@@ -1,0 +1,35 @@
+# 13 · RBAC, security & abuse protection
+Status: decided · Phase 1 · Decisions: Staff security, Non-functional requirements; research `../research/security-vulnerabilities.md` (recent CVEs, written after research completes)
+
+## RBAC
+- Permissions are `resource:action` strings (orders:read, orders:route, orders:refund, refunds:approve, products:publish, partners:approve, content:publish, settings:write, customers:impersonate, …) stored in `permissions`; roles in `roles` with `role_permissions`; `user_roles` with optional `city_id` and `partner_id` scope. Firebase custom claims carry role ids + partner_id; the API resolves effective permissions per request (Redis cache 60 s, invalidated on change).
+- Default roles and matrix: see `../research/ecommerce-baseline.md` §7 (super_admin, ops_manager, support_agent, finance, catalogue_manager, city_manager, marketing, seller_owner, seller_staff, workshop_owner, workshop_staff, mechanic, customer, guest).
+- Enforcement: Hono middleware `requirePermission()` + repository-level scoping (`actor`), RLS mirror in Supabase for Realtime; UI hides what the actor cannot do; 404 for cross-tenant ids.
+- Four-eyes: refunds/wallet credits/payouts/commission changes above `settings.approval_threshold_paise` require requester ≠ approver.
+- Staff 2FA (TOTP) implemented; enforced automatically once any staff beyond founders exists (`settings.enforce_staff_2fa` auto-true on 2nd staff).
+- Sessions: staff idle 30 min / absolute 12 h; partners 7 days; customers 30 days; sign-out-all; new-device alert (P1).
+- Audit log on every mutation (actor, ip, entity, before/after, reason) — immutable.
+
+## Abuse protection (user request: "users shouldn't spam")
+| Surface | Limit (Upstash sliding window) | Extra |
+|---|---|---|
+| OTP send | 5/phone/hour, 20/IP/hour, 3/device/10 min | Cloudflare Turnstile on send; SMS region policy IN only; cost alert |
+| OTP verify | 5 attempts per code; lockout 15 min | enumeration-safe errors |
+| Login/session | 30/IP/15 min | |
+| API general | 120 req/min/user, 600/IP | 429 + Retry-After |
+| Orders | 5 placed/user/hour, 20/day; COD 2 pending per user | fraud flags |
+| Coupons | 10 attempts/user/hour | |
+| Reviews/tickets/forms | 5/user/day; Turnstile on guest forms | |
+| Search/suggest | 60/min/IP | |
+| Uploads | 20/user/day, ≤5 MB, image types only, sharp re-encode, EXIF strip, SVG blocked | AV scan P1 |
+| Partner actions | 300/min | |
+Plus: Cloudflare WAF + bot fight mode in front of Vercel/Cloud Run, CSP with nonces, HSTS, SameSite cookies, CSRF for Server Actions/Hono mutations, input validation (Zod) everywhere, no mass assignment (explicit DTOs), signed webhooks, secrets in Secret Manager/Vercel env, dependency policy (pnpm `minimumReleaseAge`, frozen lockfile, `onlyBuiltDependencies`, Dependabot + Socket), GitHub Actions pinned by SHA with OIDC, 2FA on npm/GitHub, device fingerprint + velocity rules (P1), RTO risk score (P1), admin on separate hostname with optional IP allowlist (P1).
+
+## Data
+`permissions`, `roles`, `role_permissions`, `user_roles`, `staff` (2fa_secret enc, enforced), `sessions`, `audit_log`, `rate_limit_overrides`, `blocked_entities` (phone/ip/pincode with reason).
+
+## Acceptance tests
+RBAC matrix (every endpoint × role) generated from the permission table; cross-tenant 404s; four-eyes rejection; rate limits 429 with headers; Turnstile verification mocked; CSP header present; webhook signature failure 400; audit row per mutation.
+
+## P1/P2
+Device fingerprinting, RTO scoring, IP allowlist, customer 2FA, outbound webhooks HMAC, SIEM export.

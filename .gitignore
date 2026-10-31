@@ -1,0 +1,38 @@
+# deps
+node_modules/
+.pnpm-store/
+
+# builds
+.next/
+dist/
+build/
+out/
+.turbo/
+coverage/
+*.tsbuildinfo
+
+# env & secrets (never commit)
+.env
+.env.*
+!.env.example
+*.pem
+*service-account*.json
+firebase-adminsdk*.json
+.claude/settings.local.json
+
+# test artefacts
+playwright-report/
+test-results/
+blob-report/
+.lighthouseci/
+
+# local tooling
+.vercel/
+.supabase/
+supabase/.temp/
+.firebase/
+firebase-debug.log
+ui-debug.log
+*.log
+.DS_Store
+Thumbs.db

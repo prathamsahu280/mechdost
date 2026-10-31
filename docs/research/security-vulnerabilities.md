@@ -1,0 +1,120 @@
+# Security research — recent vulnerabilities (2025 → Oct 2026) and day-one mitigations for MechDost
+
+Researched 2026-10-31 against primary sources (nextjs.org, react.dev, nodejs.org, postgresql.org, GitHub advisories, Supabase/pnpm/Razorpay docs); secondary sources flagged. **Read before adding a dependency, auth code, payment code or CI config** (CLAUDE.md hard rule 4). Re-verify the October 2026 Next.js out-of-band advisory and Node Brotli status against GHSA/nodejs.org before quoting versions externally.
+
+## 1. Next.js / React Server Components
+| CVE / GHSA | Date | Severity | Affected | Fix / mitigation |
+|---|---|---|---|---|
+| CVE-2025-29927 middleware auth bypass via forged `x-middleware-subrequest` (https://github.com/advisories/GHSA-f82v-jwr5-mffw) | 2025-03-21 | Critical 9.1 | 12.x–15.2.2 self-hosted | ≥15.2.3 / 14.2.25; strip the header at the edge/LB; middleware is never the only authz layer. |
+| CVE-2025-49826 (204 cache-poisoning DoS), CVE-2025-49005 (missing `Vary` → RSC cache poisoning), CVE-2025-48068 (dev-server source exposure) | May–Jul 2025 | High/Med/Low | 15.x < 15.1.8 / 15.3.3 | Upgrade; self-hosted CDN must `Vary: RSC`. |
+| CVE-2025-55173 (image optimizer content injection), CVE-2025-57752 (image cache-key confusion), CVE-2025-57822 (`NextResponse.next()` header → SSRF) | 2025-08-29 | Med–High | <14.2.31/32, <15.4.5/7 | Upgrade; never forward raw request headers; no auth-gated images via `/_next/image`. |
+| CVE-2025-59471 image optimizer memory DoS (GHSA-9g9p-9gw9-jx7f) | late 2025 | Medium | <15.5.10, <16.1.5 | Upgrade; cap `remotePatterns`; prefer CDN image optimiser. |
+| **CVE-2025-55182 "React2Shell"** RSC Flight deserialization → unauthenticated RCE (https://react.dev/blog/2025/12/03/critical-security-vulnerability-in-react-server-components); Next tracked as CVE-2025-66478 | 2025-12-03 | **Critical 10.0**, mass-exploited | react-server-dom-* 19.0–19.2.0; Next 15.x/16.x App Router | React 19.0.1/19.1.2/19.2.1; Next 15.0.5…15.5.7, 16.0.7; `npx fix-react2shell-next`. No workaround. |
+| CVE-2025-55184 / CVE-2025-67779 (RSC infinite-loop DoS), CVE-2025-55183 (Server Function source exposure) (https://nextjs.org/blog/security-update-2025-12-11) | 2025-12-11 | High/Med | App Router ≥13.3 | Next 14.2.35, 15.5.9, 16.0.10; never hard-code secrets in server code. |
+| CVE-2026-23864 RSC DoS | 2026-01-26 | High 7.5 | React 19.x | Upgrade React. |
+| CVE-2026-44580 `beforeInteractive` script XSS | 2026 | High | 13.0–<15.5.16, <16.2.5 | Upgrade. |
+| July 2026 release (https://nextjs.org/blog/july-2026-security-release): CVE-2026-64641 Server Action CPU DoS; CVE-2026-64642 middleware/proxy bypass (Turbopack + single locale); CVE-2026-64645 SSRF/open-redirect via `rewrites()`/`redirects()` from request hostname; CVE-2026-64649 Server Action SSRF via Host; CVE-2026-64646 unbounded Server Action payload; CVE-2026-64643 Server Function ID disclosure; CVE-2026-64644 SVG image DoS; CVE-2026-64647/64648 fetch body cache confusion | 2026-07-20 | 4 High, 5 Medium | 15.x, 16.0–16.2.10 | 15.5.21 / 16.2.11; validate Host; never build rewrite destinations from request input. |
+| Sept 2026 release (https://nextjs.org/blog/september-2026-security-release): CVE-2026-94483 image-optimizer SSRF via allow-listed host; CVE-2026-94543/94484 SSG/ISR cache poisoning (self-hosted root catch-all); CVE-2026-94485 metadata image `dynamicParams` bypass; GHSA-h694-7cp9-m8p3 / CVE-2026-94544 `use cache` leaks incl. Draft Mode; CVE-2026-94486 `next dev` MCP endpoint leak | 2026-09-30 | High + Mediums | 15.x, 16.x | 15.5.27 / 16.3.8; never allow-list hosts whose content users control; `next dev` on localhost only. |
+| Oct 2026 out-of-band: GHSA-673q-mjm6-r5xr RCE (CVSSv4 9.5) + CVE-2026-96889 librsvg UAF via nested SVG in image pipeline (secondary: CSA Singapore AL-2026-148) | Oct 2026 | Critical | 16.x < 16.4.1, 15.x < 15.5.28 | 16.4.1 / 15.5.28; `sharp` ≥0.35.4. |
+| React Router 7 (if ever used): CVE-2025-31137, CVE-2025-43864, CVE-2025-43865 | Mar–Apr 2025 | High | 7.0–7.5.1 | ≥7.5.2. |
+Server Actions: every `'use server'` export is a public POST; do authn + authz + Zod inside each; built-in CSRF is Origin-vs-Host only → set `serverActions.allowedOrigins` to the real hosts, never `'null'` (https://nextjs.org/docs/app/guides/data-security).
+
+## 2. Node.js 22
+| CVE | Date | Fix |
+|---|---|---|
+| CVE-2025-27210 Windows device-name path traversal | Jul 2025 | 22.17.1 |
+| CVE-2025-55130 symlink bypass `--allow-fs-*`; CVE-2025-55131 `Buffer.alloc` non-zeroed; CVE-2025-59465 HTTP/2 HEADERS crash; CVE-2025-59466 stack overflow (https://nodejs.org/en/blog/vulnerability/december-2025-security-releases) | 2026-01-13 | 22.22.0 |
+| CVE-2026-56846/56848 HTTP/2 memory & UAF; CVE-2026-58043 Permission Model prefix over-grant; CVE-2026-58040 TLS session-reuse hostname skip; CVE-2026-58044 HTTP client request smuggling (https://nodejs.org/en/blog/vulnerability/july-2026-security-releases) | 2026-07-29 | 22.23.2 |
+| **CVE-2026-111497 Brotli decoder OOB write → RCE ("Node2Shell")**, CVE-2026-106069 IPv4 octal TLS hostname bypass, CVE-2026-105482 DNS NUL truncation, CVE-2026-106074 `randomUUID` snapshot entropy reuse (https://nodejs.org/en/blog/vulnerability/october-2026-security-releases) | 2026-10-21 | **22.23.4**; don't accept `Content-Encoding: br` request bodies from the internet. |
+Pattern: pin `engines.node`, distroless image digests rebuilt weekly, `server.maxHeadersCount`, behind Cloud Run LB, don't rely on `--permission` as a sandbox.
+
+## 3. Hono
+| GHSA / CVE | Date | Fixed in |
+|---|---|---|
+| CVE-2024-48913 CSRF middleware bypass when Content-Type absent | 2024-10 | 4.6.5 |
+| CVE-2025-59139 `bodyLimit` bypass via conflicting headers; GHSA-9vqf-7f2p-gf9v chunked-body bypass | 2025-09 / 2026 | 4.9.7 / 4.12.16 |
+| CVE-2025-62610 JWT `aud` not checked by default | 2025-10-21 | 4.10.2 (pass `aud`) |
+| CVE-2026-22818 JWK alg-confusion (High 8.2) | 2026-01-13 | 4.11.4 |
+| GHSA-gq3j-xvxp-8hrf non-constant-time basic/bearer auth | 2026 | 4.11.10 |
+| GHSA-9r54-q6cx-xmh5 ErrorBoundary XSS; GHSA-5pq2-9x2x-5p6w `setCookie` attribute injection | 2026 | 4.11.7 / 4.12.4 |
+| serveStatic path confusion: CVE-2026-29045, CVE-2026-39407, CVE-2026-54286, GHSA-5r4p-p66f-jhc7 | Mar–Sep 2026 | 4.12.4 / 4.12.12 / 4.12.25 / 4.13.11 |
+| GHSA-xrhx-7g5j-rcj5 ipRestriction IPv6 bypass; GHSA-f23p-vx2j-j53r `memo()` cross-user SSR leak; GHSA-8j4g-w8fx-2239 CORS ReDoS; GHSA-g6gw-c38x-mqfc `parseBody` nesting DoS | 2026 | 4.12.21 / 4.12.34 / 4.13.x |
+Takeaway: stay on latest 4.13.x; verify Firebase tokens with `firebase-admin` (not `hono/jwt`); no `serveStatic`/`hono/jsx` on the API; body limits at the LB too.
+
+## 4. Supabase / Postgres / Drizzle
+- Mass RLS-off leaks via anon key (CVE-2025-48757 Lovable apps; thousands of misconfigured instances, https://deepstrike.io/blog/hacking-thousands-of-misconfigured-supabase-instances-at-scale): RLS on every exposed table, per-operation policies `to authenticated` with `with check`, `(select auth.uid())`, `security_invoker` views, pinned `search_path` on SECURITY DEFINER, pgTAP allow/deny tests; Supabase stopped auto-exposing `public` for new projects (2026-05-30).
+- Supabase MCP prompt-injection exfiltration (Jul 2025, https://generalanalysis.com/blog/supabase-mcp-blog): agents never get `service_role`/secret key; `--read-only --project-ref`; dev branch DB only.
+- New API keys `sb_publishable_…` / `sb_secret_…` (https://supabase.com/docs/guides/getting-started/migrating-to-new-api-keys): adopt from day one; secret key server-only.
+- Realtime: CVE-2026-54238 expired JWT accepted when `exp` is a string (<2.103.1); CVE-2026-62247 `presence.read` RLS not honoured (<2.111.2) → enable Realtime authorization (private channels) explicitly.
+- Postgres core (https://www.postgresql.org/support/security/): CVE-2025-1094 quoting bypass; CVE-2025-8714/8715 pg_dump → restore code exec; CVE-2025-12818 libpq; 2026: CVE-2026-19385 pg_dump heap overflow, CVE-2026-18408 `\unrestrict`, CVE-2026-15741 SQLi via `EXTRACT` deparse, CVE-2026-14666 row-security cache ignores role changes, CVE-2026-6464 psql COPY → stay on latest minor; treat dumps as code; managed upgrades.
+- **Drizzle ORM GHSA-gpj5-g38j-94v9 / CVE-2026-39356** identifier-escape SQLi via `sql.identifier()`/`.as()` → ≥0.45.4; never pass user input to identifiers/aliases.
+- PostgREST/Storage: config risks only (public buckets, missing storage RLS, `http`/`pg_net` exposed) → private buckets + signed URLs ≤10 min; revoke `http`, `pg_net`, `vault` from `anon`/`authenticated`.
+
+## 5. Firebase Authentication
+- **SMS pumping / toll fraud**: SMS region policy allowlist **IN only** (https://docs.cloud.google.com/identity-platform/docs/admin/sms-regions); monitor success rate (<50% ⇒ pumping); reCAPTCHA Enterprise SMS defense (audit → enforce); App Check; disable test numbers in prod; own Upstash limits per phone/IP/day + billing alert.
+- Custom claims: only server sets; ≤1000 B; force `getIdToken(true)` after role change (stale up to 1 h); never read role from client body; known bug: claims vanish after `updateEmail/updateProfile` (firebase-js-sdk #9260).
+- ID tokens: `verifyIdToken(token, checkRevoked=true)`; reject custom tokens; check `aud`; never trust `uid` from client; map to Supabase via server-minted JWT / third-party auth with roles in `app_metadata`.
+- Admin credentials: Workload Identity (Cloud Run SA, Vercel OIDC) instead of service-account JSON; Secret Manager if unavoidable; GitHub secret scanning + push protection.
+
+## 6. Payments / business logic (Razorpay, OWASP API Top 10 2023)
+HMAC over **raw bytes** with `timingSafeEqual`; webhook secret ≠ key secret; keep old secret during rotation; dedupe on `x-razorpay-event-id`; monotonic state; ack fast, process via pg-boss; server-side order creation from DB amount; compare `amount/currency/order_id` on capture; verify checkout signature; fetch payment before fulfilling; OTP: server-side only, 5 attempts, lockout, uniform responses/timing, bound to session + device; BOLA/IDOR, mass assignment (`.strict()` DTOs), race conditions (`FOR UPDATE`/unique constraints), idempotency keys on mutating endpoints.
+
+## 7. Supply chain
+| Incident | Date | Lesson |
+|---|---|---|
+| tj-actions/changed-files + reviewdog (CVE-2025-30066/30154) | 2025-03 | Pin actions to full SHA; minimal `permissions:`; no `pull_request_target`. |
+| nx "s1ngularity" (postinstall weaponised AI CLIs with bypass flags; 2,349 creds) | 2025-08-26 | Block install scripts; no long-lived tokens on dev boxes; agents never run with bypass flags. |
+| chalk/debug + 16 pkgs (phished maintainer; ~2.5 h live) | 2025-09-08 | `minimumReleaseAge` would have skipped it. |
+| Shai-Hulud worm (500+ pkgs) and 2.0 (796 pkgs, preinstall, home-dir wipe) | Sep & Nov 2025 | 2FA + trusted publishing; audit GitHub Apps/webhooks. |
+| Mini Shai-Hulud / ChainDrop (SAP, TanStack, Mistral, AntV, Red Hat, keyv; CI cache poisoning → OIDC publish; valid SLSA provenance; persists via `.claude/settings.json`, `.vscode/tasks.json`) | Apr–Aug 2026 | Provenance ≠ trust; release-age delay; runner hardening; review `.claude/` changes as code. |
+| Typosquats of tailwindcss/vite/next/eslint (338+ pkgs) | 2025–26 | Exact names; Socket/Snyk PR checks. |
+| Vercel April 2026 incident (Context.ai OAuth compromise → some env vars) | 2026-04 | Mark env vars Sensitive; review OAuth apps; rotate on notice. |
+
+## 8. AI-agent specific
+CVE-2025-59536 / CVE-2025-59356 (Claude Code RCE via repo-planted hooks/MCP config before trust dialog), CVE-2025-54794/54795, "TrustFall" auto-execution of project MCP servers. Mitigations: keep Claude Code current; review `.claude/settings.json`, hooks, `.mcp.json` changes like code; no secrets in `CLAUDE.md`/committed `.env`; `.env*` git-ignored and in Claude's deny list; MCP servers read-only/least privilege; Playwright MCP ≥0.0.40; never `--dangerously-skip-permissions` outside a throwaway container; fetched web/ticket content is data; a PreToolUse hook blocking `curl | sh`, `rm -rf`, writes to `~/.claude*`.
+
+## 9. Platform / web hardening
+CSP per-request nonce + `'strict-dynamic'` in middleware (pass `x-nonce`); HSTS preload; cookies `__Host-`, `HttpOnly`, `Secure`, `SameSite=Lax`; rotate session on login; Upstash sliding-window limits; Turnstile on OTP + signup; uploads: sharp ≥0.35.4, re-encode to WebP, strip EXIF, reject SVG or serve sandboxed with `attachment`; MapLibre ≥6.4.1 (CVE-2026-85061 attribution XSS, CVSS 10); PostHog self-hosted patched monthly (CVE-2025-1520/1521/1522, PSA-2026-00001/2); Playwright ≥1.55.1 (CVE-2025-59288); open redirects allow-list relative paths; keep OTP/login working when WAF is down (fail-open availability, fail-closed auth).
+
+## Day-one security checklist (ordered)
+1. Pin `next` ≥16.4.1 (or ≥15.5.28), latest `react` 19.2.x patch, `sharp` ≥0.35.4; subscribe to Next/React security feeds. 2. Node 22.23.4+ (`.nvmrc`, image digest, Vercel runtime); refuse `br` request bodies. 3. Hono ≥4.13.11, Drizzle ≥0.45.4, MapLibre ≥6.4.1, Playwright ≥1.55.1; Renovate security PRs daily. 4. Strip `x-middleware-subrequest` and untrusted `X-Forwarded-Host` at the LB; middleware is a UX gate only. 5. Every Server Action/Hono route: `verifyIdToken` → load user → authz → Zod `.strict()` → scoped query via one `withAuth()` helper. 6. `serverActions.allowedOrigins` = prod hosts; `bodySizeLimit` ≤1 MB. 7. `images.remotePatterns` only our Storage bucket; `dangerouslyAllowSVG: false`. 8. Supabase new-key model; secret key only in Secret Manager / sensitive env. 9. RLS on 100% of exposed tables; revoke default grants; per-op policies. 10. pgTAP allow/deny per table in CI; CI fails if any exposed table lacks RLS. 11. Views `security_invoker`; SECURITY DEFINER fns in non-exposed schema with `search_path=''`. 12. Revoke `http`/`pg_net`/`vault` from end-user roles; private buckets + signed URLs. 13. Firebase ↔ Supabase: server-minted JWT, roles in `app_metadata`. 14. SMS region allowlist IN; reCAPTCHA Enterprise SMS defense; App Check; test numbers off. 15. OTP: Turnstile + limits (5/phone/10 min, 20/IP/h, daily cap) + 5 verify attempts; uniform responses; SMS billing alert. 16. Claims set only by Admin SDK job; `getIdToken(true)` after change; `checkRevoked` on sensitive ops. 17. No service-account JSON: Cloud Run SA + Vercel OIDC; secret scanning + push protection. 18. Razorpay: server-side orders, raw-body HMAC, event-id dedupe, amount/currency/order checks, fulfil via job. 19. Idempotency keys + `FOR UPDATE`/unique constraints on booking, wallet, coupons. 20. Hono: `bodyLimit`, `secureHeaders`, explicit `cors`, `csrf` origins; no `serveStatic`; no `hono/jwt` for Firebase. 21. CSP nonce + strict-dynamic, `frame-ancestors 'none'`, HSTS preload, Referrer/Permissions policies; `__Host-` cookies; session rotation. 22. Open-redirect helper (relative only); never build rewrites from request input. 23. Uploads: magic bytes, sharp re-encode, EXIF strip, ≤5 MB, separate origin, `attachment`. 24. Rate-limit all unauthenticated routes; Cloudflare WAF + Bot Fight in front. 25. CDN cache `Vary: RSC, Next-Router-State-Tree, Next-Url` or no shared cache for App Router. 26. Logs without phones/tokens; PostHog `mask_all_text`; server event allow-list; patch PostHog monthly. 27. `next dev` localhost only; dev MCP endpoint off in shared envs. 28. pnpm supply-chain settings committed; `--frozen-lockfile`; lockfile reviewed. 29. Actions SHA-pinned; `permissions: contents: read`; no `pull_request_target`; `zizmor` lint. 30. CI auth via OIDC only; ephemeral cache keys per branch. 31. Socket.dev/Snyk app blocking install-script, typosquat, new-maintainer alerts. 32. Hardware-key 2FA on GitHub, npm, Vercel, GCP, Supabase, Firebase, Razorpay; review OAuth apps quarterly. 33. gitleaks in CI; `.env*`, service-account JSON, `.claude/settings.local.json` git-ignored. 34. Claude Code: no secrets in CLAUDE.md; hooks/MCP config reviewed like code; read-only branch-scoped Supabase MCP; no bypass flags. 35. Cloud Run: non-root distroless, VPC egress only to Supabase/Razorpay/Firebase, min instances for auth path. 36. Playwright negative authz tests + RLS tests. 37. CVE triage SLA: Critical ≤24 h, High ≤7 d; `pnpm audit` + `npm audit signatures` in CI. 38. Incident runbook: rotate keys, `revokeRefreshTokens`, WAF emergency rules. 39. Quarterly: RLS scanner vs prod publishable key, SMS success-rate review, re-pin digests, bulletins review. 40. `security.txt` + disclosure policy.
+
+## Dependency policy (to commit in Phase 0)
+```yaml
+# pnpm-workspace.yaml (pnpm ≥10.16)
+minimumReleaseAge: 4320        # 3 days (10080 on release branches)
+minimumReleaseAgeExclude: [next, react, react-dom]   # only during announced security releases
+blockExoticSubdeps: true
+strictDepBuilds: true
+trustPolicy: no-downgrade
+allowBuilds: { sharp: true, esbuild: true, "@swc/core": true }   # pnpm 11; onlyBuiltDependencies on pnpm 10
+engineStrict: true
+```
+```ini
+# .npmrc
+frozen-lockfile=true
+save-exact=true
+engine-strict=true
+ignore-scripts=true
+provenance=true
+```
+```yaml
+# .github/workflows/ci.yml (excerpt)
+permissions: { contents: read, id-token: write }
+concurrency: { group: ${{ github.ref }}, cancel-in-progress: true }
+steps:
+  - uses: actions/checkout@<full-sha>
+  - uses: pnpm/action-setup@<full-sha>
+    with: { version: 11 }
+  - run: pnpm install --frozen-lockfile
+  - run: pnpm audit --audit-level=high && npm audit signatures
+  - run: pnpm dlx zizmor .github/workflows
+```
+```json
+// renovate.json
+{ "extends": ["config:recommended", "helpers:pinGitHubActionDigests", ":pinAllExceptPeerDependencies"],
+  "minimumReleaseAge": "3 days",
+  "vulnerabilityAlerts": { "enabled": true, "minimumReleaseAge": "0 days" },
+  "lockFileMaintenance": { "enabled": true, "schedule": ["before 6am on monday"] } }
+```
+GitHub org: 2FA required, secret scanning + push protection, branch protection with signed commits and required CI, Dependabot security updates, allowed-actions restricted. npm org: 2FA enforced, trusted publishing only, `publishConfig.provenance=true`.

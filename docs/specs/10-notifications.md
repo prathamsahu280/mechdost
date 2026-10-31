@@ -1,0 +1,26 @@
+# 10 · Notifications
+Status: decided · Phase 1 (in-app + email), Phase 3 (WhatsApp/SMS) · Decisions: Notifications
+
+## Goal
+Reliable, never-duplicated, never-lost notifications through a provider-agnostic layer: in-app (Supabase Realtime) and email (Resend) at launch; MSG91 SMS and WhatsApp templates built now, enabled when the provider is set up.
+
+## Architecture
+Transactional **outbox** written in the same DB transaction as the business change → pg-boss relay (`FOR UPDATE SKIP LOCKED`) → channel adapters (`packages/notify`: inapp, email, sms, whatsapp, push P1) → `notification_log` with provider ids and delivery status webhooks. Dedupe key per (event, entity, channel). Per-event channel matrix editable in admin; user preferences respected (transactional always on).
+
+## Events (catalogue)
+order.placed/routed/confirmed/declined/expired/rejected/packed/shipped/out_for_delivery/delivered/cancelled; payment.captured/failed/refund_initiated/refund_processed; return.*; service.requested/routed/proposed/confirmed/vehicle_received/estimate_sent/approved/started/ready/billed/paid/completed/declined/cancelled/reminder; ticket.*; partner.application_received/approved/rejected; user.signed_up/email_verified/deletion_requested; admin alerts (sla_breach, low_stock, amount_mismatch, webhook_failures).
+
+## Data
+`notifications` (in-app: user, title, body, link, read_at), `notification_outbox` (dedupe_key UNIQUE, channel, to, template, locale, payload, status, attempts, sent_at, provider_id), `notification_templates` (key, channel, locale en|hi, subject, body with variables, DLT template id, enabled), `notification_log`.
+
+## UI
+Bell with unread count (aria-live status "3 new notifications"), notification centre page, partner portal sound + badge, admin template editor with preview/test-send.
+
+## Rules
+Max 1 message per event per channel; quiet hours for promotional (none for transactional); Hindi template chosen by user language; email from `no-reply@mechdost…` with SPF/DKIM/DMARC; unsubscribe links for promotional; every send logged.
+
+## Acceptance tests
+Rolled-back order sends nothing; relay retry does not duplicate; template variables validated; preference off suppresses promotional but not transactional.
+
+## P1/P2
+Web push (PWA), WhatsApp interactive buttons, abandoned-cart sequences, outbound partner webhooks.
