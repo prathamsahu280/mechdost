@@ -4,8 +4,8 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Current status
 - **Phase:** 0 — Setup (in progress)
-- **Current task:** scaffold `packages/shared` (money/GST, state machines, ids, invoice numbers, IST time) test-first.
-- **Next tasks (in order):** `packages/db` (Drizzle schema + migrations + constraint tests on PGlite) → `apps/api` (Hono skeleton: security middleware, auth, RBAC, rate limits, OpenAPI, health) → `packages/ui` tokens + `apps/web` (Next.js 16 shell, header/footer/mobile tabs, home hero, en/hi) → 8 project-local skills (`mechdost-advisor`, `website-testing`, `firebase-phone-auth-rbac`, `razorpay-payments`, `drizzle-postgis-supabase`, `msg91-messaging`, `serwist-pwa`, `next-intl-hindi`) → CI workflow + Renovate + security settings → `docs/runbooks/setup.md` (accounts the user must create) → Phase 1.
+- **Current task:** `packages/db` — Drizzle schema + migrations + constraint tests on PGlite.
+- **Next tasks (in order):** `packages/db` (finish) (Drizzle schema + migrations + constraint tests on PGlite) → `apps/api` (Hono skeleton: security middleware, auth, RBAC, rate limits, OpenAPI, health) → `packages/ui` tokens + `apps/web` (Next.js 16 shell, header/footer/mobile tabs, home hero, en/hi) → 8 project-local skills (`mechdost-advisor`, `website-testing`, `firebase-phone-auth-rbac`, `razorpay-payments`, `drizzle-postgis-supabase`, `msg91-messaging`, `serwist-pwa`, `next-intl-hindi`) → CI workflow + Renovate + security settings → `docs/runbooks/setup.md` (accounts the user must create) → Phase 1.
 - **Blocked on user:** external accounts (Supabase, Firebase, Upstash, MapTiler, Turnstile, Resend, Vercel, GCP, Razorpay test) — not needed until DB/auth integration; Docker Desktop not installed (Supabase local needs it; PGlite used for tests meanwhile).
 
 ## Repository
@@ -21,6 +21,7 @@ This file is the single source of truth for **where the build is right now**. It
 | 2026-10-31 | Tests for DB constraints run on **PGlite** until Docker/Supabase local exist | No Docker/psql on this machine | PGlite is single-connection: true concurrency tests wait for real Postgres |
 
 ## Completed log (newest first)
+- 2026-10-31 — `packages/shared` done test-first: money (paise parsing, INR format, half-up division, inclusive/exclusive GST split with CGST=SGST, Fowler allocation, invoice round-off), IST time helpers, public codes (Crockford base32), Rule 46 invoice numbers + FY, typed state machines with actor rules for order, assignment, service request, payment. 30 tests incl. property tests, typecheck clean. Ruling: workshop decline/timeout returns a service request to `needs_routing` (same as orders) instead of a terminal `declined` state.
 - 2026-10-31 — Root workspace files: `package.json`, `pnpm-workspace.yaml` (supply-chain policy), `.npmrc`, `turbo.json`, `tsconfig.base.json`, `.editorconfig`, `.prettierrc.json`, `.nvmrc`, `.gitattributes` (LF).
 - 2026-10-31 — Git initialised, first commit (docs foundation) pushed to GitHub; co-author line removed via amend + force-push (user approved).
 - 2026-10-31 — Tooling installed globally: 46 skills, 14 plugins, MCP playwright + chrome-devtools (cloud-run registered, needs gcloud).

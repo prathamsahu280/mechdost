@@ -1,0 +1,24 @@
+{
+  "name": "@mechdost/shared",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./money": "./src/money.ts",
+    "./ids": "./src/ids.ts",
+    "./time": "./src/time.ts",
+    "./invoice": "./src/invoice.ts",
+    "./state": "./src/state/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.0",
+    "fast-check": "^4.10.0",
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.0"
+  }
+}
