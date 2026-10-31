@@ -16,5 +16,7 @@ export interface SqlExecutor {
  * read these settings, so every timeline row carries the real actor.
  */
 export async function setActor(tx: SqlExecutor, actor: ActorContext): Promise<void> {
-  await tx.execute(sql`select set_config('app.actor_type', ${actor.type}, true), set_config('app.actor_id', ${actor.userId ?? ''}, true)`);
+  await tx.execute(
+    sql`select set_config('app.actor_type', ${actor.type}, true), set_config('app.actor_id', ${actor.userId ?? ''}, true)`,
+  );
 }

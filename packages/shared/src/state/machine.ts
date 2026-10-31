@@ -48,7 +48,8 @@ export function defineMachine<const S extends string>(
 ): Machine<S> {
   const table = new Map<string, ReadonlySet<Actor>>();
   for (const t of transitions) {
-    if (terminal.includes(t.from)) throw new Error(`${name}: terminal state ${t.from} cannot have outgoing transitions`);
+    if (terminal.includes(t.from))
+      throw new Error(`${name}: terminal state ${t.from} cannot have outgoing transitions`);
     table.set(`${t.from}>${t.to}`, new Set(t.by));
   }
   return {

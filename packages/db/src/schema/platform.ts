@@ -57,7 +57,9 @@ export const webhookEvents = pgTable(
   },
   (t) => [
     check('webhook_events_status_valid', sql`${t.status} in ('received','processed','parked','failed')`),
-    index('webhook_events_pending_idx').on(t.receivedAt).where(sql`${t.status} in ('received','parked')`),
+    index('webhook_events_pending_idx')
+      .on(t.receivedAt)
+      .where(sql`${t.status} in ('received','parked')`),
   ],
 );
 
@@ -97,7 +99,9 @@ export const notificationOutbox = pgTable(
     recipient: text(),
     templateKey: text().notNull(),
     locale: text().notNull().default('en'),
-    payload: jsonb().notNull().default(sql`'{}'::jsonb`),
+    payload: jsonb()
+      .notNull()
+      .default(sql`'{}'::jsonb`),
     status: text().notNull().default('pending'),
     attempts: integer().notNull().default(0),
     lastError: text(),
@@ -109,7 +113,9 @@ export const notificationOutbox = pgTable(
     check('outbox_channel_valid', sql`${t.channel} in ('inapp','email','sms','whatsapp','push')`),
     check('outbox_status_valid', sql`${t.status} in ('pending','sent','failed','cancelled','suppressed')`),
     check('outbox_locale_valid', sql`${t.locale} in ('en','hi')`),
-    index('outbox_pending_idx').on(t.createdAt).where(sql`${t.status} = 'pending'`),
+    index('outbox_pending_idx')
+      .on(t.createdAt)
+      .where(sql`${t.status} = 'pending'`),
     index().on(t.recipientUserId),
   ],
 );
@@ -128,7 +134,12 @@ export const notifications = pgTable(
     readAt: ts(),
     createdAt: createdAt(),
   },
-  (t) => [index().on(t.userId, t.createdAt), index('notifications_unread_idx').on(t.userId).where(sql`${t.readAt} is null`)],
+  (t) => [
+    index().on(t.userId, t.createdAt),
+    index('notifications_unread_idx')
+      .on(t.userId)
+      .where(sql`${t.readAt} is null`),
+  ],
 );
 
 export const notificationTemplates = pgTable(
@@ -194,7 +205,9 @@ export const contentBlocks = pgTable(
 export const featureFlags = pgTable('feature_flags', {
   key: text().primaryKey(),
   enabled: boolean().notNull().default(false),
-  rules: jsonb().notNull().default(sql`'{}'::jsonb`),
+  rules: jsonb()
+    .notNull()
+    .default(sql`'{}'::jsonb`),
   updatedAt: updatedAt(),
 });
 
@@ -252,7 +265,9 @@ export const ticketMessages = pgTable(
     authorUserId: uuid().references(() => users.id, { onDelete: 'set null' }),
     authorRole: text().notNull(),
     body: text().notNull(),
-    attachments: jsonb().notNull().default(sql`'[]'::jsonb`),
+    attachments: jsonb()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
     internal: boolean().notNull().default(false),
     createdAt: createdAt(),
   },
@@ -276,7 +291,9 @@ export const partnerApplications = pgTable(
     business: text(),
     pincode: text().notNull(),
     details: text().notNull(),
-    kyc: jsonb().notNull().default(sql`'{}'::jsonb`),
+    kyc: jsonb()
+      .notNull()
+      .default(sql`'{}'::jsonb`),
     status: text().notNull().default('new'),
     convertedShopId: uuid().references(() => shops.id, { onDelete: 'set null' }),
     convertedWorkshopId: uuid(),
@@ -330,4 +347,3 @@ export const reviews = pgTable(
     index().on(t.moderatedBy),
   ],
 );
-

@@ -18,6 +18,7 @@ Read `../CLAUDE.md` first (hard rules). Then:
 | `research/security-vulnerabilities.md` | Recent CVEs/incidents for the stack (2025–2026), 40-item day-one checklist, dependency policy. |
 | `specs/README.md` + `specs/NN-*.md` | One spec per feature (auth, catalogue, cart/checkout, orders & routing, cancellations/returns/refunds, workshops, partner portals, admin & CMS, support, notifications, recommendations, analytics, RBAC & abuse, data integrity, multi-city, performance & scalability, future modules). |
 | `screenshots/concept/` | Playwright captures of every concept view, hidden section, modal, page and mobile layout (+ `capture.mjs`). |
+| `conventions/code-style.md` | Code structure, layering rules, lint/format/type gates (`pnpm check`). |
 | `runbooks/setup.md` | Accounts, API keys and where each one goes (`.env`, Vercel, Secret Manager). |
 | `plan.md` | The approved build plan (copied from the Claude plan file on approval). |
 

@@ -12,7 +12,8 @@ export async function reserveStock(
   tx: Tx,
   args: { inventoryId: string; orderId: string; qty: number; ttlMinutes?: number },
 ) {
-  if (!Number.isInteger(args.qty) || args.qty < 1 || args.qty > 99) throw new ValidationError('qty must be 1..99');
+  if (!Number.isInteger(args.qty) || args.qty < 1 || args.qty > 99)
+    throw new ValidationError('qty must be 1..99');
   const ttl = args.ttlMinutes ?? 15;
   const updated = await tx
     .update(shopInventory)
@@ -36,7 +37,8 @@ export async function reserveStock(
       expiresAt: sql`now() + make_interval(mins => ${ttl})`,
     })
     .returning();
-  return r!;
+  if (!r) throw new Error('reservation insert returned no row');
+  return r;
 }
 
 /** Convert a reservation into a sale (shop accepted / payment captured). Idempotent. */
@@ -49,13 +51,20 @@ export async function commitReservation(tx: Tx, reservationId: string) {
   if (!r) return false;
   await tx
     .update(shopInventory)
-    .set({ onHand: sql`${shopInventory.onHand} - ${r.qty}`, reserved: sql`${shopInventory.reserved} - ${r.qty}` })
+    .set({
+      onHand: sql`${shopInventory.onHand} - ${r.qty}`,
+      reserved: sql`${shopInventory.reserved} - ${r.qty}`,
+    })
     .where(eq(shopInventory.id, r.inventoryId));
   return true;
 }
 
 /** Release a reservation (cancel/decline). Idempotent. */
-export async function releaseReservation(tx: Tx, reservationId: string, to: 'released' | 'expired' = 'released') {
+export async function releaseReservation(
+  tx: Tx,
+  reservationId: string,
+  to: 'released' | 'expired' = 'released',
+) {
   const [r] = await tx
     .update(reservations)
     .set({ status: to })

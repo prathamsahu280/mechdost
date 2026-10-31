@@ -41,7 +41,12 @@ describe('roundHalfUpDiv', () => {
 
 describe('splitInclusiveGst', () => {
   it('splits an 18% intra-state price so CGST equals SGST and parts sum to gross', () => {
-    expect(splitInclusiveGst(118000, 1800, false)).toEqual({ taxable: 100000, cgst: 9000, sgst: 9000, igst: 0 });
+    expect(splitInclusiveGst(118000, 1800, false)).toEqual({
+      taxable: 100000,
+      cgst: 9000,
+      sgst: 9000,
+      igst: 0,
+    });
   });
   it('uses IGST for inter-state supply', () => {
     expect(splitInclusiveGst(118000, 1800, true)).toEqual({ taxable: 100000, cgst: 0, sgst: 0, igst: 18000 });
@@ -67,7 +72,12 @@ describe('splitInclusiveGst', () => {
 
 describe('splitExclusiveGst', () => {
   it('adds tax on top of a taxable value', () => {
-    expect(splitExclusiveGst(100000, 1800, false)).toEqual({ taxable: 100000, cgst: 9000, sgst: 9000, igst: 0 });
+    expect(splitExclusiveGst(100000, 1800, false)).toEqual({
+      taxable: 100000,
+      cgst: 9000,
+      sgst: 9000,
+      igst: 0,
+    });
     expect(splitExclusiveGst(100001, 1800, true).igst).toBe(18000);
   });
 });

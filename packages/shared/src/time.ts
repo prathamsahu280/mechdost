@@ -7,7 +7,13 @@ export const IST_TIMEZONE = 'Asia/Kolkata';
 const IST_OFFSET_MS = 330 * 60 * 1000;
 
 /** The IST wall-clock fields of an instant. */
-export function istParts(date: Date): { year: number; month: number; day: number; hour: number; minute: number } {
+export function istParts(date: Date): {
+  year: number;
+  month: number;
+  day: number;
+  hour: number;
+  minute: number;
+} {
   const shifted = new Date(date.getTime() + IST_OFFSET_MS);
   return {
     year: shifted.getUTCFullYear(),

@@ -23,8 +23,10 @@ export function isValidGstInvoiceNumber(value: string): boolean {
 export function formatInvoiceNumber(seriesPrefix: string, fy: string, sequence: number): string {
   if (!/^[A-Z0-9]{1,6}$/.test(seriesPrefix)) throw new RangeError(`Invalid series prefix: ${seriesPrefix}`);
   if (!/^\d{4}$/.test(fy)) throw new RangeError(`Invalid FY code: ${fy}`);
-  if (!Number.isSafeInteger(sequence) || sequence < 1) throw new RangeError('sequence must be a positive integer');
+  if (!Number.isSafeInteger(sequence) || sequence < 1)
+    throw new RangeError('sequence must be a positive integer');
   const value = `${seriesPrefix}/${fy}/${String(sequence).padStart(6, '0')}`;
-  if (!isValidGstInvoiceNumber(value)) throw new RangeError(`Invoice number exceeds Rule 46 limits: ${value}`);
+  if (!isValidGstInvoiceNumber(value))
+    throw new RangeError(`Invoice number exceeds Rule 46 limits: ${value}`);
   return value;
 }

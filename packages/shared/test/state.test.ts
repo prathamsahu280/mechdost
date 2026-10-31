@@ -3,7 +3,15 @@ import { assignmentMachine, orderMachine, paymentMachine, serviceRequestMachine 
 
 describe('order state machine', () => {
   it('follows the admin-routing happy path', () => {
-    const path = ['placed', 'awaiting_shop', 'confirmed', 'packed', 'shipped', 'out_for_delivery', 'delivered'] as const;
+    const path = [
+      'placed',
+      'awaiting_shop',
+      'confirmed',
+      'packed',
+      'shipped',
+      'out_for_delivery',
+      'delivered',
+    ] as const;
     for (let i = 0; i < path.length - 1; i++) expect(orderMachine.can(path[i]!, path[i + 1]!)).toBe(true);
   });
   it('sends declined or expired orders back to admin, who can reroute or reject', () => {
@@ -27,8 +35,12 @@ describe('order state machine', () => {
     expect(orderMachine.canActor('packed', 'cancelled', 'customer')).toBe(false);
   });
   it('assert throws a typed error on illegal transitions', () => {
-    expect(() => orderMachine.assert('placed', 'delivered', 'admin')).toThrowError(/illegal transition/i);
-    expect(() => orderMachine.assert('awaiting_shop', 'confirmed', 'customer')).toThrowError(/not allowed/i);
+    expect(() => {
+      orderMachine.assert('placed', 'delivered', 'admin');
+    }).toThrow(/illegal transition/i);
+    expect(() => {
+      orderMachine.assert('awaiting_shop', 'confirmed', 'customer');
+    }).toThrow(/not allowed/i);
   });
 });
 
@@ -58,7 +70,8 @@ describe('service request state machine', () => {
       'paid',
       'completed',
     ] as const;
-    for (let i = 0; i < path.length - 1; i++) expect(serviceRequestMachine.can(path[i]!, path[i + 1]!)).toBe(true);
+    for (let i = 0; i < path.length - 1; i++)
+      expect(serviceRequestMachine.can(path[i]!, path[i + 1]!)).toBe(true);
   });
   it('supports admin routing and revised estimates', () => {
     expect(serviceRequestMachine.can('requested', 'needs_routing')).toBe(true);

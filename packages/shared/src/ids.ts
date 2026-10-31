@@ -16,7 +16,7 @@ export function randomCode(length: number): string {
   const bytes = new Uint8Array(length);
   globalThis.crypto.getRandomValues(bytes);
   let out = '';
-  for (const b of bytes) out += CROCKFORD[b & 31];
+  for (const b of bytes) out += CROCKFORD.charAt(b & 31);
   return out;
 }
 

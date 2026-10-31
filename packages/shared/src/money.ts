@@ -14,7 +14,8 @@ export interface GstSplit {
 }
 
 function assertNonNegInt(name: string, n: number): void {
-  if (!Number.isSafeInteger(n) || n < 0) throw new RangeError(`${name} must be a non-negative safe integer, got ${n}`);
+  if (!Number.isSafeInteger(n) || n < 0)
+    throw new RangeError(`${name} must be a non-negative safe integer, got ${n}`);
 }
 
 /** Parse a rupee amount string ("1,250.05") into paise without floating-point error. */
@@ -78,17 +79,18 @@ export function splitExclusiveGst(taxable: Paise, rateBp: BasisPoints, interStat
 export function allocate(total: Paise, weights: readonly number[]): Paise[] {
   assertNonNegInt('total', total);
   if (weights.length === 0) throw new RangeError('weights must not be empty');
-  weights.forEach((w, i) => assertNonNegInt(`weights[${i}]`, w));
+  weights.forEach((w, i) => {
+    assertNonNegInt(`weights[${i}]`, w);
+  });
   const effective = weights.every((w) => w === 0) ? weights.map(() => 1) : [...weights];
   const sum = effective.reduce((a, b) => a + b, 0);
 
   const parts = effective.map((w) => Math.floor((total * w) / sum));
   const remainders = effective.map((w, i) => ({ i, w, r: (total * w) % sum }));
-  let leftover = total - parts.reduce((a, b) => a + b, 0);
+  const leftover = total - parts.reduce((a, b) => a + b, 0);
   remainders.sort((a, b) => b.r - a.r || b.w - a.w || a.i - b.i);
-  for (let k = 0; leftover > 0; k = (k + 1) % remainders.length, leftover--) {
-    parts[remainders[k]!.i]! += 1;
-  }
+  // leftover < weights.length always (each floor loses < 1 paisa), so one pass suffices.
+  for (const { i } of remainders.slice(0, leftover)) parts[i] = (parts[i] ?? 0) + 1;
   return parts;
 }
 

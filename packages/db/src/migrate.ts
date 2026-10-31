@@ -20,11 +20,13 @@ if (!url || url.includes('<')) {
   process.exit(1);
 }
 
-const sql = postgres(url, { max: 1, onnotice: () => {} });
+const sql = postgres(url, { max: 1, onnotice: () => undefined });
 try {
   await sql`select set_config('search_path', 'public, extensions', false)`;
   await migrate(drizzle(sql), { migrationsFolder: fileURLToPath(new URL('../drizzle', import.meta.url)) });
-  const rows = await sql<{ count: number }[]>`select count(*)::int as count from pg_tables where schemaname = 'public'`;
+  const rows = await sql<
+    { count: number }[]
+  >`select count(*)::int as count from pg_tables where schemaname = 'public'`;
   console.log(`migrations applied; public tables: ${rows[0]?.count ?? 0}`);
 } finally {
   await sql.end();

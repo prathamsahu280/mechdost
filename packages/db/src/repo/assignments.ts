@@ -5,6 +5,12 @@ import type { ActorContext } from './actor';
 import { ConflictError, mapPgError, NotFoundError, ValidationError } from './errors';
 import { transitionOrder, type Tx } from './orders';
 
+async function currentOrderVersion(tx: Tx, orderId: string): Promise<number> {
+  const [order] = await tx.select({ version: orders.version }).from(orders).where(eq(orders.id, orderId));
+  if (!order) throw new NotFoundError('Order not found');
+  return order.version;
+}
+
 /**
  * Admin routes an order to a shop (docs/specs/04). Order: placed|needs_rerouting → awaiting_shop, and one
  * `offered` assignment with a DB-clock expiry. The partial unique index guarantees one active assignment.
@@ -28,7 +34,10 @@ export async function offerOrderToShop(
     .where(eq(orders.id, args.orderId));
   if (!current) throw new NotFoundError('Order not found');
   if (current.status !== 'placed' && current.status !== 'needs_rerouting') {
-    throw new ConflictError(`Order is ${current.status}; it can only be routed from placed or needs_rerouting`, 'NOT_ROUTABLE');
+    throw new ConflictError(
+      `Order is ${current.status}; it can only be routed from placed or needs_rerouting`,
+      'NOT_ROUTABLE',
+    );
   }
   await transitionOrder(tx, {
     orderId: args.orderId,
@@ -48,7 +57,8 @@ export async function offerOrderToShop(
         expiresAt: sql`now() + make_interval(mins => ${args.timeoutMinutes})`,
       })
       .returning();
-    return assignment!;
+    if (!assignment) throw new Error('assignment insert returned no row');
+    return assignment;
   } catch (err) {
     mapPgError(err);
   }
@@ -58,7 +68,10 @@ export async function offerOrderToShop(
  * Shop accepts. Compare-and-set on the assignment (still offered, not expired by the DB clock, belongs to this
  * shop), then the order moves awaiting_shop → confirmed with shop_id set. A late accept after expiry fails.
  */
-export async function acceptAssignment(tx: Tx, args: { assignmentId: string; shopId: string; actor: ActorContext }) {
+export async function acceptAssignment(
+  tx: Tx,
+  args: { assignmentId: string; shopId: string; actor: ActorContext },
+) {
   assignmentMachine.assert('offered', 'accepted', args.actor.type);
   const [a] = await tx
     .update(orderAssignments)
@@ -73,12 +86,11 @@ export async function acceptAssignment(tx: Tx, args: { assignmentId: string; sho
     )
     .returning();
   if (!a) throw new ConflictError('This order is no longer available to accept', 'ASSIGNMENT_UNAVAILABLE');
-  const [order] = await tx.select({ version: orders.version }).from(orders).where(eq(orders.id, a.orderId));
   return transitionOrder(tx, {
     orderId: a.orderId,
     from: 'awaiting_shop',
     to: 'confirmed',
-    expectedVersion: order!.version,
+    expectedVersion: await currentOrderVersion(tx, a.orderId),
     actor: args.actor,
     patch: { shopId: args.shopId, confirmedAt: new Date() },
   });
@@ -103,12 +115,11 @@ export async function declineAssignment(
     )
     .returning();
   if (!a) throw new ConflictError('This order is no longer awaiting your response', 'ASSIGNMENT_UNAVAILABLE');
-  const [order] = await tx.select({ version: orders.version }).from(orders).where(eq(orders.id, a.orderId));
   return transitionOrder(tx, {
     orderId: a.orderId,
     from: 'awaiting_shop',
     to: 'needs_rerouting',
-    expectedVersion: order!.version,
+    expectedVersion: await currentOrderVersion(tx, a.orderId),
     actor: args.actor,
   });
 }
@@ -130,12 +141,11 @@ export async function expireAssignment(tx: Tx, args: { assignmentId: string }) {
     )
     .returning();
   if (!a) return null;
-  const [order] = await tx.select({ version: orders.version }).from(orders).where(eq(orders.id, a.orderId));
   return transitionOrder(tx, {
     orderId: a.orderId,
     from: 'awaiting_shop',
     to: 'needs_rerouting',
-    expectedVersion: order!.version,
+    expectedVersion: await currentOrderVersion(tx, a.orderId),
     actor: { type: 'system' },
   });
 }

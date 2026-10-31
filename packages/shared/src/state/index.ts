@@ -17,24 +17,29 @@ export const ORDER_STATES = [
 ] as const;
 export type OrderStatus = (typeof ORDER_STATES)[number];
 
-export const orderMachine = defineMachine('order', ORDER_STATES, ['delivered', 'cancelled', 'rejected'], [
-  { from: 'placed', to: 'awaiting_shop', by: ['admin', 'system'] },
-  { from: 'placed', to: 'cancelled', by: ['customer', 'admin'] },
-  { from: 'placed', to: 'rejected', by: ['admin'] },
-  { from: 'awaiting_shop', to: 'confirmed', by: ['shop'] },
-  { from: 'awaiting_shop', to: 'needs_rerouting', by: ['shop', 'system'] },
-  { from: 'awaiting_shop', to: 'cancelled', by: ['customer', 'admin'] },
-  { from: 'needs_rerouting', to: 'awaiting_shop', by: ['admin', 'system'] },
-  { from: 'needs_rerouting', to: 'rejected', by: ['admin'] },
-  { from: 'needs_rerouting', to: 'cancelled', by: ['customer', 'admin'] },
-  { from: 'confirmed', to: 'packed', by: ['shop'] },
-  { from: 'confirmed', to: 'cancelled', by: ['customer', 'admin', 'shop'] },
-  { from: 'packed', to: 'shipped', by: ['shop'] },
-  { from: 'packed', to: 'cancelled', by: ['admin'] },
-  { from: 'shipped', to: 'out_for_delivery', by: ['shop', 'system'] },
-  { from: 'shipped', to: 'delivered', by: ['shop', 'system'] },
-  { from: 'out_for_delivery', to: 'delivered', by: ['shop', 'system'] },
-]);
+export const orderMachine = defineMachine(
+  'order',
+  ORDER_STATES,
+  ['delivered', 'cancelled', 'rejected'],
+  [
+    { from: 'placed', to: 'awaiting_shop', by: ['admin', 'system'] },
+    { from: 'placed', to: 'cancelled', by: ['customer', 'admin'] },
+    { from: 'placed', to: 'rejected', by: ['admin'] },
+    { from: 'awaiting_shop', to: 'confirmed', by: ['shop'] },
+    { from: 'awaiting_shop', to: 'needs_rerouting', by: ['shop', 'system'] },
+    { from: 'awaiting_shop', to: 'cancelled', by: ['customer', 'admin'] },
+    { from: 'needs_rerouting', to: 'awaiting_shop', by: ['admin', 'system'] },
+    { from: 'needs_rerouting', to: 'rejected', by: ['admin'] },
+    { from: 'needs_rerouting', to: 'cancelled', by: ['customer', 'admin'] },
+    { from: 'confirmed', to: 'packed', by: ['shop'] },
+    { from: 'confirmed', to: 'cancelled', by: ['customer', 'admin', 'shop'] },
+    { from: 'packed', to: 'shipped', by: ['shop'] },
+    { from: 'packed', to: 'cancelled', by: ['admin'] },
+    { from: 'shipped', to: 'out_for_delivery', by: ['shop', 'system'] },
+    { from: 'shipped', to: 'delivered', by: ['shop', 'system'] },
+    { from: 'out_for_delivery', to: 'delivered', by: ['shop', 'system'] },
+  ],
+);
 
 /** An offer of an order or service request to one partner (one active per order — partial unique index). */
 export const ASSIGNMENT_STATES = ['offered', 'accepted', 'declined', 'expired', 'withdrawn'] as const;
@@ -121,18 +126,23 @@ export const PAYMENT_STATES = [
 ] as const;
 export type PaymentStatus = (typeof PAYMENT_STATES)[number];
 
-export const paymentMachine = defineMachine('payment', PAYMENT_STATES, ['refunded', 'expired'], [
-  { from: 'created', to: 'attempted', by: ['system'] },
-  { from: 'created', to: 'paid', by: ['system'] },
-  { from: 'created', to: 'failed', by: ['system'] },
-  { from: 'created', to: 'expired', by: ['system'] },
-  { from: 'attempted', to: 'paid', by: ['system'] },
-  { from: 'attempted', to: 'failed', by: ['system'] },
-  { from: 'attempted', to: 'expired', by: ['system'] },
-  { from: 'failed', to: 'attempted', by: ['system'] },
-  { from: 'failed', to: 'paid', by: ['system'] },
-  { from: 'failed', to: 'expired', by: ['system'] },
-  { from: 'paid', to: 'partially_refunded', by: ['system', 'admin'] },
-  { from: 'paid', to: 'refunded', by: ['system', 'admin'] },
-  { from: 'partially_refunded', to: 'refunded', by: ['system', 'admin'] },
-]);
+export const paymentMachine = defineMachine(
+  'payment',
+  PAYMENT_STATES,
+  ['refunded', 'expired'],
+  [
+    { from: 'created', to: 'attempted', by: ['system'] },
+    { from: 'created', to: 'paid', by: ['system'] },
+    { from: 'created', to: 'failed', by: ['system'] },
+    { from: 'created', to: 'expired', by: ['system'] },
+    { from: 'attempted', to: 'paid', by: ['system'] },
+    { from: 'attempted', to: 'failed', by: ['system'] },
+    { from: 'attempted', to: 'expired', by: ['system'] },
+    { from: 'failed', to: 'attempted', by: ['system'] },
+    { from: 'failed', to: 'paid', by: ['system'] },
+    { from: 'failed', to: 'expired', by: ['system'] },
+    { from: 'paid', to: 'partially_refunded', by: ['system', 'admin'] },
+    { from: 'paid', to: 'refunded', by: ['system', 'admin'] },
+    { from: 'partially_refunded', to: 'refunded', by: ['system', 'admin'] },
+  ],
+);

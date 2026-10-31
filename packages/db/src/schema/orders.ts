@@ -112,7 +112,10 @@ export const orders = pgTable(
     unique().on(t.groupId, t.subNo),
     check('orders_status_valid', sql`${t.status} in (${inList(ORDER_STATES)})`),
     check('orders_sub_no_positive', sql`${t.subNo} > 0`),
-    check('orders_amounts_nonneg', sql`${t.subtotalPaise} >= 0 and ${t.totalPaise} >= 0 and ${t.taxPaise} >= 0`),
+    check(
+      'orders_amounts_nonneg',
+      sql`${t.subtotalPaise} >= 0 and ${t.totalPaise} >= 0 and ${t.taxPaise} >= 0`,
+    ),
     check(
       'orders_shop_when_confirmed',
       sql`${t.status} in ('placed','awaiting_shop','needs_rerouting','cancelled','rejected') or ${t.shopId} is not null`,
@@ -157,7 +160,10 @@ export const orderItems = pgTable(
       'order_items_total_consistent',
       sql`${t.totalPaise} = ${t.taxablePaise} + ${t.cgstPaise} + ${t.sgstPaise} + ${t.igstPaise}`,
     ),
-    check('order_items_amounts_nonneg', sql`${t.unitPaise} >= 0 and ${t.lineDiscountPaise} >= 0 and ${t.taxablePaise} >= 0`),
+    check(
+      'order_items_amounts_nonneg',
+      sql`${t.unitPaise} >= 0 and ${t.lineDiscountPaise} >= 0 and ${t.taxablePaise} >= 0`,
+    ),
     index().on(t.orderId),
     index().on(t.variantId),
   ],
@@ -195,7 +201,9 @@ export const orderAssignments = pgTable(
     uniqueIndex('order_assignments_one_active_uq')
       .on(t.orderId)
       .where(sql`${t.status} in ('offered','accepted')`),
-    index('order_assignments_expiring_idx').on(t.expiresAt).where(sql`${t.status} = 'offered'`),
+    index('order_assignments_expiring_idx')
+      .on(t.expiresAt)
+      .where(sql`${t.status} = 'offered'`),
     index().on(t.shopId, t.status),
     index().on(t.offeredBy),
   ],
@@ -214,7 +222,9 @@ export const orderEvents = pgTable(
     actorType: text().notNull(),
     actorId: uuid(),
     visibleToCustomer: boolean().notNull().default(true),
-    payload: jsonb().notNull().default(sql`'{}'::jsonb`),
+    payload: jsonb()
+      .notNull()
+      .default(sql`'{}'::jsonb`),
     createdAt: createdAt(),
   },
   (t) => [
@@ -243,7 +253,9 @@ export const reservations = pgTable(
     check('reservations_qty_positive', sql`${t.qty} > 0`),
     check('reservations_status_valid', sql`${t.status} in ('active','committed','released','expired')`),
     check('reservations_expiry_after_create', sql`${t.expiresAt} > ${t.createdAt}`),
-    index('reservations_active_expiry_idx').on(t.expiresAt).where(sql`${t.status} = 'active'`),
+    index('reservations_active_expiry_idx')
+      .on(t.expiresAt)
+      .where(sql`${t.status} = 'active'`),
     index().on(t.orderId),
     index().on(t.inventoryId),
   ],
@@ -266,7 +278,10 @@ export const shipments = pgTable(
   },
   (t) => [
     check('shipments_mode_valid', sql`${t.mode} in ('own','courier')`),
-    check('shipments_courier_awb', sql`${t.mode} = 'own' or (${t.courier} is not null and ${t.awb} is not null)`),
+    check(
+      'shipments_courier_awb',
+      sql`${t.mode} = 'own' or (${t.courier} is not null and ${t.awb} is not null)`,
+    ),
     unique().on(t.courier, t.awb),
     index().on(t.orderId),
   ],
@@ -408,7 +423,10 @@ export const coupons = pgTable(
   },
   (t) => [
     check('coupons_kind_valid', sql`${t.kind} in ('percent','flat','free_shipping')`),
-    check('coupons_value_range', sql`(${t.kind} <> 'percent' or ${t.value} between 1 and 100) and ${t.value} >= 0`),
+    check(
+      'coupons_value_range',
+      sql`(${t.kind} <> 'percent' or ${t.value} between 1 and 100) and ${t.value} >= 0`,
+    ),
     check('coupons_window', sql`${t.endsAt} is null or ${t.endsAt} > ${t.startsAt}`),
     check(
       'coupons_usage_within_limit',

@@ -24,6 +24,8 @@ The visual design, section names and copy come from the concept prototype at htt
 
 13. **No context loss, ever.** After every completed step, update `docs/progress.md` (current phase, current task, next tasks, rulings, completed log, blockers) and any affected spec/decision/memory **before moving on**. Every new or compacted session starts by reading `CLAUDE.md` → `docs/progress.md` → `docs/decisions.md` → the current task's spec, and resumes from the ledger without re-asking settled questions. Persistent memory (`~/.claude/projects/.../memory/`) must point to these files and be updated when facts change.
 
+14. **Neat, well-structured, optimised code — enforced.** Follow `docs/conventions/code-style.md`. Every change must pass `pnpm check` (Prettier check, typecheck, ESLint strict type-checked with zero warnings, tests). No `any`, no non-null assertions in source, no SQL outside repositories, no business logic in route handlers or components, every query indexed, no read-then-write races. Never weaken a lint rule to make code pass.
+
 ## Roles and core flow (never drift)
 - Roles: customer, seller/shop, workshop, mechanic (later), staff (super_admin, ops_manager, support_agent, finance, catalogue_manager, city_manager, marketing).
 - Product order: customer places → **admin routes to a shop** (ranked suggestions, one-click) → shop **accepts** within a timer (customer + admin notified "confirmed, will be shipped") or **declines/times out** → back to admin to **reroute or reject** with a customer message and automatic refund.
@@ -69,10 +71,10 @@ Turborepo + pnpm · `apps/web` Next.js 15 App Router (React 19, Tailwind, shadcn
 - MCP: playwright, chrome-devtools, shadcn (after `components.json`), cloud-run; context7/supabase/vercel/github/firebase via plugins. Razorpay MCP later.
 
 ## Documentation map
-`docs/progress.md` (**live ledger — read first after compaction**) · `docs/README.md` (index) · `docs/decisions.md` (+ PENDING DECISIONS) · `docs/design-system.md` · `docs/concept/*.md` (exhaustive concept inventories) · `docs/research/*.md` (industry, baseline, tooling audit, data integrity, security) · `docs/specs/NN-*.md` (one per feature + future modules) · `docs/screenshots/concept/` · `docs/plan.md` (approved plan).
+`docs/progress.md` (**live ledger — read first after compaction**) · `docs/README.md` (index) · `docs/conventions/code-style.md` (structure + lint rules) · `docs/decisions.md` (+ PENDING DECISIONS) · `docs/design-system.md` · `docs/concept/*.md` (exhaustive concept inventories) · `docs/research/*.md` (industry, baseline, tooling audit, data integrity, security) · `docs/specs/NN-*.md` (one per feature + future modules) · `docs/screenshots/concept/` · `docs/plan.md` (approved plan).
 
 ## Commands (update as the repo grows)
 ```
 pnpm install · pnpm dev (web :3000, api :4000) · pnpm db:migrate · pnpm db:seed
-pnpm test · pnpm e2e · pnpm lint · pnpm typecheck · pnpm lhci
+pnpm test · pnpm e2e · pnpm lint · pnpm typecheck · pnpm check (all gates) · pnpm format · pnpm lhci
 ```

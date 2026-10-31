@@ -33,9 +33,19 @@ export async function transitionOrder(
   const rows = await tx
     .update(orders)
     .set({ status: args.to, ...args.patch })
-    .where(and(eq(orders.id, args.orderId), eq(orders.status, args.from), eq(orders.version, args.expectedVersion)))
+    .where(
+      and(
+        eq(orders.id, args.orderId),
+        eq(orders.status, args.from),
+        eq(orders.version, args.expectedVersion),
+      ),
+    )
     .returning({ id: orders.id, status: orders.status, version: orders.version, shopId: orders.shopId });
   const row = rows[0];
-  if (!row) throw new ConflictError(`Order ${args.orderId} changed before ${args.from} → ${args.to} could apply`, 'STALE_ORDER');
+  if (!row)
+    throw new ConflictError(
+      `Order ${args.orderId} changed before ${args.from} → ${args.to} could apply`,
+      'STALE_ORDER',
+    );
   return row;
 }

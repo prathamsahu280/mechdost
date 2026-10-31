@@ -74,8 +74,5 @@ export const waitlist = pgTable(
     interest: text().notNull().default('general'),
     createdAt: createdAt(),
   },
-  (t) => [
-    check('waitlist_pincode_format', sql`${t.pincode} ~ '^[1-9][0-9]{5}$'`),
-    index().on(t.pincode),
-  ],
+  (t) => [check('waitlist_pincode_format', sql`${t.pincode} ~ '^[1-9][0-9]{5}$'`), index().on(t.pincode)],
 );

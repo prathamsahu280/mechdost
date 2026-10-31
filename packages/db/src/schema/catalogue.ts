@@ -110,7 +110,10 @@ export const shopUsers = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     role: text().notNull().default('staff'),
-    permissions: text().array().notNull().default(sql`'{}'::text[]`),
+    permissions: text()
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
     createdAt: createdAt(),
   },
   (t) => [
@@ -156,7 +159,9 @@ export const products = pgTable(
       .references(() => categories.id, { onDelete: 'restrict' }),
     description: text(),
     descriptionHi: text(),
-    spec: jsonb().notNull().default(sql`'{}'::jsonb`),
+    spec: jsonb()
+      .notNull()
+      .default(sql`'{}'::jsonb`),
     hsn: text().notNull(),
     gstRateBp: integer().notNull(),
     countryOfOrigin: text().notNull().default('India'),
@@ -186,7 +191,9 @@ export const productVariants = pgTable(
       .notNull()
       .references(() => products.id, { onDelete: 'cascade' }),
     sku: text().notNull().unique(),
-    options: jsonb().notNull().default(sql`'{}'::jsonb`),
+    options: jsonb()
+      .notNull()
+      .default(sql`'{}'::jsonb`),
     barcode: text(),
     mrpPaise: paise().notNull(),
     weightG: integer(),
@@ -258,7 +265,10 @@ export const fitments = pgTable(
   },
   (t) => [
     unique().on(t.variantId, t.vehicleVariantId),
-    check('fitments_years', sql`${t.yearTo} is null or ${t.yearFrom} is null or ${t.yearTo} >= ${t.yearFrom}`),
+    check(
+      'fitments_years',
+      sql`${t.yearTo} is null or ${t.yearFrom} is null or ${t.yearTo} >= ${t.yearFrom}`,
+    ),
     index().on(t.vehicleVariantId),
   ],
 );

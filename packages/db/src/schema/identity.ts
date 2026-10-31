@@ -41,8 +41,12 @@ export const users = pgTable(
     check('users_language_valid', sql`${t.language} in ('en','hi')`),
     check('users_status_valid', sql`${t.status} in ('active','deactivated','deleted')`),
     // Soft-deleted accounts release their phone/email for reuse.
-    uniqueIndex('users_phone_active_uq').on(t.phone).where(sql`${t.deletedAt} is null`),
-    uniqueIndex('users_email_active_uq').on(t.email).where(sql`${t.deletedAt} is null`),
+    uniqueIndex('users_phone_active_uq')
+      .on(t.phone)
+      .where(sql`${t.deletedAt} is null`),
+    uniqueIndex('users_email_active_uq')
+      .on(t.email)
+      .where(sql`${t.deletedAt} is null`),
   ],
 );
 
@@ -169,7 +173,10 @@ export const notificationPreferences = pgTable(
   (t) => [
     primaryKey({ columns: [t.userId, t.channel, t.category] }),
     check('notif_pref_channel_valid', sql`${t.channel} in ('inapp','email','sms','whatsapp','push')`),
-    check('notif_pref_category_valid', sql`${t.category} in ('transactional','promotional','reminders','price_alerts')`),
+    check(
+      'notif_pref_category_valid',
+      sql`${t.category} in ('transactional','promotional','reminders','price_alerts')`,
+    ),
   ],
 );
 
@@ -295,7 +302,9 @@ export const vehicles = pgTable(
       'vehicles_service_km_le_odometer',
       sql`${t.lastServiceKm} is null or ${t.odometerKm} is null or ${t.lastServiceKm} <= ${t.odometerKm}`,
     ),
-    uniqueIndex('vehicles_one_primary_uq').on(t.userId).where(sql`${t.isPrimary} and ${t.deletedAt} is null`),
+    uniqueIndex('vehicles_one_primary_uq')
+      .on(t.userId)
+      .where(sql`${t.isPrimary} and ${t.deletedAt} is null`),
     uniqueIndex('vehicles_registration_uq')
       .on(t.userId, sql`upper(${t.registration})`)
       .where(sql`${t.registration} is not null and ${t.deletedAt} is null`),
