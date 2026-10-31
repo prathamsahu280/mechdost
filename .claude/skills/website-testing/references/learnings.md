@@ -8,3 +8,6 @@ Format: `T<n> · <date> · <area> · <bug> · <root cause> · <test that now gua
 - T4 · 2026-10-31 · config · DB URL broke because the password contained `@` · unencoded URL credentials · validate URLs by parsing (`new URL`) in env schema checks (add to API env tests) · active
 - T5 · 2026-10-31 · api · Gate tests can pass vacuously. → After writing auth/permission tests, mutation-check once: disable the check, confirm the suite fails, restore (done for `requirePermission`). · active
 - T6 · 2026-10-31 · api · Tests must not reach into tables directly (hard rule 14) — a test needing state (e.g. a deactivated user) is a signal a repository function is missing (`deactivateUser`). · active
+- T7 · 2026-11-01 · a11y · axe reported contrast failures on elements mid scroll-reveal animation. → Run axe with `emulateMedia({ reducedMotion: 'reduce' })` so it scans the final state. · active
+- T8 · 2026-11-01 · responsive · 390/1440 tests passed while 320–360 and 760–1023 overflowed. → Keep the 13-width sweep (overflow + 24px targets) in e2e for every page list change. · active
+- T9 · 2026-11-01 · visual · Tests were green but screenshots showed a blurry tablet hero and a missing nav highlight. → After UI work, screenshot 320/768/1024/1920 + dark + Hindi and look before claiming done. · active

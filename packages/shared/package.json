@@ -10,7 +10,8 @@
     "./time": "./src/time.ts",
     "./invoice": "./src/invoice.ts",
     "./state": "./src/state/index.ts",
-    "./rbac": "./src/rbac.ts"
+    "./rbac": "./src/rbac.ts",
+    "./i18n/*": "./src/i18n/*"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",

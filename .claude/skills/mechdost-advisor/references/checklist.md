@@ -70,3 +70,7 @@ Mark each touched item ✅ / ⚠️ / ❌. Anything ❌ blocks implementation un
 
 - ⚠️ Decision made without a dated entry in `decisions.md` or a ruling in `progress.md`.
 - ⚠️ A pending question answered by assumption instead of the documented default.
+
+## Tooling (promoted learnings L10, L11, L18)
+
+- ❌ Shell edits (bash heredocs, Python string replacement) of code that contains backslashes, regexes or quotes — use Write/Edit. Verify with a grep of the exact line afterwards.

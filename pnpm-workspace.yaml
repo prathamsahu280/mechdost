@@ -15,5 +15,6 @@ allowBuilds:
   # Reviewed and denied (2026-10-31): not needed at runtime (version banners / default config writers).
   '@firebase/util': false
   protobufjs: false
+  '@parcel/watcher': false # prebuilt binaries come from optional deps; script is a node-gyp fallback
 strictDepBuilds: false
 engineStrict: true

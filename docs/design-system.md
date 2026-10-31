@@ -1,5 +1,13 @@
 # MechDost design system (extracted from the concept site)
 
+> **2026-11-01 updates** (decisions.md "Web shell, design direction and demo"): the concept defines the theme; layouts may improve. Source of truth for values is `packages/ui/src/tokens.css` (Tailwind v4 `@theme`), contrast-tested in light and dark by `apps/web/test/tokens.test.ts`.
+>
+> - Text colour token is `ink`; `navy` is the brand dark surface (hero, announcement bar). Accessible adjustments: button `#d2461a`, muted `#5a6a7d`, link text `#bf3c12`, form borders `#7f8ea0`.
+> - Dark theme: bg `#0a1424`, surface `#101d31`, ink `#e8eef5`, muted `#a3b3c7`, accent-soft `#3a1f14`/`#ffb38f`, focus `#ff8b59`; system preference by default, toggle in header (≥400px) and footer.
+> - Breakpoints: `tab` 760px (grids), `nav` 1024px (full nav vs bottom tab bar).
+> - Motion tokens: `--ease-out-soft`, `--duration-fast` 150ms, `--duration-base` 220ms, `--duration-slow` 420ms; utilities `animate-page-in`, `reveal`, `skeleton`, `press`; all disabled under reduced motion.
+> - Product artwork: category illustration tiles until catalogue photos exist; floating assistant button bottom-right.
+
 Source: `style.css`, `premium.css`, `simple.css`, `service-hub.css`, `service-workshop.css`, `launch.css`, `launch-refinements.css`, `admin.css`, `member.css` (copies in `concept/source/`). Screenshots in `screenshots/concept/` (desktop 1440, mobile 390).
 
 ## Fonts

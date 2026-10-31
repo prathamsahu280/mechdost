@@ -21,6 +21,8 @@ Each feature has one spec. Specs are living documents: **any change to behaviour
 | 15  | [Multi-city](15-multi-city.md)                                                                  | 1 (foundation) | decided                           |
 | 16  | [Performance & scalability](16-performance-scalability.md)                                      | 1              | decided                           |
 | 17  | [Future modules](17-future-modules.md)                                                          | 4+             | future                            |
+| 18  | [MechDost assistant (floating chat)](18-assistant.md)                                           | 0 (static), 1  | static shipped; LLM pending Q19   |
+| 19  | [Bulk orders: negotiate with admin](19-bulk-quotes.md)                                          | 1              | decided (thresholds pending Q20)  |
 
 ## Spec template
 

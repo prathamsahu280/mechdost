@@ -29,3 +29,4 @@ Read `../CLAUDE.md` first (hard rules). Then:
 - Deferred choices go into the PENDING DECISIONS table in `decisions.md`; decided ones move to a dated entry.
 - Specs carry acceptance tests; the `website-testing` skill reads them.
 - Research files are snapshots dated in their header; re-verify versions/prices before external use.
+- `runbooks/demo.md` — partner demo walkthrough (what is real vs demo).

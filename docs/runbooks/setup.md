@@ -33,6 +33,10 @@ pnpm --filter @mechdost/api dev   # http://localhost:4000 — /health, /ready, /
 
 Without Firebase keys the API expects the Auth Emulator (`FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099`, `firebase emulators:start --only auth`). Without Upstash it uses the in-memory limiter and logs a warning (refused in production). `pnpm --filter @mechdost/api build` bundles to `apps/api/dist/server.mjs` (workspace packages inlined).
 
+## Partner demo
+
+See `docs/runbooks/demo.md` (no keys needed).
+
 ## Supabase dev project
 
 - Project ref `ewrszfqhgbrriqqggjts`, region Mumbai, Postgres 17.11.
