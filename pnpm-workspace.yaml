@@ -5,12 +5,12 @@ packages:
 # Supply-chain policy (docs/research/security-vulnerabilities.md → "Dependency policy").
 # Skip versions published < 3 days ago (chalk/debug, Shai-Hulud style attacks were live for hours).
 minimumReleaseAge: 4320
-# Only these packages may run install/build scripts; everything else is blocked.
-onlyBuiltDependencies:
-  - sharp
-  - esbuild
-  - "@swc/core"
-  - "@tailwindcss/oxide"
-  - unrs-resolver
+# Only these packages may run install/build scripts (pnpm 11 `allowBuilds`); everything else is blocked.
+allowBuilds:
+  sharp: true
+  esbuild: true
+  "@swc/core": true
+  "@tailwindcss/oxide": true
+  unrs-resolver: true
 strictDepBuilds: false
 engineStrict: true

@@ -18,3 +18,10 @@ Concurrency (parallel accepts, stock, timer-vs-accept), property tests (money/GS
 
 ## Acceptance
 No test in this spec may be skipped in CI; schema PRs require the `drizzle-postgis-supabase` skill checklist in the PR description.
+
+## Implementation map (2026-10-31)
+- Schema & constraints: `packages/db/src/schema/*.ts`; migrations `packages/db/drizzle/0000–0003` (hand-written `0000_extensions`, `0002_integrity`).
+- State machines: `packages/shared/src/state/index.ts`; CAS transitions: `packages/db/src/repo/orders.ts`, `assignments.ts`.
+- Stock: `packages/db/src/repo/inventory.ts`; invoices: `repo/invoices.ts` + SQL `public.allocate_invoice_seq()`.
+- Acceptance tests: `packages/db/test/integrity.test.ts` (PGlite). Multi-connection concurrency tests run against real Postgres in CI (to add with the CI workflow).
+- Rule for new tables: add `version`/`updated_at` triggers and `ENABLE ROW LEVEL SECURITY` in the same migration (the 0002 DO-loops only covered tables existing at that time).
