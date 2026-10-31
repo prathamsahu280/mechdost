@@ -3,6 +3,7 @@
 Researched 2026-10-31 for the MechDost project via web research (sources inline). Legend: **[TS]** table stakes · **[DIFF]** differentiator · **[LATER]** later-phase. Decisions taken on these items are logged in `../decisions.md` (all TS + DIFF in scope; LATER deferred).
 
 ## 1. Indian auto parts / service platforms
+
 - **boodmo** (parts marketplace, multi-seller): search "by Car" or "by VIN" against OEM catalogues; genuine and aftermarket both listed; orders routed through "BOODMO FULFILLED suppliers"; "10-day return policy for eligible cases"; 4.4★/17k reviews but recurring complaints on delivery slippage, part-number viewing fees and refused wrong-fitment returns (https://apps.apple.com/in/app/boodmo-car-parts-marketplace/id1154010647, https://voxya.com/consumer-complaints/incompatible-item-delivered-and-not-accepting-the-return/239506). Lesson: fitment-mismatch returns are the #1 trust killer → explicit fitment check + "wrong-part replacement guarantee" [DIFF].
 - **SparesHub**: B2B RFQ model — buyer posts vehicle + parts (photo optional), quotes from multiple verified sellers, delivery tracking, escrow (https://www.spareshub.com/). Pattern: "Request a quote" fallback when search fails [DIFF].
 - **GoMechanic**: car health reports, flexible pickup slots, real-time updates, transparent pricing, 5 warranty plans, Refer & Earn (GoApp Money), spares + accessories home delivery, 1000+ workshops (https://apps.apple.com/in/app/id1498891908); 1000 km / 1-month network warranty at any partner garage, free doorstep pickup-drop (https://gomechanic.in/chennai/guindy); separate Spares (B2B, RFQ, white-label) and Accessories lines (https://www.motorindiaonline.in/gomechanic-goes-aggressive-on-spares-and-accessories-biz/).
@@ -17,6 +18,7 @@ Researched 2026-10-31 for the MechDost project via web research (sources inline)
 - **UX patterns to copy**: "My Garage" with reg-no lookup (Vahan) → make/model/variant/fuel/year [TS]; fitment badge "Fits your Maruti Swift 2019 VXi" on every PDP [TS]; OEM/OES/aftermarket toggle [TS]; RFQ fallback [DIFF]; job timeline + photo health report + per-line estimate approval [DIFF]; network warranty honoured at any partner [DIFF].
 
 ## 2. Food / hyperlocal delivery patterns (Swiggy, Zomato, Blinkit, Zepto, Urban Company)
+
 - **Accept/reject timer**: Zomato auto-rejects restaurant orders not actioned within 4 minutes (https://www-dr.sapaad.com/knowledge-base/how-do-i-disable-or-modify-the-auto-reject-feature-for-zomato-orders/); partner app has "Rush hour" and "Food Order Ready"; rider dispatch uses ~30-s accept windows then next-closest (https://raftlabs.com/blog/how-to-build-app-like-swiggy). → MechDost: shop timer (10–15 min parts; longer for service), auto-return to admin on expiry [TS]; "Busy mode" [DIFF].
 - **Rejection penalties**: Zomato charged rejecting restaurants a share of order value, cutting rejections ~50% (https://www.deccanherald.com/business/restaurant-owners-slam-zomato-over-rejection-policy-973163.html); Swiggy ~₹50/order for reject/late/cancel-after-accept; Urban Company required ≥70% acceptance, ≥4.7★, <4 cancellations/month, penalty cap ₹1,500/month (https://moneylife.in/article/urban-company-slashes-commission-by-5-percentage-after-workers-protest/65384.html).
 - **Matching**: UC picks professionals closest and available; slot packing via Best-Fit-Decreasing + Branch & Bound with a "starvation score" for under-booked partners (https://medium.com/uc-engineering/flexible-slots-helping-partners-to-get-maximum-earnings-through-customer-flexibility-f305de12d47b). → routing ranker: stock, distance, acceptance rate, rating, load, starvation [DIFF].
@@ -26,6 +28,7 @@ Researched 2026-10-31 for the MechDost project via web research (sources inline)
 - **Support with order context**: in-app chat anchored to order id with issue quick-picks [TS].
 
 ## 3. Multi-vendor marketplace operations
+
 - **Scorecards**: Amazon ODR <1%, Late Dispatch <4% (https://docs.vortexiq.ai/nerve-centre/kpi-cards/amazon-seller/order-defect-rate). MechDost: acceptance rate, time-to-accept, on-time ready, defect/return rate, rating [TS].
 - **Commission/payout**: Amazon.in zero referral fee <₹1,000 (Apr 2025), automotive tools 6.5–8.5%; settlement ~2 weeks; Flipkart zero commission <₹1,000 (Nov 2025); UC capped beauty commission at 25%. Suggested 8–12% parts, 15–20% services, weekly payouts [TS] (user decision pending).
 - **GST**: uniform **18% on auto parts (HSN 8708) from 22 Sep 2025** (https://tallysolutions.com/gst/hsn-code-8708-product-classification-gst-rate-business-filing-guide/); e-invoicing (IRN) above ₹5 cr; **e-commerce operator TCS u/s 52 at 0.5%** since 10 Jul 2024 (https://taxguru.in/goods-and-service-tax/tax-collection-source-gst.html). → per-seller GST invoice with HSN, TCS ledger, GSTR-8 export [TS].
@@ -33,6 +36,7 @@ Researched 2026-10-31 for the MechDost project via web research (sources inline)
 - **ONDC**: auto components live; Hero MotoCorp and Uno Minda sell via seller apps (https://inc42.com/buzz/now-hero-motocorp-joins-ondc-to-sell-two-wheeler-parts-accessories-online) [LATER].
 
 ## 4. Trust & safety / compliance (India)
+
 - **DPDP Rules 2025** (notified 13/14 Nov 2025, phased ~18 months): plain-language notice, itemised purposes, withdrawal link, named grievance contact, verifiable parental consent (https://www.mondaq.com/india/data-protection/1708164/digital-personal-data-protection-rules-2025-notified) → consent log + purpose tags [TS].
 - **E-Commerce Rules 2020**: grievance officer, acknowledge 48 h, resolve 1 month; seller details, country of origin, return/refund/warranty display. **Amendment 2026 (eff. 1 Jan 2027)**: complaint copy to consumer, "lowest price in preceding 30 days" for discounts, sponsored labels, dark-pattern self-audit, express consent for data use, no bundled fees (https://www.livelaw.in/consumer-cases/government-amends-e-commerce-rules-to-strengthen-consumer-protection-550184) [TS].
 - **Payments**: Razorpay 2% (+18% GST on fee), ₹0 setup/refund fee (https://razorpay.com/pricing/); Cashfree 1.95%; COD fee set by merchant (https://razorpay.com/docs/payments/payment-gateway/web-integration/standard/cod); courier COD remittance 7–9 days.
@@ -40,10 +44,12 @@ Researched 2026-10-31 for the MechDost project via web research (sources inline)
 - **WhatsApp Business API** (per-message since 1 Jul 2025): utility ~₹0.115–0.13, marketing ~₹0.86–0.88, authentication ~₹0.115–0.35; service replies free in 24 h; INR billing by 31 Dec 2026 (https://montymobile.com/blogs/whatsapp-business-api-pricing-in-india-inr-rates-gst-and-the-2026-currency-migration-deadline) [TS].
 
 ## 5. Analytics & admin visualisation
+
 - Core metrics: GMV/NOV, funnel placed → routed → accepted → ready → delivered/served, acceptance rate & median time-to-accept per partner, reroute count, SLA %, cancellation reasons, return/refund rate & value, defect score, ratings both sides, repeat/cohorts, AOV, COD share & RTO, stockouts/fill rate, demand-vs-supply pincode heatmap, "shops per pincode" density (Zepto reports stores per city; https://oga-prod.angelone.in/news/ipos/zepto-ipo-quick-commerce-firm-eyes-stock-market-debut-in-july-2026-reports), payouts & TCS liability.
 - Libraries: Recharts (~2.4M weekly downloads) + Tremor-style KPI tiles; ECharts only for >100k points; MapLibre GL for maps (https://www.pkgpulse.com/guides/recharts-v3-vs-tremor-vs-nivo-react-charting-2026, https://blog.jawg.io/maplibre-gl-vs-leaflet-choosing-the-right-tool-for-your-interactive-map/) [TS].
 
 ## 6. Growth / retention ideas
+
 - Reminders: Park+ insurance/PUC/FASTag alerts (https://apps.apple.com/in/app/id1244749178); ACKO; CARS24 Orbit challans + PUCC/FASTag/DL reminders (https://autonauts.cars24.com/blog/revolutionising-car-ownership-with-cars24-orbit); Autodoc Club km/date → service reminders by km/date, insurance/PUC/RC expiry, challan check [DIFF].
 - Doorstep fitment: Battery Mantra 1–2 h battery delivery + install (https://www.batterymantra.com/blog/the-1-2-hours-delivery-plan-was-made-successful-in-indirapuram); Tyresnmore (CEAT) home fitment (https://autocarpro.in/news-national/ceat-tyres-tyresnmore-to-provide-home-fitment-services-79546) → "Buy + fit at home" bundles [DIFF].
 - EMI/BNPL: Razorpay cardless EMI 2% [LATER]. Loyalty/referral: wallet as refund sink + refer-and-earn [TS]. Subscriptions: RSA/care plans [LATER].
@@ -51,6 +57,7 @@ Researched 2026-10-31 for the MechDost project via web research (sources inline)
 - Fleet/B2B accounts for auto/taxi unions with monthly invoicing [LATER]. "MechDost Certified" tiered badge (Bosch Car Service / NEXA Service models) [DIFF]. Google Business Profile review import [LATER].
 
 ## 7. Multi-city expansion architecture
+
 - cities → zones (polygons) → pincodes with `serviceable_for` {parts_delivery, doorstep_service, pickup_drop, RSA}, per-zone cutoffs, fees, COD allowed, shop coverage radius; catalog/price overrides by `city_id`. Quick-commerce catchments 2–3 km; Zepto densifies before new cities (~21 stores/city).
 - Geo-fencing: zone GeoJSON, point-in-polygon at address entry; "Not serviceable yet — notify me" demand capture [TS].
 - Launch checklist (Instamart 100-city sprint incl. Raipur Mar 2025; Blinkit tier-2 caveats): waitlist demand → seed 5–10 anchor shops + 2–3 workshops per zone → verify docs → upload catalogue/stock → set SLAs/fees → train partners on accept timer → soft launch 2–3 pincodes → monitor acceptance/time-to-accept → expand (https://inc42.com/buzz/swiggy-instamart-now-available-in-100-cities-32-cities-added-this-year). Partner model over dark-store capex; micro-hub for fast movers only when volume justifies [LATER]. City launches take 4–8 months; keep city config data-driven.

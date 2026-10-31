@@ -3,6 +3,7 @@
 Mark each touched item ✅ / ⚠️ / ❌. Anything ❌ blocks implementation until fixed or explicitly ruled.
 
 ## Every task
+
 - [ ] Read `docs/progress.md`, `decisions.md`, the spec, and `learnings.md` before acting.
 - [ ] The change is in scope of the user's request (no silent widening or narrowing).
 - [ ] Docs to update are listed and will change in the same commit (spec, decisions, progress, README index).
@@ -11,6 +12,7 @@ Mark each touched item ✅ / ⚠️ / ❌. Anything ❌ blocks implementation un
 - [ ] `pnpm check` (format, typecheck, lint 0 warnings, tests) will be run and its output shown.
 
 ## Data / DB / schema (spec 14, research/data-integrity.md, skill drizzle-postgis-supabase)
+
 - ❌ Status written with a plain UPDATE (no `WHERE status = $from AND version = $v`) or outside `packages/shared/state`.
 - ❌ Money as float/`numeric` in app code, rupees instead of paise, rates not in basis points.
 - ❌ Read-then-write for stock, counters, coupons, wallet (must be a conditional single statement or `FOR UPDATE`).
@@ -23,6 +25,7 @@ Mark each touched item ✅ / ⚠️ / ❌. Anything ❌ blocks implementation un
 - ⚠️ Timestamps or "today" computed in UTC instead of IST business days.
 
 ## API (Hono)
+
 - ❌ Handler queries tables directly (must call a repository with an `actor`).
 - ❌ Permission checked only in the UI; missing `requirePermission`; cross-tenant id returns 403 instead of 404.
 - ❌ Request body not validated with Zod `.strict()` DTOs (mass assignment risk).
@@ -31,15 +34,18 @@ Mark each touched item ✅ / ⚠️ / ❌. Anything ❌ blocks implementation un
 - ⚠️ Error leaks internals (stack, SQL) instead of `{ error: { code, message, requestId } }`.
 
 ## Auth / RBAC (spec 01, 13, skill firebase-phone-auth-rbac)
+
 - ❌ Trusting a uid/role from the client body; not calling `verifyIdToken(token, true)` for sensitive actions.
 - ❌ Roles in client-editable metadata; secrets in `NEXT_PUBLIC_*`.
 - ⚠️ OTP endpoints without per-phone/IP/device limits, region policy and enumeration-safe responses.
 
 ## Payments (skill razorpay-payments)
+
 - ❌ Amount taken from the client; HMAC over parsed JSON instead of raw body; no amount/currency assert.
 - ❌ Refund without remaining-balance check under lock, or without an idempotency key.
 
 ## UI / UX (rule 2, design-system.md, ui-ux-pro-max, shadcn skills)
+
 - ❌ New visual language (colours, fonts, radii) not in `design-system.md`.
 - ❌ Inline user-facing string (must be in `packages/shared/i18n` en + hi).
 - ❌ `<img>` instead of `next/image`; missing width/height or `sizes`; `priority` on non-hero images.
@@ -49,15 +55,18 @@ Mark each touched item ✅ / ⚠️ / ❌. Anything ❌ blocks implementation un
 - ⚠️ Admin-editable content hard-coded (rule 8).
 
 ## Performance & scalability (spec 16, rule 6, 7)
+
 - ❌ Assumes a single city, single shop per order, or single server (in-memory state that must be shared).
 - ⚠️ Heavy client library not dynamically imported (maps, charts, scanner); client component where a Server Component works.
 - ⚠️ N+1 queries; uncached hot reads; no cache tag invalidation.
 
 ## Dependencies & security (research/security-vulnerabilities.md)
+
 - ❌ Version below the security minimums (Next ≥16.4.1, React 19.2.x+, Node ≥22.23.4, Hono ≥4.13.11, Drizzle ≥0.45.4, sharp ≥0.35.4, MapLibre ≥6.4.1, Playwright ≥1.55.1).
 - ❌ Package with install scripts not on the `allowBuilds` list; unpinned GitHub Action.
 - ⚠️ New package that is unmaintained, very new (<3 days), low-adoption, or duplicates an existing one.
 
 ## Docs & process
+
 - ⚠️ Decision made without a dated entry in `decisions.md` or a ruling in `progress.md`.
 - ⚠️ A pending question answered by assumption instead of the documented default.

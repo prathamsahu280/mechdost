@@ -16,19 +16,19 @@
 
 ## 2. Stack (decided)
 
-| Layer | Choice | Why |
-|---|---|---|
-| Frontend | **Next.js 15 (App Router, React 19, Turbopack)**, Vercel region `bom1` (Mumbai) | RSC + streaming = fastest first paint for a catalogue; ISR for product/workshop pages; `next/image`; PWA manifest for "add to home screen". |
-| API | **Hono (TypeScript) on Node 22** in `apps/api`, deployed to Google Cloud Run `asia-south1` (Mumbai) (Fly.io `bom` as alternative) | Among the fastest Node routers; OpenAPI via `@hono/zod-openapi` (auto docs + typed client); same API will serve the mobile app. Rejected: NestJS (heavier, slower cold start), Next route-handlers-only (couples API to web deploy, bad for mobile). |
-| DB | **Supabase Postgres (`ap-south-1`)** + **Drizzle ORM** + **PostGIS** | Typed SQL, migrations in repo, `ST_DWithin` for nearby workshops, Supabase Realtime for live order/booking updates, Supabase Storage for photos. |
-| Auth | **Firebase Authentication**: Phone OTP (primary) + Email link verification; `firebase-admin` verifies ID tokens in the API; custom claims `{role, partner_id, city_ids}`; Supabase configured with Firebase as third-party JWT issuer so RLS works for Realtime channels | User's choice. Dev: Firebase Auth Emulator with fixed test OTP `123456`. |
-| Cache / jobs | **Upstash Redis** (OTP + API rate limits, hot catalogue cache); **pg-boss** (Postgres-backed jobs: shop-acceptance timeouts, notification fan-out, reminders, daily analytics rollups) | No extra infra for jobs. |
-| Notifications | Provider interface with adapters: in-app (Realtime) + **Email (Resend)** in phase 1; **WhatsApp Business API (Gupshup/Interakt) + SMS (MSG91)** in phase 3 | Admin/shops get real-time bells; customers get email + WhatsApp. |
-| Payments | **Razorpay** (Standard checkout, webhooks, refunds API) + COD | Concept already references Razorpay. |
-| Maps | **MapLibre GL JS + free vector tiles (MapTiler free tier / Protomaps; OSM raster fallback)**, custom MechDost style (navy/orange, Devanagari glyphs), clustering, smooth fly-to, locate-me control, workshop popups, behind a map adapter. Geocoding/autocomplete/routing provider chosen by a Raipur bake-off (Google Places vs Ola Maps; OSRM/Ola routing) — pending #7 | User decision 2026-10-31: free, but must be fully functional and polished. |
-| Charts | **Recharts** + custom KPI tiles + MapLibre heat layer | Calm visuals matching design. |
-| Monorepo | **Turborepo + pnpm** | Shared packages reused by React Native later. |
-| Quality | TS strict, ESLint, Vitest, Playwright (e2e + visual snapshots), Zod at every boundary, Sentry, Lighthouse CI (≥90 perf/a11y) | "Bug-free and glitch-free". |
+| Layer         | Choice                                                                                                                                                                                                                                                                                                                                                                    | Why                                                                                                                                                                                                                                                  |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Frontend      | **Next.js 15 (App Router, React 19, Turbopack)**, Vercel region `bom1` (Mumbai)                                                                                                                                                                                                                                                                                           | RSC + streaming = fastest first paint for a catalogue; ISR for product/workshop pages; `next/image`; PWA manifest for "add to home screen".                                                                                                          |
+| API           | **Hono (TypeScript) on Node 22** in `apps/api`, deployed to Google Cloud Run `asia-south1` (Mumbai) (Fly.io `bom` as alternative)                                                                                                                                                                                                                                         | Among the fastest Node routers; OpenAPI via `@hono/zod-openapi` (auto docs + typed client); same API will serve the mobile app. Rejected: NestJS (heavier, slower cold start), Next route-handlers-only (couples API to web deploy, bad for mobile). |
+| DB            | **Supabase Postgres (`ap-south-1`)** + **Drizzle ORM** + **PostGIS**                                                                                                                                                                                                                                                                                                      | Typed SQL, migrations in repo, `ST_DWithin` for nearby workshops, Supabase Realtime for live order/booking updates, Supabase Storage for photos.                                                                                                     |
+| Auth          | **Firebase Authentication**: Phone OTP (primary) + Email link verification; `firebase-admin` verifies ID tokens in the API; custom claims `{role, partner_id, city_ids}`; Supabase configured with Firebase as third-party JWT issuer so RLS works for Realtime channels                                                                                                  | User's choice. Dev: Firebase Auth Emulator with fixed test OTP `123456`.                                                                                                                                                                             |
+| Cache / jobs  | **Upstash Redis** (OTP + API rate limits, hot catalogue cache); **pg-boss** (Postgres-backed jobs: shop-acceptance timeouts, notification fan-out, reminders, daily analytics rollups)                                                                                                                                                                                    | No extra infra for jobs.                                                                                                                                                                                                                             |
+| Notifications | Provider interface with adapters: in-app (Realtime) + **Email (Resend)** in phase 1; **WhatsApp Business API (Gupshup/Interakt) + SMS (MSG91)** in phase 3                                                                                                                                                                                                                | Admin/shops get real-time bells; customers get email + WhatsApp.                                                                                                                                                                                     |
+| Payments      | **Razorpay** (Standard checkout, webhooks, refunds API) + COD                                                                                                                                                                                                                                                                                                             | Concept already references Razorpay.                                                                                                                                                                                                                 |
+| Maps          | **MapLibre GL JS + free vector tiles (MapTiler free tier / Protomaps; OSM raster fallback)**, custom MechDost style (navy/orange, Devanagari glyphs), clustering, smooth fly-to, locate-me control, workshop popups, behind a map adapter. Geocoding/autocomplete/routing provider chosen by a Raipur bake-off (Google Places vs Ola Maps; OSRM/Ola routing) — pending #7 | User decision 2026-10-31: free, but must be fully functional and polished.                                                                                                                                                                           |
+| Charts        | **Recharts** + custom KPI tiles + MapLibre heat layer                                                                                                                                                                                                                                                                                                                     | Calm visuals matching design.                                                                                                                                                                                                                        |
+| Monorepo      | **Turborepo + pnpm**                                                                                                                                                                                                                                                                                                                                                      | Shared packages reused by React Native later.                                                                                                                                                                                                        |
+| Quality       | TS strict, ESLint, Vitest, Playwright (e2e + visual snapshots), Zod at every boundary, Sentry, Lighthouse CI (≥90 perf/a11y)                                                                                                                                                                                                                                              | "Bug-free and glitch-free".                                                                                                                                                                                                                          |
 
 ## 3. Repo layout
 
@@ -55,13 +55,13 @@ automart/
 
 ## 5. Roles, auth and accounts
 
-| Role | How created | Sign-in | Portal |
-|---|---|---|---|
-| customer | self-signup | phone OTP; email verified once | `/account` |
-| seller (shop) | admin approves a Seller application → creates `shops` row + invites owner phone | phone OTP + email verified; claim `partner_id` | `/partner/shop` |
-| workshop | admin approves a Garage application → `workshops` row + invite | same | `/partner/workshop` |
-| mechanic | admin approves Mechanic application (phase 4 portal) | same | `/partner/mechanic` (phase 4) |
-| admin / ops / support | seeded allowlist in `staff` table (email+phone), roles `admin`, `ops`, `support`, scoped to `city_ids` | phone OTP + email verified + staff allowlist | `/admin` |
+| Role                  | How created                                                                                            | Sign-in                                        | Portal                        |
+| --------------------- | ------------------------------------------------------------------------------------------------------ | ---------------------------------------------- | ----------------------------- |
+| customer              | self-signup                                                                                            | phone OTP; email verified once                 | `/account`                    |
+| seller (shop)         | admin approves a Seller application → creates `shops` row + invites owner phone                        | phone OTP + email verified; claim `partner_id` | `/partner/shop`               |
+| workshop              | admin approves a Garage application → `workshops` row + invite                                         | same                                           | `/partner/workshop`           |
+| mechanic              | admin approves Mechanic application (phase 4 portal)                                                   | same                                           | `/partner/mechanic` (phase 4) |
+| admin / ops / support | seeded allowlist in `staff` table (email+phone), roles `admin`, `ops`, `support`, scoped to `city_ids` | phone OTP + email verified + staff allowlist   | `/admin`                      |
 
 - Signup flow (calm, 3 screens): phone → OTP → name + email (+ vehicle optional) → "Verify your email" banner until the link is clicked. Browsing and cart never require login; login is requested at checkout / booking.
 - API: `Authorization: Bearer <firebase id token>` → middleware resolves `users` row (auto-provision on first call) and role claims. Partners' users can have multiple staff logins per shop/workshop (`shop_users`, `workshop_users` with roles owner/staff).
@@ -88,6 +88,7 @@ All money in paise (bigint). All timestamps timestamptz, rendered IST. Every mut
 ## 7. Core workflows (state machines live in `packages/shared/state`)
 
 ### 7.1 Product order → admin routing → shop accept/deny
+
 ```
 placed ──(admin routes)──▶ awaiting_shop ──(shop accepts)──▶ confirmed ──▶ packed ──▶ shipped ──▶ out_for_delivery ──▶ delivered
    │                            │ (shop declines / timeout)                                                            │
@@ -96,6 +97,7 @@ placed ──(admin routes)──▶ awaiting_shop ──(shop accepts)──▶
    │                            │ (admin rejects)
    └──(admin/customer cancel)──▶ cancelled / rejected  (auto-refund if prepaid)
 ```
+
 - **Placing**: customer picks address (Raipur pincode check), items re-priced server-side from `shop_inventory` across shops covering the pincode (lowest price with stock; shows "Delivery ₹x · 2 days"), pays online (Razorpay) or COD. Order lands in admin **"Needs routing"** queue; customer sees "Order placed · we are confirming with a seller".
 - **Routing (admin)**: order card shows eligible shops ranked (all items in stock → distance → acceptance rate → price); admin picks one (or "Route to recommended"). If no single shop has everything: split into sub-orders (`orders.parent_id`) — phase 2; phase 1 shows a warning and allows partial routing + partial cancel with refund.
 - **Shop side**: real-time card with countdown (`settings.acceptance_timeout_min`, default 30) and big **Accept** / **Decline (reason)** buttons; timeout → `expired` → back to admin queue, admin notified. Accept → `confirmed` → customer + admin notified "Order confirmed, will be shipped by {shop city}"; stock decremented.
@@ -104,6 +106,7 @@ placed ──(admin routes)──▶ awaiting_shop ──(shop accepts)──▶
 - **Cancellation**: customer self-cancel until `packed` (configurable); later = request → admin decides; refund auto for prepaid; stock restored.
 
 ### 7.2 Service request → nearby workshops → proposal → estimate → work → bill
+
 ```
 requested ──(customer chose workshop)──▶ awaiting_workshop ──(workshop proposes slot+range)──▶ proposed ──(customer accepts)──▶ confirmed
     │ (let MechDost choose) ──▶ needs_routing (admin) ──▶ awaiting_workshop
@@ -111,34 +114,39 @@ requested ──(customer chose workshop)──▶ awaiting_workshop ──(work
 confirmed ──▶ vehicle_received (odometer) ──▶ estimate_sent ──(customer approves lines)──▶ approved ──▶ in_progress ──▶ ready ──▶ billed ──▶ paid ──▶ completed
 cancelled (customer, before in_progress) · declined (workshop) · rejected (admin)
 ```
+
 - **Location-first**: "Find a workshop" asks **Where is the vehicle?** (use my location / saved address / pincode) → vehicle → concern/category → preferred date + slot → list of workshops within radius sorted by distance with rating, verified badge, services, hours, "Pickup available"; map alongside (concept hub layout). Customer picks a workshop **or** "Let MechDost pick" (admin-routed).
 - Workshop portal: request card → **Propose slot & expected expense** (slot, scope, low–high) or Decline (reason). Customer accepts → confirmed; reminders day-before.
 - Estimate: line items (qty, unit, GST), customer approves/declines **per line** with consent checkbox (concept flow kept); revisions create new versions and clear approval; only approved lines can be worked and billed. Final bill PDF; pay online or "Paid at workshop" (workshop marks, customer confirms).
 - Reschedule (either side, before vehicle received), cancel, dispute → support ticket linked to SR.
 
 ### 7.3 Cancellations, returns, refunds, replacements
+
 - Policy settings per city: cancel window stage, return window days (default 7), non-returnable categories (lubricants opened, batteries installed), replacement-only categories.
 - Return/replacement request (customer, from order page): reason + up to 4 photos → `requested` → admin/shop review (48h SLA) → `approved` (reverse pickup scheduled by shop/courier) / `rejected` (reason) → `received` → `qc_passed`/`qc_failed` → refund (Razorpay / bank / COD-refund via UPI id collected) or replacement sub-order auto-routed to same shop.
 - Refund ledger with status timeline; customer sees "Refund initiated · ref …".
 
 ### 7.4 Support
+
 - Ticket from account (prefilled with order/SR), guest form (concept's reference + private key kept for guests), WhatsApp deep link. Admin inbox with statuses `open / in_review / awaiting_customer / resolved / closed`, canned replies, internal notes, SLA timers, assignment. Customer sees thread in account and gets notifications.
 
 ### 7.5 Partner onboarding
+
 - Public forms from concept ("Apply as a seller / workshop / mechanic") → `partner_applications` → admin review (checklist: GST, address, photos, location pin verification as in concept's workshop editor) → **Approve** creates shop/workshop + invites owner by phone → owner completes profile (coverage pincodes, inventory upload CSV, service menu, hours) → admin **Publish**.
 
 ### 7.6 Notifications matrix (phase 1 channels: in-app + email; phase 3 adds WhatsApp/SMS)
-| Event | Customer | Shop/Workshop | Admin |
-|---|---|---|---|
-| Order placed | ✔ | – | ✔ queue |
-| Routed to shop | – | ✔ (timer) | – |
-| Accepted | ✔ "confirmed, will be shipped" | ✔ | ✔ |
-| Declined / expired | – | – | ✔ reroute |
-| Rejected | ✔ custom message + refund | – | – |
-| Shipped / delivered | ✔ | – | – |
-| SR proposal / estimate | ✔ act now | – | – |
-| Return / refund updates | ✔ | ✔ | ✔ |
-| Support reply | ✔ | – | – |
+
+| Event                   | Customer                       | Shop/Workshop | Admin     |
+| ----------------------- | ------------------------------ | ------------- | --------- |
+| Order placed            | ✔                              | –             | ✔ queue   |
+| Routed to shop          | –                              | ✔ (timer)     | –         |
+| Accepted                | ✔ "confirmed, will be shipped" | ✔             | ✔         |
+| Declined / expired      | –                              | –             | ✔ reroute |
+| Rejected                | ✔ custom message + refund      | –             | –         |
+| Shipped / delivered     | ✔                              | –             | –         |
+| SR proposal / estimate  | ✔ act now                      | –             | –         |
+| Return / refund updates | ✔                              | ✔             | ✔         |
+| Support reply           | ✔                              | –             | –         |
 
 ## 8. Admin console (`/admin`) — analytics-first
 
@@ -152,11 +160,13 @@ cancelled (customer, before in_progress) · declined (workshop) · rejected (adm
 - **Content & settings**: cities (launch/toggle), pincodes import, policies/FAQ/banners, timeouts/windows, staff & roles, notification templates, audit log, exports (CSV, keep concept's export list), backups.
 
 ## 9. Shop portal (`/partner/shop`) and Workshop portal (`/partner/workshop`)
+
 - Shop: live order feed with accept/decline + timer; order detail → pack/ship (courier/AWB)/deliver; inventory (per product price/stock/active, CSV upload, low-stock alerts); coverage pincodes; payouts view (orders delivered, commission, settlement — ledger only in phase 3); performance (acceptance rate, on-time %); profile/hours/holiday mode (pauses routing).
 - Workshop: request feed (propose/decline), calendar/slots, job card per SR (vehicle received + odometer, estimate builder with saved line templates, start/ready/bill), service menu editor, photos, hours, pickup toggle, reviews, performance.
 - Both: mobile-first (partners will use phones), big tap targets, sound + badge on new assignment.
 
 ## 10. Customer pages (faithful to concept)
+
 - `/` Home (hero, 6 category tiles, "Browse our product range" cards, "Know the work. Approve the cost." + 3 steps, highlights grid, local-preview block, trust strip, FAQ, partners teaser) — city selector in header ("Raipur ▾", others "coming soon").
 - `/shop` catalogue (category/search/sort/availability, spec filters, "fits my vehicle" toggle, delivery-PIN check panel), `/products/[slug]` (gallery, spec table, fitment, price by PIN, Add to cart / Buy with installation enquiry, Q&A → support).
 - Cart drawer → `/checkout` (address → review → pay) → `/orders/[code]` (tracking stepper, invoice, cancel/return/help).
@@ -166,6 +176,7 @@ cancelled (customer, before in_progress) · declined (workshop) · rejected (adm
 - Phase 4 extras: `/discover` (vehicle discovery, compare, EMI, test-drive), `/academy`, product lens (QR/barcode → product), `/assistance` (roadside, pickup), `/mechanics` directory.
 
 ## 11. Multi-city readiness (built in from day one)
+
 - Every partner, order, SR, pincode and staff scope carries `city_id`; `settings` per city; city selector stored in cookie + URL param; serviceability check at pincode level; "Coming soon — join waitlist" for non-live cities (captures demand analytics); ISR pages keyed by city; admin filters default to "All cities".
 
 ## 12. Build phases & milestones
@@ -183,16 +194,16 @@ Each phase ends with a demo checklist the user can click through.
 
 Budgets: LCP < 2.0 s on a mid-range Android over 4G, INP < 200 ms, CLS < 0.05, JS on product pages < 180 KB gzipped, Lighthouse ≥ 90. Enforced in CI (Lighthouse CI + bundle analyzer budgets).
 
-| Layer | Technique |
-|---|---|
-| Rendering | Next.js App Router with **static shell + streaming** (Partial Prerendering): header, hero, category tiles and policies are static; prices/stock/cart stream in Suspense holes. Product and workshop pages use ISR (revalidate 60 s + on-demand revalidation when a seller edits). |
-| Images | Every image through `next/image` (AVIF/WebP, srcset, exact `sizes`), **Supabase Storage → Cloudflare Images or Vercel image optimiser** with resize-on-upload to 3 fixed variants (thumb 320, card 640, zoom 1600) so the origin never serves 4000 px files; **blurhash/LQIP placeholders** generated at upload; width/height always set (no CLS); `priority` only on the hero; lazy load below the fold; product galleries virtualised; partner-uploaded photos auto-compressed and EXIF-stripped server-side (sharp). |
-| Data | Hono API behind Cloudflare CDN; catalogue list responses cached in Upstash Redis (30–60 s) and tagged for invalidation; cursor pagination; Postgres indexes on (city, category, published), GIN trigram on name/sku/brand, PostGIS GIST on workshop location; `EXPLAIN` checks in CI for the top 10 queries. |
-| Search | Postgres full-text + trigram at launch (free, fast enough to ~100k SKUs); switch to **Meilisearch/Typesense** (typo tolerance, facets, synonyms) in phase 3 if needed. |
-| JS | Server Components by default; client components only for cart, filters, maps, charts; **MapLibre and Recharts loaded dynamically** on interaction/viewport; no moment/lodash; icons via lucide tree-shaken; fonts self-hosted with `next/font` (`display: swap`, subset Latin + Devanagari later). |
-| Network | HTTP/2 + Brotli, immutable hashed assets, preconnect to API/CDN, `stale-while-revalidate` for catalogue, service worker (PWA) caching shell + last catalogue for repeat visits. |
-| Realtime | Supabase Realtime channels only on pages that need them (partner order feed, order tracking); polling fallback. |
-| Monitoring | Vercel Speed Insights + Sentry performance; weekly RUM report in admin. |
+| Layer      | Technique                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rendering  | Next.js App Router with **static shell + streaming** (Partial Prerendering): header, hero, category tiles and policies are static; prices/stock/cart stream in Suspense holes. Product and workshop pages use ISR (revalidate 60 s + on-demand revalidation when a seller edits).                                                                                                                                                                                                                                       |
+| Images     | Every image through `next/image` (AVIF/WebP, srcset, exact `sizes`), **Supabase Storage → Cloudflare Images or Vercel image optimiser** with resize-on-upload to 3 fixed variants (thumb 320, card 640, zoom 1600) so the origin never serves 4000 px files; **blurhash/LQIP placeholders** generated at upload; width/height always set (no CLS); `priority` only on the hero; lazy load below the fold; product galleries virtualised; partner-uploaded photos auto-compressed and EXIF-stripped server-side (sharp). |
+| Data       | Hono API behind Cloudflare CDN; catalogue list responses cached in Upstash Redis (30–60 s) and tagged for invalidation; cursor pagination; Postgres indexes on (city, category, published), GIN trigram on name/sku/brand, PostGIS GIST on workshop location; `EXPLAIN` checks in CI for the top 10 queries.                                                                                                                                                                                                            |
+| Search     | Postgres full-text + trigram at launch (free, fast enough to ~100k SKUs); switch to **Meilisearch/Typesense** (typo tolerance, facets, synonyms) in phase 3 if needed.                                                                                                                                                                                                                                                                                                                                                  |
+| JS         | Server Components by default; client components only for cart, filters, maps, charts; **MapLibre and Recharts loaded dynamically** on interaction/viewport; no moment/lodash; icons via lucide tree-shaken; fonts self-hosted with `next/font` (`display: swap`, subset Latin + Devanagari later).                                                                                                                                                                                                                      |
+| Network    | HTTP/2 + Brotli, immutable hashed assets, preconnect to API/CDN, `stale-while-revalidate` for catalogue, service worker (PWA) caching shell + last catalogue for repeat visits.                                                                                                                                                                                                                                                                                                                                         |
+| Realtime   | Supabase Realtime channels only on pages that need them (partner order feed, order tracking); polling fallback.                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Monitoring | Vercel Speed Insights + Sentry performance; weekly RUM report in admin.                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 
 ## 12b. RBAC and e-commerce foundations (set up from day one)
 
@@ -202,18 +213,22 @@ Budgets: LCP < 2.0 s on a mid-range Android over 4G, INP < 200 ms, CLS < 0.05, J
 - **E-commerce basics present from the first milestone**: customer profile edit with re-verification on phone/email change; address book (CRUD, default, map pin); vehicles CRUD; wishlist; recently viewed; cart merge on login; stock and price re-validation at checkout; coupons engine (percent/flat/free-shipping, min order, per-user limits, first-order); order notes; GST invoice on request (business GSTIN); order edit before confirmation; cancel/return/replace flows; invoices and credit notes as PDFs; reviews with photos; every admin entity with list/filter/sort/search, create/edit/soft-delete/restore, bulk actions, CSV import/export, saved views; media library; CMS for banners, pages, FAQ, policies, navigation; notification templates; feature flags; maintenance mode; sitemaps; analytics events (PostHog) for funnel steps.
 
 ## 12c. Decisions taken after the first draft (2026-10-31 Q&A) — all recorded in `docs/decisions.md`
+
 Hono confirmed over Rust; one Next.js app; all TS + D features now, L later; e-commerce baseline P0 at launch with P1 fully documented; search Postgres now → Meilisearch planned; 3-screen signup; pincode-first addresses + GPS + full address; vehicles with variant/year; history with filters + search; in-app tickets (WhatsApp pending); in-app + email notifications now, SMS/WhatsApp wired but off; deletion via support confirmation; cart recommendations (rules + co-purchase); first-party event store + self-hosted PostHog; reviews admin-approved; admin complete control (content/sections/settings/flags, no theme editor); auto-split multi-shop carts; COD cap + OTP + blocks; light KYC + manual verification; four-eyes + masked PII now, staff 2FA auto-enforced when staff added; **English + Hindi at launch**; hourly slots with capacity + busy mode; commission pending; tooling installed (46 skills, 14 plugins, 3 MCPs); 8 project-local skills incl. self-improving `mechdost-advisor` and `website-testing`; data-integrity patterns mandatory; abuse protection; scalability by construction. Docs created: `CLAUDE.md` (hard rules), `docs/README.md`, `decisions.md`, `design-system.md`, `concept/*.md` (3), `research/*.md` (5, security pending), `specs/*.md` (18), screenshots (55).
 
 ## 12e. Security baseline (from `docs/research/security-vulnerabilities.md`)
+
 Pin Next ≥16.4.1/15.5.28, React 19.2.x latest, Node 22.23.4+, Hono ≥4.13.11, Drizzle ≥0.45.4, sharp ≥0.35.4, MapLibre ≥6.4.1, Playwright ≥1.55.1; strip `x-middleware-subrequest` at the edge; `withAuth()` on every route/action; Supabase new-key model + RLS on 100% tables with pgTAP gate; Firebase SMS region IN-only + reCAPTCHA SMS defense + Turnstile + Upstash limits; raw-body HMAC + event-id dedupe for Razorpay; CSP nonces, `__Host-` cookies; pnpm `minimumReleaseAge` + `ignore-scripts` + SHA-pinned Actions + OIDC; `.claude/` config reviewed as code; 40-item checklist executed in Phase 0/5.
 
 ## 12d. Phase 0 additions
+
 - Write the 8 project-local skills (advisor + tester with `references/learnings.md` self-improvement loop and evals).
 - `pnpm` policy: `minimumReleaseAge`, frozen lockfile, `onlyBuiltDependencies`; Actions pinned by SHA; Dependabot + Socket.
 - Supabase PITR add-on; Cloudflare in front; Turnstile keys; Sentry projects.
 - `components.json` registries; `shadcn mcp init`.
 
 ## 13. Verification
+
 - Unit: state-machine transitions (every allowed/forbidden edge), money/GST maths, routing ranker.
 - API: Vitest + supertest against a Postgres test container; OpenAPI contract tests.
 - E2E (Playwright): customer order → admin route → shop accept → ship → deliver → return → refund; decline → reroute → reject with message; SR → proposal → estimate per-line approval → bill → pay; timers expire via fake clock; notifications asserted via outbox table.
@@ -222,6 +237,7 @@ Pin Next ≥16.4.1/15.5.28, React 19.2.x latest, Node 22.23.4+, Hono ≥4.13.11,
 - Manual: run locally (`pnpm dev` → web :3000, api :4000, Firebase emulator, Supabase local), seed logins: customer / shop / workshop / admin with test OTP.
 
 ## 14. Assumptions & open items (will confirm as we go)
+
 - Commission/payout model for shops and workshops not yet defined → ledger built generically (phase 3).
 - COD allowed in Raipur with a per-order cap (default ₹5,000) — adjustable in settings.
 - One shop per order in phase 1; split orders in phase 2.

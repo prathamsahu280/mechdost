@@ -14,6 +14,7 @@ the specs, or clear best practice, say so plainly, show the evidence (file + lin
 the better alternative. Never silently comply and never silently refuse.
 
 ## When to run
+
 - At the **start of every task** in this repo, before writing code or docs.
 - **Before any decision** (library choice, schema change, flow change, UX change, provider choice).
 - When the user asks "what's pending", "what do you think", "is this right", or "review this".
@@ -22,6 +23,7 @@ the better alternative. Never silently comply and never silently refuse.
 ## Procedure
 
 ### 1. Load context (always, in this order)
+
 1. `CLAUDE.md` — the 15 hard rules and skill protocol.
 2. `docs/progress.md` — current phase, current task, rulings, blockers.
 3. `docs/decisions.md` — decided items and the PENDING table.
@@ -35,24 +37,29 @@ the better alternative. Never silently comply and never silently refuse.
 Do not skim: if a doc is relevant, read the relevant section, not just the title.
 
 ### 2. Classify the task
+
 Name the areas it touches: UI · API · DB/schema · auth/RBAC · payments/money · orders/routing · service
 requests · notifications · analytics · search · maps · i18n · performance · security · infra/deploy · docs.
 Each area pulls in checks from `references/checklist.md`.
 
 ### 3. Review against the rules
+
 Walk `references/checklist.md` for every area touched. For each hard rule 1–15 decide: ✅ satisfied,
 ⚠️ risk, ❌ violation. Any ❌ must be resolved before implementation starts (fix the plan, or record a
 ruling in `docs/progress.md` with why + cost if the user explicitly chose it).
 
 ### 4. Research when the answer is not already in the docs
+
 Use `references/research-playbook.md`. Mandatory triggers:
+
 - New dependency or version bump → check release age, maintenance, advisories, and
   `docs/research/security-vulnerabilities.md`.
 - Unfamiliar or fast-moving API (Next.js, Hono, Drizzle, Supabase, Firebase, Razorpay) → Context7 / official docs.
 - A best-practice question with real consequences → at least two authoritative sources.
-Record sources (URLs) in the brief and, if durable, in the relevant research doc.
+  Record sources (URLs) in the brief and, if durable, in the relevant research doc.
 
 ### 5. Output the Advisor brief (before implementation)
+
 ```
 ADVISOR BRIEF — <task>
 Context loaded: <files/sections actually read>
@@ -66,9 +73,11 @@ Docs to update in this change: <exact files>
 Skills to run next: <from the CLAUDE.md protocol table>
 Applicable learnings: <ids from learnings.md>
 ```
+
 Keep it tight: list only what matters for this task. Quote this brief (or its key lines) in the task summary.
 
 ### 6. After the task — learn and improve (self-improvement loop)
+
 1. Append an entry to `references/learnings.md` for anything that surprised you, went wrong, cost a retry,
    or that the user corrected. Format: `L<n> · <date> · <area> · <what happened> → <rule to apply next time>`.
 2. If a lesson has now appeared **twice**, promote it: add it to `references/checklist.md` (or this file),
@@ -79,12 +88,14 @@ Keep it tight: list only what matters for this task. Quote this brief (or its ke
    prune stale learnings, and record results.
 
 ## Non-negotiables you enforce
+
 - Docs are updated in the same change; `docs/progress.md` after every step (rules 1, 13).
 - No AI attribution in commits (rule 12). Queue user questions instead of blocking (rule 15).
 - Data integrity, security, performance, scalability, admin control, analytics and i18n rules (3–10, 14).
 - Design fidelity to the concept site (rule 2) — check `docs/design-system.md` before any UI change.
 
 ## References
+
 - `references/checklist.md` — red flags and checks per area.
 - `references/task-to-docs.md` — which spec/research/concept docs each kind of task needs.
 - `references/research-playbook.md` — how to research, trusted sources, improvement sweep.

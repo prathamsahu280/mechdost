@@ -9,6 +9,7 @@ Decisions: phone OTP is the primary sign-in for every role; email is collected a
 both must be verified before ordering/booking/partner/staff actions (`docs/decisions.md`, spec 01, spec 13).
 
 ## Architecture
+
 - **Client (apps/web):** Firebase JS SDK v13 modular. `signInWithPhoneNumber(auth, phone, appVerifier)` with an
   invisible `RecaptchaVerifier`; confirm with the 6-digit code. Email: after phone sign-in, collect email and call
   `verifyBeforeUpdateEmail(user, email)`; the user clicks the link; `emailVerified` becomes true on the next
@@ -27,6 +28,7 @@ both must be verified before ordering/booking/partner/staff actions (`docs/decis
 - Every authenticated user is implicitly `customer`; other roles come from `user_roles`.
 
 ## Rules
+
 - Never accept uid, role, shopId or permissions from the request body. Never put roles in client-editable metadata.
 - Verification gates: `phone_verified_at` and `email_verified_at` required for checkout, booking, partner and staff
   routes → 403 `VERIFICATION_REQUIRED`.
@@ -35,6 +37,7 @@ both must be verified before ordering/booking/partner/staff actions (`docs/decis
 - Phone numbers stored E.164 (`+91…`); validate with the shared helper before any SMS.
 
 ## Abuse protection (spec 13, research/security-vulnerabilities.md §5)
+
 - Firebase console: SMS region policy **allow India only**; enable reCAPTCHA Enterprise SMS defense (audit → enforce);
   App Check for web; disable test phone numbers in production; billing alert on SMS spend.
 - Our limits (Upstash): OTP send 5/phone/hour, 20/IP/hour, 3/device/10 min; verify attempts 5 per code; Turnstile on
@@ -42,12 +45,14 @@ both must be verified before ordering/booking/partner/staff actions (`docs/decis
 - Watch the OTP success rate; < 50 % suggests SMS pumping.
 
 ## Dev & tests
+
 - Emulator: `firebase emulators:start --only auth` (port 9099); test OTP codes from
   `GET http://127.0.0.1:9099/emulator/v1/projects/<projectId>/verificationCodes`.
 - Unit/API tests inject a fake `TokenVerifier` returning chosen identities; never hit real Firebase.
 - Role-leak matrix (website-testing recipe) for every new route.
 
 ## Pitfalls
+
 - Custom claims vanish after `updateEmail`/`updateProfile` in some SDK versions (firebase-js-sdk #9260) — re-read from
   the DB, never rely on claims for authorization.
 - Claims are stale up to 1 h until the client refreshes the token.

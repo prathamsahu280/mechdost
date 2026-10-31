@@ -5,6 +5,7 @@ MechDost ("Your automotive connection") is a production marketplace for automoti
 The visual design, section names and copy come from the concept prototype at https://automart-concept-preview.aliveamber4.chatgpt.site — **reproduce it faithfully** (`docs/design-system.md`, `docs/screenshots/concept/`). Only prototype disclaimers are dropped.
 
 ## HARD RULES (non-negotiable, apply to every task)
+
 1. **Docs first, docs always.** Before any task, read the relevant `docs/*.md` — at minimum `docs/decisions.md`, the feature's `docs/specs/NN-*.md`, and `docs/design-system.md` — and take them into consideration. After any change that affects behaviour, data, flows, copy, config, tooling or decisions, **update the matching `docs/**/*.md` in the same change** (spec, decisions, data model, runbook, README index). A task is not done until the docs reflect it. Never contradict `docs/decisions.md` silently; append a dated entry. Deferred choices go into the **PENDING DECISIONS** table in `docs/decisions.md`; when the user asks "what's pending", read and present that table.
 2. **Design fidelity.** Match the concept's layout, tokens, section names and copy. No new visual language without a decisions entry. Calm UI: one primary action per screen, no stacked modals, empty states with one next action, mobile first, bottom tab bar under 760px.
 3. **Data integrity is law** (`docs/specs/14-data-integrity.md`, `docs/research/data-integrity.md`): state changes only through the state machines as conditional UPDATEs with `version`; one active assignment per order/request (partial unique index); stock via conditional decrement + CHECK; gapless GST invoice numbers at finalisation; idempotency keys + webhook dedupe + amount asserts for payments; integer paise only; actor-scoped repositories (404 for foreign ids); outbox for notifications; append-only events; snapshots on orders. No exceptions "for now".
@@ -29,15 +30,18 @@ The visual design, section names and copy come from the concept prototype at htt
 15. **Don't block on the user — queue it.** Keep building. Any decision, input (keys/accounts) or authorization needed from the user goes into `docs/questions-for-user.md` with a safe default to use meanwhile. When the user says "I'm here", walk through the open items one at a time. Destructive or outward-facing actions still wait for the user's explicit authorization (they are queued, never assumed).
 
 ## Roles and core flow (never drift)
+
 - Roles: customer, seller/shop, workshop, mechanic (later), staff (super_admin, ops_manager, support_agent, finance, catalogue_manager, city_manager, marketing).
 - Product order: customer places → **admin routes to a shop** (ranked suggestions, one-click) → shop **accepts** within a timer (customer + admin notified "confirmed, will be shipped") or **declines/times out** → back to admin to **reroute or reject** with a customer message and automatic refund.
 - Service request: **location first** (GPS/address/pincode) → nearby verified workshops (PostGIS) → pick one or "Let MechDost choose" → workshop proposes slot + expected cost → customer accepts → vehicle received (odometer) → itemised estimate approved **per line** → work → ready → bill → pay → review.
 - Also: cancellations, returns, refunds, replacements, support tickets, tracking, partner applications, notifications, recommendations, analytics, admin console with analytics and full CMS.
 
 ## Stack (decided — `docs/decisions.md`)
+
 Turborepo + pnpm · `apps/web` Next.js 16 App Router (React 19.3; ruling in docs/progress.md), Tailwind, shadcn/ui + registries @magicui/@kibo-ui/@dashboardblocks/@reui, Recharts, **MapLibre GL JS + free OSM/MapTiler tiles** behind a map adapter; geocoding/autocomplete/routing provider decided by the Raipur bake-off, pending #7) · `apps/api` **Hono** (TypeScript, Node 22, OpenAPI via zod-openapi) · `packages/db` **Drizzle + Supabase Postgres (Mumbai) + PostGIS** · **Firebase Auth** (phone OTP primary; email verified once; custom claims for roles) · Upstash Redis · pg-boss · Supabase Realtime + Storage · Razorpay · Resend · MSG91 later · PostHog self-hosted · Vercel `bom1` + Cloud Run `asia-south1` · Search: Postgres FTS now, **Meilisearch planned**.
 
 ## Conventions
+
 - TypeScript strict; Zod DTOs in `packages/shared` are the single source of truth; enums and state machines in `packages/shared/state`; never duplicate.
 - Money = integer paise (`bigint`), rates in basis points; times `timestamptz`, displayed IST (`Asia/Kolkata`); business day boundaries computed in IST.
 - Every mutable row: `version`, `created_at`, `updated_at`, `created_by`; every mutation writes `audit_log` and the entity's `*_events`.
@@ -48,23 +52,25 @@ Turborepo + pnpm · `apps/web` Next.js 16 App Router (React 19.3; ruling in docs
 - Dev: Firebase Auth Emulator (OTP `123456`), Supabase local, seeded Raipur data and test logins per role.
 
 ## Skill usage protocol (when each one MUST run)
-| Trigger | Skill / plugin |
-|---|---|
-| Start of any task; before any decision | `mechdost-advisor` (project), then `brainstorming` for new features |
-| Multi-step work | `writing-plans` → `executing-plans` / `subagent-driven-development` |
-| Schema, RBAC, payment, routing design | `grill-me`, `domain-modeling`, `supabase-postgres-best-practices`, `drizzle-postgis-supabase` (project), `firebase-phone-auth-rbac` (project), `razorpay-payments` (project) |
-| Implementing | `test-driven-development`; `hono` for API; `vercel-react-best-practices` for React/Next; `turborepo` for workspace changes |
-| Building or changing UI | `ui-ux-pro-max` (search guideline for the component) → `shadcn-component-discovery` (check registries first) → `shadcn` → `frontend-design` → `shadcn-component-review` + `web-design-guidelines` after |
-| Performance work or any page change | `core-web-vitals`, `performance`, Chrome DevTools MCP trace |
-| SEO/content pages | `seo`, `nextjs-seo` |
-| Accessibility | `accessibility`, `accessibility-agents` plugin |
-| Any bug | `systematic-debugging` |
-| Before "done", before commit/PR | `website-testing` (project) → `verification-before-completion` → `code-review` plugin / `requesting-code-review`; `security-guidance` hooks always on; `claude-security` before releases |
-| Messaging / PWA / Hindi work | `msg91-messaging`, `serwist-pwa`, `next-intl-hindi` (project) |
-| Deploy | `cloud-run-basics`, Cloud Run MCP, `vercel` plugin; `github` plugin for PRs |
-| Docs lookups | `context7` plugin (current library docs) |
+
+| Trigger                                | Skill / plugin                                                                                                                                                                                          |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Start of any task; before any decision | `mechdost-advisor` (project), then `brainstorming` for new features                                                                                                                                     |
+| Multi-step work                        | `writing-plans` → `executing-plans` / `subagent-driven-development`                                                                                                                                     |
+| Schema, RBAC, payment, routing design  | `grill-me`, `domain-modeling`, `supabase-postgres-best-practices`, `drizzle-postgis-supabase` (project), `firebase-phone-auth-rbac` (project), `razorpay-payments` (project)                            |
+| Implementing                           | `test-driven-development`; `hono` for API; `vercel-react-best-practices` for React/Next; `turborepo` for workspace changes                                                                              |
+| Building or changing UI                | `ui-ux-pro-max` (search guideline for the component) → `shadcn-component-discovery` (check registries first) → `shadcn` → `frontend-design` → `shadcn-component-review` + `web-design-guidelines` after |
+| Performance work or any page change    | `core-web-vitals`, `performance`, Chrome DevTools MCP trace                                                                                                                                             |
+| SEO/content pages                      | `seo`, `nextjs-seo`                                                                                                                                                                                     |
+| Accessibility                          | `accessibility`, `accessibility-agents` plugin                                                                                                                                                          |
+| Any bug                                | `systematic-debugging`                                                                                                                                                                                  |
+| Before "done", before commit/PR        | `website-testing` (project) → `verification-before-completion` → `code-review` plugin / `requesting-code-review`; `security-guidance` hooks always on; `claude-security` before releases                |
+| Messaging / PWA / Hindi work           | `msg91-messaging`, `serwist-pwa`, `next-intl-hindi` (project)                                                                                                                                           |
+| Deploy                                 | `cloud-run-basics`, Cloud Run MCP, `vercel` plugin; `github` plugin for PRs                                                                                                                             |
+| Docs lookups                           | `context7` plugin (current library docs)                                                                                                                                                                |
 
 ## Skills to use (installed globally)
+
 - Workflow (superpowers): `brainstorming` before new features · `writing-plans` before multi-step work · `grill-me` before schema/RBAC/payment designs · `test-driven-development` when implementing · `systematic-debugging` on bugs · `verification-before-completion` before "done" · `requesting-code-review` after features · `domain-modeling` for GLOSSARY/ADRs.
 - UI: `ui-ux-pro-max` (search guidelines/stack rules per component), `frontend-design`, `web-design-guidelines` (pre-PR audit), `shadcn` + `shadcn-component-discovery` (check registries before building) + `shadcn-component-review` (after), `vercel-react-best-practices`.
 - Backend/data: `hono`, `supabase-postgres-best-practices` (before any schema change), `turborepo`, `cloud-run-basics`.
@@ -73,9 +79,11 @@ Turborepo + pnpm · `apps/web` Next.js 16 App Router (React 19.3; ruling in docs
 - MCP: playwright, chrome-devtools, shadcn (after `components.json`), cloud-run; context7/supabase/vercel/github/firebase via plugins. Razorpay MCP later.
 
 ## Documentation map
+
 `docs/progress.md` (**live ledger — read first after compaction**) · `docs/questions-for-user.md` (inbox for the user) · `docs/README.md` (index) · `docs/conventions/code-style.md` (structure + lint rules) · `docs/decisions.md` (+ PENDING DECISIONS) · `docs/design-system.md` · `docs/concept/*.md` (exhaustive concept inventories) · `docs/research/*.md` (industry, baseline, tooling audit, data integrity, security) · `docs/specs/NN-*.md` (one per feature + future modules) · `docs/screenshots/concept/` · `docs/plan.md` (approved plan).
 
 ## Commands (update as the repo grows)
+
 ```
 pnpm install · pnpm dev (web :3000, api :4000) · pnpm db:migrate · pnpm db:seed
 pnpm test · pnpm e2e · pnpm lint · pnpm typecheck · pnpm check (all gates) · pnpm format · pnpm lhci

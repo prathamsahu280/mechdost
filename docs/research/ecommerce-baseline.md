@@ -3,6 +3,7 @@
 Researched 2026-10-31 from Medusa and Saleor module docs, Dokan/WCFM multi-vendor docs, Magento, Shopify, OWASP ASVS/Auth0 and Indian regulatory sources. Priority: **P0** = launch, **P1** = within ~3 months (documented in full so any item can be pulled forward at any time), **P2** = later. Decisions on specific items are in `../decisions.md` (user walkthrough 2026-10-31); where a decision changed the default it is noted with ⟶.
 
 ## 1. Customer account
+
 - Sign-up / login: phone OTP primary; email verified once ⟶ 3-screen signup (phone → OTP → name + email) — P0
 - Profile edit: name, gender, DOB, avatar, preferred language (en/hi) — P0
 - Phone/email change with re-verification: OTP to old and new; sensitive changes need recent re-auth (OWASP ASVS, https://github.com/OWASP/ASVS) — P0
@@ -29,6 +30,7 @@ Researched 2026-10-31 from Medusa and Saleor module docs, Dokan/WCFM multi-vendo
 - Customer 2FA — P2 · Communication log — P2 · Loyalty tiers — P2
 
 ## 2. Catalogue & discovery
+
 - Category tree (N-level, slugs, images, SEO, order, hide-when-empty, archive) — P0
 - Brands (logo, slug, featured, OEM/aftermarket flag) — P0
 - Product types & attribute sets (typed, filterable/searchable/comparable flags, grouped spec sheet) — P0
@@ -54,6 +56,7 @@ Researched 2026-10-31 from Medusa and Saleor module docs, Dokan/WCFM multi-vendo
 - Price display: GST-inclusive, strike-through MRP, per-segment pricing; B2B price lists P1 — P0
 
 ## 3. Cart & checkout
+
 - Guest cart + guest checkout (OTP at payment) — P0
 - Cart merge on login — P0
 - Qty limits (min/max/step, per-order caps) — P0
@@ -76,6 +79,7 @@ Researched 2026-10-31 from Medusa and Saleor module docs, Dokan/WCFM multi-vendo
 - Multi-seller split ⟶ auto-split into per-shop sub-orders at checkout — P0
 
 ## 4. Orders & post-purchase
+
 - Status axes: payment × fulfilment × order; booking states — P0
 - Edit before confirmation (Medusa order edit) — P1
 - Cancel: customer until packed, partial lines, reasons, auto-refund; seller cancel with penalty — P0
@@ -95,6 +99,7 @@ Researched 2026-10-31 from Medusa and Saleor module docs, Dokan/WCFM multi-vendo
 - Order chat with masked numbers — P1 (⟶ possibly launch; pending)
 
 ## 5. Seller/shop & workshop portal
+
 - Onboarding/KYC ⟶ light KYC (GSTIN or declaration, PAN, bank, photos, location pin) + admin manual verification; penny-drop + e-sign P1 — P0
 - Store profile (name, slug, logo, about, address + map, hours, policies, GST display, ratings) — P0
 - Staff users & roles (owner + staff P0; granular P1)
@@ -114,6 +119,7 @@ Researched 2026-10-31 from Medusa and Saleor module docs, Dokan/WCFM multi-vendo
 - Pickup/drop management — P1 · Mechanic app view — P1 · Seller analytics — P1
 
 ## 6. Admin
+
 - Dashboard (GMV, orders, bookings, AOV, refunds, approvals, SLA breaches, payouts due) — P0
 - Entity conventions: list/search/filters/column chooser, create/edit, bulk actions, soft delete/archive + restore, hard-delete with confirmation, audit trail, CSV import/export, notes & tags — P0 (saved views, version history P1)
 - Customers 360, block (incl. COD), notes — P0; impersonate (audited), merge, segments — P1
@@ -132,6 +138,7 @@ Researched 2026-10-31 from Medusa and Saleor module docs, Dokan/WCFM multi-vendo
 - Reports (sales, GSTR-1 ready tax, refunds, coupons, search terms, inventory, abandoned carts) — P1
 
 ## 7. RBAC & security
+
 - Roles: super_admin, ops_manager, support_agent, finance, catalogue_manager, city_manager, marketing; seller_owner, seller_staff, workshop_owner, workshop_staff, mechanic; customer, guest — P0
 - `resource:action` permissions, roles as bundles, least privilege (https://auth0.com/docs/manage-users/access-control/rbac) — P0
 - Matrix: super_admin all · ops_manager orders/bookings RW+cancel+refund≤threshold, returns A, sellers R, workshops RW · support_agent customers R (masked), orders R + notes + resend + cancel pre-dispatch, tickets RW, refund request only, read-only impersonate (logged) · finance payouts RWA, refunds A, ledger/reports R · catalogue_manager products/categories/brands/attributes/fitment RW+approve, media RW · city_manager = ops_manager scoped to cities · marketing promotions/CMS RW · seller_owner own store/products/inventory/orders/returns, payouts R, staff RW · seller_staff subset, no payouts/bank/staff · workshop_owner services/slots/bookings/job cards/staff, payouts R · workshop_staff bookings/job cards RW · mechanic assigned job cards · customer own resources — P0
@@ -149,9 +156,10 @@ Researched 2026-10-31 from Medusa and Saleor module docs, Dokan/WCFM multi-vendo
 - Admin hardening (separate hostname, IP allowlist optional) — P1
 
 ## 8. Platform basics
+
 - INR paise integers — P0 · i18n ⟶ English + Hindi at launch; Hinglish synonyms; Hindi templates — P0 · UTC storage, IST display — P0
 - Messaging: email, DLT SMS, WhatsApp templates, push; template manager with preview/test; delivery logs — P0
-- Event catalogue (order.*, payment.*, return.*, booking.*, product.*, payout.*, kyc.*) — P0
+- Event catalogue (order._, payment._, return._, booking._, product._, payout._, kyc.*) — P0
 - Outbound webhooks (HMAC, retries, DLQ, replay) — P1 · Inbound webhooks (gateway, courier, WhatsApp) — P0
 - Cron jobs (reservation expiry, abandoned cart, payouts, reminders, sitemap, price activation, reindex, retention purge) — P0
 - Job queue with retry + idempotency keys — P0 · Feature flags (env, %, city/role, kill switches) — P0

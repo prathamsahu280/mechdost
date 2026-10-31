@@ -3,38 +3,42 @@
 Source: `style.css`, `premium.css`, `simple.css`, `service-hub.css`, `service-workshop.css`, `launch.css`, `launch-refinements.css`, `admin.css`, `member.css` (copies in `concept/source/`). Screenshots in `screenshots/concept/` (desktop 1440, mobile 390).
 
 ## Fonts
+
 - Headings: **Manrope** 600–800 (h1 800, letter-spacing −2.8px desktop; h2 800, −1.2px).
 - Body/UI: **DM Sans** 400–700. Base 13–15px; helper text 10–12px; eyebrows 9–10px uppercase, letter-spacing 1.5–2px, bold.
 - Admin/account pages in the concept used Arial; the rebuild uses Manrope + DM Sans everywhere.
 - Load with `next/font` (swap). Add Devanagari subset when Hindi is enabled.
 
 ## Colour tokens
-| Token | Value | Use |
-|---|---|---|
-| `--navy` | `#101f34` (admin `#14263e`, member `#14243c`) | Headings, hero/discovery panels, primary dark surfaces, mobile tab active text |
-| `--accent` | `#ea5728` (buttons `#e65325`, logo `#e65a2b`) | Primary buttons, links, active tab underline, logo mark |
-| `--accent-light` | `#ff8b59` / `#ffb99c` / `#ffad87` | Hero `em`, eyebrows on dark, dots |
-| `--accent-soft` | `#fff0e9` bg + `#bf3c12` text | Current nav item, active booking step |
-| `--line` | `#e4e8ee` (cards `#e1e5ec`, inputs `#cad6e3`) | Borders |
-| `--muted` | `#657487` (also `#607185`, `#62738a`) | Secondary text |
-| `--bg` | `#f7f8fa` (admin `#f4f6f9`, member `#f5f7fa`) | Page background |
-| `--surface` | `#ffffff` | Cards, header, footer |
-| `--surface-alt` | `#eaf0f4` / `#eef3f7` / `#f1f5f8` | Service intro band, tiles, callouts |
-| `--success` | bg `#e8f5ed` text `#14683c` (tags `#eaf3ed`/`#285b3c`) | Status badges |
-| `--warning` | bg `#fff3df` border `#efdbb5` text `#674e2d` | Hub notice |
-| `--private` | bg `#fff5e9` text `#785128` | Admin "private note" callouts |
-| `--banner` | bg `#fff1e8` border `#ffd9c2` | Account banners |
-| `--error` | `#b42318` / `#a73419` / `#9a2d20` | Form errors |
-| `--whatsapp` | `#167b42` on `#eff8f2` | WhatsApp block |
-| Sidebar | bg `#14263e`, text `#c2cede`, active `#263d58` + 3px accent left border | Admin/partner sidebar |
+
+| Token            | Value                                                                   | Use                                                                            |
+| ---------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `--navy`         | `#101f34` (admin `#14263e`, member `#14243c`)                           | Headings, hero/discovery panels, primary dark surfaces, mobile tab active text |
+| `--accent`       | `#ea5728` (buttons `#e65325`, logo `#e65a2b`)                           | Primary buttons, links, active tab underline, logo mark                        |
+| `--accent-light` | `#ff8b59` / `#ffb99c` / `#ffad87`                                       | Hero `em`, eyebrows on dark, dots                                              |
+| `--accent-soft`  | `#fff0e9` bg + `#bf3c12` text                                           | Current nav item, active booking step                                          |
+| `--line`         | `#e4e8ee` (cards `#e1e5ec`, inputs `#cad6e3`)                           | Borders                                                                        |
+| `--muted`        | `#657487` (also `#607185`, `#62738a`)                                   | Secondary text                                                                 |
+| `--bg`           | `#f7f8fa` (admin `#f4f6f9`, member `#f5f7fa`)                           | Page background                                                                |
+| `--surface`      | `#ffffff`                                                               | Cards, header, footer                                                          |
+| `--surface-alt`  | `#eaf0f4` / `#eef3f7` / `#f1f5f8`                                       | Service intro band, tiles, callouts                                            |
+| `--success`      | bg `#e8f5ed` text `#14683c` (tags `#eaf3ed`/`#285b3c`)                  | Status badges                                                                  |
+| `--warning`      | bg `#fff3df` border `#efdbb5` text `#674e2d`                            | Hub notice                                                                     |
+| `--private`      | bg `#fff5e9` text `#785128`                                             | Admin "private note" callouts                                                  |
+| `--banner`       | bg `#fff1e8` border `#ffd9c2`                                           | Account banners                                                                |
+| `--error`        | `#b42318` / `#a73419` / `#9a2d20`                                       | Form errors                                                                    |
+| `--whatsapp`     | `#167b42` on `#eff8f2`                                                  | WhatsApp block                                                                 |
+| Sidebar          | bg `#14263e`, text `#c2cede`, active `#263d58` + 3px accent left border | Admin/partner sidebar                                                          |
 
 ## Shape, depth, motion
+
 - Radii: hero 24px (18 mobile); cards 14–16px; tiles 12–15px; buttons 9px; dialogs 18px; inputs 7–8px; pills 20–25px.
 - Shadows: cards `0 4px 16px #101f3405`; hover `translateY(-4px/-5px)` + `0 16px 28px #101f3410`; dialog `0 20px 80px #102a4150`; header `0 2px 16px #101f3407`.
 - Transitions 0.2s; respect `prefers-reduced-motion` (concept disables all transitions).
 - Focus ring: `3px solid #e65325`, offset 3–4px.
 
 ## Layout and chrome
+
 - `main` max 1600px, 5% side gutters (hero 3%). Section padding 55–65px desktop, 35–40px mobile.
 - **Announcement bar** (navy, 9–10px letter-spaced): "MECHDOST · Product orders by confirmation · Workshop requests in Raipur" → becomes city-aware.
 - **Header** sticky white: brand (`m↗` 42px accent + "MechDost" Manrope 800 25px + small "YOUR AUTOMOTIVE CONNECTION"), nav links 13px/700 with 8px radius and `--accent-soft` current state: Home · Shop Products · Find Workshops · My Vehicles; "Account" text button; Cart pill (`#edf2f7`, count in accent).
@@ -49,16 +53,18 @@ Source: `style.css`, `premium.css`, `simple.css`, `service-hub.css`, `service-wo
 - **Admin/partner shell**: 80px white header; 240px navy sidebar; main padding 40px 5%; h1 38px −1.3px; stat cards 3-up (34px numbers); white 14px panels 24px padding; tables 12px with `#edf2f7` headers; badges 6px radius; buttons 8px radius.
 
 ## Copy to preserve (examples; full lists in `concept/*.md`)
-- Home: "FOR EVERY DRIVE. EVERY RIDE." / "Automotive essentials. *Local vehicle care.*" / "SHOP AUTOMOTIVE ESSENTIALS — What does your vehicle need?" / "CARS, BIKES & SCOOTERS — Know the work. Approve the cost." / steps "01 Tell us what you need · 02 Review the estimate · 03 Confirm the next step".
+
+- Home: "FOR EVERY DRIVE. EVERY RIDE." / "Automotive essentials. _Local vehicle care._" / "SHOP AUTOMOTIVE ESSENTIALS — What does your vehicle need?" / "CARS, BIKES & SCOOTERS — Know the work. Approve the cost." / steps "01 Tell us what you need · 02 Review the estimate · 03 Confirm the next step".
 - Shop: "SHOP AUTOMOTIVE PRODUCTS · INDIA — Explore products. Across India." / "Check price & delivery for your area" / "CAN'T FIND YOUR PRODUCT? — Let us help you source it."
 - Workshops: "MECHDOST VEHICLE CARE — A nearby workshop. A clear estimate." / promise strip "See the scope · Approve the expense · Keep your history".
 - Partners: "FOR PARTNERS — Build your business with MechDost." / "Apply as a seller · Apply as a workshop · Apply as a mechanic".
 - Service desk: "DIGITAL SERVICE DESK — Your requests. Your estimates & bills." / "Your service. Your approval."
-- Discovery: "Your next vehicle. *Explore every possibility.*" / "Explore. Compare. Find your next drive."
+- Discovery: "Your next vehicle. _Explore every possibility._" / "Explore. Compare. Find your next drive."
 - Account: "YOUR MECHDOST ACCOUNT — Welcome back." / "A home for your vehicle care."
 - Admin: "RESTRICTED ACCESS — Your catalogue. Your control." / "MECHDOST OPERATIONS".
 
 ## UX rules (from ui-ux-pro-max + concept)
+
 - Contrast ≥ 4.5:1; visible labels (no placeholder-only); errors next to fields; 44×44px touch targets; step indicators on multi-step flows; loading → success/error feedback on every submit; stable skeletons (no flashing spinners); bottom nav ≤ 5 items; predictable back; deep links for every order/request.
 - Images: AVIF/WebP with srcset and exact `sizes`; width/height always; lazy below the fold; `priority` only on the hero; reserve space (CLS < 0.1).
 - Charts (admin): bullet/KPI tiles for targets; label every range with text, never colour alone; legends + tooltips; keyboard focus reveals the same detail as hover.

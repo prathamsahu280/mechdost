@@ -8,6 +8,7 @@ description: Use for any MechDost database change — new tables/columns, migrat
 Package: `packages/db`. Read `docs/specs/14-data-integrity.md` and `docs/research/data-integrity.md` first.
 
 ## Schema conventions (`src/schema/*.ts`)
+
 - Builders in `_common.ts`: `id()` (uuid v7 app-side, `gen_random_uuid()` DB fallback), `createdAt()`, `updatedAt()`,
   `version()`, `paise()` (bigint number mode), `citext()`, `geographyPoint()` (geography(Point,4326)).
 - `casing: 'snake_case'` — write camelCase in TS; columns become snake_case.
@@ -18,6 +19,7 @@ Package: `packages/db`. Read `docs/specs/14-data-integrity.md` and `docs/researc
 - Snapshots (address, price, title) on orders — never join live rows for history.
 
 ## Migration workflow
+
 1. Edit schema → `pnpm --filter @mechdost/db generate` (runs drizzle-kit + `scripts/fix-migrations.mjs`, which unquotes
    `"geography(...)"`). Name it: `pnpm --filter @mechdost/db exec drizzle-kit generate --name=<what>` then run the fix script.
 2. Hand-written SQL (triggers, functions, RLS policies, partitions): `drizzle-kit generate --custom --name=<what>` and fill
@@ -36,6 +38,7 @@ Package: `packages/db`. Read `docs/specs/14-data-integrity.md` and `docs/researc
 8. Update `docs/specs/14` implementation map and `docs/progress.md`.
 
 ## Repositories (`src/repo/*.ts`) — the only place that writes SQL
+
 - Take a `Tx` and an `ActorContext`; call `setActor(tx, actor)` before status changes (trigger writes `order_events`).
 - Status changes: `machine.assert(from, to, actor)` → conditional UPDATE on `(id, status, version)` → zero rows ⇒ `ConflictError`.
 - Counters/stock/coupons: single conditional UPDATE (`… WHERE on_hand - reserved >= $qty`), never read-then-write.
@@ -43,21 +46,25 @@ Package: `packages/db`. Read `docs/specs/14-data-integrity.md` and `docs/researc
 - Return 404 (`NotFoundError`) for rows outside the actor's scope.
 
 ## PostGIS
+
 - Extensions live in schema `extensions` (Supabase advisor); `search_path` must include it (Supabase roles do; tests set it).
 - Write points: `{ lng, lat }` via `geographyPoint()`. Read: select `ST_Y(location::geometry) as lat, ST_X(location::geometry) as lng`.
 - Nearby: `ST_DWithin(location, ST_SetSRID(ST_MakePoint($lng, $lat), 4326)::geography, $metres)` ordered by
   `location <-> point` (KNN with the GIST index) — GIST indexes exist on all geography columns.
 
 ## RLS policies (when Realtime/Storage need them)
+
 Use `(select auth.uid())` style, `to authenticated`, separate policies per operation with `with check`, index the policy
 columns. API connects as the owner role (bypasses RLS) and enforces scope in repositories; RLS is the mirror for
 Realtime/Storage/any direct client access. Test with SQL as `authenticated` role.
 
 ## Test harness
+
 `createTestDb()` from `@mechdost/db/testing` (PGlite 0.5.12 + pglite-postgis 0.2.12 + citext/pg_trgm/btree_gist).
 Single connection — concurrency suites must also run on real Postgres (`TEST_DATABASE_URL`).
 
 ## Gotchas already hit
+
 - drizzle-kit quotes parenthesised custom types → fix script.
 - `pnpm run generate -- --name=x` does not pass `--name` through the `&&` chain; call drizzle-kit directly to name it.
 - PGlite/pglite-postgis versions must match exactly; release-age policy blocks the newest ones.
