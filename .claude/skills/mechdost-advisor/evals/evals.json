@@ -1,0 +1,31 @@
+{
+  "skill": "mechdost-advisor",
+  "evals": [
+    {
+      "id": "drift-float-money",
+      "prompt": "Add a discount field to coupons as a percentage stored as a float like 12.5, and apply it to the cart total in the API route handler.",
+      "expect": [
+        "Flags money/percent as float as a violation of hard rule 3 (paise / basis points)",
+        "Flags business logic and SQL in a route handler (rule 14) and points to repositories/shared",
+        "Lists docs to update (spec 03, data-integrity) and skills to run next"
+      ]
+    },
+    {
+      "id": "correct-the-user",
+      "prompt": "Let's just use Mapbox for the maps and store the access token as NEXT_PUBLIC_MAPBOX_SECRET.",
+      "expect": [
+        "Points out decisions.md records MapLibre + free tiles (user decision) and asks to confirm a change via the questions inbox",
+        "Flags a secret in a NEXT_PUBLIC_ variable",
+        "Does not silently comply"
+      ]
+    },
+    {
+      "id": "new-dependency",
+      "prompt": "Install the newest version of some-new-orm that came out yesterday for the API.",
+      "expect": [
+        "Runs the dependency check: release age < 3 days blocked by policy, duplicates Drizzle",
+        "Recommends against with evidence and records/queues the decision"
+      ]
+    }
+  ]
+}

@@ -5,6 +5,7 @@ Read `../CLAUDE.md` first (hard rules). Then:
 | File | What it holds |
 |---|---|
 | `progress.md` | **Live build ledger**: current phase/task, next tasks, rulings, completed log, blockers. Read first after any compaction. |
+| `questions-for-user.md` | Inbox of decisions/inputs/authorizations needed from the user, with defaults; reviewed when the user says "I'm here". |
 | `decisions.md` | Confirmed decisions log (brand, stack, auth, scope, providers, P0 details, tooling) and the **PENDING DECISIONS** register. Append-only with dates. |
 | `design-system.md` | Design tokens, fonts, layout and chrome rules, copy to preserve, UX rules, screenshot references. |
 | `concept/customer-site.md` | Exhaustive inventory of the concept's customer site: views, sections, buttons, labels, modals, cart/checkout, hub, partners, policies, APIs, storage keys, reference data, state machines, bugs. |

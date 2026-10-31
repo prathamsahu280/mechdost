@@ -26,6 +26,8 @@ The visual design, section names and copy come from the concept prototype at htt
 
 14. **Neat, well-structured, optimised code — enforced.** Follow `docs/conventions/code-style.md`. Every change must pass `pnpm check` (Prettier check, typecheck, ESLint strict type-checked with zero warnings, tests). No `any`, no non-null assertions in source, no SQL outside repositories, no business logic in route handlers or components, every query indexed, no read-then-write races. Never weaken a lint rule to make code pass.
 
+15. **Don't block on the user — queue it.** Keep building. Any decision, input (keys/accounts) or authorization needed from the user goes into `docs/questions-for-user.md` with a safe default to use meanwhile. When the user says "I'm here", walk through the open items one at a time. Destructive or outward-facing actions still wait for the user's explicit authorization (they are queued, never assumed).
+
 ## Roles and core flow (never drift)
 - Roles: customer, seller/shop, workshop, mechanic (later), staff (super_admin, ops_manager, support_agent, finance, catalogue_manager, city_manager, marketing).
 - Product order: customer places → **admin routes to a shop** (ranked suggestions, one-click) → shop **accepts** within a timer (customer + admin notified "confirmed, will be shipped") or **declines/times out** → back to admin to **reroute or reject** with a customer message and automatic refund.
@@ -67,11 +69,11 @@ Turborepo + pnpm · `apps/web` Next.js 16 App Router (React 19.3; ruling in docs
 - UI: `ui-ux-pro-max` (search guidelines/stack rules per component), `frontend-design`, `web-design-guidelines` (pre-PR audit), `shadcn` + `shadcn-component-discovery` (check registries before building) + `shadcn-component-review` (after), `vercel-react-best-practices`.
 - Backend/data: `hono`, `supabase-postgres-best-practices` (before any schema change), `turborepo`, `cloud-run-basics`.
 - Quality: `playwright-best-practices`, `vitest`, `core-web-vitals`, `performance`, `accessibility`, `seo`, `nextjs-seo`, `web-quality-audit`, `best-practices`, plugins `code-review`, `security-guidance`, `claude-security`, `accessibility-agents`.
-- Project-local (in `.claude/skills/`, to be written in Phase 0): `mechdost-advisor` (loads docs, checks decisions/specs/design, researches improvements, flags drift; **self-improving** via `references/learnings.md`), `website-testing` (runs/triages all suites; knows e-commerce bug classes; self-improving), `firebase-phone-auth-rbac`, `razorpay-payments`, `drizzle-postgis-supabase`, `msg91-messaging`, `serwist-pwa`, `next-intl-hindi`.
+- Project-local (in `.claude/skills/`, written 2026-10-31): `mechdost-advisor` (loads docs, checks decisions/specs/design, researches improvements, flags drift; **self-improving** via `references/learnings.md`), `website-testing` (runs/triages all suites; knows e-commerce bug classes; self-improving), `firebase-phone-auth-rbac`, `razorpay-payments`, `drizzle-postgis-supabase`, `msg91-messaging`, `serwist-pwa`, `next-intl-hindi`.
 - MCP: playwright, chrome-devtools, shadcn (after `components.json`), cloud-run; context7/supabase/vercel/github/firebase via plugins. Razorpay MCP later.
 
 ## Documentation map
-`docs/progress.md` (**live ledger — read first after compaction**) · `docs/README.md` (index) · `docs/conventions/code-style.md` (structure + lint rules) · `docs/decisions.md` (+ PENDING DECISIONS) · `docs/design-system.md` · `docs/concept/*.md` (exhaustive concept inventories) · `docs/research/*.md` (industry, baseline, tooling audit, data integrity, security) · `docs/specs/NN-*.md` (one per feature + future modules) · `docs/screenshots/concept/` · `docs/plan.md` (approved plan).
+`docs/progress.md` (**live ledger — read first after compaction**) · `docs/questions-for-user.md` (inbox for the user) · `docs/README.md` (index) · `docs/conventions/code-style.md` (structure + lint rules) · `docs/decisions.md` (+ PENDING DECISIONS) · `docs/design-system.md` · `docs/concept/*.md` (exhaustive concept inventories) · `docs/research/*.md` (industry, baseline, tooling audit, data integrity, security) · `docs/specs/NN-*.md` (one per feature + future modules) · `docs/screenshots/concept/` · `docs/plan.md` (approved plan).
 
 ## Commands (update as the repo grows)
 ```

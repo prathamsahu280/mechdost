@@ -1,0 +1,18 @@
+# Advisor learnings (append-only; newest last)
+
+Format: `L<n> · <date> · <area> · <what happened> → <rule to apply next time>` · status: `active` | `promoted` | `obsolete`
+
+- L1 · 2026-10-31 · communication · Text written between tool calls never reached the user; they asked "I don't see the steps yet". → Anything the user must read goes in the **final message** of the turn. Mid-turn text is for narration only. · active
+- L2 · 2026-10-31 · communication · User wants questions queued, not asked mid-work. → Use `docs/questions-for-user.md`; only stop for destructive/outward-facing authorizations. · promoted (hard rule 15)
+- L3 · 2026-10-31 · git · Harness attribution reminder conflicted with the user's rule. → User rule wins: no AI co-author lines ever; check `git log --format=%B` before push. · promoted (hard rule 12)
+- L4 · 2026-10-31 · git · A previously granted one-off permission referred to an older HEAD; rerunning it would have rewritten the wrong commit. → Re-check what a granted command would do *now* before running it. · active
+- L5 · 2026-10-31 · tooling · pnpm 11 ignores `onlyBuiltDependencies`; the key is `allowBuilds:` in `pnpm-workspace.yaml`. · active
+- L6 · 2026-10-31 · tooling · `minimumReleaseAge` blocks packages <3 days old (e.g. postgres@4.0.0, pglite 0.5.14). → Pick the newest version older than 3 days and pin peers to match (pglite 0.5.12 ↔ pglite-postgis 0.2.12). · active
+- L7 · 2026-10-31 · db · drizzle-kit quotes custom types with parentheses (`"geography(Point,4326)"`). → `scripts/fix-migrations.mjs` runs after every generate; never hand-edit generated SQL otherwise. · active
+- L8 · 2026-10-31 · db · Supabase flags extensions in `public`. → Create extensions `WITH SCHEMA extensions`; tests set `search_path public, extensions`. · active
+- L9 · 2026-10-31 · db · A DB password containing `@` broke the connection URL. → Percent-encode passwords in URLs; validate `.env` without printing secrets. · active
+- L10 · 2026-10-31 · shell · Long bash heredocs with quotes/backticks failed to parse. → Write files with the Write tool; keep heredocs short and quoted. · active
+- L11 · 2026-10-31 · shell · Python regex replacement with `\\1` inside a heredoc produced a control character. → Use plain `str.replace` or the Write/Edit tools for code edits. · active
+- L12 · 2026-10-31 · process · CLAUDE.md said Next.js 15 after a ruling chose 16 (drift). → After any ruling, grep CLAUDE.md/specs for the old value and update in the same commit. · active
+- L13 · 2026-10-31 · scope · User asked for "really good" advisor/tester skills that self-improve. → Treat skills as products: lean SKILL.md, deep references, learnings + changelog, evals. · active
+- L14 · 2026-10-31 · design · User corrected a maps choice: they meant MapLibre + free tiles, not Mapbox. → When the user picks "option N", restate the option's name before recording it. · active

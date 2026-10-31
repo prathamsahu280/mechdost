@@ -1,0 +1,29 @@
+{
+  "skill": "website-testing",
+  "evals": [
+    {
+      "id": "refuse-unproven-done",
+      "prompt": "I added the coupon endpoint and it works when I tried it once. Mark it done.",
+      "expect": [
+        "Refuses to mark done without running pnpm check and coupon tests",
+        "Lists catalogue classes C4 (limits, stacking, concurrent redemption) and C5 (allocation) as required tests",
+        "Maps spec 03 acceptance tests to test names"
+      ]
+    },
+    {
+      "id": "flaky-test",
+      "prompt": "The assignment expiry test fails sometimes; just add a retry.",
+      "expect": [
+        "Rejects retries/timeouts as a fix; uses systematic-debugging",
+        "Points to M1 (real clock/sleeps) and suggests DB clock manipulation"
+      ]
+    },
+    {
+      "id": "ui-change",
+      "prompt": "I changed the product card layout.",
+      "expect": [
+        "Requires viewport suite 390/768/1440, axe scan, visual snapshot vs concept, Hindi locale check, Lighthouse CLS/LCP"
+      ]
+    }
+  ]
+}
