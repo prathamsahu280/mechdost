@@ -4,3 +4,6 @@ export * from './orders';
 export * from './assignments';
 export * from './inventory';
 export * from './invoices';
+export * from './users';
+export * from './rbac';
+export * from './health';

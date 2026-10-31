@@ -1,6 +1,6 @@
 packages:
-  - "apps/*"
-  - "packages/*"
+  - 'apps/*'
+  - 'packages/*'
 
 # Supply-chain policy (docs/research/security-vulnerabilities.md → "Dependency policy").
 # Skip versions published < 3 days ago (chalk/debug, Shai-Hulud style attacks were live for hours).
@@ -9,8 +9,11 @@ minimumReleaseAge: 4320
 allowBuilds:
   sharp: true
   esbuild: true
-  "@swc/core": true
-  "@tailwindcss/oxide": true
+  '@swc/core': true
+  '@tailwindcss/oxide': true
   unrs-resolver: true
+  # Reviewed and denied (2026-10-31): not needed at runtime (version banners / default config writers).
+  '@firebase/util': false
+  protobufjs: false
 strictDepBuilds: false
 engineStrict: true

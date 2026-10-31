@@ -1,0 +1,30 @@
+import type { Context } from 'hono';
+import { createMiddleware } from 'hono/factory';
+import { ApiError } from '../errors';
+import type { RateLimiter, RateRule } from '../rate-limit/limiter';
+import type { AppEnv } from '../types';
+
+/** Limits from docs/specs/13 "Abuse protection". Values tuned later via settings/overrides. */
+export const RATE_RULES = {
+  apiPerIp: { name: 'api_ip', limit: 600, windowSeconds: 60 },
+  apiPerUser: { name: 'api_user', limit: 120, windowSeconds: 60 },
+} as const satisfies Record<string, RateRule>;
+
+/**
+ * Apply `rule` keyed by `key(c)`; on excess respond 429 with Retry-After and IETF RateLimit headers.
+ * Headers are set on success too so well-behaved clients can back off early.
+ */
+export function rateLimit(limiter: RateLimiter, rule: RateRule, key: (c: Context<AppEnv>) => string) {
+  return createMiddleware<AppEnv>(async (c, next) => {
+    const r = await limiter.hit(rule, key(c));
+    const resetSeconds = Math.max(0, Math.ceil((r.resetAt - Date.now()) / 1000));
+    c.header('RateLimit-Limit', String(r.limit));
+    c.header('RateLimit-Remaining', String(r.remaining));
+    c.header('RateLimit-Reset', String(resetSeconds));
+    if (!r.allowed) {
+      c.header('Retry-After', String(Math.max(1, resetSeconds)));
+      throw new ApiError(429, 'RATE_LIMITED', 'Too many requests — please wait a moment and try again');
+    }
+    await next();
+  });
+}

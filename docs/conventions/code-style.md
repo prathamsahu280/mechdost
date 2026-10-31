@@ -4,6 +4,7 @@ Neat, consistent, optimised code is enforced by tooling, not by memory. A change
 `pnpm check` passes (format check + typecheck + lint with zero warnings + tests).
 
 ## Tooling
+
 - **Prettier** (`.prettierrc.json`): single quotes, trailing commas, width 110. Run `pnpm format`.
 - **ESLint** (`eslint.config.mjs`): `typescript-eslint` strict + stylistic **type-checked** rules, `eqeqeq`,
   `prefer-const`, consistent `import type`, no unused vars, no floating promises, no unnecessary casts or
@@ -11,6 +12,7 @@ Neat, consistent, optimised code is enforced by tooling, not by memory. A change
 - **TypeScript**: `strict`, `noUncheckedIndexedAccess`, `verbatimModuleSyntax`. No `any`; prefer `unknown` + narrowing.
 
 ## Repository layout
+
 ```
 apps/web        Next.js (App Router) — routes, Server Components, UI only; calls the API
 apps/api        Hono — routes → validated DTOs → services → repositories; no SQL in handlers
@@ -21,14 +23,27 @@ packages/notify Notification channel adapters + templates
 docs/           Decisions, specs, research, runbooks, progress ledger
 ```
 
+### `apps/api` layout
+
+```
+src/config.ts        zod env schema (fail fast, production guards)    src/app.ts      createApp(deps) — composition only
+src/middleware/*     security, auth/permissions, rate limits          src/routes/*    one router per feature (OpenAPI routes)
+src/auth/*           token verifier interface + Firebase impl, cache  src/errors.ts   ApiError + standard error shape
+src/rate-limit/*     limiter interface, memory (dev/test), Upstash    src/server.ts   process entry (real deps, shutdown)
+```
+
+Handlers validate with `.strict()` Zod schemas, call repository functions from `@mechdost/db/repo`, and map
+results to response DTOs. Dependencies are injected through `AppDeps` so tests run on PGlite with fakes.
+
 ## Rules of thumb
+
 - **One responsibility per file**; files over ~300 lines get split by concept, not by type.
 - **Pure core, thin edges**: business rules live in `packages/shared` (pure, unit-tested); I/O lives at the
   edges (repositories, adapters, route handlers).
 - **Repositories own SQL**: every state change goes through a repository function that takes an `actor`,
   uses a conditional UPDATE with `version`, and maps Postgres errors via `mapPgError`.
 - **No non-null assertions in source**: check and throw a typed error instead (`NotFoundError`, `ConflictError`).
-- **Name things for the domain** (`acceptAssignment`, not `updateRow`); comments explain *why*, not *what*.
+- **Name things for the domain** (`acceptAssignment`, not `updateRow`); comments explain _why_, not _what_.
 - **Optimise deliberately**: index every foreign key and every query filter; single round-trip conditional
   updates instead of read-then-write; cursor pagination; no N+1 (batch or join); measure before micro-tuning.
 - **Tests sit next to their package** (`test/*.test.ts`), named after behaviour, not functions.
