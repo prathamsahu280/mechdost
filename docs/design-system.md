@@ -77,3 +77,11 @@ Source: `style.css`, `premium.css`, `simple.css`, `service-hub.css`, `service-wo
 - Images: AVIF/WebP with srcset and exact `sizes`; width/height always; lazy below the fold; `priority` only on the hero; reserve space (CLS < 0.1).
 - Charts (admin): bullet/KPI tiles for targets; label every range with text, never colour alone; legends + tooltips; keyboard focus reveals the same detail as hover.
 - Product-type guidance: booking apps → trust blue/available green/booked grey states; marketplaces → category colours + success green; keep motion subtle (micro-interactions only).
+
+## Additions 2026-11-01 (see decisions)
+
+- **Surfaces (light):** page `#edf1f5`, alt surface `#e2e8ef`, card border `#d3dbe5`, layered card shadow; cards are always white on the tinted page.
+- **Rating stars:** `--color-star` for the glyph only; the number beside it uses `ink`.
+- **Product artwork:** blueprint plate (`.blueprint` utility) — navy, accent glow, 18px grid; brand chip top-left, SKU bottom-right.
+- **Emoji:** decorative, `aria-hidden`, always beside a text label, from `apps/web/src/lib/emoji.ts` only. Nav 🏠 🛍️ 🔧 🚗 · cart 🛒 · account 👤 · language 🌐 · theme 🌙/☀️ · announcement 📦 🔧 · categories 🛞 🛢️ 🔋 ⚙️ 🌀 🔩 ✨ 🧰 ⚡. Desktop nav/language emoji appear from 1280px so the header never overflows.
+- **Map pins:** 32px teardrop in `accent-button` with a white 2.5px ring and 🔧; selected = navy + accent halo + 1.22 scale; name tooltip in navy. Popups use surface/ink tokens and the accent "View & book" button.

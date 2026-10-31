@@ -1,7 +1,7 @@
 'use client';
 
-import { Moon, Sun } from 'lucide-react';
 import { useSyncExternalStore } from 'react';
+import { UI_EMOJI } from '@/lib/emoji';
 import { THEME_STORAGE_KEY } from '@/lib/theme';
 
 type Theme = 'light' | 'dark';
@@ -49,8 +49,12 @@ export function ThemeToggle({ label, className = '' }: { label: string; classNam
       data-track="theme_toggle"
       className={`press inline-flex size-11 items-center justify-center rounded-lg text-ink hover:bg-pill ${className}`}
     >
-      <Moon aria-hidden="true" className="theme-icon-moon size-5" />
-      <Sun aria-hidden="true" className="theme-icon-sun size-5" />
+      <span aria-hidden="true" className="theme-icon-moon text-[18px] leading-none">
+        {UI_EMOJI.dark}
+      </span>
+      <span aria-hidden="true" className="theme-icon-sun text-[18px] leading-none">
+        {UI_EMOJI.light}
+      </span>
     </button>
   );
 }

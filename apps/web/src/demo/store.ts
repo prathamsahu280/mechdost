@@ -55,10 +55,78 @@ export interface DemoServiceRequest {
   stage: number;
 }
 
+export type PartnerKind = 'seller' | 'garage' | 'mechanic';
+export const APPLICATION_STAGES = ['received', 'review', 'verification', 'onboarded'] as const;
+
+export interface DemoApplication {
+  code: string;
+  createdAt: string;
+  kind: PartnerKind;
+  name: string;
+  phone: string;
+  business: string;
+  pincode: string;
+  vehicles: string[];
+  details: string;
+  stage: number;
+  rejected: boolean;
+}
+
+export type ReviewTarget = 'product' | 'workshop';
+export type ReviewStatus = 'pending' | 'approved' | 'hidden';
+
+export interface DemoReview {
+  id: string;
+  createdAt: string;
+  target: ReviewTarget;
+  slug: string;
+  name: string;
+  rating: number;
+  title: string;
+  body: string;
+  status: ReviewStatus;
+}
+
+export type QuoteStatus = 'open' | 'offered' | 'accepted' | 'declined';
+
+export interface QuoteMessage {
+  id: string;
+  from: 'customer' | 'admin';
+  text: string;
+  at: string;
+}
+
+export interface QuoteOffer {
+  version: number;
+  lines: { slug: string; unitPaise: number }[];
+  deliveryPaise: number;
+  totalPaise: number;
+  validUntil: string;
+  note: string;
+  at: string;
+}
+
+export interface DemoQuote {
+  code: string;
+  createdAt: string;
+  customer: { name: string; phone: string };
+  pincode: string;
+  lines: { slug: string; name: string; brand: string; qty: number; listPaise: number }[];
+  status: QuoteStatus;
+  messages: QuoteMessage[];
+  offers: QuoteOffer[];
+  orderCode: string | null;
+}
+
 const KEYS = {
   cart: 'mechdost-cart',
   orders: 'mechdost-demo-orders',
   requests: 'mechdost-demo-requests',
+  applications: 'mechdost-demo-applications',
+  reviews: 'mechdost-demo-reviews',
+  quotes: 'mechdost-demo-quotes',
+  accounts: 'mechdost-demo-accounts',
+  session: 'mechdost-demo-session',
 } as const;
 type Key = (typeof KEYS)[keyof typeof KEYS];
 
@@ -115,10 +183,196 @@ const isOrder = (v: unknown): v is DemoOrder =>
 const isRequest = (v: unknown): v is DemoServiceRequest =>
   isRecord(v) && typeof v.code === 'string' && typeof v.workshopSlug === 'string';
 
+const isApplication = (v: unknown): v is DemoApplication =>
+  isRecord(v) && typeof v.code === 'string' && typeof v.kind === 'string';
+const isReview = (v: unknown): v is DemoReview =>
+  isRecord(v) && typeof v.id === 'string' && typeof v.rating === 'number';
+const isQuote = (v: unknown): v is DemoQuote =>
+  isRecord(v) && typeof v.code === 'string' && Array.isArray(v.messages) && Array.isArray(v.offers);
+
 const cartSnapshot = () => read(KEYS.cart, isCartLine);
 const ordersSnapshot = () => read(KEYS.orders, isOrder);
 const requestsSnapshot = () => read(KEYS.requests, isRequest);
+const applicationsSnapshot = () => read(KEYS.applications, isApplication);
+const reviewsSnapshot = () => read(KEYS.reviews, isReview);
+const quotesSnapshot = () => read(KEYS.quotes, isQuote);
 const serverSnapshot = () => EMPTY;
+
+export function useApplications(): readonly DemoApplication[] {
+  return useSyncExternalStore(subscribe, applicationsSnapshot, serverSnapshot);
+}
+
+export function useReviews(): readonly DemoReview[] {
+  return useSyncExternalStore(subscribe, reviewsSnapshot, serverSnapshot);
+}
+
+export function useQuotes(): readonly DemoQuote[] {
+  return useSyncExternalStore(subscribe, quotesSnapshot, serverSnapshot);
+}
+
+const newId = () => globalThis.crypto.randomUUID();
+
+export function createApplication(
+  input: Omit<DemoApplication, 'code' | 'createdAt' | 'stage' | 'rejected'>,
+): DemoApplication {
+  const app: DemoApplication = {
+    ...input,
+    code: publicCode('PA', 'RPR'),
+    createdAt: new Date().toISOString(),
+    stage: 0,
+    rejected: false,
+  };
+  write(KEYS.applications, [app, ...applicationsSnapshot()].slice(0, 100));
+  return app;
+}
+
+/** Admin action (demo): move an application forward, or reject it. */
+export function updateApplication(code: string, change: { stage?: number; rejected?: boolean }) {
+  write(
+    KEYS.applications,
+    applicationsSnapshot().map((a) =>
+      a.code === code
+        ? {
+            ...a,
+            stage: Math.min(change.stage ?? a.stage, APPLICATION_STAGES.length - 1),
+            rejected: change.rejected ?? a.rejected,
+          }
+        : a,
+    ),
+  );
+}
+
+/** Customer review: starts `pending`; only admin-approved reviews are published (decision 2026-10-31). */
+export function submitReview(input: Omit<DemoReview, 'id' | 'createdAt' | 'status'>): DemoReview {
+  const review: DemoReview = {
+    ...input,
+    rating: Math.min(5, Math.max(1, Math.round(input.rating))),
+    id: newId(),
+    createdAt: new Date().toISOString(),
+    status: 'pending',
+  };
+  write(KEYS.reviews, [review, ...reviewsSnapshot()].slice(0, 200));
+  return review;
+}
+
+export function moderateReview(id: string, status: ReviewStatus) {
+  write(
+    KEYS.reviews,
+    reviewsSnapshot().map((r) => (r.id === id ? { ...r, status } : r)),
+  );
+}
+
+/** Bulk quote request (spec 19): customer + lines; negotiation happens in the message thread. */
+export function createQuote(input: {
+  customer: DemoQuote['customer'];
+  pincode: string;
+  lines: DemoQuote['lines'];
+  note: string;
+}): DemoQuote {
+  const now = new Date().toISOString();
+  const quote: DemoQuote = {
+    code: publicCode('QT', 'RPR'),
+    createdAt: now,
+    customer: input.customer,
+    pincode: input.pincode,
+    lines: input.lines,
+    status: 'open',
+    messages: input.note ? [{ id: newId(), from: 'customer', text: input.note, at: now }] : [],
+    offers: [],
+    orderCode: null,
+  };
+  write(KEYS.quotes, [quote, ...quotesSnapshot()].slice(0, 50));
+  return quote;
+}
+
+function updateQuote(code: string, change: (q: DemoQuote) => DemoQuote) {
+  write(
+    KEYS.quotes,
+    quotesSnapshot().map((q) => (q.code === code ? change(q) : q)),
+  );
+}
+
+export function postQuoteMessage(code: string, from: QuoteMessage['from'], text: string) {
+  const clean = text.trim().slice(0, 1000);
+  if (!clean) return;
+  updateQuote(code, (q) =>
+    q.status === 'accepted' || q.status === 'declined'
+      ? q
+      : { ...q, messages: [...q.messages, { id: newId(), from, text: clean, at: new Date().toISOString() }] },
+  );
+}
+
+/** Admin sets the final price. A new offer supersedes the previous one (only the latest can be accepted). */
+export function sendOffer(
+  code: string,
+  offer: { lines: QuoteOffer['lines']; deliveryPaise: number; validDays: number; note: string },
+) {
+  updateQuote(code, (q) => {
+    if (q.status === 'accepted' || q.status === 'declined') return q;
+    const subtotal = offer.lines.reduce((sum, l) => {
+      const qty = q.lines.find((x) => x.slug === l.slug)?.qty ?? 0;
+      return sum + l.unitPaise * qty;
+    }, 0);
+    const now = new Date();
+    const next: QuoteOffer = {
+      version: (q.offers.at(-1)?.version ?? 0) + 1,
+      lines: offer.lines,
+      deliveryPaise: offer.deliveryPaise,
+      totalPaise: subtotal + offer.deliveryPaise,
+      validUntil: new Date(now.getTime() + offer.validDays * 86_400_000).toISOString(),
+      note: offer.note.trim().slice(0, 500),
+      at: now.toISOString(),
+    };
+    return { ...q, status: 'offered', offers: [...q.offers, next] };
+  });
+}
+
+export type AcceptResult =
+  { ok: true; orderCode: string } | { ok: false; reason: 'stale' | 'expired' | 'closed' };
+
+/**
+ * Accept exactly the offer version the customer saw. A superseded or expired offer is refused, and a quote can
+ * create only one order (mirrors spec 19's conditional UPDATE + UNIQUE orders.quote_offer_id).
+ */
+export function acceptOffer(code: string, version: number): AcceptResult {
+  const quote = quotesSnapshot().find((q) => q.code === code);
+  if (quote?.status !== 'offered') return { ok: false, reason: 'closed' };
+  const latest = quote.offers.at(-1);
+  if (latest?.version !== version) return { ok: false, reason: 'stale' };
+  if (new Date(latest.validUntil).getTime() < Date.now()) return { ok: false, reason: 'expired' };
+
+  const lines = quote.lines.map((l) => ({
+    slug: l.slug,
+    name: l.name,
+    brand: l.brand,
+    qty: l.qty,
+    unitPaise: latest.lines.find((x) => x.slug === l.slug)?.unitPaise ?? l.listPaise,
+  }));
+  const subtotalPaise = lines.reduce((s, l) => s + l.unitPaise * l.qty, 0);
+  const order: DemoOrder = {
+    code: publicCode('MD', 'RPR'),
+    createdAt: new Date().toISOString(),
+    lines,
+    subtotalPaise,
+    deliveryPaise: latest.deliveryPaise,
+    totalPaise: subtotalPaise + latest.deliveryPaise,
+    customer: {
+      name: quote.customer.name,
+      phone: quote.customer.phone,
+      address: '—',
+      pincode: quote.pincode,
+    },
+    payment: 'cod',
+    stage: 1, // the normal order workflow continues: admin routes it to a shop
+  };
+  write(KEYS.orders, [order, ...ordersSnapshot()].slice(0, 50));
+  updateQuote(code, (q) => ({ ...q, status: 'accepted', orderCode: order.code }));
+  return { ok: true, orderCode: order.code };
+}
+
+export function declineQuote(code: string) {
+  updateQuote(code, (q) => (q.status === 'accepted' ? q : { ...q, status: 'declined' }));
+}
 
 export function useCart(): readonly CartLine[] {
   return useSyncExternalStore(subscribe, cartSnapshot, serverSnapshot);
@@ -233,3 +487,27 @@ export function advanceRequest(code: string) {
     ),
   );
 }
+
+const noopSubscribe = () => () => undefined;
+/** False during server render and hydration, true after: lets pages show a skeleton instead of "not found". */
+export function useHydrated(): boolean {
+  return useSyncExternalStore(
+    noopSubscribe,
+    () => true,
+    () => false,
+  );
+}
+
+/** Storage primitives for sibling demo modules (session.ts). Same cache, listeners and cross-tab sync. */
+export const demoStorage = {
+  read: read as <T>(
+    key: 'mechdost-demo-accounts' | 'mechdost-demo-session',
+    isItem: (v: unknown) => v is T,
+  ) => readonly T[],
+  write: write as (
+    key: 'mechdost-demo-accounts' | 'mechdost-demo-session',
+    value: readonly unknown[],
+  ) => void,
+  subscribe,
+  empty: EMPTY,
+};

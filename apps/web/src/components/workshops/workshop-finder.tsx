@@ -3,7 +3,7 @@
 import { BadgeCheck, LocateFixed, MapPin, Star, Truck, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   DEMO_WORKSHOPS,
   PIN_CENTROIDS,
@@ -12,6 +12,8 @@ import {
   type DemoWorkshop,
 } from '@/demo/workshops';
 import { formatPrice } from '@/lib/format';
+import { mapUi } from '@/lib/map-ui';
+import { WorkshopMap, type MapPoint } from './workshop-map';
 
 type VehicleFilter = 'any' | '2W' | '4W';
 type Origin = { lat: number; lng: number; source: 'gps' | 'pin'; pin?: string } | null;
@@ -22,7 +24,9 @@ type Origin = { lat: number; lng: number; source: 'gps' | 'pin'; pin?: string } 
  */
 export function WorkshopFinder() {
   const t = useTranslations('finder');
+  const m = useTranslations('map');
   const locale = useLocale();
+  const mapRef = useRef<HTMLDivElement>(null);
   const [pin, setPin] = useState('');
   const [vehicle, setVehicle] = useState<VehicleFilter>('any');
   const [evOnly, setEvOnly] = useState(false);
@@ -30,6 +34,7 @@ export function WorkshopFinder() {
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState(false);
 
+  const [selected, setSelected] = useState<string | null>(null);
   const results = useMemo(() => {
     const matches = DEMO_WORKSHOPS.filter(
       (w) => (vehicle === 'any' || w.vehicles.includes(vehicle)) && (!evOnly || w.ev),
@@ -67,6 +72,20 @@ export function WorkshopFinder() {
   }
 
   const base = locale === 'hi' ? '/hi' : '';
+  const points: MapPoint[] = useMemo(
+    () =>
+      results.map(({ w, km }) => ({
+        slug: w.slug,
+        name: w.name,
+        lat: w.lat,
+        lng: w.lng,
+        href: `${base}/workshops/${w.slug}`,
+        rating: w.rating,
+        detail:
+          km !== null ? `${w.area} · ${t('distance', { km: km.toFixed(1) })}` : `${w.area} · ${w.pincode}`,
+      })),
+    [results, base, t],
+  );
 
   return (
     <div>
@@ -150,13 +169,49 @@ export function WorkshopFinder() {
       {results.length === 0 ? (
         <p className="mt-4 rounded-card border border-line-card bg-surface p-6 text-muted">{t('noMatch')}</p>
       ) : (
-        <ul className="mt-4 grid gap-4 tab:grid-cols-2">
-          {results.map(({ w, km }) => (
-            <li key={w.slug}>
-              <WorkshopCard workshop={w} km={km} href={`${base}/workshops/${w.slug}`} />
-            </li>
-          ))}
-        </ul>
+        <div className="mt-4 grid gap-5 nav:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] nav:items-start">
+          <div ref={mapRef} className="scroll-mt-28 nav:order-2 nav:sticky nav:top-28">
+            <WorkshopMap
+              points={points}
+              origin={origin}
+              selected={selected}
+              onSelect={(slug) => {
+                setSelected(slug);
+                document
+                  .getElementById(`workshop-${slug}`)
+                  ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+              }}
+              onLocate={(pos) => {
+                setLocationError(false);
+                setOrigin({ ...pos, source: 'gps' });
+              }}
+              label={t('mapLabel')}
+              youAreHere={t('youAreHere')}
+              ui={mapUi(m)}
+              className="h-[340px] tab:h-[420px] nav:h-[calc(100vh-9rem)] nav:max-h-[700px]"
+            />
+          </div>
+          <ul className="grid gap-4 nav:order-1">
+            {results.map(({ w, km }) => (
+              <li key={w.slug} id={`workshop-${w.slug}`} className="scroll-mt-32">
+                <WorkshopCard
+                  workshop={w}
+                  km={km}
+                  href={`${base}/workshops/${w.slug}`}
+                  active={selected === w.slug}
+                  onShowOnMap={() => {
+                    setSelected(w.slug);
+                    // Phones and tablets stack the map above the list: bring it into view.
+                    const box = mapRef.current?.getBoundingClientRect();
+                    if (box && (box.bottom < 80 || box.top > window.innerHeight)) {
+                      mapRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                  }}
+                />
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </div>
   );
@@ -166,14 +221,22 @@ function WorkshopCard({
   workshop: w,
   km,
   href,
+  active,
+  onShowOnMap,
 }: {
   workshop: DemoWorkshop;
   km: number | null;
   href: string;
+  active: boolean;
+  onShowOnMap: () => void;
 }) {
   const t = useTranslations('finder');
   return (
-    <article className="group flex h-full flex-col rounded-card border border-line-card bg-surface p-5 shadow-card transition duration-[var(--duration-base)] hover:-translate-y-1 hover:shadow-card-hover">
+    <article
+      className={`group flex h-full flex-col rounded-card border bg-surface p-5 shadow-card transition-[box-shadow,border-color] duration-[var(--duration-base)] hover:shadow-card-hover ${
+        active ? 'border-accent-button' : 'border-line-card'
+      }`}
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="font-heading text-lg leading-snug font-extrabold text-ink">
@@ -222,6 +285,15 @@ function WorkshopCard({
       </p>
       <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-4">
         <p className="text-sm font-bold text-ink">{t('from', { price: formatPrice(fromPricePaise(w)) })}</p>
+        <button
+          type="button"
+          onClick={onShowOnMap}
+          aria-pressed={active}
+          className="press ml-auto inline-flex min-h-11 items-center gap-1.5 rounded-button border border-input-border px-3 text-sm font-bold text-ink hover:bg-pill"
+        >
+          <MapPin aria-hidden="true" className="size-4" />
+          {t('viewOnMap')}
+        </button>
         <Link
           href={href}
           data-track={`finder_view_${w.slug}`}

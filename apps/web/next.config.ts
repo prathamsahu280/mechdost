@@ -27,7 +27,14 @@ const nextConfig: NextConfig = {
     dangerouslyAllowSVG: false,
   },
   headers() {
-    return Promise.resolve([{ source: '/:path*', headers: securityHeaders }]);
+    return Promise.resolve([
+      { source: '/:path*', headers: securityHeaders },
+      // Versioned file names (scripts/copy-map-worker.mjs), so they can be cached forever.
+      {
+        source: '/vendor/:file*',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+      },
+    ]);
   },
 };
 

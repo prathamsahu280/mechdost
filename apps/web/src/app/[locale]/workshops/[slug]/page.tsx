@@ -5,10 +5,14 @@ import { getLocale, getTranslations } from 'next-intl/server';
 import { ClientMessages } from '@/components/ui/client-messages';
 import { LocalLink } from '@/components/ui/local-link';
 import { Container } from '@/components/ui/page-intro';
+import { ReviewsSection } from '@/components/reviews/reviews-section';
 import { BookingForm } from '@/components/workshops/booking-form';
+import { WorkshopMap } from '@/components/workshops/workshop-map';
+import { workshopRating, workshopReviews } from '@/demo/reviews';
 import { DEMO_WORKSHOPS, findWorkshop } from '@/demo/workshops';
 import { routing, type Locale } from '@/i18n/routing';
 import { formatDate, formatPrice } from '@/lib/format';
+import { directionsHref, mapUi } from '@/lib/map-ui';
 import { alternatesFor } from '@/lib/seo';
 
 interface Props {
@@ -35,9 +39,10 @@ export default async function WorkshopPage({ params }: Props) {
   const { slug } = await params;
   const w = findWorkshop(slug);
   if (!w) notFound();
-  const [t, f, locale] = await Promise.all([
+  const [t, f, m, locale] = await Promise.all([
     getTranslations('workshop'),
     getTranslations('finder'),
+    getTranslations('map'),
     getLocale(),
   ]);
 
@@ -109,6 +114,46 @@ export default async function WorkshopPage({ params }: Props) {
               </li>
             ))}
           </ul>
+
+          <h2 className="mt-10 font-heading text-2xl font-extrabold tracking-[-0.02em] text-ink">
+            {t('address')}
+          </h2>
+          <WorkshopMap
+            points={[
+              {
+                slug: w.slug,
+                name: w.name,
+                lat: w.lat,
+                lng: w.lng,
+                href: `#book-title`,
+                detail: w.address,
+                rating: w.rating,
+              },
+            ]}
+            label={f('mapLabel')}
+            youAreHere={f('youAreHere')}
+            ui={mapUi(m)}
+            className="mt-4 h-[320px]"
+          />
+          <p className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-muted">
+            <span>{w.address}</span>
+            <a
+              href={directionsHref(w.lat, w.lng)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="press inline-flex min-h-11 items-center gap-1.5 rounded-button border border-input-border px-4 font-bold text-ink hover:bg-pill"
+            >
+              <MapPin aria-hidden="true" className="size-4" />
+              {f('directions')}
+            </a>
+          </p>
+
+          <ReviewsSection
+            target="workshop"
+            slug={w.slug}
+            summary={workshopRating(w)}
+            reviews={workshopReviews(w)}
+          />
         </section>
 
         <section

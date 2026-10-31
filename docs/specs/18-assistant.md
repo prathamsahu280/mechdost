@@ -25,3 +25,7 @@ A floating "Ask MechDost" button on every page that answers common questions (pr
 ## Acceptance tests
 
 Static: intent table tests; e2e opens, answers a bulk question with a WhatsApp action, closes with Esc and restores focus, axe clean. LLM (P1): tool calls scoped to the actor (role-leak test), rate limit 429, kill switch, no secrets in client bundle.
+
+## API (implemented 2026-11-01)
+
+`POST /v1/assistant/messages` in `apps/api/src/routes/assistant.ts`: strict body `{ messages: [{ role: 'user'|'assistant', text: 1..500 }] (1..50, last = user) }` → `{ reply, model }`. Provider `apps/api/src/assistant/provider.ts` (Anthropic SDK; `ASSISTANT_MODEL` default `claude-opus-5-5`, server-side fallbacks, `effort: low`, cached system prompt from `context.ts`). Errors: 503 `ASSISTANT_DISABLED` (no `ANTHROPIC_API_KEY`), 502 `ASSISTANT_UNAVAILABLE`, 429 at 20 messages / 10 min per IP. Only the last 20 turns are sent; message text is never logged. Tests: `apps/api/test/assistant.test.ts`. **Next:** web transport calling the API with fallback to the built-in answers on 503/errors.

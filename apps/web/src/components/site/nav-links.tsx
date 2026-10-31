@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { canonicalPath } from '@/lib/locale-path';
+import { NAV_EMOJI } from '@/lib/emoji';
 import { isActive, type PrimaryNavKey } from '@/lib/nav';
 
 export interface NavItem {
@@ -29,10 +30,13 @@ export function NavLinks({ label, items }: { label: string; items: readonly NavI
                 href={item.href}
                 aria-current={active ? 'page' : undefined}
                 data-track={`nav_${item.key}`}
-                className={`inline-flex min-h-11 items-center rounded-lg px-4 text-[13px] font-bold transition-colors duration-200 ${
+                className={`inline-flex min-h-11 items-center gap-1.5 rounded-lg px-3 text-[13px] xl:px-3.5 font-bold transition-colors duration-200 ${
                   active ? 'bg-accent-soft text-accent-soft-text' : 'text-ink hover:bg-pill'
                 }`}
               >
+                <span aria-hidden="true" className="hidden text-[16px] leading-none xl:inline">
+                  {NAV_EMOJI[item.key]}
+                </span>
                 {item.label}
               </Link>
             </li>

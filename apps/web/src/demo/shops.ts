@@ -1,0 +1,86 @@
+/**
+ * DEMO SHOPS (decision 2026-11-01 "Demo mode"): partner sellers in Raipur that admin routes product orders to
+ * (spec 04). Real shops come from approved seller applications (`shops`, `shop_inventory`, `shop_pincodes`).
+ */
+import type { CategoryKey } from './catalogue';
+
+export interface DemoShop {
+  slug: string;
+  name: string;
+  area: string;
+  pincode: string;
+  lat: number;
+  lng: number;
+  categories: readonly CategoryKey[];
+  /** Share of offered orders accepted in the last 30 days, 0–100. */
+  acceptance: number;
+  /** Median minutes to accept an offered order. */
+  acceptMinutes: number;
+  rating: number;
+}
+
+export const DEMO_SHOPS: readonly DemoShop[] = [
+  {
+    slug: 'sharma-auto-parts',
+    name: 'Sharma Auto Parts',
+    area: 'Pandri',
+    pincode: '492004',
+    lat: 21.2561,
+    lng: 81.6418,
+    categories: ['spareParts', 'filters', 'bearings', 'lubricants', 'accessories'],
+    acceptance: 94,
+    acceptMinutes: 6,
+    rating: 4.6,
+  },
+  {
+    slug: 'chhattisgarh-tyre-house',
+    name: 'Chhattisgarh Tyre House',
+    area: 'Telibandha',
+    pincode: '492006',
+    lat: 21.2459,
+    lng: 81.6602,
+    categories: ['tyres', 'accessories'],
+    acceptance: 89,
+    acceptMinutes: 9,
+    rating: 4.5,
+  },
+  {
+    slug: 'raipur-battery-point',
+    name: 'Raipur Battery Point',
+    area: 'Shankar Nagar',
+    pincode: '492007',
+    lat: 21.2542,
+    lng: 81.6589,
+    categories: ['batteries', 'evEssentials', 'workshopTools'],
+    acceptance: 97,
+    acceptMinutes: 4,
+    rating: 4.8,
+  },
+  {
+    slug: 'gupta-lubes-spares',
+    name: 'Gupta Lubes & Spares',
+    area: 'Tatibandh',
+    pincode: '492099',
+    lat: 21.2601,
+    lng: 81.5873,
+    categories: ['lubricants', 'filters', 'spareParts', 'bearings', 'batteries'],
+    acceptance: 82,
+    acceptMinutes: 14,
+    rating: 4.3,
+  },
+];
+
+export function findShop(slug: string | null | undefined): DemoShop | undefined {
+  return DEMO_SHOPS.find((s) => s.slug === slug);
+}
+
+/**
+ * Ranked suggestions for routing an order (spec 04): shops covering every category in the order first, then
+ * acceptance rate, then speed. The API ranker also uses stock, distance and price.
+ */
+export function rankShops(categories: readonly CategoryKey[], exclude: readonly string[] = []): DemoShop[] {
+  const coverage = (s: DemoShop) => categories.filter((c) => s.categories.includes(c)).length;
+  return DEMO_SHOPS.filter((s) => !exclude.includes(s.slug)).toSorted(
+    (a, b) => coverage(b) - coverage(a) || b.acceptance - a.acceptance || a.acceptMinutes - b.acceptMinutes,
+  );
+}

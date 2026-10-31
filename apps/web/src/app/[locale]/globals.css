@@ -166,3 +166,259 @@
     display: none;
   }
 }
+
+/*
+ * Product artwork until real photos exist: a "blueprint plate" — navy panel with a faint engineering grid,
+ * the part drawn in light line work (parts-catalogue vernacular). Same in both themes.
+ */
+@utility blueprint {
+  background-color: var(--color-navy);
+  background-image:
+    radial-gradient(
+      circle at 70% 30%,
+      color-mix(in srgb, var(--color-accent) 22%, transparent),
+      transparent 55%
+    ),
+    linear-gradient(color-mix(in srgb, white 7%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, white 7%, transparent) 1px, transparent 1px);
+  background-size:
+    100% 100%,
+    18px 18px,
+    18px 18px;
+}
+
+/* Native popover (product details): fade/rise in, respects reduced motion via the global rule. */
+[popover] {
+  transition:
+    opacity var(--duration-base) var(--ease-out-soft),
+    transform var(--duration-base) var(--ease-out-soft),
+    overlay var(--duration-base) allow-discrete,
+    display var(--duration-base) allow-discrete;
+  opacity: 0;
+  transform: translateY(8px);
+}
+[popover]:popover-open {
+  opacity: 1;
+  transform: none;
+}
+@starting-style {
+  [popover]:popover-open {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+[popover]::backdrop {
+  background: color-mix(in srgb, var(--color-navy) 45%, transparent);
+}
+
+/* Workshop map (WorkshopMap). Pins are real buttons (36×40 target) with a teardrop body and a name tooltip. */
+.md-map-pin {
+  position: relative;
+  display: block;
+  width: 36px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.md-map-pin__body {
+  position: absolute;
+  top: 0;
+  left: 2px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 2.5px solid #fff;
+  border-radius: 50% 50% 50% 0;
+  background: var(--color-accent-button);
+  box-shadow: 0 6px 14px #101f3466;
+  transform: rotate(-45deg);
+  transition:
+    transform var(--duration-fast) var(--ease-out-soft),
+    background-color var(--duration-fast) var(--ease-out-soft);
+}
+.md-map-pin__glyph {
+  font-size: 15px;
+  line-height: 1;
+  transform: rotate(45deg);
+}
+.md-map-pin:hover .md-map-pin__body,
+.md-map-pin:focus-visible .md-map-pin__body {
+  transform: rotate(-45deg) scale(1.12);
+}
+.md-map-pin--active .md-map-pin__body {
+  background: #101f34;
+  box-shadow:
+    0 0 0 4px #e6532573,
+    0 8px 18px #101f3480;
+  transform: rotate(-45deg) scale(1.22);
+}
+.md-map-pin__tip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  padding: 4px 9px;
+  border-radius: 8px;
+  background: #101f34;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 4px);
+  transition:
+    opacity var(--duration-fast) var(--ease-out-soft),
+    transform var(--duration-fast) var(--ease-out-soft);
+}
+.md-map-pin:hover .md-map-pin__tip,
+.md-map-pin:focus-visible .md-map-pin__tip {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+.maplibregl-marker:has(.md-map-pin--active),
+.maplibregl-marker:has(.md-map-pin:hover),
+.maplibregl-marker:has(.md-map-pin:focus-visible) {
+  z-index: 2;
+}
+.md-map-user {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: #2563eb;
+  box-shadow: 0 0 0 6px #2563eb40;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .md-map-user {
+    animation: md-map-pulse 2s var(--ease-out-soft) infinite;
+  }
+}
+@keyframes md-map-pulse {
+  0% {
+    box-shadow: 0 0 0 0 #2563eb66;
+  }
+  100% {
+    box-shadow: 0 0 0 14px #2563eb00;
+  }
+}
+
+/* Popups follow the site theme. */
+.md-map .maplibregl-popup-content {
+  min-width: 200px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-line-card);
+  border-radius: 14px;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  box-shadow: var(--shadow-card-hover);
+  font-family: var(--font-sans);
+}
+.md-map .maplibregl-popup-anchor-bottom .maplibregl-popup-tip,
+.md-map .maplibregl-popup-anchor-bottom-left .maplibregl-popup-tip,
+.md-map .maplibregl-popup-anchor-bottom-right .maplibregl-popup-tip {
+  border-top-color: var(--color-surface);
+}
+.md-map .maplibregl-popup-anchor-top .maplibregl-popup-tip,
+.md-map .maplibregl-popup-anchor-top-left .maplibregl-popup-tip,
+.md-map .maplibregl-popup-anchor-top-right .maplibregl-popup-tip {
+  border-bottom-color: var(--color-surface);
+}
+.md-map .maplibregl-popup-anchor-left .maplibregl-popup-tip {
+  border-right-color: var(--color-surface);
+}
+.md-map .maplibregl-popup-anchor-right .maplibregl-popup-tip {
+  border-left-color: var(--color-surface);
+}
+.md-map .maplibregl-popup-close-button {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: var(--color-muted);
+  font-size: 20px;
+}
+.md-map .maplibregl-popup-close-button:hover {
+  background: var(--color-pill);
+}
+.md-map-popup-title {
+  display: block;
+  padding-right: 24px;
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--color-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.md-map-popup-rating {
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--color-ink);
+}
+.md-map-popup-star {
+  color: var(--color-star);
+}
+.md-map-popup-detail {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--color-muted);
+}
+.md-map-popup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.md-map-popup-book,
+.md-map-popup-directions {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 800;
+}
+.md-map-popup-book {
+  background: var(--color-accent-button);
+  color: #fff;
+}
+.md-map-popup-book:hover {
+  background: var(--color-accent-button-hover);
+}
+.md-map-popup-directions {
+  border: 1px solid var(--color-input-border);
+  color: var(--color-ink);
+}
+.md-map-popup-directions:hover {
+  background: var(--color-pill);
+}
+
+/* Controls: larger touch targets, rounded to match cards. */
+.md-map .maplibregl-ctrl-group {
+  overflow: hidden;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px #101f3433;
+}
+.md-map .maplibregl-ctrl-group button {
+  width: 36px;
+  height: 36px;
+}
+.md-map-showall {
+  display: grid;
+  place-items: center;
+  color: #101f34;
+}
+.md-map .maplibregl-ctrl-attrib a {
+  display: inline-block;
+  padding: 5px 1px;
+}
+.md-map .maplibregl-ctrl-scale {
+  border-color: #536376;
+  color: #101f34;
+  background: #ffffffcc;
+}

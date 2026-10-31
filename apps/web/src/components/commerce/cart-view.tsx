@@ -14,6 +14,7 @@ const prefix = (locale: string) => (locale === 'hi' ? '/hi' : '');
 export function CartView() {
   const t = useTranslations('cart');
   const c = useTranslations('catalogue');
+  const q = useTranslations('quote');
   const locale = useLocale();
   const lines = useCart();
   const { priced, subtotalPaise, deliveryPaise, totalPaise } = priceCart(lines);
@@ -143,6 +144,13 @@ export function CartView() {
           className="mt-3 inline-flex min-h-11 w-full items-center justify-center text-sm font-bold text-ink underline-offset-4 hover:underline"
         >
           {t('continue')}
+        </Link>
+        <Link
+          href={`${base}/quotes/new?from=cart`}
+          data-track="cart_bulk_quote"
+          className="mt-1 inline-flex min-h-11 w-full items-center justify-center rounded-button border border-dashed border-input-border px-4 text-center text-sm font-bold text-accent-soft-text hover:bg-pill"
+        >
+          {q('cartBulk')}
         </Link>
       </aside>
     </div>

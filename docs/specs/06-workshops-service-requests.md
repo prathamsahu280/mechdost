@@ -59,3 +59,7 @@ None beyond register (#2 reminders).
 ## P1/P2
 
 Pickup/drop driver assignment with handover photos; mechanic app view; per-bay calendar; network warranty; "MechDost Certified" tiers; roadside assistance (spec 17).
+
+## Map (implemented in demo, 2026-11-01)
+
+`apps/web/src/components/workshops/workshop-map.tsx` — MapLibre GL 6 + OpenFreeMap tiles (light/dark follow the site theme), loaded only on map pages. The finder shows the map beside the list (sticky, ≥1024px) or above it (phones). Pins = buttons named after the workshop; selecting a pin highlights its card and vice versa ("Show on map"). Controls: zoom, full screen, locate me (sets the finder origin → distance sort), show all, scale. Popups: name, rating, area/distance, "View & book", "Directions" (Google Maps). Escape / empty-map click closes popups. Touch screens use two-finger panning outside full screen. Worker served from `/vendor` (decisions 2026-11-01). Acceptance test: `e2e/demo-flows.spec.ts` "workshop map".

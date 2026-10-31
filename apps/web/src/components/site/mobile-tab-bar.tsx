@@ -1,21 +1,14 @@
 'use client';
 
-import { CircleDot, Cog, House, LayoutGrid, type LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { canonicalPath } from '@/lib/locale-path';
-import { isActive, type PrimaryNavKey } from '@/lib/nav';
+import { NAV_EMOJI } from '@/lib/emoji';
+import { isActive } from '@/lib/nav';
 import type { NavItem } from './nav-links';
 
-const ICONS: Record<PrimaryNavKey, LucideIcon> = {
-  home: House,
-  shop: LayoutGrid,
-  workshops: Cog,
-  vehicles: CircleDot,
-};
-
 /**
- * Fixed bottom tab bar under 1024px (phones and tablets): 4 tabs, icon + label, safe-area aware, ≥44px targets.
+ * Fixed bottom tab bar under 1024px (phones and tablets): 4 tabs, emoji + label, safe-area aware, ≥44px targets.
  * Labels are translated on the server and passed in.
  */
 export function MobileTabBar({ label, items }: { label: string; items: readonly NavItem[] }) {
@@ -27,7 +20,6 @@ export function MobileTabBar({ label, items }: { label: string; items: readonly 
     >
       <ul className="mx-auto grid max-w-xl grid-cols-4 gap-1 px-2 py-1.5">
         {items.map((item) => {
-          const Icon = ICONS[item.key];
           const active = isActive(pathname, item.href, item.key === 'home');
           return (
             <li key={item.key}>
@@ -39,7 +31,12 @@ export function MobileTabBar({ label, items }: { label: string; items: readonly 
                   active ? 'bg-accent-soft text-accent-soft-text' : 'text-muted'
                 }`}
               >
-                <Icon aria-hidden="true" className="size-[21px]" strokeWidth={2} />
+                <span
+                  aria-hidden="true"
+                  className={`text-[21px] leading-none transition-transform duration-200 ${active ? 'scale-110' : 'grayscale-[35%]'}`}
+                >
+                  {NAV_EMOJI[item.key]}
+                </span>
                 <span>{item.label}</span>
               </Link>
             </li>

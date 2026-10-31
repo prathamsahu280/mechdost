@@ -1,6 +1,7 @@
 import { syncRbacCatalogue } from '@mechdost/db/repo';
 import { createTestDb, type TestDb } from '@mechdost/db/testing';
 import { createApp } from '../src/app';
+import type { AssistantProvider } from '../src/assistant/provider';
 import { TokenError, type TokenVerifier, type VerifiedToken } from '../src/auth/token-verifier';
 import { loadConfig } from '../src/config';
 import { setLogSink } from '../src/logger';
@@ -45,7 +46,13 @@ export async function testDb(): Promise<TestDb> {
   return sharedDb;
 }
 
-export async function buildApp(opts: { rateLimiter?: RateLimiter; env?: Record<string, string> } = {}) {
+export async function buildApp(
+  opts: {
+    rateLimiter?: RateLimiter;
+    env?: Record<string, string>;
+    assistant?: AssistantProvider | null;
+  } = {},
+) {
   setLogSink(() => undefined);
   const db = await testDb();
   const verifier = new FakeVerifier();
@@ -55,7 +62,13 @@ export async function buildApp(opts: { rateLimiter?: RateLimiter; env?: Record<s
     CORS_ORIGINS: ALLOWED_ORIGIN,
     ...opts.env,
   });
-  const app = createApp({ config, db, verifier, rateLimiter: opts.rateLimiter ?? new MemoryRateLimiter() });
+  const app = createApp({
+    config,
+    db,
+    verifier,
+    rateLimiter: opts.rateLimiter ?? new MemoryRateLimiter(),
+    assistant: opts.assistant ?? null,
+  });
   return { app, db, verifier };
 }
 

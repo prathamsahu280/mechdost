@@ -73,6 +73,8 @@ const NON_TEXT_PAIRS: [fg: string, bg: string][] = [
   ['accent', 'surface'],
   ['input-border', 'surface'],
   ['input-border', 'bg'],
+  ['star', 'surface'],
+  ['star', 'bg'],
 ];
 
 describe.each([

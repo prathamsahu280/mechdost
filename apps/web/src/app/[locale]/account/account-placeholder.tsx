@@ -14,7 +14,7 @@ export async function AccountPlaceholder() {
     <Container className="py-12 tab:py-16">
       <PageIntro eyebrow={t('eyebrow')} line1={t('title')} />
       <div className="mt-8">
-        <ClientMessages namespaces={['order', 'request']}>
+        <ClientMessages namespaces={['order', 'request', 'quote']}>
           <AccountActivity />
         </ClientMessages>
       </div>

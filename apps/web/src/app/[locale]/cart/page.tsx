@@ -24,7 +24,7 @@ export default async function CartPage() {
         {t('title')}
       </h1>
       <div className="mt-8">
-        <ClientMessages namespaces={['cart', 'catalogue']}>
+        <ClientMessages namespaces={['cart', 'catalogue', 'quote']}>
           <CartView />
         </ClientMessages>
       </div>

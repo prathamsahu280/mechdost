@@ -1,8 +1,8 @@
 'use client';
 
-import { ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
 import { useCart } from '@/demo/store';
+import { UI_EMOJI } from '@/lib/emoji';
 
 /**
  * Header cart pill with a live count. `countText` holds server-translated variants for 0, 1 and many
@@ -27,10 +27,12 @@ export function CartPill({
     <Link
       href={href}
       data-track="header_cart"
-      className="press inline-flex min-h-11 shrink-0 items-center gap-2 rounded-pill bg-pill px-3 text-[13px] text-ink min-[400px]:px-4"
+      className="press inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-pill border border-line-card bg-pill px-3 font-bold text-[13px] text-ink min-[400px]:px-4"
     >
-      <ShoppingCart aria-hidden="true" className="size-5 min-[400px]:hidden" />
-      <span className="sr-only min-[400px]:not-sr-only">{label}</span>
+      <span aria-hidden="true" className="text-[18px] leading-none">
+        {UI_EMOJI.cart}
+      </span>
+      <span className="sr-only min-[480px]:not-sr-only">{label}</span>
       <span
         aria-hidden="true"
         className={`min-w-[1.25rem] rounded-full text-center font-bold tabular-nums ${

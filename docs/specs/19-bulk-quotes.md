@@ -35,7 +35,7 @@ Customer: "Bulk quotes" in the account, thread view with the active offer card p
 
 ## Interim (until Phase 1)
 
-The assistant routes bulk questions to a WhatsApp draft ("I would like a price for a bulk order").
+Demo mode (2026-11-01): `/quotes/new` (prefilled from `?product=` or `?from=cart`; minimum 10 units = Q20 default) and `/quotes/{code}` (thread, offer card, accept/close) run on the browser store (`apps/web/src/demo/store.ts`: `createQuote`, `postQuoteMessage`, `sendOffer`, `acceptOffer(code, version)`, `declineQuote`). "Demo controls" stand in for the admin reply and offer builder until the admin console ships. The assistant's bulk answer links to `/quotes/new`. Acceptance test: `e2e/demo-flows.spec.ts` "bulk quote → negotiation → order".
 
 ## Acceptance tests
 

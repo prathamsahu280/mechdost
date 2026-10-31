@@ -19,18 +19,21 @@ Use Chrome. For the phone view press F12 → device toolbar → 390 px wide.
 2. **Shop** — search "battery", filter by category, sort by price. Open **Exide XLTZ4A**: MRP + savings, availability, delivery time, specs. **Add to cart** → the header count updates.
 3. **Cart → Checkout** — change quantity, see free delivery from ₹999. Place the order with a Raipur PIN (e.g. 492001); try 110001 to show the "not serviceable yet" message.
 4. **Order tracking** — code `MD-RPR-2026-XXXXXX`. Timeline shows the real flow: _placed → confirming with a nearby shop (admin routing) → confirmed → packed → out for delivery → delivered_. Open **Demo controls → Simulate next update** to play the shop's actions.
-5. **Find workshops** — enter PIN 492006 or **Use my location**; filter Car / SUV or EV. Open **Telibandha Car Clinic**: verified badge, hours, service menu with price ranges.
+5. **Find workshops** — enter PIN 492006 or **Use my location**; filter Car / SUV or EV. On the **map**: scroll to zoom, drag, tap a 🔧 pin (popup with rating, **View & book**, **Directions**; the matching card lights up), **Show on map** on any card, ⌖ locate me (re-sorts by distance), full screen, "show all". Open **Telibandha Car Clinic**: verified badge, hours, service menu with price ranges, location map, reviews.
 6. **Book** — pick services (the expected cost updates live), date and time → request `SR-RPR-…`. **Demo controls** → the workshop proposes a slot and cost → **Accept proposal** → appointment confirmed → vehicle received → work → ready.
-7. **Account** — recent orders and service requests on this device.
-8. **Ask MechDost** (floating button) — "I need 40 batteries, bulk price?" → bulk negotiation answer with WhatsApp hand-off; "book a service" → workshops. Esc closes it.
+7. **Bulk order** — on a product page click **Need 10 or more? Ask for a bulk price** (or from the cart). Enter 40 units → **Send request** → the quote thread `QT-RPR-…`. Chat, then **Demo controls → Admin: reply / Admin: send an offer** → the offer card shows the final price and savings → **Accept offer** → a normal order `MD-RPR-…` is created and tracked like any other.
+8. **Partners** (`/partners`) — apply as a seller, garage or mechanic with a real form → application status `PA-RPR-…`.
+9. **Reviews** — every product and workshop page shows ratings and reviews; write one (it waits for admin approval). ⓘ on any product card shows quick details.
+10. **Account** — recent orders, service requests and bulk quotes on this device.
+11. **Ask MechDost** (floating button) — "I need 40 batteries, bulk price?" → opens the bulk-quote form; "book a service" → workshops. Esc closes it.
 
 ## What is real vs demo
 
-| Real (production code)                                                                                                        | Demo (replaced in Phase 1)                                    |
-| ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| Design system, light/dark themes, English/Hindi, accessibility (WCAG 2.2 AA tested), responsive 320–1920 px, analytics events | Product and workshop data (`apps/web/src/demo/*`)             |
-| Database schema + integrity rules, API (auth, RBAC, rate limits) on Supabase                                                  | Cart/orders/requests stored in the browser                    |
-| Order and service state machines, money/GST maths                                                                             | "Demo controls" stand in for shop, workshop and admin actions |
-| Assistant UI                                                                                                                  | Assistant answers are static (LLM later, spec 18)             |
+| Real (production code)                                                                                                        | Demo (replaced in Phase 1)                                        |
+| ----------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| Design system, light/dark themes, English/Hindi, accessibility (WCAG 2.2 AA tested), responsive 320–1920 px, analytics events | Product and workshop data (`apps/web/src/demo/*`)                 |
+| Database schema + integrity rules, API (auth, RBAC, rate limits) on Supabase                                                  | Cart/orders/requests stored in the browser                        |
+| Order and service state machines, money/GST maths                                                                             | "Demo controls" stand in for shop, workshop and admin actions     |
+| Assistant UI + `POST /v1/assistant/messages` (Anthropic, needs a key)                                                         | Assistant answers in the web app are static until wired (spec 18) |
 
-Coming next: phone-OTP sign-in, admin routing console, shop/workshop portals, bulk-quote negotiation with admin (spec 19), payments.
+Coming next: demo sign-in for every role, reworked account section, admin console (routing, quotes, applications, reviews), shop/workshop portals, then phone-OTP sign-in with Firebase and payments.

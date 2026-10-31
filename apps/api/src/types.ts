@@ -1,5 +1,6 @@
 import type { Tx, UserRecord } from '@mechdost/db/repo';
 import type { Grant } from '@mechdost/shared/rbac';
+import type { AssistantProvider } from './assistant/provider';
 import type { TokenVerifier } from './auth/token-verifier';
 import type { Config } from './config';
 import type { RateLimiter } from './rate-limit/limiter';
@@ -10,6 +11,8 @@ export interface AppDeps {
   db: Tx;
   verifier: TokenVerifier;
   rateLimiter: RateLimiter;
+  /** LLM provider for /v1/assistant (null when no key is configured → 503, the web falls back to static answers). */
+  assistant?: AssistantProvider | null;
 }
 
 export interface AuthContext {

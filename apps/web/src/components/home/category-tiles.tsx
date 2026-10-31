@@ -1,5 +1,5 @@
-import { BatteryFull, CircleDot, Cog, Disc3, Droplets, Sparkles, type LucideIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { CATEGORY_EMOJI } from '@/lib/emoji';
 import { LocalLink } from '../ui/local-link';
 import { ButtonLink } from '../ui/button-link';
 import { Container, Eyebrow } from '../ui/page-intro';
@@ -8,14 +8,13 @@ import { Container, Eyebrow } from '../ui/page-intro';
 const CATEGORIES: {
   key: 'tyres' | 'lubricants' | 'batteries' | 'bearings' | 'spareParts' | 'accessories';
   slug: string;
-  icon: LucideIcon;
 }[] = [
-  { key: 'tyres', slug: 'tyres', icon: Disc3 },
-  { key: 'lubricants', slug: 'lubricants', icon: Droplets },
-  { key: 'batteries', slug: 'batteries', icon: BatteryFull },
-  { key: 'bearings', slug: 'bearings', icon: CircleDot },
-  { key: 'spareParts', slug: 'spare-parts', icon: Cog },
-  { key: 'accessories', slug: 'accessories', icon: Sparkles },
+  { key: 'tyres', slug: 'tyres' },
+  { key: 'lubricants', slug: 'lubricants' },
+  { key: 'batteries', slug: 'batteries' },
+  { key: 'bearings', slug: 'bearings' },
+  { key: 'spareParts', slug: 'spare-parts' },
+  { key: 'accessories', slug: 'accessories' },
 ];
 
 export function CategoryTiles() {
@@ -40,15 +39,20 @@ export function CategoryTiles() {
           </ButtonLink>
         </div>
         <ul className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-          {CATEGORIES.map(({ key, slug, icon: Icon }) => (
+          {CATEGORIES.map(({ key, slug }) => (
             <li key={key}>
               <LocalLink
                 href="/shop"
                 query={{ category: slug }}
                 data-track={`home_category_${slug}`}
-                className="press reveal flex min-h-[150px] flex-col items-center justify-center gap-3 rounded-tile border border-line-card bg-surface px-3 py-4 text-center shadow-card transition duration-[var(--duration-base)] hover:-translate-y-1 hover:border-accent-soft hover:shadow-card-hover"
+                className="group press reveal flex min-h-[150px] flex-col items-center justify-center gap-3 rounded-tile border border-line-card bg-surface px-3 py-4 text-center shadow-card transition duration-[var(--duration-base)] hover:-translate-y-1 hover:border-accent-soft hover:shadow-card-hover"
               >
-                <Icon aria-hidden="true" className="size-8 text-accent" strokeWidth={1.75} />
+                <span
+                  aria-hidden="true"
+                  className="grid size-14 place-items-center rounded-full bg-accent-soft text-[28px] leading-none transition-transform duration-[var(--duration-base)] group-hover:scale-110"
+                >
+                  {CATEGORY_EMOJI[key]}
+                </span>
                 <span>
                   <span className="block text-[15px] font-bold text-ink">{c(key)}</span>
                   <span className="mt-1 block text-[11px] leading-snug text-muted">{hints(key)}</span>

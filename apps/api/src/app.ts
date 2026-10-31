@@ -7,6 +7,7 @@ import { handleError, handleNotFound } from './errors';
 import { log } from './logger';
 import { rateLimit, RATE_RULES } from './middleware/rate-limit';
 import { securityMiddleware } from './middleware/security';
+import { assistantRoutes } from './routes/assistant';
 import { meRoutes } from './routes/me';
 import { systemRoutes } from './routes/system';
 import type { AppDeps, AppEnv } from './types';
@@ -49,6 +50,7 @@ export function createApp(deps: AppDeps) {
     rateLimit(deps.rateLimiter, RATE_RULES.apiPerIp, (c) => c.get('clientIp')),
   );
   v1.route('/', meRoutes(deps, sessions));
+  v1.route('/', assistantRoutes(deps));
   app.route('/v1', v1);
 
   app.openAPIRegistry.registerComponent('securitySchemes', 'bearerAuth', {

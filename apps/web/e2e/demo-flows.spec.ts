@@ -96,6 +96,130 @@ test.describe('workshops → booking → request status', () => {
   });
 });
 
+test.describe('bulk quote → negotiation → order (spec 19)', () => {
+  test('a customer asks for a bulk price, chats with admin, accepts the offer and gets a normal order', async ({
+    page,
+  }) => {
+    await page.goto('/shop/exide-xltz4a-2w-battery');
+    await page.getByRole('link', { name: /Ask for a bulk price/ }).click();
+    await expect(page.getByRole('heading', { level: 1, name: 'Ask for a bulk price' })).toBeVisible();
+    // Prefilled from the product page with the minimum bulk quantity.
+    await expect(page.getByLabel('Product', { exact: true })).toHaveValue('exide-xltz4a-2w-battery');
+    await expect(page.getByLabel('Quantity')).toHaveValue('10');
+
+    // Below the minimum is refused with a field error.
+    await page.getByLabel('Quantity').fill('4');
+    await page.getByRole('button', { name: 'Send request' }).click();
+    await expect(page.getByText('Add at least 10 units in total for a bulk price.')).toBeVisible();
+
+    await page.getByLabel('Quantity').fill('40');
+    await page.getByLabel('Full name').fill('Ravi Sahu');
+    await page.getByLabel('Mobile number').fill('9876543210');
+    await page.getByLabel('Delivery PIN code').fill('492001');
+    await page.getByLabel(/Anything else/).fill('Need GST invoice');
+    await page.getByRole('button', { name: 'Send request' }).click();
+
+    await expect(page).toHaveURL(/\/quotes\/QT-RPR-\d{4}-[0-9A-Z]{6}\?new=1$/);
+    await expect(page.getByText('Request sent')).toBeVisible();
+    await expect(page.getByText('Waiting for MechDost')).toBeVisible();
+    await expect(page.getByText('Need GST invoice')).toBeVisible();
+
+    // Customer writes; admin (demo controls) replies and sends the final price.
+    await page.getByLabel('Message').fill('Can you deliver by Friday?');
+    await page.getByRole('button', { name: 'Send', exact: true }).click();
+    await expect(page.getByText('Can you deliver by Friday?')).toBeVisible();
+    await page.getByText('Demo controls').click();
+    await page.getByRole('button', { name: 'Admin: reply' }).click();
+    await expect(page.getByText(/we can do better than the list price/)).toBeVisible();
+    await page.getByRole('button', { name: /Admin: send an offer/ }).click();
+    const offer = page.getByRole('region', { name: /Final price · offer 1/ });
+    await expect(offer).toBeVisible();
+    await expect(offer.getByRole('definition').filter({ hasText: '₹36,800' })).toBeVisible(); // 40 × ₹920 (8% off ₹1,000), free delivery
+    await expect(offer.getByText('You save ₹3,200')).toBeVisible();
+
+    // A newer offer arrives while the customer reads: accepting the old one is refused.
+    await page.getByRole('button', { name: /Admin: send an offer/ }).click();
+    await page.getByRole('button', { name: 'Accept offer' }).click();
+    await expect(page.getByText('A newer offer arrived.', { exact: false })).toBeVisible();
+    await expect(page.getByRole('region', { name: /offer 2/ })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Accept offer' }).click();
+    await expect(page.getByText('Order created')).toBeVisible();
+    await expect(page.getByText('Accepted', { exact: true })).toBeVisible();
+    await expect(page.getByLabel('Message')).toHaveCount(0); // chat is read-only once closed
+    await page.getByRole('link', { name: 'Track order' }).click();
+
+    // The negotiated order follows the normal order workflow.
+    await expect(page).toHaveURL(/\/orders\/MD-RPR-/);
+    await expect(page.getByText('₹36,800').first()).toBeVisible();
+
+    await page.goto('/account');
+    await expect(page.getByRole('heading', { name: 'Bulk quotes' })).toBeVisible();
+    await expect(page.getByText('Accepted')).toBeVisible();
+  });
+
+  test('the cart hands its items to a bulk quote', async ({ page }) => {
+    await page.goto('/shop/castrol-activ-4t-20w40-900ml');
+    await page.getByRole('button', { name: 'Add to cart' }).first().click();
+    await page.goto('/cart');
+    await page.getByRole('link', { name: /Ask for a bulk price/ }).click();
+    await expect(page.getByLabel('Product', { exact: true })).toHaveValue('castrol-activ-4t-20w40-900ml');
+  });
+});
+
+test.describe('workshop map (spec 06)', () => {
+  test('is fully interactive: zoom, pins, popups, locate me, show all', async ({ browser }) => {
+    const context = await browser.newContext({
+      viewport: { width: 1440, height: 900 },
+      permissions: ['geolocation'],
+      geolocation: { latitude: 21.238, longitude: 81.6337 },
+      reducedMotion: 'reduce',
+    });
+    const page = await context.newPage();
+    const errors: string[] = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    page.on('console', (m) => {
+      if (m.type() === 'error') errors.push(m.text());
+    });
+    await page.goto('/workshops');
+    const map = page.getByRole('region', { name: 'Map of workshops' });
+    await map.scrollIntoViewIfNeeded();
+    await expect(map.locator('.maplibregl-canvas')).toBeVisible();
+    await expect(map.locator('.md-map-pin')).toHaveCount(8);
+
+    const scale = map.locator('.maplibregl-ctrl-scale');
+    await expect(scale).not.toHaveText('');
+    const before = await scale.textContent();
+    await map.getByRole('button', { name: 'Zoom in' }).click();
+    await expect(scale).not.toHaveText(before ?? '');
+
+    // A pin opens its popup and highlights the matching card in the list.
+    await map.getByRole('button', { name: 'Telibandha Car Clinic' }).click();
+    const popup = map.locator('.maplibregl-popup');
+    await expect(popup.getByRole('link', { name: 'Telibandha Car Clinic' })).toBeVisible();
+    await expect(popup.getByRole('link', { name: 'View & book' })).toHaveAttribute(
+      'href',
+      '/workshops/telibandha-car-clinic',
+    );
+    await expect(popup.getByRole('link', { name: 'Directions' })).toHaveAttribute(
+      'href',
+      /google\.com\/maps\/dir/,
+    );
+    await expect(page.locator('article button[aria-pressed="true"]')).toHaveCount(1);
+
+    await map.getByRole('button', { name: 'Show all workshops' }).click();
+    await expect(popup).toHaveCount(0);
+
+    // "Locate me" on the map sorts the list by distance, like the finder's own button.
+    await map.getByRole('button', { name: 'Show my location' }).click();
+    await expect(page.getByText('Sorted by distance from you.')).toBeVisible();
+    await expect(map.getByRole('img', { name: 'You are here' })).toBeVisible();
+    await expect(map.getByRole('button', { name: 'Full-screen map' })).toBeVisible();
+    expect(errors).toEqual([]);
+    await context.close();
+  });
+});
+
 test.describe('theme and assistant', () => {
   test('dark mode toggles, persists across pages and passes axe', async ({ page }) => {
     test.skip((page.viewportSize()?.width ?? 0) < 400, 'toggle sits in the footer on very small screens');
@@ -130,7 +254,10 @@ test.describe('theme and assistant', () => {
     await page.getByLabel('Type your question').fill('I need 40 batteries, bulk price?');
     await page.getByRole('button', { name: 'Send' }).click();
     await expect(panel.getByText(/negotiate the price directly/)).toBeVisible();
-    await expect(panel.getByRole('link', { name: /Message on WhatsApp/ })).toHaveAttribute('href', /wa\.me/);
+    await expect(panel.getByRole('link', { name: 'Ask for a bulk price' })).toHaveAttribute(
+      'href',
+      '/quotes/new',
+    );
     expect(await axe(page)).toEqual([]);
     await page.keyboard.press('Escape');
     await expect(panel).toBeHidden();
@@ -146,6 +273,7 @@ test.describe('accessibility of the demo flows', () => {
     '/hi/workshops',
     '/checkout',
     '/account',
+    '/quotes/new?product=exide-xltz4a-2w-battery',
   ]) {
     test(`no WCAG 2.2 AA violations on ${path}`, async ({ page }) => {
       await page.goto(path);

@@ -29,6 +29,8 @@ const schema = z
     /** Proxies in front of the API that append to X-Forwarded-For (Cloud Run LB = 1, + Cloudflare = 2). */
     TRUSTED_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(0),
     API_DOCS: z.enum(['on', 'off']).optional(),
+    ANTHROPIC_API_KEY: z.string().min(20).optional(),
+    ASSISTANT_MODEL: z.string().default('claude-opus-5-5'),
   })
   .superRefine((env, ctx) => {
     if (env.DATABASE_POOL_URL.includes('<')) {
@@ -75,6 +77,7 @@ function toConfig(env: z.infer<typeof schema>) {
         : null,
     trustedProxyHops: env.TRUSTED_PROXY_HOPS,
     apiDocs: env.API_DOCS ? env.API_DOCS === 'on' : env.NODE_ENV !== 'production',
+    assistant: env.ANTHROPIC_API_KEY ? { apiKey: env.ANTHROPIC_API_KEY, model: env.ASSISTANT_MODEL } : null,
   };
 }
 

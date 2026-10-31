@@ -25,7 +25,7 @@ export default async function WorkshopsPage() {
     <Container className="py-10 tab:py-14">
       <PageIntro eyebrow={t('eyebrow')} line1={t('titleLine1')} line2={t('titleLine2')} lead={t('lead')} />
       <div className="mt-8">
-        <ClientMessages namespaces={['finder']}>
+        <ClientMessages namespaces={['finder', 'map']}>
           <WorkshopFinder />
         </ClientMessages>
       </div>

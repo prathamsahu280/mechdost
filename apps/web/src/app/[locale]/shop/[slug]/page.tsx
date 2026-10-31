@@ -5,9 +5,12 @@ import { getTranslations } from 'next-intl/server';
 import { AddToCartButton } from '@/components/catalogue/add-to-cart-button';
 import { ProductCard } from '@/components/catalogue/product-card';
 import { ProductVisual } from '@/components/catalogue/product-visual';
+import { ReviewsSection } from '@/components/reviews/reviews-section';
+import { StarRating } from '@/components/reviews/star-rating';
 import { LocalLink } from '@/components/ui/local-link';
 import { Container } from '@/components/ui/page-intro';
 import { CATEGORY_SLUGS, DEMO_PRODUCTS, findProduct } from '@/demo/catalogue';
+import { productRating, productReviews } from '@/demo/reviews';
 import { routing, type Locale } from '@/i18n/routing';
 import { discountPercent, formatPrice } from '@/lib/format';
 import { alternatesFor } from '@/lib/seo';
@@ -37,7 +40,12 @@ export default async function ProductPage({ params }: Props) {
   const product = findProduct(slug);
   if (!product) notFound();
 
-  const [t, c] = await Promise.all([getTranslations('catalogue'), getTranslations('categories')]);
+  const [t, c, r] = await Promise.all([
+    getTranslations('catalogue'),
+    getTranslations('categories'),
+    getTranslations('reviews'),
+  ]);
+  const rating = productRating(product);
   const off = discountPercent(product.pricePaise, product.mrpPaise);
   const related = DEMO_PRODUCTS.filter(
     (p) => p.category === product.category && p.slug !== product.slug,
@@ -72,7 +80,7 @@ export default async function ProductPage({ params }: Props) {
       </nav>
 
       <div className="mt-6 grid gap-8 tab:grid-cols-2 nav:gap-14">
-        <ProductVisual category={product.category} brand={product.brand} size="hero" />
+        <ProductVisual category={product.category} brand={product.brand} sku={product.sku} size="hero" />
 
         <div>
           <p className="text-xs text-muted">
@@ -82,6 +90,22 @@ export default async function ProductPage({ params }: Props) {
             {product.name}
           </h1>
           <p className="mt-2 text-[15px] text-muted">{product.spec}</p>
+          <a
+            href={`#reviews-${product.slug}`}
+            className="mt-3 inline-flex min-h-6 items-center gap-2 text-sm"
+          >
+            <StarRating
+              rating={rating.rating}
+              size="md"
+              label={r('ratedBy', { rating: rating.rating.toFixed(1), count: rating.count })}
+            />
+            <span aria-hidden="true" className="font-bold text-ink">
+              {rating.rating.toFixed(1)}
+            </span>
+            <span aria-hidden="true" className="text-muted underline-offset-4 hover:underline">
+              {r('count', { count: rating.count })}
+            </span>
+          </a>
 
           <div className="mt-5 flex flex-wrap items-baseline gap-3">
             <span className="font-heading text-[34px] font-extrabold text-ink">
@@ -126,6 +150,16 @@ export default async function ProductPage({ params }: Props) {
               }}
               className="min-h-12"
             />
+            <p className="mt-3 text-sm text-muted">
+              <LocalLink
+                href="/quotes/new"
+                query={{ product: product.slug }}
+                data-track="product_bulk_quote"
+                className="font-bold text-accent-soft-text underline-offset-4 hover:underline"
+              >
+                {t('bulkHint')}
+              </LocalLink>
+            </p>
           </div>
 
           <section aria-labelledby="highlights" className="mt-8">
@@ -153,6 +187,13 @@ export default async function ProductPage({ params }: Props) {
           </dl>
         </div>
       </div>
+
+      <ReviewsSection
+        target="product"
+        slug={product.slug}
+        summary={rating}
+        reviews={productReviews(product)}
+      />
 
       {related.length > 0 ? (
         <section aria-labelledby="related" className="mt-14">

@@ -1,6 +1,7 @@
 import { useLocale, useTranslations } from 'next-intl';
 import { LocalLink } from '../ui/local-link';
 import { getPathname } from '@/i18n/navigation';
+import { UI_EMOJI } from '@/lib/emoji';
 import { CartPill } from '../commerce/cart-pill';
 import { LanguageSwitcher } from './language-switcher';
 import { ThemeToggle } from './theme-toggle';
@@ -33,8 +34,20 @@ export function AnnouncementBar({ city }: { city: string }) {
   const t = useTranslations('announcement');
   return (
     <div className="bg-navy px-[5%] py-2.5 text-center text-white">
-      <p className="eyebrow text-[8px] tracking-[1px] tab:text-[10px] tab:tracking-[1.8px]">
-        <span className="font-extrabold">{t('brand')}</span> · {t('text', { city })}
+      <p className="eyebrow flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[8px] tracking-[1px] tab:text-[10px] tab:tracking-[1.8px]">
+        <span className="font-extrabold">{t('brand')}</span>
+        <span className="inline-flex items-center gap-1.5">
+          <span aria-hidden="true" className="text-[12px] tracking-normal">
+            {UI_EMOJI.orders}
+          </span>
+          {t('orders')}
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span aria-hidden="true" className="text-[12px] tracking-normal">
+            {UI_EMOJI.workshops}
+          </span>
+          {t('workshops', { city })}
+        </span>
       </p>
     </div>
   );
@@ -60,8 +73,11 @@ export function Header({ navItems }: { navItems: readonly NavItem[] }) {
           <LocalLink
             href="/account"
             data-track="header_account"
-            className="hidden min-h-11 items-center rounded-lg px-3 text-[13px] text-ink hover:bg-pill min-[420px]:inline-flex"
+            className="hidden min-h-11 items-center gap-1.5 rounded-lg px-3 text-[13px] font-bold text-ink hover:bg-pill min-[420px]:inline-flex"
           >
+            <span aria-hidden="true" className="hidden text-[16px] leading-none xl:inline">
+              {UI_EMOJI.account}
+            </span>
             {t('account')}
           </LocalLink>
           <CartPill

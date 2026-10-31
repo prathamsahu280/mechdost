@@ -5,6 +5,7 @@
 import { serve } from '@hono/node-server';
 import { createDb } from '@mechdost/db';
 import { createApp } from './app';
+import { createAnthropicProvider } from './assistant/provider';
 import { createFirebaseVerifier } from './auth/firebase-verifier';
 import { ConfigError, loadConfig } from './config';
 import { log } from './logger';
@@ -31,7 +32,10 @@ const app = createApp({
   db,
   verifier: createFirebaseVerifier(config.firebaseProjectId),
   rateLimiter,
+  assistant: config.assistant ? createAnthropicProvider(config.assistant) : null,
 });
+if (!config.assistant)
+  log('warn', 'assistant_disabled', { note: 'ANTHROPIC_API_KEY not set — /v1/assistant returns 503' });
 
 const server = serve({ fetch: app.fetch, port: config.port }, (info) => {
   log('info', 'listening', { port: info.port, env: config.env, authEmulator: config.usingAuthEmulator });
