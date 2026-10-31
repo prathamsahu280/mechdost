@@ -35,9 +35,10 @@ export function RequestView({ code }: { code: string }) {
     );
   }
 
-  const min = request.services.reduce((s, x) => s + x.minPaise, 0);
-  const max = request.services.reduce((s, x) => s + x.maxPaise, 0);
-  const slotLabel = w(request.slot);
+  // The workshop's own proposal when it made one; otherwise the menu ranges of the requested services.
+  const min = request.proposal?.minPaise ?? request.services.reduce((s, x) => s + x.minPaise, 0);
+  const max = request.proposal?.maxPaise ?? request.services.reduce((s, x) => s + x.maxPaise, 0);
+  const slotLabel = w(request.proposal?.slot ?? request.slot);
   const steps = REQUEST_STAGES.map((s) => ({ key: s, title: t(`stage_${s}`), detail: t(`detail_${s}`) }));
   const proposed = request.stage === 1;
 
@@ -67,12 +68,15 @@ export function RequestView({ code }: { code: string }) {
             <div className="mt-6 rounded-tile border border-accent-soft bg-accent-soft p-4">
               <p className="text-sm font-bold text-accent-soft-text">
                 {t('proposal', {
-                  date: formatDate(request.date, locale),
+                  date: formatDate(request.proposal?.date ?? request.date, locale),
                   slot: slotLabel,
                   min: formatPrice(min),
                   max: formatPrice(max),
                 })}
               </p>
+              {request.proposal?.note ? (
+                <p className="mt-1 text-sm text-ink">“{request.proposal.note}”</p>
+              ) : null}
               <button
                 type="button"
                 onClick={() => {

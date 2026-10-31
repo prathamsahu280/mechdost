@@ -46,3 +46,7 @@ RBAC matrix per endpoint; content publish updates storefront within revalidation
 ## P1/P2
 
 Saved views, version history diff, impersonation, merge customers, reports (GSTR-1 ready), outbound webhooks, theme editor (not planned), page builder (not planned).
+
+## Demo implementation (2026-11-01)
+
+`/admin/{overview|orders|services|quotes|applications|reviews}` (`components/portal/admin-console.tsx`): KPI tiles linking to queues, order routing, reassignment of declined service requests, bulk-quote desk (chat as MechDost + offer builder; warning above 15% discount = four-eyes threshold), partner application steps, review moderation. Data from the browser store; API + RBAC in Phase 1.

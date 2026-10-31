@@ -2,6 +2,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { LocalLink } from '../ui/local-link';
 import { getPathname } from '@/i18n/navigation';
 import { UI_EMOJI } from '@/lib/emoji';
+import { AccountLink } from '../auth/account-link';
 import { CartPill } from '../commerce/cart-pill';
 import { LanguageSwitcher } from './language-switcher';
 import { ThemeToggle } from './theme-toggle';
@@ -58,6 +59,7 @@ export function Header({ navItems }: { navItems: readonly NavItem[] }) {
   const t = useTranslations('nav');
   const language = useTranslations('language');
   const theme = useTranslations('theme');
+  const auth = useTranslations('auth');
   const locale = useLocale();
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-surface/95 shadow-header backdrop-blur">
@@ -70,16 +72,7 @@ export function Header({ navItems }: { navItems: readonly NavItem[] }) {
           <span className="hidden min-[400px]:contents">
             <ThemeToggle label={theme('toggle')} />
           </span>
-          <LocalLink
-            href="/account"
-            data-track="header_account"
-            className="hidden min-h-11 items-center gap-1.5 rounded-lg px-3 text-[13px] font-bold text-ink hover:bg-pill min-[420px]:inline-flex"
-          >
-            <span aria-hidden="true" className="hidden text-[16px] leading-none xl:inline">
-              {UI_EMOJI.account}
-            </span>
-            {t('account')}
-          </LocalLink>
+          <AccountLink prefix={locale === 'hi' ? '/hi' : ''} signIn={auth('signIn')} account={t('account')} />
           <CartPill
             href={getPathname({ href: '/cart', locale })}
             label={t('cart')}

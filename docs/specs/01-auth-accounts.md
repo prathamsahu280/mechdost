@@ -63,3 +63,7 @@ Vehicle fields may change (register #5).
 ## P1/P2
 
 Registration-number lookup (Vahan), saved cards (gateway tokens), wallet + referral, recently viewed, data export, device sessions UI, customer 2FA (P2), loyalty tiers (P2).
+
+## Demo implementation (2026-11-01)
+
+`/login` (`components/auth/login-flow.tsx`) and `/account/{section}` (`components/account/account-area.tsx`) run on `apps/web/src/demo/session.ts` until Firebase is linked: same three steps, code 123456, seeded role logins (decisions 2026-11-01). Max 10 vehicles / 10 addresses, one default address. Acceptance tests: `e2e/roles.spec.ts`.

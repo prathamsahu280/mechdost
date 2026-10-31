@@ -13,6 +13,20 @@ pnpm --filter @mechdost/web start      # http://localhost:3000
 
 Use Chrome. For the phone view press F12 → device toolbar → 390 px wide.
 
+## Demo logins (code 123456 for every number)
+
+| Role                              | Number     | Lands on            |
+| --------------------------------- | ---------- | ------------------- |
+| Customer (Ravi Sahu)              | 9876543210 | `/account`          |
+| Shop owner — Sharma Auto Parts    | 9000000001 | `/partner/shop`     |
+| Shop owner — Raipur Battery Point | 9000000004 | `/partner/shop`     |
+| Workshop — Telibandha Car Clinic  | 9000000002 | `/partner/workshop` |
+| Admin                             | 9000000003 | `/admin`            |
+
+Any other Indian mobile number creates a new customer account (name + email). The chips on `/login` fill these numbers.
+
+**Full loop to show:** place an order as a guest or customer → sign in as admin → **Order routing** → route to the recommended shop → sign in as that shop → accept (or decline with a reason → admin reroutes) → mark packed → open the order page: "Fulfilled by …" and the timeline update. Same for service requests: book at Telibandha Car Clinic → workshop login → propose slot + cost → customer accepts on the request page.
+
 ## Suggested 10-minute walkthrough
 
 1. **Home** (`/`) — hero, search box, trust strip, categories, popular products, "Know the work. Approve the cost.", partner teaser. Toggle **dark mode** (moon icon) and **हिंदी** in the header: everything switches, including prices and dates.

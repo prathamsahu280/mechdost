@@ -99,7 +99,17 @@ test.describe('navigation chrome', () => {
     test.skip(isMobile(page), 'the sweep sets its own viewports; run once');
     test.setTimeout(120_000);
     const widths = [320, 360, 390, 414, 600, 759, 760, 768, 1023, 1024, 1280, 1440, 1920];
-    const paths = ['/', '/hi', '/shop', '/workshops', '/hi/workshops', '/partners', '/cart', '/account'];
+    const paths = [
+      '/',
+      '/hi',
+      '/shop',
+      '/workshops',
+      '/hi/workshops',
+      '/partners',
+      '/cart',
+      '/account',
+      '/login',
+    ];
     const problems: string[] = [];
     for (const width of widths) {
       await page.setViewportSize({ width, height: 900 });

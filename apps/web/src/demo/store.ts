@@ -28,6 +28,12 @@ export interface DemoOrder {
   customer: { name: string; phone: string; address: string; pincode: string };
   payment: 'cod';
   stage: number;
+  /** Shop the order is offered to / accepted by (spec 04 assignment). Absent = needs routing. */
+  shop?: { slug: string; status: 'offered' | 'accepted'; offeredAt: string; expiresAt: string } | null;
+  /** Shops that declined (or let the timer run out), newest last. */
+  declined?: { slug: string; reason: string; at: string }[];
+  /** Admin rejected the order with a message to the customer (refund for prepaid orders). */
+  rejection?: { message: string; at: string } | null;
 }
 
 export const REQUEST_STAGES = [
@@ -53,6 +59,16 @@ export interface DemoServiceRequest {
   concern: string;
   customer: { name: string; phone: string };
   stage: number;
+  /** The workshop's proposal (slot + expected cost), set when it proposes (stage 1). */
+  proposal?: {
+    date: string;
+    slot: 'morning' | 'afternoon' | 'evening';
+    minPaise: number;
+    maxPaise: number;
+    note: string;
+  };
+  /** The workshop declined: the request goes back to MechDost to find another workshop. */
+  declinedBy?: string[];
 }
 
 export type PartnerKind = 'seller' | 'garage' | 'mechanic';
@@ -511,3 +527,149 @@ export const demoStorage = {
   subscribe,
   empty: EMPTY,
 };
+
+// ── Routing & partner actions (spec 04 / 06). Each transition checks the current state first, like the
+// conditional UPDATEs in packages/db (a stale or repeated action is a no-op that returns false).
+
+/** Shop acceptance timer (settings.acceptance_timeout_min, admin-editable in Phase 1). */
+export const SHOP_ACCEPT_MINUTES = 15;
+
+export type RoutingState = 'needs_routing' | 'awaiting_shop' | 'expired' | 'rejected' | 'confirmed';
+
+export function routingState(order: DemoOrder, now = Date.now()): RoutingState {
+  if (order.rejection) return 'rejected';
+  if (order.stage >= 2) return 'confirmed';
+  if (!order.shop) return 'needs_routing';
+  if (order.shop.status === 'offered' && new Date(order.shop.expiresAt).getTime() < now) return 'expired';
+  return 'awaiting_shop';
+}
+
+function updateOrder(code: string, change: (o: DemoOrder) => DemoOrder | null): boolean {
+  let changed = false;
+  write(
+    KEYS.orders,
+    ordersSnapshot().map((o) => {
+      if (o.code !== code) return o;
+      const next = change(o);
+      if (!next) return o;
+      changed = true;
+      return next;
+    }),
+  );
+  return changed;
+}
+
+/** Admin routes (or reroutes) an order to one shop. Only one active assignment per order. */
+export function routeOrder(code: string, shopSlug: string): boolean {
+  return updateOrder(code, (o) => {
+    const state = routingState(o);
+    if (state !== 'needs_routing' && state !== 'expired') return null;
+    const declined =
+      state === 'expired' && o.shop
+        ? [...(o.declined ?? []), { slug: o.shop.slug, reason: 'timeout', at: new Date().toISOString() }]
+        : o.declined;
+    const now = new Date();
+    return {
+      ...o,
+      stage: 1,
+      declined,
+      shop: {
+        slug: shopSlug,
+        status: 'offered',
+        offeredAt: now.toISOString(),
+        expiresAt: new Date(now.getTime() + SHOP_ACCEPT_MINUTES * 60_000).toISOString(),
+      },
+    };
+  });
+}
+
+/** The offered shop accepts (customer + admin see "Confirmed — will be shipped") or declines (back to admin). */
+export function respondToOrder(code: string, shopSlug: string, accept: boolean, reason = ''): boolean {
+  return updateOrder(code, (o) => {
+    if (routingState(o) !== 'awaiting_shop' || o.shop?.slug !== shopSlug) return null;
+    if (accept) return { ...o, stage: 2, shop: { ...o.shop, status: 'accepted' } };
+    return {
+      ...o,
+      shop: null,
+      declined: [
+        ...(o.declined ?? []),
+        { slug: shopSlug, reason: reason || 'declined', at: new Date().toISOString() },
+      ],
+    };
+  });
+}
+
+/** Admin rejects an unfulfillable order with a message to the customer. */
+export function rejectOrder(code: string, message: string): boolean {
+  const clean = message.trim().slice(0, 500);
+  if (!clean) return false;
+  return updateOrder(code, (o) => {
+    const state = routingState(o);
+    if (state === 'confirmed' || state === 'rejected') return null;
+    return { ...o, shop: null, rejection: { message: clean, at: new Date().toISOString() } };
+  });
+}
+
+/** The accepted shop moves its order forward: packed → out for delivery → delivered. */
+export function shopAdvanceOrder(code: string, shopSlug: string): boolean {
+  return updateOrder(code, (o) =>
+    o.shop?.slug === shopSlug && o.shop.status === 'accepted' && o.stage < ORDER_STAGES.length - 1
+      ? { ...o, stage: o.stage + 1 }
+      : null,
+  );
+}
+
+function updateRequest(code: string, change: (r: DemoServiceRequest) => DemoServiceRequest | null): boolean {
+  let changed = false;
+  write(
+    KEYS.requests,
+    requestsSnapshot().map((r) => {
+      if (r.code !== code) return r;
+      const next = change(r);
+      if (!next) return r;
+      changed = true;
+      return next;
+    }),
+  );
+  return changed;
+}
+
+/** Workshop proposes a slot and expected cost for a new request. */
+export function proposeForRequest(
+  code: string,
+  workshopSlug: string,
+  proposal: NonNullable<DemoServiceRequest['proposal']>,
+): boolean {
+  return updateRequest(code, (r) =>
+    r.workshopSlug === workshopSlug && r.stage === 0 && proposal.minPaise <= proposal.maxPaise
+      ? { ...r, stage: 1, proposal }
+      : null,
+  );
+}
+
+/** Workshop declines: MechDost finds another workshop (admin routing queue, spec 06). */
+export function declineRequest(code: string, workshopSlug: string): boolean {
+  return updateRequest(code, (r) =>
+    r.workshopSlug === workshopSlug && r.stage === 0
+      ? { ...r, declinedBy: [...(r.declinedBy ?? []), workshopSlug] }
+      : null,
+  );
+}
+
+/** Workshop moves an accepted job forward: received → in progress → ready. */
+export function workshopAdvanceRequest(code: string, workshopSlug: string): boolean {
+  return updateRequest(code, (r) =>
+    r.workshopSlug === workshopSlug && r.stage >= 2 && r.stage < REQUEST_STAGES.length - 1
+      ? { ...r, stage: r.stage + 1 }
+      : null,
+  );
+}
+
+/** Admin assigns a declined request to another workshop. */
+export function reassignRequest(code: string, workshop: { slug: string; name: string }): boolean {
+  return updateRequest(code, (r) =>
+    r.stage === 0 && (r.declinedBy ?? []).includes(r.workshopSlug)
+      ? { ...r, workshopSlug: workshop.slug, workshopName: workshop.name }
+      : null,
+  );
+}

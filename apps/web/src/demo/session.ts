@@ -106,6 +106,18 @@ export const SEEDED_ACCOUNTS: readonly DemoAccount[] = [
     createdAt: '2026-08-01T10:00:00.000Z',
   },
   {
+    id: 'demo-shop-2',
+    phone: '9000000004',
+    name: 'Anil Verma',
+    email: 'desk@raipurbatterypoint.example',
+    role: 'shop',
+    partner: 'raipur-battery-point',
+    language: 'en',
+    vehicles: [],
+    addresses: [],
+    createdAt: '2026-08-05T10:00:00.000Z',
+  },
+  {
     id: 'demo-workshop',
     phone: '9000000002',
     name: 'Imran Khan',

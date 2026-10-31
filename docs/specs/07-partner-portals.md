@@ -57,3 +57,7 @@ Commission/payout rates (register #9).
 ## P1/P2
 
 Full KYC (penny-drop, e-sign), multi-location inventory, bulk price tiers/B2B, seller coupons, seller analytics, mechanic app, pickup/drop driver management.
+
+## Demo implementation (2026-11-01)
+
+`/partner/shop` and `/partner/workshop` (`components/portal/*`), signed in with the seeded partner logins. Shop: offered orders with countdown, accept / decline with reason (stock, area, busy), then packed → out for delivery → delivered. Workshop: propose date + slot + cost range + note or decline (request returns to admin), then received → in progress → ready.

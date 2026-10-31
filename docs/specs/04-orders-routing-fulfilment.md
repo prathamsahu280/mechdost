@@ -62,3 +62,7 @@ None (auto-route is an admin setting; default off).
 ## P1/P2
 
 Courier integration webhooks, partial shipments, order edit before confirmation, split by item when one shop lacks part of a sub-order, penalties for cancel-after-accept, route by zone polygons.
+
+## Demo implementation (2026-11-01)
+
+Admin routing at `/admin/orders`, shop accept/decline at `/partner/shop`, customer tracking at `/orders/{code}` — on the browser store (`routeOrder`, `respondToOrder`, `rejectOrder`, `shopAdvanceOrder`, `routingState` in `apps/web/src/demo/store.ts`). Accept timer 15 min (`SHOP_ACCEPT_MINUTES`); suggestions from `rankShops` (category coverage → acceptance → speed; declined shops excluded). Acceptance test: `e2e/roles.spec.ts` "order routing across roles".

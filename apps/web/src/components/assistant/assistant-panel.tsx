@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useEffect, useRef, useState, type SyntheticEvent } from 'react';
 import type { AssistantCopy } from '@/assistant/copy';
 import type { Intent } from '@/assistant/intents';
-import { staticTransport, type ChatMessage } from '@/assistant/transport';
+import { defaultTransport, type ChatMessage } from '@/assistant/transport';
 import { track } from '@/lib/analytics';
 
 interface Entry extends ChatMessage {
@@ -34,6 +34,8 @@ export default function AssistantPanel({
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLOListElement>(null);
   const nextId = useRef(1);
+  // One transport per panel: the API one remembers when the server has no assistant configured.
+  const [transport] = useState(defaultTransport);
 
   useEffect(() => {
     if (open) inputRef.current?.focus();
@@ -64,7 +66,7 @@ export default function AssistantPanel({
     setDraft('');
     setTyping(true);
     const [reply] = await Promise.all([
-      staticTransport.reply(history),
+      transport.reply(history),
       new Promise((resolve) => setTimeout(resolve, 550)), // brief typing beat so answers do not feel abrupt
     ]);
     track('assistant_message', { intent: reply.intent, length: clean.length });
@@ -73,7 +75,7 @@ export default function AssistantPanel({
       {
         id: nextId.current++,
         role: 'assistant',
-        text: copy.answers[reply.intent].text,
+        text: reply.text ?? copy.answers[reply.intent].text,
         intent: reply.intent,
       },
     ]);

@@ -4,7 +4,8 @@ import { PartyPopper } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { advanceOrder, ORDER_STAGES, useOrders } from '@/demo/store';
+import { findShop } from '@/demo/shops';
+import { advanceOrder, ORDER_STAGES, useHydrated, useOrders } from '@/demo/store';
 import { formatDate, formatPrice } from '@/lib/format';
 import { StatusTimeline } from './status-timeline';
 
@@ -16,7 +17,9 @@ export function OrderView({ code }: { code: string }) {
   const locale = useLocale();
   const isNew = useSearchParams().get('new') === '1';
   const order = useOrders().find((o) => o.code === code);
+  const hydrated = useHydrated();
 
+  if (!hydrated) return <div className="skeleton h-80 rounded-card" aria-hidden="true" />;
   if (!order) {
     return (
       <div className="rounded-card border border-line-card bg-surface p-8 shadow-card">
@@ -47,15 +50,27 @@ export function OrderView({ code }: { code: string }) {
         ) : null}
         <section className="rounded-card border border-line-card bg-surface p-6 shadow-card">
           <h2 className="font-heading text-lg font-extrabold text-ink">{t('statusLabel')}</h2>
-          <div className="mt-5">
-            <StatusTimeline
-              label={t('statusLabel')}
-              steps={steps}
-              current={order.stage}
-              currentLabel={t('current')}
-            />
-          </div>
-          {order.stage < ORDER_STAGES.length - 1 ? (
+          {order.rejection ? (
+            <div role="status" className="mt-5 rounded-tile bg-warning-bg p-5 text-warning">
+              <p className="font-heading font-bold">{t('rejectedTitle')}</p>
+              <p className="mt-1 text-sm">{order.rejection.message}</p>
+            </div>
+          ) : (
+            <div className="mt-5">
+              <StatusTimeline
+                label={t('statusLabel')}
+                steps={steps}
+                current={order.stage}
+                currentLabel={t('current')}
+              />
+            </div>
+          )}
+          {order.shop?.status === 'accepted' ? (
+            <p className="mt-4 text-sm font-bold text-ink">
+              🏪 {t('shopLabel', { shop: findShop(order.shop.slug)?.name ?? order.shop.slug })}
+            </p>
+          ) : null}
+          {!order.rejection && order.stage < ORDER_STAGES.length - 1 ? (
             <details className="mt-6 rounded-lg border border-dashed border-line p-3 text-sm">
               <summary className="cursor-pointer font-bold text-muted">{demo('controls')}</summary>
               <button
