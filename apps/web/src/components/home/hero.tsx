@@ -56,7 +56,7 @@ export function Hero({ city }: { city: string }) {
             <label htmlFor="hero-search" className="text-[13px] text-hero-copy">
               {t('searchLabel')}
             </label>
-            <div className="mt-3 flex flex-col gap-2 rounded-[11px] border-2 border-white/80 bg-white p-1.5 min-[480px]:flex-row">
+            <div className="mt-3 flex flex-col gap-2 rounded-[11px] border-2 border-white/80 bg-surface p-1.5 min-[480px]:flex-row">
               <input
                 id="hero-search"
                 name="q"
