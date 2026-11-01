@@ -19,6 +19,7 @@ export const MAP_UI_KEYS = [
   'meters',
   'directions',
   'book',
+  'satellite',
 ] as const;
 
 export type MapUiKey = (typeof MAP_UI_KEYS)[number];

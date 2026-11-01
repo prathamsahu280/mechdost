@@ -1,0 +1,1 @@
+CREATE INDEX "shops_status_changed_by_index" ON "shops" USING btree ("status_changed_by");

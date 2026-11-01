@@ -29,16 +29,21 @@ The visual design, section names and copy come from the concept prototype at htt
 
 15. **Don't block on the user — queue it.** Keep building. Any decision, input (keys/accounts) or authorization needed from the user goes into `docs/questions-for-user.md` with a safe default to use meanwhile. When the user says "I'm here", walk through the open items one at a time. Destructive or outward-facing actions still wait for the user's explicit authorization (they are queued, never assumed).
 
+16. **Data is collected ML/AI-ready** (user, 2026-11-01). Every field typed and validated; reason/status/category **codes** (enums) instead of free text, free text only as an extra note; stable ids and foreign keys on every event; UTC timestamps, integer paise, units in names; append-only events + snapshots; one typed analytics event catalogue; pseudonymous analytics (no PII); consent per purpose (DPDP) before personal data is used for offers or training; each new table/event documented. Full rules: `docs/conventions/data-for-ml.md`.
+
 ## Roles and core flow (never drift)
 
 - Roles: customer, seller/shop, workshop, mechanic (later), staff (super_admin, ops_manager, support_agent, finance, catalogue_manager, city_manager, marketing).
-- Product order: customer places → **admin routes to a shop** (ranked suggestions, one-click) → shop **accepts** within a timer (customer + admin notified "confirmed, will be shipped") or **declines/times out** → back to admin to **reroute or reject** with a customer message and automatic refund.
+- Product order: customer places → **admin routes to a shop** (ranked suggestions, one-click; paused/suspended shops never offered) → shop **accepts** within a timer (customer + admin notified "confirmed, will be shipped") or **declines/times out** → back to admin to **reroute or reject** with a customer message and automatic refund → packed → out for delivery → **delivered only with the customer's delivery code** (or an audited admin override).
 - Service request: **location first** (GPS/address/pincode) → nearby verified workshops (PostGIS) → pick one or "Let MechDost choose" → workshop proposes slot + expected cost → customer accepts → vehicle received (odometer) → itemised estimate approved **per line** → work → ready → bill → pay → review.
-- Also: cancellations, returns, refunds, replacements, support tickets, tracking, partner applications, notifications, recommendations, analytics, admin console with analytics and full CMS.
+- **No returns or exchanges**; faulty/damaged/wrong parts only through support tickets (replace or refund); unfulfilled orders refunded in full (spec 05).
+- **MechDost Coins, never a wallet**: no cash value, discount only; refunds go to the original payment method (spec 20).
+- **Admin complete control** includes pausing/suspending any shop, workshop or mechanic with a reason (history kept), site content, layout and settings (spec 08).
+- Also: cancellations, support tickets, tracking, partner applications, notifications, recommendations, analytics, admin console with analytics and full CMS.
 
 ## Stack (decided — `docs/decisions.md`)
 
-Turborepo + pnpm · `apps/web` Next.js 16 App Router (React 19.3; ruling in docs/progress.md), Tailwind, shadcn/ui + registries @magicui/@kibo-ui/@dashboardblocks/@reui, Recharts, **MapLibre GL JS + free OSM/MapTiler tiles** behind a map adapter; geocoding/autocomplete/routing provider decided by the Raipur bake-off, pending #7) · `apps/api` **Hono** (TypeScript, Node 22, OpenAPI via zod-openapi) · `packages/db` **Drizzle + Supabase Postgres (Mumbai) + PostGIS** · **Firebase Auth** (phone OTP primary; email verified once; custom claims for roles) · Upstash Redis · pg-boss · Supabase Realtime + Storage · Razorpay · Resend · MSG91 later · PostHog self-hosted · Vercel `bom1` + Cloud Run `asia-south1` · Search: Postgres FTS now, **Meilisearch planned**.
+Turborepo + pnpm · `apps/web` Next.js 16 App Router (React 19.3; ruling in docs/progress.md), Tailwind, shadcn/ui + registries @magicui/@kibo-ui/@dashboardblocks/@reui, Recharts, **MapLibre GL JS + free OSM/MapTiler tiles** behind a map adapter; geocoding/autocomplete/routing provider decided by the Raipur bake-off, pending #7) · `apps/api` **Hono** (TypeScript, Node 22, OpenAPI via zod-openapi) · `packages/db` **Drizzle + Supabase Postgres (Mumbai) + PostGIS** · **Firebase Auth** (phone OTP once at sign-up, then phone-or-email + password via the API; staff also a phone code; email verified once; custom claims for roles) · Upstash Redis · pg-boss · **Live updates: Firebase Realtime Database thin pings via an outbox relay, polling fallback** (decision 2026-11-01) · Supabase Storage · Razorpay · Resend · MSG91 later · PostHog self-hosted · Vercel `bom1` + Cloud Run `asia-south1` · Search: Postgres FTS now, **Meilisearch planned**.
 
 ## Conventions
 
@@ -49,7 +54,7 @@ Turborepo + pnpm · `apps/web` Next.js 16 App Router (React 19.3; ruling in docs
 - Repositories take an `actor`; API handlers never query tables directly.
 - UI tokens from `packages/ui/tokens.css` (navy `#101f34`, accent `#ea5728`, Manrope headings, DM Sans body); copy from `docs/concept/*.md`; UTF-8 only (fix `→ · ₹` when copying from the capture).
 - Tests: Vitest (state machines, money, ranker, allocation), Playwright (every transition, role-leak suites, concurrency), pgTAP (RLS matrix), Lighthouse CI, axe. Visual snapshots vs concept at 390/768/1440.
-- Dev: Firebase Auth Emulator (OTP `123456`), Supabase local, seeded Raipur data and test logins per role.
+- Dev: Firebase Auth Emulator (OTP `123456`), Supabase local, seeded Raipur data and test logins per role (demo password `Raipur@2026`, `docs/runbooks/demo.md`).
 
 ## Skill usage protocol (when each one MUST run)
 

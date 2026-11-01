@@ -347,3 +347,36 @@ export const reviews = pgTable(
     index().on(t.moderatedBy),
   ],
 );
+
+/**
+ * Append-only history of partner standing changes (pause, suspend, reactivate) for shops now and workshops and
+ * mechanics once their tables exist (decision 2026-11-01). `reason` is shown to the partner; `internal_note` is
+ * staff-only.
+ */
+export const partnerStatusEvents = pgTable(
+  'partner_status_events',
+  {
+    id: id(),
+    partnerKind: text().notNull(),
+    partnerId: uuid().notNull(),
+    fromStatus: text().notNull(),
+    toStatus: text().notNull(),
+    reason: text().notNull(),
+    internalNote: text(),
+    endsAt: ts(),
+    changedBy: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    check('partner_status_events_kind_valid', sql`${t.partnerKind} in ('shop','workshop','mechanic')`),
+    check(
+      'partner_status_events_status_valid',
+      sql`${t.toStatus} in ('approved','paused','suspended') and ${t.fromStatus} <> ${t.toStatus}`,
+    ),
+    check('partner_status_events_reason_length', sql`char_length(${t.reason}) between 5 and 300`),
+    index().on(t.partnerKind, t.partnerId, t.createdAt),
+    index().on(t.changedBy),
+  ],
+);

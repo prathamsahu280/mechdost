@@ -7,7 +7,7 @@
  */
 import { demoStorage } from './store';
 
-export const PASSWORD_MIN = 8; // inbox Q22: 8 with new-device OTP vs NIST's 15 for password-only
+export const PASSWORD_MIN = 8; // decided 2026-11-01 (Q22): 8, with blocklist, lockout and a code on new devices
 export const PASSWORD_MAX = 64;
 export const MAX_FAILURES = 5;
 export const LOCK_MINUTES = 15;

@@ -79,7 +79,14 @@ export const shops = pgTable(
       .notNull()
       .references(() => states.id, { onDelete: 'restrict' }),
     location: geographyPoint(),
+    /** Standing, set by staff only (decision 2026-11-01): pending → approved ↔ paused → suspended. */
     status: text().notNull().default('pending'),
+    /** Partner-visible reason for the current paused/suspended standing, who set it and when it ends. */
+    statusReason: text(),
+    statusChangedBy: uuid().references(() => users.id, { onDelete: 'restrict' }),
+    statusChangedAt: ts(),
+    pausedUntil: ts(),
+    /** Availability, set by the shop itself (busy / holiday) — separate from staff standing. */
     busy: boolean().notNull().default(false),
     busyUntil: ts(),
     acceptanceTimeoutMin: integer(),
@@ -90,7 +97,11 @@ export const shops = pgTable(
     updatedAt: updatedAt(),
   },
   (t) => [
-    check('shops_status_valid', sql`${t.status} in ('pending','approved','suspended')`),
+    check('shops_status_valid', sql`${t.status} in ('pending','approved','paused','suspended')`),
+    check(
+      'shops_standing_has_reason',
+      sql`${t.status} not in ('paused','suspended') or (coalesce(char_length(${t.statusReason}), 0) >= 5 and ${t.statusChangedBy} is not null)`,
+    ),
     check(
       'shops_gstin_format',
       sql`${t.gstin} is null or ${t.gstin} ~ '^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$'`,
@@ -100,6 +111,7 @@ export const shops = pgTable(
     index().on(t.cityId, t.status),
     index().on(t.pincode),
     index().on(t.stateId),
+    index().on(t.statusChangedBy),
   ],
 );
 

@@ -60,3 +60,13 @@ Saved views, version history diff, impersonation, merge customers, reports (GSTR
 - **Performance (rule 6):** the home page stays a static Server Component. Section order/visibility and featured tiles are applied by a ~1 KB inline script in `<head>` (`SITE_LAYOUT_SCRIPT`, keys pattern-checked before they reach CSS) before first paint; text, emoji and numbers are tiny client islands (`components/site/site-overrides.tsx`) that render the server default first.
 - Code: `apps/web/src/demo/site-config.ts` (store), `lib/site-layout.ts` (shared constants + script), `components/portal/admin-site.tsx` (editors). Tests: `test/site-config.test.ts` (validation, CAS, audit, CSS-injection guard), `e2e/admin-site.spec.ts` (content in en/hi, layout + categories, settings driving bulk minimum / delivery fee / timer copy, axe + overflow).
 - **Phase 1:** same screens on `content_blocks`, `site_sections` and per-city `settings` behind `/admin/*` RBAC with publish → revalidate; text served by the content API (no client islands). Known demo limits: changes live in one browser; FAQ, policies, menus, banners, catalogue, partners, promotions and staff/roles editors are still to build.
+
+### Partner controls (2026-11-01)
+
+`/admin/partners`: tabs Shops / Workshops / Mechanics (onboarded mechanic applications); per partner Pause / Suspend / Resume / Reactivate with a partner-visible reason (5–300 chars), status pill, last change and recent history. Effects (demo `apps/web/src/demo/partner-status.ts`, production `shops.status` + `partner_status_events`):
+
+- **Paused:** excluded from routing and booking, banner in the portal, listed to customers as "not taking new bookings".
+- **Suspended:** hidden from the finder and home, booking disabled, portal locked with the reason and the support number.
+- **Guards:** routing, accepting, booking and reassignment are refused in the store too.
+
+Next (research/admin-console.md, adopted): availability vs standing, scorecards, three-level customer blocking, reason codes, pause end dates (Q28). Tests: `e2e/partners-admin.spec.ts`, `packages/db/test/integrity.test.ts` "partner standing".

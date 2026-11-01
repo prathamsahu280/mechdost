@@ -75,6 +75,8 @@ Mark each touched item ✅ / ⚠️ / ❌. Anything ❌ blocks implementation un
 
 ## Docs & process
 
+- [ ] When a decision supersedes an earlier one, grep `CLAUDE.md`, `docs/README.md`, `docs/design-system.md` and the memory files for the old wording and fix them in the same change (promoted from L12 + L39).
+
 - ⚠️ Decision made without a dated entry in `decisions.md` or a ruling in `progress.md`.
 - ⚠️ A pending question answered by assumption instead of the documented default.
 

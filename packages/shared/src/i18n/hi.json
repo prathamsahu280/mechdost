@@ -488,7 +488,8 @@
     "showMap": "नक्शा",
     "viewOnMap": "नक्शे पर दिखाएँ",
     "mapAttribution": "नक्शा डेटा © OpenStreetMap योगदानकर्ता",
-    "directions": "रास्ता देखें"
+    "directions": "रास्ता देखें",
+    "notTakingBookings": "अभी नई बुकिंग नहीं ले रही"
   },
   "workshop": {
     "services": "सर्विस मेन्यू",
@@ -521,7 +522,9 @@
     "errVehicle": "अपने वाहन की कंपनी और मॉडल लिखें।",
     "errDate": "आज या बाद की तारीख़ चुनें।",
     "back": "सभी वर्कशॉप",
-    "notListed": "आपकी ज़रूरत की सर्विस नहीं दिखी? नीचे लिखें।"
+    "notListed": "आपकी ज़रूरत की सर्विस नहीं दिखी? नीचे लिखें।",
+    "unavailable": "यह वर्कशॉप अभी MechDost पर उपलब्ध नहीं है। कृपया दूसरी वर्कशॉप चुनें।",
+    "notTakingBookings": "यह वर्कशॉप अभी नई बुकिंग नहीं ले रही है।"
   },
   "request": {
     "title": "सर्विस अनुरोध {code}",
@@ -642,7 +645,8 @@
     "kilometers": "कि.मी.",
     "meters": "मी.",
     "directions": "रास्ता देखें",
-    "book": "देखें और बुक करें"
+    "book": "देखें और बुक करें",
+    "satellite": "सैटेलाइट"
   },
   "quote": {
     "eyebrow": "बल्क ऑर्डर",
@@ -1114,7 +1118,38 @@
     "overrideReason": "कारण (ऑर्डर पर दर्ज रहेगा)",
     "overrideConfirm": "डिलीवरी कन्फ़र्म करें",
     "overrideReasonError": "कम से कम 5 अक्षरों में कारण लिखें।",
-    "deliveryOverridden": "{by} ने बिना कोड के डिलीवरी कन्फ़र्म की: {reason}"
+    "deliveryOverridden": "{by} ने बिना कोड के डिलीवरी कन्फ़र्म की: {reason}",
+    "nav_partners": "पार्टनर",
+    "partnersLead": "किसी भी दुकान, वर्कशॉप या मैकेनिक को रोकें या सस्पेंड करें। कारण ज़रूरी है; पार्टनर उसे देखता है और बदलाव इतिहास में रहता है।",
+    "partnersTab_shop": "दुकानें",
+    "partnersTab_workshop": "वर्कशॉप",
+    "partnersTab_mechanic": "मैकेनिक",
+    "partnerStatus_active": "सक्रिय",
+    "partnerStatus_paused": "रोका गया",
+    "partnerStatus_suspended": "सस्पेंड",
+    "partnerAction_pause": "रोकें",
+    "partnerAction_suspend": "सस्पेंड करें",
+    "partnerAction_resume": "फिर शुरू करें",
+    "partnerAction_reactivate": "दोबारा सक्रिय करें",
+    "partnerReason": "कारण (पार्टनर को दिखेगा)",
+    "partnerConfirm_pause": "{name} को रोकें",
+    "partnerConfirm_suspend": "{name} को सस्पेंड करें",
+    "partnerConfirm_resume": "{name} को फिर शुरू करें",
+    "partnerConfirm_reactivate": "{name} को दोबारा सक्रिय करें",
+    "partnerCancel": "रद्द करें",
+    "partnerErr_reason": "5 से 300 अक्षरों में कारण लिखें।",
+    "partnerLastChange": "{by} ने {date} को {status} किया: {reason}",
+    "partnerEffect_paused": "नए ऑर्डर या बुकिंग नहीं; चल रहा काम जारी रहेगा।",
+    "partnerEffect_suspended": "ग्राहकों से छिपा, नया काम नहीं, और पोर्टल बंद।",
+    "mechanicsEmpty": "अभी कोई मैकेनिक नहीं। मंज़ूर मैकेनिक आवेदन यहाँ दिखेंगे।",
+    "partnerHistory": "हाल के बदलाव",
+    "partnerHistoryEmpty": "अभी कोई बदलाव नहीं।",
+    "suspendedTitle": "आपका अकाउंट सस्पेंड है",
+    "suspendedBody": "MechDost ने यह अकाउंट सस्पेंड किया है, इसलिए अभी आप ऑर्डर ले या संभाल नहीं सकते।",
+    "statusReason": "कारण: {reason} ({date})",
+    "callSupport": "MechDost सपोर्ट को कॉल करें: {phone}",
+    "pausedTitle": "MechDost ने रोका है।",
+    "pausedBody": "अभी आपको नया काम नहीं मिलेगा। कृपया चल रहे ऑर्डर पूरे करें।"
   },
   "policies": {
     "returns": {

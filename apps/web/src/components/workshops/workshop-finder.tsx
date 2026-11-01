@@ -11,6 +11,7 @@ import {
   fromPricePaise,
   type DemoWorkshop,
 } from '@/demo/workshops';
+import { usePartnerHistory, usePartnerStatus, visibleToCustomers } from '@/demo/partner-status';
 import { formatPrice } from '@/lib/format';
 import { mapUi } from '@/lib/map-ui';
 import { WorkshopMap, type MapPoint } from './workshop-map';
@@ -35,15 +36,20 @@ export function WorkshopFinder() {
   const [locationError, setLocationError] = useState(false);
 
   const [selected, setSelected] = useState<string | null>(null);
+  // Suspended workshops are hidden from customers; paused ones stay listed as "not taking bookings".
+  const statusHistory = usePartnerHistory();
   const results = useMemo(() => {
     const matches = DEMO_WORKSHOPS.filter(
-      (w) => (vehicle === 'any' || w.vehicles.includes(vehicle)) && (!evOnly || w.ev),
+      (w) =>
+        (vehicle === 'any' || w.vehicles.includes(vehicle)) &&
+        (!evOnly || w.ev) &&
+        visibleToCustomers('workshop', w.slug),
     );
     const withDistance = matches.map((w) => ({ w, km: origin ? distanceKm(origin, w) : null }));
     if (origin) withDistance.sort((a, b) => (a.km ?? 0) - (b.km ?? 0));
     else withDistance.sort((a, b) => b.w.rating - a.w.rating);
     return withDistance;
-  }, [vehicle, evOnly, origin]);
+  }, [vehicle, evOnly, origin, statusHistory]);
 
   function applyPin(value: string) {
     setPin(value);
@@ -231,6 +237,7 @@ function WorkshopCard({
   onShowOnMap: () => void;
 }) {
   const t = useTranslations('finder');
+  const paused = usePartnerStatus('workshop', w.slug).status === 'paused';
   return (
     <article
       className={`group flex h-full flex-col rounded-card border bg-surface p-5 shadow-card transition-[box-shadow,border-color] duration-[var(--duration-base)] hover:shadow-card-hover ${
@@ -251,6 +258,11 @@ function WorkshopCard({
               <span className="font-bold text-ink"> · {t('distance', { km: km.toFixed(1) })}</span>
             ) : null}
           </p>
+          {paused ? (
+            <p className="mt-2 inline-flex rounded-pill bg-warning-bg px-3 py-1 text-xs font-bold text-warning">
+              {t('notTakingBookings')}
+            </p>
+          ) : null}
         </div>
         <p className="flex shrink-0 items-center gap-1 rounded-lg bg-success-bg px-2 py-1 text-xs font-bold text-success">
           <Star aria-hidden="true" className="size-3.5 fill-current" />

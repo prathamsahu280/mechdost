@@ -1,0 +1,4 @@
+ALTER TABLE "shops" DROP CONSTRAINT "shops_standing_has_reason";--> statement-breakpoint
+ALTER TABLE "shipments" DROP CONSTRAINT "shipments_delivered_needs_proof";--> statement-breakpoint
+ALTER TABLE "shops" ADD CONSTRAINT "shops_standing_has_reason" CHECK ("shops"."status" not in ('paused','suspended') or (coalesce(char_length("shops"."status_reason"), 0) >= 5 and "shops"."status_changed_by" is not null));--> statement-breakpoint
+ALTER TABLE "shipments" ADD CONSTRAINT "shipments_delivered_needs_proof" CHECK ("shipments"."status" <> 'delivered' or ("shipments"."delivered_at" is not null and ("shipments"."delivered_via" = 'code' or ("shipments"."delivered_via" = 'override' and "shipments"."override_by" is not null and coalesce(char_length("shipments"."override_reason"), 0) >= 5))));

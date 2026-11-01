@@ -4,7 +4,7 @@ Status: decided · Phase 1 (in-app + email), Phase 3 (WhatsApp/SMS) · Decisions
 
 ## Goal
 
-Reliable, never-duplicated, never-lost notifications through a provider-agnostic layer: in-app (Supabase Realtime) and email (Resend) at launch; MSG91 SMS and WhatsApp templates built now, enabled when the provider is set up.
+Reliable, never-duplicated, never-lost notifications through a provider-agnostic layer: in-app (`notifications` table; live ping via Firebase Realtime Database, decision 2026-11-01) and email (Resend) at launch; MSG91 SMS and WhatsApp templates built now, enabled when the provider is set up.
 
 ## Architecture
 

@@ -13,6 +13,7 @@ import {
 } from '@/demo/store';
 import { track } from '@/lib/analytics';
 import { formatDate, formatPrice } from '@/lib/format';
+import { PartnerGate } from './partner-gate';
 import { PortalGuard, portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
 
 const SLOTS = ['morning', 'afternoon', 'evening'] as const;
@@ -21,7 +22,11 @@ const SLOTS = ['morning', 'afternoon', 'evening'] as const;
 export function WorkshopPortal() {
   return (
     <PortalGuard role="workshop" path="/partner/workshop">
-      {(account) => <WorkshopRequests workshopSlug={account.partner ?? ''} />}
+      {(account) => (
+        <PartnerGate kind="workshop" slug={account.partner ?? ''}>
+          <WorkshopRequests workshopSlug={account.partner ?? ''} />
+        </PartnerGate>
+      )}
     </PortalGuard>
   );
 }

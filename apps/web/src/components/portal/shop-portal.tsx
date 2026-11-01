@@ -15,6 +15,7 @@ import {
 } from '@/demo/store';
 import { track } from '@/lib/analytics';
 import { formatDate, formatPrice } from '@/lib/format';
+import { PartnerGate } from './partner-gate';
 import { PortalGuard, portalCard, portalPrimary, portalQuiet, portalField, useNow } from './portal-guard';
 
 const DECLINE_REASONS = ['stock', 'area', 'busy'] as const;
@@ -26,7 +27,11 @@ const DECLINE_REASONS = ['stock', 'area', 'busy'] as const;
 export function ShopPortal() {
   return (
     <PortalGuard role="shop" path="/partner/shop">
-      {(account) => <ShopOrders shopSlug={account.partner ?? ''} />}
+      {(account) => (
+        <PartnerGate kind="shop" slug={account.partner ?? ''}>
+          <ShopOrders shopSlug={account.partner ?? ''} />
+        </PartnerGate>
+      )}
     </PortalGuard>
   );
 }

@@ -137,10 +137,10 @@ describe('configuration', () => {
       FIREBASE_PROJECT_ID: 'mechdost-prod',
       UPSTASH_REDIS_REST_URL: 'https://example.upstash.io',
       UPSTASH_REDIS_REST_TOKEN: 't',
-      CORS_ORIGINS: 'https://mechdost.in, https://www.mechdost.in',
+      CORS_ORIGINS: 'https://mechdost.com, https://www.mechdost.com',
       TRUSTED_PROXY_HOPS: '1',
     });
-    expect(cfg.corsOrigins).toEqual(['https://mechdost.in', 'https://www.mechdost.in']);
+    expect(cfg.corsOrigins).toEqual(['https://mechdost.com', 'https://www.mechdost.com']);
     expect(cfg.apiDocs).toBe(false);
     expect(cfg.trustedProxyHops).toBe(1);
   });

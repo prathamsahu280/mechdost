@@ -6,6 +6,7 @@
 import { publicCode } from '@mechdost/shared/ids';
 import { useSyncExternalStore } from 'react';
 import { deliveryFeePaise, findProduct } from './catalogue';
+import { takesNewWork } from './partner-status';
 import { siteSettings } from './site-config';
 
 export const MAX_LINES = 20;
@@ -523,7 +524,9 @@ export function placeDemoOrder(customer: DemoOrder['customer'], coins: DemoOrder
 
 export function createDemoRequest(
   input: Omit<DemoServiceRequest, 'code' | 'createdAt' | 'stage'>,
-): DemoServiceRequest {
+): DemoServiceRequest | null {
+  // A paused or suspended workshop takes no new bookings (admin control, decision 2026-11-01).
+  if (!takesNewWork('workshop', input.workshopSlug)) return null;
   const request: DemoServiceRequest = {
     ...input,
     code: publicCode('SR', 'RPR'),
@@ -614,6 +617,7 @@ function updateOrder(code: string, change: (o: DemoOrder) => DemoOrder | null): 
 
 /** Admin routes (or reroutes) an order to one shop. Only one active assignment per order. */
 export function routeOrder(code: string, shopSlug: string): boolean {
+  if (!takesNewWork('shop', shopSlug)) return false; // paused/suspended shops get no new orders
   return updateOrder(code, (o) => {
     const state = routingState(o);
     if (state !== 'needs_routing' && state !== 'expired') return null;
@@ -642,6 +646,7 @@ export function routeOrder(code: string, shopSlug: string): boolean {
 export function respondToOrder(code: string, shopSlug: string, accept: boolean, reason = ''): boolean {
   return updateOrder(code, (o) => {
     if (routingState(o) !== 'awaiting_shop' || o.shop?.slug !== shopSlug) return null;
+    if (accept && !takesNewWork('shop', shopSlug)) return null;
     if (accept) return { ...o, stage: 2, shop: { ...o.shop, status: 'accepted' } };
     return {
       ...o,
@@ -780,6 +785,7 @@ export function workshopAdvanceRequest(code: string, workshopSlug: string): bool
 
 /** Admin assigns a declined request to another workshop. */
 export function reassignRequest(code: string, workshop: { slug: string; name: string }): boolean {
+  if (!takesNewWork('workshop', workshop.slug)) return false;
   return updateRequest(code, (r) =>
     r.stage === 0 && (r.declinedBy ?? []).includes(r.workshopSlug)
       ? { ...r, workshopSlug: workshop.slug, workshopName: workshop.name }

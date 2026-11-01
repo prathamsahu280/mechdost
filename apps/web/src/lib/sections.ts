@@ -20,6 +20,7 @@ export const ADMIN_SECTIONS = [
   'services',
   'quotes',
   'applications',
+  'partners',
   'reviews',
   'coins',
   // Site customisation (spec 08 "Content" + "Settings", hard rule 8).

@@ -8,7 +8,7 @@ Goal: "Your next vehicle. Explore every possibility." — browse cars/bikes/scoo
 
 Curated external links (NGK/NTK videos, Schaeffler REPXPERT, Bosch training), topic/format filters, saved/done self-marking, admin "Add a training link" form; later: MechDost Certified tiers with quizzes. Data: `learning_resources`, `learning_progress`. Phase 4.
 
-## C. Product Lens (QR/barcode scanner, concept `assistance-scan.js`)
+## C. Product Lens (QR/barcode scanner, concept `assistance-scan.js`) — PARKED (user 2026-11-01: "not practical at this stage")
 
 Camera (BarcodeDetector) / photo / manual code → match `part_numbers`/barcodes → product page or sourcing request. Needs barcode data on products. Phase 4.
 

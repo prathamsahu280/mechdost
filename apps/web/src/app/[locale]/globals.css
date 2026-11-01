@@ -413,6 +413,28 @@
   place-items: center;
   color: #101f34;
 }
+/* Map / Satellite switch: a labelled pill (text, not an icon-only button), pressed = navy. */
+.md-map .maplibregl-ctrl-group button.md-map-mode {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: auto;
+  height: 36px;
+  padding: 0 12px;
+  font:
+    700 13px/1 var(--font-dm-sans),
+    system-ui,
+    sans-serif;
+  color: #101f34;
+}
+.md-map .maplibregl-ctrl-group button.md-map-mode[aria-pressed='true'] {
+  background: #101f34;
+  color: #fff;
+}
+.md-map-mode__icon {
+  font-size: 15px;
+  line-height: 1;
+}
 .md-map .maplibregl-ctrl-attrib a {
   display: inline-block;
   padding: 5px 1px;

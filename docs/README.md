@@ -30,4 +30,9 @@ Read `../CLAUDE.md` first (hard rules). Then:
 - Specs carry acceptance tests; the `website-testing` skill reads them.
 - Research files are snapshots dated in their header; re-verify versions/prices before external use.
 - `runbooks/demo.md` — partner demo walkthrough (what is real vs demo).
+- `research/admin-console.md` — admin controls benchmarks, enforcement ladder, scorecards, dashboards, legal hooks, build plan (2026-11-01).
+- `research/realtime.md` — real-time architecture (Supabase Broadcast from DB, topics, load, security, tests) (2026-11-01).
+- `research/promotions-referrals.md` — promotions, sponsored placements and an abuse-resistant referral programme (2026-11-01).
+- `research/realtime-alternatives.md` — Supabase Realtime vs own SSE (Hono + Redis) vs Firebase vs managed pub/sub; recommends Firebase RTDB pings via an outbox relay (2026-11-01).
+- `conventions/data-for-ml.md` — hard rule 16: ML/AI-ready data collection.
 - `runbooks/collaborator-setup.md` — new collaborator setup: run the site, Claude Code project skills (auto-loaded from `.claude/skills/`), public skills, plugins and MCP servers to install.

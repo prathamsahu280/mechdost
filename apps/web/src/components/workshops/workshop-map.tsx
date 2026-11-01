@@ -5,6 +5,14 @@ import type * as MapLibre from 'maplibre-gl';
 import type { IControl, Map as MapLibreMap, Marker, Popup } from 'maplibre-gl';
 import { useEffect, useRef } from 'react';
 import { directionsHref, type MapUi } from '@/lib/map-ui';
+import {
+  STYLE_URLS,
+  saveMapMode,
+  savedMapMode,
+  satelliteSource,
+  toHybrid,
+  type MapMode,
+} from '@/lib/map-styles';
 
 export interface MapPoint {
   slug: string;
@@ -21,10 +29,11 @@ export interface LatLng {
   lng: number;
 }
 
-const STYLES = {
-  light: 'https://tiles.openfreemap.org/styles/positron',
-  dark: 'https://tiles.openfreemap.org/styles/dark',
-};
+// Licensed imagery for production comes from configuration (lib/map-styles.ts, inbox Q27).
+const IMAGERY = satelliteSource({
+  tiles: process.env.NEXT_PUBLIC_SATELLITE_TILES,
+  attribution: process.env.NEXT_PUBLIC_SATELLITE_ATTRIBUTION,
+});
 const RAIPUR: LatLng = { lat: 21.2514, lng: 81.6296 };
 const FIT = { padding: 64, maxZoom: 14, duration: 700 };
 
@@ -122,6 +131,30 @@ function fitIcon(): SVGSVGElement {
   return svg;
 }
 
+/** Map / Satellite switch (hybrid view: imagery + roads + names), styled like MapLibre's controls. */
+function modeControl(label: string, initial: MapMode, onChange: (mode: MapMode) => void): IControl {
+  const group = el('div', 'maplibregl-ctrl maplibregl-ctrl-group');
+  const button = el('button', 'md-map-mode');
+  button.type = 'button';
+  const icon = el('span', 'md-map-mode__icon', '🛰️');
+  icon.setAttribute('aria-hidden', 'true');
+  button.append(icon, el('span', '', label));
+  let mode = initial;
+  button.setAttribute('aria-pressed', String(mode === 'satellite'));
+  button.addEventListener('click', () => {
+    mode = mode === 'satellite' ? 'map' : 'satellite';
+    button.setAttribute('aria-pressed', String(mode === 'satellite'));
+    onChange(mode);
+  });
+  group.append(button);
+  return {
+    onAdd: () => group,
+    onRemove: () => {
+      group.remove();
+    },
+  };
+}
+
 /** "Show all" button in MapLibre's control style. */
 function showAllControl(label: string, onClick: () => void): IControl {
   const group = el('div', 'maplibregl-ctrl maplibregl-ctrl-group');
@@ -196,7 +229,7 @@ export function WorkshopMap({
       const touch = isTouch();
       const m = new maplibre.Map({
         container: container.current,
-        style: STYLES[currentTheme()],
+        style: STYLE_URLS[currentTheme()],
         center: [RAIPUR.lng, RAIPUR.lat],
         zoom: 11.5,
         minZoom: 4,
@@ -255,9 +288,28 @@ export function WorkshopMap({
       m.addControl(new maplibre.ScaleControl({ unit: 'metric', maxWidth: 96 }), 'bottom-left');
       map.current = m;
 
-      // Follow the site theme toggle. Markers are DOM elements, so they survive the style swap.
+      // Map / Satellite (hybrid). Markers are DOM elements, so they survive every style swap.
+      let mode: MapMode = savedMapMode();
+      const applyStyle = () => {
+        if (mode === 'satellite') {
+          m.setStyle(STYLE_URLS.hybridBase, { transformStyle: (_prev, next) => toHybrid(next, IMAGERY) });
+        } else {
+          m.setStyle(STYLE_URLS[currentTheme()]);
+        }
+      };
+      if (mode === 'satellite') applyStyle();
+      m.addControl(
+        modeControl(ui.satellite, mode, (next) => {
+          mode = next;
+          saveMapMode(next);
+          applyStyle();
+        }),
+        'top-left',
+      );
+
+      // Follow the site theme toggle (the satellite view looks the same in both themes).
       observer = new MutationObserver(() => {
-        m.setStyle(STYLES[currentTheme()]);
+        if (mode === 'map') m.setStyle(STYLE_URLS[currentTheme()]);
       });
       observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
       m.on('load', () => {

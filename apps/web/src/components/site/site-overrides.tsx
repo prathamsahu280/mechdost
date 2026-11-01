@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import type { CategoryKey } from '@/demo/catalogue';
+import { usePartnerStatus, type PartnerKind } from '@/demo/partner-status';
 import {
   useCategoryEmoji,
   useContentOverride,
@@ -34,4 +35,17 @@ export function SettingValue({
 
 export function CategoryEmoji({ k, fallback }: { k: CategoryKey; fallback: string }) {
   return <>{useCategoryEmoji()(k, fallback)}</>;
+}
+
+/** Hides a server-rendered partner card once the admin suspends that partner (demo: browser-stored status). */
+export function HideIfSuspended({
+  kind,
+  slug,
+  children,
+}: {
+  kind: PartnerKind;
+  slug: string;
+  children: ReactNode;
+}) {
+  return usePartnerStatus(kind, slug).status === 'suspended' ? null : <>{children}</>;
 }

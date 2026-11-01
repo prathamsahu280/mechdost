@@ -10,6 +10,7 @@ import { blindIndex, decryptField, encryptField, loadKeyring } from '../src/cryp
 import { createTestDb, type TestDb } from '../src/testing';
 import * as s from '../src/schema';
 import {
+  setShopStanding,
   deliveryCodeFor,
   issueDeliveryCode,
   overrideDelivery,
@@ -831,5 +832,109 @@ describe('proof of delivery (decision 2026-11-01)', () => {
       overrideDelivery(t(), { shipmentId: id, staffUserId: F.user!, reason: 'Second try at override' }),
     ).rejects.toMatchObject({ code: 'ALREADY_DELIVERED' });
     expect(await db.$count(s.auditLog, eq(s.auditLog.action, 'delivery.override'))).toBe(1);
+  });
+});
+
+describe('partner standing: pause, suspend, reactivate (decision 2026-11-01)', () => {
+  const versionOf = async (id: string) =>
+    (await db.select({ v: s.shops.version }).from(s.shops).where(eq(s.shops.id, id)))[0]!.v;
+
+  it('pauses with a partner-visible reason, history and audit in one step', async () => {
+    const shopId = F.shopB!;
+    await setShopStanding(t(), {
+      shopId,
+      to: 'paused',
+      reason: 'Too many late deliveries this week',
+      staffUserId: F.user!,
+      expectedVersion: await versionOf(shopId),
+    });
+    const [shop] = await db.select().from(s.shops).where(eq(s.shops.id, shopId));
+    expect(shop).toMatchObject({ status: 'paused', statusReason: 'Too many late deliveries this week' });
+    const events = await db
+      .select()
+      .from(s.partnerStatusEvents)
+      .where(eq(s.partnerStatusEvents.partnerId, shopId));
+    expect(events.map((e) => [e.fromStatus, e.toStatus])).toEqual([['approved', 'paused']]);
+    expect(await db.$count(s.auditLog, eq(s.auditLog.action, 'partner.status_changed'))).toBe(1);
+  });
+
+  it('refuses a missing reason, an impossible move and a stale version', async () => {
+    const shopId = F.shopB!;
+    await expect(
+      setShopStanding(t(), {
+        shopId,
+        to: 'suspended',
+        reason: 'no',
+        staffUserId: F.user!,
+        expectedVersion: 1,
+      }),
+    ).rejects.toMatchObject({ code: 'STATUS_REASON' });
+    await expect(
+      setShopStanding(t(), {
+        shopId,
+        to: 'paused',
+        reason: 'Already paused, pausing again',
+        staffUserId: F.user!,
+        expectedVersion: await versionOf(shopId),
+      }),
+    ).rejects.toMatchObject({ code: 'STATUS_TRANSITION' });
+    await expect(
+      setShopStanding(t(), {
+        shopId,
+        to: 'suspended',
+        reason: 'Counterfeit parts reported',
+        staffUserId: F.user!,
+        expectedVersion: 1,
+      }),
+    ).rejects.toMatchObject({ code: 'STALE_VERSION' });
+  });
+
+  it('a delivery override without a reason is refused (NULL must not slip through the CHECK)', async () => {
+    const order = await newOrder();
+    const [ship] = await db
+      .insert(s.shipments)
+      .values({ orderId: order.id, mode: 'own', status: 'out_for_delivery' })
+      .returning();
+    await expectPgError(
+      db
+        .update(s.shipments)
+        .set({
+          status: 'delivered',
+          deliveredVia: 'override',
+          deliveredAt: new Date(),
+          overrideBy: F.user!,
+          overrideReason: null,
+        })
+        .where(eq(s.shipments.id, ship!.id)),
+      '23514',
+    );
+  });
+
+  it('the database refuses a pause or suspension without a reason, and keeps history append-only', async () => {
+    await expectPgError(
+      db.update(s.shops).set({ status: 'suspended', statusReason: null }).where(eq(s.shops.id, F.shopB!)),
+      '23514',
+    );
+    const [e] = await db.select().from(s.partnerStatusEvents).limit(1);
+    await expectPgError(
+      db
+        .update(s.partnerStatusEvents)
+        .set({ reason: 'rewritten history' })
+        .where(eq(s.partnerStatusEvents.id, e!.id)),
+      '23001',
+    );
+  });
+
+  it('reactivates, so the shop can be routed again', async () => {
+    const shopId = F.shopB!;
+    await setShopStanding(t(), {
+      shopId,
+      to: 'approved',
+      reason: 'Delivery times back to normal',
+      staffUserId: F.user!,
+      expectedVersion: await versionOf(shopId),
+    });
+    const [shop] = await db.select({ status: s.shops.status }).from(s.shops).where(eq(s.shops.id, shopId));
+    expect(shop?.status).toBe('approved');
   });
 });

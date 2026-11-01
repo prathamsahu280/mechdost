@@ -20,7 +20,7 @@ Spec: `docs/specs/10-notifications.md`. Package: `packages/notify` (adapters + t
 
 | Channel  | Provider                                                                     | Status                                      |
 | -------- | ---------------------------------------------------------------------------- | ------------------------------------------- |
-| inapp    | `notifications` table + Supabase Realtime                                    | on                                          |
+| inapp    | `notifications` table + Firebase RTDB ping                                    | on                                          |
 | email    | Resend (`RESEND_API_KEY`, verified domain, SPF/DKIM/DMARC)                   | on when key present (inbox Q7); else logged |
 | sms      | MSG91 (DLT-registered templates, sender ID)                                  | wired, **off**                              |
 | whatsapp | MSG91 WhatsApp (Meta-approved templates; utility category for order updates) | wired, **off**                              |

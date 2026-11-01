@@ -27,11 +27,13 @@ import {
   type DemoQuote,
   type RoutingState,
 } from '@/demo/store';
+import { takesNewWork } from '@/demo/partner-status';
 import { DEMO_WORKSHOPS } from '@/demo/workshops';
 import { track } from '@/lib/analytics';
 import { formatDate, formatPrice } from '@/lib/format';
 import { ADMIN_SECTIONS, type AdminSection } from '@/lib/sections';
 import { AdminCoins } from './admin-coins';
+import { AdminPartners } from './admin-partners';
 import { ContentEditor, LayoutEditor, SettingsEditor, type ContentDefaults } from './admin-site';
 import { PortalGuard, portalCard, portalField, portalPrimary, portalQuiet, useNow } from './portal-guard';
 
@@ -41,6 +43,7 @@ const SECTION_EMOJI: Record<AdminSection, string> = {
   services: '🔧',
   quotes: '💬',
   applications: '🤝',
+  partners: '🏬',
   reviews: '⭐',
   coins: '🪙',
   content: '✏️',
@@ -75,6 +78,7 @@ export function AdminConsole({
             {section === 'applications' ? <Applications /> : null}
             {section === 'reviews' ? <Reviews /> : null}
             {section === 'coins' ? <AdminCoins actor={account.name} /> : null}
+            {section === 'partners' ? <AdminPartners actor={account.name} /> : null}
             {section === 'content' && contentDefaults ? (
               <ContentEditor actor={account.name} defaults={contentDefaults} />
             ) : null}
@@ -485,8 +489,12 @@ function ServiceRouting() {
       ) : (
         <ul className="mt-3 grid gap-3 xl:grid-cols-2">
           {declined.map((req) => {
+            // Paused or suspended workshops are never offered (admin control).
             const options = DEMO_WORKSHOPS.filter(
-              (w) => w.vehicles.includes(req.vehicleType) && !(req.declinedBy ?? []).includes(w.slug),
+              (w) =>
+                w.vehicles.includes(req.vehicleType) &&
+                !(req.declinedBy ?? []).includes(w.slug) &&
+                takesNewWork('workshop', w.slug),
             ).slice(0, 3);
             return (
               <li key={req.code} className={`${portalCard} border-accent-button/60`}>

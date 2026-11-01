@@ -24,7 +24,7 @@ Upload → sharp pipeline (EXIF strip, resize to 320/640/1600, AVIF+WebP, blurha
 
 ## API & data (Hono + Postgres)
 
-Stateless API containers (Cloud Run min 1, max N, concurrency 80, CPU-always-on for realtime subscriptions avoided — Realtime is Supabase's); Supavisor transaction pooling; Redis cache for catalogue lists (60 s, tag invalidation), permissions (60 s), settings/content (5 min); cursor pagination; indexes: (city, category, status), GIN trigram on search columns, GIST on geo, partial indexes for queues; `EXPLAIN` CI check on top 20 queries; read replica when reads > 70% CPU; `events` partitioned monthly with BRIN; heavy jobs (co-purchase, rollups, exports) in pg-boss workers deployed as a separate Cloud Run job/worker pool; rate limits at edge (Cloudflare) + app (Upstash).
+Stateless API containers (Cloud Run min 1, max N, concurrency 80, no long-lived connections on Cloud Run — live pings go through Firebase Realtime Database (one DB per region later, ~1k writes/s each)); Supavisor transaction pooling; Redis cache for catalogue lists (60 s, tag invalidation), permissions (60 s), settings/content (5 min); cursor pagination; indexes: (city, category, status), GIN trigram on search columns, GIST on geo, partial indexes for queues; `EXPLAIN` CI check on top 20 queries; read replica when reads > 70% CPU; `events` partitioned monthly with BRIN; heavy jobs (co-purchase, rollups, exports) in pg-boss workers deployed as a separate Cloud Run job/worker pool; rate limits at edge (Cloudflare) + app (Upstash).
 
 ## Scalability path (no rewrite)
 

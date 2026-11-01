@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
+import { usePartnerStatus } from '@/demo/partner-status';
 import { useMemo, useRef, useState, type SyntheticEvent } from 'react';
 import { createDemoRequest } from '@/demo/store';
 import type { DemoWorkshop, VehicleType } from '@/demo/workshops';
@@ -31,6 +32,8 @@ export function BookingForm({ workshop }: { workshop: DemoWorkshop }) {
   const [selected, setSelected] = useState<string[]>([]);
   const [errors, setErrors] = useState<Partial<Record<Field, string>>>({});
   const [submitting, setSubmitting] = useState(false);
+  // Admin control: a paused or suspended workshop takes no new bookings.
+  const { status } = usePartnerStatus('workshop', workshop.slug);
   const started = useRef(false);
   const minDate = todayIst();
 
@@ -79,6 +82,10 @@ export function BookingForm({ workshop }: { workshop: DemoWorkshop }) {
       concern: value('concern'),
       customer: { name: value('name'), phone },
     });
+    if (!request) {
+      setSubmitting(false);
+      return;
+    }
     track('booking_confirmed', { code: request.code, workshop: workshop.slug, demo: true });
     router.push(`${locale === 'hi' ? '/hi' : ''}/service/${request.code}?new=1`);
   }
@@ -95,6 +102,14 @@ export function BookingForm({ workshop }: { workshop: DemoWorkshop }) {
     'aria-invalid': errors[id] ? true : undefined,
     'aria-describedby': errors[id] ? `book-${id}-error` : undefined,
   });
+
+  if (status !== 'active') {
+    return (
+      <p role="status" className="rounded-tile bg-warning-bg p-4 text-sm font-bold text-warning">
+        {status === 'suspended' ? t('unavailable') : t('notTakingBookings')}
+      </p>
+    );
+  }
 
   return (
     <form

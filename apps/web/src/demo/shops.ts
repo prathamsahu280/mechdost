@@ -3,6 +3,7 @@
  * (spec 04). Real shops come from approved seller applications (`shops`, `shop_inventory`, `shop_pincodes`).
  */
 import type { CategoryKey } from './catalogue';
+import { takesNewWork } from './partner-status';
 
 export interface DemoShop {
   slug: string;
@@ -80,7 +81,8 @@ export function findShop(slug: string | null | undefined): DemoShop | undefined 
  */
 export function rankShops(categories: readonly CategoryKey[], exclude: readonly string[] = []): DemoShop[] {
   const coverage = (s: DemoShop) => categories.filter((c) => s.categories.includes(c)).length;
-  return DEMO_SHOPS.filter((s) => !exclude.includes(s.slug)).toSorted(
+  // Paused or suspended shops are never suggested (admin control, decision 2026-11-01).
+  return DEMO_SHOPS.filter((s) => !exclude.includes(s.slug) && takesNewWork('shop', s.slug)).toSorted(
     (a, b) => coverage(b) - coverage(a) || b.acceptance - a.acceptance || a.acceptMinutes - b.acceptMinutes,
   );
 }

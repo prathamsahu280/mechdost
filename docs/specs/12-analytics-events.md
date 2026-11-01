@@ -36,3 +36,7 @@ Schema validation rejects unknown events; purchase server event exactly once per
 ## P1/P2
 
 ClickHouse export, experiments (PostHog), attribution/UTM reports, data warehouse for recommendations.
+
+## ML/AI-ready data (hard rule 16, 2026-11-01)
+
+Every event follows `docs/conventions/data-for-ml.md`: `noun_verb` names, typed versioned properties, enum codes instead of free text, internal ids only (no PII), source/city/locale/actor role recorded, consent per purpose before personal data is used for offers or model training.

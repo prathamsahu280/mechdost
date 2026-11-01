@@ -488,7 +488,8 @@
     "showMap": "Map",
     "viewOnMap": "Show on map",
     "mapAttribution": "Map data © OpenStreetMap contributors",
-    "directions": "Get directions"
+    "directions": "Get directions",
+    "notTakingBookings": "Not taking new bookings right now"
   },
   "workshop": {
     "services": "Service menu",
@@ -521,7 +522,9 @@
     "errVehicle": "Enter your vehicle make and model.",
     "errDate": "Choose today or a later date.",
     "back": "All workshops",
-    "notListed": "Can’t find the service you need? Describe it below."
+    "notListed": "Can’t find the service you need? Describe it below.",
+    "unavailable": "This workshop isn't available on MechDost right now. Please choose another workshop.",
+    "notTakingBookings": "This workshop is not taking new bookings right now."
   },
   "request": {
     "title": "Service request {code}",
@@ -642,7 +645,8 @@
     "kilometers": "km",
     "meters": "m",
     "directions": "Directions",
-    "book": "View & book"
+    "book": "View & book",
+    "satellite": "Satellite"
   },
   "quote": {
     "eyebrow": "Bulk orders",
@@ -1114,7 +1118,38 @@
     "overrideReason": "Reason (kept on the order)",
     "overrideConfirm": "Confirm delivery",
     "overrideReasonError": "Write a reason of at least 5 characters.",
-    "deliveryOverridden": "Delivery confirmed by {by} without the code: {reason}"
+    "deliveryOverridden": "Delivery confirmed by {by} without the code: {reason}",
+    "nav_partners": "Partners",
+    "partnersLead": "Pause or suspend any shop, workshop or mechanic. A reason is required; the partner sees it and the change is kept in the history.",
+    "partnersTab_shop": "Shops",
+    "partnersTab_workshop": "Workshops",
+    "partnersTab_mechanic": "Mechanics",
+    "partnerStatus_active": "Active",
+    "partnerStatus_paused": "Paused",
+    "partnerStatus_suspended": "Suspended",
+    "partnerAction_pause": "Pause",
+    "partnerAction_suspend": "Suspend",
+    "partnerAction_resume": "Resume",
+    "partnerAction_reactivate": "Reactivate",
+    "partnerReason": "Reason (the partner sees it)",
+    "partnerConfirm_pause": "Pause {name}",
+    "partnerConfirm_suspend": "Suspend {name}",
+    "partnerConfirm_resume": "Resume {name}",
+    "partnerConfirm_reactivate": "Reactivate {name}",
+    "partnerCancel": "Cancel",
+    "partnerErr_reason": "Write a reason of 5 to 300 characters.",
+    "partnerLastChange": "{status} by {by} on {date}: {reason}",
+    "partnerEffect_paused": "No new orders or bookings; current work continues.",
+    "partnerEffect_suspended": "Hidden from customers, no new work, and their portal is locked.",
+    "mechanicsEmpty": "No mechanics yet. Approved mechanic applications appear here.",
+    "partnerHistory": "Recent changes",
+    "partnerHistoryEmpty": "No changes yet.",
+    "suspendedTitle": "Your account is suspended",
+    "suspendedBody": "MechDost has suspended this account, so you can't receive or handle orders right now.",
+    "statusReason": "Reason: {reason} ({date})",
+    "callSupport": "Call MechDost support: {phone}",
+    "pausedTitle": "Paused by MechDost.",
+    "pausedBody": "You won't receive new work for now. Please finish your current orders."
   },
   "policies": {
     "returns": {

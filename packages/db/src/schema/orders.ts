@@ -304,7 +304,7 @@ export const shipments = pgTable(
     ),
     check(
       'shipments_delivered_needs_proof',
-      sql`${t.status} <> 'delivered' or (${t.deliveredAt} is not null and (${t.deliveredVia} = 'code' or (${t.deliveredVia} = 'override' and ${t.overrideBy} is not null and char_length(${t.overrideReason}) >= 5)))`,
+      sql`${t.status} <> 'delivered' or (${t.deliveredAt} is not null and (${t.deliveredVia} = 'code' or (${t.deliveredVia} = 'override' and ${t.overrideBy} is not null and coalesce(char_length(${t.overrideReason}), 0) >= 5)))`,
     ),
     index().on(t.overrideBy),
     check(

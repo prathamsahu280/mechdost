@@ -215,6 +215,16 @@ test.describe('workshop map (spec 06)', () => {
     await expect(page.getByText('Sorted by distance from you.')).toBeVisible();
     await expect(map.getByRole('img', { name: 'You are here' })).toBeVisible();
     await expect(map.getByRole('button', { name: 'Full-screen map' })).toBeVisible();
+
+    // Hybrid view (decision 2026-11-01): satellite imagery under roads and labels; the choice is remembered.
+    const satellite = map.getByRole('button', { name: 'Satellite' });
+    await expect(satellite).toHaveAttribute('aria-pressed', 'false');
+    await satellite.click();
+    await expect(satellite).toHaveAttribute('aria-pressed', 'true');
+    await expect(map.locator('.md-map-pin')).toHaveCount(8);
+    expect(await page.evaluate(() => localStorage.getItem('mechdost-map-mode'))).toBe('satellite');
+    await satellite.click();
+    await expect(satellite).toHaveAttribute('aria-pressed', 'false');
     expect(errors).toEqual([]);
     await context.close();
   });
