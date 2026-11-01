@@ -112,6 +112,48 @@
       "title": "Grow with MechDost.",
       "body": "Sell automotive products, register your garage or join the mechanic network. Our team reviews every application.",
       "action": "Become a partner"
+    },
+    "route": {
+      "eyebrow": "How your order reaches you",
+      "title": "Ordered online. Confirmed by a real shop near you.",
+      "lead": "MechDost checks every order and offers it to a verified shop near your PIN that has it in stock. You can follow each step.",
+      "stopsLabel": "Steps from order to delivery",
+      "step1Title": "You order",
+      "step1Body": "Browse without a PIN code. Pay cash on delivery.",
+      "step2Title": "MechDost picks a shop",
+      "step2Body": "A verified shop near you that has the item in stock.",
+      "step3Title": "The shop confirms",
+      "step3Body": "It accepts within 15 minutes, or we find another shop.",
+      "step4Title": "Delivered to you",
+      "step4Body": "Track every step from your order page.",
+      "cta": "Shop products",
+      "bulk": "Buying 10 or more? Ask for a bulk price"
+    },
+    "workshops": {
+      "eyebrow": "Top rated in {city}",
+      "title": "Workshops our customers trust",
+      "viewAll": "See all workshops",
+      "reviews": "{count} reviews",
+      "from": "From {price}",
+      "pickup": "Pickup",
+      "ev": "EV"
+    },
+    "faq": {
+      "eyebrow": "Questions",
+      "title": "Good to know",
+      "q1": "How long does delivery take in Raipur?",
+      "a1": "Most orders arrive in 1–3 days. The product page shows the expected time and your order page shows each step.",
+      "q2": "How do I pay?",
+      "a2": "Cash on delivery for now. UPI and card payments are coming soon.",
+      "q3": "What if the part does not fit?",
+      "a3": "Tell us within 7 days from your order page. After a quick check we replace it or refund you. Opened lubricants and installed batteries cannot be returned.",
+      "q4": "How are workshops checked?",
+      "a4": "Our team calls or visits every workshop, checks its location and services, and watches its reviews.",
+      "q5": "Will a workshop start work without asking me?",
+      "a5": "No. You approve the itemised estimate line by line before any work starts.",
+      "q6": "Can I order in bulk for my garage or fleet?",
+      "a6": "Yes. Ask for a bulk price from any product page or your cart and agree the final price with our team in a chat.",
+      "more": "Still have a question? Ask MechDost"
     }
   },
   "footer": {

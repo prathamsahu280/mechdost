@@ -57,3 +57,7 @@ Vehicle master source (register #4).
 ## P1/P2
 
 Back-in-stock/price-drop alerts, Q&A, photo reviews, badges, collections, B2B price lists, related/upsell rules (part of recommendations), compare (P2), 360° media (P2), Meilisearch switch.
+
+## Home page sections (2026-11-02)
+
+Hero, trust strip, category tiles, popular products, order-route band, workshop service steps, top-rated workshops, FAQ (+ FAQPage structured data), partner teaser — see decisions 2026-11-02. Popular products and top workshops come from the catalogue/workshop APIs (ranked per city) in Phase 1.

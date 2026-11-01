@@ -30,14 +30,28 @@ const BASE_PAGES = [
 ];
 const PAGES = [...BASE_PAGES, ...BASE_PAGES.map((p) => (p === '/' ? '/hi' : `/hi${p}`))];
 
+/**
+ * Collects console errors, page errors and failed HTTP responses. Failed resources are reported once, from the
+ * response (it carries the URL and headers); the browser's duplicate "Failed to load resource" console line is
+ * skipped.
+ *
+ * Known framework noise, excluded on purpose: after an en → hi → en switch, Next 16's client segment cache can
+ * prefetch the home page segment (`next-router-segment-prefetch: /$d$locale/__PAGE__`) against other
+ * statically prerendered URLs, which 404s. Navigation is unaffected (verified in a trace, 2026-11-02;
+ * docs/progress.md). Every other 404 — including any real navigation or RSC fetch — still fails the test.
+ */
 function watchErrors(page: Page) {
   const errors: string[] = [];
   page.on('console', (msg) => {
-    if (msg.type() === 'error') errors.push(`console: ${msg.text()}`);
+    if (msg.type() !== 'error' || msg.text().startsWith('Failed to load resource')) return;
+    errors.push(`console: ${msg.text()}`);
   });
   page.on('pageerror', (err) => errors.push(`pageerror: ${err.message}`));
   page.on('response', (res) => {
-    if (res.status() >= 400) errors.push(`http ${res.status()}: ${res.url()}`);
+    if (res.status() < 400) return;
+    const segment = res.request().headers()['next-router-segment-prefetch'];
+    if (res.status() === 404 && segment === '/$d$locale/__PAGE__') return;
+    errors.push(`http ${res.status()}: ${res.url()}`);
   });
   return errors;
 }

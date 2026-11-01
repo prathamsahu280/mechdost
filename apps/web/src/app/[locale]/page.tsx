@@ -1,10 +1,13 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { CategoryTiles } from '@/components/home/category-tiles';
+import { Faq } from '@/components/home/faq';
 import { Hero } from '@/components/home/hero';
+import { OrderRoute } from '@/components/home/order-route';
 import { ProductRange } from '@/components/home/product-range';
 import { PartnerTeaser } from '@/components/home/partner-teaser';
 import { ServiceSection } from '@/components/home/service-section';
+import { TopWorkshops } from '@/components/home/top-workshops';
 import { TrustStrip } from '@/components/home/trust-strip';
 import type { Locale } from '@/i18n/routing';
 import { alternatesFor } from '@/lib/seo';
@@ -27,7 +30,10 @@ export default async function HomePage() {
       <TrustStrip />
       <CategoryTiles />
       <ProductRange />
+      <OrderRoute />
       <ServiceSection city={city} />
+      <TopWorkshops city={city} />
+      <Faq />
       <PartnerTeaser />
     </>
   );
