@@ -43,6 +43,8 @@ async function apply(
     orderGroupId?: string | null;
     expiresAt?: Date | null;
     createdBy?: string | null;
+    /** Staff action to audit atomically with the ledger row (manual adjustments). */
+    audit?: { actorUserId: string; action: string };
   },
 ): Promise<CoinEntry> {
   return db.transaction(async (tx) => {
@@ -84,6 +86,7 @@ async function apply(
       };
     }
 
+    let balanceAfter: number;
     if (input.delta > 0) {
       const [acct] = await tx
         .insert(coinAccounts)
@@ -104,18 +107,32 @@ async function apply(
           },
         })
         .returning({ balance: coinAccounts.balance });
-      return { id: entry.id, delta: input.delta, kind: input.kind, balanceAfter: acct?.balance ?? 0 };
+      balanceAfter = acct?.balance ?? 0;
+    } else {
+      // Spending: compare-and-set, so two checkouts racing for the same coins cannot both succeed.
+      const spend = -input.delta;
+      const [acct] = await tx
+        .update(coinAccounts)
+        .set({ balance: sql`${coinAccounts.balance} - ${spend}`, version: sql`${coinAccounts.version} + 1` })
+        .where(and(eq(coinAccounts.userId, input.userId), gte(coinAccounts.balance, spend)))
+        .returning({ balance: coinAccounts.balance });
+      if (!acct) throw new ConflictError('Not enough MechDost Coins', 'INSUFFICIENT_COINS');
+      balanceAfter = acct.balance;
     }
 
-    // Spending: compare-and-set, so two checkouts racing for the same coins cannot both succeed.
-    const spend = -input.delta;
-    const [acct] = await tx
-      .update(coinAccounts)
-      .set({ balance: sql`${coinAccounts.balance} - ${spend}`, version: sql`${coinAccounts.version} + 1` })
-      .where(and(eq(coinAccounts.userId, input.userId), gte(coinAccounts.balance, spend)))
-      .returning({ balance: coinAccounts.balance });
-    if (!acct) throw new ConflictError('Not enough MechDost Coins', 'INSUFFICIENT_COINS');
-    return { id: entry.id, delta: input.delta, kind: input.kind, balanceAfter: acct.balance };
+    // Audit in the same transaction, only for a newly written entry (an idempotent replay returned above), so the
+    // ledger and the audit log can never disagree and a retried request is audited once.
+    if (input.audit) {
+      await tx.insert(auditLog).values({
+        actorUserId: input.audit.actorUserId,
+        actorRole: 'staff',
+        action: input.audit.action,
+        entity: 'coin_ledger',
+        entityId: entry.id,
+        after: { delta: input.delta, kind: input.kind },
+      });
+    }
+    return { id: entry.id, delta: input.delta, kind: input.kind, balanceAfter };
   });
 }
 
@@ -191,23 +208,15 @@ export async function adjustCoins(
   if (reason.length < 3 || reason.length > 200) {
     throw new ValidationError('Give a reason (3 to 200 characters)', 'COINS_REASON');
   }
-  const entry = await apply(db, {
+  return apply(db, {
     userId: input.userId,
     delta: input.delta,
     kind: 'adjust',
     reason,
     idemKey: input.idemKey,
     createdBy: input.staffUserId,
+    audit: { actorUserId: input.staffUserId, action: 'coins.adjusted' },
   });
-  await db.insert(auditLog).values({
-    actorUserId: input.staffUserId,
-    actorRole: 'staff',
-    action: 'coins.adjusted',
-    entity: 'coin_ledger',
-    entityId: entry.id,
-    after: { delta: input.delta },
-  });
-  return entry;
 }
 
 export async function coinBalance(db: Tx, userId: string): Promise<number> {

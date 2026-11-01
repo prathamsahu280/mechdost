@@ -702,6 +702,17 @@ describe('MechDost Coins ledger (spec 20)', () => {
     });
     expect(entry.balanceAfter).toBe(balance + 25);
     expect(await db.$count(s.auditLog, eq(s.auditLog.action, 'coins.adjusted'))).toBe(1);
+    // A retried request (same key) changes nothing and is not audited twice; refused attempts leave no audit.
+    const replay = await adjustCoins(t(), {
+      userId: F.user!,
+      delta: 25,
+      reason: 'Goodwill for a late delivery',
+      idemKey: 'adjust:x:000003',
+      staffUserId: F.user!,
+    });
+    expect(replay.id).toBe(entry.id);
+    expect(await coinBalance(t(), F.user!)).toBe(balance + 25);
+    expect(await db.$count(s.auditLog, eq(s.auditLog.action, 'coins.adjusted'))).toBe(1);
   });
 
   it('keeps the ledger append-only and the balance non-negative in the database itself', async () => {

@@ -27,6 +27,8 @@ Mark each touched item ✅ / ⚠️ / ❌. Anything ❌ blocks implementation un
 - [ ] Any column holding government IDs (PAN, Aadhaar, GSTIN of individuals), bank/UPI details, document numbers or secrets is `*_enc` with `encryptedCheck` and written via `encryptField` (spec 13 "Encryption"); lookups use a blind index, never the plain value.
 - [ ] Connections to non-local databases go through `createDb`/`tlsFor` (TLS required).
 
+- [ ] Audit rows are written inside the same transaction as the change they describe, and only when a new change happened (idempotent replays write nothing).
+
 ## API (Hono)
 
 - ❌ Handler queries tables directly (must call a repository with an `actor`).
