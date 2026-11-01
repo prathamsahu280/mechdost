@@ -20,6 +20,11 @@ export function tlsFor(url: string, env: Record<string, string | undefined> = pr
   if (LOCAL_HOSTS.has(host)) return false;
   const caPath = env.DATABASE_CA_CERT?.trim();
   if (caPath) return { ca: readFileSync(caPath, 'utf8'), rejectUnauthorized: true };
+  // Fail closed in production: encryption without certificate verification is open to man-in-the-middle, so
+  // the server refuses to start rather than downgrade. Dev may use 'require' until the CA is installed (Q23).
+  if (env.NODE_ENV === 'production') {
+    throw new Error('DATABASE_CA_CERT is required in production (verify-full TLS to the database)');
+  }
   return 'require';
 }
 
