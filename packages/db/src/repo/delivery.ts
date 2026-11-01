@@ -1,5 +1,5 @@
 import { randomInt } from 'node:crypto';
-import { and, eq, lt, ne, sql } from 'drizzle-orm';
+import { and, eq, isNotNull, lt, ne, sql } from 'drizzle-orm';
 import { decryptField, encryptField, safeEqual, type Keyring } from '../crypto';
 import { auditLog, shipments } from '../schema';
 import { ConflictError, NotFoundError, ValidationError } from './errors';
@@ -49,45 +49,45 @@ export async function verifyDeliveryCode(
 ): Promise<DeliveryCheck> {
   if (!/^\d{4}$/.test(entered)) throw new ValidationError('Enter the 4-digit code', 'DELIVERY_CODE_FORMAT');
   return db.transaction(async (tx) => {
-    const [row] = await tx
-      .select({
-        enc: shipments.deliveryCodeEnc,
-        attempts: shipments.deliveryCodeAttempts,
-        status: shipments.status,
-      })
-      .from(shipments)
-      .where(eq(shipments.id, shipmentId))
-      .limit(1);
-    if (!row) throw new NotFoundError('Shipment not found');
-    if (row.status === 'delivered') return { ok: true };
-    if (!row.enc) throw new ConflictError('No delivery code was issued', 'NO_DELIVERY_CODE');
-    if (row.attempts >= DELIVERY_CODE_MAX_ATTEMPTS) return { ok: false, reason: 'locked' };
+    // Reserve the attempt FIRST, atomically (security review 2026-11-01): the counter goes up before any
+    // comparison, so parallel guesses can never get more than 5 comparisons in total. Only a request that won a
+    // reservation gets to compare.
+    const [reserved] = await tx
+      .update(shipments)
+      .set({ deliveryCodeAttempts: sql`${shipments.deliveryCodeAttempts} + 1` })
+      .where(
+        and(
+          eq(shipments.id, shipmentId),
+          ne(shipments.status, 'delivered'),
+          isNotNull(shipments.deliveryCodeEnc),
+          lt(shipments.deliveryCodeAttempts, DELIVERY_CODE_MAX_ATTEMPTS),
+        ),
+      )
+      .returning({ enc: shipments.deliveryCodeEnc, attempts: shipments.deliveryCodeAttempts });
 
-    if (safeEqual(entered, decryptField(row.enc, keyring, AAD))) {
-      const done = await tx
-        .update(shipments)
-        .set({ status: 'delivered', deliveredVia: 'code', deliveredAt: sql`now()` })
-        .where(
-          and(
-            eq(shipments.id, shipmentId),
-            ne(shipments.status, 'delivered'),
-            lt(shipments.deliveryCodeAttempts, DELIVERY_CODE_MAX_ATTEMPTS),
-          ),
-        )
-        .returning({ id: shipments.id });
-      return done.length > 0 ? { ok: true } : { ok: false, reason: 'locked' };
+    if (!reserved?.enc) {
+      // Nothing reserved: explain why without comparing anything.
+      const [row] = await tx
+        .select({ enc: shipments.deliveryCodeEnc, status: shipments.status })
+        .from(shipments)
+        .where(eq(shipments.id, shipmentId))
+        .limit(1);
+      if (!row) throw new NotFoundError('Shipment not found');
+      if (row.status === 'delivered') return { ok: true };
+      if (!row.enc) throw new ConflictError('No delivery code was issued', 'NO_DELIVERY_CODE');
+      return { ok: false, reason: 'locked' };
     }
 
-    // Wrong code: count it with compare-and-set so parallel guesses cannot exceed the limit.
-    const [counted] = await tx
-      .update(shipments)
-      .set({ deliveryCodeAttempts: row.attempts + 1 })
-      .where(and(eq(shipments.id, shipmentId), eq(shipments.deliveryCodeAttempts, row.attempts)))
-      .returning({ attempts: shipments.deliveryCodeAttempts });
-    const attempts = counted?.attempts ?? DELIVERY_CODE_MAX_ATTEMPTS;
-    return attempts >= DELIVERY_CODE_MAX_ATTEMPTS
+    if (safeEqual(entered, decryptField(reserved.enc, keyring, AAD))) {
+      await tx
+        .update(shipments)
+        .set({ status: 'delivered', deliveredVia: 'code', deliveredAt: sql`now()` })
+        .where(and(eq(shipments.id, shipmentId), ne(shipments.status, 'delivered')));
+      return { ok: true };
+    }
+    return reserved.attempts >= DELIVERY_CODE_MAX_ATTEMPTS
       ? { ok: false, reason: 'locked' }
-      : { ok: false, reason: 'wrong', attemptsLeft: DELIVERY_CODE_MAX_ATTEMPTS - attempts };
+      : { ok: false, reason: 'wrong', attemptsLeft: DELIVERY_CODE_MAX_ATTEMPTS - reserved.attempts };
   });
 }
 

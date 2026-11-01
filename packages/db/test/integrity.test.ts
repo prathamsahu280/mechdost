@@ -787,6 +787,19 @@ describe('proof of delivery (decision 2026-11-01)', () => {
     expect(await verifyDeliveryCode(t(), ring, id, code)).toEqual({ ok: false, reason: 'locked' });
   });
 
+  it('parallel guessing cannot get more than 5 comparisons (attempt reserved before comparing)', async () => {
+    const id = await newShipment();
+    const code = await issueDeliveryCode(t(), ring, id);
+    const wrong = wrongFor(code);
+    const results = await Promise.all(
+      Array.from({ length: 20 }, () => verifyDeliveryCode(t(), ring, id, wrong)),
+    );
+    expect(results.filter((r) => !r.ok && r.reason === 'wrong')).toHaveLength(4);
+    const [row] = await db.select().from(s.shipments).where(eq(s.shipments.id, id));
+    expect(row?.deliveryCodeAttempts).toBe(5);
+    expect(await verifyDeliveryCode(t(), ring, id, code)).toEqual({ ok: false, reason: 'locked' });
+  });
+
   it('the database refuses "delivered" without proof and a plain-text code', async () => {
     const id = await newShipment();
     await expectPgError(
