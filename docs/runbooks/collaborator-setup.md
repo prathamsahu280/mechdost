@@ -1,0 +1,89 @@
+# Collaborator setup (code + Claude Code)
+
+For anyone joining the MechDost repo. Accounts and API keys are in [`setup.md`](setup.md); the demo walkthrough is in [`demo.md`](demo.md).
+
+## 1. Run the website
+
+Needs **Node 22.23.4 or newer** (we use 24), **pnpm 11.28.10**, Git and Chrome.
+
+```powershell
+npm install -g pnpm@11.28.10
+git clone https://github.com/prathamsahu280/mechdost.git
+cd mechdost
+pnpm install
+pnpm --filter @mechdost/web build
+pnpm --filter @mechdost/web start          # http://localhost:3000
+```
+
+For live reload while coding use `pnpm --filter @mechdost/web dev` instead of build + start. The site runs on demo data with no keys; demo logins (code `123456`) are in [`demo.md`](demo.md).
+
+Before every commit: `pnpm check` (format, typecheck, lint, unit tests). End-to-end tests: `pnpm --filter @mechdost/web e2e` (builds must be current). Never commit secrets: copy `.env.example` to `.env` and ask the owner for values over a private channel.
+
+## 2. Claude Code: what you get automatically
+
+Opening the repo in Claude Code loads, with nothing to install:
+
+- **`CLAUDE.md`**: the 15 hard rules and the skill usage protocol. Read it once yourself.
+- **Project skills** in `.claude/skills/`: `mechdost-advisor`, `website-testing` and six domain skills. See [`.claude/skills/README.md`](../../.claude/skills/README.md).
+- **`.mcp.json`**: the Supabase MCP for the **dev** project. Run `/mcp` in Claude Code and sign in with your own Supabase account; the owner must add you to the dev project first. No keys are stored in the repo.
+
+Commits and PRs must never carry AI co-author or "Generated with" lines (hard rule 12).
+
+## 3. Claude Code: public skills to install once
+
+The protocol in `CLAUDE.md` calls these at fixed trigger points. Install them for your user (global), choosing Claude Code when asked:
+
+```powershell
+npx skills add nextlevelbuilder/ui-ux-pro-max-skill      # ui-ux-pro-max
+npx skills add obra/superpowers                          # brainstorming, writing-plans, TDD, systematic-debugging, verification-before-completion, …
+npx skills add shadcn/ui                                 # shadcn
+npx skills add mattbx/shadcn-skills                      # shadcn-component-discovery, shadcn-component-review
+npx skills add vercel-labs/agent-skills                  # vercel-react-best-practices, web-design-guidelines
+npx skills add vercel/turborepo                          # turborepo
+npx skills add supabase/agent-skills                     # supabase-postgres-best-practices
+npx skills add honojs/skills                             # hono
+npx skills add antfu/skills --skill vitest               # vitest
+npx skills add currents-dev/playwright-best-practices-skill
+npx skills add addyosmani/web-quality-skills             # web-quality-audit, performance, core-web-vitals, accessibility, seo, best-practices
+npx skills add laguagu/claude-code-nextjs-skills         # nextjs-seo
+npx skills add maplibre/maplibre-agent-skills            # maplibre-fonts-glyphs
+npx skills add mattpocock/skills                         # grill-me, domain-modeling
+npx skills add google/skills                             # cloud-run-basics (deploy work only)
+```
+
+## 4. Claude Code: plugins
+
+```powershell
+claude plugin install context7@claude-plugins-official
+claude plugin install supabase@claude-plugins-official
+claude plugin install vercel@claude-plugins-official
+claude plugin install code-review@claude-plugins-official
+claude plugin install security-guidance@claude-plugins-official
+claude plugin install frontend-design@claude-plugins-official
+claude plugin install typescript-lsp@claude-plugins-official
+claude plugin install modern-web-guidance@claude-plugins-official
+claude plugin install posthog@claude-plugins-official
+claude plugin install claude-security@claude-plugins-official
+claude plugin install github@claude-plugins-official          # optional; needs a GitHub token (inbox Q14)
+
+claude plugin marketplace add firebase/agent-skills
+claude plugin install firebase@firebase
+claude plugin marketplace add google/skills
+claude plugin install google-cloud-developer@google-plugins
+claude plugin marketplace add Community-Access/accessibility-agents
+claude plugin install accessibility-agents@community-access
+```
+
+## 5. Claude Code: browser and deploy tools (MCP, user scope)
+
+```powershell
+claude mcp add --scope user playwright -- npx @playwright/mcp@latest
+claude mcp add --scope user chrome-devtools -- npx chrome-devtools-mcp@latest
+claude mcp add --scope user cloud-run -- npx -y @google-cloud/cloud-run-mcp      # deploy work only
+```
+
+## 6. Working agreements
+
+- Start every task from `docs/progress.md` (the live ledger) and update it when you finish a step (hard rule 13).
+- Questions for the owner go into `docs/questions-for-user.md` with the default you used meanwhile (hard rule 15).
+- When a skill teaches you something, append one line to its `references/learnings.md` in the same commit.

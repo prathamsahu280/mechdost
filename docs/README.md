@@ -30,3 +30,4 @@ Read `../CLAUDE.md` first (hard rules). Then:
 - Specs carry acceptance tests; the `website-testing` skill reads them.
 - Research files are snapshots dated in their header; re-verify versions/prices before external use.
 - `runbooks/demo.md` — partner demo walkthrough (what is real vs demo).
+- `runbooks/collaborator-setup.md` — new collaborator setup: run the site, Claude Code project skills (auto-loaded from `.claude/skills/`), public skills, plugins and MCP servers to install.

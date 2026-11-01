@@ -8,6 +8,7 @@ Customer storefront, admin-routed product orders with shop acceptance, location-
 - **Decisions & pending items:** [`docs/decisions.md`](docs/decisions.md)
 - **Feature specs:** [`docs/specs/`](docs/specs/README.md)
 - **Plan:** [`docs/plan.md`](docs/plan.md)
+- **New collaborator?** [`docs/runbooks/collaborator-setup.md`](docs/runbooks/collaborator-setup.md) — run the site and set up Claude Code (project skills live in [`.claude/skills/`](.claude/skills/README.md) and load automatically).
 
 Stack: Turborepo + pnpm · Next.js (App Router) · Hono API · Drizzle + Supabase Postgres (PostGIS) · Firebase Auth (phone OTP) · Upstash Redis · pg-boss · Razorpay · MapLibre.
 
