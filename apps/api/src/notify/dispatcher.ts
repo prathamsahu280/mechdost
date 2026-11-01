@@ -3,6 +3,7 @@ import {
   markOutboxFailed,
   markOutboxRetry,
   markOutboxSent,
+  renewOutboxClaim,
   type Channel,
   type OutboxRow,
   type Tx,
@@ -43,33 +44,45 @@ export interface DispatchResult {
   sent: number;
   failed: number;
   retried: number;
+  /** Rows whose claim was lost before sending (another worker owns them now). */
+  skipped: number;
 }
 
+/**
+ * Small batches (10 × ≤ 8 s send timeout = 80 s < 120 s lease) and a lease re-check right before each send:
+ * a row reclaimed by another worker after our lease ran out is skipped, never sent twice (security review
+ * 2026-11-02). Outcomes are recorded only while we still hold the claim token.
+ */
 export async function dispatchOnce(
   db: Tx,
   adapters: readonly ChannelAdapter[],
-  limit = 50,
+  limit = 10,
 ): Promise<DispatchResult> {
   const byChannel = new Map(adapters.map((a) => [a.channel, a]));
   const rows = await claimOutboxBatch(db, { channels: [...byChannel.keys()], limit });
-  const result: DispatchResult = { claimed: rows.length, sent: 0, failed: 0, retried: 0 };
+  const result: DispatchResult = { claimed: rows.length, sent: 0, failed: 0, retried: 0, skipped: 0 };
   for (const row of rows) {
     const adapter = byChannel.get(row.channel);
     if (!adapter) continue;
+    if (!(await renewOutboxClaim(db, row))) {
+      result.skipped += 1;
+      continue;
+    }
     try {
       const { providerId } = await adapter.send(row);
-      await markOutboxSent(db, row.id, providerId);
-      result.sent += 1;
+      // If this returns false another worker took over after our send: the provider id is still logged as a
+      // code-free warning so the (rare) duplicate is visible in ops.
+      if (await markOutboxSent(db, row, providerId)) result.sent += 1;
+      else log('warn', 'notify_claim_lost_after_send', { channel: row.channel });
     } catch (err) {
       const e = err instanceof ChannelError ? err : new ChannelError('retry', 'unexpected');
       if (e.failure === 'permanent') {
-        await markOutboxFailed(db, row.id, e.code);
-        result.failed += 1;
+        if (await markOutboxFailed(db, row, e.code)) result.failed += 1;
       } else {
         const delay = e.failure === 'later' ? 86_400 : backoffSeconds(row.attempts);
-        const outcome = await markOutboxRetry(db, row.id, { error: e.code, delaySeconds: delay });
+        const outcome = await markOutboxRetry(db, row, { error: e.code, delaySeconds: delay });
         if (outcome === 'failed') result.failed += 1;
-        else result.retried += 1;
+        else if (outcome === 'retry') result.retried += 1;
       }
       // Codes only: never log the recipient or payload (PII, rule 16).
       log('warn', 'notify_send_failed', { channel: row.channel, code: e.code, failure: e.failure });

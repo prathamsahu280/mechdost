@@ -22,17 +22,41 @@ const hits = new Map<string, { windowStart: number; count: number }>();
 const LIMIT = 10; // per client per minute
 let lastUpstream = 0;
 
+/**
+ * Client identity for the rate limit, the same way the API does it (security review 2026-11-02): the leftmost
+ * X-Forwarded-For entry is whatever the client sent, so count `TRUSTED_PROXY_HOPS` back from the right (entries
+ * appended by our own proxies). Vercel's `x-real-ip` is set by the platform and cannot be spoofed.
+ */
 function clientKey(req: NextRequest): string {
-  const forwarded = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim();
-  return forwarded && forwarded.length > 0 ? forwarded : 'local';
+  const platform = process.env.VERCEL ? req.headers.get('x-real-ip') : null;
+  if (platform) return platform;
+  const hops = Number(process.env.TRUSTED_PROXY_HOPS ?? '0');
+  if (Number.isInteger(hops) && hops > 0) {
+    const chain = (req.headers.get('x-forwarded-for') ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    return chain[chain.length - hops] ?? 'unknown';
+  }
+  return 'local';
+}
+
+/** Bounded map: evict the oldest entries one by one (a full clear would reset every limit at once). */
+function boundedSet<V>(map: Map<string, V>, key: string, value: V, max: number) {
+  map.delete(key);
+  map.set(key, value);
+  while (map.size > max) {
+    const oldest = map.keys().next().value;
+    if (oldest === undefined) break;
+    map.delete(oldest);
+  }
 }
 
 function limited(key: string): boolean {
   const now = Date.now();
   const entry = hits.get(key);
   if (!entry || now - entry.windowStart > 60_000) {
-    hits.set(key, { windowStart: now, count: 1 });
-    if (hits.size > 10_000) hits.clear();
+    boundedSet(hits, key, { windowStart: now, count: 1 }, 10_000);
     return false;
   }
   entry.count += 1;
@@ -57,9 +81,13 @@ interface NominatimReply {
 
 async function lookup(lat: number, lng: number): Promise<PincodeResponse> {
   // One request per second across this server instance (Nominatim policy).
-  const wait = lastUpstream + 1000 - Date.now();
+  // Reserve the slot synchronously before waiting, so parallel requests queue 1 s apart instead of all
+  // waking together.
+  const slot = Math.max(Date.now(), lastUpstream + 1000);
+  lastUpstream = slot;
+  const wait = slot - Date.now();
+  if (wait > 5000) throw new Error('upstream busy');
   if (wait > 0) await new Promise((r) => setTimeout(r, wait));
-  lastUpstream = Date.now();
   const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=16&addressdetails=1&lat=${lat}&lon=${lng}`;
   const res = await fetch(url, {
     headers: { 'user-agent': 'MechDost/1.0 (+https://mechdost.com)', 'accept-language': 'en' },
@@ -92,8 +120,7 @@ export async function GET(req: NextRequest) {
   }
   try {
     const value = await lookup(lat, lng);
-    cache.set(key, { at: Date.now(), value });
-    if (cache.size > 5000) cache.clear();
+    boundedSet(cache, key, { at: Date.now(), value }, 5000);
     return NextResponse.json(value, { headers: { 'cache-control': 'private, max-age=3600' } });
   } catch {
     return NextResponse.json({ pincode: null, area: null } satisfies PincodeResponse, { status: 502 });

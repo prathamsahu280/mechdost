@@ -49,6 +49,8 @@ export interface OutboxRow {
   locale: Locale;
   payload: Record<string, unknown>;
   attempts: number;
+  /** Fencing token of this claim; required to renew the lease and to record the outcome. */
+  claimToken: string;
 }
 
 interface RawOutbox {
@@ -60,6 +62,7 @@ interface RawOutbox {
   locale: Locale;
   payload: Record<string, unknown> | string;
   attempts: number;
+  claim_token: string;
 }
 
 function rowsOf<T>(result: unknown): T[] {
@@ -67,16 +70,23 @@ function rowsOf<T>(result: unknown): T[] {
   return (result as { rows?: T[] }).rows ?? [];
 }
 
-/** Claims due rows for the given channels only (channels without an adapter are left untouched). */
+export const OUTBOX_LEASE_SECONDS = 120;
+
+/**
+ * Claims due rows for the given channels only (channels without an adapter are left untouched). Each claimed row
+ * gets a fresh `claim_token`; a sender that took longer than the lease loses the row to the next claim and can no
+ * longer renew or record it (security review 2026-11-02: no double sends).
+ */
 export async function claimOutboxBatch(
   db: Tx,
   opts: { channels: readonly Channel[]; limit?: number; leaseSeconds?: number },
 ): Promise<OutboxRow[]> {
   if (opts.channels.length === 0) return [];
-  const limit = Math.min(Math.max(opts.limit ?? 50, 1), 500);
-  const lease = Math.min(Math.max(opts.leaseSeconds ?? 60, 10), 900);
+  const limit = Math.min(Math.max(opts.limit ?? 10, 1), 100);
+  const lease = Math.min(Math.max(opts.leaseSeconds ?? OUTBOX_LEASE_SECONDS, 10), 900);
   const result = await db.execute(sql`
-    update notification_outbox set claimed_at = now(), attempts = attempts + 1
+    update notification_outbox
+    set claimed_at = now(), claim_token = gen_random_uuid(), attempts = attempts + 1
     where id in (
       select id from notification_outbox
       where status = 'pending'
@@ -90,7 +100,7 @@ export async function claimOutboxBatch(
       limit ${limit}
       for update skip locked
     )
-    returning id, channel, recipient_user_id, recipient, template_key, locale, payload, attempts`);
+    returning id, channel, recipient_user_id, recipient, template_key, locale, payload, attempts, claim_token`);
   return rowsOf<RawOutbox>(result).map((r) => ({
     id: r.id,
     channel: r.channel,
@@ -100,39 +110,87 @@ export async function claimOutboxBatch(
     locale: r.locale,
     payload: typeof r.payload === 'string' ? (JSON.parse(r.payload) as Record<string, unknown>) : r.payload,
     attempts: r.attempts,
+    claimToken: r.claim_token,
   }));
 }
 
-export async function markOutboxSent(db: Tx, id: string, providerId: string | null): Promise<void> {
-  await db
+/**
+ * Re-checks and extends the lease immediately before a send. False = another sender reclaimed the row (our lease
+ * ran out) or it is no longer pending: do NOT send.
+ */
+export async function renewOutboxClaim(db: Tx, row: Pick<OutboxRow, 'id' | 'claimToken'>): Promise<boolean> {
+  const rows = await db
     .update(notificationOutbox)
-    .set({ status: 'sent', sentAt: new Date(), providerId, claimedAt: null, lastError: null })
-    .where(and(eq(notificationOutbox.id, id), eq(notificationOutbox.status, 'pending')));
+    .set({ claimedAt: new Date() })
+    .where(
+      and(
+        eq(notificationOutbox.id, row.id),
+        eq(notificationOutbox.claimToken, row.claimToken),
+        eq(notificationOutbox.status, 'pending'),
+      ),
+    )
+    .returning({ id: notificationOutbox.id });
+  return rows.length > 0;
+}
+
+const held = (row: Pick<OutboxRow, 'id' | 'claimToken'>) =>
+  and(
+    eq(notificationOutbox.id, row.id),
+    eq(notificationOutbox.claimToken, row.claimToken),
+    eq(notificationOutbox.status, 'pending'),
+  );
+
+export async function markOutboxSent(
+  db: Tx,
+  row: Pick<OutboxRow, 'id' | 'claimToken'>,
+  providerId: string | null,
+): Promise<boolean> {
+  const rows = await db
+    .update(notificationOutbox)
+    .set({
+      status: 'sent',
+      sentAt: new Date(),
+      providerId,
+      claimedAt: null,
+      claimToken: null,
+      lastError: null,
+    })
+    .where(held(row))
+    .returning({ id: notificationOutbox.id });
+  return rows.length > 0;
 }
 
 /** Transient failure: back off (or 24 h for a WhatsApp marketing cap); after `maxAttempts` it becomes failed. */
 export async function markOutboxRetry(
   db: Tx,
-  id: string,
+  row: Pick<OutboxRow, 'id' | 'claimToken'>,
   opts: { error: string; delaySeconds: number; maxAttempts?: number },
-): Promise<'retry' | 'failed'> {
+): Promise<'retry' | 'failed' | 'lost'> {
   const max = opts.maxAttempts ?? 6;
   const rows = await db.execute(sql`
     update notification_outbox
     set status = case when attempts >= ${max} then 'failed' else 'pending' end,
         claimed_at = null,
+        claim_token = null,
         last_error = ${opts.error.slice(0, 200)},
         next_attempt_at = now() + make_interval(secs => ${Math.max(1, Math.round(opts.delaySeconds))})
-    where id = ${id} and status = 'pending'
+    where id = ${row.id} and claim_token = ${row.claimToken} and status = 'pending'
     returning status`);
-  return rowsOf<{ status: string }>(rows)[0]?.status === 'failed' ? 'failed' : 'retry';
+  const status = rowsOf<{ status: string }>(rows)[0]?.status;
+  return status === undefined ? 'lost' : status === 'failed' ? 'failed' : 'retry';
 }
 
-export async function markOutboxFailed(db: Tx, id: string, error: string): Promise<void> {
-  await db
+export async function markOutboxFailed(
+  db: Tx,
+  row: Pick<OutboxRow, 'id' | 'claimToken'>,
+  error: string,
+): Promise<boolean> {
+  const rows = await db
     .update(notificationOutbox)
-    .set({ status: 'failed', claimedAt: null, lastError: error.slice(0, 200) })
-    .where(and(eq(notificationOutbox.id, id), eq(notificationOutbox.status, 'pending')));
+    .set({ status: 'failed', claimedAt: null, claimToken: null, lastError: error.slice(0, 200) })
+    .where(held(row))
+    .returning({ id: notificationOutbox.id });
+  return rows.length > 0;
 }
 
 /** Records a provider webhook delivery once; false means it was already seen (Meta retries deliveries). */

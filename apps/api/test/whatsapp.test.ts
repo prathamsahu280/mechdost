@@ -4,7 +4,7 @@
  */
 import { createHmac } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
-import { enqueueNotification, markOutboxSent, type OutboxRow } from '@mechdost/db/repo';
+import { claimOutboxBatch, enqueueNotification, markOutboxSent, type OutboxRow } from '@mechdost/db/repo';
 import * as s from '@mechdost/db/schema';
 import { ChannelError, backoffSeconds, dispatchOnce, type ChannelAdapter } from '../src/notify/dispatcher';
 import { createWhatsAppAdapter } from '../src/notify/whatsapp';
@@ -30,6 +30,7 @@ const row = (over: Partial<OutboxRow> = {}): OutboxRow => ({
   locale: 'hi',
   payload: { orderCode: 'MD-RPR-2026-7K3QWX', deliveryCode: '4821' },
   attempts: 1,
+  claimToken: '0192f3a4-5b6c-7d8e-9f01-000000000001',
   ...over,
 });
 
@@ -122,7 +123,7 @@ describe('notification dispatcher', () => {
       },
     };
     const result = await dispatchOnce(db, [adapter]);
-    expect(result).toMatchObject({ sent: 1, retried: 1, failed: 1 });
+    expect(result).toMatchObject({ sent: 1, retried: 1, failed: 1, skipped: 0 });
     const rows = await db.select().from(s.notificationOutbox);
     const byKey = new Map(rows.map((r) => [r.dedupeKey, r]));
     expect(byKey.get(keys[0]!)?.status).toBe('sent');
@@ -179,7 +180,8 @@ describe('WhatsApp webhook', () => {
       payload: { orderCode: 'MD-RPR-2026-7K3QWX' },
     });
     const queued = (await db.select().from(s.notificationOutbox)).find((r) => r.dedupeKey === key);
-    await markOutboxSent(db, queued!.id, 'wamid.RECEIPT1');
+    const claimed = (await claimOutboxBatch(db, { channels: ['whatsapp'] })).find((r) => r.id === queued!.id);
+    expect(await markOutboxSent(db, claimed!, 'wamid.RECEIPT1')).toBe(true);
     const body = JSON.stringify({
       object: 'whatsapp_business_account',
       entry: [

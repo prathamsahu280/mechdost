@@ -109,6 +109,11 @@ export const notificationOutbox = pgTable(
     providerId: text(),
     /** Dispatcher lease (FOR UPDATE SKIP LOCKED claim); a crashed sender's claim lapses and is retried. */
     claimedAt: ts(),
+    /**
+     * Fencing token of the current claim (security review 2026-11-02): the sender renews its lease right before
+     * sending and records the result only while it still holds this token, so a reclaimed row is never sent twice.
+     */
+    claimToken: uuid(),
     /** Earliest next try (backoff; 24 h for WhatsApp marketing caps). */
     nextAttemptAt: ts().notNull().defaultNow(),
     /** Provider delivery receipts (WhatsApp statuses webhook), for delivery-rate and cost analytics (rule 16). */

@@ -10,8 +10,10 @@ import {
   applyDeliveryReceipt,
   claimOutboxBatch,
   enqueueNotification,
+  markOutboxFailed,
   markOutboxRetry,
   markOutboxSent,
+  renewOutboxClaim,
   recordWebhookEvent,
   type Tx,
 } from '../src/repo';
@@ -76,13 +78,13 @@ describe('notification outbox', () => {
     const k = key();
     await enqueueNotification(t(), wa(k));
     const [row] = await claimOutboxBatch(t(), { channels: ['whatsapp'] });
-    expect(await markOutboxRetry(t(), row!.id, { error: 'meta_130429', delaySeconds: 60 })).toBe('retry');
+    expect(await markOutboxRetry(t(), row!, { error: 'meta_130429', delaySeconds: 60 })).toBe('retry');
     expect(await claimOutboxBatch(t(), { channels: ['whatsapp'] })).toHaveLength(0); // not due yet
     await db.execute(sql`update notification_outbox set next_attempt_at = now() - interval '1 second'`);
     const [again] = await claimOutboxBatch(t(), { channels: ['whatsapp'] });
     expect(again?.attempts).toBe(2);
     expect(
-      await markOutboxRetry(t(), again!.id, { error: 'meta_130429', delaySeconds: 60, maxAttempts: 2 }),
+      await markOutboxRetry(t(), again!, { error: 'meta_130429', delaySeconds: 60, maxAttempts: 2 }),
     ).toBe('failed');
     expect((await rowOf(k)).status).toBe('failed');
   });
@@ -94,11 +96,28 @@ describe('notification outbox', () => {
     expect(await claimOutboxBatch(t(), { channels: ['whatsapp'], leaseSeconds: 60 })).toHaveLength(1);
   });
 
+  it('a slow sender whose lease lapsed can neither send nor record (no double send)', async () => {
+    const k = key();
+    await enqueueNotification(t(), wa(k));
+    const [slow] = await claimOutboxBatch(t(), { channels: ['whatsapp'] });
+    expect(await renewOutboxClaim(t(), slow!)).toBe(true);
+    // The slow sender stalls past its lease; another sender reclaims the row.
+    await db.execute(sql`update notification_outbox set claimed_at = now() - interval '10 minutes'`);
+    const [fast] = await claimOutboxBatch(t(), { channels: ['whatsapp'], leaseSeconds: 60 });
+    expect(fast?.claimToken).not.toBe(slow?.claimToken);
+    expect(await renewOutboxClaim(t(), slow!)).toBe(false); // the dispatcher skips the send
+    expect(await markOutboxSent(t(), slow!, 'wamid.SLOW')).toBe(false);
+    expect(await markOutboxFailed(t(), slow!, 'late')).toBe(false);
+    expect(await markOutboxRetry(t(), slow!, { error: 'late', delaySeconds: 1 })).toBe('lost');
+    expect(await markOutboxSent(t(), fast!, 'wamid.FAST')).toBe(true);
+    expect(await rowOf(k)).toMatchObject({ status: 'sent', providerId: 'wamid.FAST', claimToken: null });
+  });
+
   it('records delivery receipts in any order, with Meta pricing for cost analytics', async () => {
     const k = key();
     await enqueueNotification(t(), wa(k));
     const [row] = await claimOutboxBatch(t(), { channels: ['whatsapp'] });
-    await markOutboxSent(t(), row!.id, 'wamid.HBgMOTE5ODc2NTQzMjEwFQIAERgS');
+    await markOutboxSent(t(), row!, 'wamid.HBgMOTE5ODc2NTQzMjEwFQIAERgS');
     const read = new Date('2026-11-02T10:05:00Z');
     const delivered = new Date('2026-11-02T10:01:00Z');
     expect(
