@@ -1,6 +1,9 @@
+import { Bike, Car, MapPin, Truck, Zap } from 'lucide-react';
+import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { DEMO_WORKSHOPS, fromPricePaise } from '@/demo/workshops';
 import { formatPrice } from '@/lib/format';
+import { workshopPhoto } from '@/lib/media';
 import { StarRating } from '../reviews/star-rating';
 import { ButtonLink } from '../ui/button-link';
 import { LocalLink } from '../ui/local-link';
@@ -31,64 +34,79 @@ export function TopWorkshops({ city }: { city: string }) {
         <ul className="mt-6 grid gap-4 tab:grid-cols-3">
           {top.map((w) => (
             <li key={w.slug}>
-              <article className="flex h-full flex-col rounded-card border border-line-card bg-surface p-5 shadow-card">
-                <div className="flex items-start gap-3">
+              <article className="group flex h-full flex-col overflow-hidden rounded-card border border-line-card bg-surface shadow-card transition-shadow duration-[var(--duration-base)] hover:shadow-card-hover">
+                <div className="relative aspect-[16/9] overflow-hidden bg-pill">
+                  <Image
+                    src={workshopPhoto(w.slug)}
+                    alt=""
+                    fill
+                    sizes="(min-width: 760px) 30vw, 92vw"
+                    className="object-cover transition-transform duration-[var(--duration-slow)] ease-[var(--ease-out-soft)] group-hover:scale-[1.03]"
+                  />
                   <span
                     aria-hidden="true"
-                    className="grid size-12 shrink-0 place-items-center rounded-xl bg-accent-soft text-[24px]"
+                    className="absolute top-2.5 left-2.5 grid size-9 place-items-center rounded-full bg-surface/95 text-ink shadow-card"
                   >
-                    {w.vehicles.includes('4W') ? '🚗' : '🛵'}
+                    {w.vehicles.includes('4W') ? (
+                      <Car className="size-[18px]" strokeWidth={2} />
+                    ) : (
+                      <Bike className="size-[18px]" strokeWidth={2} />
+                    )}
                   </span>
-                  <div className="min-w-0">
-                    <h3 className="font-heading text-lg leading-snug font-extrabold text-ink">
-                      <LocalLink href={`/workshops/${w.slug}`} className="hover:underline">
-                        {w.name}
-                      </LocalLink>
-                    </h3>
-                    <p className="text-sm text-muted">
-                      <span aria-hidden="true">📍 </span>
-                      {w.area} · {w.pincode}
-                    </p>
-                  </div>
                 </div>
-                <p className="mt-4 flex items-center gap-2 text-sm">
-                  <StarRating
-                    rating={w.rating}
-                    label={finder('rating', { rating: w.rating.toFixed(1), count: w.reviews })}
-                  />
-                  <span aria-hidden="true" className="font-bold text-ink">
-                    {w.rating.toFixed(1)}
-                  </span>
-                  <span aria-hidden="true" className="text-muted">
-                    {t('reviews', { count: w.reviews })}
-                  </span>
-                </p>
-                <ul className="mt-3 flex flex-wrap gap-2 text-[11px] font-bold">
-                  <li className="rounded-md bg-pill px-2 py-1 text-ink">{w.vehicles.join(' · ')}</li>
-                  {w.pickup ? (
-                    <li className="rounded-md bg-pill px-2 py-1 text-ink">
-                      <span aria-hidden="true">🚐 </span>
-                      {t('pickup')}
-                    </li>
-                  ) : null}
-                  {w.ev ? (
-                    <li className="rounded-md bg-pill px-2 py-1 text-ink">
-                      <span aria-hidden="true">⚡ </span>
-                      {t('ev')}
-                    </li>
-                  ) : null}
-                </ul>
-                <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-5">
-                  <p className="text-sm font-bold text-ink">
-                    {t('from', { price: formatPrice(fromPricePaise(w)) })}
+                <div className="flex flex-1 flex-col p-5">
+                  <div className="flex items-start gap-3">
+                    <div className="min-w-0">
+                      <h3 className="font-heading text-lg leading-snug font-extrabold text-ink">
+                        <LocalLink href={`/workshops/${w.slug}`} className="hover:underline">
+                          {w.name}
+                        </LocalLink>
+                      </h3>
+                      <p className="mt-0.5 flex items-center gap-1 text-sm text-muted">
+                        <MapPin aria-hidden="true" className="size-4 shrink-0" />
+                        {w.area} · {w.pincode}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="mt-4 flex items-center gap-2 text-sm">
+                    <StarRating
+                      rating={w.rating}
+                      label={finder('rating', { rating: w.rating.toFixed(1), count: w.reviews })}
+                    />
+                    <span aria-hidden="true" className="font-bold text-ink">
+                      {w.rating.toFixed(1)}
+                    </span>
+                    <span aria-hidden="true" className="text-muted">
+                      {t('reviews', { count: w.reviews })}
+                    </span>
                   </p>
-                  <ButtonLink
-                    href={`/workshops/${w.slug}`}
-                    data-track={`home_workshop_${w.slug}`}
-                    className="min-h-11 px-4"
-                  >
-                    {finder('view')}
-                  </ButtonLink>
+                  <ul className="mt-3 flex flex-wrap gap-2 text-[11px] font-bold">
+                    <li className="rounded-md bg-pill px-2 py-1 text-ink">{w.vehicles.join(' · ')}</li>
+                    {w.pickup ? (
+                      <li className="inline-flex items-center gap-1 rounded-md bg-pill px-2 py-1 text-ink">
+                        <Truck aria-hidden="true" className="size-3.5" />
+                        {t('pickup')}
+                      </li>
+                    ) : null}
+                    {w.ev ? (
+                      <li className="inline-flex items-center gap-1 rounded-md bg-pill px-2 py-1 text-ink">
+                        <Zap aria-hidden="true" className="size-3.5" />
+                        {t('ev')}
+                      </li>
+                    ) : null}
+                  </ul>
+                  <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-5">
+                    <p className="text-sm font-bold text-ink">
+                      {t('from', { price: formatPrice(fromPricePaise(w)) })}
+                    </p>
+                    <ButtonLink
+                      href={`/workshops/${w.slug}`}
+                      data-track={`home_workshop_${w.slug}`}
+                      className="min-h-11 px-4"
+                    >
+                      {finder('view')}
+                    </ButtonLink>
+                  </div>
                 </div>
               </article>
             </li>

@@ -157,7 +157,16 @@ export function Footer() {
             </span>
           </div>
         </div>
-        <p className="mt-6 text-xs leading-relaxed text-muted">{t('credits')}</p>
+        <p className="mt-6 text-xs leading-relaxed text-muted">
+          {t('credits')}{' '}
+          <LocalLink
+            href="/credits"
+            data-track="footer_photo_credits"
+            className="inline-flex min-h-6 items-center font-bold text-ink underline underline-offset-4"
+          >
+            {t('photoCredits')}
+          </LocalLink>
+        </p>
         <p className="mt-2 text-xs text-muted">{t('copyright', { year, company: site.company })}</p>
       </div>
     </footer>

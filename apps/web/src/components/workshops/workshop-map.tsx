@@ -46,6 +46,26 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, className: string, te
   return node;
 }
 
+/** Lucide "wrench" (same glyph as the site's workshop icon), drawn with DOM APIs because pins are not React. */
+const WRENCH_PATH =
+  'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z';
+
+function wrenchIcon(): SVGSVGElement {
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('class', 'md-map-pin__glyph');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('fill', 'none');
+  svg.setAttribute('stroke', 'currentColor');
+  svg.setAttribute('stroke-width', '2.25');
+  svg.setAttribute('stroke-linecap', 'round');
+  svg.setAttribute('stroke-linejoin', 'round');
+  const path = document.createElementNS(ns, 'path');
+  path.setAttribute('d', WRENCH_PATH);
+  svg.append(path);
+  return svg;
+}
+
 /** Teardrop pin with a wrench, plus a name tooltip shown on hover and keyboard focus. */
 function workshopPin(name: string, active: boolean): HTMLButtonElement {
   const button = el('button', `md-map-pin${active ? ' md-map-pin--active' : ''}`);
@@ -54,7 +74,7 @@ function workshopPin(name: string, active: boolean): HTMLButtonElement {
   button.setAttribute('aria-pressed', String(active));
   const body = el('span', 'md-map-pin__body');
   body.setAttribute('aria-hidden', 'true');
-  body.append(el('span', 'md-map-pin__glyph', '🔧'));
+  body.append(wrenchIcon());
   const tip = el('span', 'md-map-pin__tip', name);
   tip.setAttribute('aria-hidden', 'true');
   button.append(body, tip);

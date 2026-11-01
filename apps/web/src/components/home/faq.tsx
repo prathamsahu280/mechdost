@@ -1,4 +1,4 @@
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, MessageCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { whatsappLink } from '@/lib/site';
 import { Container, Eyebrow } from '../ui/page-intro';
@@ -40,7 +40,7 @@ export function Faq() {
             data-track="home_faq_whatsapp"
             className="mt-4 inline-flex min-h-11 items-center gap-1.5 text-sm font-bold text-accent-soft-text underline-offset-4 hover:underline"
           >
-            <span aria-hidden="true">💬</span>
+            <MessageCircle aria-hidden="true" className="size-4 shrink-0" strokeWidth={2.25} />
             {t('more')}
           </a>
         </div>

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { UI_EMOJI } from '@/lib/emoji';
+import { UI_ICONS } from '@/lib/icons';
 import { switchLocalePath, type SiteLocale } from '@/lib/locale-path';
 
 /**
@@ -21,9 +21,7 @@ export function LanguageSwitcher({ target, text }: { target: SiteLocale; text: s
       data-track={`language_${target}`}
       className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-[13px] font-bold text-ink hover:bg-pill min-[400px]:px-3"
     >
-      <span aria-hidden="true" className="hidden text-[15px] leading-none xl:inline">
-        {UI_EMOJI.language}
-      </span>
+      <UI_ICONS.language aria-hidden="true" className="hidden size-4 shrink-0 xl:block" strokeWidth={2.25} />
       {text}
     </Link>
   );

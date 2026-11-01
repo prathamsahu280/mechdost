@@ -1,0 +1,37 @@
+/*
+ * Premium finish (decision 2026-11-01 "Modern storefront refresh"): very subtle gradients layered on the existing
+ * colour utilities, so every card, primary button and navy panel picks them up without per-component classes.
+ * The colour token stays the fallback underneath (and is what the contrast tests check). Gradient values live in
+ * tokens.css per theme. Unlayered on purpose: it must sit above Tailwind's `utilities` layer.
+ */
+body {
+  background-image: var(--gradient-page);
+  background-repeat: no-repeat;
+}
+
+.bg-surface {
+  background-image: var(--gradient-surface);
+}
+
+/* A hover background colour on a surface element must stay visible, so drop the sheen while hovered. */
+.bg-surface[class*='hover:bg-']:hover {
+  background-image: none;
+}
+
+.bg-accent-button {
+  background-image: var(--gradient-accent);
+}
+
+.bg-accent-button:hover,
+.bg-accent-button:focus-visible {
+  background-image: var(--gradient-accent-hover);
+}
+
+.bg-accent-button:disabled,
+.bg-accent-button[aria-disabled='true'] {
+  background-image: none;
+}
+
+.bg-navy {
+  background-image: var(--gradient-navy);
+}

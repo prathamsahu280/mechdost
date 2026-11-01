@@ -1,5 +1,21 @@
 'use client';
 
+import {
+  ChartColumn,
+  CircleCheck,
+  Coins,
+  Compass,
+  Handshake,
+  LayoutTemplate,
+  MessageCircle,
+  Pencil,
+  Settings,
+  Star,
+  Store,
+  Timer,
+  Wrench,
+  type LucideIcon,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
@@ -33,18 +49,23 @@ import { AdminCoins } from './admin-coins';
 import { ContentEditor, LayoutEditor, SettingsEditor, type ContentDefaults } from './admin-site';
 import { PortalGuard, portalCard, portalField, portalPrimary, portalQuiet, useNow } from './portal-guard';
 
-const SECTION_EMOJI: Record<AdminSection, string> = {
-  overview: '📊',
-  orders: '🧭',
-  services: '🔧',
-  quotes: '💬',
-  applications: '🤝',
-  reviews: '⭐',
-  coins: '🪙',
-  content: '✏️',
-  layout: '🧩',
-  settings: '⚙️',
+const SECTION_ICONS: Record<AdminSection, LucideIcon> = {
+  overview: ChartColumn,
+  orders: Compass,
+  services: Wrench,
+  quotes: MessageCircle,
+  applications: Handshake,
+  reviews: Star,
+  coins: Coins,
+  content: Pencil,
+  layout: LayoutTemplate,
+  settings: Settings,
 };
+
+function SectionIcon({ section }: { section: AdminSection }) {
+  const Icon = SECTION_ICONS[section];
+  return <Icon aria-hidden="true" className="size-4 shrink-0" strokeWidth={2.25} />;
+}
 
 /**
  * Admin operations console (spec 08) in demo mode: KPIs, order routing to shops (ranked suggestions, one click,
@@ -112,9 +133,7 @@ function AdminNav({ current }: { current: AdminSection }) {
                 s === current ? 'bg-accent-soft text-accent-soft-text' : 'text-ink hover:bg-pill'
               }`}
             >
-              <span aria-hidden="true" className="text-[16px] leading-none">
-                {SECTION_EMOJI[s]}
-              </span>
+              <SectionIcon section={s} />
               {t(`nav_${s}`)}
             </Link>
           </li>
@@ -282,7 +301,8 @@ function RoutingCard({ order, now }: { order: DemoOrder; now: number }) {
 
       {state === 'awaiting_shop' && order.shop ? (
         <p className="mt-3 rounded-lg bg-warning-bg p-3 text-sm font-bold text-warning">
-          ⏱️ {t('offeredTo', { shop: shopName(order.shop.slug) })} ·{' '}
+          <Timer aria-hidden="true" className="mr-1.5 inline size-4 -translate-y-px" />
+          {t('offeredTo', { shop: shopName(order.shop.slug) })} ·{' '}
           {t('expiresIn', {
             minutes: Math.max(0, Math.ceil((new Date(order.shop.expiresAt).getTime() - now) / 60_000)),
           })}
@@ -295,7 +315,8 @@ function RoutingCard({ order, now }: { order: DemoOrder; now: number }) {
       ) : null}
       {state === 'confirmed' && order.shop ? (
         <p className="mt-3 rounded-lg bg-success-bg p-3 text-sm font-bold text-success">
-          ✅ {t('acceptedBy', { shop: shopName(order.shop.slug) })}
+          <CircleCheck aria-hidden="true" className="mr-1.5 inline size-4 -translate-y-px" />
+          {t('acceptedBy', { shop: shopName(order.shop.slug) })}
         </p>
       ) : null}
       {state === 'rejected' && order.rejection ? (
@@ -314,7 +335,10 @@ function RoutingCard({ order, now }: { order: DemoOrder; now: number }) {
                 className="flex flex-wrap items-center justify-between gap-2 rounded-tile border border-line-card p-3"
               >
                 <span className="min-w-0 text-sm">
-                  <span className="font-bold text-ink">🏪 {s.name}</span>
+                  <span className="inline-flex items-center gap-1.5 font-bold text-ink">
+                    <Store aria-hidden="true" className="size-4 shrink-0 text-muted" />
+                    {s.name}
+                  </span>
                   {i === 0 ? (
                     <span className="ml-2 rounded-pill bg-success-bg px-2 py-0.5 text-[11px] font-extrabold text-success">
                       {t('recommended')}
@@ -428,7 +452,10 @@ function ServiceRouting() {
                         }}
                         className={`${portalQuiet} w-full justify-between`}
                       >
-                        <span>🔧 {t('assignTo', { workshop: w.name })}</span>
+                        <span className="inline-flex items-center gap-1.5">
+                          <Wrench aria-hidden="true" className="size-4 shrink-0 text-muted" />
+                          {t('assignTo', { workshop: w.name })}
+                        </span>
                         <span className="text-xs text-muted">★ {w.rating.toFixed(1)}</span>
                       </button>
                     </li>

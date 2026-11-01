@@ -1,13 +1,11 @@
 import { useLocale, useTranslations } from 'next-intl';
 import { LocalLink } from '../ui/local-link';
 import { getPathname } from '@/i18n/navigation';
-import { UI_EMOJI } from '@/lib/emoji';
 import { AccountLink } from '../auth/account-link';
 import { CartPill } from '../commerce/cart-pill';
 import { LanguageSwitcher } from './language-switcher';
 import { ThemeToggle } from './theme-toggle';
 import { NavLinks, type NavItem } from './nav-links';
-import { SiteText } from './site-overrides';
 
 /** Concept brand lock-up: orange "m↗" mark, MechDost wordmark, tracked tagline. */
 export function BrandMark() {
@@ -29,30 +27,6 @@ export function BrandMark() {
         </span>
       </span>
     </LocalLink>
-  );
-}
-
-export function AnnouncementBar({ city }: { city: string }) {
-  const t = useTranslations('announcement');
-  const locale = useLocale();
-  return (
-    <div className="bg-navy px-[5%] py-2.5 text-center text-white">
-      <p className="eyebrow flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[8px] tracking-[1px] tab:text-[10px] tab:tracking-[1.8px]">
-        <span className="font-extrabold">{t('brand')}</span>
-        <span className="inline-flex items-center gap-1.5">
-          <span aria-hidden="true" className="text-[12px] tracking-normal">
-            {UI_EMOJI.orders}
-          </span>
-          <SiteText k="announcement.orders" locale={locale} fallback={t('orders')} />
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <span aria-hidden="true" className="text-[12px] tracking-normal">
-            {UI_EMOJI.workshops}
-          </span>
-          <SiteText k="announcement.workshops" locale={locale} fallback={t('workshops', { city })} />
-        </span>
-      </p>
-    </div>
   );
 }
 

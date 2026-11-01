@@ -43,3 +43,7 @@ Status values: `open` · `answered` · `withdrawn`. Priority: P0 blocks a featur
 | Q18 | 2026-11-01 | Yes: general API fails open, OTP send/login fails closed.                                                 |
 | Q20 | 2026-11-01 | 10 units minimum, no value threshold; price decided by negotiation — no discount cap, no second approver. |
 | Q21 | 2026-11-01 | Demo off before public launch, date TBD; ask again before going live.                                     |
+
+## Q26 · 2026-11-01 · Product photos (refresh branch `ui-modern-refresh`)
+
+Demo product photos are openly licensed Wikimedia Commons photos of the **product type**, not the exact listed brand/model (e.g. the Exide 2W battery listing shows a FIAMM battery). Options: (a) keep with the "representative photo" note until seller photos arrive; (b) get manufacturer/seller-supplied photos (needs permission); (c) shoot our own. **Default meanwhile:** (a). Also: merge `ui-modern-refresh` into `main` and push? **Default:** branch stays local until you review it.

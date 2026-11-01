@@ -1,116 +1,199 @@
-import { Search } from 'lucide-react';
+import { BadgeCheck, MapPin, Search, Wrench } from 'lucide-react';
 import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
 import { getPathname } from '@/i18n/navigation';
-import heroImage from '../../../public/images/automotive-hero.jpg';
-import insetImage from '../../../public/images/motorcycle.jpg';
+import heroImage from '../../../public/images/site/hero-workshop.jpg';
 import { SiteText } from '../site/site-overrides';
-import { ButtonLink } from '../ui/button-link';
+import { LocalLink } from '../ui/local-link';
+
+const POPULAR = [
+  { key: 'oil', q: 'engine oil' },
+  { key: 'battery', q: 'battery' },
+  { key: 'tyre', q: 'tyre' },
+  { key: 'brake', q: 'brake pad' },
+] as const;
 
 /**
- * Concept hero (docs/concept/customer-site.md §3.1): navy panel, copy + search on the left, workshop photo with
- * a rotated motorcycle inset on the right. Static imports give width/height + blur placeholders (no CLS, LQIP);
- * only the main photo is preloaded (LCP). The search form is a plain GET to /shop, so it works before JS loads.
+ * Home hero (decision 2026-11-01 "Modern storefront refresh"): a full-bleed workshop photo with navy fading in from
+ * the left, the concept headline, and a search console for the visitor's first job — find a part, or find a
+ * workshop by PIN. The console's two modes are a native radio group switched with CSS `:has()`, so the hero stays
+ * a static Server Component and both forms are plain GETs that work before JS loads.
  */
 export function Hero({ city }: { city: string }) {
   const t = useTranslations('home.hero');
   const locale = useLocale();
   const shopPath = getPathname({ href: '/shop', locale });
+  const workshopsPath = getPathname({ href: '/workshops', locale });
 
   return (
-    <section aria-labelledby="hero-title" className="px-[3%] pt-5 tab:pt-6">
-      <div className="mx-auto grid max-w-[1600px] overflow-hidden rounded-[18px] bg-navy text-white tab:rounded-hero nav:grid-cols-2">
-        <div className="px-[7%] py-12 tab:py-14 nav:px-[6%] nav:py-16">
-          {/* Admin-editable text (demo: /admin/content); the defaults come from the locale files. */}
-          <p className="eyebrow text-accent-light">
-            <SiteText k="hero.eyebrow" locale={locale} fallback={t('eyebrow')} />
-          </p>
-          <h1
-            id="hero-title"
-            className="mt-5 font-heading text-[clamp(40px,3.8vw,60px)] leading-[1.02] font-extrabold tracking-[-0.045em]"
-          >
-            <SiteText k="hero.titleLine1" locale={locale} fallback={t('titleLine1')} />
-            <br />
-            <em className="text-accent-light not-italic">
-              <SiteText k="hero.titleLine2" locale={locale} fallback={t('titleLine2')} />
-            </em>
-          </h1>
-          <p className="mt-6 max-w-xl text-[15px] leading-relaxed text-hero-copy tab:text-base">
-            <SiteText k="hero.lead" locale={locale} fallback={t('lead', { city })} />
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <ButtonLink href="/shop" data-track="hero_explore_products" className="min-h-12 px-6">
-              {t('exploreProducts')}
-            </ButtonLink>
-            <ButtonLink
-              href="/workshops"
-              variant="outlineOnDark"
-              data-track="hero_find_workshop"
-              className="min-h-12 px-5"
-            >
-              {t('findWorkshop')}
-            </ButtonLink>
-          </div>
-
-          <form
-            role="search"
-            action={shopPath}
-            method="get"
-            data-track-search="hero"
-            className="mt-8 max-w-md"
-          >
-            <label htmlFor="hero-search" className="text-[13px] text-hero-copy">
-              {t('searchLabel')}
-            </label>
-            <div className="mt-3 flex flex-col gap-2 rounded-[11px] border-2 border-white/80 bg-surface p-1.5 min-[480px]:flex-row">
-              <input
-                id="hero-search"
-                name="q"
-                type="search"
-                maxLength={120}
-                autoComplete="off"
-                enterKeyHint="search"
-                placeholder={t('searchPlaceholder')}
-                className="min-h-11 w-full min-w-0 flex-1 rounded-input px-3 text-[15px] text-ink placeholder:text-muted"
-              />
-              <button
-                type="submit"
-                aria-label={t('searchSubmit')}
-                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-input bg-accent-button px-4 text-white hover:bg-accent-button-hover"
-              >
-                <Search aria-hidden="true" className="size-5" strokeWidth={2.5} />
-              </button>
-            </div>
-          </form>
-        </div>
-
-        <figure className="relative aspect-[16/10] nav:aspect-auto nav:min-h-full">
+    <section aria-labelledby="hero-title" className="hero-console px-[3%] pt-4 tab:pt-5">
+      <div className="relative mx-auto max-w-[1600px] overflow-hidden rounded-[20px] bg-navy text-white tab:rounded-hero">
+        {/* Phones/tablets: full-bleed photo under a navy veil. Wide screens: the photo fills the right ~58% and is
+            framed on the car (its subject), with navy fading in from the copy side. */}
+        <div className="absolute inset-0 nav:left-[42%]">
           <Image
             src={heroImage}
             alt={t('imageAlt')}
             fill
             preload
             placeholder="blur"
-            sizes="(min-width: 1024px) 50vw, 100vw"
-            className="object-cover"
+            sizes="(min-width: 1024px) 58vw, 100vw"
+            className="object-cover object-[30%_center]"
           />
-          <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-navy/50 to-transparent" />
-          <figcaption className="eyebrow absolute top-6 left-6 max-w-[calc(100%-3rem)] rounded-lg bg-navy/85 px-3 py-2 text-[9px] text-white">
-            {t('imageLabel')}
-          </figcaption>
-          <div className="absolute right-[4%] bottom-[5%] w-[min(320px,58%)] -rotate-3 overflow-hidden rounded-xl border-[6px] border-white shadow-dialog">
-            <Image
-              src={insetImage}
-              alt={t('insetAlt')}
-              placeholder="blur"
-              sizes="320px"
-              className="aspect-[16/10] h-auto w-full object-cover"
-            />
-            <p className="eyebrow absolute inset-x-0 bottom-0 bg-gradient-to-t from-navy/90 to-transparent px-3 pt-6 pb-2 text-[8px] text-white">
-              {t('insetLabel')}
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 bg-gradient-to-b from-navy/80 via-navy/85 to-navy nav:bg-gradient-to-r nav:from-navy nav:via-navy/30 nav:to-transparent"
+          />
+        </div>
+
+        <div className="relative grid gap-10 px-[6%] pt-12 pb-8 tab:pt-16 nav:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)] nav:px-[5%] nav:pt-20 nav:pb-16">
+          <div className="max-w-[640px]">
+            <p className="text-sm font-bold text-accent-light">
+              <SiteText k="hero.eyebrow" locale={locale} fallback={t('eyebrow')} />
             </p>
+            <h1
+              id="hero-title"
+              className="mt-4 font-heading text-[clamp(38px,5vw,72px)] leading-[0.98] font-extrabold tracking-[-0.045em]"
+            >
+              <SiteText k="hero.titleLine1" locale={locale} fallback={t('titleLine1')} />
+              <br />
+              <span className="text-accent-light">
+                <SiteText k="hero.titleLine2" locale={locale} fallback={t('titleLine2')} />
+              </span>
+            </h1>
+            <p className="mt-6 max-w-[52ch] text-[15px] leading-relaxed text-hero-copy tab:text-base">
+              <SiteText k="hero.lead" locale={locale} fallback={t('lead', { city })} />
+            </p>
+
+            {/* Search console */}
+            <div className="mt-9 rounded-[18px] bg-surface p-2 text-ink shadow-dialog">
+              <fieldset className="grid grid-cols-2 gap-1 rounded-[12px] bg-pill p-1">
+                <legend className="sr-only">{t('consoleLabel')}</legend>
+                <label className="hero-mode">
+                  <input
+                    type="radio"
+                    name="hero-mode"
+                    value="parts"
+                    defaultChecked
+                    className="hero-mode-input"
+                  />
+                  <Search aria-hidden="true" className="size-4 shrink-0" strokeWidth={2.5} />
+                  <span className="min-[480px]:hidden">{t('modePartsShort')}</span>
+                  <span className="hidden min-[480px]:inline">{t('modeParts')}</span>
+                </label>
+                <label className="hero-mode">
+                  <input
+                    type="radio"
+                    name="hero-mode"
+                    value="workshop"
+                    className="hero-mode-input"
+                    data-track="hero_mode_workshop"
+                  />
+                  <Wrench aria-hidden="true" className="size-4 shrink-0" strokeWidth={2.5} />
+                  <span className="min-[480px]:hidden">{t('modeWorkshopShort')}</span>
+                  <span className="hidden min-[480px]:inline">{t('modeWorkshop')}</span>
+                </label>
+              </fieldset>
+
+              <form
+                role="search"
+                action={shopPath}
+                method="get"
+                data-track-search="hero"
+                className="hero-panel-parts p-2 pt-3"
+              >
+                <label htmlFor="hero-search" className="sr-only">
+                  {t('searchLabel')}
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    id="hero-search"
+                    name="q"
+                    type="search"
+                    maxLength={120}
+                    autoComplete="off"
+                    enterKeyHint="search"
+                    placeholder={t('searchPlaceholder')}
+                    className="min-h-12 w-full min-w-0 flex-1 rounded-input border border-input-border bg-surface px-3.5 text-[15px] text-ink placeholder:text-muted"
+                  />
+                  <button
+                    type="submit"
+                    aria-label={t('searchSubmit')}
+                    className="press inline-flex min-h-12 min-w-12 items-center justify-center rounded-input bg-accent-button px-4 text-white hover:bg-accent-button-hover"
+                  >
+                    <Search aria-hidden="true" className="size-5" strokeWidth={2.5} />
+                  </button>
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[13px]">
+                  <span className="mr-1 text-muted">{t('popularLabel')}</span>
+                  {POPULAR.map((p) => (
+                    <LocalLink
+                      key={p.key}
+                      href="/shop"
+                      query={{ q: p.q }}
+                      data-track={`hero_popular_${p.key}`}
+                      className="inline-flex min-h-8 items-center rounded-pill border border-line-card px-3 font-bold text-ink hover:border-ink"
+                    >
+                      {t(`popular.${p.key}`)}
+                    </LocalLink>
+                  ))}
+                </div>
+              </form>
+
+              <form
+                action={workshopsPath}
+                method="get"
+                data-track-search="hero_workshop"
+                className="hero-panel-workshop p-2 pt-3"
+              >
+                <div className="grid gap-2 min-[480px]:grid-cols-[1fr_1fr_auto]">
+                  <div>
+                    <label htmlFor="hero-pin" className="text-xs font-bold text-muted">
+                      {t('pinLabel')}
+                    </label>
+                    <input
+                      id="hero-pin"
+                      name="pin"
+                      inputMode="numeric"
+                      pattern="[0-9]{6}"
+                      maxLength={6}
+                      autoComplete="postal-code"
+                      placeholder={t('pinPlaceholder')}
+                      className="mt-1 min-h-12 w-full rounded-input border border-input-border bg-surface px-3.5 text-[15px] text-ink placeholder:text-muted"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="hero-vehicle" className="text-xs font-bold text-muted">
+                      {t('vehicleLabel')}
+                    </label>
+                    <select
+                      id="hero-vehicle"
+                      name="vehicle"
+                      defaultValue="any"
+                      className="mt-1 min-h-12 w-full rounded-input border border-input-border bg-surface px-3 text-[15px] text-ink"
+                    >
+                      <option value="any">{t('vehicleAny')}</option>
+                      <option value="2W">{t('vehicle2W')}</option>
+                      <option value="4W">{t('vehicle4W')}</option>
+                    </select>
+                  </div>
+                  <button
+                    type="submit"
+                    className="press inline-flex min-h-12 items-center justify-center gap-2 self-end rounded-input bg-accent-button px-5 text-sm font-bold text-white hover:bg-accent-button-hover"
+                  >
+                    <MapPin aria-hidden="true" className="size-4" strokeWidth={2.5} />
+                    {t('workshopSubmit')}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </figure>
+
+          <p className="hidden items-center gap-2 self-end justify-self-start rounded-pill tab:inline-flex bg-navy/80 px-3.5 py-2 text-[13px] font-bold text-white backdrop-blur nav:justify-self-end">
+            <BadgeCheck aria-hidden="true" className="size-4 text-accent-light" />
+            {t('photoCaption', { city })}
+          </p>
+        </div>
       </div>
     </section>
   );

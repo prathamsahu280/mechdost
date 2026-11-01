@@ -12,11 +12,6 @@
   "cities": {
     "raipur": "Raipur"
   },
-  "announcement": {
-    "brand": "MechDost",
-    "orders": "Product orders by confirmation",
-    "workshops": "Workshop requests in {city}"
-  },
   "nav": {
     "label": "Main",
     "home": "Home",
@@ -52,10 +47,27 @@
       "searchLabel": "Find your next essential",
       "searchPlaceholder": "Try tyres, battery or engine oil",
       "searchSubmit": "Search products",
-      "imageAlt": "A silver sports car in a workshop with cars on lifts behind it",
-      "imageLabel": "Products for your car. Care for your bike.",
-      "insetAlt": "A motorcycle parked on a quiet forest road",
-      "insetLabel": "And every two-wheel journey."
+      "imageAlt": "A workshop bay at night: a red car with its bonnet open beside an engine on a hoist",
+      "consoleLabel": "What do you need?",
+      "modeParts": "Parts & products",
+      "modeWorkshop": "Workshop near me",
+      "pinLabel": "Your PIN code",
+      "pinPlaceholder": "e.g. 492001",
+      "vehicleLabel": "Vehicle",
+      "vehicleAny": "Any vehicle",
+      "vehicle2W": "Bike or scooter",
+      "vehicle4W": "Car",
+      "workshopSubmit": "Find workshops",
+      "popularLabel": "Popular",
+      "popular": {
+        "oil": "Engine oil",
+        "battery": "Battery",
+        "tyre": "Tyres",
+        "brake": "Brake pads"
+      },
+      "photoCaption": "Workshops checked by our team in {city}",
+      "modePartsShort": "Parts",
+      "modeWorkshopShort": "Workshops"
     },
     "products": {
       "eyebrow": "Shop automotive essentials",
@@ -172,7 +184,7 @@
     "partners": "For Partners",
     "accountNote": "Check your account for orders, appointments and payment status.",
     "operatedBy": "Operated by",
-    "credits": "Vehicle and workshop imagery for illustration. Motorcycle: Kundan Bana / Unsplash. Workshop: Frankie Cordoba / Unsplash. No manufacturer or provider affiliation implied.",
+    "credits": "Photos from Wikimedia Commons contributors, used under their licences. They show the product type, not the exact item; no manufacturer or provider affiliation implied.",
     "copyright": "© {year} {company}",
     "colShop": "Shop",
     "colCare": "Vehicle care",
@@ -184,7 +196,8 @@
     "becomePartner": "Become a partner",
     "gstin": "GSTIN {gstin}",
     "registered": "Registered office: {address}",
-    "returnsPolicy": "Returns & refunds"
+    "returnsPolicy": "Returns & refunds",
+    "photoCredits": "Photo credits"
   },
   "whatsapp": {
     "general": "Hello MechDost, I have a question.",
@@ -373,7 +386,8 @@
     "openProduct": "Open product page",
     "bulkHint": "Need <min>10</min> or more? Ask for a bulk price.",
     "policyNote": "No returns or exchanges. Faulty parts are handled by our support team.",
-    "policyLink": "Read the policy"
+    "policyLink": "Read the policy",
+    "photoNote": "Representative photo. The shop confirms the exact item before dispatch."
   },
   "cart": {
     "title": "Your cart",
@@ -1014,10 +1028,7 @@
     "site_preview": "Open the home page",
     "content_title": "Site content",
     "content_lead": "Change the words customers see, in English and Hindi. Leave a field empty to use the default text shown in it.",
-    "content_group_announcement": "Announcement bar",
     "content_group_hero": "Home page headline",
-    "field_announcement_orders": "Message 1",
-    "field_announcement_workshops": "Message 2",
     "field_hero_eyebrow": "Small heading above the headline",
     "field_hero_titleLine1": "Headline, line 1",
     "field_hero_titleLine2": "Headline, line 2 (orange)",
@@ -1041,12 +1052,10 @@
     "section_faq": "Questions (FAQ)",
     "section_partners": "Partner invitation",
     "categories_title": "Category shortcuts",
-    "categories_lead": "Pick {min} to {max} categories for the home page and choose an emoji for each.",
+    "categories_lead": "Pick {min} to {max} categories for the home page.",
     "categories_onHome": "on the home page",
-    "categories_emoji": "Emoji for {name}",
     "categories_count": "{count} of {max} selected",
     "categories_errCount": "Pick between {min} and {max} categories.",
-    "categories_errEmoji": "Use a single emoji for {name}.",
     "settings_title": "Settings",
     "settings_lead": "Rules for orders and bulk quotes. Changes apply to new orders only; orders already placed keep their values.",
     "settings_err": "Enter a whole number from {min} to {max}.",
@@ -1116,5 +1125,15 @@
       "help": "Questions about an order? Call us:",
       "updated": "Last updated 1 November 2026."
     }
+  },
+  "credits": {
+    "eyebrow": "About this site",
+    "title": "Photo credits",
+    "lead": "The photos on this site are openly licensed. Each one is listed here with its author, licence and source.",
+    "photo": "Photo",
+    "author": "Author",
+    "license": "Licence",
+    "source": "Source",
+    "view": "View on Wikimedia Commons"
   }
 }

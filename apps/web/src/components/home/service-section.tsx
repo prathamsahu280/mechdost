@@ -28,7 +28,7 @@ export function ServiceSection({ city }: { city: string }) {
         </div>
         <ol aria-label={t('stepsLabel')} className="space-y-4">
           {STEPS.map((n) => (
-            <li key={n} className="reveal flex gap-4 rounded-tile bg-surface p-6 shadow-card">
+            <li key={n} className="flex gap-4 rounded-tile bg-surface p-6 shadow-card">
               <span
                 aria-hidden="true"
                 className="flex size-11 shrink-0 items-center justify-center rounded-full bg-accent-soft font-heading text-sm font-extrabold text-accent-soft-text"

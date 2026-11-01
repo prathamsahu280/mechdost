@@ -8,7 +8,7 @@ import { assistantCopy } from '@/assistant/server-copy';
 import { AssistantLauncher } from '@/components/assistant/assistant-launcher';
 import { AnalyticsListener } from '@/components/site/analytics-listener';
 import { Footer } from '@/components/site/footer';
-import { AnnouncementBar, Header } from '@/components/site/header';
+import { Header } from '@/components/site/header';
 import { MobileTabBar } from '@/components/site/mobile-tab-bar';
 import { getPathname } from '@/i18n/navigation';
 import { routing } from '@/i18n/routing';
@@ -81,7 +81,6 @@ export default async function LocaleLayout({
     href: localised(item.href),
     label: tabs(item.key),
   }));
-  const city = (await getTranslations('cities'))(site.defaultCity);
 
   return (
     // suppressHydrationWarning: the pre-paint script may set data-theme before React hydrates.
@@ -102,7 +101,6 @@ export default async function LocaleLayout({
         >
           {t('skipToContent')}
         </a>
-        <AnnouncementBar city={city} />
         <Header navItems={navItems} />
         <main id="content" tabIndex={-1} className="outline-none">
           {children}

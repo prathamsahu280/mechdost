@@ -1,8 +1,9 @@
+import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { CATEGORY_KEYS, CATEGORY_SLUGS } from '@/demo/catalogue';
-import { CATEGORY_EMOJI } from '@/lib/emoji';
+import { CATEGORY_ICONS } from '@/lib/icons';
+import { CATEGORY_PHOTOS } from '@/lib/media';
 import { DEFAULT_FEATURED } from '@/lib/site-layout';
-import { CategoryEmoji } from '../site/site-overrides';
 import { LocalLink } from '../ui/local-link';
 import { ButtonLink } from '../ui/button-link';
 import { Container, Eyebrow } from '../ui/page-intro';
@@ -12,7 +13,7 @@ const isDefault = (key: string) => DEFAULT_FEATURED.some((k) => k === key);
 /**
  * Home category shortcuts. All nine tiles are rendered; the default six show, and the admin's choice (demo:
  * /admin/layout, applied by the pre-paint layout script via `data-home-category`) can feature any 3–6 of them.
- * Emoji are admin-editable too. Admin-managed categories replace this list in Phase 1 (spec 08).
+ * Each category has a fixed icon (lib/icons.ts). Admin-managed categories replace this list in Phase 1 (spec 08).
  */
 export function CategoryTiles() {
   const t = useTranslations('home.products');
@@ -38,23 +39,33 @@ export function CategoryTiles() {
         <ul className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           {CATEGORY_KEYS.map((key) => {
             const slug = CATEGORY_SLUGS[key];
+            const Icon = CATEGORY_ICONS[key];
             return (
               <li key={key} data-home-category={key} className={isDefault(key) ? undefined : 'hidden'}>
                 <LocalLink
                   href="/shop"
                   query={{ category: slug }}
                   data-track={`home_category_${slug}`}
-                  className="group press reveal flex h-full min-h-[150px] flex-col items-center justify-center gap-3 rounded-tile border border-line-card bg-surface px-3 py-4 text-center shadow-card transition duration-[var(--duration-base)] hover:-translate-y-1 hover:border-accent-soft hover:shadow-card-hover"
+                  className="group press flex h-full flex-col overflow-hidden rounded-tile border border-line-card bg-surface shadow-card transition-shadow duration-[var(--duration-base)] hover:shadow-card-hover"
                 >
-                  <span
-                    aria-hidden="true"
-                    className="grid size-14 place-items-center rounded-full bg-accent-soft text-[28px] leading-none transition-transform duration-[var(--duration-base)] group-hover:scale-110"
-                  >
-                    <CategoryEmoji k={key} fallback={CATEGORY_EMOJI[key]} />
+                  <span className="relative block aspect-[4/3] overflow-hidden bg-pill">
+                    <Image
+                      src={CATEGORY_PHOTOS[key]}
+                      alt=""
+                      fill
+                      sizes="(min-width: 1024px) 16vw, (min-width: 640px) 31vw, 46vw"
+                      className="object-cover transition-transform duration-[var(--duration-slow)] ease-[var(--ease-out-soft)] group-hover:scale-[1.04]"
+                    />
+                    <span
+                      aria-hidden="true"
+                      className="absolute top-2 left-2 grid size-9 place-items-center rounded-full bg-surface/95 text-accent-soft-text shadow-card"
+                    >
+                      <Icon className="size-[18px]" strokeWidth={2} />
+                    </span>
                   </span>
-                  <span>
-                    <span className="block text-[15px] font-bold text-ink">{c(key)}</span>
-                    <span className="mt-1 block text-[11px] leading-snug text-muted">{hints(key)}</span>
+                  <span className="flex flex-1 flex-col px-3.5 py-3">
+                    <span className="block text-[15px] font-extrabold text-ink">{c(key)}</span>
+                    <span className="mt-0.5 block text-xs leading-snug text-muted">{hints(key)}</span>
                   </span>
                 </LocalLink>
               </li>

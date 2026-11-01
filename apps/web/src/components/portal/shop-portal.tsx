@@ -1,5 +1,6 @@
 'use client';
 
+import { CircleCheck, Store, Timer } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { findShop } from '@/demo/shops';
@@ -41,7 +42,10 @@ function ShopOrders({ shopSlug }: { shopSlug: string }) {
     <>
       {shop ? (
         <section className="blueprint rounded-card p-6 text-white shadow-card">
-          <h2 className="font-heading text-2xl font-extrabold">🏪 {shop.name}</h2>
+          <h2 className="flex items-center gap-2.5 font-heading text-2xl font-extrabold">
+            <Store aria-hidden="true" className="size-6 shrink-0 text-accent-light" strokeWidth={2} />
+            {shop.name}
+          </h2>
           <p className="mt-1 text-sm text-white/80">
             {shop.area} · {shop.pincode}
           </p>
@@ -134,7 +138,8 @@ function OfferedOrder({ order, shopSlug, now }: { order: DemoOrder; shopSlug: st
   return (
     <article className={`${portalCard} border-accent-button/50`}>
       <p className="mb-2 inline-flex rounded-pill bg-warning-bg px-3 py-1 text-xs font-extrabold text-warning">
-        ⏱️ {t('expiresIn', { minutes })}
+        <Timer aria-hidden="true" className="mr-1.5 size-3.5 shrink-0 self-center" />
+        {t('expiresIn', { minutes })}
       </p>
       <OrderLines order={order} />
       {declining ? (
@@ -186,9 +191,10 @@ function OfferedOrder({ order, shopSlug, now }: { order: DemoOrder; shopSlug: st
               respondToOrder(order.code, shopSlug, true);
               track('click', { id: 'shop_order_accepted', path: window.location.pathname });
             }}
-            className={`${portalPrimary} min-h-12 flex-1`}
+            className={`${portalPrimary} min-h-12 flex-1 gap-2`}
           >
-            ✅ {t('accept')}
+            <CircleCheck aria-hidden="true" className="size-4 shrink-0" />
+            {t('accept')}
           </button>
           <button
             type="button"

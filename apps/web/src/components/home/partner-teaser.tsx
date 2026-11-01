@@ -9,7 +9,7 @@ export function PartnerTeaser() {
   return (
     <section aria-labelledby="partners-teaser" className="pt-16">
       <Container>
-        <div className="reveal grid items-center gap-6 rounded-hero border border-line-card bg-surface p-8 shadow-card tab:grid-cols-[auto_1fr_auto] tab:p-10">
+        <div className="grid items-center gap-6 rounded-hero border border-line-card bg-surface p-8 shadow-card tab:grid-cols-[auto_1fr_auto] tab:p-10">
           <span className="flex size-16 items-center justify-center rounded-2xl bg-accent-soft text-accent-soft-text">
             <Handshake aria-hidden="true" className="size-8" />
           </span>

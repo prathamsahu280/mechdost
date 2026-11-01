@@ -1,6 +1,21 @@
 'use client';
 
-import { BadgeCheck, ChevronRight, MessagesSquare, Package, Trash2, Wrench } from 'lucide-react';
+import {
+  BadgeCheck,
+  Bike,
+  Car,
+  ChevronRight,
+  Coins,
+  House,
+  MapPin,
+  MessageCircle,
+  MessagesSquare,
+  Package,
+  Trash2,
+  UserRound,
+  Wrench,
+  type LucideIcon,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, type ReactNode, type SyntheticEvent } from 'react';
@@ -25,16 +40,21 @@ import { ORDER_STAGES, REQUEST_STAGES, useHydrated, useOrders, useQuotes, useReq
 import { formatDate, formatPrice } from '@/lib/format';
 import { ACCOUNT_SECTIONS, type AccountSection } from '@/lib/sections';
 
-const SECTION_EMOJI: Record<AccountSection, string> = {
-  overview: '🏠',
-  orders: '📦',
-  services: '🔧',
-  quotes: '💬',
-  coins: '🪙',
-  vehicles: '🚗',
-  addresses: '📍',
-  profile: '👤',
+const SECTION_ICONS: Record<AccountSection, LucideIcon> = {
+  overview: House,
+  orders: Package,
+  services: Wrench,
+  quotes: MessageCircle,
+  coins: Coins,
+  vehicles: Car,
+  addresses: MapPin,
+  profile: UserRound,
 };
+
+function SectionIcon({ section, className }: { section: AccountSection; className: string }) {
+  const Icon = SECTION_ICONS[section];
+  return <Icon aria-hidden="true" className={`shrink-0 ${className}`} strokeWidth={2.25} />;
+}
 
 const card = 'rounded-card border border-line-card bg-surface p-5 shadow-card tab:p-6';
 const field =
@@ -147,9 +167,7 @@ function SectionNav({ current }: { current: AccountSection }) {
                   active ? 'bg-accent-soft text-accent-soft-text' : 'text-ink hover:bg-pill'
                 }`}
               >
-                <span aria-hidden="true" className="text-[16px] leading-none">
-                  {SECTION_EMOJI[s]}
-                </span>
+                <SectionIcon section={s} className="size-4" />
                 {t(`nav_${s}`)}
               </Link>
             </li>
@@ -211,8 +229,11 @@ function Overview({ account }: { account: DemoAccount }) {
               href={`${prefix}/account/${s}`}
               className={`${card} press block p-4 hover:shadow-card-hover tab:p-5`}
             >
-              <span aria-hidden="true" className="text-[22px] leading-none">
-                {SECTION_EMOJI[s]}
+              <span
+                aria-hidden="true"
+                className="grid size-10 place-items-center rounded-xl bg-accent-soft text-accent-soft-text"
+              >
+                <SectionIcon section={s} className="size-5" />
               </span>
               <span className="mt-2 block font-heading text-3xl font-extrabold text-ink tabular-nums">
                 {n}
@@ -254,9 +275,13 @@ function VehicleSummary({ vehicle }: { vehicle: DemoVehicle }) {
     <div className="mt-2 flex items-center gap-3">
       <span
         aria-hidden="true"
-        className="grid size-12 place-items-center rounded-full bg-accent-soft text-[24px]"
+        className="grid size-12 place-items-center rounded-full bg-accent-soft text-accent-soft-text"
       >
-        {vehicle.type === '2W' ? '🛵' : '🚗'}
+        {vehicle.type === '2W' ? (
+          <Bike className="size-6" strokeWidth={2} />
+        ) : (
+          <Car className="size-6" strokeWidth={2} />
+        )}
       </span>
       <div className="min-w-0">
         <p className="font-heading text-lg font-extrabold text-ink">
@@ -276,14 +301,14 @@ function ListSection({
   id,
   title,
   empty,
-  emoji,
+  icon: Icon,
   next,
   children,
 }: {
   id: string;
   title: string;
   empty: string | null;
-  emoji: string;
+  icon: LucideIcon;
   next: { href: string; label: string; track: string };
   children: ReactNode;
 }) {
@@ -305,9 +330,9 @@ function ListSection({
         <div className="mt-3 flex items-center gap-4 rounded-card border border-dashed border-line-card bg-surface p-5">
           <span
             aria-hidden="true"
-            className="grid size-12 shrink-0 place-items-center rounded-xl bg-accent-soft text-[24px]"
+            className="grid size-12 shrink-0 place-items-center rounded-xl bg-accent-soft text-accent-soft-text"
           >
-            {emoji}
+            <Icon className="size-6" strokeWidth={2} />
           </span>
           <div className="min-w-0">
             <p className="text-sm text-muted">{empty}</p>
@@ -339,7 +364,7 @@ function OrdersList({ limit }: { limit?: number }) {
       id={`orders-${String(limit ?? 'all')}`}
       title={t('nav_orders')}
       empty={orders.length === 0 ? t('ordersEmpty') : null}
-      emoji="📦"
+      icon={Package}
       next={{ href: `${prefix}/shop`, label: t('shopNow'), track: 'account_next_orders' }}
     >
       {orders.map((order) => (
@@ -371,7 +396,7 @@ function ServicesList({ limit }: { limit?: number }) {
       id={`services-${String(limit ?? 'all')}`}
       title={t('nav_services')}
       empty={requests.length === 0 ? t('servicesEmpty') : null}
-      emoji="🔧"
+      icon={Wrench}
       next={{ href: `${prefix}/workshops`, label: t('bookService'), track: 'account_next_services' }}
     >
       {requests.map((req) => (
@@ -403,7 +428,7 @@ function QuotesList({ limit }: { limit?: number }) {
       id={`quotes-${String(limit ?? 'all')}`}
       title={t('nav_quotes')}
       empty={quotes.length === 0 ? t('quotesEmpty') : null}
-      emoji="💬"
+      icon={MessageCircle}
       next={{ href: `${prefix}/quotes/new`, label: t('newQuote'), track: 'account_next_quotes' }}
     >
       {quotes.map((quote) => (
@@ -514,7 +539,12 @@ function Vehicles({ account }: { account: DemoAccount }) {
                     defaultChecked={i === 0}
                     className="size-5 accent-[var(--color-accent-button)]"
                   />
-                  {type === '2W' ? `🛵 ${t('twoWheeler')}` : `🚗 ${t('fourWheeler')}`}
+                  {type === '2W' ? (
+                    <Bike aria-hidden="true" className="size-4 text-muted" />
+                  ) : (
+                    <Car aria-hidden="true" className="size-4 text-muted" />
+                  )}
+                  {type === '2W' ? t('twoWheeler') : t('fourWheeler')}
                 </label>
               ))}
             </div>
@@ -653,7 +683,7 @@ function Addresses({ account }: { account: DemoAccount }) {
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="flex flex-wrap items-center gap-2 font-heading font-extrabold text-ink">
-                  <span aria-hidden="true">📍</span>
+                  <MapPin aria-hidden="true" className="size-4 text-accent-soft-text" />
                   {a.label}
                   {a.isDefault ? (
                     <span className="rounded-pill bg-success-bg px-2 py-0.5 text-[11px] font-extrabold text-success">

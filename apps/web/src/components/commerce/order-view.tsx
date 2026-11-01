@@ -1,6 +1,6 @@
 'use client';
 
-import { PartyPopper } from 'lucide-react';
+import { PartyPopper, Store } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
@@ -66,8 +66,9 @@ export function OrderView({ code }: { code: string }) {
             </div>
           )}
           {order.shop?.status === 'accepted' ? (
-            <p className="mt-4 text-sm font-bold text-ink">
-              🏪 {t('shopLabel', { shop: findShop(order.shop.slug)?.name ?? order.shop.slug })}
+            <p className="mt-4 flex items-center gap-1.5 text-sm font-bold text-ink">
+              <Store aria-hidden="true" className="size-4 shrink-0 text-accent-soft-text" />
+              {t('shopLabel', { shop: findShop(order.shop.slug)?.name ?? order.shop.slug })}
             </p>
           ) : null}
           {!order.rejection && order.stage < ORDER_STAGES.length - 1 ? (

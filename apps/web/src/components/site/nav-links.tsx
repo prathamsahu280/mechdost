@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { canonicalPath } from '@/lib/locale-path';
-import { NAV_EMOJI } from '@/lib/emoji';
+import { NAV_ICONS } from '@/lib/icons';
 import { isActive, type PrimaryNavKey } from '@/lib/nav';
 
 export interface NavItem {
@@ -24,6 +24,7 @@ export function NavLinks({ label, items }: { label: string; items: readonly NavI
       <ul className="flex items-center gap-1">
         {items.map((item) => {
           const active = isActive(pathname, item.href, item.key === 'home');
+          const Icon = NAV_ICONS[item.key];
           return (
             <li key={item.key}>
               <Link
@@ -34,9 +35,7 @@ export function NavLinks({ label, items }: { label: string; items: readonly NavI
                   active ? 'bg-accent-soft text-accent-soft-text' : 'text-ink hover:bg-pill'
                 }`}
               >
-                <span aria-hidden="true" className="hidden text-[16px] leading-none xl:inline">
-                  {NAV_EMOJI[item.key]}
-                </span>
+                <Icon aria-hidden="true" className="hidden size-4 shrink-0 xl:block" strokeWidth={2.25} />
                 {item.label}
               </Link>
             </li>

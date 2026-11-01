@@ -1,7 +1,6 @@
 'use client';
 
-import { useCategoryEmoji } from '@/demo/site-config';
-import { CATEGORY_EMOJI, UI_EMOJI } from '@/lib/emoji';
+import { CATEGORY_ICONS, UI_ICONS } from '@/lib/icons';
 import { MessageCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState, type ReactNode, type SyntheticEvent } from 'react';
@@ -64,7 +63,6 @@ export function ShopBrowser({
 }) {
   const c = useTranslations('catalogue');
   const cat = useTranslations('categories');
-  const emoji = useCategoryEmoji();
   const shop = useTranslations('pages.shop');
   const product = useTranslations('product');
   const [state, setState] = useState<State>(initial);
@@ -188,6 +186,7 @@ export function ShopBrowser({
           {[undefined, ...CATEGORY_KEYS].map((k) => {
             const active = state.category === k;
             const next = { ...state, category: k };
+            const ChipIcon = k ? CATEGORY_ICONS[k] : UI_ICONS.all;
             return (
               <li key={k ?? 'all'}>
                 <a
@@ -201,9 +200,7 @@ export function ShopBrowser({
                   }}
                   className={chip(active)}
                 >
-                  <span aria-hidden="true" className="text-[15px] leading-none">
-                    {k ? emoji(k, CATEGORY_EMOJI[k]) : UI_EMOJI.all}
-                  </span>
+                  <ChipIcon aria-hidden="true" className="size-4 shrink-0" strokeWidth={2.25} />
                   {k ? cat(k) : cat('all')}
                 </a>
               </li>

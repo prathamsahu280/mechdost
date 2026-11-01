@@ -1,5 +1,6 @@
 'use client';
 
+import { Mail, ShieldCheck, Smartphone, Store, UserRound, Wrench, type LucideIcon } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useRef, useState, type ReactNode, type SyntheticEvent } from 'react';
@@ -39,7 +40,24 @@ type Step =
   | 'reset-link';
 
 const RESEND_SECONDS = 30;
-const ROLE_EMOJI: Record<DemoRole, string> = { customer: '🙋', shop: '🏪', workshop: '🔧', admin: '🛡️' };
+const ROLE_ICONS: Record<DemoRole, LucideIcon> = {
+  customer: UserRound,
+  shop: Store,
+  workshop: Wrench,
+  admin: ShieldCheck,
+};
+
+function RoleIcon({ role }: { role: DemoRole }) {
+  const Icon = ROLE_ICONS[role];
+  return (
+    <span
+      aria-hidden="true"
+      className="grid size-9 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent-soft-text"
+    >
+      <Icon className="size-[18px]" strokeWidth={2} />
+    </span>
+  );
+}
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 const primary =
@@ -475,9 +493,7 @@ export function LoginFlow() {
                     }}
                     className="press flex min-h-14 w-full items-center gap-2 rounded-button border border-line-card bg-surface px-3 text-left hover:bg-pill"
                   >
-                    <span aria-hidden="true" className="text-[20px] leading-none">
-                      {ROLE_EMOJI[a.role]}
-                    </span>
+                    <RoleIcon role={a.role} />
                     <span className="min-w-0">
                       <span className="block text-sm font-bold text-ink">{t(`role_${a.role}`)}</span>
                       <span className="block truncate text-xs text-muted">{a.name}</span>
@@ -570,10 +586,10 @@ export function LoginFlow() {
           <ul className="mt-5 space-y-3">
             {(
               [
-                ['forgot-phone', '📱', t('forgotByPhone'), t('forgotByPhoneHint')],
-                ['forgot-email', '✉️', t('forgotByEmail'), t('forgotByEmailHint', { minutes: 30 })],
+                ['forgot-phone', Smartphone, t('forgotByPhone'), t('forgotByPhoneHint')],
+                ['forgot-email', Mail, t('forgotByEmail'), t('forgotByEmailHint', { minutes: 30 })],
               ] as const
-            ).map(([target, emoji, label, hint], i) => (
+            ).map(([target, Icon, label, hint], i) => (
               <li key={target}>
                 <button
                   type="button"
@@ -583,8 +599,11 @@ export function LoginFlow() {
                   }}
                   className="press flex min-h-16 w-full items-center gap-3 rounded-tile border border-line-card bg-surface px-4 py-3 text-left hover:bg-pill"
                 >
-                  <span aria-hidden="true" className="text-[24px] leading-none">
-                    {emoji}
+                  <span
+                    aria-hidden="true"
+                    className="grid size-10 shrink-0 place-items-center rounded-xl bg-accent-soft text-accent-soft-text"
+                  >
+                    <Icon className="size-5" strokeWidth={2} />
                   </span>
                   <span>
                     <span className="block text-sm font-bold text-ink">{label}</span>

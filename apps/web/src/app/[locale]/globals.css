@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import '@mechdost/ui/tokens.css';
+@import '@mechdost/ui/surfaces.css';
 
 /* Base styles from docs/design-system.md. Components use utilities; this file holds only cross-cutting rules. */
 @layer base {
@@ -99,6 +100,55 @@
       animation-range: entry 0% entry 45%;
     }
   }
+}
+
+/*
+ * Hero search console (components/home/hero.tsx): two modes as a native radio group; the checked radio picks the
+ * visible form with :has(), so there is no client JS. Without :has() support both forms simply stay visible.
+ */
+.hero-mode {
+  position: relative;
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 10px;
+  border-radius: 9px;
+  color: var(--color-muted);
+  font-size: 14px;
+  font-weight: 800;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) var(--ease-out-soft),
+    color var(--duration-fast) var(--ease-out-soft);
+}
+/* The real radio covers the whole 44px segment (invisible), so the input itself is the full-size target. */
+.hero-mode-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.hero-mode:hover {
+  color: var(--color-ink);
+}
+.hero-mode:has(input:checked) {
+  background: var(--color-surface);
+  color: var(--color-ink);
+  box-shadow: 0 1px 2px #101f3424;
+}
+.hero-mode:has(input:focus-visible) {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+.hero-console:has(input[value='parts']:checked) .hero-panel-workshop,
+.hero-console:has(input[value='workshop']:checked) .hero-panel-parts {
+  display: none;
 }
 
 @keyframes shimmer {
@@ -240,8 +290,9 @@
     background-color var(--duration-fast) var(--ease-out-soft);
 }
 .md-map-pin__glyph {
-  font-size: 15px;
-  line-height: 1;
+  width: 15px;
+  height: 15px;
+  color: #fff;
   transform: rotate(45deg);
 }
 .md-map-pin:hover .md-map-pin__body,

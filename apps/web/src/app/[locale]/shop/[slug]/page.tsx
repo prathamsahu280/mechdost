@@ -1,4 +1,4 @@
-import { CheckCircle2, ShieldCheck, Truck } from 'lucide-react';
+import { Ban, CheckCircle2, ShieldCheck, Truck } from 'lucide-react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
@@ -81,7 +81,10 @@ export default async function ProductPage({ params }: Props) {
       </nav>
 
       <div className="mt-6 grid gap-8 tab:grid-cols-2 nav:gap-14">
-        <ProductVisual category={product.category} brand={product.brand} sku={product.sku} size="hero" />
+        <figure>
+          <ProductVisual slug={product.slug} category={product.category} brand={product.brand} size="hero" />
+          <figcaption className="mt-2 text-xs text-muted">{t('photoNote')}</figcaption>
+        </figure>
 
         <div>
           <p className="text-xs text-muted">
@@ -164,7 +167,7 @@ export default async function ProductPage({ params }: Props) {
               </LocalLink>
             </p>
             <p className="mt-2 text-sm text-muted">
-              <span aria-hidden="true">🚫 </span>
+              <Ban aria-hidden="true" className="mr-1 inline size-4 -translate-y-px align-middle" />
               {t('policyNote')}{' '}
               <LocalLink
                 href="/policies/returns"

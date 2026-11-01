@@ -1,68 +1,44 @@
-import {
-  BatteryFull,
-  CircleDot,
-  Cog,
-  Disc3,
-  Droplets,
-  Filter,
-  PlugZap,
-  Sparkles,
-  Wrench,
-  type LucideIcon,
-} from 'lucide-react';
+import Image from 'next/image';
 import type { CategoryKey } from '@/demo/catalogue';
-
-export const CATEGORY_ICONS: Record<CategoryKey, LucideIcon> = {
-  tyres: Disc3,
-  lubricants: Droplets,
-  batteries: BatteryFull,
-  bearings: CircleDot,
-  filters: Filter,
-  spareParts: Cog,
-  accessories: Sparkles,
-  workshopTools: Wrench,
-  evEssentials: PlugZap,
-};
+import { productPhoto } from '@/lib/media';
 
 /**
- * Product artwork until catalogue photos arrive (next/image + Storage, spec 02): a blueprint plate — navy panel,
- * engineering grid, the part drawn in light line work, brand stamped in the corner, part reference at the foot.
- * Fixed aspect ratio so cards never shift.
+ * Product photo (decision 2026-11-01 "Real photos"): a representative, openly licensed photo of the product type
+ * (lib/media.ts) until seller photos arrive from Storage (spec 02). Fixed aspect ratio + `fill` so cards never shift;
+ * `priority` only for the product page hero. The brand chip keeps the listed brand visible on every photo.
  */
 export function ProductVisual({
+  slug,
   category,
   brand,
-  sku,
   size = 'card',
 }: {
+  slug: string;
   category: CategoryKey;
   brand: string;
-  sku?: string;
   size?: 'card' | 'hero';
 }) {
-  const Icon = CATEGORY_ICONS[category];
   return (
     <div
-      aria-hidden="true"
-      className={`blueprint relative flex items-center justify-center overflow-hidden ${
-        size === 'hero' ? 'aspect-square rounded-card' : 'aspect-[4/3] rounded-tile'
+      className={`relative overflow-hidden bg-pill ${
+        size === 'hero' ? 'aspect-[4/3] rounded-card' : 'aspect-[4/3] rounded-tile'
       }`}
     >
-      <span className="absolute inset-[14%] rounded-full border border-dashed border-white/15" />
-      <Icon
-        className={`relative text-accent-pale transition-transform duration-[var(--duration-slow)] ease-[var(--ease-out-soft)] group-hover:scale-105 ${
-          size === 'hero' ? 'size-36' : 'size-16'
-        }`}
-        strokeWidth={1}
+      <Image
+        src={productPhoto(slug, category)}
+        alt=""
+        fill
+        preload={size === 'hero'}
+        sizes={
+          size === 'hero'
+            ? '(min-width: 760px) 50vw, 100vw'
+            : '(min-width: 1024px) 23vw, (min-width: 480px) 46vw, 92vw'
+        }
+        className="object-cover transition-transform duration-[var(--duration-slow)] ease-[var(--ease-out-soft)] group-hover:scale-[1.03]"
       />
-      <span className="absolute top-3 left-3 rounded-md bg-white/12 px-2 py-1 text-[11px] font-extrabold tracking-wide text-white">
+      <span className="absolute top-2.5 left-2.5 rounded-md bg-surface/95 px-2 py-1 text-[11px] font-extrabold tracking-wide text-ink shadow-card">
         {brand}
       </span>
-      {sku ? (
-        <span className="absolute right-3 bottom-3 text-[10px] font-bold tracking-wider text-white/70">
-          {sku}
-        </span>
-      ) : null}
     </div>
   );
 }

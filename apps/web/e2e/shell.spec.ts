@@ -186,18 +186,15 @@ test.describe('quality gates', () => {
       w.__events = [];
       window.addEventListener('mechdost:track', (e) => w.__events.push((e as CustomEvent).detail));
     });
-    await page
-      .getByRole('link', { name: /Explore Products/ })
-      .first()
-      .click();
-    await expect(page).toHaveURL(/\/shop$/);
+    await page.getByRole('link', { name: 'Engine oil', exact: true }).first().click();
+    await expect(page).toHaveURL(/\/shop\?q=engine\+oil$/);
     const events = await page.evaluate(
       () => (window as unknown as { __events: { event: string; props: { id?: string } }[] }).__events,
     );
     expect(events).toContainEqual(
       expect.objectContaining({
         event: 'click',
-        props: expect.objectContaining({ id: 'hero_explore_products' }),
+        props: expect.objectContaining({ id: 'hero_popular_oil' }),
       }),
     );
     expect(events.some((e) => e.event === 'page_view')).toBe(true);

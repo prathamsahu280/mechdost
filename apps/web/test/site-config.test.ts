@@ -5,7 +5,6 @@ import {
   DEFAULT_CONFIG,
   DEFAULT_SETTINGS,
   cleanText,
-  isEmoji,
   resetArea,
   saveCategories,
   saveContent,
@@ -51,14 +50,19 @@ describe('site config (admin customisation, spec 08)', () => {
       JSON.stringify({
         layout: { order: ['faq', 'bogus', 'faq'], hidden: ['route', 'nope'] },
         featured: ['tyres', 'batteries'], // fewer than 3 → default six
-        emoji: { tyres: '🚗', batteries: 'abc', filters: '<b>' },
+        // Removed 2026-11-01: category emoji overrides and announcement-bar text — old saves must still load.
+        emoji: { tyres: '\u{1F697}' },
         settings: {
           acceptMinutes: 1,
           bulkMinUnits: 99_999,
           deliveryFeePaise: 'x',
           freeDeliveryFromPaise: 50_000,
         },
-        content: { 'hero.titleLine1': { en: '  Hello\u0000  world ', hi: 42 }, unknown: { en: 'x' } },
+        content: {
+          'hero.titleLine1': { en: '  Hello\u0000  world ', hi: 42 },
+          unknown: { en: 'x' },
+          'announcement.orders': { en: 'Old bar text' },
+        },
       }),
     );
     const c = siteConfig();
@@ -67,7 +71,7 @@ describe('site config (admin customisation, spec 08)', () => {
     expect(c.layout.order).toHaveLength(HOME_SECTIONS.length);
     expect(c.layout.hidden).toEqual(['route']);
     expect(c.featured).toBeNull();
-    expect(c.emoji).toEqual({ tyres: '🚗' });
+    expect(c).not.toHaveProperty('emoji');
     expect(c.settings).toEqual({
       ...DEFAULT_SETTINGS,
       acceptMinutes: 5,
@@ -78,13 +82,7 @@ describe('site config (admin customisation, spec 08)', () => {
     expect(c.content).toEqual({ 'hero.titleLine1': { en: 'Hello world' } });
   });
 
-  it('accepts single emoji (incl. ZWJ sequences) and rejects text or markup', () => {
-    expect(isEmoji('🔋')).toBe(true);
-    expect(isEmoji('🛠️')).toBe(true);
-    expect(isEmoji('🧑‍🔧')).toBe(true);
-    expect(isEmoji('ab')).toBe(false);
-    expect(isEmoji('🔋 x')).toBe(false);
-    expect(isEmoji('<script>')).toBe(false);
+  it('caps admin text at the field limit', () => {
     expect(cleanText('hero.eyebrow', 'x'.repeat(500))).toHaveLength(80);
   });
 
@@ -108,13 +106,10 @@ describe('site config (admin customisation, spec 08)', () => {
     expect(siteConfig().content).toEqual({});
   });
 
-  it('refuses a featured-category list outside 3–6 and drops invalid emoji', () => {
-    expect(saveCategories(0, 'Ops', ['tyres', 'batteries'], {})).toBe(false);
-    expect(saveCategories(0, 'Ops', ['tyres', 'batteries', 'filters'], { tyres: '🛞', filters: 'no' })).toBe(
-      true,
-    );
+  it('refuses a featured-category list outside 3–6', () => {
+    expect(saveCategories(0, 'Ops', ['tyres', 'batteries'])).toBe(false);
+    expect(saveCategories(0, 'Ops', ['tyres', 'batteries', 'filters'])).toBe(true);
     expect(siteConfig().featured).toEqual(['tyres', 'batteries', 'filters']);
-    expect(siteConfig().emoji).toEqual({ tyres: '🛞' });
   });
 
   it('clamps settings on save and the delivery rule uses them', () => {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
-import { UI_EMOJI } from '@/lib/emoji';
+import { UI_ICONS } from '@/lib/icons';
 import { THEME_STORAGE_KEY } from '@/lib/theme';
 
 type Theme = 'light' | 'dark';
@@ -49,12 +49,8 @@ export function ThemeToggle({ label, className = '' }: { label: string; classNam
       data-track="theme_toggle"
       className={`press inline-flex size-11 items-center justify-center rounded-lg text-ink hover:bg-pill ${className}`}
     >
-      <span aria-hidden="true" className="theme-icon-moon text-[18px] leading-none">
-        {UI_EMOJI.dark}
-      </span>
-      <span aria-hidden="true" className="theme-icon-sun text-[18px] leading-none">
-        {UI_EMOJI.light}
-      </span>
+      <UI_ICONS.dark aria-hidden="true" className="theme-icon-moon size-[18px]" strokeWidth={2.25} />
+      <UI_ICONS.light aria-hidden="true" className="theme-icon-sun size-[18px]" strokeWidth={2.25} />
     </button>
   );
 }

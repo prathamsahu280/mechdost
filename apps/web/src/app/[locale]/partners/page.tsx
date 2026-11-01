@@ -1,4 +1,4 @@
-import { Check, Phone } from 'lucide-react';
+import { BadgeCheck, Check, FilePenLine, Hammer, Phone, Rocket, Settings, Store, Wrench } from 'lucide-react';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { ButtonLink } from '@/components/ui/button-link';
@@ -19,16 +19,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 const KINDS = [
-  { kind: 'seller', emoji: '🏪' },
-  { kind: 'garage', emoji: '🔧' },
-  { kind: 'mechanic', emoji: '🛠️' },
+  { kind: 'seller', icon: Store },
+  { kind: 'garage', icon: Wrench },
+  { kind: 'mechanic', icon: Hammer },
 ] as const;
 const POINTS = [1, 2, 3] as const;
 const STEPS = [
-  { n: 1, emoji: '📝' },
-  { n: 2, emoji: '✅' },
-  { n: 3, emoji: '⚙️' },
-  { n: 4, emoji: '🚀' },
+  { n: 1, icon: FilePenLine },
+  { n: 2, icon: BadgeCheck },
+  { n: 3, icon: Settings },
+  { n: 4, icon: Rocket },
 ] as const;
 
 /**
@@ -42,16 +42,16 @@ export default async function PartnersPage() {
     <Container className="py-12 tab:py-16">
       <PageIntro eyebrow={t('eyebrow')} line1={t('titleLine1')} line2={t('titleLine2')} lead={t('lead')} />
       <ul className="mt-10 grid gap-4 nav:grid-cols-3">
-        {KINDS.map(({ kind, emoji }) => (
+        {KINDS.map(({ kind, icon: Icon }) => (
           <li
             key={kind}
             className="flex flex-col rounded-card border border-line-card bg-surface p-6 shadow-card tab:p-7"
           >
             <span
               aria-hidden="true"
-              className="grid size-14 place-items-center rounded-2xl bg-accent-soft text-[28px]"
+              className="grid size-14 place-items-center rounded-2xl bg-accent-soft text-accent-soft-text"
             >
-              {emoji}
+              <Icon className="size-7" strokeWidth={1.75} />
             </span>
             <h2 className="mt-5 font-heading text-xl font-extrabold text-ink">{t(`${kind}Title`)}</h2>
             <p className="mt-2 text-sm text-muted">{t(`${kind}Body`)}</p>
@@ -87,11 +87,14 @@ export default async function PartnersPage() {
           {t('stepsTitle')}
         </h2>
         <ol className="mt-6 grid gap-4 tab:grid-cols-2 nav:grid-cols-4">
-          {STEPS.map(({ n, emoji }) => (
+          {STEPS.map(({ n, icon: Icon }) => (
             <li key={n} className="rounded-tile border border-line-card bg-surface p-5">
               <div className="flex items-center gap-3">
-                <span aria-hidden="true" className="text-[24px] leading-none">
-                  {emoji}
+                <span
+                  aria-hidden="true"
+                  className="grid size-9 place-items-center rounded-lg bg-accent-soft text-accent-soft-text"
+                >
+                  <Icon className="size-[18px]" strokeWidth={2} />
                 </span>
                 <span className="text-xs font-bold text-accent-soft-text">{t('stepLabel', { n })}</span>
               </div>

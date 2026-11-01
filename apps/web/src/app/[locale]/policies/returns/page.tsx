@@ -1,4 +1,4 @@
-import { Phone } from 'lucide-react';
+import { Ban, Coins, CreditCard, Phone, Undo2, Wrench } from 'lucide-react';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { Container, PageIntro } from '@/components/ui/page-intro';
@@ -20,11 +20,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 const CLAIM_DAYS = 7;
 
 const SECTIONS = [
-  { key: 'noReturns', emoji: '🚫' },
-  { key: 'faulty', emoji: '🛠️' },
-  { key: 'unfulfilled', emoji: '↩️' },
-  { key: 'refunds', emoji: '💳' },
-  { key: 'coins', emoji: '🪙' },
+  { key: 'noReturns', icon: Ban },
+  { key: 'faulty', icon: Wrench },
+  { key: 'unfulfilled', icon: Undo2 },
+  { key: 'refunds', icon: CreditCard },
+  { key: 'coins', icon: Coins },
 ] as const;
 
 /**
@@ -38,16 +38,16 @@ export default async function ReturnsPolicyPage() {
     <Container className="py-12 tab:py-16">
       <PageIntro eyebrow={t('eyebrow')} line1={t('title')} lead={t('lead')} />
       <ul className="mt-10 grid max-w-4xl gap-4">
-        {SECTIONS.map(({ key, emoji }) => (
+        {SECTIONS.map(({ key, icon: Icon }) => (
           <li
             key={key}
             className="flex gap-4 rounded-card border border-line-card bg-surface p-5 shadow-card tab:p-6"
           >
             <span
               aria-hidden="true"
-              className="grid size-12 shrink-0 place-items-center rounded-xl bg-accent-soft text-[24px]"
+              className="grid size-12 shrink-0 place-items-center rounded-xl bg-accent-soft text-accent-soft-text"
             >
-              {emoji}
+              <Icon className="size-[22px]" strokeWidth={2} />
             </span>
             <div>
               <h2 className="font-heading text-lg font-extrabold text-ink">{t(`${key}Title`)}</h2>

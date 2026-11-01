@@ -1,9 +1,10 @@
 'use client';
 
 import { BadgeCheck, LocateFixed, MapPin, Star, Truck, Zap } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   DEMO_WORKSHOPS,
   PIN_CENTROIDS,
@@ -13,6 +14,7 @@ import {
 } from '@/demo/workshops';
 import { formatPrice } from '@/lib/format';
 import { mapUi } from '@/lib/map-ui';
+import { workshopPhoto } from '@/lib/media';
 import { WorkshopMap, type MapPoint } from './workshop-map';
 
 type VehicleFilter = 'any' | '2W' | '4W';
@@ -50,6 +52,15 @@ export function WorkshopFinder() {
     const centroid = PIN_CENTROIDS[value];
     if (/^\d{6}$/.test(value)) setOrigin(centroid ? { ...centroid, source: 'pin', pin: value } : null);
   }
+
+  // Deep link from the home hero (`/workshops?pin=492001&vehicle=4W`). Read after hydration: the page is static.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const fromUrl = params.get('pin')?.trim() ?? '';
+    if (/^\d{6}$/.test(fromUrl)) applyPin(fromUrl);
+    const v = params.get('vehicle');
+    if (v === '2W' || v === '4W') setVehicle(v);
+  }, []); // once, on mount
 
   function useLocation() {
     if (!('geolocation' in navigator)) {
@@ -233,74 +244,85 @@ function WorkshopCard({
   const t = useTranslations('finder');
   return (
     <article
-      className={`group flex h-full flex-col rounded-card border bg-surface p-5 shadow-card transition-[box-shadow,border-color] duration-[var(--duration-base)] hover:shadow-card-hover ${
+      className={`group flex h-full flex-col overflow-hidden rounded-card border bg-surface shadow-card transition-[box-shadow,border-color] duration-[var(--duration-base)] hover:shadow-card-hover ${
         active ? 'border-accent-button' : 'border-line-card'
       }`}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h3 className="font-heading text-lg leading-snug font-extrabold text-ink">
-            <Link href={href} className="inline-block py-0.5 hover:underline">
-              {w.name}
-            </Link>
-          </h3>
-          <p className="mt-1 flex items-center gap-1 text-sm text-muted">
-            <MapPin aria-hidden="true" className="size-4 shrink-0" />
-            {w.area} · {w.pincode}
-            {km !== null ? (
-              <span className="font-bold text-ink"> · {t('distance', { km: km.toFixed(1) })}</span>
-            ) : null}
+      <div className="relative aspect-[16/9] overflow-hidden bg-pill">
+        <Image
+          src={workshopPhoto(w.slug)}
+          alt=""
+          fill
+          sizes="(min-width: 1024px) 28vw, (min-width: 760px) 46vw, 92vw"
+          className="object-cover"
+        />
+      </div>
+      <div className="flex flex-1 flex-col p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="font-heading text-lg leading-snug font-extrabold text-ink">
+              <Link href={href} className="inline-block py-0.5 hover:underline">
+                {w.name}
+              </Link>
+            </h3>
+            <p className="mt-1 flex items-center gap-1 text-sm text-muted">
+              <MapPin aria-hidden="true" className="size-4 shrink-0" />
+              {w.area} · {w.pincode}
+              {km !== null ? (
+                <span className="font-bold text-ink"> · {t('distance', { km: km.toFixed(1) })}</span>
+              ) : null}
+            </p>
+          </div>
+          <p className="flex shrink-0 items-center gap-1 rounded-lg bg-success-bg px-2 py-1 text-xs font-bold text-success">
+            <Star aria-hidden="true" className="size-3.5 fill-current" />
+            {w.rating.toFixed(1)}
+            <span className="sr-only">{t('rating', { rating: w.rating.toFixed(1), count: w.reviews })}</span>
           </p>
         </div>
-        <p className="flex shrink-0 items-center gap-1 rounded-lg bg-success-bg px-2 py-1 text-xs font-bold text-success">
-          <Star aria-hidden="true" className="size-3.5 fill-current" />
-          {w.rating.toFixed(1)}
-          <span className="sr-only">{t('rating', { rating: w.rating.toFixed(1), count: w.reviews })}</span>
+        <ul className="mt-3 flex flex-wrap gap-2 text-[11px] font-bold">
+          <li className="inline-flex items-center gap-1 rounded-md bg-pill px-2 py-1 text-ink">
+            <BadgeCheck aria-hidden="true" className="size-3.5 text-success" />
+            {t('checked')}
+          </li>
+          {w.pickup ? (
+            <li className="inline-flex items-center gap-1 rounded-md bg-pill px-2 py-1 text-ink">
+              <Truck aria-hidden="true" className="size-3.5" />
+              {t('pickup')}
+            </li>
+          ) : null}
+          {w.ev ? (
+            <li className="inline-flex items-center gap-1 rounded-md bg-pill px-2 py-1 text-ink">
+              <Zap aria-hidden="true" className="size-3.5" />
+              {t('ev')}
+            </li>
+          ) : null}
+          <li className="rounded-md bg-pill px-2 py-1 text-ink">{w.vehicles.join(' · ')}</li>
+        </ul>
+        <p className="mt-3 line-clamp-2 text-sm text-muted">
+          {w.services
+            .slice(0, 4)
+            .map((s) => s.name)
+            .join(' · ')}
         </p>
-      </div>
-      <ul className="mt-3 flex flex-wrap gap-2 text-[11px] font-bold">
-        <li className="inline-flex items-center gap-1 rounded-md bg-pill px-2 py-1 text-ink">
-          <BadgeCheck aria-hidden="true" className="size-3.5 text-success" />
-          {t('checked')}
-        </li>
-        {w.pickup ? (
-          <li className="inline-flex items-center gap-1 rounded-md bg-pill px-2 py-1 text-ink">
-            <Truck aria-hidden="true" className="size-3.5" />
-            {t('pickup')}
-          </li>
-        ) : null}
-        {w.ev ? (
-          <li className="inline-flex items-center gap-1 rounded-md bg-pill px-2 py-1 text-ink">
-            <Zap aria-hidden="true" className="size-3.5" />
-            {t('ev')}
-          </li>
-        ) : null}
-        <li className="rounded-md bg-pill px-2 py-1 text-ink">{w.vehicles.join(' · ')}</li>
-      </ul>
-      <p className="mt-3 line-clamp-2 text-sm text-muted">
-        {w.services
-          .slice(0, 4)
-          .map((s) => s.name)
-          .join(' · ')}
-      </p>
-      <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-4">
-        <p className="text-sm font-bold text-ink">{t('from', { price: formatPrice(fromPricePaise(w)) })}</p>
-        <button
-          type="button"
-          onClick={onShowOnMap}
-          aria-pressed={active}
-          className="press ml-auto inline-flex min-h-11 items-center gap-1.5 rounded-button border border-input-border px-3 text-sm font-bold text-ink hover:bg-pill"
-        >
-          <MapPin aria-hidden="true" className="size-4" />
-          {t('viewOnMap')}
-        </button>
-        <Link
-          href={href}
-          data-track={`finder_view_${w.slug}`}
-          className="press inline-flex min-h-11 items-center rounded-button bg-accent-button px-4 text-sm font-bold text-white hover:bg-accent-button-hover"
-        >
-          {t('view')}
-        </Link>
+        <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-4">
+          <p className="text-sm font-bold text-ink">{t('from', { price: formatPrice(fromPricePaise(w)) })}</p>
+          <button
+            type="button"
+            onClick={onShowOnMap}
+            aria-pressed={active}
+            className="press ml-auto inline-flex min-h-11 items-center gap-1.5 rounded-button border border-input-border px-3 text-sm font-bold text-ink hover:bg-pill"
+          >
+            <MapPin aria-hidden="true" className="size-4" />
+            {t('viewOnMap')}
+          </button>
+          <Link
+            href={href}
+            data-track={`finder_view_${w.slug}`}
+            className="press inline-flex min-h-11 items-center rounded-button bg-accent-button px-4 text-sm font-bold text-white hover:bg-accent-button-hover"
+          >
+            {t('view')}
+          </Link>
+        </div>
       </div>
     </article>
   );

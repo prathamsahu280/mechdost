@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useCart } from '@/demo/store';
-import { UI_EMOJI } from '@/lib/emoji';
+import { UI_ICONS } from '@/lib/icons';
 
 /**
  * Header cart pill with a live count. `countText` holds server-translated variants for 0, 1 and many
@@ -29,9 +29,7 @@ export function CartPill({
       data-track="header_cart"
       className="press inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-pill border border-line-card bg-pill px-3 font-bold text-[13px] text-ink min-[400px]:px-4"
     >
-      <span aria-hidden="true" className="text-[18px] leading-none">
-        {UI_EMOJI.cart}
-      </span>
+      <UI_ICONS.cart aria-hidden="true" className="size-[18px] shrink-0" strokeWidth={2.25} />
       <span className="sr-only min-[480px]:not-sr-only">{label}</span>
       <span
         aria-hidden="true"
