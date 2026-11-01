@@ -4,7 +4,7 @@ Status: decided · Phase 1 (in-app + email), Phase 3 (WhatsApp/SMS) · Decisions
 
 ## Goal
 
-Reliable, never-duplicated, never-lost notifications through a provider-agnostic layer: in-app (`notifications` table; live ping via Firebase Realtime Database, decision 2026-11-01) and email (Resend) at launch; MSG91 SMS and WhatsApp templates built now, enabled when the provider is set up.
+Reliable, never-duplicated, never-lost notifications through a provider-agnostic layer: in-app (`notifications` table; live ping via Firebase Realtime Database, decision 2026-11-01) and email (Resend) at launch; WhatsApp through the **Meta WhatsApp Cloud API directly** (user 2026-11-02: "i want the cheapest option"; no provider markup or monthly fee) and MSG91 for SMS/DLT later; templates are built now and switched on when the Meta account is set up.
 
 ## Architecture
 
