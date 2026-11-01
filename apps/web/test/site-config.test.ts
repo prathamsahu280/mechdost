@@ -69,6 +69,7 @@ describe('site config (admin customisation, spec 08)', () => {
     expect(c.featured).toBeNull();
     expect(c.emoji).toEqual({ tyres: '🚗' });
     expect(c.settings).toEqual({
+      ...DEFAULT_SETTINGS,
       acceptMinutes: 5,
       bulkMinUnits: 500,
       deliveryFeePaise: DEFAULT_SETTINGS.deliveryFeePaise,
@@ -118,6 +119,7 @@ describe('site config (admin customisation, spec 08)', () => {
 
   it('clamps settings on save and the delivery rule uses them', () => {
     saveSettings(0, 'Ops', {
+      ...DEFAULT_SETTINGS,
       acceptMinutes: 9_999,
       bulkMinUnits: 0,
       deliveryFeePaise: 2_900,

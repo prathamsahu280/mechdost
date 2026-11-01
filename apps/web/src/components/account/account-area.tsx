@@ -20,6 +20,7 @@ import {
   type Fuel,
   type VehicleType,
 } from '@/demo/session';
+import { CoinsSection } from './coins-section';
 import { ORDER_STAGES, REQUEST_STAGES, useHydrated, useOrders, useQuotes, useRequests } from '@/demo/store';
 import { formatDate, formatPrice } from '@/lib/format';
 import { ACCOUNT_SECTIONS, type AccountSection } from '@/lib/sections';
@@ -29,6 +30,7 @@ const SECTION_EMOJI: Record<AccountSection, string> = {
   orders: '📦',
   services: '🔧',
   quotes: '💬',
+  coins: '🪙',
   vehicles: '🚗',
   addresses: '📍',
   profile: '👤',
@@ -115,6 +117,7 @@ export function AccountArea({ section }: { section: AccountSection }) {
         {section === 'orders' ? <OrdersList /> : null}
         {section === 'services' ? <ServicesList /> : null}
         {section === 'quotes' ? <QuotesList /> : null}
+        {section === 'coins' ? <CoinsSection account={session} /> : null}
         {section === 'vehicles' ? <Vehicles account={session} /> : null}
         {section === 'addresses' ? <Addresses account={session} /> : null}
         {section === 'profile' ? <Profile account={session} /> : null}

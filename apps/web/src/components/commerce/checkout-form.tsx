@@ -1,10 +1,15 @@
 'use client';
 
+import { coinRedemption } from '@mechdost/shared/coins';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
 import { track } from '@/lib/analytics';
 import { formatPrice } from '@/lib/format';
+import { coinBalanceOf, redeemCoins, useCoins } from '@/demo/coins';
+import { useSession } from '@/demo/session';
+import { coinRulesFrom, useSiteSettings } from '@/demo/site-config';
 import { placeDemoOrder, priceCart, useCart } from '@/demo/store';
 import { CartView } from './cart-view';
 
@@ -23,6 +28,16 @@ export function CheckoutForm() {
   const { priced, subtotalPaise, deliveryPaise, totalPaise } = priceCart(lines);
   const [errors, setErrors] = useState<Partial<Record<Field, string>>>({});
   const [submitting, setSubmitting] = useState(false);
+  // MechDost Coins (spec 20): signed-in customers may use coins for part of the products, never delivery.
+  const session = useSession();
+  const settings = useSiteSettings();
+  const coinAccount = session?.role === 'customer' ? session.id : null;
+  const { balance } = useCoins(coinAccount);
+  const redemption = coinRedemption(balance, subtotalPaise, coinRulesFrom(settings));
+  const [useCoinsOn, setUseCoinsOn] = useState(false);
+  const coinDiscount = useCoinsOn ? redemption.discountPaise : 0;
+  const payablePaise = totalPaise - coinDiscount;
+  const prefix = locale === 'hi' ? '/hi' : '';
 
   if (priced.length === 0 && !submitting) return <CartView />;
 
@@ -51,9 +66,15 @@ export function CheckoutForm() {
       return;
     }
     setSubmitting(true);
-    const order = placeDemoOrder({ name: value('name'), phone, address: value('address'), pincode });
+    // Re-check the balance at the moment of ordering (another tab may have used the coins).
+    const spend =
+      useCoinsOn && coinAccount && redemption.coins > 0 && coinBalanceOf(coinAccount) >= redemption.coins
+        ? { accountId: coinAccount, coins: redemption.coins, discountPaise: redemption.discountPaise }
+        : null;
+    const order = placeDemoOrder({ name: value('name'), phone, address: value('address'), pincode }, spend);
+    if (spend) redeemCoins(spend.accountId, spend.coins, order.code);
     track('purchase', { code: order.code, valuePaise: order.totalPaise, demo: true });
-    router.push(`${locale === 'hi' ? '/hi' : ''}/orders/${order.code}?new=1`);
+    router.push(`${prefix}/orders/${order.code}?new=1`);
   }
 
   const field = (id: Field) => ({
@@ -153,6 +174,43 @@ export function CheckoutForm() {
             </label>
           </fieldset>
         </div>
+        {coinAccount && balance > 0 ? (
+          <div className="mt-5 rounded-tile border border-line-card bg-surface-alt p-4">
+            {redemption.coins > 0 ? (
+              <label className="flex items-start gap-3 text-sm text-ink">
+                <input
+                  type="checkbox"
+                  checked={useCoinsOn}
+                  onChange={(e) => {
+                    setUseCoinsOn(e.target.checked);
+                  }}
+                  className="mt-0.5 size-6 shrink-0 accent-[var(--color-accent-button)]"
+                />
+                <span>
+                  <span aria-hidden="true">🪙 </span>
+                  <span className="font-bold">
+                    {t('useCoins', {
+                      coins: redemption.coins,
+                      amount: formatPrice(redemption.discountPaise),
+                    })}
+                  </span>
+                  <span className="block text-xs text-muted">{t('coinsNote', { balance })}</span>
+                </span>
+              </label>
+            ) : (
+              <p className="text-sm text-muted">
+                <span aria-hidden="true">🪙 </span>
+                {t('coinsNotUsable', { balance })}
+              </p>
+            )}
+          </div>
+        ) : null}
+        <p className="mt-5 rounded-lg bg-warning-bg px-3 py-2 text-sm text-warning">
+          <span className="font-bold">{t('policyTitle')}</span> {t('policyNote')}{' '}
+          <Link href={`${prefix}/policies/returns`} className="font-bold underline underline-offset-2">
+            {t('policyLink')}
+          </Link>
+        </p>
         <label className="mt-5 flex items-start gap-3 text-sm text-ink">
           <input
             {...field('consent')}
@@ -168,7 +226,7 @@ export function CheckoutForm() {
           disabled={submitting}
           className="press mt-5 inline-flex min-h-12 w-full items-center justify-center rounded-button bg-accent-button px-5 text-sm font-bold text-white hover:bg-accent-button-hover disabled:opacity-70 min-[600px]:w-auto"
         >
-          {submitting ? t('placing') : `${t('place')} · ${formatPrice(totalPaise)}`}
+          {submitting ? t('placing') : `${t('place')} · ${formatPrice(payablePaise)}`}
         </button>
       </form>
 
@@ -193,9 +251,15 @@ export function CheckoutForm() {
             <dt className="text-muted">{cartT('delivery')}</dt>
             <dd className="font-bold">{deliveryPaise === 0 ? cartT('free') : formatPrice(deliveryPaise)}</dd>
           </div>
+          {coinDiscount > 0 ? (
+            <div className="flex justify-between text-success">
+              <dt>{t('coinsLine', { coins: redemption.coins })}</dt>
+              <dd className="font-bold">−{formatPrice(coinDiscount)}</dd>
+            </div>
+          ) : null}
           <div className="flex justify-between text-base">
             <dt className="font-bold">{cartT('total')}</dt>
-            <dd className="font-heading text-xl font-extrabold">{formatPrice(totalPaise)}</dd>
+            <dd className="font-heading text-xl font-extrabold">{formatPrice(payablePaise)}</dd>
           </div>
         </dl>
       </aside>

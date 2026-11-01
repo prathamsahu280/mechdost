@@ -7,7 +7,7 @@ Status: decided · Phase 1 · Decisions: Staff security, Non-functional requirem
 - Permissions are `resource:action` strings (orders:read, orders:route, orders:refund, refunds:approve, products:publish, partners:approve, content:publish, settings:write, customers:impersonate, …) stored in `permissions`; roles in `roles` with `role_permissions`; `user_roles` with optional `city_id` and `partner_id` scope. Firebase custom claims carry role ids + partner_id; the API resolves effective permissions per request (Redis cache 60 s, invalidated on change).
 - Default roles and matrix: see `../research/ecommerce-baseline.md` §7 (super_admin, ops_manager, support_agent, finance, catalogue_manager, city_manager, marketing, seller_owner, seller_staff, workshop_owner, workshop_staff, mechanic, customer, guest).
 - Enforcement: Hono middleware `requirePermission()` + repository-level scoping (`actor`), RLS mirror in Supabase for Realtime; UI hides what the actor cannot do; 404 for cross-tenant ids.
-- Four-eyes: refunds/wallet credits/payouts/commission changes above `settings.approval_threshold_paise` require requester ≠ approver.
+- Four-eyes: refunds/manual coin grants/payouts/commission changes above `settings.approval_threshold_paise` require requester ≠ approver.
 - Staff 2FA (TOTP) implemented; enforced automatically once any staff beyond founders exists (`settings.enforce_staff_2fa` auto-true on 2nd staff).
 - Sessions: staff idle 30 min / absolute 12 h; partners 7 days; customers 30 days; sign-out-all; new-device alert (P1).
 - Audit log on every mutation (actor, ip, entity, before/after, reason) — immutable.

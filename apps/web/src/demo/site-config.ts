@@ -4,6 +4,7 @@
  * admin screens stay the same. Everything read from storage is validated and clamped; every write checks the
  * version the editor loaded (a stale tab cannot overwrite newer changes) and appends an audit entry.
  */
+import { COIN_RULE_LIMITS, DEFAULT_COIN_RULES, type CoinRules } from '@mechdost/shared/coins';
 import { useSyncExternalStore } from 'react';
 import { CATEGORY_KEYS, type CategoryKey } from './catalogue';
 import {
@@ -38,6 +39,9 @@ export interface SiteSettings {
   /** Delivery fee below the free-delivery threshold (spec 03). Applies to new orders; placed orders keep theirs. */
   deliveryFeePaise: number;
   freeDeliveryFromPaise: number;
+  /** MechDost Coins (spec 20): value of one coin and the most of a product subtotal coins may pay. */
+  coinValuePaise: number;
+  coinMaxRedeemBp: number;
 }
 
 export const DEFAULT_SETTINGS: SiteSettings = {
@@ -45,6 +49,8 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   bulkMinUnits: 10,
   deliveryFeePaise: 4_900,
   freeDeliveryFromPaise: 99_900,
+  coinValuePaise: DEFAULT_COIN_RULES.coinValuePaise,
+  coinMaxRedeemBp: DEFAULT_COIN_RULES.maxRedeemBp,
 };
 
 /** Inclusive limits; money in paise (whole rupees in the editor). */
@@ -53,6 +59,8 @@ export const SETTING_LIMITS: Record<keyof SiteSettings, readonly [number, number
   bulkMinUnits: [2, 500],
   deliveryFeePaise: [0, 50_000],
   freeDeliveryFromPaise: [0, 5_000_000],
+  coinValuePaise: COIN_RULE_LIMITS.coinValuePaise,
+  coinMaxRedeemBp: COIN_RULE_LIMITS.maxRedeemBp,
 };
 
 export interface AuditEntry {
@@ -372,4 +380,13 @@ export function resetArea(expectedVersion: number, actor: string, area: AuditEnt
     if (area === 'categories') return { ...rest, featured: null, emoji: {} };
     return { ...rest, settings: DEFAULT_SETTINGS };
   });
+}
+
+/** Coin rules from the admin settings (expiry and minimum order use the defaults until Q24). */
+export function coinRulesFrom(settings: SiteSettings): CoinRules {
+  return {
+    ...DEFAULT_COIN_RULES,
+    coinValuePaise: settings.coinValuePaise,
+    maxRedeemBp: settings.coinMaxRedeemBp,
+  };
 }

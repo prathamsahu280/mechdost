@@ -35,6 +35,8 @@ export interface DemoOrder {
   declined?: { slug: string; reason: string; at: string }[];
   /** Admin rejected the order with a message to the customer (refund for prepaid orders). */
   rejection?: { message: string; at: string } | null;
+  /** MechDost Coins used on this order (spec 20): part of the discount, restored if the order is rejected. */
+  coins?: { accountId: string; coins: number; discountPaise: number } | null;
 }
 
 export const REQUEST_STAGES = [
@@ -146,6 +148,7 @@ const KEYS = {
   session: 'mechdost-demo-session',
   loginFailures: 'mechdost-demo-login-failures',
   resetLinks: 'mechdost-demo-reset-links',
+  coins: 'mechdost-demo-coins',
 } as const;
 type Key = (typeof KEYS)[keyof typeof KEYS];
 
@@ -452,8 +455,11 @@ export function priceCart(lines: readonly CartLine[]) {
   return { priced, subtotalPaise, deliveryPaise, totalPaise: subtotalPaise + deliveryPaise };
 }
 
-export function placeDemoOrder(customer: DemoOrder['customer']): DemoOrder {
-  const { priced, subtotalPaise, deliveryPaise, totalPaise } = priceCart(cartSnapshot());
+export function placeDemoOrder(customer: DemoOrder['customer'], coins: DemoOrder['coins'] = null): DemoOrder {
+  const { priced, subtotalPaise, deliveryPaise } = priceCart(cartSnapshot());
+  // Coins pay part of the products only, never delivery; the caller checked the balance and the cap.
+  const coinDiscount = coins ? Math.min(coins.discountPaise, subtotalPaise) : 0;
+  const totalPaise = subtotalPaise - coinDiscount + deliveryPaise;
   const order: DemoOrder = {
     code: publicCode('MD', 'RPR'),
     createdAt: new Date().toISOString(),
@@ -469,6 +475,7 @@ export function placeDemoOrder(customer: DemoOrder['customer']): DemoOrder {
     totalPaise,
     customer,
     payment: 'cod',
+    coins: coins && coinDiscount > 0 ? { ...coins, discountPaise: coinDiscount } : null,
     stage: 1, // placed → immediately "confirming with a shop" (admin routing queue)
   };
   write(KEYS.orders, [order, ...ordersSnapshot()].slice(0, 50));
@@ -519,7 +526,7 @@ export function useHydrated(): boolean {
 }
 
 /** Storage primitives for sibling demo modules (session.ts). Same cache, listeners and cross-tab sync. */
-type SharedKey = (typeof KEYS)['accounts' | 'session' | 'loginFailures' | 'resetLinks'];
+type SharedKey = (typeof KEYS)['accounts' | 'session' | 'loginFailures' | 'resetLinks' | 'coins'];
 
 export const demoStorage = {
   read: read as <T>(key: SharedKey, isItem: (v: unknown) => v is T) => readonly T[],

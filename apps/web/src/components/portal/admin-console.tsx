@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
 import { findProduct } from '@/demo/catalogue';
+import { restoreCoinsForOrder } from '@/demo/coins';
 import { findShop, rankShops } from '@/demo/shops';
 import {
   APPLICATION_STAGES,
@@ -28,6 +29,7 @@ import { DEMO_WORKSHOPS } from '@/demo/workshops';
 import { track } from '@/lib/analytics';
 import { formatDate, formatPrice } from '@/lib/format';
 import { ADMIN_SECTIONS, type AdminSection } from '@/lib/sections';
+import { AdminCoins } from './admin-coins';
 import { ContentEditor, LayoutEditor, SettingsEditor, type ContentDefaults } from './admin-site';
 import { PortalGuard, portalCard, portalField, portalPrimary, portalQuiet, useNow } from './portal-guard';
 
@@ -38,6 +40,7 @@ const SECTION_EMOJI: Record<AdminSection, string> = {
   quotes: '💬',
   applications: '🤝',
   reviews: '⭐',
+  coins: '🪙',
   content: '✏️',
   layout: '🧩',
   settings: '⚙️',
@@ -69,6 +72,7 @@ export function AdminConsole({
             {section === 'quotes' ? <QuoteDesk /> : null}
             {section === 'applications' ? <Applications /> : null}
             {section === 'reviews' ? <Reviews /> : null}
+            {section === 'coins' ? <AdminCoins actor={account.name} /> : null}
             {section === 'content' && contentDefaults ? (
               <ContentEditor actor={account.name} defaults={contentDefaults} />
             ) : null}
@@ -236,6 +240,8 @@ function RoutingCard({ order, now }: { order: DemoOrder; now: number }) {
     e.preventDefault();
     const v = new FormData(e.currentTarget).get('message');
     if (typeof v === 'string' && rejectOrder(order.code, v)) {
+      // Coins used on a rejected order go back to the customer (never as money; spec 20).
+      if (order.coins) restoreCoinsForOrder(order.coins.accountId, order.code);
       track('click', { id: 'admin_order_rejected', path: window.location.pathname });
     }
   }

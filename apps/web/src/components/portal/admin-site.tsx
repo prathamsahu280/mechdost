@@ -482,12 +482,21 @@ function CategoriesEditor({ actor }: { actor: string }) {
 
 // ── Settings ──────────────────────────────────────────────────────────────────────────────────────────────────
 
-const SETTING_FIELDS: { key: keyof SiteSettings; unit: 'minutes' | 'units' | 'rupees'; money: boolean }[] = [
+/** `money`: stored in paise, edited in rupees. `percent`: stored in basis points, edited in %. */
+const SETTING_FIELDS: {
+  key: keyof SiteSettings;
+  unit: 'minutes' | 'units' | 'rupees' | 'paise' | 'percent';
+  money: boolean;
+  percent?: boolean;
+}[] = [
   { key: 'acceptMinutes', unit: 'minutes', money: false },
   { key: 'bulkMinUnits', unit: 'units', money: false },
   { key: 'deliveryFeePaise', unit: 'rupees', money: true },
   { key: 'freeDeliveryFromPaise', unit: 'rupees', money: true },
+  { key: 'coinValuePaise', unit: 'paise', money: false },
+  { key: 'coinMaxRedeemBp', unit: 'percent', money: false, percent: true },
 ];
+const scaled = (f: { money: boolean; percent?: boolean }) => f.money || f.percent === true;
 
 export function SettingsEditor({ actor }: { actor: string }) {
   const t = useTranslations('portal');
@@ -497,7 +506,7 @@ export function SettingsEditor({ actor }: { actor: string }) {
   const [version, setVersion] = useState(config.versions.settings);
   const toDraft = (s: SiteSettings) =>
     Object.fromEntries(
-      SETTING_FIELDS.map(({ key, money }) => [key, String(money ? s[key] / 100 : s[key])]),
+      SETTING_FIELDS.map((f) => [f.key, String(scaled(f) ? s[f.key] / 100 : s[f.key])]),
     ) as Record<keyof SiteSettings, string>;
   const [draft, setDraft] = useState(() => toDraft(config.settings));
   const [errors, setErrors] = useState<Partial<Record<keyof SiteSettings, string>>>({});
@@ -507,15 +516,16 @@ export function SettingsEditor({ actor }: { actor: string }) {
     e.preventDefault();
     const next: Partial<Record<keyof SiteSettings, string>> = {};
     const values = { ...DEFAULT_SETTINGS };
-    for (const { key, money } of SETTING_FIELDS) {
-      const [min, max] = SETTING_LIMITS[key].map((v) => (money ? v / 100 : v)) as [number, number];
+    for (const f of SETTING_FIELDS) {
+      const { key } = f;
+      const [min, max] = SETTING_LIMITS[key].map((v) => (scaled(f) ? v / 100 : v)) as [number, number];
       const raw = draft[key].trim();
       const n = Number(raw);
       if (!/^\d+$/.test(raw) || n < min || n > max) {
         next[key] = t('settings_err', { min: num(min), max: num(max) });
         continue;
       }
-      values[key] = money ? n * 100 : n;
+      values[key] = scaled(f) ? n * 100 : n;
     }
     setErrors(next);
     const first = SETTING_FIELDS.find(({ key }) => next[key]);
@@ -556,8 +566,9 @@ export function SettingsEditor({ actor }: { actor: string }) {
       <DemoNote />
       <form onSubmit={onSubmit} className={portalCard} noValidate>
         <div className="grid gap-5 tab:grid-cols-2">
-          {SETTING_FIELDS.map(({ key, unit, money }) => {
-            const [min, max] = SETTING_LIMITS[key].map((v) => (money ? v / 100 : v)) as [number, number];
+          {SETTING_FIELDS.map((f) => {
+            const { key, unit, money } = f;
+            const [min, max] = SETTING_LIMITS[key].map((v) => (scaled(f) ? v / 100 : v)) as [number, number];
             const id = `setting-${key}`;
             return (
               <div key={key}>

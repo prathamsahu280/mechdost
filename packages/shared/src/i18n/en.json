@@ -183,7 +183,8 @@
     "trackOrder": "Track an order",
     "becomePartner": "Become a partner",
     "gstin": "GSTIN {gstin}",
-    "registered": "Registered office: {address}"
+    "registered": "Registered office: {address}",
+    "returnsPolicy": "Returns & refunds"
   },
   "whatsapp": {
     "general": "Hello MechDost, I have a question.",
@@ -370,7 +371,9 @@
     "infoTitle": "Product details",
     "close": "Close",
     "openProduct": "Open product page",
-    "bulkHint": "Need <min>10</min> or more? Ask for a bulk price."
+    "bulkHint": "Need <min>10</min> or more? Ask for a bulk price.",
+    "policyNote": "No returns or exchanges. Faulty parts are handled by our support team.",
+    "policyLink": "Read the policy"
   },
   "cart": {
     "title": "Your cart",
@@ -411,7 +414,14 @@
     "errService": "We do not deliver to this PIN yet. Raipur PIN codes start with 4920.",
     "errConsent": "Please agree to share your details to place the order.",
     "errorSummary": "Please fix the highlighted fields.",
-    "flowNote": "After you order, MechDost confirms it with a nearby shop. You get a confirmation as soon as the shop accepts."
+    "flowNote": "After you order, MechDost confirms it with a nearby shop. You get a confirmation as soon as the shop accepts.",
+    "useCoins": "Use {coins} MechDost Coins and save {amount}",
+    "coinsNote": "You have {balance} coins. Coins have no cash value.",
+    "coinsNotUsable": "Your {balance} MechDost Coins can't be used on this order.",
+    "coinsLine": "MechDost Coins ({coins})",
+    "policyTitle": "No returns or exchanges.",
+    "policyNote": "If a part is faulty or wrong, our support team will replace it or refund you.",
+    "policyLink": "Returns & refunds policy"
   },
   "order": {
     "title": "Order {code}",
@@ -441,7 +451,8 @@
     "myOrders": "Your recent orders",
     "noOrders": "You have no orders yet.",
     "rejectedTitle": "We could not fulfil this order",
-    "shopLabel": "Fulfilled by {shop}"
+    "shopLabel": "Fulfilled by {shop}",
+    "coinsLine": "MechDost Coins ({coins})"
   },
   "finder": {
     "title": "Where is your vehicle?",
@@ -861,7 +872,25 @@
     "shopNow": "Shop products",
     "bookService": "Find a workshop",
     "demoNote": "Demo: orders, requests and quotes are stored on this device.",
-    "items": "{count, plural, one {# item} other {# items}}"
+    "items": "{count, plural, one {# item} other {# items}}",
+    "nav_coins": "MechDost Coins",
+    "coinsUnit": "coins available",
+    "coinsLead": "Use your coins for a discount at checkout: 1 coin = {value} off, on up to {percent}% of your products.",
+    "coinsShop": "Shop products",
+    "coinsRulesTitle": "How coins work",
+    "coinsRule1": "1 coin gives {value} off at checkout.",
+    "coinsRule2": "Coins can pay up to {percent}% of the products in an order, not delivery.",
+    "coinsRule3": "Coins have no cash value: they can't be withdrawn, transferred, sold or exchanged for money.",
+    "coinsRule4": "If an order that used coins is cancelled, the coins come back to you.",
+    "coinsEarnSoon": "Ways to earn coins are coming soon.",
+    "coinsHistory": "Coin history",
+    "coinsHistoryEmpty": "No coin activity yet.",
+    "coinsUsed": "Used on order {code}",
+    "coinsRestored": "Returned from order {code}",
+    "coinsAdded": "Added by MechDost: {reason}",
+    "coinsRemoved": "Removed by MechDost: {reason}",
+    "coinsDemo": "Demo coins",
+    "coinsEarned": "Earned: {reason}"
   },
   "portal": {
     "guardTitle": "Sign in to continue",
@@ -1039,6 +1068,53 @@
     "area_content": "Site content",
     "area_layout": "Home layout",
     "area_categories": "Category shortcuts",
-    "area_settings": "Settings"
+    "area_settings": "Settings",
+    "nav_coins": "MechDost Coins",
+    "coinsAdminLead": "Grant or remove coins for a customer. Every change needs a reason and is recorded.",
+    "coinsRulesPending": "How customers earn coins will be set here once the rules are decided. Coins have no cash value and are only used for discounts.",
+    "coinsAdjustTitle": "Grant or remove coins",
+    "coinsPhone": "Customer's mobile number",
+    "coinsDirection": "Change",
+    "coinsDirection_add": "Add coins",
+    "coinsDirection_remove": "Remove coins",
+    "coinsAmount": "Number of coins",
+    "coinsReason": "Reason (the customer sees it)",
+    "coinsSave": "Save change",
+    "coinsDone": "Done. {name} now has {balance} coins.",
+    "coinsErrCustomer": "No customer account uses this mobile number.",
+    "coinsErr_amount": "Enter a whole number of coins from 1 to 100,000.",
+    "coinsErr_reason": "Give a reason (3 to 200 characters).",
+    "coinsErr_balance": "The customer has only {balance} coins.",
+    "coinsActivity": "Recent coin activity",
+    "coinsActivityEmpty": "No coin activity yet.",
+    "coinsKind_earn": "Earned",
+    "coinsKind_redeem": "Used",
+    "coinsKind_restore": "Returned",
+    "coinsKind_adjust": "Adjusted",
+    "setting_coinValuePaise": "Value of 1 coin",
+    "setting_coinValuePaise_hint": "The discount one coin gives, in paise (100 paise = ₹1). {min} to {max}.",
+    "setting_coinMaxRedeemBp": "Most of an order coins can pay",
+    "setting_coinMaxRedeemBp_hint": "Share of the products in an order that coins may pay. {min} to {max}%.",
+    "unit_paise": "paise",
+    "unit_percent": "%"
+  },
+  "policies": {
+    "returns": {
+      "eyebrow": "Policies",
+      "title": "Returns, refunds and faulty parts",
+      "lead": "Please check that a part fits your vehicle before you order. Not sure? Ask us first. We're happy to help.",
+      "noReturnsTitle": "No returns or exchanges",
+      "noReturnsBody": "Products can't be returned or exchanged if you change your mind, order the wrong part or no longer need it.",
+      "faultyTitle": "Faulty, damaged or wrong parts",
+      "faultyBody": "If a part is faulty, arrives damaged or isn't what you ordered, contact support within {days} days of delivery with photos. Our team checks it with the shop, then replaces the part or refunds you.",
+      "unfulfilledTitle": "Orders we can't fulfil",
+      "unfulfilledBody": "If we can't confirm your order with a shop, or you cancel before it is packed, you pay nothing for cash-on-delivery orders and online payments are refunded in full.",
+      "refundsTitle": "How refunds are paid",
+      "refundsBody": "Refunds go back to the way you paid; for cash-on-delivery orders, to your bank account or UPI ID. We start the refund within 2 working days of approval; banks usually take 5 to 7 working days.",
+      "coinsTitle": "MechDost Coins",
+      "coinsBody": "Coins used on a cancelled order are given back as coins. Coins have no cash value and are never paid out as money.",
+      "help": "Questions about an order? Call us:",
+      "updated": "Last updated 1 November 2026."
+    }
   }
 }

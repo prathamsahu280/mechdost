@@ -52,3 +52,14 @@ Register #2: pull exchanges, service reminders, disputes, order chat into launch
 ## P1/P2
 
 Exchanges with price difference; warranty replacement with workshop inspection; disputes with evidence and admin ruling; order chat; open-box delivery for batteries/tyres; RTO scoring.
+
+## Policy change (decision 2026-11-01): no returns, no exchanges
+
+This supersedes the self-service return/replacement/exchange flows above; the refund ledger, cancellation and integrity rules stay.
+
+- **Not accepted:** returns or exchanges for change of mind, wrong part ordered or no longer needed.
+- **Faulty, damaged or wrong item delivered:** the customer opens a **support ticket** (spec 09) from the order with photos within the claim window (default 7 days from delivery, Q25). Support checks with the shop and resolves as **replacement** (new sub-order `replacement_of`, routed like any order) or **refund** (refund ledger, four-eyes above threshold). Ticket reason codes: `faulty`, `damaged_in_transit`, `wrong_item`, `missing_item`.
+- **Cancellation:** free until the shop packs the order (Q25 default); after that only through support. Orders we cannot fulfil (rejected, no shop) are cancelled with a full refund automatically, as before.
+- **Refund destination:** the original payment method; bank/UPI (stored encrypted, `refunds.destination_enc`) for COD orders. **Never** into coins or a wallet; coins used on the order are restored as coins (spec 20).
+- **Disclosure** (Consumer Protection (E-Commerce) Rules 2020): the policy is shown before purchase on product pages, checkout and `/policies/returns` (footer link), in English and Hindi.
+- **Demo:** policy page and notes are live; the support-ticket claim flow arrives with spec 09. Test: `e2e/coins-policy.spec.ts` "returns policy".

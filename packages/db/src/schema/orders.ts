@@ -44,6 +44,9 @@ export const orderGroups = pgTable(
     shippingPaise: paise().notNull().default(0),
     codFeePaise: paise().notNull().default(0),
     totalPaise: paise().notNull(),
+    /** MechDost Coins used on this checkout and the part of `discountPaise` they paid (spec 20). */
+    coinsRedeemed: integer().notNull().default(0),
+    coinDiscountPaise: paise().notNull().default(0),
     couponId: uuid(),
     gstin: text(),
     businessName: text(),
@@ -64,6 +67,10 @@ export const orderGroups = pgTable(
     check(
       'order_groups_amounts_nonneg',
       sql`${t.subtotalPaise} >= 0 and ${t.discountPaise} >= 0 and ${t.shippingPaise} >= 0 and ${t.codFeePaise} >= 0 and ${t.totalPaise} >= 0`,
+    ),
+    check(
+      'order_groups_coins_consistent',
+      sql`${t.coinsRedeemed} >= 0 and ${t.coinDiscountPaise} >= 0 and ${t.coinDiscountPaise} <= ${t.discountPaise} and (${t.coinsRedeemed} = 0) = (${t.coinDiscountPaise} = 0)`,
     ),
     check(
       'order_groups_total_consistent',
@@ -343,7 +350,8 @@ export const refunds = pgTable(
   },
   (t) => [
     check('refunds_amount_positive', sql`${t.amountPaise} > 0`),
-    check('refunds_mode_valid', sql`${t.mode} in ('source','wallet','bank_upi')`),
+    // No wallet (decision 2026-11-01): money goes back to the original method, or bank/UPI for COD orders.
+    check('refunds_mode_valid', sql`${t.mode} in ('source','bank_upi')`),
     check('refunds_destination_encrypted', encryptedCheck(t.destinationEnc)),
     check(
       'refunds_bank_upi_needs_destination',

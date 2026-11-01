@@ -52,6 +52,9 @@ export const PERMISSIONS = {
   'content:write': 'Edit site content, banners, FAQ and policies',
   'content:publish': 'Publish site content',
   'coupons:write': 'Create and edit coupons and campaigns',
+  'coins:read': 'Read customer MechDost Coins balances and history',
+  'coins:adjust': 'Grant or deduct MechDost Coins by hand (audited)',
+  'coins:rules': 'Edit how MechDost Coins are earned, redeemed and expire',
   'notifications:manage': 'Edit notification templates and send test messages',
   'settings:read': 'Read platform and city settings',
   'settings:write': 'Edit platform and city settings',
@@ -110,6 +113,7 @@ const OPS: readonly Permission[] = [
   'tickets:assign',
   'settings:read',
   'analytics:read',
+  'coins:read',
 ];
 
 export const ROLES = {
@@ -149,6 +153,7 @@ export const ROLES = {
       'tickets:read',
       'tickets:reply',
       'partners:read',
+      'coins:read',
     ],
   },
   finance: {
@@ -170,6 +175,7 @@ export const ROLES = {
       'partners:read',
       'analytics:read',
       'audit:read',
+      'coins:read',
     ],
   },
   catalogue_manager: {
@@ -196,6 +202,9 @@ export const ROLES = {
       'content:write',
       'content:publish',
       'coupons:write',
+      'coins:read',
+      'coins:adjust',
+      'coins:rules',
       'notifications:manage',
       'reviews:moderate',
       'analytics:read',

@@ -163,6 +163,17 @@ export default async function ProductPage({ params }: Props) {
                 })}
               </LocalLink>
             </p>
+            <p className="mt-2 text-sm text-muted">
+              <span aria-hidden="true">🚫 </span>
+              {t('policyNote')}{' '}
+              <LocalLink
+                href="/policies/returns"
+                data-track="product_returns_policy"
+                className="font-bold text-ink underline underline-offset-2"
+              >
+                {t('policyLink')}
+              </LocalLink>
+            </p>
           </div>
 
           <section aria-labelledby="highlights" className="mt-8">

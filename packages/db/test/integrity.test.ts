@@ -10,6 +10,11 @@ import { blindIndex, decryptField, encryptField, loadKeyring } from '../src/cryp
 import { createTestDb, type TestDb } from '../src/testing';
 import * as s from '../src/schema';
 import {
+  adjustCoins,
+  coinBalance,
+  earnCoins,
+  redeemCoins,
+  restoreCoinsForOrder,
   acceptAssignment,
   allocateInvoiceNumber,
   commitReservation,
@@ -592,5 +597,134 @@ describe('encryption at the database boundary (spec 13)', () => {
     expect(row?.panEnc).not.toContain(pan);
     expect(decryptField(row?.panEnc ?? '', ring, 'shops.pan_enc')).toBe(pan);
     await expectPgError(db.update(s.shops).set({ panIndex }).where(eq(s.shops.id, F.shopB!)), '23505');
+  });
+});
+
+describe('MechDost Coins ledger (spec 20)', () => {
+  const later = new Date('2027-11-01T00:00:00Z');
+
+  it('earns and spends coins; spending more than the balance is refused', async () => {
+    const order = await newOrder();
+    const earned = await earnCoins(t(), {
+      userId: F.user!,
+      coins: 100,
+      reason: 'Demo welcome coins',
+      idemKey: 'earn:welcome:user-1',
+      expiresAt: later,
+    });
+    expect(earned.balanceAfter).toBe(100);
+    const spent = await redeemCoins(t(), {
+      userId: F.user!,
+      coins: 60,
+      orderGroupId: order.groupId,
+      idemKey: `redeem:${order.groupId}`,
+    });
+    expect(spent.balanceAfter).toBe(40);
+    const other = await newOrder();
+    await expect(
+      redeemCoins(t(), {
+        userId: F.user!,
+        coins: 41,
+        orderGroupId: other.groupId,
+        idemKey: `redeem:${other.groupId}`,
+      }),
+    ).rejects.toMatchObject({ code: 'INSUFFICIENT_COINS' });
+    expect(await coinBalance(t(), F.user!)).toBe(40);
+  });
+
+  it('is idempotent: the same event twice changes the balance once', async () => {
+    const before = await coinBalance(t(), F.user!);
+    const input = {
+      userId: F.user!,
+      coins: 5,
+      reason: 'Retry test',
+      idemKey: 'earn:retry:user-1',
+      expiresAt: later,
+    };
+    await earnCoins(t(), input);
+    const again = await earnCoins(t(), input);
+    expect(again.balanceAfter).toBe(before + 5);
+  });
+
+  it('two checkouts racing for the same coins: only one wins', async () => {
+    const balance = await coinBalance(t(), F.user!);
+    const a = await newOrder();
+    const b = await newOrder();
+    const results = await Promise.allSettled([
+      redeemCoins(t(), {
+        userId: F.user!,
+        coins: balance,
+        orderGroupId: a.groupId,
+        idemKey: `redeem:${a.groupId}`,
+      }),
+      redeemCoins(t(), {
+        userId: F.user!,
+        coins: balance,
+        orderGroupId: b.groupId,
+        idemKey: `redeem:${b.groupId}`,
+      }),
+    ]);
+    expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+    expect(await coinBalance(t(), F.user!)).toBe(0);
+    // The cancelled order gets its coins back exactly once.
+    const winner = results[0].status === 'fulfilled' ? a : b;
+    await restoreCoinsForOrder(t(), { userId: F.user!, orderGroupId: winner.groupId });
+    await restoreCoinsForOrder(t(), { userId: F.user!, orderGroupId: winner.groupId });
+    expect(await coinBalance(t(), F.user!)).toBe(balance);
+  });
+
+  it('manual adjustments need a reason, cannot overdraw, and are audited', async () => {
+    const balance = await coinBalance(t(), F.user!);
+    await expect(
+      adjustCoins(t(), {
+        userId: F.user!,
+        delta: 10,
+        reason: '',
+        idemKey: 'adjust:x:000001',
+        staffUserId: F.user!,
+      }),
+    ).rejects.toMatchObject({ code: 'COINS_REASON' });
+    await expect(
+      adjustCoins(t(), {
+        userId: F.user!,
+        delta: -(balance + 1),
+        reason: 'Correction',
+        idemKey: 'adjust:x:000002',
+        staffUserId: F.user!,
+      }),
+    ).rejects.toMatchObject({ code: 'INSUFFICIENT_COINS' });
+    const entry = await adjustCoins(t(), {
+      userId: F.user!,
+      delta: 25,
+      reason: 'Goodwill for a late delivery',
+      idemKey: 'adjust:x:000003',
+      staffUserId: F.user!,
+    });
+    expect(entry.balanceAfter).toBe(balance + 25);
+    expect(await db.$count(s.auditLog, eq(s.auditLog.action, 'coins.adjusted'))).toBe(1);
+  });
+
+  it('keeps the ledger append-only and the balance non-negative in the database itself', async () => {
+    const [row] = await db.select().from(s.coinLedger).limit(1);
+    await expectPgError(
+      db.update(s.coinLedger).set({ delta: 999 }).where(eq(s.coinLedger.id, row!.id)),
+      '23001',
+    );
+    await expectPgError(db.delete(s.coinLedger).where(eq(s.coinLedger.id, row!.id)), '23001');
+    await expectPgError(
+      db.update(s.coinAccounts).set({ balance: -1 }).where(eq(s.coinAccounts.userId, F.user!)),
+      '23514',
+    );
+  });
+
+  it('an order cannot record a coin discount larger than its discount', async () => {
+    const order = await newOrder();
+    await expectPgError(
+      db
+        .update(s.orderGroups)
+        .set({ coinsRedeemed: 10, coinDiscountPaise: 1_000, discountPaise: 0 })
+        .where(eq(s.orderGroups.id, order.groupId)),
+      '23514',
+    );
   });
 });

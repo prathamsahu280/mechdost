@@ -55,4 +55,4 @@ Payment methods at launch (register #1).
 
 ## P1/P2
 
-Buy-X-get-Y and campaign budgets, wallet redemption, click-and-collect, EMI/pay-later, abandoned-cart recovery, saved cards via tokens, gift cards (P2), express checkout (P2).
+Buy-X-get-Y and campaign budgets, MechDost Coins redemption (built, spec 20), click-and-collect, EMI/pay-later, abandoned-cart recovery, saved cards via tokens, gift cards (P2), express checkout (P2).

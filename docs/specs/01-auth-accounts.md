@@ -64,7 +64,7 @@ Vehicle fields may change (register #5).
 
 ## P1/P2
 
-Registration-number lookup (Vahan), saved cards (gateway tokens), wallet + referral, recently viewed, data export, device sessions UI, customer 2FA (P2), loyalty tiers (P2).
+Registration-number lookup (Vahan), saved cards (gateway tokens), referral (rewarded in MechDost Coins, spec 20; no wallet), recently viewed, data export, device sessions UI, customer 2FA (P2), loyalty tiers (P2).
 
 ## Demo implementation (2026-11-01)
 

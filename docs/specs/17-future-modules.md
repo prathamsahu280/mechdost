@@ -20,9 +20,9 @@ Request roadside help (tyre, starting, breakdown, towing) with live location and
 
 Mechanic registration (4 consents), skills profile, district/PIN, directory, job cards workspace, network operations admin (verification, consent, export). Role `mechanic` portal. Phase 4.
 
-## F. Wallet, referral, loyalty (P1)
+## F. Referral, loyalty tiers (P1) — no wallet
 
-Wallet ledger (credits, debits, expiry), refunds-to-wallet (instant), referral codes with reward on first order, loyalty tiers (P2). Data: `wallets`, `wallet_entries`, `referrals`.
+**No wallet** (decision 2026-11-01): replaced by MechDost Coins (spec 20, built). Still future: referral codes rewarded in coins, loyalty tiers (P2), both depending on the earning rules in Q24.
 
 ## G. Exchanges, disputes, order chat, service reminders (P1, possibly launch — register #2)
 

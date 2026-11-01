@@ -106,6 +106,12 @@ export function OrderView({ code }: { code: string }) {
               <dt className="text-muted">{cartT('delivery')}</dt>
               <dd>{order.deliveryPaise === 0 ? cartT('free') : formatPrice(order.deliveryPaise)}</dd>
             </div>
+            {order.coins ? (
+              <div className="flex justify-between text-success">
+                <dt>{t('coinsLine', { coins: order.coins.coins })}</dt>
+                <dd className="font-bold">−{formatPrice(order.coins.discountPaise)}</dd>
+              </div>
+            ) : null}
             <div className="flex justify-between text-base">
               <dt className="font-bold">{cartT('total')}</dt>
               <dd className="font-heading font-extrabold">{formatPrice(order.totalPaise)}</dd>
