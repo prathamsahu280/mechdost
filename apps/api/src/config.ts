@@ -36,6 +36,19 @@ const schema = z
     FIREBASE_DATABASE_URL: z.url().optional(),
     /** Session-mode connection for the relay's LISTEN wake-up (port 5432); optional, the 1 s sweep is the backstop. */
     DATABASE_URL: z.string().optional(),
+    /** WhatsApp via the Meta Cloud API directly (decision 2026-11-02). Off until the Meta account is ready. */
+    WHATSAPP_ENABLED: z.enum(['on', 'off']).default('off'),
+    WHATSAPP_PHONE_NUMBER_ID: z
+      .string()
+      .regex(/^\d{5,20}$/)
+      .optional(),
+    WHATSAPP_ACCESS_TOKEN: z.string().min(20).optional(),
+    WHATSAPP_APP_SECRET: z.string().min(16).optional(),
+    WHATSAPP_VERIFY_TOKEN: z.string().min(16).optional(),
+    WHATSAPP_API_VERSION: z
+      .string()
+      .regex(/^v\d{2}\.\d$/)
+      .default('v23.0'),
   })
   .superRefine((env, ctx) => {
     if (env.DATABASE_POOL_URL.includes('<')) {
@@ -49,6 +62,18 @@ const schema = z
           path: ['FIREBASE_DATABASE_URL'],
           message: 'https://<db>.<region>.firebasedatabase.app required for LIVE_TRANSPORT=rtdb',
         });
+      }
+    }
+    if (env.WHATSAPP_ENABLED === 'on') {
+      const needed = [
+        'WHATSAPP_PHONE_NUMBER_ID',
+        'WHATSAPP_ACCESS_TOKEN',
+        'WHATSAPP_APP_SECRET',
+        'WHATSAPP_VERIFY_TOKEN',
+      ] as const;
+      for (const key of needed) {
+        if (!env[key])
+          ctx.addIssue({ code: 'custom', path: [key], message: 'required when WHATSAPP_ENABLED=on' });
       }
     }
     if (env.NODE_ENV !== 'production') return;
@@ -92,6 +117,20 @@ function toConfig(env: z.infer<typeof schema>) {
         : null,
     trustedProxyHops: env.TRUSTED_PROXY_HOPS,
     apiDocs: env.API_DOCS ? env.API_DOCS === 'on' : env.NODE_ENV !== 'production',
+    whatsapp:
+      env.WHATSAPP_ENABLED === 'on' &&
+      env.WHATSAPP_PHONE_NUMBER_ID &&
+      env.WHATSAPP_ACCESS_TOKEN &&
+      env.WHATSAPP_APP_SECRET &&
+      env.WHATSAPP_VERIFY_TOKEN
+        ? {
+            phoneNumberId: env.WHATSAPP_PHONE_NUMBER_ID,
+            accessToken: env.WHATSAPP_ACCESS_TOKEN,
+            appSecret: env.WHATSAPP_APP_SECRET,
+            verifyToken: env.WHATSAPP_VERIFY_TOKEN,
+            apiVersion: env.WHATSAPP_API_VERSION,
+          }
+        : null,
     live: {
       transport: env.LIVE_TRANSPORT,
       databaseUrl: env.FIREBASE_DATABASE_URL ?? null,

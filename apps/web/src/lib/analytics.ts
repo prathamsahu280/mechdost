@@ -17,6 +17,14 @@ export interface ClientEvents {
   booking_confirmed: { code: string; workshop: string; demo: boolean };
   assistant_opened: { path: string };
   assistant_message: { intent: string; length: number };
+  /** Workshop map interactions (bug 2026-11-02: map actions were untracked). Workshop = slug, never a name. */
+  map_action: {
+    action: 'show_on_map' | 'pin_select' | 'locate' | 'show_all' | 'mode_change';
+    workshop?: string;
+    mode?: 'map' | 'satellite';
+  };
+  /** "Use my location" result: whether a PIN code was found (the PIN itself is not sent: quasi-identifier). */
+  location_detected: { source: 'finder' | 'map'; pincodeFound: boolean };
   /** Admin site customisation (spec 08 `admin_action`): which area changed and how many fields. */
   admin_site_change: {
     area: 'content' | 'layout' | 'categories' | 'settings';
@@ -42,6 +50,36 @@ export function track<E extends ClientEventName>(event: E, props: ClientEvents[E
   queue.push(entry);
   if (queue.length > MAX_QUEUE) queue.shift();
   window.dispatchEvent(new CustomEvent<TrackedEvent>('mechdost:track', { detail: entry }));
+  persistDemo(entry);
+}
+
+/**
+ * Until the events endpoint ships, the demo keeps the last 500 events on this device so a bug report can be
+ * replayed (user 2026-11-02: "u can surely check the api for the actions i did"). No PII by construction.
+ */
+export const DEMO_EVENTS_KEY = 'mechdost-demo-events';
+export type StoredEvent = TrackedEvent & { path: string };
+const DEMO_MAX = 500;
+
+function persistDemo(entry: TrackedEvent) {
+  try {
+    const raw = window.localStorage.getItem(DEMO_EVENTS_KEY);
+    const list = raw ? (JSON.parse(raw) as StoredEvent[]) : [];
+    list.push({ ...entry, path: window.location.pathname });
+    window.localStorage.setItem(DEMO_EVENTS_KEY, JSON.stringify(list.slice(-DEMO_MAX)));
+  } catch {
+    // Storage full or blocked: the in-memory queue still has the event.
+  }
+}
+
+/** The demo event log (newest last), for the admin activity view and bug reports. */
+export function demoEventLog(): StoredEvent[] {
+  try {
+    const raw = window.localStorage.getItem(DEMO_EVENTS_KEY);
+    return raw ? (JSON.parse(raw) as StoredEvent[]) : [];
+  } catch {
+    return [];
+  }
 }
 
 /** Events not yet delivered (read by the transport once it exists). */

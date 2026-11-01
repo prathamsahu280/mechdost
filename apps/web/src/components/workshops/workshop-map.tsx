@@ -4,6 +4,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import type * as MapLibre from 'maplibre-gl';
 import type { IControl, Map as MapLibreMap, Marker, Popup } from 'maplibre-gl';
 import { useEffect, useRef } from 'react';
+import { track } from '@/lib/analytics';
 import { directionsHref, type MapUi } from '@/lib/map-ui';
 import {
   STYLE_URLS,
@@ -204,8 +205,11 @@ export function WorkshopMap({
 }) {
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<MapLibreMap | null>(null);
-  const markers = useRef<Marker[]>([]);
-  const popups = useRef<Popup[]>([]);
+  const entries = useRef(new Map<string, { marker: Marker; pin: HTMLButtonElement; popup: Popup }>());
+  const userMarker = useRef<Marker | null>(null);
+  const selectedRef = useRef<string | null>(selected ?? null);
+  const lastOrigin = useRef<LatLng | null>(null);
+  const lastKey = useRef('');
   const lib = useRef<typeof MapLibre | null>(null);
   const select = useRef(onSelect);
   const locate = useRef(onLocate);
@@ -276,11 +280,13 @@ export function WorkshopMap({
         fitBoundsOptions: { maxZoom: 14 },
       });
       geolocate.on('geolocate', (pos) => {
+        track('map_action', { action: 'locate' });
         locate.current?.({ lat: pos.coords.latitude, lng: pos.coords.longitude });
       });
       m.addControl(geolocate, 'top-right');
       m.addControl(
         showAllControl(ui.showAll, () => {
+          track('map_action', { action: 'show_all' });
           fitAll.current();
         }),
         'top-right',
@@ -301,6 +307,7 @@ export function WorkshopMap({
       m.addControl(
         modeControl(ui.satellite, mode, (next) => {
           mode = next;
+          track('map_action', { action: 'mode_change', mode: next });
           saveMapMode(next);
           applyStyle();
         }),
@@ -323,12 +330,12 @@ export function WorkshopMap({
       // on empty map close them here instead.
       // Escape closes an open popup (dismissible content, WCAG 1.4.13).
       m.getContainer().addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') for (const popup of popups.current) popup.remove();
+        if (e.key === 'Escape') for (const entry of entries.current.values()) entry.popup.remove();
       });
       m.on('click', (e) => {
         const target = e.originalEvent.target;
         if (target instanceof Element && target.closest('.md-map-pin, .maplibregl-popup')) return;
-        for (const popup of popups.current) popup.remove();
+        for (const entry of entries.current.values()) entry.popup.remove();
       });
     });
     return () => {
@@ -340,7 +347,8 @@ export function WorkshopMap({
     // Runs once: labels are fixed for the page's lifetime (a language switch is a navigation).
   }, []);
 
-  // Markers + camera whenever the list, origin or selection changes.
+  // Pins + the camera when the list or the user's position changes. Selection does NOT rebuild pins (bug
+  // 2026-11-02: every "Show on map" destroyed and re-created all markers and the page jumped).
   useEffect(() => {
     let frame = 0;
     const draw = () => {
@@ -350,61 +358,102 @@ export function WorkshopMap({
         frame = window.requestAnimationFrame(draw);
         return;
       }
-      for (const mk of markers.current) mk.remove();
-      markers.current = [];
+      for (const entry of entries.current.values()) entry.marker.remove();
+      entries.current.clear();
+      userMarker.current?.remove();
+      userMarker.current = null;
       const bounds = new maplibre.LngLatBounds();
-      popups.current = [];
       for (const p of points) {
-        const active = p.slug === selected;
-        const pin = workshopPin(p.name, active);
+        const pin = workshopPin(p.name, p.slug === selectedRef.current);
         pin.addEventListener('click', () => {
+          // Same pin again (popup closed with ×): selection does not change, so reopen here.
+          const again = entries.current.get(p.slug);
+          if (p.slug === selectedRef.current && again && !again.popup.isOpen()) again.popup.addTo(m);
           select.current?.(p.slug);
         });
         const popup = new maplibre.Popup({
           offset: 30,
           closeButton: true,
           closeOnClick: false,
+          // Opening a popup must not move keyboard focus or scroll the page (bug 2026-11-02).
+          focusAfterOpen: false,
           anchor: 'bottom',
           maxWidth: '260px',
-        }).setDOMContent(popupCard(p, labels.current));
+        })
+          .setLngLat([p.lng, p.lat])
+          .setDOMContent(popupCard(p, labels.current));
+        // Popups are opened/closed only by the selection effect (a marker-owned popup toggled itself on the same
+        // click and closed again).
         const marker = new maplibre.Marker({ element: pin, anchor: 'bottom' })
           .setLngLat([p.lng, p.lat])
-          .setPopup(popup)
           .addTo(m);
-        popups.current.push(popup);
-        if (active) marker.togglePopup();
-        markers.current.push(marker);
+        entries.current.set(p.slug, { marker, pin, popup });
         bounds.extend([p.lng, p.lat]);
       }
       if (origin) {
-        const you = new maplibre.Marker({ element: userPin(youAreHere) })
+        userMarker.current = new maplibre.Marker({ element: userPin(youAreHere) })
           .setLngLat([origin.lng, origin.lat])
           .addTo(m);
-        markers.current.push(you);
         bounds.extend([origin.lng, origin.lat]);
       }
       fitAll.current = () => {
-        for (const popup of popups.current) popup.remove();
+        for (const entry of entries.current.values()) entry.popup.remove();
         if (!bounds.isEmpty()) m.fitBounds(bounds, FIT);
       };
-      const focus = points.find((p) => p.slug === selected);
-      if (focus) {
-        // Sit the pin below centre so its popup (opening upwards) fits, even on a short phone map.
-        m.easeTo({
-          center: [focus.lng, focus.lat],
-          offset: [0, Math.round(m.getContainer().clientHeight * 0.2)],
-          zoom: Math.max(m.getZoom(), 13.5),
-          duration: 700,
-        });
-      } else if (!bounds.isEmpty()) {
-        m.fitBounds(bounds, FIT);
+
+      // Camera follows intent (bug 2026-11-02: "use my location" kept flying to the selected workshop):
+      // a new position (every locate press creates one) → centre on the user; a different list → fit all;
+      // otherwise (same list, new distance labels) → leave the camera alone.
+      const key = points.map((p) => p.slug).join('|');
+      const focus = selectedRef.current ? entries.current.get(selectedRef.current) : undefined;
+      if (origin && origin !== lastOrigin.current) {
+        m.flyTo({ center: [origin.lng, origin.lat], zoom: Math.max(m.getZoom(), 14), duration: 800 });
+      } else if (key !== lastKey.current) {
+        if (focus && !focus.popup.isOpen()) focus.popup.addTo(m);
+        if (!bounds.isEmpty()) m.fitBounds(bounds, FIT);
       }
+      lastOrigin.current = origin ?? null;
+      lastKey.current = key;
     };
     draw();
     return () => {
       window.cancelAnimationFrame(frame);
     };
-  }, [points, origin, selected, youAreHere]);
+  }, [points, origin, youAreHere]);
+
+  // Selection: restyle pins in place, open one popup, ease to the pin.
+  useEffect(() => {
+    selectedRef.current = selected ?? null;
+    let frame = 0;
+    const apply = () => {
+      const m = map.current;
+      if (!m || entries.current.size === 0) {
+        frame = window.requestAnimationFrame(apply);
+        return;
+      }
+      for (const [slug, entry] of entries.current) {
+        const active = slug === selected;
+        entry.pin.classList.toggle('md-map-pin--active', active);
+        entry.pin.setAttribute('aria-pressed', String(active));
+        if (!active) entry.popup.remove();
+      }
+      const focus = selected ? entries.current.get(selected) : undefined;
+      if (!focus) return;
+      if (!focus.popup.isOpen()) focus.popup.addTo(m);
+      const at = focus.marker.getLngLat();
+      // Sit the pin below centre so its popup (opening upwards) fits, even on a short phone map.
+      m.easeTo({
+        center: [at.lng, at.lat],
+        offset: [0, Math.round(m.getContainer().clientHeight * 0.2)],
+        zoom: Math.max(m.getZoom(), 13.5),
+        duration: 700,
+      });
+    };
+    apply();
+    return () => {
+      window.cancelAnimationFrame(frame);
+    };
+  }, [selected]);
 
   return (
     <div

@@ -11,3 +11,4 @@ export * from './coins';
 export * from './delivery';
 export * from './partners';
 export * from './live';
+export * from './notify';

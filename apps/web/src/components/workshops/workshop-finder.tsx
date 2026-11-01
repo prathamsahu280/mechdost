@@ -13,11 +13,24 @@ import {
 } from '@/demo/workshops';
 import { usePartnerHistory, usePartnerStatus, visibleToCustomers } from '@/demo/partner-status';
 import { formatPrice } from '@/lib/format';
+import { track } from '@/lib/analytics';
 import { mapUi } from '@/lib/map-ui';
 import { WorkshopMap, type MapPoint } from './workshop-map';
 
 type VehicleFilter = 'any' | '2W' | '4W';
-type Origin = { lat: number; lng: number; source: 'gps' | 'pin'; pin?: string } | null;
+type Origin = { lat: number; lng: number; source: 'gps' | 'pin'; pin?: string; area?: string } | null;
+
+/** GPS → PIN code through our server (`/api/geo/pincode`); null when unknown or offline. */
+async function lookupPincode(pos: { lat: number; lng: number }) {
+  try {
+    const res = await fetch(`/api/geo/pincode?lat=${pos.lat.toFixed(5)}&lng=${pos.lng.toFixed(5)}`);
+    if (!res.ok) return null;
+    const body = (await res.json()) as { pincode: string | null; area: string | null };
+    return body.pincode ? body : null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Location-first workshop finder (spec 06): PIN or device location → nearby workshops sorted by distance,
@@ -57,6 +70,26 @@ export function WorkshopFinder() {
     if (/^\d{6}$/.test(value)) setOrigin(centroid ? { ...centroid, source: 'pin', pin: value } : null);
   }
 
+  /**
+   * A new position from either locate button (bug 2026-11-02): drop any selected workshop so the map centres on
+   * the user, then fill the PIN field from the position (user: "use my location should also fetch my pincode").
+   */
+  function locatedAt(pos: { lat: number; lng: number }, source: 'finder' | 'map') {
+    setSelected(null);
+    setLocationError(false);
+    const next = { ...pos, source: 'gps' as const };
+    setOrigin(next);
+    void lookupPincode(pos).then((found) => {
+      track('location_detected', { source, pincodeFound: found !== null });
+      if (!found?.pincode) return;
+      const code = found.pincode;
+      setPin(code);
+      setOrigin((current) =>
+        current === next ? { ...next, pin: code, area: found.area ?? undefined } : current,
+      );
+    });
+  }
+
   function useLocation() {
     if (!('geolocation' in navigator)) {
       setLocationError(true);
@@ -66,7 +99,7 @@ export function WorkshopFinder() {
     setLocationError(false);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setOrigin({ lat: pos.coords.latitude, lng: pos.coords.longitude, source: 'gps' });
+        locatedAt({ lat: pos.coords.latitude, lng: pos.coords.longitude }, 'finder');
         setLocating(false);
       },
       () => {
@@ -167,7 +200,11 @@ export function WorkshopFinder() {
         </p>
         {origin ? (
           <p className="text-xs text-muted">
-            {origin.source === 'gps' ? t('sortedByDistance') : t('sortedByPin', { pin: origin.pin ?? '' })}
+            {origin.source === 'pin'
+              ? t('sortedByPin', { pin: origin.pin ?? '' })
+              : origin.pin
+                ? t('sortedByDistanceAt', { pin: origin.pin })
+                : t('sortedByDistance')}
           </p>
         ) : null}
       </div>
@@ -182,14 +219,14 @@ export function WorkshopFinder() {
               origin={origin}
               selected={selected}
               onSelect={(slug) => {
+                track('map_action', { action: 'pin_select', workshop: slug });
                 setSelected(slug);
                 document
                   .getElementById(`workshop-${slug}`)
                   ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
               }}
               onLocate={(pos) => {
-                setLocationError(false);
-                setOrigin({ ...pos, source: 'gps' });
+                locatedAt(pos, 'map');
               }}
               label={t('mapLabel')}
               youAreHere={t('youAreHere')}
@@ -206,6 +243,7 @@ export function WorkshopFinder() {
                   href={`${base}/workshops/${w.slug}`}
                   active={selected === w.slug}
                   onShowOnMap={() => {
+                    track('map_action', { action: 'show_on_map', workshop: w.slug });
                     setSelected(w.slug);
                     // Phones and tablets stack the map above the list: bring it into view.
                     const box = mapRef.current?.getBoundingClientRect();

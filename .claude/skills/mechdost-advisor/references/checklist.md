@@ -55,6 +55,7 @@ Mark each touched item ✅ / ⚠️ / ❌. Anything ❌ blocks implementation un
 
 - ❌ New visual language (colours, fonts, radii) not in `design-system.md`.
 - ❌ Inline user-facing string (must be in `packages/shared/i18n` en + hi).
+- ❌ New content data (product/workshop/service/area/shop/category/template fields) without its Hindi version, or a map/third-party widget that ignores the locale (rule 10, user 2026-11-02). Run `e2e/hindi-coverage.spec.ts`; extend its page list for every new route.
 - ❌ `<img>` instead of `next/image`; missing width/height or `sizes`; `priority` on non-hero images.
 - ❌ Missing analytics events for new user actions (spec 12).
 - ⚠️ More than one primary action per screen, stacked modals, empty state without one next action.

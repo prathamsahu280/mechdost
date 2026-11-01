@@ -481,6 +481,7 @@
     "view": "View services & book",
     "noMatch": "No workshop matches these filters. Try another PIN or vehicle type.",
     "sortedByDistance": "Sorted by distance from you.",
+    "sortedByDistanceAt": "Sorted by distance from you · PIN {pin}.",
     "sortedByPin": "Sorted by distance from PIN {pin}.",
     "mapLabel": "Map of workshops",
     "youAreHere": "You are here",

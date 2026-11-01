@@ -5,6 +5,8 @@
 import { createDb, createListener } from '@mechdost/db';
 import { ConfigError, loadConfig } from './config';
 import { pollingPublisher, type LivePublisher } from './live/publisher';
+import { startDispatcher, type ChannelAdapter } from './notify/dispatcher';
+import { createWhatsAppAdapter } from './notify/whatsapp';
 import { startRelay } from './live/relay';
 import { createRtdbPublisher } from './live/rtdb';
 import { log } from './logger';
@@ -26,7 +28,13 @@ const publisher: LivePublisher =
     ? createRtdbPublisher({ projectId: config.firebaseProjectId, databaseUrl: config.live.databaseUrl })
     : pollingPublisher;
 const relay = startRelay({ db, publisher });
-log('info', 'worker_started', { live: publisher.name, listen: Boolean(config.live.listenUrl) });
+const adapters: ChannelAdapter[] = config.whatsapp ? [createWhatsAppAdapter(config.whatsapp)] : [];
+const dispatcher = startDispatcher({ db, adapters });
+log('info', 'worker_started', {
+  live: publisher.name,
+  listen: Boolean(config.live.listenUrl),
+  channels: adapters.map((a) => a.channel),
+});
 
 // LISTEN needs a session connection (not the transaction pooler); without it the 1 s sweep still delivers.
 const listener = config.live.listenUrl
@@ -43,8 +51,7 @@ function shutdown(signal: string) {
   if (stopping) return;
   stopping = true;
   log('info', 'shutdown', { signal });
-  void relay
-    .stop()
+  void Promise.all([relay.stop(), dispatcher.stop()])
     .then(() => Promise.all([sql.end({ timeout: 5 }), listener?.end()]))
     .finally(() => process.exit(0));
   setTimeout(() => process.exit(1), 9000).unref();

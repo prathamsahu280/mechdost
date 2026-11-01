@@ -56,11 +56,12 @@ export function toHybrid(
   };
 }
 
+/** Satellite (hybrid) is the default view (user 2026-11-02); a saved "map" choice is remembered. */
 export function savedMapMode(): MapMode {
   try {
-    return window.localStorage.getItem(MAP_MODE_KEY) === 'satellite' ? 'satellite' : 'map';
+    return window.localStorage.getItem(MAP_MODE_KEY) === 'map' ? 'map' : 'satellite';
   } catch {
-    return 'map';
+    return 'satellite';
   }
 }
 

@@ -10,6 +10,7 @@ import { securityMiddleware } from './middleware/security';
 import { assistantRoutes } from './routes/assistant';
 import { meRoutes } from './routes/me';
 import { systemRoutes } from './routes/system';
+import { whatsAppWebhookRoutes } from './routes/whatsapp-webhook';
 import type { AppDeps, AppEnv } from './types';
 import { validationHook } from './validation';
 
@@ -42,6 +43,8 @@ export function createApp(deps: AppDeps) {
   app.notFound(handleNotFound);
 
   app.route('/', systemRoutes(deps));
+  // Provider webhooks: signature-checked, outside /v1 (no user auth, no per-IP API limit; Meta retries).
+  app.route('/', whatsAppWebhookRoutes(deps));
 
   const v1 = new OpenAPIHono<AppEnv>({ defaultHook: validationHook });
   v1.use('*', timeout(REQUEST_TIMEOUT_MS));

@@ -11,6 +11,7 @@ import {
   smallint,
   text,
   unique,
+  uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
 import { createdAt, encryptedCheck, id, ts, updatedAt, version } from './_common';
@@ -106,6 +107,16 @@ export const notificationOutbox = pgTable(
     attempts: integer().notNull().default(0),
     lastError: text(),
     providerId: text(),
+    /** Dispatcher lease (FOR UPDATE SKIP LOCKED claim); a crashed sender's claim lapses and is retried. */
+    claimedAt: ts(),
+    /** Earliest next try (backoff; 24 h for WhatsApp marketing caps). */
+    nextAttemptAt: ts().notNull().defaultNow(),
+    /** Provider delivery receipts (WhatsApp statuses webhook), for delivery-rate and cost analytics (rule 16). */
+    deliveredAt: ts(),
+    readAt: ts(),
+    /** Provider pricing category of the delivered message (WhatsApp: utility | authentication | marketing | service). */
+    pricingCategory: text(),
+    billable: boolean(),
     createdAt: createdAt(),
     sentAt: ts(),
   },
@@ -113,9 +124,16 @@ export const notificationOutbox = pgTable(
     check('outbox_channel_valid', sql`${t.channel} in ('inapp','email','sms','whatsapp','push')`),
     check('outbox_status_valid', sql`${t.status} in ('pending','sent','failed','cancelled','suppressed')`),
     check('outbox_locale_valid', sql`${t.locale} in ('en','hi')`),
+    check(
+      'outbox_pricing_category_valid',
+      sql`${t.pricingCategory} is null or ${t.pricingCategory} in ('utility','authentication','authentication_international','marketing','marketing_lite','service','referral_conversion')`,
+    ),
     index('outbox_pending_idx')
-      .on(t.createdAt)
+      .on(t.nextAttemptAt)
       .where(sql`${t.status} = 'pending'`),
+    uniqueIndex('outbox_provider_id_uq')
+      .on(t.channel, t.providerId)
+      .where(sql`${t.providerId} is not null`),
     index().on(t.recipientUserId),
   ],
 );

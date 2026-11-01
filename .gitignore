@@ -36,3 +36,6 @@ ui-debug.log
 *.log
 .DS_Store
 Thumbs.db
+
+# Browser automation (Playwright MCP) snapshots
+.playwright-mcp/

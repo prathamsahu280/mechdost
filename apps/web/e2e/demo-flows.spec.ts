@@ -181,6 +181,10 @@ test.describe('workshop map (spec 06)', () => {
     page.on('console', (m) => {
       if (m.type() === 'error') errors.push(m.text());
     });
+    // Reverse geocoding is mocked: tests never call OpenStreetMap.
+    await page.route('**/api/geo/pincode**', (route) =>
+      route.fulfill({ json: { pincode: null, area: null } }),
+    );
     await page.goto('/workshops');
     const map = page.getByRole('region', { name: 'Map of workshops' });
     await map.scrollIntoViewIfNeeded();
@@ -216,16 +220,77 @@ test.describe('workshop map (spec 06)', () => {
     await expect(map.getByRole('img', { name: 'You are here' })).toBeVisible();
     await expect(map.getByRole('button', { name: 'Full-screen map' })).toBeVisible();
 
-    // Hybrid view (decision 2026-11-01): satellite imagery under roads and labels; the choice is remembered.
+    // Hybrid view (decisions 2026-11-01/02): satellite imagery under roads and labels is the default; the
+    // switch to the plain map is remembered.
     const satellite = map.getByRole('button', { name: 'Satellite' });
+    await expect(satellite).toHaveAttribute('aria-pressed', 'true');
+    await satellite.click();
     await expect(satellite).toHaveAttribute('aria-pressed', 'false');
+    await expect(map.locator('.md-map-pin')).toHaveCount(8);
+    expect(await page.evaluate(() => localStorage.getItem('mechdost-map-mode'))).toBe('map');
     await satellite.click();
     await expect(satellite).toHaveAttribute('aria-pressed', 'true');
-    await expect(map.locator('.md-map-pin')).toHaveCount(8);
-    expect(await page.evaluate(() => localStorage.getItem('mechdost-map-mode'))).toBe('satellite');
-    await satellite.click();
-    await expect(satellite).toHaveAttribute('aria-pressed', 'false');
     expect(errors).toEqual([]);
+    await context.close();
+  });
+
+  test('locating after selecting a workshop centres on you and fills your PIN (bug 2026-11-02)', async ({
+    browser,
+  }) => {
+    const context = await browser.newContext({
+      viewport: { width: 1440, height: 900 },
+      permissions: ['geolocation'],
+      // Salasar Greens, Sarona: right next to Sarona Car Care, where the old camera kept flying.
+      geolocation: { latitude: 21.2085, longitude: 81.6725 },
+      reducedMotion: 'reduce',
+    });
+    const page = await context.newPage();
+    const asked: string[] = [];
+    await page.route('**/api/geo/pincode**', (route) => {
+      asked.push(new URL(route.request().url()).search);
+      return route.fulfill({ json: { pincode: '492099', area: 'Sarona' } });
+    });
+    await page.goto('/workshops');
+    const map = page.getByRole('region', { name: 'Map of workshops' });
+    await expect(map.locator('.md-map-pin')).toHaveCount(8);
+
+    // Select a far workshop first: this used to pin the camera to it.
+    const pinBefore = await map.locator('.md-map-pin').first().elementHandle();
+    const show = page
+      .locator('article')
+      .filter({ hasText: 'Telibandha Car Clinic' })
+      .getByRole('button', { name: 'Show on map' });
+    await show.scrollIntoViewIfNeeded();
+    const scrollBefore = await page.evaluate(() => window.scrollY);
+    await show.click();
+    await expect(map.locator('.maplibregl-popup')).toHaveCount(1);
+    await expect(map.locator('.md-map-pin[aria-pressed="true"]')).toHaveCount(1);
+    // "Show on map" restyles pins in place (no rebuild = no flash) and never jumps the page.
+    expect(await pinBefore.evaluate((el) => el.isConnected)).toBe(true);
+    expect(Math.abs((await page.evaluate(() => window.scrollY)) - scrollBefore)).toBeLessThan(200);
+
+    for (let i = 0; i < 3; i += 1) {
+      await page.getByRole('button', { name: 'Use my location' }).click();
+      await expect(page.locator('#finder-pin')).toHaveValue('492099');
+    }
+    await expect(page.getByText('Sorted by distance from you · PIN 492099.')).toBeVisible();
+    await expect(map.locator('.md-map-pin[aria-pressed="true"]')).toHaveCount(0);
+    // "You are here" is inside the visible map, not off-screen behind a workshop.
+    const you = await map.getByRole('img', { name: 'You are here' }).boundingBox();
+    const box = await map.boundingBox();
+    expect(you && box).toBeTruthy();
+    if (you && box) {
+      expect(you.x).toBeGreaterThan(box.x);
+      expect(you.x).toBeLessThan(box.x + box.width);
+      expect(you.y).toBeGreaterThan(box.y);
+      expect(you.y).toBeLessThan(box.y + box.height);
+    }
+    // Coordinates go to our own server only, rounded by it before any lookup.
+    expect(asked.length).toBeGreaterThan(0);
+    // The action trail is kept on the device for bug reports.
+    const log = await page.evaluate(() => localStorage.getItem('mechdost-demo-events') ?? '');
+    expect(log).toContain('"show_on_map"');
+    expect(log).toContain('"location_detected"');
     await context.close();
   });
 });
