@@ -15,7 +15,7 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 import { ASSIGNMENT_STATES, ORDER_STATES, PAYMENT_STATES } from '@mechdost/shared/state';
-import { citext, createdAt, id, paise, ts, updatedAt, version } from './_common';
+import { citext, createdAt, encryptedCheck, id, paise, ts, updatedAt, version } from './_common';
 import { cities } from './geography';
 import { users } from './identity';
 import { productVariants, shopInventory, shops } from './catalogue';
@@ -329,6 +329,8 @@ export const refunds = pgTable(
     orderId: uuid().references(() => orders.id, { onDelete: 'restrict' }),
     amountPaise: paise().notNull(),
     mode: text().notNull().default('source'),
+    /** Bank account / UPI id for `bank_upi` refunds (COD orders), encrypted (`'refunds.destination_enc'`). */
+    destinationEnc: text(),
     idemKey: text().notNull().unique(),
     providerRefundId: text().unique(),
     status: text().notNull().default('pending'),
@@ -342,6 +344,11 @@ export const refunds = pgTable(
   (t) => [
     check('refunds_amount_positive', sql`${t.amountPaise} > 0`),
     check('refunds_mode_valid', sql`${t.mode} in ('source','wallet','bank_upi')`),
+    check('refunds_destination_encrypted', encryptedCheck(t.destinationEnc)),
+    check(
+      'refunds_bank_upi_needs_destination',
+      sql`${t.mode} <> 'bank_upi' or ${t.destinationEnc} is not null`,
+    ),
     check('refunds_status_valid', sql`${t.status} in ('pending','initiated','processed','failed')`),
     check('refunds_idem_key_format', sql`${t.idemKey} ~ '^[A-Za-z0-9_-]{10,64}$'`),
     index().on(t.paymentId),

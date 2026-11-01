@@ -7,8 +7,10 @@ import { expect, test, type Page } from '@playwright/test';
  */
 async function signInAsAdmin(page: Page, next: string) {
   await page.goto(`/login?next=${encodeURIComponent(next)}`);
-  await page.getByLabel('Mobile number').fill('9000000003');
-  await page.getByRole('button', { name: 'Send code' }).click();
+  await page.getByLabel('Mobile number or email').fill('9000000003');
+  await page.getByLabel('Password', { exact: true }).fill('Raipur@2026');
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  // Staff two-step: the code sent to their phone.
   await page.getByLabel('One-time code').fill('123456');
   await page.getByRole('button', { name: 'Verify and continue' }).click();
   await expect(page).toHaveURL(new RegExp(`${next}$`));

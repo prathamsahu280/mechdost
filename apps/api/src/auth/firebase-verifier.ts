@@ -2,8 +2,14 @@ import { getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { TokenError, type TokenVerifier, type VerifiedToken } from './token-verifier';
 
-/** Phone OTP is the only sign-in method (decision 2026-10-31); anonymous/custom/password tokens are refused. */
-const ALLOWED_PROVIDERS = new Set(['phone']);
+/**
+ * Sign-in methods (decision 2026-11-01): `phone` = OTP (sign-up, staff second step, password reset by phone);
+ * `custom` = password sign-in, whose token is minted only by our own `POST /v1/auth/password` after it checked
+ * the password with rate limits and lockout (spec 01). Direct Firebase `password` and `anonymous` tokens are
+ * refused so every password attempt goes through those limits. Custom tokens never create accounts
+ * (`ensureUser` requires a verified phone for that).
+ */
+const ALLOWED_PROVIDERS = new Set(['phone', 'custom']);
 
 const ERROR_CODES: Record<string, TokenError['code']> = {
   'auth/id-token-expired': 'TOKEN_EXPIRED',

@@ -13,7 +13,7 @@ import {
   unique,
   uuid,
 } from 'drizzle-orm/pg-core';
-import { createdAt, id, ts, updatedAt, version } from './_common';
+import { createdAt, encryptedCheck, id, ts, updatedAt, version } from './_common';
 import { cities } from './geography';
 import { users } from './identity';
 import { orders } from './orders';
@@ -291,9 +291,8 @@ export const partnerApplications = pgTable(
     business: text(),
     pincode: text().notNull(),
     details: text().notNull(),
-    kyc: jsonb()
-      .notNull()
-      .default(sql`'{}'::jsonb`),
+    /** KYC details (PAN, GSTIN, bank/UPI for payouts) as encrypted JSON (`encryptField(…, 'partner_applications.kyc_enc')`). */
+    kycEnc: text(),
     status: text().notNull().default('new'),
     convertedShopId: uuid().references(() => shops.id, { onDelete: 'set null' }),
     convertedWorkshopId: uuid(),
@@ -308,6 +307,7 @@ export const partnerApplications = pgTable(
     check('partner_applications_kind_valid', sql`${t.kind} in ('seller','garage','mechanic')`),
     check('partner_applications_status_valid', sql`${t.status} in ('new','in_review','approved','rejected')`),
     check('partner_applications_pincode', sql`${t.pincode} ~ '^[1-9][0-9]{5}$'`),
+    check('partner_applications_kyc_encrypted', encryptedCheck(t.kycEnc)),
     index().on(t.status, t.createdAt),
     index().on(t.convertedShopId),
     index().on(t.reviewedBy),

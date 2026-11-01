@@ -42,7 +42,7 @@ const FIELDS: [string, string][] = [
   ['/', '#hero-search'],
   ['/shop', 'input[type="search"]'],
   ['/workshops', '#finder-pin'],
-  ['/login', '#login-phone'],
+  ['/login', '#login-identifier'],
   ['/partners/apply/seller', '#apply-name'],
   ['/quotes/new', '#quote-name'],
 ];

@@ -19,7 +19,7 @@ For live reload while coding use `pnpm --filter @mechdost/web dev` instead of bu
 
 Before every commit: `pnpm check` (format, typecheck, lint, unit tests). End-to-end tests: `pnpm --filter @mechdost/web e2e` (builds must be current).
 
-**`.env`:** not needed for the demo website. For database work (`pnpm db:migrate`, `pnpm db:seed`) and the API, the owner shares the **dev** `.env` with you directly over a private channel (password manager or one-to-one encrypted message). It holds the dev database password and the Supabase secret key (full access to the dev database), so: keep it only in the repo root (`.env` is git-ignored), never commit, paste or forward it, and tell the owner if it leaks so both are rotated. Production keys are never shared this way (Secret Manager / Vercel only).
+**`.env`:** not needed for the demo website. For database work (`pnpm db:migrate`, `pnpm db:seed`) and the API, the owner shares the **dev** `.env` with you directly over a private channel (password manager or one-to-one encrypted message). It holds the dev database password and the Supabase secret key (full access to the dev database), so: keep it only in the repo root (`.env` is git-ignored), never commit, paste or forward it, and tell the owner if it leaks so both are rotated. Production keys are never shared this way (Secret Manager / Vercel only). The shared dev `.env` must include the same `DATA_ENCRYPTION_KEYS`, `DATA_ENCRYPTION_KEY_ID` and `DATA_INDEX_KEY` as everyone else, or encrypted dev data cannot be read.
 
 ## 2. Claude Code: what you get automatically
 

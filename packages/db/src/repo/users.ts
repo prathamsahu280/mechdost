@@ -73,7 +73,14 @@ export async function ensureUser(db: Tx, id: VerifiedIdentity): Promise<UserReco
     throw new ValidationError('Phone number must be in E.164 format', 'PHONE_FORMAT');
   }
   const existing = await findByFirebaseUid(db, id.firebaseUid);
-  if (!existing) return provision(db, id);
+  if (!existing) {
+    // Accounts are only ever created by phone sign-up (decision 2026-11-01): a password sign-in token can
+    // never create a user, so every account has a verified phone from its first row.
+    if (id.phone === null) {
+      throw new ValidationError('Create your account with your mobile number first', 'PHONE_SIGNUP_REQUIRED');
+    }
+    return provision(db, id);
+  }
 
   const patch = identityPatch(existing, id);
   if (Object.keys(patch).length === 0) return existing;

@@ -1,13 +1,22 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 
-/** Demo sign-in (spec 01): phone → OTP 123456. Lands on the role's home unless `next` says otherwise. */
-async function signIn(page: Page, phone: string, path = '/login') {
+const DEMO_PASSWORD = 'Raipur@2026';
+const STAFF = new Set(['9000000003']);
+
+/**
+ * Demo sign-in (spec 01, decision 2026-11-01): phone or email + password; staff also enter the code sent to
+ * their phone. Lands on the role's home unless `next` says otherwise.
+ */
+async function signIn(page: Page, phone: string, path = '/login', password = DEMO_PASSWORD) {
   await page.goto(path);
-  await page.getByLabel('Mobile number').fill(phone);
-  await page.getByRole('button', { name: 'Send code' }).click();
-  await page.getByLabel('One-time code').fill('123456');
-  await page.getByRole('button', { name: 'Verify and continue' }).click();
+  await page.getByLabel('Mobile number or email').fill(phone);
+  await page.getByLabel('Password', { exact: true }).fill(password);
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  if (STAFF.has(phone)) {
+    await page.getByLabel('One-time code').fill('123456');
+    await page.getByRole('button', { name: 'Verify and continue' }).click();
+  }
 }
 
 async function signOut(page: Page) {
@@ -28,52 +37,170 @@ async function placeOrder(page: Page): Promise<string> {
   return new URL(page.url()).pathname.split('/').at(-1) ?? '';
 }
 
-test.describe('demo sign-in (spec 01)', () => {
-  test('validates the number and the code, then signs a customer in', async ({ page }) => {
+test.describe('sign-in (spec 01: phone OTP once, then password)', () => {
+  const generic = "That mobile number or email and password don't match. Check them and try again.";
+
+  test('signs in with phone or email and password; wrong details get one generic message', async ({
+    page,
+  }) => {
     await page.goto('/login');
-    await page.getByLabel('Mobile number').fill('12345');
-    await page.getByRole('button', { name: 'Send code' }).click();
-    await expect(page.getByText('Enter a 10-digit Indian mobile number.')).toBeVisible();
-    await expect(page.getByLabel('Mobile number')).toBeFocused();
+    await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+    await expect(page.getByText('Enter your mobile number or email.')).toBeVisible();
+    await expect(page.getByLabel('Mobile number or email')).toBeFocused();
 
-    // Demo login chips fill the number.
+    // Demo chips fill the number and the demo password.
     await page.getByRole('button', { name: /Customer/ }).click();
-    await expect(page.getByLabel('Mobile number')).toHaveValue('9876543210');
-    await page.getByRole('button', { name: 'Send code' }).click();
-    await expect(page.getByText('Sent by SMS to +91 9876543210.')).toBeVisible();
-    await expect(page.getByLabel('One-time code')).toBeFocused();
-    await expect(page.getByText(/Resend in \d+s/)).toBeVisible();
+    await expect(page.getByLabel('Mobile number or email')).toHaveValue('9876543210');
+    await page.getByLabel('Password', { exact: true }).fill('wrong password');
+    await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+    await expect(page.getByText(generic)).toBeVisible();
+    // An account that does not exist gets exactly the same answer (no account enumeration).
+    await page.getByLabel('Mobile number or email').fill('nobody@example.com');
+    await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+    await expect(page.getByText(generic)).toBeVisible();
 
-    await page.getByLabel('One-time code').fill('111111');
-    await page.getByRole('button', { name: 'Verify and continue' }).click();
-    await expect(page.getByText('That code is not right.', { exact: false })).toBeVisible();
-
-    await page.getByLabel('One-time code').fill('123456');
-    await page.getByRole('button', { name: 'Verify and continue' }).click();
+    // Show/hide works, then the email + password sign-in succeeds.
+    await page.getByLabel('Mobile number or email').fill('Ravi.Sahu@example.com');
+    await page.getByLabel('Password', { exact: true }).fill(DEMO_PASSWORD);
+    await page.getByRole('button', { name: 'Show password' }).click();
+    await expect(page.getByLabel('Password', { exact: true })).toHaveAttribute('type', 'text');
+    await page.getByRole('button', { name: 'Sign in', exact: true }).click();
     await expect(page).toHaveURL(/\/account$/);
     await expect(page.getByRole('heading', { name: 'Hello, Ravi Sahu' })).toBeVisible();
-    // The header shows who is signed in from 420px; phones reach the account through the "My Vehicles" tab.
     if ((page.viewportSize()?.width ?? 0) >= 420) {
       await expect(page.getByRole('link', { name: /Ravi\s*,\s*Account/ })).toBeVisible();
     }
   });
 
-  test('a new number creates a customer account after name and email', async ({ page }) => {
-    await signIn(page, '9123456780');
+  test('locks an account for 15 minutes after 5 wrong passwords', async ({ page }) => {
+    await page.goto('/login');
+    for (let i = 0; i < 5; i++) {
+      await page.getByLabel('Mobile number or email').fill('9000000001');
+      await page.getByLabel('Password', { exact: true }).fill(`wrong-${String(i)}-password`);
+      await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+      await expect(page.getByRole('alert').filter({ hasText: /match|Too many/ })).toBeVisible();
+    }
+    await expect(page.getByText(/Too many attempts. Try again in 15 minutes/)).toBeVisible();
+    // Even the right password is refused while locked.
+    await page.getByLabel('Password', { exact: true }).fill(DEMO_PASSWORD);
+    await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+    await expect(page.getByText(/Too many attempts/)).toBeVisible();
+    await expect(page).toHaveURL(/\/login$/);
+  });
+
+  test('a new customer signs up with phone → code → name, email and a checked password', async ({ page }) => {
+    await page.goto('/login');
+    await page.getByRole('button', { name: 'Create an account' }).click();
+    await page.getByLabel('Mobile number').fill('12345');
+    await page.getByRole('button', { name: 'Send code' }).click();
+    await expect(page.getByText('Enter a 10-digit Indian mobile number.')).toBeVisible();
+    await page.getByLabel('Mobile number').fill('9123456780');
+    await page.getByRole('button', { name: 'Send code' }).click();
+    await expect(page.getByText('Sent by SMS to +91 9123456780.')).toBeVisible();
+    await expect(page.getByText(/Resend in \d+s/)).toBeVisible();
+    await page.getByLabel('One-time code').fill('111111');
+    await page.getByRole('button', { name: 'Verify and continue' }).click();
+    await expect(page.getByText('That code is not right.', { exact: false })).toBeVisible();
+    await page.getByLabel('One-time code').fill('123456');
+    await page.getByRole('button', { name: 'Verify and continue' }).click();
+
     await expect(page.getByRole('heading', { name: 'Almost done' })).toBeVisible();
     await page.getByLabel('Full name').fill('Neha Gupta');
-    await page.getByLabel('Email').fill('not-an-email');
-    await page.getByRole('button', { name: 'Create account' }).click();
-    await expect(page.getByText('Enter a valid email address.')).toBeVisible();
     await page.getByLabel('Email').fill('neha@example.com');
+    const create = page.getByLabel('Create password', { exact: true });
+    const confirm = page.getByLabel('Confirm password', { exact: true });
+    await create.fill('short');
+    await page.getByRole('button', { name: 'Create account' }).click();
+    await expect(page.getByText('Use at least 8 characters.')).toBeVisible();
+    await create.fill('password123');
+    await page.getByRole('button', { name: 'Create account' }).click();
+    await expect(page.getByText('This password is too common.', { exact: false })).toBeVisible();
+    await create.fill('9123456780neha');
+    await page.getByRole('button', { name: 'Create account' }).click();
+    await expect(
+      page.getByText("Don't use your name, phone number or email in your password."),
+    ).toBeVisible();
+    await create.fill('my bike is blue');
+    await confirm.fill('my bike is red');
+    await page.getByRole('button', { name: 'Create account' }).click();
+    await expect(page.getByText("The passwords don't match.")).toBeVisible();
+    await confirm.fill('my bike is blue');
     await page.getByRole('button', { name: 'Create account' }).click();
     await expect(page.getByRole('heading', { name: 'Hello, Neha Gupta' })).toBeVisible();
-    // A new customer starts with no vehicles: the vehicle form opens directly.
-    await page
-      .getByRole('link', { name: /My vehicles/ })
-      .first()
-      .click();
-    await expect(page.getByText('Add your vehicle to get matching parts', { exact: false })).toBeVisible();
+
+    // The password is never stored in plain text; next time email + password signs in.
+    const stored = await page.evaluate(() => localStorage.getItem('mechdost-demo-accounts') ?? '');
+    expect(stored).not.toContain('my bike is blue');
+    await page.goto('/account/profile');
+    await signOut(page);
+    await signIn(page, 'neha@example.com', '/login', 'my bike is blue');
+    await expect(page.getByRole('heading', { name: 'Hello, Neha Gupta' })).toBeVisible();
+  });
+
+  test('an existing number on sign-up is sent to sign in instead', async ({ page }) => {
+    await page.goto('/login');
+    await page.getByRole('button', { name: 'Create an account' }).click();
+    await page.getByLabel('Mobile number').fill('9876543210');
+    await page.getByRole('button', { name: 'Send code' }).click();
+    await page.getByLabel('One-time code').fill('123456');
+    await page.getByRole('button', { name: 'Verify and continue' }).click();
+    await expect(page.getByText('This number already has an account.', { exact: false })).toBeVisible();
+    await expect(page.getByLabel('Mobile number or email')).toHaveValue('9876543210');
+  });
+
+  test('forgot password by phone code: the new password works, the old one does not', async ({ page }) => {
+    await page.goto('/login');
+    await page.getByRole('button', { name: 'Forgot password?' }).click();
+    await page.getByRole('button', { name: /Send a code to my phone/ }).click();
+    await page.getByLabel('Mobile number').fill('9000000002');
+    await page.getByRole('button', { name: 'Send code' }).click();
+    await page.getByLabel('One-time code').fill('123456');
+    await page.getByLabel('Create password', { exact: true }).fill('workshop opens at nine');
+    await page.getByLabel('Confirm password', { exact: true }).fill('workshop opens at nine');
+    await page.getByRole('button', { name: 'Save new password' }).click();
+    await expect(page).toHaveURL(/\/partner\/workshop$/);
+    await signOut(page);
+    await signIn(page, '9000000002');
+    await expect(page.getByText(generic)).toBeVisible();
+    await signIn(page, '9000000002', '/login', 'workshop opens at nine');
+    await expect(page).toHaveURL(/\/partner\/workshop$/);
+  });
+
+  test('forgot password by email link: generic message, then a new password', async ({ page }) => {
+    await page.goto('/login');
+    await page.getByRole('button', { name: 'Forgot password?' }).click();
+    await page.getByRole('button', { name: /Email me a reset link/ }).click();
+    await page.getByLabel('Email').fill('orders@sharmaautoparts.example');
+    await page.getByRole('button', { name: 'Send reset link' }).click();
+    await expect(
+      page.getByText(/If an account uses orders@sharmaautoparts.example, we've sent a link/),
+    ).toBeVisible();
+    await page.getByRole('button', { name: 'Open the reset link' }).click();
+    await page.getByLabel('Create password', { exact: true }).fill('sharma spares since 1998');
+    await page.getByLabel('Confirm password', { exact: true }).fill('sharma spares since 1998');
+    await page.getByRole('button', { name: 'Save new password' }).click();
+    await expect(page.getByText('Password changed. Sign in with your new password.')).toBeVisible();
+    await expect(page.getByLabel('Mobile number or email')).toHaveValue('orders@sharmaautoparts.example');
+    await page.getByLabel('Password', { exact: true }).fill('sharma spares since 1998');
+    await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+    await expect(page).toHaveURL(/\/partner\/shop$/);
+  });
+
+  test('staff sign-in needs the password and a code to their phone', async ({ page }) => {
+    await page.goto('/login');
+    await page.getByLabel('Mobile number or email').fill('9000000003');
+    await page.getByLabel('Password', { exact: true }).fill(DEMO_PASSWORD);
+    await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Two-step verification' })).toBeVisible();
+    await page.getByLabel('One-time code').fill('000000');
+    await page.getByRole('button', { name: 'Verify and continue' }).click();
+    await expect(page.getByText('That code is not right.', { exact: false })).toBeVisible();
+    // No session yet: the console stays locked (the guard asks to sign in; no admin data shows).
+    await page.goto('/admin');
+    await expect(page.getByRole('heading', { name: 'Sign in to continue' })).toBeVisible();
+    await expect(page.getByText('Orders to route')).toBeHidden();
+    await signIn(page, '9000000003');
+    await expect(page).toHaveURL(/\/admin$/);
   });
 
   test('only a safe same-site "next" is followed after sign-in', async ({ page }) => {

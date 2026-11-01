@@ -14,7 +14,7 @@ import {
   uuid,
   type AnyPgColumn,
 } from 'drizzle-orm/pg-core';
-import { createdAt, geographyPoint, id, paise, ts, updatedAt, version } from './_common';
+import { createdAt, encryptedCheck, geographyPoint, id, paise, ts, updatedAt, version } from './_common';
 import { cities, pincodes, states } from './geography';
 import { users, vehicleVariants } from './identity';
 
@@ -62,7 +62,10 @@ export const shops = pgTable(
     name: text().notNull(),
     legalName: text(),
     gstin: text(),
-    pan: text(),
+    /** PAN, AES-256-GCM encrypted (`encryptField(…, 'shops.pan_enc')`); lookups use `panIndex`. */
+    panEnc: text(),
+    /** Blind index of the normalised PAN (`blindIndex(…, 'pan')`): one shop per PAN without decrypting. */
+    panIndex: text().unique(),
     phone: text().notNull(),
     email: text(),
     addressLine: text().notNull(),
@@ -93,6 +96,7 @@ export const shops = pgTable(
       sql`${t.gstin} is null or ${t.gstin} ~ '^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$'`,
     ),
     check('shops_timeout_positive', sql`${t.acceptanceTimeoutMin} is null or ${t.acceptanceTimeoutMin} > 0`),
+    check('shops_pan_encrypted', encryptedCheck(t.panEnc)),
     index().on(t.cityId, t.status),
     index().on(t.pincode),
     index().on(t.stateId),

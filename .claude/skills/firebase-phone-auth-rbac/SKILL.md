@@ -10,6 +10,8 @@ both must be verified before ordering/booking/partner/staff actions (`docs/decis
 
 ## Architecture
 
+> **2026-11-01 decision:** phone OTP **once at sign-up** (then name, email, password, confirm); afterwards phone **or** email + password through `POST /v1/auth/password` (server-side check, limits, lockout, custom token). Forgot password: phone code or email link. Staff: password + phone code. API accepts `phone` + `custom` tokens only; `ensureUser` refuses to create users without a phone. See spec 01 "Password sign-in" and spec 13 "Encryption".
+
 - **Client (apps/web):** Firebase JS SDK v13 modular. `signInWithPhoneNumber(auth, phone, appVerifier)` with an
   invisible `RecaptchaVerifier`; confirm with the 6-digit code. Email: after phone sign-in, collect email and call
   `verifyBeforeUpdateEmail(user, email)`; the user clicks the link; `emailVerified` becomes true on the next
@@ -32,7 +34,8 @@ both must be verified before ordering/booking/partner/staff actions (`docs/decis
 - Never accept uid, role, shopId or permissions from the request body. Never put roles in client-editable metadata.
 - Verification gates: `phone_verified_at` and `email_verified_at` required for checkout, booking, partner and staff
   routes → 403 `VERIFICATION_REQUIRED`.
-- Staff: TOTP second factor enforced automatically once staff beyond founders exist (`staff_security`).
+- Staff: second factor on every sign-in (phone code now, TOTP once staff beyond founders exist; secret stored encrypted in `staff_security.totp_secret_enc`).
+- Passwords: never log, never store, never compare in our DB; one generic error for unknown account / wrong password; lock after 5 failures in 15 minutes; revoke all sessions on password change.
 - Deactivating staff/partner: `revokeRefreshTokens(uid)` + delete their `user_roles` + bust the permission cache.
 - Phone numbers stored E.164 (`+91…`); validate with the shared helper before any SMS.
 

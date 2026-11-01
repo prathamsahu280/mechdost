@@ -13,7 +13,7 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
-import { citext, createdAt, geographyPoint, id, ts, updatedAt, version } from './_common';
+import { citext, createdAt, encryptedCheck, geographyPoint, id, ts, updatedAt, version } from './_common';
 import { cities, pincodes, states } from './geography';
 
 /** docs/specs/01-auth-accounts.md. Identity comes from Firebase; this row is our profile. */
@@ -110,14 +110,19 @@ export const userRoles = pgTable(
 );
 
 /** Staff second factor (TOTP) — enforced automatically once staff beyond founders exist. */
-export const staffSecurity = pgTable('staff_security', {
-  userId: uuid()
-    .primaryKey()
-    .references(() => users.id, { onDelete: 'cascade' }),
-  totpSecretEnc: text(),
-  totpEnabledAt: ts(),
-  updatedAt: updatedAt(),
-});
+export const staffSecurity = pgTable(
+  'staff_security',
+  {
+    userId: uuid()
+      .primaryKey()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    /** TOTP secret, encrypted (`encryptField(…, 'staff_security.totp_secret_enc')`). */
+    totpSecretEnc: text(),
+    totpEnabledAt: ts(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [check('staff_security_totp_encrypted', encryptedCheck(t.totpSecretEnc))],
+);
 
 export const sessions = pgTable(
   'sessions',

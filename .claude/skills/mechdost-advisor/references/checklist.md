@@ -24,6 +24,9 @@ Mark each touched item ✅ / ⚠️ / ❌. Anything ❌ blocks implementation un
 - ⚠️ Query without an index on its filter columns; offset pagination on growing lists (use cursors).
 - ⚠️ Timestamps or "today" computed in UTC instead of IST business days.
 
+- [ ] Any column holding government IDs (PAN, Aadhaar, GSTIN of individuals), bank/UPI details, document numbers or secrets is `*_enc` with `encryptedCheck` and written via `encryptField` (spec 13 "Encryption"); lookups use a blind index, never the plain value.
+- [ ] Connections to non-local databases go through `createDb`/`tlsFor` (TLS required).
+
 ## API (Hono)
 
 - ❌ Handler queries tables directly (must call a repository with an `actor`).
@@ -38,6 +41,8 @@ Mark each touched item ✅ / ⚠️ / ❌. Anything ❌ blocks implementation un
 - ❌ Trusting a uid/role from the client body; not calling `verifyIdToken(token, true)` for sensitive actions.
 - ❌ Roles in client-editable metadata; secrets in `NEXT_PUBLIC_*`.
 - ⚠️ OTP endpoints without per-phone/IP/device limits, region policy and enumeration-safe responses.
+
+- [ ] Passwords: never logged or stored by us; one generic error for unknown account / wrong password; per-account lockout; API accepts only `phone` + `custom` tokens; no account creation without a verified phone (decision 2026-11-01).
 
 ## Payments (skill razorpay-payments)
 

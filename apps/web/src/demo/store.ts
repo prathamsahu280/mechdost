@@ -144,6 +144,8 @@ const KEYS = {
   quotes: 'mechdost-demo-quotes',
   accounts: 'mechdost-demo-accounts',
   session: 'mechdost-demo-session',
+  loginFailures: 'mechdost-demo-login-failures',
+  resetLinks: 'mechdost-demo-reset-links',
 } as const;
 type Key = (typeof KEYS)[keyof typeof KEYS];
 
@@ -517,15 +519,11 @@ export function useHydrated(): boolean {
 }
 
 /** Storage primitives for sibling demo modules (session.ts). Same cache, listeners and cross-tab sync. */
+type SharedKey = (typeof KEYS)['accounts' | 'session' | 'loginFailures' | 'resetLinks'];
+
 export const demoStorage = {
-  read: read as <T>(
-    key: 'mechdost-demo-accounts' | 'mechdost-demo-session',
-    isItem: (v: unknown) => v is T,
-  ) => readonly T[],
-  write: write as (
-    key: 'mechdost-demo-accounts' | 'mechdost-demo-session',
-    value: readonly unknown[],
-  ) => void,
+  read: read as <T>(key: SharedKey, isItem: (v: unknown) => v is T) => readonly T[],
+  write: write as (key: SharedKey, value: readonly unknown[]) => void,
   subscribe,
   empty: EMPTY,
 };

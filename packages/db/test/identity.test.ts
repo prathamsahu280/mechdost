@@ -99,6 +99,22 @@ describe('ensureUser', () => {
   it('rejects a malformed phone number', async () => {
     await expect(ensureUser(db, identity('uid-8', '98000'))).rejects.toBeInstanceOf(ValidationError);
   });
+
+  it('never creates an account from a sign-in without a verified phone (password tokens)', async () => {
+    await expect(
+      ensureUser(db, { firebaseUid: 'uid-9', phone: null, email: 'a@b.in', emailVerified: true }),
+    ).rejects.toMatchObject({ code: 'PHONE_SIGNUP_REQUIRED' });
+    // An existing account signing in with a password (no phone claim) is fine and keeps its phone.
+    const u = await ensureUser(db, identity('uid-10', '+919800000099'));
+    const again = await ensureUser(db, {
+      firebaseUid: 'uid-10',
+      phone: null,
+      email: null,
+      emailVerified: false,
+    });
+    expect(again.id).toBe(u.id);
+    expect(again.phone).toBe('+919800000099');
+  });
 });
 
 describe('grants', () => {

@@ -4,7 +4,7 @@ Status: decided · Phase 1 · Decisions: `decisions.md` → Authentication, Cust
 
 ## Goal
 
-Frictionless phone-OTP sign-in for every role, one-time email verification, and a calm account area that holds profile, addresses, vehicles, orders, bookings, support, notifications and privacy controls.
+Phone-verified sign-up, then phone-or-email + password sign-in (decision 2026-11-01), one-time email verification, and a calm account area that holds profile, addresses, vehicles, orders, bookings, support, notifications and privacy controls.
 
 ## Roles
 
@@ -13,11 +13,13 @@ customer, seller_owner/staff, workshop_owner/staff, mechanic (later), staff role
 ## User stories
 
 - As a visitor I can browse and fill a cart without an account.
-- As a customer I sign up with my phone (OTP), give my name and email, verify email once, and I'm in.
+- As a customer I sign up once with my phone (OTP), then give my name, email and a password (twice); I verify my email once.
+- As a returning customer I sign in with my phone number **or** email and my password.
+- If I forget my password I choose: a code to my phone, or a reset link by email (single use, 30 minutes).
 - As a customer I can change phone (OTP to old and new) or email (re-verify) and set language (English/Hindi).
 - As a customer I manage addresses (pincode-first, "use my current location" via reverse geocoding and typed-address autocomplete (provider from the Raipur bake-off, pending #7), full written address, label, contact), vehicles, wishlist, notification preferences, consent, and can deactivate or request deletion.
-- As a partner I sign in the same way; my role and partner id come from admin approval.
-- As staff I sign in the same way and, once staff beyond founders exist, TOTP 2FA is enforced.
+- As a partner I sign in the same way (password); my role and partner id come from admin approval.
+- As staff I sign in with my password **plus a code sent to my phone** every time; TOTP replaces the SMS code once staff beyond founders exist.
 
 ## Flow & states
 
@@ -67,3 +69,15 @@ Registration-number lookup (Vahan), saved cards (gateway tokens), wallet + refer
 ## Demo implementation (2026-11-01)
 
 `/login` (`components/auth/login-flow.tsx`) and `/account/{section}` (`components/account/account-area.tsx`) run on `apps/web/src/demo/session.ts` until Firebase is linked: same three steps, code 123456, seeded role logins (decisions 2026-11-01). Max 10 vehicles / 10 addresses, one default address. Acceptance tests: `e2e/roles.spec.ts`.
+
+## Password sign-in (decision 2026-11-01)
+
+**Flows.** Sign-up: phone → OTP → name, email, password, confirm → account (customer). Sign-in: identifier (phone or email) + password → session; staff → + phone code. Forgot: choose phone (OTP → new password + confirm → signed in) or email (generic "if an account uses …" message → link, single use, 30 min → new password + confirm → sign in).
+
+**Production.** Firebase Auth holds the password (email/password provider linked to the phone user at sign-up via `linkWithCredential`; scrypt). `POST /v1/auth/password {identifier, password, turnstileToken}`: resolve phone/email → account (constant work for unknown ones), verify the password server-side (Identity Toolkit `accounts:signInWithPassword`), enforce limits, return a Firebase **custom token** → client `signInWithCustomToken`. Reset by phone: client phone sign-in → `updatePassword`. Reset by email: `sendPasswordResetEmail` (custom action URL on our domain, 30-minute expiry). API accepts `phone` and `custom` tokens only; `ensureUser` never creates an account without a verified phone.
+
+**Rules.** 8–64 characters (graphemes), blocklist (common, brand, name/phone/email), no composition rules, show/hide, paste allowed; same error for unknown account and wrong password; 5 failures / 15 min per account → 15-minute lock (+ per-IP limit, Turnstile after 3 failures); lockout and limits fail closed without Redis; all sessions revoked when the password changes; new-device sign-in sends a code to the phone (P1, Q22); every event audited (`auth.password_failed`, `auth.locked`, `auth.password_reset_requested|completed`) without the identifier in clear text.
+
+**Analytics.** `login_<role>`, `login_password_failed`, `signup_otp_sent`, `sign_up`, `reset_otp_sent`, `password_reset_phone`, `password_reset_email`, `password_reset_link`.
+
+**Demo** (`apps/web/src/demo/session.ts`, `demo/passwords.ts`, `components/auth/login-flow.tsx`): same screens on the browser store; PBKDF2-SHA-256 + salt (WebCrypto), lockout and single-use reset links in localStorage; demo password `Raipur@2026`, code `123456`; the email route shows an on-screen "demo inbox" instead of sending mail. Acceptance tests: `e2e/roles.spec.ts` "sign-in (spec 01 …)" — generic error, lockout, sign-up password checks, plain text never stored, both reset routes, staff two-step, safe `next`.

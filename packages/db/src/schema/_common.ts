@@ -4,9 +4,17 @@
  * - Money: bigint paise (number mode is safe below 2^53). Rates: integer basis points.
  * - Time: timestamptz everywhere. Mutable rows carry `version` for optimistic locking.
  */
-import { sql } from 'drizzle-orm';
-import { bigint, customType, integer, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { sql, type SQL } from 'drizzle-orm';
+import { bigint, customType, integer, timestamp, uuid, type AnyPgColumn } from 'drizzle-orm/pg-core';
 import { v7 as uuidv7 } from 'uuid';
+import { ENVELOPE_PATTERN } from '../crypto';
+
+/**
+ * CHECK body for an application-encrypted column (`*_enc`, spec 13): NULL or a `v1.` AES-256-GCM envelope from
+ * `encryptField`. Postgres itself refuses a plain-text write, whatever code path tries it.
+ */
+export const encryptedCheck = (column: AnyPgColumn): SQL =>
+  sql`${column} is null or ${column} ~ ${sql.raw(`'${ENVELOPE_PATTERN}'`)}`;
 
 export const id = () =>
   uuid()

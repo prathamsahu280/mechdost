@@ -3,8 +3,10 @@
  * They prove the database itself refuses double assignment, oversell, stale updates, history rewrites,
  * non-compliant invoice numbers and inconsistent money — regardless of application bugs.
  */
+import { randomBytes } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { eq, sql } from 'drizzle-orm';
+import { blindIndex, decryptField, encryptField, loadKeyring } from '../src/crypto';
 import { createTestDb, type TestDb } from '../src/testing';
 import * as s from '../src/schema';
 import {
@@ -560,5 +562,35 @@ describe('geo', () => {
       name: string;
     }[];
     expect(rows.map((r) => r.name)).toEqual(['Shop A']);
+  });
+});
+
+describe('encryption at the database boundary (spec 13)', () => {
+  const ring = loadKeyring({
+    DATA_ENCRYPTION_KEYS: `k1:${randomBytes(32).toString('base64')}`,
+    DATA_ENCRYPTION_KEY_ID: 'k1',
+    DATA_INDEX_KEY: randomBytes(32).toString('base64'),
+  });
+
+  it('refuses plain text in encrypted columns, whatever code writes it', async () => {
+    await expectPgError(
+      db.insert(s.staffSecurity).values({ userId: F.user!, totpSecretEnc: 'JBSWY3DPEHPK3PXP' }),
+      '23514',
+    );
+    await expectPgError(
+      db.update(s.shops).set({ panEnc: 'ABCDE1234F' }).where(eq(s.shops.id, F.shopA!)),
+      '23514',
+    );
+  });
+
+  it('stores and reads back an encrypted value; one shop per PAN via the blind index', async () => {
+    const pan = 'ABCDE1234F';
+    const panEnc = encryptField(pan, ring, 'shops.pan_enc');
+    const panIndex = blindIndex(pan, ring, 'pan');
+    await db.update(s.shops).set({ panEnc, panIndex }).where(eq(s.shops.id, F.shopA!));
+    const [row] = await db.select({ panEnc: s.shops.panEnc }).from(s.shops).where(eq(s.shops.id, F.shopA!));
+    expect(row?.panEnc).not.toContain(pan);
+    expect(decryptField(row?.panEnc ?? '', ring, 'shops.pan_enc')).toBe(pan);
+    await expectPgError(db.update(s.shops).set({ panIndex }).where(eq(s.shops.id, F.shopB!)), '23505');
   });
 });

@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import postgres from 'postgres';
+import { tlsFor } from './client';
 
 const rootEnv = fileURLToPath(new URL('../../../.env', import.meta.url));
 try {
@@ -20,7 +21,7 @@ if (!url || url.includes('<')) {
   process.exit(1);
 }
 
-const sql = postgres(url, { max: 1, onnotice: () => undefined });
+const sql = postgres(url, { max: 1, onnotice: () => undefined, ssl: tlsFor(url) });
 try {
   await sql`select set_config('search_path', 'public, extensions', false)`;
   await migrate(drizzle(sql), { migrationsFolder: fileURLToPath(new URL('../drizzle', import.meta.url)) });
