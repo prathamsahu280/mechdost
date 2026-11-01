@@ -20,7 +20,7 @@ Spec: `docs/specs/10-notifications.md`. Package: `packages/notify` (adapters + t
 
 | Channel  | Provider                                                                     | Status                                      |
 | -------- | ---------------------------------------------------------------------------- | ------------------------------------------- |
-| inapp    | `notifications` table + Firebase RTDB ping                                    | on                                          |
+| inapp    | `notifications` table + Firebase RTDB ping                                   | on                                          |
 | email    | Resend (`RESEND_API_KEY`, verified domain, SPF/DKIM/DMARC)                   | on when key present (inbox Q7); else logged |
 | sms      | MSG91 (DLT-registered templates, sender ID)                                  | wired, **off**                              |
 | whatsapp | MSG91 WhatsApp (Meta-approved templates; utility category for order updates) | wired, **off**                              |
@@ -33,8 +33,10 @@ Adapters implement `send({ to, templateKey, locale, variables }) → { providerI
 - Keyed by event (`order.confirmed`, `service.estimate_sent`, …) × channel × locale (`en`, `hi`).
 - Admin-editable (rule 8) with preview + test-send; variables validated against a Zod schema per template.
 - SMS: DLT template id stored per template; exact text must match the DLT-registered text.
-- WhatsApp: utility templates for transactional updates (~₹0.12 each); marketing templates only with opt-in;
-  free-form replies only inside the 24 h customer-service window.
+- WhatsApp (research/whatsapp.md, 2026-11-01; recommendation: Meta Cloud API **direct**, MSG91 as fallback, Q49):
+  per-message pricing before GST — utility ≈ ₹0.115 (charged inside the 24 h window too since 1 Oct 2026),
+  authentication ≈ ₹0.115, marketing ≈ ₹0.863; free-form replies free for the first 1,000/number/month.
+  Marketing only with opt-in and via the Marketing Messages API (plain Cloud API marketing ends 13 Oct 2027).
 - Transactional messages are always on; promotional respect `notification_preferences` and quiet hours (21:00–09:00 IST).
 
 ## Rules

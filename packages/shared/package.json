@@ -12,6 +12,7 @@
     "./invoice": "./src/invoice.ts",
     "./state": "./src/state/index.ts",
     "./rbac": "./src/rbac.ts",
+    "./live": "./src/live.ts",
     "./i18n/*": "./src/i18n/*"
   },
   "scripts": {

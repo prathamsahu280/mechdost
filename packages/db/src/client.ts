@@ -46,3 +46,22 @@ export function createDb(url: string, opts: { max?: number; transactionPooler?: 
 }
 
 export type Db = ReturnType<typeof createDb>['db'];
+
+/**
+ * A single session-mode connection that LISTENs on a channel (the live relay's wake-up, migration 0014).
+ * Needs a direct or session-pooler URL (port 5432); the transaction pooler cannot hold LISTEN.
+ */
+export function createListener(url: string, channel: string, onNotify: () => void) {
+  const sql = postgres(url, {
+    max: 1,
+    ssl: tlsFor(url),
+    connection: { application_name: 'mechdost-worker-listen' },
+  });
+  const ready = sql.listen(channel, () => {
+    onNotify();
+  });
+  return {
+    ready,
+    end: () => sql.end({ timeout: 5 }),
+  };
+}

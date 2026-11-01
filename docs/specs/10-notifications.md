@@ -33,3 +33,48 @@ Rolled-back order sends nothing; relay retry does not duplicate; template variab
 ## P1/P2
 
 Web push (PWA), WhatsApp interactive buttons, abandoned-cart sequences, outbound partner webhooks.
+
+## Live updates (decision 2026-11-01; step 1 built)
+
+Pages update without reloads through **thin pings**: "entity X changed, now at version v". Clients refetch through the API, which checks permissions, so a ping never carries data. Transport is swappable (`LIVE_TRANSPORT`): `polling` (default, always-on fallback, 15 → 30 → 60 s, visible tabs only) or `rtdb` (Firebase Realtime Database per-user inbox, `asia-southeast1`).
+
+Flow:
+
+1. A database trigger writes a `live_outbox` row in the same transaction as the change. This covers orders (any change), `order_assignments` (offer, accept, decline, expire) and shop standing. It then calls `pg_notify('live_outbox')`.
+2. The worker (`apps/api/src/worker.ts`, `pnpm --filter @mechdost/api worker`) claims rows with `FOR UPDATE SKIP LOCKED` and a 30 s lease. It resolves recipients **from Postgres** (`resolveLiveRecipients`), publishes and marks the rows sent. Wake-up comes from LISTEN (session URL `DATABASE_URL`), with a 1 s sweep as the backstop. Lag over 5 s logs `live_relay_lag`. Sent rows are purged after 24 h.
+3. RTDB path `inbox/{firebaseUid}/{kind}~{entityId}` = `{e,k,id,v,at}`, overwritten per entity. Rules (`firebase/database.rules.json`) allow read of your own inbox only and no client writes.
+4. Client: `parseLivePing` (exact five keys) → `newPings` version gate → debounced refetch. The client transport (`useLiveQuery`, RTDB listener and polling) is the next step, once the catalogue/order APIs exist. The demo uses `storage` events today.
+
+Recipients:
+
+| Topic             | Who receives it                                                                                                            |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `order:{id}`      | The customer; users of the shop holding an `offered`/`accepted` assignment; staff of the order's city, plus all-city staff |
+| `shop:{id}`       | The shop's users and its city's staff                                                                                      |
+| `user:{id}`       | That user                                                                                                                  |
+| `staff_city:{id}` | That city's staff                                                                                                          |
+
+Workshop and quote topics fail closed until their membership tables exist. Deactivated users receive nothing.
+
+**Data dictionary: `live_outbox`** (operational queue, not history; history lives in `*_events`):
+
+| Column           | Type            | Meaning                                                            |
+| ---------------- | --------------- | ------------------------------------------------------------------ |
+| `id`             | bigint identity | Order of writes                                                    |
+| `topic`          | text            | `{order\|shop\|workshop\|user\|staff_city\|quote}:{uuid}` (CHECK)  |
+| `kind`           | text            | `order\|assignment\|shop\|workshop\|request\|quote\|coins` (CHECK) |
+| `entity_id`      | uuid            | Changed row                                                        |
+| `entity_version` | int ≥ 1         | Row `version` after the change                                     |
+| `event`          | text            | `noun.verb` code (CHECK), e.g. `order.status_changed`              |
+| `attempts`       | int ≥ 0         | Claims so far                                                      |
+| `claimed_at`     | timestamptz     | Lease start                                                        |
+| `sent_at`        | timestamptz     | Published                                                          |
+| `created_at`     | timestamptz     | Commit-time insert (UTC)                                           |
+
+No PII. RLS on; anon/authenticated revoked; `live_enqueue()` is not callable through RPC.
+
+Tests:
+
+- `packages/shared/test/live.test.ts`: contract, gate, backoff.
+- `packages/db/test/live.test.ts`: same-transaction, rollback, versions, SKIP LOCKED, lease retry, purge, thin-only CHECKs, role-leak recipients.
+- `apps/api/test/live.test.ts`: relay delivery, transport failure, inbox paths, config, RTDB rules.

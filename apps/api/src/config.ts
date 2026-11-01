@@ -31,10 +31,25 @@ const schema = z
     API_DOCS: z.enum(['on', 'off']).optional(),
     ANTHROPIC_API_KEY: z.string().min(20).optional(),
     ASSISTANT_MODEL: z.string().default('claude-opus-5-5'),
+    /** Live updates transport (decision 2026-11-01): polling (no push) or rtdb (Firebase Realtime Database). */
+    LIVE_TRANSPORT: z.enum(['polling', 'rtdb']).default('polling'),
+    FIREBASE_DATABASE_URL: z.url().optional(),
+    /** Session-mode connection for the relay's LISTEN wake-up (port 5432); optional, the 1 s sweep is the backstop. */
+    DATABASE_URL: z.string().optional(),
   })
   .superRefine((env, ctx) => {
     if (env.DATABASE_POOL_URL.includes('<')) {
       ctx.addIssue({ code: 'custom', path: ['DATABASE_POOL_URL'], message: 'still a placeholder' });
+    }
+    if (env.LIVE_TRANSPORT === 'rtdb') {
+      const url = env.FIREBASE_DATABASE_URL ?? '';
+      if (!/^https:\/\/[a-z0-9-]+(\.[a-z0-9-]+)*\.(firebasedatabase\.app|firebaseio\.com)\/?$/.test(url)) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['FIREBASE_DATABASE_URL'],
+          message: 'https://<db>.<region>.firebasedatabase.app required for LIVE_TRANSPORT=rtdb',
+        });
+      }
     }
     if (env.NODE_ENV !== 'production') return;
     const required = ['UPSTASH_REDIS_REST_URL', 'UPSTASH_REDIS_REST_TOKEN'] as const;
@@ -77,6 +92,11 @@ function toConfig(env: z.infer<typeof schema>) {
         : null,
     trustedProxyHops: env.TRUSTED_PROXY_HOPS,
     apiDocs: env.API_DOCS ? env.API_DOCS === 'on' : env.NODE_ENV !== 'production',
+    live: {
+      transport: env.LIVE_TRANSPORT,
+      databaseUrl: env.FIREBASE_DATABASE_URL ?? null,
+      listenUrl: env.DATABASE_URL && !env.DATABASE_URL.includes('<') ? env.DATABASE_URL : null,
+    },
     assistant: env.ANTHROPIC_API_KEY ? { apiKey: env.ANTHROPIC_API_KEY, model: env.ASSISTANT_MODEL } : null,
   };
 }

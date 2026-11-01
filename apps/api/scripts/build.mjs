@@ -8,8 +8,10 @@ const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url),
 const external = Object.keys(pkg.dependencies ?? {}).filter((d) => !d.startsWith('@mechdost/'));
 
 await build({
-  entryPoints: ['src/server.ts'],
-  outfile: 'dist/server.mjs',
+  // server = stateless HTTP API; worker = always-on background loops (live relay; pg-boss jobs later).
+  entryPoints: { server: 'src/server.ts', worker: 'src/worker.ts' },
+  outdir: 'dist',
+  outExtension: { '.js': '.mjs' },
   bundle: true,
   platform: 'node',
   target: 'node22',

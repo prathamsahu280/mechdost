@@ -380,3 +380,45 @@ export const partnerStatusEvents = pgTable(
     index().on(t.changedBy),
   ],
 );
+
+/**
+ * Live-update outbox (decision 2026-11-01, docs/research/realtime-alternatives.md): one row per changed entity,
+ * written by triggers in the same transaction as the change, so a rolled-back change never pings and a crash
+ * after commit never loses one. The relay in the worker claims rows (`FOR UPDATE SKIP LOCKED`), resolves
+ * recipients from Postgres and publishes thin pings `{e,k,id,v,at}` (packages/shared/src/live.ts) to the active
+ * transport (Firebase RTDB inbox; polling needs nothing). Sent rows are purged after 24 h. No PII here.
+ */
+export const liveOutbox = pgTable(
+  'live_outbox',
+  {
+    id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+    topic: text().notNull(),
+    kind: text().notNull(),
+    entityId: uuid().notNull(),
+    entityVersion: integer().notNull(),
+    event: text().notNull(),
+    attempts: integer().notNull().default(0),
+    claimedAt: ts(),
+    sentAt: ts(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    check(
+      'live_outbox_topic_format',
+      sql`${t.topic} ~ '^(order|shop|workshop|user|staff_city|quote):[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'`,
+    ),
+    check(
+      'live_outbox_kind_valid',
+      sql`${t.kind} in ('order','assignment','shop','workshop','request','quote','coins')`,
+    ),
+    check('live_outbox_event_format', sql`${t.event} ~ '^[a-z_]+[.][a-z_]+$'`),
+    check('live_outbox_version_positive', sql`${t.entityVersion} >= 1`),
+    check('live_outbox_attempts_nonneg', sql`${t.attempts} >= 0`),
+    index('live_outbox_pending_idx')
+      .on(t.id)
+      .where(sql`${t.sentAt} is null`),
+    index('live_outbox_sent_idx')
+      .on(t.sentAt)
+      .where(sql`${t.sentAt} is not null`),
+  ],
+);
