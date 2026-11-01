@@ -3,7 +3,9 @@
 import { Minus, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
+import { CATEGORY_KEYS, CATEGORY_SLUGS } from '@/demo/catalogue';
 import { priceCart, removeFromCart, setQuantity, useCart, MAX_QTY } from '@/demo/store';
+import { CATEGORY_EMOJI, UI_EMOJI } from '@/lib/emoji';
 import { formatPrice } from '@/lib/format';
 import { track } from '@/lib/analytics';
 import { ProductVisualClient } from './product-visual-client';
@@ -15,21 +17,46 @@ export function CartView() {
   const t = useTranslations('cart');
   const c = useTranslations('catalogue');
   const q = useTranslations('quote');
+  const cat = useTranslations('categories');
   const locale = useLocale();
   const lines = useCart();
   const { priced, subtotalPaise, deliveryPaise, totalPaise } = priceCart(lines);
   const base = prefix(locale);
 
   if (priced.length === 0) {
+    // Empty state: one primary action (shop) plus category shortcuts as quiet secondary links.
     return (
-      <div className="rounded-card border border-line-card bg-surface p-8 shadow-card">
-        <p className="text-[15px] text-muted">{t('empty')}</p>
+      <div className="rounded-card border border-line-card bg-surface p-6 text-center shadow-card tab:p-10">
+        <span
+          aria-hidden="true"
+          className="mx-auto grid size-20 place-items-center rounded-full bg-accent-soft text-[40px]"
+        >
+          {UI_EMOJI.cart}
+        </span>
+        <h2 className="mt-5 font-heading text-2xl font-extrabold text-ink">{t('empty')}</h2>
+        <p className="mx-auto mt-2 max-w-md text-[15px] text-muted">{t('emptyBody')}</p>
         <Link
           href={`${base}/shop`}
-          className="press mt-5 inline-flex min-h-11 items-center rounded-button bg-accent-button px-5 text-sm font-bold text-white hover:bg-accent-button-hover"
+          data-track="cart_empty_shop"
+          className="press mt-6 inline-flex min-h-12 items-center rounded-button bg-accent-button px-6 text-sm font-bold text-white hover:bg-accent-button-hover"
         >
           {t('emptyAction')}
         </Link>
+        <p className="mt-8 text-sm font-bold text-ink">{t('emptyCategories')}</p>
+        <ul className="mt-3 flex flex-wrap justify-center gap-2">
+          {CATEGORY_KEYS.map((key) => (
+            <li key={key}>
+              <Link
+                href={`${base}/shop?category=${CATEGORY_SLUGS[key]}`}
+                data-track={`cart_empty_${key}`}
+                className="press inline-flex min-h-11 items-center gap-2 rounded-pill border border-line-card bg-surface px-4 text-sm font-bold text-ink hover:bg-pill"
+              >
+                <span aria-hidden="true">{CATEGORY_EMOJI[key]}</span>
+                {cat(key)}
+              </Link>
+            </li>
+          ))}
+        </ul>
       </div>
     );
   }

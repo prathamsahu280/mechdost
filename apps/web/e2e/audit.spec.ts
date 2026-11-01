@@ -81,6 +81,12 @@ test.describe('every page renders cleanly', () => {
   }
 });
 
+const MAP_ATTRIBUTION = new Set([
+  'https://openfreemap.org',
+  'https://www.openmaptiles.org/',
+  'https://www.openstreetmap.org/copyright',
+]);
+
 test('every internal link on every page resolves', async ({ page, request }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1024, 'one crawl is enough (desktop)');
   test.setTimeout(180_000);
@@ -104,6 +110,8 @@ test('every internal link on every page resolves', async ({ page, request }) => 
         !/^https:\/\/www\.google\.com\/maps\/dir\/\?api=1&destination=-?\d+\.\d{6},-?\d+\.\d{6}$/.test(href)
       )
         broken.push(`bad directions link ${href}`);
+    } else if (MAP_ATTRIBUTION.has(href)) {
+      // Licence-required map attribution; present only once the map has loaded, so the crawl sees it by timing.
     } else if (href.startsWith('tel:')) {
       if (href !== 'tel:+917978776551') broken.push(`bad phone link ${href}`);
     } else if (!href.startsWith('#')) {

@@ -8,7 +8,7 @@ Status: decided 2026-11-01 (user) · Phase 1 (with catalogue + orders) · Decisi
 
 ## Flow
 
-1. **Request** — from the cart ("Request bulk price"), a product page ("Buying in bulk?") or the assistant, a signed-in, verified customer opens a **quote request**: lines (product, quantity), delivery PIN, optional note. Eligibility: total quantity ≥ `settings.bulk_min_units` or value ≥ `settings.bulk_min_value_paise` (defaults in inbox Q20).
+1. **Request** — from the cart ("Request bulk price"), a product page ("Buying in bulk?") or the assistant, a signed-in, verified customer opens a **quote request**: lines (product, quantity), delivery PIN, optional note. Eligibility: total quantity ≥ `settings.bulk_min_units` (default **10 units**, user 2026-11-01, Q20; admin-editable). There is no value-based threshold.
 2. **Negotiate** — a chat thread between the customer and **MechDost admin staff** (ops/city manager with `quotes:negotiate`); shops are not in the thread (user decision). Messages, attachments (≤ 5 MB images/PDF), read receipts, realtime via Supabase Realtime, notifications through the outbox.
 3. **Offer** — the admin sets the **final price** per line (and delivery, validity, payment terms) as a versioned **offer**. Each new offer supersedes the previous one; the customer sees exactly one active offer.
 4. **Accept** — the customer accepts the active offer before it expires → the system creates a normal **order** with the negotiated line prices snapshotted (`price_source = 'quote'`, `quote_id`, `offer_version`), then the **standard workflow** applies: payment (COD/online per settings) → admin routes to a shop → shop accepts/declines → fulfilment → delivery (spec 04). Cancellation/returns per spec 05 using the negotiated prices.
@@ -24,14 +24,14 @@ Status: decided 2026-11-01 (user) · Phase 1 (with catalogue + orders) · Decisi
 
 ## Rules
 
-- Only staff with `quotes:negotiate` can post offers; four-eyes approval when the discount vs list price exceeds `settings.bulk_max_discount_bp` (default 15%).
+- Only staff with `quotes:negotiate` can post offers. **The price is whatever the negotiation settles** (user 2026-11-01, Q20): no discount cap and no second-approver gate. The offer builder shows the discount vs list price for information only; every offer is still audit-logged.
 - Accept is idempotent (Idempotency-Key) and checks `offer.version` + `valid_until` in one conditional UPDATE; exactly one order per accepted offer (UNIQUE `orders.quote_offer_id`).
 - Rate limits: 3 open quotes per customer, 30 messages/hour; Turnstile not needed (signed-in only).
 - Analytics: `quote_requested`, `quote_message_sent`, `quote_offer_sent`, `quote_accepted`, `quote_expired`.
 
 ## UI
 
-Customer: "Bulk quotes" in the account, thread view with the active offer card pinned on top (line table, total, expiry countdown, **Accept offer** as the single primary action). Admin: quotes queue (open / waiting for us / offered / expiring), thread + offer builder with list price, margin and discount warnings.
+Customer: "Bulk quotes" in the account, thread view with the active offer card pinned on top (line table, total, expiry countdown, **Accept offer** as the single primary action). Admin: quotes queue (open / waiting for us / offered / expiring), thread + offer builder with list price and the discount vs list shown for information (no gate).
 
 ## Interim (until Phase 1)
 
@@ -39,4 +39,4 @@ Demo mode (2026-11-01): `/quotes/new` (prefilled from `?product=` or `?from=cart
 
 ## Acceptance tests
 
-Two concurrent accepts → one order; accept after expiry → 409; superseded offer cannot be accepted; customer cannot see other customers' quotes (404); order lines carry negotiated prices; four-eyes on large discounts.
+Two concurrent accepts → one order; accept after expiry → 409; superseded offer cannot be accepted; customer cannot see other customers' quotes (404); order lines carry negotiated prices; a quote below 10 units is refused (400).

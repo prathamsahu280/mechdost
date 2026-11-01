@@ -49,4 +49,4 @@ Saved views, version history diff, impersonation, merge customers, reports (GSTR
 
 ## Demo implementation (2026-11-01)
 
-`/admin/{overview|orders|services|quotes|applications|reviews}` (`components/portal/admin-console.tsx`): KPI tiles linking to queues, order routing, reassignment of declined service requests, bulk-quote desk (chat as MechDost + offer builder; warning above 15% discount = four-eyes threshold), partner application steps, review moderation. Data from the browser store; API + RBAC in Phase 1.
+`/admin/{overview|orders|services|quotes|applications|reviews}` (`components/portal/admin-console.tsx`): KPI tiles linking to queues, order routing, reassignment of declined service requests, bulk-quote desk (chat as MechDost + offer builder; discount vs list shown for information, price set by negotiation, Q20), partner application steps, review moderation. Data from the browser store; API + RBAC in Phase 1.

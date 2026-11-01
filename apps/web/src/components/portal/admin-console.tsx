@@ -639,9 +639,10 @@ function QuoteNegotiation({ quote }: { quote: DemoQuote }) {
           <p className="font-heading text-xl font-extrabold text-ink">
             {t('offerTotal', { price: formatPrice(subtotal + deliveryPaise) })}
           </p>
-          {discount > 15 ? (
-            <p className="rounded-lg bg-warning-bg p-3 text-sm font-bold text-warning">
-              {t('discountWarn', { percent: discount })}
+          {/* Price is set by negotiation (user, Q20): the discount is shown for information, never gated. */}
+          {discount > 0 ? (
+            <p className="rounded-lg bg-pill p-3 text-sm font-bold text-ink">
+              {t('discountInfo', { percent: discount })}
             </p>
           ) : null}
           <div className="flex flex-wrap items-center gap-3">

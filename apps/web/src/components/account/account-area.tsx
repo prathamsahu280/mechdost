@@ -273,25 +273,51 @@ function ListSection({
   id,
   title,
   empty,
-  action,
+  emoji,
+  next,
   children,
 }: {
   id: string;
   title: string;
   empty: string | null;
-  action: ReactNode;
+  emoji: string;
+  next: { href: string; label: string; track: string };
   children: ReactNode;
 }) {
+  // Empty state = one friendly line plus its single next action (design-system UX rules). Once the list has items,
+  // the same action moves to the heading row.
   return (
     <section aria-labelledby={id}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 id={id} className="font-heading text-xl font-extrabold text-ink">
           {title}
         </h2>
-        {action}
+        {empty ? null : (
+          <Link href={next.href} data-track={next.track} className={quiet}>
+            {next.label}
+          </Link>
+        )}
       </div>
       {empty ? (
-        <p className="mt-3 text-sm text-muted">{empty}</p>
+        <div className="mt-3 flex items-center gap-4 rounded-card border border-dashed border-line-card bg-surface p-5">
+          <span
+            aria-hidden="true"
+            className="grid size-12 shrink-0 place-items-center rounded-xl bg-accent-soft text-[24px]"
+          >
+            {emoji}
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm text-muted">{empty}</p>
+            <Link
+              href={next.href}
+              data-track={next.track}
+              className="inline-flex min-h-11 items-center text-sm font-bold text-accent-soft-text underline-offset-4 hover:underline"
+            >
+              {next.label}
+              <span aria-hidden="true">&nbsp;→</span>
+            </Link>
+          </div>
+        </div>
       ) : (
         <ul className="mt-3 space-y-2">{children}</ul>
       )}
@@ -310,13 +336,8 @@ function OrdersList({ limit }: { limit?: number }) {
       id={`orders-${String(limit ?? 'all')}`}
       title={t('nav_orders')}
       empty={orders.length === 0 ? t('ordersEmpty') : null}
-      action={
-        limit === undefined ? (
-          <Link href={`${prefix}/shop`} className={quiet}>
-            {t('shopNow')}
-          </Link>
-        ) : null
-      }
+      emoji="📦"
+      next={{ href: `${prefix}/shop`, label: t('shopNow'), track: 'account_next_orders' }}
     >
       {orders.map((order) => (
         <li key={order.code}>
@@ -347,13 +368,8 @@ function ServicesList({ limit }: { limit?: number }) {
       id={`services-${String(limit ?? 'all')}`}
       title={t('nav_services')}
       empty={requests.length === 0 ? t('servicesEmpty') : null}
-      action={
-        limit === undefined ? (
-          <Link href={`${prefix}/workshops`} className={quiet}>
-            {t('bookService')}
-          </Link>
-        ) : null
-      }
+      emoji="🔧"
+      next={{ href: `${prefix}/workshops`, label: t('bookService'), track: 'account_next_services' }}
     >
       {requests.map((req) => (
         <li key={req.code}>
@@ -384,13 +400,8 @@ function QuotesList({ limit }: { limit?: number }) {
       id={`quotes-${String(limit ?? 'all')}`}
       title={t('nav_quotes')}
       empty={quotes.length === 0 ? t('quotesEmpty') : null}
-      action={
-        limit === undefined ? (
-          <Link href={`${prefix}/quotes/new`} className={quiet}>
-            {t('newQuote')}
-          </Link>
-        ) : null
-      }
+      emoji="💬"
+      next={{ href: `${prefix}/quotes/new`, label: t('newQuote'), track: 'account_next_quotes' }}
     >
       {quotes.map((quote) => (
         <li key={quote.code}>

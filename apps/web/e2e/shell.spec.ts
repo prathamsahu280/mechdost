@@ -97,7 +97,8 @@ test.describe('navigation chrome', () => {
     page,
   }) => {
     test.skip(isMobile(page), 'the sweep sets its own viewports; run once');
-    test.setTimeout(120_000);
+    // 13 widths × 9 pages = 117 loads; 120 s ran out under full-suite load (2026-11-01). Same checks, more time.
+    test.setTimeout(240_000);
     const widths = [320, 360, 390, 414, 600, 759, 760, 768, 1023, 1024, 1280, 1440, 1920];
     const paths = [
       '/',

@@ -24,7 +24,7 @@ export default async function CheckoutPage() {
         {t('title')}
       </h1>
       <div className="mt-8">
-        <ClientMessages namespaces={['checkout', 'cart', 'catalogue']}>
+        <ClientMessages namespaces={['checkout', 'cart', 'catalogue', 'quote', 'categories']}>
           <CheckoutForm />
         </ClientMessages>
       </div>

@@ -167,7 +167,17 @@
     "accountNote": "Check your account for orders, appointments and payment status.",
     "operatedBy": "Operated by",
     "credits": "Vehicle and workshop imagery for illustration. Motorcycle: Kundan Bana / Unsplash. Workshop: Frankie Cordoba / Unsplash. No manufacturer or provider affiliation implied.",
-    "copyright": "© {year} {company}"
+    "copyright": "© {year} {company}",
+    "colShop": "Shop",
+    "colCare": "Vehicle care",
+    "colAccount": "Your account",
+    "allProducts": "All products",
+    "bulkPrice": "Bulk orders",
+    "signIn": "Sign in",
+    "trackOrder": "Track an order",
+    "becomePartner": "Become a partner",
+    "gstin": "GSTIN {gstin}",
+    "registered": "Registered office: {address}"
   },
   "whatsapp": {
     "general": "Hello MechDost, I have a question.",
@@ -217,7 +227,27 @@
       "garageAction": "Apply as a workshop",
       "mechanicTitle": "Join the mechanic network",
       "mechanicBody": "Build a skills profile and access learning resources.",
-      "mechanicAction": "Apply as a mechanic"
+      "mechanicAction": "Apply as a mechanic",
+      "sellerPoint1": "Orders from customers near your shop",
+      "sellerPoint2": "Accept or decline each order within 15 minutes",
+      "sellerPoint3": "Bulk orders from garages and fleets",
+      "garagePoint1": "Service requests from vehicle owners nearby",
+      "garagePoint2": "You propose the slot and the cost; the customer approves before work starts",
+      "garagePoint3": "Ratings and a verified badge on your profile",
+      "mechanicPoint1": "A skills profile that garages and customers can trust",
+      "mechanicPoint2": "Learning resources for new vehicles and EVs",
+      "mechanicPoint3": "First in line when mechanic jobs open in Raipur",
+      "stepsTitle": "How joining works",
+      "stepLabel": "Step {n}",
+      "step1Title": "Apply",
+      "step1Body": "Fill in a short form. It takes about five minutes.",
+      "step2Title": "We verify",
+      "step2Body": "Our team calls you and checks your documents and location.",
+      "step3Title": "Set up",
+      "step3Body": "Add your products or services, hours and the PIN codes you cover.",
+      "step4Title": "Go live",
+      "step4Body": "Start receiving orders and service requests in Raipur.",
+      "helpLine": "Questions before you apply? Call us:"
     },
     "account": {
       "eyebrow": "Your MechDost account",
@@ -338,7 +368,7 @@
   },
   "cart": {
     "title": "Your cart",
-    "empty": "Your cart is empty.",
+    "empty": "Your cart is empty",
     "emptyAction": "Shop products",
     "remove": "Remove",
     "subtotal": "Products",
@@ -349,7 +379,9 @@
     "checkout": "Proceed to checkout",
     "continue": "Continue shopping",
     "summary": "Order summary",
-    "each": "{price} each"
+    "each": "{price} each",
+    "emptyBody": "Add oils, batteries, tyres and more. A local Raipur shop confirms your order before it ships.",
+    "emptyCategories": "Or start with a category"
   },
   "checkout": {
     "title": "Checkout",
@@ -832,7 +864,7 @@
     "offerNote": "Note to the customer (optional)",
     "sendOffer": "Send offer",
     "offerTotal": "Offer total {price}",
-    "discountWarn": "{percent}% below list price — production needs a second approver above 15% (spec 19).",
+    "discountInfo": "{percent}% below list price",
     "offerSent": "Offer sent.",
     "quoteClosed": "This quote is closed.",
     "selectQuote": "Choose a quote to negotiate.",
