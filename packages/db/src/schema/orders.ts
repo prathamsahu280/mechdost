@@ -280,11 +280,33 @@ export const shipments = pgTable(
     awb: text(),
     status: text().notNull().default('created'),
     proofPath: text(),
+    /**
+     * Proof of delivery (decision 2026-11-01): 4-digit code shown to the customer, stored encrypted
+     * (`'shipments.delivery_code_enc'`) so the customer can see it again; 5 wrong tries lock it.
+     */
+    deliveryCodeEnc: text(),
+    deliveryCodeAttempts: integer().notNull().default(0),
+    /** How delivery was confirmed: the customer's code, or an admin override with a reason. */
+    deliveredVia: text(),
+    deliveredAt: ts(),
+    overrideReason: text(),
+    overrideBy: uuid().references(() => users.id, { onDelete: 'restrict' }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
   (t) => [
     check('shipments_mode_valid', sql`${t.mode} in ('own','courier')`),
+    check('shipments_delivery_code_encrypted', encryptedCheck(t.deliveryCodeEnc)),
+    check('shipments_delivery_attempts_range', sql`${t.deliveryCodeAttempts} between 0 and 5`),
+    check(
+      'shipments_delivered_via_valid',
+      sql`${t.deliveredVia} is null or ${t.deliveredVia} in ('code','override')`,
+    ),
+    check(
+      'shipments_delivered_needs_proof',
+      sql`${t.status} <> 'delivered' or (${t.deliveredAt} is not null and (${t.deliveredVia} = 'code' or (${t.deliveredVia} = 'override' and ${t.overrideBy} is not null and char_length(${t.overrideReason}) >= 5)))`,
+    ),
+    index().on(t.overrideBy),
     check(
       'shipments_courier_awb',
       sql`${t.mode} = 'own' or (${t.courier} is not null and ${t.awb} is not null)`,

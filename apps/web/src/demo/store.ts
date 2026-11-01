@@ -37,7 +37,45 @@ export interface DemoOrder {
   rejection?: { message: string; at: string } | null;
   /** MechDost Coins used on this order (spec 20): part of the discount, restored if the order is rejected. */
   coins?: { accountId: string; coins: number; discountPaise: number } | null;
+  /** Proof of delivery (spec 04): code issued when the order goes out for delivery. */
+  delivery?: DeliveryProof | null;
 }
+
+/**
+ * Delivery code (decision 2026-11-01, "like any e-commerce site"): 4 digits shown to the customer when the order
+ * is out for delivery; the shop enters it to mark the order delivered. 5 wrong codes lock it (support takes
+ * over); an admin may confirm without the code only with a reason. Production stores the code encrypted.
+ */
+export interface DeliveryProof {
+  code: string;
+  attempts: number;
+  confirmedAt: string | null;
+  method: 'code' | 'override' | null;
+  overrideReason?: string;
+  overrideBy?: string;
+}
+
+export const DELIVERY_CODE_MAX_ATTEMPTS = 5;
+const STAGE_OUT_FOR_DELIVERY = ORDER_STAGES.indexOf('shipped');
+const STAGE_DELIVERED = ORDER_STAGES.indexOf('delivered');
+
+/** Uniform random 4-digit code (rejection sampling, no modulo bias). */
+function newDeliveryCode(): string {
+  const buf = new Uint32Array(1);
+  let n: number;
+  do {
+    crypto.getRandomValues(buf);
+    n = buf[0] ?? 0;
+  } while (n >= 4_294_960_000); // largest multiple of 10,000 below 2^32
+  return String(n % 10_000).padStart(4, '0');
+}
+
+const issueDelivery = (): DeliveryProof => ({
+  code: newDeliveryCode(),
+  attempts: 0,
+  confirmedAt: null,
+  method: null,
+});
 
 export const REQUEST_STAGES = [
   'requested',
@@ -500,9 +538,20 @@ export function createDemoRequest(
 export function advanceOrder(code: string) {
   write(
     KEYS.orders,
-    ordersSnapshot().map((o) =>
-      o.code === code ? { ...o, stage: Math.min(o.stage + 1, ORDER_STAGES.length - 1) } : o,
-    ),
+    ordersSnapshot().map((o) => {
+      if (o.code !== code) return o;
+      const stage = Math.min(o.stage + 1, ORDER_STAGES.length - 1);
+      // Simulates the real steps: a code is issued when it goes out; "delivered" means the code was given.
+      if (stage === STAGE_OUT_FOR_DELIVERY && !o.delivery) return { ...o, stage, delivery: issueDelivery() };
+      if (stage === STAGE_DELIVERED && o.delivery && !o.delivery.confirmedAt) {
+        return {
+          ...o,
+          stage,
+          delivery: { ...o.delivery, confirmedAt: new Date().toISOString(), method: 'code' },
+        };
+      }
+      return { ...o, stage };
+    }),
   );
 }
 
@@ -616,11 +665,69 @@ export function rejectOrder(code: string, message: string): boolean {
   });
 }
 
-/** The accepted shop moves its order forward: packed → out for delivery → delivered. */
+/**
+ * The accepted shop moves its order forward: confirmed → packed → out for delivery (a delivery code is issued to
+ * the customer). "Delivered" is never a plain step: it needs `confirmDeliveryWithCode` or an admin override.
+ */
 export function shopAdvanceOrder(code: string, shopSlug: string): boolean {
+  return updateOrder(code, (o) => {
+    if (o.shop?.slug !== shopSlug || o.shop.status !== 'accepted') return null;
+    if (o.stage >= STAGE_OUT_FOR_DELIVERY) return null;
+    const stage = o.stage + 1;
+    return stage === STAGE_OUT_FOR_DELIVERY ? { ...o, stage, delivery: issueDelivery() } : { ...o, stage };
+  });
+}
+
+export type DeliveryCheck =
+  | { ok: true }
+  | { ok: false; reason: 'wrong'; attemptsLeft: number }
+  | { ok: false; reason: 'locked' | 'not_out' };
+
+/** The delivery person enters the customer's code; right code → delivered. */
+export function confirmDeliveryWithCode(code: string, shopSlug: string, entered: string): DeliveryCheck {
+  let result: DeliveryCheck = { ok: false, reason: 'not_out' };
+  updateOrder(code, (o) => {
+    const d = o.delivery;
+    if (o.shop?.slug !== shopSlug || o.stage !== STAGE_OUT_FOR_DELIVERY || !d || d.confirmedAt) return null;
+    if (d.attempts >= DELIVERY_CODE_MAX_ATTEMPTS) {
+      result = { ok: false, reason: 'locked' };
+      return null;
+    }
+    if (entered.trim() === d.code) {
+      result = { ok: true };
+      return {
+        ...o,
+        stage: STAGE_DELIVERED,
+        delivery: { ...d, confirmedAt: new Date().toISOString(), method: 'code' },
+      };
+    }
+    const attempts = d.attempts + 1;
+    result =
+      attempts >= DELIVERY_CODE_MAX_ATTEMPTS
+        ? { ok: false, reason: 'locked' }
+        : { ok: false, reason: 'wrong', attemptsLeft: DELIVERY_CODE_MAX_ATTEMPTS - attempts };
+    return { ...o, delivery: { ...d, attempts } };
+  });
+  return result;
+}
+
+/** Admin confirms delivery without the code (customer unreachable, code lost); a reason is required and kept. */
+export function adminConfirmDelivery(code: string, reason: string, by: string): boolean {
+  const why = reason.trim().slice(0, 300);
+  if (why.length < 5) return false;
   return updateOrder(code, (o) =>
-    o.shop?.slug === shopSlug && o.shop.status === 'accepted' && o.stage < ORDER_STAGES.length - 1
-      ? { ...o, stage: o.stage + 1 }
+    o.stage === STAGE_OUT_FOR_DELIVERY && o.delivery && !o.delivery.confirmedAt
+      ? {
+          ...o,
+          stage: STAGE_DELIVERED,
+          delivery: {
+            ...o.delivery,
+            confirmedAt: new Date().toISOString(),
+            method: 'override',
+            overrideReason: why,
+            overrideBy: by,
+          },
+        }
       : null,
   );
 }

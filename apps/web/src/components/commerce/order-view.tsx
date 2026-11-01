@@ -67,7 +67,32 @@ export function OrderView({ code }: { code: string }) {
           )}
           {order.shop?.status === 'accepted' ? (
             <p className="mt-4 text-sm font-bold text-ink">
-              🏪 {t('shopLabel', { shop: findShop(order.shop.slug)?.name ?? order.shop.slug })}
+              <span aria-hidden="true">🏪 </span>
+              {t('shopLabel', { shop: findShop(order.shop.slug)?.name ?? order.shop.slug })}
+            </p>
+          ) : null}
+          {order.delivery && !order.delivery.confirmedAt && !order.rejection ? (
+            <section
+              aria-labelledby="delivery-code-title"
+              className="mt-5 rounded-tile border-2 border-accent-button bg-accent-soft p-5"
+            >
+              <h3 id="delivery-code-title" className="font-heading font-extrabold text-ink">
+                <span aria-hidden="true">🔐 </span>
+                {t('deliveryCodeTitle')}
+              </h3>
+              <p className="mt-2 font-heading text-[40px] leading-none font-extrabold tracking-[0.3em] text-ink tabular-nums">
+                {order.delivery.code}
+              </p>
+              <p className="mt-3 text-sm text-ink">{t('deliveryCodeHelp')}</p>
+              <p className="mt-1 text-xs text-muted">{t('deliveryCodeSafety')}</p>
+            </section>
+          ) : null}
+          {order.delivery?.confirmedAt ? (
+            <p className="mt-4 text-sm font-bold text-success">
+              ✅{' '}
+              {order.delivery.method === 'override'
+                ? t('deliveredBySupport', { date: formatDate(order.delivery.confirmedAt, locale) })
+                : t('deliveredWithCode', { date: formatDate(order.delivery.confirmedAt, locale) })}
             </p>
           ) : null}
           {!order.rejection && order.stage < ORDER_STAGES.length - 1 ? (

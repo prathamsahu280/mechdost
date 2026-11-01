@@ -5,11 +5,13 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
 import { findProduct } from '@/demo/catalogue';
 import { restoreCoinsForOrder } from '@/demo/coins';
+import { useSession } from '@/demo/session';
 import { findShop, rankShops } from '@/demo/shops';
 import {
   APPLICATION_STAGES,
   moderateReview,
   postQuoteMessage,
+  adminConfirmDelivery,
   rejectOrder,
   routeOrder,
   routingState,
@@ -216,6 +218,72 @@ function OrderRouting() {
   );
 }
 
+/**
+ * Exception path for proof of delivery: the customer cannot give the code (phone dead, code lost, locked after
+ * 5 wrong tries). Admin confirms delivery only with a written reason, which stays on the order (audited in
+ * production).
+ */
+function DeliveryOverride({ order }: { order: DemoOrder }) {
+  const t = useTranslations('portal');
+  const session = useSession();
+  const [open, setOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const fieldId = `override-${order.code}`;
+
+  function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const reason = new FormData(e.currentTarget).get('reason');
+    if (typeof reason !== 'string' || !adminConfirmDelivery(order.code, reason, session?.name ?? 'Admin')) {
+      setError(t('overrideReasonError'));
+      document.getElementById(fieldId)?.focus();
+      return;
+    }
+    track('click', { id: 'admin_delivery_override', path: window.location.pathname });
+  }
+
+  return (
+    <div className="mt-3 rounded-lg bg-pill p-3 text-sm">
+      <p className="text-ink">
+        <span aria-hidden="true">🚚 </span>
+        {t('outForDelivery', { attempts: order.delivery?.attempts ?? 0 })}
+      </p>
+      {open ? (
+        <form noValidate onSubmit={onSubmit} className="mt-2">
+          <label htmlFor={fieldId} className="text-sm font-bold text-ink">
+            {t('overrideReason')}
+          </label>
+          <input
+            id={fieldId}
+            name="reason"
+            maxLength={300}
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error ? `${fieldId}-error` : undefined}
+            className={portalField}
+          />
+          {error ? (
+            <p id={`${fieldId}-error`} role="alert" className="mt-1 text-sm font-bold text-error">
+              {error}
+            </p>
+          ) : null}
+          <button type="submit" className={`${portalQuiet} mt-2`}>
+            {t('overrideConfirm')}
+          </button>
+        </form>
+      ) : (
+        <button
+          type="button"
+          onClick={() => {
+            setOpen(true);
+          }}
+          className="mt-1 inline-flex min-h-11 items-center font-bold text-accent-soft-text underline-offset-4 hover:underline"
+        >
+          {t('overrideOpen')}
+        </button>
+      )}
+    </div>
+  );
+}
+
 function RoutingCard({ order, now }: { order: DemoOrder; now: number }) {
   const t = useTranslations('portal');
   const a = useTranslations('account');
@@ -282,7 +350,8 @@ function RoutingCard({ order, now }: { order: DemoOrder; now: number }) {
 
       {state === 'awaiting_shop' && order.shop ? (
         <p className="mt-3 rounded-lg bg-warning-bg p-3 text-sm font-bold text-warning">
-          ⏱️ {t('offeredTo', { shop: shopName(order.shop.slug) })} ·{' '}
+          <span aria-hidden="true">⏱️ </span>
+          {t('offeredTo', { shop: shopName(order.shop.slug) })} ·{' '}
           {t('expiresIn', {
             minutes: Math.max(0, Math.ceil((new Date(order.shop.expiresAt).getTime() - now) / 60_000)),
           })}
@@ -295,7 +364,17 @@ function RoutingCard({ order, now }: { order: DemoOrder; now: number }) {
       ) : null}
       {state === 'confirmed' && order.shop ? (
         <p className="mt-3 rounded-lg bg-success-bg p-3 text-sm font-bold text-success">
-          ✅ {t('acceptedBy', { shop: shopName(order.shop.slug) })}
+          <span aria-hidden="true">✅ </span>
+          {t('acceptedBy', { shop: shopName(order.shop.slug) })}
+        </p>
+      ) : null}
+      {order.delivery && !order.delivery.confirmedAt ? <DeliveryOverride order={order} /> : null}
+      {order.delivery?.method === 'override' ? (
+        <p className="mt-3 rounded-lg bg-private-bg p-3 text-sm text-private">
+          {t('deliveryOverridden', {
+            by: order.delivery.overrideBy ?? '',
+            reason: order.delivery.overrideReason ?? '',
+          })}
         </p>
       ) : null}
       {state === 'rejected' && order.rejection ? (

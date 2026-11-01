@@ -443,8 +443,8 @@
     "detail_routing": "हमारी टीम आपके पिन के लिए सबसे सही दुकान चुन रही है।",
     "detail_confirmed": "दुकान ने आपका ऑर्डर स्वीकार किया।",
     "detail_packed": "आपके आइटम पैक हो गए।",
-    "detail_shipped": "आपका ऑर्डर रास्ते में है।",
-    "detail_delivered": "मज़े करें! अपने अनुभव को अकाउंट में रेट करें।",
+    "detail_shipped": "आपका ऑर्डर रास्ते में है। सामान मिलने पर डिलीवरी वाले को अपना डिलीवरी कोड दें।",
+    "detail_delivered": "डिलीवर हो गया और आपके कोड से कन्फ़र्म हुआ। अपने अकाउंट में अनुभव को रेट करें।",
     "current": "मौजूदा चरण",
     "done": "पूरा",
     "help": "मदद चाहिए? अपना ऑर्डर नंबर WhatsApp करें।",
@@ -452,7 +452,12 @@
     "noOrders": "अभी तक कोई ऑर्डर नहीं।",
     "rejectedTitle": "हम यह ऑर्डर पूरा नहीं कर सके",
     "shopLabel": "{shop} द्वारा",
-    "coinsLine": "MechDost कॉइन ({coins})"
+    "coinsLine": "MechDost कॉइन ({coins})",
+    "deliveryCodeTitle": "आपका डिलीवरी कोड",
+    "deliveryCodeHelp": "यह कोड डिलीवरी वाले को तभी दें जब आपको ऑर्डर मिल जाए और आप पार्ट्स जाँच लें।",
+    "deliveryCodeSafety": "MechDost कभी कॉल या मैसेज पर यह कोड नहीं माँगेगा।",
+    "deliveredWithCode": "{date} को डिलीवर हुआ, आपके डिलीवरी कोड से कन्फ़र्म।",
+    "deliveredBySupport": "{date} को डिलीवर हुआ, MechDost सपोर्ट ने कन्फ़र्म किया।"
   },
   "finder": {
     "title": "आपका वाहन कहाँ है?",
@@ -1096,7 +1101,20 @@
     "setting_coinMaxRedeemBp": "ऑर्डर का कितना हिस्सा कॉइन से",
     "setting_coinMaxRedeemBp_hint": "ऑर्डर के प्रोडक्ट्स का कितना हिस्सा कॉइन से चुकाया जा सकता है। {min} से {max}%।",
     "unit_paise": "पैसे",
-    "unit_percent": "%"
+    "unit_percent": "%",
+    "deliveryCodeLabel": "ग्राहक का डिलीवरी कोड",
+    "deliveryCodeHint": "पार्ट्स मिलने के बाद ग्राहक से 4 अंकों का कोड पूछें।",
+    "deliveryConfirm": "डिलीवरी कन्फ़र्म करें",
+    "deliveryCodeFormat": "4 अंकों का कोड डालें।",
+    "deliveryCodeWrong": "कोड मेल नहीं खाता। {left, plural, one {# कोशिश बची} other {# कोशिशें बचीं}}।",
+    "deliveryCodeLocked": "बहुत ज़्यादा ग़लत कोड। यह डिलीवरी कन्फ़र्म करने के लिए MechDost सपोर्ट को कॉल करें।",
+    "deliveryCodeNotOut": "यह ऑर्डर डिलीवरी के लिए नहीं निकला है।",
+    "outForDelivery": "डिलीवरी के लिए निकला। ग्राहक के कोड का इंतज़ार ({attempts} ग़लत कोशिशें अब तक)।",
+    "overrideOpen": "बिना कोड के डिलीवरी कन्फ़र्म करें",
+    "overrideReason": "कारण (ऑर्डर पर दर्ज रहेगा)",
+    "overrideConfirm": "डिलीवरी कन्फ़र्म करें",
+    "overrideReasonError": "कम से कम 5 अक्षरों में कारण लिखें।",
+    "deliveryOverridden": "{by} ने बिना कोड के डिलीवरी कन्फ़र्म की: {reason}"
   },
   "policies": {
     "returns": {

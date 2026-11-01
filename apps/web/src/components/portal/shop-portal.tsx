@@ -1,10 +1,12 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useState, type SyntheticEvent } from 'react';
 import { findShop } from '@/demo/shops';
 import {
+  DELIVERY_CODE_MAX_ATTEMPTS,
   ORDER_STAGES,
+  confirmDeliveryWithCode,
   respondToOrder,
   routingState,
   shopAdvanceOrder,
@@ -134,7 +136,8 @@ function OfferedOrder({ order, shopSlug, now }: { order: DemoOrder; shopSlug: st
   return (
     <article className={`${portalCard} border-accent-button/50`}>
       <p className="mb-2 inline-flex rounded-pill bg-warning-bg px-3 py-1 text-xs font-extrabold text-warning">
-        ⏱️ {t('expiresIn', { minutes })}
+        <span aria-hidden="true">⏱️ </span>
+        {t('expiresIn', { minutes })}
       </p>
       <OrderLines order={order} />
       {declining ? (
@@ -188,7 +191,8 @@ function OfferedOrder({ order, shopSlug, now }: { order: DemoOrder; shopSlug: st
             }}
             className={`${portalPrimary} min-h-12 flex-1`}
           >
-            ✅ {t('accept')}
+            <span aria-hidden="true">✅ </span>
+            {t('accept')}
           </button>
           <button
             type="button"
@@ -209,23 +213,101 @@ function ActiveOrder({ order, shopSlug }: { order: DemoOrder; shopSlug: string }
   const t = useTranslations('portal');
   const o = useTranslations('order');
   const stage = ORDER_STAGES[order.stage] ?? 'confirmed';
-  const next =
-    stage === 'confirmed' ? t('markPacked') : stage === 'packed' ? t('markShipped') : t('markDelivered');
   return (
     <article className={portalCard}>
       <p className="mb-2 inline-flex rounded-pill bg-success-bg px-3 py-1 text-xs font-extrabold text-success">
         {o(`stage_${stage}`)}
       </p>
       <OrderLines order={order} />
-      <button
-        type="button"
-        onClick={() => {
-          shopAdvanceOrder(order.code, shopSlug);
-        }}
-        className={`${portalPrimary} mt-4 w-full`}
-      >
-        {next}
-      </button>
+      {stage === 'shipped' ? (
+        <DeliveryCodeForm order={order} shopSlug={shopSlug} />
+      ) : (
+        <button
+          type="button"
+          onClick={() => {
+            shopAdvanceOrder(order.code, shopSlug);
+          }}
+          className={`${portalPrimary} mt-4 w-full`}
+        >
+          {stage === 'confirmed' ? t('markPacked') : t('markShipped')}
+        </button>
+      )}
     </article>
+  );
+}
+
+/**
+ * Proof of delivery: the delivery person asks the customer for their 4-digit code and enters it here. Only the
+ * right code marks the order delivered; 5 wrong codes lock it and support takes over.
+ */
+function DeliveryCodeForm({ order, shopSlug }: { order: DemoOrder; shopSlug: string }) {
+  const t = useTranslations('portal');
+  const [code, setCode] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const locked = (order.delivery?.attempts ?? 0) >= DELIVERY_CODE_MAX_ATTEMPTS;
+  const inputId = `delivery-code-${order.code}`;
+
+  function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!/^\d{4}$/.test(code)) {
+      setError(t('deliveryCodeFormat'));
+      return;
+    }
+    const result = confirmDeliveryWithCode(order.code, shopSlug, code);
+    if (result.ok) {
+      track('click', { id: 'shop_delivery_confirmed', path: window.location.pathname });
+      return;
+    }
+    track('click', { id: 'shop_delivery_code_wrong', path: window.location.pathname });
+    setCode('');
+    setError(
+      result.reason === 'wrong'
+        ? t('deliveryCodeWrong', { left: result.attemptsLeft })
+        : result.reason === 'locked'
+          ? t('deliveryCodeLocked')
+          : t('deliveryCodeNotOut'),
+    );
+  }
+
+  if (locked) {
+    return (
+      <p role="alert" className="mt-4 rounded-lg bg-warning-bg p-3 text-sm font-bold text-warning">
+        {t('deliveryCodeLocked')}
+      </p>
+    );
+  }
+
+  return (
+    <form noValidate onSubmit={onSubmit} className="mt-4">
+      <label htmlFor={inputId} className="text-sm font-bold text-ink">
+        {t('deliveryCodeLabel')}
+      </label>
+      <p id={`${inputId}-hint`} className="text-xs text-muted">
+        {t('deliveryCodeHint')}
+      </p>
+      <div className="mt-2 flex gap-2">
+        <input
+          id={inputId}
+          inputMode="numeric"
+          autoComplete="off"
+          maxLength={4}
+          value={code}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? `${inputId}-error` : `${inputId}-hint`}
+          onChange={(e) => {
+            setCode(e.target.value.replace(/\D/g, '').slice(0, 4));
+          }}
+          className={`${portalField} mt-0 w-32 text-center font-heading text-xl font-extrabold tracking-[0.4em] tabular-nums`}
+        />
+        <button type="submit" className={`${portalPrimary} flex-1`}>
+          {t('deliveryConfirm')}
+        </button>
+      </div>
+      {error ? (
+        <p id={`${inputId}-error`} role="alert" className="mt-2 text-sm font-bold text-error">
+          {error}
+        </p>
+      ) : null}
+    </form>
   );
 }

@@ -66,3 +66,7 @@ Courier integration webhooks, partial shipments, order edit before confirmation,
 ## Demo implementation (2026-11-01)
 
 Admin routing at `/admin/orders`, shop accept/decline at `/partner/shop`, customer tracking at `/orders/{code}` — on the browser store (`routeOrder`, `respondToOrder`, `rejectOrder`, `shopAdvanceOrder`, `routingState` in `apps/web/src/demo/store.ts`). Accept timer 15 min (`SHOP_ACCEPT_MINUTES`); suggestions from `rankShops` (category coverage → acceptance → speed; declined shops excluded). Acceptance test: `e2e/roles.spec.ts` "order routing across roles".
+
+## Proof of delivery (decision 2026-11-01)
+
+Out for delivery → `issueDeliveryCode(shipment)` (4 digits, `crypto.randomInt`, stored encrypted, attempts reset) → customer sees it on `/orders/{code}` (`deliveryCodeFor`, actor-scoped) and gets it by SMS/WhatsApp (spec 10) → delivery person enters it (`verifyDeliveryCode`: constant-time compare, CAS attempt counter, lock at 5) → shipment `delivered` + order transitions to `delivered` in the same transaction. Exception: `overrideDelivery` (permission `orders:route`, reason 5–300 chars, audited atomically). DB CHECK `shipments_delivered_needs_proof`. Analytics: `shop_delivery_confirmed`, `shop_delivery_code_wrong`, `admin_delivery_override`. Tests: `packages/db/test/integrity.test.ts` "proof of delivery", `apps/web/e2e/delivery.spec.ts`. Demo: `apps/web/src/demo/store.ts` (`confirmDeliveryWithCode`, `adminConfirmDelivery`; "Simulate next update" stands in for both steps).

@@ -10,6 +10,10 @@ import { blindIndex, decryptField, encryptField, loadKeyring } from '../src/cryp
 import { createTestDb, type TestDb } from '../src/testing';
 import * as s from '../src/schema';
 import {
+  deliveryCodeFor,
+  issueDeliveryCode,
+  overrideDelivery,
+  verifyDeliveryCode,
   adjustCoins,
   coinBalance,
   earnCoins,
@@ -737,5 +741,82 @@ describe('MechDost Coins ledger (spec 20)', () => {
         .where(eq(s.orderGroups.id, order.groupId)),
       '23514',
     );
+  });
+});
+
+describe('proof of delivery (decision 2026-11-01)', () => {
+  const ring = loadKeyring({
+    DATA_ENCRYPTION_KEYS: `k1:${randomBytes(32).toString('base64')}`,
+    DATA_ENCRYPTION_KEY_ID: 'k1',
+    DATA_INDEX_KEY: randomBytes(32).toString('base64'),
+  });
+  const newShipment = async () => {
+    const order = await newOrder();
+    const [row] = await db
+      .insert(s.shipments)
+      .values({ orderId: order.id, mode: 'own', status: 'out_for_delivery' })
+      .returning();
+    return row!.id;
+  };
+  const wrongFor = (code: string) => (code === '0000' ? '1111' : '0000');
+
+  it('only the customer code marks a shipment delivered; wrong codes count down', async () => {
+    const id = await newShipment();
+    const code = await issueDeliveryCode(t(), ring, id);
+    expect(code).toMatch(/^\d{4}$/);
+    const [stored] = await db.select().from(s.shipments).where(eq(s.shipments.id, id));
+    expect(stored?.deliveryCodeEnc).not.toContain(code);
+    expect(await deliveryCodeFor(t(), ring, id)).toBe(code);
+
+    expect(await verifyDeliveryCode(t(), ring, id, wrongFor(code))).toEqual({
+      ok: false,
+      reason: 'wrong',
+      attemptsLeft: 4,
+    });
+    expect(await verifyDeliveryCode(t(), ring, id, code)).toEqual({ ok: true });
+    const [done] = await db.select().from(s.shipments).where(eq(s.shipments.id, id));
+    expect(done).toMatchObject({ status: 'delivered', deliveredVia: 'code' });
+    expect(await deliveryCodeFor(t(), ring, id)).toBeNull();
+  });
+
+  it('locks after 5 wrong codes, even for the right one', async () => {
+    const id = await newShipment();
+    const code = await issueDeliveryCode(t(), ring, id);
+    for (let i = 0; i < 4; i++) await verifyDeliveryCode(t(), ring, id, wrongFor(code));
+    expect(await verifyDeliveryCode(t(), ring, id, wrongFor(code))).toEqual({ ok: false, reason: 'locked' });
+    expect(await verifyDeliveryCode(t(), ring, id, code)).toEqual({ ok: false, reason: 'locked' });
+  });
+
+  it('the database refuses "delivered" without proof and a plain-text code', async () => {
+    const id = await newShipment();
+    await expectPgError(
+      db.update(s.shipments).set({ status: 'delivered' }).where(eq(s.shipments.id, id)),
+      '23514',
+    );
+    await expectPgError(
+      db.update(s.shipments).set({ deliveryCodeEnc: '4821' }).where(eq(s.shipments.id, id)),
+      '23514',
+    );
+  });
+
+  it('staff can confirm without the code only with a reason, audited once', async () => {
+    const id = await newShipment();
+    await issueDeliveryCode(t(), ring, id);
+    await expect(
+      overrideDelivery(t(), { shipmentId: id, staffUserId: F.user!, reason: 'no' }),
+    ).rejects.toMatchObject({
+      code: 'OVERRIDE_REASON',
+    });
+    await overrideDelivery(t(), {
+      shipmentId: id,
+      staffUserId: F.user!,
+      reason: 'Customer phone switched off; received in person',
+    });
+    const [row] = await db.select().from(s.shipments).where(eq(s.shipments.id, id));
+    expect(row).toMatchObject({ status: 'delivered', deliveredVia: 'override' });
+    await expect(
+      overrideDelivery(t(), { shipmentId: id, staffUserId: F.user!, reason: 'Second try at override' }),
+    ).rejects.toMatchObject({ code: 'ALREADY_DELIVERED' });
+    expect(await db.$count(s.auditLog, eq(s.auditLog.action, 'delivery.override'))).toBe(1);
   });
 });

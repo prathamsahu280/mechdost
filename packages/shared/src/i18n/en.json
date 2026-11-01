@@ -443,8 +443,8 @@
     "detail_routing": "Our team is assigning the best shop for your PIN.",
     "detail_confirmed": "The shop accepted your order.",
     "detail_packed": "Your items are packed.",
-    "detail_shipped": "Your order is on its way.",
-    "detail_delivered": "Enjoy! Rate your experience in your account.",
+    "detail_shipped": "Your order is on its way. Give your delivery code to the delivery person when you receive it.",
+    "detail_delivered": "Delivered and confirmed with your code. Rate your experience in your account.",
     "current": "Current step",
     "done": "Done",
     "help": "Need help? WhatsApp us with your order number.",
@@ -452,7 +452,12 @@
     "noOrders": "You have no orders yet.",
     "rejectedTitle": "We could not fulfil this order",
     "shopLabel": "Fulfilled by {shop}",
-    "coinsLine": "MechDost Coins ({coins})"
+    "coinsLine": "MechDost Coins ({coins})",
+    "deliveryCodeTitle": "Your delivery code",
+    "deliveryCodeHelp": "Give this code to the delivery person only after you have received your order and checked the parts.",
+    "deliveryCodeSafety": "MechDost will never ask for this code on a call or message.",
+    "deliveredWithCode": "Delivered on {date}, confirmed with your delivery code.",
+    "deliveredBySupport": "Delivered on {date}, confirmed by MechDost support."
   },
   "finder": {
     "title": "Where is your vehicle?",
@@ -1096,7 +1101,20 @@
     "setting_coinMaxRedeemBp": "Most of an order coins can pay",
     "setting_coinMaxRedeemBp_hint": "Share of the products in an order that coins may pay. {min} to {max}%.",
     "unit_paise": "paise",
-    "unit_percent": "%"
+    "unit_percent": "%",
+    "deliveryCodeLabel": "Customer's delivery code",
+    "deliveryCodeHint": "Ask the customer for the 4-digit code once they have the parts.",
+    "deliveryConfirm": "Confirm delivery",
+    "deliveryCodeFormat": "Enter the 4-digit code.",
+    "deliveryCodeWrong": "That code doesn't match. {left, plural, one {# try left} other {# tries left}}.",
+    "deliveryCodeLocked": "Too many wrong codes. Call MechDost support to confirm this delivery.",
+    "deliveryCodeNotOut": "This order is not out for delivery.",
+    "outForDelivery": "Out for delivery. Waiting for the customer's code ({attempts} wrong tries so far).",
+    "overrideOpen": "Confirm delivery without the code",
+    "overrideReason": "Reason (kept on the order)",
+    "overrideConfirm": "Confirm delivery",
+    "overrideReasonError": "Write a reason of at least 5 characters.",
+    "deliveryOverridden": "Delivery confirmed by {by} without the code: {reason}"
   },
   "policies": {
     "returns": {

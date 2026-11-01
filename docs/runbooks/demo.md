@@ -25,7 +25,7 @@ Use Chrome. For the phone view press F12 → device toolbar → 390 px wide.
 
 Sign in with the number **or** the email and the password; the admin also enters the code `123456`. "Create an account" signs up a new customer (phone → code `123456` → name, email, password, confirm). "Forgot password?" offers a code to the phone or an email link (the demo shows the link on screen instead of sending mail). The chips on `/login` fill the number and password.
 
-**Full loop to show:** place an order as a guest or customer → sign in as admin → **Order routing** → route to the recommended shop → sign in as that shop → accept (or decline with a reason → admin reroutes) → mark packed → open the order page: "Fulfilled by …" and the timeline update. Same for service requests: book at Telibandha Car Clinic → workshop login → propose slot + cost → customer accepts on the request page.
+**Full loop to show:** place an order as a guest or customer → sign in as admin → **Order routing** → route to the recommended shop → sign in as that shop → accept (or decline with a reason → admin reroutes) → mark packed → mark out for delivery → open the order page: the customer's **4-digit delivery code** → back in the shop portal enter that code to mark it delivered (5 wrong codes lock it; admin can confirm without the code with a reason). Same for service requests: book at Telibandha Car Clinic → workshop login → propose slot + cost → customer accepts on the request page.
 
 ## Suggested 10-minute walkthrough
 

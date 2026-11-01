@@ -8,3 +8,4 @@ export * from './users';
 export * from './rbac';
 export * from './health';
 export * from './coins';
+export * from './delivery';
