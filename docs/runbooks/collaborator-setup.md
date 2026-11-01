@@ -17,7 +17,9 @@ pnpm --filter @mechdost/web start          # http://localhost:3000
 
 For live reload while coding use `pnpm --filter @mechdost/web dev` instead of build + start. The site runs on demo data with no keys; demo logins (code `123456`) are in [`demo.md`](demo.md).
 
-Before every commit: `pnpm check` (format, typecheck, lint, unit tests). End-to-end tests: `pnpm --filter @mechdost/web e2e` (builds must be current). Never commit secrets: copy `.env.example` to `.env` and ask the owner for values over a private channel.
+Before every commit: `pnpm check` (format, typecheck, lint, unit tests). End-to-end tests: `pnpm --filter @mechdost/web e2e` (builds must be current).
+
+**`.env`:** not needed for the demo website. For database work (`pnpm db:migrate`, `pnpm db:seed`) and the API, the owner shares the **dev** `.env` with you directly over a private channel (password manager or one-to-one encrypted message). It holds the dev database password and the Supabase secret key (full access to the dev database), so: keep it only in the repo root (`.env` is git-ignored), never commit, paste or forward it, and tell the owner if it leaks so both are rotated. Production keys are never shared this way (Secret Manager / Vercel only).
 
 ## 2. Claude Code: what you get automatically
 
@@ -25,7 +27,7 @@ Opening the repo in Claude Code loads, with nothing to install:
 
 - **`CLAUDE.md`**: the 15 hard rules and the skill usage protocol. Read it once yourself.
 - **Project skills** in `.claude/skills/`: `mechdost-advisor`, `website-testing` and six domain skills. See [`.claude/skills/README.md`](../../.claude/skills/README.md).
-- **`.mcp.json`**: the Supabase MCP for the **dev** project. Run `/mcp` in Claude Code and sign in with your own Supabase account; the owner must add you to the dev project first. No keys are stored in the repo.
+- **`.mcp.json`**: the Supabase MCP for the **dev** project (optional). It signs in with a Supabase account via `/mcp`, not with `.env` keys, so it only works if the owner adds you to the project; without it, use `pnpm db:*` scripts with the shared `.env`. No keys are stored in the repo.
 
 Commits and PRs must never carry AI co-author or "Generated with" lines (hard rule 12).
 
