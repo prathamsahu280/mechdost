@@ -27,7 +27,7 @@ let lastUpstream = 0;
  * X-Forwarded-For entry is whatever the client sent, so count `TRUSTED_PROXY_HOPS` back from the right (entries
  * appended by our own proxies). Vercel's `x-real-ip` is set by the platform and cannot be spoofed.
  */
-function clientKey(req: NextRequest): string {
+function clientKey(req: NextRequest): string | null {
   const platform = process.env.VERCEL ? req.headers.get('x-real-ip') : null;
   if (platform) return platform;
   const hops = Number(process.env.TRUSTED_PROXY_HOPS ?? '0');
@@ -38,7 +38,13 @@ function clientKey(req: NextRequest): string {
       .filter(Boolean);
     return chain[chain.length - hops] ?? 'unknown';
   }
-  return 'local';
+  // Route handlers cannot see the socket address. Without a trusted source every visitor would share one bucket
+  // (one user could exhaust it for all), so production refuses to serve rather than fail open or shared.
+  // The one exception is a direct local connection (the demo on this machine): no proxy header at all and a
+  // loopback host. Any real deployment sits behind a proxy that adds X-Forwarded-For, so it still fails closed.
+  const direct =
+    !req.headers.has('x-forwarded-for') && ['localhost', '127.0.0.1', '[::1]'].includes(req.nextUrl.hostname);
+  return process.env.NODE_ENV !== 'production' || direct ? 'local' : null;
 }
 
 /** Bounded map: evict the oldest entries one by one (a full clear would reset every limit at once). */
@@ -83,10 +89,11 @@ async function lookup(lat: number, lng: number): Promise<PincodeResponse> {
   // One request per second across this server instance (Nominatim policy).
   // Reserve the slot synchronously before waiting, so parallel requests queue 1 s apart instead of all
   // waking together.
+  // A refused request must not push the queue (security review 2026-11-02): check first, then reserve.
   const slot = Math.max(Date.now(), lastUpstream + 1000);
-  lastUpstream = slot;
   const wait = slot - Date.now();
   if (wait > 5000) throw new Error('upstream busy');
+  lastUpstream = slot;
   if (wait > 0) await new Promise((r) => setTimeout(r, wait));
   const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=16&addressdetails=1&lat=${lat}&lon=${lng}`;
   const res = await fetch(url, {
@@ -105,7 +112,12 @@ async function lookup(lat: number, lng: number): Promise<PincodeResponse> {
 }
 
 export async function GET(req: NextRequest) {
-  if (limited(clientKey(req))) {
+  const client = clientKey(req);
+  if (client === null) {
+    console.error('geo_pincode_misconfigured: set VERCEL or TRUSTED_PROXY_HOPS');
+    return NextResponse.json({ error: 'unavailable' }, { status: 503 });
+  }
+  if (limited(client)) {
     return NextResponse.json({ error: 'rate_limited' }, { status: 429, headers: { 'retry-after': '60' } });
   }
   const lat = parseCoord(req.nextUrl.searchParams.get('lat'), INDIA.minLat, INDIA.maxLat);
