@@ -71,8 +71,14 @@ export function ShopBrowser({
   const [draft, setDraft] = useState(initial.query);
 
   const results = useMemo(
-    () => searchProducts({ query: state.query, category: state.category, sort: state.sort }),
-    [state],
+    () =>
+      searchProducts({
+        query: state.query,
+        category: state.category,
+        sort: state.sort,
+        categoryLabel: (k) => cat(k),
+      }),
+    [state, cat],
   );
 
   // Back/forward restore the filters without a reload.

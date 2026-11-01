@@ -13,6 +13,19 @@ export const site = {
   defaultCity: 'raipur',
 } as const;
 
+/**
+ * Operator name and registered office in the page language (hard rule 10, 2026-11-02). Hindi pages show them
+ * transliterated, like every business name; GST invoices and filings keep the registered (English) form.
+ */
+const COMPANY_HI = {
+  company: 'शौर्य इंटीग्रेटेड सर्विसेज़ प्राइवेट लिमिटेड',
+  registeredAddress: 'C-605 सालासर ग्रीन्स, सरोना, टाटीबंध, रायपुर 492099',
+} as const;
+
+export function companyFacts(locale: string): { company: string; registeredAddress: string } {
+  return locale === 'hi' ? COMPANY_HI : { company: site.company, registeredAddress: site.registeredAddress };
+}
+
 /** wa.me deep link with a drafted message; WhatsApp shows the draft and the user decides to send. */
 export function whatsappLink(text: string): string {
   return `https://wa.me/${site.whatsappNumber}?text=${encodeURIComponent(text)}`;

@@ -9,6 +9,7 @@ import {
   type PartnerKind,
   type PartnerStatus,
 } from '@/demo/partner-status';
+import { localizeShop, localizeWorkshop } from '@/demo/i18n/localize';
 import { DEMO_SHOPS } from '@/demo/shops';
 import { APPLICATION_STAGES, useApplications } from '@/demo/store';
 import { DEMO_WORKSHOPS } from '@/demo/workshops';
@@ -55,8 +56,16 @@ export function AdminPartners({ actor }: { actor: string }) {
     .filter((a) => a.kind === 'mechanic' && !a.rejected && a.stage === APPLICATION_STAGES.length - 1)
     .map((a) => ({ slug: a.code, name: a.name, area: a.pincode }));
   const lists: Record<PartnerKind, Partner[]> = {
-    shop: DEMO_SHOPS.map((s) => ({ slug: s.slug, name: s.name, area: s.area })),
-    workshop: DEMO_WORKSHOPS.map((w) => ({ slug: w.slug, name: w.name, area: w.area })),
+    shop: DEMO_SHOPS.map((s) => localizeShop(s, locale)).map((s) => ({
+      slug: s.slug,
+      name: s.name,
+      area: s.area,
+    })),
+    workshop: DEMO_WORKSHOPS.map((w) => localizeWorkshop(w, locale)).map((w) => ({
+      slug: w.slug,
+      name: w.name,
+      area: w.area,
+    })),
     mechanic: mechanics,
   };
   const nameOf = (kind: PartnerKind, slug: string) => lists[kind].find((p) => p.slug === slug)?.name ?? slug;
@@ -119,12 +128,15 @@ export function AdminPartners({ actor }: { actor: string }) {
               .map((c) => (
                 <li key={`${c.kind}-${c.slug}-${c.at}`} className="py-2 text-sm text-ink">
                   <span className="font-bold">{nameOf(c.kind, c.slug)}</span> ·{' '}
-                  {t('partnerLastChange', {
-                    status: t(`partnerStatus_${c.status}`),
-                    by: c.by,
-                    date: formatDate(c.at, locale),
-                    reason: c.reason,
-                  })}
+                  {/* Staff name and reason are typed by staff (user content). */}
+                  <span data-user-content>
+                    {t('partnerLastChange', {
+                      status: t(`partnerStatus_${c.status}`),
+                      by: c.by,
+                      date: formatDate(c.at, locale),
+                      reason: c.reason,
+                    })}
+                  </span>
                 </li>
               ))}
           </ul>
@@ -168,7 +180,12 @@ function PartnerRow({ kind, partner, actor }: { kind: PartnerKind; partner: Part
     <li className={portalCard}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="font-heading text-lg font-extrabold text-ink">{partner.name}</p>
+          <p
+            data-user-content={kind === 'mechanic' ? true : undefined}
+            className="font-heading text-lg font-extrabold text-ink"
+          >
+            {partner.name}
+          </p>
           <p className="text-xs text-muted">{partner.area}</p>
         </div>
         <span className={`inline-flex rounded-pill px-3 py-1 text-xs font-extrabold ${PILL[status]}`}>
@@ -177,7 +194,7 @@ function PartnerRow({ kind, partner, actor }: { kind: PartnerKind; partner: Part
       </div>
       {status !== 'active' ? <p className="mt-2 text-sm text-muted">{t(`partnerEffect_${status}`)}</p> : null}
       {change ? (
-        <p className="mt-1 text-xs text-muted">
+        <p data-user-content className="mt-1 text-xs text-muted">
           {t('partnerLastChange', {
             status: t(`partnerStatus_${change.status}`),
             by: change.by,

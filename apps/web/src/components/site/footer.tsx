@@ -1,7 +1,7 @@
 import { MessageCircle, Phone } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { CATEGORY_SLUGS } from '@/demo/catalogue';
-import { site, whatsappLink } from '@/lib/site';
+import { companyFacts, site, whatsappLink } from '@/lib/site';
 import { ExternalButtonLink } from '../ui/button-link';
 import { LocalLink } from '../ui/local-link';
 import { BrandMark } from './header';
@@ -28,6 +28,7 @@ export function Footer() {
   const account = useTranslations('account');
   const partners = useTranslations('pages.partners');
   const year = new Date().getFullYear();
+  const { company, registeredAddress } = companyFacts(useLocale());
 
   const columns: { id: string; title: string; links: FooterLink[] }[] = [
     {
@@ -143,11 +144,11 @@ export function Footer() {
             <BrandMark />
             <p className="max-w-xl text-sm text-muted">{t('accountNote')}</p>
             <p className="text-xs leading-relaxed text-muted">
-              {t('operatedBy')} <span className="font-bold text-ink uppercase">{site.company}</span>
+              {t('operatedBy')} <span className="font-bold text-ink uppercase">{company}</span>
               <br />
               {t('gstin', { gstin: site.gstin })}
               <br />
-              {t('registered', { address: site.registeredAddress })}
+              {t('registered', { address: registeredAddress })}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -158,7 +159,7 @@ export function Footer() {
           </div>
         </div>
         <p className="mt-6 text-xs leading-relaxed text-muted">{t('credits')}</p>
-        <p className="mt-2 text-xs text-muted">{t('copyright', { year, company: site.company })}</p>
+        <p className="mt-2 text-xs text-muted">{t('copyright', { year, company })}</p>
       </div>
     </footer>
   );

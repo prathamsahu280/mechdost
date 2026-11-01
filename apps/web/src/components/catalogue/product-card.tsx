@@ -1,5 +1,6 @@
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import type { DemoProduct } from '@/demo/catalogue';
+import { localizeProduct } from '@/demo/i18n/localize';
 import { productRating } from '@/demo/reviews';
 import { discountPercent, formatPrice } from '@/lib/format';
 import { StarRating } from '../reviews/star-rating';
@@ -19,7 +20,8 @@ const FIT_LABEL: Record<DemoProduct['fits'], string> = {
  * Product card: blueprint artwork with an ⓘ quick-details popover, brand and category, name, rating, price with
  * MRP and saving, availability, add to cart. Calm by default — only the shadow responds to hover.
  */
-export function ProductCard({ product }: { product: DemoProduct }) {
+export function ProductCard({ product: raw }: { product: DemoProduct }) {
+  const product = localizeProduct(raw, useLocale());
   const t = useTranslations('catalogue');
   const c = useTranslations('categories');
   const r = useTranslations('reviews');

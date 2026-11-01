@@ -39,7 +39,9 @@ export function AccountLink({
       >
         {first.charAt(0).toUpperCase()}
       </span>
-      <span className="max-w-[9ch] truncate">{first}</span>
+      <span data-user-content className="max-w-[9ch] truncate">
+        {first}
+      </span>
       <span className="sr-only">, {account}</span>
     </Link>
   );

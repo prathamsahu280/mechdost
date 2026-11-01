@@ -2,6 +2,7 @@
 
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
+import { localizeShop, productNameFor } from '@/demo/i18n/localize';
 import { findShop } from '@/demo/shops';
 import {
   DELIVERY_CODE_MAX_ATTEMPTS,
@@ -38,8 +39,10 @@ export function ShopPortal() {
 
 function ShopOrders({ shopSlug }: { shopSlug: string }) {
   const t = useTranslations('portal');
+  const locale = useLocale();
   const now = useNow();
-  const shop = findShop(shopSlug);
+  const found = findShop(shopSlug);
+  const shop = found ? localizeShop(found, locale) : undefined;
   const orders = useOrders().filter((o) => o.shop?.slug === shopSlug);
   const offered = orders.filter((o) => routingState(o, now) === 'awaiting_shop');
   const active = orders.filter((o) => o.shop?.status === 'accepted' && o.stage < ORDER_STAGES.length - 1);
@@ -118,7 +121,7 @@ function OrderLines({ order }: { order: DemoOrder }) {
         {order.lines.map((l) => (
           <li key={l.slug} className="flex justify-between gap-3 py-2">
             <span className="min-w-0 text-ink">
-              <span className="font-bold">{l.brand}</span> {l.name}
+              <span className="font-bold">{l.brand}</span> {productNameFor(l.slug, l.name, locale)}
             </span>
             <span className="shrink-0 font-bold text-ink tabular-nums">× {l.qty}</span>
           </li>

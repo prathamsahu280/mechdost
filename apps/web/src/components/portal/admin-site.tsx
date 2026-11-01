@@ -644,7 +644,8 @@ function RecentChanges() {
               className="flex flex-wrap justify-between gap-x-4 gap-y-1 py-2 text-sm"
             >
               <span className="text-ink">
-                <span className="font-bold">{area(a.area)}</span> · {t(`audit_${a.action}`)} · {a.actor}
+                <span className="font-bold">{area(a.area)}</span> · {t(`audit_${a.action}`)} ·{' '}
+                <span data-user-content>{a.actor}</span>
               </span>
               <time dateTime={a.at} className="text-muted">
                 {time(a.at)}

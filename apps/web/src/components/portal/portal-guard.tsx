@@ -56,7 +56,7 @@ export function PortalGuard({
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted">
-        <p>{t('signedInAs', { name: session.name })}</p>
+        <p data-user-content>{t('signedInAs', { name: session.name })}</p>
         <button
           type="button"
           onClick={() => {

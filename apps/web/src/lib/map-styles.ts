@@ -1,4 +1,4 @@
-import type { LayerSpecification, StyleSpecification } from 'maplibre-gl';
+import type { ExpressionSpecification, LayerSpecification, StyleSpecification } from 'maplibre-gl';
 
 /**
  * Map styles (decision 2026-10-31: MapLibre + free OpenFreeMap vector tiles; 2026-11-01: hybrid view).
@@ -53,6 +53,45 @@ export function toHybrid(
       },
     },
     layers: [{ id: 'md-satellite', type: 'raster', source: 'md-satellite' }, ...layers],
+  };
+}
+
+/**
+ * Map labels in the page language (hard rule 10, user 2026-11-02: "NH30" and place names were English on `/hi`).
+ * OpenFreeMap's OpenMapTiles-schema tiles carry `name`, `name:en`, `name_en` and `name:hi` on place, road, water
+ * and POI labels. Hindi prefers `name:hi` and falls back to the local `name` (OSM in India is mostly Latin, so a
+ * road without a Hindi name keeps its local name rather than disappearing). Road refs ("NH30") are codes and stay.
+ *
+ * Devanagari renders without extra glyphs: MapLibre GL JS ≥ 6.15 draws scripts that join letters with marks
+ * (Devanagari, Thai, Khmer…) a grapheme cluster at a time with the browser's own fonts, even when the style has
+ * a `glyphs` URL (decision 2026-11-02, verified on /hi/workshops).
+ */
+export function labelField(locale: string): ExpressionSpecification {
+  return locale === 'hi'
+    ? ['coalesce', ['get', 'name:hi'], ['get', 'name']]
+    : ['coalesce', ['get', 'name:en'], ['get', 'name_en'], ['get', 'name']];
+}
+
+/** True when a `text-field` reads any name property (`name`, `name:xx`, `name_xx`, legacy `{name…}` tokens). */
+function readsName(value: unknown): boolean {
+  if (typeof value === 'string') return /\{name(?:[:_][^}]*)?\}/.test(value);
+  if (!Array.isArray(value)) return false;
+  const [op, arg] = value as unknown[];
+  if (op === 'get' && typeof arg === 'string') return /^name(?:[:_]|$)/.test(arg);
+  return value.some(readsName);
+}
+
+/** Rewrites every name label to `labelField(locale)`; other symbol text (road refs, numbers) is untouched. */
+export function localizeLabels(style: StyleSpecification, locale: string): StyleSpecification {
+  const field = labelField(locale);
+  return {
+    ...style,
+    layers: style.layers.map((layer): LayerSpecification => {
+      if (layer.type !== 'symbol') return layer;
+      const text = layer.layout?.['text-field'];
+      if (text === undefined || !readsName(text)) return layer;
+      return { ...layer, layout: { ...layer.layout, 'text-field': field } };
+    }),
   };
 }
 

@@ -87,6 +87,29 @@ export function utilityTemplateProblem(body: string): 'promo_wording' | 'too_lon
   return null;
 }
 
+/**
+ * The body must use exactly the placeholders `{{1}}`…`{{n}}` for the template's n params (admin editor check;
+ * Meta rejects templates whose variables do not match the sample values).
+ */
+export function placeholderProblem(body: string, paramCount: number): 'missing' | 'unknown' | null {
+  const used = new Set([...body.matchAll(/\{\{(\d+)\}\}/g)].map((m) => Number(m[1])));
+  for (let i = 1; i <= paramCount; i += 1) if (!used.has(i)) return 'missing';
+  for (const n of used) if (n < 1 || n > paramCount) return 'unknown';
+  return null;
+}
+
+/**
+ * Indicative Meta prices for India in **millipaise per delivered message** (1 paise = 1000 millipaise; integer
+ * money rule). From docs/research/whatsapp.md (providers quoting Meta's card; verify against Meta's file).
+ * Admin can override them in settings; Meta changes rates on 1 Jan/Apr/Jul/Oct.
+ */
+export const DEFAULT_WHATSAPP_RATES_MILLIPAISE: Readonly<Record<string, number>> = {
+  utility: 11_500,
+  authentication: 11_500,
+  marketing: 86_310,
+  service: 0,
+};
+
 /** Template params must be short codes/numbers: no newlines/tabs, ≤ 60 chars (Meta rejects 4+ spaces/newlines). */
 export function whatsAppParamProblem(value: string): 'empty' | 'too_long' | 'bad_whitespace' | null {
   if (value.trim().length === 0) return 'empty';

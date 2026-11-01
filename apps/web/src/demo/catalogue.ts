@@ -3,6 +3,8 @@
  * items so the storefront can be presented before the catalogue API exists (spec 02, Phase 1). Indicative prices,
  * integer paise, GST-inclusive. Replaced by `GET /v1/catalogue` — never extend this file with real business data.
  */
+import { productSearchText } from './i18n/localize';
+
 export const CATEGORY_KEYS = [
   'tyres',
   'lubricants',
@@ -351,18 +353,22 @@ export function findProduct(slug: string): DemoProduct | undefined {
 
 export type SortKey = 'popular' | 'price_asc' | 'price_desc';
 
-/** Search name, brand, SKU, spec and compatibility (case-insensitive), optionally within a category. */
+/**
+ * Search name, brand, SKU, spec and compatibility in English and Hindi (case-insensitive), optionally within a
+ * category. `categoryLabel` adds the shown category name (e.g. "लुब्रिकेंट") so it matches as typed.
+ */
 export function searchProducts(opts: {
   query?: string;
   category?: CategoryKey;
   sort?: SortKey;
+  categoryLabel?: (key: CategoryKey) => string;
 }): DemoProduct[] {
   const q = opts.query?.trim().toLowerCase() ?? '';
   const words = q.split(/\s+/).filter(Boolean);
   const list = DEMO_PRODUCTS.filter((p) => {
     if (opts.category && p.category !== opts.category) return false;
     if (words.length === 0) return true;
-    const hay = `${p.name} ${p.brand} ${p.sku} ${p.spec} ${p.compatibility} ${p.category}`.toLowerCase();
+    const hay = `${productSearchText(p)} ${opts.categoryLabel?.(p.category) ?? ''}`.toLowerCase();
     return words.every((w) => hay.includes(w) || hay.includes(w.replace(/s$/, '')));
   });
   const sorted = [...list];

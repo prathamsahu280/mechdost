@@ -20,7 +20,7 @@ export default async function PartnerPage() {
   const t = await getTranslations('portal');
   return (
     <Container className="py-10 tab:py-14">
-      <PageIntro eyebrow="MechDost Partner" line1={t('shopTitle')} />
+      <PageIntro eyebrow={t('partnerEyebrow')} line1={t('shopTitle')} />
       <div className="mt-8">
         <ClientMessages namespaces={['portal', 'account', 'auth', 'order', 'request', 'quote', 'apply']}>
           <ShopPortal />

@@ -161,8 +161,19 @@ export function AdminCoins({ actor }: { actor: string }) {
                 className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-2 text-sm"
               >
                 <span className="min-w-0 text-ink">
-                  <span className="font-bold">{nameOf(e.accountId)}</span> · {t(`coinsKind_${e.kind}`)} ·{' '}
-                  <span className="text-muted">{e.orderCode ?? e.reason}</span>
+                  <span data-user-content className="font-bold">
+                    {nameOf(e.accountId)}
+                  </span>{' '}
+                  · {t(`coinsKind_${e.kind}`)} ·{' '}
+                  {e.orderCode ? (
+                    <span className="text-muted">{e.orderCode}</span>
+                  ) : e.kind === 'adjust' ? (
+                    <span data-user-content className="text-muted">
+                      {e.reason}
+                    </span>
+                  ) : (
+                    <span className="text-muted">{t('coinsReasonSeed')}</span>
+                  )}
                 </span>
                 <span className="flex items-center gap-3">
                   <span className="text-xs text-muted">{formatDate(e.at, locale)}</span>

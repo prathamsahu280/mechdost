@@ -9,6 +9,7 @@ import { DEFAULT_SETTINGS, useSiteSettings } from '@/demo/site-config';
 import { createQuote, useCart } from '@/demo/store';
 import { track } from '@/lib/analytics';
 import { formatPrice } from '@/lib/format';
+import { productNameFor } from '@/demo/i18n/localize';
 
 /**
  * Prefill quantity: the default minimum (Q20). Computed during server rendering, so it cannot read the admin's
@@ -146,7 +147,7 @@ export function QuoteRequestForm() {
                     <option value="">{t('productSelect')}</option>
                     {DEMO_PRODUCTS.map((p) => (
                       <option key={p.slug} value={p.slug}>
-                        {p.brand} {p.name} · {formatPrice(p.pricePaise)}
+                        {p.brand} {productNameFor(p.slug, p.name, locale)} · {formatPrice(p.pricePaise)}
                       </option>
                     ))}
                   </select>
@@ -176,7 +177,9 @@ export function QuoteRequestForm() {
                   onClick={() => {
                     setLines((ls) => ls.filter((_, j) => j !== i));
                   }}
-                  aria-label={t('remove', { name: product ? product.name : t('product') })}
+                  aria-label={t('remove', {
+                    name: product ? productNameFor(product.slug, product.name, locale) : t('product'),
+                  })}
                   className="press inline-flex size-11 items-center justify-center rounded-button text-muted hover:bg-pill disabled:opacity-40"
                 >
                   <X aria-hidden="true" className="size-5" />

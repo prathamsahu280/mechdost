@@ -10,6 +10,7 @@ import { CATEGORY_EMOJI, UI_EMOJI } from '@/lib/emoji';
 import { formatPrice } from '@/lib/format';
 import { track } from '@/lib/analytics';
 import { ProductVisualClient } from './product-visual-client';
+import { productNameFor } from '@/demo/i18n/localize';
 
 const prefix = (locale: string) => (locale === 'hi' ? '/hi' : '');
 
@@ -79,7 +80,7 @@ export function CartView() {
                 href={`${base}/shop/${product.slug}`}
                 className="font-heading font-bold text-ink hover:underline"
               >
-                {product.name}
+                {productNameFor(product.slug, product.name, locale)}
               </Link>
               <p className="text-xs text-muted">{t('each', { price: formatPrice(product.pricePaise) })}</p>
               <div className="mt-3 flex flex-wrap items-center justify-between gap-3">

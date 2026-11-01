@@ -12,3 +12,4 @@ export * from './delivery';
 export * from './partners';
 export * from './live';
 export * from './notify';
+export * from './notification-admin';

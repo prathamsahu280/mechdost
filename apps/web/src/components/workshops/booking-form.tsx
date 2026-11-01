@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
+import { serviceNameFor } from '@/demo/i18n/localize';
 import { usePartnerStatus } from '@/demo/partner-status';
 import { useMemo, useRef, useState, type SyntheticEvent } from 'react';
 import { createDemoRequest } from '@/demo/store';
@@ -20,6 +21,8 @@ const todayIst = () =>
   }).format(new Date());
 
 /**
+ * `workshop` is the canonical (English) record: the request snapshots it; names are shown in the page locale.
+ *
  * Appointment request (spec 06): vehicle, services (with a live expected-cost range), preferred date and slot.
  * The workshop proposes; nothing is confirmed until the customer accepts — the page says so before submit.
  */
@@ -189,7 +192,7 @@ export function BookingForm({ workshop }: { workshop: DemoWorkshop }) {
                       }}
                       className="size-6 shrink-0 accent-[var(--color-accent-button)]"
                     />
-                    <span className="font-bold text-ink">{s.name}</span>
+                    <span className="font-bold text-ink">{serviceNameFor(s.key, s.name, locale)}</span>
                   </span>
                   <span className="shrink-0 text-xs text-muted">
                     {formatPrice(s.minPaise)}–{formatPrice(s.maxPaise)}

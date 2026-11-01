@@ -33,7 +33,7 @@ export function PartnerGate({
         </h2>
         <p className="mt-2 text-sm text-ink">{t('suspendedBody')}</p>
         {change ? (
-          <p className="mt-3 rounded-lg bg-pill p-3 text-sm text-ink">
+          <p data-user-content className="mt-3 rounded-lg bg-pill p-3 text-sm text-ink">
             {t('statusReason', { reason: change.reason, date: formatDate(change.at, locale) })}
           </p>
         ) : null}
@@ -53,7 +53,7 @@ export function PartnerGate({
         <p role="status" className="rounded-lg bg-warning-bg p-4 text-sm text-warning">
           <span className="font-bold">{t('pausedTitle')}</span> {t('pausedBody')}
           {change ? (
-            <span className="mt-1 block">
+            <span data-user-content className="mt-1 block">
               {t('statusReason', { reason: change.reason, date: formatDate(change.at, locale) })}
             </span>
           ) : null}

@@ -8,6 +8,7 @@ import { Container } from '@/components/ui/page-intro';
 import { ReviewsSection } from '@/components/reviews/reviews-section';
 import { BookingForm } from '@/components/workshops/booking-form';
 import { WorkshopMap } from '@/components/workshops/workshop-map';
+import { localizeWorkshop } from '@/demo/i18n/localize';
 import { workshopRating, workshopReviews } from '@/demo/reviews';
 import { DEMO_WORKSHOPS, findWorkshop } from '@/demo/workshops';
 import { routing, type Locale } from '@/i18n/routing';
@@ -25,11 +26,12 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, slug } = await params;
-  const w = findWorkshop(slug);
-  if (!w) return {};
+  const found = findWorkshop(slug);
+  if (!found) return {};
+  const w = localizeWorkshop(found, locale);
   return {
     title: w.name,
-    description: `${w.area}, Raipur · ${w.services.map((s) => s.name).join(', ')}`,
+    description: `${w.address} · ${w.services.map((s) => s.name).join(', ')}`,
     alternates: alternatesFor(`/workshops/${slug}`, locale),
   };
 }
@@ -37,14 +39,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 /** Workshop profile (spec 06): verification, hours, service menu with price ranges, appointment request. */
 export default async function WorkshopPage({ params }: Props) {
   const { slug } = await params;
-  const w = findWorkshop(slug);
-  if (!w) notFound();
+  const found = findWorkshop(slug);
+  if (!found) notFound();
   const [t, f, m, locale] = await Promise.all([
     getTranslations('workshop'),
     getTranslations('finder'),
     getTranslations('map'),
     getLocale(),
   ]);
+  const w = localizeWorkshop(found, locale);
 
   return (
     <Container className="py-8 tab:py-12">
@@ -133,6 +136,7 @@ export default async function WorkshopPage({ params }: Props) {
             label={f('mapLabel')}
             youAreHere={f('youAreHere')}
             ui={mapUi(m)}
+            locale={locale}
             className="mt-4 h-[320px]"
           />
           <p className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-muted">
@@ -166,7 +170,7 @@ export default async function WorkshopPage({ params }: Props) {
           <p className="mt-2 text-sm text-muted">{t('bookIntro')}</p>
           <div className="mt-5">
             <ClientMessages namespaces={['workshop', 'checkout']}>
-              <BookingForm workshop={w} />
+              <BookingForm workshop={found} />
             </ClientMessages>
           </div>
         </section>

@@ -11,7 +11,7 @@ export async function AccountShell({ section }: { section: AccountSection }) {
     <Container className="py-10 tab:py-14">
       <PageIntro eyebrow={t('eyebrow')} line1={t('title')} />
       <div className="mt-8">
-        <ClientMessages namespaces={['account', 'auth', 'order', 'request', 'quote']}>
+        <ClientMessages namespaces={['account', 'auth', 'cities', 'order', 'request', 'quote']}>
           <AccountArea section={section} />
         </ClientMessages>
       </div>

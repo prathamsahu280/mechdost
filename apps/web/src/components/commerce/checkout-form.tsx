@@ -12,6 +12,7 @@ import { useSession } from '@/demo/session';
 import { coinRulesFrom, useSiteSettings } from '@/demo/site-config';
 import { placeDemoOrder, priceCart, useCart } from '@/demo/store';
 import { CartView } from './cart-view';
+import { productNameFor } from '@/demo/i18n/localize';
 
 type Field = 'name' | 'phone' | 'address' | 'pincode' | 'consent';
 
@@ -236,7 +237,8 @@ export function CheckoutForm() {
           {priced.map(({ product, qty, linePaise }) => (
             <li key={product.slug} className="flex justify-between gap-3">
               <span className="text-ink">
-                {product.name} <span className="text-muted">× {qty}</span>
+                {productNameFor(product.slug, product.name, locale)}{' '}
+                <span className="text-muted">× {qty}</span>
               </span>
               <span className="font-bold text-ink">{formatPrice(linePaise)}</span>
             </li>

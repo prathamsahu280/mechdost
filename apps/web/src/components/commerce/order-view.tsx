@@ -8,6 +8,7 @@ import { findShop } from '@/demo/shops';
 import { advanceOrder, ORDER_STAGES, useHydrated, useOrders } from '@/demo/store';
 import { formatDate, formatPrice } from '@/lib/format';
 import { StatusTimeline } from './status-timeline';
+import { productNameFor, shopNameFor } from '@/demo/i18n/localize';
 
 /** Order tracking (spec 04): timeline of the real flow — placed → admin routes → shop accepts → … → delivered. */
 export function OrderView({ code }: { code: string }) {
@@ -53,7 +54,9 @@ export function OrderView({ code }: { code: string }) {
           {order.rejection ? (
             <div role="status" className="mt-5 rounded-tile bg-warning-bg p-5 text-warning">
               <p className="font-heading font-bold">{t('rejectedTitle')}</p>
-              <p className="mt-1 text-sm">{order.rejection.message}</p>
+              <p data-user-content className="mt-1 text-sm">
+                {order.rejection.message}
+              </p>
             </div>
           ) : (
             <div className="mt-5">
@@ -68,7 +71,13 @@ export function OrderView({ code }: { code: string }) {
           {order.shop?.status === 'accepted' ? (
             <p className="mt-4 text-sm font-bold text-ink">
               <span aria-hidden="true">🏪 </span>
-              {t('shopLabel', { shop: findShop(order.shop.slug)?.name ?? order.shop.slug })}
+              {t('shopLabel', {
+                shop: shopNameFor(
+                  order.shop.slug,
+                  findShop(order.shop.slug)?.name ?? order.shop.slug,
+                  locale,
+                ),
+              })}
             </p>
           ) : null}
           {order.delivery && !order.delivery.confirmedAt && !order.rejection ? (
@@ -120,7 +129,8 @@ export function OrderView({ code }: { code: string }) {
             {order.lines.map((l) => (
               <li key={l.slug} className="flex justify-between gap-3">
                 <span>
-                  {l.brand} {l.name} <span className="text-muted">× {l.qty}</span>
+                  {l.brand} {productNameFor(l.slug, l.name, locale)}{' '}
+                  <span className="text-muted">× {l.qty}</span>
                 </span>
                 <span className="font-bold">{formatPrice(l.unitPaise * l.qty)}</span>
               </li>
@@ -145,7 +155,7 @@ export function OrderView({ code }: { code: string }) {
         </div>
         <div>
           <h2 className="font-heading font-bold text-ink">{t('deliverTo')}</h2>
-          <p className="mt-1 text-sm text-muted">
+          <p data-user-content className="mt-1 text-sm text-muted">
             {order.customer.name} · {order.customer.phone}
             <br />
             {order.customer.address} · {order.customer.pincode}

@@ -86,12 +86,18 @@ export function ApplicationStatus({ code }: { code: string }) {
       <aside className="space-y-2 rounded-card border border-line-card bg-surface p-6 text-sm shadow-card">
         <p className="font-heading text-lg font-extrabold text-ink">{t(`title_${app.kind}`)}</p>
         <p className="text-muted">{formatDate(app.createdAt, locale)}</p>
-        <p className="text-ink">
+        <p data-user-content className="text-ink">
           {app.name} · {app.phone}
         </p>
-        {app.business ? <p className="text-ink">{app.business}</p> : null}
+        {app.business ? (
+          <p data-user-content className="text-ink">
+            {app.business}
+          </p>
+        ) : null}
         <p className="text-muted">PIN {app.pincode}</p>
-        <p className="rounded-lg bg-surface-alt p-3 text-muted">{app.details}</p>
+        <p data-user-content className="rounded-lg bg-surface-alt p-3 text-muted">
+          {app.details}
+        </p>
         <p className="text-[11px] text-muted">{demo('note')}</p>
       </aside>
     </div>

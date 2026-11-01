@@ -1,4 +1,5 @@
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { localizeWorkshop } from '@/demo/i18n/localize';
 import { DEMO_WORKSHOPS, fromPricePaise } from '@/demo/workshops';
 import { formatPrice } from '@/lib/format';
 import { StarRating } from '../reviews/star-rating';
@@ -11,7 +12,10 @@ import { Container, Eyebrow } from '../ui/page-intro';
 export function TopWorkshops({ city }: { city: string }) {
   const t = useTranslations('home.workshops');
   const finder = useTranslations('finder');
-  const top = DEMO_WORKSHOPS.toSorted((a, b) => b.rating - a.rating || b.reviews - a.reviews).slice(0, 3);
+  const locale = useLocale();
+  const top = DEMO_WORKSHOPS.toSorted((a, b) => b.rating - a.rating || b.reviews - a.reviews)
+    .slice(0, 3)
+    .map((w) => localizeWorkshop(w, locale));
   return (
     <section aria-labelledby="top-workshops" className="pt-16">
       <Container>

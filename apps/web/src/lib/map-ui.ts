@@ -20,6 +20,9 @@ export const MAP_UI_KEYS = [
   'directions',
   'book',
   'satellite',
+  'closePopup',
+  'marker',
+  'mapFeedback',
 ] as const;
 
 export type MapUiKey = (typeof MAP_UI_KEYS)[number];

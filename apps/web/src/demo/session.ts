@@ -100,7 +100,7 @@ export const SEEDED_ACCOUNTS: readonly DemoAccount[] = [
     addresses: [
       {
         id: 'addr-home',
-        label: 'Home',
+        label: '',
         line1: 'C-605 Salasar Greens, Sarona',
         landmark: 'Near Tatibandh chowk',
         pincode: '492099',

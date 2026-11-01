@@ -11,6 +11,7 @@ import {
   fromPricePaise,
   type DemoWorkshop,
 } from '@/demo/workshops';
+import { localizeWorkshop } from '@/demo/i18n/localize';
 import { usePartnerHistory, usePartnerStatus, visibleToCustomers } from '@/demo/partner-status';
 import { formatPrice } from '@/lib/format';
 import { track } from '@/lib/analytics';
@@ -52,7 +53,7 @@ export function WorkshopFinder() {
   // Suspended workshops are hidden from customers; paused ones stay listed as "not taking bookings".
   const statusHistory = usePartnerHistory();
   const results = useMemo(() => {
-    const matches = DEMO_WORKSHOPS.filter(
+    const matches = DEMO_WORKSHOPS.map((w) => localizeWorkshop(w, locale)).filter(
       (w) =>
         (vehicle === 'any' || w.vehicles.includes(vehicle)) &&
         (!evOnly || w.ev) &&
@@ -62,7 +63,7 @@ export function WorkshopFinder() {
     if (origin) withDistance.sort((a, b) => (a.km ?? 0) - (b.km ?? 0));
     else withDistance.sort((a, b) => b.w.rating - a.w.rating);
     return withDistance;
-  }, [vehicle, evOnly, origin, statusHistory]);
+  }, [vehicle, evOnly, origin, statusHistory, locale]);
 
   function applyPin(value: string) {
     setPin(value);
@@ -231,6 +232,7 @@ export function WorkshopFinder() {
               label={t('mapLabel')}
               youAreHere={t('youAreHere')}
               ui={mapUi(m)}
+              locale={locale}
               className="h-[340px] tab:h-[420px] nav:h-[calc(100vh-9rem)] nav:max-h-[700px]"
             />
           </div>

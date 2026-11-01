@@ -480,7 +480,9 @@ export function LoginFlow() {
                     </span>
                     <span className="min-w-0">
                       <span className="block text-sm font-bold text-ink">{t(`role_${a.role}`)}</span>
-                      <span className="block truncate text-xs text-muted">{a.name}</span>
+                      <span data-user-content className="block truncate text-xs text-muted">
+                        {a.name}
+                      </span>
                       <span className="block text-xs text-muted tabular-nums">{a.phone}</span>
                     </span>
                   </button>

@@ -11,6 +11,7 @@ import { SettingValue } from '@/components/site/site-overrides';
 import { LocalLink } from '@/components/ui/local-link';
 import { Container } from '@/components/ui/page-intro';
 import { CATEGORY_SLUGS, DEMO_PRODUCTS, findProduct } from '@/demo/catalogue';
+import { localizeProduct } from '@/demo/i18n/localize';
 import { productRating, productReviews } from '@/demo/reviews';
 import { routing, type Locale } from '@/i18n/routing';
 import { discountPercent, formatPrice } from '@/lib/format';
@@ -26,8 +27,9 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, slug } = await params;
-  const product = findProduct(slug);
-  if (!product) return {};
+  const found = findProduct(slug);
+  if (!found) return {};
+  const product = localizeProduct(found, locale);
   return {
     title: `${product.brand} ${product.name}`,
     description: `${product.spec}. ${product.compatibility}.`,
@@ -37,9 +39,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 /** Product detail (spec 02): artwork, price + MRP, availability, delivery estimate, highlights, specs, related. */
 export default async function ProductPage({ params }: Props) {
-  const { slug } = await params;
-  const product = findProduct(slug);
-  if (!product) notFound();
+  const { locale, slug } = await params;
+  const found = findProduct(slug);
+  if (!found) notFound();
+  const product = localizeProduct(found, locale);
 
   const [t, c, r] = await Promise.all([
     getTranslations('catalogue'),

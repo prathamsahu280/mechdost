@@ -17,6 +17,7 @@ import {
 } from '@/demo/store';
 import { track } from '@/lib/analytics';
 import { formatDate, formatPrice } from '@/lib/format';
+import { productNameFor } from '@/demo/i18n/localize';
 
 const STATUS_STYLE: Record<DemoQuote['status'], string> = {
   open: 'bg-warning-bg text-warning',
@@ -146,6 +147,7 @@ export function QuoteThread({ code }: { code: string }) {
 
 function RequestedLines({ quote, waiting }: { quote: DemoQuote; waiting: boolean }) {
   const t = useTranslations('quote');
+  const locale = useLocale();
   return (
     <section className="rounded-card border border-line-card bg-surface p-6 shadow-card">
       <h2 className="font-heading text-lg font-extrabold text-ink">{t('requested')}</h2>
@@ -153,7 +155,7 @@ function RequestedLines({ quote, waiting }: { quote: DemoQuote; waiting: boolean
         {quote.lines.map((l) => (
           <li key={l.slug} className="flex justify-between gap-3 py-2.5">
             <span className="min-w-0 text-ink">
-              <span className="font-bold">{l.brand}</span> {l.name}
+              <span className="font-bold">{l.brand}</span> {productNameFor(l.slug, l.name, locale)}
             </span>
             <span className="shrink-0 font-bold text-ink tabular-nums">× {l.qty}</span>
           </li>
@@ -215,7 +217,8 @@ function OfferCard({ quote, offer }: { quote: DemoQuote; offer: QuoteOffer }) {
             return (
               <li key={l.slug} className="grid grid-cols-[1fr_auto] gap-x-3 py-2.5">
                 <span className="min-w-0 font-bold text-ink">
-                  {l.name} <span className="font-normal text-muted">× {l.qty}</span>
+                  {productNameFor(l.slug, l.name, locale)}{' '}
+                  <span className="font-normal text-muted">× {l.qty}</span>
                 </span>
                 <span className="font-bold text-ink tabular-nums">{formatPrice(unit * l.qty)}</span>
                 <span className="text-xs text-muted">
@@ -248,7 +251,9 @@ function OfferCard({ quote, offer }: { quote: DemoQuote; offer: QuoteOffer }) {
           ) : null}
         </dl>
         {offer.note ? (
-          <p className="mt-3 rounded-lg bg-surface-alt p-3 text-sm text-ink">{offer.note}</p>
+          <p data-user-content className="mt-3 rounded-lg bg-surface-alt p-3 text-sm text-ink">
+            {offer.note}
+          </p>
         ) : null}
 
         {problem === 'stale' ? (
@@ -329,7 +334,9 @@ function Chat({ quote, closed }: { quote: DemoQuote; closed: boolean }) {
                 <p className="text-[11px] font-extrabold text-muted">
                   {mine ? t('you') : t('team')} · {formatDate(m.at, locale)}
                 </p>
-                <p className="mt-0.5 whitespace-pre-wrap">{m.text}</p>
+                <p data-user-content className="mt-0.5 whitespace-pre-wrap">
+                  {m.text}
+                </p>
               </div>
             </li>
           );

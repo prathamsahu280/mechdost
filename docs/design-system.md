@@ -91,3 +91,15 @@ Source: `style.css`, `premium.css`, `simple.css`, `service-hub.css`, `service-wo
 - **Delivery code (2026-11-01):** customer card with a 2px `accent-button` border on `accent-soft`, 40px Manrope digits with wide tracking, safety line in `muted`; shop entry is a 4-digit numeric field beside the primary "Confirm delivery" button.
 - **Partner status pills (2026-11-01):** Active `success-bg/success`, Paused `warning-bg/warning`, Suspended `pill/error`; paused banners use `warning-bg`, the suspended portal lock uses a card with an `error` border and the reason.
 - **Policy notes (2026-11-01):** "No returns or exchanges" notes use `warning-bg/warning` with a bold lead and a link to `/policies/returns`.
+
+## Hindi content (2026-11-02, CLAUDE.md hard rule 10)
+
+User (2026-11-02, on `/hi/workshops`): "its in hindi but i still see quite some stuff in english … it shouldnt happen anywhere". On `/hi` **nothing user-visible is English** — UI copy, content data (products, workshops, services, shops, localities, company facts) and map labels.
+
+- **Stays in Latin script:** brand and model names (Castrol, Exide, Shell Helix, "Activ 4T 20W40", XLTZ4A; vehicle makes/models such as Honda Activa, Maruti Suzuki Swift VXi); units and technical tokens (ml, km, kg, cc, psi, 20W40, 2W/4W, EV, AC, GST, GSTIN, PIN, OTP, UPI, MRP, SKU, SMS, SUV, OEM, API, JASO, SAE, ISI, VRLA, AGM, TPE); codes (MD-…, SR-…, REQ-…, QT-…, PA-…, SKUs, phone numbers, delivery codes); the brand **MechDost** (and WhatsApp); text people typed (reviews, chat messages, names, addresses, notes, staff reasons).
+- **Transliterated:** business names (workshops, shops, the operator: "शंकर नगर ऑटो हब", "शौर्य इंटीग्रेटेड सर्विसेज़ प्राइवेट लिमिटेड") and localities ("शंकर नगर", "रायपुर"). Invoices and filings keep the registered English form.
+- **Tone:** natural, simple Hindi as Indian shopping apps write it; common loanwords in Devanagari are preferred over textbook Hindi ("सर्विस", "इंजन ऑयल", "बैटरी", "पिकअप", "फ़िटिंग"). Durations in Hindi units ("30–60 मिनट", "2–3 घंटे"); weekdays short ("सोम–शनि").
+- **Markup:** user-typed text carries `data-user-content`; text deliberately in another language carries `lang="en"` (language switcher, the English column of admin bilingual editors). Nothing else is exempt.
+- **Allowlist:** `apps/web/test/hindi-allowlist.ts` is the single list (brands from the catalogue, product/vehicle models, technical tokens, photo-credit and map-data proper names, seeded people's names). Tokens with a digit and UPPER-CASE hyphenated codes are ignored by construction. Never add a generic English word to it — translate instead.
+- **Map labels:** place/road/POI labels prefer `name:hi`, then the local OSM `name` (road refs such as NH30 are codes). Devanagari is drawn by the browser (MapLibre ≥ 6.15), no extra glyphs.
+- **Gate:** `apps/web/e2e/hindi-coverage.spec.ts` renders every `/hi` page (public, customer, shop, workshop, admin) with seeded data and fails listing page + English words; `test/content-i18n.test.ts` and `test/map-styles.test.ts` cover the data overlays and map labels.

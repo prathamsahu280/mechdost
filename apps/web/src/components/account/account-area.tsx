@@ -24,6 +24,7 @@ import { CoinsSection } from './coins-section';
 import { ORDER_STAGES, REQUEST_STAGES, useHydrated, useOrders, useQuotes, useRequests } from '@/demo/store';
 import { formatDate, formatPrice } from '@/lib/format';
 import { ACCOUNT_SECTIONS, type AccountSection } from '@/lib/sections';
+import { workshopNameFor } from '@/demo/i18n/localize';
 
 const SECTION_EMOJI: Record<AccountSection, string> = {
   overview: '🏠',
@@ -259,7 +260,7 @@ function VehicleSummary({ vehicle }: { vehicle: DemoVehicle }) {
         {vehicle.type === '2W' ? '🛵' : '🚗'}
       </span>
       <div className="min-w-0">
-        <p className="font-heading text-lg font-extrabold text-ink">
+        <p data-user-content className="font-heading text-lg font-extrabold text-ink">
           {vehicle.make} {vehicle.model}
         </p>
         <p className="text-sm text-muted">
@@ -364,6 +365,7 @@ function OrdersList({ limit }: { limit?: number }) {
 function ServicesList({ limit }: { limit?: number }) {
   const t = useTranslations('account');
   const r = useTranslations('request');
+  const locale = useLocale();
   const prefix = usePrefix();
   const requests = useRequests().slice(0, limit ?? 50);
   return (
@@ -381,7 +383,8 @@ function ServicesList({ limit }: { limit?: number }) {
             <span className="min-w-0 flex-1">
               <span className="block font-bold text-ink">{req.code}</span>
               <span className="block text-xs text-muted">
-                {req.workshopName} · {r(`stage_${REQUEST_STAGES[req.stage] ?? 'requested'}`)}
+                {workshopNameFor(req.workshopSlug, req.workshopName, locale)} ·{' '}
+                {r(`stage_${REQUEST_STAGES[req.stage] ?? 'requested'}`)}
               </span>
             </span>
             <ChevronRight aria-hidden="true" className="size-4 text-muted" />
@@ -599,6 +602,7 @@ function Vehicles({ account }: { account: DemoAccount }) {
 
 function Addresses({ account }: { account: DemoAccount }) {
   const t = useTranslations('account');
+  const city = useTranslations('cities');
   const [adding, setAdding] = useState(account.addresses.length === 0);
   const [error, setError] = useState<string | null>(null);
   const full = account.addresses.length >= MAX_ACCOUNT_ITEMS;
@@ -615,7 +619,8 @@ function Addresses({ account }: { account: DemoAccount }) {
       return;
     }
     const ok = addAddress({
-      label: (text('label') || 'Home').slice(0, 30),
+      // Empty = the default label, shown translated ("Home" / "घर"); a typed label is shown as typed.
+      label: text('label').slice(0, 30),
       line1: text('line1').slice(0, 200),
       landmark: text('landmark').slice(0, 100),
       pincode: text('pincode'),
@@ -654,23 +659,31 @@ function Addresses({ account }: { account: DemoAccount }) {
               <div className="min-w-0">
                 <p className="flex flex-wrap items-center gap-2 font-heading font-extrabold text-ink">
                   <span aria-hidden="true">📍</span>
-                  {a.label}
+                  {a.label ? <span data-user-content>{a.label}</span> : t('labelDefault')}
                   {a.isDefault ? (
                     <span className="rounded-pill bg-success-bg px-2 py-0.5 text-[11px] font-extrabold text-success">
                       {t('default')}
                     </span>
                   ) : null}
                 </p>
-                <p className="mt-1 text-sm text-ink">{a.line1}</p>
-                {a.landmark ? <p className="text-sm text-muted">{a.landmark}</p> : null}
-                <p className="text-sm text-muted">Raipur {a.pincode}</p>
+                <p data-user-content className="mt-1 text-sm text-ink">
+                  {a.line1}
+                </p>
+                {a.landmark ? (
+                  <p data-user-content className="text-sm text-muted">
+                    {a.landmark}
+                  </p>
+                ) : null}
+                <p className="text-sm text-muted">
+                  {city('raipur')} {a.pincode}
+                </p>
               </div>
               <button
                 type="button"
                 onClick={() => {
                   removeAddress(a.id);
                 }}
-                aria-label={t('remove', { name: a.label })}
+                aria-label={t('remove', { name: a.label || t('labelDefault') })}
                 className="press inline-flex size-11 shrink-0 items-center justify-center rounded-button text-muted hover:bg-pill"
               >
                 <Trash2 aria-hidden="true" className="size-5" />

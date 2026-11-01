@@ -3,6 +3,7 @@ import {
   WHATSAPP_TEMPLATES,
   classifyWhatsAppError,
   isWhatsAppTemplateKey,
+  placeholderProblem,
   toWhatsAppNumber,
   utilityTemplateProblem,
   whatsAppParamProblem,
@@ -28,6 +29,12 @@ describe('WhatsApp templates (decision 2026-11-02: Meta direct, cheapest)', () =
     expect(utilityTemplateProblem('Order {{1}} confirmed. Use coupon OIL50')).toBe('promo_wording');
     expect(utilityTemplateProblem('आपका ऑर्डर {{1}} पक्का है। अगली बार 10% छूट')).toBe('promo_wording');
     expect(utilityTemplateProblem('x'.repeat(1025))).toBe('too_long');
+  });
+
+  it('checks that template placeholders match the params', () => {
+    expect(placeholderProblem('Order {{1}} is out for delivery. Code {{2}}.', 2)).toBeNull();
+    expect(placeholderProblem('Order {{1}} is out for delivery.', 2)).toBe('missing');
+    expect(placeholderProblem('Order {{1}}, code {{2}}, {{3}}', 2)).toBe('unknown');
   });
 
   it('checks params and numbers', () => {

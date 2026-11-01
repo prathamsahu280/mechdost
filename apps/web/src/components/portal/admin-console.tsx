@@ -6,6 +6,7 @@ import { useState, type SyntheticEvent } from 'react';
 import { findProduct } from '@/demo/catalogue';
 import { restoreCoinsForOrder } from '@/demo/coins';
 import { useSession } from '@/demo/session';
+import { localizeShop, productNameFor, shopNameFor, workshopNameFor } from '@/demo/i18n/localize';
 import { findShop, rankShops } from '@/demo/shops';
 import {
   APPLICATION_STAGES,
@@ -304,8 +305,10 @@ function RoutingCard({ order, now }: { order: DemoOrder; now: number }) {
     ),
   ];
   const tried = (order.declined ?? []).map((d) => d.slug);
-  const suggestions = rankShops(categories, [...tried, ...(order.shop ? [order.shop.slug] : [])]).slice(0, 3);
-  const shopName = (slug: string) => findShop(slug)?.name ?? slug;
+  const suggestions = rankShops(categories, [...tried, ...(order.shop ? [order.shop.slug] : [])])
+    .slice(0, 3)
+    .map((s) => localizeShop(s, locale));
+  const shopName = (slug: string) => shopNameFor(slug, findShop(slug)?.name ?? slug, locale);
   const canRoute = state === 'needs_routing' || state === 'expired';
 
   function reject(e: SyntheticEvent<HTMLFormElement>) {
@@ -324,7 +327,7 @@ function RoutingCard({ order, now }: { order: DemoOrder; now: number }) {
         <div>
           <p className="font-heading text-lg font-extrabold text-ink">{order.code}</p>
           <p className="text-xs text-muted">
-            {formatDate(order.createdAt, locale)} · {order.customer.name} ·{' '}
+            {formatDate(order.createdAt, locale)} · <span data-user-content>{order.customer.name}</span> ·{' '}
             {t('orderMeta', {
               items: a('items', { count: order.lines.length }),
               total: formatPrice(order.totalPaise),
@@ -340,7 +343,7 @@ function RoutingCard({ order, now }: { order: DemoOrder; now: number }) {
         </Link>
       </div>
       <p className="mt-2 text-sm text-ink">
-        {order.lines.map((l) => `${l.name} × ${String(l.qty)}`).join(', ')}
+        {order.lines.map((l) => `${productNameFor(l.slug, l.name, locale)} × ${String(l.qty)}`).join(', ')}
       </p>
 
       {(order.declined ?? []).map((d) => (
@@ -374,7 +377,8 @@ function RoutingCard({ order, now }: { order: DemoOrder; now: number }) {
       ) : null}
       {order.delivery && !order.delivery.confirmedAt ? <DeliveryOverride order={order} /> : null}
       {order.delivery?.method === 'override' ? (
-        <p className="mt-3 rounded-lg bg-private-bg p-3 text-sm text-private">
+        // Staff name and reason are typed by staff (user content); the frame text comes from the locale file.
+        <p data-user-content className="mt-3 rounded-lg bg-private-bg p-3 text-sm text-private">
           {t('deliveryOverridden', {
             by: order.delivery.overrideBy ?? '',
             reason: order.delivery.overrideReason ?? '',
@@ -382,7 +386,7 @@ function RoutingCard({ order, now }: { order: DemoOrder; now: number }) {
         </p>
       ) : null}
       {state === 'rejected' && order.rejection ? (
-        <p className="mt-3 rounded-lg bg-pill p-3 text-sm text-muted">
+        <p data-user-content className="mt-3 rounded-lg bg-pill p-3 text-sm text-muted">
           {t('rejectedWith', { message: order.rejection.message })}
         </p>
       ) : null}
@@ -476,6 +480,7 @@ function RoutingCard({ order, now }: { order: DemoOrder; now: number }) {
 function ServiceRouting() {
   const t = useTranslations('portal');
   const r = useTranslations('request');
+  const locale = useLocale();
   const declined = useRequests().filter(
     (x) => x.stage === 0 && (x.declinedBy ?? []).includes(x.workshopSlug),
   );
@@ -500,10 +505,16 @@ function ServiceRouting() {
               <li key={req.code} className={`${portalCard} border-accent-button/60`}>
                 <p className="font-heading text-lg font-extrabold text-ink">{req.code}</p>
                 <p className="text-sm text-muted">
-                  {req.customer.name} · {req.vehicle} · {r('stage_requested')}
+                  <span data-user-content>
+                    {req.customer.name} · {req.vehicle}
+                  </span>{' '}
+                  · {r('stage_requested')}
                 </p>
                 <p className="mt-2 text-xs font-bold text-warning">
-                  {t('declinedBy', { shop: req.workshopName, reason: t('reason_declined') })}
+                  {t('declinedBy', {
+                    shop: workshopNameFor(req.workshopSlug, req.workshopName, locale),
+                    reason: t('reason_declined'),
+                  })}
                 </p>
                 <ul className="mt-3 space-y-2">
                   {options.map((w) => (
@@ -515,7 +526,7 @@ function ServiceRouting() {
                         }}
                         className={`${portalQuiet} w-full justify-between`}
                       >
-                        <span>🔧 {t('assignTo', { workshop: w.name })}</span>
+                        <span>🔧 {t('assignTo', { workshop: workshopNameFor(w.slug, w.name, locale) })}</span>
                         <span className="text-xs text-muted">★ {w.rating.toFixed(1)}</span>
                       </button>
                     </li>
@@ -565,7 +576,8 @@ function QuoteDesk() {
                 >
                   <span className="block font-bold text-ink">{x.code}</span>
                   <span className="block text-xs text-muted">
-                    {x.customer.name} · {formatDate(x.createdAt, locale)} · {q(`status_${x.status}`)}
+                    <span data-user-content>{x.customer.name}</span> · {formatDate(x.createdAt, locale)} ·{' '}
+                    {q(`status_${x.status}`)}
                   </span>
                 </button>
               </li>
@@ -624,7 +636,7 @@ function QuoteNegotiation({ quote }: { quote: DemoQuote }) {
     <div className="space-y-6">
       <section aria-labelledby="quote-chat" className={portalCard}>
         <h2 id="quote-chat" className="font-heading text-lg font-extrabold text-ink">
-          {quote.code} · {quote.customer.name} · {q(`status_${quote.status}`)}
+          {quote.code} · <span data-user-content>{quote.customer.name}</span> · {q(`status_${quote.status}`)}
         </h2>
         <ol className="mt-4 max-h-80 space-y-3 overflow-y-auto">
           {quote.messages.length === 0 ? <li className="text-sm text-muted">{q('noMessages')}</li> : null}
@@ -636,9 +648,12 @@ function QuoteNegotiation({ quote }: { quote: DemoQuote }) {
                   className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm text-ink ${ours ? 'rounded-br-md bg-accent-soft' : 'rounded-bl-md bg-surface-alt'}`}
                 >
                   <p className="text-[11px] font-extrabold text-muted">
-                    {ours ? q('team') : quote.customer.name} · {formatDate(m.at, locale)}
+                    {ours ? q('team') : <span data-user-content>{quote.customer.name}</span>} ·{' '}
+                    {formatDate(m.at, locale)}
                   </p>
-                  <p className="mt-0.5 whitespace-pre-wrap">{m.text}</p>
+                  <p data-user-content className="mt-0.5 whitespace-pre-wrap">
+                    {m.text}
+                  </p>
                 </div>
               </li>
             );
@@ -684,7 +699,7 @@ function QuoteNegotiation({ quote }: { quote: DemoQuote }) {
           {quote.lines.map((l) => (
             <div key={l.slug}>
               <label htmlFor={`price-${l.slug}`} className="text-sm font-bold text-ink">
-                {t('unitPrice', { name: l.name })}
+                {t('unitPrice', { name: productNameFor(l.slug, l.name, locale) })}
               </label>
               <input
                 id={`price-${l.slug}`}
@@ -790,11 +805,16 @@ function Applications() {
                 <p className="mb-2 inline-flex rounded-pill bg-pill px-3 py-1 text-xs font-extrabold text-ink">
                   {t(`kind_${a.kind}`)} · {a.rejected ? ap('stage_rejected') : ap(`stage_${stage}`)}
                 </p>
-                <p className="font-heading text-lg font-extrabold text-ink">{a.business || a.name}</p>
-                <p className="text-sm text-muted">
-                  {a.code} · {a.name} · PIN {a.pincode} · {formatDate(a.createdAt, locale)}
+                <p data-user-content className="font-heading text-lg font-extrabold text-ink">
+                  {a.business || a.name}
                 </p>
-                <p className="mt-2 line-clamp-3 text-sm text-ink">{a.details}</p>
+                <p className="text-sm text-muted">
+                  {a.code} · <span data-user-content>{a.name}</span> · PIN {a.pincode} ·{' '}
+                  {formatDate(a.createdAt, locale)}
+                </p>
+                <p data-user-content className="mt-2 line-clamp-3 text-sm text-ink">
+                  {a.details}
+                </p>
                 {!done ? (
                   <div className="mt-4 flex flex-wrap gap-2">
                     <button
@@ -833,8 +853,8 @@ function Reviews() {
   const pending = reviews.filter((r) => r.status === 'pending');
   const target = (slug: string, kind: 'product' | 'workshop') =>
     kind === 'product'
-      ? (findProduct(slug)?.name ?? slug)
-      : (DEMO_WORKSHOPS.find((w) => w.slug === slug)?.name ?? slug);
+      ? productNameFor(slug, findProduct(slug)?.name ?? slug, locale)
+      : workshopNameFor(slug, DEMO_WORKSHOPS.find((w) => w.slug === slug)?.name ?? slug, locale);
   return (
     <section aria-labelledby="reviews-title">
       <h2 id="reviews-title" className="font-heading text-xl font-extrabold text-ink">
@@ -851,10 +871,14 @@ function Reviews() {
                 {'☆'.repeat(5 - r.rating)}
               </p>
               <p className="sr-only">{`${String(r.rating)} / 5`}</p>
-              <p className="mt-1 font-heading font-extrabold text-ink">{r.title}</p>
-              <p className="mt-1 text-sm text-ink">{r.body}</p>
+              <p data-user-content className="mt-1 font-heading font-extrabold text-ink">
+                {r.title}
+              </p>
+              <p data-user-content className="mt-1 text-sm text-ink">
+                {r.body}
+              </p>
               <p className="mt-2 text-xs text-muted">
-                {r.name} · {formatDate(r.createdAt, locale)} ·{' '}
+                <span data-user-content>{r.name}</span> · {formatDate(r.createdAt, locale)} ·{' '}
                 {t('reviewOn', { target: target(r.slug, r.target) })}
               </p>
               <div className="mt-4 flex flex-wrap gap-2">

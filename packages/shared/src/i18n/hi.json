@@ -647,7 +647,10 @@
     "meters": "मी.",
     "directions": "रास्ता देखें",
     "book": "देखें और बुक करें",
-    "satellite": "सैटेलाइट"
+    "satellite": "सैटेलाइट",
+    "closePopup": "बंद करें",
+    "marker": "मैप मार्कर",
+    "mapFeedback": "मैप पर सुझाव दें"
   },
   "quote": {
     "eyebrow": "बल्क ऑर्डर",
@@ -870,7 +873,7 @@
     "name": "पूरा नाम",
     "email": "ईमेल",
     "phone": "मोबाइल नंबर",
-    "phoneNote": "नंबर बदलने के लिए पुराने और नए दोनों नंबर पर कोड चाहिए (Firebase साइन-इन के साथ)।",
+    "phoneNote": "नंबर बदलने के लिए पुराने और नए दोनों नंबर पर भेजा गया कोड डालना होगा।",
     "language": "भाषा",
     "saved": "सेव हो गया",
     "errProfile": "अपना नाम और सही ईमेल लिखें।",
@@ -900,7 +903,8 @@
     "coinsAdded": "MechDost ने जोड़े: {reason}",
     "coinsRemoved": "MechDost ने हटाए: {reason}",
     "coinsDemo": "डेमो कॉइन",
-    "coinsEarned": "कमाए: {reason}"
+    "coinsEarned": "कमाए: {reason}",
+    "labelDefault": "घर"
   },
   "portal": {
     "guardTitle": "आगे बढ़ने के लिए साइन इन करें",
@@ -1048,7 +1052,7 @@
     "section_route": "आपका ऑर्डर आप तक कैसे पहुँचता है",
     "section_service": "काम जानें। खर्च मंज़ूर करें।",
     "section_workshops": "टॉप रेटेड वर्कशॉप",
-    "section_faq": "सवाल-जवाब (FAQ)",
+    "section_faq": "सवाल-जवाब",
     "section_partners": "पार्टनर बनने का न्योता",
     "categories_title": "कैटेगरी शॉर्टकट",
     "categories_lead": "होम पेज के लिए {min} से {max} कैटेगरी चुनें और हर एक के लिए इमोजी चुनें।",
@@ -1150,7 +1154,9 @@
     "statusReason": "कारण: {reason} ({date})",
     "callSupport": "MechDost सपोर्ट को कॉल करें: {phone}",
     "pausedTitle": "MechDost ने रोका है।",
-    "pausedBody": "अभी आपको नया काम नहीं मिलेगा। कृपया चल रहे ऑर्डर पूरे करें।"
+    "pausedBody": "अभी आपको नया काम नहीं मिलेगा। कृपया चल रहे ऑर्डर पूरे करें।",
+    "coinsReasonSeed": "डेमो कॉइन",
+    "partnerEyebrow": "MechDost पार्टनर"
   },
   "policies": {
     "returns": {

@@ -2,6 +2,7 @@
 
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
+import { localizeWorkshop, serviceNameFor } from '@/demo/i18n/localize';
 import { findWorkshop } from '@/demo/workshops';
 import {
   REQUEST_STAGES,
@@ -33,7 +34,9 @@ export function WorkshopPortal() {
 
 function WorkshopRequests({ workshopSlug }: { workshopSlug: string }) {
   const t = useTranslations('portal');
-  const workshop = findWorkshop(workshopSlug);
+  const locale = useLocale();
+  const found = findWorkshop(workshopSlug);
+  const workshop = found ? localizeWorkshop(found, locale) : undefined;
   const mine = useRequests().filter((r) => r.workshopSlug === workshopSlug);
   const fresh = mine.filter((r) => r.stage === 0 && !(r.declinedBy ?? []).includes(workshopSlug));
   const waiting = mine.filter((r) => r.stage === 1);
@@ -137,7 +140,7 @@ function RequestSummary({ request: r }: { request: DemoServiceRequest }) {
       </p>
       <p className="font-heading text-lg font-extrabold text-ink">{r.code}</p>
       <p className="text-sm text-muted">
-        {r.customer.name} ·{' '}
+        <span data-user-content>{r.customer.name}</span> ·{' '}
         {t('requestMeta', {
           vehicle: `${r.vehicleType === '2W' ? '🛵' : '🚗'} ${r.vehicle}`,
           date: formatDate(r.date, locale),
@@ -145,9 +148,15 @@ function RequestSummary({ request: r }: { request: DemoServiceRequest }) {
         })}
       </p>
       <p className="mt-2 text-sm text-ink">
-        {t('customerAsked', { services: r.services.map((x) => x.name).join(', ') })}
+        {t('customerAsked', {
+          services: r.services.map((x) => serviceNameFor(x.key, x.name, locale)).join(', '),
+        })}
       </p>
-      {r.concern ? <p className="mt-1 text-sm text-muted">“{r.concern}”</p> : null}
+      {r.concern ? (
+        <p data-user-content className="mt-1 text-sm text-muted">
+          “{r.concern}”
+        </p>
+      ) : null}
     </>
   );
 }

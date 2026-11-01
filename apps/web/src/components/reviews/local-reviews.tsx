@@ -71,10 +71,18 @@ export function LocalReviews({ target, slug }: { target: ReviewTarget; slug: str
                 <StarRating rating={r.rating} label={t('average', { rating: r.rating })} />
                 <span className="text-xs text-muted">{formatDate(r.createdAt, locale)}</span>
               </div>
-              {r.title ? <p className="mt-2 font-heading font-bold text-ink">{r.title}</p> : null}
-              <p className="mt-1 text-sm leading-relaxed text-muted">{r.body}</p>
+              {r.title ? (
+                <p data-user-content className="mt-2 font-heading font-bold text-ink">
+                  {r.title}
+                </p>
+              ) : null}
+              <p data-user-content className="mt-1 text-sm leading-relaxed text-muted">
+                {r.body}
+              </p>
               <p className="mt-3 flex items-center gap-2 text-xs">
-                <span className="font-bold text-ink">{r.name}</span>
+                <span data-user-content className="font-bold text-ink">
+                  {r.name}
+                </span>
                 {r.status === 'pending' ? (
                   <span className="rounded-md bg-warning-bg px-1.5 py-0.5 font-bold text-warning">
                     {t('awaiting')}

@@ -2,12 +2,13 @@
 
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type * as MapLibre from 'maplibre-gl';
-import type { IControl, Map as MapLibreMap, Marker, Popup } from 'maplibre-gl';
+import type { IControl, Map as MapLibreMap, Marker, Popup, StyleSpecification } from 'maplibre-gl';
 import { useEffect, useRef } from 'react';
 import { track } from '@/lib/analytics';
 import { directionsHref, type MapUi } from '@/lib/map-ui';
 import {
   STYLE_URLS,
+  localizeLabels,
   saveMapMode,
   savedMapMode,
   satelliteSource,
@@ -191,6 +192,7 @@ export function WorkshopMap({
   label,
   youAreHere,
   ui,
+  locale,
   className = '',
 }: {
   points: MapPoint[];
@@ -201,6 +203,8 @@ export function WorkshopMap({
   label: string;
   youAreHere: string;
   ui: MapUi;
+  /** Page language: map labels (places, roads) prefer it (`localizeLabels`). */
+  locale: string;
   className?: string;
 }) {
   const container = useRef<HTMLDivElement>(null);
@@ -231,9 +235,18 @@ export function WorkshopMap({
       maplibre.setWorkerUrl(`/vendor/maplibre-gl-worker-${maplibre.getVersion()}.mjs`);
       lib.current = maplibre;
       const touch = isTouch();
+      // Every style (light, dark, hybrid) gets its labels in the page language.
+      const mapStyle = {
+        transformStyle: (_prev: unknown, next: StyleSpecification) => localizeLabels(next, locale),
+      };
+      const hybridStyle = {
+        transformStyle: (_prev: unknown, next: StyleSpecification) =>
+          localizeLabels(toHybrid(next, IMAGERY), locale),
+      };
       const m = new maplibre.Map({
         container: container.current,
         style: STYLE_URLS[currentTheme()],
+        ...mapStyle,
         center: [RAIPUR.lng, RAIPUR.lat],
         zoom: 11.5,
         minZoom: 4,
@@ -254,6 +267,9 @@ export function WorkshopMap({
           'CooperativeGesturesHandler.MacHelpText': ui.gestureMac,
           'CooperativeGesturesHandler.MobileHelpText': ui.gestureMobile,
           'AttributionControl.ToggleAttribution': ui.attribution,
+          'AttributionControl.MapFeedback': ui.mapFeedback,
+          'Popup.Close': ui.closePopup,
+          'Marker.Title': ui.marker,
           'Map.Title': ui.title,
           'ScaleControl.Kilometers': ui.kilometers,
           'ScaleControl.Meters': ui.meters,
@@ -298,9 +314,9 @@ export function WorkshopMap({
       let mode: MapMode = savedMapMode();
       const applyStyle = () => {
         if (mode === 'satellite') {
-          m.setStyle(STYLE_URLS.hybridBase, { transformStyle: (_prev, next) => toHybrid(next, IMAGERY) });
+          m.setStyle(STYLE_URLS.hybridBase, hybridStyle);
         } else {
-          m.setStyle(STYLE_URLS[currentTheme()]);
+          m.setStyle(STYLE_URLS[currentTheme()], mapStyle);
         }
       };
       if (mode === 'satellite') applyStyle();
@@ -316,7 +332,7 @@ export function WorkshopMap({
 
       // Follow the site theme toggle (the satellite view looks the same in both themes).
       observer = new MutationObserver(() => {
-        if (mode === 'map') m.setStyle(STYLE_URLS[currentTheme()]);
+        if (mode === 'map') m.setStyle(STYLE_URLS[currentTheme()], mapStyle);
       });
       observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
       m.on('load', () => {
@@ -344,7 +360,7 @@ export function WorkshopMap({
       map.current?.remove();
       map.current = null;
     };
-    // Runs once: labels are fixed for the page's lifetime (a language switch is a navigation).
+    // Runs once: labels and locale are fixed for the page's lifetime (a language switch is a navigation).
   }, []);
 
   // Pins + the camera when the list or the user's position changes. Selection does NOT rebuild pins (bug

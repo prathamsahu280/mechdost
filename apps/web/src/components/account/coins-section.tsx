@@ -77,7 +77,13 @@ export function CoinsSection({ account }: { account: DemoAccount }) {
             {entries.map((e) => (
               <li key={e.id} className="flex items-center justify-between gap-4 py-3 text-sm">
                 <span className="min-w-0">
-                  <span className="block font-bold text-ink">{describe(e, t)}</span>
+                  {/* A staff adjustment carries the reason staff typed (user content). */}
+                  <span
+                    data-user-content={e.kind === 'adjust' ? true : undefined}
+                    className="block font-bold text-ink"
+                  >
+                    {describe(e, t)}
+                  </span>
                   <span className="block text-xs text-muted">{formatDate(e.at, locale)}</span>
                 </span>
                 <span

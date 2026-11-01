@@ -7,6 +7,7 @@ import { handleError, handleNotFound } from './errors';
 import { log } from './logger';
 import { rateLimit, RATE_RULES } from './middleware/rate-limit';
 import { securityMiddleware } from './middleware/security';
+import { adminNotificationRoutes } from './routes/admin-notifications';
 import { assistantRoutes } from './routes/assistant';
 import { meRoutes } from './routes/me';
 import { systemRoutes } from './routes/system';
@@ -54,6 +55,7 @@ export function createApp(deps: AppDeps) {
   );
   v1.route('/', meRoutes(deps, sessions));
   v1.route('/', assistantRoutes(deps));
+  v1.route('/', adminNotificationRoutes(deps, sessions));
   app.route('/v1', v1);
 
   app.openAPIRegistry.registerComponent('securitySchemes', 'bearerAuth', {

@@ -7,6 +7,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { advanceRequest, REQUEST_STAGES, useRequests } from '@/demo/store';
 import { formatDate, formatPrice } from '@/lib/format';
 import { StatusTimeline } from '../commerce/status-timeline';
+import { serviceNameFor, workshopNameFor } from '@/demo/i18n/localize';
 
 /**
  * Service request status (spec 06): requested → workshop proposes slot + cost → customer accepts → vehicle
@@ -41,6 +42,7 @@ export function RequestView({ code }: { code: string }) {
   const slotLabel = w(request.proposal?.slot ?? request.slot);
   const steps = REQUEST_STAGES.map((s) => ({ key: s, title: t(`stage_${s}`), detail: t(`detail_${s}`) }));
   const proposed = request.stage === 1;
+  const workshopName = workshopNameFor(request.workshopSlug, request.workshopName, locale);
 
   return (
     <div className="grid gap-6 nav:grid-cols-[1fr_380px] nav:items-start">
@@ -51,7 +53,7 @@ export function RequestView({ code }: { code: string }) {
             className="animate-page-in flex items-center gap-3 rounded-card bg-success-bg p-5 text-success"
           >
             <PartyPopper aria-hidden="true" className="size-6 shrink-0" />
-            <p className="font-heading font-bold">{t('thanks', { workshop: request.workshopName })}</p>
+            <p className="font-heading font-bold">{t('thanks', { workshop: workshopName })}</p>
           </div>
         ) : null}
         <section className="rounded-card border border-line-card bg-surface p-6 shadow-card">
@@ -75,7 +77,9 @@ export function RequestView({ code }: { code: string }) {
                 })}
               </p>
               {request.proposal?.note ? (
-                <p className="mt-1 text-sm text-ink">“{request.proposal.note}”</p>
+                <p data-user-content className="mt-1 text-sm text-ink">
+                  “{request.proposal.note}”
+                </p>
               ) : null}
               <button
                 type="button"
@@ -107,13 +111,13 @@ export function RequestView({ code }: { code: string }) {
 
       <aside className="space-y-4 rounded-card border border-line-card bg-surface p-6 shadow-card text-sm">
         <div>
-          <h2 className="font-heading font-bold text-ink">{request.workshopName}</h2>
+          <h2 className="font-heading font-bold text-ink">{workshopName}</h2>
           <p className="text-muted">{formatDate(request.createdAt, locale)}</p>
         </div>
         <div>
           <h3 className="font-bold text-ink">{t('vehicle')}</h3>
           <p className="text-muted">
-            {request.vehicleType} · {request.vehicle}
+            {request.vehicleType} · <span data-user-content>{request.vehicle}</span>
           </p>
         </div>
         <div>
@@ -127,7 +131,7 @@ export function RequestView({ code }: { code: string }) {
           <ul className="mt-1 space-y-1">
             {request.services.map((s) => (
               <li key={s.key} className="flex justify-between gap-3">
-                <span>{s.name}</span>
+                <span>{serviceNameFor(s.key, s.name, locale)}</span>
                 <span className="text-muted">
                   {formatPrice(s.minPaise)}–{formatPrice(s.maxPaise)}
                 </span>
@@ -139,7 +143,9 @@ export function RequestView({ code }: { code: string }) {
           </p>
         </div>
         {request.concern ? (
-          <p className="rounded-lg bg-surface-alt p-3 text-muted">{request.concern}</p>
+          <p data-user-content className="rounded-lg bg-surface-alt p-3 text-muted">
+            {request.concern}
+          </p>
         ) : null}
         <p className="text-[11px] text-muted">{demo('note')}</p>
       </aside>

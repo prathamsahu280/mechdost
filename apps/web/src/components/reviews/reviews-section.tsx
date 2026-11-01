@@ -1,5 +1,6 @@
 import { BadgeCheck } from 'lucide-react';
 import { getLocale, getTranslations } from 'next-intl/server';
+import { localizeArea } from '@/demo/i18n/localize';
 import type { RatingSummary, SeedReview } from '@/demo/reviews';
 import type { ReviewTarget } from '@/demo/store';
 import { formatDate } from '@/lib/format';
@@ -74,11 +75,18 @@ export async function ReviewsSection({
                   <StarRating rating={r.rating} label={t('average', { rating: r.rating })} />
                   <span className="text-xs text-muted">{formatDate(r.date, locale)}</span>
                 </div>
-                <p className="mt-2 font-heading font-bold text-ink">{r.title}</p>
-                <p className="mt-1 text-sm leading-relaxed text-muted">{r.body}</p>
+                {/* Reviews are user-written: shown as typed (hard rule 10 exception, `data-user-content`). */}
+                <p data-user-content className="mt-2 font-heading font-bold text-ink">
+                  {r.title}
+                </p>
+                <p data-user-content className="mt-1 text-sm leading-relaxed text-muted">
+                  {r.body}
+                </p>
                 <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
-                  <span className="font-bold text-ink">{r.name}</span>
-                  <span className="text-muted">{r.area}</span>
+                  <span data-user-content className="font-bold text-ink">
+                    {r.name}
+                  </span>
+                  <span className="text-muted">{localizeArea(r.area, locale)}</span>
                   {r.verified ? (
                     <span className="inline-flex items-center gap-1 font-bold text-success">
                       <BadgeCheck aria-hidden="true" className="size-3.5" />

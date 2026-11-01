@@ -647,7 +647,10 @@
     "meters": "m",
     "directions": "Directions",
     "book": "View & book",
-    "satellite": "Satellite"
+    "satellite": "Satellite",
+    "closePopup": "Close",
+    "marker": "Map marker",
+    "mapFeedback": "Map feedback"
   },
   "quote": {
     "eyebrow": "Bulk orders",
@@ -870,7 +873,7 @@
     "name": "Full name",
     "email": "Email",
     "phone": "Mobile number",
-    "phoneNote": "Changing your number needs a code on the old and the new number (with Firebase sign-in).",
+    "phoneNote": "Changing your number needs a code sent to both the old and the new number.",
     "language": "Language",
     "saved": "Saved",
     "errProfile": "Enter your name and a valid email.",
@@ -900,7 +903,8 @@
     "coinsAdded": "Added by MechDost: {reason}",
     "coinsRemoved": "Removed by MechDost: {reason}",
     "coinsDemo": "Demo coins",
-    "coinsEarned": "Earned: {reason}"
+    "coinsEarned": "Earned: {reason}",
+    "labelDefault": "Home"
   },
   "portal": {
     "guardTitle": "Sign in to continue",
@@ -1150,7 +1154,9 @@
     "statusReason": "Reason: {reason} ({date})",
     "callSupport": "Call MechDost support: {phone}",
     "pausedTitle": "Paused by MechDost.",
-    "pausedBody": "You won't receive new work for now. Please finish your current orders."
+    "pausedBody": "You won't receive new work for now. Please finish your current orders.",
+    "coinsReasonSeed": "Demo coins",
+    "partnerEyebrow": "MechDost Partner"
   },
   "policies": {
     "returns": {
