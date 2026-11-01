@@ -102,6 +102,7 @@ beforeAll(async () => {
   F.cityStaff = await mkUser('fb-live-city-staff');
   F.otherCityStaff = await mkUser('fb-live-other-staff');
   F.globalStaff = await mkUser('fb-live-global-staff');
+  F.marketing = await mkUser('fb-live-marketing');
   const [shop] = await db
     .insert(s.shops)
     .values({
@@ -125,6 +126,8 @@ beforeAll(async () => {
     grantedBy: null,
   });
   await grantRole(t(), { userId: F.globalStaff, role: 'ops_manager', grantedBy: null });
+  // Staff without orders:read / partners:read (security review 2026-11-01: least privilege).
+  await grantRole(t(), { userId: F.marketing, role: 'marketing', grantedBy: null });
 });
 
 afterAll(async () => {
@@ -266,11 +269,13 @@ describe('live recipients come from Postgres (role-leak suite)', () => {
     expect(after).toContain('fb-live-shop');
     expect(after).not.toContain('fb-live-stranger');
     expect(after).not.toContain('fb-live-other-staff');
+    expect(after).not.toContain('fb-live-marketing');
   });
 
   it('a shop topic reaches its users and its city staff; unknown topics reach nobody', async () => {
     const shop = (await resolveLiveRecipients(t(), `shop:${F.shop!}`)).map((r) => r.firebaseUid).sort();
     expect(shop).toEqual(['fb-live-city-staff', 'fb-live-global-staff', 'fb-live-shop']);
+    expect(shop).not.toContain('fb-live-marketing');
     expect(await resolveLiveRecipients(t(), 'shop:not-a-uuid')).toEqual([]);
     expect(await resolveLiveRecipients(t(), `quote:${F.shop!}`)).toEqual([]);
   });

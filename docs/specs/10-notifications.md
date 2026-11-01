@@ -54,7 +54,7 @@ Recipients:
 | `user:{id}`       | That user                                                                                                                  |
 | `staff_city:{id}` | That city's staff                                                                                                          |
 
-Workshop and quote topics fail closed until their membership tables exist. Deactivated users receive nothing.
+Staff are chosen **by permission** (`orders:read` for order and city topics, `partners:read` for shop topics) through `role_permissions`, so custom DB roles count and staff without access (for example marketing or finance) get nothing. This follows a security review on 2026-11-01. Workshop and quote topics fail closed until their membership tables exist. Deactivated users receive nothing.
 
 **Data dictionary: `live_outbox`** (operational queue, not history; history lives in `*_events`):
 
@@ -78,3 +78,5 @@ Tests:
 - `packages/shared/test/live.test.ts`: contract, gate, backoff.
 - `packages/db/test/live.test.ts`: same-transaction, rollback, versions, SKIP LOCKED, lease retry, purge, thin-only CHECKs, role-leak recipients.
 - `apps/api/test/live.test.ts`: relay delivery, transport failure, inbox paths, config, RTDB rules.
+
+**Open follow-up (security review 2026-11-01):** when someone loses access (a shop user is removed, a staff role is revoked, a user is deactivated), delete their `inbox/{uid}` subtree. Also run a daily job that removes inbox nodes older than 7 days, so stale ids do not stay readable. The risk is low (opaque ids and versions only, data always refetched with permission checks), but it is built with the client transport step.

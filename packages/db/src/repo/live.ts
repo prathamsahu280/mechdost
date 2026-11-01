@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { parseLiveTopic, type LiveEvent, type LiveKind, type LivePing } from '@mechdost/shared/live';
-import { ROLES, type RoleKey } from '@mechdost/shared/rbac';
+import type { Permission } from '@mechdost/shared/rbac';
 import type { Tx } from './orders';
 
 /**
@@ -22,8 +22,6 @@ export interface LiveRecipient {
   userId: string;
   firebaseUid: string;
 }
-
-const STAFF_ROLE_KEYS = (Object.keys(ROLES) as RoleKey[]).filter((k) => ROLES[k].staff);
 
 interface ClaimedRow {
   id: number | string;
@@ -98,21 +96,21 @@ export async function oldestPendingLiveMs(db: Tx): Promise<number> {
   return Number(rowsOf<{ age: number | string }>(result)[0]?.age ?? 0);
 }
 
-const STAFF_IN_CITY = (cityId: ReturnType<typeof sql>) => sql`
+/**
+ * Staff who hold `permission` (through any role, including custom DB roles) for the city: least privilege, the
+ * same permission the API checks when the client refetches. Partner-scoped grants (shop/workshop) never count.
+ */
+const STAFF_WITH = (permission: Permission, cityId: ReturnType<typeof sql>) => sql`
   select u.id as user_id, u.firebase_uid from user_roles ur
-  join roles r on r.id = ur.role_id
+  join role_permissions rp on rp.role_id = ur.role_id and rp.permission_key = ${permission}
   join users u on u.id = ur.user_id
-  where r.key in (${sql.join(
-    STAFF_ROLE_KEYS.map((k) => sql`${k}`),
-    sql`, `,
-  )})
-    and ur.shop_id is null and ur.workshop_id is null
+  where ur.shop_id is null and ur.workshop_id is null
     and (ur.city_id is null or ur.city_id = (${cityId}))
     and u.status = 'active'`;
 
 /**
  * Who may see a topic, from Postgres only. Order: its customer, the shop holding an active offer or acceptance,
- * and staff of the order's city (or all-city staff). Shop: its users and its city's staff. Unknown topics resolve
+ * and city (or all-city) staff holding `orders:read`. Shop: its users and city staff holding `partners:read`. Unknown topics resolve
  * to nobody (fail closed).
  */
 export async function resolveLiveRecipients(db: Tx, topic: string): Promise<LiveRecipient[]> {
@@ -130,18 +128,18 @@ export async function resolveLiveRecipients(db: Tx, topic: string): Promise<Live
         join users u on u.id = su.user_id
         where a.order_id = ${orderId} and a.status in ('offered','accepted') and u.status = 'active'
       union
-      ${STAFF_IN_CITY(sql`select city_id from orders where id = ${orderId}`)}`;
+      ${STAFF_WITH('orders:read', sql`select city_id from orders where id = ${orderId}`)}`;
   } else if (parsed.kind === 'shop') {
     const shopId = parsed.id;
     query = sql`
       select u.id as user_id, u.firebase_uid from shop_users su join users u on u.id = su.user_id
         where su.shop_id = ${shopId} and u.status = 'active'
       union
-      ${STAFF_IN_CITY(sql`select city_id from shops where id = ${shopId}`)}`;
+      ${STAFF_WITH('partners:read', sql`select city_id from shops where id = ${shopId}`)}`;
   } else if (parsed.kind === 'user') {
     query = sql`select id as user_id, firebase_uid from users where id = ${parsed.id} and status = 'active'`;
   } else if (parsed.kind === 'staff_city') {
-    query = STAFF_IN_CITY(sql`${parsed.id}::uuid`);
+    query = STAFF_WITH('orders:read', sql`${parsed.id}::uuid`);
   } else {
     // workshop / quote topics resolve once their tables carry membership (Phase 2); fail closed until then.
     return [];
