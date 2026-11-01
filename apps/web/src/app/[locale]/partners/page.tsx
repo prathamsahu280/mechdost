@@ -6,6 +6,7 @@ import { Container, PageIntro } from '@/components/ui/page-intro';
 import type { Locale } from '@/i18n/routing';
 import { alternatesFor } from '@/lib/seo';
 import { site } from '@/lib/site';
+import { SettingValue } from '@/components/site/site-overrides';
 
 interface Props {
   params: Promise<{ locale: Locale }>;
@@ -58,7 +59,9 @@ export default async function PartnersPage() {
               {POINTS.map((n) => (
                 <li key={n} className="flex gap-3 text-sm text-ink">
                   <Check aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-success" strokeWidth={3} />
-                  {t(`${kind}Point${n}`)}
+                  {t.rich(`${kind}Point${n}`, {
+                    min: (chunks) => <SettingValue setting="acceptMinutes" fallback={chunks} />,
+                  })}
                 </li>
               ))}
             </ul>

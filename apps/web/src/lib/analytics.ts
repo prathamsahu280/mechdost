@@ -17,6 +17,12 @@ export interface ClientEvents {
   booking_confirmed: { code: string; workshop: string; demo: boolean };
   assistant_opened: { path: string };
   assistant_message: { intent: string; length: number };
+  /** Admin site customisation (spec 08 `admin_action`): which area changed and how many fields. */
+  admin_site_change: {
+    area: 'content' | 'layout' | 'categories' | 'settings';
+    action: 'save' | 'reset';
+    fields: number;
+  };
 }
 
 export type ClientEventName = keyof ClientEvents;

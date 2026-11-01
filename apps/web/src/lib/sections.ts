@@ -20,5 +20,9 @@ export const ADMIN_SECTIONS = [
   'quotes',
   'applications',
   'reviews',
+  // Site customisation (spec 08 "Content" + "Settings", hard rule 8).
+  'content',
+  'layout',
+  'settings',
 ] as const;
 export type AdminSection = (typeof ADMIN_SECTIONS)[number];

@@ -7,6 +7,7 @@ import { ProductCard } from '@/components/catalogue/product-card';
 import { ProductVisual } from '@/components/catalogue/product-visual';
 import { ReviewsSection } from '@/components/reviews/reviews-section';
 import { StarRating } from '@/components/reviews/star-rating';
+import { SettingValue } from '@/components/site/site-overrides';
 import { LocalLink } from '@/components/ui/local-link';
 import { Container } from '@/components/ui/page-intro';
 import { CATEGORY_SLUGS, DEMO_PRODUCTS, findProduct } from '@/demo/catalogue';
@@ -157,7 +158,9 @@ export default async function ProductPage({ params }: Props) {
                 data-track="product_bulk_quote"
                 className="font-bold text-accent-soft-text underline-offset-4 hover:underline"
               >
-                {t('bulkHint')}
+                {t.rich('bulkHint', {
+                  min: (chunks) => <SettingValue setting="bulkMinUnits" fallback={chunks} />,
+                })}
               </LocalLink>
             </p>
           </div>

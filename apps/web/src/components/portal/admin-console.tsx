@@ -28,6 +28,7 @@ import { DEMO_WORKSHOPS } from '@/demo/workshops';
 import { track } from '@/lib/analytics';
 import { formatDate, formatPrice } from '@/lib/format';
 import { ADMIN_SECTIONS, type AdminSection } from '@/lib/sections';
+import { ContentEditor, LayoutEditor, SettingsEditor, type ContentDefaults } from './admin-site';
 import { PortalGuard, portalCard, portalField, portalPrimary, portalQuiet, useNow } from './portal-guard';
 
 const SECTION_EMOJI: Record<AdminSection, string> = {
@@ -37,6 +38,9 @@ const SECTION_EMOJI: Record<AdminSection, string> = {
   quotes: '💬',
   applications: '🤝',
   reviews: '⭐',
+  content: '✏️',
+  layout: '🧩',
+  settings: '⚙️',
 };
 
 /**
@@ -44,11 +48,18 @@ const SECTION_EMOJI: Record<AdminSection, string> = {
  * reroute or reject with a customer message), declined service requests, bulk-quote negotiation with an offer
  * builder, partner applications and review moderation.
  */
-export function AdminConsole({ section }: { section: AdminSection }) {
+export function AdminConsole({
+  section,
+  contentDefaults,
+}: {
+  section: AdminSection;
+  /** Default site text in both locales (only passed for the content section). */
+  contentDefaults?: ContentDefaults;
+}) {
   const path = `/admin${section === 'overview' ? '' : `/${section}`}`;
   return (
     <PortalGuard role="admin" path={path}>
-      {() => (
+      {(account) => (
         <div className="grid gap-6 nav:grid-cols-[220px_minmax(0,1fr)] nav:items-start">
           <AdminNav current={section} />
           <div className="min-w-0 space-y-6">
@@ -58,6 +69,11 @@ export function AdminConsole({ section }: { section: AdminSection }) {
             {section === 'quotes' ? <QuoteDesk /> : null}
             {section === 'applications' ? <Applications /> : null}
             {section === 'reviews' ? <Reviews /> : null}
+            {section === 'content' && contentDefaults ? (
+              <ContentEditor actor={account.name} defaults={contentDefaults} />
+            ) : null}
+            {section === 'layout' ? <LayoutEditor actor={account.name} /> : null}
+            {section === 'settings' ? <SettingsEditor actor={account.name} /> : null}
           </div>
         </div>
       )}

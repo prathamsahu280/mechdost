@@ -1,5 +1,6 @@
 'use client';
 
+import { useCategoryEmoji } from '@/demo/site-config';
 import { CATEGORY_EMOJI, UI_EMOJI } from '@/lib/emoji';
 import { MessageCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -63,6 +64,7 @@ export function ShopBrowser({
 }) {
   const c = useTranslations('catalogue');
   const cat = useTranslations('categories');
+  const emoji = useCategoryEmoji();
   const shop = useTranslations('pages.shop');
   const product = useTranslations('product');
   const [state, setState] = useState<State>(initial);
@@ -200,7 +202,7 @@ export function ShopBrowser({
                   className={chip(active)}
                 >
                   <span aria-hidden="true" className="text-[15px] leading-none">
-                    {k ? CATEGORY_EMOJI[k] : UI_EMOJI.all}
+                    {k ? emoji(k, CATEGORY_EMOJI[k]) : UI_EMOJI.all}
                   </span>
                   {k ? cat(k) : cat('all')}
                 </a>

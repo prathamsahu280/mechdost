@@ -14,6 +14,7 @@ import { getPathname } from '@/i18n/navigation';
 import { routing } from '@/i18n/routing';
 import { PRIMARY_NAV } from '@/lib/nav';
 import { site } from '@/lib/site';
+import { SITE_LAYOUT_SCRIPT } from '@/lib/site-layout';
 import { THEME_INIT_SCRIPT } from '@/lib/theme';
 import './globals.css';
 
@@ -91,6 +92,8 @@ export default async function LocaleLayout({
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        {/* Admin home layout (demo, browser-stored) applied as CSS before first paint — no React JS. */}
+        <script dangerouslySetInnerHTML={{ __html: SITE_LAYOUT_SCRIPT }} />
       </head>
       <body>
         <a

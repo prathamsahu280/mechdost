@@ -4,6 +4,7 @@ import { Minus, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { CATEGORY_KEYS, CATEGORY_SLUGS } from '@/demo/catalogue';
+import { useCategoryEmoji, useSiteSettings } from '@/demo/site-config';
 import { priceCart, removeFromCart, setQuantity, useCart, MAX_QTY } from '@/demo/store';
 import { CATEGORY_EMOJI, UI_EMOJI } from '@/lib/emoji';
 import { formatPrice } from '@/lib/format';
@@ -18,6 +19,8 @@ export function CartView() {
   const c = useTranslations('catalogue');
   const q = useTranslations('quote');
   const cat = useTranslations('categories');
+  const emoji = useCategoryEmoji();
+  const settings = useSiteSettings();
   const locale = useLocale();
   const lines = useCart();
   const { priced, subtotalPaise, deliveryPaise, totalPaise } = priceCart(lines);
@@ -51,7 +54,7 @@ export function CartView() {
                 data-track={`cart_empty_${key}`}
                 className="press inline-flex min-h-11 items-center gap-2 rounded-pill border border-line-card bg-surface px-4 text-sm font-bold text-ink hover:bg-pill"
               >
-                <span aria-hidden="true">{CATEGORY_EMOJI[key]}</span>
+                <span aria-hidden="true">{emoji(key, CATEGORY_EMOJI[key])}</span>
                 {cat(key)}
               </Link>
             </li>
@@ -156,7 +159,11 @@ export function CartView() {
             <dd className="font-heading text-xl font-extrabold text-ink">{formatPrice(totalPaise)}</dd>
           </div>
         </dl>
-        {deliveryPaise > 0 ? <p className="mt-3 text-xs text-muted">{t('freeDeliveryHint')}</p> : null}
+        {deliveryPaise > 0 ? (
+          <p className="mt-3 text-xs text-muted">
+            {t('freeDeliveryHint', { amount: formatPrice(settings.freeDeliveryFromPaise) })}
+          </p>
+        ) : null}
         <Link
           href={`${base}/checkout`}
           onClick={() => {

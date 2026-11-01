@@ -372,7 +372,13 @@ export function searchProducts(opts: {
   return sorted;
 }
 
-/** Demo delivery rule: free from ₹999, else ₹49 (spec 03 makes this a per-city setting). */
-export function deliveryFeePaise(subtotalPaise: number): number {
-  return subtotalPaise === 0 || subtotalPaise >= 99_900 ? 0 : 4_900;
+/** Delivery rule: free from the threshold, else the flat fee. Admin-set (demo: /admin/settings; spec 03 per city). */
+export function deliveryFeePaise(
+  subtotalPaise: number,
+  rule: { deliveryFeePaise: number; freeDeliveryFromPaise: number } = {
+    deliveryFeePaise: 4_900,
+    freeDeliveryFromPaise: 99_900,
+  },
+): number {
+  return subtotalPaise === 0 || subtotalPaise >= rule.freeDeliveryFromPaise ? 0 : rule.deliveryFeePaise;
 }

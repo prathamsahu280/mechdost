@@ -6,6 +6,7 @@
 import { publicCode } from '@mechdost/shared/ids';
 import { useSyncExternalStore } from 'react';
 import { deliveryFeePaise, findProduct } from './catalogue';
+import { siteSettings } from './site-config';
 
 export const MAX_LINES = 20;
 export const MAX_QTY = 99;
@@ -444,7 +445,8 @@ export function priceCart(lines: readonly CartLine[]) {
     return p ? [{ product: p, qty: l.qty, linePaise: p.pricePaise * l.qty }] : [];
   });
   const subtotalPaise = priced.reduce((s, l) => s + l.linePaise, 0);
-  const deliveryPaise = deliveryFeePaise(subtotalPaise);
+  // Admin-set fee and threshold; placed orders keep the values snapshotted at placement.
+  const deliveryPaise = deliveryFeePaise(subtotalPaise, siteSettings());
   return { priced, subtotalPaise, deliveryPaise, totalPaise: subtotalPaise + deliveryPaise };
 }
 
@@ -531,9 +533,6 @@ export const demoStorage = {
 // ── Routing & partner actions (spec 04 / 06). Each transition checks the current state first, like the
 // conditional UPDATEs in packages/db (a stale or repeated action is a no-op that returns false).
 
-/** Shop acceptance timer (settings.acceptance_timeout_min, admin-editable in Phase 1). */
-export const SHOP_ACCEPT_MINUTES = 15;
-
 export type RoutingState = 'needs_routing' | 'awaiting_shop' | 'expired' | 'rejected' | 'confirmed';
 
 export function routingState(order: DemoOrder, now = Date.now()): RoutingState {
@@ -577,7 +576,9 @@ export function routeOrder(code: string, shopSlug: string): boolean {
         slug: shopSlug,
         status: 'offered',
         offeredAt: now.toISOString(),
-        expiresAt: new Date(now.getTime() + SHOP_ACCEPT_MINUTES * 60_000).toISOString(),
+        // Admin-set acceptance timer (/admin/settings); fixed at offer time, so a later change never moves
+        // the deadline of an order already offered.
+        expiresAt: new Date(now.getTime() + siteSettings().acceptMinutes * 60_000).toISOString(),
       },
     };
   });

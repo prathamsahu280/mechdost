@@ -7,6 +7,7 @@ import { CartPill } from '../commerce/cart-pill';
 import { LanguageSwitcher } from './language-switcher';
 import { ThemeToggle } from './theme-toggle';
 import { NavLinks, type NavItem } from './nav-links';
+import { SiteText } from './site-overrides';
 
 /** Concept brand lock-up: orange "m↗" mark, MechDost wordmark, tracked tagline. */
 export function BrandMark() {
@@ -33,6 +34,7 @@ export function BrandMark() {
 
 export function AnnouncementBar({ city }: { city: string }) {
   const t = useTranslations('announcement');
+  const locale = useLocale();
   return (
     <div className="bg-navy px-[5%] py-2.5 text-center text-white">
       <p className="eyebrow flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[8px] tracking-[1px] tab:text-[10px] tab:tracking-[1.8px]">
@@ -41,13 +43,13 @@ export function AnnouncementBar({ city }: { city: string }) {
           <span aria-hidden="true" className="text-[12px] tracking-normal">
             {UI_EMOJI.orders}
           </span>
-          {t('orders')}
+          <SiteText k="announcement.orders" locale={locale} fallback={t('orders')} />
         </span>
         <span className="inline-flex items-center gap-1.5">
           <span aria-hidden="true" className="text-[12px] tracking-normal">
             {UI_EMOJI.workshops}
           </span>
-          {t('workshops', { city })}
+          <SiteText k="announcement.workshops" locale={locale} fallback={t('workshops', { city })} />
         </span>
       </p>
     </div>

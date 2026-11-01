@@ -1,7 +1,13 @@
 import { useTranslations } from 'next-intl';
+import type { ReactNode } from 'react';
 import { ButtonLink } from '../ui/button-link';
 import { LocalLink } from '../ui/local-link';
 import { Container } from '../ui/page-intro';
+import { SettingValue } from '../site/site-overrides';
+
+/** Rich-text tags for admin settings inside copy: the server prints the default, the island the live value. */
+const liveMinutes = (chunks: ReactNode) => <SettingValue setting="acceptMinutes" fallback={chunks} />;
+const liveUnits = (chunks: ReactNode) => <SettingValue setting="bulkMinUnits" fallback={chunks} />;
 
 const STOPS = [
   { n: 1, emoji: '🛒' },
@@ -49,7 +55,9 @@ export function OrderRoute() {
                     {String(n).padStart(2, '0')}
                   </span>
                   <h3 className="mt-1 font-heading text-lg font-bold">{t(`step${n}Title`)}</h3>
-                  <p className="mt-1 text-sm leading-relaxed text-hero-copy">{t(`step${n}Body`)}</p>
+                  <p className="mt-1 text-sm leading-relaxed text-hero-copy">
+                    {t.rich(`step${n}Body`, { min: liveMinutes })}
+                  </p>
                 </span>
               </li>
             ))}
@@ -64,7 +72,7 @@ export function OrderRoute() {
               data-track="home_route_bulk"
               className="inline-flex min-h-11 items-center text-sm font-bold text-white underline-offset-4 hover:underline"
             >
-              {t('bulk')}
+              {t.rich('bulk', { min: liveUnits })}
             </LocalLink>
           </div>
         </div>

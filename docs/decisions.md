@@ -137,6 +137,13 @@ Append-only. Newest at the bottom. Each entry: date, decision, reason, alternati
 - **Partners page**: each partner type shows an emoji, three concrete benefits and its application button, followed by "How joining works" (apply → we verify → set up → go live) and the support number.
 - **Workshops promise strip** gains emoji (🔍 👍 📒). No new colours, fonts or radii (rule 2).
 
+## 2026-11-01 — Admin site customisation, demo first (user: "demo now, real later")
+
+- Admin can change, without code: announcement bar and home headline text (English + Hindi), home section order and visibility, which 3–6 categories appear on the home page and their emoji, the shop acceptance time, the bulk quote minimum, the delivery fee and the free-delivery threshold. Details in spec 08 "Site customisation".
+- Settings apply to new orders only (timer fixed at offer time, fee snapshotted on the order); every change is validated, version-checked per area and audited.
+- The home page stays a static Server Component: layout via a pre-paint CSS script, text/emoji/numbers via tiny client islands. Phase 1 replaces both with the content API + ISR.
+- Copy that states these numbers ("within 15 minutes", "10 or more", "from ₹999") now renders the live setting.
+
 ## PENDING DECISIONS (ask "what's pending" to review)
 
 | #   | Topic                                                                                                                                                                                       | Leaning                                                                             | When                                 |

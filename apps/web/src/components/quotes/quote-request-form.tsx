@@ -5,12 +5,16 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useRef, useState, type SyntheticEvent } from 'react';
 import { DEMO_PRODUCTS, findProduct } from '@/demo/catalogue';
+import { DEFAULT_SETTINGS, useSiteSettings } from '@/demo/site-config';
 import { createQuote, useCart } from '@/demo/store';
 import { track } from '@/lib/analytics';
 import { formatPrice } from '@/lib/format';
 
-/** settings.bulk_min_units default (inbox Q20); admin-editable once settings ship (spec 08). */
-export const BULK_MIN_UNITS = 10;
+/**
+ * Prefill quantity: the default minimum (Q20). Computed during server rendering, so it cannot read the admin's
+ * browser-stored setting; validation and hints use the live setting (/admin/settings).
+ */
+const PREFILL_QTY = DEFAULT_SETTINGS.bulkMinUnits;
 const MAX_LINES = 20;
 
 type Field = 'items' | 'name' | 'phone' | 'pincode';
@@ -21,8 +25,8 @@ interface Line {
 
 function initialLines(product: string | null, fromCart: boolean, cart: readonly Line[]): Line[] {
   if (fromCart && cart.length > 0) return cart.map((l) => ({ slug: l.slug, qty: Math.max(l.qty, 1) }));
-  if (product && findProduct(product)) return [{ slug: product, qty: BULK_MIN_UNITS }];
-  return [{ slug: '', qty: BULK_MIN_UNITS }];
+  if (product && findProduct(product)) return [{ slug: product, qty: PREFILL_QTY }];
+  return [{ slug: '', qty: PREFILL_QTY }];
 }
 
 /**
@@ -35,6 +39,7 @@ export function QuoteRequestForm() {
   const router = useRouter();
   const params = useSearchParams();
   const cart = useCart();
+  const minUnits = useSiteSettings().bulkMinUnits;
   const fromCart = params.get('from') === 'cart';
   const [lines, setLines] = useState<Line[]>(() => initialLines(params.get('product'), fromCart, cart));
   // The cart is read from storage after hydration: prefill once it arrives.
@@ -67,7 +72,7 @@ export function QuoteRequestForm() {
       .replace(/^91(?=\d{10}$)/, '');
     const next: Partial<Record<Field, string>> = {};
     if (chosen.length === 0) next.items = t('errItems');
-    else if (units < BULK_MIN_UNITS) next.items = t('errMin', { min: BULK_MIN_UNITS });
+    else if (units < minUnits) next.items = t('errMin', { min: minUnits });
     if (value('name').length < 2) next.name = t('errName');
     if (!/^[6-9]\d{9}$/.test(phone)) next.phone = t('errPhone');
     if (!/^[1-9]\d{5}$/.test(value('pincode'))) next.pincode = t('errPincode');
@@ -117,7 +122,7 @@ export function QuoteRequestForm() {
 
       <fieldset id="quote-items" tabIndex={-1} {...aria('items')}>
         <legend className="font-heading text-lg font-extrabold text-ink">{t('items')}</legend>
-        <p className="mt-1 text-sm text-muted">{t('minUnits', { min: BULK_MIN_UNITS })}</p>
+        <p className="mt-1 text-sm text-muted">{t('minUnits', { min: minUnits })}</p>
         <ul className="mt-4 space-y-3">
           {lines.map((line, i) => {
             const product = findProduct(line.slug);
@@ -184,7 +189,7 @@ export function QuoteRequestForm() {
           <button
             type="button"
             onClick={() => {
-              setLines((ls) => [...ls, { slug: '', qty: BULK_MIN_UNITS }]);
+              setLines((ls) => [...ls, { slug: '', qty: minUnits }]);
             }}
             className="press mt-3 inline-flex min-h-11 items-center rounded-button border border-dashed border-input-border px-4 text-sm font-bold text-ink hover:bg-pill"
           >

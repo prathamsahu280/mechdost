@@ -4,6 +4,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { getPathname } from '@/i18n/navigation';
 import heroImage from '../../../public/images/automotive-hero.jpg';
 import insetImage from '../../../public/images/motorcycle.jpg';
+import { SiteText } from '../site/site-overrides';
 import { ButtonLink } from '../ui/button-link';
 
 /**
@@ -20,17 +21,22 @@ export function Hero({ city }: { city: string }) {
     <section aria-labelledby="hero-title" className="px-[3%] pt-5 tab:pt-6">
       <div className="mx-auto grid max-w-[1600px] overflow-hidden rounded-[18px] bg-navy text-white tab:rounded-hero nav:grid-cols-2">
         <div className="px-[7%] py-12 tab:py-14 nav:px-[6%] nav:py-16">
-          <p className="eyebrow text-accent-light">{t('eyebrow')}</p>
+          {/* Admin-editable text (demo: /admin/content); the defaults come from the locale files. */}
+          <p className="eyebrow text-accent-light">
+            <SiteText k="hero.eyebrow" locale={locale} fallback={t('eyebrow')} />
+          </p>
           <h1
             id="hero-title"
             className="mt-5 font-heading text-[clamp(40px,3.8vw,60px)] leading-[1.02] font-extrabold tracking-[-0.045em]"
           >
-            {t('titleLine1')}
+            <SiteText k="hero.titleLine1" locale={locale} fallback={t('titleLine1')} />
             <br />
-            <em className="text-accent-light not-italic">{t('titleLine2')}</em>
+            <em className="text-accent-light not-italic">
+              <SiteText k="hero.titleLine2" locale={locale} fallback={t('titleLine2')} />
+            </em>
           </h1>
           <p className="mt-6 max-w-xl text-[15px] leading-relaxed text-hero-copy tab:text-base">
-            {t('lead', { city })}
+            <SiteText k="hero.lead" locale={locale} fallback={t('lead', { city })} />
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <ButtonLink href="/shop" data-track="hero_explore_products" className="min-h-12 px-6">
