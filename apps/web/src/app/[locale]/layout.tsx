@@ -7,6 +7,7 @@ import type { ReactNode } from 'react';
 import { assistantCopy } from '@/assistant/server-copy';
 import { AssistantLauncher } from '@/components/assistant/assistant-launcher';
 import { AnalyticsListener } from '@/components/site/analytics-listener';
+import { ConsentBanner } from '@/components/site/consent-banner';
 import { Footer } from '@/components/site/footer';
 import { AnnouncementBar, Header } from '@/components/site/header';
 import { MobileTabBar } from '@/components/site/mobile-tab-bar';
@@ -82,6 +83,7 @@ export default async function LocaleLayout({
     label: tabs(item.key),
   }));
   const city = (await getTranslations('cities'))(site.defaultCity);
+  const consent = await getTranslations('consent');
 
   return (
     // suppressHydrationWarning: the pre-paint script may set data-theme before React hydrates.
@@ -111,6 +113,15 @@ export default async function LocaleLayout({
         <MobileTabBar label={tabs('label')} items={tabItems} />
         <AssistantLauncher copy={await assistantCopy(locale)} />
         <AnalyticsListener locale={locale} />
+        <ConsentBanner
+          copy={{
+            label: consent('label'),
+            title: consent('title'),
+            body: consent('body'),
+            allow: consent('allow'),
+            essential: consent('essential'),
+          }}
+        />
       </body>
     </html>
   );

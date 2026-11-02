@@ -1,4 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
+import { CONSENT_DECIDED } from './fixtures/consent';
 import { expect, test, type Page } from '@playwright/test';
 
 const WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
@@ -170,6 +171,7 @@ test.describe('bulk quote → negotiation → order (spec 19)', () => {
 test.describe('workshop map (spec 06)', () => {
   test('is fully interactive: zoom, pins, popups, locate me, show all', async ({ browser }) => {
     const context = await browser.newContext({
+      storageState: CONSENT_DECIDED,
       viewport: { width: 1440, height: 900 },
       permissions: ['geolocation'],
       geolocation: { latitude: 21.238, longitude: 81.6337 },
@@ -238,6 +240,7 @@ test.describe('workshop map (spec 06)', () => {
     browser,
   }) => {
     const context = await browser.newContext({
+      storageState: CONSENT_DECIDED,
       viewport: { width: 1440, height: 900 },
       permissions: ['geolocation'],
       // Salasar Greens, Sarona: right next to Sarona Car Care, where the old camera kept flying.
@@ -311,7 +314,10 @@ test.describe('theme and assistant', () => {
   });
 
   test('follows the system dark preference without a saved choice', async ({ browser }) => {
-    const context = await browser.newContext({ colorScheme: 'dark' });
+    const context = await browser.newContext({
+      storageState: CONSENT_DECIDED,
+      colorScheme: 'dark',
+    });
     const page = await context.newPage();
     await page.goto('/');
     const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);

@@ -444,3 +444,8 @@
   color: #101f34;
   background: #ffffffcc;
 }
+
+/* While the privacy choice is open, the floating assistant button steps aside (consent-banner.tsx). */
+html[data-consent-open] .assistant-launcher {
+  visibility: hidden;
+}

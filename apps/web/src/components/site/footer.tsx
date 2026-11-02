@@ -4,6 +4,7 @@ import { CATEGORY_SLUGS } from '@/demo/catalogue';
 import { companyFacts, site, whatsappLink } from '@/lib/site';
 import { ExternalButtonLink } from '../ui/button-link';
 import { LocalLink } from '../ui/local-link';
+import { ConsentChoicesButton } from './consent-banner';
 import { BrandMark } from './header';
 import { ThemeToggle } from './theme-toggle';
 
@@ -21,6 +22,7 @@ interface FooterLink {
  */
 export function Footer() {
   const t = useTranslations('footer');
+  const consent = useTranslations('consent');
   const wa = useTranslations('whatsapp');
   const theme = useTranslations('theme');
   const nav = useTranslations('nav');
@@ -158,7 +160,8 @@ export function Footer() {
             </span>
           </div>
         </div>
-        <p className="mt-6 text-xs leading-relaxed text-muted">{t('credits')}</p>
+        <ConsentChoicesButton label={consent('choices')} />
+        <p className="mt-2 text-xs leading-relaxed text-muted">{t('credits')}</p>
         <p className="mt-2 text-xs text-muted">{t('copyright', { year, company })}</p>
       </div>
     </footer>

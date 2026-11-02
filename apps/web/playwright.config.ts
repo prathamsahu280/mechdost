@@ -10,7 +10,13 @@ export default defineConfig({
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? 'github' : 'list',
-  use: { baseURL: 'http://localhost:3100', trace: 'retain-on-failure' },
+  // Visitors in these suites have already made their privacy choice, so the consent banner (fixed at the bottom)
+  // does not cover what they click; e2e/consent.spec.ts starts from a clean browser to test the banner itself.
+  use: {
+    baseURL: 'http://localhost:3100',
+    trace: 'retain-on-failure',
+    storageState: 'e2e/fixtures/consent-decided.json',
+  },
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } } },
     { name: 'mobile', use: { ...devices['Pixel 7'], viewport: { width: 390, height: 844 } } },

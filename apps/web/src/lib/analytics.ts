@@ -1,11 +1,12 @@
 /**
  * First-party event tracking (docs/specs/12-analytics-events.md, hard rule 9).
- * Events are validated against this typed catalogue and queued. Transport (`POST /v1/events` via sendBeacon +
- * PostHog) and the consent gate are wired when the events endpoint ships (Phase 1); until then every event is
- * also dispatched as a `mechdost:track` DOM event so tests and dev tools can observe it.
+ * Events are typed by the shared registry and queued; each is also dispatched as a `mechdost:track` DOM event
+ * (tests, dev tools). After the visitor allows analytics (consent banner), `event-transport.ts` sends them to
+ * `POST /v1/events` when the API is configured. PostHog forwarding comes later.
  * No PII in props: ids, paths and lengths only — never phone numbers, emails or names.
  */
 import type { ClientEventName, ClientEvents } from '@mechdost/shared/analytics';
+import { forward } from './event-transport';
 // The catalogue (names + prop shapes) lives in packages/shared so the API validates the same events
 // (`CLIENT_EVENT_SCHEMAS`). Type-only import: no validator code reaches the browser bundle.
 
@@ -27,6 +28,7 @@ export function track<E extends ClientEventName>(event: E, props: ClientEvents[E
   if (queue.length > MAX_QUEUE) queue.shift();
   window.dispatchEvent(new CustomEvent<TrackedEvent>('mechdost:track', { detail: entry }));
   persistDemo(entry);
+  forward(entry);
 }
 
 /**

@@ -28,7 +28,7 @@ export function AnalyticsListener({ locale }: { locale: SiteLocale }) {
       const source = form?.dataset.trackSearch;
       if (!form || !source) return;
       const query = new FormData(form).get('q');
-      if (typeof query === 'string') track('search', { query: query.trim().slice(0, 120), source });
+      if (typeof query === 'string') track('search', { query: query.trim().slice(0, 80), source });
     }
     document.addEventListener('click', onClick, { capture: true });
     document.addEventListener('submit', onSubmit, { capture: true });

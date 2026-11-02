@@ -107,3 +107,7 @@ User (2026-11-02, on `/hi/workshops`): "its in hindi but i still see quite some 
 ### Switch (2026-11-03)
 
 On/off settings (admin Notifications) use a native checkbox with `role="switch"` and a visible text label. The track is 48×28 px, using `--color-line` when off and `--color-accent-button` when on. The thumb is white with a shadow. Focus uses the `--color-focus` outline on the visible track. A short "On / Off" text sits next to it, so state is never shown by colour alone. The whole label is the tap target (≥ 44 px).
+
+### Privacy choice banner (2026-11-03)
+
+Card (`rounded-card`, `border-line`, `bg-surface`, `shadow-dialog`) fixed above the mobile tab bar (full width with a 12 px inset) or bottom-left on desktop (max 28 rem). Heading 15 px Manrope extra-bold, body `text-sm text-muted`, then **two equal buttons** side by side (`border-ink`, `text-ink`, same size; never one filled and one quiet). Not a modal and never auto-dismissed. While it is open the floating assistant button is hidden (`html[data-consent-open]`). Reopened from "Privacy choices" in the footer's legal area. Copy in `consent.*` (en/hi).

@@ -1293,5 +1293,13 @@
     "inboxEmpty": "Nothing waiting. New requests appear here.",
     "from": "From {name}",
     "openThread": "Open {code}"
+  },
+  "consent": {
+    "label": "Privacy choice",
+    "title": "Your privacy choice",
+    "body": "We use essential storage to run the site (your cart, language and sign-in). With your permission we also count page visits and clicks — never your name, number or address — to improve MechDost. You can change this any time with “Privacy choices” at the bottom of the page.",
+    "allow": "Allow analytics",
+    "essential": "Essential only",
+    "choices": "Privacy choices"
   }
 }
