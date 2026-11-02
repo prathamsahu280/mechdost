@@ -5,47 +5,11 @@
  * also dispatched as a `mechdost:track` DOM event so tests and dev tools can observe it.
  * No PII in props: ids, paths and lengths only — never phone numbers, emails or names.
  */
-export interface ClientEvents {
-  page_view: { path: string; locale: string };
-  click: { id: string; path: string };
-  search: { query: string; source: string };
-  add_to_cart: { slug: string; qty: number };
-  remove_from_cart: { slug: string };
-  begin_checkout: { items: number; valuePaise: number };
-  purchase: { code: string; valuePaise: number; demo: boolean };
-  booking_started: { workshop: string };
-  booking_confirmed: { code: string; workshop: string; demo: boolean };
-  assistant_opened: { path: string };
-  assistant_message: { intent: string; length: number };
-  /** Workshop map interactions (bug 2026-11-02: map actions were untracked). Workshop = slug, never a name. */
-  map_action: {
-    action: 'show_on_map' | 'pin_select' | 'locate' | 'show_all' | 'mode_change';
-    workshop?: string;
-    mode?: 'map' | 'satellite';
-  };
-  /** "Use my location" result: whether a PIN code was found (the PIN itself is not sent: quasi-identifier). */
-  location_detected: { source: 'finder' | 'map'; pincodeFound: boolean };
-  /** Admin site customisation (spec 08 `admin_action`): which area changed and how many fields. */
-  admin_site_change: {
-    area: 'content' | 'layout' | 'categories' | 'settings';
-    action: 'save' | 'reset';
-    fields: number;
-  };
-  /** Support requests (spec 09): codes only, never the message text. */
-  support_ticket: {
-    action: 'created' | 'customer_reply' | 'staff_reply' | 'internal_note' | 'status';
-    kind?: string;
-    channel?: 'web' | 'whatsapp';
-    to?: string;
-  };
-  /** Admin → Notifications (spec 10, hard rule 8): which WhatsApp event changed and how; `budget` for the alert. */
-  admin_notifications_change: {
-    target: string;
-    action: 'saved' | 'enabled' | 'disabled' | 'budget';
-  };
-}
+import type { ClientEventName, ClientEvents } from '@mechdost/shared/analytics';
+// The catalogue (names + prop shapes) lives in packages/shared so the API validates the same events
+// (`CLIENT_EVENT_SCHEMAS`). Type-only import: no validator code reaches the browser bundle.
 
-export type ClientEventName = keyof ClientEvents;
+export type { ClientEventName, ClientEvents };
 
 export interface TrackedEvent<E extends ClientEventName = ClientEventName> {
   event: E;

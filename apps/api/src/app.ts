@@ -14,6 +14,7 @@ import { adminOrderRoutes } from './routes/admin-orders';
 import { assistantRoutes } from './routes/assistant';
 import { catalogueRoutes } from './routes/catalogue';
 import { checkoutRoutes } from './routes/checkout';
+import { eventRoutes } from './routes/events';
 import { meRoutes } from './routes/me';
 import { shopInventoryRoutes } from './routes/shop-inventory';
 import { shopOrderRoutes } from './routes/shop-orders';
@@ -64,6 +65,7 @@ export function createApp(deps: AppDeps) {
   v1.route('/', meRoutes(deps, sessions));
   v1.route('/', assistantRoutes(deps));
   v1.route('/', catalogueRoutes(deps));
+  v1.route('/', eventRoutes(deps));
   v1.route('/', checkoutRoutes(deps, sessions));
   v1.route('/', adminNotificationRoutes(deps, sessions));
   v1.route('/', supportRoutes(deps, sessions));

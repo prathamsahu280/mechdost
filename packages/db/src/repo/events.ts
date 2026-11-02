@@ -52,3 +52,38 @@ export async function ensureEventPartitions(db: Tx, monthsAhead = 3): Promise<nu
   );
   return num(row?.created ?? 0);
 }
+
+export interface ClientEventRow {
+  event: string;
+  occurredAt: Date;
+  page: string | null;
+  props: Record<string, unknown>;
+}
+
+/** Store a validated batch of web/app events in one statement (the API validated names and props). */
+export async function recordClientEvents(
+  db: Tx,
+  input: {
+    source: 'web' | 'app';
+    anonymousId: string;
+    sessionId: string | null;
+    consentVersion: string | null;
+    rows: readonly ClientEventRow[];
+  },
+): Promise<number> {
+  if (input.rows.length === 0) return 0;
+  await db.insert(events).values(
+    input.rows.map((r) => ({
+      id: uuidv7(),
+      occurredAt: r.occurredAt,
+      source: input.source,
+      event: r.event,
+      anonymousId: input.anonymousId,
+      sessionId: input.sessionId,
+      page: r.page,
+      props: r.props,
+      consentVersion: input.consentVersion,
+    })),
+  );
+  return input.rows.length;
+}
