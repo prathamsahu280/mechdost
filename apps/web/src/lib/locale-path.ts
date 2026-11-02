@@ -24,7 +24,8 @@ export function stripLocale(pathname: string): string {
 
 /**
  * The same page in another language. English links go through `/en/…`: the locale proxy redirects that to the
- * unprefixed URL *and* updates the NEXT_LOCALE cookie, so a Hindi cookie cannot bounce the visitor back.
+ * unprefixed URL *and* updates the NEXT_LOCALE cookie, so a Hindi cookie cannot bounce the visitor back. The cookie
+ * is only written on document requests, so the link must be a plain `<a>` (see LanguageSwitcher).
  */
 export function switchLocalePath(pathname: string, target: SiteLocale): string {
   const base = stripLocale(pathname);

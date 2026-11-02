@@ -5,6 +5,7 @@ import { getPathname } from '@/i18n/navigation';
 import heroImage from '../../../public/images/site/hero-workshop.jpg';
 import { SiteText } from '../site/site-overrides';
 import { LocalLink } from '../ui/local-link';
+import { HeroVehicleSelect } from './hero-vehicle-select';
 
 const POPULAR = [
   { key: 'oil', q: 'engine oil' },
@@ -46,14 +47,14 @@ export function Hero({ city }: { city: string }) {
           />
         </div>
 
-        <div className="relative grid gap-10 px-[6%] pt-12 pb-8 tab:pt-16 nav:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)] nav:px-[5%] nav:pt-20 nav:pb-16">
-          <div className="max-w-[640px]">
+        <div className="relative grid grid-cols-1 gap-6 px-[6%] pt-7 pb-6 tab:pt-10 tab:pb-8 nav:grid-cols-[minmax(0,1fr)_minmax(0,0.7fr)] nav:px-[5%] nav:pt-[clamp(28px,5vh,56px)] nav:pb-[clamp(24px,4.5vh,48px)]">
+          <div className="min-w-0 max-w-[720px]">
             <p className="text-sm font-bold text-hero-accent">
               <SiteText k="hero.eyebrow" locale={locale} fallback={t('eyebrow')} />
             </p>
             <h1
               id="hero-title"
-              className="mt-4 font-heading text-[clamp(38px,5vw,72px)] leading-[0.98] font-extrabold tracking-[-0.045em]"
+              className="mt-3 font-heading text-[clamp(30px,min(4.6vw,6.2vh),60px)] leading-[1.02] font-extrabold tracking-[-0.04em] tab:mt-4"
             >
               <SiteText k="hero.titleLine1" locale={locale} fallback={t('titleLine1')} />
               <br />
@@ -61,12 +62,12 @@ export function Hero({ city }: { city: string }) {
                 <SiteText k="hero.titleLine2" locale={locale} fallback={t('titleLine2')} />
               </span>
             </h1>
-            <p className="mt-6 max-w-[52ch] text-[15px] leading-relaxed text-hero-text tab:text-base">
+            <p className="mt-3 max-w-[56ch] text-[14px] leading-relaxed text-hero-text tab:mt-4 tab:text-[15px]">
               <SiteText k="hero.lead" locale={locale} fallback={t('lead', { city })} />
             </p>
 
             {/* Search console */}
-            <div className="mt-9 rounded-[18px] bg-surface p-2 text-ink shadow-dialog">
+            <div className="mt-5 rounded-[18px] bg-surface p-2 text-ink shadow-dialog tab:mt-6">
               <fieldset className="grid grid-cols-2 gap-1 rounded-[12px] bg-pill p-1">
                 <legend className="sr-only">{t('consoleLabel')}</legend>
                 <label className="hero-mode">
@@ -114,25 +115,25 @@ export function Hero({ city }: { city: string }) {
                     autoComplete="off"
                     enterKeyHint="search"
                     placeholder={t('searchPlaceholder')}
-                    className="min-h-12 w-full min-w-0 flex-1 rounded-input border border-input-border bg-surface px-3.5 text-[15px] text-ink placeholder:text-muted"
+                    className="min-h-11 w-full min-w-0 flex-1 rounded-input border border-input-border bg-surface px-3.5 text-[15px] text-ink placeholder:text-muted"
                   />
                   <button
                     type="submit"
                     aria-label={t('searchSubmit')}
-                    className="press inline-flex min-h-12 min-w-12 items-center justify-center rounded-input bg-accent-button px-4 text-white hover:bg-accent-button-hover"
+                    className="press inline-flex min-h-11 min-w-11 items-center justify-center rounded-input bg-accent-button px-4 text-white hover:bg-accent-button-hover"
                   >
                     <Search aria-hidden="true" className="size-5" strokeWidth={2.5} />
                   </button>
                 </div>
-                <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[13px]">
-                  <span className="mr-1 text-muted">{t('popularLabel')}</span>
+                <div className="mt-2.5 flex items-center gap-1.5 overflow-x-auto text-[13px] [scrollbar-width:none] min-[480px]:flex-wrap">
+                  <span className="mr-1 shrink-0 text-muted">{t('popularLabel')}</span>
                   {POPULAR.map((p) => (
                     <LocalLink
                       key={p.key}
                       href="/shop"
                       query={{ q: p.q }}
                       data-track={`hero_popular_${p.key}`}
-                      className="inline-flex min-h-8 items-center rounded-pill border border-line-card px-3 font-bold text-ink hover:border-ink"
+                      className="inline-flex min-h-8 shrink-0 items-center rounded-pill border border-line-card px-3 font-bold whitespace-nowrap text-ink hover:border-ink"
                     >
                       {t(`popular.${p.key}`)}
                     </LocalLink>
@@ -159,27 +160,24 @@ export function Hero({ city }: { city: string }) {
                       maxLength={6}
                       autoComplete="postal-code"
                       placeholder={t('pinPlaceholder')}
-                      className="mt-1 min-h-12 w-full rounded-input border border-input-border bg-surface px-3.5 text-[15px] text-ink placeholder:text-muted"
+                      className="mt-1 min-h-11 w-full rounded-input border border-input-border bg-surface px-3.5 text-[15px] text-ink placeholder:text-muted"
                     />
                   </div>
                   <div>
-                    <label htmlFor="hero-vehicle" className="text-xs font-bold text-muted">
+                    <label
+                      id="hero-vehicle-label"
+                      htmlFor="hero-vehicle"
+                      className="text-xs font-bold text-muted"
+                    >
                       {t('vehicleLabel')}
                     </label>
-                    <select
-                      id="hero-vehicle"
-                      name="vehicle"
-                      defaultValue="any"
-                      className="mt-1 min-h-12 w-full rounded-input border border-input-border bg-surface px-3 text-[15px] text-ink"
-                    >
-                      <option value="any">{t('vehicleAny')}</option>
-                      <option value="2W">{t('vehicle2W')}</option>
-                      <option value="4W">{t('vehicle4W')}</option>
-                    </select>
+                    <HeroVehicleSelect
+                      labels={{ any: t('vehicleAny'), twoW: t('vehicle2W'), fourW: t('vehicle4W') }}
+                    />
                   </div>
                   <button
                     type="submit"
-                    className="press inline-flex min-h-12 items-center justify-center gap-2 self-end rounded-input bg-accent-button px-5 text-sm font-bold text-white hover:bg-accent-button-hover"
+                    className="press inline-flex min-h-11 items-center justify-center gap-2 self-end rounded-input bg-accent-button px-5 text-sm font-bold text-white hover:bg-accent-button-hover"
                   >
                     <MapPin aria-hidden="true" className="size-4" strokeWidth={2.5} />
                     {t('workshopSubmit')}

@@ -212,6 +212,32 @@ User: "iska theme change karo, blue and green theme karna hai" → chose **blue 
 - Success/"In stock"/"Save" stay the existing green tokens.
 - **Green hero** (user: "green color hero banana hai"): the home hero panel uses its own tokens — `hero` #064e3b deep emerald, `hero-text` #d1fae5 (8.6:1), `hero-accent` #6ee7b7 for the second headline line/eyebrow (6.4:1) — so other deep-blue panels stay blue. Search console stays white with the blue glass button. Both pairs added to the tokens contrast test.
 
+## 2026-11-02 — Green brand theme (supersedes "blue main, green accent" the same day)
+
+User: "i told you green hero banana hai, not blue … green karna hai" (reason given: appeal to the mechanic partners the platform recruits). The whole site is green; blue is removed except the map's "you are here" dot (universal location convention — kept on purpose, change on request).
+
+| Token                                              | Blue version                          | Green                                                             |
+| -------------------------------------------------- | ------------------------------------- | ----------------------------------------------------------------- |
+| `navy` (brand dark surface; name kept)             | #0b2350                               | **#053d2f** deep green                                            |
+| `navy-sidebar` / active                            | #0e2856 / #1b3c78                     | #064034 / #0b5a46                                                 |
+| `accent` (logo, icons)                             | #2563eb                               | **#15803d** (5.0:1 on white)                                      |
+| `accent-button` / hover (glass fill 94%)           | #1d47c4 / #1a3fae                     | **#166534** / #14532d (white 7.1:1; ≥4.6:1 under the 12% sheen)   |
+| `accent-light` / `accent-pale` (on dark green)     | #4ade80 / #86efac                     | **#86efac** (8.7:1) / #bbf7d0                                     |
+| `accent-soft` / text                               | #eaf1ff / #1d4ed8                     | **#e9f8ef** / #166534                                             |
+| `focus`                                            | #3574f0                               | **#1f9d55** (3.5:1 on white and on #053d2f, 3.1:1 on surface-alt) |
+| `bg` / `surface-alt`·`pill` / `line` / `line-card` | #f7f9fc / #eef2f7 / #e2e7ee / #dbe2ea | #f6f8f7 / #edf2ef / #e1e7e4 / #d9e1dd (blue cast removed)         |
+| dark: navy / accent-soft / text / focus            | #0f2447 / #12264a / #93b4ff / #6ea8ff | #0a3328 / #0f2e22 / #86efac / #4ade80                             |
+
+Hero keeps its own green tokens (`hero` #064e3b, `hero-text`, `hero-accent`). Glass buttons, soft shadows and the dark theme structure are unchanged; only colours moved. Text `ink` stays near-black (#101f34) for readability.
+
+- **Hero fits one screen** (user: "hero section bhot bada hai … screen se overflow karta hai"): measured overflow 59–165px on 1366×768, 1280×720, 1536×864 laptops and phones. Headline is sized by width _and_ height — `clamp(30px, min(4.6vw, 6.2vh), 60px)` — with a 720px copy column so it sets in two lines on laptops; padding scales with `vh`; 44px fields; popular chips are one swipeable row on phones. Hero is now 434–508px tall and fits (with the trust strip peeking) at every tested size: 1280×609 → 1920×945, 360×640, 390×664, 768×900.
+
+## 2026-11-02 — Language switch fix, dark-mode greens, hero vehicle select
+
+- **Bug (user): "when language switched to hindi, and then i click on english, the language doesn't change".** Root cause: next-intl 4.14 writes the NEXT_LOCALE cookie only on document requests (`syncCookie` checks `sec-fetch-dest: document`); the header switcher was a `next/link` (client fetch), so the cookie never changed. With `NEXT_LOCALE=hi` (any reload or direct /hi visit), "English" went `/en/x` → 307 `/x` → 307 `/hi/x`. Also on production. Fix: the switcher is a plain `<a>` (full document navigation) — no middleware override. Regression suite `e2e/language.spec.ts` (Hindi direct load → English → reload → Hindi → reload → English, on /, /shop, /workshops).
+- **Dark mode** (user: "dark theme me … selected filter green hona chahiye"): the selected hero mode tab is a green glass pill (white text). Dark neutrals lose their blue cast: bg #08130f, surface #0e1c17, surface-alt #0b1813, pill #16281f, lines #1f3329/#24392f/#2a4337, input-border #7d958a, muted #a7bab0 (all contrast-tested; `theme-color` dark #08130f).
+- **Hero "Vehicle" field** now uses the custom select (client island `hero-vehicle-select.tsx`); new `e2e/hero.spec.ts` covers hero → finder with PIN + vehicle.
+
 ## PENDING DECISIONS (ask "what's pending" to review)
 
 | #   | Topic                                                                                                                                                                                       | Leaning                                                                             | When                                 |
