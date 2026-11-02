@@ -46,9 +46,9 @@ export function handleError(err: Error, c: Context<AppEnv>): Response {
     return c.json(errorBody(c, 'VALIDATION', 'Request is invalid', zodDetails(err)), 400);
   }
   if (err instanceof NotFoundError) return c.json(errorBody(c, err.code, 'Not found'), 404);
-  if (err instanceof ConflictError || err instanceof ValidationError) {
-    return c.json(errorBody(c, err.code, err.message), err.status);
-  }
+  if (err instanceof ValidationError)
+    return c.json(errorBody(c, err.code, err.message, err.details), err.status);
+  if (err instanceof ConflictError) return c.json(errorBody(c, err.code, err.message), err.status);
   if (err instanceof HTTPException) {
     const code = err.status === 413 ? 'PAYLOAD_TOO_LARGE' : err.status === 504 ? 'TIMEOUT' : 'HTTP_ERROR';
     return c.json(errorBody(c, code, err.message || 'Request failed'), err.status);

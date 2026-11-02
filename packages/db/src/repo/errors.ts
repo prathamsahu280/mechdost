@@ -22,10 +22,13 @@ export class NotFoundError extends Error {
 export class ValidationError extends Error {
   readonly status = 422;
   readonly code: string;
-  constructor(message: string, code = 'VALIDATION') {
+  /** Machine-readable specifics for the client (e.g. which cart lines changed). Never personal data. */
+  readonly details?: unknown;
+  constructor(message: string, code = 'VALIDATION', details?: unknown) {
     super(message);
     this.name = 'ValidationError';
     this.code = code;
+    this.details = details;
   }
 }
 

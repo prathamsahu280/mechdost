@@ -18,3 +18,4 @@ export * from './support-bridge';
 export * from './order-notifications';
 export * from './support';
 export * from './catalogue';
+export * from './checkout';

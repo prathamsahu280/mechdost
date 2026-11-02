@@ -8,7 +8,8 @@
     "./schema": "./src/schema/index.ts",
     "./repo": "./src/repo/index.ts",
     "./crypto": "./src/crypto.ts",
-    "./testing": "./src/testing.ts"
+    "./testing": "./src/testing.ts",
+    "./demo-seed": "./src/demo-seed.ts"
   },
   "scripts": {
     "generate": "drizzle-kit generate && node scripts/fix-migrations.mjs",
