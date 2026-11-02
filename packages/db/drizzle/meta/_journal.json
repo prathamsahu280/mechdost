@@ -211,6 +211,13 @@
       "when": 1793631936875,
       "tag": "0029_shiny_masked_marvel",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1793633187063,
+      "tag": "0030_events",
+      "breakpoints": true
     }
   ]
 }

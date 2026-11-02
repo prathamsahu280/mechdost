@@ -1,6 +1,7 @@
 import { and, asc, eq, sql } from 'drizzle-orm';
 import { auditLog, productVariants, products, shopInventory, shops } from '../schema';
 import { ConflictError, NotFoundError, pgCode, ValidationError } from './errors';
+import { recordServerEvent } from './events';
 import { localized } from './localized';
 import type { Tx } from './orders';
 import type { CatalogueLocale } from './catalogue';
@@ -204,6 +205,10 @@ async function audit(
     entityId: inventoryId,
     before: before === null ? null : { ...before, shopId: input.shopId, sku: input.sku },
     after: { ...after, shopId: input.shopId, sku: input.sku },
+  });
+  await recordServerEvent(tx, 'inventory_updated', {
+    userId: input.actorUserId,
+    props: { shopId: input.shopId, sku: input.sku, fields: Object.keys(after).sort(), by: input.actorRole },
   });
 }
 

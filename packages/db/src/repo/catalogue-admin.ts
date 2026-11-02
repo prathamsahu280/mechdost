@@ -3,6 +3,7 @@ import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { productMachine, type ProductStatus } from '@mechdost/shared/state';
 import { auditLog, brands, categories, productVariants, products, settings } from '../schema';
 import { ConflictError, NotFoundError, ValidationError } from './errors';
+import { recordServerEvent } from './events';
 import type { Tx } from './orders';
 
 /**
@@ -293,6 +294,10 @@ export async function setProductStatus(
       before: { status: from },
       after: { status: input.to },
       reason: input.to === 'rejected' ? reason : null,
+    });
+    await recordServerEvent(tx, 'admin_product_status_changed', {
+      userId: input.staffUserId,
+      props: { productSlug: input.slug, from, to: input.to },
     });
     return { version: row.version, status: input.to };
   });

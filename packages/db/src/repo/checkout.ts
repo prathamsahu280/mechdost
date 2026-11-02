@@ -4,6 +4,7 @@ import { splitInclusiveGst } from '@mechdost/shared/money';
 import { auditLog, orderGroups, orderItems, orders, settings } from '../schema';
 import { blockEffects } from '@mechdost/shared/customers';
 import { setActor } from './actor';
+import { recordServerEvent } from './events';
 import { activeBlockLevels } from './customer-blocks';
 import { ConflictError, ForbiddenError, NotFoundError, pgCode, ValidationError } from './errors';
 import { reserveStock } from './inventory';
@@ -460,6 +461,17 @@ export async function placeCodOrder(
       }
       placed.push({ code, totalPaise: g.totalPaise });
     }
+    await recordServerEvent(tx, 'purchase', {
+      userId: input.userId,
+      cityId,
+      props: {
+        orderCode: group.code,
+        subOrders: placed.length,
+        items: priced.length,
+        totalPaise: quote.totalPaise,
+        paymentMethod: 'cod',
+      },
+    });
     await tx.insert(auditLog).values({
       actorUserId: input.userId,
       actorRole: 'customer',

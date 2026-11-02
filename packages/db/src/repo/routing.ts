@@ -1,9 +1,10 @@
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import type { OrderRejectReason, OrderStatus } from '@mechdost/shared/state';
 import { ORDER_REJECT_REASONS } from '@mechdost/shared/state';
-import { auditLog, reservations, shopInventory } from '../schema';
+import { auditLog, orderAssignments, reservations, shopInventory } from '../schema';
 import { expireAssignment, offerOrderToShop } from './assignments';
 import { ConflictError, NotFoundError, ValidationError } from './errors';
+import { recordServerEvent } from './events';
 import { releaseReservation, reserveStock } from './inventory';
 import { localized } from './localized';
 import { transitionOrder, type Tx } from './orders';
@@ -409,6 +410,15 @@ export async function routeOrder(
       entityId: o.id,
       after: { shopId: input.shopId, assignmentId: assignment.id, timeoutMinutes: timeout },
     });
+    await recordServerEvent(tx, o.status === 'placed' ? 'admin_order_routed' : 'admin_order_rerouted', {
+      userId: input.staffUserId,
+      cityId: o.cityId,
+      props: {
+        orderCode: o.code,
+        shopId: input.shopId,
+        attempt: await tx.$count(orderAssignments, eq(orderAssignments.orderId, o.id)),
+      },
+    });
     return { assignmentId: assignment.id, expiresAt: assignment.expiresAt };
   });
 }
@@ -455,6 +465,11 @@ export async function rejectOrder(
       entityId: o.id,
       after: { reasonCode: input.reasonCode },
       reason: input.reasonCode,
+    });
+    await recordServerEvent(tx, 'admin_order_rejected', {
+      userId: input.staffUserId,
+      cityId: o.cityId,
+      props: { orderCode: o.code, reasonCode: input.reasonCode },
     });
     // Prepaid orders get an automatic refund here once online payment exists (spec 05); COD has nothing to refund.
     return { status: row.status, version: row.version };

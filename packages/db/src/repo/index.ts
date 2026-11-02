@@ -25,3 +25,4 @@ export * from './shop-orders';
 export * from './customer-orders';
 export * from './catalogue-admin';
 export * from './shop-inventory';
+export * from './events';

@@ -6,8 +6,9 @@ import { acceptAssignment, declineAssignment } from './assignments';
 import { issueDeliveryCode, verifyDeliveryCode, type DeliveryCheck } from './delivery';
 import { ConflictError, NotFoundError, ValidationError } from './errors';
 import { commitReservation } from './inventory';
+import { recordServerEvent } from './events';
 import { transitionOrder, type Tx } from './orders';
-import { num, rowsOf } from './sql-rows';
+import { num, numOrNull, rowsOf } from './sql-rows';
 
 /**
  * The shop side of an order (spec 04, spec 07): a shop sees offers made to it (contact details hidden until it
@@ -150,6 +151,16 @@ export async function acceptShopOffer(
         'STOCK_NOT_HELD',
       );
     for (const h of held) await commitReservation(tx, h.id);
+    const [info] = rowsOf<{ code: string; city_id: string; seconds: unknown }>(
+      await tx.execute(sql`select o.code, o.city_id, extract(epoch from a.responded_at - a.offered_at)::int as seconds
+        from order_assignments a join orders o on o.id = a.order_id where a.id = ${a.id}`),
+    );
+    if (info)
+      await recordServerEvent(tx, 'seller_order_accepted', {
+        userId: input.staffUserId,
+        cityId: info.city_id,
+        props: { orderCode: info.code, shopId: a.shopId, secondsToAccept: numOrNull(info.seconds) ?? 0 },
+      });
     return { status: row.status, version: row.version };
   });
 }
@@ -173,6 +184,17 @@ export async function declineShopOffer(
       reason: input.reasonCode,
       actor: { type: 'shop', userId: input.staffUserId },
     });
+    const [o] = await tx
+      .select({ code: orders.code, cityId: orders.cityId })
+      .from(orders)
+      .where(eq(orders.id, a.orderId))
+      .limit(1);
+    if (o)
+      await recordServerEvent(tx, 'seller_order_declined', {
+        userId: input.staffUserId,
+        cityId: o.cityId,
+        props: { orderCode: o.code, shopId: a.shopId, reasonCode: input.reasonCode },
+      });
     return { status: row.status, version: row.version };
   });
 }
@@ -280,6 +302,10 @@ export async function deliverShopOrder(
       expectedVersion: input.expectedVersion,
       actor: { type: 'shop', userId: input.staffUserId },
       patch: { deliveredAt: new Date() },
+    });
+    await recordServerEvent(tx, 'order_delivered', {
+      userId: input.staffUserId,
+      props: { orderCode: input.code, shopId: o.shopId ?? '' },
     });
     return { ok: true, version: row.version };
   });

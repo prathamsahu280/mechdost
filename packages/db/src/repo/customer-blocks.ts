@@ -8,6 +8,7 @@ import {
 import { auditLog, customerBlocks, users } from '../schema';
 import { ROLES } from '@mechdost/shared/rbac';
 import { ConflictError, ForbiddenError, NotFoundError, pgCode, ValidationError } from './errors';
+import { recordServerEvent } from './events';
 import { loadGrants } from './rbac';
 import type { Tx } from './orders';
 
@@ -119,6 +120,10 @@ export async function blockCustomer(
       after: { blockId: row.id, level: input.level, reasonCode: input.reasonCode, endsAt: input.endsAt },
       reason: input.reasonCode,
     });
+    await recordServerEvent(tx, 'admin_customer_blocked', {
+      userId: input.staffUserId,
+      props: { level: input.level, reasonCode: input.reasonCode },
+    });
     return row;
   });
 }
@@ -162,6 +167,10 @@ export async function liftCustomerBlock(
       entityId: updated.userId,
       after: { blockId: input.blockId, level: updated.level },
       reason,
+    });
+    await recordServerEvent(tx, 'admin_customer_unblocked', {
+      userId: input.staffUserId,
+      props: { level: updated.level },
     });
     return { version: updated.version };
   });

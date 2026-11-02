@@ -15,7 +15,8 @@
     "./live": "./src/live.ts",
     "./whatsapp": "./src/whatsapp.ts",
     "./i18n/*": "./src/i18n/*",
-    "./customers": "./src/customers.ts"
+    "./customers": "./src/customers.ts",
+    "./analytics": "./src/analytics.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",

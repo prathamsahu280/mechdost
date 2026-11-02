@@ -19,6 +19,7 @@ import {
   shops,
 } from '../schema';
 import { deliveryCodeFor } from './delivery';
+import { recordServerEvent } from './events';
 import { ConflictError, NotFoundError, ValidationError } from './errors';
 import { releaseReservation } from './inventory';
 import { localized } from './localized';
@@ -246,6 +247,22 @@ async function cancelInTx(
     after: { reasonCode: input.reasonCode, from: input.order.status },
     reason: input.reasonCode,
   });
+  const [info] = await tx
+    .select({ code: orders.code, cityId: orders.cityId })
+    .from(orders)
+    .where(eq(orders.id, input.order.id))
+    .limit(1);
+  if (info)
+    await recordServerEvent(tx, 'order_cancelled', {
+      userId: input.actor.userId ?? null,
+      cityId: info.cityId,
+      props: {
+        orderCode: info.code,
+        by: input.actor.type === 'customer' ? 'customer' : 'staff',
+        reasonCode: input.reasonCode,
+        fromStatus: input.order.status,
+      },
+    });
   return { status: row.status, version: row.version };
 }
 

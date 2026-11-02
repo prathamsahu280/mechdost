@@ -4,7 +4,7 @@
  */
 import { createDb, createListener } from '@mechdost/db';
 import { loadKeyring, type Keyring } from '@mechdost/db/crypto';
-import { bridgeInboundWhatsApp, expireDueAssignments } from '@mechdost/db/repo';
+import { bridgeInboundWhatsApp, ensureEventPartitions, expireDueAssignments } from '@mechdost/db/repo';
 import { ConfigError, loadConfig } from './config';
 import { pollingPublisher, type LivePublisher } from './live/publisher';
 import { startDispatcher, type ChannelAdapter } from './notify/dispatcher';
@@ -81,6 +81,20 @@ const expiryTimer = setInterval(() => {
     });
 }, 30_000);
 expiryTimer.unref();
+
+// Event store partitions (spec 12): this month + 3 ahead, checked at start and every 12 h (idempotent).
+const partitions = () => {
+  void ensureEventPartitions(db)
+    .then((n) => {
+      if (n > 0) log('info', 'event_partitions_created', { count: n });
+    })
+    .catch((err: unknown) => {
+      log('error', 'event_partitions_failed', safeError(err));
+    });
+};
+partitions();
+const partitionTimer = setInterval(partitions, 12 * 3_600_000);
+partitionTimer.unref();
 log('info', 'worker_started', {
   live: publisher.name,
   listen: Boolean(config.live.listenUrl),
@@ -104,6 +118,7 @@ function shutdown(signal: string) {
   log('info', 'shutdown', { signal });
   if (bridgeTimer) clearInterval(bridgeTimer);
   clearInterval(expiryTimer);
+  clearInterval(partitionTimer);
   void Promise.all([relay.stop(), dispatcher.stop()])
     .then(() => Promise.all([sql.end({ timeout: 5 }), listener?.end()]))
     .finally(() => process.exit(0));
