@@ -5,16 +5,19 @@
  * Dependency-free so the browser can use it without pulling a validator into the bundle.
  */
 const EMAIL = /[^\s@]+@[^\s@]+\.[^\s@]+/gu;
-// Any script's decimal digits (Devanagari ९८७…, full-width, ASCII) with spaces, dashes, dots, brackets or slashes
-// between them (security review 2026-11-03: "९८७६५ ४३२१०", "98.76.54.32.10", "(0771) 234-5678").
-const DIGIT_RUN = /\+?\p{Nd}[\p{Nd}\s\-.()/]{5,}\p{Nd}/gu;
-const DIGIT = /\p{Nd}/gu;
+// Invisible format characters (zero-width space/joiners, BOM) are removed first, so they cannot split a number.
+const FORMAT = /\p{Cf}/gu;
+// Seven or more decimal digits in any script (Devanagari, full-width, ASCII) with at most three non-letter,
+// non-digit characters between each pair — spaces, dashes, dots, commas, underscores, brackets, slashes …
+// (security reviews 2026-11-03).
+const DIGIT_RUN = /\+?\p{Nd}(?:[^\p{L}\p{Nd}]{0,3}\p{Nd}){6,}/gu;
 
 export function scrubFreeText(text: string, max = 80): string {
   return text
     .normalize('NFKC')
+    .replace(FORMAT, '')
     .replace(EMAIL, '#')
-    .replace(DIGIT_RUN, (m) => ((m.match(DIGIT) ?? []).length >= 7 ? '#' : m))
+    .replace(DIGIT_RUN, '#')
     .trim()
     .slice(0, max);
 }
