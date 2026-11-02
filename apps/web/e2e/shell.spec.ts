@@ -167,16 +167,20 @@ test.describe('quality gates', () => {
     expect(headers['x-powered-by']).toBeUndefined();
   });
 
-  test('serves the hero image in a modern format and preloads only it', async ({ page }) => {
+  test('serves photos in a modern format; only a product page preloads its main photo', async ({ page }) => {
     const imageTypes: string[] = [];
     page.on('response', (r) => {
       if (r.url().includes('/_next/image')) imageTypes.push(r.headers()['content-type'] ?? '');
     });
+    // Home hero is inline illustration (redesign 2026-11-02): no image preload; the LCP is the headline text.
     await page.goto('/');
     await page.waitForLoadState('networkidle');
+    await expect(page.locator('link[rel="preload"][as="image"]')).toHaveCount(0);
+    await page.goto('/shop/exide-xltz4a-2w-battery');
+    await page.waitForLoadState('networkidle');
+    await expect(page.locator('link[rel="preload"][as="image"]')).toHaveCount(1);
     expect(imageTypes.length).toBeGreaterThan(0);
     for (const type of imageTypes) expect(type).toMatch(/image\/(avif|webp)/);
-    await expect(page.locator('link[rel="preload"][as="image"]')).toHaveCount(1);
   });
 
   test('tracks clicks through the first-party event queue', async ({ page }) => {
@@ -186,15 +190,19 @@ test.describe('quality gates', () => {
       w.__events = [];
       window.addEventListener('mechdost:track', (e) => w.__events.push((e as CustomEvent).detail));
     });
-    await page.getByRole('link', { name: 'Engine oil', exact: true }).first().click();
-    await expect(page).toHaveURL(/\/shop\?q=engine\+oil$/);
+    await page
+      .getByRole('region', { name: 'Highlights' })
+      .getByRole('link', { name: 'Shop products' })
+      .first()
+      .click();
+    await expect(page).toHaveURL(/\/shop$/);
     const events = await page.evaluate(
       () => (window as unknown as { __events: { event: string; props: { id?: string } }[] }).__events,
     );
     expect(events).toContainEqual(
       expect.objectContaining({
         event: 'click',
-        props: expect.objectContaining({ id: 'hero_popular_oil' }),
+        props: expect.objectContaining({ id: 'hero_shop' }),
       }),
     );
     expect(events.some((e) => e.event === 'page_view')).toBe(true);

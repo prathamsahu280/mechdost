@@ -183,7 +183,7 @@ test.describe('shop filters stay in sync and never jump', () => {
     const errors = watchErrors(page);
     await page.goto('/shop');
     await page.waitForLoadState('networkidle');
-    const chips = page.getByRole('navigation', { name: 'Category' });
+    const chips = page.getByRole('navigation', { name: 'Category', exact: true });
     await chips.scrollIntoViewIfNeeded();
     // Marker survives only if the page is not reloaded.
     await page.evaluate(() => {

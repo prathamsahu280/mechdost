@@ -18,7 +18,7 @@ export function CategoryBar({ navItems, navLabel }: { navItems: readonly NavItem
         <NavLinks label={navLabel} items={navItems} />
         <span aria-hidden="true" className="hidden h-6 w-px shrink-0 bg-line-card nav:block" />
         <nav aria-label={t('categoriesLabel')} className="min-w-0 flex-1">
-          <ul className="-my-px flex gap-1.5 overflow-x-auto py-2.5 pr-8 [mask-image:linear-gradient(to_right,black_calc(100%-3rem),transparent)] [scrollbar-width:none]">
+          <ul className="relative -my-px flex gap-1.5 overflow-x-auto py-2.5 pr-8 [mask-image:linear-gradient(to_right,black_calc(100%-3rem),transparent)] [scrollbar-width:none]">
             {CATEGORY_KEYS.map((key) => {
               const Icon = CATEGORY_ICONS[key];
               return (

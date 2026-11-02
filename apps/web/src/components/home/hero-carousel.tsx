@@ -100,7 +100,7 @@ export function HeroCarousel({
       <div
         ref={trackRef}
         aria-live={autoplay ? 'off' : 'polite'}
-        className="flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain [scrollbar-width:none]"
+        className="relative flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain [scrollbar-width:none]"
       >
         {slides.map((slide, i) => (
           <div
