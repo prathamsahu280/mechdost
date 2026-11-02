@@ -154,3 +154,38 @@ export async function resolveLiveRecipients(db: Tx, topic: string): Promise<Live
   }
   return out;
 }
+
+/**
+ * Pending inbox wipes (lost access, migration 0020). Claimed with SKIP LOCKED; a crashed relay's rows come back
+ * after 60 s. Wiping is idempotent, so at-least-once is enough.
+ */
+export async function claimLiveRevocations(
+  db: Tx,
+  limit = 100,
+): Promise<{ id: number; firebaseUid: string }[]> {
+  const result = await db.execute(sql`
+    update live_revocations set attempts = attempts + 1
+    where id in (
+      select id from live_revocations
+      where done_at is null and (attempts = 0 or created_at < now() - interval '60 seconds')
+      order by id
+      limit ${Math.min(Math.max(limit, 1), 1000)}
+      for update skip locked
+    )
+    returning id, firebase_uid`);
+  return rowsOf<{ id: number | string; firebase_uid: string }>(result).map((r) => ({
+    id: Number(r.id),
+    firebaseUid: r.firebase_uid,
+  }));
+}
+
+export async function markLiveRevocationsDone(db: Tx, ids: readonly number[]): Promise<void> {
+  if (ids.length === 0) return;
+  await db.execute(
+    sql`update live_revocations set done_at = now() where id in (${sql.join(
+      ids.map((id) => sql`${id}`),
+      sql`, `,
+    )})`,
+  );
+  await db.execute(sql`delete from live_revocations where done_at < now() - interval '7 days'`);
+}

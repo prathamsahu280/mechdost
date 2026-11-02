@@ -457,7 +457,8 @@
     "deliveryCodeHelp": "यह कोड डिलीवरी वाले को तभी दें जब आपको ऑर्डर मिल जाए और आप पार्ट्स जाँच लें।",
     "deliveryCodeSafety": "MechDost कभी कॉल या मैसेज पर यह कोड नहीं माँगेगा।",
     "deliveredWithCode": "{date} को डिलीवर हुआ, आपके डिलीवरी कोड से कन्फ़र्म।",
-    "deliveredBySupport": "{date} को डिलीवर हुआ, MechDost सपोर्ट ने कन्फ़र्म किया।"
+    "deliveredBySupport": "{date} को डिलीवर हुआ, MechDost सपोर्ट ने कन्फ़र्म किया।",
+    "reportProblem": "इस ऑर्डर में दिक्कत बताएँ"
   },
   "finder": {
     "title": "आपका वाहन कहाँ है?",
@@ -904,7 +905,8 @@
     "coinsRemoved": "MechDost ने हटाए: {reason}",
     "coinsDemo": "डेमो कॉइन",
     "coinsEarned": "कमाए: {reason}",
-    "labelDefault": "घर"
+    "labelDefault": "घर",
+    "nav_support": "सहायता"
   },
   "portal": {
     "guardTitle": "आगे बढ़ने के लिए साइन इन करें",
@@ -1201,7 +1203,8 @@
     "mapDefault_help": "वर्कशॉप मैप पर ग्राहक सबसे पहले क्या देखें। जो व्यू बदलता है, उसकी पसंद उसके डिवाइस पर याद रहती है।",
     "mapDefault_satellite": "सैटेलाइट, सड़कों और नामों के साथ",
     "mapDefault_map": "सादा मैप",
-    "mapDefault_save": "मैप व्यू सेव करें"
+    "mapDefault_save": "मैप व्यू सेव करें",
+    "nav_support": "सहायता इनबॉक्स"
   },
   "policies": {
     "returns": {
@@ -1235,5 +1238,60 @@
     "ticket": {
       "replied": "MechDost सपोर्ट ने आपकी रिक्वेस्ट {{1}} का जवाब दिया है। जवाब पढ़ने के लिए इसे खोलें।"
     }
+  },
+  "support": {
+    "title": "सहायता और अनुरोध",
+    "intro": "किसी पार्ट या ऑर्डर में दिक्कत है? यहाँ बताइए। हम 48 घंटे के अंदर जवाब देते हैं।",
+    "policyNote": "हम सामान वापस या बदलते नहीं हैं। खराब, टूटे या गलत पार्ट यहाँ अनुरोध करने पर बदले जाते हैं या पैसे लौटाए जाते हैं।",
+    "new": "नया अनुरोध",
+    "kindLabel": "किस बारे में है?",
+    "kind_order_issue": "खराब, टूटा या गलत पार्ट",
+    "kind_refund": "रिफ़ंड",
+    "kind_fitment": "क्या यह मेरी गाड़ी में लगेगा?",
+    "kind_account": "मेरा अकाउंट",
+    "kind_other": "कुछ और",
+    "orderLabel": "ऑर्डर (वैकल्पिक)",
+    "orderNone": "किसी ऑर्डर के बारे में नहीं",
+    "messageLabel": "मैसेज",
+    "messageHelp": "बताइए क्या हुआ। खराब पार्ट हो तो लिखें कि क्या दिखा और कब।",
+    "send": "अनुरोध भेजें",
+    "sent": "अनुरोध {code} भेज दिया गया। हम यहीं जवाब देंगे।",
+    "err_empty": "मैसेज लिखें।",
+    "err_too_long": "{max} अक्षरों से छोटा रखें।",
+    "err_limit": "आप एक दिन में {max} अनुरोध ही कर सकते हैं। किसी पुराने अनुरोध पर जवाब दें।",
+    "err_stale": "यह अनुरोध अभी बदला है। नया रूप देखने के लिए पेज दोबारा खोलें।",
+    "err_not_allowed": "यह अनुरोध बंद हो चुका है।",
+    "empty": "अभी कोई अनुरोध नहीं। ऑर्डर में दिक्कत हो तो ऊपर अनुरोध करें।",
+    "status_open": "मिल गया",
+    "status_in_review": "हम देख रहे हैं",
+    "status_awaiting_customer": "आपके जवाब का इंतज़ार",
+    "status_resolved": "हल हो गया",
+    "status_closed": "बंद",
+    "replyLabel": "आपका जवाब",
+    "sendReply": "जवाब भेजें",
+    "fromStaff": "MechDost सहायता",
+    "you": "आप",
+    "viaWhatsApp": "WhatsApp से",
+    "orderRef": "ऑर्डर {code}",
+    "ackBy": "हम {date} तक जवाब देंगे",
+    "inboxTitle": "सहायता इनबॉक्स",
+    "inboxIntro": "वेबसाइट और WhatsApp से आए अनुरोध। 48 घंटे में जवाब दें, 30 दिन में हल करें।",
+    "filter_active": "चालू",
+    "filter_done": "हल और बंद",
+    "filterLabel": "दिखाएँ",
+    "overdueAck": "जवाब में देर",
+    "overdueResolve": "हल करने में देर",
+    "dueAck": "{date} तक जवाब दें",
+    "internalToggle": "अंदरूनी नोट (ग्राहक को नहीं दिखेगा)",
+    "internalBadge": "अंदरूनी नोट",
+    "staffReplyLabel": "ग्राहक को जवाब",
+    "sendStaff": "भेजें",
+    "whatsAppNote": "जवाब WhatsApp पर जाते हैं, ग्राहक के आखिरी मैसेज के 24 घंटे के अंदर मुफ़्त।",
+    "resolve": "हल हुआ मार्क करें",
+    "reopen": "फिर से खोलें",
+    "guest": "मेहमान",
+    "inboxEmpty": "अभी कुछ बाकी नहीं। नए अनुरोध यहाँ दिखेंगे।",
+    "from": "{name} की ओर से",
+    "openThread": "{code} खोलें"
   }
 }

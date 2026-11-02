@@ -31,6 +31,13 @@ export interface ClientEvents {
     action: 'save' | 'reset';
     fields: number;
   };
+  /** Support requests (spec 09): codes only, never the message text. */
+  support_ticket: {
+    action: 'created' | 'customer_reply' | 'staff_reply' | 'internal_note' | 'status';
+    kind?: string;
+    channel?: 'web' | 'whatsapp';
+    to?: string;
+  };
   /** Admin → Notifications (spec 10, hard rule 8): which WhatsApp event changed and how; `budget` for the alert. */
   admin_notifications_change: {
     target: string;

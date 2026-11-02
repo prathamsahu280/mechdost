@@ -85,3 +85,7 @@ User 2026-11-02: "all these options need to be with the admin too".
 - **Hindi content editing** (product/workshop `_hi` fields) arrives with the catalogue admin and the `_hi` columns (decision 2026-11-02).
 - **Events**: `admin_notifications_change {target, action}`, `admin_site_change {area: layout}`.
 - **Tests**: `e2e/admin-notifications.spec.ts`, `test/notify-defaults.test.ts`, `apps/api/test/admin-notifications.test.ts`, `packages/db/test/notification-admin.test.ts`; the Hindi gate covers `/hi/admin/notifications` (ADMIN_SECTIONS).
+
+### Support inbox (2026-11-03)
+
+`/admin/support`: requests from the website and WhatsApp with deadlines, overdue flags, masked numbers, replies, internal notes and resolve/reopen (details in spec 09).

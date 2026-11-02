@@ -8,8 +8,8 @@ import { createTestDb, type TestDb } from '@mechdost/db/testing';
 import type { Tx } from '@mechdost/db/repo';
 import { parseLivePing } from '@mechdost/shared/live';
 import { ConfigError, loadConfig } from '../src/config';
-import { inboxUpdates, type LiveDelivery, type LivePublisher } from '../src/live/publisher';
-import { relayOnce } from '../src/live/relay';
+import { inboxRemovals, inboxUpdates, type LiveDelivery, type LivePublisher } from '../src/live/publisher';
+import { relayOnce, revokeOnce } from '../src/live/relay';
 
 let db: TestDb;
 let client: Awaited<ReturnType<typeof createTestDb>>['client'];
@@ -62,6 +62,11 @@ class FakePublisher implements LivePublisher {
       return Promise.reject(new Error('transport down'));
     }
     this.batches.push([...batch]);
+    return Promise.resolve();
+  }
+  forgotten: string[] = [];
+  forget(uids: readonly string[]) {
+    this.forgotten.push(...uids);
     return Promise.resolve();
   }
 }
@@ -182,5 +187,20 @@ describe('RTDB security rules (firebase/database.rules.json)', () => {
     expect(rules.rules['.write']).toBe(false);
     expect(Object.keys(rules.rules).sort()).toEqual(['.read', '.write', 'inbox']);
     expect(rules.rules.inbox.$uid).toEqual({ '.read': 'auth != null && auth.uid === $uid', '.write': false });
+  });
+});
+
+describe('lost access wipes the live inbox (security review follow-up)', () => {
+  it('deactivating a user queues their inbox for deletion; the relay wipes it once', async () => {
+    await db.insert(s.users).values({ firebaseUid: 'fb-relay-leaver' });
+    await client.exec("update users set status = 'deactivated' where firebase_uid = 'fb-relay-leaver'");
+    const pub = new FakePublisher();
+    expect(await revokeOnce(t(), pub)).toBe(1);
+    expect(pub.forgotten).toEqual(['fb-relay-leaver']);
+    expect(await revokeOnce(t(), pub)).toBe(0);
+  });
+
+  it('only ever removes paths inside inbox/', () => {
+    expect(inboxRemovals(['uidA', '../admin', 'a/b', ''])).toEqual({ 'inbox/uidA': null });
   });
 });

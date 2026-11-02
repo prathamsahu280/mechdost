@@ -55,7 +55,17 @@ export async function AdminShell({ section }: { section: AdminSection }) {
       <PageIntro eyebrow="MechDost" line1={t('adminTitle')} />
       <div className="mt-8">
         <ClientMessages
-          namespaces={['portal', 'account', 'auth', 'order', 'request', 'quote', 'apply', 'categories']}
+          namespaces={[
+            'portal',
+            'account',
+            'auth',
+            'order',
+            'request',
+            'quote',
+            'apply',
+            'categories',
+            'support',
+          ]}
         >
           <AdminConsole
             section={section}

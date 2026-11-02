@@ -3,7 +3,7 @@
 import { BadgeCheck, ChevronRight, MessagesSquare, Package, Trash2, Wrench } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import { useState, type ReactNode, type SyntheticEvent } from 'react';
+import { Suspense, useState, type ReactNode, type SyntheticEvent } from 'react';
 import {
   MAX_ACCOUNT_ITEMS,
   addAddress,
@@ -21,6 +21,7 @@ import {
   type VehicleType,
 } from '@/demo/session';
 import { CoinsSection } from './coins-section';
+import { SupportSection } from './support-section';
 import { ORDER_STAGES, REQUEST_STAGES, useHydrated, useOrders, useQuotes, useRequests } from '@/demo/store';
 import { formatDate, formatPrice } from '@/lib/format';
 import { ACCOUNT_SECTIONS, type AccountSection } from '@/lib/sections';
@@ -32,6 +33,7 @@ const SECTION_EMOJI: Record<AccountSection, string> = {
   services: '🔧',
   quotes: '💬',
   coins: '🪙',
+  support: '🛟',
   vehicles: '🚗',
   addresses: '📍',
   profile: '👤',
@@ -119,6 +121,12 @@ export function AccountArea({ section }: { section: AccountSection }) {
         {section === 'services' ? <ServicesList /> : null}
         {section === 'quotes' ? <QuotesList /> : null}
         {section === 'coins' ? <CoinsSection account={session} /> : null}
+        {section === 'support' ? (
+          // useSearchParams (preset order) needs a Suspense boundary on statically built pages.
+          <Suspense fallback={null}>
+            <SupportSection account={session} />
+          </Suspense>
+        ) : null}
         {section === 'vehicles' ? <Vehicles account={session} /> : null}
         {section === 'addresses' ? <Addresses account={session} /> : null}
         {section === 'profile' ? <Profile account={session} /> : null}

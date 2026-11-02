@@ -287,3 +287,30 @@ describe('live recipients come from Postgres (role-leak suite)', () => {
     await db.update(s.users).set({ status: 'active' }).where(eq(s.users.id, F.shopUser!));
   });
 });
+
+describe('lost access queues a live inbox wipe (migration 0020)', () => {
+  const pending = async () =>
+    (await db.select().from(s.liveRevocations))
+      .filter((r) => r.doneAt === null)
+      .map((r) => [r.firebaseUid, r.reason]);
+
+  it('deactivation, removal from a shop and a revoked role each queue the person once', async () => {
+    await db.delete(s.liveRevocations);
+    const [u] = await db.insert(s.users).values({ firebaseUid: 'fb-live-leaving' }).returning();
+    await db.insert(s.shopUsers).values({ shopId: F.shop!, userId: u!.id, role: 'staff' });
+    await grantRole(t(), { userId: u!.id, role: 'ops_manager', grantedBy: null });
+
+    await db.delete(s.shopUsers).where(eq(s.shopUsers.userId, u!.id));
+    await db.delete(s.userRoles).where(eq(s.userRoles.userId, u!.id));
+    await db.update(s.users).set({ status: 'deactivated' }).where(eq(s.users.id, u!.id));
+    // Name changes do not queue anything.
+    await db.update(s.users).set({ name: 'Renamed' }).where(eq(s.users.id, F.customer!));
+
+    expect((await pending()).sort()).toEqual([
+      ['fb-live-leaving', 'deactivated'],
+      ['fb-live-leaving', 'partner_removed'],
+      ['fb-live-leaving', 'role_revoked'],
+    ]);
+    await db.update(s.users).set({ status: 'active' }).where(eq(s.users.id, u!.id));
+  });
+});

@@ -79,7 +79,7 @@ Tests:
 - `packages/db/test/live.test.ts`: same-transaction, rollback, versions, SKIP LOCKED, lease retry, purge, thin-only CHECKs, role-leak recipients.
 - `apps/api/test/live.test.ts`: relay delivery, transport failure, inbox paths, config, RTDB rules.
 
-**Open follow-up (security review 2026-11-01):** when someone loses access (a shop user is removed, a staff role is revoked, a user is deactivated), delete their `inbox/{uid}` subtree. Also run a daily job that removes inbox nodes older than 7 days, so stale ids do not stay readable. The risk is low (opaque ids and versions only, data always refetched with permission checks), but it is built with the client transport step.
+**Lost access wipes the inbox (built 2026-11-03, was the security-review follow-up):** triggers on `users` (deactivated), `shop_users` (removed) and `user_roles` (revoked) queue the person's Firebase uid in `live_revocations` in the same transaction (migration 0020; RLS on, helper not callable by RPC); the relay calls `LivePublisher.forget()` → RTDB `inbox/{uid}` removed (multi-path update, paths validated to stay inside `inbox/`); rows purged 7 days after completion. Stale pings were already harmless (opaque ids, refetch is permission-checked); now they are also gone. A periodic age-based prune of old inbox nodes is not needed: nodes are overwritten per entity and wiped on access loss. Tests: `packages/db/test/live.test.ts` (triggers), `apps/api/test/live.test.ts` (relay + path safety).
 
 ## WhatsApp: Meta Cloud API direct (decision 2026-11-02; built, switched off)
 

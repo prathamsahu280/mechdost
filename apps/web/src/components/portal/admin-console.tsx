@@ -35,6 +35,7 @@ import { formatDate, formatPrice } from '@/lib/format';
 import { ADMIN_SECTIONS, type AdminSection } from '@/lib/sections';
 import { AdminCoins } from './admin-coins';
 import { AdminNotifications, type NotifyDefaults } from './admin-notifications';
+import { AdminSupport } from './admin-support';
 import { AdminPartners } from './admin-partners';
 import { ContentEditor, LayoutEditor, SettingsEditor, type ContentDefaults } from './admin-site';
 import { PortalGuard, portalCard, portalField, portalPrimary, portalQuiet, useNow } from './portal-guard';
@@ -47,6 +48,7 @@ const SECTION_EMOJI: Record<AdminSection, string> = {
   applications: '🤝',
   partners: '🏬',
   reviews: '⭐',
+  support: '🛟',
   coins: '🪙',
   content: '✏️',
   layout: '🧩',
@@ -83,6 +85,7 @@ export function AdminConsole({
             {section === 'quotes' ? <QuoteDesk /> : null}
             {section === 'applications' ? <Applications /> : null}
             {section === 'reviews' ? <Reviews /> : null}
+            {section === 'support' ? <AdminSupport actor={account.name} /> : null}
             {section === 'coins' ? <AdminCoins actor={account.name} /> : null}
             {section === 'partners' ? <AdminPartners actor={account.name} /> : null}
             {section === 'content' && contentDefaults ? (

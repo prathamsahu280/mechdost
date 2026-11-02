@@ -7,6 +7,7 @@ export const ACCOUNT_SECTIONS = [
   'orders',
   'services',
   'quotes',
+  'support',
   'coins',
   'vehicles',
   'addresses',
@@ -22,6 +23,8 @@ export const ADMIN_SECTIONS = [
   'applications',
   'partners',
   'reviews',
+  // Customer requests from the website and WhatsApp (spec 09).
+  'support',
   'coins',
   // Site customisation (spec 08 "Content" + "Settings", hard rule 8).
   'content',

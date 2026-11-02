@@ -166,6 +166,13 @@ export function OrderView({ code }: { code: string }) {
           <p className="mt-1 text-sm text-muted">{t('cod')}</p>
         </div>
         <p className="text-xs text-muted">{t('help')}</p>
+        <Link
+          href={`${locale === 'hi' ? '/hi' : ''}/account/support?order=${encodeURIComponent(order.code)}`}
+          data-track="order_report_problem"
+          className="press inline-flex min-h-11 items-center text-sm font-bold text-accent underline-offset-4 hover:underline"
+        >
+          {t('reportProblem')}
+        </Link>
         <p className="text-[11px] text-muted">{demo('note')}</p>
       </aside>
     </div>

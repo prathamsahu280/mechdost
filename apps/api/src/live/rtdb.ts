@@ -1,6 +1,6 @@
 import { getApps, initializeApp } from 'firebase-admin/app';
 import { getDatabaseWithUrl } from 'firebase-admin/database';
-import { inboxUpdates, type LivePublisher } from './publisher';
+import { inboxRemovals, inboxUpdates, type LivePublisher } from './publisher';
 
 /**
  * Firebase Realtime Database transport (decision 2026-11-01). The worker writes with the Admin SDK (service
@@ -16,6 +16,11 @@ export function createRtdbPublisher(opts: { projectId: string; databaseUrl: stri
       const updates = inboxUpdates(batch);
       if (Object.keys(updates).length === 0) return;
       await db.ref().update(updates);
+    },
+    async forget(firebaseUids) {
+      const removals = inboxRemovals(firebaseUids);
+      if (Object.keys(removals).length === 0) return;
+      await db.ref().update(removals);
     },
   };
 }

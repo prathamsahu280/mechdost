@@ -1,5 +1,7 @@
 import {
   claimLiveBatch,
+  claimLiveRevocations,
+  markLiveRevocationsDone,
   markLiveSent,
   oldestPendingLiveMs,
   purgeSentLive,
@@ -19,7 +21,20 @@ export interface RelayResult {
   delivered: number;
 }
 
+/** Wipes inboxes of people who lost access (security review follow-up). */
+export async function revokeOnce(db: Tx, publisher: LivePublisher): Promise<number> {
+  const rows = await claimLiveRevocations(db);
+  if (rows.length === 0) return 0;
+  await publisher.forget([...new Set(rows.map((r) => r.firebaseUid))]);
+  await markLiveRevocationsDone(
+    db,
+    rows.map((r) => r.id),
+  );
+  return rows.length;
+}
+
 export async function relayOnce(db: Tx, publisher: LivePublisher, limit = 200): Promise<RelayResult> {
+  await revokeOnce(db, publisher);
   const rows = await claimLiveBatch(db, { limit });
   if (rows.length === 0) return { claimed: 0, delivered: 0 };
   const byTopic = new Map<string, string[]>();

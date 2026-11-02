@@ -457,7 +457,8 @@
     "deliveryCodeHelp": "Give this code to the delivery person only after you have received your order and checked the parts.",
     "deliveryCodeSafety": "MechDost will never ask for this code on a call or message.",
     "deliveredWithCode": "Delivered on {date}, confirmed with your delivery code.",
-    "deliveredBySupport": "Delivered on {date}, confirmed by MechDost support."
+    "deliveredBySupport": "Delivered on {date}, confirmed by MechDost support.",
+    "reportProblem": "Report a problem with this order"
   },
   "finder": {
     "title": "Where is your vehicle?",
@@ -904,7 +905,8 @@
     "coinsRemoved": "Removed by MechDost: {reason}",
     "coinsDemo": "Demo coins",
     "coinsEarned": "Earned: {reason}",
-    "labelDefault": "Home"
+    "labelDefault": "Home",
+    "nav_support": "Support"
   },
   "portal": {
     "guardTitle": "Sign in to continue",
@@ -1201,7 +1203,8 @@
     "mapDefault_help": "What customers see first on the workshop map. Anyone who switches views keeps their own choice on their device.",
     "mapDefault_satellite": "Satellite with roads and names",
     "mapDefault_map": "Plain map",
-    "mapDefault_save": "Save map view"
+    "mapDefault_save": "Save map view",
+    "nav_support": "Support inbox"
   },
   "policies": {
     "returns": {
@@ -1235,5 +1238,60 @@
     "ticket": {
       "replied": "MechDost support replied to your request {{1}}. Open it to read the reply."
     }
+  },
+  "support": {
+    "title": "Support & requests",
+    "intro": "Something wrong with a part or an order? Tell us here. We reply within 48 hours.",
+    "policyNote": "We don’t take returns or exchanges. Faulty, damaged or wrong parts are replaced or refunded through a request here.",
+    "new": "New request",
+    "kindLabel": "What is it about?",
+    "kind_order_issue": "Faulty, damaged or wrong part",
+    "kind_refund": "Refund",
+    "kind_fitment": "Will it fit my vehicle?",
+    "kind_account": "My account",
+    "kind_other": "Something else",
+    "orderLabel": "Order (optional)",
+    "orderNone": "Not about an order",
+    "messageLabel": "Message",
+    "messageHelp": "Tell us what happened. For a faulty part, say what you noticed and when.",
+    "send": "Send request",
+    "sent": "Request {code} sent. We’ll reply here.",
+    "err_empty": "Write a message.",
+    "err_too_long": "Keep it under {max} characters.",
+    "err_limit": "You can raise up to {max} requests a day. Reply on an existing one instead.",
+    "err_stale": "This request just changed. Reload to see the latest.",
+    "err_not_allowed": "This request is closed.",
+    "empty": "No requests yet. If something is wrong with an order, raise a request above.",
+    "status_open": "Received",
+    "status_in_review": "We’re looking into it",
+    "status_awaiting_customer": "Waiting for your reply",
+    "status_resolved": "Resolved",
+    "status_closed": "Closed",
+    "replyLabel": "Your reply",
+    "sendReply": "Send reply",
+    "fromStaff": "MechDost support",
+    "you": "You",
+    "viaWhatsApp": "via WhatsApp",
+    "orderRef": "Order {code}",
+    "ackBy": "We’ll reply by {date}",
+    "inboxTitle": "Support inbox",
+    "inboxIntro": "Requests from the website and WhatsApp. Reply within 48 hours; resolve within 30 days.",
+    "filter_active": "Active",
+    "filter_done": "Resolved and closed",
+    "filterLabel": "Show",
+    "overdueAck": "Reply overdue",
+    "overdueResolve": "Resolution overdue",
+    "dueAck": "Reply by {date}",
+    "internalToggle": "Internal note (the customer won’t see it)",
+    "internalBadge": "Internal note",
+    "staffReplyLabel": "Reply to the customer",
+    "sendStaff": "Send",
+    "whatsAppNote": "Replies go out on WhatsApp, free within 24 hours of their last message.",
+    "resolve": "Mark resolved",
+    "reopen": "Reopen",
+    "guest": "Guest",
+    "inboxEmpty": "Nothing waiting. New requests appear here.",
+    "from": "From {name}",
+    "openThread": "Open {code}"
   }
 }

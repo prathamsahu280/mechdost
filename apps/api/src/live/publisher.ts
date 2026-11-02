@@ -17,15 +17,25 @@ export interface LiveDelivery {
 export interface LivePublisher {
   readonly name: 'polling' | 'rtdb';
   publish(batch: readonly LiveDelivery[]): Promise<void>;
+  /** Deletes everything waiting for these people (they lost access). Idempotent. */
+  forget(firebaseUids: readonly string[]): Promise<void>;
 }
 
 export const pollingPublisher: LivePublisher = {
   name: 'polling',
   publish: () => Promise.resolve(),
+  forget: () => Promise.resolve(),
 };
 
 /** RTDB keys may not contain `. # $ [ ] /`; uuids and kind codes never do, but refuse anything else. */
 const SAFE_KEY = /^[A-Za-z0-9_-]{1,128}$/;
+
+/** Multi-path update that removes whole inboxes (only well-formed uids; never a path outside `inbox/`). */
+export function inboxRemovals(firebaseUids: readonly string[]): Record<string, null> {
+  return Object.fromEntries(
+    firebaseUids.filter((uid) => SAFE_KEY.test(uid)).map((uid) => [`inbox/${uid}`, null]),
+  );
+}
 
 /**
  * Builds one multi-path update for the whole batch. Each entity has one node per recipient that is overwritten

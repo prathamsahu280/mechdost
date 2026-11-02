@@ -456,3 +456,30 @@ export const liveOutbox = pgTable(
       .where(sql`${t.sentAt} is not null`),
   ],
 );
+
+/**
+ * Live-update inboxes to wipe (security review 2026-11-01 follow-up): when someone loses access — account
+ * deactivated, removed from a shop, staff role revoked — triggers queue their Firebase uid here in the same
+ * transaction, and the relay deletes `inbox/{uid}` so no stale ids stay readable. Rows are tiny and purged after
+ * 7 days; the history of the access change itself lives in `audit_log`.
+ */
+export const liveRevocations = pgTable(
+  'live_revocations',
+  {
+    id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+    firebaseUid: text().notNull(),
+    reason: text().notNull(),
+    attempts: integer().notNull().default(0),
+    doneAt: ts(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    check(
+      'live_revocations_reason_valid',
+      sql`${t.reason} in ('deactivated','partner_removed','role_revoked')`,
+    ),
+    index('live_revocations_pending_idx')
+      .on(t.id)
+      .where(sql`${t.doneAt} is null`),
+  ],
+);

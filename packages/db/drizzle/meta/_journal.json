@@ -134,6 +134,20 @@
       "when": 1793602070044,
       "tag": "0018_faulty_wallflower",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1793604504359,
+      "tag": "0019_harsh_captain_cross",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1793604507612,
+      "tag": "0020_live_revocation_triggers",
+      "breakpoints": true
     }
   ]
 }
