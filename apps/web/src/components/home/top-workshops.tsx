@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { DEMO_WORKSHOPS, fromPricePaise } from '@/demo/workshops';
 import { formatPrice } from '@/lib/format';
 import { workshopPhoto } from '@/lib/media';
+import { stagger } from '@/lib/motion';
 import { StarRating } from '../reviews/star-rating';
 import { ButtonLink } from '../ui/button-link';
 import { LocalLink } from '../ui/local-link';
@@ -17,7 +18,7 @@ export function TopWorkshops({ city }: { city: string }) {
   return (
     <section aria-labelledby="top-workshops" className="pt-16">
       <Container>
-        <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="reveal flex flex-wrap items-end justify-between gap-4">
           <div>
             <Eyebrow>{t('eyebrow', { city })}</Eyebrow>
             <h2
@@ -32,8 +33,8 @@ export function TopWorkshops({ city }: { city: string }) {
           </ButtonLink>
         </div>
         <ul className="mt-6 grid gap-4 tab:grid-cols-3">
-          {top.map((w) => (
-            <li key={w.slug}>
+          {top.map((w, i) => (
+            <li key={w.slug} className="reveal" style={stagger(i)}>
               <article className="group flex h-full flex-col overflow-hidden rounded-card border border-line-card bg-surface shadow-card transition-shadow duration-[var(--duration-base)] hover:shadow-card-hover">
                 <div className="relative aspect-[16/9] overflow-hidden bg-pill">
                   <Image

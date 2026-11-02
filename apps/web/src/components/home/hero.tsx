@@ -1,6 +1,7 @@
-import { BadgeCheck, MapPin, Search, Wrench } from 'lucide-react';
+import { BadgeCheck, MapPin, MessageCircle, ReceiptText, Search, Store, Wallet, Wrench } from 'lucide-react';
 import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
+import type { CSSProperties } from 'react';
 import { getPathname } from '@/i18n/navigation';
 import heroImage from '../../../public/images/site/hero-workshop.jpg';
 import { SiteText } from '../site/site-overrides';
@@ -25,13 +26,20 @@ export function Hero({ city }: { city: string }) {
   const locale = useLocale();
   const shopPath = getPathname({ href: '/shop', locale });
   const workshopsPath = getPathname({ href: '/workshops', locale });
+  const ticker = [
+    { text: t('photoCaption', { city }), icon: BadgeCheck },
+    { text: t('ticker2'), icon: ReceiptText },
+    { text: t('ticker3'), icon: Store },
+    { text: t('ticker4', { city }), icon: Wallet },
+    { text: t('ticker5'), icon: MessageCircle },
+  ];
 
   return (
     <section aria-labelledby="hero-title" className="hero-console px-[3%] pt-4 tab:pt-5">
       <div className="relative mx-auto max-w-[1600px] overflow-hidden rounded-[20px] bg-hero text-white tab:rounded-hero">
         {/* Phones/tablets: full-bleed photo under a green veil. Wide screens: the photo fills the right ~58% and is
             framed on the car (its subject), with green fading in from the copy side. */}
-        <div className="absolute inset-0 nav:left-[42%]">
+        <div className="hero-parallax absolute inset-0 nav:left-[42%]">
           <Image
             src={heroImage}
             alt={t('imageAlt')}
@@ -187,10 +195,30 @@ export function Hero({ city }: { city: string }) {
             </div>
           </div>
 
-          <p className="hidden items-center gap-2 self-end justify-self-start rounded-pill tab:inline-flex bg-hero/80 px-3.5 py-2 text-[13px] font-bold text-white backdrop-blur nav:justify-self-end">
-            <BadgeCheck aria-hidden="true" className="size-4 text-hero-accent" />
-            {t('photoCaption', { city })}
-          </p>
+          {/* Rotating trust badge (user 2026-11-02: "make it feel alive … appear alternatively"). Pure CSS cycle
+              (.hero-ticker in globals.css); screen readers get the full list once; reduced motion shows line 1. */}
+          <div className="hidden self-end justify-self-start tab:block nav:justify-self-end">
+            <ul className="sr-only" aria-label={t('tickerLabel')}>
+              {ticker.map(({ text }) => (
+                <li key={text}>{text}</li>
+              ))}
+            </ul>
+            <p
+              aria-hidden="true"
+              className="hero-ticker rounded-pill border border-white/15 bg-hero/80 px-3.5 py-2 text-[13px] font-bold text-white backdrop-blur"
+            >
+              {ticker.map(({ text, icon: Icon }, i) => (
+                <span
+                  key={text}
+                  style={{ '--n': i } as CSSProperties}
+                  className="inline-flex items-center gap-2"
+                >
+                  <Icon className="size-4 shrink-0 text-hero-accent" />
+                  {text}
+                </span>
+              ))}
+            </p>
+          </div>
         </div>
       </div>
     </section>

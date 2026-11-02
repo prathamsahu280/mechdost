@@ -5,6 +5,7 @@ import { ButtonLink } from '../ui/button-link';
 import { LocalLink } from '../ui/local-link';
 import { Container } from '../ui/page-intro';
 import { SettingValue } from '../site/site-overrides';
+import { stagger } from '@/lib/motion';
 
 /** Rich-text tags for admin settings inside copy: the server prints the default, the island the live value. */
 const liveMinutes = (chunks: ReactNode) => <SettingValue setting="acceptMinutes" fallback={chunks} />;
@@ -27,7 +28,7 @@ export function OrderRoute() {
   return (
     <section aria-labelledby="route-title" className="pt-16">
       <Container>
-        <div className="blueprint overflow-hidden rounded-hero px-6 py-10 text-white tab:px-12 tab:py-14">
+        <div className="reveal-panel blueprint overflow-hidden rounded-hero px-6 py-10 text-white tab:px-12 tab:py-14">
           <p className="eyebrow text-accent-light">{t('eyebrow')}</p>
           <h2
             id="route-title"
@@ -43,8 +44,12 @@ export function OrderRoute() {
               aria-hidden="true"
               className="absolute top-7 bottom-7 left-7 border-l-2 border-dashed border-white/30 nav:right-[12%] nav:bottom-auto nav:left-[12%] nav:border-t-2 nav:border-l-0"
             />
-            {STOPS.map(({ n, icon: Icon }) => (
-              <li key={n} className="relative flex gap-4 nav:flex-col nav:items-center nav:text-center">
+            {STOPS.map(({ n, icon: Icon }, i) => (
+              <li
+                key={n}
+                style={stagger(i + 1)}
+                className="reveal relative flex gap-4 nav:flex-col nav:items-center nav:text-center"
+              >
                 <span
                   aria-hidden="true"
                   className="grid size-14 shrink-0 place-items-center rounded-full bg-navy text-accent-light ring-2 ring-white/30"

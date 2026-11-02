@@ -96,7 +96,7 @@ export default async function ProductPage({ params }: Props) {
           <p className="mt-2 text-[15px] text-muted">{product.spec}</p>
           <a
             href={`#reviews-${product.slug}`}
-            className="mt-3 inline-flex min-h-6 items-center gap-2 text-sm"
+            className="mt-3 inline-flex min-h-7 items-center gap-2 text-sm"
           >
             <StarRating
               rating={rating.rating}

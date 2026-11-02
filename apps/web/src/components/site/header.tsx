@@ -38,7 +38,7 @@ export function Header({ navItems }: { navItems: readonly NavItem[] }) {
   const auth = useTranslations('auth');
   const locale = useLocale();
   return (
-    <header className="sticky top-0 z-30 border-b border-line bg-surface/95 shadow-header backdrop-blur">
+    <header className="site-header sticky top-0 z-30 border-b border-line bg-surface/95 shadow-header backdrop-blur">
       <div className="mx-auto flex min-h-[72px] max-w-[1600px] items-center justify-between gap-2 px-[5%] py-3 nav:min-h-[84px]">
         <BrandMark />
         <div className="flex shrink-0 items-center gap-0.5 min-[400px]:gap-1 sm:gap-2">

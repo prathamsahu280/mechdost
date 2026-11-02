@@ -3,6 +3,7 @@ import { useTranslations } from 'next-intl';
 import { CATEGORY_KEYS, CATEGORY_SLUGS } from '@/demo/catalogue';
 import { CATEGORY_ICONS } from '@/lib/icons';
 import { CATEGORY_PHOTOS } from '@/lib/media';
+import { stagger } from '@/lib/motion';
 import { DEFAULT_FEATURED } from '@/lib/site-layout';
 import { LocalLink } from '../ui/local-link';
 import { ButtonLink } from '../ui/button-link';
@@ -22,7 +23,7 @@ export function CategoryTiles() {
   return (
     <section aria-labelledby="categories-title" className="pt-14 tab:pt-16">
       <Container>
-        <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="reveal flex flex-wrap items-end justify-between gap-4">
           <div>
             <Eyebrow>{t('eyebrow')}</Eyebrow>
             <h2
@@ -37,11 +38,16 @@ export function CategoryTiles() {
           </ButtonLink>
         </div>
         <ul className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-          {CATEGORY_KEYS.map((key) => {
+          {CATEGORY_KEYS.map((key, i) => {
             const slug = CATEGORY_SLUGS[key];
             const Icon = CATEGORY_ICONS[key];
             return (
-              <li key={key} data-home-category={key} className={isDefault(key) ? undefined : 'hidden'}>
+              <li
+                key={key}
+                data-home-category={key}
+                style={stagger(i)}
+                className={isDefault(key) ? 'reveal' : 'reveal hidden'}
+              >
                 <LocalLink
                   href="/shop"
                   query={{ category: slug }}

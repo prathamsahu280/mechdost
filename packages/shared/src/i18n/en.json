@@ -67,7 +67,12 @@
       },
       "photoCaption": "Workshops checked by our team in {city}",
       "modePartsShort": "Parts",
-      "modeWorkshopShort": "Workshops"
+      "modeWorkshopShort": "Workshops",
+      "ticker2": "Itemised estimate before any work starts",
+      "ticker3": "Parts confirmed by a verified local shop",
+      "ticker4": "Cash on delivery across {city}",
+      "ticker5": "Help on WhatsApp in Hindi or English",
+      "tickerLabel": "Why MechDost"
     },
     "products": {
       "eyebrow": "Shop automotive essentials",

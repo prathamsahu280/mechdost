@@ -47,7 +47,7 @@ export default async function CreditsPage() {
                   href={c.source}
                   rel="noopener noreferrer"
                   target="_blank"
-                  className="inline-flex min-h-6 items-center font-bold text-accent-soft-text underline-offset-4 hover:underline"
+                  className="inline-flex min-h-7 items-center font-bold text-accent-soft-text underline-offset-4 hover:underline"
                 >
                   {t('view')}
                 </a>

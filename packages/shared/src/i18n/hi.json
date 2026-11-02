@@ -67,7 +67,12 @@
       },
       "photoCaption": "{city} में हमारी टीम द्वारा जाँची गई वर्कशॉप",
       "modePartsShort": "पार्ट्स",
-      "modeWorkshopShort": "वर्कशॉप"
+      "modeWorkshopShort": "वर्कशॉप",
+      "ticker2": "काम शुरू होने से पहले पूरा अनुमान",
+      "ticker3": "पास की सत्यापित दुकान से पार्ट्स की पुष्टि",
+      "ticker4": "{city} में कैश ऑन डिलीवरी",
+      "ticker5": "WhatsApp पर हिंदी या अंग्रेज़ी में मदद",
+      "tickerLabel": "MechDost क्यों"
     },
     "products": {
       "eyebrow": "वाहन की ज़रूरी चीज़ें ख़रीदें",

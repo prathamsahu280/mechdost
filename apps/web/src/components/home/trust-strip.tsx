@@ -1,6 +1,7 @@
 import { MessageCircle, ReceiptText, ShieldCheck, type LucideIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Container } from '../ui/page-intro';
+import { stagger } from '@/lib/motion';
 
 const ITEMS: { key: 'approve' | 'checked' | 'support'; icon: LucideIcon }[] = [
   { key: 'approve', icon: ReceiptText },
@@ -15,10 +16,11 @@ export function TrustStrip() {
     <section aria-label={t('label')} className="pt-6">
       <Container>
         <ul className="grid gap-3 tab:grid-cols-3">
-          {ITEMS.map(({ key, icon: Icon }) => (
+          {ITEMS.map(({ key, icon: Icon }, i) => (
             <li
               key={key}
-              className="flex items-start gap-3 rounded-tile border border-line-card bg-surface p-4 shadow-card"
+              style={stagger(i)}
+              className="reveal flex items-start gap-3 rounded-tile border border-line-card bg-surface p-4 shadow-card"
             >
               <span
                 aria-hidden="true"

@@ -394,7 +394,7 @@ export function LoginFlow() {
         onClick={() => {
           goTo(step === 'forgot-otp' ? 'forgot-phone' : 'signup-phone');
         }}
-        className="inline-flex min-h-6 font-bold text-accent-soft-text underline-offset-4 hover:underline"
+        className="inline-flex min-h-7 items-center font-bold text-accent-soft-text underline-offset-4 hover:underline"
       >
         {t('changeNumber')}
       </button>

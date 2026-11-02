@@ -238,6 +238,15 @@ Hero keeps its own green tokens (`hero` #064e3b, `hero-text`, `hero-accent`). Gl
 - **Dark mode** (user: "dark theme me … selected filter green hona chahiye"): the selected hero mode tab is a green glass pill (white text). Dark neutrals lose their blue cast: bg #08130f, surface #0e1c17, surface-alt #0b1813, pill #16281f, lines #1f3329/#24392f/#2a4337, input-border #7d958a, muted #a7bab0 (all contrast-tested; `theme-color` dark #08130f).
 - **Hero "Vehicle" field** now uses the custom select (client island `hero-vehicle-select.tsx`); new `e2e/hero.spec.ts` covers hero → finder with PIN + vehicle.
 
+## 2026-11-02 — "More alive": rotating hero badge, scroll motion, list cards, green footer
+
+User: "make the website feel more alive … add 3-4 lines … appear alternatively", "add proper cool scroll animations", the three request steps and the FAQ "should not be individual cards, but one card with list in it", "footer should be green bg and white text".
+
+- **Scroll motion reinstated** (supersedes the 2026-11-01 removal of per-element reveals — user request wins). CSS scroll-driven animations only (`animation-timeline: view()/scroll()`): `.reveal` rise + fade + de-blur with a row cascade (`--i` via `lib/motion.ts` `stagger()`), `.reveal-panel` scale-in for big cards/bands, hero photo parallax (`.hero-parallax`), header shadow on scroll (`.site-header`), FAQ answer slide-in. No JS; browsers without scroll timelines show everything; `prefers-reduced-motion` gets none. Hero copy is never animated (LCP).
+- **Rotating hero badge**: five lines (`photoCaption`, `ticker2–5`, en + hi) cycle every 3.6s with a slide hand-off (`.hero-ticker`, CSS only); screen readers get the full list once (sr-only `<ul>`), the animated badge is `aria-hidden`; reduced motion shows line 1. Hidden below 760px (hero height budget).
+- **One card, one list**: "Tell us what you need / Review the estimate / Confirm the next step" and the FAQ are each a single card with hairline-divided rows (steps joined by a rail).
+- **Green footer**: `bg-navy` (deep green) + `.footer-green`, which re-scopes the colour tokens so existing classes turn light-on-green (white 8.2–13.8:1, muted #c4e8d4 6.2–10.4:1 incl. the glow corner and dark mode). The WhatsApp button becomes a white pill with green text (7.1:1).
+
 ## PENDING DECISIONS (ask "what's pending" to review)
 
 | #   | Topic                                                                                                                                                                                       | Leaning                                                                             | When                                 |
