@@ -29,6 +29,8 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Completed log (newest first)
 
+- 2026-11-02 — **Vercel redeployed (user: "vapas kardo deploy vercel pe").** New project `mechdost-web` (prj_AH3KgWFmBuzWp3rfHmw9V84799RG; GitHub connection attempted by `vercel link` and failed — CLI-only), Root Directory `apps/web`, Next.js, Node 24.x. Production from `theme-blue-green` @ 2c9ed31 (green theme) → **https://mechdost-web.vercel.app**. Smoke test without auth: /, /shop, /workshops, /hi, /credits, /login 200; AVIF images; language switch Hindi→English works after a Hindi cookie (the old production bug is gone); runtime errors 0.
+
 - 2026-11-02 — **Vercel project deleted (user: "delete it from vercel. delete that project").** `mechdost-web` (prj_afWdBWH089RSYWA5rYpgBeAvcpDR) removed with `vercel project rm`; mechdost-web.vercel.app and all preview URLs now 404 `DEPLOYMENT_NOT_FOUND`. Local `.vercel/` link and `apps/web/.env.local` (CLI OIDC token) removed. No live site exists now; the deploy method stays documented in the entries below if the user wants it back. Code and branches (`ui-modern-refresh`, `theme-blue-green`) untouched.
 
 - 2026-11-02 — **Language switch bug fixed + dark-mode greens + hero vehicle select** (branch `theme-blue-green`). Reproduced in Playwright locally and on production (Hindi cookie → English bounces to /hi); root cause next-intl cookie sync only on document requests → switcher is a plain `<a>`; new `e2e/language.spec.ts` (6) and `e2e/hero.spec.ts` (2). Dark theme green-black neutrals + green selected hero tab. Production still has the language bug until this branch is deployed there.
