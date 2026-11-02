@@ -9,6 +9,11 @@ describe('scrubFreeText', () => {
     expect(scrubFreeText('XLTZ4A')).toBe('XLTZ4A');
     expect(scrubFreeText('185/65 R15 tyre')).toBe('185/65 R15 tyre');
     expect(scrubFreeText('order 2026 activa')).toBe('order 2026 activa');
+    expect(scrubFreeText('बैटरी ९८७६५ ४३२१०')).toBe('बैटरी #');
+    expect(scrubFreeText('98.76.54.32.10')).toBe('#');
+    expect(scrubFreeText('(0771) 234-5678 shop')).toBe('(# shop');
+    expect(scrubFreeText('９８７６５４３２１０')).toBe('#'); // full-width digits
+    expect(scrubFreeText('२०२६ मॉडल')).toBe('२०२६ मॉडल');
     expect(scrubFreeText(`  ${'x'.repeat(200)}  `)).toHaveLength(80);
   });
 });
