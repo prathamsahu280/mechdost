@@ -55,6 +55,8 @@ const TEXT_PAIRS: [fg: string, bg: string][] = [
   ['hero-copy', 'navy'],
   ['accent-light', 'navy'],
   ['accent-pale', 'navy'],
+  ['hero-text', 'hero'],
+  ['hero-accent', 'hero'],
   ['accent-soft-text', 'accent-soft'],
   ['accent-soft-text', 'bg'],
   ['accent-soft-text', 'surface'],

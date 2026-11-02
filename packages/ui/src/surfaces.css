@@ -18,14 +18,18 @@ body {
   background-image: none;
 }
 
-/* Primary orange: glossy, opaque-glass finish — sheen and glass edge on top, soft orange glow below. */
+/* Primary buttons: iOS-style glass — translucent blue fill, backdrop blur, faint sheen, thin bright edge. */
 .bg-accent-button {
+  background-color: var(--glass-accent-fill);
   background-image: var(--gradient-accent);
   box-shadow: var(--shadow-accent);
+  -webkit-backdrop-filter: blur(14px) saturate(170%);
+  backdrop-filter: blur(14px) saturate(170%);
 }
 
 .bg-accent-button:hover,
 .bg-accent-button:focus-visible {
+  background-color: var(--glass-accent-fill-hover);
   background-image: var(--gradient-accent-hover);
   box-shadow: var(--shadow-accent-hover);
 }
@@ -36,7 +40,7 @@ body {
   box-shadow: none;
 }
 
-/* Pale-orange states (current nav item, active chips): the same glass edge, no glow. */
+/* Pale-blue states (current nav item, active chips): a glass edge, no glow. */
 .bg-accent-soft {
   background-image: var(--gradient-accent-soft);
   box-shadow: var(--shadow-accent-soft);

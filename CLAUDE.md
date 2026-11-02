@@ -47,7 +47,7 @@ Turborepo + pnpm · `apps/web` Next.js 16 App Router (React 19.3; ruling in docs
 - Every mutable row: `version`, `created_at`, `updated_at`, `created_by`; every mutation writes `audit_log` and the entity's `*_events`.
 - Public codes: `MD-{CITY}-{YYYY}-{6 base32}` orders, `SR-…` service, `REQ-…` tickets; PKs uuid v7; GST invoice numbers from gapless counters.
 - Repositories take an `actor`; API handlers never query tables directly.
-- UI tokens from `packages/ui/tokens.css` (navy `#101f34`, accent `#ea5728`, Manrope headings, DM Sans body); copy from `docs/concept/*.md`; UTF-8 only (fix `→ · ₹` when copying from the capture).
+- UI tokens from `packages/ui/tokens.css` (on branch `theme-blue-green`: deep blue `#0b2350` surfaces, blue `#2563eb`/`#1d47c4` actions, green `#4ade80` highlights — decisions 2026-11-02; earlier branches: navy `#101f34`, accent `#ea5728`; Manrope headings, DM Sans body); copy from `docs/concept/*.md`; UTF-8 only (fix `→ · ₹` when copying from the capture).
 - Tests: Vitest (state machines, money, ranker, allocation), Playwright (every transition, role-leak suites, concurrency), pgTAP (RLS matrix), Lighthouse CI, axe. Visual snapshots vs concept at 390/768/1440.
 - Dev: Firebase Auth Emulator (OTP `123456`), Supabase local, seeded Raipur data and test logins per role.
 

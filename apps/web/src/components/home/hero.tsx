@@ -14,7 +14,7 @@ const POPULAR = [
 ] as const;
 
 /**
- * Home hero (decision 2026-11-01 "Modern storefront refresh"): a full-bleed workshop photo with navy fading in from
+ * Home hero (decision 2026-11-01 "Modern storefront refresh"): a full-bleed workshop photo with deep green fading in from
  * the left, the concept headline, and a search console for the visitor's first job — find a part, or find a
  * workshop by PIN. The console's two modes are a native radio group switched with CSS `:has()`, so the hero stays
  * a static Server Component and both forms are plain GETs that work before JS loads.
@@ -27,9 +27,9 @@ export function Hero({ city }: { city: string }) {
 
   return (
     <section aria-labelledby="hero-title" className="hero-console px-[3%] pt-4 tab:pt-5">
-      <div className="relative mx-auto max-w-[1600px] overflow-hidden rounded-[20px] bg-navy text-white tab:rounded-hero">
-        {/* Phones/tablets: full-bleed photo under a navy veil. Wide screens: the photo fills the right ~58% and is
-            framed on the car (its subject), with navy fading in from the copy side. */}
+      <div className="relative mx-auto max-w-[1600px] overflow-hidden rounded-[20px] bg-hero text-white tab:rounded-hero">
+        {/* Phones/tablets: full-bleed photo under a green veil. Wide screens: the photo fills the right ~58% and is
+            framed on the car (its subject), with green fading in from the copy side. */}
         <div className="absolute inset-0 nav:left-[42%]">
           <Image
             src={heroImage}
@@ -42,13 +42,13 @@ export function Hero({ city }: { city: string }) {
           />
           <div
             aria-hidden="true"
-            className="absolute inset-0 bg-gradient-to-b from-navy/80 via-navy/85 to-navy nav:bg-gradient-to-r nav:from-navy nav:via-navy/30 nav:to-transparent"
+            className="absolute inset-0 bg-gradient-to-b from-hero/80 via-hero/85 to-hero nav:bg-gradient-to-r nav:from-hero nav:via-hero/30 nav:to-transparent"
           />
         </div>
 
         <div className="relative grid gap-10 px-[6%] pt-12 pb-8 tab:pt-16 nav:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)] nav:px-[5%] nav:pt-20 nav:pb-16">
           <div className="max-w-[640px]">
-            <p className="text-sm font-bold text-accent-light">
+            <p className="text-sm font-bold text-hero-accent">
               <SiteText k="hero.eyebrow" locale={locale} fallback={t('eyebrow')} />
             </p>
             <h1
@@ -57,11 +57,11 @@ export function Hero({ city }: { city: string }) {
             >
               <SiteText k="hero.titleLine1" locale={locale} fallback={t('titleLine1')} />
               <br />
-              <span className="text-accent-light">
+              <span className="text-hero-accent">
                 <SiteText k="hero.titleLine2" locale={locale} fallback={t('titleLine2')} />
               </span>
             </h1>
-            <p className="mt-6 max-w-[52ch] text-[15px] leading-relaxed text-hero-copy tab:text-base">
+            <p className="mt-6 max-w-[52ch] text-[15px] leading-relaxed text-hero-text tab:text-base">
               <SiteText k="hero.lead" locale={locale} fallback={t('lead', { city })} />
             </p>
 
@@ -189,8 +189,8 @@ export function Hero({ city }: { city: string }) {
             </div>
           </div>
 
-          <p className="hidden items-center gap-2 self-end justify-self-start rounded-pill tab:inline-flex bg-navy/80 px-3.5 py-2 text-[13px] font-bold text-white backdrop-blur nav:justify-self-end">
-            <BadgeCheck aria-hidden="true" className="size-4 text-accent-light" />
+          <p className="hidden items-center gap-2 self-end justify-self-start rounded-pill tab:inline-flex bg-hero/80 px-3.5 py-2 text-[13px] font-bold text-white backdrop-blur nav:justify-self-end">
+            <BadgeCheck aria-hidden="true" className="size-4 text-hero-accent" />
             {t('photoCaption', { city })}
           </p>
         </div>

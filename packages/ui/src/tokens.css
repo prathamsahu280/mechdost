@@ -4,6 +4,9 @@
  * Changing a value here changes it everywhere; new colours/radii need a docs/decisions.md entry (hard rule 2).
  * Contrast pairs are asserted by apps/web/test/tokens.test.ts (WCAG 2.2 AA).
  *
+ * THEME 2026-11-02 (user: "blue and green theme karna hai" → blue leads, green accents; decisions.md): orange is
+ * gone. Blue = actions/links/logo, green = highlights on dark panels, deep blue = brand dark surface.
+ *
  * Accessibility adjustments vs the concept (decision 2026-10-31 "Accessible accent"):
  *   accent-button #e65325 → #d2461a (white label 3.73 → 4.53:1), muted #657487 → #5a6a7d (4.49 → ≥4.5 on bg and
  *   surface-alt), accent text links use accent-soft-text #bf3c12, form fields use input-border #7f8ea0 (concept #cad6e3
@@ -13,16 +16,16 @@
 @theme {
   /* Colour — `ink` is text, `navy` is the brand's dark surface (hero, announcement bar); they diverge in dark mode */
   --color-ink: #101f34;
-  --color-navy: #101f34;
-  --color-navy-sidebar: #14263e;
-  --color-navy-sidebar-active: #263d58;
-  --color-accent: #ea5728;
-  --color-accent-button: #d2461a;
-  --color-accent-button-hover: #b93d16;
-  --color-accent-light: #ff7a3d; /* brighter on navy (user 2026-11-02: "orange thoda dull hai"); 6.4:1 on navy */
-  --color-accent-pale: #ffb99c;
-  --color-accent-soft: #fff0e9;
-  --color-accent-soft-text: #bf3c12;
+  --color-navy: #0b2350; /* deep blue brand surface (hero, dark panels) */
+  --color-navy-sidebar: #0e2856;
+  --color-navy-sidebar-active: #1b3c78;
+  --color-accent: #2563eb; /* logo, icons, decorative marks: 5.2:1 on white */
+  --color-accent-button: #1d47c4; /* buttons: white 7.3:1 opaque, >=4.7:1 under the glass sheen */
+  --color-accent-button-hover: #1a3fae;
+  --color-accent-light: #4ade80; /* green highlight on deep blue: 8.8:1 */
+  --color-accent-pale: #86efac;
+  --color-accent-soft: #eaf1ff;
+  --color-accent-soft-text: #1d4ed8;
   --color-line: #e2e7ee;
   --color-line-card: #dbe2ea;
   --color-line-input: #cad6e3; /* decorative dividers only */
@@ -44,7 +47,11 @@
   --color-whatsapp-bg: #eff8f2;
   --color-whatsapp-line: #cfe6d7;
   --color-hero-copy: #cfd9e5;
-  --color-focus: #e65325;
+  /* Home hero panel is green (user 2026-11-02: "green color hero banana hai"); same in both themes. */
+  --color-hero: #064e3b;
+  --color-hero-text: #d1fae5; /* 8.6:1 on hero */
+  --color-hero-accent: #6ee7b7; /* 6.4:1 on hero */
+  --color-focus: #3574f0; /* focus ring: >=3.5:1 on white, page and deep blue */
   --color-star: #c27803; /* rating stars: ≥3:1 on white (decision 2026-11-01) */
 
   /* Type (font variables are provided by next/font in the root layout) */
@@ -61,9 +68,9 @@
   --radius-pill: 25px;
 
   /* Depth */
-  --shadow-card: 0 1px 1px #101f340a, 0 2px 6px -2px #101f3412, 0 16px 32px -20px #101f342e;
-  --shadow-card-hover: 0 1px 2px #101f340f, 0 6px 12px -6px #101f341f, 0 28px 48px -24px #101f3447;
-  --shadow-header: 0 1px 0 #101f340d, 0 8px 24px -16px #101f3426;
+  --shadow-card: 0 1px 2px #101f3408, 0 8px 24px -18px #101f341f;
+  --shadow-card-hover: 0 1px 2px #101f340a, 0 14px 32px -20px #101f342e;
+  --shadow-header: 0 1px 0 #101f340a;
   --shadow-dialog: 0 20px 80px #102a4150;
 
   /* Motion (ui-ux-pro-max: shared tokens, duration by context; all disabled under prefers-reduced-motion) */
@@ -88,38 +95,42 @@
   /* Very subtle gradients (user 2026-11-01: "premium feel … very very subtle gradients"), applied by surfaces.css.
      Accent stops never go lighter than accent-button, so white labels keep >= 4.5:1 across the whole button. */
   --gradient-surface: linear-gradient(180deg, #ffffff 0%, #f9fbfd 100%);
-  /* Glossy "opaque glass" accent (user 2026-11-02): bright sheen + glass edge on the top third, the label band
-     (34–66%) stays exactly accent-button so white text keeps 4.53:1; deeper base at the bottom. */
-  --gradient-accent:
-    linear-gradient(180deg, rgb(255 255 255 / 0.3) 0%, rgb(255 255 255 / 0.1) 30%, rgb(255 255 255 / 0) 34%),
-    linear-gradient(180deg, #f05a26 0%, #d2461a 34%, #d2461a 66%, #b83c15 100%);
-  --gradient-accent-hover:
-    linear-gradient(
-      180deg,
-      rgb(255 255 255 / 0.32) 0%,
-      rgb(255 255 255 / 0.12) 30%,
-      rgb(255 255 255 / 0) 34%
-    ),
-    linear-gradient(180deg, #e65022 0%, #bf3e16 34%, #bf3e16 66%, #a53613 100%);
+  /* iOS-style glass buttons (user 2026-11-02: "buttons 3d lag rahe hai … apple ios like glassmorphism"): a tinted
+     fill at 94% with backdrop blur, a faint even sheen, a thin bright inner edge and a soft small shadow — flat, not
+     3D. Fill + sheen keep white labels >= 4.7:1 everywhere on the button. Applied by surfaces.css. */
+  --glass-accent-fill: rgb(29 71 196 / 0.94);
+  --glass-accent-fill-hover: rgb(26 63 174 / 0.96);
+  --gradient-accent: linear-gradient(
+    180deg,
+    rgb(255 255 255 / 0.16) 0%,
+    rgb(255 255 255 / 0.04) 55%,
+    rgb(255 255 255 / 0) 100%
+  );
+  --gradient-accent-hover: linear-gradient(
+    180deg,
+    rgb(255 255 255 / 0.18) 0%,
+    rgb(255 255 255 / 0.05) 55%,
+    rgb(255 255 255 / 0) 100%
+  );
   --shadow-accent:
-    inset 0 1px 0 rgb(255 255 255 / 0.45), inset 0 -1px 0 rgb(0 0 0 / 0.14), 0 1px 2px #101f341f,
-    0 10px 22px -10px rgb(240 90 38 / 0.7);
+    inset 0 0 0 1px rgb(255 255 255 / 0.18), inset 0 1px 0 rgb(255 255 255 / 0.28),
+    0 2px 8px -3px rgb(29 71 196 / 0.3);
   --shadow-accent-hover:
-    inset 0 1px 0 rgb(255 255 255 / 0.5), inset 0 -1px 0 rgb(0 0 0 / 0.14), 0 1px 2px #101f341f,
-    0 14px 28px -10px rgb(240 90 38 / 0.8);
-  --gradient-accent-soft: linear-gradient(180deg, #fff6f1 0%, #ffece3 100%);
-  --shadow-accent-soft: inset 0 1px 0 #ffffff, inset 0 0 0 1px rgb(234 87 40 / 0.14);
+    inset 0 0 0 1px rgb(255 255 255 / 0.22), inset 0 1px 0 rgb(255 255 255 / 0.32),
+    0 4px 12px -4px rgb(29 71 196 / 0.34);
+  --gradient-accent-soft: linear-gradient(180deg, #f2f7ff 0%, #e8f0ff 100%);
+  --shadow-accent-soft: inset 0 1px 0 #ffffff, inset 0 0 0 1px rgb(37 99 235 / 0.14);
   --gradient-navy:
-    radial-gradient(120% 90% at 0% 0%, #1d3456 0%, transparent 55%),
-    radial-gradient(90% 80% at 100% 100%, #2a2230 0%, transparent 60%);
+    radial-gradient(120% 90% at 0% 0%, #17407a 0%, transparent 55%),
+    radial-gradient(90% 80% at 100% 100%, #0d3b3a 0%, transparent 60%);
   --gradient-page: radial-gradient(1400px 640px at 50% -280px, #ffffff 0%, transparent 70%);
 }
 
 :root[data-theme='dark'] {
   --color-ink: #e8eef5;
-  --color-navy: #13233b;
-  --color-accent-soft: #3a1f14;
-  --color-accent-soft-text: #ffb38f;
+  --color-navy: #0f2447;
+  --color-accent-soft: #12264a;
+  --color-accent-soft-text: #93b4ff;
   --color-line: #233450;
   --color-line-card: #263955;
   --color-line-input: #2c4060;
@@ -139,27 +150,27 @@
   --color-error: #ff9282;
   --color-whatsapp-bg: #0e2419;
   --color-whatsapp-line: #1f4a33;
-  --color-focus: #ff8b59;
+  --color-focus: #6ea8ff;
   --color-star: #f5b041;
-  --shadow-card: 0 4px 16px #00000033;
-  --shadow-card-hover: 0 16px 28px #00000055;
+  --shadow-card: 0 1px 2px #0000001f, 0 8px 24px -16px #00000059;
+  --shadow-card-hover: 0 1px 2px #00000026, 0 14px 32px -18px #00000073;
   --shadow-header: 0 2px 16px #00000040;
   --gradient-surface: linear-gradient(180deg, #13223a 0%, #101d31 100%);
   --gradient-navy:
-    radial-gradient(120% 90% at 0% 0%, #1a3050 0%, transparent 55%),
-    radial-gradient(90% 80% at 100% 100%, #261c26 0%, transparent 60%);
+    radial-gradient(120% 90% at 0% 0%, #173a6e 0%, transparent 55%),
+    radial-gradient(90% 80% at 100% 100%, #0c3331 0%, transparent 60%);
   --gradient-page: radial-gradient(1400px 640px at 50% -280px, #12223a 0%, transparent 70%);
-  --gradient-accent-soft: linear-gradient(180deg, #45251a 0%, #33190f 100%);
-  --shadow-accent-soft: inset 0 1px 0 rgb(255 255 255 / 0.08), inset 0 0 0 1px rgb(255 122 61 / 0.18);
+  --gradient-accent-soft: linear-gradient(180deg, #17305c 0%, #12264a 100%);
+  --shadow-accent-soft: inset 0 1px 0 rgb(255 255 255 / 0.08), inset 0 0 0 1px rgb(110 168 255 / 0.2);
   color-scheme: dark;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
     --color-ink: #e8eef5;
-    --color-navy: #13233b;
-    --color-accent-soft: #3a1f14;
-    --color-accent-soft-text: #ffb38f;
+    --color-navy: #0f2447;
+    --color-accent-soft: #12264a;
+    --color-accent-soft-text: #93b4ff;
     --color-line: #233450;
     --color-line-card: #263955;
     --color-line-input: #2c4060;
@@ -179,18 +190,18 @@
     --color-error: #ff9282;
     --color-whatsapp-bg: #0e2419;
     --color-whatsapp-line: #1f4a33;
-    --color-focus: #ff8b59;
+    --color-focus: #6ea8ff;
     --color-star: #f5b041;
-    --shadow-card: 0 4px 16px #00000033;
-    --shadow-card-hover: 0 16px 28px #00000055;
+    --shadow-card: 0 1px 2px #0000001f, 0 8px 24px -16px #00000059;
+    --shadow-card-hover: 0 1px 2px #00000026, 0 14px 32px -18px #00000073;
     --shadow-header: 0 2px 16px #00000040;
     --gradient-surface: linear-gradient(180deg, #13223a 0%, #101d31 100%);
     --gradient-navy:
-      radial-gradient(120% 90% at 0% 0%, #1a3050 0%, transparent 55%),
-      radial-gradient(90% 80% at 100% 100%, #261c26 0%, transparent 60%);
+      radial-gradient(120% 90% at 0% 0%, #173a6e 0%, transparent 55%),
+      radial-gradient(90% 80% at 100% 100%, #0c3331 0%, transparent 60%);
     --gradient-page: radial-gradient(1400px 640px at 50% -280px, #12223a 0%, transparent 70%);
-    --gradient-accent-soft: linear-gradient(180deg, #45251a 0%, #33190f 100%);
-    --shadow-accent-soft: inset 0 1px 0 rgb(255 255 255 / 0.08), inset 0 0 0 1px rgb(255 122 61 / 0.18);
+    --gradient-accent-soft: linear-gradient(180deg, #17305c 0%, #12264a 100%);
+    --shadow-accent-soft: inset 0 1px 0 rgb(255 255 255 / 0.08), inset 0 0 0 1px rgb(110 168 255 / 0.2);
     color-scheme: dark;
   }
 }

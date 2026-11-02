@@ -191,6 +191,27 @@ User: "the first time it will ask the user for the phone number, then they enter
 - **Brighter, glossy orange** (user: "orange thoda dull hai … glassmorphism type but opaque look"): `#d2461a` is already the brightest orange that keeps white labels ≥4.5:1, so brightness comes from the finish — a bright sheen + white glass edge on the top third, the label band (34–66%) exactly `accent-button`, deeper base, soft orange glow (`--gradient-accent*`, `--shadow-accent*`). Pale-orange states get a glass edge (`--gradient-accent-soft`). `accent-light` (orange on navy) #ff8b59 → #ff7a3d (6.4:1 on navy).
 - **Workshop finder list view** (user: "list type of view, with the map on the right … on clicking one workshop … it expands"): compact rows (thumbnail, name, area/distance, from-price, rating) in an accordion; one row open at a time = the selected map pin; pin clicks expand and scroll to the row; map is sticky on the right from 1024px, above the list on smaller screens. Closed panels are `inert`.
 
+## 2026-11-02 — Blue + green theme, iOS-style glass buttons, softer shadows (branch `theme-blue-green`)
+
+User: "iska theme change karo, blue and green theme karna hai" → chose **blue main, green accent**; then "itne harsh shadows nahi chahiye, and buttons 3d lag rahe hai … apple ios like glassmorphism buttons". Supersedes the orange accent and the glossy 3D button finish (decisions earlier on 2026-11-01/02). Built on its own branch from `ui-modern-refresh`; production (orange) is unchanged until the user approves.
+
+| Token                                         | Was                                   | Now                                   | Contrast                                                        |
+| --------------------------------------------- | ------------------------------------- | ------------------------------------- | --------------------------------------------------------------- |
+| `navy` (brand dark surface)                   | #101f34                               | **#0b2350** deep blue                 | hero-copy/white on it ✓                                         |
+| `accent` (logo, icons, links)                 | #ea5728                               | **#2563eb**                           | 5.2:1 on white                                                  |
+| `accent-button` / hover                       | #d2461a / #b93d16                     | **#1d47c4** / #1a3fae                 | white 7.3:1; ≥4.7:1 under the glass sheen                       |
+| `accent-light` (on navy: hero line, eyebrows) | #ff7a3d                               | **#4ade80** green                     | 8.8:1 on navy                                                   |
+| `accent-pale`                                 | #ffb99c                               | #86efac                               | —                                                               |
+| `accent-soft` / text                          | #fff0e9 / #bf3c12                     | **#eaf1ff** / #1d4ed8                 | 5.9:1                                                           |
+| `focus`                                       | #e65325                               | **#3574f0**                           | ≥3.5:1 on white, page and navy (#2563eb failed on navy at 2.96) |
+| dark: navy / accent-soft / text / focus       | #13233b / #3a1f14 / #ffb38f / #ff8b59 | #0f2447 / #12264a / #93b4ff / #6ea8ff | tokens test ✓                                                   |
+
+- **Glass buttons:** `bg-accent-button` = translucent blue fill (`--glass-accent-fill`, 94%), `backdrop-filter: blur(14px) saturate(170%)`, a faint even sheen, 1px bright inner edge, small soft shadow (no heavy glow, no 3D shading). Pale-blue states keep a glass edge.
+- **Shadows:** cards `0 1px 2px` + one soft diffused layer; header is a hairline. Dark theme likewise softer.
+- Navy panels glow cool blue (top-left) and blue-green (bottom-right). Map selected pin + tooltip, and `theme-color`, use the deep blue.
+- Success/"In stock"/"Save" stay the existing green tokens.
+- **Green hero** (user: "green color hero banana hai"): the home hero panel uses its own tokens — `hero` #064e3b deep emerald, `hero-text` #d1fae5 (8.6:1), `hero-accent` #6ee7b7 for the second headline line/eyebrow (6.4:1) — so other deep-blue panels stay blue. Search console stays white with the blue glass button. Both pairs added to the tokens contrast test.
+
 ## PENDING DECISIONS (ask "what's pending" to review)
 
 | #   | Topic                                                                                                                                                                                       | Leaning                                                                             | When                                 |

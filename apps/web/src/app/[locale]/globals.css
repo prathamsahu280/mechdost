@@ -317,9 +317,9 @@
   transform: rotate(-45deg) scale(1.12);
 }
 .md-map-pin--active .md-map-pin__body {
-  background: #101f34;
+  background: #0b2350;
   box-shadow:
-    0 0 0 4px #e6532573,
+    0 0 0 4px #2563eb73,
     0 8px 18px #101f3480;
   transform: rotate(-45deg) scale(1.22);
 }
@@ -329,7 +329,7 @@
   left: 50%;
   padding: 4px 9px;
   border-radius: 8px;
-  background: #101f34;
+  background: #0b2350;
   color: #fff;
   font-size: 12px;
   font-weight: 700;
