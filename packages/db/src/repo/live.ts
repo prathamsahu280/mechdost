@@ -179,7 +179,7 @@ export async function claimLiveRevocations(db: Tx, limit = 100): Promise<LiveRev
     where id in (
       select id from live_revocations
       where done_at is null
-        and (attempts = 0 or wiped_at < now() - make_interval(secs => ${REWIPE_SECONDS}))
+        and (attempts = 0 or coalesce(wiped_at, created_at) < now() - make_interval(secs => ${REWIPE_SECONDS}))
       order by id
       limit ${Math.min(Math.max(limit, 1), 1000)}
       for update skip locked
@@ -210,4 +210,23 @@ export async function markLiveRevocationsDone(db: Tx, rows: readonly LiveRevocat
     );
   }
   await db.execute(sql`delete from live_revocations where done_at < now() - interval '7 days'`);
+}
+
+/**
+ * A publish that timed out may still land in Firebase later (the cap stops our wait, not the write). Every wipe
+ * from the last day that concerns one of that batch's recipients is therefore re-armed for another full pass
+ * REWIPE_SECONDS from now (security review 2026-11-03).
+ */
+export async function rearmRevocationsFor(db: Tx, firebaseUids: readonly string[]): Promise<number> {
+  if (firebaseUids.length === 0) return 0;
+  const result = await db.execute(sql`
+    update live_revocations
+    set done_at = null, attempts = least(attempts, 1), wiped_at = now()
+    where created_at > now() - interval '1 day'
+      and firebase_uid in (${sql.join(
+        [...new Set(firebaseUids)].map((uid) => sql`${uid}`),
+        sql`, `,
+      )})
+    returning id`);
+  return rowsOf(result).length;
 }

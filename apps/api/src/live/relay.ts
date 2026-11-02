@@ -3,6 +3,7 @@ import {
   claimLiveRevocations,
   markLiveRevocationsDone,
   markLiveSent,
+  rearmRevocationsFor,
   oldestPendingLiveMs,
   purgeSentLive,
   resolveLiveRecipients,
@@ -23,6 +24,13 @@ import type { LiveDelivery, LivePublisher } from './publisher';
  */
 export const PUBLISH_TIMEOUT_MS = 20_000;
 
+export class PublishTimeoutError extends Error {
+  constructor() {
+    super('live publish timed out');
+    this.name = 'PublishTimeoutError';
+  }
+}
+
 export async function withTimeout<T>(work: Promise<T>, ms: number): Promise<T> {
   let timer: NodeJS.Timeout | undefined;
   try {
@@ -30,7 +38,7 @@ export async function withTimeout<T>(work: Promise<T>, ms: number): Promise<T> {
       work,
       new Promise<never>((_, reject) => {
         timer = setTimeout(() => {
-          reject(new Error('live publish timed out'));
+          reject(new PublishTimeoutError());
         }, ms);
       }),
     ]);
@@ -68,7 +76,19 @@ export async function relayOnce(db: Tx, publisher: LivePublisher, limit = 200): 
     );
   }
   const batch: LiveDelivery[] = rows.map((r) => ({ recipients: byTopic.get(r.topic) ?? [], ping: r.ping }));
-  await withTimeout(publisher.publish(batch), PUBLISH_TIMEOUT_MS);
+  try {
+    await withTimeout(publisher.publish(batch), PUBLISH_TIMEOUT_MS);
+  } catch (err) {
+    // The cap stops our wait, not Firebase's write, which may still land: re-arm the wipes that concern these
+    // recipients so another pass runs after it could have arrived. Rows stay unsent and retry after the lease.
+    if (err instanceof PublishTimeoutError) {
+      await rearmRevocationsFor(
+        db,
+        batch.flatMap((d) => d.recipients),
+      );
+    }
+    throw err;
+  }
   // Access may have ended while this batch was in flight: wipe again after publishing (the second pass, two
   // minutes later, covers other workers).
   await revokeOnce(db, publisher);

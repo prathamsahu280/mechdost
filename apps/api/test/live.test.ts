@@ -15,7 +15,7 @@ import {
   type LiveDelivery,
   type LivePublisher,
 } from '../src/live/publisher';
-import { relayOnce, revokeOnce, withTimeout } from '../src/live/relay';
+import { PublishTimeoutError, relayOnce, revokeOnce, withTimeout } from '../src/live/relay';
 
 let db: TestDb;
 let client: Awaited<ReturnType<typeof createTestDb>>['client'];
@@ -219,6 +219,29 @@ describe('lost access wipes the live inbox (security review follow-ups)', () => 
     const pub = new FakePublisher();
     expect(await revokeOnce(t(), pub)).toBe(1);
     expect(await revokeOnce(t(), pub)).toBe(0); // not back to back: waits 120 s after the first pass
+  });
+
+  it('a timed-out publish re-arms the wipes of its recipients (the late write may still land)', async () => {
+    const pub = new FakePublisher();
+    await client.exec(
+      "insert into live_revocations (firebase_uid, reason, attempts, wiped_at, done_at) values ('fb-relay-customer', 'role_changed', 2, now(), now())",
+    );
+    await newOrder();
+    pub.publish = () => Promise.reject(new PublishTimeoutError());
+    await expect(relayOnce(t(), pub)).rejects.toThrow('live publish timed out');
+    const res = await client.query<{ done_at: string | null; attempts: number }>(
+      "select done_at, attempts from live_revocations where firebase_uid = 'fb-relay-customer' and reason = 'role_changed'",
+    );
+    expect(res.rows[0]).toMatchObject({ done_at: null, attempts: 1 });
+  });
+
+  it('an older wipe without wiped_at (before migration 0023) still gets its second pass', async () => {
+    await client.exec(
+      "insert into live_revocations (firebase_uid, reason, attempts, created_at) values ('fb-relay-legacy', 'deactivated', 1, now() - interval '10 minutes')",
+    );
+    const pub = new FakePublisher();
+    await revokeOnce(t(), pub);
+    expect(pub.forgotten.some((f) => f.firebaseUid === 'fb-relay-legacy')).toBe(true);
   });
 
   it('a publish never runs past its cap', async () => {
