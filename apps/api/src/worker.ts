@@ -49,7 +49,7 @@ const bridgeTimer = config.whatsapp
   ? setInterval(() => {
       if (bridging) return;
       bridging = true;
-      void bridgeInboundWhatsApp(db, { cityCode: config.supportDefaultCityCode })
+      void bridgeInboundWhatsApp(db, { cityCode: config.defaultCityCode })
         .then((r) => {
           if (r.processed > 0) log('info', 'whatsapp_bridge', { ...r });
         })

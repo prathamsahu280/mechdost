@@ -26,11 +26,21 @@ customer (browse), seller (list products / offers), catalogue_manager (master da
 
 ## Search
 
-Launch: Postgres `tsvector` (name, brand, sku, part numbers, spec — **English and Hindi columns both**, so "बैटरी" and "battery" match on either locale; `simple` config for the Hindi part) + `pg_trgm` similarity + synonyms table; Redis cache 60 s per (city, query, filters). **Planned upgrade: Meilisearch** behind the same `/search` API (index sync job, typo tolerance, facets, Hinglish synonyms, geo for workshops).
+Launch: Postgres `tsvector` (name, brand, sku, part numbers, spec — **English and Hindi columns both**, so "बैटरी" and "battery" match on either locale; `simple` config for the Hindi part) + `pg_trgm` similarity + synonyms table; Redis cache 60 s per (city, query, filters). **Built (migration 0026):** generated column `products.search_vector` (name A, spec summary + compatibility B, description C; English text with the `english` config, Hindi with `simple`) + GIN index; brand and product names by trigram word similarity (`q <% name`, existing GIN trigram indexes); part numbers and SKUs exact after normalising (upper-case alphanumerics, ≥ 4 characters). Relevance = `ts_rank` + best word similarity + 1 for a part-number hit. Verified on the dev database (indexes used). **Planned upgrade: Meilisearch** behind the same `/search` API (index sync job, typo tolerance, facets, Hinglish synonyms, geo for workshops).
 
 ## API
 
-`GET /catalogue/categories`, `GET /catalogue/products?city&pincode&category&brand&q&vehicle&sort&cursor`, `GET /catalogue/products/:slug?pincode`, `GET /catalogue/suggest?q`, `GET /vehicles/master?make&model`, `POST /stock-alerts` (P1). Prices resolved per pincode from `shop_inventory` ∩ `shop_pincodes` (lowest price with stock; shows "From ₹" when no pincode).
+`GET /catalogue/categories`, `GET /catalogue/products?city&pincode&category&brand&q&vehicle&sort&cursor`, `GET /catalogue/products/:slug?pincode`, `GET /catalogue/suggest?q`, `GET /vehicles/master?make&model`, `POST /stock-alerts` (P1).
+
+**Price for a PIN (decision 2026-11-01 "Pincode-wise prices", Q26 default; corrected here 2026-11-03, this spec said "lowest").** The customer sees one price: the offer of the **nearest shop that covers the PIN and has free stock** (distance from the shop's location to the PIN centroid; ties → lowest price → shop id, so the answer is stable). Without a PIN: "From ₹" = the lowest buyable offer in the city. A buyable offer = live product, active variant, active inventory with `on_hand − reserved > 0`, shop `approved` and not busy (paused/suspended shops are never `approved`), and for a PIN an active `shop_pincodes` row (its `shipping_paise` and lead days are shown). Unknown PIN → `pincodeKnown: false`, no prices.
+
+**Built 2026-11-03 (API, `apps/api/src/routes/catalogue.ts`, repo `packages/db/src/repo/catalogue.ts`):**
+
+- `GET /v1/catalogue/categories?locale`: visible categories in admin order with live product counts.
+- `GET /v1/catalogue/products?city&pincode&category&brand&q&sort&available&cursor&limit&locale`: sorts `relevance` (default with `q`) · `newest` (default) · `price_asc` · `price_desc` (unpriced last). A category includes its child categories. `available=true` keeps buyable products only. Keyset cursor on (sort key, id), opaque base64url, validated (tampered → 422 `INVALID_CURSOR`); page size ≤ 48.
+- `GET /v1/catalogue/products/{slug}?city&pincode&locale`: each active variant's best offer with the **seller name** (E-Commerce Rules), photos, OE/manufacturer part numbers, spec, country of origin, GST rate; drafts/unknown → 404.
+- Public, no sign-in; per-IP limits (global 600/min + `catalogue_ip` 240/min on listings); `Cache-Control: public, max-age=30, stale-while-revalidate=120` (categories 300 s). Responses carry no internal ids. City defaults to `DEFAULT_CITY_CODE` (RPR). Hindi fields with the English fallback per `locale`.
+- Not yet: `vehicle` fitment filter and badge (vehicle master, pending #4), `suggest`, synonyms table, Redis cache, Meilisearch; web pages still read the demo catalogue until Phase 1 wiring.
 
 ## UI
 
@@ -50,7 +60,7 @@ No offers in pincode → "No eligible delivery offers for this PIN yet. Browse a
 
 ## Acceptance tests
 
-Fitment badge correctness, pincode price resolution picks lowest in-stock approved offer, unpublished/paused offers never appear, search typo "castrl" finds Castrol (trigram), cursor pagination stable under inserts, SEO JSON-LD present with Offer.
+Fitment badge correctness, pincode price resolution picks the **nearest covering** in-stock approved offer (not the cheapest; `packages/db/test/catalogue.test.ts`), unpublished/paused/busy offers never appear, search typo "castrl" finds Castrol (trigram), cursor pagination stable under inserts, SEO JSON-LD present with Offer.
 
 ## Open decisions
 

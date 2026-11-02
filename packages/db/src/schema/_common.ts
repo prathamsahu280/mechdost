@@ -38,6 +38,9 @@ export const paise = () => bigint({ mode: 'number' });
 /** Case-insensitive text (emails, coupon codes). Requires the citext extension. */
 export const citext = customType<{ data: string }>({ dataType: () => 'citext' });
 
+/** Postgres full-text search document; only ever a generated column (never written by the app). */
+export const tsvector = customType<{ data: string }>({ dataType: () => 'tsvector' });
+
 /** WGS84 point stored as PostGIS geography for metre-accurate ST_DWithin distance queries. */
 export const geographyPoint = customType<{ data: { lng: number; lat: number }; driverData: string }>({
   dataType: () => 'geography(Point,4326)',

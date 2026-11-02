@@ -9,6 +9,7 @@ import { rateLimit, RATE_RULES } from './middleware/rate-limit';
 import { securityMiddleware } from './middleware/security';
 import { adminNotificationRoutes } from './routes/admin-notifications';
 import { assistantRoutes } from './routes/assistant';
+import { catalogueRoutes } from './routes/catalogue';
 import { meRoutes } from './routes/me';
 import { supportRoutes } from './routes/support';
 import { systemRoutes } from './routes/system';
@@ -56,6 +57,7 @@ export function createApp(deps: AppDeps) {
   );
   v1.route('/', meRoutes(deps, sessions));
   v1.route('/', assistantRoutes(deps));
+  v1.route('/', catalogueRoutes(deps));
   v1.route('/', adminNotificationRoutes(deps, sessions));
   v1.route('/', supportRoutes(deps, sessions));
   app.route('/v1', v1);

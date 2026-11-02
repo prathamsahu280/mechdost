@@ -1,6 +1,7 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { notificationOutbox, webhookEvents } from '../schema';
 import type { Tx } from './orders';
+import { rowsOf } from './sql-rows';
 
 /**
  * Notification outbox (spec 10). Rows are written in the business transaction (dedupe key UNIQUE, so a retried
@@ -63,11 +64,6 @@ interface RawOutbox {
   payload: Record<string, unknown> | string;
   attempts: number;
   claim_token: string;
-}
-
-function rowsOf<T>(result: unknown): T[] {
-  if (Array.isArray(result)) return result as T[];
-  return (result as { rows?: T[] }).rows ?? [];
 }
 
 export const OUTBOX_LEASE_SECONDS = 120;

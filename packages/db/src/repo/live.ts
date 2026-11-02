@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm';
 import { parseLiveTopic, type LiveEvent, type LiveKind, type LivePing } from '@mechdost/shared/live';
 import type { Permission } from '@mechdost/shared/rbac';
 import type { Tx } from './orders';
+import { rowsOf } from './sql-rows';
 
 /**
  * Live-update relay storage (decision 2026-11-01). Triggers fill `live_outbox` inside business transactions
@@ -31,11 +32,6 @@ interface ClaimedRow {
   entity_version: number;
   event: string;
   created_at: Date | string;
-}
-
-function rowsOf<T>(result: unknown): T[] {
-  if (Array.isArray(result)) return result as T[];
-  return (result as { rows?: T[] }).rows ?? [];
 }
 
 export async function claimLiveBatch(

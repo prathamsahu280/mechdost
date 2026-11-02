@@ -246,7 +246,7 @@ export function supportRoutes(deps: AppDeps, cache: SessionCache) {
         kind: body.kind,
         orderCode: body.orderCode ?? null,
         body: body.body,
-        defaultCityCode: deps.config.supportDefaultCityCode,
+        defaultCityCode: deps.config.defaultCityCode,
       });
       return c.json(created, 201);
     })

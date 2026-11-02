@@ -58,7 +58,7 @@ Live chat widget (declined for now), order chat with partner, NPS after resoluti
   - malformed senders are parked (`webhook_events.status = parked`, `error = bad_sender`), not lost.
 - **Media:** stored as a code (`[image]`, `[document]` …) until media import is built (Supabase Storage, EXIF strip).
 - **Replies:** staff answer in the admin inbox. The reply goes back as a free-form WhatsApp message inside the 24 h window (free for 1,000 a month), otherwise as the `ticket.replied` utility template. This is built with the support inbox UI.
-- **City:** `SUPPORT_DEFAULT_CITY_CODE` (default RPR) is used only for the code segment when the sender has no known city; per-customer city routing to `staff:city` comes with the inbox.
+- **City:** `DEFAULT_CITY_CODE` (default RPR) is used only for the code segment when the sender has no known city; per-customer city routing to `staff:city` comes with the inbox.
 - **Tests:** `packages/db/test/support-bridge.test.ts`, `packages/shared/test/state.test.ts` (ticket machine).
 
 ## Customer and staff screens (built 2026-11-03, demo; API next)

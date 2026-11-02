@@ -45,8 +45,11 @@ const schema = z
     WHATSAPP_ACCESS_TOKEN: z.string().min(20).optional(),
     WHATSAPP_APP_SECRET: z.string().min(16).optional(),
     WHATSAPP_VERIFY_TOKEN: z.string().min(16).optional(),
-    /** City code for tickets opened from WhatsApp when the sender's city is unknown (code segment only). */
-    SUPPORT_DEFAULT_CITY_CODE: z
+    /**
+     * City used when a request carries none: catalogue reads without `city`, ticket codes from WhatsApp when the
+     * sender's city is unknown (code segment only). Launch city Raipur.
+     */
+    DEFAULT_CITY_CODE: z
       .string()
       .regex(/^[A-Z]{3}$/)
       .default('RPR'),
@@ -136,7 +139,7 @@ function toConfig(env: z.infer<typeof schema>) {
             apiVersion: env.WHATSAPP_API_VERSION,
           }
         : null,
-    supportDefaultCityCode: env.SUPPORT_DEFAULT_CITY_CODE,
+    defaultCityCode: env.DEFAULT_CITY_CODE,
     live: {
       transport: env.LIVE_TRANSPORT,
       databaseUrl: env.FIREBASE_DATABASE_URL ?? null,

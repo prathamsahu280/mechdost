@@ -38,7 +38,13 @@ describe('field encryption (spec 13)', () => {
   it('rejects tampering, a value moved to another column, and garbage', () => {
     const value = encryptField('secret', ring, 'staff_security.totp_secret_enc');
     const parts = value.split('.');
-    const flipped = [...parts.slice(0, 3), `A${(parts[3] ?? '').slice(1)}`, parts[4]].join('.');
+    // Always change the first ciphertext character (setting it to a fixed letter was a no-op 1 run in 64).
+    const body = parts[3] ?? '';
+    const flipped = [
+      ...parts.slice(0, 3),
+      `${body.startsWith('A') ? 'B' : 'A'}${body.slice(1)}`,
+      parts[4],
+    ].join('.');
     expect(() => decryptField(flipped, ring, 'staff_security.totp_secret_enc')).toThrow(DecryptError);
     expect(() => decryptField(value, ring, 'shops.pan_enc')).toThrow(DecryptError);
     expect(() => decryptField('plain text', ring, 'shops.pan_enc')).toThrow(DecryptError);

@@ -14,7 +14,17 @@ import {
   uuid,
   type AnyPgColumn,
 } from 'drizzle-orm/pg-core';
-import { createdAt, encryptedCheck, geographyPoint, id, paise, ts, updatedAt, version } from './_common';
+import {
+  createdAt,
+  encryptedCheck,
+  geographyPoint,
+  id,
+  paise,
+  ts,
+  tsvector,
+  updatedAt,
+  version,
+} from './_common';
 import { cities, pincodes, states } from './geography';
 import { users, vehicleVariants } from './identity';
 
@@ -204,6 +214,14 @@ export const products = pgTable(
     status: text().notNull().default('draft'),
     submittedByShopId: uuid().references(() => shops.id, { onDelete: 'set null' }),
     rejectionReason: text(),
+    /**
+     * Full-text search document (spec 02 "Search"), English and Hindi side by side so "battery" and "बैटरी"
+     * match on either locale: English text through the `english` config (stemming), Hindi through `simple`.
+     * Brand names and part numbers are matched separately (trigram on `brands.name`, exact `part_numbers`).
+     */
+    searchVector: tsvector().generatedAlwaysAs(
+      sql`setweight(to_tsvector('english'::regconfig, coalesce("name", '')), 'A') || setweight(to_tsvector('simple'::regconfig, coalesce("name_hi", '')), 'A') || setweight(to_tsvector('english'::regconfig, coalesce("spec_summary", '') || ' ' || coalesce("compatibility", '')), 'B') || setweight(to_tsvector('simple'::regconfig, coalesce("spec_summary_hi", '') || ' ' || coalesce("compatibility_hi", '')), 'B') || setweight(to_tsvector('english'::regconfig, coalesce("description", '')), 'C') || setweight(to_tsvector('simple'::regconfig, coalesce("description_hi", '')), 'C')`,
+    ),
     version: version(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
@@ -221,6 +239,11 @@ export const products = pgTable(
     index().on(t.categoryId, t.status),
     index().on(t.brandId),
     index().on(t.submittedByShopId),
+    index('products_search_vector_idx').using('gin', t.searchVector),
+    // Catalogue listing "newest first" with a stable keyset (spec 02, cursor pagination).
+    index('products_live_newest_idx')
+      .on(t.createdAt.desc(), t.id.desc())
+      .where(sql`status = 'live'`),
   ],
 );
 
