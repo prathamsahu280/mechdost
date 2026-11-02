@@ -2,6 +2,9 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { latinOffenders } from '../test/hindi-allowlist';
 
+/** The project's accessibility bar (same tags as shell.spec.ts). */
+const WCAG_AA = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
+
 /**
  * Privacy choice (DPDP; decision "declines non-essential by default"): a fresh visitor sees two equal choices,
  * nothing optional happens before choosing (no visitor id, no event request), the choice sticks across pages,
@@ -25,7 +28,10 @@ test('a fresh visitor chooses; the choice persists and can be changed', async ({
   expect(Math.abs((a?.height ?? 0) - (e?.height ?? 0))).toBeLessThan(2);
   expect(await allow.getAttribute('aria-pressed')).toBeNull();
   expect(await page.evaluate(() => localStorage.getItem('mechdost-visitor'))).toBeNull();
-  const axe = await new AxeBuilder({ page }).include('[data-testid="consent-banner"]').analyze();
+  const axe = await new AxeBuilder({ page })
+    .withTags(WCAG_AA)
+    .include('[data-testid="consent-banner"]')
+    .analyze();
   expect(axe.violations).toEqual([]);
 
   await essential.click();
@@ -75,4 +81,16 @@ test('the assistant button steps aside while the choice is open; Escape closes a
   await page.keyboard.press('Escape');
   await expect(page.getByTestId('consent-banner')).toBeHidden();
   await expect(launcher).toBeVisible();
+});
+
+test('the banner links to the privacy notice, in both languages', async ({ page }) => {
+  await page.goto('/');
+  await page.getByTestId('consent-banner').getByRole('link', { name: 'Read the privacy policy' }).click();
+  await expect(page).toHaveURL(/\/policies\/privacy$/);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Privacy');
+  await expect(page.locator('main').getByRole('heading', { level: 2 })).toHaveCount(7); // the 7 sections
+  const axe = await new AxeBuilder({ page }).withTags(WCAG_AA).analyze();
+  expect(axe.violations).toEqual([]);
+  await page.goto('/hi/policies/privacy');
+  await expect(page.getByRole('heading', { name: 'आपके विकल्प और अधिकार' })).toBeVisible();
 });

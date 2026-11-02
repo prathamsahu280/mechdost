@@ -184,7 +184,8 @@
     "becomePartner": "Become a partner",
     "gstin": "GSTIN {gstin}",
     "registered": "Registered office: {address}",
-    "returnsPolicy": "Returns & refunds"
+    "returnsPolicy": "Returns & refunds",
+    "privacyPolicy": "Privacy policy"
   },
   "whatsapp": {
     "general": "Hello MechDost, I have a question.",
@@ -1223,6 +1224,27 @@
       "coinsBody": "Coins used on a cancelled order are given back as coins. Coins have no cash value and are never paid out as money.",
       "help": "Questions about an order? Call us:",
       "updated": "Last updated 1 November 2026."
+    },
+    "privacy": {
+      "eyebrow": "Policies",
+      "title": "Privacy",
+      "lead": "What we keep about you, why, who sees it, and how you stay in control. Plain words, no surprises.",
+      "whoTitle": "Who we are",
+      "whoBody": "MechDost is run by {company}, {address}. We decide how your data is used and we answer for it.",
+      "collectTitle": "What we keep",
+      "collectBody": "Your name, mobile number and email; a password, stored only as a scrambled code we cannot read back; delivery addresses; your vehicles and service history; your orders, bookings and support messages.",
+      "purposeTitle": "Why we use it",
+      "purposeBody": "To deliver your orders and run your workshop bookings, to answer your support requests, to keep accounts safe from misuse, and to keep the order and tax records the law asks for. Nothing else without asking you first.",
+      "shareTitle": "Who sees it",
+      "shareBody": "Only the shop or workshop handling your order or booking, and only after they accept it — your number and address stay hidden until then. Order updates on WhatsApp go through Meta when you have them switched on. We never sell your data.",
+      "analyticsTitle": "Analytics, only if you allow it",
+      "analyticsBody": "With “Allow analytics” we count page visits and clicks to improve MechDost. These records never hold your name, number or address, and phone numbers or emails typed into search are removed first. Choose “Essential only” any time with “Privacy choices” at the bottom of every page.",
+      "safeTitle": "How we protect it",
+      "safeBody": "Encrypted connections everywhere, sensitive details encrypted again in our database, staff access only for the part of their job, and a log of every change staff make.",
+      "rightsTitle": "Your choices and rights",
+      "rightsBody": "Ask us to show, correct or delete your data, or withdraw a permission you gave. Deletion is confirmed by our support team first; order and invoice records are kept as long as tax law requires, then removed.",
+      "help": "Questions, requests or complaints about your data? Call us:",
+      "updated": "Last updated: 3 November 2026."
     }
   },
   "notifyTemplates": {
@@ -1300,6 +1322,7 @@
     "body": "We use essential storage to run the site (your cart, language and sign-in). With your permission we also count page visits and clicks — never your name, number or address — to improve MechDost. You can change this any time with “Privacy choices” at the bottom of the page.",
     "allow": "Allow analytics",
     "essential": "Essential only",
-    "choices": "Privacy choices"
+    "choices": "Privacy choices",
+    "policy": "Read the privacy policy"
   }
 }

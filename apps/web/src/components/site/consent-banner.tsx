@@ -9,6 +9,9 @@ export interface ConsentCopy {
   body: string;
   allow: string;
   essential: string;
+  policy: string;
+  /** Localised path of the privacy notice. */
+  policyHref: string;
 }
 
 /**
@@ -71,7 +74,12 @@ export function ConsentBanner({ copy }: { copy: ConsentCopy }) {
       className="fixed inset-x-3 z-50 rounded-card border border-line bg-surface p-4 shadow-dialog outline-none bottom-[calc(76px+env(safe-area-inset-bottom))] nav:inset-x-auto nav:bottom-6 nav:left-6 nav:max-w-md"
     >
       <h2 className="font-heading text-[15px] font-extrabold text-ink">{copy.title}</h2>
-      <p className="mt-1.5 text-sm leading-relaxed text-muted">{copy.body}</p>
+      <p className="mt-1.5 text-sm leading-relaxed text-muted">
+        {copy.body}{' '}
+        <a href={copy.policyHref} className="font-bold text-ink underline underline-offset-4">
+          {copy.policy}
+        </a>
+      </p>
       <div className="mt-3 flex gap-2">
         <button
           type="button"

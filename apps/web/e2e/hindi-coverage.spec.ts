@@ -304,6 +304,7 @@ const PUBLIC_PAGES = [
   '/login',
   '/quotes/new',
   '/policies/returns',
+  '/policies/privacy',
   '/partners',
   '/partners/apply/seller',
   '/partners/apply/garage',

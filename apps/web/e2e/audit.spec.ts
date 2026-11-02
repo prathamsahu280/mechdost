@@ -19,6 +19,7 @@ const BASE_PAGES = [
   '/account/profile',
   '/account/coins',
   '/policies/returns',
+  '/policies/privacy',
   '/admin/coins',
   '/login',
   '/quotes/new',

@@ -63,6 +63,7 @@ export function Footer() {
         { href: '/account/orders', label: t('trackOrder'), track: 'footer_orders' },
         { href: '/account/quotes', label: account('nav_quotes'), track: 'footer_quotes' },
         { href: '/policies/returns', label: t('returnsPolicy'), track: 'footer_returns_policy' },
+        { href: '/policies/privacy', label: t('privacyPolicy'), track: 'footer_privacy_policy' },
         { href: '/cart', label: nav('cart'), track: 'footer_cart' },
       ],
     },

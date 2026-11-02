@@ -120,6 +120,8 @@ export default async function LocaleLayout({
             body: consent('body'),
             allow: consent('allow'),
             essential: consent('essential'),
+            policy: consent('policy'),
+            policyHref: localised('/policies/privacy'),
           }}
         />
       </body>
