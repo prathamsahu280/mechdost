@@ -7,6 +7,7 @@ import { handleError, handleNotFound } from './errors';
 import { log } from './logger';
 import { rateLimit, RATE_RULES } from './middleware/rate-limit';
 import { securityMiddleware } from './middleware/security';
+import { adminCatalogueRoutes } from './routes/admin-catalogue';
 import { adminCustomerRoutes } from './routes/admin-customers';
 import { adminNotificationRoutes } from './routes/admin-notifications';
 import { adminOrderRoutes } from './routes/admin-orders';
@@ -66,6 +67,7 @@ export function createApp(deps: AppDeps) {
   v1.route('/', adminNotificationRoutes(deps, sessions));
   v1.route('/', supportRoutes(deps, sessions));
   v1.route('/', adminCustomerRoutes(deps, sessions));
+  v1.route('/', adminCatalogueRoutes(deps, sessions));
   v1.route('/', adminOrderRoutes(deps, sessions));
   v1.route('/', shopOrderRoutes(deps, sessions));
   app.route('/v1', v1);

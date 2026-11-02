@@ -74,3 +74,12 @@ Back-in-stock/price-drop alerts, Q&A, photo reviews, badges, collections, B2B pr
 ## Home page sections (2026-11-02)
 
 Hero, trust strip, category tiles, popular products, order-route band, workshop service steps, top-rated workshops, FAQ (+ FAQPage structured data), partner teaser — see decisions 2026-11-02. Popular products and top workshops come from the catalogue/workshop APIs (ranked per city) in Phase 1.
+
+## Built: admin catalogue editor API (2026-11-03)
+
+`packages/db/src/repo/catalogue-admin.ts`, `apps/api/src/routes/admin-catalogue.ts`; product states `productMachine` (`packages/shared/src/state`): draft → submitted (shop/admin) · draft/submitted → live (admin) · submitted → rejected (reason for the shop) · rejected → draft · live → archived · archived → draft.
+
+- `GET /v1/admin/catalogue/products?status&missingHindi=true&after` (`products:write`, verified staff): slug order, keyset `after`; every product carries `missingHindi` (name, specSummary, compatibility, description, highlights: English present, Hindi empty). The filter runs in SQL, so pages are full.
+- `GET/PATCH /v1/admin/catalogue/products/{slug}`: English and Hindi texts side by side; strict body (texts only — never price, HSN, GST or status); compare-and-set on `version` (`STALE_PRODUCT`); the English name is required; Hindi highlights empty or one per English highlight (`HIGHLIGHTS_HI_ALIGNED`, same as the DB CHECK); the audit row holds exactly the changed fields (before/after).
+- `POST …/{slug}/status {to, version, rejectionReason?}` (`products:publish`): through the machine; going live needs an active variant (`NO_VARIANT`) and, when setting `catalogue.require_hindi_to_publish` is `true` (the launch-blocking check; off until the catalogue team is ready), complete Hindi (`HINDI_MISSING` with the fields).
+- Not yet: the console screen (en/hi side by side, gap badges), category and brand editors, photos, variants and fitment editing, shop submissions.

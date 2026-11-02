@@ -206,3 +206,25 @@ export const ticketMachine = defineMachine(
     { from: 'resolved', to: 'closed', by: ['system', 'admin'] },
   ],
 );
+
+/**
+ * Catalogue product status (spec 02; matches the `products_status_valid` CHECK). Shops submit, MechDost's
+ * catalogue team (`admin` actor) publishes, rejects or archives. Archived products can be revived as drafts.
+ */
+export const PRODUCT_STATES = ['draft', 'submitted', 'live', 'rejected', 'archived'] as const;
+export type ProductStatus = (typeof PRODUCT_STATES)[number];
+
+export const productMachine = defineMachine(
+  'product',
+  PRODUCT_STATES,
+  [],
+  [
+    { from: 'draft', to: 'submitted', by: ['shop', 'admin'] },
+    { from: 'draft', to: 'live', by: ['admin'] },
+    { from: 'submitted', to: 'live', by: ['admin'] },
+    { from: 'submitted', to: 'rejected', by: ['admin'] },
+    { from: 'rejected', to: 'draft', by: ['shop', 'admin'] },
+    { from: 'live', to: 'archived', by: ['admin'] },
+    { from: 'archived', to: 'draft', by: ['admin'] },
+  ],
+);

@@ -23,3 +23,4 @@ export * from './customer-blocks';
 export * from './routing';
 export * from './shop-orders';
 export * from './customer-orders';
+export * from './catalogue-admin';
