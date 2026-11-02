@@ -15,6 +15,7 @@ import { assistantRoutes } from './routes/assistant';
 import { catalogueRoutes } from './routes/catalogue';
 import { checkoutRoutes } from './routes/checkout';
 import { meRoutes } from './routes/me';
+import { shopInventoryRoutes } from './routes/shop-inventory';
 import { shopOrderRoutes } from './routes/shop-orders';
 import { supportRoutes } from './routes/support';
 import { systemRoutes } from './routes/system';
@@ -70,6 +71,7 @@ export function createApp(deps: AppDeps) {
   v1.route('/', adminCatalogueRoutes(deps, sessions));
   v1.route('/', adminOrderRoutes(deps, sessions));
   v1.route('/', shopOrderRoutes(deps, sessions));
+  v1.route('/', shopInventoryRoutes(deps, sessions));
   app.route('/v1', v1);
 
   app.openAPIRegistry.registerComponent('securitySchemes', 'bearerAuth', {

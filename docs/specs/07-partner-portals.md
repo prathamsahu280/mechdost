@@ -63,3 +63,12 @@ Full KYC (penny-drop, e-sign), multi-location inventory, bulk price tiers/B2B, s
 `/partner/shop` and `/partner/workshop` (`components/portal/*`), signed in with the seeded partner logins. Shop: offered orders with countdown, accept / decline with reason (stock, area, busy), then packed → out for delivery → delivered. Workshop: propose date + slot + cost range + note or decline (request returns to admin), then received → in progress → ready.
 
 Public `/partners` page (2026-11-01): per partner type an emoji, three benefits and the application button, then "How joining works" (apply → we verify → set up → go live) and the support number. Copy in `pages.partners` (en + hi); becomes admin content blocks in Phase 1.
+
+## Built: shop offers API (2026-11-03)
+
+`packages/db/src/repo/shop-inventory.ts`, `apps/api/src/routes/shop-inventory.ts`.
+
+- Shop owners/staff (`inventory:write`, verified, only their own shops; another shop → 404): `GET /v1/shops/{shopId}/inventory` (SKU, product, MRP, price, stock, reserved, free, lead days, on/off, version), `POST /v1/shops/{shopId}/inventory {sku, sellingPaise, onHand?, leadDays?, active?}` (live products with an active variant only; `ALREADY_LISTED`), `PATCH /v1/shops/{shopId}/inventory/{sku} {version, …}`.
+- Staff (`partners:write`, shops in their cities; decision "admin sets prices per shop"): the same three under `/v1/admin/shops/{shopId}/inventory`.
+- Rules: price > 0 and **never above the MRP** (`PRICE_ABOVE_MRP`; Legal Metrology); stock is an absolute count and **never below the units reserved by open orders** (`STOCK_BELOW_RESERVED`, re-checked inside the UPDATE); lead days 0–60; compare-and-set on `version` (`STALE_OFFER`; an incoming order's reservation also bumps it, so a shop editing at that moment reloads); strict bodies (`reserved` can never be set); audit `inventory.listed` / `inventory.updated` with before/after.
+- Not yet: CSV import/export, low-stock alerts, coverage PIN editing, the portal screens on the API.
