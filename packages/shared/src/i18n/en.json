@@ -387,7 +387,8 @@
     "bulkHint": "Need <min>10</min> or more? Ask for a bulk price.",
     "policyNote": "No returns or exchanges. Faulty parts are handled by our support team.",
     "policyLink": "Read the policy",
-    "photoNote": "Representative photo. The shop confirms the exact item before dispatch."
+    "photoNote": "Representative photo. The shop confirms the exact item before dispatch.",
+    "clearSearch": "Clear search"
   },
   "cart": {
     "title": "Your cart",

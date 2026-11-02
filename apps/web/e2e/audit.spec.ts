@@ -170,6 +170,14 @@ test.describe('every button can be clicked', () => {
   }
 });
 
+/** Custom select (components/ui/select.tsx): open the combobox, choose an option by its accessible name. */
+async function pick(page: Page, id: string, option: string) {
+  await page.locator(`#${id}`).click();
+  await page.getByRole('option', { name: option, exact: true }).click();
+  await expect(page.locator(`#${id}`)).toHaveAttribute('aria-expanded', 'false');
+}
+const hiddenValue = (page: Page, name: string) => page.locator(`input[type="hidden"][name="${name}"]`);
+
 test.describe('shop filters stay in sync and never jump', () => {
   test('chips, dropdown, URL and results always agree, without scrolling or reloading', async ({ page }) => {
     const errors = watchErrors(page);
@@ -184,11 +192,12 @@ test.describe('shop filters stay in sync and never jump', () => {
 
     for (const key of CATEGORY_KEYS) {
       const slug = CATEGORY_SLUGS[key];
-      const name = await page
-        .locator('#shop-category option')
-        .filter({ hasText: /./ })
-        .nth(CATEGORY_KEYS.indexOf(key) + 1)
-        .innerText();
+      const name = (
+        (await page
+          .locator('#shop-category ~ [role="listbox"] [role="option"]')
+          .nth(CATEGORY_KEYS.indexOf(key) + 1)
+          .textContent()) ?? ''
+      ).trim();
       const chip = chips.getByRole('link', { name, exact: true });
       // Measure from where a real user taps: the chip fully on screen (not under the fixed mobile tab bar).
       await chip.evaluate((el) => {
@@ -197,7 +206,8 @@ test.describe('shop filters stay in sync and never jump', () => {
       const before = await page.evaluate(() => window.scrollY);
       await chip.click();
       await expect(page).toHaveURL(new RegExp(`category=${slug}$`));
-      await expect(page.locator('#shop-category')).toHaveValue(slug);
+      await expect(hiddenValue(page, 'category')).toHaveValue(slug);
+      await expect(page.locator('#shop-category')).toHaveText(name);
       await expect(chips.locator('[aria-current="page"]')).toHaveAccessibleName(name);
       const expected = DEMO_PRODUCTS.filter((p) => p.category === key).length;
       await expect(page.getByRole('article')).toHaveCount(expected);
@@ -208,18 +218,19 @@ test.describe('shop filters stay in sync and never jump', () => {
     }
 
     // Dropdown drives the chips too.
-    await page.locator('#shop-category').selectOption('tyres');
+    await pick(page, 'shop-category', 'Tyres');
     await expect(chips.locator('[aria-current="page"]')).toHaveAccessibleName('Tyres');
     await expect(page).toHaveURL(/category=tyres$/);
 
     // Sort reorders, search narrows, Back restores, Clear resets.
-    await page.locator('#shop-sort').selectOption('price_asc');
+    await pick(page, 'shop-sort', 'Price: low to high');
+    await expect(page).toHaveURL(/sort=price_asc/);
     const prices = await page.getByRole('article').locator('.font-heading.text-\\[22px\\]').allInnerTexts();
     const values = prices.map((p) => Number(p.replace(/[^\d]/g, '')));
     expect(values).toEqual([...values].sort((a, b) => a - b));
-    await page.locator('#shop-category').selectOption('');
-    await page.getByLabel('Search products').fill('exide');
-    await page.getByRole('button', { name: 'Search', exact: true }).click();
+    await pick(page, 'shop-category', 'All categories');
+    // Live search: results follow typing after the debounce — no button, no Enter.
+    await page.getByLabel('Search products').pressSequentially('exide', { delay: 40 });
     await expect(page.getByRole('article')).toHaveCount(3);
     await expect(page).toHaveURL(/q=exide/);
     await page.goBack();
@@ -233,10 +244,40 @@ test.describe('shop filters stay in sync and never jump', () => {
 
   test('a shared filtered link opens with matching controls', async ({ page }) => {
     await page.goto('/hi/shop?category=filters&sort=price_desc&q=filter');
-    await expect(page.locator('#shop-category')).toHaveValue('filters');
-    await expect(page.locator('#shop-sort')).toHaveValue('price_desc');
+    await expect(hiddenValue(page, 'category')).toHaveValue('filters');
+    await expect(hiddenValue(page, 'sort')).toHaveValue('price_desc');
     await expect(page.getByLabel('प्रोडक्ट खोजें')).toHaveValue('filter');
     await expect(page.getByRole('article')).toHaveCount(2);
+  });
+
+  test('the custom selects work from the keyboard and the clear button resets the search', async ({
+    page,
+  }) => {
+    await page.goto('/shop');
+    const sort = page.locator('#shop-sort');
+    await sort.focus();
+    await page.keyboard.press('ArrowDown');
+    await expect(sort).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.getByRole('listbox', { name: 'Sort by' })).toBeVisible();
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Enter');
+    await expect(sort).toHaveAttribute('aria-expanded', 'false');
+    await expect(page).toHaveURL(/sort=price_asc$/);
+    await expect(sort).toBeFocused();
+    await page.keyboard.press('Space');
+    await page.keyboard.press('Escape');
+    await expect(sort).toHaveAttribute('aria-expanded', 'false');
+    await expect(page).toHaveURL(/sort=price_asc$/);
+    // Clicking outside closes without changing the value.
+    await page.locator('#shop-category').click();
+    await page.locator('h1').click();
+    await expect(page.locator('#shop-category')).toHaveAttribute('aria-expanded', 'false');
+
+    await page.getByLabel('Search products').fill('battery');
+    await expect(page).toHaveURL(/q=battery/);
+    await page.getByRole('button', { name: 'Clear search' }).click();
+    await expect(page.getByLabel('Search products')).toHaveValue('');
+    await expect(page).not.toHaveURL(/q=/);
   });
 });
 

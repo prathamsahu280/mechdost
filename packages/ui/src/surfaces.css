@@ -18,18 +18,28 @@ body {
   background-image: none;
 }
 
+/* Primary orange: glossy, opaque-glass finish — sheen and glass edge on top, soft orange glow below. */
 .bg-accent-button {
   background-image: var(--gradient-accent);
+  box-shadow: var(--shadow-accent);
 }
 
 .bg-accent-button:hover,
 .bg-accent-button:focus-visible {
   background-image: var(--gradient-accent-hover);
+  box-shadow: var(--shadow-accent-hover);
 }
 
 .bg-accent-button:disabled,
 .bg-accent-button[aria-disabled='true'] {
   background-image: none;
+  box-shadow: none;
+}
+
+/* Pale-orange states (current nav item, active chips): the same glass edge, no glow. */
+.bg-accent-soft {
+  background-image: var(--gradient-accent-soft);
+  box-shadow: var(--shadow-accent-soft);
 }
 
 .bg-navy {

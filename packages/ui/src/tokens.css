@@ -19,7 +19,7 @@
   --color-accent: #ea5728;
   --color-accent-button: #d2461a;
   --color-accent-button-hover: #b93d16;
-  --color-accent-light: #ff8b59;
+  --color-accent-light: #ff7a3d; /* brighter on navy (user 2026-11-02: "orange thoda dull hai"); 6.4:1 on navy */
   --color-accent-pale: #ffb99c;
   --color-accent-soft: #fff0e9;
   --color-accent-soft-text: #bf3c12;
@@ -88,8 +88,27 @@
   /* Very subtle gradients (user 2026-11-01: "premium feel … very very subtle gradients"), applied by surfaces.css.
      Accent stops never go lighter than accent-button, so white labels keep >= 4.5:1 across the whole button. */
   --gradient-surface: linear-gradient(180deg, #ffffff 0%, #f9fbfd 100%);
-  --gradient-accent: linear-gradient(180deg, #d2461a 0%, #c03e16 100%);
-  --gradient-accent-hover: linear-gradient(180deg, #b93d16 0%, #a73613 100%);
+  /* Glossy "opaque glass" accent (user 2026-11-02): bright sheen + glass edge on the top third, the label band
+     (34–66%) stays exactly accent-button so white text keeps 4.53:1; deeper base at the bottom. */
+  --gradient-accent:
+    linear-gradient(180deg, rgb(255 255 255 / 0.3) 0%, rgb(255 255 255 / 0.1) 30%, rgb(255 255 255 / 0) 34%),
+    linear-gradient(180deg, #f05a26 0%, #d2461a 34%, #d2461a 66%, #b83c15 100%);
+  --gradient-accent-hover:
+    linear-gradient(
+      180deg,
+      rgb(255 255 255 / 0.32) 0%,
+      rgb(255 255 255 / 0.12) 30%,
+      rgb(255 255 255 / 0) 34%
+    ),
+    linear-gradient(180deg, #e65022 0%, #bf3e16 34%, #bf3e16 66%, #a53613 100%);
+  --shadow-accent:
+    inset 0 1px 0 rgb(255 255 255 / 0.45), inset 0 -1px 0 rgb(0 0 0 / 0.14), 0 1px 2px #101f341f,
+    0 10px 22px -10px rgb(240 90 38 / 0.7);
+  --shadow-accent-hover:
+    inset 0 1px 0 rgb(255 255 255 / 0.5), inset 0 -1px 0 rgb(0 0 0 / 0.14), 0 1px 2px #101f341f,
+    0 14px 28px -10px rgb(240 90 38 / 0.8);
+  --gradient-accent-soft: linear-gradient(180deg, #fff6f1 0%, #ffece3 100%);
+  --shadow-accent-soft: inset 0 1px 0 #ffffff, inset 0 0 0 1px rgb(234 87 40 / 0.14);
   --gradient-navy:
     radial-gradient(120% 90% at 0% 0%, #1d3456 0%, transparent 55%),
     radial-gradient(90% 80% at 100% 100%, #2a2230 0%, transparent 60%);
@@ -130,6 +149,8 @@
     radial-gradient(120% 90% at 0% 0%, #1a3050 0%, transparent 55%),
     radial-gradient(90% 80% at 100% 100%, #261c26 0%, transparent 60%);
   --gradient-page: radial-gradient(1400px 640px at 50% -280px, #12223a 0%, transparent 70%);
+  --gradient-accent-soft: linear-gradient(180deg, #45251a 0%, #33190f 100%);
+  --shadow-accent-soft: inset 0 1px 0 rgb(255 255 255 / 0.08), inset 0 0 0 1px rgb(255 122 61 / 0.18);
   color-scheme: dark;
 }
 
@@ -168,6 +189,8 @@
       radial-gradient(120% 90% at 0% 0%, #1a3050 0%, transparent 55%),
       radial-gradient(90% 80% at 100% 100%, #261c26 0%, transparent 60%);
     --gradient-page: radial-gradient(1400px 640px at 50% -280px, #12223a 0%, transparent 70%);
+    --gradient-accent-soft: linear-gradient(180deg, #45251a 0%, #33190f 100%);
+    --shadow-accent-soft: inset 0 1px 0 rgb(255 255 255 / 0.08), inset 0 0 0 1px rgb(255 122 61 / 0.18);
     color-scheme: dark;
   }
 }

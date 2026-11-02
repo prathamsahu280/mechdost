@@ -151,6 +151,23 @@
   display: none;
 }
 
+/* Shop search has its own clear button (shop-browser.tsx); hide the browser one. */
+.shop-search::-webkit-search-cancel-button {
+  appearance: none;
+}
+
+/* Custom select list (components/ui/select.tsx): a short drop-in when it opens; reduced motion skips it. */
+@keyframes md-select-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+}
+.md-select-list:not([hidden]) {
+  animation: md-select-in var(--duration-fast) var(--ease-out-soft);
+  transform-origin: top;
+}
+
 @keyframes shimmer {
   to {
     transform: translateX(100%);
@@ -467,6 +484,12 @@
 .md-map .maplibregl-ctrl-attrib a {
   display: inline-block;
   padding: 5px 1px;
+}
+/* Compact attribution ⓘ is ~24px by default (flaky sub-24px tap target at tablet widths): give it room. */
+.md-map .maplibregl-ctrl-attrib-button {
+  width: 32px;
+  height: 32px;
+  background-position: center;
 }
 .md-map .maplibregl-ctrl-scale {
   border-color: #536376;
