@@ -416,7 +416,11 @@ export async function setTicketStatus(
   });
 }
 
-/** Scope from staff grants holding `tickets:read`: any all-city grant ⇒ everything. */
+/**
+ * Scope from the staff grants that hold `permission`: any all-city grant ⇒ every city. Reads use
+ * `tickets:read`; replies and status changes use `tickets:reply` (security review 2026-11-03: a write must never
+ * borrow the wider read scope).
+ */
 export function ticketScopeFrom(
   grants: readonly {
     permissions: readonly string[];
@@ -424,9 +428,10 @@ export function ticketScopeFrom(
     shopId: string | null;
     workshopId: string | null;
   }[],
+  permission: 'tickets:read' | 'tickets:reply' = 'tickets:read',
 ): TicketScope {
   const relevant = grants.filter(
-    (g) => g.permissions.includes('tickets:read') && g.shopId === null && g.workshopId === null,
+    (g) => g.permissions.includes(permission) && g.shopId === null && g.workshopId === null,
   );
   if (relevant.some((g) => g.cityId === null)) return { all: true };
   return { all: false, cityIds: relevant.map((g) => g.cityId).filter((c): c is string => c !== null) };

@@ -292,7 +292,7 @@ export function supportRoutes(deps: AppDeps, cache: SessionCache) {
     })
     .openapi(staffReply, async (c) => {
       const body = c.req.valid('json');
-      const result = await staffReplyTicket(deps.db, ticketScopeFrom(c.get('auth').grants), {
+      const result = await staffReplyTicket(deps.db, ticketScopeFrom(c.get('auth').grants, 'tickets:reply'), {
         staffUserId: c.get('auth').user.id,
         code: c.req.valid('param').code,
         body: body.body,
@@ -302,7 +302,7 @@ export function supportRoutes(deps: AppDeps, cache: SessionCache) {
     })
     .openapi(changeStatus, async (c) => {
       const body = c.req.valid('json');
-      const result = await setTicketStatus(deps.db, ticketScopeFrom(c.get('auth').grants), {
+      const result = await setTicketStatus(deps.db, ticketScopeFrom(c.get('auth').grants, 'tickets:reply'), {
         staffUserId: c.get('auth').user.id,
         code: c.req.valid('param').code,
         to: body.to,

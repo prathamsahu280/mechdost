@@ -183,6 +183,25 @@ describe('staff inbox', () => {
     expect((await listInbox(t(), ALL)).length).toBeGreaterThan(raipurCodes.length);
   });
 
+  it('replying uses the reply scope, never the wider read scope', async () => {
+    const grants = [
+      { permissions: ['tickets:read'], cityId: null, shopId: null, workshopId: null },
+      { permissions: ['tickets:read', 'tickets:reply'], cityId: F.bilaspur!, shopId: null, workshopId: null },
+    ];
+    expect(ticketScopeFrom(grants, 'tickets:read')).toEqual(ALL);
+    const replyScope = ticketScopeFrom(grants, 'tickets:reply');
+    expect(replyScope).toEqual({ all: false, cityIds: [F.bilaspur] });
+    const [asha] = await listMyTickets(t(), F.asha!); // a Raipur request
+    await expect(
+      staffReplyTicket(t(), replyScope, {
+        staffUserId: F.staff!,
+        code: asha!.code,
+        body: 'Hi',
+        internal: false,
+      }),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+  });
+
   it('a reply asks the customer; an internal note does not; the customer’s answer brings it back', async () => {
     const [asha] = await listMyTickets(t(), F.asha!);
     const code = asha!.code;

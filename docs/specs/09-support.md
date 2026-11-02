@@ -88,7 +88,7 @@ Live chat widget (declined for now), order chat with partner, NPS after resoluti
 - `GET /v1/support/tickets`, `GET /v1/support/tickets/{code}`: own requests with their conversation, internal notes excluded.
 - `POST /v1/support/tickets/{code}/messages {body}`: a reply on a request that was waiting on the customer, or resolved, moves it back to `in_review` (`ticketMachine`).
 
-**Staff** (verified phone + email, `tickets:read`; posting also needs `tickets:reply`). Scope comes from grants: any all-city grant sees everything, city grants see requests whose `city_id` is theirs, and city-less requests (WhatsApp guests) go to all-city staff only.
+**Staff** (verified phone + email, `tickets:read`; posting also needs `tickets:reply`, and replies/status changes are scoped by the **`tickets:reply`** grants, never the wider read scope — security review 2026-11-03). Scope comes from grants: any all-city grant sees everything, city grants see requests whose `city_id` is theirs, and city-less requests (WhatsApp guests) go to all-city staff only.
 
 - `GET /v1/admin/support/tickets?view=active|done`: sorted by reply deadline, with `acknowledged`.
 - `GET /v1/admin/support/tickets/{code}`: includes internal notes.
