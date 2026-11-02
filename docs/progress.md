@@ -29,6 +29,8 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Completed log (newest first)
 
+- 2026-11-02 — **Redesign branch pushed, kept separate.** `ui-modern-refresh` pushed to GitHub (4 commits + this one). User: keep it on its own branch, never merge into `main`. Note: `origin/main` moved 13 commits ahead meanwhile (Hindi content, map, WhatsApp, admin notifications); a dry-run merge shows 14 conflicting files — only relevant if the user later asks to combine them.
+
 - 2026-11-02 — **Performance check of the refresh (rule 6).** Hero photo is the LCP element on both widths; image is small (AVIF 33 KB @828w, 55 KB @1080w) and downloads by ~1.2 s, but first paint is ~2 s under 4× CPU. A/B against `main` built in a temporary worktree, same script, alternating runs: branch faster on LCP and FCP at 390 and 1440, CLS 0. Budget gap logged under Next tasks.
 
 - 2026-11-02 — **Vercel preview deploy (CLI only, user: "cli se hi dalna hai", no Git connection).** Project `mechdost-web` on the user's Vercel account (Hobby), Root Directory `apps/web`, Next.js, Node 24, region `bom1` (`apps/web/vercel.json`); `.vercel/` at the repo root (git-ignored). Deploy = `git archive HEAD` into a temp folder + `.vercel/` → `vercel deploy --yes --build-env ENABLE_EXPERIMENTAL_COREPACK=1` (plain `vercel deploy` from the repo is **Blocked**: the commit author is not a member of that Vercel account). Preview Ready, pages 200, `/_next/image` serves AVIF; Vercel Authentication protects previews. Production not deployed (waits for the user).
