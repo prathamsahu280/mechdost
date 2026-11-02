@@ -47,3 +47,16 @@ Guest tracking with wrong key → 404; SLA timers computed in IST; masked PII fo
 ## P1/P2
 
 Live chat widget (declined for now), order chat with partner, NPS after resolution, Hindi canned replies (Hindi at launch applies to UI strings; canned replies maintained by staff).
+
+## WhatsApp → tickets (built 2026-11-03; settles pending #3)
+
+- **Flow:** customer messages reach the signed webhook (`/webhooks/whatsapp`), which stores each message once in `webhook_events` (`received`). The worker's `bridgeInboundWhatsApp` (every 5 s while WhatsApp is on) turns each event into a ticket message in one transaction.
+- **Which ticket:** a known customer (phone matches an active account) or a guest (phone only). The message is appended to their latest open, in-review or waiting ticket, or to one resolved in the last 7 days, which reopens it to `in_review` via the new `ticketMachine` (`packages/shared/src/state`). Otherwise a new `REQ-{city}-{yyyy}-{6}` ticket opens with kind `other`, acknowledgement due in 48 h and resolution in 30 days, plus an audit row `ticket.created`.
+- **Integrity:**
+  - `ticket_messages.channel` (code: web/app/whatsapp/email/console/system) and `external_id` (wamid) with a unique index (migration 0018): a redelivered or retried message is never stored twice;
+  - a per-phone transaction lock stops two workers from opening two tickets for one conversation;
+  - malformed senders are parked (`webhook_events.status = parked`, `error = bad_sender`), not lost.
+- **Media:** stored as a code (`[image]`, `[document]` …) until media import is built (Supabase Storage, EXIF strip).
+- **Replies:** staff answer in the admin inbox. The reply goes back as a free-form WhatsApp message inside the 24 h window (free for 1,000 a month), otherwise as the `ticket.replied` utility template. This is built with the support inbox UI.
+- **City:** `SUPPORT_DEFAULT_CITY_CODE` (default RPR) is used only for the code segment when the sender has no known city; per-customer city routing to `staff:city` comes with the inbox.
+- **Tests:** `packages/db/test/support-bridge.test.ts`, `packages/shared/test/state.test.ts` (ticket machine).

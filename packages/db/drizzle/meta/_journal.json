@@ -120,6 +120,20 @@
       "when": 1793560060751,
       "tag": "0016_secret_firebrand",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1793601826397,
+      "tag": "0017_solid_bucky",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1793602070044,
+      "tag": "0018_faulty_wallflower",
+      "breakpoints": true
     }
   ]
 }

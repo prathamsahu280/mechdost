@@ -34,6 +34,7 @@ import { track } from '@/lib/analytics';
 import { formatDate, formatPrice } from '@/lib/format';
 import { ADMIN_SECTIONS, type AdminSection } from '@/lib/sections';
 import { AdminCoins } from './admin-coins';
+import { AdminNotifications, type NotifyDefaults } from './admin-notifications';
 import { AdminPartners } from './admin-partners';
 import { ContentEditor, LayoutEditor, SettingsEditor, type ContentDefaults } from './admin-site';
 import { PortalGuard, portalCard, portalField, portalPrimary, portalQuiet, useNow } from './portal-guard';
@@ -50,6 +51,7 @@ const SECTION_EMOJI: Record<AdminSection, string> = {
   content: '✏️',
   layout: '🧩',
   settings: '⚙️',
+  notifications: '🔔',
 };
 
 /**
@@ -60,10 +62,13 @@ const SECTION_EMOJI: Record<AdminSection, string> = {
 export function AdminConsole({
   section,
   contentDefaults,
+  notifyDefaults,
 }: {
   section: AdminSection;
   /** Default site text in both locales (only passed for the content section). */
   contentDefaults?: ContentDefaults;
+  /** Default WhatsApp message text in both locales (only passed for the notifications section). */
+  notifyDefaults?: NotifyDefaults;
 }) {
   const path = `/admin${section === 'overview' ? '' : `/${section}`}`;
   return (
@@ -85,6 +90,9 @@ export function AdminConsole({
             ) : null}
             {section === 'layout' ? <LayoutEditor actor={account.name} /> : null}
             {section === 'settings' ? <SettingsEditor actor={account.name} /> : null}
+            {section === 'notifications' && notifyDefaults ? (
+              <AdminNotifications actor={account.name} defaults={notifyDefaults} />
+            ) : null}
           </div>
         </div>
       )}

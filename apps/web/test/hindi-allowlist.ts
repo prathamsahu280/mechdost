@@ -20,7 +20,8 @@ import { DEMO_PRODUCTS } from '../src/demo/catalogue';
 import { SEEDED_ACCOUNTS } from '../src/demo/session';
 
 /** Our brand and the products/services we name (brand names stay in Latin script). */
-const OUR_BRANDS = ['MechDost', 'WhatsApp'] as const;
+// Meta: the company that runs WhatsApp (admin WhatsApp setup copy, decision 2026-11-02).
+const OUR_BRANDS = ['MechDost', 'WhatsApp', 'Meta'] as const;
 
 /** Product brands come straight from the catalogue's `brand` field, plus model names used in product names. */
 const PRODUCT_BRANDS = [...new Set(DEMO_PRODUCTS.map((p) => p.brand))];

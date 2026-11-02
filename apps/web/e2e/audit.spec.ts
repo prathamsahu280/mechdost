@@ -24,6 +24,8 @@ const BASE_PAGES = [
   '/quotes/new',
   '/admin',
   '/admin/orders',
+  '/admin/notifications',
+  '/admin/layout',
   '/partner/shop',
   '/partner/workshop',
   '/partners',

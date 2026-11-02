@@ -103,3 +103,7 @@ User (2026-11-02, on `/hi/workshops`): "its in hindi but i still see quite some 
 - **Allowlist:** `apps/web/test/hindi-allowlist.ts` is the single list (brands from the catalogue, product/vehicle models, technical tokens, photo-credit and map-data proper names, seeded people's names). Tokens with a digit and UPPER-CASE hyphenated codes are ignored by construction. Never add a generic English word to it — translate instead.
 - **Map labels:** place/road/POI labels prefer `name:hi`, then the local OSM `name` (road refs such as NH30 are codes). Devanagari is drawn by the browser (MapLibre ≥ 6.15), no extra glyphs.
 - **Gate:** `apps/web/e2e/hindi-coverage.spec.ts` renders every `/hi` page (public, customer, shop, workshop, admin) with seeded data and fails listing page + English words; `test/content-i18n.test.ts` and `test/map-styles.test.ts` cover the data overlays and map labels.
+
+### Switch (2026-11-03)
+
+On/off settings (admin Notifications) use a native checkbox with `role="switch"` and a visible text label. The track is 48×28 px, using `--color-line` when off and `--color-accent-button` when on. The thumb is white with a shadow. Focus uses the `--color-focus` outline on the visible track. A short "On / Off" text sits next to it, so state is never shown by colour alone. The whole label is the tap target (≥ 44 px).

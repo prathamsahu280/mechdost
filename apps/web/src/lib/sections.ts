@@ -27,5 +27,7 @@ export const ADMIN_SECTIONS = [
   'content',
   'layout',
   'settings',
+  // WhatsApp and other notification channels (spec 10, hard rule 8).
+  'notifications',
 ] as const;
 export type AdminSection = (typeof ADMIN_SECTIONS)[number];

@@ -10,7 +10,7 @@ import {
 import { istParts, istStartOfDay } from '@mechdost/shared/time';
 import { WHATSAPP_TEMPLATES } from '@mechdost/shared/whatsapp';
 import type { SessionCache } from '../auth/session-cache';
-import { authenticate, requirePermission } from '../middleware/auth';
+import { authenticate, requirePermission, requireVerified } from '../middleware/auth';
 import { rateLimit, RATE_RULES } from '../middleware/rate-limit';
 import type { AppDeps, AppEnv } from '../types';
 import { validationHook } from '../validation';
@@ -162,6 +162,8 @@ export function adminNotificationRoutes(deps: AppDeps, cache: SessionCache) {
     '/admin/notifications/*',
     rateLimit(deps.rateLimiter, RATE_RULES.apiPerUser, (c) => c.get('auth').user.id),
   );
+  // Staff actions need phone + email verified (spec 01), then the permission (spec 13).
+  app.use('/admin/notifications/*', requireVerified);
   app.use('/admin/notifications/*', requirePermission('notifications:manage'));
   return app
     .openapi(listTemplates, async (c) => {

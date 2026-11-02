@@ -292,10 +292,21 @@ export const ticketMessages = pgTable(
       .notNull()
       .default(sql`'[]'::jsonb`),
     internal: boolean().notNull().default(false),
+    /** Where the message came from (rule 16: a code, not free text). */
+    channel: text().notNull().default('web'),
+    /** Provider message id (WhatsApp `wamid`): the unique index makes a redelivered message impossible to store twice. */
+    externalId: text(),
     createdAt: createdAt(),
   },
   (t) => [
     check('ticket_messages_role_valid', sql`${t.authorRole} in ('customer','guest','staff','system')`),
+    check(
+      'ticket_messages_channel_valid',
+      sql`${t.channel} in ('web','app','whatsapp','email','console','system')`,
+    ),
+    uniqueIndex('ticket_messages_external_uq')
+      .on(t.channel, t.externalId)
+      .where(sql`${t.externalId} is not null`),
     check('ticket_messages_body_len', sql`length(${t.body}) between 1 and 5000`),
     index().on(t.ticketId, t.createdAt),
     index().on(t.authorUserId),

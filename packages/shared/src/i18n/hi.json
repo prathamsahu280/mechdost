@@ -1156,7 +1156,52 @@
     "pausedTitle": "MechDost ने रोका है।",
     "pausedBody": "अभी आपको नया काम नहीं मिलेगा। कृपया चल रहे ऑर्डर पूरे करें।",
     "coinsReasonSeed": "डेमो कॉइन",
-    "partnerEyebrow": "MechDost पार्टनर"
+    "partnerEyebrow": "MechDost पार्टनर",
+    "nav_notifications": "सूचनाएँ",
+    "notify_title": "सूचनाएँ",
+    "notify_intro": "चुनें कि कौन-से अपडेट WhatsApp पर जाएँ और उनमें क्या लिखा हो। बाकी सब ऐप और ईमेल से मुफ़्त पहुँचता है।",
+    "notify_status_off": "WhatsApp अभी बंद है",
+    "notify_status_body": "Meta का सेटअप पूरा होते ही मैसेज शुरू होंगे: बिज़नेस अकाउंट, बिज़नेस का सत्यापन, अलग नंबर और रुपये में बिलिंग।",
+    "notify_ev_order_confirmed": "ऑर्डर पक्का हुआ",
+    "notify_ev_order_out_for_delivery": "डिलीवरी के लिए निकला (डिलीवरी कोड के साथ)",
+    "notify_ev_order_rejected": "ऑर्डर पूरा नहीं हो सका",
+    "notify_ev_service_estimate_sent": "वर्कशॉप का अनुमान तैयार",
+    "notify_ev_ticket_replied": "सपोर्ट ने जवाब दिया",
+    "notify_ev_order_routed": "दुकान के लिए नया ऑर्डर",
+    "notify_audience_customer": "ग्राहकों को",
+    "notify_audience_partner": "दुकानों को",
+    "notify_switch": "WhatsApp पर भेजें",
+    "notify_on": "चालू",
+    "notify_off": "बंद",
+    "notify_text_en": "अंग्रेज़ी मैसेज",
+    "notify_text_hi": "हिन्दी मैसेज",
+    "notify_preview": "झलक",
+    "notify_placeholders": "प्लेसहोल्डर: {list}",
+    "notify_save": "सेव करें",
+    "notify_saved": "सेव हो गया।",
+    "notify_stale": "किसी और ने इसे बदल दिया है। नया रूप देखने के लिए पेज दोबारा खोलें।",
+    "notify_problem_empty": "मैसेज लिखें।",
+    "notify_problem_promo_wording": "ऑर्डर अपडेट में ऑफ़र, छूट या कूपन की बात नहीं हो सकती: WhatsApp इन्हें मार्केटिंग मानकर लगभग 7 गुना दाम लेगा।",
+    "notify_problem_too_long": "मैसेज 1,024 अक्षरों से छोटा रखें।",
+    "notify_problem_missing": "सभी प्लेसहोल्डर इस्तेमाल करें: {list}।",
+    "notify_problem_unknown": "सिर्फ़ ये प्लेसहोल्डर इस्तेमाल करें: {list}।",
+    "notify_budget_title": "WhatsApp का मासिक बजट",
+    "notify_budget_label": "इससे ऊपर एडमिन को सूचना दें (₹)",
+    "notify_budget_help": "हर ऑर्डर अपडेट का खर्च लगभग ₹0.12 है। इस महीने का अनुमानित खर्च इस रकम तक पहुँचने पर एडमिन को सूचना मिलेगी।",
+    "notify_budget_used": "इस महीने {budget} में से {used} खर्च",
+    "notify_budget_err": "{min} से {max} तक पूरे रुपये लिखें।",
+    "notify_budget_save": "बजट सेव करें",
+    "notify_history": "हाल के बदलाव",
+    "notify_history_empty": "अभी कोई बदलाव नहीं।",
+    "notify_change_saved": "{actor} ने “{target}” बदला",
+    "notify_change_enabled": "{actor} ने “{target}” चालू किया",
+    "notify_change_disabled": "{actor} ने “{target}” बंद किया",
+    "notify_change_budget": "{actor} ने मासिक बजट बदला",
+    "mapDefault_title": "वर्कशॉप मैप: शुरुआती व्यू",
+    "mapDefault_help": "वर्कशॉप मैप पर ग्राहक सबसे पहले क्या देखें। जो व्यू बदलता है, उसकी पसंद उसके डिवाइस पर याद रहती है।",
+    "mapDefault_satellite": "सैटेलाइट, सड़कों और नामों के साथ",
+    "mapDefault_map": "सादा मैप",
+    "mapDefault_save": "मैप व्यू सेव करें"
   },
   "policies": {
     "returns": {
@@ -1175,6 +1220,20 @@
       "coinsBody": "रद्द ऑर्डर पर इस्तेमाल हुए कॉइन, कॉइन के रूप में ही वापस मिलते हैं। कॉइन का कोई नकद मूल्य नहीं है और ये कभी पैसों में नहीं दिए जाते।",
       "help": "किसी ऑर्डर के बारे में सवाल? हमें कॉल करें:",
       "updated": "आख़िरी बदलाव 1 नवंबर 2026।"
+    }
+  },
+  "notifyTemplates": {
+    "order": {
+      "confirmed": "आपका MechDost ऑर्डर {{1}} पक्का हो गया है और जल्द भेजा जाएगा। नीचे दिए बटन से ट्रैक करें।",
+      "out_for_delivery": "आपका ऑर्डर {{1}} डिलीवरी के लिए निकल चुका है। सामान मिलने पर डिलीवरी कोड {{2}} सिर्फ़ डिलीवरी पार्टनर को बताएँ।",
+      "rejected": "हम आपका ऑर्डर {{1}} पूरा नहीं कर सके। आपका भुगतान 5–7 कार्यदिवसों में उसी तरीके से वापस कर दिया जाएगा।",
+      "routed": "आपकी दुकान के लिए नया ऑर्डर {{1}}। MechDost पार्टनर पोर्टल में {{2}} मिनट के अंदर स्वीकार या मना करें।"
+    },
+    "service": {
+      "estimate_sent": "वर्कशॉप ने आपकी सर्विस रिक्वेस्ट {{1}} का अनुमान भेजा है। काम शुरू होने से पहले हर आइटम देखें और मंज़ूरी दें।"
+    },
+    "ticket": {
+      "replied": "MechDost सपोर्ट ने आपकी रिक्वेस्ट {{1}} का जवाब दिया है। जवाब पढ़ने के लिए इसे खोलें।"
     }
   }
 }

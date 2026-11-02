@@ -13,3 +13,5 @@ export * from './partners';
 export * from './live';
 export * from './notify';
 export * from './notification-admin';
+export * from './localized';
+export * from './support-bridge';

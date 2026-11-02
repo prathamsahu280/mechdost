@@ -146,3 +146,28 @@ export const paymentMachine = defineMachine(
     { from: 'partially_refunded', to: 'refunded', by: ['system', 'admin'] },
   ],
 );
+
+/**
+ * Support ticket status (docs/specs/09-support.md). A customer reply (web, app or WhatsApp) moves a ticket that is
+ * waiting on them back to review; a reply to a resolved ticket reopens it; closing is final.
+ */
+export const TICKET_STATES = ['open', 'in_review', 'awaiting_customer', 'resolved', 'closed'] as const;
+export type TicketStatus = (typeof TICKET_STATES)[number];
+
+export const ticketMachine = defineMachine(
+  'ticket',
+  TICKET_STATES,
+  ['closed'],
+  [
+    { from: 'open', to: 'in_review', by: ['admin'] },
+    { from: 'open', to: 'awaiting_customer', by: ['admin'] },
+    { from: 'open', to: 'resolved', by: ['admin'] },
+    { from: 'in_review', to: 'awaiting_customer', by: ['admin'] },
+    { from: 'in_review', to: 'resolved', by: ['admin'] },
+    { from: 'awaiting_customer', to: 'in_review', by: ['customer', 'admin'] },
+    { from: 'awaiting_customer', to: 'resolved', by: ['admin'] },
+    { from: 'awaiting_customer', to: 'closed', by: ['system'] },
+    { from: 'resolved', to: 'in_review', by: ['customer', 'admin'] },
+    { from: 'resolved', to: 'closed', by: ['system', 'admin'] },
+  ],
+);

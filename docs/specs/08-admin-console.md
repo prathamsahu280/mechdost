@@ -70,3 +70,18 @@ Saved views, version history diff, impersonation, merge customers, reports (GSTR
 - **Guards:** routing, accepting, booking and reassignment are refused in the store too.
 
 Next (research/admin-console.md, adopted): availability vs standing, scorecards, three-level customer blocking, reason codes, pause end dates (Q28). Tests: `e2e/partners-admin.spec.ts`, `packages/db/test/integrity.test.ts` "partner standing".
+
+### Notifications and map default (2026-11-03)
+
+User 2026-11-02: "all these options need to be with the admin too".
+
+- **`/admin/notifications`**:
+  - Status card (WhatsApp off until the Meta setup, Q50–Q63).
+  - One card per WhatsApp event (`packages/shared/src/whatsapp.ts` catalogue): on/off switch, English and Hindi text side by side with a live preview (sample codes), and the same checks as the API. The checks are `bodyProblem`: no offer/discount/coupon wording in utility templates, exactly the `{{1}}…{{n}}` placeholders, ≤ 1,024 characters. Default texts come from the locale files (`notifyTemplates`, read raw because `{{n}}` is Meta syntax, not ICU).
+  - Compare-and-set per event, change history.
+  - Monthly WhatsApp budget alert (₹, whole rupees) with this month's estimated spend.
+  - Demo store: `apps/web/src/demo/notification-settings.ts`. Production: `GET|PUT /v1/admin/notifications/templates`, `GET /v1/admin/notifications/whatsapp`, `PUT /v1/admin/notifications/whatsapp/budget` (verified staff with `notifications:manage`).
+- **Layout → "Workshop map: default view"**: satellite (default) or plain map, stored in `site-config` `layout.mapDefault`. A viewer's own switch on their device still wins (`savedMapMode(fallback)`).
+- **Hindi content editing** (product/workshop `_hi` fields) arrives with the catalogue admin and the `_hi` columns (decision 2026-11-02).
+- **Events**: `admin_notifications_change {target, action}`, `admin_site_change {area: layout}`.
+- **Tests**: `e2e/admin-notifications.spec.ts`, `test/notify-defaults.test.ts`, `apps/api/test/admin-notifications.test.ts`, `packages/db/test/notification-admin.test.ts`; the Hindi gate covers `/hi/admin/notifications` (ADMIN_SECTIONS).

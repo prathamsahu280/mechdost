@@ -20,7 +20,9 @@ import {
   type ContentKey,
   type SiteConfig,
   type SiteSettings,
+  saveMapDefault,
 } from '@/demo/site-config';
+import type { MapMode } from '@/lib/map-styles';
 import { track } from '@/lib/analytics';
 import { CATEGORY_EMOJI } from '@/lib/emoji';
 import {
@@ -230,8 +232,69 @@ export function LayoutEditor({ actor }: { actor: string }) {
     <div className="space-y-6">
       <SectionsEditor actor={actor} />
       <CategoriesEditor actor={actor} />
+      <MapDefaultEditor actor={actor} />
       <RecentChanges />
     </div>
+  );
+}
+
+/** Workshop map default view (user 2026-11-02: satellite by default, admin can change it). */
+function MapDefaultEditor({ actor }: { actor: string }) {
+  const t = useTranslations('portal');
+  const config = useSiteConfig();
+  const [version, setVersion] = useState(config.versions.layout);
+  const [mode, setMode] = useState<MapMode>(config.layout.mapDefault);
+  const [status, setStatus] = useState<'idle' | 'saved' | 'stale'>('idle');
+
+  function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!saveMapDefault(version, actor, mode)) {
+      setStatus('stale');
+      return;
+    }
+    setVersion(version + 1);
+    setStatus('saved');
+    track('admin_site_change', { area: 'layout', action: 'save', fields: 1 });
+  }
+
+  return (
+    <form onSubmit={onSubmit} className={portalCard}>
+      <fieldset>
+        <legend className="font-heading text-base font-extrabold text-ink">{t('mapDefault_title')}</legend>
+        <p className="mt-1 text-sm text-muted">{t('mapDefault_help')}</p>
+        <div className="mt-3 flex flex-wrap gap-3">
+          {(['satellite', 'map'] as const).map((value) => (
+            <label
+              key={value}
+              className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-button border border-input-border px-3 text-sm font-bold text-ink has-[:checked]:border-accent-button has-[:checked]:bg-accent-soft"
+            >
+              <input
+                type="radio"
+                name="map-default"
+                value={value}
+                checked={mode === value}
+                onChange={() => {
+                  setMode(value);
+                  setStatus('idle');
+                }}
+                className="size-5 accent-[var(--color-accent-button)]"
+              />
+              <span aria-hidden="true">{value === 'satellite' ? '🛰️' : '🗺️'}</span>
+              {t(value === 'satellite' ? 'mapDefault_satellite' : 'mapDefault_map')}
+            </label>
+          ))}
+        </div>
+      </fieldset>
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <button type="submit" className={portalPrimary}>
+          {t('mapDefault_save')}
+        </button>
+        <p role="status" className="text-sm font-bold">
+          {status === 'saved' ? <span className="text-success">{t('notify_saved')}</span> : null}
+          {status === 'stale' ? <span className="text-error">{t('notify_stale')}</span> : null}
+        </p>
+      </div>
+    </form>
   );
 }
 

@@ -3,6 +3,7 @@
  * must not live in request handlers. Today: the live relay (decision 2026-11-01). pg-boss timers join here.
  */
 import { createDb, createListener } from '@mechdost/db';
+import { bridgeInboundWhatsApp } from '@mechdost/db/repo';
 import { ConfigError, loadConfig } from './config';
 import { pollingPublisher, type LivePublisher } from './live/publisher';
 import { startDispatcher, type ChannelAdapter } from './notify/dispatcher';
@@ -30,6 +31,26 @@ const publisher: LivePublisher =
 const relay = startRelay({ db, publisher });
 const adapters: ChannelAdapter[] = config.whatsapp ? [createWhatsAppAdapter(config.whatsapp)] : [];
 const dispatcher = startDispatcher({ db, adapters });
+
+// Inbound WhatsApp → support tickets (spec 09). Only while WhatsApp is on; one event per transaction.
+let bridging = false;
+const bridgeTimer = config.whatsapp
+  ? setInterval(() => {
+      if (bridging) return;
+      bridging = true;
+      void bridgeInboundWhatsApp(db, { cityCode: config.supportDefaultCityCode })
+        .then((r) => {
+          if (r.processed > 0) log('info', 'whatsapp_bridge', { ...r });
+        })
+        .catch((err: unknown) => {
+          log('error', 'whatsapp_bridge_failed', { error: err instanceof Error ? err.message : String(err) });
+        })
+        .finally(() => {
+          bridging = false;
+        });
+    }, 5000)
+  : null;
+bridgeTimer?.unref();
 log('info', 'worker_started', {
   live: publisher.name,
   listen: Boolean(config.live.listenUrl),
@@ -51,6 +72,7 @@ function shutdown(signal: string) {
   if (stopping) return;
   stopping = true;
   log('info', 'shutdown', { signal });
+  if (bridgeTimer) clearInterval(bridgeTimer);
   void Promise.all([relay.stop(), dispatcher.stop()])
     .then(() => Promise.all([sql.end({ timeout: 5 }), listener?.end()]))
     .finally(() => process.exit(0));

@@ -31,6 +31,11 @@ export interface ClientEvents {
     action: 'save' | 'reset';
     fields: number;
   };
+  /** Admin → Notifications (spec 10, hard rule 8): which WhatsApp event changed and how; `budget` for the alert. */
+  admin_notifications_change: {
+    target: string;
+    action: 'saved' | 'enabled' | 'disabled' | 'budget';
+  };
 }
 
 export type ClientEventName = keyof ClientEvents;

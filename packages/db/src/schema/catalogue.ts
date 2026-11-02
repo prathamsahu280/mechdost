@@ -60,6 +60,8 @@ export const shops = pgTable(
   {
     id: id(),
     name: text().notNull(),
+    /** Hindi (transliterated) business name for /hi pages; null = show `name` and flag it in admin (rule 10). */
+    nameHi: text(),
     legalName: text(),
     gstin: text(),
     /** PAN, AES-256-GCM encrypted (`encryptField(…, 'shops.pan_enc')`); lookups use `panIndex`. */
@@ -69,6 +71,7 @@ export const shops = pgTable(
     phone: text().notNull(),
     email: text(),
     addressLine: text().notNull(),
+    addressLineHi: text(),
     pincode: text()
       .notNull()
       .references(() => pincodes.pincode, { onDelete: 'restrict' }),
@@ -175,6 +178,22 @@ export const products = pgTable(
       .references(() => categories.id, { onDelete: 'restrict' }),
     description: text(),
     descriptionHi: text(),
+    /**
+     * Customer-visible summary lines, English + Hindi side by side (decision 2026-11-02 "Localised content
+     * columns", spec 02). Brand/model names, units and codes stay in Latin script inside the Hindi text.
+     */
+    specSummary: text(),
+    specSummaryHi: text(),
+    compatibility: text(),
+    compatibilityHi: text(),
+    highlights: text()
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    highlightsHi: text()
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
     spec: jsonb()
       .notNull()
       .default(sql`'{}'::jsonb`),
@@ -193,6 +212,12 @@ export const products = pgTable(
     check('products_status_valid', sql`${t.status} in ('draft','submitted','live','rejected','archived')`),
     check('products_hsn_format', sql`${t.hsn} ~ '^[0-9]{4,8}$'`),
     check('products_gst_rate_range', sql`${t.gstRateBp} between 0 and 4000`),
+    // At most 8 highlights; the Hindi list is empty (falls back to English) or matches the English one line by line.
+    check('products_highlights_max', sql`coalesce(array_length(${t.highlights}, 1), 0) <= 8`),
+    check(
+      'products_highlights_hi_aligned',
+      sql`coalesce(array_length(${t.highlightsHi}, 1), 0) in (0, coalesce(array_length(${t.highlights}, 1), 0))`,
+    ),
     index().on(t.categoryId, t.status),
     index().on(t.brandId),
     index().on(t.submittedByShopId),

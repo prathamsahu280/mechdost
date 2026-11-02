@@ -4,6 +4,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import type * as MapLibre from 'maplibre-gl';
 import type { IControl, Map as MapLibreMap, Marker, Popup, StyleSpecification } from 'maplibre-gl';
 import { useEffect, useRef } from 'react';
+import { siteConfig } from '@/demo/site-config';
 import { track } from '@/lib/analytics';
 import { directionsHref, type MapUi } from '@/lib/map-ui';
 import {
@@ -311,7 +312,7 @@ export function WorkshopMap({
       map.current = m;
 
       // Map / Satellite (hybrid). Markers are DOM elements, so they survive every style swap.
-      let mode: MapMode = savedMapMode();
+      let mode: MapMode = savedMapMode(siteConfig().layout.mapDefault);
       const applyStyle = () => {
         if (mode === 'satellite') {
           m.setStyle(STYLE_URLS.hybridBase, hybridStyle);

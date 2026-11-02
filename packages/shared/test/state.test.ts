@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { assignmentMachine, orderMachine, paymentMachine, serviceRequestMachine } from '../src/state';
+import {
+  TICKET_STATES,
+  assignmentMachine,
+  orderMachine,
+  paymentMachine,
+  serviceRequestMachine,
+  ticketMachine,
+} from '../src/state';
 
 describe('order state machine', () => {
   it('follows the admin-routing happy path', () => {
@@ -94,5 +101,17 @@ describe('payment state machine', () => {
     expect(paymentMachine.can('paid', 'failed')).toBe(false);
     expect(paymentMachine.can('paid', 'partially_refunded')).toBe(true);
     expect(paymentMachine.can('partially_refunded', 'refunded')).toBe(true);
+  });
+});
+
+describe('ticket state machine', () => {
+  it('a customer reply brings a waiting or resolved ticket back to review', () => {
+    expect(ticketMachine.canActor('awaiting_customer', 'in_review', 'customer')).toBe(true);
+    expect(ticketMachine.canActor('resolved', 'in_review', 'customer')).toBe(true);
+  });
+  it('customers cannot resolve or close; closed is final', () => {
+    expect(ticketMachine.canActor('in_review', 'resolved', 'customer')).toBe(false);
+    expect(ticketMachine.canActor('resolved', 'closed', 'customer')).toBe(false);
+    for (const to of TICKET_STATES) expect(ticketMachine.canActor('closed', to, 'admin')).toBe(false);
   });
 });

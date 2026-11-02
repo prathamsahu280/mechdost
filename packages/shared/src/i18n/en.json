@@ -1156,7 +1156,52 @@
     "pausedTitle": "Paused by MechDost.",
     "pausedBody": "You won't receive new work for now. Please finish your current orders.",
     "coinsReasonSeed": "Demo coins",
-    "partnerEyebrow": "MechDost Partner"
+    "partnerEyebrow": "MechDost Partner",
+    "nav_notifications": "Notifications",
+    "notify_title": "Notifications",
+    "notify_intro": "Choose which updates go out on WhatsApp and what they say. Everything else reaches people in the app and by email, at no cost.",
+    "notify_status_off": "WhatsApp is off",
+    "notify_status_body": "Messages start once the Meta setup is done: business account, verified business, a dedicated number and billing in rupees.",
+    "notify_ev_order_confirmed": "Order confirmed",
+    "notify_ev_order_out_for_delivery": "Out for delivery (with the delivery code)",
+    "notify_ev_order_rejected": "Order could not be fulfilled",
+    "notify_ev_service_estimate_sent": "Workshop estimate ready",
+    "notify_ev_ticket_replied": "Support replied",
+    "notify_ev_order_routed": "New order for a shop",
+    "notify_audience_customer": "To customers",
+    "notify_audience_partner": "To shops",
+    "notify_switch": "Send on WhatsApp",
+    "notify_on": "On",
+    "notify_off": "Off",
+    "notify_text_en": "English message",
+    "notify_text_hi": "Hindi message",
+    "notify_preview": "Preview",
+    "notify_placeholders": "Placeholders: {list}",
+    "notify_save": "Save",
+    "notify_saved": "Saved.",
+    "notify_stale": "Someone else changed this. Reload the page to see the latest version.",
+    "notify_problem_empty": "Write the message.",
+    "notify_problem_promo_wording": "Order updates can’t mention offers, discounts or coupons: WhatsApp would bill them as marketing, about 7 times the price.",
+    "notify_problem_too_long": "Keep the message under 1,024 characters.",
+    "notify_problem_missing": "Use every placeholder: {list}.",
+    "notify_problem_unknown": "Only use the placeholders {list}.",
+    "notify_budget_title": "Monthly WhatsApp budget",
+    "notify_budget_label": "Alert admins above (₹)",
+    "notify_budget_help": "Order updates cost about ₹0.12 each. Admins get an alert when this month’s estimated cost reaches this amount.",
+    "notify_budget_used": "{used} of {budget} used this month",
+    "notify_budget_err": "Enter whole rupees from {min} to {max}.",
+    "notify_budget_save": "Save budget",
+    "notify_history": "Recent changes",
+    "notify_history_empty": "No changes yet.",
+    "notify_change_saved": "{actor} edited “{target}”",
+    "notify_change_enabled": "{actor} switched on “{target}”",
+    "notify_change_disabled": "{actor} switched off “{target}”",
+    "notify_change_budget": "{actor} changed the monthly budget",
+    "mapDefault_title": "Workshop map: default view",
+    "mapDefault_help": "What customers see first on the workshop map. Anyone who switches views keeps their own choice on their device.",
+    "mapDefault_satellite": "Satellite with roads and names",
+    "mapDefault_map": "Plain map",
+    "mapDefault_save": "Save map view"
   },
   "policies": {
     "returns": {
@@ -1175,6 +1220,20 @@
       "coinsBody": "Coins used on a cancelled order are given back as coins. Coins have no cash value and are never paid out as money.",
       "help": "Questions about an order? Call us:",
       "updated": "Last updated 1 November 2026."
+    }
+  },
+  "notifyTemplates": {
+    "order": {
+      "confirmed": "Your MechDost order {{1}} is confirmed and will be shipped soon. Track it with the button below.",
+      "out_for_delivery": "Your order {{1}} is out for delivery. Share delivery code {{2}} only with the delivery partner when you receive it.",
+      "rejected": "We could not fulfil your order {{1}}. Any payment will go back to your original payment method within 5–7 working days.",
+      "routed": "New order {{1}} for your shop. Accept or decline within {{2}} minutes in the MechDost partner portal."
+    },
+    "service": {
+      "estimate_sent": "The workshop has sent an estimate for your service request {{1}}. Review and approve each item before any work starts."
+    },
+    "ticket": {
+      "replied": "MechDost support replied to your request {{1}}. Open it to read the reply."
     }
   }
 }

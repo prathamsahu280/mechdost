@@ -95,12 +95,16 @@ export function localizeLabels(style: StyleSpecification, locale: string): Style
   };
 }
 
-/** Satellite (hybrid) is the default view (user 2026-11-02); a saved "map" choice is remembered. */
-export function savedMapMode(): MapMode {
+/**
+ * The viewer's own choice on this device wins; otherwise the admin's default (site settings, satellite unless
+ * changed — user 2026-11-02).
+ */
+export function savedMapMode(fallback: MapMode = 'satellite'): MapMode {
   try {
-    return window.localStorage.getItem(MAP_MODE_KEY) === 'map' ? 'map' : 'satellite';
+    const saved = window.localStorage.getItem(MAP_MODE_KEY);
+    return saved === 'map' || saved === 'satellite' ? saved : fallback;
   } catch {
-    return 'satellite';
+    return fallback;
   }
 }
 

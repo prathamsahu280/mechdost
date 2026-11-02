@@ -6,6 +6,7 @@
  */
 import { COIN_RULE_LIMITS, DEFAULT_COIN_RULES, type CoinRules } from '@mechdost/shared/coins';
 import { useSyncExternalStore } from 'react';
+import type { MapMode } from '@/lib/map-styles';
 import { CATEGORY_KEYS, type CategoryKey } from './catalogue';
 import {
   DEFAULT_FEATURED,
@@ -77,7 +78,8 @@ export interface SiteConfig {
   /** One version per area (like a per-row `version`): editors of different areas never block each other. */
   versions: Record<SiteArea, number>;
   content: Partial<Record<ContentKey, Partial<Record<SiteLocale, string>>>>;
-  layout: { order: HomeSection[]; hidden: HomeSection[] };
+  /** Home section order/visibility and the workshop map's default view (admin, user 2026-11-02). */
+  layout: { order: HomeSection[]; hidden: HomeSection[]; mapDefault: MapMode };
   /** Category tiles on the home page; null = default six. */
   featured: CategoryKey[] | null;
   emoji: Partial<Record<CategoryKey, string>>;
@@ -90,7 +92,7 @@ const ZERO_VERSIONS: Record<SiteArea, number> = { content: 0, layout: 0, categor
 export const DEFAULT_CONFIG: SiteConfig = {
   versions: ZERO_VERSIONS,
   content: {},
-  layout: { order: [...HOME_SECTIONS], hidden: [] },
+  layout: { order: [...HOME_SECTIONS], hidden: [], mapDefault: 'satellite' },
   featured: null,
   emoji: {},
   settings: DEFAULT_SETTINGS,
@@ -162,6 +164,7 @@ function parse(raw: string | null): SiteConfig {
   // Every section exactly once: keep the stored order, append any section the stored list is missing.
   const fullOrder = [...new Set([...order, ...HOME_SECTIONS])];
   const hidden = Array.isArray(layout.hidden) ? [...new Set(layout.hidden.filter(isSection))] : [];
+  const mapDefault: MapMode = layout.mapDefault === 'map' ? 'map' : 'satellite';
 
   const featuredRaw = Array.isArray(data.featured) ? [...new Set(data.featured.filter(isCategory))] : null;
   const featured =
@@ -206,7 +209,7 @@ function parse(raw: string | null): SiteConfig {
       }),
     ) as Record<SiteArea, number>,
     content,
-    layout: { order: fullOrder, hidden },
+    layout: { order: fullOrder, hidden, mapDefault },
     featured,
     emoji,
     settings,
@@ -324,12 +327,24 @@ export function saveContent(expectedVersion: number, actor: string, content: Sit
   );
 }
 
-export function saveLayout(expectedVersion: number, actor: string, layout: SiteConfig['layout']): boolean {
+export function saveLayout(
+  expectedVersion: number,
+  actor: string,
+  layout: Pick<SiteConfig['layout'], 'order' | 'hidden'>,
+): boolean {
   const order = [...new Set([...layout.order.filter(isSection), ...HOME_SECTIONS])];
   const hidden = [...new Set(layout.hidden.filter(isSection))];
   return commit(expectedVersion, { actor, area: 'layout', action: 'save', fields: hidden }, (c) => ({
     ...without(c),
-    layout: { order, hidden },
+    layout: { order, hidden, mapDefault: c.layout.mapDefault },
+  }));
+}
+
+/** Workshop map default view for everyone (a person's own switch on their device still wins). */
+export function saveMapDefault(expectedVersion: number, actor: string, mapDefault: MapMode): boolean {
+  return commit(expectedVersion, { actor, area: 'layout', action: 'save', fields: ['mapDefault'] }, (c) => ({
+    ...without(c),
+    layout: { ...c.layout, mapDefault: mapDefault === 'map' ? 'map' : 'satellite' },
   }));
 }
 
