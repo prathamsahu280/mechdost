@@ -16,6 +16,29 @@ import type { LiveDelivery, LivePublisher } from './publisher';
  * always-on worker, not in request handlers (the API stays stateless). At-least-once: if publishing fails the rows
  * stay unsent and come back when their lease lapses; clients drop duplicates with the version gate.
  */
+/**
+ * A publish may not run longer than this; the rows then stay unsent and are retried after the lease. Kept well
+ * below REWIPE_SECONDS (120 s) so the second wipe pass always lands after any publish that started before an
+ * access change.
+ */
+export const PUBLISH_TIMEOUT_MS = 20_000;
+
+export async function withTimeout<T>(work: Promise<T>, ms: number): Promise<T> {
+  let timer: NodeJS.Timeout | undefined;
+  try {
+    return await Promise.race([
+      work,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => {
+          reject(new Error('live publish timed out'));
+        }, ms);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export interface RelayResult {
   claimed: number;
   delivered: number;
@@ -45,7 +68,7 @@ export async function relayOnce(db: Tx, publisher: LivePublisher, limit = 200): 
     );
   }
   const batch: LiveDelivery[] = rows.map((r) => ({ recipients: byTopic.get(r.topic) ?? [], ping: r.ping }));
-  await publisher.publish(batch);
+  await withTimeout(publisher.publish(batch), PUBLISH_TIMEOUT_MS);
   // Access may have ended while this batch was in flight: wipe again after publishing (the second pass, two
   // minutes later, covers other workers).
   await revokeOnce(db, publisher);

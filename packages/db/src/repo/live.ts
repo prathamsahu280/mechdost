@@ -156,8 +156,9 @@ export async function resolveLiveRecipients(db: Tx, topic: string): Promise<Live
 }
 
 /**
- * Pending inbox wipes (lost access, migrations 0020/0022). Each wipe runs **twice**: once at once, and again
- * after `REWIPE_SECONDS` (longer than the relay's 30 s outbox lease and any in-flight publish), so a ping a relay
+ * Pending inbox wipes (lost access, migrations 0020/0022/0023). Each wipe runs **twice**: once at once, and again
+ * `REWIPE_SECONDS` after that first pass (`wiped_at`, not `created_at`: a relay that was down must not run both
+ * passes back to back), longer than the relay's 30 s outbox lease and its 20 s publish cap, so a ping a relay
  * resolved just before the access change and published just after the first wipe is removed too (security review
  * 2026-11-03). Claimed with SKIP LOCKED; wiping is idempotent.
  */
@@ -174,11 +175,11 @@ export interface LiveRevocation {
 
 export async function claimLiveRevocations(db: Tx, limit = 100): Promise<LiveRevocation[]> {
   const result = await db.execute(sql`
-    update live_revocations set attempts = attempts + 1
+    update live_revocations set attempts = attempts + 1, wiped_at = now()
     where id in (
       select id from live_revocations
       where done_at is null
-        and (attempts = 0 or created_at < now() - make_interval(secs => ${REWIPE_SECONDS}))
+        and (attempts = 0 or wiped_at < now() - make_interval(secs => ${REWIPE_SECONDS}))
       order by id
       limit ${Math.min(Math.max(limit, 1), 1000)}
       for update skip locked

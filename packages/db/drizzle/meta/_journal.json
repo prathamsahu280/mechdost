@@ -162,6 +162,13 @@
       "when": 1793605975978,
       "tag": "0022_live_revocation_more",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1793606684566,
+      "tag": "0023_supreme_hellfire_club",
+      "breakpoints": true
     }
   ]
 }

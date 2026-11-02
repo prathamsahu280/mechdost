@@ -472,6 +472,8 @@ export const liveRevocations = pgTable(
     node: text(),
     reason: text().notNull(),
     attempts: integer().notNull().default(0),
+    /** When the latest pass ran; the second pass waits REWIPE_SECONDS after it (not after created_at). */
+    wipedAt: ts(),
     doneAt: ts(),
     createdAt: createdAt(),
   },

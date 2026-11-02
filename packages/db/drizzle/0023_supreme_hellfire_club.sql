@@ -1,0 +1,1 @@
+ALTER TABLE "live_revocations" ADD COLUMN "wiped_at" timestamp with time zone;

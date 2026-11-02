@@ -15,7 +15,7 @@ import {
   type LiveDelivery,
   type LivePublisher,
 } from '../src/live/publisher';
-import { relayOnce, revokeOnce } from '../src/live/relay';
+import { relayOnce, revokeOnce, withTimeout } from '../src/live/relay';
 
 let db: TestDb;
 let client: Awaited<ReturnType<typeof createTestDb>>['client'];
@@ -204,10 +204,27 @@ describe('lost access wipes the live inbox (security review follow-ups)', () => 
     expect(await revokeOnce(t(), pub)).toBe(1);
     expect(pub.forgotten).toEqual([{ firebaseUid: 'fb-relay-leaver', node: null }]);
     expect(await revokeOnce(t(), pub)).toBe(0); // second pass waits for the in-flight window
-    await client.exec("update live_revocations set created_at = now() - interval '3 minutes'");
+    await client.exec("update live_revocations set wiped_at = now() - interval '3 minutes'");
     expect(await revokeOnce(t(), pub)).toBe(1);
     expect(await revokeOnce(t(), pub)).toBe(0); // done after two passes
     expect(pub.forgotten).toHaveLength(2);
+  });
+
+  it('a wipe recorded while the relay was down still gets its full in-flight window', async () => {
+    await db.insert(s.users).values({ firebaseUid: 'fb-relay-late' });
+    await client.exec("update users set status = 'deactivated' where firebase_uid = 'fb-relay-late'");
+    await client.exec(
+      "update live_revocations set created_at = now() - interval '10 minutes' where firebase_uid = 'fb-relay-late'",
+    );
+    const pub = new FakePublisher();
+    expect(await revokeOnce(t(), pub)).toBe(1);
+    expect(await revokeOnce(t(), pub)).toBe(0); // not back to back: waits 120 s after the first pass
+  });
+
+  it('a publish never runs past its cap', async () => {
+    const never = new Promise<void>(() => undefined);
+    await expect(withTimeout(never, 10)).rejects.toThrow('live publish timed out');
+    await expect(withTimeout(Promise.resolve('ok'), 10)).resolves.toBe('ok');
   });
 
   it('only ever removes paths inside inbox/{uid}', () => {
