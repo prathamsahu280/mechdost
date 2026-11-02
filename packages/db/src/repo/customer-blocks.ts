@@ -6,7 +6,9 @@ import {
   type CustomerBlockReason,
 } from '@mechdost/shared/customers';
 import { auditLog, customerBlocks, users } from '../schema';
-import { ConflictError, NotFoundError, pgCode, ValidationError } from './errors';
+import { ROLES } from '@mechdost/shared/rbac';
+import { ConflictError, ForbiddenError, NotFoundError, pgCode, ValidationError } from './errors';
+import { loadGrants } from './rbac';
 import type { Tx } from './orders';
 
 /**
@@ -14,6 +16,12 @@ import type { Tx } from './orders';
  * the API) block a customer at one level with a reason code; lifting needs a reason and compare-and-set on
  * `version`. Every change writes an audit row in the same transaction. Staff cannot block themselves.
  */
+const STAFF_ROLES = new Set(
+  Object.entries(ROLES)
+    .filter(([, r]) => r.staff)
+    .map(([key]) => key),
+);
+
 const active = and(
   isNull(customerBlocks.liftedAt),
   or(isNull(customerBlocks.endsAt), gt(customerBlocks.endsAt, sql`now()`)),
@@ -53,6 +61,18 @@ export async function blockCustomer(
   return db.transaction(async (tx) => {
     const [user] = await tx.select({ id: users.id }).from(users).where(eq(users.id, input.userId));
     if (!user) throw new NotFoundError('Customer not found');
+    // Security review 2026-11-03: this is for customers. Staff access is removed by revoking roles (spec 13,
+    // audited and four-eyes for offboarding), never by a block that could lock out another admin. Partner users
+    // may lose ordering or COD, but a full block would cut off their portal: suspend the partner instead.
+    const grants = await loadGrants(tx, input.userId);
+    const isStaff = grants.some((g) => STAFF_ROLES.has(g.role));
+    if (isStaff)
+      throw new ForbiddenError('Staff accounts cannot be blocked; revoke their roles', 'BLOCK_NOT_CUSTOMER');
+    if (input.level === 'full' && grants.some((g) => g.shopId !== null || g.workshopId !== null))
+      throw new ValidationError(
+        'Suspend the shop or workshop instead of fully blocking its user',
+        'BLOCK_PARTNER_FULL',
+      );
     // An expired, never-lifted block still holds the unique slot: close it first so a new one can start.
     await tx
       .update(customerBlocks)

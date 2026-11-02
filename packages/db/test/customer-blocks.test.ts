@@ -11,6 +11,8 @@ import { seedRaipurDemo, type DemoFixture } from '../src/demo-seed';
 import {
   activeBlockLevels,
   blockCustomer,
+  grantRole,
+  syncRbacCatalogue,
   liftCustomerBlock,
   listCustomerBlocks,
   placeCodOrder,
@@ -33,6 +35,7 @@ let staff = '';
 beforeAll(async () => {
   ({ db, client } = await createTestDb());
   await seedRaipurDemo(t(), fixture);
+  await syncRbacCatalogue(t());
   customer = (await db.insert(s.users).values({ firebaseUid: 'fb-block-customer' }).returning())[0]!.id;
   staff = (await db.insert(s.users).values({ firebaseUid: 'fb-block-staff' }).returning())[0]!.id;
 });
@@ -150,5 +153,25 @@ describe('customer blocks', () => {
       details: { reason: 'customer' },
     });
     expect(await db.$count(s.orderGroups)).toBe(0);
+  });
+
+  it('staff cannot be blocked; partner users can lose ordering but not sign-in', async () => {
+    const admin = (await db.insert(s.users).values({ firebaseUid: 'fb-block-admin2' }).returning())[0]!.id;
+    await grantRole(t(), { userId: admin, role: 'super_admin', grantedBy: null });
+    const owner = (await db.insert(s.users).values({ firebaseUid: 'fb-block-owner' }).returning())[0]!.id;
+    const [shop] = await db.select().from(s.shops).limit(1);
+    await grantRole(t(), { userId: owner, role: 'seller_owner', shopId: shop!.id, grantedBy: null });
+    const as = (userId: string, level: 'full' | 'orders') =>
+      blockCustomer(t(), {
+        userId,
+        level,
+        reasonCode: 'other',
+        note: null,
+        endsAt: null,
+        staffUserId: staff,
+      });
+    await expect(as(admin, 'orders')).rejects.toMatchObject({ code: 'BLOCK_NOT_CUSTOMER', status: 403 });
+    await expect(as(owner, 'full')).rejects.toMatchObject({ code: 'BLOCK_PARTNER_FULL' });
+    await expect(as(owner, 'orders')).resolves.toMatchObject({ version: 1 });
   });
 });

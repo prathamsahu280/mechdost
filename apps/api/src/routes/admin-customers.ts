@@ -1,5 +1,8 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
-import { blockCustomer, liftCustomerBlock, listCustomerBlocks } from '@mechdost/db/repo';
+import { blockCustomer, cityScopeFrom, liftCustomerBlock, listCustomerBlocks } from '@mechdost/db/repo';
+import type { Permission } from '@mechdost/shared/rbac';
+import { createMiddleware } from 'hono/factory';
+import { Forbidden } from '../errors';
 import { CUSTOMER_BLOCK_LEVELS, CUSTOMER_BLOCK_REASONS } from '@mechdost/shared/customers';
 import type { SessionCache } from '../auth/session-cache';
 import { authenticate, requirePermission, requireVerified } from '../middleware/auth';
@@ -104,6 +107,16 @@ export function adminCustomerRoutes(deps: AppDeps, cache: SessionCache) {
   app.use('/admin/customers/*', requireVerified);
   app.use('/admin/customers/*', requirePermission('customers:read'));
   app.on('POST', '/admin/customers/*', requirePermission('customers:block'));
+  // Customers have no home city yet, so a city-scoped grant cannot be narrowed to "its" customers: require an
+  // all-cities grant until customers carry a city (security review 2026-11-03; Q65).
+  const globalOnly = (permission: Permission) =>
+    createMiddleware<AppEnv>(async (c, next) => {
+      if (!cityScopeFrom(c.get('auth').grants, permission).all)
+        throw Forbidden('SCOPE_REQUIRED', 'This needs an all-cities role');
+      await next();
+    });
+  app.use('/admin/customers/*', globalOnly('customers:read'));
+  app.on('POST', '/admin/customers/*', globalOnly('customers:block'));
 
   return app
     .openapi(list, async (c) => {

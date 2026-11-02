@@ -4,11 +4,16 @@
  */
 import { beforeAll, describe, expect, it } from 'vitest';
 import { ensureUser, grantRole } from '@mechdost/db/repo';
+import * as s from '@mechdost/db/schema';
 import { bearer, buildApp, type ErrorJson } from './helpers';
 
 let ctx: Awaited<ReturnType<typeof buildApp>>;
 
-async function person(n: string, role: 'super_admin' | 'support_agent' | null) {
+async function person(
+  n: string,
+  role: 'super_admin' | 'support_agent' | 'city_manager' | null,
+  cityId: string | null = null,
+) {
   const phone = `+9198333333${n}`;
   const token = ctx.verifier.add(`token-blocks-00000${n}`, {
     firebaseUid: `bl-${n}`,
@@ -22,7 +27,7 @@ async function person(n: string, role: 'super_admin' | 'support_agent' | null) {
     email: `bl-${n}@example.com`,
     emailVerified: true,
   });
-  if (role) await grantRole(ctx.db, { userId: user.id, role, grantedBy: null });
+  if (role) await grantRole(ctx.db, { userId: user.id, role, cityId, grantedBy: null });
   return { id: user.id, headers: { ...bearer(token), 'content-type': 'application/json' } };
 }
 
@@ -81,5 +86,22 @@ describe('admin customer blocks', () => {
       body: JSON.stringify({ version, reason: 'Bank confirmed the payments' }),
     });
     expect(lifted.status).toBe(200);
+  });
+
+  it('city-scoped staff cannot read or change customer blocks yet (customers have no city)', async () => {
+    const [state] = await ctx.db
+      .insert(s.states)
+      .values({ code: 'CG', name: 'Chhattisgarh', gstStateCode: '22' })
+      .returning();
+    const [city] = await ctx.db
+      .insert(s.cities)
+      .values({ stateId: state!.id, code: 'RPR', slug: 'raipur', name: 'Raipur', status: 'live' })
+      .returning();
+    const manager = await person('04', 'city_manager', city!.id);
+    const customer = await person('05', null);
+    const res = await ctx.app.request(`/v1/admin/customers/${customer.id}/blocks`, {
+      headers: manager.headers,
+    });
+    expect(((await res.json()) as ErrorJson).error.code).toBe('SCOPE_REQUIRED');
   });
 });
