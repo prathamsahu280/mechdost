@@ -63,6 +63,18 @@ None (auto-route is an admin setting; default off).
 
 Courier integration webhooks, partial shipments, order edit before confirmation, split by item when one shop lacks part of a sub-order, penalties for cancel-after-accept, route by zone polygons.
 
+## Built: admin routing API (2026-11-03)
+
+`packages/db/src/repo/routing.ts`, `apps/api/src/routes/admin-orders.ts`, worker timer in `apps/api/src/worker.ts`.
+
+- **Queue** `GET /v1/admin/orders?view=needs_routing|awaiting_shop|in_progress|closed&cursor&locale`: oldest first (FIFO), keyset cursor on (placed_at, id); each item has status, PIN, total, item count, version, shops already tried, and the current offer (shop + expiry). City scope = the cities of the staff member's `orders:read` grants (`cityScopeFrom`; global grant = all cities; another city's order = 404).
+- **Order** `GET /v1/admin/orders/{code}`: items, offer history (shop, status, times, decline reason) and, while unrouted, the **ranked shops** covering the delivery PIN: eligible first (approved, not busy, every item in stock counting this order's own reservations, never a shop that already declined or let this order expire), then distance to the PIN centroid, acceptance rate over 30 days (null below 5 offers, research "minimum sample"), rating, price. Paused/suspended shops are never listed.
+- **Route / reroute** `POST …/route {shopId, version}` (`orders:route`): eligible shops only (`SHOP_NOT_ELIGIBLE`), compare-and-set on the order version (`STALE_ORDER`); the order's stock reservations move to the chosen shop in the same transaction (released at the old shop, reserved at the new; `OUT_OF_STOCK` rolls back); offer timer = setting `orders.acceptance_timeout_min` (city → global, default **15 min** as in the demo decision); audit `order.routed` / `order.rerouted`.
+- **Reject** `POST …/reject {reasonCode, message, version}`: only `placed`/`needs_rerouting`; `reasonCode` from `ORDER_REJECT_REASONS` (no_stock_nearby, all_shops_declined, unserviceable_address, suspected_fraud, pricing_error, other) + a customer message (10–500), both stored on the order (migration 0028, CHECK: a rejected order always has both); reservations released; WhatsApp `order.rejected` queued when enabled; audit. Prepaid refunds come with online payment (spec 05).
+- **Timer** (worker, every 30 s): `expireDueAssignments` expires offers past their DB-clock deadline, one CAS transaction each (safe twice / on several workers) → `needs_rerouting`.
+- Reservations made at checkout live until the order is accepted, rejected or cancelled; the reservation-expiry sweep (`releaseExpiredReservations`) is **not** scheduled for placed orders.
+- Not yet: shop side (offers list, accept → commit reservations, decline) API; cancel; auto-route setting; 50 % timer alert; the admin console on the API; analytics events `admin_order_routed`, `order_rerouted`, `order_rejected`.
+
 ## Demo implementation (2026-11-01)
 
 Admin routing at `/admin/orders`, shop accept/decline at `/partner/shop`, customer tracking at `/orders/{code}` — on the browser store (`routeOrder`, `respondToOrder`, `rejectOrder`, `shopAdvanceOrder`, `routingState` in `apps/web/src/demo/store.ts`). Accept timer 15 min (`SHOP_ACCEPT_MINUTES`); suggestions from `rankShops` (category coverage → acceptance → speed; declined shops excluded). Acceptance test: `e2e/roles.spec.ts` "order routing across roles".

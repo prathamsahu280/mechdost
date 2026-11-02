@@ -14,7 +14,12 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
-import { ASSIGNMENT_STATES, ORDER_STATES, PAYMENT_STATES } from '@mechdost/shared/state';
+import {
+  ASSIGNMENT_STATES,
+  ORDER_REJECT_REASONS,
+  ORDER_STATES,
+  PAYMENT_STATES,
+} from '@mechdost/shared/state';
 import { citext, createdAt, encryptedCheck, id, paise, ts, updatedAt, version } from './_common';
 import { cities } from './geography';
 import { users } from './identity';
@@ -108,6 +113,9 @@ export const orders = pgTable(
     taxPaise: paise().notNull().default(0),
     totalPaise: paise().notNull(),
     cancellableUntilStatus: text().notNull().default('confirmed'),
+    /** Reject (later: cancel) reason code and the message shown to the customer (spec 04). */
+    statusReasonCode: text(),
+    customerMessage: text(),
     placedAt: ts().notNull().defaultNow(),
     confirmedAt: ts(),
     deliveredAt: ts(),
@@ -119,6 +127,14 @@ export const orders = pgTable(
     unique().on(t.groupId, t.subNo),
     check('orders_status_valid', sql`${t.status} in (${inList(ORDER_STATES)})`),
     check('orders_sub_no_positive', sql`${t.subNo} > 0`),
+    check(
+      'orders_reason_code_valid',
+      sql`${t.statusReasonCode} is null or ${t.statusReasonCode} in (${inList(ORDER_REJECT_REASONS)})`,
+    ),
+    check(
+      'orders_rejected_explained',
+      sql`${t.status} <> 'rejected' or (${t.statusReasonCode} is not null and char_length(${t.customerMessage}) between 10 and 500)`,
+    ),
     check(
       'orders_amounts_nonneg',
       sql`${t.subtotalPaise} >= 0 and ${t.totalPaise} >= 0 and ${t.taxPaise} >= 0`,

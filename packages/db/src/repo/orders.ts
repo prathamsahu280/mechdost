@@ -9,7 +9,12 @@ import { queueOrderWhatsApp, type OrderWhatsAppEvent } from './order-notificatio
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Tx = PgDatabase<PgQueryResultHKT, any, any>;
 
-type OrderPatch = Partial<Pick<typeof orders.$inferInsert, 'shopId' | 'confirmedAt' | 'deliveredAt'>>;
+type OrderPatch = Partial<
+  Pick<
+    typeof orders.$inferInsert,
+    'shopId' | 'confirmedAt' | 'deliveredAt' | 'statusReasonCode' | 'customerMessage'
+  >
+>;
 
 /**
  * The only way to change an order's status (docs/specs/14-data-integrity.md):

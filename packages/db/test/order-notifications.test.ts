@@ -185,6 +185,10 @@ describe('order WhatsApp updates', () => {
           to: 'rejected',
           expectedVersion: order.version,
           actor: { type: 'admin' },
+          patch: {
+            statusReasonCode: 'no_stock_nearby',
+            customerMessage: 'No shop near you has this part today.',
+          },
         });
         throw new Error('boom');
       }),

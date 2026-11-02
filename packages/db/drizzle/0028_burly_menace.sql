@@ -1,0 +1,4 @@
+ALTER TABLE "orders" ADD COLUMN "status_reason_code" text;--> statement-breakpoint
+ALTER TABLE "orders" ADD COLUMN "customer_message" text;--> statement-breakpoint
+ALTER TABLE "orders" ADD CONSTRAINT "orders_reason_code_valid" CHECK ("orders"."status_reason_code" is null or "orders"."status_reason_code" in ('no_stock_nearby','all_shops_declined','unserviceable_address','suspected_fraud','pricing_error','other'));--> statement-breakpoint
+ALTER TABLE "orders" ADD CONSTRAINT "orders_rejected_explained" CHECK ("orders"."status" <> 'rejected' or ("orders"."status_reason_code" is not null and char_length("orders"."customer_message") between 10 and 500));

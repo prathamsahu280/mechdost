@@ -9,6 +9,7 @@ import { rateLimit, RATE_RULES } from './middleware/rate-limit';
 import { securityMiddleware } from './middleware/security';
 import { adminCustomerRoutes } from './routes/admin-customers';
 import { adminNotificationRoutes } from './routes/admin-notifications';
+import { adminOrderRoutes } from './routes/admin-orders';
 import { assistantRoutes } from './routes/assistant';
 import { catalogueRoutes } from './routes/catalogue';
 import { checkoutRoutes } from './routes/checkout';
@@ -64,6 +65,7 @@ export function createApp(deps: AppDeps) {
   v1.route('/', adminNotificationRoutes(deps, sessions));
   v1.route('/', supportRoutes(deps, sessions));
   v1.route('/', adminCustomerRoutes(deps, sessions));
+  v1.route('/', adminOrderRoutes(deps, sessions));
   app.route('/v1', v1);
 
   app.openAPIRegistry.registerComponent('securitySchemes', 'bearerAuth', {

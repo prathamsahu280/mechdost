@@ -41,6 +41,19 @@ export const orderMachine = defineMachine(
   ],
 );
 
+/**
+ * Why staff rejected an order (spec 04; ML-ready codes, hard rule 16). The customer also gets a message.
+ */
+export const ORDER_REJECT_REASONS = [
+  'no_stock_nearby',
+  'all_shops_declined',
+  'unserviceable_address',
+  'suspected_fraud',
+  'pricing_error',
+  'other',
+] as const;
+export type OrderRejectReason = (typeof ORDER_REJECT_REASONS)[number];
+
 /** An offer of an order or service request to one partner (one active per order — partial unique index). */
 export const ASSIGNMENT_STATES = ['offered', 'accepted', 'declined', 'expired', 'withdrawn'] as const;
 export type AssignmentStatus = (typeof ASSIGNMENT_STATES)[number];

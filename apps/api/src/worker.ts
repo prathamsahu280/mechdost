@@ -4,7 +4,7 @@
  */
 import { createDb, createListener } from '@mechdost/db';
 import { loadKeyring, type Keyring } from '@mechdost/db/crypto';
-import { bridgeInboundWhatsApp } from '@mechdost/db/repo';
+import { bridgeInboundWhatsApp, expireDueAssignments } from '@mechdost/db/repo';
 import { ConfigError, loadConfig } from './config';
 import { pollingPublisher, type LivePublisher } from './live/publisher';
 import { startDispatcher, type ChannelAdapter } from './notify/dispatcher';
@@ -62,6 +62,25 @@ const bridgeTimer = config.whatsapp
     }, 5000)
   : null;
 bridgeTimer?.unref();
+
+// Shop accept timers (spec 04): offers past their DB-clock deadline go back to admin for rerouting. Every 30 s;
+// each expiry is its own compare-and-set transaction, so several workers may run this safely.
+let expiring = false;
+const expiryTimer = setInterval(() => {
+  if (expiring) return;
+  expiring = true;
+  void expireDueAssignments(db)
+    .then((n) => {
+      if (n > 0) log('info', 'assignments_expired', { count: n });
+    })
+    .catch((err: unknown) => {
+      log('error', 'assignment_expiry_failed', safeError(err));
+    })
+    .finally(() => {
+      expiring = false;
+    });
+}, 30_000);
+expiryTimer.unref();
 log('info', 'worker_started', {
   live: publisher.name,
   listen: Boolean(config.live.listenUrl),
@@ -84,6 +103,7 @@ function shutdown(signal: string) {
   stopping = true;
   log('info', 'shutdown', { signal });
   if (bridgeTimer) clearInterval(bridgeTimer);
+  clearInterval(expiryTimer);
   void Promise.all([relay.stop(), dispatcher.stop()])
     .then(() => Promise.all([sql.end({ timeout: 5 }), listener?.end()]))
     .finally(() => process.exit(0));
