@@ -19,6 +19,8 @@ describe('scrubFreeText', () => {
     expect(scrubFreeText('98,765,432,10')).toBe('#');
     expect(scrubFreeText('98_76_54_32_10')).toBe('#');
     expect(scrubFreeText('9 8 7 6 5 4 3 2 1 0')).toBe('#');
+    expect(scrubFreeText('98765      43210')).toBe('#'); // long gaps
+    expect(scrubFreeText('98 -- // .. 765 -- 43210')).toBe('#');
     expect(scrubFreeText(`  ${'x'.repeat(200)}  `)).toHaveLength(80);
   });
 });

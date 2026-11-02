@@ -7,13 +7,15 @@
 const EMAIL = /[^\s@]+@[^\s@]+\.[^\s@]+/gu;
 // Invisible format characters (zero-width space/joiners, BOM) are removed first, so they cannot split a number.
 const FORMAT = /\p{Cf}/gu;
-// Seven or more decimal digits in any script (Devanagari, full-width, ASCII) with at most three non-letter,
-// non-digit characters between each pair — spaces, dashes, dots, commas, underscores, brackets, slashes …
-// (security reviews 2026-11-03).
-const DIGIT_RUN = /\+?\p{Nd}(?:[^\p{L}\p{Nd}]{0,3}\p{Nd}){6,}/gu;
+// Seven or more decimal digits in any script (Devanagari, full-width, ASCII) separated only by non-letters of any
+// length — spaces, dashes, dots, commas, underscores, brackets, slashes … A letter ends the run, so "185/65 R15"
+// stays. Linear time: the gap class excludes digits (security reviews 2026-11-03).
+const DIGIT_RUN = /\+?\p{Nd}(?:[^\p{L}\p{Nd}]*\p{Nd}){6,}/gu;
+const INPUT_MAX = 500;
 
 export function scrubFreeText(text: string, max = 80): string {
   return text
+    .slice(0, INPUT_MAX)
     .normalize('NFKC')
     .replace(FORMAT, '')
     .replace(EMAIL, '#')
