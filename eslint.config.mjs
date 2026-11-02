@@ -42,7 +42,7 @@ export default tseslint.config(
     rules: { '@typescript-eslint/no-non-null-assertion': 'off' },
   },
   {
-    files: ['**/src/migrate.ts', '**/src/seed.ts', '**/scripts/**'],
+    files: ['**/src/migrate.ts', '**/src/seed.ts', '**/src/seed-demo.ts', '**/scripts/**'],
     rules: { 'no-console': 'off' },
   },
   prettier,

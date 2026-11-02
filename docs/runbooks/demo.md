@@ -50,4 +50,8 @@ Sign in with the number **or** the email and the password; the admin also enters
 | Order and service state machines, money/GST maths                                                                             | "Demo controls" stand in for shop, workshop and admin actions     |
 | Assistant UI + `POST /v1/assistant/messages` (Anthropic, needs a key)                                                         | Assistant answers in the web app are static until wired (spec 18) |
 
+### Demo catalogue in the database (2026-11-03)
+
+`pnpm db:seed:demo` loads the same 20 products, 9 categories, 4 shops (with stock and delivery to the 5 demo PIN codes) and their Hindi texts into the database `.env` points at, so the catalogue API (`GET /v1/catalogue/…`, spec 02) serves what the web demo shows. Safe to re-run (upserts; stock never drops below what is reserved). Refuses `NODE_ENV=production`. Shops other than the first in a category price 3 % higher, so the "nearest covering shop sets the price" rule is visible: e.g. Castrol Activ is ₹440 from Sharma Auto Parts but ₹453 for PIN 492099, served by Gupta Lubes & Spares. **Before public launch (Q21): `pnpm db:seed:demo --remove`** (rolls back if any demo product is already in an order — archive those instead). The data file `packages/db/seed/raipur-demo.json` is generated from the web demo data; `apps/web/test/demo-seed-fixture.test.ts` fails when they drift (regenerate with `UPDATE_DEMO_SEED=1`). Loaded into the dev database 2026-11-03.
+
 Coming next: demo sign-in for every role, reworked account section, admin console (routing, quotes, applications, reviews), shop/workshop portals, then phone-OTP sign-in with Firebase and payments.

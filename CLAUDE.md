@@ -90,6 +90,6 @@ Turborepo + pnpm · `apps/web` Next.js 16 App Router (React 19.3; ruling in docs
 ## Commands (update as the repo grows)
 
 ```
-pnpm install · pnpm dev (web :3000, api :4000) · pnpm db:migrate · pnpm db:seed
+pnpm install · pnpm dev (web :3000, api :4000) · pnpm db:migrate · pnpm db:seed · pnpm db:seed:demo [--remove]
 pnpm test · pnpm e2e · pnpm lint · pnpm typecheck · pnpm check (all gates) · pnpm format · pnpm lhci
 ```

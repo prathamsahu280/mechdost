@@ -15,6 +15,7 @@
     "db:generate": "pnpm --filter @mechdost/db generate",
     "db:migrate": "pnpm --filter @mechdost/db migrate",
     "db:seed": "pnpm --filter @mechdost/db seed",
+    "db:seed:demo": "pnpm --filter @mechdost/db seed:demo",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check": "pnpm format:check && turbo run typecheck lint test"

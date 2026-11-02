@@ -14,6 +14,7 @@
     "generate": "drizzle-kit generate && node scripts/fix-migrations.mjs",
     "migrate": "tsx src/migrate.ts",
     "seed": "tsx src/seed.ts",
+    "seed:demo": "tsx src/seed-demo.ts",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
     "lint": "eslint . --max-warnings=0"

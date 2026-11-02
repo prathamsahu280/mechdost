@@ -40,6 +40,7 @@ Launch: Postgres `tsvector` (name, brand, sku, part numbers, spec — **English 
 - `GET /v1/catalogue/products?city&pincode&category&brand&q&sort&available&cursor&limit&locale`: sorts `relevance` (default with `q`) · `newest` (default) · `price_asc` · `price_desc` (unpriced last). A category includes its child categories. `available=true` keeps buyable products only. Keyset cursor on (sort key, id), opaque base64url, validated (tampered → 422 `INVALID_CURSOR`); page size ≤ 48.
 - `GET /v1/catalogue/products/{slug}?city&pincode&locale`: each active variant's best offer with the **seller name** (E-Commerce Rules), photos, OE/manufacturer part numbers, spec, country of origin, GST rate; drafts/unknown → 404.
 - Public, no sign-in; per-IP limits (global 600/min + `catalogue_ip` 240/min on listings); `Cache-Control: public, max-age=30, stale-while-revalidate=120` (categories 300 s). Responses carry no internal ids. City defaults to `DEFAULT_CITY_CODE` (RPR). Hindi fields with the English fallback per `locale`.
+- Demo data: `pnpm db:seed:demo` loads the web demo catalogue (Hindi included) for the API; removed before launch with `--remove` (Q21, `docs/runbooks/demo.md`).
 - Not yet: `vehicle` fitment filter and badge (vehicle master, pending #4), `suggest`, synonyms table, Redis cache, Meilisearch; web pages still read the demo catalogue until Phase 1 wiring.
 
 ## UI
