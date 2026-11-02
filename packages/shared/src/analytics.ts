@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { scrubFreeText } from './privacy';
 
 /**
  * Server-side analytics events (spec 12; hard rules 9 and 16). Emitted by the API inside the same transaction
@@ -30,7 +31,8 @@ export type ServerEvent = keyof ServerEventProps;
 /**
  * Client events (web/app → `POST /v1/events`). One schema per event is the registry: the API rejects unknown
  * events and invalid props; the web imports only the *types* (`import type`), so no validator ships to browsers.
- * Strings are short ids, slugs, paths or codes; the only user-typed text is the search query (trimmed, ≤ 80).
+ * Strings are short ids, slugs, paths or codes; the only user-typed text is the search query, scrubbed of
+ * emails and phone-like numbers (`scrubFreeText`) in the browser and again here.
  */
 const id = z.string().min(1).max(80);
 const path = z.string().max(200).regex(/^\//);
@@ -38,7 +40,16 @@ const path = z.string().max(200).regex(/^\//);
 export const CLIENT_EVENT_SCHEMAS = {
   page_view: z.object({ path, locale: z.enum(['en', 'hi']) }).strict(),
   click: z.object({ id, path }).strict(),
-  search: z.object({ query: z.string().trim().max(80), source: id }).strict(),
+  // Server-side scrub too: never trust the client to have removed phone numbers or emails.
+  search: z
+    .object({
+      query: z
+        .string()
+        .max(80)
+        .transform((q) => scrubFreeText(q)),
+      source: id,
+    })
+    .strict(),
   add_to_cart: z.object({ slug: id, qty: z.number().int().min(1).max(99) }).strict(),
   remove_from_cart: z.object({ slug: id }).strict(),
   begin_checkout: z

@@ -1,4 +1,4 @@
-import { analyticsAllowed, CONSENT_VERSION, onConsentChange } from './consent';
+import { analyticsAllowed, CONSENT_KEY, CONSENT_VERSION, onConsentChange } from './consent';
 
 /**
  * Sends tracked events to `POST {NEXT_PUBLIC_API_URL}/v1/events` (spec 12) — only after the visitor allowed
@@ -74,13 +74,27 @@ function wire() {
     if (document.visibilityState === 'hidden') flush();
   });
   onConsentChange((choice) => {
-    if (choice.analytics) return;
-    outbox.length = 0;
-    try {
-      window.localStorage.removeItem(VISITOR_KEY);
-      window.sessionStorage.removeItem(VISITOR_KEY);
-    } catch {
-      // nothing stored
+    if (!choice.analytics) forgetVisitor();
+  });
+}
+
+function forgetVisitor() {
+  outbox.length = 0;
+  try {
+    window.localStorage.removeItem(VISITOR_KEY);
+    window.sessionStorage.removeItem(VISITOR_KEY);
+  } catch {
+    // nothing stored
+  }
+}
+
+// Security review 2026-11-03: consent can also end in another tab or with a new notice version. Whenever this
+// tab loads or the consent record changes anywhere, a visitor without current consent keeps no id.
+if (typeof window !== 'undefined') {
+  if (!analyticsAllowed()) forgetVisitor();
+  window.addEventListener('storage', (e) => {
+    if (e.key === CONSENT_KEY || e.key === null) {
+      if (!analyticsAllowed()) forgetVisitor();
     }
   });
 }

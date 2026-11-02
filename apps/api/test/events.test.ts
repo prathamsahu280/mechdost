@@ -34,16 +34,18 @@ describe('POST /v1/events', () => {
         { event: 'made_up_event', occurredAt: now, props: {} },
         { event: 'add_to_cart', occurredAt: now, props: { slug: 'x', qty: 500 } },
         { event: 'click', occurredAt: now, props: { id: 'buy', path: '/shop', phone: '+919876543210' } },
+        { event: 'search', occurredAt: now, props: { query: 'exide 98111 22222 me@x.in', source: 'header' } },
       ],
     });
     expect(res.status).toBe(202);
-    expect(await res.json()).toEqual({ stored: 2, rejected: 3 });
+    expect(await res.json()).toEqual({ stored: 3, rejected: 3 });
     const rows = (await ctx.db.select().from(events)).filter((r) => r.anonymousId === anonymousId);
-    expect(rows.map((r) => r.event).sort()).toEqual(['add_to_cart', 'page_view']);
+    expect(rows.map((r) => r.event).sort()).toEqual(['add_to_cart', 'page_view', 'search']);
+    expect(rows.find((r) => r.event === 'search')!.props).toEqual({ query: 'exide # #', source: 'header' });
     expect(rows.every((r) => r.source === 'web' && r.consentVersion === '2026-11')).toBe(true);
     const cart = rows.find((r) => r.event === 'add_to_cart')!;
     expect(Date.now() - cart.occurredAt.getTime()).toBeLessThan(60_000); // 2020 clamped to the receive time
-    expect(JSON.stringify(rows)).not.toContain('9876543210');
+    expect(JSON.stringify(rows)).not.toMatch(/9876543210|98111|me@x/);
   });
 
   it('stores nothing without consent and validates the batch', async () => {

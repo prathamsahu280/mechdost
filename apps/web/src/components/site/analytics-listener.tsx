@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
+import { scrubFreeText } from '@mechdost/shared/privacy';
 import { track } from '@/lib/analytics';
 import { stripLocale, type SiteLocale } from '@/lib/locale-path';
 
@@ -28,7 +29,7 @@ export function AnalyticsListener({ locale }: { locale: SiteLocale }) {
       const source = form?.dataset.trackSearch;
       if (!form || !source) return;
       const query = new FormData(form).get('q');
-      if (typeof query === 'string') track('search', { query: query.trim().slice(0, 80), source });
+      if (typeof query === 'string') track('search', { query: scrubFreeText(query), source });
     }
     document.addEventListener('click', onClick, { capture: true });
     document.addEventListener('submit', onSubmit, { capture: true });
