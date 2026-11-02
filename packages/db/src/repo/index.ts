@@ -15,3 +15,4 @@ export * from './notify';
 export * from './notification-admin';
 export * from './localized';
 export * from './support-bridge';
+export * from './order-notifications';

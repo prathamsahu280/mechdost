@@ -1,7 +1,8 @@
 import { randomInt } from 'node:crypto';
 import { and, eq, isNotNull, lt, ne, sql } from 'drizzle-orm';
 import { decryptField, encryptField, safeEqual, type Keyring } from '../crypto';
-import { auditLog, shipments } from '../schema';
+import { auditLog, orders, shipments } from '../schema';
+import { queueOrderWhatsApp } from './order-notifications';
 import { ConflictError, NotFoundError, ValidationError } from './errors';
 import type { Tx } from './orders';
 
@@ -18,13 +19,30 @@ const AAD = 'shipments.delivery_code_enc';
 /** Issues (or re-issues) the code for a shipment that is not yet delivered; returns it for the customer only. */
 export async function issueDeliveryCode(db: Tx, keyring: Keyring, shipmentId: string): Promise<string> {
   const code = String(randomInt(0, 10_000)).padStart(4, '0');
-  const rows = await db
-    .update(shipments)
-    .set({ deliveryCodeEnc: encryptField(code, keyring, AAD), deliveryCodeAttempts: 0 })
-    .where(and(eq(shipments.id, shipmentId), ne(shipments.status, 'delivered')))
-    .returning({ id: shipments.id });
-  if (rows.length === 0) throw new ConflictError('This shipment is already delivered', 'ALREADY_DELIVERED');
-  return code;
+  return db.transaction(async (tx) => {
+    const rows = await tx
+      .update(shipments)
+      .set({ deliveryCodeEnc: encryptField(code, keyring, AAD), deliveryCodeAttempts: 0 })
+      .where(and(eq(shipments.id, shipmentId), ne(shipments.status, 'delivered')))
+      .returning({ id: shipments.id, orderId: shipments.orderId });
+    const shipment = rows[0];
+    if (!shipment) throw new ConflictError('This shipment is already delivered', 'ALREADY_DELIVERED');
+    // Customer WhatsApp with the code (spec 10), in the same transaction; queued only if staff switched it on.
+    const [order] = await tx
+      .select({ version: orders.version })
+      .from(orders)
+      .where(eq(orders.id, shipment.orderId))
+      .limit(1);
+    if (order) {
+      await queueOrderWhatsApp(tx, {
+        orderId: shipment.orderId,
+        event: 'order.out_for_delivery',
+        orderVersion: order.version,
+        secret: { deliveryCode: code, keyring },
+      });
+    }
+    return code;
+  });
 }
 
 /** The customer's code, decrypted for their own order page (actor-scoped by the caller). */

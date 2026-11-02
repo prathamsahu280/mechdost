@@ -90,3 +90,14 @@ Tests:
 - **Cost rules**: WhatsApp only for events the customer must know/act on; everything else in-app/email; no marketing at launch; budget alert ₹5k/month (Q55).
 - **Admin control (user 2026-11-02: "all these options need to be with the admin too")**: per-event WhatsApp switches, template text en/hi with preview and the promo-wording + placeholder checks, budget alert and month spend — **built 2026-11-03** (`/admin/notifications`, spec 08; API `/v1/admin/notifications/*` requires verified staff with `notifications:manage`). Sending code must check `notificationChannelEnabled(key, channel)` before queuing.
 - Tests: `packages/shared/test/whatsapp.test.ts`, `packages/db/test/notify.test.ts`, `apps/api/test/whatsapp.test.ts`.
+
+### Order milestones → WhatsApp (built 2026-11-03)
+
+- **Confirmed and rejected:** `transitionOrder` (`order.confirmed`, `order.rejected`) queues the customer's WhatsApp in the **same transaction** as the status change. A rolled-back change never sends.
+- **Out for delivery:** `issueDeliveryCode` queues `order.out_for_delivery`, also in its transaction.
+- **When a message is queued:** only if staff switched the event on (an enabled WhatsApp template, admin → Notifications) and the customer has a phone. Language = the customer's `language`.
+- **One message per transition:** the dedupe key carries the order version (`{event}:{orderId}:v{version}:whatsapp`). A re-issued delivery code does not send a second WhatsApp; it shows on the order page.
+- **Secrets stay encrypted:** the delivery code is stored in the outbox as `deliveryCodeEnc` (AES-256-GCM, AAD `notification_outbox.payload.deliveryCode`), like the shipment's own copy. The dispatcher opens it with `openPayload` just before the Meta call.
+  - Without the keyring the message is marked failed (`payload_decrypt`) and never sent.
+  - The worker refuses to start WhatsApp without `DATA_ENCRYPTION_*`.
+- **Tests:** `packages/db/test/order-notifications.test.ts`, `apps/api/test/whatsapp.test.ts` ("encrypted payload fields").

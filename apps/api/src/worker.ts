@@ -3,6 +3,7 @@
  * must not live in request handlers. Today: the live relay (decision 2026-11-01). pg-boss timers join here.
  */
 import { createDb, createListener } from '@mechdost/db';
+import { loadKeyring, type Keyring } from '@mechdost/db/crypto';
 import { bridgeInboundWhatsApp } from '@mechdost/db/repo';
 import { ConfigError, loadConfig } from './config';
 import { pollingPublisher, type LivePublisher } from './live/publisher';
@@ -30,7 +31,17 @@ const publisher: LivePublisher =
     : pollingPublisher;
 const relay = startRelay({ db, publisher });
 const adapters: ChannelAdapter[] = config.whatsapp ? [createWhatsAppAdapter(config.whatsapp)] : [];
-const dispatcher = startDispatcher({ db, adapters });
+// Encrypted payload fields (delivery codes) need the data keyring; WhatsApp without it must not start.
+let keyring: Keyring | null = null;
+if (config.whatsapp) {
+  try {
+    keyring = loadKeyring(process.env);
+  } catch (err) {
+    log('error', 'worker_keyring_missing', safeError(err));
+    process.exit(1);
+  }
+}
+const dispatcher = startDispatcher({ db, adapters, keyring });
 
 // Inbound WhatsApp → support tickets (spec 09). Only while WhatsApp is on; one event per transaction.
 let bridging = false;

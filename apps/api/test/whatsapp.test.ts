@@ -2,10 +2,11 @@
  * WhatsApp via the Meta Cloud API directly (decision 2026-11-02): template sends, error handling, the dispatcher
  * and the signed webhook (handshake, signature before parsing, dedupe, delivery receipts with pricing).
  */
-import { createHmac } from 'node:crypto';
+import { createHmac, randomBytes } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { claimOutboxBatch, enqueueNotification, markOutboxSent, type OutboxRow } from '@mechdost/db/repo';
 import * as s from '@mechdost/db/schema';
+import { encryptField, loadKeyring } from '@mechdost/db/crypto';
 import { ChannelError, backoffSeconds, dispatchOnce, type ChannelAdapter } from '../src/notify/dispatcher';
 import { createWhatsAppAdapter } from '../src/notify/whatsapp';
 import { buildApp } from './helpers';
@@ -235,5 +236,47 @@ describe('WhatsApp webhook', () => {
       ['wa:wamid.IN1', 'received'],
       ['wa:wamid.RECEIPT1:delivered', 'processed'],
     ]);
+  });
+});
+
+describe('encrypted payload fields (delivery code)', () => {
+  const ring = loadKeyring({
+    DATA_ENCRYPTION_KEYS: `k1:${randomBytes(32).toString('base64')}`,
+    DATA_ENCRYPTION_KEY_ID: 'k1',
+    DATA_INDEX_KEY: randomBytes(32).toString('base64'),
+  });
+
+  it('the adapter receives the opened code; without the keyring the message fails, never sends', async () => {
+    const { db } = await buildApp();
+    const seen: Record<string, unknown>[] = [];
+    const adapter: ChannelAdapter = {
+      channel: 'whatsapp',
+      send: (r) => {
+        seen.push(r.payload);
+        return Promise.resolve({ providerId: `wamid.enc${String(seen.length)}` });
+      },
+    };
+    const queue = async (key: string) =>
+      enqueueNotification(db, {
+        dedupeKey: key,
+        channel: 'whatsapp',
+        recipient: '+919876543210',
+        templateKey: 'order.out_for_delivery',
+        payload: {
+          orderCode: 'MD-RPR-2026-7K3QWX',
+          deliveryCodeEnc: encryptField('4821', ring, 'notification_outbox.payload.deliveryCode'),
+        },
+      });
+    await queue(`enc-ok-${String(Date.now())}`);
+    expect(await dispatchOnce(db, [adapter], { keyring: ring })).toMatchObject({ sent: 1 });
+    expect(seen.at(-1)).toEqual({ orderCode: 'MD-RPR-2026-7K3QWX', deliveryCode: '4821' });
+
+    const before = seen.length;
+    const key = `enc-nokey-${String(Date.now())}`;
+    await queue(key);
+    expect(await dispatchOnce(db, [adapter], { keyring: null })).toMatchObject({ failed: 1, sent: 0 });
+    expect(seen).toHaveLength(before);
+    const row = (await db.select().from(s.notificationOutbox)).find((r) => r.dedupeKey === key);
+    expect(row).toMatchObject({ status: 'failed', lastError: 'payload_decrypt' });
   });
 });

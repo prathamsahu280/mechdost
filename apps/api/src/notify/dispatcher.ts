@@ -3,11 +3,13 @@ import {
   markOutboxFailed,
   markOutboxRetry,
   markOutboxSent,
+  openPayload,
   renewOutboxClaim,
   type Channel,
   type OutboxRow,
   type Tx,
 } from '@mechdost/db/repo';
+import type { Keyring } from '@mechdost/db/crypto';
 import { log, safeError } from '../logger';
 
 /**
@@ -56,8 +58,9 @@ export interface DispatchResult {
 export async function dispatchOnce(
   db: Tx,
   adapters: readonly ChannelAdapter[],
-  limit = 10,
+  opts: { limit?: number; keyring?: Keyring | null } = {},
 ): Promise<DispatchResult> {
+  const limit = opts.limit ?? 10;
   const byChannel = new Map(adapters.map((a) => [a.channel, a]));
   const rows = await claimOutboxBatch(db, { channels: [...byChannel.keys()], limit });
   const result: DispatchResult = { claimed: rows.length, sent: 0, failed: 0, retried: 0, skipped: 0 };
@@ -68,8 +71,17 @@ export async function dispatchOnce(
       result.skipped += 1;
       continue;
     }
+    let open: OutboxRow;
     try {
-      const { providerId } = await adapter.send(row);
+      // Encrypted payload fields (e.g. the delivery code) are opened only here, just before the provider call.
+      open = { ...row, payload: openPayload(row.payload, opts.keyring ?? null) };
+    } catch {
+      if (await markOutboxFailed(db, row, 'payload_decrypt')) result.failed += 1;
+      log('error', 'notify_payload_decrypt_failed', { channel: row.channel });
+      continue;
+    }
+    try {
+      const { providerId } = await adapter.send(open);
       // If this returns false another worker took over after our send: the provider id is still logged as a
       // code-free warning so the (rare) duplicate is visible in ops.
       if (await markOutboxSent(db, row, providerId)) result.sent += 1;
@@ -91,7 +103,12 @@ export async function dispatchOnce(
   return result;
 }
 
-export function startDispatcher(opts: { db: Tx; adapters: readonly ChannelAdapter[]; intervalMs?: number }): {
+export function startDispatcher(opts: {
+  db: Tx;
+  adapters: readonly ChannelAdapter[];
+  keyring?: Keyring | null;
+  intervalMs?: number;
+}): {
   stop(): Promise<void>;
 } {
   let running: Promise<void> | null = null;
@@ -102,7 +119,7 @@ export function startDispatcher(opts: { db: Tx; adapters: readonly ChannelAdapte
       try {
         let r: DispatchResult;
         do {
-          r = await dispatchOnce(opts.db, opts.adapters);
+          r = await dispatchOnce(opts.db, opts.adapters, { keyring: opts.keyring ?? null });
         } while (r.claimed > 0 && !state.stopped);
       } catch (err) {
         log('error', 'notify_dispatch_failed', safeError(err));

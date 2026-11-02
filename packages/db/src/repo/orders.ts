@@ -4,6 +4,7 @@ import { orderMachine, type OrderStatus } from '@mechdost/shared/state';
 import { orders } from '../schema';
 import { setActor, type ActorContext } from './actor';
 import { ConflictError } from './errors';
+import { queueOrderWhatsApp, type OrderWhatsAppEvent } from './order-notifications';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Tx = PgDatabase<PgQueryResultHKT, any, any>;
@@ -16,7 +17,14 @@ type OrderPatch = Partial<Pick<typeof orders.$inferInsert, 'shopId' | 'confirmed
  * 2. a conditional UPDATE … WHERE status = $from AND version = $expected applies it atomically;
  * 3. zero rows updated ⇒ someone else changed it first ⇒ ConflictError (HTTP 409).
  * The `orders_status_event` trigger writes the timeline row; the bump_version trigger increments `version`.
+ * Customer WhatsApp updates for milestones are queued in the same transaction (spec 10): a rolled-back change
+ * never sends. Out for delivery is queued by `issueDeliveryCode`, which holds the code.
  */
+const WHATSAPP_ON: Partial<Record<OrderStatus, OrderWhatsAppEvent>> = {
+  confirmed: 'order.confirmed',
+  rejected: 'order.rejected',
+};
+
 export async function transitionOrder(
   tx: Tx,
   args: {
@@ -47,5 +55,7 @@ export async function transitionOrder(
       `Order ${args.orderId} changed before ${args.from} → ${args.to} could apply`,
       'STALE_ORDER',
     );
+  const event = WHATSAPP_ON[args.to];
+  if (event) await queueOrderWhatsApp(tx, { orderId: row.id, event, orderVersion: row.version });
   return row;
 }
