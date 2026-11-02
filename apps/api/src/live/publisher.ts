@@ -14,11 +14,17 @@ export interface LiveDelivery {
   ping: LivePing;
 }
 
+export interface ForgetTarget {
+  firebaseUid: string;
+  /** Null = the whole inbox; otherwise `order~{uuid}` / `assignment~{uuid}`. */
+  node: string | null;
+}
+
 export interface LivePublisher {
   readonly name: 'polling' | 'rtdb';
   publish(batch: readonly LiveDelivery[]): Promise<void>;
-  /** Deletes everything waiting for these people (they lost access). Idempotent. */
-  forget(firebaseUids: readonly string[]): Promise<void>;
+  /** Deletes what is waiting for people who lost access: a whole inbox, or one node of it. Idempotent. */
+  forget(targets: readonly ForgetTarget[]): Promise<void>;
 }
 
 export const pollingPublisher: LivePublisher = {
@@ -30,11 +36,17 @@ export const pollingPublisher: LivePublisher = {
 /** RTDB keys may not contain `. # $ [ ] /`; uuids and kind codes never do, but refuse anything else. */
 const SAFE_KEY = /^[A-Za-z0-9_-]{1,128}$/;
 
-/** Multi-path update that removes whole inboxes (only well-formed uids; never a path outside `inbox/`). */
-export function inboxRemovals(firebaseUids: readonly string[]): Record<string, null> {
-  return Object.fromEntries(
-    firebaseUids.filter((uid) => SAFE_KEY.test(uid)).map((uid) => [`inbox/${uid}`, null]),
-  );
+const NODE = /^(order|assignment)~[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+/** Multi-path update that removes inboxes or single nodes; never a path outside `inbox/{uid}`. */
+export function inboxRemovals(targets: readonly ForgetTarget[]): Record<string, null> {
+  const out: Record<string, null> = {};
+  for (const { firebaseUid, node } of targets) {
+    if (!SAFE_KEY.test(firebaseUid)) continue;
+    if (node === null) out[`inbox/${firebaseUid}`] = null;
+    else if (NODE.test(node)) out[`inbox/${firebaseUid}/${node}`] = null;
+  }
+  return out;
 }
 
 /**

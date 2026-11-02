@@ -1,0 +1,4 @@
+ALTER TABLE "live_revocations" DROP CONSTRAINT "live_revocations_reason_valid";--> statement-breakpoint
+ALTER TABLE "live_revocations" ADD COLUMN "node" text;--> statement-breakpoint
+ALTER TABLE "live_revocations" ADD CONSTRAINT "live_revocations_node_format" CHECK ("live_revocations"."node" is null or "live_revocations"."node" ~ '^(order|assignment)~[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$');--> statement-breakpoint
+ALTER TABLE "live_revocations" ADD CONSTRAINT "live_revocations_reason_valid" CHECK ("live_revocations"."reason" in ('deactivated','partner_removed','role_revoked','role_changed','uid_changed','assignment_ended'));

@@ -21,15 +21,15 @@ export interface RelayResult {
   delivered: number;
 }
 
-/** Wipes inboxes of people who lost access (security review follow-up). */
+/**
+ * Wipes what people who lost access could still read (security review follow-ups). Each wipe repeats after
+ * REWIPE_SECONDS (see `claimLiveRevocations`) so a ping published by an in-flight pass is removed as well.
+ */
 export async function revokeOnce(db: Tx, publisher: LivePublisher): Promise<number> {
   const rows = await claimLiveRevocations(db);
   if (rows.length === 0) return 0;
-  await publisher.forget([...new Set(rows.map((r) => r.firebaseUid))]);
-  await markLiveRevocationsDone(
-    db,
-    rows.map((r) => r.id),
-  );
+  await publisher.forget(rows.map((r) => ({ firebaseUid: r.firebaseUid, node: r.node })));
+  await markLiveRevocationsDone(db, rows);
   return rows.length;
 }
 
@@ -46,6 +46,9 @@ export async function relayOnce(db: Tx, publisher: LivePublisher, limit = 200): 
   }
   const batch: LiveDelivery[] = rows.map((r) => ({ recipients: byTopic.get(r.topic) ?? [], ping: r.ping }));
   await publisher.publish(batch);
+  // Access may have ended while this batch was in flight: wipe again after publishing (the second pass, two
+  // minutes later, covers other workers).
+  await revokeOnce(db, publisher);
   await markLiveSent(
     db,
     rows.map((r) => r.id),

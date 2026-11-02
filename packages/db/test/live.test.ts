@@ -4,7 +4,7 @@
  * and go only to people Postgres says may see the entity.
  */
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { parseLivePing } from '@mechdost/shared/live';
 import { createTestDb, type TestDb } from '../src/testing';
 import * as s from '../src/schema';
@@ -312,5 +312,64 @@ describe('lost access queues a live inbox wipe (migration 0020)', () => {
       ['fb-live-leaving', 'role_revoked'],
     ]);
     await db.update(s.users).set({ status: 'active' }).where(eq(s.users.id, u!.id));
+  });
+
+  it('role or shop changes, a removed permission and a new Firebase uid wipe the whole inbox', async () => {
+    await db.delete(s.liveRevocations);
+    const [u] = await db.insert(s.users).values({ firebaseUid: 'fb-live-moved' }).returning();
+    await db.insert(s.shopUsers).values({ shopId: F.shop!, userId: u!.id, role: 'staff' });
+    await grantRole(t(), { userId: u!.id, role: 'city_manager', cityId: F.city!, grantedBy: null });
+
+    await db.update(s.userRoles).set({ cityId: F.otherCity! }).where(eq(s.userRoles.userId, u!.id));
+    await db.update(s.shopUsers).set({ role: 'owner' }).where(eq(s.shopUsers.userId, u!.id)); // same shop: no wipe
+    await db.update(s.users).set({ firebaseUid: 'fb-live-moved-2' }).where(eq(s.users.id, u!.id));
+    const rows = await db.select().from(s.liveRevocations);
+    expect(rows.map((r) => [r.firebaseUid, r.reason, r.node]).sort()).toEqual([
+      ['fb-live-moved', 'role_changed', null],
+      ['fb-live-moved', 'uid_changed', null],
+    ]);
+
+    // Removing a permission from a role wipes everyone who holds that role.
+    await db.delete(s.liveRevocations);
+    const [cityManager] = await db.select().from(s.roles).where(eq(s.roles.key, 'city_manager'));
+    await db
+      .delete(s.rolePermissions)
+      .where(
+        and(
+          eq(s.rolePermissions.roleId, cityManager!.id),
+          eq(s.rolePermissions.permissionKey, 'orders:read'),
+        ),
+      );
+    const wiped = (await db.select().from(s.liveRevocations)).map((r) => r.firebaseUid).sort();
+    expect(wiped).toContain('fb-live-moved-2');
+    expect(wiped).toContain('fb-live-city-staff');
+  });
+
+  it('when a shop’s offer ends, only that order and assignment are removed from its people', async () => {
+    await db.delete(s.liveRevocations);
+    const order = await newOrder();
+    await offerOrderToShop(t(), {
+      orderId: order.id,
+      shopId: F.shop!,
+      expectedOrderVersion: order.version,
+      timeoutMinutes: 15,
+      actor: { type: 'admin' },
+    });
+    const [offer] = await db
+      .select()
+      .from(s.orderAssignments)
+      .where(eq(s.orderAssignments.orderId, order.id));
+    await db
+      .update(s.orderAssignments)
+      .set({ status: 'expired' })
+      .where(eq(s.orderAssignments.id, offer!.id));
+    const rows = await db.select().from(s.liveRevocations);
+    expect(rows.map((r) => [r.reason, r.node]).sort()).toEqual(
+      expect.arrayContaining([
+        ['assignment_ended', `assignment~${offer!.id}`],
+        ['assignment_ended', `order~${order.id}`],
+      ]),
+    );
+    expect(rows.every((r) => r.node !== null)).toBe(true);
   });
 });

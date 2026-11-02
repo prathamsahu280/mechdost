@@ -17,8 +17,8 @@ export function createRtdbPublisher(opts: { projectId: string; databaseUrl: stri
       if (Object.keys(updates).length === 0) return;
       await db.ref().update(updates);
     },
-    async forget(firebaseUids) {
-      const removals = inboxRemovals(firebaseUids);
+    async forget(targets) {
+      const removals = inboxRemovals(targets);
       if (Object.keys(removals).length === 0) return;
       await db.ref().update(removals);
     },

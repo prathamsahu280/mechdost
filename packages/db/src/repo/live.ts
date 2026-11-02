@@ -156,36 +156,57 @@ export async function resolveLiveRecipients(db: Tx, topic: string): Promise<Live
 }
 
 /**
- * Pending inbox wipes (lost access, migration 0020). Claimed with SKIP LOCKED; a crashed relay's rows come back
- * after 60 s. Wiping is idempotent, so at-least-once is enough.
+ * Pending inbox wipes (lost access, migrations 0020/0022). Each wipe runs **twice**: once at once, and again
+ * after `REWIPE_SECONDS` (longer than the relay's 30 s outbox lease and any in-flight publish), so a ping a relay
+ * resolved just before the access change and published just after the first wipe is removed too (security review
+ * 2026-11-03). Claimed with SKIP LOCKED; wiping is idempotent.
  */
-export async function claimLiveRevocations(
-  db: Tx,
-  limit = 100,
-): Promise<{ id: number; firebaseUid: string }[]> {
+export const REWIPE_SECONDS = 120;
+
+export interface LiveRevocation {
+  id: number;
+  firebaseUid: string;
+  /** Null = whole inbox; otherwise one node (`order~uuid` / `assignment~uuid`). */
+  node: string | null;
+  /** Passes including this one; the row is done once it reaches 2. */
+  attempts: number;
+}
+
+export async function claimLiveRevocations(db: Tx, limit = 100): Promise<LiveRevocation[]> {
   const result = await db.execute(sql`
     update live_revocations set attempts = attempts + 1
     where id in (
       select id from live_revocations
-      where done_at is null and (attempts = 0 or created_at < now() - interval '60 seconds')
+      where done_at is null
+        and (attempts = 0 or created_at < now() - make_interval(secs => ${REWIPE_SECONDS}))
       order by id
       limit ${Math.min(Math.max(limit, 1), 1000)}
       for update skip locked
     )
-    returning id, firebase_uid`);
-  return rowsOf<{ id: number | string; firebase_uid: string }>(result).map((r) => ({
+    returning id, firebase_uid, node, attempts`);
+  return rowsOf<{
+    id: number | string;
+    firebase_uid: string;
+    node: string | null;
+    attempts: number | string;
+  }>(result).map((r) => ({
     id: Number(r.id),
     firebaseUid: r.firebase_uid,
+    node: r.node,
+    attempts: Number(r.attempts),
   }));
 }
 
-export async function markLiveRevocationsDone(db: Tx, ids: readonly number[]): Promise<void> {
-  if (ids.length === 0) return;
-  await db.execute(
-    sql`update live_revocations set done_at = now() where id in (${sql.join(
-      ids.map((id) => sql`${id}`),
-      sql`, `,
-    )})`,
-  );
+/** Marks wipes that have had their second pass as done; purges done rows after 7 days. */
+export async function markLiveRevocationsDone(db: Tx, rows: readonly LiveRevocation[]): Promise<void> {
+  const done = rows.filter((r) => r.attempts >= 2).map((r) => r.id);
+  if (done.length > 0) {
+    await db.execute(
+      sql`update live_revocations set done_at = now() where id in (${sql.join(
+        done.map((id) => sql`${id}`),
+        sql`, `,
+      )})`,
+    );
+  }
   await db.execute(sql`delete from live_revocations where done_at < now() - interval '7 days'`);
 }

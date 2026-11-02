@@ -8,7 +8,13 @@ import { createTestDb, type TestDb } from '@mechdost/db/testing';
 import type { Tx } from '@mechdost/db/repo';
 import { parseLivePing } from '@mechdost/shared/live';
 import { ConfigError, loadConfig } from '../src/config';
-import { inboxRemovals, inboxUpdates, type LiveDelivery, type LivePublisher } from '../src/live/publisher';
+import {
+  inboxRemovals,
+  inboxUpdates,
+  type ForgetTarget,
+  type LiveDelivery,
+  type LivePublisher,
+} from '../src/live/publisher';
 import { relayOnce, revokeOnce } from '../src/live/relay';
 
 let db: TestDb;
@@ -64,9 +70,9 @@ class FakePublisher implements LivePublisher {
     this.batches.push([...batch]);
     return Promise.resolve();
   }
-  forgotten: string[] = [];
-  forget(uids: readonly string[]) {
-    this.forgotten.push(...uids);
+  forgotten: ForgetTarget[] = [];
+  forget(targets: readonly ForgetTarget[]) {
+    this.forgotten.push(...targets);
     return Promise.resolve();
   }
 }
@@ -190,17 +196,30 @@ describe('RTDB security rules (firebase/database.rules.json)', () => {
   });
 });
 
-describe('lost access wipes the live inbox (security review follow-up)', () => {
-  it('deactivating a user queues their inbox for deletion; the relay wipes it once', async () => {
+describe('lost access wipes the live inbox (security review follow-ups)', () => {
+  it('a deactivated user is wiped now and once more after the in-flight window, then the row is done', async () => {
     await db.insert(s.users).values({ firebaseUid: 'fb-relay-leaver' });
     await client.exec("update users set status = 'deactivated' where firebase_uid = 'fb-relay-leaver'");
     const pub = new FakePublisher();
     expect(await revokeOnce(t(), pub)).toBe(1);
-    expect(pub.forgotten).toEqual(['fb-relay-leaver']);
-    expect(await revokeOnce(t(), pub)).toBe(0);
+    expect(pub.forgotten).toEqual([{ firebaseUid: 'fb-relay-leaver', node: null }]);
+    expect(await revokeOnce(t(), pub)).toBe(0); // second pass waits for the in-flight window
+    await client.exec("update live_revocations set created_at = now() - interval '3 minutes'");
+    expect(await revokeOnce(t(), pub)).toBe(1);
+    expect(await revokeOnce(t(), pub)).toBe(0); // done after two passes
+    expect(pub.forgotten).toHaveLength(2);
   });
 
-  it('only ever removes paths inside inbox/', () => {
-    expect(inboxRemovals(['uidA', '../admin', 'a/b', ''])).toEqual({ 'inbox/uidA': null });
+  it('only ever removes paths inside inbox/{uid}', () => {
+    const id = '0192f3a4-5b6c-7d8e-9f01-23456789abcd';
+    expect(
+      inboxRemovals([
+        { firebaseUid: 'uidA', node: null },
+        { firebaseUid: 'uidB', node: `order~${id}` },
+        { firebaseUid: 'uidC', node: '../../admin' },
+        { firebaseUid: '../admin', node: null },
+        { firebaseUid: 'a/b', node: null },
+      ]),
+    ).toEqual({ 'inbox/uidA': null, [`inbox/uidB/order~${id}`]: null });
   });
 });

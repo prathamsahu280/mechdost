@@ -468,6 +468,8 @@ export const liveRevocations = pgTable(
   {
     id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
     firebaseUid: text().notNull(),
+    /** Null = wipe the whole inbox; otherwise one node (`{kind}~{uuid}`), e.g. an order a shop no longer holds. */
+    node: text(),
     reason: text().notNull(),
     attempts: integer().notNull().default(0),
     doneAt: ts(),
@@ -476,7 +478,11 @@ export const liveRevocations = pgTable(
   (t) => [
     check(
       'live_revocations_reason_valid',
-      sql`${t.reason} in ('deactivated','partner_removed','role_revoked')`,
+      sql`${t.reason} in ('deactivated','partner_removed','role_revoked','role_changed','uid_changed','assignment_ended')`,
+    ),
+    check(
+      'live_revocations_node_format',
+      sql`${t.node} is null or ${t.node} ~ '^(order|assignment)~[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'`,
     ),
     index('live_revocations_pending_idx')
       .on(t.id)

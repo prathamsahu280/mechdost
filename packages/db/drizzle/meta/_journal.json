@@ -148,6 +148,20 @@
       "when": 1793604507612,
       "tag": "0020_live_revocation_triggers",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1793605973308,
+      "tag": "0021_colorful_microbe",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1793605975978,
+      "tag": "0022_live_revocation_more",
+      "breakpoints": true
     }
   ]
 }
