@@ -26,7 +26,7 @@ const STOPS = [
 export function OrderRoute() {
   const t = useTranslations('home.route');
   return (
-    <section aria-labelledby="route-title" className="pt-16">
+    <section aria-labelledby="route-title" className="pt-20 tab:pt-28">
       <Container>
         <div className="reveal-panel blueprint overflow-hidden rounded-hero px-6 py-10 text-white tab:px-12 tab:py-14">
           <p className="eyebrow text-accent-light">{t('eyebrow')}</p>

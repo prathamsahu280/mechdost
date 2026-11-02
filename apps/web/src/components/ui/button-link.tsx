@@ -5,6 +5,8 @@ import { LocalLink } from './local-link';
 const VARIANTS = {
   primary: 'bg-accent-button text-white hover:bg-accent-button-hover',
   outlineOnDark: 'border border-white/40 text-white hover:bg-white/10',
+  /** Primary action on deep-green panels: white pill, green label (7.1:1). */
+  onGreen: 'bg-white text-accent-button shadow-card hover:bg-accent-soft',
   whatsapp: 'bg-whatsapp text-white hover:brightness-95',
   quiet: 'text-ink underline-offset-4 hover:underline px-0',
 } as const;

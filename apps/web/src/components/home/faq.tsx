@@ -24,7 +24,7 @@ export function Faq() {
     })),
   };
   return (
-    <section aria-labelledby="faq-title" className="pt-16">
+    <section aria-labelledby="faq-title" className="pt-20 tab:pt-28">
       <Container className="grid gap-8 nav:grid-cols-[1fr_1.6fr]">
         <div className="reveal">
           <Eyebrow>{t('eyebrow')}</Eyebrow>

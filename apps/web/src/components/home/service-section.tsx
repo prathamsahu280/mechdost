@@ -1,15 +1,22 @@
 import { useTranslations } from 'next-intl';
 import { stagger } from '@/lib/motion';
+import { StepConfirm, StepEstimate, StepTellUs } from '../illustrations';
 import { ButtonLink } from '../ui/button-link';
 import { Container, Eyebrow } from '../ui/page-intro';
 
 const STEPS = [1, 2, 3] as const;
+const STEP_ART = { 1: StepTellUs, 2: StepEstimate, 3: StepConfirm } as const;
+
+function StepArt({ n }: { n: (typeof STEPS)[number] }) {
+  const Art = STEP_ART[n];
+  return <Art className="size-16" />;
+}
 
 /** "Know the work. Approve the cost." band with the three request steps (concept §3.3). */
 export function ServiceSection({ city }: { city: string }) {
   const t = useTranslations('home.service');
   return (
-    <section aria-labelledby="service-title" className="mt-16 bg-surface-alt py-14 tab:py-16">
+    <section aria-labelledby="service-title" className="mt-20 bg-surface-alt py-16 tab:mt-28 tab:py-20">
       <Container className="grid gap-10 tab:grid-cols-2 tab:items-start">
         <div className="reveal">
           <Eyebrow>{t('eyebrow')}</Eyebrow>
@@ -37,14 +44,14 @@ export function ServiceSection({ city }: { city: string }) {
               {n < STEPS.length ? (
                 <span
                   aria-hidden="true"
-                  className="absolute top-[4.25rem] bottom-[-1.5rem] left-[1.375rem] w-px bg-line-card"
+                  className="absolute top-[5.25rem] bottom-[-1.5rem] left-[2rem] w-px bg-line-card"
                 />
               ) : null}
-              <span
-                aria-hidden="true"
-                className="relative flex size-11 shrink-0 items-center justify-center rounded-full bg-accent-soft font-heading text-sm font-extrabold text-accent-soft-text"
-              >
-                {String(n).padStart(2, '0')}
+              <span aria-hidden="true" className="relative shrink-0">
+                <StepArt n={n} />
+                <span className="absolute -right-1 -bottom-1 grid size-6 place-items-center rounded-full bg-accent-button font-heading text-[11px] font-extrabold text-white ring-2 ring-surface">
+                  {n}
+                </span>
               </span>
               <span>
                 <h3 className="font-heading text-lg font-bold text-ink">{t(`step${n}Title`)}</h3>

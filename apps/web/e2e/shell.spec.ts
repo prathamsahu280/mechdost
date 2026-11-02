@@ -32,10 +32,10 @@ test.describe('home', () => {
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
   });
 
-  test('hero search goes to the shop with the query', async ({ page }) => {
+  test('header search goes to the shop with the query', async ({ page }) => {
     await page.goto('/');
-    await page.getByLabel('Find your next essential').fill('battery');
-    await page.getByRole('button', { name: 'Search products' }).click();
+    await page.getByLabel('Search MechDost').fill('battery');
+    await page.locator('header').getByRole('button', { name: 'Search', exact: true }).click();
     await expect(page).toHaveURL(/\/shop\?q=battery$/);
     await expect(page.getByRole('status').filter({ hasText: 'You searched for' })).toContainText(
       'You searched for “battery”.',

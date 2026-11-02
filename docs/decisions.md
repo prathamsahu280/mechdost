@@ -247,6 +247,17 @@ User: "make the website feel more alive … add 3-4 lines … appear alternative
 - **One card, one list**: "Tell us what you need / Review the estimate / Confirm the next step" and the FAQ are each a single card with hairline-divided rows (steps joined by a rail).
 - **Green footer**: `bg-navy` (deep green) + `.footer-green`, which re-scopes the colour tokens so existing classes turn light-on-green (white 8.2–13.8:1, muted #c4e8d4 6.2–10.4:1 incl. the glow corner and dark mode). The WhatsApp button becomes a white pill with green text (7.1:1).
 
+## 2026-11-02 — Commerce redesign, SpareVillage-inspired, illustrated (branch `redesign-commerce`)
+
+User: "https://Sparevillage.com aise type ka banao with more illustration, subtle animations, less crowded and premium". Structure borrowed from the reference (search-first header, category pill bar, banner hero, collection rails); its look, copy and assets are not copied.
+
+- **Header:** slim sticky row — brand, site search (GET /shop?q=, `#site-search`, label "Search MechDost"), language, theme, account, cart; on phones the search is its own full-width line. **Category bar** below (not sticky): primary links (≥1024px) + 9 category pills (scroll sideways, edge fade).
+- **Hero = illustrated banner carousel** (supersedes the photo hero + in-hero search console of 2026-11-01/02): slides shop (pale green, the only h1, admin-editable copy), checked workshop (deep green, white button), local delivery (soft grey). CSS scroll-snap + a small island: dots, pause/play (WCAG 2.2.2), autoplay 7s that pauses on hover/focus/hidden tab and never runs under reduced motion; off-screen slides inert. The rotating trust line moved beside the controls. Illustrations hidden under 480px (hero height budget).
+- **Custom illustration set** (`components/illustrations`, original flat duotone SVGs coloured by tokens, light + dark): 3 hero scenes, 9 category spots (replace category photos), 3 step spots, partner art. Subtle CSS motion (float, wheel spin, twinkle), off under reduced motion. No licence/credit needed (made in-house).
+- **Products as collection rails**: Bestsellers, For bikes & scooters (2W + 2W/4W), For cars & SUVs (4W + 2W/4W) — scroll-snap rows, "View all", arrow buttons ≥760px. Admin-curated collections replace them in Phase 1 (spec 08).
+- **Less crowded**: trust strip is an open divided row (no boxes); category tiles are unboxed illustrations; section spacing 80–112px.
+- New `ButtonLink` variant `onGreen` (white pill, green label, 7.1:1) for deep-green panels.
+
 ## PENDING DECISIONS (ask "what's pending" to review)
 
 | #   | Topic                                                                                                                                                                                       | Leaning                                                                             | When                                 |

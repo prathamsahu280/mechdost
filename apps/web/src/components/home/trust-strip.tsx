@@ -9,18 +9,18 @@ const ITEMS: { key: 'approve' | 'checked' | 'support'; icon: LucideIcon }[] = [
   { key: 'support', icon: MessageCircle },
 ];
 
-/** Three promises right under the hero (concept "promise strip", promoted to the home page). */
+/** Three promises right under the hero (concept "promise strip"); one open row with hairline dividers, no boxes. */
 export function TrustStrip() {
   const t = useTranslations('home.trust');
   return (
-    <section aria-label={t('label')} className="pt-6">
+    <section aria-label={t('label')} className="pt-10 tab:pt-12">
       <Container>
-        <ul className="grid gap-3 tab:grid-cols-3">
+        <ul className="grid gap-5 tab:grid-cols-3 tab:gap-0 tab:divide-x tab:divide-line">
           {ITEMS.map(({ key, icon: Icon }, i) => (
             <li
               key={key}
               style={stagger(i)}
-              className="reveal flex items-start gap-3 rounded-tile border border-line-card bg-surface p-4 shadow-card"
+              className="reveal flex items-start gap-3.5 tab:px-7 tab:first:pl-0 tab:last:pr-0"
             >
               <span
                 aria-hidden="true"

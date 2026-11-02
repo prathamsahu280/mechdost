@@ -16,7 +16,7 @@ export function TopWorkshops({ city }: { city: string }) {
   const finder = useTranslations('finder');
   const top = DEMO_WORKSHOPS.toSorted((a, b) => b.rating - a.rating || b.reviews - a.reviews).slice(0, 3);
   return (
-    <section aria-labelledby="top-workshops" className="pt-16">
+    <section aria-labelledby="top-workshops" className="pt-20 tab:pt-28">
       <Container>
         <div className="reveal flex flex-wrap items-end justify-between gap-4">
           <div>

@@ -72,7 +72,23 @@
       "ticker3": "Parts confirmed by a verified local shop",
       "ticker4": "Cash on delivery across {city}",
       "ticker5": "Help on WhatsApp in Hindi or English",
-      "tickerLabel": "Why MechDost"
+      "tickerLabel": "Why MechDost",
+      "slide1Cta": "Shop products",
+      "slide2Eyebrow": "Vehicle care in {city}",
+      "slide2Title1": "A checked workshop.",
+      "slide2Title2": "A clear estimate.",
+      "slide2Lead": "Find a verified workshop near you, see the expected cost and approve every line before work starts.",
+      "slide2Cta": "Find a workshop",
+      "slide3Eyebrow": "Fulfilled locally",
+      "slide3Title1": "Ordered online.",
+      "slide3Title2": "Delivered from nearby.",
+      "slide3Lead": "Every order is confirmed by a verified shop near your PIN. Pay cash on delivery and follow each step.",
+      "slide3Cta": "Start shopping",
+      "carouselLabel": "Highlights",
+      "slideLabel": "{n} of {total}",
+      "goTo": "Show slide {n}",
+      "pause": "Pause slideshow",
+      "play": "Play slideshow"
     },
     "products": {
       "eyebrow": "Shop automotive essentials",
@@ -82,7 +98,12 @@
       "rangeNote": "No PIN code needed to explore",
       "emptyTitle": "Automotive essentials. Across India.",
       "emptyBody": "Explore products without entering your location. Confirm delivery and billing details when ordering.",
-      "emptyAction": "Explore Products"
+      "emptyAction": "Explore Products",
+      "railBest": "Bestsellers",
+      "railTwo": "For bikes & scooters",
+      "railFour": "For cars & SUVs",
+      "railPrev": "Scroll left",
+      "railNext": "Scroll right"
     },
     "categories": {
       "tyres": "Tyres",
@@ -1141,5 +1162,11 @@
     "license": "Licence",
     "source": "Source",
     "view": "View on Wikimedia Commons"
+  },
+  "header": {
+    "searchLabel": "Search MechDost",
+    "searchPlaceholder": "Search tyres, batteries, engine oil…",
+    "searchSubmit": "Search",
+    "categoriesLabel": "Shop by category"
   }
 }

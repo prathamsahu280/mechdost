@@ -29,6 +29,8 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Completed log (newest first)
 
+- 2026-11-02 — **SpareVillage-style redesign** on new branch `redesign-commerce` (from `theme-blue-green` @ 18c4759; production still serves theme-blue-green). Header search + category bar, illustrated banner carousel, custom SVG illustration set (built in parallel by a sub-agent: hero scenes, category spots, step + partner art), collection rails, lighter trust strip, more spacing. Tests updated: header search, typed-text fields, new carousel/category-bar spec.
+
 - 2026-11-02 — **"More alive" pass** (branch `theme-blue-green`): rotating 5-line hero badge (en + hi), CSS scroll animations (reveal cascade, panel scale-in, hero parallax, header lift, FAQ slide), steps + FAQ as single list cards, green footer via token scope. Decisions entry same date.
 
 - 2026-11-02 — **Vercel redeployed (user: "vapas kardo deploy vercel pe").** New project `mechdost-web` (prj_AH3KgWFmBuzWp3rfHmw9V84799RG; GitHub connection attempted by `vercel link` and failed — CLI-only), Root Directory `apps/web`, Next.js, Node 24.x. Production from `theme-blue-green` @ 2c9ed31 (green theme) → **https://mechdost-web.vercel.app**. Smoke test without auth: /, /shop, /workshops, /hi, /credits, /login 200; AVIF images; language switch Hindi→English works after a Hindi cookie (the old production bug is gone); runtime errors 0.

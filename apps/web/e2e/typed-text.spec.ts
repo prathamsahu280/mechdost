@@ -39,8 +39,8 @@ async function typedContrast(page: Page, selector: string): Promise<number> {
 }
 
 const FIELDS: [string, string][] = [
-  ['/', '#hero-search'],
-  ['/shop', 'input[type="search"]'],
+  ['/', '#site-search'],
+  ['/shop', '#shop-q'],
   ['/workshops', '#finder-pin'],
   ['/login', '#login-identifier'],
   ['/partners/apply/seller', '#apply-name'],

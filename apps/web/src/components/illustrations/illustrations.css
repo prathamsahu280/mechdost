@@ -1,0 +1,45 @@
+/*
+ * Illustration motion (components/illustrations): tiny, slow, ambient. CSS only; nothing moves under
+ * prefers-reduced-motion. Wheels rotate around their own centre (inline transform-box/origin on the group).
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .ill-float {
+    animation: ill-float 7s ease-in-out infinite;
+  }
+  .ill-float-slow {
+    animation: ill-float 9s ease-in-out infinite;
+    animation-delay: -2s;
+  }
+  .ill-spin {
+    animation: ill-spin 10s linear infinite;
+  }
+  .ill-twinkle {
+    animation: ill-twinkle 4.5s ease-in-out infinite;
+  }
+}
+
+@keyframes ill-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes ill-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes ill-twinkle {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
