@@ -54,6 +54,17 @@ export const ORDER_REJECT_REASONS = [
 ] as const;
 export type OrderRejectReason = (typeof ORDER_REJECT_REASONS)[number];
 
+/** Why an order was cancelled before delivery (customer or staff; ML-ready codes, spec 05). */
+export const ORDER_CANCEL_REASONS = [
+  'changed_mind',
+  'ordered_by_mistake',
+  'found_cheaper',
+  'delivery_too_slow',
+  'customer_unreachable',
+  'other',
+] as const;
+export type OrderCancelReason = (typeof ORDER_CANCEL_REASONS)[number];
+
 /** Why a shop declined an offered order (ML-ready codes; spec 04, partner scorecards). */
 export const ASSIGNMENT_DECLINE_REASONS = [
   'out_of_stock',

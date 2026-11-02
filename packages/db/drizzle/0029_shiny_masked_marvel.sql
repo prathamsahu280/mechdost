@@ -1,0 +1,3 @@
+ALTER TABLE "orders" DROP CONSTRAINT "orders_reason_code_valid";--> statement-breakpoint
+ALTER TABLE "orders" ADD CONSTRAINT "orders_cancelled_explained" CHECK ("orders"."status" <> 'cancelled' or "orders"."status_reason_code" is not null);--> statement-breakpoint
+ALTER TABLE "orders" ADD CONSTRAINT "orders_reason_code_valid" CHECK ("orders"."status_reason_code" is null or "orders"."status_reason_code" in ('no_stock_nearby','all_shops_declined','unserviceable_address','suspected_fraud','pricing_error','other','changed_mind','ordered_by_mistake','found_cheaper','delivery_too_slow','customer_unreachable','other'));

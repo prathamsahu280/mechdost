@@ -22,3 +22,4 @@ export * from './checkout';
 export * from './customer-blocks';
 export * from './routing';
 export * from './shop-orders';
+export * from './customer-orders';

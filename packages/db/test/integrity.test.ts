@@ -191,6 +191,7 @@ describe('orders: compare-and-set transitions', () => {
         to: 'cancelled',
         expectedVersion: 99,
         actor: { type: 'customer' },
+        patch: { statusReasonCode: 'changed_mind' },
       }),
     ).rejects.toMatchObject({ code: 'STALE_ORDER' });
     const ok = await transitionOrder(t(), {
@@ -199,6 +200,7 @@ describe('orders: compare-and-set transitions', () => {
       to: 'cancelled',
       expectedVersion: 1,
       actor: { type: 'customer' },
+      patch: { statusReasonCode: 'changed_mind' },
     });
     expect(ok.version).toBe(2);
     await expect(
@@ -208,6 +210,7 @@ describe('orders: compare-and-set transitions', () => {
         to: 'cancelled',
         expectedVersion: 2,
         actor: { type: 'customer' },
+        patch: { statusReasonCode: 'changed_mind' },
       }),
     ).rejects.toMatchObject({ code: 'STALE_ORDER' });
   });
@@ -243,6 +246,7 @@ describe('orders: compare-and-set transitions', () => {
         to: 'cancelled',
         expectedVersion: 1,
         actor: { type: 'customer', userId: F.user! },
+        patch: { statusReasonCode: 'changed_mind' },
       }),
     );
     const events = await db

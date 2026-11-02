@@ -63,3 +63,14 @@ This supersedes the self-service return/replacement/exchange flows above; the re
 - **Refund destination:** the original payment method; bank/UPI (stored encrypted, `refunds.destination_enc`) for COD orders. **Never** into coins or a wallet; coins used on the order are restored as coins (spec 20).
 - **Disclosure** (Consumer Protection (E-Commerce) Rules 2020): the policy is shown before purchase on product pages, checkout and `/policies/returns` (footer link), in English and Hindi.
 - **Demo:** policy page and notes are live; the support-ticket claim flow arrives with spec 09. Test: `e2e/coins-policy.spec.ts` "returns policy".
+
+## Built: order cancellation API (2026-11-03)
+
+`packages/db/src/repo/customer-orders.ts`, routes in `apps/api/src/routes/checkout.ts` (customer) and `admin-orders.ts` (staff).
+
+- **Customer** `POST /v1/orders/{subOrderCode}/cancel {reasonCode, version}`: own orders only (404 otherwise), while the sub-order is `placed`, `awaiting_shop`, `needs_rerouting` or `confirmed` and not past its `cancellable_until_status` (default `confirmed`); packed or later → 409 `NOT_CANCELLABLE` ("contact support").
+- **Staff** `POST /v1/admin/orders/{code}/cancel` (`orders:cancel`, city-scoped): anything the order machine allows for admin (also `packed`).
+- **Reason codes** `ORDER_CANCEL_REASONS` (changed_mind, ordered_by_mistake, found_cheaper, delivery_too_slow, customer_unreachable, other); a cancelled order always has one (migration 0029 CHECK `orders_cancelled_explained`).
+- **One transaction:** order → `cancelled` (CAS on version; races with a shop accept resolve to exactly one winner), an open shop offer → `withdrawn`, held stock released, stock already taken by an accept put back on the shelf, audit row `order.cancelled`. COD has nothing to refund; prepaid refunds come with online payment.
+- **Tracking** `GET /v1/orders` (newest first) and `GET /v1/orders/{groupCode}`: per sub-order status, items, the customer-visible timeline, the seller once accepted, the rejection message, the 4-digit delivery code while out for delivery, and `canCancel`.
+- Not yet: cancellation window by time, fees after dispatch, faulty-part tickets → replace/refund flow, notifications on cancel.

@@ -1,5 +1,14 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
-import { CART_MAX_LINES, LINE_MAX_QTY, placeCodOrder, quoteCheckout } from '@mechdost/db/repo';
+import {
+  CART_MAX_LINES,
+  cancelMyOrder,
+  getMyOrder,
+  LINE_MAX_QTY,
+  listMyOrders,
+  placeCodOrder,
+  quoteCheckout,
+} from '@mechdost/db/repo';
+import { ORDER_CANCEL_REASONS } from '@mechdost/shared/state';
 import type { SessionCache } from '../auth/session-cache';
 import { ApiError } from '../errors';
 import { authenticate, requirePermission, requireVerified } from '../middleware/auth';
@@ -153,15 +162,119 @@ const place = createRoute({
   },
 });
 
+const GroupCode = z
+  .string()
+  .regex(/^MD-[A-Z]{3}-\d{4}-[0-9A-HJKMNP-TV-Z]{6}$/)
+  .openapi({ param: { name: 'code', in: 'path' }, example: 'MD-RPR-2026-7K3Q9X' });
+const SubCode = z
+  .string()
+  .regex(/^MD-[A-Z]{3}-\d{4}-[0-9A-HJKMNP-TV-Z]{6}-\d{1,2}$/)
+  .openapi({ param: { name: 'code', in: 'path' }, example: 'MD-RPR-2026-7K3Q9X-1' });
+const Summary = z.object({
+  code: z.string(),
+  placedAt: z.string(),
+  totalPaise: z.number().int(),
+  paymentMethod: z.string(),
+  paymentStatus: z.string(),
+});
+const Tracked = z.object({
+  code: z.string(),
+  status: z.string(),
+  version: z.number().int(),
+  totalPaise: z.number().int(),
+  shippingPaise: z.number().int(),
+  seller: z.string().nullable(),
+  items: z.array(
+    z.object({
+      title: z.string(),
+      sku: z.string(),
+      qty: z.number().int(),
+      unitPaise: z.number().int(),
+      totalPaise: z.number().int(),
+    }),
+  ),
+  timeline: z.array(z.object({ status: z.string(), at: z.string() })),
+  message: z.string().nullable(),
+  deliveryCode: z.string().nullable(),
+  canCancel: z.boolean(),
+});
+
+const myOrders = createRoute({
+  method: 'get',
+  path: '/orders',
+  tags: ['orders'],
+  summary: 'Your orders, newest first',
+  security: [{ bearerAuth: [] }],
+  responses: {
+    200: json(
+      z.object({
+        orders: z.array(
+          Summary.extend({
+            orders: z.array(z.object({ code: z.string(), status: z.string(), totalPaise: z.number().int() })),
+          }),
+        ),
+      }),
+      'Orders',
+    ),
+    ...errorResponses,
+  },
+});
+
+const myOrder = createRoute({
+  method: 'get',
+  path: '/orders/{code}',
+  tags: ['orders'],
+  summary: 'Track one of your orders: timeline, seller, delivery code while out for delivery',
+  security: [{ bearerAuth: [] }],
+  request: { params: z.object({ code: GroupCode }), query: z.object({ locale: Locale }) },
+  responses: {
+    200: json(
+      Summary.extend({ address: z.record(z.string(), z.unknown()), orders: z.array(Tracked) }),
+      'Order',
+    ),
+    404: json(ErrorSchema, 'Not found'),
+    ...errorResponses,
+  },
+});
+
+const cancel = createRoute({
+  method: 'post',
+  path: '/orders/{code}/cancel',
+  tags: ['orders'],
+  summary: 'Cancel one part of your order before it is packed (reason code required)',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: z.object({ code: SubCode }),
+    body: {
+      required: true,
+      content: {
+        'application/json': {
+          schema: z
+            .object({ reasonCode: z.enum(ORDER_CANCEL_REASONS), version: z.number().int().min(1) })
+            .strict()
+            .openapi('CancelMyOrder'),
+        },
+      },
+    },
+  },
+  responses: {
+    200: json(z.object({ status: z.string(), version: z.number().int() }), 'Cancelled'),
+    404: json(ErrorSchema, 'Not found'),
+    409: json(ErrorSchema, 'NOT_CANCELLABLE or changed meanwhile'),
+    ...errorResponses,
+  },
+});
+
 export function checkoutRoutes(deps: AppDeps, cache: SessionCache) {
   const app = new OpenAPIHono<AppEnv>({ defaultHook: validationHook });
   app.use(
     '/checkout/quote',
     rateLimit(deps.rateLimiter, QUOTE_RATE, (c) => c.get('clientIp')),
   );
-  app.use('/orders', authenticate(deps, cache));
+  // One pattern: Hono's '/orders/*' also matches '/orders' (L54), so nothing runs twice.
+  app.use('/orders/*', authenticate(deps, cache));
   app.use(
-    '/orders',
+    '/orders/*',
     rateLimit(deps.rateLimiter, RATE_RULES.apiPerUser, (c) => c.get('auth').user.id),
   );
   app.on(
@@ -198,5 +311,36 @@ export function checkoutRoutes(deps: AppDeps, cache: SessionCache) {
         locale: body.locale,
       });
       return c.json(placed, placed.replayed ? 200 : 201);
+    })
+    .openapi(myOrders, async (c) => {
+      const rows = await listMyOrders(deps.db, c.get('auth').user.id);
+      return c.json({ orders: rows.map((r) => ({ ...r, placedAt: r.placedAt.toISOString() })) }, 200);
+    })
+    .openapi(myOrder, async (c) => {
+      const o = await getMyOrder(deps.db, c.get('auth').user.id, c.req.valid('param').code, {
+        locale: c.req.valid('query').locale,
+        keyring: deps.keyring ?? null,
+      });
+      return c.json(
+        {
+          ...o,
+          placedAt: o.placedAt.toISOString(),
+          orders: o.orders.map((x) => ({
+            ...x,
+            timeline: x.timeline.map((e) => ({ status: e.status, at: e.at.toISOString() })),
+          })),
+        },
+        200,
+      );
+    })
+    .openapi(cancel, async (c) => {
+      const b = c.req.valid('json');
+      const r = await cancelMyOrder(deps.db, {
+        userId: c.get('auth').user.id,
+        code: c.req.valid('param').code,
+        reasonCode: b.reasonCode,
+        expectedVersion: b.version,
+      });
+      return c.json(r, 200);
     });
 }

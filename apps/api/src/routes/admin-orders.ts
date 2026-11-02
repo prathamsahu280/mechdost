@@ -1,6 +1,13 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
-import { cityScopeFrom, getRoutingOrder, listRoutingQueue, rejectOrder, routeOrder } from '@mechdost/db/repo';
-import { ORDER_REJECT_REASONS } from '@mechdost/shared/state';
+import {
+  cancelOrderAsStaff,
+  cityScopeFrom,
+  getRoutingOrder,
+  listRoutingQueue,
+  rejectOrder,
+  routeOrder,
+} from '@mechdost/db/repo';
+import { ORDER_CANCEL_REASONS, ORDER_REJECT_REASONS } from '@mechdost/shared/state';
 import type { SessionCache } from '../auth/session-cache';
 import { ApiError } from '../errors';
 import { authenticate, requirePermission, requireVerified } from '../middleware/auth';
@@ -161,6 +168,33 @@ const reject = createRoute({
   },
 });
 
+const cancelRoute = createRoute({
+  method: 'post',
+  path: '/admin/orders/{code}/cancel',
+  tags: ['admin'],
+  summary: 'Cancel an order (also once packed) with a reason code; stock goes back, the offer is withdrawn',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: z.object({ code: Code }),
+    body: {
+      required: true,
+      content: {
+        'application/json': {
+          schema: z
+            .object({ reasonCode: z.enum(ORDER_CANCEL_REASONS), version: z.number().int().min(1) })
+            .strict()
+            .openapi('CancelOrderAsStaff'),
+        },
+      },
+    },
+  },
+  responses: {
+    200: json(z.object({ status: z.string(), version: z.number().int() }), 'Cancelled'),
+    ...conflict,
+    ...errorResponses,
+  },
+});
+
 interface QueueCursor {
   placedAt: string;
   id: string;
@@ -191,7 +225,9 @@ export function adminOrderRoutes(deps: AppDeps, cache: SessionCache) {
   );
   app.use('/admin/orders/*', requireVerified);
   app.use('/admin/orders/*', requirePermission('orders:read'));
-  app.on('POST', '/admin/orders/*', requirePermission('orders:route'));
+  app.on('POST', '/admin/orders/:code/route', requirePermission('orders:route'));
+  app.on('POST', '/admin/orders/:code/reject', requirePermission('orders:route'));
+  app.on('POST', '/admin/orders/:code/cancel', requirePermission('orders:cancel'));
 
   return app
     .openapi(queue, async (c) => {
@@ -250,6 +286,18 @@ export function adminOrderRoutes(deps: AppDeps, cache: SessionCache) {
         code: c.req.valid('param').code,
         reasonCode: body.reasonCode,
         message: body.message,
+        expectedVersion: body.version,
+        staffUserId: c.get('auth').user.id,
+      });
+      return c.json(r, 200);
+    })
+    .openapi(cancelRoute, async (c) => {
+      const body = c.req.valid('json');
+      const scope = cityScopeFrom(c.get('auth').grants, 'orders:cancel');
+      const r = await cancelOrderAsStaff(deps.db, {
+        cityIds: scope.all ? 'all' : scope.cityIds,
+        code: c.req.valid('param').code,
+        reasonCode: body.reasonCode,
         expectedVersion: body.version,
         staffUserId: c.get('auth').user.id,
       });

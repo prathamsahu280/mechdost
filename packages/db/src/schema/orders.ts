@@ -16,6 +16,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import {
   ASSIGNMENT_STATES,
+  ORDER_CANCEL_REASONS,
   ORDER_REJECT_REASONS,
   ORDER_STATES,
   PAYMENT_STATES,
@@ -129,12 +130,13 @@ export const orders = pgTable(
     check('orders_sub_no_positive', sql`${t.subNo} > 0`),
     check(
       'orders_reason_code_valid',
-      sql`${t.statusReasonCode} is null or ${t.statusReasonCode} in (${inList(ORDER_REJECT_REASONS)})`,
+      sql`${t.statusReasonCode} is null or ${t.statusReasonCode} in (${inList([...ORDER_REJECT_REASONS, ...ORDER_CANCEL_REASONS])})`,
     ),
     check(
       'orders_rejected_explained',
       sql`${t.status} <> 'rejected' or (${t.statusReasonCode} is not null and char_length(${t.customerMessage}) between 10 and 500)`,
     ),
+    check('orders_cancelled_explained', sql`${t.status} <> 'cancelled' or ${t.statusReasonCode} is not null`),
     check(
       'orders_amounts_nonneg',
       sql`${t.subtotalPaise} >= 0 and ${t.totalPaise} >= 0 and ${t.taxPaise} >= 0`,
