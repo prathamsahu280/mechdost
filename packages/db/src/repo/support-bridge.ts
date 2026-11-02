@@ -139,6 +139,7 @@ export async function bridgeInboundWhatsApp(
               // Guests follow up on WhatsApp; the web tracking key is random and never shown.
               accessKeyHash: user ? null : createHash('sha256').update(randomBytes(32)).digest('hex'),
               kind: 'other',
+              channel: 'whatsapp',
               slaAckDue: new Date(now.getTime() + ACK_HOURS * 3_600_000),
               slaResolveDue: new Date(now.getTime() + RESOLVE_DAYS * 86_400_000),
             })

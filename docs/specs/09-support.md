@@ -77,3 +77,28 @@ Live chat widget (declined for now), order chat with partner, NPS after resoluti
   - Resolve and reopen; every move goes through `ticketMachine`.
 - **Demo store:** `apps/web/src/demo/support.ts`, with a seeded WhatsApp guest request. Messages are user content (`data-user-content`). Event: `support_ticket {action, kind, channel, to}` (codes only).
 - **Tests:** `e2e/support.spec.ts` (order page → request → internal note → reply → customer reply → resolve), the audit includes both pages, and the Hindi gate covers `/hi/account/support` and `/hi/admin/support`.
+
+## API (built 2026-11-03)
+
+**Customer** (signed in, `tickets:create`; foreign codes → 404; strict bodies):
+
+- `POST /v1/support/tickets {kind, orderCode?, body}` → 201 `{code}`.
+  - At most 5 per 24 h, serialised per user (`TICKET_DAILY_LIMIT`, 422).
+  - The order must be the caller's own. It sets the request's city and the code's city segment.
+- `GET /v1/support/tickets`, `GET /v1/support/tickets/{code}`: own requests with their conversation, internal notes excluded.
+- `POST /v1/support/tickets/{code}/messages {body}`: a reply on a request that was waiting on the customer, or resolved, moves it back to `in_review` (`ticketMachine`).
+
+**Staff** (verified phone + email, `tickets:read`; posting also needs `tickets:reply`). Scope comes from grants: any all-city grant sees everything, city grants see requests whose `city_id` is theirs, and city-less requests (WhatsApp guests) go to all-city staff only.
+
+- `GET /v1/admin/support/tickets?view=active|done`: sorted by reply deadline, with `acknowledged`.
+- `GET /v1/admin/support/tickets/{code}`: includes internal notes.
+- `POST /v1/admin/support/tickets/{code}/messages {body, internal}`:
+  - a customer-facing reply moves open/in-review to `awaiting_customer`;
+  - on a WhatsApp request it also queues the `ticket.replied` WhatsApp in the same transaction, when switched on.
+- `POST /v1/admin/support/tickets/{code}/status {to, version}`: resolve, reopen or close via the state machine with compare-and-set (409 when stale), audited.
+
+**Data:** `support_tickets.city_id` and `channel` (migration 0025). The WhatsApp bridge sets `channel = whatsapp`.
+
+**Tests:** `packages/db/test/support.test.ts` (scope, limit, 404s, transitions, WhatsApp reply), `apps/api/test/support.test.ts` (permissions, verification, strict bodies, internal notes hidden, stale status).
+
+The web screens still use the demo store until the web app is switched to the API (Phase 1 wiring).

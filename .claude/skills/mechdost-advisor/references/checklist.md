@@ -57,6 +57,7 @@ Mark each touched item ✅ / ⚠️ / ❌. Anything ❌ blocks implementation un
 - ❌ Logging `err.message` / `err.stack` / `String(err)` (database errors embed SQL parameters: phones, message text). Log `safeError(err)` from `apps/api/src/logger.ts` (class, SQLSTATE, frames) plus ids (security review 2026-11-03).
 - ❌ A queue/job that retries the same failing item first forever: count attempts outside the rolled-back transaction and park after N.
 - ❌ A commit chained after the gates with `;` (it runs even when the gates fail). Always `gates && git add && git commit`, and read the gate output before reporting (2026-11-03: a commit went out after a load-induced test failure).
+- ❌ Test fixture codes (MD-/REQ-/SR-…) with I, L, O or U: the suffix is Crockford base32 (`0-9 A-H J K M N P-T V-Z`). Happened 3× (LIVE, RELA, SUPP) — build fixtures from `CROCKFORD` in `@mechdost/shared/ids`.
 - ❌ Inline user-facing string (must be in `packages/shared/i18n` en + hi).
 - ❌ New content data (product/workshop/service/area/shop/category/template fields) without its Hindi version, or a map/third-party widget that ignores the locale (rule 10, user 2026-11-02). Run `e2e/hindi-coverage.spec.ts`; extend its page list for every new route.
 - ❌ `<img>` instead of `next/image`; missing width/height or `sizes`; `priority` on non-hero images.

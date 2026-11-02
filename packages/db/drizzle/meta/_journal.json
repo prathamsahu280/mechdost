@@ -176,6 +176,13 @@
       "when": 1793607321600,
       "tag": "0024_live_revocations_backfill",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1793611107141,
+      "tag": "0025_gorgeous_gwen_stacy",
+      "breakpoints": true
     }
   ]
 }

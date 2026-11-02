@@ -247,6 +247,10 @@ export const supportTickets = pgTable(
     kind: text().notNull(),
     orderId: uuid().references(() => orders.id, { onDelete: 'set null' }),
     serviceRequestId: uuid(),
+    /** City of the linked order (staff scope, rule 7); null = city unknown, visible to all-city staff only. */
+    cityId: uuid().references(() => cities.id, { onDelete: 'set null' }),
+    /** Where the request started (rule 16: a code). */
+    channel: text().notNull().default('web'),
     status: text().notNull().default('open'),
     priority: text().notNull().default('normal'),
     assigneeId: uuid().references(() => users.id, { onDelete: 'set null' }),
@@ -271,7 +275,9 @@ export const supportTickets = pgTable(
       'support_tickets_owner',
       sql`${t.userId} is not null or (${t.guestPhone} is not null and ${t.accessKeyHash} is not null)`,
     ),
+    check('support_tickets_channel_valid', sql`${t.channel} in ('web','app','whatsapp','email')`),
     index().on(t.status, t.slaAckDue),
+    index().on(t.cityId, t.status),
     index().on(t.userId),
     index().on(t.orderId),
     index().on(t.assigneeId),
