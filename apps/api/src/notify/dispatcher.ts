@@ -8,7 +8,7 @@ import {
   type OutboxRow,
   type Tx,
 } from '@mechdost/db/repo';
-import { log } from '../logger';
+import { log, safeError } from '../logger';
 
 /**
  * Notification dispatcher (spec 10). Runs in the worker. Claims due outbox rows only for channels that have an
@@ -105,7 +105,7 @@ export function startDispatcher(opts: { db: Tx; adapters: readonly ChannelAdapte
           r = await dispatchOnce(opts.db, opts.adapters);
         } while (r.claimed > 0 && !state.stopped);
       } catch (err) {
-        log('error', 'notify_dispatch_failed', { error: err instanceof Error ? err.message : String(err) });
+        log('error', 'notify_dispatch_failed', safeError(err));
       }
     })().finally(() => {
       running = null;

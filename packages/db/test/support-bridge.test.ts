@@ -106,4 +106,21 @@ describe('WhatsApp → support tickets', () => {
     const parked = await db.select().from(s.webhookEvents).where(eq(s.webhookEvents.status, 'parked'));
     expect(parked.map((e) => e.error)).toEqual(['bad_sender']);
   });
+
+  it('a message that keeps failing is parked after 5 tries with a code only, and the queue moves on', async () => {
+    await db.execute(sql`update webhook_events set status = 'processed' where status = 'received'`);
+    const poison = await inbound('919822222222', 'Hello from a new number');
+    // An invalid city code makes ticket creation throw inside the transaction (a stand-in for any bug).
+    const broken = () => bridgeInboundWhatsApp(t(), { cityCode: 'rp' });
+    for (let i = 0; i < 5; i += 1) expect(await broken()).toMatchObject({ failed: 1, processed: 0 });
+    const [parked] = await db
+      .select()
+      .from(s.webhookEvents)
+      .where(eq(s.webhookEvents.id, `wa:${poison}`));
+    expect(parked).toMatchObject({ status: 'parked', attempts: 5, error: 'RangeError' });
+    expect(JSON.stringify(parked?.error)).not.toContain('Hello');
+    // Nothing else is stuck behind it.
+    await inbound('919876543210', 'Still there?');
+    expect(await bridge()).toMatchObject({ processed: 1, failed: 0 });
+  });
 });

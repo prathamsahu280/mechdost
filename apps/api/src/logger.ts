@@ -16,3 +16,31 @@ export function log(severity: Severity, message: string, fields: Record<string, 
     JSON.stringify({ severity: severity.toUpperCase(), message, time: new Date().toISOString(), ...fields }),
   );
 }
+
+/**
+ * Loggable view of an error (security review 2026-11-03): its class, the Postgres SQLSTATE if any, and the
+ * stack *frames* only. Never the message: database errors embed the failed query and its parameters (phone
+ * numbers, message text), and provider errors can echo request bodies.
+ */
+export function safeError(err: unknown): { errorName: string; pgCode?: string; frames?: string } {
+  const name = err instanceof Error ? err.name : typeof err;
+  let code: string | undefined;
+  let e: unknown = err;
+  for (let i = 0; i < 4 && e && typeof e === 'object'; i += 1) {
+    const c = (e as { code?: unknown }).code;
+    if (typeof c === 'string' && /^[0-9A-Z]{5}$/.test(c)) {
+      code = c;
+      break;
+    }
+    e = (e as { cause?: unknown }).cause;
+  }
+  const frames =
+    err instanceof Error && err.stack
+      ? err.stack
+          .split('\n')
+          .filter((line) => line.trimStart().startsWith('at '))
+          .slice(0, 8)
+          .join('\n')
+      : undefined;
+  return { errorName: name, ...(code ? { pgCode: code } : {}), ...(frames ? { frames } : {}) };
+}

@@ -54,6 +54,8 @@ Mark each touched item ✅ / ⚠️ / ❌. Anything ❌ blocks implementation un
 ## UI / UX (rule 2, design-system.md, ui-ux-pro-max, shadcn skills)
 
 - ❌ New visual language (colours, fonts, radii) not in `design-system.md`.
+- ❌ Logging `err.message` / `err.stack` / `String(err)` (database errors embed SQL parameters: phones, message text). Log `safeError(err)` from `apps/api/src/logger.ts` (class, SQLSTATE, frames) plus ids (security review 2026-11-03).
+- ❌ A queue/job that retries the same failing item first forever: count attempts outside the rolled-back transaction and park after N.
 - ❌ Inline user-facing string (must be in `packages/shared/i18n` en + hi).
 - ❌ New content data (product/workshop/service/area/shop/category/template fields) without its Hindi version, or a map/third-party widget that ignores the locale (rule 10, user 2026-11-02). Run `e2e/hindi-coverage.spec.ts`; extend its page list for every new route.
 - ❌ `<img>` instead of `next/image`; missing width/height or `sizes`; `priority` on non-hero images.

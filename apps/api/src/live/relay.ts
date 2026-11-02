@@ -6,7 +6,7 @@ import {
   resolveLiveRecipients,
   type Tx,
 } from '@mechdost/db/repo';
-import { log } from '../logger';
+import { log, safeError } from '../logger';
 import type { LiveDelivery, LivePublisher } from './publisher';
 
 /**
@@ -79,7 +79,7 @@ export function startRelay(opts: {
       } catch (err) {
         log('error', 'live_relay_failed', {
           transport: opts.publisher.name,
-          error: err instanceof Error ? err.message : String(err),
+          ...safeError(err),
         });
       }
     } while (repeatRequested());

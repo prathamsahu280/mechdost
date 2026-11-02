@@ -10,7 +10,7 @@ import { startDispatcher, type ChannelAdapter } from './notify/dispatcher';
 import { createWhatsAppAdapter } from './notify/whatsapp';
 import { startRelay } from './live/relay';
 import { createRtdbPublisher } from './live/rtdb';
-import { log } from './logger';
+import { log, safeError } from './logger';
 
 let config;
 try {
@@ -43,7 +43,7 @@ const bridgeTimer = config.whatsapp
           if (r.processed > 0) log('info', 'whatsapp_bridge', { ...r });
         })
         .catch((err: unknown) => {
-          log('error', 'whatsapp_bridge_failed', { error: err instanceof Error ? err.message : String(err) });
+          log('error', 'whatsapp_bridge_failed', safeError(err));
         })
         .finally(() => {
           bridging = false;
@@ -64,7 +64,7 @@ const listener = config.live.listenUrl
     })
   : null;
 listener?.ready.catch((err: unknown) => {
-  log('warn', 'live_listen_failed', { error: err instanceof Error ? err.message : String(err) });
+  log('warn', 'live_listen_failed', safeError(err));
 });
 
 let stopping = false;

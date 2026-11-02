@@ -4,7 +4,7 @@ import { routePath } from 'hono/route';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import { ZodError } from 'zod';
 import { ConflictError, NotFoundError, ValidationError } from '@mechdost/db/repo';
-import { log } from './logger';
+import { log, safeError } from './logger';
 import type { AppEnv } from './types';
 
 /**
@@ -56,9 +56,7 @@ export function handleError(err: Error, c: Context<AppEnv>): Response {
   log('error', 'unhandled_error', {
     requestId: c.get('requestId'),
     path: routePath(c),
-    error: err.name,
-    message: err.message,
-    stack: err.stack,
+    ...safeError(err),
   });
   return c.json(errorBody(c, 'INTERNAL', 'Something went wrong'), 500);
 }
