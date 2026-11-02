@@ -54,6 +54,17 @@ export const ORDER_REJECT_REASONS = [
 ] as const;
 export type OrderRejectReason = (typeof ORDER_REJECT_REASONS)[number];
 
+/** Why a shop declined an offered order (ML-ready codes; spec 04, partner scorecards). */
+export const ASSIGNMENT_DECLINE_REASONS = [
+  'out_of_stock',
+  'too_far',
+  'shop_closed',
+  'too_busy',
+  'price_mismatch',
+  'other',
+] as const;
+export type AssignmentDeclineReason = (typeof ASSIGNMENT_DECLINE_REASONS)[number];
+
 /** An offer of an order or service request to one partner (one active per order — partial unique index). */
 export const ASSIGNMENT_STATES = ['offered', 'accepted', 'declined', 'expired', 'withdrawn'] as const;
 export type AssignmentStatus = (typeof ASSIGNMENT_STATES)[number];

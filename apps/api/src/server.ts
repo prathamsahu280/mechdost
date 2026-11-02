@@ -4,11 +4,12 @@
  */
 import { serve } from '@hono/node-server';
 import { createDb } from '@mechdost/db';
+import { loadKeyring, type Keyring } from '@mechdost/db/crypto';
 import { createApp } from './app';
 import { createAnthropicProvider } from './assistant/provider';
 import { createFirebaseVerifier } from './auth/firebase-verifier';
 import { ConfigError, loadConfig } from './config';
-import { log } from './logger';
+import { log, safeError } from './logger';
 import { MemoryRateLimiter } from './rate-limit/limiter';
 import { UpstashRateLimiter } from './rate-limit/upstash';
 
@@ -27,7 +28,21 @@ const { db, sql } = createDb(config.databaseUrl, { max: config.databasePoolMax, 
 const rateLimiter = config.upstash ? new UpstashRateLimiter(config.upstash) : new MemoryRateLimiter();
 if (!config.upstash) log('warn', 'rate_limit_memory', { note: 'in-memory limiter — development only' });
 
+// Data keyring (spec 13): delivery codes are encrypted. Required in production; without it in development the
+// delivery-code steps answer 503 and everything else works.
+let keyring: Keyring | null = null;
+try {
+  keyring = loadKeyring(process.env);
+} catch (err) {
+  if (config.env === 'production') {
+    log('error', 'keyring_missing', safeError(err));
+    process.exit(1);
+  }
+  log('warn', 'keyring_missing', { note: 'DATA_ENCRYPTION_* not set — delivery codes unavailable' });
+}
+
 const app = createApp({
+  keyring,
   config,
   db,
   verifier: createFirebaseVerifier(config.firebaseProjectId),

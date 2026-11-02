@@ -182,16 +182,15 @@ function decode(raw: string): QueueCursor {
 
 export function adminOrderRoutes(deps: AppDeps, cache: SessionCache) {
   const app = new OpenAPIHono<AppEnv>({ defaultHook: validationHook });
-  app.use('/admin/orders', authenticate(deps, cache));
+  // One pattern only: Hono's '/admin/orders/*' also matches '/admin/orders' (two patterns would run every
+  // middleware twice and count the rate limit double).
   app.use('/admin/orders/*', authenticate(deps, cache));
-  for (const path of ['/admin/orders', '/admin/orders/*']) {
-    app.use(
-      path,
-      rateLimit(deps.rateLimiter, RATE_RULES.apiPerUser, (c) => c.get('auth').user.id),
-    );
-    app.use(path, requireVerified);
-    app.use(path, requirePermission('orders:read'));
-  }
+  app.use(
+    '/admin/orders/*',
+    rateLimit(deps.rateLimiter, RATE_RULES.apiPerUser, (c) => c.get('auth').user.id),
+  );
+  app.use('/admin/orders/*', requireVerified);
+  app.use('/admin/orders/*', requirePermission('orders:read'));
   app.on('POST', '/admin/orders/*', requirePermission('orders:route'));
 
   return app

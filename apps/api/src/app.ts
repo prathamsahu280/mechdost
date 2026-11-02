@@ -14,6 +14,7 @@ import { assistantRoutes } from './routes/assistant';
 import { catalogueRoutes } from './routes/catalogue';
 import { checkoutRoutes } from './routes/checkout';
 import { meRoutes } from './routes/me';
+import { shopOrderRoutes } from './routes/shop-orders';
 import { supportRoutes } from './routes/support';
 import { systemRoutes } from './routes/system';
 import { whatsAppWebhookRoutes } from './routes/whatsapp-webhook';
@@ -66,6 +67,7 @@ export function createApp(deps: AppDeps) {
   v1.route('/', supportRoutes(deps, sessions));
   v1.route('/', adminCustomerRoutes(deps, sessions));
   v1.route('/', adminOrderRoutes(deps, sessions));
+  v1.route('/', shopOrderRoutes(deps, sessions));
   app.route('/v1', v1);
 
   app.openAPIRegistry.registerComponent('securitySchemes', 'bearerAuth', {

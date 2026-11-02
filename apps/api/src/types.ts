@@ -1,3 +1,4 @@
+import type { Keyring } from '@mechdost/db/crypto';
 import type { Tx, UserRecord } from '@mechdost/db/repo';
 import type { Grant } from '@mechdost/shared/rbac';
 import type { AssistantProvider } from './assistant/provider';
@@ -13,6 +14,8 @@ export interface AppDeps {
   rateLimiter: RateLimiter;
   /** LLM provider for /v1/assistant (null when no key is configured → 503, the web falls back to static answers). */
   assistant?: AssistantProvider | null;
+  /** Field-encryption keyring (delivery codes); null when not configured (development only). */
+  keyring?: Keyring | null;
 }
 
 export interface AuthContext {

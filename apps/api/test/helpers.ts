@@ -1,5 +1,6 @@
 import { syncRbacCatalogue } from '@mechdost/db/repo';
 import { createTestDb, type TestDb } from '@mechdost/db/testing';
+import type { Keyring } from '@mechdost/db/crypto';
 import { createApp } from '../src/app';
 import type { AssistantProvider } from '../src/assistant/provider';
 import { TokenError, type TokenVerifier, type VerifiedToken } from '../src/auth/token-verifier';
@@ -51,6 +52,7 @@ export async function buildApp(
     rateLimiter?: RateLimiter;
     env?: Record<string, string>;
     assistant?: AssistantProvider | null;
+    keyring?: Keyring | null;
   } = {},
 ) {
   setLogSink(() => undefined);
@@ -68,6 +70,7 @@ export async function buildApp(
     verifier,
     rateLimiter: opts.rateLimiter ?? new MemoryRateLimiter(),
     assistant: opts.assistant ?? null,
+    keyring: opts.keyring ?? null,
   });
   return { app, db, verifier };
 }

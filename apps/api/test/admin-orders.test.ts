@@ -78,6 +78,13 @@ describe('admin orders API', () => {
     const marketing = await staff('04', 'marketing');
 
     expect((await ctx.app.request('/v1/admin/orders', { headers: marketing })).status).toBe(403);
+    // Each request counts once against the per-user limit (no middleware runs twice on the list path).
+    const remaining = async () =>
+      Number(
+        (await ctx.app.request('/v1/admin/orders', { headers: ops })).headers.get('RateLimit-Remaining'),
+      );
+    const r1 = await remaining();
+    expect(await remaining()).toBe(r1 - 1);
     const queue = (await (await ctx.app.request('/v1/admin/orders', { headers: ops })).json()) as {
       items: { code: string; version: number }[];
     };

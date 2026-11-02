@@ -89,3 +89,4 @@ Mark each touched item ✅ / ⚠️ / ❌. Anything ❌ blocks implementation un
 ## Tooling (promoted learnings L10, L11, L18)
 
 - ❌ Shell edits (bash heredocs, Python string replacement) of code that contains backslashes, regexes or quotes — use Write/Edit. Verify with a grep of the exact line afterwards.
+- **Hono middleware patterns (L54):** `/x/*` already covers `/x`; never register the same middleware on both. Gate methods with `app.on('POST', '/x/*', …)`. New route files get a test that one request lowers `RateLimit-Remaining` by exactly 1.
