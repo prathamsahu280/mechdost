@@ -3,7 +3,7 @@ import { HTTPException } from 'hono/http-exception';
 import { routePath } from 'hono/route';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import { ZodError } from 'zod';
-import { ConflictError, NotFoundError, ValidationError } from '@mechdost/db/repo';
+import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '@mechdost/db/repo';
 import { log, safeError } from './logger';
 import type { AppEnv } from './types';
 
@@ -48,6 +48,7 @@ export function handleError(err: Error, c: Context<AppEnv>): Response {
   if (err instanceof NotFoundError) return c.json(errorBody(c, err.code, 'Not found'), 404);
   if (err instanceof ValidationError)
     return c.json(errorBody(c, err.code, err.message, err.details), err.status);
+  if (err instanceof ForbiddenError) return c.json(errorBody(c, err.code, err.message), 403);
   if (err instanceof ConflictError) return c.json(errorBody(c, err.code, err.message), err.status);
   if (err instanceof HTTPException) {
     const code = err.status === 413 ? 'PAYLOAD_TOO_LARGE' : err.status === 504 ? 'TIMEOUT' : 'HTTP_ERROR';

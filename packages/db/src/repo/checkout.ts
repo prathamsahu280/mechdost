@@ -2,8 +2,10 @@ import { and, eq, isNull, or, sql } from 'drizzle-orm';
 import { publicCode } from '@mechdost/shared/ids';
 import { splitInclusiveGst } from '@mechdost/shared/money';
 import { auditLog, orderGroups, orderItems, orders, settings } from '../schema';
+import { blockEffects } from '@mechdost/shared/customers';
 import { setActor } from './actor';
-import { ConflictError, NotFoundError, pgCode, ValidationError } from './errors';
+import { activeBlockLevels } from './customer-blocks';
+import { ConflictError, ForbiddenError, NotFoundError, pgCode, ValidationError } from './errors';
 import { reserveStock } from './inventory';
 import { localized } from './localized';
 import type { Tx } from './orders';
@@ -364,6 +366,9 @@ export async function placeCodOrder(
     );
     const replay = await existingGroup(tx, input.userId, input.idempotencyKey);
     if (replay) return replay;
+    // Customer blocks (shared/customers.ts): `orders`/`full` refuse placing, `cod_only` refuses cash on delivery.
+    const allowed = blockEffects(await activeBlockLevels(tx, input.userId));
+    if (!allowed.order) throw new ForbiddenError('This account cannot place orders', 'ORDERS_BLOCKED');
 
     const { quote, priced, groupShops, cityId } = await quoteInternal(tx, {
       pincode: input.address.pincode,
@@ -378,9 +383,9 @@ export async function placeCodOrder(
       });
     if (quote.totalPaise !== input.expectedTotalPaise)
       throw new ConflictError('The total changed since you reviewed it', 'PRICE_CHANGED');
-    if (!quote.cod.allowed)
+    if (!quote.cod.allowed || !allowed.cod)
       throw new ValidationError('Cash on delivery is not available for this order', 'COD_NOT_ALLOWED', {
-        reason: quote.cod.reason,
+        reason: allowed.cod ? quote.cod.reason : 'customer',
         capPaise: quote.cod.capPaise,
       });
 

@@ -1,6 +1,7 @@
 import type { Context } from 'hono';
 import { createMiddleware } from 'hono/factory';
-import { ensureUser, loadGrants } from '@mechdost/db/repo';
+import { activeBlockLevels, ensureUser, loadGrants } from '@mechdost/db/repo';
+import { blockEffects } from '@mechdost/shared/customers';
 import { can, type Permission, type Target } from '@mechdost/shared/rbac';
 import type { SessionCache } from '../auth/session-cache';
 import { TokenError } from '../auth/token-verifier';
@@ -39,11 +40,18 @@ export function authenticate(
     let session = cache.get(key);
     if (!session) {
       const user = await ensureUser(deps.db, identity);
-      session = { user, grants: await loadGrants(deps.db, user.id) };
+      session = {
+        user,
+        grants: await loadGrants(deps.db, user.id),
+        blocks: await activeBlockLevels(deps.db, user.id),
+      };
       cache.set(key, session);
     }
     if (session.user.status !== 'active')
       throw Forbidden('ACCOUNT_DEACTIVATED', 'This account is not active');
+    // A `full` customer block (shared/customers.ts) refuses every signed-in request; it applies within the
+    // session-cache TTL like role changes (Q29).
+    if (!blockEffects(session.blocks).signIn) throw Forbidden('ACCOUNT_BLOCKED', 'This account is blocked');
 
     c.set('auth', { user: session.user, grants: session.grants, authTime: identity.authTime });
     await next();

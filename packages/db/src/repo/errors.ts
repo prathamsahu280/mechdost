@@ -19,6 +19,17 @@ export class NotFoundError extends Error {
   }
 }
 
+/** The actor may not do this at all (e.g. a blocked customer ordering); the API answers 403. */
+export class ForbiddenError extends Error {
+  readonly status = 403;
+  readonly code: string;
+  constructor(message: string, code = 'FORBIDDEN') {
+    super(message);
+    this.name = 'ForbiddenError';
+    this.code = code;
+  }
+}
+
 export class ValidationError extends Error {
   readonly status = 422;
   readonly code: string;

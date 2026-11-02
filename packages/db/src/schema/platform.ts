@@ -14,6 +14,7 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
+import { CUSTOMER_BLOCK_LEVELS, CUSTOMER_BLOCK_REASONS } from '@mechdost/shared/customers';
 import { createdAt, encryptedCheck, id, ts, updatedAt, version } from './_common';
 import { cities } from './geography';
 import { users } from './identity';
@@ -495,5 +496,53 @@ export const liveRevocations = pgTable(
     index('live_revocations_pending_idx')
       .on(t.id)
       .where(sql`${t.doneAt} is null`),
+  ],
+);
+
+const quoted = (values: readonly string[]) => sql.raw(values.map((v) => `'${v}'`).join(','));
+
+/**
+ * Customer blocks (shared/customers.ts; research/admin-console.md §5). At most one active (not lifted) block per
+ * user and level, enforced by a partial unique index. Lifting keeps the row (who, when, why): history is never
+ * deleted. An expired `ends_at` stops the block without lifting it. Enforced in the API: sign-in (`full`),
+ * order placement (`orders`), cash on delivery (`cod_only`).
+ */
+export const customerBlocks = pgTable(
+  'customer_blocks',
+  {
+    id: id(),
+    userId: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    level: text().notNull(),
+    reasonCode: text().notNull(),
+    note: text(),
+    endsAt: ts(),
+    createdBy: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    liftedAt: ts(),
+    liftedBy: uuid().references(() => users.id, { onDelete: 'restrict' }),
+    liftedReason: text(),
+    version: version(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    check('customer_blocks_level_valid', sql`${t.level} in (${quoted(CUSTOMER_BLOCK_LEVELS)})`),
+    check('customer_blocks_reason_valid', sql`${t.reasonCode} in (${quoted(CUSTOMER_BLOCK_REASONS)})`),
+    check('customer_blocks_note_length', sql`${t.note} is null or char_length(${t.note}) <= 500`),
+    check('customer_blocks_ends_after_start', sql`${t.endsAt} is null or ${t.endsAt} > ${t.createdAt}`),
+    check(
+      'customer_blocks_lift_complete',
+      sql`(${t.liftedAt} is null and ${t.liftedBy} is null and ${t.liftedReason} is null) or (${t.liftedAt} is not null and ${t.liftedBy} is not null and char_length(${t.liftedReason}) between 5 and 300)`,
+    ),
+    check('customer_blocks_not_self', sql`${t.createdBy} <> ${t.userId}`),
+    uniqueIndex('customer_blocks_one_active_uq')
+      .on(t.userId, t.level)
+      .where(sql`lifted_at is null`),
+    index().on(t.userId, t.createdAt),
+    index().on(t.createdBy),
+    index().on(t.liftedBy),
   ],
 );

@@ -1,8 +1,9 @@
 import type { UserRecord } from '@mechdost/db/repo';
+import type { CustomerBlockLevel } from '@mechdost/shared/customers';
 import type { Grant } from '@mechdost/shared/rbac';
 
 interface Entry {
-  value: { user: UserRecord; grants: Grant[] };
+  value: { user: UserRecord; grants: Grant[]; blocks: CustomerBlockLevel[] };
   expiresAt: number;
 }
 
