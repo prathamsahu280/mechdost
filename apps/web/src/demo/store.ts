@@ -5,9 +5,11 @@
  */
 import { publicCode } from '@mechdost/shared/ids';
 import {
+  ASSIGNMENT_DECLINE_REASONS,
   ORDER_CANCEL_REASONS,
   ORDER_REJECT_REASONS,
   SERVICE_CANCEL_REASONS,
+  type AssignmentDeclineReason,
   type OrderCancelReason,
   type OrderRejectReason,
   type ServiceCancelReason,
@@ -664,7 +666,13 @@ export function routeOrder(code: string, shopSlug: string): boolean {
 }
 
 /** The offered shop accepts (customer + admin see "Confirmed — will be shipped") or declines (back to admin). */
-export function respondToOrder(code: string, shopSlug: string, accept: boolean, reason = ''): boolean {
+export function respondToOrder(
+  code: string,
+  shopSlug: string,
+  accept: boolean,
+  reason?: AssignmentDeclineReason,
+): boolean {
+  if (!accept && !(reason && ASSIGNMENT_DECLINE_REASONS.includes(reason))) return false;
   return updateOrder(code, (o) => {
     if (routingState(o) !== 'awaiting_shop' || o.shop?.slug !== shopSlug) return null;
     if (accept && !takesNewWork('shop', shopSlug)) return null;
@@ -674,7 +682,7 @@ export function respondToOrder(code: string, shopSlug: string, accept: boolean, 
       shop: null,
       declined: [
         ...(o.declined ?? []),
-        { slug: shopSlug, reason: reason || 'declined', at: new Date().toISOString() },
+        { slug: shopSlug, reason: reason ?? 'other', at: new Date().toISOString() },
       ],
     };
   });

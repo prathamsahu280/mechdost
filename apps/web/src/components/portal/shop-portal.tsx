@@ -1,5 +1,6 @@
 'use client';
 
+import { ASSIGNMENT_DECLINE_REASONS, type AssignmentDeclineReason } from '@mechdost/shared/state';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
 import { localizeShop, productNameFor } from '@/demo/i18n/localize';
@@ -19,8 +20,6 @@ import { track } from '@/lib/analytics';
 import { formatDate, formatPrice } from '@/lib/format';
 import { PartnerGate } from './partner-gate';
 import { PortalGuard, portalCard, portalPrimary, portalQuiet, portalField, useNow } from './portal-guard';
-
-const DECLINE_REASONS = ['stock', 'area', 'busy'] as const;
 
 /**
  * Shop portal (spec 07): orders MechDost routed to this shop with an accept timer, then pack → deliver.
@@ -138,7 +137,7 @@ function OfferedOrder({ order, shopSlug, now }: { order: DemoOrder; shopSlug: st
   const t = useTranslations('portal');
   const a = useTranslations('account');
   const [declining, setDeclining] = useState(false);
-  const [reason, setReason] = useState<(typeof DECLINE_REASONS)[number]>('stock');
+  const [reason, setReason] = useState<AssignmentDeclineReason>('out_of_stock');
   const minutes = Math.max(
     0,
     Math.ceil(((order.shop ? new Date(order.shop.expiresAt).getTime() : now) - now) / 60_000),
@@ -160,11 +159,11 @@ function OfferedOrder({ order, shopSlug, now }: { order: DemoOrder; shopSlug: st
             id={`reason-${order.code}`}
             value={reason}
             onChange={(e) => {
-              setReason(DECLINE_REASONS.find((r) => r === e.target.value) ?? 'stock');
+              setReason(ASSIGNMENT_DECLINE_REASONS.find((r) => r === e.target.value) ?? 'out_of_stock');
             }}
             className={portalField}
           >
-            {DECLINE_REASONS.map((r) => (
+            {ASSIGNMENT_DECLINE_REASONS.map((r) => (
               <option key={r} value={r}>
                 {t(`reason_${r}`)}
               </option>

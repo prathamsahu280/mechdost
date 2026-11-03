@@ -60,7 +60,7 @@ Full KYC (penny-drop, e-sign), multi-location inventory, bulk price tiers/B2B, s
 
 ## Demo implementation (2026-11-01)
 
-`/partner/shop` and `/partner/workshop` (`components/portal/*`), signed in with the seeded partner logins. Shop: offered orders with countdown, accept / decline with reason (stock, area, busy), then packed → out for delivery → delivered. Workshop: propose date + slot + cost range + note or decline (request returns to admin), then received → in progress → ready.
+`/partner/shop` and `/partner/workshop` (`components/portal/*`), signed in with the seeded partner logins. Shop: offered orders with countdown, accept / decline with a reason code from `ASSIGNMENT_DECLINE_REASONS` (out of stock, outside delivery area, shop closed, too busy, price changed, other — the same codes as the API since 2026-11-03; older demo data with stock/area/busy still shows the right label), then packed → out for delivery → delivered. Workshop: propose date + slot + cost range + note or decline (request returns to admin), then received → in progress → ready.
 
 Public `/partners` page (2026-11-01): per partner type an emoji, three benefits and the application button, then "How joining works" (apply → we verify → set up → go live) and the support number. Copy in `pages.partners` (en + hi); becomes admin content blocks in Phase 1.
 

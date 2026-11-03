@@ -75,7 +75,7 @@ function seedData(now: number) {
       CODES.routing,
       [line('engine-oil-filter-petrol-car', 2), line('synthetic-engine-oil-5w30-3-5l', 1)],
       {
-        declined: [{ slug: 'gupta-lubes-spares', reason: 'stock', at: iso(-60) }],
+        declined: [{ slug: 'gupta-lubes-spares', reason: 'out_of_stock', at: iso(-60) }],
       },
     ),
     order(CODES.offered, [line('brake-pad-set-front', 1)], {

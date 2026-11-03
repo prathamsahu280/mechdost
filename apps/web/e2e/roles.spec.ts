@@ -295,7 +295,7 @@ test.describe('order routing across roles (spec 04)', () => {
     await signIn(page, '9000000004'); // Raipur Battery Point
     const offered = page.locator('article').filter({ hasText: code });
     await offered.getByRole('button', { name: 'Decline' }).click();
-    await offered.getByLabel('Reason').selectOption('stock');
+    await offered.getByLabel('Reason').selectOption('out_of_stock');
     await offered.getByRole('button', { name: 'Decline' }).click();
     await expect(page.locator('article').filter({ hasText: code })).toHaveCount(0);
     await signOut(page);

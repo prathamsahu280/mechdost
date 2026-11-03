@@ -3,10 +3,12 @@
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import {
+  ASSIGNMENT_DECLINE_REASONS,
   ORDER_CANCEL_REASONS,
   ORDER_REJECT_REASONS,
   type OrderCancelReason,
   type OrderRejectReason,
+  type AssignmentDeclineReason,
 } from '@mechdost/shared/state';
 import { useState, type SyntheticEvent } from 'react';
 import { findProduct } from '@/demo/catalogue';
@@ -114,9 +116,15 @@ export function AdminConsole({
   );
 }
 
-const REASONS = ['timeout', 'stock', 'area', 'busy'] as const;
-function reasonKey(reason: string): (typeof REASONS)[number] | 'declined' {
-  return REASONS.find((r) => r === reason) ?? 'declined';
+/** Decline codes are the API's (`ASSIGNMENT_DECLINE_REASONS`); `timeout` marks an offer that expired. */
+const LEGACY_REASONS: Partial<Record<string, AssignmentDeclineReason>> = {
+  stock: 'out_of_stock',
+  area: 'too_far',
+  busy: 'too_busy',
+};
+function reasonKey(reason: string): AssignmentDeclineReason | 'timeout' | 'declined' {
+  if (reason === 'timeout') return 'timeout';
+  return ASSIGNMENT_DECLINE_REASONS.find((r) => r === reason) ?? LEGACY_REASONS[reason] ?? 'declined';
 }
 
 function usePrefix() {
