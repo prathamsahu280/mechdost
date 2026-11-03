@@ -216,7 +216,7 @@ function CancelOrder({ order }: { order: DemoOrder }) {
     const reasonCode = new FormData(e.currentTarget).get('reasonCode') as OrderCancelReason;
     if (cancelDemoOrder(order.code, 'customer', reasonCode, order.customer.name)) {
       if (order.coins) restoreCoinsForOrder(order.coins.accountId, order.code);
-      track('click', { id: 'order_cancelled_by_customer', path: window.location.pathname });
+      track('order_cancel_submitted', { code: order.code, by: 'customer', reasonCode });
       setOpen(false);
     }
   }

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { scrubFreeText } from './privacy';
+import { ORDER_CANCEL_REASONS } from './state';
 
 /**
  * Server-side analytics events (spec 12; hard rules 9 and 16). Emitted by the API inside the same transaction
@@ -59,6 +60,11 @@ export const CLIENT_EVENT_SCHEMAS = {
   booking_started: z.object({ workshop: id }).strict(),
   booking_confirmed: z.object({ code: id, workshop: id, demo: z.boolean() }).strict(),
   booking_cancelled: z.object({ code: id, workshop: id, reasonCode: id }).strict(),
+  // The UI action; the API records the outcome as the server event `order_cancelled` (different name, so the
+  // two are never counted together).
+  order_cancel_submitted: z
+    .object({ code: id, by: z.enum(['customer', 'staff']), reasonCode: z.enum(ORDER_CANCEL_REASONS) })
+    .strict(),
   assistant_opened: z.object({ path }).strict(),
   assistant_message: z.object({ intent: id, length: z.number().int().min(0).max(5000) }).strict(),
   map_action: z

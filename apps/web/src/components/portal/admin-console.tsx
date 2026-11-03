@@ -362,7 +362,7 @@ function RoutingCard({ order, now }: { order: DemoOrder; now: number }) {
     const reasonCode = new FormData(e.currentTarget).get('reasonCode') as OrderCancelReason;
     if (cancelDemoOrder(order.code, 'staff', reasonCode, session?.name ?? 'MechDost')) {
       if (order.coins) restoreCoinsForOrder(order.coins.accountId, order.code);
-      track('click', { id: 'admin_order_cancelled', path: window.location.pathname });
+      track('order_cancel_submitted', { code: order.code, by: 'staff', reasonCode });
       setCancelling(false);
     }
   }
