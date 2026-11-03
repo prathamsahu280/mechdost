@@ -2,6 +2,12 @@
 
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
+import {
+  ORDER_CANCEL_REASONS,
+  ORDER_REJECT_REASONS,
+  type OrderCancelReason,
+  type OrderRejectReason,
+} from '@mechdost/shared/state';
 import { useState, type SyntheticEvent } from 'react';
 import { findProduct } from '@/demo/catalogue';
 import { restoreCoinsForOrder } from '@/demo/coins';
@@ -13,7 +19,9 @@ import {
   moderateReview,
   postQuoteMessage,
   adminConfirmDelivery,
+  cancelDemoOrder,
   rejectOrder,
+  staffMayCancel,
   routeOrder,
   routingState,
   sendOffer,
@@ -153,7 +161,7 @@ function Overview() {
   const states = orders.map((o) => routingState(o, now));
   const count = (s: RoutingState | RoutingState[]) =>
     states.filter((x) => (Array.isArray(s) ? s.includes(x) : x === s)).length;
-  const value = orders.filter((o) => !o.rejection).reduce((n, o) => n + o.totalPaise, 0);
+  const value = orders.filter((o) => !o.rejection && !o.cancellation).reduce((n, o) => n + o.totalPaise, 0);
   const quotes = useQuotes().filter((q) => q.status === 'open' || q.status === 'offered').length;
   const applications = useApplications().filter(
     (a) => !a.rejected && a.stage < APPLICATION_STAGES.length - 1,
@@ -212,6 +220,7 @@ function OrderRouting() {
     [t('queue_awaiting'), orders.filter((o) => routingState(o, now) === 'awaiting_shop')],
     [t('queue_done'), orders.filter((o) => routingState(o, now) === 'confirmed')],
     [t('queue_rejected'), orders.filter((o) => routingState(o, now) === 'rejected')],
+    [t('queue_cancelled'), orders.filter((o) => routingState(o, now) === 'cancelled')],
   ];
   return (
     <div className="space-y-8">
@@ -308,7 +317,10 @@ function RoutingCard({ order, now }: { order: DemoOrder; now: number }) {
   const a = useTranslations('account');
   const locale = useLocale();
   const prefix = usePrefix();
+  const ord = useTranslations('order');
+  const session = useSession();
   const [rejecting, setRejecting] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const state = routingState(order, now);
   const categories = [
     ...new Set(
@@ -327,11 +339,23 @@ function RoutingCard({ order, now }: { order: DemoOrder; now: number }) {
 
   function reject(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
-    const v = new FormData(e.currentTarget).get('message');
-    if (typeof v === 'string' && rejectOrder(order.code, v)) {
+    const data = new FormData(e.currentTarget);
+    const v = data.get('message');
+    const reasonCode = data.get('reasonCode') as OrderRejectReason;
+    if (typeof v === 'string' && rejectOrder(order.code, v, reasonCode)) {
       // Coins used on a rejected order go back to the customer (never as money; spec 20).
       if (order.coins) restoreCoinsForOrder(order.coins.accountId, order.code);
       track('click', { id: 'admin_order_rejected', path: window.location.pathname });
+    }
+  }
+
+  function cancel(e: SyntheticEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const reasonCode = new FormData(e.currentTarget).get('reasonCode') as OrderCancelReason;
+    if (cancelDemoOrder(order.code, 'staff', reasonCode, session?.name ?? 'MechDost')) {
+      if (order.coins) restoreCoinsForOrder(order.coins.accountId, order.code);
+      track('click', { id: 'admin_order_cancelled', path: window.location.pathname });
+      setCancelling(false);
     }
   }
 
@@ -404,6 +428,14 @@ function RoutingCard({ order, now }: { order: DemoOrder; now: number }) {
           {t('rejectedWith', { message: order.rejection.message })}
         </p>
       ) : null}
+      {state === 'cancelled' && order.cancellation ? (
+        <p className="mt-3 rounded-lg bg-pill p-3 text-sm text-muted">
+          {t(order.cancellation.by === 'customer' ? 'cancelledByCustomer' : 'cancelledByStaff', {
+            date: formatDate(order.cancellation.at, locale),
+          })}{' '}
+          · {ord(`cancelReason_${order.cancellation.reasonCode}`)}
+        </p>
+      ) : null}
 
       {canRoute ? (
         <div className="mt-4">
@@ -446,9 +478,69 @@ function RoutingCard({ order, now }: { order: DemoOrder; now: number }) {
         </div>
       ) : null}
 
-      {state !== 'confirmed' && state !== 'rejected' ? (
+      {staffMayCancel(order) ? (
+        cancelling ? (
+          <form onSubmit={cancel} className="mt-4 space-y-2">
+            <label htmlFor={`cancel-reason-${order.code}`} className="text-sm font-bold text-ink">
+              {t('cancelReason')}
+            </label>
+            <select
+              id={`cancel-reason-${order.code}`}
+              name="reasonCode"
+              defaultValue="customer_unreachable"
+              className={portalField}
+            >
+              {ORDER_CANCEL_REASONS.map((r) => (
+                <option key={r} value={r}>
+                  {ord(`cancelReason_${r}`)}
+                </option>
+              ))}
+            </select>
+            <div className="flex flex-wrap gap-2">
+              <button type="submit" className={portalPrimary}>
+                {t('cancelConfirm', { code: order.code })}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setCancelling(false);
+                }}
+                className={portalQuiet}
+              >
+                {a('cancel')}
+              </button>
+            </div>
+          </form>
+        ) : (
+          <button
+            type="button"
+            onClick={() => {
+              setCancelling(true);
+            }}
+            className="mt-3 mr-4 inline-flex min-h-11 items-center text-sm font-bold text-muted underline-offset-4 hover:underline"
+          >
+            {t('cancelOrder')}
+          </button>
+        )
+      ) : null}
+      {state !== 'confirmed' && state !== 'rejected' && state !== 'cancelled' ? (
         rejecting ? (
           <form onSubmit={reject} className="mt-4 space-y-2">
+            <label htmlFor={`reject-reason-${order.code}`} className="text-sm font-bold text-ink">
+              {t('rejectReason')}
+            </label>
+            <select
+              id={`reject-reason-${order.code}`}
+              name="reasonCode"
+              defaultValue="no_stock_nearby"
+              className={portalField}
+            >
+              {ORDER_REJECT_REASONS.map((r) => (
+                <option key={r} value={r}>
+                  {ord(`rejectReason_${r}`)}
+                </option>
+              ))}
+            </select>
             <label htmlFor={`reject-${order.code}`} className="text-sm font-bold text-ink">
               {t('rejectMessage')}
             </label>

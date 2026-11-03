@@ -4,6 +4,12 @@
  * nothing here is trusted or persisted on a server. One localStorage key per collection, validated on read.
  */
 import { publicCode } from '@mechdost/shared/ids';
+import {
+  ORDER_CANCEL_REASONS,
+  ORDER_REJECT_REASONS,
+  type OrderCancelReason,
+  type OrderRejectReason,
+} from '@mechdost/shared/state';
 import { useSyncExternalStore } from 'react';
 import { deliveryFeePaise, findProduct } from './catalogue';
 import { takesNewWork } from './partner-status';
@@ -34,8 +40,15 @@ export interface DemoOrder {
   shop?: { slug: string; status: 'offered' | 'accepted'; offeredAt: string; expiresAt: string } | null;
   /** Shops that declined (or let the timer run out), newest last. */
   declined?: { slug: string; reason: string; at: string }[];
-  /** Admin rejected the order with a message to the customer (refund for prepaid orders). */
-  rejection?: { message: string; at: string } | null;
+  /** Admin rejected the order with a reason code and a message to the customer (refund for prepaid orders). */
+  rejection?: { message: string; at: string; reasonCode?: OrderRejectReason } | null;
+  /** Cancelled before delivery, by the customer (until confirmed) or staff (until packed), with a reason code. */
+  cancellation?: {
+    by: 'customer' | 'staff';
+    reasonCode: OrderCancelReason;
+    actor: string;
+    at: string;
+  } | null;
   /** MechDost Coins used on this order (spec 20): part of the discount, restored if the order is rejected. */
   coins?: { accountId: string; coins: number; discountPaise: number } | null;
   /** Proof of delivery (spec 04): code issued when the order goes out for delivery. */
@@ -542,7 +555,7 @@ export function advanceOrder(code: string) {
   write(
     KEYS.orders,
     ordersSnapshot().map((o) => {
-      if (o.code !== code) return o;
+      if (o.code !== code || isClosed(o)) return o;
       const stage = Math.min(o.stage + 1, ORDER_STAGES.length - 1);
       // Simulates the real steps: a code is issued when it goes out; "delivered" means the code was given.
       if (stage === STAGE_OUT_FOR_DELIVERY && !o.delivery) return { ...o, stage, delivery: issueDelivery() };
@@ -590,9 +603,11 @@ export const demoStorage = {
 // ── Routing & partner actions (spec 04 / 06). Each transition checks the current state first, like the
 // conditional UPDATEs in packages/db (a stale or repeated action is a no-op that returns false).
 
-export type RoutingState = 'needs_routing' | 'awaiting_shop' | 'expired' | 'rejected' | 'confirmed';
+export type RoutingState =
+  'needs_routing' | 'awaiting_shop' | 'expired' | 'rejected' | 'cancelled' | 'confirmed';
 
 export function routingState(order: DemoOrder, now = Date.now()): RoutingState {
+  if (order.cancellation) return 'cancelled';
   if (order.rejection) return 'rejected';
   if (order.stage >= 2) return 'confirmed';
   if (!order.shop) return 'needs_routing';
@@ -659,14 +674,46 @@ export function respondToOrder(code: string, shopSlug: string, accept: boolean, 
   });
 }
 
-/** Admin rejects an unfulfillable order with a message to the customer. */
-export function rejectOrder(code: string, message: string): boolean {
+/** A rejected or cancelled order is closed: nothing moves it forward again. */
+export const isClosed = (o: DemoOrder) => Boolean(o.rejection ?? o.cancellation);
+
+/** Admin rejects an unfulfillable order with a reason code and a message to the customer (same rules as the API). */
+export function rejectOrder(code: string, message: string, reasonCode: OrderRejectReason): boolean {
   const clean = message.trim().slice(0, 500);
-  if (!clean) return false;
+  if (clean.length < 10 || !ORDER_REJECT_REASONS.includes(reasonCode)) return false;
   return updateOrder(code, (o) => {
     const state = routingState(o);
-    if (state === 'confirmed' || state === 'rejected') return null;
-    return { ...o, shop: null, rejection: { message: clean, at: new Date().toISOString() } };
+    if (state === 'confirmed' || state === 'rejected' || state === 'cancelled') return null;
+    return { ...o, shop: null, rejection: { message: clean, reasonCode, at: new Date().toISOString() } };
+  });
+}
+
+const STAGE_CONFIRMED = ORDER_STAGES.indexOf('confirmed');
+const STAGE_PACKED = ORDER_STAGES.indexOf('packed');
+
+/** The customer may cancel until the shop has packed the order (spec 05, same as the API). */
+export const customerMayCancel = (o: DemoOrder) => !isClosed(o) && o.stage <= STAGE_CONFIRMED;
+/** Staff may also cancel a packed order. */
+export const staffMayCancel = (o: DemoOrder) => !isClosed(o) && o.stage <= STAGE_PACKED;
+
+/**
+ * Cancel with a reason code: an open shop offer is withdrawn (the shop no longer sees it), the order closes,
+ * coins used on it come back (caller restores them). Returns false when this actor may not cancel now.
+ */
+export function cancelDemoOrder(
+  code: string,
+  by: 'customer' | 'staff',
+  reasonCode: OrderCancelReason,
+  actor: string,
+): boolean {
+  if (!ORDER_CANCEL_REASONS.includes(reasonCode)) return false;
+  return updateOrder(code, (o) => {
+    if (!(by === 'customer' ? customerMayCancel(o) : staffMayCancel(o))) return null;
+    return {
+      ...o,
+      shop: o.shop?.status === 'offered' ? null : o.shop,
+      cancellation: { by, reasonCode, actor, at: new Date().toISOString() },
+    };
   });
 }
 
@@ -676,7 +723,7 @@ export function rejectOrder(code: string, message: string): boolean {
  */
 export function shopAdvanceOrder(code: string, shopSlug: string): boolean {
   return updateOrder(code, (o) => {
-    if (o.shop?.slug !== shopSlug || o.shop.status !== 'accepted') return null;
+    if (o.shop?.slug !== shopSlug || o.shop.status !== 'accepted' || isClosed(o)) return null;
     if (o.stage >= STAGE_OUT_FOR_DELIVERY) return null;
     const stage = o.stage + 1;
     return stage === STAGE_OUT_FOR_DELIVERY ? { ...o, stage, delivery: issueDelivery() } : { ...o, stage };
@@ -693,7 +740,8 @@ export function confirmDeliveryWithCode(code: string, shopSlug: string, entered:
   let result: DeliveryCheck = { ok: false, reason: 'not_out' };
   updateOrder(code, (o) => {
     const d = o.delivery;
-    if (o.shop?.slug !== shopSlug || o.stage !== STAGE_OUT_FOR_DELIVERY || !d || d.confirmedAt) return null;
+    if (o.shop?.slug !== shopSlug || o.stage !== STAGE_OUT_FOR_DELIVERY || !d || d.confirmedAt || isClosed(o))
+      return null;
     if (d.attempts >= DELIVERY_CODE_MAX_ATTEMPTS) {
       result = { ok: false, reason: 'locked' };
       return null;

@@ -74,3 +74,10 @@ This supersedes the self-service return/replacement/exchange flows above; the re
 - **One transaction:** order → `cancelled` (CAS on version; races with a shop accept resolve to exactly one winner), an open shop offer → `withdrawn`, held stock released, stock already taken by an accept put back on the shelf, audit row `order.cancelled`. COD has nothing to refund; prepaid refunds come with online payment.
 - **Tracking** `GET /v1/orders` (newest first) and `GET /v1/orders/{groupCode}`: per sub-order status, items, the customer-visible timeline, the seller once accepted, the rejection message, the 4-digit delivery code while out for delivery, and `canCancel`.
 - Not yet: cancellation window by time, fees after dispatch, faulty-part tickets → replace/refund flow, notifications on cancel.
+
+### Demo screens (2026-11-03, same rules as the API)
+
+- Customer order page (`apps/web/src/components/commerce/order-view.tsx`): "Cancel this order" until the shop packs it (`customerMayCancel`: placed → confirmed), with a reason (`ORDER_CANCEL_REASONS` minus `customer_unreachable`) and a plain note (COD: nothing to refund; coins come back). "Keep my order" backs out. A cancelled order shows who cancelled, when and why.
+- Admin order card (`admin-console.tsx`): "Cancel order" while not closed and at most packed (`staffMayCancel`), with a reason code; the card shows "Cancelled by the customer/MechDost on … · reason"; routing and reject disappear. New queue "Cancelled". Reject now also asks for a **reason code** (`ORDER_REJECT_REASONS`) besides the message, matching `POST /v1/admin/orders/{code}/reject`.
+- Store (`apps/web/src/demo/store.ts`): `cancelDemoOrder` withdraws an open shop offer; closed orders (`isClosed`: rejected or cancelled) never move forward (demo controls, shop steps, delivery code). Shop portal drops cancelled orders from its active list. Coins used on the order are restored.
+- Tests: `e2e/order-cancel.spec.ts` (desktop + mobile).

@@ -9,6 +9,7 @@ import {
   ORDER_STAGES,
   confirmDeliveryWithCode,
   respondToOrder,
+  isClosed,
   routingState,
   shopAdvanceOrder,
   useOrders,
@@ -45,7 +46,9 @@ function ShopOrders({ shopSlug }: { shopSlug: string }) {
   const shop = found ? localizeShop(found, locale) : undefined;
   const orders = useOrders().filter((o) => o.shop?.slug === shopSlug);
   const offered = orders.filter((o) => routingState(o, now) === 'awaiting_shop');
-  const active = orders.filter((o) => o.shop?.status === 'accepted' && o.stage < ORDER_STAGES.length - 1);
+  const active = orders.filter(
+    (o) => o.shop?.status === 'accepted' && !isClosed(o) && o.stage < ORDER_STAGES.length - 1,
+  );
 
   return (
     <>

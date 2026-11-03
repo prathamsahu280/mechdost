@@ -3,9 +3,22 @@
 import { PartyPopper } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { ORDER_CANCEL_REASONS, type OrderCancelReason } from '@mechdost/shared/state';
 import { useLocale, useTranslations } from 'next-intl';
+import { useState, type SyntheticEvent } from 'react';
+import { restoreCoinsForOrder } from '@/demo/coins';
 import { findShop } from '@/demo/shops';
-import { advanceOrder, ORDER_STAGES, useHydrated, useOrders } from '@/demo/store';
+import {
+  advanceOrder,
+  cancelDemoOrder,
+  customerMayCancel,
+  isClosed,
+  ORDER_STAGES,
+  useHydrated,
+  useOrders,
+  type DemoOrder,
+} from '@/demo/store';
+import { track } from '@/lib/analytics';
 import { formatDate, formatPrice } from '@/lib/format';
 import { StatusTimeline } from './status-timeline';
 import { productNameFor, shopNameFor } from '@/demo/i18n/localize';
@@ -51,7 +64,17 @@ export function OrderView({ code }: { code: string }) {
         ) : null}
         <section className="rounded-card border border-line-card bg-surface p-6 shadow-card">
           <h2 className="font-heading text-lg font-extrabold text-ink">{t('statusLabel')}</h2>
-          {order.rejection ? (
+          {order.cancellation ? (
+            <div role="status" className="mt-5 rounded-tile bg-pill p-5 text-ink">
+              <p className="font-heading font-bold">{t('cancelledTitle')}</p>
+              <p className="mt-1 text-sm text-muted">
+                {t(order.cancellation.by === 'customer' ? 'cancelledByYou' : 'cancelledByMechDost', {
+                  date: formatDate(order.cancellation.at, locale),
+                })}{' '}
+                · {t(`cancelReason_${order.cancellation.reasonCode}`)}
+              </p>
+            </div>
+          ) : order.rejection ? (
             <div role="status" className="mt-5 rounded-tile bg-warning-bg p-5 text-warning">
               <p className="font-heading font-bold">{t('rejectedTitle')}</p>
               <p data-user-content className="mt-1 text-sm">
@@ -80,7 +103,7 @@ export function OrderView({ code }: { code: string }) {
               })}
             </p>
           ) : null}
-          {order.delivery && !order.delivery.confirmedAt && !order.rejection ? (
+          {order.delivery && !order.delivery.confirmedAt && !isClosed(order) ? (
             <section
               aria-labelledby="delivery-code-title"
               className="mt-5 rounded-tile border-2 border-accent-button bg-accent-soft p-5"
@@ -104,7 +127,8 @@ export function OrderView({ code }: { code: string }) {
                 : t('deliveredWithCode', { date: formatDate(order.delivery.confirmedAt, locale) })}
             </p>
           ) : null}
-          {!order.rejection && order.stage < ORDER_STAGES.length - 1 ? (
+          {customerMayCancel(order) ? <CancelOrder order={order} /> : null}
+          {!isClosed(order) && order.stage < ORDER_STAGES.length - 1 ? (
             <details className="mt-6 rounded-lg border border-dashed border-line p-3 text-sm">
               <summary className="cursor-pointer font-bold text-muted">{demo('controls')}</summary>
               <button
@@ -176,5 +200,75 @@ export function OrderView({ code }: { code: string }) {
         <p className="text-[11px] text-muted">{demo('note')}</p>
       </aside>
     </div>
+  );
+}
+
+/**
+ * Customer cancel (spec 05, same rule as the API): until the shop packs the order, with a reason code. Coins used on
+ * the order come back; cash on delivery has nothing to refund.
+ */
+function CancelOrder({ order }: { order: DemoOrder }) {
+  const t = useTranslations('order');
+  const [open, setOpen] = useState(false);
+
+  function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const reasonCode = new FormData(e.currentTarget).get('reasonCode') as OrderCancelReason;
+    if (cancelDemoOrder(order.code, 'customer', reasonCode, order.customer.name)) {
+      if (order.coins) restoreCoinsForOrder(order.coins.accountId, order.code);
+      track('click', { id: 'order_cancelled_by_customer', path: window.location.pathname });
+      setOpen(false);
+    }
+  }
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          setOpen(true);
+        }}
+        className="mt-5 inline-flex min-h-11 items-center text-sm font-bold text-muted underline-offset-4 hover:text-ink hover:underline"
+      >
+        {t('cancelAction')}
+      </button>
+    );
+  }
+  return (
+    <form onSubmit={onSubmit} className="mt-5 space-y-2 rounded-tile border border-line-card p-4">
+      <p className="text-sm text-ink">{t('cancelNote')}</p>
+      <label htmlFor="cancel-reason" className="text-sm font-bold text-ink">
+        {t('cancelReasonLabel')}
+      </label>
+      <select
+        id="cancel-reason"
+        name="reasonCode"
+        defaultValue="changed_mind"
+        className="mt-1 min-h-11 w-full rounded-input border border-input-border bg-surface px-3 text-[15px] text-ink"
+      >
+        {ORDER_CANCEL_REASONS.filter((r) => r !== 'customer_unreachable').map((r) => (
+          <option key={r} value={r}>
+            {t(`cancelReason_${r}`)}
+          </option>
+        ))}
+      </select>
+      <div className="flex flex-wrap gap-2 pt-1">
+        <button
+          type="submit"
+          className="press inline-flex min-h-11 items-center rounded-button border border-ink px-4 text-sm font-bold text-ink hover:bg-surface-alt"
+        >
+          {t('cancelConfirm')}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setOpen(false);
+          }}
+          className="inline-flex min-h-11 items-center px-3 text-sm font-bold text-muted hover:text-ink"
+        >
+          {t('cancelKeep')}
+        </button>
+      </div>
+    </form>
   );
 }

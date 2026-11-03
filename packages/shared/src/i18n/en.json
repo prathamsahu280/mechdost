@@ -461,7 +461,27 @@
     "deliveryCodeSafety": "MechDost will never ask for this code on a call or message.",
     "deliveredWithCode": "Delivered on {date}, confirmed with your delivery code.",
     "deliveredBySupport": "Delivered on {date}, confirmed by MechDost support.",
-    "reportProblem": "Report a problem with this order"
+    "reportProblem": "Report a problem with this order",
+    "cancelledTitle": "Order cancelled",
+    "cancelledByYou": "You cancelled this order on {date}",
+    "cancelledByMechDost": "MechDost cancelled this order on {date}",
+    "cancelAction": "Cancel this order",
+    "cancelNote": "You can cancel until the shop packs your order. Cash on delivery: nothing to refund. Coins you used come back.",
+    "cancelReasonLabel": "Why are you cancelling?",
+    "cancelConfirm": "Cancel order",
+    "cancelKeep": "Keep my order",
+    "cancelReason_changed_mind": "Changed my mind",
+    "cancelReason_ordered_by_mistake": "Ordered by mistake",
+    "cancelReason_found_cheaper": "Found it cheaper elsewhere",
+    "cancelReason_delivery_too_slow": "Delivery takes too long",
+    "cancelReason_customer_unreachable": "Customer could not be reached",
+    "cancelReason_other": "Other reason",
+    "rejectReason_no_stock_nearby": "No shop nearby has it",
+    "rejectReason_all_shops_declined": "Every shop declined",
+    "rejectReason_unserviceable_address": "We can't deliver to this address",
+    "rejectReason_suspected_fraud": "Suspected fraud",
+    "rejectReason_pricing_error": "Wrong price shown",
+    "rejectReason_other": "Other reason"
   },
   "finder": {
     "title": "Where is your vehicle?",
@@ -1244,7 +1264,14 @@
     "customersErr_ends_at": "Pick an end date in the future, or leave it empty.",
     "customersErr_reason": "Pick a reason.",
     "customersErr_liftReason": "Say why it is lifted (5 to 300 characters).",
-    "customersErr_storage": "Could not save on this device. Try again."
+    "customersErr_storage": "Could not save on this device. Try again.",
+    "queue_cancelled": "Cancelled",
+    "cancelledByCustomer": "Cancelled by the customer on {date}",
+    "cancelledByStaff": "Cancelled by MechDost on {date}",
+    "cancelOrder": "Cancel order",
+    "cancelReason": "Reason for cancelling",
+    "cancelConfirm": "Cancel {code}",
+    "rejectReason": "Reason"
   },
   "policies": {
     "returns": {

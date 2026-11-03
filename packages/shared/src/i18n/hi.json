@@ -461,7 +461,27 @@
     "deliveryCodeSafety": "MechDost कभी कॉल या मैसेज पर यह कोड नहीं माँगेगा।",
     "deliveredWithCode": "{date} को डिलीवर हुआ, आपके डिलीवरी कोड से कन्फ़र्म।",
     "deliveredBySupport": "{date} को डिलीवर हुआ, MechDost सपोर्ट ने कन्फ़र्म किया।",
-    "reportProblem": "इस ऑर्डर में दिक्कत बताएँ"
+    "reportProblem": "इस ऑर्डर में दिक्कत बताएँ",
+    "cancelledTitle": "ऑर्डर रद्द हुआ",
+    "cancelledByYou": "आपने यह ऑर्डर {date} को रद्द किया",
+    "cancelledByMechDost": "MechDost ने यह ऑर्डर {date} को रद्द किया",
+    "cancelAction": "यह ऑर्डर रद्द करें",
+    "cancelNote": "दुकान के पैक करने से पहले तक आप ऑर्डर रद्द कर सकते हैं। कैश ऑन डिलीवरी: कोई रिफ़ंड नहीं बनता। इस्तेमाल किए गए कॉइन वापस मिल जाते हैं।",
+    "cancelReasonLabel": "आप ऑर्डर क्यों रद्द कर रहे हैं?",
+    "cancelConfirm": "ऑर्डर रद्द करें",
+    "cancelKeep": "ऑर्डर रहने दें",
+    "cancelReason_changed_mind": "मन बदल गया",
+    "cancelReason_ordered_by_mistake": "गलती से ऑर्डर हो गया",
+    "cancelReason_found_cheaper": "कहीं और सस्ता मिल गया",
+    "cancelReason_delivery_too_slow": "डिलीवरी में बहुत समय लग रहा है",
+    "cancelReason_customer_unreachable": "ग्राहक से संपर्क नहीं हो सका",
+    "cancelReason_other": "कोई और कारण",
+    "rejectReason_no_stock_nearby": "पास की किसी दुकान में उपलब्ध नहीं",
+    "rejectReason_all_shops_declined": "हर दुकान ने मना किया",
+    "rejectReason_unserviceable_address": "इस पते पर डिलीवरी नहीं हो सकती",
+    "rejectReason_suspected_fraud": "धोखाधड़ी का शक",
+    "rejectReason_pricing_error": "गलत कीमत दिखी",
+    "rejectReason_other": "कोई और कारण"
   },
   "finder": {
     "title": "आपका वाहन कहाँ है?",
@@ -1244,7 +1264,14 @@
     "customersErr_ends_at": "आगे की कोई तारीख़ चुनें, या ख़ाली छोड़ दें।",
     "customersErr_reason": "कोई कारण चुनें।",
     "customersErr_liftReason": "बताएँ कि रोक क्यों हटाई जा रही है (5 से 300 अक्षर)।",
-    "customersErr_storage": "इस डिवाइस पर सेव नहीं हो सका। फिर से कोशिश करें।"
+    "customersErr_storage": "इस डिवाइस पर सेव नहीं हो सका। फिर से कोशिश करें।",
+    "queue_cancelled": "रद्द",
+    "cancelledByCustomer": "ग्राहक ने {date} को रद्द किया",
+    "cancelledByStaff": "MechDost ने {date} को रद्द किया",
+    "cancelOrder": "ऑर्डर रद्द करें",
+    "cancelReason": "रद्द करने का कारण",
+    "cancelConfirm": "{code} रद्द करें",
+    "rejectReason": "कारण"
   },
   "policies": {
     "returns": {
