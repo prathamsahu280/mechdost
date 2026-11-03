@@ -1,6 +1,7 @@
 import { and, eq, isNull, or, sql } from 'drizzle-orm';
 import {
   OPERATIONAL_SETTINGS,
+  isGlobalOnly,
   SETTING_KEYS,
   settingProblem,
   type SettingKey,
@@ -56,6 +57,11 @@ export async function saveOperationalSetting(
     staffUserId: string;
   },
 ): Promise<{ version: number }> {
+  if (input.cityId && isGlobalOnly(input.key))
+    throw new ValidationError(
+      `${input.key} applies to every city; set the global value`,
+      'SETTING_GLOBAL_ONLY',
+    );
   const problem = settingProblem(input.key, input.value);
   if (problem)
     throw new ValidationError(

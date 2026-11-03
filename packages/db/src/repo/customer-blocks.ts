@@ -74,8 +74,9 @@ export async function blockCustomer(
         'Suspend the shop or workshop instead of fully blocking its user',
         'BLOCK_PARTNER_FULL',
       );
-    // An expired, never-lifted block still holds the unique slot: close it first so a new one can start.
-    await tx
+    // An expired, never-lifted block still holds the unique slot: close it first so a new one can start
+    // (audited like any other change).
+    const closed = await tx
       .update(customerBlocks)
       .set({
         liftedAt: sql`now()`,
@@ -89,7 +90,17 @@ export async function blockCustomer(
           isNull(customerBlocks.liftedAt),
           sql`${customerBlocks.endsAt} <= now()`,
         ),
-      );
+      )
+      .returning({ id: customerBlocks.id, version: customerBlocks.version });
+    for (const c of closed)
+      await tx.insert(auditLog).values({
+        actorUserId: input.staffUserId,
+        actorRole: 'staff',
+        action: 'customer.block_expired_closed',
+        entity: 'user',
+        entityId: input.userId,
+        after: { blockId: c.id, version: c.version, reason: 'expired; replaced by a new block' },
+      });
     let row: { id: string; version: number } | undefined;
     try {
       [row] = await tx.transaction(async (sp) =>
@@ -122,7 +133,7 @@ export async function blockCustomer(
     });
     await recordServerEvent(tx, 'admin_customer_blocked', {
       userId: input.staffUserId,
-      props: { level: input.level, reasonCode: input.reasonCode },
+      props: { customerId: input.userId, level: input.level, reasonCode: input.reasonCode },
     });
     return row;
   });
@@ -170,7 +181,7 @@ export async function liftCustomerBlock(
     });
     await recordServerEvent(tx, 'admin_customer_unblocked', {
       userId: input.staffUserId,
-      props: { level: updated.level },
+      props: { customerId: updated.userId, level: updated.level },
     });
     return { version: updated.version };
   });

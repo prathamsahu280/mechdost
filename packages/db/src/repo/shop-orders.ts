@@ -250,7 +250,13 @@ export async function declineShopOffer(
 
 async function ownOrder(tx: Tx, shopIds: readonly string[], code: string) {
   const [o] = await tx
-    .select({ id: orders.id, status: orders.status, version: orders.version, shopId: orders.shopId })
+    .select({
+      id: orders.id,
+      status: orders.status,
+      version: orders.version,
+      shopId: orders.shopId,
+      cityId: orders.cityId,
+    })
     .from(orders)
     .where(eq(orders.code, code))
     .limit(1);
@@ -296,6 +302,14 @@ export async function advanceShopOrder(
     const from = { packed: 'confirmed', shipped: 'packed', out_for_delivery: 'shipped' } as const;
     if (o.status !== from[step.to]) throw new ConflictError(`Order is ${o.status}`, 'WRONG_STEP');
     const actor = { type: 'shop' as const, userId: input.staffUserId };
+    // Order row first (lock order, spec 14), then the shipment.
+    const row = await transitionOrder(tx, {
+      orderId: o.id,
+      from: from[step.to],
+      to: step.to,
+      expectedVersion: input.expectedVersion,
+      actor,
+    });
     if (step.to === 'shipped') {
       await tx.insert(shipments).values({
         orderId: o.id,
@@ -305,13 +319,6 @@ export async function advanceShopOrder(
         status: 'in_transit',
       });
     }
-    const row = await transitionOrder(tx, {
-      orderId: o.id,
-      from: from[step.to],
-      to: step.to,
-      expectedVersion: input.expectedVersion,
-      actor,
-    });
     if (step.to === 'out_for_delivery' && input.keyring) {
       const shipment = await shipmentOf(tx, o.id);
       await tx.update(shipments).set({ status: 'out_for_delivery' }).where(eq(shipments.id, shipment.id));
@@ -322,6 +329,11 @@ export async function advanceShopOrder(
       action: `order.${step.to}`,
       orderId: o.id,
       after: { status: step.to },
+    });
+    await recordServerEvent(tx, 'order_fulfilment_step', {
+      userId: input.staffUserId,
+      cityId: o.cityId,
+      props: { orderCode: input.code, shopId: o.shopId, step: step.to },
     });
     return { status: row.status, version: row.version };
   });
@@ -361,6 +373,7 @@ export async function deliverShopOrder(
     });
     await recordServerEvent(tx, 'order_delivered', {
       userId: input.staffUserId,
+      cityId: o.cityId,
       props: { orderCode: input.code, shopId: o.shopId },
     });
     await auditShop(tx, {

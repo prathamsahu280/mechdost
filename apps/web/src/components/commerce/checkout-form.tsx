@@ -88,7 +88,7 @@ export function CheckoutForm() {
         : null;
     const order = placeDemoOrder({ name: value('name'), phone, address: value('address'), pincode }, spend);
     if (spend) redeemCoins(spend.accountId, spend.coins, order.code);
-    track('purchase', { code: order.code, valuePaise: order.totalPaise, demo: true });
+    track('purchase_submitted', { code: order.code, valuePaise: order.totalPaise, demo: true });
     router.push(`${prefix}/orders/${order.code}?new=1`);
   }
 

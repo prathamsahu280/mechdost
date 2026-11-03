@@ -35,7 +35,12 @@ describe('client event registry', () => {
   });
 
   it('client actions never reuse the name of the server outcome they lead to', () => {
-    const outcomes: ServerEvent[] = ['order_cancelled', 'order_delivered', 'seller_order_declined'];
+    const outcomes = Object.keys({
+      purchase: 0,
+      order_cancelled: 0,
+      order_delivered: 0,
+      seller_order_declined: 0,
+    } satisfies Partial<Record<ServerEvent, 0>>);
     for (const name of outcomes) expect(Object.keys(CLIENT_EVENT_SCHEMAS)).not.toContain(name);
   });
 });

@@ -84,12 +84,13 @@ export interface CatalogueQuery {
   locale: CatalogueLocale;
 }
 
+/** A PIN prices the catalogue only in a live city — checkout refuses the others (code review 2026-11-03). */
 async function resolvePlace(db: Tx, cityCode: string, pincode: string | null): Promise<CataloguePlace> {
   if (pincode) {
     const [row] = rowsOf<{ city_id: string; code: string }>(
       await db.execute(sql`
         select c.id as city_id, c.code from pincodes pc join cities c on c.id = pc.city_id
-        where pc.pincode = ${pincode}`),
+        where pc.pincode = ${pincode} and c.status = 'live'`),
     );
     if (row) return { cityId: row.city_id, cityCode: row.code, pincode, pincodeKnown: true };
   }

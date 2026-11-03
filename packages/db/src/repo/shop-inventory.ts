@@ -208,6 +208,8 @@ async function audit(
   });
   await recordServerEvent(tx, 'inventory_updated', {
     userId: input.actorUserId,
+    cityId: (await tx.select({ cityId: shops.cityId }).from(shops).where(eq(shops.id, input.shopId)))[0]
+      ?.cityId,
     props: { shopId: input.shopId, sku: input.sku, fields: Object.keys(after).sort(), by: input.actorRole },
   });
 }

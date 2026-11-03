@@ -114,4 +114,16 @@ describe('admin settings', () => {
     });
     expect((await row('checkout.free_delivery_min_paise', null)).effective).toBeNull();
   });
+
+  it('a global-only setting refuses a city override (it would do nothing)', async () => {
+    await expect(
+      saveOperationalSetting(t(), {
+        key: 'catalogue.require_hindi_to_publish',
+        cityId: raipur,
+        value: true,
+        expectedVersion: null,
+        staffUserId: staff,
+      }),
+    ).rejects.toMatchObject({ code: 'SETTING_GLOBAL_ONLY' });
+  });
 });

@@ -234,6 +234,17 @@ describe('fulfilment', () => {
     // The analytics event names the shop that delivered (no empty-string fallback; advisor P2).
     const delivered = await db.select().from(events).where(eq(events.event, 'order_delivered'));
     expect(delivered.map((e) => e.props)).toContainEqual({ orderCode: code, shopId: ids[0] });
+    expect(delivered.every((e) => e.cityId !== null)).toBe(true);
+    const steps = await db.select().from(events).where(eq(events.event, 'order_fulfilment_step'));
+    expect(
+      steps.filter((e) => (e.props as { orderCode: string }).orderCode === code).map((e) => e.props),
+    ).toEqual(
+      (['packed', 'shipped', 'out_for_delivery'] as const).map((step) => ({
+        orderCode: code,
+        shopId: ids[0],
+        step,
+      })),
+    );
   });
 });
 

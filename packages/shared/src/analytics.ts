@@ -22,8 +22,13 @@ export interface ServerEventProps {
   seller_order_declined: { orderCode: string; shopId: string; reasonCode: string };
   order_cancelled: { orderCode: string; by: 'customer' | 'staff'; reasonCode: string; fromStatus: string };
   order_delivered: { orderCode: string; shopId: string };
-  admin_customer_blocked: { level: string; reasonCode: string };
-  admin_customer_unblocked: { level: string };
+  order_fulfilment_step: {
+    orderCode: string;
+    shopId: string;
+    step: 'packed' | 'shipped' | 'out_for_delivery';
+  };
+  admin_customer_blocked: { customerId: string; level: string; reasonCode: string };
+  admin_customer_unblocked: { customerId: string; level: string };
   admin_product_status_changed: { productSlug: string; from: string; to: string };
   inventory_updated: { shopId: string; sku: string; fields: string[]; by: 'shop' | 'staff' };
 }
@@ -68,7 +73,8 @@ export const CLIENT_EVENT_SCHEMAS = {
   begin_checkout: z
     .object({ items: z.number().int().min(0).max(100), valuePaise: z.number().int().min(0) })
     .strict(),
-  purchase: z.object({ code: id, valuePaise: z.number().int().min(0), demo: z.boolean() }).strict(),
+  // The customer's action; the API records the outcome as the server event `purchase` (code review 2026-11-03).
+  purchase_submitted: z.object({ code: id, valuePaise: z.number().int().min(0), demo: z.boolean() }).strict(),
   booking_started: z.object({ workshop: id }).strict(),
   booking_confirmed: z.object({ code: id, workshop: id, demo: z.boolean() }).strict(),
   booking_cancelled: z.object({ code: id, workshop: id, reasonCode: id }).strict(),
