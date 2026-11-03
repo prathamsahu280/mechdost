@@ -1,5 +1,6 @@
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import type { OrderRejectReason, OrderStatus } from '@mechdost/shared/state';
+import { OPERATIONAL_SETTINGS } from '@mechdost/shared/settings';
 import { ORDER_REJECT_REASONS } from '@mechdost/shared/state';
 import { auditLog, orderAssignments, reservations, shopInventory } from '../schema';
 import { expireAssignment, offerOrderToShop } from './assignments';
@@ -49,8 +50,14 @@ const inScope = (scope: CityScope) =>
 
 /** Settings (city first, then global): accept timer minutes (decision: admin-editable, demo default 15). */
 export const ROUTING_SETTINGS = {
-  acceptanceTimeoutMin: { key: 'orders.acceptance_timeout_min', fallback: 15 },
-  reservationMinutes: { key: 'checkout.cod_reservation_minutes', fallback: 1440 },
+  acceptanceTimeoutMin: {
+    key: 'orders.acceptance_timeout_min',
+    fallback: OPERATIONAL_SETTINGS['orders.acceptance_timeout_min'].default,
+  },
+  reservationMinutes: {
+    key: 'checkout.cod_reservation_minutes',
+    fallback: OPERATIONAL_SETTINGS['checkout.cod_reservation_minutes'].default,
+  },
 } as const;
 
 async function citySetting(db: Tx, cityId: string, s: { key: string; fallback: number }): Promise<number> {

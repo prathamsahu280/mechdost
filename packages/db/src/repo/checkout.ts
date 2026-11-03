@@ -1,5 +1,6 @@
 import { and, eq, isNull, or, sql } from 'drizzle-orm';
 import { publicCode } from '@mechdost/shared/ids';
+import { OPERATIONAL_SETTINGS } from '@mechdost/shared/settings';
 import { splitInclusiveGst } from '@mechdost/shared/money';
 import { auditLog, orderGroups, orderItems, orders, settings } from '../schema';
 import { blockEffects } from '@mechdost/shared/customers';
@@ -31,11 +32,19 @@ export const CART_MAX_LINES = 20;
 export const LINE_MAX_QTY = 99;
 
 /** Settings keys (city first, then global; admin-editable, hard rule 8). Values are integer paise / minutes. */
+// Defaults come from the one settings registry (`@mechdost/shared/settings`, editable via /v1/admin/settings).
+const S = OPERATIONAL_SETTINGS;
 export const CHECKOUT_SETTINGS = {
-  codCapPaise: { key: 'checkout.cod_cap_paise', fallback: 500_000 },
-  codFeePaise: { key: 'checkout.cod_fee_paise', fallback: 0 },
-  freeDeliveryMinPaise: { key: 'checkout.free_delivery_min_paise', fallback: null },
-  codReservationMinutes: { key: 'checkout.cod_reservation_minutes', fallback: 1440 },
+  codCapPaise: { key: 'checkout.cod_cap_paise', fallback: S['checkout.cod_cap_paise'].default },
+  codFeePaise: { key: 'checkout.cod_fee_paise', fallback: S['checkout.cod_fee_paise'].default },
+  freeDeliveryMinPaise: {
+    key: 'checkout.free_delivery_min_paise',
+    fallback: S['checkout.free_delivery_min_paise'].default,
+  },
+  codReservationMinutes: {
+    key: 'checkout.cod_reservation_minutes',
+    fallback: S['checkout.cod_reservation_minutes'].default,
+  },
 } as const;
 
 export interface CartLine {
