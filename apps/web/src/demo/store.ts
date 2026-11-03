@@ -215,7 +215,7 @@ const cache = new Map<Key, { raw: string | null; value: unknown }>();
 const EMPTY: readonly never[] = [];
 
 function read<T>(key: Key, isItem: (v: unknown) => v is T): readonly T[] {
-  let raw: string | null = null;
+  let raw: string | null;
   try {
     raw = window.localStorage.getItem(key);
   } catch {

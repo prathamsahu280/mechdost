@@ -113,7 +113,7 @@ let cached: { raw: string | null; value: Stored } | null = null;
 const EMPTY: Stored = { tickets: [] };
 
 function snapshot(): Stored {
-  let raw: string | null = null;
+  let raw: string | null;
   try {
     raw = window.localStorage.getItem(SUPPORT_KEY);
   } catch {

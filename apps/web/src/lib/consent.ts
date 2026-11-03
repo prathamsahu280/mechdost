@@ -38,7 +38,7 @@ let cached: { raw: string | null; value: ConsentChoice | null } = { raw: null, v
 /** Current choice for this notice version, or null when the visitor has not chosen. */
 export function consentChoice(): ConsentChoice | null {
   if (typeof window === 'undefined') return null;
-  let raw: string | null = null;
+  let raw: string | null;
   try {
     raw = window.localStorage.getItem(CONSENT_KEY);
   } catch {

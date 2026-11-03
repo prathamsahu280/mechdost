@@ -12,6 +12,12 @@ updates:
     cooldown:
       default-days: 3
     open-pull-requests-limit: 5
+    ignore:
+      # postgres.js v4 (2026-10-29) rewrites the driver below its API and changes parameter typing and
+      # transaction behaviour; our CI runs on PGlite, so a green check proves nothing about it. Revisit when
+      # Drizzle supports v4 and a real-Postgres test run exists (docs/research/security-vulnerabilities.md).
+      - dependency-name: postgres
+        update-types: ['version-update:semver-major']
     groups:
       # Minor and patch updates together; majors one by one so each gets its own review (advisor + changelog).
       minor-and-patch:

@@ -47,7 +47,7 @@ const isChange = (v: unknown): v is StatusChange => {
 /** Append-only history, oldest first (the latest entry per partner is its current status). */
 function history(): readonly StatusChange[] {
   if (typeof window === 'undefined') return EMPTY;
-  let raw: string | null = null;
+  let raw: string | null;
   try {
     raw = window.localStorage.getItem(KEY);
   } catch {

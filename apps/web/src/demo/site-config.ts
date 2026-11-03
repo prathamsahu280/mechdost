@@ -225,7 +225,7 @@ let cache: { raw: string | null; value: SiteConfig } = { raw: null, value: DEFAU
 /** Current config (defaults on the server or when storage is blocked). Safe to call outside React. */
 export function siteConfig(): SiteConfig {
   if (typeof window === 'undefined') return DEFAULT_CONFIG;
-  let raw: string | null = null;
+  let raw: string | null;
   try {
     raw = window.localStorage.getItem(SITE_CONFIG_KEY);
   } catch {

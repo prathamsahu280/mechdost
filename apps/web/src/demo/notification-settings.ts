@@ -81,7 +81,7 @@ function read(): NotifyConfig {
 let cached: { raw: string | null; value: NotifyConfig } | null = null;
 
 function snapshot(): NotifyConfig {
-  let raw: string | null = null;
+  let raw: string | null;
   try {
     raw = window.localStorage.getItem(NOTIFY_KEY);
   } catch {

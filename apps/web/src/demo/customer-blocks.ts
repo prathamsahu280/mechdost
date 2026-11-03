@@ -51,7 +51,7 @@ const isBlock = (v: unknown): v is DemoCustomerBlock => {
 
 function all(): readonly DemoCustomerBlock[] {
   if (typeof window === 'undefined') return EMPTY;
-  let raw: string | null = null;
+  let raw: string | null;
   try {
     raw = window.localStorage.getItem(CUSTOMER_BLOCKS_KEY);
   } catch {
