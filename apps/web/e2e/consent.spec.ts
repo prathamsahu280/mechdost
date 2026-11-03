@@ -91,6 +91,9 @@ test('the banner links to the privacy notice, in both languages', async ({ page 
   await expect(page.locator('main').getByRole('heading', { level: 2 })).toHaveCount(7); // the 7 sections
   const axe = await new AxeBuilder({ page }).withTags(WCAG_AA).analyze();
   expect(axe.violations).toEqual([]);
+  // Best practice too: all content inside landmarks (the announcement bar is a labelled aside).
+  const regions = await new AxeBuilder({ page }).withRules(['region']).analyze();
+  expect(regions.violations).toEqual([]);
   await page.goto('/hi/policies/privacy');
   await expect(page.getByRole('heading', { name: 'आपके विकल्प और अधिकार' })).toBeVisible();
 });

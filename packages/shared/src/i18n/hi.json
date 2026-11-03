@@ -15,7 +15,8 @@
   "announcement": {
     "brand": "MechDost",
     "orders": "पुष्टि के बाद प्रोडक्ट ऑर्डर",
-    "workshops": "{city} में वर्कशॉप अनुरोध"
+    "workshops": "{city} में वर्कशॉप अनुरोध",
+    "label": "सूचना"
   },
   "nav": {
     "label": "मुख्य",
@@ -574,7 +575,20 @@
     "proposal": "प्रस्ताव: {date}, {slot} · अनुमानित {min} – {max}",
     "accept": "प्रस्ताव स्वीकार करें",
     "myRequests": "आपके हाल के सर्विस अनुरोध",
-    "noRequests": "अभी तक कोई सर्विस अनुरोध नहीं।"
+    "noRequests": "अभी तक कोई सर्विस अनुरोध नहीं।",
+    "cancelAction": "यह बुकिंग रद्द करें",
+    "cancelNote": "वर्कशॉप के पास आपका वाहन पहुँचने से पहले तक आप बुकिंग रद्द कर सकते हैं। कुछ भी भुगतान नहीं करना है।",
+    "cancelReasonLabel": "आप बुकिंग क्यों रद्द कर रहे हैं?",
+    "cancelConfirm": "बुकिंग रद्द करें",
+    "cancelKeep": "बुकिंग रहने दें",
+    "cancelledTitle": "बुकिंग रद्द हुई",
+    "cancelledOn": "आपने यह बुकिंग {date} को रद्द की",
+    "cancelReason_changed_mind": "मन बदल गया",
+    "cancelReason_booked_by_mistake": "गलती से बुक हो गया",
+    "cancelReason_found_another_workshop": "कोई और वर्कशॉप मिल गई",
+    "cancelReason_slot_not_suitable": "यह समय ठीक नहीं है",
+    "cancelReason_problem_solved": "समस्या ठीक हो गई",
+    "cancelReason_other": "कोई और कारण"
   },
   "demo": {
     "controls": "डेमो कंट्रोल",

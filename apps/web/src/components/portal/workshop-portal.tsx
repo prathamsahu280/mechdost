@@ -37,7 +37,7 @@ function WorkshopRequests({ workshopSlug }: { workshopSlug: string }) {
   const locale = useLocale();
   const found = findWorkshop(workshopSlug);
   const workshop = found ? localizeWorkshop(found, locale) : undefined;
-  const mine = useRequests().filter((r) => r.workshopSlug === workshopSlug);
+  const mine = useRequests().filter((r) => r.workshopSlug === workshopSlug && !r.cancellation);
   const fresh = mine.filter((r) => r.stage === 0 && !(r.declinedBy ?? []).includes(workshopSlug));
   const waiting = mine.filter((r) => r.stage === 1);
   const jobs = mine.filter((r) => r.stage >= 2 && r.stage < REQUEST_STAGES.length - 1);

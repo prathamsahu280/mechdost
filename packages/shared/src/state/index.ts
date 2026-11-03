@@ -65,6 +65,17 @@ export const ORDER_CANCEL_REASONS = [
 ] as const;
 export type OrderCancelReason = (typeof ORDER_CANCEL_REASONS)[number];
 
+/** Why a customer cancelled a workshop booking (spec 06: allowed until the vehicle is received). */
+export const SERVICE_CANCEL_REASONS = [
+  'changed_mind',
+  'booked_by_mistake',
+  'found_another_workshop',
+  'slot_not_suitable',
+  'problem_solved',
+  'other',
+] as const;
+export type ServiceCancelReason = (typeof SERVICE_CANCEL_REASONS)[number];
+
 /** Why a shop declined an offered order (ML-ready codes; spec 04, partner scorecards). */
 export const ASSIGNMENT_DECLINE_REASONS = [
   'out_of_stock',

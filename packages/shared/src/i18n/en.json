@@ -15,7 +15,8 @@
   "announcement": {
     "brand": "MechDost",
     "orders": "Product orders by confirmation",
-    "workshops": "Workshop requests in {city}"
+    "workshops": "Workshop requests in {city}",
+    "label": "Announcement"
   },
   "nav": {
     "label": "Main",
@@ -574,7 +575,20 @@
     "proposal": "Proposed: {date}, {slot} · expected {min} – {max}",
     "accept": "Accept proposal",
     "myRequests": "Your recent service requests",
-    "noRequests": "You have no service requests yet."
+    "noRequests": "You have no service requests yet.",
+    "cancelAction": "Cancel this booking",
+    "cancelNote": "You can cancel until the workshop has your vehicle. Nothing to pay.",
+    "cancelReasonLabel": "Why are you cancelling?",
+    "cancelConfirm": "Cancel booking",
+    "cancelKeep": "Keep my booking",
+    "cancelledTitle": "Booking cancelled",
+    "cancelledOn": "You cancelled this booking on {date}",
+    "cancelReason_changed_mind": "Changed my mind",
+    "cancelReason_booked_by_mistake": "Booked by mistake",
+    "cancelReason_found_another_workshop": "Found another workshop",
+    "cancelReason_slot_not_suitable": "The time doesn't suit me",
+    "cancelReason_problem_solved": "The problem is solved",
+    "cancelReason_other": "Other reason"
   },
   "demo": {
     "controls": "Demo controls",

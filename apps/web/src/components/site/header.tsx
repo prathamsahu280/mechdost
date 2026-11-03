@@ -36,7 +36,8 @@ export function AnnouncementBar({ city }: { city: string }) {
   const t = useTranslations('announcement');
   const locale = useLocale();
   return (
-    <div className="bg-navy px-[5%] py-2.5 text-center text-white">
+    // A labelled landmark, so every piece of page content sits in one (axe `region`).
+    <aside aria-label={t('label')} className="bg-navy px-[5%] py-2.5 text-center text-white">
       <p className="eyebrow flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[8px] tracking-[1px] tab:text-[10px] tab:tracking-[1.8px]">
         <span className="font-extrabold">{t('brand')}</span>
         <span className="inline-flex items-center gap-1.5">
@@ -52,7 +53,7 @@ export function AnnouncementBar({ city }: { city: string }) {
           <SiteText k="announcement.workshops" locale={locale} fallback={t('workshops', { city })} />
         </span>
       </p>
-    </div>
+    </aside>
   );
 }
 

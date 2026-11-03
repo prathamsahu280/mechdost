@@ -588,7 +588,7 @@ function ServiceRouting() {
   const r = useTranslations('request');
   const locale = useLocale();
   const declined = useRequests().filter(
-    (x) => x.stage === 0 && (x.declinedBy ?? []).includes(x.workshopSlug),
+    (x) => !x.cancellation && x.stage === 0 && (x.declinedBy ?? []).includes(x.workshopSlug),
   );
   return (
     <section aria-labelledby="declined-requests">

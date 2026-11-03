@@ -7,8 +7,10 @@ import { publicCode } from '@mechdost/shared/ids';
 import {
   ORDER_CANCEL_REASONS,
   ORDER_REJECT_REASONS,
+  SERVICE_CANCEL_REASONS,
   type OrderCancelReason,
   type OrderRejectReason,
+  type ServiceCancelReason,
 } from '@mechdost/shared/state';
 import { useSyncExternalStore } from 'react';
 import { deliveryFeePaise, findProduct } from './catalogue';
@@ -124,6 +126,8 @@ export interface DemoServiceRequest {
   };
   /** The workshop declined: the request goes back to MechDost to find another workshop. */
   declinedBy?: string[];
+  /** The customer cancelled before the vehicle reached the workshop (spec 06), with a reason code. */
+  cancellation?: { reasonCode: ServiceCancelReason; at: string } | null;
 }
 
 export type PartnerKind = 'seller' | 'garage' | 'mechanic';
@@ -575,7 +579,9 @@ export function advanceRequest(code: string) {
   write(
     KEYS.requests,
     requestsSnapshot().map((r) =>
-      r.code === code ? { ...r, stage: Math.min(r.stage + 1, REQUEST_STAGES.length - 1) } : r,
+      r.code === code && !r.cancellation
+        ? { ...r, stage: Math.min(r.stage + 1, REQUEST_STAGES.length - 1) }
+        : r,
     ),
   );
 }
@@ -790,7 +796,8 @@ function updateRequest(code: string, change: (r: DemoServiceRequest) => DemoServ
   write(
     KEYS.requests,
     requestsSnapshot().map((r) => {
-      if (r.code !== code) return r;
+      // A cancelled request is closed: no proposal, decline, step or reassignment changes it again.
+      if (r.code !== code || r.cancellation) return r;
       const next = change(r);
       if (!next) return r;
       changed = true;
@@ -838,5 +845,18 @@ export function reassignRequest(code: string, workshop: { slug: string; name: st
     r.stage === 0 && (r.declinedBy ?? []).includes(r.workshopSlug)
       ? { ...r, workshopSlug: workshop.slug, workshopName: workshop.name }
       : null,
+  );
+}
+
+const STAGE_VEHICLE_RECEIVED = REQUEST_STAGES.indexOf('received');
+
+/** The customer may cancel a booking until the workshop has received the vehicle (spec 06). */
+export const requestCancellable = (r: DemoServiceRequest) =>
+  !r.cancellation && r.stage < STAGE_VEHICLE_RECEIVED;
+
+export function cancelDemoRequest(code: string, reasonCode: ServiceCancelReason): boolean {
+  if (!SERVICE_CANCEL_REASONS.includes(reasonCode)) return false;
+  return updateRequest(code, (r) =>
+    requestCancellable(r) ? { ...r, cancellation: { reasonCode, at: new Date().toISOString() } } : null,
   );
 }

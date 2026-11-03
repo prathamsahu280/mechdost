@@ -58,6 +58,7 @@ export const CLIENT_EVENT_SCHEMAS = {
   purchase: z.object({ code: id, valuePaise: z.number().int().min(0), demo: z.boolean() }).strict(),
   booking_started: z.object({ workshop: id }).strict(),
   booking_confirmed: z.object({ code: id, workshop: id, demo: z.boolean() }).strict(),
+  booking_cancelled: z.object({ code: id, workshop: id, reasonCode: id }).strict(),
   assistant_opened: z.object({ path }).strict(),
   assistant_message: z.object({ intent: id, length: z.number().int().min(0).max(5000) }).strict(),
   map_action: z
