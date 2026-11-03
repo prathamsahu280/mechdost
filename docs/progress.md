@@ -36,6 +36,8 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Completed log (newest first)
 
+- 2026-11-03 — **First CI run failed** (user report): web lint ran before `next typegen` had written the generated types (present locally from builds, absent on a clean checkout). Fixed by `lint` = `next typegen && eslint`; reproduced and verified in a fresh clone (12/12 tasks: shared 69, web 125, db 161, api 86); import-path case check for Linux: 0 mismatches.
+
 - 2026-11-03 — **Advisor improvement sweep**: security releases checked (Hono 4.13.16 security fixes — not exploitable with our routes, proven by new `apps/api/test/middleware-bypass.test.ts`; Next security release announced for 2026-11-04), `pnpm audit` (2 moderate transitive under firebase-admin, accepted), versions recorded in `docs/research/security-vulnerabilities.md` § Sweep 2026-11-03. Q67 queued (security-release exception to the 3-day wait).
 
 - 2026-11-03 — **CI + Dependabot**: `.github/workflows/ci.yml` (format, typecheck, lint, unit tests; SHA-pinned actions checked against the 3-day release age — `pnpm/action-setup` v6.1.1 was same-day, so v6.1.0) and `.github/dependabot.yml` (npm + actions, weekly, 3-day cooldown, minor/patch grouped).
