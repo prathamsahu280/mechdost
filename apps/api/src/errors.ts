@@ -3,7 +3,7 @@ import { HTTPException } from 'hono/http-exception';
 import { routePath } from 'hono/route';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import { ZodError } from 'zod';
-import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '@mechdost/db/repo';
+import { ConflictError, ForbiddenError, NotFoundError, pgCode, ValidationError } from '@mechdost/db/repo';
 import { log, safeError } from './logger';
 import type { AppEnv } from './types';
 
@@ -54,6 +54,11 @@ export function handleError(err: Error, c: Context<AppEnv>): Response {
     const code = err.status === 413 ? 'PAYLOAD_TOO_LARGE' : err.status === 504 ? 'TIMEOUT' : 'HTTP_ERROR';
     return c.json(errorBody(c, code, err.message || 'Request failed'), err.status);
   }
+  // Postgres outcomes no repository mapped (code review 2026-11-03): a lost race is a retryable conflict, not a 500.
+  const pg = pgCode(err);
+  if (pg === '40P01' || pg === '40001')
+    return c.json(errorBody(c, 'RETRY', 'Someone else changed this at the same moment; try again'), 409);
+  if (pg === '23505') return c.json(errorBody(c, 'UNIQUE_VIOLATION', 'This already exists'), 409);
   log('error', 'unhandled_error', {
     requestId: c.get('requestId'),
     path: routePath(c),

@@ -35,8 +35,20 @@ export type ServerEvent = keyof ServerEventProps;
  * Strings are short ids, slugs, paths or codes; the only user-typed text is the search query, scrubbed of
  * emails and phone-like numbers (`scrubFreeText`) in the browser and again here.
  */
-const id = z.string().min(1).max(80);
-const path = z.string().max(200).regex(/^\//);
+// Paths and ids are where personal data could slip in (code review 2026-11-03), so they are tight here, once:
+// a path keeps only the pathname (query string and fragment dropped, long digit runs masked); an id is a short
+// code or slug — no spaces, no free text, no phone-length digit runs.
+const LONG_DIGITS = /\p{Nd}{7,}/gu;
+export const ANALYTICS_PATH = z
+  .string()
+  .max(400)
+  .regex(/^\//)
+  .transform((p) => (p.split(/[?#]/u, 1)[0] ?? '').replace(LONG_DIGITS, '_').slice(0, 200));
+const id = z
+  .string()
+  .regex(/^[A-Za-z0-9][A-Za-z0-9_.:-]{0,79}$/)
+  .refine((v) => !/\d{7,}/u.test(v), 'looks like a phone number');
+const path = ANALYTICS_PATH;
 
 export const CLIENT_EVENT_SCHEMAS = {
   page_view: z.object({ path, locale: z.enum(['en', 'hi']) }).strict(),

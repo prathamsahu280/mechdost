@@ -154,8 +154,8 @@ describe('routing', () => {
     await db
       .update(s.orderAssignments)
       .set({ offeredAt: sql`now() - interval '20 minutes'`, expiresAt: sql`now() - interval '1 second'` });
-    expect(await expireDueAssignments(t())).toBe(1);
-    expect(await expireDueAssignments(t())).toBe(0); // twice is safe
+    expect(await expireDueAssignments(t())).toEqual({ expired: 1, failed: [] });
+    expect(await expireDueAssignments(t())).toEqual({ expired: 0, failed: [] }); // twice is safe
     const back = await getRoutingOrder(t(), raipur, code, 'en');
     expect(back.status).toBe('needs_rerouting');
     expect(back.history.map((h) => h.status)).toEqual(['expired']);
@@ -183,6 +183,39 @@ describe('routing', () => {
     expect(await db.$count(s.auditLog, sql`${s.auditLog.action} in ('order.routed', 'order.rerouted')`)).toBe(
       2,
     );
+  });
+
+  it('one drifted offer never stops the timer for the others (code review 2026-11-03)', async () => {
+    const route = async (key: string, shop: string) => {
+      const code = await place(key);
+      const { assignmentId } = await routeOrder(t(), {
+        scope: raipur,
+        code,
+        shopId: shopId[shop]!,
+        expectedVersion: await version(code),
+        staffUserId: staff,
+      });
+      return { code, assignmentId };
+    };
+    const good = await route('routing-key-000000010', 'Gupta Lubes & Spares');
+    const drifted = await route('routing-key-000000011', 'Sharma Auto Parts');
+    // Data drift: the order moved on while its offer stayed `offered` (e.g. a manual fix). It sorts first.
+    await db.update(s.orders).set({ status: 'needs_rerouting' }).where(eq(s.orders.code, drifted.code));
+    await db
+      .update(s.orderAssignments)
+      .set({ offeredAt: sql`now() - interval '30 minutes'`, expiresAt: sql`now() - interval '10 minutes'` })
+      .where(eq(s.orderAssignments.id, drifted.assignmentId));
+    await db
+      .update(s.orderAssignments)
+      .set({ offeredAt: sql`now() - interval '20 minutes'`, expiresAt: sql`now() - interval '1 second'` })
+      .where(eq(s.orderAssignments.id, good.assignmentId));
+
+    expect(await expireDueAssignments(t())).toEqual({ expired: 1, failed: [] });
+    const status = async (id: string) =>
+      (await db.select().from(s.orderAssignments).where(eq(s.orderAssignments.id, id)))[0]?.status;
+    expect(await status(good.assignmentId)).toBe('expired');
+    expect(await status(drifted.assignmentId)).toBe('withdrawn');
+    expect((await getRoutingOrder(t(), raipur, good.code, 'en')).status).toBe('needs_rerouting');
   });
 
   it('reject needs a reason code and a message, frees the stock, and only for unrouted orders', async () => {

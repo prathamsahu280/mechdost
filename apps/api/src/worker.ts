@@ -70,8 +70,10 @@ const expiryTimer = setInterval(() => {
   if (expiring) return;
   expiring = true;
   void expireDueAssignments(db)
-    .then((n) => {
-      if (n > 0) log('info', 'assignments_expired', { count: n });
+    .then(({ expired, failed }) => {
+      if (expired > 0) log('info', 'assignments_expired', { count: expired });
+      for (const f of failed)
+        log('error', 'assignment_expiry_failed', { assignmentId: f.assignmentId, ...safeError(f.error) });
     })
     .catch((err: unknown) => {
       log('error', 'assignment_expiry_failed', safeError(err));

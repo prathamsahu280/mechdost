@@ -169,7 +169,7 @@ interface ScopedOrder {
   pincode: string;
 }
 
-async function findOrder(db: Tx, scope: CityScope, code: string): Promise<ScopedOrder> {
+async function findOrder(db: Tx, scope: CityScope, code: string, lock = false): Promise<ScopedOrder> {
   const [o] = rowsOf<{
     id: string;
     code: string;
@@ -179,7 +179,7 @@ async function findOrder(db: Tx, scope: CityScope, code: string): Promise<Scoped
     pincode: string;
   }>(
     await db.execute(sql`select o.id, o.code, o.status, o.version, o.city_id, o.pincode from orders o
-      where o.code = ${code} and ${inScope(scope)}`),
+      where o.code = ${code} and ${inScope(scope)}${lock ? sql` for update of o` : sql``}`),
   );
   if (!o) throw new NotFoundError('Order not found');
   return {
@@ -384,7 +384,7 @@ export async function routeOrder(
   input: { scope: CityScope; code: string; shopId: string; expectedVersion: number; staffUserId: string },
 ) {
   return db.transaction(async (tx) => {
-    const o = await findOrder(tx, input.scope, input.code);
+    const o = await findOrder(tx, input.scope, input.code, true); // order row first (lockOrder)
     if (o.version !== input.expectedVersion)
       throw new ConflictError('This order changed meanwhile; reload', 'STALE_ORDER');
     if (o.status !== 'placed' && o.status !== 'needs_rerouting')
@@ -448,7 +448,7 @@ export async function rejectOrder(
   if (message.length < 10 || message.length > 500)
     throw new ValidationError('Write a message for the customer (10 to 500 characters)', 'REJECT_MESSAGE');
   return db.transaction(async (tx) => {
-    const o = await findOrder(tx, input.scope, input.code);
+    const o = await findOrder(tx, input.scope, input.code, true); // order row first (lockOrder)
     if (o.status !== 'placed' && o.status !== 'needs_rerouting')
       throw new ConflictError(`Order is ${o.status}; only unrouted orders can be rejected`, 'NOT_REJECTABLE');
     const row = await transitionOrder(tx, {
@@ -485,17 +485,27 @@ export async function rejectOrder(
 
 /**
  * Timer job (worker, every 30 s): expire offers past their DB-clock deadline, one transaction each, so a
- * failure on one never blocks the rest. Concurrent workers are safe (`expireAssignment` is a CAS).
+ * failure on one never blocks the rest (code review 2026-11-03: one bad row used to stop every timer, because
+ * it sorts first on every run). Failures are returned for the worker to log. Concurrent workers are safe
+ * (`expireAssignment` is a CAS).
  */
-export async function expireDueAssignments(db: Tx, limit = 50): Promise<number> {
+export async function expireDueAssignments(
+  db: Tx,
+  limit = 50,
+): Promise<{ expired: number; failed: { assignmentId: string; error: unknown }[] }> {
   const due = rowsOf<{ id: string }>(
     await db.execute(sql`select id from order_assignments where status = 'offered' and expires_at <= now()
       order by expires_at limit ${limit}`),
   );
   let expired = 0;
+  const failed: { assignmentId: string; error: unknown }[] = [];
   for (const a of due) {
-    const done = await db.transaction((tx) => expireAssignment(tx, { assignmentId: a.id }));
-    if (done) expired += 1;
+    try {
+      const done = await db.transaction((tx) => expireAssignment(tx, { assignmentId: a.id }));
+      if (done) expired += 1;
+    } catch (error) {
+      failed.push({ assignmentId: a.id, error });
+    }
   }
-  return expired;
+  return { expired, failed };
 }

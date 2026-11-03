@@ -111,6 +111,8 @@ export const orders = pgTable(
     subtotalPaise: paise().notNull(),
     discountPaise: paise().notNull().default(0),
     shippingPaise: paise().notNull().default(0),
+    /** Cash-on-delivery fee, carried by the first sub-order so the shop delivering it collects it (review 2026-11-03). */
+    codFeePaise: paise().notNull().default(0),
     taxPaise: paise().notNull().default(0),
     totalPaise: paise().notNull(),
     cancellableUntilStatus: text().notNull().default('confirmed'),
@@ -139,7 +141,12 @@ export const orders = pgTable(
     check('orders_cancelled_explained', sql`${t.status} <> 'cancelled' or ${t.statusReasonCode} is not null`),
     check(
       'orders_amounts_nonneg',
-      sql`${t.subtotalPaise} >= 0 and ${t.totalPaise} >= 0 and ${t.taxPaise} >= 0`,
+      sql`${t.subtotalPaise} >= 0 and ${t.totalPaise} >= 0 and ${t.taxPaise} >= 0 and ${t.codFeePaise} >= 0`,
+    ),
+    // What the delivering shop collects is exactly the sum of its parts (the group total = sum of sub-orders).
+    check(
+      'orders_total_matches',
+      sql`${t.totalPaise} = ${t.subtotalPaise} - ${t.discountPaise} + ${t.shippingPaise} + ${t.codFeePaise}`,
     ),
     check(
       'orders_shop_when_confirmed',

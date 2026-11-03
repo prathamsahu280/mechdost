@@ -3,12 +3,16 @@ import { assignmentMachine } from '@mechdost/shared/state';
 import { orderAssignments, orders } from '../schema';
 import type { ActorContext } from './actor';
 import { ConflictError, mapPgError, NotFoundError, ValidationError } from './errors';
-import { transitionOrder, type Tx } from './orders';
+import { lockOrder, transitionOrder, type Tx } from './orders';
 
-async function currentOrderVersion(tx: Tx, orderId: string): Promise<number> {
-  const [order] = await tx.select({ version: orders.version }).from(orders).where(eq(orders.id, orderId));
-  if (!order) throw new NotFoundError('Order not found');
-  return order.version;
+/** The order behind an assignment, locked first (lock order: order row, then assignment — see `lockOrder`). */
+async function lockOrderOf(tx: Tx, assignmentId: string) {
+  const [a] = await tx
+    .select({ orderId: orderAssignments.orderId })
+    .from(orderAssignments)
+    .where(eq(orderAssignments.id, assignmentId));
+  if (!a) return null;
+  return { orderId: a.orderId, ...(await lockOrder(tx, a.orderId)) };
 }
 
 /**
@@ -73,6 +77,9 @@ export async function acceptAssignment(
   args: { assignmentId: string; shopId: string; actor: ActorContext },
 ) {
   assignmentMachine.assert('offered', 'accepted', args.actor.type);
+  const order = await lockOrderOf(tx, args.assignmentId);
+  if (!order)
+    throw new ConflictError('This order is no longer available to accept', 'ASSIGNMENT_UNAVAILABLE');
   const [a] = await tx
     .update(orderAssignments)
     .set({ status: 'accepted', respondedAt: sql`now()` })
@@ -90,7 +97,7 @@ export async function acceptAssignment(
     orderId: a.orderId,
     from: 'awaiting_shop',
     to: 'confirmed',
-    expectedVersion: await currentOrderVersion(tx, a.orderId),
+    expectedVersion: order.version,
     actor: args.actor,
     patch: { shopId: args.shopId, confirmedAt: new Date() },
   });
@@ -103,6 +110,9 @@ export async function declineAssignment(
 ) {
   assignmentMachine.assert('offered', 'declined', args.actor.type);
   if (args.reason.trim().length < 3) throw new ValidationError('A decline reason is required');
+  const order = await lockOrderOf(tx, args.assignmentId);
+  if (!order)
+    throw new ConflictError('This order is no longer awaiting your response', 'ASSIGNMENT_UNAVAILABLE');
   const [a] = await tx
     .update(orderAssignments)
     .set({ status: 'declined', respondedAt: sql`now()`, declineReason: args.reason.trim() })
@@ -119,16 +129,26 @@ export async function declineAssignment(
     orderId: a.orderId,
     from: 'awaiting_shop',
     to: 'needs_rerouting',
-    expectedVersion: await currentOrderVersion(tx, a.orderId),
+    expectedVersion: order.version,
     actor: args.actor,
   });
 }
 
 /**
  * Timer job (pg-boss, at-least-once): expire only if still offered AND past expiry by the DB clock.
- * Returns null when there is nothing to do (already accepted/declined/expired) — safe to run twice.
+ * Returns null when there is nothing to do (already accepted/declined/expired) — safe to run twice. An offer
+ * whose order is no longer awaiting a shop (drift) is withdrawn instead of failing the job on every run.
  */
 export async function expireAssignment(tx: Tx, args: { assignmentId: string }) {
+  const order = await lockOrderOf(tx, args.assignmentId);
+  if (!order) return null;
+  if (order.status !== 'awaiting_shop') {
+    await tx
+      .update(orderAssignments)
+      .set({ status: 'withdrawn', respondedAt: sql`now()` })
+      .where(and(eq(orderAssignments.id, args.assignmentId), eq(orderAssignments.status, 'offered')));
+    return null;
+  }
   const [a] = await tx
     .update(orderAssignments)
     .set({ status: 'expired', respondedAt: sql`now()` })
@@ -145,7 +165,7 @@ export async function expireAssignment(tx: Tx, args: { assignmentId: string }) {
     orderId: a.orderId,
     from: 'awaiting_shop',
     to: 'needs_rerouting',
-    expectedVersion: await currentOrderVersion(tx, a.orderId),
+    expectedVersion: order.version,
     actor: { type: 'system' },
   });
 }

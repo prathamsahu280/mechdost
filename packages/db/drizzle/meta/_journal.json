@@ -218,6 +218,20 @@
       "when": 1793633187063,
       "tag": "0030_events",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1793633247063,
+      "tag": "0031_version_triggers",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1793723791433,
+      "tag": "0032_remarkable_mentallo",
+      "breakpoints": true
     }
   ]
 }

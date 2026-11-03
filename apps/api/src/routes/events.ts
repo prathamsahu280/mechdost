@@ -1,6 +1,6 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { recordClientEvents, type ClientEventRow } from '@mechdost/db/repo';
-import { CLIENT_EVENT_SCHEMAS } from '@mechdost/shared/analytics';
+import { ANALYTICS_PATH, CLIENT_EVENT_SCHEMAS } from '@mechdost/shared/analytics';
 import { enforceRate, rateLimit } from '../middleware/rate-limit';
 import type { RateRule } from '../rate-limit/limiter';
 import type { AppDeps, AppEnv } from '../types';
@@ -38,7 +38,7 @@ const Batch = z
           .object({
             event: z.string().max(64),
             occurredAt: z.iso.datetime({ offset: true }),
-            page: z.string().max(200).regex(/^\//).nullable().optional(),
+            page: ANALYTICS_PATH.nullable().optional(), // pathname only (no query or fragment)
             props: z.record(z.string(), z.unknown()),
           })
           .strict(),

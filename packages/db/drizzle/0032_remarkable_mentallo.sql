@@ -1,0 +1,4 @@
+ALTER TABLE "orders" DROP CONSTRAINT "orders_amounts_nonneg";--> statement-breakpoint
+ALTER TABLE "orders" ADD COLUMN "cod_fee_paise" bigint DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE "orders" ADD CONSTRAINT "orders_total_matches" CHECK ("orders"."total_paise" = "orders"."subtotal_paise" - "orders"."discount_paise" + "orders"."shipping_paise" + "orders"."cod_fee_paise");--> statement-breakpoint
+ALTER TABLE "orders" ADD CONSTRAINT "orders_amounts_nonneg" CHECK ("orders"."subtotal_paise" >= 0 and "orders"."total_paise" >= 0 and "orders"."tax_paise" >= 0 and "orders"."cod_fee_paise" >= 0);

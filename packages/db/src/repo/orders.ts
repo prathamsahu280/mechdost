@@ -3,7 +3,7 @@ import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
 import { orderMachine, type OrderStatus } from '@mechdost/shared/state';
 import { orders } from '../schema';
 import { setActor, type ActorContext } from './actor';
-import { ConflictError } from './errors';
+import { ConflictError, NotFoundError } from './errors';
 import { queueOrderWhatsApp, type OrderWhatsAppEvent } from './order-notifications';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -25,6 +25,22 @@ type OrderPatch = Partial<
  * Customer WhatsApp updates for milestones are queued in the same transaction (spec 10): a rolled-back change
  * never sends. Out for delivery is queued by `issueDeliveryCode`, which holds the code.
  */
+/**
+ * Lock order (docs/specs/14-data-integrity.md "Lock order"): every transaction that changes an order and its
+ * assignments, reservations or stock locks the **order row first**, then the rest. Cancel, reject, route,
+ * accept, decline, expiry and the shop steps all follow it, so two of them can never wait on each other in a
+ * cycle (deadlock → 500). Returns the locked status and version.
+ */
+export async function lockOrder(tx: Tx, orderId: string): Promise<{ status: OrderStatus; version: number }> {
+  const [o] = await tx
+    .select({ status: orders.status, version: orders.version })
+    .from(orders)
+    .where(eq(orders.id, orderId))
+    .for('update');
+  if (!o) throw new NotFoundError('Order not found');
+  return { status: o.status as OrderStatus, version: o.version };
+}
+
 const WHATSAPP_ON: Partial<Record<OrderStatus, OrderWhatsAppEvent>> = {
   confirmed: 'order.confirmed',
   rejected: 'order.rejected',

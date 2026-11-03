@@ -436,8 +436,11 @@ export async function placeCodOrder(
           pincode: input.address.pincode,
           subtotalPaise: g.subtotalPaise,
           shippingPaise: g.shippingPaise,
+          // The COD fee rides on the first sub-order, so sub-order totals add up to the group total and
+          // someone collects it (code review 2026-11-03).
+          codFeePaise: index === 0 ? quote.codFeePaise : 0,
           taxPaise: g.taxPaise,
-          totalPaise: g.totalPaise,
+          totalPaise: g.totalPaise + (index === 0 ? quote.codFeePaise : 0),
         })
         .returning({ id: orders.id });
       if (!order) throw new Error('order insert returned no row');
@@ -468,7 +471,7 @@ export async function placeCodOrder(
         if (!reservation)
           throw new ConflictError('A product just sold out; please review your cart', 'OUT_OF_STOCK');
       }
-      placed.push({ code, totalPaise: g.totalPaise });
+      placed.push({ code, totalPaise: g.totalPaise + (index === 0 ? quote.codFeePaise : 0) });
     }
     await recordServerEvent(tx, 'purchase', {
       userId: input.userId,

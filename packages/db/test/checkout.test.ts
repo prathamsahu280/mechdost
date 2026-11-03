@@ -222,3 +222,39 @@ describe('placing a COD order', () => {
     expect(await db.$count(s.orderGroups)).toBe(before);
   });
 });
+
+describe('COD fee (code review 2026-11-03)', () => {
+  it('rides on the first sub-order, so the sub-orders add up to what the customer confirmed', async () => {
+    await db.insert(s.settings).values({ key: 'checkout.cod_fee_paise', value: 2000 });
+    try {
+      // The oil's stock is used up by the tests above; these two still come from different shops.
+      const lines = [
+        { sku: sku('exide-xltz4a-2w-battery'), qty: 1 },
+        { sku: sku('scooter-tubeless-tyre-90-90-12'), qty: 1 },
+      ];
+      const q = await quoteCheckout(t(), { pincode: '492004', lines, locale: 'en' });
+      expect(q.ok).toBe(true);
+      expect(q.codFeePaise).toBe(2000);
+      const placed = await placeCodOrder(t(), {
+        userId,
+        idempotencyKey: key(90),
+        address: address(),
+        lines,
+        expectedTotalPaise: q.totalPaise,
+        note: null,
+        locale: 'en',
+      });
+      const [group] = await db.select().from(s.orderGroups).where(eq(s.orderGroups.code, placed.code));
+      const subs = await db
+        .select()
+        .from(s.orders)
+        .where(eq(s.orders.groupId, group!.id))
+        .orderBy(s.orders.subNo);
+      expect(subs.map((o) => o.codFeePaise)).toEqual([2000, ...subs.slice(1).map(() => 0)]);
+      expect(subs.reduce((a, o) => a + o.totalPaise, 0)).toBe(group!.totalPaise);
+      expect(placed.orders.reduce((a, o) => a + o.totalPaise, 0)).toBe(placed.totalPaise);
+    } finally {
+      await db.delete(s.settings).where(eq(s.settings.key, 'checkout.cod_fee_paise'));
+    }
+  });
+});

@@ -13,7 +13,9 @@ Status: decided · Phase 1 · Research: `../research/data-integrity.md` (mandato
 7. **Tenancy**: actor-scoped repositories, 404 for foreign ids, RLS mirror, keyset pagination, soft-delete filters by helper.
 8. **Outbox** for notifications/jobs inside the business transaction.
 9. **Audit**: append-only `*_events` with triggers; snapshots of price/address/title on orders.
-10. **Schema hygiene**: FKs with explicit rules, CHECKs, citext email, E.164 phone, timestamptz, created_by/updated_by, expand/contract migrations with `lock_timeout`, `CREATE INDEX CONCURRENTLY`, PITR enabled before launch, quarterly restore drill.
+10. **Lock order (2026-11-03, code review):** a transaction that changes an order and its assignments, reservations or stock locks the **order row first** (`lockOrder` in `packages/db/src/repo/orders.ts`, `findOrder(…, lock)` in routing), then the rest. Cancel, reject, route, accept, decline, timer expiry and the shop steps all follow it, so they never deadlock each other. Unmapped Postgres outcomes still reach the API as 409 (`40P01`/`40001` → `RETRY`, `23505` → `UNIQUE_VIOLATION`), never 500. Timer jobs run one transaction per row and keep going past a failing row (`expireDueAssignments` returns the failures for the worker log); an offer whose order already moved on is withdrawn. Real-Postgres concurrency tests for cancel vs accept and cancel vs expiry wait for Supabase local (PGlite is single-connection).
+11. **Version and updated_at triggers on every table** that has those columns (0002 installed them once; 0031 re-runs the loop for later tables); `packages/db/test/schema-invariants.test.ts` fails if a new table misses them.
+12. **Schema hygiene**: FKs with explicit rules, CHECKs, citext email, E.164 phone, timestamptz, created_by/updated_by, expand/contract migrations with `lock_timeout`, `CREATE INDEX CONCURRENTLY`, PITR enabled before launch, quarterly restore drill.
 
 ## Tests (owned by the `website-testing` skill)
 

@@ -85,6 +85,27 @@ describe('POST /v1/events', () => {
     ).toBe(400);
   });
 
+  it('stores only the pathname of a page, never its query string', async () => {
+    const ctx = await buildApp();
+    const anonymousId = randomUUID();
+    const res = await post(ctx, {
+      source: 'web',
+      anonymousId,
+      consent: { analytics: true, version: '2026-11' },
+      events: [
+        {
+          event: 'click',
+          occurredAt: new Date().toISOString(),
+          page: '/track?phone=9876543210',
+          props: { id: 'track_open', path: '/track?email=a@b.in' },
+        },
+      ],
+    });
+    expect(await res.json()).toEqual({ stored: 1, rejected: 0 });
+    const [row] = (await ctx.db.select().from(events)).filter((r) => r.anonymousId === anonymousId);
+    expect(row).toMatchObject({ page: '/track', props: { id: 'track_open', path: '/track' } });
+  });
+
   it('limits events per IP by batch size: full batches run out before single pings would', async () => {
     const ctx = await buildApp({ rateLimiter: new MemoryRateLimiter(() => 1_000_000) });
     const one = {

@@ -21,6 +21,19 @@ describe('client event registry', () => {
     ).toBe(false);
   });
 
+  it('paths keep only the pathname and ids are short codes (no personal data, hard rule 16)', () => {
+    const view = CLIENT_EVENT_SCHEMAS.page_view;
+    expect(view.parse({ path: '/track?phone=9876543210&email=a@b.in#x', locale: 'en' }).path).toBe('/track');
+    expect(view.parse({ path: '/account/9876543210', locale: 'en' }).path).toBe('/account/_');
+    expect(view.safeParse({ path: 'https://evil.example/', locale: 'en' }).success).toBe(false);
+    const click = CLIENT_EVENT_SCHEMAS.click;
+    expect(click.safeParse({ id: 'shop_order_declined', path: '/partner/shop' }).success).toBe(true);
+    expect(click.safeParse({ id: 'MD-RPR-2026-ABC123', path: '/' }).success).toBe(true);
+    expect(click.safeParse({ id: 'call me on 98765 43210', path: '/' }).success).toBe(false);
+    expect(click.safeParse({ id: '9876543210', path: '/' }).success).toBe(false);
+    expect(click.safeParse({ id: 'ravi@example.com', path: '/' }).success).toBe(false);
+  });
+
   it('client actions never reuse the name of the server outcome they lead to', () => {
     const outcomes: ServerEvent[] = ['order_cancelled', 'order_delivered', 'seller_order_declined'];
     for (const name of outcomes) expect(Object.keys(CLIENT_EVENT_SCHEMAS)).not.toContain(name);
