@@ -5,6 +5,8 @@
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { events } from '@mechdost/db/repo';
+import { EVENTS_PER_BATCH, EVENTS_RATE, EVENTS_ROWS_RATE } from '../src/routes/events';
+import { MemoryRateLimiter } from '../src/rate-limit/limiter';
 import { buildApp } from './helpers';
 
 const post = async (ctx: Awaited<ReturnType<typeof buildApp>>, body: unknown) =>
@@ -81,5 +83,32 @@ describe('POST /v1/events', () => {
         })
       ).status,
     ).toBe(400);
+  });
+
+  it('limits events per IP by batch size: full batches run out before single pings would', async () => {
+    const ctx = await buildApp({ rateLimiter: new MemoryRateLimiter(() => 1_000_000) });
+    const one = {
+      event: 'page_view',
+      occurredAt: new Date().toISOString(),
+      props: { path: '/', locale: 'en' },
+    };
+    const batch = (n: number) => ({
+      source: 'web',
+      anonymousId: randomUUID(),
+      consent: { analytics: true, version: '2026-11' },
+      events: Array.from({ length: n }, () => one),
+    });
+    const fullBatches = EVENTS_ROWS_RATE.limit / EVENTS_PER_BATCH; // 24 × 25 = 600 events
+    for (let i = 0; i < fullBatches; i += 1)
+      expect((await post(ctx, batch(EVENTS_PER_BATCH))).status).toBe(202);
+    const refused = await post(ctx, batch(1));
+    expect(refused.status).toBe(429);
+    expect(Number(refused.headers.get('Retry-After'))).toBeGreaterThan(0);
+    // 24 requests is well under the request cap: it was the event budget that refused.
+    expect(fullBatches).toBeLessThan(EVENTS_RATE.limit);
+
+    // Single-event pings cost one each: the same number of requests stays within budget.
+    const pings = await buildApp({ rateLimiter: new MemoryRateLimiter(() => 1_000_000) });
+    for (let i = 0; i <= fullBatches; i += 1) expect((await post(pings, batch(1))).status).toBe(202);
   });
 });

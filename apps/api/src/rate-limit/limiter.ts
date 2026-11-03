@@ -18,7 +18,8 @@ export interface RateResult {
 }
 
 export interface RateLimiter {
-  hit(rule: RateRule, key: string): Promise<RateResult>;
+  /** Count `weight` units (default 1) against `rule` for `key`, e.g. the number of events in a batch. */
+  hit(rule: RateRule, key: string, weight?: number): Promise<RateResult>;
 }
 
 /** Fixed-window counter in process memory. Bounded: expired windows are swept as keys are touched. */
@@ -30,7 +31,7 @@ export class MemoryRateLimiter implements RateLimiter {
     private readonly maxKeys = 50_000,
   ) {}
 
-  hit(rule: RateRule, key: string): Promise<RateResult> {
+  hit(rule: RateRule, key: string, weight = 1): Promise<RateResult> {
     const id = `${rule.name}:${key}`;
     const t = this.now();
     let w = this.windows.get(id);
@@ -39,7 +40,7 @@ export class MemoryRateLimiter implements RateLimiter {
       w = { count: 0, resetAt: t + rule.windowSeconds * 1000 };
       this.windows.set(id, w);
     }
-    w.count += 1;
+    w.count += Math.max(1, Math.floor(weight));
     return Promise.resolve({
       allowed: w.count <= rule.limit,
       limit: rule.limit,

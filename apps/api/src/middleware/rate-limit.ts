@@ -16,15 +16,31 @@ export const RATE_RULES = {
  */
 export function rateLimit(limiter: RateLimiter, rule: RateRule, key: (c: Context<AppEnv>) => string) {
   return createMiddleware<AppEnv>(async (c, next) => {
-    const r = await limiter.hit(rule, key(c));
-    const resetSeconds = Math.max(0, Math.ceil((r.resetAt - Date.now()) / 1000));
+    await enforceRate(c, limiter, rule, key(c));
+    await next();
+  });
+}
+
+/**
+ * Count `weight` units against `rule` inside a handler (weighted limits, e.g. events per batch). RateLimit-*
+ * headers describe the request rule set by the middleware, so a weighted rule only adds Retry-After when it refuses.
+ */
+export async function enforceRate(
+  c: Context<AppEnv>,
+  limiter: RateLimiter,
+  rule: RateRule,
+  key: string,
+  weight?: number,
+) {
+  const r = await limiter.hit(rule, key, weight);
+  const resetSeconds = Math.max(0, Math.ceil((r.resetAt - Date.now()) / 1000));
+  if (weight === undefined) {
     c.header('RateLimit-Limit', String(r.limit));
     c.header('RateLimit-Remaining', String(r.remaining));
     c.header('RateLimit-Reset', String(resetSeconds));
-    if (!r.allowed) {
-      c.header('Retry-After', String(Math.max(1, resetSeconds)));
-      throw new ApiError(429, 'RATE_LIMITED', 'Too many requests — please wait a moment and try again');
-    }
-    await next();
-  });
+  }
+  if (!r.allowed) {
+    c.header('Retry-After', String(Math.max(1, resetSeconds)));
+    throw new ApiError(429, 'RATE_LIMITED', 'Too many requests — please wait a moment and try again');
+  }
 }

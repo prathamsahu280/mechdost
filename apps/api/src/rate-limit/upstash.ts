@@ -30,8 +30,9 @@ export class UpstashRateLimiter implements RateLimiter {
     return rl;
   }
 
-  async hit(rule: RateRule, key: string): Promise<RateResult> {
-    const r = await this.limiterFor(rule).limit(key);
+  async hit(rule: RateRule, key: string, weight = 1): Promise<RateResult> {
+    const rate = Math.max(1, Math.floor(weight));
+    const r = await this.limiterFor(rule).limit(key, rate === 1 ? undefined : { rate });
     return { allowed: r.success, limit: r.limit, remaining: r.remaining, resetAt: r.reset };
   }
 }

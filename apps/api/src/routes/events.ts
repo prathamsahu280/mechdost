@@ -1,7 +1,7 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { recordClientEvents, type ClientEventRow } from '@mechdost/db/repo';
 import { CLIENT_EVENT_SCHEMAS } from '@mechdost/shared/analytics';
-import { rateLimit } from '../middleware/rate-limit';
+import { enforceRate, rateLimit } from '../middleware/rate-limit';
 import type { RateRule } from '../rate-limit/limiter';
 import type { AppDeps, AppEnv } from '../types';
 import { validationHook } from '../validation';
@@ -13,9 +13,11 @@ import { errorResponses } from './schemas';
  * props are dropped and counted, never stored. Consent (DPDP): without analytics consent nothing is stored.
  * Client clocks are untrusted: `occurredAt` must be within the last 24 h (else it becomes the receive time).
  */
-// Storage-abuse cap (advisor review 2026-11-03): 30 batches × 25 events ≈ 750 rows per minute per IP at most;
-// the web sends ≤ 20 events every 5 s. A per-event (weighted) limiter is a later improvement.
-export const EVENTS_RATE: RateRule = { name: 'events_ip', limit: 30, windowSeconds: 60 };
+// Storage-abuse caps (advisor review 2026-11-03): requests per IP, and events per IP weighted by batch size, so
+// a one-event ping costs 1 and a full batch 25. At most 600 rows per minute per IP (was 30 × 25 = 750); the web
+// sends ≤ 20 events every 5 s (≤ 240 per minute), leaving room for a few people behind one carrier IP.
+export const EVENTS_RATE: RateRule = { name: 'events_ip', limit: 60, windowSeconds: 60 };
+export const EVENTS_ROWS_RATE: RateRule = { name: 'events_rows_ip', limit: 600, windowSeconds: 60 };
 export const EVENTS_PER_BATCH = 25;
 const MAX_AGE_MS = 24 * 3_600_000;
 const MAX_SKEW_MS = 5 * 60_000;
@@ -80,6 +82,7 @@ export function eventRoutes(deps: AppDeps) {
   return app.openapi(ingest, async (c) => {
     const batch = c.req.valid('json');
     if (!batch.consent.analytics) return c.json({ stored: 0, rejected: 0 }, 202);
+    await enforceRate(c, deps.rateLimiter, EVENTS_ROWS_RATE, c.get('clientIp'), batch.events.length);
     const now = Date.now();
     const rows: ClientEventRow[] = [];
     let rejected = 0;
