@@ -1,8 +1,8 @@
 import { getTranslations } from 'next-intl/server';
-import { getPathname } from '@/i18n/navigation';
 import type { Locale } from '@/i18n/routing';
 import { site, whatsappLink } from '@/lib/site';
 import type { AssistantCopy } from './copy';
+import { localePath } from '@/lib/locale-path';
 
 /** Builds the assistant's translated copy and localised links on the server (no i18n runtime in the browser). */
 export async function assistantCopy(locale: Locale): Promise<AssistantCopy> {
@@ -10,7 +10,7 @@ export async function assistantCopy(locale: Locale): Promise<AssistantCopy> {
     getTranslations({ locale, namespace: 'assistant' }),
     getTranslations({ locale, namespace: 'whatsapp' }),
   ]);
-  const path = (href: string) => getPathname({ href, locale });
+  const path = (href: string) => localePath(href, locale);
   const phone = site.supportPhone;
   return {
     launcher: t('launcher'),

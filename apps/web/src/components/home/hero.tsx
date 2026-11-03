@@ -1,11 +1,11 @@
 import { Search } from 'lucide-react';
 import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
-import { getPathname } from '@/i18n/navigation';
 import heroImage from '../../../public/images/automotive-hero.jpg';
 import insetImage from '../../../public/images/motorcycle.jpg';
 import { SiteText } from '../site/site-overrides';
 import { ButtonLink } from '../ui/button-link';
+import { localePath } from '@/lib/locale-path';
 
 /**
  * Concept hero (docs/concept/customer-site.md §3.1): navy panel, copy + search on the left, workshop photo with
@@ -15,7 +15,7 @@ import { ButtonLink } from '../ui/button-link';
 export function Hero({ city }: { city: string }) {
   const t = useTranslations('home.hero');
   const locale = useLocale();
-  const shopPath = getPathname({ href: '/shop', locale });
+  const shopPath = localePath('/shop', locale);
 
   return (
     <section aria-labelledby="hero-title" className="px-[3%] pt-5 tab:pt-6">

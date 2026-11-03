@@ -5,9 +5,9 @@ import { ShopBrowser } from '@/components/catalogue/shop-browser';
 import { ClientMessages } from '@/components/ui/client-messages';
 import { Container, PageIntro } from '@/components/ui/page-intro';
 import { categoryFromSlug, DEMO_PRODUCTS, type SortKey } from '@/demo/catalogue';
-import { getPathname } from '@/i18n/navigation';
 import type { Locale } from '@/i18n/routing';
 import { alternatesFor } from '@/lib/seo';
+import { localePath } from '@/lib/locale-path';
 
 type Search = Promise<{ q?: string | string[]; category?: string | string[]; sort?: string | string[] }>;
 
@@ -55,7 +55,7 @@ export default async function ShopPage({ searchParams }: Props) {
       <PageIntro eyebrow={t('eyebrow')} line1={t('titleLine1')} line2={t('titleLine2')} lead={t('lead')} />
       <ClientMessages namespaces={['catalogue', 'categories', 'product', 'pages']}>
         <ShopBrowser
-          basePath={getPathname({ href: '/shop', locale })}
+          basePath={localePath('/shop', locale)}
           initial={initial}
           cards={cards}
           sourcingMessage={wa('sourcing')}

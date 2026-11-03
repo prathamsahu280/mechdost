@@ -1,7 +1,7 @@
 import NextLink from 'next/link';
 import { useLocale } from 'next-intl';
 import type { ComponentProps } from 'react';
-import { getPathname } from '@/i18n/navigation';
+import { localePath } from '@/lib/locale-path';
 
 type Props = Omit<ComponentProps<typeof NextLink>, 'href'> & {
   /** Unprefixed app path, e.g. `/shop`. */
@@ -15,7 +15,7 @@ type Props = Omit<ComponentProps<typeof NextLink>, 'href'> & {
  */
 export function LocalLink({ href, query, ...props }: Props) {
   const locale = useLocale();
-  const path = getPathname({ href, locale });
+  const path = localePath(href, locale);
   const search = query ? `?${new URLSearchParams(query).toString()}` : '';
   return <NextLink href={`${path}${search}`} {...props} />;
 }

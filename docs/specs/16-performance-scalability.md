@@ -10,6 +10,14 @@ LCP < 2.0 s (mid-range Android, 4G), INP < 200 ms, CLS < 0.05, TTFB < 800 ms (In
 
 Static shell + streaming (Partial Prerendering); ISR for product/workshop/content pages with on-demand revalidation; Server Components by default; dynamic import for MapLibre, Recharts, QR scanner; `next/image` with AVIF/WebP, exact `sizes`, LQIP/blurhash, `priority` only hero; self-hosted fonts via `next/font`; route-level code splitting; no barrel imports; React best-practices skill rules (no waterfalls, `Promise.all`, Suspense boundaries); PWA service worker (Serwist) caching shell + last catalogue; prefetch on viewport for product cards; bundle analyzer budget in CI; Vercel Speed Insights + web_vitals events.
 
+### Client JS: how it is measured and what keeps it down (2026-11-03)
+
+- **Measure:** `next build && next start --port 3100`, then `node apps/web/scripts/measure-js.mjs` — loads each key page in headless Chromium and sums the compressed size of the scripts the page's HTML names (its own JS). Scripts fetched later (route prefetch for links in view, lazy islands such as the map or the assistant panel) are reported separately and do not count. Exits 1 when a page is over 180 KB gz. For module-level detail: `next experimental-analyze --output` (`.next/diagnostics/analyze/data`).
+- **Measured 2026-11-03** (page's own JS, gz): `/` 163.7 KB, `/shop` 172.4, product page 172.4, `/workshops` 178.9, `/cart` 172.9 (framework ≈ 123 KB of each). Before: 178.2 / 175.1 / 174.6 / 181.6 / 175.6.
+- **Never import next-intl's navigation** (`next-intl/navigation`, `createNavigation`) — not even in a Server Component: Turbopack puts every client boundary a server module can reach into that layout's client chunks, so its client `Link` and the whole ICU formatter (≈ 12 KB gz) shipped on every page although only `getPathname` was called. Use `localePath()` (`apps/web/src/lib/locale-path.ts`) or `<LocalLink>`; ESLint `no-restricted-imports` enforces it.
+- **Header islands read light modules:** the account link reads `demo/session-state.ts` (who is signed in), not `demo/session.ts` (password hashing, sign-in), which stays on the sign-in and account pages.
+- Pages whose islands format messages on the client (`ClientMessages`: cart, checkout, finder, booking, reviews) pay for the formatter; others must not.
+
 ## Smoothness (user requirement: transitions, scrolls, navigation must feel really smooth)
 
 - **Navigation**: Next.js `<Link>` prefetch on viewport/hover; View Transitions API (`experimental.viewTransition`) for route changes with shared-element transitions for product card → product page and workshop card → profile; instant back/forward via Router Cache; scroll restoration on back; sticky header with no jank (transform-based hide/show).

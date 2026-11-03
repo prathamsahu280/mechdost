@@ -1,6 +1,5 @@
 import { useLocale, useTranslations } from 'next-intl';
 import { LocalLink } from '../ui/local-link';
-import { getPathname } from '@/i18n/navigation';
 import { UI_EMOJI } from '@/lib/emoji';
 import { AccountLink } from '../auth/account-link';
 import { CartPill } from '../commerce/cart-pill';
@@ -8,6 +7,7 @@ import { LanguageSwitcher } from './language-switcher';
 import { ThemeToggle } from './theme-toggle';
 import { NavLinks, type NavItem } from './nav-links';
 import { SiteText } from './site-overrides';
+import { localePath } from '@/lib/locale-path';
 
 /** Concept brand lock-up: orange "m↗" mark, MechDost wordmark, tracked tagline. */
 export function BrandMark() {
@@ -77,7 +77,7 @@ export function Header({ navItems }: { navItems: readonly NavItem[] }) {
           </span>
           <AccountLink prefix={locale === 'hi' ? '/hi' : ''} signIn={auth('signIn')} account={t('account')} />
           <CartPill
-            href={getPathname({ href: '/cart', locale })}
+            href={localePath('/cart', locale)}
             label={t('cart')}
             countText={{ zero: t('cartCountZero'), one: t('cartCountOne'), other: t('cartCountOther') }}
           />

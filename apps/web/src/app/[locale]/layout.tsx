@@ -11,13 +11,13 @@ import { ConsentBanner } from '@/components/site/consent-banner';
 import { Footer } from '@/components/site/footer';
 import { AnnouncementBar, Header } from '@/components/site/header';
 import { MobileTabBar } from '@/components/site/mobile-tab-bar';
-import { getPathname } from '@/i18n/navigation';
 import { routing } from '@/i18n/routing';
 import { PRIMARY_NAV } from '@/lib/nav';
 import { site } from '@/lib/site';
 import { SITE_LAYOUT_SCRIPT } from '@/lib/site-layout';
 import { THEME_INIT_SCRIPT } from '@/lib/theme';
 import './globals.css';
+import { localePath } from '@/lib/locale-path';
 
 const manrope = Manrope({ subsets: ['latin'], weight: ['600', '700', '800'], variable: '--font-manrope' });
 const dmSans = DM_Sans({ subsets: ['latin'], weight: ['400', '500', '700'], variable: '--font-dm-sans' });
@@ -75,7 +75,7 @@ export default async function LocaleLayout({
   const tabs = await getTranslations('tabs');
   // next-intl stays on the server: client islands get localised hrefs and translated labels as props, so no
   // i18n runtime or message catalogue ships to the browser (spec 16 JS budget).
-  const localised = (href: string) => getPathname({ href, locale });
+  const localised = (href: string) => localePath(href, locale);
   const navItems = PRIMARY_NAV.map((item) => ({ ...item, href: localised(item.href), label: nav(item.key) }));
   const tabItems = PRIMARY_NAV.map((item) => ({
     ...item,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { isActive } from '../src/lib/nav';
-import { canonicalPath, stripLocale, switchLocalePath } from '../src/lib/locale-path';
+import { canonicalPath, localePath, stripLocale, switchLocalePath } from '../src/lib/locale-path';
 
 describe('locale paths', () => {
   it.each([
@@ -49,5 +49,15 @@ describe('active nav item', () => {
     // Localised home must not match every Hindi page (regression: two nav items highlighted).
     expect(isActive('/hi/shop', '/hi', true)).toBe(false);
     expect(isActive('/hi', '/hi', true)).toBe(true);
+  });
+
+  it.each([
+    ['/', 'en', '/'],
+    ['/shop', 'en', '/shop'],
+    ['/', 'hi', '/hi'],
+    ['/shop', 'hi', '/hi/shop'],
+    ['/products/castrol-activ-4t-20w40-900ml', 'hi', '/hi/products/castrol-activ-4t-20w40-900ml'],
+  ])('links %s in %s as %s (as-needed prefix, like next-intl getPathname)', (href, locale, expected) => {
+    expect(localePath(href, locale)).toBe(expected);
   });
 });

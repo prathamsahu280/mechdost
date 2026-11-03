@@ -31,3 +31,14 @@ export function switchLocalePath(pathname: string, target: SiteLocale): string {
   const suffix = base === '/' ? '' : base;
   return target === 'hi' ? `/hi${suffix}` : `/en${suffix}`;
 }
+
+/**
+ * A link to an app path in a locale: `/shop` → `/shop` (English) or `/hi/shop` (Hindi). The same result as
+ * next-intl's `getPathname` for this routing (`as-needed`, no translated pathnames) — but importing next-intl's
+ * navigation from a server module puts its client `Link` and the whole ICU formatter (≈12 KB gz) in every page's
+ * bundle, so server code uses this instead (spec 16; enforced by lint).
+ */
+export function localePath(href: string, locale: string): string {
+  if (locale !== 'hi') return href;
+  return href === '/' ? '/hi' : `/hi${href}`;
+}

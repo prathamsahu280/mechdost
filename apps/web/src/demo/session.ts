@@ -6,7 +6,6 @@
  * this browser. The OTP is always 123456, like the Firebase Auth Emulator; seeded logins use DEMO_PASSWORD.
  * Replaced by Firebase Auth + the API's password sign-in in Phase 1; never holds real data.
  */
-import { useSyncExternalStore } from 'react';
 import {
   checkPassword,
   clearFailures,
@@ -20,205 +19,21 @@ import {
 } from './passwords';
 import { customerAllowed } from './customer-blocks';
 import { demoStorage } from './store';
+import {
+  ACCOUNTS,
+  accountsSnapshot,
+  DEMO_OTP,
+  DEMO_PASSWORD,
+  isAccount,
+  SEEDED_ACCOUNTS,
+  SESSION,
+  sessionSnapshot,
+  type DemoAccount,
+  type DemoAddress,
+  type DemoVehicle,
+} from './session-state';
 
-export const DEMO_OTP = '123456';
-/** Password of every seeded demo login until it is changed on this device (docs/runbooks/demo.md). */
-export const DEMO_PASSWORD = 'Raipur@2026';
-
-export type DemoRole = 'customer' | 'shop' | 'workshop' | 'admin';
-export type VehicleType = '2W' | '4W';
-export type Fuel = 'petrol' | 'diesel' | 'cng' | 'ev';
-
-export interface DemoVehicle {
-  id: string;
-  type: VehicleType;
-  make: string;
-  model: string;
-  year: number;
-  fuel: Fuel;
-  registration: string;
-  odometerKm: number;
-}
-
-export interface DemoAddress {
-  id: string;
-  label: string;
-  line1: string;
-  landmark: string;
-  pincode: string;
-  isDefault: boolean;
-}
-
-export interface DemoAccount {
-  id: string;
-  /** 10-digit Indian mobile number (E.164 without +91 in the demo). */
-  phone: string;
-  name: string;
-  email: string;
-  /** Salted PBKDF2 hash; absent on seeded accounts until changed (they use DEMO_PASSWORD). Never plain text. */
-  password?: PasswordHash;
-  role: DemoRole;
-  /** Shop or workshop slug for partner roles. */
-  partner: string | null;
-  language: 'en' | 'hi';
-  vehicles: DemoVehicle[];
-  addresses: DemoAddress[];
-  createdAt: string;
-}
-
-/** Fixed demo logins, one per role (docs/runbooks/demo.md). */
-export const SEEDED_ACCOUNTS: readonly DemoAccount[] = [
-  {
-    id: 'demo-customer',
-    phone: '9876543210',
-    name: 'Ravi Sahu',
-    email: 'ravi.sahu@example.com',
-    role: 'customer',
-    partner: null,
-    language: 'en',
-    vehicles: [
-      {
-        id: 'veh-activa',
-        type: '2W',
-        make: 'Honda',
-        model: 'Activa 6G',
-        year: 2022,
-        fuel: 'petrol',
-        registration: 'CG04 MK 2201',
-        odometerKm: 18_450,
-      },
-      {
-        id: 'veh-swift',
-        type: '4W',
-        make: 'Maruti Suzuki',
-        model: 'Swift VXi',
-        year: 2019,
-        fuel: 'petrol',
-        registration: 'CG04 HX 7710',
-        odometerKm: 52_300,
-      },
-    ],
-    addresses: [
-      {
-        id: 'addr-home',
-        label: '',
-        line1: 'C-605 Salasar Greens, Sarona',
-        landmark: 'Near Tatibandh chowk',
-        pincode: '492099',
-        isDefault: true,
-      },
-    ],
-    createdAt: '2026-09-12T10:00:00.000Z',
-  },
-  {
-    id: 'demo-shop',
-    phone: '9000000001',
-    name: 'Rakesh Sharma',
-    email: 'orders@sharmaautoparts.example',
-    role: 'shop',
-    partner: 'sharma-auto-parts',
-    language: 'en',
-    vehicles: [],
-    addresses: [],
-    createdAt: '2026-08-01T10:00:00.000Z',
-  },
-  {
-    id: 'demo-shop-2',
-    phone: '9000000004',
-    name: 'Anil Verma',
-    email: 'desk@raipurbatterypoint.example',
-    role: 'shop',
-    partner: 'raipur-battery-point',
-    language: 'en',
-    vehicles: [],
-    addresses: [],
-    createdAt: '2026-08-05T10:00:00.000Z',
-  },
-  {
-    id: 'demo-workshop',
-    phone: '9000000002',
-    name: 'Imran Khan',
-    email: 'desk@telibandhacarclinic.example',
-    role: 'workshop',
-    partner: 'telibandha-car-clinic',
-    language: 'en',
-    vehicles: [],
-    addresses: [],
-    createdAt: '2026-08-01T10:00:00.000Z',
-  },
-  {
-    id: 'demo-admin',
-    phone: '9000000003',
-    name: 'MechDost Operations',
-    email: 'ops@mechdost.example',
-    role: 'admin',
-    partner: null,
-    language: 'en',
-    vehicles: [],
-    addresses: [],
-    createdAt: '2026-07-01T10:00:00.000Z',
-  },
-];
-
-const ACCOUNTS = 'mechdost-demo-accounts';
-const SESSION = 'mechdost-demo-session';
-
-interface SessionRecord {
-  accountId: string;
-  signedInAt: string;
-}
-
-const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
-const isAccount = (v: unknown): v is DemoAccount =>
-  isRecord(v) &&
-  typeof v.id === 'string' &&
-  typeof v.phone === 'string' &&
-  typeof v.role === 'string' &&
-  Array.isArray(v.vehicles) &&
-  Array.isArray(v.addresses);
-const isSession = (v: unknown): v is SessionRecord => isRecord(v) && typeof v.accountId === 'string';
-
-let merged: { stored: readonly DemoAccount[]; all: readonly DemoAccount[] } | null = null;
-
-/** Seeded accounts with any edits made on this device, plus accounts created by sign-up. */
-function accountsSnapshot(): readonly DemoAccount[] {
-  const stored = demoStorage.read(ACCOUNTS, isAccount);
-  if (merged?.stored === stored) return merged.all;
-  const byId = new Map<string, DemoAccount>(SEEDED_ACCOUNTS.map((a) => [a.id, a]));
-  for (const a of stored) byId.set(a.id, a);
-  merged = { stored, all: [...byId.values()] };
-  return merged.all;
-}
-
-let lastSession: {
-  record: SessionRecord | undefined;
-  accounts: readonly DemoAccount[];
-  blocked: boolean;
-  value: DemoAccount | null;
-} | null = null;
-
-function sessionSnapshot(): DemoAccount | null {
-  const record = demoStorage.read(SESSION, isSession)[0];
-  const accounts = accountsSnapshot();
-  const cached = lastSession;
-  // A fully blocked customer has no session (customer-blocks.ts), whichever way they signed in.
-  const found = record ? (accounts.find((a) => a.id === record.accountId) ?? null) : null;
-  const blocked = found !== null && !customerAllowed(found.id).signIn;
-  if (cached && cached.record === record && cached.accounts === accounts && cached.blocked === blocked)
-    return cached.value;
-  const value = blocked ? null : found;
-  lastSession = { record, accounts, blocked, value };
-  return value;
-}
-
-/** Signed-in account, or null. Always null during server render and hydration. */
-export function useSession(): DemoAccount | null {
-  return useSyncExternalStore(demoStorage.subscribe, sessionSnapshot, () => null);
-}
-
-export function useAccounts(): readonly DemoAccount[] {
-  return useSyncExternalStore(demoStorage.subscribe, accountsSnapshot, () => SEEDED_ACCOUNTS);
-}
+export * from './session-state';
 
 /** Normalise "+91 98765 43210" / "098765…" to 10 digits; null when it is not an Indian mobile number. */
 export function normalisePhone(input: string): string | null {
@@ -402,18 +217,6 @@ export function signOut() {
 }
 
 /** Where each role lands after signing in. */
-export function homeFor(role: DemoRole): string {
-  switch (role) {
-    case 'shop':
-      return '/partner/shop';
-    case 'workshop':
-      return '/partner/workshop';
-    case 'admin':
-      return '/admin';
-    default:
-      return '/account';
-  }
-}
 
 /** Only same-site paths are allowed as a post-login destination (open-redirect guard). */
 export function safeNext(next: string | null): string | null {

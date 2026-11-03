@@ -34,6 +34,16 @@ export default tseslint.config(
       curly: ['error', 'multi-line'],
       'prefer-const': 'error',
       'object-shorthand': 'error',
+      // next-intl's navigation pulls its client Link and the ICU formatter into every page that imports it, even
+      // from a server module (spec 16 JS budget, 2026-11-03): use `localePath` / `LocalLink` instead.
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            { name: 'next-intl/navigation', message: 'Use localePath() or <LocalLink> (spec 16 JS budget).' },
+          ],
+        },
+      ],
     },
   },
   {
