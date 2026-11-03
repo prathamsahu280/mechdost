@@ -68,7 +68,7 @@ describe('POST /v1/events', () => {
       source: 'web',
       anonymousId,
       consent: { analytics: true, version: '2026-11' },
-      events: Array.from({ length: 51 }, () => one),
+      events: Array.from({ length: 26 }, () => one),
     });
     expect(tooMany.status).toBe(400);
     expect(

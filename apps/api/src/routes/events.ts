@@ -13,7 +13,10 @@ import { errorResponses } from './schemas';
  * props are dropped and counted, never stored. Consent (DPDP): without analytics consent nothing is stored.
  * Client clocks are untrusted: `occurredAt` must be within the last 24 h (else it becomes the receive time).
  */
-export const EVENTS_RATE: RateRule = { name: 'events_ip', limit: 120, windowSeconds: 60 };
+// Storage-abuse cap (advisor review 2026-11-03): 30 batches × 25 events ≈ 750 rows per minute per IP at most;
+// the web sends ≤ 20 events every 5 s. A per-event (weighted) limiter is a later improvement.
+export const EVENTS_RATE: RateRule = { name: 'events_ip', limit: 30, windowSeconds: 60 };
+export const EVENTS_PER_BATCH = 25;
 const MAX_AGE_MS = 24 * 3_600_000;
 const MAX_SKEW_MS = 5 * 60_000;
 
@@ -39,7 +42,7 @@ const Batch = z
           .strict(),
       )
       .min(1)
-      .max(50),
+      .max(EVENTS_PER_BATCH),
   })
   .strict()
   .openapi('EventBatch');
@@ -48,7 +51,7 @@ const ingest = createRoute({
   method: 'post',
   path: '/events',
   tags: ['analytics'],
-  summary: 'Send a batch of up to 50 web/app events (dropped without analytics consent)',
+  summary: 'Send a batch of up to 25 web/app events (dropped without analytics consent)',
   request: { body: { required: true, content: { 'application/json': { schema: Batch } } } },
   responses: {
     202: {

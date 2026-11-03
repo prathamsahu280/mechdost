@@ -1,10 +1,19 @@
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { ASSIGNMENT_DECLINE_REASONS, type AssignmentDeclineReason } from '@mechdost/shared/state';
 import type { Keyring } from '../crypto';
-import { orderAssignments, orderItems, orders, reservations, shipments, shopInventory } from '../schema';
+import {
+  auditLog,
+  orderAssignments,
+  orderItems,
+  orders,
+  reservations,
+  shipments,
+  shopInventory,
+  shops,
+} from '../schema';
 import { acceptAssignment, declineAssignment } from './assignments';
 import { issueDeliveryCode, verifyDeliveryCode, type DeliveryCheck } from './delivery';
-import { ConflictError, NotFoundError, ValidationError } from './errors';
+import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from './errors';
 import { commitReservation } from './inventory';
 import { recordServerEvent } from './events';
 import { transitionOrder, type Tx } from './orders';
@@ -38,6 +47,21 @@ const inShops = (shopIds: readonly string[], column: string) =>
         shopIds.map((id) => sql`${id}::uuid`),
         sql`, `,
       )})`;
+
+/** Every shop-side action is audited in its own transaction (CLAUDE.md conventions; spec 04 disputes). */
+async function auditShop(
+  tx: Tx,
+  input: { staffUserId: string; action: string; orderId: string; after: Record<string, unknown> },
+) {
+  await tx.insert(auditLog).values({
+    actorUserId: input.staffUserId,
+    actorRole: 'shop',
+    action: input.action,
+    entity: 'order',
+    entityId: input.orderId,
+    after: input.after,
+  });
+}
 
 export type ShopView = 'offers' | 'active' | 'done';
 
@@ -114,7 +138,8 @@ export async function listShopOrders(
       .map((i) => ({ title: i.title, sku: i.sku, qty: num(i.qty), unitPaise: num(i.unitPaise) })),
     assignmentId: r.assignment_id,
     expiresAt: r.expires_at ? new Date(r.expires_at) : null,
-    address: view === 'offers' ? null : r.shipping_address,
+    // Shared only while the shop is fulfilling the order (DPDP minimisation, advisor review 2026-11-03).
+    address: view === 'active' ? r.shipping_address : null,
   }));
 }
 
@@ -135,6 +160,18 @@ export async function acceptShopOffer(
 ) {
   return db.transaction(async (tx) => {
     const a = await ownAssignment(tx, input.shopIds, input.assignmentId);
+    // Decision 2026-11-01: a paused or suspended shop takes no new work — also not an offer made before the
+    // pause (advisor review 2026-11-03; the demo already refused it). FOR SHARE: a concurrent pause waits.
+    const [standing] = await tx
+      .select({ status: shops.status })
+      .from(shops)
+      .where(eq(shops.id, a.shopId))
+      .for('share');
+    if (standing?.status !== 'approved')
+      throw new ForbiddenError(
+        'Your shop is paused or suspended and cannot take new orders',
+        'SHOP_NOT_ACTIVE',
+      );
     const row = await acceptAssignment(tx, {
       assignmentId: a.id,
       shopId: a.shopId,
@@ -161,6 +198,12 @@ export async function acceptShopOffer(
         cityId: info.city_id,
         props: { orderCode: info.code, shopId: a.shopId, secondsToAccept: numOrNull(info.seconds) ?? 0 },
       });
+    await auditShop(tx, {
+      staffUserId: input.staffUserId,
+      action: 'order.accepted_by_shop',
+      orderId: a.orderId,
+      after: { shopId: a.shopId },
+    });
     return { status: row.status, version: row.version };
   });
 }
@@ -195,6 +238,12 @@ export async function declineShopOffer(
         cityId: o.cityId,
         props: { orderCode: o.code, shopId: a.shopId, reasonCode: input.reasonCode },
       });
+    await auditShop(tx, {
+      staffUserId: input.staffUserId,
+      action: 'order.declined_by_shop',
+      orderId: a.orderId,
+      after: { shopId: a.shopId, reasonCode: input.reasonCode },
+    });
     return { status: row.status, version: row.version };
   });
 }
@@ -267,6 +316,12 @@ export async function advanceShopOrder(
       await tx.update(shipments).set({ status: 'out_for_delivery' }).where(eq(shipments.id, shipment.id));
       await issueDeliveryCode(tx, input.keyring, shipment.id);
     }
+    await auditShop(tx, {
+      staffUserId: input.staffUserId,
+      action: `order.${step.to}`,
+      orderId: o.id,
+      after: { status: step.to },
+    });
     return { status: row.status, version: row.version };
   });
 }
@@ -306,6 +361,12 @@ export async function deliverShopOrder(
     await recordServerEvent(tx, 'order_delivered', {
       userId: input.staffUserId,
       props: { orderCode: input.code, shopId: o.shopId ?? '' },
+    });
+    await auditShop(tx, {
+      staffUserId: input.staffUserId,
+      action: 'order.delivered',
+      orderId: o.id,
+      after: { via: 'code' },
     });
     return { ok: true, version: row.version };
   });

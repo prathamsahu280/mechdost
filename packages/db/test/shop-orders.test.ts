@@ -232,3 +232,38 @@ describe('fulfilment', () => {
     ]);
   });
 });
+
+describe('advisor review fixes (2026-11-03)', () => {
+  it('a paused shop cannot accept an offer made before the pause', async () => {
+    const { assignmentId } = await placeAndRoute('Gupta Lubes & Spares');
+    await db
+      .update(s.shops)
+      .set({ status: 'paused', statusReason: 'Stock audit this week', statusChangedBy: staff })
+      .where(eq(s.shops.id, shop['Gupta Lubes & Spares']!));
+    await expect(
+      acceptShopOffer(t(), { shopIds: [shop['Gupta Lubes & Spares']!], assignmentId, staffUserId: shopUser }),
+    ).rejects.toMatchObject({ code: 'SHOP_NOT_ACTIVE', status: 403 });
+    const [a] = await db.select().from(s.orderAssignments).where(eq(s.orderAssignments.id, assignmentId));
+    expect(a!.status).toBe('offered'); // untouched: the timer returns it to MechDost
+    await db
+      .update(s.shops)
+      .set({ status: 'approved', statusReason: null, statusChangedBy: null })
+      .where(eq(s.shops.id, shop['Gupta Lubes & Spares']!));
+  });
+
+  it('every shop action is audited, and finished orders no longer carry the address', async () => {
+    const actions = (await db.select({ action: s.auditLog.action }).from(s.auditLog)).map((r) => r.action);
+    for (const a of [
+      'order.accepted_by_shop',
+      'order.declined_by_shop',
+      'order.packed',
+      'order.shipped',
+      'order.out_for_delivery',
+      'order.delivered',
+    ])
+      expect(actions, a).toContain(a);
+    const done = await listShopOrders(t(), [shop['Sharma Auto Parts']!], 'done');
+    expect(done.length).toBeGreaterThan(0);
+    expect(done.every((o) => o.address === null)).toBe(true);
+  });
+});

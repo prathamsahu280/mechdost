@@ -51,7 +51,7 @@ function flush() {
   if (timer) clearTimeout(timer);
   timer = null;
   if (!API || outbox.length === 0 || !analyticsAllowed()) return;
-  const events = outbox.splice(0, 50);
+  const events = outbox.splice(0, BATCH);
   void fetch(`${API}/v1/events`, {
     method: 'POST',
     keepalive: true,
