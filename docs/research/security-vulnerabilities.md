@@ -135,3 +135,10 @@ steps:
 ```
 
 GitHub org: 2FA required, secret scanning + push protection, branch protection with signed commits and required CI, Dependabot security updates, allowed-actions restricted. npm org: 2FA enforced, trusted publishing only, `publishConfig.provenance=true`.
+
+## Sweep 2026-11-03 (advisor improvement sweep)
+
+- **Hono 4.13.16** (2026-11-01) fixes GHSA-4m76-xfj5-7975 (`mount()` prefix bypass), GHSA-h7mg-cq63-vhpq (RegExpRouter skipped wildcard middleware for `{[^/]+}` params, a `/prefix*` route beside `/prefix/*` middleware, and paths with an encoded line terminator), GHSA-4h7h-rv7c-7m2v (`validator('form')` multipart bypass), GHSA-3gg2-335m-rxc6 (`css` helper injection), GHSA-46wx-v44x-9hh2 (`csrf()` misses `text/ping`). Our exposure: we use none of `mount()`, form validation, `css` or `csrf()`; middleware is `/prefix/*` only; `apps/api/test/middleware-bypass.test.ts` proves anonymous requests with `%0A`/`%0D`/`%E2%80%A8` paths are refused on 4.13.14. Nothing is deployed. **Action:** upgrade to 4.13.16 once it passes the 3-day release age (2026-11-04 03:05 UTC); keep the regression test.
+- **Next.js 16.4.4** (2026-11-02) is a backport release; its notes announce a **security release on 2026-11-04**. Action: upgrade to the security release when it passes the release age (or earlier if the user grants an exception, Q67) and re-run the full gates + audit.
+- **`pnpm audit --prod`:** 2 moderate, both transitive under `firebase-admin` 14.5.0 (latest) → google-gax → rimraf: `glob` 9–14.0.1 (AbortSignal bypass) and `minimatch` < 11.0.1 (ReDoS). No user input reaches them (internal temp-file cleanup); accepted until firebase-admin updates. Re-check each sweep.
+- Up to date: React 19.3.1, Drizzle 0.45.4, next-intl 4.14.9, Zod 4.6.7, MapLibre 6.16.0, @upstash/ratelimit 2.2.0, @hono/zod-openapi 1.6.3. PGlite 0.5.15 available (test-only).
