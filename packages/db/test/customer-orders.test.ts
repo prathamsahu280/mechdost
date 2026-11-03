@@ -11,6 +11,7 @@ import { eq, sql } from 'drizzle-orm';
 import { loadKeyring } from '../src/crypto';
 import { seedRaipurDemo, type DemoFixture } from '../src/demo-seed';
 import {
+  pgCode,
   acceptShopOffer,
   advanceShopOrder,
   cancelMyOrder,
@@ -130,6 +131,16 @@ describe('my orders', () => {
     const detail = await getMyOrder(t(), customer, group, { locale: 'en', keyring });
     expect(detail.orders[0]).toMatchObject({ status: 'cancelled', canCancel: false });
     expect(detail.orders[0]!.timeline.map((e) => e.status)).toEqual(['placed', 'cancelled']);
+    // The database keeps the reason with its status: a cancelled order cannot carry a reject reason.
+    const err: unknown = await db
+      .update(s.orders)
+      .set({ statusReasonCode: 'pricing_error' })
+      .where(eq(s.orders.code, code))
+      .then(
+        () => null,
+        (e: unknown) => e,
+      );
+    expect(pgCode(err)).toBe('23514'); // check_violation
   });
 
   it('an accepted order puts its stock back on the shelf when cancelled; the offer is withdrawn while waiting', async () => {
@@ -252,6 +263,25 @@ describe('my orders', () => {
       status: 'rejected',
       message: 'No shop near you has this oil today. Nothing was charged.',
     });
-    expect((await listMyOrders(t(), customer)).map((o) => o.code)[0]).toBe(rejected.group); // newest first
+    expect((await listMyOrders(t(), customer)).orders.map((o) => o.code)[0]).toBe(rejected.group); // newest first
+  });
+
+  it('pages the order history with a cursor, newest first, without repeats', async () => {
+    const all = (await listMyOrders(t(), customer, { limit: 50 })).orders.map((o) => o.code);
+    expect(all.length).toBeGreaterThan(2);
+    const seen: string[] = [];
+    let cursor: string | null = null;
+    do {
+      const page: Awaited<ReturnType<typeof listMyOrders>> = await listMyOrders(t(), customer, {
+        limit: 1,
+        cursor,
+      });
+      seen.push(...page.orders.map((o) => o.code));
+      cursor = page.nextCursor;
+    } while (cursor);
+    expect(seen).toEqual(all);
+    await expect(listMyOrders(t(), customer, { cursor: 'not-a-cursor' })).rejects.toMatchObject({
+      code: 'INVALID_CURSOR',
+    });
   });
 });

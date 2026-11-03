@@ -15,6 +15,7 @@ import { acceptAssignment, declineAssignment } from './assignments';
 import { issueDeliveryCode, verifyDeliveryCode, type DeliveryCheck } from './delivery';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from './errors';
 import { commitReservation } from './inventory';
+import { decodeCursor, encodeCursor, pageSize } from './cursor';
 import { recordServerEvent } from './events';
 import { transitionOrder, type Tx } from './orders';
 import { num, numOrNull, rowsOf } from './sql-rows';
@@ -79,12 +80,19 @@ export interface ShopOrderItem {
   address: Record<string, unknown> | null;
 }
 
+/**
+ * Offers and active orders are a shop's live working set (capped at 100, oldest first); finished orders are
+ * history, newest first and keyset-paged on (updated_at, id) (hard rule 7).
+ */
 export async function listShopOrders(
   db: Tx,
   shopIds: readonly string[],
   view: ShopView,
-): Promise<ShopOrderItem[]> {
-  const rows = rowsOf<{
+  page: { cursor?: string | null; limit?: number } = {},
+): Promise<{ items: ShopOrderItem[]; nextCursor: string | null }> {
+  const doneLimit = pageSize(page.limit, 30, 50);
+  const after = view === 'done' && page.cursor ? decodeCursor(page.cursor) : null;
+  const fetched = rowsOf<{
     id: string;
     code: string;
     status: string;
@@ -94,25 +102,35 @@ export async function listShopOrders(
     shipping_address: Record<string, unknown>;
     assignment_id: string | null;
     expires_at: string | Date | null;
+    sort_key: string;
   }>(
     view === 'offers'
       ? await db.execute(sql`
           select o.id, o.code, o.status, o.version, o.total_paise, o.pincode, o.shipping_address,
-            a.id as assignment_id, a.expires_at
+            a.id as assignment_id, a.expires_at, '' as sort_key
           from order_assignments a join orders o on o.id = a.order_id
           where a.status = 'offered' and a.expires_at > now() and ${inShops(shopIds, 'a.shop_id')}
           order by a.expires_at limit 100`)
-      : await db.execute(sql`
+      : view === 'active'
+        ? await db.execute(sql`
           select o.id, o.code, o.status, o.version, o.total_paise, o.pincode, o.shipping_address,
-            null::uuid as assignment_id, null::timestamptz as expires_at
+            null::uuid as assignment_id, null::timestamptz as expires_at, '' as sort_key
           from orders o
-          where ${inShops(shopIds, 'o.shop_id')} and ${
-            view === 'active'
-              ? sql`o.status in ('confirmed', 'packed', 'shipped', 'out_for_delivery')`
-              : sql`o.status in ('delivered', 'cancelled') and o.updated_at > now() - interval '30 days'`
-          }
-          order by o.placed_at limit 100`),
+          where ${inShops(shopIds, 'o.shop_id')} and o.status in ('confirmed', 'packed', 'shipped', 'out_for_delivery')
+          order by o.placed_at limit 100`)
+        : await db.execute(sql`
+          select o.id, o.code, o.status, o.version, o.total_paise, o.pincode, o.shipping_address,
+            null::uuid as assignment_id, null::timestamptz as expires_at, o.updated_at::text as sort_key
+          from orders o
+          where ${inShops(shopIds, 'o.shop_id')} and o.status in ('delivered', 'cancelled')
+            and o.updated_at > now() - interval '30 days'
+            ${after ? sql`and (o.updated_at, o.id) < (cast(${after.k} as timestamptz), cast(${after.id} as uuid))` : sql``}
+          order by o.updated_at desc, o.id desc limit ${doneLimit + 1}`),
   );
+  const more = view === 'done' && fetched.length > doneLimit;
+  const rows = more ? fetched.slice(0, doneLimit) : fetched;
+  const last = rows.at(-1);
+  const nextCursor = more && last ? encodeCursor({ k: last.sort_key, id: last.id }) : null;
   const ids = rows.map((r) => r.id);
   const items =
     ids.length === 0
@@ -128,7 +146,7 @@ export async function listShopOrders(
           })
           .from(orderItems)
           .where(inArray(orderItems.orderId, ids));
-  return rows.map((r) => ({
+  const list = rows.map((r) => ({
     code: r.code,
     status: r.status,
     version: num(r.version),
@@ -148,6 +166,7 @@ export async function listShopOrders(
     // Shared only while the shop is fulfilling the order (DPDP minimisation, advisor review 2026-11-03).
     address: view === 'active' ? r.shipping_address : null,
   }));
+  return { items: list, nextCursor };
 }
 
 async function ownAssignment(tx: Tx, shopIds: readonly string[], assignmentId: string) {

@@ -72,7 +72,7 @@ This supersedes the self-service return/replacement/exchange flows above; the re
 - **Staff** `POST /v1/admin/orders/{code}/cancel` (`orders:cancel`, city-scoped): anything the order machine allows for admin (also `packed`).
 - **Reason codes** `ORDER_CANCEL_REASONS` (changed_mind, ordered_by_mistake, found_cheaper, delivery_too_slow, customer_unreachable, other); a cancelled order always has one (migration 0029 CHECK `orders_cancelled_explained`).
 - **One transaction:** order → `cancelled` (CAS on version; races with a shop accept resolve to exactly one winner), an open shop offer → `withdrawn`, held stock released, stock already taken by an accept put back on the shelf, audit row `order.cancelled`. COD has nothing to refund; prepaid refunds come with online payment.
-- **Tracking** `GET /v1/orders` (newest first) and `GET /v1/orders/{groupCode}`: per sub-order status, items, the customer-visible timeline, the seller once accepted, the rejection message, the 4-digit delivery code while out for delivery, and `canCancel`.
+- **Tracking** `GET /v1/orders` (newest first, keyset-paged: `?limit=` ≤ 50, pass `nextCursor` back as `?cursor=`; a tampered cursor is 422 `INVALID_CURSOR`) and `GET /v1/orders/{groupCode}`: per sub-order status, items, the customer-visible timeline, the seller once accepted, the rejection message, the 4-digit delivery code while out for delivery, and `canCancel`.
 - Not yet: cancellation window by time, fees after dispatch, faulty-part tickets → replace/refund flow, notifications on cancel.
 
 ### Demo screens (2026-11-03, same rules as the API)

@@ -70,8 +70,17 @@ const list = createRoute({
   tags: ['shop'],
   summary: 'Offers waiting for you (customer hidden), orders in progress (with the delivery address), done',
   security: [{ bearerAuth: [] }],
-  request: { query: z.object({ view: z.enum(['offers', 'active', 'done']).default('offers') }) },
-  responses: { 200: json(z.object({ orders: z.array(ShopOrder) }), 'Orders'), ...errorResponses },
+  request: {
+    query: z.object({
+      view: z.enum(['offers', 'active', 'done']).default('offers'),
+      // `done` is paged (newest first); offers and active are the live working set.
+      cursor: z.string().max(200).optional(),
+    }),
+  },
+  responses: {
+    200: json(z.object({ orders: z.array(ShopOrder), nextCursor: z.string().nullable() }), 'Orders'),
+    ...errorResponses,
+  },
 });
 
 const accept = createRoute({
@@ -187,9 +196,18 @@ export function shopOrderRoutes(deps: AppDeps, cache: SessionCache) {
 
   return app
     .openapi(list, async (c) => {
-      const rows = await listShopOrders(deps.db, shops(c, 'orders:read'), c.req.valid('query').view);
+      const q = c.req.valid('query');
+      const page = await listShopOrders(deps.db, shops(c, 'orders:read'), q.view, {
+        cursor: q.cursor ?? null,
+      });
       return c.json(
-        { orders: rows.map((r) => ({ ...r, expiresAt: r.expiresAt ? r.expiresAt.toISOString() : null })) },
+        {
+          orders: page.items.map((r) => ({
+            ...r,
+            expiresAt: r.expiresAt ? r.expiresAt.toISOString() : null,
+          })),
+          nextCursor: page.nextCursor,
+        },
         200,
       );
     })

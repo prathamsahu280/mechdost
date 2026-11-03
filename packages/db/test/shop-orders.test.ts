@@ -106,9 +106,9 @@ afterAll(async () => {
 describe('offers', () => {
   it('only the offered shop sees the offer, without the customer; concurrent accepts → one; stock committed', async () => {
     const { code, assignmentId } = await placeAndRoute('Sharma Auto Parts');
-    const offers = await listShopOrders(t(), [shop['Sharma Auto Parts']!], 'offers');
+    const offers = (await listShopOrders(t(), [shop['Sharma Auto Parts']!], 'offers')).items;
     expect(offers).toEqual([expect.objectContaining({ code, assignmentId, address: null })]);
-    expect(await listShopOrders(t(), [shop['Gupta Lubes & Spares']!], 'offers')).toEqual([]);
+    expect((await listShopOrders(t(), [shop['Gupta Lubes & Spares']!], 'offers')).items).toEqual([]);
     await expect(
       acceptShopOffer(t(), { shopIds: [shop['Gupta Lubes & Spares']!], assignmentId, staffUserId: shopUser }),
     ).rejects.toMatchObject({ code: 'NOT_FOUND' });
@@ -132,7 +132,7 @@ describe('offers', () => {
       onHand: before.onHand - 2,
       reserved: before.reserved - 2,
     });
-    const active = await listShopOrders(t(), [shop['Sharma Auto Parts']!], 'active');
+    const active = (await listShopOrders(t(), [shop['Sharma Auto Parts']!], 'active')).items;
     expect(active[0]).toMatchObject({ code, status: 'confirmed', address: { contactName: 'Ravi Sahu' } });
     expect((await orderRow(code)).shopId).toBe(shop['Sharma Auto Parts']);
   });
@@ -178,7 +178,7 @@ describe('offers', () => {
 
 describe('fulfilment', () => {
   it('pack → hand over → out for delivery → delivered only with the customer code', async () => {
-    const [order] = await listShopOrders(t(), [shop['Sharma Auto Parts']!], 'active');
+    const [order] = (await listShopOrders(t(), [shop['Sharma Auto Parts']!], 'active')).items;
     const ids = [shop['Sharma Auto Parts']!];
     const code = order!.code;
     const step = async (stepArg: Parameters<typeof advanceShopOrder>[1]['step'], k = keyring) =>
@@ -277,7 +277,7 @@ describe('advisor review fixes (2026-11-03)', () => {
       'order.delivered',
     ])
       expect(actions, a).toContain(a);
-    const done = await listShopOrders(t(), [shop['Sharma Auto Parts']!], 'done');
+    const done = (await listShopOrders(t(), [shop['Sharma Auto Parts']!], 'done')).items;
     expect(done.length).toBeGreaterThan(0);
     expect(done.every((o) => o.address === null)).toBe(true);
   });

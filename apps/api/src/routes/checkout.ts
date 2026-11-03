@@ -203,8 +203,14 @@ const myOrders = createRoute({
   method: 'get',
   path: '/orders',
   tags: ['orders'],
-  summary: 'Your orders, newest first',
+  summary: 'Your orders, newest first (pass `nextCursor` back as `cursor` for the next page)',
   security: [{ bearerAuth: [] }],
+  request: {
+    query: z.object({
+      cursor: z.string().max(200).optional(),
+      limit: z.coerce.number().int().min(1).max(50).optional(),
+    }),
+  },
   responses: {
     200: json(
       z.object({
@@ -213,6 +219,7 @@ const myOrders = createRoute({
             orders: z.array(z.object({ code: z.string(), status: z.string(), totalPaise: z.number().int() })),
           }),
         ),
+        nextCursor: z.string().nullable(),
       }),
       'Orders',
     ),
@@ -313,8 +320,14 @@ export function checkoutRoutes(deps: AppDeps, cache: SessionCache) {
       return c.json(placed, placed.replayed ? 200 : 201);
     })
     .openapi(myOrders, async (c) => {
-      const rows = await listMyOrders(deps.db, c.get('auth').user.id);
-      return c.json({ orders: rows.map((r) => ({ ...r, placedAt: r.placedAt.toISOString() })) }, 200);
+      const page = await listMyOrders(deps.db, c.get('auth').user.id, c.req.valid('query'));
+      return c.json(
+        {
+          orders: page.orders.map((r) => ({ ...r, placedAt: r.placedAt.toISOString() })),
+          nextCursor: page.nextCursor,
+        },
+        200,
+      );
     })
     .openapi(myOrder, async (c) => {
       const o = await getMyOrder(deps.db, c.get('auth').user.id, c.req.valid('param').code, {

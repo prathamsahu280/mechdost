@@ -132,9 +132,14 @@ export const orders = pgTable(
     unique().on(t.groupId, t.subNo),
     check('orders_status_valid', sql`${t.status} in (${inList(ORDER_STATES)})`),
     check('orders_sub_no_positive', sql`${t.subNo} > 0`),
+    // The reason code belongs to the status it explains (code review 2026-11-03): a rejected order carries a
+    // reject reason, a cancelled one a cancel reason, every other status none.
     check(
       'orders_reason_code_valid',
-      sql`${t.statusReasonCode} is null or ${t.statusReasonCode} in (${inList([...ORDER_REJECT_REASONS, ...ORDER_CANCEL_REASONS])})`,
+      sql`case ${t.status}
+        when 'rejected' then ${t.statusReasonCode} in (${inList(ORDER_REJECT_REASONS)})
+        when 'cancelled' then ${t.statusReasonCode} in (${inList(ORDER_CANCEL_REASONS)})
+        else ${t.statusReasonCode} is null end`,
     ),
     check(
       'orders_rejected_explained',

@@ -1,5 +1,6 @@
 import { sql, type SQL } from 'drizzle-orm';
-import { NotFoundError, ValidationError } from './errors';
+import { NotFoundError } from './errors';
+import { decodeCursor, encodeCursor } from './cursor';
 import { localized } from './localized';
 import type { Tx } from './orders';
 import { num, numOrNull, rowsOf } from './sql-rows';
@@ -135,37 +136,6 @@ function offerLateral(place: CataloguePlace, variants: SQL): SQL {
     where ${variants} and ${buyable}
     order by si.selling_paise, s.id
     limit 1) o on true`;
-}
-
-interface Cursor {
-  k: string;
-  id: string;
-}
-
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
-
-function encodeCursor(c: Cursor): string {
-  return Buffer.from(JSON.stringify(c)).toString('base64url');
-}
-
-function decodeCursor(raw: string): Cursor {
-  try {
-    const parsed: unknown = JSON.parse(Buffer.from(raw, 'base64url').toString('utf8'));
-    if (
-      typeof parsed === 'object' &&
-      parsed !== null &&
-      'k' in parsed &&
-      'id' in parsed &&
-      typeof parsed.k === 'string' &&
-      typeof parsed.id === 'string' &&
-      parsed.k.length <= 64 &&
-      UUID.test(parsed.id)
-    )
-      return { k: parsed.k, id: parsed.id };
-  } catch {
-    // fall through
-  }
-  throw new ValidationError('Invalid cursor', 'INVALID_CURSOR');
 }
 
 /** Upper-case alphanumerics, as stored in `part_numbers.normalised`. */

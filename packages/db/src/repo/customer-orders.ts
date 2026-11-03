@@ -6,6 +6,7 @@ import {
   type OrderStatus,
 } from '@mechdost/shared/state';
 import type { Keyring } from '../crypto';
+import { decodeCursor, encodeCursor, pageSize } from './cursor';
 import {
   auditLog,
   orderAssignments,
@@ -46,14 +47,33 @@ export interface MyOrderSummary {
   orders: { code: string; status: string; totalPaise: number }[];
 }
 
-export async function listMyOrders(db: Tx, userId: string, limit = 50): Promise<MyOrderSummary[]> {
-  const groups = await db
-    .select()
+/** Newest first, keyset-paged on (created_at, id) (hard rule 7); `nextCursor` is null on the last page. */
+export async function listMyOrders(
+  db: Tx,
+  userId: string,
+  page: { limit?: number; cursor?: string | null } = {},
+): Promise<{ orders: MyOrderSummary[]; nextCursor: string | null }> {
+  const limit = pageSize(page.limit, 20, 50);
+  const after = page.cursor ? decodeCursor(page.cursor) : null;
+  const rows = await db
+    .select({ group: orderGroups, sortKey: sql<string>`${orderGroups.createdAt}::text` })
     .from(orderGroups)
-    .where(eq(orderGroups.userId, userId))
-    .orderBy(desc(orderGroups.createdAt))
-    .limit(Math.min(Math.max(limit, 1), 100));
-  if (groups.length === 0) return [];
+    .where(
+      and(
+        eq(orderGroups.userId, userId),
+        after
+          ? sql`(${orderGroups.createdAt}, ${orderGroups.id}) < (cast(${after.k} as timestamptz), cast(${after.id} as uuid))`
+          : undefined,
+      ),
+    )
+    .orderBy(desc(orderGroups.createdAt), desc(orderGroups.id))
+    .limit(limit + 1);
+  const pageRows = rows.slice(0, limit);
+  const last = pageRows.at(-1);
+  const nextCursor =
+    rows.length > limit && last ? encodeCursor({ k: last.sortKey, id: last.group.id }) : null;
+  const groups = pageRows.map((r) => r.group);
+  if (groups.length === 0) return { orders: [], nextCursor: null };
   const subs = await db
     .select({
       groupId: orders.groupId,
@@ -70,7 +90,7 @@ export async function listMyOrders(db: Tx, userId: string, limit = 50): Promise<
       ),
     )
     .orderBy(orders.subNo);
-  return groups.map((g) => ({
+  const summaries = groups.map((g) => ({
     code: g.code,
     placedAt: g.createdAt,
     totalPaise: g.totalPaise,
@@ -80,6 +100,7 @@ export async function listMyOrders(db: Tx, userId: string, limit = 50): Promise<
       .filter((s) => s.groupId === g.id)
       .map(({ code, status, totalPaise }) => ({ code, status, totalPaise })),
   }));
+  return { orders: summaries, nextCursor };
 }
 
 export interface TrackedOrder {
