@@ -1,0 +1,31 @@
+# Dependency updates (spec 13 "dependency policy"; CLAUDE.md hard rule 4). Updates arrive as pull requests that
+# must pass CI. `cooldown` mirrors pnpm's `minimumReleaseAge` (3 days): a release must have survived in the wild
+# before it is proposed. GitHub Actions updates keep the SHA pins (Dependabot rewrites the hash and the comment).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Asia/Kolkata
+    cooldown:
+      default-days: 3
+    open-pull-requests-limit: 5
+    groups:
+      # Minor and patch updates together; majors one by one so each gets its own review (advisor + changelog).
+      minor-and-patch:
+        update-types: [minor, patch]
+    commit-message:
+      prefix: deps
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Asia/Kolkata
+    cooldown:
+      default-days: 3
+    commit-message:
+      prefix: ci
