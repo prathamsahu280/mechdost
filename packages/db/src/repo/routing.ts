@@ -314,9 +314,15 @@ export async function getRoutingOrder(
   locale: CatalogueLocale,
 ): Promise<RoutingOrderView> {
   const o = await findOrder(db, scope, code);
-  const items = rowsOf<{ sku: string; title: string; qty: unknown; unit_paise: unknown }>(
+  const items = rowsOf<{
+    sku: string;
+    title: string;
+    title_hi: string | null;
+    qty: unknown;
+    unit_paise: unknown;
+  }>(
     await db.execute(
-      sql`select sku, title, qty, unit_paise from order_items where order_id = ${o.id} order by sku`,
+      sql`select sku, title, title_hi, qty, unit_paise from order_items where order_id = ${o.id} order by sku`,
     ),
   );
   const history = rowsOf<{
@@ -339,7 +345,12 @@ export async function getRoutingOrder(
     version: o.version,
     pincode: o.pincode,
     totalPaise: num(total?.total_paise ?? 0),
-    items: items.map((i) => ({ sku: i.sku, title: i.title, qty: num(i.qty), unitPaise: num(i.unit_paise) })),
+    items: items.map((i) => ({
+      sku: i.sku,
+      title: localized(i.title, i.title_hi, locale),
+      qty: num(i.qty),
+      unitPaise: num(i.unit_paise),
+    })),
     history: history.map((h) => ({
       shop: localized(h.name, h.name_hi, locale),
       status: h.status,

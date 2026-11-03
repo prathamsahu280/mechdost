@@ -170,7 +170,7 @@ export async function getMyOrder(
       items: items
         .filter((i) => i.orderId === order.id)
         .map((i) => ({
-          title: i.title,
+          title: localized(i.title, i.titleHi, opts.locale),
           sku: i.sku,
           qty: i.qty,
           unitPaise: i.unitPaise,

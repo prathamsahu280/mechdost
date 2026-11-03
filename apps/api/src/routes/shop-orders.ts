@@ -39,7 +39,13 @@ const ShopOrder = z
     totalPaise: z.number().int(),
     pincode: z.string(),
     items: z.array(
-      z.object({ title: z.string(), sku: z.string(), qty: z.number().int(), unitPaise: z.number().int() }),
+      z.object({
+        title: z.string(),
+        titleHi: z.string().nullable(),
+        sku: z.string(),
+        qty: z.number().int(),
+        unitPaise: z.number().int(),
+      }),
     ),
     assignmentId: z.string().nullable(),
     expiresAt: z.string().nullable(),

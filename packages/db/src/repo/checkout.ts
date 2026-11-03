@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { and, eq, isNull, or, sql } from 'drizzle-orm';
 import { publicCode } from '@mechdost/shared/ids';
 import { OPERATIONAL_SETTINGS } from '@mechdost/shared/settings';
@@ -99,6 +100,7 @@ interface PricedLine {
   inventoryId: string;
   shopId: string;
   title: string;
+  titleHi: string | null;
   hsn: string;
   gstRateBp: number;
   unitPaise: number;
@@ -262,7 +264,9 @@ async function quoteInternal(
       variantId: r.variant_id,
       inventoryId: r.inventory_id,
       shopId: r.shop_id,
-      title: name ?? l.sku,
+      // Snapshot both languages, whatever the customer's locale (code review 2026-11-03, hard rule 10).
+      title: `${r.brand ?? ''} ${r.name}`.trim(),
+      titleHi: r.name_hi ? `${r.brand ?? ''} ${r.name_hi}`.trim() : null,
       hsn: r.hsn ?? '',
       gstRateBp: num(r.gst_rate_bp),
       unitPaise: unit,
@@ -331,12 +335,30 @@ export interface PlacedOrder {
   replayed: boolean;
 }
 
-async function existingGroup(db: Tx, userId: string, key: string): Promise<PlacedOrder | null> {
+/** Fingerprint of what was asked for, in a fixed field order (a retry must be the same request). */
+function requestHash(input: { address: ShippingAddress; lines: readonly CartLine[]; note: string | null }) {
+  const a = input.address;
+  const canonical = JSON.stringify([
+    [a.contactName, a.contactPhone, a.line1, a.line2, a.landmark, a.pincode],
+    [...input.lines].map((l) => [l.sku, l.qty]).sort((x, y) => String(x[0]).localeCompare(String(y[0]))),
+    input.note,
+  ]);
+  return createHash('sha256').update(canonical).digest('hex');
+}
+
+async function existingGroup(db: Tx, userId: string, key: string, hash: string): Promise<PlacedOrder | null> {
   const [group] = await db
     .select()
     .from(orderGroups)
     .where(and(eq(orderGroups.userId, userId), eq(orderGroups.idempotencyKey, key)));
   if (!group) return null;
+  // Same key, different cart or address: a client bug or a reused key — never silently return the old order
+  // (code review 2026-11-03). Rows placed before the hash existed are trusted.
+  if (group.requestHash !== null && group.requestHash !== hash)
+    throw new ValidationError(
+      'This request key was already used for a different order',
+      'IDEMPOTENCY_MISMATCH',
+    );
   const subs = await db
     .select({ code: orders.code, totalPaise: orders.totalPaise })
     .from(orders)
@@ -374,7 +396,8 @@ export async function placeCodOrder(
     await tx.execute(
       sql`select pg_advisory_xact_lock(hashtextextended(${`place:${input.userId}:${input.idempotencyKey}`}, 0))`,
     );
-    const replay = await existingGroup(tx, input.userId, input.idempotencyKey);
+    const hash = requestHash(input);
+    const replay = await existingGroup(tx, input.userId, input.idempotencyKey, hash);
     if (replay) return replay;
     // Customer blocks (shared/customers.ts): `orders`/`full` refuse placing, `cod_only` refuses cash on delivery.
     const allowed = blockEffects(await activeBlockLevels(tx, input.userId));
@@ -413,6 +436,7 @@ export async function placeCodOrder(
         totalPaise: quote.totalPaise,
         note: input.note,
         idempotencyKey: input.idempotencyKey,
+        requestHash: hash,
       },
     });
 
@@ -451,6 +475,7 @@ export async function placeCodOrder(
           orderId: order.id,
           variantId: line.variantId,
           title: line.title,
+          titleHi: line.titleHi,
           sku: line.sku,
           hsn: line.hsn,
           gstRateBp: line.gstRateBp,

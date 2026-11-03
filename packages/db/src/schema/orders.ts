@@ -58,6 +58,8 @@ export const orderGroups = pgTable(
     businessName: text(),
     note: text(),
     idempotencyKey: text().notNull(),
+    /** SHA-256 of the placed request (address, lines, note): the same key with a different request is refused. */
+    requestHash: text(),
     version: version(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
@@ -170,7 +172,9 @@ export const orderItems = pgTable(
     variantId: uuid()
       .notNull()
       .references(() => productVariants.id, { onDelete: 'restrict' }),
+    /** Snapshot in English (shops, admin, invoices) and Hindi when the product has it (hard rule 10). */
     title: text().notNull(),
+    titleHi: text(),
     sku: text().notNull(),
     hsn: text().notNull(),
     gstRateBp: integer().notNull(),

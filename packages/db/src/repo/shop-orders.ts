@@ -71,7 +71,7 @@ export interface ShopOrderItem {
   version: number;
   totalPaise: number;
   pincode: string;
-  items: { title: string; sku: string; qty: number; unitPaise: number }[];
+  items: { title: string; titleHi: string | null; sku: string; qty: number; unitPaise: number }[];
   /** Offers only. */
   assignmentId: string | null;
   expiresAt: Date | null;
@@ -121,6 +121,7 @@ export async function listShopOrders(
           .select({
             orderId: orderItems.orderId,
             title: orderItems.title,
+            titleHi: orderItems.titleHi,
             sku: orderItems.sku,
             qty: orderItems.qty,
             unitPaise: orderItems.unitPaise,
@@ -135,7 +136,13 @@ export async function listShopOrders(
     pincode: r.pincode,
     items: items
       .filter((i) => i.orderId === r.id)
-      .map((i) => ({ title: i.title, sku: i.sku, qty: num(i.qty), unitPaise: num(i.unitPaise) })),
+      .map((i) => ({
+        title: i.title,
+        titleHi: i.titleHi,
+        sku: i.sku,
+        qty: num(i.qty),
+        unitPaise: num(i.unitPaise),
+      })),
     assignmentId: r.assignment_id,
     expiresAt: r.expires_at ? new Date(r.expires_at) : null,
     // Shared only while the shop is fulfilling the order (DPDP minimisation, advisor review 2026-11-03).

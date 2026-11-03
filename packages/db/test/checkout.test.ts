@@ -156,6 +156,10 @@ describe('placing a COD order', () => {
     );
     const items = await db.select().from(s.orderItems);
     expect(items.map((i) => i.cgstPaise === i.sgstPaise && i.igstPaise === 0)).toEqual([true, true]);
+    // Titles snapshot in English and Hindi whatever the customer's locale (hard rule 10).
+    const tyre = items.find((i) => i.sku === sku('scooter-tubeless-tyre-90-90-12'));
+    expect(tyre?.title).toMatch(/Tubeless scooter tyre 90\/90-12$/u);
+    expect(tyre?.titleHi).toMatch(/[ऀ-ॿ]/u);
     const reserved = await db.select().from(s.reservations).where(eq(s.reservations.status, 'active'));
     expect(reserved.map((r) => r.qty).sort()).toEqual([1, 2]);
     const events = await db.select().from(s.orderEvents);
@@ -182,6 +186,13 @@ describe('placing a COD order', () => {
     expect(a.code).toBe(b.code);
     expect([a.replayed, b.replayed].sort()).toEqual([false, true]);
     expect((await placeCodOrder(t(), input)).code).toBe(a.code);
+    // The same key for a different request is refused, never answered with the old order.
+    await expect(placeCodOrder(t(), { ...input, address: address('492001') })).rejects.toMatchObject({
+      code: 'IDEMPOTENCY_MISMATCH',
+    });
+    await expect(placeCodOrder(t(), { ...input, note: 'Different note' })).rejects.toMatchObject({
+      code: 'IDEMPOTENCY_MISMATCH',
+    });
     expect(
       await db.$count(
         s.orderGroups,
