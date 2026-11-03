@@ -19,6 +19,7 @@ import {
   type DemoOrder,
 } from '@/demo/store';
 import { track } from '@/lib/analytics';
+import { useDisclosureFocus } from '@/lib/use-disclosure-focus';
 import { formatDate, formatPrice } from '@/lib/format';
 import { StatusTimeline } from './status-timeline';
 import { productNameFor, shopNameFor } from '@/demo/i18n/localize';
@@ -65,7 +66,12 @@ export function OrderView({ code }: { code: string }) {
         <section className="rounded-card border border-line-card bg-surface p-6 shadow-card">
           <h2 className="font-heading text-lg font-extrabold text-ink">{t('statusLabel')}</h2>
           {order.cancellation ? (
-            <div role="status" className="mt-5 rounded-tile bg-pill p-5 text-ink">
+            <div
+              id="order-cancelled"
+              role="status"
+              tabIndex={-1}
+              className="mt-5 rounded-tile bg-pill p-5 text-ink"
+            >
               <p className="font-heading font-bold">{t('cancelledTitle')}</p>
               <p className="mt-1 text-sm text-muted">
                 {t(order.cancellation.by === 'customer' ? 'cancelledByYou' : 'cancelledByMechDost', {
@@ -210,6 +216,7 @@ export function OrderView({ code }: { code: string }) {
 function CancelOrder({ order }: { order: DemoOrder }) {
   const t = useTranslations('order');
   const [open, setOpen] = useState(false);
+  useDisclosureFocus(open ? 'order-cancel' : null);
 
   function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -217,7 +224,8 @@ function CancelOrder({ order }: { order: DemoOrder }) {
     if (cancelDemoOrder(order.code, 'customer', reasonCode, order.customer.name)) {
       if (order.coins) restoreCoinsForOrder(order.coins.accountId, order.code);
       track('order_cancel_submitted', { code: order.code, by: 'customer', reasonCode });
-      setOpen(false);
+      // This form unmounts with the order closed: keep keyboard focus on the outcome, not on <body>.
+      requestAnimationFrame(() => document.getElementById('order-cancelled')?.focus());
     }
   }
 
@@ -225,6 +233,7 @@ function CancelOrder({ order }: { order: DemoOrder }) {
     return (
       <button
         type="button"
+        data-disclosure-trigger="order-cancel"
         onClick={() => {
           setOpen(true);
         }}
@@ -242,6 +251,7 @@ function CancelOrder({ order }: { order: DemoOrder }) {
       </label>
       <select
         id="cancel-reason"
+        data-disclosure-field="order-cancel"
         name="reasonCode"
         defaultValue="changed_mind"
         className="mt-1 min-h-11 w-full rounded-input border border-input-border bg-surface px-3 text-[15px] text-ink"

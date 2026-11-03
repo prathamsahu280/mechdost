@@ -80,6 +80,7 @@ test('the assistant button steps aside while the choice is open; Escape closes a
   await expect(launcher).toBeHidden();
   await page.keyboard.press('Escape');
   await expect(page.getByTestId('consent-banner')).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Privacy choices' })).toBeFocused(); // focus returns to the opener
   await expect(launcher).toBeVisible();
 });
 

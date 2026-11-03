@@ -41,13 +41,16 @@ async function placeOrder(page: Page): Promise<string> {
 test('the customer cancels before packing; the admin sees it with the reason', async ({ page }) => {
   const code = await placeOrder(page);
   await page.getByRole('button', { name: 'Cancel this order' }).click();
+  // Keyboard focus follows the disclosure (web-design-guidelines review): into the form, back to the trigger.
+  await expect(page.getByLabel('Why are you cancelling?')).toBeFocused();
   await page.getByLabel('Why are you cancelling?').selectOption('ordered_by_mistake');
   await page.getByRole('button', { name: 'Keep my order' }).click();
-  await expect(page.getByRole('button', { name: 'Cancel this order' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Cancel this order' })).toBeFocused();
   await page.getByRole('button', { name: 'Cancel this order' }).click();
   await page.getByLabel('Why are you cancelling?').selectOption('ordered_by_mistake');
   await page.getByRole('button', { name: 'Cancel order', exact: true }).click();
   await expect(page.getByText('Order cancelled')).toBeVisible();
+  await expect(page.locator('#order-cancelled')).toBeFocused();
   await expect(page.getByText(/You cancelled this order on .* · Ordered by mistake/)).toBeVisible();
   await expect(page.getByRole('button', { name: 'Cancel this order' })).toHaveCount(0);
 

@@ -449,3 +449,20 @@
 html[data-consent-open] .assistant-launcher {
   visibility: hidden;
 }
+
+/* Fixed bottom UI never hides the focused element (WCAG 2.2 2.4.11): the browser scrolls focus above the mobile
+   tab bar, and above the privacy banner while it is open (banner ≈ 13rem incl. its offset). */
+html {
+  scroll-padding-bottom: calc(76px + env(safe-area-inset-bottom));
+}
+html[data-consent-open] {
+  scroll-padding-bottom: calc(76px + env(safe-area-inset-bottom) + 13rem);
+}
+@media (min-width: 1024px) {
+  html {
+    scroll-padding-bottom: 0;
+  }
+  html[data-consent-open] {
+    scroll-padding-bottom: 13rem;
+  }
+}

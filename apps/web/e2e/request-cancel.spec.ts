@@ -18,6 +18,7 @@ test('the customer cancels a workshop booking; the workshop stops seeing it', as
   await page.getByLabel('Why are you cancelling?').selectOption('found_another_workshop');
   await page.getByRole('button', { name: 'Cancel booking', exact: true }).click();
   await expect(page.getByText('Booking cancelled')).toBeVisible();
+  await expect(page.locator('#request-cancelled')).toBeFocused();
   await expect(page.getByText(/You cancelled this booking on .* · Found another workshop/)).toBeVisible();
   await expect(page.getByRole('button', { name: 'Cancel this booking' })).toHaveCount(0);
 

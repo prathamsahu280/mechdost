@@ -44,6 +44,7 @@ Source: `style.css`, `premium.css`, `simple.css`, `service-hub.css`, `service-wo
 - Shadows: cards `0 4px 16px #101f3405`; hover `translateY(-4px/-5px)` + `0 16px 28px #101f3410`; dialog `0 20px 80px #102a4150`; header `0 2px 16px #101f3407`.
 - Transitions 0.2s; respect `prefers-reduced-motion` (concept disables all transitions).
 - Focus ring: `3px solid #e65325`, offset 3–4px.
+- Focus never gets lost or hidden (2026-11-03, web-design-guidelines review): an inline disclosure whose trigger is replaced (cancel order/booking, block/lift a customer) uses `useDisclosureFocus` (`apps/web/src/lib/use-disclosure-focus.ts`): focus moves to its first field on open and back to the trigger on close; when the form closes the whole flow, focus moves to the outcome panel (`tabIndex=-1`, `role="status"`). Fixed bottom UI reserves `scroll-padding-bottom` (tab bar 76px, plus 13rem while the privacy banner is open), so a focused element is never fully hidden (WCAG 2.4.11). A reopened privacy banner returns focus to "Privacy choices".
 
 ## Layout and chrome
 

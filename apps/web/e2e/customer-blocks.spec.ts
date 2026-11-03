@@ -47,11 +47,13 @@ test('block → checkout refused → lift → order goes through; full block ref
   expect(axe.violations).toEqual([]);
 
   await row.getByRole('button', { name: 'Block…' }).click();
+  await expect(row.getByLabel('Block', { exact: true })).toBeFocused(); // focus moves into the revealed form
   await row.getByLabel('Block', { exact: true }).selectOption('orders');
   await row.getByLabel('Reason').selectOption('fake_orders');
   await row.getByLabel('Note for staff (optional)').fill('Three fake orders in October');
   await row.getByRole('button', { name: 'Block Ravi Sahu' }).click();
   await expect(row.getByText('No orders', { exact: true })).toBeVisible();
+  await expect(row.getByRole('button', { name: 'Block…' })).toBeFocused(); // and back to its trigger
   await expect(row.getByText(/Can browse and ask support, cannot order/)).toBeVisible();
 
   // Signed out, typing the blocked customer's number still hits the block.
@@ -66,9 +68,11 @@ test('block → checkout refused → lift → order goes through; full block ref
   await page.goto('/admin/customers');
   const again = page.locator('li').filter({ hasText: 'Ravi Sahu' }).first();
   await again.getByRole('button', { name: 'Lift this block' }).click();
+  await expect(again.getByLabel('Why is it lifted?')).toBeFocused();
   await again.getByLabel('Why is it lifted?').fill('Customer confirmed the orders by phone');
   await again.getByRole('button', { name: 'Lift block' }).click();
   await expect(again.getByText('No blocks')).toBeVisible();
+  await expect(again.getByRole('button', { name: 'Block…' })).toBeFocused(); // the lifted block's button is gone
   await again.getByText('Earlier blocks (1)').click();
 
   // Lifted: the same checkout now places the order.

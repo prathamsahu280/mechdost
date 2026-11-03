@@ -18,6 +18,7 @@ import {
 import { useAccounts, type DemoAccount } from '@/demo/session';
 import { track } from '@/lib/analytics';
 import { formatDate } from '@/lib/format';
+import { useDisclosureFocus } from '@/lib/use-disclosure-focus';
 import { maskPhone } from './admin-support';
 import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
 
@@ -80,6 +81,11 @@ function CustomerRow({
   const active = blocks.filter((b) => inForce(b));
   const past = blocks.filter((b) => !inForce(b));
   const idBase = `customer-${account.id}`;
+  const blockKey = `${idBase}-block`;
+  useDisclosureFocus(
+    mode === 'block' ? blockKey : typeof mode === 'object' ? `${idBase}-lift-${mode.lift}` : null,
+    blockKey,
+  );
 
   function onBlock(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -99,6 +105,7 @@ function CustomerRow({
     });
     if (!result.ok) {
       setError(t(`customersErr_${result.reason}`));
+      document.getElementById(`${idBase}-level`)?.focus(); // errors are about the level (e.g. already blocked)
       return;
     }
     track('admin_customer_block', { action: 'blocked', level, reasonCode });
@@ -130,7 +137,7 @@ function CustomerRow({
     <li className={portalCard}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p data-user-content className="font-heading text-lg font-extrabold text-ink">
+          <p data-user-content className="font-heading text-lg font-extrabold break-words text-ink">
             {account.name}
           </p>
           <p className="text-xs text-muted" lang="en">
@@ -183,7 +190,9 @@ function CustomerRow({
               </label>
               <input
                 id={`${idBase}-lift`}
+                data-disclosure-field={`${idBase}-lift-${b.id}`}
                 name="liftReason"
+                autoComplete="off"
                 maxLength={300}
                 aria-invalid={error ? true : undefined}
                 aria-describedby={error ? `${idBase}-error` : undefined}
@@ -209,6 +218,7 @@ function CustomerRow({
           ) : (
             <button
               type="button"
+              data-disclosure-trigger={`${idBase}-lift-${b.id}`}
               className={`${portalQuiet} mt-1`}
               onClick={() => {
                 setMode({ lift: b.id });
@@ -227,7 +237,14 @@ function CustomerRow({
             <label htmlFor={`${idBase}-level`} className="text-sm font-bold text-ink">
               {t('customersLevel')}
             </label>
-            <select id={`${idBase}-level`} name="level" className={portalField} defaultValue="cod_only">
+            <select
+              id={`${idBase}-level`}
+              data-disclosure-field={blockKey}
+              name="level"
+              aria-describedby={error ? `${idBase}-error` : undefined}
+              className={portalField}
+              defaultValue="cod_only"
+            >
               {CUSTOMER_BLOCK_LEVELS.map((l) => (
                 <option key={l} value={l}>
                   {t(`customersLevel_${l}`)}
@@ -257,7 +274,13 @@ function CustomerRow({
             <label htmlFor={`${idBase}-note`} className="text-sm font-bold text-ink">
               {t('customersNote')}
             </label>
-            <input id={`${idBase}-note`} name="note" maxLength={500} className={portalField} />
+            <input
+              id={`${idBase}-note`}
+              name="note"
+              autoComplete="off"
+              maxLength={500}
+              className={portalField}
+            />
           </div>
           <div className="min-[600px]:col-span-2">
             {errorLine}
@@ -282,6 +305,7 @@ function CustomerRow({
         <div className="mt-3">
           <button
             type="button"
+            data-disclosure-trigger={blockKey}
             className={portalQuiet}
             onClick={() => {
               setMode('block');

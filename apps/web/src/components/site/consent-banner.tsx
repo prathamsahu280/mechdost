@@ -24,16 +24,24 @@ export function ConsentBanner({ copy }: { copy: ConsentCopy }) {
   const [reopened, setReopened] = useState(false);
   const [mounted, setMounted] = useState(false);
   const region = useRef<HTMLElement>(null);
+  const opener = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     setMounted(true);
     return onConsentOpen(() => {
+      opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
       setReopened(true);
     });
   }, []);
 
+  // Reopened from the footer: focus moves into the banner, and back to "Privacy choices" when it closes.
   useEffect(() => {
-    if (reopened) region.current?.focus();
+    if (reopened) {
+      region.current?.focus();
+    } else if (opener.current) {
+      opener.current.focus();
+      opener.current = null;
+    }
   }, [reopened]);
 
   const visible = mounted && (!choice || reopened);

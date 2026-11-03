@@ -15,6 +15,7 @@ import {
   type DemoServiceRequest,
 } from '@/demo/store';
 import { track } from '@/lib/analytics';
+import { useDisclosureFocus } from '@/lib/use-disclosure-focus';
 import { formatDate, formatPrice } from '@/lib/format';
 import { StatusTimeline } from '../commerce/status-timeline';
 import { serviceNameFor, workshopNameFor } from '@/demo/i18n/localize';
@@ -69,7 +70,12 @@ export function RequestView({ code }: { code: string }) {
         <section className="rounded-card border border-line-card bg-surface p-6 shadow-card">
           <h2 className="font-heading text-lg font-extrabold text-ink">{t('statusLabel')}</h2>
           {request.cancellation ? (
-            <div role="status" className="mt-5 rounded-tile bg-pill p-5 text-ink">
+            <div
+              id="request-cancelled"
+              role="status"
+              tabIndex={-1}
+              className="mt-5 rounded-tile bg-pill p-5 text-ink"
+            >
               <p className="font-heading font-bold">{t('cancelledTitle')}</p>
               <p className="mt-1 text-sm text-muted">
                 {t('cancelledOn', { date: formatDate(request.cancellation.at, locale) })} ·{' '}
@@ -178,13 +184,15 @@ export function RequestView({ code }: { code: string }) {
 function CancelRequest({ request }: { request: DemoServiceRequest }) {
   const t = useTranslations('request');
   const [open, setOpen] = useState(false);
+  useDisclosureFocus(open ? 'request-cancel' : null);
 
   function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     const reasonCode = new FormData(e.currentTarget).get('reasonCode') as ServiceCancelReason;
     if (cancelDemoRequest(request.code, reasonCode)) {
       track('booking_cancelled', { code: request.code, workshop: request.workshopSlug, reasonCode });
-      setOpen(false);
+      // This form unmounts with the booking closed: keep keyboard focus on the outcome, not on <body>.
+      requestAnimationFrame(() => document.getElementById('request-cancelled')?.focus());
     }
   }
 
@@ -192,6 +200,7 @@ function CancelRequest({ request }: { request: DemoServiceRequest }) {
     return (
       <button
         type="button"
+        data-disclosure-trigger="request-cancel"
         onClick={() => {
           setOpen(true);
         }}
@@ -209,6 +218,7 @@ function CancelRequest({ request }: { request: DemoServiceRequest }) {
       </label>
       <select
         id="request-cancel-reason"
+        data-disclosure-field="request-cancel"
         name="reasonCode"
         defaultValue="changed_mind"
         className="mt-1 min-h-11 w-full rounded-input border border-input-border bg-surface px-3 text-[15px] text-ink"
