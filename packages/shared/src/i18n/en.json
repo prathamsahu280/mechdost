@@ -422,7 +422,9 @@
     "coinsLine": "MechDost Coins ({coins})",
     "policyTitle": "No returns or exchanges.",
     "policyNote": "If a part is faulty or wrong, our support team will replace it or refund you.",
-    "policyLink": "Returns & refunds policy"
+    "policyLink": "Returns & refunds policy",
+    "blockedOrders": "This account can't place orders right now. Call support at 7978776551 if you think this is a mistake.",
+    "blockedCod": "Cash on delivery isn't available for this account. Online payment is coming soon; call support at 7978776551 for help."
   },
   "order": {
     "title": "Order {code}",
@@ -810,7 +812,8 @@
     "resetLinkLead": "For the account that uses {email}.",
     "resetLinkExpired": "This reset link has expired or was already used. Ask for a new one.",
     "newLink": "Send a new link",
-    "resetDone": "Password changed. Sign in with your new password."
+    "resetDone": "Password changed. Sign in with your new password.",
+    "blocked": "This account can't sign in right now. Call support at 7978776551 if you think this is a mistake."
   },
   "account": {
     "navLabel": "Account sections",
@@ -1205,7 +1208,43 @@
     "mapDefault_satellite": "Satellite with roads and names",
     "mapDefault_map": "Plain map",
     "mapDefault_save": "Save map view",
-    "nav_support": "Support inbox"
+    "nav_support": "Support inbox",
+    "nav_customers": "Customers",
+    "customersLead": "Block a customer from cash on delivery, from ordering, or from signing in — with a reason, and for as long as needed. Every block and lift is kept.",
+    "customersEmpty": "No customer accounts yet.",
+    "customersClear": "No blocks",
+    "customersLevel": "Block",
+    "customersLevel_cod_only": "No cash on delivery",
+    "customersLevel_orders": "No orders",
+    "customersLevel_full": "No sign-in",
+    "customersEffect_cod_only": "Must pay online; cash on delivery is refused",
+    "customersEffect_orders": "Can browse and ask support, cannot order",
+    "customersEffect_full": "Cannot sign in",
+    "customersReason": "Reason",
+    "customersReason_cod_refused": "Refused cash-on-delivery parcels",
+    "customersReason_fake_orders": "Fake orders",
+    "customersReason_payment_fraud": "Payment fraud",
+    "customersReason_abusive_behaviour": "Abusive behaviour",
+    "customersReason_policy_violation": "Broke the policies",
+    "customersReason_account_security": "Account safety (suspected takeover)",
+    "customersReason_other": "Other",
+    "customersEndsAt": "Ends on (optional)",
+    "customersNote": "Note for staff (optional)",
+    "customersBlock": "Block…",
+    "customersBlockConfirm": "Block {name}",
+    "customersUntil": "until {date}",
+    "customersLift": "Lift this block",
+    "customersLiftReason": "Why is it lifted?",
+    "customersLiftConfirm": "Lift block",
+    "customersHistory": "Earlier blocks ({count})",
+    "customersLifted": "lifted",
+    "customersEnded": "ended",
+    "customersErr_not_customer": "Only customer accounts can be blocked. For staff, remove their role; for partners, pause or suspend the shop or workshop.",
+    "customersErr_already": "This customer already has a block at this level.",
+    "customersErr_ends_at": "Pick an end date in the future, or leave it empty.",
+    "customersErr_reason": "Pick a reason.",
+    "customersErr_liftReason": "Say why it is lifted (5 to 300 characters).",
+    "customersErr_storage": "Could not save on this device. Try again."
   },
   "policies": {
     "returns": {

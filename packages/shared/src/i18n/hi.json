@@ -422,7 +422,9 @@
     "coinsLine": "MechDost कॉइन ({coins})",
     "policyTitle": "वापसी या बदलाव नहीं होता।",
     "policyNote": "अगर पार्ट ख़राब या ग़लत निकले, तो हमारी सपोर्ट टीम उसे बदलेगी या पैसे लौटाएगी।",
-    "policyLink": "वापसी और रिफ़ंड नीति"
+    "policyLink": "वापसी और रिफ़ंड नीति",
+    "blockedOrders": "यह खाता अभी ऑर्डर नहीं कर सकता। अगर आपको लगता है कि यह गलती है, तो सपोर्ट को 7978776551 पर कॉल करें।",
+    "blockedCod": "इस खाते के लिए कैश ऑन डिलीवरी उपलब्ध नहीं है। ऑनलाइन भुगतान जल्द आ रहा है; मदद के लिए सपोर्ट को 7978776551 पर कॉल करें।"
   },
   "order": {
     "title": "ऑर्डर {code}",
@@ -810,7 +812,8 @@
     "resetLinkLead": "उस अकाउंट के लिए जो {email} इस्तेमाल करता है।",
     "resetLinkExpired": "यह रीसेट लिंक ख़त्म हो चुका है या पहले इस्तेमाल हो चुका है। नया लिंक मँगाएँ।",
     "newLink": "नया लिंक भेजें",
-    "resetDone": "पासवर्ड बदल गया। नए पासवर्ड से साइन इन करें।"
+    "resetDone": "पासवर्ड बदल गया। नए पासवर्ड से साइन इन करें।",
+    "blocked": "यह खाता अभी साइन इन नहीं कर सकता। अगर आपको लगता है कि यह गलती है, तो सपोर्ट को 7978776551 पर कॉल करें।"
   },
   "account": {
     "navLabel": "अकाउंट के हिस्से",
@@ -1205,7 +1208,43 @@
     "mapDefault_satellite": "सैटेलाइट, सड़कों और नामों के साथ",
     "mapDefault_map": "सादा मैप",
     "mapDefault_save": "मैप व्यू सेव करें",
-    "nav_support": "सहायता इनबॉक्स"
+    "nav_support": "सहायता इनबॉक्स",
+    "nav_customers": "ग्राहक",
+    "customersLead": "किसी ग्राहक को कैश ऑन डिलीवरी, ऑर्डर करने या साइन इन करने से रोकें — कारण के साथ, और जितने समय तक ज़रूरी हो। हर रोक और उसे हटाने का रिकॉर्ड रखा जाता है।",
+    "customersEmpty": "अभी कोई ग्राहक खाता नहीं है।",
+    "customersClear": "कोई रोक नहीं",
+    "customersLevel": "रोक",
+    "customersLevel_cod_only": "कैश ऑन डिलीवरी नहीं",
+    "customersLevel_orders": "ऑर्डर नहीं",
+    "customersLevel_full": "साइन इन नहीं",
+    "customersEffect_cod_only": "ऑनलाइन भुगतान ज़रूरी; कैश ऑन डिलीवरी नहीं",
+    "customersEffect_orders": "देख सकते हैं और सपोर्ट से पूछ सकते हैं, ऑर्डर नहीं कर सकते",
+    "customersEffect_full": "साइन इन नहीं कर सकते",
+    "customersReason": "कारण",
+    "customersReason_cod_refused": "कैश ऑन डिलीवरी पार्सल लेने से मना किया",
+    "customersReason_fake_orders": "नकली ऑर्डर",
+    "customersReason_payment_fraud": "भुगतान में धोखाधड़ी",
+    "customersReason_abusive_behaviour": "बदसलूकी",
+    "customersReason_policy_violation": "नीतियाँ तोड़ीं",
+    "customersReason_account_security": "खाते की सुरक्षा (किसी और के कब्ज़े का शक)",
+    "customersReason_other": "अन्य",
+    "customersEndsAt": "किस तारीख़ तक (वैकल्पिक)",
+    "customersNote": "स्टाफ़ के लिए नोट (वैकल्पिक)",
+    "customersBlock": "रोक लगाएँ…",
+    "customersBlockConfirm": "{name} पर रोक लगाएँ",
+    "customersUntil": "{date} तक",
+    "customersLift": "यह रोक हटाएँ",
+    "customersLiftReason": "रोक क्यों हटाई जा रही है?",
+    "customersLiftConfirm": "रोक हटाएँ",
+    "customersHistory": "पिछली रोकें ({count})",
+    "customersLifted": "हटाई गई",
+    "customersEnded": "समाप्त",
+    "customersErr_not_customer": "सिर्फ़ ग्राहक खातों पर रोक लगाई जा सकती है। स्टाफ़ के लिए उनकी भूमिका हटाएँ; पार्टनर के लिए दुकान या वर्कशॉप को रोकें या निलंबित करें।",
+    "customersErr_already": "इस ग्राहक पर इस स्तर की रोक पहले से है।",
+    "customersErr_ends_at": "आगे की कोई तारीख़ चुनें, या ख़ाली छोड़ दें।",
+    "customersErr_reason": "कोई कारण चुनें।",
+    "customersErr_liftReason": "बताएँ कि रोक क्यों हटाई जा रही है (5 से 300 अक्षर)।",
+    "customersErr_storage": "इस डिवाइस पर सेव नहीं हो सका। फिर से कोशिश करें।"
   },
   "policies": {
     "returns": {

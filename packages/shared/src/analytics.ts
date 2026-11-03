@@ -83,6 +83,13 @@ export const CLIENT_EVENT_SCHEMAS = {
       to: id.optional(),
     })
     .strict(),
+  admin_customer_block: z
+    .object({
+      action: z.enum(['blocked', 'lifted']),
+      level: z.enum(['cod_only', 'orders', 'full']),
+      reasonCode: id.optional(),
+    })
+    .strict(),
   admin_notifications_change: z
     .object({ target: id, action: z.enum(['saved', 'enabled', 'disabled', 'budget']) })
     .strict(),

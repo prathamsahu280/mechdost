@@ -18,6 +18,7 @@ import {
   recordFailure,
   type PasswordHash,
 } from './passwords';
+import { customerAllowed } from './customer-blocks';
 import { demoStorage } from './store';
 
 export const DEMO_OTP = '123456';
@@ -192,6 +193,7 @@ function accountsSnapshot(): readonly DemoAccount[] {
 let lastSession: {
   record: SessionRecord | undefined;
   accounts: readonly DemoAccount[];
+  blocked: boolean;
   value: DemoAccount | null;
 } | null = null;
 
@@ -199,9 +201,13 @@ function sessionSnapshot(): DemoAccount | null {
   const record = demoStorage.read(SESSION, isSession)[0];
   const accounts = accountsSnapshot();
   const cached = lastSession;
-  if (cached && cached.record === record && cached.accounts === accounts) return cached.value;
-  const value = record ? (accounts.find((a) => a.id === record.accountId) ?? null) : null;
-  lastSession = { record, accounts, value };
+  // A fully blocked customer has no session (customer-blocks.ts), whichever way they signed in.
+  const found = record ? (accounts.find((a) => a.id === record.accountId) ?? null) : null;
+  const blocked = found !== null && !customerAllowed(found.id).signIn;
+  if (cached && cached.record === record && cached.accounts === accounts && cached.blocked === blocked)
+    return cached.value;
+  const value = blocked ? null : found;
+  lastSession = { record, accounts, blocked, value };
   return value;
 }
 
@@ -270,7 +276,8 @@ function storedHash(account: DemoAccount | undefined): Promise<PasswordHash> | n
 export type PasswordSignIn =
   | { ok: true; account: DemoAccount; needsOtp: boolean }
   | { ok: false; reason: 'invalid' }
-  | { ok: false; reason: 'locked'; until: number };
+  | { ok: false; reason: 'locked'; until: number }
+  | { ok: false; reason: 'blocked' };
 
 /**
  * Phone or email + password. Unknown account and wrong password give the same answer after the same work
@@ -291,6 +298,8 @@ export async function signInWithPassword(identifier: string, password: string): 
     return now ? { ok: false, reason: 'locked', until: now } : { ok: false, reason: 'invalid' };
   }
   clearFailures(key);
+  // Told only after the right password, so a block never reveals whether an account exists.
+  if (!customerAllowed(account.id).signIn) return { ok: false, reason: 'blocked' };
   if (account.role === 'admin') return { ok: true, account, needsOtp: true };
   startSession(account.id);
   return { ok: true, account, needsOtp: false };

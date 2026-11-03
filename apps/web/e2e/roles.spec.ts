@@ -58,6 +58,9 @@ test.describe('sign-in (spec 01: phone OTP once, then password)', () => {
     await page.getByLabel('Mobile number or email').fill('nobody@example.com');
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
     await expect(page.getByText(generic)).toBeVisible();
+    // The message is still on screen from the first try: wait for this attempt to finish (the button is
+    // disabled while the password is checked), or the next fill races the late result.
+    await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toBeEnabled();
 
     // Show/hide works, then the email + password sign-in succeeds.
     await page.getByLabel('Mobile number or email').fill('Ravi.Sahu@example.com');

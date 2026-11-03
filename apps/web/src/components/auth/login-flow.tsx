@@ -185,6 +185,8 @@ export function LoginFlow() {
       if (result.reason === 'locked') {
         const minutes = Math.max(1, Math.ceil((result.until - Date.now()) / 60_000));
         fail(t('locked', { minutes }), 'login-password');
+      } else if (result.reason === 'blocked') {
+        fail(t('blocked'), 'login-password');
       } else {
         fail(t('errSignIn'), 'login-password');
       }

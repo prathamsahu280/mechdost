@@ -22,6 +22,8 @@ export const ADMIN_SECTIONS = [
   'quotes',
   'applications',
   'partners',
+  // Customer blocks (cod_only / orders / full), research/admin-console.md §5.
+  'customers',
   'reviews',
   // Customer requests from the website and WhatsApp (spec 09).
   'support',

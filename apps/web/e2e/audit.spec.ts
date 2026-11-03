@@ -26,6 +26,7 @@ const BASE_PAGES = [
   '/admin',
   '/admin/orders',
   '/admin/notifications',
+  '/admin/customers',
   '/admin/support',
   '/account/support',
   '/admin/layout',

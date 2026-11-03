@@ -8,7 +8,8 @@ import { useState, type SyntheticEvent } from 'react';
 import { track } from '@/lib/analytics';
 import { formatPrice } from '@/lib/format';
 import { coinBalanceOf, redeemCoins, useCoins } from '@/demo/coins';
-import { useSession } from '@/demo/session';
+import { customerAllowed } from '@/demo/customer-blocks';
+import { findAccount, useSession } from '@/demo/session';
 import { coinRulesFrom, useSiteSettings } from '@/demo/site-config';
 import { placeDemoOrder, priceCart, useCart } from '@/demo/store';
 import { CartView } from './cart-view';
@@ -29,6 +30,7 @@ export function CheckoutForm() {
   const { priced, subtotalPaise, deliveryPaise, totalPaise } = priceCart(lines);
   const [errors, setErrors] = useState<Partial<Record<Field, string>>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [blockedNote, setBlockedNote] = useState<string | null>(null);
   // MechDost Coins (spec 20): signed-in customers may use coins for part of the products, never delivery.
   const session = useSession();
   const settings = useSiteSettings();
@@ -66,6 +68,18 @@ export function CheckoutForm() {
       document.getElementById(`checkout-${firstError}`)?.focus();
       return;
     }
+    // Customer blocks (spec 08): the signed-in account, or the account behind the phone number typed in, so
+    // signing out does not get round a block. The demo takes cash on delivery only, so a COD block stops ordering.
+    const allowed = customerAllowed(session?.id ?? findAccount(phone)?.id ?? null);
+    if (!allowed.order || !allowed.cod) {
+      setBlockedNote(allowed.order ? t('blockedCod') : t('blockedOrders'));
+      track('click', {
+        id: allowed.order ? 'checkout_blocked_cod' : 'checkout_blocked_orders',
+        path: window.location.pathname,
+      });
+      return;
+    }
+    setBlockedNote(null);
     setSubmitting(true);
     // Re-check the balance at the moment of ordering (another tab may have used the coins).
     const spend =
@@ -222,6 +236,11 @@ export function CheckoutForm() {
         </label>
         {errorText('consent')}
         <p className="mt-4 rounded-lg bg-surface-alt px-3 py-2 text-xs text-muted">{t('flowNote')}</p>
+        {blockedNote ? (
+          <p role="alert" className="mt-4 rounded-lg bg-warning-bg px-3 py-2 text-sm font-bold text-warning">
+            {blockedNote}
+          </p>
+        ) : null}
         <button
           type="submit"
           disabled={submitting}
