@@ -254,8 +254,9 @@ async function ownOrder(tx: Tx, shopIds: readonly string[], code: string) {
     .from(orders)
     .where(eq(orders.code, code))
     .limit(1);
-  if (!o?.shopId || !shopIds.includes(o.shopId)) throw new NotFoundError('Order not found');
-  return o;
+  const shopId = o?.shopId;
+  if (!o || !shopId || !shopIds.includes(shopId)) throw new NotFoundError('Order not found');
+  return { ...o, shopId }; // narrowed: an order a shop acts on always has its shop
 }
 
 async function shipmentOf(tx: Tx, orderId: string) {
@@ -360,7 +361,7 @@ export async function deliverShopOrder(
     });
     await recordServerEvent(tx, 'order_delivered', {
       userId: input.staffUserId,
-      props: { orderCode: input.code, shopId: o.shopId ?? '' },
+      props: { orderCode: input.code, shopId: o.shopId },
     });
     await auditShop(tx, {
       staffUserId: input.staffUserId,

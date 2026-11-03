@@ -16,6 +16,7 @@ import {
   declineShopOffer,
   deliverShopOrder,
   deliveryCodeFor,
+  events,
   listShopOrders,
   placeCodOrder,
   quoteCheckout,
@@ -220,8 +221,8 @@ describe('fulfilment', () => {
     expect((await orderRow(code)).status).toBe('out_for_delivery');
     expect(await deliver(customerCode!)).toMatchObject({ ok: true });
     expect((await orderRow(code)).status).toBe('delivered');
-    const events = await db.select().from(s.orderEvents).where(eq(s.orderEvents.orderId, o.id));
-    expect(events.map((e) => e.toStatus)).toEqual([
+    const timeline = await db.select().from(s.orderEvents).where(eq(s.orderEvents.orderId, o.id));
+    expect(timeline.map((e) => e.toStatus)).toEqual([
       'placed',
       'awaiting_shop',
       'confirmed',
@@ -230,6 +231,9 @@ describe('fulfilment', () => {
       'out_for_delivery',
       'delivered',
     ]);
+    // The analytics event names the shop that delivered (no empty-string fallback; advisor P2).
+    const delivered = await db.select().from(events).where(eq(events.event, 'order_delivered'));
+    expect(delivered.map((e) => e.props)).toContainEqual({ orderCode: code, shopId: ids[0] });
   });
 });
 
