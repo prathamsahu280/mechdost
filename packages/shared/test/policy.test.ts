@@ -12,7 +12,7 @@ describe('policy documents', () => {
   it('keeps paragraphs, cleans text and accepts the official placeholders', () => {
     const r = cleanPolicy({
       ...doc,
-      title: '  Privacy​  ',
+      title: '  Privacy\u200b  ',
       sections: [{ heading: ' Who  we are ', body: 'Line one\r\n\r\n\r\nLine\ttwo  ' }],
     });
     expect(r).toEqual({

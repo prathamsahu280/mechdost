@@ -54,7 +54,9 @@ const paragraphs = (value: string, max: number) =>
 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
-const EMOJI = /^\p{Extended_Pictographic}[\p{Extended_Pictographic}‍️\p{Emoji_Modifier}]{0,7}$/u;
+// Joiners and variation selectors combine with the emoji before them, so they sit outside a character class.
+const EMOJI =
+  /^\p{Extended_Pictographic}(?:\p{Extended_Pictographic}|\p{Emoji_Modifier}|\u200d|\ufe0f){0,7}$/u;
 
 function validDate(value: string): boolean {
   const m = ISO_DATE.exec(value);

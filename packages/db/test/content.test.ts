@@ -52,7 +52,7 @@ describe('site content', () => {
       staffUserId: staff,
       locale: 'en',
       cityId: null,
-      value: '  Parts​ for every   ride  ',
+      value: '  Parts\u200b for every   ride  ',
       expectedVersion: null,
     });
     expect(draft.value).toBe('Parts for every ride'); // plain text, cleaned like the demo editor
