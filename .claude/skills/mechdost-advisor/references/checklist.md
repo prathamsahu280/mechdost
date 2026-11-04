@@ -90,4 +90,6 @@ Mark each touched item ✅ / ⚠️ / ❌. Anything ❌ blocks implementation un
 
 - ❌ Shell edits (bash heredocs, Python string replacement) of code that contains backslashes, regexes or quotes — use Write/Edit. Verify with a grep of the exact line afterwards.
 - **Hono middleware patterns (L54):** `/x/*` already covers `/x`; never register the same middleware on both. Gate methods with `app.on('POST', '/x/*', …)`. New route files get a test that one request lowers `RateLimit-Remaining` by exactly 1.
+- **Commit gates cannot be bypassed by a pipe (T44, L64):** every commit chain starts `set -o pipefail;` then `pnpm format:check && turbo run typecheck lint test && git add && git commit`; a gate piped through grep/tail without pipefail reports the filter's success. The pre-commit hook checks formatting; CI checks everything.
+- **Invisible characters (L65):** backslash-u escapes written through the Write/Edit tools or a heredoc can land as the real character. Build the backslash with chr(92) in Python, then check: `packages/shared/test/source-hygiene.test.ts` fails on zero-width, BOM, line-separator and NUL characters in tracked source.
 - **Demo/API parity (L58):** before calling an API feature done, list the rules the demo store enforces for the same action (standing, blocks, windows, reason codes) and check each one exists in the repository with a test.

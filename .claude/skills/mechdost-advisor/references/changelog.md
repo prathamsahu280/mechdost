@@ -6,3 +6,4 @@
 - 2026-11-01 · Promoted L12 + L39 into checklist "Docs & process": after a superseding decision, grep CLAUDE.md, docs/README.md, design-system.md and memory for the old wording.
 - 2026-11-03 — checklist: added "Demo/API parity" (L58, from the retrospective review that found the paused-shop accept gap).
 - 2026-11-03 — Improvement sweep run (research-playbook § Sweep): security releases/advisories recorded in docs/research/security-vulnerabilities.md § Sweep 2026-11-03; added L63; learnings reviewed (no stale entries removed).
+- 2026-11-04 — checklist § Tooling: added commit-gate pipefail rule (T44 + L64) and invisible-character rule (L65).

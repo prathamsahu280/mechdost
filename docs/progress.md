@@ -36,6 +36,8 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Completed log (newest first)
 
+- 2026-11-04 — **Gate slip caught**: commit 3e25cbe carried a lint error (gate piped through grep without pipefail; fixed in da66251 before CI saw a failing HEAD). Invisible characters from tool escaping fixed in 4 files; new `packages/shared/test/source-hygiene.test.ts`; checklist § Tooling updated (pipefail, escapes).
+
 - 2026-11-04 — **Policy pages on the content API**: `@mechdost/shared/policy` (structured document, plain-text cleaner, placeholder allow-list, `fillPolicyText`), repository + API accept policy documents with the same draft/publish rules, public `GET /v1/content/policies/{key}`. Tests: shared policy 4, db content 4, api content 4.
 
 - 2026-11-04 — **CI failed again** (user report): a docs commit skipped `pnpm format:check` (Prettier reflowed one line). Fixed (fa55213), verified in a fresh clone; T44; pre-commit hook `.githooks/pre-commit` added once the user granted the permission (Q68).
