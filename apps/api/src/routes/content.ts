@@ -2,12 +2,14 @@ import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import {
   cityIdByCode,
   getPublishedContent,
+  getPublishedPolicy,
   listContentForAdmin,
   publishContent,
   saveContentDraft,
   unpublishContent,
 } from '@mechdost/db/repo';
 import { CONTENT_KEYS, CONTENT_LOCALES } from '@mechdost/shared/content';
+import { POLICY_KEYS, POLICY_LIMITS } from '@mechdost/shared/policy';
 import type { SessionCache } from '../auth/session-cache';
 import { authenticate, requirePermission, requireVerified } from '../middleware/auth';
 import { rateLimit, RATE_RULES } from '../middleware/rate-limit';
@@ -22,7 +24,30 @@ import { errorResponses, ErrorSchema } from './schemas';
  * Admin: verified staff; `content:write` to read and draft, `content:publish` to publish or unpublish. A global
  * text needs an all-cities grant, a city override a grant covering the city (otherwise 404).
  */
-const Key = z.enum(CONTENT_KEYS).openapi({ param: { name: 'key', in: 'path' }, example: 'hero.titleLine1' });
+const Key = z
+  .enum([...CONTENT_KEYS, ...POLICY_KEYS])
+  .openapi({ param: { name: 'key', in: 'path' }, example: 'hero.titleLine1' });
+// Shape only; the repository cleans and checks every field (`cleanPolicy`) and refuses with POLICY_INVALID.
+const Policy = z
+  .object({
+    title: z.string().max(500),
+    lead: z.string().max(1000),
+    updatedOn: z.string().max(10),
+    sections: z
+      .array(
+        z
+          .object({
+            heading: z.string().max(500),
+            body: z.string().max(5000),
+            emoji: z.string().max(16).optional(),
+          })
+          .strict(),
+      )
+      .max(POLICY_LIMITS.sections),
+  })
+  .strict()
+  .openapi('PolicyDocument');
+const Value = z.union([z.string(), Policy]);
 const Locale = z.enum(CONTENT_LOCALES);
 const CityCode = z.string().regex(/^[A-Z]{3}$/);
 const json = <T extends z.ZodType>(schema: T, description: string) => ({
@@ -52,12 +77,24 @@ const Entry = z
   .object({
     key: z.string(),
     locale: Locale,
-    draft: z.object({ value: z.string(), version: z.number().int() }).nullable(),
+    draft: z.object({ value: Value, version: z.number().int() }).nullable(),
     published: z
-      .object({ value: z.string(), version: z.number().int(), publishedAt: z.string().nullable() })
+      .object({ value: Value, version: z.number().int(), publishedAt: z.string().nullable() })
       .nullable(),
   })
   .openapi('AdminContentEntry');
+
+const policy = createRoute({
+  method: 'get',
+  path: '/content/policies/{key}',
+  tags: ['content'],
+  summary: 'A published policy page for a locale (and city); null = show the default text',
+  request: {
+    params: z.object({ key: z.enum(POLICY_KEYS).openapi({ param: { name: 'key', in: 'path' } }) }),
+    query: z.object({ locale: Locale, city: CityCode.optional() }),
+  },
+  responses: { 200: json(z.object({ policy: Policy.nullable() }), 'Policy'), ...errorResponses },
+});
 
 const adminList = createRoute({
   method: 'get',
@@ -81,7 +118,7 @@ const saveDraft = createRoute({
       z
         .object({
           city: CityCode.nullable(),
-          value: z.string().max(2000),
+          value: z.union([z.string().max(2000), Policy]),
           version: z.number().int().min(1).nullable(),
         })
         .strict()
@@ -89,10 +126,10 @@ const saveDraft = createRoute({
     ),
   },
   responses: {
-    200: json(z.object({ version: z.number().int(), value: z.string() }), 'Saved'),
+    200: json(z.object({ version: z.number().int(), value: Value }), 'Saved'),
     404: json(ErrorSchema, 'Out of scope'),
     409: json(ErrorSchema, 'STALE_CONTENT'),
-    422: json(ErrorSchema, 'CONTENT_EMPTY'),
+    422: json(ErrorSchema, 'CONTENT_EMPTY, POLICY_INVALID (details.problem)'),
     ...errorResponses,
   },
 });
@@ -132,13 +169,26 @@ const unpublish = createRoute({
 /** Public content: cacheable for a minute in browsers, five at the CDN (publishing shows within that window). */
 export function contentRoutes(deps: AppDeps) {
   const app = new OpenAPIHono<AppEnv>({ defaultHook: validationHook });
-  return app.openapi(published, async (c) => {
-    const q = c.req.valid('query');
-    const cityId = q.city ? await cityIdByCode(deps.db, q.city) : null;
-    const content = await getPublishedContent(deps.db, { locale: q.locale, cityId });
-    c.header('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=600');
-    return c.json({ content }, 200);
-  });
+  const cacheable = 'public, max-age=60, s-maxage=300, stale-while-revalidate=600';
+  return app
+    .openapi(published, async (c) => {
+      const q = c.req.valid('query');
+      const cityId = q.city ? await cityIdByCode(deps.db, q.city) : null;
+      const content = await getPublishedContent(deps.db, { locale: q.locale, cityId });
+      c.header('Cache-Control', cacheable);
+      return c.json({ content }, 200);
+    })
+    .openapi(policy, async (c) => {
+      const q = c.req.valid('query');
+      const cityId = q.city ? await cityIdByCode(deps.db, q.city) : null;
+      const doc = await getPublishedPolicy(deps.db, {
+        key: c.req.valid('param').key,
+        locale: q.locale,
+        cityId,
+      });
+      c.header('Cache-Control', cacheable);
+      return c.json({ policy: doc }, 200);
+    });
 }
 
 export function adminContentRoutes(deps: AppDeps, cache: SessionCache) {

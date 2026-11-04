@@ -8,6 +8,7 @@ import { eq } from 'drizzle-orm';
 import {
   events,
   getPublishedContent,
+  getPublishedPolicy,
   listContentForAdmin,
   publishContent,
   saveContentDraft,
@@ -189,5 +190,69 @@ describe('site content', () => {
       'published',
       'unpublished',
     ]);
+  });
+
+  it('policies are structured documents with the same draft → publish rules; bad rows never reach a page', async () => {
+    const privacy = {
+      title: 'Privacy',
+      lead: 'What we keep about you.',
+      updatedOn: '2026-11-04',
+      sections: [{ heading: 'Who we are', body: 'Run by {company}, {address}.', emoji: '🏢' }],
+    };
+    await expect(
+      saveContentDraft(t(), {
+        key: 'policy.privacy',
+        staffUserId: staff,
+        locale: 'en',
+        cityId: null,
+        value: { ...privacy, lead: 'By {compnay}' },
+        expectedVersion: null,
+      }),
+    ).rejects.toMatchObject({ code: 'POLICY_INVALID', details: { problem: 'unknown_placeholder' } });
+    await expect(
+      saveContentDraft(t(), {
+        key: 'policy.privacy',
+        staffUserId: staff,
+        locale: 'en',
+        cityId: null,
+        value: 'just a string',
+        expectedVersion: null,
+      }),
+    ).rejects.toMatchObject({ code: 'POLICY_INVALID' });
+    const d = await saveContentDraft(t(), {
+      key: 'policy.privacy',
+      staffUserId: staff,
+      locale: 'en',
+      cityId: null,
+      value: privacy,
+      expectedVersion: null,
+    });
+    expect(await getPublishedPolicy(t(), { key: 'policy.privacy', locale: 'en', cityId: null })).toBeNull();
+    await publishContent(t(), {
+      key: 'policy.privacy',
+      staffUserId: staff,
+      locale: 'en',
+      cityId: null,
+      expectedDraftVersion: d.version,
+    });
+    expect(await getPublishedPolicy(t(), { key: 'policy.privacy', locale: 'en', cityId: raipur })).toEqual(
+      privacy,
+    );
+    expect(await getPublishedPolicy(t(), { key: 'policy.privacy', locale: 'hi', cityId: null })).toBeNull();
+    // Short texts and policies never mix: the public text map has no policy in it.
+    expect(Object.keys(await getPublishedContent(t(), { locale: 'en', cityId: null }))).not.toContain(
+      'policy.privacy',
+    );
+
+    // A row edited by hand into something invalid is treated as missing, not rendered.
+    await db
+      .update(s.contentBlocks)
+      .set({ value: { title: '<script>', sections: 'oops' } })
+      .where(eq(s.contentBlocks.key, 'policy.privacy'));
+    expect(await getPublishedPolicy(t(), { key: 'policy.privacy', locale: 'en', cityId: null })).toBeNull();
+    const entry = (await listContentForAdmin(t(), null)).find(
+      (e) => e.key === 'policy.privacy' && e.locale === 'en',
+    );
+    expect(entry?.published?.value).toBe('');
   });
 });

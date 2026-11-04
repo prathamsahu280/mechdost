@@ -19,7 +19,8 @@
     "./analytics": "./src/analytics.ts",
     "./privacy": "./src/privacy.ts",
     "./settings": "./src/settings.ts",
-    "./content": "./src/content.ts"
+    "./content": "./src/content.ts",
+    "./policy": "./src/policy.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",

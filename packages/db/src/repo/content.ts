@@ -6,6 +6,13 @@ import {
   type ContentKey,
   type ContentLocale,
 } from '@mechdost/shared/content';
+import {
+  cleanPolicy,
+  isPolicyKey,
+  POLICY_KEYS,
+  type PolicyDoc,
+  type PolicyKey,
+} from '@mechdost/shared/policy';
 import { auditLog, contentBlocks } from '../schema';
 import { ConflictError, NotFoundError, ValidationError } from './errors';
 import { recordServerEvent } from './events';
@@ -16,10 +23,15 @@ import type { Tx } from './orders';
  * global value optionally overridden per city (the city wins), each with at most one `draft` and one
  * `published` row (unique index). Staff save drafts (`content:write`), publishing copies the draft live and
  * removes it (`content:publish`); unpublishing returns the text to the locale-file default. Every change is
- * compare-and-set on `version` and audited in the same transaction.
+ * compare-and-set on `version` and audited in the same transaction. Policy pages (`@mechdost/shared/policy`)
+ * are structured documents on the same rows and follow the same rules.
  */
+/** Everything editable: short texts and policy documents. */
+export type EditableKey = ContentKey | PolicyKey;
+export type EditableValue = string | PolicyDoc;
+
 const scope = (
-  key: ContentKey,
+  key: EditableKey,
   locale: ContentLocale,
   cityId: string | null,
   status: 'draft' | 'published',
@@ -32,6 +44,13 @@ const scope = (
   );
 
 const textOf = (value: unknown): string => (typeof value === 'string' ? value : '');
+/** Stored values were cleaned on save; re-check on read so a hand-edited row can never reach a page. */
+const policyOf = (value: unknown): PolicyDoc | null => {
+  const r = cleanPolicy(value);
+  return r.ok ? r.doc : null;
+};
+const valueOf = (key: EditableKey, value: unknown): EditableValue =>
+  isPolicyKey(key) ? (policyOf(value) ?? '') : textOf(value);
 
 /** What the storefront shows: published text per key (city override first); missing keys use the default. */
 export async function getPublishedContent(
@@ -60,11 +79,34 @@ export async function getPublishedContent(
   return out;
 }
 
+/** One published policy (city override first), or null: the page then shows its locale-file default. */
+export async function getPublishedPolicy(
+  db: Tx,
+  input: { key: PolicyKey; locale: ContentLocale; cityId: string | null },
+): Promise<PolicyDoc | null> {
+  const rows = await db
+    .select({ cityId: contentBlocks.cityId, value: contentBlocks.value })
+    .from(contentBlocks)
+    .where(
+      and(
+        eq(contentBlocks.key, input.key),
+        eq(contentBlocks.locale, input.locale),
+        eq(contentBlocks.status, 'published'),
+        input.cityId
+          ? or(isNull(contentBlocks.cityId), eq(contentBlocks.cityId, input.cityId))
+          : isNull(contentBlocks.cityId),
+      ),
+    );
+  const city = input.cityId ? rows.find((r) => r.cityId === input.cityId) : undefined;
+  const global = rows.find((r) => r.cityId === null);
+  return policyOf((city ?? global)?.value);
+}
+
 export interface ContentEntry {
-  key: ContentKey;
+  key: EditableKey;
   locale: ContentLocale;
-  draft: { value: string; version: number } | null;
-  published: { value: string; version: number; publishedAt: Date | null } | null;
+  draft: { value: EditableValue; version: number } | null;
+  published: { value: EditableValue; version: number; publishedAt: Date | null } | null;
 }
 
 /** Admin view for one scope (global when `cityId` is null): every key × locale with its draft and live text. */
@@ -73,7 +115,7 @@ export async function listContentForAdmin(db: Tx, cityId: string | null): Promis
     .select()
     .from(contentBlocks)
     .where(cityId ? eq(contentBlocks.cityId, cityId) : isNull(contentBlocks.cityId));
-  return CONTENT_KEYS.flatMap((key) =>
+  return [...CONTENT_KEYS, ...POLICY_KEYS].flatMap((key) =>
     CONTENT_LOCALES.map((locale) => {
       const of = (status: string) =>
         rows.find((r) => r.key === key && r.locale === locale && r.status === status);
@@ -82,8 +124,10 @@ export async function listContentForAdmin(db: Tx, cityId: string | null): Promis
       return {
         key,
         locale,
-        draft: d ? { value: textOf(d.value), version: d.version } : null,
-        published: p ? { value: textOf(p.value), version: p.version, publishedAt: p.publishedAt } : null,
+        draft: d ? { value: valueOf(key, d.value), version: d.version } : null,
+        published: p
+          ? { value: valueOf(key, p.value), version: p.version, publishedAt: p.publishedAt }
+          : null,
       };
     }),
   );
@@ -92,20 +136,34 @@ export async function listContentForAdmin(db: Tx, cityId: string | null): Promis
 const STALE = () =>
   new ConflictError('Someone else changed this text; reload and try again', 'STALE_CONTENT');
 
-/** Create (`expectedVersion` null) or change a draft. The text is cleaned to plain text within the key's limit. */
+/** A short text cleaned to its limit, or a policy document cleaned and checked (`@mechdost/shared/policy`). */
+function cleanEditable(key: EditableKey, raw: unknown): EditableValue {
+  if (isPolicyKey(key)) {
+    const r = cleanPolicy(raw);
+    if (!r.ok)
+      throw new ValidationError('This policy cannot be saved as written', 'POLICY_INVALID', {
+        problem: r.problem,
+      });
+    return r.doc;
+  }
+  const text = typeof raw === 'string' ? cleanContentText(key, raw) : '';
+  if (!text) throw new ValidationError('Write the text, or unpublish to use the default', 'CONTENT_EMPTY');
+  return text;
+}
+
+/** Create (`expectedVersion` null) or change a draft, cleaned and validated for its key. */
 export async function saveContentDraft(
   db: Tx,
   input: {
-    key: ContentKey;
+    key: EditableKey;
     locale: ContentLocale;
     cityId: string | null;
-    value: string;
+    value: unknown;
     expectedVersion: number | null;
     staffUserId: string;
   },
-): Promise<{ version: number; value: string }> {
-  const value = cleanContentText(input.key, input.value);
-  if (!value) throw new ValidationError('Write the text, or unpublish to use the default', 'CONTENT_EMPTY');
+): Promise<{ version: number; value: EditableValue }> {
+  const value = cleanEditable(input.key, input.value);
   return db.transaction(async (tx) => {
     let saved: { version: number } | undefined;
     if (input.expectedVersion === null) {
@@ -150,7 +208,7 @@ export async function saveContentDraft(
 export async function publishContent(
   db: Tx,
   input: {
-    key: ContentKey;
+    key: EditableKey;
     locale: ContentLocale;
     cityId: string | null;
     expectedDraftVersion: number;
@@ -217,7 +275,7 @@ export async function publishContent(
 export async function unpublishContent(
   db: Tx,
   input: {
-    key: ContentKey;
+    key: EditableKey;
     locale: ContentLocale;
     cityId: string | null;
     expectedVersion: number;

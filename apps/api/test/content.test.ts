@@ -93,6 +93,40 @@ describe('site content API', () => {
     expect((await ctx.app.request('/v1/admin/content')).status).toBe(401);
   });
 
+  it('policy pages: draft and publish a structured document; the public endpoint serves it', async () => {
+    const marketing = await person('05', 'marketing', null);
+    const url = '/v1/admin/content/policy.returns/en';
+    const doc = {
+      title: 'Cancellations & returns',
+      lead: 'No returns or exchanges; faulty parts are replaced or refunded.',
+      updatedOn: '2026-11-04',
+      sections: [{ heading: 'Faulty or wrong part', body: 'Raise a support request. Call {phone}.' }],
+    };
+    const bad = await put(marketing, url, {
+      city: null,
+      value: { ...doc, updatedOn: '04/11/2026' },
+      version: null,
+    });
+    expect(bad.status).toBe(422);
+    expect(((await bad.json()) as ErrorJson & { error: { details: unknown } }).error).toMatchObject({
+      code: 'POLICY_INVALID',
+      details: { problem: 'date' },
+    });
+    const saved = await put(marketing, url, { city: null, value: doc, version: null });
+    expect(saved.status).toBe(200);
+    const { version } = (await saved.json()) as { version: number };
+    expect((await post(marketing, `${url}/publish`, { city: null, version })).status).toBe(200);
+
+    const res = await ctx.app.request('/v1/content/policies/policy.returns?locale=en&city=RPR');
+    expect(res.headers.get('cache-control')).toContain('s-maxage=300');
+    expect(((await res.json()) as { policy: unknown }).policy).toEqual(doc);
+    const hindi = (await (await ctx.app.request('/v1/content/policies/policy.returns?locale=hi')).json()) as {
+      policy: unknown;
+    };
+    expect(hindi.policy).toBeNull(); // the Hindi page keeps its Hindi default
+    expect((await ctx.app.request('/v1/content/policies/policy.secret?locale=en')).status).toBe(400);
+  });
+
   it('counts the per-user rate limit once per request', async () => {
     const marketing = await person('04', 'marketing', null);
     const remaining = async () => {
