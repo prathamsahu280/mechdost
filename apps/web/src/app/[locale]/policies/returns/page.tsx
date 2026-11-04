@@ -1,10 +1,9 @@
-import { Phone } from 'lucide-react';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { Container, PageIntro } from '@/components/ui/page-intro';
+import { PolicySections } from '@/components/ui/policy-sections';
 import type { Locale } from '@/i18n/routing';
 import { alternatesFor } from '@/lib/seo';
-import { site } from '@/lib/site';
 
 interface Props {
   params: Promise<{ locale: Locale }>;
@@ -37,39 +36,16 @@ export default async function ReturnsPolicyPage() {
   return (
     <Container className="py-12 tab:py-16">
       <PageIntro eyebrow={t('eyebrow')} line1={t('title')} lead={t('lead')} />
-      <ul className="mt-10 grid max-w-4xl gap-4">
-        {SECTIONS.map(({ key, emoji }) => (
-          <li
-            key={key}
-            className="flex gap-4 rounded-card border border-line-card bg-surface p-5 shadow-card tab:p-6"
-          >
-            <span
-              aria-hidden="true"
-              className="grid size-12 shrink-0 place-items-center rounded-xl bg-accent-soft text-[24px]"
-            >
-              {emoji}
-            </span>
-            <div>
-              <h2 className="font-heading text-lg font-extrabold text-ink">{t(`${key}Title`)}</h2>
-              <p className="mt-1 text-sm leading-relaxed text-muted">
-                {t(`${key}Body`, { days: CLAIM_DAYS })}
-              </p>
-            </div>
-          </li>
-        ))}
-      </ul>
-      <p className="mt-8 flex max-w-4xl flex-wrap items-center gap-x-2 text-sm text-muted">
-        {t('help')}
-        <a
-          href={`tel:${site.supportPhoneE164}`}
-          data-track="policy_returns_call"
-          className="inline-flex min-h-11 items-center gap-2 font-bold text-ink underline-offset-4 hover:underline"
-        >
-          <Phone aria-hidden="true" className="size-4" />
-          {site.supportPhone}
-        </a>
-      </p>
-      <p className="mt-2 max-w-4xl text-xs text-muted">{t('updated')}</p>
+      <PolicySections
+        sections={SECTIONS.map(({ key, emoji }) => ({
+          emoji,
+          title: t(`${key}Title`),
+          body: t(`${key}Body`, { days: CLAIM_DAYS }),
+        }))}
+        help={t('help')}
+        updated={t('updated')}
+        track="policy_returns_call"
+      />
     </Container>
   );
 }

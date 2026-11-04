@@ -14,10 +14,19 @@ interface FooterLink {
   track: string;
 }
 
+/** Policy pages, in the concept's order (company, privacy, delivery, returns, service terms). */
+const POLICY_LINKS = [
+  { href: '/policies/company', label: 'companyPolicy', track: 'footer_company_policy' },
+  { href: '/policies/privacy', label: 'privacyPolicy', track: 'footer_privacy_policy' },
+  { href: '/policies/delivery', label: 'deliveryPolicy', track: 'footer_delivery_policy' },
+  { href: '/policies/returns', label: 'returnsPolicy', track: 'footer_returns_policy' },
+  { href: '/policies/service-terms', label: 'serviceTerms', track: 'footer_service_terms' },
+] as const;
+
 /**
  * Site footer: help card (WhatsApp/call) beside four link columns (shop, vehicle care, account, partners), then a
  * legal row with the operator, GSTIN and registered office (confirmed by the user, inbox Q15), theme toggle and
- * credits. Server-only. Policy links join when the CMS policy pages ship — no links to pages that do not exist.
+ * credits. Server-only. Policy pages are linked in their own row under the legal block.
  * Link lists become admin-editable navigation in Phase 1 (rule 8, spec 08).
  */
 export function Footer() {
@@ -62,8 +71,6 @@ export function Footer() {
         { href: '/login', label: t('signIn'), track: 'footer_sign_in' },
         { href: '/account/orders', label: t('trackOrder'), track: 'footer_orders' },
         { href: '/account/quotes', label: account('nav_quotes'), track: 'footer_quotes' },
-        { href: '/policies/returns', label: t('returnsPolicy'), track: 'footer_returns_policy' },
-        { href: '/policies/privacy', label: t('privacyPolicy'), track: 'footer_privacy_policy' },
         { href: '/cart', label: nav('cart'), track: 'footer_cart' },
       ],
     },
@@ -161,6 +168,21 @@ export function Footer() {
             </span>
           </div>
         </div>
+        <nav aria-label={t('policiesLabel')} className="mt-6">
+          <ul className="flex flex-wrap gap-x-5">
+            {POLICY_LINKS.map((link) => (
+              <li key={link.href}>
+                <LocalLink
+                  href={link.href}
+                  data-track={link.track}
+                  className="inline-flex min-h-11 items-center text-sm text-muted underline-offset-4 hover:text-ink hover:underline"
+                >
+                  {t(link.label)}
+                </LocalLink>
+              </li>
+            ))}
+          </ul>
+        </nav>
         <ConsentChoicesButton label={consent('choices')} />
         <p className="mt-2 text-xs leading-relaxed text-muted">{t('credits')}</p>
         <p className="mt-2 text-xs text-muted">{t('copyright', { year, company })}</p>

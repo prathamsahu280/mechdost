@@ -186,7 +186,11 @@
     "gstin": "GSTIN {gstin}",
     "registered": "Registered office: {address}",
     "returnsPolicy": "Returns & refunds",
-    "privacyPolicy": "Privacy policy"
+    "privacyPolicy": "Privacy policy",
+    "policiesLabel": "Policies",
+    "companyPolicy": "Company & contact",
+    "deliveryPolicy": "Delivery & payment",
+    "serviceTerms": "Workshop bookings"
   },
   "whatsapp": {
     "general": "Hello MechDost, I have a question.",
@@ -1328,6 +1332,57 @@
       "rightsBody": "Ask us to show, correct or delete your data, or withdraw a permission you gave. Deletion is confirmed by our support team first; order and invoice records are kept as long as tax law requires, then removed.",
       "help": "Questions, requests or complaints about your data? Call us:",
       "updated": "Last updated: 3 November 2026."
+    },
+    "delivery": {
+      "eyebrow": "Policies",
+      "title": "Delivery and payment",
+      "lead": "How your order reaches you, what you pay and when.",
+      "pinTitle": "Check your PIN code first",
+      "pinBody": "Enter your PIN code to see which parts we can deliver to you, the price from the nearest shop, the delivery charge and how many days delivery takes.",
+      "pricesTitle": "Prices include GST",
+      "pricesBody": "Part prices include GST. The delivery charge is shown separately before you order, and delivery is free above the amount shown at checkout.",
+      "confirmTitle": "A nearby shop confirms your order",
+      "confirmBody": "We send your order to a verified shop near you. Once the shop accepts it, we tell you it is confirmed and on its way. If no shop can take it, we let you know and you pay nothing.",
+      "codeTitle": "Delivered only with your code",
+      "codeBody": "When your order is out for delivery you get a 4-digit delivery code. Give it to the delivery person only when the parts are in your hands.",
+      "payTitle": "Paying",
+      "payBody": "Pay cash on delivery for orders up to the limit shown at checkout. Online payment is coming soon; until then nothing is charged before delivery.",
+      "cancelTitle": "Changing your mind",
+      "cancelBody": "You can cancel until the shop packs your order. After that, parts can't be returned unless they are faulty, damaged or wrong; see our returns policy.",
+      "help": "Questions about a delivery? Call us:",
+      "updated": "Last updated 4 November 2026."
+    },
+    "service": {
+      "eyebrow": "Policies",
+      "title": "Workshop bookings",
+      "lead": "How a booking works, and why no work starts without your approval.",
+      "findTitle": "Choose a verified workshop",
+      "findBody": "Tell us where your vehicle is. We show verified workshops nearby; pick one, or let MechDost choose for you.",
+      "proposalTitle": "The workshop proposes a time and cost",
+      "proposalBody": "The workshop suggests a date, a time slot and an expected cost range. Your booking is confirmed only when you accept it.",
+      "estimateTitle": "You approve every line of work",
+      "estimateBody": "After checking your vehicle, the workshop sends an itemised estimate. You approve or decline each line. Work you have not approved is not done and not charged.",
+      "cancelTitle": "Cancelling",
+      "cancelBody": "You can cancel a booking free of charge until the workshop has your vehicle.",
+      "billTitle": "Paying the bill",
+      "billBody": "When the work is done you get a final bill with only the work you approved, and you pay that bill.",
+      "pickupTitle": "Pickup and roadside help",
+      "pickupBody": "Vehicle pickup is available only where a workshop offers it, and is agreed with the workshop for your booking. We don't offer roadside help yet.",
+      "help": "Questions about a booking? Call us:",
+      "updated": "Last updated 4 November 2026."
+    },
+    "company": {
+      "eyebrow": "Policies",
+      "title": "Company and contact",
+      "lead": "Who runs MechDost and how to reach us.",
+      "companyLabel": "Company",
+      "officeLabel": "Registered office",
+      "gstinLabel": "GSTIN",
+      "phoneLabel": "Phone and WhatsApp",
+      "whatsapp": "Message us on WhatsApp",
+      "complaintsTitle": "Complaints",
+      "complaintsBody": "Call or WhatsApp us, or raise a support request from your account. We confirm that we have your complaint within 48 hours and resolve it within one month.",
+      "updated": "Last updated 4 November 2026."
     }
   },
   "notifyTemplates": {
