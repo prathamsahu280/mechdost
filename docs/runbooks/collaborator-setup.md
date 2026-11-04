@@ -11,6 +11,7 @@ npm install -g pnpm@11.28.10
 git clone https://github.com/prathamsahu280/mechdost.git
 cd mechdost
 pnpm install
+git config core.hooksPath .githooks   # once per clone: refuses commits with unformatted files
 pnpm --filter @mechdost/web build
 pnpm --filter @mechdost/web start          # http://localhost:3000
 ```

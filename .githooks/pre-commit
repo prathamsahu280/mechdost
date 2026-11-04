@@ -1,0 +1,11 @@
+#!/bin/sh
+# Refuse a commit whose staged files are not Prettier-formatted: CI runs the same check on every push
+# (website-testing learning T44 — a docs commit made without the gate failed CI). Enable once per clone:
+#   git config core.hooksPath .githooks
+files=$(git diff --cached --name-only --diff-filter=ACMR)
+[ -z "$files" ] && exit 0
+if ! echo "$files" | xargs pnpm exec prettier --check --ignore-unknown >/dev/null 2>&1; then
+  echo "Prettier: these staged files need formatting (run: pnpm format):"
+  echo "$files" | xargs pnpm exec prettier --list-different --ignore-unknown
+  exit 1
+fi

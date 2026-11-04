@@ -36,7 +36,7 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Completed log (newest first)
 
-- 2026-11-04 — **CI failed again** (user report): a docs commit skipped `pnpm format:check` (Prettier reflowed one line). Fixed (fa55213), verified in a fresh clone; T44; a pre-commit hook to enforce it was refused by the permission system → Q68.
+- 2026-11-04 — **CI failed again** (user report): a docs commit skipped `pnpm format:check` (Prettier reflowed one line). Fixed (fa55213), verified in a fresh clone; T44; pre-commit hook `.githooks/pre-commit` added once the user granted the permission (Q68).
 - 2026-11-04 — **Content API** (hard rule 8): shared registry `@mechdost/shared/content` (demo editor now uses it), repository with draft → publish → unpublish (CAS, audit, server event), public cacheable `GET /v1/content`, admin routes with write/publish split and city scope (shared `city-scope.ts`). Tests: db content 3, api content 3.
 
 - 2026-11-04 — **Hono 4.13.16** (security release: router wildcard-middleware skip, `mount()` prefix bypass, form validator, css, csrf) taken once 3 days old; api 86/86 incl. `middleware-bypass.test.ts`.
