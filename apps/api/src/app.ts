@@ -15,6 +15,7 @@ import { adminSettingsRoutes } from './routes/admin-settings';
 import { assistantRoutes } from './routes/assistant';
 import { catalogueRoutes } from './routes/catalogue';
 import { checkoutRoutes } from './routes/checkout';
+import { adminContentRoutes, contentRoutes } from './routes/content';
 import { eventRoutes } from './routes/events';
 import { meRoutes } from './routes/me';
 import { shopInventoryRoutes } from './routes/shop-inventory';
@@ -66,6 +67,7 @@ export function createApp(deps: AppDeps) {
   v1.route('/', meRoutes(deps, sessions));
   v1.route('/', assistantRoutes(deps));
   v1.route('/', catalogueRoutes(deps));
+  v1.route('/', contentRoutes(deps));
   v1.route('/', eventRoutes(deps));
   v1.route('/', checkoutRoutes(deps, sessions));
   v1.route('/', adminNotificationRoutes(deps, sessions));
@@ -74,6 +76,7 @@ export function createApp(deps: AppDeps) {
   v1.route('/', adminCatalogueRoutes(deps, sessions));
   v1.route('/', adminOrderRoutes(deps, sessions));
   v1.route('/', adminSettingsRoutes(deps, sessions));
+  v1.route('/', adminContentRoutes(deps, sessions));
   v1.route('/', shopOrderRoutes(deps, sessions));
   v1.route('/', shopInventoryRoutes(deps, sessions));
   app.route('/v1', v1);

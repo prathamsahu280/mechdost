@@ -18,6 +18,7 @@ export * from './support-bridge';
 export * from './order-notifications';
 export * from './support';
 export * from './catalogue';
+export * from './content';
 export * from './cursor';
 export * from './checkout';
 export * from './customer-blocks';

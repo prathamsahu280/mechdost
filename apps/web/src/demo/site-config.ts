@@ -5,6 +5,7 @@
  * version the editor loaded (a stale tab cannot overwrite newer changes) and appends an audit entry.
  */
 import { COIN_RULE_LIMITS, DEFAULT_COIN_RULES, type CoinRules } from '@mechdost/shared/coins';
+import { CONTENT_KEYS, cleanContentText, contentMax, type ContentKey } from '@mechdost/shared/content';
 import { useSyncExternalStore } from 'react';
 import type { MapMode } from '@/lib/map-styles';
 import { CATEGORY_KEYS, type CategoryKey } from './catalogue';
@@ -20,17 +21,10 @@ import {
 export type SiteLocale = 'en' | 'hi';
 
 /** Text the admin can override, per locale. Defaults come from the locale files. */
-export const CONTENT_KEYS = [
-  'announcement.orders',
-  'announcement.workshops',
-  'hero.eyebrow',
-  'hero.titleLine1',
-  'hero.titleLine2',
-  'hero.lead',
-] as const;
-export type ContentKey = (typeof CONTENT_KEYS)[number];
-export const CONTENT_MAX = { 'hero.lead': 280 } as Partial<Record<ContentKey, number>>;
-export const CONTENT_MAX_DEFAULT = 80;
+// Keys, limits and cleaning are shared with the content API (packages/shared/src/content.ts): one rule set.
+export { CONTENT_KEYS, contentMax, type ContentKey };
+/** Plain text only: trims, collapses whitespace, drops control characters and caps the length. */
+export const cleanText = cleanContentText;
 
 export interface SiteSettings {
   /** Minutes a shop has to accept an offered order (spec 04). Applies to orders offered after the change. */
@@ -120,19 +114,6 @@ export function isEmoji(value: string): boolean {
 export function clampSetting(key: keyof SiteSettings, value: number): number {
   const [min, max] = SETTING_LIMITS[key];
   return Number.isFinite(value) ? Math.min(max, Math.max(min, Math.round(value))) : DEFAULT_SETTINGS[key];
-}
-
-export function contentMax(key: ContentKey): number {
-  return CONTENT_MAX[key] ?? CONTENT_MAX_DEFAULT;
-}
-
-/** Plain text only: trims, collapses whitespace, drops control characters and caps the length. */
-export function cleanText(key: ContentKey, value: string): string {
-  return value
-    .replace(/[\p{Cc}\p{Cf}]/gu, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, contentMax(key));
 }
 
 function parse(raw: string | null): SiteConfig {

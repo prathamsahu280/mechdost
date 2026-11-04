@@ -1,20 +1,17 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
-import type { Context } from 'hono';
 import {
-  cityIdByCode,
-  cityScopeFrom,
   clearCitySetting,
   listOperationalSettings,
   NotFoundError,
   saveOperationalSetting,
 } from '@mechdost/db/repo';
-import type { Permission } from '@mechdost/shared/rbac';
 import { SETTING_KEYS } from '@mechdost/shared/settings';
 import type { SessionCache } from '../auth/session-cache';
 import { authenticate, requirePermission, requireVerified } from '../middleware/auth';
 import { rateLimit, RATE_RULES } from '../middleware/rate-limit';
 import type { AppDeps, AppEnv } from '../types';
 import { validationHook } from '../validation';
+import { scopedCity } from './city-scope';
 import { errorResponses, ErrorSchema } from './schemas';
 
 /**
@@ -121,27 +118,15 @@ export function adminSettingsRoutes(deps: AppDeps, cache: SessionCache) {
   app.use(prefix, requirePermission('settings:read'));
   app.on(['PUT', 'POST'], prefix, requirePermission('settings:write'));
 
-  /** City id the caller may act on for `permission` (null = global, which needs an all-cities grant). */
-  async function scopedCity(c: Context<AppEnv>, code: string | null | undefined, permission: Permission) {
-    const scope = cityScopeFrom(c.get('auth').grants, permission);
-    if (!code) {
-      if (!scope.all) throw new NotFoundError('Setting not found');
-      return null;
-    }
-    const id = await cityIdByCode(deps.db, code);
-    if (!scope.all && !scope.cityIds.includes(id)) throw new NotFoundError('City not found');
-    return id;
-  }
-
   return app
     .openapi(list, async (c) => {
-      const cityId = await scopedCity(c, c.req.valid('query').city, 'settings:read');
+      const cityId = await scopedCity(deps, c, c.req.valid('query').city, 'settings:read');
       const rows = await listOperationalSettings(deps.db, cityId);
       return c.json({ settings: rows.map((r) => Row.parse(r)) }, 200);
     })
     .openapi(save, async (c) => {
       const b = c.req.valid('json');
-      const cityId = await scopedCity(c, b.city, 'settings:write');
+      const cityId = await scopedCity(deps, c, b.city, 'settings:write');
       const r = await saveOperationalSetting(deps.db, {
         key: c.req.valid('param').key,
         cityId,
@@ -153,7 +138,7 @@ export function adminSettingsRoutes(deps: AppDeps, cache: SessionCache) {
     })
     .openapi(clear, async (c) => {
       const b = c.req.valid('json');
-      const cityId = await scopedCity(c, b.city, 'settings:write');
+      const cityId = await scopedCity(deps, c, b.city, 'settings:write');
       if (!cityId) throw new NotFoundError('City not found');
       await clearCitySetting(deps.db, {
         key: c.req.valid('param').key,

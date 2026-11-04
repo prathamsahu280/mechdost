@@ -30,6 +30,7 @@ export interface ServerEventProps {
   admin_customer_blocked: { customerId: string; level: string; reasonCode: string };
   admin_customer_unblocked: { customerId: string; level: string };
   admin_product_status_changed: { productSlug: string; from: string; to: string };
+  admin_content_published: { key: string; locale: 'en' | 'hi'; action: 'published' | 'unpublished' };
   inventory_updated: { shopId: string; sku: string; fields: string[]; by: 'shop' | 'staff' };
 }
 export type ServerEvent = keyof ServerEventProps;
