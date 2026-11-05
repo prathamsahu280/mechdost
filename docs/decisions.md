@@ -258,6 +258,17 @@ User: "https://Sparevillage.com aise type ka banao with more illustration, subtl
 - **Less crowded**: trust strip is an open divided row (no boxes); category tiles are unboxed illustrations; section spacing 80–112px.
 - New `ButtonLink` variant `onGreen` (white pill, green label, 7.1:1) for deep-green panels.
 
+## 2026-11-05 — boodmo + Fixter inspiration pass (branch `redesign-inspo`, from `redesign-commerce`)
+
+User: "Www.boodmo.com / https://www.fixter.co.uk/ — here also, take inspo and modify". Ideas borrowed, not their look, copy, logos or artwork.
+
+- **Search by vehicle** (boodmo): home section with three choices (bike/scooter, car/SUV, EV) → new shop **Vehicle** filter `?vehicle=2W|4W|EV` (`searchProducts({ vehicle })`; `2W/4W` items match both). Shop form gets a fourth custom select. No make/model picker: the catalogue has no maker data, and the vehicle master is still a pending decision — a maker list that filters nothing would mislead.
+- **Popular services** (Fixter): four cards (bike service, car service, brakes, battery) with "From ₹" taken from the workshop service menu (`SERVICE_MENU`), linking to the finder pre-filtered by vehicle.
+- **Customer reviews** (Fixter): overall rating (weighted by review count) + a rail of unique 5★ workshop reviews; rails are focusable scroll regions (axe `scrollable-region-focusable`).
+- **Brands we stock** (boodmo): text wordmarks only (no logos — trademarks), from the brands actually in the catalogue, each searching the shop, with a no-affiliation note.
+- **Help band** (Fixter): deep-green "Not sure which part fits?" with WhatsApp + call.
+- All five are new admin-controlled home sections (`vehicle`, `services`, `reviews`, `brands`, `help` in `HOME_SECTIONS`, en + hi admin labels); old saved layouts gain them automatically.
+
 ## PENDING DECISIONS (ask "what's pending" to review)
 
 | #   | Topic                                                                                                                                                                                       | Leaning                                                                             | When                                 |

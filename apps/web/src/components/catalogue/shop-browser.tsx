@@ -1,16 +1,29 @@
 'use client';
 
 import { CATEGORY_ICONS, UI_ICONS } from '@/lib/icons';
-import { ArrowDownWideNarrow, ArrowUpNarrowWide, MessageCircle, Search, TrendingUp, X } from 'lucide-react';
+import {
+  ArrowDownWideNarrow,
+  ArrowUpNarrowWide,
+  Bike,
+  Car,
+  CarFront,
+  MessageCircle,
+  PlugZap,
+  Search,
+  TrendingUp,
+  X,
+} from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState, type ReactNode, type SyntheticEvent } from 'react';
 import {
   CATEGORY_KEYS,
   CATEGORY_SLUGS,
   categoryFromSlug,
+  vehicleFromParam,
   searchProducts,
   type CategoryKey,
   type SortKey,
+  type VehicleFilter,
 } from '@/demo/catalogue';
 import { track } from '@/lib/analytics';
 import { whatsappLink } from '@/lib/site';
@@ -24,6 +37,7 @@ const SEARCH_DEBOUNCE_MS = 300;
 interface State {
   query: string;
   category: CategoryKey | undefined;
+  vehicle: VehicleFilter | undefined;
   sort: SortKey;
 }
 
@@ -31,6 +45,7 @@ function urlFor(base: string, s: State): string {
   const params = new URLSearchParams();
   if (s.query) params.set('q', s.query);
   if (s.category) params.set('category', CATEGORY_SLUGS[s.category]);
+  if (s.vehicle) params.set('vehicle', s.vehicle);
   if (s.sort !== 'popular') params.set('sort', s.sort);
   const qs = params.toString();
   return qs ? `${base}?${qs}` : base;
@@ -42,6 +57,7 @@ function readUrl(): State {
   return {
     query: (p.get('q') ?? '').trim().slice(0, 120),
     category: categoryFromSlug(p.get('category') ?? undefined),
+    vehicle: vehicleFromParam(p.get('vehicle')),
     sort: SORTS.find((s) => s === sort) ?? 'popular',
   };
 }
@@ -78,7 +94,13 @@ export function ShopBrowser({
   const debounce = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const results = useMemo(
-    () => searchProducts({ query: state.query, category: state.category, sort: state.sort }),
+    () =>
+      searchProducts({
+        query: state.query,
+        category: state.category,
+        vehicle: state.vehicle,
+        sort: state.sort,
+      }),
     [state],
   );
 
@@ -130,6 +152,12 @@ export function ShopBrowser({
     { value: '', label: cat('all'), icon: UI_ICONS.all },
     ...CATEGORY_KEYS.map((k) => ({ value: CATEGORY_SLUGS[k], label: cat(k), icon: CATEGORY_ICONS[k] })),
   ];
+  const vehicleOptions: SelectOption<string>[] = [
+    { value: '', label: c('vehicleAny'), icon: CarFront },
+    { value: '2W', label: c('vehicle2W'), icon: Bike },
+    { value: '4W', label: c('vehicle4W'), icon: Car },
+    { value: 'EV', label: c('vehicleEV'), icon: PlugZap },
+  ];
   const sortOptions: SelectOption<SortKey>[] = [
     { value: 'popular', label: c('sortPopular'), icon: TrendingUp },
     { value: 'price_asc', label: c('sortPriceAsc'), icon: ArrowUpNarrowWide },
@@ -142,7 +170,11 @@ export function ShopBrowser({
         ? 'border-accent-soft bg-accent-soft text-accent-soft-text'
         : 'border-line-card bg-surface text-ink hover:bg-pill'
     }`;
-  const filtered = state.query !== '' || state.category !== undefined || state.sort !== 'popular';
+  const filtered =
+    state.query !== '' ||
+    state.category !== undefined ||
+    state.vehicle !== undefined ||
+    state.sort !== 'popular';
 
   return (
     <div>
@@ -151,7 +183,7 @@ export function ShopBrowser({
         action={basePath}
         method="get"
         onSubmit={onSearch}
-        className="relative z-20 mt-8 grid gap-3 rounded-card border border-line-card bg-surface p-4 shadow-card tab:grid-cols-[1fr_220px_200px] tab:items-end"
+        className="relative z-20 mt-8 grid gap-3 rounded-card border border-line-card bg-surface p-4 shadow-card tab:grid-cols-2 tab:items-end nav:grid-cols-[1fr_200px_180px_190px]"
       >
         <div>
           <label htmlFor="shop-q" className="text-xs font-bold text-muted">
@@ -205,6 +237,22 @@ export function ShopBrowser({
             trackPrefix="shop_category_select"
             onChange={(slug) => {
               apply({ ...state, category: categoryFromSlug(slug) });
+            }}
+          />
+        </div>
+        <div>
+          <label id="shop-vehicle-label" htmlFor="shop-vehicle" className="text-xs font-bold text-muted">
+            {c('vehicleLabel')}
+          </label>
+          <Select
+            id="shop-vehicle"
+            name="vehicle"
+            className="mt-1"
+            value={state.vehicle ?? ''}
+            options={vehicleOptions}
+            trackPrefix="shop_vehicle"
+            onChange={(v) => {
+              apply({ ...state, vehicle: vehicleFromParam(v) });
             }}
           />
         </div>
@@ -264,7 +312,7 @@ export function ShopBrowser({
             type="button"
             onClick={() => {
               setDraft('');
-              apply({ query: '', category: undefined, sort: 'popular' });
+              apply({ query: '', category: undefined, vehicle: undefined, sort: 'popular' });
             }}
             className="min-h-10 text-sm font-bold text-accent-soft-text underline-offset-4 hover:underline"
           >

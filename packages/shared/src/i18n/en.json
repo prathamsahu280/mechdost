@@ -198,6 +198,48 @@
       "q6": "Can I order in bulk for my garage or fleet?",
       "a6": "Yes. Ask for a bulk price from any product page or your cart and agree the final price with our team in a chat.",
       "more": "Still have a question? Ask MechDost"
+    },
+    "vehicle": {
+      "eyebrow": "Search by vehicle",
+      "title": "Parts that fit your vehicle",
+      "lead": "Choose your vehicle type to see only the parts and accessories made for it.",
+      "twoW": "Bike or scooter",
+      "twoWHint": "Oil, batteries, tyres, chains",
+      "fourW": "Car or SUV",
+      "fourWHint": "Filters, brakes, batteries, mats",
+      "ev": "Electric vehicle",
+      "evHint": "Chargers and 12 V batteries",
+      "cta": "Show parts"
+    },
+    "services": {
+      "eyebrow": "Workshop services in {city}",
+      "title": "What does your vehicle need today?",
+      "from": "From {price}",
+      "cta": "Find a workshop",
+      "routine2w": "Bike & scooter service",
+      "routine4w": "Car periodic service",
+      "brakes": "Brake check & service",
+      "battery": "Battery & starting check"
+    },
+    "reviews": {
+      "eyebrow": "Customer reviews",
+      "title": "What our customers say",
+      "summary": "{rating} out of 5 from {count} reviews",
+      "verified": "Verified customer",
+      "at": "at {workshop}",
+      "prev": "Previous reviews",
+      "next": "More reviews"
+    },
+    "brands": {
+      "eyebrow": "Brands we stock",
+      "title": "Trusted names, confirmed by local shops",
+      "note": "Brand names belong to their owners; MechDost is not affiliated with them."
+    },
+    "help": {
+      "title": "Not sure which part fits?",
+      "body": "Send us your vehicle and the problem. Our team in {city} replies in Hindi or English and confirms the right part or workshop before you pay.",
+      "whatsapp": "Chat on WhatsApp",
+      "call": "Call {phone}"
     }
   },
   "footer": {
@@ -414,7 +456,12 @@
     "policyNote": "No returns or exchanges. Faulty parts are handled by our support team.",
     "policyLink": "Read the policy",
     "photoNote": "Representative photo. The shop confirms the exact item before dispatch.",
-    "clearSearch": "Clear search"
+    "clearSearch": "Clear search",
+    "vehicleLabel": "Vehicle",
+    "vehicleAny": "Any vehicle",
+    "vehicle2W": "Bike or scooter",
+    "vehicle4W": "Car or SUV",
+    "vehicleEV": "Electric (EV)"
   },
   "cart": {
     "title": "Your cart",
@@ -1132,7 +1179,12 @@
     "setting_coinMaxRedeemBp": "Most of an order coins can pay",
     "setting_coinMaxRedeemBp_hint": "Share of the products in an order that coins may pay. {min} to {max}%.",
     "unit_paise": "paise",
-    "unit_percent": "%"
+    "unit_percent": "%",
+    "section_vehicle": "Search by vehicle",
+    "section_services": "Popular workshop services",
+    "section_reviews": "Customer reviews",
+    "section_brands": "Brands we stock",
+    "section_help": "Help band (WhatsApp / call)"
   },
   "policies": {
     "returns": {

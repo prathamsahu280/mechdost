@@ -134,6 +134,9 @@ const S = {
   },
 } satisfies Record<string, DemoService>;
 
+/** Service menu, exported for the home "popular services" cards (redesign 2026-11-05). */
+export const SERVICE_MENU = S;
+
 export const DEMO_WORKSHOPS: readonly DemoWorkshop[] = [
   {
     slug: 'pachpedi-naka-two-wheeler-care',

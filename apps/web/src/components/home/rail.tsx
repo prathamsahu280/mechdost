@@ -96,6 +96,10 @@ export function Rail({
       <ul
         id={`${id}-list`}
         ref={ref}
+        // Keyboard users can focus the row and scroll it with the arrow keys even when its cards hold no links
+        // (reviews) — axe scrollable-region-focusable, WCAG 2.1.1.
+        tabIndex={0}
+        aria-labelledby={id}
         // `relative`: makes the list the containing block, so absolutely positioned .sr-only labels inside off-screen
         // cards are clipped by the scroller instead of stretching the page sideways (bug 2026-11-02, ~3000px overflow).
         className="relative -mx-[5vw] mt-5 flex snap-x snap-mandatory scroll-px-[5vw] gap-4 overflow-x-auto px-[5vw] pb-2 [scrollbar-width:none] tab:mx-0 tab:scroll-px-0 tab:px-0"

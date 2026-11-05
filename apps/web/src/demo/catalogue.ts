@@ -352,15 +352,30 @@ export function findProduct(slug: string): DemoProduct | undefined {
 export type SortKey = 'popular' | 'price_asc' | 'price_desc';
 
 /** Search name, brand, SKU, spec and compatibility (case-insensitive), optionally within a category. */
+/** Shop "Vehicle" filter (redesign 2026-11-05, boodmo-style search by vehicle). `2W/4W` items fit both. */
+export const VEHICLE_FILTERS = ['2W', '4W', 'EV'] as const;
+export type VehicleFilter = (typeof VEHICLE_FILTERS)[number];
+
+export function vehicleFromParam(v: string | undefined | null): VehicleFilter | undefined {
+  return VEHICLE_FILTERS.find((k) => k === v);
+}
+
+export function fitsVehicle(product: DemoProduct, vehicle: VehicleFilter): boolean {
+  if (vehicle === 'EV') return product.fits === 'EV';
+  return product.fits === vehicle || product.fits === '2W/4W';
+}
+
 export function searchProducts(opts: {
   query?: string;
   category?: CategoryKey;
+  vehicle?: VehicleFilter;
   sort?: SortKey;
 }): DemoProduct[] {
   const q = opts.query?.trim().toLowerCase() ?? '';
   const words = q.split(/\s+/).filter(Boolean);
   const list = DEMO_PRODUCTS.filter((p) => {
     if (opts.category && p.category !== opts.category) return false;
+    if (opts.vehicle && !fitsVehicle(p, opts.vehicle)) return false;
     if (words.length === 0) return true;
     const hay = `${p.name} ${p.brand} ${p.sku} ${p.spec} ${p.compatibility} ${p.category}`.toLowerCase();
     return words.every((w) => hay.includes(w) || hay.includes(w.replace(/s$/, '')));

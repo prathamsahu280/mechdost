@@ -1,6 +1,11 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+import { BrandStrip } from '@/components/home/brand-strip';
 import { CategoryTiles } from '@/components/home/category-tiles';
+import { CustomerReviews } from '@/components/home/customer-reviews';
+import { HelpBand } from '@/components/home/help-band';
+import { PopularServices } from '@/components/home/popular-services';
+import { VehicleFinder } from '@/components/home/vehicle-finder';
 import { Faq } from '@/components/home/faq';
 import { Hero } from '@/components/home/hero';
 import { OrderRoute } from '@/components/home/order-route';
@@ -34,12 +39,17 @@ export default async function HomePage() {
   const sections: Record<HomeSection, ReactNode> = {
     trust: <TrustStrip />,
     categories: <CategoryTiles />,
+    vehicle: <VehicleFinder />,
     products: <ProductRange />,
+    services: <PopularServices city={city} />,
     route: <OrderRoute />,
     service: <ServiceSection city={city} />,
     workshops: <TopWorkshops city={city} />,
+    reviews: <CustomerReviews />,
+    brands: <BrandStrip />,
     faq: <Faq />,
     partners: <PartnerTeaser />,
+    help: <HelpBand city={city} />,
   };
   return (
     <>
