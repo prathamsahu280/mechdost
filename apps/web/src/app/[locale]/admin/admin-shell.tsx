@@ -12,12 +12,9 @@ import { Container, PageIntro } from '@/components/ui/page-intro';
 /** Default text for every admin-editable content key, in both locales (the editor shows them side by side). */
 async function contentDefaults(): Promise<ContentDefaults> {
   const pick = async (locale: 'en' | 'hi') => {
-    const announcement = await getTranslations({ locale, namespace: 'announcement' });
     const hero = await getTranslations({ locale, namespace: 'home.hero' });
     const city = (await getTranslations({ locale, namespace: 'cities' }))(site.defaultCity);
     return {
-      'announcement.orders': announcement('orders'),
-      'announcement.workshops': announcement('workshops', { city }),
       'hero.eyebrow': hero('eyebrow'),
       'hero.titleLine1': hero('titleLine1'),
       'hero.titleLine2': hero('titleLine2'),

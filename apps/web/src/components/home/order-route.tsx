@@ -1,19 +1,21 @@
+import { Compass, ShoppingCart, Store, Truck } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { ButtonLink } from '../ui/button-link';
 import { LocalLink } from '../ui/local-link';
 import { Container } from '../ui/page-intro';
 import { SettingValue } from '../site/site-overrides';
+import { stagger } from '@/lib/motion';
 
 /** Rich-text tags for admin settings inside copy: the server prints the default, the island the live value. */
 const liveMinutes = (chunks: ReactNode) => <SettingValue setting="acceptMinutes" fallback={chunks} />;
 const liveUnits = (chunks: ReactNode) => <SettingValue setting="bulkMinUnits" fallback={chunks} />;
 
 const STOPS = [
-  { n: 1, emoji: '🛒' },
-  { n: 2, emoji: '🧭' },
-  { n: 3, emoji: '🏪' },
-  { n: 4, emoji: '🚚' },
+  { n: 1, icon: ShoppingCart },
+  { n: 2, icon: Compass },
+  { n: 3, icon: Store },
+  { n: 4, icon: Truck },
 ] as const;
 
 /**
@@ -24,9 +26,9 @@ const STOPS = [
 export function OrderRoute() {
   const t = useTranslations('home.route');
   return (
-    <section aria-labelledby="route-title" className="pt-16">
+    <section aria-labelledby="route-title" className="pt-20 tab:pt-28">
       <Container>
-        <div className="blueprint overflow-hidden rounded-hero px-6 py-10 text-white tab:px-12 tab:py-14">
+        <div className="reveal-panel blueprint overflow-hidden rounded-hero px-6 py-10 text-white tab:px-12 tab:py-14">
           <p className="eyebrow text-accent-light">{t('eyebrow')}</p>
           <h2
             id="route-title"
@@ -42,13 +44,17 @@ export function OrderRoute() {
               aria-hidden="true"
               className="absolute top-7 bottom-7 left-7 border-l-2 border-dashed border-white/30 nav:right-[12%] nav:bottom-auto nav:left-[12%] nav:border-t-2 nav:border-l-0"
             />
-            {STOPS.map(({ n, emoji }) => (
-              <li key={n} className="relative flex gap-4 nav:flex-col nav:items-center nav:text-center">
+            {STOPS.map(({ n, icon: Icon }, i) => (
+              <li
+                key={n}
+                style={stagger(i + 1)}
+                className="reveal relative flex gap-4 nav:flex-col nav:items-center nav:text-center"
+              >
                 <span
                   aria-hidden="true"
-                  className="grid size-14 shrink-0 place-items-center rounded-full bg-navy text-[26px] ring-2 ring-white/30"
+                  className="grid size-14 shrink-0 place-items-center rounded-full bg-navy text-accent-light ring-2 ring-white/30"
                 >
-                  {emoji}
+                  <Icon className="size-6" strokeWidth={1.75} />
                 </span>
                 <span className="min-w-0">
                   <span className="block text-xs font-extrabold text-accent-light tabular-nums">

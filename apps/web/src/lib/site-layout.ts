@@ -12,12 +12,17 @@ export const SITE_CONFIG_KEY = 'mechdost-demo-site';
 export const HOME_SECTIONS = [
   'trust',
   'categories',
+  'vehicle',
   'products',
+  'services',
   'route',
   'service',
   'workshops',
+  'reviews',
+  'brands',
   'faq',
   'partners',
+  'help',
 ] as const;
 export type HomeSection = (typeof HOME_SECTIONS)[number];
 

@@ -4,12 +4,17 @@ import { ProductCard } from '@/components/catalogue/product-card';
 import { ShopBrowser } from '@/components/catalogue/shop-browser';
 import { ClientMessages } from '@/components/ui/client-messages';
 import { Container, PageIntro } from '@/components/ui/page-intro';
-import { categoryFromSlug, DEMO_PRODUCTS, type SortKey } from '@/demo/catalogue';
+import { categoryFromSlug, DEMO_PRODUCTS, vehicleFromParam, type SortKey } from '@/demo/catalogue';
 import type { Locale } from '@/i18n/routing';
 import { alternatesFor } from '@/lib/seo';
 import { localePath } from '@/lib/locale-path';
 
-type Search = Promise<{ q?: string | string[]; category?: string | string[]; sort?: string | string[] }>;
+type Search = Promise<{
+  q?: string | string[];
+  category?: string | string[];
+  vehicle?: string | string[];
+  sort?: string | string[];
+}>;
 
 interface Props {
   params: Promise<{ locale: Locale }>;
@@ -43,6 +48,7 @@ export default async function ShopPage({ searchParams }: Props) {
   const initial = {
     query: first(sp.q)?.trim().slice(0, 120) ?? '',
     category: categoryFromSlug(first(sp.category)),
+    vehicle: vehicleFromParam(first(sp.vehicle)),
     sort,
   };
   const cards = Object.fromEntries(

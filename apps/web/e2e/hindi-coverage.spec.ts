@@ -283,8 +283,9 @@ async function audit(page: Page, paths: readonly string[], signedIn: boolean): P
     const proof = MUST_SHOW[path];
     if (signedIn && proof) await expect(page.getByText(proof).first(), url).toBeVisible();
     if (path === '/workshops') {
-      // Open one map popup (its title, rating, detail and buttons are text too).
-      await page.locator('article button[aria-pressed]').first().click();
+      // Open one workshop row (its expanded panel is text too), then its map popup via "show on map".
+      await page.locator('article button[aria-expanded]').first().click();
+      await page.locator('article [role="region"] button').first().click();
       await expect(page.locator('.maplibregl-popup').first(), url).toBeVisible();
     }
     const words = latinOffenders((await page.evaluate(collectVisibleText)).join('\n'));

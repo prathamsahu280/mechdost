@@ -8,14 +8,8 @@
 export const CONTENT_LOCALES = ['en', 'hi'] as const;
 export type ContentLocale = (typeof CONTENT_LOCALES)[number];
 
-export const CONTENT_KEYS = [
-  'announcement.orders',
-  'announcement.workshops',
-  'hero.eyebrow',
-  'hero.titleLine1',
-  'hero.titleLine2',
-  'hero.lead',
-] as const;
+// The announcement-bar keys were removed with the bar itself (redesign 2026-11-02); stored values are ignored.
+export const CONTENT_KEYS = ['hero.eyebrow', 'hero.titleLine1', 'hero.titleLine2', 'hero.lead'] as const;
 export type ContentKey = (typeof CONTENT_KEYS)[number];
 
 const CONTENT_MAX: Partial<Record<ContentKey, number>> = { 'hero.lead': 280 };

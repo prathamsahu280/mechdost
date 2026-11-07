@@ -39,7 +39,8 @@ test('the Hindi booking page offers the cancel in Hindi', async ({ page }) => {
   await page.locator('input[type="checkbox"]').first().check();
   await page.getByLabel(/आपका नाम/).fill('Ravi Sahu');
   await page.getByLabel(/मोबाइल नंबर/).fill('9876543210');
-  await page.locator('form button[type="submit"]').first().click();
+  // Scoped to the page content: the header search form has a submit button too.
+  await page.locator('main form button[type="submit"]').first().click();
   await expect(page).toHaveURL(/\/hi\/service\/SR-RPR-/);
   await expect(page.getByRole('button', { name: 'यह बुकिंग रद्द करें' })).toBeVisible();
 });

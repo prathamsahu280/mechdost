@@ -1,6 +1,7 @@
 'use client';
 
 import { coinRedemption } from '@mechdost/shared/coins';
+import { Coins } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
@@ -202,7 +203,10 @@ export function CheckoutForm() {
                   className="mt-0.5 size-6 shrink-0 accent-[var(--color-accent-button)]"
                 />
                 <span>
-                  <span aria-hidden="true">🪙 </span>
+                  <Coins
+                    aria-hidden="true"
+                    className="mr-1 inline size-4 -translate-y-px text-accent-soft-text"
+                  />
                   <span className="font-bold">
                     {t('useCoins', {
                       coins: redemption.coins,
@@ -213,8 +217,8 @@ export function CheckoutForm() {
                 </span>
               </label>
             ) : (
-              <p className="text-sm text-muted">
-                <span aria-hidden="true">🪙 </span>
+              <p className="flex items-center gap-1.5 text-sm text-muted">
+                <Coins aria-hidden="true" className="size-4 shrink-0" />
                 {t('coinsNotUsable', { balance })}
               </p>
             )}

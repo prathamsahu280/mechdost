@@ -53,10 +53,48 @@
       "searchLabel": "Find your next essential",
       "searchPlaceholder": "Try tyres, battery or engine oil",
       "searchSubmit": "Search products",
-      "imageAlt": "A silver sports car in a workshop with cars on lifts behind it",
-      "imageLabel": "Products for your car. Care for your bike.",
-      "insetAlt": "A motorcycle parked on a quiet forest road",
-      "insetLabel": "And every two-wheel journey."
+      "imageAlt": "A workshop bay at night: a red car with its bonnet open beside an engine on a hoist",
+      "consoleLabel": "What do you need?",
+      "modeParts": "Parts & products",
+      "modeWorkshop": "Workshop near me",
+      "pinLabel": "Your PIN code",
+      "pinPlaceholder": "e.g. 492001",
+      "vehicleLabel": "Vehicle",
+      "vehicleAny": "Any vehicle",
+      "vehicle2W": "Bike or scooter",
+      "vehicle4W": "Car",
+      "workshopSubmit": "Find workshops",
+      "popularLabel": "Popular",
+      "popular": {
+        "oil": "Engine oil",
+        "battery": "Battery",
+        "tyre": "Tyres",
+        "brake": "Brake pads"
+      },
+      "photoCaption": "Workshops checked by our team in {city}",
+      "modePartsShort": "Parts",
+      "modeWorkshopShort": "Workshops",
+      "ticker2": "Itemised estimate before any work starts",
+      "ticker3": "Parts confirmed by a verified local shop",
+      "ticker4": "Cash on delivery across {city}",
+      "ticker5": "Help on WhatsApp in Hindi or English",
+      "tickerLabel": "Why MechDost",
+      "slide1Cta": "Shop products",
+      "slide2Eyebrow": "Vehicle care in {city}",
+      "slide2Title1": "A checked workshop.",
+      "slide2Title2": "A clear estimate.",
+      "slide2Lead": "Find a verified workshop near you, see the expected cost and approve every line before work starts.",
+      "slide2Cta": "Find a workshop",
+      "slide3Eyebrow": "Fulfilled locally",
+      "slide3Title1": "Ordered online.",
+      "slide3Title2": "Delivered from nearby.",
+      "slide3Lead": "Every order is confirmed by a verified shop near your PIN. Pay cash on delivery and follow each step.",
+      "slide3Cta": "Start shopping",
+      "carouselLabel": "Highlights",
+      "slideLabel": "{n} of {total}",
+      "goTo": "Show slide {n}",
+      "pause": "Pause slideshow",
+      "play": "Play slideshow"
     },
     "products": {
       "eyebrow": "Shop automotive essentials",
@@ -66,7 +104,12 @@
       "rangeNote": "No PIN code needed to explore",
       "emptyTitle": "Automotive essentials. Across India.",
       "emptyBody": "Explore products without entering your location. Confirm delivery and billing details when ordering.",
-      "emptyAction": "Explore Products"
+      "emptyAction": "Explore Products",
+      "railBest": "Bestsellers",
+      "railTwo": "For bikes & scooters",
+      "railFour": "For cars & SUVs",
+      "railPrev": "Scroll left",
+      "railNext": "Scroll right"
     },
     "categories": {
       "tyres": "Tyres",
@@ -161,6 +204,48 @@
       "q6": "Can I order in bulk for my garage or fleet?",
       "a6": "Yes. Ask for a bulk price from any product page or your cart and agree the final price with our team in a chat.",
       "more": "Still have a question? Ask MechDost"
+    },
+    "vehicle": {
+      "eyebrow": "Search by vehicle",
+      "title": "Parts that fit your vehicle",
+      "lead": "Choose your vehicle type to see only the parts and accessories made for it.",
+      "twoW": "Bike or scooter",
+      "twoWHint": "Oil, batteries, tyres, chains",
+      "fourW": "Car or SUV",
+      "fourWHint": "Filters, brakes, batteries, mats",
+      "ev": "Electric vehicle",
+      "evHint": "Chargers and 12 V batteries",
+      "cta": "Show parts"
+    },
+    "services": {
+      "eyebrow": "Workshop services in {city}",
+      "title": "What does your vehicle need today?",
+      "from": "From {price}",
+      "cta": "Find a workshop",
+      "routine2w": "Bike & scooter service",
+      "routine4w": "Car periodic service",
+      "brakes": "Brake check & service",
+      "battery": "Battery & starting check"
+    },
+    "reviews": {
+      "eyebrow": "Customer reviews",
+      "title": "What our customers say",
+      "summary": "{rating} out of 5 from {count} reviews",
+      "verified": "Verified customer",
+      "at": "at {workshop}",
+      "prev": "Previous reviews",
+      "next": "More reviews"
+    },
+    "brands": {
+      "eyebrow": "Brands we stock",
+      "title": "Trusted names, confirmed by local shops",
+      "note": "Brand names belong to their owners; MechDost is not affiliated with them."
+    },
+    "help": {
+      "title": "Not sure which part fits?",
+      "body": "Send us your vehicle and the problem. Our team in {city} replies in Hindi or English and confirms the right part or workshop before you pay.",
+      "whatsapp": "Chat on WhatsApp",
+      "call": "Call {phone}"
     }
   },
   "footer": {
@@ -173,7 +258,7 @@
     "partners": "For Partners",
     "accountNote": "Check your account for orders, appointments and payment status.",
     "operatedBy": "Operated by",
-    "credits": "Vehicle and workshop imagery for illustration. Motorcycle: Kundan Bana / Unsplash. Workshop: Frankie Cordoba / Unsplash. No manufacturer or provider affiliation implied.",
+    "credits": "Photos from Wikimedia Commons contributors, used under their licences. They show the product type, not the exact item; no manufacturer or provider affiliation implied.",
     "copyright": "© {year} {company}",
     "colShop": "Shop",
     "colCare": "Vehicle care",
@@ -190,7 +275,8 @@
     "policiesLabel": "Policies",
     "companyPolicy": "Company & contact",
     "deliveryPolicy": "Delivery & payment",
-    "serviceTerms": "Workshop bookings"
+    "serviceTerms": "Workshop bookings",
+    "photoCredits": "Photo credits"
   },
   "whatsapp": {
     "general": "Hello MechDost, I have a question.",
@@ -379,7 +465,14 @@
     "openProduct": "Open product page",
     "bulkHint": "Need <min>10</min> or more? Ask for a bulk price.",
     "policyNote": "No returns or exchanges. Faulty parts are handled by our support team.",
-    "policyLink": "Read the policy"
+    "policyLink": "Read the policy",
+    "photoNote": "Representative photo. The shop confirms the exact item before dispatch.",
+    "clearSearch": "Clear search",
+    "vehicleLabel": "Vehicle",
+    "vehicleAny": "Any vehicle",
+    "vehicle2W": "Bike or scooter",
+    "vehicle4W": "Car or SUV",
+    "vehicleEV": "Electric (EV)"
   },
   "cart": {
     "title": "Your cart",
@@ -1075,10 +1168,7 @@
     "site_preview": "Open the home page",
     "content_title": "Site content",
     "content_lead": "Change the words customers see, in English and Hindi. Leave a field empty to use the default text shown in it.",
-    "content_group_announcement": "Announcement bar",
     "content_group_hero": "Home page headline",
-    "field_announcement_orders": "Message 1",
-    "field_announcement_workshops": "Message 2",
     "field_hero_eyebrow": "Small heading above the headline",
     "field_hero_titleLine1": "Headline, line 1",
     "field_hero_titleLine2": "Headline, line 2 (orange)",
@@ -1102,12 +1192,10 @@
     "section_faq": "Questions (FAQ)",
     "section_partners": "Partner invitation",
     "categories_title": "Category shortcuts",
-    "categories_lead": "Pick {min} to {max} categories for the home page and choose an emoji for each.",
+    "categories_lead": "Pick {min} to {max} categories for the home page.",
     "categories_onHome": "on the home page",
-    "categories_emoji": "Emoji for {name}",
     "categories_count": "{count} of {max} selected",
     "categories_errCount": "Pick between {min} and {max} categories.",
-    "categories_errEmoji": "Use a single emoji for {name}.",
     "settings_title": "Settings",
     "settings_lead": "Rules for orders and bulk quotes. Changes apply to new orders only; orders already placed keep their values.",
     "settings_err": "Enter a whole number from {min} to {max}.",
@@ -1292,7 +1380,12 @@
     "cancelOrder": "Cancel order",
     "cancelReason": "Reason for cancelling",
     "cancelConfirm": "Cancel {code}",
-    "rejectReason": "Reason"
+    "rejectReason": "Reason",
+    "section_vehicle": "Search by vehicle",
+    "section_services": "Popular workshop services",
+    "section_reviews": "Customer reviews",
+    "section_brands": "Brands we stock",
+    "section_help": "Help band (WhatsApp / call)"
   },
   "policies": {
     "returns": {
@@ -1462,5 +1555,21 @@
     "essential": "Essential only",
     "choices": "Privacy choices",
     "policy": "Read the privacy policy"
+  },
+  "credits": {
+    "eyebrow": "About this site",
+    "title": "Photo credits",
+    "lead": "The photos on this site are openly licensed. Each one is listed here with its author, licence and source.",
+    "photo": "Photo",
+    "author": "Author",
+    "license": "Licence",
+    "source": "Source",
+    "view": "View on Wikimedia Commons"
+  },
+  "header": {
+    "searchLabel": "Search MechDost",
+    "searchPlaceholder": "Search tyres, batteries, engine oil…",
+    "searchSubmit": "Search",
+    "categoriesLabel": "Shop by category"
   }
 }

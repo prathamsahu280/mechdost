@@ -1,8 +1,8 @@
 import { useTranslations } from 'next-intl';
 import { CATEGORY_KEYS, CATEGORY_SLUGS } from '@/demo/catalogue';
-import { CATEGORY_EMOJI } from '@/lib/emoji';
+import { stagger } from '@/lib/motion';
 import { DEFAULT_FEATURED } from '@/lib/site-layout';
-import { CategoryEmoji } from '../site/site-overrides';
+import { CATEGORY_ART } from '../illustrations';
 import { LocalLink } from '../ui/local-link';
 import { ButtonLink } from '../ui/button-link';
 import { Container, Eyebrow } from '../ui/page-intro';
@@ -12,16 +12,16 @@ const isDefault = (key: string) => DEFAULT_FEATURED.some((k) => k === key);
 /**
  * Home category shortcuts. All nine tiles are rendered; the default six show, and the admin's choice (demo:
  * /admin/layout, applied by the pre-paint layout script via `data-home-category`) can feature any 3–6 of them.
- * Emoji are admin-editable too. Admin-managed categories replace this list in Phase 1 (spec 08).
+ * Each category has a fixed icon (lib/icons.ts). Admin-managed categories replace this list in Phase 1 (spec 08).
  */
 export function CategoryTiles() {
   const t = useTranslations('home.products');
   const c = useTranslations('home.categories');
   const hints = useTranslations('home.categoryHints');
   return (
-    <section aria-labelledby="categories-title" className="pt-14 tab:pt-16">
+    <section aria-labelledby="categories-title" className="pt-20 tab:pt-24">
       <Container>
-        <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="reveal flex flex-wrap items-end justify-between gap-4">
           <div>
             <Eyebrow>{t('eyebrow')}</Eyebrow>
             <h2
@@ -35,27 +35,26 @@ export function CategoryTiles() {
             {t('viewAll')}
           </ButtonLink>
         </div>
-        <ul className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-          {CATEGORY_KEYS.map((key) => {
+        <ul className="mt-8 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+          {CATEGORY_KEYS.map((key, i) => {
             const slug = CATEGORY_SLUGS[key];
+            const Art = CATEGORY_ART[key];
             return (
-              <li key={key} data-home-category={key} className={isDefault(key) ? undefined : 'hidden'}>
+              <li
+                key={key}
+                data-home-category={key}
+                style={stagger(i)}
+                className={isDefault(key) ? 'reveal' : 'reveal hidden'}
+              >
                 <LocalLink
                   href="/shop"
                   query={{ category: slug }}
                   data-track={`home_category_${slug}`}
-                  className="group press reveal flex h-full min-h-[150px] flex-col items-center justify-center gap-3 rounded-tile border border-line-card bg-surface px-3 py-4 text-center shadow-card transition duration-[var(--duration-base)] hover:-translate-y-1 hover:border-accent-soft hover:shadow-card-hover"
+                  className="group press flex h-full flex-col items-center rounded-card px-3 pt-5 pb-4 text-center transition-colors duration-[var(--duration-base)] hover:bg-surface"
                 >
-                  <span
-                    aria-hidden="true"
-                    className="grid size-14 place-items-center rounded-full bg-accent-soft text-[28px] leading-none transition-transform duration-[var(--duration-base)] group-hover:scale-110"
-                  >
-                    <CategoryEmoji k={key} fallback={CATEGORY_EMOJI[key]} />
-                  </span>
-                  <span>
-                    <span className="block text-[15px] font-bold text-ink">{c(key)}</span>
-                    <span className="mt-1 block text-[11px] leading-snug text-muted">{hints(key)}</span>
-                  </span>
+                  <Art className="size-[84px] transition-transform duration-[var(--duration-slow)] ease-[var(--ease-out-soft)] group-hover:-translate-y-1 tab:size-24" />
+                  <span className="mt-3 block text-[15px] font-extrabold text-ink">{c(key)}</span>
+                  <span className="mt-0.5 block text-xs leading-snug text-muted">{hints(key)}</span>
                 </LocalLink>
               </li>
             );

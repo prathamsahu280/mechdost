@@ -353,13 +353,27 @@ export function findProduct(slug: string): DemoProduct | undefined {
 
 export type SortKey = 'popular' | 'price_asc' | 'price_desc';
 
+/** Shop "Vehicle" filter (redesign 2026-11-05, boodmo-style search by vehicle). `2W/4W` items fit both. */
+export const VEHICLE_FILTERS = ['2W', '4W', 'EV'] as const;
+export type VehicleFilter = (typeof VEHICLE_FILTERS)[number];
+
+export function vehicleFromParam(v: string | undefined | null): VehicleFilter | undefined {
+  return VEHICLE_FILTERS.find((k) => k === v);
+}
+
+export function fitsVehicle(product: DemoProduct, vehicle: VehicleFilter): boolean {
+  if (vehicle === 'EV') return product.fits === 'EV';
+  return product.fits === vehicle || product.fits === '2W/4W';
+}
+
 /**
  * Search name, brand, SKU, spec and compatibility in English and Hindi (case-insensitive), optionally within a
- * category. `categoryLabel` adds the shown category name (e.g. "लुब्रिकेंट") so it matches as typed.
+ * category and a vehicle type. `categoryLabel` adds the shown category name (e.g. "लुब्रिकेंट") so it matches as typed.
  */
 export function searchProducts(opts: {
   query?: string;
   category?: CategoryKey;
+  vehicle?: VehicleFilter;
   sort?: SortKey;
   categoryLabel?: (key: CategoryKey) => string;
 }): DemoProduct[] {
@@ -367,6 +381,7 @@ export function searchProducts(opts: {
   const words = q.split(/\s+/).filter(Boolean);
   const list = DEMO_PRODUCTS.filter((p) => {
     if (opts.category && p.category !== opts.category) return false;
+    if (opts.vehicle && !fitsVehicle(p, opts.vehicle)) return false;
     if (words.length === 0) return true;
     const hay = `${productSearchText(p)} ${opts.categoryLabel?.(p.category) ?? ''}`.toLowerCase();
     return words.every((w) => hay.includes(w) || hay.includes(w.replace(/s$/, '')));

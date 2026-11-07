@@ -21,14 +21,14 @@ test.describe('admin site customisation (spec 08)', () => {
     await signInAsAdmin(page, '/admin/content');
     await page.locator('#content-hero_titleLine1-en').fill('Genuine parts.');
     await page.locator('#content-hero_titleLine1-hi').fill('असली पार्ट्स।');
-    await page.locator('#content-announcement_orders-en').fill('Free fitting this week');
+    await page.locator('#content-hero_lead-en').fill('Free fitting this week on every battery.');
     await page.getByRole('button', { name: 'Save changes' }).click();
     await expect(page.getByRole('status').filter({ hasText: 'Saved.' })).toBeVisible();
     await expect(page.getByText(/Site content · saved · MechDost Operations/)).toBeVisible();
 
     await page.goto('/');
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Genuine parts.');
-    await expect(page.getByText('Free fitting this week')).toBeVisible();
+    await expect(page.getByText('Free fitting this week on every battery.')).toBeVisible();
     await page.goto('/hi');
     await expect(page.getByRole('heading', { level: 1 })).toContainText('असली पार्ट्स।');
 
@@ -40,7 +40,7 @@ test.describe('admin site customisation (spec 08)', () => {
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Automotive essentials.');
   });
 
-  test('home sections can be hidden and reordered; categories featured with new emoji', async ({ page }) => {
+  test('home sections can be hidden and reordered; featured categories can change', async ({ page }) => {
     await signInAsAdmin(page, '/admin/layout');
     // Hide the FAQ, move workshops to the top.
     await page.getByRole('listitem').filter({ hasText: 'Questions (FAQ)' }).getByLabel('Show').uncheck();
@@ -49,14 +49,9 @@ test.describe('admin site customisation (spec 08)', () => {
     await page.getByRole('button', { name: 'Save changes' }).first().click();
     await expect(page.getByRole('status').filter({ hasText: 'Saved.' }).first()).toBeVisible();
 
-    // Feature EV essentials instead of bearings, with a new emoji for tyres.
+    // Feature EV essentials instead of bearings.
     await page.getByRole('checkbox', { name: /^Bearings/ }).uncheck();
     await page.getByRole('checkbox', { name: /^EV essentials/ }).check();
-    await page.getByLabel('Emoji for Tyres').fill('🚗');
-    await page.getByLabel('Emoji for Filters').fill('abc');
-    await page.getByRole('button', { name: 'Save changes' }).nth(1).click();
-    await expect(page.getByText('Use a single emoji for Filters.')).toBeVisible();
-    await page.getByLabel('Emoji for Filters').fill('');
     await page.getByRole('button', { name: 'Save changes' }).nth(1).click();
     await expect(page.getByText(/Category shortcuts · saved/)).toBeVisible();
 
@@ -68,7 +63,8 @@ test.describe('admin site customisation (spec 08)', () => {
     const tiles = page.getByRole('region', { name: 'What does your vehicle need?' });
     await expect(tiles.getByRole('link', { name: /EV essentials/ })).toBeVisible();
     await expect(tiles.getByRole('link', { name: /Bearings/ })).toBeHidden();
-    await expect(page.locator('[data-home-category="tyres"] [aria-hidden="true"]').first()).toHaveText('🚗');
+    // Category tiles carry a fixed Lucide icon (emoji removed 2026-11-01).
+    await expect(page.locator('[data-home-category="evEssentials"] svg').first()).toBeVisible();
 
     // The layout survives a full reload (applied before first paint) and resets cleanly.
     await page.reload();

@@ -1,5 +1,6 @@
 'use client';
 
+import { Wrench } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
 import { localizeWorkshop, serviceNameFor } from '@/demo/i18n/localize';
@@ -46,7 +47,10 @@ function WorkshopRequests({ workshopSlug }: { workshopSlug: string }) {
     <>
       {workshop ? (
         <section className="blueprint rounded-card p-6 text-white shadow-card">
-          <h2 className="font-heading text-2xl font-extrabold">🔧 {workshop.name}</h2>
+          <h2 className="flex items-center gap-2.5 font-heading text-2xl font-extrabold">
+            <Wrench aria-hidden="true" className="size-6 shrink-0 text-accent-light" strokeWidth={2} />
+            {workshop.name}
+          </h2>
           <p className="mt-1 text-sm text-white/80">
             {workshop.area} · {workshop.pincode} · ★ {workshop.rating.toFixed(1)}
           </p>
@@ -142,7 +146,7 @@ function RequestSummary({ request: r }: { request: DemoServiceRequest }) {
       <p className="text-sm text-muted">
         <span data-user-content>{r.customer.name}</span> ·{' '}
         {t('requestMeta', {
-          vehicle: `${r.vehicleType === '2W' ? '🛵' : '🚗'} ${r.vehicle}`,
+          vehicle: `${r.vehicle} (${r.vehicleType})`,
           date: formatDate(r.date, locale),
           slot: t(`slot_${r.slot}`),
         })}

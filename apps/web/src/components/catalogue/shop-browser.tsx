@@ -1,26 +1,43 @@
 'use client';
 
-import { useCategoryEmoji } from '@/demo/site-config';
-import { CATEGORY_EMOJI, UI_EMOJI } from '@/lib/emoji';
-import { MessageCircle } from 'lucide-react';
+import { CATEGORY_ICONS, UI_ICONS } from '@/lib/icons';
+import {
+  ArrowDownWideNarrow,
+  ArrowUpNarrowWide,
+  Bike,
+  Car,
+  CarFront,
+  MessageCircle,
+  PlugZap,
+  Search,
+  TrendingUp,
+  X,
+} from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState, type ReactNode, type SyntheticEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode, type SyntheticEvent } from 'react';
 import {
   CATEGORY_KEYS,
   CATEGORY_SLUGS,
   categoryFromSlug,
+  vehicleFromParam,
   searchProducts,
   type CategoryKey,
   type SortKey,
+  type VehicleFilter,
 } from '@/demo/catalogue';
 import { track } from '@/lib/analytics';
 import { whatsappLink } from '@/lib/site';
+import { Select, type SelectOption } from '../ui/select';
 
 const SORTS: SortKey[] = ['popular', 'price_asc', 'price_desc'];
+
+/** Live search waits this long after the last keystroke (user 2026-11-02: "search dynamic … with debounce"). */
+const SEARCH_DEBOUNCE_MS = 300;
 
 interface State {
   query: string;
   category: CategoryKey | undefined;
+  vehicle: VehicleFilter | undefined;
   sort: SortKey;
 }
 
@@ -28,6 +45,7 @@ function urlFor(base: string, s: State): string {
   const params = new URLSearchParams();
   if (s.query) params.set('q', s.query);
   if (s.category) params.set('category', CATEGORY_SLUGS[s.category]);
+  if (s.vehicle) params.set('vehicle', s.vehicle);
   if (s.sort !== 'popular') params.set('sort', s.sort);
   const qs = params.toString();
   return qs ? `${base}?${qs}` : base;
@@ -39,6 +57,7 @@ function readUrl(): State {
   return {
     query: (p.get('q') ?? '').trim().slice(0, 120),
     category: categoryFromSlug(p.get('category') ?? undefined),
+    vehicle: vehicleFromParam(p.get('vehicle')),
     sort: SORTS.find((s) => s === sort) ?? 'popular',
   };
 }
@@ -46,7 +65,9 @@ function readUrl(): State {
 /**
  * Instant catalogue filtering (user, 2026-11-01: switching categories must not reload or jump to the top).
  * Product cards are rendered on the server once and passed in; this island only filters and orders them,
- * keeps the URL in sync with `history.pushState` (shareable, Back works) and never scrolls.
+ * keeps the URL in sync with `history.pushState` (shareable, Back works) and never scrolls. Typing filters live
+ * after a short debounce and *replaces* the URL entry, so Back does not step through every keystroke; Enter
+ * applies at once.
  * Without JavaScript the same form and links still work as normal GET navigations.
  */
 export function ShopBrowser({
@@ -64,17 +85,20 @@ export function ShopBrowser({
 }) {
   const c = useTranslations('catalogue');
   const cat = useTranslations('categories');
-  const emoji = useCategoryEmoji();
   const shop = useTranslations('pages.shop');
   const product = useTranslations('product');
   const [state, setState] = useState<State>(initial);
   const [draft, setDraft] = useState(initial.query);
+  const stateRef = useRef(state);
+  stateRef.current = state;
+  const debounce = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const results = useMemo(
     () =>
       searchProducts({
         query: state.query,
         category: state.category,
+        vehicle: state.vehicle,
         sort: state.sort,
         categoryLabel: (k) => cat(k),
       }),
@@ -94,17 +118,52 @@ export function ShopBrowser({
     };
   }, []);
 
-  function apply(next: State) {
+  function apply(next: State, history: 'push' | 'replace' = 'push') {
     setState(next);
-    window.history.pushState(null, '', urlFor(basePath, next));
+    const url = urlFor(basePath, next);
+    if (history === 'push') window.history.pushState(null, '', url);
+    else window.history.replaceState(null, '', url);
   }
+
+  function applyQuery(raw: string, history: 'push' | 'replace') {
+    clearTimeout(debounce.current);
+    const query = raw.trim().slice(0, 120);
+    if (query === stateRef.current.query) return;
+    if (query.length >= 2) track('search', { query, source: 'shop' });
+    apply({ ...stateRef.current, query }, history);
+  }
+
+  // Live search: apply the query once typing pauses.
+  useEffect(() => {
+    debounce.current = setTimeout(() => {
+      applyQuery(draft, 'replace');
+    }, SEARCH_DEBOUNCE_MS);
+    return () => {
+      clearTimeout(debounce.current);
+    };
+    // applyQuery reads the latest state through stateRef; only typing restarts the timer.
+  }, [draft]);
 
   function onSearch(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
-    const query = draft.trim().slice(0, 120);
-    if (query) track('search', { query, source: 'shop' });
-    apply({ ...state, query });
+    applyQuery(draft, 'push');
   }
+
+  const categoryOptions: SelectOption<string>[] = [
+    { value: '', label: cat('all'), icon: UI_ICONS.all },
+    ...CATEGORY_KEYS.map((k) => ({ value: CATEGORY_SLUGS[k], label: cat(k), icon: CATEGORY_ICONS[k] })),
+  ];
+  const vehicleOptions: SelectOption<string>[] = [
+    { value: '', label: c('vehicleAny'), icon: CarFront },
+    { value: '2W', label: c('vehicle2W'), icon: Bike },
+    { value: '4W', label: c('vehicle4W'), icon: Car },
+    { value: 'EV', label: c('vehicleEV'), icon: PlugZap },
+  ];
+  const sortOptions: SelectOption<SortKey>[] = [
+    { value: 'popular', label: c('sortPopular'), icon: TrendingUp },
+    { value: 'price_asc', label: c('sortPriceAsc'), icon: ArrowUpNarrowWide },
+    { value: 'price_desc', label: c('sortPriceDesc'), icon: ArrowDownWideNarrow },
+  ];
 
   const chip = (active: boolean) =>
     `press inline-flex min-h-10 items-center gap-1.5 rounded-pill border px-4 text-[13px] font-bold whitespace-nowrap transition-colors duration-[var(--duration-base)] ${
@@ -112,9 +171,11 @@ export function ShopBrowser({
         ? 'border-accent-soft bg-accent-soft text-accent-soft-text'
         : 'border-line-card bg-surface text-ink hover:bg-pill'
     }`;
-  const field =
-    'mt-1 min-h-11 w-full rounded-input border border-input-border bg-surface px-3 text-[15px] text-ink placeholder:text-muted';
-  const filtered = state.query !== '' || state.category !== undefined || state.sort !== 'popular';
+  const filtered =
+    state.query !== '' ||
+    state.category !== undefined ||
+    state.vehicle !== undefined ||
+    state.sort !== 'popular';
 
   return (
     <div>
@@ -123,70 +184,95 @@ export function ShopBrowser({
         action={basePath}
         method="get"
         onSubmit={onSearch}
-        className="mt-8 grid gap-3 rounded-card border border-line-card bg-surface p-4 shadow-card tab:grid-cols-[1fr_220px_200px_auto] tab:items-end"
+        className="relative z-20 mt-8 grid gap-3 rounded-card border border-line-card bg-surface p-4 shadow-card tab:grid-cols-2 tab:items-end nav:grid-cols-[1fr_200px_180px_190px]"
       >
         <div>
           <label htmlFor="shop-q" className="text-xs font-bold text-muted">
             {c('searchLabel')}
           </label>
-          <input
-            id="shop-q"
-            name="q"
-            type="search"
-            value={draft}
-            maxLength={120}
-            placeholder={c('searchPlaceholder')}
-            onChange={(e) => {
-              setDraft(e.target.value);
+          <div className="relative mt-1">
+            <Search
+              aria-hidden="true"
+              className="pointer-events-none absolute top-1/2 left-3 size-[18px] -translate-y-1/2 text-muted"
+            />
+            <input
+              id="shop-q"
+              name="q"
+              type="search"
+              value={draft}
+              maxLength={120}
+              autoComplete="off"
+              enterKeyHint="search"
+              placeholder={c('searchPlaceholder')}
+              onChange={(e) => {
+                setDraft(e.target.value);
+              }}
+              className="shop-search min-h-11 w-full rounded-input border border-input-border bg-surface pr-11 pl-10 text-[15px] text-ink placeholder:text-muted hover:border-ink"
+            />
+            {draft ? (
+              <button
+                type="button"
+                aria-label={c('clearSearch')}
+                data-track="shop_search_clear"
+                onClick={() => {
+                  setDraft('');
+                  applyQuery('', 'push');
+                }}
+                className="absolute top-1/2 right-1 inline-flex size-9 -translate-y-1/2 items-center justify-center rounded-full text-muted hover:bg-pill hover:text-ink"
+              >
+                <X aria-hidden="true" className="size-4" strokeWidth={2.5} />
+              </button>
+            ) : null}
+          </div>
+        </div>
+        <div>
+          <label id="shop-category-label" htmlFor="shop-category" className="text-xs font-bold text-muted">
+            {c('categoryLabel')}
+          </label>
+          <Select
+            id="shop-category"
+            name="category"
+            className="mt-1"
+            value={state.category ? CATEGORY_SLUGS[state.category] : ''}
+            options={categoryOptions}
+            trackPrefix="shop_category_select"
+            onChange={(slug) => {
+              apply({ ...state, category: categoryFromSlug(slug) });
             }}
-            className={field}
           />
         </div>
         <div>
-          <label htmlFor="shop-category" className="text-xs font-bold text-muted">
-            {c('categoryLabel')}
+          <label id="shop-vehicle-label" htmlFor="shop-vehicle" className="text-xs font-bold text-muted">
+            {c('vehicleLabel')}
           </label>
-          <select
-            id="shop-category"
-            name="category"
-            value={state.category ? CATEGORY_SLUGS[state.category] : ''}
-            onChange={(e) => {
-              apply({ ...state, category: categoryFromSlug(e.target.value) });
+          <Select
+            id="shop-vehicle"
+            name="vehicle"
+            className="mt-1"
+            value={state.vehicle ?? ''}
+            options={vehicleOptions}
+            trackPrefix="shop_vehicle"
+            onChange={(v) => {
+              apply({ ...state, vehicle: vehicleFromParam(v) });
             }}
-            className={field}
-          >
-            <option value="">{cat('all')}</option>
-            {CATEGORY_KEYS.map((k) => (
-              <option key={k} value={CATEGORY_SLUGS[k]}>
-                {cat(k)}
-              </option>
-            ))}
-          </select>
+          />
         </div>
         <div>
-          <label htmlFor="shop-sort" className="text-xs font-bold text-muted">
+          <label id="shop-sort-label" htmlFor="shop-sort" className="text-xs font-bold text-muted">
             {c('sortLabel')}
           </label>
-          <select
+          <Select
             id="shop-sort"
             name="sort"
+            className="mt-1"
             value={state.sort}
-            onChange={(e) => {
-              apply({ ...state, sort: SORTS.find((s) => s === e.target.value) ?? 'popular' });
+            options={sortOptions}
+            trackPrefix="shop_sort"
+            onChange={(sort) => {
+              apply({ ...state, sort });
             }}
-            className={field}
-          >
-            <option value="popular">{c('sortPopular')}</option>
-            <option value="price_asc">{c('sortPriceAsc')}</option>
-            <option value="price_desc">{c('sortPriceDesc')}</option>
-          </select>
+          />
         </div>
-        <button
-          type="submit"
-          className="press min-h-11 rounded-button bg-accent-button px-6 text-sm font-bold text-white hover:bg-accent-button-hover"
-        >
-          {c('searchSubmit')}
-        </button>
       </form>
 
       <nav aria-label={c('categoryLabel')} className="-mx-[5%] mt-5 overflow-x-auto px-[5%] pb-2">
@@ -194,6 +280,7 @@ export function ShopBrowser({
           {[undefined, ...CATEGORY_KEYS].map((k) => {
             const active = state.category === k;
             const next = { ...state, category: k };
+            const ChipIcon = k ? CATEGORY_ICONS[k] : UI_ICONS.all;
             return (
               <li key={k ?? 'all'}>
                 <a
@@ -207,9 +294,7 @@ export function ShopBrowser({
                   }}
                   className={chip(active)}
                 >
-                  <span aria-hidden="true" className="text-[15px] leading-none">
-                    {k ? emoji(k, CATEGORY_EMOJI[k]) : UI_EMOJI.all}
-                  </span>
+                  <ChipIcon aria-hidden="true" className="size-4 shrink-0" strokeWidth={2.25} />
                   {k ? cat(k) : cat('all')}
                 </a>
               </li>
@@ -228,7 +313,7 @@ export function ShopBrowser({
             type="button"
             onClick={() => {
               setDraft('');
-              apply({ query: '', category: undefined, sort: 'popular' });
+              apply({ query: '', category: undefined, vehicle: undefined, sort: 'popular' });
             }}
             className="min-h-10 text-sm font-bold text-accent-soft-text underline-offset-4 hover:underline"
           >

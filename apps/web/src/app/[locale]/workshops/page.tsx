@@ -1,3 +1,4 @@
+import { NotebookPen, Search, ThumbsUp } from 'lucide-react';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { ClientMessages } from '@/components/ui/client-messages';
@@ -17,9 +18,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 const PROMISES = [
-  { n: 1, emoji: '🔍' },
-  { n: 2, emoji: '👍' },
-  { n: 3, emoji: '📒' },
+  { n: 1, icon: Search },
+  { n: 2, icon: ThumbsUp },
+  { n: 3, icon: NotebookPen },
 ] as const;
 
 /** Workshop finder (spec 06): location first, then nearby verified workshops. Demo data until the API ships. */
@@ -34,13 +35,13 @@ export default async function WorkshopsPage() {
         </ClientMessages>
       </div>
       <ul className="mt-12 grid gap-4 tab:grid-cols-3">
-        {PROMISES.map(({ n, emoji }) => (
-          <li key={n} className="reveal flex gap-4 rounded-tile border border-line-card bg-surface p-6">
+        {PROMISES.map(({ n, icon: Icon }) => (
+          <li key={n} className="flex gap-4 rounded-tile border border-line-card bg-surface p-6">
             <span
               aria-hidden="true"
-              className="grid size-11 shrink-0 place-items-center rounded-xl bg-accent-soft text-[22px]"
+              className="grid size-11 shrink-0 place-items-center rounded-xl bg-accent-soft text-accent-soft-text"
             >
-              {emoji}
+              <Icon className="size-5" strokeWidth={2} />
             </span>
             <div>
               <h2 className="font-heading text-lg font-bold text-ink">{t(`promise${n}Title`)}</h2>

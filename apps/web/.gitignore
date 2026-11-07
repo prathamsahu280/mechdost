@@ -3,3 +3,6 @@ next-env.d.ts
 /test-results/
 /playwright-report/
 /public/vendor/
+
+.vercel
+.env*

@@ -1,3 +1,4 @@
+import { CalendarDays, Car, CreditCard, FilePenLine, Hand, MapPin } from 'lucide-react';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { Container, PageIntro } from '@/components/ui/page-intro';
@@ -20,12 +21,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 const SECTIONS = [
-  { key: 'find', emoji: '📍' },
-  { key: 'proposal', emoji: '🗓️' },
-  { key: 'estimate', emoji: '📝' },
-  { key: 'cancel', emoji: '✋' },
-  { key: 'bill', emoji: '💳' },
-  { key: 'pickup', emoji: '🚗' },
+  { key: 'find', icon: MapPin },
+  { key: 'proposal', icon: CalendarDays },
+  { key: 'estimate', icon: FilePenLine },
+  { key: 'cancel', icon: Hand },
+  { key: 'bill', icon: CreditCard },
+  { key: 'pickup', icon: Car },
 ] as const;
 
 /**
@@ -39,8 +40,8 @@ export default async function ServiceTermsPage() {
     <Container className="py-12 tab:py-16">
       <PageIntro eyebrow={t('eyebrow')} line1={t('title')} lead={t('lead')} />
       <PolicySections
-        sections={SECTIONS.map(({ key, emoji }) => ({
-          emoji,
+        sections={SECTIONS.map(({ key, icon }) => ({
+          icon,
           title: t(`${key}Title`),
           body: t(`${key}Body`),
         }))}

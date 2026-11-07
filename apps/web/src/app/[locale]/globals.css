@@ -1,5 +1,7 @@
 @import 'tailwindcss';
 @import '@mechdost/ui/tokens.css';
+@import '@mechdost/ui/surfaces.css';
+@import '../../components/illustrations/illustrations.css';
 
 /* Base styles from docs/design-system.md. Components use utilities; this file holds only cross-cutting rules. */
 @layer base {
@@ -83,22 +85,151 @@
   animation: page-in var(--duration-slow) var(--ease-out-soft) both;
 }
 
-@keyframes reveal {
+/*
+ * Scroll motion (user 2026-11-02: "make the website feel more alive … add proper cool scroll animations").
+ * CSS scroll-driven animations only — no JS, no layout work, compositor-friendly (opacity/transform/filter).
+ * Progressive enhancement: browsers without animation-timeline simply show everything; prefers-reduced-motion
+ * gets no scroll motion at all. Never applied to the hero copy (LCP) — the hero only gets a photo parallax.
+ *   .reveal        rise + fade + de-blur as the element enters; `--i` (lib/motion.ts stagger) cascades a row
+ *   .reveal-panel  large cards/bands: rise from below
+ * No scale in reveals: elements keep their real size while animating, so tap targets never shrink mid-scroll.
+ *   .hero-parallax the hero photo drifts slower than the page
+ *   .site-header   gains its shadow once the page scrolls
+ */
+@keyframes reveal-rise {
   from {
     opacity: 0;
-    transform: translateY(24px);
+    transform: translateY(36px);
+    filter: blur(6px);
+  }
+}
+@keyframes reveal-panel {
+  from {
+    opacity: 0.2;
+    transform: translateY(32px);
+  }
+}
+@keyframes hero-drift {
+  from {
+    transform: scale(1.1) translateY(0);
+  }
+  to {
+    transform: scale(1.1) translateY(5%);
+  }
+}
+@keyframes header-lift {
+  from {
+    box-shadow: none;
+  }
+  to {
+    box-shadow: 0 10px 30px -18px #101f3440;
   }
 }
 
-/* Scroll reveal: progressive enhancement — browsers without scroll timelines simply show the content. */
 @supports (animation-timeline: view()) {
   @media (prefers-reduced-motion: no-preference) {
     .reveal {
-      animation: reveal linear both;
+      animation: reveal-rise linear both;
       animation-timeline: view();
-      animation-range: entry 0% entry 45%;
+      animation-range: entry calc(var(--i, 0) * 7%) cover calc(26% + var(--i, 0) * 7%);
+    }
+    .reveal-panel {
+      animation: reveal-panel linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 30%;
+    }
+    .hero-parallax {
+      animation: hero-drift linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 90vh;
+    }
+    .site-header {
+      animation: header-lift linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 120px;
     }
   }
+}
+
+/*
+ * Rotating hero badge (.hero-ticker, components/home/hero.tsx): five lines stacked in one grid cell, each visible
+ * for 3.6s of an 18s loop with a slide-up hand-off. The badge keeps the widest line's size, so nothing jumps.
+ * Reduced motion: line 1 only.
+ */
+.hero-ticker {
+  display: inline-grid;
+  overflow: hidden;
+}
+.hero-ticker > span {
+  grid-area: 1 / 1;
+  opacity: 0;
+  animation: hero-ticker 18s var(--ease-out-soft) infinite;
+  animation-delay: calc(var(--n, 0) * 3.6s);
+}
+@keyframes hero-ticker {
+  0% {
+    opacity: 0;
+    transform: translateY(70%);
+  }
+  3%,
+  17% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  20%,
+  100% {
+    opacity: 0;
+    transform: translateY(-70%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-ticker > span {
+    animation: none !important;
+    opacity: 0;
+  }
+  .hero-ticker > span:first-child {
+    opacity: 1;
+  }
+}
+
+/* FAQ answers slide in when a question opens. */
+details[open] > .faq-answer {
+  animation: faq-open var(--duration-base) var(--ease-out-soft);
+}
+@keyframes faq-open {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+/*
+ * Green footer (user 2026-11-02: "footer should be green bg and white text"). Re-scopes the colour tokens inside
+ * the footer so every existing utility (text-ink, text-muted, border-line, …) turns light-on-green. Contrast on
+ * #053d2f / its #0b5a44 glow / dark #0a3328: white 8.2–13.8:1, muted #c4e8d4 6.2–10.4:1, accent #86efac ≥5.8:1.
+ */
+.footer-green {
+  --color-ink: #ffffff;
+  --color-muted: #c4e8d4;
+  --color-line: rgb(255 255 255 / 0.14);
+  --color-line-card: rgb(255 255 255 / 0.22);
+  --color-pill: rgb(255 255 255 / 0.1);
+  --color-surface: rgb(255 255 255 / 0.06);
+  --color-accent: #86efac;
+  --color-accent-soft-text: #86efac;
+  --color-whatsapp-bg: rgb(255 255 255 / 0.06);
+  --color-whatsapp-line: rgb(255 255 255 / 0.16);
+  --color-focus: #86efac;
+  --gradient-surface: none;
+  color: var(--color-ink);
+}
+/* The green WhatsApp button would vanish on green: white pill, green label (7.1:1). */
+.footer-green .bg-whatsapp {
+  background-color: #ffffff;
+  color: #166534;
+}
+.footer-green .bg-whatsapp:hover {
+  background-color: #e9f8ef;
 }
 
 @keyframes shimmer {
@@ -240,8 +371,9 @@
     background-color var(--duration-fast) var(--ease-out-soft);
 }
 .md-map-pin__glyph {
-  font-size: 15px;
-  line-height: 1;
+  width: 15px;
+  height: 15px;
+  color: #fff;
   transform: rotate(45deg);
 }
 .md-map-pin:hover .md-map-pin__body,
@@ -249,9 +381,9 @@
   transform: rotate(-45deg) scale(1.12);
 }
 .md-map-pin--active .md-map-pin__body {
-  background: #101f34;
+  background: #053d2f;
   box-shadow:
-    0 0 0 4px #e6532573,
+    0 0 0 4px #16a34a73,
     0 8px 18px #101f3480;
   transform: rotate(-45deg) scale(1.22);
 }
@@ -261,7 +393,7 @@
   left: 50%;
   padding: 4px 9px;
   border-radius: 8px;
-  background: #101f34;
+  background: #053d2f;
   color: #fff;
   font-size: 12px;
   font-weight: 700;
@@ -438,6 +570,12 @@
 .md-map .maplibregl-ctrl-attrib a {
   display: inline-block;
   padding: 5px 1px;
+}
+/* Compact attribution ⓘ is ~24px by default (flaky sub-24px tap target at tablet widths): give it room. */
+.md-map .maplibregl-ctrl-attrib-button {
+  width: 32px;
+  height: 32px;
+  background-position: center;
 }
 .md-map .maplibregl-ctrl-scale {
   border-color: #536376;

@@ -1,15 +1,8 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import type { CategoryKey } from '@/demo/catalogue';
 import { usePartnerStatus, type PartnerKind } from '@/demo/partner-status';
-import {
-  useCategoryEmoji,
-  useContentOverride,
-  useSiteSettings,
-  type ContentKey,
-  type SiteSettings,
-} from '@/demo/site-config';
+import { useContentOverride, useSiteSettings, type ContentKey, type SiteSettings } from '@/demo/site-config';
 
 /**
  * Tiny client islands that let admin customisation (demo: stored in this browser) show on Server Component
@@ -31,10 +24,6 @@ export function SettingValue({
 }) {
   const value = useSiteSettings()[setting];
   return <>{Number.isFinite(value) ? value : fallback}</>;
-}
-
-export function CategoryEmoji({ k, fallback }: { k: CategoryKey; fallback: string }) {
-  return <>{useCategoryEmoji()(k, fallback)}</>;
 }
 
 /** Hides a server-rendered partner card once the admin suspends that partner (demo: browser-stored status). */

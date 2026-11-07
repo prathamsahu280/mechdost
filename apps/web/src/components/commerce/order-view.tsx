@@ -1,6 +1,6 @@
 'use client';
 
-import { PartyPopper } from 'lucide-react';
+import { PartyPopper, Store } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { ORDER_CANCEL_REASONS, type OrderCancelReason } from '@mechdost/shared/state';
@@ -98,8 +98,8 @@ export function OrderView({ code }: { code: string }) {
             </div>
           )}
           {order.shop?.status === 'accepted' ? (
-            <p className="mt-4 text-sm font-bold text-ink">
-              <span aria-hidden="true">🏪 </span>
+            <p className="mt-4 flex items-center gap-1.5 text-sm font-bold text-ink">
+              <Store aria-hidden="true" className="size-4 shrink-0 text-accent-soft-text" />
               {t('shopLabel', {
                 shop: shopNameFor(
                   order.shop.slug,

@@ -76,7 +76,6 @@ export interface SiteConfig {
   layout: { order: HomeSection[]; hidden: HomeSection[]; mapDefault: MapMode };
   /** Category tiles on the home page; null = default six. */
   featured: CategoryKey[] | null;
-  emoji: Partial<Record<CategoryKey, string>>;
   settings: SiteSettings;
   audit: AuditEntry[];
 }
@@ -88,7 +87,6 @@ export const DEFAULT_CONFIG: SiteConfig = {
   content: {},
   layout: { order: [...HOME_SECTIONS], hidden: [], mapDefault: 'satellite' },
   featured: null,
-  emoji: {},
   settings: DEFAULT_SETTINGS,
   audit: [],
 };
@@ -100,16 +98,6 @@ const MAX_AUDIT = 30;
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
 const isSection = (v: unknown): v is HomeSection => HOME_SECTIONS.some((s) => s === v);
 const isCategory = (v: unknown): v is CategoryKey => CATEGORY_KEYS.some((k) => k === v);
-
-/** One emoji (incl. ZWJ sequences and variation selectors); no letters, digits, spaces or markup. */
-export function isEmoji(value: string): boolean {
-  return (
-    value.length > 0 &&
-    value.length <= 16 &&
-    /\p{Extended_Pictographic}/u.test(value) &&
-    !/[\p{L}\p{N}\s<>]/u.test(value)
-  );
-}
 
 export function clampSetting(key: keyof SiteSettings, value: number): number {
   const [min, max] = SETTING_LIMITS[key];
@@ -153,13 +141,7 @@ function parse(raw: string | null): SiteConfig {
       ? featuredRaw
       : null;
 
-  const emoji: SiteConfig['emoji'] = {};
-  if (isRecord(data.emoji)) {
-    for (const key of CATEGORY_KEYS) {
-      const v = data.emoji[key];
-      if (typeof v === 'string' && isEmoji(v.trim())) emoji[key] = v.trim();
-    }
-  }
+  // Configs saved before 2026-11-01 may still carry an `emoji` map (category emoji overrides, removed): ignored.
 
   const s = isRecord(data.settings) ? data.settings : {};
   const settings = Object.fromEntries(
@@ -192,7 +174,6 @@ function parse(raw: string | null): SiteConfig {
     content,
     layout: { order: fullOrder, hidden, mapDefault },
     featured,
-    emoji,
     settings,
     audit,
   };
@@ -249,11 +230,6 @@ export function useContentOverride(key: ContentKey, locale: string): string | nu
   return (locale === 'hi' ? entry?.hi : entry?.en) ?? null;
 }
 
-export function useCategoryEmoji(): (key: CategoryKey, fallback: string) => string {
-  const emoji = useSiteConfig().emoji;
-  return (key, fallback) => emoji[key] ?? fallback;
-}
-
 type Change = Omit<SiteConfig, 'versions' | 'audit'>;
 
 /**
@@ -286,7 +262,6 @@ const without = (c: SiteConfig): Change => ({
   content: c.content,
   layout: c.layout,
   featured: c.featured,
-  emoji: c.emoji,
   settings: c.settings,
 });
 
@@ -329,26 +304,15 @@ export function saveMapDefault(expectedVersion: number, actor: string, mapDefaul
   }));
 }
 
-export function saveCategories(
-  expectedVersion: number,
-  actor: string,
-  featured: CategoryKey[],
-  emoji: SiteConfig['emoji'],
-): boolean {
+export function saveCategories(expectedVersion: number, actor: string, featured: CategoryKey[]): boolean {
   const list = [...new Set(featured.filter(isCategory))];
   if (list.length < FEATURED_MIN || list.length > FEATURED_MAX) return false;
-  const cleanEmoji: SiteConfig['emoji'] = {};
-  for (const key of CATEGORY_KEYS) {
-    const v = emoji[key]?.trim();
-    if (v && isEmoji(v)) cleanEmoji[key] = v;
-  }
   const isDefault =
     list.length === DEFAULT_FEATURED.length && list.every((k, i) => k === DEFAULT_FEATURED[i]);
-  return commit(
-    expectedVersion,
-    { actor, area: 'categories', action: 'save', fields: Object.keys(cleanEmoji) },
-    (c) => ({ ...without(c), featured: isDefault ? null : list, emoji: cleanEmoji }),
-  );
+  return commit(expectedVersion, { actor, area: 'categories', action: 'save', fields: list }, (c) => ({
+    ...without(c),
+    featured: isDefault ? null : list,
+  }));
 }
 
 export function saveSettings(expectedVersion: number, actor: string, settings: SiteSettings): boolean {
@@ -373,7 +337,7 @@ export function resetArea(expectedVersion: number, actor: string, area: AuditEnt
     const rest = without(c);
     if (area === 'content') return { ...rest, content: {} };
     if (area === 'layout') return { ...rest, layout: DEFAULT_CONFIG.layout };
-    if (area === 'categories') return { ...rest, featured: null, emoji: {} };
+    if (area === 'categories') return { ...rest, featured: null };
     return { ...rest, settings: DEFAULT_SETTINGS };
   });
 }

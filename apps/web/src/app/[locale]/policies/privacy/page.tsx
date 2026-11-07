@@ -1,3 +1,4 @@
+import { Building2, ChartColumn, FolderOpen, Hand, Handshake, Lock, Target } from 'lucide-react';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { Container, PageIntro } from '@/components/ui/page-intro';
@@ -21,13 +22,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 const SECTIONS = [
-  { key: 'who', emoji: '🏢' },
-  { key: 'collect', emoji: '🗂️' },
-  { key: 'purpose', emoji: '🎯' },
-  { key: 'share', emoji: '🤝' },
-  { key: 'analytics', emoji: '📊' },
-  { key: 'safe', emoji: '🔒' },
-  { key: 'rights', emoji: '✋' },
+  { key: 'who', icon: Building2 },
+  { key: 'collect', icon: FolderOpen },
+  { key: 'purpose', icon: Target },
+  { key: 'share', icon: Handshake },
+  { key: 'analytics', icon: ChartColumn },
+  { key: 'safe', icon: Lock },
+  { key: 'rights', icon: Hand },
 ] as const;
 
 /**
@@ -44,8 +45,8 @@ export default async function PrivacyPolicyPage({ params }: Props) {
     <Container className="py-12 tab:py-16">
       <PageIntro eyebrow={t('eyebrow')} line1={t('title')} lead={t('lead')} />
       <PolicySections
-        sections={SECTIONS.map(({ key, emoji }) => ({
-          emoji,
+        sections={SECTIONS.map(({ key, icon }) => ({
+          icon,
           title: t(`${key}Title`),
           body: t(`${key}Body`, { company, address: registeredAddress }),
         }))}

@@ -3,12 +3,12 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { canonicalPath } from '@/lib/locale-path';
-import { NAV_EMOJI } from '@/lib/emoji';
+import { NAV_ICONS } from '@/lib/icons';
 import { isActive } from '@/lib/nav';
 import type { NavItem } from './nav-links';
 
 /**
- * Fixed bottom tab bar under 1024px (phones and tablets): 4 tabs, emoji + label, safe-area aware, ≥44px targets.
+ * Fixed bottom tab bar under 1024px (phones and tablets): 4 tabs, icon + label, safe-area aware, ≥44px targets.
  * Labels are translated on the server and passed in.
  */
 export function MobileTabBar({ label, items }: { label: string; items: readonly NavItem[] }) {
@@ -21,6 +21,7 @@ export function MobileTabBar({ label, items }: { label: string; items: readonly 
       <ul className="mx-auto grid max-w-xl grid-cols-4 gap-1 px-2 py-1.5">
         {items.map((item) => {
           const active = isActive(pathname, item.href, item.key === 'home');
+          const Icon = NAV_ICONS[item.key];
           return (
             <li key={item.key}>
               <Link
@@ -31,12 +32,11 @@ export function MobileTabBar({ label, items }: { label: string; items: readonly 
                   active ? 'bg-accent-soft text-accent-soft-text' : 'text-muted'
                 }`}
               >
-                <span
+                <Icon
                   aria-hidden="true"
-                  className={`text-[21px] leading-none transition-transform duration-200 ${active ? 'scale-110' : 'grayscale-[35%]'}`}
-                >
-                  {NAV_EMOJI[item.key]}
-                </span>
+                  className={`size-5 transition-transform duration-200 ${active ? 'scale-110' : ''}`}
+                  strokeWidth={active ? 2.5 : 2}
+                />
                 <span>{item.label}</span>
               </Link>
             </li>

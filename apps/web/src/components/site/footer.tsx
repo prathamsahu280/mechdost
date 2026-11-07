@@ -27,7 +27,8 @@ const POLICY_LINKS = [
  * Site footer: help card (WhatsApp/call) beside four link columns (shop, vehicle care, account, partners), then a
  * legal row with the operator, GSTIN and registered office (confirmed by the user, inbox Q15), theme toggle and
  * credits. Server-only. Policy pages are linked in their own row under the legal block.
- * Link lists become admin-editable navigation in Phase 1 (rule 8, spec 08).
+ * Link lists become admin-editable navigation in Phase 1 (rule 8, spec 08). Green (user 2026-11-02): `.footer-green`
+ * (globals.css) re-scopes the colour tokens, so the existing classes turn light-on-green.
  */
 export function Footer() {
   const t = useTranslations('footer');
@@ -91,101 +92,112 @@ export function Footer() {
   ];
 
   return (
-    <footer className="mt-16 border-t border-line bg-surface">
-      <div className="mx-auto grid max-w-[1600px] gap-10 px-[5%] pt-12 pb-8 nav:grid-cols-[minmax(280px,340px)_1fr]">
-        <section
-          aria-labelledby="footer-help"
-          className="rounded-card border border-whatsapp-line bg-whatsapp-bg p-6 nav:self-start"
-        >
-          <h2 id="footer-help" className="font-heading text-[17px] font-extrabold text-ink">
-            {t('helpTitle')}
-          </h2>
-          <p className="mt-2 text-sm leading-relaxed text-muted">{t('helpBody')}</p>
-          <div className="mt-5 flex flex-wrap items-center gap-3">
-            <ExternalButtonLink
-              variant="whatsapp"
-              href={whatsappLink(wa('general'))}
-              target="_blank"
-              rel="noopener noreferrer"
-              note={t('whatsappNote')}
-              data-track="footer_whatsapp"
-            >
-              <MessageCircle aria-hidden="true" className="mr-2 inline size-4 align-[-3px]" />
-              {t('whatsapp', { phone: site.supportPhone })}
-            </ExternalButtonLink>
-            <a
-              href={`tel:${site.supportPhoneE164}`}
-              data-track="footer_call"
-              className="inline-flex min-h-11 items-center gap-2 px-2 text-sm font-bold text-ink underline-offset-4 hover:underline"
-            >
-              <Phone aria-hidden="true" className="size-4" />
-              {t('call')}
-            </a>
-          </div>
-        </section>
+    <footer className="footer-green mt-16 bg-navy">
+      <div>
+        <div className="mx-auto grid max-w-[1600px] gap-10 px-[5%] pt-12 pb-8 nav:grid-cols-[minmax(280px,340px)_1fr]">
+          <section
+            aria-labelledby="footer-help"
+            className="rounded-card border border-whatsapp-line bg-whatsapp-bg p-6 nav:self-start"
+          >
+            <h2 id="footer-help" className="font-heading text-[17px] font-extrabold text-ink">
+              {t('helpTitle')}
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-muted">{t('helpBody')}</p>
+            <div className="mt-5 flex flex-wrap items-center gap-3">
+              <ExternalButtonLink
+                variant="whatsapp"
+                href={whatsappLink(wa('general'))}
+                target="_blank"
+                rel="noopener noreferrer"
+                note={t('whatsappNote')}
+                data-track="footer_whatsapp"
+              >
+                <MessageCircle aria-hidden="true" className="mr-2 inline size-4 align-[-3px]" />
+                {t('whatsapp', { phone: site.supportPhone })}
+              </ExternalButtonLink>
+              <a
+                href={`tel:${site.supportPhoneE164}`}
+                data-track="footer_call"
+                className="inline-flex min-h-11 items-center gap-2 px-2 text-sm font-bold text-ink underline-offset-4 hover:underline"
+              >
+                <Phone aria-hidden="true" className="size-4" />
+                {t('call')}
+              </a>
+            </div>
+          </section>
 
-        <div className="grid grid-cols-2 gap-x-6 gap-y-8 tab:grid-cols-4">
-          {columns.map((col) => (
-            <nav key={col.id} aria-labelledby={`footer-col-${col.id}`}>
-              <h2 id={`footer-col-${col.id}`} className="text-sm font-extrabold text-ink">
-                {col.title}
-              </h2>
-              <ul className="mt-2">
-                {col.links.map((link) => (
-                  <li key={link.href}>
-                    <LocalLink
-                      href={link.href}
-                      data-track={link.track}
-                      className="inline-flex min-h-11 min-w-11 items-center text-sm text-muted underline-offset-4 hover:text-ink hover:underline"
-                    >
-                      {link.label}
-                    </LocalLink>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-          ))}
-        </div>
-      </div>
-
-      <div className="mx-auto max-w-[1600px] px-[5%] pb-10">
-        <div className="grid gap-6 border-t border-line pt-8 nav:grid-cols-[1fr_auto] nav:items-start">
-          <div className="space-y-3">
-            <BrandMark />
-            <p className="max-w-xl text-sm text-muted">{t('accountNote')}</p>
-            <p className="text-xs leading-relaxed text-muted">
-              {t('operatedBy')} <span className="font-bold text-ink uppercase">{company}</span>
-              <br />
-              {t('gstin', { gstin: site.gstin })}
-              <br />
-              {t('registered', { address: registeredAddress })}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <ThemeToggle label={theme('toggle')} className="border border-line-card" />
-            <span aria-hidden="true" className="text-sm text-muted">
-              {theme('toggle')}
-            </span>
-          </div>
-        </div>
-        <nav aria-label={t('policiesLabel')} className="mt-6">
-          <ul className="flex flex-wrap gap-x-5">
-            {POLICY_LINKS.map((link) => (
-              <li key={link.href}>
-                <LocalLink
-                  href={link.href}
-                  data-track={link.track}
-                  className="inline-flex min-h-11 items-center text-sm text-muted underline-offset-4 hover:text-ink hover:underline"
-                >
-                  {t(link.label)}
-                </LocalLink>
-              </li>
+          <div className="grid grid-cols-2 gap-x-6 gap-y-8 tab:grid-cols-4">
+            {columns.map((col) => (
+              <nav key={col.id} aria-labelledby={`footer-col-${col.id}`}>
+                <h2 id={`footer-col-${col.id}`} className="text-sm font-extrabold text-ink">
+                  {col.title}
+                </h2>
+                <ul className="mt-2">
+                  {col.links.map((link) => (
+                    <li key={link.href}>
+                      <LocalLink
+                        href={link.href}
+                        data-track={link.track}
+                        className="inline-flex min-h-11 min-w-11 items-center text-sm text-muted underline-offset-4 hover:text-ink hover:underline"
+                      >
+                        {link.label}
+                      </LocalLink>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
             ))}
-          </ul>
-        </nav>
-        <ConsentChoicesButton label={consent('choices')} />
-        <p className="mt-2 text-xs leading-relaxed text-muted">{t('credits')}</p>
-        <p className="mt-2 text-xs text-muted">{t('copyright', { year, company })}</p>
+          </div>
+        </div>
+
+        <div className="mx-auto max-w-[1600px] px-[5%] pb-10">
+          <div className="grid gap-6 border-t border-line pt-8 nav:grid-cols-[1fr_auto] nav:items-start">
+            <div className="space-y-3">
+              <BrandMark />
+              <p className="max-w-xl text-sm text-muted">{t('accountNote')}</p>
+              <p className="text-xs leading-relaxed text-muted">
+                {t('operatedBy')} <span className="font-bold text-ink uppercase">{company}</span>
+                <br />
+                {t('gstin', { gstin: site.gstin })}
+                <br />
+                {t('registered', { address: registeredAddress })}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <ThemeToggle label={theme('toggle')} className="border border-line-card" />
+              <span aria-hidden="true" className="text-sm text-muted">
+                {theme('toggle')}
+              </span>
+            </div>
+          </div>
+          <nav aria-label={t('policiesLabel')} className="mt-6">
+            <ul className="flex flex-wrap gap-x-5">
+              {POLICY_LINKS.map((link) => (
+                <li key={link.href}>
+                  <LocalLink
+                    href={link.href}
+                    data-track={link.track}
+                    className="inline-flex min-h-11 items-center text-sm text-muted underline-offset-4 hover:text-ink hover:underline"
+                  >
+                    {t(link.label)}
+                  </LocalLink>
+                </li>
+              ))}
+            </ul>
+          </nav>
+          <ConsentChoicesButton label={consent('choices')} />
+          <p className="mt-2 text-xs leading-relaxed text-muted">
+            {t('credits')}{' '}
+            <LocalLink
+              href="/credits"
+              data-track="footer_photo_credits"
+              className="inline-flex min-h-7 items-center font-bold text-ink underline underline-offset-4"
+            >
+              {t('photoCredits')}
+            </LocalLink>
+          </p>
+          <p className="mt-2 text-xs text-muted">{t('copyright', { year, company })}</p>
+        </div>
       </div>
     </footer>
   );

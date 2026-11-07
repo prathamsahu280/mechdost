@@ -1,15 +1,15 @@
-import { Phone } from 'lucide-react';
+import { Phone, type LucideIcon } from 'lucide-react';
 import { site } from '@/lib/site';
 
 export interface PolicySectionItem {
-  emoji: string;
+  icon: LucideIcon;
   title: string;
   body: string;
 }
 
 /**
  * The body of every policy page (privacy, returns, delivery, workshop bookings): one card per section with a
- * decorative emoji, then the support number and the "last updated" line. Server-only; the copy arrives
+ * decorative icon, then the support number and the "last updated" line. Server-only; the copy arrives
  * translated. When the storefront reads the content API, the same sections come from `GET /v1/content/policies`.
  */
 export function PolicySections({
@@ -34,9 +34,9 @@ export function PolicySections({
           >
             <span
               aria-hidden="true"
-              className="grid size-12 shrink-0 place-items-center rounded-xl bg-accent-soft text-[24px]"
+              className="grid size-12 shrink-0 place-items-center rounded-xl bg-accent-soft text-accent-soft-text"
             >
-              {s.emoji}
+              <s.icon className="size-[22px]" strokeWidth={2} />
             </span>
             <div>
               <h2 className="font-heading text-lg font-extrabold text-ink">{s.title}</h2>

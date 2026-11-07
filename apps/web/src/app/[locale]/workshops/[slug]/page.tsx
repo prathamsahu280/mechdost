@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { BadgeCheck, Clock, MapPin, Star, Truck, Zap } from 'lucide-react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -13,6 +14,7 @@ import { workshopRating, workshopReviews } from '@/demo/reviews';
 import { DEMO_WORKSHOPS, findWorkshop } from '@/demo/workshops';
 import { routing, type Locale } from '@/i18n/routing';
 import { formatDate, formatPrice } from '@/lib/format';
+import { workshopPhoto } from '@/lib/media';
 import { directionsHref, mapUi } from '@/lib/map-ui';
 import { alternatesFor } from '@/lib/seo';
 
@@ -55,40 +57,54 @@ export default async function WorkshopPage({ params }: Props) {
         ← {t('back')}
       </LocalLink>
 
-      <header className="mt-5 rounded-hero bg-navy p-6 text-white tab:p-10">
-        <p className="eyebrow inline-flex items-center gap-1.5 text-accent-light">
-          <BadgeCheck aria-hidden="true" className="size-4" />
-          {t('checkedOn', { date: formatDate(w.checkedOn, locale) })}
-        </p>
-        <h1 className="mt-3 font-heading text-[clamp(28px,3.6vw,48px)] leading-tight font-extrabold tracking-[-0.03em]">
-          {w.name}
-        </h1>
-        <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-hero-copy">
-          <li className="flex items-center gap-1.5">
-            <MapPin aria-hidden="true" className="size-4" />
-            {w.address} · {w.pincode}
-          </li>
-          <li className="flex items-center gap-1.5">
-            <Clock aria-hidden="true" className="size-4" />
-            {w.hours}
-          </li>
-          <li className="flex items-center gap-1.5">
-            <Star aria-hidden="true" className="size-4 fill-current text-accent-light" />
-            {f('rating', { rating: w.rating.toFixed(1), count: w.reviews })}
-          </li>
-          {w.pickup ? (
+      <header className="relative mt-5 overflow-hidden rounded-hero bg-navy text-white">
+        <Image
+          src={workshopPhoto(w.slug)}
+          alt=""
+          fill
+          preload
+          sizes="(min-width: 1600px) 1440px, 90vw"
+          className="object-cover"
+        />
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 bg-gradient-to-t from-navy via-navy/85 to-navy/35"
+        />
+        <div className="relative p-6 pt-28 tab:p-10 tab:pt-40">
+          <p className="eyebrow inline-flex items-center gap-1.5 text-accent-light">
+            <BadgeCheck aria-hidden="true" className="size-4" />
+            {t('checkedOn', { date: formatDate(w.checkedOn, locale) })}
+          </p>
+          <h1 className="mt-3 font-heading text-[clamp(28px,3.6vw,48px)] leading-tight font-extrabold tracking-[-0.03em]">
+            {w.name}
+          </h1>
+          <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-hero-copy">
             <li className="flex items-center gap-1.5">
-              <Truck aria-hidden="true" className="size-4" />
-              {f('pickup')}
+              <MapPin aria-hidden="true" className="size-4" />
+              {w.address} · {w.pincode}
             </li>
-          ) : null}
-          {w.ev ? (
             <li className="flex items-center gap-1.5">
-              <Zap aria-hidden="true" className="size-4" />
-              {f('ev')}
+              <Clock aria-hidden="true" className="size-4" />
+              {w.hours}
             </li>
-          ) : null}
-        </ul>
+            <li className="flex items-center gap-1.5">
+              <Star aria-hidden="true" className="size-4 fill-current text-accent-light" />
+              {f('rating', { rating: w.rating.toFixed(1), count: w.reviews })}
+            </li>
+            {w.pickup ? (
+              <li className="flex items-center gap-1.5">
+                <Truck aria-hidden="true" className="size-4" />
+                {f('pickup')}
+              </li>
+            ) : null}
+            {w.ev ? (
+              <li className="flex items-center gap-1.5">
+                <Zap aria-hidden="true" className="size-4" />
+                {f('ev')}
+              </li>
+            ) : null}
+          </ul>
+        </div>
       </header>
 
       <div className="mt-8 grid gap-8 nav:grid-cols-[1fr_420px] nav:items-start">
@@ -98,10 +114,7 @@ export default async function WorkshopPage({ params }: Props) {
           </h2>
           <ul className="mt-4 grid gap-3">
             {w.services.map((s) => (
-              <li
-                key={s.key}
-                className="reveal rounded-tile border border-line-card bg-surface p-5 shadow-card"
-              >
+              <li key={s.key} className="rounded-tile border border-line-card bg-surface p-5 shadow-card">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <h3 className="font-heading font-bold text-ink">{s.name}</h3>
                   <p className="font-heading font-extrabold text-ink">

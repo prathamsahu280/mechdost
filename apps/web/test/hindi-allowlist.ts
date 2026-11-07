@@ -23,6 +23,9 @@ import { SEEDED_ACCOUNTS } from '../src/demo/session';
 // Meta: the company that runs WhatsApp (admin WhatsApp setup copy, decision 2026-11-02).
 const OUR_BRANDS = ['MechDost', 'WhatsApp', 'Meta'] as const;
 
+/** Proper names of services we credit (photo licences require naming the source: footer + /credits). */
+const CREDITED_SOURCES = ['Wikimedia', 'Commons'] as const;
+
 /** Product brands come straight from the catalogue's `brand` field, plus model names used in product names. */
 const PRODUCT_BRANDS = [...new Set(DEMO_PRODUCTS.map((p) => p.brand))];
 const PRODUCT_MODELS = ['Activ', 'Actibond'] as const;
@@ -74,6 +77,7 @@ const PEOPLE = SEEDED_ACCOUNTS.map((a) => a.name);
 
 export const HINDI_ALLOWLIST: readonly string[] = [
   ...OUR_BRANDS,
+  ...CREDITED_SOURCES,
   ...PRODUCT_BRANDS,
   ...PRODUCT_MODELS,
   ...VEHICLE_MODELS,

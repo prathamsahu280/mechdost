@@ -4,9 +4,9 @@ import { Minus, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { CATEGORY_KEYS, CATEGORY_SLUGS } from '@/demo/catalogue';
-import { useCategoryEmoji, useSiteSettings } from '@/demo/site-config';
+import { useSiteSettings } from '@/demo/site-config';
 import { priceCart, removeFromCart, setQuantity, useCart, MAX_QTY } from '@/demo/store';
-import { CATEGORY_EMOJI, UI_EMOJI } from '@/lib/emoji';
+import { CATEGORY_ICONS, UI_ICONS } from '@/lib/icons';
 import { formatPrice } from '@/lib/format';
 import { track } from '@/lib/analytics';
 import { ProductVisualClient } from './product-visual-client';
@@ -20,7 +20,6 @@ export function CartView() {
   const c = useTranslations('catalogue');
   const q = useTranslations('quote');
   const cat = useTranslations('categories');
-  const emoji = useCategoryEmoji();
   const settings = useSiteSettings();
   const locale = useLocale();
   const lines = useCart();
@@ -33,9 +32,9 @@ export function CartView() {
       <div className="rounded-card border border-line-card bg-surface p-6 text-center shadow-card tab:p-10">
         <span
           aria-hidden="true"
-          className="mx-auto grid size-20 place-items-center rounded-full bg-accent-soft text-[40px]"
+          className="mx-auto grid size-20 place-items-center rounded-full bg-accent-soft text-accent-soft-text"
         >
-          {UI_EMOJI.cart}
+          <UI_ICONS.cart className="size-9" strokeWidth={1.75} />
         </span>
         <h2 className="mt-5 font-heading text-2xl font-extrabold text-ink">{t('empty')}</h2>
         <p className="mx-auto mt-2 max-w-md text-[15px] text-muted">{t('emptyBody')}</p>
@@ -48,18 +47,25 @@ export function CartView() {
         </Link>
         <p className="mt-8 text-sm font-bold text-ink">{t('emptyCategories')}</p>
         <ul className="mt-3 flex flex-wrap justify-center gap-2">
-          {CATEGORY_KEYS.map((key) => (
-            <li key={key}>
-              <Link
-                href={`${base}/shop?category=${CATEGORY_SLUGS[key]}`}
-                data-track={`cart_empty_${key}`}
-                className="press inline-flex min-h-11 items-center gap-2 rounded-pill border border-line-card bg-surface px-4 text-sm font-bold text-ink hover:bg-pill"
-              >
-                <span aria-hidden="true">{emoji(key, CATEGORY_EMOJI[key])}</span>
-                {cat(key)}
-              </Link>
-            </li>
-          ))}
+          {CATEGORY_KEYS.map((key) => {
+            const Icon = CATEGORY_ICONS[key];
+            return (
+              <li key={key}>
+                <Link
+                  href={`${base}/shop?category=${CATEGORY_SLUGS[key]}`}
+                  data-track={`cart_empty_${key}`}
+                  className="press inline-flex min-h-11 items-center gap-2 rounded-pill border border-line-card bg-surface px-4 text-sm font-bold text-ink hover:bg-pill"
+                >
+                  <Icon
+                    aria-hidden="true"
+                    className="size-4 shrink-0 text-accent-soft-text"
+                    strokeWidth={2.25}
+                  />
+                  {cat(key)}
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       </div>
     );
@@ -73,7 +79,7 @@ export function CartView() {
             key={product.slug}
             className="grid grid-cols-[72px_1fr] gap-4 rounded-card border border-line-card bg-surface p-4 shadow-card min-[480px]:grid-cols-[96px_1fr]"
           >
-            <ProductVisualClient category={product.category} />
+            <ProductVisualClient slug={product.slug} category={product.category} />
             <div className="min-w-0">
               <p className="text-[11px] font-bold text-muted uppercase">{product.brand}</p>
               <Link

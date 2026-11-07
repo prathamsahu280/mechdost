@@ -79,7 +79,7 @@ describe('site content API', () => {
 
   it('a city manager drafts for their city only and cannot publish; other roles are refused', async () => {
     const manager = await person('02', 'city_manager', raipur);
-    const url = '/v1/admin/content/announcement.orders/hi';
+    const url = '/v1/admin/content/hero.eyebrow/hi';
     expect(
       (await put(manager, url, { city: 'RPR', value: 'रायपुर में आज डिलीवरी', version: null })).status,
     ).toBe(200);

@@ -1,5 +1,6 @@
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, MessageCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { stagger } from '@/lib/motion';
 import { whatsappLink } from '@/lib/site';
 import { Container, Eyebrow } from '../ui/page-intro';
 
@@ -23,9 +24,9 @@ export function Faq() {
     })),
   };
   return (
-    <section aria-labelledby="faq-title" className="pt-16">
+    <section aria-labelledby="faq-title" className="pt-20 tab:pt-28">
       <Container className="grid gap-8 nav:grid-cols-[1fr_1.6fr]">
-        <div>
+        <div className="reveal">
           <Eyebrow>{t('eyebrow')}</Eyebrow>
           <h2
             id="faq-title"
@@ -40,22 +41,25 @@ export function Faq() {
             data-track="home_faq_whatsapp"
             className="mt-4 inline-flex min-h-11 items-center gap-1.5 text-sm font-bold text-accent-soft-text underline-offset-4 hover:underline"
           >
-            <span aria-hidden="true">💬</span>
+            <MessageCircle aria-hidden="true" className="size-4 shrink-0" strokeWidth={2.25} />
             {t('more')}
           </a>
         </div>
-        <ul className="space-y-3">
-          {ITEMS.map((n) => (
-            <li key={n}>
-              <details className="group rounded-tile border border-line-card bg-surface shadow-card open:shadow-card-hover">
-                <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 px-5 py-3 font-heading font-bold text-ink [&::-webkit-details-marker]:hidden">
+        {/* One card, one list (user 2026-11-02): questions are rows separated by hairlines. */}
+        <ul className="reveal-panel divide-y divide-line overflow-hidden rounded-card border border-line-card bg-surface shadow-card">
+          {ITEMS.map((n, i) => (
+            <li key={n} style={stagger(i)} className="reveal">
+              <details className="group transition-colors duration-[var(--duration-base)] open:bg-surface-alt/60">
+                <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 px-5 py-3 font-heading font-bold text-ink hover:bg-surface-alt/60 [&::-webkit-details-marker]:hidden">
                   {t(`q${n}`)}
-                  <ChevronDown
+                  <span
                     aria-hidden="true"
-                    className="size-5 shrink-0 text-muted transition-transform duration-[var(--duration-base)] group-open:rotate-180"
-                  />
+                    className="grid size-8 shrink-0 place-items-center rounded-full bg-pill transition-colors duration-[var(--duration-base)] group-open:bg-accent-soft"
+                  >
+                    <ChevronDown className="size-4 text-muted transition-transform duration-[var(--duration-base)] group-open:rotate-180 group-open:text-accent-soft-text" />
+                  </span>
                 </summary>
-                <p className="px-5 pb-5 text-sm leading-relaxed text-muted">{t(`a${n}`)}</p>
+                <p className="faq-answer px-5 pb-5 text-sm leading-relaxed text-muted">{t(`a${n}`)}</p>
               </details>
             </li>
           ))}

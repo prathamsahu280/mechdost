@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { homeFor, useSession } from '@/demo/session-state';
-import { UI_EMOJI } from '@/lib/emoji';
+import { UI_ICONS } from '@/lib/icons';
 
 /**
  * Header account entry: "Sign in" when signed out, the person's initial + first name when signed in (links to
@@ -23,9 +23,7 @@ export function AccountLink({
   if (!session) {
     return (
       <Link href={`${prefix}/login`} data-track="header_sign_in" className={className}>
-        <span aria-hidden="true" className="hidden text-[16px] leading-none xl:inline">
-          {UI_EMOJI.account}
-        </span>
+        <UI_ICONS.account aria-hidden="true" className="hidden size-4 shrink-0 xl:block" strokeWidth={2.25} />
         {signIn}
       </Link>
     );

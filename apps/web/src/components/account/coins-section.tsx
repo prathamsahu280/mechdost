@@ -1,5 +1,6 @@
 'use client';
 
+import { Coins } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCoins, type CoinEntry } from '@/demo/coins';
@@ -28,9 +29,11 @@ export function CoinsSection({ account }: { account: DemoAccount }) {
           {t('nav_coins')}
         </h2>
         <p className="mt-3 flex items-baseline gap-3">
-          <span aria-hidden="true" className="text-[36px] leading-none">
-            🪙
-          </span>
+          <Coins
+            aria-hidden="true"
+            className="size-9 shrink-0 self-center text-accent-light"
+            strokeWidth={1.75}
+          />
           <span className="font-heading text-[44px] leading-none font-extrabold tabular-nums">{balance}</span>
           <span className="text-hero-copy">{t('coinsUnit')}</span>
         </p>

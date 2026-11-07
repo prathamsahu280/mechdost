@@ -70,9 +70,16 @@ test.describe('workshops → booking → request status', () => {
     await page.goto('/workshops');
     await page.getByLabel('PIN code').fill('492006');
     await expect(page.getByText('Sorted by distance from PIN 492006.')).toBeVisible();
-    await page.getByLabel('Vehicle type').selectOption('4W');
+    await page.getByRole('combobox', { name: 'Vehicle type' }).click();
+    await page.getByRole('option', { name: 'Car / SUV', exact: true }).click();
+    await expect(page.locator('input[type="hidden"][name="vehicle"]')).toHaveValue('4W');
     const first = page.getByRole('article').first();
     await expect(first).toContainText('Telibandha Car Clinic');
+    // The list is compact; choosing a workshop expands it.
+    const row = first.getByRole('button', { name: /Telibandha Car Clinic/ });
+    await expect(row).toHaveAttribute('aria-expanded', 'false');
+    await row.click();
+    await expect(row).toHaveAttribute('aria-expanded', 'true');
     await first.getByRole('link', { name: 'View services & book' }).click();
 
     await expect(page.getByRole('heading', { level: 1, name: 'Telibandha Car Clinic' })).toBeVisible();
@@ -211,7 +218,18 @@ test.describe('workshop map (spec 06)', () => {
       'href',
       /google\.com\/maps\/dir/,
     );
-    await expect(page.locator('article button[aria-pressed="true"]')).toHaveCount(1);
+    // …and expands exactly that workshop in the list.
+    const expanded = page.locator('article button[aria-expanded="true"]');
+    await expect(expanded).toHaveCount(1);
+    await expect(expanded).toContainText('Telibandha Car Clinic');
+    await expect(page.getByRole('region', { name: 'Telibandha Car Clinic' })).toBeVisible();
+    // Choosing another row in the list moves the selection; choosing it again closes it.
+    const other = page.getByRole('article').getByRole('button', { name: /Sarona Car Care/ });
+    await other.click();
+    await expect(expanded).toHaveCount(1);
+    await expect(expanded).toContainText('Sarona Car Care');
+    await other.click();
+    await expect(expanded).toHaveCount(0);
 
     await map.getByRole('button', { name: 'Show all workshops' }).click();
     await expect(popup).toHaveCount(0);
@@ -259,10 +277,10 @@ test.describe('workshop map (spec 06)', () => {
 
     // Select a far workshop first: this used to pin the camera to it.
     const pinBefore = await map.locator('.md-map-pin').first().elementHandle();
-    const show = page
-      .locator('article')
-      .filter({ hasText: 'Telibandha Car Clinic' })
-      .getByRole('button', { name: 'Show on map' });
+    // Workshops are a compact list: open the row first, then use its "Show on map".
+    const row = page.locator('article').filter({ hasText: 'Telibandha Car Clinic' });
+    await row.locator('button[aria-expanded]').click();
+    const show = row.getByRole('button', { name: 'Show on map' });
     await show.scrollIntoViewIfNeeded();
     const scrollBefore = await page.evaluate(() => window.scrollY);
     await show.click();
@@ -321,7 +339,7 @@ test.describe('theme and assistant', () => {
     const page = await context.newPage();
     await page.goto('/');
     const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
-    expect(bg).toBe('rgb(10, 20, 36)');
+    expect(bg).toBe('rgb(8, 19, 15)');
     await context.close();
   });
 

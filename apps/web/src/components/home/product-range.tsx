@@ -1,33 +1,63 @@
-import { useTranslations } from 'next-intl';
-import { DEMO_PRODUCTS } from '@/demo/catalogue';
+import { useLocale, useTranslations } from 'next-intl';
+import { DEMO_PRODUCTS, type DemoProduct } from '@/demo/catalogue';
+import { localePath } from '@/lib/locale-path';
 import { ProductCard } from '../catalogue/product-card';
-import { ButtonLink } from '../ui/button-link';
 import { Container } from '../ui/page-intro';
+import { Rail } from './rail';
 
-/** "Browse our product range": the popular products (demo catalogue until the catalogue API ships). */
+/**
+ * Product collections (redesign 2026-11-02, SpareVillage-style rails, less crowded): bestsellers, then two rails by
+ * vehicle. Demo catalogue until the catalogue API ships; admin-curated collections replace these in Phase 1 (spec 08).
+ */
 export function ProductRange() {
   const t = useTranslations('home.products');
-  const popular = DEMO_PRODUCTS.filter((p) => p.popular).slice(0, 4);
+  const locale = useLocale();
+  const shop = localePath('/shop', locale);
+  const rails: { id: string; title: string; items: readonly DemoProduct[]; href: string; track: string }[] = [
+    {
+      id: 'rail-best',
+      title: t('railBest'),
+      items: DEMO_PRODUCTS.filter((p) => p.popular),
+      href: shop,
+      track: 'home_rail_best_all',
+    },
+    {
+      id: 'rail-2w',
+      title: t('railTwo'),
+      items: DEMO_PRODUCTS.filter((p) => p.fits === '2W' || p.fits === '2W/4W'),
+      href: shop,
+      track: 'home_rail_2w_all',
+    },
+    {
+      id: 'rail-4w',
+      title: t('railFour'),
+      items: DEMO_PRODUCTS.filter((p) => p.fits === '4W' || p.fits === '2W/4W'),
+      href: shop,
+      track: 'home_rail_4w_all',
+    },
+  ];
   return (
-    <section aria-labelledby="range-title" className="pt-14">
+    <section aria-labelledby="range-title" className="pt-20 tab:pt-24">
       <Container>
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 id="range-title" className="font-heading text-xl font-bold text-ink">
-            {t('rangeTitle')}
-          </h2>
-          <p className="text-xs text-muted">{t('rangeNote')}</p>
-        </div>
-        <ul className="mt-6 grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 nav:grid-cols-4">
-          {popular.map((p) => (
-            <li key={p.slug}>
-              <ProductCard product={p} />
-            </li>
+        <h2 id="range-title" className="sr-only">
+          {t('rangeTitle')}
+        </h2>
+        <div className="space-y-14 tab:space-y-16">
+          {rails.map((rail) => (
+            <Rail
+              key={rail.id}
+              id={rail.id}
+              title={rail.title}
+              viewAll={{ href: rail.href, label: t('viewAll'), track: rail.track }}
+              labels={{ prev: t('railPrev'), next: t('railNext') }}
+            >
+              {rail.items.map((p) => (
+                <li key={p.slug} className="w-[min(78vw,270px)] shrink-0 snap-start">
+                  <ProductCard product={p} />
+                </li>
+              ))}
+            </Rail>
           ))}
-        </ul>
-        <div className="mt-6 text-center">
-          <ButtonLink href="/shop" variant="quiet" data-track="home_range_view_all">
-            {t('viewAll')}
-          </ButtonLink>
         </div>
       </Container>
     </section>

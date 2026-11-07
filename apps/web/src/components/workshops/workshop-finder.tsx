@@ -1,9 +1,21 @@
 'use client';
 
-import { BadgeCheck, LocateFixed, MapPin, Star, Truck, Zap } from 'lucide-react';
+import {
+  BadgeCheck,
+  Bike,
+  Car,
+  CarFront,
+  ChevronDown,
+  LocateFixed,
+  MapPin,
+  Star,
+  Truck,
+  Zap,
+} from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   DEMO_WORKSHOPS,
   PIN_CENTROIDS,
@@ -13,9 +25,11 @@ import {
 } from '@/demo/workshops';
 import { localizeWorkshop } from '@/demo/i18n/localize';
 import { usePartnerHistory, usePartnerStatus, visibleToCustomers } from '@/demo/partner-status';
-import { formatPrice } from '@/lib/format';
 import { track } from '@/lib/analytics';
+import { formatPrice } from '@/lib/format';
 import { mapUi } from '@/lib/map-ui';
+import { workshopPhoto } from '@/lib/media';
+import { Select } from '../ui/select';
 import { WorkshopMap, type MapPoint } from './workshop-map';
 
 type VehicleFilter = 'any' | '2W' | '4W';
@@ -70,6 +84,15 @@ export function WorkshopFinder() {
     const centroid = PIN_CENTROIDS[value];
     if (/^\d{6}$/.test(value)) setOrigin(centroid ? { ...centroid, source: 'pin', pin: value } : null);
   }
+
+  // Deep link from the home hero (`/workshops?pin=492001&vehicle=4W`). Read after hydration: the page is static.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const fromUrl = params.get('pin')?.trim() ?? '';
+    if (/^\d{6}$/.test(fromUrl)) applyPin(fromUrl);
+    const v = params.get('vehicle');
+    if (v === '2W' || v === '4W') setVehicle(v);
+  }, []); // once, on mount
 
   /**
    * A new position from either locate button (bug 2026-11-02): drop any selected workshop so the map centres on
@@ -155,21 +178,26 @@ export function WorkshopFinder() {
             />
           </div>
           <div>
-            <label htmlFor="finder-vehicle" className="text-xs font-bold text-muted">
+            <label
+              id="finder-vehicle-label"
+              htmlFor="finder-vehicle"
+              className="text-xs font-bold text-muted"
+            >
               {t('vehicleLabel')}
             </label>
-            <select
+            <Select
               id="finder-vehicle"
+              name="vehicle"
+              className="mt-1"
               value={vehicle}
-              onChange={(e) => {
-                setVehicle(e.target.value as VehicleFilter);
-              }}
-              className="mt-1 min-h-11 w-full rounded-input border border-input-border bg-surface px-3 text-[15px] text-ink"
-            >
-              <option value="any">{t('any')}</option>
-              <option value="2W">{t('twoWheeler')}</option>
-              <option value="4W">{t('fourWheeler')}</option>
-            </select>
+              trackPrefix="finder_vehicle"
+              options={[
+                { value: 'any', label: t('any'), icon: CarFront },
+                { value: '2W', label: t('twoWheeler'), icon: Bike },
+                { value: '4W', label: t('fourWheeler'), icon: Car },
+              ]}
+              onChange={setVehicle}
+            />
           </div>
           <button
             type="button"
@@ -188,7 +216,7 @@ export function WorkshopFinder() {
             onChange={(e) => {
               setEvOnly(e.target.checked);
             }}
-            className="size-6 accent-[var(--color-accent-button)]"
+            className="size-[26px] shrink-0 accent-[var(--color-accent-button)]"
           />
           {t('evOnly')}
         </label>
@@ -213,8 +241,8 @@ export function WorkshopFinder() {
       {results.length === 0 ? (
         <p className="mt-4 rounded-card border border-line-card bg-surface p-6 text-muted">{t('noMatch')}</p>
       ) : (
-        <div className="mt-4 grid gap-5 nav:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] nav:items-start">
-          <div ref={mapRef} className="scroll-mt-28 nav:order-2 nav:sticky nav:top-28">
+        <div className="mt-4 grid grid-cols-1 gap-5 nav:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] nav:items-start">
+          <div ref={mapRef} className="scroll-mt-28 nav:order-2 nav:sticky nav:top-24">
             <WorkshopMap
               points={points}
               origin={origin}
@@ -222,9 +250,12 @@ export function WorkshopFinder() {
               onSelect={(slug) => {
                 track('map_action', { action: 'pin_select', workshop: slug });
                 setSelected(slug);
-                document
-                  .getElementById(`workshop-${slug}`)
-                  ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                // Let the row expand first, then bring it into view.
+                requestAnimationFrame(() => {
+                  document
+                    .getElementById(`workshop-${slug}`)
+                    ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                });
               }}
               onLocate={(pos) => {
                 locatedAt(pos, 'map');
@@ -233,17 +264,20 @@ export function WorkshopFinder() {
               youAreHere={t('youAreHere')}
               ui={mapUi(m)}
               locale={locale}
-              className="h-[340px] tab:h-[420px] nav:h-[calc(100vh-9rem)] nav:max-h-[700px]"
+              className="h-[340px] tab:h-[420px] nav:h-[calc(100vh-7.5rem)] nav:max-h-[760px]"
             />
           </div>
-          <ul className="grid gap-4 nav:order-1">
+          <ul className="grid grid-cols-1 gap-2.5 nav:order-1">
             {results.map(({ w, km }) => (
-              <li key={w.slug} id={`workshop-${w.slug}`} className="scroll-mt-32">
-                <WorkshopCard
+              <li key={w.slug} id={`workshop-${w.slug}`} className="scroll-mt-28">
+                <WorkshopRow
                   workshop={w}
                   km={km}
                   href={`${base}/workshops/${w.slug}`}
-                  active={selected === w.slug}
+                  open={selected === w.slug}
+                  onToggle={() => {
+                    setSelected((current) => (current === w.slug ? null : w.slug));
+                  }}
                   onShowOnMap={() => {
                     track('map_action', { action: 'show_on_map', workshop: w.slug });
                     setSelected(w.slug);
@@ -263,96 +297,155 @@ export function WorkshopFinder() {
   );
 }
 
-function WorkshopCard({
+/**
+ * Compact list row (user 2026-11-02: list view with the map on the right; a workshop expands when chosen in the
+ * list or on the map). The row header is an accordion button (aria-expanded/controls); one row is open at a time
+ * and the open row is the selected map pin. The panel animates its height with grid rows; the closed panel is
+ * inert so its links are not tabbable. Reduced motion makes the change instant (global rule).
+ */
+function WorkshopRow({
   workshop: w,
   km,
   href,
-  active,
+  open,
+  onToggle,
   onShowOnMap,
 }: {
   workshop: DemoWorkshop;
   km: number | null;
   href: string;
-  active: boolean;
+  open: boolean;
+  onToggle: () => void;
   onShowOnMap: () => void;
 }) {
   const t = useTranslations('finder');
+  const panelId = `workshop-panel-${w.slug}`;
   const paused = usePartnerStatus('workshop', w.slug).status === 'paused';
   return (
     <article
-      className={`group flex h-full flex-col rounded-card border bg-surface p-5 shadow-card transition-[box-shadow,border-color] duration-[var(--duration-base)] hover:shadow-card-hover ${
-        active ? 'border-accent-button' : 'border-line-card'
+      className={`overflow-hidden rounded-tile border bg-surface transition-[box-shadow,border-color] duration-[var(--duration-base)] ${
+        open
+          ? 'border-accent-button shadow-card-hover'
+          : 'border-line-card shadow-card hover:shadow-card-hover'
       }`}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h3 className="font-heading text-lg leading-snug font-extrabold text-ink">
-            <Link href={href} className="inline-block py-0.5 hover:underline">
-              {w.name}
-            </Link>
-          </h3>
-          <p className="mt-1 flex items-center gap-1 text-sm text-muted">
-            <MapPin aria-hidden="true" className="size-4 shrink-0" />
-            {w.area} · {w.pincode}
-            {km !== null ? (
-              <span className="font-bold text-ink"> · {t('distance', { km: km.toFixed(1) })}</span>
-            ) : null}
-          </p>
-          {paused ? (
-            <p className="mt-2 inline-flex rounded-pill bg-warning-bg px-3 py-1 text-xs font-bold text-warning">
-              {t('notTakingBookings')}
-            </p>
-          ) : null}
-        </div>
-        <p className="flex shrink-0 items-center gap-1 rounded-lg bg-success-bg px-2 py-1 text-xs font-bold text-success">
-          <Star aria-hidden="true" className="size-3.5 fill-current" />
-          {w.rating.toFixed(1)}
-          <span className="sr-only">{t('rating', { rating: w.rating.toFixed(1), count: w.reviews })}</span>
-        </p>
-      </div>
-      <ul className="mt-3 flex flex-wrap gap-2 text-[11px] font-bold">
-        <li className="inline-flex items-center gap-1 rounded-md bg-pill px-2 py-1 text-ink">
-          <BadgeCheck aria-hidden="true" className="size-3.5 text-success" />
-          {t('checked')}
-        </li>
-        {w.pickup ? (
-          <li className="inline-flex items-center gap-1 rounded-md bg-pill px-2 py-1 text-ink">
-            <Truck aria-hidden="true" className="size-3.5" />
-            {t('pickup')}
-          </li>
-        ) : null}
-        {w.ev ? (
-          <li className="inline-flex items-center gap-1 rounded-md bg-pill px-2 py-1 text-ink">
-            <Zap aria-hidden="true" className="size-3.5" />
-            {t('ev')}
-          </li>
-        ) : null}
-        <li className="rounded-md bg-pill px-2 py-1 text-ink">{w.vehicles.join(' · ')}</li>
-      </ul>
-      <p className="mt-3 line-clamp-2 text-sm text-muted">
-        {w.services
-          .slice(0, 4)
-          .map((s) => s.name)
-          .join(' · ')}
-      </p>
-      <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-4">
-        <p className="text-sm font-bold text-ink">{t('from', { price: formatPrice(fromPricePaise(w)) })}</p>
+      <h3>
         <button
           type="button"
-          onClick={onShowOnMap}
-          aria-pressed={active}
-          className="press ml-auto inline-flex min-h-11 items-center gap-1.5 rounded-button border border-input-border px-3 text-sm font-bold text-ink hover:bg-pill"
+          aria-expanded={open}
+          aria-controls={panelId}
+          onClick={onToggle}
+          data-track={`finder_row_${w.slug}`}
+          className="flex w-full items-center gap-3 p-2.5 pr-3 text-left"
         >
-          <MapPin aria-hidden="true" className="size-4" />
-          {t('viewOnMap')}
+          <span className="relative size-16 shrink-0 overflow-hidden rounded-[10px] bg-pill">
+            <Image src={workshopPhoto(w.slug)} alt="" fill sizes="64px" className="object-cover" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate font-heading text-[15px] leading-snug font-extrabold text-ink">
+              {w.name}
+            </span>
+            <span className="mt-0.5 flex items-center gap-1 text-xs text-muted">
+              <MapPin aria-hidden="true" className="size-3.5 shrink-0" />
+              <span className="truncate">
+                {w.area}
+                {km !== null ? (
+                  <span className="font-bold text-ink"> · {t('distance', { km: km.toFixed(1) })}</span>
+                ) : (
+                  <> · {w.pincode}</>
+                )}
+              </span>
+            </span>
+            <span className="mt-1 block text-xs font-bold text-ink">
+              {t('from', { price: formatPrice(fromPricePaise(w)) })}
+            </span>
+            {paused ? (
+              <span className="mt-1.5 inline-flex rounded-pill bg-warning-bg px-2.5 py-0.5 text-[11px] font-bold text-warning">
+                {t('notTakingBookings')}
+              </span>
+            ) : null}
+          </span>
+          <span className="flex shrink-0 flex-col items-end gap-2">
+            <span className="flex items-center gap-1 rounded-lg bg-success-bg px-2 py-1 text-xs font-bold text-success">
+              <Star aria-hidden="true" className="size-3.5 fill-current" />
+              {w.rating.toFixed(1)}
+              <span className="sr-only">
+                {t('rating', { rating: w.rating.toFixed(1), count: w.reviews })}
+              </span>
+            </span>
+            <ChevronDown
+              aria-hidden="true"
+              className={`size-5 text-muted transition-transform duration-[var(--duration-base)] ${open ? 'rotate-180' : ''}`}
+            />
+          </span>
         </button>
-        <Link
-          href={href}
-          data-track={`finder_view_${w.slug}`}
-          className="press inline-flex min-h-11 items-center rounded-button bg-accent-button px-4 text-sm font-bold text-white hover:bg-accent-button-hover"
-        >
-          {t('view')}
-        </Link>
+      </h3>
+      <div
+        id={panelId}
+        role="region"
+        aria-label={w.name}
+        inert={!open}
+        className={`grid transition-[grid-template-rows] duration-[var(--duration-base)] ease-[var(--ease-out-soft)] ${
+          open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+        }`}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <div className="border-t border-line px-3 pt-3 pb-3.5">
+            <div className="relative aspect-[16/8] overflow-hidden rounded-[10px] bg-pill">
+              {open ? (
+                <Image
+                  src={workshopPhoto(w.slug)}
+                  alt=""
+                  fill
+                  sizes="(min-width: 1024px) 34vw, 92vw"
+                  className="object-cover"
+                />
+              ) : null}
+            </div>
+            <ul className="mt-3 flex flex-wrap gap-2 text-[11px] font-bold">
+              <li className="inline-flex items-center gap-1 rounded-md bg-pill px-2 py-1 text-ink">
+                <BadgeCheck aria-hidden="true" className="size-3.5 text-success" />
+                {t('checked')}
+              </li>
+              {w.pickup ? (
+                <li className="inline-flex items-center gap-1 rounded-md bg-pill px-2 py-1 text-ink">
+                  <Truck aria-hidden="true" className="size-3.5" />
+                  {t('pickup')}
+                </li>
+              ) : null}
+              {w.ev ? (
+                <li className="inline-flex items-center gap-1 rounded-md bg-pill px-2 py-1 text-ink">
+                  <Zap aria-hidden="true" className="size-3.5" />
+                  {t('ev')}
+                </li>
+              ) : null}
+              <li className="rounded-md bg-pill px-2 py-1 text-ink">{w.vehicles.join(' · ')}</li>
+            </ul>
+            <p className="mt-3 text-sm text-muted">
+              {w.services
+                .slice(0, 5)
+                .map((sv) => sv.name)
+                .join(' · ')}
+            </p>
+            <div className="mt-4 flex flex-wrap items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={onShowOnMap}
+                className="press inline-flex min-h-11 items-center gap-1.5 rounded-button border border-input-border px-3 text-sm font-bold text-ink hover:bg-pill"
+              >
+                <MapPin aria-hidden="true" className="size-4" />
+                {t('viewOnMap')}
+              </button>
+              <Link
+                href={href}
+                data-track={`finder_view_${w.slug}`}
+                className="press inline-flex min-h-11 items-center rounded-button bg-accent-button px-4 text-sm font-bold text-white hover:bg-accent-button-hover"
+              >
+                {t('view')}
+              </Link>
+            </div>
+          </div>
+        </div>
       </div>
     </article>
   );

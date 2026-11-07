@@ -237,6 +237,112 @@ User: "the first time it will ask the user for the phone number, then they enter
 - **CI and dependency updates (2026-11-03):** GitHub Actions `CI` (`.github/workflows/ci.yml`) runs Prettier, typecheck, lint and unit tests on every push/PR — actions pinned by commit SHA (no release younger than 3 days), read-only token, no persisted credentials, frozen lockfile. Updates via **Dependabot** (`.github/dependabot.yml`, as spec 13 says; the ledger's "Renovate" was a drift) with a 3-day cooldown matching pnpm's `minimumReleaseAge`. e2e/Lighthouse/visual jobs join once a preview deploy exists.
 - **Privacy notice** `/policies/privacy` written from what the product does (the concept's text was outdated); grievance officer details follow Q15.
 
+## 2026-11-01 — Modern storefront refresh with real photos (user: "ye bhot dull hai, color scheme same rakho, bas make it better and more modern"; "images ko hata ke web se realistic images khojo"; "use /frontend-design")
+
+- **Branch:** work on `ui-modern-refresh`, never directly on `main` (user: "jo bhi changes karoge alag se branch bana ke karna").
+- **Colour, type and radii unchanged** (navy `#101f34`, accent `#ea5728`/`#d2461a`, Manrope + DM Sans). No new tokens.
+- **Real photos replace the blueprint plates and the old Unsplash hero/inset.** 31 openly licensed photos from Wikimedia Commons (CC0 / public domain / CC BY / CC BY-SA only), one per demo product and workshop plus hero, parts store and engine bay, in `apps/web/public/images/{products,workshops,site}`. Registry and credits: `apps/web/src/lib/media.ts`; public attribution page `/credits` linked from the footer (licence condition); `test/media.test.ts` fails if a file has no credit or a product/workshop has no photo. Paths are strings (no static imports) so client bundles carry no blur placeholders; only the hero is a static import (blur + preload).
+- **Photos are representative of the product type, not the exact listed item** (e.g. the Exide 2W listing shows a FIAMM battery). Product pages say so under the photo ("Representative photo. The shop confirms the exact item before dispatch."); the footer says no affiliation is implied. Seller photos from Storage replace them in Phase 1 (spec 02) — queued as Q26.
+- **Hero:** full-bleed workshop photo (copy side solid navy, photo framed on its subject from 1024px) with a search console: "Parts & products" (GET `/shop?q=`, popular-search chips) or "Workshop near me" (GET `/workshops?pin=&vehicle=`; the finder reads both on mount). Modes are a native radio group switched with CSS `:has()` — no client JS. The hero photo label and rotated motorcycle inset are dropped.
+- **Cards:** product cards are photo-first (edge-to-edge photo, brand chip, ⓘ, Bestseller; category · fit line; tabular prices); category tiles are photo tiles (admin emoji kept as a chip, rule 8); workshop cards (home + finder) and the workshop page header use the workshop photo. Cart thumbnails use the product photo.
+- **Motion:** per-element scroll-reveal removed from home tiles, steps, partner teaser and workshop pages (frontend-design: one orchestrated moment, not scattered fades; it also left the category row blank in full-page captures). Press feedback and hover image zoom stay.
+- **Icons, not emoji (2026-11-01, user: "remove emojis, use icons"):** every emoji in the web app replaced with `lucide-react` icons (registry `apps/web/src/lib/icons.ts`; `lib/emoji.ts` deleted). This supersedes the 2026-11-01 emoji additions. The admin's per-category emoji override is removed end to end (store field, editor input, validation, strings); category icons are fixed per category, and old saved configs that still hold an `emoji` map load fine (ignored).
+- **Announcement bar removed (2026-11-01, user request):** the navy top strip ("MechDost · Product orders by confirmation · Workshop requests in …") is gone, along with its two admin-editable content keys (`announcement.orders`, `announcement.workshops`), the admin "Announcement bar" content group and the `announcement` locale namespace. Old saved configs with those keys load fine (unknown keys ignored). The sticky header is now the top of every page.
+
+- **Lighter, higher-contrast light theme + subtle gradients** (user: "BG lighter, more contrast and a bit premium feel"; "very very subtle gradients to cards and colors"). Supersedes the 2026-11-01 concrete-grey page: `bg` #edf1f5 → #f7f9fc, `surface-alt`/`pill` → #eef2f7, `line` #e2e7ee, `line-card` #dbe2ea, `muted` #536376 → #435368 (≈8:1 on bg); layered card/header shadows. Gradients are tokens (`--gradient-surface|accent|accent-hover|navy|page`, per theme in tokens.css) applied by `packages/ui/src/surfaces.css` on `.bg-surface`, `.bg-accent-button`, `.bg-navy` and the body — accent stops never lighter than `accent-button`, so white labels stay ≥4.5:1. Dark theme colours unchanged.
+
+## 2026-11-02 — Custom selects, live search, glossy orange, workshop list view (user requests on `ui-modern-refresh`)
+
+- **Custom selects** (user: "categories, sort by ka filter me select ka div bhi apna custom hona chahiye"): `apps/web/src/components/ui/select.tsx`, WAI-ARIA APG select-only combobox (button `role=combobox` + `listbox`, `aria-activedescendant`; ↑/↓/Home/End/Enter/Space/Escape/Tab, typeahead; outside click closes; hidden input keeps the GET form working). Used for shop Category + Sort and the workshop finder's Vehicle type. Built in-repo (no Radix/headless dependency — supply-chain policy). Without JS the dropdowns cannot open; category chips and plain links still work, sort stays default.
+- **Live shop search** (user: "search dynamic honi chahiye with debounce"): results follow typing after 300 ms; the URL is _replaced_ while typing (Back does not replay keystrokes) and _pushed_ on Enter/clear; `search` analytics fire once per settled query (≥2 chars). The Search button is replaced by a leading search icon and a clear (×) button; Enter still submits without JS.
+- **Brighter, glossy orange** (user: "orange thoda dull hai … glassmorphism type but opaque look"): `#d2461a` is already the brightest orange that keeps white labels ≥4.5:1, so brightness comes from the finish — a bright sheen + white glass edge on the top third, the label band (34–66%) exactly `accent-button`, deeper base, soft orange glow (`--gradient-accent*`, `--shadow-accent*`). Pale-orange states get a glass edge (`--gradient-accent-soft`). `accent-light` (orange on navy) #ff8b59 → #ff7a3d (6.4:1 on navy).
+- **Workshop finder list view** (user: "list type of view, with the map on the right … on clicking one workshop … it expands"): compact rows (thumbnail, name, area/distance, from-price, rating) in an accordion; one row open at a time = the selected map pin; pin clicks expand and scroll to the row; map is sticky on the right from 1024px, above the list on smaller screens. Closed panels are `inert`.
+
+## 2026-11-02 — Blue + green theme, iOS-style glass buttons, softer shadows (branch `theme-blue-green`)
+
+User: "iska theme change karo, blue and green theme karna hai" → chose **blue main, green accent**; then "itne harsh shadows nahi chahiye, and buttons 3d lag rahe hai … apple ios like glassmorphism buttons". Supersedes the orange accent and the glossy 3D button finish (decisions earlier on 2026-11-01/02). Built on its own branch from `ui-modern-refresh`; production (orange) is unchanged until the user approves.
+
+| Token                                         | Was                                   | Now                                   | Contrast                                                        |
+| --------------------------------------------- | ------------------------------------- | ------------------------------------- | --------------------------------------------------------------- |
+| `navy` (brand dark surface)                   | #101f34                               | **#0b2350** deep blue                 | hero-copy/white on it ✓                                         |
+| `accent` (logo, icons, links)                 | #ea5728                               | **#2563eb**                           | 5.2:1 on white                                                  |
+| `accent-button` / hover                       | #d2461a / #b93d16                     | **#1d47c4** / #1a3fae                 | white 7.3:1; ≥4.7:1 under the glass sheen                       |
+| `accent-light` (on navy: hero line, eyebrows) | #ff7a3d                               | **#4ade80** green                     | 8.8:1 on navy                                                   |
+| `accent-pale`                                 | #ffb99c                               | #86efac                               | —                                                               |
+| `accent-soft` / text                          | #fff0e9 / #bf3c12                     | **#eaf1ff** / #1d4ed8                 | 5.9:1                                                           |
+| `focus`                                       | #e65325                               | **#3574f0**                           | ≥3.5:1 on white, page and navy (#2563eb failed on navy at 2.96) |
+| dark: navy / accent-soft / text / focus       | #13233b / #3a1f14 / #ffb38f / #ff8b59 | #0f2447 / #12264a / #93b4ff / #6ea8ff | tokens test ✓                                                   |
+
+- **Glass buttons:** `bg-accent-button` = translucent blue fill (`--glass-accent-fill`, 94%), `backdrop-filter: blur(14px) saturate(170%)`, a faint even sheen, 1px bright inner edge, small soft shadow (no heavy glow, no 3D shading). Pale-blue states keep a glass edge.
+- **Shadows:** cards `0 1px 2px` + one soft diffused layer; header is a hairline. Dark theme likewise softer.
+- Navy panels glow cool blue (top-left) and blue-green (bottom-right). Map selected pin + tooltip, and `theme-color`, use the deep blue.
+- Success/"In stock"/"Save" stay the existing green tokens.
+- **Green hero** (user: "green color hero banana hai"): the home hero panel uses its own tokens — `hero` #064e3b deep emerald, `hero-text` #d1fae5 (8.6:1), `hero-accent` #6ee7b7 for the second headline line/eyebrow (6.4:1) — so other deep-blue panels stay blue. Search console stays white with the blue glass button. Both pairs added to the tokens contrast test.
+
+## 2026-11-02 — Green brand theme (supersedes "blue main, green accent" the same day)
+
+User: "i told you green hero banana hai, not blue … green karna hai" (reason given: appeal to the mechanic partners the platform recruits). The whole site is green; blue is removed except the map's "you are here" dot (universal location convention — kept on purpose, change on request).
+
+| Token                                              | Blue version                          | Green                                                             |
+| -------------------------------------------------- | ------------------------------------- | ----------------------------------------------------------------- |
+| `navy` (brand dark surface; name kept)             | #0b2350                               | **#053d2f** deep green                                            |
+| `navy-sidebar` / active                            | #0e2856 / #1b3c78                     | #064034 / #0b5a46                                                 |
+| `accent` (logo, icons)                             | #2563eb                               | **#15803d** (5.0:1 on white)                                      |
+| `accent-button` / hover (glass fill 94%)           | #1d47c4 / #1a3fae                     | **#166534** / #14532d (white 7.1:1; ≥4.6:1 under the 12% sheen)   |
+| `accent-light` / `accent-pale` (on dark green)     | #4ade80 / #86efac                     | **#86efac** (8.7:1) / #bbf7d0                                     |
+| `accent-soft` / text                               | #eaf1ff / #1d4ed8                     | **#e9f8ef** / #166534                                             |
+| `focus`                                            | #3574f0                               | **#1f9d55** (3.5:1 on white and on #053d2f, 3.1:1 on surface-alt) |
+| `bg` / `surface-alt`·`pill` / `line` / `line-card` | #f7f9fc / #eef2f7 / #e2e7ee / #dbe2ea | #f6f8f7 / #edf2ef / #e1e7e4 / #d9e1dd (blue cast removed)         |
+| dark: navy / accent-soft / text / focus            | #0f2447 / #12264a / #93b4ff / #6ea8ff | #0a3328 / #0f2e22 / #86efac / #4ade80                             |
+
+Hero keeps its own green tokens (`hero` #064e3b, `hero-text`, `hero-accent`). Glass buttons, soft shadows and the dark theme structure are unchanged; only colours moved. Text `ink` stays near-black (#101f34) for readability.
+
+- **Hero fits one screen** (user: "hero section bhot bada hai … screen se overflow karta hai"): measured overflow 59–165px on 1366×768, 1280×720, 1536×864 laptops and phones. Headline is sized by width _and_ height — `clamp(30px, min(4.6vw, 6.2vh), 60px)` — with a 720px copy column so it sets in two lines on laptops; padding scales with `vh`; 44px fields; popular chips are one swipeable row on phones. Hero is now 434–508px tall and fits (with the trust strip peeking) at every tested size: 1280×609 → 1920×945, 360×640, 390×664, 768×900.
+
+## 2026-11-02 — Language switch fix, dark-mode greens, hero vehicle select
+
+- **Bug (user): "when language switched to hindi, and then i click on english, the language doesn't change".** Root cause: next-intl 4.14 writes the NEXT_LOCALE cookie only on document requests (`syncCookie` checks `sec-fetch-dest: document`); the header switcher was a `next/link` (client fetch), so the cookie never changed. With `NEXT_LOCALE=hi` (any reload or direct /hi visit), "English" went `/en/x` → 307 `/x` → 307 `/hi/x`. Also on production. Fix: the switcher is a plain `<a>` (full document navigation) — no middleware override. Regression suite `e2e/language.spec.ts` (Hindi direct load → English → reload → Hindi → reload → English, on /, /shop, /workshops).
+- **Dark mode** (user: "dark theme me … selected filter green hona chahiye"): the selected hero mode tab is a green glass pill (white text). Dark neutrals lose their blue cast: bg #08130f, surface #0e1c17, surface-alt #0b1813, pill #16281f, lines #1f3329/#24392f/#2a4337, input-border #7d958a, muted #a7bab0 (all contrast-tested; `theme-color` dark #08130f).
+- **Hero "Vehicle" field** now uses the custom select (client island `hero-vehicle-select.tsx`); new `e2e/hero.spec.ts` covers hero → finder with PIN + vehicle.
+
+## 2026-11-02 — "More alive": rotating hero badge, scroll motion, list cards, green footer
+
+User: "make the website feel more alive … add 3-4 lines … appear alternatively", "add proper cool scroll animations", the three request steps and the FAQ "should not be individual cards, but one card with list in it", "footer should be green bg and white text".
+
+- **Scroll motion reinstated** (supersedes the 2026-11-01 removal of per-element reveals — user request wins). CSS scroll-driven animations only (`animation-timeline: view()/scroll()`): `.reveal` rise + fade + de-blur with a row cascade (`--i` via `lib/motion.ts` `stagger()`), `.reveal-panel` scale-in for big cards/bands, hero photo parallax (`.hero-parallax`), header shadow on scroll (`.site-header`), FAQ answer slide-in. No JS; browsers without scroll timelines show everything; `prefers-reduced-motion` gets none. Hero copy is never animated (LCP).
+- **Rotating hero badge**: five lines (`photoCaption`, `ticker2–5`, en + hi) cycle every 3.6s with a slide hand-off (`.hero-ticker`, CSS only); screen readers get the full list once (sr-only `<ul>`), the animated badge is `aria-hidden`; reduced motion shows line 1. Hidden below 760px (hero height budget).
+- **One card, one list**: "Tell us what you need / Review the estimate / Confirm the next step" and the FAQ are each a single card with hairline-divided rows (steps joined by a rail).
+- **Green footer**: `bg-navy` (deep green) + `.footer-green`, which re-scopes the colour tokens so existing classes turn light-on-green (white 8.2–13.8:1, muted #c4e8d4 6.2–10.4:1 incl. the glow corner and dark mode). The WhatsApp button becomes a white pill with green text (7.1:1).
+
+## 2026-11-02 — Commerce redesign, SpareVillage-inspired, illustrated (branch `redesign-commerce`)
+
+User: "https://Sparevillage.com aise type ka banao with more illustration, subtle animations, less crowded and premium". Structure borrowed from the reference (search-first header, category pill bar, banner hero, collection rails); its look, copy and assets are not copied.
+
+- **Header:** slim sticky row — brand, site search (GET /shop?q=, `#site-search`, label "Search MechDost"), language, theme, account, cart; on phones the search is its own full-width line. **Category bar** below (not sticky): primary links (≥1024px) + 9 category pills (scroll sideways, edge fade).
+- **Hero = illustrated banner carousel** (supersedes the photo hero + in-hero search console of 2026-11-01/02): slides shop (pale green, the only h1, admin-editable copy), checked workshop (deep green, white button), local delivery (soft grey). CSS scroll-snap + a small island: dots, pause/play (WCAG 2.2.2), autoplay 7s that pauses on hover/focus/hidden tab and never runs under reduced motion; off-screen slides inert. The rotating trust line moved beside the controls. Illustrations hidden under 480px (hero height budget).
+- **Custom illustration set** (`components/illustrations`, original flat duotone SVGs coloured by tokens, light + dark): 3 hero scenes, 9 category spots (replace category photos), 3 step spots, partner art. Subtle CSS motion (float, wheel spin, twinkle), off under reduced motion. No licence/credit needed (made in-house).
+- **Products as collection rails**: Bestsellers, For bikes & scooters (2W + 2W/4W), For cars & SUVs (4W + 2W/4W) — scroll-snap rows, "View all", arrow buttons ≥760px. Admin-curated collections replace them in Phase 1 (spec 08).
+- **Less crowded**: trust strip is an open divided row (no boxes); category tiles are unboxed illustrations; section spacing 80–112px.
+- New `ButtonLink` variant `onGreen` (white pill, green label, 7.1:1) for deep-green panels.
+
+## 2026-11-05 — boodmo + Fixter inspiration pass (branch `redesign-inspo`, from `redesign-commerce`)
+
+User: "Www.boodmo.com / https://www.fixter.co.uk/ — here also, take inspo and modify". Ideas borrowed, not their look, copy, logos or artwork.
+
+- **Search by vehicle** (boodmo): home section with three choices (bike/scooter, car/SUV, EV) → new shop **Vehicle** filter `?vehicle=2W|4W|EV` (`searchProducts({ vehicle })`; `2W/4W` items match both). Shop form gets a fourth custom select. No make/model picker: the catalogue has no maker data, and the vehicle master is still a pending decision — a maker list that filters nothing would mislead.
+- **Popular services** (Fixter): four cards (bike service, car service, brakes, battery) with "From ₹" taken from the workshop service menu (`SERVICE_MENU`), linking to the finder pre-filtered by vehicle.
+- **Customer reviews** (Fixter): overall rating (weighted by review count) + a rail of unique 5★ workshop reviews; rails are focusable scroll regions (axe `scrollable-region-focusable`).
+- **Brands we stock** (boodmo): text wordmarks only (no logos — trademarks), from the brands actually in the catalogue, each searching the shop, with a no-affiliation note.
+- **Help band** (Fixter): deep-green "Not sure which part fits?" with WhatsApp + call.
+- All five are new admin-controlled home sections (`vehicle`, `services`, `reviews`, `brands`, `help` in `HOME_SECTIONS`, en + hi admin labels); old saved layouts gain them automatically.
+
+## 2026-11-07 — Merge of the redesign with `main`
+
+- Policy pages use Lucide icons, not emoji (extends "remove emojis, use icons" to `main`'s new policy pages via `PolicySections`).
+- The announcement bar stays removed: its keys are gone from the shared content registry (demo store and API ignore stored values).
+- The footer has no scroll animation (content must be readable whenever it is measured or seen).
+- Lives on branch `redesign-merged`; `main` is not changed until the user asks (user 2026-11-07: "main me nahi dalna hai, new branch me dalna hai").
+
 ## PENDING DECISIONS (ask "what's pending" to review)
 
 | #   | Topic                                                                                                                                                                                       | Leaning                                                                             | When                                 |

@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowDown, ArrowUp } from 'lucide-react';
+import { ArrowDown, ArrowUp, Pin } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, type ReactNode, type SyntheticEvent } from 'react';
@@ -9,7 +9,6 @@ import {
   DEFAULT_SETTINGS,
   SETTING_LIMITS,
   contentMax,
-  isEmoji,
   resetArea,
   saveCategories,
   saveContent,
@@ -24,7 +23,7 @@ import {
 } from '@/demo/site-config';
 import type { MapMode } from '@/lib/map-styles';
 import { track } from '@/lib/analytics';
-import { CATEGORY_EMOJI } from '@/lib/emoji';
+import { CATEGORY_ICONS } from '@/lib/icons';
 import {
   DEFAULT_FEATURED,
   FEATURED_MAX,
@@ -43,8 +42,6 @@ const fieldId = (key: string) => key.replace('.', '_');
 
 /** Label message per content key (explicit literals keep next-intl's key checking). */
 const FIELD_LABEL = {
-  'announcement.orders': 'field_announcement_orders',
-  'announcement.workshops': 'field_announcement_workshops',
   'hero.eyebrow': 'field_hero_eyebrow',
   'hero.titleLine1': 'field_hero_titleLine1',
   'hero.titleLine2': 'field_hero_titleLine2',
@@ -107,8 +104,7 @@ function PreviewLink() {
 
 // ── Site content ──────────────────────────────────────────────────────────────────────────────────────────────
 
-const CONTENT_GROUPS: { id: 'announcement' | 'hero'; keys: ContentKey[] }[] = [
-  { id: 'announcement', keys: ['announcement.orders', 'announcement.workshops'] },
+const CONTENT_GROUPS: { id: 'hero'; keys: ContentKey[] }[] = [
   { id: 'hero', keys: ['hero.eyebrow', 'hero.titleLine1', 'hero.titleLine2', 'hero.lead'] },
 ];
 
@@ -352,7 +348,7 @@ function SectionsEditor({ actor }: { actor: string }) {
       <DemoNote />
       <form onSubmit={onSubmit} className={portalCard}>
         <p className="rounded-tile bg-pill px-4 py-3 text-sm font-bold text-ink">
-          <span aria-hidden="true">📌 </span>
+          <Pin aria-hidden="true" className="mr-1.5 inline size-4 -translate-y-px text-accent-soft-text" />
           {t('layout_heroFirst')}
         </p>
         <ol className="mt-3 space-y-2">
@@ -428,7 +424,6 @@ function CategoriesEditor({ actor }: { actor: string }) {
   const config = useSiteConfig();
   const [version, setVersion] = useState(config.versions.categories);
   const [featured, setFeatured] = useState<CategoryKey[]>(config.featured ?? [...DEFAULT_FEATURED]);
-  const [emoji, setEmoji] = useState<Partial<Record<CategoryKey, string>>>(config.emoji);
   const [status, setStatus] = useState<Status>('idle');
   const [error, setError] = useState('');
 
@@ -439,18 +434,8 @@ function CategoriesEditor({ actor }: { actor: string }) {
       setStatus('invalid');
       return;
     }
-    const bad = CATEGORY_KEYS.find((k) => {
-      const v = emoji[k]?.trim();
-      return v ? !isEmoji(v) : false;
-    });
-    if (bad) {
-      setError(t('categories_errEmoji', { name: cat(bad) }));
-      setStatus('invalid');
-      document.getElementById(`emoji-${bad}`)?.focus();
-      return;
-    }
     setError('');
-    if (!saveCategories(version, actor, featured, emoji)) {
+    if (!saveCategories(version, actor, featured)) {
       setStatus('stale');
       return;
     }
@@ -459,7 +444,7 @@ function CategoriesEditor({ actor }: { actor: string }) {
     track('admin_site_change', {
       area: 'categories',
       action: 'save',
-      fields: Object.values(emoji).filter(Boolean).length,
+      fields: featured.length,
     });
   }
 
@@ -470,7 +455,6 @@ function CategoriesEditor({ actor }: { actor: string }) {
     }
     setVersion(version + 1);
     setFeatured([...DEFAULT_FEATURED]);
-    setEmoji({});
     setError('');
     setStatus('reset');
     track('admin_site_change', { area: 'categories', action: 'reset', fields: 0 });
@@ -494,6 +478,7 @@ function CategoriesEditor({ actor }: { actor: string }) {
           {CATEGORY_KEYS.map((key) => {
             const on = featured.includes(key);
             const name = cat(key);
+            const Icon = CATEGORY_ICONS[key];
             return (
               <li
                 key={key}
@@ -501,20 +486,7 @@ function CategoriesEditor({ actor }: { actor: string }) {
                   on ? 'border-accent-button bg-accent-soft' : 'border-line-card bg-surface'
                 }`}
               >
-                <label htmlFor={`emoji-${key}`} className="sr-only">
-                  {t('categories_emoji', { name })}
-                </label>
-                <input
-                  id={`emoji-${key}`}
-                  value={emoji[key] ?? ''}
-                  placeholder={CATEGORY_EMOJI[key]}
-                  maxLength={16}
-                  onChange={(e) => {
-                    setStatus('idle');
-                    setEmoji((m) => ({ ...m, [key]: e.target.value }));
-                  }}
-                  className="min-h-11 w-14 shrink-0 rounded-input border border-input-border bg-surface text-center text-[22px] text-ink placeholder:opacity-60"
-                />
+                <Icon aria-hidden="true" className="size-5 shrink-0 text-accent-soft-text" strokeWidth={2} />
                 <label className="inline-flex min-h-11 flex-1 items-center gap-2 text-sm font-bold text-ink">
                   <input
                     type="checkbox"

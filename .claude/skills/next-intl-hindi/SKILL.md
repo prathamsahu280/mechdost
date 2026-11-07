@@ -10,7 +10,7 @@ description: Use for any MechDost user-facing text, translation, locale routing,
 - Messages: `packages/shared/i18n/en.json` and `hi.json` (same keys; nested by feature: `home.hero.title`).
   Shared by web, emails/notifications and later the mobile app.
 - Routing: `localePrefix: 'as-needed'` — English at `/…`, Hindi at `/hi/…` (SEO-friendly, hreflang pairs).
-  Locale detection from cookie `NEXT_LOCALE` then `Accept-Language`; the header language switcher sets the cookie and
+  Locale detection from cookie `NEXT_LOCALE` then `Accept-Language`; the header language switcher sets the cookie (it must be a plain `<a>`: next-intl syncs NEXT_LOCALE only on document requests, so a `next/link` switch is undone by the old cookie — bug 2026-11-02) and
   the user's profile `language`. Admin/partner portals may use `'never'` prefix (no SEO) with cookie/profile locale.
 - `i18n/request.ts` loads messages for the resolved locale; Server Components use `getTranslations`, client components
   receive only the namespaces they need (keep bundles small).
