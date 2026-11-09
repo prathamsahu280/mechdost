@@ -339,7 +339,7 @@ test.describe('theme and assistant', () => {
     const page = await context.newPage();
     await page.goto('/');
     const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
-    expect(bg).toBe('rgb(8, 19, 15)');
+    expect(bg).toBe('rgb(23, 23, 23)'); // --color-bg dark #171717 (neutral, 2026-11-09)
     await context.close();
   });
 

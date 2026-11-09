@@ -49,3 +49,9 @@ body {
 .bg-navy {
   background-image: var(--gradient-navy);
 }
+
+/* Home hero panel: flat green in light; in dark a charcoal panel with a faint mint glow and a hairline edge. */
+.bg-hero {
+  background-image: var(--gradient-hero);
+  box-shadow: var(--shadow-hero);
+}

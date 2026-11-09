@@ -232,6 +232,160 @@ details[open] > .faq-answer {
   background-color: #e9f8ef;
 }
 
+/*
+ * Neutral dark footer (user 2026-11-09: dark-mode green "very excessive … use neutral tones", Supabase-style).
+ * In dark the footer is charcoal, a step darker than the page, with grey text and mint only for accents.
+ */
+:root[data-theme='dark'] .footer-green {
+  --color-muted: #a3a3a3;
+  --color-line: rgb(255 255 255 / 0.08);
+  --color-line-card: rgb(255 255 255 / 0.12);
+  --color-ink: #ededed;
+  --color-accent: #6ee7b7;
+  --color-accent-soft-text: #6ee7b7;
+  background-color: #111111;
+  background-image: none;
+  border-top: 1px solid #262626;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .footer-green {
+    --color-muted: #a3a3a3;
+    --color-line: rgb(255 255 255 / 0.08);
+    --color-line-card: rgb(255 255 255 / 0.12);
+    --color-ink: #ededed;
+    --color-accent: #6ee7b7;
+    --color-accent-soft-text: #6ee7b7;
+    background-color: #111111;
+    background-image: none;
+    border-top: 1px solid #262626;
+  }
+}
+
+/*
+ * Add to cart motion (user 2026-11-09, components/catalogue/add-to-cart-button.tsx + lib/cart-fly.ts): the label
+ * pulses and slides in, the check draws itself, a ripple spreads, a "+1" chip arcs to the header cart and the pill
+ * bumps on landing. All of it is off under reduced motion.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .atc-pulse {
+    animation: atc-pulse 460ms var(--ease-out-soft);
+  }
+  .atc-in {
+    animation: atc-in 320ms var(--ease-out-soft) both;
+  }
+  .atc-check {
+    animation: atc-pop 380ms var(--ease-out-soft) both;
+  }
+  .atc-check path {
+    stroke-dasharray: 24;
+    stroke-dashoffset: 24;
+    animation: atc-draw 420ms 90ms var(--ease-out-soft) forwards;
+  }
+  .atc-ripple {
+    position: absolute;
+    inset: 50% auto auto 50%;
+    width: 24px;
+    height: 24px;
+    border-radius: 9999px;
+    background: rgb(255 255 255 / 0.35);
+    transform: translate(-50%, -50%) scale(0);
+    pointer-events: none;
+    animation: atc-ripple 620ms var(--ease-out-soft) forwards;
+  }
+  .cart-bump {
+    animation: cart-bump 520ms var(--ease-out-soft);
+  }
+  .cart-bump .cart-count {
+    animation: cart-count 520ms var(--ease-out-soft);
+  }
+}
+.cart-fly {
+  position: fixed;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: 9999px;
+  background: var(--color-accent-button);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.25),
+    0 8px 20px -6px rgb(0 0 0 / 0.35);
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+@keyframes atc-pulse {
+  0% {
+    transform: scale(1);
+  }
+  30% {
+    transform: scale(0.94);
+  }
+  65% {
+    transform: scale(1.04);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes atc-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@keyframes atc-pop {
+  0% {
+    transform: scale(0.4) rotate(-20deg);
+  }
+  60% {
+    transform: scale(1.2) rotate(0deg);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes atc-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes atc-ripple {
+  to {
+    transform: translate(-50%, -50%) scale(18);
+    opacity: 0;
+  }
+}
+@keyframes cart-bump {
+  0% {
+    transform: scale(1);
+  }
+  30% {
+    transform: scale(1.12) rotate(-4deg);
+  }
+  60% {
+    transform: scale(0.97) rotate(2deg);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes cart-count {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.45);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
 @keyframes shimmer {
   to {
     transform: translateX(100%);

@@ -47,7 +47,8 @@
   --color-whatsapp-bg: #eff8f2;
   --color-whatsapp-line: #cfe6d7;
   --color-hero-copy: #cfd9e5;
-  /* Home hero panel is green (user 2026-11-02: "green color hero banana hai"); same in both themes. */
+  /* Home hero panel is green in light (user 2026-11-02: "green color hero banana hai"); charcoal with green accents in
+     dark (user 2026-11-09: dark mode green "very excessive … use neutral tones"). */
   --color-hero: #064e3b;
   --color-hero-text: #d1fae5; /* 8.6:1 on hero */
   --color-hero-accent: #6ee7b7; /* 6.4:1 on hero */
@@ -124,84 +125,100 @@
     radial-gradient(120% 90% at 0% 0%, #0b5a44 0%, transparent 55%),
     radial-gradient(90% 80% at 100% 100%, #0a4a42 0%, transparent 60%);
   --gradient-page: radial-gradient(1400px 640px at 50% -280px, #ffffff 0%, transparent 70%);
+  --gradient-hero: none;
+  --shadow-hero: none;
 }
 
 :root[data-theme='dark'] {
-  --color-ink: #e8eef5;
-  --color-navy: #0a3328;
-  --color-accent-soft: #0f2e22;
-  --color-accent-soft-text: #86efac;
-  --color-line: #1f3329;
-  --color-line-card: #24392f;
-  --color-line-input: #2a4337;
-  --color-input-border: #7d958a;
-  --color-muted: #a7bab0;
-  --color-bg: #08130f;
-  --color-surface: #0e1c17;
-  --color-surface-alt: #0b1813;
-  --color-pill: #16281f;
-  --color-success-bg: #0f2a1d;
+  --color-ink: #ededed;
+  --color-navy: #212121;
+  --color-hero: #1c1c1c;
+  --color-hero-text: #d4d4d4;
+  --color-hero-accent: #6ee7b7;
+  --color-accent-soft: #1f2321;
+  --color-accent-soft-text: #6ee7b7;
+  --color-line: #2a2a2a;
+  --color-line-card: #303030;
+  --color-line-input: #383838;
+  --color-input-border: #8a8a8a;
+  --color-muted: #a3a3a3;
+  --color-bg: #171717;
+  --color-surface: #1f1f1f;
+  --color-surface-alt: #1b1b1b;
+  --color-pill: #262626;
+  --color-success-bg: #1a2620;
   --color-success: #84d6a6;
-  --color-warning-bg: #2d2311;
-  --color-warning-line: #5a4622;
+  --color-warning-bg: #2a2418;
+  --color-warning-line: #4d4128;
   --color-warning: #f1d29b;
-  --color-private-bg: #2c2113;
+  --color-private-bg: #2a2219;
   --color-private: #f0c690;
   --color-error: #ff9282;
-  --color-whatsapp-bg: #0e2419;
-  --color-whatsapp-line: #1f4a33;
+  --color-whatsapp-bg: #1c2420;
+  --color-whatsapp-line: #2e3b34;
   --color-focus: #4ade80;
   --color-star: #f5b041;
   --shadow-card: 0 1px 2px #0000001f, 0 8px 24px -16px #00000059;
   --shadow-card-hover: 0 1px 2px #00000026, 0 14px 32px -18px #00000073;
   --shadow-header: 0 2px 16px #00000040;
-  --gradient-surface: linear-gradient(180deg, #122219 0%, #0e1c17 100%);
+  --gradient-surface: linear-gradient(180deg, #222222 0%, #1f1f1f 100%);
   --gradient-navy:
-    radial-gradient(120% 90% at 0% 0%, #0e4a3a 0%, transparent 55%),
-    radial-gradient(90% 80% at 100% 100%, #08332e 0%, transparent 60%);
-  --gradient-page: radial-gradient(1400px 640px at 50% -280px, #0f2019 0%, transparent 70%);
-  --gradient-accent-soft: linear-gradient(180deg, #143a2b 0%, #0f2e22 100%);
-  --shadow-accent-soft: inset 0 1px 0 rgb(255 255 255 / 0.08), inset 0 0 0 1px rgb(74 222 128 / 0.2);
+    radial-gradient(120% 90% at 0% 0%, #2a2a2a 0%, transparent 55%),
+    radial-gradient(90% 80% at 100% 100%, rgb(62 207 142 / 0.07) 0%, transparent 60%);
+  --gradient-page: radial-gradient(1400px 640px at 50% -280px, #1f1f1f 0%, transparent 70%);
+  --gradient-accent-soft: linear-gradient(180deg, #232725 0%, #1f2321 100%);
+  --shadow-accent-soft: inset 0 1px 0 rgb(255 255 255 / 0.06), inset 0 0 0 1px rgb(110 231 183 / 0.16);
+  --gradient-hero:
+    radial-gradient(80% 120% at 100% 0%, rgb(62 207 142 / 0.1) 0%, transparent 60%),
+    linear-gradient(180deg, #212121 0%, #1c1c1c 100%);
+  --shadow-hero: inset 0 0 0 1px #2e2e2e;
   color-scheme: dark;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --color-ink: #e8eef5;
-    --color-navy: #0a3328;
-    --color-accent-soft: #0f2e22;
-    --color-accent-soft-text: #86efac;
-    --color-line: #1f3329;
-    --color-line-card: #24392f;
-    --color-line-input: #2a4337;
-    --color-input-border: #7d958a;
-    --color-muted: #a7bab0;
-    --color-bg: #08130f;
-    --color-surface: #0e1c17;
-    --color-surface-alt: #0b1813;
-    --color-pill: #16281f;
-    --color-success-bg: #0f2a1d;
+    --color-ink: #ededed;
+    --color-navy: #212121;
+    --color-hero: #1c1c1c;
+    --color-hero-text: #d4d4d4;
+    --color-hero-accent: #6ee7b7;
+    --color-accent-soft: #1f2321;
+    --color-accent-soft-text: #6ee7b7;
+    --color-line: #2a2a2a;
+    --color-line-card: #303030;
+    --color-line-input: #383838;
+    --color-input-border: #8a8a8a;
+    --color-muted: #a3a3a3;
+    --color-bg: #171717;
+    --color-surface: #1f1f1f;
+    --color-surface-alt: #1b1b1b;
+    --color-pill: #262626;
+    --color-success-bg: #1a2620;
     --color-success: #84d6a6;
-    --color-warning-bg: #2d2311;
-    --color-warning-line: #5a4622;
+    --color-warning-bg: #2a2418;
+    --color-warning-line: #4d4128;
     --color-warning: #f1d29b;
-    --color-private-bg: #2c2113;
+    --color-private-bg: #2a2219;
     --color-private: #f0c690;
     --color-error: #ff9282;
-    --color-whatsapp-bg: #0e2419;
-    --color-whatsapp-line: #1f4a33;
+    --color-whatsapp-bg: #1c2420;
+    --color-whatsapp-line: #2e3b34;
     --color-focus: #4ade80;
     --color-star: #f5b041;
     --shadow-card: 0 1px 2px #0000001f, 0 8px 24px -16px #00000059;
     --shadow-card-hover: 0 1px 2px #00000026, 0 14px 32px -18px #00000073;
     --shadow-header: 0 2px 16px #00000040;
-    --gradient-surface: linear-gradient(180deg, #122219 0%, #0e1c17 100%);
+    --gradient-surface: linear-gradient(180deg, #222222 0%, #1f1f1f 100%);
     --gradient-navy:
-      radial-gradient(120% 90% at 0% 0%, #0e4a3a 0%, transparent 55%),
-      radial-gradient(90% 80% at 100% 100%, #08332e 0%, transparent 60%);
-    --gradient-page: radial-gradient(1400px 640px at 50% -280px, #0f2019 0%, transparent 70%);
-    --gradient-accent-soft: linear-gradient(180deg, #143a2b 0%, #0f2e22 100%);
-    --shadow-accent-soft: inset 0 1px 0 rgb(255 255 255 / 0.08), inset 0 0 0 1px rgb(74 222 128 / 0.2);
+      radial-gradient(120% 90% at 0% 0%, #2a2a2a 0%, transparent 55%),
+      radial-gradient(90% 80% at 100% 100%, rgb(62 207 142 / 0.07) 0%, transparent 60%);
+    --gradient-page: radial-gradient(1400px 640px at 50% -280px, #1f1f1f 0%, transparent 70%);
+    --gradient-accent-soft: linear-gradient(180deg, #232725 0%, #1f2321 100%);
+    --shadow-accent-soft: inset 0 1px 0 rgb(255 255 255 / 0.06), inset 0 0 0 1px rgb(110 231 183 / 0.16);
+    --gradient-hero:
+      radial-gradient(80% 120% at 100% 0%, rgb(62 207 142 / 0.1) 0%, transparent 60%),
+      linear-gradient(180deg, #212121 0%, #1c1c1c 100%);
+    --shadow-hero: inset 0 0 0 1px #2e2e2e;
     color-scheme: dark;
   }
 }

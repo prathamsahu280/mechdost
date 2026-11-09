@@ -343,6 +343,12 @@ User: "Www.boodmo.com / https://www.fixter.co.uk/ — here also, take inspo and 
 - The footer has no scroll animation (content must be readable whenever it is measured or seen).
 - Lives on branch `redesign-merged`; `main` is not changed until the user asks (user 2026-11-07: "main me nahi dalna hai, new branch me dalna hai").
 
+## 2026-11-09 — Neutral dark theme and add-to-cart motion
+
+- **Dark theme is neutral grey, green only as accent** (user: dark bg "dark green hai, usko grayish karo supabase ke theme me … green in dark mode is very excessive … use neutral tones"). Dark tokens: bg `#171717`, surface `#1f1f1f`, surface-alt `#1b1b1b`, pill `#262626`, lines `#2a2a2a`/`#303030`, ink `#ededed`, muted `#a3a3a3`, navy panels `#212121`, accent-soft `#1f2321` with mint `#6ee7b7` text. The home hero is charcoal (`#1c1c1c`) with a faint mint glow and hairline edge in dark (`--gradient-hero`, `--shadow-hero`); it stays green in light. The footer is `#111111` in dark. Green stays for primary buttons, focus, highlights and illustrations. Light theme unchanged.
+- **Add to cart motion** (user: "Add to Cart me iska animation aur accha karna hai"): the label pulses and slides in, the check draws itself, a ripple spreads, a "+qty" chip arcs to the header cart (`lib/cart-fly.ts`, `[data-cart-target]`) and the pill bumps when it lands. Off under reduced motion. The "added" state keeps the green button (the old `bg-success` fill had white text at < 4.5:1 in dark).
+- Branch `dark-neutral` (from `redesign-merged`); `main` untouched.
+
 ## PENDING DECISIONS (ask "what's pending" to review)
 
 | #   | Topic                                                                                                                                                                                       | Leaning                                                                             | When                                 |
