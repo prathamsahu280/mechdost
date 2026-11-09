@@ -78,13 +78,35 @@ export async function releaseReservation(
   return true;
 }
 
-/** TTL job: expire every active reservation past its expiry (DB clock). Safe to run concurrently/twice. */
-export async function releaseExpiredReservations(tx: Tx) {
-  const due = await tx
-    .select({ id: reservations.id })
+/**
+ * Hold-expiry job (worker, every 60 s; spec 04): frees active holds past their DB-clock expiry, so stock held by
+ * an order nobody routed or accepted goes back on sale. One transaction per hold, locking the **order row first**
+ * (spec 14 lock order — the same order as accept and cancel, so they cannot deadlock), and a failure on one hold
+ * never blocks the rest. Accepting later re-reserves a lapsed hold or is refused (`acceptShopOffer`). Safe to run
+ * concurrently or twice: `releaseReservation` is a compare-and-set on `status = 'active'`.
+ */
+export async function releaseExpiredReservations(
+  db: Tx,
+  limit = 100,
+): Promise<{ released: number; failed: { reservationId: string; error: unknown }[] }> {
+  const due = await db
+    .select({ id: reservations.id, orderId: reservations.orderId })
     .from(reservations)
-    .where(and(eq(reservations.status, 'active'), lte(reservations.expiresAt, sql`now()`)));
+    .where(and(eq(reservations.status, 'active'), lte(reservations.expiresAt, sql`now()`)))
+    .orderBy(reservations.expiresAt)
+    .limit(limit);
   let released = 0;
-  for (const r of due) if (await releaseReservation(tx, r.id, 'expired')) released++;
-  return released;
+  const failed: { reservationId: string; error: unknown }[] = [];
+  for (const r of due) {
+    try {
+      const done = await db.transaction(async (tx) => {
+        await tx.execute(sql`select 1 from orders where id = ${r.orderId} for update`);
+        return releaseReservation(tx, r.id, 'expired');
+      });
+      if (done) released += 1;
+    } catch (error) {
+      failed.push({ reservationId: r.id, error });
+    }
+  }
+  return { released, failed };
 }

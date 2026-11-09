@@ -4,7 +4,12 @@
  */
 import { createDb, createListener } from '@mechdost/db';
 import { loadKeyring, type Keyring } from '@mechdost/db/crypto';
-import { bridgeInboundWhatsApp, ensureEventPartitions, expireDueAssignments } from '@mechdost/db/repo';
+import {
+  bridgeInboundWhatsApp,
+  ensureEventPartitions,
+  expireDueAssignments,
+  releaseExpiredReservations,
+} from '@mechdost/db/repo';
 import { ConfigError, loadConfig } from './config';
 import { pollingPublisher, type LivePublisher } from './live/publisher';
 import { startDispatcher, type ChannelAdapter } from './notify/dispatcher';
@@ -84,6 +89,27 @@ const expiryTimer = setInterval(() => {
 }, 30_000);
 expiryTimer.unref();
 
+// Stock hold expiry (spec 04): holds past `checkout.cod_reservation_minutes` go back on sale. Every 60 s; one
+// transaction per hold (order row locked first), so several workers may run this safely.
+let releasing = false;
+const holdTimer = setInterval(() => {
+  if (releasing) return;
+  releasing = true;
+  void releaseExpiredReservations(db)
+    .then(({ released, failed }) => {
+      if (released > 0) log('info', 'reservations_expired', { count: released });
+      for (const f of failed)
+        log('error', 'reservation_expiry_failed', { reservationId: f.reservationId, ...safeError(f.error) });
+    })
+    .catch((err: unknown) => {
+      log('error', 'reservation_expiry_failed', safeError(err));
+    })
+    .finally(() => {
+      releasing = false;
+    });
+}, 60_000);
+holdTimer.unref();
+
 // Event store partitions (spec 12): this month + 3 ahead, checked at start and every 12 h (idempotent).
 const partitions = () => {
   void ensureEventPartitions(db)
@@ -120,6 +146,7 @@ function shutdown(signal: string) {
   log('info', 'shutdown', { signal });
   if (bridgeTimer) clearInterval(bridgeTimer);
   clearInterval(expiryTimer);
+  clearInterval(holdTimer);
   clearInterval(partitionTimer);
   void Promise.all([relay.stop(), dispatcher.stop()])
     .then(() => Promise.all([sql.end({ timeout: 5 }), listener?.end()]))

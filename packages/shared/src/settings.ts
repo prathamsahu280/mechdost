@@ -17,8 +17,8 @@ export const OPERATIONAL_SETTINGS = {
   'checkout.cod_fee_paise': { kind: 'int', min: 0, max: 50_000, default: 0 },
   /** A shop group's delivery is free from this subtotal (paise); null = never free. */
   'checkout.free_delivery_min_paise': { kind: 'int', min: 0, max: 10_000_000, default: null, nullable: true },
-  /** Expiry stamped on a COD order's stock hold (minutes). No sweep frees expired holds yet (spec 04), so today
-   *  holds last until accept, reject or cancel; the value takes effect when the sweep is scheduled. */
+  /** How long a COD order's stock hold lasts (minutes, from checkout or the latest routing). The worker's sweep
+   *  then puts the stock back on sale; a later accept re-reserves it or is refused (spec 04). */
   'checkout.cod_reservation_minutes': { kind: 'int', min: 30, max: 10_080, default: 1440 },
   /** How long a shop has to accept an offered order (minutes). */
   // Same bounds as the demo `/admin/settings` screen and spec 08 (5–120 min).

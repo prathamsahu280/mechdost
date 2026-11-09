@@ -455,8 +455,8 @@ describe('stock: no oversell', () => {
     await db.execute(
       sql`update reservations set created_at = now() - interval '1 hour', expires_at = now() - interval '1 minute' where id = ${r!.id}`,
     );
-    expect(await db.transaction((tx) => releaseExpiredReservations(tx as unknown as Tx))).toBe(1);
-    expect(await db.transaction((tx) => releaseExpiredReservations(tx as unknown as Tx))).toBe(0);
+    expect(await releaseExpiredReservations(db as unknown as Tx)).toEqual({ released: 1, failed: [] });
+    expect(await releaseExpiredReservations(db as unknown as Tx)).toEqual({ released: 0, failed: [] });
     const [inv] = await db.select().from(s.shopInventory).where(eq(s.shopInventory.id, F.inv!));
     expect(inv!.reserved).toBe(0);
   });

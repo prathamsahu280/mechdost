@@ -14,7 +14,7 @@ import {
 import { acceptAssignment, declineAssignment } from './assignments';
 import { issueDeliveryCode, verifyDeliveryCode, type DeliveryCheck } from './delivery';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from './errors';
-import { commitReservation } from './inventory';
+import { commitReservation, reserveStock } from './inventory';
 import { decodeCursor, encodeCursor, pageSize } from './cursor';
 import { recordServerEvent } from './events';
 import { transitionOrder, type Tx } from './orders';
@@ -179,7 +179,46 @@ async function ownAssignment(tx: Tx, shopIds: readonly string[], assignmentId: s
   return a;
 }
 
-/** Accept: compare-and-set on the offer (late accepts fail), order confirmed, reservations committed. */
+/**
+ * Accepting sells every item from this shop, so each item needs a hold here (spec 04). The expiry sweep may have
+ * freed holds of an order that waited too long; those are re-reserved now, inside the accept transaction, or
+ * the whole accept is refused — a shop never sells stock its inventory does not cover. A hold at another shop
+ * means routing and holds disagree: refused too, for admin to reroute. Returns the hold ids to commit.
+ */
+async function holdEveryItem(tx: Tx, orderId: string, shopId: string): Promise<string[]> {
+  const notHeld = () =>
+    new ConflictError(
+      'Your shop no longer has stock held for every item in this order; ask MechDost to reroute',
+      'STOCK_NOT_HELD',
+    );
+  const held = await tx
+    .select({ id: reservations.id, shopId: shopInventory.shopId, variantId: shopInventory.variantId })
+    .from(reservations)
+    .innerJoin(shopInventory, eq(shopInventory.id, reservations.inventoryId))
+    .where(and(eq(reservations.orderId, orderId), eq(reservations.status, 'active')));
+  if (held.some((h) => h.shopId !== shopId)) throw notHeld();
+  const items = await tx
+    .select({ variantId: orderItems.variantId, qty: orderItems.qty, inventoryId: shopInventory.id })
+    .from(orderItems)
+    .leftJoin(
+      shopInventory,
+      and(eq(shopInventory.variantId, orderItems.variantId), eq(shopInventory.shopId, shopId)),
+    )
+    .where(eq(orderItems.orderId, orderId));
+  if (items.length === 0) throw notHeld();
+  const covered = new Set(held.map((h) => h.variantId));
+  const ids = held.map((h) => h.id);
+  for (const item of items.filter((i) => !covered.has(i.variantId))) {
+    const again = item.inventoryId
+      ? await reserveStock(tx, { inventoryId: item.inventoryId, orderId, qty: item.qty })
+      : null;
+    if (!again) throw notHeld();
+    ids.push(again.id);
+  }
+  return ids;
+}
+
+/** Accept: compare-and-set on the offer (late accepts fail), order confirmed, every item's hold committed. */
 export async function acceptShopOffer(
   db: Tx,
   input: { shopIds: readonly string[]; assignmentId: string; staffUserId: string },
@@ -203,17 +242,7 @@ export async function acceptShopOffer(
       shopId: a.shopId,
       actor: { type: 'shop', userId: input.staffUserId },
     });
-    const held = await tx
-      .select({ id: reservations.id, shopId: shopInventory.shopId })
-      .from(reservations)
-      .innerJoin(shopInventory, eq(shopInventory.id, reservations.inventoryId))
-      .where(and(eq(reservations.orderId, a.orderId), eq(reservations.status, 'active')));
-    if (held.length === 0 || held.some((h) => h.shopId !== a.shopId))
-      throw new ConflictError(
-        'Stock for this order is not held at your shop; ask MechDost to reroute',
-        'STOCK_NOT_HELD',
-      );
-    for (const h of held) await commitReservation(tx, h.id);
+    for (const id of await holdEveryItem(tx, a.orderId, a.shopId)) await commitReservation(tx, id);
     const [info] = rowsOf<{ code: string; city_id: string; seconds: unknown }>(
       await tx.execute(sql`select o.code, o.city_id, extract(epoch from a.responded_at - a.offered_at)::int as seconds
         from order_assignments a join orders o on o.id = a.order_id where a.id = ${a.id}`),

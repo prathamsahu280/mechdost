@@ -20,6 +20,7 @@ import {
   listShopOrders,
   placeCodOrder,
   quoteCheckout,
+  releaseExpiredReservations,
   routeOrder,
   type CityScope,
   type Tx,
@@ -173,6 +174,52 @@ describe('offers', () => {
       .from(s.orderAssignments)
       .where(eq(s.orderAssignments.id, declined.assignmentId));
     expect(a).toMatchObject({ status: 'declined', declineReason: 'out_of_stock' });
+  });
+});
+
+describe('stock hold expiry (sweep scheduled 2026-11-09)', () => {
+  const lapse = (code: string) =>
+    db.execute(sql`update reservations set created_at = now() - interval '2 days',
+      expires_at = now() - interval '1 minute'
+      where order_id = (select id from orders where code = ${code}) and status = 'active'`);
+
+  it('the sweep frees a lapsed hold; accepting re-reserves it, so the sale still takes the stock', async () => {
+    const { code, assignmentId } = await placeAndRoute('Sharma Auto Parts');
+    const held = await stock('Sharma Auto Parts');
+    await lapse(code);
+    const first = await releaseExpiredReservations(t());
+    expect(first.released).toBeGreaterThanOrEqual(1);
+    expect(first.failed).toEqual([]);
+    expect((await releaseExpiredReservations(t())).released).toBe(0); // exactly once
+    expect(await stock('Sharma Auto Parts')).toEqual({ onHand: held.onHand, reserved: held.reserved - 2 });
+
+    await acceptShopOffer(t(), {
+      shopIds: [shop['Sharma Auto Parts']!],
+      assignmentId,
+      staffUserId: shopUser,
+    });
+    expect(await stock('Sharma Auto Parts')).toEqual({
+      onHand: held.onHand - 2,
+      reserved: held.reserved - 2,
+    });
+    expect((await orderRow(code)).status).toBe('confirmed');
+  });
+
+  it('accept is refused, and changes nothing, when a lapsed hold cannot be re-reserved', async () => {
+    const { code, assignmentId } = await placeAndRoute('Sharma Auto Parts');
+    await lapse(code);
+    await releaseExpiredReservations(t());
+    const free = await stock('Sharma Auto Parts');
+    const inventory = sql`(select si.id from shop_inventory si join product_variants v on v.id = si.variant_id
+      where v.sku = ${OIL} and si.shop_id = ${shop['Sharma Auto Parts']!})`;
+    await db.execute(sql`update shop_inventory set on_hand = reserved where id = ${inventory}`);
+    await expect(
+      acceptShopOffer(t(), { shopIds: [shop['Sharma Auto Parts']!], assignmentId, staffUserId: shopUser }),
+    ).rejects.toMatchObject({ code: 'STOCK_NOT_HELD' });
+    const [a] = await db.select().from(s.orderAssignments).where(eq(s.orderAssignments.id, assignmentId));
+    expect(a?.status).toBe('offered');
+    expect((await orderRow(code)).status).toBe('awaiting_shop');
+    await db.execute(sql`update shop_inventory set on_hand = ${free.onHand} where id = ${inventory}`);
   });
 });
 
