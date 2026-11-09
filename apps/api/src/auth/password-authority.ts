@@ -9,6 +9,8 @@ export interface PasswordAuthority {
   /** The Firebase uid when `password` is right for `email`'s password credential, else null. Throws when
    *  Firebase cannot answer (network, quota) — the caller answers 503 and does not count a failure. */
   check(email: string, password: string): Promise<string | null>;
+  /** The email of the Firebase account `uid` (its password credential), or null. */
+  emailOf(uid: string): Promise<string | null>;
   /** A Firebase custom token for `uid` (the client calls `signInWithCustomToken`). */
   customToken(uid: string, claims?: Record<string, boolean>): Promise<string>;
 }
@@ -56,6 +58,16 @@ export function createFirebasePasswordAuthority(opts: {
       const reason = (body.error?.message ?? '').split(' ')[0] ?? '';
       if (res.status === 400 && NO.has(reason)) return null;
       throw new Error(`password check failed: ${String(res.status)} ${reason}`);
+    },
+    async emailOf(uid) {
+      try {
+        return (await auth.getUser(uid)).email ?? null;
+      } catch (err) {
+        // A profile whose Firebase account is gone: the generic "no match", not "unavailable".
+        if (typeof err === 'object' && err !== null && 'code' in err && err.code === 'auth/user-not-found')
+          return null;
+        throw err;
+      }
     },
     customToken(uid, claims) {
       return auth.createCustomToken(uid, claims);

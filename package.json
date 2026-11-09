@@ -18,7 +18,8 @@
     "db:seed:demo": "pnpm --filter @mechdost/db seed:demo",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check": "pnpm format:check && turbo run typecheck lint test"
+    "check": "pnpm format:check && turbo run typecheck lint test",
+    "emulators": "pnpm dlx firebase-tools@15.35.0 emulators:start --only auth --project demo-mechdost"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

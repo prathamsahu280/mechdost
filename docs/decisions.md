@@ -247,6 +247,8 @@ User: "the first time it will ask the user for the phone number, then they enter
 - **Real vs demo sign-in on the web:** pending Q69 (default: a switch, demo on deployed demos, Firebase locally). Built as `NEXT_PUBLIC_AUTH_MODE` (demo when unset).
 - **Web uses `@firebase/app` + `@firebase/auth` only**, not the `firebase` umbrella package: the umbrella pulls Firestore → `@grpc/grpc-js` (1 high + 1 low advisory, Node-only code we never run). Same versions as firebase 13.2.0.
 - **Password reset email link lasts 60 minutes** in real mode (Firebase's fixed lifetime) instead of spec 01's 30; the screens say 60. Revisit with a custom action handler on our domain (Q30).
+- **After a password is linked or changed, the browser signs in again through the API** (Firebase marks such sessions `password`, which the API refuses so its limits cannot be skipped). The API looks up the password's email in Firebase when the profile has none yet (fresh sign-up); only those accounts make that extra call.
+- **`firebase-tools` runs through `pnpm dlx` at an exact version**, not as a dependency (66 direct dependencies; only the Auth Emulator is used, for tests).
 - **Real partners land on the account area** (not the demo shop/workshop portals, which have no real shop behind them) until the portals move to the API; real staff land on admin (staff roles are only listed for a two-step session).
 
 ## PENDING DECISIONS (ask "what's pending" to review)

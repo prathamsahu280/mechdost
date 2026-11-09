@@ -12,7 +12,6 @@ import {
   removeAddress,
   removeVehicle,
   setDefaultAddress,
-  signOut,
   updateProfile,
   useSession,
   type DemoAccount,
@@ -23,6 +22,7 @@ import {
 import { CoinsSection } from './coins-section';
 import { SupportSection } from './support-section';
 import { ORDER_STAGES, REQUEST_STAGES, useHydrated, useOrders, useQuotes, useRequests } from '@/demo/store';
+import { signOutEverywhere } from '@/lib/auth/sign-out';
 import { formatDate, formatPrice } from '@/lib/format';
 import { ACCOUNT_SECTIONS, type AccountSection } from '@/lib/sections';
 import { workshopNameFor } from '@/demo/i18n/localize';
@@ -874,7 +874,7 @@ function SignOutButton() {
     <button
       type="button"
       onClick={() => {
-        signOut();
+        signOutEverywhere();
       }}
       className={quiet}
     >

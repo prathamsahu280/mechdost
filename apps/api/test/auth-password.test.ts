@@ -96,6 +96,19 @@ describe('POST /v1/auth/password', () => {
     expect((await signIn({ identifier: a.email, password: 'Raipur@2026' })).status).toBe(200);
   });
 
+  it('right after sign-up the profile has no email yet: the password is checked against the Firebase email', async () => {
+    // Phone sign-up made the row (phone only); the password was just linked in Firebase under this email.
+    await ensureUser(ctx.db, {
+      firebaseUid: 'pw-11',
+      phone: '+919855555511',
+      email: null,
+      emailVerified: false,
+    });
+    auth.add('fresh-11@example.com', 'pw-11', 'Raipur@2026');
+    const r = await signIn({ identifier: '9855555511', password: 'Raipur@2026' });
+    expect(await r.json()).toEqual({ status: 'signed_in', customToken: 'ct:pw-11:{}' });
+  });
+
   it('refuses without a valid Turnstile token, before asking Firebase', async () => {
     await account('04');
     const before = auth.checks.length;

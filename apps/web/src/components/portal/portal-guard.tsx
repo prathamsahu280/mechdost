@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState, type ReactNode } from 'react';
-import { signOut, useSession, type DemoAccount, type DemoRole } from '@/demo/session';
+import { useSession, type DemoAccount, type DemoRole } from '@/demo/session';
+import { signOutEverywhere } from '@/lib/auth/sign-out';
 import { useHydrated } from '@/demo/store';
 
 /**
@@ -42,7 +43,7 @@ export function PortalGuard({
             <button
               type="button"
               onClick={() => {
-                signOut();
+                signOutEverywhere();
               }}
               className="press inline-flex min-h-11 items-center rounded-button border border-input-border px-4 text-sm font-bold text-ink hover:bg-pill"
             >
@@ -60,7 +61,7 @@ export function PortalGuard({
         <button
           type="button"
           onClick={() => {
-            signOut();
+            signOutEverywhere();
           }}
           className="press inline-flex min-h-11 items-center rounded-button border border-input-border px-4 font-bold text-ink hover:bg-pill"
         >

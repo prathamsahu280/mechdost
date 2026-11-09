@@ -401,11 +401,20 @@ export function LoginFlow() {
     return done(result.account, `login_${result.account.role}`);
   }
 
-  async function signInReal(password: string): Promise<Outcome> {
+  /**
+   * Password sign-in through the API (custom token). Also used right after a password is set (sign-up, phone
+   * reset): Firebase then marks the session as a `password` sign-in, which the API refuses by design (no way
+   * around its limits), so the browser signs in again the API's way.
+   */
+  async function signInReal(
+    password: string,
+    who: string = identifier,
+    event: (role: DemoRole) => string = (role) => `login_${role}`,
+  ): Promise<Outcome> {
     const token = await botCheck();
     if (!token) return undefined;
     const r = await real();
-    const res = await r.passwordSignIn({ identifier, password, turnstileToken: token, locale });
+    const res = await r.passwordSignIn({ identifier: who, password, turnstileToken: token, locale });
     if (!res.ok) {
       track('click', { id: 'login_password_failed', path: window.location.pathname });
       if (res.reason === 'invalid') fail(t('errSignIn'), 'login-password');
@@ -422,11 +431,12 @@ export function LoginFlow() {
         return undefined;
       }
       pendingPassword.current = password;
+      setIdentifier(who);
       setStaffPhone(res.phone);
       goTo('staff');
       return undefined;
     }
-    return finishReal((role) => `login_${role}`);
+    return finishReal(event);
   }
 
   async function onStaffCode(e: SyntheticEvent<HTMLFormElement>) {
@@ -584,10 +594,30 @@ export function LoginFlow() {
         return done(result.account, 'sign_up');
       }
       const r = await real();
+      // Create the profile with the phone session first (the API makes it on the first call; a blocked number
+      // stops here), so the API sign-in below finds the account by its phone.
+      const first = await r.fetchMe();
+      if (!first || first === 'blocked') {
+        failForm(first === 'blocked' ? t('blocked') : t('errUnavailable'));
+        return undefined;
+      }
       const linked = await r.linkEmailPassword(email, password);
       if (!linked.ok) {
         if (linked.reason === 'email_in_use') fail(t('emailInUse'), 'login-email');
         else failForm(t('errUnavailable'));
+        return undefined;
+      }
+      // Linking turned the session into a `password` sign-in, which the API refuses: sign in the API's way.
+      const token = await botCheck();
+      if (!token) return undefined;
+      const session = await r.passwordSignIn({
+        identifier: `+91${phone}`,
+        password,
+        turnstileToken: token,
+        locale,
+      });
+      if (!session.ok || session.status !== 'signed_in') {
+        failForm(t('errUnavailable'));
         return undefined;
       }
       const me = await r.fetchMe();
@@ -641,7 +671,8 @@ export function LoginFlow() {
         failForm(t('errUnavailable'));
         return undefined;
       }
-      return finishReal(() => 'password_reset_phone');
+      // The new password made this a `password` session, which the API refuses: sign in the API's way.
+      return signInReal(password, `+91${phone}`, () => 'password_reset_phone');
     });
   }
 
@@ -936,6 +967,7 @@ export function LoginFlow() {
           />
           {fieldError('login-email')}
           {newPasswordFields}
+          {securityCheck}
           {formError}
           {submit(t('create'), t('verifying'))}
         </form>
@@ -1019,6 +1051,7 @@ export function LoginFlow() {
           {usernameFor(phone)}
           {codeField('login-otp-sent')}
           {newPasswordFields}
+          {securityCheck}
           {formError}
           {submit(t('savePassword'), t('verifying'))}
           {back}

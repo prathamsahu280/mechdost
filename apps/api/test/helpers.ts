@@ -43,11 +43,17 @@ export class FakeVerifier implements TokenVerifier {
 /** Fake Firebase password store: email (case-insensitive) → uid + password. Records every check. */
 export class FakePasswordAuthority implements PasswordAuthority {
   private readonly accounts = new Map<string, { uid: string; password: string }>();
+  private readonly emails = new Map<string, string>();
   readonly checks: string[] = [];
   failNext = false;
 
   add(email: string, uid: string, password: string) {
     this.accounts.set(email.toLowerCase(), { uid, password });
+    this.emails.set(uid, email);
+  }
+
+  emailOf(uid: string): Promise<string | null> {
+    return Promise.resolve(this.emails.get(uid) ?? null);
   }
 
   check(email: string, password: string): Promise<string | null> {

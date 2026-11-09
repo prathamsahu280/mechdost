@@ -113,7 +113,10 @@ export function authRoutes(deps: AppDeps) {
     const account = ident ? await findPasswordAccount(deps.db, ident) : null;
     let uid: string | null;
     try {
-      uid = await passwordAuth.check(account?.email ?? NO_ACCOUNT_EMAIL, body.password);
+      // Right after sign-up the profile row has no email yet (it syncs on the next API call), but Firebase knows
+      // which email the password was linked to. Only such fresh accounts make this extra call.
+      const email = account ? (account.email ?? (await passwordAuth.emailOf(account.firebaseUid))) : null;
+      uid = await passwordAuth.check(email ?? NO_ACCOUNT_EMAIL, body.password);
     } catch (err) {
       log('error', 'password_check_unavailable', safeError(err));
       throw unavailable();

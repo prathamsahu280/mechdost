@@ -29,6 +29,9 @@ declare global {
 }
 
 const SCRIPT = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+/** A check that has not answered by then (blocked or slow network) fails instead of leaving the form busy;
+ *  not while a visible challenge waits for the person. */
+const GIVE_UP_MS = 20_000;
 let loading: Promise<TurnstileApi> | null = null;
 let widget: { id: string; el: HTMLElement } | null = null;
 let pending: { resolve: (t: string) => void; reject: (e: Error) => void } | null = null;
@@ -66,6 +69,31 @@ export async function turnstileToken(
   containerId: string,
   locale: string,
   onInteractive: (shown: boolean) => void = () => undefined,
+): Promise<string> {
+  let waitingForPerson = false;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const giveUp = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      if (!waitingForPerson) reject(new Error('turnstile timed out'));
+    }, GIVE_UP_MS);
+  });
+  try {
+    return await Promise.race([
+      issue(containerId, locale, (on) => {
+        waitingForPerson = on;
+        onInteractive(on);
+      }),
+      giveUp,
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function issue(
+  containerId: string,
+  locale: string,
+  onInteractive: (shown: boolean) => void,
 ): Promise<string> {
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
   if (!siteKey) throw new Error('turnstile not configured');
