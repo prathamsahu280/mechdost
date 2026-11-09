@@ -5,6 +5,8 @@ export interface VerifiedToken extends VerifiedIdentity {
   /** `auth_time`: when the user last signed in (seconds). Used for recent-auth checks on sensitive actions. */
   authTime: number;
   signInProvider: string;
+  /** Made by both staff sign-in steps (password, then a fresh phone code): custom token with `staff_2fa`. */
+  staff2fa: boolean;
 }
 
 export interface VerifyOptions {

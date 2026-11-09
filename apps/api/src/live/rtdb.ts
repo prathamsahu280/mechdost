@@ -1,5 +1,5 @@
-import { getApps, initializeApp } from 'firebase-admin/app';
 import { getDatabaseWithUrl } from 'firebase-admin/database';
+import { firebaseAdminApp } from '../auth/firebase-app';
 import { inboxRemovals, inboxUpdates, type LivePublisher } from './publisher';
 
 /**
@@ -7,8 +7,16 @@ import { inboxRemovals, inboxUpdates, type LivePublisher } from './publisher';
  * account via Application Default Credentials on Cloud Run); browsers and the app only *read* their own inbox,
  * enforced by `database.rules.json` (`auth.uid === $uid`, no client writes). One multi-path update per batch.
  */
-export function createRtdbPublisher(opts: { projectId: string; databaseUrl: string }): LivePublisher {
-  const app = getApps()[0] ?? initializeApp({ projectId: opts.projectId, databaseURL: opts.databaseUrl });
+export function createRtdbPublisher(opts: {
+  projectId: string;
+  databaseUrl: string;
+  keyFile?: string | null;
+}): LivePublisher {
+  const app = firebaseAdminApp({
+    projectId: opts.projectId,
+    keyFile: opts.keyFile ?? null,
+    databaseURL: opts.databaseUrl,
+  });
   const db = getDatabaseWithUrl(opts.databaseUrl, app);
   return {
     name: 'rtdb',

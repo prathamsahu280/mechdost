@@ -237,6 +237,15 @@ User: "the first time it will ask the user for the phone number, then they enter
 - **CI and dependency updates (2026-11-03):** GitHub Actions `CI` (`.github/workflows/ci.yml`) runs Prettier, typecheck, lint and unit tests on every push/PR — actions pinned by commit SHA (no release younger than 3 days), read-only token, no persisted credentials, frozen lockfile. Updates via **Dependabot** (`.github/dependabot.yml`, as spec 13 says; the ledger's "Renovate" was a drift) with a 3-day cooldown matching pnpm's `minimumReleaseAge`. e2e/Lighthouse/visual jobs join once a preview deploy exists.
 - **Privacy notice** `/policies/privacy` written from what the product does (the concept's text was outdated); grievance officer details follow Q15.
 
+## 2026-11-09 — Password sign-in API: rulings while building (advisor brief 2026-11-09)
+
+- **Staff two-step is enforced by the API, not the client.** Phone-code tokens stay valid for everyone (sign-up and the phone reset need them), so a phone code alone must not open the admin side: staff grants count only for a session minted by both steps (`staff_2fa` claim, ≤ 12 h old, spec 13). The second step re-sends the password with the fresh phone token (no extra server secret or ticket table).
+- **Staff = any grant not tied to a shop or workshop** (`isStaffGrant`), so admin-made roles are covered without a code list (L17).
+- **Turnstile on every password sign-in** (not only after 3 failures as spec 01 first said): one rule, no hidden second state; Cloudflare's test keys in development.
+- **Per-IP limit 60 per hour** on password sign-in (spec 01's 20/IP/hour is for OTP sends; Indian mobile networks put many users behind one IP, CGNAT). Per-identifier lock stays 5 failures / 15 minutes.
+- **Firebase Admin signs custom tokens locally with the key file in development**; production has no key file and signs through IAM (runbook `docs/runbooks/firebase.md`).
+- **Real vs demo sign-in on the web:** pending Q69 (default: a switch, demo on deployed demos, Firebase locally).
+
 ## PENDING DECISIONS (ask "what's pending" to review)
 
 | #   | Topic                                                                                                                                                                                       | Leaning                                                                             | When                                 |

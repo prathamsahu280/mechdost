@@ -7,6 +7,16 @@ export interface RateRule {
   name: string;
   limit: number;
   windowSeconds: number;
+  /** Refuse (throw) instead of allowing when the store cannot answer — sign-in limits (Q18). */
+  failClosed?: boolean;
+}
+
+/** The limit store did not answer for a `failClosed` rule. */
+export class RateLimitUnavailable extends Error {
+  constructor() {
+    super('rate limit store unavailable');
+    this.name = 'RateLimitUnavailable';
+  }
 }
 
 export interface RateResult {
@@ -20,6 +30,8 @@ export interface RateResult {
 export interface RateLimiter {
   /** Count `weight` units (default 1) against `rule` for `key`, e.g. the number of events in a batch. */
   hit(rule: RateRule, key: string, weight?: number): Promise<RateResult>;
+  /** Read the state of `key` without counting (e.g. "is this sign-in locked?"); `allowed` = units left. */
+  peek(rule: RateRule, key: string): Promise<RateResult>;
 }
 
 /** Fixed-window counter in process memory. Bounded: expired windows are swept as keys are touched. */
@@ -46,6 +58,18 @@ export class MemoryRateLimiter implements RateLimiter {
       limit: rule.limit,
       remaining: Math.max(0, rule.limit - w.count),
       resetAt: w.resetAt,
+    });
+  }
+
+  peek(rule: RateRule, key: string): Promise<RateResult> {
+    const t = this.now();
+    const w = this.windows.get(`${rule.name}:${key}`);
+    const live = w && w.resetAt > t ? w : { count: 0, resetAt: t + rule.windowSeconds * 1000 };
+    return Promise.resolve({
+      allowed: live.count < rule.limit,
+      limit: rule.limit,
+      remaining: Math.max(0, rule.limit - live.count),
+      resetAt: live.resetAt,
     });
   }
 

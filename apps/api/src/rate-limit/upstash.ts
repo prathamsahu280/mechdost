@@ -1,10 +1,11 @@
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
-import type { RateLimiter, RateResult, RateRule } from './limiter';
+import { RateLimitUnavailable, type RateLimiter, type RateResult, type RateRule } from './limiter';
 
 /**
  * Sliding-window limits shared by all instances. If Redis is slow or down, Upstash allows the request after
  * `timeout` (fail-open) so an outage does not take the API down; Cloudflare WAF remains the outer layer.
+ * Rules marked `failClosed` (password sign-in, Q18) throw `RateLimitUnavailable` instead.
  */
 export class UpstashRateLimiter implements RateLimiter {
   private readonly redis: Redis;
@@ -33,6 +34,17 @@ export class UpstashRateLimiter implements RateLimiter {
   async hit(rule: RateRule, key: string, weight = 1): Promise<RateResult> {
     const rate = Math.max(1, Math.floor(weight));
     const r = await this.limiterFor(rule).limit(key, rate === 1 ? undefined : { rate });
+    if (rule.failClosed && r.reason === 'timeout') throw new RateLimitUnavailable();
     return { allowed: r.success, limit: r.limit, remaining: r.remaining, resetAt: r.reset };
+  }
+
+  async peek(rule: RateRule, key: string): Promise<RateResult> {
+    try {
+      const r = await this.limiterFor(rule).getRemaining(key);
+      return { allowed: r.remaining > 0, limit: rule.limit, remaining: r.remaining, resetAt: r.reset };
+    } catch (err) {
+      if (rule.failClosed) throw new RateLimitUnavailable();
+      throw err;
+    }
   }
 }

@@ -32,7 +32,11 @@ try {
 const { db, sql } = createDb(config.databaseUrl, { max: 2, transactionPooler: true });
 const publisher: LivePublisher =
   config.live.transport === 'rtdb' && config.live.databaseUrl
-    ? createRtdbPublisher({ projectId: config.firebaseProjectId, databaseUrl: config.live.databaseUrl })
+    ? createRtdbPublisher({
+        projectId: config.firebaseProjectId,
+        databaseUrl: config.live.databaseUrl,
+        keyFile: config.firebaseKeyFile,
+      })
     : pollingPublisher;
 const relay = startRelay({ db, publisher });
 const adapters: ChannelAdapter[] = config.whatsapp ? [createWhatsAppAdapter(config.whatsapp)] : [];

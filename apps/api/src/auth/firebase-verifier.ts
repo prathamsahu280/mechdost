@@ -1,5 +1,6 @@
-import { getApps, initializeApp } from 'firebase-admin/app';
+import { STAFF_2FA_CLAIM } from '@mechdost/shared/auth';
 import { getAuth } from 'firebase-admin/auth';
+import { firebaseAdminApp } from './firebase-app';
 import { TokenError, type TokenVerifier, type VerifiedToken } from './token-verifier';
 
 /**
@@ -28,8 +29,8 @@ function errorCode(err: unknown): string | undefined {
  * revocation). Credentials: Cloud Run service account (ADC) in production; `FIREBASE_AUTH_EMULATOR_HOST`
  * locally, which firebase-admin reads itself. Never use hono/jwt for Firebase tokens (key rotation, aud).
  */
-export function createFirebaseVerifier(projectId: string): TokenVerifier {
-  const app = getApps()[0] ?? initializeApp({ projectId });
+export function createFirebaseVerifier(projectId: string, keyFile: string | null = null): TokenVerifier {
+  const app = firebaseAdminApp({ projectId, keyFile });
   const auth = getAuth(app);
 
   return {
@@ -45,6 +46,7 @@ export function createFirebaseVerifier(projectId: string): TokenVerifier {
           emailVerified: decoded.email_verified === true,
           authTime: decoded.auth_time,
           signInProvider: provider,
+          staff2fa: provider === 'custom' && decoded[STAFF_2FA_CLAIM] === true,
         };
       } catch (err) {
         if (err instanceof TokenError) throw err;

@@ -4,6 +4,7 @@ import { PERMISSIONS, ROLES } from '@mechdost/shared/rbac';
 import {
   deactivateUser,
   ensureUser,
+  findPasswordAccount,
   grantRole,
   loadGrants,
   syncRbacCatalogue,
@@ -105,7 +106,7 @@ describe('ensureUser', () => {
       ensureUser(db, { firebaseUid: 'uid-9', phone: null, email: 'a@b.in', emailVerified: true }),
     ).rejects.toMatchObject({ code: 'PHONE_SIGNUP_REQUIRED' });
     // An existing account signing in with a password (no phone claim) is fine and keeps its phone.
-    const u = await ensureUser(db, identity('uid-10', '+919800000099'));
+    const u = await ensureUser(db, identity('uid-10', '+919811100099'));
     const again = await ensureUser(db, {
       firebaseUid: 'uid-10',
       phone: null,
@@ -113,7 +114,7 @@ describe('ensureUser', () => {
       emailVerified: false,
     });
     expect(again.id).toBe(u.id);
-    expect(again.phone).toBe('+919800000099');
+    expect(again.phone).toBe('+919811100099');
   });
 });
 
@@ -145,7 +146,7 @@ describe('grants', () => {
 
 describe('updateProfile', () => {
   it('applies a patch at the expected version and audits the field names', async () => {
-    const u = await ensureUser(db, identity('uid-profile', '+919800000020'));
+    const u = await ensureUser(db, identity('uid-profile', '+919811100020'));
     const updated = await updateProfile(db, {
       userId: u.id,
       expectedVersion: u.version,
@@ -183,5 +184,28 @@ describe('deactivateUser', () => {
     expect(again.status).toBe('deactivated');
     const audits = await db.select().from(auditLog).where(eq(auditLog.action, 'user.deactivated'));
     expect(audits.map((a) => a.reason)).toEqual(['fraud report REQ-1']);
+  });
+});
+
+describe('findPasswordAccount (spec 01 password sign-in)', () => {
+  it('finds the active account by phone or email, says whether it is staff, and never a deleted one', async () => {
+    const u = await ensureUser(db, identity('uid-pw', '+919822200020', 'Pw.User@Example.com', true));
+    const byPhone = await findPasswordAccount(db, { kind: 'phone', value: '+919822200020' });
+    expect(byPhone).toEqual({
+      userId: u.id,
+      firebaseUid: 'uid-pw',
+      phone: '+919822200020',
+      email: 'Pw.User@Example.com', // as stored; found below by the lower-case email (citext)
+      status: 'active',
+      staff: false,
+    });
+    expect(await findPasswordAccount(db, { kind: 'email', value: 'pw.user@example.com' })).toEqual(byPhone);
+    expect(await findPasswordAccount(db, { kind: 'phone', value: '+919822200099' })).toBeNull();
+
+    await grantRole(db, { userId: u.id, role: 'ops_manager', grantedBy: null });
+    expect((await findPasswordAccount(db, { kind: 'phone', value: '+919822200020' }))?.staff).toBe(true);
+
+    await db.update(users).set({ deletedAt: new Date() }).where(eq(users.id, u.id));
+    expect(await findPasswordAccount(db, { kind: 'phone', value: '+919822200020' })).toBeNull();
   });
 });

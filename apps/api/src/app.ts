@@ -13,6 +13,7 @@ import { adminNotificationRoutes } from './routes/admin-notifications';
 import { adminOrderRoutes } from './routes/admin-orders';
 import { adminSettingsRoutes } from './routes/admin-settings';
 import { assistantRoutes } from './routes/assistant';
+import { authRoutes } from './routes/auth';
 import { catalogueRoutes } from './routes/catalogue';
 import { checkoutRoutes } from './routes/checkout';
 import { adminContentRoutes, contentRoutes } from './routes/content';
@@ -64,6 +65,7 @@ export function createApp(deps: AppDeps) {
     '*',
     rateLimit(deps.rateLimiter, RATE_RULES.apiPerIp, (c) => c.get('clientIp')),
   );
+  v1.route('/', authRoutes(deps));
   v1.route('/', meRoutes(deps, sessions));
   v1.route('/', assistantRoutes(deps));
   v1.route('/', catalogueRoutes(deps));

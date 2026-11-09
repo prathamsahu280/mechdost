@@ -3,6 +3,8 @@ import { createTestDb, type TestDb } from '@mechdost/db/testing';
 import type { Keyring } from '@mechdost/db/crypto';
 import { createApp } from '../src/app';
 import type { AssistantProvider } from '../src/assistant/provider';
+import type { PasswordAuthority } from '../src/auth/password-authority';
+import type { TurnstileVerifier } from '../src/auth/turnstile';
 import { TokenError, type TokenVerifier, type VerifiedToken } from '../src/auth/token-verifier';
 import { loadConfig } from '../src/config';
 import { setLogSink } from '../src/logger';
@@ -22,6 +24,8 @@ export class FakeVerifier implements TokenVerifier {
       emailVerified: false,
       authTime: Math.floor(Date.now() / 1000),
       signInProvider: 'phone',
+      // Most tests act as a fully signed-in staff member; staff-session tests set this to false explicitly.
+      staff2fa: true,
       ...identity,
     });
     return token;
@@ -33,6 +37,39 @@ export class FakeVerifier implements TokenVerifier {
     if (!t) return Promise.reject(new TokenError('TOKEN_INVALID'));
     if (t instanceof TokenError) return Promise.reject(t);
     return Promise.resolve(t);
+  }
+}
+
+/** Fake Firebase password store: email (case-insensitive) → uid + password. Records every check. */
+export class FakePasswordAuthority implements PasswordAuthority {
+  private readonly accounts = new Map<string, { uid: string; password: string }>();
+  readonly checks: string[] = [];
+  failNext = false;
+
+  add(email: string, uid: string, password: string) {
+    this.accounts.set(email.toLowerCase(), { uid, password });
+  }
+
+  check(email: string, password: string): Promise<string | null> {
+    this.checks.push(email);
+    if (this.failNext) {
+      this.failNext = false;
+      return Promise.reject(new Error('firebase down'));
+    }
+    const a = this.accounts.get(email.toLowerCase());
+    return Promise.resolve(a?.password === password ? a.uid : null);
+  }
+
+  customToken(uid: string, claims?: Record<string, boolean>): Promise<string> {
+    return Promise.resolve(`ct:${uid}:${JSON.stringify(claims ?? {})}`);
+  }
+}
+
+/** Fake Turnstile: only the listed tokens are human. */
+export class FakeTurnstile implements TurnstileVerifier {
+  constructor(private readonly human: readonly string[]) {}
+  verify(token: string): Promise<boolean> {
+    return Promise.resolve(this.human.includes(token));
   }
 }
 
@@ -53,6 +90,8 @@ export async function buildApp(
     env?: Record<string, string>;
     assistant?: AssistantProvider | null;
     keyring?: Keyring | null;
+    passwordAuth?: PasswordAuthority | null;
+    turnstile?: TurnstileVerifier | null;
   } = {},
 ) {
   setLogSink(() => undefined);
@@ -71,6 +110,8 @@ export async function buildApp(
     rateLimiter: opts.rateLimiter ?? new MemoryRateLimiter(),
     assistant: opts.assistant ?? null,
     keyring: opts.keyring ?? null,
+    passwordAuth: opts.passwordAuth ?? null,
+    turnstile: opts.turnstile ?? null,
   });
   return { app, db, verifier };
 }

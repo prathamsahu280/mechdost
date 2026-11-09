@@ -20,7 +20,8 @@
     "./privacy": "./src/privacy.ts",
     "./settings": "./src/settings.ts",
     "./content": "./src/content.ts",
-    "./policy": "./src/policy.ts"
+    "./policy": "./src/policy.ts",
+    "./auth": "./src/auth.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",

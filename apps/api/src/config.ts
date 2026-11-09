@@ -24,6 +24,12 @@ const schema = z
     CORS_ORIGINS: csv,
     FIREBASE_PROJECT_ID: z.string().default('demo-mechdost'),
     FIREBASE_AUTH_EMULATOR_HOST: z.string().optional(),
+    /** Service-account key file, local development only (outside the repo); production uses Cloud Run identity. */
+    GOOGLE_APPLICATION_CREDENTIALS: z.string().min(1).optional(),
+    /** Web API key of the Firebase project: the API checks passwords with it (spec 01). Not a secret by itself. */
+    FIREBASE_API_KEY: z.string().min(10).optional(),
+    /** Cloudflare Turnstile secret; development may use Cloudflare's always-pass test secret. */
+    TURNSTILE_SECRET_KEY: z.string().min(10).optional(),
     UPSTASH_REDIS_REST_URL: z.url().optional(),
     UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
     /** Proxies in front of the API that append to X-Forwarded-For (Cloud Run LB = 1, + Cloudflare = 2). */
@@ -85,9 +91,21 @@ const schema = z
       }
     }
     if (env.NODE_ENV !== 'production') return;
-    const required = ['UPSTASH_REDIS_REST_URL', 'UPSTASH_REDIS_REST_TOKEN'] as const;
+    const required = [
+      'UPSTASH_REDIS_REST_URL',
+      'UPSTASH_REDIS_REST_TOKEN',
+      'FIREBASE_API_KEY',
+      'TURNSTILE_SECRET_KEY',
+    ] as const;
     for (const key of required) {
       if (!env[key]) ctx.addIssue({ code: 'custom', path: [key], message: 'required in production' });
+    }
+    if (env.GOOGLE_APPLICATION_CREDENTIALS) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['GOOGLE_APPLICATION_CREDENTIALS'],
+        message: 'must be unset in production (no key files: Cloud Run service account)',
+      });
     }
     if (env.FIREBASE_AUTH_EMULATOR_HOST) {
       ctx.addIssue({
@@ -119,6 +137,10 @@ function toConfig(env: z.infer<typeof schema>) {
     corsOrigins: env.CORS_ORIGINS,
     firebaseProjectId: env.FIREBASE_PROJECT_ID,
     usingAuthEmulator: Boolean(env.FIREBASE_AUTH_EMULATOR_HOST),
+    authEmulatorHost: env.FIREBASE_AUTH_EMULATOR_HOST ?? null,
+    firebaseApiKey: env.FIREBASE_API_KEY ?? null,
+    firebaseKeyFile: env.GOOGLE_APPLICATION_CREDENTIALS ?? null,
+    turnstileSecret: env.TURNSTILE_SECRET_KEY ?? null,
     upstash:
       env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN
         ? { url: env.UPSTASH_REDIS_REST_URL, token: env.UPSTASH_REDIS_REST_TOKEN }

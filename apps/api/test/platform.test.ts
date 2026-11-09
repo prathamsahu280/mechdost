@@ -110,6 +110,8 @@ describe('configuration', () => {
         'FIREBASE_AUTH_EMULATOR_HOST',
         'FIREBASE_PROJECT_ID',
         'CORS_ORIGINS',
+        'FIREBASE_API_KEY',
+        'TURNSTILE_SECRET_KEY',
       ]) {
         expect(msg).toContain(key);
       }
@@ -137,6 +139,8 @@ describe('configuration', () => {
       FIREBASE_PROJECT_ID: 'mechdost-prod',
       UPSTASH_REDIS_REST_URL: 'https://example.upstash.io',
       UPSTASH_REDIS_REST_TOKEN: 't',
+      FIREBASE_API_KEY: 'test-web-api-key-0000',
+      TURNSTILE_SECRET_KEY: '0x-test-secret-0000',
       CORS_ORIGINS: 'https://mechdost.com, https://www.mechdost.com',
       TRUSTED_PROXY_HOPS: '1',
     });

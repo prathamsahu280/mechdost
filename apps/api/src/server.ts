@@ -8,6 +8,8 @@ import { loadKeyring, type Keyring } from '@mechdost/db/crypto';
 import { createApp } from './app';
 import { createAnthropicProvider } from './assistant/provider';
 import { createFirebaseVerifier } from './auth/firebase-verifier';
+import { createFirebasePasswordAuthority } from './auth/password-authority';
+import { createTurnstileVerifier } from './auth/turnstile';
 import { ConfigError, loadConfig } from './config';
 import { log, safeError } from './logger';
 import { MemoryRateLimiter } from './rate-limit/limiter';
@@ -45,10 +47,23 @@ const app = createApp({
   keyring,
   config,
   db,
-  verifier: createFirebaseVerifier(config.firebaseProjectId),
+  verifier: createFirebaseVerifier(config.firebaseProjectId, config.firebaseKeyFile),
   rateLimiter,
   assistant: config.assistant ? createAnthropicProvider(config.assistant) : null,
+  passwordAuth: config.firebaseApiKey
+    ? createFirebasePasswordAuthority({
+        projectId: config.firebaseProjectId,
+        apiKey: config.firebaseApiKey,
+        keyFile: config.firebaseKeyFile,
+        ...(config.authEmulatorHost ? { emulatorHost: config.authEmulatorHost } : {}),
+      })
+    : null,
+  turnstile: config.turnstileSecret ? createTurnstileVerifier(config.turnstileSecret) : null,
 });
+if (!config.firebaseApiKey || !config.turnstileSecret)
+  log('warn', 'password_sign_in_disabled', {
+    note: 'FIREBASE_API_KEY or TURNSTILE_SECRET_KEY not set — /v1/auth/password returns 503',
+  });
 if (!config.assistant)
   log('warn', 'assistant_disabled', { note: 'ANTHROPIC_API_KEY not set — /v1/assistant returns 503' });
 

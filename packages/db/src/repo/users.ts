@@ -1,8 +1,10 @@
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, isNull, sql } from 'drizzle-orm';
+import { isStaffGrant, type SignInIdentifier } from '@mechdost/shared/auth';
 import type { PgUpdateSetSource } from 'drizzle-orm/pg-core';
 import { auditLog, users } from '../schema';
 import { ConflictError, pgCode, ValidationError } from './errors';
 import type { Tx } from './orders';
+import { loadGrants } from './rbac';
 
 /** What a verified Firebase ID token tells us about the caller. Never built from request bodies. */
 export interface VerifiedIdentity {
@@ -204,5 +206,63 @@ export async function deactivateUser(
       entityId: args.userId,
       reason: args.reason,
     });
+  });
+}
+
+/** The account a password sign-in names (spec 01): what the API needs to check the password and pick the flow. */
+export interface PasswordAccount {
+  userId: string;
+  firebaseUid: string;
+  phone: string | null;
+  email: string | null;
+  status: string;
+  /** Holds a staff grant: signs in with password **and** a phone code (decision 2026-11-01). */
+  staff: boolean;
+}
+
+/**
+ * Look up the account behind "phone number or email" for `POST /v1/auth/password`. Deleted accounts are never
+ * found (their phone and email may belong to someone new). Email matching is case-insensitive (citext).
+ */
+export async function findPasswordAccount(db: Tx, ident: SignInIdentifier): Promise<PasswordAccount | null> {
+  const [u] = await db
+    .select({
+      userId: users.id,
+      firebaseUid: users.firebaseUid,
+      phone: users.phone,
+      email: users.email,
+      status: users.status,
+    })
+    .from(users)
+    .where(
+      and(
+        isNull(users.deletedAt),
+        ident.kind === 'phone' ? eq(users.phone, ident.value) : eq(users.email, ident.value),
+      ),
+    )
+    .limit(1);
+  if (!u) return null;
+  return { ...u, staff: (await loadGrants(db, u.userId)).some(isStaffGrant) };
+}
+
+/**
+ * Sign-in audit (spec 01): failures and locks, with the account when one was named — never the phone or email
+ * that was typed (DPDP minimisation; the identifier may belong to someone else).
+ */
+export async function recordSignInAudit(
+  db: Tx,
+  input: {
+    action: 'auth.password_failed' | 'auth.locked';
+    userId: string | null;
+    ipTruncated: string | null;
+  },
+): Promise<void> {
+  await db.insert(auditLog).values({
+    actorUserId: input.userId,
+    actorRole: 'anonymous',
+    action: input.action,
+    entity: 'user',
+    entityId: input.userId,
+    ipTruncated: input.ipTruncated,
   });
 }

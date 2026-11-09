@@ -1,6 +1,7 @@
 import type { Context } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import { activeBlockLevels, ensureUser, loadGrants } from '@mechdost/db/repo';
+import { isStaffGrant, STAFF_SESSION_MAX_AGE_SECONDS } from '@mechdost/shared/auth';
 import { blockEffects } from '@mechdost/shared/customers';
 import { can, type Permission, type Target } from '@mechdost/shared/rbac';
 import type { SessionCache } from '../auth/session-cache';
@@ -8,7 +9,7 @@ import { TokenError } from '../auth/token-verifier';
 import { ApiError, Forbidden, Unauthorized } from '../errors';
 import type { AppDeps, AppEnv } from '../types';
 
-const BEARER = /^Bearer ([A-Za-z0-9._-]{20,4096})$/;
+export const BEARER = /^Bearer ([A-Za-z0-9._-]{20,4096})$/;
 
 /**
  * Verify the Firebase ID token, load (or auto-provision) the user and their grants
@@ -53,7 +54,18 @@ export function authenticate(
     // session-cache TTL like role changes (Q29).
     if (!blockEffects(session.blocks).signIn) throw Forbidden('ACCOUNT_BLOCKED', 'This account is blocked');
 
-    c.set('auth', { user: session.user, grants: session.grants, authTime: identity.authTime });
+    // Staff permissions need the two-step staff session (password + fresh phone code, decision 2026-11-01),
+    // at most one working day old. Any other session of a staff member keeps only the non-staff grants, so a
+    // phone code alone (sign-up / reset path) never opens the admin side.
+    const staffSession =
+      identity.staff2fa && Date.now() / 1000 - identity.authTime <= STAFF_SESSION_MAX_AGE_SECONDS;
+    const staffWithheld = staffSession ? [] : session.grants.filter(isStaffGrant);
+    c.set('auth', {
+      user: session.user,
+      grants: staffSession ? session.grants : session.grants.filter((g) => !isStaffGrant(g)),
+      authTime: identity.authTime,
+      staffWithheld,
+    });
     await next();
   });
 }
@@ -76,7 +88,13 @@ export const requireVerified = createMiddleware<AppEnv>(async (c, next) => {
  */
 export function requirePermission(permission: Permission, target?: (c: Context<AppEnv>) => Target) {
   return createMiddleware<AppEnv>(async (c, next) => {
-    if (!can(c.get('auth').grants, permission, target ? target(c) : {})) throw Forbidden();
+    const auth = c.get('auth');
+    const t = target ? target(c) : {};
+    if (!can(auth.grants, permission, t)) {
+      if (can(auth.staffWithheld, permission, t))
+        throw Forbidden('STAFF_2FA_REQUIRED', 'Sign in with your password and the code sent to your phone');
+      throw Forbidden();
+    }
     await next();
   });
 }
