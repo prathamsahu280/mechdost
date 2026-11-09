@@ -38,10 +38,9 @@ export class UpstashRateLimiter implements RateLimiter {
     return { allowed: r.success, limit: r.limit, remaining: r.remaining, resetAt: r.reset };
   }
 
-  async peek(rule: RateRule, key: string): Promise<RateResult> {
+  async reset(rule: RateRule, key: string): Promise<void> {
     try {
-      const r = await this.limiterFor(rule).getRemaining(key);
-      return { allowed: r.remaining > 0, limit: rule.limit, remaining: r.remaining, resetAt: r.reset };
+      await this.limiterFor(rule).resetUsedTokens(key);
     } catch (err) {
       if (rule.failClosed) throw new RateLimitUnavailable();
       throw err;

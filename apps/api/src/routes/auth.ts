@@ -17,8 +17,10 @@ import { errorResponses } from './schemas';
  * Firebase custom token; the browser then calls `signInWithCustomToken`. Accounts are only made by phone
  * sign-up, so this route never creates one.
  *
- * - Turnstile first, then per-IP and per-identifier limits that **fail closed** (Q18): 5 failures in 15 minutes
- *   lock the identifier — known or unknown, so a lock says nothing about whether an account exists.
+ * - Turnstile first, then per-IP and per-identifier limits that **fail closed** (Q18). Every attempt is counted
+ *   atomically **before** Firebase is asked (security review 2026-11-09: a read-then-count let parallel guesses
+ *   through), the 6th within 15 minutes is refused, and a successful sign-in clears the count — so in effect 5
+ *   failures lock the identifier, known or unknown (a lock says nothing about whether an account exists).
  * - One answer for an unknown account and a wrong password, after the same Firebase call (constant work).
  * - Staff (any platform/city grant): the password alone returns `staff_code` and the account's phone; the client
  *   signs in with a phone code and repeats this call with that fresh phone ID token as Bearer → a custom token
@@ -102,9 +104,9 @@ export function authRoutes(deps: AppDeps) {
 
     const ident = parseSignInIdentifier(body.identifier);
     const key = keyOf(ident ? `${ident.kind}:${ident.value}` : `raw:${body.identifier.trim().toLowerCase()}`);
-    const lock = await closed(() => deps.rateLimiter.peek(SIGN_IN_FAILURES, key));
-    if (!lock.allowed) {
-      c.header('Retry-After', String(Math.max(1, Math.ceil((lock.resetAt - Date.now()) / 1000))));
+    const attempt = await closed(() => deps.rateLimiter.hit(SIGN_IN_FAILURES, key));
+    if (!attempt.allowed) {
+      c.header('Retry-After', String(Math.max(1, Math.ceil((attempt.resetAt - Date.now()) / 1000))));
       throw new ApiError(429, 'ACCOUNT_LOCKED', 'Too many attempts — wait 15 minutes or reset your password');
     }
 
@@ -118,13 +120,13 @@ export function authRoutes(deps: AppDeps) {
     }
 
     if (uid !== account?.firebaseUid) {
-      const after = await closed(() => deps.rateLimiter.hit(SIGN_IN_FAILURES, key));
       const audit = { userId: account?.userId ?? null, ipTruncated: truncateIp(ip) };
       await recordSignInAudit(deps.db, { action: 'auth.password_failed', ...audit });
-      if (after.remaining === 0) await recordSignInAudit(deps.db, { action: 'auth.locked', ...audit });
+      if (attempt.remaining === 0) await recordSignInAudit(deps.db, { action: 'auth.locked', ...audit });
       throw new ApiError(401, 'INVALID_CREDENTIALS', 'That phone number or email and password do not match');
     }
 
+    await closed(() => deps.rateLimiter.reset(SIGN_IN_FAILURES, key));
     let claims: Record<string, boolean> | undefined;
     if (account.staff) {
       const phoneToken = BEARER.exec(c.req.header('authorization') ?? '')?.[1];

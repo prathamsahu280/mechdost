@@ -44,6 +44,7 @@ Mark each touched item ✅ / ⚠️ / ❌. Anything ❌ blocks implementation un
 - ❌ Roles in client-editable metadata; secrets in `NEXT_PUBLIC_*`.
 - ⚠️ OTP endpoints without per-phone/IP/device limits, region policy and enumeration-safe responses.
 
+- [ ] Locks and rate limits decide from the same atomic call that counts (never read-then-count; parallel-request test) — L69.
 - [ ] Passwords: never logged or stored by us; one generic error for unknown account / wrong password; per-account lockout; API accepts only `phone` + `custom` tokens; no account creation without a verified phone (decision 2026-11-01).
 
 ## Payments (skill razorpay-payments)

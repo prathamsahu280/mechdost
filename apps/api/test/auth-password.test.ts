@@ -76,6 +76,26 @@ describe('POST /v1/auth/password', () => {
     expect(((await ghost.json()) as ErrorJson).error.code).toBe('ACCOUNT_LOCKED');
   });
 
+  it('parallel guesses cannot pass the lock: 10 at once reach Firebase at most 5 times (security review)', async () => {
+    const a = await account('09');
+    const before = auth.checks.length;
+    const results = await Promise.all(
+      Array.from({ length: 10 }, async (_, i) =>
+        signIn({ identifier: a.phone, password: `guess-${String(i)}` }),
+      ),
+    );
+    expect(auth.checks.length - before).toBeLessThanOrEqual(5);
+    expect(results.filter((r) => r.status === 429)).toHaveLength(5);
+  });
+
+  it('a successful sign-in clears the failures of that identifier', async () => {
+    const a = await account('10');
+    for (let i = 0; i < 4; i++) await signIn({ identifier: a.email, password: `wrong-${String(i)}` });
+    expect((await signIn({ identifier: a.email, password: 'Raipur@2026' })).status).toBe(200);
+    for (let i = 0; i < 4; i++) await signIn({ identifier: a.email, password: `wrong-again-${String(i)}` });
+    expect((await signIn({ identifier: a.email, password: 'Raipur@2026' })).status).toBe(200);
+  });
+
   it('refuses without a valid Turnstile token, before asking Firebase', async () => {
     await account('04');
     const before = auth.checks.length;
