@@ -1,9 +1,11 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+import { connection } from 'next/server';
 import { Suspense } from 'react';
 import { LoginFlow } from '@/components/auth/login-flow';
 import { ClientMessages } from '@/components/ui/client-messages';
 import { Container, PageIntro } from '@/components/ui/page-intro';
+import { AUTH_MODE } from '@/lib/auth/mode';
 import type { Locale } from '@/i18n/routing';
 import { alternatesFor } from '@/lib/seo';
 
@@ -17,8 +19,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: t('title'), alternates: alternatesFor('/login', locale), robots: { index: false } };
 }
 
-/** Phone-OTP sign-in for every role (spec 01). Demo mode until Firebase is linked (inbox Q3). */
+/**
+ * Sign-in for every role (spec 01). Real sign-in mode renders this page per request so its scripts carry the
+ * proxy's CSP nonce (decisions 2026-11-09); demo mode stays a static page.
+ */
 export default async function LoginPage() {
+  if (AUTH_MODE === 'firebase') await connection();
   const t = await getTranslations('auth');
   return (
     <Container className="py-10 tab:py-16">

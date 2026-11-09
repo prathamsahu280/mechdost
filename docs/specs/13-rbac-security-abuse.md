@@ -9,7 +9,7 @@ Status: decided · Phase 1 · Decisions: Staff security, Non-functional requirem
 - Enforcement: Hono middleware `requirePermission()` + repository-level scoping (`actor`), RLS mirror in Supabase (defence in depth); live pings in Firebase RTDB carry opaque ids only and each user can read only `/inbox/{uid}` (rule `auth.uid === $uid`), the worker decides recipients from Postgres, data always refetched through the API; UI hides what the actor cannot do; 404 for cross-tenant ids.
 - Four-eyes: refunds/manual coin grants/payouts/commission changes above `settings.approval_threshold_paise` require requester ≠ approver.
 - Staff 2FA (TOTP) implemented; enforced automatically once any staff beyond founders exists (`settings.enforce_staff_2fa` auto-true on 2nd staff).
-- **CSP (2026-11-09):** site-wide allow-list policy from `apps/web/src/lib/csp.ts` (decisions 2026-11-09); a nonce policy on `/login` only is the next step before real sign-in goes live.
+- **CSP (2026-11-09):** site-wide allow-list policy from `apps/web/src/lib/csp.ts` (decisions 2026-11-09); and in real sign-in mode a nonce + `strict-dynamic` policy on `/login` (proxy `src/proxy.ts`, layout inline scripts by hash).
 - Staff sign-in = password + a phone code every time (decision 2026-11-01); the API grants staff permissions only to a session made by both steps (`staff_2fa` custom-token claim, ≤ 12 h old), otherwise `STAFF_2FA_REQUIRED` (built 2026-11-09, spec 01).
 - Sessions: staff idle 30 min / absolute 12 h; partners 7 days; customers 30 days; sign-out-all; new-device alert (P1).
 - Audit log on every mutation (actor, ip, entity, before/after, reason) — immutable.

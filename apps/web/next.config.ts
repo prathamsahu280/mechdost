@@ -1,6 +1,6 @@
 import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
-import { contentSecurityPolicy } from './src/lib/csp';
+import { cspFromEnv } from './src/lib/csp';
 
 /**
  * Security headers for every page (docs/research/security-vulnerabilities.md #21). The CSP is an allow-list built
@@ -15,13 +15,7 @@ const securityHeaders = [
   { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(self), payment=(self)' },
   {
     key: 'Content-Security-Policy',
-    value: contentSecurityPolicy({
-      dev: process.env.NODE_ENV === 'development',
-      authMode: process.env.NEXT_PUBLIC_AUTH_MODE === 'firebase' ? 'firebase' : 'demo',
-      apiUrl: process.env.NEXT_PUBLIC_API_URL,
-      firebaseAuthDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-      authEmulatorHost: process.env.NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST,
-    }),
+    value: cspFromEnv(),
   },
 ];
 
