@@ -5,6 +5,8 @@ packages:
 # Supply-chain policy (docs/research/security-vulnerabilities.md → "Dependency policy").
 # Skip versions published < 3 days ago (chalk/debug, Shai-Hulud style attacks were live for hours).
 minimumReleaseAge: 4320
+# Exceptions (minimumReleaseAgeExclude) only for security releases, exact versions, removed once 3 days old
+# (procedure: docs/research/security-vulnerabilities.md; Next 16.4.5 used one 2026-11-04 to 2026-11-09).
 # Only these packages may run install/build scripts (pnpm 11 `allowBuilds`); everything else is blocked.
 allowBuilds:
   sharp: true

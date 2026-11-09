@@ -30,5 +30,5 @@ describe('source hygiene', () => {
         ),
     );
     expect(offenders).toEqual([]);
-  });
+  }, 30_000); // reads every tracked file: slower than a unit test on a busy machine
 });

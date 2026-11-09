@@ -13,7 +13,7 @@ describe('randomCode', () => {
     const seen = new Set<string>();
     for (let i = 0; i < 50_000; i++) seen.add(randomCode(6));
     expect(seen.size).toBeGreaterThan(49_990);
-  });
+  }, 30_000); // 50k crypto draws: under 1 s alone, slower on a loaded machine
 });
 
 describe('publicCode', () => {
