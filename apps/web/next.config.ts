@@ -1,9 +1,11 @@
 import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
+import { contentSecurityPolicy } from './src/lib/csp';
 
 /**
- * Security headers for every page (docs/research/security-vulnerabilities.md #21). A nonce-based CSP is added
- * with the first third-party script (Turnstile/Razorpay/PostHog) — today the site loads first-party code only.
+ * Security headers for every page (docs/research/security-vulnerabilities.md #21). The CSP is an allow-list built
+ * by `src/lib/csp.ts` from the build's settings (ruling 2026-11-09: nonces would make every page dynamic); real
+ * sign-in mode adds Turnstile, reCAPTCHA and Firebase Auth.
  */
 const securityHeaders = [
   { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
@@ -11,7 +13,16 @@ const securityHeaders = [
   { key: 'X-Frame-Options', value: 'DENY' },
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
   { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(self), payment=(self)' },
-  { key: 'Content-Security-Policy', value: "frame-ancestors 'none'; base-uri 'self'; form-action 'self'" },
+  {
+    key: 'Content-Security-Policy',
+    value: contentSecurityPolicy({
+      dev: process.env.NODE_ENV === 'development',
+      authMode: process.env.NEXT_PUBLIC_AUTH_MODE === 'firebase' ? 'firebase' : 'demo',
+      apiUrl: process.env.NEXT_PUBLIC_API_URL,
+      firebaseAuthDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+      authEmulatorHost: process.env.NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST,
+    }),
+  },
 ];
 
 const nextConfig: NextConfig = {

@@ -251,6 +251,13 @@ User: "the first time it will ask the user for the phone number, then they enter
 - **`firebase-tools` runs through `pnpm dlx` at an exact version**, not as a dependency (66 direct dependencies; only the Auth Emulator is used, for tests).
 - **Real partners land on the account area** (not the demo shop/workshop portals, which have no real shop behind them) until the portals move to the API; real staff land on admin (staff roles are only listed for a two-step session).
 
+## 2026-11-09 — Content-Security-Policy: allow-list site-wide, nonce later only on /login
+
+- Next 16 can put nonces only on pages rendered per request ("all pages must be dynamically rendered", bundled docs `content-security-policy.md`), which would end static pages, CDN caching and our speed budgets. Hash-based CSP (SRI) is still experimental.
+- **Site-wide: an allow-list CSP** built by `apps/web/src/lib/csp.ts` (unit-tested, applied in `next.config.ts`): scripts, connections, frames and workers only from this site, the map hosts (OpenFreeMap, Esri), the API, and — in real sign-in mode only — Turnstile, reCAPTCHA and Firebase Auth; `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`, `frame-ancestors 'none'`. `'unsafe-inline'` stays for scripts and styles (Next's inline bootstrap, inlined CSS), so the policy limits _where_ code and data can come from and go to, not inline injection.
+- **Next step (P1, before real sign-in goes live):** a strict nonce + `strict-dynamic` policy on `/login` only (that page renders per request; passwords and third-party scripts live there), added by the proxy on top of the site-wide header.
+- Verified: page audit 201 + demo flows 33 (maps) with no violations; real-mode e2e fails on any violation and passes. Not covered by the emulator: Google's real reCAPTCHA scripts → manual check on the real project before launch (runbook firebase.md).
+
 ## PENDING DECISIONS (ask "what's pending" to review)
 
 | #   | Topic                                                                                                                                                                                       | Leaning                                                                             | When                                 |

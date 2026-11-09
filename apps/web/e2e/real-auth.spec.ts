@@ -15,8 +15,17 @@ const PROJECT = 'demo-mechdost';
 test.skip(process.env.E2E_AUTH_MODE !== 'firebase', 'needs a firebase-mode build, the emulator and the API');
 test.describe.configure({ mode: 'serial', timeout: 120_000 });
 // One real account per run: the flows run once (desktop); the screens themselves are covered at 390 px in demo mode.
-test.beforeEach(() => {
+const cspViolations: string[] = [];
+test.beforeEach(({ page }) => {
   test.skip(test.info().project.name !== 'desktop', 'one real account per run');
+  cspViolations.length = 0;
+  // The CSP (src/lib/csp.ts) must allow everything real sign-in needs: any blocked request fails the test.
+  page.on('console', (msg) => {
+    if (/Content Security Policy|Refused to/i.test(msg.text())) cspViolations.push(msg.text());
+  });
+});
+test.afterEach(() => {
+  expect(cspViolations).toEqual([]);
 });
 
 const run = Date.now().toString().slice(-7);
