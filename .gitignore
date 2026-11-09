@@ -17,7 +17,8 @@ coverage/
 !.env.example
 *.pem
 *service-account*.json
-firebase-adminsdk*.json
+# Firebase names admin keys <project>-firebase-adminsdk-<id>.json
+*firebase-adminsdk*.json
 .claude/settings.local.json
 
 # test artefacts
