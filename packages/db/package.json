@@ -29,7 +29,7 @@
   "devDependencies": {
     "@electric-sql/pglite": "0.5.12",
     "@electric-sql/pglite-postgis": "0.2.12",
-    "@types/node": "^22.19.0",
+    "@types/node": "^26.6.6",
     "drizzle-kit": "^0.31.11",
     "tsx": "^4.21.0",
     "typescript": "~6.0.3",
