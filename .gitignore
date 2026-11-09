@@ -39,3 +39,6 @@ Thumbs.db
 
 # Browser automation (Playwright MCP) snapshots
 .playwright-mcp/
+
+# Accessibility review history (local; findings are summarised in the commit/progress docs)
+.a11y-history/

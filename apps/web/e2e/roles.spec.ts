@@ -81,13 +81,14 @@ test.describe('sign-in (spec 01: phone OTP once, then password)', () => {
       await page.getByLabel('Mobile number or email').fill('9000000001');
       await page.getByLabel('Password', { exact: true }).fill(`wrong-${String(i)}-password`);
       await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-      await expect(page.getByRole('alert').filter({ hasText: /match|Too many/ })).toBeVisible();
+      // Shown next to the field (and, for the lock, also read out by the alert region: hence first()).
+      await expect(page.getByText(/match|Too many/).first()).toBeVisible();
     }
-    await expect(page.getByText(/Too many attempts. Try again in 15 minutes/)).toBeVisible();
+    await expect(page.getByText(/Too many attempts. Try again in 15 minutes/).first()).toBeVisible();
     // Even the right password is refused while locked.
     await page.getByLabel('Password', { exact: true }).fill(DEMO_PASSWORD);
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-    await expect(page.getByText(/Too many attempts/)).toBeVisible();
+    await expect(page.getByText(/Too many attempts/).first()).toBeVisible();
     await expect(page).toHaveURL(/\/login$/);
   });
 
@@ -109,7 +110,7 @@ test.describe('sign-in (spec 01: phone OTP once, then password)', () => {
 
     await expect(page.getByRole('heading', { name: 'Almost done' })).toBeVisible();
     await page.getByLabel('Full name').fill('Neha Gupta');
-    await page.getByLabel('Email').fill('neha@example.com');
+    await page.getByLabel('Email', { exact: true }).fill('neha@example.com');
     const create = page.getByLabel('Create password', { exact: true });
     const confirm = page.getByLabel('Confirm password', { exact: true });
     await create.fill('short');
@@ -173,7 +174,7 @@ test.describe('sign-in (spec 01: phone OTP once, then password)', () => {
     await page.goto('/login');
     await page.getByRole('button', { name: 'Forgot password?' }).click();
     await page.getByRole('button', { name: /Email me a reset link/ }).click();
-    await page.getByLabel('Email').fill('orders@sharmaautoparts.example');
+    await page.getByLabel('Email', { exact: true }).fill('orders@sharmaautoparts.example');
     await page.getByRole('button', { name: 'Send reset link' }).click();
     await expect(
       page.getByText(/If an account uses orders@sharmaautoparts.example, we've sent a link/),

@@ -851,7 +851,20 @@
     "resetLinkExpired": "This reset link has expired or was already used. Ask for a new one.",
     "newLink": "Send a new link",
     "resetDone": "Password changed. Sign in with your new password.",
-    "blocked": "This account can't sign in right now. Call support at 7978776551 if you think this is a mistake."
+    "blocked": "This account can't sign in right now. Call support at 7978776551 if you think this is a mistake.",
+    "errTooManyCodes": "Too many code requests. Wait a few minutes, then try again.",
+    "errUnavailable": "Sign-in isn't working right now. Try again in a few minutes, or call 7978776551.",
+    "errBotCheck": "We couldn't finish the security check. Press the button again.",
+    "errStaffOtherAccount": "This code was for a different account. Use the latest code sent to your phone.",
+    "errOtpExpired": "This code has expired. Ask for a new one with “Resend code”.",
+    "otpHint": "Enter the 6-digit code from the SMS. You can paste it.",
+    "accountCreated": "Your account is ready",
+    "verifyEmailSent": "We sent a link to {email}. Open it once to verify your email — you need that before your first order.",
+    "continue": "Continue",
+    "securityCheck": "Security check",
+    "securityCheckLead": "Please complete the security check above the button.",
+    "sendingCode": "Sending code…",
+    "sendingLink": "Sending…"
   },
   "account": {
     "navLabel": "Account sections",

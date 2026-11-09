@@ -2,12 +2,13 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { useEffect, useRef, useState, type ReactNode, type SyntheticEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode, type SyntheticEvent } from 'react';
 import { PASSWORD_MAX, PASSWORD_MIN, passwordProblem } from '@/demo/passwords';
 import {
   DEMO_OTP,
   DEMO_PASSWORD,
   SEEDED_ACCOUNTS,
+  adoptRealAccount,
   completeStaffSignIn,
   homeFor,
   normalisePhone,
@@ -23,6 +24,8 @@ import {
   type DemoRole,
 } from '@/demo/session';
 import { track } from '@/lib/analytics';
+import type * as RealClientModule from '@/lib/auth/firebase-client';
+import { AUTH_MODE } from '@/lib/auth/mode';
 import { PasswordField, authInput } from './password-field';
 
 type Step =
@@ -31,6 +34,7 @@ type Step =
   | 'signup-phone'
   | 'signup-otp'
   | 'signup-profile'
+  | 'signup-done'
   | 'forgot'
   | 'forgot-phone'
   | 'forgot-otp'
@@ -38,26 +42,82 @@ type Step =
   | 'forgot-email-sent'
   | 'reset-link';
 
+/** Real accounts (Firebase + the API) or the browser-only demo (Q69). */
+const REAL = AUTH_MODE === 'firebase';
+/** Firebase is heavy: loaded only when a real-mode step needs it (JS budget, L63). */
+type RealClient = typeof RealClientModule;
+let realClient: Promise<RealClient> | null = null;
+const real = () => (realClient ??= import('@/lib/auth/firebase-client'));
+const turnstile = () => import('@/lib/auth/turnstile');
+
 const RESEND_SECONDS = 30;
+/** Busy work this slow is announced; faster work stays quiet (a11y review 2026-11-09). */
+const ANNOUNCE_BUSY_AFTER_MS = 700;
+/** Firebase reset links work once and expire after an hour; the demo link after 30 minutes. */
+const RESET_LINK_MINUTES = REAL ? 60 : 30;
 const ROLE_EMOJI: Record<DemoRole, string> = { customer: '🙋', shop: '🏪', workshop: '🔧', admin: '🛡️' };
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const RECAPTCHA_ID = 'login-recaptcha';
+const TURNSTILE_ID = 'login-turnstile';
 
 const primary =
-  'press inline-flex min-h-12 w-full items-center justify-center rounded-button bg-accent-button px-6 text-sm font-bold text-white hover:bg-accent-button-hover disabled:opacity-70';
+  'press inline-flex min-h-12 w-full items-center justify-center rounded-button bg-accent-button px-6 text-sm font-bold text-white hover:bg-accent-button-hover aria-disabled:cursor-wait aria-disabled:opacity-70';
 const linkButton =
-  'inline-flex min-h-11 items-center font-bold text-accent-soft-text underline-offset-4 hover:underline';
+  'inline-flex min-h-11 items-center font-bold text-accent-soft-text underline-offset-4 hover:underline aria-disabled:cursor-default aria-disabled:no-underline aria-disabled:text-muted';
 
 const text = (data: FormData, key: string) => {
   const v = data.get(key);
   return typeof v === 'string' ? v : '';
 };
+const ids = (...list: (string | null | undefined | false)[]) => list.filter(Boolean).join(' ') || undefined;
+
+/** `''` = an error about the whole form (network, limits, bot check), not one field. */
+interface FormError {
+  message: string;
+  field: string;
+  seq: number;
+}
+/** What a busy action ended with: `leaving` keeps the button busy through the navigation. */
+type Outcome = 'leaving' | undefined;
 
 /**
- * Sign-in (spec 01, decision 2026-11-01) in demo mode:
+ * Two always-mounted screen-reader regions (polite status, assertive alert). Text is cleared and set again after
+ * a tick so a repeated message is read again. Used only when focus does not move — when it moves, the newly
+ * focused field's description carries the message (one channel per event, a11y review 2026-11-09).
+ */
+function useAnnouncer() {
+  const [polite, setPolite] = useState('');
+  const [assertive, setAssertive] = useState('');
+  const timers = useRef<{ polite?: number; assertive?: number }>({});
+  const announce = useCallback((message: string, kind: 'polite' | 'assertive' = 'polite') => {
+    const set = kind === 'polite' ? setPolite : setAssertive;
+    window.clearTimeout(timers.current[kind]);
+    set('');
+    timers.current[kind] = window.setTimeout(() => {
+      set(message);
+    }, 100);
+  }, []);
+  const regions = (
+    <>
+      <div role="status" aria-atomic="true" className="sr-only">
+        {polite}
+      </div>
+      <div role="alert" aria-atomic="true" className="sr-only">
+        {assertive}
+      </div>
+    </>
+  );
+  return { announce, regions };
+}
+
+/**
+ * Sign-in (spec 01, decision 2026-11-01), in demo or real (Firebase) mode — same screens:
  * - returning users: phone number or email + password (staff also enter a code sent to their phone);
- * - new users: phone → one-time code → name, email, password, confirm password;
+ * - new users: phone → one-time code → name, email, password, confirm password (real: then "verify your email");
  * - forgot password: a code to the phone, or a reset link by email — whichever the person prefers.
- * One primary action per step, errors next to the field, focus moves to each step's first field.
+ * Accessibility (review 2026-11-09, `.a11y-history/2026-11-09-login-firebase`): one primary action per step;
+ * errors next to their field (form-level ones above the button); focus moves after render; busy buttons stay
+ * focusable (`aria-disabled`); field-less steps focus their heading; nothing ticks in a live region.
  */
 export function LoginFlow() {
   const t = useTranslations('auth');
@@ -65,40 +125,147 @@ export function LoginFlow() {
   const router = useRouter();
   const next = safeNext(useSearchParams().get('next'));
   const prefix = locale === 'hi' ? '/hi' : '';
-  const [step, setStep] = useState<Step>('signin');
+  const { announce, regions } = useAnnouncer();
+  const [view, setView] = useState<{ step: Step; n: number }>({ step: 'signin', n: 0 });
+  const step = view.step;
   const [identifier, setIdentifier] = useState('');
   const [phone, setPhone] = useState('');
-  const [error, setError] = useState<{ message: string; field: string } | null>(null);
+  const [error, setError] = useState<FormError | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const busyRef = useRef(false);
+  const busyTimer = useRef<number | undefined>(undefined);
   const [staff, setStaff] = useState<DemoAccount | null>(null);
+  /** Real mode, staff: the phone the API named, and the password for the second call (memory only). */
+  const [staffPhone, setStaffPhone] = useState('');
+  const pendingPassword = useRef('');
+  const [created, setCreated] = useState<{ account: DemoAccount; email: string } | null>(null);
   const [resetEmail, setResetEmail] = useState('');
   const [resetToken, setResetToken] = useState<string | null>(null);
   const [linkToken, setLinkToken] = useState<string | null>(null);
+  const [codeExpired, setCodeExpired] = useState(false);
+  const [challenge, setChallenge] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
+  const seq = useRef(0);
 
+  // Every step change — including to the same step — moves focus into the new content (counter, not step).
   useEffect(() => {
     const el =
       root.current?.querySelector<HTMLElement>('[data-autofocus]') ??
       root.current?.querySelector<HTMLElement>('input, button');
     el?.focus();
-  }, [step]);
+  }, [view.n]);
+
+  // Errors: focus the field after its aria-invalid/description are rendered; if it already has focus (Enter in
+  // the field) or the error is about the whole form, say it through the alert region instead.
+  useEffect(() => {
+    if (!error) return;
+    const el = error.field ? document.getElementById(error.field) : null;
+    if (el && el !== document.activeElement) el.focus();
+    else announce(error.message, 'assertive');
+  }, [error, announce]);
+
+  useEffect(
+    () => () => {
+      window.clearTimeout(busyTimer.current);
+    },
+    [],
+  );
 
   function goTo(s: Step, keepNotice = false) {
     setError(null);
+    setCodeExpired(false);
     if (!keepNotice) setNotice(null);
-    setStep(s);
+    setView((v) => ({ step: s, n: v.n + 1 }));
   }
 
   function fail(message: string, field: string) {
-    setError({ message, field });
-    document.getElementById(field)?.focus();
+    seq.current += 1;
+    setError({ message, field, seq: seq.current });
+  }
+  const failForm = (message: string) => {
+    fail(message, '');
+  };
+
+  /** Runs one busy action: ignores repeats (Enter twice), announces slow work, never leaves the form stuck. */
+  async function guarded(busyLabel: string, task: () => Promise<Outcome>) {
+    if (busyRef.current) return;
+    busyRef.current = true;
+    setBusy(true);
+    busyTimer.current = window.setTimeout(() => {
+      announce(busyLabel);
+    }, ANNOUNCE_BUSY_AFTER_MS);
+    let outcome: Outcome;
+    try {
+      outcome = await task();
+    } catch {
+      failForm(t('errUnavailable'));
+    }
+    window.clearTimeout(busyTimer.current);
+    if (outcome !== 'leaving') {
+      busyRef.current = false;
+      setBusy(false);
+    }
   }
 
-  function done(account: DemoAccount, event: string) {
+  function done(account: DemoAccount, event: string): Outcome {
     track('click', { id: event, path: window.location.pathname });
     router.push(next ?? `${prefix}${homeFor(account.role)}`);
+    return 'leaving';
+  }
+
+  /** Real mode: load the profile from the API, mirror it for the browser-data screens, go home. */
+  async function finishReal(event: (role: DemoRole) => string): Promise<Outcome> {
+    const r = await real();
+    const me = await r.fetchMe();
+    if (me === 'blocked') {
+      await r.signOutReal();
+      failForm(t('blocked'));
+      return undefined;
+    }
+    if (!me) {
+      failForm(t('errUnavailable'));
+      return undefined;
+    }
+    const account = adoptRealAccount(me);
+    return done(account, event(account.role));
+  }
+
+  /** A fresh Turnstile token for the API; a visible challenge is labelled and announced. */
+  async function botCheck(): Promise<string | null> {
+    try {
+      const { turnstileToken } = await turnstile();
+      return await turnstileToken(TURNSTILE_ID, locale, (shown) => {
+        setChallenge(shown);
+        if (shown) {
+          announce(t('securityCheckLead'));
+          track('click', { id: 'login_bot_check_shown', path: window.location.pathname });
+        }
+      });
+    } catch {
+      failForm(t('errBotCheck'));
+      return null;
+    }
+  }
+
+  function phoneFail(reason: 'phone' | 'rate' | 'captcha' | 'unavailable') {
+    if (reason === 'phone') fail(t('errPhone'), 'login-phone');
+    else if (reason === 'rate') failForm(t('errTooManyCodes'));
+    else if (reason === 'captcha') {
+      track('click', { id: 'login_captcha_failed', path: window.location.pathname });
+      failForm(t('errBotCheck'));
+    } else failForm(t('errUnavailable'));
+  }
+
+  function codeFail(reason: 'otp' | 'expired' | 'rate' | 'unavailable') {
+    if (reason === 'otp') fail(t('errOtp'), 'login-otp');
+    else if (reason === 'expired') {
+      track('click', { id: 'login_code_expired', path: window.location.pathname });
+      setCodeExpired(true);
+      fail(t('errOtpExpired'), 'login-otp');
+    } else if (reason === 'rate') failForm(t('errTooManyCodes'));
+    else failForm(t('errUnavailable'));
   }
 
   /** New-password rules shared by sign-up and both reset routes. Returns false (and shows why) when invalid. */
@@ -119,13 +286,46 @@ export function LoginFlow() {
     return true;
   }
 
-  const errorText = error ? (
-    <p id="login-error" role="alert" className="mt-2 text-sm font-bold text-error">
+  const errorFor = (field: string) => (error?.field === field ? error.message : null);
+  const errorId = (field: string) => (error?.field === field ? `${field}-error` : undefined);
+  const fieldError = (field: string) =>
+    error?.field === field ? (
+      <p id={`${field}-error`} className="mt-1 text-sm font-bold text-error">
+        {error.message}
+      </p>
+    ) : null;
+  const formErrorShown = error?.field === '';
+  const formError = formErrorShown ? (
+    <p id="login-form-error" className="mt-4 text-sm font-bold text-error">
       {error.message}
     </p>
   ) : null;
-  const invalid = (field: string) => error?.field === field;
-  const describedBy = (field: string) => (error?.field === field ? 'login-error' : undefined);
+
+  const submit = (label: string, busyLabel: string) => (
+    <button
+      type="submit"
+      aria-disabled={busy || undefined}
+      aria-describedby={formErrorShown ? 'login-form-error' : undefined}
+      className={`${primary} mt-5`}
+    >
+      {busy ? busyLabel : label}
+    </button>
+  );
+
+  /** Where Cloudflare shows a challenge when it must ask: right before the button, labelled while shown. */
+  const securityCheck = REAL ? (
+    <div role="group" aria-labelledby={challenge ? 'login-turnstile-label' : undefined} className="mt-4">
+      <p id="login-turnstile-label" hidden={!challenge} className="text-sm font-bold text-ink">
+        {t('securityCheck')}
+      </p>
+      <div id={TURNSTILE_ID} />
+    </div>
+  ) : null;
+
+  /** Lets password managers save the new password under the right account (hidden from people and AT). */
+  const usernameFor = (value: string) => (
+    <input type="text" name="username" autoComplete="username" value={value} readOnly hidden />
+  );
 
   const back = (
     <p className="mt-5 text-center text-sm">
@@ -149,16 +349,14 @@ export function LoginFlow() {
         label={t('newPassword')}
         autoComplete="new-password"
         hint={t('passwordHint', { min: PASSWORD_MIN })}
-        invalid={invalid('login-new-password')}
-        describedBy={describedBy('login-new-password')}
+        error={errorFor('login-new-password')}
       />
       <PasswordField
         id="login-confirm-password"
         name="confirm"
         label={t('confirmPassword')}
         autoComplete="new-password"
-        invalid={invalid('login-confirm-password')}
-        describedBy={describedBy('login-confirm-password')}
+        error={errorFor('login-confirm-password')}
       />
     </>
   );
@@ -167,6 +365,7 @@ export function LoginFlow() {
 
   async function onSignIn(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (busyRef.current) return;
     const data = new FormData(e.currentTarget);
     const password = text(data, 'password');
     if (!identifier.trim()) {
@@ -177,77 +376,189 @@ export function LoginFlow() {
       fail(t('errPasswordEmpty'), 'login-password');
       return;
     }
-    setBusy(true);
+    await guarded(t('verifying'), async () => (REAL ? signInReal(password) : signInDemo(password)));
+  }
+
+  async function signInDemo(password: string): Promise<Outcome> {
     const result = await signInWithPassword(identifier, password);
-    setBusy(false);
     if (!result.ok) {
       track('click', { id: 'login_password_failed', path: window.location.pathname });
       if (result.reason === 'locked') {
         const minutes = Math.max(1, Math.ceil((result.until - Date.now()) / 60_000));
-        fail(t('locked', { minutes }), 'login-password');
+        failForm(t('locked', { minutes }));
       } else if (result.reason === 'blocked') {
-        fail(t('blocked'), 'login-password');
+        failForm(t('blocked'));
       } else {
         fail(t('errSignIn'), 'login-password');
       }
-      return;
+      return undefined;
     }
     if (result.needsOtp) {
       setStaff(result.account);
       goTo('staff');
-      return;
+      return undefined;
     }
-    done(result.account, `login_${result.account.role}`);
+    return done(result.account, `login_${result.account.role}`);
   }
 
-  function onStaffCode(e: SyntheticEvent<HTMLFormElement>) {
+  async function signInReal(password: string): Promise<Outcome> {
+    const token = await botCheck();
+    if (!token) return undefined;
+    const r = await real();
+    const res = await r.passwordSignIn({ identifier, password, turnstileToken: token, locale });
+    if (!res.ok) {
+      track('click', { id: 'login_password_failed', path: window.location.pathname });
+      if (res.reason === 'invalid') fail(t('errSignIn'), 'login-password');
+      else if (res.reason === 'locked')
+        failForm(t('locked', { minutes: Math.max(1, Math.ceil((res.retryAfterSeconds ?? 900) / 60)) }));
+      else if (res.reason === 'turnstile') failForm(t('errBotCheck'));
+      else failForm(t('errUnavailable'));
+      return undefined;
+    }
+    if (res.status === 'staff_code') {
+      const sent = await r.sendPhoneCode(res.phone, locale, RECAPTCHA_ID);
+      if (!sent.ok) {
+        phoneFail(sent.reason === 'phone' ? 'unavailable' : sent.reason);
+        return undefined;
+      }
+      pendingPassword.current = password;
+      setStaffPhone(res.phone);
+      goTo('staff');
+      return undefined;
+    }
+    return finishReal((role) => `login_${role}`);
+  }
+
+  async function onStaffCode(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!staff) return;
-    if (!completeStaffSignIn(staff.id, text(new FormData(e.currentTarget), 'otp'))) {
+    if (busyRef.current) return;
+    const otp = text(new FormData(e.currentTarget), 'otp');
+    if (!/^\d{6}$/.test(otp)) {
       fail(t('errOtp'), 'login-otp');
       return;
     }
-    done(staff, `login_${staff.role}`);
+    if (!REAL) {
+      if (!staff || !completeStaffSignIn(staff.id, otp)) {
+        fail(t('errOtp'), 'login-otp');
+        return;
+      }
+      await guarded(t('verifying'), () => Promise.resolve(done(staff, `login_${staff.role}`)));
+      return;
+    }
+    await guarded(t('verifying'), async () => {
+      const r = await real();
+      const confirmed = await r.confirmPhoneCode(otp);
+      if (!confirmed.ok) {
+        codeFail(confirmed.reason);
+        return undefined;
+      }
+      const token = await botCheck();
+      if (!token) return undefined;
+      const res = await r.passwordSignIn({
+        identifier,
+        password: pendingPassword.current,
+        turnstileToken: token,
+        locale,
+        phoneToken: true,
+      });
+      if (!res.ok || res.status !== 'signed_in') {
+        if (!res.ok && res.reason === 'staff_expired') codeFail('expired');
+        else if (!res.ok && res.reason === 'staff_mismatch') failForm(t('errStaffOtherAccount'));
+        else if (!res.ok && res.reason === 'turnstile') failForm(t('errBotCheck'));
+        else failForm(t('errUnavailable'));
+        return undefined;
+      }
+      pendingPassword.current = '';
+      return finishReal((role) => `login_${role}`);
+    });
+  }
+
+  /** Resend the code of the current step (demo: nothing to send). */
+  async function resendCode(): Promise<boolean> {
+    if (!REAL) return true;
+    const r = await real();
+    const target = step === 'staff' ? staffPhone : `+91${phone}`;
+    const sent = await r.sendPhoneCode(target, locale, RECAPTCHA_ID);
+    if (!sent.ok) {
+      phoneFail(sent.reason === 'phone' ? 'unavailable' : sent.reason);
+      return false;
+    }
+    setCodeExpired(false);
+    setError(null);
+    return true;
   }
 
   // ── New users ─────────────────────────────────────────────────────────────────────────────────────────────
 
   function onPhone(target: Step) {
-    return (e: SyntheticEvent<HTMLFormElement>) => {
+    return async (e: SyntheticEvent<HTMLFormElement>) => {
       e.preventDefault();
+      if (busyRef.current) return;
       const normalised = normalisePhone(phone);
       if (!normalised) {
         fail(t('errPhone'), 'login-phone');
         return;
       }
       setPhone(normalised);
-      track('click', {
-        id: target === 'signup-otp' ? 'signup_otp_sent' : 'reset_otp_sent',
-        path: window.location.pathname,
+      await guarded(t('sendingCode'), async () => {
+        if (REAL) {
+          const r = await real();
+          const sent = await r.sendPhoneCode(`+91${normalised}`, locale, RECAPTCHA_ID);
+          if (!sent.ok) {
+            phoneFail(sent.reason);
+            return undefined;
+          }
+        }
+        track('click', {
+          id: target === 'signup-otp' ? 'signup_otp_sent' : 'reset_otp_sent',
+          path: window.location.pathname,
+        });
+        goTo(target);
+        return undefined;
       });
-      goTo(target);
     };
   }
 
-  function onSignUpCode(e: SyntheticEvent<HTMLFormElement>) {
+  /** The code proved the number is theirs, so it is safe to say an account exists. */
+  function phoneHasAccount() {
+    setIdentifier(phone);
+    setNotice(t('phoneInUse'));
+    goTo('signin', true);
+  }
+
+  async function onSignUpCode(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
-    const result = verifyPhoneOtp(phone, text(new FormData(e.currentTarget), 'otp'));
-    if (!result.ok) {
+    if (busyRef.current) return;
+    const otp = text(new FormData(e.currentTarget), 'otp');
+    if (!REAL) {
+      const result = verifyPhoneOtp(phone, otp);
+      if (!result.ok) fail(t('errOtp'), 'login-otp');
+      else if (result.exists) phoneHasAccount();
+      else goTo('signup-profile');
+      return;
+    }
+    if (!/^\d{6}$/.test(otp)) {
       fail(t('errOtp'), 'login-otp');
       return;
     }
-    if (result.exists) {
-      // The code proved the number is theirs, so it is safe to say an account exists.
-      setIdentifier(phone);
-      setNotice(t('phoneInUse'));
-      goTo('signin', true);
-      return;
-    }
-    goTo('signup-profile');
+    await guarded(t('verifying'), async () => {
+      const r = await real();
+      const confirmed = await r.confirmPhoneCode(otp);
+      if (!confirmed.ok) {
+        codeFail(confirmed.reason);
+        return undefined;
+      }
+      if (confirmed.hasPassword) {
+        await r.signOutReal();
+        phoneHasAccount();
+      } else goTo('signup-profile');
+      return undefined;
+    });
   }
 
   async function onProfile(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (busyRef.current) return;
     const data = new FormData(e.currentTarget);
     const name = text(data, 'name').trim();
     const email = text(data, 'email').trim();
@@ -261,25 +572,42 @@ export function LoginFlow() {
     }
     const password = text(data, 'password');
     if (!checkNewPassword(password, text(data, 'confirm'), { phone, email, name })) return;
-    setBusy(true);
-    const result = await signUp({ phone, name, email, password, language: locale === 'hi' ? 'hi' : 'en' });
-    setBusy(false);
-    if (!result.ok) {
-      if (result.reason === 'email_in_use') fail(t('emailInUse'), 'login-email');
-      else {
-        setIdentifier(phone);
-        setNotice(t('phoneInUse'));
-        goTo('signin', true);
+    const language = locale === 'hi' ? 'hi' : 'en';
+    await guarded(t('verifying'), async () => {
+      if (!REAL) {
+        const result = await signUp({ phone, name, email, password, language });
+        if (!result.ok) {
+          if (result.reason === 'email_in_use') fail(t('emailInUse'), 'login-email');
+          else phoneHasAccount();
+          return undefined;
+        }
+        return done(result.account, 'sign_up');
       }
-      return;
-    }
-    done(result.account, 'sign_up');
+      const r = await real();
+      const linked = await r.linkEmailPassword(email, password);
+      if (!linked.ok) {
+        if (linked.reason === 'email_in_use') fail(t('emailInUse'), 'login-email');
+        else failForm(t('errUnavailable'));
+        return undefined;
+      }
+      const me = await r.fetchMe();
+      if (!me || me === 'blocked') {
+        failForm(me === 'blocked' ? t('blocked') : t('errUnavailable'));
+        return undefined;
+      }
+      const saved = (await r.saveProfile(me, { name, language })) ?? me;
+      setCreated({ account: adoptRealAccount({ ...saved, name }), email });
+      track('click', { id: 'sign_up', path: window.location.pathname });
+      goTo('signup-done');
+      return undefined;
+    });
   }
 
   // ── Forgot password ───────────────────────────────────────────────────────────────────────────────────────
 
   async function onResetWithCode(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (busyRef.current) return;
     const data = new FormData(e.currentTarget);
     const otp = text(data, 'otp');
     if (!/^\d{6}$/.test(otp)) {
@@ -288,53 +616,78 @@ export function LoginFlow() {
     }
     const password = text(data, 'password');
     if (!checkNewPassword(password, text(data, 'confirm'), { phone })) return;
-    setBusy(true);
-    const result = await resetPasswordWithOtp(phone, otp, password);
-    setBusy(false);
-    if (!result.ok) {
-      fail(result.reason === 'otp' ? t('errOtp') : t('noAccount'), 'login-otp');
-      return;
-    }
-    done(result.account, 'password_reset_phone');
+    await guarded(t('verifying'), async () => {
+      if (!REAL) {
+        const result = await resetPasswordWithOtp(phone, otp, password);
+        if (!result.ok) {
+          if (result.reason === 'otp') fail(t('errOtp'), 'login-otp');
+          else failForm(t('noAccount'));
+          return undefined;
+        }
+        return done(result.account, 'password_reset_phone');
+      }
+      const r = await real();
+      const confirmed = await r.confirmPhoneCode(otp);
+      if (!confirmed.ok) {
+        codeFail(confirmed.reason);
+        return undefined;
+      }
+      if (!confirmed.hasPassword) {
+        await r.signOutReal();
+        failForm(t('noAccount'));
+        return undefined;
+      }
+      if (!(await r.setNewPassword(password))) {
+        failForm(t('errUnavailable'));
+        return undefined;
+      }
+      return finishReal(() => 'password_reset_phone');
+    });
   }
 
-  function onResetEmail(e: SyntheticEvent<HTMLFormElement>) {
+  async function onResetEmail(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (busyRef.current) return;
     const email = text(new FormData(e.currentTarget), 'email').trim();
     if (!EMAIL.test(email)) {
       fail(t('errEmail'), 'login-reset-email');
       return;
     }
-    setResetEmail(email);
-    setResetToken(requestEmailReset(email));
-    track('click', { id: 'password_reset_email', path: window.location.pathname });
-    goTo('forgot-email-sent');
+    await guarded(t('sendingLink'), async () => {
+      setResetEmail(email);
+      if (REAL) await (await real()).sendResetEmail(email, locale);
+      else setResetToken(requestEmailReset(email));
+      track('click', { id: 'password_reset_email', path: window.location.pathname });
+      goTo('forgot-email-sent');
+      return undefined;
+    });
   }
 
   async function onResetWithLink(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!linkToken) return;
+    if (busyRef.current || !linkToken) return;
     const data = new FormData(e.currentTarget);
     const password = text(data, 'password');
     if (!checkNewPassword(password, text(data, 'confirm'), { email: resetEmail })) return;
-    setBusy(true);
-    const result = await resetPasswordWithLink(linkToken, password);
-    setBusy(false);
-    if (!result.ok) {
-      setLinkToken(null);
-      goTo('reset-link');
-      return;
-    }
-    track('click', { id: 'password_reset_link', path: window.location.pathname });
-    setIdentifier(result.account.email);
-    setNotice(t('resetDone'));
-    goTo('signin', true);
+    await guarded(t('verifying'), async () => {
+      const result = await resetPasswordWithLink(linkToken, password);
+      if (!result.ok) {
+        setLinkToken(null);
+        goTo('reset-link');
+        return undefined;
+      }
+      track('click', { id: 'password_reset_link', path: window.location.pathname });
+      setIdentifier(result.account.email);
+      setNotice(t('resetDone'));
+      goTo('signin', true);
+      return undefined;
+    });
   }
 
   // ── Steps ─────────────────────────────────────────────────────────────────────────────────────────────────
 
   const phoneForm = (target: Step, title: string, lead: string) => (
-    <form noValidate onSubmit={onPhone(target)}>
+    <form noValidate aria-labelledby="login-step-title" onSubmit={(e) => void onPhone(target)(e)}>
       <StepTitle title={title} lead={lead} />
       <label htmlFor="login-phone" className="mt-5 block text-sm font-bold text-ink">
         {t('phone')}
@@ -350,39 +703,54 @@ export function LoginFlow() {
           inputMode="numeric"
           autoComplete="tel-national"
           maxLength={14}
+          required
           value={phone}
-          aria-invalid={invalid('login-phone') ? true : undefined}
-          aria-describedby={describedBy('login-phone') ?? 'login-phone-hint'}
+          aria-invalid={errorFor('login-phone') ? true : undefined}
+          aria-describedby={ids(errorId('login-phone'), 'login-phone-hint')}
           onChange={(e) => {
             setPhone(e.target.value);
           }}
           className={`${authInput} mt-0`}
         />
       </div>
+      {fieldError('login-phone')}
       <p id="login-phone-hint" className="mt-1 text-xs text-muted">
         {t('phoneHint')}
       </p>
-      {errorText}
-      <button type="submit" className={`${primary} mt-5`}>
-        {t('sendOtp')}
-      </button>
+      {formError}
+      {submit(t('sendOtp'), t('sendingCode'))}
       {back}
     </form>
   );
 
-  const codeSentTo = (
-    <p className="mt-1 text-sm text-muted">
-      {t('otpSent', { phone })}{' '}
-      <button
-        type="button"
-        onClick={() => {
-          goTo(step === 'forgot-otp' ? 'forgot-phone' : 'signup-phone');
-        }}
-        className="inline-flex min-h-6 font-bold text-accent-soft-text underline-offset-4 hover:underline"
-      >
-        {t('changeNumber')}
-      </button>
-    </p>
+  const codeField = (describedBy?: string) => (
+    <CodeField
+      error={errorFor('login-otp')}
+      describedBy={describedBy}
+      cooldownOver={codeExpired}
+      onResend={resendCode}
+      announce={announce}
+    />
+  );
+
+  const codeSentTo = (title: string) => (
+    <>
+      <h2 id="login-step-title" className="font-heading text-xl font-extrabold text-ink">
+        {title}
+      </h2>
+      <p className="mt-1 text-sm text-muted">
+        <span id="login-otp-sent">{t('otpSent', { phone })}</span>{' '}
+        <button
+          type="button"
+          onClick={() => {
+            goTo(step === 'forgot-otp' ? 'forgot-phone' : 'signup-phone');
+          }}
+          className="inline-flex min-h-6 font-bold text-accent-soft-text underline-offset-4 hover:underline"
+        >
+          {t('changeNumber')}
+        </button>
+      </p>
+    </>
   );
 
   let body: ReactNode = null;
@@ -391,7 +759,7 @@ export function LoginFlow() {
       body = (
         <form noValidate onSubmit={(e) => void onSignIn(e)}>
           {notice ? (
-            <p role="status" className="mb-4 rounded-lg bg-success-bg p-3 text-sm font-bold text-success">
+            <p id="login-notice" className="mb-4 rounded-lg bg-success-bg p-3 text-sm font-bold text-success">
               {notice}
             </p>
           ) : null}
@@ -403,16 +771,22 @@ export function LoginFlow() {
             id="login-identifier"
             name="identifier"
             autoComplete="username"
-            inputMode="email"
+            inputMode="text"
             maxLength={200}
+            required
             value={identifier}
-            aria-invalid={invalid('login-identifier') ? true : undefined}
-            aria-describedby={describedBy('login-identifier') ?? 'login-identifier-hint'}
+            aria-invalid={errorFor('login-identifier') ? true : undefined}
+            aria-describedby={ids(
+              notice && 'login-notice',
+              errorId('login-identifier'),
+              'login-identifier-hint',
+            )}
             onChange={(e) => {
               setIdentifier(e.target.value);
             }}
             className={authInput}
           />
+          {fieldError('login-identifier')}
           <p id="login-identifier-hint" className="mt-1 text-xs text-muted">
             {t('identifierHint')}
           </p>
@@ -421,8 +795,7 @@ export function LoginFlow() {
             name="password"
             label={t('password')}
             autoComplete="current-password"
-            invalid={invalid('login-password')}
-            describedBy={describedBy('login-password')}
+            error={errorFor('login-password')}
             inputRef={passwordRef}
           />
           <p className="mt-1 text-right text-sm">
@@ -436,10 +809,9 @@ export function LoginFlow() {
               {t('forgot')}
             </button>
           </p>
-          {errorText}
-          <button type="submit" disabled={busy} className={`${primary} mt-3`}>
-            {busy ? t('verifying') : t('signInButton')}
-          </button>
+          {securityCheck}
+          {formError}
+          {submit(t('signInButton'), t('verifying'))}
           <p className="mt-5 text-center text-sm text-muted">
             {t('newHere')}{' '}
             <button
@@ -454,61 +826,64 @@ export function LoginFlow() {
           </p>
           <p className="mt-2 text-center text-xs text-muted">{t('terms')}</p>
 
-          <section
-            aria-labelledby="demo-logins"
-            className="mt-8 rounded-tile border border-dashed border-line p-4"
-          >
-            <h2 id="demo-logins" className="text-sm font-extrabold text-ink">
-              {t('demoAccounts')}
-            </h2>
-            <p className="mt-1 text-xs text-muted">
-              {t('demoAccountsLead', { password: DEMO_PASSWORD, otp: DEMO_OTP })}
-            </p>
-            <ul className="mt-3 grid grid-cols-2 gap-2">
-              {SEEDED_ACCOUNTS.map((a) => (
-                <li key={a.id}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIdentifier(a.phone);
-                      if (passwordRef.current) passwordRef.current.value = DEMO_PASSWORD;
-                      setError(null);
-                      passwordRef.current?.focus();
-                    }}
-                    className="press flex min-h-14 w-full items-center gap-2 rounded-button border border-line-card bg-surface px-3 text-left hover:bg-pill"
-                  >
-                    <span aria-hidden="true" className="text-[20px] leading-none">
-                      {ROLE_EMOJI[a.role]}
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block text-sm font-bold text-ink">{t(`role_${a.role}`)}</span>
-                      <span data-user-content className="block truncate text-xs text-muted">
-                        {a.name}
+          {REAL ? null : (
+            <section
+              aria-labelledby="demo-logins"
+              className="mt-8 rounded-tile border border-dashed border-line p-4"
+            >
+              <h2 id="demo-logins" className="text-sm font-extrabold text-ink">
+                {t('demoAccounts')}
+              </h2>
+              <p className="mt-1 text-xs text-muted">
+                {t('demoAccountsLead', { password: DEMO_PASSWORD, otp: DEMO_OTP })}
+              </p>
+              <ul className="mt-3 grid grid-cols-2 gap-2">
+                {SEEDED_ACCOUNTS.map((a) => (
+                  <li key={a.id}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIdentifier(a.phone);
+                        if (passwordRef.current) passwordRef.current.value = DEMO_PASSWORD;
+                        setError(null);
+                        passwordRef.current?.focus();
+                      }}
+                      className="press flex min-h-14 w-full items-center gap-2 rounded-button border border-line-card bg-surface px-3 text-left hover:bg-pill"
+                    >
+                      <span aria-hidden="true" className="text-[20px] leading-none">
+                        {ROLE_EMOJI[a.role]}
                       </span>
-                      <span className="block text-xs text-muted tabular-nums">{a.phone}</span>
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </section>
+                      <span className="min-w-0">
+                        <span className="block text-sm font-bold text-ink">{t(`role_${a.role}`)}</span>
+                        <span data-user-content className="block truncate text-xs text-muted">
+                          {a.name}
+                        </span>
+                        <span className="block text-xs text-muted tabular-nums">{a.phone}</span>
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
         </form>
       );
       break;
 
-    case 'staff':
+    case 'staff': {
+      const shown = REAL ? staffPhone.replace(/^\+91/, '') : (staff?.phone ?? '');
       body = (
-        <form noValidate onSubmit={onStaffCode}>
-          <StepTitle title={t('staffTitle')} lead={t('staffLead', { phone: staff?.phone ?? '' })} />
-          <CodeField invalid={invalid('login-otp')} describedBy={describedBy('login-otp')} />
-          {errorText}
-          <button type="submit" className={`${primary} mt-5`}>
-            {t('verify')}
-          </button>
+        <form noValidate aria-labelledby="login-step-title" onSubmit={(e) => void onStaffCode(e)}>
+          <StepTitle title={t('staffTitle')} lead={t('staffLead', { phone: shown })} />
+          {codeField('login-step-lead')}
+          {securityCheck}
+          {formError}
+          {submit(t('verify'), t('verifying'))}
           {back}
         </form>
       );
       break;
+    }
 
     case 'signup-phone':
       body = phoneForm('signup-otp', t('signupTitle'), t('signupLead'));
@@ -516,22 +891,20 @@ export function LoginFlow() {
 
     case 'signup-otp':
       body = (
-        <form noValidate onSubmit={onSignUpCode}>
-          <h2 className="font-heading text-xl font-extrabold text-ink">{t('otpTitle')}</h2>
-          {codeSentTo}
-          <CodeField invalid={invalid('login-otp')} describedBy={describedBy('login-otp')} />
-          {errorText}
-          <button type="submit" className={`${primary} mt-5`}>
-            {t('verify')}
-          </button>
+        <form noValidate aria-labelledby="login-step-title" onSubmit={(e) => void onSignUpCode(e)}>
+          {codeSentTo(t('otpTitle'))}
+          {codeField('login-otp-sent')}
+          {formError}
+          {submit(t('verify'), t('verifying'))}
         </form>
       );
       break;
 
     case 'signup-profile':
       body = (
-        <form noValidate onSubmit={(e) => void onProfile(e)}>
+        <form noValidate aria-labelledby="login-step-title" onSubmit={(e) => void onProfile(e)}>
           <StepTitle title={t('profileTitle')} lead={t('profileLead')} />
+          {usernameFor(phone)}
           <label htmlFor="login-name" className="mt-5 block text-sm font-bold text-ink">
             {t('name')}
           </label>
@@ -541,10 +914,12 @@ export function LoginFlow() {
             name="name"
             autoComplete="name"
             maxLength={100}
-            aria-invalid={invalid('login-name') ? true : undefined}
-            aria-describedby={describedBy('login-name')}
+            required
+            aria-invalid={errorFor('login-name') ? true : undefined}
+            aria-describedby={errorId('login-name')}
             className={authInput}
           />
+          {fieldError('login-name')}
           <label htmlFor="login-email" className="mt-4 block text-sm font-bold text-ink">
             {t('email')}
           </label>
@@ -554,16 +929,39 @@ export function LoginFlow() {
             type="email"
             autoComplete="email"
             maxLength={200}
-            aria-invalid={invalid('login-email') ? true : undefined}
-            aria-describedby={describedBy('login-email')}
+            required
+            aria-invalid={errorFor('login-email') ? true : undefined}
+            aria-describedby={errorId('login-email')}
             className={authInput}
           />
+          {fieldError('login-email')}
           {newPasswordFields}
-          {errorText}
-          <button type="submit" disabled={busy} className={`${primary} mt-5`}>
-            {busy ? t('verifying') : t('create')}
-          </button>
+          {formError}
+          {submit(t('create'), t('verifying'))}
         </form>
+      );
+      break;
+
+    case 'signup-done':
+      body = (
+        <div>
+          <StepTitle
+            focusHeading
+            title={t('accountCreated')}
+            lead={t('verifyEmailSent', { email: created?.email ?? '' })}
+          />
+          <button
+            type="button"
+            onClick={() => {
+              if (created)
+                void guarded(t('verifying'), () => Promise.resolve(done(created.account, 'sign_up_done')));
+            }}
+            aria-disabled={busy || undefined}
+            className={`${primary} mt-5`}
+          >
+            {t('continue')}
+          </button>
+        </div>
       );
       break;
 
@@ -575,7 +973,12 @@ export function LoginFlow() {
             {(
               [
                 ['forgot-phone', '📱', t('forgotByPhone'), t('forgotByPhoneHint')],
-                ['forgot-email', '✉️', t('forgotByEmail'), t('forgotByEmailHint', { minutes: 30 })],
+                [
+                  'forgot-email',
+                  '✉️',
+                  t('forgotByEmail'),
+                  t('forgotByEmailHint', { minutes: RESET_LINK_MINUTES }),
+                ],
               ] as const
             ).map(([target, emoji, label, hint], i) => (
               <li key={target}>
@@ -583,6 +986,8 @@ export function LoginFlow() {
                   type="button"
                   data-autofocus={i === 0 ? true : undefined}
                   onClick={() => {
+                    // Carry over what was already typed as the sign-in identifier (WCAG 3.3.7).
+                    if (target === 'forgot-phone' && !phone) setPhone(normalisePhone(identifier) ?? '');
                     goTo(target);
                   }}
                   className="press flex min-h-16 w-full items-center gap-3 rounded-tile border border-line-card bg-surface px-4 py-3 text-left hover:bg-pill"
@@ -609,15 +1014,13 @@ export function LoginFlow() {
 
     case 'forgot-otp':
       body = (
-        <form noValidate onSubmit={(e) => void onResetWithCode(e)}>
-          <h2 className="font-heading text-xl font-extrabold text-ink">{t('resetOtpTitle')}</h2>
-          {codeSentTo}
-          <CodeField invalid={invalid('login-otp')} describedBy={describedBy('login-otp')} />
+        <form noValidate aria-labelledby="login-step-title" onSubmit={(e) => void onResetWithCode(e)}>
+          {codeSentTo(t('resetOtpTitle'))}
+          {usernameFor(phone)}
+          {codeField('login-otp-sent')}
           {newPasswordFields}
-          {errorText}
-          <button type="submit" disabled={busy} className={`${primary} mt-5`}>
-            {busy ? t('verifying') : t('savePassword')}
-          </button>
+          {formError}
+          {submit(t('savePassword'), t('verifying'))}
           {back}
         </form>
       );
@@ -625,7 +1028,7 @@ export function LoginFlow() {
 
     case 'forgot-email':
       body = (
-        <form noValidate onSubmit={onResetEmail}>
+        <form noValidate aria-labelledby="login-step-title" onSubmit={(e) => void onResetEmail(e)}>
           <StepTitle title={t('resetEmailTitle')} lead={t('resetEmailLead')} />
           <label htmlFor="login-reset-email" className="mt-5 block text-sm font-bold text-ink">
             {t('email')}
@@ -637,14 +1040,15 @@ export function LoginFlow() {
             type="email"
             autoComplete="email"
             maxLength={200}
-            aria-invalid={invalid('login-reset-email') ? true : undefined}
-            aria-describedby={describedBy('login-reset-email')}
+            required
+            defaultValue={resetEmail || (EMAIL.test(identifier.trim()) ? identifier.trim() : '')}
+            aria-invalid={errorFor('login-reset-email') ? true : undefined}
+            aria-describedby={errorId('login-reset-email')}
             className={authInput}
           />
-          {errorText}
-          <button type="submit" className={`${primary} mt-5`}>
-            {t('sendLink')}
-          </button>
+          {fieldError('login-reset-email')}
+          {formError}
+          {submit(t('sendLink'), t('sendingLink'))}
           {back}
         </form>
       );
@@ -653,27 +1057,32 @@ export function LoginFlow() {
     case 'forgot-email-sent':
       body = (
         <div>
-          <StepTitle title={t('emailSentTitle')} lead={t('emailSent', { email: resetEmail, minutes: 30 })} />
-          <div className="mt-5 rounded-tile border border-dashed border-line p-4 text-sm">
-            {resetToken ? (
-              <>
-                <p className="text-xs text-muted">{t('demoInboxNote')}</p>
-                <button
-                  type="button"
-                  data-autofocus
-                  onClick={() => {
-                    setLinkToken(resetToken);
-                    goTo('reset-link');
-                  }}
-                  className={`${linkButton} mt-1`}
-                >
-                  {t('demoInbox')}
-                </button>
-              </>
-            ) : (
-              <p className="text-xs text-muted">{t('demoNoEmail')}</p>
-            )}
-          </div>
+          <StepTitle
+            focusHeading
+            title={t('emailSentTitle')}
+            lead={t('emailSent', { email: resetEmail, minutes: RESET_LINK_MINUTES })}
+          />
+          {REAL ? null : (
+            <div className="mt-5 rounded-tile border border-dashed border-line p-4 text-sm">
+              {resetToken ? (
+                <>
+                  <p className="text-xs text-muted">{t('demoInboxNote')}</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLinkToken(resetToken);
+                      goTo('reset-link');
+                    }}
+                    className={`${linkButton} mt-1`}
+                  >
+                    {t('demoInbox')}
+                  </button>
+                </>
+              ) : (
+                <p className="text-xs text-muted">{t('demoNoEmail')}</p>
+              )}
+            </div>
+          )}
           {back}
         </div>
       );
@@ -682,20 +1091,18 @@ export function LoginFlow() {
     case 'reset-link':
       body =
         linkToken && resetLinkValid(linkToken) ? (
-          <form noValidate onSubmit={(e) => void onResetWithLink(e)}>
+          <form noValidate aria-labelledby="login-step-title" onSubmit={(e) => void onResetWithLink(e)}>
             <StepTitle title={t('resetLinkTitle')} lead={t('resetLinkLead', { email: resetEmail })} />
+            {usernameFor(resetEmail)}
             {newPasswordFields}
-            {errorText}
-            <button type="submit" disabled={busy} className={`${primary} mt-5`}>
-              {busy ? t('verifying') : t('savePassword')}
-            </button>
+            {formError}
+            {submit(t('savePassword'), t('verifying'))}
           </form>
         ) : (
           <div>
-            <StepTitle title={t('resetLinkTitle')} lead={t('resetLinkExpired')} />
+            <StepTitle focusHeading title={t('resetLinkTitle')} lead={t('resetLinkExpired')} />
             <button
               type="button"
-              data-autofocus
               onClick={() => {
                 goTo('forgot-email');
               }}
@@ -709,25 +1116,63 @@ export function LoginFlow() {
       break;
   }
 
-  return <div ref={root}>{body}</div>;
+  return (
+    <div ref={root}>
+      {body}
+      {/* Stable across steps, so a step change never unmounts the reCAPTCHA badge (inline, not fixed). */}
+      {REAL ? <div id={RECAPTCHA_ID} className="mt-6" /> : null}
+      {regions}
+    </div>
+  );
 }
 
-function StepTitle({ title, lead }: { title: string; lead: string }) {
+/**
+ * Step heading and lead. `focusHeading`: the step has no field, so its heading takes focus and the lead is read
+ * with it (a11y review 2026-11-09: otherwise "Back to sign in" took focus and the message was never heard).
+ */
+function StepTitle({ title, lead, focusHeading }: { title: string; lead: string; focusHeading?: boolean }) {
   return (
     <>
-      <h2 className="font-heading text-xl font-extrabold text-ink">{title}</h2>
-      <p className="mt-1 text-sm text-muted">{lead}</p>
+      <h2
+        id="login-step-title"
+        tabIndex={focusHeading ? -1 : undefined}
+        data-autofocus={focusHeading ? true : undefined}
+        aria-describedby={focusHeading ? 'login-step-lead' : undefined}
+        className="font-heading text-xl font-extrabold text-ink"
+      >
+        {title}
+      </h2>
+      <p id="login-step-lead" className="mt-1 text-sm text-muted">
+        {lead}
+      </p>
     </>
   );
 }
 
-/** 6-digit code with a 30-second resend timer (modern-web-guidance sms-otp-form pattern). */
-function CodeField({ invalid, describedBy }: { invalid: boolean; describedBy?: string }) {
+/**
+ * 6-digit code with a 30-second resend timer (modern-web-guidance sms-otp-form pattern). The resend button is
+ * always there (disabled by `aria-disabled` while counting down) so focus never drops; the countdown is plain
+ * text, not a live region; a pasted SMS or "123 456" is reduced to its 6 digits (WCAG 3.3.8). `cooldownOver`:
+ * the code expired, so a new one may be asked for at once.
+ */
+function CodeField({
+  error,
+  describedBy,
+  cooldownOver,
+  onResend,
+  announce,
+}: {
+  error: string | null;
+  describedBy?: string;
+  cooldownOver: boolean;
+  onResend: () => Promise<boolean>;
+  announce: (message: string) => void;
+}) {
   const t = useTranslations('auth');
   const [code, setCode] = useState('');
   const [resendAt, setResendAt] = useState(() => Date.now() + RESEND_SECONDS * 1000);
   const [now, setNow] = useState(() => Date.now());
-  const [resent, setResent] = useState(false);
+  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     if (now >= resendAt) return;
@@ -739,7 +1184,8 @@ function CodeField({ invalid, describedBy }: { invalid: boolean; describedBy?: s
     };
   }, [now, resendAt]);
 
-  const waitSeconds = Math.max(0, Math.ceil((resendAt - now) / 1000));
+  const waitSeconds = cooldownOver ? 0 : Math.max(0, Math.ceil((resendAt - now) / 1000));
+  const waiting = waitSeconds > 0 || sending;
   return (
     <>
       <label htmlFor="login-otp" className="mt-5 block text-sm font-bold text-ink">
@@ -753,36 +1199,51 @@ function CodeField({ invalid, describedBy }: { invalid: boolean; describedBy?: s
         inputMode="numeric"
         autoComplete="one-time-code"
         pattern="\d{6}"
-        maxLength={6}
+        required
         value={code}
-        aria-invalid={invalid ? true : undefined}
-        aria-describedby={describedBy ?? 'login-otp-hint'}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={ids(error && 'login-otp-error', describedBy, 'login-otp-hint')}
         onChange={(e) => {
           setCode(e.target.value.replace(/\D/g, '').slice(0, 6));
         }}
+        onPaste={(e) => {
+          const six = /\d{6}/.exec(e.clipboardData.getData('text').replace(/[\s-]/g, ''));
+          if (six) {
+            e.preventDefault();
+            setCode(six[0]);
+          }
+        }}
         className={`${authInput} text-center font-heading text-2xl font-extrabold tracking-[0.5em] tabular-nums`}
       />
+      {error ? (
+        <p id="login-otp-error" className="mt-1 text-sm font-bold text-error">
+          {error}
+        </p>
+      ) : null}
       <p id="login-otp-hint" className="mt-1 text-xs text-muted">
-        {t('demoHint', { otp: DEMO_OTP })}
+        {REAL ? t('otpHint') : t('demoHint', { otp: DEMO_OTP })}
       </p>
-      <p className="mt-2 text-center text-sm" aria-live="polite">
-        {waitSeconds > 0 ? (
-          <span className="text-muted">{t('resendIn', { seconds: waitSeconds })}</span>
-        ) : (
-          <button
-            type="button"
-            onClick={() => {
+      <p className="mt-2 text-center text-sm">
+        <button
+          type="button"
+          aria-disabled={waiting || undefined}
+          onClick={() => {
+            if (waiting) return;
+            setSending(true);
+            void onResend().then((ok) => {
+              setSending(false);
+              if (!ok) return;
               const at = Date.now();
               setNow(at);
               setResendAt(at + RESEND_SECONDS * 1000);
-              setResent(true);
-            }}
-            className={linkButton}
-          >
-            {t('resend')}
-          </button>
-        )}
-        {resent && waitSeconds > 0 ? <span className="block text-xs text-success">{t('resent')}</span> : null}
+              announce(t('resent'));
+              document.getElementById('login-otp')?.focus();
+            });
+          }}
+          className={linkButton}
+        >
+          {waitSeconds > 0 ? t('resendIn', { seconds: waitSeconds }) : t('resend')}
+        </button>
       </p>
     </>
   );

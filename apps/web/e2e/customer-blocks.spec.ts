@@ -87,7 +87,8 @@ test('block → checkout refused → lift → order goes through; full block ref
   await expect(ravi.getByText('No sign-in', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Sign out' }).first().click();
   await signIn(page, CUSTOMER);
-  await expect(page.getByText("This account can't sign in right now.")).toBeVisible();
+  // Form-level message: on screen above the button and read out by the alert region (hence first()).
+  await expect(page.getByText("This account can't sign in right now.").first()).toBeVisible();
   await expect(page).toHaveURL(/\/login/);
 });
 

@@ -13,6 +13,8 @@
     "e2e": "playwright test"
   },
   "dependencies": {
+    "@firebase/app": "0.16.5",
+    "@firebase/auth": "1.13.9",
     "@mechdost/shared": "workspace:*",
     "@mechdost/ui": "workspace:*",
     "lucide-react": "1.63.0",

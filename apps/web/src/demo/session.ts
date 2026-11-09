@@ -18,6 +18,7 @@ import {
   type PasswordHash,
 } from './passwords';
 import { customerAllowed } from './customer-blocks';
+import { demoRoleFor, type RealMe } from '@/lib/auth/real-account';
 import { demoStorage } from './store';
 import {
   ACCOUNTS,
@@ -210,6 +211,33 @@ export async function resetPasswordWithLink(
   const account = accountId ? accountsSnapshot().find((a) => a.id === accountId) : undefined;
   if (!account) return { ok: false };
   return { ok: true, account: await setPassword(account, password) };
+}
+
+/**
+ * Real sign-in (Firebase, Q69): the account, cart and portal screens still run on this browser's data, so the
+ * signed-in person gets (or keeps) a browser account under their phone number with the name, email, language and
+ * landing role from `GET /v1/me`. No password is stored here — it lives only in Firebase. Their vehicles and
+ * addresses on this device are kept.
+ */
+export function adoptRealAccount(me: RealMe): DemoAccount {
+  const phone = me.phone ? normalisePhone(me.phone) : null;
+  if (!phone) throw new Error('a real account always has an Indian mobile number (phone sign-up)');
+  const existing = findAccount(phone);
+  const account: DemoAccount = {
+    id: existing?.id ?? `real-${globalThis.crypto.randomUUID()}`,
+    phone,
+    name: (me.name ?? existing?.name ?? '').slice(0, 100),
+    email: (me.email ?? existing?.email ?? '').toLowerCase(),
+    role: demoRoleFor(me),
+    partner: null,
+    language: me.language === 'hi' ? 'hi' : 'en',
+    vehicles: existing?.vehicles ?? [],
+    addresses: existing?.addresses ?? [],
+    createdAt: existing?.createdAt ?? new Date().toISOString(),
+  };
+  saveAccount(account);
+  startSession(account.id);
+  return account;
 }
 
 export function signOut() {

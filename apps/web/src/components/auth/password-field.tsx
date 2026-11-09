@@ -9,7 +9,9 @@ export const authInput =
 
 /**
  * Password input with a show/hide toggle (paste allowed, no composition rules: NIST SP 800-63B-4). The toggle is
- * a real button with a state the screen reader announces; `autoComplete` tells password managers what to do.
+ * a real button with a fixed name whose `aria-pressed` carries the state (a changing name plus pressed said the
+ * state twice, a11y review 2026-11-09); `autoComplete` tells password managers what to do. `error` shows next to
+ * the input and is part of its description, before the hint (WCAG 3.3.1).
  */
 export function PasswordField({
   id,
@@ -17,8 +19,7 @@ export function PasswordField({
   label,
   autoComplete,
   hint,
-  invalid,
-  describedBy,
+  error,
   inputRef,
 }: {
   id: string;
@@ -26,13 +27,14 @@ export function PasswordField({
   label: string;
   autoComplete: 'current-password' | 'new-password';
   hint?: string;
-  invalid?: boolean;
-  describedBy?: string;
+  /** Error text for this field, or null. */
+  error?: string | null;
   inputRef?: Ref<HTMLInputElement>;
 }) {
   const t = useTranslations('auth');
   const [visible, setVisible] = useState(false);
   const hintId = hint ? `${id}-hint` : undefined;
+  const errorId = error ? `${id}-error` : undefined;
   return (
     <div className="mt-4">
       <label htmlFor={id} className="block text-sm font-bold text-ink">
@@ -47,14 +49,15 @@ export function PasswordField({
           autoComplete={autoComplete}
           maxLength={256}
           spellCheck={false}
-          aria-invalid={invalid ? true : undefined}
-          aria-describedby={[describedBy, hintId].filter(Boolean).join(' ') || undefined}
+          required
+          aria-invalid={error ? true : undefined}
+          aria-describedby={[errorId, hintId].filter(Boolean).join(' ') || undefined}
           className={`${authInput} pr-14`}
         />
         <button
           type="button"
           aria-pressed={visible}
-          aria-label={visible ? t('hidePassword') : t('showPassword')}
+          aria-label={t('showPassword')}
           aria-controls={id}
           onClick={() => {
             setVisible((v) => !v);
@@ -68,6 +71,11 @@ export function PasswordField({
           )}
         </button>
       </div>
+      {error ? (
+        <p id={errorId} className="mt-1 text-sm font-bold text-error">
+          {error}
+        </p>
+      ) : null}
       {hint ? (
         <p id={hintId} className="mt-1 text-xs text-muted">
           {hint}
