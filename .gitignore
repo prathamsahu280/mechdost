@@ -43,3 +43,6 @@ Thumbs.db
 
 # Accessibility review history (local; findings are summarised in the commit/progress docs)
 .a11y-history/
+
+# Plan execution scratch (superpowers ledgers, briefs, review packages)
+.superpowers/

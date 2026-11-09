@@ -7,6 +7,11 @@ import {
   listCatalogue,
   listCatalogueCategories,
 } from '@mechdost/db/repo';
+import {
+  CatalogueCategorySchema,
+  CataloguePageSchema,
+  CatalogueProductSchema,
+} from '@mechdost/shared/catalogue';
 import { rateLimit } from '../middleware/rate-limit';
 import type { RateRule } from '../rate-limit/limiter';
 import type { AppDeps, AppEnv } from '../types';
@@ -35,73 +40,11 @@ const Pincode = z
   .openapi({ example: '492001' });
 const Slug = z.string().regex(/^[a-z0-9][a-z0-9-]{0,119}$/);
 
-const Offer = z.object({
-  pricePaise: z.number().int(),
-  mrpPaise: z.number().int(),
-  shippingPaise: z.number().int().nullable(),
-  leadDays: z.number().int().nullable(),
-});
-const Photo = z.object({
-  path: z.string(),
-  alt: z.string(),
-  width: z.number().int(),
-  height: z.number().int(),
-  blurhash: z.string().nullable(),
-});
-const Place = z
-  .object({
-    cityCode: z.string(),
-    pincode: z.string().nullable(),
-    pincodeKnown: z.boolean().nullable(),
-  })
-  .openapi('CataloguePlace');
-const CardFields = {
-  slug: z.string(),
-  name: z.string(),
-  brand: z.object({ slug: z.string(), name: z.string() }),
-  category: z.object({ slug: z.string(), name: z.string() }),
-  specSummary: z.string().nullable(),
-  highlights: z.array(z.string()),
-  rating: z.object({ avg: z.number(), count: z.number().int() }).nullable(),
-};
-const Card = z
-  .object({ ...CardFields, offer: Offer.nullable(), photo: Photo.nullable() })
-  .openapi('CatalogueCard');
-const Page = z
-  .object({ place: Place, items: z.array(Card), nextCursor: z.string().nullable() })
-  .openapi('CataloguePage');
-const Product = z
-  .object({
-    ...CardFields,
-    description: z.string().nullable(),
-    compatibility: z.string().nullable(),
-    spec: z.record(z.string(), z.unknown()),
-    countryOfOrigin: z.string(),
-    warranty: z.string().nullable(),
-    gstRateBp: z.number().int(),
-    partNumbers: z.array(z.object({ kind: z.string(), value: z.string() })),
-    photos: z.array(Photo),
-    variants: z.array(
-      z.object({
-        sku: z.string(),
-        options: z.record(z.string(), z.unknown()),
-        mrpPaise: z.number().int(),
-        offer: Offer.extend({ seller: z.string() }).nullable(),
-      }),
-    ),
-    place: Place,
-  })
-  .openapi('CatalogueProduct');
-const Category = z
-  .object({
-    slug: z.string(),
-    parentSlug: z.string().nullable(),
-    name: z.string(),
-    description: z.string().nullable(),
-    icon: z.string().nullable(),
-    liveProducts: z.number().int(),
-  })
-  .openapi('CatalogueCategory');
+// The DTOs live in @mechdost/shared/catalogue (one definition for API and web); importing @hono/zod-openapi
+// first gives them `.openapi()` for the component names.
+const Page = CataloguePageSchema.openapi('CataloguePage');
+const Product = CatalogueProductSchema.openapi('CatalogueProduct');
+const Category = CatalogueCategorySchema.openapi('CatalogueCategory');
 
 const json = <T extends z.ZodType>(schema: T, description: string) => ({
   description,
