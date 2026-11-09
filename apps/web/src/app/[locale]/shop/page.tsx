@@ -6,6 +6,7 @@ import { ClientMessages } from '@/components/ui/client-messages';
 import { Container, PageIntro } from '@/components/ui/page-intro';
 import { categoryFromSlug, DEMO_PRODUCTS, type SortKey } from '@/demo/catalogue';
 import type { Locale } from '@/i18n/routing';
+import { demoCard } from '@/lib/catalogue/demo-source';
 import { alternatesFor } from '@/lib/seo';
 import { localePath } from '@/lib/locale-path';
 
@@ -46,7 +47,7 @@ export default async function ShopPage({ searchParams }: Props) {
     sort,
   };
   const cards = Object.fromEntries(
-    DEMO_PRODUCTS.map((p) => [p.slug, <ProductCard key={p.slug} product={p} />]),
+    DEMO_PRODUCTS.map((p) => [p.slug, <ProductCard key={p.slug} product={demoCard(p, locale)} />]),
   );
   const c = await getTranslations('catalogue');
 

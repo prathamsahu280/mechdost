@@ -1,5 +1,6 @@
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { DEMO_PRODUCTS } from '@/demo/catalogue';
+import { demoCard } from '@/lib/catalogue/demo-source';
 import { ProductCard } from '../catalogue/product-card';
 import { ButtonLink } from '../ui/button-link';
 import { Container } from '../ui/page-intro';
@@ -7,7 +8,10 @@ import { Container } from '../ui/page-intro';
 /** "Browse our product range": the popular products (demo catalogue until the catalogue API ships). */
 export function ProductRange() {
   const t = useTranslations('home.products');
-  const popular = DEMO_PRODUCTS.filter((p) => p.popular).slice(0, 4);
+  const locale = useLocale();
+  const popular = DEMO_PRODUCTS.filter((p) => p.popular)
+    .slice(0, 4)
+    .map((p) => demoCard(p, locale));
   return (
     <section aria-labelledby="range-title" className="pt-14">
       <Container>

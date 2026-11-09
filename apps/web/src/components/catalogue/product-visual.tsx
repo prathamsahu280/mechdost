@@ -5,6 +5,7 @@ import {
   Disc3,
   Droplets,
   Filter,
+  Package,
   PlugZap,
   Sparkles,
   Wrench,
@@ -35,12 +36,13 @@ export function ProductVisual({
   sku,
   size = 'card',
 }: {
-  category: CategoryKey;
+  /** `null` when the source's category has no artwork (generic part icon). */
+  category: CategoryKey | null;
   brand: string;
-  sku?: string;
+  sku?: string | null;
   size?: 'card' | 'hero';
 }) {
-  const Icon = CATEGORY_ICONS[category];
+  const Icon = category ? CATEGORY_ICONS[category] : Package;
   return (
     <div
       aria-hidden="true"
