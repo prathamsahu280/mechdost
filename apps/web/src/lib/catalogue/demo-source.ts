@@ -37,7 +37,6 @@ export function demoProduct(raw: DemoProduct, locale: string): ProductView {
   return {
     ...demoCard(raw, locale),
     description: null,
-    specRows: [],
     seller: null,
     countryOfOrigin: null,
     partNumbers: [],

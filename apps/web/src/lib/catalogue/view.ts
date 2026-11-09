@@ -28,7 +28,6 @@ export interface CardView {
 
 export interface ProductView extends CardView {
   description: string | null;
-  specRows: { label: string; value: string }[];
   /** The shop that sells at the shown price (E-Commerce Rules); `null` in demo data. */
   seller: string | null;
   countryOfOrigin: string | null;
