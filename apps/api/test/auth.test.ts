@@ -179,6 +179,21 @@ describe('permission and verification gates', () => {
     expect((await gated.request('/route-orders', { headers: bearer(ops) })).status).toBe(200);
   });
 
+  it('a new sign-in sees a role granted moments ago; refreshes of the old session may stay cached', async () => {
+    const { gated, verifier, db } = await gatedApp();
+    const identity = { firebaseUid: 'g-9', phone: '+919833333339' };
+    const old = verifier.add('token-gate-new-signin-01', { ...identity, authTime: 1_900_000_000 });
+    expect((await gated.request('/route-orders', { headers: bearer(old) })).status).toBe(403);
+
+    const u = await ensureUser(db, { ...identity, email: null, emailVerified: false });
+    await grantRole(db, { userId: u.id, role: 'ops_manager', grantedBy: null });
+    // Same sign-in (token refresh): served from the session cache for up to 60 s (spec 13).
+    expect((await gated.request('/route-orders', { headers: bearer(old) })).status).toBe(403);
+    // A fresh sign-in (new auth_time) loads roles again, on every instance.
+    const fresh = verifier.add('token-gate-new-signin-02', { ...identity, authTime: 1_900_000_060 });
+    expect((await gated.request('/route-orders', { headers: bearer(fresh) })).status).toBe(200);
+  });
+
   it('scopes shop permissions to the shop in the path', async () => {
     const { gated, verifier, db } = await gatedApp();
     const token = verifier.add('token-gate-seller-000001', { firebaseUid: 'g-3', phone: '+919833333333' });

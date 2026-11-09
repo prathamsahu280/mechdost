@@ -250,6 +250,8 @@ User: "the first time it will ask the user for the phone number, then they enter
 - **After a password is linked or changed, the browser signs in again through the API** (Firebase marks such sessions `password`, which the API refuses so its limits cannot be skipped). The API looks up the password's email in Firebase when the profile has none yet (fresh sign-up); only those accounts make that extra call.
 - **`firebase-tools` runs through `pnpm dlx` at an exact version**, not as a dependency (66 direct dependencies; only the Auth Emulator is used, for tests).
 - **Real partners land on the account area** (not the demo shop/workshop portals, which have no real shop behind them) until the portals move to the API; real staff land on admin (staff roles are only listed for a two-step session).
+- **Every new sign-in reloads roles, status and blocks** (found by the staff e2e): the API's 60 s per-instance session cache is keyed by the token's sign-in time too, so a role granted, removed or a block set a moment ago applies at the person's next sign-in on every instance; token refreshes within one sign-in still use the cache (spec 13).
+- **The first super_admin is made from the command line**: `pnpm db:grant-role --phone +91… --role super_admin --reason "…"` (staff roles only; audited as a system grant). Nobody can grant roles in the app before one exists; the real sign-in e2e uses the same command.
 
 ## 2026-11-09 — Content-Security-Policy: allow-list site-wide, nonce later only on /login
 

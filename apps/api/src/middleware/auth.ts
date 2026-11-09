@@ -37,7 +37,9 @@ export function authenticate(
       throw err;
     }
 
-    const key = `${identity.firebaseUid}|${identity.phone ?? ''}|${identity.email ?? ''}|${String(identity.emailVerified)}`;
+    // `authTime` is in the key: token refreshes of one sign-in share the entry, while every new sign-in loads the
+    // user's roles, status and blocks again on every instance (a role granted moments ago works on next sign-in).
+    const key = `${identity.firebaseUid}|${String(identity.authTime)}|${identity.phone ?? ''}|${identity.email ?? ''}|${String(identity.emailVerified)}`;
     let session = cache.get(key);
     if (!session) {
       const user = await ensureUser(deps.db, identity);

@@ -9,7 +9,8 @@ interface Entry {
 
 /**
  * Per-instance cache of the resolved user + grants, keyed by the token's identity facts, so a signed-in
- * user costs zero DB queries per request for `ttlMs` (spec 13: "cache 60 s"). Role changes and
+ * user costs zero DB queries per request for `ttlMs` (spec 13: "cache 60 s"). The key includes the sign-in time,
+ * so every new sign-in loads fresh; within one sign-in, role changes and
  * deactivations therefore apply within `ttlMs` on every instance; sensitive routes also check revocation.
  * Holds no state that must be shared (rule 7) — losing it only costs a query.
  */

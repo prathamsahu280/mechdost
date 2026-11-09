@@ -29,7 +29,8 @@ Why the key file is passed explicitly (`apps/api/src/auth/firebase-app.ts`): wit
 4. No key files: the API's runtime service account signs custom tokens through IAM — enable the **IAM Service Account Credentials API** and grant the service account `roles/iam.serviceAccountTokenCreator` on itself. The API refuses to start in production with `GOOGLE_APPLICATION_CREDENTIALS` set.
 5. Secrets in Secret Manager: `TURNSTILE_SECRET_KEY`, Upstash keys; `FIREBASE_API_KEY` as plain config (it is the public web key). Production refuses to start without them.
 6. Email action links (verification, password reset) on our domain (Q30).
-7. Manual check on the real project with the production build: phone sign-up shows no CSP errors in the browser console (Google's reCAPTCHA scripts and frames are not exercised by the emulator; allow-list in `apps/web/src/lib/csp.ts`).
+7. First admin: the person signs up on the site (phone code, email, password), then from a machine with the production `DATABASE_URL`: `pnpm db:grant-role --phone +91XXXXXXXXXX --role super_admin --reason "first admin"` (staff roles only, `--city <slug>` for city roles; audited). Their next sign-in asks for the phone code and opens the admin console.
+8. Manual check on the real project with the production build: phone sign-up shows no CSP errors in the browser console (Google's reCAPTCHA scripts and frames are not exercised by the emulator; allow-list in `apps/web/src/lib/csp.ts`).
 
 ## Smoke test (no accounts created)
 
@@ -44,7 +45,7 @@ The emulator fakes SMS and emails, so real mode is tested with no SMS cost. `fir
    `FIREBASE_PROJECT_ID=demo-mechdost FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 FIREBASE_API_KEY=fake-emulator-key GOOGLE_APPLICATION_CREDENTIALS= TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA CORS_ORIGINS=http://localhost:3100 pnpm exec tsx --env-file-if-exists=../../.env src/server.ts` (in `apps/api`).
 3. Web build in firebase mode (the web app does not read the root `.env`; values are passed explicitly):
    `NEXT_PUBLIC_AUTH_MODE=firebase NEXT_PUBLIC_API_URL=http://localhost:4000 NEXT_PUBLIC_FIREBASE_API_KEY=fake-emulator-key NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=localhost NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-mechdost NEXT_PUBLIC_FIREBASE_APP_ID=1:1:web:1 NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 NEXT_PUBLIC_TURNSTILE_SITE_KEY=1x00000000000000000000AA pnpm --filter @mechdost/web build`.
-4. `E2E_AUTH_MODE=firebase pnpm exec playwright test e2e/real-auth.spec.ts --workers=1` (in `apps/web`; desktop runs the flows, mobile skips them).
+4. `E2E_AUTH_MODE=firebase pnpm exec playwright test e2e/real-auth.spec.ts --workers=1` (in `apps/web`; desktop runs the flows, mobile skips them). The last test grants the run's account `support_agent` with `pnpm db:grant-role` and checks the staff two-step: password → phone code → admin console.
 5. Rebuild in demo mode afterwards (`pnpm --filter @mechdost/web build`) before any other e2e run.
 
 The API writes the test accounts to the database in `.env` (the dev project): they are dev data, one per run.

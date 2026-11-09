@@ -3,8 +3,10 @@
  * docs/runbooks/firebase.md § End-to-end). Skipped unless the web was built with NEXT_PUBLIC_AUTH_MODE=firebase and
  * E2E_AUTH_MODE=firebase is set: sign-up with a phone code → email + password → "account ready" → account area;
  * password sign-in by email and by phone; one answer for a wrong password; reset by phone code; reset by email
- * (the emulator records the reset link). Codes are read from the emulator's REST endpoints, never typed by hand.
+ * (the emulator records the reset link); staff two-step (password, then a phone code, then the admin console).
+ * Codes are read from the emulator's REST endpoints, never typed by hand.
  */
+import { spawnSync } from 'node:child_process';
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 
 const EMULATOR = 'http://127.0.0.1:9099';
@@ -181,4 +183,33 @@ test('forgot password by email: the same message for anyone, and the emulator ho
       return codes.some((c) => c.email === email && c.requestType === 'PASSWORD_RESET');
     })
     .toBe(true);
+});
+
+test('staff: the password alone stops at the phone code; with the code the admin console opens', async ({
+  page,
+  request,
+}) => {
+  const e164 = `+91${phone10}`;
+  // Grant a staff role the way the first admin is made (runbook firebase.md; writes the .env database).
+  // One command string of fixed values only (digits and literals), so the shell sees nothing user-made.
+  const granted = spawnSync(
+    `pnpm db:grant-role --phone ${e164} --role support_agent --reason real-sign-in-e2e`,
+    { cwd: '../..', encoding: 'utf8', shell: true },
+  );
+  expect(granted.status, granted.stderr).toBe(0);
+
+  const before = await codesSoFar(request, e164);
+  await passwordSignIn(page, email, secondPassword);
+  const title = page.getByRole('heading', { name: 'Two-step verification' });
+  await expect(title).toBeVisible(SLOW);
+  await expect(page.getByText(`Staff accounts also need the code we sent to +91 ${phone10}.`)).toBeVisible();
+  // No staff session yet: the console asks the person to sign in (the API refuses staff calls anyway).
+  const other = await page.context().newPage();
+  await other.goto('/admin');
+  await expect(other.getByRole('heading', { name: 'Sign in to continue' })).toBeVisible(SLOW);
+  await other.close();
+
+  await page.getByLabel('One-time code').fill(await latestCode(request, e164, before));
+  await page.getByRole('button', { name: 'Verify and continue' }).click();
+  await expect(page).toHaveURL(/\/admin$/, SLOW);
 });
