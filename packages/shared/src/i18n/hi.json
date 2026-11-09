@@ -961,7 +961,15 @@
     "coinsDemo": "डेमो कॉइन",
     "coinsEarned": "कमाए: {reason}",
     "labelDefault": "घर",
-    "nav_support": "सहायता"
+    "nav_support": "सहायता",
+    "emailNotVerified": "ईमेल अभी सत्यापित नहीं",
+    "verifyEmailTitle": "अपना ईमेल सत्यापित करें",
+    "verifyEmailBody": "हमने {email} पर एक लिंक भेजा है। इसे एक बार खोलें — पहले ऑर्डर से पहले ईमेल सत्यापित होना ज़रूरी है।",
+    "verifyEmailResend": "लिंक फिर से भेजें",
+    "verifyEmailSending": "भेजा जा रहा है…",
+    "verifyEmailSent": "भेज दिया। अपना इनबॉक्स और स्पैम फ़ोल्डर देखें।",
+    "verifyEmailFailed": "लिंक नहीं भेजा जा सका। कुछ मिनट बाद फिर कोशिश करें।",
+    "verifyEmailDone": "ईमेल सत्यापित हो गया। अब आप ऑर्डर कर सकते हैं।"
   },
   "portal": {
     "guardTitle": "आगे बढ़ने के लिए साइन इन करें",

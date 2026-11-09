@@ -91,6 +91,24 @@ test('sign up with a phone code, then email and password; the account area knows
   await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page).toHaveURL(/\/account$/, SLOW);
   await expect(page.getByRole('heading', { name: `Hello, ${name}` })).toBeVisible();
+
+  // Until the link is opened: the pill says so, and the card can send the link again.
+  await expect(page.getByText(`Email not verified yet · ${email}`)).toBeVisible(SLOW);
+  const card = page.getByRole('region', { name: 'Verify your email' });
+  await card.getByRole('button', { name: 'Send the link again' }).click();
+  await expect(card.getByRole('status')).toHaveText('Sent. Check your inbox and spam folder.', SLOW);
+  // Open the newest verification link the emulator holds, as the person would from their inbox.
+  const links = await request.get(`${EMULATOR}/emulator/v1/projects/${PROJECT}/oobCodes`);
+  const verify = (
+    ((await links.json()) as { oobCodes?: { email: string; requestType: string; oobLink: string }[] })
+      .oobCodes ?? []
+  ).filter((c) => c.email === email && c.requestType === 'VERIFY_EMAIL');
+  const link = verify.at(-1)?.oobLink;
+  expect(link).toBeTruthy();
+  await request.get(link ?? '');
+  await page.reload();
+  await expect(page.getByText(`Email verified · ${email}`)).toBeVisible(SLOW);
+  await expect(card).toHaveCount(0);
 });
 
 test('password sign-in by email and by phone; a wrong password gets the one generic answer', async ({

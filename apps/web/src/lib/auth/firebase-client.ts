@@ -137,9 +137,27 @@ export async function linkEmailPassword(
   return { ok: true };
 }
 
-/** Resend the verification email (account area banner). */
-export async function resendVerification(): Promise<boolean> {
-  const user = auth?.currentUser;
+/**
+ * Email verification status for the account-area banner (spec 01: verified once, needed before ordering). Waits
+ * for Firebase to restore the session after a page load, reloads the user (the link may have been opened in
+ * another tab or on the phone), and once verified tells the API right away (a fresh token on `GET /v1/me`).
+ * Null when nobody is signed in to Firebase or the account has no email.
+ */
+export async function emailStatus(locale: string): Promise<{ email: string; verified: boolean } | null> {
+  const a = firebaseAuth(locale);
+  await a.authStateReady();
+  const user = a.currentUser;
+  if (!user?.email) return null;
+  await user.reload().catch(() => undefined);
+  if (user.emailVerified) await fetchMe().catch(() => null);
+  return { email: user.email, verified: user.emailVerified };
+}
+
+/** Send the verification email again (account-area banner). False when it could not be sent. */
+export async function resendVerification(locale: string): Promise<boolean> {
+  const a = firebaseAuth(locale);
+  await a.authStateReady();
+  const user = a.currentUser;
   if (!user) return false;
   return sendEmailVerification(user).then(
     () => true,

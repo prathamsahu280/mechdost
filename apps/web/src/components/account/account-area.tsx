@@ -3,7 +3,7 @@
 import { BadgeCheck, ChevronRight, MessagesSquare, Package, Trash2, Wrench } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import { Suspense, useState, type ReactNode, type SyntheticEvent } from 'react';
+import { Suspense, useEffect, useRef, useState, type ReactNode, type SyntheticEvent } from 'react';
 import {
   MAX_ACCOUNT_ITEMS,
   addAddress,
@@ -22,7 +22,10 @@ import {
 import { CoinsSection } from './coins-section';
 import { SupportSection } from './support-section';
 import { ORDER_STAGES, REQUEST_STAGES, useHydrated, useOrders, useQuotes, useRequests } from '@/demo/store';
+import { AUTH_MODE } from '@/lib/auth/mode';
 import { signOutEverywhere } from '@/lib/auth/sign-out';
+import { useEmailStatus } from '@/lib/auth/use-email-status';
+import { EmailPill, VerifyEmailCard } from './verify-email';
 import { formatDate, formatPrice } from '@/lib/format';
 import { ACCOUNT_SECTIONS, type AccountSection } from '@/lib/sections';
 import { workshopNameFor } from '@/demo/i18n/localize';
@@ -177,6 +180,22 @@ function Overview({ account }: { account: DemoAccount }) {
   const requests = useRequests();
   const quotes = useQuotes();
   const vehicle = account.vehicles[0];
+  // Real sign-in: the email's verification state from Firebase (demo accounts count as verified).
+  const { state: emailState } = useEmailStatus(locale);
+  const pillRef = useRef<HTMLLIElement>(null);
+  const focusInCard = useRef(false);
+  const lastKind = useRef(emailState.kind);
+  const [emailNews, setEmailNews] = useState('');
+  useEffect(() => {
+    const was = lastKind.current;
+    lastKind.current = emailState.kind;
+    if (was !== 'unverified' || emailState.kind !== 'verified') return;
+    // The card is gone. If focus was in it, put focus on the pill (its text says "verified"); otherwise say it.
+    if (focusInCard.current) {
+      focusInCard.current = false;
+      pillRef.current?.focus();
+    } else setEmailNews(t('verifyEmailDone'));
+  }, [emailState.kind, t]);
   const stats: [AccountSection, string, number][] = [
     ['orders', t('stat_orders'), orders.length],
     ['services', t('stat_services'), requests.length],
@@ -206,10 +225,14 @@ function Overview({ account }: { account: DemoAccount }) {
             <BadgeCheck aria-hidden="true" className="size-4" />
             {t('phoneVerified')} · +91 {account.phone}
           </li>
-          <li className="inline-flex items-center gap-1.5 rounded-pill bg-white/12 px-3 py-1.5">
-            <BadgeCheck aria-hidden="true" className="size-4" />
-            {t('emailVerified')} · {account.email}
-          </li>
+          {AUTH_MODE === 'firebase' ? (
+            <EmailPill state={emailState} email={account.email} pillRef={pillRef} />
+          ) : (
+            <li className="inline-flex items-center gap-1.5 rounded-pill bg-white/12 px-3 py-1.5">
+              <BadgeCheck aria-hidden="true" className="size-4" />
+              {t('emailVerified')} · {account.email}
+            </li>
+          )}
         </ul>
       </section>
 
@@ -253,6 +276,19 @@ function Overview({ account }: { account: DemoAccount }) {
         <OrdersList limit={3} />
         <ServicesList limit={3} />
       </div>
+
+      {emailState.kind === 'unverified' ? (
+        <VerifyEmailCard
+          email={emailState.email}
+          className={card}
+          onFocusInside={(inside) => {
+            focusInCard.current = inside;
+          }}
+        />
+      ) : null}
+      <p role="status" className="sr-only">
+        {emailNews}
+      </p>
     </>
   );
 }

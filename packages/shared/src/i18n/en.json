@@ -961,7 +961,15 @@
     "coinsDemo": "Demo coins",
     "coinsEarned": "Earned: {reason}",
     "labelDefault": "Home",
-    "nav_support": "Support"
+    "nav_support": "Support",
+    "emailNotVerified": "Email not verified yet",
+    "verifyEmailTitle": "Verify your email",
+    "verifyEmailBody": "We sent a link to {email}. Open it once — you need a verified email before your first order.",
+    "verifyEmailResend": "Send the link again",
+    "verifyEmailSending": "Sending…",
+    "verifyEmailSent": "Sent. Check your inbox and spam folder.",
+    "verifyEmailFailed": "Couldn't send the link. Try again in a few minutes.",
+    "verifyEmailDone": "Email verified. You're all set to order."
   },
   "portal": {
     "guardTitle": "Sign in to continue",
