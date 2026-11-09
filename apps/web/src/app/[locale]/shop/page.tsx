@@ -1,12 +1,16 @@
 import type { Metadata } from 'next';
+import type { ReactNode } from 'react';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { ProductCard } from '@/components/catalogue/product-card';
-import { ShopBrowser } from '@/components/catalogue/shop-browser';
+import { ShopBrowser, type ServerListing } from '@/components/catalogue/shop-browser';
 import { ClientMessages } from '@/components/ui/client-messages';
 import { Container, PageIntro } from '@/components/ui/page-intro';
-import { categoryFromSlug, DEMO_PRODUCTS, type SortKey } from '@/demo/catalogue';
+import { CATEGORY_SLUGS, categoryFromSlug, DEMO_PRODUCTS, type SortKey } from '@/demo/catalogue';
 import type { Locale } from '@/i18n/routing';
+import { fetchCataloguePage } from '@/lib/catalogue/api-source';
 import { demoCard } from '@/lib/catalogue/demo-source';
+import { DATA_MODE } from '@/lib/data-mode';
+import { loadMoreCards } from './actions';
 import { alternatesFor } from '@/lib/seo';
 import { localePath } from '@/lib/locale-path';
 
@@ -46,9 +50,28 @@ export default async function ShopPage({ searchParams }: Props) {
     category: categoryFromSlug(first(sp.category)),
     sort,
   };
-  const cards = Object.fromEntries(
-    DEMO_PRODUCTS.map((p) => [p.slug, <ProductCard key={p.slug} product={demoCard(p, locale)} />]),
-  );
+  let cards: Record<string, ReactNode>;
+  let server: ServerListing | undefined;
+  if (DATA_MODE === 'api') {
+    // The API filters, searches and pages (spec 02); a failure throws to the shop's error boundary.
+    const page = await fetchCataloguePage({
+      locale,
+      q: initial.query,
+      category: initial.category ? CATEGORY_SLUGS[initial.category] : undefined,
+      sort: sort === 'popular' ? undefined : sort,
+    });
+    cards = Object.fromEntries(page.items.map((p) => [p.slug, <ProductCard key={p.slug} product={p} />]));
+    server = {
+      locale,
+      slugs: page.items.map((p) => p.slug),
+      nextCursor: page.nextCursor,
+      loadMore: loadMoreCards,
+    };
+  } else {
+    cards = Object.fromEntries(
+      DEMO_PRODUCTS.map((p) => [p.slug, <ProductCard key={p.slug} product={demoCard(p, locale)} />]),
+    );
+  }
   const c = await getTranslations('catalogue');
 
   return (
@@ -61,6 +84,7 @@ export default async function ShopPage({ searchParams }: Props) {
           cards={cards}
           sourcingMessage={wa('sourcing')}
           whatsappNote={footer('whatsappNote')}
+          server={server}
         />
       </ClientMessages>
       <p className="mt-6 text-xs text-muted">{c('inclusive')}</p>

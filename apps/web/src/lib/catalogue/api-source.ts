@@ -15,7 +15,8 @@ import type { CardView, ProductView } from './view';
  * boundary — never an empty catalogue that looks real. Only a 404 product is `null`.
  */
 const CITY = 'RPR'; // until the city selector (spec 15)
-const PAGE_SIZE = 24;
+/** Cards per page (API max 48). `CATALOGUE_PAGE_SIZE` (server env) only for tests with a small catalogue. */
+const PAGE_SIZE = Math.min(48, Math.max(1, Number(process.env.CATALOGUE_PAGE_SIZE) || 24));
 const QUERY_MAX = 120;
 const TIMEOUT_MS = 3000;
 

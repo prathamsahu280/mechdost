@@ -4,7 +4,17 @@ import { useCategoryEmoji } from '@/demo/site-config';
 import { CATEGORY_EMOJI, UI_EMOJI } from '@/lib/emoji';
 import { MessageCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState, type ReactNode, type SyntheticEvent } from 'react';
+import { useRouter } from 'next/navigation';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+  type ReactNode,
+  type SyntheticEvent,
+} from 'react';
+import type { ListingQuery } from '@/app/[locale]/shop/actions';
 import {
   CATEGORY_KEYS,
   CATEGORY_SLUGS,
@@ -14,6 +24,7 @@ import {
   type SortKey,
 } from '@/demo/catalogue';
 import { track } from '@/lib/analytics';
+import type { Locale } from '@/i18n/routing';
 import { whatsappLink } from '@/lib/site';
 
 const SORTS: SortKey[] = ['popular', 'price_asc', 'price_desc'];
@@ -48,19 +59,40 @@ function readUrl(): State {
  * Product cards are rendered on the server once and passed in; this island only filters and orders them,
  * keeps the URL in sync with `history.pushState` (shareable, Back works) and never scrolls.
  * Without JavaScript the same form and links still work as normal GET navigations.
+ *
+ * Data mode `api` (`server` set): the server already filtered, so changing a filter navigates (the URL is the
+ * query; `scroll: false`, focus stays on the control) and the page re-renders with the API's results; "Load
+ * more" appends the next page from a server function, moves focus to the first new card and announces it.
  */
+export interface ServerListing {
+  locale: Locale;
+  slugs: string[];
+  nextCursor: string | null;
+  loadMore: (
+    query: ListingQuery,
+    cursor: string,
+  ) => Promise<{ cards: { slug: string; node: ReactNode }[]; nextCursor: string | null }>;
+}
+
+/** The API's sort for the shop's sort key: "popular" has no API ranking yet (search uses relevance). */
+function apiSort(sort: SortKey): ListingQuery['sort'] {
+  return sort === 'popular' ? null : sort;
+}
+
 export function ShopBrowser({
   basePath,
   initial,
   cards,
   sourcingMessage,
   whatsappNote,
+  server,
 }: {
   basePath: string;
   initial: State;
   cards: Record<string, ReactNode>;
   sourcingMessage: string;
   whatsappNote: string;
+  server?: ServerListing;
 }) {
   const c = useTranslations('catalogue');
   const cat = useTranslations('categories');
@@ -69,8 +101,23 @@ export function ShopBrowser({
   const product = useTranslations('product');
   const [state, setState] = useState<State>(initial);
   const [draft, setDraft] = useState(initial.query);
+  const router = useRouter();
+  const [navigating, startNavigation] = useTransition();
+  // Cards appended by "Load more", tied to the listing they belong to (a new search starts empty).
+  const listingKey = server ? `${server.slugs.join(',')}|${server.nextCursor ?? ''}` : '';
+  const [more, setMore] = useState<{
+    key: string;
+    cards: { slug: string; node: ReactNode }[];
+    nextCursor: string | null;
+  } | null>(null);
+  const [loadState, setLoadState] = useState<'idle' | 'loading' | 'failed'>('idle');
+  const [announcement, setAnnouncement] = useState('');
+  const firstNew = useRef<HTMLLIElement>(null);
+  const [focusSlug, setFocusSlug] = useState<string | null>(null);
+  const appended = more?.key === listingKey ? more : null;
+  const nextCursor = appended ? appended.nextCursor : (server?.nextCursor ?? null);
 
-  const results = useMemo(
+  const demoResults = useMemo(
     () =>
       searchProducts({
         query: state.query,
@@ -80,6 +127,13 @@ export function ShopBrowser({
       }),
     [state, cat],
   );
+  const results: { slug: string }[] = server ? server.slugs.map((slug) => ({ slug })) : demoResults;
+  const shownCount = results.length + (appended?.cards.length ?? 0);
+
+  // After "Load more", focus the first new card (it is in the DOM once this render commits).
+  useEffect(() => {
+    if (focusSlug) firstNew.current?.focus();
+  }, [focusSlug]);
 
   // Back/forward restore the filters without a reload.
   useEffect(() => {
@@ -96,7 +150,42 @@ export function ShopBrowser({
 
   function apply(next: State) {
     setState(next);
+    if (server) {
+      startNavigation(() => {
+        router.push(urlFor(basePath, next), { scroll: false });
+      });
+      return;
+    }
     window.history.pushState(null, '', urlFor(basePath, next));
+  }
+
+  async function loadMore() {
+    if (!server || !nextCursor || loadState === 'loading') return;
+    setLoadState('loading');
+    setAnnouncement('');
+    try {
+      const page = await server.loadMore(
+        {
+          locale: server.locale,
+          q: state.query,
+          category: state.category ? CATEGORY_SLUGS[state.category] : null,
+          sort: apiSort(state.sort),
+        },
+        nextCursor,
+      );
+      setMore({
+        key: listingKey,
+        cards: [...(appended?.cards ?? []), ...page.cards],
+        nextCursor: page.nextCursor,
+      });
+      setLoadState('idle');
+      setAnnouncement(c('loadedMore', { count: page.cards.length }));
+      track('click', { id: 'shop_load_more', path: window.location.pathname });
+      setFocusSlug(page.cards[0]?.slug ?? null);
+    } catch {
+      setLoadState('failed');
+      setAnnouncement(c('loadMoreFailed'));
+    }
   }
 
   function onSearch(e: SyntheticEvent<HTMLFormElement>) {
@@ -221,7 +310,7 @@ export function ShopBrowser({
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
         <p role="status" className="text-sm font-bold text-ink">
           {state.query ? `${shop('searchedFor', { query: state.query })} ` : ''}
-          {c('results', { count: results.length })}
+          {nextCursor ? c('resultsShown', { count: shownCount }) : c('results', { count: shownCount })}
         </p>
         {filtered ? (
           <button
@@ -237,14 +326,51 @@ export function ShopBrowser({
         ) : null}
       </div>
 
-      {results.length > 0 ? (
-        <ul className="mt-5 grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 tab:grid-cols-3 nav:grid-cols-4">
-          {results.map((p) => (
-            <li key={p.slug} className="animate-page-in">
-              {cards[p.slug]}
-            </li>
-          ))}
-        </ul>
+      {shownCount > 0 ? (
+        <>
+          <ul
+            aria-busy={navigating || undefined}
+            className="mt-5 grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 tab:grid-cols-3 nav:grid-cols-4"
+          >
+            {results.map((p) => (
+              <li key={p.slug} className="animate-page-in">
+                {cards[p.slug]}
+              </li>
+            ))}
+            {appended?.cards.map((card) => (
+              <li
+                key={card.slug}
+                ref={card.slug === focusSlug ? firstNew : undefined}
+                tabIndex={card.slug === focusSlug ? -1 : undefined}
+                className="animate-page-in"
+              >
+                {card.node}
+              </li>
+            ))}
+          </ul>
+          {server ? (
+            <div className="mt-6 flex flex-col items-center gap-2">
+              <p role="status" className="sr-only">
+                {announcement}
+              </p>
+              {loadState === 'failed' ? (
+                <p className="text-sm font-bold text-error">{c('loadMoreFailed')}</p>
+              ) : null}
+              {nextCursor ? (
+                <button
+                  type="button"
+                  aria-disabled={loadState === 'loading' || undefined}
+                  onClick={() => {
+                    void loadMore();
+                  }}
+                  className="press inline-flex min-h-11 items-center rounded-button border border-input-border bg-surface px-5 text-sm font-bold text-ink hover:bg-pill aria-disabled:cursor-wait aria-disabled:opacity-70"
+                >
+                  {loadState === 'loading' ? c('loadingMore') : c('loadMore')}
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+        </>
       ) : (
         <div className="mt-6 rounded-card border border-line-card bg-surface p-7 shadow-card">
           <p className="max-w-2xl text-[15px] text-muted">

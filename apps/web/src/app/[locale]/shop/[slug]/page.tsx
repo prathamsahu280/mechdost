@@ -1,6 +1,7 @@
 import { CheckCircle2, Clock, MessageCircle, ShieldCheck, Truck } from 'lucide-react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { cache } from 'react';
 import { getTranslations } from 'next-intl/server';
 import { AddToCartButton } from '@/components/catalogue/add-to-cart-button';
 import { availabilityLabel, ProductCard } from '@/components/catalogue/product-card';
@@ -11,10 +12,12 @@ import { SettingValue } from '@/components/site/site-overrides';
 import { LocalLink } from '@/components/ui/local-link';
 import { Container } from '@/components/ui/page-intro';
 import { DEMO_PRODUCTS, findProduct } from '@/demo/catalogue';
-import { productRating, productReviews } from '@/demo/reviews';
+import { productRating, productReviews, type RatingSummary, type SeedReview } from '@/demo/reviews';
 import { routing, type Locale } from '@/i18n/routing';
+import { fetchCatalogueProduct, fetchCataloguePage } from '@/lib/catalogue/api-source';
 import { demoCard, demoProduct } from '@/lib/catalogue/demo-source';
 import type { CardView, ProductView } from '@/lib/catalogue/view';
+import { DATA_MODE } from '@/lib/data-mode';
 import { discountPercent, formatPrice } from '@/lib/format';
 import { alternatesFor } from '@/lib/seo';
 import { whatsappLink } from '@/lib/site';
@@ -23,27 +26,46 @@ interface Props {
   params: Promise<{ locale: Locale; slug: string }>;
 }
 
+/** API mode prerenders nothing at build (no build-time API dependency); pages render on first visit and are
+ * kept for 60 s by the fetch cache (ISR). Demo mode prerenders every demo product. */
 export function generateStaticParams() {
+  if (DATA_MODE === 'api') return [];
   return routing.locales.flatMap((locale) => DEMO_PRODUCTS.map((p) => ({ locale, slug: p.slug })));
 }
 
-/** The product, its related products and (demo data only, until the reviews API) its reviews. */
-function load(slug: string, locale: Locale) {
+interface Loaded {
+  product: ProductView;
+  related: CardView[];
+  /** Demo data only, until the reviews API. */
+  reviews: { summary: RatingSummary; list: SeedReview[] } | null;
+}
+
+/** The product, its related products and its reviews; `null` → 404. Cached per request (metadata + page). */
+const load = cache(async (slug: string, locale: Locale): Promise<Loaded | null> => {
+  if (DATA_MODE === 'api') {
+    const product = await fetchCatalogueProduct(slug, locale);
+    if (!product) return null;
+    const page = await fetchCataloguePage({ locale, category: product.category.slug, limit: 5 });
+    return {
+      product,
+      related: page.items.filter((p) => p.slug !== slug).slice(0, 4),
+      reviews: null,
+    };
+  }
   const found = findProduct(slug);
   if (!found) return null;
-  const related: CardView[] = DEMO_PRODUCTS.filter((p) => p.category === found.category && p.slug !== slug)
-    .slice(0, 4)
-    .map((p) => demoCard(p, locale));
   return {
     product: demoProduct(found, locale),
-    related,
+    related: DEMO_PRODUCTS.filter((p) => p.category === found.category && p.slug !== slug)
+      .slice(0, 4)
+      .map((p) => demoCard(p, locale)),
     reviews: { summary: productRating(found), list: productReviews(found) },
   };
-}
+});
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, slug } = await params;
-  const data = load(slug, locale);
+  const data = await load(slug, locale);
   if (!data) return {};
   const { product } = data;
   return {
@@ -60,7 +82,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
  */
 export default async function ProductPage({ params }: Props) {
   const { locale, slug } = await params;
-  const data = load(slug, locale);
+  const data = await load(slug, locale);
   if (!data) notFound();
   const { product, related, reviews } = data;
 
@@ -71,7 +93,8 @@ export default async function ProductPage({ params }: Props) {
     getTranslations('footer'),
   ]);
   const categoryName = product.category.name ?? (product.category.key ? c(product.category.key) : null);
-  const rating = product.rating && product.rating.count > 0 ? product.rating : null;
+  // The star row links to the reviews section, so it shows only when that section does.
+  const rating = reviews && product.rating && product.rating.count > 0 ? product.rating : null;
   const price = product.price;
   const off = price ? discountPercent(price.pricePaise, price.mrpPaise ?? undefined) : 0;
   const onRequest = product.availability === 'on_request';
@@ -258,7 +281,14 @@ export default async function ProductPage({ params }: Props) {
         </div>
       </div>
 
-      <ReviewsSection target="product" slug={product.slug} summary={reviews.summary} reviews={reviews.list} />
+      {reviews ? (
+        <ReviewsSection
+          target="product"
+          slug={product.slug}
+          summary={reviews.summary}
+          reviews={reviews.list}
+        />
+      ) : null}
 
       {related.length > 0 ? (
         <section aria-labelledby="related" className="mt-14">
