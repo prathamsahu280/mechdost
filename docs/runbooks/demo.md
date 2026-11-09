@@ -41,6 +41,14 @@ Sign in with the number **or** the email and the password; the admin also enters
 10. **Account** — recent orders, service requests and bulk quotes on this device.
 11. **Ask MechDost** (floating button) — "I need 40 batteries, bulk price?" → opens the bulk-quote form; "book a service" → workshops. Esc closes it.
 
+## Catalogue on the API (data mode `api`, local only)
+
+1. API on :4000 with the demo catalogue: `pnpm db:seed:demo` once, then in `apps/api`: `CORS_ORIGINS=http://localhost:3100 pnpm exec tsx --env-file-if-exists=../../.env src/server.ts`.
+2. Web build: `NEXT_PUBLIC_DATA_MODE=api NEXT_PUBLIC_API_URL=http://localhost:4000 pnpm --filter @mechdost/web build`.
+3. Tests (in `apps/web`): `E2E_DATA_MODE=api CATALOGUE_PAGE_SIZE=8 NEXT_PUBLIC_API_URL=http://localhost:4000 pnpm exec playwright test e2e/catalogue-api.spec.ts --workers=1` (8 per page so the 20 demo products span pages). Hindi: add `e2e/hindi-coverage.spec.ts`.
+4. API-down check: stop the API, then `E2E_DATA_MODE=api E2E_API_DOWN=1 NEXT_PUBLIC_API_URL=http://localhost:4000 pnpm exec playwright test e2e/catalogue-api.spec.ts --workers=1` → the retry message, focused.
+5. Rebuild in demo mode (`pnpm --filter @mechdost/web build`) before any other e2e run.
+
 ## What is real vs demo
 
 | Real (production code)                                                                                                        | Demo (replaced in Phase 1)                                        |

@@ -26,6 +26,12 @@ Static shell + streaming (Partial Prerendering); ISR for product/workshop/conten
 - **Scrolling**: passive listeners, `content-visibility: auto` for long lists, virtualised catalogue beyond 60 items, images with reserved aspect ratio (CLS < 0.05), no layout shift from fonts (`size-adjust`), bottom tab bar fixed with safe-area padding.
 - **Measurement**: INP < 200 ms and long-task budget (< 50 ms tasks) in Lighthouse CI; Chrome DevTools MCP traces on key flows before each release; web_vitals events in analytics.
 
+### Server-side data from the API (ruling 2026-11-10, catalogue)
+
+- `fetch` caching is off by default in Next 16: every server fetch states `next: { revalidate, tags }`. Pages get ISR from those fetches (no page-level `revalidate`, which must be a literal and cannot follow the data switch).
+- No build-time dependency on the API: dynamic product routes prerender nothing in api mode and render on first visit; a failed fetch throws so the last good page keeps serving.
+- **Open (blocks `NEXT_PUBLIC_DATA_MODE=api` on deploys):** server-side calls reach the API from the web server's IP, so per-IP limits (`catalogue_ip` 240/min, global 600/min) would apply to all shoppers together. Fix with a server-to-server key that has its own limit, or by forwarding the shopper's IP through a trusted hop (`TRUSTED_PROXY_HOPS`).
+
 ## Images
 
 Upload → sharp pipeline (EXIF strip, resize to 320/640/1600, AVIF+WebP, blurhash) → Supabase Storage → CDN (Cloudflare in front; Vercel image optimiser as fallback). Never serve originals. Lazy load below fold; reserve space.

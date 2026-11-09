@@ -260,6 +260,14 @@ User: "the first time it will ask the user for the phone number, then they enter
 - **Built the same day: strict policy on `/login` in real mode.** The proxy makes a fresh nonce per request, puts it in the request header Next reads while rendering (next-intl forwards request headers) and sends the policy `script-src 'self' 'nonce-…' 'strict-dynamic'` + the exact SHA-256 hashes of the root layout's two fixed inline scripts (theme, home layout: the shared layout cannot read a nonce without making every page dynamic). Only that page renders per request in real mode; in demo mode it stays prerendered. Checked: 18/18 framework scripts carry the nonce, a new nonce per request, real sign-in e2e 4/4 with no violations.
 - Verified: page audit 201 + demo flows 33 (maps) with no violations; real-mode e2e fails on any violation and passes. Not covered by the emulator: Google's real reCAPTCHA scripts → manual check on the real project before launch (runbook firebase.md).
 
+## 2026-11-10 — Storefront on the API: data switch and catalogue wiring (advisor brief 2026-11-10)
+
+- **`NEXT_PUBLIC_DATA_MODE` = `api` | `demo`** (Q70 default; anything else = demo). The catalogue and search are built on the API behind it; cart and checkout follow. It stays `demo` on every deploy until cart + checkout use the API, because the demo cart's prices differ from the API's nearest-shop offers.
+- **Catalogue DTOs live in `@mechdost/shared/catalogue`** (moved from the API route; the API adds OpenAPI names). Hard rule: Zod DTOs in packages/shared are the single source.
+- **No build-time dependency on the API**; server fetches state `revalidate` + tags and throw on failure (ISR keeps the last good page). Spec 16 § Server-side data.
+- **Unknown facts are left out, never shown blank** (a11y review): no price → "Ask about this product" on WhatsApp instead of add to cart; "Fitment not listed" replaces spec 02's "Check fitment" (read as a command).
+- **Before the switch goes on anywhere**, the web's server-to-API calls need their own rate-limit identity (shared web-server IP otherwise throttles all shoppers).
+
 ## PENDING DECISIONS (ask "what's pending" to review)
 
 | #   | Topic                                                                                                                                                                                       | Leaning                                                                             | When                                 |

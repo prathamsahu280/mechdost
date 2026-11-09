@@ -43,6 +43,18 @@ Launch: Postgres `tsvector` (name, brand, sku, part numbers, spec — **English 
 - Demo data: `pnpm db:seed:demo` loads the web demo catalogue (Hindi included) for the API; removed before launch with `--remove` (Q21, `docs/runbooks/demo.md`).
 - Not yet: `vehicle` fitment filter and badge (vehicle master, pending #4), `suggest`, synonyms table, Redis cache, Meilisearch; web pages still read the demo catalogue until Phase 1 wiring.
 
+## Web on the API (built 2026-11-10, behind `NEXT_PUBLIC_DATA_MODE`, Q70)
+
+Plan `docs/superpowers/plans/2026-11-10-catalogue-on-api.md`. Off (`demo`) on every deploy until cart + checkout use the API too: the demo cart's prices are not the API's nearest-shop offers.
+
+- **One view model** (`apps/web/src/lib/catalogue/view.ts`: `CardView`, `ProductView`), two sources: `demo-source.ts` (demo data) and `api-source.ts` (server-only). DTOs come from `@mechdost/shared/catalogue` (moved out of the API route, one definition).
+- **API source:** every response parsed; `fetch` with `revalidate` 30 s (listing) / 60 s (product) and tags `catalogue`, `product:<slug>`; 3 s timeout; failures throw (Next keeps the last good page; first visits show the shop's retry message, `app/[locale]/shop/error.tsx`); 404 → product 404; a tampered cursor restarts at page 1. Always `city=RPR` (until the city selector) and the page locale.
+- **Product pages:** no build-time API calls (`generateStaticParams` returns nothing in api mode); rendered on first visit, then cached. Shows the seller and the country of origin (in Hindi on `/hi`, from the browser's country names; the column is English text today — an ISO code would be cleaner, rule 16). No reviews section or star row until the reviews API.
+- **Listing:** the server filters, searches and pages (24 per page); changing a filter navigates (`scroll: false`); "Load more" is a server function returning server-rendered cards (no catalogue code in the browser), focus moves to the first new card and a polite status announces it.
+- **Facts the source does not know are left out** (a11y review 2026-11-10, `.a11y-history/2026-11-10-catalogue-view-model`): no price → no price block and no add to cart, the product page offers "Ask about this product" (WhatsApp); no rating → no star row; no fit data → "Fitment not listed"; empty highlights or specification rows → no heading or blank row.
+- **Not yet:** API product photos (artwork stays the category icon), home "popular products" from the API, on-demand revalidation when the admin edits (tags are ready), PIN price check on the web.
+- **Blocker before the switch goes on anywhere:** the web's server-side calls come from one IP, so the API's per-IP limits would throttle every shopper together (spec 16).
+
 ## UI
 
 Concept sections `#home-products`, `#catalogue`, `#find-parts`, product page (`05-page-product-*.png`); hero search; 6 category tiles with concept descriptions; "Check price & delivery for your area" panel; product card with `<details>` "Specification & fitment"; status lines copied from the concept; fitment badge green; "Request a product →" sourcing form (quick RFQ: brand, reference, photo optional → ticket kind Product sourcing).
@@ -53,7 +65,7 @@ Only `live` products with an active, in-stock offer from an approved shop coveri
 
 ## Edge cases
 
-No offers in pincode → "No eligible delivery offers for this PIN yet. Browse all products or request sourcing."; product without fitment data → neutral badge "Check fitment"; search with zero results → suggestions + sourcing CTA; catalogue load failure → retry copy from concept.
+No offers in pincode → "No eligible delivery offers for this PIN yet. Browse all products or request sourcing."; product without fitment data → neutral chip "Fitment not listed" (a11y review 2026-11-10: "Check fitment" read as a command on non-interactive text); search with zero results → suggestions + sourcing CTA; catalogue load failure → retry copy from concept.
 
 ## Analytics
 
