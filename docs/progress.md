@@ -38,6 +38,8 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Completed log (newest first)
 
+- 2026-11-09 — **Production = `dark-neutral` @ 41af12a** (user: "i mean production"). `vercel deploy --prod` (CLI, git-archive export) → https://mechdost-web.vercel.app. Smoke: /, /hi, /shop, /workshops, /cart, /policies/privacy 200; new dark bg token and `data-cart-target` served; runtime errors 0.
+
 - 2026-11-09 — **Neutral dark theme + add-to-cart motion** on branch `dark-neutral` (from `redesign-merged`). Dark tokens grey (Supabase-style), hero charcoal with mint glow in dark, footer `#111111` in dark, theme-color `#171717`; add-to-cart pulse/check-draw/ripple + "+qty" chip flying to the header cart, pill bump on landing (`lib/cart-fly.ts`). Fixed: "Added" state used `bg-success` (white on mint in dark, failed contrast). Test `follows the system dark preference` now expects `rgb(23, 23, 23)`. Gates: tokens contrast 66/66, typecheck, lint, e2e demo-flows + audit desktop (118 + theme 3) green.
 
 - 2026-11-07 — **Production = `redesign-merged` @ 9694307** (user: "Prod me karo"). `vercel deploy --prod` (CLI only, git-archive export) → https://mechdost-web.vercel.app. Smoke test without auth: /, /hi, /shop, /shop?vehicle=2W, /workshops, /hi/workshops, /policies/delivery, /policies/privacy, /login, /credits all 200; carousel, header search and the 5 new home sections present; AVIF images; Hindi → English switch lands on /shop with lang=en and cookie=en; runtime errors 0.
