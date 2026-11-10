@@ -38,6 +38,8 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Completed log (newest first)
 
+- 2026-11-10 — **Production = `dark-green-touch` @ 2ca7059** (terms + policies hub + dark green touch). `vercel deploy --prod` (CLI) → https://mechdost-web.vercel.app. Smoke: /, /hi, /shop, /policies, /policies/terms, /hi/policies, /hi/policies/terms, /login, /workshops 200; footer links the terms; runtime errors 0.
+
 - 2026-11-10 — **Subtle green in dark mode** on branch `dark-green-touch` (from `terms-policies`): green glows in the page, card, hero, panel and footer gradients, button glow, greener accent-soft. Gates: tokens contrast 66/66, e2e demo-flows desktop 17/17 (incl. dark-mode axe), `pnpm check`.
 
 - 2026-11-10 — **Terms of use + policies hub** on branch `terms-policies` (from `dark-neutral`). `/policies/terms` (11 sections, en + hi), `/policies` hub (one-card list of all six), footer links (terms first, hub last), sign-in terms line links both pages, `policy.terms` added to the admin policy registry, both routes added to the audit and Hindi-coverage crawls. Lawyer review queued as Q69. Gates: typecheck, lint, e2e audit + Hindi coverage desktop 111/111, audit + auth mobile 105 + 1 skipped.
