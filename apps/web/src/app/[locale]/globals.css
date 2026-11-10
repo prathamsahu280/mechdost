@@ -244,8 +244,10 @@ details[open] > .faq-answer {
   --color-accent: #6ee7b7;
   --color-accent-soft-text: #6ee7b7;
   background-color: #111111;
-  background-image: none;
-  border-top: 1px solid #262626;
+  background-image:
+    radial-gradient(70% 90% at 0% 0%, rgb(62 207 142 / 0.08) 0%, transparent 60%),
+    radial-gradient(50% 70% at 100% 100%, rgb(62 207 142 / 0.05) 0%, transparent 60%);
+  border-top: 1px solid rgb(110 231 183 / 0.12);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) .footer-green {
@@ -256,8 +258,10 @@ details[open] > .faq-answer {
     --color-accent: #6ee7b7;
     --color-accent-soft-text: #6ee7b7;
     background-color: #111111;
-    background-image: none;
-    border-top: 1px solid #262626;
+    background-image:
+      radial-gradient(70% 90% at 0% 0%, rgb(62 207 142 / 0.08) 0%, transparent 60%),
+      radial-gradient(50% 70% at 100% 100%, rgb(62 207 142 / 0.05) 0%, transparent 60%);
+    border-top: 1px solid rgb(110 231 183 / 0.12);
   }
 }
 

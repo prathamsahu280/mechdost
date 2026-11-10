@@ -356,6 +356,11 @@ User: "Www.boodmo.com / https://www.fixter.co.uk/ — here also, take inspo and 
 - Footer policy row starts with "Terms of use" and ends with "All terms and policies". The sign-in screen's "you agree to the terms and privacy policy" line now links to both pages.
 - Branch `terms-policies` (from `dark-neutral`); `main` untouched.
 
+## 2026-11-10 — A subtle green touch in the dark theme
+
+- User: dark mode green "thoda zyada hi kam ho gaya hai, add subtle greenness, maybe in gradient, actions". The base stays neutral grey (2026-11-09); green returns only as light: a mint glow at the top of the page, a faint corner glow on cards, stronger glows on the hero and dark panels, a slightly green selected-state tint (accent-soft `#1b2620`), a soft green glow around primary buttons, and a faint glow plus mint hairline on the footer. Solid colour tokens (text/background pairs) are unchanged apart from accent-soft, so contrast stays as tested.
+- Branch `dark-green-touch` (from `terms-policies`); `main` untouched.
+
 ## PENDING DECISIONS (ask "what's pending" to review)
 
 | #   | Topic                                                                                                                                                                                       | Leaning                                                                             | When                                 |

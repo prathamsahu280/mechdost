@@ -5,6 +5,7 @@
 > - Text colour token is `ink`; `navy` is the brand dark surface (hero, announcement bar). Accessible adjustments: button `#d2461a`, muted `#5a6a7d`, link text `#bf3c12`, form borders `#7f8ea0`.
 > - Dark theme: bg `#0a1424`, surface `#101d31`, ink `#e8eef5`, muted `#a3b3c7`, accent-soft `#3a1f14`/`#ffb38f`, focus `#ff8b59`; system preference by default, toggle in header (≥400px) and footer.
 > - **Dark theme since 2026-11-09 (decisions.md):** neutral greys (Supabase-style) — bg `#171717`, surface `#1f1f1f`, pill `#262626`, ink `#ededed`, muted `#a3a3a3`, panels `#212121`, hero charcoal `#1c1c1c` + faint mint glow, footer `#111111`; green only for buttons, focus, mint `#6ee7b7` highlights. Supersedes the dark values above.
+> - Dark green touch (2026-11-10): neutral base, green only as glow — page-top mint glow, card corner glow, hero/panel glows, accent-soft `#1b2620`, green glow on primary buttons, footer glow + mint hairline.
 > - Add to cart motion: pulse + check draw + ripple + "+qty" chip flying to `[data-cart-target]` + pill bump (`lib/cart-fly.ts`); none under reduced motion.
 > - Breakpoints: `tab` 760px (grids), `nav` 1024px (full nav vs bottom tab bar).
 > - Motion tokens: `--ease-out-soft`, `--duration-fast` 150ms, `--duration-base` 220ms, `--duration-slow` 420ms; utilities `animate-page-in`, `reveal`, `skeleton`, `press`; all disabled under reduced motion.
