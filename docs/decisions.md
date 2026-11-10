@@ -349,6 +349,13 @@ User: "Www.boodmo.com / https://www.fixter.co.uk/ — here also, take inspo and 
 - **Add to cart motion** (user: "Add to Cart me iska animation aur accha karna hai"): the label pulses and slides in, the check draws itself, a ripple spreads, a "+qty" chip arcs to the header cart (`lib/cart-fly.ts`, `[data-cart-target]`) and the pill bumps when it lands. Off under reduced motion. The "added" state keeps the green button (the old `bg-success` fill had white text at < 4.5:1 in dark).
 - Branch `dark-neutral` (from `redesign-merged`); `main` untouched.
 
+## 2026-11-10 — Terms of use and a policies hub
+
+- User: "add a terms and policy section too". New page **Terms of use** (`/policies/terms`, en + hi, 11 sections) written only from rules the product already follows: shop acceptance before an order is confirmed, full refund when no shop can fulfil, delivery code, no returns but faulty-part help (spec 05), Coins have no cash value (spec 20), account blocks always with a reason, Indian law with courts in Raipur and the consumer commission always open. Admin-editable as `policy.terms` (registry `packages/shared/src/policy.ts`). Lawyer review queued (Q69).
+- New hub **Terms and policies** (`/policies`): one card listing all six policy pages with a one-line summary each.
+- Footer policy row starts with "Terms of use" and ends with "All terms and policies". The sign-in screen's "you agree to the terms and privacy policy" line now links to both pages.
+- Branch `terms-policies` (from `dark-neutral`); `main` untouched.
+
 ## PENDING DECISIONS (ask "what's pending" to review)
 
 | #   | Topic                                                                                                                                                                                       | Leaning                                                                             | When                                 |

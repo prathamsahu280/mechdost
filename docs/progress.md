@@ -38,6 +38,8 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Completed log (newest first)
 
+- 2026-11-10 — **Terms of use + policies hub** on branch `terms-policies` (from `dark-neutral`). `/policies/terms` (11 sections, en + hi), `/policies` hub (one-card list of all six), footer links (terms first, hub last), sign-in terms line links both pages, `policy.terms` added to the admin policy registry, both routes added to the audit and Hindi-coverage crawls. Lawyer review queued as Q69. Gates: typecheck, lint, e2e audit + Hindi coverage desktop 111/111, audit + auth mobile 105 + 1 skipped.
+
 - 2026-11-09 — **Production = `dark-neutral` @ 41af12a** (user: "i mean production"). `vercel deploy --prod` (CLI, git-archive export) → https://mechdost-web.vercel.app. Smoke: /, /hi, /shop, /workshops, /cart, /policies/privacy 200; new dark bg token and `data-cart-target` served; runtime errors 0.
 
 - 2026-11-09 — **Neutral dark theme + add-to-cart motion** on branch `dark-neutral` (from `redesign-merged`). Dark tokens grey (Supabase-style), hero charcoal with mint glow in dark, footer `#111111` in dark, theme-color `#171717`; add-to-cart pulse/check-draw/ripple + "+qty" chip flying to the header cart, pill bump on landing (`lib/cart-fly.ts`). Fixed: "Added" state used `bg-success` (white on mint in dark, failed contrast). Test `follows the system dark preference` now expects `rgb(23, 23, 23)`. Gates: tokens contrast 66/66, typecheck, lint, e2e demo-flows + audit desktop (118 + theme 3) green.

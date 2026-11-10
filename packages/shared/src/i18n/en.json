@@ -276,7 +276,9 @@
     "companyPolicy": "Company & contact",
     "deliveryPolicy": "Delivery & payment",
     "serviceTerms": "Workshop bookings",
-    "photoCredits": "Photo credits"
+    "photoCredits": "Photo credits",
+    "termsOfUse": "Terms of use",
+    "allPolicies": "All terms and policies"
   },
   "whatsapp": {
     "general": "Hello MechDost, I have a question.",
@@ -890,7 +892,7 @@
     "signIn": "Sign in",
     "signOut": "Sign out",
     "signedInAs": "Signed in as {name}",
-    "terms": "By continuing you agree to MechDost's terms and privacy policy.",
+    "terms": "By continuing you agree to MechDost's <terms>terms of use</terms> and <privacy>privacy policy</privacy>.",
     "welcome": "Welcome, {name}",
     "identifier": "Mobile number or email",
     "identifierHint": "The number or email you signed up with.",
@@ -1476,6 +1478,47 @@
       "complaintsTitle": "Complaints",
       "complaintsBody": "Call or WhatsApp us, or raise a support request from your account. We confirm that we have your complaint within 48 hours and resolve it within one month.",
       "updated": "Last updated 4 November 2026."
+    },
+    "terms": {
+      "eyebrow": "Policies",
+      "title": "Terms of use",
+      "lead": "The rules for using MechDost, in plain words: what we do, what you can expect, and what we ask of you.",
+      "aboutTitle": "About these terms",
+      "aboutBody": "These terms apply when you use MechDost, the website and services run by {company}, {address}. By using MechDost you agree to them. If you don't agree, please don't use the service.",
+      "accountTitle": "Your account",
+      "accountBody": "Sign up with your own mobile number and keep your password private. You are responsible for what happens on your account, so tell us at once if you think someone else is using it. We may block an account that is misused, and we always give the reason.",
+      "marketplaceTitle": "What MechDost does",
+      "marketplaceBody": "MechDost connects you with verified local shops and workshops. Shops sell and pack the parts; workshops do the service work. We check partners before they join, send each order to a shop, and step in when something goes wrong.",
+      "ordersTitle": "Prices and orders",
+      "ordersBody": "Prices are in rupees and include GST. An order is confirmed only when a shop accepts it; if no shop can, we cancel it and you get a full refund. If a price is clearly wrong, we may correct it before your order is confirmed and ask you again.",
+      "deliveryTitle": "Delivery",
+      "deliveryBody": "Your parts are handed over only when you share your delivery code, so nobody else can receive them. Please check the parts when they arrive.",
+      "returnsTitle": "No returns, help with faulty parts",
+      "returnsBody": "Parts can't be returned or exchanged for a change of mind. If a part is faulty, damaged or not what you ordered, our support team replaces it or refunds you, as set out in the returns and refunds policy.",
+      "coinsTitle": "MechDost Coins",
+      "coinsBody": "Coins are a discount only. They have no cash value, can't be transferred, and are never paid out as money.",
+      "fairTitle": "Fair use",
+      "fairBody": "Please don't misuse MechDost: no false orders or bookings, no fake reviews, no attempts to break into accounts or systems, and no copying of our content or data in bulk. Reviews must be about your own experience.",
+      "responsibilityTitle": "Our responsibility",
+      "responsibilityBody": "We answer for the service we provide. If you fit a part yourself, you do so at your own risk; we recommend a trained mechanic. Nothing in these terms limits your rights under Indian consumer law.",
+      "lawTitle": "Law and disputes",
+      "lawBody": "These terms follow the laws of India. Please talk to us first; most problems are solved quickly. Otherwise, the courts in Raipur, Chhattisgarh decide, and you can always approach a consumer commission.",
+      "changesTitle": "Changes to these terms",
+      "changesBody": "When these terms change in substance, we update the date below and tell signed-in customers. An order or booking follows the terms that applied when it was placed.",
+      "help": "Questions about these terms? Call us:",
+      "updated": "Last updated 10 November 2026."
+    },
+    "hub": {
+      "eyebrow": "Policies",
+      "title": "Terms and policies",
+      "lead": "Everything that applies to your orders, bookings and data, in plain words. Pick a topic.",
+      "termsBody": "The rules for using MechDost and what we ask of you.",
+      "privacyBody": "What we keep about you, why, and how you stay in control.",
+      "deliveryBody": "Delivery areas, charges, timing and ways to pay.",
+      "returnsBody": "No returns for a change of mind; help with faulty parts.",
+      "serviceBody": "How workshop bookings work and how you approve the work.",
+      "companyBody": "Who runs MechDost, how to reach us and how to complain.",
+      "help": "Can't find what you need? Call us:"
     }
   },
   "notifyTemplates": {

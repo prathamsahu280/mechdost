@@ -5,7 +5,13 @@
  * paragraphs. Official facts are written as placeholders (`{company}`, `{address}`, `{phone}`) and filled by
  * plain replacement at render time, so they stay in one place. Pure functions, no dependencies.
  */
-export const POLICY_KEYS = ['policy.privacy', 'policy.returns', 'policy.delivery', 'policy.service'] as const;
+export const POLICY_KEYS = [
+  'policy.privacy',
+  'policy.returns',
+  'policy.delivery',
+  'policy.service',
+  'policy.terms',
+] as const;
 export type PolicyKey = (typeof POLICY_KEYS)[number];
 
 export const POLICY_TOKENS = ['company', 'address', 'phone'] as const;

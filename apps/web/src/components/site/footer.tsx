@@ -14,13 +14,15 @@ interface FooterLink {
   track: string;
 }
 
-/** Policy pages, in the concept's order (company, privacy, delivery, returns, service terms). */
+/** Policy pages: terms of use first (2026-11-10), then the concept's order; the row ends with the hub. */
 const POLICY_LINKS = [
+  { href: '/policies/terms', label: 'termsOfUse', track: 'footer_terms' },
   { href: '/policies/company', label: 'companyPolicy', track: 'footer_company_policy' },
   { href: '/policies/privacy', label: 'privacyPolicy', track: 'footer_privacy_policy' },
   { href: '/policies/delivery', label: 'deliveryPolicy', track: 'footer_delivery_policy' },
   { href: '/policies/returns', label: 'returnsPolicy', track: 'footer_returns_policy' },
   { href: '/policies/service-terms', label: 'serviceTerms', track: 'footer_service_terms' },
+  { href: '/policies', label: 'allPolicies', track: 'footer_all_policies' },
 ] as const;
 
 /**

@@ -24,6 +24,7 @@ import {
   type DemoRole,
 } from '@/demo/session';
 import { track } from '@/lib/analytics';
+import { localePath } from '@/lib/locale-path';
 import { PasswordField, authInput } from './password-field';
 
 type Step =
@@ -470,7 +471,28 @@ export function LoginFlow() {
               {t('createAccount')}
             </button>
           </p>
-          <p className="mt-2 text-center text-xs text-muted">{t('terms')}</p>
+          <p className="mt-2 text-center text-xs text-muted">
+            {t.rich('terms', {
+              terms: (chunks) => (
+                <a
+                  href={localePath('/policies/terms', locale)}
+                  data-track="login_terms"
+                  className="font-bold text-ink underline underline-offset-4"
+                >
+                  {chunks}
+                </a>
+              ),
+              privacy: (chunks) => (
+                <a
+                  href={localePath('/policies/privacy', locale)}
+                  data-track="login_privacy"
+                  className="font-bold text-ink underline underline-offset-4"
+                >
+                  {chunks}
+                </a>
+              ),
+            })}
+          </p>
 
           <section
             aria-labelledby="demo-logins"

@@ -23,6 +23,8 @@ const BASE_PAGES = [
   '/policies/delivery',
   '/policies/service-terms',
   '/policies/company',
+  '/policies/terms',
+  '/policies',
   '/admin/coins',
   '/login',
   '/quotes/new',
