@@ -277,6 +277,7 @@ User: "review the bugs properly and start working on it … implement the toolin
 - **Vehicles first-class for two-wheelers, three-wheelers and cars** (`vehicle_models.vehicle_type` 2W/3W/4W already in the schema): fitment and "Fits your vehicle" cover all three. The vehicle master source stays Q10; any seed is labelled demo data until then (no fitment written from memory).
 - **WhatsApp order updates + WhatsApp confirmation before cash on delivery** replace the SMS-OTP COD confirmation sketched in spec 03. Meta WhatsApp Cloud API is in business verification, so sending stays off until templates are approved; the confirmation step ships behind an admin setting that defaults **off** (otherwise every COD order would stall). Timeout/behaviour: Q74.
 - **Later:** "send a photo of your part" quote request. **Not for now:** buy a battery/tyre with fitting included.
+- **Root error page (2026-11-12 ruling):** a focused message and "Try again" only. The "Reset saved data" button planned in the review fix was dropped: it pushed every page over the 180 KB JS budget (error boundaries ship with every route), and B11 already drops corrupt saved data on read. Strings reach it through a JSON data block in the layout, not the i18n runtime.
 - **Correction:** `price_history_daily` (review A5) is needed 30 days before the first production price reduction, not by a fixed 1 Dec 2026 date (nothing is deployed yet); it is built before launch.
 
 ## PENDING DECISIONS (ask "what's pending" to review)

@@ -5,35 +5,9 @@
  */
 import { productSearchText } from './i18n/localize';
 
-export const CATEGORY_KEYS = [
-  'tyres',
-  'lubricants',
-  'batteries',
-  'bearings',
-  'filters',
-  'spareParts',
-  'accessories',
-  'workshopTools',
-  'evEssentials',
-] as const;
-
-export type CategoryKey = (typeof CATEGORY_KEYS)[number];
-
-export const CATEGORY_SLUGS: Record<CategoryKey, string> = {
-  tyres: 'tyres',
-  lubricants: 'lubricants',
-  batteries: 'batteries',
-  bearings: 'bearings',
-  filters: 'filters',
-  spareParts: 'spare-parts',
-  accessories: 'accessories',
-  workshopTools: 'workshop-tools',
-  evEssentials: 'ev-essentials',
-};
-
-export function categoryFromSlug(slug: string | undefined): CategoryKey | undefined {
-  return CATEGORY_KEYS.find((k) => CATEGORY_SLUGS[k] === slug);
-}
+// Category constants live in a small module so pages that only need them do not ship the product data.
+export { CATEGORY_KEYS, CATEGORY_SLUGS, categoryFromSlug, type CategoryKey } from './categories';
+import type { CategoryKey } from './categories';
 
 export type VehicleFit = '2W' | '4W' | '2W/4W' | 'EV';
 export type Availability = 'in_stock' | 'low_stock' | 'on_request';

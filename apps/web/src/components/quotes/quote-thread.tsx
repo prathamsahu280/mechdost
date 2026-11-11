@@ -19,6 +19,7 @@ import { track } from '@/lib/analytics';
 import { localePath } from '@/lib/locale-path';
 import { formatDate, formatPrice } from '@/lib/format';
 import { productNameFor } from '@/demo/i18n/localize';
+import { customerAllowed } from '@/demo/customer-blocks';
 import { useSession } from '@/demo/session-state';
 
 const STATUS_STYLE: Record<DemoQuote['status'], string> = {
@@ -191,7 +192,7 @@ function OfferCard({ quote, offer }: { quote: DemoQuote; offer: QuoteOffer }) {
     // Deliver to the account's default (else first) address; checkout rules apply (review B10).
     const saved = session?.addresses.find((a) => a.isDefault) ?? session?.addresses[0] ?? null;
     const result = acceptOffer(quote.code, offer.version, {
-      accountId: session?.id ?? null,
+      allowed: customerAllowed(session?.id ?? null),
       address: saved ? { line1: saved.line1, landmark: saved.landmark, pincode: saved.pincode } : null,
     });
     if (result.ok) {

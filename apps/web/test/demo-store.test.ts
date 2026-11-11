@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { blockCustomer } from '../src/demo/customer-blocks';
+import { blockCustomer, customerAllowed } from '../src/demo/customer-blocks';
 import {
   acceptOffer,
   addToCart,
@@ -104,18 +104,18 @@ describe('accepting a quote follows the checkout rules (review B10)', () => {
 
   it('needs a serviceable delivery address', () => {
     const code = quoteWithOffer();
-    expect(acceptOffer(code, 1, { accountId: null, address: null })).toEqual({
+    expect(acceptOffer(code, 1, { allowed: { order: true, cod: true }, address: null })).toEqual({
       ok: false,
       reason: 'address',
     });
     expect(
       acceptOffer(code, 1, {
-        accountId: null,
+        allowed: { order: true, cod: true },
         address: { line1: 'House 12, Pandri', landmark: '', pincode: '110001' },
       }),
     ).toEqual({ ok: false, reason: 'address' });
     const ok = acceptOffer(code, 1, {
-      accountId: null,
+      allowed: { order: true, cod: true },
       address: { line1: 'House 12, Pandri', landmark: '', pincode: '492001' },
     });
     expect(ok.ok).toBe(true);
@@ -133,7 +133,7 @@ describe('accepting a quote follows the checkout rules (review B10)', () => {
     });
     expect(
       acceptOffer(code, 1, {
-        accountId: 'acct-ravi',
+        allowed: customerAllowed('acct-ravi'),
         address: { line1: 'House 12, Pandri', landmark: '', pincode: '492001' },
       }),
     ).toEqual({ ok: false, reason: 'blocked' });

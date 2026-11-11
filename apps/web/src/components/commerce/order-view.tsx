@@ -7,7 +7,7 @@ import { ORDER_CANCEL_REASONS, type OrderCancelReason } from '@mechdost/shared/s
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
 import { restoreCoinsForOrder } from '@/demo/coins';
-import { findShop } from '@/demo/shops';
+import { findShop, rankShops } from '@/demo/shops';
 import {
   advanceOrder,
   cancelDemoOrder,
@@ -140,7 +140,7 @@ export function OrderView({ code }: { code: string }) {
               <button
                 type="button"
                 onClick={() => {
-                  advanceOrder(order.code);
+                  advanceOrder(order.code, rankShops([])[0]?.slug);
                 }}
                 className="press mt-3 inline-flex min-h-10 items-center rounded-button border border-input-border px-4 text-sm font-bold text-ink hover:bg-pill"
               >

@@ -8,7 +8,7 @@ import { COIN_RULE_LIMITS, DEFAULT_COIN_RULES, type CoinRules } from '@mechdost/
 import { CONTENT_KEYS, cleanContentText, contentMax, type ContentKey } from '@mechdost/shared/content';
 import { useSyncExternalStore } from 'react';
 import type { MapMode } from '@/lib/map-styles';
-import { CATEGORY_KEYS, type CategoryKey } from './catalogue';
+import { CATEGORY_KEYS, type CategoryKey } from './categories';
 import {
   DEFAULT_FEATURED,
   FEATURED_MAX,

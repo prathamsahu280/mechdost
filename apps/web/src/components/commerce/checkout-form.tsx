@@ -11,7 +11,8 @@ import { coinBalanceOf, redeemCoins, useCoins } from '@/demo/coins';
 import { customerAllowed } from '@/demo/customer-blocks';
 import { findAccount, useSession } from '@/demo/session';
 import { coinRulesFrom, useSiteSettings } from '@/demo/site-config';
-import { placeDemoOrder, priceCart, useCart } from '@/demo/store';
+import { placeDemoOrder, useCart } from '@/demo/store';
+import { priceCart } from '@/demo/cart-pricing';
 import { CartView } from './cart-view';
 import { productNameFor } from '@/demo/i18n/localize';
 
@@ -86,7 +87,11 @@ export function CheckoutForm() {
       useCoinsOn && coinAccount && redemption.coins > 0 && coinBalanceOf(coinAccount) >= redemption.coins
         ? { accountId: coinAccount, coins: redemption.coins, discountPaise: redemption.discountPaise }
         : null;
-    const order = placeDemoOrder({ name: value('name'), phone, address: value('address'), pincode }, spend);
+    const order = placeDemoOrder(
+      { name: value('name'), phone, address: value('address'), pincode },
+      priceCart(lines),
+      spend,
+    );
     if (spend) redeemCoins(spend.accountId, spend.coins, order.code);
     track('purchase_submitted', { code: order.code, valuePaise: order.totalPaise, demo: true });
     router.push(`${prefix}/orders/${order.code}?new=1`);

@@ -1511,12 +1511,8 @@
   },
   "errorPage": {
     "title": "Something went wrong on this page.",
-    "body": "Try again. If it keeps happening, data saved in this browser from an earlier visit may be out of date.",
+    "body": "Try again. If it keeps happening, contact support from the page footer.",
     "tryAgain": "Try again",
-    "trying": "Trying again…",
-    "reset": "Reset saved data",
-    "confirm": "This erases the cart, orders, quotes and demo sign-in saved in this browser. It cannot be undone. Your theme and privacy choices stay.",
-    "cancel": "Cancel",
-    "erase": "Erase saved data"
+    "trying": "Trying again…"
   }
 }

@@ -15,10 +15,8 @@ import {
   type ServiceCancelReason,
 } from '@mechdost/shared/state';
 import { useSyncExternalStore } from 'react';
-import { deliveryFeePaise, findProduct } from './catalogue';
-import { customerAllowed } from './customer-blocks';
+import type { PricedCart } from './cart-pricing';
 import { takesNewWork } from './partner-status';
-import { rankShops } from './shops';
 import { siteSettings } from './site-config';
 
 export const MAX_LINES = 20;
@@ -434,7 +432,8 @@ export type AcceptResult =
 
 /** Where the accepted quote is delivered; the same rules as checkout apply (review B10). */
 export interface QuoteDelivery {
-  accountId: string | null;
+  /** From `customerAllowed()` for the account (passed in: the store stays free of the blocks module). */
+  allowed: { order: boolean; cod: boolean };
   address: { line1: string; landmark: string; pincode: string } | null;
 }
 
@@ -454,8 +453,7 @@ export function acceptOffer(code: string, version: number, delivery: QuoteDelive
     (quote.address ? { line1: quote.address, landmark: '', pincode: quote.pincode } : null);
   if (!address || address.line1.trim().length < 10 || !/^4920\d{2}$/.test(address.pincode))
     return { ok: false, reason: 'address' };
-  const allowed = customerAllowed(delivery.accountId);
-  if (!allowed.order || !allowed.cod) return { ok: false, reason: 'blocked' };
+  if (!delivery.allowed.order || !delivery.allowed.cod) return { ok: false, reason: 'blocked' };
 
   const lines = quote.lines.map((l) => ({
     slug: l.slug,
@@ -538,20 +536,16 @@ export function removeFromCart(slug: string) {
   );
 }
 
-/** Cart lines joined with demo prices (unknown slugs from old sessions are dropped). */
-export function priceCart(lines: readonly CartLine[]) {
-  const priced = lines.flatMap((l) => {
-    const p = findProduct(l.slug);
-    return p ? [{ product: p, qty: l.qty, linePaise: p.pricePaise * l.qty }] : [];
-  });
-  const subtotalPaise = priced.reduce((s, l) => s + l.linePaise, 0);
-  // Admin-set fee and threshold; placed orders keep the values snapshotted at placement.
-  const deliveryPaise = deliveryFeePaise(subtotalPaise, siteSettings());
-  return { priced, subtotalPaise, deliveryPaise, totalPaise: subtotalPaise + deliveryPaise };
-}
-
-export function placeDemoOrder(customer: DemoOrder['customer'], coins: DemoOrder['coins'] = null): DemoOrder {
-  const { priced, subtotalPaise, deliveryPaise } = priceCart(cartSnapshot());
+/**
+ * Place the cart as an order. The caller prices it with `priceCart` (`demo/cart-pricing.ts`): the store stays free
+ * of the product catalogue, so the cart pill on every page does not ship it (JS budget, spec 16).
+ */
+export function placeDemoOrder(
+  customer: DemoOrder['customer'],
+  cart: PricedCart,
+  coins: DemoOrder['coins'] = null,
+): DemoOrder {
+  const { priced, subtotalPaise, deliveryPaise } = cart;
   // Coins pay part of the products only, never delivery; the caller checked the balance and the cap.
   const coinDiscount = coins ? Math.min(coins.discountPaise, subtotalPaise) : 0;
   const totalPaise = subtotalPaise - coinDiscount + deliveryPaise;
@@ -595,16 +589,9 @@ export function createDemoRequest(
 
 const STAGE_CONFIRMED_AT = ORDER_STAGES.indexOf('confirmed');
 
-/** The best-ranked shop that takes new work, as an accepted offer (demo simulation only). */
-function simulatedOffer(): NonNullable<DemoOrder['shop']> | null {
-  const [shop] = rankShops([]);
-  if (!shop) return null;
-  const now = new Date().toISOString();
-  return { slug: shop.slug, status: 'accepted', offeredAt: now, expiresAt: now };
-}
-
 /** Demo control: move to the next stage (in production these are shop/workshop/admin actions). */
-export function advanceOrder(code: string) {
+/** `fallbackShopSlug`: the shop the simulation "routes" to when none was offered yet (the caller ranks shops). */
+export function advanceOrder(code: string, fallbackShopSlug?: string) {
   write(
     KEYS.orders,
     ordersSnapshot().map((o) => {
@@ -612,7 +599,12 @@ export function advanceOrder(code: string) {
       const stage = Math.min(o.stage + 1, ORDER_STAGES.length - 1);
       // Simulates admin routing + the shop's acceptance, so the shop portal and admin agree (review B12).
       if (stage === STAGE_CONFIRMED_AT) {
-        const shop = o.shop ?? simulatedOffer();
+        const now = new Date().toISOString();
+        const shop =
+          o.shop ??
+          (fallbackShopSlug
+            ? { slug: fallbackShopSlug, status: 'accepted' as const, offeredAt: now, expiresAt: now }
+            : null);
         return shop ? { ...o, stage, shop: { ...shop, status: 'accepted' as const } } : o;
       }
       // Simulates the real steps: a code is issued when it goes out; "delivered" means the code was given.

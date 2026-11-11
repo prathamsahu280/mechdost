@@ -1,8 +1,9 @@
 import type { Metadata, Viewport } from 'next';
 import { DM_Sans, Manrope, Noto_Sans_Devanagari } from 'next/font/google';
 import { notFound } from 'next/navigation';
-import { hasLocale, NextIntlClientProvider } from 'next-intl';
+import { hasLocale } from 'next-intl';
 import { getMessages, getTranslations } from 'next-intl/server';
+import { ERROR_COPY_ID } from '@/lib/error-copy';
 import type { ReactNode } from 'react';
 import { assistantCopy } from '@/assistant/server-copy';
 import { AssistantLauncher } from '@/components/assistant/assistant-launcher';
@@ -107,11 +108,14 @@ export default async function LocaleLayout({
         </a>
         <AnnouncementBar city={city} />
         <Header navItems={navItems} />
+        {/* The root error page's strings as a data block (not executed): no i18n runtime on every page (JS budget). */}
+        <script
+          id={ERROR_COPY_ID}
+          type="application/json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(errorCopy).replace(/</g, '\\u003c') }}
+        />
         <main id="content" tabIndex={-1} className="outline-none">
-          {/* Only the root error page's strings reach the browser here; pages keep their own ClientMessages. */}
-          <NextIntlClientProvider locale={locale} messages={{ errorPage: errorCopy }} timeZone="Asia/Kolkata">
-            {children}
-          </NextIntlClientProvider>
+          {children}
         </main>
         <Footer />
         <MobileTabBar label={tabs('label')} items={tabItems} />
