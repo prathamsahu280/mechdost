@@ -246,10 +246,25 @@ export function signOut() {
 
 /** Where each role lands after signing in. */
 
-/** Only same-site paths are allowed as a post-login destination (open-redirect guard). */
+/**
+ * Only same-site paths are allowed as a post-login destination (open-redirect guard). The URL parser strips tab,
+ * CR and LF, so `/<tab>/evil.example` would resolve to another host (review B1): control characters and
+ * backslashes are refused outright, and the result must still be on our own origin after parsing.
+ */
+const PROBE_ORIGIN = 'https://mechdost.invalid';
+// eslint-disable-next-line no-control-regex -- the point is to refuse control characters
+const CONTROL = /[\u0000-\u001f\u007f]/;
 export function safeNext(next: string | null): string | null {
-  if (!next || !next.startsWith('/') || next.startsWith('//') || next.includes('\\')) return null;
-  return next;
+  if (!next?.startsWith('/') || next.startsWith('//') || next.includes('\\') || CONTROL.test(next))
+    return null;
+  let url: URL;
+  try {
+    url = new URL(next, PROBE_ORIGIN);
+  } catch {
+    return null;
+  }
+  if (url.origin !== PROBE_ORIGIN) return null;
+  return `${url.pathname}${url.search}${url.hash}`;
 }
 
 function updateSignedIn(change: (a: DemoAccount) => DemoAccount) {

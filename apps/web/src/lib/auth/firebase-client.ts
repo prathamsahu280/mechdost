@@ -14,6 +14,7 @@ import {
   type Auth,
   type ConfirmationResult,
 } from '@firebase/auth';
+import { codeFailFor, passwordLinkedFor, type CodeFail } from './auth-errors';
 import type { RealMe } from './real-account';
 
 /**
@@ -57,7 +58,7 @@ const codeOf = (err: unknown) =>
   typeof err === 'object' && err !== null && 'code' in err && typeof err.code === 'string' ? err.code : '';
 
 export type PhoneFail = 'phone' | 'rate' | 'captcha' | 'unavailable';
-export type CodeFail = 'otp' | 'expired' | 'rate' | 'unavailable';
+export type { CodeFail };
 
 /** A closed reCAPTCHA challenge never settles the send: give up after this long (a11y review 2026-11-09). */
 const SEND_TIMEOUT_MS = 60_000;
@@ -109,11 +110,7 @@ export async function confirmPhoneCode(
     const { user } = await confirmation.confirm(code);
     return { ok: true, hasPassword: user.providerData.some((p) => p.providerId === 'password') };
   } catch (err) {
-    const c = codeOf(err);
-    if (c === 'auth/invalid-verification-code' || c === 'auth/code-expired')
-      return { ok: false, reason: 'otp' };
-    if (c === 'auth/too-many-requests') return { ok: false, reason: 'rate' };
-    return { ok: false, reason: 'unavailable' };
+    return { ok: false, reason: codeFailFor(codeOf(err)) };
   }
 }
 
@@ -124,6 +121,8 @@ export async function linkEmailPassword(
 ): Promise<{ ok: true } | { ok: false; reason: 'email_in_use' | 'unavailable' }> {
   const user = auth?.currentUser;
   if (!user) return { ok: false, reason: 'unavailable' };
+  // A retry after an earlier link succeeded (the next step failed): already linked is fine (review B15).
+  if (passwordLinkedFor(user.providerData, email)) return { ok: true };
   try {
     await linkWithCredential(user, EmailAuthProvider.credential(email, password));
   } catch (err) {
