@@ -1,6 +1,6 @@
 import { sql, type SQL } from 'drizzle-orm';
 import { NotFoundError } from './errors';
-import { decodeCursor, encodeCursor } from './cursor';
+import { decodeCursor, encodeCursor, type CursorKind } from './cursor';
 import { localized } from './localized';
 import type { Tx } from './orders';
 import { num, numOrNull, rowsOf } from './sql-rows';
@@ -239,19 +239,25 @@ export async function listCatalogue(db: Tx, query: CatalogueQuery): Promise<Cata
   if (query.brand) filters.push(sql`b.slug = ${query.brand}`);
   if (query.availableOnly) filters.push(sql`o.price is not null`);
 
-  const key: Record<CatalogueSort, { expr: SQL; type: SQL; dir: 'asc' | 'desc' }> = {
+  const key: Record<CatalogueSort, { expr: SQL; type: SQL; kind: CursorKind; dir: 'asc' | 'desc' }> = {
     relevance: {
       expr: sql`(ts_rank(p.search_vector, ${tsq}) + greatest(word_similarity(${q}, p.name), word_similarity(${q}, b.name))
         + case when ${partMatch} then 1 else 0 end)::float8`,
       type: sql`float8`,
+      kind: 'number',
       dir: 'desc',
     },
-    newest: { expr: sql`p.created_at`, type: sql`timestamptz`, dir: 'desc' },
-    price_asc: { expr: sql`coalesce(o.price, ${NO_PRICE_ASC})`, type: sql`bigint`, dir: 'asc' },
-    price_desc: { expr: sql`coalesce(o.price, -1)`, type: sql`bigint`, dir: 'desc' },
+    newest: { expr: sql`p.created_at`, type: sql`timestamptz`, kind: 'timestamp', dir: 'desc' },
+    price_asc: {
+      expr: sql`coalesce(o.price, ${NO_PRICE_ASC})`,
+      type: sql`bigint`,
+      kind: 'number',
+      dir: 'asc',
+    },
+    price_desc: { expr: sql`coalesce(o.price, -1)`, type: sql`bigint`, kind: 'number', dir: 'desc' },
   };
   const k = key[sort];
-  const cursor = query.cursor ? decodeCursor(query.cursor) : null;
+  const cursor = query.cursor ? decodeCursor(query.cursor, k.kind) : null;
   const after = cursor
     ? k.dir === 'desc'
       ? sql`(r.sort_key, r.id) < (cast(${cursor.k} as ${k.type}), cast(${cursor.id} as uuid))`

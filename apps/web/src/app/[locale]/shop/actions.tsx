@@ -45,6 +45,7 @@ export async function loadMoreCards(
     category: query.category ?? undefined,
     sort: query.sort ?? undefined,
     cursor,
+    restartOnBadCursor: false,
   });
   return {
     cards: page.items.map((p) => ({ slug: p.slug, node: <ProductCard key={p.slug} product={p} /> })),

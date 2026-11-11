@@ -54,7 +54,7 @@ export async function listMyOrders(
   page: { limit?: number; cursor?: string | null } = {},
 ): Promise<{ orders: MyOrderSummary[]; nextCursor: string | null }> {
   const limit = pageSize(page.limit, 20, 50);
-  const after = page.cursor ? decodeCursor(page.cursor) : null;
+  const after = page.cursor ? decodeCursor(page.cursor, 'timestamp') : null;
   const rows = await db
     .select({ group: orderGroups, sortKey: sql<string>`${orderGroups.createdAt}::text` })
     .from(orderGroups)

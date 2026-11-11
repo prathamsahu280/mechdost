@@ -91,6 +91,19 @@ describe('catalogue API', () => {
     const cursor = await ctx.app.request('/v1/catalogue/products?cursor=abc');
     expect(cursor.status).toBe(422);
     expect(((await cursor.json()) as ErrorJson).error.code).toBe('INVALID_CURSOR');
+    // Review B6: a well-formed cursor whose key does not fit the sort is a 422, never a cast error (500).
+    const forge = (k: string) =>
+      Buffer.from(JSON.stringify({ k, id: '01890000-0000-7000-8000-000000000000' })).toString('base64url');
+    const cases: [sort: string, key: string][] = [
+      ['price_asc', '2026-11-01 10:00:00+00'],
+      ['newest', 'not-a-date'],
+      ['relevance', 'abc'],
+    ];
+    for (const [sort, k] of cases) {
+      const res = await ctx.app.request(`/v1/catalogue/products?sort=${sort}&cursor=${forge(k)}`);
+      expect(res.status, sort).toBe(422);
+      expect(((await res.json()) as ErrorJson).error.code, sort).toBe('INVALID_CURSOR');
+    }
     expect((await ctx.app.request('/v1/catalogue/products?city=XYZ')).status).toBe(404);
   });
 

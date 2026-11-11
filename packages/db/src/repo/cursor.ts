@@ -16,7 +16,20 @@ export function encodeCursor(c: Keyset): string {
   return Buffer.from(JSON.stringify(c)).toString('base64url');
 }
 
-export function decodeCursor(raw: string): Keyset {
+/** What the cursor's sort key must parse as; checked before it reaches a SQL cast (review B6). */
+export type CursorKind = 'number' | 'timestamp' | 'text';
+
+/** `timestamptz::text` as Postgres writes it, e.g. `2026-11-10 12:34:56.123456+05:30`. */
+const TIMESTAMP = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(\.\d{1,6})?[+-]\d{2}(:\d{2}){0,2}$/;
+const NUMBER = /^-?\d{1,20}(\.\d{1,20})?(e[+-]?\d{1,3})?$/i;
+
+function keyFits(k: string, kind: CursorKind): boolean {
+  if (kind === 'number') return NUMBER.test(k);
+  if (kind === 'timestamp') return TIMESTAMP.test(k);
+  return true;
+}
+
+export function decodeCursor(raw: string, kind: CursorKind = 'text'): Keyset {
   try {
     const parsed: unknown = JSON.parse(Buffer.from(raw, 'base64url').toString('utf8'));
     if (
@@ -27,7 +40,8 @@ export function decodeCursor(raw: string): Keyset {
       typeof parsed.k === 'string' &&
       typeof parsed.id === 'string' &&
       parsed.k.length <= 64 &&
-      UUID.test(parsed.id)
+      UUID.test(parsed.id) &&
+      keyFits(parsed.k, kind)
     )
       return { k: parsed.k, id: parsed.id };
   } catch {

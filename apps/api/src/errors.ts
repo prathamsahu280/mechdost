@@ -4,6 +4,7 @@ import { routePath } from 'hono/route';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import { ZodError } from 'zod';
 import { ConflictError, ForbiddenError, NotFoundError, pgCode, ValidationError } from '@mechdost/db/repo';
+import { ActorNotAllowedError, IllegalTransitionError } from '@mechdost/shared/state';
 import { log, safeError } from './logger';
 import type { AppEnv } from './types';
 
@@ -50,6 +51,9 @@ export function handleError(err: Error, c: Context<AppEnv>): Response {
     return c.json(errorBody(c, err.code, err.message, err.details), err.status);
   if (err instanceof ForbiddenError) return c.json(errorBody(c, err.code, err.message), 403);
   if (err instanceof ConflictError) return c.json(errorBody(c, err.code, err.message), err.status);
+  // A move the state machine forbids is the caller's mistake, not a server fault (review B5).
+  if (err instanceof IllegalTransitionError || err instanceof ActorNotAllowedError)
+    return c.json(errorBody(c, err.code, err.message), 409);
   if (err instanceof HTTPException) {
     const code = err.status === 413 ? 'PAYLOAD_TOO_LARGE' : err.status === 504 ? 'TIMEOUT' : 'HTTP_ERROR';
     return c.json(errorBody(c, code, err.message || 'Request failed'), err.status);

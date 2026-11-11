@@ -30,6 +30,8 @@ export interface CatalogueQuery {
   sort?: ApiSort;
   cursor?: string;
   limit?: number;
+  /** A shared link starts again at page 1 on a bad cursor; "Load more" must fail instead (review B6). */
+  restartOnBadCursor?: boolean;
 }
 
 function base(): string {
@@ -56,7 +58,7 @@ export async function fetchCataloguePage(
   if (query.cursor) url.searchParams.set('cursor', query.cursor);
 
   let res = await get(url, { revalidate: 30, tags: ['catalogue'] });
-  if (res.status === 422 && query.cursor) {
+  if (res.status === 422 && query.cursor && query.restartOnBadCursor !== false) {
     // A tampered or outdated cursor in a shared link: start again from the first page.
     url.searchParams.delete('cursor');
     res = await get(url, { revalidate: 30, tags: ['catalogue'] });

@@ -26,6 +26,29 @@ async function person(
 }
 
 describe('support API', () => {
+  it('an illegal status move is a 409 with a stable code, not a 500 (review B5)', async () => {
+    const ctx = await buildApp();
+    const customer = await person(ctx, '07', null);
+    const agent = await person(ctx, '08', 'support_agent');
+    const { code } = (await (
+      await ctx.app.request('/v1/support/tickets', {
+        method: 'POST',
+        headers: customer,
+        body: JSON.stringify({ kind: 'order_issue', body: 'Part arrived broken.' }),
+      })
+    ).json()) as { code: string };
+    const { version } = (await (
+      await ctx.app.request(`/v1/admin/support/tickets/${code}`, { headers: agent })
+    ).json()) as { version: number };
+    const res = await ctx.app.request(`/v1/admin/support/tickets/${code}/status`, {
+      method: 'POST',
+      headers: agent,
+      body: JSON.stringify({ to: 'closed', version }),
+    });
+    expect(res.status).toBe(409);
+    expect(((await res.json()) as ErrorJson).error.code).toBe('ILLEGAL_TRANSITION');
+  });
+
   it('a customer raises, reads and answers their own request; others get 404', async () => {
     const ctx = await buildApp();
     const asha = await person(ctx, '01', null);

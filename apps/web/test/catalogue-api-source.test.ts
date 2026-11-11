@@ -141,6 +141,14 @@ describe('catalogue API source (plan 2026-11-10 task 3)', () => {
     expect(result.items).toHaveLength(1);
   });
 
+  it('Load more (restartOnBadCursor: false) fails on 422 instead of appending page 1 again', async () => {
+    fetchMock.mockResolvedValueOnce(json({ code: 'INVALID_CURSOR' }, 422));
+    await expect(
+      fetchCataloguePage({ locale: 'en', cursor: 'stale', restartOnBadCursor: false }),
+    ).rejects.toThrow();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it('apiCard: offer null → price null, availability on_request, fit null', () => {
     const view = apiCard({ ...card, offer: null });
     expect(view.price).toBeNull();

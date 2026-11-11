@@ -91,7 +91,7 @@ export async function listShopOrders(
   page: { cursor?: string | null; limit?: number } = {},
 ): Promise<{ items: ShopOrderItem[]; nextCursor: string | null }> {
   const doneLimit = pageSize(page.limit, 30, 50);
-  const after = view === 'done' && page.cursor ? decodeCursor(page.cursor) : null;
+  const after = view === 'done' && page.cursor ? decodeCursor(page.cursor, 'timestamp') : null;
   const fetched = rowsOf<{
     id: string;
     code: string;
