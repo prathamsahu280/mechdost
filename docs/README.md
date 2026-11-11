@@ -35,6 +35,7 @@ Read `../CLAUDE.md` first (hard rules). Then:
 - `research/promotions-referrals.md` — promotions, sponsored placements and an abuse-resistant referral programme (2026-11-01).
 - `research/realtime-alternatives.md` — Supabase Realtime vs own SSE (Hono + Redis) vs Firebase vs managed pub/sub; recommends Firebase RTDB pings via an outbox relay (2026-11-01).
 - `research/whatsapp.md` — WhatsApp Cloud API direct vs BSPs (MSG91, Interakt, AiSensy, WATI, Twilio, 360dialog), INR prices, OTP, compliance, setup checklist (2026-11-01).
+- `research/repo-review-2026-11-11.md` — whole-repo review: bugs and breakable flows (B1–B16), architecture/launch readiness (A1–A12), tooling/CI/skills (T1–T15), launch blockers, features to pull forward (2026-11-11).
 - `conventions/data-for-ml.md` — hard rule 16: ML/AI-ready data collection.
 - `runbooks/collaborator-setup.md` — new collaborator setup: run the site, Claude Code project skills (auto-loaded from `.claude/skills/`), public skills, plugins and MCP servers to install.
 - `runbooks/firebase.md` — Firebase projects, local keys, production checklist for sign-in.
