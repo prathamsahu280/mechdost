@@ -242,3 +242,28 @@ export async function applyDeliveryReceipt(
     returning id`);
   return rowsOf(rows).length > 0;
 }
+
+/**
+ * Records a provider delivery receipt and applies it in one transaction (review low): if applying fails, the
+ * receipt is not marked as seen, so the provider's retry can still apply it. Returns false for a duplicate.
+ */
+export async function recordDeliveryReceipt(
+  db: Tx,
+  input: {
+    eventId: string;
+    provider: string;
+    payload: Record<string, unknown>;
+    receipt: Parameters<typeof applyDeliveryReceipt>[1];
+  },
+): Promise<boolean> {
+  return db.transaction(async (tx) => {
+    const fresh = await recordWebhookEvent(tx, {
+      id: input.eventId,
+      provider: input.provider,
+      type: 'status',
+      payload: input.payload,
+    });
+    if (fresh) await applyDeliveryReceipt(tx, input.receipt);
+    return fresh;
+  });
+}

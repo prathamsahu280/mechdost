@@ -5,6 +5,7 @@
  * Hindi is edited and published separately per key (hard rule 10): `/hi` falls back to the Hindi default, never
  * to English.
  */
+import { cleanLine } from './text';
 export const CONTENT_LOCALES = ['en', 'hi'] as const;
 export type ContentLocale = (typeof CONTENT_LOCALES)[number];
 
@@ -31,9 +32,5 @@ export function contentMax(key: ContentKey): number {
 
 /** Plain text only: control and format characters dropped, whitespace collapsed, trimmed, length capped. */
 export function cleanContentText(key: ContentKey, value: string): string {
-  return value
-    .replace(/[\p{Cc}\p{Cf}]/gu, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, contentMax(key));
+  return cleanLine(value, contentMax(key));
 }

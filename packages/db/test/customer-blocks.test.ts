@@ -175,3 +175,25 @@ describe('customer blocks', () => {
     await expect(as(owner, 'orders')).resolves.toMatchObject({ version: 1 });
   });
 });
+
+describe('custom staff roles (review low)', () => {
+  it('a person with an admin-made staff role cannot be blocked either', async () => {
+    const [role] = await db
+      .insert(s.roles)
+      .values({ key: 'night_desk', name: 'Night desk', isSystem: false })
+      .returning();
+    await db.insert(s.rolePermissions).values({ roleId: role!.id, permissionKey: 'orders:read' });
+    const desk = (await db.insert(s.users).values({ firebaseUid: 'fb-block-night-desk' }).returning())[0]!.id;
+    await grantRole(t(), { userId: desk, role: 'night_desk', grantedBy: null });
+    await expect(
+      blockCustomer(t(), {
+        userId: desk,
+        level: 'orders',
+        reasonCode: 'other',
+        note: null,
+        endsAt: null,
+        staffUserId: staff,
+      }),
+    ).rejects.toMatchObject({ code: 'BLOCK_NOT_CUSTOMER' });
+  });
+});

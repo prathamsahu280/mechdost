@@ -373,3 +373,16 @@ describe('lost access queues a live inbox wipe (migration 0020)', () => {
     expect(rows.every((r) => r.node !== null)).toBe(true);
   });
 });
+
+describe('live outbox bounds (review low)', () => {
+  it('stops retrying a ping after 20 attempts and purges unsent pings older than 24 h', async () => {
+    await db.execute(sql`delete from live_outbox`);
+    await newOrder();
+    await newOrder();
+    await db.execute(sql`update live_outbox set attempts = 20`);
+    expect(await claimLiveBatch(t())).toHaveLength(0);
+    await db.execute(sql`update live_outbox set created_at = now() - interval '25 hours'`);
+    expect(await purgeSentLive(t())).toBeGreaterThanOrEqual(2);
+    expect((await db.execute(sql`select count(*)::int as n from live_outbox`)).rows[0]).toEqual({ n: 0 });
+  });
+});

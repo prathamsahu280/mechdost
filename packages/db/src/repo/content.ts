@@ -151,6 +151,11 @@ function cleanEditable(key: EditableKey, raw: unknown): EditableValue {
   return text;
 }
 
+/** Audit entity id of one content entry (key, locale, optional city). */
+function entityKey(key: string, locale: string, cityId: string | null): string {
+  return `${key}:${locale}${cityId ? `@${cityId}` : ''}`;
+}
+
 /** Create (`expectedVersion` null) or change a draft, cleaned and validated for its key. */
 export async function saveContentDraft(
   db: Tx,
@@ -167,6 +172,16 @@ export async function saveContentDraft(
   return db.transaction(async (tx) => {
     let saved: { version: number } | undefined;
     if (input.expectedVersion === null) {
+      // A new draft continues this entry's version count (one audited save = one version), so a stale
+      // "publish version N" from an earlier, already published draft can never match it (review low: ABA).
+      const saves = await tx.$count(
+        auditLog,
+        and(
+          eq(auditLog.entity, 'content'),
+          eq(auditLog.entityId, entityKey(input.key, input.locale, input.cityId)),
+          eq(auditLog.action, 'content.draft_saved'),
+        ),
+      );
       [saved] = await tx
         .insert(contentBlocks)
         .values({
@@ -175,6 +190,7 @@ export async function saveContentDraft(
           cityId: input.cityId,
           value,
           status: 'draft',
+          version: saves + 1,
           updatedBy: input.staffUserId,
         })
         .onConflictDoNothing()
@@ -197,7 +213,7 @@ export async function saveContentDraft(
       actorRole: 'staff',
       action: 'content.draft_saved',
       entity: 'content',
-      entityId: `${input.key}:${input.locale}${input.cityId ? `@${input.cityId}` : ''}`,
+      entityId: entityKey(input.key, input.locale, input.cityId),
       after: { value, version: saved.version },
     });
     return { version: saved.version, value };
@@ -258,7 +274,7 @@ export async function publishContent(
       actorRole: 'staff',
       action: 'content.published',
       entity: 'content',
-      entityId: `${input.key}:${input.locale}${input.cityId ? `@${input.cityId}` : ''}`,
+      entityId: entityKey(input.key, input.locale, input.cityId),
       before: before ? { value: before.value, version: before.version } : null,
       after: { value: draft.value, version: live.version },
     });
@@ -304,7 +320,7 @@ export async function unpublishContent(
       actorRole: 'staff',
       action: 'content.unpublished',
       entity: 'content',
-      entityId: `${input.key}:${input.locale}${input.cityId ? `@${input.cityId}` : ''}`,
+      entityId: entityKey(input.key, input.locale, input.cityId),
       before: { value: gone.value, version: gone.version },
       after: null,
     });

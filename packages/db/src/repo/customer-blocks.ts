@@ -6,7 +6,8 @@ import {
   type CustomerBlockReason,
 } from '@mechdost/shared/customers';
 import { auditLog, customerBlocks, users } from '../schema';
-import { ROLES } from '@mechdost/shared/rbac';
+import { isStaffGrant } from '@mechdost/shared/auth';
+import { isRoleKey, ROLES } from '@mechdost/shared/rbac';
 import { ConflictError, ForbiddenError, NotFoundError, pgCode, ValidationError } from './errors';
 import { recordServerEvent } from './events';
 import { loadGrants } from './rbac';
@@ -66,7 +67,8 @@ export async function blockCustomer(
     // audited and four-eyes for offboarding), never by a block that could lock out another admin. Partner users
     // may lose ordering or COD, but a full block would cut off their portal: suspend the partner instead.
     const grants = await loadGrants(tx, input.userId);
-    const isStaff = grants.some((g) => STAFF_ROLES.has(g.role));
+    // Admin-made roles are staff roles too (global or city-scoped; review low).
+    const isStaff = grants.some((g) => STAFF_ROLES.has(g.role) || (!isRoleKey(g.role) && isStaffGrant(g)));
     if (isStaff)
       throw new ForbiddenError('Staff accounts cannot be blocked; revoke their roles', 'BLOCK_NOT_CUSTOMER');
     if (input.level === 'full' && grants.some((g) => g.shopId !== null || g.workshopId !== null))

@@ -34,6 +34,9 @@ interface ClaimedRow {
   created_at: Date | string;
 }
 
+/** A ping is a hint (clients also poll): after this many tries it is dropped, not retried forever (review low). */
+export const LIVE_MAX_ATTEMPTS = 20;
+
 export async function claimLiveBatch(
   db: Tx,
   opts: { limit?: number; leaseSeconds?: number } = {},
@@ -44,7 +47,7 @@ export async function claimLiveBatch(
     update live_outbox set claimed_at = now(), attempts = attempts + 1
     where id in (
       select id from live_outbox
-      where sent_at is null
+      where sent_at is null and attempts < ${LIVE_MAX_ATTEMPTS}
         and (claimed_at is null or claimed_at < now() - make_interval(secs => ${lease}))
       order by id
       limit ${limit}
@@ -79,7 +82,10 @@ export async function markLiveSent(db: Tx, ids: readonly number[]): Promise<void
 /** Sent rows are kept 24 h for debugging, then purged (hard rule 16: the history lives in `*_events`). */
 export async function purgeSentLive(db: Tx, olderThanHours = 24): Promise<number> {
   const result = await db.execute(
-    sql`delete from live_outbox where sent_at is not null and sent_at < now() - make_interval(hours => ${olderThanHours}) returning id`,
+    sql`delete from live_outbox
+      where (sent_at is not null and sent_at < now() - make_interval(hours => ${olderThanHours}))
+        or (sent_at is null and created_at < now() - make_interval(hours => ${olderThanHours}))
+      returning id`,
   );
   return rowsOf(result).length;
 }

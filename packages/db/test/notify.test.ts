@@ -14,6 +14,7 @@ import {
   markOutboxRetry,
   markOutboxSent,
   renewOutboxClaim,
+  recordDeliveryReceipt,
   recordWebhookEvent,
   type Tx,
 } from '../src/repo';
@@ -184,5 +185,28 @@ describe('notification outbox', () => {
     };
     expect(await recordWebhookEvent(t(), event)).toBe(true);
     expect(await recordWebhookEvent(t(), event)).toBe(false);
+  });
+});
+
+describe('delivery receipts are recorded and applied together (review low)', () => {
+  it('a receipt that fails to apply is not marked as seen, so a retry can still apply it', async () => {
+    await expect(
+      recordDeliveryReceipt(t(), {
+        eventId: 'wa:atomic-test:delivered',
+        provider: 'whatsapp',
+        payload: { status: 'delivered' },
+        receipt: {
+          channel: 'whatsapp',
+          providerId: 'atomic-test',
+          status: 'delivered',
+          at: new Date(Number.NaN),
+        },
+      }),
+    ).rejects.toThrow();
+    const seen = await db
+      .select()
+      .from(s.webhookEvents)
+      .where(eq(s.webhookEvents.id, 'wa:atomic-test:delivered'));
+    expect(seen).toHaveLength(0);
   });
 });

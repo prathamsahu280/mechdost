@@ -75,7 +75,7 @@ async function apply(
         .from(coinLedger)
         .where(eq(coinLedger.idemKey, input.idemKey))
         .limit(1);
-      if (prior?.userId !== input.userId) {
+      if (prior?.userId !== input.userId || prior.delta !== input.delta || prior.kind !== input.kind) {
         throw new ConflictError('This idempotency key belongs to another coin event', 'COINS_IDEM_MISMATCH');
       }
       return {

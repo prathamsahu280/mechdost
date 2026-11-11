@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { Hono } from 'hono';
 import { z } from 'zod';
-import { applyDeliveryReceipt, recordWebhookEvent } from '@mechdost/db/repo';
+import { recordDeliveryReceipt, recordWebhookEvent } from '@mechdost/db/repo';
 import { log } from '../logger';
 import type { AppDeps, AppEnv } from '../types';
 
@@ -109,28 +109,26 @@ export function whatsAppWebhookRoutes(deps: AppDeps) {
       for (const change of entry.changes) {
         for (const s of change.value.statuses ?? []) {
           if (s.status === 'deleted' || s.status === 'warning') continue;
-          const fresh = await recordWebhookEvent(deps.db, {
-            id: `wa:${s.id}:${s.status}`,
+          const category = s.pricing?.category;
+          await recordDeliveryReceipt(deps.db, {
+            eventId: `wa:${s.id}:${s.status}`,
             provider: 'whatsapp',
-            type: 'status',
             payload: {
               status: s.status,
               timestamp: s.timestamp,
-              category: s.pricing?.category ?? null,
+              category: category ?? null,
               billable: s.pricing?.billable ?? null,
               errorCode: s.errors?.[0]?.code ?? null,
             },
-          });
-          if (!fresh) continue;
-          const category = s.pricing?.category;
-          await applyDeliveryReceipt(deps.db, {
-            channel: 'whatsapp',
-            providerId: s.id,
-            status: s.status,
-            at: new Date(Number(s.timestamp) * 1000),
-            pricingCategory: category && PRICING.has(category) ? category : null,
-            billable: s.pricing?.billable ?? null,
-            errorCode: s.errors?.[0]?.code ?? null,
+            receipt: {
+              channel: 'whatsapp',
+              providerId: s.id,
+              status: s.status,
+              at: new Date(Number(s.timestamp) * 1000),
+              pricingCategory: category && PRICING.has(category) ? category : null,
+              billable: s.pricing?.billable ?? null,
+              errorCode: s.errors?.[0]?.code ?? null,
+            },
           });
         }
         for (const m of change.value.messages ?? []) {

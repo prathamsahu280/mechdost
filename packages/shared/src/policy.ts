@@ -5,6 +5,7 @@
  * paragraphs. Official facts are written as placeholders (`{company}`, `{address}`, `{phone}`) and filled by
  * plain replacement at render time, so they stay in one place. Pure functions, no dependencies.
  */
+import { clip, cleanLine } from './text';
 export const POLICY_KEYS = ['policy.privacy', 'policy.returns', 'policy.delivery', 'policy.service'] as const;
 export type PolicyKey = (typeof POLICY_KEYS)[number];
 
@@ -35,22 +36,19 @@ export function isPolicyKey(key: string): key is PolicyKey {
   return (POLICY_KEYS as readonly string[]).includes(key);
 }
 
-const line = (value: string, max: number) =>
-  value
-    .replace(/[\p{Cc}\p{Cf}]/gu, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, max);
+const line = cleanLine;
 
 /** Paragraphs survive (blank line between them); everything else is cleaned like a single line. */
 const paragraphs = (value: string, max: number) =>
-  value
-    .replace(/\r\n?/g, '\n')
-    .split(/\n\s*\n/)
-    .map((p) => line(p, max))
-    .filter(Boolean)
-    .join('\n\n')
-    .slice(0, max);
+  clip(
+    value
+      .replace(/\r\n?/g, '\n')
+      .split(/\n\s*\n/)
+      .map((p) => line(p, max))
+      .filter(Boolean)
+      .join('\n\n'),
+    max,
+  );
 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;

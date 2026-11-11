@@ -256,3 +256,16 @@ describe('site content', () => {
     expect(entry?.published?.value).toBe('');
   });
 });
+
+describe('content draft versions (review low: ABA)', () => {
+  it('a stale "publish version N" never publishes a newer draft that restarted at N', async () => {
+    const key = { key: 'hero.lead' as const, locale: 'en' as const, cityId: null, staffUserId: staff };
+    const first = await saveContentDraft(t(), { ...key, value: 'First lead text', expectedVersion: null });
+    await publishContent(t(), { ...key, expectedDraftVersion: first.version });
+    const second = await saveContentDraft(t(), { ...key, value: 'Second lead text', expectedVersion: null });
+    expect(second.version).not.toBe(first.version);
+    await expect(publishContent(t(), { ...key, expectedDraftVersion: first.version })).rejects.toMatchObject({
+      code: 'STALE_CONTENT',
+    });
+  });
+});

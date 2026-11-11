@@ -942,3 +942,26 @@ describe('partner standing: pause, suspend, reactivate (decision 2026-11-01)', (
     expect(shop?.status).toBe('approved');
   });
 });
+
+describe('coin idempotency (review low)', () => {
+  it('replaying a key with a different amount is refused, not reported as the old success', async () => {
+    const u = (await db.insert(s.users).values({ firebaseUid: 'fb-coins-replay' }).returning())[0]!.id;
+    const later = new Date(Date.now() + 86_400_000);
+    await earnCoins(t(), {
+      userId: u,
+      coins: 5,
+      reason: 'Replay test',
+      idemKey: 'earn:replay:1',
+      expiresAt: later,
+    });
+    await expect(
+      earnCoins(t(), {
+        userId: u,
+        coins: 50,
+        reason: 'Replay test',
+        idemKey: 'earn:replay:1',
+        expiresAt: later,
+      }),
+    ).rejects.toMatchObject({ code: 'COINS_IDEM_MISMATCH' });
+  });
+});
