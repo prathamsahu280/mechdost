@@ -97,6 +97,39 @@ test.describe('workshops → booking → request status', () => {
   });
 });
 
+test.describe('demo shop filters follow the URL (review B13)', () => {
+  test('the main Shop link clears a category picked on the page; Back brings it back', async ({ page }) => {
+    await page.goto('/shop');
+    const allCategories = page.getByRole('link', { name: /All categories/ });
+    await expect(allCategories).toHaveAttribute('aria-current', 'page');
+    await page.getByRole('link', { name: 'Batteries' }).first().click();
+    await expect(page).toHaveURL(/category=batteries/);
+    await expect(allCategories).not.toHaveAttribute('aria-current', 'page');
+    const filtered = await page.locator('article').count();
+
+    // The header link on desktop, the bottom tab bar on phones: whichever main link to the shop is visible.
+    await page.locator('a[href="/shop"]').filter({ visible: true }).first().click();
+    await expect(page).toHaveURL(/\/shop$/);
+    await expect(allCategories).toHaveAttribute('aria-current', 'page');
+    await expect.poll(() => page.locator('article').count()).toBeGreaterThan(filtered);
+
+    await page.goBack();
+    await expect(page).toHaveURL(/category=batteries/);
+    await expect.poll(() => page.locator('article').count()).toBe(filtered);
+  });
+});
+
+test.describe('workshop booking date (review B14)', () => {
+  test("the date starts at the visitor's today in IST, not the day the page was built", async ({ page }) => {
+    await page.clock.setFixedTime(new Date('2027-03-15T10:00:00+05:30'));
+    await page.goto('/workshops/telibandha-car-clinic');
+    const date = page.getByLabel('Preferred date');
+    await expect(date).toHaveValue('2027-03-15');
+    await expect(date).toHaveAttribute('min', '2027-03-15');
+    await expect(date).toHaveAttribute('max', '2027-05-14');
+  });
+});
+
 test.describe('bulk quote → negotiation → order (spec 19)', () => {
   test('a customer asks for a bulk price, chats with admin, accepts the offer and gets a normal order', async ({
     page,

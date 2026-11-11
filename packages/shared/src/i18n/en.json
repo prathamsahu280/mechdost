@@ -565,7 +565,7 @@
     "submitting": "Sending…",
     "errServices": "Choose at least one service.",
     "errVehicle": "Enter your vehicle make and model.",
-    "errDate": "Choose today or a later date.",
+    "errDate": "Choose a date from today up to 60 days ahead.",
     "back": "All workshops",
     "notListed": "Can’t find the service you need? Describe it below.",
     "unavailable": "This workshop isn't available on MechDost right now. Please choose another workshop.",

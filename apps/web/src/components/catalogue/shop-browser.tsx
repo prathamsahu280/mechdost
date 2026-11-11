@@ -4,7 +4,7 @@ import { useCategoryEmoji } from '@/demo/site-config';
 import { CATEGORY_EMOJI, UI_EMOJI } from '@/lib/emoji';
 import { MessageCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   useEffect,
   useMemo,
@@ -43,8 +43,20 @@ function urlFor(base: string, s: State): string {
   return qs ? `${base}?${qs}` : base;
 }
 
+/** The filters of a server listing, in the shape the URL helpers use. */
+function listingState(q: ListingQuery): State {
+  return {
+    query: q.q,
+    category: categoryFromSlug(q.category ?? undefined),
+    sort: q.sort === 'price_asc' || q.sort === 'price_desc' ? q.sort : 'popular',
+  };
+}
+
 function readUrl(): State {
-  const p = new URLSearchParams(window.location.search);
+  return stateFrom(new URLSearchParams(window.location.search));
+}
+
+function stateFrom(p: Pick<URLSearchParams, 'get'>): State {
   const sort = p.get('sort');
   return {
     query: (p.get('q') ?? '').trim().slice(0, 120),
@@ -106,6 +118,17 @@ export function ShopBrowser({
     setState(initial);
     setDraft(initial.query);
   }
+  // Demo mode filters in the browser, so the URL is the source of truth: a header link to /shop or Back to a
+  // filtered URL resets the controls even though the server's `initial` did not change (review B13).
+  const params = useSearchParams();
+  const urlKey = params.toString();
+  const [shownUrl, setShownUrl] = useState(urlKey);
+  if (!server && shownUrl !== urlKey) {
+    setShownUrl(urlKey);
+    const fromUrl = stateFrom(params);
+    setState(fromUrl);
+    setDraft(fromUrl.query);
+  }
   const router = useRouter();
   const [navigating, startNavigation] = useTransition();
   // Cards appended by "Load more", tied to the listing they belong to (a new search starts empty).
@@ -121,6 +144,11 @@ export function ShopBrowser({
   const firstNew = useRef<HTMLLIElement>(null);
   const [focusSlug, setFocusSlug] = useState<string | null>(null);
   const appended = more?.key === listingKey ? more : null;
+  // Read after an await: the values of the render that is current then, not of the one that started it.
+  const latest = useRef({ listingKey, navigating });
+  useEffect(() => {
+    latest.current = { listingKey, navigating };
+  });
   const nextCursor = appended ? appended.nextCursor : (server?.nextCursor ?? null);
 
   const demoResults = useMemo(
@@ -169,8 +197,14 @@ export function ShopBrowser({
     if (!server || !nextCursor || loadState === 'loading' || navigating) return;
     setLoadState('loading');
     setAnnouncement('');
+    const startedFor = listingKey;
     try {
       const page = await server.loadMore(server.query, nextCursor);
+      // A filter or sort chosen while this page was loading wins: drop the late result (review B16).
+      if (latest.current.listingKey !== startedFor || latest.current.navigating) {
+        setLoadState('idle');
+        return;
+      }
       const shown = new Set([...server.slugs, ...(appended?.cards.map((card) => card.slug) ?? [])]);
       const fresh = page.cards.filter((card) => !shown.has(card.slug));
       setMore({
@@ -182,7 +216,8 @@ export function ShopBrowser({
       // Put the open pages in the URL and let the server render them, so the Router Cache holds the whole list
       // and Back from a product returns to it (replaceState alone would restore the cached first page). The
       // same cards keep their elements (one keyed list), so focus and scroll stay put.
-      const url = new URL(window.location.href);
+      // Built from the listing this page belongs to, never from whatever the address bar shows now.
+      const url = new URL(urlFor(basePath, listingState(server.query)), window.location.origin);
       url.searchParams.set('pages', String((appended?.pages ?? server.pages) + 1));
       startNavigation(() => {
         router.replace(`${url.pathname}${url.search}`, { scroll: false });

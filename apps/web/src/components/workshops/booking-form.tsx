@@ -5,12 +5,21 @@ import { useLocale, useTranslations } from 'next-intl';
 import { serviceNameFor } from '@/demo/i18n/localize';
 import { usePartnerStatus } from '@/demo/partner-status';
 import { useMemo, useRef, useState, type SyntheticEvent } from 'react';
-import { createDemoRequest } from '@/demo/store';
+import { createDemoRequest, useHydrated } from '@/demo/store';
 import type { DemoWorkshop, VehicleType } from '@/demo/workshops';
 import { track } from '@/lib/analytics';
 import { formatPrice } from '@/lib/format';
 
 type Field = 'vehicle' | 'services' | 'date' | 'name' | 'phone';
+
+const MAX_DAYS_AHEAD = 60;
+
+/** `YYYY-MM-DD` plus `days` (calendar arithmetic in UTC, so no time-zone drift). */
+function plusDays(isoDate: string, days: number): string {
+  const d = new Date(`${isoDate}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
 
 const todayIst = () =>
   new Intl.DateTimeFormat('en-CA', {
@@ -38,7 +47,11 @@ export function BookingForm({ workshop }: { workshop: DemoWorkshop }) {
   // Admin control: a paused or suspended workshop takes no new bookings.
   const { status } = usePartnerStatus('workshop', workshop.slug);
   const started = useRef(false);
-  const minDate = todayIst();
+  // The page is prerendered: "today" is read in the browser after hydration, never frozen at build time (review
+  // B14). Bookings go up to 60 days ahead.
+  const hydrated = useHydrated();
+  const minDate = hydrated ? todayIst() : undefined;
+  const maxDate = minDate ? plusDays(minDate, MAX_DAYS_AHEAD) : undefined;
 
   const services = workshop.services.filter((s) => s.vehicle === 'both' || s.vehicle === vehicleType);
   const chosen = services.filter((s) => selected.includes(s.key));
@@ -63,7 +76,8 @@ export function BookingForm({ workshop }: { workshop: DemoWorkshop }) {
     const next: Partial<Record<Field, string>> = {};
     if (value('vehicle').length < 3) next.vehicle = t('errVehicle');
     if (chosen.length === 0) next.services = t('errServices');
-    if (!value('date') || value('date') < minDate) next.date = t('errDate');
+    const date = value('date');
+    if (!date || (minDate && date < minDate) || (maxDate && date > maxDate)) next.date = t('errDate');
     if (value('name').length < 2) next.name = checkout('errName');
     if (!/^[6-9]\d{9}$/.test(phone)) next.phone = checkout('errPhone');
     setErrors(next);
@@ -220,7 +234,9 @@ export function BookingForm({ workshop }: { workshop: DemoWorkshop }) {
             id="book-date"
             name="date"
             type="date"
+            key={minDate ?? 'prerendered'}
             min={minDate}
+            max={maxDate}
             defaultValue={minDate}
             className={inputClass}
             {...aria('date')}
