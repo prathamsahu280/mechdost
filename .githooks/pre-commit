@@ -4,6 +4,13 @@
 #   git config core.hooksPath .githooks
 files=$(git diff --cached --name-only --diff-filter=ACMR)
 [ -z "$files" ] && exit 0
+# Secrets never enter git (CLAUDE.md hard rule 4): env files, service-account / admin SDK keys, private keys.
+secrets=$(echo "$files" | grep -iE '(^|/)\.env$|(^|/)\.env\.[^/]*$|firebase-adminsdk|service-account[^/]*\.json$|\.pem$' | grep -v '\.env\.example$')
+if [ -n "$secrets" ]; then
+  echo "pre-commit: refusing to commit secret files:" >&2
+  echo "$secrets" >&2
+  exit 1
+fi
 if ! echo "$files" | xargs pnpm exec prettier --check --ignore-unknown >/dev/null 2>&1; then
   echo "Prettier: these staged files need formatting (run: pnpm format):"
   echo "$files" | xargs pnpm exec prettier --list-different --ignore-unknown
