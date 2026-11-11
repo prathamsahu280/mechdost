@@ -41,6 +41,7 @@ import {
 import { takesNewWork } from '@/demo/partner-status';
 import { DEMO_WORKSHOPS } from '@/demo/workshops';
 import { track } from '@/lib/analytics';
+import { parseRupees } from '@/lib/money-input';
 import { formatDate, formatPrice } from '@/lib/format';
 import { ADMIN_SECTIONS, type AdminSection } from '@/lib/sections';
 import { AdminCoins } from './admin-coins';
@@ -726,20 +727,76 @@ function QuoteNegotiation({ quote }: { quote: DemoQuote }) {
   const [note, setNote] = useState('');
   const [reply, setReply] = useState('');
   const [sent, setSent] = useState(false);
+  // Errors show once a field was left or a send was tried, and clear as soon as the value is valid (a11y review).
+  const [touched, setTouched] = useState<ReadonlySet<string>>(new Set());
   const closed = quote.status === 'accepted' || quote.status === 'declined';
 
-  const unit = (slug: string) => Math.max(0, Math.round(Number(prices[slug] ?? 0) * 100));
+  // Typed values are parsed to integer paise once; a bad value is an error, never NaN in the total (review B4).
+  const parsed = Object.fromEntries(quote.lines.map((l) => [l.slug, parseRupees(prices[l.slug] ?? '')]));
+  const deliveryParsed = parseRupees(delivery, { allowZero: true });
+  const daysValue = /^\d{1,2}$/.test(days) ? Number(days) : 0;
+  const daysOk = daysValue >= 1 && daysValue <= 30;
+  const fieldError = (id: string): string | null => {
+    if (!touched.has(id)) return null;
+    if (id === 'offer-days') return daysOk ? null : t('daysRange');
+    const r = id === 'offer-delivery' ? deliveryParsed : parsed[id.slice('price-'.length)];
+    if (!r || r.ok) return null;
+    return r.error === 'empty' ? t('priceEmpty') : r.error === 'zero' ? t('priceZero') : t('priceFormat');
+  };
+  const fieldIds = [...quote.lines.map((l) => `price-${l.slug}`), 'offer-delivery', 'offer-days'];
+  const allValid = Object.values(parsed).every((r) => r.ok) && deliveryParsed.ok && daysOk;
+  const unit = (slug: string) => {
+    const r = parsed[slug];
+    return r?.ok ? r.paise : 0;
+  };
   const subtotal = quote.lines.reduce((n, l) => n + unit(l.slug) * l.qty, 0);
   const listTotal = quote.lines.reduce((n, l) => n + l.listPaise * l.qty, 0);
-  const deliveryPaise = Math.max(0, Math.round(Number(delivery) * 100));
+  const deliveryPaise = deliveryParsed.ok ? deliveryParsed.paise : 0;
   const discount = listTotal > 0 ? Math.round(((listTotal - subtotal) / listTotal) * 100) : 0;
+  const touch = (id: string) => {
+    setTouched((prev) => (prev.has(id) ? prev : new Set([...prev, id])));
+  };
+  // Accessible error wiring for one field: aria-invalid plus the error text before the hint.
+  const errorProps = (id: string, hintId?: string) => {
+    const err = fieldError(id);
+    const describedBy = [err ? `${id}-error` : null, hintId ?? null].filter(Boolean).join(' ');
+    return {
+      'aria-invalid': err ? true : undefined,
+      'aria-describedby': describedBy || undefined,
+      onBlur: () => {
+        touch(id);
+      },
+    } as const;
+  };
+  const errorText = (id: string) => {
+    const err = fieldError(id);
+    return err ? (
+      <p id={`${id}-error`} className="mt-1 text-sm font-bold text-error">
+        {err}
+      </p>
+    ) : null;
+  };
+  const invalid = (id: string) =>
+    id === 'offer-days'
+      ? !daysOk
+      : id === 'offer-delivery'
+        ? !deliveryParsed.ok
+        : !parsed[id.slice('price-'.length)]?.ok;
 
   function send(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!allValid) {
+      // The button stays enabled: a failed send shows every error and moves focus to the first one.
+      setTouched(new Set(fieldIds));
+      const first = fieldIds.find(invalid);
+      if (first) document.getElementById(first)?.focus();
+      track('click', { id: 'admin_quote_offer_invalid', path: window.location.pathname });
+      return;
+    }
     sendOffer(quote.code, {
       lines: quote.lines.map((l) => ({ slug: l.slug, unitPaise: unit(l.slug) })),
       deliveryPaise,
-      validDays: Math.min(30, Math.max(1, Math.floor(Number(days) || 3))),
+      validDays: daysValue,
       note,
     });
     setSent(true);
@@ -806,7 +863,12 @@ function QuoteNegotiation({ quote }: { quote: DemoQuote }) {
       </section>
 
       {!closed ? (
-        <form onSubmit={send} aria-labelledby="offer-builder" className={`${portalCard} space-y-4`}>
+        <form
+          onSubmit={send}
+          noValidate
+          aria-labelledby="offer-builder"
+          className={`${portalCard} space-y-4`}
+        >
           <h2 id="offer-builder" className="font-heading text-lg font-extrabold text-ink">
             {t('offerBuilder')}
           </h2>
@@ -817,15 +879,20 @@ function QuoteNegotiation({ quote }: { quote: DemoQuote }) {
               </label>
               <input
                 id={`price-${l.slug}`}
+                name={`price-${l.slug}`}
                 inputMode="decimal"
+                autoComplete="off"
+                aria-required="true"
                 value={prices[l.slug] ?? ''}
                 onChange={(e) => {
-                  setPrices((p) => ({ ...p, [l.slug]: e.target.value.replace(/[^\d.]/g, '') }));
+                  setPrices((p) => ({ ...p, [l.slug]: e.target.value }));
                   setSent(false);
                 }}
+                {...errorProps(`price-${l.slug}`, `price-${l.slug}-hint`)}
                 className={portalField}
               />
-              <p className="mt-1 text-xs text-muted">
+              {errorText(`price-${l.slug}`)}
+              <p id={`price-${l.slug}-hint`} className="mt-1 text-xs text-muted">
                 {t('listPrice', { price: formatPrice(l.listPaise), qty: l.qty })}
               </p>
             </div>
@@ -837,13 +904,18 @@ function QuoteNegotiation({ quote }: { quote: DemoQuote }) {
               </label>
               <input
                 id="offer-delivery"
+                name="offer-delivery"
                 inputMode="decimal"
+                autoComplete="off"
                 value={delivery}
                 onChange={(e) => {
-                  setDelivery(e.target.value.replace(/[^\d.]/g, ''));
+                  setDelivery(e.target.value);
+                  setSent(false);
                 }}
+                {...errorProps('offer-delivery')}
                 className={portalField}
               />
+              {errorText('offer-delivery')}
             </div>
             <div>
               <label htmlFor="offer-days" className="text-sm font-bold text-ink">
@@ -851,13 +923,21 @@ function QuoteNegotiation({ quote }: { quote: DemoQuote }) {
               </label>
               <input
                 id="offer-days"
+                name="offer-days"
                 inputMode="numeric"
+                autoComplete="off"
                 value={days}
                 onChange={(e) => {
-                  setDays(e.target.value.replace(/\D/g, ''));
+                  setDays(e.target.value.trim());
+                  setSent(false);
                 }}
+                {...errorProps('offer-days', 'offer-days-hint')}
                 className={portalField}
               />
+              {errorText('offer-days')}
+              <p id="offer-days-hint" className="mt-1 text-xs text-muted">
+                {t('daysRange')}
+              </p>
             </div>
           </div>
           <div>
@@ -870,12 +950,13 @@ function QuoteNegotiation({ quote }: { quote: DemoQuote }) {
               maxLength={500}
               onChange={(e) => {
                 setNote(e.target.value);
+                setSent(false);
               }}
               className={portalField}
             />
           </div>
           <p className="font-heading text-xl font-extrabold text-ink">
-            {t('offerTotal', { price: formatPrice(subtotal + deliveryPaise) })}
+            {allValid ? t('offerTotal', { price: formatPrice(subtotal + deliveryPaise) }) : t('fixPrices')}
           </p>
           {/* Price is set by negotiation (user, Q20): the discount is shown for information, never gated. */}
           {discount > 0 ? (
@@ -884,7 +965,7 @@ function QuoteNegotiation({ quote }: { quote: DemoQuote }) {
             </p>
           ) : null}
           <div className="flex flex-wrap items-center gap-3">
-            <button type="submit" disabled={subtotal <= 0} className={portalPrimary}>
+            <button type="submit" className={portalPrimary}>
               {t('sendOffer')}
             </button>
             <p role="status" className="text-sm font-bold text-success">

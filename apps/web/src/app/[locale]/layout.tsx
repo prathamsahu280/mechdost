@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from 'next';
 import { DM_Sans, Manrope, Noto_Sans_Devanagari } from 'next/font/google';
 import { notFound } from 'next/navigation';
-import { hasLocale } from 'next-intl';
-import { getTranslations } from 'next-intl/server';
+import { hasLocale, NextIntlClientProvider } from 'next-intl';
+import { getMessages, getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { assistantCopy } from '@/assistant/server-copy';
 import { AssistantLauncher } from '@/components/assistant/assistant-launcher';
@@ -84,6 +84,7 @@ export default async function LocaleLayout({
   }));
   const city = (await getTranslations('cities'))(site.defaultCity);
   const consent = await getTranslations('consent');
+  const errorCopy = (await getMessages()).errorPage;
 
   return (
     // suppressHydrationWarning: the pre-paint script may set data-theme before React hydrates.
@@ -107,7 +108,10 @@ export default async function LocaleLayout({
         <AnnouncementBar city={city} />
         <Header navItems={navItems} />
         <main id="content" tabIndex={-1} className="outline-none">
-          {children}
+          {/* Only the root error page's strings reach the browser here; pages keep their own ClientMessages. */}
+          <NextIntlClientProvider locale={locale} messages={{ errorPage: errorCopy }} timeZone="Asia/Kolkata">
+            {children}
+          </NextIntlClientProvider>
         </main>
         <Footer />
         <MobileTabBar label={tabs('label')} items={tabItems} />

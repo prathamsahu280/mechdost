@@ -108,6 +108,7 @@ export function ProductCard({
                 added: t('added'),
                 maxQty: t('maxQty'),
                 maxLines: t('maxLines'),
+                saveFailed: t('saveFailed'),
               }}
             />
           </div>

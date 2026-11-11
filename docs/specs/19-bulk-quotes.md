@@ -37,6 +37,11 @@ Customer: "Bulk quotes" in the account, thread view with the active offer card p
 
 Demo mode (2026-11-01): `/quotes/new` (prefilled from `?product=` or `?from=cart`; minimum 10 units = Q20 default) and `/quotes/{code}` (thread, offer card, accept/close) run on the browser store (`apps/web/src/demo/store.ts`: `createQuote`, `postQuoteMessage`, `sendOffer`, `acceptOffer(code, version)`, `declineQuote`). "Demo controls" stand in for the admin reply and offer builder until the admin console ships. The assistant's bulk answer links to `/quotes/new`. Acceptance test: `e2e/demo-flows.spec.ts` "bulk quote → negotiation → order".
 
+## Demo hardening (2026-11-11, review B4/B10)
+
+- The request form asks for the **delivery address** with the PIN code; accepting an offer applies the checkout rules (a serviceable Raipur address, from the account's default address or the request, and no `orders`/`cod_only` block), otherwise the customer sees "Add a Raipur delivery address" or the blocked message (`quote_accept_address`, `quote_accept_blocked`).
+- Admin offer prices are parsed to integer paise (`apps/web/src/lib/money-input.ts`: ₹ sign, digit grouping and Devanagari digits accepted; up to 2 decimals); a bad or ₹0 unit price shows an error next to the field (aria-invalid + aria-describedby), the total waits until prices are valid, delivery may be ₹0, validity is 1–30 days, and "Send offer" stays enabled and focuses the first wrong field (`admin_quote_offer_invalid`).
+
 ## Acceptance tests
 
 Two concurrent accepts → one order; accept after expiry → 409; superseded offer cannot be accepted; customer cannot see other customers' quotes (404); order lines carry negotiated prices; a quote below 10 units is refused (400).

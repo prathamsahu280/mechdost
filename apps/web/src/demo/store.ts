@@ -16,7 +16,9 @@ import {
 } from '@mechdost/shared/state';
 import { useSyncExternalStore } from 'react';
 import { deliveryFeePaise, findProduct } from './catalogue';
+import { customerAllowed } from './customer-blocks';
 import { takesNewWork } from './partner-status';
+import { rankShops } from './shops';
 import { siteSettings } from './site-config';
 
 export const MAX_LINES = 20;
@@ -188,6 +190,8 @@ export interface DemoQuote {
   createdAt: string;
   customer: { name: string; phone: string };
   pincode: string;
+  /** Delivery address given with the request (older saved quotes have none). */
+  address?: string;
   lines: { slug: string; name: string; brand: string; qty: number; listPaise: number }[];
   status: QuoteStatus;
   messages: QuoteMessage[];
@@ -234,13 +238,16 @@ function read<T>(key: Key, isItem: (v: unknown) => v is T): readonly T[] {
   return value;
 }
 
-function write(key: Key, value: readonly unknown[]) {
+/** False when the browser refused to save (storage full or blocked): callers tell the user (review B11). */
+function write(key: Key, value: readonly unknown[]): boolean {
+  let saved = true;
   try {
     window.localStorage.setItem(key, JSON.stringify(value));
   } catch {
-    // Storage blocked (private mode): the demo keeps working for this page view only.
+    saved = false;
   }
   for (const l of listeners) l();
+  return saved;
 }
 
 function subscribe(listener: () => void) {
@@ -256,10 +263,22 @@ function subscribe(listener: () => void) {
 }
 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
+// Saved data can be old or edited by hand: anything that would mis-price or crash a page is dropped (review B11).
 const isCartLine = (v: unknown): v is CartLine =>
-  isRecord(v) && typeof v.slug === 'string' && typeof v.qty === 'number' && Number.isInteger(v.qty);
+  isRecord(v) &&
+  typeof v.slug === 'string' &&
+  typeof v.qty === 'number' &&
+  Number.isInteger(v.qty) &&
+  v.qty >= 1 &&
+  v.qty <= MAX_QTY;
 const isOrder = (v: unknown): v is DemoOrder =>
-  isRecord(v) && typeof v.code === 'string' && Array.isArray(v.lines);
+  isRecord(v) &&
+  typeof v.code === 'string' &&
+  Array.isArray(v.lines) &&
+  typeof v.stage === 'number' &&
+  typeof v.totalPaise === 'number' &&
+  isRecord(v.customer) &&
+  typeof v.customer.name === 'string';
 const isRequest = (v: unknown): v is DemoServiceRequest =>
   isRecord(v) && typeof v.code === 'string' && typeof v.workshopSlug === 'string';
 
@@ -346,6 +365,7 @@ export function moderateReview(id: string, status: ReviewStatus) {
 export function createQuote(input: {
   customer: DemoQuote['customer'];
   pincode: string;
+  address?: string;
   lines: DemoQuote['lines'];
   note: string;
 }): DemoQuote {
@@ -355,6 +375,7 @@ export function createQuote(input: {
     createdAt: now,
     customer: input.customer,
     pincode: input.pincode,
+    ...(input.address ? { address: input.address } : {}),
     lines: input.lines,
     status: 'open',
     messages: input.note ? [{ id: newId(), from: 'customer', text: input.note, at: now }] : [],
@@ -408,18 +429,33 @@ export function sendOffer(
 }
 
 export type AcceptResult =
-  { ok: true; orderCode: string } | { ok: false; reason: 'stale' | 'expired' | 'closed' };
+  | { ok: true; orderCode: string }
+  | { ok: false; reason: 'stale' | 'expired' | 'closed' | 'address' | 'blocked' };
+
+/** Where the accepted quote is delivered; the same rules as checkout apply (review B10). */
+export interface QuoteDelivery {
+  accountId: string | null;
+  address: { line1: string; landmark: string; pincode: string } | null;
+}
 
 /**
  * Accept exactly the offer version the customer saw. A superseded or expired offer is refused, and a quote can
  * create only one order (mirrors spec 19's conditional UPDATE + UNIQUE orders.quote_offer_id).
  */
-export function acceptOffer(code: string, version: number): AcceptResult {
+export function acceptOffer(code: string, version: number, delivery: QuoteDelivery): AcceptResult {
   const quote = quotesSnapshot().find((q) => q.code === code);
   if (quote?.status !== 'offered') return { ok: false, reason: 'closed' };
   const latest = quote.offers.at(-1);
   if (latest?.version !== version) return { ok: false, reason: 'stale' };
   if (new Date(latest.validUntil).getTime() < Date.now()) return { ok: false, reason: 'expired' };
+  // Checkout rules (checkout-form.tsx): a serviceable Raipur address, and no order/COD block on the account.
+  const address =
+    delivery.address ??
+    (quote.address ? { line1: quote.address, landmark: '', pincode: quote.pincode } : null);
+  if (!address || address.line1.trim().length < 10 || !/^4920\d{2}$/.test(address.pincode))
+    return { ok: false, reason: 'address' };
+  const allowed = customerAllowed(delivery.accountId);
+  if (!allowed.order || !allowed.cod) return { ok: false, reason: 'blocked' };
 
   const lines = quote.lines.map((l) => ({
     slug: l.slug,
@@ -439,8 +475,8 @@ export function acceptOffer(code: string, version: number): AcceptResult {
     customer: {
       name: quote.customer.name,
       phone: quote.customer.phone,
-      address: '—',
-      pincode: quote.pincode,
+      address: [address.line1.trim(), address.landmark.trim()].filter(Boolean).join(', '),
+      pincode: address.pincode,
     },
     payment: 'cod',
     stage: 1, // the normal order workflow continues: admin routes it to a shop
@@ -466,7 +502,7 @@ export function useRequests(): readonly DemoServiceRequest[] {
   return useSyncExternalStore(subscribe, requestsSnapshot, serverSnapshot);
 }
 
-export type AddResult = 'added' | 'max_qty' | 'max_lines';
+export type AddResult = 'added' | 'max_qty' | 'max_lines' | 'save_failed';
 
 /** Concept limits: at most 20 different products and 99 units of each. */
 export function addToCart(slug: string, qty = 1): AddResult {
@@ -475,15 +511,16 @@ export function addToCart(slug: string, qty = 1): AddResult {
   if (existing) {
     if (existing.qty >= MAX_QTY) return 'max_qty';
     existing.qty = Math.min(MAX_QTY, existing.qty + qty);
-    write(
+    const saved = write(
       KEYS.cart,
       lines.map((l) => (l.slug === slug ? { ...existing } : l)),
     );
-    return 'added';
+    return saved ? 'added' : 'save_failed';
   }
   if (lines.length >= MAX_LINES) return 'max_lines';
-  write(KEYS.cart, [...lines, { slug, qty: Math.min(MAX_QTY, Math.max(1, qty)) }]);
-  return 'added';
+  return write(KEYS.cart, [...lines, { slug, qty: Math.min(MAX_QTY, Math.max(1, qty)) }])
+    ? 'added'
+    : 'save_failed';
 }
 
 export function setQuantity(slug: string, qty: number) {
@@ -556,6 +593,16 @@ export function createDemoRequest(
   return request;
 }
 
+const STAGE_CONFIRMED_AT = ORDER_STAGES.indexOf('confirmed');
+
+/** The best-ranked shop that takes new work, as an accepted offer (demo simulation only). */
+function simulatedOffer(): NonNullable<DemoOrder['shop']> | null {
+  const [shop] = rankShops([]);
+  if (!shop) return null;
+  const now = new Date().toISOString();
+  return { slug: shop.slug, status: 'accepted', offeredAt: now, expiresAt: now };
+}
+
 /** Demo control: move to the next stage (in production these are shop/workshop/admin actions). */
 export function advanceOrder(code: string) {
   write(
@@ -563,6 +610,11 @@ export function advanceOrder(code: string) {
     ordersSnapshot().map((o) => {
       if (o.code !== code || isClosed(o)) return o;
       const stage = Math.min(o.stage + 1, ORDER_STAGES.length - 1);
+      // Simulates admin routing + the shop's acceptance, so the shop portal and admin agree (review B12).
+      if (stage === STAGE_CONFIRMED_AT) {
+        const shop = o.shop ?? simulatedOffer();
+        return shop ? { ...o, stage, shop: { ...shop, status: 'accepted' as const } } : o;
+      }
       // Simulates the real steps: a code is issued when it goes out; "delivered" means the code was given.
       if (stage === STAGE_OUT_FOR_DELIVERY && !o.delivery) return { ...o, stage, delivery: issueDelivery() };
       if (stage === STAGE_DELIVERED && o.delivery && !o.delivery.confirmedAt) {

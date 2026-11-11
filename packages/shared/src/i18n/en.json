@@ -357,6 +357,7 @@
     "viewCart": "View cart",
     "maxQty": "Maximum 99 units per product.",
     "maxLines": "Maximum 20 different products per order.",
+    "saveFailed": "Not added: this browser is not saving data. Turn off private browsing or allow site data, then try again.",
     "viewDetails": "View details",
     "mrp": "MRP {price}",
     "save": "Save {percent}%",
@@ -767,6 +768,9 @@
     "declinedBody": "You closed this quote. Start a new one any time.",
     "waiting": "No offer yet. The team will post a final price here.",
     "stale": "A newer offer arrived. Please review it before accepting.",
+    "needAddress": "Add a Raipur delivery address to your account to accept this offer.",
+    "addAddress": "Add an address",
+    "blockedOrders": "This account cannot place orders right now. Please contact support.",
     "demoReply": "Admin: reply",
     "demoReplyText": "Thanks! For this quantity we can do better than the list price. Sending you an offer now.",
     "demoOffer": "Admin: send an offer (8% off)",
@@ -775,7 +779,9 @@
     "newQuote": "Ask for a bulk price",
     "notFound": "We could not find this quote on this device.",
     "back": "Back to shop",
-    "cartBulk": "Buying in bulk? Ask for a bulk price"
+    "cartBulk": "Buying in bulk? Ask for a bulk price",
+    "address": "Delivery address",
+    "errAddress": "Enter the full delivery address (house, street, area)."
   },
   "auth": {
     "title": "Sign in to MechDost",
@@ -1044,6 +1050,11 @@
     "listPrice": "List {price} × {qty}",
     "delivery": "Delivery (₹)",
     "validDays": "Valid for (days)",
+    "priceEmpty": "Enter a price in rupees.",
+    "priceFormat": "Use digits only, up to 2 decimals, for example 1250.50.",
+    "priceZero": "The price must be more than ₹0.",
+    "daysRange": "1 to 30 days.",
+    "fixPrices": "Fix the highlighted prices to see the total.",
     "offerNote": "Note to the customer (optional)",
     "sendOffer": "Send offer",
     "offerTotal": "Offer total {price}",
@@ -1497,5 +1508,15 @@
     "essential": "Essential only",
     "choices": "Privacy choices",
     "policy": "Read the privacy policy"
+  },
+  "errorPage": {
+    "title": "Something went wrong on this page.",
+    "body": "Try again. If it keeps happening, data saved in this browser from an earlier visit may be out of date.",
+    "tryAgain": "Try again",
+    "trying": "Trying again…",
+    "reset": "Reset saved data",
+    "confirm": "This erases the cart, orders, quotes and demo sign-in saved in this browser. It cannot be undone. Your theme and privacy choices stay.",
+    "cancel": "Cancel",
+    "erase": "Erase saved data"
   }
 }

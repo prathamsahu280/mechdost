@@ -214,6 +214,7 @@ export default async function ProductPage({ params }: Props) {
                   added: t('added'),
                   maxQty: t('maxQty'),
                   maxLines: t('maxLines'),
+                  saveFailed: t('saveFailed'),
                 }}
                 className="min-h-12"
               />

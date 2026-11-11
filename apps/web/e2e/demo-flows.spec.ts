@@ -116,6 +116,7 @@ test.describe('bulk quote → negotiation → order (spec 19)', () => {
     await page.getByLabel('Quantity').fill('40');
     await page.getByLabel('Full name').fill('Ravi Sahu');
     await page.getByLabel('Mobile number').fill('9876543210');
+    await page.getByLabel('Delivery address').fill('House 12, Pandri, Raipur');
     await page.getByLabel('Delivery PIN code').fill('492001');
     await page.getByLabel(/Anything else/).fill('Need GST invoice');
     await page.getByRole('button', { name: 'Send request' }).click();
@@ -157,6 +158,43 @@ test.describe('bulk quote → negotiation → order (spec 19)', () => {
     await page.goto('/account');
     await expect(page.getByRole('heading', { name: 'Bulk quotes' })).toBeVisible();
     await expect(page.getByText('Accepted')).toBeVisible();
+  });
+
+  test('admin offer prices: a stray "." is explained next to the field, never sent (review B4)', async ({
+    page,
+  }) => {
+    await page.goto('/shop/exide-xltz4a-2w-battery');
+    await page.getByRole('link', { name: /Ask for a bulk price/ }).click();
+    await page.getByLabel('Quantity').fill('20');
+    await page.getByLabel('Full name').fill('Ravi Sahu');
+    await page.getByLabel('Mobile number').fill('9876543210');
+    await page.getByLabel('Delivery address').fill('House 12, Pandri, Raipur');
+    await page.getByLabel('Delivery PIN code').fill('492001');
+    await page.getByRole('button', { name: 'Send request' }).click();
+    await expect(page).toHaveURL(/\/quotes\/QT-RPR-/);
+
+    await page.goto('/login?next=%2Fadmin%2Fquotes');
+    await page.getByLabel('Mobile number or email').fill('9000000003');
+    await page.getByLabel('Password', { exact: true }).fill('Raipur@2026');
+    await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+    await page.getByLabel('One-time code').fill('123456');
+    await page.getByRole('button', { name: 'Verify and continue' }).click();
+    await expect(page).toHaveURL(/\/admin\/quotes$/);
+
+    const price = page.getByLabel(/Price per unit for/).first();
+    await price.fill('.');
+    await price.blur();
+    await expect(page.getByText('Use digits only, up to 2 decimals, for example 1250.50.')).toBeVisible();
+    await expect(price).toHaveAttribute('aria-invalid', 'true');
+    await expect(page.getByText('Fix the highlighted prices to see the total.')).toBeVisible();
+    await page.getByRole('button', { name: 'Send offer' }).click();
+    await expect(price).toBeFocused();
+    await expect(page.getByText('Offer sent.')).toHaveCount(0);
+
+    await price.fill('900');
+    await expect(price).not.toHaveAttribute('aria-invalid', 'true');
+    await page.getByRole('button', { name: 'Send offer' }).click();
+    await expect(page.getByText('Offer sent.')).toBeVisible();
   });
 
   test('the cart hands its items to a bulk quote', async ({ page }) => {

@@ -16,8 +16,10 @@ import {
   type QuoteOffer,
 } from '@/demo/store';
 import { track } from '@/lib/analytics';
+import { localePath } from '@/lib/locale-path';
 import { formatDate, formatPrice } from '@/lib/format';
 import { productNameFor } from '@/demo/i18n/localize';
+import { useSession } from '@/demo/session-state';
 
 const STATUS_STYLE: Record<DemoQuote['status'], string> = {
   open: 'bg-warning-bg text-warning',
@@ -171,7 +173,8 @@ function RequestedLines({ quote, waiting }: { quote: DemoQuote; waiting: boolean
 function OfferCard({ quote, offer }: { quote: DemoQuote; offer: QuoteOffer }) {
   const t = useTranslations('quote');
   const locale = useLocale();
-  const [problem, setProblem] = useState<'stale' | 'expired' | null>(null);
+  const [problem, setProblem] = useState<'stale' | 'expired' | 'address' | 'blocked' | null>(null);
+  const session = useSession();
   // The version shown when the customer started reading: accepting checks it is still the latest.
   const [seenVersion, setSeenVersion] = useState(offer.version);
   const expired = new Date(offer.validUntil).getTime() < Date.now();
@@ -185,7 +188,12 @@ function OfferCard({ quote, offer }: { quote: DemoQuote; offer: QuoteOffer }) {
       setSeenVersion(offer.version);
       return;
     }
-    const result = acceptOffer(quote.code, offer.version);
+    // Deliver to the account's default (else first) address; checkout rules apply (review B10).
+    const saved = session?.addresses.find((a) => a.isDefault) ?? session?.addresses[0] ?? null;
+    const result = acceptOffer(quote.code, offer.version, {
+      accountId: session?.id ?? null,
+      address: saved ? { line1: saved.line1, landmark: saved.landmark, pincode: saved.pincode } : null,
+    });
     if (result.ok) {
       track('click', { id: 'quote_accepted', path: window.location.pathname });
       setProblem(null);
@@ -194,6 +202,9 @@ function OfferCard({ quote, offer }: { quote: DemoQuote; offer: QuoteOffer }) {
       setSeenVersion(offer.version);
     } else if (result.reason === 'expired') {
       setProblem('expired');
+    } else if (result.reason === 'address' || result.reason === 'blocked') {
+      setProblem(result.reason);
+      track('click', { id: `quote_accept_${result.reason}`, path: window.location.pathname });
     }
   }
 
@@ -259,6 +270,19 @@ function OfferCard({ quote, offer }: { quote: DemoQuote; offer: QuoteOffer }) {
         {problem === 'stale' ? (
           <p role="alert" className="mt-4 rounded-lg bg-warning-bg p-3 text-sm font-bold text-warning">
             {t('stale')}
+          </p>
+        ) : null}
+        {problem === 'address' ? (
+          <p role="alert" className="mt-4 rounded-lg bg-warning-bg p-3 text-sm font-bold text-warning">
+            {t('needAddress')}{' '}
+            <Link href={localePath('/account/addresses', locale)} className="underline underline-offset-4">
+              {t('addAddress')}
+            </Link>
+          </p>
+        ) : null}
+        {problem === 'blocked' ? (
+          <p role="alert" className="mt-4 rounded-lg bg-warning-bg p-3 text-sm font-bold text-warning">
+            {t('blockedOrders')}
           </p>
         ) : null}
         {expired || problem === 'expired' ? (

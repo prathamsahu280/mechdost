@@ -10,6 +10,8 @@ export interface AddToCartLabels {
   added: string;
   maxQty: string;
   maxLines: string;
+  /** The browser refused to save the cart (private mode, storage full): nothing was added (review B11). */
+  saveFailed: string;
 }
 
 /**
@@ -29,8 +31,9 @@ export function AddToCartButton({
 }) {
   const [result, setResult] = useState<AddResult | null>(null);
 
+  // Only the success message clears itself; an error stays until the next press (a11y review 2026-11-11).
   useEffect(() => {
-    if (!result) return;
+    if (result !== 'added') return;
     const id = window.setTimeout(() => {
       setResult(null);
     }, 2200);
@@ -47,7 +50,9 @@ export function AddToCartButton({
         ? labels.maxQty
         : result === 'max_lines'
           ? labels.maxLines
-          : '';
+          : result === 'save_failed'
+            ? labels.saveFailed
+            : '';
 
   return (
     <>
@@ -55,8 +60,14 @@ export function AddToCartButton({
         type="button"
         onClick={() => {
           const r = addToCart(slug, qty);
-          setResult(r);
+          // Clear first, so the same message pressed twice changes the status text and is announced again.
+          setResult(null);
+          window.requestAnimationFrame(() => {
+            setResult(r);
+          });
           if (r === 'added') track('add_to_cart', { slug, qty });
+          else if (r === 'save_failed')
+            track('click', { id: 'add_to_cart_save_failed', path: window.location.pathname });
         }}
         className={`press inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-button px-5 text-sm font-bold text-white transition-colors duration-[var(--duration-base)] ${
           added ? 'bg-success' : 'bg-accent-button hover:bg-accent-button-hover'

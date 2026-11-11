@@ -18,7 +18,7 @@ import { productNameFor } from '@/demo/i18n/localize';
 const PREFILL_QTY = DEFAULT_SETTINGS.bulkMinUnits;
 const MAX_LINES = 20;
 
-type Field = 'items' | 'name' | 'phone' | 'pincode';
+type Field = 'items' | 'name' | 'phone' | 'address' | 'pincode';
 interface Line {
   slug: string;
   qty: number;
@@ -76,6 +76,7 @@ export function QuoteRequestForm() {
     else if (units < minUnits) next.items = t('errMin', { min: minUnits });
     if (value('name').length < 2) next.name = t('errName');
     if (!/^[6-9]\d{9}$/.test(phone)) next.phone = t('errPhone');
+    if (value('address').length < 10) next.address = t('errAddress');
     if (!/^[1-9]\d{5}$/.test(value('pincode'))) next.pincode = t('errPincode');
     setErrors(next);
     const first = Object.keys(next)[0];
@@ -90,6 +91,7 @@ export function QuoteRequestForm() {
     const quote = createQuote({
       customer: { name: value('name'), phone },
       pincode: value('pincode'),
+      address: value('address'),
       note: value('note'),
       lines: [...merged].flatMap(([slug, qty]) => {
         const p = findProduct(slug);
@@ -238,6 +240,20 @@ export function QuoteRequestForm() {
             className={input}
           />
           {err('phone')}
+        </div>
+        <div className="min-[600px]:col-span-2">
+          <label htmlFor="quote-address" className="text-sm font-bold text-ink">
+            {t('address')}
+          </label>
+          <input
+            id="quote-address"
+            {...aria('address')}
+            name="address"
+            autoComplete="street-address"
+            maxLength={200}
+            className={input}
+          />
+          {err('address')}
         </div>
         <div>
           <label htmlFor="quote-pincode" className="text-sm font-bold text-ink">
