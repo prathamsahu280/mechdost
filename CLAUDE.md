@@ -53,7 +53,7 @@ Turborepo + pnpm · `apps/web` Next.js 16 App Router (React 19.3; ruling in docs
 - Public codes: `MD-{CITY}-{YYYY}-{6 base32}` orders, `SR-…` service, `REQ-…` tickets; PKs uuid v7; GST invoice numbers from gapless counters.
 - Repositories take an `actor`; API handlers never query tables directly.
 - UI tokens from `packages/ui/tokens.css` (navy `#101f34`, accent `#ea5728`, Manrope headings, DM Sans body); copy from `docs/concept/*.md`; UTF-8 only (fix `→ · ₹` when copying from the capture).
-- Tests: Vitest (state machines, money, ranker, allocation), Playwright (every transition, role-leak suites, concurrency), pgTAP (RLS matrix), Lighthouse CI, axe. Visual snapshots vs concept at 390/768/1440.
+- Tests: Vitest (state machines, money, ranker, allocation), Playwright (every transition, role-leak suites, concurrency), axe; planned (not set up yet): pgTAP (RLS matrix), Lighthouse CI. Visual snapshots vs concept at 390/768/1440.
 - Dev: Firebase Auth Emulator (OTP `123456`), Supabase local, seeded Raipur data and test logins per role (demo password `Raipur@2026`, `docs/runbooks/demo.md`).
 
 ## Skill usage protocol (when each one MUST run)
@@ -70,18 +70,13 @@ Turborepo + pnpm · `apps/web` Next.js 16 App Router (React 19.3; ruling in docs
 | Accessibility                          | `accessibility`, `accessibility-agents` plugin                                                                                                                                                          |
 | Any bug                                | `systematic-debugging`                                                                                                                                                                                  |
 | Before "done", before commit/PR        | `website-testing` (project) → `verification-before-completion` → `code-review` plugin / `requesting-code-review`; `security-guidance` hooks always on; `claude-security` before releases                |
-| Messaging / PWA / Hindi work           | `msg91-messaging`, `serwist-pwa`, `next-intl-hindi` (project)                                                                                                                                           |
+| Messaging / PWA / Hindi work           | `notifications-messaging`, `serwist-pwa`, `next-intl-hindi` (project)                                                                                                                                   |
 | Deploy                                 | `cloud-run-basics`, Cloud Run MCP, `vercel` plugin; `github` plugin for PRs                                                                                                                             |
 | Docs lookups                           | `context7` plugin (current library docs)                                                                                                                                                                |
 
-## Skills to use (installed globally)
+## Skills to use
 
-- Workflow (superpowers): `brainstorming` before new features · `writing-plans` before multi-step work · `grill-me` before schema/RBAC/payment designs · `test-driven-development` when implementing · `systematic-debugging` on bugs · `verification-before-completion` before "done" · `requesting-code-review` after features · `domain-modeling` for GLOSSARY/ADRs.
-- UI: `ui-ux-pro-max` (search guidelines/stack rules per component), `frontend-design`, `web-design-guidelines` (pre-PR audit), `shadcn` + `shadcn-component-discovery` (check registries before building) + `shadcn-component-review` (after), `vercel-react-best-practices`.
-- Backend/data: `hono`, `supabase-postgres-best-practices` (before any schema change), `turborepo`, `cloud-run-basics`.
-- Quality: `playwright-best-practices`, `vitest`, `core-web-vitals`, `performance`, `accessibility`, `seo`, `nextjs-seo`, `web-quality-audit`, `best-practices`, plugins `code-review`, `security-guidance`, `claude-security`, `accessibility-agents`.
-- Project-local (in `.claude/skills/`, written 2026-10-31): `mechdost-advisor` (loads docs, checks decisions/specs/design, researches improvements, flags drift; **self-improving** via `references/learnings.md`), `website-testing` (runs/triages all suites; knows e-commerce bug classes; self-improving), `firebase-phone-auth-rbac`, `razorpay-payments`, `drizzle-postgis-supabase`, `msg91-messaging`, `serwist-pwa`, `next-intl-hindi`.
-- MCP: playwright, chrome-devtools, shadcn (after `components.json`), cloud-run; context7/supabase/vercel/github/firebase via plugins. Razorpay MCP later.
+The protocol table above says when each skill runs. The full list of installed skills, plugins and MCP servers, with what each is for, is in `docs/runbooks/collaborator-setup.md`.
 
 ## Documentation map
 
@@ -91,5 +86,5 @@ Turborepo + pnpm · `apps/web` Next.js 16 App Router (React 19.3; ruling in docs
 
 ```
 pnpm install · pnpm dev (web :3000, api :4000) · pnpm db:migrate · pnpm db:seed · pnpm db:seed:demo [--remove] · pnpm db:grant-role --phone +91… --role <staff role> --reason "…"
-pnpm test · pnpm e2e · pnpm lint · pnpm typecheck · pnpm check (all gates) · pnpm format · pnpm lhci
+pnpm test · pnpm e2e · pnpm lint · pnpm typecheck · pnpm check (all gates) · pnpm format · (planned: pnpm lhci)
 ```

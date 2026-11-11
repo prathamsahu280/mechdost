@@ -11,7 +11,7 @@
 | Shop / workshop portals, onboarding                 | `specs/07-partner-portals.md`, `concept/admin.md` (workshop editor)                                                                         |
 | Admin console, CMS, dashboards                      | `specs/08-admin-console.md`, `concept/admin.md`, skill `dataviz`                                                                            |
 | Support tickets                                     | `specs/09-support.md`, `concept/account-support.md` §2                                                                                      |
-| Notifications                                       | `specs/10-notifications.md`, skill `msg91-messaging`                                                                                        |
+| Notifications                                       | `specs/10-notifications.md`, skill `notifications-messaging`                                                                                |
 | Recommendations                                     | `specs/11-recommendations.md`                                                                                                               |
 | Analytics / events                                  | `specs/12-analytics-events.md`                                                                                                              |
 | RBAC, rate limits, abuse                            | `specs/13-rbac-security-abuse.md`, `research/security-vulnerabilities.md`                                                                   |

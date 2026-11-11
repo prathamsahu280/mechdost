@@ -90,3 +90,12 @@ claude mcp add --scope user cloud-run -- npx -y @google-cloud/cloud-run-mcp     
 - Start every task from `docs/progress.md` (the live ledger) and update it when you finish a step (hard rule 13).
 - Questions for the owner go into `docs/questions-for-user.md` with the default you used meanwhile (hard rule 15).
 - When a skill teaches you something, append one line to its `references/learnings.md` in the same commit.
+
+## Skills, plugins and MCP servers (moved from CLAUDE.md, 2026-11-11)
+
+- Workflow (superpowers): `brainstorming` before new features · `writing-plans` before multi-step work · `grill-me` before schema/RBAC/payment designs · `test-driven-development` when implementing · `systematic-debugging` on bugs · `verification-before-completion` before "done" · `requesting-code-review` after features · `domain-modeling` for GLOSSARY/ADRs.
+- UI: `ui-ux-pro-max` (search guidelines/stack rules per component), `frontend-design`, `web-design-guidelines` (pre-PR audit), `shadcn` + `shadcn-component-discovery` (check registries before building) + `shadcn-component-review` (after), `vercel-react-best-practices`.
+- Backend/data: `hono`, `supabase-postgres-best-practices` (before any schema change), `turborepo`, `cloud-run-basics`.
+- Quality: `playwright-best-practices`, `vitest`, `core-web-vitals`, `performance`, `accessibility`, `seo`, `nextjs-seo`, `web-quality-audit`, `best-practices`, plugins `code-review`, `security-guidance`, `claude-security`, `accessibility-agents`.
+- Project-local (in `.claude/skills/`, written 2026-10-31): `mechdost-advisor` (loads docs, checks decisions/specs/design, researches improvements, flags drift; **self-improving** via `references/learnings.md`), `website-testing` (runs/triages all suites; knows e-commerce bug classes; self-improving), `firebase-phone-auth-rbac`, `razorpay-payments`, `drizzle-postgis-supabase`, `notifications-messaging`, `serwist-pwa`, `next-intl-hindi`.
+- MCP: playwright, chrome-devtools, shadcn (after `components.json`), cloud-run; context7/supabase/vercel/github/firebase via plugins. Razorpay MCP later.

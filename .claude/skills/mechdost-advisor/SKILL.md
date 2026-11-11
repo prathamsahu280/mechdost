@@ -1,6 +1,6 @@
 ---
 name: mechdost-advisor
-description: MechDost project advisor. MUST run at the start of every MechDost task (feature, bug, refactor, schema, dependency, config, copy, docs) and before any product or technical decision. Loads the project's decisions, specs, design system, research and learnings; checks the request against the 15 hard rules; flags conflicts and risks; researches current best practice when needed; corrects the user or Claude when something drifts; queues user questions; and improves itself after every task via references/learnings.md.
+description: MechDost project advisor. MUST run at the start of every MechDost task (feature, bug, refactor, schema, dependency, config, copy, docs) and before any product or technical decision. Loads the project's decisions, specs, design system, research and learnings; checks the request against the hard rules (1–16); flags conflicts and risks; researches current best practice when needed; corrects the user or Claude when something drifts; queues user questions; and improves itself after every task via references/learnings.md.
 ---
 
 # MechDost Advisor
@@ -24,7 +24,7 @@ the better alternative. Never silently comply and never silently refuse.
 
 ### 1. Load context (always, in this order)
 
-1. `CLAUDE.md` — the 15 hard rules and skill protocol.
+1. `CLAUDE.md` — all hard rules (1–16) and the skill protocol.
 2. `docs/progress.md` — current phase, current task, rulings, blockers.
 3. `docs/decisions.md` — decided items and the PENDING table.
 4. `docs/questions-for-user.md` — open questions and their defaults.
@@ -44,7 +44,7 @@ Each area pulls in checks from `references/checklist.md`.
 
 ### 3. Review against the rules
 
-Walk `references/checklist.md` for every area touched. For each hard rule 1–15 decide: ✅ satisfied,
+Walk `references/checklist.md` for every area touched. For each hard rule 1–16 decide: ✅ satisfied,
 ⚠️ risk, ❌ violation. Any ❌ must be resolved before implementation starts (fix the plan, or record a
 ruling in `docs/progress.md` with why + cost if the user explicitly chose it).
 

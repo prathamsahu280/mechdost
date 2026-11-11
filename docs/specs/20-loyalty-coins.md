@@ -1,6 +1,6 @@
 # 20 · MechDost Coins (loyalty bonus, not a wallet)
 
-Status: decided 2026-11-01 (user) · ledger + redemption built; **earning rules pending Q24** · Decisions: "No wallet; MechDost Coins; no-returns policy"
+Status: decided 2026-11-01 (user) · ledger built (repository + tests); redemption at checkout, restore on cancel/refund, expiry and the staff adjust route are **not wired yet** (review 2026-11-11, C4); **earning rules pending Q24** · Decisions: "No wallet; MechDost Coins; no-returns policy"
 
 ## Goal (user's words)
 

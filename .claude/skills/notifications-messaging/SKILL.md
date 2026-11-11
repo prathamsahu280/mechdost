@@ -1,11 +1,11 @@
 ---
-name: msg91-messaging
-description: Use for MechDost notification work — in-app, email (Resend), SMS and WhatsApp (MSG91) templates, the transactional outbox and relay, DLT registration, delivery webhooks, user preferences, Hindi templates and notification tests. SMS/WhatsApp stay wired but disabled until the provider is set up (decision 2026-10-31).
+name: notifications-messaging
+description: Use for MechDost notification work — in-app, email (Resend), WhatsApp (Meta Cloud API direct) and SMS (MSG91, later) templates, the transactional outbox and relay, DLT registration, delivery webhooks, user preferences, Hindi templates and notification tests. SMS/WhatsApp stay wired but disabled until the provider is set up (decision 2026-10-31).
 ---
 
 # Messaging & notifications (MechDost)
 
-Spec: `docs/specs/10-notifications.md`. Package: `packages/notify` (adapters + templates).
+Spec: `docs/specs/10-notifications.md`. Code: outbox + templates in `packages/db/src/repo/notify.ts`, `order-notifications.ts`, `notification-admin.ts`; dispatcher and channel adapters in `apps/api/src/notify/` (`whatsapp.ts` = Meta Cloud API); delivery webhooks in `apps/api/src/routes/whatsapp-webhook.ts`. (Renamed from `msg91-messaging` on 2026-11-11: WhatsApp no longer goes through MSG91.)
 
 ## Architecture (never bypass)
 
@@ -14,17 +14,17 @@ Spec: `docs/specs/10-notifications.md`. Package: `packages/notify` (adapters + t
 2. Relay worker (pg-boss): claim `status='pending'` rows with `FOR UPDATE SKIP LOCKED`, render template
    (`notification_templates` by key/channel/locale), send through the channel adapter, store `provider_id`,
    mark `sent` / `failed` (attempts, backoff). Channel disabled or user opted out → `suppressed`.
-3. Delivery webhooks (Resend, MSG91) update status; verify their signatures; dedupe by provider event id.
+3. Delivery webhooks (Resend, Meta WhatsApp, MSG91 later) update status; verify their signatures; dedupe by provider event id; record + apply a receipt in one transaction (`recordDeliveryReceipt`).
 
 ## Channels
 
-| Channel  | Provider                                                                     | Status                                      |
-| -------- | ---------------------------------------------------------------------------- | ------------------------------------------- |
-| inapp    | `notifications` table + Firebase RTDB ping                                   | on                                          |
-| email    | Resend (`RESEND_API_KEY`, verified domain, SPF/DKIM/DMARC)                   | on when key present (inbox Q7); else logged |
-| sms      | MSG91 (DLT-registered templates, sender ID)                                  | wired, **off**                              |
-| whatsapp | MSG91 WhatsApp (Meta-approved templates; utility category for order updates) | wired, **off**                              |
-| push     | Web push via PWA (P1)                                                        | later                                       |
+| Channel  | Provider                                                                       | Status                                                              |
+| -------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------- |
+| inapp    | `notifications` table + Firebase RTDB ping                                     | on                                                                  |
+| email    | Resend (`RESEND_API_KEY`, verified domain, SPF/DKIM/DMARC)                     | on when key present (inbox Q7); else logged                         |
+| sms      | MSG91 (DLT-registered templates, sender ID)                                    | wired, **off**                                                      |
+| whatsapp | Meta WhatsApp Cloud API direct (approved templates; utility for order updates) | wired, **off** until Meta business verification + template approval |
+| push     | Web push via PWA (P1)                                                          | later                                                               |
 
 Adapters implement `send({ to, templateKey, locale, variables }) → { providerId }` with a fake adapter for tests.
 
