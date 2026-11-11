@@ -1,7 +1,17 @@
-import { and, desc, eq, gt, inArray, lt, sql } from 'drizzle-orm';
+import { and, desc, eq, gt, inArray, isNull, lt, sql } from 'drizzle-orm';
 import { publicCode } from '@mechdost/shared/ids';
 import { ticketMachine, type TicketStatus } from '@mechdost/shared/state';
-import { auditLog, cities, orderGroups, orders, supportTickets, ticketMessages, users } from '../schema';
+import { OPERATIONAL_SETTINGS } from '@mechdost/shared/settings';
+import {
+  auditLog,
+  cities,
+  orderGroups,
+  orders,
+  settings,
+  supportTickets,
+  ticketMessages,
+  users,
+} from '../schema';
 import { ConflictError, NotFoundError, ValidationError } from './errors';
 import { notificationChannelEnabled } from './notification-admin';
 import { enqueueNotification } from './notify';
@@ -77,8 +87,26 @@ async function messagesOf(db: Tx, ticketId: string, includeInternal: boolean): P
         includeInternal ? undefined : eq(ticketMessages.internal, false),
       ),
     )
-    .orderBy(ticketMessages.createdAt);
-  return rows;
+    .orderBy(desc(ticketMessages.createdAt), desc(ticketMessages.id))
+    .limit(THREAD_LIMIT);
+  return rows.reverse();
+}
+
+/** A thread shows its newest messages (review B9: no unbounded reads); older ones stay in the database. */
+const THREAD_LIMIT = 200;
+const REPLY_CAP_KEY = 'support.customer_messages_per_ticket_per_day';
+
+/** The admin's reply cap (global setting), else the registry default. */
+async function replyCap(tx: Tx): Promise<number> {
+  const [row] = await tx
+    .select({ value: settings.value })
+    .from(settings)
+    .where(and(eq(settings.key, REPLY_CAP_KEY), isNull(settings.cityId)))
+    .limit(1);
+  const v = row?.value;
+  return typeof v === 'number' && Number.isSafeInteger(v) && v > 0
+    ? v
+    : OPERATIONAL_SETTINGS[REPLY_CAP_KEY].default;
 }
 
 const ticketColumns = {
@@ -230,6 +258,20 @@ export async function customerReplyTicket(
     if (!t) throw new NotFoundError('Request not found');
     let status = t.status as TicketStatus;
     if (status === 'closed') throw new ConflictError('This request is closed', 'TICKET_CLOSED');
+    // The ticket row is locked above, so concurrent replies count each other.
+    const today = await tx.$count(
+      ticketMessages,
+      and(
+        eq(ticketMessages.ticketId, t.id),
+        eq(ticketMessages.authorRole, 'customer'),
+        gt(ticketMessages.createdAt, new Date(Date.now() - 86_400_000)),
+      ),
+    );
+    if (today >= (await replyCap(tx)))
+      throw new ValidationError(
+        'Too many messages on this request today; we will answer soon',
+        'REPLY_LIMIT',
+      );
     if (status === 'awaiting_customer' || status === 'resolved') {
       ticketMachine.assert(status, 'in_review', 'customer');
       await tx

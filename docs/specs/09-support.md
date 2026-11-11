@@ -84,6 +84,7 @@ Live chat widget (declined for now), order chat with partner, NPS after resoluti
 
 - `POST /v1/support/tickets {kind, orderCode?, body}` → 201 `{code}`.
   - At most 5 per 24 h, serialised per user (`TICKET_DAILY_LIMIT`, 422).
+  - On one request a customer may post at most `support.customer_messages_per_ticket_per_day` messages in 24 h (admin setting, default 20, the opening message included; `REPLY_LIMIT`, 422; counted under the ticket row lock). Threads return their newest 200 messages (review B9, 2026-11-11).
   - The order must be the caller's own. It sets the request's city and the code's city segment.
 - `GET /v1/support/tickets`, `GET /v1/support/tickets/{code}`: own requests with their conversation, internal notes excluded.
 - `POST /v1/support/tickets/{code}/messages {body}`: a reply on a request that was waiting on the customer, or resolved, moves it back to `in_review` (`ticketMachine`).

@@ -290,3 +290,55 @@ describe('staff inbox', () => {
     await db.execute(sql`delete from notification_outbox`);
   });
 });
+
+describe('reply limits (review B9)', () => {
+  it('a customer cannot post more than the daily message cap on one request (admin setting)', async () => {
+    const chatty = (await db.insert(s.users).values({ firebaseUid: 'fb-support-chatty' }).returning())[0]!.id;
+    const { code } = await createSupportTicket(t(), {
+      userId: chatty,
+      kind: 'other',
+      orderCode: null,
+      body: 'First question',
+      defaultCityCode: 'RPR',
+    });
+    await db.insert(s.settings).values({ key: 'support.customer_messages_per_ticket_per_day', value: 5 });
+    try {
+      // The opening message counts: 1 + 4 follow-ups = 5.
+      for (let i = 0; i < 4; i += 1)
+        await customerReplyTicket(t(), { userId: chatty, code, body: `Follow-up ${String(i)}` });
+      await expect(
+        customerReplyTicket(t(), { userId: chatty, code, body: 'One more' }),
+      ).rejects.toMatchObject({
+        code: 'REPLY_LIMIT',
+      });
+    } finally {
+      await db.delete(s.settings).where(eq(s.settings.key, 'support.customer_messages_per_ticket_per_day'));
+    }
+  });
+
+  it('a long thread returns the newest 200 messages, oldest first', async () => {
+    const talker = (await db.insert(s.users).values({ firebaseUid: 'fb-support-talker' }).returning())[0]!.id;
+    const { code } = await createSupportTicket(t(), {
+      userId: talker,
+      kind: 'other',
+      orderCode: null,
+      body: 'Message 0',
+      defaultCityCode: 'RPR',
+    });
+    const [ticket] = await db.select().from(s.supportTickets).where(eq(s.supportTickets.code, code));
+    await db.insert(s.ticketMessages).values(
+      Array.from({ length: 249 }, (_, i) => ({
+        ticketId: ticket!.id,
+        authorUserId: talker,
+        authorRole: 'customer',
+        body: `Message ${String(i + 1)}`,
+        channel: 'web',
+        createdAt: new Date(Date.now() + (i + 1) * 1000),
+      })),
+    );
+    const view = await getMyTicket(t(), talker, code);
+    expect(view.messages).toHaveLength(200);
+    expect(view.messages.at(-1)!.body).toBe('Message 249');
+    expect(view.messages[0]!.body).toBe('Message 50');
+  });
+});

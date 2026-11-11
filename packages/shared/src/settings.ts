@@ -26,6 +26,14 @@ export const OPERATIONAL_SETTINGS = {
   /** Launch check: products go live only with complete Hindi texts. */
   // One catalogue for every city: publishing reads the global value only.
   'catalogue.require_hindi_to_publish': { kind: 'boolean', default: false, globalOnly: true },
+  /** Customer messages (the first one included) allowed on one support request in 24 hours (review B9). */
+  'support.customer_messages_per_ticket_per_day': {
+    kind: 'int',
+    min: 5,
+    max: 100,
+    default: 20,
+    globalOnly: true,
+  },
 } as const satisfies Record<string, SettingSpec>;
 
 export type SettingKey = keyof typeof OPERATIONAL_SETTINGS;
