@@ -268,6 +268,17 @@ User: "the first time it will ask the user for the phone number, then they enter
 - **Unknown facts are left out, never shown blank** (a11y review): no price → "Ask about this product" on WhatsApp instead of add to cart; "Fitment not listed" replaces spec 02's "Check fitment" (read as a command).
 - **Before the switch goes on anywhere**, rate limits must stay per shopper for the web's server-to-API calls (the shared web-server IP would throttle all shoppers together, and one shared bucket could be exhausted by one client): the web forwards the shopper's IP in a header the API trusts only from the web, and limits its own "Load more" server function and searches per IP (spec 16).
 
+## 2026-11-11 — Whole-repo review follow-up (user answers)
+
+User: "review the bugs properly and start working on it … implement the tooling fixes and the features … for both two wheelers, three wheelers and cars, yeah will add whatsapp order updates and confirmation before cash on delivery, meta whatsapp messaging … is in the verifying stage … send a photo of your part … a bit later … buy a battery or tyre with fitting included eh not really for us as of now".
+
+- **Bugs:** re-verify every finding of `docs/research/repo-review-2026-11-11.md` with a failing test, then fix; a finding that cannot be made to fail is closed, not fixed.
+- **Tooling (Q72 approved):** shared `.claude/settings.json` (commit attribution off, secret files unreadable, hooks), `commit-msg` and secret-file git hooks, CI build + demo e2e + Node from `.nvmrc`. Global settings and plugin enablement stay with the user.
+- **Vehicles first-class for two-wheelers, three-wheelers and cars** (`vehicle_models.vehicle_type` 2W/3W/4W already in the schema): fitment and "Fits your vehicle" cover all three. The vehicle master source stays Q10; any seed is labelled demo data until then (no fitment written from memory).
+- **WhatsApp order updates + WhatsApp confirmation before cash on delivery** replace the SMS-OTP COD confirmation sketched in spec 03. Meta WhatsApp Cloud API is in business verification, so sending stays off until templates are approved; the confirmation step ships behind an admin setting that defaults **off** (otherwise every COD order would stall). Timeout/behaviour: Q74.
+- **Later:** "send a photo of your part" quote request. **Not for now:** buy a battery/tyre with fitting included.
+- **Correction:** `price_history_daily` (review A5) is needed 30 days before the first production price reduction, not by a fixed 1 Dec 2026 date (nothing is deployed yet); it is built before launch.
+
 ## PENDING DECISIONS (ask "what's pending" to review)
 
 | #   | Topic                                                                                                                                                                                       | Leaning                                                                             | When                                 |

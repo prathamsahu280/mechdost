@@ -161,6 +161,40 @@ Already in place, so not recommended: Dependabot (3-day cooldown), SHA-pinned ac
 
 **Scope to defer for a sooner launch** (Q71): referrals and Coins earning, the promotions engine and brand deals, the LLM assistant, bulk quotes, satellite imagery, the geocoding bake-off, self-hosted PostHog, Meilisearch, realtime pings (polling is enough), recommendations, WhatsApp OTP, CMS layout editing, and spec 17. Optionally run workshop booking concierge-style (admin + WhatsApp) at first.
 
+## 6. Second pass (Fable 5.2): coins, invoices, live relay, content, notification admin, config
+
+Nothing Critical. Each finding carries an evidence tag:
+
+- **[traced]** checked in the code by me;
+- **[reviewer]** traced end to end by the reviewer;
+- **[plausible]** depends on how the API is deployed or wired later.
+
+| #   | Sev    | Tier      | Finding                                                                                                                                                                                                                                                                                                                                                   | Fix                                                                                     |
+| --- | ------ | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| C1  | High   | traced    | **One failing batch blocks inbox wipes for good.** `inboxRemovals` (`apps/api/src/live/publisher.ts:42-50`) can put `inbox/{uid}` and `inbox/{uid}/{node}` in one multi-path update, which Firebase rejects (ancestor path). `claimLiveRevocations` has already bumped the attempts, so the same rows fail every 120 s and those inboxes are never wiped. | Drop node paths when the whole inbox for that uid is in the batch; add a same-uid test. |
+| C2  | High   | traced    | **Production allows `TRUSTED_PROXY_HOPS=0`** (`apps/api/src/config.ts:36`). Behind Cloud Run every request then shares the proxy's IP: one rate-limit bucket for all users.                                                                                                                                                                               | Require ≥ 1 in production.                                                              |
+| C3  | Medium | plausible | **Production checks are skipped when `NODE_ENV` is unset** (`config.ts:20` defaults to development; `.env.example` ships development + the auth emulator host).                                                                                                                                                                                           | Require `NODE_ENV` explicitly, or refuse non-production when `K_SERVICE` is set.        |
+| C4  | Medium | reviewer  | **Coins and invoices are not wired.** No caller of `earnCoins`/`redeemCoins`/`restoreCoinsForOrder`/`adjustCoins`/`allocateInvoiceNumber` outside tests; no expiry writer; `invoices` lacks an immutability trigger, a total CHECK, an FK on `credit_note_for`, and one-tax-invoice-per-order. Spec 20 says "ledger + redemption built".                  | Correct spec 20; add the constraints when invoices are built (launch blocker).          |
+| C5  | Medium | plausible | **Coin restore is keyed per order group** (`coins.ts:173-193`): a partial cancel of a multi-shop group restores all or nothing.                                                                                                                                                                                                                           | Allocate and restore coins per order.                                                   |
+| C6  | Medium | traced    | **A city-scoped role edits all-city notification settings** (`admin-notifications.ts:167` names no city; `covers()` in `rbac.ts:323` treats that as covered).                                                                                                                                                                                             | Require an all-cities grant, as content and settings do.                                |
+
+Low (reviewer):
+
+- **Content version ABA:** publishing deletes the draft, and the next draft restarts at v1, so a stale "publish v1" publishes another draft (`content.ts:170-227`).
+- **Hindi text cleaning:** `\p{Cf}` → space strips ZWJ/ZWNJ and splits Devanagari words (`packages/shared/src/content.ts:35`, `policy.ts:40`).
+- **Live outbox:** no retry cap or TTL on pings (`live.ts:43-53`).
+- **Coin replay:** the check is user-only; a replay with a different delta returns the old entry as success (`coins.ts:78-86`).
+- **Invoice allocator:** the financial year comes from the app clock; series of 5+ characters overflow 16 chars (`invoices.ts:15-20`).
+- **Notification templates:** `body`/`subject` are stored but never used when sending.
+
+Checked and sound:
+
+- the coins ledger mechanics;
+- the invoice counter locking;
+- the live relay claim and lease, and its private-data rules;
+- content authorisation and plain-text rendering;
+- `safeError` logging.
+
 ## 5. Claude Code features worth using
 
 - **Hooks + `attribution` + `permissions.deny`** in a shared `.claude/settings.json` (T1). Rules then hold mechanically instead of relying on memory after compaction.
