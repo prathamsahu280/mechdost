@@ -34,6 +34,8 @@ const schema = z
     UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
     /** Proxies in front of the API that append to X-Forwarded-For (Cloud Run LB = 1, + Cloudflare = 2). */
     TRUSTED_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(0),
+    /** Set by Cloud Run on every service; used only to refuse a non-production NODE_ENV there (review C3). */
+    K_SERVICE: z.string().optional(),
     API_DOCS: z.enum(['on', 'off']).optional(),
     ANTHROPIC_API_KEY: z.string().min(20).optional(),
     ASSISTANT_MODEL: z.string().default('claude-opus-5-5'),
@@ -90,7 +92,23 @@ const schema = z
           ctx.addIssue({ code: 'custom', path: [key], message: 'required when WHATSAPP_ENABLED=on' });
       }
     }
+    if (env.K_SERVICE && env.NODE_ENV !== 'production') {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['NODE_ENV'],
+        message:
+          'must be production on Cloud Run (K_SERVICE is set); development skips every production check',
+      });
+    }
     if (env.NODE_ENV !== 'production') return;
+    if (env.TRUSTED_PROXY_HOPS < 1) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['TRUSTED_PROXY_HOPS'],
+        message:
+          'at least 1 in production (Cloud Run load balancer), else every user shares one rate-limit bucket',
+      });
+    }
     const required = [
       'UPSTASH_REDIS_REST_URL',
       'UPSTASH_REDIS_REST_TOKEN',

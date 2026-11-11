@@ -4,6 +4,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { ensureUser, grantRole } from '@mechdost/db/repo';
+import * as s from '@mechdost/db/schema';
 import { bearer, buildApp, type ErrorJson } from './helpers';
 
 async function staffApp(role: 'marketing' | 'support_agent' | null, n: string, emailVerified = true) {
@@ -31,6 +32,56 @@ const template = {
 };
 
 describe('admin notifications API', () => {
+  it('a city-scoped notifications grant cannot change the all-city templates or budget (review C6)', async () => {
+    const ctx = await buildApp();
+    const token = ctx.verifier.add('token-admin-notify-000099', {
+      firebaseUid: 'an-99',
+      phone: '+919844444499',
+      email: 'an-99@example.com',
+      emailVerified: true,
+    });
+    const user = await ensureUser(ctx.db, {
+      firebaseUid: 'an-99',
+      phone: '+919844444499',
+      email: 'an-99@example.com',
+      emailVerified: true,
+    });
+    const [state] =
+      (await ctx.db.select().from(s.states)).length > 0
+        ? await ctx.db.select().from(s.states)
+        : await ctx.db
+            .insert(s.states)
+            .values({ code: 'CG', name: 'Chhattisgarh', gstStateCode: '22' })
+            .returning();
+    const [city] = await ctx.db
+      .insert(s.cities)
+      .values({ stateId: state!.id, code: 'BLS', slug: 'bilaspur', name: 'Bilaspur', status: 'live' })
+      .returning();
+    const raipur = city!.id;
+    // An admin-made custom role may be city-scoped (built-in marketing is global only).
+    const [custom] = await ctx.db
+      .insert(s.roles)
+      .values({ key: 'city_comms', name: 'City comms', isSystem: false })
+      .returning();
+    await ctx.db
+      .insert(s.rolePermissions)
+      .values({ roleId: custom!.id, permissionKey: 'notifications:manage' });
+    await grantRole(ctx.db, { userId: user.id, role: 'city_comms', cityId: raipur, grantedBy: null });
+    const headers = { ...bearer(token), 'content-type': 'application/json' };
+    const put = await ctx.app.request('/v1/admin/notifications/templates', {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify(template),
+    });
+    expect(put.status).toBe(404);
+    const budget = await ctx.app.request('/v1/admin/notifications/whatsapp/budget', {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify({ budgetPaise: 100_000, version: null }),
+    });
+    expect(budget.status).toBe(404);
+  });
+
   it('is refused without notifications:manage (customers and support agents)', async () => {
     for (const [role, n] of [
       [null, '01'],

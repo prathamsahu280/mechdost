@@ -1,5 +1,7 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import {
+  cityScopeFrom,
+  NotFoundError,
   WHATSAPP_BUDGET_KEY,
   getGlobalSetting,
   listNotificationTemplates,
@@ -165,6 +167,12 @@ export function adminNotificationRoutes(deps: AppDeps, cache: SessionCache) {
   // Staff actions need phone + email verified (spec 01), then the permission (spec 13).
   app.use('/admin/notifications/*', requireVerified);
   app.use('/admin/notifications/*', requirePermission('notifications:manage'));
+  // Templates and the WhatsApp budget apply to every city, so a city-scoped grant cannot change them (review C6).
+  app.use('/admin/notifications/*', async (c, next) => {
+    if (!cityScopeFrom(c.get('auth').grants, 'notifications:manage').all)
+      throw new NotFoundError('Not found');
+    await next();
+  });
   return app
     .openapi(listTemplates, async (c) => {
       const templates = await listNotificationTemplates(deps.db);

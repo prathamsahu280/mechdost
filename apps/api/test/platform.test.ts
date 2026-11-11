@@ -93,6 +93,33 @@ describe('security baseline', () => {
 describe('configuration', () => {
   const base = { DATABASE_POOL_URL: 'postgres://x' };
 
+  const prod = {
+    ...base,
+    NODE_ENV: 'production',
+    FIREBASE_PROJECT_ID: 'mechdost-prod',
+    UPSTASH_REDIS_REST_URL: 'https://example.upstash.io',
+    UPSTASH_REDIS_REST_TOKEN: 't',
+    FIREBASE_API_KEY: 'test-web-api-key-0000',
+    TURNSTILE_SECRET_KEY: '0x-test-secret-0000',
+    CORS_ORIGINS: 'https://mechdost.com',
+    TRUSTED_PROXY_HOPS: '1',
+  };
+
+  it('production needs at least one trusted proxy hop (else every user shares one rate-limit bucket; review C2)', () => {
+    expect(() => loadConfig({ ...prod, TRUSTED_PROXY_HOPS: '0' })).toThrow(/TRUSTED_PROXY_HOPS/);
+    const { TRUSTED_PROXY_HOPS: _unset, ...withoutHops } = prod;
+    expect(() => loadConfig(withoutHops)).toThrow(/TRUSTED_PROXY_HOPS/);
+    expect(loadConfig(prod).trustedProxyHops).toBe(1);
+  });
+
+  it('on Cloud Run (K_SERVICE set) the API refuses to start unless NODE_ENV=production (review C3)', () => {
+    expect(() => loadConfig({ ...base, K_SERVICE: 'mechdost-api' })).toThrow(/NODE_ENV/);
+    expect(() => loadConfig({ ...base, NODE_ENV: 'development', K_SERVICE: 'mechdost-api' })).toThrow(
+      /NODE_ENV/,
+    );
+    expect(loadConfig({ ...prod, K_SERVICE: 'mechdost-api' }).trustedProxyHops).toBe(1);
+  });
+
   it('refuses unsafe production setups and names the variables, not their values', () => {
     try {
       loadConfig({

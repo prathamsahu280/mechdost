@@ -250,6 +250,17 @@ describe('lost access wipes the live inbox (security review follow-ups)', () => 
     await expect(withTimeout(Promise.resolve('ok'), 10)).resolves.toBe('ok');
   });
 
+  it('never puts a path and its ancestor in one batch (Firebase rejects the whole update; review C1)', () => {
+    const id = '0192f3a4-5b6c-7d8e-9f01-23456789abcd';
+    expect(
+      inboxRemovals([
+        { firebaseUid: 'uidA', node: `order~${id}` },
+        { firebaseUid: 'uidA', node: null },
+        { firebaseUid: 'uidB', node: `order~${id}` },
+      ]),
+    ).toEqual({ 'inbox/uidA': null, [`inbox/uidB/order~${id}`]: null });
+  });
+
   it('only ever removes paths inside inbox/{uid}', () => {
     const id = '0192f3a4-5b6c-7d8e-9f01-23456789abcd';
     expect(

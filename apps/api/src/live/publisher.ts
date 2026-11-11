@@ -41,10 +41,13 @@ const NODE = /^(order|assignment)~[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4
 /** Multi-path update that removes inboxes or single nodes; never a path outside `inbox/{uid}`. */
 export function inboxRemovals(targets: readonly ForgetTarget[]): Record<string, null> {
   const out: Record<string, null> = {};
+  // A whole-inbox wipe covers that uid's nodes; Firebase rejects an update holding a path and its ancestor,
+  // which would fail the whole batch on every retry (review C1).
+  const whole = new Set(targets.filter((x) => x.node === null).map((x) => x.firebaseUid));
   for (const { firebaseUid, node } of targets) {
     if (!SAFE_KEY.test(firebaseUid)) continue;
     if (node === null) out[`inbox/${firebaseUid}`] = null;
-    else if (NODE.test(node)) out[`inbox/${firebaseUid}/${node}`] = null;
+    else if (!whole.has(firebaseUid) && NODE.test(node)) out[`inbox/${firebaseUid}/${node}`] = null;
   }
   return out;
 }
