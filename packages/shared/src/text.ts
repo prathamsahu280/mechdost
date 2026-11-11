@@ -5,7 +5,7 @@
  * trimmed and cut to `max` UTF-16 units without splitting a surrogate pair.
  */
 const CONTROL = /\p{Cc}/gu;
-const FORMAT = /(?![‌‍])\p{Cf}/gu;
+const FORMAT = /(?![\u200c\u200d])\p{Cf}/gu;
 
 export function clip(value: string, max: number): string {
   if (value.length <= max) return value;

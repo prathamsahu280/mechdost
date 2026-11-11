@@ -14,11 +14,17 @@ const INVISIBLE = /[\u200b\u200c\u2028\u2029\ufeff]/u;
 const NUL = String.fromCharCode(0);
 
 describe('source hygiene', () => {
-  it('tracked source files contain no invisible characters', () => {
-    const files = execFileSync('git', ['ls-files', '*.ts', '*.tsx', '*.mjs', '*.sql'], {
-      cwd: ROOT,
-      encoding: 'utf8',
-    })
+  // New, not yet committed files count too, so the local gate catches what CI would (2026-11-11: a new file
+  // passed locally while untracked and failed CI once committed).
+  it('source files contain no invisible characters', () => {
+    const files = execFileSync(
+      'git',
+      ['ls-files', '--cached', '--others', '--exclude-standard', '*.ts', '*.tsx', '*.mjs', '*.sql'],
+      {
+        cwd: ROOT,
+        encoding: 'utf8',
+      },
+    )
       .split('\n')
       .filter(Boolean);
     const offenders = files.flatMap((file) =>

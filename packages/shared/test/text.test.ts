@@ -4,13 +4,13 @@ import { cleanLine } from '../src/text';
 
 describe('plain-text cleaning (review low: Hindi joiners)', () => {
   it('keeps ZWJ/ZWNJ inside Devanagari words instead of splitting them', () => {
-    const word = 'क्‍ष और क्‌ष'; // conjunct forms written with ZWJ (U+200D) and ZWNJ (U+200C)
+    const word = 'क्\u200dष और क्\u200cष'; // conjunct forms written with ZWJ (U+200D) and ZWNJ (U+200C)
     expect(cleanLine(word, 100)).toBe(word);
     expect(cleanContentText('hero.titleLine1', word)).toBe(word);
   });
 
   it('drops other invisible format characters without splitting the word, and control characters', () => {
-    expect(cleanLine('ab‮cd​ef', 100)).toBe('abcdef');
+    expect(cleanLine('ab\u202ecd\u200bef', 100)).toBe('abcdef');
     expect(cleanLine('one\u0007two\nthree', 100)).toBe('one two three');
   });
 
