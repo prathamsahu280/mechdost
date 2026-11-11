@@ -110,6 +110,12 @@ describe('catalogue API source (plan 2026-11-10 task 3)', () => {
     expect(await fetchCatalogueProduct('gone', 'en')).toBeNull();
   });
 
+  it('a slug the API would reject (capitals, underscores, too long) is a 404 without calling the API', async () => {
+    for (const slug of ['Castrol-Activ', 'a_b', 'café', 'x'.repeat(121)])
+      expect(await fetchCatalogueProduct(slug, 'en')).toBeNull();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('500 → throws (ISR keeps the last good page)', async () => {
     fetchMock.mockResolvedValue(json({ code: 'INTERNAL' }, 500));
     await expect(fetchCataloguePage({ locale: 'en' })).rejects.toThrow(/500/);

@@ -266,7 +266,7 @@ User: "the first time it will ask the user for the phone number, then they enter
 - **Catalogue DTOs live in `@mechdost/shared/catalogue`** (moved from the API route; the API adds OpenAPI names). Hard rule: Zod DTOs in packages/shared are the single source.
 - **No build-time dependency on the API**; server fetches state `revalidate` + tags and throw on failure (ISR keeps the last good page). Spec 16 § Server-side data.
 - **Unknown facts are left out, never shown blank** (a11y review): no price → "Ask about this product" on WhatsApp instead of add to cart; "Fitment not listed" replaces spec 02's "Check fitment" (read as a command).
-- **Before the switch goes on anywhere**, the web's server-to-API calls need their own rate-limit identity (shared web-server IP otherwise throttles all shoppers).
+- **Before the switch goes on anywhere**, rate limits must stay per shopper for the web's server-to-API calls (the shared web-server IP would throttle all shoppers together, and one shared bucket could be exhausted by one client): the web forwards the shopper's IP in a header the API trusts only from the web, and limits its own "Load more" server function and searches per IP (spec 16).
 
 ## PENDING DECISIONS (ask "what's pending" to review)
 

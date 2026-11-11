@@ -62,6 +62,48 @@ test.describe('catalogue on the API', () => {
     await expect(page.getByText('20 products', { exact: true })).toBeVisible();
   });
 
+  test('quick details on a card added by Load more open that card (unique ids)', async ({ page }) => {
+    await page.goto('/shop');
+    await page.getByRole('button', { name: 'Load more products' }).click();
+    await expect(page.locator('article')).toHaveCount(16, SLOW);
+    const ninth = page.locator('article').nth(8);
+    const name = (await ninth.getByRole('heading', { level: 3 }).innerText()).trim();
+    await ninth.getByRole('button', { name: /^More details about / }).click();
+    await expect(page.getByRole('dialog', { name })).toBeVisible();
+    await page.keyboard.press('Escape');
+    expect(await axe(page)).toEqual([]);
+  });
+
+  test('leaving a category through the main shop link resets the filters; Load more continues that list', async ({
+    page,
+  }) => {
+    await page.goto('/shop?category=batteries');
+    await expect(page.getByText('3 products')).toBeVisible(SLOW);
+    // The header link on desktop, the bottom tab bar on phones: whichever main link to the shop is visible.
+    await page.locator('a[href="/shop"]').filter({ visible: true }).first().click();
+    await expect(page.getByText('Showing 8 products')).toBeVisible(SLOW);
+    await expect(page.getByRole('link', { name: /All categories/ })).toHaveAttribute('aria-current', 'page');
+    await page.getByRole('button', { name: 'Load more products' }).click();
+    await expect(page.locator('article')).toHaveCount(16, SLOW);
+  });
+
+  test('pages added by Load more are still there after opening a product and going Back', async ({
+    page,
+  }) => {
+    await page.goto('/shop');
+    await page.getByRole('button', { name: 'Load more products' }).click();
+    await expect(page.locator('article')).toHaveCount(16, SLOW);
+    await page.locator('article').nth(12).getByRole('heading', { level: 3 }).getByRole('link').click();
+    await expect(page).toHaveURL(/\/shop\/[a-z0-9-]+$/, SLOW);
+    await page.goBack();
+    await expect(page.locator('article')).toHaveCount(16, SLOW);
+  });
+
+  test('a malformed product URL is a 404 page', async ({ page }) => {
+    const res = await page.goto('/shop/Not_A_Slug');
+    expect(res?.status()).toBe(404);
+  });
+
   test('product page shows the seller and the country of origin', async ({ page }) => {
     await page.goto('/shop/castrol-activ-4t-20w40-900ml');
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible(SLOW);

@@ -9,12 +9,18 @@ import { CATEGORY_SLUGS, categoryFromSlug, DEMO_PRODUCTS, type SortKey } from '@
 import type { Locale } from '@/i18n/routing';
 import { fetchCataloguePage } from '@/lib/catalogue/api-source';
 import { demoCard } from '@/lib/catalogue/demo-source';
+import type { CardView } from '@/lib/catalogue/view';
 import { DATA_MODE } from '@/lib/data-mode';
-import { loadMoreCards } from './actions';
+import { loadMoreCards, type ListingQuery } from './actions';
 import { alternatesFor } from '@/lib/seo';
 import { localePath } from '@/lib/locale-path';
 
-type Search = Promise<{ q?: string | string[]; category?: string | string[]; sort?: string | string[] }>;
+type Search = Promise<{
+  q?: string | string[];
+  category?: string | string[];
+  sort?: string | string[];
+  pages?: string | string[];
+}>;
 
 interface Props {
   params: Promise<{ locale: Locale }>;
@@ -31,10 +37,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 /**
- * Catalogue (spec 02). The server renders every product card once and the initial filters from the URL
- * (shareable links, SEO, works without JS); `ShopBrowser` then filters instantly in the browser — no reload,
- * no scroll jump. With the catalogue API this becomes server pagination + `router.replace(…, { scroll: false })`.
+ * Catalogue (spec 02). Demo mode: the server renders every product card once and the initial filters from the
+ * URL (shareable links, SEO, works without JS); `ShopBrowser` then filters instantly in the browser.
+ * API mode: the API filters, searches and pages; `?pages=N` (set by "Load more", at most 10) renders that many
+ * pages, so Back from a product returns to the whole list at the same place (final review 2026-11-10).
  */
+const MAX_PAGES = 10;
 export default async function ShopPage({ searchParams }: Props) {
   const [t, footer, wa, locale] = await Promise.all([
     getTranslations('pages.shop'),
@@ -53,20 +61,30 @@ export default async function ShopPage({ searchParams }: Props) {
   let cards: Record<string, ReactNode>;
   let server: ServerListing | undefined;
   if (DATA_MODE === 'api') {
-    // The API filters, searches and pages (spec 02); a failure throws to the shop's error boundary.
-    const page = await fetchCataloguePage({
+    // A failure throws to the shop's error boundary.
+    const query: ListingQuery = {
       locale,
       q: initial.query,
-      category: initial.category ? CATEGORY_SLUGS[initial.category] : undefined,
-      sort: sort === 'popular' ? undefined : sort,
-    });
-    cards = Object.fromEntries(page.items.map((p) => [p.slug, <ProductCard key={p.slug} product={p} />]));
-    server = {
-      locale,
-      slugs: page.items.map((p) => p.slug),
-      nextCursor: page.nextCursor,
-      loadMore: loadMoreCards,
+      category: initial.category ? CATEGORY_SLUGS[initial.category] : null,
+      sort: sort === 'popular' ? null : sort,
     };
+    const pages = Math.min(MAX_PAGES, Math.max(1, Math.trunc(Number(first(sp.pages))) || 1));
+    const items: CardView[] = [];
+    let cursor: string | null = null;
+    for (let n = 0; n < pages; n++) {
+      const page = await fetchCataloguePage({
+        locale,
+        q: query.q,
+        category: query.category ?? undefined,
+        sort: query.sort ?? undefined,
+        cursor: cursor ?? undefined,
+      });
+      for (const item of page.items) if (!items.some((i) => i.slug === item.slug)) items.push(item);
+      cursor = page.nextCursor;
+      if (!cursor) break;
+    }
+    cards = Object.fromEntries(items.map((p) => [p.slug, <ProductCard key={p.slug} product={p} />]));
+    server = { query, pages, slugs: items.map((p) => p.slug), nextCursor: cursor, loadMore: loadMoreCards };
   } else {
     cards = Object.fromEntries(
       DEMO_PRODUCTS.map((p) => [p.slug, <ProductCard key={p.slug} product={demoCard(p, locale)} />]),

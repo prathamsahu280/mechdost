@@ -30,7 +30,7 @@ Static shell + streaming (Partial Prerendering); ISR for product/workshop/conten
 
 - `fetch` caching is off by default in Next 16: every server fetch states `next: { revalidate, tags }`. Pages get ISR from those fetches (no page-level `revalidate`, which must be a literal and cannot follow the data switch).
 - No build-time dependency on the API: dynamic product routes prerender nothing in api mode and render on first visit; a failed fetch throws so the last good page keeps serving.
-- **Open (blocks `NEXT_PUBLIC_DATA_MODE=api` on deploys):** server-side calls reach the API from the web server's IP, so per-IP limits (`catalogue_ip` 240/min, global 600/min) would apply to all shoppers together. Fix with a server-to-server key that has its own limit, or by forwarding the shopper's IP through a trusted hop (`TRUSTED_PROXY_HOPS`).
+- **Open (blocks `NEXT_PUBLIC_DATA_MODE=api` on deploys):** server-side calls reach the API from the web server's IP, so per-IP limits (`catalogue_ip` 240/min, global 600/min) would apply to all shoppers together. The fix must keep **per-shopper** limits (final review 2026-11-10: a single server-to-server bucket would let one client exhaust it for everyone by varying `?q=` or calling the "Load more" server function): the web forwards the shopper's IP in a header the API trusts only from the web (shared secret + trusted hop) and the API limits on that IP; the web also limits the "Load more" server function and uncached searches per IP.
 
 ## Images
 

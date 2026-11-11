@@ -10,6 +10,7 @@ import {
 import {
   CatalogueCategorySchema,
   CataloguePageSchema,
+  CATALOGUE_SLUG_RE,
   CatalogueProductSchema,
 } from '@mechdost/shared/catalogue';
 import { rateLimit } from '../middleware/rate-limit';
@@ -38,7 +39,7 @@ const Pincode = z
   .regex(/^[1-9][0-9]{5}$/)
   .optional()
   .openapi({ example: '492001' });
-const Slug = z.string().regex(/^[a-z0-9][a-z0-9-]{0,119}$/);
+const Slug = z.string().regex(CATALOGUE_SLUG_RE);
 
 // The DTOs live in @mechdost/shared/catalogue (one definition for API and web); importing @hono/zod-openapi
 // first gives them `.openapi()` for the component names.

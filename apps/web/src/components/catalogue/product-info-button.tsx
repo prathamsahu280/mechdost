@@ -1,6 +1,5 @@
 import { CheckCircle2, Info, ShieldCheck, Truck, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useId } from 'react';
 import type { CardView } from '@/lib/catalogue/view';
 import { formatPrice } from '@/lib/format';
 import { LocalLink } from '../ui/local-link';
@@ -8,12 +7,13 @@ import { LocalLink } from '../ui/local-link';
 /**
  * The product card's ⓘ button (user, 2026-11-01): quick details without leaving the list. Uses the native Popover
  * API — light dismiss, Esc to close, focus returns to the button, works before JavaScript loads. Server component.
- * a11y review 2026-11-10: ids from `useId` (a product can appear twice on one page), focus moves to the close
- * button on open (`autofocus`), and unknown facts are left out instead of shown blank.
+ * a11y review 2026-11-10: ids are `info-<scope>-<slug>` — a product appears at most once per list, and `scope`
+ * tells lists on one page apart (`useId` repeats across server renders, e.g. "Load more" pages: final review);
+ * focus moves to the close button on open (`autofocus`); unknown facts are left out instead of shown blank.
  */
-export function ProductInfoButton({ product }: { product: CardView }) {
+export function ProductInfoButton({ product, scope }: { product: CardView; scope: string }) {
   const t = useTranslations('catalogue');
-  const id = `info${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
+  const id = `info-${scope}-${product.slug}`;
   const rows = [
     { key: 'spec', term: t('specification'), value: product.spec },
     { key: 'compat', term: t('compatibility'), value: product.compatibility },

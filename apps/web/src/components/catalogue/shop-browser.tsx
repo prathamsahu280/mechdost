@@ -24,7 +24,6 @@ import {
   type SortKey,
 } from '@/demo/catalogue';
 import { track } from '@/lib/analytics';
-import type { Locale } from '@/i18n/routing';
 import { whatsappLink } from '@/lib/site';
 
 const SORTS: SortKey[] = ['popular', 'price_asc', 'price_desc'];
@@ -65,18 +64,16 @@ function readUrl(): State {
  * more" appends the next page from a server function, moves focus to the first new card and announces it.
  */
 export interface ServerListing {
-  locale: Locale;
+  /** The query the server rendered; "Load more" continues exactly this list (never the on-screen state). */
+  query: ListingQuery;
+  /** Pages already rendered by the server (`?pages=N`). */
+  pages: number;
   slugs: string[];
   nextCursor: string | null;
   loadMore: (
     query: ListingQuery,
     cursor: string,
   ) => Promise<{ cards: { slug: string; node: ReactNode }[]; nextCursor: string | null }>;
-}
-
-/** The API's sort for the shop's sort key: "popular" has no API ranking yet (search uses relevance). */
-function apiSort(sort: SortKey): ListingQuery['sort'] {
-  return sort === 'popular' ? null : sort;
 }
 
 export function ShopBrowser({
@@ -101,6 +98,14 @@ export function ShopBrowser({
   const product = useTranslations('product');
   const [state, setState] = useState<State>(initial);
   const [draft, setDraft] = useState(initial.query);
+  // A new server render with other filters (header link, Back, a shared URL) resets the controls to match.
+  const initialKey = `${initial.query}|${initial.category ?? ''}|${initial.sort}`;
+  const [shownKey, setShownKey] = useState(initialKey);
+  if (shownKey !== initialKey) {
+    setShownKey(initialKey);
+    setState(initial);
+    setDraft(initial.query);
+  }
   const router = useRouter();
   const [navigating, startNavigation] = useTransition();
   // Cards appended by "Load more", tied to the listing they belong to (a new search starts empty).
@@ -109,6 +114,7 @@ export function ShopBrowser({
     key: string;
     cards: { slug: string; node: ReactNode }[];
     nextCursor: string | null;
+    pages: number;
   } | null>(null);
   const [loadState, setLoadState] = useState<'idle' | 'loading' | 'failed'>('idle');
   const [announcement, setAnnouncement] = useState('');
@@ -160,28 +166,31 @@ export function ShopBrowser({
   }
 
   async function loadMore() {
-    if (!server || !nextCursor || loadState === 'loading') return;
+    if (!server || !nextCursor || loadState === 'loading' || navigating) return;
     setLoadState('loading');
     setAnnouncement('');
     try {
-      const page = await server.loadMore(
-        {
-          locale: server.locale,
-          q: state.query,
-          category: state.category ? CATEGORY_SLUGS[state.category] : null,
-          sort: apiSort(state.sort),
-        },
-        nextCursor,
-      );
+      const page = await server.loadMore(server.query, nextCursor);
+      const shown = new Set([...server.slugs, ...(appended?.cards.map((card) => card.slug) ?? [])]);
+      const fresh = page.cards.filter((card) => !shown.has(card.slug));
       setMore({
         key: listingKey,
-        cards: [...(appended?.cards ?? []), ...page.cards],
+        cards: [...(appended?.cards ?? []), ...fresh],
         nextCursor: page.nextCursor,
+        pages: (appended?.pages ?? server.pages) + 1,
+      });
+      // Put the open pages in the URL and let the server render them, so the Router Cache holds the whole list
+      // and Back from a product returns to it (replaceState alone would restore the cached first page). The
+      // same cards keep their elements (one keyed list), so focus and scroll stay put.
+      const url = new URL(window.location.href);
+      url.searchParams.set('pages', String((appended?.pages ?? server.pages) + 1));
+      startNavigation(() => {
+        router.replace(`${url.pathname}${url.search}`, { scroll: false });
       });
       setLoadState('idle');
-      setAnnouncement(c('loadedMore', { count: page.cards.length }));
+      setAnnouncement(c('loadedMore', { count: fresh.length }));
       track('click', { id: 'shop_load_more', path: window.location.pathname });
-      setFocusSlug(page.cards[0]?.slug ?? null);
+      setFocusSlug(fresh[0]?.slug ?? null);
     } catch {
       setLoadState('failed');
       setAnnouncement(c('loadMoreFailed'));
@@ -332,21 +341,18 @@ export function ShopBrowser({
             aria-busy={navigating || undefined}
             className="mt-5 grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 tab:grid-cols-3 nav:grid-cols-4"
           >
-            {results.map((p) => (
-              <li key={p.slug} className="animate-page-in">
-                {cards[p.slug]}
-              </li>
-            ))}
-            {appended?.cards.map((card) => (
-              <li
-                key={card.slug}
-                ref={card.slug === focusSlug ? firstNew : undefined}
-                tabIndex={card.slug === focusSlug ? -1 : undefined}
-                className="animate-page-in"
-              >
-                {card.node}
-              </li>
-            ))}
+            {[...results.map((p) => ({ slug: p.slug, node: cards[p.slug] })), ...(appended?.cards ?? [])].map(
+              (card) => (
+                <li
+                  key={card.slug}
+                  ref={card.slug === focusSlug ? firstNew : undefined}
+                  tabIndex={card.slug === focusSlug ? -1 : undefined}
+                  className="animate-page-in"
+                >
+                  {card.node}
+                </li>
+              ),
+            )}
           </ul>
           {server ? (
             <div className="mt-6 flex flex-col items-center gap-2">
@@ -359,7 +365,7 @@ export function ShopBrowser({
               {nextCursor ? (
                 <button
                   type="button"
-                  aria-disabled={loadState === 'loading' || undefined}
+                  aria-disabled={loadState === 'loading' || navigating || undefined}
                   onClick={() => {
                     void loadMore();
                   }}

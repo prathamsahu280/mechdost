@@ -7,6 +7,9 @@ import { z } from 'zod';
  */
 export const CATALOGUE_LOCALES = ['en', 'hi'] as const;
 
+/** Product and category slugs as the API accepts them (anything else can never exist). */
+export const CATALOGUE_SLUG_RE = /^[a-z0-9][a-z0-9-]{0,119}$/;
+
 export const CatalogueOfferSchema = z.object({
   pricePaise: z.number().int(),
   mrpPaise: z.number().int(),

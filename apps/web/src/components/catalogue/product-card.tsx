@@ -13,7 +13,14 @@ import { ProductVisual } from './product-visual';
  * Facts the source does not know are left out, never shown as blanks (a11y review 2026-11-10): no price → no
  * price block and no add-to-cart (the product page offers "Ask about this product"); no rating → no star row.
  */
-export function ProductCard({ product }: { product: CardView }) {
+export function ProductCard({
+  product,
+  scope = 'list',
+}: {
+  product: CardView;
+  /** Distinguishes lists on one page (ids of the quick-details popover). */
+  scope?: string;
+}) {
   const t = useTranslations('catalogue');
   const c = useTranslations('categories');
   const r = useTranslations('reviews');
@@ -28,7 +35,7 @@ export function ProductCard({ product }: { product: CardView }) {
         <LocalLink href={`/shop/${product.slug}`} className="block" tabIndex={-1} aria-hidden="true">
           <ProductVisual category={product.category.key} brand={product.brand} sku={product.sku} />
         </LocalLink>
-        <ProductInfoButton product={product} />
+        <ProductInfoButton product={product} scope={scope} />
         <div className="pointer-events-none absolute bottom-3 left-3 flex gap-1.5">
           {product.popular ? (
             <span className="rounded-md bg-accent-button px-2 py-0.5 text-[11px] font-bold text-white">

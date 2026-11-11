@@ -1,5 +1,6 @@
 import {
   CataloguePageSchema,
+  CATALOGUE_SLUG_RE,
   CatalogueProductSchema,
   type CatalogueCard,
   type CatalogueProduct,
@@ -66,6 +67,8 @@ export async function fetchCataloguePage(
 }
 
 export async function fetchCatalogueProduct(slug: string, locale: Locale): Promise<ProductView | null> {
+  // A slug the API would reject (400) cannot exist: a 404 page, no API call, no cache entry.
+  if (!CATALOGUE_SLUG_RE.test(slug)) return null;
   const url = new URL(`${base()}/v1/catalogue/products/${encodeURIComponent(slug)}`);
   url.searchParams.set('locale', locale);
   url.searchParams.set('city', CITY);
