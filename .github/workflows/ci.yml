@@ -2,7 +2,9 @@
 # Supply-chain rules (docs/research/security-vulnerabilities.md): third-party actions pinned by full commit SHA
 # (tag in the comment), read-only token, credentials not persisted, frozen lockfile, pnpm's install-script
 # allow-list and 3-day release age from pnpm-workspace.yaml. Unit tests run on PGlite: no secrets needed.
-# e2e, Lighthouse CI and the visual suite join here once the preview deploy exists (Vercel, blocked on the account).
+# The demo-mode browser suites run against a local production build (`next start`), so they need no deploy;
+# Lighthouse CI and the visual suite join once the preview deploy exists (Vercel, blocked on the account).
+# Node comes from .nvmrc (the runtime Cloud Run uses), never a separate number here (review 2026-11-11, T7).
 name: CI
 
 on:
@@ -36,7 +38,7 @@ jobs:
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24
+          node-version-file: .nvmrc
           cache: pnpm
 
       - name: Install (frozen lockfile)
@@ -47,3 +49,49 @@ jobs:
 
       - name: Typecheck, lint (zero warnings), unit tests
         run: pnpm exec turbo run typecheck lint test --concurrency=2
+
+      # Build-only failures (server/client boundary, prerender) pass typecheck and tests (learnings L26, T30).
+      - name: Production build
+        run: pnpm exec turbo run build --concurrency=2
+
+      # Report-only for now: a fix may need a release older than the 3-day minimum age (Q67).
+      - name: Dependency audit (high and critical)
+        run: pnpm audit --audit-level=high
+        continue-on-error: true
+
+  e2e-demo:
+    name: Browser suites (demo mode)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Build the web (demo data)
+        run: pnpm --filter @mechdost/web build
+
+      - name: Install Chromium for Playwright
+        run: pnpm --filter @mechdost/web exec playwright install --with-deps chromium
+
+      # Shell + demo flows (incl. axe) and the Hindi coverage gate (hard rule 10).
+      - name: Playwright
+        run: pnpm --filter @mechdost/web exec playwright test e2e/shell.spec.ts e2e/demo-flows.spec.ts e2e/hindi-coverage.spec.ts
+
+      # Product-page JS budget (spec 16, hard rule 6): < 180 KB gzip.
+      - name: JS budget
+        working-directory: apps/web
+        run: |
+          pnpm exec next start --port 3100 &
+          for i in $(seq 1 60); do curl -sf http://localhost:3100 >/dev/null && break; sleep 1; done
+          node scripts/measure-js.mjs http://localhost:3100
