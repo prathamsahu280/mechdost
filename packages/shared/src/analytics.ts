@@ -22,6 +22,7 @@ export interface ServerEventProps {
   seller_order_declined: { orderCode: string; shopId: string; reasonCode: string };
   order_cancelled: { orderCode: string; by: 'customer' | 'staff'; reasonCode: string; fromStatus: string };
   order_delivered: { orderCode: string; shopId: string };
+  admin_delivery_override: { orderCode: string };
   order_fulfilment_step: {
     orderCode: string;
     shopId: string;

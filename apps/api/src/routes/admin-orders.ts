@@ -4,6 +4,7 @@ import {
   cityScopeFrom,
   getRoutingOrder,
   listRoutingQueue,
+  overrideOrderDelivery,
   rejectOrder,
   routeOrder,
 } from '@mechdost/db/repo';
@@ -195,6 +196,33 @@ const cancelRoute = createRoute({
   },
 });
 
+const deliverOverride = createRoute({
+  method: 'post',
+  path: '/admin/orders/{code}/deliver-override',
+  tags: ['admin'],
+  summary: "Confirm delivery without the customer's code (code locked or lost); audited, needs a reason",
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: z.object({ code: Code }),
+    body: {
+      required: true,
+      content: {
+        'application/json': {
+          schema: z
+            .object({ reason: z.string().trim().min(5).max(300), version: z.number().int().min(1) })
+            .strict()
+            .openapi('OverrideDelivery'),
+        },
+      },
+    },
+  },
+  responses: {
+    200: json(z.object({ status: z.string(), version: z.number().int() }), 'Delivered'),
+    ...conflict,
+    ...errorResponses,
+  },
+});
+
 interface QueueCursor {
   placedAt: string;
   id: string;
@@ -228,6 +256,7 @@ export function adminOrderRoutes(deps: AppDeps, cache: SessionCache) {
   app.on('POST', '/admin/orders/:code/route', requirePermission('orders:route'));
   app.on('POST', '/admin/orders/:code/reject', requirePermission('orders:route'));
   app.on('POST', '/admin/orders/:code/cancel', requirePermission('orders:cancel'));
+  app.on('POST', '/admin/orders/:code/deliver-override', requirePermission('orders:route'));
 
   return app
     .openapi(queue, async (c) => {
@@ -298,6 +327,17 @@ export function adminOrderRoutes(deps: AppDeps, cache: SessionCache) {
         cityIds: scope.all ? 'all' : scope.cityIds,
         code: c.req.valid('param').code,
         reasonCode: body.reasonCode,
+        expectedVersion: body.version,
+        staffUserId: c.get('auth').user.id,
+      });
+      return c.json(r, 200);
+    })
+    .openapi(deliverOverride, async (c) => {
+      const body = c.req.valid('json');
+      const r = await overrideOrderDelivery(deps.db, {
+        scope: cityScopeFrom(c.get('auth').grants, 'orders:route'),
+        code: c.req.valid('param').code,
+        reason: body.reason,
         expectedVersion: body.version,
         staffUserId: c.get('auth').user.id,
       });

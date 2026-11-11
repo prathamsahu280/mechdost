@@ -16,6 +16,7 @@ import {
   declineShopOffer,
   deliverShopOrder,
   deliveryCodeFor,
+  overrideOrderDelivery,
   events,
   listShopOrders,
   placeCodOrder,
@@ -327,5 +328,87 @@ describe('advisor review fixes (2026-11-03)', () => {
     const done = (await listShopOrders(t(), [shop['Sharma Auto Parts']!], 'done')).items;
     expect(done.length).toBeGreaterThan(0);
     expect(done.every((o) => o.address === null)).toBe(true);
+  });
+});
+
+describe('delivery override (review B2, spec 04)', () => {
+  it('a locked delivery code no longer strands the order: staff override, audited, once', async () => {
+    const ids = [shop['Sharma Auto Parts']!];
+    const { code, assignmentId } = await placeAndRoute('Sharma Auto Parts');
+    await acceptShopOffer(t(), { shopIds: ids, assignmentId, staffUserId: shopUser });
+    for (const step of [
+      { to: 'packed' },
+      { to: 'shipped', mode: 'own' },
+      { to: 'out_for_delivery' },
+    ] as const)
+      await advanceShopOrder(t(), {
+        shopIds: ids,
+        code,
+        expectedVersion: (await orderRow(code)).version,
+        step,
+        staffUserId: shopUser,
+        keyring,
+      });
+    const o = await orderRow(code);
+    const [shipment] = await db.select().from(s.shipments).where(eq(s.shipments.orderId, o.id));
+    const right = (await deliveryCodeFor(t(), keyring, shipment!.id))!;
+    const wrong = right === '0000' ? '1111' : '0000';
+    let last;
+    for (let i = 0; i < 5; i++)
+      last = await deliverShopOrder(t(), {
+        shopIds: ids,
+        code,
+        deliveryCode: wrong,
+        expectedVersion: o.version,
+        staffUserId: shopUser,
+        keyring,
+      });
+    expect(last).toEqual({ ok: false, reason: 'locked' });
+
+    // Another city's staff cannot see it; a short reason is refused; nothing changes.
+    await expect(
+      overrideOrderDelivery(t(), {
+        scope: { all: false, cityIds: ['01890000-0000-7000-8000-000000000000'] },
+        code,
+        reason: 'Customer confirmed on the phone',
+        expectedVersion: o.version,
+        staffUserId: staff,
+      }),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    await expect(
+      overrideOrderDelivery(t(), {
+        scope,
+        code,
+        reason: 'no',
+        expectedVersion: o.version,
+        staffUserId: staff,
+      }),
+    ).rejects.toMatchObject({ code: 'OVERRIDE_REASON' });
+    expect((await orderRow(code)).status).toBe('out_for_delivery');
+
+    const done = await overrideOrderDelivery(t(), {
+      scope,
+      code,
+      reason: 'Customer confirmed on the phone',
+      expectedVersion: o.version,
+      staffUserId: staff,
+    });
+    expect(done.status).toBe('delivered');
+    expect((await orderRow(code)).status).toBe('delivered');
+    const [after] = await db.select().from(s.shipments).where(eq(s.shipments.id, shipment!.id));
+    expect(after).toMatchObject({ status: 'delivered', deliveredVia: 'override', overrideBy: staff });
+    const audit = await db.select().from(s.auditLog).where(eq(s.auditLog.entityId, shipment!.id));
+    expect(audit.map((a) => a.action)).toContain('delivery.override');
+    const ev = await db.select().from(events).where(eq(events.event, 'admin_delivery_override'));
+    expect(ev.map((e) => e.props)).toContainEqual({ orderCode: code });
+    await expect(
+      overrideOrderDelivery(t(), {
+        scope,
+        code,
+        reason: 'Customer confirmed on the phone',
+        expectedVersion: done.version,
+        staffUserId: staff,
+      }),
+    ).rejects.toMatchObject({ code: 'WRONG_STEP' });
   });
 });

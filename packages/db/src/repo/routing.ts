@@ -2,7 +2,8 @@ import { and, eq, inArray, sql } from 'drizzle-orm';
 import type { OrderRejectReason, OrderStatus } from '@mechdost/shared/state';
 import { OPERATIONAL_SETTINGS } from '@mechdost/shared/settings';
 import { ORDER_REJECT_REASONS } from '@mechdost/shared/state';
-import { auditLog, orderAssignments, reservations, shopInventory } from '../schema';
+import { auditLog, orderAssignments, reservations, shipments, shopInventory } from '../schema';
+import { overrideShipmentInTx } from './delivery';
 import { expireAssignment, offerOrderToShop } from './assignments';
 import { ConflictError, NotFoundError, ValidationError } from './errors';
 import { recordServerEvent } from './events';
@@ -519,4 +520,43 @@ export async function expireDueAssignments(
     }
   }
   return { expired, failed };
+}
+
+/**
+ * Staff confirm delivery without the customer's code (spec 04: code locked after 5 wrong tries, lost, or the
+ * customer unreachable). Order row first (lock order), then the shipment override and the order move in one
+ * transaction, audited, with a reason of 5–300 characters. Other cities' orders are 404 (review B2).
+ */
+export async function overrideOrderDelivery(
+  db: Tx,
+  input: { scope: CityScope; code: string; reason: string; expectedVersion: number; staffUserId: string },
+): Promise<{ status: 'delivered'; version: number }> {
+  const reason = input.reason.trim();
+  if (reason.length < 5 || reason.length > 300)
+    throw new ValidationError('Give a reason (5 to 300 characters)', 'OVERRIDE_REASON');
+  return db.transaction(async (tx) => {
+    const o = await findOrder(tx, input.scope, input.code, true);
+    if (o.status !== 'out_for_delivery') throw new ConflictError(`Order is ${o.status}`, 'WRONG_STEP');
+    const [shipment] = await tx
+      .select({ id: shipments.id })
+      .from(shipments)
+      .where(eq(shipments.orderId, o.id))
+      .limit(1);
+    if (!shipment) throw new ConflictError('This order has not been handed over yet', 'NO_SHIPMENT');
+    await overrideShipmentInTx(tx, { shipmentId: shipment.id, staffUserId: input.staffUserId, reason });
+    const row = await transitionOrder(tx, {
+      orderId: o.id,
+      from: 'out_for_delivery',
+      to: 'delivered',
+      expectedVersion: input.expectedVersion,
+      actor: { type: 'admin', userId: input.staffUserId },
+      patch: { deliveredAt: new Date() },
+    });
+    await recordServerEvent(tx, 'admin_delivery_override', {
+      userId: input.staffUserId,
+      cityId: o.cityId,
+      props: { orderCode: o.code },
+    });
+    return { status: 'delivered', version: row.version };
+  });
 }

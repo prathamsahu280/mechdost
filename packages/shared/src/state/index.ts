@@ -37,7 +37,8 @@ export const orderMachine = defineMachine(
     { from: 'packed', to: 'cancelled', by: ['admin'] },
     { from: 'shipped', to: 'out_for_delivery', by: ['shop', 'system'] },
     { from: 'shipped', to: 'delivered', by: ['shop', 'system'] },
-    { from: 'out_for_delivery', to: 'delivered', by: ['shop', 'system'] },
+    // Staff confirm without the customer's code only through the audited override (spec 04, review B2).
+    { from: 'out_for_delivery', to: 'delivered', by: ['shop', 'system', 'admin'] },
   ],
 );
 

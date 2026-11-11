@@ -134,3 +134,29 @@ describe('admin orders API', () => {
     expect(reject.status).toBe(400); // reason must be a code
   });
 });
+
+describe('delivery override over HTTP (review B2)', () => {
+  it('needs orders:route, a reason, and an order out for delivery', async () => {
+    const ops = await staff('11', 'ops_manager');
+    const agent = await staff('12', 'support_agent');
+    const url = `/v1/admin/orders/${code}/deliver-override`;
+    const body = (reason: string) => JSON.stringify({ reason, version: 1 });
+    expect(
+      (await ctx.app.request(url, { method: 'POST', headers: agent, body: body('Customer said yes') }))
+        .status,
+    ).toBe(403);
+    expect((await ctx.app.request(url, { method: 'POST', headers: ops, body: body('no') })).status).toBe(400);
+    const res = await ctx.app.request(url, { method: 'POST', headers: ops, body: body('Customer said yes') });
+    expect(res.status).toBe(409);
+    expect(((await res.json()) as ErrorJson).error.code).toBe('WRONG_STEP');
+    const missing = await ctx.app.request(
+      `/v1/admin/orders/${code.replace(/-\d+$/, '-9')}/deliver-override`,
+      {
+        method: 'POST',
+        headers: ops,
+        body: body('Customer said yes'),
+      },
+    );
+    expect(missing.status).toBe(404);
+  });
+});

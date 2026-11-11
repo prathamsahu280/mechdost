@@ -114,30 +114,36 @@ export async function overrideDelivery(
   db: Tx,
   input: { shipmentId: string; staffUserId: string; reason: string },
 ): Promise<void> {
+  await db.transaction((tx) => overrideShipmentInTx(tx, input));
+}
+
+/** The override inside the caller's transaction (the admin order override moves the order in the same one). */
+export async function overrideShipmentInTx(
+  tx: Tx,
+  input: { shipmentId: string; staffUserId: string; reason: string },
+): Promise<void> {
   const reason = input.reason.trim();
   if (reason.length < 5 || reason.length > 300) {
     throw new ValidationError('Give a reason (5 to 300 characters)', 'OVERRIDE_REASON');
   }
-  await db.transaction(async (tx) => {
-    const rows = await tx
-      .update(shipments)
-      .set({
-        status: 'delivered',
-        deliveredVia: 'override',
-        deliveredAt: sql`now()`,
-        overrideReason: reason,
-        overrideBy: input.staffUserId,
-      })
-      .where(and(eq(shipments.id, input.shipmentId), ne(shipments.status, 'delivered')))
-      .returning({ id: shipments.id });
-    if (rows.length === 0) throw new ConflictError('This shipment is already delivered', 'ALREADY_DELIVERED');
-    await tx.insert(auditLog).values({
-      actorUserId: input.staffUserId,
-      actorRole: 'staff',
-      action: 'delivery.override',
-      entity: 'shipment',
-      entityId: input.shipmentId,
-      after: { deliveredVia: 'override' },
-    });
+  const rows = await tx
+    .update(shipments)
+    .set({
+      status: 'delivered',
+      deliveredVia: 'override',
+      deliveredAt: sql`now()`,
+      overrideReason: reason,
+      overrideBy: input.staffUserId,
+    })
+    .where(and(eq(shipments.id, input.shipmentId), ne(shipments.status, 'delivered')))
+    .returning({ id: shipments.id });
+  if (rows.length === 0) throw new ConflictError('This shipment is already delivered', 'ALREADY_DELIVERED');
+  await tx.insert(auditLog).values({
+    actorUserId: input.staffUserId,
+    actorRole: 'staff',
+    action: 'delivery.override',
+    entity: 'shipment',
+    entityId: input.shipmentId,
+    after: { deliveredVia: 'override' },
   });
 }
