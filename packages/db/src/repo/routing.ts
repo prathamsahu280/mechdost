@@ -363,7 +363,7 @@ export async function getRoutingOrder(
   };
 }
 
-/** Move the order's active reservations to `shopId`, reserving anything not yet held there. */
+/** Move the order's active reservations to `shopId`, reserving anything not yet held there and renewing kept holds. */
 async function moveReservations(tx: Tx, orderId: string, shopId: string, ttlMinutes: number): Promise<void> {
   const held = await tx
     .select({
@@ -377,6 +377,16 @@ async function moveReservations(tx: Tx, orderId: string, shopId: string, ttlMinu
     .where(and(eq(reservations.orderId, orderId), eq(reservations.status, 'active')));
   for (const r of held.filter((h) => h.shopId !== shopId)) await releaseReservation(tx, r.id);
   const keep = new Set(held.filter((h) => h.shopId === shopId).map((h) => h.variantId));
+  // Holds kept at this shop must last through the accept window too, or the sweep frees them mid-offer and the
+  // accept fails with STOCK_NOT_HELD (review B8). Never shortens a hold.
+  const kept = held.filter((h) => h.shopId === shopId).map((h) => h.id);
+  if (kept.length > 0)
+    await tx
+      .update(reservations)
+      .set({
+        expiresAt: sql`greatest(${reservations.expiresAt}, now() + make_interval(mins => ${ttlMinutes}))`,
+      })
+      .where(inArray(reservations.id, kept));
   const items = rowsOf<{ variant_id: string; qty: unknown; inventory_id: string | null }>(
     await tx.execute(sql`select i.variant_id, i.qty, si.id as inventory_id from order_items i
       left join shop_inventory si on si.variant_id = i.variant_id and si.shop_id = ${shopId} and si.active

@@ -41,10 +41,21 @@ import type { CatalogueLocale } from './catalogue';
 export interface MyOrderSummary {
   code: string;
   placedAt: Date;
+  /** What is still payable: the sub-orders that were not cancelled or rejected (review B7). */
   totalPaise: number;
+  /** The total confirmed at checkout (snapshot). */
+  placedTotalPaise: number;
   paymentMethod: string;
   paymentStatus: string;
   orders: { code: string; status: string; totalPaise: number }[];
+}
+
+/** Sum of the sub-orders still on their way or delivered; cancelled and rejected parts are not payable. */
+function payable(subs: readonly { status: string; totalPaise: number }[]): number {
+  return subs.reduce(
+    (n, s) => (s.status === 'cancelled' || s.status === 'rejected' ? n : n + s.totalPaise),
+    0,
+  );
 }
 
 /** Newest first, keyset-paged on (created_at, id) (hard rule 7); `nextCursor` is null on the last page. */
@@ -93,7 +104,8 @@ export async function listMyOrders(
   const summaries = groups.map((g) => ({
     code: g.code,
     placedAt: g.createdAt,
-    totalPaise: g.totalPaise,
+    totalPaise: payable(subs.filter((s) => s.groupId === g.id)),
+    placedTotalPaise: g.totalPaise,
     paymentMethod: g.paymentMethod,
     paymentStatus: g.paymentStatus,
     orders: subs
@@ -207,7 +219,8 @@ export async function getMyOrder(
   return {
     code: g.code,
     placedAt: g.createdAt,
-    totalPaise: g.totalPaise,
+    totalPaise: payable(subs.map((s) => s.order)),
+    placedTotalPaise: g.totalPaise,
     paymentMethod: g.paymentMethod,
     paymentStatus: g.paymentStatus,
     address: (first?.order.shippingAddress ?? {}) as Record<string, unknown>,

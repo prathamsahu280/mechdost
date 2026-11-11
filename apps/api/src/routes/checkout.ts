@@ -173,7 +173,10 @@ const SubCode = z
 const Summary = z.object({
   code: z.string(),
   placedAt: z.string(),
+  /** Still payable: cancelled or rejected parts excluded. */
   totalPaise: z.number().int(),
+  /** Confirmed at checkout. */
+  placedTotalPaise: z.number().int(),
   paymentMethod: z.string(),
   paymentStatus: z.string(),
 });

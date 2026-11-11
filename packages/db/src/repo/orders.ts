@@ -1,7 +1,7 @@
 import { and, eq } from 'drizzle-orm';
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
 import { orderMachine, type OrderStatus } from '@mechdost/shared/state';
-import { orders } from '../schema';
+import { orderGroups, orders } from '../schema';
 import { setActor, type ActorContext } from './actor';
 import { ConflictError, NotFoundError } from './errors';
 import { queueOrderWhatsApp, type OrderWhatsAppEvent } from './order-notifications';
@@ -69,7 +69,13 @@ export async function transitionOrder(
         eq(orders.version, args.expectedVersion),
       ),
     )
-    .returning({ id: orders.id, status: orders.status, version: orders.version, shopId: orders.shopId });
+    .returning({
+      id: orders.id,
+      status: orders.status,
+      version: orders.version,
+      shopId: orders.shopId,
+      groupId: orders.groupId,
+    });
   const row = rows[0];
   if (!row)
     throw new ConflictError(
@@ -78,5 +84,28 @@ export async function transitionOrder(
     );
   const event = WHATSAPP_ON[args.to];
   if (event) await queueOrderWhatsApp(tx, { orderId: row.id, event, orderVersion: row.version });
+  if (orderMachine.isTerminal(args.to)) await settleCodGroup(tx, row.groupId);
   return row;
+}
+
+/**
+ * A COD group is `cod_collected` once none of its sub-orders is still open and at least one was delivered
+ * (review B7). The group row is locked first, so two parts finishing at once cannot both miss the last one.
+ * A group whose parts were all cancelled keeps `cod_pending` until the COD payment states are designed with
+ * the WhatsApp COD confirmation (Q74).
+ */
+async function settleCodGroup(tx: Tx, groupId: string): Promise<void> {
+  const [g] = await tx
+    .select({ method: orderGroups.paymentMethod, status: orderGroups.paymentStatus })
+    .from(orderGroups)
+    .where(eq(orderGroups.id, groupId))
+    .for('update');
+  if (g?.method !== 'cod' || g.status !== 'cod_pending') return;
+  const subs = await tx.select({ status: orders.status }).from(orders).where(eq(orders.groupId, groupId));
+  if (subs.some((s) => !orderMachine.isTerminal(s.status as OrderStatus))) return;
+  if (!subs.some((s) => s.status === 'delivered')) return;
+  await tx
+    .update(orderGroups)
+    .set({ paymentStatus: 'cod_collected' }) // the version trigger (0031) bumps `version`
+    .where(and(eq(orderGroups.id, groupId), eq(orderGroups.paymentStatus, 'cod_pending')));
 }

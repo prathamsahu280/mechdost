@@ -248,3 +248,31 @@ describe('routing', () => {
     ).rejects.toMatchObject({ code: 'NOT_REJECTABLE' });
   });
 });
+
+describe('kept holds (review B8)', () => {
+  it('routing to the shop that already holds the stock renews the hold for the accept window', async () => {
+    const code = await place('routing-kept-hold-000001');
+    const [o] = await db.select().from(s.orders).where(eq(s.orders.code, code));
+    // The checkout hold is about to lapse (placed a while ago).
+    await db.execute(
+      sql`update reservations set expires_at = now() + interval '1 minute' where order_id = ${o!.id}`,
+    );
+    const [held] = await db.select().from(s.reservations).where(eq(s.reservations.orderId, o!.id));
+    const holder = (
+      await db.select().from(s.shopInventory).where(eq(s.shopInventory.id, held!.inventoryId))
+    )[0]!.shopId;
+    await routeOrder(t(), {
+      scope: raipur,
+      code,
+      shopId: holder,
+      expectedVersion: await version(code),
+      staffUserId: staff,
+    });
+    const [after] = await db
+      .select()
+      .from(s.reservations)
+      .where(sql`${s.reservations.orderId} = ${o!.id} and ${s.reservations.status} = 'active'`);
+    expect(after!.id).toBe(held!.id); // the same hold was kept…
+    expect(after!.expiresAt.getTime() - Date.now()).toBeGreaterThan(10 * 60_000); // …and renewed
+  });
+});

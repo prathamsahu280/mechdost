@@ -39,6 +39,8 @@ Admin queue cards with countdown chips and SLA colours; order detail with timeli
 
 Timer is DB-clock based; late accept after expiry is rejected (CAS); shop in busy/holiday mode is not eligible; partial fulfilment not allowed in phase 1 (split happened at checkout); admin cannot route to a shop lacking stock unless override flag with note; every state change audited.
 
+- **Group totals and COD status (built 2026-11-11, review B7/B8):** the customer's order list and detail show `totalPaise` = what is still payable (sub-orders not cancelled or rejected) and `placedTotalPaise` = the total confirmed at checkout. A COD group becomes `cod_collected` when no sub-order is still open and at least one was delivered (set inside every terminal order move, group row locked). A COD group whose parts were all cancelled keeps `cod_pending` until the COD payment states are designed with the WhatsApp COD confirmation (Q74); moving the COD fee off a cancelled first part is Q66. Routing to the shop that already holds the stock renews those holds for the reservation window (never shortens them).
+
 ## Edge cases
 
 Shop accepts exactly at expiry → whichever CAS wins is final; shop app offline → email/SMS fallback and admin alert at 50% of timer; customer cancels while `awaiting_shop` → assignment withdrawn; all eligible shops decline → admin reject flow; courier webhook out of order → monotonic state.

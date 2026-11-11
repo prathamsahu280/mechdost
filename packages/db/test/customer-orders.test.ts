@@ -18,8 +18,10 @@ import {
   cancelOrderAsStaff,
   getMyOrder,
   listMyOrders,
+  overrideOrderDelivery,
   placeCodOrder,
   quoteCheckout,
+  rankShopsForOrder,
   rejectOrder,
   routeOrder,
   type Tx,
@@ -283,5 +285,87 @@ describe('my orders', () => {
     await expect(listMyOrders(t(), customer, { cursor: 'not-a-cursor' })).rejects.toMatchObject({
       code: 'INVALID_CURSOR',
     });
+  });
+});
+
+describe('order group totals and COD status (review B7)', () => {
+  it('a two-shop COD group shows what is still payable, and is cod_collected once the rest is delivered', async () => {
+    const sku = (slug: string) => fixture.products.find((p) => p.slug === slug)?.sku ?? slug;
+    const lines = [
+      { sku: sku('exide-xltz4a-2w-battery'), qty: 1 },
+      { sku: sku('scooter-tubeless-tyre-90-90-12'), qty: 1 },
+    ];
+    const q = await quoteCheckout(t(), { pincode: '492004', lines, locale: 'en' });
+    expect(q.ok).toBe(true);
+    const placed = await placeCodOrder(t(), {
+      userId: customer,
+      idempotencyKey: 'customer-orders-group-000001',
+      address: {
+        contactName: 'Ravi',
+        contactPhone: '+919876543210',
+        line1: 'House 12, Pandri',
+        line2: null,
+        landmark: null,
+        pincode: '492004',
+      },
+      lines,
+      expectedTotalPaise: q.totalPaise,
+      note: null,
+      locale: 'en',
+    });
+    expect(placed.orders).toHaveLength(2);
+    const [first, second] = placed.orders;
+    await cancelMyOrder(t(), {
+      userId: customer,
+      code: first!.code,
+      reasonCode: 'changed_mind',
+      expectedVersion: (await row(first!.code)).version,
+    });
+    const view = await getMyOrder(t(), customer, placed.code, { locale: 'en', keyring });
+    expect(view.totalPaise).toBe(second!.totalPaise);
+    expect(view.placedTotalPaise).toBe(placed.totalPaise);
+    const listed = (await listMyOrders(t(), customer)).orders.find((o) => o.code === placed.code);
+    expect(listed?.totalPaise).toBe(second!.totalPaise);
+
+    // Deliver the remaining part: the group's COD is collected.
+    const o = await row(second!.code);
+    await routeOrder(t(), {
+      scope: { all: true },
+      code: second!.code,
+      shopId: (await rankShopsForOrder(t(), o.id, 'en')).find((x) => x.eligible)!.shopId,
+      expectedVersion: o.version,
+      staffUserId: staff,
+    });
+    const routed = await row(second!.code);
+    const [a] = await db
+      .select()
+      .from(s.orderAssignments)
+      .where(sql`${s.orderAssignments.orderId} = ${routed.id} and ${s.orderAssignments.status} = 'offered'`);
+    await acceptShopOffer(t(), { shopIds: [a!.shopId], assignmentId: a!.id, staffUserId: staff });
+    for (const step of [
+      { to: 'packed' },
+      { to: 'shipped', mode: 'own' },
+      { to: 'out_for_delivery' },
+    ] as const)
+      await advanceShopOrder(t(), {
+        shopIds: [a!.shopId],
+        code: second!.code,
+        expectedVersion: (await row(second!.code)).version,
+        step,
+        staffUserId: staff,
+        keyring,
+      });
+    await overrideOrderDelivery(t(), {
+      scope: { all: true },
+      code: second!.code,
+      reason: 'Customer paid cash at the door',
+      expectedVersion: (await row(second!.code)).version,
+      staffUserId: staff,
+    });
+    const [g] = await db.select().from(s.orderGroups).where(eq(s.orderGroups.code, placed.code));
+    expect(g!.paymentStatus).toBe('cod_collected');
+    expect((await getMyOrder(t(), customer, placed.code, { locale: 'en', keyring })).paymentStatus).toBe(
+      'cod_collected',
+    );
   });
 });
