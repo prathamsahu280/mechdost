@@ -23,7 +23,9 @@
     "./policy": "./src/policy.ts",
     "./auth": "./src/auth.ts",
     "./catalogue": "./src/catalogue.ts",
-    "./vehicles": "./src/vehicles.ts"
+    "./vehicles": "./src/vehicles.ts",
+    "./gst": "./src/gst.ts",
+    "./partners": "./src/partners.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",

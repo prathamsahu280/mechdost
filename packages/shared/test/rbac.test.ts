@@ -112,3 +112,13 @@ describe('can()', () => {
     expect(permissionsOf(grants).has('orders:place')).toBe(true);
   });
 });
+
+describe('price approval (design 2026-11-13)', () => {
+  it('operations staff approve seller prices; marketing and shops do not', () => {
+    expect(isPermission('prices:approve')).toBe(true);
+    expect((ROLES.ops_manager.permissions as readonly string[]).includes('prices:approve')).toBe(true);
+    expect((ROLES.city_manager.permissions as readonly string[]).includes('prices:approve')).toBe(true);
+    expect((ROLES.marketing.permissions as readonly string[]).includes('prices:approve')).toBe(false);
+    expect((ROLES.seller_owner.permissions as readonly string[]).includes('prices:approve')).toBe(false);
+  });
+});

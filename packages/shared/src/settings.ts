@@ -23,6 +23,14 @@ export const OPERATIONAL_SETTINGS = {
   /** Minutes to finish an online payment; the stock hold lasts as long, then the worker cancels the unpaid
    *  order and puts the stock back (Razorpay, plan 2026-11-12). */
   'checkout.online_payment_minutes': { kind: 'int', min: 10, max: 120, default: 30 },
+  /** Delivery charge pre-filled for each PIN when approving a new shop (paise; design 2026-11-13). */
+  'partners.default_shipping_paise': { kind: 'int', min: 0, max: 50_000, default: 4_000 },
+  /** Delivery days pre-filled for each PIN when approving a new shop. */
+  'partners.default_lead_days': { kind: 'int', min: 0, max: 14, default: 2 },
+  /** Days a seller invite link stays valid. */
+  'partners.invite_days': { kind: 'int', min: 1, max: 30, default: 7 },
+  /** A new shop must accept the MechDost seller agreement before it goes live (Q77). */
+  'partners.agreement_required': { kind: 'boolean', default: true },
   /** How long a shop has to accept an offered order (minutes). */
   // Same bounds as the demo `/admin/settings` screen and spec 08 (5–120 min).
   'orders.acceptance_timeout_min': { kind: 'int', min: 5, max: 120, default: 15 },

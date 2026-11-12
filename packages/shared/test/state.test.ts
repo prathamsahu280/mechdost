@@ -6,6 +6,9 @@ import {
   paymentMachine,
   serviceRequestMachine,
   ticketMachine,
+  applicationMachine,
+  inviteMachine,
+  priceRequestMachine,
 } from '../src/state';
 
 describe('order state machine', () => {
@@ -113,5 +116,34 @@ describe('ticket state machine', () => {
     expect(ticketMachine.canActor('in_review', 'resolved', 'customer')).toBe(false);
     expect(ticketMachine.canActor('resolved', 'closed', 'customer')).toBe(false);
     for (const to of TICKET_STATES) expect(ticketMachine.canActor('closed', to, 'admin')).toBe(false);
+  });
+});
+
+describe('seller onboarding machines (design 2026-11-13)', () => {
+  it('applications: admin reviews; an invited one is approved by the system on submit', () => {
+    expect(applicationMachine.canActor('new', 'in_review', 'admin')).toBe(true);
+    expect(applicationMachine.canActor('in_review', 'approved', 'admin')).toBe(true);
+    expect(applicationMachine.canActor('new', 'rejected', 'admin')).toBe(true);
+    expect(applicationMachine.canActor('new', 'approved', 'system')).toBe(true);
+    expect(applicationMachine.canActor('new', 'approved', 'shop')).toBe(false);
+    expect(applicationMachine.can('approved', 'new')).toBe(false);
+    expect(applicationMachine.isTerminal('rejected')).toBe(true);
+  });
+
+  it('invites: used or expired by the system, revoked by an admin, never reopened', () => {
+    expect(inviteMachine.canActor('sent', 'used', 'system')).toBe(true);
+    expect(inviteMachine.canActor('sent', 'expired', 'system')).toBe(true);
+    expect(inviteMachine.canActor('sent', 'revoked', 'admin')).toBe(true);
+    expect(inviteMachine.canActor('sent', 'revoked', 'shop')).toBe(false);
+    expect(inviteMachine.can('used', 'sent')).toBe(false);
+  });
+
+  it('price requests: only an admin decides; the shop may withdraw its own; a newer one supersedes', () => {
+    expect(priceRequestMachine.canActor('pending', 'approved', 'admin')).toBe(true);
+    expect(priceRequestMachine.canActor('pending', 'rejected', 'admin')).toBe(true);
+    expect(priceRequestMachine.canActor('pending', 'approved', 'shop')).toBe(false);
+    expect(priceRequestMachine.canActor('pending', 'withdrawn', 'shop')).toBe(true);
+    expect(priceRequestMachine.canActor('pending', 'superseded', 'system')).toBe(true);
+    expect(priceRequestMachine.can('approved', 'pending')).toBe(false);
   });
 });

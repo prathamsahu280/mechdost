@@ -40,6 +40,24 @@ export interface ServerEventProps {
   admin_product_status_changed: { productSlug: string; from: string; to: string };
   admin_content_published: { key: string; locale: 'en' | 'hi'; action: 'published' | 'unpublished' };
   inventory_updated: { shopId: string; sku: string; fields: string[]; by: 'shop' | 'staff' };
+  partner_application_submitted: {
+    kind: string;
+    source: 'public' | 'invite';
+    gstStatus: string;
+    products: number;
+    locationSource: string;
+  };
+  partner_application_decided: { decision: 'approved' | 'rejected'; reasonCode: string | null };
+  partner_invite_sent: Record<string, never>;
+  price_request_submitted: { shopId: string; sku: string };
+  price_request_decided: {
+    shopId: string;
+    sku: string;
+    decision: 'approved' | 'rejected';
+    reasonCode: string | null;
+  };
+  agreement_accepted: { shopId: string; version: number };
+  shop_went_live: { shopId: string };
 }
 export type ServerEvent = keyof ServerEventProps;
 

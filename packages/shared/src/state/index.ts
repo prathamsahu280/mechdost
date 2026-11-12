@@ -247,3 +247,51 @@ export const productMachine = defineMachine(
     { from: 'archived', to: 'draft', by: ['admin'] },
   ],
 );
+
+/** Seller applications (design 2026-11-13): staff review; an invited application is approved on submit. */
+export const APPLICATION_STATES = ['new', 'in_review', 'approved', 'rejected'] as const;
+export type ApplicationStatus = (typeof APPLICATION_STATES)[number];
+
+export const applicationMachine = defineMachine(
+  'partner_application',
+  APPLICATION_STATES,
+  ['approved', 'rejected'],
+  [
+    { from: 'new', to: 'in_review', by: ['admin'] },
+    { from: 'new', to: 'approved', by: ['admin', 'system'] },
+    { from: 'new', to: 'rejected', by: ['admin'] },
+    { from: 'in_review', to: 'approved', by: ['admin'] },
+    { from: 'in_review', to: 'rejected', by: ['admin'] },
+  ],
+);
+
+/** Admin invites to sellers: one-time links. */
+export const INVITE_STATES = ['sent', 'used', 'expired', 'revoked'] as const;
+export type InviteStatus = (typeof INVITE_STATES)[number];
+
+export const inviteMachine = defineMachine(
+  'partner_invite',
+  INVITE_STATES,
+  ['used', 'expired', 'revoked'],
+  [
+    { from: 'sent', to: 'used', by: ['system'] },
+    { from: 'sent', to: 'expired', by: ['system'] },
+    { from: 'sent', to: 'revoked', by: ['admin'] },
+  ],
+);
+
+/** A seller's price for one product, approved or rejected by staff line by line (user 2026-11-13). */
+export const PRICE_REQUEST_STATES = ['pending', 'approved', 'rejected', 'withdrawn', 'superseded'] as const;
+export type PriceRequestStatus = (typeof PRICE_REQUEST_STATES)[number];
+
+export const priceRequestMachine = defineMachine(
+  'price_request',
+  PRICE_REQUEST_STATES,
+  ['approved', 'rejected', 'withdrawn', 'superseded'],
+  [
+    { from: 'pending', to: 'approved', by: ['admin'] },
+    { from: 'pending', to: 'rejected', by: ['admin'] },
+    { from: 'pending', to: 'withdrawn', by: ['shop'] },
+    { from: 'pending', to: 'superseded', by: ['system'] },
+  ],
+);
