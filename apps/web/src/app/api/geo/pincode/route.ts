@@ -6,6 +6,13 @@
  * `lookup` for the chosen provider behind the same response shape. Rate limited per client (hard rule 4).
  */
 import { NextResponse, type NextRequest } from 'next/server';
+import {
+  boundedSet,
+  clientKey,
+  createLimiter,
+  NOMINATIM_HEADERS,
+  upstreamSlot,
+} from '@/lib/geo/nominatim-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,56 +25,7 @@ interface PincodeResponse {
 const INDIA = { minLat: 6, maxLat: 37.5, minLng: 68, maxLng: 97.5 };
 const CACHE_MS = 24 * 3600_000;
 const cache = new Map<string, { at: number; value: PincodeResponse }>();
-const hits = new Map<string, { windowStart: number; count: number }>();
-const LIMIT = 10; // per client per minute
-let lastUpstream = 0;
-
-/**
- * Client identity for the rate limit, the same way the API does it (security review 2026-11-02): the leftmost
- * X-Forwarded-For entry is whatever the client sent, so count `TRUSTED_PROXY_HOPS` back from the right (entries
- * appended by our own proxies). Vercel's `x-real-ip` is set by the platform and cannot be spoofed.
- */
-function clientKey(req: NextRequest): string | null {
-  const platform = process.env.VERCEL ? req.headers.get('x-real-ip') : null;
-  if (platform) return platform;
-  const hops = Number(process.env.TRUSTED_PROXY_HOPS ?? '0');
-  if (Number.isInteger(hops) && hops > 0) {
-    const chain = (req.headers.get('x-forwarded-for') ?? '')
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean);
-    return chain[chain.length - hops] ?? 'unknown';
-  }
-  // Route handlers cannot see the socket address. Without a trusted source every visitor would share one bucket
-  // (one user could exhaust it for all), so production refuses to serve rather than fail open or shared.
-  // The one exception is a direct local connection (the demo on this machine): no proxy header at all and a
-  // loopback host. Any real deployment sits behind a proxy that adds X-Forwarded-For, so it still fails closed.
-  const direct =
-    !req.headers.has('x-forwarded-for') && ['localhost', '127.0.0.1', '[::1]'].includes(req.nextUrl.hostname);
-  return process.env.NODE_ENV !== 'production' || direct ? 'local' : null;
-}
-
-/** Bounded map: evict the oldest entries one by one (a full clear would reset every limit at once). */
-function boundedSet<V>(map: Map<string, V>, key: string, value: V, max: number) {
-  map.delete(key);
-  map.set(key, value);
-  while (map.size > max) {
-    const oldest = map.keys().next().value;
-    if (oldest === undefined) break;
-    map.delete(oldest);
-  }
-}
-
-function limited(key: string): boolean {
-  const now = Date.now();
-  const entry = hits.get(key);
-  if (!entry || now - entry.windowStart > 60_000) {
-    boundedSet(hits, key, { windowStart: now, count: 1 }, 10_000);
-    return false;
-  }
-  entry.count += 1;
-  return entry.count > LIMIT;
-}
+const limited = createLimiter(10); // per client per minute
 
 function parseCoord(value: string | null, min: number, max: number): number | null {
   if (value === null || !/^-?\d{1,3}(\.\d{1,8})?$/.test(value)) return null;
@@ -86,18 +44,10 @@ interface NominatimReply {
 }
 
 async function lookup(lat: number, lng: number): Promise<PincodeResponse> {
-  // One request per second across this server instance (Nominatim policy).
-  // Reserve the slot synchronously before waiting, so parallel requests queue 1 s apart instead of all
-  // waking together.
-  // A refused request must not push the queue (security review 2026-11-02): check first, then reserve.
-  const slot = Math.max(Date.now(), lastUpstream + 1000);
-  const wait = slot - Date.now();
-  if (wait > 5000) throw new Error('upstream busy');
-  lastUpstream = slot;
-  if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+  await upstreamSlot(); // one request per second across this instance (Nominatim policy)
   const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=16&addressdetails=1&lat=${lat}&lon=${lng}`;
   const res = await fetch(url, {
-    headers: { 'user-agent': 'MechDost/1.0 (+https://mechdost.com)', 'accept-language': 'en' },
+    headers: NOMINATIM_HEADERS,
     signal: AbortSignal.timeout(5000),
     cache: 'no-store',
   });
