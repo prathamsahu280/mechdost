@@ -20,6 +20,7 @@ import { checkoutRoutes } from './routes/checkout';
 import { adminContentRoutes, contentRoutes } from './routes/content';
 import { eventRoutes } from './routes/events';
 import { meRoutes } from './routes/me';
+import { partnerAdminRoutes, partnerPublicRoutes, shopOnboardingRoutes } from './routes/partner-onboarding';
 import { shopInventoryRoutes } from './routes/shop-inventory';
 import { shopOrderRoutes } from './routes/shop-orders';
 import { supportRoutes } from './routes/support';
@@ -84,6 +85,9 @@ export function createApp(deps: AppDeps) {
   v1.route('/', adminContentRoutes(deps, sessions));
   v1.route('/', shopOrderRoutes(deps, sessions));
   v1.route('/', shopInventoryRoutes(deps, sessions));
+  v1.route('/', partnerPublicRoutes(deps));
+  v1.route('/', partnerAdminRoutes(deps, sessions));
+  v1.route('/', shopOnboardingRoutes(deps, sessions));
   app.route('/v1', v1);
 
   app.openAPIRegistry.registerComponent('securitySchemes', 'bearerAuth', {

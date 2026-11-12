@@ -1,6 +1,7 @@
 import type { Context } from 'hono';
 import { createMiddleware } from 'hono/factory';
-import { activeBlockLevels, ensureUser, loadGrants } from '@mechdost/db/repo';
+import { log } from '../logger';
+import { activeBlockLevels, ensureUser, linkApplicantOwner, loadGrants } from '@mechdost/db/repo';
 import { isStaffGrant, STAFF_SESSION_MAX_AGE_SECONDS } from '@mechdost/shared/auth';
 import { blockEffects } from '@mechdost/shared/customers';
 import { can, type Permission, type Target } from '@mechdost/shared/rbac';
@@ -43,6 +44,12 @@ export function authenticate(
     let session = cache.get(key);
     if (!session) {
       const user = await ensureUser(deps.db, identity);
+      // An approved seller applicant becomes the owner of their shop on sign-in (the phone was proved by OTP).
+      if (
+        identity.phone &&
+        (await linkApplicantOwner(deps.db, { userId: user.id, phone: identity.phone })) > 0
+      )
+        log('info', 'applicant_owner_linked', { userId: user.id });
       session = {
         user,
         grants: await loadGrants(deps.db, user.id),
