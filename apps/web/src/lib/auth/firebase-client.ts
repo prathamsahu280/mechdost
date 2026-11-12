@@ -247,10 +247,10 @@ export async function passwordSignIn(input: {
 export type ApiMe = RealMe & { version: number };
 
 /** The signed-in user's ID token for API calls (waits for Firebase to restore the session), or null. */
-export async function currentIdToken(locale: string): Promise<string | null> {
+export async function currentIdToken(locale: string, forceRefresh = false): Promise<string | null> {
   const a = firebaseAuth(locale);
   await a.authStateReady();
-  return a.currentUser ? a.currentUser.getIdToken() : null;
+  return a.currentUser ? a.currentUser.getIdToken(forceRefresh) : null;
 }
 
 /**

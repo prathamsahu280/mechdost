@@ -40,7 +40,9 @@ export function CheckoutForm() {
   // Online payment (Razorpay) needs real sign-in: the API knows who pays.
   const onlineAvailable = AUTH_MODE === 'firebase';
   const [method, setMethod] = useState<'cod' | 'online'>('cod');
-  const [onlineNote, setOnlineNote] = useState<{ text: string; signIn?: boolean } | null>(null);
+  const [onlineNote, setOnlineNote] = useState<{ text: string; link?: 'sign_in' | 'verify_email' } | null>(
+    null,
+  );
   const [paid, setPaid] = useState<string | null>(null);
   // One key per attempt: retrying after a closed popup reuses the same order on the API.
   const attemptKey = useRef<string | null>(null);
@@ -103,7 +105,10 @@ export function CheckoutForm() {
     track('click', { id: `checkout_online_${result.reason}`, path: window.location.pathname });
     // A changed cart or price needs a fresh order: the next try gets a new key.
     if (result.reason === 'cart_changed' || result.reason === 'price_changed') attemptKey.current = null;
-    setOnlineNote({ text: t(`online_${result.reason}`), signIn: result.reason === 'sign_in' });
+    setOnlineNote({
+      text: t(`online_${result.reason}`),
+      link: result.reason === 'sign_in' || result.reason === 'verify_email' ? result.reason : undefined,
+    });
   }
 
   function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
@@ -325,12 +330,17 @@ export function CheckoutForm() {
         {onlineNote ? (
           <p role="alert" className="mt-4 rounded-lg bg-warning-bg px-3 py-2 text-sm font-bold text-warning">
             {onlineNote.text}{' '}
-            {onlineNote.signIn ? (
+            {onlineNote.link === 'sign_in' ? (
               <Link
                 href={`${prefix}/login?next=${encodeURIComponent(`${prefix}/checkout`)}`}
                 className="underline underline-offset-2"
               >
                 {t('onlineSignInLink')}
+              </Link>
+            ) : null}
+            {onlineNote.link === 'verify_email' ? (
+              <Link href={`${prefix}/account`} className="underline underline-offset-2">
+                {t('onlineVerifyLink')}
               </Link>
             ) : null}
           </p>

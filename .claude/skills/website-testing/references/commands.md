@@ -30,7 +30,7 @@
 
 - **PGlite** (in-process Postgres 17 + PostGIS/citext/pg_trgm/btree_gist) via `@mechdost/db/testing` → `createTestDb()`. Single connection: proves constraints/triggers/CAS, not true parallelism.
 - **Supabase dev** (`ewrszfqhgbrriqqggjts`) — migrations + advisors; never run destructive test data there.
-- **Firebase Auth Emulator** (`FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099`, OTP `123456`); fetch codes via
+- **Firebase Auth Emulator** (`FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099`; the SMS code is random, not `123456`); fetch codes via
   `GET http://127.0.0.1:9099/emulator/v1/projects/<id>/verificationCodes`.
 - **Turnstile test keys**: site `1x00000000000000000000AA`, secret `1x0000000000000000000000000000000AA` (always pass);
   `2x...` variants always fail — use both in tests.

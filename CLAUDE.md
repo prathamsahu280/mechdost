@@ -54,7 +54,7 @@ Turborepo + pnpm · `apps/web` Next.js 16 App Router (React 19.3; ruling in docs
 - Repositories take an `actor`; API handlers never query tables directly.
 - UI tokens from `packages/ui/tokens.css` (navy `#101f34`, accent `#ea5728`, Manrope headings, DM Sans body); copy from `docs/concept/*.md`; UTF-8 only (fix `→ · ₹` when copying from the capture).
 - Tests: Vitest (state machines, money, ranker, allocation), Playwright (every transition, role-leak suites, concurrency), axe; planned (not set up yet): pgTAP (RLS matrix), Lighthouse CI. Visual snapshots vs concept at 390/768/1440.
-- Dev: Firebase Auth Emulator (OTP `123456`), Supabase local, seeded Raipur data and test logins per role (demo password `Raipur@2026`, `docs/runbooks/demo.md`).
+- Dev: Firebase Auth Emulator (the emulator issues a **random** SMS code: read it from the emulator log or `GET :9099/emulator/v1/projects/demo-mechdost/verificationCodes`; `123456` is only the browser demo-mode code), Supabase local, seeded Raipur data and test logins per role (demo password `Raipur@2026`, `docs/runbooks/demo.md`).
 
 ## Skill usage protocol (when each one MUST run)
 

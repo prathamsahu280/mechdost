@@ -15,6 +15,7 @@ export type PayOnlineResult =
       ok: false;
       reason:
         | 'sign_in'
+        | 'verify_email'
         | 'unavailable'
         | 'cart_changed'
         | 'price_changed'
@@ -99,7 +100,7 @@ const errorCode = async (res: Response) =>
 export async function payOnline(input: PayOnlineInput): Promise<PayOnlineResult> {
   if (!API) return { ok: false, reason: 'unavailable' };
   const { currentIdToken } = await import('@/lib/auth/firebase-client');
-  const token = await currentIdToken(input.locale).catch(() => null);
+  let token = await currentIdToken(input.locale).catch(() => null);
   if (!token) return { ok: false, reason: 'sign_in' };
 
   try {
@@ -114,24 +115,31 @@ export async function payOnline(input: PayOnlineInput): Promise<PayOnlineResult>
     if (!quote.ok) return { ok: false, reason: 'cart_changed' };
 
     // 2. Place the order paid online; the API creates and stores the Razorpay order.
-    const placeRes = await api(
-      '/orders',
-      token,
-      {
-        address: input.address,
-        lines: input.lines,
-        expectedTotalPaise: quote.onlineTotalPaise,
-        paymentMethod: 'online',
-        locale: input.locale === 'hi' ? 'hi' : 'en',
-      },
-      { 'idempotency-key': input.idempotencyKey },
-    );
+    const order = {
+      address: input.address,
+      lines: input.lines,
+      expectedTotalPaise: quote.onlineTotalPaise,
+      paymentMethod: 'online',
+      locale: input.locale === 'hi' ? 'hi' : 'en',
+    };
+    const idem = { 'idempotency-key': input.idempotencyKey };
+    let placeRes = await api('/orders', token, order, idem);
+    let code = placeRes.ok ? '' : await errorCode(placeRes);
+    if (code === 'VERIFICATION_REQUIRED') {
+      // The sign-in token still carries the old "email not verified" fact when the email link was opened after
+      // signing in: refresh it once, then retry with the same key (never a second order).
+      const fresh = await currentIdToken(input.locale, true).catch(() => null);
+      if (fresh) {
+        token = fresh;
+        placeRes = await api('/orders', token, order, idem);
+        code = placeRes.ok ? '' : await errorCode(placeRes);
+      }
+    }
     if (!placeRes.ok) {
-      const code = await errorCode(placeRes);
       if (code === 'PRICE_CHANGED') return { ok: false, reason: 'price_changed' };
       if (code === 'ORDERS_BLOCKED') return { ok: false, reason: 'blocked' };
-      if (code === 'AUTH_REQUIRED' || code === 'VERIFICATION_REQUIRED')
-        return { ok: false, reason: 'sign_in' };
+      if (code === 'VERIFICATION_REQUIRED') return { ok: false, reason: 'verify_email' };
+      if (code === 'AUTH_REQUIRED') return { ok: false, reason: 'sign_in' };
       if (code === 'CHECKOUT_UNAVAILABLE' || code === 'OUT_OF_STOCK')
         return { ok: false, reason: 'cart_changed' };
       return { ok: false, reason: 'unavailable' };

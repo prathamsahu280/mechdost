@@ -9,18 +9,20 @@
   - Production uses Secret Manager and refuses `rzp_test_` keys.
 - **When it switches on:** online payment is offered only when the key id and the secret are both set. Without them, `paymentMethod: 'online'` answers `422 PAYMENT_METHOD_UNAVAILABLE`.
 
-## Try it before the website's pay button exists
+## Test it from the website (local)
 
-1. **Start the API** with the test keys in `.env` (`pnpm dev`).
-2. **Sign in.** You need a verified customer and its token; see `docs/runbooks/firebase.md`.
-3. **Get the totals.** `POST /v1/checkout/quote {pincode, lines}` and note `onlineTotalPaise`.
-4. **Place the order.** `POST /v1/orders` with `Idempotency-Key`, `paymentMethod: 'online'` and `expectedTotalPaise: onlineTotalPaise`.
-   - The answer holds `razorpay.orderId` and `keyId`.
-5. **Pay in Razorpay Checkout.** Open it with that order id (any page with `checkout.js`, or the Dashboard's test tools).
-   - Use a test card or a test UPI id from the Razorpay test-mode docs.
-   - Checkout returns `razorpay_payment_id`, `razorpay_order_id` and `razorpay_signature`.
-6. **Confirm the payment.** `POST /v1/payments/razorpay/verify {razorpayOrderId, razorpayPaymentId, razorpaySignature}`.
-   - Expect `outcome: "paid"`. The order then shows `paymentStatus: "paid"` and enters the admin routing queue.
+1. **Check the keys first.** Razorpay must accept the key id and secret in `.env`. An answer of `401 Authentication failed` means the keys are wrong or revoked: generate new ones in Dashboard → Test mode → Account & Settings → API Keys. Restart the API after changing `.env`.
+2. **Start three processes:**
+   - the Auth emulator: `pnpm emulators`, on port 9099, project `demo-mechdost`;
+   - the API, with the emulator overrides `FIREBASE_PROJECT_ID=demo-mechdost`, `FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099` and an empty `GOOGLE_APPLICATION_CREDENTIALS`;
+   - the web, with `NEXT_PUBLIC_AUTH_MODE=firebase`, `NEXT_PUBLIC_API_URL=http://localhost:4000` and the `NEXT_PUBLIC_FIREBASE_*` emulator values. The web does not read the root `.env`.
+3. **Sign up at `/login`.** The emulator's SMS code is **random**, not `123456`. Read it from the emulator log or from `GET http://127.0.0.1:9099/emulator/v1/projects/demo-mechdost/verificationCodes`.
+4. **Verify the email.** Ordering needs a verified phone and a verified email. In the emulator, use the verification link it prints, or set `emailVerified` through the emulator's `accounts:update`.
+5. **Pay.** Add a product to the cart, open `/checkout`, choose **Pay online now: UPI, cards, net banking (Razorpay)** and press **Continue to secure payment**.
+   - Razorpay Checkout opens in test mode. Pay with a test card or the test UPI id `success@razorpay`.
+   - The API verifies the payment before the order counts as paid.
+
+**Without the website:** `POST /v1/checkout/quote`, then `POST /v1/orders` with `paymentMethod: 'online'` and an `Idempotency-Key`. After paying, call `POST /v1/payments/razorpay/verify`.
 
 ## Webhook (Q75)
 
