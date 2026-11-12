@@ -8,6 +8,7 @@ const card = {
   category: { slug: 'lubricants', name: 'Lubricants' },
   specSummary: 'Engine oil for 2W · 20W40 · 900 ml',
   highlights: ['API SL'],
+  vehicleTypes: ['2W'],
   rating: null,
   offer: { pricePaise: 44_000, mrpPaise: 47_500, shippingPaise: null, leadDays: null },
   photo: null,

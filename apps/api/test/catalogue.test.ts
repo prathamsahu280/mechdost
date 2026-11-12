@@ -78,13 +78,21 @@ describe('catalogue API', () => {
       name: 'Exide Xplore XLTZ4A बैटरी',
       category: { slug: 'batteries', name: 'बैटरी' },
       offer: { pricePaise: 100000, mrpPaise: 150000, shippingPaise: 0 },
+      vehicleTypes: [], // fitment not listed
     });
     expect(body.items[0]).not.toHaveProperty('id');
     expect(JSON.stringify(body)).not.toMatch(/[0-9a-f]{8}-[0-9a-f]{4}-/); // no uuids at all
   });
 
   it('validates the query strictly', async () => {
-    for (const bad of ['pincode=12345', 'city=raipur', 'limit=500', 'sort=cheapest', `q=${'x'.repeat(81)}`]) {
+    for (const bad of [
+      'pincode=12345',
+      'city=raipur',
+      'limit=500',
+      'sort=cheapest',
+      `q=${'x'.repeat(81)}`,
+      'vehicle=EV',
+    ]) {
       const res = await ctx.app.request(`/v1/catalogue/products?${bad}`);
       expect(res.status, bad).toBe(400);
     }

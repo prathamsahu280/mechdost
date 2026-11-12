@@ -1,4 +1,5 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
+import { VEHICLE_TYPES } from '@mechdost/shared/vehicles';
 import {
   CATALOGUE_PAGE_MAX,
   CATALOGUE_QUERY_MAX,
@@ -72,6 +73,8 @@ const products = createRoute({
       pincode: Pincode,
       category: Slug.optional(),
       brand: Slug.optional(),
+      /** Only products tagged for this vehicle type (decision 2026-11-12). */
+      vehicle: z.enum(VEHICLE_TYPES).optional(),
       q: z.string().trim().max(CATALOGUE_QUERY_MAX).optional(),
       sort: z.enum(CATALOGUE_SORTS).optional(),
       available: z.enum(['true', 'false']).optional(),
@@ -136,6 +139,7 @@ export function catalogueRoutes(deps: AppDeps) {
         pincode: query.pincode ?? null,
         category: query.category ?? null,
         brand: query.brand ?? null,
+        vehicleType: query.vehicle ?? null,
         q: query.q ?? null,
         sort: query.sort ?? null,
         availableOnly: query.available === 'true',

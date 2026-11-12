@@ -9,7 +9,13 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import en from '@mechdost/shared/i18n/en.json';
 import hi from '@mechdost/shared/i18n/hi.json';
-import { CATEGORY_KEYS, CATEGORY_SLUGS, DEMO_PRODUCTS, type CategoryKey } from '../src/demo/catalogue';
+import {
+  CATEGORY_KEYS,
+  CATEGORY_SLUGS,
+  DEMO_PRODUCTS,
+  VEHICLE_TYPES_OF_FIT,
+  type CategoryKey,
+} from '../src/demo/catalogue';
 import { AREA_HI, PRODUCT_HI, SHOP_HI } from '../src/demo/i18n/hi';
 import { DEMO_SHOPS } from '../src/demo/shops';
 import { PIN_CENTROIDS } from '../src/demo/workshops';
@@ -69,6 +75,8 @@ function buildFixture() {
       mrpPaise: p.mrpPaise ?? p.pricePaise,
       hsn: HSN[p.category],
       gstRateBp: 1800,
+      // Type-level fitment from the demo `fits` value only (decision 2026-11-12; EV is a fuel, no type).
+      vehicleTypes: VEHICLE_TYPES_OF_FIT[p.fits],
     };
   });
   const shops = DEMO_SHOPS.map((s, i) => ({

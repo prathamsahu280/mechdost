@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { VEHICLE_TYPES } from './vehicles';
 
 /**
  * Catalogue response DTOs (spec 02): the single definition used by the API (OpenAPI names are added there) and
@@ -38,6 +39,8 @@ const cardFields = {
   category: z.object({ slug: z.string(), name: z.string() }),
   specSummary: z.string().nullable(),
   highlights: z.array(z.string()),
+  /** Vehicle types the product is for; empty = fitment not listed (decision 2026-11-12). */
+  vehicleTypes: z.array(z.enum(VEHICLE_TYPES)),
   rating: z.object({ avg: z.number(), count: z.number().int() }).nullable(),
 };
 

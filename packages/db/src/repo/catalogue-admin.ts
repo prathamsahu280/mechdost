@@ -1,6 +1,7 @@
 import { and, asc, eq, gt, sql, type SQL } from 'drizzle-orm';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { productMachine, type ProductStatus } from '@mechdost/shared/state';
+import { VEHICLE_TYPES, isVehicleType, type VehicleType } from '@mechdost/shared/vehicles';
 import { auditLog, brands, categories, productVariants, products, settings } from '../schema';
 import { ConflictError, NotFoundError, ValidationError } from './errors';
 import { recordServerEvent } from './events';
@@ -56,6 +57,8 @@ export interface AdminProduct {
   descriptionHi: string | null;
   highlights: string[];
   highlightsHi: string[];
+  /** Vehicle types the product is for (decision 2026-11-12); empty = fitment not listed. */
+  vehicleTypes: string[];
   rejectionReason: string | null;
   /** English fields with no Hindi version (shown in English on /hi). */
   missingHindi: HindiGap[];
@@ -101,6 +104,7 @@ const select = {
   descriptionHi: products.descriptionHi,
   highlights: products.highlights,
   highlightsHi: products.highlightsHi,
+  vehicleTypes: products.vehicleTypes,
   rejectionReason: products.rejectionReason,
 };
 type Row = Awaited<ReturnType<typeof loadRows>>[number];
@@ -300,5 +304,37 @@ export async function setProductStatus(
       props: { productSlug: input.slug, from, to: input.to },
     });
     return { version: row.version, status: input.to };
+  });
+}
+
+/**
+ * Set the vehicle types a product is for (admin control, rule 8; decision 2026-11-12). Codes come from the shared
+ * list only, duplicates collapse, the order is always 2W, 3W, 4W. Optimistic version; audited.
+ */
+export async function setProductVehicleTypes(
+  db: Tx,
+  input: { slug: string; expectedVersion: number; vehicleTypes: readonly VehicleType[]; staffUserId: string },
+): Promise<{ version: number; vehicleTypes: VehicleType[] }> {
+  if (!input.vehicleTypes.every(isVehicleType))
+    throw new ValidationError('Vehicle types are 2W, 3W or 4W', 'VEHICLE_TYPES');
+  const next = VEHICLE_TYPES.filter((t) => input.vehicleTypes.includes(t));
+  return db.transaction(async (tx) => {
+    const current = await getAdminProduct(tx, input.slug);
+    const [row] = await tx
+      .update(products)
+      .set({ vehicleTypes: next })
+      .where(and(eq(products.id, current.id), eq(products.version, input.expectedVersion)))
+      .returning({ version: products.version });
+    if (!row) throw new ConflictError('Someone else changed this product; reload', 'STALE_PRODUCT');
+    await tx.insert(auditLog).values({
+      actorUserId: input.staffUserId,
+      actorRole: 'staff',
+      action: 'product.vehicle_types_updated',
+      entity: 'product',
+      entityId: current.id,
+      before: { vehicleTypes: current.vehicleTypes },
+      after: { vehicleTypes: next },
+    });
+    return { version: row.version, vehicleTypes: next };
   });
 }

@@ -14,6 +14,7 @@ const card: CatalogueCard = {
   category: { slug: 'lubricants', name: 'Lubricants' },
   specSummary: 'Engine oil for 2W · 20W40 · 900 ml',
   highlights: ['API SL'],
+  vehicleTypes: [],
   rating: null,
   offer: { pricePaise: 44_000, mrpPaise: 47_500, shippingPaise: null, leadDays: null },
   photo: null,
@@ -149,11 +150,12 @@ describe('catalogue API source (plan 2026-11-10 task 3)', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it('apiCard: offer null → price null, availability on_request, fit null', () => {
+  it('apiCard: offer null → price null, availability on_request; vehicle types from the API', () => {
     const view = apiCard({ ...card, offer: null });
     expect(view.price).toBeNull();
     expect(view.availability).toBe('on_request');
-    expect(view.fit).toBeNull();
+    expect(view.vehicleTypes).toEqual([]); // the card says "Fitment not listed"
+    expect(apiCard({ ...card, vehicleTypes: ['2W', '3W'] }).vehicleTypes).toEqual(['2W', '3W']);
     expect(view.category).toEqual({ key: 'lubricants', slug: 'lubricants', name: 'Lubricants' });
     expect(apiCard(card).price).toEqual({ pricePaise: 44_000, mrpPaise: 47_500 });
     expect(apiCard(card).availability).toBe('in_stock');

@@ -279,3 +279,25 @@ describe('product page', () => {
     expect(page.variants[0]?.offer).toMatchObject({ pricePaise: 95000, seller: 'Far Auto' });
   });
 });
+
+describe('vehicle types (decision 2026-11-12: fitment by type until Q76)', () => {
+  it('cards and pages carry the tags; a vehicle filter keeps only tagged products', async () => {
+    await product('auto-brake-shoe-3w', { vehicleTypes: ['3W'] });
+    await product('tyre-gauge-all', { vehicleTypes: ['2W', '3W', '4W'] });
+    const threeWheelers = await listCatalogue(t(), { ...base, vehicleType: '3W' });
+    expect(threeWheelers.items.map((i) => i.slug).sort()).toEqual(['auto-brake-shoe-3w', 'tyre-gauge-all']);
+    expect(threeWheelers.items.find((i) => i.slug === 'tyre-gauge-all')?.vehicleTypes).toEqual([
+      '2W',
+      '3W',
+      '4W',
+    ]);
+    const all = await listCatalogue(t(), base);
+    expect(all.items.find((i) => i.slug === 'castrol-activ')?.vehicleTypes).toEqual([]);
+    const page = await getCatalogueProduct(t(), 'auto-brake-shoe-3w', base);
+    expect(page.vehicleTypes).toEqual(['3W']);
+  });
+
+  it('the database refuses codes that are not vehicle types', async () => {
+    await expect(product('ev-tagged', { vehicleTypes: ['EV'] })).rejects.toThrow();
+  });
+});

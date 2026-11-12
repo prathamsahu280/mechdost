@@ -215,6 +215,14 @@ export const products = pgTable(
     submittedByShopId: uuid().references(() => shops.id, { onDelete: 'set null' }),
     rejectionReason: text(),
     /**
+     * Vehicle types the product is for (decision 2026-11-12, Q76 default): a type, never an exact-fit claim.
+     * Empty = fitment not listed. Exact make/model/year rows live in `fitments` and take priority later.
+     */
+    vehicleTypes: text()
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    /**
      * Full-text search document (spec 02 "Search"), English and Hindi side by side so "battery" and "बैटरी"
      * match on either locale: English text through the `english` config (stemming), Hindi through `simple`.
      * Brand names and part numbers are matched separately (trigram on `brands.name`, exact `part_numbers`).
@@ -240,6 +248,8 @@ export const products = pgTable(
     index().on(t.brandId),
     index().on(t.submittedByShopId),
     index('products_search_vector_idx').using('gin', t.searchVector),
+    check('products_vehicle_types_valid', sql`${t.vehicleTypes} <@ array['2W','3W','4W']::text[]`),
+    index('products_vehicle_types_idx').using('gin', t.vehicleTypes),
     // Catalogue listing "newest first" with a stable keyset (spec 02, cursor pagination).
     index('products_live_newest_idx')
       .on(t.createdAt.desc(), t.id.desc())

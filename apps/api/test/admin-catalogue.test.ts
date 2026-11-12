@@ -85,4 +85,39 @@ describe('admin catalogue API', () => {
     };
     expect(list.items.map((i) => i.slug)).not.toContain(SLUG);
   });
+
+  it('sets the vehicle types a product is for; the public catalogue filters on them (decision 2026-11-12)', async () => {
+    const manager = await staff('05', 'catalogue_manager');
+    const marketing = await staff('06', 'marketing');
+    const url = `/v1/admin/catalogue/products/${SLUG}/vehicle-types`;
+    const listed = async (vehicle: string) =>
+      (
+        (await (await ctx.app.request(`/v1/catalogue/products?vehicle=${vehicle}&locale=en`)).json()) as {
+          items: { slug: string; vehicleTypes: string[] }[];
+        }
+      ).items;
+    expect((await listed('3W')).map((i) => i.slug)).not.toContain(SLUG);
+    const p = (await (
+      await ctx.app.request(`/v1/admin/catalogue/products/${SLUG}`, { headers: manager })
+    ).json()) as {
+      version: number;
+      vehicleTypes: string[];
+    };
+    expect(p.vehicleTypes).toEqual(['2W']);
+    const body = (types: unknown) => JSON.stringify({ version: p.version, vehicleTypes: types });
+    expect(
+      (await ctx.app.request(url, { method: 'PUT', headers: marketing, body: body(['3W']) })).status,
+    ).toBe(403);
+    expect((await ctx.app.request(url, { method: 'PUT', headers: manager, body: body(['EV']) })).status).toBe(
+      400,
+    );
+    const saved = await ctx.app.request(url, { method: 'PUT', headers: manager, body: body(['3W', '2W']) });
+    expect(saved.status).toBe(200);
+    expect(await saved.json()).toMatchObject({ vehicleTypes: ['2W', '3W'] });
+    expect((await ctx.app.request(url, { method: 'PUT', headers: manager, body: body([]) })).status).toBe(
+      409,
+    );
+    const threeWheelers = await listed('3W');
+    expect(threeWheelers.find((i) => i.slug === SLUG)?.vehicleTypes).toEqual(['2W', '3W']);
+  });
 });

@@ -10,6 +10,7 @@ import {
   listAdminProducts,
   listCatalogue,
   setProductStatus,
+  setProductVehicleTypes,
   updateProductTexts,
   type Tx,
 } from '../src/repo';
@@ -141,5 +142,42 @@ describe('catalogue editor', () => {
     expect(
       (await listCatalogue(t(), { cityCode: 'RPR', locale: 'hi' })).items.map((i) => i.name).sort(),
     ).toEqual(['ड्राफ़्ट बैटरी', 'पूरी बैटरी']);
+  });
+});
+
+describe('vehicle types (admin-editable, decision 2026-11-12)', () => {
+  it('staff set the types a product is for; audited; stale versions and unknown codes are refused', async () => {
+    const p = await getAdminProduct(t(), 'b-draft');
+    const r = await setProductVehicleTypes(t(), {
+      slug: 'b-draft',
+      expectedVersion: p.version,
+      vehicleTypes: ['4W', '2W', '2W'],
+      staffUserId: staff,
+    });
+    expect((await getAdminProduct(t(), 'b-draft')).vehicleTypes).toEqual(['2W', '4W']);
+    const audit = await db
+      .select()
+      .from(s.auditLog)
+      .where(eq(s.auditLog.action, 'product.vehicle_types_updated'));
+    expect(audit.at(-1)).toMatchObject({
+      before: { vehicleTypes: [] },
+      after: { vehicleTypes: ['2W', '4W'] },
+    });
+    await expect(
+      setProductVehicleTypes(t(), {
+        slug: 'b-draft',
+        expectedVersion: p.version,
+        vehicleTypes: [],
+        staffUserId: staff,
+      }),
+    ).rejects.toMatchObject({ code: 'STALE_PRODUCT' });
+    await expect(
+      setProductVehicleTypes(t(), {
+        slug: 'b-draft',
+        expectedVersion: r.version,
+        vehicleTypes: ['EV' as '2W'],
+        staffUserId: staff,
+      }),
+    ).rejects.toMatchObject({ code: 'VEHICLE_TYPES' });
   });
 });

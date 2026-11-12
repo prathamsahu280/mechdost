@@ -5,6 +5,7 @@ import { ProductCard } from '@/components/catalogue/product-card';
 import { routing, type Locale } from '@/i18n/routing';
 import { fetchCataloguePage, type ApiSort } from '@/lib/catalogue/api-source';
 import { DATA_MODE } from '@/lib/data-mode';
+import { isVehicleType, type VehicleType } from '@mechdost/shared/vehicles';
 
 /** What the shop listing asks the API for; the same values the page reads from its URL. */
 export interface ListingQuery {
@@ -12,6 +13,8 @@ export interface ListingQuery {
   q: string;
   category: string | null;
   sort: ApiSort | null;
+  /** Only products tagged for this vehicle type (decision 2026-11-12). */
+  vehicle: VehicleType | null;
 }
 
 const SORTS: readonly ApiSort[] = ['relevance', 'newest', 'price_asc', 'price_desc'];
@@ -24,8 +27,9 @@ function parse(input: ListingQuery, cursor: string): ListingQuery {
   if (input.category !== null && !/^[a-z0-9][a-z0-9-]{0,63}$/.test(input.category))
     throw new Error('bad category');
   if (input.sort !== null && !SORTS.includes(input.sort)) throw new Error('bad sort');
+  if (input.vehicle !== null && !isVehicleType(input.vehicle)) throw new Error('bad vehicle');
   if (typeof cursor !== 'string' || cursor.length === 0 || cursor.length > 512) throw new Error('bad cursor');
-  return { locale, q: input.q, category: input.category, sort: input.sort };
+  return { locale, q: input.q, category: input.category, sort: input.sort, vehicle: input.vehicle };
 }
 
 /**
@@ -44,6 +48,7 @@ export async function loadMoreCards(
     q: query.q,
     category: query.category ?? undefined,
     sort: query.sort ?? undefined,
+    vehicle: query.vehicle ?? undefined,
     cursor,
     restartOnBadCursor: false,
   });

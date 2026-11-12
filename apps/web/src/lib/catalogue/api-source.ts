@@ -1,3 +1,4 @@
+import type { VehicleType } from '@mechdost/shared/vehicles';
 import {
   CataloguePageSchema,
   CATALOGUE_SLUG_RE,
@@ -28,6 +29,7 @@ export interface CatalogueQuery {
   q?: string;
   category?: string;
   sort?: ApiSort;
+  vehicle?: VehicleType;
   cursor?: string;
   limit?: number;
   /** A shared link starts again at page 1 on a bad cursor; "Load more" must fail instead (review B6). */
@@ -55,6 +57,7 @@ export async function fetchCataloguePage(
   if (q) url.searchParams.set('q', q);
   if (query.category) url.searchParams.set('category', query.category);
   if (query.sort) url.searchParams.set('sort', query.sort);
+  if (query.vehicle) url.searchParams.set('vehicle', query.vehicle);
   if (query.cursor) url.searchParams.set('cursor', query.cursor);
 
   let res = await get(url, { revalidate: 30, tags: ['catalogue'] });
@@ -93,7 +96,7 @@ export function apiCard(c: CatalogueCard): CardView {
     },
     spec: c.specSummary,
     compatibility: null,
-    fit: null, // vehicle master pending (#4)
+    vehicleTypes: c.vehicleTypes,
     price: c.offer ? { pricePaise: c.offer.pricePaise, mrpPaise: c.offer.mrpPaise } : null,
     availability: c.offer ? 'in_stock' : 'on_request',
     leadDays: c.offer?.leadDays ?? null,

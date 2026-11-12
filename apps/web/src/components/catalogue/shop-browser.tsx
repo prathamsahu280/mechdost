@@ -24,6 +24,7 @@ import {
   type SortKey,
 } from '@/demo/catalogue';
 import { track } from '@/lib/analytics';
+import { VEHICLE_LABEL_KEY, VEHICLE_TYPES, type VehicleType } from '@mechdost/shared/vehicles';
 import { whatsappLink } from '@/lib/site';
 
 const SORTS: SortKey[] = ['popular', 'price_asc', 'price_desc'];
@@ -32,6 +33,8 @@ interface State {
   query: string;
   category: CategoryKey | undefined;
   sort: SortKey;
+  /** Only products tagged for this vehicle type (decision 2026-11-12). */
+  vehicle: VehicleType | undefined;
 }
 
 function urlFor(base: string, s: State): string {
@@ -39,6 +42,7 @@ function urlFor(base: string, s: State): string {
   if (s.query) params.set('q', s.query);
   if (s.category) params.set('category', CATEGORY_SLUGS[s.category]);
   if (s.sort !== 'popular') params.set('sort', s.sort);
+  if (s.vehicle) params.set('vehicle', s.vehicle);
   const qs = params.toString();
   return qs ? `${base}?${qs}` : base;
 }
@@ -49,6 +53,7 @@ function listingState(q: ListingQuery): State {
     query: q.q,
     category: categoryFromSlug(q.category ?? undefined),
     sort: q.sort === 'price_asc' || q.sort === 'price_desc' ? q.sort : 'popular',
+    vehicle: q.vehicle ?? undefined,
   };
 }
 
@@ -62,6 +67,7 @@ function stateFrom(p: Pick<URLSearchParams, 'get'>): State {
     query: (p.get('q') ?? '').trim().slice(0, 120),
     category: categoryFromSlug(p.get('category') ?? undefined),
     sort: SORTS.find((s) => s === sort) ?? 'popular',
+    vehicle: VEHICLE_TYPES.find((v) => v === p.get('vehicle')),
   };
 }
 
@@ -111,7 +117,7 @@ export function ShopBrowser({
   const [state, setState] = useState<State>(initial);
   const [draft, setDraft] = useState(initial.query);
   // A new server render with other filters (header link, Back, a shared URL) resets the controls to match.
-  const initialKey = `${initial.query}|${initial.category ?? ''}|${initial.sort}`;
+  const initialKey = `${initial.query}|${initial.category ?? ''}|${initial.sort}|${initial.vehicle ?? ''}`;
   const [shownKey, setShownKey] = useState(initialKey);
   if (shownKey !== initialKey) {
     setShownKey(initialKey);
@@ -157,6 +163,7 @@ export function ShopBrowser({
         query: state.query,
         category: state.category,
         sort: state.sort,
+        vehicle: state.vehicle,
         categoryLabel: (k) => cat(k),
       }),
     [state, cat],
@@ -247,7 +254,11 @@ export function ShopBrowser({
     }`;
   const field =
     'mt-1 min-h-11 w-full rounded-input border border-input-border bg-surface px-3 text-[15px] text-ink placeholder:text-muted';
-  const filtered = state.query !== '' || state.category !== undefined || state.sort !== 'popular';
+  const filtered =
+    state.query !== '' ||
+    state.category !== undefined ||
+    state.sort !== 'popular' ||
+    state.vehicle !== undefined;
 
   return (
     <div>
@@ -256,7 +267,7 @@ export function ShopBrowser({
         action={basePath}
         method="get"
         onSubmit={onSearch}
-        className="mt-8 grid gap-3 rounded-card border border-line-card bg-surface p-4 shadow-card tab:grid-cols-[1fr_220px_200px_auto] tab:items-end"
+        className="mt-8 grid gap-3 rounded-card border border-line-card bg-surface p-4 shadow-card tab:grid-cols-3 tab:items-end nav:grid-cols-[1fr_200px_180px_180px_auto]"
       >
         <div>
           <label htmlFor="shop-q" className="text-xs font-bold text-muted">
@@ -292,6 +303,29 @@ export function ShopBrowser({
             {CATEGORY_KEYS.map((k) => (
               <option key={k} value={CATEGORY_SLUGS[k]}>
                 {cat(k)}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label htmlFor="shop-vehicle" className="text-xs font-bold text-muted">
+            {c('vehicleLabel')}
+          </label>
+          <select
+            id="shop-vehicle"
+            name="vehicle"
+            value={state.vehicle ?? ''}
+            onChange={(e) => {
+              const vehicle = VEHICLE_TYPES.find((v) => v === e.target.value);
+              track('click', { id: `shop_vehicle_${vehicle ?? 'all'}`, path: window.location.pathname });
+              apply({ ...state, vehicle });
+            }}
+            className={field}
+          >
+            <option value="">{c('vehicleAll')}</option>
+            {VEHICLE_TYPES.map((v) => (
+              <option key={v} value={v}>
+                {c(VEHICLE_LABEL_KEY[v])}
               </option>
             ))}
           </select>
@@ -361,7 +395,7 @@ export function ShopBrowser({
             type="button"
             onClick={() => {
               setDraft('');
-              apply({ query: '', category: undefined, sort: 'popular' });
+              apply({ query: '', category: undefined, sort: 'popular', vehicle: undefined });
             }}
             className="min-h-10 text-sm font-bold text-accent-soft-text underline-offset-4 hover:underline"
           >

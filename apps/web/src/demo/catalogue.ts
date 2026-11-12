@@ -3,6 +3,7 @@
  * items so the storefront can be presented before the catalogue API exists (spec 02, Phase 1). Indicative prices,
  * integer paise, GST-inclusive. Replaced by `GET /v1/catalogue` — never extend this file with real business data.
  */
+import type { VehicleType } from '@mechdost/shared/vehicles';
 import { productSearchText } from './i18n/localize';
 
 // Category constants live in a small module so pages that only need them do not ship the product data.
@@ -10,6 +11,17 @@ export { CATEGORY_KEYS, CATEGORY_SLUGS, categoryFromSlug, type CategoryKey } fro
 import type { CategoryKey } from './categories';
 
 export type VehicleFit = '2W' | '4W' | '2W/4W' | 'EV';
+
+/**
+ * Vehicle types of a demo `fits` value (decision 2026-11-12). EV is a fuel, not a type: those products list no
+ * type. The seed fixture carries the same tags (`apps/web/test/demo-seed-fixture.test.ts`).
+ */
+export const VEHICLE_TYPES_OF_FIT: Record<VehicleFit, readonly VehicleType[]> = {
+  '2W': ['2W'],
+  '4W': ['4W'],
+  '2W/4W': ['2W', '4W'],
+  EV: [],
+};
 export type Availability = 'in_stock' | 'low_stock' | 'on_request';
 
 export interface DemoProduct {
@@ -335,12 +347,14 @@ export function searchProducts(opts: {
   query?: string;
   category?: CategoryKey;
   sort?: SortKey;
+  vehicle?: VehicleType;
   categoryLabel?: (key: CategoryKey) => string;
 }): DemoProduct[] {
   const q = opts.query?.trim().toLowerCase() ?? '';
   const words = q.split(/\s+/).filter(Boolean);
   const list = DEMO_PRODUCTS.filter((p) => {
     if (opts.category && p.category !== opts.category) return false;
+    if (opts.vehicle && !VEHICLE_TYPES_OF_FIT[p.fits].includes(opts.vehicle)) return false;
     if (words.length === 0) return true;
     const hay = `${productSearchText(p)} ${opts.categoryLabel?.(p.category) ?? ''}`.toLowerCase();
     return words.every((w) => hay.includes(w) || hay.includes(w.replace(/s$/, '')));

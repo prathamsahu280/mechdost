@@ -12,11 +12,11 @@ describe('catalogue view model, demo source (plan 2026-11-10 task 2)', () => {
     vi.resetModules();
   });
 
-  it('demoCard maps price, MRP, fit and rating', () => {
+  it('demoCard maps price, MRP, vehicle types and rating', () => {
     if (!castrol) throw new Error('fixture missing');
     const card = demoCard(castrol, 'en');
     expect(card.price).toEqual({ pricePaise: 44_000, mrpPaise: 47_500 });
-    expect(card.fit).toBe('2W');
+    expect(card.vehicleTypes).toEqual(['2W']);
     expect(card.category).toEqual({ key: 'lubricants', slug: 'lubricants', name: null });
     expect(card.rating).toEqual({ avg: productRating(castrol).rating, count: productRating(castrol).count });
     expect(card.availability).toBe('in_stock');

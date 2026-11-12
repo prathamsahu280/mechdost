@@ -41,7 +41,8 @@ Launch: Postgres `tsvector` (name, brand, sku, part numbers, spec — **English 
 - `GET /v1/catalogue/products/{slug}?city&pincode&locale`: each active variant's best offer with the **seller name** (E-Commerce Rules), photos, OE/manufacturer part numbers, spec, country of origin, GST rate; drafts/unknown → 404.
 - Public, no sign-in; per-IP limits (global 600/min + `catalogue_ip` 240/min on listings); `Cache-Control: public, max-age=30, stale-while-revalidate=120` (categories 300 s). Responses carry no internal ids. City defaults to `DEFAULT_CITY_CODE` (RPR). Hindi fields with the English fallback per `locale`.
 - Demo data: `pnpm db:seed:demo` loads the web demo catalogue (Hindi included) for the API; removed before launch with `--remove` (Q21, `docs/runbooks/demo.md`).
-- Not yet: `vehicle` fitment filter and badge (vehicle master, pending #4), `suggest`, synonyms table, Redis cache, Meilisearch; web pages still read the demo catalogue until Phase 1 wiring.
+- **Vehicle types (2026-11-12, Q76 default):** `products.vehicle_types` (2W/3W/4W, empty = fitment not listed; migration 0037, CHECK + GIN index). `GET /v1/catalogue/products?vehicle=3W` keeps only tagged products; cards and product pages return `vehicleTypes`; staff set them with `PUT /v1/admin/catalogue/products/{slug}/vehicle-types` (`products:write`, version, audited `product.vehicle_types_updated`). Web: the card chip shows the codes ("2W · 3W", screen readers hear "Vehicle type:"), untagged shows "Fitment not listed"; the shop has a "Vehicle type" select kept in the URL (`?vehicle=`), demo and API mode, event `shop_vehicle_<type>`. Demo/seed tags come only from the demo `fits` values (EV is a fuel: no type).
+- Not yet: exact make/model/year fitment and "Fits your {vehicle}" (Q76/Q10), `suggest`, synonyms table, Redis cache, Meilisearch; web pages still read the demo catalogue until Phase 1 wiring.
 
 ## Web on the API (built 2026-11-10, behind `NEXT_PUBLIC_DATA_MODE`, Q70)
 

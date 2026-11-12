@@ -14,11 +14,13 @@ import { DATA_MODE } from '@/lib/data-mode';
 import { loadMoreCards, type ListingQuery } from './actions';
 import { alternatesFor } from '@/lib/seo';
 import { localePath } from '@/lib/locale-path';
+import { VEHICLE_TYPES } from '@mechdost/shared/vehicles';
 
 type Search = Promise<{
   q?: string | string[];
   category?: string | string[];
   sort?: string | string[];
+  vehicle?: string | string[];
   pages?: string | string[];
 }>;
 
@@ -57,6 +59,7 @@ export default async function ShopPage({ searchParams }: Props) {
     query: first(sp.q)?.trim().slice(0, 120) ?? '',
     category: categoryFromSlug(first(sp.category)),
     sort,
+    vehicle: VEHICLE_TYPES.find((v) => v === first(sp.vehicle)),
   };
   let cards: Record<string, ReactNode>;
   let server: ServerListing | undefined;
@@ -67,6 +70,7 @@ export default async function ShopPage({ searchParams }: Props) {
       q: initial.query,
       category: initial.category ? CATEGORY_SLUGS[initial.category] : null,
       sort: sort === 'popular' ? null : sort,
+      vehicle: initial.vehicle ?? null,
     };
     const pages = Math.min(MAX_PAGES, Math.max(1, Math.trunc(Number(first(sp.pages))) || 1));
     const items: CardView[] = [];
@@ -77,6 +81,7 @@ export default async function ShopPage({ searchParams }: Props) {
         q: query.q,
         category: query.category ?? undefined,
         sort: query.sort ?? undefined,
+        vehicle: query.vehicle ?? undefined,
         cursor: cursor ?? undefined,
       });
       for (const item of page.items) if (!items.some((i) => i.slug === item.slug)) items.push(item);

@@ -1,4 +1,5 @@
 import { sql, type SQL } from 'drizzle-orm';
+import { VEHICLE_TYPES, isVehicleType, type VehicleType } from '@mechdost/shared/vehicles';
 import { NotFoundError } from './errors';
 import { decodeCursor, encodeCursor, type CursorKind } from './cursor';
 import { localized } from './localized';
@@ -52,6 +53,8 @@ export interface CatalogueCard {
   category: { slug: string; name: string };
   specSummary: string | null;
   highlights: string[];
+  /** Vehicle types the product is for, in 2W/3W/4W order; empty = fitment not listed (decision 2026-11-12). */
+  vehicleTypes: VehicleType[];
   offer: CatalogueOffer | null;
   rating: { avg: number; count: number } | null;
   photo: CataloguePhoto | null;
@@ -77,6 +80,8 @@ export interface CatalogueQuery {
   pincode?: string | null;
   category?: string | null;
   brand?: string | null;
+  /** Only products tagged for this vehicle type. */
+  vehicleType?: VehicleType | null;
   q?: string | null;
   sort?: CatalogueSort | null;
   availableOnly?: boolean;
@@ -157,6 +162,7 @@ interface CardRow {
   spec_summary_hi: string | null;
   highlights: string[] | null;
   highlights_hi: string[] | null;
+  vehicle_types: string[] | null;
   price: unknown;
   mrp: unknown;
   shipping: unknown;
@@ -183,6 +189,7 @@ function toCard(r: CardRow, locale: CatalogueLocale): CatalogueCard {
     category: { slug: r.category_slug, name: localized(r.category_name, r.category_name_hi, locale) },
     specSummary: r.spec_summary === null ? null : localized(r.spec_summary, r.spec_summary_hi, locale),
     highlights: locale === 'hi' && highlightsHi.length > 0 ? highlightsHi : (r.highlights ?? []),
+    vehicleTypes: vehicleTypesOf(r.vehicle_types),
     offer:
       price === null
         ? null
@@ -204,6 +211,12 @@ function toCard(r: CardRow, locale: CatalogueLocale): CatalogueCard {
             blurhash: r.photo_blurhash,
           },
   };
+}
+
+/** Known codes only, in the shared 2W/3W/4W order. */
+function vehicleTypesOf(raw: string[] | null): VehicleType[] {
+  const set = new Set((raw ?? []).filter(isVehicleType));
+  return VEHICLE_TYPES.filter((t) => set.has(t));
 }
 
 /** First photo and approved-review rating for the rows of `page` (joined after the page is cut). */
@@ -237,6 +250,7 @@ export async function listCatalogue(db: Tx, query: CatalogueQuery): Promise<Cata
       sql`(c.slug = ${query.category} or c.parent_id = (select id from categories where slug = ${query.category}))`,
     );
   if (query.brand) filters.push(sql`b.slug = ${query.brand}`);
+  if (query.vehicleType) filters.push(sql`p.vehicle_types @> array[${query.vehicleType}]::text[]`);
   if (query.availableOnly) filters.push(sql`o.price is not null`);
 
   const key: Record<CatalogueSort, { expr: SQL; type: SQL; kind: CursorKind; dir: 'asc' | 'desc' }> = {
@@ -269,7 +283,7 @@ export async function listCatalogue(db: Tx, query: CatalogueQuery): Promise<Cata
     with ranked as (
       select p.id, p.slug, p.name, p.name_hi, b.slug as brand_slug, b.name as brand_name,
         c.slug as category_slug, c.name as category_name, c.name_hi as category_name_hi,
-        p.spec_summary, p.spec_summary_hi, p.highlights, p.highlights_hi,
+        p.spec_summary, p.spec_summary_hi, p.highlights, p.highlights_hi, p.vehicle_types,
         o.price, o.mrp, o.shipping, o.lead_days, ${k.expr} as sort_key
       from products p
       join brands b on b.id = p.brand_id
@@ -335,8 +349,8 @@ export async function getCatalogueProduct(
       with pg as (
         select p.id, p.slug, p.name, p.name_hi, b.slug as brand_slug, b.name as brand_name,
           c.slug as category_slug, c.name as category_name, c.name_hi as category_name_hi,
-          p.spec_summary, p.spec_summary_hi, p.highlights, p.highlights_hi, p.description, p.description_hi,
-          p.compatibility, p.compatibility_hi, p.spec, p.country_of_origin, p.warranty, p.gst_rate_bp,
+          p.spec_summary, p.spec_summary_hi, p.highlights, p.highlights_hi, p.vehicle_types,
+          p.description, p.description_hi, p.compatibility, p.compatibility_hi, p.spec, p.country_of_origin, p.warranty, p.gst_rate_bp,
           null::bigint as price, null::bigint as mrp, null::bigint as shipping, null::int as lead_days,
           '' as sort_key_text
         from products p join brands b on b.id = p.brand_id join categories c on c.id = p.category_id

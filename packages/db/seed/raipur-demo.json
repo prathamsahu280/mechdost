@@ -204,7 +204,8 @@
       "highlightsHi": ["इंजन की सुरक्षा के लिए ऐक्टिबॉन्ड मॉलिक्यूल", "JASO MA2 · API SL", "900 ml पैक"],
       "mrpPaise": 47500,
       "hsn": "2710",
-      "gstRateBp": 1800
+      "gstRateBp": 1800,
+      "vehicleTypes": ["2W"]
     },
     {
       "slug": "exide-xltz4a-2w-battery",
@@ -221,7 +222,8 @@
       "highlightsHi": ["मेंटेनेंस-फ़्री", "24F + 24P वारंटी", "भेजने से पहले फ़िटमेंट जाँच"],
       "mrpPaise": 112000,
       "hsn": "8507",
-      "gstRateBp": 1800
+      "gstRateBp": 1800,
+      "vehicleTypes": ["2W"]
     },
     {
       "slug": "scooter-tubeless-tyre-90-90-12",
@@ -238,7 +240,8 @@
       "highlightsHi": ["गीली सड़क पर बेहतर पकड़", "पार्टनर वर्कशॉप पर फ़िटिंग उपलब्ध"],
       "mrpPaise": 165000,
       "hsn": "4011",
-      "gstRateBp": 1800
+      "gstRateBp": 1800,
+      "vehicleTypes": ["2W"]
     },
     {
       "slug": "car-tyre-185-65-r15",
@@ -255,7 +258,8 @@
       "highlightsHi": ["चलते समय कम आवाज़", "माँगने पर अलाइनमेंट और बैलेंसिंग"],
       "mrpPaise": 455000,
       "hsn": "4011",
-      "gstRateBp": 1800
+      "gstRateBp": 1800,
+      "vehicleTypes": ["4W"]
     },
     {
       "slug": "car-starter-battery-45ah",
@@ -272,7 +276,8 @@
       "highlightsHi": ["माँगने पर पुरानी बैटरी पर एक्सचेंज छूट", "इंस्टॉलेशन उपलब्ध"],
       "mrpPaise": 520000,
       "hsn": "8507",
-      "gstRateBp": 1800
+      "gstRateBp": 1800,
+      "vehicleTypes": ["4W"]
     },
     {
       "slug": "heavy-duty-battery-90ah",
@@ -289,7 +294,8 @@
       "highlightsHi": ["सप्लायर से पुष्टि ज़रूरी", "डिलीवरी के साथ इंस्टॉलेशन"],
       "mrpPaise": 890000,
       "hsn": "8507",
-      "gstRateBp": 1800
+      "gstRateBp": 1800,
+      "vehicleTypes": ["4W"]
     },
     {
       "slug": "synthetic-engine-oil-5w30-3-5l",
@@ -306,7 +312,8 @@
       "highlightsHi": ["बेहतर माइलेज वाला ग्रेड", "ऑयल फ़िल्टर के साथ लें"],
       "mrpPaise": 315000,
       "hsn": "2710",
-      "gstRateBp": 1800
+      "gstRateBp": 1800,
+      "vehicleTypes": ["4W"]
     },
     {
       "slug": "engine-oil-filter-petrol-car",
@@ -323,7 +330,8 @@
       "highlightsHi": ["OEM जैसी फ़िल्ट्रेशन", "हर ऑयल चेंज पर बदलें"],
       "mrpPaise": 42000,
       "hsn": "8421",
-      "gstRateBp": 1800
+      "gstRateBp": 1800,
+      "vehicleTypes": ["4W"]
     },
     {
       "slug": "diesel-fuel-filter",
@@ -340,7 +348,8 @@
       "highlightsHi": ["पानी अलग करता है", "इंजेक्टर को सुरक्षित रखता है"],
       "mrpPaise": 68000,
       "hsn": "8421",
-      "gstRateBp": 1800
+      "gstRateBp": 1800,
+      "vehicleTypes": ["4W"]
     },
     {
       "slug": "front-wheel-bearing-kit",
@@ -357,7 +366,8 @@
       "highlightsHi": ["सप्लायर से पुष्टि ज़रूरी", "वर्कशॉप से फ़िटिंग करवाने की सलाह"],
       "mrpPaise": 145000,
       "hsn": "8482",
-      "gstRateBp": 1800
+      "gstRateBp": 1800,
+      "vehicleTypes": ["4W"]
     },
     {
       "slug": "motorcycle-wheel-bearing-6301",
@@ -374,7 +384,8 @@
       "highlightsHi": ["2 का सेट", "दोनों तरफ़ से सील्ड"],
       "mrpPaise": 18000,
       "hsn": "8482",
-      "gstRateBp": 1800
+      "gstRateBp": 1800,
+      "vehicleTypes": ["2W"]
     },
     {
       "slug": "brake-pad-set-front",
@@ -391,7 +402,8 @@
       "highlightsHi": ["कम धूल", "पार्टनर वर्कशॉप पर फ़िटिंग"],
       "mrpPaise": 125000,
       "hsn": "8708",
-      "gstRateBp": 1800
+      "gstRateBp": 1800,
+      "vehicleTypes": ["4W"]
     },
     {
       "slug": "chain-sprocket-kit-150cc",
@@ -408,7 +420,8 @@
       "highlightsHi": ["O-रिंग चेन", "आगे और पीछे के स्प्रॉकेट शामिल"],
       "mrpPaise": 135000,
       "hsn": "8708",
-      "gstRateBp": 1800
+      "gstRateBp": 1800,
+      "vehicleTypes": ["2W"]
     },
     {
       "slug": "spark-plug-iridium",
@@ -425,7 +438,8 @@
       "highlightsHi": ["जल्दी स्टार्ट", "कॉपर प्लग से ज़्यादा लंबी उम्र"],
       "mrpPaise": 62000,
       "hsn": "8708",
-      "gstRateBp": 1800
+      "gstRateBp": 1800,
+      "vehicleTypes": ["2W"]
     },
     {
       "slug": "all-weather-car-floor-mats",
@@ -442,7 +456,8 @@
       "highlightsHi": ["धोकर दोबारा इस्तेमाल करें", "फिसलन-रोधी बैकिंग"],
       "mrpPaise": 120000,
       "hsn": "8708",
-      "gstRateBp": 1800
+      "gstRateBp": 1800,
+      "vehicleTypes": ["4W"]
     },
     {
       "slug": "two-wheeler-body-cover",
@@ -459,7 +474,8 @@
       "highlightsHi": ["इलास्टिक किनारा", "रखने के लिए पाउच"],
       "mrpPaise": 65000,
       "hsn": "8708",
-      "gstRateBp": 1800
+      "gstRateBp": 1800,
+      "vehicleTypes": ["2W"]
     },
     {
       "slug": "socket-tool-set-46pc",
@@ -476,7 +492,8 @@
       "highlightsHi": ["क्रोम वैनेडियम", "कैरी केस"],
       "mrpPaise": 240000,
       "hsn": "8204",
-      "gstRateBp": 1800
+      "gstRateBp": 1800,
+      "vehicleTypes": ["2W", "4W"]
     },
     {
       "slug": "digital-tyre-pressure-gauge",
@@ -493,7 +510,8 @@
       "highlightsHi": ["±1 psi तक सटीक", "अपने-आप बंद"],
       "mrpPaise": 75000,
       "hsn": "8204",
-      "gstRateBp": 1800
+      "gstRateBp": 1800,
+      "vehicleTypes": ["2W", "4W"]
     },
     {
       "slug": "ev-12v-auxiliary-battery",
@@ -510,7 +528,8 @@
       "highlightsHi": ["इलेक्ट्रिकल मेल हमारी टीम जाँचती है", "इंस्टॉलेशन की सलाह"],
       "mrpPaise": 480000,
       "hsn": "8504",
-      "gstRateBp": 1800
+      "gstRateBp": 1800,
+      "vehicleTypes": []
     },
     {
       "slug": "ev-portable-charger-15a",
@@ -527,7 +546,8 @@
       "highlightsHi": ["अर्थ-लीकेज से सुरक्षा", "दीवार के सॉकेट की रेटिंग जाँच लें"],
       "mrpPaise": 1250000,
       "hsn": "8504",
-      "gstRateBp": 1800
+      "gstRateBp": 1800,
+      "vehicleTypes": []
     }
   ],
   "shops": [

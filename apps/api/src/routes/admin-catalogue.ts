@@ -5,9 +5,11 @@ import {
   HIGHLIGHT_MAX,
   listAdminProducts,
   setProductStatus,
+  setProductVehicleTypes,
   updateProductTexts,
 } from '@mechdost/db/repo';
 import { PRODUCT_STATES } from '@mechdost/shared/state';
+import { VEHICLE_TYPES } from '@mechdost/shared/vehicles';
 import type { SessionCache } from '../auth/session-cache';
 import { authenticate, requirePermission, requireVerified } from '../middleware/auth';
 import { rateLimit, RATE_RULES } from '../middleware/rate-limit';
@@ -42,6 +44,7 @@ const Product = z
     descriptionHi: z.string().nullable(),
     highlights: z.array(z.string()),
     highlightsHi: z.array(z.string()),
+    vehicleTypes: z.array(z.string()),
     rejectionReason: z.string().nullable(),
     missingHindi: z.array(z.string()),
   })
@@ -152,6 +155,36 @@ const status = createRoute({
   },
 });
 
+const vehicleTypes = createRoute({
+  method: 'put',
+  path: '/admin/catalogue/products/{slug}/vehicle-types',
+  tags: ['admin'],
+  summary: 'Set the vehicle types a product is for (2W, 3W, 4W; empty = fitment not listed)',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: z.object({ slug: Slug }),
+    body: {
+      required: true,
+      content: {
+        'application/json': {
+          schema: z
+            .object({
+              version: z.number().int().min(1),
+              vehicleTypes: z.array(z.enum(VEHICLE_TYPES)).max(VEHICLE_TYPES.length * 2),
+            })
+            .strict()
+            .openapi('AdminProductVehicleTypes'),
+        },
+      },
+    },
+  },
+  responses: {
+    200: json(z.object({ version: z.number().int(), vehicleTypes: z.array(z.enum(VEHICLE_TYPES)) }), 'Saved'),
+    ...conflict,
+    ...errorResponses,
+  },
+});
+
 export function adminCatalogueRoutes(deps: AppDeps, cache: SessionCache) {
   const app = new OpenAPIHono<AppEnv>({ defaultHook: validationHook });
   const prefix = '/admin/catalogue/*'; // one pattern per prefix (L54)
@@ -184,6 +217,16 @@ export function adminCatalogueRoutes(deps: AppDeps, cache: SessionCache) {
         slug: c.req.valid('param').slug,
         expectedVersion: version,
         patch: fields,
+        staffUserId: c.get('auth').user.id,
+      });
+      return c.json(r, 200);
+    })
+    .openapi(vehicleTypes, async (c) => {
+      const b = c.req.valid('json');
+      const r = await setProductVehicleTypes(deps.db, {
+        slug: c.req.valid('param').slug,
+        expectedVersion: b.version,
+        vehicleTypes: b.vehicleTypes,
         staffUserId: c.get('auth').user.id,
       });
       return c.json(r, 200);

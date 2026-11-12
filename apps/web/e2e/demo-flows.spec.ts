@@ -119,6 +119,29 @@ test.describe('demo shop filters follow the URL (review B13)', () => {
   });
 });
 
+test.describe('vehicle type filter (decision 2026-11-12: 2W, 3W and 4W first-class)', () => {
+  test('filters the shop by vehicle type, keeps it in the URL, and clears it', async ({ page }) => {
+    await page.goto('/shop');
+    const vehicle = page.getByLabel('Vehicle type');
+    await vehicle.selectOption('2W');
+    await expect(page).toHaveURL(/vehicle=2W/);
+    const cards = page.getByRole('article');
+    await expect.poll(() => cards.count()).toBeGreaterThan(0);
+    for (const text of await cards.allTextContents()) expect(text).toContain('2W');
+
+    // No demo product is tagged for three-wheelers yet: an empty list with one next action.
+    await vehicle.selectOption('3W');
+    await expect(page).toHaveURL(/vehicle=3W/);
+    await expect(cards).toHaveCount(0);
+    await page.getByRole('button', { name: 'Clear filters' }).click();
+    await expect(page).toHaveURL(/\/shop$/);
+    await expect(vehicle).toHaveValue('');
+
+    await page.goto('/shop?vehicle=4W');
+    await expect(vehicle).toHaveValue('4W');
+  });
+});
+
 test.describe('workshop booking date (review B14)', () => {
   test("the date starts at the visitor's today in IST, not the day the page was built", async ({ page }) => {
     await page.clock.setFixedTime(new Date('2027-03-15T10:00:00+05:30'));

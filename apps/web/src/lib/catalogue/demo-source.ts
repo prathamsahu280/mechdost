@@ -1,14 +1,7 @@
-import { CATEGORY_SLUGS, type DemoProduct } from '@/demo/catalogue';
+import { CATEGORY_SLUGS, VEHICLE_TYPES_OF_FIT, type DemoProduct } from '@/demo/catalogue';
 import { localizeProduct } from '@/demo/i18n/localize';
 import { productRating } from '@/demo/reviews';
 import type { CardView, ProductView } from './view';
-
-const FIT_LABEL: Record<DemoProduct['fits'], string> = {
-  '2W': '2W',
-  '4W': '4W',
-  '2W/4W': '2W · 4W',
-  EV: 'EV',
-};
 
 /** A demo product as a card (data mode `demo`), localised like the rest of the demo screens. */
 export function demoCard(raw: DemoProduct, locale: string): CardView {
@@ -22,7 +15,7 @@ export function demoCard(raw: DemoProduct, locale: string): CardView {
     category: { key: p.category, slug: CATEGORY_SLUGS[p.category], name: null },
     spec: p.spec,
     compatibility: p.compatibility,
-    fit: FIT_LABEL[p.fits],
+    vehicleTypes: VEHICLE_TYPES_OF_FIT[p.fits],
     price: { pricePaise: p.pricePaise, mrpPaise: p.mrpPaise ?? null },
     availability: p.availability,
     leadDays: p.leadDays,

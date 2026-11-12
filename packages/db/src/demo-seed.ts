@@ -37,6 +37,8 @@ export interface DemoFixture {
     mrpPaise: number;
     hsn: string;
     gstRateBp: number;
+    /** Vehicle types the product is for (decision 2026-11-12); empty = fitment not listed. */
+    vehicleTypes?: ('2W' | '3W' | '4W')[];
   }[];
   shops: {
     slug: string;
@@ -150,6 +152,7 @@ export async function seedRaipurDemo(db: Tx, f: DemoFixture): Promise<DemoSeedRe
         highlightsHi: p.highlightsHi,
         hsn: p.hsn,
         gstRateBp: p.gstRateBp,
+        vehicleTypes: p.vehicleTypes ?? [],
         status: 'live',
       };
       const [product] = await tx

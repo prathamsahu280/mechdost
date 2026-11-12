@@ -43,10 +43,10 @@ export function ProductCard({
             </span>
           ) : null}
           <span className="rounded-md bg-surface/95 px-2 py-0.5 text-[11px] font-bold text-ink">
-            {product.fit ? (
+            {product.vehicleTypes.length > 0 ? (
               <>
                 <span className="sr-only">{t('fitsLabel')} </span>
-                {product.fit}
+                {product.vehicleTypes.join(' · ')}
               </>
             ) : (
               t('fitUnknown')

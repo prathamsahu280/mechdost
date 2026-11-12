@@ -260,6 +260,13 @@
       "when": 1794506246794,
       "tag": "0036_one_open_payment_per_group",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1794508032290,
+      "tag": "0037_product_vehicle_types",
+      "breakpoints": true
     }
   ]
 }
