@@ -33,6 +33,15 @@
 
 The worker cancels online orders that are not paid within `checkout.online_payment_minutes` (default 30, an admin setting). The stock goes back on sale, and the order and payment show `expired`.
 
+## A payment that needs a refund
+
+If money is captured for an order that already expired or was cancelled, it is **not** marked paid:
+
+- the audit log gets `payment.captured_needs_refund` (with the payment id and amount);
+- the API logs `razorpay_webhook_needs_refund`.
+
+Refund it from the Razorpay Dashboard until automatic refunds exist (spec 05).
+
 ## Not yet
 
 - Refunds for paid orders that are cancelled or rejected (spec 05).

@@ -1,6 +1,6 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { Hono } from 'hono';
-import { applyRazorpayPayment, recordWebhookEvent } from '@mechdost/db/repo';
+import { recordAndApplyRazorpayEvent } from '@mechdost/db/repo';
 import type { SessionCache } from '../auth/session-cache';
 import { ApiError } from '../errors';
 import { log } from '../logger';
@@ -42,7 +42,15 @@ const verify = createRoute({
         'application/json': {
           schema: z.object({
             orderCode: z.string(),
-            outcome: z.enum(['paid', 'attempted', 'failed', 'unchanged', 'mismatch', 'unknown_order']),
+            outcome: z.enum([
+              'paid',
+              'attempted',
+              'failed',
+              'unchanged',
+              'mismatch',
+              'unknown_order',
+              'needs_refund',
+            ]),
           }),
         },
       },
@@ -102,28 +110,17 @@ export function razorpayWebhookRoutes(deps: AppDeps) {
         return c.text('ok', 200);
       }
       const payment = paymentFromWebhook(body);
-      if (!PAYMENT_EVENTS.has(body.event) || !payment?.orderId) {
-        await recordWebhookEvent(deps.db, {
-          id: `rzp:${eventId}`,
-          provider: 'razorpay',
-          type: body.event,
-          payload: {},
-        });
-        return c.text('ok', 200);
-      }
-      const fresh = await recordWebhookEvent(deps.db, {
-        id: `rzp:${eventId}`,
-        provider: 'razorpay',
+      const fact =
+        PAYMENT_EVENTS.has(body.event) && payment?.orderId ? paymentFact(payment, payment.orderId) : null;
+      // Recorded once and applied in the same transaction (a failed apply leaves the event unseen for the retry).
+      const { outcome } = await recordAndApplyRazorpayEvent(deps.db, {
+        eventId: `rzp:${eventId}`,
         type: body.event,
-        payload: { orderId: payment.orderId, paymentId: payment.id, status: payment.status },
+        payload: payment ? { orderId: payment.orderId, paymentId: payment.id, status: payment.status } : {},
+        fact,
       });
-      if (!fresh) return c.text('ok', 200); // Razorpay delivers at least once
-      const fact = paymentFact(payment, payment.orderId);
-      if (fact) {
-        const { outcome } = await applyRazorpayPayment(deps.db, fact);
-        if (outcome === 'mismatch' || outcome === 'unknown_order')
-          log('error', 'razorpay_webhook_' + outcome, { requestId: c.get('requestId'), event: body.event });
-      }
+      if (outcome === 'mismatch' || outcome === 'unknown_order' || outcome === 'needs_refund')
+        log('error', `razorpay_webhook_${outcome}`, { requestId: c.get('requestId'), event: body.event });
       return c.text('ok', 200);
     },
   );

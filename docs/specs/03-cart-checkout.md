@@ -57,6 +57,12 @@ Plan `docs/superpowers/plans/2026-11-12-razorpay-checkout-backend.md`; user chos
 - **Unpaid online orders:**
   - They never appear in the routing queue, and `routeOrder` refuses them (`409 AWAITING_PAYMENT`).
   - The worker cancels them after the payment window (system, reason `payment_not_completed`), puts the stock back, and marks the group and payment `expired`.
+- **Security review fixes (2026-11-12):**
+  - A webhook event is recorded only together with its payment fact (one transaction), so a failed apply is retried.
+  - Locks are taken group first, then payment (the expiry job takes orders, then group, then payments).
+  - Cancelling the last live part of an unpaid online order expires the group and its Razorpay orders.
+  - Money captured for an expired or cancelled order never completes it: outcome `needs_refund`, audit `payment.captured_needs_refund` (once per payment), logged as an error for finance until automatic refunds exist (spec 05).
+  - Razorpay order `expire_by` is not set (not verified for the Orders API); the window is enforced on our side.
 - **Not yet:**
   - the website's pay button (comes with "cart + checkout on the API");
   - refunds for paid orders that are cancelled or rejected (spec 05);

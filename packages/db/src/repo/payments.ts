@@ -1,7 +1,7 @@
 import { and, desc, eq, inArray, isNull, lt, sql } from 'drizzle-orm';
 import { paymentMachine, type PaymentStatus } from '@mechdost/shared/state';
 import { OPERATIONAL_SETTINGS } from '@mechdost/shared/settings';
-import { auditLog, orderGroups, orders, payments, settings } from '../schema';
+import { auditLog, orderGroups, orders, payments, settings, webhookEvents } from '../schema';
 import { cancelInTx } from './customer-orders';
 import { NotFoundError } from './errors';
 import { recordServerEvent } from './events';
@@ -110,7 +110,15 @@ export interface RazorpayPaymentFact {
   method: string | null;
 }
 
-export type PaymentOutcome = 'paid' | 'attempted' | 'failed' | 'unchanged' | 'mismatch' | 'unknown_order';
+export type PaymentOutcome =
+  | 'paid'
+  | 'attempted'
+  | 'failed'
+  | 'unchanged'
+  | 'mismatch'
+  | 'unknown_order'
+  /** Money was captured for an order that has expired or was cancelled: audited for a refund (spec 05). */
+  | 'needs_refund';
 
 const TARGET: Record<RazorpayPaymentFact['status'], 'paid' | 'attempted' | 'failed'> = {
   captured: 'paid',
@@ -124,18 +132,30 @@ export async function applyRazorpayPayment(
   fact: RazorpayPaymentFact,
 ): Promise<{ outcome: PaymentOutcome }> {
   return db.transaction(async (tx) => {
-    const [p] = await tx
+    // Lock order: group row, then the payment row (the expiry job takes orders → group → payments; security review).
+    const [ref] = await tx
+      .select({ groupId: payments.groupId })
+      .from(payments)
+      .where(eq(payments.providerOrderId, fact.providerOrderId))
+      .limit(1);
+    if (!ref) return { outcome: 'unknown_order' as const };
+    const [group] = await tx
       .select({
-        ...columns,
         cityId: orderGroups.cityId,
         userId: orderGroups.userId,
         groupCode: orderGroups.code,
+        paymentStatus: orderGroups.paymentStatus,
       })
+      .from(orderGroups)
+      .where(eq(orderGroups.id, ref.groupId))
+      .for('update');
+    const [payment] = await tx
+      .select(columns)
       .from(payments)
-      .innerJoin(orderGroups, eq(orderGroups.id, payments.groupId))
       .where(eq(payments.providerOrderId, fact.providerOrderId))
-      .for('update', { of: payments });
-    if (!p) return { outcome: 'unknown_order' as const };
+      .for('update');
+    if (!group || !payment) return { outcome: 'unknown_order' as const };
+    const p = { ...payment, ...group };
 
     if (fact.amountPaise !== p.amountPaise || fact.currency !== 'INR') {
       await tx.insert(auditLog).values({
@@ -151,6 +171,37 @@ export async function applyRazorpayPayment(
 
     const to = TARGET[fact.status];
     const from = p.status as PaymentStatus;
+    // Captured money for an order that expired or was cancelled must not complete it: flag it for a refund.
+    if (
+      to === 'paid' &&
+      (from === 'expired' || p.paymentStatus === 'expired' || !(await hasLiveOrder(tx, p.groupId)))
+    ) {
+      const [seen] = await tx
+        .select({ id: auditLog.id })
+        .from(auditLog)
+        .where(
+          and(
+            eq(auditLog.action, 'payment.captured_needs_refund'),
+            eq(auditLog.entityId, fact.providerOrderId),
+            sql`${auditLog.after} ->> 'providerPaymentId' = ${fact.providerPaymentId}`,
+          ),
+        )
+        .limit(1);
+      if (!seen)
+        await tx.insert(auditLog).values({
+          actorUserId: null,
+          actorRole: 'system',
+          action: 'payment.captured_needs_refund',
+          entity: 'payment',
+          entityId: fact.providerOrderId,
+          after: {
+            providerPaymentId: fact.providerPaymentId,
+            amountPaise: fact.amountPaise,
+            groupCode: p.groupCode,
+          },
+        });
+      return { outcome: 'needs_refund' as const };
+    }
     if (from === to || !paymentMachine.canActor(from, to, 'system')) return { outcome: 'unchanged' as const };
 
     // Conditional on the status read under the lock (the version trigger bumps `version`).
@@ -247,4 +298,46 @@ export async function onlinePaymentMinutes(db: Tx): Promise<number> {
   return typeof v === 'number' && Number.isSafeInteger(v) && v > 0
     ? v
     : OPERATIONAL_SETTINGS['checkout.online_payment_minutes'].default;
+}
+
+/** Is any sub-order of the group still live (not cancelled or rejected)? */
+async function hasLiveOrder(tx: Tx, groupId: string): Promise<boolean> {
+  const live = await tx.$count(
+    orders,
+    and(eq(orders.groupId, groupId), sql`${orders.status} not in ('cancelled', 'rejected')`),
+  );
+  return live > 0;
+}
+
+/**
+ * A webhook event is recorded together with its payment fact (one transaction): if applying fails, the event is
+ * not marked as seen, so Razorpay's retry can still apply it (security review 2026-11-12).
+ */
+export async function recordAndApplyRazorpayEvent(
+  db: Tx,
+  input: {
+    eventId: string;
+    type: string;
+    payload: Record<string, unknown>;
+    fact: RazorpayPaymentFact | null;
+  },
+): Promise<{ fresh: boolean; outcome: PaymentOutcome | null }> {
+  return db.transaction(async (tx) => {
+    const [row] = await tx
+      .insert(webhookEvents)
+      .values({
+        id: input.eventId,
+        provider: 'razorpay',
+        type: input.type,
+        payload: input.payload,
+        status: 'processed',
+        processedAt: new Date(),
+      })
+      .onConflictDoNothing({ target: webhookEvents.id })
+      .returning({ id: webhookEvents.id });
+    if (!row) return { fresh: false, outcome: null };
+    if (!input.fact) return { fresh: true, outcome: null };
+    const { outcome } = await applyRazorpayPayment(tx, input.fact);
+    return { fresh: true, outcome };
+  });
 }

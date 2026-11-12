@@ -11,6 +11,8 @@ import { eq, sql } from 'drizzle-orm';
 import { seedRaipurDemo, type DemoFixture } from '../src/demo-seed';
 import {
   applyRazorpayPayment,
+  cancelMyOrder,
+  recordAndApplyRazorpayEvent,
   expireUnpaidOnlineOrders,
   listRoutingQueue,
   openPaymentForGroup,
@@ -186,5 +188,65 @@ describe('unpaid online orders', () => {
     const holds = await db.select().from(s.reservations).where(eq(s.reservations.orderId, order!.id));
     expect(holds.every((h) => h.status !== 'active')).toBe(true);
     expect(await expireUnpaidOnlineOrders(t(), { olderThanMinutes: 30 })).toBe(0);
+  });
+});
+
+describe('captures that must not complete an order (security review 2026-11-12)', () => {
+  it('a capture after the payment window ended is flagged for a refund, never marks paid', async () => {
+    const { placed, groupId, providerOrderId } = await placeOnline();
+    await db.execute(
+      sql`update order_groups set created_at = now() - interval '45 minutes' where id = ${groupId}`,
+    );
+    await expireUnpaidOnlineOrders(t(), { olderThanMinutes: 30 });
+    expect(await applyRazorpayPayment(t(), captured(providerOrderId, placed.totalPaise))).toEqual({
+      outcome: 'needs_refund',
+    });
+    expect(await groupStatus(groupId)).toBe('expired');
+    const audit = await db
+      .select()
+      .from(s.auditLog)
+      .where(
+        sql`${s.auditLog.action} = 'payment.captured_needs_refund' and ${s.auditLog.entityId} = ${providerOrderId}`,
+      );
+    expect(audit).toHaveLength(1);
+  });
+
+  it('cancelling an unpaid online order closes its payment; a later capture is flagged for a refund', async () => {
+    const { placed, groupId, providerOrderId } = await placeOnline();
+    const [order] = await db.select().from(s.orders).where(eq(s.orders.code, placed.orders[0]!.code));
+    await cancelMyOrder(t(), {
+      userId,
+      code: order!.code,
+      reasonCode: 'changed_mind',
+      expectedVersion: order!.version,
+    });
+    expect(await groupStatus(groupId)).toBe('expired');
+    expect(await openPaymentForGroup(t(), groupId)).toBeNull();
+    expect(await applyRazorpayPayment(t(), captured(providerOrderId, placed.totalPaise))).toEqual({
+      outcome: 'needs_refund',
+    });
+  });
+
+  it('a webhook event is recorded only together with its payment fact (a failed apply can be retried)', async () => {
+    const { placed, providerOrderId } = await placeOnline();
+    await expect(
+      recordAndApplyRazorpayEvent(t(), {
+        eventId: 'rzp:evt_atomic_0001',
+        type: 'payment.captured',
+        payload: {},
+        // A payment id already used by another order: the unique index throws inside the apply.
+        fact: captured(providerOrderId, placed.totalPaise, 'pay_order_test000001'),
+      }),
+    ).rejects.toThrow();
+    const seen = await db.select().from(s.webhookEvents).where(eq(s.webhookEvents.id, 'rzp:evt_atomic_0001'));
+    expect(seen).toHaveLength(0);
+    expect(
+      await recordAndApplyRazorpayEvent(t(), {
+        eventId: 'rzp:evt_atomic_0001',
+        type: 'payment.captured',
+        payload: {},
+        fact: captured(providerOrderId, placed.totalPaise),
+      }),
+    ).toEqual({ fresh: true, outcome: 'paid' });
   });
 });

@@ -28,6 +28,7 @@ export async function ensureRazorpayOrder(
   input: { userId: string; groupCode: string },
 ): Promise<CheckoutHandle | null> {
   const group = await onlineGroupOfUser(db, input);
+  // Paid, expired, or every part cancelled (the group then expires): nothing to pay.
   if (!['created', 'attempted', 'failed'].includes(group.paymentStatus)) return null;
   const open = await openPaymentForGroup(db, group.id);
   if (open)

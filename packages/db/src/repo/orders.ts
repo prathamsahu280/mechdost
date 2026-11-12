@@ -1,7 +1,7 @@
-import { and, eq } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
 import { orderMachine, type OrderStatus } from '@mechdost/shared/state';
-import { orderGroups, orders } from '../schema';
+import { orderGroups, orders, payments } from '../schema';
 import { setActor, type ActorContext } from './actor';
 import { ConflictError, NotFoundError } from './errors';
 import { queueOrderWhatsApp, type OrderWhatsAppEvent } from './order-notifications';
@@ -84,28 +84,44 @@ export async function transitionOrder(
     );
   const event = WHATSAPP_ON[args.to];
   if (event) await queueOrderWhatsApp(tx, { orderId: row.id, event, orderVersion: row.version });
-  if (orderMachine.isTerminal(args.to)) await settleCodGroup(tx, row.groupId);
+  if (orderMachine.isTerminal(args.to)) await settleGroupPayment(tx, row.groupId);
   return row;
 }
 
 /**
- * A COD group is `cod_collected` once none of its sub-orders is still open and at least one was delivered
- * (review B7). The group row is locked first, so two parts finishing at once cannot both miss the last one.
- * A group whose parts were all cancelled keeps `cod_pending` until the COD payment states are designed with
- * the WhatsApp COD confirmation (Q74).
+ * After a terminal order move, settle the group's payment status (group row locked after the order row):
+ * - COD: `cod_collected` once no sub-order is still open and at least one was delivered (review B7). A COD group
+ *   whose parts were all cancelled keeps `cod_pending` until the COD payment states are designed (Q74).
+ * - Online, not yet paid: when no sub-order is still live (all cancelled or rejected) the group and its open
+ *   Razorpay orders expire, so a later capture is flagged for a refund instead of completing a cancelled order
+ *   (security review 2026-11-12).
  */
-async function settleCodGroup(tx: Tx, groupId: string): Promise<void> {
+async function settleGroupPayment(tx: Tx, groupId: string): Promise<void> {
   const [g] = await tx
     .select({ method: orderGroups.paymentMethod, status: orderGroups.paymentStatus })
     .from(orderGroups)
     .where(eq(orderGroups.id, groupId))
     .for('update');
-  if (g?.method !== 'cod' || g.status !== 'cod_pending') return;
+  if (!g) return;
   const subs = await tx.select({ status: orders.status }).from(orders).where(eq(orders.groupId, groupId));
   if (subs.some((s) => !orderMachine.isTerminal(s.status as OrderStatus))) return;
-  if (!subs.some((s) => s.status === 'delivered')) return;
-  await tx
-    .update(orderGroups)
-    .set({ paymentStatus: 'cod_collected' }) // the version trigger (0031) bumps `version`
-    .where(and(eq(orderGroups.id, groupId), eq(orderGroups.paymentStatus, 'cod_pending')));
+  if (g.method === 'cod' && g.status === 'cod_pending' && subs.some((s) => s.status === 'delivered')) {
+    await tx
+      .update(orderGroups)
+      .set({ paymentStatus: 'cod_collected' }) // the version trigger (0031) bumps `version`
+      .where(and(eq(orderGroups.id, groupId), eq(orderGroups.paymentStatus, 'cod_pending')));
+    return;
+  }
+  if (g.method === 'online' && UNPAID.includes(g.status)) {
+    await tx
+      .update(orderGroups)
+      .set({ paymentStatus: 'expired' })
+      .where(and(eq(orderGroups.id, groupId), inArray(orderGroups.paymentStatus, [...UNPAID])));
+    await tx
+      .update(payments)
+      .set({ status: 'expired' })
+      .where(and(eq(payments.groupId, groupId), inArray(payments.status, [...UNPAID])));
+  }
 }
+
+const UNPAID: readonly string[] = ['created', 'attempted', 'failed'];
