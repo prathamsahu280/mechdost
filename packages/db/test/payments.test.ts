@@ -250,3 +250,24 @@ describe('captures that must not complete an order (security review 2026-11-12)'
     ).toEqual({ fresh: true, outcome: 'paid' });
   });
 });
+
+describe('replays of a completed payment (security review 2026-11-12, second pass)', () => {
+  it('a replayed capture of a paid order is unchanged, even after the order was later cancelled', async () => {
+    const { placed, providerOrderId } = await placeOnline();
+    expect((await applyRazorpayPayment(t(), captured(providerOrderId, placed.totalPaise))).outcome).toBe(
+      'paid',
+    );
+    await db.execute(sql`update orders set status = 'cancelled', status_reason_code = 'other'
+      where code = ${placed.orders[0]!.code}`);
+    expect(await applyRazorpayPayment(t(), captured(providerOrderId, placed.totalPaise))).toEqual({
+      outcome: 'unchanged',
+    });
+    const flags = await db
+      .select()
+      .from(s.auditLog)
+      .where(
+        sql`${s.auditLog.action} = 'payment.captured_needs_refund' and ${s.auditLog.entityId} = ${providerOrderId}`,
+      );
+    expect(flags).toHaveLength(0);
+  });
+});

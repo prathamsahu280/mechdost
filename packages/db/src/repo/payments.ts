@@ -171,6 +171,9 @@ export async function applyRazorpayPayment(
 
     const to = TARGET[fact.status];
     const from = p.status as PaymentStatus;
+    // A payment that already completed is final: replays change nothing (checked before the refund flag).
+    if (from === 'paid' || from === 'partially_refunded' || from === 'refunded')
+      return { outcome: 'unchanged' as const };
     // Captured money for an order that expired or was cancelled must not complete it: flag it for a refund.
     if (
       to === 'paid' &&
