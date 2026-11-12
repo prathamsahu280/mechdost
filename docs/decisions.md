@@ -291,6 +291,30 @@ User shared Razorpay **test** keys and asked to "see how we have the stuff for r
 - An online order holds stock for 30 minutes (admin setting) and is never routed before it is paid.
 - A valid checkout signature alone never marks an order paid: the server fetches the payment from Razorpay first (Razorpay docs).
 
+## 2026-11-13 — Seller onboarding, price approval, buyer GSTIN, comparison (user requests)
+
+User (2026-11-13), in order:
+
+1. **Apply as a seller:**
+   - Add a **GST number** field.
+   - Replace the free-text "what you sell" field with a **tick-list of the products/categories the seller sells**.
+   - Add an **address** field and a **location button**: pick the location on a map with a search, or "use my location".
+2. **Customers may add a GSTIN at checkout** (optional) for a GST invoice.
+3. **Product comparison:** compare several products (for example engine oils) with cost and everything; the user will give more detail later.
+   - Research it and propose extra features.
+   - Search gets a vehicle-type filter (2W/3W/4W). Built 2026-11-13: commit 1bb7cd2.
+4. **Seller price changes need admin approval:** a seller can raise or lower a price. The change goes to the admin, who approves or rejects it.
+   - If the admin rejects it, **that product is not shown for that seller**. Customers get it from other nearby shops (routing and pricing skip it).
+   - This replaces "shop owners edit their selling price directly" (spec 07 § inventory).
+   - Admin-set prices stay direct.
+5. **After the application is confirmed:** the seller sees an option to sign an **end-to-end agreement with MechDost**. The user will provide its details later (Q77). Build the slot and the status, not the text.
+6. **Admin invites a seller:**
+   - The admin enters name, email and phone, and the seller gets a link.
+   - The application counts as already verified, and the email and phone count as verified.
+   - The seller still fills in the rest: GSTIN, product list, prices and so on.
+
+Exploration first: specs 02, 03, 07, 08, 13 and 15, the skills, and research. A new comparison spec where needed.
+
 ## 2026-11-12 — Three-wheelers first-class; fitment by vehicle type (default for Q76)
 
 Follow-up to the 2026-11-11 answer "for both two wheelers, three wheelers and cars".
