@@ -4,14 +4,15 @@ import { coinRedemption } from '@mechdost/shared/coins';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { useState, type SyntheticEvent } from 'react';
+import { useRef, useState, type SyntheticEvent } from 'react';
+import { AUTH_MODE } from '@/lib/auth/mode';
 import { track } from '@/lib/analytics';
 import { formatPrice } from '@/lib/format';
 import { coinBalanceOf, redeemCoins, useCoins } from '@/demo/coins';
 import { customerAllowed } from '@/demo/customer-blocks';
 import { findAccount, useSession } from '@/demo/session';
 import { coinRulesFrom, useSiteSettings } from '@/demo/site-config';
-import { placeDemoOrder, useCart } from '@/demo/store';
+import { clearCart, placeDemoOrder, useCart } from '@/demo/store';
 import { priceCart } from '@/demo/cart-pricing';
 import { CartView } from './cart-view';
 import { productNameFor } from '@/demo/i18n/localize';
@@ -21,7 +22,11 @@ type Field = 'name' | 'phone' | 'address' | 'pincode' | 'consent';
 const PHONE = /^[6-9]\d{9}$/;
 const PIN = /^[1-9]\d{5}$/;
 
-/** Checkout step (spec 03) on the demo store: labelled fields, inline errors, error summary focus, COD only. */
+/**
+ * Checkout step (spec 03): labelled fields, inline errors, error summary focus. Cash on delivery uses the demo
+ * store; "Pay online" (real sign-in builds) places the order on the API and opens Razorpay Checkout
+ * (`lib/payments/pay-online.ts`, loaded only when chosen).
+ */
 export function CheckoutForm() {
   const t = useTranslations('checkout');
   const cartT = useTranslations('cart');
@@ -32,6 +37,14 @@ export function CheckoutForm() {
   const [errors, setErrors] = useState<Partial<Record<Field, string>>>({});
   const [submitting, setSubmitting] = useState(false);
   const [blockedNote, setBlockedNote] = useState<string | null>(null);
+  // Online payment (Razorpay) needs real sign-in: the API knows who pays.
+  const onlineAvailable = AUTH_MODE === 'firebase';
+  const [method, setMethod] = useState<'cod' | 'online'>('cod');
+  const [onlineNote, setOnlineNote] = useState<{ text: string; signIn?: boolean } | null>(null);
+  const [paid, setPaid] = useState<string | null>(null);
+  // One key per attempt: retrying after a closed popup reuses the same order on the API.
+  const attemptKey = useRef<string | null>(null);
+  const paidHeading = useRef<HTMLHeadingElement>(null);
   // MechDost Coins (spec 20): signed-in customers may use coins for part of the products, never delivery.
   const session = useSession();
   const settings = useSiteSettings();
@@ -39,11 +52,59 @@ export function CheckoutForm() {
   const { balance } = useCoins(coinAccount);
   const redemption = coinRedemption(balance, subtotalPaise, coinRulesFrom(settings));
   const [useCoinsOn, setUseCoinsOn] = useState(false);
-  const coinDiscount = useCoinsOn ? redemption.discountPaise : 0;
+  // Coins are a demo-store discount: not applied to online payments (the API prices the order).
+  const coinDiscount = useCoinsOn && method === 'cod' ? redemption.discountPaise : 0;
   const payablePaise = totalPaise - coinDiscount;
   const prefix = locale === 'hi' ? '/hi' : '';
 
+  if (paid)
+    return (
+      <section className="rounded-card border border-line-card bg-surface p-7 shadow-card">
+        <h2 ref={paidHeading} tabIndex={-1} className="font-heading text-xl font-extrabold text-ink">
+          {t('paidTitle')}
+        </h2>
+        <p className="mt-2 text-sm text-ink">{t('paidBody', { code: paid })}</p>
+        <Link
+          href={`${prefix}/account`}
+          className="press mt-5 inline-flex min-h-11 items-center rounded-button bg-accent-button px-5 text-sm font-bold text-white hover:bg-accent-button-hover"
+        >
+          {t('paidNext')}
+        </Link>
+      </section>
+    );
+
   if (priced.length === 0 && !submitting) return <CartView />;
+
+  async function payOnlineNow(details: { name: string; phone: string; address: string; pincode: string }) {
+    setOnlineNote(null);
+    setSubmitting(true);
+    attemptKey.current ??= crypto.randomUUID();
+    const { payOnline } = await import('@/lib/payments/pay-online');
+    const result = await payOnline({
+      locale,
+      idempotencyKey: attemptKey.current,
+      lines: priced.map(({ product, qty }) => ({ sku: product.sku, qty })),
+      address: {
+        contactName: details.name,
+        contactPhone: `+91${details.phone}`,
+        line1: details.address,
+        pincode: details.pincode,
+      },
+    });
+    setSubmitting(false);
+    if (result.ok) {
+      track('click', { id: 'checkout_paid_online', path: window.location.pathname });
+      clearCart();
+      attemptKey.current = null;
+      setPaid(result.orderCode);
+      window.requestAnimationFrame(() => paidHeading.current?.focus());
+      return;
+    }
+    track('click', { id: `checkout_online_${result.reason}`, path: window.location.pathname });
+    // A changed cart or price needs a fresh order: the next try gets a new key.
+    if (result.reason === 'cart_changed' || result.reason === 'price_changed') attemptKey.current = null;
+    setOnlineNote({ text: t(`online_${result.reason}`), signIn: result.reason === 'sign_in' });
+  }
 
   function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -81,6 +142,10 @@ export function CheckoutForm() {
       return;
     }
     setBlockedNote(null);
+    if (method === 'online') {
+      void payOnlineNow({ name: value('name'), phone, address: value('address'), pincode });
+      return;
+    }
     setSubmitting(true);
     // Re-check the balance at the moment of ordering (another tab may have used the coins).
     const spend =
@@ -183,15 +248,31 @@ export function CheckoutForm() {
                 type="radio"
                 name="payment"
                 value="cod"
-                defaultChecked
+                checked={method === 'cod'}
+                onChange={() => {
+                  setMethod('cod');
+                }}
                 className="size-6 accent-[var(--color-accent-button)]"
               />
               {t('cod')}
             </label>
-            <label className="mt-2 flex min-h-11 items-center gap-2 rounded-input border border-line px-3 text-sm text-muted">
-              <input type="radio" name="payment" value="online" disabled className="size-6" />
-              {t('online')}
+            <label
+              className={`mt-2 flex min-h-11 items-center gap-2 rounded-input border px-3 text-sm ${onlineAvailable ? 'border-input-border text-ink' : 'border-line text-muted'}`}
+            >
+              <input
+                type="radio"
+                name="payment"
+                value="online"
+                checked={method === 'online'}
+                disabled={!onlineAvailable}
+                onChange={() => {
+                  setMethod('online');
+                }}
+                className="size-6 accent-[var(--color-accent-button)]"
+              />
+              {onlineAvailable ? t('onlineRazorpay') : t('online')}
             </label>
+            {method === 'online' ? <p className="mt-2 text-xs text-muted">{t('onlineNote')}</p> : null}
           </fieldset>
         </div>
         {coinAccount && balance > 0 ? (
@@ -241,6 +322,19 @@ export function CheckoutForm() {
         </label>
         {errorText('consent')}
         <p className="mt-4 rounded-lg bg-surface-alt px-3 py-2 text-xs text-muted">{t('flowNote')}</p>
+        {onlineNote ? (
+          <p role="alert" className="mt-4 rounded-lg bg-warning-bg px-3 py-2 text-sm font-bold text-warning">
+            {onlineNote.text}{' '}
+            {onlineNote.signIn ? (
+              <Link
+                href={`${prefix}/login?next=${encodeURIComponent(`${prefix}/checkout`)}`}
+                className="underline underline-offset-2"
+              >
+                {t('onlineSignInLink')}
+              </Link>
+            ) : null}
+          </p>
+        ) : null}
         {blockedNote ? (
           <p role="alert" className="mt-4 rounded-lg bg-warning-bg px-3 py-2 text-sm font-bold text-warning">
             {blockedNote}
@@ -251,7 +345,11 @@ export function CheckoutForm() {
           disabled={submitting}
           className="press mt-5 inline-flex min-h-12 w-full items-center justify-center rounded-button bg-accent-button px-5 text-sm font-bold text-white hover:bg-accent-button-hover disabled:opacity-70 min-[600px]:w-auto"
         >
-          {submitting ? t('placing') : `${t('place')} · ${formatPrice(payablePaise)}`}
+          {submitting
+            ? t(method === 'online' ? 'paying' : 'placing')
+            : method === 'online'
+              ? t('payNow')
+              : `${t('place')} · ${formatPrice(payablePaise)}`}
         </button>
       </form>
 

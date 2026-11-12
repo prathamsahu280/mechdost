@@ -40,6 +40,12 @@ export const INLINE_SCRIPT_HASHES = [THEME_INIT_SCRIPT, SITE_LAYOUT_SCRIPT].map(
   (source) => `'sha256-${createHash('sha256').update(source).digest('base64')}'`,
 );
 
+// Razorpay Standard Checkout (pay online, real-sign-in builds): checkout.js, its iframe and its API.
+const RAZORPAY_SCRIPTS = ['https://checkout.razorpay.com'];
+const RAZORPAY_FRAMES = ['https://api.razorpay.com', 'https://checkout.razorpay.com'];
+const RAZORPAY_CONNECT = ['https://api.razorpay.com', 'https://lumberjack.razorpay.com'];
+const RAZORPAY_IMAGES = ['https://cdn.razorpay.com'];
+
 const origin = (url: string | undefined) => {
   if (!url) return null;
   try {
@@ -61,21 +67,23 @@ export function contentSecurityPolicy(input: CspInput): string {
     ? ["'self'", `'nonce-${input.nonce}'`, "'strict-dynamic'", ...INLINE_SCRIPT_HASHES, "'unsafe-inline'"]
     : ["'self'", "'unsafe-inline'"];
   if (input.dev) script.push("'unsafe-eval'");
-  if (real) script.push(TURNSTILE, ...RECAPTCHA_SCRIPTS);
+  if (real) script.push(TURNSTILE, ...RECAPTCHA_SCRIPTS, ...RAZORPAY_SCRIPTS);
 
   const connect = ["'self'", ...MAP_ORIGINS];
   if (api) connect.push(api);
-  if (real) connect.push(...FIREBASE_AUTH_APIS, TURNSTILE);
+  if (real) connect.push(...FIREBASE_AUTH_APIS, TURNSTILE, ...RAZORPAY_CONNECT);
   if (emulator) connect.push(emulator);
   if (input.dev) connect.push('ws:');
 
-  const frame = real ? [TURNSTILE, ...RECAPTCHA_FRAMES, ...(authDomain ? [authDomain] : [])] : ["'none'"];
+  const frame = real
+    ? [TURNSTILE, ...RECAPTCHA_FRAMES, ...RAZORPAY_FRAMES, ...(authDomain ? [authDomain] : [])]
+    : ["'none'"];
 
   const directives: [string, string[]][] = [
     ['default-src', ["'self'"]],
     ['script-src', script],
     ['style-src', ["'self'", "'unsafe-inline'"]],
-    ['img-src', ["'self'", 'data:', 'blob:', ...MAP_ORIGINS]],
+    ['img-src', ["'self'", 'data:', 'blob:', ...MAP_ORIGINS, ...(real ? RAZORPAY_IMAGES : [])]],
     ['font-src', ["'self'", 'data:']],
     ['connect-src', connect],
     ['worker-src', ["'self'", 'blob:']],

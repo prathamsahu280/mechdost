@@ -246,6 +246,13 @@ export async function passwordSignIn(input: {
 
 export type ApiMe = RealMe & { version: number };
 
+/** The signed-in user's ID token for API calls (waits for Firebase to restore the session), or null. */
+export async function currentIdToken(locale: string): Promise<string | null> {
+  const a = firebaseAuth(locale);
+  await a.authStateReady();
+  return a.currentUser ? a.currentUser.getIdToken() : null;
+}
+
 /**
  * `GET /v1/me` for the signed-in Firebase user (creates the profile row on first sign-up). `blocked`: the API
  * refuses this account (blocked or deactivated) — the caller signs out and shows why.

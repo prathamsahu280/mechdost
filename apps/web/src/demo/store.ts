@@ -529,6 +529,11 @@ export function setQuantity(slug: string, qty: number) {
   );
 }
 
+/** Empty the cart (after an order paid online on the API). */
+export function clearCart(): boolean {
+  return write(KEYS.cart, []);
+}
+
 export function removeFromCart(slug: string) {
   write(
     KEYS.cart,
