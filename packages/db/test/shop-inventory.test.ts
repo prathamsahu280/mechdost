@@ -49,10 +49,19 @@ describe('shop offers', () => {
       shopId: shop['Sharma Auto Parts']!,
       sku: OIL,
       actorUserId: user,
-      actorRole: 'shop' as const,
+      // Staff set prices directly; a shop's own price is a request for approval (user 2026-11-13).
+      actorRole: 'staff' as const,
     };
     const o = (await offerOf('Sharma Auto Parts', OIL))!;
     expect(o).toMatchObject({ sellingPaise: 44000, mrpPaise: 47500, free: 12 });
+    await expect(
+      saveShopOffer(t(), {
+        ...base,
+        actorRole: 'shop',
+        expectedVersion: o.version,
+        changes: { sellingPaise: 43000 },
+      }),
+    ).rejects.toMatchObject({ code: 'PRICE_NEEDS_APPROVAL' });
     await expect(
       saveShopOffer(t(), { ...base, expectedVersion: o.version, changes: { sellingPaise: 48000 } }),
     ).rejects.toMatchObject({

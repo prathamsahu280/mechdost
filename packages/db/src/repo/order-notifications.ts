@@ -16,7 +16,7 @@ import type { Tx } from './orders';
  */
 export type OrderWhatsAppEvent = 'order.confirmed' | 'order.rejected' | 'order.out_for_delivery';
 
-const SECRET_KEYS = ['deliveryCode'] as const;
+const SECRET_KEYS = ['deliveryCode', 'token'] as const;
 const aadFor = (key: string) => `notification_outbox.payload.${key}`;
 
 export async function queueOrderWhatsApp(
@@ -57,6 +57,15 @@ export async function queueOrderWhatsApp(
     locale: row.language === 'hi' ? 'hi' : 'en',
     payload,
   });
+}
+
+/** Encrypts one secret payload field as `<key>Enc` (opened by `openPayload` just before sending). */
+export function sealPayloadField(
+  value: string,
+  keyring: Keyring,
+  key: (typeof SECRET_KEYS)[number],
+): Record<string, string> {
+  return { [`${key}Enc`]: encryptField(value, keyring, aadFor(key)) };
 }
 
 /** Decrypts `<key>Enc` payload fields for the sender; anything else passes through unchanged. */

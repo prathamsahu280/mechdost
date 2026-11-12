@@ -124,6 +124,9 @@ export async function saveShopOffer(
       .limit(1);
     if (!variant) throw new NotFoundError('No such SKU');
     check(input.changes, variant.mrp);
+    // A shop's own price is always a request for staff approval (user 2026-11-13); stock and on/off stay direct.
+    if (input.actorRole === 'shop' && input.changes.sellingPaise !== undefined)
+      throw new ConflictError('Prices need approval: send a price request instead', 'PRICE_NEEDS_APPROVAL');
 
     if (input.expectedVersion === null) {
       if (variant.pStatus !== 'live' || variant.vStatus !== 'active')
@@ -160,12 +163,19 @@ export async function saveShopOffer(
       .where(and(eq(shopInventory.shopId, input.shopId), eq(shopInventory.variantId, variant.id)))
       .limit(1);
     if (!current) throw new NotFoundError('This shop does not offer this SKU yet');
+    if (input.actorRole === 'shop' && input.changes.active === true && current.adminBlocked)
+      throw new ConflictError('MechDost took this product off sale for your shop', 'LISTING_BLOCKED');
     if (input.changes.onHand !== undefined && input.changes.onHand < current.reserved)
       throw new ConflictError(
         `${String(current.reserved)} unit(s) are reserved for open orders; stock cannot go below that`,
         'STOCK_BELOW_RESERVED',
       );
-    const set = Object.fromEntries(Object.entries(input.changes).filter(([, v]) => v !== undefined));
+    const set: Record<string, unknown> = Object.fromEntries(
+      Object.entries(input.changes).filter(([, v]) => v !== undefined),
+    );
+    // Staff putting a blocked listing back on sale lifts the block.
+    if (input.actorRole === 'staff' && input.changes.active === true && current.adminBlocked)
+      Object.assign(set, { adminBlocked: false, blockedReasonCode: null });
     if (Object.keys(set).length === 0) throw new ValidationError('Nothing to change', 'EMPTY_PATCH');
     const [row] = await tx
       .update(shopInventory)

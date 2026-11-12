@@ -73,10 +73,18 @@ describe('shop inventory API', () => {
       body: JSON.stringify({ version: oil.version, reserved: 0 }),
     });
     expect(sneaky.status).toBe(400);
+    // A shop's own price needs staff approval (user 2026-11-13): send a price request instead.
+    const ownPrice = await ctx.app.request(`${mine}/${OIL}`, {
+      method: 'PATCH',
+      headers: owner,
+      body: JSON.stringify({ version: oil.version, sellingPaise: 43500 }),
+    });
+    expect(ownPrice.status).toBe(409);
+    expect(((await ownPrice.json()) as ErrorJson).error.code).toBe('PRICE_NEEDS_APPROVAL');
     const ok = await ctx.app.request(`${mine}/${OIL}`, {
       method: 'PATCH',
       headers: owner,
-      body: JSON.stringify({ version: oil.version, sellingPaise: 43500, onHand: 20 }),
+      body: JSON.stringify({ version: oil.version, onHand: 20 }),
     });
     expect(ok.status).toBe(200);
     const { version } = (await ok.json()) as { version: number };
