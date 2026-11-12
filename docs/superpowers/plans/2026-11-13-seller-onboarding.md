@@ -227,7 +227,7 @@ The user gave a Resend key (send-only, in `.env` as `RESEND_API_KEY`); invites a
 
 - Create: `apps/api/src/notify/email.ts`, `packages/shared/src/email-templates.ts`.
 - Modify:
-  - `apps/api/src/config.ts` (`RESEND_API_KEY` optional, `^re_[A-Za-z0-9_]{20,}$`; `EMAIL_FROM`; production requires both or neither);
+  - `apps/api/src/config.ts` (`RESEND_API_KEY` optional, `^re_[A-Za-z0-9_]{20,}$`; `EMAIL_DOMAIN` default `mechdost.com`, used to build the five senders);
   - `apps/api/src/worker.ts` (add the adapter when configured);
   - `.env.example` (notes);
   - `docs/runbooks/` (a new `email.md`).
@@ -239,7 +239,14 @@ The user gave a Resend key (send-only, in `.env` as `RESEND_API_KEY`); invites a
   - `POST https://api.resend.com/emails` with the `Authorization: Bearer` header and an `Idempotency-Key` set to the outbox dedupe key;
   - 10 s timeout, no SDK.
   - Responses: 429/5xx → `ChannelError('retry')`; 401/403 → `'later'`; 422 → `'permanent'`.
-- **`EMAIL_TEMPLATES`:** `partner_invite {name, link, expiresOn}` in en and hi, subject plus text and an HTML body (plain, branded, no tracking pixels).
+- **`EMAIL_PURPOSES = ['updates','billing','support','promotions','system']`** and **`EMAIL_SENDERS`**:
+  - `updates` → `MechDost <updates@mechdost.com>`;
+  - `billing` → `MechDost Billing <billing@mechdost.com>`;
+  - `support` → `MechDost Support <support@mechdost.com>`;
+  - `promotions` → `MechDost <promotions@mechdost.com>`;
+  - `system` → `MechDost <noreply@mechdost.com>`;
+  - reply-to is always `support@mechdost.com` (decision 2026-11-13 "Email sender addresses").
+- **`EMAIL_TEMPLATES`:** `partner_invite {name, link, expiresOn}` (purpose `updates`) in en and hi, subject plus text and an HTML body (plain, branded, no tracking pixels). Every template declares its purpose; the adapter picks the sender from it.
   - Templates are code defaults, overridable later through `notification_templates` (rule 8).
 
 **Steps:**
@@ -248,7 +255,7 @@ The user gave a Resend key (send-only, in `.env` as `RESEND_API_KEY`); invites a
   - a send posts the rendered template with the idempotency key;
   - 429 → retry; 422 → permanent;
   - an unknown template → permanent;
-  - config: a key without `EMAIL_FROM` → a `ConfigError` naming `EMAIL_FROM`.
+  - each purpose uses its sender (`partner_invite` from `updates@mechdost.com`), and reply-to is `support@mechdost.com`.
 - [ ] **Step 2:** Run it. Expected: FAIL.
 - [ ] **Step 3:** Implement. Without a verified sending domain, Resend only delivers from `onboarding@resend.dev` to the account owner: queue **Q79** (verify `mechdost.com` in Resend: SPF, DKIM, DMARC). Default meanwhile: invites still show the link to the admin.
 - [ ] **Step 4:** Run the tests. Expected: PASS.

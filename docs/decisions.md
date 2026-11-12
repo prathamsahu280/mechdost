@@ -291,6 +291,20 @@ User shared Razorpay **test** keys and asked to "see how we have the stuff for r
 - An online order holds stock for 30 minutes (admin setting) and is never routed before it is paid.
 - A valid checkout signature alone never marks an order paid: the server fetches the payment from Razorpay first (Razorpay docs).
 
+## 2026-11-13 — Email sender addresses (user)
+
+User: "4 primary mails would be support@mechdost.com, promotions@mechdost.com, billing@mechdost.com and noreply@mechdost.com and we can also use … updates@mechdost.com … their usages are pretty self explanatory". Resend sends the email (the key is in `.env`; the domain must be verified, Q79).
+
+| Sender                    | Used for                                                                                              |
+| ------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `updates@mechdost.com`    | Order and service-request updates, seller invites, application and price decisions, agreement notices |
+| `billing@mechdost.com`    | Invoices, receipts, refunds, credit notes, payment issues                                             |
+| `support@mechdost.com`    | Support ticket replies; the reply-to address on every email                                           |
+| `promotions@mechdost.com` | Offers and campaigns, only with marketing consent (DPDP), always with an unsubscribe link             |
+| `noreply@mechdost.com`    | Account and system emails: email verification, password and security notices                          |
+
+Each email template declares its purpose. The sender for a purpose comes from the shared `EMAIL_SENDERS` defaults, which the admin can override (rule 8).
+
 ## 2026-11-13 — Seller onboarding, price approval, buyer GSTIN, comparison (user requests)
 
 User (2026-11-13), in order:
