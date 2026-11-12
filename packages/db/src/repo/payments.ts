@@ -150,7 +150,7 @@ export async function applyRazorpayPayment(
       .where(eq(orderGroups.id, ref.groupId))
       .for('update');
     const [payment] = await tx
-      .select(columns)
+      .select({ ...columns, providerPaymentId: payments.providerPaymentId })
       .from(payments)
       .where(eq(payments.providerOrderId, fact.providerOrderId))
       .for('update');
@@ -171,38 +171,20 @@ export async function applyRazorpayPayment(
 
     const to = TARGET[fact.status];
     const from = p.status as PaymentStatus;
-    // A payment that already completed is final: replays change nothing (checked before the refund flag).
-    if (from === 'paid' || from === 'partially_refunded' || from === 'refunded')
-      return { outcome: 'unchanged' as const };
+    // A completed payment is final. The same payment again is a replay (unchanged); a different captured payment on
+    // it is money taken twice and is flagged for a refund (security review, third pass).
+    if (from === 'paid' || from === 'partially_refunded' || from === 'refunded') {
+      if (to !== 'paid' || p.providerPaymentId === fact.providerPaymentId)
+        return { outcome: 'unchanged' as const };
+      await flagForRefund(tx, fact, p.groupCode);
+      return { outcome: 'needs_refund' as const };
+    }
     // Captured money for an order that expired or was cancelled must not complete it: flag it for a refund.
     if (
       to === 'paid' &&
       (from === 'expired' || p.paymentStatus === 'expired' || !(await hasLiveOrder(tx, p.groupId)))
     ) {
-      const [seen] = await tx
-        .select({ id: auditLog.id })
-        .from(auditLog)
-        .where(
-          and(
-            eq(auditLog.action, 'payment.captured_needs_refund'),
-            eq(auditLog.entityId, fact.providerOrderId),
-            sql`${auditLog.after} ->> 'providerPaymentId' = ${fact.providerPaymentId}`,
-          ),
-        )
-        .limit(1);
-      if (!seen)
-        await tx.insert(auditLog).values({
-          actorUserId: null,
-          actorRole: 'system',
-          action: 'payment.captured_needs_refund',
-          entity: 'payment',
-          entityId: fact.providerOrderId,
-          after: {
-            providerPaymentId: fact.providerPaymentId,
-            amountPaise: fact.amountPaise,
-            groupCode: p.groupCode,
-          },
-        });
+      await flagForRefund(tx, fact, p.groupCode);
       return { outcome: 'needs_refund' as const };
     }
     if (from === to || !paymentMachine.canActor(from, to, 'system')) return { outcome: 'unchanged' as const };
@@ -342,5 +324,29 @@ export async function recordAndApplyRazorpayEvent(
     if (!input.fact) return { fresh: true, outcome: null };
     const { outcome } = await applyRazorpayPayment(tx, input.fact);
     return { fresh: true, outcome };
+  });
+}
+
+/** Audit a captured payment that must be refunded (once per Razorpay payment id). */
+async function flagForRefund(tx: Tx, fact: RazorpayPaymentFact, groupCode: string): Promise<void> {
+  const [seen] = await tx
+    .select({ id: auditLog.id })
+    .from(auditLog)
+    .where(
+      and(
+        eq(auditLog.action, 'payment.captured_needs_refund'),
+        eq(auditLog.entityId, fact.providerOrderId),
+        sql`${auditLog.after} ->> 'providerPaymentId' = ${fact.providerPaymentId}`,
+      ),
+    )
+    .limit(1);
+  if (seen) return;
+  await tx.insert(auditLog).values({
+    actorUserId: null,
+    actorRole: 'system',
+    action: 'payment.captured_needs_refund',
+    entity: 'payment',
+    entityId: fact.providerOrderId,
+    after: { providerPaymentId: fact.providerPaymentId, amountPaise: fact.amountPaise, groupCode },
   });
 }

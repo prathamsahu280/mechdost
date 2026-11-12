@@ -271,3 +271,25 @@ describe('replays of a completed payment (security review 2026-11-12, second pas
     expect(flags).toHaveLength(0);
   });
 });
+
+describe('a second capture on a paid order (security review 2026-11-12, third pass)', () => {
+  it('is flagged for a refund once; the first payment stays the paid one', async () => {
+    const { placed, providerOrderId } = await placeOnline();
+    await applyRazorpayPayment(t(), captured(providerOrderId, placed.totalPaise, 'pay_FirstPaid01'));
+    const second = captured(providerOrderId, placed.totalPaise, 'pay_SecondPay01');
+    expect(await applyRazorpayPayment(t(), second)).toEqual({ outcome: 'needs_refund' });
+    expect(await applyRazorpayPayment(t(), second)).toEqual({ outcome: 'needs_refund' });
+    const flags = await db
+      .select()
+      .from(s.auditLog)
+      .where(
+        sql`${s.auditLog.action} = 'payment.captured_needs_refund' and ${s.auditLog.entityId} = ${providerOrderId}`,
+      );
+    expect(flags).toHaveLength(1);
+    const [payment] = await db
+      .select()
+      .from(s.payments)
+      .where(eq(s.payments.providerOrderId, providerOrderId));
+    expect(payment).toMatchObject({ status: 'paid', providerPaymentId: 'pay_FirstPaid01' });
+  });
+});
