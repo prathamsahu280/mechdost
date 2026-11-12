@@ -53,6 +53,18 @@ const schema = z
     RAZORPAY_KEY_SECRET: z.string().min(16).max(64).optional(),
     /** Webhook secret (Razorpay Dashboard → Webhooks); the webhook route answers 404 until it is set. */
     RAZORPAY_WEBHOOK_SECRET: z.string().min(8).max(128).optional(),
+    /** Email through Resend (plan 2026-11-13): sending is on when the key is set. */
+    RESEND_API_KEY: z
+      .string()
+      .regex(/^re_[A-Za-z0-9_]{20,}$/)
+      .optional(),
+    /** Sender domain: updates@, billing@, support@ (reply-to), promotions@, noreply@ (decision 2026-11-13). */
+    EMAIL_DOMAIN: z
+      .string()
+      .regex(/^[a-z0-9-]+(\.[a-z0-9-]+)+$/)
+      .default('mechdost.com'),
+    /** The website origin, for links in emails. */
+    WEB_BASE_URL: z.url().default('http://localhost:3000'),
     WHATSAPP_ENABLED: z.enum(['on', 'off']).default('off'),
     WHATSAPP_PHONE_NUMBER_ID: z
       .string()
@@ -116,6 +128,9 @@ const schema = z
       });
     }
     if (env.NODE_ENV !== 'production') return;
+    if (!env.WEB_BASE_URL.startsWith('https://')) {
+      ctx.addIssue({ code: 'custom', path: ['WEB_BASE_URL'], message: 'https required in production' });
+    }
     if (env.RAZORPAY_KEY_ID?.startsWith('rzp_test_')) {
       ctx.addIssue({
         code: 'custom',
@@ -204,6 +219,10 @@ function toConfig(env: z.infer<typeof schema>) {
             webhookSecret: env.RAZORPAY_WEBHOOK_SECRET ?? null,
           }
         : null,
+    email: env.RESEND_API_KEY
+      ? { apiKey: env.RESEND_API_KEY, domain: env.EMAIL_DOMAIN, webBaseUrl: env.WEB_BASE_URL }
+      : null,
+    webBaseUrl: env.WEB_BASE_URL,
     whatsapp:
       env.WHATSAPP_ENABLED === 'on' &&
       env.WHATSAPP_PHONE_NUMBER_ID &&

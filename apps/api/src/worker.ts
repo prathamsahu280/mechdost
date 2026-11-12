@@ -14,6 +14,7 @@ import {
 import { ConfigError, loadConfig } from './config';
 import { pollingPublisher, type LivePublisher } from './live/publisher';
 import { startDispatcher, type ChannelAdapter } from './notify/dispatcher';
+import { createEmailAdapter } from './notify/email';
 import { createWhatsAppAdapter } from './notify/whatsapp';
 import { startRelay } from './live/relay';
 import { createRtdbPublisher } from './live/rtdb';
@@ -40,10 +41,13 @@ const publisher: LivePublisher =
       })
     : pollingPublisher;
 const relay = startRelay({ db, publisher });
-const adapters: ChannelAdapter[] = config.whatsapp ? [createWhatsAppAdapter(config.whatsapp)] : [];
-// Encrypted payload fields (delivery codes) need the data keyring; WhatsApp without it must not start.
+const adapters: ChannelAdapter[] = [
+  ...(config.whatsapp ? [createWhatsAppAdapter(config.whatsapp)] : []),
+  ...(config.email ? [createEmailAdapter(config.email)] : []),
+];
+// Encrypted payload fields (delivery codes, invite tokens) need the data keyring; a channel without it must not start.
 let keyring: Keyring | null = null;
-if (config.whatsapp) {
+if (adapters.length > 0) {
   try {
     keyring = loadKeyring(process.env);
   } catch (err) {

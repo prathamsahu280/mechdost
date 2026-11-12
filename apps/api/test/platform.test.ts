@@ -103,6 +103,7 @@ describe('configuration', () => {
     TURNSTILE_SECRET_KEY: '0x-test-secret-0000',
     CORS_ORIGINS: 'https://mechdost.com',
     TRUSTED_PROXY_HOPS: '1',
+    WEB_BASE_URL: 'https://mechdost.com',
   };
 
   it('production needs at least one trusted proxy hop (else every user shares one rate-limit bucket; review C2)', () => {
@@ -183,6 +184,7 @@ describe('configuration', () => {
       TURNSTILE_SECRET_KEY: '0x-test-secret-0000',
       CORS_ORIGINS: 'https://mechdost.com, https://www.mechdost.com',
       TRUSTED_PROXY_HOPS: '1',
+      WEB_BASE_URL: 'https://mechdost.com',
     });
     expect(cfg.corsOrigins).toEqual(['https://mechdost.com', 'https://www.mechdost.com']);
     expect(cfg.apiDocs).toBe(false);

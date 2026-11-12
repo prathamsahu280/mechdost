@@ -25,7 +25,8 @@
     "./catalogue": "./src/catalogue.ts",
     "./vehicles": "./src/vehicles.ts",
     "./gst": "./src/gst.ts",
-    "./partners": "./src/partners.ts"
+    "./partners": "./src/partners.ts",
+    "./email-templates": "./src/email-templates.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
