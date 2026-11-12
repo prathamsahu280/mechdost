@@ -222,3 +222,22 @@ export function usePriceRequestsVersion(): number {
     () => 0,
   );
 }
+
+const EMPTY: readonly DemoPriceRequest[] = [];
+let pendingCache: { raw: string | null; list: readonly DemoPriceRequest[] } | null = null;
+
+function pendingSnapshot(): readonly DemoPriceRequest[] {
+  let raw: string | null;
+  try {
+    raw = window.localStorage.getItem(REQUESTS_KEY);
+  } catch {
+    return EMPTY;
+  }
+  if (pendingCache?.raw !== raw) pendingCache = { raw, list: pendingPriceRequests() };
+  return pendingCache.list;
+}
+
+/** Pending requests for the admin queue (empty during server render; no hydration mismatch). */
+export function usePendingPriceRequests(): readonly DemoPriceRequest[] {
+  return useSyncExternalStore(subscribe, pendingSnapshot, () => EMPTY);
+}

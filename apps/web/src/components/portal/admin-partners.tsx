@@ -17,6 +17,7 @@ import { track } from '@/lib/analytics';
 import { formatDate } from '@/lib/format';
 import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
 import { AdminInvites } from './admin-invites';
+import { AdminPriceRequests } from './admin-price-requests';
 
 type Action = 'pause' | 'suspend' | 'resume' | 'reactivate';
 const TARGET: Record<Action, PartnerStatus> = {
@@ -81,6 +82,8 @@ export function AdminPartners({ actor }: { actor: string }) {
       </div>
 
       <AdminInvites />
+
+      <AdminPriceRequests />
 
       <div role="tablist" aria-label={t('nav_partners')} className="flex flex-wrap gap-2">
         {(['shop', 'workshop', 'mechanic'] as const).map((k) => (

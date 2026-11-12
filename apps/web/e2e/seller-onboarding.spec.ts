@@ -153,3 +153,50 @@ test.describe('admin invites a seller', () => {
     await expect(page.getByText('This invite was withdrawn.', { exact: false })).toBeVisible();
   });
 });
+
+test.describe('price approval queue', () => {
+  test('the admin approves one price and rejects another with a reason', async ({ page }) => {
+    await offline(page);
+    await page.addInitScript(() => {
+      if (window.localStorage.getItem('mechdost-demo-price-requests')) return;
+      const base = {
+        shopSlug: 'sharma-auto-parts',
+        status: 'pending',
+        reason: null,
+        createdAt: new Date().toISOString(),
+        decidedAt: null,
+      };
+      window.localStorage.setItem(
+        'mechdost-demo-price-requests',
+        JSON.stringify([
+          {
+            ...base,
+            id: 'pr-1',
+            productSlug: 'castrol-activ-4t-20w40-900ml',
+            pricePaise: 44_000,
+            mrpPaise: 47_500,
+          },
+          {
+            ...base,
+            id: 'pr-2',
+            productSlug: 'exide-xltz4a-2w-battery',
+            pricePaise: 111_500,
+            mrpPaise: 112_000,
+          },
+        ]),
+      );
+    });
+    await signInAdmin(page, '/admin/partners');
+    const queue = page.getByRole('region', { name: 'Price requests' });
+    const castrol = queue.getByRole('listitem').filter({ hasText: 'Activ 4T 20W40 900 ml' });
+    await expect(castrol).toContainText('Sharma Auto Parts');
+    await expect(castrol).toContainText('₹440');
+    await castrol.getByRole('button', { name: 'Approve' }).click();
+    await expect(castrol).toHaveCount(0);
+
+    const exide = queue.getByRole('listitem').filter({ hasText: 'XLTZ4A' });
+    await exide.getByLabel('Reason').selectOption({ label: 'Above market price' });
+    await exide.getByRole('button', { name: 'Reject' }).click();
+    await expect(queue.getByText('No price changes are waiting.')).toBeVisible();
+  });
+});
