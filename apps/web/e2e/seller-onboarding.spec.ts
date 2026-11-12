@@ -111,3 +111,45 @@ test.describe('invite link', () => {
     await expect(page.getByText('This invite has already been used.', { exact: false })).toBeVisible();
   });
 });
+
+async function signInAdmin(page: Page, next: string) {
+  await page.goto(`/login?next=${encodeURIComponent(next)}`);
+  await page.getByLabel('Mobile number or email').fill('9000000003');
+  await page.getByLabel('Password', { exact: true }).fill('Raipur@2026');
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await page.getByLabel('One-time code').fill('123456');
+  await page.getByRole('button', { name: 'Verify and continue' }).click();
+  await expect(page).toHaveURL(new RegExp(`${next}$`));
+}
+
+test.describe('admin invites a seller', () => {
+  test('the invite is listed with its link, opens the invited form, and can be revoked', async ({ page }) => {
+    await offline(page);
+    await signInAdmin(page, '/admin/partners');
+    const card = page.getByRole('region', { name: 'Invite a seller' });
+    await card.getByLabel('Name').fill('Meena Sahu');
+    await card.getByLabel('Email').fill('meena@example.com');
+    await card.getByLabel('Mobile number').fill('9811122233');
+    await card.getByRole('button', { name: 'Create invite link' }).click();
+    const row = card.getByRole('listitem').filter({ hasText: 'Meena Sahu' });
+    await expect(row.getByText('Waiting for the seller')).toBeVisible();
+    await expect(row.getByRole('button', { name: 'Copy link' })).toBeVisible();
+    const href = await row.getByRole('link', { name: 'Open the invite' }).getAttribute('href');
+    expect(href).toMatch(/^\/partners\/invite\/[0-9a-f]{48}$/);
+
+    await page.goto(href ?? '/');
+    await expect(page.getByLabel('Your name')).toHaveValue('Meena Sahu');
+
+    await page.goto('/admin/partners');
+    await card
+      .getByRole('listitem')
+      .filter({ hasText: 'Meena Sahu' })
+      .getByRole('button', { name: 'Revoke' })
+      .click();
+    await expect(
+      card.getByRole('listitem').filter({ hasText: 'Meena Sahu' }).getByText('Revoked'),
+    ).toBeVisible();
+    await page.goto(href ?? '/');
+    await expect(page.getByText('This invite was withdrawn.', { exact: false })).toBeVisible();
+  });
+});
