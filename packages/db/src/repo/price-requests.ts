@@ -5,7 +5,6 @@ import {
   auditLog,
   productVariants,
   products,
-  shopAgreements,
   shopInventory,
   shopPincodes,
   shopPriceRequests,
@@ -285,12 +284,12 @@ export async function maybeGoLive(tx: Tx, shopId: string, actorUserId: string | 
     .where(eq(shops.id, shopId));
   if (shop?.status !== 'pending') return false;
   if (await agreementRequired(tx)) {
-    const [accepted] = await tx
-      .select({ id: shopAgreements.id })
-      .from(shopAgreements)
-      .where(eq(shopAgreements.shopId, shopId))
-      .limit(1);
-    if (!accepted) return false;
+    // The current version: a shop that accepted only an older text does not go live (security review).
+    const [accepted] = rowsOf<{ ok: boolean }>(
+      await tx.execute(sql`select exists (select 1 from shop_agreements a
+        where a.shop_id = ${shopId} and a.version = (select max(version) from agreement_versions)) as ok`),
+    );
+    if (!accepted?.ok) return false;
   }
   const [onSale] = await tx
     .select({ id: shopInventory.id })

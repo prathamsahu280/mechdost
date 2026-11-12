@@ -246,3 +246,20 @@ describe('going live', () => {
     expect(await status()).toBe('approved');
   });
 });
+
+describe('agreement versions (security review 2026-11-13)', () => {
+  it('only the current version can be accepted', async () => {
+    const shop = (await db.select().from(s.shops).limit(1))[0]!;
+    const v1 = (await db.select().from(s.agreementVersions))[0]!.version;
+    await publishAgreement(t(), {
+      textEn: 'MechDost seller agreement, version 2 (placeholder).',
+      textHi: 'MechDost विक्रेता अनुबंध, संस्करण 2 (अस्थायी पाठ)।',
+      staffUserId: staff,
+    });
+    await expect(acceptAgreement(t(), { shopId: shop.id, userId: staff, version: v1 })).rejects.toMatchObject(
+      {
+        code: 'AGREEMENT_OUTDATED',
+      },
+    );
+  });
+});

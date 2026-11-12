@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from 'node:crypto';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq, inArray, isNull } from 'drizzle-orm';
 import { InviteSchema } from '@mechdost/shared/partners';
 import { OPERATIONAL_SETTINGS } from '@mechdost/shared/settings';
 import { inviteMachine, type InviteStatus } from '@mechdost/shared/state';
@@ -10,6 +10,7 @@ import { recordServerEvent } from './events';
 import { enqueueNotification } from './notify';
 import { sealPayloadField } from './order-notifications';
 import type { Tx } from './orders';
+import type { CityScope } from './routing';
 
 /**
  * Admin invites to sellers (design 2026-11-13): a one-time link. Only the SHA-256 of the token is stored; the
@@ -33,7 +34,14 @@ async function inviteDays(db: Tx): Promise<number> {
 
 export async function createInvite(
   db: Tx,
-  input: { name: string; email: string; phone: string; staffUserId: string; keyring: Keyring },
+  input: {
+    name: string;
+    email: string;
+    phone: string;
+    staffUserId: string;
+    keyring: Keyring;
+    cityId: string;
+  },
 ): Promise<{ id: string; token: string; expiresAt: Date }> {
   const parsed = InviteSchema.safeParse({ name: input.name, email: input.email, phone: input.phone });
   if (!parsed.success) throw new ValidationError('Check the name, email and mobile number', 'INVITE_INVALID');
@@ -52,6 +60,7 @@ export async function createInvite(
             name: invite.name,
             email: invite.email,
             phone: invite.phone,
+            cityId: input.cityId,
             createdBy: input.staffUserId,
             expiresAt,
           })
@@ -89,6 +98,7 @@ export async function createInvite(
 
 export interface OpenInvite {
   id: string;
+  cityId: string;
   name: string;
   email: string;
   phone: string;
@@ -103,6 +113,7 @@ export async function findOpenInvite(db: Tx, token: string, lock = false): Promi
   const query = db
     .select({
       id: partnerInvites.id,
+      cityId: partnerInvites.cityId,
       name: partnerInvites.name,
       email: partnerInvites.email,
       phone: partnerInvites.phone,
@@ -137,14 +148,22 @@ export async function openInvite(
   };
 }
 
-export async function revokeInvite(db: Tx, input: { id: string; staffUserId: string }): Promise<void> {
+export async function revokeInvite(
+  db: Tx,
+  input: { id: string; staffUserId: string; scope?: CityScope },
+): Promise<void> {
   await db.transaction(async (tx) => {
     const [row] = await tx
-      .select({ status: partnerInvites.status, version: partnerInvites.version })
+      .select({
+        status: partnerInvites.status,
+        version: partnerInvites.version,
+        cityId: partnerInvites.cityId,
+      })
       .from(partnerInvites)
       .where(eq(partnerInvites.id, input.id))
       .for('update');
-    if (!row) throw new NotFoundError('Invite not found');
+    if (!row || (input.scope && !input.scope.all && !input.scope.cityIds.includes(row.cityId)))
+      throw new NotFoundError('Invite not found');
     inviteMachine.assert(row.status as InviteStatus, 'revoked', 'admin');
     await tx
       .update(partnerInvites)
@@ -160,8 +179,9 @@ export async function revokeInvite(db: Tx, input: { id: string; staffUserId: str
   });
 }
 
-/** Invites for the admin list (newest first). */
-export async function listInvites(db: Tx, opts: { limit?: number } = {}) {
+/** Invites in the staff member's cities, for the admin list. */
+export async function listInvites(db: Tx, scope: CityScope, opts: { limit?: number } = {}) {
+  if (!scope.all && scope.cityIds.length === 0) return [];
   return db
     .select({
       id: partnerInvites.id,
@@ -174,6 +194,7 @@ export async function listInvites(db: Tx, opts: { limit?: number } = {}) {
       createdAt: partnerInvites.createdAt,
     })
     .from(partnerInvites)
+    .where(scope.all ? undefined : inArray(partnerInvites.cityId, scope.cityIds))
     .orderBy(partnerInvites.createdAt)
     .limit(Math.min(Math.max(opts.limit ?? 50, 1), 200));
 }

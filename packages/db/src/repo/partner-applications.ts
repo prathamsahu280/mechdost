@@ -15,10 +15,8 @@ import {
   partnerInvites,
   pincodes,
   products,
-  roles,
   shopPincodes,
   shops,
-  userRoles,
 } from '../schema';
 import { ConflictError, NotFoundError, ValidationError } from './errors';
 import { recordServerEvent } from './events';
@@ -74,6 +72,8 @@ export async function submitSellerApplication(
     let reviewedBy: string | null = null;
     if (input.source === 'invite') {
       const invite = await findOpenInvite(tx, input.inviteToken, true);
+      if (invite.cityId !== place.city_id)
+        throw new ValidationError('This invite is for another city', 'INVITE_CITY');
       if (invite.phone !== app.phone)
         throw new ValidationError('Use the mobile number the invite was sent for', 'INVITE_PHONE');
       const used = await tx
@@ -569,40 +569,30 @@ export async function listApplications(
  * how many shops were linked. The phone was proved by OTP at sign-in (Q78), so the match is safe.
  */
 export async function linkApplicantOwner(db: Tx, input: { userId: string; phone: string }): Promise<number> {
-  const apps = await db
-    .select({ shopId: partnerApplications.convertedShopId, reviewedBy: partnerApplications.reviewedBy })
-    .from(partnerApplications)
-    .where(
-      and(
-        eq(partnerApplications.phone, input.phone),
-        eq(partnerApplications.status, 'approved'),
-        sql`${partnerApplications.convertedShopId} is not null`,
-      ),
-    );
-  let linked = 0;
-  for (const a of apps) {
-    if (!a.shopId) continue;
-    const [has] = await db
-      .select({ id: userRoles.id })
-      .from(userRoles)
-      .innerJoin(roles, eq(roles.id, userRoles.roleId))
+  return db.transaction(async (tx) => {
+    // Claimed once (owner_user_id): a removed owner is never granted again by signing in (security review).
+    const claimed = await tx
+      .update(partnerApplications)
+      .set({ ownerUserId: input.userId })
       .where(
         and(
-          eq(userRoles.userId, input.userId),
-          eq(userRoles.shopId, a.shopId),
-          eq(roles.key, 'seller_owner'),
+          eq(partnerApplications.phone, input.phone),
+          eq(partnerApplications.status, 'approved'),
+          sql`${partnerApplications.convertedShopId} is not null`,
+          sql`${partnerApplications.ownerUserId} is null`,
         ),
       )
-      .limit(1);
-    if (has) continue;
-    await grantRole(db, {
-      userId: input.userId,
-      role: 'seller_owner',
-      shopId: a.shopId,
-      grantedBy: a.reviewedBy,
-      reason: 'seller application approved',
-    });
-    linked += 1;
-  }
-  return linked;
+      .returning({ shopId: partnerApplications.convertedShopId, reviewedBy: partnerApplications.reviewedBy });
+    for (const a of claimed) {
+      if (!a.shopId) continue;
+      await grantRole(tx, {
+        userId: input.userId,
+        role: 'seller_owner',
+        shopId: a.shopId,
+        grantedBy: a.reviewedBy,
+        reason: 'seller application approved',
+      });
+    }
+    return claimed.length;
+  });
 }

@@ -16,6 +16,7 @@ import {
   createInvite,
   getApplication,
   linkApplicantOwner,
+  listInvites,
   openInvite,
   rejectApplication,
   revokeInvite,
@@ -40,6 +41,8 @@ let db: TestDb;
 let client: Awaited<ReturnType<typeof createTestDb>>['client'];
 const t = () => db as unknown as Tx;
 let staff = '';
+let raipurId = '';
+const cityOf = () => raipurId;
 let n = 0;
 
 const application = (over: Partial<SellerApplication> = {}): SellerApplication => {
@@ -66,6 +69,7 @@ beforeAll(async () => {
   await seedRaipurDemo(t(), fixture);
   await syncRbacCatalogue(t());
   staff = (await db.insert(s.users).values({ firebaseUid: 'fb-apps-staff' }).returning())[0]!.id;
+  raipurId = (await db.select().from(s.cities).limit(1))[0]!.id;
 });
 
 afterAll(async () => {
@@ -115,6 +119,7 @@ describe('invites', () => {
       phone: '+919812345670',
       staffUserId: staff,
       keyring,
+      cityId: cityOf(),
     });
     expect(invite.token).toMatch(/^[A-Za-z0-9_-]{43}$/);
     expect(await openInvite(t(), invite.token)).toMatchObject({ name: 'Asha Verma', phoneLast4: '5670' });
@@ -145,6 +150,7 @@ describe('invites', () => {
       phone: '+919812345671',
       staffUserId: staff,
       keyring,
+      cityId: cityOf(),
     });
     const [row] = await db.select().from(s.partnerInvites).where(eq(s.partnerInvites.phone, '+919812345671'));
     await revokeInvite(t(), { id: row!.id, staffUserId: staff });
@@ -155,6 +161,7 @@ describe('invites', () => {
       phone: '+919812345672',
       staffUserId: staff,
       keyring,
+      cityId: cityOf(),
     });
     await db
       .update(s.partnerInvites)
@@ -167,6 +174,7 @@ describe('invites', () => {
       phone: '+919812345673',
       staffUserId: staff,
       keyring,
+      cityId: cityOf(),
     });
     const r = await submitSellerApplication(t(), {
       application: application({ phone: '+919812345673' }), // the GSTIN used by the public applications above
@@ -251,5 +259,35 @@ describe('review', () => {
     const grants = await db.select().from(s.userRoles).where(eq(s.userRoles.userId, user.id));
     expect(grants).toHaveLength(1);
     expect(grants[0]?.shopId).toBeTruthy();
+  });
+});
+
+describe('security review 2026-11-13', () => {
+  it('an owner link happens once: a removed owner is not re-granted on the next sign-in', async () => {
+    const user = (await db.insert(s.users).values({ firebaseUid: 'fb-owner-2' }).returning())[0]!;
+    // The application's owner was already linked to fb-owner-1 above; another account with that phone gets nothing.
+    expect(await linkApplicantOwner(t(), { userId: user.id, phone: '+919811111111' })).toBe(0);
+    const owner = (await db.select().from(s.users).where(eq(s.users.firebaseUid, 'fb-owner-1')))[0]!;
+    await db.delete(s.userRoles).where(eq(s.userRoles.userId, owner.id)); // an admin removed the owner
+    expect(await linkApplicantOwner(t(), { userId: owner.id, phone: '+919811111111' })).toBe(0);
+  });
+
+  it('an invite belongs to a city: the application must be in it, and other cities cannot see or revoke it', async () => {
+    const raipur = (await db.select().from(s.cities).limit(1))[0]!;
+    const invite = await createInvite(t(), {
+      name: 'Esha Patel',
+      email: 'esha@example.com',
+      phone: '+919812345679',
+      staffUserId: staff,
+      keyring,
+      cityId: raipur.id,
+    });
+    const [row] = await db.select().from(s.partnerInvites).where(eq(s.partnerInvites.phone, '+919812345679'));
+    expect(row?.cityId).toBe(raipur.id);
+    expect(await listInvites(t(), { all: false, cityIds: [] })).toEqual([]);
+    await expect(
+      revokeInvite(t(), { id: row!.id, staffUserId: staff, scope: { all: false, cityIds: [] } }),
+    ).rejects.toMatchObject({ status: 404 });
+    expect(invite.token).toBeTruthy();
   });
 });

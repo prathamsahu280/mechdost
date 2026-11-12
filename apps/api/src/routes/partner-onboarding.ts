@@ -3,6 +3,7 @@ import type { Context } from 'hono';
 import {
   acceptAgreement,
   approveApplication,
+  cityIdByCode,
   cityScopeFrom,
   createInvite,
   currentAgreement,
@@ -212,6 +213,8 @@ export function partnerAdminRoutes(deps: AppDeps, cache: SessionCache) {
   }
   app.on('POST', '/admin/partner-applications/:code/approve', requirePermission('partners:approve'));
   app.on('POST', '/admin/partner-applications/:code/reject', requirePermission('partners:approve'));
+  // An invite pre-approves a seller, so creating one needs the approval permission (security review 2026-11-13).
+  app.on('POST', '/admin/partner-invites', requirePermission('partners:approve'));
   const scope = (c: Context<AppEnv>, permission: string) => cityScopeFrom(c.get('auth').grants, permission);
 
   app.openapi(
@@ -335,7 +338,14 @@ export function partnerAdminRoutes(deps: AppDeps, cache: SessionCache) {
       tags: ['admin'],
       summary: 'Invite a seller: emails a one-time link (also returned once, to copy)',
       security: [{ bearerAuth: [] }],
-      request: body(InviteSchema),
+      request: body(
+        InviteSchema.extend({
+          cityCode: z
+            .string()
+            .regex(/^[A-Z]{3}$/)
+            .optional(),
+        }),
+      ),
       responses: {
         201: json(
           z.object({ id: z.string(), token: z.string(), link: z.string(), expiresAt: z.string() }),
@@ -346,9 +356,14 @@ export function partnerAdminRoutes(deps: AppDeps, cache: SessionCache) {
       },
     }),
     async (c) => {
-      const b = c.req.valid('json');
+      const { cityCode, ...b } = c.req.valid('json');
+      const cityId = await cityIdByCode(deps.db, cityCode ?? deps.config.defaultCityCode);
+      const allowed = scope(c, 'partners:approve');
+      if (!allowed.all && !allowed.cityIds.includes(cityId))
+        throw new ApiError(403, 'CITY_NOT_ALLOWED', 'You cannot invite sellers in this city');
       const r = await createInvite(deps.db, {
         ...b,
+        cityId,
         staffUserId: c.get('auth').user.id,
         keyring: keyringOf(deps),
       });
@@ -366,7 +381,7 @@ export function partnerAdminRoutes(deps: AppDeps, cache: SessionCache) {
       security: [{ bearerAuth: [] }],
       responses: { 200: json(z.object({ items: z.array(Loose) }), 'Invites'), ...errorResponses },
     }),
-    async (c) => c.json({ items: await listInvites(deps.db) }, 200),
+    async (c) => c.json({ items: await listInvites(deps.db, scope(c, 'partners:write')) }, 200),
   );
 
   app.openapi(
@@ -380,7 +395,11 @@ export function partnerAdminRoutes(deps: AppDeps, cache: SessionCache) {
       responses: { 200: json(z.object({ status: z.string() }), 'Revoked'), ...conflict, ...errorResponses },
     }),
     async (c) => {
-      await revokeInvite(deps.db, { id: c.req.valid('param').id, staffUserId: c.get('auth').user.id });
+      await revokeInvite(deps.db, {
+        id: c.req.valid('param').id,
+        staffUserId: c.get('auth').user.id,
+        scope: scope(c, 'partners:write'),
+      });
       return c.json({ status: 'revoked' }, 200);
     },
   );

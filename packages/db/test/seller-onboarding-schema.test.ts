@@ -22,6 +22,7 @@ const t = () => db as unknown as Tx;
 let shopId = '';
 let variantId = '';
 let staffId = '';
+let cityId = '';
 
 const pgCode = async (p: Promise<unknown>) => {
   try {
@@ -39,6 +40,7 @@ beforeAll(async () => {
   shopId = (await db.select({ id: s.shops.id }).from(s.shops).limit(1))[0]!.id;
   variantId = (await db.select({ id: s.productVariants.id }).from(s.productVariants).limit(1))[0]!.id;
   staffId = (await db.insert(s.users).values({ firebaseUid: 'fb-onboarding-staff' }).returning())[0]!.id;
+  cityId = (await db.select().from(s.cities).limit(1))[0]!.id;
 });
 
 afterAll(async () => {
@@ -104,6 +106,7 @@ describe('seller onboarding schema (migration 0038)', () => {
       email: 'asha@example.com',
       phone: '+919812345670',
       createdBy: staffId,
+      cityId,
       expiresAt: new Date(Date.now() + 86_400_000),
     };
     expect(await pgCode(db.insert(s.partnerInvites).values(invite))).toBe('ok');

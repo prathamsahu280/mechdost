@@ -334,6 +334,10 @@ export const partnerInvites = pgTable(
     name: text().notNull(),
     email: citext().notNull(),
     phone: text().notNull(),
+    /** The city the inviting staff member may approve sellers for; the application must be in it. */
+    cityId: uuid()
+      .notNull()
+      .references(() => cities.id, { onDelete: 'restrict' }),
     status: text().notNull().default('sent'),
     createdBy: uuid()
       .notNull()
@@ -353,6 +357,7 @@ export const partnerInvites = pgTable(
       .where(sql`${t.status} = 'sent'`),
     index().on(t.createdBy),
     index().on(t.status, t.expiresAt),
+    index().on(t.cityId),
   ],
 );
 
@@ -390,6 +395,8 @@ export const partnerApplications = pgTable(
     status: text().notNull().default('new'),
     reasonCode: text(),
     convertedShopId: uuid().references(() => shops.id, { onDelete: 'set null' }),
+    /** Who became the shop's owner from this application (linked once, at their first sign-in; review 2026-11-13). */
+    ownerUserId: uuid().references(() => users.id, { onDelete: 'set null' }),
     convertedWorkshopId: uuid(),
     reviewedBy: uuid().references(() => users.id, { onDelete: 'set null' }),
     reviewNote: text(),
@@ -428,6 +435,7 @@ export const partnerApplications = pgTable(
     index().on(t.gstinIndex),
     index().on(t.inviteId),
     index().on(t.phone),
+    index().on(t.ownerUserId),
   ],
 );
 

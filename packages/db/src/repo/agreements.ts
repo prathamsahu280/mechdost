@@ -1,6 +1,6 @@
 import { desc, eq, sql } from 'drizzle-orm';
 import { agreementVersions, auditLog, shopAgreements, shops } from '../schema';
-import { NotFoundError, ValidationError } from './errors';
+import { ConflictError, NotFoundError, ValidationError } from './errors';
 import { recordServerEvent } from './events';
 import type { Tx } from './orders';
 import { maybeGoLive } from './price-requests';
@@ -68,11 +68,11 @@ export async function acceptAgreement(
   input: { shopId: string; userId: string; version: number },
 ): Promise<{ live: boolean }> {
   return db.transaction(async (tx) => {
-    const [v] = await tx
-      .select({ version: agreementVersions.version })
-      .from(agreementVersions)
-      .where(eq(agreementVersions.version, input.version));
-    if (!v) throw new NotFoundError('No such agreement version');
+    const current = await currentAgreement(tx);
+    if (!current) throw new NotFoundError('No agreement has been published yet');
+    // Only the current text can be accepted (security review 2026-11-13).
+    if (current.version !== input.version)
+      throw new ConflictError('A newer agreement has been published; read it again', 'AGREEMENT_OUTDATED');
     const [shop] = await tx.select({ cityId: shops.cityId }).from(shops).where(eq(shops.id, input.shopId));
     if (!shop) throw new NotFoundError('Shop not found');
     const inserted = await tx
