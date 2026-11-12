@@ -1,4 +1,5 @@
 import {
+  ConflictError,
   applyRazorpayPayment,
   onlineGroupOfUser,
   openPaymentForGroup,
@@ -26,6 +27,7 @@ export async function ensureRazorpayOrder(
   db: Tx,
   gateway: RazorpayGateway,
   input: { userId: string; groupCode: string },
+  retried = false,
 ): Promise<CheckoutHandle | null> {
   const group = await onlineGroupOfUser(db, input);
   // Paid, expired, or every part cancelled (the group then expires): nothing to pay.
@@ -49,11 +51,16 @@ export async function ensureRazorpayOrder(
   if (created.amountPaise !== amountPaise || created.currency !== 'INR')
     throw new ApiError(502, 'PAYMENT_PROVIDER_MISMATCH', 'The payment provider returned a different amount');
   // Two overlapping place calls: the first stored Razorpay order wins and this one is never shown (finding 2).
-  const stored = await recordRazorpayOrder(db, {
-    groupId: group.id,
-    providerOrderId: created.id,
-    amountPaise,
-  });
+  // A part cancelled meanwhile changes what is payable: start once more with the new amount (security review).
+  let stored;
+  try {
+    stored = await recordRazorpayOrder(db, { groupId: group.id, providerOrderId: created.id, amountPaise });
+  } catch (err) {
+    if (!retried && err instanceof ConflictError && err.code === 'PAYABLE_CHANGED')
+      return ensureRazorpayOrder(db, gateway, input, true);
+    if (err instanceof ConflictError && err.code === 'PAYMENT_CLOSED') return null;
+    throw err;
+  }
   return {
     keyId: gateway.keyId,
     orderId: stored.providerOrderId,

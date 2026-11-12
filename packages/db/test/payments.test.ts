@@ -327,12 +327,19 @@ describe('final review 2026-11-12', () => {
   it('a capture on another Razorpay order of an already paid group is flagged for a refund, never a crash', async () => {
     const { groupId, placed, providerOrderId } = await placeOnline();
     await applyRazorpayPayment(t(), captured(providerOrderId, placed.totalPaise));
-    const late = await recordRazorpayOrder(t(), {
-      groupId,
-      providerOrderId: `${providerOrderId}_late`,
-      amountPaise: placed.totalPaise,
-    });
-    expect(await applyRazorpayPayment(t(), captured(late.providerOrderId, placed.totalPaise))).toEqual({
+    // Recording refuses a paid group, so the late order is inserted directly (a row from before that check).
+    await expect(
+      recordRazorpayOrder(t(), {
+        groupId,
+        providerOrderId: `${providerOrderId}_x`,
+        amountPaise: placed.totalPaise,
+      }),
+    ).rejects.toMatchObject({ code: 'PAYMENT_CLOSED' });
+    const [late] = await db
+      .insert(s.payments)
+      .values({ groupId, providerOrderId: `${providerOrderId}_late`, amountPaise: placed.totalPaise })
+      .returning();
+    expect(await applyRazorpayPayment(t(), captured(late!.providerOrderId, placed.totalPaise))).toEqual({
       outcome: 'needs_refund',
     });
     expect(await groupStatus(groupId)).toBe('paid');

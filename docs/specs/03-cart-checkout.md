@@ -67,7 +67,8 @@ Plan `docs/superpowers/plans/2026-11-12-razorpay-checkout-backend.md`; user chos
   - A capture extends the order's stock holds to `checkout.cod_reservation_minutes`, so a paid order keeps its stock until staff route it.
   - A capture on another Razorpay order of a group that is already paid is `needs_refund` (never an error loop).
   - Cancelling one part of an unpaid online order expires its open Razorpay order; the next payment asks only for the live parts.
-  - The payment window is `checkout.online_payment_minutes` of the order's **city** (else global), the same value that set the stock hold. One group failing never stops the rest of the expiry run.
+  - The payment window is `checkout.online_payment_minutes` of the order's **city** (else global), the same value that set the stock hold. The expiry query decides the window in SQL, so a batch holds only due groups (no starvation); one group failing never stops the rest.
+  - The Razorpay order is stored under the group lock (the lock a part cancel takes) after re-checking the payable amount: a part cancelled while Razorpay was creating the order makes the API start once more with the new amount (`PAYABLE_CHANGED`), never store the old total.
   - Production refuses to start with Razorpay keys but no `RAZORPAY_WEBHOOK_SECRET`.
   - The website: a retry of a paid attempt is a success; a closed window or changed details start a new order; once Razorpay took the money, a failed confirmation says "not confirmed yet" (it checks the order, which the webhook may have confirmed), never "choose cash on delivery".
 - **Website:** checkout offers "Pay online" in real sign-in builds (`apps/web/src/lib/payments/pay-online.ts`); local test steps in `docs/runbooks/payments.md`.

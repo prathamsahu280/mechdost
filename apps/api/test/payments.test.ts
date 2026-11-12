@@ -37,13 +37,18 @@ class FakeRazorpay implements RazorpayGateway {
   keyId = ENV.RAZORPAY_KEY_ID;
   ordersCreated = 0;
   payments = new Map<string, RazorpayPayment>();
-  createOrder(input: { amountPaise: number }) {
+  /** Runs once while the next Razorpay order is being created (to race a cancel against it). */
+  duringCreate: (() => Promise<void>) | null = null;
+  async createOrder(input: { amountPaise: number }) {
     this.ordersCreated += 1;
-    return Promise.resolve({
+    const hook = this.duringCreate;
+    this.duringCreate = null;
+    if (hook) await hook();
+    return {
       id: `order_Fake${String(this.ordersCreated).padStart(6, '0')}`,
       amountPaise: input.amountPaise,
-      currency: 'INR',
-    });
+      currency: 'INR' as const,
+    };
   }
   fetchPayment(id: string) {
     const p = this.payments.get(id);
@@ -317,5 +322,28 @@ describe('final review 2026-11-12', () => {
     } finally {
       setLogSink(() => undefined);
     }
+  });
+
+  it('a part cancelled while Razorpay creates the order is never charged (security review 2026-11-12)', async () => {
+    const dev = await person('04');
+    const user = (await ctx.db.select().from(s.users)).find((u) => u.firebaseUid === 'pay-04');
+    razorpay.duringCreate = async () => {
+      const groups = (await ctx.db.select().from(s.orderGroups)).filter((g) => g.userId === user!.id);
+      const subs = (await ctx.db.select().from(s.orders)).filter((o) => o.groupId === groups[0]!.id);
+      const first = subs.sort((a, b) => a.code.localeCompare(b.code))[0]!;
+      await cancelMyOrder(ctx.db, {
+        userId: user!.id,
+        code: first.code,
+        reasonCode: 'changed_mind',
+        expectedVersion: first.version,
+      });
+    };
+    const placed = await placeOnline(dev, 'payments-api-race-000001', TWO_SHOP_CART);
+    expect(placed.status).toBe(201);
+    const kept = [...placed.body.orders].sort((a, b) => a.code.localeCompare(b.code))[1]!;
+    expect(placed.body.razorpay?.amountPaise).toBe(kept.totalPaise);
+    const group = (await ctx.db.select().from(s.orderGroups)).find((g) => g.code === placed.body.code);
+    const stored = (await ctx.db.select().from(s.payments)).filter((p) => p.groupId === group!.id);
+    expect(stored.map((p) => p.amountPaise)).toEqual([kept.totalPaise]);
   });
 });

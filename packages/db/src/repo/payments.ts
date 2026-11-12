@@ -1,11 +1,11 @@
-import { and, desc, eq, inArray, lt, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, sql, type SQL } from 'drizzle-orm';
 import { paymentMachine, type PaymentStatus } from '@mechdost/shared/state';
-import { OPERATIONAL_SETTINGS } from '@mechdost/shared/settings';
 import { auditLog, orderGroups, orders, payments, reservations, webhookEvents } from '../schema';
 import { CHECKOUT_SETTINGS, settingOr } from './checkout';
 import { cancelInTx } from './customer-orders';
 import { ConflictError, NotFoundError } from './errors';
 import { recordServerEvent } from './events';
+import { rowsOf } from './sql-rows';
 import type { Tx } from './orders';
 
 /**
@@ -69,35 +69,54 @@ export async function onlineGroupOfUser(
     )
     .limit(1);
   if (!g) throw new NotFoundError('Order not found');
-  const [row] = await db
-    .select({ payable: sql<string>`coalesce(sum(${orders.totalPaise}), 0)` })
-    .from(orders)
-    .where(and(eq(orders.groupId, g.id), sql`${orders.status} not in ('cancelled', 'rejected')`));
-  return { ...g, payablePaise: Number(row?.payable ?? 0) };
+  return { ...g, payablePaise: await payableOf(db, g.id) };
 }
 
 /**
  * Store the Razorpay order before the client sees it. A group has one open Razorpay order
  * (`payments_one_open_per_group_uq`): when two place calls overlap, the second gets the first one's order and its
  * own Razorpay order is never shown, so it cannot be paid (final review 2026-11-12, finding 2).
+ * The group row is locked (the same lock a part cancel takes in `settleGroupPayment`) and the amount still payable
+ * is checked again: a part cancelled while Razorpay was creating the order gives `PAYABLE_CHANGED`, never a stored
+ * order for the old total (security review 2026-11-12).
  */
 export async function recordRazorpayOrder(
   db: Tx,
   input: { groupId: string; providerOrderId: string; amountPaise: number },
 ): Promise<PaymentRow> {
+  return db.transaction(async (tx) => {
+    const [group] = await tx
+      .select({ status: orderGroups.paymentStatus })
+      .from(orderGroups)
+      .where(eq(orderGroups.id, input.groupId))
+      .for('update');
+    if (!group || !OPEN.includes(group.status as PaymentStatus))
+      throw new ConflictError('The order cannot be paid any more', 'PAYMENT_CLOSED');
+    if ((await payableOf(tx, input.groupId)) !== input.amountPaise)
+      throw new ConflictError('The amount to pay changed', 'PAYABLE_CHANGED');
+    const [row] = await tx
+      .insert(payments)
+      .values({
+        groupId: input.groupId,
+        providerOrderId: input.providerOrderId,
+        amountPaise: input.amountPaise,
+      })
+      .onConflictDoNothing()
+      .returning(columns);
+    if (row) return row;
+    const open = await openPaymentForGroup(tx, input.groupId);
+    if (!open) throw new ConflictError('The order cannot be paid any more', 'PAYMENT_CLOSED');
+    return open;
+  });
+}
+
+/** What is still payable in a group: the sub-orders not cancelled or rejected. */
+async function payableOf(db: Tx, groupId: string): Promise<number> {
   const [row] = await db
-    .insert(payments)
-    .values({
-      groupId: input.groupId,
-      providerOrderId: input.providerOrderId,
-      amountPaise: input.amountPaise,
-    })
-    .onConflictDoNothing()
-    .returning(columns);
-  if (row) return row;
-  const open = await openPaymentForGroup(db, input.groupId);
-  if (!open) throw new ConflictError('The order cannot be paid any more', 'PAYMENT_CLOSED');
-  return open;
+    .select({ payable: sql<string>`coalesce(sum(${orders.totalPaise}), 0)` })
+    .from(orders)
+    .where(and(eq(orders.groupId, groupId), sql`${orders.status} not in ('cancelled', 'rejected')`));
+  return Number(row?.payable ?? 0);
 }
 
 /** The payment behind a Razorpay order, only for the customer who placed it (404 otherwise). */
@@ -260,28 +279,29 @@ export async function applyRazorpayPayment(
  * stock hold (final review 2026-11-12, finding 7). One group failing never stops the rest. Run by the worker.
  */
 export async function expireUnpaidOnlineOrders(db: Tx): Promise<{ closed: number; failed: number }> {
-  const shortest = OPERATIONAL_SETTINGS['checkout.online_payment_minutes'].min;
-  const due = await db
-    .select({
-      id: orderGroups.id,
-      cityId: orderGroups.cityId,
-      ageMinutes: sql<string>`extract(epoch from now() - ${orderGroups.createdAt}) / 60`,
-    })
-    .from(orderGroups)
-    .where(
-      and(
-        eq(orderGroups.paymentMethod, 'online'),
-        inArray(orderGroups.paymentStatus, [...OPEN]),
-        lt(orderGroups.createdAt, sql`now() - make_interval(mins => ${shortest})`),
-      ),
-    )
-    .limit(100);
+  const key = CHECKOUT_SETTINGS.onlinePaymentMinutes.key;
+  // Same choice as `settingOr`: the city row if there is one, else the global row; a value that is not a
+  // non-negative integer falls back to the registry default. Deciding it in SQL means a batch holds only groups
+  // that are due, so groups of a city with a long window never crowd out due ones (security review 2026-11-12).
+  const valid = (v: SQL) =>
+    sql`case when jsonb_typeof(${v}) = 'number' and (${v})::text ~ '^[0-9]{1,6}$' then ((${v})::text)::int end`;
+  const due = rowsOf<{ id: string }>(
+    await db.execute(sql`
+      select g.id from order_groups g
+      left join settings cs on cs.key = ${key} and cs.city_id = g.city_id
+      left join settings gs on gs.key = ${key} and gs.city_id is null
+      where g.payment_method = 'online'
+        and g.payment_status in ('created', 'attempted', 'failed')
+        and g.created_at < now() - make_interval(mins => coalesce(
+          case when cs.id is not null then ${valid(sql`cs.value`)} else ${valid(sql`gs.value`)} end,
+          ${CHECKOUT_SETTINGS.onlinePaymentMinutes.fallback}))
+      order by g.created_at
+      limit 100`),
+  );
   let closed = 0;
   let failed = 0;
   for (const g of due) {
     try {
-      const minutes = await settingOr(db, g.cityId, CHECKOUT_SETTINGS.onlinePaymentMinutes);
-      if (Number(g.ageMinutes) < minutes) continue;
       if (await expireGroup(db, g.id)) closed += 1;
     } catch {
       failed += 1;
