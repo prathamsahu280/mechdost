@@ -275,4 +275,29 @@ describe('kept holds (review B8)', () => {
     expect(after!.id).toBe(held!.id); // the same hold was kept…
     expect(after!.expiresAt.getTime() - Date.now()).toBeGreaterThan(10 * 60_000); // …and renewed
   });
+
+  it('shops with only a GST enrolment number, or a blocked listing, are never offered (design 2026-11-13)', async () => {
+    const code = await place('routing-key-enrolled01');
+    const offered = async () =>
+      (await getRoutingOrder(t(), raipur, code, 'en')).shops.filter((x) => x.eligible).map((x) => x.shopId);
+    expect(await offered()).toContain(shopId['Gupta Lubes & Spares']);
+    await db
+      .update(s.shops)
+      .set({ gstStatus: 'enrolled' })
+      .where(eq(s.shops.id, shopId['Gupta Lubes & Spares']!));
+    expect(await offered()).not.toContain(shopId['Gupta Lubes & Spares']);
+    await db
+      .update(s.shops)
+      .set({ gstStatus: 'registered' })
+      .where(eq(s.shops.id, shopId['Gupta Lubes & Spares']!));
+    await db
+      .update(s.shopInventory)
+      .set({ adminBlocked: true, blockedReasonCode: 'above_market' })
+      .where(eq(s.shopInventory.shopId, shopId['Gupta Lubes & Spares']!));
+    expect(await offered()).not.toContain(shopId['Gupta Lubes & Spares']);
+    await db
+      .update(s.shopInventory)
+      .set({ adminBlocked: false, blockedReasonCode: null })
+      .where(eq(s.shopInventory.shopId, shopId['Gupta Lubes & Spares']!));
+  });
 });

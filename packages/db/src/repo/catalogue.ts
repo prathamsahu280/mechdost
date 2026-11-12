@@ -117,8 +117,10 @@ async function resolvePlace(db: Tx, cityCode: string, pincode: string | null): P
  * With a PIN: only shops covering it, nearest first. Without: the city's lowest price.
  */
 function offerLateral(place: CataloguePlace, variants: SQL): SQL {
-  const buyable = sql`v.status = 'active' and si.active and si.on_hand - si.reserved > 0
-    and s.status = 'approved' and not (s.busy and (s.busy_until is null or s.busy_until > now()))`;
+  // Blocked listings and shops with only a GST enrolment number are never priced (design 2026-11-13).
+  const buyable = sql`v.status = 'active' and si.active and not si.admin_blocked and si.on_hand - si.reserved > 0
+    and s.status = 'approved' and s.gst_status = 'registered'
+    and not (s.busy and (s.busy_until is null or s.busy_until > now()))`;
   if (place.pincode) {
     return sql`left join lateral (
       select si.selling_paise as price, v.mrp_paise as mrp, sp.shipping_paise as shipping,

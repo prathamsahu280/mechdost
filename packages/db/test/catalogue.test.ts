@@ -301,3 +301,26 @@ describe('vehicle types (decision 2026-11-12: fitment by type until Q76)', () =>
     await expect(product('ev-tagged', { vehicleTypes: ['EV'] })).rejects.toThrow();
   });
 });
+
+describe('shops that are never used for prices (design 2026-11-13)', () => {
+  it('a shop with only a GST enrolment number, and a listing staff blocked, are never priced', async () => {
+    const page = () => getCatalogueProduct(t(), 'exide-xltz4a', { ...base, pincode: '492001', locale: 'en' });
+    const before = (await page()).variants[0]?.offer?.seller;
+    expect(before).toBeTruthy();
+    const [nearest] = await db.select().from(s.shops).where(eq(s.shops.name, before!));
+    await db.update(s.shops).set({ gstStatus: 'enrolled' }).where(eq(s.shops.id, nearest!.id));
+    expect((await page()).variants[0]?.offer?.seller).not.toBe(before);
+    await db.update(s.shops).set({ gstStatus: 'registered' }).where(eq(s.shops.id, nearest!.id));
+    // Blocked by staff but switched back on by hand: still never priced.
+    await db
+      .update(s.shopInventory)
+      .set({ adminBlocked: true, blockedReasonCode: 'above_market', active: true })
+      .where(eq(s.shopInventory.shopId, nearest!.id));
+    expect((await page()).variants[0]?.offer?.seller).not.toBe(before);
+    await db
+      .update(s.shopInventory)
+      .set({ adminBlocked: false, blockedReasonCode: null })
+      .where(eq(s.shopInventory.shopId, nearest!.id));
+    expect((await page()).variants[0]?.offer?.seller).toBe(before);
+  });
+});

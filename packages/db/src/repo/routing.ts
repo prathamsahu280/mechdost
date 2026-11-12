@@ -238,7 +238,7 @@ export async function rankShopsForOrder(
       select s.id as shop_id, s.name, s.name_hi,
         st_distance(s.location, (select centroid from pincodes where pincode = o.pincode)) as dist_m,
         (select count(*) from items i join shop_inventory si on si.variant_id = i.variant_id and si.shop_id = s.id
-           and si.active
+           and si.active and not si.admin_blocked
            and si.on_hand - si.reserved + coalesce((select sum(r.qty) from reservations r
              where r.order_id = o.id and r.status = 'active' and r.inventory_id = si.id), 0) >= i.qty)::int as stocked,
         (select count(*) from items)::int as total,
@@ -250,7 +250,7 @@ export async function rankShopsForOrder(
           and a.status in ('declined', 'expired')) as tried
       from o
       join shop_pincodes sp on sp.pincode = o.pincode and sp.active
-      join shops s on s.id = sp.shop_id and s.status = 'approved'
+      join shops s on s.id = sp.shop_id and s.status = 'approved' and s.gst_status = 'registered'
         and not (s.busy and (s.busy_until is null or s.busy_until > now()))
       left join lateral (
         select count(*) filter (where a.status = 'accepted')::int as accepted,

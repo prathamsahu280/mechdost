@@ -206,8 +206,8 @@ async function quoteInternal(
         from shop_inventory si
         join shops s on s.id = si.shop_id
         join shop_pincodes sp on sp.shop_id = s.id and sp.pincode = ${input.pincode} and sp.active
-        where p.id is not null and si.variant_id = v.id and si.active and si.on_hand - si.reserved >= l.qty
-          and s.status = 'approved' and not (s.busy and (s.busy_until is null or s.busy_until > now()))
+        where p.id is not null and si.variant_id = v.id and si.active and not si.admin_blocked
+          and si.on_hand - si.reserved >= l.qty and s.status = 'approved' and s.gst_status = 'registered' and not (s.busy and (s.busy_until is null or s.busy_until > now()))
         order by st_distance(s.location, (select centroid from pincodes where pincode = ${input.pincode})) asc nulls last,
           si.selling_paise, s.id
         limit 1) o on true
@@ -216,7 +216,8 @@ async function quoteInternal(
         from shop_inventory si
         join shops s on s.id = si.shop_id
         join shop_pincodes sp on sp.shop_id = s.id and sp.pincode = ${input.pincode} and sp.active
-        where p.id is not null and si.variant_id = v.id and si.active and s.status = 'approved'
+        where p.id is not null and si.variant_id = v.id and si.active and not si.admin_blocked
+          and s.status = 'approved' and s.gst_status = 'registered'
           and not (s.busy and (s.busy_until is null or s.busy_until > now()))) best on true`),
   );
   const bySku = new Map(rows.map((r) => [r.sku, r]));
