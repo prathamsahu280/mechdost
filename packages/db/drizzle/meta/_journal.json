@@ -267,6 +267,13 @@
       "when": 1794508032290,
       "tag": "0037_product_vehicle_types",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1794511277013,
+      "tag": "0038_seller_onboarding",
+      "breakpoints": true
     }
   ]
 }

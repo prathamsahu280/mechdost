@@ -11,9 +11,12 @@ import {
   smallint,
   text,
   unique,
+  uniqueIndex,
   uuid,
   type AnyPgColumn,
 } from 'drizzle-orm/pg-core';
+import { GST_STATUSES } from '@mechdost/shared/partners';
+import { PRICE_REQUEST_STATES } from '@mechdost/shared/state';
 import {
   createdAt,
   encryptedCheck,
@@ -29,6 +32,9 @@ import { cities, pincodes, states } from './geography';
 import { users, vehicleVariants } from './identity';
 
 /** docs/specs/02-catalogue-search.md */
+
+const inList = (values: readonly string[]) => sql.raw(values.map((v) => `'${v}'`).join(','));
+
 export const categories = pgTable(
   'categories',
   {
@@ -92,6 +98,11 @@ export const shops = pgTable(
       .notNull()
       .references(() => states.id, { onDelete: 'restrict' }),
     location: geographyPoint(),
+    /**
+     * `registered` (GSTIN) or `enrolled` (GST enrolment number, Notification 34/2023-CT). Enrolled shops are never
+     * priced or routed until bills of supply exist (design 2026-11-13).
+     */
+    gstStatus: text().notNull().default('registered'),
     /** Standing, set by staff only (decision 2026-11-01): pending → approved ↔ paused → suspended. */
     status: text().notNull().default('pending'),
     /** Partner-visible reason for the current paused/suspended standing, who set it and when it ends. */
@@ -111,6 +122,7 @@ export const shops = pgTable(
   },
   (t) => [
     check('shops_status_valid', sql`${t.status} in ('pending','approved','paused','suspended')`),
+    check('shops_gst_status_valid', sql`${t.gstStatus} in (${inList(GST_STATUSES)})`),
     check(
       'shops_standing_has_reason',
       sql`${t.status} not in ('paused','suspended') or (coalesce(char_length(${t.statusReason}), 0) >= 5 and ${t.statusChangedBy} is not null)`,
@@ -366,16 +378,64 @@ export const shopInventory = pgTable(
     reserved: integer().notNull().default(0),
     leadDays: smallint(),
     active: boolean().notNull().default(true),
+    /** Staff refused this listing (a rejected price, design 2026-11-13): the shop cannot switch it back on. */
+    adminBlocked: boolean().notNull().default(false),
+    blockedReasonCode: text(),
     version: version(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
   (t) => [
     unique().on(t.shopId, t.variantId),
+    check('shop_inventory_blocked_reason', sql`not ${t.adminBlocked} or ${t.blockedReasonCode} is not null`),
     check('shop_inventory_selling_positive', sql`${t.sellingPaise} > 0`),
     check('shop_inventory_on_hand_nonneg', sql`${t.onHand} >= 0`),
     check('shop_inventory_reserved_nonneg', sql`${t.reserved} >= 0`),
     check('shop_inventory_available_nonneg', sql`${t.onHand} - ${t.reserved} >= 0`),
     index().on(t.variantId, t.active),
+  ],
+);
+
+/**
+ * A shop's price for one product, approved or rejected by staff line by line (user 2026-11-13, approach 3):
+ * onboarding prices, invited sellers' prices and later changes all go through here. Append-style history.
+ */
+export const shopPriceRequests = pgTable(
+  'shop_price_requests',
+  {
+    id: id(),
+    shopId: uuid()
+      .notNull()
+      .references(() => shops.id, { onDelete: 'cascade' }),
+    variantId: uuid()
+      .notNull()
+      .references(() => productVariants.id, { onDelete: 'restrict' }),
+    requestedPaise: paise().notNull(),
+    /** The approved price on sale when the request was made; null for a first price. */
+    previousPaise: paise(),
+    onHand: integer().notNull().default(0),
+    status: text().notNull().default('pending'),
+    reasonCode: text(),
+    note: text(),
+    requestedBy: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    decidedBy: uuid().references(() => users.id, { onDelete: 'restrict' }),
+    decidedAt: ts(),
+    version: version(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    check('shop_price_requests_status_valid', sql`${t.status} in (${inList(PRICE_REQUEST_STATES)})`),
+    check('shop_price_requests_positive', sql`${t.requestedPaise} > 0`),
+    check('shop_price_requests_on_hand_nonneg', sql`${t.onHand} >= 0`),
+    uniqueIndex('shop_price_requests_one_pending_uq')
+      .on(t.shopId, t.variantId)
+      .where(sql`${t.status} = 'pending'`),
+    index().on(t.status, t.createdAt),
+    index().on(t.variantId),
+    index().on(t.requestedBy),
+    index().on(t.decidedBy),
   ],
 );

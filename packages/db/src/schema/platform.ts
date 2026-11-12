@@ -15,13 +15,18 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 import { CUSTOMER_BLOCK_LEVELS, CUSTOMER_BLOCK_REASONS } from '@mechdost/shared/customers';
-import { createdAt, encryptedCheck, id, ts, updatedAt, version } from './_common';
+import { GST_STATUSES, LOCATION_SOURCES } from '@mechdost/shared/partners';
+import { APPLICATION_STATES, INVITE_STATES } from '@mechdost/shared/state';
+import { citext, createdAt, encryptedCheck, geographyPoint, id, ts, updatedAt, version } from './_common';
 import { cities } from './geography';
 import { users } from './identity';
 import { orders } from './orders';
-import { shops } from './catalogue';
+import { products, shops } from './catalogue';
 
 /** Brandur-style idempotency keys for money-moving endpoints (docs/research/data-integrity.md §4). */
+
+const inList = (values: readonly string[]) => sql.raw(values.map((v) => `'${v}'`).join(','));
+
 export const idempotencyKeys = pgTable(
   'idempotency_keys',
   {
@@ -320,7 +325,42 @@ export const ticketMessages = pgTable(
   ],
 );
 
-/** "Apply as a seller / workshop / mechanic" (concept launchRequest forms). */
+/** Admin invites to sellers (design 2026-11-13): a one-time link; only the SHA-256 of the token is stored. */
+export const partnerInvites = pgTable(
+  'partner_invites',
+  {
+    id: id(),
+    tokenHash: text().notNull().unique(),
+    name: text().notNull(),
+    email: citext().notNull(),
+    phone: text().notNull(),
+    status: text().notNull().default('sent'),
+    createdBy: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    expiresAt: ts().notNull(),
+    usedAt: ts(),
+    version: version(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    check('partner_invites_status_valid', sql`${t.status} in (${inList(INVITE_STATES)})`),
+    check('partner_invites_token_hash', sql`${t.tokenHash} ~ '^[0-9a-f]{64}$'`),
+    check('partner_invites_phone', sql`${t.phone} ~ '^\\+91[6-9][0-9]{9}$'`),
+    uniqueIndex('partner_invites_one_open_per_phone_uq')
+      .on(t.phone)
+      .where(sql`${t.status} = 'sent'`),
+    index().on(t.createdBy),
+    index().on(t.status, t.expiresAt),
+  ],
+);
+
+/**
+ * "Apply as a seller / workshop / mechanic" (concept launchRequest forms). Sellers (design 2026-11-13) add the
+ * GST status (the GSTIN or enrolment number itself is in `kyc_enc`; `gstin_index` finds duplicates), the address,
+ * the map pin and the products they sell (`partner_application_products`).
+ */
 export const partnerApplications = pgTable(
   'partner_applications',
   {
@@ -329,12 +369,26 @@ export const partnerApplications = pgTable(
     kind: text().notNull(),
     name: text().notNull(),
     phone: text().notNull(),
+    email: citext(),
     business: text(),
+    shopName: text(),
+    shopNameHi: text(),
     pincode: text().notNull(),
-    details: text().notNull(),
+    details: text(),
     /** KYC details (PAN, GSTIN, bank/UPI for payouts) as encrypted JSON (`encryptField(…, 'partner_applications.kyc_enc')`). */
     kycEnc: text(),
+    gstStatus: text(),
+    /** Blind index of the GSTIN or enrolment number (`blindIndex(…, 'gstin')`): duplicates without decrypting. */
+    gstinIndex: text(),
+    addressLine: text(),
+    landmark: text(),
+    location: geographyPoint(),
+    locationAccuracyM: integer(),
+    locationSource: text(),
+    source: text().notNull().default('public'),
+    inviteId: uuid().references(() => partnerInvites.id, { onDelete: 'set null' }),
     status: text().notNull().default('new'),
+    reasonCode: text(),
     convertedShopId: uuid().references(() => shops.id, { onDelete: 'set null' }),
     convertedWorkshopId: uuid(),
     reviewedBy: uuid().references(() => users.id, { onDelete: 'set null' }),
@@ -346,13 +400,88 @@ export const partnerApplications = pgTable(
   },
   (t) => [
     check('partner_applications_kind_valid', sql`${t.kind} in ('seller','garage','mechanic')`),
-    check('partner_applications_status_valid', sql`${t.status} in ('new','in_review','approved','rejected')`),
+    check('partner_applications_status_valid', sql`${t.status} in (${inList(APPLICATION_STATES)})`),
     check('partner_applications_pincode', sql`${t.pincode} ~ '^[1-9][0-9]{5}$'`),
     check('partner_applications_kyc_encrypted', encryptedCheck(t.kycEnc)),
+    check('partner_applications_source_valid', sql`${t.source} in ('public','invite')`),
+    check(
+      'partner_applications_gst_status_valid',
+      sql`${t.gstStatus} is null or ${t.gstStatus} in (${inList(GST_STATUSES)})`,
+    ),
+    check(
+      'partner_applications_location_source_valid',
+      sql`${t.locationSource} is null or ${t.locationSource} in (${inList(LOCATION_SOURCES)})`,
+    ),
+    check(
+      'partner_applications_accuracy_nonneg',
+      sql`${t.locationAccuracyM} is null or ${t.locationAccuracyM} >= 0`,
+    ),
+    // A seller application carries its GST status, address and map pin; other kinds keep the free-text form.
+    check(
+      'partner_applications_seller_complete',
+      sql`${t.kind} <> 'seller' or (${t.gstStatus} is not null and ${t.addressLine} is not null and ${t.location} is not null and ${t.locationSource} is not null)`,
+    ),
+    check('partner_applications_details_for_others', sql`${t.kind} = 'seller' or ${t.details} is not null`),
     index().on(t.status, t.createdAt),
     index().on(t.convertedShopId),
     index().on(t.reviewedBy),
+    index().on(t.gstinIndex),
+    index().on(t.inviteId),
+    index().on(t.phone),
   ],
+);
+
+/** The catalogue products a seller ticked on the application (their prices come after approval). */
+export const partnerApplicationProducts = pgTable(
+  'partner_application_products',
+  {
+    applicationId: uuid()
+      .notNull()
+      .references(() => partnerApplications.id, { onDelete: 'cascade' }),
+    productId: uuid()
+      .notNull()
+      .references(() => products.id, { onDelete: 'restrict' }),
+  },
+  (t) => [primaryKey({ columns: [t.applicationId, t.productId] }), index().on(t.productId)],
+);
+
+/** MechDost seller agreement texts (admin CMS, versioned; Q77). */
+export const agreementVersions = pgTable(
+  'agreement_versions',
+  {
+    id: id(),
+    version: integer().notNull().unique(),
+    textEn: text().notNull(),
+    textHi: text().notNull(),
+    publishedAt: ts()
+      .notNull()
+      .default(sql`now()`),
+    createdBy: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+  },
+  (t) => [check('agreement_versions_positive', sql`${t.version} > 0`), index().on(t.createdBy)],
+);
+
+/** Which shop accepted which agreement version, by whom and when. Append-only. */
+export const shopAgreements = pgTable(
+  'shop_agreements',
+  {
+    id: id(),
+    shopId: uuid()
+      .notNull()
+      .references(() => shops.id, { onDelete: 'cascade' }),
+    version: integer()
+      .notNull()
+      .references(() => agreementVersions.version, { onDelete: 'restrict' }),
+    acceptedBy: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    acceptedAt: ts()
+      .notNull()
+      .default(sql`now()`),
+  },
+  (t) => [unique().on(t.shopId, t.version), index().on(t.version), index().on(t.acceptedBy)],
 );
 
 /** Reviews are verified-purchase only and admin-approved before publish (decisions 2026-10-31). */
