@@ -17,6 +17,7 @@
     "./i18n/*": "./src/i18n/*",
     "./customers": "./src/customers.ts",
     "./analytics": "./src/analytics.ts",
+    "./analytics-path": "./src/analytics-path.ts",
     "./privacy": "./src/privacy.ts",
     "./settings": "./src/settings.ts",
     "./content": "./src/content.ts",

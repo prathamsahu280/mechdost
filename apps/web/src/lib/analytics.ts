@@ -6,6 +6,7 @@
  * No PII in props: ids, paths and lengths only — never phone numbers, emails or names.
  */
 import type { ClientEventName, ClientEvents } from '@mechdost/shared/analytics';
+import { redactPath } from '@mechdost/shared/analytics-path';
 import { forward } from './event-transport';
 // The catalogue (names + prop shapes) lives in packages/shared so the API validates the same events
 // (`CLIENT_EVENT_SCHEMAS`). Type-only import: no validator code reaches the browser bundle.
@@ -23,7 +24,10 @@ const queue: TrackedEvent[] = [];
 
 export function track<E extends ClientEventName>(event: E, props: ClientEvents[E]): void {
   if (typeof window === 'undefined') return;
-  const entry: TrackedEvent = { event, props, occurredAt: new Date().toISOString() };
+  // Secrets in a path segment (invite tokens) never leave this function (security review 2026-11-13).
+  const safe =
+    'path' in props && typeof props.path === 'string' ? { ...props, path: redactPath(props.path) } : props;
+  const entry: TrackedEvent = { event, props: safe, occurredAt: new Date().toISOString() };
   queue.push(entry);
   if (queue.length > MAX_QUEUE) queue.shift();
   window.dispatchEvent(new CustomEvent<TrackedEvent>('mechdost:track', { detail: entry }));
@@ -43,7 +47,7 @@ function persistDemo(entry: TrackedEvent) {
   try {
     const raw = window.localStorage.getItem(DEMO_EVENTS_KEY);
     const list = raw ? (JSON.parse(raw) as StoredEvent[]) : [];
-    list.push({ ...entry, path: window.location.pathname });
+    list.push({ ...entry, path: redactPath(window.location.pathname) });
     window.localStorage.setItem(DEMO_EVENTS_KEY, JSON.stringify(list.slice(-DEMO_MAX)));
   } catch {
     // Storage full or blocked: the in-memory queue still has the event.

@@ -1,3 +1,4 @@
+import { redactPath } from '@mechdost/shared/analytics-path';
 import { analyticsAllowed, CONSENT_KEY, CONSENT_VERSION, onConsentChange } from './consent';
 
 /**
@@ -102,7 +103,8 @@ if (typeof window !== 'undefined') {
 export function forward(entry: { event: string; occurredAt: string; props: unknown }): void {
   if (!API || !analyticsAllowed()) return;
   wire();
-  outbox.push({ ...entry, page: window.location.pathname.slice(0, 200) });
+  // Invite tokens never leave the browser; the API's ANALYTICS_PATH redacts again on the way in.
+  outbox.push({ ...entry, page: redactPath(window.location.pathname).slice(0, 200) });
   if (outbox.length >= BATCH) flush();
   else timer ??= setTimeout(flush, DELAY_MS);
 }

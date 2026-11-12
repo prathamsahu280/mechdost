@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { redactPath } from './analytics-path';
 import { scrubFreeText } from './privacy';
 import { ORDER_CANCEL_REASONS } from './state';
 
@@ -75,7 +76,11 @@ export const ANALYTICS_PATH = z
   .string()
   .max(400)
   .regex(/^\//)
-  .transform((p) => (p.split(/[?#]/u, 1)[0] ?? '').replace(LONG_DIGITS, '_').slice(0, 200));
+  .transform((p) =>
+    redactPath(p.split(/[?#]/u, 1)[0] ?? '')
+      .replace(LONG_DIGITS, '_')
+      .slice(0, 200),
+  );
 const id = z
   .string()
   .regex(/^[A-Za-z0-9][A-Za-z0-9_.:-]{0,79}$/)
