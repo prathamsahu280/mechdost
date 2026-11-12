@@ -38,4 +38,5 @@ Read `../CLAUDE.md` first (hard rules). Then:
 - `research/repo-review-2026-11-11.md` — whole-repo review: bugs and breakable flows (B1–B16), architecture/launch readiness (A1–A12), tooling/CI/skills (T1–T15), launch blockers, features to pull forward (2026-11-11).
 - `conventions/data-for-ml.md` — hard rule 16: ML/AI-ready data collection.
 - `runbooks/collaborator-setup.md` — new collaborator setup: run the site, Claude Code project skills (auto-loaded from `.claude/skills/`), public skills, plugins and MCP servers to install.
+- `runbooks/payments.md` — Razorpay keys, how to try online payment end to end (quote → place → Checkout → verify), the webhook (Q75), unpaid-order expiry (2026-11-12).
 - `runbooks/firebase.md` — Firebase projects, local keys, production checklist for sign-in.

@@ -137,6 +137,8 @@ export async function listRoutingQueue(
         select s.name as shop_name, s.name_hi as shop_name_hi, a.expires_at from order_assignments a
         join shops s on s.id = a.shop_id where a.order_id = o.id and a.status = 'offered' limit 1) cur on true
       where o.status in (${statuses}) and ${inScope(scope)} and ${after}
+        and exists (select 1 from order_groups g where g.id = o.group_id
+          and (g.payment_method = 'cod' or g.payment_status in ('paid', 'partially_refunded', 'refunded')))
       order by o.placed_at, o.id
       limit ${limit + 1}`),
   );
@@ -400,6 +402,16 @@ async function moveReservations(tx: Tx, orderId: string, shopId: string, ttlMinu
   }
 }
 
+/** Cash on delivery, or an online payment that completed (plan 2026-11-12: unpaid orders never reach a shop). */
+async function paymentAllowsRouting(tx: Tx, orderId: string): Promise<boolean> {
+  const [g] = rowsOf<{ ok: boolean }>(
+    await tx.execute(sql`select (g.payment_method = 'cod'
+        or g.payment_status in ('paid', 'partially_refunded', 'refunded')) as ok
+      from orders o join order_groups g on g.id = o.group_id where o.id = ${orderId}`),
+  );
+  return g?.ok === true;
+}
+
 /** Route (or reroute) to one shop: eligible only; reservations move; accept timer from settings. */
 export async function routeOrder(
   db: Tx,
@@ -411,6 +423,8 @@ export async function routeOrder(
       throw new ConflictError('This order changed meanwhile; reload', 'STALE_ORDER');
     if (o.status !== 'placed' && o.status !== 'needs_rerouting')
       throw new ConflictError(`Order is ${o.status}; it cannot be routed now`, 'NOT_ROUTABLE');
+    if (!(await paymentAllowsRouting(tx, o.id)))
+      throw new ConflictError('This order is waiting for its online payment', 'AWAITING_PAYMENT');
     const shop = (await rankShopsForOrder(tx, o.id, 'en')).find((s) => s.shopId === input.shopId);
     if (!shop?.eligible)
       throw new ConflictError(

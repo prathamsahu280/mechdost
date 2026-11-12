@@ -280,6 +280,17 @@ User: "review the bugs properly and start working on it … implement the toolin
 - **Root error page (2026-11-12 ruling):** a focused message and "Try again" only. The "Reset saved data" button planned in the review fix was dropped: it pushed every page over the 180 KB JS budget (error boundaries ship with every route), and B11 already drops corrupt saved data on read. Strings reach it through a JSON data block in the layout, not the i18n runtime.
 - **Correction:** `price_history_daily` (review A5) is needed 30 days before the first production price reduction, not by a fixed 1 Dec 2026 date (nothing is deployed yet); it is built before launch.
 
+## 2026-11-12 — Razorpay Standard Checkout (user)
+
+User shared Razorpay **test** keys and asked to "see how we have the stuff for razorpay and integrate it"; chose option 1 ("backend now, pay button with the real checkout").
+
+- **Q2 answered: cash on delivery + Razorpay** at launch.
+- **Q8 answered:** test keys received; they live only in the git-ignored `.env` (the user adds them; never committed, never in code). The webhook secret is still to come.
+- **No Razorpay SDK:** two REST calls with `fetch` (dependency policy).
+- Online totals carry no COD fee.
+- An online order holds stock for 30 minutes (admin setting) and is never routed before it is paid.
+- A valid checkout signature alone never marks an order paid: the server fetches the payment from Razorpay first (Razorpay docs).
+
 ## PENDING DECISIONS (ask "what's pending" to review)
 
 | #   | Topic                                                                                                                                                                                       | Leaning                                                                             | When                                 |

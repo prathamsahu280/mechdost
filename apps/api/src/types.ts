@@ -6,6 +6,7 @@ import type { PasswordAuthority } from './auth/password-authority';
 import type { TokenVerifier } from './auth/token-verifier';
 import type { TurnstileVerifier } from './auth/turnstile';
 import type { Config } from './config';
+import type { RazorpayGateway } from './payments/razorpay';
 import type { RateLimiter } from './rate-limit/limiter';
 
 /** Everything the app needs from the outside world — injected so tests use PGlite and fakes. */
@@ -22,6 +23,8 @@ export interface AppDeps {
   passwordAuth?: PasswordAuthority | null;
   /** Bot check on sign-in; null when not configured → sign-in answers 503 (fails closed). */
   turnstile?: TurnstileVerifier | null;
+  /** Razorpay gateway; null when not configured → online payment answers PAYMENT_METHOD_UNAVAILABLE. */
+  razorpay?: RazorpayGateway | null;
 }
 
 export interface AuthContext {

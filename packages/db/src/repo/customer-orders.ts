@@ -228,8 +228,8 @@ export async function getMyOrder(
   };
 }
 
-/** Shared by customer and staff cancel: withdraw the offer, free or restock, move to `cancelled`. */
-async function cancelInTx(
+/** Shared by customer, staff and system cancel: withdraw the offer, free or restock, move to `cancelled`. */
+export async function cancelInTx(
   tx: Tx,
   input: {
     order: { id: string; status: OrderStatus };
@@ -274,7 +274,7 @@ async function cancelInTx(
   }
   await tx.insert(auditLog).values({
     actorUserId: input.actor.userId ?? null,
-    actorRole: input.actor.type === 'customer' ? 'customer' : 'staff',
+    actorRole: input.actor.type === 'admin' ? 'staff' : input.actor.type,
     action: 'order.cancelled',
     entity: 'order',
     entityId: input.order.id,
@@ -292,7 +292,7 @@ async function cancelInTx(
       cityId: info.cityId,
       props: {
         orderCode: info.code,
-        by: input.actor.type === 'customer' ? 'customer' : 'staff',
+        by: input.actor.type === 'customer' ? 'customer' : input.actor.type === 'system' ? 'system' : 'staff',
         reasonCode: input.reasonCode,
         fromStatus: input.order.status,
       },

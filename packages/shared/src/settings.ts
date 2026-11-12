@@ -20,6 +20,9 @@ export const OPERATIONAL_SETTINGS = {
   /** How long a COD order's stock hold lasts (minutes, from checkout or the latest routing). The worker's sweep
    *  then puts the stock back on sale; a later accept re-reserves it or is refused (spec 04). */
   'checkout.cod_reservation_minutes': { kind: 'int', min: 30, max: 10_080, default: 1440 },
+  /** Minutes to finish an online payment; the stock hold lasts as long, then the worker cancels the unpaid
+   *  order and puts the stock back (Razorpay, plan 2026-11-12). */
+  'checkout.online_payment_minutes': { kind: 'int', min: 10, max: 120, default: 30 },
   /** How long a shop has to accept an offered order (minutes). */
   // Same bounds as the demo `/admin/settings` screen and spec 08 (5–120 min).
   'orders.acceptance_timeout_min': { kind: 'int', min: 5, max: 120, default: 15 },

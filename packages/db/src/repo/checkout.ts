@@ -38,6 +38,10 @@ const S = OPERATIONAL_SETTINGS;
 export const CHECKOUT_SETTINGS = {
   codCapPaise: { key: 'checkout.cod_cap_paise', fallback: S['checkout.cod_cap_paise'].default },
   codFeePaise: { key: 'checkout.cod_fee_paise', fallback: S['checkout.cod_fee_paise'].default },
+  onlinePaymentMinutes: {
+    key: 'checkout.online_payment_minutes',
+    fallback: S['checkout.online_payment_minutes'].default,
+  },
   freeDeliveryMinPaise: {
     key: 'checkout.free_delivery_min_paise',
     fallback: S['checkout.free_delivery_min_paise'].default,
@@ -87,7 +91,10 @@ export interface CheckoutQuote {
   shippingPaise: number;
   codFeePaise: number;
   taxPaise: number;
+  /** Cash-on-delivery total (includes the COD fee). */
   totalPaise: number;
+  /** Total when paid online: no COD fee. */
+  onlineTotalPaise: number;
   /** Every line can be bought as asked. */
   ok: boolean;
   cod: { allowed: boolean; reason: 'over_cap' | 'pincode' | null; capPaise: number };
@@ -301,13 +308,14 @@ async function quoteInternal(
       codFeePaise: codFee,
       taxPaise: tax,
       totalPaise: totalCod,
+      onlineTotalPaise: subtotal + shipping,
       ok: lines.every((l) => l.issue === null),
       cod: { allowed: reason === null, reason, capPaise: cap },
     },
   };
 }
 
-/** Price a cart for a delivery PIN (no side effects). Totals assume cash on delivery, the only method today. */
+/** Price a cart for a delivery PIN (no side effects): the COD total and the online total. */
 export async function quoteCheckout(
   db: Tx,
   input: { pincode: string; lines: readonly CartLine[]; locale: CatalogueLocale },
@@ -325,9 +333,11 @@ export interface ShippingAddress {
   pincode: string;
 }
 
+export type PaymentMethod = 'cod' | 'online';
+
 export interface PlacedOrder {
   code: string;
-  paymentMethod: 'cod';
+  paymentMethod: PaymentMethod;
   paymentStatus: string;
   totalPaise: number;
   orders: { code: string; totalPaise: number }[];
@@ -366,7 +376,7 @@ async function existingGroup(db: Tx, userId: string, key: string, hash: string):
     .orderBy(orders.subNo);
   return {
     code: group.code,
-    paymentMethod: 'cod',
+    paymentMethod: group.paymentMethod === 'online' ? 'online' : 'cod',
     paymentStatus: group.paymentStatus,
     totalPaise: group.totalPaise,
     orders: subs,
@@ -374,22 +384,32 @@ async function existingGroup(db: Tx, userId: string, key: string, hash: string):
   };
 }
 
+export interface PlaceOrderInput {
+  userId: string;
+  idempotencyKey: string;
+  address: ShippingAddress;
+  lines: readonly CartLine[];
+  expectedTotalPaise: number;
+  note: string | null;
+  locale: CatalogueLocale;
+}
+
+/** Place a cash-on-delivery order (see `placeOrder`). */
+export function placeCodOrder(db: Tx, input: PlaceOrderInput): Promise<PlacedOrder> {
+  return placeOrder(db, { ...input, method: 'cod' });
+}
+
 /**
- * Place a cash-on-delivery order. Same `idempotencyKey` (per user) → the same order, never a second one.
- * Throws CHECKOUT_UNAVAILABLE (with the line issues as details), PRICE_CHANGED, COD_NOT_ALLOWED, OUT_OF_STOCK.
+ * Place an order paid by cash on delivery or online (Razorpay). Same `idempotencyKey` (per user) → the same order,
+ * never a second one. Online: no COD fee, `payment_status = 'created'`, stock held for the online payment window;
+ * the API then creates the Razorpay order. Throws CHECKOUT_UNAVAILABLE (with the line issues as details),
+ * PRICE_CHANGED, COD_NOT_ALLOWED, OUT_OF_STOCK, ORDERS_BLOCKED.
  */
-export async function placeCodOrder(
+export async function placeOrder(
   db: Tx,
-  input: {
-    userId: string;
-    idempotencyKey: string;
-    address: ShippingAddress;
-    lines: readonly CartLine[];
-    expectedTotalPaise: number;
-    note: string | null;
-    locale: CatalogueLocale;
-  },
+  input: PlaceOrderInput & { method: PaymentMethod },
 ): Promise<PlacedOrder> {
+  const online = input.method === 'online';
   if (!/^[A-Za-z0-9_-]{16,64}$/.test(input.idempotencyKey))
     throw new ValidationError('Invalid idempotency key', 'IDEMPOTENCY_KEY');
   return db.transaction(async (tx) => {
@@ -414,9 +434,11 @@ export async function placeCodOrder(
           .filter((l) => l.issue)
           .map((l) => ({ sku: l.sku, issue: l.issue, available: l.available })),
       });
-    if (quote.totalPaise !== input.expectedTotalPaise)
+    const totalPaise = online ? quote.onlineTotalPaise : quote.totalPaise;
+    const codFeePaise = online ? 0 : quote.codFeePaise;
+    if (totalPaise !== input.expectedTotalPaise)
       throw new ConflictError('The total changed since you reviewed it', 'PRICE_CHANGED');
-    if (!quote.cod.allowed || !allowed.cod)
+    if (!online && (!quote.cod.allowed || !allowed.cod))
       throw new ValidationError('Cash on delivery is not available for this order', 'COD_NOT_ALLOWED', {
         reason: allowed.cod ? quote.cod.reason : 'customer',
         capPaise: quote.cod.capPaise,
@@ -428,19 +450,23 @@ export async function placeCodOrder(
       values: {
         userId: input.userId,
         cityId,
-        paymentMethod: 'cod',
-        paymentStatus: 'cod_pending',
+        paymentMethod: input.method,
+        paymentStatus: online ? 'created' : 'cod_pending',
         subtotalPaise: quote.subtotalPaise,
         shippingPaise: quote.shippingPaise,
-        codFeePaise: quote.codFeePaise,
-        totalPaise: quote.totalPaise,
+        codFeePaise,
+        totalPaise,
         note: input.note,
         idempotencyKey: input.idempotencyKey,
         requestHash: hash,
       },
     });
 
-    const ttl = await settingOr(tx, cityId, CHECKOUT_SETTINGS.codReservationMinutes);
+    const ttl = await settingOr(
+      tx,
+      cityId,
+      online ? CHECKOUT_SETTINGS.onlinePaymentMinutes : CHECKOUT_SETTINGS.codReservationMinutes,
+    );
     const placed: { code: string; totalPaise: number }[] = [];
     for (const [index, shopId] of groupShops.entries()) {
       const g = quote.groups[index];
@@ -462,9 +488,9 @@ export async function placeCodOrder(
           shippingPaise: g.shippingPaise,
           // The COD fee rides on the first sub-order, so sub-order totals add up to the group total and
           // someone collects it (code review 2026-11-03).
-          codFeePaise: index === 0 ? quote.codFeePaise : 0,
+          codFeePaise: index === 0 ? codFeePaise : 0,
           taxPaise: g.taxPaise,
-          totalPaise: g.totalPaise + (index === 0 ? quote.codFeePaise : 0),
+          totalPaise: g.totalPaise + (index === 0 ? codFeePaise : 0),
         })
         .returning({ id: orders.id });
       if (!order) throw new Error('order insert returned no row');
@@ -496,7 +522,7 @@ export async function placeCodOrder(
         if (!reservation)
           throw new ConflictError('A product just sold out; please review your cart', 'OUT_OF_STOCK');
       }
-      placed.push({ code, totalPaise: g.totalPaise + (index === 0 ? quote.codFeePaise : 0) });
+      placed.push({ code, totalPaise: g.totalPaise + (index === 0 ? codFeePaise : 0) });
     }
     await recordServerEvent(tx, 'purchase', {
       userId: input.userId,
@@ -505,8 +531,8 @@ export async function placeCodOrder(
         orderCode: group.code,
         subOrders: placed.length,
         items: priced.length,
-        totalPaise: quote.totalPaise,
-        paymentMethod: 'cod',
+        totalPaise,
+        paymentMethod: input.method,
       },
     });
     await tx.insert(auditLog).values({
@@ -517,16 +543,16 @@ export async function placeCodOrder(
       entityId: group.id,
       after: {
         code: group.code,
-        totalPaise: quote.totalPaise,
+        totalPaise,
         subOrders: placed.length,
-        paymentMethod: 'cod',
+        paymentMethod: input.method,
       },
     });
     return {
       code: group.code,
-      paymentMethod: 'cod',
-      paymentStatus: 'cod_pending',
-      totalPaise: quote.totalPaise,
+      paymentMethod: input.method,
+      paymentStatus: online ? 'created' : 'cod_pending',
+      totalPaise,
       orders: placed,
       replayed: false,
     };

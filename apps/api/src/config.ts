@@ -45,6 +45,14 @@ const schema = z
     /** Session-mode connection for the relay's LISTEN wake-up (port 5432); optional, the 1 s sweep is the backstop. */
     DATABASE_URL: z.string().optional(),
     /** WhatsApp via the Meta Cloud API directly (decision 2026-11-02). Off until the Meta account is ready. */
+    /** Razorpay (plan 2026-11-12): online payment is offered only when key id + secret are set. */
+    RAZORPAY_KEY_ID: z
+      .string()
+      .regex(/^rzp_(test|live)_[A-Za-z0-9]{8,32}$/)
+      .optional(),
+    RAZORPAY_KEY_SECRET: z.string().min(16).max(64).optional(),
+    /** Webhook secret (Razorpay Dashboard → Webhooks); the webhook route answers 404 until it is set. */
+    RAZORPAY_WEBHOOK_SECRET: z.string().min(8).max(128).optional(),
     WHATSAPP_ENABLED: z.enum(['on', 'off']).default('off'),
     WHATSAPP_PHONE_NUMBER_ID: z
       .string()
@@ -100,7 +108,21 @@ const schema = z
           'must be production on Cloud Run (K_SERVICE is set); development skips every production check',
       });
     }
+    if (Boolean(env.RAZORPAY_KEY_ID) !== Boolean(env.RAZORPAY_KEY_SECRET)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: [env.RAZORPAY_KEY_ID ? 'RAZORPAY_KEY_SECRET' : 'RAZORPAY_KEY_ID'],
+        message: 'Razorpay needs both the key id and the key secret',
+      });
+    }
     if (env.NODE_ENV !== 'production') return;
+    if (env.RAZORPAY_KEY_ID?.startsWith('rzp_test_')) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['RAZORPAY_KEY_ID'],
+        message: 'test keys are not allowed in production',
+      });
+    }
     if (env.TRUSTED_PROXY_HOPS < 1) {
       ctx.addIssue({
         code: 'custom',
@@ -165,6 +187,14 @@ function toConfig(env: z.infer<typeof schema>) {
         : null,
     trustedProxyHops: env.TRUSTED_PROXY_HOPS,
     apiDocs: env.API_DOCS ? env.API_DOCS === 'on' : env.NODE_ENV !== 'production',
+    razorpay:
+      env.RAZORPAY_KEY_ID && env.RAZORPAY_KEY_SECRET
+        ? {
+            keyId: env.RAZORPAY_KEY_ID,
+            keySecret: env.RAZORPAY_KEY_SECRET,
+            webhookSecret: env.RAZORPAY_WEBHOOK_SECRET ?? null,
+          }
+        : null,
     whatsapp:
       env.WHATSAPP_ENABLED === 'on' &&
       env.WHATSAPP_PHONE_NUMBER_ID &&

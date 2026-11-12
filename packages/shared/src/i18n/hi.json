@@ -495,6 +495,7 @@
     "cancelReason_found_cheaper": "कहीं और सस्ता मिल गया",
     "cancelReason_delivery_too_slow": "डिलीवरी में बहुत समय लग रहा है",
     "cancelReason_customer_unreachable": "ग्राहक से संपर्क नहीं हो सका",
+    "cancelReason_payment_not_completed": "समय पर भुगतान पूरा नहीं हुआ",
     "cancelReason_other": "कोई और कारण",
     "rejectReason_no_stock_nearby": "पास की किसी दुकान में उपलब्ध नहीं",
     "rejectReason_all_shops_declined": "हर दुकान ने मना किया",

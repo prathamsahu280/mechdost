@@ -10,6 +10,7 @@ import { createAnthropicProvider } from './assistant/provider';
 import { createFirebaseVerifier } from './auth/firebase-verifier';
 import { createFirebasePasswordAuthority } from './auth/password-authority';
 import { createTurnstileVerifier } from './auth/turnstile';
+import { httpRazorpay } from './payments/razorpay';
 import { ConfigError, loadConfig } from './config';
 import { log, safeError } from './logger';
 import { MemoryRateLimiter } from './rate-limit/limiter';
@@ -59,6 +60,7 @@ const app = createApp({
       })
     : null,
   turnstile: config.turnstileSecret ? createTurnstileVerifier(config.turnstileSecret) : null,
+  razorpay: config.razorpay ? httpRazorpay(config.razorpay.keyId, config.razorpay.keySecret) : null,
 });
 if (!config.firebaseApiKey || !config.turnstileSecret)
   log('warn', 'password_sign_in_disabled', {

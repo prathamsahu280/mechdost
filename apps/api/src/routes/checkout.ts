@@ -5,11 +5,12 @@ import {
   getMyOrder,
   LINE_MAX_QTY,
   listMyOrders,
-  placeCodOrder,
+  placeOrder,
   quoteCheckout,
 } from '@mechdost/db/repo';
-import { ORDER_CANCEL_REASONS } from '@mechdost/shared/state';
+import { PERSON_CANCEL_REASONS } from '@mechdost/shared/state';
 import type { SessionCache } from '../auth/session-cache';
+import { ensureRazorpayOrder } from '../payments/service';
 import { ApiError } from '../errors';
 import { authenticate, requirePermission, requireVerified } from '../middleware/auth';
 import { rateLimit, RATE_RULES } from '../middleware/rate-limit';
@@ -80,6 +81,8 @@ const Quote = z
     codFeePaise: z.number().int(),
     taxPaise: z.number().int(),
     totalPaise: z.number().int(),
+    /** Paid online: no COD fee. */
+    onlineTotalPaise: z.number().int(),
     ok: z.boolean(),
     cod: z.object({
       allowed: z.boolean(),
@@ -114,11 +117,21 @@ const PlaceBody = z
 const Placed = z
   .object({
     code: z.string(),
-    paymentMethod: z.literal('cod'),
+    paymentMethod: z.enum(['cod', 'online']),
     paymentStatus: z.string(),
     totalPaise: z.number().int(),
     orders: z.array(z.object({ code: z.string(), totalPaise: z.number().int() })),
     replayed: z.boolean(),
+    /** Online orders: what the browser needs to open Razorpay Checkout (null once paid or expired). */
+    razorpay: z
+      .object({
+        keyId: z.string(),
+        orderId: z.string(),
+        amountPaise: z.number().int(),
+        currency: z.literal('INR'),
+      })
+      .nullable()
+      .optional(),
   })
   .openapi('PlacedOrder');
 
@@ -260,7 +273,7 @@ const cancel = createRoute({
       content: {
         'application/json': {
           schema: z
-            .object({ reasonCode: z.enum(ORDER_CANCEL_REASONS), version: z.number().int().min(1) })
+            .object({ reasonCode: z.enum(PERSON_CANCEL_REASONS), version: z.number().int().min(1) })
             .strict()
             .openapi('CancelMyOrder'),
         },
@@ -302,10 +315,13 @@ export function checkoutRoutes(deps: AppDeps, cache: SessionCache) {
     })
     .openapi(place, async (c) => {
       const body = c.req.valid('json');
-      if (body.paymentMethod !== 'cod')
-        throw new ApiError(422, 'PAYMENT_METHOD_UNAVAILABLE', 'Only cash on delivery is available for now');
-      const placed = await placeCodOrder(deps.db, {
-        userId: c.get('auth').user.id,
+      const razorpay = deps.razorpay ?? null;
+      if (body.paymentMethod === 'online' && !razorpay)
+        throw new ApiError(422, 'PAYMENT_METHOD_UNAVAILABLE', 'Online payment is not available yet');
+      const userId = c.get('auth').user.id;
+      const placed = await placeOrder(deps.db, {
+        method: body.paymentMethod,
+        userId,
         idempotencyKey: c.req.valid('header')['idempotency-key'],
         address: {
           contactName: body.address.contactName,
@@ -320,7 +336,15 @@ export function checkoutRoutes(deps: AppDeps, cache: SessionCache) {
         note: body.note ?? null,
         locale: body.locale,
       });
-      return c.json(placed, placed.replayed ? 200 : 201);
+      // The Razorpay order exists (stored) before the client sees it; a retried place reuses it.
+      const handle =
+        placed.paymentMethod === 'online' && razorpay
+          ? await ensureRazorpayOrder(deps.db, razorpay, { userId, groupCode: placed.code })
+          : undefined;
+      return c.json(
+        handle === undefined ? placed : { ...placed, razorpay: handle },
+        placed.replayed ? 200 : 201,
+      );
     })
     .openapi(myOrders, async (c) => {
       const page = await listMyOrders(deps.db, c.get('auth').user.id, c.req.valid('query'));

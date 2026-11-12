@@ -9,6 +9,8 @@ import {
   ensureEventPartitions,
   expireDueAssignments,
   releaseExpiredReservations,
+  expireUnpaidOnlineOrders,
+  onlinePaymentMinutes,
 } from '@mechdost/db/repo';
 import { ConfigError, loadConfig } from './config';
 import { pollingPublisher, type LivePublisher } from './live/publisher';
@@ -114,6 +116,26 @@ const holdTimer = setInterval(() => {
 }, 60_000);
 holdTimer.unref();
 
+// Unpaid online orders (Razorpay, plan 2026-11-12): after `checkout.online_payment_minutes` the order is cancelled
+// and its stock goes back on sale. Every 60 s; one transaction per group.
+let expiringPayments = false;
+const paymentTimer = setInterval(() => {
+  if (expiringPayments) return;
+  expiringPayments = true;
+  void onlinePaymentMinutes(db)
+    .then((minutes) => expireUnpaidOnlineOrders(db, { olderThanMinutes: minutes }))
+    .then((n) => {
+      if (n > 0) log('info', 'unpaid_orders_expired', { count: n });
+    })
+    .catch((err: unknown) => {
+      log('error', 'unpaid_orders_expiry_failed', safeError(err));
+    })
+    .finally(() => {
+      expiringPayments = false;
+    });
+}, 60_000);
+paymentTimer.unref();
+
 // Event store partitions (spec 12): this month + 3 ahead, checked at start and every 12 h (idempotent).
 const partitions = () => {
   void ensureEventPartitions(db)
@@ -151,6 +173,7 @@ function shutdown(signal: string) {
   if (bridgeTimer) clearInterval(bridgeTimer);
   clearInterval(expiryTimer);
   clearInterval(holdTimer);
+  clearInterval(paymentTimer);
   clearInterval(partitionTimer);
   void Promise.all([relay.stop(), dispatcher.stop()])
     .then(() => Promise.all([sql.end({ timeout: 5 }), listener?.end()]))

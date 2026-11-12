@@ -8,7 +8,7 @@ import {
   rejectOrder,
   routeOrder,
 } from '@mechdost/db/repo';
-import { ORDER_CANCEL_REASONS, ORDER_REJECT_REASONS } from '@mechdost/shared/state';
+import { PERSON_CANCEL_REASONS, ORDER_REJECT_REASONS } from '@mechdost/shared/state';
 import type { SessionCache } from '../auth/session-cache';
 import { ApiError } from '../errors';
 import { authenticate, requirePermission, requireVerified } from '../middleware/auth';
@@ -182,7 +182,7 @@ const cancelRoute = createRoute({
       content: {
         'application/json': {
           schema: z
-            .object({ reasonCode: z.enum(ORDER_CANCEL_REASONS), version: z.number().int().min(1) })
+            .object({ reasonCode: z.enum(PERSON_CANCEL_REASONS), version: z.number().int().min(1) })
             .strict()
             .openapi('CancelOrderAsStaff'),
         },

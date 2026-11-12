@@ -20,7 +20,14 @@ export interface ServerEventProps {
   admin_order_rejected: { orderCode: string; reasonCode: string };
   seller_order_accepted: { orderCode: string; shopId: string; secondsToAccept: number };
   seller_order_declined: { orderCode: string; shopId: string; reasonCode: string };
-  order_cancelled: { orderCode: string; by: 'customer' | 'staff'; reasonCode: string; fromStatus: string };
+  order_cancelled: {
+    orderCode: string;
+    by: 'customer' | 'staff' | 'system';
+    reasonCode: string;
+    fromStatus: string;
+  };
+  payment_captured: { orderCode: string; amountPaise: number; method: string };
+  payment_failed: { orderCode: string; amountPaise: number; method: string };
   order_delivered: { orderCode: string; shopId: string };
   admin_delivery_override: { orderCode: string };
   order_fulfilment_step: {

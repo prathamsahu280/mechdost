@@ -15,6 +15,7 @@ import { adminSettingsRoutes } from './routes/admin-settings';
 import { assistantRoutes } from './routes/assistant';
 import { authRoutes } from './routes/auth';
 import { catalogueRoutes } from './routes/catalogue';
+import { paymentRoutes, razorpayWebhookRoutes } from './routes/payments';
 import { checkoutRoutes } from './routes/checkout';
 import { adminContentRoutes, contentRoutes } from './routes/content';
 import { eventRoutes } from './routes/events';
@@ -58,6 +59,7 @@ export function createApp(deps: AppDeps) {
   app.route('/', systemRoutes(deps));
   // Provider webhooks: signature-checked, outside /v1 (no user auth, no per-IP API limit; Meta retries).
   app.route('/', whatsAppWebhookRoutes(deps));
+  app.route('/', razorpayWebhookRoutes(deps));
 
   const v1 = new OpenAPIHono<AppEnv>({ defaultHook: validationHook });
   v1.use('*', timeout(REQUEST_TIMEOUT_MS));
@@ -72,6 +74,7 @@ export function createApp(deps: AppDeps) {
   v1.route('/', contentRoutes(deps));
   v1.route('/', eventRoutes(deps));
   v1.route('/', checkoutRoutes(deps, sessions));
+  v1.route('/', paymentRoutes(deps, sessions));
   v1.route('/', adminNotificationRoutes(deps, sessions));
   v1.route('/', supportRoutes(deps, sessions));
   v1.route('/', adminCustomerRoutes(deps, sessions));

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import {
   ASSIGNMENT_DECLINE_REASONS,
-  ORDER_CANCEL_REASONS,
+  PERSON_CANCEL_REASONS,
   ORDER_REJECT_REASONS,
   type OrderCancelReason,
   type OrderRejectReason,
@@ -499,7 +499,7 @@ function RoutingCard({ order, now }: { order: DemoOrder; now: number }) {
               defaultValue="customer_unreachable"
               className={portalField}
             >
-              {ORDER_CANCEL_REASONS.map((r) => (
+              {PERSON_CANCEL_REASONS.map((r) => (
                 <option key={r} value={r}>
                   {ord(`cancelReason_${r}`)}
                 </option>

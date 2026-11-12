@@ -5,7 +5,10 @@ description: Use for any MechDost payment work — creating Razorpay orders, che
 
 # Razorpay payments (MechDost)
 
-Status: test mode only until inbox Q2/Q8 are answered. Payment method mix is a pending decision (COD + Razorpay leaning).
+Status (2026-11-12): COD + Razorpay decided (Q2); test keys in `.env` (Q8). Backend built: online place → stored
+Razorpay order, `POST /v1/payments/razorpay/verify` (HMAC + server fetch), `POST /webhooks/razorpay` (raw HMAC +
+event dedupe, inline apply), unpaid-order expiry. Code: `apps/api/src/payments/*`, `apps/api/src/routes/payments.ts`,
+`packages/db/src/repo/payments.ts`. Not yet: web pay button, refunds, reconciliation job, pg-boss processing.
 
 ## Flow
 

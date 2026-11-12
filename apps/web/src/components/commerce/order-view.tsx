@@ -3,7 +3,7 @@
 import { PartyPopper } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { ORDER_CANCEL_REASONS, type OrderCancelReason } from '@mechdost/shared/state';
+import { PERSON_CANCEL_REASONS, type OrderCancelReason } from '@mechdost/shared/state';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
 import { restoreCoinsForOrder } from '@/demo/coins';
@@ -256,7 +256,7 @@ function CancelOrder({ order }: { order: DemoOrder }) {
         defaultValue="changed_mind"
         className="mt-1 min-h-11 w-full rounded-input border border-input-border bg-surface px-3 text-[15px] text-ink"
       >
-        {ORDER_CANCEL_REASONS.filter((r) => r !== 'customer_unreachable').map((r) => (
+        {PERSON_CANCEL_REASONS.filter((r) => r !== 'customer_unreachable').map((r) => (
           <option key={r} value={r}>
             {t(`cancelReason_${r}`)}
           </option>

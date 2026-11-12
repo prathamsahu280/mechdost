@@ -32,6 +32,37 @@ cart (client + server `carts` for logged-in) → `checkout_sessions` (address, p
 - Customer blocks (spec 08, built 2026-11-03): `orders`/`full` → 403 `ORDERS_BLOCKED`; `cod_only` → `COD_NOT_ALLOWED` (`reason: customer`). The public quote does not know the customer, so placement is the authoritative check.
 - Not yet: server carts and merge, checkout sessions, coupons, Coins redemption at the server, business GSTIN, COD OTP confirmation, Razorpay, web checkout wired to the API.
 
+## Online payment — Razorpay Standard Checkout (backend built 2026-11-12)
+
+Plan `docs/superpowers/plans/2026-11-12-razorpay-checkout-backend.md`; user chose "backend now, pay button with the real checkout".
+
+- **Quote:** `POST /v1/checkout/quote` returns `totalPaise` (cash on delivery, includes the COD fee) and `onlineTotalPaise` (paid online: no COD fee).
+- **Place:** `POST /v1/orders {paymentMethod: 'online', expectedTotalPaise: onlineTotalPaise, …}` with `Idempotency-Key`.
+  - It places the order like COD (re-priced, reserved, idempotent) with `payment_method = 'online'` and `payment_status = 'created'`, no COD fee, and stock held for `checkout.online_payment_minutes` (admin setting, 10–120, default 30).
+  - It then creates the Razorpay order (`amount` = group total, `receipt` = group code) and stores it in `payments` (unique provider order id) **before** answering.
+  - The answer carries `razorpay {keyId, orderId, amountPaise, currency}`. A retried place reuses the stored Razorpay order.
+  - `422 PAYMENT_METHOD_UNAVAILABLE` while the keys are not set.
+- **Checkout callback:** `POST /v1/payments/razorpay/verify {razorpayOrderId, razorpayPaymentId, razorpaySignature}`, for a signed-in, verified owner only (404 otherwise).
+  - It checks `HMAC_SHA256(our order id + "|" + payment id, key secret)` in constant time (`400 SIGNATURE_INVALID`).
+  - It then **fetches the payment from Razorpay**: only `captured`, for our order, the stored amount and INR, marks the order paid.
+  - Answer: `{orderCode, outcome: paid | attempted | failed | unchanged | mismatch}`.
+- **Webhook:** `POST /webhooks/razorpay`; 404 until `RAZORPAY_WEBHOOK_SECRET` is set.
+  - It checks the raw-body HMAC (`X-Razorpay-Signature`) before parsing.
+  - Each `x-razorpay-event-id` is recorded once (`webhook_events`).
+  - It handles `payment.captured`, `payment.authorized`, `payment.failed` and `order.paid`, applied inline (one small transaction; pg-boss later).
+- **Payment facts** (`applyRazorpayPayment`):
+  - The payment row is locked, and the amount and currency must match (otherwise audit `payment.amount_mismatch`, no change).
+  - The state is monotonic through `paymentMachine`: a failure after paid is a no-op, and a failed UPI attempt can still be paid later.
+  - Events `payment_captured` / `payment_failed`.
+- **Unpaid online orders:**
+  - They never appear in the routing queue, and `routeOrder` refuses them (`409 AWAITING_PAYMENT`).
+  - The worker cancels them after the payment window (system, reason `payment_not_completed`), puts the stock back, and marks the group and payment `expired`.
+- **Not yet:**
+  - the website's pay button (comes with "cart + checkout on the API");
+  - refunds for paid orders that are cancelled or rejected (spec 05);
+  - the hourly reconciliation job;
+  - pg-boss processing of webhooks.
+
 ## UI
 
 Cart drawer (concept "Your cart" modal copy), checkout pages reuse concept "Checkout · Delivery details" and "Review your order" labels; shop-group blocks "Sold by {shop} · Delivery ₹x · {n} days"; coupon field; payment selector; COD OTP screen; confirmation "Order placed" with stepper.

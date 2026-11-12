@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { and, eq, sql } from 'drizzle-orm';
 import { seedRaipurDemo, type DemoFixture } from '../src/demo-seed';
-import { placeCodOrder, quoteCheckout, type ShippingAddress, type Tx } from '../src/repo';
+import { placeCodOrder, placeOrder, quoteCheckout, type ShippingAddress, type Tx } from '../src/repo';
 import * as s from '../src/schema';
 import { createTestDb, type TestDb } from '../src/testing';
 
@@ -267,5 +267,64 @@ describe('COD fee (code review 2026-11-03)', () => {
     } finally {
       await db.delete(s.settings).where(eq(s.settings.key, 'checkout.cod_fee_paise'));
     }
+  });
+});
+
+describe('online payment (Razorpay, plan 2026-11-12)', () => {
+  it('the quote also gives the online total: no COD fee', async () => {
+    await db.insert(s.settings).values({ key: 'checkout.cod_fee_paise', value: 2000 });
+    try {
+      const q = await quoteCheckout(t(), { pincode: '492004', lines: [{ sku: OIL, qty: 1 }], locale: 'en' });
+      expect(q.onlineTotalPaise).toBe(q.subtotalPaise + q.shippingPaise);
+      expect(q.totalPaise).toBe(q.onlineTotalPaise + 2000);
+    } finally {
+      await db.delete(s.settings).where(eq(s.settings.key, 'checkout.cod_fee_paise'));
+    }
+  });
+
+  it('an online order has no COD fee, starts unpaid and holds stock only for the payment window', async () => {
+    const lines = [{ sku: sku('exide-xltz4a-2w-battery'), qty: 1 }]; // the oil is used up by earlier tests
+    const q = await quoteCheckout(t(), { pincode: '492004', lines, locale: 'en' });
+    const placed = await placeOrder(t(), {
+      method: 'online',
+      userId,
+      idempotencyKey: key(500),
+      address: address(),
+      lines,
+      expectedTotalPaise: q.onlineTotalPaise,
+      note: null,
+      locale: 'en',
+    });
+    expect(placed).toMatchObject({
+      paymentMethod: 'online',
+      paymentStatus: 'created',
+      totalPaise: q.onlineTotalPaise,
+    });
+    const [group] = await db.select().from(s.orderGroups).where(eq(s.orderGroups.code, placed.code));
+    expect(group).toMatchObject({ paymentMethod: 'online', paymentStatus: 'created', codFeePaise: 0 });
+    const [order] = await db.select().from(s.orders).where(eq(s.orders.groupId, group!.id));
+    const [hold] = await db.select().from(s.reservations).where(eq(s.reservations.orderId, order!.id));
+    const minutes = (hold!.expiresAt.getTime() - Date.now()) / 60_000;
+    expect(minutes).toBeGreaterThan(25);
+    expect(minutes).toBeLessThan(35); // default online window 30 min, not the 24 h COD hold
+
+    // The same key returns the same order (a double tap or a retry), never a second one.
+    const again = await placeOrder(t(), {
+      method: 'online',
+      userId,
+      idempotencyKey: key(500),
+      address: address(),
+      lines,
+      expectedTotalPaise: q.onlineTotalPaise,
+      note: null,
+      locale: 'en',
+    });
+    expect(again).toMatchObject({ code: placed.code, replayed: true, paymentMethod: 'online' });
+    expect(
+      await db.$count(
+        s.orderGroups,
+        and(eq(s.orderGroups.userId, userId), eq(s.orderGroups.idempotencyKey, key(500))),
+      ),
+    ).toBe(1);
   });
 });

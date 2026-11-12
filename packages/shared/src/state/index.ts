@@ -23,7 +23,8 @@ export const orderMachine = defineMachine(
   ['delivered', 'cancelled', 'rejected'],
   [
     { from: 'placed', to: 'awaiting_shop', by: ['admin', 'system'] },
-    { from: 'placed', to: 'cancelled', by: ['customer', 'admin'] },
+    // system: an online order whose payment never completed (the worker, after the payment window).
+    { from: 'placed', to: 'cancelled', by: ['customer', 'admin', 'system'] },
     { from: 'placed', to: 'rejected', by: ['admin'] },
     { from: 'awaiting_shop', to: 'confirmed', by: ['shop'] },
     { from: 'awaiting_shop', to: 'needs_rerouting', by: ['shop', 'system'] },
@@ -62,9 +63,15 @@ export const ORDER_CANCEL_REASONS = [
   'found_cheaper',
   'delivery_too_slow',
   'customer_unreachable',
+  /** System: an online order whose payment did not complete within the payment window. */
+  'payment_not_completed',
   'other',
 ] as const;
 export type OrderCancelReason = (typeof ORDER_CANCEL_REASONS)[number];
+/** Reasons a customer or staff member may pick; `payment_not_completed` is set by the system only. */
+export const PERSON_CANCEL_REASONS = ORDER_CANCEL_REASONS.filter(
+  (r): r is Exclude<OrderCancelReason, 'payment_not_completed'> => r !== 'payment_not_completed',
+);
 
 /** Why a customer cancelled a workshop booking (spec 06: allowed until the vehicle is received). */
 export const SERVICE_CANCEL_REASONS = [
