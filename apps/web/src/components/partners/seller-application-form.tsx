@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
+import { isGstEnrolmentNumber, isGstin } from '@mechdost/shared/gst';
 import { SellerApplicationSchema, type Location } from '@mechdost/shared/partners';
 import { createApplication } from '@/demo/store';
 import { track } from '@/lib/analytics';
@@ -95,6 +96,11 @@ export function SellerApplicationForm({
     const parsed = SellerApplicationSchema.safeParse(candidate);
     if (!parsed.success) {
       const bad = new Set(parsed.error.issues.map((i) => String(i.path[0] ?? '')));
+      // Zod runs the schema's GST-number refinement only once every other field is valid; check it here too so a
+      // wrong GSTIN shows next to its field in the first round of errors.
+      const gstOk =
+        gstStatus === 'registered' ? isGstin(candidate.gstNumber) : isGstEnrolmentNumber(candidate.gstNumber);
+      if (!gstOk) bad.add('gstNumber');
       const next: Partial<Record<Field, string>> = {};
       for (const f of FIELD_ORDER) if (bad.has(f)) next[f] = messages[f];
       setErrors(next);

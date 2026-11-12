@@ -312,6 +312,7 @@ const PUBLIC_PAGES = [
   '/partners/apply/seller',
   '/partners/apply/garage',
   '/partners/apply/mechanic',
+  '/partners/invite/not-a-real-invite',
   `/partners/applications/${CODES.application}`,
   '/account',
   '/admin',

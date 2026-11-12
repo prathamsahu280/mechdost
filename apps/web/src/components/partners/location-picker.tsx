@@ -3,7 +3,7 @@
 import { LocateFixed, MapPin, Search } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useLocale, useTranslations } from 'next-intl';
-import { useRef, useState, type SyntheticEvent } from 'react';
+import { useRef, useState } from 'react';
 import type { Location } from '@mechdost/shared/partners';
 import { track } from '@/lib/analytics';
 import type { PickPoint } from './location-map';
@@ -78,9 +78,9 @@ export function LocationPicker({
     );
   }
 
-  async function search(e: SyntheticEvent<HTMLFormElement>) {
-    e.preventDefault();
-    e.stopPropagation();
+  // Not a <form>: this dialog sits inside the seller form, and a nested form is invalid HTML (the server-rendered
+  // page drops it, so Search submitted the application). Enter in the box and the button both call this.
+  async function search() {
     const q = query.trim();
     if (q.length < 3) return;
     setBusy('search');
@@ -153,7 +153,7 @@ export function LocationPicker({
             <LocateFixed aria-hidden="true" className="size-4" />
             {busy === 'gps' ? t('locationLocating') : t('locationUseMine')}
           </button>
-          <form onSubmit={(e) => void search(e)} role="search" className="flex gap-2">
+          <div role="search" className="flex gap-2">
             <label htmlFor="location-search" className="sr-only">
               {t('locationSearchLabel')}
             </label>
@@ -167,17 +167,23 @@ export function LocationPicker({
               onChange={(e) => {
                 setQuery(e.target.value);
               }}
+              onKeyDown={(e) => {
+                if (e.key !== 'Enter') return;
+                e.preventDefault();
+                void search();
+              }}
               className={field}
             />
             <button
-              type="submit"
+              type="button"
+              onClick={() => void search()}
               disabled={busy !== null}
               className="press inline-flex min-h-11 items-center gap-2 rounded-button border border-input-border px-4 text-sm font-bold"
             >
               <Search aria-hidden="true" className="size-4" />
               {t('locationSearchButton')}
             </button>
-          </form>
+          </div>
           {results && results.length > 0 ? (
             <ul className="divide-y divide-line-card rounded-card border border-line-card">
               {results.map((r) => (
