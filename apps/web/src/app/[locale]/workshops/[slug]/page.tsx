@@ -109,7 +109,8 @@ export default async function WorkshopPage({ params }: Props) {
                   </p>
                 </div>
                 <p className="mt-1 text-xs text-muted">
-                  {t('duration', { duration: s.duration })} · {s.vehicle === 'both' ? '2W · 4W' : s.vehicle}
+                  {t('duration', { duration: s.duration })} ·{' '}
+                  {s.vehicle === 'any' ? w.vehicles.join(' · ') : s.vehicle}
                 </p>
                 <p className="mt-2 text-sm text-muted">
                   <span className="font-bold text-ink">{t('included')}:</span> {s.included}

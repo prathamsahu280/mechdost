@@ -14,6 +14,7 @@ import {
 } from '@/demo/store';
 import { track } from '@/lib/analytics';
 import { formatDate, formatPrice } from '@/lib/format';
+import { VEHICLE_ICON } from '@mechdost/shared/vehicles';
 import { PartnerGate } from './partner-gate';
 import { PortalGuard, portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
 
@@ -142,7 +143,7 @@ function RequestSummary({ request: r }: { request: DemoServiceRequest }) {
       <p className="text-sm text-muted">
         <span data-user-content>{r.customer.name}</span> ·{' '}
         {t('requestMeta', {
-          vehicle: `${r.vehicleType === '2W' ? '🛵' : '🚗'} ${r.vehicle}`,
+          vehicle: `${VEHICLE_ICON[r.vehicleType]} ${r.vehicle}`,
           date: formatDate(r.date, locale),
           slot: t(`slot_${r.slot}`),
         })}

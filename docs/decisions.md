@@ -291,6 +291,21 @@ User shared Razorpay **test** keys and asked to "see how we have the stuff for r
 - An online order holds stock for 30 minutes (admin setting) and is never routed before it is paid.
 - A valid checkout signature alone never marks an order paid: the server fetches the payment from Razorpay first (Razorpay docs).
 
+## 2026-11-12 — Three-wheelers first-class; fitment by vehicle type (default for Q76)
+
+Follow-up to the 2026-11-11 answer "for both two wheelers, three wheelers and cars".
+
+- **One vehicle-type list:** `packages/shared/src/vehicles.ts` holds `VEHICLE_TYPES` (2W, 3W, 4W), the label keys and the decorative icons (🛵 🛺 🚗). It matches the database CHECKs. It has no Zod, so browser islands stay inside the JS budget.
+- **Electric is a fuel, not a type:** an e-rickshaw is a 3W with fuel `electric`.
+- **Three-wheelers appear wherever 2W and 4W did:** account vehicles, the workshop finder filter, booking, the workshop portal, and partner applications. Labels: "Auto / e-rickshaw" and "ऑटो / ई-रिक्शा".
+- **Workshop services:** "both" became `any`, meaning every type the workshop serves. One demo workshop (Mowa EV & Bike Point) serves 3W, so the filter is never empty.
+- **Fitment depth (Q76, default until answered):**
+  - Products are tagged by vehicle type, admin-editable.
+  - The wording is "For three-wheelers" and a "my vehicle type" filter, never "Fits your vehicle". A type does not guarantee a fit, and there are no returns.
+  - Exact make/model/year rows (`fitments`) are added later and take priority. Untagged products show "Fitment not listed".
+  - No fitment is written from memory: the demo carries over only the existing `fits` values.
+  - This supersedes spec 02's "Fits your {vehicle}" badge for type-level data.
+
 ## PENDING DECISIONS (ask "what's pending" to review)
 
 | #   | Topic                                                                                                                                                                                       | Leaning                                                                             | When                                 |

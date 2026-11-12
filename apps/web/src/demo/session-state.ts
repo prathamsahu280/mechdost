@@ -7,13 +7,14 @@ import { useSyncExternalStore } from 'react';
 import { customerAllowed } from './customer-blocks';
 import type { PasswordHash } from './passwords';
 import { demoStorage } from './store';
+import type { VehicleType } from '@mechdost/shared/vehicles';
 
 export const DEMO_OTP = '123456';
 /** Password of every seeded demo login until it is changed on this device (docs/runbooks/demo.md). */
 export const DEMO_PASSWORD = 'Raipur@2026';
 
 export type DemoRole = 'customer' | 'shop' | 'workshop' | 'admin';
-export type VehicleType = '2W' | '4W';
+export type { VehicleType } from '@mechdost/shared/vehicles';
 export type Fuel = 'petrol' | 'diesel' | 'cng' | 'ev';
 
 export interface DemoVehicle {

@@ -4,6 +4,7 @@
  * nothing here is trusted or persisted on a server. One localStorage key per collection, validated on read.
  */
 import { publicCode } from '@mechdost/shared/ids';
+import type { VehicleType } from '@mechdost/shared/vehicles';
 import {
   ASSIGNMENT_DECLINE_REASONS,
   ORDER_CANCEL_REASONS,
@@ -110,7 +111,7 @@ export interface DemoServiceRequest {
   createdAt: string;
   workshopSlug: string;
   workshopName: string;
-  vehicleType: '2W' | '4W';
+  vehicleType: VehicleType;
   vehicle: string;
   services: { key: string; name: string; minPaise: number; maxPaise: number }[];
   date: string;

@@ -17,8 +17,8 @@ import {
   type DemoAccount,
   type DemoVehicle,
   type Fuel,
-  type VehicleType,
 } from '@/demo/session';
+import { VEHICLE_ICON, VEHICLE_LABEL_KEY, VEHICLE_TYPES } from '@mechdost/shared/vehicles';
 import { CoinsSection } from './coins-section';
 import { SupportSection } from './support-section';
 import { ORDER_STAGES, REQUEST_STAGES, useHydrated, useOrders, useQuotes, useRequests } from '@/demo/store';
@@ -301,7 +301,7 @@ function VehicleSummary({ vehicle }: { vehicle: DemoVehicle }) {
         aria-hidden="true"
         className="grid size-12 place-items-center rounded-full bg-accent-soft text-[24px]"
       >
-        {vehicle.type === '2W' ? '🛵' : '🚗'}
+        {VEHICLE_ICON[vehicle.type]}
       </span>
       <div className="min-w-0">
         <p data-user-content className="font-heading text-lg font-extrabold text-ink">
@@ -491,7 +491,7 @@ function Vehicles({ account }: { account: DemoAccount }) {
       return;
     }
     const ok = addVehicle({
-      type: text('type') === '4W' ? '4W' : '2W',
+      type: VEHICLE_TYPES.find((v) => v === text('type')) ?? '2W',
       make: text('make').slice(0, 40),
       model: text('model').slice(0, 60),
       year,
@@ -549,7 +549,7 @@ function Vehicles({ account }: { account: DemoAccount }) {
           <fieldset>
             <legend className="text-sm font-bold text-ink">{t('vehicleType')}</legend>
             <div className="mt-2 flex flex-wrap gap-2">
-              {(['2W', '4W'] as VehicleType[]).map((type, i) => (
+              {VEHICLE_TYPES.map((type, i) => (
                 <label
                   key={type}
                   className="press inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-button border border-input-border px-4 text-sm font-bold text-ink has-checked:border-accent-button has-checked:bg-accent-soft has-checked:text-accent-soft-text"
@@ -561,7 +561,7 @@ function Vehicles({ account }: { account: DemoAccount }) {
                     defaultChecked={i === 0}
                     className="size-5 accent-[var(--color-accent-button)]"
                   />
-                  {type === '2W' ? `🛵 ${t('twoWheeler')}` : `🚗 ${t('fourWheeler')}`}
+                  {`${VEHICLE_ICON[type]} ${t(VEHICLE_LABEL_KEY[type])}`}
                 </label>
               ))}
             </div>

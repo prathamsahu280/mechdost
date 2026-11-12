@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
 import { createApplication, type PartnerKind } from '@/demo/store';
+import { VEHICLE_LABEL_KEY } from '@mechdost/shared/vehicles';
 import { track } from '@/lib/analytics';
 
 type Field = 'name' | 'phone' | 'business' | 'pincode' | 'vehicles' | 'details' | 'consent';
@@ -138,7 +139,7 @@ export function ApplicationForm({ kind }: { kind: PartnerKind }) {
         <fieldset {...aria('vehicles')} tabIndex={-1}>
           <legend className="text-sm font-bold text-ink">{t('vehicles')}</legend>
           <div className="mt-2 flex flex-wrap gap-2">
-            {(['2W', '4W', 'EV'] as const).map((v) => (
+            {(['2W', '3W', '4W', 'EV'] as const).map((v) => (
               <label
                 key={v}
                 className="press inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-button border border-input-border px-4 text-sm font-bold text-ink has-checked:border-accent-button has-checked:bg-accent-soft has-checked:text-accent-soft-text"
@@ -149,7 +150,7 @@ export function ApplicationForm({ kind }: { kind: PartnerKind }) {
                   value={v}
                   className="size-5 accent-[var(--color-accent-button)]"
                 />
-                {v === '2W' ? t('twoWheeler') : v === '4W' ? t('fourWheeler') : t('ev')}
+                {v === 'EV' ? t('ev') : t(VEHICLE_LABEL_KEY[v])}
               </label>
             ))}
           </div>

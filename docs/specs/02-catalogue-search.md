@@ -13,7 +13,7 @@ customer (browse), seller (list products / offers), catalogue_manager (master da
 ## User stories
 
 - Browse by category tiles, filter by brand/price/fitment/availability/seller/attributes, sort, paginate ("load more" on mobile).
-- See "Fits your {vehicle}" badge; filter the whole catalogue by my primary vehicle.
+- See a vehicle-type chip ("For two-wheelers / three-wheelers / cars"); filter the whole catalogue by my primary vehicle's **type**. "Fits your {vehicle}" is shown only for exact make/model/year fitment rows (decision 2026-11-12, Q76).
 - Search by name, brand, part number (OE/cross-reference), with suggestions and zero-result fallback ("Request a product" sourcing form from the concept).
 - Open a product page with gallery, spec table, fitment list, price by pincode, reviews, recommendations, "Add to cart" / "Buy with installation" / "Ask about this product".
 - Get notified when an out-of-stock item is back (P1).

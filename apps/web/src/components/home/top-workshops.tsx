@@ -5,6 +5,7 @@ import { formatPrice } from '@/lib/format';
 import { StarRating } from '../reviews/star-rating';
 import { HideIfSuspended } from '../site/site-overrides';
 import { ButtonLink } from '../ui/button-link';
+import { VEHICLE_ICON } from '@mechdost/shared/vehicles';
 import { LocalLink } from '../ui/local-link';
 import { Container, Eyebrow } from '../ui/page-intro';
 
@@ -43,7 +44,7 @@ export function TopWorkshops({ city }: { city: string }) {
                       aria-hidden="true"
                       className="grid size-12 shrink-0 place-items-center rounded-xl bg-accent-soft text-[24px]"
                     >
-                      {w.vehicles.includes('4W') ? '🚗' : '🛵'}
+                      {VEHICLE_ICON[w.vehicles.includes('4W') ? '4W' : (w.vehicles[0] ?? '2W')]}
                     </span>
                     <div className="min-w-0">
                       <h3 className="font-heading text-lg leading-snug font-extrabold text-ink">

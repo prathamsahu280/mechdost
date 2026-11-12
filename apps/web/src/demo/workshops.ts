@@ -2,7 +2,9 @@
  * DEMO WORKSHOPS (decision 2026-11-01 "Demo mode"). Fictional workshops placed in real Raipur localities so the
  * location-first finder (spec 06) can be presented. Replaced by `GET /v1/workshops/nearby` (PostGIS ST_DWithin).
  */
-export type VehicleType = '2W' | '4W';
+import type { VehicleType } from '@mechdost/shared/vehicles';
+
+export type { VehicleType };
 
 export interface DemoService {
   key: string;
@@ -10,7 +12,8 @@ export interface DemoService {
   minPaise: number;
   maxPaise: number;
   duration: string;
-  vehicle: VehicleType | 'both';
+  /** `any`: every vehicle type the workshop serves. */
+  vehicle: VehicleType | 'any';
   included: string;
 }
 
@@ -39,7 +42,7 @@ const S = {
     minPaise: 25_000,
     maxPaise: 70_000,
     duration: '30–60 min',
-    vehicle: 'both',
+    vehicle: 'any',
     included: 'Road test, scanner check where available, written findings.',
   },
   routine2w: {
@@ -66,7 +69,7 @@ const S = {
     minPaise: 25_000,
     maxPaise: 60_000,
     duration: '30–45 min',
-    vehicle: 'both',
+    vehicle: 'any',
     included: 'Labour only; bring your oil or buy it from MechDost.',
   },
   brakes: {
@@ -75,7 +78,7 @@ const S = {
     minPaise: 25_000,
     maxPaise: 60_000,
     duration: '45 min',
-    vehicle: 'both',
+    vehicle: 'any',
     included: 'Pad/shoe check, cleaning and adjustment.',
   },
   battery: {
@@ -84,7 +87,7 @@ const S = {
     minPaise: 20_000,
     maxPaise: 50_000,
     duration: '20–30 min',
-    vehicle: 'both',
+    vehicle: 'any',
     included: 'Load test, terminal cleaning, charging-system check.',
   },
   tyres: {
@@ -93,7 +96,7 @@ const S = {
     minPaise: 15_000,
     maxPaise: 40_000,
     duration: '20–40 min',
-    vehicle: 'both',
+    vehicle: 'any',
     included: 'Fitting, pressure check, puncture inspection.',
   },
   ac: {
@@ -120,7 +123,7 @@ const S = {
     minPaise: 50_000,
     maxPaise: 90_000,
     duration: '45 min',
-    vehicle: 'both',
+    vehicle: 'any',
     included: 'Battery health readout, brakes, tyres, charging port check.',
   },
   wash: {
@@ -129,7 +132,7 @@ const S = {
     minPaise: 30_000,
     maxPaise: 90_000,
     duration: '1–2 h',
-    vehicle: 'both',
+    vehicle: 'any',
     included: 'Foam wash, vacuum, dashboard polish.',
   },
 } satisfies Record<string, DemoService>;
@@ -228,7 +231,7 @@ export const DEMO_WORKSHOPS: readonly DemoWorkshop[] = [
     pincode: '492007',
     lat: 21.2802,
     lng: 81.6687,
-    vehicles: ['2W'],
+    vehicles: ['2W', '3W'],
     ev: true,
     pickup: true,
     rating: 4.8,

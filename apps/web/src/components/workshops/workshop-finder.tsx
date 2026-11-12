@@ -4,6 +4,7 @@ import { BadgeCheck, LocateFixed, MapPin, Star, Truck, Zap } from 'lucide-react'
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useMemo, useRef, useState } from 'react';
+import { VEHICLE_LABEL_KEY, VEHICLE_TYPES, isVehicleType, type VehicleType } from '@mechdost/shared/vehicles';
 import {
   DEMO_WORKSHOPS,
   PIN_CENTROIDS,
@@ -18,7 +19,7 @@ import { track } from '@/lib/analytics';
 import { mapUi } from '@/lib/map-ui';
 import { WorkshopMap, type MapPoint } from './workshop-map';
 
-type VehicleFilter = 'any' | '2W' | '4W';
+type VehicleFilter = 'any' | VehicleType;
 type Origin = { lat: number; lng: number; source: 'gps' | 'pin'; pin?: string; area?: string } | null;
 
 /** GPS → PIN code through our server (`/api/geo/pincode`); null when unknown or offline. */
@@ -162,13 +163,16 @@ export function WorkshopFinder() {
               id="finder-vehicle"
               value={vehicle}
               onChange={(e) => {
-                setVehicle(e.target.value as VehicleFilter);
+                setVehicle(isVehicleType(e.target.value) ? e.target.value : 'any');
               }}
               className="mt-1 min-h-11 w-full rounded-input border border-input-border bg-surface px-3 text-[15px] text-ink"
             >
               <option value="any">{t('any')}</option>
-              <option value="2W">{t('twoWheeler')}</option>
-              <option value="4W">{t('fourWheeler')}</option>
+              {VEHICLE_TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {t(VEHICLE_LABEL_KEY[type])}
+                </option>
+              ))}
             </select>
           </div>
           <button

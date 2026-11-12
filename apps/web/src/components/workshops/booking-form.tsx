@@ -7,6 +7,7 @@ import { usePartnerStatus } from '@/demo/partner-status';
 import { useMemo, useRef, useState, type SyntheticEvent } from 'react';
 import { createDemoRequest, useHydrated } from '@/demo/store';
 import type { DemoWorkshop, VehicleType } from '@/demo/workshops';
+import { VEHICLE_ICON } from '@mechdost/shared/vehicles';
 import { track } from '@/lib/analytics';
 import { formatPrice } from '@/lib/format';
 
@@ -53,7 +54,7 @@ export function BookingForm({ workshop }: { workshop: DemoWorkshop }) {
   const minDate = hydrated ? todayIst() : undefined;
   const maxDate = minDate ? plusDays(minDate, MAX_DAYS_AHEAD) : undefined;
 
-  const services = workshop.services.filter((s) => s.vehicle === 'both' || s.vehicle === vehicleType);
+  const services = workshop.services.filter((s) => s.vehicle === 'any' || s.vehicle === vehicleType);
   const chosen = services.filter((s) => selected.includes(s.key));
   const estimate = useMemo(
     () => ({
@@ -163,7 +164,7 @@ export function BookingForm({ workshop }: { workshop: DemoWorkshop }) {
                   }}
                   className="sr-only"
                 />
-                {v === '2W' ? '2W' : '4W'}
+                <span aria-hidden="true">{VEHICLE_ICON[v]}</span> {v}
               </label>
             ))}
           </div>
