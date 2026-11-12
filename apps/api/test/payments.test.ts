@@ -9,14 +9,22 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { seedRaipurDemo, type DemoFixture } from '@mechdost/db/demo-seed';
-import { ensureUser } from '@mechdost/db/repo';
+import { cancelMyOrder, ensureUser } from '@mechdost/db/repo';
+import * as s from '@mechdost/db/schema';
+import { setLogSink } from '../src/logger';
 import type { RazorpayGateway, RazorpayPayment } from '../src/payments/razorpay';
 import { bearer, buildApp, type ErrorJson } from './helpers';
 
 const fixture = JSON.parse(
   readFileSync(fileURLToPath(new URL('../../../packages/db/seed/raipur-demo.json', import.meta.url)), 'utf8'),
 ) as DemoFixture;
-const BATTERY = fixture.products.find((p) => p.slug === 'exide-xltz4a-2w-battery')?.sku ?? '';
+const skuOf = (slug: string) => fixture.products.find((p) => p.slug === slug)?.sku ?? '';
+const BATTERY = skuOf('exide-xltz4a-2w-battery');
+// Two shops serve this cart: one order group, two sub-orders.
+const TWO_SHOP_CART = [
+  { sku: skuOf('castrol-activ-4t-20w40-900ml'), qty: 1 },
+  { sku: skuOf('scooter-tubeless-tyre-90-90-12'), qty: 1 },
+];
 const KEY_SECRET = 'test_key_secret_0123456789';
 const WEBHOOK_SECRET = 'test_webhook_secret_01';
 const ENV = {
@@ -66,8 +74,11 @@ async function person(n: string) {
   return { ...bearer(token), 'content-type': 'application/json' };
 }
 
-async function placeOnline(headers: Record<string, string>, key?: string) {
-  const lines = [{ sku: BATTERY, qty: 1 }];
+async function placeOnline(
+  headers: Record<string, string>,
+  key?: string,
+  lines: { sku: string; qty: number }[] = [{ sku: BATTERY, qty: 1 }],
+) {
   const q = (await (
     await ctx.app.request('/v1/checkout/quote', {
       method: 'POST',
@@ -98,6 +109,7 @@ async function placeOnline(headers: Record<string, string>, key?: string) {
       code: string;
       totalPaise: number;
       paymentStatus: string;
+      orders: { code: string; totalPaise: number }[];
       razorpay: { keyId: string; orderId: string; amountPaise: number; currency: string } | null;
     },
   };
@@ -255,5 +267,55 @@ describe('the webhook', () => {
     });
     const res = await off.app.request('/webhooks/razorpay', { method: 'POST', body: '{}' });
     expect(res.status).toBe(404);
+  });
+});
+
+describe('final review 2026-11-12', () => {
+  it('after one part is cancelled, paying asks only for what is left, with a new Razorpay order', async () => {
+    const key = 'payments-api-partial-00001';
+    const meera = await person('03');
+    const first = await placeOnline(meera, key, TWO_SHOP_CART);
+    expect(first.status).toBe(201);
+    expect(first.body.orders).toHaveLength(2);
+    const [gone, kept] = first.body.orders;
+    const sub = (await ctx.db.select().from(s.orders)).find((o) => o.code === gone!.code);
+    const user = (await ctx.db.select().from(s.users)).find((u) => u.firebaseUid === 'pay-03');
+    await cancelMyOrder(ctx.db, {
+      userId: user!.id,
+      code: gone!.code,
+      reasonCode: 'changed_mind',
+      expectedVersion: sub!.version,
+    });
+    const again = await placeOnline(meera, key, TWO_SHOP_CART);
+    expect(again.status).toBe(200);
+    expect(again.body.razorpay?.amountPaise).toBe(kept!.totalPaise);
+    expect(again.body.razorpay?.orderId).not.toBe(first.body.razorpay?.orderId);
+  });
+
+  it('the checkout callback logs money that needs a refund, like the webhook does', async () => {
+    const lines: string[] = [];
+    setLogSink((line) => lines.push(line));
+    try {
+      const placed = await placeOnline(asha);
+      const orderId = placed.body.razorpay!.orderId;
+      for (const id of ['pay_FirstApi0001', 'pay_SecondApi001']) {
+        razorpay.payments.set(id, {
+          id,
+          orderId,
+          status: 'captured',
+          amountPaise: placed.body.totalPaise,
+          currency: 'INR',
+          method: 'upi',
+        });
+      }
+      await verify(asha, orderId, 'pay_FirstApi0001', sign(orderId, 'pay_FirstApi0001'));
+      const res = await verify(asha, orderId, 'pay_SecondApi001', sign(orderId, 'pay_SecondApi001'));
+      expect(((await res.json()) as { outcome: string }).outcome).toBe('needs_refund');
+      expect(
+        lines.some((l) => l.includes('"severity":"ERROR"') && l.includes('razorpay_verify_needs_refund')),
+      ).toBe(true);
+    } finally {
+      setLogSink(() => undefined);
+    }
   });
 });

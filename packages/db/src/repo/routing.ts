@@ -2,7 +2,7 @@ import { and, eq, inArray, sql } from 'drizzle-orm';
 import type { OrderRejectReason, OrderStatus } from '@mechdost/shared/state';
 import { OPERATIONAL_SETTINGS } from '@mechdost/shared/settings';
 import { ORDER_REJECT_REASONS } from '@mechdost/shared/state';
-import { auditLog, orderAssignments, reservations, shipments, shopInventory } from '../schema';
+import { auditLog, orderAssignments, orders, reservations, shipments, shopInventory } from '../schema';
 import { overrideShipmentInTx } from './delivery';
 import { expireAssignment, offerOrderToShop } from './assignments';
 import { ConflictError, NotFoundError, ValidationError } from './errors';
@@ -581,6 +581,14 @@ export async function overrideOrderDelivery(
       cityId: o.cityId,
       props: { orderCode: o.code },
     });
+    // Delivered counts include overridden deliveries, like the code path (final review 2026-11-12).
+    const [owner] = await tx.select({ shopId: orders.shopId }).from(orders).where(eq(orders.id, o.id));
+    if (owner?.shopId)
+      await recordServerEvent(tx, 'order_delivered', {
+        userId: input.staffUserId,
+        cityId: o.cityId,
+        props: { orderCode: o.code, shopId: owner.shopId },
+      });
     return { status: 'delivered', version: row.version };
   });
 }

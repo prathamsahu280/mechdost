@@ -112,6 +112,19 @@ describe('configuration', () => {
     expect(loadConfig(prod).trustedProxyHops).toBe(1);
   });
 
+  it('production with Razorpay keys needs the webhook secret (no capture may go unnoticed; final review 2026-11-12)', () => {
+    const live = {
+      ...prod,
+      RAZORPAY_KEY_ID: 'rzp_live_Fake0123456789',
+      RAZORPAY_KEY_SECRET: 'live_key_secret_0123456789',
+    };
+    expect(() => loadConfig(live)).toThrow(/RAZORPAY_WEBHOOK_SECRET/);
+    expect(loadConfig({ ...live, RAZORPAY_WEBHOOK_SECRET: 'whsec_0123456789' }).razorpay?.webhookSecret).toBe(
+      'whsec_0123456789',
+    );
+    expect(loadConfig(prod).razorpay).toBeNull();
+  });
+
   it('on Cloud Run (K_SERVICE set) the API refuses to start unless NODE_ENV=production (review C3)', () => {
     expect(() => loadConfig({ ...base, K_SERVICE: 'mechdost-api' })).toThrow(/NODE_ENV/);
     expect(() => loadConfig({ ...base, NODE_ENV: 'development', K_SERVICE: 'mechdost-api' })).toThrow(

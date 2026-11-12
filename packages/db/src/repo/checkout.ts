@@ -144,7 +144,12 @@ async function setting(db: Tx, cityId: string, key: string): Promise<number | nu
     : null;
 }
 
-async function settingOr(db: Tx, cityId: string, s: { key: string; fallback: number }): Promise<number> {
+/** A checkout setting for a city (city value, else global, else the registry default). */
+export async function settingOr(
+  db: Tx,
+  cityId: string,
+  s: { key: string; fallback: number },
+): Promise<number> {
   return (await setting(db, cityId, s.key)) ?? s.fallback;
 }
 

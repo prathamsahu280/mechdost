@@ -38,19 +38,28 @@ export async function ensureRazorpayOrder(
       amountPaise: open.amountPaise,
       currency: 'INR',
     };
+  // Only the parts still live are charged: a part cancelled before paying is not (final review, finding 3).
+  const amountPaise = group.payablePaise;
+  if (amountPaise <= 0) return null;
   const created = await gateway.createOrder({
-    amountPaise: group.totalPaise,
+    amountPaise,
     receipt: group.code, // ≤ 40 chars (MD-RPR-2026-XXXXXX)
     notes: { orderCode: group.code },
   });
-  if (created.amountPaise !== group.totalPaise || created.currency !== 'INR')
+  if (created.amountPaise !== amountPaise || created.currency !== 'INR')
     throw new ApiError(502, 'PAYMENT_PROVIDER_MISMATCH', 'The payment provider returned a different amount');
-  await recordRazorpayOrder(db, {
+  // Two overlapping place calls: the first stored Razorpay order wins and this one is never shown (finding 2).
+  const stored = await recordRazorpayOrder(db, {
     groupId: group.id,
     providerOrderId: created.id,
-    amountPaise: group.totalPaise,
+    amountPaise,
   });
-  return { keyId: gateway.keyId, orderId: created.id, amountPaise: group.totalPaise, currency: 'INR' };
+  return {
+    keyId: gateway.keyId,
+    orderId: stored.providerOrderId,
+    amountPaise: stored.amountPaise,
+    currency: 'INR',
+  };
 }
 
 /** A Razorpay payment as the fact our repository understands (null for states that change nothing). */

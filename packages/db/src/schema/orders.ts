@@ -378,6 +378,11 @@ export const payments = pgTable(
     uniqueIndex('payments_one_success_per_group_uq')
       .on(t.groupId)
       .where(sql`${t.status} in ('paid','partially_refunded','refunded')`),
+    // One Razorpay order a customer can still pay per group: two overlapping place calls never create two
+    // (final review 2026-11-12, finding 2).
+    uniqueIndex('payments_one_open_per_group_uq')
+      .on(t.groupId)
+      .where(sql`${t.status} in ('created','attempted','failed')`),
     index().on(t.groupId),
   ],
 );

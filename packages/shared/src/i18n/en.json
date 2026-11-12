@@ -460,7 +460,9 @@
     "online_cart_changed": "Some products changed or sold out. Please review your cart.",
     "online_price_changed": "The price changed. Please review your cart and pay again.",
     "online_blocked": "This account cannot place orders right now. Please contact support.",
-    "online_cancelled": "Payment was not completed. Your order is saved for 30 minutes: continue to pay again.",
+    "online_cancelled": "Payment was not completed. Your order is saved for a short time: continue to pay again.",
+    "online_expired": "The time to pay for that order has ended. Continue to place it again.",
+    "online_details_changed": "Your details changed. Continue to place the order with the new details.",
     "online_failed": "The payment failed. Nothing was charged; you can try again or choose cash on delivery.",
     "online_not_confirmed": "We could not confirm the payment yet. If money was taken, it shows on your order soon; otherwise it is refunded."
   },

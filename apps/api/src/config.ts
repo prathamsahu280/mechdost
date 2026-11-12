@@ -123,6 +123,15 @@ const schema = z
         message: 'test keys are not allowed in production',
       });
     }
+    // Without the webhook, a payment whose browser closed before the callback is never confirmed or flagged
+    // (final review 2026-11-12, finding 5).
+    if (env.RAZORPAY_KEY_ID && !env.RAZORPAY_WEBHOOK_SECRET) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['RAZORPAY_WEBHOOK_SECRET'],
+        message: 'required in production when Razorpay keys are set',
+      });
+    }
     if (env.TRUSTED_PROXY_HOPS < 1) {
       ctx.addIssue({
         code: 'custom',

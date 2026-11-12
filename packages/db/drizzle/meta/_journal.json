@@ -253,6 +253,13 @@
       "when": 1794497258651,
       "tag": "0035_payment_not_completed_reason",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1794506246794,
+      "tag": "0036_one_open_payment_per_group",
+      "breakpoints": true
     }
   ]
 }

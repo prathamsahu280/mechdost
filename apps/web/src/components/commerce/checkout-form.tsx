@@ -103,8 +103,14 @@ export function CheckoutForm() {
       return;
     }
     track('click', { id: `checkout_online_${result.reason}`, path: window.location.pathname });
-    // A changed cart or price needs a fresh order: the next try gets a new key.
-    if (result.reason === 'cart_changed' || result.reason === 'price_changed') attemptKey.current = null;
+    // A changed cart, price or details, or a closed payment window, needs a fresh order: the next try gets a new key.
+    if (
+      result.reason === 'cart_changed' ||
+      result.reason === 'price_changed' ||
+      result.reason === 'expired' ||
+      result.reason === 'details_changed'
+    )
+      attemptKey.current = null;
     setOnlineNote({
       text: t(`online_${result.reason}`),
       link: result.reason === 'sign_in' || result.reason === 'verify_email' ? result.reason : undefined,

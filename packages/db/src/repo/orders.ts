@@ -104,7 +104,20 @@ async function settleGroupPayment(tx: Tx, groupId: string): Promise<void> {
     .for('update');
   if (!g) return;
   const subs = await tx.select({ status: orders.status }).from(orders).where(eq(orders.groupId, groupId));
-  if (subs.some((s) => !orderMachine.isTerminal(s.status as OrderStatus))) return;
+  if (subs.some((s) => !orderMachine.isTerminal(s.status as OrderStatus))) {
+    // A part was cancelled or rejected before paying: the open Razorpay order still asks for the old total. Close
+    // it, so the next payment asks only for what is left (final review 2026-11-12, finding 3).
+    if (
+      g.method === 'online' &&
+      UNPAID.includes(g.status) &&
+      subs.some((s) => s.status === 'cancelled' || s.status === 'rejected')
+    )
+      await tx
+        .update(payments)
+        .set({ status: 'expired' })
+        .where(and(eq(payments.groupId, groupId), inArray(payments.status, [...UNPAID])));
+    return;
+  }
   if (g.method === 'cod' && g.status === 'cod_pending' && subs.some((s) => s.status === 'delivered')) {
     await tx
       .update(orderGroups)

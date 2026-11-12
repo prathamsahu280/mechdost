@@ -8,6 +8,7 @@
   - `RAZORPAY_WEBHOOK_SECRET` (server only, set in Razorpay Dashboard → Webhooks)
   - Production uses Secret Manager and refuses `rzp_test_` keys.
 - **When it switches on:** online payment is offered only when the key id and the secret are both set. Without them, `paymentMethod: 'online'` answers `422 PAYMENT_METHOD_UNAVAILABLE`.
+- **Production** refuses to start with Razorpay keys but no webhook secret: without the webhook, a payment whose browser closed before the confirmation is never noticed.
 
 ## Test it from the website (local)
 
@@ -37,10 +38,10 @@ The worker cancels online orders that are not paid within `checkout.online_payme
 
 ## A payment that needs a refund
 
-If money is captured for an order that already expired or was cancelled, it is **not** marked paid:
+If money is captured for an order that already expired, was cancelled, or was already paid through another payment, it is **not** marked paid:
 
 - the audit log gets `payment.captured_needs_refund` (with the payment id and amount);
-- the API logs `razorpay_webhook_needs_refund`.
+- the API logs `razorpay_webhook_needs_refund` (webhook) or `razorpay_verify_needs_refund` (checkout callback).
 
 Refund it from the Razorpay Dashboard until automatic refunds exist (spec 05).
 

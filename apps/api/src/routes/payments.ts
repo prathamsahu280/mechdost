@@ -79,6 +79,12 @@ export function paymentRoutes(deps: AppDeps, cache: SessionCache) {
       paymentId: body.razorpayPaymentId,
       signature: body.razorpaySignature,
     });
+    // Finance watches these (runbook "A payment that needs a refund"), on this path as on the webhook.
+    if (result.outcome === 'needs_refund' || result.outcome === 'mismatch')
+      log('error', `razorpay_verify_${result.outcome}`, {
+        requestId: c.get('requestId'),
+        orderCode: result.orderCode,
+      });
     return c.json(result, 200);
   });
 }

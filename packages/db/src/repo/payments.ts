@@ -1,9 +1,10 @@
-import { and, desc, eq, inArray, isNull, lt, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, lt, sql } from 'drizzle-orm';
 import { paymentMachine, type PaymentStatus } from '@mechdost/shared/state';
 import { OPERATIONAL_SETTINGS } from '@mechdost/shared/settings';
-import { auditLog, orderGroups, orders, payments, settings, webhookEvents } from '../schema';
+import { auditLog, orderGroups, orders, payments, reservations, webhookEvents } from '../schema';
+import { CHECKOUT_SETTINGS, settingOr } from './checkout';
 import { cancelInTx } from './customer-orders';
-import { NotFoundError } from './errors';
+import { ConflictError, NotFoundError } from './errors';
 import { recordServerEvent } from './events';
 import type { Tx } from './orders';
 
@@ -43,11 +44,14 @@ export async function openPaymentForGroup(db: Tx, groupId: string): Promise<Paym
   return row ?? null;
 }
 
-/** A customer's own online order group by its code (404 for anyone else or a COD order). */
+/**
+ * A customer's own online order group by its code (404 for anyone else or a COD order). `payablePaise`: the
+ * sub-orders still live; a part cancelled before paying is not charged (final review 2026-11-12, finding 3).
+ */
 export async function onlineGroupOfUser(
   db: Tx,
   input: { userId: string; groupCode: string },
-): Promise<{ id: string; code: string; totalPaise: number; paymentStatus: string }> {
+): Promise<{ id: string; code: string; totalPaise: number; payablePaise: number; paymentStatus: string }> {
   const [g] = await db
     .select({
       id: orderGroups.id,
@@ -65,10 +69,18 @@ export async function onlineGroupOfUser(
     )
     .limit(1);
   if (!g) throw new NotFoundError('Order not found');
-  return g;
+  const [row] = await db
+    .select({ payable: sql<string>`coalesce(sum(${orders.totalPaise}), 0)` })
+    .from(orders)
+    .where(and(eq(orders.groupId, g.id), sql`${orders.status} not in ('cancelled', 'rejected')`));
+  return { ...g, payablePaise: Number(row?.payable ?? 0) };
 }
 
-/** Store the Razorpay order before the client sees it (unique provider order id). */
+/**
+ * Store the Razorpay order before the client sees it. A group has one open Razorpay order
+ * (`payments_one_open_per_group_uq`): when two place calls overlap, the second gets the first one's order and its
+ * own Razorpay order is never shown, so it cannot be paid (final review 2026-11-12, finding 2).
+ */
 export async function recordRazorpayOrder(
   db: Tx,
   input: { groupId: string; providerOrderId: string; amountPaise: number },
@@ -80,9 +92,12 @@ export async function recordRazorpayOrder(
       providerOrderId: input.providerOrderId,
       amountPaise: input.amountPaise,
     })
+    .onConflictDoNothing()
     .returning(columns);
-  if (!row) throw new Error('payment insert returned no row');
-  return row;
+  if (row) return row;
+  const open = await openPaymentForGroup(db, input.groupId);
+  if (!open) throw new ConflictError('The order cannot be paid any more', 'PAYMENT_CLOSED');
+  return open;
 }
 
 /** The payment behind a Razorpay order, only for the customer who placed it (404 otherwise). */
@@ -179,6 +194,11 @@ export async function applyRazorpayPayment(
       await flagForRefund(tx, fact, p.groupCode);
       return { outcome: 'needs_refund' as const };
     }
+    // The group was already paid through another Razorpay order: this is money taken twice (finding 2).
+    if (to === 'paid' && p.paymentStatus === 'paid') {
+      await flagForRefund(tx, fact, p.groupCode);
+      return { outcome: 'needs_refund' as const };
+    }
     // Captured money for an order that expired or was cancelled must not complete it: flag it for a refund.
     if (
       to === 'paid' &&
@@ -204,6 +224,17 @@ export async function applyRazorpayPayment(
       .update(orderGroups)
       .set({ paymentStatus: to })
       .where(and(eq(orderGroups.id, p.groupId), sql`${orderGroups.paymentStatus} <> 'paid'`));
+    // A paid order keeps its stock until staff route it: the short online hold becomes the COD hold (finding 1).
+    if (to === 'paid') {
+      const minutes = await settingOr(tx, p.cityId, CHECKOUT_SETTINGS.codReservationMinutes);
+      const groupOrders = tx.select({ id: orders.id }).from(orders).where(eq(orders.groupId, p.groupId));
+      await tx
+        .update(reservations)
+        .set({
+          expiresAt: sql`greatest(${reservations.expiresAt}, now() + make_interval(mins => ${minutes}))`,
+        })
+        .where(and(eq(reservations.status, 'active'), inArray(reservations.orderId, groupOrders)));
+    }
     await tx.insert(auditLog).values({
       actorUserId: null,
       actorRole: 'system',
@@ -225,64 +256,67 @@ export async function applyRazorpayPayment(
 /**
  * Online orders whose payment never completed within the window: their sub-orders are cancelled by the system
  * (reason `payment_not_completed`), the stock goes back on sale, and the group and its open payments expire.
- * Returns the number of groups closed. Run by the worker every minute.
+ * The window is `checkout.online_payment_minutes` of the order's city (else global), the same value that set its
+ * stock hold (final review 2026-11-12, finding 7). One group failing never stops the rest. Run by the worker.
  */
-export async function expireUnpaidOnlineOrders(db: Tx, input: { olderThanMinutes: number }): Promise<number> {
+export async function expireUnpaidOnlineOrders(db: Tx): Promise<{ closed: number; failed: number }> {
+  const shortest = OPERATIONAL_SETTINGS['checkout.online_payment_minutes'].min;
   const due = await db
-    .select({ id: orderGroups.id })
+    .select({
+      id: orderGroups.id,
+      cityId: orderGroups.cityId,
+      ageMinutes: sql<string>`extract(epoch from now() - ${orderGroups.createdAt}) / 60`,
+    })
     .from(orderGroups)
     .where(
       and(
         eq(orderGroups.paymentMethod, 'online'),
         inArray(orderGroups.paymentStatus, [...OPEN]),
-        lt(orderGroups.createdAt, sql`now() - make_interval(mins => ${input.olderThanMinutes})`),
+        lt(orderGroups.createdAt, sql`now() - make_interval(mins => ${shortest})`),
       ),
     )
     .limit(100);
   let closed = 0;
+  let failed = 0;
   for (const g of due) {
-    const done = await db.transaction(async (tx) => {
-      // Order rows first (lock order), then the group: a capture racing this sees either state, never half.
-      const subs = await tx
-        .select({ id: orders.id, status: orders.status, version: orders.version })
-        .from(orders)
-        .where(eq(orders.groupId, g.id))
-        .for('update');
-      const [group] = await tx
-        .update(orderGroups)
-        .set({ paymentStatus: 'expired' })
-        .where(and(eq(orderGroups.id, g.id), inArray(orderGroups.paymentStatus, [...OPEN])))
-        .returning({ id: orderGroups.id });
-      if (!group) return false; // paid meanwhile
-      for (const o of subs.filter((x) => x.status === 'placed'))
-        await cancelInTx(tx, {
-          order: { id: o.id, status: 'placed' },
-          expectedVersion: o.version,
-          reasonCode: 'payment_not_completed',
-          actor: { type: 'system' },
-        });
-      await tx
-        .update(payments)
-        .set({ status: 'expired' })
-        .where(and(eq(payments.groupId, g.id), inArray(payments.status, [...OPEN])));
-      return true;
-    });
-    if (done) closed += 1;
+    try {
+      const minutes = await settingOr(db, g.cityId, CHECKOUT_SETTINGS.onlinePaymentMinutes);
+      if (Number(g.ageMinutes) < minutes) continue;
+      if (await expireGroup(db, g.id)) closed += 1;
+    } catch {
+      failed += 1;
+    }
   }
-  return closed;
+  return { closed, failed };
 }
 
-/** Minutes an online payment may take (admin setting `checkout.online_payment_minutes`, global value). */
-export async function onlinePaymentMinutes(db: Tx): Promise<number> {
-  const [row] = await db
-    .select({ value: settings.value })
-    .from(settings)
-    .where(and(eq(settings.key, 'checkout.online_payment_minutes'), isNull(settings.cityId)))
-    .limit(1);
-  const v = row?.value;
-  return typeof v === 'number' && Number.isSafeInteger(v) && v > 0
-    ? v
-    : OPERATIONAL_SETTINGS['checkout.online_payment_minutes'].default;
+async function expireGroup(db: Tx, groupId: string): Promise<boolean> {
+  return db.transaction(async (tx) => {
+    // Order rows first (lock order), then the group: a capture racing this sees either state, never half.
+    const subs = await tx
+      .select({ id: orders.id, status: orders.status, version: orders.version })
+      .from(orders)
+      .where(eq(orders.groupId, groupId))
+      .for('update');
+    const [group] = await tx
+      .update(orderGroups)
+      .set({ paymentStatus: 'expired' })
+      .where(and(eq(orderGroups.id, groupId), inArray(orderGroups.paymentStatus, [...OPEN])))
+      .returning({ id: orderGroups.id });
+    if (!group) return false; // paid meanwhile
+    for (const o of subs.filter((x) => x.status === 'placed'))
+      await cancelInTx(tx, {
+        order: { id: o.id, status: 'placed' },
+        expectedVersion: o.version,
+        reasonCode: 'payment_not_completed',
+        actor: { type: 'system' },
+      });
+    await tx
+      .update(payments)
+      .set({ status: 'expired' })
+      .where(and(eq(payments.groupId, groupId), inArray(payments.status, [...OPEN])));
+    return true;
+  });
 }
 
 /** Is any sub-order of the group still live (not cancelled or rejected)? */

@@ -30,7 +30,7 @@ cart (client + server `carts` for logged-in) → `checkout_sessions` (address, p
 - `POST /v1/checkout/quote` `{pincode, lines:[{sku, qty}], locale}`: public (60/min per IP). Each line is priced from the **nearest covering shop with free stock for the whole quantity** (same rule as spec 02); lines are grouped by that shop into per-shop groups ("Sold by …", delivery from `shop_pincodes.shipping_paise`, free when the group subtotal reaches setting `checkout.free_delivery_min_paise`); GST split exactly per line (`splitInclusiveGst`: CGST = SGST when shop state = delivery state, else IGST). Line issues: `unavailable` (not live / no stock anywhere) or `insufficient_stock` with `available` = the most one shop can deliver. COD eligibility: `checkout.cod_cap_paise` (default ₹5,000) and the PIN's `cod_allowed`; `checkout.cod_fee_paise` (default 0). The COD fee is stored on the group (`order_groups.cod_fee_paise`) **and on the first sub-order** (`orders.cod_fee_paise`, migration 0032), so each sub-order's total is exactly what its shop collects (`orders_total_matches` CHECK: total = subtotal − discount + shipping + COD fee) and the sub-orders add up to the group total (code review 2026-11-03). Settings are per city with a global fallback (admin-editable, hard rule 8). Unknown or non-live PIN → 422 `PINCODE_NOT_SERVICEABLE`.
 - `POST /v1/orders` (signed in, phone + email verified, `orders:place`, 10 per 10 min per user, **`Idempotency-Key` header required**): COD only (`online` → 422 `PAYMENT_METHOD_UNAVAILABLE` until Razorpay, pending #1). In one transaction: advisory lock on (user, key) → same key returns the same order (200, `replayed: true`; first time 201) — but only for the same request: a SHA-256 of address, lines and note is stored (`order_groups.request_hash`, 0033) and the same key with a different request is 422 `IDEMPOTENCY_MISMATCH` → re-quote → `CHECKOUT_UNAVAILABLE` (422, `details.lines`) / `PRICE_CHANGED` (409, the customer's `expectedTotalPaise` must equal the re-priced total) / `COD_NOT_ALLOWED` (422) → order group `MD-{CITY}-{YYYY}-{6}` (code collision retried in a savepoint) + one sub-order per shop (`{group}-{n}`, status `placed`, `suggested_shop_id` = pricing shop, address snapshot) + items with tax snapshot and the title in English and Hindi (`order_items.title` / `title_hi`, 0033; readers pick by locale, shops get both) + stock reservations (conditional updates; TTL `checkout.cod_reservation_minutes`, default 24 h) + audit row; the insert trigger writes the `placed` timeline event with actor customer and the live outbox pings the admin queue.
 - Customer blocks (spec 08, built 2026-11-03): `orders`/`full` → 403 `ORDERS_BLOCKED`; `cod_only` → `COD_NOT_ALLOWED` (`reason: customer`). The public quote does not know the customer, so placement is the authoritative check.
-- Not yet: server carts and merge, checkout sessions, coupons, Coins redemption at the server, business GSTIN, COD OTP confirmation, Razorpay, web checkout wired to the API.
+- Not yet: server carts and merge, checkout sessions, coupons, Coins redemption at the server, business GSTIN, COD OTP confirmation, the web cart on the API (the pay-online button already places API orders; see § Online payment).
 
 ## Online payment — Razorpay Standard Checkout (backend built 2026-11-12)
 
@@ -39,13 +39,13 @@ Plan `docs/superpowers/plans/2026-11-12-razorpay-checkout-backend.md`; user chos
 - **Quote:** `POST /v1/checkout/quote` returns `totalPaise` (cash on delivery, includes the COD fee) and `onlineTotalPaise` (paid online: no COD fee).
 - **Place:** `POST /v1/orders {paymentMethod: 'online', expectedTotalPaise: onlineTotalPaise, …}` with `Idempotency-Key`.
   - It places the order like COD (re-priced, reserved, idempotent) with `payment_method = 'online'` and `payment_status = 'created'`, no COD fee, and stock held for `checkout.online_payment_minutes` (admin setting, 10–120, default 30).
-  - It then creates the Razorpay order (`amount` = group total, `receipt` = group code) and stores it in `payments` (unique provider order id) **before** answering.
+  - It then creates the Razorpay order (`amount` = what is still payable: the live sub-orders; `receipt` = group code) and stores it in `payments` (unique provider order id; **one open Razorpay order per group**, `payments_one_open_per_group_uq`) **before** answering. When two place calls overlap, the first stored order wins and the other is never shown.
   - The answer carries `razorpay {keyId, orderId, amountPaise, currency}`. A retried place reuses the stored Razorpay order.
   - `422 PAYMENT_METHOD_UNAVAILABLE` while the keys are not set.
 - **Checkout callback:** `POST /v1/payments/razorpay/verify {razorpayOrderId, razorpayPaymentId, razorpaySignature}`, for a signed-in, verified owner only (404 otherwise).
   - It checks `HMAC_SHA256(our order id + "|" + payment id, key secret)` in constant time (`400 SIGNATURE_INVALID`).
   - It then **fetches the payment from Razorpay**: only `captured`, for our order, the stored amount and INR, marks the order paid.
-  - Answer: `{orderCode, outcome: paid | attempted | failed | unchanged | mismatch}`.
+  - Answer: `{orderCode, outcome: paid | attempted | failed | unchanged | mismatch | unknown_order | needs_refund}`. `needs_refund` and `mismatch` are logged as errors here as on the webhook.
 - **Webhook:** `POST /webhooks/razorpay`; 404 until `RAZORPAY_WEBHOOK_SECRET` is set.
   - It checks the raw-body HMAC (`X-Razorpay-Signature`) before parsing.
   - Each `x-razorpay-event-id` is recorded once (`webhook_events`).
@@ -63,8 +63,15 @@ Plan `docs/superpowers/plans/2026-11-12-razorpay-checkout-backend.md`; user chos
   - Cancelling the last live part of an unpaid online order expires the group and its Razorpay orders.
   - Money captured for an expired or cancelled order never completes it: outcome `needs_refund`, audit `payment.captured_needs_refund` (once per payment), logged as an error for finance until automatic refunds exist (spec 05).
   - Razorpay order `expire_by` is not set (not verified for the Orders API); the window is enforced on our side.
+- **Final review fixes (2026-11-12):**
+  - A capture extends the order's stock holds to `checkout.cod_reservation_minutes`, so a paid order keeps its stock until staff route it.
+  - A capture on another Razorpay order of a group that is already paid is `needs_refund` (never an error loop).
+  - Cancelling one part of an unpaid online order expires its open Razorpay order; the next payment asks only for the live parts.
+  - The payment window is `checkout.online_payment_minutes` of the order's **city** (else global), the same value that set the stock hold. One group failing never stops the rest of the expiry run.
+  - Production refuses to start with Razorpay keys but no `RAZORPAY_WEBHOOK_SECRET`.
+  - The website: a retry of a paid attempt is a success; a closed window or changed details start a new order; once Razorpay took the money, a failed confirmation says "not confirmed yet" (it checks the order, which the webhook may have confirmed), never "choose cash on delivery".
+- **Website:** checkout offers "Pay online" in real sign-in builds (`apps/web/src/lib/payments/pay-online.ts`); local test steps in `docs/runbooks/payments.md`.
 - **Not yet:**
-  - the website's pay button (comes with "cart + checkout on the API");
   - refunds for paid orders that are cancelled or rejected (spec 05);
   - the hourly reconciliation job;
   - pg-boss processing of webhooks.

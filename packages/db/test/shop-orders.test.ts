@@ -401,6 +401,9 @@ describe('delivery override (review B2, spec 04)', () => {
     expect(audit.map((a) => a.action)).toContain('delivery.override');
     const ev = await db.select().from(events).where(eq(events.event, 'admin_delivery_override'));
     expect(ev.map((e) => e.props)).toContainEqual({ orderCode: code });
+    // Delivered counts include overridden deliveries (final review 2026-11-12, minor).
+    const delivered = await db.select().from(events).where(eq(events.event, 'order_delivered'));
+    expect(delivered.map((e) => (e.props as { orderCode: string }).orderCode)).toContain(code);
     await expect(
       overrideOrderDelivery(t(), {
         scope,

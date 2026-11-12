@@ -15,6 +15,7 @@ import {
   recordAndApplyRazorpayEvent,
   expireUnpaidOnlineOrders,
   listRoutingQueue,
+  onlineGroupOfUser,
   openPaymentForGroup,
   paymentOfUserGroup,
   placeOrder,
@@ -28,7 +29,13 @@ import { createTestDb, type TestDb } from '../src/testing';
 const fixture = JSON.parse(
   readFileSync(fileURLToPath(new URL('../seed/raipur-demo.json', import.meta.url)), 'utf8'),
 ) as DemoFixture;
-const BATTERY = fixture.products.find((p) => p.slug === 'exide-xltz4a-2w-battery')?.sku ?? '';
+const skuOf = (slug: string) => fixture.products.find((p) => p.slug === slug)?.sku ?? '';
+const BATTERY = skuOf('exide-xltz4a-2w-battery');
+// Two shops serve this cart (checkout.test.ts "splits a cart per nearest shop"): two sub-orders, one group.
+const TWO_SHOP_CART = [
+  { sku: skuOf('castrol-activ-4t-20w40-900ml'), qty: 1 },
+  { sku: skuOf('scooter-tubeless-tyre-90-90-12'), qty: 1 },
+];
 
 let db: TestDb;
 let client: Awaited<ReturnType<typeof createTestDb>>['client'];
@@ -37,8 +44,7 @@ let userId = '';
 let otherUser = '';
 let n = 0;
 
-async function placeOnline() {
-  const lines = [{ sku: BATTERY, qty: 1 }];
+async function placeOnline(lines: { sku: string; qty: number }[] = [{ sku: BATTERY, qty: 1 }]) {
   const q = await quoteCheckout(t(), { pincode: '492004', lines, locale: 'en' });
   n += 1;
   const placed = await placeOrder(t(), {
@@ -181,13 +187,13 @@ describe('unpaid online orders', () => {
     await db.execute(
       sql`update order_groups set created_at = now() - interval '45 minutes' where id = ${groupId}`,
     );
-    expect(await expireUnpaidOnlineOrders(t(), { olderThanMinutes: 30 })).toBe(1);
+    expect(await expireUnpaidOnlineOrders(t())).toEqual({ closed: 1, failed: 0 });
     expect(await groupStatus(groupId)).toBe('expired');
     const [order] = await db.select().from(s.orders).where(eq(s.orders.code, placed.orders[0]!.code));
     expect(order!.status).toBe('cancelled');
     const holds = await db.select().from(s.reservations).where(eq(s.reservations.orderId, order!.id));
     expect(holds.every((h) => h.status !== 'active')).toBe(true);
-    expect(await expireUnpaidOnlineOrders(t(), { olderThanMinutes: 30 })).toBe(0);
+    expect(await expireUnpaidOnlineOrders(t())).toEqual({ closed: 0, failed: 0 });
   });
 });
 
@@ -197,7 +203,7 @@ describe('captures that must not complete an order (security review 2026-11-12)'
     await db.execute(
       sql`update order_groups set created_at = now() - interval '45 minutes' where id = ${groupId}`,
     );
-    await expireUnpaidOnlineOrders(t(), { olderThanMinutes: 30 });
+    await expireUnpaidOnlineOrders(t());
     expect(await applyRazorpayPayment(t(), captured(providerOrderId, placed.totalPaise))).toEqual({
       outcome: 'needs_refund',
     });
@@ -291,5 +297,83 @@ describe('a second capture on a paid order (security review 2026-11-12, third pa
       .from(s.payments)
       .where(eq(s.payments.providerOrderId, providerOrderId));
     expect(payment).toMatchObject({ status: 'paid', providerPaymentId: 'pay_FirstPaid01' });
+  });
+});
+
+describe('final review 2026-11-12', () => {
+  it('a paid order keeps its stock held until it is routed (the online hold is extended on capture)', async () => {
+    const { placed, providerOrderId } = await placeOnline();
+    await applyRazorpayPayment(t(), captured(providerOrderId, placed.totalPaise));
+    const [order] = await db.select().from(s.orders).where(eq(s.orders.code, placed.orders[0]!.code));
+    const holds = await db.select().from(s.reservations).where(eq(s.reservations.orderId, order!.id));
+    expect(holds.length).toBeGreaterThan(0);
+    // COD holds last `checkout.cod_reservation_minutes` (default 1440); a paid order gets at least that.
+    const minutesLeft = (h: (typeof holds)[number]) => (h.expiresAt.getTime() - Date.now()) / 60_000;
+    expect(holds.every((h) => h.status === 'active' && minutesLeft(h) > 1400)).toBe(true);
+  });
+
+  it('a group has one open Razorpay order: a second one recorded at the same time returns the first', async () => {
+    const { groupId, providerOrderId, placed } = await placeOnline();
+    const again = await recordRazorpayOrder(t(), {
+      groupId,
+      providerOrderId: `${providerOrderId}_dup`,
+      amountPaise: placed.totalPaise,
+    });
+    expect(again.providerOrderId).toBe(providerOrderId);
+    const rows = await db.select().from(s.payments).where(eq(s.payments.groupId, groupId));
+    expect(rows).toHaveLength(1);
+  });
+
+  it('a capture on another Razorpay order of an already paid group is flagged for a refund, never a crash', async () => {
+    const { groupId, placed, providerOrderId } = await placeOnline();
+    await applyRazorpayPayment(t(), captured(providerOrderId, placed.totalPaise));
+    const late = await recordRazorpayOrder(t(), {
+      groupId,
+      providerOrderId: `${providerOrderId}_late`,
+      amountPaise: placed.totalPaise,
+    });
+    expect(await applyRazorpayPayment(t(), captured(late.providerOrderId, placed.totalPaise))).toEqual({
+      outcome: 'needs_refund',
+    });
+    expect(await groupStatus(groupId)).toBe('paid');
+  });
+
+  it('cancelling one part of an unpaid online order closes the payment; the next one asks only for what is left', async () => {
+    const { placed, groupId, providerOrderId } = await placeOnline(TWO_SHOP_CART);
+    expect(placed.orders).toHaveLength(2);
+    const [first, second] = placed.orders;
+    const [order] = await db.select().from(s.orders).where(eq(s.orders.code, first!.code));
+    await cancelMyOrder(t(), {
+      userId,
+      code: order!.code,
+      reasonCode: 'changed_mind',
+      expectedVersion: order!.version,
+    });
+    expect(await groupStatus(groupId)).toBe('created');
+    expect(await openPaymentForGroup(t(), groupId)).toBeNull();
+    const group = await onlineGroupOfUser(t(), { userId, groupCode: placed.code });
+    expect(group.payablePaise).toBe(second!.totalPaise);
+    // The old Razorpay order (full amount) can no longer complete the order.
+    expect(await applyRazorpayPayment(t(), captured(providerOrderId, placed.totalPaise))).toEqual({
+      outcome: 'needs_refund',
+    });
+  });
+
+  it('the payment window follows the city setting, not only the global one', async () => {
+    const { groupId } = await placeOnline();
+    const [g] = await db.select().from(s.orderGroups).where(eq(s.orderGroups.id, groupId));
+    await db.execute(
+      sql`update order_groups set created_at = now() - interval '15 minutes' where id = ${groupId}`,
+    );
+    expect((await expireUnpaidOnlineOrders(t())).closed).toBe(0); // global default: 30 minutes
+    await db
+      .insert(s.settings)
+      .values({ key: 'checkout.online_payment_minutes', cityId: g!.cityId, value: 10 });
+    try {
+      expect((await expireUnpaidOnlineOrders(t())).closed).toBe(1);
+      expect(await groupStatus(groupId)).toBe('expired');
+    } finally {
+      await db.delete(s.settings).where(eq(s.settings.key, 'checkout.online_payment_minutes'));
+    }
   });
 });

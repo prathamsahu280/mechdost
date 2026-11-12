@@ -22,7 +22,11 @@ export type PayOnlineResult =
         | 'blocked'
         | 'cancelled'
         | 'failed'
-        | 'not_confirmed';
+        | 'not_confirmed'
+        /** The payment window of this order closed: the next try starts a new order. */
+        | 'expired'
+        /** Name, phone or address changed since the last try: the next try starts a new order. */
+        | 'details_changed';
       orderCode?: string;
     };
 
@@ -94,6 +98,16 @@ async function api(path: string, token: string | null, body: unknown, extra: Rec
   });
 }
 
+/** Has the order been paid (by the callback or by Razorpay's webhook)? */
+async function orderPaid(code: string, token: string): Promise<boolean> {
+  const res = await fetch(`${API}/v1/orders/${encodeURIComponent(code)}`, {
+    headers: { authorization: `Bearer ${token}` },
+    signal: AbortSignal.timeout(15_000),
+  }).catch(() => null);
+  if (!res?.ok) return false;
+  return ((await res.json()) as { paymentStatus?: string }).paymentStatus === 'paid';
+}
+
 const errorCode = async (res: Response) =>
   ((await res.json().catch(() => ({}))) as { error?: { code?: string } }).error?.code ?? '';
 
@@ -142,11 +156,22 @@ export async function payOnline(input: PayOnlineInput): Promise<PayOnlineResult>
       if (code === 'AUTH_REQUIRED') return { ok: false, reason: 'sign_in' };
       if (code === 'CHECKOUT_UNAVAILABLE' || code === 'OUT_OF_STOCK')
         return { ok: false, reason: 'cart_changed' };
+      if (code === 'IDEMPOTENCY_MISMATCH') return { ok: false, reason: 'details_changed' };
       return { ok: false, reason: 'unavailable' };
     }
-    const placed = (await placeRes.json()) as { code: string; razorpay?: RazorpayHandle | null };
+    const placed = (await placeRes.json()) as {
+      code: string;
+      paymentStatus: string;
+      razorpay?: RazorpayHandle | null;
+    };
     const handle = placed.razorpay;
-    if (!handle) return { ok: false, reason: 'unavailable', orderCode: placed.code };
+    // A retry of an attempt that was already paid (for example the confirmation timed out) is a success, never
+    // "choose cash on delivery"; an attempt whose window closed starts over (final review 2026-11-12, finding 4).
+    if (!handle) {
+      if (placed.paymentStatus === 'paid') return { ok: true, orderCode: placed.code };
+      if (placed.paymentStatus === 'expired') return { ok: false, reason: 'expired', orderCode: placed.code };
+      return { ok: false, reason: 'unavailable', orderCode: placed.code };
+    }
 
     // 3. Razorpay Checkout.
     const Razorpay = await loadCheckout();
@@ -182,14 +207,18 @@ export async function payOnline(input: PayOnlineInput): Promise<PayOnlineResult>
       return { ok: false, reason: success, orderCode: placed.code };
 
     // 4. The API verifies (signature, then a server fetch) before the order counts as paid.
-    const verifyRes = await api('/payments/razorpay/verify', token, {
+    // Money may already be taken here: a failure from now on is "not confirmed yet", never "unavailable".
+    const outcome = await api('/payments/razorpay/verify', token, {
       razorpayOrderId: success.razorpay_order_id,
       razorpayPaymentId: success.razorpay_payment_id,
       razorpaySignature: success.razorpay_signature,
-    });
-    const verified = verifyRes.ok ? ((await verifyRes.json()) as { outcome: string }) : null;
-    if (verified?.outcome !== 'paid') return { ok: false, reason: 'not_confirmed', orderCode: placed.code };
-    return { ok: true, orderCode: placed.code };
+    })
+      .then(async (res) => (res.ok ? ((await res.json()) as { outcome: string }).outcome : null))
+      .catch(() => null);
+    // The webhook may have confirmed it first (the callback then answers "unchanged").
+    if (outcome === 'paid' || (await orderPaid(placed.code, token)))
+      return { ok: true, orderCode: placed.code };
+    return { ok: false, reason: 'not_confirmed', orderCode: placed.code };
   } catch {
     return { ok: false, reason: 'unavailable' };
   }
