@@ -14,7 +14,7 @@ Append-only. Newest at the bottom. Each entry: date, decision, reason, alternati
 ## 2026-10-31 — Stack
 
 - **Frontend:** Next.js 15 App Router, React 19, Tailwind + shadcn/ui, one app for storefront + account + partner portals + admin (option B1).
-- **API:** Hono (TypeScript, Node 22) as a separate service with OpenAPI; deploy Cloud Run `asia-south1`. Alternatives considered: NestJS (heavier), Fastify, Go, Rust/Axum (fastest runtime but ~1.5–2× slower delivery; may host hot paths later), Next route handlers only (bad for mobile), Supabase-only (awkward workflows).
+- **API:** Hono (TypeScript, Node 22; **Node 24 LTS since 2026-11-13**, see that entry) as a separate service with OpenAPI; deploy Cloud Run `asia-south1`. Alternatives considered: NestJS (heavier), Fastify, Go, Rust/Axum (fastest runtime but ~1.5–2× slower delivery; may host hot paths later), Next route handlers only (bad for mobile), Supabase-only (awkward workflows).
 - **DB:** Supabase Postgres (ap-south-1) + PostGIS, Drizzle ORM. **Realtime/Storage:** Supabase (realtime superseded 2026-11-01 → Firebase Realtime Database pings; Storage stays Supabase). **Cache/rate-limit:** Upstash Redis. **Jobs:** pg-boss.
 - **Monorepo:** Turborepo + pnpm; `packages/shared` reused by a future React Native app.
 - **Hosting:** Vercel `bom1` (web), Cloud Run Mumbai (API), Supabase Mumbai.
@@ -290,6 +290,17 @@ User shared Razorpay **test** keys and asked to "see how we have the stuff for r
 - Online totals carry no COD fee.
 - An online order holds stock for 30 minutes (admin setting) and is never routed before it is paid.
 - A valid checkout signature alone never marks an order paid: the server fetches the payment from Razorpay first (Razorpay docs).
+
+## 2026-11-13 — Runtime Node 24 LTS (CI fix)
+
+CI had failed at `pnpm install` since 2026-11-09 (`39e0eae`): `@firebase/app@0.16.5` requires Node ≥ 24.12.0, and `.nvmrc` pinned CI to 22.23.4. Local machines already ran Node 24, so it never showed up locally.
+
+- **Runtime is Node 24 LTS ("Krypton").**
+  - `.nvmrc` = 24.22.3, the latest security release (2026-11-10).
+  - `engines.node` ≥ 24.22.1, which carries the October 2026 security fixes.
+  - The API (Cloud Run) and the web (Vercel) use the same major.
+- **Why not pin an older Firebase?** It would keep a superseded client SDK. Node 22 is in maintenance, and Node 24 is the active LTS line.
+- **`@types/node` stays ^22** for now; nothing uses Node 24-only APIs. It is bumped with the next dependency sweep.
 
 ## 2026-11-13 — Email sender addresses (user)
 

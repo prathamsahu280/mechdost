@@ -4,7 +4,7 @@ For anyone joining the MechDost repo. Accounts and API keys are in [`setup.md`](
 
 ## 1. Run the website
 
-Needs **Node 22.23.4 or newer** (we use 24), **pnpm 11.28.10**, Git and Chrome.
+Needs **Node 24.22.1 or newer** (CI uses 24.22.3 from `.nvmrc`), **pnpm 11.28.10**, Git and Chrome.
 
 ```powershell
 npm install -g pnpm@11.28.10
