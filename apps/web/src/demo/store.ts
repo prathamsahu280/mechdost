@@ -148,6 +148,27 @@ export interface DemoApplication {
   details: string;
   stage: number;
   rejected: boolean;
+  /** Seller applications (design 2026-11-13); older saved rows lack them. */
+  email?: string;
+  shopName?: string;
+  gstStatus?: 'registered' | 'enrolled';
+  gstNumber?: string;
+  addressLine?: string;
+  landmark?: string;
+  location?: { lat: number; lng: number; accuracyM: number; source: 'gps' | 'search' | 'pin' };
+  productSlugs?: string[];
+  source?: 'public' | 'invite';
+}
+
+/** An admin's invite to a seller (demo of `partner_invites`): one-time link, 7 days. */
+export interface DemoInvite {
+  token: string;
+  name: string;
+  email: string;
+  phone: string;
+  createdAt: string;
+  expiresAt: string;
+  status: 'sent' | 'used' | 'revoked';
 }
 
 export type ReviewTarget = 'product' | 'workshop';
@@ -210,6 +231,7 @@ const KEYS = {
   loginFailures: 'mechdost-demo-login-failures',
   resetLinks: 'mechdost-demo-reset-links',
   coins: 'mechdost-demo-coins',
+  invites: 'mechdost-demo-invites',
 } as const;
 type Key = (typeof KEYS)[keyof typeof KEYS];
 
@@ -285,6 +307,8 @@ const isApplication = (v: unknown): v is DemoApplication =>
   isRecord(v) && typeof v.code === 'string' && typeof v.kind === 'string';
 const isReview = (v: unknown): v is DemoReview =>
   isRecord(v) && typeof v.id === 'string' && typeof v.rating === 'number';
+const isInvite = (v: unknown): v is DemoInvite =>
+  isRecord(v) && typeof v.token === 'string' && typeof v.phone === 'string' && typeof v.status === 'string';
 const isQuote = (v: unknown): v is DemoQuote =>
   isRecord(v) && typeof v.code === 'string' && Array.isArray(v.messages) && Array.isArray(v.offers);
 
@@ -294,6 +318,7 @@ const requestsSnapshot = () => read(KEYS.requests, isRequest);
 const applicationsSnapshot = () => read(KEYS.applications, isApplication);
 const reviewsSnapshot = () => read(KEYS.reviews, isReview);
 const quotesSnapshot = () => read(KEYS.quotes, isQuote);
+const invitesSnapshot = () => read(KEYS.invites, isInvite);
 const serverSnapshot = () => EMPTY;
 
 export function useApplications(): readonly DemoApplication[] {
@@ -308,18 +333,70 @@ export function useQuotes(): readonly DemoQuote[] {
   return useSyncExternalStore(subscribe, quotesSnapshot, serverSnapshot);
 }
 
+export function useInvites(): readonly DemoInvite[] {
+  return useSyncExternalStore(subscribe, invitesSnapshot, serverSnapshot);
+}
+
+/** Admin (demo): invite a seller. Returns the one-time token for the link. */
+export function createInvite(input: { name: string; email: string; phone: string }): DemoInvite {
+  const bytes = new Uint8Array(24);
+  globalThis.crypto.getRandomValues(bytes);
+  const token = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+  const now = new Date();
+  const invite: DemoInvite = {
+    ...input,
+    token,
+    createdAt: now.toISOString(),
+    expiresAt: new Date(now.getTime() + 7 * 86_400_000).toISOString(),
+    status: 'sent',
+  };
+  write(
+    KEYS.invites,
+    [invite, ...invitesSnapshot().filter((i) => !(i.phone === input.phone && i.status === 'sent'))].slice(
+      0,
+      200,
+    ),
+  );
+  return invite;
+}
+
+/** The invite behind a link, or why it cannot be used. */
+export function findInvite(token: string): DemoInvite | 'used' | 'expired' | 'revoked' | null {
+  const invite = invitesSnapshot().find((i) => i.token === token);
+  if (!invite) return null;
+  if (invite.status === 'used' || invite.status === 'revoked') return invite.status;
+  if (Date.parse(invite.expiresAt) <= Date.now()) return 'expired';
+  return invite;
+}
+
+export function revokeInvite(token: string) {
+  write(
+    KEYS.invites,
+    invitesSnapshot().map((i) =>
+      i.token === token && i.status === 'sent' ? { ...i, status: 'revoked' as const } : i,
+    ),
+  );
+}
+
 const newId = () => globalThis.crypto.randomUUID();
 
 export function createApplication(
   input: Omit<DemoApplication, 'code' | 'createdAt' | 'stage' | 'rejected'>,
+  inviteToken?: string,
 ): DemoApplication {
   const app: DemoApplication = {
     ...input,
     code: publicCode('PA', 'RPR'),
     createdAt: new Date().toISOString(),
-    stage: 0,
+    // An invited seller is pre-approved by the inviting admin (design 2026-11-13).
+    stage: inviteToken ? APPLICATION_STAGES.indexOf('onboarded') : 0,
     rejected: false,
   };
+  if (inviteToken)
+    write(
+      KEYS.invites,
+      invitesSnapshot().map((i) => (i.token === inviteToken ? { ...i, status: 'used' as const } : i)),
+    );
   write(KEYS.applications, [app, ...applicationsSnapshot()].slice(0, 100));
   return app;
 }
