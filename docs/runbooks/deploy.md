@@ -50,7 +50,7 @@ push to main ─▶ CI (format, types, lint, tests)
 
 ## 3. First-time setup
 
-Done by Claude on 2026-11-13: the server bootstrap (§ 3.1), the GitHub variables (§ 3.4) and the files in the repo. Everything else is yours: it needs your accounts, your SSH access or your secrets.
+Done by Claude on 2026-11-13: the server bootstrap (§ 3.1), the deploy key and the `production` environment secrets (§ 3.3, with your approval), the GitHub variables (§ 3.4) and the files in the repo. Everything else is yours: it needs your accounts, your SSH access or your secrets.
 
 ### 3.1 Server bootstrap (done 2026-11-13; safe to re-run)
 
@@ -73,23 +73,36 @@ scp deploy/bootstrap.sh ubuntu@13.201.82.82:/tmp/ && ssh ubuntu@13.201.82.82 'ba
   - HTTPS, TCP 443, from `0.0.0.0/0` and `::/0` (UDP 443 is optional, for HTTP/3).
 - **SSH (22):** keep it as it is. Restrict it to your own IP if you can, but GitHub Actions also needs SSH (§ 3.3). If you restrict it, allow GitHub's runner ranges or use a self-hosted runner.
 
-### 3.3 Deploy key and GitHub secrets (you, one command block)
+### 3.3 Deploy key and GitHub secrets (done 2026-11-13)
 
-GitHub Actions logs in with **its own key**, not yours. It can be removed from the server at any time without touching your access. Run from the repo root in this Claude session (prefix each line with `!`) or in Git Bash:
+GitHub Actions logs in with **its own key** (`github-actions-deploy@mechdost` in `~/.ssh/authorized_keys` on the server), not yours, so it can be removed without touching your access. The secrets live in the GitHub **environment `production`**, which only accepts the `main` branch (Settings → Environments):
+
+| Secret               | Value                                                                                                    |
+| -------------------- | -------------------------------------------------------------------------------------------------------- |
+| `DEPLOY_SSH_KEY`     | The private half of the deploy key. GitHub holds the only copy; the local copy was deleted after upload. |
+| `DEPLOY_KNOWN_HOSTS` | The server's ed25519 host key (`ssh-keyscan`), so a man-in-the-middle cannot impersonate the server.     |
+| `DEPLOY_HOST`        | `13.201.82.82`                                                                                           |
+| `DEPLOY_USER`        | `ubuntu`                                                                                                 |
+
+**To rotate the key:**
 
 ```bash
 ssh-keygen -q -t ed25519 -N "" -C "github-actions-deploy@mechdost" -f ~/.ssh/mechdost_deploy
-ssh ubuntu@13.201.82.82 'umask 077; mkdir -p ~/.ssh; cat >> ~/.ssh/authorized_keys' < ~/.ssh/mechdost_deploy.pub
-GH="/c/Program Files/GitHub CLI/gh.exe"
-"$GH" secret set DEPLOY_SSH_KEY < ~/.ssh/mechdost_deploy
-ssh-keyscan -t ed25519 13.201.82.82 2>/dev/null | "$GH" secret set DEPLOY_KNOWN_HOSTS
-"$GH" secret set DEPLOY_HOST --body 13.201.82.82
-"$GH" secret set DEPLOY_USER --body ubuntu
-rm ~/.ssh/mechdost_deploy   # GitHub holds the only copy; the public half stays on the server
+ssh ubuntu@13.201.82.82 'umask 077; cat >> ~/.ssh/authorized_keys' < ~/.ssh/mechdost_deploy.pub
+"/c/Program Files/GitHub CLI/gh.exe" secret set DEPLOY_SSH_KEY --env production < ~/.ssh/mechdost_deploy
+rm ~/.ssh/mechdost_deploy
+# then delete the old github-actions-deploy line from ~/.ssh/authorized_keys on the server
 ```
 
-- `DEPLOY_KNOWN_HOSTS` pins the server's host key, so a man-in-the-middle cannot impersonate the server.
-- **If the server is rebuilt:** run the `ssh-keyscan` line again.
+If the server is rebuilt, refresh the host key:
+
+```bash
+ssh-keyscan -t ed25519 <ip> | "/c/Program Files/GitHub CLI/gh.exe" secret set DEPLOY_KNOWN_HOSTS --env production
+```
+
+Also update `DEPLOY_HOST` if the address changes.
+
+**Workflow trust:** the deploy only runs for a green CI run started by a **push to `main` of this repository**, never for a fork or a pull-request run, or when started by hand (`workflow_dispatch`) by someone with write access (security review 2026-11-13).
 
 ### 3.4 GitHub repository variables (public build settings)
 
@@ -156,7 +169,7 @@ Today `mechdost.com` points at `2.57.91.91` (the registrar's parking page). Repl
 
 ### 3.7 Switch deploys on
 
-Once § 3.3 and § 3.5 are done:
+Once § 3.5 is done (§ 3.3 already is):
 
 ```bash
 "/c/Program Files/GitHub CLI/gh.exe" variable set DEPLOY_ENABLED --body true
@@ -215,7 +228,7 @@ When a separate production Supabase project exists, migrations move into the pip
 
 ## 7. Security notes
 
-- **Secrets:** they live only in `/opt/mechdost/.env` (mode 600) and in GitHub **secrets** (`DEPLOY_SSH_KEY`, `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_KNOWN_HOSTS`). They are never in images (`.dockerignore`), the repo, variables or logs.
+- **Secrets:** they live only in `/opt/mechdost/.env` (mode 600) and in the GitHub environment `production` (secrets `DEPLOY_SSH_KEY`, `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_KNOWN_HOSTS`; main branch only). They are never in images (`.dockerignore`), the repo, variables or logs.
 - **Pinned sources:** actions are pinned by commit SHA, and the Node and Caddy images by digest (hard rule 4). To update one, replace the SHA or digest in the same change as the version comment.
 - **Containers:**
   - all run as non-root, with `no-new-privileges` and memory limits (web 512 MB, API 384 MB, Caddy 128 MB);
@@ -223,7 +236,7 @@ When a separate production Supabase project exists, migrations move into the pip
   - only Caddy publishes ports (80/443).
 - **Headers:** security headers (CSP, HSTS preload, frame and referrer policy) come from `apps/web/next.config.ts` and the API. Caddy adds HTTPS and compression only.
 - **Rate limits:** the API trusts one proxy hop (`TRUSTED_PROXY_HOPS=1`, Caddy), so each client's real IP is used.
-- **Removing the deploy key:** delete its line (`github-actions-deploy@mechdost`) from `~/.ssh/authorized_keys` on the server, then delete the GitHub secret `DEPLOY_SSH_KEY`.
+- **Removing the deploy key:** delete its line (`github-actions-deploy@mechdost`) from `~/.ssh/authorized_keys` on the server, then delete the `DEPLOY_SSH_KEY` secret of the `production` environment.
 - **Server patching:** security updates install automatically (unattended-upgrades). Reboot for kernel updates when convenient: `sudo reboot`. The containers come back by themselves (`restart: unless-stopped`).
 
 ## 8. Troubleshooting

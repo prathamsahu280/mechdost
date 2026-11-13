@@ -30,7 +30,14 @@ env:
 
 jobs:
   images:
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    # Only a green CI run started by a push to main of this repository (never a fork or a PR run): the deploy
+    # key and registry token must not run on untrusted code (security review 2026-11-13).
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -94,6 +101,8 @@ jobs:
     needs: images
     # Off until the server is set up (repository variable DEPLOY_ENABLED=true, docs/runbooks/deploy.md § First-time setup).
     if: vars.DEPLOY_ENABLED == 'true'
+    # Deploy secrets live in the protected `production` environment, which only accepts the main branch.
+    environment: production
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
