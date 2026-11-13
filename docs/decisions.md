@@ -380,6 +380,17 @@ User (2026-11-13): "yes go ahead with option 1" for the design `docs/superpowers
 - **MVP attributes:** engine oil, battery, tyre. Other categories and the extras (compare with similar, share button, my-vehicle row, popular comparisons) follow as small changes.
 - **Wording:** facts only, "Lowest price per litre", never "Best". The fit row keeps the type-level wording of the fitment decision ("For two-wheelers"), never "Fits your vehicle".
 
+## 2026-11-13 — Hosting: Docker on the user's AWS server (user)
+
+User (2026-11-13): "we have to setup the cd part too, basically i think we should dockerize it and use that and also i have the vps ready too … its an aws … ubuntu@13.201.82.82"; "the database would still be supabase tho". Answers to the design questions: build images in GitHub Actions, use mechdost.com now, demo website + live API.
+
+- **Supersedes** "Hosting: Vercel `bom1` (web), Cloud Run Mumbai (API)". The database stays Supabase (Mumbai); auth stays Firebase.
+- **Stack:** one AWS server (Ubuntu 24.04, 2 vCPU, 1.9 GB + 2 GB swap) runs docker compose in `/opt/mechdost`: Caddy (HTTPS, `mechdost.com`, `www` → apex, `api.mechdost.com`), the Next.js standalone web image and the Hono API image.
+- **Pipeline:** CI green on `main` → `Deploy` builds both images in Actions (the server is too small to build Next.js) → GHCR (private) → SSH with a dedicated deploy key (pinned host key) → `docker compose pull && up -d --wait`. Rollback = deploy an older SHA.
+- **Secrets** only in the server's `.env` (mode 600) and GitHub secrets; `NEXT_PUBLIC_*` are GitHub variables compiled into the web image. No service-account key file on the server (the API's production check forbids it; tokens are verified with the project id).
+- **API is opt-in** (`COMPOSE_PROFILES=api`) until its production settings exist (Upstash Q4, Turnstile Q5, Firebase web key); the website goes live first, in demo mode (Q69/Q70 defaults).
+- **Migrations** stay manual (`pnpm db:migrate`) until a production Supabase project exists. Runbook: `docs/runbooks/deploy.md`.
+
 ## PENDING DECISIONS (ask "what's pending" to review)
 
 | #   | Topic                                                                                                                                                                                       | Leaning                                                                             | When                                 |

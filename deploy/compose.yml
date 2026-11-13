@@ -1,0 +1,59 @@
+# MechDost production stack on the AWS server (docs/runbooks/deploy.md). Lives in /opt/mechdost next to
+# .env (secrets and settings, mode 600, never in git; template: env.server.example).
+# The deploy workflow sets IMAGE_TAG to the commit being deployed. The database is Supabase (not here).
+# The API only starts when .env has COMPOSE_PROFILES=api: its production settings (Upstash, Turnstile, Firebase
+# web key) must all be present first, or it refuses to boot (apps/api/src/config.ts).
+name: mechdost
+
+services:
+  caddy:
+    image: caddy:2.11.9-alpine@sha256:003a97808e781aa9f7e75cc2f43d34d461099031faf5e20faefb9f61126836f0
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    # The API is optional (profile `api`); a missing or failing API never takes the website down.
+    depends_on:
+      - web
+    mem_limit: 128m
+
+  web:
+    image: ghcr.io/prathamsahu280/mechdost-web:${IMAGE_TAG:?set IMAGE_TAG}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+    expose:
+      - '3000'
+    mem_limit: 512m
+    # Writable filesystem: Next.js keeps its page and image cache under .next/ (ISR).
+    security_opt:
+      - no-new-privileges:true
+
+  api:
+    image: ghcr.io/prathamsahu280/mechdost-api:${IMAGE_TAG:?set IMAGE_TAG}
+    profiles: [api]
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      PORT: '4000'
+      # One proxy (Caddy) in front: client IPs for rate limits come from X-Forwarded-For.
+      TRUSTED_PROXY_HOPS: '1'
+      # No service-account key file in production (config check): ID tokens are verified with the project id.
+    expose:
+      - '4000'
+    mem_limit: 384m
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  caddy_data:
+  caddy_config:

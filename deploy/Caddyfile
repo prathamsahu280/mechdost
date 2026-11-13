@@ -1,0 +1,19 @@
+# MechDost reverse proxy (docs/runbooks/deploy.md). Caddy gets and renews HTTPS certificates automatically once
+# the DNS records point at this server. Security headers come from the apps themselves (next.config.ts, API).
+{
+	email {$ACME_EMAIL:admin@mechdost.com}
+}
+
+mechdost.com {
+	encode zstd gzip
+	reverse_proxy web:3000
+}
+
+www.mechdost.com {
+	redir https://mechdost.com{uri} permanent
+}
+
+api.mechdost.com {
+	encode zstd gzip
+	reverse_proxy api:4000
+}

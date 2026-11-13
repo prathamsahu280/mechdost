@@ -1,0 +1,142 @@
+# Continuous deployment (docs/runbooks/deploy.md, design docs/superpowers/specs/2026-11-13-docker-vps-deploy-design.md).
+# After CI passes on main: build the web + API images, push them to GHCR, then update the stack on the AWS server
+# over SSH (docker compose pull + up --wait). Manual run: Actions → Deploy → Run workflow (optionally a commit SHA,
+# which is also how to roll back).
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Commit SHA or branch to deploy (default main)
+        required: false
+        default: main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  WEB_IMAGE: ghcr.io/prathamsahu280/mechdost-web
+  API_IMAGE: ghcr.io/prathamsahu280/mechdost-api
+
+jobs:
+  images:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      sha: ${{ steps.sha.outputs.sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || inputs.ref }}
+          persist-credentials: false
+      - id: sha
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push the API image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: true
+          provenance: false
+          tags: |
+            ${{ env.API_IMAGE }}:${{ steps.sha.outputs.sha }}
+            ${{ env.API_IMAGE }}:main
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,scope=api,mode=max
+      - name: Build and push the website image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          push: true
+          provenance: false
+          # Public settings compiled into the browser code (repository variables, never secrets).
+          build-args: |
+            NEXT_PUBLIC_APP_URL=${{ vars.NEXT_PUBLIC_APP_URL }}
+            NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
+            NEXT_PUBLIC_DATA_MODE=${{ vars.NEXT_PUBLIC_DATA_MODE }}
+            NEXT_PUBLIC_AUTH_MODE=${{ vars.NEXT_PUBLIC_AUTH_MODE }}
+            NEXT_PUBLIC_MAPTILER_KEY=${{ vars.NEXT_PUBLIC_MAPTILER_KEY }}
+            NEXT_PUBLIC_SATELLITE_TILES=${{ vars.NEXT_PUBLIC_SATELLITE_TILES }}
+            NEXT_PUBLIC_SATELLITE_ATTRIBUTION=${{ vars.NEXT_PUBLIC_SATELLITE_ATTRIBUTION }}
+            NEXT_PUBLIC_POSTHOG_KEY=${{ vars.NEXT_PUBLIC_POSTHOG_KEY }}
+            NEXT_PUBLIC_POSTHOG_HOST=${{ vars.NEXT_PUBLIC_POSTHOG_HOST }}
+            NEXT_PUBLIC_SENTRY_DSN=${{ vars.NEXT_PUBLIC_SENTRY_DSN }}
+            NEXT_PUBLIC_RAZORPAY_KEY_ID=${{ vars.NEXT_PUBLIC_RAZORPAY_KEY_ID }}
+            NEXT_PUBLIC_TURNSTILE_SITE_KEY=${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
+          tags: |
+            ${{ env.WEB_IMAGE }}:${{ steps.sha.outputs.sha }}
+            ${{ env.WEB_IMAGE }}:main
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,scope=web,mode=max
+
+  deploy:
+    needs: images
+    # Off until the server is set up (repository variable DEPLOY_ENABLED=true, docs/runbooks/deploy.md § First-time setup).
+    if: vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.images.outputs.sha }}
+          persist-credentials: false
+      - name: SSH key and pinned host key
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+      - name: Update the stack on the server
+        env:
+          HOST: ${{ secrets.DEPLOY_HOST }}
+          SSH_USER: ${{ secrets.DEPLOY_USER }}
+          TAG: ${{ needs.images.outputs.sha }}
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ssh_() { ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes -o BatchMode=yes "$SSH_USER@$HOST" "$@"; }
+          ssh_ 'test -f /opt/mechdost/.env' \
+            || { echo "::error::/opt/mechdost/.env is missing on the server (docs/runbooks/deploy.md § Server settings)"; exit 1; }
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes -o BatchMode=yes \
+            deploy/compose.yml deploy/Caddyfile "$SSH_USER@$HOST:/opt/mechdost/"
+          printf '%s' "$GHCR_TOKEN" | ssh_ "docker login ghcr.io -u '$GHCR_USER' --password-stdin" >/dev/null
+          ssh_ "cd /opt/mechdost && echo 'IMAGE_TAG=$TAG' > .image-tag \
+            && export IMAGE_TAG='$TAG' \
+            && docker compose pull --quiet \
+            && docker compose up -d --wait --wait-timeout 120 --remove-orphans; rc=\$?; \
+            docker logout ghcr.io >/dev/null; docker image prune -f >/dev/null; \
+            docker compose ps; exit \$rc"
+      - name: Public check (informational until DNS points at the server)
+        continue-on-error: true
+        run: |
+          curl -fsS -o /dev/null -w 'https://mechdost.com %{http_code}\n' --max-time 20 https://mechdost.com/
+      - name: Remove the key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key

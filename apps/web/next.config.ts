@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
 import { cspFromEnv } from './src/lib/csp';
@@ -20,6 +21,10 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Docker image (docs/runbooks/deploy.md): a self-contained server with only the files it needs.
+  output: 'standalone',
+  // The monorepo root, so workspace packages are traced into the standalone output.
+  outputFileTracingRoot: fileURLToPath(new URL('../../', import.meta.url)),
   poweredByHeader: false,
   reactStrictMode: true,
   // CSS is ~7 KB gzipped: inlining removes the render-blocking request (≈0.5 s LCP on slow 4G, trace 2026-11-01).

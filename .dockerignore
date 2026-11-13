@@ -1,0 +1,21 @@
+# Build context for apps/web/Dockerfile and apps/api/Dockerfile (docs/runbooks/deploy.md).
+# Secrets never enter an image (hard rule 4).
+.env
+.env.*
+!.env.example
+*.pem
+*service-account*.json
+*firebase-adminsdk*.json
+# Local state and outputs
+**/node_modules
+**/.next
+**/dist
+**/.turbo
+**/coverage
+**/test-results
+**/playwright-report
+.superpowers
+.playwright-mcp
+.git
+docs
+firebase
