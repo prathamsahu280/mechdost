@@ -49,8 +49,14 @@ export default async function ComparePage({ params, searchParams }: Props) {
   const loaded = await load(requested, locale);
   const category = loaded[0]?.category ?? null;
   const items = loaded.filter((x) => x.category.slug === category?.slug);
-  const leftOut =
-    (typeof p === 'string' ? p.split(',').filter((s) => s.trim() !== '').length : 0) > items.length;
+  // Every distinct product the link asked for that is not in the table (unknown, another category, over 4).
+  const asked = new Set(
+    (Array.isArray(p) ? (p[0] ?? '') : (p ?? ''))
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => s !== ''),
+  );
+  const leftOut = asked.size > items.length;
   const categoryName = category ? (category.name ?? (category.key ? c(category.key) : category.slug)) : '';
 
   return (
@@ -59,7 +65,7 @@ export default async function ComparePage({ params, searchParams }: Props) {
         {t('title')}
       </h1>
       <p className="mt-2 max-w-2xl text-[15px] text-muted">{t('intro')}</p>
-      {leftOut && items.length > 0 ? (
+      {leftOut ? (
         <p role="note" className="mt-4 max-w-2xl rounded-tile bg-warning-bg px-4 py-3 text-sm text-ink">
           {t('leftOut')}
         </p>

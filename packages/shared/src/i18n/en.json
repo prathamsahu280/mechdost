@@ -429,7 +429,7 @@
     "emptyTitle": "Pick products to compare",
     "emptyBody": "Tap Compare on up to 4 products from one category.",
     "emptyAction": "Add products from the shop",
-    "leftOut": "Some products were left out: you can compare up to 4 products from one category.",
+    "leftOut": "Some products were left out: they are not available, are from another category, or go beyond 4.",
     "group": {
       "price": "Price",
       "fit": "Fit",

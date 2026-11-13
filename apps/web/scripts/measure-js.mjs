@@ -10,7 +10,15 @@ const BUDGET_KB = 180;
 const base = process.argv.find((a) => a.startsWith('http')) ?? 'http://localhost:3100';
 const topIndex = process.argv.indexOf('--top');
 const top = topIndex > 0 ? Number(process.argv[topIndex + 1]) : 8;
-const PAGES = ['/', '/shop', '/shop/castrol-activ-4t-20w40-900ml', '/workshops', '/cart', '/hi'];
+const PAGES = [
+  '/',
+  '/shop',
+  '/shop/castrol-activ-4t-20w40-900ml',
+  '/compare?p=castrol-activ-4t-20w40-900ml,motul-3100-4t-10w30-1l,hp-racer4-20w40-900ml',
+  '/workshops',
+  '/cart',
+  '/hi',
+];
 
 const browser = await chromium.launch();
 let over = false;

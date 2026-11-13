@@ -108,3 +108,33 @@ test('the comparison page passes axe (WCAG 2.2 AA)', async ({ page }) => {
     results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(' | ')}`),
   ).toEqual([]);
 });
+
+test('the left-out note appears only when a requested product is missing', async ({ page }) => {
+  // A repeated product is not "left out".
+  await page.goto(`/compare?p=${CASTROL},${CASTROL},${MOTUL}`);
+  await expect(page.getByRole('table')).toBeVisible();
+  await expect(page.getByRole('note')).toHaveCount(0);
+  // One product survives (a battery cannot join oils): the note explains, then the empty state.
+  await page.goto(`/compare?p=${CASTROL},${EXIDE}`);
+  await expect(page.getByRole('note')).toContainText('Some products were left out');
+  await expect(page.getByRole('heading', { name: 'Pick products to compare' })).toBeVisible();
+  // Nothing valid at all.
+  await page.goto('/compare?p=not-a-product');
+  await expect(page.getByRole('note')).toBeVisible();
+});
+
+test('on a phone the first product column is not hidden under the row labels', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'sticky label column + scroll snap only matter at phone width');
+  await page.goto(`/compare?p=${CASTROL},${MOTUL},${HP}`);
+  const table = page.getByRole('table');
+  await expect(table).toBeVisible();
+  const label = await table.getByRole('rowheader', { name: 'MRP', exact: true }).boundingBox();
+  const first = await table
+    .getByRole('row')
+    .filter({ has: page.getByRole('rowheader', { name: 'MRP', exact: true }) })
+    .getByRole('cell')
+    .first()
+    .boundingBox();
+  expect(label && first).toBeTruthy();
+  if (label && first) expect(first.x).toBeGreaterThanOrEqual(label.x + label.width - 1);
+});

@@ -143,12 +143,8 @@ export function buildCompareRows(items: readonly ProductView[]): CompareGroup[] 
     {
       key: 'warranty',
       rows: [
+        // Typed warranty months only: `products.warranty` is English free text with no Hindi column yet (rule 10).
         ...attrRows('warranty'),
-        row(
-          'warranty',
-          { ns: 'row', key: 'warranty' },
-          items.map((p) => (p.warranty ? { kind: 'text', text: p.warranty } : null)),
-        ),
         row(
           'origin',
           { ns: 'row', key: 'origin' },

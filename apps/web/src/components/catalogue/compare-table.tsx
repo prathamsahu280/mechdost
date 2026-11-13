@@ -62,21 +62,23 @@ export function CompareTable({
 
   return (
     <div
-      className="max-h-[calc(100dvh-170px)] snap-x snap-mandatory overflow-auto overscroll-x-contain rounded-card border border-line-card bg-surface shadow-card"
+      className="max-h-[calc(100dvh-170px)] snap-x snap-mandatory scroll-pl-[26vw] overflow-auto tab:scroll-pl-48 overscroll-x-contain rounded-card border border-line-card bg-surface shadow-card"
       tabIndex={0}
       role="region"
-      aria-label={caption}
+      aria-labelledby="compare-caption"
     >
       <table className="w-full border-separate border-spacing-0 text-sm">
-        <caption className="sr-only">{caption}</caption>
+        <caption id="compare-caption" className="sr-only">
+          {caption}
+        </caption>
         <thead>
           <tr>
-            <td className="sticky top-0 left-0 z-30 w-[28vw] min-w-[28vw] border-b border-line-card bg-surface tab:w-48 tab:min-w-48" />
+            <td className="sticky top-0 left-0 z-30 w-[26vw] min-w-[26vw] border-b border-line-card bg-surface tab:w-48 tab:min-w-48" />
             {items.map((p) => (
               <th
                 key={p.slug}
                 scope="col"
-                className="sticky top-0 z-20 min-w-[36vw] snap-start border-b border-l border-line-card bg-surface p-3 text-left align-top font-normal tab:min-w-56"
+                className="sticky top-0 z-20 min-w-[32vw] snap-start border-b border-l border-line-card bg-surface p-3 text-left align-top font-normal tab:min-w-56"
               >
                 <div className="flex items-start justify-between gap-1">
                   <LocalLink

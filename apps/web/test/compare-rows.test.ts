@@ -84,6 +84,16 @@ describe('buildCompareRows (design 2026-11-13)', () => {
   });
 });
 
+describe('warranty (review 2026-11-13: no English free text on /hi)', () => {
+  it('shows typed warranty months but not the untranslated warranty text', () => {
+    const rows = buildCompareRows([
+      { ...castrol, warranty: 'Two years from purchase' },
+      { ...hp, warranty: 'One year' },
+    ]);
+    expect(rows.flatMap((g) => g.rows.map((r) => r.key))).not.toContain('warranty');
+  });
+});
+
 describe('parseCompareParam', () => {
   it('keeps valid, distinct slugs, at most 4', () => {
     expect(parseCompareParam('a,a,B!,b,c,d,e')).toEqual(['a', 'b', 'c', 'd']);
