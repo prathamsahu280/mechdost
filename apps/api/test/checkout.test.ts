@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { seedRaipurDemo, type DemoFixture } from '@mechdost/db/demo-seed';
 import { ensureUser } from '@mechdost/db/repo';
+import { orderGroups } from '@mechdost/db/schema';
 import { bearer, buildApp, type ErrorJson } from './helpers';
 
 const fixture = JSON.parse(
@@ -132,5 +133,46 @@ describe('checkout API', () => {
       code: 'CHECKOUT_UNAVAILABLE',
       details: { lines: [{ sku: OIL, issue: 'insufficient_stock' }] },
     });
+  });
+});
+
+describe('business purchase with a GSTIN (plan 2026-11-13 buyer GSTIN)', () => {
+  it('places with a business GSTIN; refuses a bad checksum or half the pair; the quote names the delivery state', async () => {
+    const lines = [{ sku: OIL, qty: 1 }];
+    const expectedTotalPaise = await quoteTotal(lines);
+    const send = (k: string, business: unknown) =>
+      ctx.app.request('/v1/orders', {
+        method: 'POST',
+        headers: { ...verified, 'idempotency-key': k },
+        body: JSON.stringify({ address, lines, expectedTotalPaise, paymentMethod: 'cod', business }),
+      });
+
+    const ok = await send('order-key-biz-0000001', { gstin: '22abvcs4888h1zl', businessName: 'Sahu Motors' });
+    expect(ok.status).toBe(201);
+    const { code } = (await ok.json()) as { code: string };
+    const group = (await ctx.db.select().from(orderGroups)).find((g) => g.code === code);
+    expect(group).toMatchObject({ gstin: '22ABVCS4888H1ZL', businessName: 'Sahu Motors' });
+    const detail = await ctx.app.request(`/v1/orders/${code}?locale=en`, { headers: verified });
+    expect(((await detail.json()) as { business: unknown }).business).toEqual({
+      gstin: '22ABVCS4888H1ZL',
+      businessName: 'Sahu Motors',
+    });
+
+    const bad = await send('order-key-biz-0000002', {
+      gstin: '22ABVCS4888H1ZM',
+      businessName: 'Sahu Motors',
+    });
+    expect(bad.status).toBe(400);
+    expect(((await bad.json()) as ErrorJson).error.details).toEqual(
+      expect.arrayContaining([expect.objectContaining({ path: 'business.gstin' })]),
+    );
+    expect((await send('order-key-biz-0000003', { gstin: '22ABVCS4888H1ZL' })).status).toBe(400);
+
+    const quote = await ctx.app.request('/v1/checkout/quote', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ pincode: '492004', lines }),
+    });
+    expect(((await quote.json()) as { deliveryStateCode: string }).deliveryStateCode).toBe('22');
   });
 });

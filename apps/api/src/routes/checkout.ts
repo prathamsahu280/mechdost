@@ -18,6 +18,7 @@ import type { RateRule } from '../rate-limit/limiter';
 import type { AppDeps, AppEnv } from '../types';
 import { validationHook } from '../validation';
 import { errorResponses, ErrorSchema } from './schemas';
+import { BusinessPurchaseSchema } from '@mechdost/shared/business';
 
 /**
  * Checkout (spec 03). `POST /checkout/quote` prices a cart for a PIN (public, per-IP limit). `POST /orders` places
@@ -52,6 +53,8 @@ const QuoteBody = z
 const Quote = z
   .object({
     cityCode: z.string(),
+    /** GST state code of the delivery PIN (place of supply), e.g. '22'. */
+    deliveryStateCode: z.string(),
     pincode: z.string(),
     lines: z.array(
       z.object({
@@ -109,6 +112,8 @@ const PlaceBody = z
     expectedTotalPaise: z.number().int().min(0),
     paymentMethod: z.enum(['cod', 'online']),
     note: Text(1, 300).nullable().optional(),
+    /** Optional business purchase: GSTIN (checksum) + business name, both or neither (buyer GSTIN plan). */
+    business: BusinessPurchaseSchema.nullable().optional(),
     locale: Locale,
   })
   .strict()
@@ -252,7 +257,11 @@ const myOrder = createRoute({
   request: { params: z.object({ code: GroupCode }), query: z.object({ locale: Locale }) },
   responses: {
     200: json(
-      Summary.extend({ address: z.record(z.string(), z.unknown()), orders: z.array(Tracked) }),
+      Summary.extend({
+        address: z.record(z.string(), z.unknown()),
+        business: z.object({ gstin: z.string(), businessName: z.string() }).nullable(),
+        orders: z.array(Tracked),
+      }),
       'Order',
     ),
     404: json(ErrorSchema, 'Not found'),
@@ -334,6 +343,7 @@ export function checkoutRoutes(deps: AppDeps, cache: SessionCache) {
         lines: body.lines,
         expectedTotalPaise: body.expectedTotalPaise,
         note: body.note ?? null,
+        business: body.business ?? null,
         locale: body.locale,
       });
       // The Razorpay order exists (stored) before the client sees it; a retried place reuses it.

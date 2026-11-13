@@ -134,6 +134,8 @@ export interface TrackedOrder {
 
 export interface MyOrderDetail extends Omit<MyOrderSummary, 'orders'> {
   address: Record<string, unknown>;
+  /** Business purchase (GST invoice) details given at checkout, or null. */
+  business: { gstin: string; businessName: string } | null;
   orders: TrackedOrder[];
 }
 
@@ -224,6 +226,7 @@ export async function getMyOrder(
     paymentMethod: g.paymentMethod,
     paymentStatus: g.paymentStatus,
     address: (first?.order.shippingAddress ?? {}) as Record<string, unknown>,
+    business: g.gstin && g.businessName ? { gstin: g.gstin, businessName: g.businessName } : null,
     orders: tracked,
   };
 }
