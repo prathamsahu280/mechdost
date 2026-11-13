@@ -301,7 +301,7 @@ User shared Razorpay **test** keys and asked to "see how we have the stuff for r
 - **Checkout:** prefilled from the signed-in customer (name, phone, default address and PIN); a known COD block is shown on load and ordering is disabled; field errors clear as the field is edited.
 - **Signals:** admin Overview tiles for support requests to answer and price changes to approve; the customer's section bar shows replies and quote offers waiting for them.
 - **Copy:** the account page no longer says "no password"; signed-in visitors on `/login` are told and offered the way back; `/support` redirects to the account's support section; footer "Account" instead of "Sign in".
-- **Open, needs a design:** an approved or invited seller cannot sign in to their shop (demo and API: nothing writes `shop_users`) — P0 for the next session.
+- **Open (demo only):** an approved or invited seller cannot sign in to their shop in the browser demo; the real API links the owner on sign-in (`linkApplicantOwner` in the auth middleware) — Q89.
 
 ## 2026-11-13 — Compare tray on every page; language switch is a full page load (user UI review)
 
