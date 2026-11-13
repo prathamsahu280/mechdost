@@ -82,145 +82,153 @@ export function CompareTable({
   const labelCell = 'compare-label';
 
   return (
-    <div role="table" aria-labelledby="compare-caption" style={style} className="compare">
+    <>
+      {/* The caption sits outside the table: a table may only contain rows and row groups (review 2026-11-14). */}
       <p id="compare-caption" className="sr-only">
         {caption}
       </p>
-
-      {/* Sticky product strip: scrolls sideways with the body (kept in step by CompareScrollSync). */}
-      <div
-        role="rowgroup"
-        className="sticky top-[71px] z-20 border-b border-line-card bg-bg/95 tab:bg-surface/95 backdrop-blur nav:top-[83px] tab:rounded-t-card tab:border tab:px-0"
-      >
-        <div data-compare-scroll="head" className="no-scrollbar overflow-x-auto overscroll-x-contain">
-          <div role="row" className="compare-track compare-grid">
-            <div aria-hidden="true" className={`${labelCell} hidden tab:block`} />
-            {items.map((p, i) => (
-              <div key={p.slug} role="columnheader" className="compare-col py-3 pr-1 tab:px-4">
-                <div className="flex items-start justify-between gap-1">
-                  <LocalLink
-                    href={`/shop/${p.slug}`}
-                    className="line-clamp-2 font-heading text-[14px] leading-snug font-bold text-ink hover:underline tab:text-[15px]"
-                  >
-                    {p.brand} {p.name}
-                  </LocalLink>
-                  <CompareRemove
-                    slug={p.slug}
-                    slugs={slugs}
-                    prefix={prefix}
-                    label={t('remove', { name: `${p.brand} ${p.name}` })}
-                  />
+      <div role="table" aria-labelledby="compare-caption" style={style} className="compare">
+        {/* Sticky product strip: scrolls sideways with the body (kept in step by CompareScrollSync). */}
+        <div
+          role="rowgroup"
+          className="sticky top-[71px] z-20 border-b border-line-card bg-bg/95 tab:bg-surface/95 backdrop-blur nav:top-[83px] tab:rounded-t-card tab:border tab:px-0"
+        >
+          <div data-compare-scroll="head" className="no-scrollbar overflow-x-auto overscroll-x-contain">
+            <div role="row" className="compare-track compare-grid">
+              {/* A real header cell in every layout, so each product's cells sit under its own name for screen
+                readers; on phones it is visually hidden and out of the grid (review 2026-11-14). */}
+              <div role="columnheader" className={`${labelCell} sr-only tab:not-sr-only`}>
+                <span className="sr-only">{t('detailColumn')}</span>
+              </div>
+              {items.map((p, i) => (
+                <div key={p.slug} role="columnheader" className="compare-col py-3 pr-1 tab:px-4">
+                  <div className="flex items-start justify-between gap-1">
+                    <LocalLink
+                      href={`/shop/${p.slug}`}
+                      className="line-clamp-2 font-heading text-[14px] leading-snug font-bold text-ink hover:underline tab:text-[15px]"
+                    >
+                      {p.brand} {p.name}
+                    </LocalLink>
+                    <CompareRemove
+                      slug={p.slug}
+                      slugs={slugs}
+                      prefix={prefix}
+                      label={t('remove', { name: `${p.brand} ${p.name}` })}
+                    />
+                  </div>
+                  {p.price ? (
+                    <p className="flex flex-wrap items-baseline gap-x-2 font-heading text-lg font-extrabold text-ink">
+                      {formatPrice(p.price.pricePaise)}
+                      {isLowestPrice(i) ? (
+                        <span className="rounded-md bg-success-bg px-1.5 py-0.5 font-sans text-[11px] font-bold text-success">
+                          {t('lowestPrice')}
+                        </span>
+                      ) : null}
+                    </p>
+                  ) : (
+                    <p className="text-xs font-bold text-warning">{cat('onRequest')}</p>
+                  )}
                 </div>
-                {p.price ? (
-                  <p className="flex flex-wrap items-baseline gap-x-2 font-heading text-lg font-extrabold text-ink">
-                    {formatPrice(p.price.pricePaise)}
-                    {isLowestPrice(i) ? (
-                      <span className="rounded-md bg-success-bg px-1.5 py-0.5 font-sans text-[11px] font-bold text-success">
-                        {t('lowestPrice')}
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div
+          data-compare-scroll="body"
+          className="snap-x snap-mandatory overflow-x-auto overscroll-x-contain tab:scroll-pl-44 tab:rounded-b-card tab:border tab:border-t-0 tab:border-line-card tab:bg-surface tab:px-0 tab:shadow-card"
+        >
+          <div className="compare-track">
+            {/* Summary: what the cards on the shop show, so a product can be bought straight from here. */}
+            <div role="rowgroup">
+              <div role="row" className="compare-grid border-b border-line-card">
+                <div role="rowheader" className={`${labelCell} sr-only tab:not-sr-only`}>
+                  <span className="sr-only">{t('summaryRow')}</span>
+                </div>
+                {items.map((p) => {
+                  const off = p.price
+                    ? discountPercent(p.price.pricePaise, p.price.mrpPaise ?? undefined)
+                    : 0;
+                  const rating = p.rating && p.rating.count > 0 ? p.rating : null;
+                  return (
+                    <div key={p.slug} role="cell" className="compare-col snap-start py-4 pr-1 tab:px-4">
+                      <ProductVisual category={p.category.key} brand={p.brand} />
+                      {rating ? (
+                        <div className="mt-2 flex items-center gap-1.5 text-xs text-muted">
+                          <StarRating
+                            rating={rating.avg}
+                            label={r('ratedBy', { rating: rating.avg.toFixed(1), count: rating.count })}
+                          />
+                          <span aria-hidden="true">{rating.avg.toFixed(1)}</span>
+                        </div>
+                      ) : null}
+                      {off !== null && off > 0 ? (
+                        <p className="mt-1.5 w-fit rounded-md bg-success-bg px-1.5 py-0.5 text-[11px] font-bold text-success">
+                          {cat('save', { percent: off })}
+                        </p>
+                      ) : null}
+                      {p.price ? (
+                        <div className="mt-3">
+                          <AddToCartButton
+                            slug={p.slug}
+                            source="compare"
+                            labels={{
+                              add: cat('addToCart'),
+                              added: cat('added'),
+                              maxQty: cat('maxQty'),
+                              maxLines: cat('maxLines'),
+                              saveFailed: cat('saveFailed'),
+                            }}
+                          />
+                        </div>
+                      ) : null}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {groups.map((g) => (
+              <div key={g.key} role="rowgroup" aria-label={t(`group.${g.key}`)}>
+                <div aria-hidden="true" className="compare-group">
+                  <span className="sticky left-0 inline-block px-0 tab:px-4">{t(`group.${g.key}`)}</span>
+                </div>
+                {g.rows.map((row) => (
+                  <div
+                    key={row.key}
+                    role="row"
+                    data-same={row.same && items.length > 1 ? '' : undefined}
+                    className="compare-grid border-b border-line-card"
+                  >
+                    <div role="rowheader" className={labelCell}>
+                      <span className="sticky left-0 inline-block tab:static">
+                        {row.label.ns === 'row'
+                          ? t(`row.${row.label.key}` as 'row.price')
+                          : t(`attr.${row.label.key}` as 'attr.saeGrade')}
                       </span>
-                    ) : null}
-                  </p>
-                ) : (
-                  <p className="text-xs font-bold text-warning">{cat('onRequest')}</p>
-                )}
+                    </div>
+                    {row.cells.map((c, i) => (
+                      <div
+                        key={slugs[i]}
+                        role="cell"
+                        className={`compare-col pb-3 pr-1 text-sm tab:px-4 tab:py-3 ${c === null ? 'text-muted' : 'text-ink'}`}
+                      >
+                        {cell(c)}
+                        {c?.kind === 'unitPrice' && row.lowestIdx?.includes(i)
+                          ? badge(t(`lowest_${c.per}`))
+                          : null}
+                        {c?.kind === 'price' && row.key === 'price' && isLowestPrice(i)
+                          ? badge(t('lowestPrice'))
+                          : null}
+                      </div>
+                    ))}
+                  </div>
+                ))}
               </div>
             ))}
           </div>
         </div>
       </div>
-
-      <div
-        data-compare-scroll="body"
-        className="snap-x snap-mandatory overflow-x-auto overscroll-x-contain tab:scroll-pl-44 tab:rounded-b-card tab:border tab:border-t-0 tab:border-line-card tab:bg-surface tab:px-0 tab:shadow-card"
-      >
-        <div className="compare-track">
-          {/* Summary: what the cards on the shop show, so a product can be bought straight from here. */}
-          <div role="rowgroup">
-            <div role="row" className="compare-grid border-b border-line-card">
-              <div role="rowheader" className={`${labelCell} hidden tab:block`}>
-                <span className="sr-only">{t('group.price')}</span>
-              </div>
-              {items.map((p) => {
-                const off = p.price ? discountPercent(p.price.pricePaise, p.price.mrpPaise ?? undefined) : 0;
-                const rating = p.rating && p.rating.count > 0 ? p.rating : null;
-                return (
-                  <div key={p.slug} role="cell" className="compare-col snap-start py-4 pr-1 tab:px-4">
-                    <ProductVisual category={p.category.key} brand={p.brand} />
-                    {rating ? (
-                      <div className="mt-2 flex items-center gap-1.5 text-xs text-muted">
-                        <StarRating
-                          rating={rating.avg}
-                          label={r('ratedBy', { rating: rating.avg.toFixed(1), count: rating.count })}
-                        />
-                        <span aria-hidden="true">{rating.avg.toFixed(1)}</span>
-                      </div>
-                    ) : null}
-                    {off !== null && off > 0 ? (
-                      <p className="mt-1.5 w-fit rounded-md bg-success-bg px-1.5 py-0.5 text-[11px] font-bold text-success">
-                        {cat('save', { percent: off })}
-                      </p>
-                    ) : null}
-                    {p.price ? (
-                      <div className="mt-3">
-                        <AddToCartButton
-                          slug={p.slug}
-                          source="compare"
-                          labels={{
-                            add: cat('addToCart'),
-                            added: cat('added'),
-                            maxQty: cat('maxQty'),
-                            maxLines: cat('maxLines'),
-                            saveFailed: cat('saveFailed'),
-                          }}
-                        />
-                      </div>
-                    ) : null}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {groups.map((g) => (
-            <div key={g.key} role="rowgroup" aria-label={t(`group.${g.key}`)}>
-              <div aria-hidden="true" className="compare-group">
-                <span className="sticky left-0 inline-block px-0 tab:px-4">{t(`group.${g.key}`)}</span>
-              </div>
-              {g.rows.map((row) => (
-                <div
-                  key={row.key}
-                  role="row"
-                  data-same={row.same && items.length > 1 ? '' : undefined}
-                  className="compare-grid border-b border-line-card"
-                >
-                  <div role="rowheader" className={labelCell}>
-                    <span className="sticky left-0 inline-block tab:static">
-                      {row.label.ns === 'row'
-                        ? t(`row.${row.label.key}` as 'row.price')
-                        : t(`attr.${row.label.key}` as 'attr.saeGrade')}
-                    </span>
-                  </div>
-                  {row.cells.map((c, i) => (
-                    <div
-                      key={slugs[i]}
-                      role="cell"
-                      className={`compare-col pb-3 pr-1 text-sm tab:px-4 tab:py-3 ${c === null ? 'text-muted' : 'text-ink'}`}
-                    >
-                      {cell(c)}
-                      {c?.kind === 'unitPrice' && row.lowestIdx?.includes(i)
-                        ? badge(t(`lowest_${c.per}`))
-                        : null}
-                      {c?.kind === 'price' && row.key === 'price' && isLowestPrice(i)
-                        ? badge(t('lowestPrice'))
-                        : null}
-                    </div>
-                  ))}
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
+    </>
   );
 }

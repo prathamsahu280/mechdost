@@ -29,6 +29,8 @@ export function ShopPrices({ shop }: { shop: DemoShop }) {
           {t('pricesTitle')}
         </h2>
         <p className="mt-1 text-sm text-muted">{t('pricesLead')}</p>
+        {/* The shop's approved price is what it is paid; customers see the admin's price (Q26, QA 2026-11-14 U1). */}
+        <p className="mt-1 text-sm text-muted">{t('priceCustomerNote')}</p>
       </div>
       <ul className="grid gap-3 nav:grid-cols-2">
         {products.map((p) => (

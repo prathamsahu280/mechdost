@@ -514,7 +514,8 @@ html[data-consent-open] {
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
-@media (min-width: 768px) {
+@media (min-width: 760px) {
+  /* = --breakpoint-tab, so the grid switches with the `tab:` classes */
   .compare {
     --track-min: calc(11rem + var(--cols) * 12rem);
     max-width: calc(11rem + var(--cols) * 22rem);

@@ -133,6 +133,7 @@ export function OrderView({ code }: { code: string }) {
                   <li key={l.slug}>
                     <Link
                       href={`${locale === 'hi' ? '/hi' : ''}/shop/${l.slug}#reviews-${l.slug}`}
+                      data-track="order_rate_product"
                       className="press inline-flex min-h-11 items-center rounded-pill border border-line-input px-4 text-sm font-bold text-ink hover:border-ink"
                     >
                       {t('rateProduct', { product: productNameFor(l.slug, l.name, locale) })}

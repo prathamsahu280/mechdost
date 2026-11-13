@@ -217,14 +217,14 @@ test.describe('shop prices', () => {
     await signInShop(page);
     const prices = page.getByRole('region', { name: 'Your prices' });
     const castrol = prices.getByRole('listitem').filter({ hasText: 'Activ 4T 20W40 900 ml' });
-    await expect(castrol).toContainText('On sale at ₹440');
+    await expect(castrol).toContainText('On sale · you are paid ₹440');
     await castrol.getByLabel('New price (₹)').fill('480');
     await castrol.getByRole('button', { name: 'Send for approval' }).click();
     await expect(castrol.getByText('The price cannot be above the MRP (₹475).')).toBeVisible();
     await castrol.getByLabel('New price (₹)').fill('430');
     await castrol.getByRole('button', { name: 'Send for approval' }).click();
     await expect(castrol).toContainText('Waiting for approval: ₹430');
-    await expect(castrol).toContainText('On sale at ₹440');
+    await expect(castrol).toContainText('On sale · you are paid ₹440');
 
     const shell = prices.getByRole('listitem').filter({ hasText: 'Fully synthetic engine oil 5W-30 3.5 L' });
     await shell.getByLabel('New price (₹)').fill('3100');
@@ -246,7 +246,7 @@ test.describe('shop prices', () => {
 
     await page.getByRole('button', { name: 'Sign out' }).first().click();
     await signInShop(page);
-    await expect(castrol).toContainText('On sale at ₹430');
+    await expect(castrol).toContainText('On sale · you are paid ₹430');
     await expect(shell).toContainText('Taken off sale: Above market price');
   });
 });

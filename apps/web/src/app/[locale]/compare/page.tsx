@@ -16,7 +16,7 @@ import { DATA_MODE } from '@/lib/data-mode';
 
 interface Props {
   params: Promise<{ locale: Locale }>;
-  searchParams: Promise<{ p?: string | string[] }>;
+  searchParams: Promise<{ p?: string | string[]; cleared?: string }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -44,7 +44,7 @@ async function load(slugs: readonly string[], locale: Locale): Promise<ProductVi
  * page needs no `ClientMessages`.
  */
 export default async function ComparePage({ params, searchParams }: Props) {
-  const [{ locale }, { p }] = await Promise.all([params, searchParams]);
+  const [{ locale }, { p, cleared }] = await Promise.all([params, searchParams]);
   const [t, c] = await Promise.all([getTranslations('compare'), getTranslations('categories')]);
   const prefix = locale === 'hi' ? '/hi' : '';
   const requested = parseCompareParam(p);
@@ -75,7 +75,7 @@ export default async function ComparePage({ params, searchParams }: Props) {
       <div className="mt-6">
         {items.length === 0 ? (
           <>
-            {requested.length === 0 ? <OpenSavedComparison prefix={prefix} /> : null}
+            {requested.length === 0 && cleared !== '1' ? <OpenSavedComparison prefix={prefix} /> : null}
             <EmptyState
               title={t('emptyTitle')}
               body={t('emptyBody')}
@@ -108,6 +108,7 @@ export default async function ComparePage({ params, searchParams }: Props) {
                 ) : null}
                 {category ? (
                   <LocalLink
+                    data-track="compare_back"
                     href={`/shop?category=${category.slug}`}
                     className="inline-flex min-h-11 items-center px-2 text-sm font-bold text-accent-soft-text underline-offset-4 hover:underline"
                   >

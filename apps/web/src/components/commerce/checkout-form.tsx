@@ -71,7 +71,7 @@ export function CheckoutForm() {
   useCustomerBlocks();
   const signedInAllowed = session ? customerAllowed(session.id) : null;
   const knownBlock =
-    signedInAllowed && (!signedInAllowed.order || (!signedInAllowed.cod && method === 'cod'))
+    signedInAllowed && (!signedInAllowed.order || !signedInAllowed.cod)
       ? signedInAllowed.order
         ? t('blockedCod')
         : t('blockedOrders')
@@ -265,6 +265,8 @@ export function CheckoutForm() {
             <input
               {...field('name')}
               defaultValue={prefill.name}
+              // What the customer typed or saved: not checked for translation (hard rule 10).
+              data-user-content
               autoComplete="name"
               maxLength={100}
               className={inputClass}
@@ -294,6 +296,8 @@ export function CheckoutForm() {
             <textarea
               {...field('address')}
               defaultValue={prefill.address}
+              // What the customer typed or saved: not checked for translation (hard rule 10).
+              data-user-content
               rows={3}
               autoComplete="street-address"
               maxLength={500}

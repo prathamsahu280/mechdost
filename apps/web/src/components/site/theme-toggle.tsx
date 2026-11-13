@@ -47,7 +47,13 @@ export function ThemeToggle({ label, className = '' }: { label: string; classNam
     try {
       localStorage.setItem(THEME_STORAGE_KEY, next);
     } catch {
-      // Private mode / storage blocked: the theme still applies for this page view.
+      // Private mode / storage full: the theme still applies for this page view. Drop the old saved value, or the
+      // inline guard (`THEME_INIT_SCRIPT`) would put it straight back (review 2026-11-14).
+      try {
+        localStorage.removeItem(THEME_STORAGE_KEY);
+      } catch {
+        // Storage blocked entirely: nothing saved, nothing to restore.
+      }
     }
   }
 

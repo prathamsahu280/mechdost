@@ -294,7 +294,7 @@ User shared Razorpay **test** keys and asked to "see how we have the stuff for r
 ## 2026-11-14 — Behaviour changes from the overnight QA (all with regression tests in `e2e/qa-regressions.spec.ts`)
 
 - **Reason codes are always chosen, never preselected** (shop decline, admin reject/cancel, customer order and booking cancel): rule 16 — a default code nobody picked is bad data.
-- **Order rejection:** the customer sees the reason code's sentence in their language, plus "nothing was charged" for cash on delivery; the admin's message is an optional note (no English default text).
+- **Order rejection:** the customer sees the reason code's sentence in their language, plus "nothing was charged" for cash-on-delivery orders, plus the admin's message (10–500 characters, the API's rule; no English default text — the admin writes it in the customer's language). Follow-up: the API's customer order view does not return the reason code yet (`customer-orders.ts`).
 - **Delivery code:** shown only to the customer (or the guest who placed the order on that device), never to shops, workshops or staff.
 - **Offers:** an open offer lapses at once when the shop is paused or suspended; routing never suggests a shop that stocks none of the order's categories (the admin is told when no shop can take it); shops see their missed offers; delivered orders get their own list (admin queue "Delivered", shop portal "Delivered").
 - **Floating UI:** the compare tray and the shoppers' assistant stay out of `/admin` and `/partner`; the tray also stays out of `/checkout` and steps aside for the privacy banner.

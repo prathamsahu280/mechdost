@@ -863,7 +863,15 @@ export function routeOrder(code: string, shopSlug: string): boolean {
     if (state !== 'needs_routing' && state !== 'expired') return null;
     const declined =
       state === 'expired' && o.shop
-        ? [...(o.declined ?? []), { slug: o.shop.slug, reason: 'timeout', at: new Date().toISOString() }]
+        ? [
+            ...(o.declined ?? []),
+            {
+              slug: o.shop.slug,
+              // A lapse because the shop was paused or suspended is not a missed timer (review 2026-11-14).
+              reason: takesNewWork('shop', o.shop.slug) ? 'timeout' : 'shop_closed',
+              at: new Date().toISOString(),
+            },
+          ]
         : o.declined;
     const now = new Date();
     return {
@@ -910,10 +918,10 @@ export const isClosed = (o: DemoOrder) => Boolean(o.rejection ?? o.cancellation)
 
 /** Admin rejects an unfulfillable order with a reason code and a message to the customer (same rules as the API). */
 export function rejectOrder(code: string, message: string, reasonCode: OrderRejectReason): boolean {
-  // The reason code carries the customer's explanation (shown in their language); the note is optional extra
-  // text (QA 2026-11-14, B1: the admin's English default reached Hindi customers).
-  const clean = message.trim().slice(0, 500);
-  if (!ORDER_REJECT_REASONS.includes(reasonCode)) return false;
+  // Same rule as the API (`repo/routing.ts`, CHECK 10–500): a message the admin writes, with no English default
+  // text (QA 2026-11-14, B1); the reason code's sentence is shown in the customer's language as well.
+  const clean = message.trim();
+  if (clean.length < 10 || clean.length > 500 || !ORDER_REJECT_REASONS.includes(reasonCode)) return false;
   return updateOrder(code, (o) => {
     const state = routingState(o);
     if (state === 'confirmed' || state === 'rejected' || state === 'cancelled') return null;

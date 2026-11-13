@@ -53,7 +53,9 @@ function ShopOrders({ shopSlug }: { shopSlug: string }) {
   const missed = useOrders()
     .filter(
       (o) =>
-        (o.shop?.slug === shopSlug && routingState(o, now) === 'expired') ||
+        (o.shop?.slug === shopSlug &&
+          o.shop.status === 'offered' &&
+          new Date(o.shop.expiresAt).getTime() < now) ||
         (o.declined ?? []).some((d) => d.slug === shopSlug && d.reason === 'timeout'),
     )
     .slice(0, 10);

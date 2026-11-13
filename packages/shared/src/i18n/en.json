@@ -493,7 +493,9 @@
       "months": "{n} months",
       "V": "{n} V",
       "Ah": "{n} Ah"
-    }
+    },
+    "detailColumn": "Detail",
+    "summaryRow": "At a glance"
   },
   "cart": {
     "title": "Your cart",
@@ -1250,7 +1252,7 @@
     "expired": "No answer from {shop} — reroute or reject",
     "acceptedBy": "Accepted by {shop}",
     "reject": "Reject with a message",
-    "rejectMessage": "Message to the customer (optional, in their language)",
+    "rejectMessage": "Message to the customer (in their language, 10–500 characters)",
     "rejectSend": "Reject order",
     "rejectedWith": "Rejected: {message}",
     "openOrder": "Open order",
@@ -1465,7 +1467,7 @@
     "pricesTitle": "Your prices",
     "pricesLead": "Every new price goes to MechDost for approval; your current price stays on sale until then. A price can never be above the MRP.",
     "priceMrp": "MRP {mrp}",
-    "priceOnSale": "On sale at {price}",
+    "priceOnSale": "On sale · you are paid {price}",
     "pricePending": "Waiting for approval: {price}",
     "priceNotApproved": "Not approved: {reason}",
     "priceOffSale": "Taken off sale: {reason}",
@@ -1644,7 +1646,7 @@
     "rules_saveFailed": "Not saved: this browser is not saving data.",
     "reasonChoose": "Choose a reason",
     "reasonRequired": "Choose a reason first.",
-    "noShopCanTake": "No shop that stocks these products can take it now. Reject it with a message to the customer, or wait for a shop to come back.",
+    "noShopCanTake": "No shop can take it now: every shop is paused or suspended. Reject it with a message to the customer, or wait.",
     "aboveList": "Above the list price ({price}). Check before sending.",
     "queue_delivered": "Delivered",
     "shopDelivered": "Delivered",
@@ -1653,7 +1655,10 @@
     "shopMissedNote": "These offers ran out before you answered and went back to MechDost. Answer new offers within the timer.",
     "kpi_support": "Support requests to answer",
     "kpi_priceRequests": "Price changes to approve",
-    "coverageNone": "Stocks none of these categories: check with the shop first"
+    "coverageNone": "Stocks none of these categories: check with the shop first",
+    "priceCustomerNote": "Customers see the MechDost price for their area, which can differ from what you are paid.",
+    "rejectMessageShort": "Write at least 10 characters for the customer.",
+    "expiredPaused": "{shop} is paused or suspended — reroute or reject"
   },
   "policies": {
     "returns": {

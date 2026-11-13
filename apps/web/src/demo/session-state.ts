@@ -157,13 +157,24 @@ interface SessionRecord {
 }
 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
+/** Every field the address form writes (checkout prefills from these; review 2026-11-14). */
+const isAddress = (a: unknown): a is DemoAddress =>
+  isRecord(a) &&
+  typeof a.id === 'string' &&
+  typeof a.label === 'string' &&
+  typeof a.line1 === 'string' &&
+  typeof a.landmark === 'string' &&
+  typeof a.pincode === 'string' &&
+  typeof a.isDefault === 'boolean';
+
 export const isAccount = (v: unknown): v is DemoAccount =>
   isRecord(v) &&
   typeof v.id === 'string' &&
   typeof v.phone === 'string' &&
   typeof v.role === 'string' &&
   Array.isArray(v.vehicles) &&
-  Array.isArray(v.addresses);
+  Array.isArray(v.addresses) &&
+  v.addresses.every(isAddress);
 export const isSession = (v: unknown): v is SessionRecord => isRecord(v) && typeof v.accountId === 'string';
 
 let merged: { stored: readonly DemoAccount[]; all: readonly DemoAccount[] } | null = null;

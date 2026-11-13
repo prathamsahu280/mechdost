@@ -108,7 +108,10 @@ export function CompareRemove({
         if (readCompare().slugs.includes(slug)) removeFromCompare(slug);
         const rest = slugs.filter((s) => s !== slug);
         track('compare_removed', { slug, count: rest.length });
-        router.replace(prefix + (rest.length > 0 ? compareHref(rest) : '/compare'), { scroll: false });
+        // `cleared`: the empty page must not jump to another saved comparison (review 2026-11-14).
+        router.replace(prefix + (rest.length > 0 ? compareHref(rest) : '/compare?cleared=1'), {
+          scroll: false,
+        });
       }}
       className="press inline-flex size-11 shrink-0 items-center justify-center rounded-full text-muted hover:bg-surface-alt hover:text-ink"
     >

@@ -14,6 +14,14 @@ const MOTUL = 'motul-3100-4t-10w30-1l';
 const HP = 'hp-racer4-20w40-900ml';
 const EXIDE = 'exide-xltz4a-2w-battery';
 
+/** The product column headers (the first header is the "Detail" corner, kept for screen readers). */
+function productHeaders(page: Page) {
+  return page
+    .getByRole('table')
+    .getByRole('columnheader')
+    .filter({ has: page.getByRole('link') });
+}
+
 /** Taps like a person: the control centred on screen, never under the fixed tab bar or the compare tray. */
 async function tap(target: Locator) {
   await target.evaluate((el) => {
@@ -62,7 +70,7 @@ test('compare three engine oils from the shop', async ({ page }) => {
   await expect(page).toHaveURL(new RegExp(`/compare\\?p=${CASTROL},${MOTUL},${HP}$`));
 
   const table = page.getByRole('table');
-  await expect(table.getByRole('columnheader')).toHaveCount(3);
+  await expect(productHeaders(page)).toHaveCount(3);
   const lowest = table.getByRole('cell').filter({ hasText: 'Lowest price per litre' });
   await expect(lowest).toHaveCount(1);
   await expect(lowest).toContainText('₹366.67 per litre');
@@ -99,12 +107,12 @@ test('a shared link opens the same table; bad, extra and other-category slugs ar
   page,
 }) => {
   await page.goto(`/compare?p=${HP},${CASTROL}`);
-  await expect(page.getByRole('table').getByRole('columnheader')).toHaveCount(2);
+  await expect(productHeaders(page)).toHaveCount(2);
   await expect(page.getByRole('note')).toHaveCount(0);
 
   await page.goto(`/compare?p=${HP},${EXIDE},not-a-product,${CASTROL}`);
   await expect(page.getByRole('note')).toContainText('Some products were left out');
-  const headers = page.getByRole('table').getByRole('columnheader');
+  const headers = productHeaders(page);
   await expect(headers).toHaveCount(2);
   await expect(headers.first()).toContainText('HP Racer4');
 
@@ -117,7 +125,7 @@ test('removing a product from the table updates the link', async ({ page }) => {
   await page.goto(`/compare?p=${CASTROL},${MOTUL},${HP}`);
   await tap(page.getByRole('button', { name: 'Remove HP Racer4 20W40 900 ml' }));
   await expect(page).toHaveURL(new RegExp(`/compare\\?p=${CASTROL},${MOTUL}$`));
-  await expect(page.getByRole('table').getByRole('columnheader')).toHaveCount(2);
+  await expect(productHeaders(page)).toHaveCount(2);
 });
 
 test('the comparison page passes axe (WCAG 2.2 AA)', async ({ page }) => {
@@ -139,7 +147,7 @@ test('the left-out note appears only when a requested product is missing', async
   // One product survives (a battery cannot join oils): the note explains; that product stays, with a way to add more.
   await page.goto(`/compare?p=${CASTROL},${EXIDE}`);
   await expect(page.getByRole('note')).toContainText('Some products were left out');
-  await expect(page.getByRole('table').getByRole('columnheader')).toHaveCount(1);
+  await expect(productHeaders(page)).toHaveCount(1);
   await expect(page.getByRole('link', { name: 'Add a product (1 of 4)' })).toBeVisible();
   // Nothing valid at all.
   await page.goto('/compare?p=not-a-product');

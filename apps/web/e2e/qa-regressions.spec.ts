@@ -210,7 +210,12 @@ test('U8: /compare without a list opens the saved comparison', async ({ page }) 
   });
   await page.goto('/compare');
   await expect(page).toHaveURL(/\/compare\?p=castrol-activ-4t-20w40-900ml,motul-3100-4t-10w30-1l$/);
-  await expect(page.getByRole('table').getByRole('columnheader')).toHaveCount(2);
+  await expect(
+    page
+      .getByRole('table')
+      .getByRole('columnheader')
+      .filter({ has: page.getByRole('link') }),
+  ).toHaveCount(2);
 });
 
 test('U6: checkout starts from the signed-in customer’s details and default address', async ({ page }) => {
@@ -296,8 +301,13 @@ test('B1: a rejection reaches a Hindi customer in Hindi, with nothing charged fo
   await page.goto('/admin/orders');
   const card = page.locator('article').filter({ hasText: CODES.routing });
   await card.getByRole('button', { name: 'Reject with a message' }).click();
-  await expect(card.getByLabel('Message to the customer', { exact: false })).toHaveValue('');
+  const note = card.getByLabel('Message to the customer', { exact: false });
+  await expect(note).toHaveValue('');
   await card.getByLabel('Reason', { exact: true }).selectOption('no_stock_nearby');
+  // Same rule as the API: a message of at least 10 characters, written by the admin.
+  await card.getByRole('button', { name: 'Reject order' }).click();
+  await expect(card.getByText('Write at least 10 characters for the customer.')).toBeVisible();
+  await note.fill('हमें खेद है, यह बैटरी अभी उपलब्ध नहीं है।');
   await card.getByRole('button', { name: 'Reject order' }).click();
   await page.goto(`/hi/orders/${CODES.routing}`);
   await expect(
@@ -331,7 +341,7 @@ test('lifecycle 3: an offer held by a suspended shop can be rerouted at once', a
   await signIn(page, '9000000003');
   await page.goto('/admin/orders');
   const card = page.locator('article').filter({ hasText: CODES.offered });
-  await expect(card.getByText(/No answer from .* reroute or reject/)).toBeVisible();
+  await expect(card.getByText(/is paused or suspended — reroute or reject/)).toBeVisible();
   await expect(card.getByRole('button', { name: /^Route to/ }).first()).toBeVisible();
 });
 
@@ -505,4 +515,37 @@ test('U4: the customer’s section bar shows a reply or an offer waiting for the
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth),
   ).toBeLessThanOrEqual(1);
+});
+
+test.describe('consent banner on desktop', () => {
+  test.use({ storageState: { cookies: [], origins: [] } });
+  test('lifecycle 6: the privacy banner does not cover the side navigation', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'desktop layout: the side navigation is on the left');
+    await signIn(page, '9876543210');
+    await page.goto('/account/orders');
+    const banner = page.getByTestId('consent-banner');
+    await expect(banner).toBeVisible();
+    const nav = await page.getByRole('navigation', { name: 'Account sections' }).boundingBox();
+    const box = await banner.boundingBox();
+    expect(nav && box).toBeTruthy();
+    if (nav && box) expect(box.x).toBeGreaterThanOrEqual(nav.x + nav.width);
+  });
+});
+
+test('review: the theme toggle still works when the browser storage is full', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'the header toggle is shown from 400 px; desktop is enough for the storage case');
+  await page.goto('/');
+  await page.evaluate(() => {
+    localStorage.setItem('mechdost-theme', 'light');
+  });
+  await page.reload();
+  await page.evaluate(() => {
+    Storage.prototype.setItem = () => {
+      throw new DOMException('QuotaExceededError');
+    };
+  });
+  await page.getByRole('button', { name: 'Dark mode' }).first().click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await page.waitForTimeout(300);
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 });

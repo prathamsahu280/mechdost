@@ -80,7 +80,7 @@ export function ConsentBanner({ copy }: { copy: ConsentCopy }) {
       tabIndex={-1}
       aria-label={copy.label}
       data-testid="consent-banner"
-      className="fixed inset-x-2 z-50 rounded-card border border-line bg-surface p-3 shadow-dialog nav:p-4 outline-none bottom-[calc(76px+env(safe-area-inset-bottom))] nav:inset-x-auto nav:bottom-6 nav:left-6 nav:max-w-md"
+      className="fixed inset-x-2 z-50 rounded-card border border-line bg-surface p-3 shadow-dialog nav:p-4 outline-none bottom-[calc(76px+env(safe-area-inset-bottom))] nav:inset-x-auto nav:bottom-6 nav:right-6 nav:max-w-md"
     >
       <h2 className="font-heading text-sm font-extrabold text-ink nav:text-[15px]">{copy.title}</h2>
       <p className="mt-1 text-[13px] leading-snug text-muted nav:mt-1.5 nav:text-sm nav:leading-relaxed">

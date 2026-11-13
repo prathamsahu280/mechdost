@@ -798,6 +798,7 @@ export function LoginFlow() {
               {t('alreadySignedIn', { name: current.name })}{' '}
               <Link
                 href={`${prefix}${homeFor(current.role)}`}
+                data-track="login_go_account"
                 className="font-bold text-accent-soft-text underline underline-offset-2"
               >
                 {t('goToAccount')}

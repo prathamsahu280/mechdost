@@ -370,6 +370,7 @@ function RoutingCard({ order, now }: { order: DemoOrder; now: number }) {
   const [cancelling, setCancelling] = useState(false);
   // Which form was sent without a reason (QA 2026-11-14, U2: no preselected reason codes, rule 16).
   const [noReason, setNoReason] = useState<'reject' | 'cancel' | null>(null);
+  const [shortNote, setShortNote] = useState(false);
   const state = routingState(order, now);
   const categories = [
     ...new Set(
@@ -396,6 +397,11 @@ function RoutingCard({ order, now }: { order: DemoOrder; now: number }) {
     if (!reasonCode) {
       setNoReason('reject');
       document.getElementById(`reject-reason-${order.code}`)?.focus();
+      return;
+    }
+    if (typeof v !== 'string' || v.trim().length < 10) {
+      setShortNote(true);
+      document.getElementById(`reject-${order.code}`)?.focus();
       return;
     }
     if (typeof v === 'string' && rejectOrder(order.code, v, reasonCode)) {
@@ -469,7 +475,9 @@ function RoutingCard({ order, now }: { order: DemoOrder; now: number }) {
       ) : null}
       {state === 'expired' && order.shop ? (
         <p className="mt-3 rounded-lg bg-warning-bg p-3 text-sm font-bold text-warning">
-          {t('expired', { shop: shopName(order.shop.slug) })}
+          {takesNewWork('shop', order.shop.slug)
+            ? t('expired', { shop: shopName(order.shop.slug) })
+            : t('expiredPaused', { shop: shopName(order.shop.slug) })}
         </p>
       ) : null}
       {state === 'confirmed' && order.shop ? (
@@ -647,8 +655,18 @@ function RoutingCard({ order, now }: { order: DemoOrder; now: number }) {
               name="message"
               rows={3}
               maxLength={500}
+              aria-invalid={shortNote ? true : undefined}
+              aria-describedby={shortNote ? `reject-${order.code}-error` : undefined}
+              onChange={() => {
+                setShortNote(false);
+              }}
               className={`${portalField} py-2`}
             />
+            {shortNote ? (
+              <p id={`reject-${order.code}-error`} className="text-xs font-bold text-error">
+                {t('rejectMessageShort')}
+              </p>
+            ) : null}
             <div className="flex flex-wrap gap-2">
               <button type="submit" className={portalPrimary}>
                 {t('rejectSend')}
@@ -769,6 +787,7 @@ function ServiceRouting() {
                 </div>
                 <Link
                   href={`${prefix}/service/${req.code}`}
+                  data-track="admin_open_request"
                   className="inline-flex min-h-11 items-center text-sm font-bold text-accent-soft-text underline-offset-4 hover:underline"
                 >
                   {t('openRequest')}
