@@ -384,6 +384,7 @@ User (2026-11-13): "yes go ahead with option 1" for the design `docs/superpowers
 
 User (2026-11-13): "we have to setup the cd part too, basically i think we should dockerize it and use that and also i have the vps ready too … its an aws … ubuntu@13.201.82.82"; "the database would still be supabase tho". Answers to the design questions: build images in GitHub Actions, use mechdost.com now, demo website + live API.
 
+- **Server address:** Elastic IP **13.207.157.3** (attached 2026-11-13; the launch address 13.201.82.82 is gone).
 - **Supersedes** "Hosting: Vercel `bom1` (web), Cloud Run Mumbai (API)". The database stays Supabase (Mumbai); auth stays Firebase.
 - **Stack:** one AWS server (Ubuntu 24.04, 2 vCPU, 1.9 GB + 2 GB swap) runs docker compose in `/opt/mechdost`: Caddy (HTTPS, `mechdost.com`, `www` → apex, `api.mechdost.com`), the Next.js standalone web image and the Hono API image.
 - **Pipeline:** CI green on `main` → `Deploy` builds both images in Actions (the server is too small to build Next.js) → GHCR (private) → SSH with a dedicated deploy key (pinned host key) → `docker compose pull && up -d --wait`. Rollback = deploy an older SHA.

@@ -14,7 +14,7 @@ push to main ─▶ CI (format, types, lint, tests)
                    ▼
               Deploy workflow
               ├─ images: build web + API images (Buildx, cached) ─▶ ghcr.io/prathamsahu280/mechdost-{web,api}:<sha>
-              └─ deploy: ssh ubuntu@13.201.82.82 ─▶ /opt/mechdost
+              └─ deploy: ssh ubuntu@13.207.157.3 ─▶ /opt/mechdost
                                                      docker compose pull && up -d --wait
                                                      ┌──────────────────────────────────────────┐
   shoppers ─▶ https://mechdost.com ────────────────▶ │ caddy :80/:443 (HTTPS, Let's Encrypt)    │
@@ -28,7 +28,7 @@ push to main ─▶ CI (format, types, lint, tests)
 
 | Piece    | Where                          | Notes                                                                                                                                                |
 | -------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Server   | AWS, `ubuntu@13.201.82.82`     | Ubuntu 24.04, 2 vCPU, 1.9 GB RAM + 2 GB swap, 19 GB disk.                                                                                            |
+| Server   | AWS, `ubuntu@13.207.157.3`     | Ubuntu 24.04, 2 vCPU, 1.9 GB RAM + 2 GB swap, 19 GB disk.                                                                                            |
 | Stack    | `/opt/mechdost/` on the server | `compose.yml`, `Caddyfile` (copied by every deploy), `.env` (yours, never in git; every deploy keeps one line in it, `IMAGE_TAG=<deployed commit>`). |
 | Images   | GHCR (private, like the repo)  | `mechdost-web:<sha>` / `:main`, `mechdost-api:<sha>` / `:main`.                                                                                      |
 | Database | Supabase                       | Not on the server. Migrations are run by hand (§ 6).                                                                                                 |
@@ -63,7 +63,7 @@ The script installs:
 - `/opt/mechdost` (owned by `ubuntu`).
 
 ```bash
-scp deploy/bootstrap.sh ubuntu@13.201.82.82:/tmp/ && ssh ubuntu@13.201.82.82 'bash /tmp/bootstrap.sh'
+scp deploy/bootstrap.sh ubuntu@13.207.157.3:/tmp/ && ssh ubuntu@13.207.157.3 'bash /tmp/bootstrap.sh'
 ```
 
 ### 3.2 AWS security group (you, AWS console)
@@ -81,14 +81,14 @@ GitHub Actions logs in with **its own key** (`github-actions-deploy@mechdost` in
 | -------------------- | -------------------------------------------------------------------------------------------------------- |
 | `DEPLOY_SSH_KEY`     | The private half of the deploy key. GitHub holds the only copy; the local copy was deleted after upload. |
 | `DEPLOY_KNOWN_HOSTS` | The server's ed25519 host key (`ssh-keyscan`), so a man-in-the-middle cannot impersonate the server.     |
-| `DEPLOY_HOST`        | `13.201.82.82`                                                                                           |
+| `DEPLOY_HOST`        | `13.207.157.3`                                                                                           |
 | `DEPLOY_USER`        | `ubuntu`                                                                                                 |
 
 **To rotate the key:**
 
 ```bash
 ssh-keygen -q -t ed25519 -N "" -C "github-actions-deploy@mechdost" -f ~/.ssh/mechdost_deploy
-ssh ubuntu@13.201.82.82 'umask 077; cat >> ~/.ssh/authorized_keys' < ~/.ssh/mechdost_deploy.pub
+ssh ubuntu@13.207.157.3 'umask 077; cat >> ~/.ssh/authorized_keys' < ~/.ssh/mechdost_deploy.pub
 "/c/Program Files/GitHub CLI/gh.exe" secret set DEPLOY_SSH_KEY --env production < ~/.ssh/mechdost_deploy
 rm ~/.ssh/mechdost_deploy
 # then delete the old github-actions-deploy line from ~/.ssh/authorized_keys on the server
@@ -134,8 +134,8 @@ Never put a secret in a variable: variables are printed in logs.
 Start from the template, then fill in the values from your password manager or your local `.env`. Do **not** copy the local `.env` as is: it has development values (localhost URLs, the Auth emulator, test keys).
 
 ```bash
-scp deploy/env.server.example ubuntu@13.201.82.82:/opt/mechdost/.env
-ssh -t ubuntu@13.201.82.82 'chmod 600 /opt/mechdost/.env && nano /opt/mechdost/.env'
+scp deploy/env.server.example ubuntu@13.207.157.3:/opt/mechdost/.env
+ssh -t ubuntu@13.207.157.3 'chmod 600 /opt/mechdost/.env && nano /opt/mechdost/.env'
 ```
 
 **Website only (now):** the file only has to exist. The website reads nothing from it.
@@ -158,13 +158,13 @@ Today `mechdost.com` points at `2.57.91.91` (the registrar's parking page). Repl
 
 | Type | Name               | Value                       | TTL                          |
 | ---- | ------------------ | --------------------------- | ---------------------------- |
-| A    | `@` (mechdost.com) | `13.201.82.82`              | 300                          |
-| A    | `www`              | `13.201.82.82`              | 300                          |
-| A    | `api`              | `13.201.82.82`              | 300                          |
+| A    | `@` (mechdost.com) | `13.207.157.3`              | 300                          |
+| A    | `www`              | `13.207.157.3`              | 300                          |
+| A    | `api`              | `13.207.157.3`              | 300                          |
 | CAA  | `@`                | `0 issue "letsencrypt.org"` | 3600 (optional, recommended) |
 
 - **Delete** any other A or AAAA record on `@`, `www` and `api`; a leftover AAAA record breaks certificate issuance.
-- **Check:** `nslookup mechdost.com` should show `13.201.82.82`. Caddy then gets the certificates within a minute of the next request, and no restart is needed.
+- **Check:** `nslookup mechdost.com` should show `13.207.157.3`. Caddy then gets the certificates within a minute of the next request, and no restart is needed.
 - **Elastic IP:** the server needs an Elastic IP in AWS, or this address changes when the instance is stopped and started.
 
 ### 3.7 Switch deploys on
@@ -201,7 +201,7 @@ Until `DEPLOY_ENABLED=true`, the workflow only builds and pushes images (which a
 
 ## 5. Everyday operations
 
-All commands run on the server (`ssh ubuntu@13.201.82.82`, then `cd /opt/mechdost`), unless they say `gh`.
+All commands run on the server (`ssh ubuntu@13.207.157.3`, then `cd /opt/mechdost`), unless they say `gh`.
 
 | Task                         | Command                                                                                                                                                                                                                                                             |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -246,7 +246,7 @@ When a separate production Supabase project exists, migrations move into the pip
 | Deploy fails "`.env` is missing"                                 | § 3.5 not done                                                        | Create `/opt/mechdost/.env`.                                                                                               |
 | Deploy fails at `ssh` / host key                                 | Deploy key not on the server, or the server was rebuilt               | § 3.3 (re-run the `ssh-keyscan` line).                                                                                     |
 | Deploy fails in `up --wait`                                      | New container unhealthy                                               | `docker compose logs --since 10m api` (or `web`). The API prints which production setting is missing. Roll back if needed. |
-| `https://mechdost.com` does not load, `http://13.201.82.82` does | DNS not pointing here yet, or ports closed                            | § 3.6 / § 3.2; then `docker compose logs caddy`.                                                                           |
+| `https://mechdost.com` does not load, `http://13.207.157.3` does | DNS not pointing here yet, or ports closed                            | § 3.6 / § 3.2; then `docker compose logs caddy`.                                                                           |
 | Certificate errors in Caddy logs                                 | DNS still on the old address, an extra AAAA record, or port 80 closed | Fix DNS or ports; Caddy retries by itself.                                                                                 |
 | 502 on `api.mechdost.com`                                        | API not enabled (`COMPOSE_PROFILES=api` missing) or crashed           | § 3.5; `docker compose ps`.                                                                                                |
 | Site slow, server swapping                                       | Out of memory                                                         | `docker stats`; the instance may need 4 GB (t3.medium) when the API and worker both run.                                   |

@@ -17,6 +17,8 @@ Every green push to `main` goes live without hand work, on the user's own server
 
 ## Server
 
+- **Address:** Elastic IP 13.207.157.3 (attached 2026-11-13, replaces the launch address 13.201.82.82).
+
 - **Machine:** AWS, Ubuntu 24.04, 2 vCPU, 1.9 GB RAM, 17 GB free disk. It is reached with the user's SSH key.
 - **Too small to build Next.js:** so images are built in Actions, and the server adds a 2 GB swap file for safety.
 
@@ -60,9 +62,9 @@ Actions are pinned by SHA, and no third-party SSH action is used (plain `ssh`).
 ## Needs the user (`questions-for-user.md`)
 
 - **DNS at the registrar:**
-  - `A mechdost.com → 13.201.82.82`;
-  - `A www.mechdost.com → 13.201.82.82`;
-  - `A api.mechdost.com → 13.201.82.82`;
+  - `A mechdost.com → 13.207.157.3`;
+  - `A www.mechdost.com → 13.207.157.3`;
+  - `A api.mechdost.com → 13.207.157.3`;
   - optional `CAA 0 issue "letsencrypt.org"`.
 - **AWS security group:** inbound TCP 80 and 443 from anywhere (22 stays as is).
 - **Firebase:** add `mechdost.com` to the authorised domains when real sign-in is turned on (later).
