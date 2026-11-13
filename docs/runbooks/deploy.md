@@ -156,12 +156,12 @@ The checks are in `apps/api/src/config.ts`. No service-account key file goes on 
 
 Today `mechdost.com` points at `2.57.91.91` (the registrar's parking page). Replace or add these records:
 
-| Type | Name               | Value                       | TTL                          |
-| ---- | ------------------ | --------------------------- | ---------------------------- |
-| A    | `@` (mechdost.com) | `13.207.157.3`              | 300                          |
-| A    | `www`              | `13.207.157.3`              | 300                          |
-| A    | `api`              | `13.207.157.3`              | 300                          |
-| CAA  | `@`                | `0 issue "letsencrypt.org"` | 3600 (optional, recommended) |
+| Type       | Name               | Value                                               | TTL                          |
+| ---------- | ------------------ | --------------------------------------------------- | ---------------------------- |
+| A          | `@` (mechdost.com) | `13.207.157.3`                                      | 300                          |
+| A or CNAME | `www`              | `13.207.157.3`, or CNAME `mechdost.com` (as set up) | 300                          |
+| A          | `api`              | `13.207.157.3`                                      | 300                          |
+| CAA        | `@`                | `0 issue "letsencrypt.org"`                         | 3600 (optional, recommended) |
 
 - **Delete** any other A or AAAA record on `@`, `www` and `api`; a leftover AAAA record breaks certificate issuance.
 - **Check:** `nslookup mechdost.com` should show `13.207.157.3`. Caddy then gets the certificates within a minute of the next request, and no restart is needed.
@@ -241,15 +241,15 @@ When a separate production Supabase project exists, migrations move into the pip
 
 ## 8. Troubleshooting
 
-| Symptom                                                          | Likely cause                                                          | Fix                                                                                                                        |
-| ---------------------------------------------------------------- | --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| Deploy fails "`.env` is missing"                                 | § 3.5 not done                                                        | Create `/opt/mechdost/.env`.                                                                                               |
-| Deploy fails at `ssh` / host key                                 | Deploy key not on the server, or the server was rebuilt               | § 3.3 (re-run the `ssh-keyscan` line).                                                                                     |
-| Deploy fails in `up --wait`                                      | New container unhealthy                                               | `docker compose logs --since 10m api` (or `web`). The API prints which production setting is missing. Roll back if needed. |
-| `https://mechdost.com` does not load, `http://13.207.157.3` does | DNS not pointing here yet, or ports closed                            | § 3.6 / § 3.2; then `docker compose logs caddy`.                                                                           |
-| Certificate errors in Caddy logs                                 | DNS still on the old address, an extra AAAA record, or port 80 closed | Fix DNS or ports; Caddy retries by itself.                                                                                 |
-| 502 on `api.mechdost.com`                                        | API not enabled (`COMPOSE_PROFILES=api` missing) or crashed           | § 3.5; `docker compose ps`.                                                                                                |
-| Site slow, server swapping                                       | Out of memory                                                         | `docker stats`; the instance may need 4 GB (t3.medium) when the API and worker both run.                                   |
+| Symptom                                                                    | Likely cause                                                                                                                                           | Fix                                                                                                                                                                                                                   |
+| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Deploy fails "`.env` is missing"                                           | § 3.5 not done                                                                                                                                         | Create `/opt/mechdost/.env`.                                                                                                                                                                                          |
+| Deploy fails at `ssh` / host key                                           | Deploy key not on the server, or the server was rebuilt                                                                                                | § 3.3 (re-run the `ssh-keyscan` line).                                                                                                                                                                                |
+| Deploy fails in `up --wait`                                                | New container unhealthy                                                                                                                                | `docker compose logs --since 10m api` (or `web`). The API prints which production setting is missing. Roll back if needed.                                                                                            |
+| `https://mechdost.com` does not load, `http://13.207.157.3` does           | DNS not pointing here yet, or ports closed                                                                                                             | § 3.6 / § 3.2; then `docker compose logs caddy`.                                                                                                                                                                      |
+| Certificate errors in Caddy logs (`2.57.91.91: … no application protocol`) | Let's Encrypt still saw the old DNS answer from its cache just after the records changed (seen 2026-11-13), or an extra AAAA record, or port 80 closed | Check the authoritative answer (`nslookup mechdost.com hermes.dns-parking.com`). Once it is right, `docker compose restart caddy` retries at once (otherwise Caddy backs off and may try ZeroSSL, which can be slow). |
+| 502 on `api.mechdost.com`                                                  | API not enabled (`COMPOSE_PROFILES=api` missing) or crashed                                                                                            | § 3.5; `docker compose ps`.                                                                                                                                                                                           |
+| Site slow, server swapping                                                 | Out of memory                                                                                                                                          | `docker stats`; the instance may need 4 GB (t3.medium) when the API and worker both run.                                                                                                                              |
 
 ## 9. Not covered yet (queued)
 
