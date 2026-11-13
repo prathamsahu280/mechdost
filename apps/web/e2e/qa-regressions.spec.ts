@@ -549,3 +549,10 @@ test('review: the theme toggle still works when the browser storage is full', as
   await page.waitForTimeout(300);
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 });
+
+test('QA 13: checkout says from when delivery is free while a fee is charged', async ({ page }) => {
+  await page.goto('/shop/castrol-activ-4t-20w40-900ml');
+  await page.getByRole('button', { name: 'Add to cart' }).first().click();
+  await page.goto('/checkout');
+  await expect(page.getByRole('complementary').getByText(/Free delivery on orders from ₹/)).toBeVisible();
+});

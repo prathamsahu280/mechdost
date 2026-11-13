@@ -532,6 +532,12 @@ export function CheckoutForm() {
             <dd className="font-heading text-xl font-extrabold">{formatPrice(payablePaise)}</dd>
           </div>
         </dl>
+        {/* Same hint as the cart, so the fee never surprises (QA 2026-11-14, finding 13). */}
+        {deliveryPaise > 0 ? (
+          <p className="mt-3 text-xs text-muted">
+            {cartT('freeDeliveryHint', { amount: formatPrice(settings.freeDeliveryFromPaise) })}
+          </p>
+        ) : null}
       </aside>
     </div>
   );
