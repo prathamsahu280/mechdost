@@ -37,3 +37,12 @@ A workshop, fleet owner or business buying parts wants an invoice with its GSTIN
 ## Left to the builder
 
 Exact placement in the checkout form and the state-name list (from the GST state codes).
+
+## As built (2026-11-13)
+
+Built as designed (commits 114678c, b270a6b, 12ff0f1, 05e1c56). Builder calls:
+
+- The demo website uses its single demo city's GST state (`apps/web/src/demo/city.ts`); in API mode the quote's `deliveryStateCode` gives the delivery state per PIN.
+- The form checks with the Zod-free `isGstin`/`normaliseGstin` (same rules as `BusinessPurchaseSchema`), keeping Zod out of the page bundle.
+- The "GST invoice for …" line lives in the `order` namespace, which the order page, the shop portal and the admin console all load.
+- A bad or half-filled `business` is a **400** `VALIDATION` with the field path (`business.gstin`), the API's standard body-validation answer, not 422 as written in "Tests" above.
