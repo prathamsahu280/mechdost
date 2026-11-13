@@ -102,7 +102,15 @@ export const CLIENT_EVENT_SCHEMAS = {
       source: id,
     })
     .strict(),
-  add_to_cart: z.object({ slug: id, qty: z.number().int().min(1).max(99) }).strict(),
+  // `source` is optional so events from tabs opened before comparison existed still pass.
+  add_to_cart: z
+    .object({ slug: id, qty: z.number().int().min(1).max(99), source: z.enum(['compare']).optional() })
+    .strict(),
+  // Product comparison (design 2026-11-13): slugs, category and counts only.
+  compare_added: z.object({ slug: id, category: id, count: z.number().int().min(1).max(4) }).strict(),
+  compare_removed: z.object({ slug: id, count: z.number().int().min(0).max(4) }).strict(),
+  compare_opened: z.object({ count: z.number().int().min(0).max(4), category: id.nullable() }).strict(),
+  compare_differences_toggled: z.object({ on: z.boolean() }).strict(),
   remove_from_cart: z.object({ slug: id }).strict(),
   begin_checkout: z
     .object({ items: z.number().int().min(0).max(100), valuePaise: z.number().int().min(0) })
