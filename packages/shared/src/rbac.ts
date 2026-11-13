@@ -33,6 +33,7 @@ export const PERMISSIONS = {
   'invoices:read': 'Read invoices and credit notes',
   'gst:export': 'Export GST and TCS reports',
   'products:write': 'Create and edit products, photos and fitments',
+  'prices:write': 'Set customer prices per city and PIN code',
   'products:publish': 'Publish or unpublish products',
   'products:import': 'Bulk import products',
   'categories:write': 'Edit categories and brands',
@@ -131,7 +132,8 @@ export const ROLES = {
     description: 'Routing, orders, service requests, partners and returns',
     scope: 'global',
     staff: true,
-    permissions: OPS,
+    // Customer prices per city and PIN (Q26, design 2026-11-13); not city managers until prices are city-scoped.
+    permissions: [...OPS, 'prices:write'],
   },
   city_manager: {
     name: 'City manager',
@@ -172,6 +174,7 @@ export const ROLES = {
       'payments:read',
       'payouts:read',
       'payouts:manage',
+      'prices:write',
       'invoices:read',
       'gst:export',
       'partners:read',
