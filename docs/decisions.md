@@ -366,6 +366,20 @@ Follow-up to the 2026-11-11 answer "for both two wheelers, three wheelers and ca
   - No fitment is written from memory: the demo carries over only the existing `fits` values.
   - This supersedes spec 02's "Fits your {vehicle}" badge for type-level data.
 
+## 2026-11-13 — Product comparison: typed attributes in code (user, Q80)
+
+User (2026-11-13): "yes go ahead with option 1" for the design `docs/superpowers/specs/2026-11-13-product-comparison-design.md`.
+
+- **Compare:** up to 4 products from one category, side by side, with price, MRP, ₹ per litre / kg / unit, delivery days, fit, specs, warranty, origin and ratings; "Only differences"; a shareable `/compare?p=…` link; the list is kept in the browser like the cart.
+- **Data (option 1):**
+  - The attribute list per category (key, type, unit, group, label key) lives in shared code.
+  - The values are in `products.spec`, checked per category on every write; the admin edits the values.
+  - A new attribute, or attributes for a category the admin creates, needs a code change. Admin-editable definitions are a P2 extra.
+  - Categories without definitions compare on the shared rows only.
+- **Unit price:** each pack (variant) carries a typed net quantity. The unit price is integer-paise maths rounded half up, always from the same pack as the price shown.
+- **MVP attributes:** engine oil, battery, tyre. Other categories and the extras (compare with similar, share button, my-vehicle row, popular comparisons) follow as small changes.
+- **Wording:** facts only, "Lowest price per litre", never "Best". The fit row keeps the type-level wording of the fitment decision ("For two-wheelers"), never "Fits your vehicle".
+
 ## PENDING DECISIONS (ask "what's pending" to review)
 
 | #   | Topic                                                                                                                                                                                       | Leaning                                                                             | When                                 |
