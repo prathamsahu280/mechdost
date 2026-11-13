@@ -18,6 +18,7 @@ import { findShop, rankShops } from '@/demo/shops';
 import { shopsOffSale } from '@/demo/price-requests';
 import {
   APPLICATION_STAGES,
+  ORDER_STAGES,
   REQUEST_STAGES,
   moderateReview,
   postQuoteMessage,
@@ -201,7 +202,15 @@ function Overview() {
       tone: 'alert',
     },
     { label: t('kpi_awaitingShop'), value: String(count('awaiting_shop')), href: 'orders' },
-    { label: t('kpi_confirmed'), value: String(count('confirmed')), href: 'orders' },
+    {
+      // Delivered orders are done, not "confirmed" work (QA 2026-11-14, U5).
+      label: t('kpi_confirmed'),
+      value: String(
+        orders.filter((o, i) => states[i] === 'confirmed' && o.stage < ORDER_STAGES.indexOf('delivered'))
+          .length,
+      ),
+      href: 'orders',
+    },
     { label: t('kpi_value'), value: formatPrice(value), href: 'orders' },
     { label: t('kpi_quotes'), value: String(quotes), href: 'quotes' },
     { label: t('kpi_services'), value: String(services), href: 'services' },

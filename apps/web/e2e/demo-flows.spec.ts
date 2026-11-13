@@ -438,6 +438,17 @@ test.describe('theme and assistant', () => {
     await context.close();
   });
 
+  test('404 pages keep the saved theme (QA 2026-11-14: client-rendered error shell)', async ({ page }) => {
+    await page.goto('/');
+    await page.evaluate(() => {
+      localStorage.setItem('mechdost-theme', 'dark');
+    });
+    for (const path of ['/no-such-page', '/hi/no-such-page', '/account/no-such-section']) {
+      await page.goto(path);
+      await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    }
+  });
+
   test('the saved theme comes back if <html> loses it, and follows another tab', async ({
     page,
     context,

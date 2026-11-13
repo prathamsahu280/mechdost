@@ -122,7 +122,9 @@ export function AdminInvites() {
             return (
               <li key={i.token} className="flex flex-wrap items-center justify-between gap-2 py-3">
                 <div className="text-sm">
-                  <p className="font-bold text-ink">{i.name}</p>
+                  <p data-user-content className="font-bold text-ink">
+                    {i.name}
+                  </p>
                   <p className="text-muted">
                     {t(`inviteStatus_${status}`)} ·{' '}
                     {t('inviteUntil', { date: formatDate(i.expiresAt, locale) })}

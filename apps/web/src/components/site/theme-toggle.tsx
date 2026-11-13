@@ -1,6 +1,6 @@
 'use client';
 
-import { useSyncExternalStore } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 import { UI_EMOJI } from '@/lib/emoji';
 import { THEME_STORAGE_KEY } from '@/lib/theme';
 
@@ -29,6 +29,17 @@ function subscribe(onChange: () => void) {
  */
 export function ThemeToggle({ label, className = '' }: { label: string; className?: string }) {
   const theme = useSyncExternalStore<Theme | null>(subscribe, currentTheme, () => null);
+  // Pages Next renders on the client (the 404 error shell) never run the inline theme script: apply the saved
+  // choice here, since this toggle is on every page (QA 2026-11-14).
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(THEME_STORAGE_KEY);
+      if ((saved === 'dark' || saved === 'light') && !document.documentElement.dataset.theme)
+        document.documentElement.dataset.theme = saved;
+    } catch {
+      // Storage blocked: the system theme applies.
+    }
+  }, []);
 
   function toggle() {
     const next: Theme = currentTheme() === 'dark' ? 'light' : 'dark';

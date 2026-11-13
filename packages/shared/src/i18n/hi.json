@@ -668,7 +668,8 @@
     "viewOnMap": "नक्शे पर दिखाएँ",
     "mapAttribution": "नक्शा डेटा © OpenStreetMap योगदानकर्ता",
     "directions": "रास्ता देखें",
-    "notTakingBookings": "अभी नई बुकिंग नहीं ले रही"
+    "notTakingBookings": "अभी नई बुकिंग नहीं ले रही",
+    "pinUnknown": "यह पिन कोड अभी हमारे पास नहीं है, इसलिए वर्कशॉप दूरी के हिसाब से नहीं दिख रहीं। नंबर जाँचें या अपनी लोकेशन इस्तेमाल करें।"
   },
   "workshop": {
     "services": "सर्विस मेन्यू",
@@ -1203,7 +1204,7 @@
     "navLabel": "कंसोल के हिस्से",
     "kpi_needsRouting": "रूट करने वाले ऑर्डर",
     "kpi_awaitingShop": "दुकान के जवाब का इंतज़ार",
-    "kpi_confirmed": "पुष्ट ऑर्डर",
+    "kpi_confirmed": "कन्फ़र्म, अभी डिलीवर नहीं",
     "kpi_value": "ऑर्डर मूल्य",
     "kpi_quotes": "खुले बल्क कोटेशन",
     "kpi_applications": "जाँच के लिए आवेदन",
@@ -1303,7 +1304,6 @@
     "markReady": "ले जाने के लिए तैयार",
     "noneRequests": "कोई नया अनुरोध नहीं।",
     "noneJobs": "कोई काम प्रगति में नहीं।",
-    "requestMeta": "{vehicle} · {date}, {slot}",
     "customerAsked": "ग्राहक ने माँगा: {services}",
     "nav_content": "साइट का कंटेंट",
     "nav_layout": "होम पेज लेआउट",

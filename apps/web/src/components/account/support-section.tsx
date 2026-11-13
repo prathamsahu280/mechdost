@@ -213,9 +213,14 @@ function CustomerTicket({ ticket, account }: { ticket: DemoTicket; account: Demo
           {labels.status(ticket.status)}
         </span>
       </div>
+      {/* Only the parts that exist, joined: no dangling "·" once the ticket is acknowledged (QA 2026-11-14, P2). */}
       <p className="mt-1 text-xs text-muted">
-        {ticket.orderCode ? `${t('orderRef', { code: ticket.orderCode })} · ` : null}
-        {ticket.acknowledgedAt ? null : t('ackBy', { date: formatDate(ticket.ackDue, locale) })}
+        {[
+          ticket.orderCode ? t('orderRef', { code: ticket.orderCode }) : null,
+          ticket.acknowledgedAt ? null : t('ackBy', { date: formatDate(ticket.ackDue, locale) }),
+        ]
+          .filter((part): part is string => part !== null)
+          .join(' · ')}
       </p>
       <div className="mt-3">
         <TicketThread ticket={ticket} viewer="customer" />

@@ -78,6 +78,8 @@ export function WorkshopFinder() {
     const centroid = PIN_CENTROIDS[value];
     if (/^\d{6}$/.test(value)) setOrigin(centroid ? { ...centroid, source: 'pin', pin: value } : null);
   }
+  // A complete PIN we have no location for was ignored silently (QA 2026-11-14, B6): say so.
+  const pinUnknown = /^\d{6}$/.test(pin) && !PIN_CENTROIDS[pin] && origin?.source !== 'gps';
 
   /**
    * A new position from either locate button (bug 2026-11-02): drop any selected workshop so the map centres on
@@ -204,6 +206,11 @@ export function WorkshopFinder() {
           {t('evOnly')}
         </label>
         {locationError ? <p className="mt-2 text-sm font-bold text-error">{t('locationDenied')}</p> : null}
+        {pinUnknown ? (
+          <p role="status" className="mt-2 text-sm font-bold text-warning">
+            {t('pinUnknown')}
+          </p>
+        ) : null}
       </section>
 
       <div className="mt-6 flex flex-wrap items-baseline justify-between gap-2">

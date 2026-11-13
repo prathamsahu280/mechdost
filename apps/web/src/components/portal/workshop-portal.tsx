@@ -141,12 +141,9 @@ function RequestSummary({ request: r }: { request: DemoServiceRequest }) {
       </p>
       <p className="font-heading text-lg font-extrabold text-ink">{r.code}</p>
       <p className="text-sm text-muted">
-        <span data-user-content>{r.customer.name}</span> ·{' '}
-        {t('requestMeta', {
-          vehicle: `${VEHICLE_ICON[r.vehicleType]} ${r.vehicle}`,
-          date: formatDate(r.date, locale),
-          slot: t(`slot_${r.slot}`),
-        })}
+        {/* The vehicle is what the customer typed: marked as user text (QA 2026-11-14, P4). */}
+        <span data-user-content>{r.customer.name}</span> · {VEHICLE_ICON[r.vehicleType]}{' '}
+        <span data-user-content>{r.vehicle}</span> · {formatDate(r.date, locale)}, {t(`slot_${r.slot}`)}
       </p>
       <p className="mt-2 text-sm text-ink">
         {t('customerAsked', {

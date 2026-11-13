@@ -668,7 +668,8 @@
     "viewOnMap": "Show on map",
     "mapAttribution": "Map data © OpenStreetMap contributors",
     "directions": "Get directions",
-    "notTakingBookings": "Not taking new bookings right now"
+    "notTakingBookings": "Not taking new bookings right now",
+    "pinUnknown": "We don't know this PIN code yet, so workshops are not sorted by distance. Check the number or use your location."
   },
   "workshop": {
     "services": "Service menu",
@@ -1203,7 +1204,7 @@
     "navLabel": "Console sections",
     "kpi_needsRouting": "Orders to route",
     "kpi_awaitingShop": "Waiting for a shop",
-    "kpi_confirmed": "Confirmed orders",
+    "kpi_confirmed": "Confirmed, not yet delivered",
     "kpi_value": "Order value",
     "kpi_quotes": "Open bulk quotes",
     "kpi_applications": "Applications to review",
@@ -1303,7 +1304,6 @@
     "markReady": "Ready for pickup",
     "noneRequests": "No new requests.",
     "noneJobs": "No jobs in progress.",
-    "requestMeta": "{vehicle} · {date}, {slot}",
     "customerAsked": "Customer asked for: {services}",
     "nav_content": "Site content",
     "nav_layout": "Home layout",
