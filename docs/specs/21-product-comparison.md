@@ -137,3 +137,11 @@ A rider choosing between engine oils (or batteries, tyres) sees what each costs,
   - saved comparisons;
   - admin-editable attribute definitions;
   - choosing another pack size in the table.
+
+## Layout revision (2026-11-13, user UI review)
+
+- The compare tray floats on every page while the list is not empty (locale layout), never on `/compare` itself.
+- `/compare`: a sticky product strip (name, price, "Lowest price", remove) under the site header; a summary row (artwork, rating, saving, add to cart); groups of rows. Phones: the row label sits on its own line above the values and products get half the width each (three or four swipe sideways; the strip follows). Tablets and up: a sticky label column, product columns up to 22rem. The page scrolls; there is no scroll box inside it.
+- Toolbar: "Only differences", "Add a product (n of 4)" (to the same category) and "Back to {category}". One product is shown (not the empty state), so removing down to one keeps it.
+- Product cards: "Compare" sits beside "Add to cart".
+- Tests: `compare.spec.ts` (tray stays on screen while scrolling), `state-matrix.spec.ts` (tray present on shop pages when the list is filled, every fixed element on screen).

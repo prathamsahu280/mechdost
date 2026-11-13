@@ -291,6 +291,13 @@ User shared Razorpay **test** keys and asked to "see how we have the stuff for r
 - An online order holds stock for 30 minutes (admin setting) and is never routed before it is paid.
 - A valid checkout signature alone never marks an order paid: the server fetches the payment from Razorpay first (Razorpay docs).
 
+## 2026-11-13 — Compare tray on every page; language switch is a full page load (user UI review)
+
+- **Compare tray:** mounted in the locale layout (outside the animated page wrapper), not only under `/shop` — user: "if something is on the list for the compare then compare should be a floating button". Hides itself on `/compare`. Replaces the 2026-11-13 "shop pages only, never the root layout (JS budget)" note: every page ships only a few-hundred-byte `CompareTrayLoader`, which loads the tray and its store once the list holds something. Budget kept (`measure-js`, all routes < 180 KB; `/workshops` 176.5 KB after its map component also moved to a lazy chunk).
+- **Language switch:** a full document navigation that keeps the query string and hash. A client-side switch left the `NEXT_LOCALE` cookie unchanged (next-intl only syncs it on document requests), so Hindi → English bounced back, and it rebuilt `<html>` without the saved theme.
+- **Theme guard:** the before-paint inline script also restores `data-theme` if React removes it and follows other tabs (inline: no bundle cost; CSP allows it by hash).
+- **Compare page layout:** sticky product strip + page scroll (no inner scroll box), labels above values on phones, label column on tablets and up; a single product is allowed (with "Add a product").
+
 ## 2026-11-13 — Runtime Node 24 LTS (CI fix)
 
 CI had failed at `pnpm install` since 2026-11-09 (`39e0eae`): `@firebase/app@0.16.5` requires Node ≥ 24.12.0, and `.nvmrc` pinned CI to 22.23.4. Local machines already ran Node 24, so it never showed up locally.
