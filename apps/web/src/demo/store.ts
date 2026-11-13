@@ -18,7 +18,7 @@ import {
 import { useSyncExternalStore } from 'react';
 import type { PricedCart } from './cart-pricing';
 import { takesNewWork } from './partner-status';
-import { APPLICATION_REJECT_REASONS, type ApplicationRejectReason } from '@mechdost/shared/partners';
+import { APPLICATION_REJECT_REASONS, type ApplicationRejectReason } from '@mechdost/shared/partner-codes';
 import { OPERATIONAL_SETTINGS } from '@mechdost/shared/settings';
 import { siteSettings } from './site-config';
 import { PIN_CENTROIDS } from './workshops';

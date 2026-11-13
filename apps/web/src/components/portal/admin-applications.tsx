@@ -1,6 +1,6 @@
 'use client';
 
-import { APPLICATION_REJECT_REASONS, type ApplicationRejectReason } from '@mechdost/shared/partners';
+import { APPLICATION_REJECT_REASONS, type ApplicationRejectReason } from '@mechdost/shared/partner-codes';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
 import {

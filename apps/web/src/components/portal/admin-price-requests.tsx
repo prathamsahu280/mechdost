@@ -2,7 +2,7 @@
 
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { PRICE_REJECT_REASONS } from '@mechdost/shared/partners';
+import { PRICE_REJECT_REASONS } from '@mechdost/shared/partner-codes';
 import { DEMO_PRODUCTS } from '@/demo/catalogue';
 import { localizeProduct, localizeShop } from '@/demo/i18n/localize';
 import {

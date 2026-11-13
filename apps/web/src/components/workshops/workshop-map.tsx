@@ -301,6 +301,13 @@ export function WorkshopMap({
         locate.current?.({ lat: pos.coords.latitude, lng: pos.coords.longitude });
       });
       m.addControl(geolocate, 'top-right');
+      // MapLibre creates this button unnamed and labels it only after an async permission check; name it now so it
+      // is never announced (or scanned) without a label (CI axe flake 2026-11-13). MapLibre overwrites it later.
+      const locateButton = m.getContainer().querySelector<HTMLButtonElement>('.maplibregl-ctrl-geolocate');
+      if (locateButton && !locateButton.getAttribute('aria-label')) {
+        locateButton.setAttribute('aria-label', ui.locate);
+        locateButton.title = ui.locate;
+      }
       m.addControl(
         showAllControl(ui.showAll, () => {
           track('map_action', { action: 'show_all' });

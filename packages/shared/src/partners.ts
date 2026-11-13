@@ -6,22 +6,10 @@
 import { z } from 'zod';
 import { isGstEnrolmentNumber, isGstin } from './gst';
 
-export const GST_STATUSES = ['registered', 'enrolled'] as const;
-export type GstStatus = (typeof GST_STATUSES)[number];
-
-/** How the shop's map pin was set: the device's location, an address search, or by moving the pin. */
-export const LOCATION_SOURCES = ['gps', 'search', 'pin'] as const;
-export type LocationSource = (typeof LOCATION_SOURCES)[number];
-
-export const APPLICATION_REJECT_REASONS = [
-  'not_serviceable',
-  'documents_invalid',
-  'duplicate',
-  'not_a_business',
-  'other',
-] as const;
-export type ApplicationRejectReason = (typeof APPLICATION_REJECT_REASONS)[number];
-export const PRICE_REJECT_REASONS = ['above_market', 'mrp_mismatch', 'wrong_product', 'other'] as const;
+// The code lists live in a Zod-free module so browser code (the demo store on every page) can use them without
+// pulling Zod into the page bundle (JS budget, spec 16; CI 2026-11-13).
+export * from './partner-codes';
+import { GST_STATUSES, LOCATION_SOURCES } from './partner-codes';
 
 /** At most this many products on one application (a large shop can add more after approval). */
 export const APPLICATION_PRODUCTS_MAX = 500;

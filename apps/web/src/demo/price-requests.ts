@@ -1,7 +1,7 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
-import { PRICE_REJECT_REASONS } from '@mechdost/shared/partners';
+import { PRICE_REJECT_REASONS } from '@mechdost/shared/partner-codes';
 import { PRICE_REQUEST_STATES, priceRequestMachine, type PriceRequestStatus } from '@mechdost/shared/state';
 
 /**
