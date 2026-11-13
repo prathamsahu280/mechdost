@@ -29,8 +29,11 @@ export const OPERATIONAL_SETTINGS = {
   'partners.default_lead_days': { kind: 'int', min: 0, max: 14, default: 2 },
   /** Days a seller invite link stays valid. */
   'partners.invite_days': { kind: 'int', min: 1, max: 30, default: 7 },
-  /** A new shop must accept the MechDost seller agreement before it goes live (Q77). */
-  'partners.agreement_required': { kind: 'boolean', default: true },
+  /**
+   * A new shop must accept the current MechDost seller agreement before it goes live. Off until the agreement text
+   * exists (Q77): the admin publishes a version, then turns this on. On with no version published, new shops wait.
+   */
+  'partners.agreement_required': { kind: 'boolean', default: false },
   /** How long a shop has to accept an offered order (minutes). */
   // Same bounds as the demo `/admin/settings` screen and spec 08 (5–120 min).
   'orders.acceptance_timeout_min': { kind: 'int', min: 5, max: 120, default: 15 },

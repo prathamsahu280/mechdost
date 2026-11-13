@@ -240,7 +240,7 @@ describe('deciding prices', () => {
 });
 
 describe('going live', () => {
-  it('with no agreement published yet, a shop is not held back by it (final review 2026-11-13)', async () => {
+  it('with the agreement not required (the default until its text exists, Q77), a shop goes live without it', async () => {
     expect(await db.select().from(s.agreementVersions)).toHaveLength(0);
     const pincode = (await db.select().from(s.pincodes).where(eq(s.pincodes.pincode, '492004')))[0]!;
     const [shop] = await db
@@ -270,6 +270,39 @@ describe('going live', () => {
       decision: 'approved',
     });
     expect((await db.select().from(s.shops).where(eq(s.shops.id, shop!.id)))[0]!.status).toBe('approved');
+  });
+
+  it('with the agreement required but none published yet, a new shop waits (fail-closed, security review)', async () => {
+    expect(await db.select().from(s.agreementVersions)).toHaveLength(0);
+    await db.insert(s.settings).values({ key: 'partners.agreement_required', value: true });
+    const pincode = (await db.select().from(s.pincodes).where(eq(s.pincodes.pincode, '492004')))[0]!;
+    const [shop] = await db
+      .insert(s.shops)
+      .values({
+        name: 'Waiting Shop',
+        phone: '+919800000003',
+        addressLine: 'Fafadih',
+        pincode: '492004',
+        cityId: pincode.cityId!,
+        stateId: pincode.stateId,
+      })
+      .returning();
+    await db.insert(s.shopPincodes).values({ shopId: shop!.id, pincode: '492004', shippingPaise: 4000 });
+    const req = await submitPriceRequest(t(), {
+      shopId: shop!.id,
+      userId: staff,
+      sku: OIL,
+      pricePaise: 43000,
+      onHand: 4,
+    });
+    const [row] = await db.select().from(s.shopPriceRequests).where(eq(s.shopPriceRequests.id, req.id));
+    await decidePriceRequest(t(), {
+      id: req.id,
+      expectedVersion: row!.version,
+      staffUserId: staff,
+      decision: 'approved',
+    });
+    expect((await db.select().from(s.shops).where(eq(s.shops.id, shop!.id)))[0]!.status).toBe('pending');
   });
 
   it('a new shop goes live only after the agreement, an approved price and a delivery area, in any order', async () => {

@@ -1,5 +1,6 @@
 import { and, asc, desc, eq, gt, inArray, lt, or, sql } from 'drizzle-orm';
 import { PRICE_REJECT_REASONS } from '@mechdost/shared/partners';
+import { OPERATIONAL_SETTINGS } from '@mechdost/shared/settings';
 import { priceRequestMachine, type PriceRequestStatus } from '@mechdost/shared/state';
 import {
   auditLog,
@@ -305,7 +306,9 @@ async function agreementRequired(tx: Tx): Promise<boolean> {
       sql`select value from settings where key = 'partners.agreement_required' and city_id is null limit 1`,
     ),
   );
-  return row?.value !== false;
+  return typeof row?.value === 'boolean'
+    ? row.value
+    : OPERATIONAL_SETTINGS['partners.agreement_required'].default;
 }
 
 /**
@@ -319,13 +322,12 @@ export async function maybeGoLive(tx: Tx, shopId: string, actorUserId: string | 
     .where(eq(shops.id, shopId));
   if (shop?.status !== 'pending') return false;
   if (await agreementRequired(tx)) {
-    // The current version: a shop that accepted only an older text does not go live (security review). Until a
-    // first version is published (text from the user, Q77) there is nothing to accept, so nothing holds a shop
-    // back; shops see the card once a version exists (final review 2026-11-13).
+    // The current version: a shop that accepted only an older text does not go live (security review). Fail-closed:
+    // required with no version published means the shop waits. Going live without an agreement is an explicit
+    // operator choice (`partners.agreement_required` off, the default until the text exists, Q77).
     const [accepted] = rowsOf<{ ok: boolean }>(
-      await tx.execute(sql`select not exists (select 1 from agreement_versions)
-        or exists (select 1 from shop_agreements a
-          where a.shop_id = ${shopId} and a.version = (select max(version) from agreement_versions)) as ok`),
+      await tx.execute(sql`select exists (select 1 from shop_agreements a
+        where a.shop_id = ${shopId} and a.version = (select max(version) from agreement_versions)) as ok`),
     );
     if (!accepted?.ok) return false;
   }
