@@ -45,7 +45,7 @@ push to main ─▶ CI (format, types, lint, tests)
 ## 2. What the website and API run on
 
 - **Website:** demo data and demo sign-in (`NEXT_PUBLIC_DATA_MODE=demo`, `NEXT_PUBLIC_AUTH_MODE=demo`; Q69/Q70 defaults). It needs no secrets at run time.
-- **API:** off until its production settings exist (§ 3.5). It then runs against the Supabase project. Today that is the same project as development, so a separate production project is needed before real customers.
+- **API:** live since 2026-11-13 at https://api.mechdost.com (`COMPOSE_PROFILES=api` in the server `.env`). It runs against the Supabase project. Today that is the same project as development, so a separate production project is needed before real customers.
 - **Website settings are fixed at build time.** `NEXT_PUBLIC_*` values are compiled into the browser code, so they are **GitHub repository variables** read by the image build, not server settings. Changing one means a new deploy.
 
 ## 3. First-time setup
