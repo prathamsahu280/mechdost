@@ -342,6 +342,8 @@ export function CheckoutForm() {
                   value={gstinInput}
                   onChange={(e) => {
                     setGstinInput(e.target.value);
+                    // A corrected GSTIN must not keep its old error next to the state note (final review).
+                    if (errors.gstin) setErrors(({ gstin: _g, ...rest }) => rest);
                   }}
                   autoCapitalize="characters"
                   autoComplete="off"

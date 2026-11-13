@@ -15,7 +15,12 @@ export function GstInvoiceLine({
   if (!business) return null;
   return (
     <p className={className}>
-      {t('gstInvoiceFor', { business: business.businessName, gstin: business.gstin })}
+      {t.rich('gstInvoiceFor', {
+        business: business.businessName,
+        gstin: business.gstin,
+        // The business name is what the customer typed (Hindi gate: user text may stay in Latin script).
+        name: (chunks) => <span data-user-content>{chunks}</span>,
+      })}
     </p>
   );
 }

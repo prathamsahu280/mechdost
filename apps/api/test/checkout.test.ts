@@ -167,6 +167,9 @@ describe('business purchase with a GSTIN (plan 2026-11-13 buyer GSTIN)', () => {
       expect.arrayContaining([expect.objectContaining({ path: 'business.gstin' })]),
     );
     expect((await send('order-key-biz-0000003', { gstin: '22ABVCS4888H1ZL' })).status).toBe(400);
+    const groupsBefore = (await ctx.db.select().from(orderGroups)).length;
+    expect((await send('order-key-biz-0000004', { businessName: 'Sahu Motors' })).status).toBe(400);
+    expect((await ctx.db.select().from(orderGroups)).length).toBe(groupsBefore);
 
     const quote = await ctx.app.request('/v1/checkout/quote', {
       method: 'POST',

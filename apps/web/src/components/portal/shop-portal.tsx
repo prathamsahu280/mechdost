@@ -111,7 +111,11 @@ function ShopOrders({ shopSlug }: { shopSlug: string }) {
   );
 }
 
-function OrderLines({ order }: { order: DemoOrder }) {
+/**
+ * `showBusiness`: the buyer's GSTIN and business name are customer details, shared with the shop only once it has
+ * accepted the order (as in `repo/shop-orders.ts`; final review 2026-11-13).
+ */
+function OrderLines({ order, showBusiness = false }: { order: DemoOrder; showBusiness?: boolean }) {
   const t = useTranslations('portal');
   const a = useTranslations('account');
   const locale = useLocale();
@@ -126,7 +130,9 @@ function OrderLines({ order }: { order: DemoOrder }) {
           pin: order.customer.pincode,
         })}
       </p>
-      <GstInvoiceLine business={order.business} className="mt-1 text-xs font-bold text-ink" />
+      {showBusiness ? (
+        <GstInvoiceLine business={order.business} className="mt-1 text-xs font-bold text-ink" />
+      ) : null}
       <ul className="mt-3 divide-y divide-line text-sm">
         {order.lines.map((l) => (
           <li key={l.slug} className="flex justify-between gap-3 py-2">
@@ -236,7 +242,7 @@ function ActiveOrder({ order, shopSlug }: { order: DemoOrder; shopSlug: string }
       <p className="mb-2 inline-flex rounded-pill bg-success-bg px-3 py-1 text-xs font-extrabold text-success">
         {o(`stage_${stage}`)}
       </p>
-      <OrderLines order={order} />
+      <OrderLines order={order} showBusiness />
       {stage === 'shipped' ? (
         <DeliveryCodeForm order={order} shopSlug={shopSlug} />
       ) : (

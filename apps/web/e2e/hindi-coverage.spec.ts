@@ -76,6 +76,7 @@ function seedData(now: number) {
       [line('engine-oil-filter-petrol-car', 2), line('synthetic-engine-oil-5w30-3-5l', 1)],
       {
         declined: [{ slug: 'gupta-lubes-spares', reason: 'out_of_stock', at: iso(-60) }],
+        business: { gstin: '22ABVCS4888H1ZL', businessName: 'Sahu Motors' },
       },
     ),
     order(CODES.offered, [line('brake-pad-set-front', 1)], {
@@ -85,6 +86,7 @@ function seedData(now: number) {
       stage: 4,
       shop: { slug: 'sharma-auto-parts', status: 'accepted', offeredAt: iso(-80), expiresAt: iso(-65) },
       delivery: { code: '4821', attempts: 0, confirmedAt: null, method: null },
+      business: { gstin: '22ABVCS4888H1ZL', businessName: 'Sahu Motors' },
     }),
   ];
   const workshop = DEMO_WORKSHOPS.find((w) => w.slug === 'telibandha-car-clinic');

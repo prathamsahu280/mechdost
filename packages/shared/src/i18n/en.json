@@ -535,7 +535,7 @@
     "rejectReason_suspected_fraud": "Suspected fraud",
     "rejectReason_pricing_error": "Wrong price shown",
     "rejectReason_other": "Other reason",
-    "gstInvoiceFor": "GST invoice for {business} ({gstin})"
+    "gstInvoiceFor": "GST invoice for <name>{business}</name> ({gstin})"
   },
   "finder": {
     "title": "Where is your vehicle?",

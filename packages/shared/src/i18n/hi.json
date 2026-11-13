@@ -535,7 +535,7 @@
     "rejectReason_suspected_fraud": "धोखाधड़ी का शक",
     "rejectReason_pricing_error": "गलत कीमत दिखी",
     "rejectReason_other": "कोई और कारण",
-    "gstInvoiceFor": "{business} ({gstin}) के लिए GST बिल"
+    "gstInvoiceFor": "<name>{business}</name> ({gstin}) के लिए GST बिल"
   },
   "finder": {
     "title": "आपका वाहन कहाँ है?",
