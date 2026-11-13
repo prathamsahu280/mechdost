@@ -136,8 +136,8 @@ jobs:
           scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes -o BatchMode=yes \
             deploy/compose.yml deploy/Caddyfile "$SSH_USER@$HOST:/opt/mechdost/"
           printf '%s' "$GHCR_TOKEN" | ssh_ "docker login ghcr.io -u '$GHCR_USER' --password-stdin" >/dev/null
-          ssh_ "cd /opt/mechdost && echo 'IMAGE_TAG=$TAG' > .image-tag \
-            && export IMAGE_TAG='$TAG' \
+          # IMAGE_TAG lives in .env (one line, replaced on every deploy) so manual `docker compose` commands work.
+          ssh_ "cd /opt/mechdost && sed -i '/^IMAGE_TAG=/d' .env && echo 'IMAGE_TAG=$TAG' >> .env && rm -f .image-tag \
             && docker compose pull --quiet \
             && docker compose up -d --wait --wait-timeout 120 --remove-orphans; rc=\$?; \
             docker logout ghcr.io >/dev/null; docker image prune -f >/dev/null; \

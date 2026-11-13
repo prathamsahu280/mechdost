@@ -26,13 +26,13 @@ push to main ─▶ CI (format, types, lint, tests)
                                                      Supabase Postgres (Mumbai), Firebase Auth
 ```
 
-| Piece    | Where                          | Notes                                                                                                                   |
-| -------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
-| Server   | AWS, `ubuntu@13.201.82.82`     | Ubuntu 24.04, 2 vCPU, 1.9 GB RAM + 2 GB swap, 19 GB disk.                                                               |
-| Stack    | `/opt/mechdost/` on the server | `compose.yml`, `Caddyfile` (copied by every deploy), `.env` (yours, never in git), `.image-tag` (last deployed commit). |
-| Images   | GHCR (private, like the repo)  | `mechdost-web:<sha>` / `:main`, `mechdost-api:<sha>` / `:main`.                                                         |
-| Database | Supabase                       | Not on the server. Migrations are run by hand (§ 6).                                                                    |
-| HTTPS    | Caddy                          | Certificates are issued and renewed automatically once DNS points at the server.                                        |
+| Piece    | Where                          | Notes                                                                                                                                                |
+| -------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Server   | AWS, `ubuntu@13.201.82.82`     | Ubuntu 24.04, 2 vCPU, 1.9 GB RAM + 2 GB swap, 19 GB disk.                                                                                            |
+| Stack    | `/opt/mechdost/` on the server | `compose.yml`, `Caddyfile` (copied by every deploy), `.env` (yours, never in git; every deploy keeps one line in it, `IMAGE_TAG=<deployed commit>`). |
+| Images   | GHCR (private, like the repo)  | `mechdost-web:<sha>` / `:main`, `mechdost-api:<sha>` / `:main`.                                                                                      |
+| Database | Supabase                       | Not on the server. Migrations are run by hand (§ 6).                                                                                                 |
+| HTTPS    | Caddy                          | Certificates are issued and renewed automatically once DNS points at the server.                                                                     |
 
 **Repository files:**
 
@@ -189,7 +189,7 @@ Until `DEPLOY_ENABLED=true`, the workflow only builds and pushes images (which a
    1. stops with a clear error if `/opt/mechdost/.env` is missing;
    2. copies `deploy/compose.yml` and `deploy/Caddyfile` to `/opt/mechdost/`;
    3. logs in to GHCR on the server with the job's short-lived token, and logs out afterwards;
-   4. runs `IMAGE_TAG=<sha> docker compose pull`, then `docker compose up -d --wait --wait-timeout 120 --remove-orphans`;
+   4. writes `IMAGE_TAG=<sha>` into `.env` (replacing the previous line), runs `docker compose pull`, then `docker compose up -d --wait --wait-timeout 120 --remove-orphans`;
    5. prunes old images and prints `docker compose ps`.
 4. **Health:** `up --wait` fails the job if a container does not become healthy within 120 s:
    - web: `GET /` on :3000;
@@ -205,7 +205,7 @@ All commands run on the server (`ssh ubuntu@13.201.82.82`, then `cd /opt/mechdos
 
 | Task                         | Command                                                                                                                                                                                                                                                             |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| What is running              | `docker compose ps` · `cat .image-tag`                                                                                                                                                                                                                              |
+| What is running              | `docker compose ps` · `grep IMAGE_TAG .env`                                                                                                                                                                                                                         |
 | Logs (follow)                | `docker compose logs -f web` · `… api` · `… caddy` (last hour: `--since 1h`)                                                                                                                                                                                        |
 | Restart one service          | `docker compose restart web`                                                                                                                                                                                                                                        |
 | Settings changed in `.env`   | `docker compose up -d` (recreates the services whose settings changed)                                                                                                                                                                                              |
