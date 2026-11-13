@@ -120,4 +120,55 @@ describe('admin catalogue API', () => {
     const threeWheelers = await listed('3W');
     expect(threeWheelers.find((i) => i.slug === SLUG)?.vehicleTypes).toEqual(['2W', '3W']);
   });
+
+  it('sets typed attributes and pack sizes (product comparison, design 2026-11-13)', async () => {
+    const manager = await staff('07', 'catalogue_manager');
+    const marketing = await staff('08', 'marketing');
+    const url = `/v1/admin/catalogue/products/${SLUG}/attributes`;
+    const p = (await (
+      await ctx.app.request(`/v1/admin/catalogue/products/${SLUG}`, { headers: manager })
+    ).json()) as { version: number };
+    const body = (attributes: unknown, version = p.version) => JSON.stringify({ version, attributes });
+    const oil = { saeGrade: '20W40', apiClass: 'SL', jasoClass: 'MA2', baseType: 'mineral' };
+    expect((await ctx.app.request(url, { method: 'PUT', headers: marketing, body: body(oil) })).status).toBe(
+      403,
+    );
+    const bad = await ctx.app.request(url, {
+      method: 'PUT',
+      headers: manager,
+      body: body({ saeGrade: '99W99' }),
+    });
+    expect(bad.status).toBe(422);
+    expect(((await bad.json()) as ErrorJson).error.code).toBe('ATTRIBUTES');
+    const saved = await ctx.app.request(url, { method: 'PUT', headers: manager, body: body(oil) });
+    expect(saved.status).toBe(200);
+    expect(await saved.json()).toMatchObject({ attributes: oil });
+    expect((await ctx.app.request(url, { method: 'PUT', headers: manager, body: body(oil) })).status).toBe(
+      409,
+    );
+
+    const sku = fixture.products.find((x) => x.slug === SLUG)?.sku ?? '';
+    const packUrl = `/v1/admin/catalogue/variants/${sku}/net-quantity`;
+    const pack = (netQuantity: unknown) => JSON.stringify({ netQuantity });
+    expect(
+      (await ctx.app.request(packUrl, { method: 'PUT', headers: manager, body: pack({ qty: 1, unit: 'l' }) }))
+        .status,
+    ).toBe(400);
+    const packed = await ctx.app.request(packUrl, {
+      method: 'PUT',
+      headers: manager,
+      body: pack({ qty: 900, unit: 'ml' }),
+    });
+    expect(packed.status).toBe(200);
+    expect(await packed.json()).toEqual({ sku, netQuantity: { qty: 900, unit: 'ml' } });
+
+    const page = (await (
+      await ctx.app.request('/v1/catalogue/products?pincode=492001&locale=en&city=RPR&limit=48')
+    ).json()) as { items: { slug: string; offer: { netQuantity: unknown } | null }[] };
+    expect(page.items.find((i) => i.slug === SLUG)?.offer?.netQuantity).toEqual({ qty: 900, unit: 'ml' });
+    const product = (await (
+      await ctx.app.request(`/v1/catalogue/products/${SLUG}?pincode=492001&locale=en&city=RPR`)
+    ).json()) as { attributes: unknown; attributeSet: unknown };
+    expect(product).toMatchObject({ attributeSet: 'lubricants', attributes: oil });
+  });
 });

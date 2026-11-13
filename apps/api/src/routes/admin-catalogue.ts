@@ -4,10 +4,13 @@ import {
   HIGHLIGHT_LEN,
   HIGHLIGHT_MAX,
   listAdminProducts,
+  setProductAttributes,
   setProductStatus,
   setProductVehicleTypes,
+  setVariantNetQuantity,
   updateProductTexts,
 } from '@mechdost/db/repo';
+import { NET_QTY_MAX, NET_UNITS } from '@mechdost/shared/product-attributes';
 import { PRODUCT_STATES } from '@mechdost/shared/state';
 import { VEHICLE_TYPES } from '@mechdost/shared/vehicles';
 import type { SessionCache } from '../auth/session-cache';
@@ -185,6 +188,71 @@ const vehicleTypes = createRoute({
   },
 });
 
+const attributes = createRoute({
+  method: 'put',
+  path: '/admin/catalogue/products/{slug}/attributes',
+  tags: ['admin'],
+  summary: "Set a product's typed attributes (checked against its category's definitions; replaces the set)",
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: z.object({ slug: Slug }),
+    body: {
+      required: true,
+      content: {
+        'application/json': {
+          schema: z
+            .object({
+              version: z.number().int().min(1),
+              attributes: z
+                .record(z.string().max(40), z.union([z.string().max(40), z.number(), z.boolean()]))
+                .refine((a) => Object.keys(a).length <= 20, 'At most 20 attributes'),
+            })
+            .strict()
+            .openapi('AdminProductAttributes'),
+        },
+      },
+    },
+  },
+  responses: {
+    200: json(
+      z.object({
+        version: z.number().int(),
+        attributes: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])),
+      }),
+      'Saved',
+    ),
+    ...conflict,
+    ...errorResponses,
+  },
+});
+
+/** One pack's net quantity: a whole number in ml, g, piece or m (design 2026-11-13). */
+const Pack = z.object({ qty: z.number().int().min(1).max(NET_QTY_MAX), unit: z.enum(NET_UNITS) }).strict();
+
+const netQuantity = createRoute({
+  method: 'put',
+  path: '/admin/catalogue/variants/{sku}/net-quantity',
+  tags: ['admin'],
+  summary: 'Set or clear the net quantity of one pack (for the unit price)',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: z.object({ sku: z.string().min(1).max(64) }),
+    body: {
+      required: true,
+      content: {
+        'application/json': {
+          schema: z.object({ netQuantity: Pack.nullable() }).strict().openapi('AdminVariantNetQuantity'),
+        },
+      },
+    },
+  },
+  responses: {
+    200: json(z.object({ sku: z.string(), netQuantity: Pack.nullable() }), 'Saved'),
+    ...conflict,
+    ...errorResponses,
+  },
+});
+
 export function adminCatalogueRoutes(deps: AppDeps, cache: SessionCache) {
   const app = new OpenAPIHono<AppEnv>({ defaultHook: validationHook });
   const prefix = '/admin/catalogue/*'; // one pattern per prefix (L54)
@@ -227,6 +295,24 @@ export function adminCatalogueRoutes(deps: AppDeps, cache: SessionCache) {
         slug: c.req.valid('param').slug,
         expectedVersion: b.version,
         vehicleTypes: b.vehicleTypes,
+        staffUserId: c.get('auth').user.id,
+      });
+      return c.json(r, 200);
+    })
+    .openapi(attributes, async (c) => {
+      const b = c.req.valid('json');
+      const r = await setProductAttributes(deps.db, {
+        slug: c.req.valid('param').slug,
+        expectedVersion: b.version,
+        attributes: b.attributes,
+        staffUserId: c.get('auth').user.id,
+      });
+      return c.json(r, 200);
+    })
+    .openapi(netQuantity, async (c) => {
+      const r = await setVariantNetQuantity(deps.db, {
+        sku: c.req.valid('param').sku,
+        netQuantity: c.req.valid('json').netQuantity,
         staffUserId: c.get('auth').user.id,
       });
       return c.json(r, 200);

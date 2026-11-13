@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { NET_UNITS } from './product-attributes';
 import { VEHICLE_TYPES } from './vehicles';
 
 /**
@@ -11,9 +12,14 @@ export const CATALOGUE_LOCALES = ['en', 'hi'] as const;
 /** Product and category slugs as the API accepts them (anything else can never exist). */
 export const CATALOGUE_SLUG_RE = /^[a-z0-9][a-z0-9-]{0,119}$/;
 
+/** Net quantity of one pack (design 2026-11-13 "Product comparison"): unit prices come from it. */
+export const NetQuantitySchema = z.object({ qty: z.number().int().min(1), unit: z.enum(NET_UNITS) });
+
 export const CatalogueOfferSchema = z.object({
   pricePaise: z.number().int(),
   mrpPaise: z.number().int(),
+  /** The pack this offer prices; null when its size is not listed. */
+  netQuantity: NetQuantitySchema.nullable(),
   shippingPaise: z.number().int().nullable(),
   leadDays: z.number().int().nullable(),
 });
@@ -61,6 +67,10 @@ export const CatalogueProductSchema = z.object({
   description: z.string().nullable(),
   compatibility: z.string().nullable(),
   spec: z.record(z.string(), z.unknown()),
+  /** Category slug whose attribute definitions apply (own or parent); null = shared compare rows only. */
+  attributeSet: z.string().nullable(),
+  /** Typed attributes read through those definitions (only valid, known values). */
+  attributes: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])),
   countryOfOrigin: z.string(),
   warranty: z.string().nullable(),
   gstRateBp: z.number().int(),
@@ -71,6 +81,7 @@ export const CatalogueProductSchema = z.object({
       sku: z.string(),
       options: z.record(z.string(), z.unknown()),
       mrpPaise: z.number().int(),
+      netQuantity: NetQuantitySchema.nullable(),
       offer: CatalogueOfferSchema.extend({ seller: z.string() }).nullable(),
     }),
   ),

@@ -16,7 +16,7 @@ const card: CatalogueCard = {
   highlights: ['API SL'],
   vehicleTypes: [],
   rating: null,
-  offer: { pricePaise: 44_000, mrpPaise: 47_500, shippingPaise: null, leadDays: null },
+  offer: { pricePaise: 44_000, mrpPaise: 47_500, netQuantity: null, shippingPaise: null, leadDays: null },
   photo: null,
 };
 const product: CatalogueProduct = {
@@ -24,20 +24,24 @@ const product: CatalogueProduct = {
   description: 'Mineral oil',
   compatibility: 'All 4-stroke two-wheelers',
   spec: {},
+  attributeSet: 'lubricants',
+  attributes: {},
   countryOfOrigin: 'India',
   warranty: null,
   gstRateBp: 1800,
   partNumbers: [],
   photos: [],
   variants: [
-    { sku: 'CAS-0900-A', options: {}, mrpPaise: 47_500, offer: null },
+    { sku: 'CAS-0900-A', options: {}, mrpPaise: 47_500, netQuantity: null, offer: null },
     {
       sku: 'CAS-0900-B',
       options: {},
       mrpPaise: 47_500,
+      netQuantity: { qty: 900, unit: 'ml' },
       offer: {
         pricePaise: 44_000,
         mrpPaise: 47_500,
+        netQuantity: { qty: 900, unit: 'ml' },
         shippingPaise: 0,
         leadDays: 2,
         seller: 'Sharma Auto Parts',
