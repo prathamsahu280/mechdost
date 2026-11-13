@@ -1,5 +1,12 @@
 import { sql, type SQL } from 'drizzle-orm';
 import { VEHICLE_TYPES, isVehicleType, type VehicleType } from '@mechdost/shared/vehicles';
+import {
+  attributeDefs,
+  isNetQuantity,
+  readAttributes,
+  type AttrValue,
+  type NetQuantity,
+} from '@mechdost/shared/product-attributes';
 import { NotFoundError } from './errors';
 import { decodeCursor, encodeCursor, type CursorKind } from './cursor';
 import { localized } from './localized';
@@ -40,6 +47,8 @@ export interface CataloguePlace {
 export interface CatalogueOffer {
   pricePaise: number;
   mrpPaise: number;
+  /** Net quantity of the very pack this offer prices (unit price, design 2026-11-13); null when not listed. */
+  netQuantity: NetQuantity | null;
   /** Delivery charge for the PIN; null without a PIN. */
   shippingPaise: number | null;
   leadDays: number | null;
@@ -123,7 +132,8 @@ function offerLateral(place: CataloguePlace, variants: SQL): SQL {
     and not (s.busy and (s.busy_until is null or s.busy_until > now()))`;
   if (place.pincode) {
     return sql`left join lateral (
-      select si.selling_paise as price, v.mrp_paise as mrp, sp.shipping_paise as shipping,
+      select si.selling_paise as price, v.mrp_paise as mrp, v.net_qty as net_qty, v.net_unit as net_unit,
+        sp.shipping_paise as shipping,
         coalesce(si.lead_days, sp.lead_days) as lead_days, s.name as shop_name, s.name_hi as shop_name_hi
       from product_variants v
       join shop_inventory si on si.variant_id = v.id
@@ -135,7 +145,8 @@ function offerLateral(place: CataloguePlace, variants: SQL): SQL {
       limit 1) o on true`;
   }
   return sql`left join lateral (
-    select si.selling_paise as price, v.mrp_paise as mrp, null::bigint as shipping, si.lead_days as lead_days,
+    select si.selling_paise as price, v.mrp_paise as mrp, v.net_qty as net_qty, v.net_unit as net_unit,
+      null::bigint as shipping, si.lead_days as lead_days,
       s.name as shop_name, s.name_hi as shop_name_hi
     from product_variants v
     join shop_inventory si on si.variant_id = v.id
@@ -167,6 +178,8 @@ interface CardRow {
   vehicle_types: string[] | null;
   price: unknown;
   mrp: unknown;
+  net_qty: unknown;
+  net_unit: string | null;
   shipping: unknown;
   lead_days: unknown;
   sort_key_text: string;
@@ -198,6 +211,7 @@ function toCard(r: CardRow, locale: CatalogueLocale): CatalogueCard {
         : {
             pricePaise: price,
             mrpPaise: num(r.mrp),
+            netQuantity: netQuantityOf(r.net_qty, r.net_unit),
             shippingPaise: numOrNull(r.shipping),
             leadDays: numOrNull(r.lead_days),
           },
@@ -213,6 +227,22 @@ function toCard(r: CardRow, locale: CatalogueLocale): CatalogueCard {
             blurhash: r.photo_blurhash,
           },
   };
+}
+
+/** A stored pack size, or null when it is missing or not a valid pair. */
+function netQuantityOf(qty: unknown, unit: string | null): NetQuantity | null {
+  const v = { qty: numOrNull(qty), unit };
+  return isNetQuantity(v) ? v : null;
+}
+
+/**
+ * Which category's attribute definitions apply (design 2026-11-13): the product's own category, else its parent
+ * (a "2W batteries" subcategory uses the battery attributes); null when neither has definitions.
+ */
+export function attributeSetFor(categorySlug: string, parentSlug: string | null): string | null {
+  if (attributeDefs(categorySlug).length > 0) return categorySlug;
+  if (parentSlug !== null && attributeDefs(parentSlug).length > 0) return parentSlug;
+  return null;
 }
 
 /** Known codes only, in the shared 2W/3W/4W order. */
@@ -286,7 +316,7 @@ export async function listCatalogue(db: Tx, query: CatalogueQuery): Promise<Cata
       select p.id, p.slug, p.name, p.name_hi, b.slug as brand_slug, b.name as brand_name,
         c.slug as category_slug, c.name as category_name, c.name_hi as category_name_hi,
         p.spec_summary, p.spec_summary_hi, p.highlights, p.highlights_hi, p.vehicle_types,
-        o.price, o.mrp, o.shipping, o.lead_days, ${k.expr} as sort_key
+        o.price, o.mrp, o.net_qty, o.net_unit, o.shipping, o.lead_days, ${k.expr} as sort_key
       from products p
       join brands b on b.id = p.brand_id
       join categories c on c.id = p.category_id
@@ -312,6 +342,8 @@ export interface CatalogueVariant {
   sku: string;
   options: Record<string, unknown>;
   mrpPaise: number;
+  /** Net quantity of this pack; null when not listed. */
+  netQuantity: NetQuantity | null;
   offer: (CatalogueOffer & { seller: string }) | null;
 }
 
@@ -319,6 +351,10 @@ export interface CatalogueProduct extends Omit<CatalogueCard, 'offer' | 'photo'>
   description: string | null;
   compatibility: string | null;
   spec: Record<string, unknown>;
+  /** Category slug whose attribute definitions apply (own or parent); null = shared compare rows only. */
+  attributeSet: string | null;
+  /** `spec` read through those definitions: only valid, known values (design 2026-11-13). */
+  attributes: Record<string, AttrValue>;
   countryOfOrigin: string;
   warranty: string | null;
   gstRateBp: number;
@@ -342,6 +378,7 @@ export async function getCatalogueProduct(
       compatibility: string | null;
       compatibility_hi: string | null;
       spec: Record<string, unknown>;
+      parent_category_slug: string | null;
       country_of_origin: string;
       warranty: string | null;
       gst_rate_bp: unknown;
@@ -353,9 +390,11 @@ export async function getCatalogueProduct(
           c.slug as category_slug, c.name as category_name, c.name_hi as category_name_hi,
           p.spec_summary, p.spec_summary_hi, p.highlights, p.highlights_hi, p.vehicle_types,
           p.description, p.description_hi, p.compatibility, p.compatibility_hi, p.spec, p.country_of_origin, p.warranty, p.gst_rate_bp,
-          null::bigint as price, null::bigint as mrp, null::bigint as shipping, null::int as lead_days,
+          null::bigint as price, null::bigint as mrp, null::int as net_qty, null::text as net_unit,
+          null::bigint as shipping, null::int as lead_days, pc.slug as parent_category_slug,
           '' as sort_key_text
         from products p join brands b on b.id = p.brand_id join categories c on c.id = p.category_id
+          left join categories pc on pc.id = c.parent_id
         where p.slug = ${slug} and p.status = 'live' and c.archived_at is null
       )
       select pg.*, ph.*, rv.* from pg ${cardExtras}`),
@@ -365,6 +404,8 @@ export async function getCatalogueProduct(
     sku: string;
     options: Record<string, unknown>;
     mrp_paise: unknown;
+    pack_qty: unknown;
+    pack_unit: string | null;
     price: unknown;
     mrp: unknown;
     shipping: unknown;
@@ -373,7 +414,7 @@ export async function getCatalogueProduct(
     shop_name_hi: string | null;
   }>(
     await db.execute(sql`
-      select pv.sku, pv.options, pv.mrp_paise, o.price, o.mrp, o.shipping, o.lead_days, o.shop_name, o.shop_name_hi
+      select pv.sku, pv.options, pv.mrp_paise, pv.net_qty as pack_qty, pv.net_unit as pack_unit, o.price, o.mrp, o.shipping, o.lead_days, o.shop_name, o.shop_name_hi
       from product_variants pv
       ${offerLateral(place, sql`v.id = pv.id`)}
       where pv.product_id = ${p.id} and pv.status = 'active'
@@ -398,12 +439,15 @@ export async function getCatalogueProduct(
   );
   const card = toCard(p, opts.locale);
   const { offer: _offer, photo: _photo, ...base } = card;
+  const attributeSet = attributeSetFor(p.category_slug, p.parent_category_slug);
   return {
     ...base,
     description: p.description === null ? null : localized(p.description, p.description_hi, opts.locale),
     compatibility:
       p.compatibility === null ? null : localized(p.compatibility, p.compatibility_hi, opts.locale),
     spec: p.spec,
+    attributeSet,
+    attributes: attributeSet === null ? {} : readAttributes(attributeSet, p.spec),
     countryOfOrigin: p.country_of_origin,
     warranty: p.warranty,
     gstRateBp: num(p.gst_rate_bp),
@@ -417,16 +461,19 @@ export async function getCatalogueProduct(
     })),
     variants: variants.map((v) => {
       const price = numOrNull(v.price);
+      const pack = netQuantityOf(v.pack_qty, v.pack_unit);
       return {
         sku: v.sku,
         options: v.options,
         mrpPaise: num(v.mrp_paise),
+        netQuantity: pack,
         offer:
           price === null
             ? null
             : {
                 pricePaise: price,
                 mrpPaise: num(v.mrp),
+                netQuantity: pack,
                 shippingPaise: numOrNull(v.shipping),
                 leadDays: numOrNull(v.lead_days),
                 seller: localized(v.shop_name ?? '', v.shop_name_hi, opts.locale),

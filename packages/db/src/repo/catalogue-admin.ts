@@ -1,8 +1,16 @@
 import { and, asc, eq, gt, sql, type SQL } from 'drizzle-orm';
-import type { AnyPgColumn } from 'drizzle-orm/pg-core';
+import { alias, type AnyPgColumn } from 'drizzle-orm/pg-core';
+import {
+  isNetQuantity,
+  readAttributes,
+  validateAttributes,
+  type AttrValue,
+  type NetQuantity,
+} from '@mechdost/shared/product-attributes';
 import { productMachine, type ProductStatus } from '@mechdost/shared/state';
 import { VEHICLE_TYPES, isVehicleType, type VehicleType } from '@mechdost/shared/vehicles';
 import { auditLog, brands, categories, productVariants, products, settings } from '../schema';
+import { attributeSetFor } from './catalogue';
 import { ConflictError, NotFoundError, ValidationError } from './errors';
 import { recordServerEvent } from './events';
 import type { Tx } from './orders';
@@ -336,5 +344,92 @@ export async function setProductVehicleTypes(
       after: { vehicleTypes: next },
     });
     return { version: row.version, vehicleTypes: next };
+  });
+}
+
+const parentCategories = alias(categories, 'parent_categories');
+
+/**
+ * Set a product's typed attributes (design 2026-11-13 "Product comparison"; admin control, rule 8). The list of
+ * attributes comes from the shared definitions of the product's category (or its parent); every key must be
+ * known and every value valid (strict). Replaces the whole set. Optimistic version; audited.
+ */
+export async function setProductAttributes(
+  db: Tx,
+  input: { slug: string; expectedVersion: number; attributes: Record<string, unknown>; staffUserId: string },
+): Promise<{ version: number; attributes: Record<string, AttrValue> }> {
+  return db.transaction(async (tx) => {
+    const [current] = await tx
+      .select({
+        id: products.id,
+        spec: products.spec,
+        categorySlug: categories.slug,
+        parentSlug: parentCategories.slug,
+      })
+      .from(products)
+      .innerJoin(categories, eq(categories.id, products.categoryId))
+      .leftJoin(parentCategories, eq(parentCategories.id, categories.parentId))
+      .where(eq(products.slug, input.slug))
+      .limit(1);
+    if (!current) throw new NotFoundError('Product not found');
+    const set = attributeSetFor(current.categorySlug, current.parentSlug) ?? current.categorySlug;
+    const check = validateAttributes(set, input.attributes);
+    if (!check.ok)
+      throw new ValidationError(
+        check.code === 'UNKNOWN_KEY'
+          ? `"${check.key}" is not an attribute of this category`
+          : `"${check.key}" has a value this category does not accept`,
+        'ATTRIBUTES',
+      );
+    const [row] = await tx
+      .update(products)
+      .set({ spec: check.values })
+      .where(and(eq(products.id, current.id), eq(products.version, input.expectedVersion)))
+      .returning({ version: products.version });
+    if (!row) throw new ConflictError('Someone else changed this product; reload', 'STALE_PRODUCT');
+    await tx.insert(auditLog).values({
+      actorUserId: input.staffUserId,
+      actorRole: 'staff',
+      action: 'product.attributes_updated',
+      entity: 'product',
+      entityId: current.id,
+      before: { attributes: readAttributes(set, current.spec) },
+      after: { attributes: check.values },
+    });
+    return { version: row.version, attributes: check.values };
+  });
+}
+
+/** Set or clear the net quantity of one pack (variant) by SKU (design 2026-11-13). Audited. */
+export async function setVariantNetQuantity(
+  db: Tx,
+  input: { sku: string; netQuantity: NetQuantity | null; staffUserId: string },
+): Promise<{ sku: string; netQuantity: NetQuantity | null }> {
+  if (input.netQuantity !== null && !isNetQuantity(input.netQuantity))
+    throw new ValidationError('Net quantity is a whole number in ml, g, piece or m', 'NET_QUANTITY');
+  const next = input.netQuantity;
+  return db.transaction(async (tx) => {
+    const [current] = await tx
+      .select({ id: productVariants.id, netQty: productVariants.netQty, netUnit: productVariants.netUnit })
+      .from(productVariants)
+      .where(eq(productVariants.sku, input.sku))
+      .limit(1);
+    if (!current) throw new NotFoundError('Variant not found');
+    await tx
+      .update(productVariants)
+      .set({ netQty: next?.qty ?? null, netUnit: next?.unit ?? null })
+      .where(eq(productVariants.id, current.id));
+    await tx.insert(auditLog).values({
+      actorUserId: input.staffUserId,
+      actorRole: 'staff',
+      action: 'variant.net_quantity_updated',
+      entity: 'product_variant',
+      entityId: current.id,
+      before: {
+        netQuantity: current.netQty === null ? null : { qty: current.netQty, unit: current.netUnit },
+      },
+      after: { netQuantity: next },
+    });
+    return { sku: input.sku, netQuantity: next };
   });
 }

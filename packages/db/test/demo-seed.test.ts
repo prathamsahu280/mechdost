@@ -71,6 +71,30 @@ describe('Raipur demo seed', () => {
     expect(oil.variants[0]?.offer?.seller).toBe('गुप्ता ल्यूब्स एंड स्पेयर्स');
   });
 
+  it('writes typed attributes and the pack size for comparison (design 2026-11-13)', async () => {
+    const withCompare: DemoFixture = {
+      ...fixture,
+      products: fixture.products.map((p) =>
+        p.slug === 'castrol-activ-4t-20w40-900ml'
+          ? {
+              ...p,
+              attributes: { saeGrade: '20W40', jasoClass: 'MA2' },
+              netQuantity: { qty: 900, unit: 'ml' },
+            }
+          : p,
+      ),
+    };
+    await seedRaipurDemo(t(), withCompare);
+    const oil = await getCatalogueProduct(t(), 'castrol-activ-4t-20w40-900ml', {
+      cityCode: 'RPR',
+      pincode: '492099',
+      locale: 'en',
+    });
+    expect(oil.attributes).toEqual({ saeGrade: '20W40', jasoClass: 'MA2' });
+    expect(oil.variants[0]?.netQuantity).toEqual({ qty: 900, unit: 'ml' });
+    expect(oil.variants[0]?.offer?.netQuantity).toEqual({ qty: 900, unit: 'ml' });
+  });
+
   it('can be removed again before launch', async () => {
     await removeRaipurDemo(t(), fixture);
     expect(await db.$count(s.products)).toBe(0);

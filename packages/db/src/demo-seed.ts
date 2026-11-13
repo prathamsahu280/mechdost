@@ -1,4 +1,5 @@
 import { and, eq, inArray, sql } from 'drizzle-orm';
+import { validateAttributes, type AttrValue, type NetQuantity } from '@mechdost/shared/product-attributes';
 import type { Tx } from './repo/orders';
 import * as s from './schema';
 
@@ -39,6 +40,10 @@ export interface DemoFixture {
     gstRateBp: number;
     /** Vehicle types the product is for (decision 2026-11-12); empty = fitment not listed. */
     vehicleTypes?: ('2W' | '3W' | '4W')[];
+    /** Typed attributes for comparison (decision 2026-11-13), checked against the category's definitions. */
+    attributes?: Record<string, AttrValue>;
+    /** Net quantity of the pack (unit price). */
+    netQuantity?: NetQuantity;
   }[];
   shops: {
     slug: string;
@@ -139,6 +144,8 @@ export async function seedRaipurDemo(db: Tx, f: DemoFixture): Promise<DemoSeedRe
 
     const variantIds = new Map<string, string>();
     for (const p of f.products) {
+      const check = validateAttributes(p.category, p.attributes ?? {});
+      if (!check.ok) throw new Error(`demo seed: ${p.slug} attribute ${check.key} ${check.code}`);
       const values = {
         name: p.name,
         nameHi: p.nameHi,
@@ -153,6 +160,7 @@ export async function seedRaipurDemo(db: Tx, f: DemoFixture): Promise<DemoSeedRe
         hsn: p.hsn,
         gstRateBp: p.gstRateBp,
         vehicleTypes: p.vehicleTypes ?? [],
+        spec: check.values,
         status: 'live',
       };
       const [product] = await tx
@@ -164,12 +172,13 @@ export async function seedRaipurDemo(db: Tx, f: DemoFixture): Promise<DemoSeedRe
         })
         .returning({ id: s.products.id });
       if (!product) throw new Error('demo seed: product upsert returned nothing');
+      const pack = { netQty: p.netQuantity?.qty ?? null, netUnit: p.netQuantity?.unit ?? null };
       const [variant] = await tx
         .insert(s.productVariants)
-        .values({ productId: product.id, sku: p.sku, mrpPaise: p.mrpPaise })
+        .values({ productId: product.id, sku: p.sku, mrpPaise: p.mrpPaise, ...pack })
         .onConflictDoUpdate({
           target: s.productVariants.sku,
-          set: { productId: product.id, mrpPaise: p.mrpPaise, status: 'active' },
+          set: { productId: product.id, mrpPaise: p.mrpPaise, status: 'active', ...pack },
         })
         .returning({ id: s.productVariants.id });
       if (variant) variantIds.set(p.sku, variant.id);

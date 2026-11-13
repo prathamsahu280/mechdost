@@ -152,7 +152,13 @@ describe('prices', () => {
     const page = await listCatalogue(t(), { ...base, pincode: '492001', q: 'XLTZ4A' });
     const exide = page.items.find((i) => i.slug === 'exide-xltz4a');
     // Busy Auto is nearer but busy; Paused Auto is cheapest but paused; Far Auto is cheaper but farther.
-    expect(exide?.offer).toEqual({ pricePaise: 110000, mrpPaise: 150000, shippingPaise: 4000, leadDays: 2 });
+    expect(exide?.offer).toEqual({
+      pricePaise: 110000,
+      mrpPaise: 150000,
+      netQuantity: null,
+      shippingPaise: 4000,
+      leadDays: 2,
+    });
     expect(page.place).toEqual({ cityId: F.raipur, cityCode: 'RPR', pincode: '492001', pincodeKnown: true });
   });
 

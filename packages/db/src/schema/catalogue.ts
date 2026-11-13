@@ -16,6 +16,7 @@ import {
   type AnyPgColumn,
 } from 'drizzle-orm/pg-core';
 import { GST_STATUSES } from '@mechdost/shared/partners';
+import { NET_UNITS } from '@mechdost/shared/product-attributes';
 import { PRICE_REQUEST_STATES } from '@mechdost/shared/state';
 import {
   createdAt,
@@ -250,6 +251,8 @@ export const products = pgTable(
     check('products_status_valid', sql`${t.status} in ('draft','submitted','live','rejected','archived')`),
     check('products_hsn_format', sql`${t.hsn} ~ '^[0-9]{4,8}$'`),
     check('products_gst_rate_range', sql`${t.gstRateBp} between 0 and 4000`),
+    // Typed attributes per category live here (decision 2026-11-13); always a JSON object.
+    check('products_spec_object', sql`jsonb_typeof(${t.spec}) = 'object'`),
     // At most 8 highlights; the Hindi list is empty (falls back to English) or matches the English one line by line.
     check('products_highlights_max', sql`coalesce(array_length(${t.highlights}, 1), 0) <= 8`),
     check(
@@ -283,6 +286,12 @@ export const productVariants = pgTable(
     barcode: text(),
     mrpPaise: paise().notNull(),
     weightG: integer(),
+    /**
+     * Net quantity of the pack (design 2026-11-13 "Product comparison"): a whole number in a base unit
+     * (`NET_UNITS`: ml, g, piece, m). Both or neither; the unit price is worked out from it.
+     */
+    netQty: integer(),
+    netUnit: text(),
     status: text().notNull().default('active'),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
@@ -290,6 +299,9 @@ export const productVariants = pgTable(
   (t) => [
     check('product_variants_mrp_nonneg', sql`${t.mrpPaise} >= 0`),
     check('product_variants_status_valid', sql`${t.status} in ('active','archived')`),
+    check('product_variants_net_pair', sql`(${t.netQty} is null) = (${t.netUnit} is null)`),
+    check('product_variants_net_qty_range', sql`${t.netQty} between 1 and 1000000`),
+    check('product_variants_net_unit_valid', sql`${t.netUnit} in (${inList(NET_UNITS)})`),
     index().on(t.productId),
     index().on(t.barcode),
   ],

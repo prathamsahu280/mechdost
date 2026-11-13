@@ -295,6 +295,13 @@
       "when": 1794555503900,
       "tag": "0041_order_group_gstin",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1794568228083,
+      "tag": "0042_product_compare",
+      "breakpoints": true
     }
   ]
 }
