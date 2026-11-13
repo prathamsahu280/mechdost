@@ -46,6 +46,7 @@ describe('locale messages', () => {
       'footer.copyright',
       'assistant.bot',
       'catalogue.mrp',
+      'portal.priceMrp', // "MRP {mrp}": the abbreviation is used as is in Hindi, like catalogue.mrp
       'policies.company.gstinLabel', // a registration code (hard rule 10 allows codes)
     ]);
     for (const [key, value] of hiLeaves) {

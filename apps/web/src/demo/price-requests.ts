@@ -117,11 +117,17 @@ export function submitPriceRequest(input: {
   productSlug: string;
   pricePaise: number;
   mrpPaise: number;
+  /** The price this shop already sells at (demo catalogue price) when no listing exists yet. */
+  currentPaise?: number;
 }): DemoPriceRequest | { error: 'PRICE_INVALID' | 'PRICE_ABOVE_MRP' } {
   if (!isPaise(input.pricePaise)) return { error: 'PRICE_INVALID' };
   if (input.pricePaise > input.mrpPaise) return { error: 'PRICE_ABOVE_MRP' };
+  const { currentPaise, ...line } = input;
+  if (isPaise(currentPaise) && !listings().some((l) => sameLine(l, line.shopSlug, line.productSlug))) {
+    saveListing(line.shopSlug, line.productSlug, { livePaise: currentPaise });
+  }
   const request: DemoPriceRequest = {
-    ...input,
+    ...line,
     id: globalThis.crypto.randomUUID(),
     status: 'pending',
     reason: null,

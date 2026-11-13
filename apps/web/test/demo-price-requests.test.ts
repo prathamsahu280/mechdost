@@ -101,4 +101,15 @@ describe('demo price requests', () => {
     expect(decidePriceRequest(a.id, { decision: 'approved' })).toBe(false);
     expect(withdrawPriceRequest(a.id)).toBe(false);
   });
+  it('a shop already selling at a catalogue price keeps it live, and a rejected change takes it off sale', () => {
+    const r = submitPriceRequest({ ...line, pricePaise: 45_000, currentPaise: 44_000 });
+    if ('error' in r) throw new Error(r.error);
+    expect(listingOf(line.shopSlug, line.productSlug)).toEqual({
+      status: 'on_sale',
+      livePaise: 44_000,
+      pending: 45_000,
+    });
+    decidePriceRequest(r.id, { decision: 'rejected', reason: 'above_market' });
+    expect(listingOf(line.shopSlug, line.productSlug)).toEqual({ status: 'blocked', reason: 'above_market' });
+  });
 });

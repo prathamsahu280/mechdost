@@ -200,3 +200,53 @@ test.describe('price approval queue', () => {
     await expect(queue.getByText('No price changes are waiting.')).toBeVisible();
   });
 });
+
+async function signInShop(page: Page) {
+  await page.goto(`/login?next=${encodeURIComponent('/partner/shop')}`);
+  await page.getByLabel('Mobile number or email').fill('9000000001');
+  await page.getByLabel('Password', { exact: true }).fill('Raipur@2026');
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await expect(page).toHaveURL(/\/partner\/shop$/);
+}
+
+test.describe('shop prices', () => {
+  test('prices wait for approval; approved goes on sale, a rejected change takes it off sale', async ({
+    page,
+  }) => {
+    await offline(page);
+    await signInShop(page);
+    const prices = page.getByRole('region', { name: 'Your prices' });
+    const castrol = prices.getByRole('listitem').filter({ hasText: 'Activ 4T 20W40 900 ml' });
+    await expect(castrol).toContainText('On sale at ₹440');
+    await castrol.getByLabel('New price (₹)').fill('480');
+    await castrol.getByRole('button', { name: 'Send for approval' }).click();
+    await expect(castrol.getByText('The price cannot be above the MRP (₹475).')).toBeVisible();
+    await castrol.getByLabel('New price (₹)').fill('430');
+    await castrol.getByRole('button', { name: 'Send for approval' }).click();
+    await expect(castrol).toContainText('Waiting for approval: ₹430');
+    await expect(castrol).toContainText('On sale at ₹440');
+
+    const shell = prices.getByRole('listitem').filter({ hasText: 'Fully synthetic engine oil 5W-30 3.5 L' });
+    await shell.getByLabel('New price (₹)').fill('3100');
+    await shell.getByRole('button', { name: 'Send for approval' }).click();
+    await expect(shell).toContainText('Waiting for approval: ₹3,100');
+
+    await page.getByRole('button', { name: 'Sign out' }).first().click();
+    await signInAdmin(page, '/admin/partners');
+    const queue = page.getByRole('region', { name: 'Price requests' });
+    await queue
+      .getByRole('listitem')
+      .filter({ hasText: 'Activ 4T 20W40 900 ml' })
+      .getByRole('button', { name: 'Approve' })
+      .click();
+    const shellRequest = queue.getByRole('listitem').filter({ hasText: 'Fully synthetic engine oil' });
+    await shellRequest.getByLabel('Reason').selectOption({ label: 'Above market price' });
+    await shellRequest.getByRole('button', { name: 'Reject' }).click();
+    await expect(queue.getByText('No price changes are waiting.')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Sign out' }).first().click();
+    await signInShop(page);
+    await expect(castrol).toContainText('On sale at ₹430');
+    await expect(shell).toContainText('Taken off sale: Above market price');
+  });
+});

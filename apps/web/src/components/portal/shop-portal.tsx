@@ -19,6 +19,7 @@ import {
 import { track } from '@/lib/analytics';
 import { formatDate, formatPrice } from '@/lib/format';
 import { PartnerGate } from './partner-gate';
+import { ShopPrices } from './shop-prices';
 import { PortalGuard, portalCard, portalPrimary, portalQuiet, portalField, useNow } from './portal-guard';
 
 /**
@@ -100,6 +101,8 @@ function ShopOrders({ shopSlug }: { shopSlug: string }) {
           </ul>
         )}
       </section>
+
+      {found ? <ShopPrices shop={found} /> : null}
     </>
   );
 }
