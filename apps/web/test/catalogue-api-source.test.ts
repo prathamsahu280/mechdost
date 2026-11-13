@@ -175,4 +175,15 @@ describe('catalogue API source (plan 2026-11-10 task 3)', () => {
     expect(apiProduct(product, 'hi').countryOfOrigin).toBe('भारत');
     expect(apiProduct({ ...product, countryOfOrigin: 'Atlantis' }, 'hi').countryOfOrigin).toBe('Atlantis');
   });
+
+  it('maps the offered pack and re-reads attributes defensively (design 2026-11-13)', () => {
+    const c = apiCard({ ...card, offer: { ...card.offer!, netQuantity: { qty: 900, unit: 'ml' } } });
+    expect(c.pack).toEqual({ qty: 900, unit: 'ml' });
+    expect(apiCard({ ...card, offer: null }).pack).toBeNull();
+    const p = apiProduct({ ...product, attributes: { saeGrade: '20W40', apiClass: 'XX' } }, 'en');
+    expect(p.attributeSet).toBe('lubricants');
+    expect(p.attributes).toEqual({ saeGrade: '20W40' });
+    // The pack of the variant that is sold.
+    expect(p.pack).toEqual({ qty: 900, unit: 'ml' });
+  });
 });

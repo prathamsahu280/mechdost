@@ -30,6 +30,33 @@ describe('catalogue view model, demo source (plan 2026-11-10 task 2)', () => {
     expect(demoProduct(castrol, 'hi').compatibility).toBe(hi?.compatibility ?? '');
   });
 
+  it('carries the pack size and typed attributes for comparison (design 2026-11-13)', () => {
+    if (!castrol) throw new Error('fixture missing');
+    expect(demoCard(castrol, 'en').pack).toEqual({ qty: 900, unit: 'ml' });
+    const p = demoProduct(castrol, 'en');
+    expect(p.attributeSet).toBe('lubricants');
+    expect(p.attributes).toMatchObject({ saeGrade: '20W40', apiClass: 'SL', jasoClass: 'MA2' });
+    const tyre = findProduct('car-tyre-185-65-r15');
+    if (!tyre) throw new Error('fixture missing');
+    expect(demoProduct(tyre, 'en').attributes).toEqual({
+      size: '185/65 R15',
+      loadIndex: 88,
+      speedSymbol: 'H',
+      tubeless: true,
+    });
+  });
+
+  it('has three more two-wheeler engine oils to compare', () => {
+    for (const slug of ['motul-3100-4t-10w30-1l', 'shell-advance-ax7-10w30-1l', 'hp-racer4-20w40-900ml']) {
+      const p = findProduct(slug);
+      expect(p?.category).toBe('lubricants');
+      expect(p?.fits).toBe('2W');
+      expect(PRODUCT_HI[slug]).toBeDefined();
+    }
+    const hp = findProduct('hp-racer4-20w40-900ml');
+    expect(hp && demoCard(hp, 'en').pack).toEqual({ qty: 900, unit: 'ml' });
+  });
+
   it('DATA_MODE is demo unless the env says api', async () => {
     vi.stubEnv('NEXT_PUBLIC_DATA_MODE', 'API');
     expect((await import('../src/lib/data-mode')).DATA_MODE).toBe('demo');

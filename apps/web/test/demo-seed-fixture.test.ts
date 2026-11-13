@@ -77,6 +77,9 @@ function buildFixture() {
       gstRateBp: 1800,
       // Type-level fitment from the demo `fits` value only (decision 2026-11-12; EV is a fuel, no type).
       vehicleTypes: VEHICLE_TYPES_OF_FIT[p.fits],
+      // Comparison data (decision 2026-11-13): typed attributes and the pack size, when the demo states them.
+      ...(p.attributes ? { attributes: { ...p.attributes } } : {}),
+      ...(p.netQuantity ? { netQuantity: p.netQuantity } : {}),
     };
   });
   const shops = DEMO_SHOPS.map((s, i) => ({

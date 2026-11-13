@@ -1,3 +1,4 @@
+import { attributeDefs, readAttributes } from '@mechdost/shared/product-attributes';
 import { CATEGORY_SLUGS, VEHICLE_TYPES_OF_FIT, type DemoProduct } from '@/demo/catalogue';
 import { localizeProduct } from '@/demo/i18n/localize';
 import { productRating } from '@/demo/reviews';
@@ -17,6 +18,7 @@ export function demoCard(raw: DemoProduct, locale: string): CardView {
     compatibility: p.compatibility,
     vehicleTypes: VEHICLE_TYPES_OF_FIT[p.fits],
     price: { pricePaise: p.pricePaise, mrpPaise: p.mrpPaise ?? null },
+    pack: p.netQuantity ?? null,
     availability: p.availability,
     leadDays: p.leadDays,
     highlights: p.highlights,
@@ -27,6 +29,8 @@ export function demoCard(raw: DemoProduct, locale: string): CardView {
 }
 
 export function demoProduct(raw: DemoProduct, locale: string): ProductView {
+  const slug = CATEGORY_SLUGS[raw.category];
+  const attributeSet = attributeDefs(slug).length > 0 ? slug : null;
   return {
     ...demoCard(raw, locale),
     description: null,
@@ -34,5 +38,8 @@ export function demoProduct(raw: DemoProduct, locale: string): ProductView {
     countryOfOrigin: null,
     partNumbers: [],
     shippingPaise: null,
+    attributeSet,
+    attributes: attributeSet === null ? {} : readAttributes(attributeSet, raw.attributes ?? {}),
+    warranty: null,
   };
 }

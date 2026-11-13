@@ -24,6 +24,21 @@ export const PRODUCT_HI: Readonly<Record<string, ProductHi>> = {
     compatibility: '4-स्ट्रोक इंजन वाले सभी दोपहिया वाहन',
     highlights: ['इंजन की सुरक्षा के लिए ऐक्टिबॉन्ड मॉलिक्यूल', 'JASO MA2 · API SL', '900 ml पैक'],
   },
+  'motul-3100-4t-10w30-1l': {
+    spec: '2W इंजन ऑयल · 10W30 · 1 L',
+    compatibility: '4-स्ट्रोक इंजन और वेट क्लच वाली मोटरसाइकिलें',
+    highlights: ['सेमी-सिंथेटिक', 'JASO MA2 · API SM', '1 L पैक'],
+  },
+  'shell-advance-ax7-10w30-1l': {
+    spec: '2W इंजन ऑयल · 10W30 · 1 L',
+    compatibility: '4-स्ट्रोक इंजन और वेट क्लच वाली मोटरसाइकिलें',
+    highlights: ['सेमी-सिंथेटिक', 'JASO MA2 · API SM', '1 L पैक'],
+  },
+  'hp-racer4-20w40-900ml': {
+    spec: '2W इंजन ऑयल · 20W40 · 900 ml',
+    compatibility: '4-स्ट्रोक इंजन वाले सभी दोपहिया वाहन',
+    highlights: ['मिनरल ऑयल', 'JASO MA2 · API SL', '900 ml पैक'],
+  },
   'exide-xltz4a-2w-battery': {
     spec: '12 V · 3 Ah · VRLA · फ़ैक्टरी चार्ज्ड',
     compatibility: 'ज़्यादातर 100–125 cc मोटरसाइकिल और स्कूटर',

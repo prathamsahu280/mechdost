@@ -57,9 +57,9 @@ test.describe('catalogue on the API', () => {
     await expect(page.getByRole('status').filter({ hasText: '8 more products loaded' })).toBeAttached();
     await expect(page.locator('li:focus')).toHaveCount(1);
     await page.getByRole('button', { name: 'Load more products' }).click();
-    await expect(page.locator('article')).toHaveCount(20, SLOW);
+    await expect(page.locator('article')).toHaveCount(23, SLOW);
     await expect(page.getByRole('button', { name: 'Load more products' })).toHaveCount(0);
-    await expect(page.getByText('20 products', { exact: true })).toBeVisible();
+    await expect(page.getByText('23 products', { exact: true })).toBeVisible();
   });
 
   test('quick details on a card added by Load more open that card (unique ids)', async ({ page }) => {

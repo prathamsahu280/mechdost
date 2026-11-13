@@ -6,6 +6,7 @@ import {
   type CatalogueCard,
   type CatalogueProduct,
 } from '@mechdost/shared/catalogue';
+import { readAttributes } from '@mechdost/shared/product-attributes';
 import { categoryFromSlug } from '@/demo/catalogue';
 import type { Locale } from '@/i18n/routing';
 import type { CardView, ProductView } from './view';
@@ -98,6 +99,7 @@ export function apiCard(c: CatalogueCard): CardView {
     compatibility: null,
     vehicleTypes: c.vehicleTypes,
     price: c.offer ? { pricePaise: c.offer.pricePaise, mrpPaise: c.offer.mrpPaise } : null,
+    pack: c.offer?.netQuantity ?? null,
     availability: c.offer ? 'in_stock' : 'on_request',
     leadDays: c.offer?.leadDays ?? null,
     highlights: c.highlights,
@@ -119,6 +121,10 @@ export function apiProduct(p: CatalogueProduct, locale: Locale): ProductView {
     countryOfOrigin: countryName(p.countryOfOrigin, locale),
     partNumbers: p.partNumbers,
     shippingPaise: offer?.shippingPaise ?? null,
+    attributeSet: p.attributeSet,
+    // Re-read through the shared definitions: a value this build does not know is left out, never shown raw.
+    attributes: p.attributeSet === null ? {} : readAttributes(p.attributeSet, p.attributes),
+    warranty: p.warranty,
   };
 }
 

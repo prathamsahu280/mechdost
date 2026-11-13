@@ -1,5 +1,6 @@
 import type { VehicleType } from '@mechdost/shared/vehicles';
 import type { CataloguePhoto } from '@mechdost/shared/catalogue';
+import type { AttrValue, NetQuantity } from '@mechdost/shared/product-attributes';
 import type { CategoryKey } from '@/demo/catalogue';
 
 /**
@@ -19,6 +20,8 @@ export interface CardView {
   /** Vehicle types the product is for, 2W/3W/4W order; empty = "Fitment not listed" (decision 2026-11-12). */
   vehicleTypes: readonly VehicleType[];
   price: { pricePaise: number; mrpPaise: number | null } | null;
+  /** Net quantity of the pack the price is for (unit price, design 2026-11-13); null when not listed. */
+  pack: NetQuantity | null;
   availability: 'in_stock' | 'low_stock' | 'on_request';
   leadDays: number | null;
   highlights: string[];
@@ -34,4 +37,9 @@ export interface ProductView extends CardView {
   countryOfOrigin: string | null;
   partNumbers: { kind: string; value: string }[];
   shippingPaise: number | null;
+  /** Category slug whose attribute definitions apply; null = shared compare rows only. */
+  attributeSet: string | null;
+  /** Typed attributes (only valid, known values) for comparison. */
+  attributes: Record<string, AttrValue>;
+  warranty: string | null;
 }
