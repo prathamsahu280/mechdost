@@ -190,6 +190,17 @@ export function pendingPriceRequests(): DemoPriceRequest[] {
   return requests().filter((r) => r.status === 'pending');
 }
 
+/** Shops that may not get an order with these products: a change was rejected and the product taken off sale. */
+export function shopsOffSale(productSlugs: readonly string[]): string[] {
+  return [
+    ...new Set(
+      listings()
+        .filter((l) => l.blocked !== null && productSlugs.includes(l.productSlug))
+        .map((l) => l.shopSlug),
+    ),
+  ];
+}
+
 /** What the shop and checkout see for one product of one shop. */
 export function listingOf(shopSlug: string, productSlug: string): ListingState {
   const l = listings().find((x) => sameLine(x, shopSlug, productSlug));

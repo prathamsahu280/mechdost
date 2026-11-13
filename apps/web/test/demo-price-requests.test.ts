@@ -8,6 +8,7 @@ import {
   decidePriceRequest,
   listingOf,
   pendingPriceRequests,
+  shopsOffSale,
   submitPriceRequest,
   withdrawPriceRequest,
 } from '../src/demo/price-requests';
@@ -111,5 +112,13 @@ describe('demo price requests', () => {
     });
     decidePriceRequest(r.id, { decision: 'rejected', reason: 'above_market' });
     expect(listingOf(line.shopSlug, line.productSlug)).toEqual({ status: 'blocked', reason: 'above_market' });
+  });
+  it('routing skips a shop whose product was taken off sale (other nearby shops serve it)', () => {
+    const r = submitPriceRequest({ ...line, pricePaise: 45_000, currentPaise: 44_000 });
+    if ('error' in r) throw new Error(r.error);
+    expect(shopsOffSale([line.productSlug, 'other-product'])).toEqual([]);
+    decidePriceRequest(r.id, { decision: 'rejected', reason: 'above_market' });
+    expect(shopsOffSale([line.productSlug, 'other-product'])).toEqual([line.shopSlug]);
+    expect(shopsOffSale(['other-product'])).toEqual([]);
   });
 });

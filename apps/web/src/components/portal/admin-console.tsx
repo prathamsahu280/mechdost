@@ -16,6 +16,7 @@ import { restoreCoinsForOrder } from '@/demo/coins';
 import { useSession } from '@/demo/session';
 import { localizeShop, productNameFor, shopNameFor, workshopNameFor } from '@/demo/i18n/localize';
 import { findShop, rankShops } from '@/demo/shops';
+import { shopsOffSale } from '@/demo/price-requests';
 import {
   APPLICATION_STAGES,
   moderateReview,
@@ -340,7 +341,9 @@ function RoutingCard({ order, now }: { order: DemoOrder; now: number }) {
     ),
   ];
   const tried = (order.declined ?? []).map((d) => d.slug);
-  const suggestions = rankShops(categories, [...tried, ...(order.shop ? [order.shop.slug] : [])])
+  // A shop whose product was taken off sale (rejected price change) is not offered; nearby shops serve it.
+  const offSale = shopsOffSale(order.lines.map((l) => l.slug));
+  const suggestions = rankShops(categories, [...tried, ...offSale, ...(order.shop ? [order.shop.slug] : [])])
     .slice(0, 3)
     .map((s) => localizeShop(s, locale));
   const shopName = (slug: string) => shopNameFor(slug, findShop(slug)?.name ?? slug, locale);
