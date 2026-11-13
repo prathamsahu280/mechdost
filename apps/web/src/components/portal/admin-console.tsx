@@ -28,7 +28,6 @@ import {
   routeOrder,
   routingState,
   sendOffer,
-  updateApplication,
   useApplications,
   useOrders,
   useQuotes,
@@ -52,6 +51,7 @@ import { AdminPartners } from './admin-partners';
 import { AdminCustomers } from './admin-customers';
 import { ContentEditor, LayoutEditor, SettingsEditor, type ContentDefaults } from './admin-site';
 import { PortalGuard, portalCard, portalField, portalPrimary, portalQuiet, useNow } from './portal-guard';
+import { Applications } from './admin-applications';
 
 const SECTION_EMOJI: Record<AdminSection, string> = {
   overview: '📊',
@@ -978,69 +978,6 @@ function QuoteNegotiation({ quote }: { quote: DemoQuote }) {
         </form>
       ) : null}
     </div>
-  );
-}
-
-function Applications() {
-  const t = useTranslations('portal');
-  const ap = useTranslations('apply');
-  const locale = useLocale();
-  const apps = useApplications();
-  return (
-    <section aria-labelledby="applications-title">
-      <h2 id="applications-title" className="font-heading text-xl font-extrabold text-ink">
-        {t('nav_applications')}
-      </h2>
-      {apps.length === 0 ? (
-        <p className="mt-3 text-sm text-muted">{t('emptyQueue')}</p>
-      ) : (
-        <ul className="mt-3 grid gap-3 xl:grid-cols-2">
-          {apps.map((a) => {
-            const stage = APPLICATION_STAGES[a.stage] ?? 'received';
-            const done = a.rejected || a.stage >= APPLICATION_STAGES.length - 1;
-            return (
-              <li key={a.code} className={portalCard}>
-                <p className="mb-2 inline-flex rounded-pill bg-pill px-3 py-1 text-xs font-extrabold text-ink">
-                  {t(`kind_${a.kind}`)} · {a.rejected ? ap('stage_rejected') : ap(`stage_${stage}`)}
-                </p>
-                <p data-user-content className="font-heading text-lg font-extrabold text-ink">
-                  {a.business || a.name}
-                </p>
-                <p className="text-sm text-muted">
-                  {a.code} · <span data-user-content>{a.name}</span> · PIN {a.pincode} ·{' '}
-                  {formatDate(a.createdAt, locale)}
-                </p>
-                <p data-user-content className="mt-2 line-clamp-3 text-sm text-ink">
-                  {a.details}
-                </p>
-                {!done ? (
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        updateApplication(a.code, { stage: a.stage + 1 });
-                      }}
-                      className={portalPrimary}
-                    >
-                      {t('nextStep')}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        updateApplication(a.code, { rejected: true });
-                      }}
-                      className={portalQuiet}
-                    >
-                      {t('rejectApplication')}
-                    </button>
-                  </div>
-                ) : null}
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </section>
   );
 }
 

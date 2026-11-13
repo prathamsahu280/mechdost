@@ -48,6 +48,7 @@ describe('locale messages', () => {
       'catalogue.mrp',
       'portal.priceMrp', // "MRP {mrp}": the abbreviation is used as is in Hindi, like catalogue.mrp
       'policies.company.gstinLabel', // a registration code (hard rule 10 allows codes)
+      'portal.appGstin', // the same registration-code label in the admin review
     ]);
     for (const [key, value] of hiLeaves) {
       if (allowedLatin.has(key)) continue;

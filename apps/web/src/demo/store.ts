@@ -18,7 +18,10 @@ import {
 import { useSyncExternalStore } from 'react';
 import type { PricedCart } from './cart-pricing';
 import { takesNewWork } from './partner-status';
+import { APPLICATION_REJECT_REASONS, type ApplicationRejectReason } from '@mechdost/shared/partners';
+import { OPERATIONAL_SETTINGS } from '@mechdost/shared/settings';
 import { siteSettings } from './site-config';
+import { PIN_CENTROIDS } from './workshops';
 
 export const MAX_LINES = 20;
 export const MAX_QTY = 99;
@@ -158,6 +161,16 @@ export interface DemoApplication {
   location?: { lat: number; lng: number; accuracyM: number; source: 'gps' | 'search' | 'pin' };
   productSlugs?: string[];
   source?: 'public' | 'invite';
+  /** Set by the admin at approval (user 2026-11-13: "admin, at approval"); becomes `shop_pincodes`. */
+  coverage?: Coverage;
+  rejectReason?: ApplicationRejectReason;
+}
+
+/** A new shop's delivery area: PIN codes with one delivery charge and delivery days. */
+export interface Coverage {
+  pincodes: string[];
+  shippingPaise: number;
+  leadDays: number;
 }
 
 /** An admin's invite to a seller (demo of `partner_invites`): one-time link, 7 days. */
@@ -388,9 +401,11 @@ export function createApplication(
     ...input,
     code: publicCode('PA', 'RPR'),
     createdAt: new Date().toISOString(),
-    // An invited seller is pre-approved by the inviting admin (design 2026-11-13).
+    // An invited seller is pre-approved by the inviting admin, with the city's default delivery area, which the
+    // admin can edit later (design 2026-11-13; the API uses `defaultCoverage` the same way).
     stage: inviteToken ? APPLICATION_STAGES.indexOf('onboarded') : 0,
     rejected: false,
+    ...(inviteToken ? { coverage: defaultCoverage() } : {}),
   };
   if (inviteToken)
     write(
@@ -399,6 +414,67 @@ export function createApplication(
     );
   write(KEYS.applications, [app, ...applicationsSnapshot()].slice(0, 100));
   return app;
+}
+
+/** The city's PIN codes with the standard charge and days (settings `partners.default_*`). */
+export function defaultCoverage(): Coverage {
+  return {
+    pincodes: Object.keys(PIN_CENTROIDS),
+    shippingPaise: OPERATIONAL_SETTINGS['partners.default_shipping_paise'].default,
+    leadDays: OPERATIONAL_SETTINGS['partners.default_lead_days'].default,
+  };
+}
+
+const ONBOARDED_STAGE = APPLICATION_STAGES.indexOf('onboarded');
+
+function validCoverage(c: Coverage): boolean {
+  const ship = OPERATIONAL_SETTINGS['partners.default_shipping_paise'];
+  const days = OPERATIONAL_SETTINGS['partners.default_lead_days'];
+  return (
+    c.pincodes.length > 0 &&
+    c.pincodes.every((p) => /^\d{6}$/.test(p)) &&
+    Number.isSafeInteger(c.shippingPaise) &&
+    c.shippingPaise >= ship.min &&
+    c.shippingPaise <= ship.max &&
+    Number.isSafeInteger(c.leadDays) &&
+    c.leadDays >= days.min &&
+    c.leadDays <= days.max
+  );
+}
+
+/** Admin: approve an open application with its delivery area. False if invalid or already decided. */
+export function approveApplication(code: string, coverage: Coverage): boolean {
+  if (!validCoverage(coverage)) return false;
+  return decideOpenApplication(code, (a) => ({
+    ...a,
+    stage: ONBOARDED_STAGE,
+    coverage: { ...coverage, pincodes: [...new Set(coverage.pincodes)] },
+  }));
+}
+
+/** Admin: reject an open application with a reason code. */
+export function rejectApplication(code: string, reason: ApplicationRejectReason): boolean {
+  if (!APPLICATION_REJECT_REASONS.includes(reason)) return false;
+  return decideOpenApplication(code, (a) => ({ ...a, rejected: true, rejectReason: reason }));
+}
+
+function decideOpenApplication(code: string, decide: (a: DemoApplication) => DemoApplication): boolean {
+  const all = applicationsSnapshot();
+  const open = all.find((a) => a.code === code && !a.rejected && a.stage < ONBOARDED_STAGE);
+  if (!open) return false;
+  write(
+    KEYS.applications,
+    all.map((a) => (a === open ? decide(a) : a)),
+  );
+  return true;
+}
+
+/** Other open (not rejected) applications with the same GST number: a likely duplicate. */
+export function applicationsWithSameGstin(app: DemoApplication): DemoApplication[] {
+  if (!app.gstNumber) return [];
+  return applicationsSnapshot().filter(
+    (a) => a.code !== app.code && !a.rejected && a.gstNumber === app.gstNumber,
+  );
 }
 
 /** Admin action (demo): move an application forward, or reject it. */

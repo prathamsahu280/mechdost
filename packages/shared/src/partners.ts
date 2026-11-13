@@ -20,6 +20,7 @@ export const APPLICATION_REJECT_REASONS = [
   'not_a_business',
   'other',
 ] as const;
+export type ApplicationRejectReason = (typeof APPLICATION_REJECT_REASONS)[number];
 export const PRICE_REJECT_REASONS = ['above_market', 'mrp_mismatch', 'wrong_product', 'other'] as const;
 
 /** At most this many products on one application (a large shop can add more after approval). */

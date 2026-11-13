@@ -277,3 +277,60 @@ test.describe('seller agreement', () => {
     await expect(card).toContainText('You accepted version 1');
   });
 });
+
+test.describe('application review', () => {
+  test('the admin sees the seller details, sets the delivery area and approves; another is rejected with a reason', async ({
+    page,
+  }) => {
+    await offline(page);
+    await page.addInitScript(() => {
+      if (window.localStorage.getItem('mechdost-demo-applications')) return;
+      const base = {
+        createdAt: new Date().toISOString(),
+        kind: 'seller',
+        phone: '9876543210',
+        pincode: '492004',
+        vehicles: [],
+        details: '',
+        stage: 2,
+        rejected: false,
+        gstStatus: 'registered',
+        gstNumber: '22ABVCS4888H1ZL',
+        addressLine: 'Shop 4, GE Road, Pandri',
+        location: { lat: 21.2514, lng: 81.6467, accuracyM: 100, source: 'search' },
+        productSlugs: ['castrol-activ-4t-20w40-900ml', 'synthetic-engine-oil-5w30-3-5l'],
+        source: 'public',
+      };
+      window.localStorage.setItem(
+        'mechdost-demo-applications',
+        JSON.stringify([
+          { ...base, code: 'PA-RPR-2026-AAAAAA', name: 'Ravi Sahu', business: 'Sahu Auto Parts' },
+          { ...base, code: 'PA-RPR-2026-BBBBBB', name: 'Mohan Sahu', business: 'Sahu Motors' },
+        ]),
+      );
+    });
+    await signInAdmin(page, '/admin/applications');
+    const ravi = page.getByRole('listitem').filter({ hasText: 'Ravi Sahu' });
+    await expect(ravi).toContainText('22ABVCS4888H1ZL');
+    await expect(ravi).toContainText('2 products');
+    await expect(ravi).toContainText('Same GSTIN as PA-RPR-2026-BBBBBB');
+
+    await ravi.getByRole('button', { name: 'Approve with delivery area' }).click();
+    const area = ravi.getByRole('group', { name: 'Delivery area' });
+    await expect(area.getByRole('checkbox', { name: '492004' })).toBeChecked();
+    await area.getByRole('checkbox', { name: '492099' }).uncheck();
+    await ravi.getByLabel('Delivery charge (₹)').fill('30');
+    await ravi.getByLabel('Delivery days').fill('1');
+    await ravi.getByRole('button', { name: 'Approve and onboard' }).click();
+    await expect(ravi).toContainText('Approved and onboarded');
+    await expect(ravi).toContainText('Delivers to 4 PIN codes · ₹30 · 1 day');
+
+    const mohan = page.getByRole('listitem').filter({ hasText: 'Mohan Sahu' });
+    await mohan.getByRole('button', { name: 'Reject' }).click();
+    await mohan.getByRole('button', { name: 'Reject application' }).click();
+    await expect(mohan.getByText('Choose a reason.')).toBeVisible();
+    await mohan.getByLabel('Reason').selectOption({ label: 'Duplicate application' });
+    await mohan.getByRole('button', { name: 'Reject application' }).click();
+    await expect(mohan).toContainText('Rejected: Duplicate application');
+  });
+});
