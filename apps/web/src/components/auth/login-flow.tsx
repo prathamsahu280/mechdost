@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState, type ReactNode, type SyntheticEvent } from 'react';
@@ -19,6 +20,7 @@ import {
   safeNext,
   signInWithPassword,
   signUp,
+  useSession,
   verifyPhoneOtp,
   type DemoAccount,
   type DemoRole,
@@ -124,6 +126,8 @@ export function LoginFlow() {
   const locale = useLocale();
   const router = useRouter();
   const next = safeNext(useSearchParams().get('next'));
+  // Already signed in: say so, with the way back; the form stays for switching accounts (QA 2026-11-14, F4).
+  const current = useSession();
   const prefix = locale === 'hi' ? '/hi' : '';
   const { announce, regions } = useAnnouncer();
   const [view, setView] = useState<{ step: Step; n: number }>({ step: 'signin', n: 0 });
@@ -789,6 +793,17 @@ export function LoginFlow() {
     case 'signin':
       body = (
         <form noValidate onSubmit={(e) => void onSignIn(e)}>
+          {current && !notice ? (
+            <p className="mb-4 rounded-lg bg-pill p-3 text-sm text-ink">
+              {t('alreadySignedIn', { name: current.name })}{' '}
+              <Link
+                href={`${prefix}${homeFor(current.role)}`}
+                className="font-bold text-accent-soft-text underline underline-offset-2"
+              >
+                {t('goToAccount')}
+              </Link>
+            </p>
+          ) : null}
           {notice ? (
             <p id="login-notice" className="mb-4 rounded-lg bg-success-bg p-3 text-sm font-bold text-success">
               {notice}

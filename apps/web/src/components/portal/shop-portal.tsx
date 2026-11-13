@@ -48,9 +48,23 @@ function ShopOrders({ shopSlug }: { shopSlug: string }) {
   const shop = found ? localizeShop(found, locale) : undefined;
   const orders = useOrders().filter((o) => o.shop?.slug === shopSlug);
   const offered = orders.filter((o) => routingState(o, now) === 'awaiting_shop');
+  // Offers that ran out on this shop — still waiting for the admin, or already rerouted — stay visible, so the shop
+  // knows it missed them (QA 2026-11-14, U12: they vanished).
+  const missed = useOrders()
+    .filter(
+      (o) =>
+        (o.shop?.slug === shopSlug && routingState(o, now) === 'expired') ||
+        (o.declined ?? []).some((d) => d.slug === shopSlug && d.reason === 'timeout'),
+    )
+    .slice(0, 10);
   const active = orders.filter(
     (o) => o.shop?.status === 'accepted' && !isClosed(o) && o.stage < ORDER_STAGES.length - 1,
   );
+  // Delivered orders stay listed, newest first (lifecycle QA 2026-11-14, 5: they vanished after the code).
+  const delivered = orders
+    .filter((o) => o.shop?.status === 'accepted' && !isClosed(o) && o.stage === ORDER_STAGES.length - 1)
+    .toSorted((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .slice(0, 10);
 
   return (
     <>
@@ -100,6 +114,39 @@ function ShopOrders({ shopSlug }: { shopSlug: string }) {
             {active.map((o) => (
               <li key={o.code}>
                 <ActiveOrder order={o} shopSlug={shopSlug} />
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {missed.length > 0 ? (
+        <section aria-labelledby="missed-title">
+          <h2 id="missed-title" className="font-heading text-xl font-extrabold text-ink">
+            {t('shopMissed')} <span className="text-muted tabular-nums">({missed.length})</span>
+          </h2>
+          <p className="mt-1 text-sm text-muted">{t('shopMissedNote')}</p>
+          <ul className="mt-3 grid gap-3 nav:grid-cols-2">
+            {missed.map((o) => (
+              <li key={o.code} className={portalCard}>
+                <OrderLines order={o} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      <section aria-labelledby="delivered-title">
+        <h2 id="delivered-title" className="font-heading text-xl font-extrabold text-ink">
+          {t('shopDelivered')} <span className="text-muted tabular-nums">({delivered.length})</span>
+        </h2>
+        {delivered.length === 0 ? (
+          <p className="mt-3 text-sm text-muted">{t('shopDeliveredNone')}</p>
+        ) : (
+          <ul className="mt-3 grid gap-3 nav:grid-cols-2">
+            {delivered.map((o) => (
+              <li key={o.code} className={portalCard}>
+                <OrderLines order={o} showBusiness />
               </li>
             ))}
           </ul>

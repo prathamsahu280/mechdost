@@ -64,7 +64,14 @@ export function ApplicationStatus({ code }: { code: string }) {
           <StatusTimeline
             label={t('statusLabel')}
             steps={steps}
-            current={app.rejected ? app.stage + 1 : app.stage}
+            // The last step reached reads as done, not "in progress" (lifecycle QA 2026-11-14, 8).
+            current={
+              app.rejected
+                ? app.stage + 1
+                : app.stage >= APPLICATION_STAGES.length - 1
+                  ? steps.length
+                  : app.stage
+            }
             currentLabel={t('current')}
           />
         </div>
@@ -95,9 +102,11 @@ export function ApplicationStatus({ code }: { code: string }) {
           </p>
         ) : null}
         <p className="text-muted">PIN {app.pincode}</p>
-        <p data-user-content className="rounded-lg bg-surface-alt p-3 text-muted">
-          {app.details}
-        </p>
+        {app.details.trim() ? (
+          <p data-user-content className="rounded-lg bg-surface-alt p-3 text-muted">
+            {app.details}
+          </p>
+        ) : null}
         <p className="text-[11px] text-muted">{demo('note')}</p>
       </aside>
     </div>

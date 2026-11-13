@@ -116,3 +116,16 @@ export function CompareRemove({
     </button>
   );
 }
+
+/**
+ * `/compare` opened without a list (a bookmark, the browser's back button): open the comparison saved in this
+ * browser instead of "Pick products" (QA 2026-11-14, U8). Renders nothing.
+ */
+export function OpenSavedComparison({ prefix }: { prefix: string }) {
+  const router = useRouter();
+  useEffect(() => {
+    const saved = readCompare().slugs;
+    if (saved.length > 0) router.replace(prefix + compareHref(saved));
+  }, [prefix, router]);
+  return null;
+}

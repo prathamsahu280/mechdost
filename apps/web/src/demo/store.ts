@@ -830,7 +830,13 @@ export function routingState(order: DemoOrder, now = Date.now()): RoutingState {
   if (order.rejection) return 'rejected';
   if (order.stage >= 2) return 'confirmed';
   if (!order.shop) return 'needs_routing';
-  if (order.shop.status === 'offered' && new Date(order.shop.expiresAt).getTime() < now) return 'expired';
+  // An open offer lapses when its time runs out, or at once when the shop is paused or suspended meanwhile (it
+  // stayed stuck until the timer ended: lifecycle QA 2026-11-14, finding 3).
+  if (
+    order.shop.status === 'offered' &&
+    (new Date(order.shop.expiresAt).getTime() < now || !takesNewWork('shop', order.shop.slug))
+  )
+    return 'expired';
   return 'awaiting_shop';
 }
 
@@ -904,8 +910,10 @@ export const isClosed = (o: DemoOrder) => Boolean(o.rejection ?? o.cancellation)
 
 /** Admin rejects an unfulfillable order with a reason code and a message to the customer (same rules as the API). */
 export function rejectOrder(code: string, message: string, reasonCode: OrderRejectReason): boolean {
+  // The reason code carries the customer's explanation (shown in their language); the note is optional extra
+  // text (QA 2026-11-14, B1: the admin's English default reached Hindi customers).
   const clean = message.trim().slice(0, 500);
-  if (clean.length < 10 || !ORDER_REJECT_REASONS.includes(reasonCode)) return false;
+  if (!ORDER_REJECT_REASONS.includes(reasonCode)) return false;
   return updateOrder(code, (o) => {
     const state = routingState(o);
     if (state === 'confirmed' || state === 'rejected' || state === 'cancelled') return null;

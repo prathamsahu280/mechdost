@@ -593,7 +593,7 @@
     "detail_confirmed": "The shop accepted your order.",
     "detail_packed": "Your items are packed.",
     "detail_shipped": "Your order is on its way. Give your delivery code to the delivery person when you receive it.",
-    "detail_delivered": "Delivered and confirmed with your code. Rate your experience in your account.",
+    "detail_delivered": "Delivered and confirmed with your code. Rate the products below.",
     "current": "Current step",
     "done": "Done",
     "help": "Need help? WhatsApp us with your order number.",
@@ -632,9 +632,19 @@
     "gstInvoiceFor": "GST invoice for <name>{business}</name> ({gstin})",
     "cancelViaSupport": "To cancel this order, contact support.",
     "cancelViaSupportLink": "Contact support",
-    "detail_delivered_support": "Delivered and confirmed by MechDost support. Rate your experience in your account.",
+    "detail_delivered_support": "Delivered and confirmed by MechDost support. Rate the products below.",
     "reasonChoose": "Choose a reason",
-    "reasonRequired": "Choose a reason first."
+    "reasonRequired": "Choose a reason first.",
+    "rateTitle": "How was it?",
+    "rateProduct": "Rate {product}",
+    "rejectedBecause_no_stock_nearby": "No shop near you has these products in stock right now.",
+    "rejectedBecause_all_shops_declined": "The shops near you could not take this order right now.",
+    "rejectedBecause_unserviceable_address": "We can't deliver to this address yet.",
+    "rejectedBecause_suspected_fraud": "We couldn't confirm this order. Call support at 7978776551 if this is a mistake.",
+    "rejectedBecause_pricing_error": "The price shown was wrong, so we could not accept the order.",
+    "rejectedBecause_other": "We can't fulfil this order right now.",
+    "rejectedCod": "This was cash on delivery, so nothing was charged.",
+    "rejectedNote": "Note from MechDost:"
   },
   "finder": {
     "title": "Where is your vehicle?",
@@ -745,7 +755,9 @@
     "cancelReason_other": "Other reason",
     "current": "Current step",
     "reasonChoose": "Choose a reason",
-    "reasonRequired": "Choose a reason first."
+    "reasonRequired": "Choose a reason first.",
+    "declinedFinding": "{workshop} can't take this request. MechDost is finding another workshop near you.",
+    "reassignedTo": "{previous} couldn't take it, so MechDost passed your request to {workshop}."
   },
   "demo": {
     "controls": "Demo controls",
@@ -1079,7 +1091,9 @@
     "securityCheck": "Security check",
     "securityCheckLead": "Please complete the security check above the button.",
     "sendingCode": "Sending code…",
-    "sendingLink": "Sending…"
+    "sendingLink": "Sending…",
+    "alreadySignedIn": "You're signed in as {name}. Sign in below only to switch accounts.",
+    "goToAccount": "Go to your account"
   },
   "account": {
     "navLabel": "Account sections",
@@ -1091,7 +1105,7 @@
     "nav_addresses": "Addresses",
     "nav_profile": "Profile",
     "signedOutTitle": "Sign in to see your account",
-    "signedOutBody": "Orders, service requests, vehicles and addresses live here. Sign in with your mobile number — no password.",
+    "signedOutBody": "Orders, service requests, vehicles and addresses live here. Sign in with your mobile number or email and your password.",
     "signIn": "Sign in",
     "deviceActivity": "On this device",
     "partnerTitle": "You are signed in as {role}",
@@ -1185,7 +1199,8 @@
     "verifyEmailSending": "Sending…",
     "verifyEmailSent": "Sent. Check your inbox and spam folder.",
     "verifyEmailFailed": "Couldn't send the link. Try again in a few minutes.",
-    "verifyEmailDone": "Email verified. You're all set to order."
+    "verifyEmailDone": "Email verified. You're all set to order.",
+    "navWaiting": "{count} waiting for you"
   },
   "portal": {
     "guardTitle": "Sign in to continue",
@@ -1235,8 +1250,7 @@
     "expired": "No answer from {shop} — reroute or reject",
     "acceptedBy": "Accepted by {shop}",
     "reject": "Reject with a message",
-    "rejectMessage": "Message to the customer",
-    "rejectDefault": "We're sorry — we can't fulfil this order in Raipur right now. Any payment is refunded within 5–7 days.",
+    "rejectMessage": "Message to the customer (optional, in their language)",
     "rejectSend": "Reject order",
     "rejectedWith": "Rejected: {message}",
     "openOrder": "Open order",
@@ -1629,7 +1643,17 @@
     "rules_saved": "Order rules saved",
     "rules_saveFailed": "Not saved: this browser is not saving data.",
     "reasonChoose": "Choose a reason",
-    "reasonRequired": "Choose a reason first."
+    "reasonRequired": "Choose a reason first.",
+    "noShopCanTake": "No shop that stocks these products can take it now. Reject it with a message to the customer, or wait for a shop to come back.",
+    "aboveList": "Above the list price ({price}). Check before sending.",
+    "queue_delivered": "Delivered",
+    "shopDelivered": "Delivered",
+    "shopDeliveredNone": "No delivered orders yet.",
+    "shopMissed": "Missed offers",
+    "shopMissedNote": "These offers ran out before you answered and went back to MechDost. Answer new offers within the timer.",
+    "kpi_support": "Support requests to answer",
+    "kpi_priceRequests": "Price changes to approve",
+    "coverageNone": "Stocks none of these categories: check with the shop first"
   },
   "policies": {
     "returns": {

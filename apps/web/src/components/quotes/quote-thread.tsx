@@ -392,10 +392,12 @@ function Chat({ quote, closed }: { quote: DemoQuote; closed: boolean }) {
             }}
             className="min-h-11 flex-1 resize-none rounded-input border border-input-border bg-surface px-3 py-2.5 text-[15px] text-ink placeholder:text-muted"
           />
+          {/* Nothing to send yet: the button says so by being off (QA 2026-11-14, crawler F11). */}
           <button
             type="submit"
             aria-label={t('send')}
-            className="press inline-flex size-11 shrink-0 items-center justify-center rounded-button bg-accent-button text-white hover:bg-accent-button-hover"
+            disabled={!draft.trim()}
+            className="press inline-flex size-11 shrink-0 items-center justify-center rounded-button bg-accent-button text-white hover:bg-accent-button-hover disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Send aria-hidden="true" className="size-4" />
           </button>

@@ -15,12 +15,14 @@ import {
   setDefaultAddress,
   updateProfile,
   useSession,
+  useSessionBlocked,
   type DemoAccount,
   type DemoVehicle,
   type Fuel,
 } from '@/demo/session';
 import { VEHICLE_ICON, VEHICLE_LABEL_KEY, VEHICLE_TYPES } from '@mechdost/shared/vehicles';
 import { CoinsSection } from './coins-section';
+import { useTickets } from '@/demo/support';
 import { SupportSection } from './support-section';
 import { ORDER_STAGES, REQUEST_STAGES, useHydrated, useOrders, useQuotes, useRequests } from '@/demo/store';
 import { AUTH_MODE } from '@/lib/auth/mode';
@@ -66,6 +68,7 @@ export function AccountArea({ section }: { section: AccountSection }) {
   const auth = useTranslations('auth');
   const hydrated = useHydrated();
   const session = useSession();
+  const blocked = useSessionBlocked();
   const prefix = usePrefix();
 
   if (!hydrated) return <div className="skeleton h-96 rounded-card" aria-hidden="true" />;
@@ -76,7 +79,13 @@ export function AccountArea({ section }: { section: AccountSection }) {
         <div className={`${card} flex flex-wrap items-center justify-between gap-4`}>
           <div className="max-w-xl">
             <h2 className="font-heading text-xl font-extrabold text-ink">{t('signedOutTitle')}</h2>
-            <p className="mt-1 text-sm text-muted">{t('signedOutBody')}</p>
+            {blocked ? (
+              <p role="alert" className="mt-1 text-sm font-bold text-warning">
+                {auth('blocked')}
+              </p>
+            ) : (
+              <p className="mt-1 text-sm text-muted">{t('signedOutBody')}</p>
+            )}
           </div>
           <Link
             href={`${prefix}/login?next=${encodeURIComponent(`${prefix}/account${section === 'overview' ? '' : `/${section}`}`)}`}
@@ -144,6 +153,14 @@ function SectionNav({ current }: { current: AccountSection }) {
   const bar = useCenterCurrent<HTMLElement>(current);
   const t = useTranslations('account');
   const prefix = usePrefix();
+  // What waits for the customer: a support reply to answer, a quote offer to decide (QA 2026-11-14, U4).
+  const session = useSession();
+  const tickets = useTickets();
+  const quotes = useQuotes();
+  const waiting: Partial<Record<AccountSection, number>> = {
+    support: tickets.filter((x) => x.accountId === session?.id && x.status === 'awaiting_customer').length,
+    quotes: quotes.filter((q) => q.status === 'offered').length,
+  };
   return (
     <nav
       ref={bar}
@@ -158,7 +175,9 @@ function SectionNav({ current }: { current: AccountSection }) {
               <Link
                 href={`${prefix}/account${s === 'overview' ? '' : `/${s}`}`}
                 aria-current={active ? 'page' : undefined}
-                className={`press flex min-h-11 items-center gap-2 rounded-pill px-4 text-sm font-bold whitespace-nowrap nav:rounded-button ${
+                // `relative` keeps the badge's screen-reader text inside the link: positioned against the page, it
+                // widened the page on phones (QA 2026-11-14: the support e2e clicked a moving target).
+                className={`press relative flex min-h-11 items-center gap-2 rounded-pill px-4 text-sm font-bold whitespace-nowrap nav:rounded-button ${
                   active ? 'bg-accent-soft text-accent-soft-text' : 'text-ink hover:bg-pill'
                 }`}
               >
@@ -166,6 +185,12 @@ function SectionNav({ current }: { current: AccountSection }) {
                   {SECTION_EMOJI[s]}
                 </span>
                 {t(`nav_${s}`)}
+                {waiting[s] ? (
+                  <span className="rounded-full bg-accent-button px-1.5 text-xs font-extrabold text-white tabular-nums">
+                    <span aria-hidden="true">{waiting[s]}</span>
+                    <span className="sr-only">{t('navWaiting', { count: waiting[s] })}</span>
+                  </span>
+                ) : null}
               </Link>
             </li>
           );

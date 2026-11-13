@@ -8,6 +8,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
 import { restoreCoinsForOrder } from '@/demo/coins';
 import { findShop, rankShops } from '@/demo/shops';
+import { useSession } from '@/demo/session';
 import {
   advanceOrder,
   cancelDemoOrder,
@@ -35,6 +36,10 @@ export function OrderView({ code }: { code: string }) {
   const isNew = useSearchParams().get('new') === '1';
   const order = useOrders().find((o) => o.code === code);
   const hydrated = useHydrated();
+  // The delivery code proves the customer has the parcel: shops, workshops and staff never see it (QA 2026-11-14,
+  // U11). Guests who placed the order on this device (no account) still do.
+  const viewer = useSession();
+  const maySeeCode = viewer === null || viewer.role === 'customer';
 
   if (!hydrated) return <div className="skeleton h-80 rounded-card" aria-hidden="true" />;
   if (!order) {
@@ -92,9 +97,19 @@ export function OrderView({ code }: { code: string }) {
           ) : order.rejection ? (
             <div role="status" className="mt-5 rounded-tile bg-warning-bg p-5 text-warning">
               <p className="font-heading font-bold">{t('rejectedTitle')}</p>
-              <p data-user-content className="mt-1 text-sm">
-                {order.rejection.message}
-              </p>
+              {order.rejection.reasonCode ? (
+                <p className="mt-1 text-sm">
+                  {t(`rejectedBecause_${order.rejection.reasonCode}`)} {t('rejectedCod')}
+                </p>
+              ) : null}
+              {order.rejection.message ? (
+                <p className="mt-1 text-sm">
+                  {order.rejection.reasonCode ? (
+                    <span className="font-bold">{t('rejectedNote')} </span>
+                  ) : null}
+                  <span data-user-content>{order.rejection.message}</span>
+                </p>
+              ) : null}
             </div>
           ) : (
             <div className="mt-5">
@@ -106,6 +121,27 @@ export function OrderView({ code }: { code: string }) {
               />
             </div>
           )}
+          {/* Delivered: rate what was bought, right here (QA 2026-11-14, U15: the copy pointed to the account,
+              which has no reviews). */}
+          {maySeeCode && !isClosed(order) && order.stage === ORDER_STAGES.length - 1 ? (
+            <section aria-labelledby="rate-title" className="mt-5">
+              <h3 id="rate-title" className="font-heading font-extrabold text-ink">
+                {t('rateTitle')}
+              </h3>
+              <ul className="mt-2 flex flex-wrap gap-2">
+                {order.lines.map((l) => (
+                  <li key={l.slug}>
+                    <Link
+                      href={`${locale === 'hi' ? '/hi' : ''}/shop/${l.slug}#reviews-${l.slug}`}
+                      className="press inline-flex min-h-11 items-center rounded-pill border border-line-input px-4 text-sm font-bold text-ink hover:border-ink"
+                    >
+                      {t('rateProduct', { product: productNameFor(l.slug, l.name, locale) })}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
           {order.shop?.status === 'accepted' ? (
             <p className="mt-4 text-sm font-bold text-ink">
               <span aria-hidden="true">🏪 </span>
@@ -118,7 +154,7 @@ export function OrderView({ code }: { code: string }) {
               })}
             </p>
           ) : null}
-          {order.delivery && !order.delivery.confirmedAt && !isClosed(order) ? (
+          {maySeeCode && order.delivery && !order.delivery.confirmedAt && !isClosed(order) ? (
             <section
               aria-labelledby="delivery-code-title"
               className="mt-5 rounded-tile border-2 border-accent-button bg-accent-soft p-5"

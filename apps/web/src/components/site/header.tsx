@@ -13,15 +13,20 @@ import { localePath } from '@/lib/locale-path';
 export function BrandMark() {
   const t = useTranslations('common');
   return (
-    <LocalLink href="/" className="group inline-flex items-center gap-2" data-track="brand_home">
+    <LocalLink
+      href="/"
+      className="group inline-flex items-center gap-1.5 min-[380px]:gap-2"
+      data-track="brand_home"
+    >
       <span
         aria-hidden="true"
-        className="font-heading text-[34px] leading-none font-extrabold text-accent tab:text-[40px]"
+        className="font-heading text-[30px] leading-none font-extrabold text-accent min-[380px]:text-[34px] tab:text-[40px]"
       >
         m<span className="align-top text-[22px] tab:text-[26px]">↗</span>
       </span>
       <span className="flex flex-col">
-        <span className="font-heading text-[21px] leading-none font-extrabold tracking-[-0.04em] text-ink tab:text-[24px]">
+        {/* A little smaller under 380 px so logo, language, account and cart fit a 360 px phone (QA 2026-11-14). */}
+        <span className="font-heading text-[19px] leading-none font-extrabold tracking-[-0.04em] text-ink min-[380px]:text-[21px] tab:text-[24px]">
           {t('brand')}
         </span>
         <span className="eyebrow mt-1.5 hidden text-[7px] whitespace-nowrap text-ink sm:block tab:text-[8px]">

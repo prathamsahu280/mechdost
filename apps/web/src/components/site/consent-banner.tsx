@@ -70,8 +70,9 @@ export function ConsentBanner({ copy }: { copy: ConsentCopy }) {
     saveConsent(analytics);
     setReopened(false);
   };
+  // Compact on phones: the full notice stays, but it must not hide the page's main action (QA 2026-11-14, P5).
   const button =
-    'press inline-flex min-h-11 flex-1 items-center justify-center rounded-button border border-ink px-4 text-sm font-bold text-ink hover:bg-surface-alt';
+    'press inline-flex min-h-11 flex-1 items-center justify-center rounded-button border border-ink px-3 text-[13px] font-bold text-ink hover:bg-surface-alt nav:px-4 nav:text-sm';
 
   return (
     <section
@@ -79,16 +80,16 @@ export function ConsentBanner({ copy }: { copy: ConsentCopy }) {
       tabIndex={-1}
       aria-label={copy.label}
       data-testid="consent-banner"
-      className="fixed inset-x-3 z-50 rounded-card border border-line bg-surface p-4 shadow-dialog outline-none bottom-[calc(76px+env(safe-area-inset-bottom))] nav:inset-x-auto nav:bottom-6 nav:left-6 nav:max-w-md"
+      className="fixed inset-x-2 z-50 rounded-card border border-line bg-surface p-3 shadow-dialog nav:p-4 outline-none bottom-[calc(76px+env(safe-area-inset-bottom))] nav:inset-x-auto nav:bottom-6 nav:left-6 nav:max-w-md"
     >
-      <h2 className="font-heading text-[15px] font-extrabold text-ink">{copy.title}</h2>
-      <p className="mt-1.5 text-sm leading-relaxed text-muted">
+      <h2 className="font-heading text-sm font-extrabold text-ink nav:text-[15px]">{copy.title}</h2>
+      <p className="mt-1 text-[13px] leading-snug text-muted nav:mt-1.5 nav:text-sm nav:leading-relaxed">
         {copy.body}{' '}
         <a href={copy.policyHref} className="font-bold text-ink underline underline-offset-4">
           {copy.policy}
         </a>
       </p>
-      <div className="mt-3 flex gap-2">
+      <div className="mt-2 flex gap-2 nav:mt-3">
         <button
           type="button"
           className={button}

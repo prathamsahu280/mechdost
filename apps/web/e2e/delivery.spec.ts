@@ -52,12 +52,23 @@ async function orderOutForDelivery(page: Page): Promise<string> {
   return code;
 }
 
+/**
+ * Reads the code the way it reaches the shop in real life: from the customer. The shop's own account never sees
+ * it on the order page (QA 2026-11-14, U11): sign out (the guest placed the order on this device), read it, and
+ * sign the shop back in.
+ */
 async function deliveryCodeOf(page: Page, order: string): Promise<string> {
+  await page.goto('/partner/shop');
+  await signOut(page);
   await page.goto(`/orders/${order}`);
   const box = page.getByRole('region', { name: /Your delivery code/ });
   await expect(box).toBeVisible();
   const text = (await box.locator('p').first().innerText()).trim();
   expect(text).toMatch(/^\d{4}$/);
+  await expect(
+    page.getByText('Give this code to the delivery person only after', { exact: false }),
+  ).toBeVisible();
+  await signIn(page, '9000000001', '/partner/shop');
   return text;
 }
 
@@ -69,9 +80,6 @@ test.describe('proof of delivery', () => {
     await expect(card.getByRole('button', { name: 'Mark delivered' })).toHaveCount(0);
 
     const code = await deliveryCodeOf(page, order);
-    await expect(
-      page.getByText('Give this code to the delivery person only after', { exact: false }),
-    ).toBeVisible();
     await page.goto('/partner/shop');
     const field = card.getByLabel("Customer's delivery code");
     await field.fill(code === '0000' ? '1111' : '0000');
@@ -113,6 +121,7 @@ test.describe('proof of delivery', () => {
     await expect(adminCard.getByText(/without the code: Customer phone was off/)).toBeVisible();
 
     await page.goto(`/orders/${order}`);
-    await expect(page.getByText(/confirmed by MechDost support/)).toBeVisible();
+    // The timeline step and the line below both say so now (QA 2026-11-14, B4): check the dated line.
+    await expect(page.getByText(/Delivered on .*, confirmed by MechDost support\./)).toBeVisible();
   });
 });

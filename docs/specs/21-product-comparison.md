@@ -14,7 +14,7 @@ A rider choosing between engine oils (or batteries, tyres) sees what each costs,
 ## Flows
 
 1. **Pick:** the "Compare" button on a product card (shop list and related products, not the home page) or on the product page. One category at a time, at most 4. Another category shows "You can compare one category at a time." with **Start a new comparison**; a fifth product shows "You can compare up to 4 products. Remove one first."
-2. **Tray:** "Compare (n)" and "Clear" at the bottom left (above the tab bar on phones, clear of the assistant button); only on shop pages and only while something is picked.
+2. **Tray:** "Compare (n)" and "Clear" at the bottom left (above the tab bar on phones, clear of the assistant button); on every page while something is picked, except `/compare` and `/checkout` (revised 2026-11-14; see "Layout revision" below).
 3. **Compare page `/compare?p=a,b,c`:** server-rendered from the URL, so the link can be shared. The page:
    - keeps valid, distinct slugs, at most 4;
    - keeps only the first product's category and notes when anything was left out;
@@ -140,7 +140,7 @@ A rider choosing between engine oils (or batteries, tyres) sees what each costs,
 
 ## Layout revision (2026-11-13, user UI review)
 
-- The compare tray floats on every page while the list is not empty (locale layout), never on `/compare` itself.
+- The compare tray floats on every page while the list is not empty (locale layout), never on `/compare` itself or at `/checkout` (it covered the form). It steps aside while the privacy banner is open and the page keeps room for it at the end.
 - `/compare`: a sticky product strip (name, price, "Lowest price", remove) under the site header; a summary row (artwork, rating, saving, add to cart); groups of rows. Phones: the row label sits on its own line above the values and products get half the width each (three or four swipe sideways; the strip follows). Tablets and up: a sticky label column, product columns up to 22rem. The page scrolls; there is no scroll box inside it.
 - Toolbar: "Only differences", "Add a product (n of 4)" (to the same category) and "Back to {category}". One product is shown (not the empty state), so removing down to one keeps it.
 - Product cards: "Compare" sits beside "Add to cart".

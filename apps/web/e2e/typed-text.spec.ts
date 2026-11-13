@@ -43,7 +43,9 @@ const FIELDS: [string, string][] = [
   ['/shop', 'input[type="search"]'],
   ['/workshops', '#finder-pin'],
   ['/login', '#login-identifier'],
-  ['/partners/apply/seller', '#apply-name'],
+  // The seller application has its own form since 2026-11-13 (`seller-*` ids); other kinds keep `apply-*`.
+  ['/partners/apply/seller', '#seller-name'],
+  ['/partners/apply/garage', '#apply-name'],
   ['/quotes/new', '#quote-name'],
 ];
 

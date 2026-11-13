@@ -291,6 +291,18 @@ User shared Razorpay **test** keys and asked to "see how we have the stuff for r
 - An online order holds stock for 30 minutes (admin setting) and is never routed before it is paid.
 - A valid checkout signature alone never marks an order paid: the server fetches the payment from Razorpay first (Razorpay docs).
 
+## 2026-11-14 — Behaviour changes from the overnight QA (all with regression tests in `e2e/qa-regressions.spec.ts`)
+
+- **Reason codes are always chosen, never preselected** (shop decline, admin reject/cancel, customer order and booking cancel): rule 16 — a default code nobody picked is bad data.
+- **Order rejection:** the customer sees the reason code's sentence in their language, plus "nothing was charged" for cash on delivery; the admin's message is an optional note (no English default text).
+- **Delivery code:** shown only to the customer (or the guest who placed the order on that device), never to shops, workshops or staff.
+- **Offers:** an open offer lapses at once when the shop is paused or suspended; routing never suggests a shop that stocks none of the order's categories (the admin is told when no shop can take it); shops see their missed offers; delivered orders get their own list (admin queue "Delivered", shop portal "Delivered").
+- **Floating UI:** the compare tray and the shoppers' assistant stay out of `/admin` and `/partner`; the tray also stays out of `/checkout` and steps aside for the privacy banner.
+- **Checkout:** prefilled from the signed-in customer (name, phone, default address and PIN); a known COD block is shown on load and ordering is disabled; field errors clear as the field is edited.
+- **Signals:** admin Overview tiles for support requests to answer and price changes to approve; the customer's section bar shows replies and quote offers waiting for them.
+- **Copy:** the account page no longer says "no password"; signed-in visitors on `/login` are told and offered the way back; `/support` redirects to the account's support section; footer "Account" instead of "Sign in".
+- **Open, needs a design:** an approved or invited seller cannot sign in to their shop (demo and API: nothing writes `shop_users`) — P0 for the next session.
+
 ## 2026-11-13 — Compare tray on every page; language switch is a full page load (user UI review)
 
 - **Compare tray:** mounted in the locale layout (outside the animated page wrapper), not only under `/shop` — user: "if something is on the list for the compare then compare should be a floating button". Hides itself on `/compare`. Replaces the 2026-11-13 "shop pages only, never the root layout (JS budget)" note: every page ships only a few-hundred-byte `CompareTrayLoader`, which loads the tray and its store once the list holds something. Budget kept (`measure-js`, all routes < 180 KB; `/workshops` 176.5 KB after its map component also moved to a lazy chunk).

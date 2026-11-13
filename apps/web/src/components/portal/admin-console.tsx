@@ -15,7 +15,8 @@ import { restoreCoinsForOrder } from '@/demo/coins';
 import { useSession } from '@/demo/session';
 import { localizeShop, productNameFor, shopNameFor, workshopNameFor } from '@/demo/i18n/localize';
 import { findShop, rankShops } from '@/demo/shops';
-import { shopsOffSale } from '@/demo/price-requests';
+import { shopsOffSale, usePendingPriceRequests } from '@/demo/price-requests';
+import { useTickets } from '@/demo/support';
 import {
   APPLICATION_STAGES,
   ORDER_STAGES,
@@ -193,6 +194,9 @@ function Overview() {
   ).length;
   const reviews = useReviews().filter((r) => r.status === 'pending').length;
   const services = useRequests().length;
+  // Waiting work that had no tile (QA 2026-11-14, U4).
+  const support = useTickets().filter((x) => x.status === 'open' || x.status === 'in_review').length;
+  const priceRequests = usePendingPriceRequests().length;
 
   const tiles: { label: string; value: string; href: AdminSection; tone?: 'alert' }[] = [
     {
@@ -216,6 +220,8 @@ function Overview() {
     { label: t('kpi_services'), value: String(services), href: 'services' },
     { label: t('kpi_applications'), value: String(applications), href: 'applications' },
     { label: t('kpi_reviews'), value: String(reviews), href: 'reviews' },
+    { label: t('kpi_support'), value: String(support), href: 'support', tone: 'alert' },
+    { label: t('kpi_priceRequests'), value: String(priceRequests), href: 'partners', tone: 'alert' },
   ];
 
   return (
@@ -251,7 +257,15 @@ function OrderRouting() {
   const groups: [string, DemoOrder[]][] = [
     [t('queue_needs'), orders.filter((o) => ['needs_routing', 'expired'].includes(routingState(o, now)))],
     [t('queue_awaiting'), orders.filter((o) => routingState(o, now) === 'awaiting_shop')],
-    [t('queue_done'), orders.filter((o) => routingState(o, now) === 'confirmed')],
+    // Delivered orders have their own list (lifecycle QA 2026-11-14, 5: they stayed under "in delivery").
+    [
+      t('queue_done'),
+      orders.filter((o) => routingState(o, now) === 'confirmed' && o.stage < ORDER_STAGES.length - 1),
+    ],
+    [
+      t('queue_delivered'),
+      orders.filter((o) => routingState(o, now) === 'confirmed' && o.stage === ORDER_STAGES.length - 1),
+    ],
     [t('queue_rejected'), orders.filter((o) => routingState(o, now) === 'rejected')],
     [t('queue_cancelled'), orders.filter((o) => routingState(o, now) === 'cancelled')],
   ];
@@ -424,13 +438,15 @@ function RoutingCard({ order, now }: { order: DemoOrder; now: number }) {
         </div>
         <Link
           href={`${prefix}/orders/${order.code}`}
-          className="text-sm font-bold text-accent-soft-text underline-offset-4 hover:underline"
+          className="inline-flex min-h-11 items-center text-sm font-bold text-accent-soft-text underline-offset-4 hover:underline"
         >
           {t('openOrder')}
         </Link>
       </div>
       <p className="mt-2 text-sm text-ink">
-        {order.lines.map((l) => `${productNameFor(l.slug, l.name, locale)} × ${String(l.qty)}`).join(', ')}
+        {order.lines
+          .map((l) => `${l.brand} ${productNameFor(l.slug, l.name, locale)} × ${String(l.qty)}`)
+          .join(', ')}
       </p>
 
       {(order.declined ?? []).map((d) => (
@@ -474,7 +490,11 @@ function RoutingCard({ order, now }: { order: DemoOrder; now: number }) {
       ) : null}
       {state === 'rejected' && order.rejection ? (
         <p data-user-content className="mt-3 rounded-lg bg-pill p-3 text-sm text-muted">
-          {t('rejectedWith', { message: order.rejection.message })}
+          {t('rejectedWith', {
+            message:
+              order.rejection.message ||
+              (order.rejection.reasonCode ? ord(`rejectReason_${order.rejection.reasonCode}`) : ''),
+          })}
         </p>
       ) : null}
       {state === 'cancelled' && order.cancellation ? (
@@ -489,6 +509,9 @@ function RoutingCard({ order, now }: { order: DemoOrder; now: number }) {
       {canRoute ? (
         <div className="mt-4">
           <h3 className="text-xs font-extrabold text-muted">{t('suggestions')}</h3>
+          {suggestions.length === 0 ? (
+            <p className="mt-2 text-sm font-bold text-warning">{t('noShopCanTake')}</p>
+          ) : null}
           <ul className="mt-2 space-y-2">
             {suggestions.map((s, i) => (
               <li
@@ -504,10 +527,14 @@ function RoutingCard({ order, now }: { order: DemoOrder; now: number }) {
                   ) : null}
                   <span className="block text-xs text-muted">
                     {s.area} ·{' '}
-                    {t('coverage', {
-                      n: categories.filter((c) => s.categories.includes(c)).length,
-                      total: categories.length,
-                    })}{' '}
+                    {categories.length > 0 && !categories.some((c) => s.categories.includes(c)) ? (
+                      <span className="font-bold text-warning">{t('coverageNone')}</span>
+                    ) : (
+                      t('coverage', {
+                        n: categories.filter((c) => s.categories.includes(c)).length,
+                        total: categories.length,
+                      })
+                    )}{' '}
                     · {t('acceptance', { rate: s.acceptance, minutes: s.acceptMinutes })}
                   </span>
                 </span>
@@ -620,7 +647,6 @@ function RoutingCard({ order, now }: { order: DemoOrder; now: number }) {
               name="message"
               rows={3}
               maxLength={500}
-              defaultValue={t('rejectDefault')}
               className={`${portalField} py-2`}
             />
             <div className="flex flex-wrap gap-2">
@@ -992,6 +1018,12 @@ function QuoteNegotiation({ quote }: { quote: DemoQuote }) {
                 className={portalField}
               />
               {errorText(`price-${l.slug}`)}
+              {/* A warning, not a block: a higher price can be right, but it should be a choice (QA U14). */}
+              {unit(l.slug) > l.listPaise ? (
+                <p role="status" className="mt-1 text-xs font-bold text-warning">
+                  {t('aboveList', { price: formatPrice(l.listPaise) })}
+                </p>
+              ) : null}
               <p id={`price-${l.slug}-hint`} className="mt-1 text-xs text-muted">
                 {t('listPrice', { price: formatPrice(l.listPaise), qty: l.qty })}
               </p>

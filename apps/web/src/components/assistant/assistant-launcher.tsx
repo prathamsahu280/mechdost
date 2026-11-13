@@ -15,6 +15,9 @@ export function AssistantLauncher({ copy }: { copy: AssistantCopy }) {
   const [loaded, setLoaded] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const pathname = usePathname();
+  // The assistant helps shoppers; in the partner and admin portals it covered working controls (QA 2026-11-14,
+  // U10 / crawler F9). Hooks above run on every render; only the output stops here.
+  if (/^(\/(en|hi))?\/(admin|partner)(\/|$)/.test(pathname)) return null;
 
   return (
     <>

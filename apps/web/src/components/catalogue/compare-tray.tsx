@@ -25,8 +25,15 @@ export function CompareTray({
 }) {
   const list = useCompare();
   const pathname = usePathname();
-  // Not on the comparison itself: the table is what the tray would open.
-  if (list.slugs.length === 0 || /\/compare\/?$/.test(pathname)) return null;
+  // Not on the comparison itself (the table is what the tray would open), nor at checkout, where it covered the
+  // form (QA 2026-11-14, crawler F8).
+  // Nor in the admin and partner portals, where it covered the side navigation (lifecycle QA 2026-11-14, 6).
+  if (
+    list.slugs.length === 0 ||
+    /\/(compare|checkout)\/?$/.test(pathname) ||
+    /^(\/(en|hi))?\/(admin|partner)(\/|$)/.test(pathname)
+  )
+    return null;
   return (
     <aside
       data-compare-tray=""

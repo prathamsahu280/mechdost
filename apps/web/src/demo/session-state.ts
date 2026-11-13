@@ -199,6 +199,19 @@ export function sessionSnapshot(): DemoAccount | null {
   return value;
 }
 
+/**
+ * The stored session belongs to a fully blocked customer (who therefore counts as signed out): pages say why,
+ * instead of looking like a silent sign-out (QA 2026-11-14, crawler F6).
+ */
+export function sessionBlocked(): boolean {
+  sessionSnapshot();
+  return lastSession?.blocked ?? false;
+}
+
+export function useSessionBlocked(): boolean {
+  return useSyncExternalStore(demoStorage.subscribe, sessionBlocked, () => false);
+}
+
 /** Signed-in account, or null. Always null during server render and hydration. */
 export function useSession(): DemoAccount | null {
   return useSyncExternalStore(demoStorage.subscribe, sessionSnapshot, () => null);

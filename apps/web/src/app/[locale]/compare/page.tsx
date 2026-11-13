@@ -2,7 +2,7 @@ import { Plus } from 'lucide-react';
 import type { Metadata } from 'next';
 import { COMPARE_MAX } from '@mechdost/shared/product-attributes';
 import { getTranslations } from 'next-intl/server';
-import { DifferencesToggle } from '@/components/catalogue/compare-islands';
+import { DifferencesToggle, OpenSavedComparison } from '@/components/catalogue/compare-islands';
 import { CompareTable } from '@/components/catalogue/compare-table';
 import { LocalLink } from '@/components/ui/local-link';
 import { Container, EmptyState } from '@/components/ui/page-intro';
@@ -74,18 +74,21 @@ export default async function ComparePage({ params, searchParams }: Props) {
       ) : null}
       <div className="mt-6">
         {items.length === 0 ? (
-          <EmptyState
-            title={t('emptyTitle')}
-            body={t('emptyBody')}
-            action={
-              <LocalLink
-                href={category ? `/shop?category=${category.slug}` : '/shop'}
-                className="press inline-flex min-h-11 items-center rounded-button bg-accent-button px-5 text-sm font-bold text-white hover:bg-accent-button-hover"
-              >
-                {t('emptyAction')}
-              </LocalLink>
-            }
-          />
+          <>
+            {requested.length === 0 ? <OpenSavedComparison prefix={prefix} /> : null}
+            <EmptyState
+              title={t('emptyTitle')}
+              body={t('emptyBody')}
+              action={
+                <LocalLink
+                  href={category ? `/shop?category=${category.slug}` : '/shop'}
+                  className="press inline-flex min-h-11 items-center rounded-button bg-accent-button px-5 text-sm font-bold text-white hover:bg-accent-button-hover"
+                >
+                  {t('emptyAction')}
+                </LocalLink>
+              }
+            />
+          </>
         ) : (
           <DifferencesToggle
             label={t('onlyDifferences')}

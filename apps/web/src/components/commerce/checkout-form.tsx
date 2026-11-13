@@ -10,7 +10,7 @@ import { AUTH_MODE } from '@/lib/auth/mode';
 import { track } from '@/lib/analytics';
 import { formatPrice } from '@/lib/format';
 import { coinBalanceOf, redeemCoins, useCoins } from '@/demo/coins';
-import { customerAllowed } from '@/demo/customer-blocks';
+import { customerAllowed, useCustomerBlocks } from '@/demo/customer-blocks';
 import { findAccount, useSession } from '@/demo/session';
 import { coinRulesFrom, useSiteSettings } from '@/demo/site-config';
 import { DEMO_CITY } from '@/demo/city';
@@ -54,6 +54,28 @@ export function CheckoutForm() {
   const session = useSession();
   const settings = useSiteSettings();
   const coinAccount = session?.role === 'customer' ? session.id : null;
+  // A signed-in customer starts from their name, number and default address (QA 2026-11-14, U6 / crawler F3:
+  // everything was empty and the PIN fixed at 492001). Guests keep the Raipur PIN hint.
+  const customer = session?.role === 'customer' ? session : null;
+  const home = customer
+    ? (customer.addresses.find((a) => a.isDefault) ?? customer.addresses[0] ?? null)
+    : null;
+  const prefill = {
+    name: customer?.name ?? '',
+    phone: customer?.phone ?? '',
+    address: home ? [home.line1, home.landmark].filter((part) => part.trim() !== '').join(', ') : '',
+    pincode: home?.pincode ?? '492001',
+  };
+  // A signed-in customer's block is known before they type anything: say so at once and stop the order
+  // (QA 2026-11-14, crawler F2: it was only shown after submitting). The typed-phone check below stays.
+  useCustomerBlocks();
+  const signedInAllowed = session ? customerAllowed(session.id) : null;
+  const knownBlock =
+    signedInAllowed && (!signedInAllowed.order || (!signedInAllowed.cod && method === 'cod'))
+      ? signedInAllowed.order
+        ? t('blockedCod')
+        : t('blockedOrders')
+      : null;
   const { balance } = useCoins(coinAccount);
   const redemption = coinRedemption(balance, subtotalPaise, coinRulesFrom(settings));
   const [useCoinsOn, setUseCoinsOn] = useState(false);
@@ -223,6 +245,8 @@ export function CheckoutForm() {
   return (
     <div className="grid gap-6 nav:grid-cols-[1fr_360px] nav:items-start">
       <form
+        // Remount once the session is known (after hydration), so the defaults below apply.
+        key={customer?.id ?? 'guest'}
         noValidate
         onSubmit={onSubmit}
         className="rounded-card border border-line-card bg-surface p-6 shadow-card"
@@ -238,7 +262,13 @@ export function CheckoutForm() {
             <label htmlFor="checkout-name" className="text-sm font-bold text-ink">
               {t('name')}
             </label>
-            <input {...field('name')} autoComplete="name" maxLength={100} className={inputClass} />
+            <input
+              {...field('name')}
+              defaultValue={prefill.name}
+              autoComplete="name"
+              maxLength={100}
+              className={inputClass}
+            />
             {errorText('name')}
           </div>
           <div>
@@ -247,6 +277,7 @@ export function CheckoutForm() {
             </label>
             <input
               {...field('phone')}
+              defaultValue={prefill.phone}
               type="tel"
               inputMode="numeric"
               autoComplete="tel-national"
@@ -262,6 +293,7 @@ export function CheckoutForm() {
             </label>
             <textarea
               {...field('address')}
+              defaultValue={prefill.address}
               rows={3}
               autoComplete="street-address"
               maxLength={500}
@@ -278,7 +310,7 @@ export function CheckoutForm() {
               inputMode="numeric"
               autoComplete="postal-code"
               maxLength={6}
-              defaultValue="492001"
+              defaultValue={prefill.pincode}
               className={inputClass}
             />
             <p className="mt-1 text-xs text-muted">{t('pincodeHint')}</p>
@@ -445,14 +477,14 @@ export function CheckoutForm() {
             ) : null}
           </p>
         ) : null}
-        {blockedNote ? (
+        {(blockedNote ?? knownBlock) ? (
           <p role="alert" className="mt-4 rounded-lg bg-warning-bg px-3 py-2 text-sm font-bold text-warning">
-            {blockedNote}
+            {blockedNote ?? knownBlock}
           </p>
         ) : null}
         <button
           type="submit"
-          disabled={submitting}
+          disabled={submitting || knownBlock !== null}
           className="press mt-5 inline-flex min-h-12 w-full items-center justify-center rounded-button bg-accent-button px-5 text-sm font-bold text-white hover:bg-accent-button-hover disabled:opacity-70 min-[600px]:w-auto"
         >
           {submitting

@@ -19,6 +19,7 @@ import { useDisclosureFocus } from '@/lib/use-disclosure-focus';
 import { formatDate, formatPrice } from '@/lib/format';
 import { StatusTimeline } from '../commerce/status-timeline';
 import { serviceNameFor, workshopNameFor } from '@/demo/i18n/localize';
+import { DEMO_WORKSHOPS } from '@/demo/workshops';
 
 /**
  * Service request status (spec 06): requested → workshop proposes slot + cost → customer accepts → vehicle
@@ -54,6 +55,17 @@ export function RequestView({ code }: { code: string }) {
   const steps = REQUEST_STAGES.map((s) => ({ key: s, title: t(`stage_${s}`), detail: t(`detail_${s}`) }));
   const proposed = request.stage === 1 && !request.cancellation;
   const workshopName = workshopNameFor(request.workshopSlug, request.workshopName, locale);
+  // A decline and a reassignment are told to the customer, not done silently (QA 2026-11-14, U7).
+  const declinedBy = request.declinedBy ?? [];
+  const waitingForAnother = !request.cancellation && declinedBy.includes(request.workshopSlug);
+  const previous = declinedBy.at(-1);
+  const previousName = previous
+    ? workshopNameFor(previous, DEMO_WORKSHOPS.find((w) => w.slug === previous)?.name ?? previous, locale)
+    : null;
+  const movedNote =
+    !request.cancellation && !waitingForAnother && previousName && request.stage === 0
+      ? t('reassignedTo', { previous: previousName, workshop: workshopName })
+      : null;
 
   return (
     <div className="grid gap-6 nav:grid-cols-[1fr_380px] nav:items-start">
@@ -69,6 +81,14 @@ export function RequestView({ code }: { code: string }) {
         ) : null}
         <section className="rounded-card border border-line-card bg-surface p-6 shadow-card">
           <h2 className="font-heading text-lg font-extrabold text-ink">{t('statusLabel')}</h2>
+          {waitingForAnother || movedNote ? (
+            <p
+              role="status"
+              className="mt-3 rounded-lg bg-warning-bg px-3 py-2 text-sm font-bold text-warning"
+            >
+              {waitingForAnother ? t('declinedFinding', { workshop: workshopName }) : movedNote}
+            </p>
+          ) : null}
           {request.cancellation ? (
             <div
               id="request-cancelled"
