@@ -1,6 +1,7 @@
 import { attributeDefs, readAttributes } from '@mechdost/shared/product-attributes';
 import { CATEGORY_SLUGS, VEHICLE_TYPES_OF_FIT, type DemoProduct } from '@/demo/catalogue';
 import { localizeProduct } from '@/demo/i18n/localize';
+import { DEMO_PRODUCT_SPECS } from '@/demo/product-specs';
 import { productRating } from '@/demo/reviews';
 import type { CardView, ProductView } from './view';
 
@@ -18,7 +19,7 @@ export function demoCard(raw: DemoProduct, locale: string): CardView {
     compatibility: p.compatibility,
     vehicleTypes: VEHICLE_TYPES_OF_FIT[p.fits],
     price: { pricePaise: p.pricePaise, mrpPaise: p.mrpPaise ?? null },
-    pack: p.netQuantity ?? null,
+    pack: DEMO_PRODUCT_SPECS[raw.slug]?.netQuantity ?? null,
     availability: p.availability,
     leadDays: p.leadDays,
     highlights: p.highlights,
@@ -39,7 +40,10 @@ export function demoProduct(raw: DemoProduct, locale: string): ProductView {
     partNumbers: [],
     shippingPaise: null,
     attributeSet,
-    attributes: attributeSet === null ? {} : readAttributes(attributeSet, raw.attributes ?? {}),
+    attributes:
+      attributeSet === null
+        ? {}
+        : readAttributes(attributeSet, DEMO_PRODUCT_SPECS[raw.slug]?.attributes ?? {}),
     warranty: null,
   };
 }

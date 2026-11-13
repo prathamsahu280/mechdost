@@ -3,9 +3,9 @@
  * items so the storefront can be presented before the catalogue API exists (spec 02, Phase 1). Indicative prices,
  * integer paise, GST-inclusive. Replaced by `GET /v1/catalogue` — never extend this file with real business data.
  */
-import type { AttrValue, NetQuantity } from '@mechdost/shared/product-attributes';
 import type { VehicleType } from '@mechdost/shared/vehicles';
-import { productSearchText } from './i18n/localize';
+// Only the product translations, not all of `./i18n/hi.ts` (JS budget: this file ships with the shop page).
+import { productSearchText } from './i18n/product-search';
 
 // Category constants live in a small module so pages that only need them do not ship the product data.
 export { CATEGORY_KEYS, CATEGORY_SLUGS, categoryFromSlug, type CategoryKey } from './categories';
@@ -40,10 +40,6 @@ export interface DemoProduct {
   leadDays: number;
   highlights: string[];
   popular?: boolean;
-  /** Typed attributes for comparison (decision 2026-11-13); only what the pack or spec states. */
-  attributes?: Readonly<Record<string, AttrValue>>;
-  /** Net quantity of the pack (unit price). */
-  netQuantity?: NetQuantity;
 }
 
 export const DEMO_PRODUCTS: readonly DemoProduct[] = [
@@ -62,8 +58,6 @@ export const DEMO_PRODUCTS: readonly DemoProduct[] = [
     leadDays: 1,
     highlights: ['Actibond molecules for engine protection', 'JASO MA2 · API SL', '900 ml pack'],
     popular: true,
-    attributes: { saeGrade: '20W40', apiClass: 'SL', jasoClass: 'MA2' },
-    netQuantity: { qty: 900, unit: 'ml' },
   },
   // Three more 2W engine oils so the demo can compare engine oils (design 2026-11-13). Indicative data.
   {
@@ -80,8 +74,6 @@ export const DEMO_PRODUCTS: readonly DemoProduct[] = [
     availability: 'in_stock',
     leadDays: 1,
     highlights: ['Semi-synthetic', 'JASO MA2 · API SM', '1 L pack'],
-    attributes: { saeGrade: '10W30', apiClass: 'SM', jasoClass: 'MA2', baseType: 'semi_synthetic' },
-    netQuantity: { qty: 1000, unit: 'ml' },
   },
   {
     slug: 'shell-advance-ax7-10w30-1l',
@@ -97,8 +89,6 @@ export const DEMO_PRODUCTS: readonly DemoProduct[] = [
     availability: 'in_stock',
     leadDays: 1,
     highlights: ['Semi-synthetic', 'JASO MA2 · API SM', '1 L pack'],
-    attributes: { saeGrade: '10W30', apiClass: 'SM', jasoClass: 'MA2', baseType: 'semi_synthetic' },
-    netQuantity: { qty: 1000, unit: 'ml' },
   },
   {
     slug: 'hp-racer4-20w40-900ml',
@@ -114,8 +104,6 @@ export const DEMO_PRODUCTS: readonly DemoProduct[] = [
     availability: 'in_stock',
     leadDays: 1,
     highlights: ['Mineral oil', 'JASO MA2 · API SL', '900 ml pack'],
-    attributes: { saeGrade: '20W40', apiClass: 'SL', jasoClass: 'MA2', baseType: 'mineral' },
-    netQuantity: { qty: 900, unit: 'ml' },
   },
   {
     slug: 'exide-xltz4a-2w-battery',
@@ -132,13 +120,6 @@ export const DEMO_PRODUCTS: readonly DemoProduct[] = [
     leadDays: 1,
     highlights: ['Maintenance free', '24F + 24P warranty', 'Fitment check before dispatch'],
     popular: true,
-    attributes: {
-      voltage: 12,
-      capacityAh: 3,
-      batteryType: 'vrla',
-      freeReplacementMonths: 24,
-      proRataMonths: 24,
-    },
   },
   {
     slug: 'scooter-tubeless-tyre-90-90-12',
@@ -154,7 +135,6 @@ export const DEMO_PRODUCTS: readonly DemoProduct[] = [
     leadDays: 2,
     highlights: ['Wet-grip tread', 'Fitting available at partner workshops'],
     popular: true,
-    attributes: { size: '90/90-12', loadIndex: 54, speedSymbol: 'J', tubeless: true },
   },
   {
     slug: 'car-tyre-185-65-r15',
@@ -170,7 +150,6 @@ export const DEMO_PRODUCTS: readonly DemoProduct[] = [
     availability: 'low_stock',
     leadDays: 3,
     highlights: ['Low rolling noise', 'Alignment and balancing on request'],
-    attributes: { size: '185/65 R15', loadIndex: 88, speedSymbol: 'H', tubeless: true },
   },
   {
     slug: 'car-starter-battery-45ah',
@@ -186,7 +165,6 @@ export const DEMO_PRODUCTS: readonly DemoProduct[] = [
     leadDays: 2,
     highlights: ['Old battery exchange discount on request', 'Installation available'],
     popular: true,
-    attributes: { voltage: 12, capacityAh: 45 },
   },
   {
     slug: 'heavy-duty-battery-90ah',
@@ -201,7 +179,6 @@ export const DEMO_PRODUCTS: readonly DemoProduct[] = [
     availability: 'on_request',
     leadDays: 4,
     highlights: ['Supplier confirmation required', 'Delivered and installed'],
-    attributes: { voltage: 12, capacityAh: 90 },
   },
   {
     slug: 'synthetic-engine-oil-5w30-3-5l',
@@ -217,8 +194,6 @@ export const DEMO_PRODUCTS: readonly DemoProduct[] = [
     availability: 'in_stock',
     leadDays: 2,
     highlights: ['Fuel-economy grade', 'Pair with an oil filter'],
-    attributes: { saeGrade: '5W30', apiClass: 'SP', baseType: 'synthetic' },
-    netQuantity: { qty: 3500, unit: 'ml' },
   },
   {
     slug: 'engine-oil-filter-petrol-car',
@@ -332,7 +307,6 @@ export const DEMO_PRODUCTS: readonly DemoProduct[] = [
     availability: 'in_stock',
     leadDays: 2,
     highlights: ['Washable', 'Anti-slip backing'],
-    netQuantity: { qty: 5, unit: 'piece' },
   },
   {
     slug: 'two-wheeler-body-cover',

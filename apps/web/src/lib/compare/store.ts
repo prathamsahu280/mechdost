@@ -1,11 +1,12 @@
 import { useSyncExternalStore } from 'react';
+import { COMPARE_MAX } from '@mechdost/shared/product-attributes';
 
 /**
  * Compare list (design `docs/superpowers/specs/2026-11-13-product-comparison-design.md`): up to 4 products of one
  * category, kept in this browser like the cart, in both data modes. Deliberately tiny and Zod-free: it ships on
  * every shop page (JS budget, L79). The compare page itself reads the list from its URL, not from here.
  */
-export const COMPARE_MAX = 4;
+export { COMPARE_MAX };
 const KEY = 'mechdost-compare';
 const SLUG = /^[a-z0-9][a-z0-9-]{0,119}$/;
 

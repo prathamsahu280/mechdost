@@ -466,3 +466,8 @@ html[data-consent-open] {
     scroll-padding-bottom: 13rem;
   }
 }
+
+/* Product comparison: "Only differences" hides rows that are the same for every product (design 2026-11-13). */
+[data-diff-only] tr[data-same] {
+  display: none;
+}

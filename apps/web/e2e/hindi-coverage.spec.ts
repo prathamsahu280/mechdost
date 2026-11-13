@@ -321,6 +321,11 @@ const PUBLIC_PAGES = [
   '/partner/shop',
   '/partner/workshop',
   '/no-such-page',
+  // Comparisons with products (design 2026-11-13): attribute labels and translated values are on screen.
+  '/compare',
+  '/compare?p=castrol-activ-4t-20w40-900ml,motul-3100-4t-10w30-1l,hp-racer4-20w40-900ml',
+  '/compare?p=exide-xltz4a-2w-battery,car-starter-battery-45ah',
+  '/compare?p=scooter-tubeless-tyre-90-90-12,car-tyre-185-65-r15',
   ...DEMO_PRODUCTS.map((p) => `/shop/${p.slug}`),
   ...DEMO_WORKSHOPS.map((w) => `/workshops/${w.slug}`),
 ];

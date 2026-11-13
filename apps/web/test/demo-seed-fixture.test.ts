@@ -17,6 +17,7 @@ import {
   type CategoryKey,
 } from '../src/demo/catalogue';
 import { AREA_HI, PRODUCT_HI, SHOP_HI } from '../src/demo/i18n/hi';
+import { DEMO_PRODUCT_SPECS } from '../src/demo/product-specs';
 import { DEMO_SHOPS } from '../src/demo/shops';
 import { PIN_CENTROIDS } from '../src/demo/workshops';
 
@@ -58,6 +59,7 @@ function buildFixture() {
     .map((name) => ({ slug: slugify(name), name }));
   const products = DEMO_PRODUCTS.map((p) => {
     const h = PRODUCT_HI[p.slug];
+    const specs = DEMO_PRODUCT_SPECS[p.slug];
     return {
       slug: p.slug,
       sku: p.sku,
@@ -78,8 +80,8 @@ function buildFixture() {
       // Type-level fitment from the demo `fits` value only (decision 2026-11-12; EV is a fuel, no type).
       vehicleTypes: VEHICLE_TYPES_OF_FIT[p.fits],
       // Comparison data (decision 2026-11-13): typed attributes and the pack size, when the demo states them.
-      ...(p.attributes ? { attributes: { ...p.attributes } } : {}),
-      ...(p.netQuantity ? { netQuantity: p.netQuantity } : {}),
+      ...(specs?.attributes ? { attributes: { ...specs.attributes } } : {}),
+      ...(specs?.netQuantity ? { netQuantity: specs.netQuantity } : {}),
     };
   });
   const shops = DEMO_SHOPS.map((s, i) => ({
