@@ -340,6 +340,17 @@ User (2026-11-13), in order:
 
 Exploration first: specs 02, 03, 07, 08, 13 and 15, the skills, and research. A new comparison spec where needed.
 
+## 2026-11-13 — Seller onboarding as built (rulings)
+
+Design: `docs/superpowers/specs/2026-11-13-seller-onboarding-design.md`; plan ledger rulings in `.superpowers/sdd/2026-11-13-seller-onboarding/progress.md`.
+
+- **GSTIN or GST enrolment number:** a seller is either GST-registered (15-character GSTIN, checksum verified) or enrolled (12-character enrolment number, for sellers below the GST threshold). Both are stored encrypted in `partner_applications.kyc_enc` with a blind index for duplicates. **Enrolled shops are onboarded but never priced or routed** until they register (`shops.gst_status = 'registered'` guard in catalogue, checkout and routing), because a marketplace sale needs a GST invoice.
+- **Agreement gate:** a new shop goes live only after its prices are approved **and** it accepts the current agreement version (`maybeGoLive`), while `partners.agreement_required` is on (default on). Accepting an old version is refused (`AGREEMENT_OUTDATED`); a new version asks every shop again. Text comes from the user (Q77).
+- **Every price is a request** (approach 3): onboarding prices and later changes go through one queue (`shop_price_requests`, one pending per shop and variant); the old price stays live until a change is approved. A rejected change on a live product takes it off sale for that shop (`shop_inventory.admin_blocked`) and routing skips that shop for orders with that product. Prices can never exceed the MRP.
+- **Invites:** an invited application is approved on submit with the city's default delivery area (`defaultCoverage`); the admin edits the area later. Invites belong to a city; creating one needs `partners:approve`.
+- **Delivery area at approval** (user: "admin, at approval"): pre-filled with the city's PIN codes, the default charge (`partners.default_shipping_paise`, ₹40) and days (`partners.default_lead_days`, 2).
+- **Admin screens:** invites, the price queue and the agreement sit on `/admin/partners` (no new admin section).
+
 ## 2026-11-12 — Three-wheelers first-class; fitment by vehicle type (default for Q76)
 
 Follow-up to the 2026-11-11 answer "for both two wheelers, three wheelers and cars".

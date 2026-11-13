@@ -76,3 +76,10 @@ Encrypted columns: `shops.pan_enc` (+ unique `pan_index`), `partner_applications
 ## Privacy notice (2026-11-03)
 
 `/policies/privacy` (`apps/web/src/app/[locale]/policies/privacy/page.tsx`, copy `policies.privacy.*` en/hi): DPDP Act 2023 notice in plain language — who we are (operator + registered office), what we keep, why (itemised purposes), who sees it (only the shop/workshop handling an order, after it accepts; WhatsApp via Meta when switched on; never sold), analytics only with consent and how to change it, how it is protected, rights (access, correction, deletion via support confirmation, withdrawal; order/invoice records kept as tax law requires) and the contact. Linked from the privacy choice banner and the footer; audited by `e2e/consent.spec.ts` (axe WCAG 2.2 AA) and the Hindi gate. Grievance officer name/contact: inbox Q15 (CIN/officer later). Moves to admin-editable policy pages with the CMS (spec 08).
+
+## Seller onboarding (2026-11-13)
+
+- **Permissions:** `prices:approve` (new, in the ops roles) decides price requests; `partners:approve` approves or rejects applications and creates invites; `partners:write` lists and revokes invites; `content:write` publishes agreement versions. Shop routes need the shop's owner or staff (another shop → 404).
+- **Abuse:** the public application and invite routes need Turnstile; 5 applications and 30 invite opens per IP per hour; the location search allows 10 searches a minute per client and never searches as you type (Nominatim policy).
+- **Invite tokens:** only a SHA-256 hash is stored; the token travels encrypted in the outbox payload (`tokenEnc`) until the email is sent; single use, expiring, per city; never written to analytics (`redactPath`).
+- **KYC:** the GSTIN or enrolment number is stored in `partner_applications.kyc_enc` with a `gstin_index` blind index for duplicate checks; the shop owner is linked once (`owner_user_id`).

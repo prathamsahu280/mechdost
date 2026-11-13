@@ -51,3 +51,9 @@ ClickHouse export, experiments (PostHog), attribution/UTM reports, data warehous
 ## ML/AI-ready data (hard rule 16, 2026-11-01)
 
 Every event follows `docs/conventions/data-for-ml.md`: `noun_verb` names, typed versioned properties, enum codes instead of free text, internal ids only (no PII), source/city/locale/actor role recorded, consent per purpose before personal data is used for offers or model training.
+
+## Seller onboarding events (2026-11-13)
+
+- **Server events** (`packages/shared/src/analytics.ts`): `partner_application_submitted` (kind, source public or invite, gstStatus, product count, locationSource), `partner_application_decided` (decision, reasonCode), `partner_invite_sent`, `price_request_submitted` (shopId, sku), `price_request_decided` (shopId, sku, decision, reasonCode), `agreement_accepted` (shopId, version), `shop_went_live` (shopId). No GSTIN, names, phones or emails in props.
+- **Click ids (web):** `partner_application_seller`, `partner_application_seller_invite`, `partner_products_opened`, `partner_location_gps`, `partner_location_search`, `partner_location_pin`, `admin_invite_created`, `admin_invite_revoked`, `admin_price_approved`, `admin_price_rejected`, `admin_agreement_published`, `admin_application_approved`, `admin_application_rejected`, `shop_price_requested`, `shop_agreement_accepted`.
+- **No secrets in paths:** the invite link carries a bearer token, so `redactPath` (`@mechdost/shared/analytics-path`) turns `/partners/invite/<token>` into `/partners/invite/:token` in `track()`, the on-device demo log, the transport's `page` field and the API's `ANALYTICS_PATH`. Any new route with a secret in its path is added there (security review 2026-11-13).

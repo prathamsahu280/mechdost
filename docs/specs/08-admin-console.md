@@ -103,3 +103,9 @@ User 2026-11-02: "all these options need to be with the admin too".
 ### Support inbox (2026-11-03)
 
 `/admin/support`: requests from the website and WhatsApp with deadlines, overdue flags, masked numbers, replies, internal notes and resolve/reopen (details in spec 09).
+
+### Seller onboarding queues (2026-11-13)
+
+- **`/admin/applications`:** seller cards show the GSTIN or enrolment number, address, location (map link), product count, an "Invited" badge, and a warning when another open application has the same GSTIN. Sellers at verification get **Approve with delivery area** (the city's PIN codes all ticked; charge and days pre-filled from `partners.default_shipping_paise` and `partners.default_lead_days`). Every application is rejected with a reason code (`APPLICATION_REJECT_REASONS`).
+- **`/admin/partners`:** **Invite a seller** (name, email, mobile → link; open, copy, revoke; status waiting, application received, revoked or expired), **Price requests** (shop, asked price, MRP; approve, or reject with a reason code from `PRICE_REJECT_REASONS`; needs `prices:approve`) and **Seller agreement** (publish a new version in English and Hindi; every version is kept).
+- **API:** `GET /v1/admin/partner-applications`, `GET …/{code}`, `POST …/{code}/approve` (with the delivery area), `POST …/{code}/reject`; `GET|POST /v1/admin/partner-invites`, `POST …/{id}/revoke`; `GET /v1/admin/price-requests`, `POST …/{id}/decide`; `POST /v1/admin/agreements`. All scoped to the staff member's cities.

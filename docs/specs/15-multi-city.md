@@ -24,3 +24,7 @@ waitlist demand → seed partners → verify docs → catalogue coverage → set
 ## Acceptance tests
 
 Order in a paused city blocked; staff scoped by city cannot see others; pincode import validates; city switch changes prices/offers.
+
+## Seller onboarding (2026-11-13)
+
+Invites and applications belong to a city; staff see and decide only their cities' applications, invites and price requests. The delivery area offered at approval is the city's PIN codes; the default charge and days are operational settings. Nothing assumes Raipur: the demo pre-fills from the demo city's PIN list.

@@ -72,3 +72,17 @@ Public `/partners` page (2026-11-01): per partner type an emoji, three benefits 
 - Staff (`partners:write`, shops in their cities; decision "admin sets prices per shop"): the same three under `/v1/admin/shops/{shopId}/inventory`.
 - Rules: price > 0 and **never above the MRP** (`PRICE_ABOVE_MRP`; Legal Metrology); stock is an absolute count and **never below the units reserved by open orders** (`STOCK_BELOW_RESERVED`, re-checked inside the UPDATE); lead days 0–60; compare-and-set on `version` (`STALE_OFFER`; an incoming order's reservation also bumps it, so a shop editing at that moment reloads); strict bodies (`reserved` can never be set); audit `inventory.listed` / `inventory.updated` with before/after.
 - Not yet: CSV import/export, low-stock alerts, coverage PIN editing, the portal screens on the API.
+
+## Built: seller onboarding, prices and agreement (2026-11-13)
+
+Design `docs/superpowers/specs/2026-11-13-seller-onboarding-design.md`; decisions entry "Seller onboarding as built".
+
+- **Apply as a seller** (`/partners/apply/seller`): name, mobile, email, business name (as on GST), shop name, GST status (GSTIN with checksum, or enrolment number), address, landmark, PIN, **shop location** (dialog: use my location; search on Search via `/api/geo/search` — Nominatim, India only, cached, 10 searches a minute per client; tap or drag the pin; works without the map) and a **tick-list of products** from the catalogue (prices are asked after approval). Validated with `SellerApplicationSchema` (shared with the API); all errors show at once next to their fields.
+- **Invite link** (`/partners/invite/[token]`): the same form with name, email and mobile locked; single use, 7 days, per city; used, expired and withdrawn links say so.
+- **Shop portal:**
+  - **Seller agreement** card: the current version in the shop's language; accept with a tick; a newer version asks again.
+  - **Your prices**: per product the live price, the MRP and any pending change; a new price is sent for approval and may not exceed the MRP; statuses "On sale at", "Waiting for approval", "Not approved: reason", "Taken off sale: reason". Replaces direct price edits (the inventory API answers `PRICE_NEEDS_APPROVAL`).
+- **API:** public `POST /v1/partner-applications`, `GET /v1/partner-invites/{token}`, `POST /v1/partner-invites/{token}/application` (Turnstile; 5 applications and 30 invite opens per IP per hour); shop `GET|POST /v1/shop-onboarding/{shopId}/price-requests`, `POST …/price-requests/{id}/withdraw`, `GET|POST /v1/shop-onboarding/{shopId}/agreement` (owner or staff of that shop, 404 otherwise).
+- **Data:** `partner_application_products`, `partner_invites`, `shop_price_requests`, `agreement_versions`, `shop_agreements` (append-only); `shops.gst_status`; `shop_inventory.admin_blocked` + `blocked_reason_code`; `partner_applications.owner_user_id` (migrations 0038, 0039).
+- **Website status:** the screens run on the browser demo store (`demo/store.ts`, `demo/price-requests.ts`, `demo/agreements.ts`) until the data switch; the demo checkout still charges the catalogue price (the API prices from `shop_inventory`).
+- **Tests:** `e2e/seller-onboarding.spec.ts` (16 tests: application, wrong GSTIN, invite, admin invites, review with delivery area, price queue, shop prices round trip, agreement); unit tests `demo-price-requests`, `demo-agreements`, `demo-applications`; DB and API suites `partner-applications`, `price-requests`, `partner-onboarding`.
