@@ -4,8 +4,10 @@ import { discountPercent, formatPrice } from '@/lib/format';
 import { StarRating } from '../reviews/star-rating';
 import { LocalLink } from '../ui/local-link';
 import { AddToCartButton } from './add-to-cart-button';
+import { CompareToggle } from './compare-toggle';
 import { ProductInfoButton } from './product-info-button';
 import { ProductVisual } from './product-visual';
+import { UnitPrice } from './unit-price';
 
 /**
  * Product card: blueprint artwork with an ⓘ quick-details popover, brand and category, name, rating, price with
@@ -16,12 +18,16 @@ import { ProductVisual } from './product-visual';
 export function ProductCard({
   product,
   scope = 'list',
+  compare = true,
 }: {
   product: CardView;
   /** Distinguishes lists on one page (ids of the quick-details popover). */
   scope?: string;
+  /** Shows the "Compare" toggle (shop pages, where the compare tray lives; not the home page). */
+  compare?: boolean;
 }) {
   const t = useTranslations('catalogue');
+  const cmp = useTranslations('compare');
   const c = useTranslations('categories');
   const r = useTranslations('reviews');
   const price = product.price;
@@ -94,13 +100,30 @@ export function ProductCard({
             ) : null}
           </div>
         ) : null}
+        {price ? <UnitPrice pricePaise={price.pricePaise} pack={product.pack} className="mt-0.5" /> : null}
         <p
           className={`mt-1 text-xs font-bold ${product.availability === 'on_request' ? 'text-warning' : 'text-success'}`}
         >
           {availabilityLabel(t, product.availability)}
         </p>
-        {price ? (
-          <div className="mt-auto pt-4">
+        <div className="mt-auto flex flex-col gap-2 pt-4">
+          {compare ? (
+            <CompareToggle
+              slug={product.slug}
+              category={product.category.slug}
+              labels={{
+                toggle: cmp('toggle'),
+                toggleName: cmp('toggleName', { name: `${product.brand} ${product.name}` }),
+                added: cmp('added', { count: '{count}' }),
+                removed: cmp('removed'),
+                full: cmp('full'),
+                otherCategory: cmp('otherCategory'),
+                startNew: cmp('startNew'),
+                saveFailed: t('saveFailed'),
+              }}
+            />
+          ) : null}
+          {price ? (
             <AddToCartButton
               slug={product.slug}
               labels={{
@@ -111,8 +134,8 @@ export function ProductCard({
                 saveFailed: t('saveFailed'),
               }}
             />
-          </div>
-        ) : null}
+          ) : null}
+        </div>
       </div>
     </article>
   );

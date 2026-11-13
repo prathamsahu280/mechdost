@@ -23,11 +23,14 @@ export function AddToCartButton({
   labels,
   qty = 1,
   className = '',
+  source,
 }: {
   slug: string;
   labels: AddToCartLabels;
   qty?: number;
   className?: string;
+  /** Where the press came from, for analytics (the comparison table). */
+  source?: 'compare';
 }) {
   const [result, setResult] = useState<AddResult | null>(null);
 
@@ -65,7 +68,7 @@ export function AddToCartButton({
           window.requestAnimationFrame(() => {
             setResult(r);
           });
-          if (r === 'added') track('add_to_cart', { slug, qty });
+          if (r === 'added') track('add_to_cart', source ? { slug, qty, source } : { slug, qty });
           else if (r === 'save_failed')
             track('click', { id: 'add_to_cart_save_failed', path: window.location.pathname });
         }}

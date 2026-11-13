@@ -47,6 +47,10 @@ describe('locale messages', () => {
       'assistant.bot',
       'catalogue.mrp',
       'portal.priceMrp', // "MRP {mrp}": the abbreviation is used as is in Hindi, like catalogue.mrp
+      'compare.row.mrp', // the same abbreviation as a row label
+      'compare.value.batteryType.agm', // AGM: a battery technology code
+      'compare.unit.V', // units stay Latin (hard rule 10)
+      'compare.unit.Ah',
       'policies.company.gstinLabel', // a registration code (hard rule 10 allows codes)
       'portal.appGstin', // the same registration-code label in the admin review
       'checkout.gstin', // the buyer's GSTIN field label at checkout (a code)

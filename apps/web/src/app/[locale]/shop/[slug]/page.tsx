@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation';
 import { cache } from 'react';
 import { getTranslations } from 'next-intl/server';
 import { AddToCartButton } from '@/components/catalogue/add-to-cart-button';
+import { CompareToggle } from '@/components/catalogue/compare-toggle';
+import { UnitPrice } from '@/components/catalogue/unit-price';
 import { availabilityLabel, ProductCard } from '@/components/catalogue/product-card';
 import { ProductVisual } from '@/components/catalogue/product-visual';
 import { ReviewsSection } from '@/components/reviews/reviews-section';
@@ -86,11 +88,12 @@ export default async function ProductPage({ params }: Props) {
   if (!data) notFound();
   const { product, related, reviews } = data;
 
-  const [t, c, r, footer] = await Promise.all([
+  const [t, c, r, footer, cmp] = await Promise.all([
     getTranslations('catalogue'),
     getTranslations('categories'),
     getTranslations('reviews'),
     getTranslations('footer'),
+    getTranslations('compare'),
   ]);
   const categoryName = product.category.name ?? (product.category.key ? c(product.category.key) : null);
   // The star row links to the reviews section, so it shows only when that section does.
@@ -178,6 +181,7 @@ export default async function ProductPage({ params }: Props) {
                   </>
                 ) : null}
               </div>
+              <UnitPrice pricePaise={price.pricePaise} pack={product.pack} className="mt-1 text-sm" />
               <p className="mt-1 text-xs text-muted">{t('inclusive')}</p>
             </>
           ) : null}
@@ -231,6 +235,21 @@ export default async function ProductPage({ params }: Props) {
                 <span className="sr-only"> ({footer('whatsappNote')})</span>
               </a>
             )}
+            <CompareToggle
+              slug={product.slug}
+              category={product.category.slug}
+              labels={{
+                toggle: cmp('toggle'),
+                toggleName: cmp('toggleName', { name: `${product.brand} ${product.name}` }),
+                added: cmp('added', { count: '{count}' }),
+                removed: cmp('removed'),
+                full: cmp('full'),
+                otherCategory: cmp('otherCategory'),
+                startNew: cmp('startNew'),
+                saveFailed: t('saveFailed'),
+              }}
+              className="mt-3"
+            />
             <p className="mt-3 text-sm text-muted">
               <LocalLink
                 href="/quotes/new"

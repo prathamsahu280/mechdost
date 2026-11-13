@@ -24,7 +24,7 @@ export function ProductRange() {
         <ul className="mt-6 grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 nav:grid-cols-4">
           {popular.map((p) => (
             <li key={p.slug}>
-              <ProductCard product={p} scope="home" />
+              <ProductCard product={p} scope="home" compare={false} />
             </li>
           ))}
         </ul>

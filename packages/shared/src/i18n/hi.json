@@ -399,7 +399,98 @@
     "openProduct": "प्रोडक्ट पेज खोलें",
     "bulkHint": "<min>10</min> या ज़्यादा चाहिए? बल्क दाम पूछें।",
     "policyNote": "वापसी या बदलाव नहीं होता। ख़राब पार्ट्स के मामले हमारी सपोर्ट टीम देखती है।",
-    "policyLink": "नीति पढ़ें"
+    "policyLink": "नीति पढ़ें",
+    "unitPrice_litre": "{price} प्रति लीटर",
+    "unitPrice_kg": "{price} प्रति किलो",
+    "unitPrice_piece": "{price} प्रति पीस",
+    "unitPrice_metre": "{price} प्रति मीटर"
+  },
+  "compare": {
+    "toggle": "तुलना करें",
+    "toggleName": "{name} की तुलना करें",
+    "added": "तुलना में जोड़ा गया (4 में से {count})",
+    "removed": "तुलना से हटाया गया",
+    "full": "आप 4 प्रोडक्ट तक की तुलना कर सकते हैं। पहले एक हटाएँ।",
+    "otherCategory": "एक बार में एक ही कैटेगरी की तुलना हो सकती है।",
+    "startNew": "नई तुलना शुरू करें",
+    "trayLabel": "तुलना के प्रोडक्ट",
+    "trayLink": "तुलना करें ({count})",
+    "trayClear": "सब हटाएँ",
+    "title": "प्रोडक्ट की तुलना",
+    "intro": "एक कैटेगरी के 4 प्रोडक्ट तक, साथ-साथ।",
+    "caption": "{category}: {count} प्रोडक्ट साथ-साथ",
+    "onlyDifferences": "सिर्फ़ अंतर",
+    "notListed": "नहीं बताया गया",
+    "lowest_litre": "प्रति लीटर सबसे कम दाम",
+    "lowest_kg": "प्रति किलो सबसे कम दाम",
+    "lowest_piece": "प्रति पीस सबसे कम दाम",
+    "lowest_metre": "प्रति मीटर सबसे कम दाम",
+    "remove": "{name} हटाएँ",
+    "emptyTitle": "तुलना के लिए प्रोडक्ट चुनें",
+    "emptyBody": "एक कैटेगरी के 4 प्रोडक्ट तक पर “तुलना करें” दबाएँ।",
+    "emptyAction": "दुकान से प्रोडक्ट जोड़ें",
+    "leftOut": "कुछ प्रोडक्ट छोड़ दिए गए: एक कैटेगरी के 4 प्रोडक्ट तक की तुलना हो सकती है।",
+    "group": {
+      "price": "दाम",
+      "fit": "फ़िट",
+      "specs": "ख़ासियतें",
+      "warranty": "वारंटी और मूल देश",
+      "ratings": "रेटिंग"
+    },
+    "row": {
+      "price": "दाम",
+      "mrp": "MRP",
+      "unitPrice": "प्रति यूनिट दाम",
+      "delivery": "डिलीवरी",
+      "vehicleTypes": "वाहन का प्रकार",
+      "compatibility": "किसके लिए",
+      "warranty": "वारंटी",
+      "origin": "मूल देश",
+      "rating": "रेटिंग"
+    },
+    "deliveryDays": "{days, plural, =0 {आज} one {# दिन} other {# दिन}}",
+    "ratingValue": "5 में से {rating} ({count})",
+    "attr": {
+      "saeGrade": "SAE ग्रेड",
+      "apiClass": "API क्लास",
+      "jasoClass": "JASO क्लास",
+      "baseType": "बेस ऑयल",
+      "voltage": "वोल्टेज",
+      "capacityAh": "क्षमता",
+      "batteryType": "बैटरी का प्रकार",
+      "freeReplacementMonths": "मुफ़्त रिप्लेसमेंट",
+      "proRataMonths": "प्रो-रेटा वारंटी",
+      "size": "साइज़",
+      "loadIndex": "लोड इंडेक्स",
+      "speedSymbol": "स्पीड रेटिंग",
+      "tubeless": "ट्यूबलेस",
+      "position": "पहिया"
+    },
+    "value": {
+      "baseType": {
+        "mineral": "मिनरल",
+        "semi_synthetic": "सेमी-सिंथेटिक",
+        "synthetic": "सिंथेटिक"
+      },
+      "batteryType": {
+        "flooded": "फ़्लडेड",
+        "vrla": "VRLA (सील्ड)",
+        "agm": "AGM",
+        "lithium": "लिथियम"
+      },
+      "position": {
+        "front": "आगे",
+        "rear": "पीछे",
+        "both": "आगे या पीछे"
+      },
+      "yes": "हाँ",
+      "no": "नहीं"
+    },
+    "unit": {
+      "months": "{n} महीने",
+      "V": "{n} V",
+      "Ah": "{n} Ah"
+    }
   },
   "cart": {
     "title": "आपका कार्ट",

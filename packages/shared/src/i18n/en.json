@@ -399,7 +399,98 @@
     "openProduct": "Open product page",
     "bulkHint": "Need <min>10</min> or more? Ask for a bulk price.",
     "policyNote": "No returns or exchanges. Faulty parts are handled by our support team.",
-    "policyLink": "Read the policy"
+    "policyLink": "Read the policy",
+    "unitPrice_litre": "{price} per litre",
+    "unitPrice_kg": "{price} per kg",
+    "unitPrice_piece": "{price} per piece",
+    "unitPrice_metre": "{price} per metre"
+  },
+  "compare": {
+    "toggle": "Compare",
+    "toggleName": "Compare {name}",
+    "added": "Added to compare ({count} of 4)",
+    "removed": "Removed from compare",
+    "full": "You can compare up to 4 products. Remove one first.",
+    "otherCategory": "You can compare one category at a time.",
+    "startNew": "Start a new comparison",
+    "trayLabel": "Products to compare",
+    "trayLink": "Compare ({count})",
+    "trayClear": "Clear",
+    "title": "Compare products",
+    "intro": "Up to 4 products from one category, side by side.",
+    "caption": "{category}: {count} products side by side",
+    "onlyDifferences": "Only differences",
+    "notListed": "Not listed",
+    "lowest_litre": "Lowest price per litre",
+    "lowest_kg": "Lowest price per kg",
+    "lowest_piece": "Lowest price per piece",
+    "lowest_metre": "Lowest price per metre",
+    "remove": "Remove {name}",
+    "emptyTitle": "Pick products to compare",
+    "emptyBody": "Tap Compare on up to 4 products from one category.",
+    "emptyAction": "Add products from the shop",
+    "leftOut": "Some products were left out: you can compare up to 4 products from one category.",
+    "group": {
+      "price": "Price",
+      "fit": "Fit",
+      "specs": "Specs",
+      "warranty": "Warranty and origin",
+      "ratings": "Ratings"
+    },
+    "row": {
+      "price": "Price",
+      "mrp": "MRP",
+      "unitPrice": "Price per unit",
+      "delivery": "Delivery",
+      "vehicleTypes": "Vehicle type",
+      "compatibility": "Suits",
+      "warranty": "Warranty",
+      "origin": "Country of origin",
+      "rating": "Rating"
+    },
+    "deliveryDays": "{days, plural, =0 {same day} one {# day} other {# days}}",
+    "ratingValue": "{rating} of 5 ({count})",
+    "attr": {
+      "saeGrade": "SAE grade",
+      "apiClass": "API class",
+      "jasoClass": "JASO class",
+      "baseType": "Base oil",
+      "voltage": "Voltage",
+      "capacityAh": "Capacity",
+      "batteryType": "Battery type",
+      "freeReplacementMonths": "Free replacement",
+      "proRataMonths": "Pro-rata warranty",
+      "size": "Size",
+      "loadIndex": "Load index",
+      "speedSymbol": "Speed rating",
+      "tubeless": "Tubeless",
+      "position": "Wheel"
+    },
+    "value": {
+      "baseType": {
+        "mineral": "Mineral",
+        "semi_synthetic": "Semi-synthetic",
+        "synthetic": "Synthetic"
+      },
+      "batteryType": {
+        "flooded": "Flooded",
+        "vrla": "VRLA (sealed)",
+        "agm": "AGM",
+        "lithium": "Lithium"
+      },
+      "position": {
+        "front": "Front",
+        "rear": "Rear",
+        "both": "Front or rear"
+      },
+      "yes": "Yes",
+      "no": "No"
+    },
+    "unit": {
+      "months": "{n} months",
+      "V": "{n} V",
+      "Ah": "{n} Ah"
+    }
   },
   "cart": {
     "title": "Your cart",
