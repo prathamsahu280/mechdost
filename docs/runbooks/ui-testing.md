@@ -1,0 +1,85 @@
+# UI testing runbook — states, permutations, render checks (2026-11-14)
+
+How to test the website the way people use it: every page in every meaningful state, on phones and desktops, in
+both languages and themes, as every role. Started after a UI review (user, 2026-11-13: "check each and everything
+under every condition and state … every permutation") found bugs no suite had caught. Screenshots and raw findings
+of each review go to the git-ignored `reports/` folder (local only); this runbook and the tests are what we keep.
+
+## 1. The state dimensions
+
+| Dimension | Values                                                                                   | How it is set (demo mode)                                  |
+| --------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| Role      | guest · customer · shop · workshop · admin (staff code `123456`)                         | sign in through `/login` (`docs/runbooks/demo.md`)         |
+| Theme     | light · dark — always against the **opposite** system preference, so a lost choice shows | `mechdost-theme` + `colorScheme`                           |
+| Language  | en · hi                                                                                  | the URL (`/hi/…`); the `NEXT_LOCALE` cookie after a switch |
+| Viewport  | 320 · 360 · 375 · 390 · 414 · 430 · 480 · 540 · 600 · 768 · 1024 · 1280 · 1440           | Playwright projects (390, 1440) + the responsive sweep     |
+| World     | **empty** · **cart** (cart + compare list) · **busy** (below)                            | `localStorage`, seeded before load (`page.addInitScript`)  |
+| Consent   | decided · undecided (banner open)                                                        | `mechdost-consent`                                         |
+
+**Busy world** (`apps/web/e2e/fixtures/demo-world.ts`): cart and compare list, plus orders waiting for routing,
+offered to a shop (timer running) and shipped; an open support ticket about the shipped order; service requests new,
+proposed and declined; a bulk quote; a partner application; reviews. The same records feed the Hindi gate.
+
+Storage keys: `mechdost-cart`, `mechdost-compare`, `mechdost-demo-orders`, `-requests`, `-quotes`,
+`-applications`, `-reviews`, `-support`, `-coins`, `-session`, `-accounts`, `-invites`, `-price-requests`,
+`-shop-listings`, `-partner-status`, `-customer-blocks`, `-order-rules`, `-site`, `-notifications`,
+`-agreements`. Shapes: the types in `apps/web/src/demo/*.ts`.
+
+## 2. The automated matrix — `apps/web/e2e/state-matrix.spec.ts`
+
+- **Customer side:** {guest, customer} × {light, dark} × {en, hi} × {empty, cart, busy} on 11 public pages, plus
+  4 account pages when signed in, plus the busy-only pages (`/orders/…`, `/service/…`, `/quotes/…`, account
+  support/services/quotes). Each state also switches language on `/`, a filtered shop and a compare link, and back.
+- **Portals:** {shop, workshop, admin} × {light, dark} × {en, hi} × {empty, busy}.
+- **Responsive sweep:** 11 widths from 320 to 1280, busy world, en + hi on the key pages.
+- Both Playwright projects (desktop 1440, mobile 390).
+
+Checks on every page: nothing scrolls sideways; `data-theme` and `lang` kept; every visible `position: fixed`
+element on screen after scrolling (tab bar, compare tray, assistant, banners); compare tray present exactly when
+the list has something; no page errors and no failed requests to our server; language switch keeps the page, the
+query string and the hash, and the theme.
+
+Run (against a production build; the config reuses a server on :3100):
+
+```
+pnpm --filter @mechdost/web build
+cd apps/web && pnpm exec next start --port 3100   # in another terminal
+npx playwright test e2e/state-matrix.spec.ts --workers=2                   # checks only (~15 min)
+MATRIX_SHOTS=../../reports/<date>/render-matrix npx playwright test e2e/state-matrix.spec.ts --workers=2  # + screenshots
+MATRIX_TIMEOUT=60000 npx playwright test e2e/state-matrix.spec.ts -g "<state label>"   # find where one state hangs
+```
+
+Labels read `<role>-<theme>-<lang>-<world>` (e.g. `customer-dark-hi-busy`) and `w<width>` for the sweep.
+
+## 3. Manual / agent review on top of the matrix
+
+The matrix proves pages do not break; it does not judge whether they look right. After it runs:
+
+1. Look at the screenshots (or give batches to review agents): hierarchy, spacing, contrast in dark mode, Hindi
+   wrapping, overlapping floating elements, empty states with one next action, one primary action per screen.
+2. Walk the **cross-role flows** in one browser (demo data is per browser), switching roles: order happy path and
+   decline → reroute → timeout → reject; service request to bill and review; seller application → approval → invite
+   → agreement → price approval/rejection; support ticket reply; bulk quote → offer → order; coins.
+3. Click every control on each page in each world (the crawler under `reports/<date>/crawler/scripts/` is reusable).
+4. Record findings with severity (bug / UX / polish), state label, viewport, screenshot path and likely cause.
+
+## 4. Bug classes found so far — and the check that catches each
+
+| Bug class                                                                                        | Caught by                                                        |
+| ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------- |
+| A `position: fixed` element inside an ancestor with `transform`/`filter` (animation fill `both`) | fixed-elements-on-screen check; `compare.spec` tray-in-view test |
+| React clears `<html>` attributes when the per-locale root layout changes on the client           | theme check after language switch; `demo-flows` theme tests      |
+| Language cookie only synced on document requests (client-side switch bounced back)               | `demo-flows` "Hindi → English works after a Hindi visit"         |
+| Query string / hash lost on language switch                                                      | matrix "same page" check                                         |
+| Header row too wide at in-between widths (400–520 px)                                            | responsive sweep (11 widths)                                     |
+| Scroll box inside the page cutting content off                                                   | `compare.spec` "two products use the full width"                 |
+| Restyled third-party widget keeps its own text colour (contrast)                                 | axe in dark mode, run several times (async widgets)              |
+| A shared constant import dragging a big module into every page                                   | `measure-js` (all routes < 180 KB gz)                            |
+| A test that changes a remembered preference must change it back (cookie)                         | the matrix switches language back after each check               |
+
+## 5. Results log
+
+| Date       | Run                                                            | Result                                                                                                                                                                                                                      |
+| ---------- | -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-11-14 | Render matrix v1 (2 worlds, 6 widths)                          | 45 passed; 16 false alarms (`%2C` in the redirected compare link — test now decodes); 1 real: 414 px overflow (header) → fixed for 320–700 px                                                                               |
+| 2026-11-14 | Three Fable review agents (shop/compare, state/theme, portals) | ~35 findings; fixed tonight: tray position, theme loss, Hindi→English, query loss, compare layout, header widths, dark checkboxes/map controls, Hindi map labels, workshop card wrap; the rest queued in `docs/progress.md` |

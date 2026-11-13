@@ -65,7 +65,19 @@ Mark each touched item ✅ / ⚠️ / ❌. Anything ❌ blocks implementation un
 - ❌ `<img>` instead of `next/image`; missing width/height or `sizes`; `priority` on non-hero images.
 - ❌ Missing analytics events for new user actions (spec 12).
 - ⚠️ More than one primary action per screen, stacked modals, empty state without one next action.
-- ⚠️ Not checked at 390 / 768 / 1440 px, with Hindi text, keyboard-only and reduced motion.
+- ⚠️ Not checked at 390 / 768 / 1440 px, with Hindi text, keyboard-only and reduced motion — and not run through
+  `e2e/state-matrix.spec.ts` (every role × theme × language × world empty/cart/busy, widths 320–1280;
+  `docs/runbooks/ui-testing.md`). The user checks pages by eye in these states; so must we (UI review 2026-11-14).
+- ❌ `position: fixed` UI (trays, bars, floating buttons) mounted inside anything animated or transformed, or an
+  animation with fill `both`/`forwards` on a wrapper: fixed children then scroll with the page. Mount floating UI in
+  the locale layout, outside `template.tsx`.
+- ❌ Preferences kept only by a before-paint script or by `next/link` navigation across locales: React clears
+  `<html>` attributes when the per-locale root layout changes, and next-intl only syncs `NEXT_LOCALE` on document
+  requests. Language switches are full loads that keep query and hash.
+- ❌ A header/toolbar row that only fits at the tested widths: check 320–700 px in steps of 10 (both languages).
+- ❌ A scroll box inside the page (`max-h` + `overflow-auto`) for main content: it traps scrolling and cuts content.
+- ❌ An "every page" client component (layout) that imports a shared module for one constant, or that could load
+  on demand: check `measure-js` for every route.
 - ⚠️ Admin-editable content hard-coded (rule 8).
 
 ## Performance & scalability (spec 16, rule 6, 7)

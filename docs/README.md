@@ -42,3 +42,4 @@ Read `../CLAUDE.md` first (hard rules). Then:
 - `runbooks/payments.md` — Razorpay keys, how to try online payment end to end (quote → place → Checkout → verify), the webhook (Q75), unpaid-order expiry (2026-11-12).
 - `runbooks/firebase.md` — Firebase projects, local keys, production checklist for sign-in.
 - `runbooks/deploy.md` — deployment: Docker images built in GitHub Actions, the AWS server (`/opt/mechdost`, Caddy HTTPS), first-time setup (security group, deploy key, `.env`, DNS), deploys, rollback, logs, migrations, troubleshooting (2026-11-13).
+- `runbooks/ui-testing.md` — UI testing: state dimensions (role, theme, language, viewport, worlds empty/cart/busy), the state matrix and responsive sweep (`e2e/state-matrix.spec.ts`), agent review and cross-role flows, bug classes and the checks that catch them, results log (2026-11-14). Screenshots live in the git-ignored `reports/`.

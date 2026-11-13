@@ -29,6 +29,11 @@ unit/integration tests). Then add, by area:
 - order/assignment/stock/payment flows → **concurrency** and **clock** suites
 - payments/webhooks → **webhook chaos** suite (replay, out-of-order, tamper, rotated secret)
 - UI → Playwright e2e at 390/768/1440, **axe** scan, keyboard path, **visual snapshot vs concept**, Hindi locale
+- any UI or layout change → the **state matrix** `e2e/state-matrix.spec.ts` (role × theme × language × world
+  empty/cart/busy × viewport, plus the 320–1280 responsive sweep) and a look at its screenshots
+  (`MATRIX_SHOTS=…`). Runbook: `docs/runbooks/ui-testing.md` — dimensions, worlds, cross-role flows, bug classes.
+  Floating UI is asserted with `boundingBox()` inside the viewport (a click scrolls to it and hides the bug);
+  preferences (theme, language) are tested across the real interaction, both directions, and switched back.
 - pages → **Lighthouse CI** budgets (LCP < 2 s, INP < 200 ms, CLS < 0.05, ≥ 90 scores, JS budget)
 
 ### 2. Check the bug catalogue
