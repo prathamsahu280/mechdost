@@ -160,10 +160,39 @@ export async function listAdminProducts(
   return { items: page.map(toAdmin), next: rows.length > limit ? (page.at(-1)?.slug ?? null) : null };
 }
 
-export async function getAdminProduct(db: Tx, slug: string): Promise<AdminProduct & { id: string }> {
+/** One pack of a product, as the editor shows it (net quantity for the unit price, MRP for the price rules). */
+export interface AdminVariant {
+  sku: string;
+  mrpPaise: number;
+  netQuantity: NetQuantity | null;
+}
+
+/**
+ * One product for the editor: the list fields plus its typed attributes and packs, so the "Fit & specs" form
+ * starts from what is stored (the attribute save replaces the whole set).
+ */
+export async function getAdminProduct(
+  db: Tx,
+  slug: string,
+): Promise<AdminProduct & { id: string; attributes: Record<string, AttrValue>; variants: AdminVariant[] }> {
   const [r] = await loadRows(db, eq(products.slug, slug), 1);
   if (!r) throw new NotFoundError('Product not found');
-  return { ...toAdmin(r), id: r.id };
+  const [extra] = await db.select({ spec: products.spec }).from(products).where(eq(products.id, r.id));
+  const packs = await db
+    .select({
+      sku: productVariants.sku,
+      mrpPaise: productVariants.mrpPaise,
+      netQty: productVariants.netQty,
+      netUnit: productVariants.netUnit,
+    })
+    .from(productVariants)
+    .where(eq(productVariants.productId, r.id))
+    .orderBy(asc(productVariants.sku));
+  const variants = packs.map((v) => {
+    const q = { qty: v.netQty, unit: v.netUnit };
+    return { sku: v.sku, mrpPaise: v.mrpPaise, netQuantity: isNetQuantity(q) ? q : null };
+  });
+  return { ...toAdmin(r), id: r.id, attributes: readAttributes(r.category, extra?.spec), variants };
 }
 
 export interface TextPatch {

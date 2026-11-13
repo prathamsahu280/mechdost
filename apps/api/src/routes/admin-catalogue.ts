@@ -53,6 +53,18 @@ const Product = z
   })
   .openapi('AdminProduct');
 
+/** The editor's view of one product: the list fields plus its typed attributes and every pack. */
+const ProductDetail = Product.extend({
+  attributes: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])),
+  variants: z.array(
+    z.object({
+      sku: z.string(),
+      mrpPaise: z.number().int(),
+      netQuantity: z.object({ qty: z.number().int(), unit: z.enum(NET_UNITS) }).nullable(),
+    }),
+  ),
+}).openapi('AdminProductDetail');
+
 const text = (max: number) => z.string().max(max).nullable().optional();
 const highlights = z.array(z.string().max(HIGHLIGHT_LEN)).max(HIGHLIGHT_MAX).optional();
 const Patch = z
@@ -107,7 +119,7 @@ const detail = createRoute({
   summary: 'One product, English and Hindi side by side',
   security: [{ bearerAuth: [] }],
   request: { params: z.object({ slug: Slug }) },
-  responses: { 200: json(Product, 'Product'), 404: json(ErrorSchema, 'Not found'), ...errorResponses },
+  responses: { 200: json(ProductDetail, 'Product'), 404: json(ErrorSchema, 'Not found'), ...errorResponses },
 });
 
 const patch = createRoute({

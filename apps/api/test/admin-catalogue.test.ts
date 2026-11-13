@@ -170,5 +170,14 @@ describe('admin catalogue API', () => {
       await ctx.app.request(`/v1/catalogue/products/${SLUG}?pincode=492001&locale=en&city=RPR`)
     ).json()) as { attributes: unknown; attributeSet: unknown };
     expect(product).toMatchObject({ attributeSet: 'lubricants', attributes: oil });
+
+    // The editor's detail carries the stored attributes and packs (admin catalogue screen, plan Task 5).
+    const detail = await (
+      await ctx.app.request(`/v1/admin/catalogue/products/${SLUG}`, { headers: manager })
+    ).json();
+    expect(detail).toMatchObject({
+      attributes: oil,
+      variants: [{ sku, mrpPaise: expect.any(Number) as number, netQuantity: { qty: 900, unit: 'ml' } }],
+    });
   });
 });
