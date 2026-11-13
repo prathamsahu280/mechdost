@@ -39,7 +39,9 @@ export function OrderView({ code }: { code: string }) {
   // The delivery code proves the customer has the parcel: shops, workshops and staff never see it (QA 2026-11-14,
   // U11). Guests who placed the order on this device (no account) still do.
   const viewer = useSession();
-  const maySeeCode = viewer === null || viewer.role === 'customer';
+  // Customers only for their own order (matched by phone, as the demo keeps no owner id; review 2026-11-14).
+  const maySeeCode =
+    viewer === null || (viewer.role === 'customer' && order?.customer.phone === viewer.phone);
 
   if (!hydrated) return <div className="skeleton h-80 rounded-card" aria-hidden="true" />;
   if (!order) {

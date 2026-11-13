@@ -556,3 +556,25 @@ test('QA 13: checkout says from when delivery is free while a fee is charged', a
   await page.goto('/checkout');
   await expect(page.getByRole('complementary').getByText(/Free delivery on orders from ₹/)).toBeVisible();
 });
+
+test('review: a different customer account does not see someone else’s delivery code', async ({ page }) => {
+  const orders = seedData(Date.now())['mechdost-demo-orders'];
+  const shipped = orders.find((o) => o.code === CODES.shipped);
+  expect(shipped).toBeTruthy();
+  if (!shipped) return;
+  const someoneElse = {
+    ...shipped,
+    customer: { ...shipped.customer, phone: '9123456780', name: 'Asha Verma' },
+  };
+  await page.addInitScript(
+    (value: string) => {
+      if (!window.localStorage.getItem('mechdost-demo-orders'))
+        window.localStorage.setItem('mechdost-demo-orders', value);
+    },
+    JSON.stringify([someoneElse]),
+  );
+  await signIn(page, '9876543210');
+  await page.goto(`/orders/${CODES.shipped}`);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText(CODES.shipped);
+  await expect(page.getByText('4821')).toHaveCount(0);
+});
