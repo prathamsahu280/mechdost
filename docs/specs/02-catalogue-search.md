@@ -82,7 +82,7 @@ Vehicle master source (register #4).
 
 ## P1/P2
 
-Back-in-stock/price-drop alerts, Q&A, photo reviews, badges, collections, B2B price lists, related/upsell rules (part of recommendations), compare (P2), 360° media (P2), Meilisearch switch.
+Back-in-stock/price-drop alerts, Q&A, photo reviews, badges, collections, B2B price lists, related/upsell rules (part of recommendations), 360° media (P2), Meilisearch switch.
 
 ## Home page sections (2026-11-02)
 
@@ -96,3 +96,7 @@ Hero, trust strip, category tiles, popular products, order-route band, workshop 
 - `GET/PATCH /v1/admin/catalogue/products/{slug}`: English and Hindi texts side by side; strict body (texts only — never price, HSN, GST or status); compare-and-set on `version` (`STALE_PRODUCT`); the English name is required; Hindi highlights empty or one per English highlight (`HIGHLIGHTS_HI_ALIGNED`, same as the DB CHECK); the audit row holds exactly the changed fields (before/after).
 - `POST …/{slug}/status {to, version, rejectionReason?}` (`products:publish`): through the machine; going live needs an active variant (`NO_VARIANT`) and, when setting `catalogue.require_hindi_to_publish` is `true` (the launch-blocking check; off until the catalogue team is ready), complete Hindi (`HINDI_MISSING` with the fields).
 - Not yet: the console screen (en/hi side by side, gap badges), category and brand editors, photos, variants and fitment editing, shop submissions.
+
+## Built: comparison, typed attributes and unit price (2026-11-13)
+
+Spec 21 (`21-product-comparison.md`). Typed attributes per category in `products.spec` (definitions in `@mechdost/shared/product-attributes`), a net quantity per pack (`product_variants.net_qty` / `net_unit`, migration 0042), the catalogue offer's `netQuantity` (the pack it prices), and "₹ … per litre / kg / piece / metre" on cards and the product page. Admin endpoints: `PUT /v1/admin/catalogue/products/{slug}/attributes`, `PUT /v1/admin/catalogue/variants/{sku}/net-quantity`.

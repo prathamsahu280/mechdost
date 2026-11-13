@@ -73,6 +73,7 @@ Mark each touched item ✅ / ⚠️ / ❌. Anything ❌ blocks implementation un
 - ❌ Assumes a single city, single shop per order, or single server (in-memory state that must be shared).
 - ⚠️ Heavy client library not dynamically imported (maps, charts, scanner); client component where a Server Component works.
 - ⚠️ N+1 queries; uncached hot reads; no cache tag invalidation.
+- ⚠️ JS budget (L79, L90): anything a client component imports ships on every route that renders it (demo data, translation tables, Zod). Keep server-only data in its own module, import the narrowest module from client paths, keep small islands static (no `next/dynamic` for < 1 KB), and compare `scripts/measure-js.mjs` against the last CI run's budget lines before committing UI work.
 
 ## Dependencies & security (research/security-vulnerabilities.md)
 

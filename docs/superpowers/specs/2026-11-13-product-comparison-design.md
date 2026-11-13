@@ -73,3 +73,12 @@ A rider choosing between three 2W engine oils, or two batteries, wants to see si
 ## Left to the builder
 
 The tray's placement around the cart button, the indicative demo oils, and whether the API compare read is a new endpoint or several product reads.
+
+## As built (2026-11-13)
+
+Built as designed; spec `docs/specs/21-product-comparison.md`. Builder calls:
+
+- The API resolves which category's definitions apply (own or parent category) and returns `attributeSet` + `attributes`; the website re-reads them with the shared reader.
+- An attribute value the category does not accept is 422 `ATTRIBUTES` (the API's domain-validation status); a malformed body stays 400.
+- The compare page reads each product (no new endpoint). The tray sits bottom-left, clear of the assistant button. No product artwork in the sticky table header (keeps the header short on phones).
+- Demo comparison data lives in a server-only module (`apps/web/src/demo/product-specs.ts`), and the shop's client search now imports only the product translations: `/shop` went from 178.7 to 178.6 KB gz with the feature in.

@@ -24,6 +24,7 @@ Each feature has one spec. Specs are living documents: **any change to behaviour
 | 18  | [MechDost assistant (floating chat)](18-assistant.md)                                           | 0 (static), 1  | static shipped; LLM pending Q19   |
 | 19  | [Bulk orders: negotiate with admin](19-bulk-quotes.md)                                          | 1              | decided (thresholds pending Q20)  |
 | 20  | [MechDost Coins (loyalty, no wallet)](20-loyalty-coins.md)                                      | 1              | ledger built; earning pending Q24 |
+| 21  | [Product comparison](21-product-comparison.md)                                                  | 1              | built (demo + API)                |
 
 ## Spec template
 
