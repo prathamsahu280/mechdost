@@ -108,7 +108,14 @@ export const CLIENT_EVENT_SCHEMAS = {
     .object({ items: z.number().int().min(0).max(100), valuePaise: z.number().int().min(0) })
     .strict(),
   // The customer's action; the API records the outcome as the server event `purchase` (code review 2026-11-03).
-  purchase_submitted: z.object({ code: id, valuePaise: z.number().int().min(0), demo: z.boolean() }).strict(),
+  purchase_submitted: z
+    .object({
+      code: id,
+      valuePaise: z.number().int().min(0),
+      demo: z.boolean(),
+      businessPurchase: z.boolean(),
+    })
+    .strict(),
   booking_started: z.object({ workshop: id }).strict(),
   booking_confirmed: z.object({ code: id, workshop: id, demo: z.boolean() }).strict(),
   booking_cancelled: z.object({ code: id, workshop: id, reasonCode: id }).strict(),

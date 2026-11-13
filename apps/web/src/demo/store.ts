@@ -42,6 +42,8 @@ export interface DemoOrder {
   deliveryPaise: number;
   totalPaise: number;
   customer: { name: string; phone: string; address: string; pincode: string };
+  /** Business purchase (GST invoice), from checkout; snapshot like `order_groups.gstin` / `business_name`. */
+  business?: { gstin: string; businessName: string } | null;
   payment: 'cod';
   stage: number;
   /** Shop the order is offered to / accepted by (spec 04 assignment). Absent = needs routing. */
@@ -703,6 +705,7 @@ export function placeDemoOrder(
   customer: DemoOrder['customer'],
   cart: PricedCart,
   coins: DemoOrder['coins'] = null,
+  business: DemoOrder['business'] = null,
 ): DemoOrder {
   const { priced, subtotalPaise, deliveryPaise } = cart;
   // Coins pay part of the products only, never delivery; the caller checked the balance and the cap.
@@ -722,6 +725,7 @@ export function placeDemoOrder(
     deliveryPaise,
     totalPaise,
     customer,
+    business,
     payment: 'cod',
     coins: coins && coinDiscount > 0 ? { ...coins, discountPaise: coinDiscount } : null,
     stage: 1, // placed → immediately "confirming with a shop" (admin routing queue)

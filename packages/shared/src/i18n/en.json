@@ -469,7 +469,14 @@
     "online_expired": "The time to pay for that order has ended. Continue to place it again.",
     "online_details_changed": "Your details changed. Continue to place the order with the new details.",
     "online_failed": "The payment failed. Nothing was charged; you can try again or choose cash on delivery.",
-    "online_not_confirmed": "We could not confirm the payment yet. If money was taken, it shows on your order soon; otherwise it is refunded."
+    "online_not_confirmed": "We could not confirm the payment yet. If money was taken, it shows on your order soon; otherwise it is refunded.",
+    "businessToggle": "This is a business purchase (GST invoice)",
+    "businessHint": "Optional. Add your GSTIN to get a GST invoice for input tax credit.",
+    "gstin": "GSTIN",
+    "businessName": "Business name (as on GST)",
+    "errGstin": "Check the GSTIN: 15 characters, as on the GST certificate.",
+    "errBusinessName": "Enter the business name as on its GST registration.",
+    "gstStateNote": "This GSTIN is registered in {state}. Goods delivered in {deliveryState} are invoiced with {deliveryState} as the place of supply."
   },
   "order": {
     "title": "Order {code}",
@@ -527,7 +534,8 @@
     "rejectReason_unserviceable_address": "We can't deliver to this address",
     "rejectReason_suspected_fraud": "Suspected fraud",
     "rejectReason_pricing_error": "Wrong price shown",
-    "rejectReason_other": "Other reason"
+    "rejectReason_other": "Other reason",
+    "gstInvoiceFor": "GST invoice for {business} ({gstin})"
   },
   "finder": {
     "title": "Where is your vehicle?",

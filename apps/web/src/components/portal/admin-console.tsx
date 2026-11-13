@@ -52,6 +52,7 @@ import { AdminCustomers } from './admin-customers';
 import { ContentEditor, LayoutEditor, SettingsEditor, type ContentDefaults } from './admin-site';
 import { PortalGuard, portalCard, portalField, portalPrimary, portalQuiet, useNow } from './portal-guard';
 import { Applications } from './admin-applications';
+import { GstInvoiceLine } from '@/components/commerce/gst-invoice-line';
 
 const SECTION_EMOJI: Record<AdminSection, string> = {
   overview: '📊',
@@ -384,6 +385,7 @@ function RoutingCard({ order, now }: { order: DemoOrder; now: number }) {
               pin: order.customer.pincode,
             })}
           </p>
+          <GstInvoiceLine business={order.business} className="mt-1 text-xs font-bold text-ink" />
         </div>
         <Link
           href={`${prefix}/orders/${order.code}`}

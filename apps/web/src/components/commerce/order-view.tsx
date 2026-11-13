@@ -23,6 +23,7 @@ import { useDisclosureFocus } from '@/lib/use-disclosure-focus';
 import { formatDate, formatPrice } from '@/lib/format';
 import { StatusTimeline } from './status-timeline';
 import { productNameFor, shopNameFor } from '@/demo/i18n/localize';
+import { GstInvoiceLine } from '@/components/commerce/gst-invoice-line';
 
 /** Order tracking (spec 04): timeline of the real flow — placed → admin routes → shop accepts → … → delivered. */
 export function OrderView({ code }: { code: string }) {
@@ -190,6 +191,7 @@ export function OrderView({ code }: { code: string }) {
             <br />
             {order.customer.address} · {order.customer.pincode}
           </p>
+          <GstInvoiceLine business={order.business} />
         </div>
         <div>
           <h2 className="font-heading font-bold text-ink">{t('payment')}</h2>

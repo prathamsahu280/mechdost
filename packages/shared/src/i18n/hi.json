@@ -469,7 +469,14 @@
     "online_expired": "उस ऑर्डर के भुगतान का समय खत्म हो गया। ऑर्डर फिर से देने के लिए आगे बढ़ें।",
     "online_details_changed": "आपकी जानकारी बदल गई है। नई जानकारी के साथ ऑर्डर देने के लिए आगे बढ़ें।",
     "online_failed": "भुगतान नहीं हो पाया। कोई पैसा नहीं कटा; दोबारा कोशिश करें या कैश ऑन डिलीवरी चुनें।",
-    "online_not_confirmed": "हम अभी भुगतान की पुष्टि नहीं कर पाए। अगर पैसा कटा है तो जल्द ही ऑर्डर पर दिखेगा; नहीं तो लौटा दिया जाएगा।"
+    "online_not_confirmed": "हम अभी भुगतान की पुष्टि नहीं कर पाए। अगर पैसा कटा है तो जल्द ही ऑर्डर पर दिखेगा; नहीं तो लौटा दिया जाएगा।",
+    "businessToggle": "यह व्यवसाय की खरीद है (GST बिल)",
+    "businessHint": "वैकल्पिक। इनपुट टैक्स क्रेडिट के लिए GST बिल पाने हेतु अपना GSTIN डालें।",
+    "gstin": "GSTIN",
+    "businessName": "व्यवसाय का नाम (GST के अनुसार)",
+    "errGstin": "GSTIN जांचें: 15 अक्षर, जैसा GST प्रमाणपत्र पर है।",
+    "errBusinessName": "व्यवसाय का नाम वैसा ही डालें जैसा GST पंजीकरण में है।",
+    "gstStateNote": "यह GSTIN {state} में पंजीकृत है। {deliveryState} में दिया गया सामान {deliveryState} को आपूर्ति का स्थान मानकर बिल किया जाता है।"
   },
   "order": {
     "title": "ऑर्डर {code}",
@@ -527,7 +534,8 @@
     "rejectReason_unserviceable_address": "इस पते पर डिलीवरी नहीं हो सकती",
     "rejectReason_suspected_fraud": "धोखाधड़ी का शक",
     "rejectReason_pricing_error": "गलत कीमत दिखी",
-    "rejectReason_other": "कोई और कारण"
+    "rejectReason_other": "कोई और कारण",
+    "gstInvoiceFor": "{business} ({gstin}) के लिए GST बिल"
   },
   "finder": {
     "title": "आपका वाहन कहाँ है?",

@@ -36,6 +36,8 @@ export interface PayOnlineInput {
   idempotencyKey: string;
   lines: { sku: string; qty: number }[];
   address: { contactName: string; contactPhone: string; line1: string; pincode: string };
+  /** Optional business purchase (GST invoice). */
+  business?: { gstin: string; businessName: string } | null;
 }
 
 interface RazorpayHandle {
@@ -134,6 +136,7 @@ export async function payOnline(input: PayOnlineInput): Promise<PayOnlineResult>
       lines: input.lines,
       expectedTotalPaise: quote.onlineTotalPaise,
       paymentMethod: 'online',
+      ...(input.business ? { business: input.business } : {}),
       locale: input.locale === 'hi' ? 'hi' : 'en',
     };
     const idem = { 'idempotency-key': input.idempotencyKey };

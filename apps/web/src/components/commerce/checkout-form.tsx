@@ -1,6 +1,7 @@
 'use client';
 
 import { coinRedemption } from '@mechdost/shared/coins';
+import { GST_STATE_CODES, gstinStateCode, isGstin, normaliseGstin } from '@mechdost/shared/gst';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
@@ -12,12 +13,13 @@ import { coinBalanceOf, redeemCoins, useCoins } from '@/demo/coins';
 import { customerAllowed } from '@/demo/customer-blocks';
 import { findAccount, useSession } from '@/demo/session';
 import { coinRulesFrom, useSiteSettings } from '@/demo/site-config';
+import { DEMO_CITY } from '@/demo/city';
 import { clearCart, placeDemoOrder, useCart } from '@/demo/store';
 import { priceCart } from '@/demo/cart-pricing';
 import { CartView } from './cart-view';
 import { productNameFor } from '@/demo/i18n/localize';
 
-type Field = 'name' | 'phone' | 'address' | 'pincode' | 'consent';
+type Field = 'name' | 'phone' | 'address' | 'pincode' | 'gstin' | 'businessName' | 'consent';
 
 const PHONE = /^[6-9]\d{9}$/;
 const PIN = /^[1-9]\d{5}$/;
@@ -29,6 +31,7 @@ const PIN = /^[1-9]\d{5}$/;
  */
 export function CheckoutForm() {
   const t = useTranslations('checkout');
+  const states = useTranslations('gstStates');
   const cartT = useTranslations('cart');
   const locale = useLocale();
   const router = useRouter();
@@ -58,6 +61,15 @@ export function CheckoutForm() {
   const coinDiscount = useCoinsOn && method === 'cod' ? redemption.discountPaise : 0;
   const payablePaise = totalPaise - coinDiscount;
   const prefix = locale === 'hi' ? '/hi' : '';
+  // Business purchase (buyer GSTIN plan 2026-11-13): optional; checked with the shared, Zod-free GST helpers.
+  const [isBusiness, setIsBusiness] = useState(false);
+  const [gstinInput, setGstinInput] = useState('');
+  const typedGstin = normaliseGstin(gstinInput);
+  type StateKey = Parameters<typeof states>[0];
+  const isStateKey = (code: string): code is StateKey => GST_STATE_CODES.includes(code);
+  const gstinState = isBusiness && isGstin(typedGstin) ? gstinStateCode(typedGstin) : null;
+  const otherState =
+    gstinState && gstinState !== DEMO_CITY.gstStateCode && isStateKey(gstinState) ? gstinState : null;
 
   if (paid)
     return (
@@ -77,7 +89,10 @@ export function CheckoutForm() {
 
   if (priced.length === 0 && !submitting) return <CartView />;
 
-  async function payOnlineNow(details: { name: string; phone: string; address: string; pincode: string }) {
+  async function payOnlineNow(
+    details: { name: string; phone: string; address: string; pincode: string },
+    business: { gstin: string; businessName: string } | null,
+  ) {
     setOnlineNote(null);
     setSubmitting(true);
     attemptKey.current ??= crypto.randomUUID();
@@ -92,6 +107,7 @@ export function CheckoutForm() {
         line1: details.address,
         pincode: details.pincode,
       },
+      business,
     });
     setSubmitting(false);
     if (result.ok) {
@@ -134,6 +150,12 @@ export function CheckoutForm() {
     if (value('address').length < 10) next.address = t('errAddress');
     if (!PIN.test(pincode)) next.pincode = t('errPincode');
     else if (!pincode.startsWith('4920')) next.pincode = t('errService');
+    const business = isBusiness
+      ? { gstin: normaliseGstin(value('gstin')), businessName: value('businessName') }
+      : null;
+    if (business && !isGstin(business.gstin)) next.gstin = t('errGstin');
+    if (business && (business.businessName.length < 2 || business.businessName.length > 120))
+      next.businessName = t('errBusinessName');
     if (data.get('consent') !== 'on') next.consent = t('errConsent');
     setErrors(next);
     const firstError = Object.keys(next)[0];
@@ -154,7 +176,7 @@ export function CheckoutForm() {
     }
     setBlockedNote(null);
     if (method === 'online') {
-      void payOnlineNow({ name: value('name'), phone, address: value('address'), pincode });
+      void payOnlineNow({ name: value('name'), phone, address: value('address'), pincode }, business);
       return;
     }
     setSubmitting(true);
@@ -167,9 +189,15 @@ export function CheckoutForm() {
       { name: value('name'), phone, address: value('address'), pincode },
       priceCart(lines),
       spend,
+      business,
     );
     if (spend) redeemCoins(spend.accountId, spend.coins, order.code);
-    track('purchase_submitted', { code: order.code, valuePaise: order.totalPaise, demo: true });
+    track('purchase_submitted', {
+      code: order.code,
+      valuePaise: order.totalPaise,
+      demo: true,
+      businessPurchase: business !== null,
+    });
     router.push(`${prefix}/orders/${order.code}?new=1`);
   }
 
@@ -285,6 +313,66 @@ export function CheckoutForm() {
             </label>
             {method === 'online' ? <p className="mt-2 text-xs text-muted">{t('onlineNote')}</p> : null}
           </fieldset>
+        </div>
+        <div className="mt-5 rounded-tile border border-line-card bg-surface-alt p-4">
+          <label className="flex items-start gap-3 text-sm text-ink">
+            <input
+              id="checkout-business"
+              type="checkbox"
+              checked={isBusiness}
+              onChange={(e) => {
+                setIsBusiness(e.target.checked);
+                if (!e.target.checked) setErrors(({ gstin: _g, businessName: _b, ...rest }) => rest);
+              }}
+              className="mt-0.5 size-6 shrink-0 accent-[var(--color-accent-button)]"
+            />
+            <span>
+              <span className="font-bold">{t('businessToggle')}</span>
+              <span className="block text-xs text-muted">{t('businessHint')}</span>
+            </span>
+          </label>
+          {isBusiness ? (
+            <div className="mt-4 grid gap-4 min-[600px]:grid-cols-2">
+              <div>
+                <label htmlFor="checkout-gstin" className="text-sm font-bold text-ink">
+                  {t('gstin')}
+                </label>
+                <input
+                  {...field('gstin')}
+                  value={gstinInput}
+                  onChange={(e) => {
+                    setGstinInput(e.target.value);
+                  }}
+                  autoCapitalize="characters"
+                  autoComplete="off"
+                  spellCheck={false}
+                  maxLength={20}
+                  className={`${inputClass} uppercase`}
+                />
+                {errorText('gstin')}
+                {otherState ? (
+                  <p role="status" className="mt-1 text-xs text-muted">
+                    {t('gstStateNote', {
+                      state: states(otherState),
+                      deliveryState: states(DEMO_CITY.gstStateCode),
+                    })}
+                  </p>
+                ) : null}
+              </div>
+              <div>
+                <label htmlFor="checkout-businessName" className="text-sm font-bold text-ink">
+                  {t('businessName')}
+                </label>
+                <input
+                  {...field('businessName')}
+                  autoComplete="organization"
+                  maxLength={120}
+                  className={inputClass}
+                />
+                {errorText('businessName')}
+              </div>
+            </div>
+          ) : null}
         </div>
         {coinAccount && balance > 0 ? (
           <div className="mt-5 rounded-tile border border-line-card bg-surface-alt p-4">

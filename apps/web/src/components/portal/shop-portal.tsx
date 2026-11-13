@@ -22,6 +22,7 @@ import { ShopAgreement } from './agreement-cards';
 import { PartnerGate } from './partner-gate';
 import { ShopPrices } from './shop-prices';
 import { PortalGuard, portalCard, portalPrimary, portalQuiet, portalField, useNow } from './portal-guard';
+import { GstInvoiceLine } from '@/components/commerce/gst-invoice-line';
 
 /**
  * Shop portal (spec 07): orders MechDost routed to this shop with an accept timer, then pack → deliver.
@@ -125,6 +126,7 @@ function OrderLines({ order }: { order: DemoOrder }) {
           pin: order.customer.pincode,
         })}
       </p>
+      <GstInvoiceLine business={order.business} className="mt-1 text-xs font-bold text-ink" />
       <ul className="mt-3 divide-y divide-line text-sm">
         {order.lines.map((l) => (
           <li key={l.slug} className="flex justify-between gap-3 py-2">
