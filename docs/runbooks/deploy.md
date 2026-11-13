@@ -38,7 +38,7 @@ push to main ─▶ CI (format, types, lint, tests)
 
 - `apps/web/Dockerfile` and `apps/api/Dockerfile`: multi-stage, pinned `node:24.22.1-bookworm-slim` digest, run as the `node` user, with health checks.
 - `.dockerignore`: keeps `.env`, keys and local builds out of the build context.
-- `deploy/compose.yml`, `deploy/Caddyfile`, `deploy/bootstrap.sh`, `deploy/env.server.example`.
+- `deploy/compose.yml`, `deploy/Caddyfile`, `deploy/bootstrap.sh`, `deploy/env.server.example`, `deploy/set-env.sh` (sets `.env` lines from stdin, prints names only), `deploy/supabase-ca-2021.crt` (public Supabase CA).
 - `.github/workflows/deploy.yml`.
 - `apps/web/next.config.ts`: `output: 'standalone'` for the web image.
 
@@ -152,6 +152,34 @@ ssh -t ubuntu@13.207.157.3 'chmod 600 /opt/mechdost/.env && nano /opt/mechdost/.
 
 The checks are in `apps/api/src/config.ts`. No service-account key file goes on the server: the API verifies sign-in tokens with the project id. When all of these are filled in, uncomment `COMPOSE_PROFILES=api` and deploy (§ 5).
 
+### 3.5a Turn the API on (api.mechdost.com)
+
+The API starts only when every production check in `apps/api/src/config.ts` passes. Two of those settings are already handled by `compose.yml`:
+
+- `TRUSTED_PROXY_HOPS=1`;
+- `DATABASE_CA_CERT`: the public Supabase Root 2021 CA, `deploy/supabase-ca-2021.crt`, verified against the Mumbai poolers on 2026-11-13.
+
+You add the rest:
+
+1. **Upstash Redis** (rate limits): go to https://console.upstash.com, then Create database, Redis, region **ap-south-1 (Mumbai)**. Copy the **REST URL** and **REST token** into your local `.env` as `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`.
+2. **Cloudflare Turnstile** (bot check on public forms): go to https://dash.cloudflare.com, then Turnstile, then Add widget. Use the hostnames `mechdost.com` and `localhost`, mode Managed. Copy:
+   - the **secret key** into the local `.env` as `TURNSTILE_SECRET_KEY`;
+   - the **site key** as `NEXT_PUBLIC_TURNSTILE_SITE_KEY`. That one is also a GitHub variable (§ 3.4), needed when real sign-in is switched on.
+3. **Copy the settings to the server** without showing them anywhere. Run this from the repo root (prefix with `!` in this Claude session). `set-env.sh` prints only the names it set:
+
+```bash
+grep -E '^(DATABASE_POOL_URL|DATABASE_URL|SUPABASE_URL|SUPABASE_SECRET_KEY|DATA_ENCRYPTION_KEYS|DATA_ENCRYPTION_KEY_ID|DATA_INDEX_KEY|FIREBASE_PROJECT_ID|FIREBASE_API_KEY|UPSTASH_REDIS_REST_URL|UPSTASH_REDIS_REST_TOKEN|TURNSTILE_SECRET_KEY)=' .env   | ssh ubuntu@13.207.157.3 'bash /opt/mechdost/set-env.sh'
+```
+
+**Do not copy** `DATABASE_CA_CERT` (a Windows path), `FIREBASE_AUTH_EMULATOR_HOST`, `GOOGLE_APPLICATION_CREDENTIALS`, or the Razorpay **test** keys. Production refuses all of them. 4. **Switch on:**
+
+- `printf 'COMPOSE_PROFILES=api
+' | ssh ubuntu@13.207.157.3 'bash /opt/mechdost/set-env.sh'`;
+- then on the server: `cd /opt/mechdost && docker compose up -d --wait`.
+- Check: `curl https://api.mechdost.com/health`. If the API does not start, `docker compose logs api` names each missing or invalid setting (names only, never values).
+
+**Note:** the API then uses the same Supabase project as development, which is the user's choice for now (decisions 2026-11-13 "Hosting"). Create a production project before real customers.
+
 ### 3.6 DNS (you, at the registrar of mechdost.com)
 
 Today `mechdost.com` points at `2.57.91.91` (the registrar's parking page). Replace or add these records:
@@ -187,7 +215,7 @@ Until `DEPLOY_ENABLED=true`, the workflow only builds and pushes images (which a
    - pushes `:<sha>` and `:main` to GHCR with the job's own token (no stored registry password).
 3. **Job `deploy`** (only with `DEPLOY_ENABLED=true`) runs over SSH with the deploy key and the pinned host key:
    1. stops with a clear error if `/opt/mechdost/.env` is missing;
-   2. copies `deploy/compose.yml` and `deploy/Caddyfile` to `/opt/mechdost/`;
+   2. copies `deploy/compose.yml`, `deploy/Caddyfile`, `deploy/supabase-ca-2021.crt` and `deploy/set-env.sh` to `/opt/mechdost/`;
    3. logs in to GHCR on the server with the job's short-lived token, and logs out afterwards;
    4. writes `IMAGE_TAG=<sha>` into `.env` (replacing the previous line), runs `docker compose pull`, then `docker compose up -d --wait --wait-timeout 120 --remove-orphans`;
    5. prunes old images and prints `docker compose ps`.

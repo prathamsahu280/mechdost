@@ -134,7 +134,7 @@ jobs:
           ssh_ 'test -f /opt/mechdost/.env' \
             || { echo "::error::/opt/mechdost/.env is missing on the server (docs/runbooks/deploy.md § Server settings)"; exit 1; }
           scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes -o BatchMode=yes \
-            deploy/compose.yml deploy/Caddyfile "$SSH_USER@$HOST:/opt/mechdost/"
+            deploy/compose.yml deploy/Caddyfile deploy/supabase-ca-2021.crt deploy/set-env.sh "$SSH_USER@$HOST:/opt/mechdost/"
           printf '%s' "$GHCR_TOKEN" | ssh_ "docker login ghcr.io -u '$GHCR_USER' --password-stdin" >/dev/null
           # IMAGE_TAG lives in .env (one line, replaced on every deploy) so manual `docker compose` commands work.
           ssh_ "cd /opt/mechdost && sed -i '/^IMAGE_TAG=/d' .env && echo 'IMAGE_TAG=$TAG' >> .env && rm -f .image-tag \

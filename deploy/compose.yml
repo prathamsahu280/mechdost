@@ -45,6 +45,10 @@ services:
       # One proxy (Caddy) in front: client IPs for rate limits come from X-Forwarded-For.
       TRUSTED_PROXY_HOPS: '1'
       # No service-account key file in production (config check): ID tokens are verified with the project id.
+      # verify-full TLS to Supabase (production refuses anything less): the public Supabase Root 2021 CA.
+      DATABASE_CA_CERT: /run/secrets/supabase-ca.crt
+    volumes:
+      - ./supabase-ca-2021.crt:/run/secrets/supabase-ca.crt:ro
     expose:
       - '4000'
     mem_limit: 384m
