@@ -19,14 +19,16 @@ export function AccountLink({
 }) {
   const session = useSession();
   const className =
-    'hidden min-h-11 items-center gap-2 rounded-lg px-3 text-[13px] font-bold text-ink hover:bg-pill min-[420px]:inline-flex';
+    // Icon-only on phones (360 px+), text from 640 px: the header row must fit every width (UI review 2026-11-14:
+    // at 420-520 px the page scrolled sideways; under 420 px there was no way to sign in from the header).
+    'hidden min-h-11 min-w-11 items-center justify-center gap-2 rounded-lg px-2 text-[13px] font-bold text-ink hover:bg-pill min-[360px]:inline-flex sm:px-3';
   if (!session) {
     return (
       <Link href={`${prefix}/login`} data-track="header_sign_in" className={className}>
-        <span aria-hidden="true" className="hidden text-[16px] leading-none xl:inline">
+        <span aria-hidden="true" className="text-[16px] leading-none sm:hidden xl:inline">
           {UI_EMOJI.account}
         </span>
-        {signIn}
+        <span className="sr-only sm:not-sr-only">{signIn}</span>
       </Link>
     );
   }
@@ -39,7 +41,7 @@ export function AccountLink({
       >
         {first.charAt(0).toUpperCase()}
       </span>
-      <span data-user-content className="max-w-[9ch] truncate">
+      <span data-user-content className="sr-only max-w-[9ch] truncate sm:not-sr-only">
         {first}
       </span>
       <span className="sr-only">, {account}</span>

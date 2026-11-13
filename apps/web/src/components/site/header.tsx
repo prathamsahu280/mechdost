@@ -24,7 +24,7 @@ export function BrandMark() {
         <span className="font-heading text-[21px] leading-none font-extrabold tracking-[-0.04em] text-ink tab:text-[24px]">
           {t('brand')}
         </span>
-        <span className="eyebrow mt-1.5 hidden text-[7px] whitespace-nowrap text-ink min-[400px]:block tab:text-[8px]">
+        <span className="eyebrow mt-1.5 hidden text-[7px] whitespace-nowrap text-ink sm:block tab:text-[8px]">
           {t('tagline')}
         </span>
       </span>
@@ -66,13 +66,13 @@ export function Header({ navItems }: { navItems: readonly NavItem[] }) {
   const locale = useLocale();
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-surface/95 shadow-header backdrop-blur">
-      <div className="mx-auto flex min-h-[72px] max-w-[1600px] items-center justify-between gap-2 px-[5%] py-3 nav:min-h-[84px]">
+      <div className="mx-auto flex min-h-[72px] max-w-[1600px] items-center justify-between gap-1 px-[5%] py-3 sm:gap-2 nav:min-h-[84px]">
         <BrandMark />
-        <div className="flex shrink-0 items-center gap-0.5 min-[400px]:gap-1 sm:gap-2">
+        <div className="flex shrink-0 items-center gap-0.5 min-[440px]:gap-1 sm:gap-2">
           <NavLinks label={t('label')} items={navItems} />
           <LanguageSwitcher target={locale === 'hi' ? 'en' : 'hi'} text={language('other')} />
           {/* Visibility on a wrapper: the toggle's own inline-flex would override a `hidden` class. */}
-          <span className="hidden min-[400px]:contents">
+          <span className="hidden sm:contents">
             <ThemeToggle label={theme('toggle')} />
           </span>
           <AccountLink prefix={locale === 'hi' ? '/hi' : ''} signIn={auth('signIn')} account={t('account')} />

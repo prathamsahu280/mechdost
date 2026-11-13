@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { CompareTrayLoader } from '@/components/catalogue/compare-tray-loader';
 import { DM_Sans, Manrope, Noto_Sans_Devanagari } from 'next/font/google';
 import { notFound } from 'next/navigation';
 import { hasLocale } from 'next-intl';
@@ -85,6 +86,7 @@ export default async function LocaleLayout({
   }));
   const city = (await getTranslations('cities'))(site.defaultCity);
   const consent = await getTranslations('consent');
+  const compare = await getTranslations('compare');
   const errorCopy = (await getMessages()).errorPage;
 
   return (
@@ -119,6 +121,18 @@ export default async function LocaleLayout({
         </main>
         <Footer />
         <MobileTabBar label={tabs('label')} items={tabItems} />
+        {/*
+          The compare tray floats on every page once something is picked (user 2026-11-13). Mounted here, outside
+          the animated page wrapper, so no transform can pin it to the end of the page; renders nothing when empty.
+        */}
+        <CompareTrayLoader
+          prefix={locale === 'hi' ? '/hi' : ''}
+          labels={{
+            label: compare('trayLabel'),
+            link: compare('trayLink', { count: '{count}' }),
+            clear: compare('trayClear'),
+          }}
+        />
         <AssistantLauncher copy={await assistantCopy(locale)} />
         <AnalyticsListener locale={locale} />
         <ConsentBanner

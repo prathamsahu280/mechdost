@@ -79,8 +79,13 @@
   }
 }
 
+/*
+ * `backwards`, never `both`: a kept end state leaves `transform` on the wrapper (an identity matrix is still not
+ * `none`), which makes it the containing block of every `position: fixed` descendant — the compare tray then sat
+ * at the end of the page instead of floating (bug 2026-11-13).
+ */
 @utility animate-page-in {
-  animation: page-in var(--duration-slow) var(--ease-out-soft) both;
+  animation: page-in var(--duration-slow) var(--ease-out-soft) backwards;
 }
 
 @keyframes reveal {
@@ -94,7 +99,7 @@
 @supports (animation-timeline: view()) {
   @media (prefers-reduced-motion: no-preference) {
     .reveal {
-      animation: reveal linear both;
+      animation: reveal linear backwards; /* not `both`: see animate-page-in */
       animation-timeline: view();
       animation-range: entry 0% entry 45%;
     }
@@ -468,6 +473,106 @@ html[data-consent-open] {
 }
 
 /* Product comparison: "Only differences" hides rows that are the same for every product (design 2026-11-13). */
-[data-diff-only] tr[data-same] {
+[data-diff-only] [data-same] {
   display: none;
+}
+
+/*
+ * Comparison grid (redesign 2026-11-13). Phones: product columns only, each about half the screen (two fit; three
+ * or four swipe), the row label on its own line above the values. Tablets and up: an 11rem label column, products
+ * share the rest up to 22rem each.
+ */
+.compare {
+  /* Phones: each product about half the width (two fit, more swipe). Percentages, not vw: vw counts a scrollbar. */
+  --track-min: calc(var(--cols) * 48%);
+}
+.compare-track {
+  width: max(100%, var(--track-min));
+}
+.compare-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+  column-gap: 0.75rem;
+}
+.compare-label {
+  grid-column: 1 / -1;
+  padding: 0.75rem 0 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-muted);
+}
+.compare-group {
+  padding: 1.25rem 0 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--color-muted);
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+@media (min-width: 768px) {
+  .compare {
+    --track-min: calc(11rem + var(--cols) * 12rem);
+    max-width: calc(11rem + var(--cols) * 22rem);
+  }
+  .compare-grid {
+    grid-template-columns: 11rem repeat(var(--cols), minmax(0, 1fr));
+    column-gap: 0;
+  }
+  .compare-label {
+    grid-column: auto;
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    padding: 0.75rem 1rem;
+    background: var(--color-surface);
+  }
+  .compare-col {
+    border-left: 1px solid var(--color-line-card);
+  }
+  .compare-group {
+    background: var(--color-surface-alt);
+    padding: 0.75rem 0 0.5rem;
+  }
+}
+
+/* Native checkboxes and radios in the brand colour, readable in both themes (UI review 2026-11-13). */
+input[type='checkbox'],
+input[type='radio'] {
+  accent-color: var(--color-accent-button);
+}
+
+/* MapLibre's controls are white by default: follow the dark theme (UI review 2026-11-13). */
+:root[data-theme='dark'] .maplibregl-ctrl-group,
+:root[data-theme='dark'] .maplibregl-ctrl-attrib,
+:root[data-theme='dark'] .maplibregl-ctrl-scale {
+  background-color: var(--color-surface);
+  color: var(--color-ink);
+}
+:root[data-theme='dark'] .maplibregl-ctrl-attrib a {
+  color: var(--color-ink);
+}
+:root[data-theme='dark'] .maplibregl-ctrl-group button + button {
+  border-top-color: var(--color-line);
+}
+:root[data-theme='dark'] .maplibregl-ctrl button .maplibregl-ctrl-icon {
+  filter: invert(1) hue-rotate(180deg);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .maplibregl-ctrl-group,
+  :root:not([data-theme='light']) .maplibregl-ctrl-attrib,
+  :root:not([data-theme='light']) .maplibregl-ctrl-scale {
+    background-color: var(--color-surface);
+    color: var(--color-ink);
+  }
+  :root:not([data-theme='light']) .maplibregl-ctrl-attrib a {
+    color: var(--color-ink);
+  }
+  :root:not([data-theme='light']) .maplibregl-ctrl button .maplibregl-ctrl-icon {
+    filter: invert(1) hue-rotate(180deg);
+  }
 }

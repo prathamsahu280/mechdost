@@ -5,8 +5,7 @@
  * and are edited by the admin. Codes, never free text (hard rule 16).
  */
 
-/** At most this many products side by side, one category (design 2026-11-13; NN/g: 3-4 when the user builds the table). */
-export const COMPARE_MAX = 4;
+export { COMPARE_MAX } from './compare-max';
 
 export const NET_UNITS = ['ml', 'g', 'piece', 'm'] as const;
 export type NetUnit = (typeof NET_UNITS)[number];

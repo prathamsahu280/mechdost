@@ -29,6 +29,7 @@
     "./gst": "./src/gst.ts",
     "./partner-codes": "./src/partner-codes.ts",
     "./product-attributes": "./src/product-attributes.ts",
+    "./compare-max": "./src/compare-max.ts",
     "./admin-prices": "./src/admin-prices.ts",
     "./partners": "./src/partners.ts",
     "./email-templates": "./src/email-templates.ts"

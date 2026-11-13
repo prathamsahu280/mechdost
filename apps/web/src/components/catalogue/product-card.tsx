@@ -106,9 +106,11 @@ export function ProductCard({
         >
           {availabilityLabel(t, product.availability)}
         </p>
-        <div className="mt-auto flex flex-col gap-2 pt-4">
+        {/* Compare sits beside Add to cart (user 2026-11-13: it was a whole extra row at the bottom of the card). */}
+        <div className="mt-auto flex items-start gap-2 pt-4">
           {compare ? (
             <CompareToggle
+              className="shrink-0"
               slug={product.slug}
               category={product.category.slug}
               labels={{
@@ -124,16 +126,19 @@ export function ProductCard({
             />
           ) : null}
           {price ? (
-            <AddToCartButton
-              slug={product.slug}
-              labels={{
-                add: t('addToCart'),
-                added: t('added'),
-                maxQty: t('maxQty'),
-                maxLines: t('maxLines'),
-                saveFailed: t('saveFailed'),
-              }}
-            />
+            <div className="min-w-0 flex-1">
+              <AddToCartButton
+                slug={product.slug}
+                className="px-3"
+                labels={{
+                  add: t('addToCart'),
+                  added: t('added'),
+                  maxQty: t('maxQty'),
+                  maxLines: t('maxLines'),
+                  saveFailed: t('saveFailed'),
+                }}
+              />
+            </div>
           ) : null}
         </div>
       </div>

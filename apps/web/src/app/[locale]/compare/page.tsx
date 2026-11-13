@@ -1,4 +1,6 @@
+import { Plus } from 'lucide-react';
 import type { Metadata } from 'next';
+import { COMPARE_MAX } from '@mechdost/shared/product-attributes';
 import { getTranslations } from 'next-intl/server';
 import { DifferencesToggle } from '@/components/catalogue/compare-islands';
 import { CompareTable } from '@/components/catalogue/compare-table';
@@ -71,7 +73,7 @@ export default async function ComparePage({ params, searchParams }: Props) {
         </p>
       ) : null}
       <div className="mt-6">
-        {items.length < 2 ? (
+        {items.length === 0 ? (
           <EmptyState
             title={t('emptyTitle')}
             body={t('emptyBody')}
@@ -89,6 +91,28 @@ export default async function ComparePage({ params, searchParams }: Props) {
             label={t('onlyDifferences')}
             count={items.length}
             category={category?.slug ?? null}
+            tools={
+              <>
+                {items.length < COMPARE_MAX && category ? (
+                  <LocalLink
+                    href={`/shop?category=${category.slug}`}
+                    data-track="compare_add_more"
+                    className="press inline-flex min-h-11 items-center gap-1.5 rounded-pill border border-dashed border-input-border px-4 text-sm font-bold text-ink hover:border-ink"
+                  >
+                    <Plus aria-hidden="true" className="size-4" />
+                    {t('addMore', { count: items.length, max: COMPARE_MAX })}
+                  </LocalLink>
+                ) : null}
+                {category ? (
+                  <LocalLink
+                    href={`/shop?category=${category.slug}`}
+                    className="inline-flex min-h-11 items-center px-2 text-sm font-bold text-accent-soft-text underline-offset-4 hover:underline"
+                  >
+                    {t('backTo', { category: categoryName })}
+                  </LocalLink>
+                ) : null}
+              </>
+            }
           >
             <CompareTable
               items={items}

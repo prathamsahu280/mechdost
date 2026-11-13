@@ -46,3 +46,6 @@ Thumbs.db
 
 # Plan execution scratch (superpowers ledgers, briefs, review packages)
 .superpowers/
+
+# UI review reports with screenshots (local only; user 2026-11-14)
+reports/

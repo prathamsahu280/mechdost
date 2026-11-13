@@ -2,6 +2,7 @@
 
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type { Map as MapLibreMap, Marker, StyleSpecification } from 'maplibre-gl';
+import { useTranslations } from 'next-intl';
 import { useEffect, useRef } from 'react';
 import { STYLE_URLS, localizeLabels } from '@/lib/map-styles';
 
@@ -41,7 +42,14 @@ export function LocationMap({
   const marker = useRef<Marker | null>(null);
   const pick = useRef(onPick);
   // Values the map is created with (once per opening of the dialog); later centres move it (effect below).
-  const init = useRef({ center, locale, label, onFail });
+  const mapT = useTranslations('map');
+  // Control labels in the page's language (hard rule 10; the workshop map does the same).
+  const controls = {
+    'NavigationControl.ZoomIn': mapT('zoomIn'),
+    'NavigationControl.ZoomOut': mapT('zoomOut'),
+    'AttributionControl.ToggleAttribution': mapT('attribution'),
+  };
+  const init = useRef({ center, locale, label, onFail, controls });
   useEffect(() => {
     pick.current = onPick;
   });
@@ -51,7 +59,7 @@ export function LocationMap({
     import('maplibre-gl')
       .then((maplibre) => {
         if (cancelled || !container.current) return;
-        const { center, locale, label, onFail } = init.current;
+        const { center, locale, label, onFail, controls } = init.current;
         maplibre.setWorkerUrl(`/vendor/maplibre-gl-worker-${maplibre.getVersion()}.mjs`);
         const start = center ?? RAIPUR;
         const m = new maplibre.Map({
@@ -66,6 +74,7 @@ export function LocationMap({
           pitchWithRotate: false,
           touchPitch: false,
           attributionControl: { compact: true },
+          locale: controls,
         });
         m.addControl(new maplibre.NavigationControl({ showCompass: false }), 'top-right');
         const pin = new maplibre.Marker({ draggable: true, color: '#ea5728' })

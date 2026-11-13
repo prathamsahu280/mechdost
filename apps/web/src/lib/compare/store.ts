@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react';
-import { COMPARE_MAX } from '@mechdost/shared/product-attributes';
+import { COMPARE_MAX } from '@mechdost/shared/compare-max';
+import { COMPARE_EVENT, COMPARE_KEY } from './signal';
 
 /**
  * Compare list (design `docs/superpowers/specs/2026-11-13-product-comparison-design.md`): up to 4 products of one
@@ -7,7 +8,7 @@ import { COMPARE_MAX } from '@mechdost/shared/product-attributes';
  * every shop page (JS budget, L79). The compare page itself reads the list from its URL, not from here.
  */
 export { COMPARE_MAX };
-const KEY = 'mechdost-compare';
+const KEY = COMPARE_KEY;
 const SLUG = /^[a-z0-9][a-z0-9-]{0,119}$/;
 
 export interface CompareList {
@@ -57,6 +58,7 @@ function write(list: CompareList): boolean {
     saved = false;
   }
   for (const l of listeners) l();
+  window.dispatchEvent(new Event(COMPARE_EVENT));
   return saved;
 }
 

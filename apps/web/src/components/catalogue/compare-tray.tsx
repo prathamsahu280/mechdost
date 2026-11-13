@@ -1,6 +1,7 @@
 'use client';
 
 import NextLink from 'next/link';
+import { usePathname } from 'next/navigation';
 import { clearCompare, compareHref, useCompare } from '@/lib/compare/store';
 
 export interface CompareTrayLabels {
@@ -11,7 +12,7 @@ export interface CompareTrayLabels {
 }
 
 /**
- * The small "Compare (2)" bar (design 2026-11-13). Only on shop pages, only while something is picked. Kept
+ * The small "Compare (2)" bar (design 2026-11-13). On every page (locale layout), only while something is picked. Kept
  * small on phones (Baymard: a big compare panel hid half the screen): bottom-left above the tab bar, clear of the
  * assistant button (bottom-right).
  */
@@ -23,7 +24,9 @@ export function CompareTray({
   /** '' or '/hi', from the server. */ prefix: string;
 }) {
   const list = useCompare();
-  if (list.slugs.length === 0) return null;
+  const pathname = usePathname();
+  // Not on the comparison itself: the table is what the tray would open.
+  if (list.slugs.length === 0 || /\/compare\/?$/.test(pathname)) return null;
   return (
     <aside
       aria-label={labels.label}

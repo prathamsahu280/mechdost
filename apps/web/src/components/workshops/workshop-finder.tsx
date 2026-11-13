@@ -3,7 +3,7 @@
 import { BadgeCheck, LocateFixed, MapPin, Star, Truck, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import { useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useMemo, useRef, useState } from 'react';
 import { VEHICLE_LABEL_KEY, VEHICLE_TYPES, isVehicleType, type VehicleType } from '@mechdost/shared/vehicles';
 import {
   DEMO_WORKSHOPS,
@@ -17,7 +17,14 @@ import { usePartnerHistory, usePartnerStatus, visibleToCustomers } from '@/demo/
 import { formatPrice } from '@/lib/format';
 import { track } from '@/lib/analytics';
 import { mapUi } from '@/lib/map-ui';
-import { WorkshopMap, type MapPoint } from './workshop-map';
+import type { MapPoint } from './workshop-map';
+
+/**
+ * The map's own code loads after the list (JS budget, 2026-11-13: `/workshops` was over 180 KB). MapLibre was
+ * already loaded on demand; this moves the component too. The placeholder has the map's size, so nothing shifts.
+ */
+const WorkshopMap = lazy(() => import('./workshop-map').then((m) => ({ default: m.WorkshopMap })));
+const MAP_SIZE = 'h-[340px] tab:h-[420px] nav:h-[calc(100vh-9rem)] nav:max-h-[700px]';
 
 type VehicleFilter = 'any' | VehicleType;
 type Origin = { lat: number; lng: number; source: 'gps' | 'pin'; pin?: string; area?: string } | null;
@@ -219,26 +226,34 @@ export function WorkshopFinder() {
       ) : (
         <div className="mt-4 grid gap-5 nav:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] nav:items-start">
           <div ref={mapRef} className="scroll-mt-28 nav:order-2 nav:sticky nav:top-28">
-            <WorkshopMap
-              points={points}
-              origin={origin}
-              selected={selected}
-              onSelect={(slug) => {
-                track('map_action', { action: 'pin_select', workshop: slug });
-                setSelected(slug);
-                document
-                  .getElementById(`workshop-${slug}`)
-                  ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-              }}
-              onLocate={(pos) => {
-                locatedAt(pos, 'map');
-              }}
-              label={t('mapLabel')}
-              youAreHere={t('youAreHere')}
-              ui={mapUi(m)}
-              locale={locale}
-              className="h-[340px] tab:h-[420px] nav:h-[calc(100vh-9rem)] nav:max-h-[700px]"
-            />
+            <Suspense
+              fallback={
+                <div
+                  className={`rounded-card border border-line-card bg-surface-alt shadow-card ${MAP_SIZE}`}
+                />
+              }
+            >
+              <WorkshopMap
+                points={points}
+                origin={origin}
+                selected={selected}
+                onSelect={(slug) => {
+                  track('map_action', { action: 'pin_select', workshop: slug });
+                  setSelected(slug);
+                  document
+                    .getElementById(`workshop-${slug}`)
+                    ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }}
+                onLocate={(pos) => {
+                  locatedAt(pos, 'map');
+                }}
+                label={t('mapLabel')}
+                youAreHere={t('youAreHere')}
+                ui={mapUi(m)}
+                locale={locale}
+                className={MAP_SIZE}
+              />
+            </Suspense>
           </div>
           <ul className="grid gap-4 nav:order-1">
             {results.map(({ w, km }) => (
@@ -295,12 +310,15 @@ function WorkshopCard({
               {w.name}
             </Link>
           </h3>
-          <p className="mt-1 flex items-center gap-1 text-sm text-muted">
-            <MapPin aria-hidden="true" className="size-4 shrink-0" />
-            {w.area} · {w.pincode}
-            {km !== null ? (
-              <span className="font-bold text-ink"> · {t('distance', { km: km.toFixed(1) })}</span>
-            ) : null}
+          <p className="mt-1 flex items-start gap-1 text-sm text-muted">
+            <MapPin aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+            {/* One text run, so the distance wraps with the area instead of forming a second column. */}
+            <span>
+              {w.area} · {w.pincode}
+              {km !== null ? (
+                <span className="font-bold text-ink"> · {t('distance', { km: km.toFixed(1) })}</span>
+              ) : null}
+            </span>
           </p>
           {paused ? (
             <p className="mt-2 inline-flex rounded-pill bg-warning-bg px-3 py-1 text-xs font-bold text-warning">
