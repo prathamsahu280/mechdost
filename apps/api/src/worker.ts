@@ -10,6 +10,7 @@ import {
   expireDueAssignments,
   releaseExpiredReservations,
   expireUnpaidOnlineOrders,
+  resumeEndedPauses,
 } from '@mechdost/db/repo';
 import { ConfigError, loadConfig } from './config';
 import { pollingPublisher, type LivePublisher } from './live/publisher';
@@ -98,6 +99,25 @@ const expiryTimer = setInterval(() => {
 }, 30_000);
 expiryTimer.unref();
 
+// Pauses with an end date resume by themselves (Q28, user 2026-11-13). Every 60 s; each shop is its own
+// compare-and-set, so several workers may run this safely.
+let resuming = false;
+const pauseTimer = setInterval(() => {
+  if (resuming) return;
+  resuming = true;
+  void resumeEndedPauses(db)
+    .then((count) => {
+      if (count > 0) log('info', 'pauses_ended', { count });
+    })
+    .catch((err: unknown) => {
+      log('error', 'pause_resume_failed', safeError(err));
+    })
+    .finally(() => {
+      resuming = false;
+    });
+}, 60_000);
+pauseTimer.unref();
+
 // Stock hold expiry (spec 04): holds past `checkout.cod_reservation_minutes` go back on sale. Every 60 s; one
 // transaction per hold (order row locked first), so several workers may run this safely.
 let releasing = false;
@@ -176,6 +196,7 @@ function shutdown(signal: string) {
   if (bridgeTimer) clearInterval(bridgeTimer);
   clearInterval(expiryTimer);
   clearInterval(holdTimer);
+  clearInterval(pauseTimer);
   clearInterval(paymentTimer);
   clearInterval(partitionTimer);
   void Promise.all([relay.stop(), dispatcher.stop()])

@@ -1,4 +1,4 @@
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, isNotNull, lte, sql } from 'drizzle-orm';
 import { auditLog, partnerStatusEvents, shops } from '../schema';
 import { ConflictError, ValidationError } from './errors';
 import type { Tx } from './orders';
@@ -82,4 +82,55 @@ export async function setShopStanding(
     });
     return updated;
   });
+}
+
+/**
+ * Background sweep (worker): pauses with an end date resume by themselves once it has passed (Q28, user
+ * 2026-11-13). Each shop is resumed with a compare-and-set on its version, so a staff change at the same moment
+ * wins; the history row names the staff member who set the pause (it was their scheduled end), the audit entry is
+ * the system. Returns how many shops resumed.
+ */
+export async function resumeEndedPauses(db: Tx, now: Date = new Date()): Promise<number> {
+  const due = await db
+    .select({ id: shops.id, version: shops.version, by: shops.statusChangedBy })
+    .from(shops)
+    .where(and(eq(shops.status, 'paused'), isNotNull(shops.pausedUntil), lte(shops.pausedUntil, now)));
+  let resumed = 0;
+  for (const shop of due) {
+    const done = await db.transaction(async (tx) => {
+      const [updated] = await tx
+        .update(shops)
+        .set({
+          status: 'approved',
+          statusReason: 'The pause ended',
+          statusChangedAt: sql`now()`,
+          pausedUntil: null,
+          version: sql`${shops.version} + 1`,
+        })
+        .where(and(eq(shops.id, shop.id), eq(shops.version, shop.version), eq(shops.status, 'paused')))
+        .returning({ id: shops.id });
+      if (!updated) return false;
+      if (shop.by)
+        await tx.insert(partnerStatusEvents).values({
+          partnerKind: 'shop',
+          partnerId: shop.id,
+          fromStatus: 'paused',
+          toStatus: 'approved',
+          reason: 'The pause ended',
+          changedBy: shop.by,
+        });
+      await tx.insert(auditLog).values({
+        actorUserId: null,
+        actorRole: 'system',
+        action: 'partner.pause_ended',
+        entity: 'shop',
+        entityId: shop.id,
+        before: { status: 'paused' },
+        after: { status: 'approved' },
+      });
+      return true;
+    });
+    if (done) resumed += 1;
+  }
+  return resumed;
 }

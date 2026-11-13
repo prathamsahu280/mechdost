@@ -117,3 +117,13 @@ Staff with `products:write` set a product's typed attributes (`PUT /v1/admin/cat
 ## Order rules (2026-11-13)
 
 Admin → Settings → **Order rules**: "Customers may cancel their own order until the shop confirms it" (`orders.customer_self_cancel`, off by default, Q25). Spec 05.
+
+## Partner pauses end by themselves (2026-11-13, Q28)
+
+- **End date:** a pause may carry an optional end date (`shops.paused_until`). The worker's sweep (`resumeEndedPauses`, every 60 s) resumes shops whose date has passed, with:
+  - a compare-and-set on the version;
+  - a history row (`paused → approved`, "The pause ended", credited to the staff member who set the pause);
+  - a system audit entry `partner.pause_ended`.
+- **Pauses without a date:** they stay until resumed by hand.
+- **Q28 answers:** no fixed warn → pause → suspend ladder (the admin decides each time); one admin may offboard.
+- Test: db `partner-pause.test.ts`.

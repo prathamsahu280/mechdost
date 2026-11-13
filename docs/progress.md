@@ -9,14 +9,14 @@ This file is the single source of truth for **where the build is right now**. It
 1. **Q82 + Q26 admin catalogue screen with admin PIN prices** (user: build now, before the website switch). Pricing model change, so it needs a short design first: fallback when no admin price, per-PIN vs city default, suggestion source, the shop price and margin on orders (Q11).
 2. **Clear small changes:**
    - ~~Q25~~ **done 2026-11-13**: customer self-cancel is now an admin setting, off by default (cancel through support);
-   - Q78: invited sellers' phones count as verified;
-   - Q28: one-admin offboarding, optional pause end date;
+   - Q78: invited sellers' phones count as verified. This changes the Firebase sign-up flow, so it needs a short auth design (firebase-phone-auth-rbac);
+   - ~~Q28~~ **done 2026-11-13**: pauses with an end date resume automatically (worker sweep); one-admin offboarding needed no change (four-eyes was never built);
    - Q74: COD-confirmation timeout as an admin setting;
    - Q66: COD fee per PIN code.
 3. **Q11:** margin and workshop flat-fee ledger with weekly payouts; **Q24:** coin earning rules (admin-configurable); **referrals** once Q35–Q47 are answered.
 4. **Q1:** service reminders, disputes, order chat; **Q59:** partner WhatsApp alerts; WhatsApp work once the Meta details arrive (Q56 OTP order pending).
 5. **Research:** Q12 free geocoders better than Nominatim for Raipur; Q27 whether Esri imagery is free for this use.
-6. **Then:** the website switch (web → API), refunds (spec 05), production Supabase project, monitoring.
+6. **Then:** deploy the **background worker** (offer timeouts, stock-hold release, unpaid-order expiry, pause resume, outbox): it is not in the production compose yet, which is fine while the website is on demo data but is required for the switch; then the website switch (web → API), refunds (spec 05), production Supabase project, monitoring.
 
 Still open: Q9/Q63, Q19, Q23 (Enforce SSL, later), Q30 mailboxes, Q35–Q47 referrals and promotions, Q53, Q58, Q77 text. **Dependabot #7:** the rebase did not happen (branch unchanged), so it is not merged yet. Then the spec 21 P1 extras (compare with similar, share, admin editor screen) or the queued items below. **Queued from the review:** real-Postgres concurrency harness (spec 14), invite email locale + IST date, audit gaps (withdraw/supersede, maybeGoLive actor), geo search labels in Hindi, map pin vs PIN check, CGNAT-friendly per-IP limit.
 
