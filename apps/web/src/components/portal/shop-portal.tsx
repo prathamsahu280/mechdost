@@ -18,6 +18,7 @@ import {
 } from '@/demo/store';
 import { track } from '@/lib/analytics';
 import { formatDate, formatPrice } from '@/lib/format';
+import { ShopAgreement } from './agreement-cards';
 import { PartnerGate } from './partner-gate';
 import { ShopPrices } from './shop-prices';
 import { PortalGuard, portalCard, portalPrimary, portalQuiet, portalField, useNow } from './portal-guard';
@@ -67,6 +68,8 @@ function ShopOrders({ shopSlug }: { shopSlug: string }) {
           </p>
         </section>
       ) : null}
+
+      <ShopAgreement shopSlug={shopSlug} />
 
       <section aria-labelledby="offered-title">
         <h2 id="offered-title" className="font-heading text-xl font-extrabold text-ink">

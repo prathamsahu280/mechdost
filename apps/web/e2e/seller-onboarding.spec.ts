@@ -250,3 +250,30 @@ test.describe('shop prices', () => {
     await expect(shell).toContainText('Taken off sale: Above market price');
   });
 });
+
+test.describe('seller agreement', () => {
+  test('the admin publishes the agreement and the shop accepts the current version', async ({ page }) => {
+    await offline(page);
+    await signInAdmin(page, '/admin/partners');
+    const admin = page.getByRole('region', { name: 'Seller agreement' });
+    await expect(admin.getByText('No agreement published yet.', { exact: false })).toBeVisible();
+    await admin
+      .getByLabel('Agreement text (English)')
+      .fill('The seller agrees to list genuine parts at prices approved by MechDost.');
+    await admin
+      .getByLabel('Agreement text (Hindi)')
+      .fill('विक्रेता MechDost द्वारा मंज़ूर कीमतों पर असली पुर्ज़े बेचने के लिए सहमत है।');
+    await admin.getByRole('button', { name: 'Publish this version' }).click();
+    await expect(admin.getByText('Version 1 is current.')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Sign out' }).first().click();
+    await signInShop(page);
+    const card = page.getByRole('region', { name: 'Seller agreement' });
+    await expect(card).toContainText('genuine parts at prices approved by MechDost');
+    await card.getByRole('button', { name: 'Accept the agreement' }).click();
+    await expect(card.getByText('Tick the box to accept.')).toBeVisible();
+    await card.getByLabel('I have read and agree to this agreement.').check();
+    await card.getByRole('button', { name: 'Accept the agreement' }).click();
+    await expect(card).toContainText('You accepted version 1');
+  });
+});
