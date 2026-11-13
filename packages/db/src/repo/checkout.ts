@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { adminPriceJoins } from './admin-price-sql';
 import { and, eq, isNull, or, sql } from 'drizzle-orm';
 import type { BusinessPurchase } from '@mechdost/shared/business';
 import { publicCode } from '@mechdost/shared/ids';
@@ -114,6 +115,8 @@ interface PricedLine {
   hsn: string;
   gstRateBp: number;
   unitPaise: number;
+  /** The chosen shop's approved price (what it is paid); unitPaise - this = MechDost's margin (Q11). */
+  shopUnitPaise: number;
   interState: boolean;
 }
 
@@ -202,13 +205,14 @@ async function quoteInternal(
     shop_name_hi: string | null;
     shop_state_id: string | null;
     price: unknown;
+    shop_price: unknown;
     shipping: unknown;
     lead_days: unknown;
     max_free: unknown;
   }>(
     await db.execute(sql`
       select l.sku, l.qty, v.id as variant_id, p.name, p.name_hi, b.name as brand, p.hsn, p.gst_rate_bp,
-        v.mrp_paise, o.inventory_id, o.shop_id, o.shop_name, o.shop_name_hi, o.shop_state_id, o.price,
+        v.mrp_paise, o.inventory_id, o.shop_id, o.shop_name, o.shop_name_hi, o.shop_state_id, o.price, o.shop_price,
         o.shipping, o.lead_days, best.max_free
       from jsonb_to_recordset(${JSON.stringify(input.lines)}::jsonb) as l(sku text, qty int)
       left join product_variants v on v.sku = l.sku and v.status = 'active'
@@ -216,13 +220,17 @@ async function quoteInternal(
       left join brands b on b.id = p.brand_id
       left join lateral (
         select si.id as inventory_id, s.id as shop_id, s.name as shop_name, s.name_hi as shop_name_hi,
-          s.state_id as shop_state_id, si.selling_paise as price, sp.shipping_paise as shipping,
+          s.state_id as shop_state_id,
+          coalesce(ap_pin.selling_paise, ap_city.selling_paise, si.selling_paise) as price,
+          si.selling_paise as shop_price, sp.shipping_paise as shipping,
           coalesce(si.lead_days, sp.lead_days) as lead_days
         from shop_inventory si
         join shops s on s.id = si.shop_id
         join shop_pincodes sp on sp.shop_id = s.id and sp.pincode = ${input.pincode} and sp.active
+        ${adminPriceJoins(sql`si.variant_id`, place.city_id, input.pincode)}
         where p.id is not null and si.variant_id = v.id and si.active and not si.admin_blocked
           and si.on_hand - si.reserved >= l.qty and s.status = 'approved' and s.gst_status = 'registered' and not (s.busy and (s.busy_until is null or s.busy_until > now()))
+          and si.selling_paise <= coalesce(ap_pin.selling_paise, ap_city.selling_paise, si.selling_paise)
         order by st_distance(s.location, (select centroid from pincodes where pincode = ${input.pincode})) asc nulls last,
           si.selling_paise, s.id
         limit 1) o on true
@@ -231,7 +239,9 @@ async function quoteInternal(
         from shop_inventory si
         join shops s on s.id = si.shop_id
         join shop_pincodes sp on sp.shop_id = s.id and sp.pincode = ${input.pincode} and sp.active
+        ${adminPriceJoins(sql`si.variant_id`, place.city_id, input.pincode)}
         where p.id is not null and si.variant_id = v.id and si.active and not si.admin_blocked
+          and si.selling_paise <= coalesce(ap_pin.selling_paise, ap_city.selling_paise, si.selling_paise)
           and s.status = 'approved' and s.gst_status = 'registered'
           and not (s.busy and (s.busy_until is null or s.busy_until > now()))) best on true`),
   );
@@ -298,6 +308,7 @@ async function quoteInternal(
       hsn: r.hsn ?? '',
       gstRateBp: num(r.gst_rate_bp),
       unitPaise: unit,
+      shopUnitPaise: num(r.shop_price),
       interState,
     });
     return { ...base, unitPaise: unit, totalPaise: gross, group: g, issue: null, available: null };
@@ -544,6 +555,7 @@ export async function placeOrder(
           hsn: line.hsn,
           gstRateBp: line.gstRateBp,
           unitPaise: line.unitPaise,
+          shopUnitPaise: line.shopUnitPaise,
           qty: line.qty,
           taxablePaise: tax.taxable,
           cgstPaise: tax.cgst,

@@ -96,6 +96,10 @@ beforeAll(async () => {
   await seedRaipurDemo(t(), fixture);
   customer = (await db.insert(s.users).values({ firebaseUid: 'fb-shoporders-customer' }).returning())[0]!.id;
   staff = (await db.insert(s.users).values({ firebaseUid: 'fb-shoporders-staff' }).returning())[0]!.id;
+  // Admin city prices at MRP (Q26): every shop is paid at or below what the customer pays, so these tests exercise
+  // routing itself (a shop paid more than the customer pays is never offered; admin-price-resolution.test.ts).
+  await db.execute(sql`insert into admin_prices (variant_id, city_id, selling_paise, updated_by)
+    select v.id, c.id, v.mrp_paise, ${staff} from product_variants v cross join cities c where c.code = 'RPR'`);
   shopUser = (await db.insert(s.users).values({ firebaseUid: 'fb-shoporders-shop' }).returning())[0]!.id;
   for (const row of await db.select().from(s.shops)) shop[row.name] = row.id;
   scope = { all: true };

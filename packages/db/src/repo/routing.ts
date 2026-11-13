@@ -234,11 +234,12 @@ export async function rankShopsForOrder(
   }>(
     await db.execute(sql`
       with o as (select id, pincode from orders where id = ${orderId}),
-      items as (select variant_id, qty from order_items where order_id = ${orderId})
+      items as (select variant_id, qty, unit_paise from order_items where order_id = ${orderId})
       select s.id as shop_id, s.name, s.name_hi,
         st_distance(s.location, (select centroid from pincodes where pincode = o.pincode)) as dist_m,
+        -- A shop counts for an item only if it is paid at or below what the customer pays (admin prices, Q26).
         (select count(*) from items i join shop_inventory si on si.variant_id = i.variant_id and si.shop_id = s.id
-           and si.active and not si.admin_blocked
+           and si.active and not si.admin_blocked and si.selling_paise <= i.unit_paise
            and si.on_hand - si.reserved + coalesce((select sum(r.qty) from reservations r
              where r.order_id = o.id and r.status = 'active' and r.inventory_id = si.id), 0) >= i.qty)::int as stocked,
         (select count(*) from items)::int as total,

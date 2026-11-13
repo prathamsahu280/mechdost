@@ -1,4 +1,5 @@
 import { sql, type SQL } from 'drizzle-orm';
+import { adminPriceJoins, CUSTOMER_PRICE } from './admin-price-sql';
 import { VEHICLE_TYPES, isVehicleType, type VehicleType } from '@mechdost/shared/vehicles';
 import {
   attributeDefs,
@@ -137,28 +138,33 @@ export const BUYABLE_OFFER = sql`v.status = 'active' and si.active and not si.ad
 function offerLateral(place: CataloguePlace, variants: SQL): SQL {
   const buyable = BUYABLE_OFFER;
   if (place.pincode) {
+    // Customer price: the admin's PIN override, else city price, else the shop's own (Q26); only shops paid at or
+    // below it qualify (design 2026-11-13: never sold below what the shop is paid).
     return sql`left join lateral (
-      select si.selling_paise as price, v.mrp_paise as mrp, v.net_qty as net_qty, v.net_unit as net_unit,
+      select ${CUSTOMER_PRICE} as price, v.mrp_paise as mrp, v.net_qty as net_qty, v.net_unit as net_unit,
         sp.shipping_paise as shipping,
         coalesce(si.lead_days, sp.lead_days) as lead_days, s.name as shop_name, s.name_hi as shop_name_hi
       from product_variants v
       join shop_inventory si on si.variant_id = v.id
       join shops s on s.id = si.shop_id
       join shop_pincodes sp on sp.shop_id = s.id and sp.pincode = ${place.pincode} and sp.active
-      where ${variants} and ${buyable}
+      ${adminPriceJoins(sql`v.id`, place.cityId, place.pincode)}
+      where ${variants} and ${buyable} and si.selling_paise <= ${CUSTOMER_PRICE}
       order by st_distance(s.location, (select centroid from pincodes where pincode = ${place.pincode})) asc nulls last,
         si.selling_paise, s.id
       limit 1) o on true`;
   }
+  // City-wide "From ₹": the city price when the admin set one (PIN overrides are shown once a PIN is known).
   return sql`left join lateral (
-    select si.selling_paise as price, v.mrp_paise as mrp, v.net_qty as net_qty, v.net_unit as net_unit,
+    select ${CUSTOMER_PRICE} as price, v.mrp_paise as mrp, v.net_qty as net_qty, v.net_unit as net_unit,
       null::bigint as shipping, si.lead_days as lead_days,
       s.name as shop_name, s.name_hi as shop_name_hi
     from product_variants v
     join shop_inventory si on si.variant_id = v.id
     join shops s on s.id = si.shop_id and s.city_id = ${place.cityId}
-    where ${variants} and ${buyable}
-    order by si.selling_paise, s.id
+    ${adminPriceJoins(sql`v.id`, place.cityId, null)}
+    where ${variants} and ${buyable} and si.selling_paise <= ${CUSTOMER_PRICE}
+    order by ${CUSTOMER_PRICE}, si.selling_paise, s.id
     limit 1) o on true`;
 }
 
