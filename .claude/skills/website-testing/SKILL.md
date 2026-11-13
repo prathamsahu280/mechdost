@@ -46,6 +46,23 @@ has a test (existing or added now). Missing coverage for a touched class is a bl
 Every "Acceptance tests" bullet in `docs/specs/NN-*.md` for the touched feature must map to a named test.
 List the mapping in your summary.
 
+### 3a. Walk the states (UI changes)
+
+For every page or component the change touches, answer these in the report. "Not applicable" needs a reason.
+
+1. **Which stored keys does it read?** (`docs/runbooks/ui-testing.md` §1). For each: empty, one, many, at its
+   limit, invalid row.
+2. **Which roles can reach it?** Guest, customer, shop, workshop, admin: what each sees, and the guard for the rest.
+3. **Which status codes can the record be in?** Every code of its machine in `packages/shared/src/state`, closed
+   ones too (cancelled, rejected, closed, expired, revoked). Say which ones the demo store cannot represent and
+   where they are tested instead.
+4. **What do the other roles see after each control is used?** Name the page and the count that changes.
+5. **Which deadlines apply?** (offer timer, invite, quote validity, block end, ticket SLA.) Both sides, with
+   `page.clock`.
+6. **Second tab or second person:** stale `version`, `storage` event, sign-out or block while the page is open.
+7. **Combinations:** at least nothing · ongoing order + open ticket + cart · everything at once · at the limits.
+8. **Is the seeded data on screen?** Each matrix page asserts a marker of its world before the layout checks.
+
 ### 4. Run and read
 
 Run the suites (commands in `references/commands.md`). Read the actual output: counts, failures, warnings,
@@ -65,6 +82,7 @@ TEST REPORT — <task>
 Suites run: <name: passed/failed/skipped counts>
 Acceptance tests (spec NN): <bullet → test name>
 Bug classes covered: <catalogue ids touched → test names>
+States walked: <worlds × theme × language × widths rendered> · <states not representable in demo → where covered>
 New tests added: <names>  ·  Regression tests for bugs fixed: <names>
 Gaps / follow-ups: <anything not covered + why, also recorded in docs/progress.md>
 ```

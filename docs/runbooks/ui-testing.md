@@ -1,5 +1,8 @@
 # UI testing runbook — states, permutations, render checks (2026-11-14)
 
+Full catalogue of every state, status code, world, route × role × control and cross-role flow:
+[`ui-test-catalogue.md`](ui-test-catalogue.md) (written by the test-design review, 2026-11-14).
+
 How to test the website the way people use it: every page in every meaningful state, on phones and desktops, in
 both languages and themes, as every role. Started after a UI review (user, 2026-11-13: "check each and everything
 under every condition and state … every permutation") found bugs no suite had caught. Screenshots and raw findings
@@ -58,7 +61,8 @@ The matrix proves pages do not break; it does not judge whether they look right.
 1. Look at the screenshots (or give batches to review agents): hierarchy, spacing, contrast in dark mode, Hindi
    wrapping, overlapping floating elements, empty states with one next action, one primary action per screen.
 2. Walk the **cross-role flows** in one browser (demo data is per browser), switching roles: order happy path and
-   decline → reroute → timeout → reject; service request to bill and review; seller application → approval → invite
+   decline → reroute → timeout → reject; service request to "ready for pickup" (the demo store stops there: estimate
+   lines, bill, payment and refunds are covered by the API and unit suites); seller application → approval → invite
    → agreement → price approval/rejection; support ticket reply; bulk quote → offer → order; coins.
 3. Click every control on each page in each world (the crawler under `reports/<date>/crawler/scripts/` is reusable).
 4. Record findings with severity (bug / UX / polish), state label, viewport, screenshot path and likely cause.

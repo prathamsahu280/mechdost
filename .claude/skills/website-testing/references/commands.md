@@ -20,11 +20,28 @@
 | API (auth, RBAC, role-leak, validation, rate limits, idempotency, errors, headers, catalogue, checkout, orders, support, WhatsApp webhook, config)                | `apps/api/test`                                                                                                                                                                                                                                                       | ✅                                                              |
 | Web unit (view models, API source, CSP, customer blocks, demo store, money input, safe redirect)                                                                  | `apps/web/test`                                                                                                                                                                                                                                                       | ✅                                                              |
 | Browser (Playwright, desktop 1440 + mobile 390; axe inside the suites)                                                                                            | `apps/web/e2e`: shell, demo-flows, hindi-coverage, audit, roles, consent, delivery, order-cancel, request-cancel, support, partners-admin, admin-site, admin-notifications, customer-blocks, coins-policy, typed-text, catalogue-api (API mode), real-auth (emulator) | ✅ (CI runs shell, demo-flows, hindi-coverage since 2026-11-11) |
-| Concurrency on real Postgres                                                                                                                                      | CI `postgis/postgis` service container                                                                                                                                                                                                                                | ⏳ planned (review A4)                                          |
-| Webhook chaos (Razorpay)                                                                                                                                          | `apps/api/test/webhooks`                                                                                                                                                                                                                                              | ⏳ with payments                                                |
-| Visual snapshots vs concept                                                                                                                                       | —                                                                                                                                                                                                                                                                     | ⏳ planned                                                      |
-| Lighthouse CI                                                                                                                                                     | `lighthouserc.json`                                                                                                                                                                                                                                                   | ⏳ planned (needs a preview deploy)                             |
-| RLS policy matrix                                                                                                                                                 | `packages/db/test/rls.test.ts`                                                                                                                                                                                                                                        | ⏳ when policies are added (Q73)                                |
+
+### 3a. Walk the states (UI changes)
+
+For every page or component the change touches, answer these in the report. "Not applicable" needs a reason.
+
+1. **Which stored keys does it read?** (`docs/runbooks/ui-testing.md` §1). For each: empty, one, many, at its
+   limit, invalid row.
+2. **Which roles can reach it?** Guest, customer, shop, workshop, admin: what each sees, and the guard for the rest.
+3. **Which status codes can the record be in?** Every code of its machine in `packages/shared/src/state`, closed
+   ones too (cancelled, rejected, closed, expired, revoked). Say which ones the demo store cannot represent and
+   where they are tested instead.
+4. **What do the other roles see after each control is used?** Name the page and the count that changes.
+5. **Which deadlines apply?** (offer timer, invite, quote validity, block end, ticket SLA.) Both sides, with
+   `page.clock`.
+6. **Second tab or second person:** stale `version`, `storage` event, sign-out or block while the page is open.
+7. **Combinations:** at least nothing · ongoing order + open ticket + cart · everything at once · at the limits.
+8. **Is the seeded data on screen?** Each matrix page asserts a marker of its world before the layout checks.
+   | Concurrency on real Postgres | CI `postgis/postgis` service container | ⏳ planned (review A4) |
+   | Webhook chaos (Razorpay) | `apps/api/test/webhooks` | ⏳ with payments |
+   | Visual snapshots vs concept | — | ⏳ planned |
+   | Lighthouse CI | `lighthouserc.json` | ⏳ planned (needs a preview deploy) |
+   | RLS policy matrix | `packages/db/test/rls.test.ts` | ⏳ when policies are added (Q73) |
 
 ## Environments
 

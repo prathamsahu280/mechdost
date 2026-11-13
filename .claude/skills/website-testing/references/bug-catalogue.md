@@ -91,6 +91,26 @@ which are automated. Add new classes at the end of the relevant section.
 - **H9 · Double-tap / slow network** — buttons not disabled while pending → e2e with throttled network.
 - **H10 · Reduced motion ignored** → e2e with `prefers-reduced-motion` asserts no animation.
 - **H11 · Safari/iOS quirks** (100vh, date inputs, sticky) → WebKit project in Playwright.
+- **H12 · Fixed element inside a transformed ancestor** — a floating bar (tray, tab bar, assistant, banner) renders
+  at the end of the page because a wrapper keeps `transform` (animation fill `both`/`forwards`), `filter`, `contain`
+  or `will-change` → state matrix `layoutFacts`: every visible `position: fixed` box inside the viewport after
+  scrolling; assert `boundingBox()` before clicking (Playwright scrolls first).
+- **H13 · `<html>` attributes lost on a root-layout change** — a client-side language switch rebuilds `<html>` and
+  drops attributes set outside React (`data-theme`, `data-consent-open`, the `md-site-layout` style) → use the real
+  switcher both ways and assert each one; never `page.goto` for this.
+- **H14 · Preference cookie out of step with the URL** — `NEXT_LOCALE` written only on document requests → switch,
+  then open an unprefixed URL and expect the chosen language; query and hash kept; the test switches back.
+- **H15 · Header overflow between breakpoints** (400-640 px) → width sweep in steps of 10-20 px, **signed in**,
+  Hindi, 2-digit cart count; no sideways scroll, no overlapping header children.
+- **H16 · Inner scroll box for main content** (`max-h` + `overflow-auto`) → matrix rule: no element except the map
+  and chat thread with `overflow-y: auto|scroll` and `scrollHeight > clientHeight`.
+- **H17 · Restyled third-party widget loses contrast** (MapLibre attribution in dark mode) → axe in both themes
+  after the widget has loaded, run 3 times; a background override always sets text and link colours too.
+- **H18 · Floating elements overlap each other** (banner, tray, assistant, tab bar) → pairwise rectangle check of
+  visible fixed nodes at 320-430 px with the banner open and the tray full.
+- **H19 · Seeded state never rendered** — a seed in the wrong shape is dropped and the page shows its empty state,
+  which has no layout bugs (2026-11-14: the busy world's ticket) → every matrix world asserts a marker per page
+  (`mustShow`) and seeded count = shown count.
 
 ## I. Performance, caching & scale
 
@@ -120,6 +140,26 @@ which are automated. Add new classes at the end of the relevant section.
 - **L1 · Admin edit not audited** → audit_log row per mutation test.
 - **L2 · Four-eyes bypass** (same person requests and approves) → refund/payout approval test.
 - **L3 · Content publish not live / draft leaks** → CMS publish + revalidation test; drafts never served.
+
+## N. State combinations & cross-role consistency
+
+- **N1 · Counts disagree** — cart pill ≠ cart, admin overview tile ≠ queue, shop stats ≠ lists → matrix count checks.
+- **N2 · Action available in the wrong status** — cancel after packed, accept after expiry, reply on a closed
+  ticket, accept a stale or expired offer → one control test per status code of the machine, both sides of each window.
+- **N3 · Other role not updated** — the shop still sees a cancelled order; the customer never sees the proposal →
+  cross-role flow asserts the other roles' pages after every step.
+- **N4 · Paused / suspended / blocked ignored on one path** — routing suggestions, direct URL booking, quote
+  acceptance, a second tab → test each entry point, not only the main form.
+- **N5 · Seed quirks hide states** — support store is `{ tickets: [] }`, is not validated per row, and seeds a
+  WhatsApp ticket when the key is missing; coins always include a 250 seed for the demo customer; partner standing
+  is append-only (latest wins); `selfCancel` lives on the order; other stores drop invalid rows silently → build
+  seeds from `e2e/fixtures/demo-world.ts`, never hand-written JSON.
+- **N6 · Demo-only controls reachable** ("advance", "demo reply", "demo offer") → flows use real role actions; a
+  build check keeps these out of production.
+- **N7 · Deadline boundary** — offer, invite, quote validity, block end, SLA → `page.clock` on both sides; all
+  fixture times computed from one `now`.
+- **N8 · Demo store not scoped to the account** — orders, requests and quotes show for whoever is signed in on
+  this browser → role-leak e2e asserts guards, and the API suites own the real isolation.
 
 ## M. Test-suite hygiene
 

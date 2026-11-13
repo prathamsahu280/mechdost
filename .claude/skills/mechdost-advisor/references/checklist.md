@@ -10,6 +10,8 @@ Mark each touched item ✅ / ⚠️ / ❌. Anything ❌ blocks implementation un
 - [ ] No user question blocks work: it is queued in `docs/questions-for-user.md` with a default.
 - [ ] Commit message has no AI attribution.
 - [ ] `pnpm check` (format, typecheck, lint 0 warnings, tests) will be run and its output shown.
+- [ ] For UI work: the plan names the world states and the cross-role checks, and the summary says which were
+      rendered (theme × language × widths).
 
 ## Data / DB / schema (spec 14, research/data-integrity.md, skill drizzle-postgis-supabase)
 
@@ -78,6 +80,20 @@ Mark each touched item ✅ / ⚠️ / ❌. Anything ❌ blocks implementation un
 - ❌ A scroll box inside the page (`max-h` + `overflow-auto`) for main content: it traps scrolling and cuts content.
 - ❌ An "every page" client component (layout) that imports a shared module for one constant, or that could load
   on demand: check `measure-js` for every route.
+- ❌ UI change planned without naming the states it must be shown in. Before coding, list: the stored keys the
+  screen reads, the roles that reach it, every status code of its record (closed ones too), and the worlds to render
+  (`docs/runbooks/ui-testing.md`). Minimum: nothing · ongoing order + open ticket + cart · everything · at the limits.
+- ❌ A control added without saying what each **other role** sees afterwards (page and count), and in which statuses
+  the control is hidden or refused.
+- ❌ A test seed written by hand instead of from `e2e/fixtures/demo-world.ts`, or a seeded page with no assertion
+  that the seeded record is on screen (2026-11-14: the busy world's ticket had the wrong shape and nothing failed).
+- ❌ A third-party widget's background restyled without its text and link colours, or not checked with axe in both
+  themes after it has loaded (T61).
+- ⚠️ A new stored key or status without a row in the runbook's dimensions table and a world that renders it.
+- ⚠️ A state the demo store cannot represent (online payment, refunds, estimate lines, bill, out of stock): say
+  where it is tested instead; do not leave it silent.
+- ⚠️ A deadline (offer, invite, quote, block, SLA) with no test on both sides of it.
+- ⚠️ Demo-only controls ("advance", "demo reply", "demo offer") visible to customers: flag for removal before launch.
 - ⚠️ Admin-editable content hard-coded (rule 8).
 
 ## Performance & scalability (spec 16, rule 6, 7)
