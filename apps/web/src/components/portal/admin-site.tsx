@@ -1,5 +1,6 @@
 'use client';
 
+import { saveOrderRules, useOrderRules } from '@/demo/order-rules';
 import { ArrowDown, ArrowUp } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
@@ -717,6 +718,48 @@ function RecentChanges() {
           ))}
         </ul>
       )}
+    </section>
+  );
+}
+
+/**
+ * Yes/no order rules (hard rule 8): today "customers may cancel their own order" (Q25, off by default: cancel
+ * through support). Each new order copies the rule when it is placed; orders already placed keep theirs.
+ */
+export function OrderRulesEditor() {
+  const t = useTranslations('portal');
+  const rules = useOrderRules();
+  const [status, setStatus] = useState<'idle' | 'saved' | 'failed'>('idle');
+  return (
+    <section
+      aria-labelledby="order-rules-title"
+      className="rounded-card border border-line-card bg-surface p-5 shadow-card"
+    >
+      <h2 id="order-rules-title" className="font-heading text-lg font-extrabold text-ink">
+        {t('rules_title')}
+      </h2>
+      <label className="mt-3 flex items-start gap-3 text-sm text-ink">
+        <input
+          type="checkbox"
+          checked={rules.customerSelfCancel}
+          onChange={(e) => {
+            const ok = saveOrderRules({ customerSelfCancel: e.target.checked });
+            setStatus(ok ? 'saved' : 'failed');
+            if (ok) track('admin_site_change', { area: 'settings', action: 'save', fields: 1 });
+          }}
+          className="mt-0.5 size-6 shrink-0 accent-[var(--color-accent-button)]"
+        />
+        <span>
+          <span className="font-bold">{t('rules_selfCancel')}</span>
+          <span className="block text-xs text-muted">{t('rules_selfCancelHint')}</span>
+        </span>
+      </label>
+      <p
+        role="status"
+        className={`mt-2 text-xs font-bold ${status === 'failed' ? 'text-error' : 'text-success'}`}
+      >
+        {status === 'saved' ? t('rules_saved') : status === 'failed' ? t('rules_saveFailed') : ''}
+      </p>
     </section>
   );
 }

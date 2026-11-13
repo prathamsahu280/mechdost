@@ -81,3 +81,16 @@ This supersedes the self-service return/replacement/exchange flows above; the re
 - Admin order card (`admin-console.tsx`): "Cancel order" while not closed and at most packed (`staffMayCancel`), with a reason code; the card shows "Cancelled by the customer/MechDost on … · reason"; routing and reject disappear. New queue "Cancelled". Reject now also asks for a **reason code** (`ORDER_REJECT_REASONS`) besides the message, matching `POST /v1/admin/orders/{code}/reject`.
 - Store (`apps/web/src/demo/store.ts`): `cancelDemoOrder` withdraws an open shop offer; closed orders (`isClosed`: rejected or cancelled) never move forward (demo controls, shop steps, delivery code). Shop portal drops cancelled orders from its active list. Coins used on the order are restored.
 - Tests: `e2e/order-cancel.spec.ts` (desktop + mobile).
+
+## Customer self-cancel is an admin rule, off by default (2026-11-13, Q25)
+
+- **User's answer:** "Only through support". Faulty, damaged or wrong items can be claimed within **7 days** of delivery.
+- **Setting:** `orders.customer_self_cancel` (boolean, default **false**, city override allowed; `@mechdost/shared/settings`).
+- **Snapshot:** checkout copies it onto each order as `orders.cancellable_until_status`: `confirmed` when on, `none` when off. A change applies to orders placed afterwards only.
+- **API:** `cancelMyOrder` answers 409 `NOT_CANCELLABLE` for `none`; staff cancel (`cancelOrderAsStaff`) is unchanged.
+- **Website:** the order page shows "To cancel this order, contact support." with a link to the support form for that order, instead of the cancel button.
+- **Admin:** a checkbox in Admin → Settings → Order rules. In the demo it is stored in the browser (`apps/web/src/demo/order-rules.ts`) and copied onto demo orders the same way (`DemoOrder.selfCancel`).
+- **Tests:**
+  - db `customer-orders.test.ts` "by default the customer cannot cancel";
+  - web `demo-store.test.ts` (default off, snapshot);
+  - e2e `order-cancel.spec.ts` (support link by default; the admin turns the rule on).

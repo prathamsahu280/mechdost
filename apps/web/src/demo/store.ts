@@ -3,6 +3,7 @@
  * Real flows go through the API with server-side pricing, idempotency keys and state machines (specs 03/04/06/14);
  * nothing here is trusted or persisted on a server. One localStorage key per collection, validated on read.
  */
+import { orderRules } from './order-rules';
 import { publicCode } from '@mechdost/shared/ids';
 import type { VehicleType } from '@mechdost/shared/vehicles';
 import {
@@ -36,6 +37,8 @@ export type OrderStage = (typeof ORDER_STAGES)[number];
 
 export interface DemoOrder {
   code: string;
+  /** Copy of the admin rule at placement (Q25): may the customer cancel it themselves? Missing = no. */
+  selfCancel?: boolean;
   createdAt: string;
   lines: { slug: string; name: string; brand: string; qty: number; unitPaise: number }[];
   subtotalPaise: number;
@@ -729,6 +732,7 @@ export function placeDemoOrder(
     payment: 'cod',
     coins: coins && coinDiscount > 0 ? { ...coins, discountPaise: coinDiscount } : null,
     stage: 1, // placed → immediately "confirming with a shop" (admin routing queue)
+    selfCancel: orderRules().customerSelfCancel,
   };
   write(KEYS.orders, [order, ...ordersSnapshot()].slice(0, 50));
   write(KEYS.cart, []);
@@ -913,7 +917,12 @@ const STAGE_CONFIRMED = ORDER_STAGES.indexOf('confirmed');
 const STAGE_PACKED = ORDER_STAGES.indexOf('packed');
 
 /** The customer may cancel until the shop has packed the order (spec 05, same as the API). */
-export const customerMayCancel = (o: DemoOrder) => !isClosed(o) && o.stage <= STAGE_CONFIRMED;
+/** Customers cancel themselves only when the order carries the admin's "self-cancel" rule (Q25); else via support. */
+export const customerMayCancel = (o: DemoOrder) =>
+  o.selfCancel === true && !isClosed(o) && o.stage <= STAGE_CONFIRMED;
+/** Still early enough that support can cancel without the shop: shown as "contact support to cancel". */
+export const cancelViaSupport = (o: DemoOrder) =>
+  !customerMayCancel(o) && !isClosed(o) && o.stage <= STAGE_CONFIRMED;
 /** Staff may also cancel a packed order. */
 export const staffMayCancel = (o: DemoOrder) => !isClosed(o) && o.stage <= STAGE_PACKED;
 

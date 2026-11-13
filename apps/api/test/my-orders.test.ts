@@ -2,6 +2,7 @@
  * Customer order API: list and track your own orders (others → 404), cancel with a reason code before packing,
  * one rate-limit count per request on the shared /orders prefix; staff cancel needs orders:cancel.
  */
+import * as s from '@mechdost/db/schema';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { beforeAll, describe, expect, it } from 'vitest';
@@ -36,6 +37,8 @@ async function person(n: string, role: string | null = null) {
 beforeAll(async () => {
   ctx = await buildApp();
   await seedRaipurDemo(ctx.db, fixture);
+  // These tests cancel as the customer, which is off by default (Q25: cancel through support only).
+  await ctx.db.insert(s.settings).values({ key: 'orders.customer_self_cancel', value: true });
 });
 
 describe('my orders API', () => {

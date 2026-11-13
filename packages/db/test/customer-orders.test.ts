@@ -103,6 +103,8 @@ beforeAll(async () => {
   stranger = await user('fb-co-stranger');
   staff = await user('fb-co-staff');
   sharma = (await db.select().from(s.shops).where(eq(s.shops.name, 'Sharma Auto Parts')))[0]!.id;
+  // These tests exercise customer cancelling, which is off by default (Q25: cancel through support only).
+  await db.insert(s.settings).values({ key: 'orders.customer_self_cancel', value: true });
 });
 
 afterAll(async () => {
@@ -110,6 +112,29 @@ afterAll(async () => {
 });
 
 describe('my orders', () => {
+  it('by default the customer cannot cancel; support (staff) cancels (Q25, user 2026-11-13)', async () => {
+    await db.delete(s.settings).where(eq(s.settings.key, 'orders.customer_self_cancel'));
+    try {
+      const { code, group } = await place();
+      expect((await row(code)).cancellableUntilStatus).toBe('none');
+      const detail = await getMyOrder(t(), customer, group, { locale: 'en', keyring });
+      expect(detail.orders[0]).toMatchObject({ status: 'placed', canCancel: false });
+      await expect(
+        cancelMyOrder(t(), { userId: customer, code, reasonCode: 'changed_mind', expectedVersion: 1 }),
+      ).rejects.toMatchObject({ code: 'NOT_CANCELLABLE' });
+      await cancelOrderAsStaff(t(), {
+        cityIds: 'all',
+        code,
+        reasonCode: 'changed_mind',
+        expectedVersion: (await row(code)).version,
+        staffUserId: staff,
+      });
+      expect((await row(code)).status).toBe('cancelled');
+    } finally {
+      await db.insert(s.settings).values({ key: 'orders.customer_self_cancel', value: true });
+    }
+  });
+
   it('cancelling a placed order needs a reason and frees the held stock; strangers get 404', async () => {
     const start = await shelf();
     const { code, group } = await place();

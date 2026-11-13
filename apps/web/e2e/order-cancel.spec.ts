@@ -38,7 +38,33 @@ async function placeOrder(page: Page): Promise<string> {
   return new URL(page.url()).pathname.split('/').at(-1) ?? '';
 }
 
+test('by default the customer cancels through support (Q25); the admin can allow self-cancel', async ({
+  page,
+}) => {
+  await placeOrder(page);
+  await expect(page.getByRole('button', { name: 'Cancel this order' })).toHaveCount(0);
+  await expect(page.getByText('To cancel this order, contact support.')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Contact support' })).toHaveAttribute(
+    'href',
+    /\/account\/support\?order=MD-RPR-/,
+  );
+
+  // The admin turns self-cancel on; orders placed afterwards carry the rule.
+  await signIn(page, ADMIN, '/login?next=%2Fadmin%2Fsettings');
+  const rule = page.getByLabel('Customers may cancel their own order until the shop confirms it');
+  await expect(rule).not.toBeChecked();
+  await rule.check();
+  await expect(page.getByText('Order rules saved')).toBeVisible();
+  await signOut(page, '/admin');
+  await placeOrder(page);
+  await expect(page.getByRole('button', { name: 'Cancel this order' })).toBeVisible();
+});
+
 test('the customer cancels before packing; the admin sees it with the reason', async ({ page }) => {
+  // Self-cancel is an admin rule, off by default (Q25): this test runs with it on.
+  await page.addInitScript(() => {
+    window.localStorage.setItem('mechdost-demo-order-rules', JSON.stringify({ customerSelfCancel: true }));
+  });
   const code = await placeOrder(page);
   await page.getByRole('button', { name: 'Cancel this order' }).click();
   // Keyboard focus follows the disclosure (web-design-guidelines review): into the form, back to the trigger.

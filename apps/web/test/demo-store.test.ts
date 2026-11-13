@@ -1,7 +1,12 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { blockCustomer, customerAllowed } from '../src/demo/customer-blocks';
+import { priceCart } from '../src/demo/cart-pricing';
+import { saveOrderRules } from '../src/demo/order-rules';
 import {
   acceptOffer,
+  cancelDemoOrder,
+  customerMayCancel,
+  placeDemoOrder,
   addToCart,
   advanceOrder,
   createQuote,
@@ -160,5 +165,30 @@ describe('the demo "next update" control (review B12)', () => {
     const [after] = stored(data, 'mechdost-demo-orders') as DemoOrder[];
     expect(after!.stage).toBe(2);
     expect(after!.shop?.status).toBe('accepted');
+  });
+});
+
+describe('customer cancel is off by default (Q25, user 2026-11-13)', () => {
+  const customer = { name: 'Ravi', phone: '9876543210', address: 'Pandri, Raipur', pincode: '492004' };
+  const cart = () => priceCart([{ slug: 'castrol-activ-4t-20w40-900ml', qty: 1 }]);
+
+  it('an order placed with the default rules cannot be cancelled by the customer, only by staff', () => {
+    fakeWindow();
+    const order = placeDemoOrder(customer, cart());
+    expect(order.selfCancel).toBe(false);
+    expect(customerMayCancel(order)).toBe(false);
+    expect(cancelDemoOrder(order.code, 'customer', 'changed_mind', 'Ravi')).toBe(false);
+    expect(cancelDemoOrder(order.code, 'staff', 'changed_mind', 'Admin')).toBe(true);
+  });
+
+  it('with the admin rule on, the order copies it and the customer may cancel until confirmed', () => {
+    fakeWindow();
+    saveOrderRules({ customerSelfCancel: true });
+    const order = placeDemoOrder(customer, cart());
+    expect(order.selfCancel).toBe(true);
+    expect(customerMayCancel(order)).toBe(true);
+    // Turning the rule off later does not change orders already placed (snapshot, like the API).
+    saveOrderRules({ customerSelfCancel: false });
+    expect(customerMayCancel(order)).toBe(true);
   });
 });

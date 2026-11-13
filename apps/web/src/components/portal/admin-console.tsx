@@ -49,7 +49,13 @@ import { AdminNotifications, type NotifyDefaults } from './admin-notifications';
 import { AdminSupport } from './admin-support';
 import { AdminPartners } from './admin-partners';
 import { AdminCustomers } from './admin-customers';
-import { ContentEditor, LayoutEditor, SettingsEditor, type ContentDefaults } from './admin-site';
+import {
+  ContentEditor,
+  LayoutEditor,
+  OrderRulesEditor,
+  SettingsEditor,
+  type ContentDefaults,
+} from './admin-site';
 import { PortalGuard, portalCard, portalField, portalPrimary, portalQuiet, useNow } from './portal-guard';
 import { Applications } from './admin-applications';
 import { GstInvoiceLine } from '@/components/commerce/gst-invoice-line';
@@ -108,7 +114,12 @@ export function AdminConsole({
               <ContentEditor actor={account.name} defaults={contentDefaults} />
             ) : null}
             {section === 'layout' ? <LayoutEditor actor={account.name} /> : null}
-            {section === 'settings' ? <SettingsEditor actor={account.name} /> : null}
+            {section === 'settings' ? (
+              <div className="space-y-6">
+                <SettingsEditor actor={account.name} />
+                <OrderRulesEditor />
+              </div>
+            ) : null}
             {section === 'notifications' && notifyDefaults ? (
               <AdminNotifications actor={account.name} defaults={notifyDefaults} />
             ) : null}

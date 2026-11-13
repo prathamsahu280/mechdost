@@ -626,7 +626,9 @@
     "rejectReason_suspected_fraud": "धोखाधड़ी का शक",
     "rejectReason_pricing_error": "गलत कीमत दिखी",
     "rejectReason_other": "कोई और कारण",
-    "gstInvoiceFor": "<name>{business}</name> ({gstin}) के लिए GST बिल"
+    "gstInvoiceFor": "<name>{business}</name> ({gstin}) के लिए GST बिल",
+    "cancelViaSupport": "यह ऑर्डर रद्द करने के लिए सपोर्ट से संपर्क करें।",
+    "cancelViaSupportLink": "सपोर्ट से संपर्क करें"
   },
   "finder": {
     "title": "आपका वाहन कहाँ है?",
@@ -1608,7 +1610,12 @@
     "cancelOrder": "ऑर्डर रद्द करें",
     "cancelReason": "रद्द करने का कारण",
     "cancelConfirm": "{code} रद्द करें",
-    "rejectReason": "कारण"
+    "rejectReason": "कारण",
+    "rules_title": "ऑर्डर के नियम",
+    "rules_selfCancel": "दुकान की पुष्टि से पहले ग्राहक खुद ऑर्डर रद्द कर सकें",
+    "rules_selfCancelHint": "बंद होने पर ग्राहक सपोर्ट के ज़रिए रद्द करते हैं। बदलाव के बाद दिए गए ऑर्डर पर लागू होता है।",
+    "rules_saved": "ऑर्डर के नियम सेव हो गए",
+    "rules_saveFailed": "सेव नहीं हुआ: यह ब्राउज़र डेटा सेव नहीं कर रहा।"
   },
   "policies": {
     "returns": {

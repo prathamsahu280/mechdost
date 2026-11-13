@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { and, eq, isNull, or, sql } from 'drizzle-orm';
 import type { BusinessPurchase } from '@mechdost/shared/business';
 import { publicCode } from '@mechdost/shared/ids';
-import { OPERATIONAL_SETTINGS } from '@mechdost/shared/settings';
+import { OPERATIONAL_SETTINGS, type SettingKey } from '@mechdost/shared/settings';
 import { splitInclusiveGst } from '@mechdost/shared/money';
 import { auditLog, orderGroups, orderItems, orders, settings } from '../schema';
 import { blockEffects } from '@mechdost/shared/customers';
@@ -145,6 +145,17 @@ async function setting(db: Tx, cityId: string, key: string): Promise<number | nu
   return row && typeof row.value === 'number' && Number.isSafeInteger(row.value) && row.value >= 0
     ? row.value
     : null;
+}
+
+/** A yes/no setting for a city (city value, else global, else the registry default). */
+async function flagSetting(db: Tx, cityId: string, key: SettingKey): Promise<boolean> {
+  const rows = await db
+    .select({ cityId: settings.cityId, value: settings.value })
+    .from(settings)
+    .where(and(eq(settings.key, key), or(eq(settings.cityId, cityId), isNull(settings.cityId))));
+  const row = rows.find((r) => r.cityId === cityId) ?? rows.find((r) => r.cityId === null);
+  const fallback = OPERATIONAL_SETTINGS[key];
+  return typeof row?.value === 'boolean' ? row.value : fallback.kind === 'boolean' && fallback.default;
 }
 
 /** A checkout setting for a city (city value, else global, else the registry default). */
@@ -465,6 +476,10 @@ export async function placeOrder(
       });
 
     await setActor(tx, { type: 'customer', userId: input.userId });
+    // Snapshot of the cancel rule (Q25): customers cancel until confirmed only when the admin allows it.
+    const cancellableUntilStatus = (await flagSetting(tx, cityId, 'orders.customer_self_cancel'))
+      ? 'confirmed'
+      : 'none';
     const group = await insertGroup(tx, {
       cityCode: quote.cityCode,
       values: {
@@ -513,6 +528,7 @@ export async function placeOrder(
           codFeePaise: index === 0 ? codFeePaise : 0,
           taxPaise: g.taxPaise,
           totalPaise: g.totalPaise + (index === 0 ? codFeePaise : 0),
+          cancellableUntilStatus,
         })
         .returning({ id: orders.id });
       if (!order) throw new Error('order insert returned no row');

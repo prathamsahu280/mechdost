@@ -85,6 +85,8 @@ const groupStatus = async (groupId: string) =>
 beforeAll(async () => {
   ({ db, client } = await createTestDb());
   await seedRaipurDemo(t(), fixture);
+  // These tests cancel as the customer, which is off by default (Q25: cancel through support only).
+  await db.insert(s.settings).values({ key: 'orders.customer_self_cancel', value: true });
   userId = (await db.insert(s.users).values({ firebaseUid: 'fb-payments-ravi' }).returning())[0]!.id;
   otherUser = (await db.insert(s.users).values({ firebaseUid: 'fb-payments-other' }).returning())[0]!.id;
 });

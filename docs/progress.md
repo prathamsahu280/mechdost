@@ -8,7 +8,7 @@ This file is the single source of truth for **where the build is right now**. It
 
 1. **Q82 + Q26 admin catalogue screen with admin PIN prices** (user: build now, before the website switch). Pricing model change, so it needs a short design first: fallback when no admin price, per-PIN vs city default, suggestion source, the shop price and margin on orders (Q11).
 2. **Clear small changes:**
-   - Q25: customer self-cancel removed (cancel only through support);
+   - ~~Q25~~ **done 2026-11-13**: customer self-cancel is now an admin setting, off by default (cancel through support);
    - Q78: invited sellers' phones count as verified;
    - Q28: one-admin offboarding, optional pause end date;
    - Q74: COD-confirmation timeout as an admin setting;

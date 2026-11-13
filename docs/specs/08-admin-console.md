@@ -113,3 +113,7 @@ User 2026-11-02: "all these options need to be with the admin too".
 ## Catalogue: attributes and pack sizes (2026-11-13)
 
 Staff with `products:write` set a product's typed attributes (`PUT /v1/admin/catalogue/products/{slug}/attributes`, strict per category, versioned, audited) and each pack's net quantity (`PUT /v1/admin/catalogue/variants/{sku}/net-quantity`, audited). The attribute list per category is code (decision 2026-11-13); the values are the admin's. The editor screen comes with the admin catalogue UI (spec 21 P1).
+
+## Order rules (2026-11-13)
+
+Admin → Settings → **Order rules**: "Customers may cancel their own order until the shop confirms it" (`orders.customer_self_cancel`, off by default, Q25). Spec 05.

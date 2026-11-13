@@ -11,6 +11,7 @@ import { findShop, rankShops } from '@/demo/shops';
 import {
   advanceOrder,
   cancelDemoOrder,
+  cancelViaSupport,
   customerMayCancel,
   isClosed,
   ORDER_STAGES,
@@ -135,6 +136,18 @@ export function OrderView({ code }: { code: string }) {
             </p>
           ) : null}
           {customerMayCancel(order) ? <CancelOrder order={order} /> : null}
+          {cancelViaSupport(order) ? (
+            <p className="mt-4 text-sm text-muted">
+              {t('cancelViaSupport')}{' '}
+              <Link
+                href={`${locale === 'hi' ? '/hi' : ''}/account/support?order=${encodeURIComponent(order.code)}`}
+                data-track="order_cancel_via_support"
+                className="font-bold text-accent underline-offset-4 hover:underline"
+              >
+                {t('cancelViaSupportLink')}
+              </Link>
+            </p>
+          ) : null}
           {!isClosed(order) && order.stage < ORDER_STAGES.length - 1 ? (
             <details className="mt-6 rounded-lg border border-dashed border-line p-3 text-sm">
               <summary className="cursor-pointer font-bold text-muted">{demo('controls')}</summary>

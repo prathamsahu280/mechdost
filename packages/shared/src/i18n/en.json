@@ -626,7 +626,9 @@
     "rejectReason_suspected_fraud": "Suspected fraud",
     "rejectReason_pricing_error": "Wrong price shown",
     "rejectReason_other": "Other reason",
-    "gstInvoiceFor": "GST invoice for <name>{business}</name> ({gstin})"
+    "gstInvoiceFor": "GST invoice for <name>{business}</name> ({gstin})",
+    "cancelViaSupport": "To cancel this order, contact support.",
+    "cancelViaSupportLink": "Contact support"
   },
   "finder": {
     "title": "Where is your vehicle?",
@@ -1608,7 +1610,12 @@
     "cancelOrder": "Cancel order",
     "cancelReason": "Reason for cancelling",
     "cancelConfirm": "Cancel {code}",
-    "rejectReason": "Reason"
+    "rejectReason": "Reason",
+    "rules_title": "Order rules",
+    "rules_selfCancel": "Customers may cancel their own order until the shop confirms it",
+    "rules_selfCancelHint": "Off: customers cancel through support. Applies to orders placed after the change.",
+    "rules_saved": "Order rules saved",
+    "rules_saveFailed": "Not saved: this browser is not saving data."
   },
   "policies": {
     "returns": {
