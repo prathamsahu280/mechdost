@@ -392,6 +392,32 @@ User (2026-11-13): "we have to setup the cd part too, basically i think we shoul
 - **API is opt-in** (`COMPOSE_PROFILES=api`) until its production settings exist (Upstash Q4, Turnstile Q5, Firebase web key); the website goes live first, in demo mode (Q69/Q70 defaults).
 - **Migrations** stay manual (`pnpm db:migrate`) until a production Supabase project exists. Runbook: `docs/runbooks/deploy.md`.
 
+## 2026-11-13 — Business rules answered (user, questions inbox walk-through)
+
+Full answers in `docs/questions-for-user.md` (Answered log, 2026-11-13). The ones that change what is built:
+
+- **Launch scope (Q71):** everything built so far ships at launch (parts and full workshop booking, coins, bulk quotes, assistant when Q19 is decided).
+- **Pricing (Q26):** the **admin sets the customer price per PIN code**, helped by suggestions from the nearest shops' prices. Supersedes "PIN price = nearest covering shop with stock" (2026-11-01).
+- **Earnings (Q11):** from shops, MechDost keeps the **margin** between the admin's PIN price and the shop's approved price; from workshops, a **flat fee per completed booking** (admin-set). **Weekly** payouts.
+- **Claims and cancelling (Q25):** faulty, damaged or wrong items within **7 days** of delivery; cancelling **only through support**, which removes the customer self-cancel button.
+- **Coins (Q24):** earned on delivered orders (%), the first order, workshop bookings and referrals, at admin-set rates. Usable after **8 days**; expiry **180 days**; both admin-configurable.
+- **Referrals (Q31–Q34):** rewards are admin-set (no defaults); caps default 5 a month and 25 a year; coins unlock when the friend places an order (taken back on cancel or refund); any signed-up customer can refer. The rest of the referral questions are still open.
+- **COD fee (Q66):** off by default, admin-configurable, can be set **per PIN code**; when on, the shop passes it to MechDost. **COD WhatsApp confirmation (Q74):** the admin sets the time; with no reply the order goes to a "call the customer" queue.
+- **Partners (Q28, Q78, Q59):**
+  - pause end dates optional;
+  - no fixed warn → pause → suspend ladder;
+  - one admin can offboard;
+  - invited sellers' phones count as verified (the admin's entry);
+  - WhatsApp alerts to shops and workshops, with opt-in as one line in the partner application.
+- **After-sale at launch (Q1):** service reminders, disputes, order chat.
+- **WhatsApp (Q54–Q62):**
+  - marketing from launch (opt-in recipients);
+  - budget alert set by the admin;
+  - OTP over both WhatsApp and Firebase SMS (order to be given);
+  - templates **English only at launch**, a deliberate exception to hard rule 10 for WhatsApp templates.
+- **Kept as built:** type-level fitment (Q76, Q10 not needed yet), deny-all RLS (Q73), suspension within 60 s (Q29), customer blocks by super admins only (Q65), English road names on the Hindi map (Q64), checked security fixes may skip the 3-day wait (Q67).
+- **Admin catalogue screen (Q82): build now**, before the website switch, including the Q26 PIN prices.
+
 ## PENDING DECISIONS (ask "what's pending" to review)
 
 | #   | Topic                                                                                                                                                                                       | Leaning                                                                             | When                                 |
