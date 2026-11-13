@@ -122,14 +122,20 @@ async function resolvePlace(db: Tx, cityCode: string, pincode: string | null): P
 }
 
 /**
+ * A listing that can be sold right now (aliases: `v` variant, `si` shop_inventory, `s` shop). Blocked listings and
+ * shops with only a GST enrolment number are never priced (design 2026-11-13). Shared by the catalogue, checkout
+ * and the admin price board, so all three agree on which shops count.
+ */
+export const BUYABLE_OFFER = sql`v.status = 'active' and si.active and not si.admin_blocked and si.on_hand - si.reserved > 0
+    and s.status = 'approved' and s.gst_status = 'registered'
+    and not (s.busy and (s.busy_until is null or s.busy_until > now()))`;
+
+/**
  * Best buyable offer for the variants matched by `variants` (a condition on `v`), as a LATERAL subquery `o`.
  * With a PIN: only shops covering it, nearest first. Without: the city's lowest price.
  */
 function offerLateral(place: CataloguePlace, variants: SQL): SQL {
-  // Blocked listings and shops with only a GST enrolment number are never priced (design 2026-11-13).
-  const buyable = sql`v.status = 'active' and si.active and not si.admin_blocked and si.on_hand - si.reserved > 0
-    and s.status = 'approved' and s.gst_status = 'registered'
-    and not (s.busy and (s.busy_until is null or s.busy_until > now()))`;
+  const buyable = BUYABLE_OFFER;
   if (place.pincode) {
     return sql`left join lateral (
       select si.selling_paise as price, v.mrp_paise as mrp, v.net_qty as net_qty, v.net_unit as net_unit,

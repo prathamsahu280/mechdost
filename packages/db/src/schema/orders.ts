@@ -194,6 +194,8 @@ export const orderItems = pgTable(
     hsn: text().notNull(),
     gstRateBp: integer().notNull(),
     unitPaise: paise().notNull(),
+    /** The chosen shop's approved price per unit (what it is paid); `unit_paise` - this = MechDost's margin (Q11). Null on orders before 2026-11-13. */
+    shopUnitPaise: paise(),
     qty: integer().notNull(),
     lineDiscountPaise: paise().notNull().default(0),
     taxablePaise: paise().notNull(),
@@ -205,6 +207,10 @@ export const orderItems = pgTable(
   },
   (t) => [
     check('order_items_qty_positive', sql`${t.qty} > 0 and ${t.qty} <= 99`),
+    check(
+      'order_items_shop_unit_valid',
+      sql`${t.shopUnitPaise} is null or (${t.shopUnitPaise} >= 0 and ${t.shopUnitPaise} <= ${t.unitPaise})`,
+    ),
     check('order_items_cgst_equals_sgst', sql`${t.cgstPaise} = ${t.sgstPaise}`),
     check('order_items_intra_or_inter', sql`${t.igstPaise} = 0 or ${t.cgstPaise} = 0`),
     check(

@@ -34,3 +34,4 @@ export * from './partner-invites';
 export * from './partner-applications';
 export * from './price-requests';
 export * from './agreements';
+export * from './admin-prices';

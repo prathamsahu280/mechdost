@@ -452,3 +452,43 @@ export const shopPriceRequests = pgTable(
     index().on(t.decidedBy),
   ],
 );
+
+/**
+ * Customer prices set by the admin (design `docs/superpowers/specs/2026-11-13-admin-catalogue-pin-prices-design.md`,
+ * Q26): one city price per pack, plus optional per-PIN overrides. The shop keeps its own approved price in
+ * `shop_inventory.selling_paise` (what it is paid); the difference is MechDost's margin (Q11). Rules (never above
+ * MRP, never below what a shop is paid) are checked by the repository; the database keeps the shape.
+ */
+export const adminPrices = pgTable(
+  'admin_prices',
+  {
+    id: id(),
+    variantId: uuid()
+      .notNull()
+      .references(() => productVariants.id, { onDelete: 'cascade' }),
+    cityId: uuid()
+      .notNull()
+      .references(() => cities.id, { onDelete: 'restrict' }),
+    /** Null = the city price; set = an override for this PIN (in the same city). */
+    pincode: text().references(() => pincodes.pincode, { onDelete: 'restrict' }),
+    sellingPaise: paise().notNull(),
+    updatedBy: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    version: version(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    check('admin_prices_positive', sql`${t.sellingPaise} > 0`),
+    uniqueIndex('admin_prices_city_uq')
+      .on(t.variantId, t.cityId)
+      .where(sql`${t.pincode} is null`),
+    uniqueIndex('admin_prices_pin_uq')
+      .on(t.variantId, t.cityId, t.pincode)
+      .where(sql`${t.pincode} is not null`),
+    index().on(t.cityId),
+    index().on(t.pincode),
+    index().on(t.updatedBy),
+  ],
+);

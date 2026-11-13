@@ -302,6 +302,13 @@
       "when": 1794568228083,
       "tag": "0042_product_compare",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1794591587649,
+      "tag": "0043_admin_prices",
+      "breakpoints": true
     }
   ]
 }
