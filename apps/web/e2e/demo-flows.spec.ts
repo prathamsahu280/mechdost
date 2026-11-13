@@ -263,6 +263,14 @@ test.describe('bulk quote → negotiation → order (spec 19)', () => {
 });
 
 test.describe('workshop map (spec 06)', () => {
+  // Both tests open their own 1440px desktop context, so the mobile project would only repeat them. MapLibre
+  // renders WebGL on the CPU in CI (2 workers on 2 cores), so the long interactive run gets triple time
+  // (CI flake 2026-11-12/13: timeouts at different steps, never a wrong result).
+  test.skip(({ isMobile }) => isMobile, 'desktop-only: the test creates its own desktop context');
+  test.beforeEach(() => {
+    test.slow();
+  });
+
   test('is fully interactive: zoom, pins, popups, locate me, show all', async ({ browser }) => {
     const context = await browser.newContext({
       storageState: CONSENT_DECIDED,
