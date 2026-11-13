@@ -8,10 +8,19 @@ const ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 const GSTIN_PATTERN = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
 const ENROLMENT_PATTERN = /^[0-9]{2}[A-Z0-9]{10}$/;
 
-/** State and union-territory codes in use (01–38) and 97 "other territory". */
+/** State and union-territory codes in use (01–38) and 97 "other territory"; names in i18n `gstStates`. */
+export const GST_STATE_CODES: readonly string[] = [
+  ...Array.from({ length: 38 }, (_, i) => String(i + 1).padStart(2, '0')),
+  '97',
+];
+
 function knownStateCode(code: string): boolean {
-  const n = Number(code);
-  return (n >= 1 && n <= 38) || n === 97;
+  return GST_STATE_CODES.includes(code);
+}
+
+/** What people type → the stored form: no spaces, upper case (a GSTIN has no lower-case letters). */
+export function normaliseGstin(raw: string): string {
+  return raw.replace(/\s+/g, '').toUpperCase();
 }
 
 /** The check character for the first 14 characters of a GSTIN. */

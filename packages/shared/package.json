@@ -25,6 +25,7 @@
     "./auth": "./src/auth.ts",
     "./catalogue": "./src/catalogue.ts",
     "./vehicles": "./src/vehicles.ts",
+    "./business": "./src/business.ts",
     "./gst": "./src/gst.ts",
     "./partners": "./src/partners.ts",
     "./email-templates": "./src/email-templates.ts"
