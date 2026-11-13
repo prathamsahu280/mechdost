@@ -415,6 +415,67 @@ test.describe('theme and assistant', () => {
     expect(await axe(page)).toEqual([]);
   });
 
+  test('a saved light choice survives switching language both ways (bug 2026-11-13)', async ({ browser }) => {
+    const context = await browser.newContext({ storageState: CONSENT_DECIDED, colorScheme: 'dark' });
+    const page = await context.newPage();
+    await page.goto('/');
+    await page.evaluate(() => {
+      localStorage.setItem('mechdost-theme', 'light');
+    });
+    await page.reload();
+    const html = page.locator('html');
+    await expect(html).toHaveAttribute('data-theme', 'light');
+    // Client-side navigation to the other language rebuilds <html> (the root layout is per locale).
+    await page.locator('a[hreflang="hi"]').first().click();
+    await expect(page).toHaveURL(/\/hi$/);
+    await expect(html).toHaveAttribute('lang', 'hi');
+    await expect(html).toHaveAttribute('data-theme', 'light');
+    await page.locator('a[hreflang="en"]').first().click();
+    await expect(html).toHaveAttribute('lang', 'en');
+    await expect(html).toHaveAttribute('data-theme', 'light');
+    const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+    expect(bg).not.toBe('rgb(10, 20, 36)');
+    await context.close();
+  });
+
+  test('the saved theme comes back if <html> loses it, and follows another tab', async ({
+    page,
+    context,
+  }) => {
+    await page.goto('/');
+    await page.evaluate(() => {
+      localStorage.setItem('mechdost-theme', 'dark');
+    });
+    await page.reload();
+    const html = page.locator('html');
+    await expect(html).toHaveAttribute('data-theme', 'dark');
+    // What React does to <html> on a client-side change of locale (redirect by the language cookie).
+    await page.evaluate(() => {
+      delete document.documentElement.dataset.theme;
+    });
+    await expect(html).toHaveAttribute('data-theme', 'dark');
+    const other = await context.newPage();
+    await other.goto('/shop');
+    await other.evaluate(() => {
+      localStorage.setItem('mechdost-theme', 'light');
+    });
+    await expect(html).toHaveAttribute('data-theme', 'light');
+    await other.close();
+  });
+
+  test('Hindi → English works after a Hindi visit and keeps the filters (bugs 2026-11-13)', async ({
+    page,
+  }) => {
+    // Opening a Hindi page directly stores the Hindi language cookie.
+    await page.goto('/hi/shop?category=lubricants#top');
+    await page.locator('a[hreflang="en"]').first().click();
+    await expect(page).toHaveURL(/\/shop\?category=lubricants#top$/);
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+    await page.locator('a[hreflang="hi"]').first().click();
+    await expect(page).toHaveURL(/\/hi\/shop\?category=lubricants#top$/);
+    await expect(page.locator('html')).toHaveAttribute('lang', 'hi');
+  });
+
   test('follows the system dark preference without a saved choice', async ({ browser }) => {
     const context = await browser.newContext({
       storageState: CONSENT_DECIDED,

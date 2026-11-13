@@ -8,10 +8,13 @@ import {
   removeFromCompare,
   startNewComparison,
 } from '../src/lib/compare/store';
+import { COMPARE_EVENT } from '../src/lib/compare/signal';
 
-/** Minimal browser stand-in: the store needs localStorage and storage-event listeners only. */
+/** Minimal browser stand-in: localStorage, storage-event listeners, and the change event it sends. */
+const sent: string[] = [];
 function fakeWindow(opts: { failWrites?: boolean } = {}) {
   const data = new Map<string, string>();
+  sent.length = 0;
   Object.assign(globalThis, {
     window: {
       localStorage: {
@@ -26,6 +29,10 @@ function fakeWindow(opts: { failWrites?: boolean } = {}) {
       },
       addEventListener: () => undefined,
       removeEventListener: () => undefined,
+      dispatchEvent: (e: Event) => {
+        sent.push(e.type);
+        return true;
+      },
     },
   });
   return data;
@@ -34,6 +41,12 @@ function fakeWindow(opts: { failWrites?: boolean } = {}) {
 describe('compare list (design 2026-11-13)', () => {
   beforeEach(() => {
     fakeWindow();
+  });
+
+  it('tells the page after every change, so the tray loader can load the tray (JS budget 2026-11-13)', () => {
+    addToCompare('castrol-activ-4t-20w40-900ml', 'lubricants');
+    removeFromCompare('castrol-activ-4t-20w40-900ml');
+    expect(sent).toEqual([COMPARE_EVENT, COMPARE_EVENT]);
   });
 
   it('holds at most 4 products of one category', () => {

@@ -26,6 +26,28 @@ function toggle(page: Page, name: string) {
   return page.getByRole('button', { name: `Compare ${name}`, exact: true });
 }
 
+/** The tray floats on screen wherever the shopper has scrolled (bug 2026-11-13: it sat at the end of the page). */
+async function expectOnScreen(page: Page, target: Locator) {
+  const box = await target.boundingBox();
+  const view = page.viewportSize();
+  expect(box && view).toBeTruthy();
+  if (!box || !view) return;
+  expect(box.y).toBeGreaterThanOrEqual(0);
+  expect(box.y + box.height).toBeLessThanOrEqual(view.height);
+}
+
+test('the compare tray floats in view while scrolling the shop', async ({ page }) => {
+  await page.goto('/shop?category=lubricants');
+  await tap(toggle(page, 'Castrol Activ 4T 20W40 900 ml'));
+  const tray = page.getByRole('complementary', { name: 'Products to compare' });
+  await expect(tray).toBeVisible();
+  await expectOnScreen(page, tray);
+  await page.evaluate(() => {
+    window.scrollTo(0, document.body.scrollHeight / 2);
+  });
+  await expectOnScreen(page, tray);
+});
+
 test('compare three engine oils from the shop', async ({ page }) => {
   await page.goto('/shop?category=lubricants');
   for (const name of ['Castrol Activ 4T 20W40 900 ml', 'Motul 3100 4T 10W30 1 L', 'HP Racer4 20W40 900 ml']) {
@@ -55,9 +77,9 @@ test('compare three engine oils from the shop', async ({ page }) => {
   await expect(table.getByRole('rowheader', { name: 'JASO class' })).toBeHidden();
   await expect(table.getByRole('rowheader', { name: 'SAE grade' })).toBeVisible();
 
-  const hpColumn = table.getByRole('columnheader').filter({ hasText: 'HP Racer4' });
-  await tap(hpColumn.getByRole('button', { name: 'Add to cart' }));
-  await expect(hpColumn.getByRole('button', { name: 'Added' })).toBeVisible();
+  // Add to cart sits in the summary row under each product (third column = HP).
+  await tap(table.getByRole('button', { name: 'Add to cart' }).nth(2));
+  await expect(table.getByRole('button', { name: 'Added' })).toHaveCount(1);
 });
 
 test('one category at a time: a battery starts a new comparison', async ({ page }) => {
@@ -114,27 +136,41 @@ test('the left-out note appears only when a requested product is missing', async
   await page.goto(`/compare?p=${CASTROL},${CASTROL},${MOTUL}`);
   await expect(page.getByRole('table')).toBeVisible();
   await expect(page.getByRole('note')).toHaveCount(0);
-  // One product survives (a battery cannot join oils): the note explains, then the empty state.
+  // One product survives (a battery cannot join oils): the note explains; that product stays, with a way to add more.
   await page.goto(`/compare?p=${CASTROL},${EXIDE}`);
   await expect(page.getByRole('note')).toContainText('Some products were left out');
-  await expect(page.getByRole('heading', { name: 'Pick products to compare' })).toBeVisible();
+  await expect(page.getByRole('table').getByRole('columnheader')).toHaveCount(1);
+  await expect(page.getByRole('link', { name: 'Add a product (1 of 4)' })).toBeVisible();
   // Nothing valid at all.
   await page.goto('/compare?p=not-a-product');
   await expect(page.getByRole('note')).toBeVisible();
 });
 
-test('on a phone the first product column is not hidden under the row labels', async ({ page, isMobile }) => {
-  test.skip(!isMobile, 'sticky label column + scroll snap only matter at phone width');
-  await page.goto(`/compare?p=${CASTROL},${MOTUL},${HP}`);
+test('on a phone two products use the full width, the label above their values', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(!isMobile, 'labels above values only at phone width');
+  await page.goto(`/compare?p=${CASTROL},${MOTUL}`);
   const table = page.getByRole('table');
   await expect(table).toBeVisible();
-  const label = await table.getByRole('rowheader', { name: 'MRP', exact: true }).boundingBox();
-  const first = await table
+  const row = table
     .getByRole('row')
-    .filter({ has: page.getByRole('rowheader', { name: 'MRP', exact: true }) })
-    .getByRole('cell')
-    .first()
-    .boundingBox();
-  expect(label && first).toBeTruthy();
-  if (label && first) expect(first.x).toBeGreaterThanOrEqual(label.x + label.width - 1);
+    .filter({ has: page.getByRole('rowheader', { name: 'MRP', exact: true }) });
+  const label = await row.getByRole('rowheader').boundingBox();
+  const cells = row.getByRole('cell');
+  const first = await cells.first().boundingBox();
+  const second = await cells.nth(1).boundingBox();
+  const view = page.viewportSize();
+  expect(label && first && second && view).toBeTruthy();
+  if (!label || !first || !second || !view) return;
+  expect(first.y).toBeGreaterThanOrEqual(label.y + label.height - 1);
+  expect(first.width).toBeGreaterThan(view.width * 0.38);
+  expect(second.x + second.width).toBeLessThanOrEqual(view.width);
+  // No scroll box inside the page: the whole comparison is reachable by scrolling the page.
+  const inner = await table.evaluate((el) => {
+    const body = el.querySelector<HTMLElement>('[data-compare-scroll="body"]');
+    return body ? body.scrollHeight - body.clientHeight : 0;
+  });
+  expect(inner).toBeLessThanOrEqual(1);
 });
