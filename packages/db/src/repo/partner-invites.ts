@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from 'node:crypto';
-import { and, eq, inArray, isNull } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNull, lt, lte, or, sql } from 'drizzle-orm';
 import { InviteSchema } from '@mechdost/shared/partners';
 import { OPERATIONAL_SETTINGS } from '@mechdost/shared/settings';
 import { inviteMachine, type InviteStatus } from '@mechdost/shared/state';
@@ -50,6 +50,19 @@ export async function createInvite(
   const days = await inviteDays(db);
   const expiresAt = new Date(Date.now() + days * 86_400_000);
   return db.transaction(async (tx) => {
+    // An invite past its date no longer blocks a new one for that number (final review 2026-11-13; there is no
+    // sweep, so stale rows are expired here, by the system).
+    inviteMachine.assert('sent', 'expired', 'system');
+    await tx
+      .update(partnerInvites)
+      .set({ status: 'expired' })
+      .where(
+        and(
+          eq(partnerInvites.phone, invite.phone),
+          eq(partnerInvites.status, 'sent'),
+          lte(partnerInvites.expiresAt, sql`now()`),
+        ),
+      );
     let row: { id: string } | undefined;
     try {
       [row] = await tx.transaction(async (sp) =>
@@ -140,6 +153,8 @@ export async function openInvite(
   token: string,
 ): Promise<{ name: string; email: string; phoneLast4: string; expiresAt: Date }> {
   const invite = await findOpenInvite(db, token);
+  // Funnel step (spec 12): no personal data, only the city.
+  await recordServerEvent(db, 'partner_invite_opened', { cityId: invite.cityId, props: {} });
   return {
     name: invite.name,
     email: invite.email,
@@ -179,10 +194,16 @@ export async function revokeInvite(
   });
 }
 
-/** Invites in the staff member's cities, for the admin list. */
-export async function listInvites(db: Tx, scope: CityScope, opts: { limit?: number } = {}) {
-  if (!scope.all && scope.cityIds.length === 0) return [];
-  return db
+/** Invites in the staff member's cities, newest first; a `sent` invite past its date shows as `expired`. */
+export async function listInvites(
+  db: Tx,
+  scope: CityScope,
+  opts: { limit?: number; before?: { createdAt: string; id: string } | null } = {},
+) {
+  if (!scope.all && scope.cityIds.length === 0) return { items: [], more: false };
+  const limit = Math.min(Math.max(opts.limit ?? 50, 1), 200);
+  const before = opts.before;
+  const rows = await db
     .select({
       id: partnerInvites.id,
       name: partnerInvites.name,
@@ -194,7 +215,22 @@ export async function listInvites(db: Tx, scope: CityScope, opts: { limit?: numb
       createdAt: partnerInvites.createdAt,
     })
     .from(partnerInvites)
-    .where(scope.all ? undefined : inArray(partnerInvites.cityId, scope.cityIds))
-    .orderBy(partnerInvites.createdAt)
-    .limit(Math.min(Math.max(opts.limit ?? 50, 1), 200));
+    .where(
+      and(
+        scope.all ? undefined : inArray(partnerInvites.cityId, scope.cityIds),
+        before
+          ? or(
+              lt(partnerInvites.createdAt, new Date(before.createdAt)),
+              and(eq(partnerInvites.createdAt, new Date(before.createdAt)), lt(partnerInvites.id, before.id)),
+            )
+          : undefined,
+      ),
+    )
+    .orderBy(desc(partnerInvites.createdAt), desc(partnerInvites.id))
+    .limit(limit + 1);
+  const now = Date.now();
+  const items = rows
+    .slice(0, limit)
+    .map((r) => (r.status === 'sent' && r.expiresAt.getTime() <= now ? { ...r, status: 'expired' } : r));
+  return { items, more: rows.length > limit };
 }

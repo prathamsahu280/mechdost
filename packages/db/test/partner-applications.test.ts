@@ -24,6 +24,7 @@ import {
   syncRbacCatalogue,
   type Tx,
 } from '../src/repo';
+import { events } from '../src/repo/events';
 import * as s from '../src/schema';
 import { createTestDb, type TestDb } from '../src/testing';
 
@@ -284,10 +285,82 @@ describe('security review 2026-11-13', () => {
     });
     const [row] = await db.select().from(s.partnerInvites).where(eq(s.partnerInvites.phone, '+919812345679'));
     expect(row?.cityId).toBe(raipur.id);
-    expect(await listInvites(t(), { all: false, cityIds: [] })).toEqual([]);
+    expect((await listInvites(t(), { all: false, cityIds: [] })).items).toEqual([]);
     await expect(
       revokeInvite(t(), { id: row!.id, staffUserId: staff, scope: { all: false, cityIds: [] } }),
     ).rejects.toMatchObject({ status: 404 });
     expect(invite.token).toBeTruthy();
+  });
+});
+
+describe('final review fixes 2026-11-13', () => {
+  it('an expired invite does not block a new one for that number; the list shows it expired, newest first', async () => {
+    const phone = '+919812345690';
+    const first = {
+      name: 'Gita Rao',
+      email: 'g@example.com',
+      phone,
+      staffUserId: staff,
+      keyring,
+      cityId: cityOf(),
+    };
+    await createInvite(t(), first);
+    await expect(createInvite(t(), first)).rejects.toMatchObject({ code: 'INVITE_OPEN' });
+    await db
+      .update(s.partnerInvites)
+      .set({ expiresAt: new Date(Date.now() - 1000) })
+      .where(eq(s.partnerInvites.phone, phone));
+    await createInvite(t(), { ...first, email: 'gita@example.com' });
+    const mine = (await listInvites(t(), ALL)).items.filter((i) => i.phone === phone);
+    expect(mine.map((i) => [i.email, i.status])).toEqual([
+      ['gita@example.com', 'sent'],
+      ['g@example.com', 'expired'],
+    ]);
+  });
+  it('an invited application keeps the invited name, email and mobile, whatever the form sent', async () => {
+    const invite = await createInvite(t(), {
+      name: 'Hema Patel',
+      email: 'hema@example.com',
+      phone: '+919812345691',
+      staffUserId: staff,
+      keyring,
+      cityId: cityOf(),
+    });
+    const r = await submitSellerApplication(t(), {
+      application: application({ name: 'Someone Else', email: 'other@example.com', phone: '+919800000000' }),
+      source: 'invite',
+      inviteToken: invite.token,
+      keyring,
+    });
+    const [row] = await db.select().from(s.partnerApplications).where(eq(s.partnerApplications.code, r.code));
+    expect(row).toMatchObject({ name: 'Hema Patel', email: 'hema@example.com', phone: '+919812345691' });
+  });
+  it('the invite list pages with a cursor, newest first, and never loses a row', async () => {
+    const all = (await listInvites(t(), ALL, { limit: 200 })).items;
+    expect(all.length).toBeGreaterThan(2);
+    const seen: string[] = [];
+    let before: { createdAt: string; id: string } | null = null;
+    for (;;) {
+      const page = await listInvites(t(), ALL, { limit: 2, before });
+      seen.push(...page.items.map((i) => i.id));
+      const last = page.items.at(-1);
+      if (!page.more || !last) break;
+      before = { createdAt: last.createdAt.toISOString(), id: last.id };
+    }
+    expect(seen).toEqual(all.map((i) => i.id));
+  });
+  it('opening an invite link is counted (partner_invite_opened), with no personal data', async () => {
+    const invite = await createInvite(t(), {
+      name: 'Jaya Rao',
+      email: 'jaya@example.com',
+      phone: '+919812345693',
+      staffUserId: staff,
+      keyring,
+      cityId: cityOf(),
+    });
+    await openInvite(t(), invite.token);
+    const rows = await db.select().from(events).where(eq(events.event, 'partner_invite_opened'));
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.at(-1)).toMatchObject({ cityId: cityOf(), props: {} });
   });
 });

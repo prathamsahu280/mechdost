@@ -7,12 +7,13 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, ne } from 'drizzle-orm';
 import { seedRaipurDemo, type DemoFixture } from '../src/demo-seed';
 import {
   acceptAgreement,
   decidePriceRequest,
   getCatalogueProduct,
+  listPriceRequests,
   placeCodOrder,
   publishAgreement,
   quoteCheckout,
@@ -150,6 +151,40 @@ describe('deciding prices', () => {
     });
   });
 
+  it('approving a price change keeps the stock and on/off switch the shop set meanwhile (review 2026-11-13)', async () => {
+    const [row] = await db
+      .select({ inv: s.shopInventory, sku: s.productVariants.sku })
+      .from(s.shopInventory)
+      .innerJoin(s.productVariants, eq(s.productVariants.id, s.shopInventory.variantId))
+      .where(and(eq(s.shopInventory.shopId, sharma), ne(s.productVariants.sku, OIL)))
+      .limit(1);
+    const { inv, sku } = row!;
+    const { id } = await submitPriceRequest(t(), {
+      shopId: sharma,
+      userId: staff,
+      sku,
+      pricePaise: inv.sellingPaise - 100,
+      onHand: 50,
+    });
+    // While it waits, the shop corrects stock to 10 and switches the listing off.
+    await db
+      .update(s.shopInventory)
+      .set({ onHand: 10 + inv.reserved, active: false })
+      .where(eq(s.shopInventory.id, inv.id));
+    const req = (await db.select().from(s.shopPriceRequests).where(eq(s.shopPriceRequests.id, id)))[0]!;
+    await decidePriceRequest(t(), {
+      id,
+      expectedVersion: req.version,
+      staffUserId: staff,
+      decision: 'approved',
+    });
+    expect(await listing(sharma, sku)).toMatchObject({
+      sellingPaise: inv.sellingPaise - 100,
+      onHand: 10 + inv.reserved,
+      active: false,
+    });
+  });
+
   it('rejecting a live price keeps open orders, takes it off sale for that shop, and the next shop serves the PIN', async () => {
     expect(await sellerFor('492004')).toBe('Sharma Auto Parts');
     const lines = [{ sku: OIL, qty: 1 }];
@@ -205,6 +240,38 @@ describe('deciding prices', () => {
 });
 
 describe('going live', () => {
+  it('with no agreement published yet, a shop is not held back by it (final review 2026-11-13)', async () => {
+    expect(await db.select().from(s.agreementVersions)).toHaveLength(0);
+    const pincode = (await db.select().from(s.pincodes).where(eq(s.pincodes.pincode, '492004')))[0]!;
+    const [shop] = await db
+      .insert(s.shops)
+      .values({
+        name: 'Early Shop',
+        phone: '+919800000002',
+        addressLine: 'Station Road',
+        pincode: '492004',
+        cityId: pincode.cityId!,
+        stateId: pincode.stateId,
+      })
+      .returning();
+    await db.insert(s.shopPincodes).values({ shopId: shop!.id, pincode: '492004', shippingPaise: 4000 });
+    const req = await submitPriceRequest(t(), {
+      shopId: shop!.id,
+      userId: staff,
+      sku: OIL,
+      pricePaise: 43000,
+      onHand: 4,
+    });
+    const [row] = await db.select().from(s.shopPriceRequests).where(eq(s.shopPriceRequests.id, req.id));
+    await decidePriceRequest(t(), {
+      id: req.id,
+      expectedVersion: row!.version,
+      staffUserId: staff,
+      decision: 'approved',
+    });
+    expect((await db.select().from(s.shops).where(eq(s.shops.id, shop!.id)))[0]!.status).toBe('approved');
+  });
+
   it('a new shop goes live only after the agreement, an approved price and a delivery area, in any order', async () => {
     const pincode = (await db.select().from(s.pincodes).where(eq(s.pincodes.pincode, '492004')))[0]!;
     const [shop] = await db
@@ -261,5 +328,29 @@ describe('agreement versions (security review 2026-11-13)', () => {
         code: 'AGREEMENT_OUTDATED',
       },
     );
+  });
+});
+
+describe('paging (final review 2026-11-13)', () => {
+  it('the shop list pages newest first and the admin queue oldest first, without losing rows', async () => {
+    const collect = async (opts: { shopId?: string; scope?: { all: true } }) => {
+      const seen: string[] = [];
+      let cursor: { createdAt: string; id: string } | null = null;
+      for (;;) {
+        const page = await listPriceRequests(t(), { ...opts, limit: 1, cursor });
+        seen.push(...page.items.map((r) => r.id));
+        const last = page.items.at(-1);
+        if (!page.more || !last) break;
+        cursor = { createdAt: last.createdAt.toISOString(), id: last.id };
+      }
+      return seen;
+    };
+    const shopAll = (await listPriceRequests(t(), { shopId: sharma, limit: 200 })).items;
+    expect(shopAll.length).toBeGreaterThan(1);
+    expect(await collect({ shopId: sharma })).toEqual(shopAll.map((r) => r.id));
+    const queueAll = (await listPriceRequests(t(), { scope: { all: true }, limit: 200 })).items;
+    expect(await collect({ scope: { all: true } })).toEqual(queueAll.map((r) => r.id));
+    const times = queueAll.map((r) => r.createdAt.getTime());
+    expect(times).toEqual([...times].sort((a, b) => a - b));
   });
 });

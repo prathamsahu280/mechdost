@@ -357,7 +357,7 @@ export const partnerInvites = pgTable(
       .where(sql`${t.status} = 'sent'`),
     index().on(t.createdBy),
     index().on(t.status, t.expiresAt),
-    index().on(t.cityId),
+    index().on(t.cityId, t.createdAt, t.id),
   ],
 );
 

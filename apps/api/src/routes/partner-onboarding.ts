@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import type { Context } from 'hono';
 import {
@@ -13,6 +14,7 @@ import {
   listInvites,
   listPriceRequests,
   NotFoundError,
+  findOpenInvite,
   openInvite,
   publishAgreement,
   rejectApplication,
@@ -34,7 +36,7 @@ import type { SessionCache } from '../auth/session-cache';
 import { ApiError } from '../errors';
 import { log, safeError } from '../logger';
 import { authenticate, requirePermission, requireVerified } from '../middleware/auth';
-import { rateLimit, RATE_RULES } from '../middleware/rate-limit';
+import { enforceRate, rateLimit, RATE_RULES } from '../middleware/rate-limit';
 import type { RateRule } from '../rate-limit/limiter';
 import type { AppDeps, AppEnv } from '../types';
 import { validationHook } from '../validation';
@@ -48,6 +50,9 @@ import { errorResponses, ErrorSchema } from './schemas';
  */
 const APPLY_PER_IP: RateRule = { name: 'partner_apply_ip', limit: 5, windowSeconds: 3600 };
 const INVITE_PER_IP: RateRule = { name: 'partner_invite_ip', limit: 30, windowSeconds: 3600 };
+/** Spec: per IP and per phone. Keyed by a hash, so no phone number sits in the limiter store. */
+const APPLY_PER_PHONE: RateRule = { name: 'partner_apply_phone', limit: 3, windowSeconds: 86_400 };
+const phoneKey = (phone: string) => createHash('sha256').update(`partner_apply:${phone}`).digest('hex');
 
 const json = <T extends z.ZodType>(schema: T, description: string) => ({
   description,
@@ -58,6 +63,37 @@ const Loose = z.record(z.string(), z.unknown());
 const body = <T extends z.ZodType>(schema: T) => ({
   body: { required: true, content: { 'application/json': { schema } } },
 });
+
+/** Keyset paging for the admin and shop lists (final review 2026-11-13, hard rule 7): opaque `nextCursor`. */
+const PageQuery = {
+  limit: z.coerce.number().int().min(1).max(100).optional(),
+  cursor: z.string().max(200).optional(),
+};
+interface Keyset {
+  createdAt: string;
+  id: string;
+}
+const encodeCursor = (k: Keyset) => Buffer.from(JSON.stringify(k)).toString('base64url');
+function decodeCursor(raw: string | undefined): Keyset | null {
+  if (!raw) return null;
+  try {
+    const v: unknown = JSON.parse(Buffer.from(raw, 'base64url').toString('utf8'));
+    const parsed = z
+      .object({ createdAt: z.string().max(40), id: z.uuid() })
+      .strict()
+      .safeParse(v);
+    if (parsed.success && !Number.isNaN(Date.parse(parsed.data.createdAt))) return parsed.data;
+  } catch {
+    // fall through
+  }
+  throw new ApiError(422, 'INVALID_CURSOR', 'Invalid cursor');
+}
+function nextCursorOf(page: { items: readonly { createdAt: Date; id: string }[]; more: boolean }) {
+  const last = page.items.at(-1);
+  return page.more && last ? encodeCursor({ createdAt: last.createdAt.toISOString(), id: last.id }) : null;
+}
+const Page = (name: string) =>
+  z.object({ items: z.array(Loose), nextCursor: z.string().nullable() }).openapi(name);
 
 const SubmitBody = z
   .object({ application: Loose, turnstileToken: z.string().min(1).max(2048) })
@@ -133,6 +169,7 @@ export function partnerPublicRoutes(deps: AppDeps) {
       const b = c.req.valid('json');
       const application = parseApplication(b.application);
       await human(deps, c, b.turnstileToken);
+      await enforceRate(c, deps.rateLimiter, APPLY_PER_PHONE, phoneKey(application.phone), 1);
       const r = await submitSellerApplication(deps.db, {
         application,
         source: 'public',
@@ -179,12 +216,21 @@ export function partnerPublicRoutes(deps: AppDeps) {
     }),
     async (c) => {
       const b = c.req.valid('json');
-      const application = parseApplication(b.application);
+      const token = c.req.valid('param').token;
       await human(deps, c, b.turnstileToken);
+      // The invite proves name, email and mobile; the form only shows them (masked phone), so they are taken
+      // from the invite, never from the body (final review 2026-11-13). The repository re-reads them locked.
+      const invite = await findOpenInvite(deps.db, token);
+      const application = parseApplication({
+        ...b.application,
+        name: invite.name,
+        email: invite.email,
+        phone: invite.phone,
+      });
       const r = await submitSellerApplication(deps.db, {
         application,
         source: 'invite',
-        inviteToken: c.req.valid('param').token,
+        inviteToken: token,
         keyring: keyringOf(deps),
       });
       return c.json(r, 201);
@@ -224,15 +270,18 @@ export function partnerAdminRoutes(deps: AppDeps, cache: SessionCache) {
       tags: ['admin'],
       summary: 'Applications in your cities, newest first',
       security: [{ bearerAuth: [] }],
-      request: { query: z.object({ status: z.enum(APPLICATION_STATES).optional() }) },
+      request: { query: z.object({ status: z.enum(APPLICATION_STATES).optional(), ...PageQuery }) },
       responses: {
-        200: json(z.object({ items: z.array(Loose), more: z.boolean() }), 'Applications'),
+        200: json(Page('PartnerApplicationPage'), 'Applications'),
         ...errorResponses,
       },
     }),
     async (c) => {
+      const q = c.req.valid('query');
       const r = await listApplications(deps.db, scope(c, 'applications:review'), {
-        status: c.req.valid('query').status ?? null,
+        status: q.status ?? null,
+        before: decodeCursor(q.cursor),
+        ...(q.limit ? { limit: q.limit } : {}),
       });
       return c.json(
         {
@@ -240,7 +289,7 @@ export function partnerAdminRoutes(deps: AppDeps, cache: SessionCache) {
             ...rest,
             createdAt: rest.createdAt.toISOString(),
           })),
-          more: r.more,
+          nextCursor: nextCursorOf(r),
         },
         200,
       );
@@ -377,11 +426,19 @@ export function partnerAdminRoutes(deps: AppDeps, cache: SessionCache) {
       method: 'get',
       path: '/admin/partner-invites',
       tags: ['admin'],
-      summary: 'Invites and their status',
+      summary: 'Invites and their status, newest first',
       security: [{ bearerAuth: [] }],
-      responses: { 200: json(z.object({ items: z.array(Loose) }), 'Invites'), ...errorResponses },
+      request: { query: z.object(PageQuery) },
+      responses: { 200: json(Page('PartnerInvitePage'), 'Invites'), ...errorResponses },
     }),
-    async (c) => c.json({ items: await listInvites(deps.db, scope(c, 'partners:write')) }, 200),
+    async (c) => {
+      const q = c.req.valid('query');
+      const page = await listInvites(deps.db, scope(c, 'partners:write'), {
+        before: decodeCursor(q.cursor),
+        ...(q.limit ? { limit: q.limit } : {}),
+      });
+      return c.json({ items: page.items, nextCursor: nextCursorOf(page) }, 200);
+    },
   );
 
   app.openapi(
@@ -411,19 +468,19 @@ export function partnerAdminRoutes(deps: AppDeps, cache: SessionCache) {
       tags: ['admin'],
       summary: 'The price queue in your cities (oldest waiting first)',
       security: [{ bearerAuth: [] }],
-      request: { query: z.object({ status: z.enum(PRICE_REQUEST_STATES).optional() }) },
-      responses: { 200: json(z.object({ items: z.array(Loose) }), 'Price requests'), ...errorResponses },
+      request: { query: z.object({ status: z.enum(PRICE_REQUEST_STATES).optional(), ...PageQuery }) },
+      responses: { 200: json(Page('PriceRequestQueuePage'), 'Price requests'), ...errorResponses },
     }),
-    async (c) =>
-      c.json(
-        {
-          items: await listPriceRequests(deps.db, {
-            scope: scope(c, 'prices:approve'),
-            status: c.req.valid('query').status ?? 'pending',
-          }),
-        },
-        200,
-      ),
+    async (c) => {
+      const q = c.req.valid('query');
+      const page = await listPriceRequests(deps.db, {
+        scope: scope(c, 'prices:approve'),
+        status: q.status ?? 'pending',
+        cursor: decodeCursor(q.cursor),
+        ...(q.limit ? { limit: q.limit } : {}),
+      });
+      return c.json({ items: page.items, nextCursor: nextCursorOf(page) }, 200);
+    },
   );
 
   app.openapi(
@@ -460,6 +517,36 @@ export function partnerAdminRoutes(deps: AppDeps, cache: SessionCache) {
         }),
         200,
       );
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: 'get',
+      path: '/admin/agreements/current',
+      tags: ['admin'],
+      summary: 'The current seller agreement (null until one is published), for the editor',
+      security: [{ bearerAuth: [] }],
+      responses: {
+        200: json(
+          z.object({
+            agreement: z
+              .object({
+                version: z.number().int(),
+                textEn: z.string(),
+                textHi: z.string(),
+                publishedAt: z.string(),
+              })
+              .nullable(),
+          }),
+          'Current agreement',
+        ),
+        ...errorResponses,
+      },
+    }),
+    async (c) => {
+      const a = await currentAgreement(deps.db);
+      return c.json({ agreement: a ? { ...a, publishedAt: a.publishedAt.toISOString() } : null }, 200);
     },
   );
 
@@ -507,9 +594,9 @@ export function shopOnboardingRoutes(deps: AppDeps, cache: SessionCache) {
       tags: ['shop'],
       summary: "Your shop's price requests (newest first)",
       security: [{ bearerAuth: [] }],
-      request: { params: ShopParam },
+      request: { params: ShopParam, query: z.object(PageQuery) },
       responses: {
-        200: json(z.object({ items: z.array(Loose) }), 'Requests'),
+        200: json(Page('ShopPriceRequestPage'), 'Requests'),
         ...conflict,
         ...errorResponses,
       },
@@ -517,7 +604,13 @@ export function shopOnboardingRoutes(deps: AppDeps, cache: SessionCache) {
     async (c) => {
       const { shopId } = c.req.valid('param');
       own(c, shopId);
-      return c.json({ items: await listPriceRequests(deps.db, { shopId }) }, 200);
+      const q = c.req.valid('query');
+      const page = await listPriceRequests(deps.db, {
+        shopId,
+        cursor: decodeCursor(q.cursor),
+        ...(q.limit ? { limit: q.limit } : {}),
+      });
+      return c.json({ items: page.items, nextCursor: nextCursorOf(page) }, 200);
     },
   );
 

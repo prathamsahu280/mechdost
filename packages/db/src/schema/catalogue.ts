@@ -434,6 +434,7 @@ export const shopPriceRequests = pgTable(
       .on(t.shopId, t.variantId)
       .where(sql`${t.status} = 'pending'`),
     index().on(t.status, t.createdAt),
+    index().on(t.shopId, t.createdAt, t.id),
     index().on(t.variantId),
     index().on(t.requestedBy),
     index().on(t.decidedBy),

@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, inArray, lt, or, sql } from 'drizzle-orm';
 import { PRICE_REJECT_REASONS } from '@mechdost/shared/partners';
 import { priceRequestMachine, type PriceRequestStatus } from '@mechdost/shared/state';
 import {
@@ -154,7 +154,15 @@ export async function decidePriceRequest(
       if (v.pStatus !== 'live' || v.vStatus !== 'active')
         throw new ConflictError('This product is no longer live', 'PRODUCT_NOT_LIVE');
       checkPrice(req.requestedPaise, v.mrp);
-      if (inv) {
+      if (inv && !inv.adminBlocked) {
+        // Only the price waits for approval; stock and the on/off switch are the shop's own and may have
+        // changed while the request waited (review 2026-11-13), so they are left as they are now.
+        await tx
+          .update(shopInventory)
+          .set({ sellingPaise: req.requestedPaise })
+          .where(eq(shopInventory.id, inv.id));
+      } else if (inv) {
+        // Lifting a block (taken off sale after a rejected change): back on sale with the stock asked for.
         await tx
           .update(shopInventory)
           .set({
@@ -224,10 +232,21 @@ export async function decidePriceRequest(
 /** The price queue for staff (oldest waiting first) or one shop's own requests (newest first). */
 export async function listPriceRequests(
   db: Tx,
-  opts: { scope?: CityScope; shopId?: string; status?: PriceRequestStatus | null; limit?: number },
+  opts: {
+    scope?: CityScope;
+    shopId?: string;
+    status?: PriceRequestStatus | null;
+    limit?: number;
+    /** The last row of the previous page (keyset paging, final review 2026-11-13). */
+    cursor?: { createdAt: string; id: string } | null;
+  },
 ) {
   const limit = Math.min(Math.max(opts.limit ?? 50, 1), 200);
-  return db
+  // A shop reads its own history newest first; the staff queue is worked oldest first.
+  const newestFirst = Boolean(opts.shopId);
+  const c = opts.cursor;
+  const at = c ? new Date(c.createdAt) : null;
+  const rows = await db
     .select({
       id: shopPriceRequests.id,
       version: shopPriceRequests.version,
@@ -258,10 +277,26 @@ export async function listPriceRequests(
             )
           : undefined,
         opts.status ? eq(shopPriceRequests.status, opts.status) : undefined,
+        c && at
+          ? newestFirst
+            ? or(
+                lt(shopPriceRequests.createdAt, at),
+                and(eq(shopPriceRequests.createdAt, at), lt(shopPriceRequests.id, c.id)),
+              )
+            : or(
+                gt(shopPriceRequests.createdAt, at),
+                and(eq(shopPriceRequests.createdAt, at), gt(shopPriceRequests.id, c.id)),
+              )
+          : undefined,
       ),
     )
-    .orderBy(opts.shopId ? desc(shopPriceRequests.createdAt) : shopPriceRequests.createdAt)
-    .limit(limit);
+    .orderBy(
+      ...(newestFirst
+        ? [desc(shopPriceRequests.createdAt), desc(shopPriceRequests.id)]
+        : [asc(shopPriceRequests.createdAt), asc(shopPriceRequests.id)]),
+    )
+    .limit(limit + 1);
+  return { items: rows.slice(0, limit), more: rows.length > limit };
 }
 
 async function agreementRequired(tx: Tx): Promise<boolean> {
@@ -284,10 +319,13 @@ export async function maybeGoLive(tx: Tx, shopId: string, actorUserId: string | 
     .where(eq(shops.id, shopId));
   if (shop?.status !== 'pending') return false;
   if (await agreementRequired(tx)) {
-    // The current version: a shop that accepted only an older text does not go live (security review).
+    // The current version: a shop that accepted only an older text does not go live (security review). Until a
+    // first version is published (text from the user, Q77) there is nothing to accept, so nothing holds a shop
+    // back; shops see the card once a version exists (final review 2026-11-13).
     const [accepted] = rowsOf<{ ok: boolean }>(
-      await tx.execute(sql`select exists (select 1 from shop_agreements a
-        where a.shop_id = ${shopId} and a.version = (select max(version) from agreement_versions)) as ok`),
+      await tx.execute(sql`select not exists (select 1 from agreement_versions)
+        or exists (select 1 from shop_agreements a
+          where a.shop_id = ${shopId} and a.version = (select max(version) from agreement_versions)) as ok`),
     );
     if (!accepted?.ok) return false;
   }

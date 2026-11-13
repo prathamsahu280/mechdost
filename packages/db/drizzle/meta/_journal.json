@@ -281,6 +281,13 @@
       "when": 1794513627769,
       "tag": "0039_onboarding_review_fixes",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1794552533791,
+      "tag": "0040_list_paging_indexes",
+      "breakpoints": true
     }
   ]
 }

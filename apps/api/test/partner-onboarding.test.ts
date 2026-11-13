@@ -103,6 +103,22 @@ describe('public application form', () => {
   });
 });
 
+describe('per-phone limit (final review 2026-11-13)', () => {
+  it('one mobile number can apply 3 times a day, whatever the IP; another number still can', async () => {
+    const fresh = await buildApp({ keyring, turnstile: new FakeTurnstile([HUMAN]) });
+    const submit = (phone: string) =>
+      fresh.app.request('/v1/partner-applications', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ application: application({ phone }), turnstileToken: HUMAN }),
+      });
+    for (let i = 0; i < 3; i++) expect((await submit('+919870011111')).status).toBe(201);
+    const fourth = await submit('+919870011111');
+    expect(fourth.status).toBe(429);
+    expect((await submit('+919870022222')).status).toBe(201);
+  });
+});
+
 describe('invites and review', () => {
   it('staff invite a seller; the link opens and submits once; marketing cannot see applications', async () => {
     const res = await post(
@@ -129,6 +145,22 @@ describe('invites and review', () => {
     expect((await ctx.app.request('/v1/admin/partner-applications', { headers: marketing })).status).toBe(
       403,
     );
+  });
+
+  it('an invited form needs no contacts: they come from the invite (final review 2026-11-13)', async () => {
+    const res = await post(
+      '/v1/admin/partner-invites',
+      { name: 'Isha Nair', email: 'isha@example.com', phone: '+919812345692' },
+      ops,
+    );
+    expect(res.status).toBe(201);
+    const { token } = (await res.json()) as { token: string };
+    const { name: _n, email: _e, phone: _p, ...rest } = application({ gstNumber: '27AAPFU0939F1ZV' });
+    const submitted = await post(`/v1/partner-invites/${token}/application`, {
+      application: rest,
+      turnstileToken: HUMAN,
+    });
+    expect(submitted.status).toBe(201);
   });
 
   it('staff approve with the delivery area; the shop asks for a price; staff approve it; the shop goes live', async () => {
@@ -219,5 +251,62 @@ describe('invites and review', () => {
     expect(decided.status).toBe(200);
     const [shop] = (await ctx.db.select().from(s.shops)).filter((x) => x.id === shopId);
     expect(shop?.status).toBe('approved');
+  });
+});
+
+describe('admin list paging (final review 2026-11-13)', () => {
+  it('invites and applications page with nextCursor and lose no rows; a bad cursor is 422', async () => {
+    const walk = async (path: string) => {
+      const ids: string[] = [];
+      let cursor: string | null = null;
+      for (let guard = 0; guard < 50; guard++) {
+        const url = `${path}${path.includes('?') ? '&' : '?'}limit=1${cursor ? `&cursor=${cursor}` : ''}`;
+        const res = await ctx.app.request(url, { headers: ops });
+        expect(res.status).toBe(200);
+        const body = (await res.json()) as {
+          items: { code?: string; id?: string }[];
+          nextCursor: string | null;
+        };
+        ids.push(...body.items.map((i) => i.code ?? i.id ?? ''));
+        cursor = body.nextCursor;
+        if (!cursor) break;
+      }
+      return ids;
+    };
+    const invites = await walk('/v1/admin/partner-invites');
+    expect(invites.length).toBeGreaterThan(1);
+    expect(new Set(invites).size).toBe(invites.length);
+    const apps = await walk('/v1/admin/partner-applications');
+    expect(apps.length).toBeGreaterThan(1);
+    expect(new Set(apps).size).toBe(apps.length);
+    expect((await ctx.app.request('/v1/admin/partner-invites?cursor=bad!', { headers: ops })).status).toBe(
+      422,
+    );
+  });
+});
+
+describe('agreement editor (final review 2026-11-13)', () => {
+  it('staff read the current agreement: none yet, then the published version', async () => {
+    const superAdmin = await person('super-editor', '+919870099077', 'super_admin');
+    const before = await ctx.app.request('/v1/admin/agreements/current', { headers: superAdmin });
+    expect(before.status).toBe(200);
+    const body = (await before.json()) as { agreement: { version: number } | null };
+    const published = await post(
+      '/v1/admin/agreements',
+      {
+        textEn: 'MechDost seller agreement text for the editor test.',
+        textHi: 'संपादक परीक्षण के लिए MechDost विक्रेता अनुबंध का पाठ।',
+      },
+      superAdmin,
+    );
+    expect(published.status).toBe(200);
+    const after = (await (
+      await ctx.app.request('/v1/admin/agreements/current', { headers: superAdmin })
+    ).json()) as { agreement: { version: number; textEn: string } | null };
+    expect(after.agreement?.version).toBe((body.agreement?.version ?? 0) + 1);
+    expect(after.agreement?.textEn).toContain('editor test');
+    // Agreement text is content (`content:write`, which marketing has); ops does not edit it.
+    expect((await ctx.app.request('/v1/admin/agreements/current', { headers: marketing })).status).toBe(200);
+    expect((await ctx.app.request('/v1/admin/agreements/current', { headers: ops })).status).toBe(403);
   });
 });

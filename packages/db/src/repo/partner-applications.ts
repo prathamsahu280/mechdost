@@ -70,12 +70,13 @@ export async function submitSellerApplication(
     let status: ApplicationStatus = 'new';
     let inviteId: string | null = null;
     let reviewedBy: string | null = null;
+    let contacts = { name: app.name, email: app.email, phone: app.phone };
     if (input.source === 'invite') {
       const invite = await findOpenInvite(tx, input.inviteToken, true);
       if (invite.cityId !== place.city_id)
         throw new ValidationError('This invite is for another city', 'INVITE_CITY');
-      if (invite.phone !== app.phone)
-        throw new ValidationError('Use the mobile number the invite was sent for', 'INVITE_PHONE');
+      // The invite proves these contacts (design: pre-verified); the form cannot change them (final review).
+      contacts = { name: invite.name, email: invite.email, phone: invite.phone };
       const used = await tx
         .update(partnerInvites)
         .set({ status: 'used', usedAt: sql`now()` })
@@ -96,9 +97,9 @@ export async function submitSellerApplication(
       .values({
         code,
         kind: 'seller',
-        name: app.name,
-        phone: app.phone,
-        email: app.email,
+        name: contacts.name,
+        phone: contacts.phone,
+        email: contacts.email,
         business: app.businessName,
         shopName: app.shopName,
         shopNameHi: app.shopNameHi ?? null,

@@ -50,6 +50,8 @@ export interface ServerEventProps {
   };
   partner_application_decided: { decision: 'approved' | 'rejected'; reasonCode: string | null };
   partner_invite_sent: Record<string, never>;
+  /** The invite link was opened (funnel: sent → opened → submitted). */
+  partner_invite_opened: Record<string, never>;
   price_request_submitted: { shopId: string; sku: string };
   price_request_decided: {
     shopId: string;
