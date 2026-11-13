@@ -28,6 +28,12 @@ export function DifferencesToggle({
   useEffect(() => {
     track('compare_opened', { count, category });
   }, [count, category]);
+  // The language redirect encodes the commas (`?p=a%2Cb`): show the shareable link as typed (review 2026-11-14).
+  useEffect(() => {
+    const { pathname, search, hash } = window.location;
+    if (/%2C/i.test(search))
+      window.history.replaceState(window.history.state, '', pathname + search.replace(/%2C/gi, ',') + hash);
+  }, []);
   useScrollSync();
   return (
     <div data-diff-only={on ? 'true' : undefined}>

@@ -578,3 +578,10 @@ test('review: a different customer account does not see someone else’s deliver
   await expect(page.getByRole('heading', { level: 1 })).toContainText(CODES.shipped);
   await expect(page.getByText('4821')).toHaveCount(0);
 });
+
+test('review: a comparison link stays readable after switching language', async ({ page }) => {
+  await page.goto('/hi/compare?p=castrol-activ-4t-20w40-900ml,motul-3100-4t-10w30-1l');
+  await page.locator('a[hreflang="en"]').first().click();
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  await expect(page).toHaveURL(/\/compare\?p=castrol-activ-4t-20w40-900ml,motul-3100-4t-10w30-1l$/);
+});
