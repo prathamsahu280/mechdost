@@ -67,6 +67,16 @@ export const orderGroups = pgTable(
   (t) => [
     unique('order_groups_idempotency_uq').on(t.userId, t.idempotencyKey),
     check('order_groups_code_format', sql`${t.code} ~ '^MD-[A-Z]{3}-[0-9]{4}-[0-9A-HJKMNP-TV-Z]{6}$'`),
+    // Business purchase (buyer GSTIN plan 2026-11-13): both or neither, a well-formed GSTIN, a sane name.
+    check(
+      'order_groups_gstin_format',
+      sql`${t.gstin} is null or ${t.gstin} ~ '^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$'`,
+    ),
+    check('order_groups_business_pair', sql`(${t.gstin} is null) = (${t.businessName} is null)`),
+    check(
+      'order_groups_business_name_len',
+      sql`${t.businessName} is null or char_length(${t.businessName}) between 2 and 120`,
+    ),
     check('order_groups_payment_method_valid', sql`${t.paymentMethod} in ('online','cod')`),
     check(
       'order_groups_payment_status_valid',

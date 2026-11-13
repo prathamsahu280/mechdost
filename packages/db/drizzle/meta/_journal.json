@@ -288,6 +288,13 @@
       "when": 1794552533791,
       "tag": "0040_list_paging_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1794555503900,
+      "tag": "0041_order_group_gstin",
+      "breakpoints": true
     }
   ]
 }

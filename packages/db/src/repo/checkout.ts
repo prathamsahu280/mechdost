@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { and, eq, isNull, or, sql } from 'drizzle-orm';
+import type { BusinessPurchase } from '@mechdost/shared/business';
 import { publicCode } from '@mechdost/shared/ids';
 import { OPERATIONAL_SETTINGS } from '@mechdost/shared/settings';
 import { splitInclusiveGst } from '@mechdost/shared/money';
@@ -84,6 +85,8 @@ export interface QuoteGroup {
 
 export interface CheckoutQuote {
   cityCode: string;
+  /** GST state code of the delivery PIN (place of supply), e.g. '22' for Chhattisgarh. */
+  deliveryStateCode: string;
   pincode: string;
   lines: QuoteLine[];
   groups: QuoteGroup[];
@@ -162,11 +165,12 @@ async function quoteInternal(
     city_id: string;
     city_code: string;
     state_id: string;
+    state_gst_code: string;
     cod_allowed: boolean;
   }>(
     await db.execute(sql`
-      select c.id as city_id, c.code as city_code, pc.state_id, pc.cod_allowed
-      from pincodes pc join cities c on c.id = pc.city_id
+      select c.id as city_id, c.code as city_code, pc.state_id, st.gst_state_code as state_gst_code, pc.cod_allowed
+      from pincodes pc join cities c on c.id = pc.city_id join states st on st.id = pc.state_id
       where pc.pincode = ${input.pincode} and c.status = 'live'`),
   );
   if (!place) throw new ValidationError('We do not deliver to this PIN code yet', 'PINCODE_NOT_SERVICEABLE');
@@ -306,6 +310,7 @@ async function quoteInternal(
     groupShops,
     quote: {
       cityCode: place.city_code,
+      deliveryStateCode: place.state_gst_code,
       pincode: input.pincode,
       lines,
       groups,
@@ -352,12 +357,19 @@ export interface PlacedOrder {
 }
 
 /** Fingerprint of what was asked for, in a fixed field order (a retry must be the same request). */
-function requestHash(input: { address: ShippingAddress; lines: readonly CartLine[]; note: string | null }) {
+function requestHash(input: {
+  address: ShippingAddress;
+  lines: readonly CartLine[];
+  note: string | null;
+  business?: BusinessPurchase | null;
+}) {
   const a = input.address;
   const canonical = JSON.stringify([
     [a.contactName, a.contactPhone, a.line1, a.line2, a.landmark, a.pincode],
     [...input.lines].map((l) => [l.sku, l.qty]).sort((x, y) => String(x[0]).localeCompare(String(y[0]))),
     input.note,
+    // A different GSTIN under the same key is a different request (buyer GSTIN plan).
+    input.business ? [input.business.gstin, input.business.businessName] : null,
   ]);
   return createHash('sha256').update(canonical).digest('hex');
 }
@@ -398,6 +410,8 @@ export interface PlaceOrderInput {
   expectedTotalPaise: number;
   note: string | null;
   locale: CatalogueLocale;
+  /** Optional business purchase (GST invoice); validated by `BusinessPurchaseSchema` at the API. */
+  business?: BusinessPurchase | null;
 }
 
 /** Place a cash-on-delivery order (see `placeOrder`). */
@@ -463,6 +477,8 @@ export async function placeOrder(
         codFeePaise,
         totalPaise,
         note: input.note,
+        gstin: input.business?.gstin ?? null,
+        businessName: input.business?.businessName ?? null,
         idempotencyKey: input.idempotencyKey,
         requestHash: hash,
       },

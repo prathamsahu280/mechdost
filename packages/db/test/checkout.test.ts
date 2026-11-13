@@ -328,3 +328,65 @@ describe('online payment (Razorpay, plan 2026-11-12)', () => {
     ).toBe(1);
   });
 });
+
+describe('business purchase with a GSTIN (plan 2026-11-13 buyer GSTIN)', () => {
+  const business = { gstin: '22ABVCS4888H1ZL', businessName: 'Sahu Motors' };
+  const place = async (n: number, extra: { business?: typeof business | null } = {}) => {
+    // Its own product: earlier tests in this file used up the oil's stock.
+    const lines = [{ sku: sku('synthetic-engine-oil-5w30-3-5l'), qty: 1 }];
+    const q = await quoteCheckout(t(), { pincode: '492004', lines, locale: 'en' });
+    return {
+      input: {
+        userId,
+        idempotencyKey: key(n),
+        address: address(),
+        lines,
+        expectedTotalPaise: q.totalPaise,
+        note: null,
+        locale: 'en' as const,
+        ...extra,
+      },
+    };
+  };
+  const group = async (code: string) =>
+    (await db.select().from(s.orderGroups).where(eq(s.orderGroups.code, code)))[0]!;
+
+  it('stores the GSTIN and business name on the order group; without them, nulls', async () => {
+    const withBiz = await placeCodOrder(t(), (await place(901, { business })).input);
+    expect(await group(withBiz.code)).toMatchObject({
+      gstin: '22ABVCS4888H1ZL',
+      businessName: 'Sahu Motors',
+    });
+    const plain = await placeCodOrder(t(), (await place(902)).input);
+    expect(await group(plain.code)).toMatchObject({ gstin: null, businessName: null });
+  });
+
+  it('the same key with a different GSTIN is a different request, never the old order', async () => {
+    const { input } = await place(903, { business });
+    await placeCodOrder(t(), input);
+    await expect(
+      placeCodOrder(t(), { ...input, business: { gstin: '27AAPFU0939F1ZV', businessName: 'Sahu Motors' } }),
+    ).rejects.toMatchObject({ code: 'IDEMPOTENCY_MISMATCH' });
+    await expect(placeCodOrder(t(), { ...input, business: null })).rejects.toMatchObject({
+      code: 'IDEMPOTENCY_MISMATCH',
+    });
+  });
+
+  it('the database refuses a malformed GSTIN or a GSTIN without a business name', async () => {
+    const { code } = await placeCodOrder(t(), (await place(904)).input);
+    await expect(
+      db
+        .update(s.orderGroups)
+        .set({ gstin: 'BAD', businessName: 'Sahu Motors' })
+        .where(eq(s.orderGroups.code, code)),
+    ).rejects.toThrow();
+    await expect(
+      db.update(s.orderGroups).set({ gstin: '22ABVCS4888H1ZL' }).where(eq(s.orderGroups.code, code)),
+    ).rejects.toThrow();
+  });
+
+  it('the quote names the delivery state by its GST code', async () => {
+    const q = await quoteCheckout(t(), { pincode: '492001', lines: [{ sku: OIL, qty: 1 }], locale: 'en' });
+    expect(q.deliveryStateCode).toBe('22');
+  });
+});
