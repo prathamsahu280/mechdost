@@ -3,7 +3,7 @@
 import { PartyPopper } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { PERSON_CANCEL_REASONS, type OrderCancelReason } from '@mechdost/shared/state';
+import { PERSON_CANCEL_REASONS } from '@mechdost/shared/state';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
 import { restoreCoinsForOrder } from '@/demo/coins';
@@ -51,12 +51,19 @@ export function OrderView({ code }: { code: string }) {
     );
   }
 
-  const steps = ORDER_STAGES.map((s) => ({ key: s, title: t(`stage_${s}`), detail: t(`detail_${s}`) }));
+  // An admin-confirmed delivery must not say "confirmed with your code" (QA 2026-11-14, B4).
+  const bySupport = order.delivery?.method === 'override';
+  const steps = ORDER_STAGES.map((s) => ({
+    key: s,
+    title: t(`stage_${s}`),
+    detail: s === 'delivered' && bySupport ? t('detail_delivered_support') : t(`detail_${s}`),
+  }));
 
   return (
     <div className="grid gap-6 nav:grid-cols-[1fr_380px] nav:items-start">
       <div className="space-y-6">
-        {isNew ? (
+        {/* Not on an order that has since been cancelled or rejected (QA 2026-11-14, B5). */}
+        {isNew && !order.cancellation && !order.rejection ? (
           <div
             role="status"
             className="animate-page-in flex items-center gap-3 rounded-card bg-success-bg p-5 text-success"
@@ -232,10 +239,18 @@ function CancelOrder({ order }: { order: DemoOrder }) {
   const t = useTranslations('order');
   const [open, setOpen] = useState(false);
   useDisclosureFocus(open ? 'order-cancel' : null);
+  // No reason is chosen for the customer (QA 2026-11-14, U2; rule 16).
+  const [missing, setMissing] = useState(false);
 
   function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
-    const reasonCode = new FormData(e.currentTarget).get('reasonCode') as OrderCancelReason;
+    const picked = new FormData(e.currentTarget).get('reasonCode');
+    const reasonCode = PERSON_CANCEL_REASONS.find((r) => r === picked && r !== 'customer_unreachable');
+    if (!reasonCode) {
+      setMissing(true);
+      document.getElementById('cancel-reason')?.focus();
+      return;
+    }
     if (cancelDemoOrder(order.code, 'customer', reasonCode, order.customer.name)) {
       if (order.coins) restoreCoinsForOrder(order.coins.accountId, order.code);
       track('order_cancel_submitted', { code: order.code, by: 'customer', reasonCode });
@@ -268,15 +283,26 @@ function CancelOrder({ order }: { order: DemoOrder }) {
         id="cancel-reason"
         data-disclosure-field="order-cancel"
         name="reasonCode"
-        defaultValue="changed_mind"
+        defaultValue=""
+        aria-invalid={missing ? true : undefined}
+        aria-describedby={missing ? 'cancel-reason-error' : undefined}
+        onChange={() => {
+          setMissing(false);
+        }}
         className="mt-1 min-h-11 w-full rounded-input border border-input-border bg-surface px-3 text-[15px] text-ink"
       >
+        <option value="">{t('reasonChoose')}</option>
         {PERSON_CANCEL_REASONS.filter((r) => r !== 'customer_unreachable').map((r) => (
           <option key={r} value={r}>
             {t(`cancelReason_${r}`)}
           </option>
         ))}
       </select>
+      {missing ? (
+        <p id="cancel-reason-error" className="text-xs font-bold text-error">
+          {t('reasonRequired')}
+        </p>
+      ) : null}
       <div className="flex flex-wrap gap-2 pt-1">
         <button
           type="submit"

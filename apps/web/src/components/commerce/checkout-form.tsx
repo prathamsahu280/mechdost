@@ -206,6 +206,10 @@ export function CheckoutForm() {
     name: id,
     'aria-invalid': errors[id] ? true : undefined,
     'aria-describedby': errors[id] ? `checkout-${id}-error` : undefined,
+    // Editing a field clears its error at once; the next submit checks it again (QA 2026-11-14, U17).
+    onInput: () => {
+      if (errors[id]) setErrors(({ [id]: _cleared, ...rest }) => rest);
+    },
   });
   const inputClass =
     'mt-1 min-h-11 w-full rounded-input border border-input-border bg-surface px-3 text-[15px] text-ink aria-[invalid=true]:border-error';

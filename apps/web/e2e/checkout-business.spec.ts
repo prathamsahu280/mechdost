@@ -150,3 +150,15 @@ test('the shop sees the GSTIN only after accepting the order', async ({ page }) 
   await expect(offered).not.toContainText('GST invoice for');
   await expect(active).toContainText('GST invoice for Sahu Motors (27AAPFU0939F1ZV)');
 });
+
+test('a field error goes away as soon as that field is corrected (QA 2026-11-14, U17)', async ({ page }) => {
+  await toCheckout(page);
+  await fillDelivery(page);
+  await page.getByLabel('PIN code').fill('560001');
+  await page.getByRole('button', { name: /Place order/ }).click();
+  const error = page.getByText('We do not deliver to this PIN yet. Raipur PIN codes start with 4920.');
+  await expect(error).toBeVisible();
+  await page.getByLabel('PIN code').fill('492099');
+  await expect(error).toHaveCount(0);
+  await expect(page.getByLabel('PIN code')).not.toHaveAttribute('aria-invalid', 'true');
+});

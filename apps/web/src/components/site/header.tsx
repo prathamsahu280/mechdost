@@ -72,7 +72,7 @@ export function Header({ navItems }: { navItems: readonly NavItem[] }) {
           <NavLinks label={t('label')} items={navItems} />
           <LanguageSwitcher target={locale === 'hi' ? 'en' : 'hi'} text={language('other')} />
           {/* Visibility on a wrapper: the toggle's own inline-flex would override a `hidden` class. */}
-          <span className="hidden sm:contents">
+          <span className="hidden min-[400px]:contents">
             <ThemeToggle label={theme('toggle')} />
           </span>
           <AccountLink prefix={locale === 'hi' ? '/hi' : ''} signIn={auth('signIn')} account={t('account')} />

@@ -209,32 +209,35 @@ export default async function ProductPage({ params }: Props) {
             </li>
           </ul>
 
-          <div className="mt-6 max-w-sm">
-            {price ? (
-              <AddToCartButton
-                slug={product.slug}
-                labels={{
-                  add: t('addToCart'),
-                  added: t('added'),
-                  maxQty: t('maxQty'),
-                  maxLines: t('maxLines'),
-                  saveFailed: t('saveFailed'),
-                }}
-                className="min-h-12"
-              />
-            ) : (
-              <a
-                href={whatsappLink(t('askAboutMessage', { product: `${product.brand} ${product.name}` }))}
-                target="_blank"
-                rel="noopener noreferrer"
-                data-track="product_ask_whatsapp"
-                className="press inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-button bg-whatsapp px-5 text-sm font-bold text-white"
-              >
-                <MessageCircle aria-hidden="true" className="size-4" />
-                {t('askAboutProduct')}
-                <span className="sr-only"> ({footer('whatsappNote')})</span>
-              </a>
-            )}
+          {/* Compare beside the main action (UI review 2026-11-14: it sat below the fold on phones). */}
+          <div className="mt-6 flex max-w-md items-start gap-2">
+            <div className="min-w-0 flex-1">
+              {price ? (
+                <AddToCartButton
+                  slug={product.slug}
+                  labels={{
+                    add: t('addToCart'),
+                    added: t('added'),
+                    maxQty: t('maxQty'),
+                    maxLines: t('maxLines'),
+                    saveFailed: t('saveFailed'),
+                  }}
+                  className="min-h-12"
+                />
+              ) : (
+                <a
+                  href={whatsappLink(t('askAboutMessage', { product: `${product.brand} ${product.name}` }))}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-track="product_ask_whatsapp"
+                  className="press inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-button bg-whatsapp px-5 text-sm font-bold text-white"
+                >
+                  <MessageCircle aria-hidden="true" className="size-4" />
+                  {t('askAboutProduct')}
+                  <span className="sr-only"> ({footer('whatsappNote')})</span>
+                </a>
+              )}
+            </div>
             <CompareToggle
               slug={product.slug}
               category={product.category.slug}
@@ -248,8 +251,10 @@ export default async function ProductPage({ params }: Props) {
                 startNew: cmp('startNew'),
                 saveFailed: t('saveFailed'),
               }}
-              className="mt-3"
+              className="shrink-0"
             />
+          </div>
+          <div className="max-w-md">
             <p className="mt-3 text-sm text-muted">
               <LocalLink
                 href="/quotes/new"

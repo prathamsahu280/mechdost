@@ -68,7 +68,9 @@ export function Footer() {
       id: 'account',
       title: t('colAccount'),
       links: [
-        { href: '/login', label: t('signIn'), track: 'footer_sign_in' },
+        // The account area (sign-in card when signed out): the footer is static, so it cannot say "Sign in" only to
+        // signed-out visitors (UI review 2026-11-14).
+        { href: '/account', label: nav('account'), track: 'footer_account' },
         { href: '/account/orders', label: t('trackOrder'), track: 'footer_orders' },
         { href: '/account/quotes', label: account('nav_quotes'), track: 'footer_quotes' },
         { href: '/cart', label: nav('cart'), track: 'footer_cart' },

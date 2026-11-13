@@ -6,11 +6,10 @@ import {
   ASSIGNMENT_DECLINE_REASONS,
   PERSON_CANCEL_REASONS,
   ORDER_REJECT_REASONS,
-  type OrderCancelReason,
-  type OrderRejectReason,
   type AssignmentDeclineReason,
 } from '@mechdost/shared/state';
 import { useState, type SyntheticEvent } from 'react';
+import { useCenterCurrent } from '@/lib/use-center-current';
 import { findProduct } from '@/demo/catalogue';
 import { restoreCoinsForOrder } from '@/demo/coins';
 import { useSession } from '@/demo/session';
@@ -19,6 +18,7 @@ import { findShop, rankShops } from '@/demo/shops';
 import { shopsOffSale } from '@/demo/price-requests';
 import {
   APPLICATION_STAGES,
+  REQUEST_STAGES,
   moderateReview,
   postQuoteMessage,
   adminConfirmDelivery,
@@ -146,10 +146,12 @@ function usePrefix() {
 }
 
 function AdminNav({ current }: { current: AdminSection }) {
+  const bar = useCenterCurrent<HTMLElement>(current);
   const t = useTranslations('portal');
   const prefix = usePrefix();
   return (
     <nav
+      ref={bar}
       aria-label={t('navLabel')}
       className="-mx-[5%] overflow-x-auto px-[5%] nav:sticky nav:top-28 nav:mx-0 nav:px-0"
     >
@@ -343,6 +345,8 @@ function RoutingCard({ order, now }: { order: DemoOrder; now: number }) {
   const session = useSession();
   const [rejecting, setRejecting] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  // Which form was sent without a reason (QA 2026-11-14, U2: no preselected reason codes, rule 16).
+  const [noReason, setNoReason] = useState<'reject' | 'cancel' | null>(null);
   const state = routingState(order, now);
   const categories = [
     ...new Set(
@@ -365,7 +369,12 @@ function RoutingCard({ order, now }: { order: DemoOrder; now: number }) {
     e.preventDefault();
     const data = new FormData(e.currentTarget);
     const v = data.get('message');
-    const reasonCode = data.get('reasonCode') as OrderRejectReason;
+    const reasonCode = ORDER_REJECT_REASONS.find((r) => r === data.get('reasonCode'));
+    if (!reasonCode) {
+      setNoReason('reject');
+      document.getElementById(`reject-reason-${order.code}`)?.focus();
+      return;
+    }
     if (typeof v === 'string' && rejectOrder(order.code, v, reasonCode)) {
       // Coins used on a rejected order go back to the customer (never as money; spec 20).
       if (order.coins) restoreCoinsForOrder(order.coins.accountId, order.code);
@@ -375,7 +384,13 @@ function RoutingCard({ order, now }: { order: DemoOrder; now: number }) {
 
   function cancel(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
-    const reasonCode = new FormData(e.currentTarget).get('reasonCode') as OrderCancelReason;
+    const picked = new FormData(e.currentTarget).get('reasonCode');
+    const reasonCode = PERSON_CANCEL_REASONS.find((r) => r === picked);
+    if (!reasonCode) {
+      setNoReason('cancel');
+      document.getElementById(`cancel-reason-${order.code}`)?.focus();
+      return;
+    }
     if (cancelDemoOrder(order.code, 'staff', reasonCode, session?.name ?? 'MechDost')) {
       if (order.coins) restoreCoinsForOrder(order.coins.accountId, order.code);
       track('order_cancel_submitted', { code: order.code, by: 'staff', reasonCode });
@@ -512,15 +527,26 @@ function RoutingCard({ order, now }: { order: DemoOrder; now: number }) {
             <select
               id={`cancel-reason-${order.code}`}
               name="reasonCode"
-              defaultValue="customer_unreachable"
+              defaultValue=""
+              aria-invalid={noReason === 'cancel' ? true : undefined}
+              aria-describedby={noReason === 'cancel' ? `cancel-reason-${order.code}-error` : undefined}
+              onChange={() => {
+                setNoReason(null);
+              }}
               className={portalField}
             >
+              <option value="">{t('reasonChoose')}</option>
               {PERSON_CANCEL_REASONS.map((r) => (
                 <option key={r} value={r}>
                   {ord(`cancelReason_${r}`)}
                 </option>
               ))}
             </select>
+            {noReason === 'cancel' ? (
+              <p id={`cancel-reason-${order.code}-error`} className="text-xs font-bold text-error">
+                {t('reasonRequired')}
+              </p>
+            ) : null}
             <div className="flex flex-wrap gap-2">
               <button type="submit" className={portalPrimary}>
                 {t('cancelConfirm', { code: order.code })}
@@ -557,15 +583,26 @@ function RoutingCard({ order, now }: { order: DemoOrder; now: number }) {
             <select
               id={`reject-reason-${order.code}`}
               name="reasonCode"
-              defaultValue="no_stock_nearby"
+              defaultValue=""
+              aria-invalid={noReason === 'reject' ? true : undefined}
+              aria-describedby={noReason === 'reject' ? `reject-reason-${order.code}-error` : undefined}
+              onChange={() => {
+                setNoReason(null);
+              }}
               className={portalField}
             >
+              <option value="">{t('reasonChoose')}</option>
               {ORDER_REJECT_REASONS.map((r) => (
                 <option key={r} value={r}>
                   {ord(`rejectReason_${r}`)}
                 </option>
               ))}
             </select>
+            {noReason === 'reject' ? (
+              <p id={`reject-reason-${order.code}-error`} className="text-xs font-bold text-error">
+                {t('reasonRequired')}
+              </p>
+            ) : null}
             <label htmlFor={`reject-${order.code}`} className="text-sm font-bold text-ink">
               {t('rejectMessage')}
             </label>
@@ -612,63 +649,101 @@ function ServiceRouting() {
   const t = useTranslations('portal');
   const r = useTranslations('request');
   const locale = useLocale();
-  const declined = useRequests().filter(
+  const prefix = usePrefix();
+  const all = useRequests();
+  const declined = all.filter(
     (x) => !x.cancellation && x.stage === 0 && (x.declinedBy ?? []).includes(x.workshopSlug),
   );
   return (
-    <section aria-labelledby="declined-requests">
-      <h2 id="declined-requests" className="font-heading text-xl font-extrabold text-ink">
-        {t('declinedRequests')} <span className="text-muted tabular-nums">({declined.length})</span>
-      </h2>
-      {declined.length === 0 ? (
-        <p className="mt-3 text-sm text-muted">{t('emptyQueue')}</p>
-      ) : (
-        <ul className="mt-3 grid gap-3 xl:grid-cols-2">
-          {declined.map((req) => {
-            // Paused or suspended workshops are never offered (admin control).
-            const options = DEMO_WORKSHOPS.filter(
-              (w) =>
-                w.vehicles.includes(req.vehicleType) &&
-                !(req.declinedBy ?? []).includes(w.slug) &&
-                takesNewWork('workshop', w.slug),
-            ).slice(0, 3);
-            return (
-              <li key={req.code} className={`${portalCard} border-accent-button/60`}>
-                <p className="font-heading text-lg font-extrabold text-ink">{req.code}</p>
-                <p className="text-sm text-muted">
-                  <span data-user-content>
-                    {req.customer.name} · {req.vehicle}
-                  </span>{' '}
-                  · {r('stage_requested')}
-                </p>
-                <p className="mt-2 text-xs font-bold text-warning">
-                  {t('declinedBy', {
-                    shop: workshopNameFor(req.workshopSlug, req.workshopName, locale),
-                    reason: t('reason_declined'),
-                  })}
-                </p>
-                <ul className="mt-3 space-y-2">
-                  {options.map((w) => (
-                    <li key={w.slug}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          reassignRequest(req.code, { slug: w.slug, name: w.name });
-                        }}
-                        className={`${portalQuiet} w-full justify-between`}
-                      >
-                        <span>🔧 {t('assignTo', { workshop: workshopNameFor(w.slug, w.name, locale) })}</span>
-                        <span className="text-xs text-muted">★ {w.rating.toFixed(1)}</span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+    <div className="space-y-8">
+      <section aria-labelledby="declined-requests">
+        <h2 id="declined-requests" className="font-heading text-xl font-extrabold text-ink">
+          {t('declinedRequests')} <span className="text-muted tabular-nums">({declined.length})</span>
+        </h2>
+        {declined.length === 0 ? (
+          <p className="mt-3 text-sm text-muted">{t('emptyQueue')}</p>
+        ) : (
+          <ul className="mt-3 grid gap-3 xl:grid-cols-2">
+            {declined.map((req) => {
+              // Paused or suspended workshops are never offered (admin control).
+              const options = DEMO_WORKSHOPS.filter(
+                (w) =>
+                  w.vehicles.includes(req.vehicleType) &&
+                  !(req.declinedBy ?? []).includes(w.slug) &&
+                  takesNewWork('workshop', w.slug),
+              ).slice(0, 3);
+              return (
+                <li key={req.code} className={`${portalCard} border-accent-button/60`}>
+                  <p className="font-heading text-lg font-extrabold text-ink">{req.code}</p>
+                  <p className="text-sm text-muted">
+                    <span data-user-content>
+                      {req.customer.name} · {req.vehicle}
+                    </span>{' '}
+                    · {r('stage_requested')}
+                  </p>
+                  <p className="mt-2 text-xs font-bold text-warning">
+                    {t('declinedBy', {
+                      shop: workshopNameFor(req.workshopSlug, req.workshopName, locale),
+                      reason: t('reason_declined'),
+                    })}
+                  </p>
+                  <ul className="mt-3 space-y-2">
+                    {options.map((w) => (
+                      <li key={w.slug}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            reassignRequest(req.code, { slug: w.slug, name: w.name });
+                          }}
+                          className={`${portalQuiet} w-full justify-between`}
+                        >
+                          <span>
+                            🔧 {t('assignTo', { workshop: workshopNameFor(w.slug, w.name, locale) })}
+                          </span>
+                          <span className="text-xs text-muted">★ {w.rating.toFixed(1)}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+      {/* Every request, so the section matches the Overview count (UI review 2026-11-14). */}
+      <section aria-labelledby="all-requests">
+        <h2 id="all-requests" className="font-heading text-xl font-extrabold text-ink">
+          {t('allRequests')} <span className="text-muted tabular-nums">({all.length})</span>
+        </h2>
+        {all.length === 0 ? (
+          <p className="mt-3 text-sm text-muted">{t('emptyQueue')}</p>
+        ) : (
+          <ul className={`mt-3 divide-y divide-line-card ${portalCard}`}>
+            {all.map((req) => (
+              <li key={req.code} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-3">
+                <div className="min-w-0">
+                  <p className="font-heading font-extrabold text-ink">{req.code}</p>
+                  <p className="text-sm text-muted">
+                    <span data-user-content>{req.customer.name}</span> ·{' '}
+                    {workshopNameFor(req.workshopSlug, req.workshopName, locale)} ·{' '}
+                    {req.cancellation
+                      ? r('cancelledTitle')
+                      : r(`stage_${REQUEST_STAGES[req.stage] ?? 'requested'}`)}
+                  </p>
+                </div>
+                <Link
+                  href={`${prefix}/service/${req.code}`}
+                  className="inline-flex min-h-11 items-center text-sm font-bold text-accent-soft-text underline-offset-4 hover:underline"
+                >
+                  {t('openRequest')}
+                </Link>
               </li>
-            );
-          })}
-        </ul>
-      )}
-    </section>
+            ))}
+          </ul>
+        )}
+      </section>
+    </div>
   );
 }
 

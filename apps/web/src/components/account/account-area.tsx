@@ -4,6 +4,7 @@ import { BadgeCheck, ChevronRight, MessagesSquare, Package, Trash2, Wrench } fro
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { Suspense, useEffect, useRef, useState, type ReactNode, type SyntheticEvent } from 'react';
+import { useCenterCurrent } from '@/lib/use-center-current';
 import {
   MAX_ACCOUNT_ITEMS,
   addAddress,
@@ -140,10 +141,12 @@ export function AccountArea({ section }: { section: AccountSection }) {
 }
 
 function SectionNav({ current }: { current: AccountSection }) {
+  const bar = useCenterCurrent<HTMLElement>(current);
   const t = useTranslations('account');
   const prefix = usePrefix();
   return (
     <nav
+      ref={bar}
       aria-label={t('navLabel')}
       className="-mx-[5%] overflow-x-auto px-[5%] nav:sticky nav:top-28 nav:mx-0 nav:px-0"
     >

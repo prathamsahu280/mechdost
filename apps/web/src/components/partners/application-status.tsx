@@ -65,7 +65,7 @@ export function ApplicationStatus({ code }: { code: string }) {
             label={t('statusLabel')}
             steps={steps}
             current={app.rejected ? app.stage + 1 : app.stage}
-            currentLabel={t('statusLabel')}
+            currentLabel={t('current')}
           />
         </div>
         {!app.rejected && app.stage < APPLICATION_STAGES.length - 1 ? (

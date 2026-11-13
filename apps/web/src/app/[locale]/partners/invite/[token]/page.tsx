@@ -25,7 +25,7 @@ export default async function InvitePage({ params }: Props) {
       <div className="grid gap-8 nav:grid-cols-[1fr_minmax(0,640px)] nav:items-start">
         <PageIntro eyebrow={t('eyebrow')} line1={t('inviteTitle')} lead={t('intro')} />
         <div className="rounded-card border border-line-card bg-surface p-6 shadow-card tab:p-8">
-          <ClientMessages namespaces={['apply', 'categories']}>
+          <ClientMessages namespaces={['apply', 'categories', 'map']}>
             <InviteApplication token={token} />
           </ClientMessages>
         </div>

@@ -178,11 +178,13 @@ export function seedData(now: number) {
   };
 }
 
+export const TICKET_CODE = 'REQ-RPR-2026-HND401';
+
 /** An open support ticket from the demo customer about the shipped order (`mechdost-demo-support`). */
 export function supportTicket(now: number) {
   const at = new Date(now - 2 * 3_600_000).toISOString();
   return {
-    code: 'REQ-RPR-2026-HND401',
+    code: TICKET_CODE,
     accountId: 'demo-customer',
     customerName: 'Ravi Sahu',
     kind: 'order_issue',
@@ -211,5 +213,6 @@ export function supportTicket(now: number) {
 
 /** Everything at once: the busy world plus the open ticket, keyed by localStorage key. */
 export function busyWorld(now: number): Record<string, unknown> {
-  return { ...seedData(now), 'mechdost-demo-support': [supportTicket(now)] };
+  // The support store keeps `{ tickets }` (a bare array would fall back to its seeded WhatsApp ticket).
+  return { ...seedData(now), 'mechdost-demo-support': { tickets: [supportTicket(now)] } };
 }

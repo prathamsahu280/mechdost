@@ -15,7 +15,7 @@
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
-import { busyWorld, CODES } from './fixtures/demo-world';
+import { busyWorld, CODES, TICKET_CODE } from './fixtures/demo-world';
 
 const SHOTS = process.env.MATRIX_SHOTS ?? '';
 const DEMO_PASSWORD = 'Raipur@2026';
@@ -53,7 +53,14 @@ const PORTALS = [
   {
     role: 'admin',
     phone: '9000000003',
-    pages: ['/admin', '/admin/orders', '/admin/partners', '/admin/settings', '/admin/content'],
+    pages: [
+      '/admin',
+      '/admin/orders',
+      '/admin/services',
+      '/admin/partners',
+      '/admin/settings',
+      '/admin/content',
+    ],
   },
 ] as const;
 
@@ -73,6 +80,12 @@ async function seed(page: Page, state: { theme: Theme; world: World }) {
       consent: string;
       extra: Record<string, unknown>;
     }) => {
+      // Seed once per test: later loads keep what the app changed (a cleared compare list stays cleared).
+      if (window.localStorage.getItem('mechdost-e2e-seeded') === '1') {
+        window.localStorage.setItem('mechdost-theme', s.theme);
+        return;
+      }
+      window.localStorage.setItem('mechdost-e2e-seeded', '1');
       const set = (k: string, v: string) => {
         if (window.localStorage.getItem(k) === null) window.localStorage.setItem(k, v);
       };
@@ -153,6 +166,8 @@ async function checkPage(
   const html = page.locator('html');
   await expect.soft(html, `${where}: theme`).toHaveAttribute('data-theme', state.theme);
   await expect.soft(html, `${where}: language`).toHaveAttribute('lang', state.locale);
+  const proof = state.world === 'busy' ? MUST_SHOW[path] : undefined;
+  if (proof) await expect.soft(page.getByText(proof).first(), `${where}: shows ${proof}`).toBeVisible();
   const facts = await layoutFacts(page);
   expect
     .soft(facts.overflow, `${where}: scrolls sideways by ${String(facts.overflow)}px`)
@@ -206,6 +221,18 @@ const BUSY_PAGES = [
   '/account/services',
   '/account/quotes',
 ] as const;
+
+/** Proof the busy world's records are on screen (an empty page proves nothing). */
+const MUST_SHOW: Readonly<Record<string, string>> = {
+  [`/orders/${CODES.shipped}`]: CODES.shipped,
+  [`/service/${CODES.proposed}`]: CODES.proposed,
+  [`/quotes/${CODES.quote}`]: CODES.quote,
+  '/account/support': TICKET_CODE,
+  '/account/services': CODES.proposed,
+  '/account/quotes': CODES.quote,
+  // The services section lists every request, not only declined ones (UI review 2026-11-14).
+  '/admin/services': CODES.fresh,
+};
 
 const WORLDS = ['empty', 'cart', 'busy'] as const satisfies readonly World[];
 

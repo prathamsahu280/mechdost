@@ -4,7 +4,7 @@ import { PartyPopper } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { SERVICE_CANCEL_REASONS, type ServiceCancelReason } from '@mechdost/shared/state';
+import { SERVICE_CANCEL_REASONS } from '@mechdost/shared/state';
 import { useState, type SyntheticEvent } from 'react';
 import {
   advanceRequest,
@@ -88,7 +88,7 @@ export function RequestView({ code }: { code: string }) {
                 label={t('statusLabel')}
                 steps={steps}
                 current={request.stage}
-                currentLabel={t('stage_requested')}
+                currentLabel={t('current')}
               />
             </div>
           )}
@@ -185,10 +185,18 @@ function CancelRequest({ request }: { request: DemoServiceRequest }) {
   const t = useTranslations('request');
   const [open, setOpen] = useState(false);
   useDisclosureFocus(open ? 'request-cancel' : null);
+  // No reason is chosen for the customer (QA 2026-11-14, U2; rule 16).
+  const [missing, setMissing] = useState(false);
 
   function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
-    const reasonCode = new FormData(e.currentTarget).get('reasonCode') as ServiceCancelReason;
+    const picked = new FormData(e.currentTarget).get('reasonCode');
+    const reasonCode = SERVICE_CANCEL_REASONS.find((r) => r === picked);
+    if (!reasonCode) {
+      setMissing(true);
+      document.getElementById('request-cancel-reason')?.focus();
+      return;
+    }
     if (cancelDemoRequest(request.code, reasonCode)) {
       track('booking_cancelled', { code: request.code, workshop: request.workshopSlug, reasonCode });
       // This form unmounts with the booking closed: keep keyboard focus on the outcome, not on <body>.
@@ -220,15 +228,26 @@ function CancelRequest({ request }: { request: DemoServiceRequest }) {
         id="request-cancel-reason"
         data-disclosure-field="request-cancel"
         name="reasonCode"
-        defaultValue="changed_mind"
+        defaultValue=""
+        aria-invalid={missing ? true : undefined}
+        aria-describedby={missing ? 'request-cancel-reason-error' : undefined}
+        onChange={() => {
+          setMissing(false);
+        }}
         className="mt-1 min-h-11 w-full rounded-input border border-input-border bg-surface px-3 text-[15px] text-ink"
       >
+        <option value="">{t('reasonChoose')}</option>
         {SERVICE_CANCEL_REASONS.map((r) => (
           <option key={r} value={r}>
             {t(`cancelReason_${r}`)}
           </option>
         ))}
       </select>
+      {missing ? (
+        <p id="request-cancel-reason-error" className="text-xs font-bold text-error">
+          {t('reasonRequired')}
+        </p>
+      ) : null}
       <div className="flex flex-wrap gap-2 pt-1">
         <button
           type="submit"

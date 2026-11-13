@@ -151,7 +151,9 @@ function OfferedOrder({ order, shopSlug, now }: { order: DemoOrder; shopSlug: st
   const t = useTranslations('portal');
   const a = useTranslations('account');
   const [declining, setDeclining] = useState(false);
-  const [reason, setReason] = useState<AssignmentDeclineReason>('out_of_stock');
+  // No reason is chosen for the shop (QA 2026-11-14, U2; rule 16: a code nobody picked is bad data).
+  const [reason, setReason] = useState<AssignmentDeclineReason | ''>('');
+  const [missing, setMissing] = useState(false);
   const minutes = Math.max(
     0,
     Math.ceil(((order.shop ? new Date(order.shop.expiresAt).getTime() : now) - now) / 60_000),
@@ -172,21 +174,35 @@ function OfferedOrder({ order, shopSlug, now }: { order: DemoOrder; shopSlug: st
           <select
             id={`reason-${order.code}`}
             value={reason}
+            aria-invalid={missing ? true : undefined}
+            aria-describedby={missing ? `reason-${order.code}-error` : undefined}
             onChange={(e) => {
-              setReason(ASSIGNMENT_DECLINE_REASONS.find((r) => r === e.target.value) ?? 'out_of_stock');
+              setReason(ASSIGNMENT_DECLINE_REASONS.find((r) => r === e.target.value) ?? '');
+              setMissing(false);
             }}
             className={portalField}
           >
+            <option value="">{t('reasonChoose')}</option>
             {ASSIGNMENT_DECLINE_REASONS.map((r) => (
               <option key={r} value={r}>
                 {t(`reason_${r}`)}
               </option>
             ))}
           </select>
+          {missing ? (
+            <p id={`reason-${order.code}-error`} className="text-xs font-bold text-error">
+              {t('reasonRequired')}
+            </p>
+          ) : null}
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
               onClick={() => {
+                if (!reason) {
+                  setMissing(true);
+                  document.getElementById(`reason-${order.code}`)?.focus();
+                  return;
+                }
                 respondToOrder(order.code, shopSlug, false, reason);
                 track('click', { id: 'shop_order_declined', path: window.location.pathname });
               }}

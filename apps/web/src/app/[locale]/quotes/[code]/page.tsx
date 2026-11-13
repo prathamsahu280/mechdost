@@ -25,7 +25,7 @@ export default async function QuotePage({ params }: Props) {
   const t = await getTranslations('quote');
   return (
     <Container className="py-10 tab:py-14">
-      <h1 className="font-heading text-[clamp(26px,3vw,40px)] font-extrabold tracking-[-0.02em] break-all text-ink">
+      <h1 className="font-heading text-[clamp(22px,3vw,40px)] font-extrabold tracking-[-0.02em] break-words text-ink">
         {t('reference', { code: safe || code.slice(0, 40) })}
       </h1>
       <div className="mt-6">

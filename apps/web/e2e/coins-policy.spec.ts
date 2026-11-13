@@ -58,6 +58,7 @@ test.describe('MechDost Coins (spec 20)', () => {
     const card = page.locator('article').filter({ hasText: code });
     await card.getByRole('button', { name: 'Reject with a message' }).click();
     await card.getByLabel('Message to the customer').fill('Sorry, this battery is out of stock this week.');
+    await card.getByLabel('Reason', { exact: true }).selectOption('no_stock_nearby');
     await card.getByRole('button', { name: 'Reject order' }).click();
     await expect(card.getByText(/Rejected: Sorry/)).toBeVisible();
     await page.goto('/admin/coins');

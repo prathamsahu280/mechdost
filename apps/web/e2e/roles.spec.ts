@@ -296,6 +296,9 @@ test.describe('order routing across roles (spec 04)', () => {
     await signIn(page, '9000000004'); // Raipur Battery Point
     const offered = page.locator('article').filter({ hasText: code });
     await offered.getByRole('button', { name: 'Decline' }).click();
+    // No reason is chosen for the shop (QA 2026-11-14, U2).
+    await offered.getByRole('button', { name: 'Decline' }).click();
+    await expect(offered.getByText('Choose a reason first.')).toBeVisible();
     await offered.getByLabel('Reason').selectOption('out_of_stock');
     await offered.getByRole('button', { name: 'Decline' }).click();
     await expect(page.locator('article').filter({ hasText: code })).toHaveCount(0);
@@ -332,6 +335,10 @@ test.describe('order routing across roles (spec 04)', () => {
     await card
       .getByLabel('Message to the customer')
       .fill('Sorry, this battery is out of stock across Raipur this week.');
+    // No reason is chosen for the admin: sending without one is refused (QA 2026-11-14, U2).
+    await card.getByRole('button', { name: 'Reject order' }).click();
+    await expect(card.getByText('Choose a reason first.')).toBeVisible();
+    await card.getByLabel('Reason', { exact: true }).selectOption('no_stock_nearby');
     await card.getByRole('button', { name: 'Reject order' }).click();
     await expect(
       page

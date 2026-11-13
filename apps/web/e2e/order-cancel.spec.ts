@@ -73,9 +73,14 @@ test('the customer cancels before packing; the admin sees it with the reason', a
   await page.getByRole('button', { name: 'Keep my order' }).click();
   await expect(page.getByRole('button', { name: 'Cancel this order' })).toBeFocused();
   await page.getByRole('button', { name: 'Cancel this order' }).click();
+  // No reason is chosen for the customer (QA 2026-11-14, U2).
+  await page.getByRole('button', { name: 'Cancel order', exact: true }).click();
+  await expect(page.getByText('Choose a reason first.')).toBeVisible();
   await page.getByLabel('Why are you cancelling?').selectOption('ordered_by_mistake');
   await page.getByRole('button', { name: 'Cancel order', exact: true }).click();
   await expect(page.getByText('Order cancelled')).toBeVisible();
+  // The "Thank you! Your order is placed." banner of a fresh order is gone once it is cancelled (QA B5).
+  await expect(page.getByText('Thank you! Your order is placed.')).toHaveCount(0);
   await expect(page.locator('#order-cancelled')).toBeFocused();
   await expect(page.getByText(/You cancelled this order on .* · Ordered by mistake/)).toBeVisible();
   await expect(page.getByRole('button', { name: 'Cancel this order' })).toHaveCount(0);

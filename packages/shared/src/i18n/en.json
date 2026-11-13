@@ -631,7 +631,10 @@
     "rejectReason_other": "Other reason",
     "gstInvoiceFor": "GST invoice for <name>{business}</name> ({gstin})",
     "cancelViaSupport": "To cancel this order, contact support.",
-    "cancelViaSupportLink": "Contact support"
+    "cancelViaSupportLink": "Contact support",
+    "detail_delivered_support": "Delivered and confirmed by MechDost support. Rate your experience in your account.",
+    "reasonChoose": "Choose a reason",
+    "reasonRequired": "Choose a reason first."
   },
   "finder": {
     "title": "Where is your vehicle?",
@@ -738,7 +741,10 @@
     "cancelReason_found_another_workshop": "Found another workshop",
     "cancelReason_slot_not_suitable": "The time doesn't suit me",
     "cancelReason_problem_solved": "The problem is solved",
-    "cancelReason_other": "Other reason"
+    "cancelReason_other": "Other reason",
+    "current": "Current step",
+    "reasonChoose": "Choose a reason",
+    "reasonRequired": "Choose a reason first."
   },
   "demo": {
     "controls": "Demo controls",
@@ -848,7 +854,8 @@
     "inviteUsed": "This invite has already been used. Sign in, or ask MechDost for a new invite.",
     "inviteExpired": "This invite has expired. Ask MechDost for a new one.",
     "inviteRevoked": "This invite was withdrawn. Ask MechDost for a new one.",
-    "inviteNotFound": "We could not find this invite. Check the link in your email."
+    "inviteNotFound": "We could not find this invite. Check the link in your email.",
+    "current": "Current step"
   },
   "reviews": {
     "title": "Ratings & reviews",
@@ -1261,6 +1268,8 @@
     "hide": "Hide",
     "reviewOn": "On {target}",
     "declinedRequests": "Declined by the workshop",
+    "allRequests": "All service requests",
+    "openRequest": "Open request",
     "assignTo": "Assign to {workshop}",
     "shopTitle": "Shop orders",
     "offered": "New orders to accept",
@@ -1618,7 +1627,9 @@
     "rules_selfCancel": "Customers may cancel their own order until the shop confirms it",
     "rules_selfCancelHint": "Off: customers cancel through support. Applies to orders placed after the change.",
     "rules_saved": "Order rules saved",
-    "rules_saveFailed": "Not saved: this browser is not saving data."
+    "rules_saveFailed": "Not saved: this browser is not saving data.",
+    "reasonChoose": "Choose a reason",
+    "reasonRequired": "Choose a reason first."
   },
   "policies": {
     "returns": {

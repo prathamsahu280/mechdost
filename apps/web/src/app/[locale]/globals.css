@@ -576,3 +576,13 @@ input[type='radio'] {
     filter: invert(1) hue-rotate(180deg);
   }
 }
+
+/* The privacy banner sits where the compare tray floats: the tray steps aside until the banner is answered. */
+html[data-consent-open] [data-compare-tray] {
+  display: none;
+}
+
+/* While the compare tray floats, the page ends with room for it, so nothing stays hidden under it (QA U9). */
+body:has([data-compare-tray]) main {
+  padding-bottom: 4.5rem;
+}

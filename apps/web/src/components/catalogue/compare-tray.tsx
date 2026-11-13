@@ -29,6 +29,7 @@ export function CompareTray({
   if (list.slugs.length === 0 || /\/compare\/?$/.test(pathname)) return null;
   return (
     <aside
+      data-compare-tray=""
       aria-label={labels.label}
       className="fixed bottom-[calc(84px+env(safe-area-inset-bottom))] left-4 z-40 flex items-center gap-1 rounded-pill border border-line-card bg-surface p-1 shadow-dialog nav:bottom-6 nav:left-6"
     >

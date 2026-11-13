@@ -631,7 +631,10 @@
     "rejectReason_other": "कोई और कारण",
     "gstInvoiceFor": "<name>{business}</name> ({gstin}) के लिए GST बिल",
     "cancelViaSupport": "यह ऑर्डर रद्द करने के लिए सपोर्ट से संपर्क करें।",
-    "cancelViaSupportLink": "सपोर्ट से संपर्क करें"
+    "cancelViaSupportLink": "सपोर्ट से संपर्क करें",
+    "detail_delivered_support": "डिलीवर हो गया और MechDost सपोर्ट ने कन्फ़र्म किया। अपने अकाउंट में अनुभव को रेट करें।",
+    "reasonChoose": "कारण चुनें",
+    "reasonRequired": "पहले कारण चुनें।"
   },
   "finder": {
     "title": "आपका वाहन कहाँ है?",
@@ -738,7 +741,10 @@
     "cancelReason_found_another_workshop": "कोई और वर्कशॉप मिल गई",
     "cancelReason_slot_not_suitable": "यह समय ठीक नहीं है",
     "cancelReason_problem_solved": "समस्या ठीक हो गई",
-    "cancelReason_other": "कोई और कारण"
+    "cancelReason_other": "कोई और कारण",
+    "current": "मौजूदा चरण",
+    "reasonChoose": "कारण चुनें",
+    "reasonRequired": "पहले कारण चुनें।"
   },
   "demo": {
     "controls": "डेमो कंट्रोल",
@@ -848,7 +854,8 @@
     "inviteUsed": "यह निमंत्रण पहले ही इस्तेमाल हो चुका है। साइन इन करें या MechDost से नया निमंत्रण मांगें।",
     "inviteExpired": "इस निमंत्रण की समय-सीमा खत्म हो गई है। MechDost से नया निमंत्रण मांगें।",
     "inviteRevoked": "यह निमंत्रण वापस ले लिया गया है। MechDost से नया निमंत्रण मांगें।",
-    "inviteNotFound": "यह निमंत्रण नहीं मिला। अपने ईमेल में दिया लिंक जांचें।"
+    "inviteNotFound": "यह निमंत्रण नहीं मिला। अपने ईमेल में दिया लिंक जांचें।",
+    "current": "मौजूदा चरण"
   },
   "reviews": {
     "title": "रेटिंग और रिव्यू",
@@ -1261,6 +1268,8 @@
     "hide": "छिपाएँ",
     "reviewOn": "{target} पर",
     "declinedRequests": "वर्कशॉप ने मना किया",
+    "allRequests": "सभी सर्विस अनुरोध",
+    "openRequest": "अनुरोध खोलें",
     "assignTo": "{workshop} को सौंपें",
     "shopTitle": "दुकान के ऑर्डर",
     "offered": "स्वीकार करने के लिए नए ऑर्डर",
@@ -1618,7 +1627,9 @@
     "rules_selfCancel": "दुकान की पुष्टि से पहले ग्राहक खुद ऑर्डर रद्द कर सकें",
     "rules_selfCancelHint": "बंद होने पर ग्राहक सपोर्ट के ज़रिए रद्द करते हैं। बदलाव के बाद दिए गए ऑर्डर पर लागू होता है।",
     "rules_saved": "ऑर्डर के नियम सेव हो गए",
-    "rules_saveFailed": "सेव नहीं हुआ: यह ब्राउज़र डेटा सेव नहीं कर रहा।"
+    "rules_saveFailed": "सेव नहीं हुआ: यह ब्राउज़र डेटा सेव नहीं कर रहा।",
+    "reasonChoose": "कारण चुनें",
+    "reasonRequired": "पहले कारण चुनें।"
   },
   "policies": {
     "returns": {
