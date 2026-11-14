@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useLocale, useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { useState, type SyntheticEvent } from 'react';
@@ -16,6 +17,7 @@ import {
   type SupportError,
   type TicketKind,
 } from '@/demo/support';
+import { AUTH_MODE } from '@/lib/auth/mode';
 import { track } from '@/lib/analytics';
 import { formatDate } from '@/lib/format';
 import { TicketThread, useTicketLabels } from '@/components/support/ticket-thread';
@@ -46,8 +48,21 @@ function usePresetOrder(): string | null {
 
 const ORDER_CODE = /^MD-[A-Z]{3}-[0-9]{4}-[0-9A-Z]{6}$/;
 
+/** Requests on the API (real sign-in builds only): loaded on demand so demo bundles stay the same size. */
+const SupportSectionApi = dynamic(() => import('./support-section-api').then((m) => m.SupportSectionApi), {
+  ssr: false,
+});
+
 export function SupportSection({ account }: { account: DemoAccount }) {
   const presetOrder = usePresetOrder();
+  return AUTH_MODE === 'firebase' ? (
+    <SupportSectionApi presetOrder={presetOrder} />
+  ) : (
+    <DemoSupportSection account={account} presetOrder={presetOrder} />
+  );
+}
+
+function DemoSupportSection({ account, presetOrder }: { account: DemoAccount; presetOrder: string | null }) {
   const t = useTranslations('support');
   const labels = useTicketLabels();
   const orders = useOrders();
