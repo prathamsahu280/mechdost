@@ -3,10 +3,15 @@ import {
   cityScopeFrom,
   getAdminServiceRequest,
   listAdminServiceRequests,
+  overrideArrival,
   reassignServiceRequest,
   rejectServiceRequest,
 } from '@mechdost/db/repo';
-import { ReassignSchema, RejectServiceRequestSchema } from '@mechdost/shared/service-requests';
+import {
+  ArrivalOverrideSchema,
+  ReassignSchema,
+  RejectServiceRequestSchema,
+} from '@mechdost/shared/service-requests';
 import type { SessionCache } from '../auth/session-cache';
 import { authenticate, requirePermission, requireVerified } from '../middleware/auth';
 import { rateLimit, RATE_RULES } from '../middleware/rate-limit';
@@ -84,6 +89,20 @@ const reject = createRoute({
   responses: { 200: json(Changed, 'Rejected'), ...conflict, ...errorResponses },
 });
 
+const arrival = createRoute({
+  method: 'post',
+  path: '/admin/service-requests/{code}/arrival-override',
+  tags: ['admin'],
+  summary:
+    "Confirm a home visit's arrival without the customer's code (reason and odometer required; audited)",
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: z.object({ code: RequestCode }),
+    body: body(ArrivalOverrideSchema.openapi('ArrivalOverride')),
+  },
+  responses: { 200: json(Changed, 'Arrived'), ...conflict, ...errorResponses },
+});
+
 export function adminServiceRequestRoutes(deps: AppDeps, cache: SessionCache) {
   const app = new OpenAPIHono<AppEnv>({ defaultHook: validationHook });
   app.use('/admin/service-requests/*', authenticate(deps, cache));
@@ -122,6 +141,18 @@ export function adminServiceRequestRoutes(deps: AppDeps, cache: SessionCache) {
         scope: cityScopeFrom(c.get('auth').grants, 'service:route'),
         code: c.req.valid('param').code,
         workshopId: b.workshopId,
+        expectedVersion: b.version,
+        staffUserId: c.get('auth').user.id,
+      });
+      return c.json(r, 200);
+    })
+    .openapi(arrival, async (c) => {
+      const b = c.req.valid('json');
+      const r = await overrideArrival(deps.db, {
+        scope: cityScopeFrom(c.get('auth').grants, 'service:route'),
+        code: c.req.valid('param').code,
+        reason: b.reason,
+        odometerKm: b.odometerKm,
         expectedVersion: b.version,
         staffUserId: c.get('auth').user.id,
       });

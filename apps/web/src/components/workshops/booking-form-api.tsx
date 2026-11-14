@@ -15,11 +15,14 @@ import {
   type SyntheticEvent,
 } from 'react';
 import type { SavedVehicle } from '@mechdost/shared/account-api';
+import type { ServiceMode } from '@mechdost/shared/state';
 import { useSession } from '@/demo/session';
 import { AUTH_MODE } from '@/lib/auth/mode';
 import { track } from '@/lib/analytics';
 import { formatPrice } from '@/lib/format';
+import { homeErrorKey } from '@/lib/home-service-views';
 import { istDate, newIdempotencyKey, rangeOf, serviceErrorKey, servicesFor } from '@/lib/service-views';
+import { HomeAddressPicker, ServiceModeSwitch, VisitFeeLine, useHomeAddresses } from './home-mode-fields';
 
 /** The API takes bookings from today up to 30 days ahead (IST). */
 const MAX_DAYS_AHEAD = 30;
@@ -37,16 +40,20 @@ export interface BookingWorkshop {
   name: string;
   vehicleTypes: VehicleType[];
   pickup: boolean;
+  gstRegistered: boolean;
+  /** Home servicing: null when the workshop does not do home visits. */
+  home: { radiusKm: number; visitFeePaise: number } | null;
   services: {
     key: string;
     title: string;
     lowPaise: number;
     highPaise: number;
     vehicleType: VehicleType | null;
+    homeAvailable: boolean;
   }[];
 }
 
-type Field = 'vehicleType' | 'vehicle' | 'services' | 'concern' | 'pincode' | 'date';
+type Field = 'vehicleType' | 'vehicle' | 'services' | 'concern' | 'pincode' | 'date' | 'address';
 
 /** API error code → the field it is about (shown next to that field); others show above the button. */
 const FIELD_OF: Record<string, Field> = {
@@ -57,6 +64,13 @@ const FIELD_OF: Record<string, Field> = {
   VEHICLE_NOT_SERVED: 'vehicleType',
   UNKNOWN_SERVICE: 'services',
   CONCERN_REQUIRED: 'concern',
+  ADDRESS_NOT_PINNED: 'address',
+  ADDRESS_REQUIRED: 'address',
+  PINCODE_MISMATCH: 'address',
+  WORKSHOP_OUT_OF_RADIUS: 'address',
+  HOME_NOT_OFFERED: 'address',
+  SERVICE_NOT_AT_HOME: 'services',
+  SERVICE_REQUIRED: 'services',
 };
 
 /**
@@ -76,10 +90,18 @@ export function BookingFormApi({
 }) {
   const t = useTranslations('workshop');
   const r = useTranslations('request');
+  const h = useTranslations('homeService');
   const locale = useLocale();
   const router = useRouter();
   const formId = useId();
-  const pinFromLink = useSearchParams().get('pin') ?? '';
+  const query = useSearchParams();
+  const pinFromLink = query.get('pin') ?? '';
+  // The finder links here with the home choice and the address already made.
+  const [mode, setMode] = useState<ServiceMode>(
+    workshop?.home && query.get('mode') === 'home' ? 'home' : 'workshop',
+  );
+  const [addressId, setAddressId] = useState(query.get('address') ?? '');
+  const home = mode === 'home' && workshop?.home ? workshop.home : null;
   const choose = workshop === null;
   const types = workshop ? workshop.vehicleTypes : [...VEHICLE_TYPES];
   const [vehicleType, setVehicleType] = useState<VehicleType>(types[0] ?? '2W');
@@ -87,6 +109,14 @@ export function BookingFormApi({
   // A saved vehicle picked from the API (real sign-in) fills the type and the name below (design 2026-11-15).
   const [savedVehicle, setSavedVehicle] = useState<SavedVehicle | null>(null);
   const signedIn = useSession()?.role === 'customer';
+  const addresses = useHomeAddresses(Boolean(workshop?.home) && signedIn && AUTH_MODE === 'firebase');
+  const address =
+    addresses.state === 'ready' ? (addresses.pinned.find((a) => a.id === addressId) ?? null) : null;
+  // A saved choice that is no longer a pinned address (deleted, unpinned) is dropped, never sent.
+  const message = (code: string) =>
+    homeErrorKey(code)
+      ? h(homeErrorKey(code) as 'err_FEE_CHANGED')
+      : r(serviceErrorKey(code) as 'api_err_generic');
   const [errors, setErrors] = useState<Partial<Record<Field, string>>>({});
   const [note, setNote] = useState<{ text: string; link?: 'sign_in' | 'verify' } | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -103,7 +133,9 @@ export function BookingFormApi({
   const prefix = locale === 'hi' ? '/hi' : '';
   const workshopId = workshop?.slug ?? 'mechdost';
 
-  const services = workshop ? servicesFor(workshop.services, vehicleType) : [];
+  const services = workshop
+    ? servicesFor(home ? workshop.services.filter((s) => s.homeAvailable) : workshop.services, vehicleType)
+    : [];
   const chosen = services.filter((s) => selected.includes(s.key));
   const range = useMemo(() => rangeOf(chosen), [chosen]);
   const fid = (f: Field) => `${formId}-${f}`;
@@ -115,14 +147,17 @@ export function BookingFormApi({
       const v = data.get(k);
       return typeof v === 'string' ? v.trim() : '';
     };
-    const pincode = value('pincode');
+    const pincode = home ? (address?.pincode ?? '') : value('pincode');
     const concern = value('concern');
     const date = value('date');
     const next: Partial<Record<Field, string>> = {};
-    if (!/^[1-9]\d{5}$/.test(pincode)) next.pincode = t('api_errPincode');
+    if (home && !address) next.address = h('err_ADDRESS_REQUIRED');
+    else if (!home && !/^[1-9]\d{5}$/.test(pincode)) next.pincode = t('api_errPincode');
     if (value('vehicle').length < 2) next.vehicle = t('errVehicle');
     if (choose && concern.length < 3) next.concern = t('api_errConcern');
-    if (!choose && chosen.length === 0 && concern.length < 3) next.services = t('api_errServicesOrConcern');
+    if (home && chosen.length === 0) next.services = h('err_SERVICE_REQUIRED');
+    else if (!choose && chosen.length === 0 && concern.length < 3)
+      next.services = t('api_errServicesOrConcern');
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || (today && date < today) || (lastDay && date > lastDay))
       next.date = t('api_errDate');
     setErrors(next);
@@ -145,11 +180,14 @@ export function BookingFormApi({
         serviceKeys: chosen.map((s) => s.key),
         concern: concern.length >= 3 ? concern : null,
         pincode,
-        lat: origin?.lat ?? null,
-        lng: origin?.lng ?? null,
+        lat: home ? null : (origin?.lat ?? null),
+        lng: home ? null : (origin?.lng ?? null),
         preferredDate: date,
         preferredSlot: slot,
-        pickup: data.get('pickup') === 'on',
+        pickup: home ? false : data.get('pickup') === 'on',
+        ...(home && address
+          ? { mode: 'home' as const, addressId: address.id, visitFeePaise: home.visitFeePaise }
+          : {}),
       },
       attemptKey.current,
     );
@@ -163,7 +201,7 @@ export function BookingFormApi({
     track('click', { id: `booking_${res.code.toLowerCase()}`, path: window.location.pathname });
     const field = FIELD_OF[res.code];
     if (field) {
-      setErrors({ [field]: r(serviceErrorKey(res.code) as 'api_err_generic') });
+      setErrors({ [field]: message(res.code) });
       document.getElementById(fid(field))?.focus();
       return;
     }
@@ -172,7 +210,7 @@ export function BookingFormApi({
         ? { text: t('api_signIn'), link: 'sign_in' }
         : res.code === 'VERIFICATION_REQUIRED'
           ? { text: t('api_verify'), link: 'verify' }
-          : { text: r(serviceErrorKey(res.code) as 'api_err_generic') },
+          : { text: message(res.code) },
     );
   }
 
@@ -202,21 +240,44 @@ export function BookingFormApi({
         track('booking_started', { workshop: workshopId });
       }}
     >
-      <div>
-        <label htmlFor={fid('pincode')} className="text-sm font-bold text-ink">
-          {t('api_pincode')}
-        </label>
-        <input
-          {...aria('pincode')}
-          name="pincode"
-          inputMode="numeric"
-          autoComplete="postal-code"
-          maxLength={6}
-          defaultValue={initialPin ?? pinFromLink.replace(/\D/g, '').slice(0, 6)}
-          className={inputClass}
+      {workshop?.home ? (
+        <ServiceModeSwitch
+          mode={mode}
+          onChange={(m) => {
+            setMode(m);
+            setSelected([]);
+            setErrors({});
+            track('service_mode_selected', { mode: m });
+          }}
         />
-        {err('pincode')}
-      </div>
+      ) : null}
+
+      {home ? (
+        <HomeAddressPicker
+          addresses={addresses}
+          signedIn={signedIn}
+          value={address?.id ?? ''}
+          onChange={setAddressId}
+          error={errors.address}
+          fieldId={fid('address')}
+        />
+      ) : (
+        <div>
+          <label htmlFor={fid('pincode')} className="text-sm font-bold text-ink">
+            {t('api_pincode')}
+          </label>
+          <input
+            {...aria('pincode')}
+            name="pincode"
+            inputMode="numeric"
+            autoComplete="postal-code"
+            maxLength={6}
+            defaultValue={initialPin ?? pinFromLink.replace(/\D/g, '').slice(0, 6)}
+            className={inputClass}
+          />
+          {err('pincode')}
+        </div>
+      )}
 
       {types.length > 1 ? (
         <fieldset id={fid('vehicleType')} tabIndex={-1}>
@@ -295,6 +356,7 @@ export function BookingFormApi({
       {workshop ? (
         <fieldset {...aria('services')} tabIndex={-1}>
           <legend className="text-sm font-bold text-ink">{t('pickServices')}</legend>
+          {home ? <p className="mt-1 text-xs text-muted">{h('homeServicesOnly')}</p> : null}
           {services.length === 0 ? (
             <p className="mt-2 text-sm text-muted">{t('notListed')}</p>
           ) : (
@@ -386,7 +448,7 @@ export function BookingFormApi({
         </div>
       </div>
 
-      {choose || workshop.pickup ? (
+      {!home && (choose || workshop.pickup) ? (
         <label className="flex min-h-11 items-center gap-3 text-sm text-ink">
           <input
             type="checkbox"
@@ -395,6 +457,13 @@ export function BookingFormApi({
           />
           {t('api_pickup')}
         </label>
+      ) : null}
+
+      {home ? (
+        <>
+          <VisitFeeLine feePaise={home.visitFeePaise} gstRegistered={workshop?.gstRegistered ?? false} />
+          <p className="rounded-lg bg-surface-alt px-3 py-2 text-xs text-muted">{h('homeNote')}</p>
+        </>
       ) : null}
 
       <p className="rounded-lg bg-surface-alt px-3 py-2 text-xs text-muted">{t('api_accountNote')}</p>

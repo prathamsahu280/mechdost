@@ -58,6 +58,9 @@ const saved: AdminWorkshop = {
   status: 'approved',
   statusReason: null,
   busy: false,
+  homeService: false,
+  homeRadiusKm: 5,
+  homeVisitFeePaise: 9900,
   version: 3,
   missingHindi: ['name'],
   menu: [
@@ -73,6 +76,7 @@ const saved: AdminWorkshop = {
       maxMinutes: 60,
       vehicleType: null,
       active: true,
+      homeAvailable: false,
     },
   ],
 };
@@ -119,6 +123,33 @@ describe('admin workshop form → API bodies', () => {
     f.lng = '81.63';
     const r = updateBody(saved, f);
     expect(r.ok && r.body).toEqual({ version: 3, lat: 21.2514, lng: 81.63 });
+  });
+
+  it('sends the home servicing settings as paise and km, and ticks a menu line for home visits', () => {
+    const f = formFromWorkshop(saved);
+    f.homeService = true;
+    f.homeRadiusKm = '8';
+    f.homeVisitFee = '149.50';
+    const row = f.menu[0];
+    if (row) f.menu = [{ ...row, homeAvailable: true }];
+    const r = updateBody(saved, f);
+    expect(r.ok && r.body).toMatchObject({
+      version: 3,
+      homeService: true,
+      homeRadiusKm: 8,
+      homeVisitFeePaise: 14_950,
+      menu: [{ key: 'oil-change', homeAvailable: true }],
+    });
+  });
+
+  it('flags a radius beyond 25 km and a fee above the ₹500 ceiling', () => {
+    const f = formFromWorkshop(saved);
+    f.homeRadiusKm = '40';
+    f.homeVisitFee = '900';
+    const r = updateBody(saved, f);
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(Object.keys(r.errors)).toEqual(expect.arrayContaining(['homeRadiusKm', 'homeVisitFee']));
   });
 
   it('reads member phones as Indian mobile numbers', () => {

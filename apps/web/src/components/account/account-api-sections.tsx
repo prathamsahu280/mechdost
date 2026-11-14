@@ -2,7 +2,7 @@
 
 import { Pencil, Trash2 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-import { useCallback, useEffect, useState, type ReactNode, type SyntheticEvent } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState, type ReactNode, type SyntheticEvent } from 'react';
 import {
   ADDRESS_LABELS,
   MAX_ACCOUNT_ITEMS,
@@ -15,6 +15,9 @@ import { VEHICLE_ICON, VEHICLE_LABEL_KEY, VEHICLE_TYPES } from '@mechdost/shared
 import { updateProfile as updateBrowserProfile } from '@/demo/session';
 import * as api from '@/lib/account-api';
 import type { ApiResult } from '@/lib/orders-api';
+
+// The map pin step loads MapLibre only when an address form opens (design 2026-11-15: home servicing).
+const AddressPinMap = lazy(() => import('./address-pin-map').then((m) => ({ default: m.AddressPinMap })));
 
 const card = 'rounded-card border border-line-card bg-surface p-5 shadow-card tab:p-6';
 const field =
@@ -86,6 +89,7 @@ const national = (e164: string) => e164.replace(/^\+91/, '');
 export function AddressesApi({ defaults }: { defaults: { name: string; phone: string } }) {
   const t = useTranslations('account');
   const a = useTranslations('accountApi');
+  const h = useTranslations('homeService');
   const { loaded, reload } = useApiData(api.fetchAddresses);
   const locale = useLocale();
   const saveError = useSaveError();
@@ -189,6 +193,9 @@ export function AddressesApi({ defaults }: { defaults: { name: string; phone: st
                   {!addr.serviceable ? (
                     <p className="mt-1 text-sm font-bold text-warning">{a('notServiceable')}</p>
                   ) : null}
+                  <p className="text-xs text-muted">
+                    {addr.lat !== null && addr.lng !== null ? h('pinSet') : h('pinNone')}
+                  </p>
                 </div>
                 <div className="flex shrink-0 gap-1">
                   <button
@@ -262,6 +269,9 @@ interface AddressBody {
   line2: string | null;
   landmark: string | null;
   pincode: string;
+  /** The map pin (both, or both null to remove it; omitted when there is none and never was). */
+  lat?: number | null;
+  lng?: number | null;
 }
 
 function AddressForm({
@@ -283,6 +293,11 @@ function AddressForm({
   const a = useTranslations('accountApi');
   const [localError, setLocalError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [pin, setPin] = useState<{ lat: number; lng: number } | null>(
+    initial?.lat !== undefined && initial.lat !== null && initial.lng !== null
+      ? { lat: initial.lat, lng: initial.lng }
+      : null,
+  );
   const idOf = (k: string) => `addr-${initial?.id ?? 'new'}-${k}`;
 
   async function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
@@ -298,6 +313,12 @@ function AddressForm({
       line2: text(data, 'line2') || null,
       landmark: text(data, 'landmark') || null,
       pincode: text(data, 'pincode'),
+      // A removed pin is sent as null/null; a new address without a pin simply has none.
+      ...(pin
+        ? { lat: Number(pin.lat.toFixed(6)), lng: Number(pin.lng.toFixed(6)) }
+        : initial && initial.lat !== null
+          ? { lat: null, lng: null }
+          : {}),
     };
     if (
       body.contactName.length < 2 ||
@@ -422,6 +443,9 @@ function AddressForm({
             className={field}
           />
         </div>
+        <Suspense fallback={<div className="skeleton h-72 rounded-card tab:col-span-2" aria-hidden="true" />}>
+          <AddressPinMap value={pin} onChange={setPin} />
+        </Suspense>
       </div>
       {shown ? (
         <p role="alert" className="text-sm font-bold text-error">

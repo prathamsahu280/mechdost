@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import type { ServiceRequestSummary, ServiceRequestView } from '@mechdost/db/repo';
 import { SERVICE_CODE_RE, SERVICE_SLOTS } from '@mechdost/shared/service-requests';
-import { SERVICE_REQUEST_STATES } from '@mechdost/shared/state';
+import { SERVICE_MODES, SERVICE_REQUEST_STATES } from '@mechdost/shared/state';
 import { VEHICLE_TYPES } from '@mechdost/shared/vehicles';
 import { ErrorSchema } from './schemas';
 
@@ -47,6 +47,7 @@ const MenuItem = z.object({
   minMinutes: z.number().int(),
   maxMinutes: z.number().int(),
   vehicleType: z.enum(VEHICLE_TYPES).nullable(),
+  homeAvailable: z.boolean(),
 });
 
 export const PublicWorkshop = z
@@ -67,6 +68,7 @@ export const PublicWorkshop = z
     ratingAvg: z.number().nullable(),
     ratingCount: z.number().int(),
     gstRegistered: z.boolean(),
+    home: z.object({ radiusKm: z.number().int(), visitFeePaise: z.number().int() }).nullable(),
     services: z.array(MenuItem),
     /** Only on one workshop's page: days of the labour promise while it is on (admin setting), else null. */
     labourPromiseDays: z.number().int().nullable().optional(),
@@ -92,6 +94,7 @@ export const RequestSummary = z
     preferredSlot: z.enum(SERVICE_SLOTS),
     pincode: z.string(),
     waitingForCustomer: z.boolean(),
+    serviceMode: z.enum(SERVICE_MODES),
     createdAt: z.string(),
     updatedAt: z.string(),
   })
@@ -110,6 +113,29 @@ export const RequestDetail = z
     code: z.string(),
     status: z.enum(SERVICE_REQUEST_STATES),
     version: z.number().int(),
+    serviceMode: z.enum(SERVICE_MODES),
+    home: z
+      .object({
+        visitFeePaise: z.number().int(),
+        gstRegistered: z.boolean(),
+        feeWaivedReason: z.string().nullable(),
+        mechanicName: z.string().nullable(),
+        address: z
+          .object({ line1: z.string(), line2: z.string().nullable(), landmark: z.string().nullable() })
+          .nullable(),
+        arrivalCode: z.string().nullable(),
+        arrivalLocked: z.boolean(),
+        arrivedVia: z.enum(['code', 'override']).nullable(),
+        move: z
+          .object({
+            id: z.string(),
+            reasonCode: z.string(),
+            transport: z.string(),
+            status: z.enum(['proposed', 'accepted', 'declined']),
+          })
+          .nullable(),
+      })
+      .nullable(),
     routingMode: z.enum(['chosen', 'mechdost']),
     workshop: z
       .object({
@@ -118,6 +144,8 @@ export const RequestDetail = z
         name: z.string(),
         area: z.string(),
         phone: z.string().nullable(),
+        ratingAvg: z.number().nullable(),
+        ratingCount: z.number().int(),
       })
       .nullable(),
     vehicle: z.object({ type: z.enum(VEHICLE_TYPES), text: z.string(), vehicleId: z.string().nullable() }),
@@ -171,6 +199,7 @@ export const RequestDetail = z
             gstRateBp: z.number().int(),
             taxablePaise: z.number().int(),
             gstPaise: z.number().int(),
+            kind: z.literal('visit_fee').optional(),
           }),
         ),
         gstRegistered: z.boolean(),

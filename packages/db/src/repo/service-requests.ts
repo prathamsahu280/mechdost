@@ -10,6 +10,7 @@ import {
   SERVICE_CUSTOMER_CANCELLABLE,
   serviceRequestMachine,
   type ServiceCancelReason,
+  type ServiceMode,
   type ServiceRequestStatus,
 } from '@mechdost/shared/state';
 import { istDateString } from '@mechdost/shared/time';
@@ -22,6 +23,7 @@ import {
   pincodes,
   serviceBills,
   serviceEvents,
+  serviceMoves,
   serviceProposals,
   serviceRequests,
   users,
@@ -30,8 +32,12 @@ import {
   workshopServices,
 } from '../schema';
 import type { ActorContext } from './actor';
+import { readArrivalCode } from './arrival-code';
 import { decodeCursor, encodeCursor, pageSize } from './cursor';
+import type { Keyring } from '../crypto';
+import { assertHomeEligible, loadHomeAddress } from './home-booking';
 import { cancelPendingServiceRewards, createServiceReward } from './coins';
+import { issueArrivalCode } from './arrival-code';
 import { ConflictError, NotFoundError, pgCode, ValidationError } from './errors';
 import { queueServiceReceivedEmail, queueServiceStatusEmail } from './email-events';
 import { recordServerEvent } from './events';
@@ -60,6 +66,7 @@ export interface RequestCore {
   vehicleKey: string;
   vehicleId: string | null;
   vehicleType: VehicleType;
+  serviceMode: ServiceMode;
 }
 
 const CORE = {
@@ -73,13 +80,19 @@ const CORE = {
   vehicleKey: serviceRequests.vehicleKey,
   vehicleId: serviceRequests.vehicleId,
   vehicleType: serviceRequests.vehicleType,
+  serviceMode: serviceRequests.serviceMode,
 };
 
 /** The request matching `where`, locked FOR UPDATE (request row first), or 404. */
 export async function lockRequest(tx: Tx, where: SQL | undefined): Promise<RequestCore> {
   const [r] = await tx.select(CORE).from(serviceRequests).where(where).limit(1).for('update');
   if (!r) throw new NotFoundError('Service request not found');
-  return { ...r, status: r.status as ServiceRequestStatus, vehicleType: r.vehicleType as VehicleType };
+  return {
+    ...r,
+    status: r.status as ServiceRequestStatus,
+    vehicleType: r.vehicleType as VehicleType,
+    serviceMode: r.serviceMode as ServiceMode,
+  };
 }
 
 /** Wrong step for the current status: 409 with the status, before any write. */
@@ -91,7 +104,15 @@ export function requireStatus(r: RequestCore, allowed: readonly ServiceRequestSt
 type RequestPatch = Partial<
   Pick<
     typeof serviceRequests.$inferInsert,
-    'workshopId' | 'statusReasonCode' | 'customerMessage' | 'odometerKm' | 'receivedAt' | 'completedAt'
+    | 'workshopId'
+    | 'statusReasonCode'
+    | 'customerMessage'
+    | 'odometerKm'
+    | 'receivedAt'
+    | 'completedAt'
+    | 'visitingMechanic'
+    | 'arrivalOverrideReason'
+    | 'arrivalOverrideBy'
   >
 >;
 
@@ -155,6 +176,7 @@ export async function transitionRequest(
       to: args.to,
       by: args.actor.type,
       reasonCode: args.reasonCode ?? null,
+      mode: r.serviceMode,
     },
   });
   // A paid workshop booking earns the admin-set coins (spec 20, Q24), pending until the unlock days pass.
@@ -248,12 +270,45 @@ export interface BillView {
   method: string | null;
 }
 
+/** Home servicing details of a request (null when it was booked at the workshop). */
+export interface HomeVisitView {
+  /** Visit fee the customer saw when booking (paise), kept after a move to the workshop unless waived. */
+  visitFeePaise: number;
+  /** Whether the workshop charges GST (the fee then carries GST on the bill, shown next to it). */
+  gstRegistered: boolean;
+  feeWaivedReason: string | null;
+  mechanicName: string | null;
+  /** Where the mechanic goes: the customer, the workshop and staff see it once the visit is confirmed. */
+  address: { line1: string; line2: string | null; landmark: string | null } | null;
+  /** The code the customer shows at the door: the customer only, while the visit is confirmed. */
+  arrivalCode: string | null;
+  arrivalLocked: boolean;
+  arrivedVia: 'code' | 'override' | null;
+  /** The latest offer to move the job to the workshop. */
+  move: {
+    id: string;
+    reasonCode: string;
+    transport: string;
+    status: 'proposed' | 'accepted' | 'declined';
+  } | null;
+}
+
 export interface ServiceRequestView {
   code: string;
+  serviceMode: ServiceMode;
+  home: HomeVisitView | null;
   status: ServiceRequestStatus;
   version: number;
   routingMode: 'chosen' | 'mechdost';
-  workshop: { id: string; slug: string; name: string; area: string; phone: string | null } | null;
+  workshop: {
+    id: string;
+    slug: string;
+    name: string;
+    area: string;
+    phone: string | null;
+    ratingAvg: number | null;
+    ratingCount: number;
+  } | null;
   vehicle: { type: VehicleType; text: string; vehicleId: string | null };
   services: ServiceSnapshotLine[];
   concern: string | null;
@@ -296,6 +351,7 @@ export async function loadRequestView(
   requestId: string,
   audience: 'customer' | 'workshop' | 'admin',
   locale: ServiceLocale,
+  keyring: Keyring | null = null,
 ): Promise<ServiceRequestView> {
   const [r] = await db
     .select({
@@ -307,6 +363,9 @@ export async function loadRequestView(
       wArea: workshops.area,
       wAreaHi: workshops.areaHi,
       wPhone: workshops.phone,
+      wGstRegistered: workshops.gstRegistered,
+      wRatingAvg: workshops.ratingAvg,
+      wRatingCount: workshops.ratingCount,
       customerName: users.name,
       customerPhone: users.phone,
     })
@@ -339,6 +398,12 @@ export async function loadRequestView(
         .where(eq(estimateItems.estimateId, estimate.id))
         .orderBy(asc(estimateItems.lineNo))
     : [];
+  const [move] = await db
+    .select()
+    .from(serviceMoves)
+    .where(eq(serviceMoves.requestId, req.id))
+    .orderBy(desc(serviceMoves.createdAt))
+    .limit(1);
   const [bill] = await db.select().from(serviceBills).where(eq(serviceBills.requestId, req.id)).limit(1);
   const timeline = await db
     .select({
@@ -351,8 +416,50 @@ export async function loadRequestView(
     .from(serviceEvents)
     .where(eq(serviceEvents.requestId, req.id))
     .orderBy(asc(serviceEvents.id));
+  const codeRow = req.visitFeePaise === null ? null : await readArrivalCode(db, keyring, req.id);
+  const homeAddress = req.homeAddress as {
+    line1: string;
+    line2?: string | null;
+    landmark?: string | null;
+  } | null;
+  const seesAddress = audience === 'customer' || audience === 'admin' || shared;
+  const arrived = req.arrivalOverrideBy
+    ? 'override'
+    : req.receivedAt && req.serviceMode === 'home'
+      ? 'code'
+      : null;
+  const home: HomeVisitView | null =
+    req.visitFeePaise === null
+      ? null
+      : {
+          visitFeePaise: req.visitFeePaise,
+          gstRegistered: r.wGstRegistered ?? false,
+          feeWaivedReason: req.visitFeeWaivedReason,
+          mechanicName: req.visitingMechanic,
+          address:
+            homeAddress && seesAddress
+              ? {
+                  line1: homeAddress.line1,
+                  line2: homeAddress.line2 ?? null,
+                  landmark: homeAddress.landmark ?? null,
+                }
+              : null,
+          arrivalCode: audience === 'customer' && status === 'confirmed' ? (codeRow?.code ?? null) : null,
+          arrivalLocked: codeRow?.locked ?? false,
+          arrivedVia: arrived,
+          move: move
+            ? {
+                id: move.id,
+                reasonCode: move.reasonCode,
+                transport: move.transport,
+                status: move.status as 'proposed' | 'accepted' | 'declined',
+              }
+            : null,
+        };
   return {
     code: req.code,
+    serviceMode: req.serviceMode as ServiceMode,
+    home,
     status,
     version: req.version,
     routingMode: req.routingMode as 'chosen' | 'mechdost',
@@ -364,6 +471,8 @@ export async function loadRequestView(
             name: localized(r.wName, r.wNameHi, locale),
             area: localized(r.wArea, r.wAreaHi, locale),
             phone: shared ? r.wPhone : null,
+            ratingAvg: r.wRatingAvg === null ? null : Number(r.wRatingAvg),
+            ratingCount: r.wRatingCount ?? 0,
           }
         : null,
     vehicle: { type: req.vehicleType as VehicleType, text: req.vehicleText, vehicleId: req.vehicleId },
@@ -448,8 +557,9 @@ export interface ServiceRequestSummary {
   preferredDate: string;
   preferredSlot: ServiceSlot;
   pincode: string;
-  /** The customer has something to decide (a proposal or an estimate): the account badge. */
+  /** The customer has something to decide (a proposal, an estimate or an offer to move a home job): the account badge. */
   waitingForCustomer: boolean;
+  serviceMode: ServiceMode;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -468,6 +578,8 @@ interface SummaryRow {
   preferred_date: string | Date;
   preferred_slot: ServiceSlot;
   pincode: string;
+  service_mode: ServiceMode;
+  move_pending: boolean;
   created_at: string | Date;
   updated_at: string | Date;
   sort_key: string;
@@ -475,7 +587,8 @@ interface SummaryRow {
 
 export const SUMMARY_SELECT = sql.raw(`r.id, r.code, r.status, r.version, w.slug as w_slug, w.name as w_name,
   w.name_hi as w_name_hi, r.vehicle_type, r.vehicle_text, r.services, r.preferred_date::text as preferred_date,
-  r.preferred_slot, r.pincode, r.created_at, r.updated_at`);
+  r.preferred_slot, r.pincode, r.service_mode, r.created_at, r.updated_at,
+  exists (select 1 from service_moves m where m.request_id = r.id and m.status = 'proposed') as move_pending`);
 
 export function toSummary(row: SummaryRow, locale: ServiceLocale): ServiceRequestSummary {
   const services =
@@ -498,7 +611,8 @@ export function toSummary(row: SummaryRow, locale: ServiceLocale): ServiceReques
     preferredDate: String(row.preferred_date),
     preferredSlot: row.preferred_slot,
     pincode: row.pincode,
-    waitingForCustomer: row.status === 'proposed' || row.status === 'estimate_sent',
+    waitingForCustomer: row.status === 'proposed' || row.status === 'estimate_sent' || row.move_pending,
+    serviceMode: row.service_mode,
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
   };
@@ -607,11 +721,33 @@ export async function createServiceRequest(
       if (!v) throw new NotFoundError('Vehicle not found');
     }
 
+    // Home visit: a pinned saved address of this customer decides the place (and the PIN must be the address's).
+    const mode = b.mode ?? 'workshop';
+    const address =
+      mode === 'home' && b.addressId ? await loadHomeAddress(tx, input.userId, b.addressId) : null;
+    if (mode === 'home' && !address)
+      throw new ValidationError('A home visit needs a saved address', 'ADDRESS_REQUIRED');
+    if (address && address.pincode !== b.pincode)
+      throw new ValidationError('The PIN code is not the address PIN code', 'PINCODE_MISMATCH');
+    const inRadius = address
+      ? sql`ST_DWithin(w.location, ST_SetSRID(ST_MakePoint(${address.lng}, ${address.lat}), 4326)::geography,
+          w.home_radius_km * 1000)`
+      : sql`false`;
+    let visitFeePaise: number | null = null;
     let workshopId: string | null = null;
     let services: SnapshotJson[] = [];
     if (b.workshopSlug) {
-      const [w] = rowsOf<{ id: string; city_id: string; vehicle_types: string[] }>(
-        await tx.execute(sql`select w.id, w.city_id, w.vehicle_types from workshops w
+      const [w] = rowsOf<{
+        id: string;
+        city_id: string;
+        vehicle_types: string[];
+        home_service: boolean;
+        home_radius_km: unknown;
+        home_visit_fee_paise: unknown;
+        in_radius: boolean;
+      }>(
+        await tx.execute(sql`select w.id, w.city_id, w.vehicle_types, w.home_service, w.home_radius_km,
+            w.home_visit_fee_paise, ${inRadius} as in_radius from workshops w
           where w.slug = ${b.workshopSlug} and w.published and w.location_verified and w.status = 'approved'
             and not w.busy
           for share`),
@@ -638,6 +774,14 @@ export async function createServiceRequest(
       const fits = menu.filter((m) => m.vehicleType === null || m.vehicleType === b.vehicleType);
       if (fits.length !== keys.length)
         throw new ValidationError('A chosen service is not offered for this vehicle', 'UNKNOWN_SERVICE');
+      if (mode === 'home')
+        visitFeePaise = await assertHomeEligible(tx, {
+          w,
+          cityId: place.cityId,
+          seenFeePaise: b.visitFeePaise ?? -1,
+          serviceCount: keys.length,
+          allHomeAvailable: fits.every((m) => m.homeAvailable),
+        });
       services = keys.map((k) => {
         const m = fits.find((x) => x.key === k);
         if (!m) throw new ValidationError('A chosen service is not offered', 'UNKNOWN_SERVICE');
@@ -666,7 +810,17 @@ export async function createServiceRequest(
       services,
       concern: b.concern ?? null,
       pincode: b.pincode,
-      location: typeof b.lat === 'number' && typeof b.lng === 'number' ? { lat: b.lat, lng: b.lng } : null,
+      location: address
+        ? { lat: address.lat, lng: address.lng }
+        : typeof b.lat === 'number' && typeof b.lng === 'number'
+          ? { lat: b.lat, lng: b.lng }
+          : null,
+      serviceMode: mode,
+      addressId: address ? b.addressId : null,
+      homeAddress: address
+        ? { line1: address.line1, line2: address.line2, landmark: address.landmark }
+        : null,
+      visitFeePaise,
       preferredDate: b.preferredDate,
       preferredSlot: b.preferredSlot,
       pickupRequested: b.pickup,
@@ -685,6 +839,7 @@ export async function createServiceRequest(
             ...row,
             status: row.status as ServiceRequestStatus,
             vehicleType: row.vehicleType as VehicleType,
+            serviceMode: row.serviceMode as ServiceMode,
           };
         });
       } catch (err) {
@@ -720,6 +875,7 @@ export async function createServiceRequest(
         workshopId,
         routing: workshopId ? 'chosen' : 'mechdost',
         services: services.length,
+        mode,
       },
     });
     const moved = await transitionRequest(tx, {
@@ -750,14 +906,20 @@ export async function listMyServiceRequests(
   return pageSummaries(db, sql`r.user_id = ${userId}`, 'created_at', page, locale);
 }
 
-export async function getMyServiceRequest(db: Tx, userId: string, code: string, locale: ServiceLocale) {
+export async function getMyServiceRequest(
+  db: Tx,
+  userId: string,
+  code: string,
+  locale: ServiceLocale,
+  keyring: Keyring | null = null,
+) {
   const [r] = await db
     .select({ id: serviceRequests.id })
     .from(serviceRequests)
     .where(own(userId, code))
     .limit(1);
   if (!r) throw new NotFoundError('Service request not found');
-  return loadRequestView(db, r.id, 'customer', locale);
+  return loadRequestView(db, r.id, 'customer', locale, keyring);
 }
 
 /** Cancel before the vehicle reaches the workshop, with a reason code (spec 06). */
@@ -785,11 +947,13 @@ export async function cancelMyServiceRequest(
 /** Accept the workshop's slot + expected cost (→ confirmed) or turn it down (→ the workshop proposes again). */
 export async function decideProposal(
   db: Tx,
-  input: { userId: string; code: string; accept: boolean; expectedVersion: number },
+  input: { userId: string; code: string; accept: boolean; expectedVersion: number; keyring?: Keyring | null },
 ) {
   return db.transaction(async (tx) => {
     const r = await lockRequest(tx, own(input.userId, input.code));
     requireStatus(r, ['proposed']);
+    // Home visit: confirming issues the arrival code the customer shows at the door (no keyring = refuse, no silent skip).
+    if (input.accept && r.serviceMode === 'home') await issueArrivalCode(tx, input.keyring ?? null, r.id);
     const [p] = await tx
       .update(serviceProposals)
       .set({ status: input.accept ? 'accepted' : 'declined', decidedAt: new Date() })

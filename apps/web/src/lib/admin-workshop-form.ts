@@ -1,6 +1,7 @@
 import type { AdminWorkshop } from '@mechdost/shared/service-api';
 import { CreateWorkshopSchema, UpdateWorkshopSchema } from '@mechdost/shared/service-requests';
 import { isVehicleType, type VehicleType } from '@mechdost/shared/vehicles';
+import { feeRupeesToPaise } from './home-service-views';
 import { rupeesToPaise } from './service-views';
 
 /**
@@ -22,6 +23,8 @@ export interface MenuRow {
   maxMinutes: string;
   vehicleType: VehicleType | '';
   active: boolean;
+  /** Done at the customer's home (home servicing). */
+  homeAvailable: boolean;
 }
 
 export interface WorkshopForm {
@@ -47,6 +50,10 @@ export interface WorkshopForm {
   locationVerified: boolean;
   published: boolean;
   busy: boolean;
+  /** Home servicing (spec 06): on/off, radius in km, the visit fee in rupees as typed. */
+  homeService: boolean;
+  homeRadiusKm: string;
+  homeVisitFee: string;
   menu: MenuRow[];
 }
 
@@ -62,6 +69,7 @@ export const emptyMenuRow = (): MenuRow => ({
   maxMinutes: '60',
   vehicleType: '',
   active: true,
+  homeAvailable: false,
 });
 
 export function emptyWorkshopForm(): WorkshopForm {
@@ -87,6 +95,9 @@ export function emptyWorkshopForm(): WorkshopForm {
     locationVerified: false,
     published: false,
     busy: false,
+    homeService: false,
+    homeRadiusKm: '5',
+    homeVisitFee: '99',
     menu: [],
   };
 }
@@ -114,6 +125,9 @@ export function formFromWorkshop(w: AdminWorkshop): WorkshopForm {
     locationVerified: w.locationVerified,
     published: w.published,
     busy: w.busy,
+    homeService: w.homeService,
+    homeRadiusKm: String(w.homeRadiusKm),
+    homeVisitFee: String(w.homeVisitFeePaise / 100),
     menu: w.menu.map((m) => ({
       key: m.key,
       title: m.title,
@@ -126,6 +140,7 @@ export function formFromWorkshop(w: AdminWorkshop): WorkshopForm {
       maxMinutes: String(m.maxMinutes),
       vehicleType: m.vehicleType ?? '',
       active: m.active,
+      homeAvailable: m.homeAvailable,
     })),
   };
 }
@@ -170,9 +185,17 @@ function fields(f: WorkshopForm) {
       maxMinutes: num(m.maxMinutes),
       vehicleType: m.vehicleType === '' ? null : m.vehicleType,
       active: m.active,
+      homeAvailable: m.homeAvailable,
     })),
   };
 }
+
+/** Home servicing fields (edits only: a new workshop starts with home visits off). */
+const homeFields = (f: WorkshopForm) => ({
+  homeService: f.homeService,
+  homeRadiusKm: num(f.homeRadiusKm),
+  homeVisitFeePaise: feeRupeesToPaise(f.homeVisitFee) ?? f.homeVisitFee.trim(),
+});
 
 export type FormErrors = Record<string, true>;
 
@@ -180,6 +203,7 @@ export type FormErrors = Record<string, true>;
 function fieldPath(path: readonly PropertyKey[]): string {
   const [head, i, field] = path.map(String);
   if (head === 'hours') return 'hours';
+  if (head === 'homeVisitFeePaise') return 'homeVisitFee';
   if (head === 'menu' && i !== undefined && field !== undefined) return `menu.${i}.${field}`;
   if (head === 'menu') return 'menu';
   return head ?? 'form';
@@ -224,8 +248,12 @@ export function updateBody(
   original: AdminWorkshop,
   f: WorkshopForm,
 ): { ok: true; body: Record<string, unknown>; changed: boolean } | { ok: false; errors: FormErrors } {
-  const now: Record<string, unknown> = { ...fields(f), busy: f.busy };
-  const before: Record<string, unknown> = { ...fields(formFromWorkshop(original)), busy: original.busy };
+  const now: Record<string, unknown> = { ...fields(f), busy: f.busy, ...homeFields(f) };
+  const before: Record<string, unknown> = {
+    ...fields(formFromWorkshop(original)),
+    busy: original.busy,
+    ...homeFields(formFromWorkshop(original)),
+  };
   const body: Record<string, unknown> = { version: original.version };
   for (const [k, v] of Object.entries(now)) if (!same(v, before[k])) body[k] = v;
   if ('lat' in body || 'lng' in body) {

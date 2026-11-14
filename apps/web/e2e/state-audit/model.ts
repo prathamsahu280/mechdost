@@ -1289,4 +1289,66 @@ export const REAL_MODE_VIEWS = [
     ],
     notShownFor: [],
   },
+  // ─────────────── Home servicing (2026-11-15, spec 06) ───────────────
+  {
+    code: 'API-HOME-MODE',
+    page: 'Workshop finder and booking form, real sign-in',
+    component:
+      'Mode switch "At the workshop / At my home", saved-address picker, visit-fee line before booking',
+    file: 'src/components/workshops/home-mode-fields.tsx',
+    reach: 'sign in as customer → /workshops/{slug} (a workshop that does home visits) → "At my home"',
+    states: [
+      'workshop-default',
+      'home-signed-out',
+      'home-loading',
+      'home-no-address',
+      'home-no-pinned-address',
+      'home-address-picked',
+      'fee-with-gst',
+      'fee-free',
+      'error-fee-changed',
+      'error-out-of-radius',
+    ],
+    notShownFor: ['workshops that do not do home visits'],
+  },
+  {
+    code: 'API-HOME-LISTING',
+    page: 'Workshop finder (/workshops), real sign-in',
+    component:
+      'Home listing: workshops whose own radius covers the pinned address, with the visit fee on each card',
+    file: 'src/components/workshops/workshop-finder-api.tsx',
+    reach: 'sign in as customer → /workshops → "At my home" → choose a pinned address',
+    states: ['idle', 'loading', 'none', 'some', 'edge-of-radius', 'error-retry'],
+    notShownFor: [],
+  },
+  {
+    code: 'API-HOME-ARRIVAL',
+    page: 'Workshop portal (/partner/workshop) and request page, real sign-in',
+    component:
+      'Arrival code: customer sees it; the workshop enters it with the odometer (right, wrong, locked)',
+    file: 'src/components/portal/home-visit-portal-api.tsx',
+    reach: 'sign in as workshop owner → /partner/workshop → a confirmed home job → "Mechanic arrived"',
+    states: ['empty', 'wrong-code', 'locked', 'format-error', 'odometer-error', 'busy', 'arrived'],
+    notShownFor: ['jobs booked at the workshop'],
+  },
+  {
+    code: 'API-HOME-FEE-LINE',
+    page: 'Service request (/service/{code}) bill, real sign-in',
+    component: 'Visit-fee line on the bill (with GST, waived at 0, fee only after a declined move)',
+    file: 'src/components/workshops/service-estimate.tsx',
+    reach: 'sign in as customer → a home request that is billed',
+    states: ['with-gst', 'no-gst', 'waived', 'fee-only'],
+    notShownFor: ['jobs booked at the workshop'],
+  },
+  {
+    code: 'API-HOME-MOVE',
+    page: 'Service request (/service/{code}) and workshop portal, real sign-in',
+    component:
+      'Offer to move the job to the workshop: workshop form, customer card (accept / decline), outcome',
+    file: 'src/components/workshops/home-visit-api.tsx',
+    reach:
+      'sign in as workshop owner → an arrived home job → "Offer to move to workshop"; then as the customer → /service/{code}',
+    states: ['closed', 'open-empty', 'open-missing', 'waiting', 'accepted', 'declined', 'error'],
+    notShownFor: ['jobs booked at the workshop', 'before arrival'],
+  },
 ] as const;

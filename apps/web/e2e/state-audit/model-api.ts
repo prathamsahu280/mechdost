@@ -75,6 +75,91 @@ export const REFUND_VARIANTS = [
 ] as const;
 
 export const API_COMPONENTS: readonly ComponentDef[] = [
+  // ─────────────── Home servicing (2026-11-15, spec 06) ───────────────
+  {
+    code: 'API-SVC-HOMEFIND',
+    page: 'Workshop finder (/workshops), real sign-in',
+    component:
+      'Mode switch (at the workshop / at my home), saved-address picker, home listing with the visit fee: none, some, at the radius edge',
+    path: '/workshops',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['customer'] },
+      { name: 'mode', values: ['workshop', 'home'] },
+      { name: 'addresses', values: ['none', 'unpinned', 'pinned'] },
+      { name: 'listing', values: ['none', 'some', 'edge', 'error'] },
+      stress,
+    ],
+    // Nothing is listed at the workshop (it needs a PIN typed); the address and listing only matter at home.
+    valid: (r: Row) => r.mode === 'home' || (r.addresses === 'pinned' && r.listing === 'some'),
+    sweep: 12,
+    note: API_NOTE,
+    realApi: true,
+  },
+  {
+    code: 'API-SVC-HOMEREQ',
+    page: 'Service request (/service/{code}), real sign-in',
+    component:
+      'Home visit panel: mechanic, rating, address, visit fee, arrival code (shown / locked / used), offer to move (waiting / accepted / declined), visit-fee line on the bill',
+    path: '/service/SR-RPR-2026-HND401',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['customer'] },
+      {
+        name: 'home',
+        values: [
+          'confirmed-code',
+          'confirmed-locked',
+          'arrived',
+          'arrived-override',
+          'move-offer',
+          'move-accepted',
+          'move-declined',
+          'fee-waived',
+          'billed-fee',
+        ],
+      },
+      stress,
+    ],
+    sweep: 16,
+    note: API_NOTE,
+    realApi: true,
+  },
+  {
+    code: 'API-WS-HOMEJOB',
+    page: 'Workshop portal (/partner/workshop), real sign-in',
+    component:
+      'Home servicing settings card; new home request (mechanic name); arrival entry (code and odometer: right / wrong / locked); offer to move; fee due after a declined move',
+    path: '/partner/workshop',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['workshop'] },
+      {
+        name: 'job',
+        values: [
+          'propose',
+          'arrival',
+          'arrival-wrong',
+          'arrival-locked',
+          'offer-move',
+          'move-waiting',
+          'fee-due',
+        ],
+      },
+      { name: 'settings', values: ['off', 'on'] },
+      stress,
+    ],
+    sweep: 14,
+    note: API_NOTE,
+    realApi: true,
+  },
+
   // ─────────────── Refunds (2026-11-15, spec 05) ───────────────
   {
     code: 'API-ADM-REFUNDQ',

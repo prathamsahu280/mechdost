@@ -18,6 +18,7 @@ import {
 } from '@/lib/service-views';
 import { StatusTimeline } from '../commerce/status-timeline';
 import { ServiceBillView } from './service-estimate';
+import { HomeVisitAside, HomeVisitBox } from './home-visit-api';
 import { EstimateApprovalApi, EstimateChoicesApi } from './service-estimate-api';
 
 /** Workshop review once the service is paid (spec 06): its own chunk, fetched only then. */
@@ -38,6 +39,7 @@ const box = 'rounded-card border border-line-card bg-surface p-6 shadow-card';
 export function RequestViewApi({ code }: { code: string }) {
   const t = useTranslations('request');
   const w = useTranslations('workshop');
+  const h = useTranslations('homeService');
   const locale = useLocale();
   const isNew = useSearchParams().get('new') === '1';
   const [load, setLoad] = useState<Load>({ kind: 'loading' });
@@ -114,10 +116,17 @@ export function RequestViewApi({ code }: { code: string }) {
     : rangeOf(req.services);
   const slot = req.proposal?.slot ?? req.preferredSlot;
   const step = customerStepIndex(req.status);
+  // A home visit has "mechanic arrived" where a workshop job has "vehicle received".
+  const atHome = req.home !== null && req.serviceMode === 'home';
   const steps = CUSTOMER_STEPS.map((s) => ({
     key: s,
-    title: t(`step_${s}`),
-    detail: s === 'requested' && req.status === 'proposed' ? t('stepDetail_proposed') : t(`stepDetail_${s}`),
+    title: atHome && s === 'received' ? h('stepArrived') : t(`step_${s}`),
+    detail:
+      atHome && s === 'received'
+        ? h('stepArrivedDetail')
+        : s === 'requested' && req.status === 'proposed'
+          ? t('stepDetail_proposed')
+          : t(`stepDetail_${s}`),
   }));
   const noWork = req.status === 'no_work_approved' || (req.status === 'completed' && req.bill === null);
   const estimate = req.estimate;
@@ -185,6 +194,7 @@ export function RequestViewApi({ code }: { code: string }) {
           ) : null}
 
           {req.status === 'proposed' && req.proposal ? <ProposalBox req={req} onChanged={refresh} /> : null}
+          <HomeVisitBox req={req} onChanged={refresh} />
           {req.status === 'estimate_sent' && estimate?.status === 'sent' ? (
             <EstimateApprovalApi
               key={`${req.code}-r${String(estimate.revision)}`}
@@ -236,6 +246,7 @@ export function RequestViewApi({ code }: { code: string }) {
           ) : null}
           <p className="text-muted">{formatDate(req.createdAt, locale)}</p>
         </div>
+        <HomeVisitAside req={req} />
         <div>
           <h3 className="font-bold text-ink">{t('vehicle')}</h3>
           <p className="text-muted">

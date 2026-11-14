@@ -143,6 +143,11 @@ export const OPERATIONAL_SETTINGS = {
   'service.labour_promise_enabled': { kind: 'boolean', default: false, globalOnly: true },
   /** Days the labour promise lasts; copied onto each bill when it is made, so a later change never rewrites it. */
   'service.labour_promise_days': { kind: 'int', min: 7, max: 90, default: 30, globalOnly: true },
+  /**
+   * Home servicing (spec 06, 15): the most a workshop may charge as its home visit fee in this city (paise). Each
+   * workshop sets its own fee up to this; 0 means visits must be free.
+   */
+  'service.home_fee_max_paise': { kind: 'int', min: 0, max: 50_000, default: 50_000 },
 } as const satisfies Record<string, SettingSpec>;
 
 /**

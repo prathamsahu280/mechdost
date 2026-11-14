@@ -64,6 +64,33 @@ async function prepareApi(page: Page, c: AuditCase): Promise<string[]> {
       await settleApi(page);
     }
   }
+  // Home servicing: switch the finder to "At my home" and pick the first pinned address.
+  if (c.code === 'API-SVC-HOMEFIND' && c.state.mode === 'home') {
+    await main.locator('input[name="serviceMode"][value="home"]').check({ force: true });
+    await settleApi(page);
+    const pick = main.locator('#finder-home-address');
+    if ((await pick.count()) > 0) {
+      await pick.selectOption({ index: 1 });
+      await settleApi(page);
+    }
+  }
+
+  // Workshop job card of a home visit: open the offer-to-move form, or try a wrong code.
+  if (c.code === 'API-WS-HOMEJOB') {
+    if (c.state.job === 'offer-move') {
+      await main.locator('[data-track="workshop_home_move_open"]').first().click();
+      await settleApi(page);
+    } else if (c.state.job === 'arrival-wrong' || c.state.job === 'arrival-locked') {
+      const code = main.locator('input[name="arrivalCode"]').first();
+      if ((await code.count()) === 0) notes.push('no arrival form');
+      else {
+        await code.fill('1111');
+        await main.locator('input[name="odometer"]').first().fill('21400');
+        await main.locator('form:has(input[name="arrivalCode"]) button[type="submit"]').first().click();
+        await settleApi(page);
+      }
+    }
+  }
   return notes;
 }
 

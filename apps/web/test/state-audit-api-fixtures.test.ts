@@ -22,6 +22,9 @@ describe('API-mode audit fixtures (Q106)', () => {
       'API-ADM-CONTENT',
       'API-NAV-ADMIN',
       'API-NAV-ACCOUNT',
+      'API-SVC-HOMEFIND',
+      'API-SVC-HOMEREQ',
+      'API-WS-HOMEJOB',
     ])
       expect(codes.has(code), code).toBe(true);
   });

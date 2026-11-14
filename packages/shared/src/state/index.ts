@@ -86,6 +86,22 @@ export const SERVICE_CANCEL_REASONS = [
 ] as const;
 export type ServiceCancelReason = (typeof SERVICE_CANCEL_REASONS)[number];
 
+/** Where a service happens: the vehicle goes to the workshop, or a workshop mechanic comes to the customer's home. */
+export const SERVICE_MODES = ['workshop', 'home'] as const;
+export type ServiceMode = (typeof SERVICE_MODES)[number];
+
+/** Why a workshop offers to move a home job to the workshop (spec 06 home servicing). */
+export const MOVE_REASONS = ['needs_lift', 'needs_tools', 'parts_unavailable', 'other'] as const;
+export type MoveReason = (typeof MOVE_REASONS)[number];
+
+/** How the vehicle gets to the workshop if the customer accepts the move. */
+export const MOVE_TRANSPORTS = ['customer_drops', 'workshop_picks_up'] as const;
+export type MoveTransport = (typeof MOVE_TRANSPORTS)[number];
+
+/** Why a workshop waives the home visit fee (the bill line stays, at 0). */
+export const VISIT_FEE_WAIVE_REASONS = ['goodwill', 'small_job', 'regular_customer', 'other'] as const;
+export type VisitFeeWaiveReason = (typeof VISIT_FEE_WAIVE_REASONS)[number];
+
 /** Why a workshop declined a service request (ML-ready codes; the request goes back to MechDost for routing). */
 export const SERVICE_DECLINE_REASONS = [
   'fully_booked',
@@ -192,9 +208,12 @@ export const serviceRequestMachine = defineMachine(
     { from: 'proposed', to: 'awaiting_workshop', by: ['customer'] },
     { from: 'proposed', to: 'needs_routing', by: ['admin'] },
     { from: 'proposed', to: 'cancelled', by: ['customer', 'admin'] },
-    { from: 'confirmed', to: 'vehicle_received', by: ['workshop'] },
+    // 'admin' only through the audited arrival-code override (home servicing).
+    { from: 'confirmed', to: 'vehicle_received', by: ['workshop', 'admin'] },
     { from: 'confirmed', to: 'cancelled', by: ['customer', 'admin', 'workshop'] },
     { from: 'vehicle_received', to: 'estimate_sent', by: ['workshop'] },
+    // Home servicing: the customer declined the offer to move the job to the workshop (spec 06); only that path uses it.
+    { from: 'vehicle_received', to: 'no_work_approved', by: ['customer'] },
     { from: 'estimate_sent', to: 'approved', by: ['customer'] },
     { from: 'estimate_sent', to: 'no_work_approved', by: ['customer'] },
     { from: 'approved', to: 'estimate_sent', by: ['workshop'] },

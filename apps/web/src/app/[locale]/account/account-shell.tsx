@@ -12,7 +12,17 @@ export async function AccountShell({ section }: { section: AccountSection }) {
       <PageIntro eyebrow={t('eyebrow')} line1={t('title')} />
       <div className="mt-8">
         <ClientMessages
-          namespaces={['account', 'auth', 'cities', 'order', 'request', 'quote', 'support', 'bell']}
+          namespaces={[
+            'account',
+            'auth',
+            'cities',
+            'order',
+            'request',
+            'quote',
+            'support',
+            'bell',
+            'homeService',
+          ]}
         >
           <AccountArea section={section} />
         </ClientMessages>

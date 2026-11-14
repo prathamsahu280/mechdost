@@ -22,14 +22,16 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 import {
+  MOVE_REASONS,
+  MOVE_TRANSPORTS,
   SERVICE_CANCEL_REASONS,
   SERVICE_REJECT_REASONS,
   SERVICE_REQUEST_STATES,
 } from '@mechdost/shared/state';
 import { ESTIMATE_GST_RATES_BP } from '@mechdost/shared/service-bill';
-import { createdAt, geographyPoint, id, paise, ts, updatedAt, version } from './_common';
+import { createdAt, encryptedCheck, geographyPoint, id, paise, ts, updatedAt, version } from './_common';
 import { cities, pincodes } from './geography';
-import { users, vehicles } from './identity';
+import { addresses, users, vehicles } from './identity';
 
 const inList = (values: readonly (string | number)[]) =>
   sql.raw(values.map((v) => (typeof v === 'number' ? String(v) : `'${v}'`)).join(','));
@@ -74,6 +76,10 @@ export const workshops = pgTable(
     statusChangedAt: ts(),
     /** Availability: a busy workshop takes no new requests. */
     busy: boolean().notNull().default(false),
+    /** Home servicing (spec 06): the workshop opts in with its own radius and visit fee; per menu line below. */
+    homeService: boolean().notNull().default(false),
+    homeRadiusKm: smallint().notNull().default(5),
+    homeVisitFeePaise: integer().notNull().default(9900),
     ratingAvg: numeric({ precision: 3, scale: 2 }),
     ratingCount: integer().notNull().default(0),
     createdBy: uuid().references(() => users.id, { onDelete: 'set null' }),
@@ -104,7 +110,13 @@ export const workshops = pgTable(
     check('workshops_gst_registered_has_gstin', sql`${t.gstRegistered} = (${t.gstin} is not null)`),
     check('workshops_phone_format', sql`${t.phone} is null or ${t.phone} ~ '^\\+[1-9][0-9]{7,14}$'`),
     check('workshops_rating_count_nonneg', sql`${t.ratingCount} >= 0`),
+    check('workshops_home_radius_range', sql`${t.homeRadiusKm} between 1 and 25`),
+    check('workshops_home_fee_range', sql`${t.homeVisitFeePaise} between 0 and 50000`),
     index('workshops_location_gist').using('gist', t.location),
+    // Home listing (ST_DWithin on the workshop pin, bounded by the 25 km maximum radius): only workshops that opted in.
+    index('workshops_home_location_gist')
+      .using('gist', t.location)
+      .where(sql`${t.homeService}`),
     index().on(t.cityId, t.published),
     index().on(t.pincode),
     index().on(t.statusChangedBy),
@@ -132,6 +144,8 @@ export const workshopServices = pgTable(
     /** null: every vehicle type the workshop serves. */
     vehicleType: text(),
     active: boolean().notNull().default(true),
+    /** The workshop can do this at the customer's home (off until the workshop ticks it). */
+    homeAvailable: boolean().notNull().default(false),
     sortOrder: smallint().notNull().default(0),
     version: version(),
     createdAt: createdAt(),
@@ -189,12 +203,48 @@ export const serviceRequests = pgTable(
     receivedAt: ts(),
     completedAt: ts(),
     idempotencyKey: text().notNull(),
+    /** `workshop` (vehicle goes to the workshop) or `home` (a mechanic comes; a move offer can switch it, spec 06). */
+    serviceMode: text().notNull().default('workshop'),
+    /** The saved address a home visit goes to, and a snapshot of it (the address may be edited later). */
+    addressId: uuid().references(() => addresses.id, { onDelete: 'set null' }),
+    homeAddress: jsonb(),
+    /** Visit fee the customer saw when booking (snapshot, paise); set for requests booked at home, kept after a move. */
+    visitFeePaise: integer(),
+    visitFeeWaivedReason: text(),
+    /** First name of the visiting mechanic, named by the workshop when it proposes the visit. */
+    visitingMechanic: text(),
+    arrivalOverrideReason: text(),
+    arrivalOverrideBy: uuid().references(() => users.id, { onDelete: 'restrict' }),
     version: version(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
   (t) => [
     unique('service_requests_idempotency_uq').on(t.userId, t.idempotencyKey),
+    check('service_requests_mode_valid', sql`${t.serviceMode} in ('workshop','home')`),
+    check('service_requests_home_no_pickup', sql`${t.serviceMode} <> 'home' or not ${t.pickupRequested}`),
+    check(
+      'service_requests_home_needs_pin',
+      sql`${t.serviceMode} <> 'home' or (${t.location} is not null and ${t.homeAddress} is not null and ${t.visitFeePaise} is not null)`,
+    ),
+    check(
+      'service_requests_visit_fee_range',
+      sql`${t.visitFeePaise} is null or ${t.visitFeePaise} between 0 and 50000`,
+    ),
+    check(
+      'service_requests_waive_reason_valid',
+      sql`${t.visitFeeWaivedReason} is null or (${t.visitFeePaise} is not null and ${t.visitFeeWaivedReason} in ('goodwill','small_job','regular_customer','other'))`,
+    ),
+    check(
+      'service_requests_mechanic_len',
+      sql`${t.visitingMechanic} is null or char_length(${t.visitingMechanic}) between 2 and 30`,
+    ),
+    check(
+      'service_requests_arrival_override_pair',
+      sql`(${t.arrivalOverrideReason} is null) = (${t.arrivalOverrideBy} is null)`,
+    ),
+    index().on(t.addressId),
+    index().on(t.arrivalOverrideBy),
     check('service_requests_code_format', sql`${t.code} ~ '^SR-[A-Z]{3}-[0-9]{4}-[0-9A-HJKMNP-TV-Z]{6}$'`),
     check('service_requests_status_valid', sql`${t.status} in (${inList(SERVICE_REQUEST_STATES)})`),
     check('service_requests_routing_valid', sql`${t.routingMode} in ('chosen','mechdost')`),
@@ -348,9 +398,8 @@ export const serviceBills = pgTable(
       .notNull()
       .unique()
       .references(() => serviceRequests.id, { onDelete: 'restrict' }),
-    estimateId: uuid()
-      .notNull()
-      .references(() => estimates.id, { onDelete: 'restrict' }),
+    /** null only for a visit-fee-only bill (a home job where no work was approved). */
+    estimateId: uuid().references(() => estimates.id, { onDelete: 'restrict' }),
     lines: jsonb().notNull(),
     gstRegistered: boolean().notNull(),
     taxablePaise: paise().notNull(),
@@ -386,6 +435,10 @@ export const serviceBills = pgTable(
       sql`${t.labourPromiseDays} is null or ${t.labourPromiseDays} between 7 and 90`,
     ),
     check('service_bills_lines_array', sql`jsonb_typeof(${t.lines}) = 'array'`),
+    check(
+      'service_bills_estimate_or_visit_only',
+      sql`${t.estimateId} is not null or (jsonb_typeof(${t.lines}) = 'array' and jsonb_array_length(${t.lines}) = 1)`,
+    ),
     check('service_bills_method_valid', sql`${t.method} is null or ${t.method} in ('cash','upi','card')`),
     check('service_bills_paid_pair', sql`(${t.paidAt} is null) = (${t.method} is null)`),
     index().on(t.estimateId),
@@ -415,5 +468,61 @@ export const serviceEvents = pgTable(
   (t) => [
     check('service_events_actor_valid', sql`${t.actorType} in ('customer','workshop','admin','system')`),
     index().on(t.requestId, t.id),
+  ],
+);
+
+/**
+ * An offer to move a home job to the workshop (spec 06 home servicing). A side record, not a state: one proposed offer
+ * per request (partial unique index); accepting switches `service_requests.service_mode` to workshop, declining
+ * closes the job with the visit fee only.
+ */
+export const serviceMoves = pgTable(
+  'service_moves',
+  {
+    id: id(),
+    requestId: uuid()
+      .notNull()
+      .references(() => serviceRequests.id, { onDelete: 'restrict' }),
+    reasonCode: text().notNull(),
+    transport: text().notNull(),
+    status: text().notNull().default('proposed'),
+    proposedBy: uuid().references(() => users.id, { onDelete: 'set null' }),
+    decidedAt: ts(),
+    version: version(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    check('service_moves_reason_valid', sql`${t.reasonCode} in (${inList(MOVE_REASONS)})`),
+    check('service_moves_transport_valid', sql`${t.transport} in (${inList(MOVE_TRANSPORTS)})`),
+    check('service_moves_status_valid', sql`${t.status} in ('proposed','accepted','declined')`),
+    check('service_moves_decided_pair', sql`(${t.status} = 'proposed') = (${t.decidedAt} is null)`),
+    uniqueIndex('service_moves_one_proposed_uq')
+      .on(t.requestId)
+      .where(sql`${t.status} = 'proposed'`),
+    index().on(t.requestId),
+    index().on(t.proposedBy),
+  ],
+);
+
+/**
+ * The arrival code of a home visit, one row per request (own row, so guesses never bump the request's `version`):
+ * encrypted like the delivery code, locked after 5 wrong tries. Written only by `repo/arrival-code.ts`.
+ */
+export const serviceArrivalCodes = pgTable(
+  'service_arrival_codes',
+  {
+    requestId: uuid()
+      .primaryKey()
+      .references(() => serviceRequests.id, { onDelete: 'restrict' }),
+    codeEnc: text().notNull(),
+    attempts: smallint().notNull().default(0),
+    version: version(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    check('service_arrival_codes_attempts', sql`${t.attempts} between 0 and 5`),
+    check('service_arrival_codes_encrypted', encryptedCheck(t.codeEnc)),
   ],
 );

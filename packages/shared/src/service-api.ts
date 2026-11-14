@@ -5,7 +5,7 @@
  * (lazy imports) and server components, never by demo pages. Money in integer paise; times as ISO strings.
  */
 import { z } from 'zod';
-import { SERVICE_REQUEST_STATES } from './state';
+import { SERVICE_MODES, SERVICE_REQUEST_STATES } from './state';
 import { VEHICLE_TYPES } from './vehicles';
 
 const SLOTS = ['morning', 'afternoon', 'evening'] as const;
@@ -25,6 +25,7 @@ export const WorkshopMenuItemDto = z.object({
   minMinutes: z.number().int(),
   maxMinutes: z.number().int(),
   vehicleType: Vehicle.nullable(),
+  homeAvailable: z.boolean(),
 });
 export type WorkshopMenuItem = z.infer<typeof WorkshopMenuItemDto>;
 
@@ -45,6 +46,8 @@ export const PublicWorkshopDto = z.object({
   ratingAvg: z.number().nullable(),
   ratingCount: z.number().int(),
   gstRegistered: z.boolean(),
+  /** Home servicing: null when the workshop does not do home visits. */
+  home: z.object({ radiusKm: z.number().int(), visitFeePaise: z.number().int() }).nullable(),
   services: z.array(WorkshopMenuItemDto),
   /** Days of the labour promise while it is on (workshop page only; absent or null = no promise). */
   labourPromiseDays: z.number().int().nullable().optional(),
@@ -77,6 +80,7 @@ export const ServiceRequestSummaryDto = z.object({
   preferredSlot: z.enum(SLOTS),
   pincode: z.string(),
   waitingForCustomer: z.boolean(),
+  serviceMode: z.enum(SERVICE_MODES),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -110,6 +114,7 @@ export const ServiceBillDto = z.object({
       gstRateBp: z.number().int(),
       taxablePaise: z.number().int(),
       gstPaise: z.number().int(),
+      kind: z.literal('visit_fee').optional(),
     }),
   ),
   gstRegistered: z.boolean(),
@@ -126,8 +131,34 @@ export const ServiceBillDto = z.object({
 });
 export type ServiceBillView = z.infer<typeof ServiceBillDto>;
 
+/** Home servicing details of a request (null when it was booked at the workshop). */
+export const HomeVisitDto = z.object({
+  visitFeePaise: z.number().int(),
+  gstRegistered: z.boolean(),
+  feeWaivedReason: z.string().nullable(),
+  mechanicName: z.string().nullable(),
+  address: z
+    .object({ line1: z.string(), line2: z.string().nullable(), landmark: z.string().nullable() })
+    .nullable(),
+  /** The customer's own view only, while the visit is confirmed. */
+  arrivalCode: z.string().nullable(),
+  arrivalLocked: z.boolean(),
+  arrivedVia: z.enum(['code', 'override']).nullable(),
+  move: z
+    .object({
+      id: z.string(),
+      reasonCode: z.string(),
+      transport: z.string(),
+      status: z.enum(['proposed', 'accepted', 'declined']),
+    })
+    .nullable(),
+});
+export type HomeVisit = z.infer<typeof HomeVisitDto>;
+
 export const ServiceRequestDetailDto = z.object({
   code: z.string(),
+  serviceMode: z.enum(SERVICE_MODES),
+  home: HomeVisitDto.nullable(),
   status: Status,
   version: z.number().int(),
   routingMode: z.enum(['chosen', 'mechdost']),
@@ -138,6 +169,8 @@ export const ServiceRequestDetailDto = z.object({
       name: z.string(),
       area: z.string(),
       phone: z.string().nullable(),
+      ratingAvg: z.number().nullable(),
+      ratingCount: z.number().int(),
     })
     .nullable(),
   vehicle: z.object({ type: Vehicle, text: z.string(), vehicleId: z.string().nullable() }),
@@ -184,6 +217,43 @@ export const ServiceChangedDto = z.object({ status: Status, version: z.number().
 export type ServiceChanged = z.infer<typeof ServiceChangedDto>;
 /** `POST …/estimates` also answers with the new revision. */
 export const EstimateSentDto = ServiceChangedDto.extend({ revision: z.number().int() });
+/** `POST …/vehicle-received`: the arrival check (a wrong or locked code is a 200 with `ok: false`). */
+export const ArrivalResultDto = z.object({
+  ok: z.boolean(),
+  status: Status.optional(),
+  version: z.number().int().optional(),
+  reason: z.enum(['wrong', 'locked']).optional(),
+  attemptsLeft: z.number().int().optional(),
+});
+export type ArrivalResult = z.infer<typeof ArrivalResultDto>;
+/** `POST …/move` (workshop): the offer id with the unchanged status and version. */
+export const MoveProposedDto = ServiceChangedDto.extend({ id: z.string() });
+/** `GET /v1/workshop/home-settings` and `PUT …/{workshopId}`. */
+export const HomeSettingsListDto = z.object({
+  workshops: z.array(
+    z.object({
+      workshopId: z.string(),
+      name: z.string(),
+      homeService: z.boolean(),
+      homeRadiusKm: z.number().int(),
+      homeVisitFeePaise: z.number().int(),
+      maxFeePaise: z.number().int(),
+      gstRegistered: z.boolean(),
+      version: z.number().int(),
+      services: z.array(
+        z.object({
+          key: z.string(),
+          title: z.string(),
+          titleHi: z.string().nullable(),
+          homeAvailable: z.boolean(),
+        }),
+      ),
+    }),
+  ),
+});
+export type HomeSettingsList = z.infer<typeof HomeSettingsListDto>;
+export const HomeSettingsSavedDto = z.object({ version: z.number().int() });
+
 /** `POST …/bill` also answers with the bill total. */
 export const BillCreatedDto = ServiceChangedDto.extend({ totalPaise: z.number().int() });
 
@@ -209,6 +279,7 @@ export const AdminMenuItemDto = z.object({
   maxMinutes: z.number().int(),
   vehicleType: Vehicle.nullable(),
   active: z.boolean(),
+  homeAvailable: z.boolean(),
 });
 export type AdminMenuItem = z.infer<typeof AdminMenuItemDto>;
 
@@ -237,6 +308,9 @@ export const AdminWorkshopDto = z.object({
   status: z.enum(['approved', 'paused', 'suspended']),
   statusReason: z.string().nullable(),
   busy: z.boolean(),
+  homeService: z.boolean(),
+  homeRadiusKm: z.number().int(),
+  homeVisitFeePaise: z.number().int(),
   version: z.number().int(),
   missingHindi: z.array(z.string()),
   menu: z.array(AdminMenuItemDto),

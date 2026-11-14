@@ -33,6 +33,7 @@ import {
   type MyShopDto,
 } from '@mechdost/shared/shop-api';
 import type { AuditCase } from '../cases.ts';
+import { homeFinderMocks, homeJobMocks, homeRequestMocks } from './home-fixtures.ts';
 import type { Mock, MockCtx, Reply } from './mock-api.ts';
 
 const NOW = Date.parse('2026-11-15T10:00:00.000Z');
@@ -1073,6 +1074,12 @@ export function mocksFor(c: AuditCase): Mock[] {
       return quotesMocks();
     case 'API-ADM-CONTENT':
       return contentMocks();
+    case 'API-SVC-HOMEFIND':
+      return homeFinderMocks(c);
+    case 'API-SVC-HOMEREQ':
+      return homeRequestMocks(c);
+    case 'API-WS-HOMEJOB':
+      return homeJobMocks(c);
     default:
       // Navigation rows: the bar is under test; the screen behind it answers "not mocked" (see `mock-api.ts`).
       return [meMock()];

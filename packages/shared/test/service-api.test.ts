@@ -27,6 +27,7 @@ const workshop = {
   ratingAvg: null,
   ratingCount: 0,
   gstRegistered: true,
+  home: { radiusKm: 5, visitFeePaise: 9900 },
   services: [
     {
       key: 'oil-change',
@@ -37,6 +38,7 @@ const workshop = {
       minMinutes: 30,
       maxMinutes: 60,
       vehicleType: null,
+      homeAvailable: true,
     },
   ],
 };
@@ -51,6 +53,7 @@ const summary = {
   preferredSlot: 'morning',
   pincode: '492007',
   waitingForCustomer: false,
+  serviceMode: 'workshop',
   createdAt: at,
   updatedAt: at,
 };
@@ -69,8 +72,18 @@ describe('service API response schemas', () => {
     const detail = {
       ...summary,
       status: 'billed',
+      serviceMode: 'workshop',
+      home: null,
       routingMode: 'chosen',
-      workshop: { id: 'w1', slug: workshop.slug, name: workshop.name, area: workshop.area, phone: null },
+      workshop: {
+        id: 'w1',
+        slug: workshop.slug,
+        name: workshop.name,
+        area: workshop.area,
+        phone: null,
+        ratingAvg: null,
+        ratingCount: 0,
+      },
       vehicle: { type: '2W', text: 'Honda Activa', vehicleId: null },
       concern: null,
       pickup: false,
@@ -154,9 +167,14 @@ describe('service API response schemas', () => {
       status: 'approved',
       statusReason: null,
       busy: false,
+      homeService: false,
+      homeRadiusKm: 5,
+      homeVisitFeePaise: 9900,
       version: 1,
       missingHindi: ['name'],
-      menu: [{ ...workshop.services[0], titleHi: null, includedHi: null, active: true }],
+      menu: [
+        { ...workshop.services[0], titleHi: null, includedHi: null, active: true, homeAvailable: false },
+      ],
     };
     expect(AdminWorkshopListDto.parse({ workshops: [admin] }).workshops[0]?.menu[0]?.active).toBe(true);
   });

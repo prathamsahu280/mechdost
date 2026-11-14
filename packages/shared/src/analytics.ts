@@ -107,6 +107,8 @@ export interface ServerEventProps {
     workshopId: string | null;
     routing: 'chosen' | 'mechdost';
     services: number;
+    /** Where the service happens (home servicing); optional: events stored before 2026-11-15 have none. */
+    mode?: 'workshop' | 'home';
   };
   service_status_changed: {
     requestCode: string;
@@ -115,7 +117,22 @@ export interface ServerEventProps {
     to: string;
     by: 'customer' | 'workshop' | 'admin' | 'system';
     reasonCode: string | null;
+    mode?: 'workshop' | 'home';
   };
+  /** Home servicing (spec 06): the mechanic arrived (`via` code or the audited admin override). */
+  home_visit_arrived: { requestCode: string; workshopId: string; via: 'code' | 'override' };
+  home_move_proposed: { requestCode: string; workshopId: string; reasonCode: string; transport: string };
+  home_move_answered: { requestCode: string; workshopId: string; accepted: boolean };
+  /** A workshop changed its home settings (portal or admin). */
+  workshop_home_settings_saved: {
+    workshopId: string;
+    homeService: boolean;
+    radiusKm: number;
+    feePaise: number;
+    homeServices: number;
+    by: 'workshop' | 'admin';
+  };
+  home_visit_fee_waived: { requestCode: string; workshopId: string; reasonCode: string };
   service_estimate_sent: { requestCode: string; workshopId: string; revision: number; lines: number };
   service_estimate_decided: { requestCode: string; revision: number; approved: number; declined: number };
   service_billed: { requestCode: string; workshopId: string; totalPaise: number; lines: number };
@@ -262,6 +279,8 @@ export const CLIENT_EVENT_SCHEMAS = {
     })
     .strict(),
   booking_started: z.object({ workshop: id }).strict(),
+  // Home servicing (spec 06): the customer chose where the service happens.
+  service_mode_selected: z.object({ mode: z.enum(['workshop', 'home']) }).strict(),
   booking_confirmed: z.object({ code: id, workshop: id, demo: z.boolean() }).strict(),
   booking_cancelled: z.object({ code: id, workshop: id, reasonCode: id }).strict(),
   // Workshop estimates (spec 06): the version and line counts only.

@@ -79,6 +79,7 @@ const SETTING_LABEL = {
   'coins.expiry_days': 'coins_api_set_expiry_days',
   'service.labour_promise_enabled': 'api_set_service_labour_promise_enabled',
   'service.labour_promise_days': 'api_set_service_labour_promise_days',
+  'service.home_fee_max_paise': 'api_set_service_home_fee_max_paise',
 } as const satisfies Record<SettingKey, string>;
 
 const UNIT_LABEL = {

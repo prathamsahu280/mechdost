@@ -87,8 +87,17 @@ export async function reassignServiceRequest(
     if (r.workshopId === input.workshopId)
       throw new ConflictError('The request is already with this workshop', 'SAME_WORKSHOP');
     // FOR SHARE: a concurrent pause or unpublish waits for this assignment (and then applies to it).
-    const [w] = rowsOf<{ id: string; city_id: string; vehicle_types: string[] }>(
-      await tx.execute(sql`select w.id, w.city_id, w.vehicle_types from workshops w
+    const [w] = rowsOf<{
+      id: string;
+      city_id: string;
+      vehicle_types: string[];
+      home_service: boolean;
+      in_radius: boolean;
+    }>(
+      await tx.execute(sql`select w.id, w.city_id, w.vehicle_types, w.home_service,
+          exists (select 1 from service_requests sr where sr.id = ${r.id} and sr.location is not null
+            and ST_DWithin(w.location, sr.location, w.home_radius_km * 1000)) as in_radius
+        from workshops w
         where w.id = ${input.workshopId} and w.published and w.location_verified and w.status = 'approved'
           and not w.busy
         for share`),
@@ -98,6 +107,9 @@ export async function reassignServiceRequest(
       throw new ValidationError('This workshop is in another city', 'WORKSHOP_OUT_OF_AREA');
     if (!w.vehicle_types.includes(r.vehicleType))
       throw new ValidationError('This workshop does not service that vehicle type', 'VEHICLE_NOT_SERVED');
+    // A home visit only goes to a workshop that does home visits and travels as far as the customer's pin.
+    if (r.serviceMode === 'home' && !(w.home_service && w.in_radius))
+      throw new ValidationError('This workshop does not do home visits that far', 'WORKSHOP_OUT_OF_RADIUS');
     const actor = { type: 'admin' as const, userId: input.staffUserId };
     const payload = { from: r.workshopId, to: w.id };
     let version = input.expectedVersion;
@@ -109,7 +121,7 @@ export async function reassignServiceRequest(
           to: 'needs_routing',
           expectedVersion: version,
           actor,
-          patch: { workshopId: null },
+          patch: { workshopId: null, visitingMechanic: null },
           payload,
           visibleToCustomer: false,
         })
@@ -118,7 +130,7 @@ export async function reassignServiceRequest(
     if (r.status === 'awaiting_workshop') {
       const [row] = await tx
         .update(serviceRequests)
-        .set({ workshopId: w.id })
+        .set({ workshopId: w.id, visitingMechanic: null })
         .where(
           and(
             eq(serviceRequests.id, r.id),
@@ -154,7 +166,7 @@ export async function reassignServiceRequest(
       to: 'awaiting_workshop',
       expectedVersion: version,
       actor,
-      patch: { workshopId: w.id },
+      patch: { workshopId: w.id, visitingMechanic: null },
       payload,
     });
   });

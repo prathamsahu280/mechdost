@@ -87,3 +87,7 @@ activated`, before/after). Client event `admin_pincode_change {action, reasonCod
   - Approving a partner whose own PIN is inactive gives a generic error.
   - Out-of-scope staff can learn which city a PIN belongs to (the data stays 404).
   - The demo seed overwrites admin-edited PIN rows (only if `db:seed:demo` is re-run on live).
+
+## Home servicing per city (2026-11-15)
+
+`service.home_fee_max_paise` (settings registry, global with per-city override, default 50 000 = ₹500, hard DB cap 50 000): the highest visit fee a workshop of that city may set (`FEE_ABOVE_CAP`; also checked at booking, so a lowered cap blocks bookings of a workshop still above it until it lowers its fee). Home listing and booking are city-scoped like workshops (the PIN of the address decides the city; a workshop in another city is `WORKSHOP_OUT_OF_AREA`).

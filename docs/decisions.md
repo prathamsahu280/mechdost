@@ -944,3 +944,16 @@ Design: `docs/superpowers/specs/2026-11-15-trust-wording-design.md`; plan `docs/
 - **Demo setting:** `labourPromiseDays` (0 = off, 1 to 6 raised to 7, max 90) because the demo settings are numbers only.
 - **Dark-pattern audit fixes made here:** (F1) the checkout summary now lists the cash-on-delivery fee as its own line and the total follows the chosen payment method (it ignored the quote's fee); (F2) closing a bulk quote no longer requires choosing a reason. Listed, not fixed: preselected cash on delivery (Q109), demo-only scarcity labels (rule added to spec 02), the push prompt checklist for its builder, the home-service visit fee rule. Cost if wrong: low.
 - **New questions:** Q109 (default payment), Q110 (legal review of clause and strong claims), Q111 (labour promise terms and a workshop agreement).
+
+## 2026-11-15 — Home servicing built (builder rulings under the approved design)
+
+Design: `docs/superpowers/specs/2026-11-15-home-service-design.md`; built description: spec 06 § "Built: home servicing". The user rulings ("Workshop opts in", "On the final bill", "Offer to move it") are unchanged; the builder's calls inside them:
+
+- **Fee snapshot at booking, not at "confirmed".** The customer sees the fee on the card and the review; a workshop that changes it before the customer books gets `409 FEE_CHANGED`, so what was shown is what is charged. Cost if wrong: low (one column set earlier). A later admin reassign keeps the customer's snapshot (the workshop absorbs a higher fee). Cost if wrong: a workshop may dispute; revisit with ops.
+- **Arrival code is encrypted, not hashed.** The customer must read it again on the request page, exactly like the delivery code (`delivery.ts` stores it as an AES-GCM envelope); the brief said "hashed like the delivery code". Stored in its own table so guesses never bump the request version. Cost if wrong: none (same protection class, same key ring).
+- **GST on the visit fee goes on top, only when the workshop is registered** (18 %, like estimate labour lines); the card and the review show the GST next to the fee, so there is no surprise at the bill. Cost if wrong: a flat tax-inclusive fee would be simpler for customers; changing it is one function (`computeServiceBill`).
+- **"Let MechDost choose" is not offered at home** (the fee depends on the workshop). Cost if wrong: customers without a nearby home workshop get an empty list and the workshop option.
+- **A wrong or locked arrival code is a `200 { ok: false }`**, not an error, so the attempt counter commits (same as the delivery code).
+- **Declined move reuses the existing `no_work_approved` → `billed` path** (one new edge `vehicle_received → no_work_approved` by the customer, one admin actor on the arrival edge); `billJob` bills the fee alone (`service_bills.estimate_id` nullable with a one-line CHECK). Cost if wrong: none; the edges are used only by the home paths.
+- **Per-city cap in the settings registry** (`service.home_fee_max_paise`, default ₹500, DB hard cap ₹500); the admin settings label key lives in the `portal` namespace like the coin settings (the settings screen needs it there).
+- **Not built:** editing the mechanic name after the proposal; email/push for the offer and arrival (bell/push build); live tracking.
