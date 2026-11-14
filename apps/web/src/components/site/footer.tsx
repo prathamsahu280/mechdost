@@ -7,7 +7,7 @@ import { LocalLink } from '../ui/local-link';
 import { ConsentChoicesButton } from './consent-banner';
 import { BrandMark } from './header';
 import { ThemeToggle } from './theme-toggle';
-import { BROWSER_ONLY_FEATURES } from '@/lib/data-mode';
+import { QUOTES_AVAILABLE } from '@/lib/data-mode';
 
 interface FooterLink {
   href: string;
@@ -55,9 +55,7 @@ export function Footer() {
           label: cat(key),
           track: `footer_shop_${key}`,
         })),
-        ...(BROWSER_ONLY_FEATURES
-          ? [{ href: '/quotes/new', label: t('bulkPrice'), track: 'footer_bulk' }]
-          : []),
+        ...(QUOTES_AVAILABLE ? [{ href: '/quotes/new', label: t('bulkPrice'), track: 'footer_bulk' }] : []),
       ],
     },
     {
@@ -77,7 +75,7 @@ export function Footer() {
         // signed-out visitors (UI review 2026-11-14).
         { href: '/account', label: nav('account'), track: 'footer_account' },
         { href: '/account/orders', label: t('trackOrder'), track: 'footer_orders' },
-        ...(BROWSER_ONLY_FEATURES
+        ...(QUOTES_AVAILABLE
           ? [{ href: '/account/quotes', label: account('nav_quotes'), track: 'footer_quotes' }]
           : []),
         { href: '/cart', label: nav('cart'), track: 'footer_cart' },

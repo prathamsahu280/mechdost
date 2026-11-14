@@ -4,4 +4,6 @@ export * from './catalogue';
 export * from './orders';
 export * from './platform';
 export * from './loyalty';
+export * from './payouts';
 export * from './services';
+export * from './quotes';

@@ -47,6 +47,17 @@ Goal: mechdost.com runs on real sign-in (Firebase) and the API for every flow, w
   the API; workshop accounts land on /partner/workshop. Response schemas `@mechdost/shared/service-api`. API gaps
   listed in spec 06 § Real API mode (web) (no API change). Playwright not run (low-memory machine) — run the service
   e2e at merge.
+- 2026-11-14: MechDost Coins on its branch (worktree-agent-a8d06d11eb05c0003): migration 0047 (`coin_rewards`,
+  per-part coin share, ledger reason codes), redeem inside `POST /v1/orders` (`coins`, 409 COINS_CHANGED), restore on
+  cancel/reject, rewards on delivery / paid booking with the 8-day unlock, expiry job, `/v1/me/coins*`,
+  `/v1/admin/coins/*`, coin rules in settings; web: account coins, checkout coins (COD + online), order coin line,
+  Admin → Coins, all behind the real-mode switches; coins un-hidden. Referrals not built (Q47). Playwright and
+  `next build` not run (low-memory machine): run the coin e2e and the JS budget at merge. Spec 20 "Built".
+- 2026-11-14 (bulk quotes, agent worktree): quotes on the API end to end — migration 0049 (`quote_requests`, lines,
+  messages, versioned offers, events; `order_groups.quote_id`/`quote_offer_id`, `order_items.price_source`; `quotes:*`
+  permissions), repo + routes (`/v1/quotes*`, `/v1/admin/quotes*`), worker expiry, offer email, web real mode (request
+  form on the live catalogue, thread, account list, admin quote desk) un-hidden with its own flag `QUOTES_ON_API`.
+  Spec 19 "Built: API + real mode", decisions "Bulk quotes on the API". Migration not applied; Playwright not run.
 - 2026-11-14: Reviews stream on its branch (worktree-agent-a31131dde8070eb42): migration 0046 (not applied),
   repo + routes `/v1/reviews/{product|workshop}/{slug}`, `/v1/my-reviews` (eligible, submit), `/v1/admin/reviews`
   (queue, moderate), product/workshop review sections (server-rendered), "Rate" on delivered orders and paid services,
@@ -57,6 +68,14 @@ Goal: mechdost.com runs on real sign-in (Firebase) and the API for every flow, w
   by checkout / workshops / service requests / coverage, Admin → Settings → Service area + approval-form pick list
   (en + hi), reference file of Raipur PINs + `pnpm db:seed:pincodes` (not applied). Spec 15 "PIN codes", spec 03
   "Delivery charges".
+- 2026-11-14: Coins code review fixed on the coins branch (user rulings: adjustments super admin only + daily cap;
+  order rewards refused above 0 until a guard is chosen; shops see the coin line and are owed it in the new
+  `shop_payout_entries`, finance report `/v1/admin/payouts/entries`), minor fixes (lock order, expiry paging,
+  self-booking, order page coins); merged `main`; migration renumbered **0050** (prevId = 0048).
+- 2026-11-14: Merged `main` (quotes, 0049 live) into the coins branch: no coins on quote orders (`COINS_NOT_ON_QUOTES`),
+  quote orders skip the checkout COD cap (their own ceiling applies), one shop money model (payout, collect on COD,
+  coin line), worker runs both the quote and the coin jobs; coins migration stays **0050** (prevId = 0049,
+  `when` after 0049).
 
 - 2026-11-14 (shop management, branch worktree-agent-a2bed9e12251b15fd):
   - Admin → Partners → Shops on the API: list and detail, profile with Hindi, GSTIN, minutes to accept and

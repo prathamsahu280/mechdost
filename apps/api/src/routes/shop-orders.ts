@@ -37,6 +37,10 @@ const ShopOrder = z
     status: z.string(),
     version: z.number().int(),
     totalPaise: z.number().int(),
+    payoutPaise: z.number().int(),
+    collectPaise: z.number().int().nullable(),
+    /** MechDost Coins discount on this part, paid by MechDost (never by the shop; spec 20); 0 when none. */
+    coinDiscountPaise: z.number().int(),
     pincode: z.string(),
     items: z.array(
       z.object({

@@ -2,6 +2,7 @@ import { and, eq, isNull, or, sql } from 'drizzle-orm';
 import {
   OPERATIONAL_SETTINGS,
   isGlobalOnly,
+  needsCoinGuard,
   SETTING_KEYS,
   settingProblem,
   type SettingKey,
@@ -92,6 +93,12 @@ export async function saveOperationalSetting(
     throw new ValidationError(
       `Invalid value for ${input.key}`,
       problem === 'range' ? 'SETTING_RANGE' : 'SETTING_TYPE',
+    );
+  // Order rewards can be farmed until an anti-abuse guard is chosen (user 2026-11-14: "decide when enabling").
+  if (needsCoinGuard(input.key, input.value))
+    throw new ValidationError(
+      `${input.key} stays 0 until an anti-abuse guard for order rewards is chosen`,
+      'COIN_GUARD_REQUIRED',
     );
   // `value` is a NOT NULL jsonb column: a null setting is stored as JSON null, not SQL NULL.
   const stored = input.value === null ? sql`'null'::jsonb` : input.value;

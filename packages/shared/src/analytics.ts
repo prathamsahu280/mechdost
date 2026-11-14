@@ -15,6 +15,8 @@ export interface ServerEventProps {
     items: number;
     totalPaise: number;
     paymentMethod: 'cod' | 'online';
+    /** MechDost Coins used (spec 20); 0 when none. Optional: events stored before 2026-11-14 have none. */
+    coinsRedeemed?: number;
   };
   admin_order_routed: { orderCode: string; shopId: string; attempt: number };
   admin_order_rerouted: { orderCode: string; shopId: string; attempt: number };
@@ -112,6 +114,34 @@ export interface ServerEventProps {
   admin_shop_member_added: { shopId: string; role: 'seller_owner' | 'seller_staff' };
   /** Working hours changed by the owner (`by: 'shop'`); staff edits are `admin_shop_updated` with `hours`. */
   shop_hours_changed: { shopId: string; days: number; by: 'shop' };
+  /** MechDost Coins (spec 20): counts and codes only; `customerId` is the pseudonymous account id. */
+  coins_redeemed: { orderCode: string; coins: number; discountPaise: number };
+  coins_restored: { orderCode: string; coins: number };
+  coins_reward_created: { rewardId: string; source: string; coins: number; unlockDays: number };
+  coins_earned: { rewardId: string; source: string; coins: number };
+  coins_expired: { coins: number };
+  coins_adjusted: { customerId: string; delta: number; reasonCode: string };
+  /** Bulk quotes (spec 19): codes, counts, versions and paise only — never message text. */
+  quote_requested: { quoteCode: string; lines: number; units: number; listTotalPaise: number | null };
+  quote_message_sent: { quoteCode: string; by: 'customer' | 'staff' };
+  quote_offer_sent: {
+    quoteCode: string;
+    offerVersion: number;
+    totalPaise: number;
+    listTotalPaise: number | null;
+    validDays: number;
+  };
+  quote_accepted: { quoteCode: string; offerVersion: number; orderCode: string; totalPaise: number };
+  /** Declined by the customer or withdrawn by staff (expiry is `quote_expired`). */
+  quote_closed: {
+    quoteCode: string;
+    to: 'declined' | 'withdrawn';
+    by: 'customer' | 'staff';
+    reasonCode: string;
+  };
+  quote_expired: { quoteCode: string; reasonCode: string; offerVersion: number };
+  /** The active offer ran out; the quote went back to negotiating. */
+  quote_offer_expired: { quoteCode: string; offerVersion: number };
 }
 export type ServerEvent = keyof ServerEventProps;
 

@@ -43,4 +43,5 @@ export * from './service-jobs';
 export * from './service-routing';
 export * from './service-notifications';
 export * from './shops-admin';
+export * from './quotes';
 export * from './reviews';

@@ -3,10 +3,11 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import { QuoteThread } from '@/components/quotes/quote-thread';
+import { QuoteThreadLazy } from '@/components/quotes/quote-lazy';
 import { ClientMessages } from '@/components/ui/client-messages';
 import { Container } from '@/components/ui/page-intro';
 import type { Locale } from '@/i18n/routing';
-import { BROWSER_ONLY_FEATURES } from '@/lib/data-mode';
+import { QUOTES_AVAILABLE, QUOTES_ON_API } from '@/lib/data-mode';
 
 interface Props {
   params: Promise<{ locale: Locale; code: string }>;
@@ -20,10 +21,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: t('reference', { code: code.slice(0, 40) }), robots: { index: false } };
 }
 
-/** Bulk quote thread (spec 19). Codes are QT-{CITY}-{YYYY}-{6 base32}. */
+/** Bulk quote thread (spec 19). Codes are QT-{CITY}-{YYYY}-{6 base32}. Real data mode reads it from the API. */
 export default async function QuotePage({ params }: Props) {
-  // No quote desk on the API yet: real mode hides bulk quotes (BROWSER_ONLY_FEATURES).
-  if (!BROWSER_ONLY_FEATURES) notFound();
+  if (!QUOTES_AVAILABLE) notFound();
   const { code } = await params;
   const safe = CODE.test(code) ? code : '';
   const t = await getTranslations('quote');
@@ -35,7 +35,7 @@ export default async function QuotePage({ params }: Props) {
       <div className="mt-6">
         <ClientMessages namespaces={['quote', 'demo']}>
           <Suspense fallback={<div className="skeleton h-80 rounded-card" aria-hidden="true" />}>
-            <QuoteThread code={safe} />
+            {QUOTES_ON_API ? <QuoteThreadLazy code={safe} /> : <QuoteThread code={safe} />}
           </Suspense>
         </ClientMessages>
       </div>

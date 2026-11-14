@@ -29,13 +29,13 @@ describe('admin price rules (design 2026-11-13: never above MRP, never below wha
     expect(resolveCustomerPrice({ pinPaise: null, cityPaise: null, shopPaise: null })).toBeNull();
   });
 
-  it('prices:write belongs to super admins, operations managers and finance only', () => {
+  it('prices:write belongs to super admins and catalogue managers only (user 2026-11-14)', () => {
     const has = (role: keyof typeof ROLES) =>
       (ROLES[role].permissions as readonly string[]).includes('prices:write');
     expect(has('super_admin')).toBe(true);
-    expect(has('ops_manager')).toBe(true);
-    expect(has('finance')).toBe(true);
-    expect(has('catalogue_manager')).toBe(false);
+    expect(has('catalogue_manager')).toBe(true);
+    expect(has('ops_manager')).toBe(false);
+    expect(has('finance')).toBe(false);
     expect(has('city_manager')).toBe(false);
     expect(has('marketing')).toBe(false);
   });

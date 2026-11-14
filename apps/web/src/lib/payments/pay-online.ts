@@ -19,6 +19,8 @@ export type PayOnlineResult =
         | 'unavailable'
         | 'cart_changed'
         | 'price_changed'
+        /** The coins chosen are no longer allowed (balance or cap changed): re-check them. */
+        | 'coins_changed'
         | 'blocked'
         | 'cancelled'
         | 'failed'
@@ -38,6 +40,8 @@ export interface PayOnlineInput {
   address: { contactName: string; contactPhone: string; line1: string; pincode: string };
   /** Optional business purchase (GST invoice). */
   business?: { gstin: string; businessName: string } | null;
+  /** MechDost Coins to use and the discount they give (spec 20); the API re-checks both. */
+  coins?: { count: number; discountPaise: number } | null;
 }
 
 interface RazorpayHandle {
@@ -134,9 +138,10 @@ export async function payOnline(input: PayOnlineInput): Promise<PayOnlineResult>
     const order = {
       address: input.address,
       lines: input.lines,
-      expectedTotalPaise: quote.onlineTotalPaise,
+      expectedTotalPaise: quote.onlineTotalPaise - (input.coins?.discountPaise ?? 0),
       paymentMethod: 'online',
       ...(input.business ? { business: input.business } : {}),
+      ...(input.coins && input.coins.count > 0 ? { coins: input.coins.count } : {}),
       locale: input.locale === 'hi' ? 'hi' : 'en',
     };
     const idem = { 'idempotency-key': input.idempotencyKey };
@@ -154,6 +159,8 @@ export async function payOnline(input: PayOnlineInput): Promise<PayOnlineResult>
     }
     if (!placeRes.ok) {
       if (code === 'PRICE_CHANGED') return { ok: false, reason: 'price_changed' };
+      if (code === 'COINS_CHANGED' || code === 'INSUFFICIENT_COINS')
+        return { ok: false, reason: 'coins_changed' };
       if (code === 'ORDERS_BLOCKED') return { ok: false, reason: 'blocked' };
       if (code === 'VERIFICATION_REQUIRED') return { ok: false, reason: 'verify_email' };
       if (code === 'AUTH_REQUIRED') return { ok: false, reason: 'sign_in' };

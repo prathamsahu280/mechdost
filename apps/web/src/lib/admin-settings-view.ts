@@ -1,4 +1,5 @@
 import {
+  needsCoinGuard,
   OPERATIONAL_SETTINGS,
   settingProblem,
   type SettingKey,
@@ -10,7 +11,7 @@ import {
  * registry (`@mechdost/shared/settings`) holds money in paise and durations in minutes or days; the screen shows
  * money in whole rupees and checks every value with the same rules before sending it.
  */
-export type SettingUnit = 'rupees' | 'minutes' | 'days' | 'count' | 'switch';
+export type SettingUnit = 'rupees' | 'minutes' | 'days' | 'units' | 'count' | 'bp' | 'coins' | 'switch';
 
 export function settingUnit(key: SettingKey): SettingUnit {
   const spec: SettingSpec = OPERATIONAL_SETTINGS[key];
@@ -18,6 +19,10 @@ export function settingUnit(key: SettingKey): SettingUnit {
   if (key.endsWith('_paise')) return 'rupees';
   if (key.endsWith('_minutes') || key.endsWith('_min')) return 'minutes';
   if (key.endsWith('_days')) return 'days';
+  if (key.endsWith('_units')) return 'units';
+  // Coin rules (spec 20): shares in basis points (100 = 1%), bonuses in coins.
+  if (key.endsWith('_bp')) return 'bp';
+  if (key.endsWith('_bonus')) return 'coins';
   return 'count';
 }
 
@@ -41,8 +46,10 @@ export function toInput(key: SettingKey, value: number | boolean | null): string
   return String(settingUnit(key) === 'rupees' ? value / 100 : value);
 }
 
-export type InputResult =
-  { ok: true; value: number | boolean | null } | { ok: false; problem: 'type' | 'range' };
+/** `guard`: an order reward that stays 0 until an anti-abuse guard is chosen (spec 20, COIN_GUARD_REQUIRED). */
+export type InputProblem = 'type' | 'range' | 'guard';
+
+export type InputResult = { ok: true; value: number | boolean | null } | { ok: false; problem: InputProblem };
 
 /** What the person typed → the value the API stores, checked like the API (`settingProblem`). */
 export function fromInput(key: SettingKey, raw: string): InputResult {
@@ -58,5 +65,6 @@ export function fromInput(key: SettingKey, raw: string): InputResult {
     else value = Number(text) * (unit === 'rupees' ? 100 : 1);
   }
   const problem = settingProblem(key, value);
-  return problem ? { ok: false, problem } : { ok: true, value };
+  if (problem) return { ok: false, problem };
+  return needsCoinGuard(key, value) ? { ok: false, problem: 'guard' } : { ok: true, value };
 }

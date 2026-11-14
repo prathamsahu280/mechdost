@@ -49,6 +49,13 @@ export const OPERATIONAL_SETTINGS = {
    * accept (user 2026-11-14, shop working hours; spec 04).
    */
   'orders.closed_shop_grace_min': { kind: 'int', min: 15, max: 240, default: 60 },
+  /** Smallest bulk quote, in units across all its products (spec 19, Q20 default 10). */
+  'quotes.min_units': { kind: 'int', min: 2, max: 500, default: 10 },
+  /**
+   * Largest accepted bulk quote paid by cash on delivery (paise; review 2026-11-14). Above it the customer is asked
+   * to contact MechDost (online payment for quotes is pending #18).
+   */
+  'quotes.cod_cap_paise': { kind: 'int', min: 0, max: 100_000_000, default: 5_000_000 },
   /** Launch check: products go live only with complete Hindi texts. */
   // One catalogue for every city: publishing reads the global value only.
   'catalogue.require_hindi_to_publish': { kind: 'boolean', default: false, globalOnly: true },
@@ -70,7 +77,59 @@ export const OPERATIONAL_SETTINGS = {
    * 2026-11-14, Q91); 0 turns the AI answers off. Over the cap the website shows its built-in answers.
    */
   'assistant.daily_messages': { kind: 'int', min: 0, max: 100_000, default: 500, globalOnly: true },
+  /*
+   * MechDost Coins (spec 20; Q24, user 2026-11-13). Coins belong to the customer's account, not a city, so every
+   * coin rule is site-wide. Every reward is 0 until the admin sets it. Saving one needs `coins:rules` too.
+   */
+  /** Discount value of one coin (paise). */
+  'coins.value_paise': { kind: 'int', min: 100, max: 1_000, default: 100, globalOnly: true },
+  /** Most of an order's product subtotal coins may pay (basis points, 1000 = 10%); 0 turns redemption off. */
+  'coins.max_redeem_bp': { kind: 'int', min: 0, max: 5_000, default: 1_000, globalOnly: true },
+  /** Smallest product subtotal on which coins can be used (paise). */
+  'coins.min_order_paise': { kind: 'int', min: 0, max: 10_000_000, default: 0, globalOnly: true },
+  /** Coins earned on a delivered order: this share of what its products cost (basis points, 100 = 1%). */
+  'coins.earn_order_bp': { kind: 'int', min: 0, max: 2_000, default: 0, globalOnly: true },
+  /** Extra coins for a customer's first delivered order. */
+  'coins.first_order_bonus': { kind: 'int', min: 0, max: 10_000, default: 0, globalOnly: true },
+  /** Coins for each paid workshop booking. */
+  'coins.workshop_booking_bonus': { kind: 'int', min: 0, max: 10_000, default: 0, globalOnly: true },
+  /**
+   * Anti-abuse for workshop rewards (security review 2026-11-14): "paid at the workshop" is the workshop's own word,
+   * so no reward below this bill total (paise) ...
+   */
+  'coins.workshop_reward_min_bill_paise': {
+    kind: 'int',
+    min: 0,
+    max: 10_000_000,
+    default: 50_000,
+    globalOnly: true,
+  },
+  /** ... and at most one reward per customer per workshop in this many days (0 = no limit). */
+  'coins.workshop_reward_cooldown_days': { kind: 'int', min: 0, max: 365, default: 30, globalOnly: true },
+  /** Most coins staff may grant and deduct together for one customer in one IST day (code review 2026-11-14). */
+  'coins.adjust_daily_cap': { kind: 'int', min: 1, max: 1_000_000, default: 5_000, globalOnly: true },
+  /** Days before earned coins can be used (after the 7-day claim window, so claims cannot farm coins). */
+  'coins.unlock_days': { kind: 'int', min: 0, max: 60, default: 8, globalOnly: true },
+  /** Days before unused coins expire. */
+  'coins.expiry_days': { kind: 'int', min: 30, max: 1_095, default: 180, globalOnly: true },
 } as const satisfies Record<string, SettingSpec>;
+
+/**
+ * Order rewards can be farmed (order, cancel after delivery, re-order) until an anti-abuse guard is chosen (user
+ * 2026-11-14: "decide when enabling"; pending decisions). Until then they can only be saved as 0.
+ */
+export const COIN_GUARDED_SETTINGS: readonly SettingKey[] = [
+  'coins.earn_order_bp',
+  'coins.first_order_bonus',
+];
+
+/** True when `value` would switch on a reward that still needs its guard (COIN_GUARD_REQUIRED). */
+export function needsCoinGuard(key: SettingKey, value: unknown): boolean {
+  return COIN_GUARDED_SETTINGS.includes(key) && typeof value === 'number' && value > 0;
+}
+
+/** Coin rule keys: saving one also needs the `coins:rules` permission (spec 20). */
+export const isCoinSettingKey = (key: string): boolean => key.startsWith('coins.');
 
 export type SettingKey = keyof typeof OPERATIONAL_SETTINGS;
 export const SETTING_KEYS = Object.keys(OPERATIONAL_SETTINGS) as SettingKey[];

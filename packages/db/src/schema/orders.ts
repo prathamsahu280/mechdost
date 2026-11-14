@@ -25,6 +25,7 @@ import { citext, createdAt, encryptedCheck, id, paise, ts, updatedAt, version } 
 import { cities } from './geography';
 import { users } from './identity';
 import { productVariants, shopInventory, shops } from './catalogue';
+import { quoteOffers, quoteRequests } from './quotes';
 
 const inList = (values: readonly string[]) => sql.raw(values.map((v) => `'${v}'`).join(','));
 
@@ -60,6 +61,9 @@ export const orderGroups = pgTable(
     idempotencyKey: text().notNull(),
     /** SHA-256 of the placed request (address, lines, note): the same key with a different request is refused. */
     requestHash: text(),
+    /** Set when the order comes from an accepted bulk quote offer (spec 19): one order per quote and per offer. */
+    quoteId: uuid().references(() => quoteRequests.id, { onDelete: 'restrict' }),
+    quoteOfferId: uuid().references(() => quoteOffers.id, { onDelete: 'restrict' }),
     version: version(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
@@ -94,6 +98,13 @@ export const orderGroups = pgTable(
       'order_groups_total_consistent',
       sql`${t.totalPaise} = ${t.subtotalPaise} - ${t.discountPaise} + ${t.shippingPaise} + ${t.codFeePaise}`,
     ),
+    check('order_groups_quote_pair', sql`(${t.quoteId} is null) = (${t.quoteOfferId} is null)`),
+    uniqueIndex('order_groups_quote_uq')
+      .on(t.quoteId)
+      .where(sql`${t.quoteId} is not null`),
+    uniqueIndex('order_groups_quote_offer_uq')
+      .on(t.quoteOfferId)
+      .where(sql`${t.quoteOfferId} is not null`),
     index().on(t.userId, t.createdAt),
     index().on(t.cityId, t.createdAt),
   ],
@@ -127,6 +138,9 @@ export const orders = pgTable(
     codFeePaise: paise().notNull().default(0),
     taxPaise: paise().notNull().default(0),
     totalPaise: paise().notNull(),
+    /** This sub-order's share of the checkout's MechDost Coins and the part of `discountPaise` they paid (spec 20). */
+    coinsRedeemed: integer().notNull().default(0),
+    coinDiscountPaise: paise().notNull().default(0),
     cancellableUntilStatus: text().notNull().default('confirmed'),
     /** Reject (later: cancel) reason code and the message shown to the customer (spec 04). */
     statusReasonCode: text(),
@@ -164,6 +178,10 @@ export const orders = pgTable(
     check(
       'orders_total_matches',
       sql`${t.totalPaise} = ${t.subtotalPaise} - ${t.discountPaise} + ${t.shippingPaise} + ${t.codFeePaise}`,
+    ),
+    check(
+      'orders_coins_consistent',
+      sql`${t.coinsRedeemed} >= 0 and ${t.coinDiscountPaise} >= 0 and ${t.coinDiscountPaise} <= ${t.discountPaise} and (${t.coinsRedeemed} = 0) = (${t.coinDiscountPaise} = 0)`,
     ),
     check(
       'orders_shop_when_confirmed',
@@ -204,12 +222,25 @@ export const orderItems = pgTable(
     igstPaise: paise().notNull().default(0),
     totalPaise: paise().notNull(),
     recoSource: text(),
+    /** Where the unit price came from: the catalogue, or a negotiated bulk quote offer (spec 19). */
+    priceSource: text().notNull().default('catalogue'),
+    /**
+     * Quote lines only: the most a shop may be paid per unit — the catalogue price for the PIN when the order was
+     * placed (the checkout's admin price ceiling). Routing compares shops against it, not the negotiated price.
+     */
+    costCeilingPaise: paise(),
   },
   (t) => [
     check('order_items_qty_positive', sql`${t.qty} > 0 and ${t.qty} <= 99`),
+    check('order_items_price_source_valid', sql`${t.priceSource} in ('catalogue','quote')`),
+    check(
+      'order_items_cost_ceiling_quote_only',
+      sql`(${t.costCeilingPaise} is not null) = (${t.priceSource} = 'quote') and (${t.costCeilingPaise} is null or ${t.costCeilingPaise} > 0)`,
+    ),
+    // A negotiated price may sit below the shop's approved price: MechDost pays the shop its price (spec 19).
     check(
       'order_items_shop_unit_valid',
-      sql`${t.shopUnitPaise} is null or (${t.shopUnitPaise} >= 0 and ${t.shopUnitPaise} <= ${t.unitPaise})`,
+      sql`${t.shopUnitPaise} is null or (${t.shopUnitPaise} >= 0 and (${t.shopUnitPaise} <= ${t.unitPaise} or ${t.priceSource} = 'quote'))`,
     ),
     check('order_items_cgst_equals_sgst', sql`${t.cgstPaise} = ${t.sgstPaise}`),
     check('order_items_intra_or_inter', sql`${t.igstPaise} = 0 or ${t.cgstPaise} = 0`),

@@ -90,6 +90,8 @@ export type TrackedOrder = z.infer<typeof TrackedOrder>;
 
 export const MyOrderDto = Summary.loose().extend({
   business: z.object({ gstin: z.string(), businessName: z.string() }).nullable(),
+  /** MechDost Coins used at checkout (spec 20); optional so answers from an older API still parse. */
+  coins: z.object({ coins: z.number().int(), discountPaise: z.number().int() }).nullable().optional(),
   orders: z.array(TrackedOrder),
 });
 export type MyOrder = z.infer<typeof MyOrderDto>;

@@ -249,12 +249,15 @@ export async function rankShopsForOrder(
   }>(
     await db.execute(sql`
       with o as (select id, pincode from orders where id = ${orderId}),
-      items as (select variant_id, qty, unit_paise from order_items where order_id = ${orderId})
+      -- The most a shop may be paid per unit: the customer price, or for a negotiated bulk quote line the catalogue
+      -- price it had at checkout (review C1, 2026-11-14) — a quote below the shop price is still routable.
+      items as (select variant_id, qty, coalesce(cost_ceiling_paise, unit_paise) as ceiling_paise
+        from order_items where order_id = ${orderId})
       select s.id as shop_id, s.name, s.name_hi, s.hours,
         st_distance(s.location, (select centroid from pincodes where pincode = o.pincode)) as dist_m,
         -- A shop counts for an item only if it is paid at or below what the customer pays (admin prices, Q26).
         (select count(*) from items i join shop_inventory si on si.variant_id = i.variant_id and si.shop_id = s.id
-           and si.active and not si.admin_blocked and si.selling_paise <= i.unit_paise
+           and si.active and not si.admin_blocked and si.selling_paise <= i.ceiling_paise
            and si.on_hand - si.reserved + coalesce((select sum(r.qty) from reservations r
              where r.order_id = o.id and r.status = 'active' and r.inventory_id = si.id), 0) >= i.qty)::int as stocked,
         (select count(*) from items)::int as total,
@@ -452,6 +455,11 @@ export async function routeOrder(
         shop?.triedBefore ? 'This shop already declined this order' : 'This shop cannot take this order',
         'SHOP_NOT_ELIGIBLE',
       );
+    // What this shop is paid per unit: its approved price now (shop-facing views show it; review I1).
+    await tx.execute(sql`
+      update order_items oi set shop_unit_paise = si.selling_paise
+      from shop_inventory si
+      where oi.order_id = ${o.id} and si.shop_id = ${input.shopId} and si.variant_id = oi.variant_id`);
     // The shop's own acceptance time (admin shop profile) wins over the city setting. A closed shop may still be
     // offered the order: it then has until its next opening time + the grace setting (user 2026-11-14).
     const [own] = await tx

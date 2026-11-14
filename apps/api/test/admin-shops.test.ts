@@ -228,7 +228,8 @@ describe('admin shops API', () => {
     const battery = shop['Raipur Battery Point']!;
     const owner = await person('09', 'seller_owner', { shopId: battery });
     const staff = await person('10', 'seller_staff', { shopId: battery });
-    const hours = { open: '08:00', close: '24:00', days: [0, 1, 2, 3, 4, 5, 6] };
+    // Round the clock, so `openNow` does not depend on when the test runs (L114).
+    const hours = { open: '00:00', close: '24:00', days: [0, 1, 2, 3, 4, 5, 6] };
     const byStaff = await send('PUT', `/v1/shop/hours/${battery}`, staff.headers, {
       version: await versionOf(battery),
       hours,

@@ -68,6 +68,33 @@ export const EMAIL_TEMPLATES = {
           };
     },
   },
+  /** MechDost sent (or revised) a bulk price offer (spec 19); the customer accepts it on the quote page. */
+  quote_offer: {
+    purpose: 'updates',
+    params: ['quoteCode', 'validUntil'],
+    render(p, { locale, webBaseUrl }) {
+      const url = `${webBaseUrl}${localePath(locale, `/quotes/${p.quoteCode ?? ''}`)}`;
+      return locale === 'hi'
+        ? {
+            subject: `आपकी थोक कीमत तैयार है (${p.quoteCode ?? ''})`,
+            paragraphs: [
+              'नमस्ते,',
+              'MechDost ने आपके थोक अनुरोध के लिए कीमत भेजी है। ऑफ़र देखें और ठीक लगे तो उसी पेज पर स्वीकार करें।',
+              `यह ऑफ़र ${p.validUntil ?? ''} तक मान्य है।`,
+            ],
+            action: { label: 'ऑफ़र देखें', url },
+          }
+        : {
+            subject: `Your bulk price is ready (${p.quoteCode ?? ''})`,
+            paragraphs: [
+              'Hello,',
+              'MechDost has sent a price for your bulk request. Review the offer and accept it on the same page if it works for you.',
+              `The offer is valid until ${p.validUntil ?? ''}.`,
+            ],
+            action: { label: 'View the offer', url },
+          };
+    },
+  },
 } as const satisfies Record<string, TemplateDef>;
 
 export type EmailTemplateKey = keyof typeof EMAIL_TEMPLATES;

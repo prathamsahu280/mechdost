@@ -22,6 +22,9 @@ export const PERMISSIONS = {
   'service:respond': 'Propose slots or decline service requests offered to the workshop',
   'service:work': 'Run job cards: vehicle received, estimates, progress, bills',
   'service_menu:write': 'Edit the workshop service menu, hours and photos',
+  'quotes:request': 'Ask MechDost for a bulk price and negotiate it',
+  'quotes:read': 'Read bulk quotes in scope',
+  'quotes:negotiate': 'Reply to bulk quotes, send price offers and withdraw quotes',
   'returns:request': 'Request returns or replacements',
   'returns:review': 'Approve or reject returns and replacements',
   'refunds:read': 'Read refunds',
@@ -88,6 +91,7 @@ const CUSTOMER: readonly Permission[] = [
   'account:write',
   'orders:place',
   'service:request',
+  'quotes:request',
   'returns:request',
   'tickets:create',
   'reviews:write',
@@ -100,6 +104,8 @@ const OPS: readonly Permission[] = [
   'orders:export',
   'service:read',
   'service:route',
+  'quotes:read',
+  'quotes:negotiate',
   'returns:review',
   'refunds:read',
   'refunds:initiate',
@@ -108,7 +114,6 @@ const OPS: readonly Permission[] = [
   'partners:read',
   'partners:write',
   'partners:approve',
-  'prices:approve',
   'applications:review',
   'customers:read',
   'tickets:read',
@@ -132,8 +137,9 @@ export const ROLES = {
     description: 'Routing, orders, service requests, partners and returns',
     scope: 'global',
     staff: true,
-    // Customer prices per city and PIN (Q26, design 2026-11-13); not city managers until prices are city-scoped.
-    permissions: [...OPS, 'prices:write'],
+    // Prices (shop costs, customer prices, seller price requests) are super admin + catalogue manager only
+    // (user 2026-11-14).
+    permissions: OPS,
   },
   city_manager: {
     name: 'City manager',
@@ -174,7 +180,6 @@ export const ROLES = {
       'payments:read',
       'payouts:read',
       'payouts:manage',
-      'prices:write',
       'invoices:read',
       'gst:export',
       'partners:read',
@@ -194,6 +199,9 @@ export const ROLES = {
       'products:import',
       'categories:write',
       'partners:read',
+      // Shop costs and customer prices, and seller price requests (user 2026-11-14).
+      'prices:write',
+      'prices:approve',
       'reviews:moderate',
       'analytics:read',
     ],
@@ -208,7 +216,7 @@ export const ROLES = {
       'content:publish',
       'coupons:write',
       'coins:read',
-      'coins:adjust',
+      // Coin grants and deductions are super admin only (user 2026-11-14); marketing keeps the rules.
       'coins:rules',
       'notifications:manage',
       'reviews:moderate',

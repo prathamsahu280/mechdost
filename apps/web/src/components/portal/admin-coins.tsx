@@ -1,18 +1,30 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
 import { adjustCoins, coinBalanceOf, useCoinEntries } from '@/demo/coins';
 import { findAccount, normalisePhone, useAccounts } from '@/demo/session';
+import { AUTH_MODE } from '@/lib/auth/mode';
 import { track } from '@/lib/analytics';
 import { formatDate } from '@/lib/format';
 import { portalCard, portalField, portalPrimary } from './portal-guard';
 
-/**
- * Admin coins desk (spec 20, permission `coins:adjust`): grant or deduct MechDost Coins for one customer with a
- * reason, and see recent coin activity. Earning rules are added here once the owner decides them (inbox Q24).
- */
+// Real sign-in builds: the API desk (accounts, activity, adjustments), loaded only there.
+const AdminCoinsApi = dynamic(() => import('./admin-coins-api').then((m) => m.AdminCoinsApi), {
+  loading: () => <div className="skeleton h-72 rounded-card" aria-hidden="true" />,
+});
+
+/** Admin → Coins: the API desk in real sign-in builds, the browser demo otherwise (spec 20). */
 export function AdminCoins({ actor }: { actor: string }) {
+  return AUTH_MODE === 'firebase' ? <AdminCoinsApi /> : <DemoCoins actor={actor} />;
+}
+
+/**
+ * Admin coins desk, browser demo (spec 20, permission `coins:adjust`): grant or deduct MechDost Coins for one
+ * customer with a reason, and see recent coin activity.
+ */
+function DemoCoins({ actor }: { actor: string }) {
   const t = useTranslations('portal');
   const locale = useLocale();
   const entries = useCoinEntries().slice(0, 15);
