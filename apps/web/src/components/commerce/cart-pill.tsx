@@ -1,8 +1,10 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useCart } from '@/demo/store';
 import { UI_EMOJI } from '@/lib/emoji';
+import { isPortalPath } from '@/lib/portal-path';
 
 /**
  * Header cart pill with a live count. `countText` holds server-translated variants for 0, 1 and many
@@ -18,11 +20,14 @@ export function CartPill({
   countText: { zero: string; one: string; other: string };
 }) {
   const lines = useCart();
+  const pathname = usePathname();
   const count = lines.reduce((n, l) => n + l.qty, 0);
   const sr = (count === 0 ? countText.zero : count === 1 ? countText.one : countText.other).replace(
     '#',
     String(count),
   );
+  // Partners and staff at work in a portal are not shopping (QA 2026-11-14, U16); the storefront keeps the cart.
+  if (isPortalPath(pathname)) return null;
   return (
     <Link
       href={href}

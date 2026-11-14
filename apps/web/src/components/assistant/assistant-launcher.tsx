@@ -1,5 +1,6 @@
 'use client';
 
+import { isPortalPath } from '@/lib/portal-path';
 import { MessageCircleQuestion } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { lazy, Suspense, useRef, useState } from 'react';
@@ -17,7 +18,7 @@ export function AssistantLauncher({ copy }: { copy: AssistantCopy }) {
   const pathname = usePathname();
   // The assistant helps shoppers; in the partner and admin portals it covered working controls (QA 2026-11-14,
   // U10 / crawler F9). Hooks above run on every render; only the output stops here.
-  if (/^(\/(en|hi))?\/(admin|partner)(\/|$)/.test(pathname)) return null;
+  if (isPortalPath(pathname)) return null;
 
   return (
     <>

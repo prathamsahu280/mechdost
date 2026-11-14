@@ -1,5 +1,6 @@
 'use client';
 
+import { isPortalPath } from '@/lib/portal-path';
 import NextLink from 'next/link';
 import { usePathname } from 'next/navigation';
 import { clearCompare, compareHref, useCompare } from '@/lib/compare/store';
@@ -28,11 +29,7 @@ export function CompareTray({
   // Not on the comparison itself (the table is what the tray would open), nor at checkout, where it covered the
   // form (QA 2026-11-14, crawler F8).
   // Nor in the admin and partner portals, where it covered the side navigation (lifecycle QA 2026-11-14, 6).
-  if (
-    list.slugs.length === 0 ||
-    /\/(compare|checkout)\/?$/.test(pathname) ||
-    /^(\/(en|hi))?\/(admin|partner)(\/|$)/.test(pathname)
-  )
+  if (list.slugs.length === 0 || /\/(compare|checkout)\/?$/.test(pathname) || isPortalPath(pathname))
     return null;
   return (
     <aside

@@ -585,3 +585,19 @@ test('review: a comparison link stays readable after switching language', async 
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
   await expect(page).toHaveURL(/\/compare\?p=castrol-activ-4t-20w40-900ml,motul-3100-4t-10w30-1l$/);
 });
+
+test('U16: the portals drop the shopper tab bar and cart; the storefront keeps them', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const tabs = page.locator('[data-track^="tab_"]'); // the bottom tab bar's links, in any language
+  const cart = page.locator('[data-track="header_cart"]');
+  await signIn(page, '9000000001'); // shop owner
+  for (const path of ['/partner/shop', '/hi/partner/shop']) {
+    await page.goto(path);
+    await expect(page.locator('main h1')).toBeVisible();
+    await expect(tabs).toHaveCount(0);
+    await expect(cart).toHaveCount(0);
+  }
+  await page.goto('/shop');
+  await expect(tabs.first()).toBeVisible();
+  await expect(cart).toBeVisible();
+});

@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { canonicalPath } from '@/lib/locale-path';
 import { NAV_EMOJI } from '@/lib/emoji';
 import { isActive } from '@/lib/nav';
+import { isPortalPath } from '@/lib/portal-path';
 import type { NavItem } from './nav-links';
 
 /**
@@ -12,7 +13,10 @@ import type { NavItem } from './nav-links';
  * Labels are translated on the server and passed in.
  */
 export function MobileTabBar({ label, items }: { label: string; items: readonly NavItem[] }) {
-  const pathname = canonicalPath(usePathname());
+  const raw = usePathname();
+  const pathname = canonicalPath(raw);
+  // Shopper navigation; the portals have their own section bar (QA 2026-11-14, U16).
+  if (isPortalPath(raw)) return null;
   return (
     <nav
       aria-label={label}
