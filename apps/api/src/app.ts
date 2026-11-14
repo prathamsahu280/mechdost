@@ -31,6 +31,7 @@ import { adminServiceRequestRoutes } from './routes/admin-service-requests';
 import { serviceRequestRoutes } from './routes/service-requests';
 import { workshopPortalRoutes } from './routes/workshop-portal';
 import { workshopAdminRoutes, workshopPublicRoutes } from './routes/workshops';
+import { reviewPublicRoutes, reviewRoutes } from './routes/reviews';
 import type { AppDeps, AppEnv } from './types';
 import { validationHook } from './validation';
 
@@ -99,6 +100,8 @@ export function createApp(deps: AppDeps) {
   v1.route('/', serviceRequestRoutes(deps, sessions));
   v1.route('/', workshopPortalRoutes(deps, sessions));
   v1.route('/', adminServiceRequestRoutes(deps, sessions));
+  v1.route('/', reviewPublicRoutes(deps));
+  v1.route('/', reviewRoutes(deps, sessions));
   app.route('/v1', v1);
 
   app.openAPIRegistry.registerComponent('securitySchemes', 'bearerAuth', {
