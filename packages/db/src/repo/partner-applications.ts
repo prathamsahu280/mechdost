@@ -16,6 +16,7 @@ import {
   pincodes,
   products,
   shopPincodes,
+  shopUsers,
   shops,
 } from '../schema';
 import { ConflictError, NotFoundError, ValidationError } from './errors';
@@ -593,6 +594,11 @@ export async function linkApplicantOwner(db: Tx, input: { userId: string; phone:
         grantedBy: a.reviewedBy,
         reason: 'seller application approved',
       });
+      // Membership = who gets live pings for the shop (live.ts); the grant above is what the API authorises.
+      await tx
+        .insert(shopUsers)
+        .values({ shopId: a.shopId, userId: input.userId, role: 'owner' })
+        .onConflictDoNothing();
     }
     return claimed.length;
   });

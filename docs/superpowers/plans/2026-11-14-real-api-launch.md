@@ -47,3 +47,14 @@ Goal: mechdost.com runs on real sign-in (Firebase) and the API for every flow, w
   the API; workshop accounts land on /partner/workshop. Response schemas `@mechdost/shared/service-api`. API gaps
   listed in spec 06 § Real API mode (web) (no API change). Playwright not run (low-memory machine) — run the service
   e2e at merge.
+
+- 2026-11-14 (shop management, branch worktree-agent-a2bed9e12251b15fd):
+  - Admin → Partners → Shops on the API: list and detail, profile with Hindi, GSTIN, minutes to accept and
+    free delivery, delivery PIN codes, products from the live catalogue, standing with reason codes, portal access.
+  - Shop portal header, pause banner, owner's working hours, "Sell another product" (price request) and the
+    agreement card.
+  - Checkout free delivery: PIN ?? shop ?? city.
+  - Routing: open shops first; a closed shop waits until it opens + `orders.closed_shop_grace_min`.
+  - Seller application picker on the live catalogue.
+  - Migration **0049**, not applied anywhere yet.
+  - Specs 03/04/07/08, decisions, runbook "Add the first shop".

@@ -311,7 +311,9 @@ Items decided to happen before going public; tick them off here.
    - Phone sign-in is enabled.
    - SMS region policy is set to India only (security baseline).
 3. **Online payments (optional at launch):** set `NEXT_PUBLIC_RAZORPAY_KEY_ID` (public key id). Without it, checkout offers cash on delivery only. Test keys take test payments only.
-4. **Database migrations applied** (§ 6). 0044 was applied 2026-11-14.
+4. **Database migrations applied** (§ 6). 0044 was applied 2026-11-14. **0049 (shop management: free-delivery
+   override, standing reason codes, shop hours) is needed by the shop screens below**; apply it before deploying that
+   code.
 5. **Flip the switches:**
    - `gh variable set NEXT_PUBLIC_AUTH_MODE --body firebase`
    - `gh variable set NEXT_PUBLIC_DATA_MODE --body api`
@@ -322,7 +324,24 @@ Items decided to happen before going public; tick them off here.
    - Sign out and in again (staff two-step).
 7. **Content:**
    - Admin → Catalogue → Add product / Import CSV (`docs/runbooks/catalogue-import.md`).
-   - Add shops (seller invite or application → approve with PIN codes). Set shop prices.
+   - **Add the first shop** (spec 07 "Shop management on the API"):
+     1. Admin → Partners → **Invite a seller** (name, email, mobile). The seller opens the link and fills the form,
+        ticking products from the live catalogue. An invited application is approved on submit with the city's
+        default delivery area. A walk-in seller can apply at `/partners/apply/seller` instead; approve it in the
+        applications list with its PIN codes, charge and days.
+     2. The seller **signs up on mechdost.com with the same mobile number**. That links them as the shop's owner. If
+        someone else must run the portal, use Admin → Partners → Shops → Manage → **Portal access** and enter their
+        phone. They must have signed up first.
+     3. Admin → Partners → Shops → Manage:
+        - **Profile:** add the Hindi name and address. Check the GSTIN, the working hours (default 09:00–21:00,
+          Monday to Saturday), the minutes to accept and the free-delivery amount. Leave these empty to use the
+          city settings.
+        - **Delivery area:** add or adjust the PIN codes, charges and days.
+     4. **Products:** Admin → Partners → Shops → Manage → **Products** → Add a product. Pick it from the catalogue,
+        then enter the shop's price (not above the MRP), the stock and "On sale". Alternatively, the shop picks
+        "Sell another product" in its portal and staff approve the price in the price queue.
+     5. The shop goes **live by itself** once it has a product on sale and a PIN code (and the agreement, if
+        `partners.agreement_required` is on). The list shows "Live".
    - Add workshops (Admin → Workshops). Publish and verify the location.
 8. **WhatsApp:**
    - Once Meta approves the templates, turn each event on in Admin → Notifications (English and Hindi text).

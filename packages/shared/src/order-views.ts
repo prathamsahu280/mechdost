@@ -105,6 +105,9 @@ export const RankedShop = z.object({
   pricePaise: z.number().int().nullable(),
   triedBefore: z.boolean(),
   eligible: z.boolean(),
+  /** Inside its working hours now (IST); a closed shop's offer waits until `opensAt` + the grace setting. */
+  openNow: z.boolean(),
+  opensAt: z.string().nullable(),
 });
 export type RankedShopDto = z.infer<typeof RankedShop>;
 

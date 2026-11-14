@@ -5,6 +5,7 @@ import { ASSIGNMENT_DECLINE_REASONS, type AssignmentDeclineReason } from '@mechd
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useState, type SyntheticEvent } from 'react';
 import { adminApi } from '@/lib/admin-api';
+import { deadlineView, istDayTime } from '@/lib/admin-shop-form';
 import { track } from '@/lib/analytics';
 import { formatPrice } from '@/lib/format';
 import {
@@ -12,13 +13,14 @@ import {
   advanceBody,
   apiErrorKey,
   itemTitle,
-  minutesLeft,
   nextShopAction,
   shopStageKey,
 } from '@/lib/order-views';
 import { ApiError, ApiListState, LoadMore } from './api-list-state';
 import { portalCard, portalField, portalPrimary, portalQuiet, useNow } from './portal-guard';
 import { ShopPricesApi } from './shop-prices-api';
+import { ShopAgreementApi } from './shop-onboarding-api';
+import { ShopNewProductApi, ShopProfileApi } from './shop-profile-api';
 import { useApiList } from './use-api-list';
 
 const OFFER_POLL_MS = 30_000;
@@ -55,6 +57,10 @@ export function ShopOrdersApi() {
 
   return (
     <>
+      <ShopProfileApi />
+
+      <ShopAgreementApi />
+
       <section aria-labelledby="offered-title">
         <h2 id="offered-title" className="font-heading text-xl font-extrabold text-ink">
           {t('offered')}{' '}
@@ -125,6 +131,8 @@ export function ShopOrdersApi() {
       </section>
 
       <ShopPricesApi />
+
+      <ShopNewProductApi />
     </>
   );
 }
@@ -205,7 +213,8 @@ function OfferedOrder({ order, onChanged }: { order: ShopOrderDto; onChanged: ()
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const id = order.assignmentId;
-  const minutes = minutesLeft(order.expiresAt, now);
+  // An offer made while the shop was closed waits for its opening time (+ grace): show the time, not hours of minutes.
+  const deadline = deadlineView(order.expiresAt, now);
 
   async function respond(accept: boolean) {
     if (!id) return;
@@ -231,7 +240,9 @@ function OfferedOrder({ order, onChanged }: { order: ShopOrderDto; onChanged: ()
     <article className={`${portalCard} border-accent-button/50`} aria-busy={busy || undefined}>
       <p className="mb-2 inline-flex rounded-pill bg-warning-bg px-3 py-1 text-xs font-extrabold text-warning">
         <span aria-hidden="true">⏱️ </span>
-        {t('expiresIn', { minutes })}
+        {deadline.kind === 'minutes'
+          ? t('expiresIn', { minutes: deadline.minutes })
+          : t('shops_api_waitsUntil', { time: istDayTime(deadline.at, locale) })}
       </p>
       <OrderLines order={order} />
       {error ? (

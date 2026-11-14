@@ -42,6 +42,11 @@ export const OPERATIONAL_SETTINGS = {
   /** How long a shop has to accept an offered order (minutes). */
   // Same bounds as the demo `/admin/settings` screen and spec 08 (5–120 min).
   'orders.acceptance_timeout_min': { kind: 'int', min: 5, max: 120, default: 15 },
+  /**
+   * An order routed to a closed shop waits for it: the shop has until its next opening time plus these minutes to
+   * accept (user 2026-11-14, shop working hours; spec 04).
+   */
+  'orders.closed_shop_grace_min': { kind: 'int', min: 15, max: 240, default: 60 },
   /** Launch check: products go live only with complete Hindi texts. */
   // One catalogue for every city: publishing reads the global value only.
   'catalogue.require_hindi_to_publish': { kind: 'boolean', default: false, globalOnly: true },

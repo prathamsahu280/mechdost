@@ -84,6 +84,19 @@ export interface ServerEventProps {
   service_estimate_decided: { requestCode: string; revision: number; approved: number; declined: number };
   service_billed: { requestCode: string; workshopId: string; totalPaise: number; lines: number };
   admin_workshop_saved: { workshopId: string; action: 'created' | 'updated'; published: boolean };
+  /** Shop management (decision 2026-11-14 "Shop management"; specs 07/08). */
+  admin_partner_standing_changed: {
+    partnerKind: 'shop' | 'workshop';
+    partnerId: string;
+    from: string;
+    to: string;
+    reasonCode: string | null;
+  };
+  admin_shop_updated: { shopId: string; fields: string[] };
+  admin_shop_coverage_changed: { shopId: string; added: number; changed: number; removed: number };
+  admin_shop_member_added: { shopId: string; role: 'seller_owner' | 'seller_staff' };
+  /** Working hours changed by the owner (`by: 'shop'`); staff edits are `admin_shop_updated` with `hours`. */
+  shop_hours_changed: { shopId: string; days: number; by: 'shop' };
 }
 export type ServerEvent = keyof ServerEventProps;
 

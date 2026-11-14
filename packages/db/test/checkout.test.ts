@@ -116,6 +116,42 @@ describe('quote', () => {
     ).rejects.toMatchObject({ code: 'DUPLICATE_LINE' });
   });
 
+  it('free delivery per group: the shop override wins over the city setting; 0 = always free', async () => {
+    const [sharma] = await db.select().from(s.shops).where(eq(s.shops.name, 'Sharma Auto Parts'));
+    const lines = [
+      { sku: OIL, qty: 2 }, // ₹880 from Sharma
+      { sku: sku('scooter-tubeless-tyre-90-90-12'), qty: 1 }, // ₹1,650 from Chhattisgarh Tyre House
+    ];
+    const shippingBySeller = async () =>
+      Object.fromEntries(
+        (await quoteCheckout(t(), { pincode: '492004', lines, locale: 'en' })).groups.map((g) => [
+          g.seller,
+          g.shippingPaise,
+        ]),
+      );
+    await db.insert(s.settings).values({ key: 'checkout.free_delivery_min_paise', value: 100000 });
+    // City: free from ₹1,000 → only the tyre group (₹1,650) ships free.
+    expect(await shippingBySeller()).toEqual({ 'Sharma Auto Parts': 4000, 'Chhattisgarh Tyre House': 0 });
+    // Sharma: free from ₹500 → its ₹880 group ships free too; the other shop still follows the city.
+    await db.update(s.shops).set({ freeDeliveryMinPaise: 50000 }).where(eq(s.shops.id, sharma!.id));
+    expect(await shippingBySeller()).toEqual({ 'Sharma Auto Parts': 0, 'Chhattisgarh Tyre House': 0 });
+    // A shop threshold above the city's is honoured (the shop's value, not the lower one).
+    await db.update(s.shops).set({ freeDeliveryMinPaise: 1_00_000_00 }).where(eq(s.shops.id, sharma!.id));
+    await db
+      .update(s.settings)
+      .set({ value: 50000 })
+      .where(eq(s.settings.key, 'checkout.free_delivery_min_paise'));
+    expect(await shippingBySeller()).toEqual({ 'Sharma Auto Parts': 4000, 'Chhattisgarh Tyre House': 0 });
+    // 0 = always free for that shop, even with no city setting at all.
+    await db.delete(s.settings).where(eq(s.settings.key, 'checkout.free_delivery_min_paise'));
+    await db.update(s.shops).set({ freeDeliveryMinPaise: 0 }).where(eq(s.shops.id, sharma!.id));
+    expect(await shippingBySeller()).toEqual({ 'Sharma Auto Parts': 0, 'Chhattisgarh Tyre House': 4000 });
+    await db.update(s.shops).set({ freeDeliveryMinPaise: null }).where(eq(s.shops.id, sharma!.id));
+    await expect(
+      db.update(s.shops).set({ freeDeliveryMinPaise: -1 }).where(eq(s.shops.id, sharma!.id)),
+    ).rejects.toThrow();
+  });
+
   it('uses IGST when the shop is in another state', async () => {
     const [od] = await db
       .insert(s.states)

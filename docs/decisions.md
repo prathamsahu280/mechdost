@@ -511,6 +511,45 @@ Full answers in `docs/questions-for-user.md` (Answered log, 2026-11-13). The one
 - **Kept as built:** type-level fitment (Q76, Q10 not needed yet), deny-all RLS (Q73), suspension within 60 s (Q29), customer blocks by super admins only (Q65), English road names on the Hindi map (Q64), checked security fixes may skip the 3-day wait (Q67).
 - **Admin catalogue screen (Q82): build now**, before the website switch, including the Q26 PIN prices.
 
+## 2026-11-14 — Shop management and shop hours on the API (rulings; user: hours "keep it configurable")
+
+Specs 03, 04, 07 and 08; migration 0049. Rulings, with the cost if wrong in brackets:
+
+- **Why a shop is paused or suspended is a code plus a note** (hard rule 16). The codes are in
+  `PARTNER_STANDING_REASONS`, stored in `partner_status_events.reason_code`. The note is the 5–300 character text the
+  shop reads. The code is never preselected. Older rows and workshops keep a null code (workshops still use free
+  text). (cheap: add codes to workshops later)
+- **Free delivery per order group** uses the first threshold set: PIN ?? shop ?? city setting. The shop value is
+  `shops.free_delivery_min_paise` (NULL = city, 0 = always free). The first set value wins even when it is higher
+  than the city's. (cheap)
+- **Staff edits:** a GSTIN change is an approval. It needs `partners:approve` covering the shop's city, the GSTIN
+  must be valid and from the shop's state, and setting it makes an enrolled shop `registered`. A GSTIN can be
+  corrected, never removed. (medium: invoices depend on it)
+- **Coverage** may only use PIN codes of the shop's own city. A shop elsewhere is another shop (spec 15). Coverage
+  edits are a compare-and-set on the shop's `version`. (cheap)
+- **Who can do what:**
+  - The admin shop inventory routes moved under one `/admin/shops/*` router (L54: no double authentication or rate
+    counting).
+  - Reading a shop's offers needs `partners:read` (was `partners:write`).
+  - Portal access refuses staff accounts (`MEMBER_IS_STAFF`).
+  - Adding a member writes `shop_users` as well as the role grant, so live pings reach shops. The owner link on
+    sign-in does too: before this, production never wrote `shop_users`. (cheap)
+- **Going live:** a pending shop also goes live when staff add a PIN code or a product, not only on price approval
+  or the agreement. Pending shops cannot be paused or suspended by hand.
+- **Minutes to accept:** a shop's own value (5–120) now applies when routing (the column existed but was ignored).
+- **Working hours** (user 2026-11-14):
+  - One window on chosen weekdays, in IST. The default for every shop is **09:00–21:00, Monday to Saturday**.
+    Closing "24:00" means open until midnight.
+  - The owner edits them, and so does staff. Shop staff (non-owner) cannot.
+  - Routing ranks open shops first among eligible shops (before distance). Routing to a closed shop is allowed: the
+    shop gets the offer at once and has until **opening + `orders.closed_shop_grace_min`** (default 60, 15–240,
+    city override) to accept.
+  - The stock hold is stretched to cover that.
+  - Not built: lunch breaks, holidays, a per-shop grace, the closing-soon case.
+  - (cheap: the rules live in `@mechdost/shared/shop-hours`)
+- **Seller application picker:** in real sign-in builds it lists the live API catalogue (the mode in which the form
+  posts to the API). (cheap)
+
 ## PENDING DECISIONS (ask "what's pending" to review)
 
 | #   | Topic                                                                                                                                                                                       | Leaning                                                                             | When                                 |

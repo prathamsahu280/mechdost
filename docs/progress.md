@@ -4,6 +4,19 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Current status
 
+- **2026-11-14 (night): shop management on the real API** (agent branch `worktree-agent-a2bed9e12251b15fd`; not merged).
+  - Built: Admin → Partners → Shops (profile with Hindi, GSTIN, minutes to accept and free delivery; PIN coverage;
+    products; standing with reason codes; portal access); shop portal header, pause banner, owner's hours, "Sell
+    another product" and the agreement card; checkout free delivery PIN ?? shop ?? city; routing with shop hours
+    (open first; a closed shop waits until it opens + `orders.closed_shop_grace_min`); seller picker on the live
+    catalogue.
+  - Migration **0049**: not applied anywhere.
+  - Docs: specs 03/04/07/08/14, decisions "Shop management and shop hours on the API", runbook "Add the first shop".
+  - **Next:**
+    - merge (renumber 0049 if other migrations land first);
+    - apply 0049 before deploying;
+    - run the real-mode e2e with the emulator.
+
 - **2026-11-14 (evening): real-API launch for Monday 2026-11-16** (plan `docs/superpowers/plans/2026-11-14-real-api-launch.md`; user: "switch to the real api", scope "Everything, accept risk").
   - **On main, verified by `pnpm check`:**
     - C1 (me): customer cart quote, COD checkout, order page + cancel, account orders on the API (`DATA_MODE`).

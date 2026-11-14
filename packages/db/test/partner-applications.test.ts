@@ -260,6 +260,9 @@ describe('review', () => {
     const grants = await db.select().from(s.userRoles).where(eq(s.userRoles.userId, user.id));
     expect(grants).toHaveLength(1);
     expect(grants[0]?.shopId).toBeTruthy();
+    // The owner is a shop member too, so live pings (new offers) reach them (shop management 2026-11-14).
+    const members = await db.select().from(s.shopUsers).where(eq(s.shopUsers.userId, user.id));
+    expect(members.map((m) => [m.shopId, m.role])).toEqual([[grants[0]?.shopId, 'owner']]);
   });
 });
 

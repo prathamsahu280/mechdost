@@ -138,3 +138,17 @@ With `NEXT_PUBLIC_DATA_MODE=api` the cart and checkout use the API, not the brow
 - **Response schemas:** `@mechdost/shared/checkout-api`.
 
 Ruling (2026-11-14): the customer screens switch on `DATA_MODE` (prices and SKUs are catalogue data); the portals switch on `AUTH_MODE`. Launch flips both together. Mixed combinations are not supported.
+
+## Delivery charge and free delivery (2026-11-14, shop management)
+
+- **Charge:** each order group (one shop) pays that shop's charge for the delivery PIN (`shop_pincodes.shipping_paise`,
+  set per PIN in Admin → Partners → Shops → Delivery area).
+- **Free delivery** applies when the group's subtotal reaches the first threshold that is set, in this order:
+  1. the PIN code's own value (`pincodes.free_delivery_min_paise`, built by the PIN-code change; until it lands the
+     slot is empty and marked in `quoteInternal`);
+  2. the shop's (`shops.free_delivery_min_paise`, migration 0049, Admin → Partners → Shops → Profile);
+  3. the city setting `checkout.free_delivery_min_paise` (city value, else global).
+- **0 means always free.** Nothing set anywhere means the charge always applies. A shop value above the city's is
+  honoured (the first set value wins; it is not the lower of the two).
+- Shared rule: `@mechdost/shared/free-delivery` (`freeDeliveryMinPaise`, `groupShippingPaise`; Zod-free, so the db
+  and the browser can use it). Tests: shared `free-delivery.test.ts`, db `checkout.test.ts` "free delivery per group".

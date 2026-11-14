@@ -19,11 +19,11 @@ import {
   adminActions,
   closedGroup,
   historyReasonKey,
-  minutesLeft,
   routeSuggestions,
   shopStageKey,
   type AdminGroup,
 } from '@/lib/order-views';
+import { deadlineView, istDayTime } from '@/lib/admin-shop-form';
 import { ApiError, ApiListState, LoadMore } from './api-list-state';
 import { portalCard, portalField, portalPrimary, portalQuiet, useNow } from './portal-guard';
 import { useApiList, type ApiList } from './use-api-list';
@@ -213,7 +213,13 @@ function RoutingCard({
         <p className="mt-3 rounded-lg bg-warning-bg p-3 text-sm font-bold text-warning">
           <span aria-hidden="true">⏱️ </span>
           {t('offeredTo', { shop: item.offer.shop })} ·{' '}
-          {t('expiresIn', { minutes: minutesLeft(item.offer.expiresAt, now) })}
+          {(() => {
+            // Routed while the shop was closed: the offer waits for its opening (+ grace), so show that time.
+            const d = deadlineView(item.offer.expiresAt, now);
+            return d.kind === 'minutes'
+              ? t('expiresIn', { minutes: d.minutes })
+              : t('shops_api_waitsUntil', { time: istDayTime(d.at, locale) });
+          })()}
         </p>
       ) : null}
       {['confirmed', 'packed', 'shipped', 'delivered'].includes(stage) ? (
@@ -262,6 +268,16 @@ function RoutingCard({
                       {t('recommended')}
                     </span>
                   ) : null}
+                  {/* Working hours (user 2026-11-14): open shops are ranked first; a closed one can still take it. */}
+                  <span
+                    className={`ml-2 rounded-pill px-2 py-0.5 text-[11px] font-extrabold ${
+                      s.openNow ? 'bg-success-bg text-success' : 'bg-pill text-muted'
+                    }`}
+                  >
+                    {s.openNow || !s.opensAt
+                      ? t('shops_api_openNow')
+                      : t('shops_api_closedOpens', { time: istDayTime(s.opensAt, locale) })}
+                  </span>
                   <ShopFacts shop={s} />
                 </span>
                 <button
@@ -279,6 +295,9 @@ function RoutingCard({
               </li>
             ))}
           </ul>
+          {suggestions.some((s) => !s.openNow) ? (
+            <p className="mt-2 text-xs text-muted">{t('shops_api_closedRouteNote')}</p>
+          ) : null}
         </div>
       ) : null}
 

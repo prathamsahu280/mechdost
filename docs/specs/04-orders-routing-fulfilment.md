@@ -112,3 +112,31 @@ With real sign-in (`NEXT_PUBLIC_AUTH_MODE=firebase`) the shop portal and Admin �
 - **Shop**: offers (`GET /v1/shop/orders?view=offers`, polled every 30 s while the tab is visible, timer from `expiresAt`), accept / decline with a reason code that is never preselected, orders in progress with one button per stage (`confirmed` → Mark packed; `packed` → Mark out for delivery = `advance shipped (mode own)` then `advance out_for_delivery`, so the customer gets the code; a half-done `shipped` order only repeats the second call), the customer's 4-digit code (`deliver`; wrong → tries left, locked → call support), delivered/cancelled of the last 30 days with "Load more". Every call sends the order `version`; every action reloads all lists; a failed load says so with "Try again" (never an empty list).
 - **Admin**: four API views (needs routing, waiting for the shop — both polled every 30 s — in progress, closed split into delivered / rejected / cancelled) with "Load more". Open orders load their detail: items, offer history ("Declined by … : reason"; expired = no answer in time) and the API's ranked shops — only `eligible` and not `triedBefore`, top three, the first "Recommended", with distance, items in stock and acceptance rate. Route, reject (reason code + 10–500 character message, only `placed`/`needs_rerouting`), cancel (reason code; allowed statuses from `orderMachine`), and confirm delivery without the code (`deliver-override`, reason ≥ 5 characters) for `out_for_delivery`.
 - **Not covered by the API yet** (gaps, demo-only on these screens): offers the shop missed (expired) are not listed for the shop; rejection message, cancellation details, delivery-code attempt count and override reason are not in the admin queue; courier hand-over (courier + AWB) has no button (own delivery only); the closed view is oldest first.
+
+## Shop working hours in routing (2026-11-14, user)
+
+User: "each seller individually configures it for their shop so during the routing time u can show it to admin that
+this shop might be open and suggest to route via that and if admin routes to a closed shop then it goes to the shop
+till morning until it opens and still then it waits for like an hour or smth and yeah keep it configurable".
+
+- **Hours:** `shops.hours` = one window `{open, close, days}` in IST (0 = Sunday; close may be `24:00`), default
+  09:00–21:00 Monday to Saturday (migration 0049). The owner sets them in the shop portal, staff in Admin → Partners →
+  Shops (spec 07). Rules in `@mechdost/shared/shop-hours` (`shopOpenState`, `acceptanceDeadline`; IST weekday, not
+  UTC).
+- **Suggestions:** the ranked shops carry `openNow` and `opensAt`. Among eligible shops, open ones rank first, then
+  distance and the rest as before. The admin card shows "Open now" or "Closed · opens {day, time}" and a note when a
+  suggested shop is closed. The first suggestion (Recommended) is therefore an open shop whenever one is eligible.
+- **Routing to a closed shop is allowed.** The offer reaches the shop at once (its list shows it). The accept deadline
+  is the **next opening time + `orders.closed_shop_grace_min`** (admin setting, 15–240 min, default 60, city
+  override), never earlier than the normal timeout. While the shop is open, the timeout is the shop's own minutes to
+  accept (`shops.acceptance_timeout_min`), else the city setting `orders.acceptance_timeout_min`. The deadline is
+  computed in the assignment insert (`offerOrderToShop` `expiresAt`), so the existing timer job expires it unchanged.
+- **Stock hold:** routing extends the order's hold to at least the deadline + the timeout, so the morning accept does
+  not fail with `STOCK_NOT_HELD`.
+- **Shop and admin screens:** a deadline more than two hours away shows as "accept by {weekday, time}" instead of a
+  minute countdown.
+- **Tests:** shared `shop-hours.test.ts` (the opening minute in and closing minute out, the IST weekday at 00:30,
+  Saturday night → Monday, 24:00, grace) and db `routing.test.ts` (open shops first with `opensAt`, a closed shop's
+  deadline = opening + grace from the city setting, the hold covers the deadline, a shop's own minutes to accept).
+- **Not done:** split windows (lunch breaks), holidays and a per-shop grace; an offer made just before closing still
+  gets the normal timeout.

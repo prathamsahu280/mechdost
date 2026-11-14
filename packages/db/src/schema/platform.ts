@@ -15,7 +15,7 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 import { CUSTOMER_BLOCK_LEVELS, CUSTOMER_BLOCK_REASONS } from '@mechdost/shared/customers';
-import { GST_STATUSES, LOCATION_SOURCES } from '@mechdost/shared/partners';
+import { GST_STATUSES, LOCATION_SOURCES, PARTNER_STANDING_REASONS } from '@mechdost/shared/partner-codes';
 import { APPLICATION_STATES, INVITE_STATES } from '@mechdost/shared/state';
 import { citext, createdAt, encryptedCheck, geographyPoint, id, ts, updatedAt, version } from './_common';
 import { cities } from './geography';
@@ -539,6 +539,8 @@ export const partnerStatusEvents = pgTable(
     partnerId: uuid().notNull(),
     fromStatus: text().notNull(),
     toStatus: text().notNull(),
+    /** Why, as a code (`PARTNER_STANDING_REASONS`, hard rule 16); null on rows written before migration 0049. */
+    reasonCode: text(),
     reason: text().notNull(),
     internalNote: text(),
     endsAt: ts(),
@@ -554,6 +556,10 @@ export const partnerStatusEvents = pgTable(
       sql`${t.toStatus} in ('approved','paused','suspended') and ${t.fromStatus} <> ${t.toStatus}`,
     ),
     check('partner_status_events_reason_length', sql`char_length(${t.reason}) between 5 and 300`),
+    check(
+      'partner_status_events_reason_code_valid',
+      sql`${t.reasonCode} is null or ${t.reasonCode} in (${inList(PARTNER_STANDING_REASONS)})`,
+    ),
     index().on(t.partnerKind, t.partnerId, t.createdAt),
     index().on(t.changedBy),
   ],
