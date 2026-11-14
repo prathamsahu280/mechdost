@@ -23,6 +23,10 @@ const PROTECTED: [method: string, path: string][] = [
   ['POST', '/v1/admin/pincodes'],
   ['PATCH', '/v1/admin/pincodes/492001'],
   ['POST', '/v1/admin/pincodes/492001/status'],
+  // Admin analytics and Overview counts (2026-11-14).
+  ['GET', '/v1/admin/analytics/dashboard'],
+  ['GET', '/v1/admin/analytics/dashboard?city=RPR&from=2026-11-01&to=2026-11-14'],
+  ['GET', '/v1/admin/overview'],
 ];
 
 describe('protected routes refuse anonymous requests under any path encoding', () => {
