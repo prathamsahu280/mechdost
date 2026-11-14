@@ -3300,6 +3300,7 @@
     "tpl_refund_requested": "रिफंड का अनुरोध",
     "tpl_refund_processed": "रिफंड भेजा गया",
     "tpl_refund_failed": "रिफंड अटका, दोबारा कोशिश",
+    "tpl_refund_declined": "रिफंड मंज़ूर नहीं हुआ",
     "tpl_service_request_received": "सर्विस अनुरोध मिला",
     "tpl_service_proposed": "वर्कशॉप ने समय और खर्च बताया",
     "tpl_service_confirmed": "वर्कशॉप विज़िट पक्की",

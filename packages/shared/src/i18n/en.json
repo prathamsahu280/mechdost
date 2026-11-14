@@ -3300,6 +3300,7 @@
     "tpl_refund_requested": "Refund requested",
     "tpl_refund_processed": "Refund processed",
     "tpl_refund_failed": "Refund failed, retrying",
+    "tpl_refund_declined": "Refund not approved",
     "tpl_service_request_received": "Service request received",
     "tpl_service_proposed": "Workshop proposed a time and cost",
     "tpl_service_confirmed": "Workshop visit confirmed",
