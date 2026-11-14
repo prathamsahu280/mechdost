@@ -754,6 +754,31 @@ User 2026-11-15 ~01:00 IST: "go ahead and work on the 1,2,3,4,5,6" (6 = shop Wha
 - **Trust wording ("genuine", "genuine parts"):** wording only, no money-back guarantee. The user picked both tones: "Genuine parts from verified Raipur shops" and the stronger "100% genuine parts" / "Only original parts". **Advisor flag:** a stronger claim is a representation under the Consumer Protection (E-Commerce) Rules, and with no guarantee every shop must actually meet it. Mitigations: the copy is admin-editable (rule 8), and a "genuine parts only" clause is proposed for the seller agreement (Q77). Queued as Q102.
 - **Process (user):** "make sure u follow the proper rules, skills and stuff for these". Each feature gets the advisor brief, a design note, a plan, TDD, docs and the gate, plus a review before merge. Agents run on Sonnet and the main session verifies their work. Market research first ("do research around more on already existing stuff + what else is out there on the market").
 
+## 2026-11-15 — Launch features round, second answers (user, before sleeping)
+
+- **Design docs approved** ("Approve, build them"): `docs/superpowers/specs/2026-11-15-account-api-design.md`,
+  `2026-11-15-emails-design.md`, `2026-11-15-bell-push-design.md`.
+- **Push:** Firebase Cloud Messaging, browser library loaded only after "Turn on". The prompt card shows **soon after
+  sign-in** (user's choice over "after an order"; market scan warns a "no" is near-permanent on iPhone, so the card never
+  triggers the browser prompt itself and "Not now" snoozes 14 days). VAPID key: Q103, the user sends it 2026-11-16.
+- **Emails:** admin edits text per language in a fixed layout, with preview, test send and reset.
+- **Home service:** the visit fee is shown upfront and added as a line on the final bill. If the job can't be done at
+  home, the workshop offers to move it to the workshop with a new estimate, and the customer accepts or declines. The
+  visit fee is still charged unless the workshop waives it.
+- **Before/after photos public:** the admin setting alone decides; no per-request customer OK (user: "No, admin setting is
+  enough"). **Advisor flag:** photos show the customer's number plate and possibly faces. Mitigations: EXIF stripped, the
+  public setting is off by default, the privacy notice says workshop photos may be shown publicly when the admin enables
+  it, and number-plate blur is queued as P2 (market scan). (Cost if wrong: a DPDP complaint; reversible by turning the
+  setting off.)
+- **COD refunds (Q104):** the customer gives a UPI ID or bank details on the support ticket. They are stored encrypted
+  (spec 05 `destination_enc`) and go through the same finance approval queue. Finance pays out by hand and marks the
+  refund paid with the UTR.
+- **Genuine clause (Q102):** yes. The seller agreement gets a "genuine parts only" clause. A confirmed fake means the
+  product is pulled and the seller can be suspended (with a reason code). The agreement text still comes from the user
+  (Q77).
+- **30-day labour promise (Q105):** yes, admin-configurable (on/off and the number of days, off by default). It is shown on
+  workshop pages and bills when on, and workshops accept it at onboarding.
+
 ## PENDING DECISIONS (ask "what's pending" to review)
 
 | #   | Topic                                                                                                                                                                                                                                                                                                            | Leaning                                                                             | When                                 |
