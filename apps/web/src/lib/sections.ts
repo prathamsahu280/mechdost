@@ -1,3 +1,4 @@
+import { AUTH_MODE } from './auth/mode';
 import { BROWSER_ONLY_FEATURES, QUOTES_AVAILABLE } from './data-mode';
 
 /**
@@ -42,11 +43,21 @@ const ALL_ADMIN_SECTIONS = [
 export type AdminSection = (typeof ALL_ADMIN_SECTIONS)[number];
 
 /** Sections for features that have no API yet (`BROWSER_ONLY_FEATURES`): hidden in real mode. */
-const BROWSER_ONLY_SECTIONS: readonly string[] = ['coins', 'reviews'];
-/** Bulk quotes have their own flag: on the API in real mode (spec 19, 2026-11-14). */
-const hiddenQuotes = (s: string) => s === 'quotes' && !QUOTES_AVAILABLE;
+const BROWSER_ONLY_SECTIONS: readonly string[] = ['coins'];
+/** Bulk quotes have their own flag: on the API in real mode, on the browser store in the demo (spec 19, 2026-11-14). */
+const quotesShown = QUOTES_AVAILABLE;
+/**
+ * Review moderation (2026-11-14): the demo queue in the browser demo, the API queue with real sign-in; hidden only
+ * in the mixed build (real data, demo sign-in), where neither queue would show the reviews customers see.
+ */
+const reviewsShown = BROWSER_ONLY_FEATURES || AUTH_MODE === 'firebase';
 const shown = <T extends string>(all: readonly T[]): readonly T[] =>
-  all.filter((s) => !hiddenQuotes(s) && (BROWSER_ONLY_FEATURES || !BROWSER_ONLY_SECTIONS.includes(s)));
+  all.filter(
+    (s) =>
+      (BROWSER_ONLY_FEATURES || !BROWSER_ONLY_SECTIONS.includes(s)) &&
+      (s !== 'quotes' || quotesShown) &&
+      (s !== 'reviews' || reviewsShown),
+  );
 
 /** Account sections shown in this build (navigation, routes). */
 export const ACCOUNT_SECTIONS = shown(ALL_ACCOUNT_SECTIONS);

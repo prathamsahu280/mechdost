@@ -126,6 +126,26 @@ describe('configuration', () => {
     expect(loadConfig(prod).razorpay).toBeNull();
   });
 
+  it('production refuses Razorpay test keys unless RAZORPAY_ALLOW_TEST_KEYS=true (pre-launch testing, user 2026-11-14)', () => {
+    const test = {
+      ...prod,
+      RAZORPAY_KEY_ID: 'rzp_test_Fake0123456789',
+      RAZORPAY_KEY_SECRET: 'test_key_secret_0123456789',
+      RAZORPAY_WEBHOOK_SECRET: 'whsec_0123456789',
+    };
+    expect(() => loadConfig(test)).toThrow(/test keys are not allowed in production/);
+    expect(() => loadConfig({ ...test, RAZORPAY_ALLOW_TEST_KEYS: 'false' })).toThrow(/test keys/);
+    expect(() => loadConfig({ ...test, RAZORPAY_ALLOW_TEST_KEYS: 'yes' })).toThrow(
+      /RAZORPAY_ALLOW_TEST_KEYS/,
+    );
+    const allowed = loadConfig({ ...test, RAZORPAY_ALLOW_TEST_KEYS: 'true' });
+    expect(allowed.razorpay?.keyId).toBe('rzp_test_Fake0123456789');
+    expect(allowed.razorpay?.testMode).toBe(true);
+    // A live key never reports test mode, flag or not.
+    const live = { ...test, RAZORPAY_KEY_ID: 'rzp_live_Fake0123456789', RAZORPAY_ALLOW_TEST_KEYS: 'true' };
+    expect(loadConfig(live).razorpay?.testMode).toBe(false);
+  });
+
   it('on Cloud Run (K_SERVICE set) the API refuses to start unless NODE_ENV=production (review C3)', () => {
     expect(() => loadConfig({ ...base, K_SERVICE: 'mechdost-api' })).toThrow(/NODE_ENV/);
     expect(() => loadConfig({ ...base, NODE_ENV: 'development', K_SERVICE: 'mechdost-api' })).toThrow(

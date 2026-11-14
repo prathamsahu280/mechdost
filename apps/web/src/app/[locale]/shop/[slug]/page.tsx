@@ -1,13 +1,14 @@
 import { CheckCircle2, Clock, MessageCircle, ShieldCheck, Truck } from 'lucide-react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { cache } from 'react';
+import { cache, Suspense } from 'react';
 import { getTranslations } from 'next-intl/server';
 import { AddToCartButton } from '@/components/catalogue/add-to-cart-button';
 import { CompareToggle } from '@/components/catalogue/compare-toggle';
 import { UnitPrice } from '@/components/catalogue/unit-price';
 import { availabilityLabel, ProductCard } from '@/components/catalogue/product-card';
 import { ProductVisual } from '@/components/catalogue/product-visual';
+import { ReviewsApiSection, ReviewsApiSkeleton } from '@/components/reviews/reviews-api-section';
 import { ReviewsSection } from '@/components/reviews/reviews-section';
 import { StarRating } from '@/components/reviews/star-rating';
 import { SettingValue } from '@/components/site/site-overrides';
@@ -38,7 +39,7 @@ export function generateStaticParams() {
 interface Loaded {
   product: ProductView;
   related: CardView[];
-  /** Demo data only, until the reviews API. */
+  /** Demo data only; real data mode streams `ReviewsApiSection` instead. */
   reviews: { summary: RatingSummary; list: SeedReview[] } | null;
 }
 
@@ -96,8 +97,10 @@ export default async function ProductPage({ params }: Props) {
     getTranslations('compare'),
   ]);
   const categoryName = product.category.name ?? (product.category.key ? c(product.category.key) : null);
-  // The star row links to the reviews section, so it shows only when that section does.
-  const rating = reviews && product.rating && product.rating.count > 0 ? product.rating : null;
+  // The star row links to the reviews section, so it shows only when that section does (approved reviews only:
+  // the catalogue's rating and the API section count the same rows).
+  const rating =
+    (reviews || DATA_MODE === 'api') && product.rating && product.rating.count > 0 ? product.rating : null;
   const price = product.price;
   const off = price ? discountPercent(price.pricePaise, price.mrpPaise ?? undefined) : 0;
   const onRequest = product.availability === 'on_request';
@@ -320,6 +323,11 @@ export default async function ProductPage({ params }: Props) {
           summary={reviews.summary}
           reviews={reviews.list}
         />
+      ) : null}
+      {DATA_MODE === 'api' ? (
+        <Suspense fallback={<ReviewsApiSkeleton />}>
+          <ReviewsApiSection target="product" slug={product.slug} />
+        </Suspense>
       ) : null}
 
       {related.length > 0 ? (

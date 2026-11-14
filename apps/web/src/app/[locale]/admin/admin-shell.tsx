@@ -68,6 +68,8 @@ export async function AdminShell({ section }: { section: AdminSection }) {
             // Admin → Catalogue: vehicle type labels and specification names/values (plan 2026-11-14 B).
             'catalogue',
             'compare',
+            // Admin → Reviews (moderation queue on the API, 2026-11-14).
+            'reviews',
           ]}
         >
           <AdminConsole

@@ -318,10 +318,24 @@
       "breakpoints": true
     },
     {
-      "idx": 45,
+      "idx": 46,
       "version": "7",
-      "when": 1794669134590,
-      "tag": "0045_quotes",
+      "when": 1794668886334,
+      "tag": "0046_reviews",
+      "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1794669041990,
+      "tag": "0048_pincode_service_area",
+      "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1794674556645,
+      "tag": "0049_quotes",
       "breakpoints": true
     }
   ]

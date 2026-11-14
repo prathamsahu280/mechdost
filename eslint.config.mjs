@@ -56,6 +56,7 @@ export default tseslint.config(
       '**/src/migrate.ts',
       '**/src/seed.ts',
       '**/src/seed-demo.ts',
+      '**/src/seed-pincodes.ts',
       '**/src/grant-role.ts',
       '**/scripts/**',
     ],

@@ -296,6 +296,12 @@ User shared Razorpay **test** keys and asked to "see how we have the stuff for r
 - **Switch the website to real sign-in and the API** (user: "switch on the real api"); launch Monday, scope **everything including workshops and service requests, risk accepted** (plan `docs/superpowers/plans/2026-11-14-real-api-launch.md`).
 - **Database:** keep the `mechdost-dev` Supabase project for production; **full reset** done 2026-11-14 with the user's approval (no real data: Firebase had 0 users, the 2 orders were Razorpay tests). Rebuilt from migrations; RBAC seed; Raipur, 5 PIN codes and 9 categories kept from the reference data; no products, shops, users or orders.
 
+## 2026-11-14 (evening) — Quotes, coins and reviews are built on the API before launch (user: "BUILD ALL OF THEM WE NEED THEM ALL")
+
+- This overrides the earlier "hidden in real mode" ruling for these three features. Each one gets its API, its real-mode screens and tests, built by parallel agents. Migration numbers: quotes 0045, reviews 0046, coins 0047, each only if needed.
+- **Payments at launch:** the user chose cash on delivery plus Razorpay with the test key. The API refuses test keys in production, a deliberate guard, so the copied keys took the API down for about 6 minutes. They are disabled on the server, and the public key variable was removed from GitHub. Launch is **cash on delivery only until live keys** unless the user decides otherwise (asked 2026-11-14). The webhook secret is generated and kept in the local `.env` (and disabled on the server with the keys).
+- **Smoke test:** run the emulator end-to-end test against the launch backend, then reset the data before the real catalogue goes in. Only when the user says so.
+
 ## 2026-11-14 — Launch scope in real mode: features with no API are hidden (ruling under "Everything, accept risk")
 
 - **Hidden in real mode** (`BROWSER_ONLY_FEATURES` in `apps/web/src/lib/data-mode.ts`): bulk quotes (spec 19), MechDost Coins (spec 20) and customer reviews. None has an API yet, and in real mode anything a customer typed there would stay on their device only.
@@ -322,7 +328,7 @@ Rulings taken while building (spec 19 followed; where the code had to differ, th
 - **Minimum units → 400** at the API (spec acceptance test), from the admin setting `quotes.min_units` (default 10, city override allowed; Admin → Settings shows it in units). Quantity per line 1–99 (an accepted quote becomes a normal order). (cheap)
 - **Limits:** 3 open quotes per customer, 20 quote requests per hour, 30 customer messages per quote per hour, accept 20 per 10 min. (cheap)
 - **Expiry:** an offer is valid 1–30 days; when it runs out the worker closes the quote as `expired` (`offer_expired`); a quote nobody writes on for 30 days expires as `inactive`. (cheap)
-- **Staff:** new permissions `quotes:read` and `quotes:negotiate` (ops manager, city manager, super admin; city managers only in their city), `quotes:request` for customers. Migration 0045 inserts them for the system roles so the desk works before `pnpm db:seed` runs. Staff see the contact phone masked to the last 4 digits. (cheap)
+- **Staff:** new permissions `quotes:read` and `quotes:negotiate` (ops manager, city manager, super admin; city managers only in their city), `quotes:request` for customers. Migration 0049 inserts them for the system roles so the desk works before `pnpm db:seed` runs. Staff see the contact phone masked to the last 4 digits. (cheap)
 - **Notifications:** live pings (customer + city staff) and an email when an offer is sent (verified addresses only); no new WhatsApp template until Meta approval. (cheap)
 - **List price snapshot:** each line keeps the catalogue price per unit for the PIN at request time (nearest shop with stock for one unit; null = price on request); the quote keeps the total when every line has one. Information only (Q20). (—)
 
@@ -368,6 +374,30 @@ Full review and evidence: `docs/research/security-vulnerabilities.md` § Review 
 - **Paid at the workshop** completes the job in one step (`billed → paid` by the workshop, `paid → completed` by the system), as the demo. Online payment of bills later.
 - **`user_roles.workshop_id` gets its FK** to `workshops` (it had none because the table did not exist).
 - **Zod-free constants for the db layer**: `SERVICE_CUSTOMER_CANCELLABLE` and `ESTIMATE_SENDABLE_FROM` live in `@mechdost/shared/state`; the db package must not import the Zod DTO module at runtime, or its schemas are built before `@hono/zod-openapi` extends Zod and lose `.openapi()` (found by the API test).
+
+## 2026-11-14 — Service-area PIN codes, admin-configurable (user: "do all Raipur PINs but make it admin configurable"; "admin configurable per shop or per pincode")
+
+Advisor brief 2026-11-14; spec 15 "PIN codes", spec 03 "Delivery charges". Rulings (cost if wrong in brackets):
+
+- **One master switch `pincodes.active`** decides serviceability for parts and services. Spec 15's model lists
+  per-service flags (`serviceable_for {parts_delivery, doorstep_service, pickup_drop, rsa}`); those columns stay,
+  unread, until a service is offered in some PINs and not others. [Low: one migration and a filter per flow later.]
+- **Inactive = unknown** for new business (checkout, catalogue PIN price, nearby workshops, new service requests,
+  new shop coverage); existing orders, coverage rows and partner addresses are untouched. Rows are never deleted.
+- **Reason code + optional note** to switch off (rule 16); switching on needs a centroid. History = `audit_log`
+  (no separate `pincode_events` table: there is no state machine). [Low.]
+- **Permissions:** read with `settings:read`, write with the existing `cities:manage` ("Launch cities and manage
+  pincodes": super admin; city manager for their city). No new permission. [Low.]
+- **`source` column:** the reference seed refreshes only rows it added (`seed`); any admin write makes a row
+  `admin` and the seed never touches it again; the seed never switches a PIN on or off. [Low.]
+- **Sanity checks:** centroid inside India's box (Zod) and ≤ 150 km from the city centre (`PINCODE_FAR_FROM_CITY`);
+  Hindi area name must contain Devanagari (rule 10).
+- **Reference data:** Raipur's urban PINs active, the rest of Raipur district loaded switched off
+  (`outside_service_area`) so the admin can switch them on; PINs that could not be verified are left out
+  (`docs/research/raipur-pincodes.md`).
+- **Free delivery chain:** PIN `free_delivery_min_paise` ?? shop override ?? city setting; NULL = no override,
+  0 = always free.
+- **Migration number 0048** (0045–0047 reserved for streams merging in parallel).
 
 ## 2026-11-14 — Cart on sign-out, demo controls, demo service estimates and bills (user)
 
@@ -522,6 +552,32 @@ Full answers in `docs/questions-for-user.md` (Answered log, 2026-11-13). The one
   - templates **English only at launch**, a deliberate exception to hard rule 10 for WhatsApp templates.
 - **Kept as built:** type-level fitment (Q76, Q10 not needed yet), deny-all RLS (Q73), suspension within 60 s (Q29), customer blocks by super admins only (Q65), English road names on the Hindi map (Q64), checked security fixes may skip the 3-day wait (Q67).
 - **Admin catalogue screen (Q82): build now**, before the website switch, including the Q26 PIN prices.
+
+## 2026-11-14 — Customer reviews on the API (launch stream; user: "BUILD ALL OF THEM WE NEED THEM ALL")
+
+Built per decision 2026-10-31 (verified purchase only, admin approves before publish). Details: spec 02 § Reviews.
+**Supersedes for reviews only** the 2026-11-14 ruling "features with no API are hidden in real mode": review sections,
+the write form and Admin → Reviews now work in real mode (quotes and coins unchanged by this entry).
+
+- **Verified = one purchase:** a delivered sub-order containing the product, or a service request in `paid` /
+  `completed` at the workshop (spec 06 "review after paid"; `completed` also covers a returned vehicle with no work).
+  One review per customer, target and purchase; buying the same product again allows another review. (Cost if
+  wrong: low — tighten to one per customer and target with a unique index change.)
+- **Velocity follows spec 13 ("Reviews 5/user/day"):** 5 accepted reviews per customer per 24 h, counted in the
+  database; plus 20 attempts per hour on the write route. (Cost if wrong: a customer with more than 5 delivered
+  products waits a day for the rest; the number is one constant.)
+- **Plain text only**, ≤ 1000 characters, stars required, text optional; no title field (the demo's title is not
+  carried over: fewer fields, same signal). Reviewer shown publicly as first name + last initial.
+- **Moderation is reversible** (hidden → approved allowed); hiding needs a reason **code** (spam, abusive,
+  personal_data, off_topic, not_genuine, other) with an optional staff-only note (hard rule 16). Customer edits after
+  sending, staff text edits, delete and partner reply are **not built** (queued in spec 02 § Reviews "Not built yet").
+- **Who moderates:** the existing `reviews:moderate` permission (super admin, catalogue manager, marketing), verified
+  staff, city-scoped by the purchase's city; the RBAC catalogue is unchanged.
+- **Ratings:** workshop `rating_avg` / `rating_count` are recomputed in the moderation transaction (workshop row
+  locked first); product ratings stay computed live from approved rows (no new product columns). Public reads are
+  cached 60 s (HTTP + Next fetch cache), so an approval shows within a minute.
+- **Admin → Reviews visibility:** demo queue in the browser demo, API queue with real sign-in, hidden in the mixed
+  build (real data + demo sign-in), as no queue there matches what customers see.
 
 ## PENDING DECISIONS (ask "what's pending" to review)
 

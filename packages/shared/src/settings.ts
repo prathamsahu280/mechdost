@@ -35,10 +35,12 @@ export const OPERATIONAL_SETTINGS = {
    */
   'partners.agreement_required': { kind: 'boolean', default: false },
   /**
-   * Customers may cancel their own order until the shop confirms it. Off by default: cancelling goes through
-   * support (Q25, user 2026-11-13). Copied onto each order at checkout (`orders.cancellable_until_status`).
+   * Customers may cancel their own cash-on-delivery order until the shop confirms it. Off by default: cancelling
+   * goes through support (Q25, user 2026-11-13). Copied onto each order at checkout (`orders.cancellable_until_status`).
    */
-  'orders.customer_self_cancel': { kind: 'boolean', default: false },
+  'orders.customer_self_cancel_cod': { kind: 'boolean', default: false },
+  /** The same rule for orders paid online (refund to the original method on cancel); separate (user 2026-11-14). */
+  'orders.customer_self_cancel_online': { kind: 'boolean', default: false },
   /** How long a shop has to accept an offered order (minutes). */
   // Same bounds as the demo `/admin/settings` screen and spec 08 (5–120 min).
   'orders.acceptance_timeout_min': { kind: 'int', min: 5, max: 120, default: 15 },

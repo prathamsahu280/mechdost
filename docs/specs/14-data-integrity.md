@@ -41,7 +41,7 @@ No test in this spec may be skipped in CI; schema PRs require the `drizzle-postg
 - `order_items.shop_unit_paise` (nullable for older rows, CHECK `>= 0` and `<= unit_paise`): the chosen shop's approved price, beside the customer `unit_paise`.
 - Guarded by `packages/db/test/admin-prices.test.ts`, `admin-price-resolution.test.ts` and the schema invariants (RLS, triggers) in `schema-invariants.test.ts`.
 
-## Data model note: bulk quotes (migration 0045, 2026-11-14)
+## Data model note: bulk quotes (migration 0049, 2026-11-14)
 
 - `quote_requests`: code `QT-{CITY}-{YYYY}-{6}` (format CHECK + unique + retry), `(user_id, idempotency_key)` unique + request hash (same key, different request → refused), status CHECK from `QUOTE_STATES`, reason code bound to its status, `closed_at` set exactly when closed, an offered/accepted quote has an offer. Status changes: `quoteMachine` + conditional UPDATE on (id, status, version); every transaction locks the quote row first.
 - `quote_offers`: UNIQUE (quote, offer_version), **one `active` per quote** (partial unique), total = subtotal + delivery CHECK, valid_until after created_at. Accepting checks the active version and validity under the quote lock, then places the order in the same transaction.

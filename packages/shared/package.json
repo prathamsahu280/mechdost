@@ -44,7 +44,11 @@
     "./service-requests": "./src/service-requests.ts",
     "./service-api": "./src/service-api.ts",
     "./quote-rules": "./src/quote-rules.ts",
-    "./quote-api": "./src/quote-api.ts"
+    "./quote-api": "./src/quote-api.ts",
+    "./reviews": "./src/reviews.ts",
+    "./reviews-api": "./src/reviews-api.ts",
+    "./geo": "./src/geo.ts",
+    "./geo-api": "./src/geo-api.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",

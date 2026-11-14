@@ -85,7 +85,10 @@ This supersedes the self-service return/replacement/exchange flows above; the re
 ## Customer self-cancel is an admin rule, off by default (2026-11-13, Q25)
 
 - **User's answer:** "Only through support". Faulty, damaged or wrong items can be claimed within **7 days** of delivery.
-- **Setting:** `orders.customer_self_cancel` (boolean, default **false**, city override allowed; `@mechdost/shared/settings`).
+- **Settings (split 2026-11-14, user: "cancellation on online paid orders or cancellation on cod orders each should be configurable"):**
+  - `orders.customer_self_cancel_cod` and `orders.customer_self_cancel_online`: booleans, both default **false**, city override allowed (`@mechdost/shared/settings`).
+  - Checkout copies the rule for the order's payment method onto the order (`cancellable_until_status`).
+  - Test: `packages/db/test/customer-orders.test.ts`, "COD and online self-cancel are separate settings".
 - **Snapshot:** checkout copies it onto each order as `orders.cancellable_until_status`: `confirmed` when on, `none` when off. A change applies to orders placed afterwards only.
 - **API:** `cancelMyOrder` answers 409 `NOT_CANCELLABLE` for `none`; staff cancel (`cancelOrderAsStaff`) is unchanged.
 - **Website:** the order page shows "To cancel this order, contact support." with a link to the support form for that order, instead of the cancel button.
