@@ -161,6 +161,7 @@ export function adminShopRoutes(deps: AppDeps, cache: SessionCache) {
         shopId: c.req.valid('param').shopId,
         expectedVersion: version,
         patch: changes,
+        keyring: deps.keyring ?? null,
       });
       return c.json(r, 200);
     })

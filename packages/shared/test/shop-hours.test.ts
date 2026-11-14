@@ -75,6 +75,28 @@ describe('shop hours', () => {
     ).toEqual({ expiresAt: ist('2026-11-23T10:30:00'), closed: true });
   });
 
+  it('near closing counts as closed (user 2026-11-14: "treat as closed"): the timer would pass closing time', () => {
+    const at = (local: string, timeoutMinutes = 15) =>
+      acceptanceDeadline({ hours: MON_SAT, at: ist(local), timeoutMinutes, graceMinutes: 60 });
+    // 20:55 + 15 min passes the 21:00 close → waits for tomorrow 09:00 + 60.
+    expect(at('2026-11-16T20:55:00')).toEqual({ expiresAt: ist('2026-11-17T10:00:00'), closed: true });
+    // Ending exactly at closing time is still inside the day.
+    expect(at('2026-11-16T20:45:00')).toEqual({ expiresAt: ist('2026-11-16T21:00:00'), closed: false });
+    expect(at('2026-11-16T20:40:00')).toEqual({ expiresAt: ist('2026-11-16T20:55:00'), closed: false });
+    // Saturday evening near closing → Monday morning.
+    expect(at('2026-11-21T20:55:00')).toEqual({ expiresAt: ist('2026-11-23T10:00:00'), closed: true });
+    // Round the clock never "closes".
+    const always = { open: '00:00', close: '24:00', days: [0, 1, 2, 3, 4, 5, 6] };
+    expect(
+      acceptanceDeadline({
+        hours: always,
+        at: ist('2026-11-16T23:55:00'),
+        timeoutMinutes: 15,
+        graceMinutes: 60,
+      }),
+    ).toEqual({ expiresAt: ist('2026-11-17T00:10:00'), closed: false });
+  });
+
   it('closing at 24:00 means open to midnight (round the clock with 00:00–24:00 every day)', () => {
     const roundTheClock = { open: '00:00', close: '24:00', days: [0, 1, 2, 3, 4, 5, 6] };
     expect(isShopHours(roundTheClock)).toBe(true);

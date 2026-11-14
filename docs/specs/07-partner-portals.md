@@ -124,7 +124,7 @@ API screen is a separate module loaded with `next/dynamic` / `import()` only in 
 
 ## Shop management on the API (2026-11-14)
 
-Decision "Shop management and shop hours on the API" (2026-11-14). Migration **0049**: `shops.free_delivery_min_paise`,
+Decision "Shop management and shop hours on the API" (2026-11-14). Migration **0051**: `shops.free_delivery_min_paise`,
 `shops.hours`, `partner_status_events.reason_code`. Real sign-in only; the demo screens are unchanged.
 
 **Admin → Partners → Shops**
@@ -219,3 +219,25 @@ Decision "Shop management and shop hours on the API" (2026-11-14). Migration **0
   - workshop standing still takes free text without a reason code;
   - the application's ticked products are not offered as quick picks in "Sell another product";
   - removing someone's portal access needs `pnpm db:grant-role`-style tooling (no endpoint).
+
+**Code review fixes (2026-11-14, user rulings)**
+
+- **List cursor:** carries the last row's name and id. It is compared directly and never looked up by id: the old
+  look-up could read a shop in another city (security review), and a rename between pages skipped rows.
+- **Migration 0051** backfills `shop_users` from the shop grants in `user_roles`. The owner wins when a person
+  holds both roles; it is idempotent and only covers shops that exist.
+- **GSTIN:** a GSTIN already held by another shop, or by a seller application that is not this shop's own and not
+  rejected, is refused with 409 `GSTIN_TAKEN` (blind index with the API keyring).
+- **Pending shops:**
+  - A pending shop may be **suspended** to keep it dark while its PIN codes and products are set up.
+  - The coverage and products panels warn that saving publishes a pending shop.
+  - Reactivating it later is an explicit staff decision to go live.
+- **Active PIN codes only:**
+  - Coverage counts and the go-live check include only active PIN codes (`pincodes.active`).
+  - A shop serving only switched-off PIN codes stays pending.
+- **Audit:** going live after the shop accepts the agreement is audited as the shop, not staff.
+- **Portal access:**
+  - An owner is never downgraded to staff (409 `ALREADY_OWNER`).
+  - Deactivated accounts are refused (409 `ACCOUNT_NOT_ACTIVE`).
+- **Hindi times:** shown on the 24-hour clock (no Latin am/pm).
+- **Closing soon:** an offer whose timer would run past closing counts as closed (spec 04).

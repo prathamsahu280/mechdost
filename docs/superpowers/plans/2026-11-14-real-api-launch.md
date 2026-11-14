@@ -66,5 +66,6 @@ Goal: mechdost.com runs on real sign-in (Firebase) and the API for every flow, w
   - Checkout free delivery: PIN ?? shop ?? city.
   - Routing: open shops first; a closed shop waits until it opens + `orders.closed_shop_grace_min`.
   - Seller application picker on the live catalogue.
-  - Migration **0049**, not applied anywhere yet.
+  - Migration **0051**, not applied anywhere yet.
   - Specs 03/04/07/08, decisions, runbook "Add the first shop".
+- 2026-11-14 (shop management, code review): main merged; migration renumbered to **0051** with a `shop_users` backfill; list cursor no longer reads other cities; `GSTIN_TAKEN`; pending shops can be kept dark (suspended) with a publish warning; only active PINs count for going live; owners never downgraded; near-closing offers wait for the next opening; Hindi 24-hour times; free delivery PIN ?? shop ?? city with main's `pincodes.free_delivery_min_paise`.

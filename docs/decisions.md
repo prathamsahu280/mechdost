@@ -569,7 +569,7 @@ the write form and Admin → Reviews now work in real mode (quotes and coins unc
 
 ## 2026-11-14 — Shop management and shop hours on the API (rulings; user: hours "keep it configurable")
 
-Specs 03, 04, 07 and 08; migration 0049. Rulings, with the cost if wrong in brackets:
+Specs 03, 04, 07 and 08; migration 0051. Rulings, with the cost if wrong in brackets:
 
 - **Why a shop is paused or suspended is a code plus a note** (hard rule 16). The codes are in
   `PARTNER_STANDING_REASONS`, stored in `partner_status_events.reason_code`. The note is the 5–300 character text the
@@ -601,7 +601,15 @@ Specs 03, 04, 07 and 08; migration 0049. Rulings, with the cost if wrong in brac
     shop gets the offer at once and has until **opening + `orders.closed_shop_grace_min`** (default 60, 15–240,
     city override) to accept.
   - The stock hold is stretched to cover that.
-  - Not built: lunch breaks, holidays, a per-shop grace, the closing-soon case.
+  - **Closing soon counts as closed** (user 2026-11-14, "Yes, treat as closed"): if the timer would run past
+    today's closing time, the deadline is the next opening + grace.
+  - Not built: lunch breaks, holidays, a per-shop grace.
+- **Code review rulings (2026-11-14):**
+  - A pending shop can be suspended to keep it dark; the UI warns that saving a PIN and a product publishes it.
+  - A GSTIN held by another shop or a live application is refused (409 `GSTIN_TAKEN`).
+  - Only active PIN codes count for going live.
+  - Owners are never downgraded by "Portal access"; deactivated accounts are refused.
+  - Migration 0051 backfills `shop_users` from the shop grants.
   - (cheap: the rules live in `@mechdost/shared/shop-hours`)
 - **Seller application picker:** in real sign-in builds it lists the live API catalogue (the mode in which the form
   posts to the API). (cheap)

@@ -29,7 +29,8 @@ function keyFits(k: string, kind: CursorKind): boolean {
   return true;
 }
 
-export function decodeCursor(raw: string, kind: CursorKind = 'text'): Keyset {
+/** `maxKeyLength`: longer sort keys for lists keyed by a name (shop names, up to 300 characters). */
+export function decodeCursor(raw: string, kind: CursorKind = 'text', maxKeyLength = 64): Keyset {
   try {
     const parsed: unknown = JSON.parse(Buffer.from(raw, 'base64url').toString('utf8'));
     if (
@@ -39,7 +40,7 @@ export function decodeCursor(raw: string, kind: CursorKind = 'text'): Keyset {
       'id' in parsed &&
       typeof parsed.k === 'string' &&
       typeof parsed.id === 'string' &&
-      parsed.k.length <= 64 &&
+      parsed.k.length <= maxKeyLength &&
       UUID.test(parsed.id) &&
       keyFits(parsed.k, kind)
     )

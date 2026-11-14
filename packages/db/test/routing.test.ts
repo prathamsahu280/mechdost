@@ -39,12 +39,16 @@ const shopId: Record<string, string> = {};
 /** Open around the clock: the routing tests below do not depend on the time they run at. */
 const ALWAYS: ShopHours = { open: '00:00', close: '24:00', days: [0, 1, 2, 3, 4, 5, 6] };
 const istWeekday = (d: Date) => new Date(d.getTime() + 330 * 60_000).getUTCDay();
-/** Closed all of today (IST): open only on tomorrow's weekday. */
-const closedToday = (): ShopHours => ({
+/**
+ * Closed today and tomorrow (IST): open only on the weekday three days ahead. The next opening is the same instant
+ * even if IST midnight passes during the test (code review 2026-11-14: no dependence on the midnight instant).
+ */
+const CLOSED_FOR_DAYS: ShopHours = {
   open: '09:00',
   close: '21:00',
-  days: [(istWeekday(new Date()) + 1) % 7],
-});
+  days: [(istWeekday(new Date()) + 3) % 7],
+};
+const closedToday = (): ShopHours => CLOSED_FOR_DAYS;
 const shopOpenStateAt = (h: ShopHours) => {
   const st = shopOpenState(h, new Date());
   if (st.open) throw new Error('expected closed');

@@ -5,11 +5,13 @@
  * (history kept; paused shops never priced), portal members by phone (role grant + shop_users for live pings), and
  * a pending shop going live once it has a product on sale and a PIN.
  */
+import { randomBytes } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { and, eq } from 'drizzle-orm';
 import { gstinCheckChar } from '@mechdost/shared/gst';
+import { loadKeyring } from '../src/crypto';
 import { seedRaipurDemo, type DemoFixture } from '../src/demo-seed';
 import {
   addShopMember,
@@ -17,11 +19,13 @@ import {
   getMyShops,
   grantRole,
   listAdminShops,
+  maybeGoLive,
   quoteCheckout,
   saveShopOffer,
   setOwnShopHours,
   setShopCoverage,
   setShopStanding,
+  submitSellerApplication,
   syncRbacCatalogue,
   updateShopProfile,
   type CityScope,
@@ -34,6 +38,11 @@ const fixture = JSON.parse(
   readFileSync(fileURLToPath(new URL('../seed/raipur-demo.json', import.meta.url)), 'utf8'),
 ) as DemoFixture;
 const OIL = 'CAS-ACT4T-0900';
+const keyring = loadKeyring({
+  DATA_ENCRYPTION_KEYS: `k1:${randomBytes(32).toString('base64')}`,
+  DATA_ENCRYPTION_KEY_ID: 'k1',
+  DATA_INDEX_KEY: randomBytes(32).toString('base64'),
+});
 const GSTIN = `22AAAAA0000A1Z${gstinCheckChar('22AAAAA0000A1Z')}`;
 const WRONG_GSTIN = `22AAAAA0000A1Z${gstinCheckChar('22AAAAA0000A1Z') === '9' ? '8' : '9'}`;
 
@@ -492,5 +501,213 @@ describe('members and the shop’s own profile', () => {
     });
     expect(me!.offersOnSale).toBeGreaterThan(0);
     expect(await getMyShops(t(), [])).toEqual([]);
+  });
+});
+
+describe('code review 2026-11-14', () => {
+  it('the list cursor carries the last name: a rename between pages skips nothing and leaks no other city', async () => {
+    const first = await listAdminShops(t(), raipur, { limit: 2 });
+    const last = first.items.at(-1)!;
+    // Renaming the last shop of page 1 must not move the page boundary (it used to be re-read from the table).
+    await db.update(s.shops).set({ name: 'Zzz Renamed Shop' }).where(eq(s.shops.id, last.id));
+    const second = await listAdminShops(t(), raipur, { limit: 10, cursor: first.nextCursor });
+    await db.update(s.shops).set({ name: last.name }).where(eq(s.shops.id, last.id));
+    expect(second.items.map((r) => r.name)).toContain('Raipur Battery Point');
+    expect(second.items.map((r) => r.name)).toContain('Sharma Auto Parts');
+    // A cursor is only a (name, id) pair: it never looks up a shop by id (another city's shop cannot steer paging).
+    const decoded = JSON.parse(Buffer.from(first.nextCursor!, 'base64url').toString('utf8')) as { k: string };
+    expect(decoded.k).toBe(last.name);
+  });
+
+  it('migration 0051 backfills shop_users from shop grants (owner wins, idempotent)', async () => {
+    const sqlText = readFileSync(
+      fileURLToPath(new URL('../drizzle/0051_shop_management.sql', import.meta.url)),
+      'utf8',
+    );
+    const backfill = sqlText.slice(sqlText.indexOf('INSERT INTO "shop_users"'));
+    const id = shop['Chhattisgarh Tyre House']!;
+    const [a] = await db.insert(s.users).values({ firebaseUid: 'fb-backfill-a' }).returning();
+    const [b] = await db.insert(s.users).values({ firebaseUid: 'fb-backfill-b' }).returning();
+    // Grants written straight to user_roles, as production did before shop_users was kept.
+    await grantRole(t(), { userId: a!.id, role: 'seller_owner', shopId: id, grantedBy: null });
+    await grantRole(t(), { userId: a!.id, role: 'seller_staff', shopId: id, grantedBy: null });
+    await grantRole(t(), { userId: b!.id, role: 'seller_staff', shopId: id, grantedBy: null });
+    await client.exec(backfill);
+    await client.exec(backfill);
+    const rows = await db.select().from(s.shopUsers).where(eq(s.shopUsers.shopId, id));
+    expect(rows.map((r) => [r.userId, r.role]).sort()).toEqual(
+      [
+        [a!.id, 'owner'],
+        [b!.id, 'staff'],
+      ].sort(),
+    );
+  });
+
+  it('a GSTIN another shop or a seller application already holds is refused (409)', async () => {
+    const mine = shop['Raipur Battery Point']!;
+    const other = shop['Sharma Auto Parts']!;
+    const held = `22BBBBB1111B1Z${gstinCheckChar('22BBBBB1111B1Z')}`;
+    await db.update(s.shops).set({ gstin: held }).where(eq(s.shops.id, other));
+    const base = { scope: raipur, approveScope: raipur, staffUserId: staff, shopId: mine, keyring };
+    await expect(
+      updateShopProfile(t(), { ...base, expectedVersion: await version(mine), patch: { gstin: held } }),
+    ).rejects.toMatchObject({ code: 'GSTIN_TAKEN', status: 409 });
+    await db.update(s.shops).set({ gstin: null }).where(eq(s.shops.id, other));
+
+    const applied = `22CCCCC2222C1Z${gstinCheckChar('22CCCCC2222C1Z')}`;
+    await submitSellerApplication(t(), {
+      application: {
+        name: 'Asha Verma',
+        phone: '+919811155501',
+        email: 'asha@example.com',
+        businessName: 'Verma Spares',
+        shopName: 'Verma Spares',
+        gstStatus: 'registered',
+        gstNumber: applied,
+        addressLine: 'Shop 9, Station Road, Raipur',
+        pincode: '492001',
+        location: { lat: 21.24, lng: 81.63, accuracyM: 10, source: 'gps' },
+        productSlugs: ['castrol-activ-4t-20w40-900ml'],
+        consent: true,
+      },
+      source: 'public',
+      keyring,
+    });
+    await expect(
+      updateShopProfile(t(), { ...base, expectedVersion: await version(mine), patch: { gstin: applied } }),
+    ).rejects.toMatchObject({ code: 'GSTIN_TAKEN' });
+  });
+
+  it('a pending shop can be kept dark (suspended): coverage and products do not publish it', async () => {
+    const [p] = await db
+      .insert(s.shops)
+      .values({
+        name: 'Dark Pending Spares',
+        phone: '+919000000098',
+        addressLine: 'Tatibandh, Raipur',
+        pincode: '492001',
+        cityId: raipur.all ? '' : raipur.cityIds[0]!,
+        stateId: (await db.select().from(s.states))[0]!.id,
+        location: { lng: 81.6, lat: 21.25 },
+      })
+      .returning();
+    await setShopStanding(t(), {
+      scope: raipur,
+      shopId: p!.id,
+      to: 'suspended',
+      reasonCode: 'documents_pending',
+      reason: 'Licence not received yet',
+      staffUserId: staff,
+      expectedVersion: await version(p!.id),
+    });
+    await setShopCoverage(t(), {
+      scope: raipur,
+      staffUserId: staff,
+      shopId: p!.id,
+      expectedVersion: await version(p!.id),
+      upsert: [{ pincode: '492001', shippingPaise: 3000, leadDays: 2, active: true }],
+      remove: [],
+    });
+    await saveShopOffer(t(), {
+      shopId: p!.id,
+      sku: OIL,
+      expectedVersion: null,
+      changes: { sellingPaise: 43000, onHand: 4 },
+      actorUserId: staff,
+      actorRole: 'staff',
+    });
+    expect((await getAdminShop(t(), raipur, p!.id)).status).toBe('suspended');
+  });
+
+  it('only active PIN codes count: a shop delivering only to a switched-off PIN does not go live', async () => {
+    await db
+      .update(s.pincodes)
+      .set({ active: false, inactiveReason: 'other' })
+      .where(eq(s.pincodes.pincode, '492007'));
+    const [p] = await db
+      .insert(s.shops)
+      .values({
+        name: 'Inactive Pin Spares',
+        phone: '+919000000097',
+        addressLine: 'Mowa, Raipur',
+        pincode: '492001',
+        cityId: raipur.all ? '' : raipur.cityIds[0]!,
+        stateId: (await db.select().from(s.states))[0]!.id,
+        location: { lng: 81.66, lat: 21.26 },
+      })
+      .returning();
+    await setShopCoverage(t(), {
+      scope: raipur,
+      staffUserId: staff,
+      shopId: p!.id,
+      expectedVersion: await version(p!.id),
+      upsert: [{ pincode: '492007', shippingPaise: 3000, leadDays: 2, active: true }],
+      remove: [],
+    });
+    await saveShopOffer(t(), {
+      shopId: p!.id,
+      sku: OIL,
+      expectedVersion: null,
+      changes: { sellingPaise: 43000, onHand: 4 },
+      actorUserId: staff,
+      actorRole: 'staff',
+    });
+    const d = await getAdminShop(t(), raipur, p!.id);
+    await db
+      .update(s.pincodes)
+      .set({ active: true, inactiveReason: null })
+      .where(eq(s.pincodes.pincode, '492007'));
+    expect(d.status).toBe('pending');
+    expect(d.coveragePincodes).toBe(0);
+  });
+
+  it('members: an owner is never downgraded to staff; deactivated accounts are refused', async () => {
+    const id = shop['Gupta Lubes & Spares']!;
+    const [u] = await db
+      .insert(s.users)
+      .values({ firebaseUid: 'fb-member-owner', phone: '+919811100071' })
+      .returning();
+    const add = (role: 'seller_owner' | 'seller_staff', phone = '+919811100071') =>
+      addShopMember(t(), { scope: raipur, staffUserId: staff, shopId: id, phone, role });
+    await add('seller_owner');
+    await expect(add('seller_staff')).rejects.toMatchObject({ code: 'ALREADY_OWNER' });
+    const member = await db
+      .select()
+      .from(s.shopUsers)
+      .where(and(eq(s.shopUsers.shopId, id), eq(s.shopUsers.userId, u!.id)));
+    expect(member.map((m) => m.role)).toEqual(['owner']);
+    await db
+      .insert(s.users)
+      .values({ firebaseUid: 'fb-member-gone', phone: '+919811100072', status: 'deactivated' });
+    await expect(add('seller_staff', '+919811100072')).rejects.toMatchObject({ code: 'ACCOUNT_NOT_ACTIVE' });
+  });
+
+  it('going live after the shop accepts the agreement is credited to the shop, not staff', async () => {
+    const [p] = await db
+      .insert(s.shops)
+      .values({
+        name: 'Agreement Live Spares',
+        phone: '+919000000096',
+        addressLine: 'Pandri, Raipur',
+        pincode: '492004',
+        cityId: raipur.all ? '' : raipur.cityIds[0]!,
+        stateId: (await db.select().from(s.states))[0]!.id,
+        location: { lng: 81.64, lat: 21.25 },
+      })
+      .returning();
+    await db
+      .insert(s.shopPincodes)
+      .values({ shopId: p!.id, pincode: '492004', shippingPaise: 0, leadDays: 1 });
+    const v = (await db.select().from(s.productVariants).where(eq(s.productVariants.sku, OIL)))[0]!;
+    await db
+      .insert(s.shopInventory)
+      .values({ shopId: p!.id, variantId: v.id, sellingPaise: 43000, onHand: 3 });
+    const [owner] = await db.insert(s.users).values({ firebaseUid: 'fb-agree-owner' }).returning();
+    await maybeGoLive(t(), p!.id, owner!.id, 'shop');
+    const [audit] = await db
+      .select()
+      .from(s.auditLog)
+      .where(and(eq(s.auditLog.entityId, p!.id), eq(s.auditLog.action, 'shop.went_live')));
+    expect(audit).toMatchObject({ actorUserId: owner!.id, actorRole: 'shop' });
   });
 });

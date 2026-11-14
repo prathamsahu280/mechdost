@@ -23,6 +23,8 @@ import { grantRole } from './rbac';
 import type { CityScope } from './routing';
 import { num, numOrNull, rowsOf } from './sql-rows';
 import { findPasswordAccount } from './users';
+import { gstinHeldElsewhere } from './partner-applications';
+import type { Keyring } from '../crypto';
 
 /**
  * Shop management on the real API (decision 2026-11-14 "Shop management"; specs 07/08 "Real API mode"). Staff
@@ -107,7 +109,8 @@ interface ShopSqlRow {
 
 const ROW_COLUMNS = sql`s.id, s.city_id, s.name, s.name_hi, s.address_line, s.address_line_hi, s.pincode, s.status,
   s.gst_status, (s.busy and (s.busy_until is null or s.busy_until > now())) as busy,
-  (select count(*) from shop_pincodes sp where sp.shop_id = s.id and sp.active)::int as coverage,
+  (select count(*) from shop_pincodes sp join pincodes pc on pc.pincode = sp.pincode and pc.active
+    where sp.shop_id = s.id and sp.active)::int as coverage,
   (select count(*) from shop_inventory si where si.shop_id = s.id and si.active and not si.admin_blocked)::int
     as on_sale,
   s.free_delivery_min_paise, s.hours, s.version`;
@@ -164,19 +167,21 @@ export async function listAdminShops(
   opts: { status?: ShopStatus | null; cursor?: string | null; limit?: number },
 ): Promise<{ items: AdminShopRow[]; nextCursor: string | null }> {
   const limit = pageSize(opts.limit, SHOP_PAGE, SHOP_PAGE_MAX);
-  const after = opts.cursor ? decodeCursor(opts.cursor) : null;
+  // The cursor carries the last row's name and id (never re-read: a rename between pages skips nothing, and no
+  // lookup by id can reach a shop outside the caller's cities; security review 2026-11-14).
+  const after = opts.cursor ? decodeCursor(opts.cursor, 'text', 300) : null;
   const rows = rowsOf<ShopSqlRow>(
     await db.execute(sql`select ${ROW_COLUMNS} from shops s
       where ${inCities(scope)}
         and ${opts.status ? sql`s.status = ${opts.status}` : sql`true`}
-        and ${after ? sql`(s.name, s.id) > (select c.name, c.id from shops c where c.id = ${after.id}::uuid)` : sql`true`}
+        and ${after ? sql`(s.name, s.id) > (${after.k}, ${after.id}::uuid)` : sql`true`}
       order by s.name, s.id limit ${limit + 1}`),
   );
   const items = rows.slice(0, limit).map(toRow);
   const last = items.at(-1);
   return {
     items,
-    nextCursor: rows.length > limit && last ? encodeCursor({ k: 'shop', id: last.id }) : null,
+    nextCursor: rows.length > limit && last ? encodeCursor({ k: last.name, id: last.id }) : null,
   };
 }
 
@@ -277,6 +282,8 @@ export async function updateShopProfile(
     shopId: string;
     expectedVersion: number;
     patch: ShopProfilePatch;
+    /** For the duplicate check against seller applications (blind index); null in development. */
+    keyring?: Keyring | null;
   },
 ): Promise<{ version: number }> {
   return db.transaction(async (tx) => {
@@ -298,6 +305,8 @@ export async function updateShopProfile(
         .where(eq(states.id, cur.stateId));
       if (st && gstinStateCode(input.patch.gstin) !== st.code)
         throw new ValidationError("This GSTIN belongs to another state than the shop's", 'GSTIN_STATE');
+      if (await gstinHeldElsewhere(tx, input.patch.gstin, input.keyring ?? null, cur.id))
+        throw new ConflictError('Another shop or seller application already has this GSTIN', 'GSTIN_TAKEN');
       set.gstStatus = 'registered';
     }
     const [row] = await tx
@@ -417,7 +426,7 @@ export async function setShopCoverage(
         removed,
       },
     });
-    await maybeGoLive(tx, cur.id, input.staffUserId);
+    await maybeGoLive(tx, cur.id, input.staffUserId, 'staff');
     const [after] = await tx.select({ version: shops.version }).from(shops).where(eq(shops.id, cur.id));
     return { version: after?.version ?? bumped.version };
   });
@@ -434,9 +443,31 @@ export async function addShopMember(
   const shop = await scopedShop(db, input.scope, input.shopId);
   const account = await findPasswordAccount(db, { kind: 'phone', value: input.phone });
   if (!account) throw new NotFoundError('No account uses this phone number; the person signs up first');
+  if (account.status !== 'active')
+    throw new ConflictError('This account is not active', 'ACCOUNT_NOT_ACTIVE');
   if (account.staff)
     throw new ConflictError('This is a MechDost staff account; use a separate account', 'MEMBER_IS_STAFF');
   await db.transaction(async (tx) => {
+    if (input.role === 'seller_staff') {
+      const [owner] = await tx
+        .select({ role: shopUsers.role })
+        .from(shopUsers)
+        .where(and(eq(shopUsers.shopId, shop.id), eq(shopUsers.userId, account.userId)));
+      const owns = await tx
+        .select({ id: userRoles.id })
+        .from(userRoles)
+        .innerJoin(roles, eq(roles.id, userRoles.roleId))
+        .where(
+          and(
+            eq(userRoles.shopId, shop.id),
+            eq(userRoles.userId, account.userId),
+            eq(roles.key, 'seller_owner'),
+          ),
+        )
+        .limit(1);
+      if (owner?.role === 'owner' || owns.length > 0)
+        throw new ConflictError('This person already owns the shop', 'ALREADY_OWNER');
+    }
     await grantRole(tx, {
       userId: account.userId,
       role: input.role,
@@ -523,7 +554,8 @@ export async function getMyShops(db: Tx, shopIds: readonly string[]): Promise<My
         st.accepted, st.answered, s.hours, s.version
       from shops s
       left join lateral (select count(*)::int as n, min(sp.shipping_paise) as min_ship, max(sp.shipping_paise) as max_ship
-        from shop_pincodes sp where sp.shop_id = s.id and sp.active) cov on true
+        from shop_pincodes sp join pincodes pc on pc.pincode = sp.pincode and pc.active
+        where sp.shop_id = s.id and sp.active) cov on true
       left join lateral (select count(*) filter (where a.status = 'accepted')::int as accepted,
           count(*) filter (where a.status in ('accepted', 'declined', 'expired'))::int as answered
         from order_assignments a where a.shop_id = s.id and a.offered_at > now() - interval '30 days') st on true

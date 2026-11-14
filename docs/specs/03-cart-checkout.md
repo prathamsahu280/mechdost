@@ -82,10 +82,14 @@ Plan `docs/superpowers/plans/2026-11-12-razorpay-checkout-backend.md`; user chos
 - Each shop group's delivery charge is the covering shop's `shop_pincodes.shipping_paise` for the delivery PIN.
 - It becomes **free** when the group subtotal reaches the free-delivery threshold, chosen in this order:
   1. the **PIN's** `pincodes.free_delivery_min_paise` (Admin → Settings → Service area);
-  2. the **shop's** override (`shops.free_delivery_min_paise`, built in parallel; merged into the same chain);
+  2. the **shop's** override (`shops.free_delivery_min_paise`, migration 0051, Admin → Partners → Shops → Profile);
   3. the city setting `checkout.free_delivery_min_paise` (city value, else global; none = never free).
 - NULL means "no override, look further"; **0 means always free** at that level. Integer paise, ₹0–₹1,00,000
   (CHECK). Tests: `packages/db/test/pincodes.test.ts` "free delivery per PIN" (0 = free, threshold, NULL falls back).
+- The first value set wins, even when a shop's value is higher than the city's (it is not the lower of the two).
+  Shared rule `@mechdost/shared/free-delivery` (`freeDeliveryMinPaise`, `groupShippingPaise`; Zod-free). More tests:
+  shared `free-delivery.test.ts`; db `checkout.test.ts` "free delivery per group" (shop over city, 0 = always free,
+  PIN 0 beats a shop threshold, PIN null falls back to the shop).
 - An inactive PIN (spec 15 "PIN codes") is not serviceable: the quote refuses it with `PINCODE_NOT_SERVICEABLE`.
 
 ## UI
@@ -149,17 +153,3 @@ With `NEXT_PUBLIC_DATA_MODE=api` the cart and checkout use the API, not the brow
 - **Response schemas:** `@mechdost/shared/checkout-api`.
 
 Ruling (2026-11-14): the customer screens switch on `DATA_MODE` (prices and SKUs are catalogue data); the portals switch on `AUTH_MODE`. Launch flips both together. Mixed combinations are not supported.
-
-## Delivery charge and free delivery (2026-11-14, shop management)
-
-- **Charge:** each order group (one shop) pays that shop's charge for the delivery PIN (`shop_pincodes.shipping_paise`,
-  set per PIN in Admin → Partners → Shops → Delivery area).
-- **Free delivery** applies when the group's subtotal reaches the first threshold that is set, in this order:
-  1. the PIN code's own value (`pincodes.free_delivery_min_paise`, built by the PIN-code change; until it lands the
-     slot is empty and marked in `quoteInternal`);
-  2. the shop's (`shops.free_delivery_min_paise`, migration 0049, Admin → Partners → Shops → Profile);
-  3. the city setting `checkout.free_delivery_min_paise` (city value, else global).
-- **0 means always free.** Nothing set anywhere means the charge always applies. A shop value above the city's is
-  honoured (the first set value wins; it is not the lower of the two).
-- Shared rule: `@mechdost/shared/free-delivery` (`freeDeliveryMinPaise`, `groupShippingPaise`; Zod-free, so the db
-  and the browser can use it). Tests: shared `free-delivery.test.ts`, db `checkout.test.ts` "free delivery per group".

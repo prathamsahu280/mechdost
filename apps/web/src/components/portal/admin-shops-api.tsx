@@ -564,6 +564,11 @@ function CoverageForm({ shop, onSaved }: { shop: AdminShopDetailDto; onSaved: ()
   return (
     <form noValidate onSubmit={(e) => void onSubmit(e)} aria-busy={busy || undefined} className="space-y-3">
       <p className="text-sm text-muted">{t('shops_api_covLead')}</p>
+      {shop.status === 'pending' ? (
+        <p role="note" className="rounded-lg bg-warning-bg p-3 text-sm text-warning">
+          {t('shops_api_publishWarn')}
+        </p>
+      ) : null}
       {rows.length === 0 ? <p className="text-sm text-muted">{t('shops_api_covEmpty')}</p> : null}
       <ul className="space-y-2">
         {rows.map((r, i) => {
@@ -704,6 +709,11 @@ function ProductsPanel({ shop, onChanged }: { shop: AdminShopDetailDto; onChange
 
   return (
     <div className="space-y-3">
+      {shop.status === 'pending' ? (
+        <p role="note" className="rounded-lg bg-warning-bg p-3 text-sm text-warning">
+          {t('shops_api_publishWarn')}
+        </p>
+      ) : null}
       <ApiListState
         loading={offers === null && error === null}
         error={error}

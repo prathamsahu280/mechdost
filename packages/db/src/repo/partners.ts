@@ -17,6 +17,9 @@ import type { CityScope } from './routing';
 export type Standing = 'approved' | 'paused' | 'suspended';
 
 const ALLOWED: Record<string, readonly Standing[]> = {
+  // A pending shop can be kept dark (suspended) so adding its PIN codes and products does not publish it
+  // (code review 2026-11-14); reactivating it later is an explicit staff decision to go live.
+  pending: ['suspended'],
   approved: ['paused', 'suspended'],
   paused: ['approved', 'suspended'],
   suspended: ['approved'],

@@ -216,12 +216,15 @@ export function coverageBody(
 
 /* ─────────────── Standing, deadlines, errors ─────────────── */
 
-/** The standings staff may move a shop to (pending shops go live by themselves, never by hand). */
+/**
+ * The standings staff may move a shop to. A pending shop goes live by itself; staff may only keep it dark
+ * (suspended) so its PIN codes and products can be set up first (code review 2026-11-14).
+ */
 export function standingTargets(status: ShopStatus): ('approved' | 'paused' | 'suspended')[] {
   if (status === 'approved') return ['paused', 'suspended'];
   if (status === 'paused') return ['approved', 'suspended'];
   if (status === 'suspended') return ['approved'];
-  return [];
+  return ['suspended'];
 }
 
 /**
@@ -239,12 +242,14 @@ export function deadlineView(
   return minutes > 120 ? { kind: 'until', at: expiresAt } : { kind: 'minutes', minutes };
 }
 
-/** Weekday and time in IST, e.g. "Tue, 9:00 am" (hi: "मंगल, 9:00 am"). */
+/** Weekday and time in IST, e.g. "Tue, 9:00 am"; Hindi uses the 24-hour clock ("मंगल, 21:30": no Latin am/pm). */
 export function istDayTime(iso: string, locale: string): string {
-  return new Intl.DateTimeFormat(locale === 'hi' ? 'hi-IN' : 'en-IN', {
+  const hi = locale === 'hi';
+  return new Intl.DateTimeFormat(hi ? 'hi-IN' : 'en-IN', {
     weekday: 'short',
-    hour: 'numeric',
+    hour: hi ? '2-digit' : 'numeric',
     minute: '2-digit',
+    ...(hi ? { hourCycle: 'h23' as const } : {}),
     timeZone: 'Asia/Kolkata',
   }).format(new Date(iso));
 }
@@ -280,6 +285,9 @@ const SHOP_ERRORS = new Set([
   'PRODUCT_NOT_LIVE',
   'STALE_OFFER',
   'EMPTY_PATCH',
+  'GSTIN_TAKEN',
+  'ALREADY_OWNER',
+  'ACCOUNT_NOT_ACTIVE',
 ]);
 
 export type ShopErrorKey = `shops_api_err_${string}` | CommonErrorKey;

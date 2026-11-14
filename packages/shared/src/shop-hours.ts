@@ -60,9 +60,18 @@ export function shopOpenState(hours: ShopHours, at: Date): { open: true } | { op
   return { open: false, opensAt: new Date(at.getTime() + 7 * DAY_MS) };
 }
 
+/** The instant today's window closes (the shop must be open at `at`). */
+function closingInstant(hours: ShopHours, at: Date): Date {
+  const local = at.getTime() + IST_OFFSET_MS;
+  const dayStart = Math.floor(local / DAY_MS) * DAY_MS;
+  return new Date(dayStart + minutesOf(hours.close) * 60_000 - IST_OFFSET_MS);
+}
+
 /**
- * When an offer to this shop runs out: the normal accept timeout while the shop is open; if it is closed, the next
- * opening time plus the grace minutes (the offer waits overnight and over closed days).
+ * When an offer to this shop runs out: the normal accept timeout while the shop is open; if it is closed — or the
+ * timeout would run past today's closing time (user 2026-11-14: "treat as closed") — the next opening time plus the
+ * grace minutes (the offer waits overnight and over closed days). Open past midnight (24:00 into a 00:00 opening the
+ * next day) is one continuous window, never "closing".
  */
 export function acceptanceDeadline(input: {
   hours: ShopHours;
@@ -70,8 +79,15 @@ export function acceptanceDeadline(input: {
   timeoutMinutes: number;
   graceMinutes: number;
 }): { expiresAt: Date; closed: boolean } {
+  const normal = new Date(input.at.getTime() + input.timeoutMinutes * 60_000);
+  const waitFrom = (from: Date) => {
+    const next = shopOpenState(input.hours, from);
+    // Open again right at `from` (a 24:00 close running into a 00:00 opening): the window simply continues.
+    if (next.open) return { expiresAt: normal, closed: false };
+    return { expiresAt: new Date(next.opensAt.getTime() + input.graceMinutes * 60_000), closed: true };
+  };
   const state = shopOpenState(input.hours, input.at);
-  return state.open
-    ? { expiresAt: new Date(input.at.getTime() + input.timeoutMinutes * 60_000), closed: false }
-    : { expiresAt: new Date(state.opensAt.getTime() + input.graceMinutes * 60_000), closed: true };
+  if (!state.open) return waitFrom(input.at);
+  const closesAt = closingInstant(input.hours, input.at);
+  return normal.getTime() > closesAt.getTime() ? waitFrom(closesAt) : { expiresAt: normal, closed: false };
 }

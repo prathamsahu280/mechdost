@@ -49,13 +49,15 @@ No test in this spec may be skipped in CI; schema PRs require the `drizzle-postg
 - `user_roles.workshop_id` now references `workshops` (added `NOT VALID`, then validated).
 - All eight tables: RLS on, `anon` / `authenticated` revoked, version and updated_at triggers (schema-invariants test), every FK and filter indexed. Writes only through the repositories listed in spec 06 "Built: API"; lock order: the request row first, then proposals, estimates and bills.
 
-## Data model note: shop management (migration 0049, 2026-11-14)
+## Data model note: shop management (migration 0051, 2026-11-14)
 
 - `shops.free_delivery_min_paise`: bigint, nullable, CHECK `>= 0`. NULL = the city setting.
 - `shops.hours`: jsonb, NOT NULL, default 09:00–21:00 Monday to Saturday, CHECK object; the shape is validated by
   `isShopHours` in the repositories.
 - `partner_status_events.reason_code`: nullable, CHECK in `PARTNER_STANDING_REASONS`.
 - All three are metadata-only changes (nullable or constant default, `lock_timeout` 5 s).
+- The migration also backfills `shop_users` from the shop grants in `user_roles` (`DISTINCT ON`, owner first,
+  `ON CONFLICT DO NOTHING`, joined to `shops` for the FK). A test re-runs the statement twice.
 - Writes go only through `shops-admin.ts` and `partners.ts`:
   - compare-and-set on `shops.version` for profile, hours and coverage (`STALE_SHOP`);
   - standing is conditional on (id, status, version);

@@ -151,7 +151,7 @@ export async function saveShopOffer(
         if (!row) throw new Error('offer insert returned no row');
         await audit(tx, input, row.id, null, { ...input.changes });
         // A pending shop goes live with its first product on sale (and a PIN), e.g. when staff add stock.
-        await maybeGoLive(tx, input.shopId, input.actorUserId);
+        await maybeGoLive(tx, input.shopId, input.actorUserId, input.actorRole);
         return { version: row.version };
       } catch (err) {
         if (pgCode(err) === '23505')

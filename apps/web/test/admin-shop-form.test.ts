@@ -4,6 +4,7 @@ import {
   coverageBody,
   deadlineView,
   formFromShop,
+  istDayTime,
   rowsFromCoverage,
   shopErrorKey,
   shopPatch,
@@ -147,11 +148,12 @@ describe('coverage editor', () => {
 });
 
 describe('standing, deadlines and errors', () => {
-  it('offers only the moves the API allows; pending shops have none', () => {
+  it('offers only the moves the API allows; a pending shop can only be kept dark', () => {
     expect(standingTargets('approved')).toEqual(['paused', 'suspended']);
     expect(standingTargets('paused')).toEqual(['approved', 'suspended']);
     expect(standingTargets('suspended')).toEqual(['approved']);
-    expect(standingTargets('pending')).toEqual([]);
+    // A pending shop can only be kept dark (code review 2026-11-14); it goes live by itself otherwise.
+    expect(standingTargets('pending')).toEqual(['suspended']);
   });
 
   it('a deadline within two hours counts down; a closed shop shows the time it waits until', () => {
@@ -164,7 +166,15 @@ describe('standing, deadlines and errors', () => {
     expect(deadlineView(null, now)).toEqual({ kind: 'minutes', minutes: 0 });
   });
 
+  it('Hindi times use the 24-hour clock (no Latin am/pm on /hi)', () => {
+    const hi = istDayTime('2026-11-17T21:30:00+05:30', 'hi');
+    expect(hi).toContain('21:30');
+    expect(hi).not.toMatch(/[ap]m/i);
+  });
+
   it('maps API codes to messages, falling back to the common ones', () => {
+    expect(shopErrorKey('GSTIN_TAKEN')).toBe('shops_api_err_GSTIN_TAKEN');
+    expect(shopErrorKey('ALREADY_OWNER')).toBe('shops_api_err_ALREADY_OWNER');
     expect(shopErrorKey('PINCODE_OTHER_CITY')).toBe('shops_api_err_PINCODE_OTHER_CITY');
     expect(shopErrorKey('STALE_SHOP')).toBe('shops_api_err_STALE_SHOP');
     expect(shopErrorKey('HTTP_429')).toBe('api_common_err_rate');

@@ -120,7 +120,7 @@ this shop might be open and suggest to route via that and if admin routes to a c
 till morning until it opens and still then it waits for like an hour or smth and yeah keep it configurable".
 
 - **Hours:** `shops.hours` = one window `{open, close, days}` in IST (0 = Sunday; close may be `24:00`), default
-  09:00–21:00 Monday to Saturday (migration 0049). The owner sets them in the shop portal, staff in Admin → Partners →
+  09:00–21:00 Monday to Saturday (migration 0051). The owner sets them in the shop portal, staff in Admin → Partners →
   Shops (spec 07). Rules in `@mechdost/shared/shop-hours` (`shopOpenState`, `acceptanceDeadline`; IST weekday, not
   UTC).
 - **Suggestions:** the ranked shops carry `openNow` and `opensAt`. Among eligible shops, open ones rank first, then
@@ -138,5 +138,8 @@ till morning until it opens and still then it waits for like an hour or smth and
 - **Tests:** shared `shop-hours.test.ts` (the opening minute in and closing minute out, the IST weekday at 00:30,
   Saturday night → Monday, 24:00, grace) and db `routing.test.ts` (open shops first with `opensAt`, a closed shop's
   deadline = opening + grace from the city setting, the hold covers the deadline, a shop's own minutes to accept).
-- **Not done:** split windows (lunch breaks), holidays and a per-shop grace; an offer made just before closing still
-  gets the normal timeout.
+- **Near closing = closed** (user 2026-11-14: "Yes, treat as closed"): if now + the timeout would pass today's
+  closing time, the deadline is the next opening + grace (20:55 to a 21:00 close → tomorrow 09:00 + 60 min). A
+  24:00 close running into a 00:00 opening is one window. Tests: shared `shop-hours.test.ts` "near closing".
+- Routing tests use hours closed for the next two days, so passing IST midnight mid-test changes nothing.
+- **Not done:** split windows (lunch breaks), holidays and a per-shop grace.

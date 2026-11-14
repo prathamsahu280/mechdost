@@ -146,6 +146,13 @@ describe('quote', () => {
     await db.delete(s.settings).where(eq(s.settings.key, 'checkout.free_delivery_min_paise'));
     await db.update(s.shops).set({ freeDeliveryMinPaise: 0 }).where(eq(s.shops.id, sharma!.id));
     expect(await shippingBySeller()).toEqual({ 'Sharma Auto Parts': 0, 'Chhattisgarh Tyre House': 4000 });
+    // The PIN's own value wins over the shop's: PIN 0 = free for every group even with a shop threshold.
+    await db.update(s.shops).set({ freeDeliveryMinPaise: 1_00_000_00 }).where(eq(s.shops.id, sharma!.id));
+    await db.update(s.pincodes).set({ freeDeliveryMinPaise: 0 }).where(eq(s.pincodes.pincode, '492004'));
+    expect(await shippingBySeller()).toEqual({ 'Sharma Auto Parts': 0, 'Chhattisgarh Tyre House': 0 });
+    // PIN null falls back to the shop (Sharma: above its ₹880, so charged), then to the city (none: charged).
+    await db.update(s.pincodes).set({ freeDeliveryMinPaise: null }).where(eq(s.pincodes.pincode, '492004'));
+    expect(await shippingBySeller()).toEqual({ 'Sharma Auto Parts': 4000, 'Chhattisgarh Tyre House': 4000 });
     await db.update(s.shops).set({ freeDeliveryMinPaise: null }).where(eq(s.shops.id, sharma!.id));
     await expect(
       db.update(s.shops).set({ freeDeliveryMinPaise: -1 }).where(eq(s.shops.id, sharma!.id)),
