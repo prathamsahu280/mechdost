@@ -15,6 +15,9 @@ const PROTECTED: [method: string, path: string][] = [
   ['GET', '/v1/admin/orders'],
   ['GET', '/v1/admin/customers/00000000-0000-7000-8000-000000000000/blocks'],
   ['GET', '/v1/shop/orders'],
+  ['GET', '/v1/my-reviews/eligible?order=MD-RPR-2026-7K3Q9X'],
+  ['POST', '/v1/my-reviews'],
+  ['GET', '/v1/admin/reviews'],
 ];
 
 describe('protected routes refuse anonymous requests under any path encoding', () => {

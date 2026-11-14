@@ -38,6 +38,21 @@ export interface ServerEventProps {
   };
   admin_customer_blocked: { customerId: string; level: string; reasonCode: string };
   admin_customer_unblocked: { customerId: string; level: string };
+  /** A verified customer review, pending moderation (spec 02 § Reviews). Rating only, never the text. */
+  review_submitted: {
+    reviewId: string;
+    targetType: 'product' | 'workshop';
+    targetId: string;
+    rating: number;
+    hasText: boolean;
+  };
+  admin_review_moderated: {
+    reviewId: string;
+    targetType: 'product' | 'workshop';
+    from: string;
+    to: string;
+    reasonCode: string | null;
+  };
   admin_product_status_changed: { productSlug: string; from: string; to: string };
   /** A product added by staff, from the admin form or a CSV import (status draft, or live when published). */
   admin_product_created: { productSlug: string; sku: string; status: string; source: 'form' | 'import' };
