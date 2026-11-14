@@ -29,3 +29,5 @@ Goal: mechdost.com runs on real sign-in (Firebase) and the API for every flow, w
 ## Progress
 
 - 2026-11-14: DB reset + reference seed; worker service deployed; plan written.
+- 2026-11-14: Stream A built on branch `feat/workshops-service-api` (not merged): migration 0044, repos, routes, db + API
+  tests, spec 06 "Built: API", spec 14 note, decisions "Workshops backend". Migration not applied to any database yet.
