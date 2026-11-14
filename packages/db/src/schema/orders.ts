@@ -138,6 +138,9 @@ export const orders = pgTable(
     codFeePaise: paise().notNull().default(0),
     taxPaise: paise().notNull().default(0),
     totalPaise: paise().notNull(),
+    /** This sub-order's share of the checkout's MechDost Coins and the part of `discountPaise` they paid (spec 20). */
+    coinsRedeemed: integer().notNull().default(0),
+    coinDiscountPaise: paise().notNull().default(0),
     cancellableUntilStatus: text().notNull().default('confirmed'),
     /** Reject (later: cancel) reason code and the message shown to the customer (spec 04). */
     statusReasonCode: text(),
@@ -175,6 +178,10 @@ export const orders = pgTable(
     check(
       'orders_total_matches',
       sql`${t.totalPaise} = ${t.subtotalPaise} - ${t.discountPaise} + ${t.shippingPaise} + ${t.codFeePaise}`,
+    ),
+    check(
+      'orders_coins_consistent',
+      sql`${t.coinsRedeemed} >= 0 and ${t.coinDiscountPaise} >= 0 and ${t.coinDiscountPaise} <= ${t.discountPaise} and (${t.coinsRedeemed} = 0) = (${t.coinDiscountPaise} = 0)`,
     ),
     check(
       'orders_shop_when_confirmed',

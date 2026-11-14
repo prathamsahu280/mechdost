@@ -26,6 +26,8 @@ export const ShopOrder = z.object({
   payoutPaise: z.number().int(),
   /** Cash to collect at delivery (cash-on-delivery orders), else null. */
   collectPaise: z.number().int().nullable(),
+  /** MechDost Coins discount on this part, paid by MechDost (spec 20); optional so older API answers still parse. */
+  coinDiscountPaise: z.number().int().optional(),
   pincode: z.string(),
   /** `unitPaise` is the shop's own price. */
   items: z.array(ShopOrderItem),

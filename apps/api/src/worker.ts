@@ -10,6 +10,8 @@ import {
   expireDueAssignments,
   releaseExpiredReservations,
   expireUnpaidOnlineOrders,
+  expireDueCoins,
+  releaseDueCoinRewards,
   expireQuotes,
   resumeEndedPauses,
 } from '@mechdost/db/repo';
@@ -161,6 +163,32 @@ const paymentTimer = setInterval(() => {
 }, 60_000);
 paymentTimer.unref();
 
+// MechDost Coins (spec 20, Q24): rewards whose unlock days have passed become coins; unused coins past their expiry
+// lapse. Every 10 minutes; one transaction per reward (row locked, skip locked) or per customer (account row
+// locked), each idempotent by its ledger key, so several workers may run this safely.
+let coinWork = false;
+const coinTimer = setInterval(() => {
+  if (coinWork) return;
+  coinWork = true;
+  void (async () => {
+    const released = await releaseDueCoinRewards(db);
+    if (released.credited > 0) log('info', 'coin_rewards_credited', { count: released.credited });
+    for (const f of released.failed)
+      log('error', 'coin_reward_failed', { rewardId: f.rewardId, ...safeError(f.error) });
+    const expired = await expireDueCoins(db);
+    if (expired.expired > 0) log('info', 'coins_expired', { customers: expired.expired });
+    // Customer ids stay out of the log (pseudonymous analytics only); the count is enough to alert on.
+    if (expired.failed.length > 0) log('error', 'coin_expiry_failed', { customers: expired.failed.length });
+  })()
+    .catch((err: unknown) => {
+      log('error', 'coin_jobs_failed', safeError(err));
+    })
+    .finally(() => {
+      coinWork = false;
+    });
+}, 600_000);
+coinTimer.unref();
+
 // Bulk quotes (spec 19): offers past `valid_until` and quotes nobody wrote on close as `expired`. Every 5 min; one
 // transaction per quote (quote row locked first), so several workers may run this safely.
 // A quote that keeps failing is skipped for a growing delay (1 min doubling to 6 h) and logged with its id and
@@ -227,6 +255,7 @@ function shutdown(signal: string) {
   clearInterval(holdTimer);
   clearInterval(pauseTimer);
   clearInterval(paymentTimer);
+  clearInterval(coinTimer);
   clearInterval(quoteTimer);
   clearInterval(partitionTimer);
   void Promise.all([relay.stop(), dispatcher.stop()])

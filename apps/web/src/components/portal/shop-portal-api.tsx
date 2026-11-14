@@ -165,6 +165,12 @@ function OrderLines({ order }: { order: ShopOrderDto }) {
           {t('api_shop_collect', { amount: formatPrice(order.collectPaise) })}
         </p>
       )}
+      {/* MechDost Coins (spec 20): the customer paid less by this much; MechDost pays it, the payout is unchanged. */}
+      {order.coinDiscountPaise ? (
+        <p className="mt-1 text-xs text-ink">
+          {t('coins_api_shop_discount', { amount: formatPrice(order.coinDiscountPaise) })}
+        </p>
+      ) : null}
       <ul className="mt-3 divide-y divide-line text-sm">
         {order.items.map((l) => (
           <li key={l.sku} className="flex justify-between gap-3 py-2">

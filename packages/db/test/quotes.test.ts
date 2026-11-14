@@ -627,7 +627,8 @@ describe('review fixes 2026-11-14', () => {
       (o) => o.code === order.code,
     );
     expect(offered?.items).toMatchObject([{ sku: 'CAS-ACT4T-0900', qty: 10, unitPaise: 44_000 }]);
-    expect(offered).toMatchObject({ payoutPaise: 440_000, collectPaise: 400_000 });
+    // No coins on a quote order (spec 20 ruling 2026-11-14): the coin line is 0.
+    expect(offered).toMatchObject({ payoutPaise: 440_000, collectPaise: 400_000, coinDiscountPaise: 0 });
 
     await acceptShopOffer(t(), {
       shopIds: [sharma],

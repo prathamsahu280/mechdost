@@ -43,7 +43,7 @@ const ALL_ADMIN_SECTIONS = [
 export type AdminSection = (typeof ALL_ADMIN_SECTIONS)[number];
 
 /** Sections for features that have no API yet (`BROWSER_ONLY_FEATURES`): hidden in real mode. */
-const BROWSER_ONLY_SECTIONS: readonly string[] = ['coins'];
+const BROWSER_ONLY_SECTIONS: readonly string[] = [];
 /** Bulk quotes have their own flag: on the API in real mode, on the browser store in the demo (spec 19, 2026-11-14). */
 const quotesShown = QUOTES_AVAILABLE;
 /**

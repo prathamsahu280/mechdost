@@ -18,6 +18,8 @@ import { authRoutes } from './routes/auth';
 import { catalogueRoutes } from './routes/catalogue';
 import { paymentRoutes, razorpayWebhookRoutes } from './routes/payments';
 import { checkoutRoutes } from './routes/checkout';
+import { coinRoutes } from './routes/coins';
+import { payoutRoutes } from './routes/payouts';
 import { adminContentRoutes, contentRoutes } from './routes/content';
 import { eventRoutes } from './routes/events';
 import { pincodeAdminRoutes, pincodePublicRoutes } from './routes/geo';
@@ -84,6 +86,8 @@ export function createApp(deps: AppDeps) {
   v1.route('/', eventRoutes(deps));
   v1.route('/', checkoutRoutes(deps, sessions));
   v1.route('/', paymentRoutes(deps, sessions));
+  v1.route('/', coinRoutes(deps, sessions));
+  v1.route('/', payoutRoutes(deps, sessions));
   v1.route('/', adminNotificationRoutes(deps, sessions));
   v1.route('/', supportRoutes(deps, sessions));
   v1.route('/', adminCustomerRoutes(deps, sessions));

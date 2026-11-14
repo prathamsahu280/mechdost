@@ -76,6 +76,8 @@ export interface ShopOrderItem {
   payoutPaise: number;
   /** Cash to collect from the customer at delivery (cash-on-delivery orders), else null. */
   collectPaise: number | null;
+  /** MechDost Coins discount on this part (paid by MechDost, never by the shop; spec 20); 0 when none. */
+  coinDiscountPaise: number;
   pincode: string;
   /** `unitPaise` is the shop's own price per unit (review I1, 2026-11-14), not the customer's. */
   items: { title: string; titleHi: string | null; sku: string; qty: number; unitPaise: number }[];
@@ -104,6 +106,7 @@ export async function listShopOrders(
     status: string;
     version: unknown;
     total_paise: unknown;
+    coin_discount_paise: unknown;
     pincode: string;
     shipping_address: Record<string, unknown>;
     payment_method: string;
@@ -113,23 +116,26 @@ export async function listShopOrders(
   }>(
     view === 'offers'
       ? await db.execute(sql`
-          select o.id, o.code, o.status, o.version, o.total_paise, o.pincode, o.shipping_address,
+          select o.id, o.code, o.status, o.version, o.total_paise, o.coin_discount_paise,
             (select g.payment_method from order_groups g where g.id = o.group_id) as payment_method,
+            o.pincode, o.shipping_address,
             a.id as assignment_id, a.expires_at, '' as sort_key
           from order_assignments a join orders o on o.id = a.order_id
           where a.status = 'offered' and a.expires_at > now() and ${inShops(shopIds, 'a.shop_id')}
           order by a.expires_at limit 100`)
       : view === 'active'
         ? await db.execute(sql`
-          select o.id, o.code, o.status, o.version, o.total_paise, o.pincode, o.shipping_address,
+          select o.id, o.code, o.status, o.version, o.total_paise, o.coin_discount_paise,
             (select g.payment_method from order_groups g where g.id = o.group_id) as payment_method,
+            o.pincode, o.shipping_address,
             null::uuid as assignment_id, null::timestamptz as expires_at, '' as sort_key
           from orders o
           where ${inShops(shopIds, 'o.shop_id')} and o.status in ('confirmed', 'packed', 'shipped', 'out_for_delivery')
           order by o.placed_at limit 100`)
         : await db.execute(sql`
-          select o.id, o.code, o.status, o.version, o.total_paise, o.pincode, o.shipping_address,
+          select o.id, o.code, o.status, o.version, o.total_paise, o.coin_discount_paise,
             (select g.payment_method from order_groups g where g.id = o.group_id) as payment_method,
+            o.pincode, o.shipping_address,
             null::uuid as assignment_id, null::timestamptz as expires_at, o.updated_at::text as sort_key
           from orders o
           where ${inShops(shopIds, 'o.shop_id')} and o.status in ('delivered', 'cancelled')
@@ -164,6 +170,7 @@ export async function listShopOrders(
       status: r.status,
       version: num(r.version),
       totalPaise: num(r.total_paise),
+      coinDiscountPaise: num(r.coin_discount_paise),
       payoutPaise: lines.reduce((sum, i) => sum + num(i.unitPaise) * num(i.qty), 0),
       collectPaise: r.payment_method === 'cod' ? num(r.total_paise) : null,
       pincode: r.pincode,

@@ -15,6 +15,8 @@ export interface ServerEventProps {
     items: number;
     totalPaise: number;
     paymentMethod: 'cod' | 'online';
+    /** MechDost Coins used (spec 20); 0 when none. Optional: events stored before 2026-11-14 have none. */
+    coinsRedeemed?: number;
   };
   admin_order_routed: { orderCode: string; shopId: string; attempt: number };
   admin_order_rerouted: { orderCode: string; shopId: string; attempt: number };
@@ -99,6 +101,13 @@ export interface ServerEventProps {
   service_estimate_decided: { requestCode: string; revision: number; approved: number; declined: number };
   service_billed: { requestCode: string; workshopId: string; totalPaise: number; lines: number };
   admin_workshop_saved: { workshopId: string; action: 'created' | 'updated'; published: boolean };
+  /** MechDost Coins (spec 20): counts and codes only; `customerId` is the pseudonymous account id. */
+  coins_redeemed: { orderCode: string; coins: number; discountPaise: number };
+  coins_restored: { orderCode: string; coins: number };
+  coins_reward_created: { rewardId: string; source: string; coins: number; unlockDays: number };
+  coins_earned: { rewardId: string; source: string; coins: number };
+  coins_expired: { coins: number };
+  coins_adjusted: { customerId: string; delta: number; reasonCode: string };
   /** Bulk quotes (spec 19): codes, counts, versions and paise only — never message text. */
   quote_requested: { quoteCode: string; lines: number; units: number; listTotalPaise: number | null };
   quote_message_sent: { quoteCode: string; by: 'customer' | 'staff' };

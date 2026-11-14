@@ -5,7 +5,9 @@ import {
   NotFoundError,
   saveOperationalSetting,
 } from '@mechdost/db/repo';
-import { SETTING_KEYS } from '@mechdost/shared/settings';
+import { can } from '@mechdost/shared/rbac';
+import { isCoinSettingKey, SETTING_KEYS } from '@mechdost/shared/settings';
+import { Forbidden } from '../errors';
 import type { SessionCache } from '../auth/session-cache';
 import { authenticate, requirePermission, requireVerified } from '../middleware/auth';
 import { rateLimit, RATE_RULES } from '../middleware/rate-limit';
@@ -126,6 +128,9 @@ export function adminSettingsRoutes(deps: AppDeps, cache: SessionCache) {
     })
     .openapi(save, async (c) => {
       const b = c.req.valid('json');
+      // Coin rules (spec 20) also need `coins:rules`.
+      if (isCoinSettingKey(c.req.valid('param').key) && !can(c.get('auth').grants, 'coins:rules', {}))
+        throw Forbidden();
       const cityId = await scopedCity(deps, c, b.city, 'settings:write');
       const r = await saveOperationalSetting(deps.db, {
         key: c.req.valid('param').key,

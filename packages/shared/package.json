@@ -7,6 +7,7 @@
     ".": "./src/index.ts",
     "./money": "./src/money.ts",
     "./coins": "./src/coins.ts",
+    "./coins-api": "./src/coins-api.ts",
     "./ids": "./src/ids.ts",
     "./time": "./src/time.ts",
     "./invoice": "./src/invoice.ts",
