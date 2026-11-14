@@ -313,6 +313,8 @@ function detailOf(variant: string, c: AuditCase): Detail {
           billedAt: iso(-10),
           paidAt: null,
           method: null,
+          // The labour promise frozen on the bill (trust wording merge 2026-11-15): off for this fixture.
+          labourPromiseDays: null,
         },
       };
     default:
