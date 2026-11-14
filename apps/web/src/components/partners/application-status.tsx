@@ -5,11 +5,47 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { APPLICATION_STAGES, updateApplication, useApplications } from '@/demo/store';
+import { AUTH_MODE } from '@/lib/auth/mode';
 import { formatDate } from '@/lib/format';
 import { StatusTimeline } from '../commerce/status-timeline';
 
-/** Partner application status (spec 07). Demo controls stand in for the admin review. */
 export function ApplicationStatus({ code }: { code: string }) {
+  return AUTH_MODE === 'firebase' ? <ReceivedApi code={code} /> : <DemoApplicationStatus code={code} />;
+}
+
+/**
+ * Real sign-in builds: the API has no public status lookup yet (applicants have no account until approval), so
+ * the page confirms the reference and says how the team gets in touch, instead of showing invented progress.
+ */
+function ReceivedApi({ code }: { code: string }) {
+  const t = useTranslations('apply');
+  const isNew = useSearchParams().get('new') === '1';
+  const base = useLocale() === 'hi' ? '/hi' : '';
+  return (
+    <section className="max-w-2xl rounded-card border border-line-card bg-surface p-6 shadow-card">
+      {isNew && code ? (
+        <div
+          role="status"
+          className="animate-page-in mb-6 flex gap-3 rounded-tile bg-success-bg p-5 text-success"
+        >
+          <BadgeCheck aria-hidden="true" className="size-6 shrink-0" />
+          <p className="font-heading font-bold">{t('received')}</p>
+        </div>
+      ) : null}
+      <p className="text-sm text-ink">{code ? t('api_statusBody', { code }) : t('notFound')}</p>
+      <p className="mt-2 text-sm text-muted">{t('api_statusOffline')}</p>
+      <Link
+        href={`${base}/partners`}
+        className="press mt-5 inline-flex min-h-11 items-center rounded-button bg-accent-button px-5 text-sm font-bold text-white"
+      >
+        {t('back')}
+      </Link>
+    </section>
+  );
+}
+
+/** Partner application status (spec 07). Demo controls stand in for the admin review. */
+function DemoApplicationStatus({ code }: { code: string }) {
   const t = useTranslations('apply');
   const demo = useTranslations('demo');
   const locale = useLocale();

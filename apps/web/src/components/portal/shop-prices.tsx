@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
 import { DEMO_PRODUCTS, type DemoProduct } from '@/demo/catalogue';
@@ -7,6 +8,7 @@ import { localizeProduct } from '@/demo/i18n/localize';
 import { listingOf, submitPriceRequest, usePriceRequestsVersion } from '@/demo/price-requests';
 import type { DemoShop } from '@/demo/shops';
 import { track } from '@/lib/analytics';
+import { AUTH_MODE } from '@/lib/auth/mode';
 import { formatPrice } from '@/lib/format';
 import { parseRupees } from '@/lib/money-input';
 import { portalCard, portalField, portalPrimary } from './portal-guard';
@@ -18,6 +20,15 @@ import { portalCard, portalField, portalPrimary } from './portal-guard';
  * `/v1/shop-onboarding/{shopId}/price-requests` (data switch).
  */
 export function ShopPrices({ shop }: { shop: DemoShop }) {
+  return AUTH_MODE === 'firebase' ? <ShopPricesApi /> : <DemoShopPrices shop={shop} />;
+}
+
+/** Real sign-in builds: the signed-in partner's own shop on the API, loaded only then. */
+const ShopPricesApi = dynamic(() => import('./shop-onboarding-api').then((m) => m.ShopPricesApi), {
+  ssr: false,
+});
+
+function DemoShopPrices({ shop }: { shop: DemoShop }) {
   const t = useTranslations('portal');
   usePriceRequestsVersion();
   const products = DEMO_PRODUCTS.filter((p) => shop.categories.includes(p.category));

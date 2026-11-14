@@ -1,6 +1,7 @@
 'use client';
 
 import { APPLICATION_REJECT_REASONS, type ApplicationRejectReason } from '@mechdost/shared/partner-codes';
+import dynamic from 'next/dynamic';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
 import {
@@ -14,6 +15,7 @@ import {
   type DemoApplication,
 } from '@/demo/store';
 import { track } from '@/lib/analytics';
+import { AUTH_MODE } from '@/lib/auth/mode';
 import { formatDate, formatPrice } from '@/lib/format';
 import { parseRupees } from '@/lib/money-input';
 import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
@@ -28,6 +30,15 @@ const VERIFICATION = APPLICATION_STAGES.indexOf('verification');
  * `/v1/admin/partner-applications` (data switch).
  */
 export function Applications() {
+  return AUTH_MODE === 'firebase' ? <ApplicationsApi /> : <DemoApplications />;
+}
+
+/** Real sign-in builds: the same screen on `/v1/admin/partner-applications`, loaded only then. */
+const ApplicationsApi = dynamic(() => import('./admin-onboarding-api').then((m) => m.ApplicationsApi), {
+  ssr: false,
+});
+
+function DemoApplications() {
   const t = useTranslations('portal');
   const apps = useApplications();
   return (
