@@ -142,8 +142,19 @@ export async function resolveLiveRecipients(db: Tx, topic: string): Promise<Live
     query = sql`select id as user_id, firebase_uid from users where id = ${parsed.id} and status = 'active'`;
   } else if (parsed.kind === 'staff_city') {
     query = STAFF_WITH('orders:read', sql`${parsed.id}::uuid`);
+  } else if (parsed.kind === 'quote') {
+    // A bulk quote (spec 19): its customer and the city's staff who can read quotes.
+    const quoteId = parsed.id;
+    query = sql`
+      select u.id as user_id, u.firebase_uid from quote_requests q join users u on u.id = q.user_id
+        where q.id = ${quoteId} and u.status = 'active'
+      union
+      select staff.user_id, staff.firebase_uid
+        from (${STAFF_WITH('quotes:read', sql`select city_id from quote_requests where id = ${quoteId}`)}) staff
+        -- An id that is no quote resolves to nobody (an all-city grant would otherwise match a null city).
+        where exists (select 1 from quote_requests where id = ${quoteId})`;
   } else {
-    // workshop / quote topics resolve once their tables carry membership (Phase 2); fail closed until then.
+    // workshop topics resolve once their tables carry membership (Phase 2); fail closed until then.
     return [];
   }
   const rows = rowsOf<{ user_id: string; firebase_uid: string }>(await db.execute(query));

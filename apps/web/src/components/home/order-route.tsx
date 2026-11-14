@@ -4,7 +4,7 @@ import { ButtonLink } from '../ui/button-link';
 import { LocalLink } from '../ui/local-link';
 import { Container } from '../ui/page-intro';
 import { SettingValue } from '../site/site-overrides';
-import { BROWSER_ONLY_FEATURES } from '@/lib/data-mode';
+import { QUOTES_AVAILABLE } from '@/lib/data-mode';
 
 /** Rich-text tags for admin settings inside copy: the server prints the default, the island the live value. */
 const liveMinutes = (chunks: ReactNode) => <SettingValue setting="acceptMinutes" fallback={chunks} />;
@@ -68,7 +68,7 @@ export function OrderRoute() {
             <ButtonLink href="/shop" data-track="home_route_shop" className="min-h-12 px-6">
               {t('cta')}
             </ButtonLink>
-            {BROWSER_ONLY_FEATURES ? (
+            {QUOTES_AVAILABLE ? (
               <LocalLink
                 href="/quotes/new"
                 data-track="home_route_bulk"

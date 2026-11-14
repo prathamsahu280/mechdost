@@ -6,7 +6,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { CATEGORY_KEYS, CATEGORY_SLUGS } from '@/demo/catalogue';
 import { useCategoryEmoji, useSiteSettings } from '@/demo/site-config';
 import { removeFromCart, setQuantity, useCart, MAX_QTY } from '@/demo/store';
-import { BROWSER_ONLY_FEATURES, DATA_MODE } from '@/lib/data-mode';
+import { DATA_MODE, QUOTES_AVAILABLE } from '@/lib/data-mode';
 import { DEFAULT_PIN, useCartPricing } from '@/lib/use-cart-pricing';
 import { CATEGORY_EMOJI, UI_EMOJI } from '@/lib/emoji';
 import { formatPrice } from '@/lib/format';
@@ -197,7 +197,7 @@ export function CartView() {
         >
           {t('continue')}
         </Link>
-        {BROWSER_ONLY_FEATURES ? (
+        {QUOTES_AVAILABLE ? (
           <Link
             href={`${base}/quotes/new?from=cart`}
             data-track="cart_bulk_quote"

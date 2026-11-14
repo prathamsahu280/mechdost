@@ -17,3 +17,11 @@ export const SHOW_DEMO_CONTROLS = DATA_MODE === 'demo' && process.env.NEXT_PUBLI
  * customer types is kept only on their device. Decision 2026-11-14 (launch).
  */
 export const BROWSER_ONLY_FEATURES = SHOW_DEMO_CONTROLS;
+
+/**
+ * Bulk quotes (spec 19) run on the API in real data mode (2026-11-14): request form, thread and account list call
+ * `/v1/quotes`; the admin quote desk calls `/v1/admin/quotes` with real sign-in.
+ */
+export const QUOTES_ON_API = DATA_MODE === 'api';
+/** Bulk quotes are offered in this build: on the API in real mode, on the browser store in the demo. */
+export const QUOTES_AVAILABLE = QUOTES_ON_API || BROWSER_ONLY_FEATURES;

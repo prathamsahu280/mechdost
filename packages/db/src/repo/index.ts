@@ -42,4 +42,5 @@ export * from './pincodes';
 export * from './service-jobs';
 export * from './service-routing';
 export * from './service-notifications';
+export * from './quotes';
 export * from './reviews';
