@@ -4,6 +4,7 @@ import {
   addWorkshopMember,
   cityScopeFrom,
   createWorkshop,
+  currentLabourPromiseDays,
   findNearbyWorkshops,
   getAdminWorkshop,
   getPublicWorkshop,
@@ -260,7 +261,7 @@ export function workshopPublicRoutes(deps: AppDeps) {
     .openapi(detail, async (c) => {
       const w = await getPublicWorkshop(deps.db, c.req.valid('param').slug, c.req.valid('query').locale);
       c.header('Cache-Control', CACHE);
-      return c.json(w, 200);
+      return c.json({ ...w, labourPromiseDays: await currentLabourPromiseDays(deps.db) }, 200);
     });
 }
 

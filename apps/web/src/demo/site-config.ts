@@ -26,6 +26,8 @@ export { CONTENT_KEYS, contentMax, type ContentKey };
 /** Plain text only: trims, collapses whitespace, drops control characters and caps the length. */
 export const cleanText = cleanContentText;
 
+const LABOUR_PROMISE_MIN_DAYS = 7;
+
 export interface SiteSettings {
   /** Minutes a shop has to accept an offered order (spec 04). Applies to orders offered after the change. */
   acceptMinutes: number;
@@ -37,6 +39,8 @@ export interface SiteSettings {
   /** MechDost Coins (spec 20): value of one coin and the most of a product subtotal coins may pay. */
   coinValuePaise: number;
   coinMaxRedeemBp: number;
+  /** Labour promise (user 2026-11-15, Q105): days from the bill; 0 = off, otherwise 7 to 90 (API: enabled + days). */
+  labourPromiseDays: number;
 }
 
 export const DEFAULT_SETTINGS: SiteSettings = {
@@ -46,6 +50,7 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   freeDeliveryFromPaise: 99_900,
   coinValuePaise: DEFAULT_COIN_RULES.coinValuePaise,
   coinMaxRedeemBp: DEFAULT_COIN_RULES.maxRedeemBp,
+  labourPromiseDays: 0,
 };
 
 /** Inclusive limits; money in paise (whole rupees in the editor). */
@@ -56,6 +61,7 @@ export const SETTING_LIMITS: Record<keyof SiteSettings, readonly [number, number
   freeDeliveryFromPaise: [0, 5_000_000],
   coinValuePaise: COIN_RULE_LIMITS.coinValuePaise,
   coinMaxRedeemBp: COIN_RULE_LIMITS.maxRedeemBp,
+  labourPromiseDays: [0, 90],
 };
 
 export interface AuditEntry {
@@ -113,7 +119,10 @@ export function isEmoji(value: string): boolean {
 
 export function clampSetting(key: keyof SiteSettings, value: number): number {
   const [min, max] = SETTING_LIMITS[key];
-  return Number.isFinite(value) ? Math.min(max, Math.max(min, Math.round(value))) : DEFAULT_SETTINGS[key];
+  if (!Number.isFinite(value)) return DEFAULT_SETTINGS[key];
+  const n = Math.min(max, Math.max(min, Math.round(value)));
+  // A promise shorter than a week is not offered (the API's range is 7 to 90): 1 to 6 is raised to 7.
+  return key === 'labourPromiseDays' && n > 0 && n < LABOUR_PROMISE_MIN_DAYS ? LABOUR_PROMISE_MIN_DAYS : n;
 }
 
 function parse(raw: string | null): SiteConfig {

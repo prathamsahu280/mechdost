@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { CartView } from '@/components/commerce/cart-view';
+import { TrustLine } from '@/components/site/trust-line';
 import { ClientMessages } from '@/components/ui/client-messages';
 import { Container } from '@/components/ui/page-intro';
 import type { Locale } from '@/i18n/routing';
@@ -23,6 +24,7 @@ export default async function CartPage() {
       <h1 className="font-heading text-[clamp(30px,3.4vw,44px)] font-extrabold tracking-[-0.03em] text-ink">
         {t('title')}
       </h1>
+      <TrustLine placement="checkout" className="mt-3 max-w-prose text-[15px] text-muted" />
       <div className="mt-8">
         <ClientMessages namespaces={['cart', 'catalogue', 'quote', 'categories']}>
           <CartView />

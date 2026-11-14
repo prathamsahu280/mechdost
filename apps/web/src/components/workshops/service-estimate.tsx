@@ -1,8 +1,9 @@
 'use client';
 
+import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { formatINR } from '@mechdost/shared/money';
-import { computeServiceBill } from '@mechdost/shared/service-bill';
+import { computeServiceBill, labourPromiseEndsAt } from '@mechdost/shared/service-bill';
 import { useEffect, useId, useState, type SyntheticEvent } from 'react';
 import { decideEstimate } from '@/demo/service-jobs';
 import {
@@ -211,12 +212,16 @@ export function ServiceBillView({
   bill,
   workshopName,
   gstRegistered,
+  requestCode,
 }: {
   bill: DemoServiceBill;
   workshopName: string;
   gstRegistered: boolean;
+  /** The job's code: with a promise on the bill, the "ask for a free redo" link needs it. */
+  requestCode?: string;
 }) {
   const t = useTranslations('request');
+  const trust = useTranslations('trust');
   const locale = useLocale();
   const titleId = useId();
   const rates = new Set(bill.lines.map((l) => l.gstRateBp));
@@ -272,6 +277,28 @@ export function ServiceBillView({
         {row(t('billTotal'), formatINR(bill.totalPaise), true)}
       </dl>
       {gstRegistered ? null : <p className="mt-2 text-xs text-muted">{t('billNoGst')}</p>}
+      {bill.labourPromiseDays ? (
+        <div className="mt-3 rounded-lg bg-surface-alt px-3 py-2 text-sm">
+          <p className="font-bold text-ink">
+            {trust('labourBillLine', {
+              days: bill.labourPromiseDays,
+              date: formatDate(
+                labourPromiseEndsAt(new Date(bill.billedAt), bill.labourPromiseDays).toISOString(),
+                locale,
+              ),
+            })}
+          </p>
+          {requestCode ? (
+            <Link
+              href={`${locale === 'hi' ? '/hi' : ''}/account/support?redo=${encodeURIComponent(requestCode)}`}
+              data-track="labour_redo_claim_open"
+              className="mt-1 inline-flex min-h-11 items-center font-bold text-accent-soft-text underline-offset-4 hover:underline"
+            >
+              {trust('labourClaim')}
+            </Link>
+          ) : null}
+        </div>
+      ) : null}
       <p
         className={`mt-4 rounded-lg px-3 py-2 text-sm font-bold ${bill.paidAt ? 'bg-success-bg text-success' : 'bg-accent-soft text-accent-soft-text'}`}
       >

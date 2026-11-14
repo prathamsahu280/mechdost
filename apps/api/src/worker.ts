@@ -5,10 +5,13 @@
  */
 import { createDb, createListener } from '@mechdost/db';
 import { loadKeyring, type Keyring } from '@mechdost/db/crypto';
+import { trustLineText } from '@mechdost/shared/content';
+import { defaultEmailTrustLine } from '@mechdost/shared/email-layout';
 import {
   bridgeInboundWhatsApp,
   emailOverrideFor,
   ensureEventPartitions,
+  getPublishedContent,
   expireDueAssignments,
   releaseExpiredReservations,
   expireUnpaidOnlineOrders,
@@ -60,7 +63,17 @@ const relay = startRelay({ db, publisher });
 const adapters: ChannelAdapter[] = [
   ...(config.whatsapp ? [createWhatsAppAdapter(config.whatsapp)] : []),
   ...(config.email
-    ? [createEmailAdapter(config.email, { loadOverride: (key, locale) => emailOverrideFor(db, key, locale) })]
+    ? [
+        createEmailAdapter(config.email, {
+          loadOverride: (key, locale) => emailOverrideFor(db, key, locale),
+          // Order emails' "genuine parts" footer line (Admin -> Content `trust.emailFooter`; design 2026-11-15).
+          loadTrustLine: async (locale) =>
+            trustLineText(
+              (await getPublishedContent(db, { locale, cityId: null }))['trust.emailFooter'],
+              defaultEmailTrustLine(locale),
+            ),
+        }),
+      ]
     : []),
 ];
 // Encrypted payload fields (delivery codes, invite tokens) need the data keyring; a channel without it must not start.

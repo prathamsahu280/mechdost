@@ -269,3 +269,36 @@ describe('content draft versions (review low: ABA)', () => {
     });
   });
 });
+
+describe('trust lines (design 2026-11-15)', () => {
+  it('publishing or taking down a trust line records trust_line_edited with its placement', async () => {
+    const base = { locale: 'hi' as const, cityId: null, staffUserId: staff };
+    const draft = await saveContentDraft(t(), {
+      ...base,
+      key: 'trust.checkout',
+      value: 'केवल असली पार्ट्स',
+      expectedVersion: null,
+    });
+    const live = await publishContent(t(), {
+      ...base,
+      key: 'trust.checkout',
+      expectedDraftVersion: draft.version,
+    });
+    expect(await getPublishedContent(t(), { locale: 'hi', cityId: null })).toMatchObject({
+      'trust.checkout': 'केवल असली पार्ट्स',
+    });
+    await unpublishContent(t(), { ...base, key: 'trust.checkout', expectedVersion: live.version });
+    const edits = await db.select().from(events).where(eq(events.event, 'trust_line_edited'));
+    expect(edits.map((e) => e.props)).toEqual([
+      { placement: 'checkout', locale: 'hi', action: 'published' },
+      { placement: 'checkout', locale: 'hi', action: 'unpublished' },
+    ]);
+  });
+
+  it('a trust line hidden with "-" is stored and read back as the hide marker', async () => {
+    const base = { locale: 'en' as const, cityId: null, staffUserId: staff, key: 'trust.homeBill' as const };
+    const draft = await saveContentDraft(t(), { ...base, value: '-', expectedVersion: null });
+    await publishContent(t(), { ...base, expectedDraftVersion: draft.version });
+    expect((await getPublishedContent(t(), { locale: 'en', cityId: null }))['trust.homeBill']).toBe('-');
+  });
+});

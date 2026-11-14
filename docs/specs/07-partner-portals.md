@@ -252,3 +252,18 @@ Decision "Shop management and shop hours on the API" (2026-11-14). Migration **0
   staff note, withdrawn ones marked; "N in the last 30 days"; empty is one sentence. Calm and factual: the shop never sees
   the threshold or the word "pause" here. `GET /v1/shop/warnings` (`orders:read`, scoped to the shop's grants).
 - Strings: locale namespace `shopGiveUp`. Spec 04 and 08 carry the rules.
+
+## "Genuine parts only" clause (2026-11-15, Q102)
+
+- A clause in English and Hindi (`packages/shared/src/seller-clause.ts`, **draft, pending legal review, Q110**): the
+  shop lists only genuine products, legally sourced and in their original packaging; if MechDost confirms that a
+  product sold is fake or counterfeit, the product is taken off sale and the shop can be paused or suspended.
+- It is **part of the agreement text, not a separate tick**: the admin presses "Add the Genuine parts only clause" in
+  Admin → Partners → Agreement (adds it once to both texts), reviews, and publishes a new version; every shop then
+  accepts that version (`partners.agreement_required` flow unchanged). The full agreement text still comes from the user
+  (Q77).
+- Consequence code: `counterfeit_confirmed` in `PARTNER_STANDING_REASONS` (CHECK `partner_status_events_reason_code_valid`
+  in migration 0057); staff choose it when pausing or suspending, the shop reads "Counterfeit product confirmed" (en/hi).
+- Seller pitch on `/partners`: "Sell genuine parts to {city} customers" (trust line `trust.partner`, admin-editable).
+- Workshops: while the labour promise is on, the demo application form asks for the acceptance tick (spec 06
+  "Labour promise").

@@ -45,6 +45,7 @@ export * from './workshops';
 export * from './service-requests';
 export * from './pincodes';
 export * from './service-jobs';
+export * from './labour-promise';
 export * from './service-routing';
 export * from './service-notifications';
 export * from './shops-admin';

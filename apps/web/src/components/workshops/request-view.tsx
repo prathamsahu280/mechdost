@@ -216,6 +216,7 @@ function DemoRequestView({ code }: { code: string }) {
               bill={request.bill}
               workshopName={workshopName}
               gstRegistered={workshopGstRegistered(request.workshopSlug)}
+              requestCode={request.code}
             />
           ) : null}
           {stage === 'completed' && !request.closedAt ? (

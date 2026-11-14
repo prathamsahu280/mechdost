@@ -24,7 +24,7 @@ import {
 } from './geometry.ts';
 import { knownIssueFor } from './known-issues.ts';
 import { navCheck } from './nav-run.ts';
-import { CARTS, COMPARES, PRODUCTS } from './model.ts';
+import { CARTS, COMPARES, PRODUCTS, TRUST_KEYS } from './model.ts';
 
 /** Never measured: the map canvas, its controls and pins (dedicated map tests cover them, T10). */
 const IGNORE =
@@ -87,6 +87,48 @@ function customerWithSavedData(kind: string) {
   };
 }
 
+const LONG_TRUST = {
+  en: 'Only original parts from verified shops, with a bill for every order. Ask us anything on WhatsApp before you buy, in English or Hindi.',
+  hi: 'केवल असली पार्ट्स, सत्यापित दुकानों से, हर ऑर्डर के साथ बिल। ख़रीदने से पहले WhatsApp पर हमसे कुछ भी पूछें, हिंदी या अंग्रेज़ी में, हम तुरंत जवाब देते हैं।',
+} as const;
+const SHORT_TRUST = { en: 'Genuine parts, bill included.', hi: 'असली पार्ट्स, बिल सहित।' } as const;
+
+/**
+ * The demo site config the case seeds for the `trust` and `promise` states (design 2026-11-15): trust lines as the
+ * locale-file default, a short admin wording, a 140-character wording, or hidden with "-"; the labour promise off or on
+ * for 30 days (on the bill of the busy world's billed request too).
+ */
+function trustSeed(c: AuditCase, now: number): Record<string, string> {
+  const { trust, promise } = c.state;
+  if (trust === undefined && promise === undefined) return {};
+  const text = (locale: 'en' | 'hi') =>
+    trust === 'override'
+      ? SHORT_TRUST[locale]
+      : trust === 'long'
+        ? LONG_TRUST[locale]
+        : trust === 'hidden'
+          ? '-'
+          : '';
+  const content: Record<string, Record<string, string>> = {};
+  if (trust !== undefined && trust !== 'default')
+    for (const key of TRUST_KEYS) content[key] = { en: text('en'), hi: text('hi') };
+  const out: Record<string, string> = {
+    'mechdost-demo-site': JSON.stringify({
+      content,
+      settings: { labourPromiseDays: promise === 'on' ? 30 : 0 },
+    }),
+  };
+  if (promise === 'on' && c.world === 'busy') {
+    // the billed request of the busy world carries the promise frozen on its bill
+    const seeded = busyWorld(now)['mechdost-demo-requests'];
+    const requests = Array.isArray(seeded) ? (seeded as { bill?: object }[]) : [];
+    out['mechdost-demo-requests'] = JSON.stringify(
+      requests.map((r) => (r.bill ? { ...r, bill: { ...r.bill, labourPromiseDays: 30 } } : r)),
+    );
+  }
+  return out;
+}
+
 const localised = (path: string, locale: string) =>
   locale === 'en' ? path : path === '/' ? '/hi' : `/hi${path}`;
 
@@ -106,6 +148,7 @@ export function seedFor(c: AuditCase, now: number): Record<string, string> {
     seed['mechdost-cart'] = JSON.stringify(CART_WORLD.cart);
     seed['mechdost-compare'] = JSON.stringify(CART_WORLD.compare);
   }
+  Object.assign(seed, trustSeed(c, now));
   const cart = c.state.cart;
   if (cart !== undefined) {
     const lines = CARTS[cart];

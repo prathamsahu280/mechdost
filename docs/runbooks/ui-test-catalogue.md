@@ -821,3 +821,20 @@ Not covered yet (listed for the next round): the shop's price requests and agree
 Settings → PIN codes (`ServiceAreaApi` shares the page with the settings form calls), applications and invites on the
 API, the customer's delivery-PIN checker and review form, and server-rendered catalogue pages in a real build (their
 data is read by the Node server, which a browser route cannot intercept).
+
+### 9.8 Trust-line and labour-promise rows (2026-11-15)
+
+Design `docs/superpowers/specs/2026-11-15-trust-wording-design.md`. Two state keys seed the demo site config before the
+first load (`harness.ts` `trustSeed`):
+
+| Key       | Values                                  | Meaning                                                                                                               |
+| --------- | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `trust`   | `default`, `override`, `long`, `hidden` | the locale-file text; a short admin wording; 140-character English or Hindi wording; every trust line hidden with `-` |
+| `promise` | `off`, `on`                             | labour promise off, or 30 days (also written onto the busy world's billed request, so the bill shows it)              |
+
+Rows that carry them: `HOME-HERO` (`trust`), `PDP-BUYBOX` (`trust`), `CART-EMPTY` and `CHK-FORM` (`trust`), `WS-PROFILE`
+(`trust`, `promise`: header line, booking sentence), `PTN-LANDING` (`trust`: seller pitch), `SR-VIEW` (`promise`: the
+bill's promise line and redo link), `PTN-APPLY` (`promise`: the workshop acceptance tick). A hidden line must leave no empty
+gap (the hero list collapses with `empty:hidden`); long Hindi wording must wrap inside its container at 320 px.
+`API-ADM-CONTENT` (chunk G, § 9.7) is the Trust lines editor on the API: `content=default|long|hidden|error`.
+`test/state-audit-trust.test.ts` keeps the model's trust keys equal to `CONTENT_KEYS` and checks the seeds.

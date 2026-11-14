@@ -13,6 +13,7 @@ import {
   ticketScopeFrom,
   type TicketView,
 } from '@mechdost/db/repo';
+import { SERVICE_CODE_RE } from '@mechdost/shared/service-requests';
 import { TICKET_STATES } from '@mechdost/shared/state';
 import type { SessionCache } from '../auth/session-cache';
 import { authenticate, requirePermission, requireVerified } from '../middleware/auth';
@@ -79,6 +80,8 @@ const NewTicket = z
       .regex(/^MD-[A-Z]{3}-\d{4}-[0-9A-HJKMNP-TV-Z]{6}$/)
       .nullable()
       .optional(),
+    /** The billed service job (SR-…) a `labour_redo` request is about; required for that kind. */
+    serviceCode: z.string().regex(SERVICE_CODE_RE).nullable().optional(),
     body: z.string().min(1).max(TICKET_BODY_MAX),
   })
   .strict()
@@ -127,8 +130,12 @@ const createTicket = createRoute({
   request: { body: { required: true, content: { 'application/json': { schema: NewTicket } } } },
   responses: {
     201: json(z.object({ code: z.string() }), 'Created'),
-    404: json(ErrorSchema, 'Order not found'),
-    422: json(ErrorSchema, 'Daily limit or invalid message'),
+    404: json(ErrorSchema, 'Order or service job not found'),
+    409: json(ErrorSchema, 'LABOUR_REDO_OPEN: a redo request for this job is already open'),
+    422: json(
+      ErrorSchema,
+      'Daily limit, invalid message, SERVICE_CODE_REQUIRED or LABOUR_PROMISE_UNAVAILABLE',
+    ),
     ...errorResponses,
   },
 });
@@ -245,6 +252,7 @@ export function supportRoutes(deps: AppDeps, cache: SessionCache) {
         userId: c.get('auth').user.id,
         kind: body.kind,
         orderCode: body.orderCode ?? null,
+        serviceCode: body.serviceCode ?? null,
         body: body.body,
         defaultCityCode: deps.config.defaultCityCode,
       });

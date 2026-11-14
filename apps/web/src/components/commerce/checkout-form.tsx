@@ -19,6 +19,7 @@ import { clearCart, placeDemoOrder, useCart } from '@/demo/store';
 import { priceCart } from '@/demo/cart-pricing';
 import { DATA_MODE } from '@/lib/data-mode';
 import { useCartPricing } from '@/lib/use-cart-pricing';
+import { checkoutTotals } from '@/lib/checkout-totals';
 import { codAllowedAfterCoins, coinRulesFromApi } from '@/lib/coins-view';
 import { CartView } from './cart-view';
 
@@ -136,7 +137,14 @@ export function CheckoutForm() {
   // Demo: coins are a demo-store discount on cash on delivery only. Real data: the API applies them to both methods.
   const coinDiscount = useCoinsOn && (realData || method === 'cod') ? redemption.discountPaise : 0;
   const showCoins = (coinAccount !== null || realCustomer !== null) && balance > 0;
-  const payablePaise = totalPaise - coinDiscount;
+  // The summary always adds up: a cash-on-delivery fee is its own line, and paying online does not carry it.
+  const { feePaise, payablePaise } = checkoutTotals({
+    method,
+    totalPaise,
+    codFeePaise: pricing.codFeePaise,
+    onlineTotalPaise: pricing.onlineTotalPaise,
+    coinDiscountPaise: coinDiscount,
+  });
   const prefix = locale === 'hi' ? '/hi' : '';
   // Business purchase (buyer GSTIN plan 2026-11-13): optional; checked with the shared, Zod-free GST helpers.
   const [isBusiness, setIsBusiness] = useState(false);
@@ -708,6 +716,12 @@ export function CheckoutForm() {
             <dt className="text-muted">{cartT('delivery')}</dt>
             <dd className="font-bold">{deliveryPaise === 0 ? cartT('free') : formatPrice(deliveryPaise)}</dd>
           </div>
+          {feePaise > 0 ? (
+            <div className="flex justify-between">
+              <dt className="text-muted">{t('codFee')}</dt>
+              <dd className="font-bold">{formatPrice(feePaise)}</dd>
+            </div>
+          ) : null}
           {coinDiscount > 0 ? (
             <div className="flex justify-between text-success">
               <dt>{t('coinsLine', { coins: redemption.coins })}</dt>

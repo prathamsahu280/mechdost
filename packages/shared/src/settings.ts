@@ -124,6 +124,14 @@ export const OPERATIONAL_SETTINGS = {
   'coins.unlock_days': { kind: 'int', min: 0, max: 60, default: 8, globalOnly: true },
   /** Days before unused coins expire. */
   'coins.expiry_days': { kind: 'int', min: 30, max: 1_095, default: 180, globalOnly: true },
+  /**
+   * The labour promise (user 2026-11-15, Q105): when on, workshop pages, the booking review and the bill say the
+   * workshop redoes faulty labour free within `service.labour_promise_days` days. Off until the admin chooses.
+   * Site-wide, like the wording it drives.
+   */
+  'service.labour_promise_enabled': { kind: 'boolean', default: false, globalOnly: true },
+  /** Days the labour promise lasts; copied onto each bill when it is made, so a later change never rewrites it. */
+  'service.labour_promise_days': { kind: 'int', min: 7, max: 90, default: 30, globalOnly: true },
 } as const satisfies Record<string, SettingSpec>;
 
 /**

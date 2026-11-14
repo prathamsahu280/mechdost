@@ -34,6 +34,8 @@ export const PARTNER_STANDING_REASONS = [
   'pricing_issue',
   'policy_violation',
   'fraud_suspected',
+  /** A fake or counterfeit product was confirmed: the "genuine parts only" clause of the seller agreement (2026-11-15). */
+  'counterfeit_confirmed',
   'issue_resolved',
   'other',
   'pause_ended',

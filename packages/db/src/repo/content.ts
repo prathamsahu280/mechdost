@@ -3,6 +3,7 @@ import {
   cleanContentText,
   CONTENT_KEYS,
   CONTENT_LOCALES,
+  trustPlacementOf,
   type ContentKey,
   type ContentLocale,
 } from '@mechdost/shared/content';
@@ -151,6 +152,21 @@ function cleanEditable(key: EditableKey, raw: unknown): EditableValue {
   return text;
 }
 
+/** A trust line ('genuine parts' wording) changed: one extra server event with its placement (spec 12). */
+async function recordTrustEdit(
+  tx: Tx,
+  input: { key: EditableKey; locale: ContentLocale; cityId: string | null; staffUserId: string },
+  action: 'published' | 'unpublished',
+): Promise<void> {
+  const placement = trustPlacementOf(input.key);
+  if (!placement) return;
+  await recordServerEvent(tx, 'trust_line_edited', {
+    userId: input.staffUserId,
+    cityId: input.cityId,
+    props: { placement, locale: input.locale, action },
+  });
+}
+
 /** Audit entity id of one content entry (key, locale, optional city). */
 function entityKey(key: string, locale: string, cityId: string | null): string {
   return `${key}:${locale}${cityId ? `@${cityId}` : ''}`;
@@ -283,6 +299,7 @@ export async function publishContent(
       cityId: input.cityId,
       props: { key: input.key, locale: input.locale, action: 'published' },
     });
+    await recordTrustEdit(tx, input, 'published');
     return { version: live.version };
   });
 }
@@ -329,5 +346,6 @@ export async function unpublishContent(
       cityId: input.cityId,
       props: { key: input.key, locale: input.locale, action: 'unpublished' },
     });
+    await recordTrustEdit(tx, input, 'unpublished');
   });
 }

@@ -31,6 +31,7 @@ import { commonErrorKey } from '@/lib/api-error-key';
 import { track } from '@/lib/analytics';
 import { formatDate, formatPrice } from '@/lib/format';
 import { parseCoverage } from '@/lib/partner-onboarding-view';
+import { GenuineClauseButton } from './genuine-clause';
 import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
 
 /**
@@ -1003,6 +1004,7 @@ export function AgreementApi() {
             />
           </div>
         ))}
+        <GenuineClauseButton />
         {invalid ? (
           <p id="agreement-error" className="text-xs font-bold text-error">
             {t('agreementErrText')}

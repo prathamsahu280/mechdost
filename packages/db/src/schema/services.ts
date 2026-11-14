@@ -358,6 +358,8 @@ export const serviceBills = pgTable(
     sgstPaise: paise().notNull(),
     roundOffPaise: integer().notNull(),
     totalPaise: paise().notNull(),
+    /** Days of labour promise the bill carries (the setting at billing time); null = no promise (off, or older bill). */
+    labourPromiseDays: integer(),
     billedAt: ts().notNull().defaultNow(),
     billedBy: uuid().references(() => users.id, { onDelete: 'set null' }),
     paidAt: ts(),
@@ -379,6 +381,10 @@ export const serviceBills = pgTable(
       sql`${t.totalPaise} = ${t.taxablePaise} + ${t.cgstPaise} + ${t.sgstPaise} + ${t.roundOffPaise}`,
     ),
     check('service_bills_unregistered_no_gst', sql`${t.gstRegistered} or ${t.cgstPaise} = 0`),
+    check(
+      'service_bills_labour_promise_days_range',
+      sql`${t.labourPromiseDays} is null or ${t.labourPromiseDays} between 7 and 90`,
+    ),
     check('service_bills_lines_array', sql`jsonb_typeof(${t.lines}) = 'array'`),
     check('service_bills_method_valid', sql`${t.method} is null or ${t.method} in ('cash','upi','card')`),
     check('service_bills_paid_pair', sql`(${t.paidAt} is null) = (${t.method} is null)`),

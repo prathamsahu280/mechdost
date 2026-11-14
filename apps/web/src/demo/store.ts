@@ -152,6 +152,8 @@ export interface DemoEstimate {
 export type DemoServiceBill = Omit<ServiceBill, 'lines'> & {
   lines: (ServiceBill['lines'][number] & { serviceKey?: string })[];
   billedAt: string;
+  /** Days of labour promise frozen on the bill (2026-11-15); null/absent = none. */
+  labourPromiseDays?: number | null;
   paidAt: string | null;
 };
 

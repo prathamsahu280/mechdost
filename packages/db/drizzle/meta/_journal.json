@@ -386,6 +386,13 @@
       "when": 1794690693198,
       "tag": "0056_email_templates",
       "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1794692604079,
+      "tag": "0057_trust_labour_promise",
+      "breakpoints": true
     }
   ]
 }

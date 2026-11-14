@@ -25,7 +25,11 @@ export interface CartPricing {
   priced: PricedLine[];
   subtotalPaise: number;
   deliveryPaise: number;
+  /** Cash-on-delivery total (includes `codFeePaise`); the total for an online payment is `onlineTotalPaise`. */
   totalPaise: number;
+  /** The admin-set fee added to a cash-on-delivery order (0 in the demo and when none is set). */
+  codFeePaise: number;
+  onlineTotalPaise: number;
   /** Real data mode: the API quote behind the numbers (COD eligibility, groups, line issues). */
   quote: CheckoutQuote | null;
   /** Real data mode: waiting for the first quote, or the API could not price the cart (error code). */
@@ -61,6 +65,8 @@ function useDemoCartPricing(lines: readonly CartLine[]): CartPricing {
       subtotalPaise: demo.subtotalPaise,
       deliveryPaise: demo.deliveryPaise,
       totalPaise: demo.totalPaise,
+      codFeePaise: 0,
+      onlineTotalPaise: demo.totalPaise,
       quote: null,
       status: 'ready' as const,
       error: null,
@@ -134,6 +140,8 @@ function useApiCartPricing(lines: readonly CartLine[], pincode: string, locale: 
     subtotalPaise: quote?.subtotalPaise ?? 0,
     deliveryPaise: quote?.shippingPaise ?? 0,
     totalPaise: quote?.totalPaise ?? 0,
+    codFeePaise: quote?.codFeePaise ?? 0,
+    onlineTotalPaise: quote?.onlineTotalPaise ?? 0,
     // Only a quote for exactly this cart and PIN may be used to place an order.
     quote: current,
     status: apiLines.length === 0 ? 'ready' : fresh && state.error ? 'error' : current ? 'ready' : 'loading',

@@ -1,5 +1,6 @@
 import { and, desc, eq, gt, inArray, isNull, lt, sql } from 'drizzle-orm';
 import { publicCode } from '@mechdost/shared/ids';
+import { labourPromiseOpen } from '@mechdost/shared/service-bill';
 import { ticketMachine, type TicketStatus } from '@mechdost/shared/state';
 import { OPERATIONAL_SETTINGS } from '@mechdost/shared/settings';
 import {
@@ -7,6 +8,8 @@ import {
   cities,
   orderGroups,
   orders,
+  serviceBills,
+  serviceRequests,
   settings,
   supportTickets,
   ticketMessages,
@@ -24,7 +27,8 @@ import type { Tx } from './orders';
  * city staff see requests about their cities' orders). Every status change goes through `ticketMachine` as a
  * compare-and-set; every creation is audited. Customer limit: 5 requests per 24 h (serialised per user).
  */
-export const TICKET_KINDS = ['order_issue', 'refund', 'fitment', 'account', 'other'] as const;
+/** `labour_redo` = a customer claims the workshop's labour promise on one of their billed jobs (user 2026-11-15, Q105). */
+export const TICKET_KINDS = ['order_issue', 'refund', 'fitment', 'account', 'labour_redo', 'other'] as const;
 export type TicketKind = (typeof TICKET_KINDS)[number];
 export const DAILY_TICKET_LIMIT = 5;
 export const TICKET_BODY_MAX = 2000;
@@ -137,6 +141,8 @@ export async function createSupportTicket(
     userId: string;
     kind: TicketKind;
     orderCode: string | null;
+    /** Required for `labour_redo` (the service job, SR-…); ignored for other kinds. */
+    serviceCode?: string | null;
     body: string;
     defaultCityCode: string;
   },
@@ -176,6 +182,46 @@ export async function createSupportTicket(
       cityId = order.cityId;
       cityCode = order.cityCode;
     }
+    let serviceRequestId: string | null = null;
+    if (input.kind === 'labour_redo') {
+      if (!input.serviceCode) {
+        throw new ValidationError('Choose the service job to redo', 'SERVICE_CODE_REQUIRED');
+      }
+      // Actor-scoped like orders: someone else's job is "not found".
+      const [job] = await tx
+        .select({
+          id: serviceRequests.id,
+          cityId: serviceRequests.cityId,
+          cityCode: cities.code,
+          billedAt: serviceBills.billedAt,
+          days: serviceBills.labourPromiseDays,
+        })
+        .from(serviceRequests)
+        .innerJoin(cities, eq(cities.id, serviceRequests.cityId))
+        .leftJoin(serviceBills, eq(serviceBills.requestId, serviceRequests.id))
+        .where(and(eq(serviceRequests.code, input.serviceCode), eq(serviceRequests.userId, input.userId)))
+        .limit(1);
+      if (!job) throw new NotFoundError('Service job not found');
+      if (!job.billedAt || !labourPromiseOpen(job.billedAt, job.days, now)) {
+        throw new ValidationError(
+          'This job has no labour promise, or it has ended',
+          'LABOUR_PROMISE_UNAVAILABLE',
+        );
+      }
+      const open = await tx.$count(
+        supportTickets,
+        and(
+          eq(supportTickets.serviceRequestId, job.id),
+          eq(supportTickets.kind, 'labour_redo'),
+          inArray(supportTickets.status, ACTIVE),
+        ),
+      );
+      if (open > 0)
+        throw new ConflictError('A redo request for this job is already open', 'LABOUR_REDO_OPEN');
+      serviceRequestId = job.id;
+      cityId = job.cityId;
+      cityCode = job.cityCode;
+    }
     const [ticket] = await tx
       .insert(supportTickets)
       .values({
@@ -183,6 +229,7 @@ export async function createSupportTicket(
         userId: input.userId,
         kind: input.kind,
         orderId,
+        serviceRequestId,
         cityId,
         channel: 'web',
         slaAckDue: new Date(now.getTime() + ACK_MS),

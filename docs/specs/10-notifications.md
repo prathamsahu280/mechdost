@@ -132,3 +132,7 @@ In real sign-in builds (`AUTH_MODE === 'firebase'`; Stream D of `docs/superpower
 - The status line shows how many events are on; the budget card shows this month's sent / delivered / failed and estimated cost from `GET /v1/admin/notifications/whatsapp` and saves the alert with `PUT …/whatsapp/budget` (whole rupees → paise, compare-and-set).
 - Launch step (Stream F): staff switch on `order.confirmed`, `order.out_for_delivery`, `order.rejected`, `ticket.replied` and `order.routed` here once the Meta templates are approved.
 - **Gap:** no change-history endpoint, so the demo's "Recent changes" card is not shown in API mode.
+
+## Order-email trust line (2026-11-15)
+
+Order emails (`order_*` templates) carry one footer line above the company line: "Genuine parts from verified Raipur shops." (Hindi: "रायपुर की सत्यापित दुकानों से असली पार्ट्स।"). The admin rewords or hides it in Admin → Content → Trust lines (`trust.emailFooter`, spec 08); the worker reads the published text at send time and falls back to the default if the lookup fails. Other emails (refunds, service, quotes, support, partners) do not carry it.

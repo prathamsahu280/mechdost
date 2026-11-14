@@ -19,6 +19,7 @@ import {
   billJob,
   cancelMyServiceRequest,
   cancelPendingServiceRewards,
+  createSupportTicket,
   createServiceRequest,
   decideEstimate,
   decideProposal,
@@ -910,5 +911,101 @@ describe('service emails (spec 10, design 2026-11-15)', () => {
       }),
     ).rejects.toThrow('boom');
     expect(await db.$count(s.notificationOutbox)).toBe(0);
+  });
+});
+
+describe('labour promise (design 2026-11-15, Q105)', () => {
+  let odometer = 500_000;
+  /** A request taken to billed; the promise on the bill is whatever the setting is at that moment. */
+  async function billed() {
+    // The odometer never goes back (same vehicle text across this file): each bill starts above all earlier ones.
+    odometer += 1_000;
+    const r = await received(odometer);
+    const sent = await sendEstimate(t(), {
+      ...step(r.code, r.version),
+      lines: [{ description: 'Labour', serviceKey: null, qty: 1, unitPaise: 50_000, gstRateBp: 1800 }],
+    });
+    const [line] = await items(r.code);
+    let v = (
+      await decideEstimate(t(), {
+        userId: f.customer,
+        code: r.code,
+        decision: {
+          revision: 1,
+          version: sent.version,
+          consent: true,
+          decisions: [{ itemId: line!.id, decision: 'approved' }],
+        },
+      })
+    ).version;
+    v = (await advanceJob(t(), { ...step(r.code, v), to: 'in_progress' })).version;
+    v = (await advanceJob(t(), { ...step(r.code, v), to: 'ready' })).version;
+    await billJob(t(), step(r.code, v));
+    return r.code;
+  }
+  const setting = (key: string, value: boolean | number) =>
+    db
+      .insert(s.settings)
+      .values({ key, value, cityId: null })
+      .onConflictDoUpdate({
+        target: [s.settings.key, s.settings.cityId],
+        set: { value },
+      });
+  const clear = () => db.delete(s.settings).where(sql`key like 'service.labour_promise_%'`);
+  const claim = (serviceCode: string | null, userId = f.customer) =>
+    createSupportTicket(t(), {
+      userId,
+      kind: 'labour_redo',
+      orderCode: null,
+      serviceCode,
+      body: 'The brake still rubs after the service.',
+      defaultCityCode: 'RPR',
+    });
+
+  it('a bill carries no promise while the setting is off (the default)', async () => {
+    await clear();
+    const code = await billed();
+    expect((await getMyServiceRequest(t(), f.customer, code, 'en')).bill?.labourPromiseDays).toBeNull();
+  });
+
+  it('the days are frozen on the bill when it is made: a later change never rewrites it', async () => {
+    await clear();
+    await setting('service.labour_promise_enabled', true);
+    await setting('service.labour_promise_days', 45);
+    const code = await billed();
+    await setting('service.labour_promise_days', 10);
+    expect((await getMyServiceRequest(t(), f.customer, code, 'en')).bill?.labourPromiseDays).toBe(45);
+    // An out-of-range stored value reads as the default, never as a hand-edited promise.
+    await db.execute(sql`update settings set value = '3'::jsonb where key = 'service.labour_promise_days'`);
+    const second = await billed();
+    expect((await getMyServiceRequest(t(), f.customer, second, 'en')).bill?.labourPromiseDays).toBe(30);
+    await clear();
+  });
+
+  it('claiming: only your own billed job with a running promise; one open claim per job', async () => {
+    await clear();
+    await setting('service.labour_promise_enabled', true);
+    const code = await billed();
+    await expect(claim(null)).rejects.toMatchObject({ code: 'SERVICE_CODE_REQUIRED' });
+    await expect(claim(code, f.other)).rejects.toMatchObject({ name: 'NotFoundError' });
+    const ticket = await claim(code);
+    expect(ticket.code).toMatch(/^REQ-RPR-/);
+    const [row] = await db.select().from(s.supportTickets).where(eq(s.supportTickets.code, ticket.code));
+    expect(row).toMatchObject({ kind: 'labour_redo', status: 'open' });
+    expect(row?.serviceRequestId).toBeTruthy();
+    await expect(claim(code)).rejects.toMatchObject({ code: 'LABOUR_REDO_OPEN' });
+    // The window has passed.
+    await db.execute(sql`update service_bills set billed_at = now() - interval '31 days'`);
+    await db.execute(sql`update support_tickets set status = 'closed'`);
+    await expect(claim(code)).rejects.toMatchObject({ code: 'LABOUR_PROMISE_UNAVAILABLE' });
+    await clear();
+  });
+
+  it('a bill made while the promise was off cannot be claimed, even if the promise is on later', async () => {
+    await clear();
+    const code = await billed();
+    await setting('service.labour_promise_enabled', true);
+    await expect(claim(code)).rejects.toMatchObject({ code: 'LABOUR_PROMISE_UNAVAILABLE' });
+    await clear();
   });
 });

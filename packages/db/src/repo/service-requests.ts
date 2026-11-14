@@ -242,6 +242,8 @@ export interface BillView {
   roundOffPaise: number;
   totalPaise: number;
   billedAt: Date;
+  /** Days of labour promise frozen on the bill (user 2026-11-15); null = none. */
+  labourPromiseDays: number | null;
   paidAt: Date | null;
   method: string | null;
 }
@@ -417,6 +419,7 @@ export async function loadRequestView(
           roundOffPaise: bill.roundOffPaise,
           totalPaise: bill.totalPaise,
           billedAt: bill.billedAt,
+          labourPromiseDays: bill.labourPromiseDays,
           paidAt: bill.paidAt,
           method: bill.method,
         }

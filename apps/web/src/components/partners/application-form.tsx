@@ -5,10 +5,11 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
 import { type PartnerKind } from '@/demo/store';
 import { createApplication } from '@/demo/partner-store';
+import { useSiteSettings } from '@/demo/site-config';
 import { VEHICLE_LABEL_KEY } from '@mechdost/shared/vehicles';
 import { track } from '@/lib/analytics';
 
-type Field = 'name' | 'phone' | 'business' | 'pincode' | 'vehicles' | 'details' | 'consent';
+type Field = 'name' | 'phone' | 'business' | 'pincode' | 'vehicles' | 'details' | 'labourPromise' | 'consent';
 
 /**
  * Partner application (spec 07): the fields of `partner_applications`. Inline errors next to fields, focus moves to
@@ -17,7 +18,11 @@ type Field = 'name' | 'phone' | 'business' | 'pincode' | 'vehicles' | 'details' 
  */
 export function ApplicationForm({ kind }: { kind: PartnerKind }) {
   const t = useTranslations('apply');
+  const trust = useTranslations('trust');
   const locale = useLocale();
+  // A workshop accepts the labour promise when it applies, while the admin has the promise on (Q105, 2026-11-15).
+  const labourPromiseDays = useSiteSettings().labourPromiseDays;
+  const needsLabourPromise = kind === 'garage' && labourPromiseDays > 0;
   const router = useRouter();
   const [errors, setErrors] = useState<Partial<Record<Field, string>>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -42,6 +47,8 @@ export function ApplicationForm({ kind }: { kind: PartnerKind }) {
     if (!/^[1-9]\d{5}$/.test(value('pincode'))) next.pincode = t('errPincode');
     if (needsVehicles && vehicles.length === 0) next.vehicles = t('errVehicles');
     if (value('details').length < 20) next.details = t('errDetails');
+    if (needsLabourPromise && data.get('labourPromise') !== 'on')
+      next.labourPromise = trust('labourOnboardingError');
     if (data.get('consent') !== 'on') next.consent = t('errConsent');
     setErrors(next);
     const first = Object.keys(next)[0];
@@ -167,6 +174,21 @@ export function ApplicationForm({ kind }: { kind: PartnerKind }) {
         <p className="mt-1 text-xs text-muted">{t('detailsHint')}</p>
         {err('details')}
       </div>
+
+      {needsLabourPromise ? (
+        <div>
+          <label className="flex items-start gap-3 text-sm text-ink">
+            <input
+              {...aria('labourPromise')}
+              name="labourPromise"
+              type="checkbox"
+              className="mt-0.5 size-6 shrink-0 accent-[var(--color-accent-button)]"
+            />
+            <span>{trust('labourOnboarding')}</span>
+          </label>
+          {err('labourPromise')}
+        </div>
+      ) : null}
 
       <label className="flex items-start gap-3 text-sm text-ink">
         <input

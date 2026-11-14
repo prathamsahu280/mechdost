@@ -210,6 +210,7 @@ export function RequestViewApi({ code }: { code: string }) {
               bill={req.bill}
               workshopName={workshopName ?? ''}
               gstRegistered={req.bill.gstRegistered}
+              requestCode={req.code}
             />
           ) : null}
           {customerMayCancel(req.status) ? <CancelRequestApi req={req} onChanged={refresh} /> : null}

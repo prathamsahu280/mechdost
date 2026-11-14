@@ -42,7 +42,10 @@ export type SupportErrorKey =
   | 'err_stale'
   | 'err_not_allowed'
   | 'api_err_reply_limit'
-  | 'api_err_order';
+  | 'api_err_order'
+  | 'api_err_labour'
+  | 'api_err_labour_open'
+  | 'api_err_service';
 
 /** API support codes → `support.*` messages; null = not a support-specific code (use the common message). */
 export function supportErrorKey(code: string): SupportErrorKey | null {
@@ -53,6 +56,11 @@ export function supportErrorKey(code: string): SupportErrorKey | null {
       return 'err_too_long';
     case 'TICKET_DAILY_LIMIT':
       return 'err_limit';
+    case 'LABOUR_PROMISE_UNAVAILABLE':
+    case 'SERVICE_CODE_REQUIRED':
+      return 'api_err_labour';
+    case 'LABOUR_REDO_OPEN':
+      return 'api_err_labour_open';
     case 'REPLY_LIMIT':
       return 'api_err_reply_limit';
     case 'TICKET_CLOSED':

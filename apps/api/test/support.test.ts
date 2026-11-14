@@ -25,6 +25,24 @@ async function person(
   return { ...bearer(token), 'content-type': 'application/json' };
 }
 
+describe('support API: redo under the labour promise', () => {
+  it('needs a service job code, never accepts a malformed one, and refuses a job that is not yours (404)', async () => {
+    const ctx = await buildApp();
+    const asha = await person(ctx, '11', null);
+    const send = (body: unknown) =>
+      ctx.app.request('/v1/support/tickets', { method: 'POST', headers: asha, body: JSON.stringify(body) });
+    const text = 'The brake still rubs after the service.';
+    const missing = await send({ kind: 'labour_redo', body: text });
+    expect(missing.status).toBe(422);
+    expect(((await missing.json()) as ErrorJson).error.code).toBe('SERVICE_CODE_REQUIRED');
+    expect((await send({ kind: 'labour_redo', serviceCode: 'nope', body: text })).status).toBe(400);
+    // a well-formed code that is not on this customer's account is "not found", never "forbidden"
+    expect((await send({ kind: 'labour_redo', serviceCode: 'SR-RPR-2026-AAAAAA', body: text })).status).toBe(
+      404,
+    );
+  });
+});
+
 describe('support API', () => {
   it('an illegal status move is a 409 with a stable code, not a 500 (review B5)', async () => {
     const ctx = await buildApp();

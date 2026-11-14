@@ -4,6 +4,24 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Current status
 
+- **2026-11-15 (morning): trust wording, seller clause, labour promise, dark-pattern audit built** on branch
+  `worktree-agent-a60fd5ab3acdbed1d` (not merged). Design `docs/superpowers/specs/2026-11-15-trust-wording-design.md`,
+  plan `docs/superpowers/plans/2026-11-15-trust-wording.md`, audit `docs/research/dark-patterns-audit-2026-11.md`,
+  decisions "2026-11-15 — Trust wording, seller clause, labour promise, dark-pattern audit built".
+  - **Built:** eight trust lines (home hero, product, cart and checkout, workshop page, partner page, order-email footer)
+    as content keys with en + hi defaults (`trust` namespace), editable and hideable in Admin → Content, event
+    `trust_line_edited`; "Genuine parts only" clause (draft) added to the agreement text by a button, standing reason
+    `counterfeit_confirmed`; labour promise settings (off by default, 7 to 90 days) shown on workshop pages and the bill
+    (days frozen at billing), claim as ticket kind `labour_redo`, workshop tick on the demo application form; dark-pattern
+    audit with two fixes (COD fee line at checkout, optional quote-close reason).
+  - **Migration `0057_trust_labour_promise`** (support kind CHECK, standing reason CHECK, `service_bills.labour_promise_days`):
+    not applied; the coordinator renumbers at merge.
+  - **State audit:** `trust` and `promise` dimensions on HOME-HERO, PDP-BUYBOX, CART-EMPTY, CHK-FORM, WS-PROFILE,
+    PTN-LANDING, SR-VIEW, PTN-APPLY; new API row `API-ADM-CONTENT`; checklist regenerated (2,901 items).
+  - **Questions queued:** Q109 (default payment), Q110 (legal review), Q111 (labour promise terms, workshop agreement).
+  - **Not done:** workshop API application and agreement (no such flow yet), "GST bill" on the product page (needs the
+    selling shop), browser run of the new audit rows (no Playwright by instruction).
+
 - **2026-11-15 (after midnight): launch merges in progress.** Each branch gets a fresh review and fixes, then is merged, re-stamped, gated, migrated live after a precheck, pushed and deploy-checked.
   - **On main and live/deploying:**
     - reviews (0046), PIN codes (0048 plus seed: 27 PINs, 21 active);

@@ -1,4 +1,5 @@
 import { getTranslations } from 'next-intl/server';
+import type { TrustPlacement } from '@mechdost/shared/content';
 import { AdminConsole } from '@/components/portal/admin-console';
 import type { ContentDefaults } from '@/components/portal/admin-site';
 import type { NotifyDefaults } from '@/components/portal/admin-notifications';
@@ -15,6 +16,9 @@ async function contentDefaults(): Promise<ContentDefaults> {
     const announcement = await getTranslations({ locale, namespace: 'announcement' });
     const hero = await getTranslations({ locale, namespace: 'home.hero' });
     const city = (await getTranslations({ locale, namespace: 'cities' }))(site.defaultCity);
+    const trust = await getTranslations({ locale, namespace: 'trust' });
+    // The product line shows its {brand} token so the admin sees where the brand goes.
+    const line = (p: TrustPlacement) => trust(p, { city, brand: '{brand}' });
     return {
       'announcement.orders': announcement('orders'),
       'announcement.workshops': announcement('workshops', { city }),
@@ -22,6 +26,14 @@ async function contentDefaults(): Promise<ContentDefaults> {
       'hero.titleLine1': hero('titleLine1'),
       'hero.titleLine2': hero('titleLine2'),
       'hero.lead': hero('lead', { city }),
+      'trust.homeGenuine': line('homeGenuine'),
+      'trust.homeBill': line('homeBill'),
+      'trust.homeEstimates': line('homeEstimates'),
+      'trust.product': line('product'),
+      'trust.checkout': line('checkout'),
+      'trust.emailFooter': line('emailFooter'),
+      'trust.workshop': line('workshop'),
+      'trust.partner': line('partner'),
     };
   };
   const [en, hi] = await Promise.all([pick('en'), pick('hi')]);
@@ -70,6 +82,8 @@ export async function AdminShell({ section }: { section: AdminSection }) {
             'compare',
             // Admin → Reviews (moderation queue on the API, 2026-11-14).
             'reviews',
+            // Admin → Content trust lines, the agreement clause and the labour promise (design 2026-11-15).
+            'trust',
           ]}
         >
           <AdminConsole

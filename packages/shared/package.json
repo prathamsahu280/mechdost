@@ -31,6 +31,7 @@
     "./business": "./src/business.ts",
     "./gst": "./src/gst.ts",
     "./partner-codes": "./src/partner-codes.ts",
+    "./seller-clause": "./src/seller-clause.ts",
     "./partner-warnings": "./src/partner-warnings.ts",
     "./product-attributes": "./src/product-attributes.ts",
     "./compare-max": "./src/compare-max.ts",

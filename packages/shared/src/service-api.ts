@@ -46,6 +46,8 @@ export const PublicWorkshopDto = z.object({
   ratingCount: z.number().int(),
   gstRegistered: z.boolean(),
   services: z.array(WorkshopMenuItemDto),
+  /** Days of the labour promise while it is on (workshop page only; absent or null = no promise). */
+  labourPromiseDays: z.number().int().nullable().optional(),
 });
 export type PublicWorkshop = z.infer<typeof PublicWorkshopDto>;
 
@@ -117,6 +119,8 @@ export const ServiceBillDto = z.object({
   roundOffPaise: z.number().int(),
   totalPaise: z.number().int(),
   billedAt: z.string(),
+  /** Days of labour promise frozen on the bill; null/absent = none (older bills have no field). */
+  labourPromiseDays: z.number().int().nullable().default(null),
   paidAt: z.string().nullable(),
   method: z.string().nullable(),
 });

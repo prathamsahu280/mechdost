@@ -14,6 +14,7 @@ import {
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from './errors';
 import { recordServerEvent } from './events';
 import type { Tx } from './orders';
+import { currentLabourPromiseDays } from './labour-promise';
 import { queueServiceWhatsApp } from './service-notifications';
 import {
   assertBookableDate,
@@ -369,6 +370,8 @@ export async function billJob(db: Tx, input: StepInput) {
       roundOffPaise: bill.roundOffPaise,
       totalPaise: bill.totalPaise,
       billedBy: input.staffUserId,
+      // The promise as of now, frozen on the bill: a later setting change never rewrites it (null = none).
+      labourPromiseDays: await currentLabourPromiseDays(tx),
     });
     await recordServerEvent(tx, 'service_billed', {
       userId: input.staffUserId,

@@ -13,6 +13,7 @@ import {
 import { track } from '@/lib/analytics';
 import { AUTH_MODE } from '@/lib/auth/mode';
 import { formatDate } from '@/lib/format';
+import { GenuineClauseButton } from './genuine-clause';
 import { portalCard, portalField, portalPrimary } from './portal-guard';
 
 /** Real sign-in builds: the same cards on the API (`/v1/admin/agreements`, `/v1/shop-onboarding/{shopId}/agreement`). */
@@ -85,6 +86,7 @@ function DemoAdminAgreement() {
             />
           </div>
         ))}
+        <GenuineClauseButton />
         {invalid ? (
           <p id="agreement-error" className="text-xs font-bold text-error">
             {t('agreementErrText')}

@@ -269,3 +269,41 @@ Analytics section.
   `partner.warning_issued` / `partner.warning_withdrawn`; events `admin_partner_warning_issued` / `_withdrawn`.
 - **Reroute queue:** an order a shop gave up shows the reason line and the shop's "gave this order up before" tag (spec 04).
 - **Tests:** `packages/db/test/partner-warnings.test.ts`, `apps/api/test/shop-give-up.test.ts`.
+
+## Trust lines and the labour promise setting (2026-11-15)
+
+Design: `docs/superpowers/specs/2026-11-15-trust-wording-design.md`; plan `docs/superpowers/plans/2026-11-15-trust-wording.md`.
+
+- **Trust lines** are eight admin-editable texts, one per placement, in **Admin → Content → "Trust lines"** (a fourth
+  group after the announcement bar and the home headline). They are ordinary content keys (`trust.homeGenuine`,
+  `trust.homeBill`, `trust.homeEstimates`, `trust.product`, `trust.checkout`, `trust.emailFooter`, `trust.workshop`,
+  `trust.partner`; registry `packages/shared/src/content.ts`), so the same rules hold: English and Hindi are edited and
+  published separately, empty means the locale-file default (`trust` namespace, en + hi), one draft and one live text
+  per key and language, compare-and-set on `version`, audit `content.draft_saved|published|unpublished`.
+- **Hide a line** in one language by publishing the text `-` (a dash); the editor says so under the group heading and
+  the field shows "Hidden". Removing the text brings the default back. The product line may use `{brand}`; an override
+  that needs a brand the page does not have falls back to the default (`trustLineText`).
+- **Where they show** (Server Components read the published text, cached 60 s with the tag `content`; the demo build
+  also applies the browser-stored override in a tiny island, so no new client code on product pages):
+  home hero (three lines under the search), product page near the price (brand from the product; **"GST bill" only for a
+  GST-registered selling shop, left out when unknown, which is always on the product page today**), cart and checkout
+  under the title, workshop page header and the partner page's seller card, and the order emails' footer line
+  (`trust.emailFooter`, order templates `order_*` only, read by the worker at send time; the default for Raipur lives in
+  `email-layout.ts` and a test keeps it equal to the locale text).
+- **Default wording** (en): "100% genuine parts from verified {city} shops" · "Bill with every order" · "Clear
+  estimates, you approve every line" · "Genuine {brand} part from a verified shop" · "Only original parts from verified
+  shops. Pay online or cash on delivery." · "Genuine parts from verified {city} shops." · "Verified workshop · you
+  approve every line of the estimate" · "Sell genuine parts to {city} customers". Truthful-claims rules: no "sealed
+  pack", no blanket "GST bill".
+- **Event:** `trust_line_edited {placement, locale, action}` (server, written with the publish or unpublish, besides
+  `admin_content_published`).
+- **Labour promise settings** (Admin → Settings, site-wide): `service.labour_promise_enabled` (default off) and
+  `service.labour_promise_days` (7–90, default 30). The demo settings screen has one field, `labourPromiseDays`
+  (0 = off, 1–6 are raised to 7).
+- **Agreement clause:** Admin → Partners → Agreement has an "Add the Genuine parts only clause" button that appends the
+  clause (en + hi, `packages/shared/src/seller-clause.ts`, **draft pending legal review**) to both texts once; the admin
+  reviews and publishes a new version. Standing reason code `counterfeit_confirmed` ("Counterfeit product confirmed")
+  joins the pause/suspend reasons.
+- Tests: `packages/shared/test/trust.test.ts`, `packages/db/test/content.test.ts` (events), `apps/api/test/email.test.ts`
+  (footer), `apps/web/test/trust-content.test.ts`, `site-config.test.ts`, UI state rows `trust=…` and `promise=…`,
+  `API-ADM-CONTENT`.

@@ -12,7 +12,7 @@ import { ticketMachine, type TicketStatus } from '@mechdost/shared/state';
  */
 export const SUPPORT_KEY = 'mechdost-demo-support';
 
-export const TICKET_KINDS = ['order_issue', 'refund', 'fitment', 'account', 'other'] as const;
+export const TICKET_KINDS = ['order_issue', 'refund', 'fitment', 'account', 'labour_redo', 'other'] as const;
 export type TicketKind = (typeof TICKET_KINDS)[number];
 export type TicketChannel = 'web' | 'whatsapp';
 

@@ -184,3 +184,12 @@ Decision 2026-10-31 (verified purchase only, staff approve before publish) built
   - Line breaks in review text are collapsed.
   - The 1000-character limit is checked before cleaning.
   - Public review fetches by the web server share its single IP's rate-limit bucket.
+
+## Trust line on the product page (2026-11-15)
+
+Near the price, one line: "Genuine {brand} part from a verified shop" (no brand: "Genuine part from a verified shop"),
+admin-editable and hideable per language (spec 08 "Trust lines"). It is wording, not a guarantee. **"GST bill" is added
+only beside a GST-registered selling shop**; the product page does not know the shop, so it is left out. No "sealed pack".
+Rule for scarcity labels: "Few left" and "Popular" exist only on the demo catalogue's static data; the real catalogue source
+never sets them. If they are ever shown for real data they must come from real stock or real sales (and a number must be the
+real stock), never from an admin switch (dark-pattern audit F4, `docs/research/dark-patterns-audit-2026-11.md`).

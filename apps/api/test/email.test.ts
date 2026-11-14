@@ -5,6 +5,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { enqueueNotification, events, type OutboxRow } from '@mechdost/db/repo';
+import { sampleEmailParams, type EmailTemplateKey } from '@mechdost/shared/email-templates';
 import { ConfigError, loadConfig } from '../src/config';
 import { dispatchOnce } from '../src/notify/dispatcher';
 import { createEmailAdapter } from '../src/notify/email';
@@ -133,6 +134,50 @@ describe('email adapter (Resend)', () => {
     expect(body.from).toBe('MechDost Billing <billing@mechdost.com>');
     expect(body.html).toContain('&lt;img src=x&gt;');
     expect(body.html).not.toContain('<img');
+  });
+
+  describe('the "genuine parts" footer line on order emails (design 2026-11-15)', () => {
+    const sent = async (
+      templateKey: string,
+      locale: 'en' | 'hi',
+      loadTrustLine?: (l: 'en' | 'hi') => Promise<string | null>,
+    ) => {
+      const resend = fakeResend();
+      const a = createEmailAdapter(
+        { apiKey: KEY, domain: 'mechdost.com', webBaseUrl: 'https://mechdost.com' },
+        { fetchImpl: resend.fetchImpl, ...(loadTrustLine ? { loadTrustLine } : {}) },
+      );
+      await a.send(
+        row({
+          templateKey,
+          locale,
+          payload: sampleEmailParams(templateKey as EmailTemplateKey),
+        }),
+      );
+      return JSON.parse(resend.calls[0]!.init.body as string) as { text: string };
+    };
+
+    it('shows the default line on order emails, in the recipient language', async () => {
+      expect((await sent('order_placed', 'en')).text).toContain('Genuine parts from verified Raipur shops.');
+      expect((await sent('order_placed', 'hi')).text).toContain(
+        'रायपुर की सत्यापित दुकानों से असली पार्ट्स।',
+      );
+    });
+
+    it('uses the admin wording, and shows nothing when the admin hid it', async () => {
+      expect(
+        (await sent('order_placed', 'en', () => Promise.resolve('Only original parts.'))).text,
+      ).toContain('Only original parts.');
+      const hidden = (await sent('order_placed', 'en', () => Promise.resolve(null))).text;
+      expect(hidden).not.toContain('Genuine parts');
+    });
+
+    it('falls back to the default when the content lookup fails, and stays off other emails', async () => {
+      expect((await sent('order_placed', 'en', () => Promise.reject(new Error('db down')))).text).toContain(
+        'Genuine parts from verified Raipur shops.',
+      );
+      expect((await sent('ticket_received', 'en')).text).not.toContain('Genuine parts');
+    });
   });
 
   it('records email_sent and email_failed server events with the template only, never an address (spec 12)', async () => {

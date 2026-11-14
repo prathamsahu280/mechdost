@@ -297,6 +297,25 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
     realApi: true,
   },
 
+  // ─────────────── Admin → Content: trust lines (design 2026-11-15) ───────────────
+  {
+    code: 'API-ADM-CONTENT',
+    page: 'Admin → Content, real sign-in',
+    component:
+      'Trust lines editor: eight lines in English and Hindi, default, long wording, hidden with "-", load error',
+    path: '/admin/content',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['admin'] },
+      { name: 'content', values: ['default', 'long', 'hidden', 'error'] },
+    ],
+    sweep: 10,
+    note: API_NOTE,
+    realApi: true,
+  },
+
   // ─────────────── Navigation in a real-sign-in build ───────────────
   {
     code: 'API-NAV-ADMIN',

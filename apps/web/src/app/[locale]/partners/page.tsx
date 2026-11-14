@@ -7,6 +7,7 @@ import type { Locale } from '@/i18n/routing';
 import { alternatesFor } from '@/lib/seo';
 import { site } from '@/lib/site';
 import { SettingValue } from '@/components/site/site-overrides';
+import { TrustLine } from '@/components/site/trust-line';
 
 interface Props {
   params: Promise<{ locale: Locale }>;
@@ -55,6 +56,9 @@ export default async function PartnersPage() {
             </span>
             <h2 className="mt-5 font-heading text-xl font-extrabold text-ink">{t(`${kind}Title`)}</h2>
             <p className="mt-2 text-sm text-muted">{t(`${kind}Body`)}</p>
+            {kind === 'seller' ? (
+              <TrustLine placement="partner" className="mt-3 text-sm font-bold text-accent-soft-text" />
+            ) : null}
             <ul className="mt-5 flex-1 space-y-3 border-t border-line pt-5">
               {POINTS.map((n) => (
                 <li key={n} className="flex gap-3 text-sm text-ink">
