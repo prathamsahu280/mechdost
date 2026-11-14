@@ -179,6 +179,8 @@ describe('service requests API', () => {
 
   it('books (verified only, idempotent) and runs the whole job card to paid', async () => {
     const unverified = await person('07', { verified: false });
+    // Email verification is an admin setting (off by default, user 2026-11-14); switched on, it refuses (left on: no later step uses an email-unverified customer).
+    await ctx.db.insert(s.settings).values({ key: 'customers.require_verified_email', value: true });
     const refused = await call(unverified, 'POST', '/service-requests', booking, key);
     expect(refused.status).toBe(403);
     expect(refused.body.error.code).toBe('VERIFICATION_REQUIRED');

@@ -181,11 +181,14 @@ async function quoteInternal(
     state_id: string;
     state_gst_code: string;
     cod_allowed: boolean;
+    free_delivery_min_paise: unknown;
   }>(
+    // An inactive PIN is not serviceable (spec 15 "PIN codes"): refused like an unknown one.
     await db.execute(sql`
-      select c.id as city_id, c.code as city_code, pc.state_id, st.gst_state_code as state_gst_code, pc.cod_allowed
+      select c.id as city_id, c.code as city_code, pc.state_id, st.gst_state_code as state_gst_code, pc.cod_allowed,
+        pc.free_delivery_min_paise
       from pincodes pc join cities c on c.id = pc.city_id join states st on st.id = pc.state_id
-      where pc.pincode = ${input.pincode} and c.status = 'live'`),
+      where pc.pincode = ${input.pincode} and pc.active and c.status = 'live'`),
   );
   if (!place) throw new ValidationError('We do not deliver to this PIN code yet', 'PINCODE_NOT_SERVICEABLE');
 
@@ -314,8 +317,11 @@ async function quoteInternal(
     return { ...base, unitPaise: unit, totalPaise: gross, group: g, issue: null, available: null };
   });
 
-  const freeMin = await setting(db, place.city_id, CHECKOUT_SETTINGS.freeDeliveryMinPaise.key);
+  const cityFreeMin = await setting(db, place.city_id, CHECKOUT_SETTINGS.freeDeliveryMinPaise.key);
+  const pinFreeMin = numOrNull(place.free_delivery_min_paise);
   for (const g of groups) {
+    // Free-delivery threshold: PIN override ?? shop override ?? city setting (spec 03 "Delivery charges").
+    const freeMin = pinFreeMin ?? /* shop override (shops.free_delivery_min_paise) goes here */ cityFreeMin;
     if (freeMin !== null && g.subtotalPaise >= freeMin) g.shippingPaise = 0;
     g.totalPaise = g.subtotalPaise + g.shippingPaise;
   }

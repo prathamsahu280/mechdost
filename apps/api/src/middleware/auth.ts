@@ -1,7 +1,13 @@
 import type { Context } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import { log } from '../logger';
-import { activeBlockLevels, ensureUser, linkApplicantOwner, loadGrants } from '@mechdost/db/repo';
+import {
+  activeBlockLevels,
+  ensureUser,
+  globalFlagSetting,
+  linkApplicantOwner,
+  loadGrants,
+} from '@mechdost/db/repo';
 import { isStaffGrant, STAFF_SESSION_MAX_AGE_SECONDS } from '@mechdost/shared/auth';
 import { blockEffects } from '@mechdost/shared/customers';
 import { can, type Permission, type Target } from '@mechdost/shared/rbac';
@@ -97,6 +103,26 @@ export const requireVerified = createMiddleware<AppEnv>(async (c, next) => {
   }
   await next();
 });
+
+/**
+ * Customer actions (ordering, booking, reviewing): a verified phone always; a verified email only when the admin
+ * switches on `customers.require_verified_email` (off by default, user 2026-11-14). Staff and partner routes keep
+ * `requireVerified` (both).
+ */
+export function requireCustomerVerified(deps: Pick<AppDeps, 'db'>) {
+  return createMiddleware<AppEnv>(async (c, next) => {
+    const { user } = c.get('auth');
+    const emailNeeded =
+      !user.emailVerifiedAt && (await globalFlagSetting(deps.db, 'customers.require_verified_email'));
+    if (!user.phoneVerifiedAt || emailNeeded) {
+      throw new ApiError(403, 'VERIFICATION_REQUIRED', 'Verify your phone number and email to continue', {
+        phoneVerified: Boolean(user.phoneVerifiedAt),
+        emailVerified: Boolean(user.emailVerifiedAt),
+      });
+    }
+    await next();
+  });
+}
 
 /**
  * Permission gate (spec 13). `target` names the city/shop/workshop being acted on when the route knows it;

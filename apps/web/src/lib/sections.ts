@@ -45,9 +45,16 @@ const ALL_ADMIN_SECTIONS = [
 export type AdminSection = (typeof ALL_ADMIN_SECTIONS)[number];
 
 /** Sections for features that have no API yet (`BROWSER_ONLY_FEATURES`): hidden in real mode. */
-const BROWSER_ONLY_SECTIONS: readonly string[] = ['quotes', 'coins', 'reviews'];
+const BROWSER_ONLY_SECTIONS: readonly string[] = ['quotes', 'coins'];
+/**
+ * Review moderation (2026-11-14): the demo queue in the browser demo, the API queue with real sign-in; hidden only
+ * in the mixed build (real data, demo sign-in), where neither queue would show the reviews customers see.
+ */
+const reviewsShown = BROWSER_ONLY_FEATURES || AUTH_MODE === 'firebase';
 const shown = <T extends string>(all: readonly T[]): readonly T[] =>
-  BROWSER_ONLY_FEATURES ? all : all.filter((s) => !BROWSER_ONLY_SECTIONS.includes(s));
+  all.filter(
+    (s) => (BROWSER_ONLY_FEATURES || !BROWSER_ONLY_SECTIONS.includes(s)) && (s !== 'reviews' || reviewsShown),
+  );
 
 /** Account sections shown in this build (navigation, routes). */
 export const ACCOUNT_SECTIONS = shown(ALL_ACCOUNT_SECTIONS);

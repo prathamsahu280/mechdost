@@ -178,12 +178,12 @@ function toPublic(r: WorkshopRow, locale: ServiceLocale, services: MenuItem[]): 
   };
 }
 
-/** The origin for a nearby search: the given point, or the PIN code's centroid. */
+/** The origin for a nearby search: the given point, or the PIN code's centroid (an inactive PIN reads as unknown). */
 async function originOf(db: Tx, at: { lat: number; lng: number } | { pincode: string }) {
   if ('lat' in at) return at;
   const [p] = rowsOf<{ lat: unknown; lng: unknown }>(
     await db.execute(sql`select ST_Y(centroid::geometry) as lat, ST_X(centroid::geometry) as lng
-      from pincodes where pincode = ${at.pincode} and centroid is not null`),
+      from pincodes where pincode = ${at.pincode} and active and centroid is not null`),
   );
   if (!p) throw new ValidationError('We do not know where this PIN code is yet', 'PINCODE_UNKNOWN');
   return { lat: num(p.lat), lng: num(p.lng) };

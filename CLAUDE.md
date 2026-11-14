@@ -71,7 +71,7 @@ Turborepo + pnpm · `apps/web` Next.js 16 App Router (React 19.3; ruling in docs
 | Any bug                                | `systematic-debugging`                                                                                                                                                                                  |
 | Before "done", before commit/PR        | `website-testing` (project) → `verification-before-completion` → `code-review` plugin / `requesting-code-review`; `security-guidance` hooks always on; `claude-security` before releases                |
 | Messaging / PWA / Hindi work           | `notifications-messaging`, `serwist-pwa`, `next-intl-hindi` (project)                                                                                                                                   |
-| Deploy                                 | `cloud-run-basics`, Cloud Run MCP, `vercel` plugin; `github` plugin for PRs                                                                                                                             |
+| Deploy                                 | Docker on the AWS server via GitHub Actions → GHCR (`docs/runbooks/deploy.md`; migrations first, § 6); `gh` CLI / `github` plugin for runs and PRs (decision 2026-11-13; Cloud Run and Vercel retired)  |
 | Docs lookups                           | `context7` plugin (current library docs)                                                                                                                                                                |
 
 ## Skills to use

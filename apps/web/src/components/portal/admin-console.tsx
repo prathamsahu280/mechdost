@@ -73,10 +73,22 @@ const AdminErrorsApi = dynamic(() => import('./admin-errors-api').then((m) => m.
   loading: () => <div className="skeleton h-96 rounded-card" aria-hidden="true" />,
 });
 
+/** Real sign-in: review moderation on the API (spec 02 § Reviews, 2026-11-14); demo builds never load it. */
+const AdminReviewsApi = dynamic(() => import('./admin-reviews-api').then((m) => m.AdminReviewsApi), {
+  ssr: false,
+  loading: () => <div className="skeleton h-96 rounded-card" aria-hidden="true" />,
+});
+
 /** Real sign-in: service routing on the API (Stream E, 2026-11-14); demo builds never load it. */
 const ServiceRoutingApi = dynamic(() => import('./admin-services-api').then((m) => m.ServiceRoutingApi), {
   ssr: false,
   loading: () => <div className="skeleton h-96 rounded-card" aria-hidden="true" />,
+});
+
+/** Real sign-in: service-area PIN codes under Settings (spec 15 "PIN codes", 2026-11-14); demo builds never load it. */
+const ServiceAreaApi = dynamic(() => import('./admin-pincodes-api').then((m) => m.ServiceAreaApi), {
+  ssr: false,
+  loading: () => <div className="skeleton h-64 rounded-card" aria-hidden="true" />,
 });
 
 const SECTION_EMOJI: Record<AdminSection, string> = {
@@ -132,7 +144,7 @@ export function AdminConsole({
             ) : null}
             {section === 'quotes' ? <QuoteDesk /> : null}
             {section === 'applications' ? <Applications /> : null}
-            {section === 'reviews' ? <Reviews /> : null}
+            {section === 'reviews' ? AUTH_MODE === 'firebase' ? <AdminReviewsApi /> : <Reviews /> : null}
             {section === 'support' ? <AdminSupport actor={account.name} /> : null}
             {section === 'coins' ? <AdminCoins actor={account.name} /> : null}
             {section === 'partners' ? <AdminPartners actor={account.name} /> : null}
@@ -146,6 +158,7 @@ export function AdminConsole({
               <div className="space-y-6">
                 <SettingsEditor actor={account.name} />
                 <OrderRulesEditor />
+                {AUTH_MODE === 'firebase' ? <ServiceAreaApi /> : null}
               </div>
             ) : null}
             {section === 'notifications' && notifyDefaults ? (

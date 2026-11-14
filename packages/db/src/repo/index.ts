@@ -38,6 +38,8 @@ export * from './agreements';
 export * from './admin-prices';
 export * from './workshops';
 export * from './service-requests';
+export * from './pincodes';
 export * from './service-jobs';
 export * from './service-routing';
 export * from './service-notifications';
+export * from './reviews';
