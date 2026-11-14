@@ -52,9 +52,11 @@ describe('scrubErrorText: values embedded by URLs and Postgres (review 2026-11-1
   });
 
   it('keeps row ids and public codes that look like digit runs', () => {
-    expect(scrubErrorText('order MD-RPR-2026-234567 row 01a1db2d-e45a-7f47-8659-9433601cf99d failed')).toBe(
-      'order MD-RPR-2026-234567 row 01a1db2d-e45a-7f47-8659-9433601cf99d failed',
+    expect(scrubErrorText('order MD-RPR-2026-23456K row 01a1db2d-e45a-7f47-8659-9433601cf99d failed')).toBe(
+      'order MD-RPR-2026-23456K row 01a1db2d-e45a-7f47-8659-9433601cf99d failed',
     );
+    // Shaped like an id but not one we issue (all-digit tail): masked like any digit run.
+    expect(scrubErrorText('order MD-RPR-2026-234567 failed')).toBe('order MD-RPR-# failed');
     expect(scrubErrorText('call 9876543210 about 019a8f00-0000-7000-8000-000000000001')).toBe(
       'call # about 019a8f00-0000-7000-8000-000000000001',
     );

@@ -30,11 +30,16 @@ const MAX_ITEMS = 50;
 const PERSONAL_KEY =
   /(phone|mobile|email|name|address|street|landmark|line1|line2|pincode|gstin|note|message|text|comment|password|token|otp|secret|userid|customerid|^user|^customer|^lat|^lng|^lon|latitude|longitude|^ip)$/iu;
 
-function cleanValue(value: unknown, depth: number): { keep: boolean; value?: unknown } {
+// Keys that hold ids: `id`, `ids`, `code`, `codes`, or camelCase names ending in Id/Ids/Code/Codes (shopId, orderCode,
+// targetIds). User-linking ids are dropped earlier by PERSONAL_KEY.
+const ID_KEY = /^(?:id|ids|code|codes)$|[a-z0-9](?:Id|Ids|Code|Codes)$/u;
+
+function cleanValue(value: unknown, depth: number, idKey: boolean): { keep: boolean; value?: unknown } {
   if (typeof value === 'string') {
     if (value.length > MAX_STRING) return { keep: false };
-    // UUIDs (v7: digit runs) and public codes (MD-RPR-2026-…) identify rows, not people (review 2026-11-14).
-    if (isPseudonymousId(value)) return { keep: true, value };
+    // UUIDs (v7: digit runs) and public codes (MD-RPR-2026-…) identify rows, not people — but only under keys that
+    // hold ids; anywhere else an id-shaped value is free text and goes through the mask (reviews 2026-11-14).
+    if (idKey && isPseudonymousId(value)) return { keep: true, value };
     if (maskPersonalData(value) !== value) return { keep: false };
     return { keep: true, value };
   }
@@ -44,7 +49,7 @@ function cleanValue(value: unknown, depth: number): { keep: boolean; value?: unk
   if (Array.isArray(value)) {
     const items = value
       .slice(0, MAX_ITEMS)
-      .map((v) => cleanValue(v, depth + 1))
+      .map((v) => cleanValue(v, depth + 1, idKey))
       .filter((r) => r.keep)
       .map((r) => r.value);
     return { keep: true, value: items };
@@ -61,7 +66,7 @@ function scrubObject(props: Record<string, unknown>, depth: number): Record<stri
       continue;
     }
     if (PERSONAL_KEY.test(key)) continue;
-    const r = cleanValue(value, depth);
+    const r = cleanValue(value, depth, ID_KEY.test(key));
     if (r.keep) out[key] = r.value;
   }
   return out;

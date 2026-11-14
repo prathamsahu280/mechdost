@@ -241,24 +241,27 @@ describe('PostHog payload', () => {
 
 /** Fixed UUID v7 sample (time-ordered ids are full of digit runs that look like phone numbers to the mask). */
 function uuidV7Sample(n: number): string[] {
-  let seed = 0x2f6b1d3;
-  const hex = (len: number) => {
-    let out = '';
-    for (let i = 0; i < len; i += 1) {
-      seed = (seed * 1103515245 + 12345) % 2 ** 31;
-      out += (seed % 16).toString(16);
-    }
-    return out;
+  // mulberry32: a small, well-mixed deterministic generator (an LCG's low bits are periodic: review 2026-11-14).
+  let a = 0x2f6b1d3;
+  const rand = () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 2 ** 32;
   };
-  return Array.from(
-    { length: n },
-    () =>
-      `${hex(8)}-${hex(4)}-7${hex(3)}-${'89ab'[Number.parseInt(hex(1), 16) % 4] ?? '8'}${hex(3)}-${hex(12)}`,
-  );
+  const hex = (len: number) =>
+    Array.from({ length: len }, () => Math.floor(rand() * 16).toString(16)).join('');
+  // Real-shaped v7: 48-bit millisecond time from launch week, version 7, variant 8–b, random rest.
+  const start = Date.UTC(2026, 10, 14);
+  return Array.from({ length: n }, (_, i) => {
+    const ms = (start + i * 7919 + Math.floor(rand() * 1000)).toString(16).padStart(12, '0');
+    const variant = '89ab'.charAt(Math.floor(rand() * 4));
+    return `${ms.slice(0, 8)}-${ms.slice(8, 12)}-7${hex(3)}-${variant}${hex(3)}-${hex(12)}`;
+  });
 }
 
-describe('PostHog props keep pseudonymous ids (review 2026-11-14)', () => {
-  it('every UUID v7 and public code survives; phone numbers still go', () => {
+describe('PostHog props keep pseudonymous ids, only under id keys (reviews 2026-11-14)', () => {
+  it('every UUID v7 and public code survives under an id key; phone numbers still go', () => {
     const ids = [
       '01a1db2d-e45a-7f47-8659-9433601cf99d',
       '019a8f00-0000-7000-8000-000000000001',
@@ -266,9 +269,9 @@ describe('PostHog props keep pseudonymous ids (review 2026-11-14)', () => {
     ];
     for (const id of ids) expect(scrubProps({ shopId: id })).toEqual({ shopId: id });
     for (const code of [
-      'MD-RPR-2026-234567',
+      'MD-RPR-2026-23456K',
       'SR-RPR-2026-7K2M9Q',
-      'REQ-RPR-2026-000001',
+      'REQ-RPR-2026-00000Z',
       'QT-RPR-2026-99999Z',
     ])
       expect(scrubProps({ orderCode: code })).toEqual({ orderCode: code });
@@ -276,6 +279,21 @@ describe('PostHog props keep pseudonymous ids (review 2026-11-14)', () => {
       ids: ['01a1db2d-e45a-7f47-8659-9433601cf99d'],
     });
     expect(scrubProps({ ref: '98765 43210', other: '+91-9876543210' })).toEqual({});
+  });
+
+  it('id-shaped values outside id keys, and fake ids under id keys, are masked', () => {
+    // Free-text keys never get the exemption, however much the value looks like an id.
+    expect(scrubProps({ label: 'MD-RPR-2026-23456K', path: '01a1db2d-e45a-7f47-8659-9433601cf99d' })).toEqual(
+      {},
+    );
+    // All-digit tails, digit-only "UUIDs" and phones dressed as codes are not ids we issue.
+    expect(
+      scrubProps({
+        orderCode: 'MD-RPR-2026-234567',
+        shopId: '98765432-1098-7654-8210-987654321098',
+        requestCode: 'SR-RPR-2026-9876543210',
+      }),
+    ).toEqual({});
   });
 });
 

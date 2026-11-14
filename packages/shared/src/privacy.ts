@@ -22,15 +22,27 @@ export function maskPersonalData(text: string): string {
   return text.normalize('NFKC').replace(FORMAT, '').replace(EMAIL, '#').replace(DIGIT_RUN, '#');
 }
 
-// Pseudonymous ids we keep (review 2026-11-14): time-ordered UUIDs (v7) and public codes such as MD-RPR-2026-7K3Q9X
-// are full of digit runs that look like phone numbers to DIGIT_RUN, but they identify rows, not people.
-const UUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/iu;
-const PUBLIC_CODE = /[A-Z]{2,4}-[A-Z]{3}-\d{4}-[0-9A-HJKMNP-TV-Z]{6}/u;
-const ID_ANYWHERE = new RegExp(`(?<![\\w-])(?:${UUID.source}|${PUBLIC_CODE.source})(?![\\w-])`, 'giu');
+// Pseudonymous ids we keep (reviews 2026-11-14): time-ordered UUIDs (v7) and public codes such as MD-RPR-2026-7K3Q9X
+// are full of digit runs that look like phone numbers to DIGIT_RUN, but they identify rows, not people. Only the
+// exact shapes we issue qualify, so text merely shaped like an id cannot carry a phone number past the mask:
+// - UUID: lowercase (as we emit), version 1–8, variant 8/9/a/b, and at least one hex letter (an all-digit "UUID"
+//   could be a phone number; ~0.02 % of real v7 ids have no letter and are masked, which is the safe side);
+// - code: a prefix we issue (`publicCode` in ./ids: MD orders, SR service requests, REQ tickets, QT quotes, PA
+//   partner applications), city, year 20xx, and a 6-character Crockford tail with at least one letter (an
+//   all-digit tail joins the year into a 10-digit run; ~0.1 % of real codes, masked — decision 2026-11-14).
+const UUID =
+  /(?=[0-9a-f-]{0,35}[a-f])[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/u;
+const PUBLIC_CODE =
+  /(?:MD|SR|REQ|QT|PA)-[A-Z]{3}-20\d{2}-(?=[0-9A-HJKMNP-TV-Z]{0,5}[A-HJKMNP-TV-Z])[0-9A-HJKMNP-TV-Z]{6}/u;
+const ID_ANYWHERE = new RegExp(`(?<![\\w-])(?:${UUID.source}|${PUBLIC_CODE.source})(?![\\w-])`, 'gu');
+const ID_EXACT = new RegExp(`^(?:${UUID.source}|${PUBLIC_CODE.source})$`, 'u');
 
-/** True when the whole value is a UUID or a public code (MD-…, SR-…, REQ-…, QT-…): kept, never masked. */
+/**
+ * True when the whole value is a UUID or a public code we issue. Callers exempt it from the phone mask only where a
+ * field is known to hold an id (`…Id` / `…Code` keys in analytics props); free text never gets the exemption.
+ */
 export function isPseudonymousId(value: string): boolean {
-  return new RegExp(`^(?:${UUID.source}|${PUBLIC_CODE.source})$`, 'iu').test(value);
+  return ID_EXACT.test(value);
 }
 
 // Placeholders: private-use brackets around lowercase letters (a letter ends a digit run, so masking cannot join
