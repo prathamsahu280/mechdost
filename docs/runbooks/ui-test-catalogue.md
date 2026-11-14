@@ -730,3 +730,13 @@ After the run:
 3. Run `node apps/web/scripts/state-audit-checklist.mjs`. Ids are positional per component, so adding a value
    renumbers that component's items, and they start unticked.
 4. Run the new rows: `STATE_AUDIT_ONLY=<CODE>-`.
+
+### 9.6 Real-API-mode views (2026-11-15)
+
+The harness runs in demo mode, so views that only exist with real sign-in cannot be in `COMPONENTS` (they would fail
+`present`). They are listed in `REAL_MODE_VIEWS` (`model.ts`) with the navigation that reaches each and the states an
+API-mode audit must render; `test/state-audit-real-views.test.ts` checks the files and that their text comes from the
+locale namespace. Current entries (shop give-up, shop warnings, admin warnings, admin reroute-queue give-up line):
+`API-SHOP-GIVEUP`, `API-SHOP-WARNINGS`, `API-ADMIN-WARNINGS`, `API-ADMIN-GIVEUP-QUEUE`. Turning them into runnable
+cases needs an API-mode run on a seeded emulator database (queued as Q102); until then they are covered by the DB and
+API suites and the Hindi gate.

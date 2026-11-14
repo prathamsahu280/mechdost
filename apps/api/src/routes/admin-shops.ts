@@ -3,12 +3,21 @@ import {
   addShopMember,
   cityScopeFrom,
   getAdminShop,
+  issuePartnerWarning,
   listAdminShops,
+  listPartnerWarningsForAdmin,
   setShopCoverage,
   setShopStanding,
   updateShopProfile,
   ValidationError,
+  withdrawPartnerWarning,
 } from '@mechdost/db/repo';
+import {
+  AdminPartnerWarnings,
+  IssueWarningSchema,
+  WarningIssued,
+  WithdrawWarningSchema,
+} from '@mechdost/shared/partner-warnings';
 import {
   AdminShopDetail,
   AdminShopList,
@@ -121,6 +130,45 @@ const member = createRoute({
   responses: { 200: json(ShopMemberAdded, 'Granted'), ...conflict, ...errorResponses },
 });
 
+const warningsList = createRoute({
+  method: 'get',
+  path: '/admin/shops/{shopId}/warnings',
+  tags: ['admin'],
+  summary: 'Warnings given to the shop in the window, how many count, and whether to consider a pause',
+  security: [{ bearerAuth: [] }],
+  request: { params: z.object({ shopId: ShopId }) },
+  responses: { 200: json(AdminPartnerWarnings, 'Warnings'), ...conflict, ...errorResponses },
+});
+
+const warningIssue = createRoute({
+  method: 'post',
+  path: '/admin/shops/{shopId}/warnings',
+  tags: ['admin'],
+  summary: 'Warn the shop with a reason code (a note the shop reads; required for "other")',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: z.object({ shopId: ShopId }),
+    body: body(IssueWarningSchema),
+  },
+  responses: { 200: json(WarningIssued, 'Issued'), ...conflict, ...errorResponses },
+});
+
+const warningWithdraw = createRoute({
+  method: 'post',
+  path: '/admin/shops/{shopId}/warnings/{warningId}/withdraw',
+  tags: ['admin'],
+  summary: 'Withdraw a warning given by mistake (it stays in the history, marked withdrawn)',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: z.object({
+      shopId: ShopId,
+      warningId: z.uuid().openapi({ param: { name: 'warningId', in: 'path' } }),
+    }),
+    body: body(WithdrawWarningSchema),
+  },
+  responses: { 200: json(AdminPartnerWarnings, 'Withdrawn'), ...conflict, ...errorResponses },
+});
+
 export function adminShopRoutes(deps: AppDeps, cache: SessionCache) {
   const app = new OpenAPIHono<AppEnv>({ defaultHook: validationHook });
   // '/admin/shops/*' also matches '/admin/shops' (Hono): one pattern, so nothing runs twice.
@@ -134,6 +182,9 @@ export function adminShopRoutes(deps: AppDeps, cache: SessionCache) {
   app.on(['POST', 'PATCH', 'PUT'], '/admin/shops/*', requirePermission('partners:write'));
   app.on('POST', '/admin/shops/:shopId/standing', requirePermission('partners:approve'));
   app.on('POST', '/admin/shops/:shopId/members', requirePermission('partners:approve'));
+  // Warnings are a disciplinary step, like pausing: same permission and city scope.
+  app.on('POST', '/admin/shops/:shopId/warnings', requirePermission('partners:approve'));
+  app.on('POST', '/admin/shops/:shopId/warnings/:warningId/withdraw', requirePermission('partners:approve'));
 
   registerAdminShopInventory(app, deps);
 
@@ -190,6 +241,37 @@ export function adminShopRoutes(deps: AppDeps, cache: SessionCache) {
         staffUserId: c.get('auth').user.id,
         expectedVersion: b.version,
         pausedUntil: b.pausedUntil ? new Date(b.pausedUntil) : null,
+      });
+      return c.json(r, 200);
+    })
+    .openapi(warningsList, async (c) => {
+      const scope = cityScopeFrom(c.get('auth').grants, 'partners:read');
+      return c.json(
+        await listPartnerWarningsForAdmin(deps.db, scope, 'shop', c.req.valid('param').shopId),
+        200,
+      );
+    })
+    .openapi(warningIssue, async (c) => {
+      const b = c.req.valid('json');
+      const r = await issuePartnerWarning(deps.db, {
+        kind: 'shop',
+        partnerId: c.req.valid('param').shopId,
+        scope: cityScopeFrom(c.get('auth').grants, 'partners:approve'),
+        reasonCode: b.reasonCode,
+        note: b.note ?? null,
+        staffUserId: c.get('auth').user.id,
+      });
+      return c.json(r, 200);
+    })
+    .openapi(warningWithdraw, async (c) => {
+      const p = c.req.valid('param');
+      const r = await withdrawPartnerWarning(deps.db, {
+        kind: 'shop',
+        partnerId: p.shopId,
+        warningId: p.warningId,
+        scope: cityScopeFrom(c.get('auth').grants, 'partners:approve'),
+        note: c.req.valid('json').note,
+        staffUserId: c.get('auth').user.id,
       });
       return c.json(r, 200);
     })

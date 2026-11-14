@@ -36,6 +36,8 @@ const QueueItem = z.object({
   items: z.number().int(),
   version: z.number().int(),
   attempts: z.number().int(),
+  /** Set when the latest attempt was a shop giving the order up after accepting it. */
+  gaveUpReason: z.string().nullable(),
   offer: z.object({ shop: z.string(), expiresAt: z.string() }).nullable(),
 });
 const RankedShop = z.object({
@@ -48,6 +50,8 @@ const RankedShop = z.object({
   rating: z.number().nullable(),
   pricePaise: z.number().int().nullable(),
   triedBefore: z.boolean(),
+  /** This shop accepted the order and gave it up before. */
+  gaveUpBefore: z.boolean(),
   eligible: z.boolean(),
   /** Inside its working hours now (IST); a closed shop's offer waits until `opensAt` + the grace setting. */
   openNow: z.boolean(),
@@ -70,6 +74,7 @@ const OrderView = z
         offeredAt: z.string(),
         respondedAt: z.string().nullable(),
         declineReason: z.string().nullable(),
+        giveUpReason: z.string().nullable(),
       }),
     ),
     shops: z.array(RankedShop),

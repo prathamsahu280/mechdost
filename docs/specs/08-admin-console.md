@@ -240,3 +240,22 @@ Analytics section.
   queries are enough at launch volume — revisit at ~1M events/month or when the dashboard's p95 passes 1 s); traffic
   per city (needs `city_id` on web events); refunds ₹, ratings and an orders-by-hour chart from the Overview list
   above; CSV export.
+
+## Warnings to partners (2026-11-15)
+
+- **Model:** `partner_warnings` (append-only): `issued` and `withdrawn` rows, reason code (`PARTNER_WARNING_REASONS`: missed
+  offers, gave up orders, late deliveries, quality complaints, pricing issue, policy violation, other), optional note (5 to 300
+  characters, required for "other"), real FKs `shop_id` / `workshop_id` (exactly one). The repository works for shops and
+  workshops; **HTTP routes and screens exist for shops only** (workshops: next).
+- **Admin → Partners → Shops → a shop → Warnings tab:** issue form (reason, note), the warnings in the window with a
+  Withdraw action (note required; the original stays, marked withdrawn), the count, and the **pause prompt**: when live
+  warnings in the window reach the threshold and the shop is still approved, a banner appears above the tabs and in the tab
+  ("This shop has N warnings in the last 30 days. You may want to review its standing.") with a button to the Standing
+  panel. Nothing is paused automatically.
+- **Settings (Admin → Settings, global only):** `partners.warning_threshold` (default 3), `partners.warning_window_days`
+  (default 30; a rolling 30 x 24 h window in UTC).
+- **API:** `GET/POST /v1/admin/shops/{id}/warnings`, `POST .../warnings/{warningId}/withdraw`; read needs `partners:read`,
+  issue and withdraw need `partners:approve` in the shop's city (404 elsewhere); strict bodies; audit
+  `partner.warning_issued` / `partner.warning_withdrawn`; events `admin_partner_warning_issued` / `_withdrawn`.
+- **Reroute queue:** an order a shop gave up shows the reason line and the shop's "gave this order up before" tag (spec 04).
+- **Tests:** `packages/db/test/partner-warnings.test.ts`, `apps/api/test/shop-give-up.test.ts`.

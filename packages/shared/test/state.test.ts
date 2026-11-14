@@ -62,6 +62,32 @@ describe('assignment state machine', () => {
     expect(assignmentMachine.can('accepted', 'declined')).toBe(false);
     expect(assignmentMachine.can('expired', 'accepted')).toBe(false);
   });
+
+  it('a shop may give up an accepted order, nobody else, and only once', () => {
+    expect(assignmentMachine.canActor('accepted', 'given_up', 'shop')).toBe(true);
+    expect(assignmentMachine.canActor('accepted', 'given_up', 'customer')).toBe(false);
+    expect(assignmentMachine.canActor('accepted', 'given_up', 'admin')).toBe(false);
+    expect(assignmentMachine.can('given_up', 'accepted')).toBe(false);
+    expect(assignmentMachine.isTerminal('given_up')).toBe(true);
+  });
+
+  it('a confirmed order goes back to admin (needs_rerouting) only by the shop, never once packed', () => {
+    expect(orderMachine.canActor('confirmed', 'needs_rerouting', 'shop')).toBe(true);
+    expect(orderMachine.canActor('confirmed', 'needs_rerouting', 'customer')).toBe(false);
+    expect(orderMachine.can('packed', 'needs_rerouting')).toBe(false);
+  });
+});
+
+describe('partner warning codes', () => {
+  it('give-up and warning reasons are codes', async () => {
+    const { ASSIGNMENT_GIVE_UP_REASONS } = await import('../src/state');
+    const { PARTNER_WARNING_REASONS, IssueWarningSchema } = await import('../src/partner-warnings');
+    expect(ASSIGNMENT_GIVE_UP_REASONS).toContain('other');
+    expect(PARTNER_WARNING_REASONS).toContain('gave_up_orders');
+    expect(IssueWarningSchema.safeParse({ reasonCode: 'other' }).success).toBe(false); // "other" needs a note
+    expect(IssueWarningSchema.safeParse({ reasonCode: 'missed_offers' }).success).toBe(true);
+    expect(IssueWarningSchema.safeParse({ reasonCode: 'made_up' }).success).toBe(false);
+  });
 });
 
 describe('service request state machine', () => {

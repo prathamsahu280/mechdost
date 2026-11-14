@@ -726,6 +726,18 @@ Specs 03, 04, 07 and 08; migration 0051. Rulings, with the cost if wrong in brac
 - **Indexes (0050):** `service_requests (city_id, created_at)` replaces `service_requests (city_id)`;
   `order_assignments (offered_at)` added.
 
+## 2026-11-15 — Shop gives up an accepted order; warnings to partners (user rulings; design note 2026-11-15)
+
+- **Give-up:** a shop may give up an accepted order before packing, with a reason code; it returns to admin to reroute
+  (never auto-cancelled); the customer is not told; stock goes back; it counts against the shop's score and is in its
+  history. Assignment status `given_up`, order transition `confirmed -> needs_rerouting` (shop).
+- **Warnings:** append-only records with a reason code (+ optional note); the shop reads its own; staff are **prompted**
+  (never automatic) to consider a pause at N warnings in a rolling window (settings `partners.warning_threshold` = 3,
+  `partners.warning_window_days` = 30, global-only); pausing stays the existing standing flow.
+- **Calls made (cost if wrong in the design note):** a shop that gave an order up stays offerable (flagged); the customer's
+  earlier "confirmed" row stays visible while the step back is hidden; the window is 30 x 24 h UTC; workshop warnings are
+  built in the model and repository, HTTP/UI later.
+
 ## PENDING DECISIONS (ask "what's pending" to review)
 
 | #   | Topic                                                                                                                                                                                                                                                                                                            | Leaning                                                                             | When                                 |

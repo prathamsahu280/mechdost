@@ -871,3 +871,65 @@ export const STEPPER: ComponentDef = {
     (r.interaction === 'hover-inc' || r.interaction === 'focus-dec'),
   note: 'User bug 3: the "+" hover background covered the count.',
 };
+
+/**
+ * Views that exist only with real sign-in (API mode): the demo harness cannot render them, so they are not in
+ * `COMPONENTS` (they would fail `present`). Each lists the states an API-mode audit must render, in the same
+ * vocabulary (width, theme and locale are crossed as for any component) and the navigation that reaches it.
+ * `test/state-audit-real-views.test.ts` keeps the component files and the states honest; the runnable matrix
+ * needs a seeded API-mode run (queued in docs/questions-for-user.md).
+ */
+export const REAL_MODE_VIEWS = [
+  {
+    code: 'API-SHOP-GIVEUP',
+    page: 'Shop portal (/partner/shop), real sign-in',
+    component: "Can't fulfil this order: button on a confirmed order, inline reason form (spec 04)",
+    file: 'src/components/portal/shop-give-up.tsx',
+    reach: 'sign in as shop owner → /partner/shop → Orders in progress → a confirmed order',
+    states: [
+      'closed',
+      'open-empty',
+      'open-reason-missing',
+      'open-filled',
+      'busy',
+      'error-stale',
+      'error-reason',
+    ],
+    notShownFor: ['packed', 'shipped', 'out_for_delivery'],
+  },
+  {
+    code: 'API-SHOP-WARNINGS',
+    page: 'Shop portal (/partner/shop), real sign-in',
+    component: "Notes from MechDost: the shop's warnings (spec 07)",
+    file: 'src/components/portal/shop-warnings-api.tsx',
+    reach: 'sign in as shop owner → /partner/shop → "Notes from MechDost" section (#warnings)',
+    states: ['loading', 'empty', 'one', 'at-threshold', 'withdrawn-row', 'note-long', 'error-retry'],
+    notShownFor: [],
+  },
+  {
+    code: 'API-ADMIN-WARNINGS',
+    page: 'Admin → Partners → Shops, real sign-in',
+    component: 'Warnings tab and the pause prompt on a shop (spec 08)',
+    file: 'src/components/portal/admin-shop-warnings.tsx',
+    reach: 'sign in as ops manager → /admin → Partners → Shops → open a shop → Warnings tab',
+    states: [
+      'empty',
+      'form-invalid',
+      'issued',
+      'prompt-visible',
+      'withdraw-open',
+      'withdraw-invalid',
+      'error',
+    ],
+    notShownFor: [],
+  },
+  {
+    code: 'API-ADMIN-GIVEUP-QUEUE',
+    page: 'Admin → Orders (needs routing), real sign-in',
+    component: 'Reroute queue card with the shop\'s give-up reason and the "gave this order up before" tag',
+    file: 'src/components/portal/admin-orders-api.tsx',
+    reach: 'sign in as ops manager → /admin → Orders → Needs routing → an order a shop gave up',
+    states: ['reason-line', 'tag-on-suggestion', 'both', 'neither'],
+    notShownFor: [],
+  },
+] as const;

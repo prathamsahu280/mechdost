@@ -40,6 +40,8 @@ const SETTING_LABEL = {
   'partners.default_shipping_paise': 'api_set_partners_default_shipping_paise',
   'partners.default_lead_days': 'api_set_partners_default_lead_days',
   'partners.invite_days': 'api_set_partners_invite_days',
+  'partners.warning_threshold': 'api_set_partners_warning_threshold',
+  'partners.warning_window_days': 'api_set_partners_warning_window_days',
   'partners.agreement_required': 'api_set_partners_agreement_required',
   'orders.customer_self_cancel_cod': 'api_set_orders_customer_self_cancel_cod',
   'orders.customer_self_cancel_online': 'api_set_orders_customer_self_cancel_online',

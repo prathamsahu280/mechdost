@@ -5,11 +5,14 @@ import {
   advanceShopOrder,
   declineShopOffer,
   deliverShopOrder,
+  giveUpShopOrder,
+  listPartnerWarningsForPartner,
   listShopOrders,
   shopIdsFrom,
 } from '@mechdost/db/repo';
+import { ShopWarningsList } from '@mechdost/shared/partner-warnings';
 import type { Permission } from '@mechdost/shared/rbac';
-import { ASSIGNMENT_DECLINE_REASONS } from '@mechdost/shared/state';
+import { ASSIGNMENT_DECLINE_REASONS, ASSIGNMENT_GIVE_UP_REASONS } from '@mechdost/shared/state';
 import type { SessionCache } from '../auth/session-cache';
 import { authenticate, requirePermission, requireVerified } from '../middleware/auth';
 import { rateLimit, RATE_RULES } from '../middleware/rate-limit';
@@ -24,6 +27,8 @@ import { errorResponses, ErrorSchema } from './schemas';
  * Scope = the shops in the caller's grants for each permission; other shops' ids and codes are 404.
  */
 export const DELIVER_RATE: RateRule = { name: 'shop_deliver_user', limit: 20, windowSeconds: 600 };
+
+export const GIVE_UP_RATE: RateRule = { name: 'shop_give_up_user', limit: 10, windowSeconds: 600 };
 
 const OrderCode = z
   .string()
@@ -54,6 +59,8 @@ const ShopOrder = z
     assignmentId: z.string().nullable(),
     expiresAt: z.string().nullable(),
     address: z.record(z.string(), z.unknown()).nullable(),
+    /** History only: why this shop gave the order up (status `given_up`), else null. */
+    givenUpReason: z.string().nullable(),
   })
   .openapi('ShopOrder');
 const Changed = z.object({ status: z.string(), version: z.number().int() });
@@ -176,10 +183,44 @@ const deliver = createRoute({
   },
 });
 
+const giveUp = createRoute({
+  method: 'post',
+  path: '/shop/orders/{code}/give-up',
+  tags: ['shop'],
+  summary: 'Give up an order you accepted, before packing, with a reason code (it goes back to MechDost)',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: z.object({ code: OrderCode }),
+    body: body(
+      z
+        .object({
+          reasonCode: z.enum(ASSIGNMENT_GIVE_UP_REASONS),
+          note: z.string().trim().min(1).max(300).nullable().optional(),
+          version: z.number().int().min(1),
+        })
+        .strict()
+        .openapi('GiveUpShopOrder'),
+    ),
+  },
+  responses: { 200: json(Changed, 'Given up; with MechDost to reroute'), ...conflict, ...errorResponses },
+});
+
+const warnings = createRoute({
+  method: 'get',
+  path: '/shop/warnings',
+  tags: ['shop'],
+  summary: 'Warnings MechDost gave your shop (reason, note, date) and how many count in the window',
+  security: [{ bearerAuth: [] }],
+  responses: {
+    200: json(ShopWarningsList, 'Warnings per shop in your grants'),
+    ...errorResponses,
+  },
+});
+
 export function shopOrderRoutes(deps: AppDeps, cache: SessionCache) {
   const app = new OpenAPIHono<AppEnv>({ defaultHook: validationHook });
   // '/shop/orders/*' also matches '/shop/orders' (Hono): one pattern per prefix, so nothing runs twice.
-  for (const path of ['/shop/orders/*', '/shop/offers/*']) {
+  for (const path of ['/shop/orders/*', '/shop/offers/*', '/shop/warnings/*']) {
     app.use(path, authenticate(deps, cache));
     app.use(
       path,
@@ -189,6 +230,12 @@ export function shopOrderRoutes(deps: AppDeps, cache: SessionCache) {
   }
   app.use('/shop/orders', requirePermission('orders:read'));
   app.use('/shop/offers/*', requirePermission('assignments:respond'));
+  app.use('/shop/warnings/*', requirePermission('orders:read'));
+  app.on(
+    'POST',
+    '/shop/orders/:code/give-up',
+    rateLimit(deps.rateLimiter, GIVE_UP_RATE, (c) => c.get('auth').user.id),
+  );
   // Hono's '/x/*' also matches '/x': scope fulfilment to the POST actions so the list stays orders:read.
   app.on('POST', '/shop/orders/*', requirePermission('orders:fulfil'));
   app.on(
@@ -246,6 +293,28 @@ export function shopOrderRoutes(deps: AppDeps, cache: SessionCache) {
         keyring: deps.keyring ?? null,
       });
       return c.json(r, 200);
+    })
+    .openapi(giveUp, async (c) => {
+      const b = c.req.valid('json');
+      const r = await giveUpShopOrder(deps.db, {
+        shopIds: shops(c, 'orders:fulfil'),
+        code: c.req.valid('param').code,
+        expectedVersion: b.version,
+        reasonCode: b.reasonCode,
+        note: b.note ?? null,
+        staffUserId: c.get('auth').user.id,
+      });
+      return c.json(r, 200);
+    })
+    .openapi(warnings, async (c) => {
+      const ids = shops(c, 'orders:read');
+      const views = await Promise.all(
+        ids.map(async (shopId) => ({
+          shopId,
+          ...(await listPartnerWarningsForPartner(deps.db, ids, 'shop', shopId)),
+        })),
+      );
+      return c.json({ shops: views }, 200);
     })
     .openapi(deliver, async (c) => {
       const b = c.req.valid('json');

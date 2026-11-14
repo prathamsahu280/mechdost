@@ -143,3 +143,28 @@ till morning until it opens and still then it waits for like an hour or smth and
   24:00 close running into a 00:00 opening is one window. Tests: shared `shop-hours.test.ts` "near closing".
 - Routing tests use hours closed for the next two days, so passing IST midnight mid-test changes nothing.
 - **Not done:** split windows (lunch breaks), holidays and a per-shop grace.
+
+## Shop gives up an accepted order (2026-11-15; user ruling)
+
+Design: `docs/superpowers/specs/2026-11-15-shop-give-up-warnings-design.md`.
+
+- **Rule:** a shop that accepted an order may give it up **only while it is `confirmed`** (before packing), with a reason
+  code (`ASSIGNMENT_GIVE_UP_REASONS`: out of stock, stock damaged, cannot deliver, shop closed, price issue, other) and an
+  optional note (300 characters, staff-only). It goes **back to admin** (`needs_rerouting`), never auto-cancelled.
+- **Machines:** assignment `accepted -> given_up` (shop); order `confirmed -> needs_rerouting` (shop). One transaction,
+  order row locked first: assignment CAS on status, order conditional UPDATE on (status, version), `shop_id` and
+  `confirmed_at` cleared, committed stock put back (`restoreCommittedStock`, the exact reverse of the accept), audit
+  `order.given_up_by_shop`, event `seller_order_given_up`. Another shop's order and a repeat call are 404; packed or later
+  is 409 `WRONG_STEP`; a stale version is 409 `STALE_ORDER` and changes nothing.
+- **Customer:** not told. The status trigger hides the `confirmed -> needs_rerouting` timeline row from the customer
+  (migration 0053); the order shows "confirming with a seller" again. When it is rerouted and confirmed again the customer
+  gets the usual confirmation.
+- **Admin:** the order is in "needs routing" with the reason line ("{shop} accepted this order, then gave it up: {reason}");
+  the shop is still offerable and carries a "Gave this order up before" tag (declined and expired shops stay excluded).
+- **Score and history:** `given_up` counts as answered, not accepted (acceptance rate in routing, `offersAnswered` in
+  analytics); the shop's "Delivered" history lists the order as "Given up" with its reason, without the customer's details.
+- **Staff notification:** the order and assignment triggers already ping city staff (live outbox); `notifyStaffShopGaveUp`
+  is the hook for the push/email channels (ids and codes only).
+- **Tests:** `packages/db/test/shop-give-up.test.ts` (stock back, re-route to the same or another shop, one active
+  assignment, hidden from the customer, packed/foreign/stale/reason/note refusals, races: five give-ups, give-up vs pack,
+  give-up vs staff cancel), `apps/api/test/shop-give-up.test.ts`, `packages/shared/test/state.test.ts`.

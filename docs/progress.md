@@ -26,7 +26,11 @@ This file is the single source of truth for **where the build is right now**. It
     - Q100 (WhatsApp authentication template), Q97 (invoicing), Q98 (support@ inbox);
     - the go-ahead for the emulator test and data reset;
     - flipping the switch (`NEXT_PUBLIC_AUTH_MODE` / `NEXT_PUBLIC_DATA_MODE`).
-  - **To build:** shop gives up an accepted order → back to admin (user ruling); delivery code by WhatsApp once the template exists.
+  - **Built on branch `worktree-agent-ae36b855027f92e10` (not merged, 2026-11-15):** shop gives up an accepted order →
+    back to admin, and warnings to partners with a pause prompt (design note `docs/superpowers/specs/2026-11-15-shop-give-up-warnings-design.md`;
+    migration `0053_shop_give_up_warnings`, not applied; coordinator renumbers at merge). Shops only over HTTP; workshop warnings
+    are in the model and repository. Next: merge, apply migration, render the three screens at 390/1440 in light/dark and /hi.
+  - **To build:** delivery code by WhatsApp once the template exists; workshop warnings routes and screens.
 
 - **2026-11-14 (late night): UI state audit written, not run yet** (branch `worktree-agent-a7b149b62f8cf6ab3`; coordinator: "write everything up and then do the tests one by one and mark them off", "dont do the tests just yet we can do them overnight").
   - Root cause of the four layout bugs the user found: `docs/research/ui-testing-gap-2026-11-14.md`. The matrix varied pages and preferences but no interaction states, cross-entity relations, data shapes or intermediate widths, and asserted presence, not geometry.

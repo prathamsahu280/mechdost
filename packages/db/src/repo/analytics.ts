@@ -204,6 +204,7 @@ const OFFER_COLUMNS = sql`
   count(*) filter (where a.status = 'accepted')::int as accepted,
   count(*) filter (where a.status = 'declined')::int as declined,
   count(*) filter (where a.status = 'expired')::int as expired,
+  count(*) filter (where a.status = 'given_up')::int as given_up,
   percentile_cont(0.5) within group (order by extract(epoch from (a.responded_at - a.offered_at)))
     filter (where a.status = 'accepted' and a.responded_at is not null) as median_s`;
 
@@ -217,7 +218,8 @@ async function shopPerformance(db: Tx, cities: AnalyticsCities, b: Bounds) {
   const [t] = rowsOf<Record<string, unknown>>(totals);
   return {
     kpis: {
-      offersAnswered: num(t?.accepted ?? 0) + num(t?.declined ?? 0) + num(t?.expired ?? 0),
+      offersAnswered:
+        num(t?.accepted ?? 0) + num(t?.declined ?? 0) + num(t?.expired ?? 0) + num(t?.given_up ?? 0),
       offersAccepted: num(t?.accepted ?? 0),
       medianSecondsToAccept: medianInt(t?.median_s),
     },
