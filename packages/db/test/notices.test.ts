@@ -202,7 +202,7 @@ describe('queueNotice', () => {
   it('a rolled-back change leaves no notice', async () => {
     await expect(
       db.transaction(async (tx) => {
-        await queueNotice(tx as unknown as Tx, {
+        await queueNotice(tx, {
           kind: 'order.delivered',
           userId: F.en!,
           entityId: 'o4',

@@ -23,7 +23,8 @@ import { SEEDED_ACCOUNTS } from '../src/demo/session';
 // Meta: the company that runs WhatsApp (admin WhatsApp setup copy, decision 2026-11-02).
 // Razorpay: the payment partner named in the Terms of Service (2026-11-14).
 // Sentry, PostHog: the error-report and analytics providers named in the privacy notice (decision 2026-11-14).
-const OUR_BRANDS = ['MechDost', 'WhatsApp', 'Meta', 'Razorpay', 'Sentry', 'PostHog'] as const;
+// iPhone: the device's own name in the "Add to Home Screen" push steps (bell and push, 2026-11-15).
+const OUR_BRANDS = ['MechDost', 'WhatsApp', 'Meta', 'Razorpay', 'Sentry', 'PostHog', 'iPhone'] as const;
 
 /** Product brands come straight from the catalogue's `brand` field, plus model names used in product names. */
 const PRODUCT_BRANDS = [...new Set(DEMO_PRODUCTS.map((p) => p.brand))];

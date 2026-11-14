@@ -8,6 +8,7 @@ import { commonErrorKey, type CommonErrorKey } from '@/lib/api-error-key';
 import { formatCount } from '@/lib/admin-analytics-view';
 import { formatPrice } from '@/lib/format';
 import { ADMIN_SECTIONS, type AdminSection } from '@/lib/sections';
+import { PushPromptSlot } from '../notices/push-prompt-slot';
 import { portalCard, portalPrimary } from './portal-guard';
 
 interface Tile {
@@ -67,49 +68,52 @@ export function AdminOverviewApi() {
   const tiles = all.filter((tile) => tile.value !== null && ADMIN_SECTIONS.includes(tile.href));
 
   return (
-    <section aria-labelledby="kpis" className="space-y-3">
-      <h2 id="kpis" className="font-heading text-xl font-extrabold text-ink">
-        {t('nav_overview')}
-      </h2>
-      {error ? (
-        <div role="alert" className={`${portalCard} space-y-3`}>
-          <p className="text-sm font-bold text-error">{t(error)}</p>
-          <button
-            type="button"
-            className={portalPrimary}
-            onClick={() => {
-              void load();
-            }}
-          >
-            {t('api_common_retry')}
-          </button>
-        </div>
-      ) : data === null ? (
-        <div role="status" className="grid grid-cols-2 gap-3 tab:grid-cols-4">
-          <span className="sr-only">{t('api_common_loading')}</span>
-          {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="skeleton h-24 rounded-card" aria-hidden="true" />
-          ))}
-        </div>
-      ) : (
-        <ul className="grid grid-cols-2 gap-3 tab:grid-cols-4">
-          {tiles.map((tile) => (
-            <li key={tile.label}>
-              <Link
-                href={`${prefix}/admin/${tile.href}`}
-                className={`${portalCard} press block p-4 hover:shadow-card-hover ${
-                  tile.alert && tile.value ? 'border-accent-button' : ''
-                }`}
-              >
-                <span className="block font-heading text-3xl font-extrabold text-ink tabular-nums">
-                  {tile.money ? formatPrice(tile.value ?? 0) : formatCount(tile.value ?? 0, locale)}
-                </span>
-                <span className="mt-1 block text-sm text-muted">{tile.label}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
+    <>
+      <PushPromptSlot />
+      <section aria-labelledby="kpis" className="space-y-3">
+        <h2 id="kpis" className="font-heading text-xl font-extrabold text-ink">
+          {t('nav_overview')}
+        </h2>
+        {error ? (
+          <div role="alert" className={`${portalCard} space-y-3`}>
+            <p className="text-sm font-bold text-error">{t(error)}</p>
+            <button
+              type="button"
+              className={portalPrimary}
+              onClick={() => {
+                void load();
+              }}
+            >
+              {t('api_common_retry')}
+            </button>
+          </div>
+        ) : data === null ? (
+          <div role="status" className="grid grid-cols-2 gap-3 tab:grid-cols-4">
+            <span className="sr-only">{t('api_common_loading')}</span>
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="skeleton h-24 rounded-card" aria-hidden="true" />
+            ))}
+          </div>
+        ) : (
+          <ul className="grid grid-cols-2 gap-3 tab:grid-cols-4">
+            {tiles.map((tile) => (
+              <li key={tile.label}>
+                <Link
+                  href={`${prefix}/admin/${tile.href}`}
+                  className={`${portalCard} press block p-4 hover:shadow-card-hover ${
+                    tile.alert && tile.value ? 'border-accent-button' : ''
+                  }`}
+                >
+                  <span className="block font-heading text-3xl font-extrabold text-ink tabular-nums">
+                    {tile.money ? formatPrice(tile.value ?? 0) : formatCount(tile.value ?? 0, locale)}
+                  </span>
+                  <span className="mt-1 block text-sm text-muted">{tile.label}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </>
   );
 }

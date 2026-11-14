@@ -42,7 +42,14 @@ describe('content security policy (ruling 2026-11-09)', () => {
         'https://api.mechdost.com',
         'https://identitytoolkit.googleapis.com',
         'https://securetoken.googleapis.com',
+        // Web push (spec 10): the browser registers its token with these two.
+        'https://fcmregistrations.googleapis.com',
+        'https://firebaseinstallations.googleapis.com',
       ]),
+    );
+    // Demo builds never talk to Firebase push.
+    expect(directive(contentSecurityPolicy({ dev: false, authMode: 'demo' }), 'connect-src')).not.toContain(
+      'https://fcmregistrations.googleapis.com',
     );
     expect(directive(p, 'frame-src')).toEqual(
       expect.arrayContaining(['https://challenges.cloudflare.com', 'https://mechdost-prod.firebaseapp.com']),

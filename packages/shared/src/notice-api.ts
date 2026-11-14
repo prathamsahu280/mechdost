@@ -78,6 +78,8 @@ export const PushDeviceDto = z
   .object({ id: z.uuid(), platform: z.enum(['web', 'android', 'ios']), registered: z.literal(true) })
   .strict();
 
+export const PushDeviceRemovedDto = z.object({ removed: z.literal(true) }).strict();
+
 export const NoticePreferencesDto = z
   .object({
     /** Push for order, booking and support updates (in-app is always on). */

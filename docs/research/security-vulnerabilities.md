@@ -169,3 +169,13 @@ Static review of every item against the code (Opus agent, each claim traced end 
 - **`@sentry/cli` 2.58.6** (web devDependency, 2026-05-21; Docker build only for source maps): its `postinstall` (fallback binary download) is **denied** in `allowBuilds`; the binary comes from the optional `@sentry/cli-<platform>` package (checked: `sentry-cli --version` works without the script).
 - **`@sentry/nextjs` not used** (pulls rollup, babel and the webpack plugin, wraps the build); **`posthog-node`/`posthog-js` not used** (two HTTP calls with `fetch`).
 - `pnpm audit --prod` after adding them (2026-11-14): no finding under any Sentry package. Five findings, all older and unrelated: 2 moderate in `@hono/node-server` 2.1.5 (GHSA-jpvv-r467-5p4w and a backslash-path advisory; patched in 2.1.6 — **upgrade queued**, not part of this change), and the known `glob`/`minimatch`/`fast-xml-parser` findings under `firebase-admin`.
+
+## Dependency check: `@firebase/messaging` 0.13.3 (2026-11-15, bell and web push)
+
+- **Why this package:** the web push token needs `getToken`/`deleteToken`. The `firebase` umbrella stays out (2026-11-09 entry: it adds `@firebase/firestore` → `@grpc/grpc-js` < 1.13.6, GHSA-f596-whhp-79r4). Same family and line as `@firebase/app` 0.16.5 already used.
+- **Age and release:** 0.13.3 published 2026-09-09 (67 days; `minimumReleaseAge` is 3 days). Maintained (0.13.0 2026-05-28, 0.13.1 2026-07-30, 0.13.2 2026-08-19).
+- **Dependencies:** `idb` 7.1.1, `tslib`, `@firebase/util`, `@firebase/component`, `@firebase/installations`, `@firebase/messaging-interop-types` (peer `@firebase/app`). No install scripts (`@firebase/util`'s postinstall stays denied in `pnpm-workspace.yaml`).
+- **`pnpm audit --prod` after adding it:** the same 5 findings as before (1 low, 4 moderate; `glob`/`minimatch`/`fast-xml-parser` under `firebase-admin`, `@hono/node-server`); none under `@firebase/messaging`.
+- **Runtime exposure:** loaded only after the person taps "Turn on" (spec 16); talks to `fcmregistrations.googleapis.com` and `firebaseinstallations.googleapis.com` (added to `connect-src` in real mode only, `apps/web/test/csp.test.ts`). The service worker has no Firebase code and fetches nothing.
+- **Server:** `firebase-admin` 14.5.0 `getMessaging().sendEach` (already installed; the 2 moderate transitive findings are the known ones).
+- **Review points:** a token is personal data (never logged or returned by an API; RLS on, anon/authenticated revoked); push payload is title/short body/link only; the worker opens only paths on this site (`safePath`, same rule as the API's `link` CHECK and the catalogue's `noticeLink`).

@@ -47,6 +47,11 @@ const CoinsSectionApi = lazy(() =>
 const AddressesApi = lazy(() => import('./account-api-sections').then((m) => ({ default: m.AddressesApi })));
 const VehiclesApi = lazy(() => import('./account-api-sections').then((m) => ({ default: m.VehiclesApi })));
 const ProfileApi = lazy(() => import('./account-api-sections').then((m) => ({ default: m.ProfileApi })));
+// Bell and push (spec 10, 2026-11-15), real sign-in only: the choices, and the "get updates on this device" card.
+const NoticeSettings = lazy(() =>
+  import('../notices/notice-prefs').then((m) => ({ default: m.NoticeSettings })),
+);
+const PushPrompt = lazy(() => import('../notices/push-card').then((m) => ({ default: m.PushPrompt })));
 const sectionFallback = <div className="skeleton h-72 rounded-card" aria-hidden="true" />;
 
 const SECTION_EMOJI: Record<AccountSection, string> = {
@@ -58,6 +63,7 @@ const SECTION_EMOJI: Record<AccountSection, string> = {
   support: '🛟',
   vehicles: '🚗',
   addresses: '📍',
+  notifications: '🔔',
   profile: '👤',
 };
 
@@ -145,6 +151,16 @@ export function AccountArea({ section }: { section: AccountSection }) {
     <div className="grid gap-6 nav:grid-cols-[220px_minmax(0,1fr)] nav:items-start">
       <SectionNav current={section} />
       <div className="min-w-0 space-y-6">
+        {section === 'overview' && AUTH_MODE === 'firebase' ? (
+          <Suspense fallback={null}>
+            <PushPrompt />
+          </Suspense>
+        ) : null}
+        {section === 'notifications' ? (
+          <Suspense fallback={sectionFallback}>
+            <NoticeSettings role="customer" />
+          </Suspense>
+        ) : null}
         {section === 'overview' ? <Overview account={session} /> : null}
         {section === 'orders' ? <OrdersList /> : null}
         {section === 'services' ? <ServicesList /> : null}

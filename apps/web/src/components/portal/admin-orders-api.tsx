@@ -30,6 +30,7 @@ import {
 import { deadlineView, istDayTime } from '@/lib/admin-shop-form';
 import { ApiError, ApiListState, LoadMore } from './api-list-state';
 import { portalCard, portalField, portalPrimary, portalQuiet, useNow } from './portal-guard';
+import { useNoticeRefresh } from '../notices/use-notice-refresh';
 import { useApiList, type ApiList } from './use-api-list';
 
 const POLL_MS = 30_000;
@@ -66,6 +67,11 @@ export function OrderRoutingApi() {
   const refresh = useCallback(async () => {
     await Promise.all([needs.reload(), awaiting.reload(), progress.reload(), closed.reload()]);
   }, [needs, awaiting, progress, closed]);
+  // New orders to route and shops that declined, timed out or gave an order back arrive through the bell (spec 10).
+  useNoticeRefresh(
+    ['staff.order_needs_routing', 'staff.shop_declined', 'staff.shop_timed_out', 'staff.shop_gave_up'],
+    refresh,
+  );
 
   const groups: { key: AdminGroup; list: ApiList<RoutingQueueItemDto>; items: RoutingQueueItemDto[] }[] = [
     { key: 'needs', list: needs, items: needs.items },

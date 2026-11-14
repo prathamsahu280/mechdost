@@ -51,6 +51,14 @@ const nextConfig: NextConfig = {
   headers() {
     return Promise.resolve([
       { source: '/:path*', headers: securityHeaders },
+      // The push worker (spec 10) is re-checked on every visit so a fix reaches browsers at once; its scope is the site.
+      {
+        source: '/firebase-messaging-sw.js',
+        headers: [
+          { key: 'Cache-Control', value: 'no-cache' },
+          { key: 'Service-Worker-Allowed', value: '/' },
+        ],
+      },
       // Versioned file names (scripts/copy-map-worker.mjs), so they can be cached forever.
       {
         source: '/vendor/:file*',

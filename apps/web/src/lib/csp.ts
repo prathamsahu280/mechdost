@@ -34,6 +34,11 @@ const TURNSTILE = 'https://challenges.cloudflare.com';
 const RECAPTCHA_SCRIPTS = ['https://www.google.com/recaptcha/', 'https://www.gstatic.com/recaptcha/'];
 const RECAPTCHA_FRAMES = ['https://www.google.com/recaptcha/', 'https://recaptcha.google.com/recaptcha/'];
 const FIREBASE_AUTH_APIS = ['https://identitytoolkit.googleapis.com', 'https://securetoken.googleapis.com'];
+/** Web push (spec 10): the browser registers its push token with Firebase Installations and FCM Registrations. */
+const FIREBASE_PUSH_APIS = [
+  'https://fcmregistrations.googleapis.com',
+  'https://firebaseinstallations.googleapis.com',
+];
 /**
  * The root layout's two fixed inline scripts (theme before first paint, admin home layout). The shared layout
  * cannot read a nonce without making every page dynamic, so under a nonce policy they are allowed by hash.
@@ -88,7 +93,7 @@ export function contentSecurityPolicy(input: CspInput): string {
 
   const connect = ["'self'", ...MAP_ORIGINS];
   if (api) connect.push(api);
-  if (real) connect.push(...FIREBASE_AUTH_APIS, TURNSTILE, ...RAZORPAY_CONNECT);
+  if (real) connect.push(...FIREBASE_AUTH_APIS, ...FIREBASE_PUSH_APIS, TURNSTILE, ...RAZORPAY_CONNECT);
   if (emulator) connect.push(emulator);
   const sentry = sentryIngestOrigin(input.sentryDsn);
   if (sentry) connect.push(sentry);

@@ -25,6 +25,7 @@ import {
 import { ApiListState, LoadMore } from './api-list-state';
 import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
 import { ServiceApiError } from './service-api-error';
+import { PushPromptSlot } from '../notices/push-prompt-slot';
 import { useApiList } from './use-api-list';
 import { EstimateBuilderApi, JobStepsApi, OdometerFormApi } from './workshop-job-api';
 
@@ -63,6 +64,7 @@ export function WorkshopRequestsApi() {
 
   return (
     <>
+      <PushPromptSlot />
       {name ? (
         <section className="blueprint rounded-card p-6 text-white shadow-card">
           <h2 className="font-heading text-2xl font-extrabold">🔧 {name}</h2>

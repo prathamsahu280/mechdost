@@ -131,7 +131,7 @@ export function uaFamily(header: string | undefined): 'chrome' | 'firefox' | 'sa
   if (/Edg(e|A|iOS)?\//.test(ua)) return 'edge';
   if (/Firefox\/|FxiOS\//.test(ua)) return 'firefox';
   if (/Chrome\/|CriOS\//.test(ua)) return 'chrome';
-  if (/Safari\//.test(ua)) return 'safari';
+  if (ua.includes('Safari/')) return 'safari';
   return 'other';
 }
 

@@ -22,7 +22,9 @@ export default async function PartnerPage() {
     <Container className="py-10 tab:py-14">
       <PageIntro eyebrow={t('partnerEyebrow')} line1={t('shopTitle')} />
       <div className="mt-8">
-        <ClientMessages namespaces={['portal', 'account', 'auth', 'order', 'request', 'quote', 'apply']}>
+        <ClientMessages
+          namespaces={['portal', 'account', 'auth', 'order', 'request', 'quote', 'apply', 'bell']}
+        >
           <ShopPortal />
         </ClientMessages>
       </div>
