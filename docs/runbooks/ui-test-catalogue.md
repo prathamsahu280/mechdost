@@ -595,3 +595,129 @@ pages, limit constants). Nothing was run.
 Also worth a line each: storage blocked or full; stale consent version; no saved theme with system dark on portals;
 the demo "advance", "demo reply" and "demo offer" controls reachable by any visitor; orders, requests and quotes not
 scoped to the account in the demo store (two customers on one browser see each other's rows).
+
+---
+
+## 9. UI state audit: the component dimension model (2026-11-14)
+
+Sections 6–8 model **pages × worlds**. They missed four layout bugs on 2026-11-14 because nothing varied
+interaction states, cross-entity relations, data shapes or the widths between 390 and 1440, and nothing measured
+geometry (`docs/research/ui-testing-gap-2026-11-14.md`). The UI state audit models **components × dimensions**
+and measures boxes.
+
+| Part                       | Where                                                                                                                              |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Component state model      | `apps/web/e2e/state-audit/model.ts` (65 components, their dimensions and values)                                                   |
+| Pairwise / cross generator | `apps/web/e2e/state-audit/pairwise.ts` (deterministic, no dependency, unit-tested)                                                 |
+| Cases and ids              | `apps/web/e2e/state-audit/cases.ts` (`SHOP-CARD-017` …; chunks for the overnight run)                                              |
+| Geometry assertions        | `apps/web/e2e/state-audit/geometry.ts` (runs in the page)                                                                          |
+| Runner per case            | `apps/web/e2e/state-audit/harness.ts`; tests in `state-audit.audit.ts`                                                             |
+| Known, filed bugs          | `apps/web/e2e/state-audit/known-issues.ts` (annotations only with `STATE_AUDIT_KNOWN=allow`)                                       |
+| Config                     | `apps/web/playwright.state-audit.config.ts` (one Chromium project; not part of `pnpm e2e`)                                         |
+| Written checklist          | `docs/qa/ui-state-checklist.md` (1,731 items; one test each; ticked from the report)                                               |
+| Scripts                    | `apps/web/scripts/state-audit-checklist.mjs` (regenerate), `state-audit-tick.mjs` (tick), `state-audit-run.mjs` (overnight chunks) |
+
+### 9.1 Dimensions
+
+Every case has `width`, `theme`, `locale`, `auth`, `world` plus component dimensions. The harness gives each
+value one meaning (`harness.ts` `seedFor` / `prepare` / `interact`):
+
+| Dimension     | Values                                                                                                    | How it is set                                                                                                                       |
+| ------------- | --------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `width`       | 320, 390, 480, 768, 1024, 1280, 1440, 1920 (grid column counts change at 480/640/760/1024/1280)           | `page.setViewportSize`                                                                                                              |
+| `theme`       | light, dark                                                                                               | `mechdost-theme`; system preference set to the opposite                                                                             |
+| `locale`      | en, hi                                                                                                    | `/hi` prefix                                                                                                                        |
+| `auth`        | out, customer, shop, workshop, admin                                                                      | `mechdost-demo-session` seeded directly (no sign-in form)                                                                           |
+| `world`       | empty, cart, busy                                                                                         | as section 6 (`fixtures/demo-world.ts`)                                                                                             |
+| `cart`        | none, c1, c2, c99, mixed (partial in-cart), many20 (limit), below (under free delivery), max (₹12,37,500) | `mechdost-cart` (`CARTS`)                                                                                                           |
+| `compare`     | none, lub-1…lub-4, bat-2, bat-3, tyr-2, spa-2, spa-3 (mixed MRP / "on request" / no MRP)                  | `mechdost-compare` (`COMPARES`); `bat-2` on `/shop` = mixed categories                                                              |
+| `stress`      | none, long-text, long-price, mixed-shape                                                                  | applied to the rendered DOM (`applyStress`): 70+ character names en/hi, ₹1,00,000, every other card without rating/MRP/saving/badge |
+| `interaction` | hover-dec, hover-inc, focus-dec, focus-inc, active-inc (disabled covered at qty 1 / 99)                   | stepper part hovered, Tab-focused or held down while measuring                                                                      |
+| `action`      | compare-other, start-new, add, inc, dec-remove                                                            | clicked before measuring; then every card is checked against the stored lists                                                       |
+| `open`        | closed, first, last, all                                                                                  | FAQ items, quick-details popover, assistant panel                                                                                   |
+| `form`        | clean, errors (submitted empty), filled                                                                   | forms on checkout, booking, partner application, support, sign-in, quotes                                                           |
+| `consent`     | decided, open                                                                                             | banner open = no `mechdost-consent`                                                                                                 |
+
+Strategy: pairwise (all pairs) for every component; a **full cross** for the high-risk ones (card × compare ×
+cart × width; card actions × width; stepper surface × quantity × interaction × width; compare table columns ×
+cart × width; header width × auth; floating stack width × consent), with the other dimensions paired against the
+cross. Constraints (for example, no signed-out `/account`) live in the model, never as skipped tests.
+
+Not representable in demo mode: out of stock, unrated products, prices over ₹12,500 (stress covers the layout
+side; API mode covers the data side). Map canvases are excluded (map specs cover them).
+
+### 9.2 Assertions per state
+
+The checks are `present`, `inside`, `overlap`, `covered`, `clipped`, `aligned`, `tap`, `hscroll`, `focus`,
+`console`, `sync`, `axe` (every fourth case and every core case) and `hindi` (on `/hi`). The exact rules are in
+`geometry.ts` and the checklist header. `inside`, `overlap` and `covered` run three times:
+
+- on the whole component;
+- again while each kind of control is hovered (up to the component's `sweep` cap);
+- again while each of the first controls reached by Tab is focused.
+
+Severity: P0 and P1 fail the test, P2 is an annotation. On failure the test attaches the following, and the test
+output gives the state line and every finding:
+
+- `state-audit-failure.png`: a viewport screenshot with the offending boxes outlined in red;
+- `state-audit-findings` (JSON).
+
+### 9.3 Running it overnight (low-memory machine)
+
+```bash
+# 1. One production build of the demo site (no other heavy suite at the same time, T41).
+pnpm --filter @mechdost/web build
+# 2. Optional: start the server once so every chunk reuses it (otherwise each chunk starts its own).
+pnpm --filter @mechdost/web exec next start --port 3100
+# 3. In another terminal: all five chunks, one after another, one browser (workers 1), ticking after each.
+node apps/web/scripts/state-audit-run.mjs all --date 2026-11-15
+#    or some chunks: node apps/web/scripts/state-audit-run.mjs B C
+```
+
+| Chunk | Id prefixes                                         | Tests |
+| ----- | --------------------------------------------------- | ----- |
+| A     | CHR-, HOME-                                         | 342   |
+| B     | SHOP-, STEP-                                        | 444   |
+| C     | PDP-, CMP-, CART-, CHK-                             | 296   |
+| D     | ORD-, SR-, QT-, ACC-, WS-, PTN-, SUP-, LOGIN-, POL- | 377   |
+| E     | PRT-, ADM-                                          | 272   |
+
+Expected duration: about 6–8 s per test (load, settle, a scrolling scan, up to 16 hovers and 16 focus stops,
+axe on a quarter of the tests), so **3–4 hours for all 1,731** with one worker. Each chunk takes 30–60 minutes
+and is ticked as soon as it ends. Logs, JSON reports and screenshots are kept in
+`apps/web/test-results/state-audit-<date>/<chunk>/`, which is git-ignored. The checklist links point there.
+
+A single component: `STATE_AUDIT_ONLY=STEP- pnpm --filter @mechdost/web exec playwright test -c
+playwright.state-audit.config.ts`. The per-push subset: `STATE_AUDIT_TIER=core STATE_AUDIT_KNOWN=allow …`.
+
+After the run:
+
+1. Read `## Run results` in the checklist (failures, worst first).
+2. Expect the first run to need harness fixes. A `present` failure usually means a wrong scope selector. Many
+   identical findings on unrelated pages usually mean a noisy rule. Fix the harness (and add a unit test where it
+   is pure), then re-run that chunk.
+3. Triage each real failure into `## Found bugs` with its ids and a severity. Fix it test-first, then re-run the
+   chunk to tick it.
+4. Add a filed bug to `known-issues.ts` only if the per-push subset must stay green while the fix is in review.
+   Remove it in the fixing change.
+
+### 9.4 CI
+
+- **Every push** (`ci.yml` job `e2e-demo`, step "UI state audit (core subset)"): the 84 `core` items, about
+  5 minutes on two workers, with `STATE_AUDIT_KNOWN=allow`. The step is **report-only**
+  (`continue-on-error`) until the first overnight run is triaged (Q97), then it blocks.
+- **Nightly** (`.github/workflows/ui-state-audit.yml`, 02:00 IST, or run by hand with id prefixes): every item.
+  It ticks the checklist and uploads the ticked checklist, the JSON report and the screenshots as the
+  `ui-state-audit` artifact (14 days). It never commits.
+- `pnpm check` runs `apps/web/test/state-audit-*.test.ts`. These cover the pairwise coverage, the ticking and
+  merging, and that the checklist matches the model. A model change without
+  `node apps/web/scripts/state-audit-checklist.mjs` fails the gate.
+
+### 9.5 Adding a component or a dimension
+
+1. Add it to `COMPONENTS` in `model.ts`: code, page, scope selector, parameters, strategy. Add `align` for grids
+   and tables, `mustShow` for seeded records, and `core` for the per-push subset.
+2. If a new state key needs set-up, give it one meaning in `harness.ts` and document it in 9.1.
+3. Run `node apps/web/scripts/state-audit-checklist.mjs`. Ids are positional per component, so adding a value
+   renumbers that component's items, and they start unticked.
+4. Run the new rows: `STATE_AUDIT_ONLY=<CODE>-`.
