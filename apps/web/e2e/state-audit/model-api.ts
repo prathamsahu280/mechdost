@@ -51,6 +51,8 @@ export const REAL_ACCOUNT_SECTIONS = [
   'coins',
   'vehicles',
   'addresses',
+  // The bell's choices and this device's push (bell + push merge 2026-11-15): real sign-in only.
+  'notifications',
   'profile',
 ] as const;
 
