@@ -1729,7 +1729,7 @@
     "notify_status_off": "WhatsApp is off",
     "notify_status_body": "Messages start once the Meta setup is done: business account, verified business, a dedicated number and billing in rupees.",
     "notify_ev_order_confirmed": "Order confirmed",
-    "notify_ev_order_out_for_delivery": "Out for delivery (with the delivery code)",
+    "notify_ev_order_out_for_delivery": "Out for delivery",
     "notify_ev_order_rejected": "Order could not be fulfilled",
     "notify_ev_service_estimate_sent": "Workshop estimate ready",
     "notify_ev_ticket_replied": "Support replied",
@@ -1962,7 +1962,7 @@
   "notifyTemplates": {
     "order": {
       "confirmed": "Your MechDost order {{1}} is confirmed and will be shipped soon. Track it with the button below.",
-      "out_for_delivery": "Your order {{1}} is out for delivery. Share delivery code {{2}} only with the delivery partner when you receive it.",
+      "out_for_delivery": "Your order {{1}} is out for delivery. When the parcel arrives, tap Track order below and show the delivery person the confirmation shown on the website.",
       "rejected": "We could not fulfil your order {{1}}. Any payment will go back to your original payment method within 5–7 working days.",
       "routed": "New order {{1}} for your shop. Accept or decline within {{2}} minutes in the MechDost partner portal."
     },

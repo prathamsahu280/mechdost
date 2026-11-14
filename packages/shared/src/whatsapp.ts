@@ -32,10 +32,12 @@ export const WHATSAPP_TEMPLATES = {
     urlParam: 'orderCode',
     audience: 'customer',
   },
+  // No delivery code here (user 2026-11-14): Meta refuses passcode-like codes in utility templates, and a code in a
+  // notification shows on a locked screen. The button opens the order page, which shows the code to the customer.
   'order.out_for_delivery': {
     name: 'order_out_for_delivery',
     category: 'utility',
-    params: ['orderCode', 'deliveryCode'],
+    params: ['orderCode'],
     urlParam: 'orderCode',
     audience: 'customer',
   },

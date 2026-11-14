@@ -11,8 +11,9 @@ import type { Tx } from './orders';
  * for the event (an enabled template, admin → Notifications) and the customer has a phone. One message per
  * transition: the dedupe key carries the order version reached by it.
  *
- * Secrets in the payload (the delivery code) are stored encrypted like the shipment's own copy and decrypted by
- * the sender just before the Meta call (`openPayload`), so the outbox never holds them in clear text.
+ * Secrets in a payload (`sealPayloadField`, e.g. a token) are stored encrypted and decrypted by the sender just before
+ * the Meta call (`openPayload`), so the outbox never holds them in clear text. The delivery code is never sent by
+ * WhatsApp (user 2026-11-14: Meta refuses passcode-like codes in utility templates); the order page shows it.
  */
 export type OrderWhatsAppEvent = 'order.confirmed' | 'order.rejected' | 'order.out_for_delivery';
 
@@ -26,8 +27,6 @@ export async function queueOrderWhatsApp(
     event: OrderWhatsAppEvent;
     /** Order version after the transition (makes the dedupe key unique per transition). */
     orderVersion: number;
-    /** Out for delivery only: the code, encrypted with `keyring` before it is stored. */
-    secret?: { deliveryCode: string; keyring: Keyring };
   },
 ): Promise<boolean> {
   if (!(await notificationChannelEnabled(tx, input.event, 'whatsapp'))) return false;
@@ -40,14 +39,6 @@ export async function queueOrderWhatsApp(
     .limit(1);
   if (!row?.phone) return false;
   const payload: Record<string, string> = { orderCode: row.code };
-  if (input.event === 'order.out_for_delivery') {
-    if (!input.secret) throw new Error('out_for_delivery needs the delivery code');
-    payload.deliveryCodeEnc = encryptField(
-      input.secret.deliveryCode,
-      input.secret.keyring,
-      aadFor('deliveryCode'),
-    );
-  }
   return enqueueNotification(tx, {
     dedupeKey: `${input.event}:${input.orderId}:v${String(input.orderVersion)}:whatsapp`,
     channel: 'whatsapp',

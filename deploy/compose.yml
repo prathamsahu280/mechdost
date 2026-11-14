@@ -65,6 +65,36 @@ services:
     security_opt:
       - no-new-privileges:true
 
+  # Background jobs (2026-11-14): sends queued WhatsApp/email messages (outbox), expires shop offers, releases stock
+  # holds, expires unpaid online orders, resumes ended pauses, turns WhatsApp replies into support tickets, and the
+  # live-update relay. Same image and settings as the API; no port. One instance only (the jobs use row locks, so a
+  # second one would be safe but useless).
+  worker:
+    image: ghcr.io/prathamsahu280/mechdost-api:${IMAGE_TAG:?set IMAGE_TAG}
+    profiles: [api]
+    restart: unless-stopped
+    command: ['node', 'dist/worker.mjs']
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      TRUSTED_PROXY_HOPS: '1'
+      GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/firebase-admin.json
+      DATABASE_CA_CERT: /run/secrets/supabase-ca.crt
+    volumes:
+      - ./supabase-ca-2021.crt:/run/secrets/supabase-ca.crt:ro
+      - ./firebase-admin.json:/run/secrets/firebase-admin.json:ro
+    # The image's health check calls the API port; the worker has none.
+    healthcheck:
+      disable: true
+    depends_on:
+      - api
+    mem_limit: 256m
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+
 volumes:
   caddy_data:
   caddy_config:

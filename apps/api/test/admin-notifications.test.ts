@@ -137,9 +137,9 @@ describe('admin notifications API', () => {
       whatsappCatalogue: { key: string; params: string[] }[];
     };
     expect(json.templates.some((t) => t.key === 'order.confirmed' && t.locale === 'en')).toBe(true);
+    // The delivery code is never sent by WhatsApp (user 2026-11-14): one placeholder, the order code.
     expect(json.whatsappCatalogue.find((c) => c.key === 'order.out_for_delivery')?.params).toEqual([
       'orderCode',
-      'deliveryCode',
     ]);
   });
 

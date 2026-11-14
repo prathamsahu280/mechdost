@@ -39,7 +39,8 @@ const base = {
   key: 'order.out_for_delivery',
   channel: 'whatsapp' as const,
   locale: 'hi' as const,
-  body: 'आपका ऑर्डर {{1}} रास्ते में है। डिलीवरी कोड {{2}} केवल डिलीवरी पार्टनर को बताएँ।',
+  // One placeholder: the delivery code is never sent by WhatsApp (user 2026-11-14).
+  body: 'आपका ऑर्डर {{1}} डिलीवरी के लिए निकल चुका है। डिलीवरी कोड ऑर्डर पेज पर है।',
   enabled: true,
 };
 
@@ -67,10 +68,10 @@ describe('notification templates (admin)', () => {
         expectedVersion: null,
         staffUserId: staff,
       });
-    await expect(
-      save({ body: 'Order {{1}} is on the way, code {{2}}. Get 10% off next time!' }),
-    ).rejects.toMatchObject({ code: 'TEMPLATE_PROMO_WORDING' });
-    await expect(save({ body: 'Order {{1}} is on the way.' })).rejects.toMatchObject({
+    await expect(save({ body: 'Order {{1}} is on the way. Get 10% off next time!' })).rejects.toMatchObject({
+      code: 'TEMPLATE_PROMO_WORDING',
+    });
+    await expect(save({ body: 'Order {{1}} is on the way, code {{2}}.' })).rejects.toMatchObject({
       code: 'TEMPLATE_PLACEHOLDERS',
     });
     await expect(save({ key: 'promo.oil_week', body: 'x {{1}}' })).rejects.toMatchObject({

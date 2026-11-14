@@ -29,7 +29,7 @@ const row = (over: Partial<OutboxRow> = {}): OutboxRow => ({
   recipient: '+919876543210',
   templateKey: 'order.out_for_delivery',
   locale: 'hi',
-  payload: { orderCode: 'MD-RPR-2026-7K3QWX', deliveryCode: '4821' },
+  payload: { orderCode: 'MD-RPR-2026-7K3QWX' },
   attempts: 1,
   claimToken: '0192f3a4-5b6c-7d8e-9f01-000000000001',
   ...over,
@@ -63,10 +63,8 @@ describe('WhatsApp adapter (Meta Cloud API direct)', () => {
     expect(body.to).toBe('919876543210');
     expect(body.template.name).toBe('order_out_for_delivery');
     expect(body.template.language.code).toBe('hi');
-    expect(body.template.components[0]?.parameters.map((p) => p.text)).toEqual([
-      'MD-RPR-2026-7K3QWX',
-      '4821',
-    ]);
+    // The delivery code is never in a WhatsApp message (user 2026-11-14); the button opens the order page.
+    expect(body.template.components[0]?.parameters.map((p) => p.text)).toEqual(['MD-RPR-2026-7K3QWX']);
     expect(body.template.components[1]).toMatchObject({
       type: 'button',
       parameters: [{ text: 'MD-RPR-2026-7K3QWX' }],
@@ -79,7 +77,7 @@ describe('WhatsApp adapter (Meta Cloud API direct)', () => {
     for (const bad of [
       row({ templateKey: 'promo.oil_sale' }),
       row({ recipient: '9876543210' }),
-      row({ payload: { orderCode: 'MD-1\nhello', deliveryCode: '4821' } }),
+      row({ payload: { orderCode: 'MD-1\nhello' } }),
     ]) {
       await expect(adapter.send(bad)).rejects.toMatchObject({ failure: 'permanent' });
     }

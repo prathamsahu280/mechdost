@@ -12,7 +12,6 @@ import {
   acceptAssignment,
   issueDeliveryCode,
   offerOrderToShop,
-  openPayload,
   saveNotificationTemplate,
   transitionOrder,
   type Tx,
@@ -196,8 +195,10 @@ describe('order WhatsApp updates', () => {
     expect(await db.$count(s.notificationOutbox)).toBe(0);
   });
 
-  it('out for delivery carries the code encrypted; only the sender can open it', async () => {
-    await enable('order.out_for_delivery', 'Order {{1}} is on the way. Code {{2}}.');
+  // Meta refuses a passcode-like code in a utility template (user 2026-11-14), and a code in a notification can be
+  // read on a locked screen: the message says the order is on its way; the code stays on the order page.
+  it('out for delivery tells the order code only, never the delivery code', async () => {
+    await enable('order.out_for_delivery', 'Order {{1}} is out for delivery.');
     const { order } = await newOrder();
     const [shipment] = await db
       .insert(s.shipments)
@@ -206,12 +207,7 @@ describe('order WhatsApp updates', () => {
     const code = await issueDeliveryCode(t(), ring, shipment!.id);
     const [row] = await db.select().from(s.notificationOutbox);
     const payload = row!.payload as Record<string, string>;
-    expect(JSON.stringify(payload)).not.toContain(`"${code}"`);
-    expect(payload.deliveryCodeEnc).toMatch(/^v1\./);
-    expect(openPayload(payload, ring)).toEqual({
-      orderCode: expect.any(String) as string,
-      deliveryCode: code,
-    });
-    expect(() => openPayload(payload, null)).toThrow();
+    expect(Object.keys(payload)).toEqual(['orderCode']);
+    expect(JSON.stringify(payload)).not.toContain(code);
   });
 });

@@ -283,7 +283,7 @@ When a separate production Supabase project exists, migrations move into the pip
 ## 9. Not covered yet (queued)
 
 - A production Supabase project and migrations in the pipeline (§ 6).
-- The background worker (`dist/worker.mjs`, live relay) as a compose service, when live updates are on.
+- ~~The background worker as a compose service~~ — **added 2026-11-14**: service `worker` in `deploy/compose.yml` (same API image, `node dist/worker.mjs`, profile `api`, 256 MB, no port, health check off). It sends the outbox (WhatsApp, email), expires shop offers, releases stock holds, expires unpaid online orders, resumes ended pauses, bridges WhatsApp replies into support tickets and runs the live relay. Logs: `docker compose logs -f worker` (`worker_started` lists the channels). Trial-run on the server before the first deploy: started cleanly with the WhatsApp channel.
 - Uptime monitoring and error tracking (Sentry), and alerts.
 - Backups: Supabase handles the database (PITR add-on to turn on). The server holds no data except Caddy's certificates, which are re-issued automatically.
 

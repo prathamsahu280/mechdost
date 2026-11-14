@@ -27,7 +27,8 @@ export async function issueDeliveryCode(db: Tx, keyring: Keyring, shipmentId: st
       .returning({ id: shipments.id, orderId: shipments.orderId });
     const shipment = rows[0];
     if (!shipment) throw new ConflictError('This shipment is already delivered', 'ALREADY_DELIVERED');
-    // Customer WhatsApp with the code (spec 10), in the same transaction; queued only if staff switched it on.
+    // Customer WhatsApp "out for delivery" (spec 10), in the same transaction; queued only if staff switched it on.
+    // It never carries the code: the customer reads it on the order page (user 2026-11-14).
     const [order] = await tx
       .select({ version: orders.version })
       .from(orders)
@@ -38,7 +39,6 @@ export async function issueDeliveryCode(db: Tx, keyring: Keyring, shipmentId: st
         orderId: shipment.orderId,
         event: 'order.out_for_delivery',
         orderVersion: order.version,
-        secret: { deliveryCode: code, keyring },
       });
     }
     return code;
