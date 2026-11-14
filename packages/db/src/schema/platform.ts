@@ -16,12 +16,14 @@ import {
 } from 'drizzle-orm/pg-core';
 import { CUSTOMER_BLOCK_LEVELS, CUSTOMER_BLOCK_REASONS } from '@mechdost/shared/customers';
 import { GST_STATUSES, LOCATION_SOURCES, PARTNER_STANDING_REASONS } from '@mechdost/shared/partner-codes';
+import { REVIEW_HIDE_REASONS, REVIEW_STATES } from '@mechdost/shared/reviews';
 import { APPLICATION_STATES, INVITE_STATES } from '@mechdost/shared/state';
 import { citext, createdAt, encryptedCheck, geographyPoint, id, ts, updatedAt, version } from './_common';
 import { cities } from './geography';
 import { users } from './identity';
 import { orders } from './orders';
 import { products, shops } from './catalogue';
+import { serviceRequests } from './services';
 
 /** Brandur-style idempotency keys for money-moving endpoints (docs/research/data-integrity.md §4). */
 
@@ -492,7 +494,12 @@ export const shopAgreements = pgTable(
   (t) => [unique().on(t.shopId, t.version), index().on(t.version), index().on(t.acceptedBy)],
 );
 
-/** Reviews are verified-purchase only and admin-approved before publish (decisions 2026-10-31). */
+/**
+ * Reviews are verified-purchase only and admin-approved before publish (decisions 2026-10-31; spec 02 § Reviews).
+ * A product review links the delivered sub-order, a workshop review the paid/completed service request; one per
+ * customer, target and purchase. `status` moves through `reviewMachine` (`@mechdost/shared/reviews`) by
+ * compare-and-set on `version`; hiding needs a reason code. Only approved rows are public and count in ratings.
+ */
 export const reviews = pgTable(
   'reviews',
   {
@@ -500,28 +507,56 @@ export const reviews = pgTable(
     userId: uuid()
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
+    /** City of the purchase, for city-scoped moderation (hard rule 7). */
+    cityId: uuid()
+      .notNull()
+      .references(() => cities.id, { onDelete: 'restrict' }),
     orderId: uuid().references(() => orders.id, { onDelete: 'set null' }),
-    serviceRequestId: uuid(),
+    serviceRequestId: uuid().references(() => serviceRequests.id, { onDelete: 'restrict' }),
     targetType: text().notNull(),
     targetId: uuid().notNull(),
     rating: smallint().notNull(),
+    /** Plain text as the customer wrote it (user content: never translated); null = stars only. */
     body: text(),
     status: text().notNull().default('pending'),
+    /** Why staff hid it (`REVIEW_HIDE_REASONS`); set exactly while hidden. */
+    hiddenReason: text(),
+    /** Staff-only note on the last moderation. */
+    moderationNote: text(),
     reply: text(),
     moderatedBy: uuid().references(() => users.id, { onDelete: 'set null' }),
     moderatedAt: ts(),
+    version: version(),
     createdAt: createdAt(),
+    updatedAt: updatedAt(),
   },
   (t) => [
     check('reviews_rating_range', sql`${t.rating} between 1 and 5`),
     check('reviews_target_valid', sql`${t.targetType} in ('product','shop','workshop')`),
-    check('reviews_status_valid', sql`${t.status} in ('pending','approved','hidden')`),
+    check('reviews_status_valid', sql`${t.status} in (${inList(REVIEW_STATES)})`),
     check('reviews_verified', sql`${t.orderId} is not null or ${t.serviceRequestId} is not null`),
+    check(
+      'reviews_purchase_matches_target',
+      sql`(${t.targetType} <> 'product' or ${t.orderId} is not null) and (${t.targetType} <> 'workshop' or ${t.serviceRequestId} is not null)`,
+    ),
+    check('reviews_body_length', sql`${t.body} is null or char_length(${t.body}) between 1 and 1000`),
+    check(
+      'reviews_hidden_reason',
+      sql`(${t.status} = 'hidden') = (${t.hiddenReason} is not null) and (${t.hiddenReason} is null or ${t.hiddenReason} in (${inList(REVIEW_HIDE_REASONS)}))`,
+    ),
+    check('reviews_note_length', sql`${t.moderationNote} is null or char_length(${t.moderationNote}) <= 300`),
+    check('reviews_moderated', sql`${t.status} = 'pending' or ${t.moderatedAt} is not null`),
     unique('reviews_one_per_purchase_uq')
       .on(t.userId, t.orderId, t.serviceRequestId, t.targetType, t.targetId)
       .nullsNotDistinct(),
-    index().on(t.targetType, t.targetId, t.status),
+    // Public list (approved, newest first) and rating summary per target.
+    index('reviews_target_public_idx').on(t.targetType, t.targetId, t.status, t.createdAt, t.id),
+    // Moderation queue (status, oldest first) and the per-customer daily limit.
+    index('reviews_status_created_idx').on(t.status, t.createdAt, t.id),
+    index('reviews_user_created_idx').on(t.userId, t.createdAt),
+    index().on(t.cityId),
     index().on(t.orderId),
+    index().on(t.serviceRequestId),
     index().on(t.moderatedBy),
   ],
 );

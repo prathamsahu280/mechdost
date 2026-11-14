@@ -23,6 +23,7 @@ import {
   type InviteRowDto,
   type PriceRequestRowDto,
 } from '@mechdost/shared/partner-api';
+import { AdminPincodeList } from '@mechdost/shared/geo-api';
 import { InviteSchema } from '@mechdost/shared/partners';
 import { OPERATIONAL_SETTINGS } from '@mechdost/shared/settings';
 import { adminApi, type ResponseSchema } from '@/lib/admin-api';
@@ -375,7 +376,22 @@ function CoverageForm({
   const [invalid, setInvalid] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [pins, setPins] = useState(app.pincode);
+  const [pickNote, setPickNote] = useState<string | null>(null);
   const id = (k: string) => `coverage-${app.code}-${k}`;
+
+  /** Pick list (spec 15 "PIN codes"): every active PIN code of the application's city, from the API. */
+  async function fillServiceArea() {
+    setPickNote(null);
+    const res = await adminApi(locale, `/admin/pincodes?pincode=${app.pincode}`, AdminPincodeList);
+    if (!res.ok) {
+      setPickNote(errorText(res.code));
+      return;
+    }
+    const active = res.data.pincodes.filter((p) => p.active).map((p) => p.pincode);
+    setPins(active.join(', '));
+    setPickNote(t('geo_api_pickDone', { count: active.length }));
+  }
 
   async function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -421,7 +437,10 @@ function CoverageForm({
           id={id('pins')}
           name="pins"
           rows={2}
-          defaultValue={app.pincode}
+          value={pins}
+          onChange={(e) => {
+            setPins(e.target.value);
+          }}
           aria-invalid={invalid ? true : undefined}
           aria-describedby={invalid ? `${id('error')} ${id('hint')}` : id('hint')}
           className={`${portalField} py-2`}
@@ -429,6 +448,14 @@ function CoverageForm({
         <p id={id('hint')} className="mt-1 text-xs text-muted">
           {t('api_on_pinsHint')}
         </p>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <button type="button" className={portalQuiet} onClick={() => void fillServiceArea()}>
+            {t('geo_api_pick')}
+          </button>
+          <p role="status" className="text-xs text-muted">
+            {pickNote ?? ''}
+          </p>
+        </div>
       </div>
       <div className="flex flex-wrap gap-3">
         <div>

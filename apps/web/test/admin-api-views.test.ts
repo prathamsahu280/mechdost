@@ -123,10 +123,10 @@ describe('settings view', () => {
   });
 
   it('handles switches', () => {
-    expect(settingUnit('orders.customer_self_cancel')).toBe('switch');
-    expect(settingBounds('orders.customer_self_cancel')).toBeNull();
-    expect(toInput('orders.customer_self_cancel', true)).toBe('true');
-    expect(fromInput('orders.customer_self_cancel', 'false')).toEqual({ ok: true, value: false });
+    expect(settingUnit('orders.customer_self_cancel_cod')).toBe('switch');
+    expect(settingBounds('orders.customer_self_cancel_cod')).toBeNull();
+    expect(toInput('orders.customer_self_cancel_cod', true)).toBe('true');
+    expect(fromInput('orders.customer_self_cancel_cod', 'false')).toEqual({ ok: true, value: false });
     expect(settingUnit('partners.invite_days')).toBe('days');
     expect(settingUnit('assistant.daily_messages')).toBe('count');
   });

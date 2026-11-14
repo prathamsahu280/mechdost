@@ -143,7 +143,7 @@ beforeAll(async () => {
   ctx = await buildApp({ env: ENV, razorpay });
   await seedRaipurDemo(ctx.db, fixture);
   // These tests cancel as the customer, which is off by default (Q25: cancel through support only).
-  await ctx.db.insert(s.settings).values({ key: 'orders.customer_self_cancel', value: true });
+  await ctx.db.insert(s.settings).values({ key: 'orders.customer_self_cancel_online', value: true });
   ravi = await person('01');
   asha = await person('02');
 });

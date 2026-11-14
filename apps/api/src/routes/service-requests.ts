@@ -15,7 +15,7 @@ import {
   ProposalDecisionSchema,
 } from '@mechdost/shared/service-requests';
 import type { SessionCache } from '../auth/session-cache';
-import { authenticate, requirePermission, requireVerified } from '../middleware/auth';
+import { authenticate, requireCustomerVerified, requirePermission } from '../middleware/auth';
 import { rateLimit, RATE_RULES } from '../middleware/rate-limit';
 import type { RateRule } from '../rate-limit/limiter';
 import type { AppDeps, AppEnv } from '../types';
@@ -138,7 +138,7 @@ export function serviceRequestRoutes(deps: AppDeps, cache: SessionCache) {
     '/service-requests/*',
     rateLimit(deps.rateLimiter, RATE_RULES.apiPerUser, (c) => c.get('auth').user.id),
   );
-  app.on('POST', '/service-requests/*', requireVerified, requirePermission('service:request'));
+  app.on('POST', '/service-requests/*', requireCustomerVerified(deps), requirePermission('service:request'));
   app.on(
     'POST',
     '/service-requests',

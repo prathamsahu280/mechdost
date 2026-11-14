@@ -35,10 +35,12 @@ export const OPERATIONAL_SETTINGS = {
    */
   'partners.agreement_required': { kind: 'boolean', default: false },
   /**
-   * Customers may cancel their own order until the shop confirms it. Off by default: cancelling goes through
-   * support (Q25, user 2026-11-13). Copied onto each order at checkout (`orders.cancellable_until_status`).
+   * Customers may cancel their own cash-on-delivery order until the shop confirms it. Off by default: cancelling
+   * goes through support (Q25, user 2026-11-13). Copied onto each order at checkout (`orders.cancellable_until_status`).
    */
-  'orders.customer_self_cancel': { kind: 'boolean', default: false },
+  'orders.customer_self_cancel_cod': { kind: 'boolean', default: false },
+  /** The same rule for orders paid online (refund to the original method on cancel); separate (user 2026-11-14). */
+  'orders.customer_self_cancel_online': { kind: 'boolean', default: false },
   /** How long a shop has to accept an offered order (minutes). */
   // Same bounds as the demo `/admin/settings` screen and spec 08 (5–120 min).
   'orders.acceptance_timeout_min': { kind: 'int', min: 5, max: 120, default: 15 },
@@ -50,6 +52,11 @@ export const OPERATIONAL_SETTINGS = {
   /** Launch check: products go live only with complete Hindi texts. */
   // One catalogue for every city: publishing reads the global value only.
   'catalogue.require_hindi_to_publish': { kind: 'boolean', default: false, globalOnly: true },
+  /**
+   * Customers must verify their email (not only their phone) before ordering, booking or reviewing. Off by default:
+   * phone OTP is enough (user 2026-11-14). Staff and partners always need both.
+   */
+  'customers.require_verified_email': { kind: 'boolean', default: false, globalOnly: true },
   /** Customer messages (the first one included) allowed on one support request in 24 hours (review B9). */
   'support.customer_messages_per_ticket_per_day': {
     kind: 'int',

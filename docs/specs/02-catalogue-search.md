@@ -117,3 +117,70 @@ Design `docs/superpowers/specs/2026-11-13-admin-catalogue-pin-prices-design.md`;
 - **Rules for an admin price** (`checkAdminPrice`, checked in the screen and again in the API): at most the MRP (`MRP_EXCEEDED`); at least the lowest approved price among shops that deliver there with stock (`BELOW_SHOP_PRICE`), so MechDost never sells below what a shop is paid; no such shop → refused (`NO_SHOP`).
 - **Which shop**: among shops covering the PIN with stock **and** an approved price at or below the customer price, the nearest one (ties: price, then id). A shop that later raises its price above the customer price stops being chosen; with no shop left, the product shows "on request" at that PIN — never sold at a loss.
 - Set from Admin → Catalogue → Prices (spec 08) or `PUT /v1/admin/prices/{sku}` (`prices:write`).
+
+## Reviews (built 2026-11-14)
+
+Decision 2026-10-31 (verified purchase only, staff approve before publish) built on the API; rulings in
+`docs/decisions.md` "2026-11-14 — Customer reviews on the API". Workshop reviews follow the same rules (spec 06).
+
+- **Data** (migration `0046_reviews`, table `reviews`): `user_id`, `city_id` (of the purchase, for city-scoped
+  moderation), `order_id` (the delivered **sub-order**) or `service_request_id` (FK, paid/completed request),
+  `target_type` product | workshop, `target_id`, `rating` 1–5, `body` (plain text ≤ 1000, null = stars only), `status`
+  pending | approved | hidden (`reviewMachine`, `@mechdost/shared/reviews`), `hidden_reason` (code: spam, abusive,
+  personal_data, off_topic, not_genuine, other; set exactly while hidden), `moderation_note` (staff-only ≤ 300),
+  `moderated_by/at`, `version`, `created_at/updated_at`. Checks: product ⇒ order, workshop ⇒ service request; one row
+  per customer, target and purchase (unique, nulls not distinct). RLS on, no direct client access. Indexes: public
+  list `(target_type, target_id, status, created_at, id)`, queue `(status, created_at, id)`, daily limit
+  `(user_id, created_at)`, every FK.
+- **Who may review:** the customer of a **delivered** sub-order containing the product, or of a service request in
+  `paid` / `completed` at that workshop. Anything else: foreign/unknown order or request → 404; not delivered/paid or
+  not in that purchase → 422 `REVIEW_NOT_ELIGIBLE`; second review → 409 `REVIEW_EXISTS`; more than **5 in 24 h**
+  (spec 13) → 422 `REVIEW_DAILY_LIMIT` (counted inside the transaction under a per-customer advisory lock).
+- **Text:** plain text — control and invisible format characters removed (ZWJ/ZWNJ kept for Hindi), whitespace
+  collapsed, ≤ 1000 characters (API refuses longer bodies with 400). Rendered as text by React (no HTML). User
+  content: never translated (`data-user-content`), never logged, never in analytics props.
+- **Moderation** (`reviews:moderate`: super admin, catalogue manager, marketing; verified staff; city-scoped like
+  other admin queues, other cities' ids → 404): pending → approved | hidden, approved → hidden, hidden → approved;
+  compare-and-set on `version` (409 `STALE_REVIEW`), illegal move 409 `ILLEGAL_TRANSITION`, hide without a reason
+  code 422. Each change writes `audit_log` (`review.submitted`, `review.moderated` with the reason) and a server
+  event (`review_submitted`, `admin_review_moderated`; ids and codes only).
+- **Ratings:** only approved reviews count. Workshops: `rating_avg` / `rating_count` recomputed in the moderation
+  transaction after locking the workshop row. Products: computed live from the approved rows (catalogue
+  `cardExtras`; same numbers as the review section).
+- **API:** `GET /v1/reviews/{product|workshop}/{slug}?cursor&limit≤20` (public; live product / published workshop,
+  else 404; approved only, newest first, keyset cursor; summary avg (1 decimal) / count / distribution 5★…1★;
+  reviewer shown as "First L."; `Cache-Control: public, max-age=60, stale-while-revalidate=300`; 120/min/IP) ·
+  `GET /v1/my-reviews/eligible?order=MD-…|service=SR-…&locale` and `POST /v1/my-reviews` (strict body: exactly one
+  of `orderCode` / `serviceCode`, `targetType`, `targetSlug`, `rating`, optional `body`; verified account; 20
+  attempts/hour/user on top of 120/min) · `GET /v1/admin/reviews?status&cursor` (pending oldest first, others newest
+  first) · `POST /v1/admin/reviews/{id}/moderate {to, reasonCode?, note?, version}`. Response schemas for the web:
+  `@mechdost/shared/reviews-api`.
+- **Web (real data mode):** product and workshop pages stream `ReviewsApiSection` (server component, no client JS,
+  `<Suspense>` with a skeleton): summary card, distribution, newest 10 reviews with the verified badge; empty → "No
+  reviews yet" with one next action (Your orders / Your services); failure → a short note (never the error
+  boundary). The product page's star row shows in real mode too (catalogue rating = approved reviews). The order
+  page (any delivered part) and the service page (`paid` / `completed`) lazy-load `WriteReviewApi`: what this
+  purchase lets the customer review, one form open at a time, stars required, text optional with a counter, status
+  of a sent review (waiting / published / not published), API codes → `reviews.api_err_*`. Admin → Reviews with real
+  sign-in loads `admin-reviews-api.tsx` (tabs Waiting / Published / Hidden, approve, hide with a reason and a staff
+  note, stale → reload with a message). Strings `reviews.api_*` (en + hi).
+- **Tests:** `packages/shared/test/reviews.test.ts` (machine every pair, text cleaning, schemas),
+  `packages/db/test/reviews.test.ts` (eligibility, not-a-buyer, duplicate, daily limit, pending not public,
+  moderation CAS / illegal / other city, workshop aggregate, cursor, audit + events exactly once, DB checks),
+  `apps/api/test/reviews.test.ts` (HTTP: 401/403/404/409/422/429, verification, strict bodies, cache header, shared
+  schemas parse the answers), `apps/web/test/reviews-api.test.ts`; review routes added to the middleware-bypass
+  suite. Playwright not run in this change (low-memory machine): run the order/service/admin flows at merge.
+- **Not built yet:** staff edit of the text and delete (decision 2026-10-31 "edit, hide, remove": hide covers
+  removal from public view), partner reply (`reply` column unused), photo reviews (P1), notifying the customer when
+  a review is approved or hidden, "load more" on public pages (newest 10 only), on-demand revalidation of the
+  product/workshop page when a review is approved (pages refresh within 60 s).
+
+### Review findings (2026-11-14, before merge)
+
+- **Fixed:** a product delivered in two parts of one order at different times could be reviewed twice. Test: "one review per product per purchase…".
+- **Known, not fixed yet:**
+  - Moderating a workshop review bumps `workshops.version`, so an admin profile form open at the same time gets a stale-version 409.
+  - A workshop can be reviewed after `no_work_approved → completed`, with no paid bill. Spec 06 says "after the bill is paid"; to confirm.
+  - Line breaks in review text are collapsed.
+  - The 1000-character limit is checked before cleaning.
+  - Public review fetches by the web server share its single IP's rate-limit bucket.

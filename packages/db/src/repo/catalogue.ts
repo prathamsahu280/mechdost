@@ -106,7 +106,7 @@ async function resolvePlace(db: Tx, cityCode: string, pincode: string | null): P
     const [row] = rowsOf<{ city_id: string; code: string }>(
       await db.execute(sql`
         select c.id as city_id, c.code from pincodes pc join cities c on c.id = pc.city_id
-        where pc.pincode = ${pincode} and c.status = 'live'`),
+        where pc.pincode = ${pincode} and pc.active and c.status = 'live'`),
     );
     if (row) return { cityId: row.city_id, cityCode: row.code, pincode, pincodeKnown: true };
   }

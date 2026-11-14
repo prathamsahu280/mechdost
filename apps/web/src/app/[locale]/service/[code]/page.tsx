@@ -5,6 +5,7 @@ import { ClientMessages } from '@/components/ui/client-messages';
 import { Container } from '@/components/ui/page-intro';
 import { RequestView } from '@/components/workshops/request-view';
 import type { Locale } from '@/i18n/routing';
+import { DATA_MODE } from '@/lib/data-mode';
 
 interface Props {
   params: Promise<{ locale: Locale; code: string }>;
@@ -27,7 +28,11 @@ export default async function ServiceRequestPage({ params }: Props) {
         {t('title', { code: safe || code.slice(0, 40) })}
       </h1>
       <div className="mt-8">
-        <ClientMessages namespaces={['request', 'workshop', 'demo']}>
+        <ClientMessages
+          namespaces={
+            DATA_MODE === 'api' ? ['request', 'workshop', 'demo', 'reviews'] : ['request', 'workshop', 'demo']
+          }
+        >
           <Suspense>
             <RequestView code={safe} />
           </Suspense>

@@ -182,7 +182,7 @@ async function isDuplicateGstin(
   return shop !== undefined;
 }
 
-/** The city's PIN codes with the default delivery charge and days (admin settings). */
+/** The city's active PIN codes with the default delivery charge and days (admin settings). */
 export async function defaultCoverage(tx: Tx, pincode: string): Promise<CoverageInput[]> {
   const [home] = await tx
     .select({ cityId: pincodes.cityId })
@@ -192,7 +192,8 @@ export async function defaultCoverage(tx: Tx, pincode: string): Promise<Coverage
   const pins = await tx
     .select({ pincode: pincodes.pincode })
     .from(pincodes)
-    .where(eq(pincodes.cityId, home.cityId));
+    .where(and(eq(pincodes.cityId, home.cityId), eq(pincodes.active, true)))
+    .orderBy(pincodes.pincode);
   const shipping = await globalInt(tx, 'partners.default_shipping_paise');
   const lead = await globalInt(tx, 'partners.default_lead_days');
   return pins.map((p) => ({ pincode: p.pincode, shippingPaise: shipping, leadDays: lead }));
@@ -258,9 +259,13 @@ async function createShop(
     .select({ pincode: pincodes.pincode })
     .from(pincodes)
     .where(
-      inArray(
-        pincodes.pincode,
-        input.coverage.map((c) => c.pincode),
+      and(
+        inArray(
+          pincodes.pincode,
+          input.coverage.map((c) => c.pincode),
+        ),
+        // A shop can only be given active PIN codes (spec 15 "PIN codes").
+        eq(pincodes.active, true),
       ),
     );
   if (pins.length !== input.coverage.length)

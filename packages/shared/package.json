@@ -45,7 +45,11 @@
     "./service-api": "./src/service-api.ts",
     "./free-delivery": "./src/free-delivery.ts",
     "./shop-hours": "./src/shop-hours.ts",
-    "./shop-api": "./src/shop-api.ts"
+    "./shop-api": "./src/shop-api.ts",
+    "./reviews": "./src/reviews.ts",
+    "./reviews-api": "./src/reviews-api.ts",
+    "./geo": "./src/geo.ts",
+    "./geo-api": "./src/geo-api.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",

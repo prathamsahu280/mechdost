@@ -182,11 +182,14 @@ async function quoteInternal(
     state_id: string;
     state_gst_code: string;
     cod_allowed: boolean;
+    free_delivery_min_paise: unknown;
   }>(
+    // An inactive PIN is not serviceable (spec 15 "PIN codes"): refused like an unknown one.
     await db.execute(sql`
-      select c.id as city_id, c.code as city_code, pc.state_id, st.gst_state_code as state_gst_code, pc.cod_allowed
+      select c.id as city_id, c.code as city_code, pc.state_id, st.gst_state_code as state_gst_code, pc.cod_allowed,
+        pc.free_delivery_min_paise
       from pincodes pc join cities c on c.id = pc.city_id join states st on st.id = pc.state_id
-      where pc.pincode = ${input.pincode} and c.status = 'live'`),
+      where pc.pincode = ${input.pincode} and pc.active and c.status = 'live'`),
   );
   if (!place) throw new ValidationError('We do not deliver to this PIN code yet', 'PINCODE_NOT_SERVICEABLE');
 
@@ -321,9 +324,10 @@ async function quoteInternal(
 
   // Free delivery per group (spec 03): PIN override ?? shop override ?? city setting (`@mechdost/shared/free-delivery`).
   const cityFreeMin = await setting(db, place.city_id, CHECKOUT_SETTINGS.freeDeliveryMinPaise.key);
+  const pinFreeMin = numOrNull(place.free_delivery_min_paise);
   groups.forEach((g, i) => {
     const freeMinPaise = freeDeliveryMinPaise({
-      pin: null, // PIN override slot: `pincodes.free_delivery_min_paise` (parallel PIN-code work) goes here.
+      pin: pinFreeMin,
       shop: groupShopFreeMin[i] ?? null,
       city: cityFreeMin,
     });
@@ -498,8 +502,13 @@ export async function placeOrder(
       });
 
     await setActor(tx, { type: 'customer', userId: input.userId });
-    // Snapshot of the cancel rule (Q25): customers cancel until confirmed only when the admin allows it.
-    const cancellableUntilStatus = (await flagSetting(tx, cityId, 'orders.customer_self_cancel'))
+    // Snapshot of the cancel rule (Q25): customers cancel until confirmed only when the admin allows it, set
+    // separately for online-paid and cash-on-delivery orders (user 2026-11-14).
+    const cancellableUntilStatus = (await flagSetting(
+      tx,
+      cityId,
+      online ? 'orders.customer_self_cancel_online' : 'orders.customer_self_cancel_cod',
+    ))
       ? 'confirmed'
       : 'none';
     const group = await insertGroup(tx, {

@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import type { ServiceRequestDetail } from '@mechdost/shared/service-api';
 import { SERVICE_CANCEL_REASONS } from '@mechdost/shared/state';
-import { useCallback, useEffect, useState, type SyntheticEvent } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState, type SyntheticEvent } from 'react';
 import { track } from '@/lib/analytics';
 import { formatDate, formatPrice } from '@/lib/format';
 import {
@@ -19,6 +19,11 @@ import {
 import { StatusTimeline } from '../commerce/status-timeline';
 import { ServiceBillView } from './service-estimate';
 import { EstimateApprovalApi, EstimateChoicesApi } from './service-estimate-api';
+
+/** Workshop review once the service is paid (spec 06): its own chunk, fetched only then. */
+const WriteReviewApi = lazy(() =>
+  import('../reviews/write-review-api').then((m) => ({ default: m.WriteReviewApi })),
+);
 
 type Load = { kind: 'loading' } | { kind: 'error'; code: string } | { kind: 'ok'; req: ServiceRequestDetail };
 const POLL_MS = 30_000;
@@ -209,6 +214,11 @@ export function RequestViewApi({ code }: { code: string }) {
           ) : null}
           {customerMayCancel(req.status) ? <CancelRequestApi req={req} onChanged={refresh} /> : null}
         </section>
+        {req.status === 'paid' || req.status === 'completed' ? (
+          <Suspense fallback={null}>
+            <WriteReviewApi kind="service" code={req.code} />
+          </Suspense>
+        ) : null}
       </div>
 
       <aside className="space-y-4 rounded-card border border-line-card bg-surface p-6 text-sm shadow-card">

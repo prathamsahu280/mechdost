@@ -71,6 +71,11 @@ if (!config.assistant)
 
 const server = serve({ fetch: app.fetch, port: config.port }, (info) => {
   log('info', 'listening', { port: info.port, env: config.env, authEmulator: config.usingAuthEmulator });
+  // RAZORPAY_ALLOW_TEST_KEYS (pre-launch testing): online payments are fake. Never with real customers.
+  if (config.env === 'production' && config.razorpay?.testMode)
+    log('warn', 'razorpay_test_keys_in_production', {
+      note: 'online payments are test payments; switch to live keys before real customers',
+    });
 });
 
 let stopping = false;

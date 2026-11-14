@@ -1,0 +1,220 @@
+{
+  "about": "Raipur service-area PIN codes (spec 15 'PIN codes'). Sources, coordinate choices and exclusions: docs/research/raipur-pincodes.md. Load with: pnpm db:seed:pincodes",
+  "state": { "code": "CG", "name": "Chhattisgarh", "nameHi": "छत्तीसगढ़", "gstStateCode": "22" },
+  "city": {
+    "code": "RPR",
+    "slug": "raipur",
+    "name": "Raipur",
+    "nameHi": "रायपुर",
+    "lat": 21.2514,
+    "lng": 81.6296
+  },
+  "pincodes": [
+    {
+      "pincode": "492001",
+      "areaEn": "Raipur GPO (Jaistambh Chowk)",
+      "areaHi": "रायपुर जीपीओ (जयस्तंभ चौक)",
+      "lat": 21.23506,
+      "lng": 81.63902,
+      "active": true
+    },
+    {
+      "pincode": "492002",
+      "areaEn": "Mantralaya (Nava Raipur)",
+      "areaHi": "मंत्रालय (नवा रायपुर)",
+      "lat": 21.15903,
+      "lng": 81.79554,
+      "active": true
+    },
+    {
+      "pincode": "492003",
+      "areaEn": "Urla",
+      "areaHi": "उरला",
+      "lat": 21.30833,
+      "lng": 81.61776,
+      "active": true
+    },
+    {
+      "pincode": "492004",
+      "areaEn": "Pandri / Shankar Nagar",
+      "areaHi": "पंडरी / शंकर नगर",
+      "lat": 21.25457,
+      "lng": 81.65708,
+      "active": true
+    },
+    {
+      "pincode": "492005",
+      "areaEn": "Vidhan Sabha",
+      "areaHi": "विधानसभा",
+      "lat": 21.28935,
+      "lng": 81.72292,
+      "active": true
+    },
+    {
+      "pincode": "492008",
+      "areaEn": "WRS Colony / Khamtarai",
+      "areaHi": "डब्ल्यूआरएस कॉलोनी / खमतराई",
+      "lat": 21.27664,
+      "lng": 81.64028,
+      "active": true
+    },
+    {
+      "pincode": "492009",
+      "areaEn": "Gudhiyari / Raipur Ganj",
+      "areaHi": "गुढ़ियारी / रायपुर गंज",
+      "lat": 21.26619,
+      "lng": 81.62225,
+      "active": true
+    },
+    {
+      "pincode": "492010",
+      "areaEn": "Ravishankar University / Science College",
+      "areaHi": "रविशंकर विश्वविद्यालय / साइंस कॉलेज",
+      "lat": 21.24616,
+      "lng": 81.60007,
+      "active": true
+    },
+    {
+      "pincode": "492012",
+      "areaEn": "Krishak Nagar",
+      "areaHi": "कृषक नगर",
+      "lat": 21.23784,
+      "lng": 81.70542,
+      "active": true
+    },
+    {
+      "pincode": "492013",
+      "areaEn": "Sunder Nagar / Raipura",
+      "areaHi": "सुंदर नगर / रायपुरा",
+      "lat": 21.22746,
+      "lng": 81.60962,
+      "active": true
+    },
+    {
+      "pincode": "492014",
+      "areaEn": "Saddu",
+      "areaHi": "सड्डू",
+      "lat": 21.2667,
+      "lng": 81.66832,
+      "active": true
+    },
+    {
+      "pincode": "492015",
+      "areaEn": "Mana Camp",
+      "areaHi": "माना कैंप",
+      "lat": 21.19331,
+      "lng": 81.71706,
+      "active": true
+    },
+    {
+      "pincode": "492016",
+      "areaEn": "Mana Basti",
+      "areaHi": "माना बस्ती",
+      "lat": 21.19515,
+      "lng": 81.70342,
+      "active": true
+    },
+    {
+      "pincode": "492017",
+      "areaEn": "IBC Raipur (near the railway station)",
+      "areaHi": "आईबीसी रायपुर (रेलवे स्टेशन के पास)",
+      "lat": 21.25586,
+      "lng": 81.62954,
+      "active": true
+    },
+    {
+      "pincode": "492018",
+      "areaEn": "Nava Raipur Atal Nagar (Sector 27)",
+      "areaHi": "नवा रायपुर अटल नगर (सेक्टर 27)",
+      "lat": 21.14091,
+      "lng": 81.78495,
+      "active": true
+    },
+    {
+      "pincode": "492099",
+      "areaEn": "Tatibandh",
+      "areaHi": "टाटीबंध",
+      "lat": 21.25956,
+      "lng": 81.57744,
+      "active": true
+    },
+    {
+      "pincode": "492101",
+      "areaEn": "Mandir Hasaud",
+      "areaHi": "मंदिर हसौद",
+      "lat": 21.22601,
+      "lng": 81.77376,
+      "active": true
+    },
+    {
+      "pincode": "493111",
+      "areaEn": "Mandhar / Siltara",
+      "areaHi": "मांढर / सिलतरा",
+      "lat": 21.33763,
+      "lng": 81.70471,
+      "active": true
+    },
+    {
+      "pincode": "493221",
+      "areaEn": "Birgaon",
+      "areaHi": "बिरगांव",
+      "lat": 21.30867,
+      "lng": 81.63692,
+      "active": true
+    },
+    {
+      "pincode": "493114",
+      "areaEn": "Tilda-Neora",
+      "areaHi": "तिल्दा-नेवरा",
+      "lat": 21.55043,
+      "lng": 81.79576,
+      "active": false,
+      "reason": "outside_service_area"
+    },
+    {
+      "pincode": "493116",
+      "areaEn": "Baikunth",
+      "areaHi": "बैकुंठ",
+      "lat": 21.49357,
+      "lng": 81.78531,
+      "active": false,
+      "reason": "outside_service_area"
+    },
+    {
+      "pincode": "493225",
+      "areaEn": "Kharora",
+      "areaHi": "खरोरा",
+      "lat": 21.40041,
+      "lng": 81.92638,
+      "active": false,
+      "reason": "outside_service_area"
+    },
+    {
+      "pincode": "493441",
+      "areaEn": "Arang",
+      "areaHi": "आरंग",
+      "lat": 21.19294,
+      "lng": 81.96708,
+      "active": false,
+      "reason": "outside_service_area"
+    },
+    {
+      "pincode": "493661",
+      "areaEn": "Abhanpur",
+      "areaHi": "अभनपुर",
+      "lat": 21.05339,
+      "lng": 81.747,
+      "active": false,
+      "reason": "outside_service_area"
+    },
+    {
+      "pincode": "493881",
+      "areaEn": "Gobra Nawapara",
+      "areaHi": "गोबरा नवापारा",
+      "lat": 20.96755,
+      "lng": 81.85887,
+      "active": false,
+      "reason": "outside_service_area"
+    }
+  ]
+}

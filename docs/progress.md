@@ -4,6 +4,15 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Current status
 
+- **2026-11-14 (night): reviews and PIN codes merged and migrated.**
+  - Fresh review: no critical issues. Three findings fixed test-first; the rest are documented in specs 02/15.
+  - Prechecks passed. Migrations 0046 (reviews) and 0048 (PIN codes) applied to `mechdost-dev`; advisors: INFO only.
+  - `db:seed:pincodes` run: 27 PINs, 21 active, 6 off.
+  - Since then: Razorpay test keys enabled with `RAZORPAY_ALLOW_TEST_KEYS` (user), Resend key and PostHog key set on the server, self-cancel split per payment method (deployed).
+  - **Next:**
+    - Merge quotes (re-stamp its migration after 0048), coins (fraud fix in progress, re-stamp), and shop management + hours.
+    - Sentry/PostHog integration (agent building).
+    - Then the switch.
 - **2026-11-14 (night): shop management on the real API** (agent branch `worktree-agent-a2bed9e12251b15fd`; not merged).
   - Built: Admin → Partners → Shops (profile with Hindi, GSTIN, minutes to accept and free delivery; PIN coverage;
     products; standing with reason codes; portal access); shop portal header, pause banner, owner's hours, "Sell
@@ -27,6 +36,7 @@ This file is the single source of truth for **where the build is right now**. It
     - Q86: demo controls hidden in real mode.
     - Decision: quotes, coins and reviews hidden in real mode (no API).
     - Security fixes: workshop publish/verify needs `partners:approve` in that workshop's city, checked on the resulting state.
+  - **Reviews stream (branch `worktree-agent-a31131dde8070eb42`, not merged):** reviews API (migration 0046, not applied), product/workshop review sections, "Rate" on delivered orders and paid services, Admin → Reviews on the API; spec 02 § Reviews. At merge: apply 0046 after 0045, run the order/service/admin Playwright flows.
   - **Stream E merged** (workshop finder, booking, request page, workshop portal, admin services and workshops on the API).
   - **Deployed:** `6c61101` (CI and Deploy green, 2026-11-14 evening; the site is still in demo mode). Fixed on the way: `/cart` budget (demo session import), demo store split (−3.8 KB on every page), a Dockerfile line-continuation bug. CI does not build the Docker images; adding that check is offered to the user.
   - **Budgets:** demo and real-mode builds measured; `/shop` and `/cart` at 179.9–180.0 KB with no headroom (spec 16 note).
@@ -121,6 +131,8 @@ Still open: Q9/Q63, Q19, Q23 (Enforce SSL, later), Q30 mailboxes, Q35–Q47 refe
 
 ## Completed log (newest first)
 
+- 2026-11-14 — **Customer reviews on the API** (branch `worktree-agent-a31131dde8070eb42`): verified purchase only (delivered sub-order / paid service), one per purchase, 5 a day, plain text ≤ 1000; staff moderation (approve / hide with reason code, compare-and-set, city-scoped); workshop rating recomputed in the transaction; public list server-rendered on product and workshop pages; write form lazy on order and service pages; Admin → Reviews on the API. Tests: shared, db, api, web unit. Decisions "Customer reviews on the API".
+- 2026-11-14 — **Service-area PIN codes, admin-configurable (branch `worktree-agent-a1386983dfc859158`, not merged)**: migration 0048 (not applied), admin API `/v1/admin/pincodes*` + public `/v1/cities/{city}/pincodes`, inactive PINs refused by checkout / catalogue PIN price / nearby workshops / service requests / shop coverage, per-PIN free-delivery threshold (spec 03 "Delivery charges"), Admin → Settings → Service area + approval-form "fill in the city's PINs" (en + hi), Raipur reference file (19 active, 6 district PINs off; `docs/research/raipur-pincodes.md`) + `pnpm db:seed:pincodes` (not run). Next at merge: apply 0048, run the seed (runbook deploy.md step 4), answer Q96.
 - 2026-11-14 — **Stream E: workshops and service requests on the API (web)**: finder, workshop page, booking (incl. "Let MechDost choose"), home top workshops, request page, account services, workshop portal, Admin → Services and Partners → Workshops behind `DATA_MODE`/`AUTH_MODE`; demo unchanged. Spec 06 § Real API mode (web) lists the API gaps. Unit tests added; Playwright to run at merge.
 - 2026-11-10 — **Catalogue + search on the API (behind the data switch)**: shared catalogue DTOs; web view model with demo and API sources; product pages render on first visit (no build-time API), listing server-paged with "Load more" (server function), retry message when the API is down; a11y review built in (unknown facts left out, popover ids and focus, On request icon, WhatsApp "Ask about this product"). Tests: shared 2, web unit 12, API-mode e2e 16 + 6 axe + Hindi coverage, API-down 2, demo e2e. Budgets unchanged.
 - 2026-11-09 — **Staff two-step end to end (real mode)**: new e2e test grants the run's account `support_agent` (`pnpm db:grant-role`, new CLI: staff roles only, audited system grant; also how the first super_admin is made) and checks password → "Two-step verification" → phone code → admin console, with `/admin` asking to sign in before the code. Bug found and fixed: the API's 60 s session cache served the grants of the account's earlier sign-in, so the new staff member landed on the account area; the cache key now includes the token's sign-in time (unit test in `apps/api/test/auth.test.ts`). Real e2e 5/5; demo build restored.

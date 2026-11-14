@@ -154,7 +154,8 @@ next workshop action, every error code has en + hi text, decline/reject/payment 
 3. No ranked workshop suggestions for service routing (orders have them): the web filters `GET /admin/workshops`;
    no distance ranking (requests carry a PIN, not a point, in the list).
 4. No city-wide "top workshops" read: the home strip ranks nearby results around the city centre.
-5. No reviews API: ratings show "New on MechDost" and the "Rate {workshop}" link is hidden in API mode.
+5. ~~No reviews API~~ (built 2026-11-14, spec 02 § Reviews): a paid or completed request shows "Rate the workshop"
+   (`WriteReviewApi`); the workshop page shows approved reviews; `rating_avg` / `rating_count` follow moderation.
 6. Saved vehicles are browser-side, so bookings send no `vehicleId` (odometer history keys on the vehicle text).
 7. No staff cancel for service requests (the machine allows `admin → cancelled`), no member list/remove, no standing
    history in the admin workshop read, no live pings (screens poll every 30 s).

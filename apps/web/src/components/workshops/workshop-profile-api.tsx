@@ -1,6 +1,8 @@
 import { BadgeCheck, Clock, MapPin, Star, Truck, Zap } from 'lucide-react';
 import { getLocale, getTranslations } from 'next-intl/server';
 import type { PublicWorkshop } from '@mechdost/shared/service-api';
+import { Suspense } from 'react';
+import { ReviewsApiSection, ReviewsApiSkeleton } from '@/components/reviews/reviews-api-section';
 import { ClientMessages } from '@/components/ui/client-messages';
 import { LocalLink } from '@/components/ui/local-link';
 import { Container } from '@/components/ui/page-intro';
@@ -13,7 +15,7 @@ import { WorkshopMap } from './workshop-map';
 /**
  * Workshop profile from the API (data mode `api`, spec 06, Stream E): verification, hours, the active service menu
  * with price ranges and times, map and the appointment request. Texts come localised from the API (`?locale=`).
- * Reviews follow when the reviews API ships (demo only until then).
+ * Approved reviews stream in below the map (`ReviewsApiSection`, server-rendered).
  */
 export async function WorkshopProfileApi({ workshop: w }: { workshop: PublicWorkshop }) {
   const [t, f, m, locale] = await Promise.all([
@@ -140,6 +142,10 @@ export async function WorkshopProfileApi({ workshop: w }: { workshop: PublicWork
               {f('directions')}
             </a>
           </p>
+
+          <Suspense fallback={<ReviewsApiSkeleton />}>
+            <ReviewsApiSection target="workshop" slug={w.slug} />
+          </Suspense>
         </section>
 
         <section

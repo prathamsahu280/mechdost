@@ -25,6 +25,13 @@
 
 **Without the website:** `POST /v1/checkout/quote`, then `POST /v1/orders` with `paymentMethod: 'online'` and an `Idempotency-Key`. After paying, call `POST /v1/payments/razorpay/verify`.
 
+## Production refuses test keys
+
+The API will not start in production with an `rzp_test_` key (`apps/api/src/config.ts`). A test payment is free and anyone can make one with Razorpay's public test cards, so an order could be marked paid and shipped with no money received. On 2026-11-14 the test keys were copied to the server, the API crash-looped (502) for about 6 minutes, and the lines were disabled in `/opt/mechdost/.env`. Since 2026-11-14, `RAZORPAY_ALLOW_TEST_KEYS=true` in the server `.env` is an explicit pre-launch exception (user: keep test keys while there is no real data and the tests are still to run):
+
+- The API starts with test keys and logs `razorpay_test_keys_in_production` (severity `warn`) on every start.
+- **Before real customers:** remove the flag, put the live keys and a live-mode webhook in place, and redeploy (launch checklist in `deploy.md`).
+
 ## Webhook (Q75)
 
 - Needs a public HTTPS URL to `POST /webhooks/razorpay`: the deployed API, or a tunnel while testing.
