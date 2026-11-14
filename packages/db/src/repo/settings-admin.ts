@@ -68,7 +68,7 @@ export async function globalFlagSetting(db: Tx, key: SettingKey): Promise<boolea
     .limit(1);
   if (typeof row?.value === 'boolean') return row.value;
   const spec = OPERATIONAL_SETTINGS[key];
-  return spec.kind === 'boolean' && Boolean(spec.default);
+  return spec.kind === 'boolean' && spec.default;
 }
 
 /** Create (`expectedVersion` null) or change the global value or one city's override. */
