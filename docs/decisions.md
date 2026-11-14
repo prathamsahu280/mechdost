@@ -595,7 +595,7 @@ the write form and Admin → Reviews now work in real mode (quotes and coins unc
   the states of bug 4 sixteen times and passed (`docs/research/ui-testing-gap-2026-11-14.md`).
 - Assertions are **geometric** (inside, overlap, painted over, clipped, aligned, ≥ 24 px, focus ring), also while
   each control is hovered and focused; P0/P1 fail, P2 is a note.
-- CI: the 84 `core` items run on every push (report-only until the first full run is triaged, Q97); everything
+- CI: the 84 `core` items run on every push (report-only until the first full run is triaged, Q101); everything
   nightly (`.github/workflows/ui-state-audit.yml`, artifact only, never commits). Not part of `pnpm e2e`.
 - Tooling: `apps/web/tsconfig.json` sets `allowImportingTsExtensions` so the audit's pure modules can use explicit
   `.ts` imports and run directly in Node 24 (checklist writer and ticking script); no new dependency. (Cost if

@@ -705,7 +705,7 @@ After the run:
 
 - **Every push** (`ci.yml` job `e2e-demo`, step "UI state audit (core subset)"): the 84 `core` items, about
   5 minutes on two workers, with `STATE_AUDIT_KNOWN=allow`. The step is **report-only**
-  (`continue-on-error`) until the first overnight run is triaged (Q97), then it blocks.
+  (`continue-on-error`) until the first overnight run is triaged (Q101), then it blocks.
 - **Nightly** (`.github/workflows/ui-state-audit.yml`, 02:00 IST, or run by hand with id prefixes): every item.
   It ticks the checklist and uploads the ticked checklist, the JSON report and the screenshots as the
   `ui-state-audit` artifact (14 days). It never commits.
