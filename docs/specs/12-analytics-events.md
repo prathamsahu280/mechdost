@@ -52,6 +52,11 @@ ClickHouse export, experiments (PostHog), attribution/UTM reports, data warehous
 
 Every event follows `docs/conventions/data-for-ml.md`: `noun_verb` names, typed versioned properties, enum codes instead of free text, internal ids only (no PII), source/city/locale/actor role recorded, consent per purpose before personal data is used for offers or model training.
 
+## Bulk quote events (spec 19, 2026-11-14)
+
+- **Server events** (`packages/shared/src/analytics.ts`, written in the transaction of the change): `quote_requested` (quoteCode, lines, units, listTotalPaise), `quote_message_sent` (quoteCode, by customer|staff — never the text), `quote_offer_sent` (quoteCode, offerVersion, totalPaise, listTotalPaise, validDays), `quote_accepted` (quoteCode, offerVersion, orderCode, totalPaise), `quote_closed` (quoteCode, to declined|withdrawn, by, reasonCode), `quote_expired` (quoteCode, reasonCode offer_expired|inactive, offerVersion). The accepted order also records `purchase`.
+- **Click ids (web, real mode):** `quote_requested`, `quote_request_failed_<key>`, `quote_message_sent`, `quote_accepted`, `quote_accept_failed_<key>`, `quote_declined_<reason>`, `admin_quote_reply`, `admin_quote_offer_sent`, `admin_quote_offer_invalid`, `admin_quote_withdrawn_<reason>`.
+
 ## Seller onboarding events (2026-11-13)
 
 - **Server events** (`packages/shared/src/analytics.ts`): `partner_application_submitted` (kind, source public or invite, gstStatus, product count, locationSource), `partner_application_decided` (decision, reasonCode), `partner_invite_sent`, `partner_invite_opened` (city only), `price_request_submitted` (shopId, sku), `price_request_decided` (shopId, sku, decision, reasonCode), `agreement_accepted` (shopId, version), `shop_went_live` (shopId). No GSTIN, names, phones or emails in props.

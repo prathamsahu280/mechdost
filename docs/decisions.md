@@ -307,6 +307,24 @@ User shared Razorpay **test** keys and asked to "see how we have the stuff for r
 - **Demo controls** (Q86) are hidden by `SHOW_DEMO_CONTROLS`, which is the same switch.
 - **Switches:** customer screens follow `NEXT_PUBLIC_DATA_MODE=api`; portals follow `NEXT_PUBLIC_AUTH_MODE=firebase`. Launch flips both, and mixed combinations are not supported.
 - **Cost if wrong:** bulk buyers lose the form until the quote API ships. They can still reach us on WhatsApp. Policy pages still describe coins as a planned feature.
+- **Update 2026-11-14:** bulk quotes now run on the API and are shown again in real mode (own flag `QUOTES_ON_API` / `QUOTES_AVAILABLE`); see "Bulk quotes on the API".
+
+## 2026-11-14 — Bulk quotes on the API (spec 19 "Built: API + real mode")
+
+Rulings taken while building (spec 19 followed; where the code had to differ, the reason; cost if wrong in brackets):
+
+- **Order link on the order group, not the sub-order:** spec 19 says UNIQUE `orders.quote_offer_id`, but one checkout is an `order_groups` row split into per-shop sub-orders, so the link is `order_groups.quote_id` + `quote_offer_id` with a partial unique index on each: exactly one order per quote and per offer. (cheap)
+- **Table name `quote_requests`** as in the spec; offers `quote_offers` with one `active` per quote (partial unique). (—)
+- **A customer message on an offered quote reopens talks** (spec: "`offered → negotiating` when a new message reopens talks (old offer superseded)"): the active offer is superseded and the thread shows a hint before sending. A **staff** message leaves the offer active (staff revise by sending a new offer). The demo kept the offer on any message; the API follows the spec. (cheap: one transition)
+- **Payment: cash on delivery only** for accepted quotes at launch (lead's scope; spec says "COD/online per settings"). The offer stores `payment_method = 'cod'` (CHECK, extensible). **No COD fee and no COD cap** on a quote order: staff agreed the total with the customer; the PIN's COD rule and customer blocks still apply. Online payment for quotes → PENDING #18. (medium: a big order paid on delivery)
+- **Negotiated prices may sit below the shop's approved price** (`order_items.price_source = 'quote'` relaxes the `shop_unit ≤ unit` CHECK): the shop is paid its approved price and MechDost carries the difference. (medium: margin; staff see the catalogue total and the discount while offering)
+- **Delivery:** the offer's delivery charge rides on the first sub-order (like the COD fee). The catalogue free-delivery rule does not apply to quotes. (cheap)
+- **Minimum units → 400** at the API (spec acceptance test), from the admin setting `quotes.min_units` (default 10, city override allowed; Admin → Settings shows it in units). Quantity per line 1–99 (an accepted quote becomes a normal order). (cheap)
+- **Limits:** 3 open quotes per customer, 20 quote requests per hour, 30 customer messages per quote per hour, accept 20 per 10 min. (cheap)
+- **Expiry:** an offer is valid 1–30 days; when it runs out the worker closes the quote as `expired` (`offer_expired`); a quote nobody writes on for 30 days expires as `inactive`. (cheap)
+- **Staff:** new permissions `quotes:read` and `quotes:negotiate` (ops manager, city manager, super admin; city managers only in their city), `quotes:request` for customers. Migration 0045 inserts them for the system roles so the desk works before `pnpm db:seed` runs. Staff see the contact phone masked to the last 4 digits. (cheap)
+- **Notifications:** live pings (customer + city staff) and an email when an offer is sent (verified addresses only); no new WhatsApp template until Meta approval. (cheap)
+- **List price snapshot:** each line keeps the catalogue price per unit for the PIN at request time (nearest shop with stock for one unit; null = price on request); the quote keeps the total when every line has one. Information only (Q20). (—)
 
 ## 2026-11-14 — Adding products: admin form and CSV import (plan 2026-11-14, Stream B)
 
@@ -524,6 +542,8 @@ Full answers in `docs/questions-for-user.md` (Answered log, 2026-11-13). The one
 | 15  | Vehicle fields, commission, payment methods, post-purchase P1 — see rows 1, 2, 5, 9                                                                                                         | —                                                                                   | —                                    |
 | 14  | Baseline walkthrough: remaining untouched P0 items use the baseline defaults (coupons engine, attribute sets, part numbers, SEO, OOS handling, admin CRUD conventions, impersonation in P1) | Defaults                                                                            | Confirm anytime                      |
 | 16  | Hindi map: roads without `name:hi` in OSM show their local (English) name on `/hi` — keep, or hide them (inbox Q64)                                                                         | Keep showing the local name; refs (NH30) always                                     | Before launch                        |
+| 17  | Bulk quotes: attachments (≤ 5 MB images/PDF) and read receipts in the thread (spec 19)                                                                                                      | Build with Supabase Storage after launch                                            | After launch                         |
+| 18  | Bulk quotes: online payment (Razorpay) for an accepted offer, and whether staff choose COD / online per offer                                                                               | COD only at launch; add online with the Razorpay live keys                          | After launch                         |
 
 ## 2026-10-31 — Tooling (see `research/tooling-audit.md`)
 
