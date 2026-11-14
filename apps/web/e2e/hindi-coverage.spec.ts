@@ -90,6 +90,8 @@ const MUST_SHOW: Readonly<Record<string, string>> = {
   '/account/coins': '250',
   [`/orders/${CODES.shipped}`]: '4821',
   [`/service/${CODES.proposed}`]: 'तेलीबांधा कार क्लिनिक',
+  [`/service/${CODES.estimate}`]: 'मेरी पसंद पक्की करें',
+  [`/service/${CODES.billed}`]: 'एसजीएसटी 9%',
   [`/quotes/${CODES.quote}`]: 'कार स्टार्टर बैटरी 45 Ah',
   '/cart': 'ट्यूबलेस स्कूटर टायर 90/90-12',
   '/partner/shop': CODES.offered,
@@ -166,6 +168,8 @@ const CUSTOMER_PAGES = [
   `/orders/${CODES.shipped}`,
   `/orders/${CODES.routing}`,
   `/service/${CODES.proposed}`,
+  `/service/${CODES.estimate}`,
+  `/service/${CODES.billed}`,
   `/quotes/${CODES.quote}`,
   '/quotes/new',
 ];

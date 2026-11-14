@@ -21,6 +21,8 @@ export const CODES = {
   fresh: 'SR-RPR-2026-HND101',
   proposed: 'SR-RPR-2026-HND102',
   declined: 'SR-RPR-2026-HND103',
+  estimate: 'SR-RPR-2026-HND104',
+  billed: 'SR-RPR-2026-HND105',
   quote: 'QT-RPR-2026-HND201',
   application: 'PA-RPR-2026-HND301',
 };
@@ -78,6 +80,14 @@ export function seedData(now: number) {
   const services = workshop.services
     .slice(0, 2)
     .map((s) => ({ key: s.key, name: s.name, minPaise: s.minPaise, maxPaise: s.maxPaise }));
+  const estimateLine = (s: (typeof services)[number] | undefined, id: string) => ({
+    id,
+    description: s?.name ?? 'Inspection',
+    serviceKey: s?.key,
+    qty: 1,
+    unitPaise: 150_000,
+    gstRateBp: 1800,
+  });
   const request = (code: string, extra: Partial<DemoServiceRequest>): DemoServiceRequest => ({
     code,
     createdAt: iso(-120),
@@ -106,6 +116,70 @@ export function seedData(now: number) {
       },
     }),
     request(CODES.declined, { declinedBy: [workshop.slug] }),
+    // Estimates and bills (2026-11-14). `flow: 2` = the stage list with estimates (older records are remapped).
+    request(CODES.estimate, {
+      flow: 2,
+      stage: 4, // estimate_sent
+      odometerKm: 24_500,
+      estimate: {
+        version: 2,
+        sentAt: iso(-30),
+        decidedAt: null,
+        lines: [
+          { ...estimateLine(services[0], 'v2-1'), decision: 'pending' },
+          {
+            id: 'v2-2',
+            description: 'Brake pads (front), fitted',
+            qty: 1,
+            unitPaise: 120_000,
+            gstRateBp: 1800,
+            decision: 'pending',
+          },
+        ],
+      },
+    }),
+    request(CODES.billed, {
+      flow: 2,
+      stage: 8, // billed
+      odometerKm: 31_200,
+      estimate: {
+        version: 1,
+        sentAt: iso(-200),
+        decidedAt: iso(-190),
+        lines: [
+          { ...estimateLine(services[0], 'v1-1'), decision: 'declined' },
+          {
+            id: 'v1-2',
+            description: 'Brake pads (front), fitted',
+            qty: 1,
+            unitPaise: 120_000,
+            gstRateBp: 1800,
+            decision: 'approved',
+          },
+        ],
+      },
+      // 1 × ₹1,200 at 18 % → CGST = SGST = ₹108 → ₹1,416 (no round-off).
+      bill: {
+        lines: [
+          {
+            id: 'v1-2',
+            description: 'Brake pads (front), fitted',
+            qty: 1,
+            unitPaise: 120_000,
+            gstRateBp: 1800,
+            taxablePaise: 120_000,
+            gstPaise: 21_600,
+          },
+        ],
+        taxablePaise: 120_000,
+        cgstPaise: 10_800,
+        sgstPaise: 10_800,
+        roundOffPaise: 0,
+        totalPaise: 141_600,
+        billedAt: iso(-20),
+        paidAt: null,
+      },
+    }),
   ];
   const quote: DemoQuote = {
     code: CODES.quote,

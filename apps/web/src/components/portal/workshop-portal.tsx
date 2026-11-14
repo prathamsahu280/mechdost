@@ -2,25 +2,28 @@
 
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
-import { localizeWorkshop, serviceNameFor } from '@/demo/i18n/localize';
+import { localizeWorkshop } from '@/demo/i18n/localize';
 import { findWorkshop } from '@/demo/workshops';
 import {
-  REQUEST_STAGES,
   declineRequest,
   proposeForRequest,
+  requestStage,
   useRequests,
-  workshopAdvanceRequest,
   type DemoServiceRequest,
+  type RequestStage,
 } from '@/demo/store';
 import { track } from '@/lib/analytics';
-import { formatDate, formatPrice } from '@/lib/format';
-import { VEHICLE_ICON } from '@mechdost/shared/vehicles';
+import { formatPrice } from '@/lib/format';
 import { PartnerGate } from './partner-gate';
+import { JobCard, RequestSummary } from './workshop-job';
 import { PortalGuard, portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
 
 const SLOTS = ['morning', 'afternoon', 'evening'] as const;
 
-/** Workshop portal (spec 07): propose slot + expected cost, then receive → work → ready. */
+/**
+ * Workshop portal (spec 07): propose slot + expected cost; then the job card — vehicle received (odometer),
+ * itemised estimate, work on approved lines, bill, paid at the workshop.
+ */
 export function WorkshopPortal() {
   return (
     <PortalGuard role="workshop" path="/partner/workshop">
@@ -39,9 +42,11 @@ function WorkshopRequests({ workshopSlug }: { workshopSlug: string }) {
   const found = findWorkshop(workshopSlug);
   const workshop = found ? localizeWorkshop(found, locale) : undefined;
   const mine = useRequests().filter((r) => r.workshopSlug === workshopSlug && !r.cancellation);
-  const fresh = mine.filter((r) => r.stage === 0 && !(r.declinedBy ?? []).includes(workshopSlug));
-  const waiting = mine.filter((r) => r.stage === 1);
-  const jobs = mine.filter((r) => r.stage >= 2 && r.stage < REQUEST_STAGES.length - 1);
+  const at = (r: DemoServiceRequest, ...stages: RequestStage[]) => stages.includes(requestStage(r));
+  const fresh = mine.filter((r) => at(r, 'requested') && !(r.declinedBy ?? []).includes(workshopSlug));
+  const waiting = mine.filter((r) => at(r, 'proposed'));
+  const jobs = mine.filter((r) => !at(r, 'requested', 'proposed', 'completed'));
+  const done = mine.filter((r) => at(r, 'completed')).slice(0, 10);
 
   return (
     <>
@@ -100,61 +105,34 @@ function WorkshopRequests({ workshopSlug }: { workshopSlug: string }) {
           <p className="mt-3 text-sm text-muted">{t('noneJobs')}</p>
         ) : (
           <ul className="mt-3 grid gap-3 nav:grid-cols-2">
-            {jobs.map((r) => {
-              const stage = REQUEST_STAGES[r.stage] ?? 'confirmed';
-              const label =
-                stage === 'confirmed'
-                  ? t('markReceived')
-                  : stage === 'received'
-                    ? t('markWorking')
-                    : t('markReady');
-              return (
-                <li key={r.code} className={portalCard}>
-                  <RequestSummary request={r} />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      workshopAdvanceRequest(r.code, workshopSlug);
-                    }}
-                    className={`${portalPrimary} mt-4 w-full`}
-                  >
-                    {label}
-                  </button>
-                </li>
-              );
-            })}
+            {jobs.map((r) => (
+              <li key={r.code}>
+                <JobCard request={r} workshopSlug={workshopSlug} />
+              </li>
+            ))}
           </ul>
         )}
       </section>
-    </>
-  );
-}
 
-function RequestSummary({ request: r }: { request: DemoServiceRequest }) {
-  const t = useTranslations('portal');
-  const s = useTranslations('request');
-  const locale = useLocale();
-  return (
-    <>
-      <p className="mb-2 inline-flex rounded-pill bg-pill px-3 py-1 text-xs font-extrabold text-ink">
-        {s(`stage_${REQUEST_STAGES[r.stage] ?? 'requested'}`)}
-      </p>
-      <p className="font-heading text-lg font-extrabold text-ink">{r.code}</p>
-      <p className="text-sm text-muted">
-        {/* The vehicle is what the customer typed: marked as user text (QA 2026-11-14, P4). */}
-        <span data-user-content>{r.customer.name}</span> · {VEHICLE_ICON[r.vehicleType]}{' '}
-        <span data-user-content>{r.vehicle}</span> · {formatDate(r.date, locale)}, {t(`slot_${r.slot}`)}
-      </p>
-      <p className="mt-2 text-sm text-ink">
-        {t('customerAsked', {
-          services: r.services.map((x) => serviceNameFor(x.key, x.name, locale)).join(', '),
-        })}
-      </p>
-      {r.concern ? (
-        <p data-user-content className="mt-1 text-sm text-muted">
-          “{r.concern}”
-        </p>
-      ) : null}
+      <section aria-labelledby="completed-jobs">
+        <h2 id="completed-jobs" className="font-heading text-xl font-extrabold text-ink">
+          {t('completedJobs')} <span className="text-muted tabular-nums">({done.length})</span>
+        </h2>
+        {done.length === 0 ? (
+          <p className="mt-3 text-sm text-muted">{t('noneCompleted')}</p>
+        ) : (
+          <ul className={`mt-3 divide-y divide-line-card ${portalCard}`}>
+            {done.map((r) => (
+              <li key={r.code} className="flex flex-wrap justify-between gap-x-4 py-2 text-sm">
+                <span className="font-heading font-extrabold text-ink">{r.code}</span>
+                <span className="text-muted">
+                  {r.bill ? formatPrice(r.bill.totalPaise) : t('noWorkApproved')}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </>
   );
 }

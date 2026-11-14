@@ -280,6 +280,10 @@ export function findWorkshop(slug: string): DemoWorkshop | undefined {
   return DEMO_WORKSHOPS.find((w) => w.slug === slug);
 }
 
+/** Small garages below the GST threshold bill no GST (spec 06: 0% when unregistered). Demo data. */
+const GST_UNREGISTERED = new Set(['amapara-express-service']);
+export const workshopGstRegistered = (slug: string) => !GST_UNREGISTERED.has(slug);
+
 /** Raipur PIN centroids (demo) — the real build geocodes via the chosen provider (inbox Q12). */
 export const PIN_CENTROIDS: Record<string, { lat: number; lng: number }> = {
   '492001': { lat: 21.2292, lng: 81.6338 },

@@ -32,7 +32,8 @@
     "./compare-max": "./src/compare-max.ts",
     "./admin-prices": "./src/admin-prices.ts",
     "./partners": "./src/partners.ts",
-    "./email-templates": "./src/email-templates.ts"
+    "./email-templates": "./src/email-templates.ts",
+    "./service-bill": "./src/service-bill.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",

@@ -291,6 +291,14 @@ User shared Razorpay **test** keys and asked to "see how we have the stuff for r
 - An online order holds stock for 30 minutes (admin setting) and is never routed before it is paid.
 - A valid checkout signature alone never marks an order paid: the server fetches the payment from Razorpay first (Razorpay docs).
 
+## 2026-11-14 — Cart on sign-out, demo controls, demo service estimates and bills (user)
+
+- **Cart and compare list stay on sign-out** (Q85): they belong to the device, as for a guest.
+- **Demo-only controls are hidden before launch** (Q86): "advance", "demo reply", "demo offer" — launch checklist item.
+- **The demo gets the service estimate and bill** (user: "add the service estimates and billing in the demo too"): vehicle received with odometer → itemised estimate approved per line → work → ready → bill from approved lines → pay (paid at the workshop) → review, as in spec 06.
+  Built the same day. Rulings (cost if wrong in brackets): the demo states are a subset of `serviceRequestMachine`, and `billed → paid → completed` is one workshop step ("Mark paid at the workshop"; the customer's confirmation and online payment for services come with the API — cheap to add); a "no work approved" job ends with "Vehicle returned" and no bill (the machine also allows billing an inspection charge — not in the demo); a revision is allowed from approved, in progress and no-work — not while the customer is still deciding (exactly the machine; review 2026-11-14); old saved jobs past "received" restart from "received" (no estimate to bill from) and starts from the approved lines (concept), every decision back to pending; the odometer must be at least the last reading recorded for that vehicle on the device; GST slabs 0/5/12/18/28 %, CGST + SGST (workshops bill in their own state); one demo workshop (Amapara Express Service) is not GST-registered so the 0 % path is visible. Bill maths shared with the API: `packages/shared/src/service-bill.ts` (property-tested).
+- **Order lifecycle navigation test** (user asked whether the site was really used at every order stage by each role): `e2e/order-lifecycle-navigation.spec.ts` drives one real order through every stage and has the customer, the shop and the admin walk their pages at each stage, checking every view agrees.
+
 ## 2026-11-14 — Behaviour changes from the overnight QA (all with regression tests in `e2e/qa-regressions.spec.ts`)
 
 - **Reason codes are always chosen, never preselected** (shop decline, admin reject/cancel, customer order and booking cancel): rule 16 — a default code nobody picked is bad data.

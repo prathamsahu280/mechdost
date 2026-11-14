@@ -6,24 +6,53 @@ import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { SERVICE_CANCEL_REASONS } from '@mechdost/shared/state';
 import { useState, type SyntheticEvent } from 'react';
+import { advanceRequest } from '@/demo/service-jobs';
 import {
-  advanceRequest,
+  acceptProposal,
   cancelDemoRequest,
-  REQUEST_STAGES,
+  requestAdvanceable,
   requestCancellable,
+  requestStage,
   useRequests,
   type DemoServiceRequest,
+  type RequestStage,
 } from '@/demo/store';
 import { track } from '@/lib/analytics';
 import { useDisclosureFocus } from '@/lib/use-disclosure-focus';
 import { formatDate, formatPrice } from '@/lib/format';
 import { StatusTimeline } from '../commerce/status-timeline';
 import { serviceNameFor, workshopNameFor } from '@/demo/i18n/localize';
-import { DEMO_WORKSHOPS } from '@/demo/workshops';
+import { DEMO_WORKSHOPS, workshopGstRegistered } from '@/demo/workshops';
+import { EstimateApproval, EstimateChoices, ServiceBillView } from './service-estimate';
+
+/** The customer's stepper (spec 06 UI: Request, Estimate, Approved, In progress, Ready, Billed). */
+const STEPS = [
+  'requested',
+  'confirmed',
+  'received',
+  'estimate',
+  'in_progress',
+  'ready',
+  'billed',
+  'completed',
+] as const;
+const STEP_OF: Record<Exclude<RequestStage, 'no_work_approved'>, number> = {
+  requested: 0,
+  proposed: 0,
+  confirmed: 1,
+  received: 2,
+  estimate_sent: 3,
+  approved: 4,
+  in_progress: 4,
+  ready: 5,
+  billed: 6,
+  completed: STEPS.length, // every step done
+};
 
 /**
  * Service request status (spec 06): requested → workshop proposes slot + cost → customer accepts → vehicle
- * received → per-line estimate approval → work → ready. Demo controls stand in for the workshop's actions.
+ * received (odometer) → itemised estimate approved line by line → work → ready → bill → paid at the workshop →
+ * rate the workshop. Demo controls stand in for the workshop's actions, never the customer's.
  */
 export function RequestView({ code }: { code: string }) {
   const t = useTranslations('request');
@@ -33,6 +62,7 @@ export function RequestView({ code }: { code: string }) {
   const isNew = useSearchParams().get('new') === '1';
   const request = useRequests().find((r) => r.code === code);
   const base = locale === 'hi' ? '/hi' : '';
+  const [justDecided, setJustDecided] = useState(false);
 
   if (!request) {
     return (
@@ -52,8 +82,15 @@ export function RequestView({ code }: { code: string }) {
   const min = request.proposal?.minPaise ?? request.services.reduce((s, x) => s + x.minPaise, 0);
   const max = request.proposal?.maxPaise ?? request.services.reduce((s, x) => s + x.maxPaise, 0);
   const slotLabel = w(request.proposal?.slot ?? request.slot);
-  const steps = REQUEST_STAGES.map((s) => ({ key: s, title: t(`stage_${s}`), detail: t(`detail_${s}`) }));
-  const proposed = request.stage === 1 && !request.cancellation;
+  const stage = requestStage(request);
+  const steps = STEPS.map((s) => ({
+    key: s,
+    title: t(`step_${s}`),
+    detail: s === 'requested' && stage === 'proposed' ? t('stepDetail_proposed') : t(`stepDetail_${s}`),
+  }));
+  const proposed = stage === 'proposed' && !request.cancellation;
+  const noWork = !request.cancellation && (stage === 'no_work_approved' || Boolean(request.closedAt));
+  const estimate = request.cancellation ? undefined : request.estimate;
   const workshopName = workshopNameFor(request.workshopSlug, request.workshopName, locale);
   // A decline and a reassignment are told to the customer, not done silently (QA 2026-11-14, U7).
   const declinedBy = request.declinedBy ?? [];
@@ -89,7 +126,16 @@ export function RequestView({ code }: { code: string }) {
               {waitingForAnother ? t('declinedFinding', { workshop: workshopName }) : movedNote}
             </p>
           ) : null}
-          {request.cancellation ? (
+          {noWork ? (
+            <div role="status" className="mt-5 rounded-tile bg-pill p-5 text-ink">
+              <p className="font-heading font-bold">{t('noWorkTitle')}</p>
+              <p className="mt-1 text-sm text-muted">
+                {request.closedAt
+                  ? t('noWorkClosed', { date: formatDate(request.closedAt, locale) })
+                  : t('noWorkBody', { workshop: workshopName })}
+              </p>
+            </div>
+          ) : request.cancellation ? (
             <div
               id="request-cancelled"
               role="status"
@@ -107,7 +153,7 @@ export function RequestView({ code }: { code: string }) {
               <StatusTimeline
                 label={t('statusLabel')}
                 steps={steps}
-                current={request.stage}
+                current={stage === 'no_work_approved' ? 0 : STEP_OF[stage]}
                 currentLabel={t('current')}
               />
             </div>
@@ -130,7 +176,7 @@ export function RequestView({ code }: { code: string }) {
               <button
                 type="button"
                 onClick={() => {
-                  advanceRequest(request.code);
+                  acceptProposal(request.code);
                 }}
                 className="press mt-3 inline-flex min-h-11 items-center rounded-button bg-accent-button px-5 text-sm font-bold text-white hover:bg-accent-button-hover"
               >
@@ -138,8 +184,36 @@ export function RequestView({ code }: { code: string }) {
               </button>
             </div>
           ) : null}
+          {estimate && stage === 'estimate_sent' ? (
+            <EstimateApproval
+              key={`${request.code}-v${String(estimate.version)}`}
+              request={request}
+              estimate={estimate}
+              onDecided={() => {
+                setJustDecided(true);
+              }}
+            />
+          ) : null}
+          {estimate?.decidedAt && stage !== 'estimate_sent' && !request.bill ? (
+            <EstimateChoices estimate={estimate} fresh={justDecided && stage === 'approved'} />
+          ) : null}
+          {request.bill ? (
+            <ServiceBillView
+              bill={request.bill}
+              workshopName={workshopName}
+              gstRegistered={workshopGstRegistered(request.workshopSlug)}
+            />
+          ) : null}
+          {stage === 'completed' && !request.closedAt ? (
+            <Link
+              href={`${base}/workshops/${request.workshopSlug}#reviews-${request.workshopSlug}`}
+              className="press mt-4 inline-flex min-h-11 items-center rounded-button bg-accent-button px-5 text-sm font-bold text-white hover:bg-accent-button-hover"
+            >
+              {t('rateWorkshop', { workshop: workshopName })}
+            </Link>
+          ) : null}
           {requestCancellable(request) ? <CancelRequest request={request} /> : null}
-          {!proposed && !request.cancellation && request.stage < REQUEST_STAGES.length - 1 ? (
+          {requestAdvanceable(request) ? (
             <details className="mt-6 rounded-lg border border-dashed border-line p-3 text-sm">
               <summary className="cursor-pointer font-bold text-muted">{demo('controls')}</summary>
               <button
@@ -166,6 +240,11 @@ export function RequestView({ code }: { code: string }) {
           <p className="text-muted">
             {request.vehicleType} · <span data-user-content>{request.vehicle}</span>
           </p>
+          {request.odometerKm !== undefined ? (
+            <p className="text-muted">
+              {t('odometer', { km: new Intl.NumberFormat('en-IN').format(request.odometerKm) })}
+            </p>
+          ) : null}
         </div>
         <div>
           <h3 className="font-bold text-ink">{t('when')}</h3>

@@ -285,3 +285,11 @@ When a separate production Supabase project exists, migrations move into the pip
 - The background worker (`dist/worker.mjs`, live relay) as a compose service, when live updates are on.
 - Uptime monitoring and error tracking (Sentry), and alerts.
 - Backups: Supabase handles the database (PITR add-on to turn on). The server holds no data except Caddy's certificates, which are re-issued automatically.
+
+## Before the public launch (checklist)
+
+Items decided to happen before going public; tick them off here.
+
+- [ ] Hide the demo-only controls: "advance" (orders, service requests, applications), "demo reply" and "demo offer" (Q86, user 2026-11-14).
+- [ ] Switch the website from the browser demo to real sign-in and the API (data switch), so seller onboarding links the shop owner on sign-in (Q89).
+- [ ] Demo data off (Q21: "Demo off before public launch, date TBD").

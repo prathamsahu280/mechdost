@@ -24,7 +24,15 @@ import { VEHICLE_ICON, VEHICLE_LABEL_KEY, VEHICLE_TYPES } from '@mechdost/shared
 import { CoinsSection } from './coins-section';
 import { useTickets } from '@/demo/support';
 import { SupportSection } from './support-section';
-import { ORDER_STAGES, REQUEST_STAGES, useHydrated, useOrders, useQuotes, useRequests } from '@/demo/store';
+import {
+  ORDER_STAGES,
+  REQUEST_STAGES,
+  requestStage,
+  useHydrated,
+  useOrders,
+  useQuotes,
+  useRequests,
+} from '@/demo/store';
 import { AUTH_MODE } from '@/lib/auth/mode';
 import { signOutEverywhere } from '@/lib/auth/sign-out';
 import { useEmailStatus } from '@/lib/auth/use-email-status';
@@ -153,13 +161,18 @@ function SectionNav({ current }: { current: AccountSection }) {
   const bar = useCenterCurrent<HTMLElement>(current);
   const t = useTranslations('account');
   const prefix = usePrefix();
-  // What waits for the customer: a support reply to answer, a quote offer to decide (QA 2026-11-14, U4).
+  // What waits for the customer: a support reply to answer, a quote offer to decide (QA 2026-11-14, U4), a
+  // workshop proposal to accept or an estimate to approve (spec 06).
   const session = useSession();
   const tickets = useTickets();
   const quotes = useQuotes();
+  const requests = useRequests();
   const waiting: Partial<Record<AccountSection, number>> = {
     support: tickets.filter((x) => x.accountId === session?.id && x.status === 'awaiting_customer').length,
     quotes: quotes.filter((q) => q.status === 'offered').length,
+    services: requests.filter(
+      (x) => !x.cancellation && (requestStage(x) === 'proposed' || requestStage(x) === 'estimate_sent'),
+    ).length,
   };
   return (
     <nav

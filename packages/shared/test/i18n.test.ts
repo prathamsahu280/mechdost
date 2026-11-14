@@ -54,6 +54,8 @@ describe('locale messages', () => {
       'policies.company.gstinLabel', // a registration code (hard rule 10 allows codes)
       'portal.appGstin', // the same registration-code label in the admin review
       'checkout.gstin', // the buyer's GSTIN field label at checkout (a code)
+      'request.lineGst', // "GST {rate}%" on an estimate line: the tax's name is used as is, like GSTIN
+      'portal.field_gst', // the same tax name as a field label in the estimate builder
     ]);
     for (const [key, value] of hiLeaves) {
       if (allowedLatin.has(key)) continue;

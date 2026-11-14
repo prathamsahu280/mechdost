@@ -23,6 +23,7 @@ import { APPLICATION_REJECT_REASONS, type ApplicationRejectReason } from '@mechd
 import { OPERATIONAL_SETTINGS } from '@mechdost/shared/settings';
 import { siteSettings } from './site-config';
 import { PIN_CENTROIDS } from './workshops';
+import type { EstimateLine, ServiceBill } from '@mechdost/shared/service-bill';
 
 export const MAX_LINES = 20;
 export const MAX_QTY = 99;
@@ -104,7 +105,28 @@ const issueDelivery = (): DeliveryProof => ({
   method: null,
 });
 
+/**
+ * The demo's service request states, a subset of the canonical machine (`serviceRequestMachine`, spec 06):
+ * `received` is `vehicle_received`; `billed -> paid -> completed` is one step here (the workshop marks the bill
+ * paid and the request completes). Stored as an index, so a stage inserted later needs the read-time remap below.
+ */
 export const REQUEST_STAGES = [
+  'requested',
+  'proposed',
+  'confirmed',
+  'received',
+  'estimate_sent',
+  'approved',
+  'in_progress',
+  'ready',
+  'billed',
+  'completed',
+  'no_work_approved',
+] as const;
+export type RequestStage = (typeof REQUEST_STAGES)[number];
+/** 2 = estimates and bills added (2026-11-14). Records without it used the 6-stage list below. */
+const REQUEST_FLOW = 2;
+const LEGACY_REQUEST_STAGES = [
   'requested',
   'proposed',
   'confirmed',
@@ -112,7 +134,25 @@ export const REQUEST_STAGES = [
   'in_progress',
   'ready',
 ] as const;
-export type RequestStage = (typeof REQUEST_STAGES)[number];
+/** For `service-jobs.ts` (estimates and bills live there so shop pages do not load them; JS budget). */
+export const stageAt = (s: RequestStage) => REQUEST_STAGES.indexOf(s);
+export const requestStage = (r: DemoServiceRequest): RequestStage => REQUEST_STAGES[r.stage] ?? 'requested';
+
+/** A line on a workshop estimate; `serviceKey` when it came from the requested service (shown localised). */
+export type DemoEstimateLine = EstimateLine & { serviceKey?: string };
+export interface DemoEstimate {
+  version: number;
+  sentAt: string;
+  lines: DemoEstimateLine[];
+  /** When the customer decided (with consent); null while waiting. */
+  decidedAt: string | null;
+}
+/** A snapshot taken when the workshop bills: later edits never change it (spec 06). */
+export type DemoServiceBill = Omit<ServiceBill, 'lines'> & {
+  lines: (ServiceBill['lines'][number] & { serviceKey?: string })[];
+  billedAt: string;
+  paidAt: string | null;
+};
 
 export interface DemoServiceRequest {
   code: string;
@@ -139,6 +179,14 @@ export interface DemoServiceRequest {
   declinedBy?: string[];
   /** The customer cancelled before the vehicle reached the workshop (spec 06), with a reason code. */
   cancellation?: { reasonCode: ServiceCancelReason; at: string } | null;
+  /** Stage-list version (see REQUEST_FLOW); missing on records saved before estimates existed. */
+  flow?: number;
+  /** Recorded when the workshop receives the vehicle. */
+  odometerKm?: number;
+  estimate?: DemoEstimate;
+  bill?: DemoServiceBill;
+  /** The vehicle went back with no work approved (nothing charged). */
+  closedAt?: string;
 }
 
 export type PartnerKind = 'seller' | 'garage' | 'mechanic';
@@ -257,7 +305,7 @@ const listeners = new Set<() => void>();
 const cache = new Map<Key, { raw: string | null; value: unknown }>();
 const EMPTY: readonly never[] = [];
 
-function read<T>(key: Key, isItem: (v: unknown) => v is T): readonly T[] {
+function read<T>(key: Key, isItem: (v: unknown) => v is T, upgrade?: (v: T) => T): readonly T[] {
   let raw: string | null;
   try {
     raw = window.localStorage.getItem(key);
@@ -269,7 +317,7 @@ function read<T>(key: Key, isItem: (v: unknown) => v is T): readonly T[] {
   let value: readonly T[] = EMPTY;
   try {
     const parsed: unknown = raw ? JSON.parse(raw) : [];
-    if (Array.isArray(parsed)) value = parsed.filter(isItem);
+    if (Array.isArray(parsed)) value = upgrade ? parsed.filter(isItem).map(upgrade) : parsed.filter(isItem);
   } catch {
     value = EMPTY;
   }
@@ -332,7 +380,15 @@ const isQuote = (v: unknown): v is DemoQuote =>
 
 const cartSnapshot = () => read(KEYS.cart, isCartLine);
 const ordersSnapshot = () => read(KEYS.orders, isOrder);
-const requestsSnapshot = () => read(KEYS.requests, isRequest);
+/** Records saved before estimates existed keep their meaning: their old stage index is mapped by name. */
+function upgradeRequest(r: DemoServiceRequest): DemoServiceRequest {
+  if (r.flow === REQUEST_FLOW) return r;
+  const old = LEGACY_REQUEST_STAGES[r.stage] ?? 'requested';
+  // Old jobs past "received" have no estimate to work or bill from: they continue from "received".
+  const stage = old === 'in_progress' || old === 'ready' ? 'received' : old;
+  return { ...r, flow: REQUEST_FLOW, stage: stageAt(stage) };
+}
+export const requestsSnapshot = () => read(KEYS.requests, isRequest, upgradeRequest);
 const applicationsSnapshot = () => read(KEYS.applications, isApplication);
 const reviewsSnapshot = () => read(KEYS.reviews, isReview);
 const quotesSnapshot = () => read(KEYS.quotes, isQuote);
@@ -749,6 +805,7 @@ export function createDemoRequest(
     code: publicCode('SR', 'RPR'),
     createdAt: new Date().toISOString(),
     stage: 0,
+    flow: REQUEST_FLOW,
   };
   write(KEYS.requests, [request, ...requestsSnapshot()].slice(0, 50));
   return request;
@@ -788,14 +845,15 @@ export function advanceOrder(code: string, fallbackShopSlug?: string) {
   );
 }
 
-export function advanceRequest(code: string) {
-  write(
-    KEYS.requests,
-    requestsSnapshot().map((r) =>
-      r.code === code && !r.cancellation
-        ? { ...r, stage: Math.min(r.stage + 1, REQUEST_STAGES.length - 1) }
-        : r,
-    ),
+/** The customer's own next step is never simulated by the demo control (see advanceRequest). */
+export const requestAdvanceable = (r: DemoServiceRequest) =>
+  !r.cancellation &&
+  !(['proposed', 'estimate_sent', 'completed'] as RequestStage[]).includes(requestStage(r));
+
+/** The customer accepts the workshop's slot and expected cost (spec 06: proposed -> confirmed). */
+export function acceptProposal(code: string): boolean {
+  return updateRequest(code, (r) =>
+    requestStage(r) === 'proposed' ? { ...r, stage: stageAt('confirmed') } : null,
   );
 }
 
@@ -1031,7 +1089,10 @@ export function adminConfirmDelivery(code: string, reason: string, by: string): 
   );
 }
 
-function updateRequest(code: string, change: (r: DemoServiceRequest) => DemoServiceRequest | null): boolean {
+export function updateRequest(
+  code: string,
+  change: (r: DemoServiceRequest) => DemoServiceRequest | null,
+): boolean {
   let changed = false;
   write(
     KEYS.requests,
@@ -1069,15 +1130,6 @@ export function declineRequest(code: string, workshopSlug: string): boolean {
   );
 }
 
-/** Workshop moves an accepted job forward: received → in progress → ready. */
-export function workshopAdvanceRequest(code: string, workshopSlug: string): boolean {
-  return updateRequest(code, (r) =>
-    r.workshopSlug === workshopSlug && r.stage >= 2 && r.stage < REQUEST_STAGES.length - 1
-      ? { ...r, stage: r.stage + 1 }
-      : null,
-  );
-}
-
 /** Admin assigns a declined request to another workshop. */
 export function reassignRequest(code: string, workshop: { slug: string; name: string }): boolean {
   if (!takesNewWork('workshop', workshop.slug)) return false;
@@ -1088,7 +1140,7 @@ export function reassignRequest(code: string, workshop: { slug: string; name: st
   );
 }
 
-const STAGE_VEHICLE_RECEIVED = REQUEST_STAGES.indexOf('received');
+const STAGE_VEHICLE_RECEIVED = stageAt('received');
 
 /** The customer may cancel a booking until the workshop has received the vehicle (spec 06). */
 export const requestCancellable = (r: DemoServiceRequest) =>

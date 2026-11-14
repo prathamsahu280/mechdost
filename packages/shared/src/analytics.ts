@@ -127,6 +127,18 @@ export const CLIENT_EVENT_SCHEMAS = {
   booking_started: z.object({ workshop: id }).strict(),
   booking_confirmed: z.object({ code: id, workshop: id, demo: z.boolean() }).strict(),
   booking_cancelled: z.object({ code: id, workshop: id, reasonCode: id }).strict(),
+  // Workshop estimates (spec 06): the version and line counts only.
+  estimate_viewed: z
+    .object({ code: id, version: z.number().int().min(1).max(99), lines: z.number().int().min(1).max(20) })
+    .strict(),
+  job_card_approved: z
+    .object({
+      code: id,
+      version: z.number().int().min(1).max(99),
+      approved: z.number().int().min(0).max(20),
+      declined: z.number().int().min(0).max(20),
+    })
+    .strict(),
   // The UI action; the API records the outcome as the server event `order_cancelled` (different name, so the
   // two are never counted together).
   order_cancel_submitted: z

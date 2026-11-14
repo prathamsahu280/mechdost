@@ -61,8 +61,9 @@ The matrix proves pages do not break; it does not judge whether they look right.
 1. Look at the screenshots (or give batches to review agents): hierarchy, spacing, contrast in dark mode, Hindi
    wrapping, overlapping floating elements, empty states with one next action, one primary action per screen.
 2. Walk the **cross-role flows** in one browser (demo data is per browser), switching roles: order happy path and
-   decline → reroute → timeout → reject; service request to "ready for pickup" (the demo store stops there: estimate
-   lines, bill, payment and refunds are covered by the API and unit suites); seller application → approval → invite
+   decline → reroute → timeout → reject (automated per stage and role: `e2e/order-lifecycle-navigation.spec.ts`);
+   service request through odometer, estimate (approve/decline per line, revision), work, bill and payment at the
+   workshop (`e2e/service-estimate.spec.ts`); seller application → approval → invite
    → agreement → price approval/rejection; support ticket reply; bulk quote → offer → order; coins.
 3. Click every control on each page in each world (the crawler under `reports/<date>/crawler/scripts/` is reusable).
 4. Record findings with severity (bug / UX / polish), state label, viewport, screenshot path and likely cause.

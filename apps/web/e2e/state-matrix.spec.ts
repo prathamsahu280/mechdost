@@ -216,6 +216,8 @@ test.describe.configure({ mode: 'default' });
 const BUSY_PAGES = [
   `/orders/${CODES.shipped}`,
   `/service/${CODES.proposed}`,
+  `/service/${CODES.estimate}`,
+  `/service/${CODES.billed}`,
   `/quotes/${CODES.quote}`,
   '/account/support',
   '/account/services',
@@ -226,6 +228,8 @@ const BUSY_PAGES = [
 const MUST_SHOW: Readonly<Record<string, string>> = {
   [`/orders/${CODES.shipped}`]: CODES.shipped,
   [`/service/${CODES.proposed}`]: CODES.proposed,
+  [`/service/${CODES.estimate}`]: 'Brake pads (front), fitted',
+  [`/service/${CODES.billed}`]: '₹1,416',
   [`/quotes/${CODES.quote}`]: CODES.quote,
   '/account/support': TICKET_CODE,
   '/account/services': CODES.proposed,
