@@ -2,6 +2,7 @@
 
 import { saveOrderRules, useOrderRules } from '@/demo/order-rules';
 import { ArrowDown, ArrowUp } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, type ReactNode, type SyntheticEvent } from 'react';
@@ -24,6 +25,7 @@ import {
   saveMapDefault,
 } from '@/demo/site-config';
 import type { MapMode } from '@/lib/map-styles';
+import { AUTH_MODE } from '@/lib/auth/mode';
 import { track } from '@/lib/analytics';
 import { CATEGORY_EMOJI } from '@/lib/emoji';
 import {
@@ -34,6 +36,10 @@ import {
   type HomeSection,
 } from '@/lib/site-layout';
 import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
+
+/** The API editors (real sign-in builds only): loaded on demand so demo bundles stay the same size. */
+const SettingsApi = dynamic(() => import('./admin-site-api').then((m) => m.SettingsApi), { ssr: false });
+const ContentApi = dynamic(() => import('./admin-site-api').then((m) => m.ContentApi), { ssr: false });
 
 /** Default text per content key in both locales, resolved on the server from the locale files. */
 export type ContentDefaults = Record<ContentKey, { en: string; hi: string }>;
@@ -114,6 +120,14 @@ const CONTENT_GROUPS: { id: 'announcement' | 'hero'; keys: ContentKey[] }[] = [
 ];
 
 export function ContentEditor({ actor, defaults }: { actor: string; defaults: ContentDefaults }) {
+  return AUTH_MODE === 'firebase' ? (
+    <ContentApi defaults={defaults} />
+  ) : (
+    <DemoContentEditor actor={actor} defaults={defaults} />
+  );
+}
+
+function DemoContentEditor({ actor, defaults }: { actor: string; defaults: ContentDefaults }) {
   const t = useTranslations('portal');
   const config = useSiteConfig();
   const [version, setVersion] = useState(config.versions.content);
@@ -563,6 +577,10 @@ const SETTING_FIELDS: {
 const scaled = (f: { money: boolean; percent?: boolean }) => f.money || f.percent === true;
 
 export function SettingsEditor({ actor }: { actor: string }) {
+  return AUTH_MODE === 'firebase' ? <SettingsApi /> : <DemoSettingsEditor actor={actor} />;
+}
+
+function DemoSettingsEditor({ actor }: { actor: string }) {
   const t = useTranslations('portal');
   const locale = useLocale();
   const num = (n: number) => new Intl.NumberFormat(locale === 'hi' ? 'hi-IN' : 'en-IN').format(n);
@@ -727,6 +745,11 @@ function RecentChanges() {
  * through support). Each new order copies the rule when it is placed; orders already placed keep theirs.
  */
 export function OrderRulesEditor() {
+  // On the API the self-cancel rule is one of the settings above (`orders.customer_self_cancel`).
+  return AUTH_MODE === 'firebase' ? null : <DemoOrderRulesEditor />;
+}
+
+function DemoOrderRulesEditor() {
   const t = useTranslations('portal');
   const rules = useOrderRules();
   const [status, setStatus] = useState<'idle' | 'saved' | 'failed'>('idle');

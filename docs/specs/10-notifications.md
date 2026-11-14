@@ -105,3 +105,12 @@ Tests:
 ## WhatsApp templates as submitted to Meta (2026-11-14)
 
 English, no header/footer. Utility: `order_confirmed` ({{1}} order code; button "Track order" → `https://mechdost.com/orders/{{1}}`), `order_out_for_delivery` ("Your order {{1}} is out for delivery. When the parcel arrives, tap Track order below and show the delivery person the confirmation shown on the website." — same button; Meta flags the words code / OTP / PIN / password / verification in utility templates, so they are avoided), `order_rejected_refund` (button "View order"), `service_estimate_ready` (button "Review estimate" → `/service/{{1}}`), `ticket_reply` (button "Open request" → `/account/support?ticket={{1}}`), `partner_new_order` ({{1}} order, {{2}} minutes; no button). Authentication: `mechdost_otp` (Meta's fixed OTP text, copy-code button, security note, 10-minute expiry) — WhatsApp OTP sending is not built yet (Q56). Meta credentials and the webhook are live on the server (Q94).
+
+## Real API mode (2026-11-14)
+
+In real sign-in builds (`AUTH_MODE === 'firebase'`; Stream D of `docs/superpowers/plans/2026-11-14-real-api-launch.md`) Admin → Notifications runs on `/v1/admin/notifications/*` (`apps/web/src/components/portal/admin-notifications-api.tsx`, loaded with `next/dynamic`; demo unchanged):
+
+- One card per WhatsApp event: the on/off switch and the English and Hindi text. "On" means the event's WhatsApp templates are enabled; Save sends `PUT /v1/admin/notifications/templates` for **both** languages (channel `whatsapp`, each row with its own `version`, null creates it) with the same switch value. Text not saved yet is prefilled from the locale defaults and marked "Suggested text: not saved yet", so the first save creates the rows. The text is checked like the API first (no offer wording, exact `{{n}}` placeholders); API refusals (`TEMPLATE_*`) show next to the field, a stale version reloads.
+- The status line shows how many events are on; the budget card shows this month's sent / delivered / failed and estimated cost from `GET /v1/admin/notifications/whatsapp` and saves the alert with `PUT …/whatsapp/budget` (whole rupees → paise, compare-and-set).
+- Launch step (Stream F): staff switch on `order.confirmed`, `order.out_for_delivery`, `order.rejected`, `ticket.replied` and `order.routed` here once the Meta templates are approved.
+- **Gap:** no change-history endpoint, so the demo's "Recent changes" card is not shown in API mode.

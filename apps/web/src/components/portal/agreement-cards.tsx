@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
 import {
@@ -10,14 +11,31 @@ import {
   useAgreementsVersion,
 } from '@/demo/agreements';
 import { track } from '@/lib/analytics';
+import { AUTH_MODE } from '@/lib/auth/mode';
 import { formatDate } from '@/lib/format';
 import { portalCard, portalField, portalPrimary } from './portal-guard';
+
+/** Real sign-in builds: the same cards on the API (`/v1/admin/agreements`, `/v1/shop-onboarding/{shopId}/agreement`). */
+const AgreementApi = dynamic(() => import('./admin-onboarding-api').then((m) => m.AgreementApi), {
+  ssr: false,
+});
+const ShopAgreementApi = dynamic(() => import('./shop-onboarding-api').then((m) => m.ShopAgreementApi), {
+  ssr: false,
+});
+
+export function AdminAgreement() {
+  return AUTH_MODE === 'firebase' ? <AgreementApi /> : <DemoAdminAgreement />;
+}
+
+export function ShopAgreement({ shopSlug }: { shopSlug: string }) {
+  return AUTH_MODE === 'firebase' ? <ShopAgreementApi /> : <DemoShopAgreement shopSlug={shopSlug} />;
+}
 
 /**
  * Admin: publish the seller agreement (user 2026-11-13; text from the user later, Q77). Every version is kept;
  * publishing a new one asks every shop to accept again. Both languages are required (hard rule 10).
  */
-export function AdminAgreement() {
+function DemoAdminAgreement() {
   const t = useTranslations('portal');
   useAgreementsVersion();
   const current = typeof window === 'undefined' ? null : currentAgreement();
@@ -81,7 +99,7 @@ export function AdminAgreement() {
 }
 
 /** Shop: read and accept the current agreement. Hidden until MechDost publishes one. */
-export function ShopAgreement({ shopSlug }: { shopSlug: string }) {
+function DemoShopAgreement({ shopSlug }: { shopSlug: string }) {
   const t = useTranslations('portal');
   const locale = useLocale();
   useAgreementsVersion();

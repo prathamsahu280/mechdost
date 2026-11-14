@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { PRICE_REJECT_REASONS } from '@mechdost/shared/partner-codes';
@@ -13,6 +14,7 @@ import {
 } from '@/demo/price-requests';
 import { findShop } from '@/demo/shops';
 import { track } from '@/lib/analytics';
+import { AUTH_MODE } from '@/lib/auth/mode';
 import { formatPrice } from '@/lib/format';
 import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
 
@@ -22,6 +24,15 @@ import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-gu
  * takes it off sale for that shop. Demo store until the console calls `/v1/admin/price-requests` (data switch).
  */
 export function AdminPriceRequests() {
+  return AUTH_MODE === 'firebase' ? <PriceRequestsApi /> : <DemoAdminPriceRequests />;
+}
+
+/** Real sign-in builds: `/v1/admin/price-requests`, loaded only then. */
+const PriceRequestsApi = dynamic(() => import('./admin-onboarding-api').then((m) => m.PriceRequestsApi), {
+  ssr: false,
+});
+
+function DemoAdminPriceRequests() {
   const t = useTranslations('portal');
   const pending = usePendingPriceRequests();
 

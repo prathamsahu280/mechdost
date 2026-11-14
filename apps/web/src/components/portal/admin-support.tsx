@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
 import {
@@ -11,6 +12,7 @@ import {
   type DemoTicket,
   type SupportError,
 } from '@/demo/support';
+import { AUTH_MODE } from '@/lib/auth/mode';
 import { track } from '@/lib/analytics';
 import { formatDate } from '@/lib/format';
 import { TicketThread, useTicketLabels } from '@/components/support/ticket-thread';
@@ -33,6 +35,11 @@ export function maskPhone(value: string): string {
   return `+${digits.slice(0, 2)} ${digits.slice(2, 4)}•••••${digits.slice(-2)}`;
 }
 
+/** The inbox on the API (real sign-in builds only): loaded on demand so demo bundles stay the same size. */
+const AdminSupportApi = dynamic(() => import('./admin-support-api').then((m) => m.AdminSupportApi), {
+  ssr: false,
+});
+
 /**
  * Admin → Support inbox (spec 09). Requests from the website and WhatsApp, oldest response deadline first,
  * overdue ones flagged. Staff reply to the customer (moves the request to "waiting for the customer"; on WhatsApp
@@ -40,6 +47,10 @@ export function maskPhone(value: string): string {
  * ticket state machine.
  */
 export function AdminSupport({ actor }: { actor: string }) {
+  return AUTH_MODE === 'firebase' ? <AdminSupportApi /> : <DemoSupportInbox actor={actor} />;
+}
+
+function DemoSupportInbox({ actor }: { actor: string }) {
   const t = useTranslations('support');
   const [filter, setFilter] = useState<'active' | 'done'>('active');
   const tickets = [...useTickets()]

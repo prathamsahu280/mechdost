@@ -1,10 +1,12 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
 import { InviteSchema } from '@mechdost/shared/partners';
 import { createInvite, revokeInvite, useInvites, type DemoInvite } from '@/demo/store';
 import { track } from '@/lib/analytics';
+import { AUTH_MODE } from '@/lib/auth/mode';
 import { formatDate } from '@/lib/format';
 import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
 
@@ -18,6 +20,13 @@ const FIELDS: Field[] = ['name', 'email', 'phone'];
  * the link from noreply@).
  */
 export function AdminInvites() {
+  return AUTH_MODE === 'firebase' ? <InvitesApi /> : <DemoAdminInvites />;
+}
+
+/** Real sign-in builds: `/v1/admin/partner-invites`, loaded only then. */
+const InvitesApi = dynamic(() => import('./admin-onboarding-api').then((m) => m.InvitesApi), { ssr: false });
+
+function DemoAdminInvites() {
   const t = useTranslations('portal');
   const locale = useLocale();
   const invites = useInvites();

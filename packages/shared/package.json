@@ -34,7 +34,10 @@
     "./admin-catalogue": "./src/admin-catalogue.ts",
     "./checkout-api": "./src/checkout-api.ts",
     "./order-views": "./src/order-views.ts",
+    "./admin-config-api": "./src/admin-config-api.ts",
+    "./support-api": "./src/support-api.ts",
     "./partners": "./src/partners.ts",
+    "./partner-api": "./src/partner-api.ts",
     "./email-templates": "./src/email-templates.ts",
     "./service-bill": "./src/service-bill.ts"
   },

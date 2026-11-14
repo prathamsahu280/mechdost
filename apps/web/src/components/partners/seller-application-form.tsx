@@ -4,10 +4,12 @@ import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
 import { isGstEnrolmentNumber, isGstin } from '@mechdost/shared/gst';
-import { SellerApplicationSchema, type Location } from '@mechdost/shared/partners';
+import { SellerApplicationSchema, type Location, type SellerApplication } from '@mechdost/shared/partners';
 import { DEMO_PRODUCTS } from '@/demo/catalogue';
 import { createApplication } from '@/demo/store';
 import { track } from '@/lib/analytics';
+import { AUTH_MODE } from '@/lib/auth/mode';
+import { applyErrorView, type ApplyFormError } from '@/lib/partner-onboarding-view';
 import { LocationPicker } from './location-picker';
 import { ProductPicker } from './product-picker';
 
@@ -42,12 +44,19 @@ const FIELD_ORDER: Field[] = [
  * Apply as a seller (design 2026-11-13): GST status (GSTIN or enrolment number), address, the shop's map pin and a
  * tick-list of the products sold. Checked with the same schema as the API (`SellerApplicationSchema`, GSTIN
  * checksum included). With an invite, name, email and mobile number come from the invite and are locked.
- * Demo store until the website posts to `/v1/partner-applications` (data switch).
+ * Real sign-in builds post to `/v1/partner-applications` (or the invite route) with a Turnstile token; the API
+ * client loads only then (`import()`), so the demo bundle is unchanged. The demo keeps the browser store.
  */
+const REAL = AUTH_MODE === 'firebase';
+const TURNSTILE_ID = 'seller-turnstile';
+/** A well-formed stand-in for the client check when the invite's number is masked; the API uses the invite's. */
+const MASKED_PHONE_STANDIN = '+916000000000';
+
 export function SellerApplicationForm({
   invite,
 }: {
-  invite?: { token: string; name: string; email: string; phone: string };
+  /** `phoneMasked`: real builds only show the last 4 digits; the API takes the number from the invite. */
+  invite?: { token: string; name: string; email: string; phone: string; phoneMasked?: boolean };
 }) {
   const t = useTranslations('apply');
   const locale = useLocale();
@@ -57,6 +66,8 @@ export function SellerApplicationForm({
   const [gstStatus, setGstStatus] = useState<'registered' | 'enrolled'>('registered');
   const [location, setLocation] = useState<Location | null>(null);
   const [products, setProducts] = useState<string[]>([]);
+  const [formError, setFormError] = useState<ApplyFormError | null>(null);
+  const [challenge, setChallenge] = useState(false);
 
   const messages: Record<Field, string> = {
     name: t('errName'),
@@ -81,7 +92,7 @@ export function SellerApplicationForm({
     };
     const candidate = {
       name: invite?.name ?? value('name'),
-      phone: invite?.phone ?? value('phone'),
+      phone: invite?.phoneMasked ? MASKED_PHONE_STANDIN : (invite?.phone ?? value('phone')),
       email: invite?.email ?? value('email'),
       businessName: value('businessName'),
       shopName: value('shopName'),
@@ -110,8 +121,13 @@ export function SellerApplicationForm({
       return;
     }
     setErrors({});
+    setFormError(null);
     setSubmitting(true);
     const app = parsed.data;
+    if (REAL) {
+      void sendToApi(app);
+      return;
+    }
     const created = createApplication(
       {
         kind: 'seller',
@@ -146,6 +162,45 @@ export function SellerApplicationForm({
     router.push(`${locale === 'hi' ? '/hi' : ''}/partners/applications/${created.code}?new=1`);
   }
 
+  /** Real builds: Turnstile, then the API; refusals show next to the fields the API names, or above the form. */
+  async function sendToApi(app: SellerApplication) {
+    const fail = (code: string, fields: readonly string[] = []) => {
+      const view = applyErrorView(code, fields);
+      const next: Partial<Record<Field, string>> = {};
+      for (const f of FIELD_ORDER) {
+        if (!(f in view.fields)) continue;
+        const key = view.fields[f];
+        next[f] = key ? t(key) : messages[f];
+      }
+      setErrors(next);
+      setFormError(view.form);
+      setSubmitting(false);
+      const first = FIELD_ORDER.find((f) => next[f]);
+      document.getElementById(first ? `seller-${first}` : 'seller-form-error')?.focus();
+    };
+    let token: string;
+    try {
+      const { turnstileToken } = await import('@/lib/auth/turnstile');
+      token = await turnstileToken(TURNSTILE_ID, locale, setChallenge);
+    } catch {
+      fail('TURNSTILE_FAILED');
+      return;
+    }
+    const { submitApplication } = await import('@/lib/partner-public-api');
+    // With an invite the API takes name, email and mobile number from the invite, never from the form.
+    const { name: _name, email: _email, phone: _phone, ...own } = app;
+    const res = await submitApplication(invite ? own : app, token, invite?.token);
+    if (!res.ok) {
+      fail(res.code, res.fields);
+      return;
+    }
+    track('click', {
+      id: invite ? 'partner_application_seller_invite' : 'partner_application_seller',
+      path: window.location.pathname,
+    });
+    router.push(`${locale === 'hi' ? '/hi' : ''}/partners/applications/${res.code}?new=1`);
+  }
+
   const input =
     'mt-1 min-h-11 w-full rounded-input border border-input-border bg-surface px-3 text-[15px] text-ink placeholder:text-muted aria-[invalid=true]:border-error read-only:bg-surface-alt';
   const aria = (id: Field) => ({
@@ -170,6 +225,16 @@ export function SellerApplicationForm({
       {invite ? (
         <p className="rounded-lg bg-accent-soft px-3 py-2 text-sm font-bold text-accent-soft-text">
           {t('invitedNote')}
+        </p>
+      ) : null}
+      {formError ? (
+        <p
+          id="seller-form-error"
+          role="alert"
+          tabIndex={-1}
+          className="rounded-lg bg-warning-bg px-3 py-2 text-sm font-bold text-warning"
+        >
+          {t(formError)}
         </p>
       ) : null}
       {Object.keys(errors).length > 0 ? (
@@ -344,6 +409,15 @@ export function SellerApplicationForm({
         <span>{t('consent')}</span>
       </label>
       {err('consent')}
+
+      {REAL ? (
+        <div role="group" aria-labelledby={challenge ? 'seller-turnstile-label' : undefined}>
+          <p id="seller-turnstile-label" hidden={!challenge} className="text-sm font-bold text-ink">
+            {t('api_securityCheck')}
+          </p>
+          <div id={TURNSTILE_ID} />
+        </div>
+      ) : null}
 
       <button
         type="submit"

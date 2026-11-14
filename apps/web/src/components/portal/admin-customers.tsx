@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import {
   CUSTOMER_BLOCK_LEVELS,
   CUSTOMER_BLOCK_REASONS,
@@ -16,6 +17,7 @@ import {
   type DemoCustomerBlock,
 } from '@/demo/customer-blocks';
 import { useAccounts, type DemoAccount } from '@/demo/session';
+import { AUTH_MODE } from '@/lib/auth/mode';
 import { track } from '@/lib/analytics';
 import { formatDate } from '@/lib/format';
 import { useDisclosureFocus } from '@/lib/use-disclosure-focus';
@@ -28,12 +30,21 @@ const PILL: Record<CustomerBlockLevel, string> = {
   full: 'bg-pill text-error',
 };
 
+/** Blocks on the API (real sign-in builds only): loaded on demand so demo bundles stay the same size. */
+const AdminCustomersApi = dynamic(() => import('./admin-customers-api').then((m) => m.AdminCustomersApi), {
+  ssr: false,
+});
+
 /**
  * Admin → Customers (research/admin-console.md §5, decision 2026-11-01): block a customer at one level with a
  * reason code, optional end date and a staff-only note; lift with a reason; history kept. Phone numbers are
  * masked. Same rules as the API (`/v1/admin/customers/…`): customers only, one active block per level.
  */
 export function AdminCustomers({ actor }: { actor: string }) {
+  return AUTH_MODE === 'firebase' ? <AdminCustomersApi /> : <DemoCustomers actor={actor} />;
+}
+
+function DemoCustomers({ actor }: { actor: string }) {
   const t = useTranslations('portal');
   const accounts = useAccounts();
   const blocks = useCustomerBlocks();

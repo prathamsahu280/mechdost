@@ -1,7 +1,8 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import type { DemoTicket } from '@/demo/support';
+import type { TicketStatus } from '@mechdost/shared/state';
+import type { SupportTicketKind } from '@mechdost/shared/support-api';
 import { formatDate } from '@/lib/format';
 
 const STATUS_LABEL = {
@@ -23,16 +24,34 @@ const KIND_LABEL = {
 export function useTicketLabels() {
   const t = useTranslations('support');
   return {
-    status: (s: DemoTicket['status']) => t(STATUS_LABEL[s]),
-    kind: (k: DemoTicket['kind']) => t(KIND_LABEL[k]),
+    status: (s: TicketStatus) => t(STATUS_LABEL[s]),
+    kind: (k: SupportTicketKind) => t(KIND_LABEL[k]),
   };
+}
+
+/** One message as the thread shows it: the demo store's messages, or the API's mapped by `threadFromApi`. */
+export interface ThreadMessage {
+  id: string;
+  role: string;
+  /** Who wrote it (demo store); the API does not expose staff or customer names, so it is absent there. */
+  author?: string;
+  body: string;
+  internal: boolean;
+  channel: string;
+  at: string;
 }
 
 /**
  * One request's messages, oldest first. Customers never see internal notes. Message text is user content
  * (`data-user-content`: kept in the language it was written in, outside the Hindi coverage gate).
  */
-export function TicketThread({ ticket, viewer }: { ticket: DemoTicket; viewer: 'customer' | 'staff' }) {
+export function TicketThread({
+  ticket,
+  viewer,
+}: {
+  ticket: { messages: readonly ThreadMessage[] };
+  viewer: 'customer' | 'staff';
+}) {
   const t = useTranslations('support');
   const locale = useLocale();
   const messages = ticket.messages.filter((m) => viewer === 'staff' || !m.internal);
@@ -44,12 +63,12 @@ export function TicketThread({ ticket, viewer }: { ticket: DemoTicket; viewer: '
           m.role === 'staff'
             ? viewer === 'customer'
               ? t('fromStaff')
-              : m.author
+              : (m.author ?? t('fromStaff'))
             : viewer === 'customer'
               ? t('you')
               : m.role === 'guest'
                 ? t('guest')
-                : m.author;
+                : (m.author ?? t('api_customer'));
         return (
           <li
             key={m.id}

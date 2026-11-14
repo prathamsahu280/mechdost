@@ -141,3 +141,15 @@ Admin → Settings → **Order rules**: "Customers may cancel their own order un
 ## Admin → Orders on the API (2026-11-14, Stream C2)
 
 With real sign-in `/admin/orders` loads `admin-orders-api.tsx` on demand (other sections unchanged): routing queue, ranked shops from the API (paused, suspended, busy and already-tried shops never offered), one-click routing, reject with a reason code and customer message, cancel with a reason code, delivery override with a written reason. Details and remaining gaps: spec 04 § Real API mode.
+
+## Real API mode (2026-11-14)
+
+Stream D of the real-API launch (`docs/superpowers/plans/2026-11-14-real-api-launch.md`). In real sign-in builds (`AUTH_MODE === 'firebase'`) these admin sections call the API through `apps/web/src/lib/admin-api.ts`; each API screen is a separate component loaded with `next/dynamic`, so demo bundles are unchanged and demo mode works as before. Answers are validated with `@mechdost/shared/admin-config-api`, `support-api` and `partner-api`; API error codes become field messages or the shared `portal.api_common_err_*` messages (`apps/web/src/lib/api-error-key.ts`), and every list has loading, error-with-retry and empty states.
+
+- **Notifications** (`admin-notifications-api.tsx`): see spec 10.
+- **Support** (`admin-support-api.tsx`): see spec 09.
+- **Settings** (`admin-site-api.tsx` `SettingsApi`): every key of the `@mechdost/shared/settings` registry with its default and range; money is typed in whole rupees and stored in paise; checked with `settingProblem` before sending; one Save sends `PUT /v1/admin/settings/{key}` (global value, compare-and-set) for the changed keys. The demo's yes/no "order rules" card is not shown: `orders.customer_self_cancel` is in the list. City overrides are API-only for now.
+- **Site content** (`ContentApi`): the live text of the announcement and home headline keys per language. "Save and publish" writes the draft (`PUT /v1/admin/content/{key}/{locale}`) and publishes it; an emptied field is unpublished (the default text shows). Policy pages are not edited here yet (API supports them).
+- **Customers** (`admin-customers-api.tsx`): the API has no customer search, so staff open a customer by account id, then block (level, reason never preselected, optional end day in IST and staff note) or lift with a reason; history shown. The block reason select starts empty (the demo still preselects one).
+- **Partner applications, invites, price requests, seller agreement** (`admin-onboarding-api.tsx`): see spec 07 "Real API mode". The partners list (pause/suspend), layout editor, coins, reviews and quotes are still demo-only.
+- **Gaps:** no customer search/list endpoint; no audit-history endpoint for the "Recent changes" cards (not shown in API mode); no endpoint listing a city's PIN codes for the approval form.

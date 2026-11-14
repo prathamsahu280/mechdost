@@ -32,3 +32,8 @@ Goal: mechdost.com runs on real sign-in (Firebase) and the API for every flow, w
 - 2026-11-14: Stream C1 done on main (customer cart and quote, COD checkout, order page and cancel, account orders on the API; spec 03/04 "Real API mode"). Ruling: customer screens switch on `DATA_MODE`, portals on `AUTH_MODE`; launch flips both.
 - 2026-11-14: Stream C2 (shop portal + admin orders) and Stream D (partners, support, settings, content, blocks, notifications) handed back by agents; merging.
 - 2026-11-14: Stream C2 (branch worktree-agent-afee1627d3b370618): shop portal + Your prices + Admin → Orders on the API in real sign-in (dynamic imports; demo unchanged); real shop accounts land on /partner/shop. Gaps listed in spec 04/07 § Real API mode. Browser suites still to run at merge.
+- 2026-11-14: Stream D on its branch — notifications (WhatsApp switches + budget), support (customer + inbox), settings,
+  site content, customer blocks, seller application (Turnstile) + invite, admin applications / invites / price queue /
+  agreement, shop prices + agreement accept, all behind `AUTH_MODE === 'firebase'` with dynamic imports. Gaps: no public
+  application status route, no customer search, no PIN-list endpoint, product picker still demo catalogue, partner roles
+  still land in the customer area (`demoRoleFor`).
