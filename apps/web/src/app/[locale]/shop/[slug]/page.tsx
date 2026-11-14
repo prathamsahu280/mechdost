@@ -249,15 +249,12 @@ export default async function ProductPage({ params }: Props) {
             <CompareToggle
               slug={product.slug}
               category={product.category.slug}
+              categoryName={categoryName}
               labels={{
                 toggle: cmp('toggle'),
                 toggleName: cmp('toggleName', { name: `${product.brand} ${product.name}` }),
                 added: cmp('added', { count: '{count}' }),
                 removed: cmp('removed'),
-                full: cmp('full'),
-                otherCategory: cmp('otherCategory'),
-                startNew: cmp('startNew'),
-                saveFailed: t('saveFailed'),
               }}
               className="shrink-0"
             />

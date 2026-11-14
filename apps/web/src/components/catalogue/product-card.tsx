@@ -106,45 +106,46 @@ export function ProductCard({
         >
           {availabilityLabel(t, product.availability)}
         </p>
-        {/* Compare sits beside Add to cart (user 2026-11-13: it was a whole extra row at the bottom of the card). */}
-        <div className="mt-auto flex items-start gap-2 pt-4">
-          {compare ? (
-            <CompareToggle
-              className="shrink-0"
-              slug={product.slug}
-              category={product.category.slug}
-              labels={{
-                toggle: cmp('toggle'),
-                toggleName: cmp('toggleName', { name: `${product.brand} ${product.name}` }),
-                added: cmp('added', { count: '{count}' }),
-                removed: cmp('removed'),
-                full: cmp('full'),
-                otherCategory: cmp('otherCategory'),
-                startNew: cmp('startNew'),
-                saveFailed: t('saveFailed'),
-              }}
-            />
-          ) : null}
-          {price ? (
-            <div className="min-w-0 flex-1">
-              <AddToCartButton
-                sku={product.sku}
+        {/* Action row (redesign 2026-11-14, bug: a message inside the row pushed "Add to cart" out of the card):
+            a container, so the row adapts to the card, not the window. Add to cart first (the one primary action),
+            Compare beside it as an icon in mid widths, with its word from 18rem; on narrow cards the two stack.
+            Nothing else ever enters this row: compare questions and limits are asked in the tray. */}
+        <div className="@container mt-auto pt-4">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 @max-[12.5rem]:grid-cols-1">
+            {price ? (
+              <div className="min-w-0">
+                <AddToCartButton
+                  sku={product.sku}
+                  slug={product.slug}
+                  labels={{
+                    add: t('addToCart'),
+                    added: t('added'),
+                    maxQty: t('maxQty'),
+                    maxLines: t('maxLines'),
+                    saveFailed: t('saveFailed'),
+                    increase: t('cartIncrease', { name: `${product.brand} ${product.name}` }),
+                    decrease: t('cartDecrease', { name: `${product.brand} ${product.name}` }),
+                    remove: t('cartRemove', { name: `${product.brand} ${product.name}` }),
+                    inCart: t('inCart', { count: '#' }),
+                  }}
+                />
+              </div>
+            ) : null}
+            {compare ? (
+              <CompareToggle
                 slug={product.slug}
-                className="px-3"
+                category={product.category.slug}
+                categoryName={categoryName}
+                layout={price ? 'card' : 'page'}
                 labels={{
-                  add: t('addToCart'),
-                  added: t('added'),
-                  maxQty: t('maxQty'),
-                  maxLines: t('maxLines'),
-                  saveFailed: t('saveFailed'),
-                  increase: t('cartIncrease', { name: `${product.brand} ${product.name}` }),
-                  decrease: t('cartDecrease', { name: `${product.brand} ${product.name}` }),
-                  remove: t('cartRemove', { name: `${product.brand} ${product.name}` }),
-                  inCart: t('inCart', { count: '#' }),
+                  toggle: cmp('toggle'),
+                  toggleName: cmp('toggleName', { name: `${product.brand} ${product.name}` }),
+                  added: cmp('added', { count: '{count}' }),
+                  removed: cmp('removed'),
                 }}
               />
-            </div>
-          ) : null}
+            ) : null}
+          </div>
         </div>
       </div>
     </article>

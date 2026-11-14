@@ -1,16 +1,9 @@
 'use client';
 
-import { Check } from 'lucide-react';
+import { ArrowLeftRight, Check } from 'lucide-react';
 import { useState } from 'react';
 import { track } from '@/lib/analytics';
-import {
-  addToCompare,
-  readCompare,
-  removeFromCompare,
-  startNewComparison,
-  useCompare,
-  type CompareAddResult,
-} from '@/lib/compare/store';
+import { addToCompare, readCompare, removeFromCompare, useCompare } from '@/lib/compare/store';
 
 export interface CompareToggleLabels {
   toggle: string;
@@ -19,52 +12,38 @@ export interface CompareToggleLabels {
   /** "Added to compare ({count} of 4)" with {count} left in for the island to fill. */
   added: string;
   removed: string;
-  full: string;
-  otherCategory: string;
-  startNew: string;
-  saveFailed: string;
-}
-
-interface Note {
-  text: string;
-  error?: boolean;
-  /** The list holds another category: offer "Start a new comparison". */
-  other?: boolean;
 }
 
 /**
- * "Compare" toggle on a product card or page (design 2026-11-13): a pressed button (`aria-pressed`) and one status
- * line, read out by screen readers and shown when something went wrong. When the list holds another category the
- * one way out is "Start a new comparison". Labels arrive translated from the server; kept small, it ships on every
- * shop page (JS budget, spec 16).
+ * "Compare" toggle on a product card or page (redesign 2026-11-14): a pressed button (`aria-pressed`, filled with
+ * a tick when on). It never shows a message of its own — another category, a full list or a refused save is asked
+ * or told once, in the compare tray, and every card follows the one shared list (bug 2026-11-14: each card kept
+ * its own red message and its own "Start a new comparison"). Added/removed are announced through a hidden status.
+ *
+ * `layout="card"`: inside a card's action row (an `@container`): a full-width button with its word on narrow cards
+ * (the row stacks), an icon button in mid widths, the word again from 18rem. `layout="page"`: always the word.
+ * Labels arrive translated from the server; kept small, it ships on every shop page (JS budget, spec 16).
  */
 export function CompareToggle({
   slug,
   category,
+  categoryName,
   labels,
+  layout = 'page',
   className = '',
 }: {
   slug: string;
   /** Category slug: the list holds one category at a time. */
   category: string;
+  /** The category's display name in the page language (shown in the tray). */
+  categoryName: string | null;
   labels: CompareToggleLabels;
+  layout?: 'card' | 'page';
   className?: string;
 }) {
   const on = useCompare().slugs.includes(slug);
-  const [note, setNote] = useState<Note | null>(null);
-
-  const after = (r: CompareAddResult) => {
-    if (r === 'added') {
-      const count = readCompare().slugs.length;
-      track('compare_added', { slug, category, count });
-      setNote({ text: labels.added.replace('{count}', String(count)) });
-    } else
-      setNote({
-        text: r === 'full' ? labels.full : r === 'other_category' ? labels.otherCategory : labels.saveFailed,
-        error: true,
-        other: r === 'other_category',
-      });
-  };
+  const [status, setStatus] = useState('');
+  const Icon = on ? Check : ArrowLeftRight;
 
   return (
     <div className={className}>
@@ -72,36 +51,40 @@ export function CompareToggle({
         type="button"
         aria-pressed={on}
         aria-label={labels.toggleName}
+        data-compare-toggle={slug}
         onClick={() => {
-          if (!on) {
-            after(addToCompare(slug, category));
+          if (on) {
+            removeFromCompare(slug);
+            track('compare_removed', { slug, count: readCompare().slugs.length });
+            setStatus(labels.removed);
             return;
           }
-          removeFromCompare(slug);
-          track('compare_removed', { slug, count: readCompare().slugs.length });
-          setNote({ text: labels.removed });
+          const lang = document.documentElement.lang;
+          const r = addToCompare(slug, category, categoryName ? { name: categoryName, lang } : {});
+          if (r !== 'added') {
+            setStatus('');
+            return;
+          }
+          const count = readCompare().slugs.length;
+          track('compare_added', { slug, category, count });
+          setStatus(labels.added.replace('{count}', String(count)));
         }}
-        className={`press inline-flex min-h-11 items-center gap-2 rounded-button border px-3 text-sm font-bold transition-colors duration-[var(--duration-base)] ${
-          on ? 'border-ink bg-ink text-surface' : 'border-line-input bg-surface text-ink hover:border-ink'
-        }`}
+        className={`press relative inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-button border px-3 text-sm font-bold transition-colors duration-[var(--duration-base)] ${
+          layout === 'card' ? '@max-[12.5rem]:w-full' : ''
+        } ${on ? 'border-ink bg-ink text-surface' : 'border-line-input bg-surface text-ink hover:border-ink'}`}
       >
-        {on ? <Check aria-hidden="true" className="size-4" strokeWidth={3} /> : null}
-        {labels.toggle}
-      </button>
-      <p role="status" className={note?.error ? 'mt-2 text-xs font-bold text-error' : 'sr-only'}>
-        {note?.text}
-      </p>
-      {note?.other ? (
-        <button
-          type="button"
-          onClick={() => {
-            after(startNewComparison(slug, category));
-          }}
-          className="min-h-11 text-xs font-bold text-ink underline underline-offset-2"
+        <Icon aria-hidden="true" className="size-4 shrink-0" strokeWidth={on ? 3 : 2} />
+        <span
+          className={
+            layout === 'card' ? 'sr-only @max-[12.5rem]:not-sr-only @min-[18rem]:not-sr-only' : undefined
+          }
         >
-          {labels.startNew}
-        </button>
-      ) : null}
+          {labels.toggle}
+        </span>
+      </button>
+      <p role="status" className="sr-only">
+        {status}
+      </p>
     </div>
   );
 }

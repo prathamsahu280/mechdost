@@ -28,8 +28,10 @@ export function CompareTrayLoader(props: TrayProps) {
   const [Tray, setTray] = useState<ComponentType<TrayProps> | null>(null);
   useEffect(() => {
     let started = false;
-    const check = () => {
-      if (started || !hasList()) return;
+    // `prompt`: the store has something to ask or tell (another category, a refused save) — load the tray even
+    // while the list is empty (redesign 2026-11-14).
+    const check = (e?: Event) => {
+      if (started || !(hasList() || (e instanceof CustomEvent && e.detail === 'prompt'))) return;
       started = true;
       void import('./compare-tray').then((m) => {
         setTray(() => m.CompareTray);

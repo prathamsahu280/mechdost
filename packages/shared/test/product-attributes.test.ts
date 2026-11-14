@@ -118,4 +118,19 @@ describe('compare analytics events', () => {
     );
     expect(CLIENT_EVENT_SCHEMAS.compare_differences_toggled.safeParse({ on: true }).success).toBe(true);
   });
+
+  it('the tray question records the categories, the count and the answer as codes (redesign 2026-11-14)', () => {
+    const asked = CLIENT_EVENT_SCHEMAS.compare_switch_prompted;
+    expect(asked.safeParse({ from: 'lubricants', to: 'batteries', count: 1 }).success).toBe(true);
+    expect(asked.safeParse({ from: 'lubricants', to: 'batteries', count: 0 }).success).toBe(false);
+    expect(asked.safeParse({ from: 'lubricants', to: 'batteries', count: 1, name: 'x' }).success).toBe(false);
+    const answered = CLIENT_EVENT_SCHEMAS.compare_switch_answered;
+    expect(answered.safeParse({ choice: 'start_new', to: 'batteries' }).success).toBe(true);
+    expect(answered.safeParse({ choice: 'keep', to: 'batteries' }).success).toBe(true);
+    expect(answered.safeParse({ choice: 'maybe', to: 'batteries' }).success).toBe(false);
+    const limit = CLIENT_EVENT_SCHEMAS.compare_limit_shown;
+    expect(limit.safeParse({ reason: 'full' }).success).toBe(true);
+    expect(limit.safeParse({ reason: 'save_failed' }).success).toBe(true);
+    expect(limit.safeParse({ reason: 'other' }).success).toBe(false);
+  });
 });

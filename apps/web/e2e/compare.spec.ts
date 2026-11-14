@@ -96,10 +96,10 @@ test('one category at a time: a battery starts a new comparison', async ({ page 
   await tap(toggle(page, 'Castrol Activ 4T 20W40 900 ml'));
   await page.goto(`/shop/${EXIDE}`);
   await tap(toggle(page, 'Exide XLTZ4A 24F+24P'));
-  await expect(
-    page.getByRole('status').filter({ hasText: 'You can compare one category at a time.' }),
-  ).toBeVisible();
-  await tap(page.getByRole('button', { name: 'Start a new comparison' }));
+  // The tray asks (redesign 2026-11-14; the card no longer shows a message of its own).
+  const ask = page.getByRole('dialog', { name: 'Start a new comparison with Batteries?' });
+  await expect(ask).toBeVisible();
+  await ask.getByRole('button', { name: 'Start new' }).click();
   await expect(toggle(page, 'Exide XLTZ4A 24F+24P')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByRole('link', { name: 'Compare (1)' })).toBeVisible();
 });

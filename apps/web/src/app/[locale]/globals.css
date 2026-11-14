@@ -579,8 +579,18 @@ input[type='radio'] {
 }
 
 /* The privacy banner sits where the compare tray floats: the tray steps aside until the banner is answered. */
-html[data-consent-open] [data-compare-tray] {
+html[data-consent-open] [data-compare-tray]:not([data-prompt]) {
   display: none;
+}
+/* …except while it asks something the shopper just triggered (redesign 2026-11-14): then it floats above the
+   banner (≈ 13rem with its offset, the same figure as the scroll padding above), never over it. */
+html[data-consent-open] [data-compare-tray][data-prompt] {
+  bottom: calc(84px + env(safe-area-inset-bottom) + 13rem);
+}
+@media (min-width: 1024px) {
+  html[data-consent-open] [data-compare-tray][data-prompt] {
+    bottom: calc(1.5rem + 13rem);
+  }
 }
 
 /* While the compare tray floats, the page ends with room for it, so nothing stays hidden under it (QA U9). */

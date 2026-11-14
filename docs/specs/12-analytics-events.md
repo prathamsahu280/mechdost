@@ -69,3 +69,4 @@ text. The change itself is in `audit_log` (`pincode.*`, before/after) in the sam
 
 - **Client events:** `compare_added` (slug, category, count 1–4), `compare_removed` (slug, count), `compare_opened` (count, category), `compare_differences_toggled` (on). `add_to_cart` gains an optional `source: 'compare'` (optional so events from older open tabs still pass).
 - **Click ids:** `compare_tray_open`, `compare_tray_clear`. Spec 21.
+- **Tray question (redesign 2026-11-14):** `compare_switch_prompted` (from, to: category slugs; count 1–4 being replaced), `compare_switch_answered` (choice `start_new` | `keep`, to), `compare_limit_shown` (reason `full` | `save_failed`). Codes and counts only; "Start new" also sends `compare_added` (count 1).

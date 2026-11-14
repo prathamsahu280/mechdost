@@ -567,6 +567,19 @@ the write form and Admin → Reviews now work in real mode (quotes and coins unc
 - **Admin → Reviews visibility:** demo queue in the browser demo, API queue with real sign-in, hidden in the mixed
   build (real data + demo sign-in), as no queue there matches what customers see.
 
+## 2026-11-14 — Compare control and card actions redesigned (user: "that ui is really really buggy")
+
+- **Replaces** the 2026-11-13 flow "another category shows 'You can compare one category at a time.' with Start a new
+  comparison" on the card: cards and the product page never show compare messages. The compare tray asks once
+  ("Start a new comparison with {to}? This removes {n} {from} item(s)." — **Start new** / **Keep current**) and tells
+  "full" / "save refused" with **OK**. Non-modal, inside the tray; Escape keeps the list. One shared store and prompt.
+- **Card action row:** "Add to cart" first, Compare beside it (icon in mid widths, word when wide), stacked on narrow
+  cards — a container query on the row. No new colours, fonts or radii.
+- **Stored list** gains optional `name` + `lang` (category name in the page language) for the tray; never shown in
+  another language. Events `compare_switch_prompted`, `compare_switch_answered`, `compare_limit_shown` (spec 12).
+- Locale keys `compare.otherCategory` and `compare.startNew` removed; `switch*` and `dismiss` added (en + hi).
+- Spec 21 § "Redesign 2026-11-14"; geometry tests written first and run overnight (user asked to hold browser runs).
+
 ## PENDING DECISIONS (ask "what's pending" to review)
 
 | #   | Topic                                                                                                                                                                                       | Leaning                                                                             | When                                 |

@@ -4,6 +4,18 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Current status
 
+- **2026-11-14 (late night): compare control, card stepper and comparison table redesigned** (branch
+  `worktree-agent-a165b7b3f223fe1d3`, not merged). User bugs: other-category cards showed a red message that pushed
+  "Add to cart" out of the card, stale per card; hovering "+" hid the stepper count; `/compare` columns misaligned.
+  - Built: one shared compare store + tray question (Start new / Keep current), `@container` card action row, stepper
+    geometry (same height, count clips, inset hover), fixed column slots in the table; en + hi; 3 new events.
+    Spec 21 § "Redesign 2026-11-14", decisions entry, design system, UI test catalogue § 7 rows 11–13 and § 7.1.
+  - Verified: unit tests (store prompt, wording en/hi, events), typecheck, lint, `pnpm check`.
+  - **Owed (user: "dont do the tests just yet we can do them overnight"):** one `next build`, then
+    `playwright test e2e/compare-ui.spec.ts e2e/cart-stepper-geometry.spec.ts e2e/compare-table-geometry.spec.ts
+e2e/compare.spec.ts e2e/cart-stepper.spec.ts --workers=1`, the Hindi gate for `/hi/shop` and `/hi/compare`,
+    the state matrix shop rows, and `node scripts/measure-js.mjs` (`/shop`, `/cart`, product page, `/compare` < 180 KB).
+
 - **2026-11-14 (night): reviews and PIN codes merged and migrated.**
   - Fresh review: no critical issues. Three findings fixed test-first; the rest are documented in specs 02/15.
   - Prechecks passed. Migrations 0046 (reviews) and 0048 (PIN codes) applied to `mechdost-dev`; advisors: INFO only.

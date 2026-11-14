@@ -133,6 +133,18 @@ export default async function LocaleLayout({
             label: compare('trayLabel'),
             link: compare('trayLink', { count: '{count}' }),
             clear: compare('trayClear'),
+            switchTitle: compare('switchTitle', { to: '{to}' }),
+            switchTitleNoName: compare('switchTitleNoName'),
+            switchOne: compare('switchOne', { from: '{from}' }),
+            switchMany: compare('switchMany', { from: '{from}', count: '{count}' }),
+            switchOneNoName: compare('switchOneNoName'),
+            switchManyNoName: compare('switchManyNoName', { count: '{count}' }),
+            switchStart: compare('switchStart'),
+            switchKeep: compare('switchKeep'),
+            added: compare('added', { count: '{count}' }),
+            full: compare('full'),
+            saveFailed: (await getTranslations('catalogue'))('saveFailed'),
+            dismiss: compare('dismiss'),
           }}
         />
         <AssistantLauncher copy={await assistantCopy(locale)} />

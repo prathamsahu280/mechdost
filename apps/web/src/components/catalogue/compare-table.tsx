@@ -105,7 +105,7 @@ export function CompareTable({
                   <div className="flex items-start justify-between gap-1">
                     <LocalLink
                       href={`/shop/${p.slug}`}
-                      className="line-clamp-2 font-heading text-[14px] leading-snug font-bold text-ink hover:underline tab:text-[15px]"
+                      className="line-clamp-2 min-h-[2lh] font-heading text-[14px] leading-snug font-bold text-ink hover:underline tab:text-[15px]"
                     >
                       {p.brand} {p.name}
                     </LocalLink>
@@ -151,24 +151,37 @@ export function CompareTable({
                     : 0;
                   const rating = p.rating && p.rating.count > 0 ? p.rating : null;
                   return (
-                    <div key={p.slug} role="cell" className="compare-col snap-start py-4 pr-1 tab:px-4">
-                      <ProductVisual category={p.category.key} brand={p.brand} />
-                      {rating ? (
-                        <div className="mt-2 flex items-center gap-1.5 text-xs text-muted">
-                          <StarRating
-                            rating={rating.avg}
-                            label={r('ratedBy', { rating: rating.avg.toFixed(1), count: rating.count })}
-                          />
-                          <span aria-hidden="true">{rating.avg.toFixed(1)}</span>
-                        </div>
-                      ) : null}
-                      {off !== null && off > 0 ? (
-                        <p className="mt-1.5 w-fit rounded-md bg-success-bg px-1.5 py-0.5 text-[11px] font-bold text-success">
-                          {cat('save', { percent: off })}
-                        </p>
-                      ) : null}
+                    // Fixed slots (bug 2026-11-14: a "Save 11%" in one column pushed its button lower): artwork of
+                    // a bounded size, a rating line and a saving line kept even when empty, then the action at the
+                    // foot of the cell — the grid row makes every cell as tall as the tallest, so actions align.
+                    <div
+                      key={p.slug}
+                      role="cell"
+                      className="compare-col flex snap-start flex-col py-4 pr-1 tab:px-4"
+                    >
+                      <div className="mx-auto w-full max-w-[13rem]">
+                        <ProductVisual category={p.category.key} brand={p.brand} />
+                      </div>
+                      <div className="mt-2 flex min-h-5 items-center gap-1.5 text-xs text-muted">
+                        {rating ? (
+                          <>
+                            <StarRating
+                              rating={rating.avg}
+                              label={r('ratedBy', { rating: rating.avg.toFixed(1), count: rating.count })}
+                            />
+                            <span aria-hidden="true">{rating.avg.toFixed(1)}</span>
+                          </>
+                        ) : null}
+                      </div>
+                      <div className="mt-1.5 min-h-[22px]">
+                        {off !== null && off > 0 ? (
+                          <p className="w-fit rounded-md bg-success-bg px-1.5 py-0.5 text-[11px] font-bold text-success">
+                            {cat('save', { percent: off })}
+                          </p>
+                        ) : null}
+                      </div>
                       {p.price ? (
-                        <div className="mt-3">
+                        <div className="mt-auto pt-3">
                           <AddToCartButton
                             sku={p.sku}
                             slug={p.slug}

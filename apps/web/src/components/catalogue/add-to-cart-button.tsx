@@ -25,6 +25,11 @@ export interface AddToCartLabels {
  * 2026-11-14: "add the quantity in there itself too just like swiggy or amazon"). − at one removes it and "Add to
  * cart" comes back; + stops at the per-product limit. Feedback is announced (aria-live), no modal, no navigation.
  * Labels arrive translated from the server so no i18n runtime ships with this island.
+ *
+ * Geometry (bug 2026-11-14: hovering "+" hid the count): the stepper is exactly as tall as "Add to cart" (its
+ * outline is an overlay, not a border around the 44 px buttons); the count takes the space between the buttons and
+ * clips instead of running under them; the words "3 in cart" show only from 12rem, where they fit in Hindi too; the
+ * hover surface is an inset face inside each button, so it never reaches the count.
  */
 export function AddToCartButton({
   slug,
@@ -82,13 +87,15 @@ export function AddToCartButton({
 
   const [inCartBefore = '', inCartAfter = ''] = labels.inCart.split('#');
   const stepButton =
-    'press inline-flex size-11 shrink-0 items-center justify-center rounded-button text-accent-soft-text hover:bg-surface disabled:opacity-40';
+    'press group/step relative z-[1] inline-flex w-11 shrink-0 items-center justify-center rounded-button text-accent-soft-text disabled:opacity-40';
+  const stepFace =
+    'inline-flex size-9 items-center justify-center rounded-md transition-colors duration-[var(--duration-base)] group-hover/step:group-enabled/step:bg-surface';
 
   return (
     <>
       {inCart > 0 ? (
         <div
-          className={`@container flex min-h-11 w-full min-w-0 items-center justify-between gap-1 rounded-button border-2 border-accent-button bg-accent-soft ${className}`}
+          className={`@container relative flex min-h-11 w-full min-w-0 items-stretch rounded-button bg-accent-soft ${className}`}
         >
           <button
             type="button"
@@ -105,18 +112,21 @@ export function AddToCartButton({
             }}
             className={stepButton}
           >
-            {inCart === 1 ? (
-              <Trash2 aria-hidden="true" className="size-4" />
-            ) : (
-              <Minus aria-hidden="true" className="size-4" strokeWidth={3} />
-            )}
+            <span className={stepFace}>
+              {inCart === 1 ? (
+                <Trash2 aria-hidden="true" className="size-4" />
+              ) : (
+                <Minus aria-hidden="true" className="size-4" strokeWidth={3} />
+              )}
+            </span>
           </button>
           {/* Narrow cards (two columns on phones) show just the number, like "− 2 +"; with room the words show too.
-              The words always stay for screen readers (QA 2026-11-14: "1 in cart" widened a 480 px page). */}
-          <span className="min-w-0 text-sm font-extrabold whitespace-nowrap text-accent-soft-text tabular-nums">
-            <span className="sr-only @min-[11rem]:not-sr-only">{inCartBefore}</span>
+              The words always stay for screen readers (QA 2026-11-14: "1 in cart" widened a 480 px page). The
+              count owns the space between the buttons and clips, so it can never run under them. */}
+          <span className="block min-w-0 flex-1 self-center truncate text-center text-sm font-extrabold text-accent-soft-text tabular-nums">
+            <span className="sr-only @min-[12rem]:not-sr-only">{inCartBefore}</span>
             {inCart}
-            <span className="sr-only @min-[11rem]:not-sr-only">{inCartAfter}</span>
+            <span className="sr-only @min-[12rem]:not-sr-only">{inCartAfter}</span>
           </span>
           <button
             type="button"
@@ -127,8 +137,16 @@ export function AddToCartButton({
             }}
             className={stepButton}
           >
-            <Plus aria-hidden="true" className="size-4" strokeWidth={3} />
+            <span className={stepFace}>
+              <Plus aria-hidden="true" className="size-4" strokeWidth={3} />
+            </span>
           </button>
+          {/* The outline is drawn inside the stepper's box, not around it: same height as "Add to cart" (no jump).
+              The buttons sit above it so their focus ring stays whole. */}
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 rounded-button border-2 border-accent-button"
+          />
         </div>
       ) : (
         <button
@@ -136,7 +154,7 @@ export function AddToCartButton({
           onClick={() => {
             add(qty);
           }}
-          className={`press inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-button bg-accent-button px-5 text-sm font-bold text-white transition-colors duration-[var(--duration-base)] hover:bg-accent-button-hover ${className}`}
+          className={`press inline-flex min-h-11 w-full min-w-0 items-center justify-center gap-2 rounded-button bg-accent-button px-3 text-sm leading-tight font-bold text-white transition-colors duration-[var(--duration-base)] hover:bg-accent-button-hover ${className}`}
         >
           <ShoppingCart aria-hidden="true" className="size-4" />
           {labels.add}

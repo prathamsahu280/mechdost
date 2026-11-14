@@ -13,8 +13,11 @@ A rider choosing between engine oils (or batteries, tyres) sees what each costs,
 
 ## Flows
 
-1. **Pick:** the "Compare" button on a product card (shop list and related products, not the home page) or on the product page. One category at a time, at most 4. Another category shows "You can compare one category at a time." with **Start a new comparison**; a fifth product shows "You can compare up to 4 products. Remove one first."
-2. **Tray:** "Compare (n)" and "Clear" at the bottom left (above the tab bar on phones, clear of the assistant button); on every page while something is picked, except `/compare` and `/checkout` (revised 2026-11-14; see "Layout revision" below).
+1. **Pick:** the "Compare" button on a product card (shop list and related products, not the home page) or on the product page: a pressed toggle (filled, with a tick, when on). One category at a time, at most 4. The control never shows a message of its own (redesign 2026-11-14, below):
+   - **Another category:** the tray asks once — "Start a new comparison with Batteries?" / "This removes 1 Lubricants item." — with **Start new** (primary) and **Keep current**. Start new replaces the list with that product; every card and the product page follow at once (one shared store).
+   - **A fifth product:** the tray says "You can compare up to 4 products. Remove one first." with **OK**.
+   - **The browser refuses to save:** the tray says so (the shared "Not added…" wording) with **OK**.
+2. **Tray:** "Compare (n)", the category name and "Clear" at the bottom left (above the tab bar on phones, clear of the assistant button); on every page while something is picked, except `/compare` and `/checkout` (revised 2026-11-14; see "Layout revision" below). The question or notice opens above the bar, inside the tray (not a modal).
 3. **Compare page `/compare?p=a,b,c`:** server-rendered from the URL, so the link can be shared. The page:
    - keeps valid, distinct slugs, at most 4;
    - keeps only the first product's category and notes when anything was left out;
@@ -87,6 +90,9 @@ A rider choosing between engine oils (or batteries, tyres) sees what each costs,
 | `compare_removed`             | slug, count                        |
 | `compare_opened`              | count, category                    |
 | `compare_differences_toggled` | on                                 |
+| `compare_switch_prompted`     | from, to (category slugs), count   |
+| `compare_switch_answered`     | choice (`start_new`/`keep`), to    |
+| `compare_limit_shown`         | reason (`full`/`save_failed`)      |
 | `add_to_cart`                 | gains optional `source: 'compare'` |
 
 - **Clicks:** `compare_tray_open`, `compare_tray_clear`.
@@ -111,11 +117,13 @@ A rider choosing between engine oils (or batteries, tyres) sees what each costs,
   - `compare-rows.test.ts`: lowest mark, ties, no price, same rows, dropped rows, slug parsing;
   - `catalogue-view.test.ts`;
   - `catalogue-api-source.test.ts`.
+- **Web unit (redesign 2026-11-14):** `compare-store.test.ts` (the shared prompt: switch, start new, keep, full, refused save, any change closes it, stored name validated) and `compare-prompt-text.test.ts` (the question in English and Hindi, names only in their own language).
+- **e2e, `compare-ui.spec.ts`, `cart-stepper-geometry.spec.ts`, `compare-table-geometry.spec.ts`** (geometry, see "Redesign 2026-11-14").
 - **e2e, `compare.spec.ts`** (desktop and mobile):
   - three oils from the shop → tray → table with ₹ per litre and the lowest mark;
   - "Only differences" hides identical rows;
   - add to cart from the table;
-  - another category → start a new comparison;
+  - another category → the tray asks → Start new;
   - shared, mixed and bad links;
   - empty page;
   - remove updates the link;
@@ -145,3 +153,22 @@ A rider choosing between engine oils (or batteries, tyres) sees what each costs,
 - Toolbar: "Only differences", "Add a product (n of 4)" (to the same category) and "Back to {category}". One product is shown (not the empty state), so removing down to one keeps it.
 - Product cards: "Compare" sits beside "Add to cart".
 - Tests: `compare.spec.ts` (tray stays on screen while scrolling), `state-matrix.spec.ts` (tray present on shop pages when the list is filled, every fixed element on screen).
+
+## Redesign 2026-11-14 (user: "that ui is really really buggy and needs a thorough improvement and major one")
+
+**Bugs (desktop, one Lubricants product in the tray):**
+
+1. Every card of another category showed red "You can compare one category at a time." and "Start a new comparison" inside the card. The message sat in the `shrink-0` compare column of the action row, which widened to the message, so "Add to cart" (the `flex-1` column) was squeezed to a few pixels and hung outside the card ("Ad / to / ca"); cards in a row became uneven.
+2. "Start a new comparison" cleared the message only on that card: each card kept its own message state.
+3. Hovering "+" on a card's quantity stepper hid the count (spec 03): the words "3 in cart" showed from 11rem, but the card's `px-3` and the 2 px border left less room than they need, so the text overflowed under "+", whose hover surface painted over it. The stepper was also 4 px taller than "Add to cart".
+4. `/compare`: artwork as tall as the column was wide; a "Save 11%" in one column pushed its button lower; the in-cart stepper was taller than "Add to cart".
+
+**Now:**
+
+- **One shared store** (`lib/compare/store.ts`): the list plus one prompt (`switch` / `full` / `save_failed`). Cards, the product page and the tray all subscribe; any change to the list closes the prompt. The list keeps the category name and the page language it was written in (`{ category, slugs, name, lang }`); the tray shows the name only in that language.
+- **The tray asks** (`compare-tray.tsx`): a non-modal `role="dialog"` above the bar, labelled by the question and described by the consequence. Focus moves to it; Escape or "Keep current" changes nothing; focus returns to the control that asked (found by `data-compare-toggle`, as Safari does not focus clicked buttons); "Added to compare (1 of 4)" is announced. The tray loads (lazy chunk) on the first prompt even with an empty list. While the privacy banner is open, a tray with a question floats above it.
+- **Card action row** (`product-card.tsx`): an `@container`. "Add to cart" first (the primary action), Compare beside it — an icon button (accessible name "Compare {product}") from 12.5rem, with its word from 18rem; under 12.5rem (two-column phones) the two stack and Compare is a full-width button with its word. Nothing else ever enters the row.
+- **Stepper** (`add-to-cart-button.tsx`): the outline is an overlay inside the box (same height as "Add to cart"), the count takes the space between the buttons and clips, the words show from 12rem, the hover surface is an inset face inside each 44 px button.
+- **Table** (`compare-table.tsx`): artwork at most 13rem wide (4:3), a rating line and a saving line kept even when empty, the action at the foot of each cell (`mt-auto`), so every column's action sits on one line; product names reserve two lines.
+
+**Tests (written first; run overnight — the user asked to hold browser runs 2026-11-14):** `e2e/compare-ui.spec.ts` (cards at 390/768/1280/1920 with another category in the tray, with the cart and a full list; the question; Start new / Keep current / Escape; full list; Clear; product page; axe light + dark with the question open; Hindi), `e2e/cart-stepper-geometry.spec.ts`, `e2e/compare-table-geometry.spec.ts`, helpers `e2e/helpers/geometry.ts`; unit `test/compare-store.test.ts` (prompt), `test/compare-prompt-text.test.ts` (wording, en + hi).
