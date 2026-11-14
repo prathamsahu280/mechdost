@@ -20,6 +20,7 @@ const BASE_PAGES = [
   '/account/coins',
   '/policies/returns',
   '/policies/privacy',
+  '/terms',
   '/policies/delivery',
   '/policies/service-terms',
   '/policies/company',

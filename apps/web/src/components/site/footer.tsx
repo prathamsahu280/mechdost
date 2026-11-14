@@ -14,9 +14,11 @@ interface FooterLink {
   track: string;
 }
 
-/** Policy pages, in the concept's order (company, privacy, delivery, returns, service terms). */
+/** Policy pages, in the concept's order (company, privacy, delivery, returns, service terms); Terms of Service added
+ * 2026-11-14 (Meta needs it at /terms). */
 const POLICY_LINKS = [
   { href: '/policies/company', label: 'companyPolicy', track: 'footer_company_policy' },
+  { href: '/terms', label: 'termsOfService', track: 'footer_terms' },
   { href: '/policies/privacy', label: 'privacyPolicy', track: 'footer_privacy_policy' },
   { href: '/policies/delivery', label: 'deliveryPolicy', track: 'footer_delivery_policy' },
   { href: '/policies/returns', label: 'returnsPolicy', track: 'footer_returns_policy' },
