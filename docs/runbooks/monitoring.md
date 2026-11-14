@@ -30,7 +30,9 @@ Nothing personal leaves: Sentry events pass `scrubErrorEvent` (`packages/shared/
 | `POSTHOG_KEY`                                                                 | server `.env`                             | project API key `phc_…`                                                               |
 | `POSTHOG_HOST`                                                                | server `.env`                             | `https://eu.i.posthog.com`                                                            |
 
-The API refuses malformed values at start-up (`apps/api/src/config.ts`, error names the variable, never the value).
+The API refuses malformed values at start-up (`apps/api/src/config.ts`, error names the variable, never the value). **This is fail-fast even for these optional settings:** a mistyped `SENTRY_DSN`, `POSTHOG_KEY` or `SENTRY_API_TOKEN` stops the API and the worker (the site shows 502 for API calls), it is not silently ignored. To recover: `docker compose logs api --tail 20` shows `config_invalid` with the variable's name → fix or empty that line in `/opt/mechdost/.env` → `docker compose up -d --wait api worker` → `curl -fsS https://api.mechdost.com/health`. An empty value always means "off" and is always accepted.
+
+**Sentry project settings to set once, in both projects** (`mechdost-api` and `mechdost-api-actual`): Settings → Projects → _project_ → Security & Privacy → **Prevent Storing of IP Addresses: on**, and **Data Scrubber: on** with **Use Default Scrubbers: on** (a second line of defence behind our `beforeSend`). The SDKs already send no IP (`sendDefaultPii: false`), but Sentry would otherwise record the sender's IP from the request.
 
 ### Create the read-only token for Admin → Errors (EU region)
 
@@ -47,6 +49,8 @@ Never use the CI token (`SENTRY_AUTH_TOKEN`) here: it can upload releases. To re
 - Log-message issues are named after the log line (`assignment_expiry_failed`, `posthog_read_failed`, …) with the safe fields (`errorName`, `pgCode`, `frames`) under "Additional data".
 - **Alerts to create** (Alerts → Create Alert → Issues): "A new issue is created" in each project → email the owner; "Number of events > 50 in 1 h" → email. Turn on **Spike protection** (Settings → Subscription) so a storm cannot use up the monthly quota.
 - Browser stack traces are readable when the Deploy run had `SENTRY_AUTH_TOKEN` (source maps uploaded for that release). If they show minified names, check that the Deploy log says the upload ran (no "upload failed" line).
+- API and worker frames show TypeScript files and lines because the image runs Node with `--enable-source-maps`. Cost: only when a stack is read (an error is logged or reported) Node maps each frame through `dist/*.mjs.map`; the maps are parsed once per process (a few MB of memory) and normal requests pay nothing. If an error storm ever shows high CPU, remove `NODE_OPTIONS=--enable-source-maps` from `apps/api/Dockerfile` (frames then point into `dist/server.mjs`).
+- Uncaught errors in the worker's PostHog loop are logged as `posthog_tick_failed` and never end the worker; a row that cannot be converted is skipped (`posthog_row_skipped`).
 
 ## Reading PostHog (EU)
 
