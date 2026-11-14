@@ -273,13 +273,11 @@ const cardExtras = sql`
     select avg(rv.rating)::float8 as rating_avg, count(*)::int as rating_count
     from reviews rv where rv.target_type = 'product' and rv.target_id = pg.id and rv.status = 'approved') rv on true`;
 
-export async function listCatalogue(db: Tx, query: CatalogueQuery): Promise<CataloguePage> {
-  const limit = Math.min(Math.max(query.limit ?? 24, 1), CATALOGUE_PAGE_MAX);
-  const q = (query.q ?? '').trim().slice(0, CATALOGUE_QUERY_MAX);
-  const sort: CatalogueSort =
-    query.sort === 'relevance' && !q ? 'newest' : (query.sort ?? (q ? 'relevance' : 'newest'));
-  const place = await resolvePlace(db, query.cityCode, query.pincode ?? null);
-
+/**
+ * The catalogue's text search on `p` (products) and `b` (brands): full text, trigram word similarity on the names,
+ * exact part number / SKU. Shared by the listing and the admin analytics ("does any product match this search?").
+ */
+export function catalogueTextMatch(q: string): { tsq: SQL; partMatch: SQL; match: SQL } {
   const tsq = sql`(websearch_to_tsquery('english', ${q}) || websearch_to_tsquery('simple', ${q}))`;
   const part = normalisePartNumber(q);
   const partMatch =
@@ -287,8 +285,35 @@ export async function listCatalogue(db: Tx, query: CatalogueQuery): Promise<Cata
       ? sql`exists (select 1 from product_variants v2 left join part_numbers pn on pn.variant_id = v2.id
           where v2.product_id = p.id and (pn.normalised = ${part} or upper(v2.sku) = ${q.toUpperCase()}))`
       : sql`false`;
+  return {
+    tsq,
+    partMatch,
+    match: sql`(p.search_vector @@ ${tsq} or ${q} <% p.name or ${q} <% b.name or ${partMatch})`,
+  };
+}
+
+/** Whether any live product in a live category matches `q` now (admin analytics: searches that find nothing). */
+export async function catalogueHasMatch(db: Tx, q: string): Promise<boolean> {
+  const query = q.trim().slice(0, CATALOGUE_QUERY_MAX);
+  if (!query) return false;
+  const rows = rowsOf<{ found: boolean }>(
+    await db.execute(sql`select exists (select 1 from products p join brands b on b.id = p.brand_id
+      join categories c on c.id = p.category_id
+      where p.status = 'live' and c.archived_at is null and ${catalogueTextMatch(query).match}) as found`),
+  );
+  return rows[0]?.found === true;
+}
+
+export async function listCatalogue(db: Tx, query: CatalogueQuery): Promise<CataloguePage> {
+  const limit = Math.min(Math.max(query.limit ?? 24, 1), CATALOGUE_PAGE_MAX);
+  const q = (query.q ?? '').trim().slice(0, CATALOGUE_QUERY_MAX);
+  const sort: CatalogueSort =
+    query.sort === 'relevance' && !q ? 'newest' : (query.sort ?? (q ? 'relevance' : 'newest'));
+  const place = await resolvePlace(db, query.cityCode, query.pincode ?? null);
+
+  const { tsq, partMatch, match } = catalogueTextMatch(q);
   const filters: SQL[] = [sql`p.status = 'live'`, sql`c.archived_at is null`];
-  if (q) filters.push(sql`(p.search_vector @@ ${tsq} or ${q} <% p.name or ${q} <% b.name or ${partMatch})`);
+  if (q) filters.push(match);
   if (query.category)
     filters.push(
       sql`(c.slug = ${query.category} or c.parent_id = (select id from categories where slug = ${query.category}))`,

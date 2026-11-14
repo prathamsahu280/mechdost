@@ -231,7 +231,9 @@ export const serviceRequests = pgTable(
     index().on(t.userId, t.createdAt),
     index().on(t.workshopId, t.status),
     index().on(t.status, t.cityId, t.createdAt),
-    index().on(t.cityId),
+    // Admin analytics (0050): requests of a city in a date range, every status; also serves the city_id FK
+    // (replaces the single-column index).
+    index('service_requests_city_created_idx').on(t.cityId, t.createdAt),
     index().on(t.vehicleId),
     index().on(t.pincode),
     index().on(t.userId, t.vehicleKey),
