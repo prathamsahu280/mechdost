@@ -1,6 +1,7 @@
 'use client';
 
 import { ASSIGNMENT_DECLINE_REASONS, type AssignmentDeclineReason } from '@mechdost/shared/state';
+import dynamic from 'next/dynamic';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
 import { localizeShop, productNameFor } from '@/demo/i18n/localize';
@@ -17,6 +18,7 @@ import {
   type DemoOrder,
 } from '@/demo/store';
 import { track } from '@/lib/analytics';
+import { AUTH_MODE } from '@/lib/auth/mode';
 import { formatDate, formatPrice } from '@/lib/format';
 import { ShopAgreement } from './agreement-cards';
 import { PartnerGate } from './partner-gate';
@@ -24,18 +26,29 @@ import { ShopPrices } from './shop-prices';
 import { PortalGuard, portalCard, portalPrimary, portalQuiet, portalField, useNow } from './portal-guard';
 import { GstInvoiceLine } from '@/components/commerce/gst-invoice-line';
 
+/** Real sign-in: the portal reads and acts through the API; demo builds never load it (Stream C2, 2026-11-14). */
+const ShopOrdersApi = dynamic(() => import('./shop-portal-api').then((m) => m.ShopOrdersApi), {
+  ssr: false,
+  loading: () => <div className="skeleton h-96 rounded-card" aria-hidden="true" />,
+});
+
 /**
  * Shop portal (spec 07): orders MechDost routed to this shop with an accept timer, then pack → deliver.
  * Big tap targets — shop owners use phones.
  */
 export function ShopPortal() {
+  const api = AUTH_MODE === 'firebase';
   return (
-    <PortalGuard role="shop" path="/partner/shop">
-      {(account) => (
-        <PartnerGate kind="shop" slug={account.partner ?? ''}>
-          <ShopOrders shopSlug={account.partner ?? ''} />
-        </PartnerGate>
-      )}
+    <PortalGuard role="shop" path="/partner/shop" demoNote={!api}>
+      {(account) =>
+        api ? (
+          <ShopOrdersApi />
+        ) : (
+          <PartnerGate kind="shop" slug={account.partner ?? ''}>
+            <ShopOrders shopSlug={account.partner ?? ''} />
+          </PartnerGate>
+        )
+      }
     </PortalGuard>
   );
 }

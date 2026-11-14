@@ -32,6 +32,7 @@
     "./compare-max": "./src/compare-max.ts",
     "./admin-prices": "./src/admin-prices.ts",
     "./admin-catalogue": "./src/admin-catalogue.ts",
+    "./order-views": "./src/order-views.ts",
     "./partners": "./src/partners.ts",
     "./email-templates": "./src/email-templates.ts",
     "./service-bill": "./src/service-bill.ts"

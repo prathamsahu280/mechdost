@@ -35,15 +35,29 @@ const me = (over: Partial<RealMe> = {}): RealMe => ({
 describe('real sign-in → the screens that still run on browser data (Q69 default)', () => {
   beforeEach(fakeWindow);
 
-  it('maps API roles to the screen a person lands on: staff → admin, everyone else → customer for now', () => {
+  it('maps API roles to the screen a person lands on: staff → admin, shop → shop portal, else customer', () => {
     expect(demoRoleFor(me())).toBe('customer');
     expect(demoRoleFor(me({ roles: [{ role: 'ops_manager', shopId: null, workshopId: null }] }))).toBe(
       'admin',
     );
-    // Partner portals still run on demo shops; a real partner lands on the account area until they move to the API.
+    // The shop portal runs on the API in real sign-in (Stream C2); workshops still land on the account area.
     expect(demoRoleFor(me({ roles: [{ role: 'seller_owner', shopId: 's1', workshopId: null }] }))).toBe(
+      'shop',
+    );
+    expect(demoRoleFor(me({ roles: [{ role: 'workshop_owner', shopId: null, workshopId: 'w1' }] }))).toBe(
       'customer',
     );
+    // Staff who also run a shop land on the admin console.
+    expect(
+      demoRoleFor(
+        me({
+          roles: [
+            { role: 'ops_manager', shopId: null, workshopId: null },
+            { role: 'seller_owner', shopId: 's1', workshopId: null },
+          ],
+        }),
+      ),
+    ).toBe('admin');
   });
 
   it('signs the person in on this device under their phone number, once, and keeps their own edits', () => {

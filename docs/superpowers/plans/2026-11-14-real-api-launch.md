@@ -29,3 +29,4 @@ Goal: mechdost.com runs on real sign-in (Firebase) and the API for every flow, w
 ## Progress
 
 - 2026-11-14: DB reset + reference seed; worker service deployed; plan written.
+- 2026-11-14: Stream C2 (branch worktree-agent-afee1627d3b370618): shop portal + Your prices + Admin → Orders on the API in real sign-in (dynamic imports; demo unchanged); real shop accounts land on /partner/shop. Gaps listed in spec 04/07 § Real API mode. Browser suites still to run at merge.
