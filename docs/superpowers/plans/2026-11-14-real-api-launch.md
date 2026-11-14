@@ -88,3 +88,8 @@ Goal: mechdost.com runs on real sign-in (Firebase) and the API for every flow, w
   - Migration **0051**, not applied anywhere yet.
   - Specs 03/04/07/08, decisions, runbook "Add the first shop".
 - 2026-11-14 (shop management, code review): main merged; migration renumbered to **0051** with a `shop_users` backfill; list cursor no longer reads other cities; `GSTIN_TAKEN`; pending shops can be kept dark (suspended) with a publish warning; only active PINs count for going live; owners never downgraded; near-closing offers wait for the next opening; Hindi 24-hour times; free delivery PIN ?? shop ?? city with main's `pincodes.free_delivery_min_paise`.
+- 2026-11-14 (Analytics, branch `worktree-agent-aec2a7191f86abd9d`): Admin → Analytics on real data —
+  `GET /v1/admin/analytics/dashboard` (`analytics:read`, city-scoped, IST ranges ≤ 180 days, cached 2 min) and
+  `GET /v1/admin/overview` (queue counts per permission); real-mode Overview tiles from the API; migration
+  `0052_analytics_indexes` (renumbered at merge 2026-11-15); SVG charts (no Recharts dependency yet). Spec 08 "Analytics (built
+  2026-11-14)", spec 12 note, decisions "Admin analytics from our own data". Playwright not run.

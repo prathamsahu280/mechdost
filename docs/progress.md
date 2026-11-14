@@ -58,6 +58,11 @@ This file is the single source of truth for **where the build is right now**. It
     `playwright test e2e/compare-ui.spec.ts e2e/cart-stepper-geometry.spec.ts e2e/compare-table-geometry.spec.ts
 e2e/compare.spec.ts e2e/cart-stepper.spec.ts --workers=1`, the Hindi gate for `/hi/shop` and `/hi/compare`,
     the state matrix shop rows, and `node scripts/measure-js.mjs` (`/shop`, `/cart`, product page, `/compare` < 180 KB).
+- **2026-11-14 (late): Admin → Analytics built on branch `worktree-agent-aec2a7191f86abd9d` (not merged).**
+  - API `GET /v1/admin/analytics/dashboard` + `GET /v1/admin/overview`; Admin → Analytics page and real-mode Overview tiles (spec 08 "Analytics (built 2026-11-14)", decisions "Admin analytics from our own data").
+  - Migration renumbered **`0052_analytics_indexes`** at merge (2026-11-15; prevId = 0051, `when` after 0051).
+  - Code review fixes done on the branch (explicit city-id lists, one read-only transaction with a 10 s statement timeout → 503 `QUERY_TIMEOUT`, city-scoped new/repeat, explicit booked states, funnel ≤ 100 %, search phrases need 3 visitors, single-flight cache, chart `role="group"`, `SET LOCAL lock_timeout`); `main` merged in.
+  - **Next at merge:** coordinator renames the migration to `0052_analytics_indexes` (re-stamped `when`, snapshot regenerated), apply it, render Admin → Analytics at 390/1440 in light/dark and /hi (Playwright not run here); the monitoring branch's "errors" section joins `REAL_SIGN_IN_ONLY` in `sections.ts` and `SECTION_EMOJI`.
 
 - **2026-11-14 (night): reviews and PIN codes merged and migrated.**
   - Fresh review: no critical issues. Three findings fixed test-first; the rest are documented in specs 02/15.

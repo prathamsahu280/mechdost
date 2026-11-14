@@ -20,6 +20,8 @@ export type AccountSection = (typeof ALL_ACCOUNT_SECTIONS)[number];
 
 const ALL_ADMIN_SECTIONS = [
   'overview',
+  // Analytics from our own data (spec 08 "Analytics", 2026-11-14): real sign-in only (it reads the API).
+  'analytics',
   'orders',
   'services',
   'quotes',
@@ -51,12 +53,18 @@ const quotesShown = QUOTES_AVAILABLE;
  * in the mixed build (real data, demo sign-in), where neither queue would show the reviews customers see.
  */
 const reviewsShown = BROWSER_ONLY_FEATURES || AUTH_MODE === 'firebase';
+/**
+ * Sections that only read the API and have no demo version: shown with real sign-in only. One list for all of them
+ * (Analytics 2026-11-14; add later ones here, e.g. the monitoring "errors" section).
+ */
+const REAL_SIGN_IN_ONLY: readonly string[] = ['analytics'];
 const shown = <T extends string>(all: readonly T[]): readonly T[] =>
   all.filter(
     (s) =>
       (BROWSER_ONLY_FEATURES || !BROWSER_ONLY_SECTIONS.includes(s)) &&
       (s !== 'quotes' || quotesShown) &&
-      (s !== 'reviews' || reviewsShown),
+      (s !== 'reviews' || reviewsShown) &&
+      (AUTH_MODE === 'firebase' || !REAL_SIGN_IN_ONLY.includes(s)),
   );
 
 /** Account sections shown in this build (navigation, routes). */

@@ -294,6 +294,8 @@ export const orderAssignments = pgTable(
       .where(sql`${t.status} = 'offered'`),
     index().on(t.shopId, t.status),
     index().on(t.offeredBy),
+    // Admin analytics (0050): shop acceptance over offers made in a date range.
+    index('order_assignments_offered_at_idx').on(t.offeredAt),
   ],
 );
 

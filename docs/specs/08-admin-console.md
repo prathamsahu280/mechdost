@@ -165,3 +165,78 @@ Stream D of the real-API launch (`docs/superpowers/plans/2026-11-14-real-api-lau
 - **Service area** (`admin-pincodes-api.tsx`, under Settings; built 2026-11-14): a city's PIN codes — add, edit (centroid, English + Hindi area, free-delivery threshold), switch off with a reason code or on; `settings:read` to see, `cities:manage` to change. The seller approval form can fill in the city's active PIN codes. Details: spec 15 "PIN codes".
 - **Gaps:** no customer search/list endpoint; no audit-history endpoint for the "Recent changes" cards (not shown in API mode).
 - **Add product** and **Import CSV** (built 2026-11-14, plan 2026-11-14 Stream B; runbook `docs/runbooks/catalogue-import.md`): above the list. The form asks for the category first (it decides the specification fields: selects for codes, numbers for V/Ah/months), then brand, English and Hindi texts, highlights (one per line), vehicle types, the first pack (SKU, MRP in rupees, HSN, GST slab, pack size) and "Publish right away"; a new product opens in the editor. The import offers the column template, a file input, **Check file** (dry run: ready count, skipped SKUs, or a table of problems by row and column) and then **Import N products**. Strings `portal.cat_add_*` / `portal.cat_import_*` (en + hi); form logic in `apps/web/src/lib/admin-catalogue-add.ts` (unit-tested). Events: `admin_catalogue_product_added`, `admin_catalogue_import_checked`, `admin_catalogue_imported` (click), server `admin_product_created`, `admin_catalogue_imported`.
+
+## Analytics (built 2026-11-14)
+
+User (2026-11-14): "i want to be able to view them in our website for the admin" — a built-in Analytics page from our
+own data (not embedded PostHog). Real sign-in builds only (`AUTH_MODE === 'firebase'`); the browser demo has no
+Analytics section.
+
+- **API** (`apps/api/src/routes/admin-analytics.ts`, repo `packages/db/src/repo/analytics.ts`, response schemas
+  `@mechdost/shared/admin-analytics-api`, ranges `@mechdost/shared/analytics-range`):
+  - `GET /v1/admin/analytics/dashboard?city=&from=&to=` — verified staff with `analytics:read`; `from`/`to` are IST
+    calendar dates (inclusive), default the last 30 days, at most 180 days, `from` not in the future (400
+    `RANGE_INVALID` / `RANGE_TOO_LONG`; unknown query parameters 400). `city` is a city code inside the caller's
+    analytics scope (another city is 404); without it, every city in scope — always passed to SQL as an explicit
+    city-id list (never "every row"), so the `(city_id, created_at)` indexes serve the all-cities view too. Cached per
+    (cities, traffic, range) for 2 min on the instance (`TtlCache`, 200 entries; concurrent misses for one key share
+    one load) and `Cache-Control: private, max-age=60`. The whole report runs in **one read-only, repeatable-read
+    transaction** with `SET LOCAL statement_timeout = '10s'` (`readOnlyReport`): one pooled connection, one
+    consistent snapshot, queries one after another; a timeout (Postgres 57014) answers **503 `QUERY_TIMEOUT`** and
+    the page says "choose fewer days or one city".
+  - `GET /v1/admin/overview` — live queue counts for the Overview: orders to route / waiting for a shop / on their
+    way (`orders:read`), service requests to route (`service:read`), open support (`tickets:read`), reviews to
+    moderate (`reviews:moderate`), applications (`applications:review`, all-cities grant only: applications have no
+    city), price requests (`prices:approve`), and today's orders and value (`analytics:read`). Each count is limited
+    to the cities of its own permission and is null without it; no permission at all → 403. Not cached (live).
+- **What the dashboard shows** (all integers: counts, paise):
+  - KPIs: orders, order value (GMV), average order, cash-on-delivery share (count split), cancelled and rejected
+    order parts with their reason codes (labels from `order.cancelReason_*` / `rejectReason_*`), online payments not
+    completed, customers / new / repeat, service requests / confirmed / completed / cancelled, shop acceptance and
+    median time to accept.
+  - Charts per IST day (orders, order value, service requests, visitors), the funnel, most ordered / viewed
+    products, top searches with "no match", orders and bookings by PIN code (area name in Hindi on /hi), shop
+    performance (offers, accepted, declined, timed out, median time to accept), workshop performance (requests,
+    confirmed, completed, cancelled, median time to the first proposal).
+- **Definitions** (also in the repo's header): an **order** is a checkout that became one — cash on delivery, or
+  online and paid (the routing queue's rule); unpaid online checkouts are counted only as "online payments not
+  completed". **GMV** = value of order parts not cancelled or rejected; **AOV** = GMV ÷ orders with a live part.
+  **New customer** = first order in the selected cities is in the range; **repeat** = more than one order in those
+  cities up to the range's end (other cities' orders are never read, so a city manager learns nothing about them). Shop
+  acceptance = accepted ÷ (accepted + declined + timed out), over offers made in the range (same rule as the routing
+  ranker). Bookings "confirmed" = an explicit list of `confirmed` and the later working states
+  (`BOOKED_SERVICE_STATES`, independent of the state array's order); "completed" = paid or completed. The funnel shows
+  "% of the step before" only up to 100 %; a larger visitor step (add to cart from a list without a product page)
+  reads "More than the step before" instead.
+- **Traffic is site-wide**: web events carry no city yet (spec 12), so visitors, visits, product views (`page_view`
+  on `/shop/<slug>`), searches, the funnel's visitor steps (distinct visitor ids: product view → add to cart →
+  checkout started) and top searches are computed only for staff whose analytics grant covers every city, and are
+  null for city-scoped staff (the page says why). The order steps (placed → delivered) count orders, so the funnel
+  never divides visitors by orders.
+- **Privacy** (rule 16): no personal data in responses — ids, codes, product/shop/workshop/area names and aggregated
+  search phrases; a phrase is listed only when at least three distinct visitors searched it (k-anonymity of 3), already
+  scrubbed of phone numbers and emails on both ends. "No match" = the phrase finds no live product right now
+  (`catalogueHasMatch`, the catalogue's own text search).
+- **Indexes** (migration `0052_analytics_indexes`): `service_requests (city_id, created_at)` (replaces the
+  single-column `city_id` index it leads with) and `order_assignments (offered_at)`. Everything else uses existing
+  indexes: `order_groups (city_id, created_at)` → `orders (group_id, sub_no)` → `order_items (order_id)`;
+  `order_groups (user_id, created_at)` for new/repeat; `events (event, occurred_at)` on the partition key (only the
+  range's monthly partitions are read); `service_proposals (request_id)`; Overview counts use each queue's
+  `(status, …)` index.
+- **Web**: Admin → Analytics (`admin-analytics-api.tsx`, charts `analytics-charts.tsx`, helpers
+  `lib/admin-analytics-view.ts`, calls `lib/admin-analytics-api.ts`), loaded with `next/dynamic` only in real
+  sign-in. Presets 7 / 30 / 90 days, From / To (IST dates), city picker (the API's list of the caller's cities), one
+  primary "Show"; loading skeleton, error with "Try again", empty state "No data yet — it appears once customers use
+  the site". Charts: decision 2026-11-14 "Analytics charts in SVG". Admin → Overview with real sign-in reads
+  `GET /v1/admin/overview` (`admin-overview-api.tsx`) instead of the browser demo store. Strings
+  `portal.analytics_api_*` + `portal.nav_analytics` (en + hi). Click ids `admin_analytics_preset_{7|30|90}`,
+  `admin_analytics_apply`, `admin_analytics_retry`.
+- **Tests**: `packages/db/test/analytics.test.ts` (IST bucketing at 00:30 / 23:59 IST, city filter, unpaid online
+  checkouts, GMV, new/repeat, funnel, top products, k-anonymous searches with "no match", areas, shops, workshops,
+  Overview scopes), `packages/shared/test/analytics-range.test.ts`, `apps/api/test/admin-analytics.test.ts`
+  (401/403/verification, city scope 404, no traffic for city staff, range 400s, cache header, Overview per
+  permission), `apps/api/test/ttl-cache.test.ts`, the bypass suite, `apps/web/test/admin-analytics-view.test.ts`.
+- **Not yet**: quotes requested/accepted and coins (their tables are not on main); `metrics_daily` rollups (live
+  queries are enough at launch volume — revisit at ~1M events/month or when the dashboard's p95 passes 1 s); traffic
+  per city (needs `city_id` on web events); refunds ₹, ratings and an orders-by-hour chart from the Overview list
+  above; CSV export.

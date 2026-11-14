@@ -37,6 +37,15 @@ Typed client catalogue `apps/web/src/lib/analytics.ts`: `page_view`, `click` (`d
 
 Dashboard charts read `metrics_daily`; ad-hoc questions via PostHog HogQL; export CSV of events by date range (async job).
 
+**Built 2026-11-14 (spec 08 "Analytics"):** Admin → Analytics reads the event store **live** (no `metrics_daily` yet),
+bounded by an IST date range of at most 180 days on `occurred_at` (partition key, `events (event, occurred_at)` index):
+visitors = distinct `anonymous_id` of `page_view`, visits = distinct `session_id`, product views = `page_view` on
+`/shop/<slug>`, searches, distinct visitors with `add_to_cart` / `begin_checkout`; top searches grouped by the
+normalised scrubbed phrase and shown only when ≥ 3 distinct visitors typed it. Only `source` web/app events count.
+Because client events carry **no `city_id`**, this traffic is site-wide and shown only to staff with an all-cities
+analytics grant. Click ids added: `admin_analytics_preset_{7|30|90}`, `admin_analytics_apply`, `admin_analytics_retry`.
+Next: `city_id` on web events (from the chosen city/PIN), then per-city traffic; rollups when volume needs them.
+
 ## Rules
 
 No PII in `props` beyond ids; phone/email never stored in events; IP truncated; `anonymous_id` merged to `user_id` on login (identify event); events validated by Zod schema registry in `packages/shared/analytics`.

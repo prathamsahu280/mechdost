@@ -63,6 +63,9 @@ export function handleError(err: Error, c: Context<AppEnv>): Response {
   if (pg === '40P01' || pg === '40001')
     return c.json(errorBody(c, 'RETRY', 'Someone else changed this at the same moment; try again'), 409);
   if (pg === '23505') return c.json(errorBody(c, 'UNIQUE_VIOLATION', 'This already exists'), 409);
+  // A statement over its timeout (reports run with a local statement_timeout): retryable, not a server fault.
+  if (pg === '57014')
+    return c.json(errorBody(c, 'QUERY_TIMEOUT', 'This took too long; try a shorter range'), 503);
   log('error', 'unhandled_error', {
     requestId: c.get('requestId'),
     path: routePath(c),

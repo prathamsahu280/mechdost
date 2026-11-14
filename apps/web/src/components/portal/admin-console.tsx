@@ -91,8 +91,19 @@ const ServiceAreaApi = dynamic(() => import('./admin-pincodes-api').then((m) => 
   loading: () => <div className="skeleton h-64 rounded-card" aria-hidden="true" />,
 });
 
+/** Real sign-in: Analytics and the Overview queue counts on the API (spec 08 "Analytics", 2026-11-14). */
+const AdminAnalyticsApi = dynamic(() => import('./admin-analytics-api').then((m) => m.AdminAnalyticsApi), {
+  ssr: false,
+  loading: () => <div className="skeleton h-96 rounded-card" aria-hidden="true" />,
+});
+const AdminOverviewApi = dynamic(() => import('./admin-overview-api').then((m) => m.AdminOverviewApi), {
+  ssr: false,
+  loading: () => <div className="skeleton h-48 rounded-card" aria-hidden="true" />,
+});
+
 const SECTION_EMOJI: Record<AdminSection, string> = {
   overview: '📊',
+  analytics: '📈',
   orders: '🧭',
   services: '🔧',
   quotes: '💬',
@@ -132,7 +143,8 @@ export function AdminConsole({
         <div className="grid gap-6 nav:grid-cols-[220px_minmax(0,1fr)] nav:items-start">
           <AdminNav current={section} />
           <div className="min-w-0 space-y-6">
-            {section === 'overview' ? <Overview /> : null}
+            {section === 'overview' ? AUTH_MODE === 'firebase' ? <AdminOverviewApi /> : <Overview /> : null}
+            {section === 'analytics' && AUTH_MODE === 'firebase' ? <AdminAnalyticsApi /> : null}
             {section === 'orders' ? AUTH_MODE === 'firebase' ? <OrderRoutingApi /> : <OrderRouting /> : null}
             {section === 'services' ? (
               AUTH_MODE === 'firebase' ? (

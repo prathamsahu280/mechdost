@@ -52,7 +52,9 @@
     "./reviews": "./src/reviews.ts",
     "./reviews-api": "./src/reviews-api.ts",
     "./geo": "./src/geo.ts",
-    "./geo-api": "./src/geo-api.ts"
+    "./geo-api": "./src/geo-api.ts",
+    "./analytics-range": "./src/analytics-range.ts",
+    "./admin-analytics-api": "./src/admin-analytics-api.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
