@@ -15,7 +15,7 @@ This file is the single source of truth for **where the build is right now**. It
     - Decision: quotes, coins and reviews hidden in real mode (no API).
     - Security fixes: workshop publish/verify needs `partners:approve` in that workshop's city, checked on the resulting state.
   - **Stream E merged** (workshop finder, booking, request page, workshop portal, admin services and workshops on the API).
-  - **Pushed:** `4694fbe`.
+  - **Deployed:** `6c61101` (CI and Deploy green, 2026-11-14 evening; the site is still in demo mode). Fixed on the way: `/cart` budget (demo session import), demo store split (−3.8 KB on every page), a Dockerfile line-continuation bug. CI does not build the Docker images; adding that check is offered to the user.
   - **Budgets:** demo and real-mode builds measured; `/shop` and `/cart` at 179.9–180.0 KB with no headroom (spec 16 note).
   - **Firebase web config:** passed to the website build (Dockerfile + deploy). The four `NEXT_PUBLIC_FIREBASE_*` repository variables still have to be set by the user.
   - **Live API:** `/v1/workshops` and `/v1/checkout/quote` answer 200.
