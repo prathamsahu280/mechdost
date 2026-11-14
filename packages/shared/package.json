@@ -41,7 +41,8 @@
     "./partner-api": "./src/partner-api.ts",
     "./email-templates": "./src/email-templates.ts",
     "./service-bill": "./src/service-bill.ts",
-    "./service-requests": "./src/service-requests.ts"
+    "./service-requests": "./src/service-requests.ts",
+    "./service-api": "./src/service-api.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",

@@ -40,3 +40,10 @@ Goal: mechdost.com runs on real sign-in (Firebase) and the API for every flow, w
 - 2026-11-14 (Stream B, branch `feat/catalogue-create-import`): `POST /v1/admin/catalogue/products` + `POST /v1/admin/catalogue/import` (dry run, all-or-nothing, SKU-idempotent, 500 rows, 30/h), Admin → Catalogue "Add product" + "Import CSV" (en + hi), runbook + sample CSV, decisions entry. No migration needed. Tests: shared 12, db 6, api 4 new; `pnpm check` green.
 - 2026-11-14: Stream A built on branch `feat/workshops-service-api` (not merged): migration 0044, repos, routes, db + API
   tests, spec 06 "Built: API", spec 14 note, decisions "Workshops backend". Migration not applied to any database yet.
+- 2026-11-14: Stream E on its branch (worktree-agent-aaec16f4981c2a6b9): finder + map, "Let MechDost choose", workshop
+  page, booking, home top workshops, request page (proposal, per-line estimate with consent, bill, cancel), account
+  services, workshop portal (propose/decline, odometer, estimate, start/ready/bill/paid/return), Admin → Services
+  (route/reject) and Admin → Partners → Workshops (add/edit with Hindi + menu, publish/verify, standing, members) on
+  the API; workshop accounts land on /partner/workshop. Response schemas `@mechdost/shared/service-api`. API gaps
+  listed in spec 06 § Real API mode (web) (no API change). Playwright not run (low-memory machine) — run the service
+  e2e at merge.

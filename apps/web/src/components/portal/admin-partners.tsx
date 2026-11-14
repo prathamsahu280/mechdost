@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
 import {
@@ -14,11 +15,21 @@ import { allShops } from '@/demo/shops';
 import { APPLICATION_STAGES, useApplications } from '@/demo/store';
 import { DEMO_WORKSHOPS } from '@/demo/workshops';
 import { track } from '@/lib/analytics';
+import { AUTH_MODE } from '@/lib/auth/mode';
 import { formatDate } from '@/lib/format';
 import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
 import { AdminInvites } from './admin-invites';
 import { AdminAgreement } from './agreement-cards';
 import { AdminPriceRequests } from './admin-price-requests';
+
+/** Real sign-in: workshops are added, edited and paused on the API (Stream E, 2026-11-14). */
+const AdminWorkshopsApi = dynamic(() => import('./admin-workshops-api').then((m) => m.AdminWorkshopsApi), {
+  ssr: false,
+  loading: () => <div className="skeleton h-64 rounded-card" aria-hidden="true" />,
+});
+/** The demo partner tabs; with real sign-in workshops live in their own API section above them. */
+const PARTNER_TABS: readonly PartnerKind[] =
+  AUTH_MODE === 'firebase' ? ['shop', 'mechanic'] : ['shop', 'workshop', 'mechanic'];
 
 type Action = 'pause' | 'suspend' | 'resume' | 'reactivate';
 const TARGET: Record<Action, PartnerStatus> = {
@@ -90,8 +101,10 @@ export function AdminPartners({ actor }: { actor: string }) {
 
       <AdminAgreement />
 
+      {AUTH_MODE === 'firebase' ? <AdminWorkshopsApi /> : null}
+
       <div role="tablist" aria-label={t('nav_partners')} className="flex flex-wrap gap-2">
-        {(['shop', 'workshop', 'mechanic'] as const).map((k) => (
+        {PARTNER_TABS.map((k) => (
           <button
             key={k}
             type="button"

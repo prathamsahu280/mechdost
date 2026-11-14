@@ -71,6 +71,12 @@ const OrderRoutingApi = dynamic(() => import('./admin-orders-api').then((m) => m
   loading: () => <div className="skeleton h-96 rounded-card" aria-hidden="true" />,
 });
 
+/** Real sign-in: service routing on the API (Stream E, 2026-11-14); demo builds never load it. */
+const ServiceRoutingApi = dynamic(() => import('./admin-services-api').then((m) => m.ServiceRoutingApi), {
+  ssr: false,
+  loading: () => <div className="skeleton h-96 rounded-card" aria-hidden="true" />,
+});
+
 const SECTION_EMOJI: Record<AdminSection, string> = {
   overview: '📊',
   orders: '🧭',
@@ -114,7 +120,13 @@ export function AdminConsole({
           <div className="min-w-0 space-y-6">
             {section === 'overview' ? <Overview /> : null}
             {section === 'orders' ? AUTH_MODE === 'firebase' ? <OrderRoutingApi /> : <OrderRouting /> : null}
-            {section === 'services' ? <ServiceRouting /> : null}
+            {section === 'services' ? (
+              AUTH_MODE === 'firebase' ? (
+                <ServiceRoutingApi />
+              ) : (
+                <ServiceRouting />
+              )
+            ) : null}
             {section === 'quotes' ? <QuoteDesk /> : null}
             {section === 'applications' ? <Applications /> : null}
             {section === 'reviews' ? <Reviews /> : null}

@@ -19,7 +19,7 @@ const TIMEOUT_MS = 15_000;
 
 export type ApiResult<T> = { ok: true; data: T } | { ok: false; status: number; code: string };
 
-interface Schema<T> {
+export interface Schema<T> {
   safeParse(value: unknown): { success: true; data: T } | { success: false };
 }
 
@@ -36,7 +36,7 @@ async function token(locale: string, refresh = false): Promise<string | null> {
   return currentIdToken(locale, refresh).catch(() => null);
 }
 
-async function call<T>(
+export async function call<T>(
   path: string,
   schema: Schema<T>,
   init: {
@@ -73,7 +73,7 @@ async function call<T>(
 }
 
 /** Signed-in call; refreshes the token once when the API says the verification facts changed. */
-async function authed<T>(
+export async function authed<T>(
   locale: string,
   path: string,
   schema: Schema<T>,

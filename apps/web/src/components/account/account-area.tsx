@@ -25,8 +25,9 @@ import { VEHICLE_ICON, VEHICLE_LABEL_KEY, VEHICLE_TYPES } from '@mechdost/shared
 import { CoinsSection } from './coins-section';
 import { useTickets } from '@/demo/support';
 import { SupportSection } from './support-section';
-import { REQUEST_STAGES, requestStage, useHydrated, useQuotes, useRequests } from '@/demo/store';
+import { useHydrated, useQuotes } from '@/demo/store';
 import { useOrderRows } from '@/lib/use-order-rows';
+import { useServiceRows } from '@/lib/use-service-rows';
 import { SHOW_DEMO_CONTROLS } from '@/lib/data-mode';
 import { track } from '@/lib/analytics';
 import { AUTH_MODE } from '@/lib/auth/mode';
@@ -35,7 +36,6 @@ import { useEmailStatus } from '@/lib/auth/use-email-status';
 import { EmailPill, VerifyEmailCard } from './verify-email';
 import { formatDate, formatPrice } from '@/lib/format';
 import { ACCOUNT_SECTIONS, type AccountSection } from '@/lib/sections';
-import { workshopNameFor } from '@/demo/i18n/localize';
 
 const SECTION_EMOJI: Record<AccountSection, string> = {
   overview: '🏠',
@@ -162,13 +162,11 @@ function SectionNav({ current }: { current: AccountSection }) {
   const session = useSession();
   const tickets = useTickets();
   const quotes = useQuotes();
-  const requests = useRequests();
+  const requests = useServiceRows().rows;
   const waiting: Partial<Record<AccountSection, number>> = {
     support: tickets.filter((x) => x.accountId === session?.id && x.status === 'awaiting_customer').length,
     quotes: quotes.filter((q) => q.status === 'offered').length,
-    services: requests.filter(
-      (x) => !x.cancellation && (requestStage(x) === 'proposed' || requestStage(x) === 'estimate_sent'),
-    ).length,
+    services: requests.filter((x) => x.waiting).length,
   };
   return (
     <nav
@@ -214,7 +212,7 @@ function Overview({ account }: { account: DemoAccount }) {
   const locale = useLocale();
   const prefix = usePrefix();
   const orders = useOrderRows().rows;
-  const requests = useRequests();
+  const requests = useServiceRows().rows;
   const quotes = useQuotes();
   const vehicle = account.vehicles[0];
   // Real sign-in: the email's verification state from Firebase (demo accounts count as verified).
@@ -457,14 +455,22 @@ function OrdersList({ limit }: { limit?: number }) {
 function ServicesList({ limit }: { limit?: number }) {
   const t = useTranslations('account');
   const r = useTranslations('request');
-  const locale = useLocale();
   const prefix = usePrefix();
-  const requests = useRequests().slice(0, limit ?? 50);
+  const { rows, status } = useServiceRows();
+  const requests = rows.slice(0, limit ?? 50);
   return (
     <ListSection
       id={`services-${String(limit ?? 'all')}`}
       title={t('nav_services')}
-      empty={requests.length === 0 ? t('servicesEmpty') : null}
+      empty={
+        status === 'loading'
+          ? r('api_loading')
+          : status === 'error'
+            ? r('api_listError')
+            : requests.length === 0
+              ? t('servicesEmpty')
+              : null
+      }
       emoji="🔧"
       next={{ href: `${prefix}/workshops`, label: t('bookService'), track: 'account_next_services' }}
     >
@@ -475,8 +481,7 @@ function ServicesList({ limit }: { limit?: number }) {
             <span className="min-w-0 flex-1">
               <span className="block font-bold text-ink">{req.code}</span>
               <span className="block text-xs text-muted">
-                {workshopNameFor(req.workshopSlug, req.workshopName, locale)} ·{' '}
-                {r(`stage_${REQUEST_STAGES[req.stage] ?? 'requested'}`)}
+                {req.workshop ?? r('api_workshopPending')} · {r(req.statusKey as 'stage_requested')}
               </span>
             </span>
             <ChevronRight aria-hidden="true" className="size-4 text-muted" />

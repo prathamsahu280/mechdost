@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { SERVICE_CANCEL_REASONS } from '@mechdost/shared/state';
-import { useState, type SyntheticEvent } from 'react';
+import { lazy, Suspense, useState, type SyntheticEvent } from 'react';
 import { advanceRequest } from '@/demo/service-jobs';
 import {
   acceptProposal,
@@ -24,7 +24,10 @@ import { StatusTimeline } from '../commerce/status-timeline';
 import { serviceNameFor, workshopNameFor } from '@/demo/i18n/localize';
 import { DEMO_WORKSHOPS, workshopGstRegistered } from '@/demo/workshops';
 import { EstimateApproval, EstimateChoices, ServiceBillView } from './service-estimate';
-import { SHOW_DEMO_CONTROLS } from '@/lib/data-mode';
+import { DATA_MODE, SHOW_DEMO_CONTROLS } from '@/lib/data-mode';
+
+/** Real data mode (Stream E): the request on the API, loaded on demand so the demo build never carries it. */
+const RequestViewApi = lazy(() => import('./request-view-api').then((m) => ({ default: m.RequestViewApi })));
 
 /** The customer's stepper (spec 06 UI: Request, Estimate, Approved, In progress, Ready, Billed). */
 const STEPS = [
@@ -56,6 +59,16 @@ const STEP_OF: Record<Exclude<RequestStage, 'no_work_approved'>, number> = {
  * rate the workshop. Demo controls stand in for the workshop's actions, never the customer's.
  */
 export function RequestView({ code }: { code: string }) {
+  return DATA_MODE === 'api' ? (
+    <Suspense fallback={<div className="skeleton h-96 rounded-card" aria-hidden="true" />}>
+      <RequestViewApi code={code} />
+    </Suspense>
+  ) : (
+    <DemoRequestView code={code} />
+  );
+}
+
+function DemoRequestView({ code }: { code: string }) {
   const t = useTranslations('request');
   const w = useTranslations('workshop');
   const demo = useTranslations('demo');
