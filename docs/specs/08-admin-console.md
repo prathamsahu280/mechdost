@@ -137,3 +137,15 @@ Admin → Settings → **Order rules**: "Customers may cancel their own order un
 - **Fit & specs**: vehicle types (2W/3W/4W); pack size per SKU (quantity + unit); specifications shown read-only (edited through the catalogue import for now).
 - **Prices**: city code (default RPR, any city), the city price per SKU with its floor (lowest shop price) and the MRP checked before sending, then each PIN: what customers pay and why (PIN price / city price / nearest shop), best-case margin, one-click suggestions (nearest, lowest, highest shop price) and a PIN price that can be removed.
 - Responses are validated with the shared schemas `@mechdost/shared/admin-catalogue`; calls go through `apps/web/src/lib/admin-api.ts` (Firebase ID token, error codes translated as `portal.cat_err_*`).
+
+## Real API mode (2026-11-14)
+
+Stream D of the real-API launch (`docs/superpowers/plans/2026-11-14-real-api-launch.md`). In real sign-in builds (`AUTH_MODE === 'firebase'`) these admin sections call the API through `apps/web/src/lib/admin-api.ts`; each API screen is a separate component loaded with `next/dynamic`, so demo bundles are unchanged and demo mode works as before. Answers are validated with `@mechdost/shared/admin-config-api`, `support-api` and `partner-api`; API error codes become field messages or the shared `portal.api_common_err_*` messages (`apps/web/src/lib/api-error-key.ts`), and every list has loading, error-with-retry and empty states.
+
+- **Notifications** (`admin-notifications-api.tsx`): see spec 10.
+- **Support** (`admin-support-api.tsx`): see spec 09.
+- **Settings** (`admin-site-api.tsx` `SettingsApi`): every key of the `@mechdost/shared/settings` registry with its default and range; money is typed in whole rupees and stored in paise; checked with `settingProblem` before sending; one Save sends `PUT /v1/admin/settings/{key}` (global value, compare-and-set) for the changed keys. The demo's yes/no "order rules" card is not shown: `orders.customer_self_cancel` is in the list. City overrides are API-only for now.
+- **Site content** (`ContentApi`): the live text of the announcement and home headline keys per language. "Save and publish" writes the draft (`PUT /v1/admin/content/{key}/{locale}`) and publishes it; an emptied field is unpublished (the default text shows). Policy pages are not edited here yet (API supports them).
+- **Customers** (`admin-customers-api.tsx`): the API has no customer search, so staff open a customer by account id, then block (level, reason never preselected, optional end day in IST and staff note) or lift with a reason; history shown. The block reason select starts empty (the demo still preselects one).
+- **Partner applications, invites, price requests, seller agreement** (`admin-onboarding-api.tsx`): see spec 07 "Real API mode". The partners list (pause/suspend), layout editor, coins, reviews and quotes are still demo-only.
+- **Gaps:** no customer search/list endpoint; no audit-history endpoint for the "Recent changes" cards (not shown in API mode); no endpoint listing a city's PIN codes for the approval form.

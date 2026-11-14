@@ -95,3 +95,26 @@ Lifecycle QA found that in the browser demo an approved or invited seller could 
 - **Signing in with the application's phone** (sign-up with OTP, or password later) makes that account the shop's owner — once: a shop already claimed by another account stays with it, and staff/partner accounts are never changed (`linkApplicantShop` in `apps/web/src/demo/session.ts`).
 - Test: `e2e/seller-onboarding.spec.ts` "approved seller reaches their shop" (an order routed by the admin to the new shop shows up in its portal; signing in again keeps the shop).
 - Still demo-only gap: the storefront does not price by a new shop's approved prices (decision 2026-11-13 ruling; arrives with the data switch).
+
+## Real API mode (2026-11-14)
+
+Real sign-in builds (`AUTH_MODE === 'firebase'`) run seller onboarding on the API; demo builds are unchanged. Every
+API screen is a separate module loaded with `next/dynamic` / `import()` only in that mode, so demo bundles do not grow.
+
+- **Seller form** (`seller-application-form.tsx`): same checks, then Turnstile (`lib/auth/turnstile.ts`) and
+  `POST /v1/partner-applications` (`lib/partner-public-api.ts`, plain fetch, no ID token). API refusals show next to
+  the field (`APPLICATION_INVALID` `details.fields`, `PINCODE_NOT_SERVED`, `PRODUCTS`, `INVITE_CITY`) or above the form
+  (bot check, rate limit, outage, invite state) — `applyErrorView` in `lib/partner-onboarding-view.ts`.
+- **Invite link** (`invite-application-api.tsx`): `GET /v1/partner-invites/{token}` shows name and email locked and the
+  mobile number masked (`••••••1234`); the submit omits name, email and phone (the API takes them from the invite).
+- **Status page**: the API has no public status lookup, so it confirms the reference and says the team calls within
+  2 working days (no invented timeline).
+- **Admin** (`admin-onboarding-api.tsx`): applications (list + detail, approve with the delivery area typed as PIN
+  codes + one charge + days, reject with a reason code never preselected + optional note), invites (create → link
+  shown once to copy, list, revoke), price queue (approve / reject with reason), seller agreement (publish en + hi).
+- **Shop** (`shop-onboarding-api.tsx`): "Your prices" from `/v1/shops/{shopId}/inventory` + the shop's price requests
+  (send, withdraw), and the agreement card (accept the current version). The shop id comes from `GET /v1/me` roles.
+- Response shapes: `@mechdost/shared/partner-api`. Tests: `apps/web/test/partner-onboarding-view.test.ts`.
+- Gaps: no public application status route; the product picker still lists the demo catalogue (the API refuses
+  slugs it does not have → "choose again" on the field); real shop accounts still land on the customer area
+  (`demoRoleFor`) until the shop portal moves to the API, so the shop cards are wired but not yet reachable.

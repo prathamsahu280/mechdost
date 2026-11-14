@@ -102,4 +102,13 @@ Live chat widget (declined for now), order chat with partner, NPS after resoluti
 
 **Tests:** `packages/db/test/support.test.ts` (scope, limit, 404s, transitions, WhatsApp reply), `apps/api/test/support.test.ts` (permissions, verification, strict bodies, internal notes hidden, stale status).
 
-The web screens still use the demo store until the web app is switched to the API (Phase 1 wiring).
+The demo build still uses the browser store.
+
+## Real API mode (2026-11-14)
+
+In real sign-in builds (`AUTH_MODE === 'firebase'`; Stream D of `docs/superpowers/plans/2026-11-14-real-api-launch.md`) both screens run on this API, loaded with `next/dynamic` so demo bundles are unchanged:
+
+- **Account → Support** (`apps/web/src/components/account/support-section-api.tsx`): raise a request (`POST /v1/support/tickets`; the "Order" choice lists the codes from `GET /v1/orders`, plus `?order=` from the order page), list and read requests (`GET /v1/support/tickets`), reply (`POST …/{code}/messages`). "We'll reply by" shows until staff answer or move the request on.
+- **Admin → Support** (`apps/web/src/components/portal/admin-support-api.tsx`): inbox by view (`GET /v1/admin/support/tickets?view=active|done`, earliest deadline first, overdue flags), the conversation with internal notes loads when a request is opened, reply or internal note, resolve / reopen with the ticket `version` (stale → reload).
+- Answers validated with `@mechdost/shared/support-api`; codes mapped in `apps/web/src/lib/support-view.ts` (`TICKET_DAILY_LIMIT`, `REPLY_LIMIT`, `TICKET_CLOSED`, `STALE_TICKET` → messages next to the field).
+- **Gaps:** the inbox has no customer name or masked phone (the API does not return them) and messages carry no author name (customer view shows "MechDost support" / "You", staff view "Customer" / "MechDost support").
