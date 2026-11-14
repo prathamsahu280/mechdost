@@ -357,6 +357,30 @@ Full review and evidence: `docs/research/security-vulnerabilities.md` § Review 
 - **`user_roles.workshop_id` gets its FK** to `workshops` (it had none because the table did not exist).
 - **Zod-free constants for the db layer**: `SERVICE_CUSTOMER_CANCELLABLE` and `ESTIMATE_SENDABLE_FROM` live in `@mechdost/shared/state`; the db package must not import the Zod DTO module at runtime, or its schemas are built before `@hono/zod-openapi` extends Zod and lose `.openapi()` (found by the API test).
 
+## 2026-11-14 — Service-area PIN codes, admin-configurable (user: "do all Raipur PINs but make it admin configurable"; "admin configurable per shop or per pincode")
+
+Advisor brief 2026-11-14; spec 15 "PIN codes", spec 03 "Delivery charges". Rulings (cost if wrong in brackets):
+
+- **One master switch `pincodes.active`** decides serviceability for parts and services. Spec 15's model lists
+  per-service flags (`serviceable_for {parts_delivery, doorstep_service, pickup_drop, rsa}`); those columns stay,
+  unread, until a service is offered in some PINs and not others. [Low: one migration and a filter per flow later.]
+- **Inactive = unknown** for new business (checkout, catalogue PIN price, nearby workshops, new service requests,
+  new shop coverage); existing orders, coverage rows and partner addresses are untouched. Rows are never deleted.
+- **Reason code + optional note** to switch off (rule 16); switching on needs a centroid. History = `audit_log`
+  (no separate `pincode_events` table: there is no state machine). [Low.]
+- **Permissions:** read with `settings:read`, write with the existing `cities:manage` ("Launch cities and manage
+  pincodes": super admin; city manager for their city). No new permission. [Low.]
+- **`source` column:** the reference seed refreshes only rows it added (`seed`); any admin write makes a row
+  `admin` and the seed never touches it again; the seed never switches a PIN on or off. [Low.]
+- **Sanity checks:** centroid inside India's box (Zod) and ≤ 150 km from the city centre (`PINCODE_FAR_FROM_CITY`);
+  Hindi area name must contain Devanagari (rule 10).
+- **Reference data:** Raipur's urban PINs active, the rest of Raipur district loaded switched off
+  (`outside_service_area`) so the admin can switch them on; PINs that could not be verified are left out
+  (`docs/research/raipur-pincodes.md`).
+- **Free delivery chain:** PIN `free_delivery_min_paise` ?? shop override ?? city setting; NULL = no override,
+  0 = always free.
+- **Migration number 0048** (0045–0047 reserved for streams merging in parallel).
+
 ## 2026-11-14 — Cart on sign-out, demo controls, demo service estimates and bills (user)
 
 - **Cart and compare list stay on sign-out** (Q85): they belong to the device, as for a guest.

@@ -51,3 +51,9 @@ Goal: mechdost.com runs on real sign-in (Firebase) and the API for every flow, w
   repo + routes `/v1/reviews/{product|workshop}/{slug}`, `/v1/my-reviews` (eligible, submit), `/v1/admin/reviews`
   (queue, moderate), product/workshop review sections (server-rendered), "Rate" on delivered orders and paid services,
   Admin → Reviews on the API; spec 02 § Reviews, decisions "Customer reviews on the API". Playwright not run.
+- 2026-11-14 (PIN codes, branch `worktree-agent-a1386983dfc859158`): service-area PIN codes admin-configurable —
+  migration 0048 (`active` + reason, Hindi area name, `source`, per-PIN free-delivery threshold, `version`), admin API
+  `/v1/admin/pincodes*` (`settings:read` / `cities:manage`), public `/v1/cities/{city}/pincodes`, inactive PINs refused
+  by checkout / workshops / service requests / coverage, Admin → Settings → Service area + approval-form pick list
+  (en + hi), reference file of Raipur PINs + `pnpm db:seed:pincodes` (not applied). Spec 15 "PIN codes", spec 03
+  "Delivery charges".

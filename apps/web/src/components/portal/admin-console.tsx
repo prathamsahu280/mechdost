@@ -79,6 +79,12 @@ const ServiceRoutingApi = dynamic(() => import('./admin-services-api').then((m) 
   loading: () => <div className="skeleton h-96 rounded-card" aria-hidden="true" />,
 });
 
+/** Real sign-in: service-area PIN codes under Settings (spec 15 "PIN codes", 2026-11-14); demo builds never load it. */
+const ServiceAreaApi = dynamic(() => import('./admin-pincodes-api').then((m) => m.ServiceAreaApi), {
+  ssr: false,
+  loading: () => <div className="skeleton h-64 rounded-card" aria-hidden="true" />,
+});
+
 const SECTION_EMOJI: Record<AdminSection, string> = {
   overview: '📊',
   orders: '🧭',
@@ -145,6 +151,7 @@ export function AdminConsole({
               <div className="space-y-6">
                 <SettingsEditor actor={account.name} />
                 <OrderRulesEditor />
+                {AUTH_MODE === 'firebase' ? <ServiceAreaApi /> : null}
               </div>
             ) : null}
             {section === 'notifications' && notifyDefaults ? (

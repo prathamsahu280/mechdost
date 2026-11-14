@@ -53,6 +53,11 @@ ClickHouse export, experiments (PostHog), attribution/UTM reports, data warehous
 
 Every event follows `docs/conventions/data-for-ml.md`: `noun_verb` names, typed versioned properties, enum codes instead of free text, internal ids only (no PII), source/city/locale/actor role recorded, consent per purpose before personal data is used for offers or model training.
 
+## Service-area PIN codes (2026-11-14)
+
+Client event `admin_pincode_change {action: added|edited|deactivated|activated, reasonCode?}` — never the PIN's area
+text. The change itself is in `audit_log` (`pincode.*`, before/after) in the same transaction (spec 15 "PIN codes").
+
 ## Seller onboarding events (2026-11-13)
 
 - **Server events** (`packages/shared/src/analytics.ts`): `partner_application_submitted` (kind, source public or invite, gstStatus, product count, locationSource), `partner_application_decided` (decision, reasonCode), `partner_invite_sent`, `partner_invite_opened` (city only), `price_request_submitted` (shopId, sku), `price_request_decided` (shopId, sku, decision, reasonCode), `agreement_accepted` (shopId, version), `shop_went_live` (shopId). No GSTIN, names, phones or emails in props.

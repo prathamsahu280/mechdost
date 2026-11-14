@@ -20,6 +20,7 @@ import { paymentRoutes, razorpayWebhookRoutes } from './routes/payments';
 import { checkoutRoutes } from './routes/checkout';
 import { adminContentRoutes, contentRoutes } from './routes/content';
 import { eventRoutes } from './routes/events';
+import { pincodeAdminRoutes, pincodePublicRoutes } from './routes/geo';
 import { meRoutes } from './routes/me';
 import { partnerAdminRoutes, partnerPublicRoutes, shopOnboardingRoutes } from './routes/partner-onboarding';
 import { shopInventoryRoutes } from './routes/shop-inventory';
@@ -102,6 +103,8 @@ export function createApp(deps: AppDeps) {
   v1.route('/', adminServiceRequestRoutes(deps, sessions));
   v1.route('/', reviewPublicRoutes(deps));
   v1.route('/', reviewRoutes(deps, sessions));
+  v1.route('/', pincodePublicRoutes(deps));
+  v1.route('/', pincodeAdminRoutes(deps, sessions));
   app.route('/v1', v1);
 
   app.openAPIRegistry.registerComponent('securitySchemes', 'bearerAuth', {

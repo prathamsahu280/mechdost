@@ -323,6 +323,13 @@
       "when": 1794668886334,
       "tag": "0046_reviews",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1794669041990,
+      "tag": "0048_pincode_service_area",
+      "breakpoints": true
     }
   ]
 }

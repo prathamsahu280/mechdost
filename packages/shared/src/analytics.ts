@@ -217,6 +217,10 @@ export const CLIENT_EVENT_SCHEMAS = {
   admin_notifications_change: z
     .object({ target: id, action: z.enum(['saved', 'enabled', 'disabled', 'budget']) })
     .strict(),
+  // Service-area PIN codes (spec 15): what was done and, when switched off, the reason code. Never the area text.
+  admin_pincode_change: z
+    .object({ action: z.enum(['added', 'edited', 'deactivated', 'activated']), reasonCode: id.optional() })
+    .strict(),
 } as const;
 
 export type ClientEvents = {
