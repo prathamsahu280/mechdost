@@ -19,7 +19,7 @@ import { routing, type Locale } from '@/i18n/routing';
 import { fetchCatalogueProduct, fetchCataloguePage } from '@/lib/catalogue/api-source';
 import { demoCard, demoProduct } from '@/lib/catalogue/demo-source';
 import type { CardView, ProductView } from '@/lib/catalogue/view';
-import { DATA_MODE } from '@/lib/data-mode';
+import { BROWSER_ONLY_FEATURES, DATA_MODE } from '@/lib/data-mode';
 import { discountPercent, formatPrice } from '@/lib/format';
 import { alternatesFor } from '@/lib/seo';
 import { whatsappLink } from '@/lib/site';
@@ -260,18 +260,20 @@ export default async function ProductPage({ params }: Props) {
             />
           </div>
           <div className="max-w-md">
-            <p className="mt-3 text-sm text-muted">
-              <LocalLink
-                href="/quotes/new"
-                query={{ product: product.slug }}
-                data-track="product_bulk_quote"
-                className="font-bold text-accent-soft-text underline-offset-4 hover:underline"
-              >
-                {t.rich('bulkHint', {
-                  min: (chunks) => <SettingValue setting="bulkMinUnits" fallback={chunks} />,
-                })}
-              </LocalLink>
-            </p>
+            {BROWSER_ONLY_FEATURES ? (
+              <p className="mt-3 text-sm text-muted">
+                <LocalLink
+                  href="/quotes/new"
+                  query={{ product: product.slug }}
+                  data-track="product_bulk_quote"
+                  className="font-bold text-accent-soft-text underline-offset-4 hover:underline"
+                >
+                  {t.rich('bulkHint', {
+                    min: (chunks) => <SettingValue setting="bulkMinUnits" fallback={chunks} />,
+                  })}
+                </LocalLink>
+              </p>
+            ) : null}
             <p className="mt-2 text-sm text-muted">
               <span aria-hidden="true">🚫 </span>
               {t('policyNote')}{' '}

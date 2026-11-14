@@ -209,7 +209,7 @@ function Overview() {
   const support = useTickets().filter((x) => x.status === 'open' || x.status === 'in_review').length;
   const priceRequests = usePendingPriceRequests().length;
 
-  const tiles: { label: string; value: string; href: AdminSection; tone?: 'alert' }[] = [
+  const allTiles: { label: string; value: string; href: AdminSection; tone?: 'alert' }[] = [
     {
       label: t('kpi_needsRouting'),
       value: String(count(['needs_routing', 'expired'])),
@@ -234,6 +234,7 @@ function Overview() {
     { label: t('kpi_support'), value: String(support), href: 'support', tone: 'alert' },
     { label: t('kpi_priceRequests'), value: String(priceRequests), href: 'partners', tone: 'alert' },
   ];
+  const tiles = allTiles.filter((k) => ADMIN_SECTIONS.includes(k.href));
 
   return (
     <section aria-labelledby="kpis">

@@ -3,6 +3,7 @@ import type { Locale } from '@/i18n/routing';
 import { site, whatsappLink } from '@/lib/site';
 import type { AssistantCopy } from './copy';
 import { localePath } from '@/lib/locale-path';
+import { BROWSER_ONLY_FEATURES } from '@/lib/data-mode';
 
 /** Builds the assistant's translated copy and localised links on the server (no i18n runtime in the browser). */
 export async function assistantCopy(locale: Locale): Promise<AssistantCopy> {
@@ -36,7 +37,10 @@ export async function assistantCopy(locale: Locale): Promise<AssistantCopy> {
       workshop: { text: t('a_workshop'), action: { label: t('go_workshops'), href: path('/workshops') } },
       bulk: {
         text: t('a_bulk'),
-        action: { label: t('go_bulk'), href: path('/quotes/new') },
+        // Real mode has no quote desk yet (BROWSER_ONLY_FEATURES): the same request goes to WhatsApp.
+        action: BROWSER_ONLY_FEATURES
+          ? { label: t('go_bulk'), href: path('/quotes/new') }
+          : { label: t('go_whatsapp'), href: whatsappLink(wa('general')), external: true },
       },
       track: { text: t('a_track'), action: { label: t('go_account'), href: path('/account') } },
       partner: { text: t('a_partner'), action: { label: t('go_partners'), href: path('/partners') } },

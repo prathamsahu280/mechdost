@@ -4,6 +4,7 @@ import { ButtonLink } from '../ui/button-link';
 import { LocalLink } from '../ui/local-link';
 import { Container } from '../ui/page-intro';
 import { SettingValue } from '../site/site-overrides';
+import { BROWSER_ONLY_FEATURES } from '@/lib/data-mode';
 
 /** Rich-text tags for admin settings inside copy: the server prints the default, the island the live value. */
 const liveMinutes = (chunks: ReactNode) => <SettingValue setting="acceptMinutes" fallback={chunks} />;
@@ -67,13 +68,15 @@ export function OrderRoute() {
             <ButtonLink href="/shop" data-track="home_route_shop" className="min-h-12 px-6">
               {t('cta')}
             </ButtonLink>
-            <LocalLink
-              href="/quotes/new"
-              data-track="home_route_bulk"
-              className="inline-flex min-h-11 items-center text-sm font-bold text-white underline-offset-4 hover:underline"
-            >
-              {t.rich('bulk', { min: liveUnits })}
-            </LocalLink>
+            {BROWSER_ONLY_FEATURES ? (
+              <LocalLink
+                href="/quotes/new"
+                data-track="home_route_bulk"
+                className="inline-flex min-h-11 items-center text-sm font-bold text-white underline-offset-4 hover:underline"
+              >
+                {t.rich('bulk', { min: liveUnits })}
+              </LocalLink>
+            ) : null}
           </div>
         </div>
       </Container>

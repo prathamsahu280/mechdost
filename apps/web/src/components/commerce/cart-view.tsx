@@ -7,7 +7,7 @@ import { CATEGORY_KEYS, CATEGORY_SLUGS } from '@/demo/catalogue';
 import { useCategoryEmoji, useSiteSettings } from '@/demo/site-config';
 import { removeFromCart, setQuantity, useCart, MAX_QTY } from '@/demo/store';
 import { useSession } from '@/demo/session';
-import { DATA_MODE } from '@/lib/data-mode';
+import { BROWSER_ONLY_FEATURES, DATA_MODE } from '@/lib/data-mode';
 import { DEFAULT_PIN, useCartPricing } from '@/lib/use-cart-pricing';
 import { CATEGORY_EMOJI, UI_EMOJI } from '@/lib/emoji';
 import { formatPrice } from '@/lib/format';
@@ -200,13 +200,15 @@ export function CartView() {
         >
           {t('continue')}
         </Link>
-        <Link
-          href={`${base}/quotes/new?from=cart`}
-          data-track="cart_bulk_quote"
-          className="mt-1 inline-flex min-h-11 w-full items-center justify-center rounded-button border border-dashed border-input-border px-4 text-center text-sm font-bold text-accent-soft-text hover:bg-pill"
-        >
-          {q('cartBulk')}
-        </Link>
+        {BROWSER_ONLY_FEATURES ? (
+          <Link
+            href={`${base}/quotes/new?from=cart`}
+            data-track="cart_bulk_quote"
+            className="mt-1 inline-flex min-h-11 w-full items-center justify-center rounded-button border border-dashed border-input-border px-4 text-center text-sm font-bold text-accent-soft-text hover:bg-pill"
+          >
+            {q('cartBulk')}
+          </Link>
+        ) : null}
       </aside>
     </div>
   );

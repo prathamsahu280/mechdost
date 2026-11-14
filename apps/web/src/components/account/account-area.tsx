@@ -233,12 +233,13 @@ function Overview({ account }: { account: DemoAccount }) {
       pillRef.current?.focus();
     } else setEmailNews(t('verifyEmailDone'));
   }, [emailState.kind, t]);
-  const stats: [AccountSection, string, number][] = [
+  const allStats: [AccountSection, string, number][] = [
     ['orders', t('stat_orders'), orders.length],
     ['services', t('stat_services'), requests.length],
     ['quotes', t('stat_quotes'), quotes.length],
     ['vehicles', t('stat_vehicles'), account.vehicles.length],
   ];
+  const stats = allStats.filter(([s]) => ACCOUNT_SECTIONS.includes(s));
 
   return (
     <>

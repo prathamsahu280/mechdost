@@ -10,3 +10,10 @@ export const DATA_MODE: 'api' | 'demo' = process.env.NEXT_PUBLIC_DATA_MODE === '
  * Hidden as soon as either real data or real sign-in is on (Q86, launch checklist).
  */
 export const SHOW_DEMO_CONTROLS = DATA_MODE === 'demo' && process.env.NEXT_PUBLIC_AUTH_MODE !== 'firebase';
+
+/**
+ * Features that exist only in the browser demo, with no API yet: bulk quotes (spec 19), MechDost Coins (spec 20) and
+ * customer reviews. In real mode they are hidden everywhere (links, account and admin sections, pages) so nothing a
+ * customer types is kept only on their device. Decision 2026-11-14 (launch).
+ */
+export const BROWSER_ONLY_FEATURES = SHOW_DEMO_CONTROLS;

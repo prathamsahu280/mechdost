@@ -296,6 +296,18 @@ User shared Razorpay **test** keys and asked to "see how we have the stuff for r
 - **Switch the website to real sign-in and the API** (user: "switch on the real api"); launch Monday, scope **everything including workshops and service requests, risk accepted** (plan `docs/superpowers/plans/2026-11-14-real-api-launch.md`).
 - **Database:** keep the `mechdost-dev` Supabase project for production; **full reset** done 2026-11-14 with the user's approval (no real data: Firebase had 0 users, the 2 orders were Razorpay tests). Rebuilt from migrations; RBAC seed; Raipur, 5 PIN codes and 9 categories kept from the reference data; no products, shops, users or orders.
 
+## 2026-11-14 — Launch scope in real mode: features with no API are hidden (ruling under "Everything, accept risk")
+
+- **Hidden in real mode** (`BROWSER_ONLY_FEATURES` in `apps/web/src/lib/data-mode.ts`): bulk quotes (spec 19), MechDost Coins (spec 20) and customer reviews. None has an API yet, and in real mode anything a customer typed there would stay on their device only.
+  - Account and admin sections drop out of navigation and their routes 404.
+  - Links to `/quotes/new` are removed (product page, cart, home, footer).
+  - The assistant's bulk answer opens WhatsApp instead.
+  - Review sections render nothing.
+  - Checkout already skips coins in real mode.
+- **Demo controls** (Q86) are hidden by `SHOW_DEMO_CONTROLS`, which is the same switch.
+- **Switches:** customer screens follow `NEXT_PUBLIC_DATA_MODE=api`; portals follow `NEXT_PUBLIC_AUTH_MODE=firebase`. Launch flips both, and mixed combinations are not supported.
+- **Cost if wrong:** bulk buyers lose the form until the quote API ships. They can still reach us on WhatsApp. Policy pages still describe coins as a planned feature.
+
 ## 2026-11-14 — Adding products: admin form and CSV import (plan 2026-11-14, Stream B)
 
 The reset database has no products, so staff add them (runbook `docs/runbooks/catalogue-import.md`). Rulings taken while building (cost if wrong in brackets):

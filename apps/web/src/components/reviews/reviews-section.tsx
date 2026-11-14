@@ -3,6 +3,7 @@ import { getLocale, getTranslations } from 'next-intl/server';
 import { localizeArea } from '@/demo/i18n/localize';
 import type { RatingSummary, SeedReview } from '@/demo/reviews';
 import type { ReviewTarget } from '@/demo/store';
+import { BROWSER_ONLY_FEATURES } from '@/lib/data-mode';
 import { formatDate } from '@/lib/format';
 import { ClientMessages } from '../ui/client-messages';
 import { LocalReviews } from './local-reviews';
@@ -23,6 +24,8 @@ export async function ReviewsSection({
   summary: RatingSummary;
   reviews: SeedReview[];
 }) {
+  // Reviews live in the browser demo only (no review API yet): real mode shows none (BROWSER_ONLY_FEATURES).
+  if (!BROWSER_ONLY_FEATURES) return null;
   const [t, locale] = await Promise.all([getTranslations('reviews'), getLocale()]);
   const rating = summary.rating.toFixed(1);
 

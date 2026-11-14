@@ -1,10 +1,12 @@
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import { QuoteThread } from '@/components/quotes/quote-thread';
 import { ClientMessages } from '@/components/ui/client-messages';
 import { Container } from '@/components/ui/page-intro';
 import type { Locale } from '@/i18n/routing';
+import { BROWSER_ONLY_FEATURES } from '@/lib/data-mode';
 
 interface Props {
   params: Promise<{ locale: Locale; code: string }>;
@@ -20,6 +22,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 /** Bulk quote thread (spec 19). Codes are QT-{CITY}-{YYYY}-{6 base32}. */
 export default async function QuotePage({ params }: Props) {
+  // No quote desk on the API yet: real mode hides bulk quotes (BROWSER_ONLY_FEATURES).
+  if (!BROWSER_ONLY_FEATURES) notFound();
   const { code } = await params;
   const safe = CODE.test(code) ? code : '';
   const t = await getTranslations('quote');

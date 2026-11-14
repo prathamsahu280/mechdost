@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import { QuoteRequestForm } from '@/components/quotes/quote-request-form';
@@ -7,6 +8,7 @@ import { LocalLink } from '@/components/ui/local-link';
 import { Container, PageIntro } from '@/components/ui/page-intro';
 import type { Locale } from '@/i18n/routing';
 import { alternatesFor } from '@/lib/seo';
+import { BROWSER_ONLY_FEATURES } from '@/lib/data-mode';
 
 interface Props {
   params: Promise<{ locale: Locale }>;
@@ -20,6 +22,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 /** Bulk quote request (spec 19). `?product=slug` or `?from=cart` prefill the lines (read on the client). */
 export default async function NewQuotePage() {
+  // No quote desk on the API yet: real mode hides bulk quotes (BROWSER_ONLY_FEATURES).
+  if (!BROWSER_ONLY_FEATURES) notFound();
   const t = await getTranslations('quote');
   return (
     <Container className="py-10 tab:py-14">

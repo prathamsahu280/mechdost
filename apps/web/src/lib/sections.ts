@@ -1,8 +1,10 @@
+import { BROWSER_ONLY_FEATURES } from './data-mode';
+
 /**
  * Section lists for the account area and the admin console. Kept outside the client components: server pages
  * (generateStaticParams) cannot read values exported from a 'use client' module.
  */
-export const ACCOUNT_SECTIONS = [
+const ALL_ACCOUNT_SECTIONS = [
   'overview',
   'orders',
   'services',
@@ -13,9 +15,9 @@ export const ACCOUNT_SECTIONS = [
   'addresses',
   'profile',
 ] as const;
-export type AccountSection = (typeof ACCOUNT_SECTIONS)[number];
+export type AccountSection = (typeof ALL_ACCOUNT_SECTIONS)[number];
 
-export const ADMIN_SECTIONS = [
+const ALL_ADMIN_SECTIONS = [
   'overview',
   'orders',
   'services',
@@ -37,4 +39,14 @@ export const ADMIN_SECTIONS = [
   // WhatsApp and other notification channels (spec 10, hard rule 8).
   'notifications',
 ] as const;
-export type AdminSection = (typeof ADMIN_SECTIONS)[number];
+export type AdminSection = (typeof ALL_ADMIN_SECTIONS)[number];
+
+/** Sections for features that have no API yet (`BROWSER_ONLY_FEATURES`): hidden in real mode. */
+const BROWSER_ONLY_SECTIONS: readonly string[] = ['quotes', 'coins', 'reviews'];
+const shown = <T extends string>(all: readonly T[]): readonly T[] =>
+  BROWSER_ONLY_FEATURES ? all : all.filter((s) => !BROWSER_ONLY_SECTIONS.includes(s));
+
+/** Account sections shown in this build (navigation, routes). */
+export const ACCOUNT_SECTIONS = shown(ALL_ACCOUNT_SECTIONS);
+/** Admin sections shown in this build (navigation, routes). */
+export const ADMIN_SECTIONS = shown(ALL_ADMIN_SECTIONS);
