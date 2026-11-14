@@ -16,6 +16,8 @@ import {
   resumeEndedPauses,
 } from '@mechdost/db/repo';
 import { FailureBackoff } from './backoff';
+import { dispatchDueRefunds } from './payments/refunds';
+import { httpRazorpay } from './payments/razorpay';
 import { ConfigError, loadConfig } from './config';
 import { pollingPublisher, type LivePublisher } from './live/publisher';
 import { startDispatcher, type ChannelAdapter } from './notify/dispatcher';
@@ -163,6 +165,30 @@ const paymentTimer = setInterval(() => {
 }, 60_000);
 paymentTimer.unref();
 
+// Approved refunds (spec 05, decision 2026-11-15): the approving request sends the refund to Razorpay at once; this
+// sweep sends the ones that never went out (a crash after the approval) and retries failures with a growing delay.
+// Razorpay's refund idempotency header makes every try safe. Only while Razorpay is configured.
+let sendingRefunds = false;
+const refundGateway = config.razorpay ? httpRazorpay(config.razorpay.keyId, config.razorpay.keySecret) : null;
+const refundTimer = refundGateway
+  ? setInterval(() => {
+      if (sendingRefunds) return;
+      sendingRefunds = true;
+      void dispatchDueRefunds(db, refundGateway)
+        .then((r) => {
+          if (r.sent + r.retry + r.failed > 0) log('info', 'refunds_dispatched', { ...r });
+          if (r.failed > 0) log('error', 'refunds_failed', { count: r.failed });
+        })
+        .catch((err: unknown) => {
+          log('error', 'refund_dispatch_failed', safeError(err));
+        })
+        .finally(() => {
+          sendingRefunds = false;
+        });
+    }, 30_000)
+  : null;
+refundTimer?.unref();
+
 // MechDost Coins (spec 20, Q24): rewards whose unlock days have passed become coins; unused coins past their expiry
 // lapse. Every 10 minutes; one transaction per reward (row locked, skip locked) or per customer (account row
 // locked), each idempotent by its ledger key, so several workers may run this safely.
@@ -255,6 +281,7 @@ function shutdown(signal: string) {
   clearInterval(holdTimer);
   clearInterval(pauseTimer);
   clearInterval(paymentTimer);
+  if (refundTimer) clearInterval(refundTimer);
   clearInterval(coinTimer);
   clearInterval(quoteTimer);
   clearInterval(partitionTimer);

@@ -214,7 +214,7 @@ export async function applyRazorpayPayment(
       return { outcome: 'needs_refund' as const };
     }
     // The group was already paid through another Razorpay order: this is money taken twice (finding 2).
-    if (to === 'paid' && p.paymentStatus === 'paid') {
+    if (to === 'paid' && ['paid', 'partially_refunded', 'refunded'].includes(p.paymentStatus)) {
       await flagForRefund(tx, fact, p.groupCode);
       return { outcome: 'needs_refund' as const };
     }

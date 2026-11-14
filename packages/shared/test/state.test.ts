@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  REFUND_STATES,
   TICKET_STATES,
+  refundMachine,
   assignmentMachine,
   orderMachine,
   paymentMachine,
@@ -10,6 +12,7 @@ import {
   inviteMachine,
   priceRequestMachine,
 } from '../src/state';
+import { customerRefundStatus } from '../src/refunds-api';
 
 describe('order state machine', () => {
   it('follows the admin-routing happy path', () => {
@@ -104,6 +107,31 @@ describe('payment state machine', () => {
     expect(paymentMachine.can('paid', 'failed')).toBe(false);
     expect(paymentMachine.can('paid', 'partially_refunded')).toBe(true);
     expect(paymentMachine.can('partially_refunded', 'refunded')).toBe(true);
+  });
+});
+
+describe('refund state machine (decision 2026-11-15: all refunds need approval)', () => {
+  it('never reaches Razorpay without an admin approval', () => {
+    expect(refundMachine.canActor('requested', 'approved', 'admin')).toBe(true);
+    expect(refundMachine.canActor('requested', 'approved', 'system')).toBe(false);
+    expect(refundMachine.can('requested', 'initiated')).toBe(false);
+    expect(refundMachine.can('requested', 'processed')).toBe(false);
+    expect(refundMachine.canActor('requested', 'rejected', 'admin')).toBe(true);
+  });
+  it('only the system moves an approved refund on, and finished refunds stay finished', () => {
+    expect(refundMachine.canActor('approved', 'initiated', 'system')).toBe(true);
+    expect(refundMachine.canActor('approved', 'initiated', 'admin')).toBe(false);
+    expect(refundMachine.can('approved', 'processed')).toBe(true);
+    expect(refundMachine.can('initiated', 'processed')).toBe(true);
+    expect(refundMachine.can('initiated', 'failed')).toBe(true);
+    for (const done of ['rejected', 'processed', 'failed'] as const) {
+      expect(refundMachine.isTerminal(done)).toBe(true);
+      expect(refundMachine.next(done)).toEqual([]);
+    }
+  });
+  it('never shows "refunded" to the customer before Razorpay confirms', () => {
+    const shown = REFUND_STATES.filter((s) => customerRefundStatus(s) === 'refunded');
+    expect(shown).toEqual(['processed']);
   });
 });
 

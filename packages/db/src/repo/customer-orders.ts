@@ -5,7 +5,9 @@ import {
   type OrderCancelReason,
   type OrderStatus,
 } from '@mechdost/shared/state';
+import type { CustomerRefund } from '@mechdost/shared/refunds-api';
 import type { Keyring } from '../crypto';
+import { customerRefundsByOrder } from './refunds';
 import { decodeCursor, encodeCursor, pageSize } from './cursor';
 import {
   auditLog,
@@ -139,6 +141,8 @@ export interface TrackedOrder {
   /** Out for delivery: the code to give the delivery person. */
   deliveryCode: string | null;
   canCancel: boolean;
+  /** Refunds on this part, as the customer sees them (spec 05: asked, processing, refunded). */
+  refunds: CustomerRefund[];
 }
 
 export interface MyOrderDetail extends Omit<MyOrderSummary, 'orders'> {
@@ -195,6 +199,7 @@ export async function getMyOrder(
     .from(orderEvents)
     .where(and(inArray(orderEvents.orderId, ids), eq(orderEvents.visibleToCustomer, true)))
     .orderBy(orderEvents.id);
+  const refundsByOrder = await customerRefundsByOrder(db, userId, ids);
   const tracked: TrackedOrder[] = [];
   for (const { order, shopName, shopNameHi } of subs) {
     let deliveryCode: string | null = null;
@@ -226,6 +231,7 @@ export async function getMyOrder(
       message: order.status === 'rejected' ? order.customerMessage : null,
       deliveryCode,
       canCancel: customerMayCancel(order.status, order.cancellableUntilStatus),
+      refunds: refundsByOrder.get(order.id) ?? [],
     });
   }
   const [first] = subs;

@@ -95,7 +95,88 @@ export const EMAIL_TEMPLATES = {
           };
     },
   },
+  /**
+   * A refund was asked for (spec 05, decision 2026-11-15: every refund needs a finance approval). Never promises an
+   * automatic or instant refund: it says we are reviewing it.
+   */
+  refund_requested: {
+    purpose: 'billing',
+    params: ['orderCode', 'amount'],
+    render(p, { locale, webBaseUrl }) {
+      const url = `${webBaseUrl}${localePath(locale, `/orders/${orderGroupCode(p.orderCode)}`)}`;
+      return locale === 'hi'
+        ? {
+            subject: `आपके रिफ़ंड का अनुरोध मिला (${p.orderCode ?? ''})`,
+            paragraphs: [
+              'नमस्ते,',
+              `ऑर्डर ${p.orderCode ?? ''} के ${p.amount ?? ''} के रिफ़ंड का अनुरोध हमारी टीम के पास है। मंज़ूरी के बाद पैसा आपके मूल भुगतान माध्यम में भेजा जाएगा, और हम आपको बताएँगे।`,
+            ],
+            action: { label: 'ऑर्डर देखें', url },
+          }
+        : {
+            subject: `We have your refund request (${p.orderCode ?? ''})`,
+            paragraphs: [
+              'Hello,',
+              `A refund of ${p.amount ?? ''} for order ${p.orderCode ?? ''} is with our team for review. Once it is approved, the money is sent to your original payment method, and we will let you know.`,
+            ],
+            action: { label: 'View the order', url },
+          };
+    },
+  },
+  /** Razorpay confirmed the refund: the bank decides the last days (5-7 working days). */
+  refund_processed: {
+    purpose: 'billing',
+    params: ['orderCode', 'amount'],
+    render(p, { locale, webBaseUrl }) {
+      const url = `${webBaseUrl}${localePath(locale, `/orders/${orderGroupCode(p.orderCode)}`)}`;
+      return locale === 'hi'
+        ? {
+            subject: `आपका रिफ़ंड भेज दिया गया (${p.orderCode ?? ''})`,
+            paragraphs: [
+              'नमस्ते,',
+              `ऑर्डर ${p.orderCode ?? ''} का ${p.amount ?? ''} का रिफ़ंड भेज दिया गया है। आपके बैंक या भुगतान ऐप में दिखने में 5-7 कार्य दिवस लग सकते हैं।`,
+            ],
+            action: { label: 'ऑर्डर देखें', url },
+          }
+        : {
+            subject: `Your refund has been sent (${p.orderCode ?? ''})`,
+            paragraphs: [
+              'Hello,',
+              `The refund of ${p.amount ?? ''} for order ${p.orderCode ?? ''} has been sent. It can take 5-7 working days to show in your bank or payment app.`,
+            ],
+            action: { label: 'View the order', url },
+          };
+    },
+  },
+  /** Finance declined the refund request; the customer is pointed to support. */
+  refund_declined: {
+    purpose: 'billing',
+    params: ['orderCode', 'amount'],
+    render(p, { locale, webBaseUrl }) {
+      const url = `${webBaseUrl}${localePath(locale, '/support')}`;
+      return locale === 'hi'
+        ? {
+            subject: `आपके रिफ़ंड के बारे में (${p.orderCode ?? ''})`,
+            paragraphs: [
+              'नमस्ते,',
+              `ऑर्डर ${p.orderCode ?? ''} के ${p.amount ?? ''} के रिफ़ंड का अनुरोध हम मंज़ूर नहीं कर सके। कारण जानने या दोबारा देखने के लिए सहायता से संपर्क करें।`,
+            ],
+            action: { label: 'सहायता से संपर्क करें', url },
+          }
+        : {
+            subject: `About your refund (${p.orderCode ?? ''})`,
+            paragraphs: [
+              'Hello,',
+              `We could not approve the refund of ${p.amount ?? ''} for order ${p.orderCode ?? ''}. Please contact support to understand why or to have it looked at again.`,
+            ],
+            action: { label: 'Contact support', url },
+          };
+    },
+  },
 } as const satisfies Record<string, TemplateDef>;
+
+/** `MD-RPR-2026-7K3Q9X-1` (a part) → `MD-RPR-2026-7K3Q9X` (the order page). */
+const orderGroupCode = (code: string | undefined) => (code ?? '').replace(/-\d{1,2}$/, '');
 
 export type EmailTemplateKey = keyof typeof EMAIL_TEMPLATES;
 

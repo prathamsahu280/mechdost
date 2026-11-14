@@ -4,6 +4,7 @@
  * screens (dynamic imports), never by the demo pages.
  */
 import { z } from 'zod';
+import { CustomerRefundDto } from './refunds-api';
 
 export const CheckoutQuoteDto = z.object({
   cityCode: z.string(),
@@ -85,6 +86,8 @@ const TrackedOrder = z.object({
   message: z.string().nullable(),
   deliveryCode: z.string().nullable(),
   canCancel: z.boolean(),
+  /** Refunds on this part (spec 05); optional so answers from an older API still parse. */
+  refunds: z.array(CustomerRefundDto).optional(),
 });
 export type TrackedOrder = z.infer<typeof TrackedOrder>;
 

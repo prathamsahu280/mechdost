@@ -1,12 +1,17 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { Hono } from 'hono';
-import { recordAndApplyRazorpayEvent } from '@mechdost/db/repo';
+import { recordAndApplyRazorpayEvent, recordAndApplyRazorpayRefundEvent } from '@mechdost/db/repo';
 import type { SessionCache } from '../auth/session-cache';
 import { ApiError } from '../errors';
 import { log } from '../logger';
 import { authenticate, requireCustomerVerified } from '../middleware/auth';
 import { rateLimit, RATE_RULES } from '../middleware/rate-limit';
-import { paymentFromWebhook, WebhookPayload, webhookSignatureValid } from '../payments/razorpay';
+import {
+  paymentFromWebhook,
+  refundFromWebhook,
+  WebhookPayload,
+  webhookSignatureValid,
+} from '../payments/razorpay';
 import { paymentFact, verifyCheckout } from '../payments/service';
 import type { AppDeps, AppEnv } from '../types';
 import { validationHook } from '../validation';
@@ -91,6 +96,8 @@ export function paymentRoutes(deps: AppDeps, cache: SessionCache) {
 
 const EVENT_ID = /^[A-Za-z0-9_-]{1,64}$/;
 const PAYMENT_EVENTS = new Set(['payment.captured', 'payment.authorized', 'payment.failed', 'order.paid']);
+/** `refund.created` is recorded but changes nothing: our own state moves on the confirmed outcomes only. */
+const REFUND_EVENTS = new Set(['refund.created', 'refund.processed', 'refund.failed']);
 
 export function razorpayWebhookRoutes(deps: AppDeps) {
   const app = new Hono<AppEnv>();
@@ -113,6 +120,33 @@ export function razorpayWebhookRoutes(deps: AppDeps) {
       } catch {
         // Signed by Razorpay but a shape we do not handle: acknowledge so it is not retried.
         log('warn', 'razorpay_webhook_unparsed', { requestId: c.get('requestId') });
+        return c.text('ok', 200);
+      }
+      if (body.event.startsWith('refund.')) {
+        if (!REFUND_EVENTS.has(body.event)) return c.text('ok', 200);
+        const refund = refundFromWebhook(body);
+        const settled = body.event === 'refund.processed' || body.event === 'refund.failed';
+        const res = await recordAndApplyRazorpayRefundEvent(deps.db, {
+          eventId: `rzp:${eventId}`,
+          type: body.event,
+          payload: refund ? { refundId: refund.id, paymentId: refund.paymentId, status: refund.status } : {},
+          fact:
+            refund && settled
+              ? {
+                  providerRefundId: refund.id,
+                  providerPaymentId: refund.paymentId,
+                  refundId: refund.refundId,
+                  status: body.event === 'refund.processed' ? 'processed' : 'failed',
+                  amountPaise: refund.amountPaise,
+                  currency: refund.currency,
+                }
+              : null,
+        });
+        if (res.outcome === 'mismatch' || res.outcome === 'unknown_refund')
+          log('error', `razorpay_webhook_refund_${res.outcome}`, {
+            requestId: c.get('requestId'),
+            event: body.event,
+          });
         return c.text('ok', 200);
       }
       const payment = paymentFromWebhook(body);

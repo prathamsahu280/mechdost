@@ -80,3 +80,6 @@ export async function createTestDb() {
 }
 
 export type TestDb = Awaited<ReturnType<typeof createTestDb>>['db'];
+
+/** Query helper for the API's tests, which do not depend on drizzle-orm themselves. */
+export { eq } from 'drizzle-orm';

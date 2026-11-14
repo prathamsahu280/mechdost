@@ -49,6 +49,7 @@
     "./shop-api": "./src/shop-api.ts",
     "./quote-rules": "./src/quote-rules.ts",
     "./quote-api": "./src/quote-api.ts",
+    "./refunds-api": "./src/refunds-api.ts",
     "./reviews": "./src/reviews.ts",
     "./reviews-api": "./src/reviews-api.ts",
     "./geo": "./src/geo.ts",
