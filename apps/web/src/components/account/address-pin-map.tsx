@@ -121,7 +121,6 @@ export function AddressPinMap({
       marker.current = null;
     };
     // The map is created once; the pin follows `value` below.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

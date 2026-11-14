@@ -80,7 +80,7 @@ export function WorkshopFinderApi() {
     const filters = { ...(vehicle === 'any' ? {} : { vehicleType: vehicle }), ev: evOnly };
     // Home visits: the pinned address decides, with each workshop's own travel radius (no PIN or GPS search).
     if (home)
-      return homeAddress?.lat != null && homeAddress.lng != null
+      return homeAddress?.lat !== undefined && homeAddress.lat !== null && homeAddress.lng !== null
         ? { lat: homeAddress.lat, lng: homeAddress.lng, mode: 'home', ...filters, ev: false }
         : null;
     if (gps) return { ...gps, ...filters };

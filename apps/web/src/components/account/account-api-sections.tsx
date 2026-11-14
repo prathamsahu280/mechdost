@@ -291,11 +291,12 @@ function AddressForm({
 }) {
   const t = useTranslations('account');
   const a = useTranslations('accountApi');
-  const h = useTranslations('homeService');
   const [localError, setLocalError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [pin, setPin] = useState<{ lat: number; lng: number } | null>(
-    initial && initial.lat !== null && initial.lng !== null ? { lat: initial.lat, lng: initial.lng } : null,
+    initial?.lat !== undefined && initial.lat !== null && initial.lng !== null
+      ? { lat: initial.lat, lng: initial.lng }
+      : null,
   );
   const idOf = (k: string) => `addr-${initial?.id ?? 'new'}-${k}`;
 

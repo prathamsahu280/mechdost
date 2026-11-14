@@ -47,6 +47,15 @@ async function person(n: string, opts: { role?: string; workshopId?: string } = 
   return { id: user.id, headers: { ...bearer(token), 'content-type': 'application/json' } };
 }
 
+/** A value inside a JSON answer by dotted path (numbers index arrays); undefined when absent. */
+const at = (o: unknown, path: string): unknown =>
+  path
+    .split('.')
+    .reduce<unknown>(
+      (a, k) => (a !== null && typeof a === 'object' ? (a as Record<string, unknown>)[k] : undefined),
+      o,
+    );
+
 const call = async (p: Person | null, method: string, path: string, payload?: unknown, extra = {}) => {
   const res = await ctx.app.request(`/v1${path}`, {
     method,
@@ -54,7 +63,10 @@ const call = async (p: Person | null, method: string, path: string, payload?: un
     ...(payload === undefined ? {} : { body: JSON.stringify(payload) }),
   });
   const text = await res.text();
-  return { status: res.status, body: (text ? JSON.parse(text) : null) as Record<string, any> & ErrorJson };
+  return {
+    status: res.status,
+    body: (text ? JSON.parse(text) : null) as Record<string, unknown> & ErrorJson,
+  };
 };
 
 const WORKSHOP = {
@@ -164,14 +176,14 @@ describe('workshop home settings (portal)', () => {
     const mine = await call(owner, 'GET', '/workshop/home-settings');
     expect(mine.status).toBe(200);
     expect(mine.body.workshops).toHaveLength(1);
-    const w = mine.body.workshops[0];
+    const w = at(mine.body, 'workshops.0') as Record<string, unknown>;
     expect(w).toMatchObject({
       homeService: false,
       homeRadiusKm: 5,
       homeVisitFeePaise: 9900,
       maxFeePaise: 50000,
     });
-    version = w.version;
+    version = Number(w.version);
     const body = {
       homeService: true,
       homeRadiusKm: 5,
@@ -256,7 +268,7 @@ describe('home booking and the arrival code', () => {
       slot: 'morning',
       lowPaise: 80_000,
       highPaise: 150_000,
-      version: made.body.version,
+      version: Number(at(made.body, 'version')),
     });
     expect(noName.body.error.code).toBe('MECHANIC_REQUIRED');
     const proposed = await call(owner, 'POST', `/workshop/requests/${code}/propose`, {
@@ -265,29 +277,29 @@ describe('home booking and the arrival code', () => {
       lowPaise: 80_000,
       highPaise: 150_000,
       mechanicName: 'Sunil',
-      version: made.body.version,
+      version: Number(at(made.body, 'version')),
     });
     expect(proposed.status).toBe(200);
     const confirmed = await call(customer, 'POST', `/service-requests/${code}/proposal`, {
       accept: true,
-      version: proposed.body.version,
+      version: Number(at(proposed.body, 'version')),
     });
     expect(confirmed.status).toBe(200);
-    jobVersion = confirmed.body.version;
+    jobVersion = Number(at(confirmed.body, 'version'));
     const mine = await call(customer, 'GET', `/service-requests/${code}`);
     expect(mine.body.home).toMatchObject({ visitFeePaise: 9900, mechanicName: 'Sunil' });
-    expect(mine.body.home.arrivalCode).toMatch(/^\d{4}$/);
-    expect(mine.body.workshop.ratingCount).toBe(0);
+    expect(at(mine.body, 'home.arrivalCode')).toMatch(/^\d{4}$/);
+    expect(at(mine.body, 'workshop.ratingCount')).toBe(0);
     const theirs = await call(owner, 'GET', `/workshop/requests/${code}`);
-    expect(theirs.body.home.arrivalCode).toBeNull();
-    expect(JSON.stringify(theirs.body)).not.toContain(mine.body.home.arrivalCode);
+    expect(at(theirs.body, 'home.arrivalCode')).toBeNull();
+    expect(JSON.stringify(theirs.body)).not.toContain(String(at(mine.body, 'home.arrivalCode')));
     const admin = await call(ops, 'GET', `/admin/service-requests/${code}`);
-    expect(admin.body.home.arrivalCode).toBeNull();
+    expect(at(admin.body, 'home.arrivalCode')).toBeNull();
   });
 
   it('a wrong code is a 200 with attempts left; the right one marks arrival; a stranger gets 404', async () => {
     const mine = await call(customer, 'GET', `/service-requests/${code}`);
-    const right = String(mine.body.home.arrivalCode);
+    const right = String(at(mine.body, 'home.arrivalCode'));
     const wrong = right === '0000' ? '1111' : '0000';
     const path = `/workshop/requests/${code}/vehicle-received`;
     expect(
@@ -311,7 +323,7 @@ describe('home booking and the arrival code', () => {
     });
     expect(good.status).toBe(200);
     expect(good.body).toMatchObject({ ok: true, status: 'vehicle_received' });
-    jobVersion = good.body.version;
+    jobVersion = Number(at(good.body, 'version'));
   });
 
   it('the move offer: only the workshop offers, only the customer answers, accepting makes it a workshop job', async () => {
@@ -328,7 +340,7 @@ describe('home booking and the arrival code', () => {
     expect(accepted.status).toBe(200);
     const mine = await call(customer, 'GET', `/service-requests/${code}`);
     expect(mine.body.serviceMode).toBe('workshop');
-    expect(mine.body.home.move.status).toBe('accepted');
+    expect(at(mine.body, 'home.move.status')).toBe('accepted');
   });
 
   it('the waive step and the arrival override are permissioned', async () => {
@@ -342,7 +354,7 @@ describe('home booking and the arrival code', () => {
     ).toBe(403);
     const waived = await call(owner, 'POST', `/workshop/requests/${code}/waive-visit-fee`, {
       reasonCode: 'goodwill',
-      version: (await call(owner, 'GET', `/workshop/requests/${code}`)).body.version,
+      version: Number(at((await call(owner, 'GET', `/workshop/requests/${code}`)).body, 'version')),
     });
     expect(waived.status).toBe(200);
     expect(

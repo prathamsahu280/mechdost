@@ -1,5 +1,4 @@
 import {
-  MoveProposedDto,
   NearbyWorkshopsDto,
   PublicWorkshopDto,
   ServiceChangedDto,

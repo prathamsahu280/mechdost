@@ -1,6 +1,5 @@
 import { and, asc, desc, eq, inArray, ne, sql, type SQL } from 'drizzle-orm';
 import { publicCode } from '@mechdost/shared/ids';
-import { OPERATIONAL_SETTINGS } from '@mechdost/shared/settings';
 import type {
   CreateServiceRequestInput,
   EstimateDecisionInput,
@@ -38,7 +37,6 @@ import { decodeCursor, encodeCursor, pageSize } from './cursor';
 import type { Keyring } from '../crypto';
 import { assertHomeEligible, loadHomeAddress } from './home-booking';
 import { cancelPendingServiceRewards, createServiceReward } from './coins';
-import { settingOr } from './checkout';
 import { issueArrivalCode } from './arrival-code';
 import { ConflictError, NotFoundError, pgCode, ValidationError } from './errors';
 import { queueServiceReceivedEmail, queueServiceStatusEmail } from './email-events';
