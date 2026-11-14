@@ -1,6 +1,7 @@
 /**
  * Worker entry (Cloud Run service with min 1 instance and CPU always allocated, or a VM): background loops that
- * must not live in request handlers. Today: the live relay (decision 2026-11-01). pg-boss timers join here.
+ * must not live in request handlers: the live relay (decision 2026-11-01), the outbox dispatcher, the order/stock
+ * timers, and PostHog forwarding (decision 2026-11-14).
  */
 import { createDb, createListener } from '@mechdost/db';
 import { loadKeyring, type Keyring } from '@mechdost/db/crypto';
@@ -10,8 +11,10 @@ import {
   expireDueAssignments,
   releaseExpiredReservations,
   expireUnpaidOnlineOrders,
+  readForwardableEvents,
   resumeEndedPauses,
 } from '@mechdost/db/repo';
+import { createPosthogSender, startPosthogForwarder } from './analytics/posthog';
 import { ConfigError, loadConfig } from './config';
 import { pollingPublisher, type LivePublisher } from './live/publisher';
 import { startDispatcher, type ChannelAdapter } from './notify/dispatcher';
@@ -20,6 +23,7 @@ import { createWhatsAppAdapter } from './notify/whatsapp';
 import { startRelay } from './live/relay';
 import { createRtdbPublisher } from './live/rtdb';
 import { log, safeError } from './logger';
+import { startSentry } from './monitoring/sentry';
 
 let config;
 try {
@@ -31,6 +35,9 @@ try {
   }
   throw err;
 }
+
+// Error reports (decision 2026-11-14): no-op without SENTRY_DSN.
+const sentry = await startSentry(config.sentry, 'worker');
 
 const { db, sql } = createDb(config.databaseUrl, { max: 2, transactionPooler: true });
 const publisher: LivePublisher =
@@ -172,7 +179,21 @@ const partitions = () => {
 partitions();
 const partitionTimer = setInterval(partitions, 12 * 3_600_000);
 partitionTimer.unref();
+// PostHog EU (decision 2026-11-14): consented events from the store, every 10 s, never on a request path. Rows
+// wait 60 s (late commits); after a restart the read starts 10 minutes back (PostHog drops duplicates by uuid).
+const posthog = config.posthog
+  ? startPosthogForwarder({
+      read: (after, limit) => readForwardableEvents(db, { after, limit, lagSeconds: 60, startMinutes: 10 }),
+      sender: createPosthogSender(config.posthog),
+      webBaseUrl: config.webBaseUrl,
+      intervalMs: 10_000,
+      log,
+    })
+  : null;
+
 log('info', 'worker_started', {
+  posthog: Boolean(posthog),
+  sentry: Boolean(config.sentry),
   live: publisher.name,
   listen: Boolean(config.live.listenUrl),
   channels: adapters.map((a) => a.channel),
@@ -199,8 +220,8 @@ function shutdown(signal: string) {
   clearInterval(pauseTimer);
   clearInterval(paymentTimer);
   clearInterval(partitionTimer);
-  void Promise.all([relay.stop(), dispatcher.stop()])
-    .then(() => Promise.all([sql.end({ timeout: 5 }), listener?.end()]))
+  void Promise.all([relay.stop(), dispatcher.stop(), posthog?.stop()])
+    .then(() => Promise.all([sql.end({ timeout: 5 }), listener?.end(), sentry.flush()]))
     .finally(() => process.exit(0));
   setTimeout(() => process.exit(1), 9000).unref();
 }

@@ -14,12 +14,28 @@ const DIGIT_RUN = /\+?\p{Nd}(?:[^\p{L}\p{Nd}]*\p{Nd}){6,}/gu;
 const INPUT_MAX = 500;
 
 export function scrubFreeText(text: string, max = 80): string {
-  return text
-    .slice(0, INPUT_MAX)
-    .normalize('NFKC')
-    .replace(FORMAT, '')
-    .replace(EMAIL, '#')
-    .replace(DIGIT_RUN, '#')
-    .trim()
-    .slice(0, max);
+  return maskPersonalData(text.slice(0, INPUT_MAX)).trim().slice(0, max);
+}
+
+/** Emails and 7+ digit runs become "#", with no length cap (error messages; callers cap the input). */
+export function maskPersonalData(text: string): string {
+  return text.normalize('NFKC').replace(FORMAT, '').replace(EMAIL, '#').replace(DIGIT_RUN, '#');
+}
+
+/**
+ * The privacy notice a visitor accepted when they chose "Allow analytics" (the web stores it with the choice and
+ * sends it with every event). `2026-11-14` is the first notice that names PostHog (EU) as the analytics provider
+ * (decision 2026-11-14), so only events consented under it or a later notice are forwarded there; older choices
+ * are asked again by the banner.
+ */
+export const CONSENT_NOTICE_VERSION = '2026-11-14';
+
+const NOTICE = /^(\d{4})-(\d{2})(?:-(\d{2}))?$/u;
+
+/** True when the consent was given under the notice that names PostHog, or a later one. */
+export function consentAllowsForwarding(version: string | null | undefined): boolean {
+  const m = version ? NOTICE.exec(version) : null;
+  if (!m) return false;
+  const key = `${m[1] ?? ''}-${m[2] ?? ''}-${m[3] ?? '00'}`;
+  return key >= CONSENT_NOTICE_VERSION;
 }

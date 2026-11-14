@@ -1,6 +1,7 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
+import { CONSENT_NOTICE_VERSION } from '@mechdost/shared/privacy';
 
 /**
  * Consent for non-essential processing (DPDP; decision 2026-10-31 "cookie banner declines non-essential by
@@ -10,7 +11,8 @@ import { useSyncExternalStore } from 'react';
  * choices also go to the `consents` table once web sign-in exists.
  */
 export const CONSENT_KEY = 'mechdost-consent';
-export const CONSENT_VERSION = '2026-11';
+// `2026-11-14`: the notice names PostHog (EU) as the analytics provider, so earlier choices are asked again.
+export const CONSENT_VERSION = CONSENT_NOTICE_VERSION;
 const OPEN_EVENT = 'mechdost:consent-open';
 const CHANGE_EVENT = 'mechdost:consent-change';
 

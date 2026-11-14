@@ -1,3 +1,4 @@
+import { AUTH_MODE } from './auth/mode';
 import { BROWSER_ONLY_FEATURES } from './data-mode';
 
 /**
@@ -38,6 +39,8 @@ const ALL_ADMIN_SECTIONS = [
   'settings',
   // WhatsApp and other notification channels (spec 10, hard rule 8).
   'notifications',
+  // Latest Sentry issues of the website and the API (decision 2026-11-14); real sign-in only (it reads the API).
+  'errors',
 ] as const;
 export type AdminSection = (typeof ALL_ADMIN_SECTIONS)[number];
 
@@ -48,5 +51,9 @@ const shown = <T extends string>(all: readonly T[]): readonly T[] =>
 
 /** Account sections shown in this build (navigation, routes). */
 export const ACCOUNT_SECTIONS = shown(ALL_ACCOUNT_SECTIONS);
+/** Admin sections that read live API data only: not in demo sign-in builds. */
+const REAL_SIGN_IN_ONLY: readonly string[] = ['errors'];
 /** Admin sections shown in this build (navigation, routes). */
-export const ADMIN_SECTIONS = shown(ALL_ADMIN_SECTIONS);
+export const ADMIN_SECTIONS = shown(ALL_ADMIN_SECTIONS).filter(
+  (s) => AUTH_MODE === 'firebase' || !REAL_SIGN_IN_ONLY.includes(s),
+);

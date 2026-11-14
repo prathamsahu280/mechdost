@@ -26,6 +26,11 @@ const nextConfig: NextConfig = {
   // The monorepo root, so workspace packages are traced into the standalone output.
   outputFileTracingRoot: fileURLToPath(new URL('../../', import.meta.url)),
   poweredByHeader: false,
+  // Sentry's Node SDK stays a runtime dependency of the server, not bundled (instrumentation.ts, decision 2026-11-14).
+  serverExternalPackages: ['@sentry/node'],
+  // Browser source maps only for the Docker build that uploads them to Sentry; the same step deletes them, so they
+  // are never served (apps/web/Dockerfile, docs/runbooks/monitoring.md).
+  productionBrowserSourceMaps: process.env.SENTRY_SOURCEMAPS === '1',
   reactStrictMode: true,
   // The two build switches are always defined, so they are inlined as constants and the code for the other mode is
   // dropped from the bundle (an unset NEXT_PUBLIC_ variable is left as a runtime lookup). Unset means demo, as

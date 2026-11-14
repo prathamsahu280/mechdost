@@ -19,7 +19,7 @@ import { busyWorld, CODES, TICKET_CODE } from './fixtures/demo-world';
 
 const SHOTS = process.env.MATRIX_SHOTS ?? '';
 const DEMO_PASSWORD = 'Raipur@2026';
-const CONSENT = JSON.stringify({ analytics: false, version: '2026-11', at: '2026-11-01T00:00:00.000Z' });
+const CONSENT = JSON.stringify({ analytics: false, version: '2026-11-14', at: '2026-11-01T00:00:00.000Z' });
 const CASTROL = 'castrol-activ-4t-20w40-900ml';
 const MOTUL = 'motul-3100-4t-10w30-1l';
 const CART = [

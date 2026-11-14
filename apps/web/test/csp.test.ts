@@ -50,6 +50,25 @@ describe('content security policy (ruling 2026-11-09)', () => {
     expect(p).not.toContain('http://127.0.0.1');
   });
 
+  it('Sentry: only the ingest host of the configured DSN (EU region), only when a DSN is set', () => {
+    const dsn =
+      'https://0123456789abcdef0123456789abcdef@o4500000000000000.ingest.de.sentry.io/4500000000000001';
+    const p = contentSecurityPolicy({ dev: false, authMode: 'demo', sentryDsn: dsn });
+    expect(directive(p, 'connect-src')).toContain('https://o4500000000000000.ingest.de.sentry.io');
+    expect(p).not.toContain('0123456789abcdef0123456789abcdef');
+    expect(contentSecurityPolicy({ dev: false, authMode: 'demo' })).not.toContain('sentry');
+    for (const bad of [
+      '',
+      'not a dsn',
+      'http://k@o1.ingest.de.sentry.io/1',
+      'https://k@evil.example.com/1',
+    ]) {
+      expect(contentSecurityPolicy({ dev: false, authMode: 'demo', sentryDsn: bad })).not.toMatch(
+        /sentry|evil/u,
+      );
+    }
+  });
+
   it('development allows eval and the dev socket; a bad API URL is ignored, not allowed', () => {
     const p = contentSecurityPolicy({ dev: true, authMode: 'demo', apiUrl: 'not a url' });
     expect(directive(p, 'script-src')).toContain("'unsafe-eval'");

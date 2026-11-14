@@ -87,6 +87,56 @@ const schema = z
       .string()
       .regex(/^v\d{2}\.\d$/)
       .default('v23.0'),
+    /** Sentry error reports (decision 2026-11-14): off until the DSN is set. Same DSN for the API and the worker. */
+    SENTRY_DSN: z
+      .string()
+      .regex(
+        /^https:\/\/[A-Za-z0-9]{16,64}@[a-z0-9.-]+(:\d{2,5})?\/\d{1,20}$/,
+        'a Sentry DSN (https://<key>@<host>/<id>)',
+      )
+      .optional(),
+    /** Environment name shown in Sentry; defaults to NODE_ENV. */
+    SENTRY_ENVIRONMENT: z
+      .string()
+      .regex(/^[a-z][a-z0-9-]{0,31}$/)
+      .optional(),
+    /** Release (the deployed commit, set from IMAGE_TAG by deploy/compose.yml) so issues show which build broke. */
+    SENTRY_RELEASE: z
+      .string()
+      .regex(/^[A-Za-z0-9._-]{1,64}$/)
+      .optional(),
+    /**
+     * Admin → Errors (decision 2026-11-14): a read-only Sentry token (`event:read`, `project:read`, `org:read`;
+     * never the CI upload token) and the org/project slugs. The panel shows "not connected" until all are set.
+     */
+    SENTRY_API_TOKEN: z
+      .string()
+      .regex(/^[A-Za-z0-9_=+./-]{32,400}$/)
+      .optional(),
+    SENTRY_ORG: z
+      .string()
+      .regex(/^[a-z0-9][a-z0-9_-]{0,49}$/)
+      .optional(),
+    SENTRY_PROJECT_WEB: z
+      .string()
+      .regex(/^[a-z0-9][a-z0-9_-]{0,99}$/)
+      .optional(),
+    SENTRY_PROJECT_API: z
+      .string()
+      .regex(/^[a-z0-9][a-z0-9_-]{0,99}$/)
+      .optional(),
+    /** Sentry's API for the org's data region (EU: de.sentry.io, decision 2026-11-14). */
+    SENTRY_REGION_URL: z
+      .string()
+      .regex(/^https:\/\/([a-z0-9-]+\.)*sentry\.io\/?$/, 'https://<region>.sentry.io')
+      .default('https://de.sentry.io'),
+    /** PostHog project API key (`phc_…`, decision 2026-11-14): the worker forwards consented events; off when unset. */
+    POSTHOG_KEY: z
+      .string()
+      .regex(/^phc_[A-Za-z0-9]{20,80}$/, 'a PostHog project API key (phc_…)')
+      .optional(),
+    /** PostHog ingestion host; EU cloud by default (decision 2026-11-14). */
+    POSTHOG_HOST: z.url().default('https://eu.i.posthog.com'),
   })
   .superRefine((env, ctx) => {
     if (env.DATABASE_POOL_URL.includes('<')) {
@@ -130,6 +180,9 @@ const schema = z
       });
     }
     if (env.NODE_ENV !== 'production') return;
+    if (env.POSTHOG_KEY && !env.POSTHOG_HOST.startsWith('https://')) {
+      ctx.addIssue({ code: 'custom', path: ['POSTHOG_HOST'], message: 'https required in production' });
+    }
     if (!env.WEB_BASE_URL.startsWith('https://')) {
       ctx.addIssue({ code: 'custom', path: ['WEB_BASE_URL'], message: 'https required in production' });
     }
@@ -252,6 +305,30 @@ function toConfig(env: z.infer<typeof schema>) {
       listenUrl: env.DATABASE_URL && !env.DATABASE_URL.includes('<') ? env.DATABASE_URL : null,
     },
     assistant: env.ANTHROPIC_API_KEY ? { apiKey: env.ANTHROPIC_API_KEY, model: env.ASSISTANT_MODEL } : null,
+    /** Error reports to Sentry; null = off (nothing loaded, nothing sent). */
+    sentry: env.SENTRY_DSN
+      ? {
+          dsn: env.SENTRY_DSN,
+          environment: env.SENTRY_ENVIRONMENT ?? env.NODE_ENV,
+          release: env.SENTRY_RELEASE ?? null,
+        }
+      : null,
+    /** Read-only Sentry issues for Admin → Errors; null = "not connected". */
+    sentryIssues:
+      env.SENTRY_API_TOKEN && env.SENTRY_ORG && (env.SENTRY_PROJECT_WEB || env.SENTRY_PROJECT_API)
+        ? {
+            token: env.SENTRY_API_TOKEN,
+            org: env.SENTRY_ORG,
+            projects: {
+              web: env.SENTRY_PROJECT_WEB ?? null,
+              api: env.SENTRY_PROJECT_API ?? null,
+            },
+            baseUrl: env.SENTRY_REGION_URL.replace(/\/+$/, ''),
+            environment: env.SENTRY_ENVIRONMENT ?? env.NODE_ENV,
+          }
+        : null,
+    /** Consented events forwarded to PostHog by the worker; null = off. */
+    posthog: env.POSTHOG_KEY ? { key: env.POSTHOG_KEY, host: env.POSTHOG_HOST.replace(/\/+$/, '') } : null,
   };
 }
 

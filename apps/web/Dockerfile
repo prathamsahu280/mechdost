@@ -21,9 +21,9 @@ ARG NEXT_PUBLIC_AUTH_MODE=demo
 ARG NEXT_PUBLIC_MAPTILER_KEY
 ARG NEXT_PUBLIC_SATELLITE_TILES
 ARG NEXT_PUBLIC_SATELLITE_ATTRIBUTION
-ARG NEXT_PUBLIC_POSTHOG_KEY
-ARG NEXT_PUBLIC_POSTHOG_HOST
 ARG NEXT_PUBLIC_SENTRY_DSN
+ARG NEXT_PUBLIC_SENTRY_ENVIRONMENT=production
+ARG NEXT_PUBLIC_SENTRY_RELEASE
 ARG NEXT_PUBLIC_RAZORPAY_KEY_ID
 ARG NEXT_PUBLIC_TURNSTILE_SITE_KEY
 ARG NEXT_PUBLIC_FIREBASE_API_KEY
@@ -37,16 +37,36 @@ ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL \
     NEXT_PUBLIC_MAPTILER_KEY=$NEXT_PUBLIC_MAPTILER_KEY \
     NEXT_PUBLIC_SATELLITE_TILES=$NEXT_PUBLIC_SATELLITE_TILES \
     NEXT_PUBLIC_SATELLITE_ATTRIBUTION=$NEXT_PUBLIC_SATELLITE_ATTRIBUTION \
-    NEXT_PUBLIC_POSTHOG_KEY=$NEXT_PUBLIC_POSTHOG_KEY \
-    NEXT_PUBLIC_POSTHOG_HOST=$NEXT_PUBLIC_POSTHOG_HOST \
     NEXT_PUBLIC_SENTRY_DSN=$NEXT_PUBLIC_SENTRY_DSN \
+    NEXT_PUBLIC_SENTRY_ENVIRONMENT=$NEXT_PUBLIC_SENTRY_ENVIRONMENT \
+    NEXT_PUBLIC_SENTRY_RELEASE=$NEXT_PUBLIC_SENTRY_RELEASE \
     NEXT_PUBLIC_RAZORPAY_KEY_ID=$NEXT_PUBLIC_RAZORPAY_KEY_ID \
     NEXT_PUBLIC_TURNSTILE_SITE_KEY=$NEXT_PUBLIC_TURNSTILE_SITE_KEY \
     NEXT_PUBLIC_FIREBASE_API_KEY=$NEXT_PUBLIC_FIREBASE_API_KEY \
     NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=$NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN \
     NEXT_PUBLIC_FIREBASE_PROJECT_ID=$NEXT_PUBLIC_FIREBASE_PROJECT_ID \
     NEXT_PUBLIC_FIREBASE_APP_ID=$NEXT_PUBLIC_FIREBASE_APP_ID
-RUN pnpm --filter @mechdost/web build
+# Source maps for Sentry (decision 2026-11-14): only when the Deploy workflow passes the `sentry_auth_token` build
+# secret (never a build argument, never in a layer). Then the browser maps are built, uploaded to the EU region for
+# this release, and deleted in the same step; without the secret the step is skipped. Either way no `.map` file is
+# left under .next/static, so source maps are never served.
+ARG SENTRY_ORG
+ARG SENTRY_PROJECT_WEB
+ARG SENTRY_URL=https://de.sentry.io
+RUN --mount=type=secret,id=sentry_auth_token,required=false \
+    set -e; \
+    if [ -s /run/secrets/sentry_auth_token ] && [ -n "$SENTRY_ORG" ] && [ -n "$SENTRY_PROJECT_WEB" ] \
+       && [ -n "$NEXT_PUBLIC_SENTRY_RELEASE" ]; then UPLOAD=1; else UPLOAD=0; fi; \
+    if [ "$UPLOAD" = 1 ]; then export SENTRY_SOURCEMAPS=1; fi; \
+    pnpm --filter @mechdost/web build; \
+    if [ "$UPLOAD" = 1 ]; then \
+      SENTRY_AUTH_TOKEN="$(cat /run/secrets/sentry_auth_token)" SENTRY_URL="$SENTRY_URL" \
+        pnpm --filter @mechdost/web exec sentry-cli sourcemaps upload --org "$SENTRY_ORG" \
+        --project "$SENTRY_PROJECT_WEB" --release "$NEXT_PUBLIC_SENTRY_RELEASE" --url-prefix '~/_next/static' \
+        .next/static \
+        || echo 'Sentry source-map upload failed; deploying without it'; \
+    fi; \
+    find apps/web/.next/static -name '*.map' -delete
 
 FROM node:24.22.3-bookworm-slim@sha256:dc26ae92c9fb15cf6b1d63e20f0944b2efe0f115b20e00be48fb23fceb061c54 AS run
 ENV NODE_ENV=production PORT=3000 HOSTNAME=0.0.0.0 NEXT_TELEMETRY_DISABLED=1

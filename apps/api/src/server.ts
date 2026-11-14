@@ -13,6 +13,8 @@ import { createTurnstileVerifier } from './auth/turnstile';
 import { httpRazorpay } from './payments/razorpay';
 import { ConfigError, loadConfig } from './config';
 import { log, safeError } from './logger';
+import { startSentry } from './monitoring/sentry';
+import { createSentryIssuesClient } from './monitoring/sentry-issues';
 import { MemoryRateLimiter } from './rate-limit/limiter';
 import { UpstashRateLimiter } from './rate-limit/upstash';
 
@@ -26,6 +28,9 @@ try {
   }
   throw err;
 }
+
+// Error reports (decision 2026-11-14): no-op without SENTRY_DSN.
+const sentry = await startSentry(config.sentry, 'api');
 
 const { db, sql } = createDb(config.databaseUrl, { max: config.databasePoolMax, transactionPooler: true });
 const rateLimiter = config.upstash ? new UpstashRateLimiter(config.upstash) : new MemoryRateLimiter();
@@ -61,6 +66,7 @@ const app = createApp({
     : null,
   turnstile: config.turnstileSecret ? createTurnstileVerifier(config.turnstileSecret) : null,
   razorpay: config.razorpay ? httpRazorpay(config.razorpay.keyId, config.razorpay.keySecret) : null,
+  sentryIssues: config.sentryIssues ? createSentryIssuesClient(config.sentryIssues) : null,
 });
 if (!config.firebaseApiKey || !config.turnstileSecret)
   log('warn', 'password_sign_in_disabled', {
@@ -84,7 +90,7 @@ function shutdown(signal: string) {
   stopping = true;
   log('info', 'shutdown', { signal });
   server.close(() => {
-    void sql.end({ timeout: 5 }).finally(() => process.exit(0));
+    void Promise.all([sql.end({ timeout: 5 }), sentry.flush()]).finally(() => process.exit(0));
   });
   setTimeout(() => process.exit(1), 9000).unref();
 }

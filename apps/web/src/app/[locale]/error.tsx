@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useSyncExternalStore, useTransition } from 'react';
 import { track } from '@/lib/analytics';
 import { readErrorCopy, type ErrorCopy } from '@/lib/error-copy';
+import { reportClientError } from '@/lib/error-reporting';
 
 const noSubscribe = () => () => undefined;
 // useSyncExternalStore needs the same object on every read: parse the data block once.
@@ -15,7 +16,13 @@ const copySnapshot = () => (cachedCopy ??= readErrorCopy(document));
  * small (JS budget, spec 16): the message is focused on arrival and "Try again" is the one action. Strings come from
  * the layout's JSON data block, read in the browser (no i18n runtime on every page).
  */
-export default function LocaleError({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
+export default function LocaleError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
   const copy = useSyncExternalStore(noSubscribe, copySnapshot, () => null);
   const router = useRouter();
   const heading = useRef<HTMLHeadingElement>(null);
@@ -24,6 +31,11 @@ export default function LocaleError({ reset }: { error: Error & { digest?: strin
   useEffect(() => {
     heading.current?.focus();
   }, [copy]);
+
+  // A caught render error never reaches the window handlers: report it here (Sentry, decision 2026-11-14).
+  useEffect(() => {
+    reportClientError(error);
+  }, [error]);
 
   if (!copy) return null;
   return (

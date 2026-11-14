@@ -106,3 +106,67 @@ export async function recordClientEvents(
   );
   return input.rows.length;
 }
+
+/** Read position of the PostHog forwarder: the exact `received_at` (text, microseconds kept) and id of the last row. */
+export interface EventCursor {
+  receivedAt: string;
+  id: string;
+}
+
+export interface ForwardableEvent {
+  id: string;
+  occurredAt: Date;
+  source: string;
+  event: string;
+  userId: string | null;
+  anonymousId: string | null;
+  sessionId: string | null;
+  cityId: string | null;
+  page: string | null;
+  props: unknown;
+  consentVersion: string | null;
+  cursor: EventCursor;
+}
+
+/**
+ * Events to forward to PostHog (worker, decision 2026-11-14), oldest first after `after`. Only server events and
+ * web/app events stored with a consent record (the API stores none without "Allow analytics"; the forwarder checks
+ * the notice version again). Rows younger than `lagSeconds` wait: `received_at` is the inserting transaction's start
+ * time, so a slow transaction can commit a row older than the cursor; the lag lets it land first. Without a cursor
+ * the read starts `startMinutes` back (after a restart PostHog drops re-sent events by their uuid). The `occurred_at`
+ * bound (client times are at most 24 h old, else replaced by the receive time) lets Postgres skip old partitions.
+ */
+export async function readForwardableEvents(
+  db: Tx,
+  input: { after: EventCursor | null; limit: number; lagSeconds: number; startMinutes: number },
+): Promise<ForwardableEvent[]> {
+  const position = input.after
+    ? sql`(${events.receivedAt}, ${events.id}) > (${input.after.receivedAt}::timestamptz, ${input.after.id}::uuid)
+        and ${events.occurredAt} >= ${input.after.receivedAt}::timestamptz - interval '25 hours'`
+    : sql`${events.receivedAt} > now() - make_interval(mins => ${input.startMinutes})
+        and ${events.occurredAt} >= now() - make_interval(mins => ${input.startMinutes}) - interval '25 hours'`;
+  const rows = await db
+    .select({
+      id: events.id,
+      occurredAt: events.occurredAt,
+      receivedAt: sql<string>`${events.receivedAt}::text`,
+      source: events.source,
+      event: events.event,
+      userId: events.userId,
+      anonymousId: events.anonymousId,
+      sessionId: events.sessionId,
+      cityId: events.cityId,
+      page: events.page,
+      props: events.props,
+      consentVersion: events.consentVersion,
+    })
+    .from(events)
+    .where(
+      sql`(${events.source} = 'server' or ${events.consentVersion} is not null)
+        and ${events.receivedAt} < now() - make_interval(secs => ${input.lagSeconds})
+        and ${position}`,
+    )
+    .orderBy(events.receivedAt, events.id)
+    .limit(input.limit);
+  return rows.map(({ receivedAt, ...r }) => ({ ...r, cursor: { receivedAt, id: r.id } }));
+}

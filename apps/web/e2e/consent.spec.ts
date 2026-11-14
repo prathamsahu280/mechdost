@@ -42,7 +42,7 @@ test('a fresh visitor chooses; the choice persists and can be changed', async ({
     await page.evaluate(() => JSON.parse(localStorage.getItem('mechdost-consent') ?? '{}') as unknown),
   ).toMatchObject({
     analytics: false,
-    version: '2026-11',
+    version: '2026-11-14',
   });
 
   await page.getByRole('button', { name: 'Privacy choices' }).click();

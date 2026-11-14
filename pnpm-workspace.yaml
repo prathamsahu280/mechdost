@@ -18,5 +18,8 @@ allowBuilds:
   '@firebase/util': false
   protobufjs: false
   '@parcel/watcher': false # prebuilt binaries come from optional deps; script is a node-gyp fallback
+  # Reviewed and denied (2026-11-14): the binary comes from the optional @sentry/cli-<platform> package; the script
+  # only re-downloads it from the internet as a fallback. Used at Docker build time for source-map upload.
+  '@sentry/cli': false
 strictDepBuilds: false
 engineStrict: true

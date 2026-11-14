@@ -2,7 +2,7 @@
  * First-party event tracking (docs/specs/12-analytics-events.md, hard rule 9).
  * Events are typed by the shared registry and queued; each is also dispatched as a `mechdost:track` DOM event
  * (tests, dev tools). After the visitor allows analytics (consent banner), `event-transport.ts` sends them to
- * `POST /v1/events` when the API is configured. PostHog forwarding comes later.
+ * `POST /v1/events` when the API is configured; the worker forwards consented events to PostHog EU (spec 12).
  * No PII in props: ids, paths and lengths only — never phone numbers, emails or names.
  */
 import type { ClientEventName, ClientEvents } from '@mechdost/shared/analytics';

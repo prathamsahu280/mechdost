@@ -19,6 +19,7 @@
     "@hono/zod-openapi": "1.6.3",
     "@mechdost/db": "workspace:*",
     "@mechdost/shared": "workspace:*",
+    "@sentry/node": "10.78.0",
     "@upstash/ratelimit": "2.2.0",
     "@upstash/redis": "1.40.0",
     "firebase-admin": "14.5.0",
