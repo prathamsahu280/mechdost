@@ -26,6 +26,7 @@ import { formatDate, formatPrice } from '@/lib/format';
 import { StatusTimeline } from './status-timeline';
 import { productNameFor, shopNameFor } from '@/demo/i18n/localize';
 import { GstInvoiceLine } from '@/components/commerce/gst-invoice-line';
+import { SHOW_DEMO_CONTROLS } from '@/lib/data-mode';
 
 /** Order tracking (spec 04): timeline of the real flow — placed → admin routes → shop accepts → … → delivered. */
 export function OrderView({ code }: { code: string }) {
@@ -194,7 +195,7 @@ export function OrderView({ code }: { code: string }) {
               </Link>
             </p>
           ) : null}
-          {!isClosed(order) && order.stage < ORDER_STAGES.length - 1 ? (
+          {SHOW_DEMO_CONTROLS && !isClosed(order) && order.stage < ORDER_STAGES.length - 1 ? (
             <details className="mt-6 rounded-lg border border-dashed border-line p-3 text-sm">
               <summary className="cursor-pointer font-bold text-muted">{demo('controls')}</summary>
               <button

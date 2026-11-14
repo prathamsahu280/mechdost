@@ -21,6 +21,7 @@ import { formatDate, formatPrice } from '@/lib/format';
 import { productNameFor } from '@/demo/i18n/localize';
 import { customerAllowed } from '@/demo/customer-blocks';
 import { useSession } from '@/demo/session-state';
+import { SHOW_DEMO_CONTROLS } from '@/lib/data-mode';
 
 const STATUS_STYLE: Record<DemoQuote['status'], string> = {
   open: 'bg-warning-bg text-warning',
@@ -110,7 +111,7 @@ export function QuoteThread({ code }: { code: string }) {
         <Chat quote={quote} closed={closed} />
       </div>
 
-      {!closed ? (
+      {SHOW_DEMO_CONTROLS && !closed ? (
         <details className="rounded-lg border border-dashed border-line p-3 text-sm">
           <summary className="cursor-pointer font-bold text-muted">{demo('controls')}</summary>
           <div className="mt-3 flex flex-wrap gap-2">

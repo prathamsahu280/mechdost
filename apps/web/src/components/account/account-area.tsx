@@ -27,6 +27,7 @@ import { useTickets } from '@/demo/support';
 import { SupportSection } from './support-section';
 import { REQUEST_STAGES, requestStage, useHydrated, useQuotes, useRequests } from '@/demo/store';
 import { useOrderRows } from '@/lib/use-order-rows';
+import { SHOW_DEMO_CONTROLS } from '@/lib/data-mode';
 import { track } from '@/lib/analytics';
 import { AUTH_MODE } from '@/lib/auth/mode';
 import { signOutEverywhere } from '@/lib/auth/sign-out';
@@ -146,7 +147,7 @@ export function AccountArea({ section }: { section: AccountSection }) {
         {section === 'vehicles' ? <Vehicles account={session} /> : null}
         {section === 'addresses' ? <Addresses account={session} /> : null}
         {section === 'profile' ? <Profile account={session} /> : null}
-        <p className="text-xs text-muted">{t('demoNote')}</p>
+        {SHOW_DEMO_CONTROLS ? <p className="text-xs text-muted">{t('demoNote')}</p> : null}
       </div>
     </div>
   );

@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { APPLICATION_STAGES, updateApplication, useApplications } from '@/demo/store';
 import { AUTH_MODE } from '@/lib/auth/mode';
+import { SHOW_DEMO_CONTROLS } from '@/lib/data-mode';
 import { formatDate } from '@/lib/format';
 import { StatusTimeline } from '../commerce/status-timeline';
 
@@ -111,7 +112,7 @@ function DemoApplicationStatus({ code }: { code: string }) {
             currentLabel={t('current')}
           />
         </div>
-        {!app.rejected && app.stage < APPLICATION_STAGES.length - 1 ? (
+        {SHOW_DEMO_CONTROLS && !app.rejected && app.stage < APPLICATION_STAGES.length - 1 ? (
           <details className="mt-6 rounded-lg border border-dashed border-line p-3 text-sm">
             <summary className="cursor-pointer font-bold text-muted">{demo('controls')}</summary>
             <button

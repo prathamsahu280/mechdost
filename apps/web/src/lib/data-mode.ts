@@ -4,3 +4,9 @@
  * exactly `api` means demo, so a typo never points a demo deploy at a missing API.
  */
 export const DATA_MODE: 'api' | 'demo' = process.env.NEXT_PUBLIC_DATA_MODE === 'api' ? 'api' : 'demo';
+
+/**
+ * The "Demo controls" panels (simulate the next update, admin replies, offers) exist only for the browser demo.
+ * Hidden as soon as either real data or real sign-in is on (Q86, launch checklist).
+ */
+export const SHOW_DEMO_CONTROLS = DATA_MODE === 'demo' && process.env.NEXT_PUBLIC_AUTH_MODE !== 'firebase';

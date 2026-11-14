@@ -24,6 +24,7 @@ import { StatusTimeline } from '../commerce/status-timeline';
 import { serviceNameFor, workshopNameFor } from '@/demo/i18n/localize';
 import { DEMO_WORKSHOPS, workshopGstRegistered } from '@/demo/workshops';
 import { EstimateApproval, EstimateChoices, ServiceBillView } from './service-estimate';
+import { SHOW_DEMO_CONTROLS } from '@/lib/data-mode';
 
 /** The customer's stepper (spec 06 UI: Request, Estimate, Approved, In progress, Ready, Billed). */
 const STEPS = [
@@ -213,7 +214,7 @@ export function RequestView({ code }: { code: string }) {
             </Link>
           ) : null}
           {requestCancellable(request) ? <CancelRequest request={request} /> : null}
-          {requestAdvanceable(request) ? (
+          {SHOW_DEMO_CONTROLS && requestAdvanceable(request) ? (
             <details className="mt-6 rounded-lg border border-dashed border-line p-3 text-sm">
               <summary className="cursor-pointer font-bold text-muted">{demo('controls')}</summary>
               <button
