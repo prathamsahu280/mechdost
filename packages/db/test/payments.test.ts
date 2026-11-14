@@ -386,3 +386,30 @@ describe('final review 2026-11-12', () => {
     }
   });
 });
+
+describe('payment emails (spec 10, design 2026-11-15)', () => {
+  const emails = () =>
+    db
+      .select({ template: s.notificationOutbox.templateKey, payload: s.notificationOutbox.payload })
+      .from(s.notificationOutbox)
+      .where(eq(s.notificationOutbox.channel, 'email'));
+
+  it('a capture sends the receipt and the order confirmation once; a bad amount or a replay sends nothing', async () => {
+    await db
+      .update(s.users)
+      .set({ email: 'ravi.pay@example.com', emailVerifiedAt: new Date() })
+      .where(eq(s.users.id, userId));
+    await db.execute(sql`delete from notification_outbox`);
+    const { placed, providerOrderId } = await placeOnline();
+    expect(await emails()).toEqual([]); // placed but unpaid: nothing yet
+    await applyRazorpayPayment(t(), captured(providerOrderId, placed.totalPaise - 100));
+    expect(await emails()).toEqual([]);
+    await applyRazorpayPayment(t(), captured(providerOrderId, placed.totalPaise));
+    await applyRazorpayPayment(t(), captured(providerOrderId, placed.totalPaise));
+    const sent = await emails();
+    expect(sent.map((e) => e.template).sort()).toEqual(['order_placed', 'payment_received']);
+    const receipt = sent.find((e) => e.template === 'payment_received')!.payload as Record<string, string>;
+    expect(receipt).toMatchObject({ orderCode: placed.code, method: 'UPI' });
+    expect(receipt.paymentId).toBe(`pay_${providerOrderId}`);
+  });
+});

@@ -4,6 +4,7 @@ import {
   markOutboxRetry,
   markOutboxSent,
   openPayload,
+  recordServerEvent,
   renewOutboxClaim,
   type Channel,
   type OutboxRow,
@@ -35,6 +36,32 @@ export class ChannelError extends Error {
 export interface ChannelAdapter {
   readonly channel: Channel;
   send(row: OutboxRow): Promise<{ providerId: string | null }>;
+}
+
+/**
+ * `email_sent` / `email_failed` server events (spec 12): template, language and an error code, never an address or
+ * text. The row is already recorded, so an analytics failure is logged and never stops the dispatcher.
+ */
+async function recordEmailOutcome(
+  db: Tx,
+  row: OutboxRow,
+  outcome: { sent: true } | { sent: false; code: string },
+): Promise<void> {
+  if (row.channel !== 'email') return;
+  try {
+    if (outcome.sent)
+      await recordServerEvent(db, 'email_sent', {
+        userId: row.recipientUserId,
+        props: { template: row.templateKey, locale: row.locale },
+      });
+    else
+      await recordServerEvent(db, 'email_failed', {
+        userId: row.recipientUserId,
+        props: { template: row.templateKey, code: outcome.code },
+      });
+  } catch (err) {
+    log('warn', 'notify_event_failed', safeError(err));
+  }
 }
 
 export function backoffSeconds(attempts: number): number {
@@ -84,17 +111,24 @@ export async function dispatchOnce(
       const { providerId } = await adapter.send(open);
       // If this returns false another worker took over after our send: the provider id is still logged as a
       // code-free warning so the (rare) duplicate is visible in ops.
-      if (await markOutboxSent(db, row, providerId)) result.sent += 1;
-      else log('warn', 'notify_claim_lost_after_send', { channel: row.channel });
+      if (await markOutboxSent(db, row, providerId)) {
+        result.sent += 1;
+        await recordEmailOutcome(db, row, { sent: true });
+      } else log('warn', 'notify_claim_lost_after_send', { channel: row.channel });
     } catch (err) {
       const e = err instanceof ChannelError ? err : new ChannelError('retry', 'unexpected');
       if (e.failure === 'permanent') {
-        if (await markOutboxFailed(db, row, e.code)) result.failed += 1;
+        if (await markOutboxFailed(db, row, e.code)) {
+          result.failed += 1;
+          await recordEmailOutcome(db, row, { sent: false, code: e.code });
+        }
       } else {
         const delay = e.failure === 'later' ? 86_400 : backoffSeconds(row.attempts);
         const outcome = await markOutboxRetry(db, row, { error: e.code, delaySeconds: delay });
-        if (outcome === 'failed') result.failed += 1;
-        else if (outcome === 'retry') result.retried += 1;
+        if (outcome === 'failed') {
+          result.failed += 1;
+          await recordEmailOutcome(db, row, { sent: false, code: e.code });
+        } else if (outcome === 'retry') result.retried += 1;
       }
       // Codes only: never log the recipient or payload (PII, rule 16).
       log('warn', 'notify_send_failed', { channel: row.channel, code: e.code, failure: e.failure });

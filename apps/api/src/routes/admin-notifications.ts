@@ -4,8 +4,12 @@ import {
   NotFoundError,
   WHATSAPP_BUDGET_KEY,
   getGlobalSetting,
+  listEmailTemplates,
   listNotificationTemplates,
   putGlobalSetting,
+  queueEmailTest,
+  resetEmailTemplate,
+  saveEmailTemplate,
   saveNotificationTemplate,
   whatsAppUsage,
 } from '@mechdost/db/repo';
@@ -152,6 +156,111 @@ const saveBudget = createRoute({
   },
 });
 
+const EmailRow = z
+  .object({
+    key: z.string(),
+    locale: Locale,
+    subject: z.string().nullable(),
+    heading: z.string().nullable(),
+    body: z.string(),
+    buttonLabel: z.string().nullable(),
+    enabled: z.boolean(),
+    version: z.number().int(),
+    updatedAt: z.string(),
+  })
+  .openapi('EmailTemplateRow');
+
+const EmailSave = z
+  .object({
+    key: z.string().min(1).max(64),
+    locale: Locale,
+    subject: z.string().max(200).nullable(),
+    heading: z.string().max(200).nullable(),
+    body: z.string().max(4000).nullable(),
+    buttonLabel: z.string().max(100).nullable(),
+    enabled: z.boolean(),
+    /** null to create; the current version to edit (compare-and-set). */
+    version: z.number().int().min(1).nullable(),
+  })
+  .strict()
+  .openapi('EmailTemplateSave');
+
+const EmailTarget = z
+  .object({ key: z.string().min(1).max(64), locale: Locale })
+  .strict()
+  .openapi('EmailTemplateTarget');
+
+const EmailReset = EmailTarget.extend({ version: z.number().int().min(1) })
+  .strict()
+  .openapi('EmailTemplateReset');
+
+const listEmails = createRoute({
+  method: 'get',
+  path: '/admin/notifications/emails',
+  tags: ['admin'],
+  summary: 'Saved email text overrides and on/off switches (no row = the code default, on)',
+  security: [{ bearerAuth: [] }],
+  responses: {
+    200: {
+      description: 'Overrides',
+      content: { 'application/json': { schema: z.object({ templates: z.array(EmailRow) }) } },
+    },
+    ...errorResponses,
+  },
+});
+
+const saveEmail = createRoute({
+  method: 'put',
+  path: '/admin/notifications/emails',
+  tags: ['admin'],
+  summary: 'Save subject, heading, body and button label of an email in one language, and its on/off switch',
+  security: [{ bearerAuth: [] }],
+  request: { body: { required: true, content: { 'application/json': { schema: EmailSave } } } },
+  responses: {
+    200: {
+      description: 'Saved',
+      content: { 'application/json': { schema: z.object({ version: z.number().int() }) } },
+    },
+    409: { description: 'Stale version', content: { 'application/json': { schema: ErrorSchema } } },
+    422: { description: 'Text not allowed', content: { 'application/json': { schema: ErrorSchema } } },
+    ...errorResponses,
+  },
+});
+
+const resetEmail = createRoute({
+  method: 'post',
+  path: '/admin/notifications/emails/reset',
+  tags: ['admin'],
+  summary: 'Back to the default text of an email in one language (the on/off switch is kept)',
+  security: [{ bearerAuth: [] }],
+  request: { body: { required: true, content: { 'application/json': { schema: EmailReset } } } },
+  responses: {
+    200: {
+      description: 'Reset',
+      content: { 'application/json': { schema: z.object({ ok: z.literal(true) }) } },
+    },
+    409: { description: 'Stale version', content: { 'application/json': { schema: ErrorSchema } } },
+    ...errorResponses,
+  },
+});
+
+const testEmail = createRoute({
+  method: 'post',
+  path: '/admin/notifications/emails/test',
+  tags: ['admin'],
+  summary: 'Send an email with sample data to your own verified address',
+  security: [{ bearerAuth: [] }],
+  request: { body: { required: true, content: { 'application/json': { schema: EmailTarget } } } },
+  responses: {
+    200: {
+      description: 'Queued',
+      content: { 'application/json': { schema: z.object({ ok: z.literal(true) }) } },
+    },
+    422: { description: 'No verified address', content: { 'application/json': { schema: ErrorSchema } } },
+    ...errorResponses,
+  },
+});
+
 function monthStartIst(now: Date): Date {
   const { year, month } = istParts(now);
   return istStartOfDay(`${String(year)}-${String(month).padStart(2, '0')}-01`);
@@ -173,6 +282,10 @@ export function adminNotificationRoutes(deps: AppDeps, cache: SessionCache) {
       throw new NotFoundError('Not found');
     await next();
   });
+  app.use(
+    '/admin/notifications/emails/test',
+    rateLimit(deps.rateLimiter, RATE_RULES.emailTest, (c) => c.get('auth').user.id),
+  );
   return app
     .openapi(listTemplates, async (c) => {
       const templates = await listNotificationTemplates(deps.db);
@@ -204,6 +317,47 @@ export function adminNotificationRoutes(deps: AppDeps, cache: SessionCache) {
         staffUserId: c.get('auth').user.id,
       });
       return c.json(saved, 200);
+    })
+    .openapi(listEmails, async (c) => {
+      const templates = await listEmailTemplates(deps.db);
+      return c.json(
+        { templates: templates.map((t) => ({ ...t, updatedAt: t.updatedAt.toISOString() })) },
+        200,
+      );
+    })
+    .openapi(saveEmail, async (c) => {
+      const body = c.req.valid('json');
+      const saved = await saveEmailTemplate(deps.db, {
+        key: body.key,
+        locale: body.locale,
+        subject: body.subject,
+        heading: body.heading,
+        body: body.body,
+        buttonLabel: body.buttonLabel,
+        enabled: body.enabled,
+        expectedVersion: body.version,
+        staffUserId: c.get('auth').user.id,
+      });
+      return c.json(saved, 200);
+    })
+    .openapi(resetEmail, async (c) => {
+      const body = c.req.valid('json');
+      await resetEmailTemplate(deps.db, {
+        key: body.key,
+        locale: body.locale,
+        expectedVersion: body.version,
+        staffUserId: c.get('auth').user.id,
+      });
+      return c.json({ ok: true as const }, 200);
+    })
+    .openapi(testEmail, async (c) => {
+      const body = c.req.valid('json');
+      await queueEmailTest(deps.db, {
+        key: body.key,
+        locale: body.locale,
+        staffUserId: c.get('auth').user.id,
+      });
+      return c.json({ ok: true as const }, 200);
     })
     .openapi(getUsage, async (c) => {
       const monthStart = monthStartIst(new Date());

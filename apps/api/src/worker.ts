@@ -7,6 +7,7 @@ import { createDb, createListener } from '@mechdost/db';
 import { loadKeyring, type Keyring } from '@mechdost/db/crypto';
 import {
   bridgeInboundWhatsApp,
+  emailOverrideFor,
   ensureEventPartitions,
   expireDueAssignments,
   releaseExpiredReservations,
@@ -14,6 +15,7 @@ import {
   expireDueCoins,
   releaseDueCoinRewards,
   expireQuotes,
+  queueQuoteExpiringEmails,
   readForwardableEvents,
   resumeEndedPauses,
 } from '@mechdost/db/repo';
@@ -55,7 +57,9 @@ const publisher: LivePublisher =
 const relay = startRelay({ db, publisher });
 const adapters: ChannelAdapter[] = [
   ...(config.whatsapp ? [createWhatsAppAdapter(config.whatsapp)] : []),
-  ...(config.email ? [createEmailAdapter(config.email)] : []),
+  ...(config.email
+    ? [createEmailAdapter(config.email, { loadOverride: (key, locale) => emailOverrideFor(db, key, locale) })]
+    : []),
 ];
 // Encrypted payload fields (delivery codes, invite tokens) need the data keyring; a channel without it must not start.
 let keyring: Keyring | null = null;
@@ -206,7 +210,13 @@ const quoteTimer = setInterval(() => {
   if (expiringQuotes) return;
   expiringQuotes = true;
   void expireQuotes(db, { skip: quoteBackoff.skipped(Date.now()) })
-    .then(({ offersExpired, expired, failed }) => {
+    .then(async ({ offersExpired, expired, failed }) => {
+      // The 24-hour "offer ends soon" email (design 2026-11-15); idempotent per offer, so every sweep may call it.
+      const reminded = await queueQuoteExpiringEmails(db).catch((err: unknown) => {
+        log('error', 'quote_expiring_email_failed', safeError(err));
+        return 0;
+      });
+      if (reminded > 0) log('info', 'quote_expiring_emails_queued', { count: reminded });
       if (offersExpired > 0) log('info', 'quote_offers_expired', { count: offersExpired });
       if (expired > 0) log('info', 'quotes_expired', { count: expired });
       for (const f of failed) {

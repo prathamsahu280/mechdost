@@ -78,6 +78,12 @@ No test in this spec may be skipped in CI; schema PRs require the `drizzle-postg
 
 - `events_received_idx` on `events (received_at, id)`, created on the partitioned parent, so every existing partition and every partition `ensure_event_partitions` makes later gets it. It serves the PostHog forwarder's read (`readForwardableEvents`: `(received_at, id) > cursor`, ordered) as an index range scan. No data change; plain build (CONCURRENTLY is not allowed on a partitioned parent; the table is small at launch). Numbered 0053 because 0049–0052 are taken by parallel branches; the journal `when` is re-stamped at merge (L106).
 
+## Data model note: email templates (migration `email_templates`, 2026-11-15; renumbered at merge)
+
+- **`notification_templates`:** two nullable columns, `heading` (≤ 120) and `button_label` (≤ 40, CHECKs `templates_heading_len`, `templates_button_label_len`), used by `channel = 'email'` rows. For email rows `body = ''` means "no body override" and `enabled = false` switches that language off; no row = code default, on. Compare-and-set on `version`, audit rows `email_template.saved|reset|test_sent`. No new table, so no new RLS work (the table already has RLS on and is revoked from anon/authenticated).
+- **Outbox:** unchanged. Email dedupe keys are `{template}:{entity}:v{version}:email` (UNIQUE), written in the transaction of the state change; the delivery code travels sealed (`deliveryCodeEnc`) and is opened only by the dispatcher.
+- **Quote expiry reminder:** `queueQuoteExpiringEmails` reads active offers of offered quotes ending within 24 h (the partial unique index on active offers keeps the scan small); one transaction per offer, dedupe per offer id.
+
 ## Give-up and warnings (2026-11-15, migration 0054)
 
 - **Give-up is one transaction:** order row locked first (lock order), assignment `accepted -> given_up` as a compare-and-set

@@ -167,3 +167,136 @@ describe('admin notifications API', () => {
     expect(negative.status).toBe(400);
   });
 });
+
+describe('admin emails API (design 2026-11-15)', () => {
+  const put = (headers: Record<string, string>, body: Record<string, unknown>) => ({
+    method: 'PUT',
+    headers,
+    body: JSON.stringify(body),
+  });
+  const base = {
+    key: 'order_confirmed',
+    locale: 'en',
+    subject: 'Good news, {orderCode}',
+    heading: null,
+    body: null,
+    buttonLabel: null,
+    enabled: true,
+    version: null,
+  };
+
+  it('edits text per language, lists it, resets it, and audits each step', async () => {
+    const { app, headers, db } = await staffApp('marketing', '11');
+    expect(
+      (
+        (await (await app.request('/v1/admin/notifications/emails', { headers })).json()) as {
+          templates: unknown[];
+        }
+      ).templates,
+    ).toEqual([]);
+    const saved = await app.request('/v1/admin/notifications/emails', put(headers, base));
+    expect(saved.status).toBe(200);
+    const { version } = (await saved.json()) as { version: number };
+    const list = (await (await app.request('/v1/admin/notifications/emails', { headers })).json()) as {
+      templates: { key: string; locale: string; subject: string; version: number; enabled: boolean }[];
+    };
+    expect(list.templates).toMatchObject([
+      { key: 'order_confirmed', locale: 'en', subject: 'Good news, {orderCode}', version, enabled: true },
+    ]);
+    const stale = await app.request(
+      '/v1/admin/notifications/emails',
+      put(headers, { ...base, version: version + 5 }),
+    );
+    expect(stale.status).toBe(409);
+    const reset = await app.request('/v1/admin/notifications/emails/reset', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ key: 'order_confirmed', locale: 'en', version }),
+    });
+    expect(reset.status).toBe(200);
+    expect(
+      (
+        (await (await app.request('/v1/admin/notifications/emails', { headers })).json()) as {
+          templates: unknown[];
+        }
+      ).templates,
+    ).toEqual([]);
+    const audit = await db.select().from(s.auditLog);
+    expect(audit.map((a) => a.action)).toEqual(
+      expect.arrayContaining(['email_template.saved', 'email_template.reset']),
+    );
+  });
+
+  it('refuses unknown placeholders and HTML (422) and unknown templates; the old endpoint refuses the email channel', async () => {
+    const { app, headers } = await staffApp('marketing', '12');
+    const bad = await app.request(
+      '/v1/admin/notifications/emails',
+      put(headers, { ...base, body: 'Hi {nope}' }),
+    );
+    expect(bad.status).toBe(422);
+    expect(((await bad.json()) as ErrorJson).error.code).toBe('EMAIL_PLACEHOLDER');
+    const html = await app.request(
+      '/v1/admin/notifications/emails',
+      put(headers, { ...base, body: '<b>x</b>' }),
+    );
+    expect(html.status).toBe(422);
+    const unknown = await app.request(
+      '/v1/admin/notifications/emails',
+      put(headers, { ...base, key: 'not_a_template' }),
+    );
+    expect(unknown.status).toBe(422);
+    const generic = await app.request(
+      '/v1/admin/notifications/templates',
+      put(headers, { ...template, key: 'order.confirmed', channel: 'email' }),
+    );
+    expect(generic.status).toBe(422);
+  });
+
+  it('switching a template off stops it being queued; only notifications:manage reaches the endpoints', async () => {
+    const { app, headers } = await staffApp('marketing', '13');
+    const off = await app.request(
+      '/v1/admin/notifications/emails',
+      put(headers, { ...base, key: 'ticket_resolved', subject: null, enabled: false }),
+    );
+    expect(off.status).toBe(200);
+    const support = await staffApp('support_agent', '14');
+    expect(
+      (await support.app.request('/v1/admin/notifications/emails', { headers: support.headers })).status,
+    ).toBe(403);
+    const anon = await staffApp(null, '15');
+    expect((await anon.app.request('/v1/admin/notifications/emails', { headers: anon.headers })).status).toBe(
+      403,
+    );
+  });
+
+  it('a test send goes to the staff member’s own verified email only, marked as a test, with sample data', async () => {
+    const { app, headers, db } = await staffApp('marketing', '16');
+    const res = await app.request('/v1/admin/notifications/emails/test', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ key: 'order_confirmed', locale: 'hi' }),
+    });
+    expect(res.status).toBe(200);
+    const rows = await db.select().from(s.notificationOutbox);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      channel: 'email',
+      templateKey: 'order_confirmed',
+      locale: 'hi',
+      recipient: 'an-16@example.com',
+      payload: expect.objectContaining({ test: 'true' }) as unknown,
+    });
+    const unverified = await staffApp('marketing', '17', false);
+    const refused = await unverified.app.request('/v1/admin/notifications/emails/test', {
+      method: 'POST',
+      headers: unverified.headers,
+      body: JSON.stringify({ key: 'order_confirmed', locale: 'en' }),
+    });
+    expect(refused.status).toBeGreaterThanOrEqual(400);
+    expect(
+      (await unverified.db.select().from(s.notificationOutbox)).filter(
+        (r) => r.recipient === 'an-17@example.com',
+      ),
+    ).toHaveLength(0);
+  });
+});

@@ -863,3 +863,15 @@ User 2026-11-15 ~01:00 IST: "go ahead and work on the 1,2,3,4,5,6" (6 = shop Wha
 ## 2026-10-31 — Skills installed
 
 - `ui-ux-pro-max` (nextlevelbuilder) and `obra/superpowers` (15 workflow skills) installed globally for Claude Code. See `research/skills.md` for the full evaluation and picks.
+
+## 2026-11-15 — Transactional emails built (builder rulings under the approved design)
+
+Design: `docs/superpowers/specs/2026-11-15-emails-design.md`. Spec 10 "Transactional emails" is the built description.
+
+- **Quote offer email now follows the setting:** it used to require a verified address always; it now sends to the stored address unless `customers.require_verified_email` is on (design: "otherwise to the stored email"). Partners always need a verified address.
+- **Order placed (online) is sent when the payment is captured,** with the receipt, not at checkout (an unpaid online order is not "being confirmed with a seller"). COD is sent at checkout.
+- **Applicants (no account) get `application_received` / decision emails at the address on the form, in English.** The public form is behind Turnstile and the rate limits; the worst abuse is one calm acknowledgement to a third party per submission. Cost if wrong: a harassment vector (low); fix = send the first mail only after the applicant opens an emailed link, or only for invited applications.
+- **The delivery code is in the "out for delivery" email** (design); WhatsApp still never carries it. It is sealed in the outbox and opened only at send. Cost if wrong: an email account takeover could read the code; mitigation is the "only at the door" text and the delivery-code attempt limit.
+- **Button colour in emails is `#bf3c12`** (the design system's accent-soft text colour) so white label text passes AA; `#ea5728` stays the header stripe. No new token.
+- **Grievance contact** is an env var (`EMAIL_GRIEVANCE_CONTACT`), hidden until set (Q15b), because settings has no text kind yet.
+- **Not built, by the design's own rule:** `coins_expiring` (no reminder job), Resend bounce webhooks, workshop warning emails (no workshop login email), applicant language.

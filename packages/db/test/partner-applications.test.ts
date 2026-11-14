@@ -97,6 +97,12 @@ describe('public seller applications', () => {
     expect(products).toHaveLength(2);
     const detail = await getApplication(t(), ALL, r.code, keyring);
     expect(detail).toMatchObject({ gstNumber: '27AAPFU0939F1ZV', duplicateGstin: false, products: 2 });
+    // The applicant is told it arrived (spec 10), at the address on the form, in the same transaction.
+    const [mail] = await db
+      .select()
+      .from(s.notificationOutbox)
+      .where(eq(s.notificationOutbox.dedupeKey, `application_received:${row!.id}:v1:email`));
+    expect(mail).toMatchObject({ recipient: row!.email, payload: { applicationCode: r.code } });
   });
 
   it('flags a GSTIN that another application already used; refuses unknown products', async () => {

@@ -182,7 +182,12 @@ export const notificationTemplates = pgTable(
     channel: text().notNull(),
     locale: text().notNull(),
     subject: text(),
+    /** Email only (design 2026-11-15): the big line above the body; null = the code default. */
+    heading: text(),
+    /** For an email row, '' means no body override (the code default is used); other channels always carry text. */
     body: text().notNull(),
+    /** Email only: the button label; null = the code default. */
+    buttonLabel: text(),
     dltTemplateId: text(),
     enabled: boolean().notNull().default(true),
     version: version(),
@@ -192,6 +197,8 @@ export const notificationTemplates = pgTable(
   (t) => [
     primaryKey({ columns: [t.key, t.channel, t.locale] }),
     check('templates_locale_valid', sql`${t.locale} in ('en','hi')`),
+    check('templates_heading_len', sql`${t.heading} is null or char_length(${t.heading}) <= 120`),
+    check('templates_button_label_len', sql`${t.buttonLabel} is null or char_length(${t.buttonLabel}) <= 40`),
     index().on(t.updatedBy),
   ],
 );

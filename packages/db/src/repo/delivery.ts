@@ -2,7 +2,8 @@ import { randomInt } from 'node:crypto';
 import { and, eq, isNotNull, lt, ne, sql } from 'drizzle-orm';
 import { decryptField, encryptField, safeEqual, type Keyring } from '../crypto';
 import { auditLog, orders, shipments } from '../schema';
-import { queueOrderWhatsApp } from './order-notifications';
+import { queueOutForDeliveryEmail } from './email-events';
+import { queueOrderWhatsApp, sealPayloadField } from './order-notifications';
 import { ConflictError, NotFoundError, ValidationError } from './errors';
 import type { Tx } from './orders';
 
@@ -39,6 +40,12 @@ export async function issueDeliveryCode(db: Tx, keyring: Keyring, shipmentId: st
         orderId: shipment.orderId,
         event: 'order.out_for_delivery',
         orderVersion: order.version,
+      });
+      // The email (unlike WhatsApp) carries the code, sealed in the outbox until the sender opens it; one per order version.
+      await queueOutForDeliveryEmail(tx, {
+        orderId: shipment.orderId,
+        version: order.version,
+        sealedCode: sealPayloadField(code, keyring, 'deliveryCode'),
       });
     }
     return code;

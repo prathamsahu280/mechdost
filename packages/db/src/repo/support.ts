@@ -12,6 +12,7 @@ import {
   ticketMessages,
   users,
 } from '../schema';
+import { queueTicketEmail } from './email-events';
 import { ConflictError, NotFoundError, ValidationError } from './errors';
 import { notificationChannelEnabled } from './notification-admin';
 import { enqueueNotification } from './notify';
@@ -203,6 +204,14 @@ export async function createSupportTicket(
       entity: 'support_ticket',
       entityId: ticket.id,
       after: { code: ticket.code, kind: input.kind, channel: 'web', order: Boolean(orderId) },
+    });
+    // Email confirmation (spec 10), same transaction.
+    await queueTicketEmail(tx, {
+      template: 'ticket_received',
+      entityId: ticket.id,
+      version: 1,
+      userId: input.userId,
+      ticketCode: ticket.code,
     });
     return { code: ticket.code };
   });
@@ -423,6 +432,15 @@ export async function staffReplyTicket(
         });
       }
     }
+    // A reply on a ticket raised on WhatsApp is answered there; web and app tickets get the email.
+    if (!input.internal && message && t.channel !== 'whatsapp')
+      await queueTicketEmail(tx, {
+        template: 'ticket_reply',
+        entityId: message.id,
+        version: 1,
+        userId: t.userId,
+        ticketCode: t.code,
+      });
     return { status };
   });
 }
@@ -454,6 +472,14 @@ export async function setTicketStatus(
       before: { status: from },
       after: { status: input.to },
     });
+    if (input.to === 'resolved')
+      await queueTicketEmail(tx, {
+        template: 'ticket_resolved',
+        entityId: t.id,
+        version: row.version,
+        userId: t.userId,
+        ticketCode: t.code,
+      });
     return { status: input.to, version: row.version };
   });
 }

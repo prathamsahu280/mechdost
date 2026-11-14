@@ -9,6 +9,7 @@ import {
 } from '@mechdost/shared/partner-warnings';
 import { OPERATIONAL_SETTINGS } from '@mechdost/shared/settings';
 import { auditLog, partnerWarnings, settings, shops, workshops } from '../schema';
+import { queueShopWarningEmail } from './email-events';
 import { ConflictError, mapPgError, NotFoundError, ValidationError } from './errors';
 import { recordServerEvent } from './events';
 import type { Tx } from './orders';
@@ -188,6 +189,15 @@ export async function issuePartnerWarning(
           suggestPause: warnings.suggestPause,
         },
       });
+      // A calm note to the shop's people (spec 10). Workshops have no login email yet, so only shops get it.
+      if (input.kind === 'shop')
+        await queueShopWarningEmail(tx, {
+          warningId: row.id,
+          shopId: input.partnerId,
+          reasonCode: input.reasonCode,
+          counting: warnings.counting,
+          windowDays: warnings.windowDays,
+        });
       return { id: row.id, warnings };
     } catch (err) {
       mapPgError(err);

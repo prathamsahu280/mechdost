@@ -33,6 +33,7 @@ import type { ActorContext } from './actor';
 import { decodeCursor, encodeCursor, pageSize } from './cursor';
 import { cancelPendingServiceRewards, createServiceReward } from './coins';
 import { ConflictError, NotFoundError, pgCode, ValidationError } from './errors';
+import { queueServiceReceivedEmail, queueServiceStatusEmail } from './email-events';
 import { recordServerEvent } from './events';
 import { localized } from './localized';
 import type { Tx } from './orders';
@@ -171,6 +172,8 @@ export async function transitionRequest(
   r.status = row.status as ServiceRequestStatus;
   r.version = row.version;
   if (args.patch?.workshopId !== undefined) r.workshopId = args.patch.workshopId;
+  // Customer email for the milestone (spec 10, design 2026-11-15), same transaction: a rolled-back move sends nothing.
+  await queueServiceStatusEmail(tx, { request: r, to: args.to, version: row.version, payload: args.payload });
   return { status: r.status, version: row.version };
 }
 
@@ -721,6 +724,12 @@ export async function createServiceRequest(
       to: workshopId ? 'awaiting_workshop' : 'needs_routing',
       expectedVersion: created.version,
       actor: { type: 'system', userId: null },
+    });
+    await queueServiceReceivedEmail(tx, {
+      id: created.id,
+      code: created.code,
+      userId: created.userId,
+      workshopId,
     });
     return { code: created.code, status: moved.status, version: moved.version, replayed: false };
   });

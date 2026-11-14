@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useId, useState, type SyntheticEvent } from 'react';
 import {
@@ -33,6 +34,9 @@ import type { NotifyDefaults } from './admin-notifications';
 import { EVENT_LABEL, PROBLEM_LABEL, SAMPLES } from './notify-labels';
 import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
 
+/** The Emails tab (spec 10, design 2026-11-15) is loaded on demand: its template catalogue and preview code stay out of the WhatsApp tab. */
+const EmailsPanel = dynamic(() => import('./admin-emails-api').then((m) => m.EmailsPanel), { ssr: false });
+
 interface Loaded {
   templates: NotificationTemplateDto[];
   usage: WhatsAppUsageDto;
@@ -48,6 +52,8 @@ export function NotificationsApi({ defaults }: { defaults: NotifyDefaults }) {
   const locale = useLocale();
   const [data, setData] = useState<Loaded | null>(null);
   const [error, setError] = useState<CommonErrorKey | null>(null);
+  const [tab, setTab] = useState<'whatsapp' | 'emails'>('whatsapp');
+  const tabs = useTranslations('adminEmails');
 
   const load = useCallback(async () => {
     const [templates, usage] = await Promise.all([
@@ -83,7 +89,24 @@ export function NotificationsApi({ defaults }: { defaults: NotifyDefaults }) {
         </h2>
         <p className="mt-1 max-w-prose text-sm text-muted">{t('notify_intro')}</p>
       </div>
-      {error ? (
+      <div role="tablist" aria-label={tabs('tabs_label')} className="flex gap-2">
+        {(['whatsapp', 'emails'] as const).map((id) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={tab === id}
+            className={`${portalQuiet} ${tab === id ? 'bg-pill' : ''}`}
+            onClick={() => {
+              setTab(id);
+            }}
+          >
+            {tabs(id === 'whatsapp' ? 'tab_whatsapp' : 'tab_emails')}
+          </button>
+        ))}
+      </div>
+      {tab === 'emails' ? <EmailsPanel /> : null}
+      {tab === 'emails' ? null : error ? (
         <div role="alert" className={`${portalCard} space-y-3`}>
           <p className="text-sm font-bold text-error">{t(error)}</p>
           <button
@@ -98,12 +121,12 @@ export function NotificationsApi({ defaults }: { defaults: NotifyDefaults }) {
           </button>
         </div>
       ) : null}
-      {!data && !error ? (
+      {tab === 'emails' ? null : !data && !error ? (
         <p role="status" className={`${portalCard} text-sm text-muted`}>
           {t('api_common_loading')}
         </p>
       ) : null}
-      {data ? (
+      {tab === 'emails' ? null : data ? (
         <>
           <div
             role="status"

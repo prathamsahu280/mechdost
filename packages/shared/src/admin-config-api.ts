@@ -41,6 +41,36 @@ export const NotificationTemplateList = z.object({
   ),
 });
 
+/** One saved email override per template and language (no row = the code default, on). Spec 10, design 2026-11-15. */
+export const EmailTemplateRow = z.object({
+  key: z.string(),
+  locale: z.enum(['en', 'hi']),
+  subject: z.string().nullable(),
+  heading: z.string().nullable(),
+  body: z.string(),
+  buttonLabel: z.string().nullable(),
+  enabled: z.boolean(),
+  version: Int,
+  updatedAt: z.string(),
+});
+export type EmailTemplateRowDto = z.infer<typeof EmailTemplateRow>;
+export const EmailTemplateList = z.object({ templates: z.array(EmailTemplateRow) });
+
+/** Body of the email save (compare-and-set: `version` null creates). Text fields: null or '' = the code default. */
+export const EmailTemplateSave = z
+  .object({
+    key: z.string().min(1).max(64),
+    locale: z.enum(['en', 'hi']),
+    subject: z.string().max(200).nullable(),
+    heading: z.string().max(200).nullable(),
+    body: z.string().max(4000).nullable(),
+    buttonLabel: z.string().max(100).nullable(),
+    enabled: z.boolean(),
+    version: Int.min(1).nullable(),
+  })
+  .strict();
+export type EmailTemplateSaveDto = z.infer<typeof EmailTemplateSave>;
+
 export const WhatsAppUsage = z.object({
   budgetPaise: Int.nullable(),
   budgetVersion: Int.nullable(),

@@ -1,14 +1,19 @@
 import { and, eq, gte, isNull, sql } from 'drizzle-orm';
 import {
+  emailOverrideProblem,
+  isEmailTemplateKey,
+  sampleEmailParams,
+} from '@mechdost/shared/email-templates';
+import {
   DEFAULT_WHATSAPP_RATES_MILLIPAISE,
   WHATSAPP_TEMPLATES,
   isWhatsAppTemplateKey,
   placeholderProblem,
   utilityTemplateProblem,
 } from '@mechdost/shared/whatsapp';
-import { auditLog, notificationOutbox, notificationTemplates, settings } from '../schema';
+import { auditLog, notificationOutbox, notificationTemplates, settings, users } from '../schema';
 import { ConflictError, ValidationError } from './errors';
-import type { Channel, Locale } from './notify';
+import { enqueueNotification, type Channel, type Locale } from './notify';
 import type { Tx } from './orders';
 
 /**
@@ -50,6 +55,8 @@ export async function listNotificationTemplates(db: Tx): Promise<TemplateRecord[
 /** Validates a template for its channel. WhatsApp: known event, utility wording, matching placeholders. */
 export function templateProblem(input: { key: string; channel: Channel; body: string }): string | null {
   if (!CHANNELS.includes(input.channel)) return 'TEMPLATE_CHANNEL';
+  // Emails have their own editor and checks (closed placeholder list per template): `saveEmailTemplate`.
+  if (input.channel === 'email') return 'TEMPLATE_EMAIL_ENDPOINT';
   const body = input.body.trim();
   if (body.length === 0) return 'TEMPLATE_EMPTY';
   if (input.channel === 'whatsapp') {
@@ -65,6 +72,7 @@ export function templateProblem(input: { key: string; channel: Channel; body: st
 
 const MESSAGES: Record<string, string> = {
   TEMPLATE_CHANNEL: 'Unknown channel',
+  TEMPLATE_EMAIL_ENDPOINT: 'Emails are edited in the Emails tab',
   TEMPLATE_EMPTY: 'Write the message text',
   TEMPLATE_UNKNOWN_EVENT: 'This event has no WhatsApp template',
   TEMPLATE_PROMO_WORDING:
@@ -257,4 +265,245 @@ export async function whatsAppUsage(
     byCategory,
     costPaise: Math.round(totalMilli / 1000),
   };
+}
+
+// ----- Emails (design 2026-11-15): code defaults + admin text overrides ---------------------------------------
+// One row per template and language in `notification_templates` (channel `email`). No row = the code default and
+// switched on. Subject, heading and button label are null for "default"; body is '' for "default". `enabled`
+// false = the email is not sent in that language (`emailTemplateEnabled`).
+
+export interface EmailTemplateRecord {
+  key: string;
+  locale: Locale;
+  subject: string | null;
+  heading: string | null;
+  body: string;
+  buttonLabel: string | null;
+  enabled: boolean;
+  version: number;
+  updatedAt: Date;
+}
+
+export async function listEmailTemplates(db: Tx): Promise<EmailTemplateRecord[]> {
+  const rows = await db
+    .select()
+    .from(notificationTemplates)
+    .where(eq(notificationTemplates.channel, 'email'))
+    .orderBy(notificationTemplates.key, notificationTemplates.locale);
+  return rows.map((r) => ({
+    key: r.key,
+    locale: r.locale as Locale,
+    subject: r.subject,
+    heading: r.heading,
+    body: r.body,
+    buttonLabel: r.buttonLabel,
+    enabled: r.enabled,
+    version: r.version,
+    updatedAt: r.updatedAt,
+  }));
+}
+
+/**
+ * "Send me a test": one outbox row to the signed-in staff member's own verified address, with the template's
+ * sample data (never real customer data), through the same dispatcher and Resend path as real mail. It ignores the
+ * on/off switch (to try a template before switching it on) and is audited. Marked `test` so the subject says so.
+ */
+export async function queueEmailTest(
+  db: Tx,
+  input: { key: string; locale: Locale; staffUserId: string },
+): Promise<void> {
+  if (!isEmailTemplateKey(input.key))
+    throw new ValidationError(EMAIL_MESSAGES.EMAIL_UNKNOWN_TEMPLATE ?? '', 'EMAIL_UNKNOWN_TEMPLATE');
+  const key = input.key;
+  await db.transaction(async (tx) => {
+    const [me] = await tx
+      .select({ email: users.email, verified: users.emailVerifiedAt })
+      .from(users)
+      .where(eq(users.id, input.staffUserId))
+      .limit(1);
+    if (!me?.email || !me.verified)
+      throw new ValidationError('Your own email address is not verified', 'EMAIL_TEST_NO_ADDRESS');
+    await enqueueNotification(tx, {
+      dedupeKey: `email_test:${key}:${crypto.randomUUID()}`,
+      channel: 'email',
+      recipientUserId: input.staffUserId,
+      recipient: me.email,
+      templateKey: key,
+      locale: input.locale,
+      payload: { ...sampleEmailParams(key), test: 'true' },
+    });
+    await tx.insert(auditLog).values({
+      actorUserId: input.staffUserId,
+      actorRole: 'staff',
+      action: 'email_template.test_sent',
+      entity: 'email_template',
+      entityId: `${key}:${input.locale}`,
+    });
+  });
+}
+
+/** The admin's text override for one email and language at send time (null = code defaults). */
+export async function emailOverrideFor(
+  db: Tx,
+  key: string,
+  locale: Locale,
+): Promise<{
+  subject: string | null;
+  heading: string | null;
+  body: string;
+  buttonLabel: string | null;
+} | null> {
+  const [row] = await db
+    .select({
+      subject: notificationTemplates.subject,
+      heading: notificationTemplates.heading,
+      body: notificationTemplates.body,
+      buttonLabel: notificationTemplates.buttonLabel,
+    })
+    .from(notificationTemplates)
+    .where(
+      and(
+        eq(notificationTemplates.key, key),
+        eq(notificationTemplates.channel, 'email'),
+        eq(notificationTemplates.locale, locale),
+      ),
+    )
+    .limit(1);
+  return row ?? null;
+}
+
+const EMAIL_MESSAGES: Record<string, string> = {
+  EMAIL_UNKNOWN_TEMPLATE: 'This email does not exist',
+  EMAIL_PLACEHOLDER: 'Use only the placeholders listed for this email, in curly brackets',
+  EMAIL_HTML: 'Write plain text: the layout is fixed and HTML is not allowed',
+  EMAIL_SUBJECT_LINES: 'The subject must be one line',
+  EMAIL_TOO_LONG: 'The text is too long',
+};
+
+const blankToNull = (v: string | null | undefined) => (v && v.trim() !== '' ? v.trim() : null);
+
+export async function saveEmailTemplate(
+  db: Tx,
+  input: {
+    key: string;
+    locale: Locale;
+    subject?: string | null;
+    heading?: string | null;
+    body?: string | null;
+    buttonLabel?: string | null;
+    enabled: boolean;
+    /** null = create (fails if someone created it meanwhile). */
+    expectedVersion: number | null;
+    staffUserId: string;
+  },
+): Promise<{ version: number }> {
+  const text = {
+    subject: blankToNull(input.subject),
+    heading: blankToNull(input.heading),
+    body: blankToNull(input.body) ?? '',
+    buttonLabel: blankToNull(input.buttonLabel),
+  };
+  const problem = emailOverrideProblem(input.key, text);
+  if (problem) throw new ValidationError(EMAIL_MESSAGES[problem] ?? problem, problem);
+  return db.transaction(async (tx) => {
+    const where = and(
+      eq(notificationTemplates.key, input.key),
+      eq(notificationTemplates.channel, 'email'),
+      eq(notificationTemplates.locale, input.locale),
+    );
+    const [before] = await tx.select().from(notificationTemplates).where(where);
+    let saved: { version: number } | undefined;
+    if (input.expectedVersion === null) {
+      [saved] = await tx
+        .insert(notificationTemplates)
+        .values({
+          key: input.key,
+          channel: 'email',
+          locale: input.locale,
+          ...text,
+          enabled: input.enabled,
+          updatedBy: input.staffUserId,
+        })
+        .onConflictDoNothing()
+        .returning({ version: notificationTemplates.version });
+    } else {
+      [saved] = await tx
+        .update(notificationTemplates)
+        .set({ ...text, enabled: input.enabled, updatedBy: input.staffUserId })
+        .where(and(where, eq(notificationTemplates.version, input.expectedVersion)))
+        .returning({ version: notificationTemplates.version });
+    }
+    if (!saved)
+      throw new ConflictError('Someone else changed this email; reload and try again', 'STALE_TEMPLATE');
+    await tx.insert(auditLog).values({
+      actorUserId: input.staffUserId,
+      actorRole: 'staff',
+      action: 'email_template.saved',
+      entity: 'email_template',
+      entityId: `${input.key}:${input.locale}`,
+      before: before
+        ? {
+            subject: before.subject,
+            heading: before.heading,
+            body: before.body,
+            buttonLabel: before.buttonLabel,
+            enabled: before.enabled,
+            version: before.version,
+          }
+        : null,
+      after: { ...text, enabled: input.enabled, version: saved.version },
+    });
+    return saved;
+  });
+}
+
+/**
+ * Back to the code default text for one language (compare-and-set, audited). The on/off switch is kept: a
+ * switched-off email stays off until staff switch it on; an "on" email with no text left simply loses its row.
+ */
+export async function resetEmailTemplate(
+  db: Tx,
+  input: { key: string; locale: Locale; expectedVersion: number; staffUserId: string },
+): Promise<{ version: number | null }> {
+  if (!isEmailTemplateKey(input.key))
+    throw new ValidationError(EMAIL_MESSAGES.EMAIL_UNKNOWN_TEMPLATE ?? '', 'EMAIL_UNKNOWN_TEMPLATE');
+  return db.transaction(async (tx) => {
+    const where = and(
+      eq(notificationTemplates.key, input.key),
+      eq(notificationTemplates.channel, 'email'),
+      eq(notificationTemplates.locale, input.locale),
+      eq(notificationTemplates.version, input.expectedVersion),
+    );
+    const [before] = await tx.select().from(notificationTemplates).where(where).for('update');
+    if (!before)
+      throw new ConflictError('Someone else changed this email; reload and try again', 'STALE_TEMPLATE');
+    let version: number | null = null;
+    if (before.enabled) {
+      await tx.delete(notificationTemplates).where(where);
+    } else {
+      const [row] = await tx
+        .update(notificationTemplates)
+        .set({ subject: null, heading: null, body: '', buttonLabel: null, updatedBy: input.staffUserId })
+        .where(where)
+        .returning({ version: notificationTemplates.version });
+      version = row?.version ?? null;
+    }
+    await tx.insert(auditLog).values({
+      actorUserId: input.staffUserId,
+      actorRole: 'staff',
+      action: 'email_template.reset',
+      entity: 'email_template',
+      entityId: `${input.key}:${input.locale}`,
+      before: {
+        subject: before.subject,
+        heading: before.heading,
+        body: before.body,
+        buttonLabel: before.buttonLabel,
+        enabled: before.enabled,
+        version: before.version,
+      },
+      after: { reset: true },
+    });
+    return { version };
+  });
 }

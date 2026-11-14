@@ -1,9 +1,11 @@
 import {
   EMAIL_TEMPLATES,
+  composeEmail,
   emailReplyTo,
   emailSender,
   isEmailTemplateKey,
   renderEmail,
+  type EmailOverride,
 } from '@mechdost/shared/email-templates';
 import type { OutboxRow } from '@mechdost/db/repo';
 import { ChannelError, type ChannelAdapter } from './dispatcher';
@@ -11,6 +13,8 @@ import { ChannelError, type ChannelAdapter } from './dispatcher';
 /**
  * Email through Resend (plan 2026-11-13 Task 3b), two REST calls' worth of code and no SDK (dependency policy).
  * The outbox dedupe is per row; Resend's `Idempotency-Key` makes a retried send after a lost answer harmless.
+ * Text comes from the template's code defaults, replaced field by field by the admin's override when one exists
+ * (`loadOverride`, read at send time so an edit applies to mail still waiting); the layout never changes.
  */
 export interface EmailConfig {
   apiKey: string;
@@ -18,13 +22,17 @@ export interface EmailConfig {
   domain: string;
   /** Website origin for links in emails. */
   webBaseUrl: string;
+  /** Footer contact of the grievance officer; hidden until set (Q15b). */
+  grievanceContact?: string | null;
 }
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+export type OverrideLoader = (key: string, locale: 'en' | 'hi') => Promise<EmailOverride | null>;
+
 export function createEmailAdapter(
   cfg: EmailConfig,
-  opts: { fetchImpl?: typeof fetch; timeoutMs?: number } = {},
+  opts: { fetchImpl?: typeof fetch; timeoutMs?: number; loadOverride?: OverrideLoader } = {},
 ): ChannelAdapter {
   const fetchImpl = opts.fetchImpl ?? fetch;
   return {
@@ -38,11 +46,27 @@ export function createEmailAdapter(
         const raw = row.payload[key];
         params[key] = typeof raw === 'number' ? String(raw) : typeof raw === 'string' ? raw : '';
       }
-      const content = template.render(params, {
-        locale: row.locale === 'hi' ? 'hi' : 'en',
-        webBaseUrl: cfg.webBaseUrl.replace(/\/$/, ''),
+      const locale = row.locale === 'hi' ? 'hi' : 'en';
+      // The code default is always a safe text; a database hiccup must not stop the mail.
+      const override: EmailOverride | null = await (
+        opts.loadOverride?.(row.templateKey, locale) ?? Promise.resolve(null)
+      ).catch(() => null);
+      const composed = composeEmail(
+        row.templateKey,
+        locale,
+        params,
+        { webBaseUrl: cfg.webBaseUrl, grievanceContact: cfg.grievanceContact ?? null },
+        override,
+      );
+      const { text, html } = renderEmail(composed, {
+        locale,
+        grievanceContact: cfg.grievanceContact ?? null,
       });
-      const { text, html } = renderEmail(content);
+      // A staff test send (Admin → Emails) is marked so nobody mistakes it for a real notification.
+      const subject =
+        row.payload.test === 'true'
+          ? `${locale === 'hi' ? '[टेस्ट]' : '[Test]'} ${composed.subject}`
+          : composed.subject;
       let res: Response;
       try {
         res = await fetchImpl('https://api.resend.com/emails', {
@@ -56,7 +80,7 @@ export function createEmailAdapter(
             from: emailSender(template.purpose, cfg.domain),
             to: [row.recipient],
             reply_to: emailReplyTo(cfg.domain),
-            subject: content.subject,
+            subject,
             text,
             html,
           }),
