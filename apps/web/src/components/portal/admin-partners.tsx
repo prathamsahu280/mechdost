@@ -12,7 +12,8 @@ import {
 } from '@/demo/partner-status';
 import { localizeShop, localizeWorkshop } from '@/demo/i18n/localize';
 import { allShops } from '@/demo/shops';
-import { APPLICATION_STAGES, useApplications } from '@/demo/store';
+import { APPLICATION_STAGES } from '@/demo/store';
+import { useApplications } from '@/demo/partner-store';
 import { DEMO_WORKSHOPS } from '@/demo/workshops';
 import { track } from '@/lib/analytics';
 import { AUTH_MODE } from '@/lib/auth/mode';

@@ -4,16 +4,15 @@
  * second application with the same GSTIN is flagged. Mirrors `packages/db/src/repo/partner-applications.ts`.
  */
 import { beforeEach, describe, expect, it } from 'vitest';
+import { APPLICATION_STAGES, type DemoApplication } from '../src/demo/store';
 import {
-  APPLICATION_STAGES,
   applicationsWithSameGstin,
   approveApplication,
   createApplication,
   createInvite,
   defaultCoverage,
   rejectApplication,
-  type DemoApplication,
-} from '../src/demo/store';
+} from '../src/demo/partner-store';
 
 function fakeWindow() {
   const data = new Map<string, string>();

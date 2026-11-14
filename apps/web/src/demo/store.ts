@@ -20,10 +20,8 @@ import { useSyncExternalStore } from 'react';
 import type { PricedCart } from './cart-pricing';
 import type { CategoryKey } from './categories';
 import { takesNewWork } from './partner-status';
-import { APPLICATION_REJECT_REASONS, type ApplicationRejectReason } from '@mechdost/shared/partner-codes';
-import { OPERATIONAL_SETTINGS } from '@mechdost/shared/settings';
+import type { ApplicationRejectReason } from '@mechdost/shared/partner-codes';
 import { siteSettings } from './site-config';
-import { PIN_CENTROIDS } from './workshops';
 import type { EstimateLine, ServiceBill } from '@mechdost/shared/service-bill';
 
 export const MAX_LINES = 20;
@@ -377,12 +375,6 @@ const isRequest = (v: unknown): v is DemoServiceRequest =>
 
 const isApplication = (v: unknown): v is DemoApplication =>
   isRecord(v) && typeof v.code === 'string' && typeof v.kind === 'string';
-const isReview = (v: unknown): v is DemoReview =>
-  isRecord(v) && typeof v.id === 'string' && typeof v.rating === 'number';
-const isInvite = (v: unknown): v is DemoInvite =>
-  isRecord(v) && typeof v.token === 'string' && typeof v.phone === 'string' && typeof v.status === 'string';
-const isQuote = (v: unknown): v is DemoQuote =>
-  isRecord(v) && typeof v.code === 'string' && Array.isArray(v.messages) && Array.isArray(v.offers);
 
 const cartSnapshot = () => read(KEYS.cart, isCartLine);
 const ordersSnapshot = () => read(KEYS.orders, isOrder);
@@ -398,318 +390,9 @@ export const requestsSnapshot = () => read(KEYS.requests, isRequest, upgradeRequ
 const applicationsSnapshot = () => read(KEYS.applications, isApplication);
 /** Current applications outside React (shops derived from approvals, sign-in linking; Q89). */
 export const applicationsNow = applicationsSnapshot;
-const reviewsSnapshot = () => read(KEYS.reviews, isReview);
-const quotesSnapshot = () => read(KEYS.quotes, isQuote);
-const invitesSnapshot = () => read(KEYS.invites, isInvite);
 const serverSnapshot = () => EMPTY;
 
-export function useApplications(): readonly DemoApplication[] {
-  return useSyncExternalStore(subscribe, applicationsSnapshot, serverSnapshot);
-}
-
-export function useReviews(): readonly DemoReview[] {
-  return useSyncExternalStore(subscribe, reviewsSnapshot, serverSnapshot);
-}
-
-export function useQuotes(): readonly DemoQuote[] {
-  return useSyncExternalStore(subscribe, quotesSnapshot, serverSnapshot);
-}
-
-export function useInvites(): readonly DemoInvite[] {
-  return useSyncExternalStore(subscribe, invitesSnapshot, serverSnapshot);
-}
-
-/** Admin (demo): invite a seller. Returns the one-time token for the link. */
-export function createInvite(input: { name: string; email: string; phone: string }): DemoInvite {
-  const bytes = new Uint8Array(24);
-  globalThis.crypto.getRandomValues(bytes);
-  const token = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
-  const now = new Date();
-  const invite: DemoInvite = {
-    ...input,
-    token,
-    createdAt: now.toISOString(),
-    expiresAt: new Date(now.getTime() + 7 * 86_400_000).toISOString(),
-    status: 'sent',
-  };
-  write(
-    KEYS.invites,
-    [invite, ...invitesSnapshot().filter((i) => !(i.phone === input.phone && i.status === 'sent'))].slice(
-      0,
-      200,
-    ),
-  );
-  return invite;
-}
-
-/** The invite behind a link, or why it cannot be used. */
-export function findInvite(token: string): DemoInvite | 'used' | 'expired' | 'revoked' | null {
-  const invite = invitesSnapshot().find((i) => i.token === token);
-  if (!invite) return null;
-  if (invite.status === 'used' || invite.status === 'revoked') return invite.status;
-  if (Date.parse(invite.expiresAt) <= Date.now()) return 'expired';
-  return invite;
-}
-
-export function revokeInvite(token: string) {
-  write(
-    KEYS.invites,
-    invitesSnapshot().map((i) =>
-      i.token === token && i.status === 'sent' ? { ...i, status: 'revoked' as const } : i,
-    ),
-  );
-}
-
 const newId = () => globalThis.crypto.randomUUID();
-
-export function createApplication(
-  input: Omit<DemoApplication, 'code' | 'createdAt' | 'stage' | 'rejected'>,
-  inviteToken?: string,
-): DemoApplication {
-  const app: DemoApplication = {
-    ...input,
-    code: publicCode('PA', 'RPR'),
-    createdAt: new Date().toISOString(),
-    // An invited seller is pre-approved by the inviting admin, with the city's default delivery area, which the
-    // admin can edit later (design 2026-11-13; the API uses `defaultCoverage` the same way).
-    stage: inviteToken ? APPLICATION_STAGES.indexOf('onboarded') : 0,
-    rejected: false,
-    ...(inviteToken ? { coverage: defaultCoverage() } : {}),
-  };
-  if (inviteToken)
-    write(
-      KEYS.invites,
-      invitesSnapshot().map((i) => (i.token === inviteToken ? { ...i, status: 'used' as const } : i)),
-    );
-  write(KEYS.applications, [app, ...applicationsSnapshot()].slice(0, 100));
-  return app;
-}
-
-/** The city's PIN codes with the standard charge and days (settings `partners.default_*`). */
-export function defaultCoverage(): Coverage {
-  return {
-    pincodes: Object.keys(PIN_CENTROIDS),
-    shippingPaise: OPERATIONAL_SETTINGS['partners.default_shipping_paise'].default,
-    leadDays: OPERATIONAL_SETTINGS['partners.default_lead_days'].default,
-  };
-}
-
-const ONBOARDED_STAGE = APPLICATION_STAGES.indexOf('onboarded');
-
-function validCoverage(c: Coverage): boolean {
-  const ship = OPERATIONAL_SETTINGS['partners.default_shipping_paise'];
-  const days = OPERATIONAL_SETTINGS['partners.default_lead_days'];
-  return (
-    c.pincodes.length > 0 &&
-    c.pincodes.every((p) => /^\d{6}$/.test(p)) &&
-    Number.isSafeInteger(c.shippingPaise) &&
-    c.shippingPaise >= ship.min &&
-    c.shippingPaise <= ship.max &&
-    Number.isSafeInteger(c.leadDays) &&
-    c.leadDays >= days.min &&
-    c.leadDays <= days.max
-  );
-}
-
-/** Admin: approve an open application with its delivery area. False if invalid or already decided. */
-export function approveApplication(code: string, coverage: Coverage): boolean {
-  if (!validCoverage(coverage)) return false;
-  return decideOpenApplication(code, (a) => ({
-    ...a,
-    stage: ONBOARDED_STAGE,
-    coverage: { ...coverage, pincodes: [...new Set(coverage.pincodes)] },
-  }));
-}
-
-/** Admin: reject an open application with a reason code. */
-export function rejectApplication(code: string, reason: ApplicationRejectReason): boolean {
-  if (!APPLICATION_REJECT_REASONS.includes(reason)) return false;
-  return decideOpenApplication(code, (a) => ({ ...a, rejected: true, rejectReason: reason }));
-}
-
-function decideOpenApplication(code: string, decide: (a: DemoApplication) => DemoApplication): boolean {
-  const all = applicationsSnapshot();
-  const open = all.find((a) => a.code === code && !a.rejected && a.stage < ONBOARDED_STAGE);
-  if (!open) return false;
-  write(
-    KEYS.applications,
-    all.map((a) => (a === open ? decide(a) : a)),
-  );
-  return true;
-}
-
-/** Other open (not rejected) applications with the same GST number: a likely duplicate. */
-export function applicationsWithSameGstin(app: DemoApplication): DemoApplication[] {
-  if (!app.gstNumber) return [];
-  return applicationsSnapshot().filter(
-    (a) => a.code !== app.code && !a.rejected && a.gstNumber === app.gstNumber,
-  );
-}
-
-/** Admin action (demo): move an application forward, or reject it. */
-export function updateApplication(code: string, change: { stage?: number; rejected?: boolean }) {
-  write(
-    KEYS.applications,
-    applicationsSnapshot().map((a) =>
-      a.code === code
-        ? {
-            ...a,
-            stage: Math.min(change.stage ?? a.stage, APPLICATION_STAGES.length - 1),
-            rejected: change.rejected ?? a.rejected,
-          }
-        : a,
-    ),
-  );
-}
-
-/** Customer review: starts `pending`; only admin-approved reviews are published (decision 2026-10-31). */
-export function submitReview(input: Omit<DemoReview, 'id' | 'createdAt' | 'status'>): DemoReview {
-  const review: DemoReview = {
-    ...input,
-    rating: Math.min(5, Math.max(1, Math.round(input.rating))),
-    id: newId(),
-    createdAt: new Date().toISOString(),
-    status: 'pending',
-  };
-  write(KEYS.reviews, [review, ...reviewsSnapshot()].slice(0, 200));
-  return review;
-}
-
-export function moderateReview(id: string, status: ReviewStatus) {
-  write(
-    KEYS.reviews,
-    reviewsSnapshot().map((r) => (r.id === id ? { ...r, status } : r)),
-  );
-}
-
-/** Bulk quote request (spec 19): customer + lines; negotiation happens in the message thread. */
-export function createQuote(input: {
-  customer: DemoQuote['customer'];
-  pincode: string;
-  address?: string;
-  lines: DemoQuote['lines'];
-  note: string;
-}): DemoQuote {
-  const now = new Date().toISOString();
-  const quote: DemoQuote = {
-    code: publicCode('QT', 'RPR'),
-    createdAt: now,
-    customer: input.customer,
-    pincode: input.pincode,
-    ...(input.address ? { address: input.address } : {}),
-    lines: input.lines,
-    status: 'open',
-    messages: input.note ? [{ id: newId(), from: 'customer', text: input.note, at: now }] : [],
-    offers: [],
-    orderCode: null,
-  };
-  write(KEYS.quotes, [quote, ...quotesSnapshot()].slice(0, 50));
-  return quote;
-}
-
-function updateQuote(code: string, change: (q: DemoQuote) => DemoQuote) {
-  write(
-    KEYS.quotes,
-    quotesSnapshot().map((q) => (q.code === code ? change(q) : q)),
-  );
-}
-
-export function postQuoteMessage(code: string, from: QuoteMessage['from'], text: string) {
-  const clean = text.trim().slice(0, 1000);
-  if (!clean) return;
-  updateQuote(code, (q) =>
-    q.status === 'accepted' || q.status === 'declined'
-      ? q
-      : { ...q, messages: [...q.messages, { id: newId(), from, text: clean, at: new Date().toISOString() }] },
-  );
-}
-
-/** Admin sets the final price. A new offer supersedes the previous one (only the latest can be accepted). */
-export function sendOffer(
-  code: string,
-  offer: { lines: QuoteOffer['lines']; deliveryPaise: number; validDays: number; note: string },
-) {
-  updateQuote(code, (q) => {
-    if (q.status === 'accepted' || q.status === 'declined') return q;
-    const subtotal = offer.lines.reduce((sum, l) => {
-      const qty = q.lines.find((x) => x.slug === l.slug)?.qty ?? 0;
-      return sum + l.unitPaise * qty;
-    }, 0);
-    const now = new Date();
-    const next: QuoteOffer = {
-      version: (q.offers.at(-1)?.version ?? 0) + 1,
-      lines: offer.lines,
-      deliveryPaise: offer.deliveryPaise,
-      totalPaise: subtotal + offer.deliveryPaise,
-      validUntil: new Date(now.getTime() + offer.validDays * 86_400_000).toISOString(),
-      note: offer.note.trim().slice(0, 500),
-      at: now.toISOString(),
-    };
-    return { ...q, status: 'offered', offers: [...q.offers, next] };
-  });
-}
-
-export type AcceptResult =
-  | { ok: true; orderCode: string }
-  | { ok: false; reason: 'stale' | 'expired' | 'closed' | 'address' | 'blocked' };
-
-/** Where the accepted quote is delivered; the same rules as checkout apply (review B10). */
-export interface QuoteDelivery {
-  /** From `customerAllowed()` for the account (passed in: the store stays free of the blocks module). */
-  allowed: { order: boolean; cod: boolean };
-  address: { line1: string; landmark: string; pincode: string } | null;
-}
-
-/**
- * Accept exactly the offer version the customer saw. A superseded or expired offer is refused, and a quote can
- * create only one order (mirrors spec 19's conditional UPDATE + UNIQUE orders.quote_offer_id).
- */
-export function acceptOffer(code: string, version: number, delivery: QuoteDelivery): AcceptResult {
-  const quote = quotesSnapshot().find((q) => q.code === code);
-  if (quote?.status !== 'offered') return { ok: false, reason: 'closed' };
-  const latest = quote.offers.at(-1);
-  if (latest?.version !== version) return { ok: false, reason: 'stale' };
-  if (new Date(latest.validUntil).getTime() < Date.now()) return { ok: false, reason: 'expired' };
-  // Checkout rules (checkout-form.tsx): a serviceable Raipur address, and no order/COD block on the account.
-  const address =
-    delivery.address ??
-    (quote.address ? { line1: quote.address, landmark: '', pincode: quote.pincode } : null);
-  if (!address || address.line1.trim().length < 10 || !/^4920\d{2}$/.test(address.pincode))
-    return { ok: false, reason: 'address' };
-  if (!delivery.allowed.order || !delivery.allowed.cod) return { ok: false, reason: 'blocked' };
-
-  const lines = quote.lines.map((l) => ({
-    slug: l.slug,
-    name: l.name,
-    brand: l.brand,
-    qty: l.qty,
-    unitPaise: latest.lines.find((x) => x.slug === l.slug)?.unitPaise ?? l.listPaise,
-  }));
-  const subtotalPaise = lines.reduce((s, l) => s + l.unitPaise * l.qty, 0);
-  const order: DemoOrder = {
-    code: publicCode('MD', 'RPR'),
-    createdAt: new Date().toISOString(),
-    lines,
-    subtotalPaise,
-    deliveryPaise: latest.deliveryPaise,
-    totalPaise: subtotalPaise + latest.deliveryPaise,
-    customer: {
-      name: quote.customer.name,
-      phone: quote.customer.phone,
-      address: [address.line1.trim(), address.landmark.trim()].filter(Boolean).join(', '),
-      pincode: address.pincode,
-    },
-    payment: 'cod',
-    stage: 1, // the normal order workflow continues: admin routes it to a shop
-  };
-  write(KEYS.orders, [order, ...ordersSnapshot()].slice(0, 50));
-  updateQuote(code, (q) => ({ ...q, status: 'accepted', orderCode: order.code }));
-  return { ok: true, orderCode: order.code };
-}
-
-export function declineQuote(code: string) {
-  updateQuote(code, (q) => (q.status === 'accepted' ? q : { ...q, status: 'declined' }));
-}
 
 export function useCart(): readonly CartLine[] {
   return useSyncExternalStore(subscribe, cartSnapshot, serverSnapshot);
@@ -880,6 +563,22 @@ export function useHydrated(): boolean {
 
 /** Storage primitives for sibling demo modules (session.ts). Same cache, listeners and cross-tab sync. */
 type SharedKey = (typeof KEYS)['accounts' | 'session' | 'loginFailures' | 'resetLinks' | 'coins'];
+
+/**
+ * The store's own storage for the split-out demo modules (`quote-store.ts`, `partner-store.ts`): same keys, cache and listeners, so
+ * every hook sees every write. Split so pages that never touch quotes do not carry that code (JS budget, spec 16).
+ */
+export const storeCore = {
+  keys: KEYS,
+  read,
+  write,
+  subscribe,
+  serverSnapshot,
+  isRecord,
+  ordersSnapshot,
+  applicationsSnapshot,
+  newId,
+};
 
 export const demoStorage = {
   read: read as <T>(key: SharedKey, isItem: (v: unknown) => v is T) => readonly T[],

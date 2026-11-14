@@ -25,7 +25,8 @@ import { VEHICLE_ICON, VEHICLE_LABEL_KEY, VEHICLE_TYPES } from '@mechdost/shared
 import { CoinsSection } from './coins-section';
 import { useTickets } from '@/demo/support';
 import { SupportSection } from './support-section';
-import { useHydrated, useQuotes } from '@/demo/store';
+import { useHydrated } from '@/demo/store';
+import { useQuotes } from '@/demo/quote-store';
 import { useOrderRows } from '@/lib/use-order-rows';
 import { useServiceRows } from '@/lib/use-service-rows';
 import { SHOW_DEMO_CONTROLS } from '@/lib/data-mode';

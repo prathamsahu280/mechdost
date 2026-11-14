@@ -4,16 +4,15 @@ import { APPLICATION_REJECT_REASONS, type ApplicationRejectReason } from '@mechd
 import dynamic from 'next/dynamic';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
+import { APPLICATION_STAGES, type DemoApplication } from '@/demo/store';
 import {
-  APPLICATION_STAGES,
   applicationsWithSameGstin,
   approveApplication,
   defaultCoverage,
   rejectApplication,
   updateApplication,
   useApplications,
-  type DemoApplication,
-} from '@/demo/store';
+} from '@/demo/partner-store';
 import { track } from '@/lib/analytics';
 import { AUTH_MODE } from '@/lib/auth/mode';
 import { formatDate, formatPrice } from '@/lib/format';

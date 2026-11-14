@@ -3,7 +3,8 @@
 import { Star } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
-import { submitReview, useReviews, type ReviewTarget } from '@/demo/store';
+import { type ReviewTarget } from '@/demo/store';
+import { submitReview, useReviews } from '@/demo/partner-store';
 import { track } from '@/lib/analytics';
 import { formatDate } from '@/lib/format';
 import { StarRating } from './star-rating';

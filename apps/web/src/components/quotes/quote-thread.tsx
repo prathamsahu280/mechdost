@@ -5,16 +5,8 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useRef, useState, type SyntheticEvent } from 'react';
-import {
-  acceptOffer,
-  declineQuote,
-  postQuoteMessage,
-  sendOffer,
-  useHydrated,
-  useQuotes,
-  type DemoQuote,
-  type QuoteOffer,
-} from '@/demo/store';
+import { useHydrated, type DemoQuote, type QuoteOffer } from '@/demo/store';
+import { acceptOffer, declineQuote, postQuoteMessage, sendOffer, useQuotes } from '@/demo/quote-store';
 import { track } from '@/lib/analytics';
 import { localePath } from '@/lib/locale-path';
 import { formatDate, formatPrice } from '@/lib/format';

@@ -3,16 +3,14 @@ import { blockCustomer, customerAllowed } from '../src/demo/customer-blocks';
 import { priceCart } from '../src/demo/cart-pricing';
 import { saveOrderRules } from '../src/demo/order-rules';
 import {
-  acceptOffer,
   cancelDemoOrder,
   customerMayCancel,
   placeDemoOrder,
   addToCart,
   advanceOrder,
-  createQuote,
-  sendOffer,
   type DemoOrder,
 } from '../src/demo/store';
+import { acceptOffer, createQuote, sendOffer } from '../src/demo/quote-store';
 
 /** Minimal browser stand-in: the store needs localStorage and storage-event listeners only. */
 function fakeWindow(opts: { failWrites?: boolean } = {}) {

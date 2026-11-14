@@ -6,7 +6,7 @@ import { useState, type SyntheticEvent } from 'react';
 import { isGstEnrolmentNumber, isGstin } from '@mechdost/shared/gst';
 import { SellerApplicationSchema, type Location, type SellerApplication } from '@mechdost/shared/partners';
 import { DEMO_PRODUCTS } from '@/demo/catalogue';
-import { createApplication } from '@/demo/store';
+import { createApplication } from '@/demo/partner-store';
 import { track } from '@/lib/analytics';
 import { AUTH_MODE } from '@/lib/auth/mode';
 import { applyErrorView, type ApplyFormError } from '@/lib/partner-onboarding-view';

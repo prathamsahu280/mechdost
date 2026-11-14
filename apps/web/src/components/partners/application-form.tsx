@@ -3,7 +3,8 @@
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
-import { createApplication, type PartnerKind } from '@/demo/store';
+import { type PartnerKind } from '@/demo/store';
+import { createApplication } from '@/demo/partner-store';
 import { VEHICLE_LABEL_KEY } from '@mechdost/shared/vehicles';
 import { track } from '@/lib/analytics';
 

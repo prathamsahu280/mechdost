@@ -22,25 +22,21 @@ import {
   APPLICATION_STAGES,
   ORDER_STAGES,
   REQUEST_STAGES,
-  moderateReview,
-  postQuoteMessage,
   adminConfirmDelivery,
   cancelDemoOrder,
   rejectOrder,
   staffMayCancel,
   routeOrder,
   routingState,
-  sendOffer,
-  useApplications,
   useOrders,
-  useQuotes,
   useRequests,
-  useReviews,
   reassignRequest,
   type DemoOrder,
   type DemoQuote,
   type RoutingState,
 } from '@/demo/store';
+import { moderateReview, useApplications, useReviews } from '@/demo/partner-store';
+import { postQuoteMessage, sendOffer, useQuotes } from '@/demo/quote-store';
 import { takesNewWork } from '@/demo/partner-status';
 import { DEMO_WORKSHOPS } from '@/demo/workshops';
 import { track } from '@/lib/analytics';

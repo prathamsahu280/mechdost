@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
 import { useSyncExternalStore } from 'react';
-import { findInvite, useInvites } from '@/demo/store';
+import { findInvite, useInvites } from '@/demo/partner-store';
 import { AUTH_MODE } from '@/lib/auth/mode';
 import { SellerApplicationForm } from './seller-application-form';
 
