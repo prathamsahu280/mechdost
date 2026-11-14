@@ -13,6 +13,23 @@ export interface ErrorCopy {
 
 const KEYS: readonly (keyof ErrorCopy)[] = ['title', 'body', 'tryAgain', 'trying'];
 
+let remembered: { copy: ErrorCopy; lang: string } | null = null;
+
+/**
+ * Keep the copy and the page language for `app/global-error.tsx` (review 2026-11-14): that page replaces the whole
+ * document, so the data block is gone by the time it renders. Called on load by the site-wide analytics island; a
+ * page without a valid block never erases what was read.
+ */
+export function rememberErrorCopy(
+  doc: Pick<Document, 'getElementById'> & { documentElement: { lang: string } },
+): void {
+  const copy = readErrorCopy(doc);
+  if (copy) remembered = { copy, lang: doc.documentElement.lang || 'en' };
+}
+
+/** The remembered copy, or null when no page with the data block has loaded yet. */
+export const rememberedErrorCopy = () => remembered;
+
 /** The copy from the page, or null when it is missing or malformed (the caller then renders nothing). */
 export function readErrorCopy(doc: Pick<Document, 'getElementById'>): ErrorCopy | null {
   try {

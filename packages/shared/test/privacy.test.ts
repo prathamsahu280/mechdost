@@ -1,5 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { scrubFreeText } from '../src/privacy';
+import { isPseudonymousId, maskPersonalDataKeepIds, scrubFreeText } from '../src/privacy';
+
+describe('pseudonymous ids survive masking (review 2026-11-14)', () => {
+  it('recognises UUIDs and public codes only as whole values', () => {
+    expect(isPseudonymousId('01a1db2d-e45a-7f47-8659-9433601cf99d')).toBe(true);
+    expect(isPseudonymousId('MD-RPR-2026-234567')).toBe(true);
+    expect(isPseudonymousId('9876543210')).toBe(false);
+    expect(isPseudonymousId('x 01a1db2d-e45a-7f47-8659-9433601cf99d')).toBe(false);
+  });
+
+  it('keeps every embedded id (more than 26 too) and still masks phone numbers', () => {
+    const ids = Array.from({ length: 30 }, (_, i) => `MD-RPR-2026-${String(100000 + i)}`);
+    expect(maskPersonalDataKeepIds(`${ids.join(' ')} call 9876543210`)).toBe(`${ids.join(' ')} call #`);
+  });
+});
 
 describe('scrubFreeText', () => {
   it('removes phone numbers and emails but keeps part numbers and sizes', () => {

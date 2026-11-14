@@ -23,6 +23,8 @@ const PROTECTED: [method: string, path: string][] = [
   ['POST', '/v1/admin/pincodes'],
   ['PATCH', '/v1/admin/pincodes/492001'],
   ['POST', '/v1/admin/pincodes/492001/status'],
+  // Admin → Errors (Sentry issues, review 2026-11-14).
+  ['GET', '/v1/admin/errors'],
 ];
 
 describe('protected routes refuse anonymous requests under any path encoding', () => {

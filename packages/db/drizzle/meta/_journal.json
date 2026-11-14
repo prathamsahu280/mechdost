@@ -330,6 +330,13 @@
       "when": 1794669041990,
       "tag": "0048_pincode_service_area",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1794679331422,
+      "tag": "0053_events_received_index",
+      "breakpoints": true
     }
   ]
 }

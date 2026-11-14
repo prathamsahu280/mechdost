@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { scrubFreeText } from '@mechdost/shared/privacy';
 import { track } from '@/lib/analytics';
+import { rememberErrorCopy } from '@/lib/error-copy';
 import { startErrorReporting } from '@/lib/error-reporting';
 import { stripLocale, type SiteLocale } from '@/lib/locale-path';
 
@@ -22,6 +23,8 @@ export function AnalyticsListener({ locale }: { locale: SiteLocale }) {
 
   useEffect(() => {
     startErrorReporting();
+    // The global error page replaces the whole document: keep its words while the data block is here.
+    rememberErrorCopy(document);
   }, []);
 
   useEffect(() => {

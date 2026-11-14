@@ -41,6 +41,9 @@ describe('error reporting in the browser', () => {
   it('loads the SDK only on the first error, then sends queued and later errors', async () => {
     const listeners = fakeWindow();
     const m = await load(DSN);
+    // Listening starts when the module loads (before hydration), not only from the island's effect.
+    expect(listeners.has('error')).toBe(true);
+    expect(listeners.has('unhandledrejection')).toBe(true);
     m.startErrorReporting();
     expect(startSentry).not.toHaveBeenCalled();
     listeners.get('error')?.({ message: 'Script error.' }); // cross-origin: ignored

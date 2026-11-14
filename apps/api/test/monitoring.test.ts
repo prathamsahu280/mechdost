@@ -80,6 +80,7 @@ describe('Sentry options', () => {
     expect('tracesSampleRate' in opts).toBe(false);
     expect(opts.defaultIntegrations).toBe(false);
     expect(opts.skipOpenTelemetrySetup).toBe(true);
+    expect(opts.registerEsmLoaderHooks).toBe(false);
     expect(opts.maxBreadcrumbs).toBe(0);
     expect(opts.serverName).toBe('api');
     expect(opts.release).toBe('abc');
@@ -238,6 +239,46 @@ describe('PostHog payload', () => {
   });
 });
 
+/** Fixed UUID v7 sample (time-ordered ids are full of digit runs that look like phone numbers to the mask). */
+function uuidV7Sample(n: number): string[] {
+  let seed = 0x2f6b1d3;
+  const hex = (len: number) => {
+    let out = '';
+    for (let i = 0; i < len; i += 1) {
+      seed = (seed * 1103515245 + 12345) % 2 ** 31;
+      out += (seed % 16).toString(16);
+    }
+    return out;
+  };
+  return Array.from(
+    { length: n },
+    () =>
+      `${hex(8)}-${hex(4)}-7${hex(3)}-${'89ab'[Number.parseInt(hex(1), 16) % 4] ?? '8'}${hex(3)}-${hex(12)}`,
+  );
+}
+
+describe('PostHog props keep pseudonymous ids (review 2026-11-14)', () => {
+  it('every UUID v7 and public code survives; phone numbers still go', () => {
+    const ids = [
+      '01a1db2d-e45a-7f47-8659-9433601cf99d',
+      '019a8f00-0000-7000-8000-000000000001',
+      ...uuidV7Sample(200),
+    ];
+    for (const id of ids) expect(scrubProps({ shopId: id })).toEqual({ shopId: id });
+    for (const code of [
+      'MD-RPR-2026-234567',
+      'SR-RPR-2026-7K2M9Q',
+      'REQ-RPR-2026-000001',
+      'QT-RPR-2026-99999Z',
+    ])
+      expect(scrubProps({ orderCode: code })).toEqual({ orderCode: code });
+    expect(scrubProps({ ids: ['01a1db2d-e45a-7f47-8659-9433601cf99d', '9876543210'] })).toEqual({
+      ids: ['01a1db2d-e45a-7f47-8659-9433601cf99d'],
+    });
+    expect(scrubProps({ ref: '98765 43210', other: '+91-9876543210' })).toEqual({});
+  });
+});
+
 const ok = () => new Response('{"status":"Ok"}', { status: 200 });
 
 describe('PostHog sender', () => {
@@ -332,6 +373,45 @@ describe('PostHog forwarder', () => {
     await fwd.stop();
     expect(stats).toMatchObject({ forwarded: 1, dropped: 1 });
     expect(logs).toContain('posthog_batch_dropped');
+  });
+
+  it('a row that cannot be converted is skipped (cursor moves on); a throwing sender never kills the worker', async () => {
+    const logs: string[] = [];
+    const poison = row({ id: 'p', occurredAt: new Date(Number.NaN), cursor: { receivedAt: 't0', id: 'p' } });
+    const reads: unknown[] = [];
+    const fwd = startPosthogForwarder({
+      read: (after) => (reads.push(after), Promise.resolve(after ? [] : [poison, ...rows(1, 1)])),
+      sender: { send: () => Promise.reject(new Error('boom')) },
+      webBaseUrl: WEB,
+      intervalMs: 0,
+      log: (_s, m) => logs.push(m),
+    });
+    // A sender that throws counts as a dropped batch.
+    await expect(fwd.tick()).resolves.toMatchObject({ forwarded: 0, dropped: 1, skipped: 1 });
+    // Anything unexpected inside a tick is logged, never an unhandled rejection (which would end the worker).
+    const broken = startPosthogForwarder({
+      read: () => Promise.resolve(null as unknown as []),
+      sender: { send: () => Promise.resolve(true) },
+      webBaseUrl: WEB,
+      intervalMs: 0,
+      log: (_s, m) => logs.push(m),
+    });
+    await expect(broken.tick()).resolves.toMatchObject({ forwarded: 0 });
+    expect(logs).toContain('posthog_tick_failed');
+    await broken.stop();
+    const safe = startPosthogForwarder({
+      read: (after) => (reads.push(after), Promise.resolve(after ? [] : [poison, ...rows(1, 1)])),
+      sender: { send: () => Promise.resolve(true) },
+      webBaseUrl: WEB,
+      intervalMs: 0,
+      log: (_s, m) => logs.push(m),
+    });
+    await expect(safe.tick()).resolves.toMatchObject({ forwarded: 1, skipped: 1 });
+    await safe.tick();
+    expect(reads.at(-1)).toEqual({ receivedAt: 't1', id: 'id1' });
+    expect(logs).toContain('posthog_row_skipped');
+    await fwd.stop();
+    await safe.stop();
   });
 
   it('a failed read keeps the cursor and logs, without throwing', async () => {

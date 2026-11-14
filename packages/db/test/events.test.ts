@@ -166,4 +166,19 @@ describe('events to forward to PostHog (decision 2026-11-14)', () => {
     const server = next.find((r) => r.id === ids.server)!;
     expect((await read(server.cursor, 100)).map((r) => r.id)).not.toContain(ids.server);
   });
+
+  it('the cursor columns are indexed on the parent and on every partition, also ones created later (0053)', async () => {
+    await ensureEventPartitions(t(), 8);
+    const parts = (
+      await db.execute(sql`select c.relname from pg_inherits i join pg_class c on c.oid = i.inhrelid
+        where i.inhparent = 'public.events'::regclass`)
+    ).rows as { relname: string }[];
+    const indexed = (
+      await db.execute(sql`select tablename from pg_indexes
+        where schemaname = 'public' and indexdef like '%(received_at, id)%'`)
+    ).rows as { tablename: string }[];
+    const tables = new Set(indexed.map((r) => r.tablename));
+    expect(tables.has('events')).toBe(true);
+    for (const p of parts) expect([p.relname, tables.has(p.relname)]).toEqual([p.relname, true]);
+  });
 });

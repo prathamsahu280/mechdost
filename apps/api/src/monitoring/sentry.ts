@@ -29,6 +29,8 @@ export function sentryOptions<I>(settings: SentrySettings, service: Service, int
     defaultIntegrations: false as const,
     integrations,
     skipOpenTelemetrySetup: true,
+    // No import-in-the-middle loader hooks: nothing is auto-instrumented, and the hooks cost start-up time and memory.
+    registerEsmLoaderHooks: false,
     maxBreadcrumbs: 0,
     beforeSend: <E extends ScrubbableEvent>(event: E): E => scrubErrorEvent(event),
   };

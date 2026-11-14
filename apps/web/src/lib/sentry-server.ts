@@ -23,6 +23,7 @@ export function startServerReporting(dsn: string): void {
     sendDefaultPii: false,
     defaultIntegrations: false,
     skipOpenTelemetrySetup: true,
+    registerEsmLoaderHooks: false,
     integrations: [
       Sentry.eventFiltersIntegration(),
       Sentry.linkedErrorsIntegration(),

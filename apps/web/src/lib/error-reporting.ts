@@ -59,3 +59,7 @@ export function startErrorReporting(): void {
   window.addEventListener('error', onError);
   window.addEventListener('unhandledrejection', onRejection);
 }
+
+// Start as soon as this module runs in the browser (its chunk loads before hydration), so errors during hydration
+// are caught too; the island's effect call is then a no-op (review 2026-11-14).
+if (typeof window !== 'undefined') startErrorReporting();

@@ -22,6 +22,46 @@ export function maskPersonalData(text: string): string {
   return text.normalize('NFKC').replace(FORMAT, '').replace(EMAIL, '#').replace(DIGIT_RUN, '#');
 }
 
+// Pseudonymous ids we keep (review 2026-11-14): time-ordered UUIDs (v7) and public codes such as MD-RPR-2026-7K3Q9X
+// are full of digit runs that look like phone numbers to DIGIT_RUN, but they identify rows, not people.
+const UUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/iu;
+const PUBLIC_CODE = /[A-Z]{2,4}-[A-Z]{3}-\d{4}-[0-9A-HJKMNP-TV-Z]{6}/u;
+const ID_ANYWHERE = new RegExp(`(?<![\\w-])(?:${UUID.source}|${PUBLIC_CODE.source})(?![\\w-])`, 'giu');
+
+/** True when the whole value is a UUID or a public code (MD-…, SR-…, REQ-…, QT-…): kept, never masked. */
+export function isPseudonymousId(value: string): boolean {
+  return new RegExp(`^(?:${UUID.source}|${PUBLIC_CODE.source})$`, 'iu').test(value);
+}
+
+// Placeholders: private-use brackets around lowercase letters (a letter ends a digit run, so masking cannot join
+// digits across a kept id).
+const OPEN = '\uE000';
+const CLOSE = '\uE001';
+const PLACEHOLDER = /\uE000([a-z]+)\uE001/gu;
+
+/**
+ * `maskPersonalData` that leaves embedded UUIDs and public codes intact (error messages: an order code or a row id
+ * is what makes a report useful). The ids are swapped for letter-only placeholders while masking, then put back.
+ */
+export function maskPersonalDataKeepIds(text: string): string {
+  const kept: string[] = [];
+  const marked = text.replace(ID_ANYWHERE, (m) => {
+    kept.push(m);
+    return `${OPEN}${placeholder(kept.length - 1)}${CLOSE}`;
+  });
+  return maskPersonalData(marked).replace(PLACEHOLDER, (whole, key: string) => kept[indexOf(key)] ?? whole);
+}
+
+const placeholder = (n: number): string =>
+  n < 26
+    ? String.fromCharCode(97 + n)
+    : placeholder(Math.floor(n / 26) - 1) + String.fromCharCode(97 + (n % 26));
+const indexOf = (key: string): number => {
+  let acc = -1;
+  for (let i = 0; i < key.length; i += 1) acc = (acc + 1) * 26 + key.charCodeAt(i) - 97;
+  return acc;
+};
+
 /**
  * The privacy notice a visitor accepted when they chose "Allow analytics" (the web stores it with the choice and
  * sends it with every event). `2026-11-14` is the first notice that names PostHog (EU) as the analytics provider

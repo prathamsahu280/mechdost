@@ -10,7 +10,7 @@
  * server — so they use one fixed id with business codes only. Props pass `scrubProps` on top of the registry's own
  * validation: personal keys, free text, emails and phone-like numbers never leave.
  */
-import { consentAllowsForwarding, maskPersonalData } from '@mechdost/shared/privacy';
+import { consentAllowsForwarding, isPseudonymousId, maskPersonalData } from '@mechdost/shared/privacy';
 import type { EventCursor, ForwardableEvent } from '@mechdost/db/repo';
 import type { Severity } from '../logger';
 
@@ -32,7 +32,10 @@ const PERSONAL_KEY =
 
 function cleanValue(value: unknown, depth: number): { keep: boolean; value?: unknown } {
   if (typeof value === 'string') {
-    if (value.length > MAX_STRING || maskPersonalData(value) !== value) return { keep: false };
+    if (value.length > MAX_STRING) return { keep: false };
+    // UUIDs (v7: digit runs) and public codes (MD-RPR-2026-…) identify rows, not people (review 2026-11-14).
+    if (isPseudonymousId(value)) return { keep: true, value };
+    if (maskPersonalData(value) !== value) return { keep: false };
     return { keep: true, value };
   }
   if (typeof value === 'number') return Number.isFinite(value) ? { keep: true, value } : { keep: false };
@@ -190,13 +193,23 @@ export function startPosthogForwarder(input: {
       if (!last) break;
       const out: PosthogEvent[] = [];
       for (const row of rows) {
-        const e = toPosthogEvent(row, input.webBaseUrl);
+        let e: PosthogEvent | null = null;
+        try {
+          e = toPosthogEvent(row, input.webBaseUrl);
+        } catch (err) {
+          // One malformed row must not stop the stream: skip it, the cursor still moves past it.
+          input.log('warn', 'posthog_row_skipped', {
+            errorName: err instanceof Error ? err.name : typeof err,
+          });
+        }
         if (e) out.push(e);
         else stats.skipped += 1;
       }
       for (let i = 0; i < out.length; i += sendSize) {
         const chunk = out.slice(i, i + sendSize);
-        if (await input.sender.send(chunk)) stats.forwarded += chunk.length;
+        // A sender that throws (it should not) counts as a dropped batch.
+        const sent = await input.sender.send(chunk).catch(() => false);
+        if (sent) stats.forwarded += chunk.length;
         else {
           stats.dropped += chunk.length;
           input.log('warn', 'posthog_batch_dropped', { events: chunk.length });
@@ -214,9 +227,17 @@ export function startPosthogForwarder(input: {
 
   const tick = (): Promise<ForwarderStats> => {
     if (running) return running;
-    running = runTick().finally(() => {
-      running = null;
-    });
+    // Never rejects: an unhandled rejection from the interval would end the worker (Sentry `strict` mode exits).
+    running = runTick()
+      .catch((err: unknown) => {
+        input.log('error', 'posthog_tick_failed', {
+          errorName: err instanceof Error ? err.name : typeof err,
+        });
+        return { forwarded: 0, skipped: 0, dropped: 0 };
+      })
+      .finally(() => {
+        running = null;
+      });
     return running;
   };
 

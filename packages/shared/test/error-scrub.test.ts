@@ -31,6 +31,36 @@ describe('scrubErrorText', () => {
   });
 });
 
+describe('scrubErrorText: values embedded by URLs and Postgres (review 2026-11-14)', () => {
+  it('drops query strings of URLs inside the text', () => {
+    expect(scrubErrorText('fetch failed: https://api.mechdost.com/v1/x?token=abc&phone=1 (503)')).toBe(
+      'fetch failed: https://api.mechdost.com/v1/x (503)',
+    );
+    expect(scrubErrorText('GET /v1/catalogue?q=ravi+sahu failed')).toBe('GET /v1/catalogue failed');
+  });
+
+  it('cuts the input Postgres echoes back', () => {
+    expect(scrubErrorText('invalid input syntax for type uuid: "Ravi Sahu, House 12"')).toBe(
+      'invalid input syntax for type uuid: [redacted]',
+    );
+    expect(scrubErrorText('invalid input syntax for type integer: "abc" at character 5')).toBe(
+      'invalid input syntax for type integer: [redacted]',
+    );
+    expect(scrubErrorText('Key (email)=(Ravi.Sahu@example.com) already exists.')).toBe(
+      'Key (email)=([redacted]) already exists.',
+    );
+  });
+
+  it('keeps row ids and public codes that look like digit runs', () => {
+    expect(scrubErrorText('order MD-RPR-2026-234567 row 01a1db2d-e45a-7f47-8659-9433601cf99d failed')).toBe(
+      'order MD-RPR-2026-234567 row 01a1db2d-e45a-7f47-8659-9433601cf99d failed',
+    );
+    expect(scrubErrorText('call 9876543210 about 019a8f00-0000-7000-8000-000000000001')).toBe(
+      'call # about 019a8f00-0000-7000-8000-000000000001',
+    );
+  });
+});
+
 describe('scrubUrl', () => {
   it('keeps origin and path, drops query and fragment, redacts secret segments', () => {
     expect(scrubUrl('https://mechdost.com/shop?q=9876543210#top')).toBe('https://mechdost.com/shop');
@@ -85,6 +115,31 @@ describe('scrubErrorEvent', () => {
     });
     expect(event.tags).toEqual({ route: '/v1/me' });
     expect(JSON.stringify(event)).not.toMatch(/9876543210|ravi@|a@b\.co|1\.2\.3\.4|Bearer x/);
+  });
+
+  it('stack frames lose URL query strings (browser chunks loaded with a query)', () => {
+    const event = scrubErrorEvent({
+      exception: {
+        values: [
+          {
+            value: 'x',
+            stacktrace: {
+              frames: [
+                {
+                  filename: 'https://mechdost.com/_next/static/chunks/a.js?v=9876543210',
+                  abs_path: 'app:///b.js?x=1',
+                },
+                { filename: '/partners/invite/secret-value' },
+              ],
+            },
+          },
+        ],
+      },
+    });
+    expect(event.exception.values[0]?.stacktrace.frames).toEqual([
+      { filename: 'https://mechdost.com/_next/static/chunks/a.js', abs_path: 'app:///b.js' },
+      { filename: '/partners/invite/:token' },
+    ]);
   });
 
   it('accepts an event without optional parts', () => {
