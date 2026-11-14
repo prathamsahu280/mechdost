@@ -34,3 +34,9 @@ No test in this spec may be skipped in CI; schema PRs require the `drizzle-postg
 - Stock: `packages/db/src/repo/inventory.ts`; invoices: `repo/invoices.ts` + SQL `public.allocate_invoice_seq()`.
 - Acceptance tests: `packages/db/test/integrity.test.ts` (PGlite). Multi-connection concurrency tests run against real Postgres in CI (to add with the CI workflow).
 - Rule for new tables: add `version`/`updated_at` triggers and `ENABLE ROW LEVEL SECURITY` in the same migration (the 0002 DO-loops only covered tables existing at that time).
+
+## Data model note: admin prices (migration 0043, 2026-11-13)
+
+- `admin_prices` (variant × city × optional PIN; `price_paise` bigint > 0, `version`, `updated_by`): partial unique indexes on (variant, city) where `pincode` is null and on (variant, city, pincode) where it is not null; RLS on, anon/authenticated revoked, version and updated_at triggers; writes only through `packages/db/src/repo/admin-prices.ts` (compare-and-set, audited).
+- `order_items.shop_unit_paise` (nullable for older rows, CHECK `>= 0` and `<= unit_paise`): the chosen shop's approved price, beside the customer `unit_paise`.
+- Guarded by `packages/db/test/admin-prices.test.ts`, `admin-price-resolution.test.ts` and the schema invariants (RLS, triggers) in `schema-invariants.test.ts`.

@@ -100,3 +100,12 @@ Hero, trust strip, category tiles, popular products, order-route band, workshop 
 ## Built: comparison, typed attributes and unit price (2026-11-13)
 
 Spec 21 (`21-product-comparison.md`). Typed attributes per category in `products.spec` (definitions in `@mechdost/shared/product-attributes`), a net quantity per pack (`product_variants.net_qty` / `net_unit`, migration 0042), the catalogue offer's `netQuantity` (the pack it prices), and "₹ … per litre / kg / piece / metre" on cards and the product page. Admin endpoints: `PUT /v1/admin/catalogue/products/{slug}/attributes`, `PUT /v1/admin/catalogue/variants/{sku}/net-quantity`.
+
+## Customer price: admin prices per city and PIN (built 2026-11-13/14, Q26)
+
+Design `docs/superpowers/specs/2026-11-13-admin-catalogue-pin-prices-design.md`; plan `docs/superpowers/plans/2026-11-13-admin-catalogue-pin-prices.md`.
+
+- **What the customer pays** for a pack at a PIN: the admin's **PIN price**, else the admin's **city price**, else (interim, Q83) the chosen shop's approved price. Integer paise; resolved in the same SQL that picks the shop (`packages/db/src/repo/catalogue.ts`, `checkout.ts`), shared rule `resolveCustomerPrice` in `packages/shared/src/admin-prices.ts`.
+- **Rules for an admin price** (`checkAdminPrice`, checked in the screen and again in the API): at most the MRP (`MRP_EXCEEDED`); at least the lowest approved price among shops that deliver there with stock (`BELOW_SHOP_PRICE`), so MechDost never sells below what a shop is paid; no such shop → refused (`NO_SHOP`).
+- **Which shop**: among shops covering the PIN with stock **and** an approved price at or below the customer price, the nearest one (ties: price, then id). A shop that later raises its price above the customer price stops being chosen; with no shop left, the product shows "on request" at that PIN — never sold at a loss.
+- Set from Admin → Catalogue → Prices (spec 08) or `PUT /v1/admin/prices/{sku}` (`prices:write`).

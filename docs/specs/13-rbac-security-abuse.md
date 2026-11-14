@@ -83,3 +83,7 @@ Encrypted columns: `shops.pan_enc` (+ unique `pan_index`), `partner_applications
 - **Abuse:** the public application and invite routes need Turnstile; 5 applications and 30 invite opens per IP per hour, and 3 applications per mobile number per day (keyed by a hash of the number); the location search allows 10 searches a minute per client and never searches as you type (Nominatim policy).
 - **Invite tokens:** only a SHA-256 hash is stored; the token travels encrypted in the outbox payload (`tokenEnc`) until the email is sent; single use, expiring, per city; never written to analytics (`redactPath`).
 - **KYC:** the GSTIN or enrolment number is stored in `partner_applications.kyc_enc` with a `gstin_index` blind index for duplicate checks; the shop owner is linked once (`owner_user_id`).
+
+## Permission `prices:write` (2026-11-13, Q26)
+
+"Set customer prices per city and PIN code": super_admin, ops_manager and finance. Not catalogue_manager (catalogue texts only) and not city_manager until prices are city-scoped. The price board (`GET /v1/admin/prices/products/{slug}`) needs it too (one permission per area: whoever sees the margins can set them). Writes are compare-and-set on `version` (`STALE_PRICE`) and audited (`price.set` / `price.cleared` with before/after).

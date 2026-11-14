@@ -301,7 +301,8 @@ Full review and evidence: `docs/research/security-vulnerabilities.md` § Review 
 - **Firebase admin credentials on the AWS server** (Q93, user: "just push it there too"): the project's service-account key is a server-only file mounted at `/run/secrets/firebase-admin.json`; production accepts a key file only from `/run/secrets/`. Replaces the 2026-11-13 "no key files (Cloud Run)" rule, which no longer applies on AWS.
 - **AI assistant site-wide daily budget**: admin setting `assistant.daily_messages` (default 500, 0 = off). Turnstile follows with the web transport.
 - **Docker images follow `.nvmrc`** (Node 24.22.3), enforced by a test; RLS on every table, no RLS-bypassing views and no client-role privileges enforced by a schema test.
-- Open (questions inbox): Q90 email verification before linking (Firebase-level), Q91 assistant Turnstile, Q92 Cloudflare.
+- Answered later the same day: **Q90** keep first-come email ownership ("if a person has added an email then another person cant add it"); **Q92** no Cloudflare in front of the site for now. Still open: Q91 assistant Turnstile (with the web transport).
+- **Admin prices plan complete (Task 6, docs):** customer price = PIN price, else city price, else (interim, Q83) the shop's price; never above MRP or below what a shop is paid; routing only to shops at or below the customer price; `order_items.shop_unit_paise` keeps the margin; `prices:write` for super_admin, ops_manager, finance (specs 02, 04, 08, 13, 14; runbook firebase.md).
 
 ## 2026-11-14 — Cart on sign-out, demo controls, demo service estimates and bills (user)
 
