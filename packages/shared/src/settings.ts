@@ -47,6 +47,11 @@ export const OPERATIONAL_SETTINGS = {
   /** Launch check: products go live only with complete Hindi texts. */
   // One catalogue for every city: publishing reads the global value only.
   'catalogue.require_hindi_to_publish': { kind: 'boolean', default: false, globalOnly: true },
+  /**
+   * Customers must verify their email (not only their phone) before ordering, booking or reviewing. Off by default:
+   * phone OTP is enough (user 2026-11-14). Staff and partners always need both.
+   */
+  'customers.require_verified_email': { kind: 'boolean', default: false, globalOnly: true },
   /** Customer messages (the first one included) allowed on one support request in 24 hours (review B9). */
   'support.customer_messages_per_ticket_per_day': {
     kind: 'int',

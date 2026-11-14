@@ -2316,6 +2316,7 @@
     "api_set_orders_customer_self_cancel_online": "दुकान के पुष्टि करने तक ग्राहक अपना ऑनलाइन भुगतान वाला ऑर्डर रद्द कर सकते हैं; पैसा उसी भुगतान तरीके में वापस जाता है",
     "api_set_orders_acceptance_timeout_min": "दुकान के पास ऑर्डर स्वीकार करने का समय",
     "api_set_catalogue_require_hindi_to_publish": "प्रोडक्ट केवल पूरे हिंदी टेक्स्ट के साथ लाइव हों",
+    "api_set_customers_require_verified_email": "ऑर्डर, बुकिंग या समीक्षा से पहले ग्राहकों को फ़ोन के साथ अपना ईमेल भी सत्यापित करना होगा",
     "api_set_support_customer_messages_per_ticket_per_day": "हर अनुरोध पर ग्राहक के रोज़ के संदेश",
     "api_set_assistant_daily_messages": "शॉपिंग सहायक के रोज़ के जवाब (0 = बंद)",
     "api_set_unit_rupees": "रुपये",

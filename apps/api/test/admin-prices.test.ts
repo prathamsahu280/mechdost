@@ -55,19 +55,21 @@ beforeAll(async () => {
 });
 
 describe('admin prices API', () => {
-  it('finance reads the board and sets, updates and clears prices; marketing is refused', async () => {
-    const finance = await staff('01', 'finance');
+  it('a catalogue manager reads the board and sets, updates and clears prices; marketing and catalogue are refused (user 2026-11-14)', async () => {
+    const catalogue = await staff('01', 'catalogue_manager');
+    const financeRole = await staff('03', 'finance');
     const marketing = await staff('02', 'marketing');
     const boardUrl = `/v1/admin/prices/products/${SLUG}?city=RPR`;
     expect((await ctx.app.request(boardUrl, { headers: marketing })).status).toBe(403);
-    const res = await ctx.app.request(boardUrl, { headers: finance });
+    expect((await ctx.app.request(boardUrl, { headers: financeRole })).status).toBe(403);
+    const res = await ctx.app.request(boardUrl, { headers: catalogue });
     expect(res.status).toBe(200);
     const board = (await res.json()) as Board;
     const v = board.variants[0]!;
     expect(v).toMatchObject({ sku: SKU, mrpPaise: 47_500, city: null });
     const pin = v.pins[0]!;
 
-    const put = (body: unknown, headers = finance) =>
+    const put = (body: unknown, headers = catalogue) =>
       ctx.app.request(`/v1/admin/prices/${SKU}`, { method: 'PUT', headers, body: JSON.stringify(body) });
     expect(
       (await put({ city: 'RPR', pincode: null, pricePaise: 46_000, version: null }, marketing)).status,
@@ -103,16 +105,16 @@ describe('admin prices API', () => {
     const del = (ver: number) =>
       ctx.app.request(`/v1/admin/prices/${SKU}/pins/${pin.pincode}?city=RPR&version=${String(ver)}`, {
         method: 'DELETE',
-        headers: finance,
+        headers: catalogue,
       });
     expect((await del(pinVersion + 9)).status).toBe(409);
     expect((await del(pinVersion)).status).toBe(204);
 
-    const after = (await (await ctx.app.request(boardUrl, { headers: finance })).json()) as Board;
+    const after = (await (await ctx.app.request(boardUrl, { headers: catalogue })).json()) as Board;
     expect(after.variants[0]!.city).toEqual({ pricePaise: 46_500, version: version + 1 });
     expect(after.variants[0]!.pins.find((p) => p.pincode === pin.pincode)!.override).toBeNull();
     expect(
-      (await ctx.app.request(`/v1/admin/prices/products/nope?city=RPR`, { headers: finance })).status,
+      (await ctx.app.request(`/v1/admin/prices/products/nope?city=RPR`, { headers: catalogue })).status,
     ).toBe(404);
   });
 });

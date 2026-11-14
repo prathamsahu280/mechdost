@@ -108,7 +108,6 @@ const OPS: readonly Permission[] = [
   'partners:read',
   'partners:write',
   'partners:approve',
-  'prices:approve',
   'applications:review',
   'customers:read',
   'tickets:read',
@@ -132,8 +131,9 @@ export const ROLES = {
     description: 'Routing, orders, service requests, partners and returns',
     scope: 'global',
     staff: true,
-    // Customer prices per city and PIN (Q26, design 2026-11-13); not city managers until prices are city-scoped.
-    permissions: [...OPS, 'prices:write'],
+    // Prices (shop costs, customer prices, seller price requests) are super admin + catalogue manager only
+    // (user 2026-11-14).
+    permissions: OPS,
   },
   city_manager: {
     name: 'City manager',
@@ -174,7 +174,6 @@ export const ROLES = {
       'payments:read',
       'payouts:read',
       'payouts:manage',
-      'prices:write',
       'invoices:read',
       'gst:export',
       'partners:read',
@@ -194,6 +193,9 @@ export const ROLES = {
       'products:import',
       'categories:write',
       'partners:read',
+      // Shop costs and customer prices, and seller price requests (user 2026-11-14).
+      'prices:write',
+      'prices:approve',
       'reviews:moderate',
       'analytics:read',
     ],

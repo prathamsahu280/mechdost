@@ -38,6 +38,7 @@ const SETTING_LABEL = {
   'orders.customer_self_cancel_online': 'api_set_orders_customer_self_cancel_online',
   'orders.acceptance_timeout_min': 'api_set_orders_acceptance_timeout_min',
   'catalogue.require_hindi_to_publish': 'api_set_catalogue_require_hindi_to_publish',
+  'customers.require_verified_email': 'api_set_customers_require_verified_email',
   'support.customer_messages_per_ticket_per_day': 'api_set_support_customer_messages_per_ticket_per_day',
   'assistant.daily_messages': 'api_set_assistant_daily_messages',
 } as const satisfies Record<SettingKey, string>;
