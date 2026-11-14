@@ -544,7 +544,8 @@ html[data-consent-open]:has([data-compare-tray][data-prompt]) {
     @apply inline-flex min-h-11 w-fit cursor-pointer items-center gap-2 text-sm font-bold text-ink select-none;
   }
   .compare-check > input {
-    @apply size-5 shrink-0 cursor-pointer;
+    /* 24px: the WCAG 2.2 target-size minimum (2.5.8) for the box itself; the 44px label row stays the full hit area. */
+    @apply size-6 shrink-0 cursor-pointer;
     accent-color: var(--color-accent-button);
   }
 }
