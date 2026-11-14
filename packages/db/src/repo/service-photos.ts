@@ -50,6 +50,10 @@ export async function photoSettings(db: Tx): Promise<PhotoSettings> {
   };
 }
 
+/** The gate of a stage has passed: before from `vehicle_received` on, after from `ready` on. */
+const photoGatePassed = (stage: PhotoStage, status: ServiceRequestStatus): boolean =>
+  stage === 'before' ? status !== 'confirmed' : status === 'ready';
+
 async function liveCount(tx: Tx, requestId: string, stage: PhotoStage): Promise<number> {
   const [row] = await tx
     .select({ n: sql<number>`count(*)::int` })
@@ -230,6 +234,11 @@ export async function removeServicePhoto(
     if (!photo) throw new NotFoundError('Photo not found');
     if (!photoRemovable(r.status))
       throw new ConflictError('Photos cannot be removed after the bill', 'PHOTO_STAGE_CLOSED');
+    // Proof stays: once a stage's gate has passed, its last live photo cannot be removed (counted under the lock).
+    if (photoGatePassed(photo.stage as PhotoStage, r.status) && (await photoSettings(tx)).required) {
+      if ((await liveCount(tx, r.id, photo.stage as PhotoStage)) <= 1)
+        throw new ConflictError('The last photo of this stage must stay', 'PHOTO_REQUIRED_KEEP');
+    }
     const now = new Date();
     await tx.update(servicePhotos).set({ deletedAt: now }).where(eq(servicePhotos.id, photo.id));
     await tx.update(mediaObjects).set({ deletedAt: now }).where(eq(mediaObjects.id, photo.mediaId));

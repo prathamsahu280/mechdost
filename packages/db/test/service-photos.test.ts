@@ -46,6 +46,9 @@ const t = () => db as unknown as Tx;
 const TODAY = istDateString(new Date());
 const W: Record<string, { id: string; slug: string }> = {};
 let keyN = 0;
+// Each job needs a higher reading than the last one recorded for the same vehicle.
+let odoN = 0;
+const odo = () => (odoN += 1000);
 const k = () => randomBytes(32).toString('base64');
 const keyring = loadKeyring({
   DATA_ENCRYPTION_KEYS: `k1:${k()}`,
@@ -156,23 +159,23 @@ describe('settings', () => {
 describe('the vehicle_received gate', () => {
   it('refuses with PHOTOS_REQUIRED without a before photo, then passes with one (409, one transaction)', async () => {
     const r = await confirmed();
-    await expect(receiveVehicle(t(), { ...step(r.code, r.version), odometerKm: 5000 })).rejects.toMatchObject(
-      {
-        status: 409,
-        code: 'PHOTOS_REQUIRED',
-      },
-    );
+    await expect(
+      receiveVehicle(t(), { ...step(r.code, r.version), odometerKm: odo() }),
+    ).rejects.toMatchObject({
+      status: 409,
+      code: 'PHOTOS_REQUIRED',
+    });
     const [still] = await db.select().from(s.serviceRequests).where(eq(s.serviceRequests.code, r.code));
     expect(still?.status).toBe('confirmed');
     await addPhoto(r.code, 'before');
-    const out = await receiveVehicle(t(), { ...step(r.code, r.version), odometerKm: 5000 });
+    const out = await receiveVehicle(t(), { ...step(r.code, r.version), odometerKm: odo() });
     expect(out.status).toBe('vehicle_received');
   });
 
   it('does not gate when the admin made photos optional', async () => {
     await setting('service.photos_required', false);
     const r = await confirmed();
-    const out = await receiveVehicle(t(), { ...step(r.code, r.version), odometerKm: 5000 });
+    const out = await receiveVehicle(t(), { ...step(r.code, r.version), odometerKm: odo() });
     expect(out.status).toBe('vehicle_received');
     await setting('service.photos_required', true);
   });
@@ -186,11 +189,11 @@ describe('the vehicle_received gate', () => {
       photoId: p.id,
       staffUserId: f.staff,
     });
-    await expect(receiveVehicle(t(), { ...step(r.code, r.version), odometerKm: 5000 })).rejects.toMatchObject(
-      {
-        code: 'PHOTOS_REQUIRED',
-      },
-    );
+    await expect(
+      receiveVehicle(t(), { ...step(r.code, r.version), odometerKm: odo() }),
+    ).rejects.toMatchObject({
+      code: 'PHOTOS_REQUIRED',
+    });
   });
 });
 
@@ -198,7 +201,7 @@ describe('the vehicle_received gate', () => {
 async function inProgress() {
   const r = await confirmed();
   await addPhoto(r.code, 'before');
-  let v = (await receiveVehicle(t(), { ...step(r.code, r.version), odometerKm: 7000 })).version;
+  let v = (await receiveVehicle(t(), { ...step(r.code, r.version), odometerKm: odo() })).version;
   const sent = await sendEstimate(t(), {
     ...step(r.code, v),
     lines: [{ description: 'Labour', serviceKey: 'routine2w', qty: 1, unitPaise: 80_000, gstRateBp: 1800 }],
@@ -458,7 +461,7 @@ describe('home jobs', () => {
   it('need a before photo before the arrival code is compared, and a refused gate does not burn a try', async () => {
     const j = await homeJob();
     expect(j.arrivalCode).toMatch(/^[0-9]{4}$/);
-    const input = { ...step(j.code, j.version), odometerKm: 9000, keyring };
+    const input = { ...step(j.code, j.version), odometerKm: odo(), keyring };
     const wrong = j.arrivalCode === '0000' ? '1111' : '0000';
     await expect(markVehicleReceived(t(), { ...input, arrivalCode: wrong })).rejects.toMatchObject({
       code: 'PHOTOS_REQUIRED',
@@ -481,10 +484,51 @@ describe('home jobs', () => {
       scope: { all: true },
       code: j.code,
       reason: 'Customer unreachable, workshop confirmed by phone',
-      odometerKm: 9100,
+      odometerKm: odo(),
       expectedVersion: j.version,
       staffUserId: f.staff,
     });
     expect(out.status).toBe('vehicle_received');
+  });
+});
+
+describe('proof cannot be deleted after the gate passed (security review 2026-11-15)', () => {
+  const rm = (code: string, photoId: string) =>
+    removeServicePhoto(t(), { workshopIds: ws(), code, photoId, staffUserId: f.staff });
+
+  it('the only before photo cannot go once the vehicle is received; with two, one can', async () => {
+    const r = await confirmed();
+    const a = await addPhoto(r.code, 'before');
+    await receiveVehicle(t(), { ...step(r.code, r.version), odometerKm: odo() });
+    await expect(rm(r.code, a.id)).rejects.toMatchObject({ status: 409, code: 'PHOTO_REQUIRED_KEEP' });
+    const b = await addPhoto(r.code, 'before');
+    await rm(r.code, a.id);
+    await expect(rm(r.code, b.id)).rejects.toMatchObject({ code: 'PHOTO_REQUIRED_KEEP' });
+    expect((await listPhotosForCustomer(t(), f.customer, r.code)).photos).toHaveLength(1);
+  });
+
+  it('the only after photo cannot go at ready; billed refuses every removal', async () => {
+    const j = await inProgress();
+    const a = await addPhoto(j.code, 'after');
+    await rm(j.code, (await addPhoto(j.code, 'after')).id); // in progress the gate has not passed: free to remove
+    const ready = await advanceJob(t(), { ...step(j.code, j.version), to: 'ready' });
+    await expect(rm(j.code, a.id)).rejects.toMatchObject({ status: 409, code: 'PHOTO_REQUIRED_KEEP' });
+    const before = (await listPhotosForCustomer(t(), f.customer, j.code)).photos.find(
+      (p) => p.stage === 'before',
+    );
+    await expect(rm(j.code, before!.id)).rejects.toMatchObject({ code: 'PHOTO_REQUIRED_KEEP' });
+    await billJob(t(), step(j.code, ready.version));
+    await expect(rm(j.code, a.id)).rejects.toMatchObject({ status: 409 });
+    await expect(rm(j.code, before!.id)).rejects.toMatchObject({ status: 409 });
+  });
+
+  it('with photos not required, removal stays allowed', async () => {
+    await setting('service.photos_required', false);
+    const r = await confirmed();
+    const a = await addPhoto(r.code, 'before');
+    await receiveVehicle(t(), { ...step(r.code, r.version), odometerKm: odo() });
+    await rm(r.code, a.id);
+    await setting('service.photos_required', true);
+    expect((await listPhotosForCustomer(t(), f.customer, r.code)).photos).toHaveLength(0);
   });
 });

@@ -3772,6 +3772,7 @@
     "err_PHOTO_TOO_LARGE": "This photo is bigger than 8 MB. Try a smaller one.",
     "err_PHOTO_UNREADABLE": "We could not read this photo. Try another one.",
     "err_PHOTOS_UNAVAILABLE": "Photos are not available right now. Please try again later.",
+    "err_PHOTO_REQUIRED_KEEP": "The last photo of this stage must stay. Add another before removing this one.",
     "err_PHOTO_STAGE_CLOSED": "Photos cannot be added at this step.",
     "err_RATE_LIMITED": "Too many photos at once. Wait a few minutes and try again.",
     "err_generic": "The photo could not be added. Check your connection and try again.",

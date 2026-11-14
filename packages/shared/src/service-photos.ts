@@ -51,6 +51,7 @@ export const photoRemovable = (status: ServiceRequestStatus): boolean =>
 export const PHOTO_ERROR_CODES = [
   'PHOTOS_REQUIRED',
   'PHOTO_STAGE_CLOSED',
+  'PHOTO_REQUIRED_KEEP',
   'PHOTO_LIMIT',
   'PHOTO_TYPE',
   'PHOTO_HEIC',
