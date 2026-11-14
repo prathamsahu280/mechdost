@@ -299,7 +299,7 @@ User shared Razorpay **test** keys and asked to "see how we have the stuff for r
 ## 2026-11-14 (evening) — Quotes, coins and reviews are built on the API before launch (user: "BUILD ALL OF THEM WE NEED THEM ALL")
 
 - This overrides the earlier "hidden in real mode" ruling for these three features. Each one gets its API, its real-mode screens and tests, built by parallel agents. Migration numbers: quotes 0045, reviews 0046, coins 0047, each only if needed.
-- **Payments at launch:** cash on delivery plus Razorpay with the **test** key for now; the live key comes later. The test key id and secret were copied from the local `.env` to GitHub and the server (user: "Copy from my local .env"). The webhook secret is still empty (Q75).
+- **Payments at launch:** the user chose cash on delivery plus Razorpay with the test key. The API refuses test keys in production, a deliberate guard, so the copied keys took the API down for about 6 minutes. They are disabled on the server, and the public key variable was removed from GitHub. Launch is **cash on delivery only until live keys** unless the user decides otherwise (asked 2026-11-14). The webhook secret is generated and kept in the local `.env` (and disabled on the server with the keys).
 - **Smoke test:** run the emulator end-to-end test against the launch backend, then reset the data before the real catalogue goes in. Only when the user says so.
 
 ## 2026-11-14 — Launch scope in real mode: features with no API are hidden (ruling under "Everything, accept risk")
