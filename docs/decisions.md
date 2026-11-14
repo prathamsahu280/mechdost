@@ -779,6 +779,22 @@ User 2026-11-15 ~01:00 IST: "go ahead and work on the 1,2,3,4,5,6" (6 = shop Wha
 - **30-day labour promise (Q105):** yes, admin-configurable (on/off and the number of days, off by default). It is shown on
   workshop pages and bills when on, and workshops accept it at onboarding.
 
+## 2026-11-15 — Next tier answers (user)
+
+- **Coupons:** MechDost-funded and shop-funded coupons both exist from the start, and **only admin creates and configures
+  them** (user: "go with option 3 but only admin configures them"). Each coupon is marked with who funds it. A shop-funded
+  coupon lowers what the shop is owed on that order, and a MechDost-funded one does not. Types: % / flat / free delivery,
+  minimum order, per-user limit, first order (spec 03 rules; CCPA price display rules in `research/promotions-referrals.md`).
+- **Order chat / disputes:** customer ↔ MechDost support only. Support talks to the shop or workshop, and no direct
+  customer ↔ partner chat.
+- **Payout statements:** decide later (ties to the commission model, PENDING #9). Not built until then.
+- **Product photos:** admin uploads by default. Admin settings decide whether shops may add photos to products they sell,
+  and photo uploads by shops can be switched on or off. Uploads by shops show only after catalogue approval.
+- **Market scan adopted (coordinator, 2026-11-15):** P0 items go into the current builds (refund status + approval SLA,
+  visit fee line + arrival code, push pre-prompt, give-up reason codes that separate legitimate give-ups, and a
+  dark-patterns self-audit of checkout and booking before launch). The P1 items (fixed-price inspection package, "responds
+  within X min", service reminders) are queued after the next tier.
+
 ## PENDING DECISIONS (ask "what's pending" to review)
 
 | #   | Topic                                                                                                                                                                                                                                                                                                            | Leaning                                                                             | When                                 |
