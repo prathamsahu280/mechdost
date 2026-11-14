@@ -86,15 +86,22 @@ jobs:
             NEXT_PUBLIC_MAPTILER_KEY=${{ vars.NEXT_PUBLIC_MAPTILER_KEY }}
             NEXT_PUBLIC_SATELLITE_TILES=${{ vars.NEXT_PUBLIC_SATELLITE_TILES }}
             NEXT_PUBLIC_SATELLITE_ATTRIBUTION=${{ vars.NEXT_PUBLIC_SATELLITE_ATTRIBUTION }}
-            NEXT_PUBLIC_POSTHOG_KEY=${{ vars.NEXT_PUBLIC_POSTHOG_KEY }}
-            NEXT_PUBLIC_POSTHOG_HOST=${{ vars.NEXT_PUBLIC_POSTHOG_HOST }}
             NEXT_PUBLIC_SENTRY_DSN=${{ vars.NEXT_PUBLIC_SENTRY_DSN }}
+            NEXT_PUBLIC_SENTRY_RELEASE=${{ steps.sha.outputs.sha }}
+            NEXT_PUBLIC_SENTRY_ENVIRONMENT=production
+            SENTRY_ORG=${{ vars.SENTRY_ORG }}
+            SENTRY_PROJECT_WEB=${{ vars.SENTRY_PROJECT_WEB }}
+            SENTRY_URL=${{ vars.SENTRY_URL || 'https://de.sentry.io' }}
             NEXT_PUBLIC_RAZORPAY_KEY_ID=${{ vars.NEXT_PUBLIC_RAZORPAY_KEY_ID }}
             NEXT_PUBLIC_TURNSTILE_SITE_KEY=${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
             NEXT_PUBLIC_FIREBASE_API_KEY=${{ vars.NEXT_PUBLIC_FIREBASE_API_KEY }}
             NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${{ vars.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
             NEXT_PUBLIC_FIREBASE_PROJECT_ID=${{ vars.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
             NEXT_PUBLIC_FIREBASE_APP_ID=${{ vars.NEXT_PUBLIC_FIREBASE_APP_ID }}
+          # Source-map upload to Sentry (EU) inside the build, only when this secret is set; it is mounted for that
+          # one step and never stored in the image (apps/web/Dockerfile, docs/runbooks/monitoring.md).
+          secrets: |
+            sentry_auth_token=${{ secrets.SENTRY_AUTH_TOKEN }}
           tags: |
             ${{ env.WEB_IMAGE }}:${{ steps.sha.outputs.sha }}
             ${{ env.WEB_IMAGE }}:main

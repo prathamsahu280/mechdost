@@ -6,7 +6,7 @@
       "localStorage": [
         {
           "name": "mechdost-consent",
-          "value": "{\"analytics\":false,\"version\":\"2026-11\",\"at\":\"2026-11-01T00:00:00.000Z\"}"
+          "value": "{\"analytics\":false,\"version\":\"2026-11-14\",\"at\":\"2026-11-01T00:00:00.000Z\"}"
         }
       ]
     }

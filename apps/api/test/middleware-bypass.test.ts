@@ -27,6 +27,8 @@ const PROTECTED: [method: string, path: string][] = [
   ['GET', '/v1/admin/analytics/dashboard'],
   ['GET', '/v1/admin/analytics/dashboard?city=RPR&from=2026-11-01&to=2026-11-14'],
   ['GET', '/v1/admin/overview'],
+  // Admin → Errors (Sentry issues, review 2026-11-14).
+  ['GET', '/v1/admin/errors'],
 ];
 
 describe('protected routes refuse anonymous requests under any path encoding', () => {

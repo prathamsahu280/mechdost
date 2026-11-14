@@ -73,6 +73,12 @@ const QuoteDeskApi = dynamic(() => import('./admin-quotes-api').then((m) => m.Qu
   loading: () => <div className="skeleton h-96 rounded-card" aria-hidden="true" />,
 });
 
+/** Real sign-in: Admin → Errors (Sentry issues through the API, decision 2026-11-14); demo builds never load it. */
+const AdminErrorsApi = dynamic(() => import('./admin-errors-api').then((m) => m.AdminErrorsApi), {
+  ssr: false,
+  loading: () => <div className="skeleton h-96 rounded-card" aria-hidden="true" />,
+});
+
 /** Real sign-in: review moderation on the API (spec 02 § Reviews, 2026-11-14); demo builds never load it. */
 const AdminReviewsApi = dynamic(() => import('./admin-reviews-api').then((m) => m.AdminReviewsApi), {
   ssr: false,
@@ -118,6 +124,7 @@ const SECTION_EMOJI: Record<AdminSection, string> = {
   layout: '🧩',
   settings: '⚙️',
   notifications: '🔔',
+  errors: '🚨',
 };
 
 /**
@@ -175,6 +182,7 @@ export function AdminConsole({
             {section === 'notifications' && notifyDefaults ? (
               <AdminNotifications actor={account.name} defaults={notifyDefaults} />
             ) : null}
+            {section === 'errors' && AUTH_MODE === 'firebase' ? <AdminErrorsApi /> : null}
           </div>
         </div>
       )}

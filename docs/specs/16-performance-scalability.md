@@ -50,6 +50,8 @@ Stateless API containers (Cloud Run min 1, max N, concurrency 80, no long-lived 
 
 Sentry (web + API) with release tags; structured JSON logs (Cloud Logging); OpenTelemetry traces API → DB; alerts: error rate, p95, queue depth, webhook failures, payment mismatch, acceptance timer backlog.
 
+**Built 2026-11-14 (decision "Monitoring", `runbooks/monitoring.md`):** Sentry EU, errors only (no tracing, no OpenTelemetry setup, no replay, no breadcrumbs), every event scrubbed (`@mechdost/shared/error-scrub`), release = deployed commit. API + worker: `@sentry/node` loaded by dynamic import only when `SENTRY_DSN` is set; 500s and `log('error')` lines (one per message per 10 min). Website server: `instrumentation.ts` `onRequestError` (`@sentry/node`, `serverExternalPackages`). Browser: `lib/error-reporting.ts` (two listeners + a queue in the page's JS) loads `@sentry/browser` (`lib/sentry-browser.ts`, its own 28.9 KB gz chunk) **only after the first error**, so error-free visits fetch nothing; max 10 reports per page. Browser source maps are built, uploaded and deleted inside the Deploy image build only when `SENTRY_AUTH_TOKEN` is set; `.map` files are never left in `.next/static`. OpenTelemetry traces and alert rules beyond Sentry's are still to do.
+
 ## Acceptance
 
 Lighthouse CI on home/shop/product/workshop pages per PR; k6 load test (500 VU browse, 50 VU checkout) before launch; chaos test: Redis down → degraded but working; DB failover drill.
@@ -58,3 +60,4 @@ Lighthouse CI on home/shop/product/workshop pages per PR; k6 load test (500 VU b
 
 - `NEXT_PUBLIC_DATA_MODE` and `NEXT_PUBLIC_AUTH_MODE` are always defined at build time (`next.config.ts` `env`, default `demo`), so the CI budget build inlines them like production does and drops the other mode's code. Mode-specific hooks are chosen at module level (`useCartPricing`).
 - **Demo store split (2026-11-14):** quotes moved to `demo/quote-store.ts`, and applications, invites and reviews to `demo/partner-store.ts`. They share storage through `storeCore`. Turbopack keeps every export of a module, so cold code must live in its own module. Result in the demo build: `/shop` 180.0 → 176.2 KB, `/cart` 179.9 → 176.1, every page about −3.8 KB.
+- **Sentry measured (2026-11-14, demo build with `NEXT_PUBLIC_SENTRY_DSN` set, `measure-js.mjs`):** `/` 161.2 KB, `/shop` 176.9, product page 174.1, `/compare` 156.3, `/workshops` 176.1, `/cart` 176.9, `/hi` 161.2 (page's own JS, gz). Against the earlier `/shop` 176.2 and `/cart` 176.1: **+0.7–0.8 KB** (error listeners, the error boundary's report, the DSN constant). The Sentry SDK chunk (28.9 KB gz) is not requested on load. Headroom on `/shop` and `/cart`: 3.1 KB.

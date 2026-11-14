@@ -6,6 +6,7 @@ import { ZodError } from 'zod';
 import { ConflictError, ForbiddenError, NotFoundError, pgCode, ValidationError } from '@mechdost/db/repo';
 import { ActorNotAllowedError, IllegalTransitionError } from '@mechdost/shared/state';
 import { log, safeError } from './logger';
+import { reportException } from './monitoring/sentry';
 import type { AppEnv } from './types';
 
 /**
@@ -71,6 +72,7 @@ export function handleError(err: Error, c: Context<AppEnv>): Response {
     path: routePath(c),
     ...safeError(err),
   });
+  reportException(err, { requestId: c.get('requestId'), route: routePath(c) });
   return c.json(errorBody(c, 'INTERNAL', 'Something went wrong'), 500);
 }
 

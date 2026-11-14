@@ -4,11 +4,14 @@ import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { scrubFreeText } from '@mechdost/shared/privacy';
 import { track } from '@/lib/analytics';
+import { rememberErrorCopy } from '@/lib/error-copy';
+import { startErrorReporting } from '@/lib/error-reporting';
 import { stripLocale, type SiteLocale } from '@/lib/locale-path';
 
 /**
  * One tiny client island for the whole site (hard rule 9 without turning server components into client ones):
- * page views on navigation, `data-track` clicks and `data-track-search` form submits via event delegation.
+ * page views on navigation, `data-track` clicks and `data-track-search` form submits via event delegation; it also
+ * starts the error listeners (Sentry loads only after an error, `lib/error-reporting.ts`).
  */
 export function AnalyticsListener({ locale }: { locale: SiteLocale }) {
   const pathname = usePathname();
@@ -17,6 +20,12 @@ export function AnalyticsListener({ locale }: { locale: SiteLocale }) {
     // Path without the locale prefix, so English and Hindi views of a page aggregate together.
     track('page_view', { path: stripLocale(pathname), locale });
   }, [pathname, locale]);
+
+  useEffect(() => {
+    startErrorReporting();
+    // The global error page replaces the whole document: keep its words while the data block is here.
+    rememberErrorCopy(document);
+  }, []);
 
   useEffect(() => {
     function onClick(e: MouseEvent) {

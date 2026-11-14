@@ -73,3 +73,7 @@ No test in this spec may be skipped in CI; schema PRs require the `drizzle-postg
   - server events in the typed catalogue.
 - Offer deadlines for closed shops are a fixed `expires_at` (opening + grace) in the same insert, never earlier than
   the normal timeout (`greatest(...)`), so the CHECK `expires_at > offered_at` and the timer job are unchanged.
+
+## Data model note: event store cursor index (migration 0053, 2026-11-14)
+
+- `events_received_idx` on `events (received_at, id)`, created on the partitioned parent, so every existing partition and every partition `ensure_event_partitions` makes later gets it. It serves the PostHog forwarder's read (`readForwardableEvents`: `(received_at, id) > cursor`, ordered) as an index range scan. No data change; plain build (CONCURRENTLY is not allowed on a partitioned parent; the table is small at launch). Numbered 0053 because 0049–0052 are taken by parallel branches; the journal `when` is re-stamped at merge (L106).

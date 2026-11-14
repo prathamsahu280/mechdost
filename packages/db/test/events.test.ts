@@ -12,6 +12,7 @@ import {
   ensureEventPartitions,
   events,
   placeCodOrder,
+  readForwardableEvents,
   quoteCheckout,
   rejectOrder,
   routeOrder,
@@ -120,5 +121,64 @@ describe('event store', () => {
     await expect(
       db.execute(sql`update events set event = 'tampered' where id = ${row!.id}`),
     ).rejects.toThrow();
+  });
+});
+
+describe('events to forward to PostHog (decision 2026-11-14)', () => {
+  const ids = {
+    consented: '019a8f00-0000-7000-8000-000000000001',
+    noConsent: '019a8f00-0000-7000-8000-000000000002',
+    server: '019a8f00-0000-7000-8000-000000000003',
+    tooYoung: '019a8f00-0000-7000-8000-000000000004',
+  };
+
+  beforeAll(async () => {
+    // Microsecond receive times, as Postgres stores them: the cursor must not lose them (no row read twice).
+    await db.execute(sql`insert into events (id, occurred_at, received_at, source, event, anonymous_id, page, props,
+        consent_version) values
+      (${ids.consented}::uuid, now() - interval '5 min', now() - interval '5 min' + interval '17 microseconds', 'web',
+        'page_view', 'a0f1c7a2-0000-4000-8000-000000000001', '/shop', '{"path":"/shop","locale":"en"}', '2026-11-14'),
+      (${ids.noConsent}::uuid, now() - interval '4 min', now() - interval '4 min', 'web', 'page_view',
+        'a0f1c7a2-0000-4000-8000-000000000002', '/shop', '{"path":"/shop","locale":"en"}', null),
+      (${ids.server}::uuid, now() - interval '3 min', now() - interval '3 min' + interval '123 microseconds', 'server',
+        'order_delivered', null, null, '{"orderCode":"MD-RPR-2026-AAAAAA"}', null),
+      (${ids.tooYoung}::uuid, now() - interval '5 s', now() - interval '5 s', 'web', 'page_view',
+        'a0f1c7a2-0000-4000-8000-000000000003', '/cart', '{"path":"/cart","locale":"en"}', '2026-11-14')`);
+  });
+
+  const read = (after: Parameters<typeof readForwardableEvents>[1]['after'], limit = 10) =>
+    readForwardableEvents(t(), { after, limit, lagSeconds: 60, startMinutes: 60 });
+
+  it('returns consented web events and server events, oldest first, never unconsented or too-young rows', async () => {
+    const rows = (await read(null)).filter((r) => Object.values(ids).includes(r.id));
+    expect(rows.map((r) => r.id)).toEqual([ids.consented, ids.server]);
+    expect(rows[0]).toMatchObject({ source: 'web', event: 'page_view', consentVersion: '2026-11-14' });
+  });
+
+  it('pages with an exact cursor: each row once, microseconds kept', async () => {
+    const all = await read(null, 100);
+    const firstIdx = all.findIndex((r) => r.id === ids.consented);
+    const first = all[firstIdx]!;
+    expect(first.cursor.receivedAt).toMatch(/\.\d{6}/u);
+    const next = await read(first.cursor, 100);
+    expect(next.map((r) => r.id)).not.toContain(ids.consented);
+    expect(next.map((r) => r.id)).toContain(ids.server);
+    const server = next.find((r) => r.id === ids.server)!;
+    expect((await read(server.cursor, 100)).map((r) => r.id)).not.toContain(ids.server);
+  });
+
+  it('the cursor columns are indexed on the parent and on every partition, also ones created later (0053)', async () => {
+    await ensureEventPartitions(t(), 8);
+    const parts = (
+      await db.execute(sql`select c.relname from pg_inherits i join pg_class c on c.oid = i.inhrelid
+        where i.inhparent = 'public.events'::regclass`)
+    ).rows as { relname: string }[];
+    const indexed = (
+      await db.execute(sql`select tablename from pg_indexes
+        where schemaname = 'public' and indexdef like '%(received_at, id)%'`)
+    ).rows as { tablename: string }[];
+    const tables = new Set(indexed.map((r) => r.tablename));
+    expect(tables.has('events')).toBe(true);
+    for (const p of parts) expect([p.relname, tables.has(p.relname)]).toEqual([p.relname, true]);
   });
 });

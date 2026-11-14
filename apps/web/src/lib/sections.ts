@@ -41,6 +41,8 @@ const ALL_ADMIN_SECTIONS = [
   'settings',
   // WhatsApp and other notification channels (spec 10, hard rule 8).
   'notifications',
+  // Latest Sentry issues of the website and the API (decision 2026-11-14); real sign-in only (it reads the API).
+  'errors',
 ] as const;
 export type AdminSection = (typeof ALL_ADMIN_SECTIONS)[number];
 
@@ -55,9 +57,9 @@ const quotesShown = QUOTES_AVAILABLE;
 const reviewsShown = BROWSER_ONLY_FEATURES || AUTH_MODE === 'firebase';
 /**
  * Sections that only read the API and have no demo version: shown with real sign-in only. One list for all of them
- * (Analytics 2026-11-14; add later ones here, e.g. the monitoring "errors" section).
+ * (Analytics and the monitoring Errors panel, 2026-11-14; add later ones here).
  */
-const REAL_SIGN_IN_ONLY: readonly string[] = ['analytics'];
+const REAL_SIGN_IN_ONLY: readonly string[] = ['analytics', 'errors'];
 const shown = <T extends string>(all: readonly T[]): readonly T[] =>
   all.filter(
     (s) =>

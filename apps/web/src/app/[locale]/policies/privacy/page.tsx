@@ -26,6 +26,7 @@ const SECTIONS = [
   { key: 'purpose', emoji: '🎯' },
   { key: 'share', emoji: '🤝' },
   { key: 'analytics', emoji: '📊' },
+  { key: 'errors', emoji: '🛠️' },
   { key: 'safe', emoji: '🔒' },
   { key: 'rights', emoji: '✋' },
 ] as const;

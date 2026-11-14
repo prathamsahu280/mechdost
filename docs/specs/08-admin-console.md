@@ -240,3 +240,12 @@ Analytics section.
   queries are enough at launch volume — revisit at ~1M events/month or when the dashboard's p95 passes 1 s); traffic
   per city (needs `city_id` on web events); refunds ₹, ratings and an orders-by-hour chart from the Overview list
   above; CSV export.
+
+## Admin → Errors (2026-11-14, decision "Monitoring")
+
+- **Who:** verified staff with an all-cities `settings:read` grant (super admin, operations manager); a city manager gets 404, other roles 403. Real sign-in builds only (`ADMIN_SECTIONS` drops `errors` when `AUTH_MODE` is demo); the screen is `components/portal/admin-errors-api.tsx`, loaded with `next/dynamic`.
+- **What:** the latest 25 unresolved Sentry issues per project — website (`mechdost-api`) and server (`mechdost-api-actual`) — for the configured environment: title (scrubbed), level, events in the last 24 h and in total, people affected, first/last seen, and "Open in Sentry". One action: Refresh. States: loading, failed (with retry), "not connected" (one next step: add the read token, monitoring runbook), "Sentry could not be reached" per project, "No unresolved problems".
+- **API:** `GET /v1/admin/errors` → `{ connected, environment, fetchedAt, projects: [{ project, ok, issues }] }` (`@mechdost/shared/admin-errors-api`). The API calls `https://de.sentry.io/api/0/projects/{org}/{project}/issues/?query=is:unresolved environment:<env>&statsPeriod=24h` with the read-only `SENTRY_API_TOKEN`, keeps only whitelisted fields (no user emails, IPs, tags or event payloads), links only to `*.sentry.io`, caches 60 s per instance (15 s after a failure). The token never reaches the browser.
+- **Analytics:** clicks `admin_errors_refresh`, `admin_errors_open`.
+- **Tests:** `apps/api/test/admin-errors.test.ts` (roles, PII and token never in the answer, not connected, EU URL, cache, failing project).
+- **Later:** a dedicated `errors:read` permission (needs the RBAC sync on production), resolve/ignore from the panel.

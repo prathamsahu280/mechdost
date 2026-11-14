@@ -24,6 +24,8 @@ export interface CspInput {
    * loaded by a script that had it (`'strict-dynamic'`), so injected inline script no longer runs there.
    */
   nonce?: string | undefined;
+  /** `NEXT_PUBLIC_SENTRY_DSN`: error reports go to its ingest host (EU region, decision 2026-11-14). */
+  sentryDsn?: string | undefined;
 }
 
 /** Map styles, vector tiles, glyphs, sprites (OpenFreeMap) and satellite tiles (Esri), fetched by MapLibre. */
@@ -45,6 +47,21 @@ const RAZORPAY_SCRIPTS = ['https://checkout.razorpay.com'];
 const RAZORPAY_FRAMES = ['https://api.razorpay.com', 'https://checkout.razorpay.com'];
 const RAZORPAY_CONNECT = ['https://api.razorpay.com', 'https://lumberjack.razorpay.com'];
 const RAZORPAY_IMAGES = ['https://cdn.razorpay.com'];
+
+/**
+ * The Sentry ingest origin of a DSN (`https://<key>@o<n>.ingest.de.sentry.io/<id>` → `https://o<n>.ingest.de.sentry.io`),
+ * derived rather than hard-coded so the region follows the project; only https hosts under sentry.io qualify.
+ */
+export function sentryIngestOrigin(dsn: string | undefined): string | null {
+  if (!dsn) return null;
+  try {
+    const u = new URL(dsn);
+    if (u.protocol !== 'https:' || !/^[a-z0-9.-]+\.sentry\.io$/u.test(u.hostname)) return null;
+    return u.origin;
+  } catch {
+    return null;
+  }
+}
 
 const origin = (url: string | undefined) => {
   if (!url) return null;
@@ -73,6 +90,8 @@ export function contentSecurityPolicy(input: CspInput): string {
   if (api) connect.push(api);
   if (real) connect.push(...FIREBASE_AUTH_APIS, TURNSTILE, ...RAZORPAY_CONNECT);
   if (emulator) connect.push(emulator);
+  const sentry = sentryIngestOrigin(input.sentryDsn);
+  if (sentry) connect.push(sentry);
   if (input.dev) connect.push('ws:');
 
   const frame = real
@@ -104,6 +123,7 @@ export function cspFromEnv(nonce?: string): string {
     apiUrl: process.env.NEXT_PUBLIC_API_URL,
     firebaseAuthDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
     authEmulatorHost: process.env.NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST,
+    sentryDsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
     nonce,
   });
 }

@@ -17,7 +17,8 @@ RUN pnpm --filter @mechdost/api build \
  && pnpm --filter @mechdost/api deploy --prod --legacy /out
 
 FROM node:24.22.3-bookworm-slim@sha256:dc26ae92c9fb15cf6b1d63e20f0944b2efe0f115b20e00be48fb23fceb061c54 AS run
-ENV NODE_ENV=production PORT=4000
+# Source maps (dist/*.mjs.map, bundled by scripts/build.mjs) give Sentry reports and logs TypeScript file/line frames.
+ENV NODE_ENV=production PORT=4000 NODE_OPTIONS=--enable-source-maps
 WORKDIR /app
 COPY --from=build --chown=node:node /out/node_modules ./node_modules
 COPY --from=build --chown=node:node /repo/apps/api/package.json ./package.json

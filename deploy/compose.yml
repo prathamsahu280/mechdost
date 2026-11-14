@@ -45,6 +45,8 @@ services:
     environment:
       NODE_ENV: production
       PORT: '4000'
+      # Sentry release = the deployed commit (monitoring runbook).
+      SENTRY_RELEASE: ${IMAGE_TAG:?set IMAGE_TAG}
       # One proxy (Caddy) in front: client IPs for rate limits come from X-Forwarded-For.
       TRUSTED_PROXY_HOPS: '1'
       # Firebase admin credentials (Q93, 2026-11-14): the project's service-account key, copied once to
@@ -77,6 +79,7 @@ services:
     env_file: .env
     environment:
       NODE_ENV: production
+      SENTRY_RELEASE: ${IMAGE_TAG:?set IMAGE_TAG}
       TRUSTED_PROXY_HOPS: '1'
       GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/firebase-admin.json
       DATABASE_CA_CERT: /run/secrets/supabase-ca.crt

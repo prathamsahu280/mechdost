@@ -93,3 +93,4 @@ Goal: mechdost.com runs on real sign-in (Firebase) and the API for every flow, w
   `GET /v1/admin/overview` (queue counts per permission); real-mode Overview tiles from the API; migration
   `0052_analytics_indexes` (renumbered at merge 2026-11-15); SVG charts (no Recharts dependency yet). Spec 08 "Analytics (built
   2026-11-14)", spec 12 note, decisions "Admin analytics from our own data". Playwright not run.
+- 2026-11-14: Monitoring on branch `worktree-agent-a2669c70113cd7e74`: Sentry EU (API, worker, website server, browser loaded after the first error; scrubbed; source maps uploaded in Deploy when the secret is set), PostHog EU forwarding of consented events by the worker (plain fetch), Admin → Errors (`GET /v1/admin/errors`, read-only token), consent notice `2026-11-14` naming PostHog, privacy copy en + hi. Runbook `docs/runbooks/monitoring.md`.

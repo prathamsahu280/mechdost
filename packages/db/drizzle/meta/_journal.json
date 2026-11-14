@@ -358,6 +358,13 @@
       "when": 1794684277456,
       "tag": "0052_analytics_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1794685340898,
+      "tag": "0053_events_received_index",
+      "breakpoints": true
     }
   ]
 }

@@ -8,6 +8,7 @@ import type { TurnstileVerifier } from '../src/auth/turnstile';
 import { TokenError, type TokenVerifier, type VerifiedToken } from '../src/auth/token-verifier';
 import { loadConfig } from '../src/config';
 import type { RazorpayGateway } from '../src/payments/razorpay';
+import type { SentryIssuesClient } from '../src/monitoring/sentry-issues';
 import { setLogSink } from '../src/logger';
 import { MemoryRateLimiter, type RateLimiter } from '../src/rate-limit/limiter';
 
@@ -104,6 +105,7 @@ export async function buildApp(
     passwordAuth?: PasswordAuthority | null;
     turnstile?: TurnstileVerifier | null;
     razorpay?: RazorpayGateway | null;
+    sentryIssues?: SentryIssuesClient | null;
   } = {},
 ) {
   setLogSink(() => undefined);
@@ -125,6 +127,7 @@ export async function buildApp(
     passwordAuth: opts.passwordAuth ?? null,
     turnstile: opts.turnstile ?? null,
     razorpay: opts.razorpay ?? null,
+    sentryIssues: opts.sentryIssues ?? null,
   });
   return { app, db, verifier };
 }
