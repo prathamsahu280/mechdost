@@ -573,11 +573,14 @@ the write form and Admin → Reviews now work in real mode (quotes and coins unc
   `GET /v1/admin/analytics/dashboard` and the Overview reads `GET /v1/admin/overview` (spec 08 "Analytics").
 - **Live queries, no rollups yet:** every query is bounded by an IST date range (≤ 180 days) on an indexed column and
   cached 2 min per instance; `metrics_daily` (spec 12) waits until volume needs it (~1M events/month or p95 > 1 s).
-  Queries run one at a time so a dashboard never takes several pooled connections from customers.
+  Each report runs in one read-only, repeatable-read transaction with a 10 s local statement timeout (one pooled
+  connection, one snapshot; timeout → 503 `QUERY_TIMEOUT`), with explicit city-id lists so city indexes are used
+  (code review 2026-11-14).
 - **City scope:** staff see only their analytics cities (another city = 404). Web events have no city yet, so site
   traffic, the funnel's visitor steps and searches are site-wide and shown only to all-cities staff.
 - **Order = cash on delivery or paid online** (the routing queue's rule); GMV excludes cancelled/rejected parts.
-- **Search phrases need ≥ 2 distinct visitors** before an admin sees them (k-anonymity; they are user text).
+- **Search phrases need ≥ 3 distinct visitors** before an admin sees them (k-anonymity; they are user text; raised
+  from 2 in the code review 2026-11-14). New/repeat customers are judged on the selected cities' orders only.
 - **Analytics charts in SVG (no Recharts yet):** Recharts is the decided chart library (2026-10-31) but is not
   installed; the dashboard needs only single-series daily bars and a funnel, so it uses small accessible SVG/HTML
   charts on the existing tokens (accent bars, `line` gridlines, keyboard read-out, table view) instead of adding a

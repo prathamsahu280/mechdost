@@ -6,10 +6,22 @@
  */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { eq, sql } from 'drizzle-orm';
+import { PgDialect } from 'drizzle-orm/pg-core';
+import { SERVICE_REQUEST_STATES } from '@mechdost/shared/state';
 import { resolveAnalyticsRange, type AnalyticsRange } from '@mechdost/shared/analytics-range';
 import { createTestDb, type TestDb } from '../src/testing';
 import * as s from '../src/schema';
-import { adminOverviewCounts, analyticsCities, analyticsDashboard, type Tx } from '../src/repo';
+import {
+  adminOverviewCounts,
+  analyticsCities,
+  analyticsCityFilter,
+  analyticsDashboard,
+  BOOKED_SERVICE_STATES,
+  pgCode,
+  readOnlyReport,
+  type Tx,
+} from '../src/repo';
+import { rowsOf } from '../src/repo/sql-rows';
 import { addWorkshop, seedServiceFixture, type Fixture } from './service-fixture';
 
 let db: TestDb;
@@ -378,8 +390,15 @@ beforeAll(async () => {
     anon: 'v2',
     props: { path: '/shop/castrol-activ', locale: 'hi' },
   });
-  // Searches: two visitors each for "engine oil" (a product matches) and "xyzzy" (nothing does); one for a phrase
-  // only one visitor typed (never shown: k-anonymity of 2).
+  // Searches: three visitors each for "engine oil" (a product matches) and "xyzzy" (nothing does); "brake" by two
+  // and a phrase by one visitor (never shown: k-anonymity of 3). v4 only searches (no page view).
+  for (const [anon, query, at] of [
+    ['v4', 'engine oil', '2026-11-04T05:00:00Z'],
+    ['v4', 'xyzzy', '2026-11-04T05:01:00Z'],
+    ['v1', 'brake', '2026-11-04T05:02:00Z'],
+    ['v2', 'brake', '2026-11-04T05:03:00Z'],
+  ] as const)
+    await event({ event: 'search', at, anon, props: { query, source: 'shop' } });
   await event({
     event: 'search',
     at: '2026-11-02T05:00:00Z',
@@ -483,12 +502,24 @@ describe('analytics dashboard', () => {
 
   it('keeps to the cities asked for; an empty scope sees nothing; "all" sees every city', async () => {
     const bhilai = await analyticsDashboard(t(), { cityIds: [f.bhilai], range: NOV(), traffic: false });
-    expect(bhilai.kpis).toMatchObject({ ordersPlaced: 1, gmvPaise: 70000, serviceRequests: 1, customers: 1 });
+    // City-scoped customers: "other" has one Bhilai order (other cities' orders are not looked at).
+    expect(bhilai.kpis).toMatchObject({
+      ordersPlaced: 1,
+      gmvPaise: 70000,
+      serviceRequests: 1,
+      customers: 1,
+      newCustomers: 1,
+      repeatCustomers: 0,
+    });
     expect(bhilai.workshops).toEqual([]);
     const none = await analyticsDashboard(t(), { cityIds: [], range: NOV(), traffic: false });
     expect(none.kpis).toMatchObject({ ordersPlaced: 0, gmvPaise: 0, aovPaise: null, serviceRequests: 0 });
     expect(none.topOrdered).toEqual([]);
-    const all = await analyticsDashboard(t(), { cityIds: 'all', range: NOV(), traffic: false });
+    const all = await analyticsDashboard(t(), {
+      cityIds: [f.raipur, f.bhilai],
+      range: NOV(),
+      traffic: false,
+    });
     expect(all.kpis).toMatchObject({ ordersPlaced: 4, gmvPaise: 150000, serviceRequests: 4 });
   });
 
@@ -504,7 +535,7 @@ describe('analytics dashboard', () => {
       visitors: 2,
       sessions: 2,
       productViews: 3,
-      searches: 6,
+      searches: 10,
       cartVisitors: 1,
       checkoutVisitors: 1,
     });
@@ -527,8 +558,8 @@ describe('analytics dashboard', () => {
       },
     ]);
     expect(d.topSearches).toEqual([
-      { query: 'engine oil', count: 3, matches: true },
-      { query: 'xyzzy', count: 2, matches: false },
+      { query: 'engine oil', count: 4, matches: true },
+      { query: 'xyzzy', count: 3, matches: false },
     ]);
   });
 
@@ -607,5 +638,77 @@ describe('admin overview queues', () => {
       ordersToday: 0,
       gmvTodayPaise: 0,
     });
+  });
+});
+
+describe('analytics query safety', () => {
+  it('filters cities with an explicit id list (never "true"), so the (city_id, created_at) indexes apply', async () => {
+    const dialect = new PgDialect();
+    const q = dialect.sqlToQuery(analyticsCityFilter('og.city_id', [f.raipur, f.bhilai]));
+    expect(q.sql).toBe('og.city_id in ($1::uuid, $2::uuid)');
+    expect(q.params).toEqual([f.raipur, f.bhilai]);
+    expect(dialect.sqlToQuery(analyticsCityFilter('og.city_id', [])).sql).toBe('false');
+
+    const plan = async (query: ReturnType<typeof sql>) =>
+      db.transaction(async (tx) => {
+        await tx.execute(sql`set local enable_seqscan = off`);
+        return rowsOf<Record<string, string>>(await tx.execute(sql`explain ${query}`))
+          .map((r) => Object.values(r).join(' '))
+          .join(' | ');
+      });
+    const range = sql`created_at >= '2026-11-01'::timestamptz and created_at < '2026-11-11'::timestamptz`;
+    expect(
+      await plan(
+        sql`select count(*) from order_groups og where ${analyticsCityFilter('og.city_id', [f.raipur, f.bhilai])} and og.${range}`,
+      ),
+    ).toContain('order_groups_city_id_created_at_index');
+    expect(
+      await plan(
+        sql`select count(*) from service_requests sr where ${analyticsCityFilter('sr.city_id', [f.raipur])} and sr.${range}`,
+      ),
+    ).toContain('service_requests_city_created_idx');
+  });
+
+  it('runs a report read-only, in one snapshot, with a local statement timeout', async () => {
+    const seen = await readOnlyReport(t(), async (tx) => {
+      const show = async (name: string) =>
+        rowsOf<Record<string, string>>(await tx.execute(sql.raw(`show ${name}`)))[0]?.[name];
+      const out = {
+        timeout: await show('statement_timeout'),
+        readOnly: await show('transaction_read_only'),
+        isolation: await show('transaction_isolation'),
+        write: '',
+      };
+      const err = await tx
+        .execute(sql`insert into events (source, event, props) values ('server', 'probe', '{}'::jsonb)`)
+        .then(
+          () => null,
+          (e: unknown) => e,
+        );
+      out.write = pgCode(err) ?? 'allowed';
+      return out;
+    }).catch((e: unknown) => e);
+    // 25006 = read_only_sql_transaction.
+    expect(seen).toEqual({ timeout: '10s', readOnly: 'on', isolation: 'repeatable read', write: '25006' });
+    const after = rowsOf<{ statement_timeout: string }>(await db.execute(sql`show statement_timeout`))[0];
+    expect(after?.statement_timeout).toBe('0');
+  });
+
+  it('counts bookings by an explicit list of working states, not by the order of the state list', () => {
+    expect([...BOOKED_SERVICE_STATES].sort()).toEqual(
+      [
+        'approved',
+        'billed',
+        'completed',
+        'confirmed',
+        'estimate_sent',
+        'in_progress',
+        'no_work_approved',
+        'paid',
+        'ready',
+        'vehicle_received',
+      ].sort(),
+    );
+    for (const state of BOOKED_SERVICE_STATES) expect(SERVICE_REQUEST_STATES).toContain(state);
   });
 });

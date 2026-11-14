@@ -30,8 +30,13 @@ const VISITOR_STEPS = new Set(['product_view', 'add_to_cart', 'checkout_started'
 export interface FunnelRow<S extends string> {
   step: S;
   count: number;
-  /** % of the previous step when both count the same thing (visitors or orders); null otherwise. */
+  /**
+   * % of the previous step when both count the same thing (visitors or orders) and this step is not larger; null
+   * otherwise. Never above 100: visitors can add to the cart from a product list without opening a product page.
+   */
   ofPrevious: number | null;
+  /** True when this visitor step counts more than the one before (shown as words, not as a percentage). */
+  morePrevious: boolean;
   /** Bar width, % of the largest step. */
   width: number;
 }
@@ -41,10 +46,12 @@ export function funnelRows<S extends string>(funnel: readonly { step: S; count: 
   return funnel.map((f, i) => {
     const prev = i > 0 ? funnel[i - 1] : undefined;
     const sameUnit = prev !== undefined && VISITOR_STEPS.has(prev.step) === VISITOR_STEPS.has(f.step);
+    const more = prev !== undefined && sameUnit && f.count > prev.count;
     return {
       step: f.step,
       count: f.count,
-      ofPrevious: prev && sameUnit ? (sharePercent(f.count, prev.count) ?? 0) : null,
+      ofPrevious: prev && sameUnit && !more ? (sharePercent(f.count, prev.count) ?? 0) : null,
+      morePrevious: more,
       width: max > 0 ? Math.round((f.count * 100) / max) : 0,
     };
   });

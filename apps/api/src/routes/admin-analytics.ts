@@ -25,8 +25,9 @@ import { errorResponses, ErrorSchema } from './schemas';
  * Admin analytics (spec 08 "Analytics", built 2026-11-14) and the Overview queue counts. Read-only aggregates;
  * verified staff only. The dashboard needs `analytics:read` and stays inside the caller's cities (a city outside
  * them is 404, like any out-of-scope target); site traffic (web events carry no city yet) only for an all-cities
- * grant. Answers are cached per (scope, city, range) for two minutes on this instance and privately for a minute in
- * the browser, so a busy admin team cannot turn the dashboard into a database load.
+ * grant. Answers are cached per (cities, traffic, range) for two minutes on this instance (concurrent misses share
+ * one load) and privately for a minute in the browser, so a busy admin team cannot turn the dashboard into a
+ * database load. Each report runs in one read-only transaction with a 10 s statement timeout (503 QUERY_TIMEOUT).
  */
 const DATE = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const DashboardQuery = z
@@ -109,18 +110,15 @@ export function adminAnalyticsRoutes(deps: AppDeps, cache: SessionCache) {
       const cities = await analyticsCities(deps.db, scope);
       const chosen = q.city ? cities.find((x) => x.code === q.city) : null;
       if (q.city && !chosen) throw new NotFoundError('City not found');
-      const cityIds = chosen ? [chosen.id] : scope.all ? ('all' as const) : scope.cityIds;
+      // Always an explicit id list (also for every city), so the (city_id, created_at) indexes are used.
+      const cityIds = chosen ? [chosen.id] : cities.map((x) => x.id).sort();
       // Web events carry no city: site-wide traffic only for staff who may see every city.
       const traffic = scope.all;
-      const key = JSON.stringify([
-        scope.all ? 'all' : [...scope.cityIds].sort(),
-        chosen?.id ?? null,
-        range.fromDate,
-        range.toDate,
-      ]);
-      const data =
-        dashboards.get(key) ??
-        dashboards.set(key, await analyticsDashboard(deps.db, { cityIds, range, traffic }));
+      const key = JSON.stringify([cityIds, traffic, range.fromDate, range.toDate]);
+      // Single flight: several admins opening the same view at once cost one computation.
+      const data = await dashboards.getOrLoad(key, () =>
+        analyticsDashboard(deps.db, { cityIds, range, traffic }),
+      );
       c.header('Cache-Control', CACHE_HEADER);
       return c.json(
         {

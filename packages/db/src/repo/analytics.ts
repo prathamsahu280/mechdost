@@ -2,7 +2,7 @@ import { sql, type SQL } from 'drizzle-orm';
 import type { AdminOverview, AnalyticsDashboard } from '@mechdost/shared/admin-analytics-api';
 import { analyticsDays, type AnalyticsRange } from '@mechdost/shared/analytics-range';
 import { istDateString } from '@mechdost/shared/time';
-import { SERVICE_REQUEST_STATES } from '@mechdost/shared/state';
+import type { ServiceRequestStatus } from '@mechdost/shared/state';
 import { catalogueHasMatch } from './catalogue';
 import type { Tx } from './orders';
 import type { CityScope } from './routing';
@@ -19,12 +19,17 @@ import { num, numOrNull, rowsOf } from './sql-rows';
  * - an **order** is a checkout that became one: cash on delivery, or online and paid (the routing queue's rule);
  *   unpaid online checkouts are counted separately and are never orders;
  * - **GMV** is the value of order parts not cancelled or rejected; AOV = GMV ÷ orders with a part still live;
- * - **new customer**: first order ever in the range; **repeat**: more than one order up to the range's end;
+ * - **new customer**: first order in these cities is in the range; **repeat**: more than one order in these cities up
+ *   to the range's end (orders in other cities are never looked at, so a city manager learns nothing about them);
  * - **traffic** (web/app events) has no city yet, so it is site-wide and only computed when asked for (staff whose
  *   analytics grant covers every city); funnel visitor steps are distinct visitor ids, order steps are orders;
- * - a search phrase is listed only when at least two visitors typed it (it is user text; k-anonymity of 2).
+ * - a search phrase is listed only when at least three visitors typed it (it is user text; k-anonymity of 3).
+ *
+ * Cities are always an explicit id list (never "every row"), so the `(city_id, created_at)` indexes are usable for
+ * an all-cities view too (code review 2026-11-14). Every report runs in one read-only, repeatable-read transaction
+ * with a local statement timeout (`readOnlyReport`): one pooled connection, one consistent snapshot, bounded time.
  */
-export type AnalyticsCities = 'all' | readonly string[];
+export type AnalyticsCities = readonly string[];
 export type AnalyticsResult = Omit<AnalyticsDashboard, 'range' | 'city' | 'cities'>;
 
 const PAID = sql.raw(`('paid', 'partially_refunded', 'refunded')`);
@@ -34,26 +39,64 @@ const isOrder = (alias: string) =>
 const LIVE_PART = sql.raw(`not in ('cancelled', 'rejected')`);
 const PRODUCT_PATH = '^/shop/[^/]+$';
 const IST = sql.raw(`'Asia/Kolkata'`);
-/** Service requests that reached "confirmed" or a later working state. */
-const BOOKED = SERVICE_REQUEST_STATES.slice(
-  SERVICE_REQUEST_STATES.indexOf('confirmed'),
-  SERVICE_REQUEST_STATES.indexOf('completed') + 1,
-);
+/**
+ * Service requests that reached "confirmed" or a later working state — listed explicitly, so reordering or adding
+ * states in `SERVICE_REQUEST_STATES` never changes what counts as a booking (code review 2026-11-14).
+ */
+export const BOOKED_SERVICE_STATES: readonly ServiceRequestStatus[] = [
+  'confirmed',
+  'vehicle_received',
+  'estimate_sent',
+  'approved',
+  'no_work_approved',
+  'in_progress',
+  'ready',
+  'billed',
+  'paid',
+  'completed',
+];
+const BOOKED = BOOKED_SERVICE_STATES;
+/** A search phrase is shown only when this many distinct visitors typed it (k-anonymity; it is user text). */
+export const SEARCH_MIN_VISITORS = 3;
+/** Statement timeout of a report transaction. */
+export const REPORT_TIMEOUT_MS = 10_000;
 const list = (values: readonly string[]) =>
   sql`(${sql.join(
     values.map((v) => sql`${v}`),
     sql`, `,
   )})`;
 
-function cityIn(column: string, cities: AnalyticsCities): SQL {
-  if (cities === 'all') return sql`true`;
+/** `column in (…ids)`; `false` for no cities. Never `true`: an explicit list keeps the city indexes usable. */
+export function analyticsCityFilter(column: string, cities: AnalyticsCities): SQL {
   if (cities.length === 0) return sql`false`;
   return sql`${sql.raw(column)} in (${sql.join(
     cities.map((id) => sql`${id}::uuid`),
     sql`, `,
   )})`;
 }
-const citiesOf = (scope: CityScope): AnalyticsCities => (scope.all ? 'all' : scope.cityIds);
+const cityIn = analyticsCityFilter;
+/** For queries led by a status index (Overview queues): every city needs no city filter at all. */
+const scopeFilter = (column: string, scope: CityScope): SQL =>
+  scope.all ? sql`true` : analyticsCityFilter(column, scope.cityIds);
+
+/**
+ * Run a report in one read-only, repeatable-read transaction (one pooled connection, one consistent snapshot) with a
+ * local statement timeout; a timeout surfaces as Postgres 57014, which the API answers as 503 `QUERY_TIMEOUT`.
+ */
+export async function readOnlyReport<T>(
+  db: Tx,
+  fn: (tx: Tx) => Promise<T>,
+  timeoutMs: number = REPORT_TIMEOUT_MS,
+): Promise<T> {
+  const ms = Math.max(1, Math.trunc(timeoutMs));
+  return db.transaction(
+    async (tx) => {
+      await tx.execute(sql.raw(`set local statement_timeout = '${String(ms)}ms'`));
+      return fn(tx);
+    },
+    { isolationLevel: 'repeatable read', accessMode: 'read only' },
+  );
+}
 
 interface Bounds {
   from: string;
@@ -128,9 +171,11 @@ async function customerKpis(db: Tx, cities: AnalyticsCities, b: Bounds) {
       )
       select
         count(*) filter (where not exists (select 1 from order_groups p
-          where p.user_id = c.user_id and p.created_at < ${b.from}::timestamptz and ${isOrder('p')}))::int as fresh,
+          where p.user_id = c.user_id and p.created_at < ${b.from}::timestamptz and ${isOrder('p')}
+            and ${cityIn('p.city_id', cities)}))::int as fresh,
         count(*) filter (where (select count(*) from order_groups p
-          where p.user_id = c.user_id and p.created_at < ${b.to}::timestamptz and ${isOrder('p')}) > 1)::int as repeat
+          where p.user_id = c.user_id and p.created_at < ${b.to}::timestamptz and ${isOrder('p')}
+            and ${cityIn('p.city_id', cities)}) > 1)::int as repeat
       from c`),
   );
   return { newCustomers: num(r?.fresh ?? 0), repeatCustomers: num(r?.repeat ?? 0) };
@@ -348,7 +393,7 @@ async function traffic(db: Tx, b: Bounds) {
       from events e
       where e.event = 'search' and ${inRange}
       group by 1
-      having count(distinct e.anonymous_id) >= 2 and regexp_replace(lower(btrim(e.props->>'query')), '\\s+', ' ', 'g') <> ''
+      having count(distinct e.anonymous_id) >= ${SEARCH_MIN_VISITORS} and regexp_replace(lower(btrim(e.props->>'query')), '\\s+', ' ', 'g') <> ''
       order by n desc, q
       limit 15`);
   const [t] = rowsOf<Record<string, unknown>>(totals);
@@ -384,12 +429,19 @@ async function traffic(db: Tx, b: Bounds) {
  */
 export async function analyticsDashboard(
   db: Tx,
+  input: { cityIds: AnalyticsCities; range: AnalyticsRange; traffic: boolean; timeoutMs?: number },
+): Promise<AnalyticsResult> {
+  return readOnlyReport(db, (tx) => dashboardIn(tx, input), input.timeoutMs);
+}
+
+async function dashboardIn(
+  db: Tx,
   input: { cityIds: AnalyticsCities; range: AnalyticsRange; traffic: boolean },
 ): Promise<AnalyticsResult> {
   const { fromInstant, toInstant, dates } = analyticsDays(input.range);
   const b: Bounds = { from: fromInstant.toISOString(), to: toInstant.toISOString() };
   const cities = input.cityIds;
-  // One query at a time: a dashboard must never take several pooled connections from customer traffic.
+  // One query at a time, in one transaction: a dashboard holds a single pooled connection.
   const orders = await orderKpis(db, cities, b);
   const reasons = await reasonCounts(db, cities, b);
   const customers = await customerKpis(db, cities, b);
@@ -451,7 +503,7 @@ export async function analyticsCities(
 ): Promise<{ id: string; code: string; name: string; nameHi: string | null }[]> {
   const rows = rowsOf<{ id: string; code: string; name: string; name_hi: string | null }>(
     await db.execute(sql`select c.id, c.code, c.name, c.name_hi from cities c
-      where ${cityIn('c.id', citiesOf(scope))} order by c.code`),
+      where ${scopeFilter('c.id', scope)} order by c.code`),
   );
   return rows.map((r) => ({ id: r.id, code: r.code, name: r.name, nameHi: r.name_hi }));
 }
@@ -481,10 +533,14 @@ async function count(db: Tx, query: SQL): Promise<number> {
  */
 export async function adminOverviewCounts(
   db: Tx,
-  input: { now: Date; scopes: OverviewScopes },
+  input: { now: Date; scopes: OverviewScopes; timeoutMs?: number },
 ): Promise<AdminOverview> {
+  return readOnlyReport(db, (tx) => overviewIn(tx, input), input.timeoutMs);
+}
+
+async function overviewIn(db: Tx, input: { now: Date; scopes: OverviewScopes }): Promise<AdminOverview> {
   const { scopes } = input;
-  // One query at a time (see analyticsDashboard): never several pooled connections for one admin screen.
+  // One query at a time, in one read-only transaction (see analyticsDashboard).
   const orders = scopes.orders
     ? await db.execute(sql`
         select count(*) filter (where o.status in ('placed', 'needs_rerouting'))::int as need,
@@ -493,28 +549,28 @@ export async function adminOverviewCounts(
         from orders o
         where o.status in ('placed', 'needs_rerouting', 'awaiting_shop', 'confirmed', 'packed', 'shipped',
             'out_for_delivery')
-          and ${cityIn('o.city_id', citiesOf(scopes.orders))}
+          and ${scopeFilter('o.city_id', scopes.orders)}
           and exists (select 1 from order_groups g where g.id = o.group_id and ${isOrder('g')})`)
     : null;
   const service = scopes.service
     ? await count(
         db,
         sql`select count(*) as n from service_requests r
-          where r.status = 'needs_routing' and ${cityIn('r.city_id', citiesOf(scopes.service))}`,
+          where r.status = 'needs_routing' and ${scopeFilter('r.city_id', scopes.service)}`,
       )
     : null;
   const tickets = scopes.tickets
     ? await count(
         db,
         sql`select count(*) as n from support_tickets t
-          where t.status in ('open', 'in_review') and ${cityIn('t.city_id', citiesOf(scopes.tickets))}`,
+          where t.status in ('open', 'in_review') and ${scopeFilter('t.city_id', scopes.tickets)}`,
       )
     : null;
   const reviews = scopes.reviews
     ? await count(
         db,
         sql`select count(*) as n from reviews r
-          where r.status = 'pending' and ${cityIn('r.city_id', citiesOf(scopes.reviews))}`,
+          where r.status = 'pending' and ${scopeFilter('r.city_id', scopes.reviews)}`,
       )
     : null;
   const applications = scopes.applications?.all
@@ -527,16 +583,21 @@ export async function adminOverviewCounts(
     ? await count(
         db,
         sql`select count(*) as n from shop_price_requests pr join shops s on s.id = pr.shop_id
-          where pr.status = 'pending' and ${cityIn('s.city_id', citiesOf(scopes.prices))}`,
+          where pr.status = 'pending' and ${scopeFilter('s.city_id', scopes.prices)}`,
       )
     : null;
   const today = istDateString(input.now);
   const day = analyticsDays({ fromDate: today, toDate: today, days: 1 });
+  // A date range on order_groups: an explicit city list so `(city_id, created_at)` is used for every city too.
   const todayKpis = scopes.analytics
-    ? await orderKpis(db, citiesOf(scopes.analytics), {
-        from: day.fromInstant.toISOString(),
-        to: day.toInstant.toISOString(),
-      })
+    ? await orderKpis(
+        db,
+        (await analyticsCities(db, scopes.analytics)).map((c) => c.id),
+        {
+          from: day.fromInstant.toISOString(),
+          to: day.toInstant.toISOString(),
+        },
+      )
     : null;
   const [o] = orders ? rowsOf<{ need: unknown; awaiting: unknown; progress: unknown }>(orders) : [];
   return {

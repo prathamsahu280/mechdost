@@ -7,7 +7,8 @@ import { chartTicks, shortDay } from '@/lib/admin-analytics-view';
 /**
  * Small dependency-free charts for Admin → Analytics (decision 2026-11-14 "Analytics charts in SVG"): one series per
  * chart in the accent colour (the title names it, so no legend), round ticks from 0, recessive gridlines, the hovered
- * or focused day read out in text above the plot (arrow keys move it), and every chart also as a table.
+ * or focused day read out in text above the plot (a labelled, focusable group: arrow keys move the day; the SVG
+ * itself is hidden from assistive technology), and every chart also as a table.
  */
 const W = 600;
 const H = 160;
@@ -25,6 +26,7 @@ export function DailyBars({
 }) {
   const t = useTranslations('portal');
   const hintId = useId();
+  const readoutId = useId();
   const [active, setActive] = useState<number | null>(null);
   const values = days.map((d) => d.value);
   const ticks = chartTicks(values);
@@ -64,7 +66,7 @@ export function DailyBars({
   return (
     <figure className="min-w-0 rounded-card border border-line-card bg-surface p-4 shadow-card">
       <figcaption className="font-heading text-base font-extrabold text-ink">{title}</figcaption>
-      <p aria-live="polite" className="mt-1 min-h-5 text-sm text-muted tabular-nums">
+      <p id={readoutId} aria-live="polite" className="mt-1 min-h-5 text-sm text-muted tabular-nums">
         {shown
           ? t('analytics_api_chart_readout', {
               day: shortDay(shown.date, locale),
@@ -82,9 +84,9 @@ export function DailyBars({
           ))}
         </div>
         <div
-          role="img"
-          aria-label={summary}
-          aria-describedby={hintId}
+          role="group"
+          aria-label={title}
+          aria-describedby={`${readoutId} ${hintId}`}
           tabIndex={0}
           onKeyDown={onKey}
           onBlur={() => {
@@ -96,6 +98,7 @@ export function DailyBars({
           className="min-w-0 flex-1 rounded-tile focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
         >
           <svg
+            aria-hidden="true"
             viewBox={`0 0 ${String(W)} ${String(H)}`}
             preserveAspectRatio="none"
             className="block h-40 w-full"

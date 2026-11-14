@@ -41,7 +41,7 @@ Dashboard charts read `metrics_daily`; ad-hoc questions via PostHog HogQL; expor
 bounded by an IST date range of at most 180 days on `occurred_at` (partition key, `events (event, occurred_at)` index):
 visitors = distinct `anonymous_id` of `page_view`, visits = distinct `session_id`, product views = `page_view` on
 `/shop/<slug>`, searches, distinct visitors with `add_to_cart` / `begin_checkout`; top searches grouped by the
-normalised scrubbed phrase and shown only when ≥ 2 distinct visitors typed it. Only `source` web/app events count.
+normalised scrubbed phrase and shown only when ≥ 3 distinct visitors typed it. Only `source` web/app events count.
 Because client events carry **no `city_id`**, this traffic is site-wide and shown only to staff with an all-cities
 analytics grant. Click ids added: `admin_analytics_preset_{7|30|90}`, `admin_analytics_apply`, `admin_analytics_retry`.
 Next: `city_id` on web events (from the chosen city/PIN), then per-city traffic; rollups when volume needs them.

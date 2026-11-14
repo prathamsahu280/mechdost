@@ -37,13 +37,25 @@ describe('admin analytics view helpers', () => {
         { step: 'order_placed', count: 4 },
       ]),
     ).toEqual([
-      { step: 'product_view', count: 200, ofPrevious: null, width: 100 },
-      { step: 'add_to_cart', count: 50, ofPrevious: 25, width: 25 },
-      { step: 'checkout_started', count: 0, ofPrevious: 0, width: 0 },
-      { step: 'order_placed', count: 4, ofPrevious: null, width: 2 },
+      { step: 'product_view', count: 200, ofPrevious: null, morePrevious: false, width: 100 },
+      { step: 'add_to_cart', count: 50, ofPrevious: 25, morePrevious: false, width: 25 },
+      { step: 'checkout_started', count: 0, ofPrevious: 0, morePrevious: false, width: 0 },
+      { step: 'order_placed', count: 4, ofPrevious: null, morePrevious: false, width: 2 },
     ]);
     expect(funnelRows([{ step: 'order_placed', count: 0 }])).toEqual([
-      { step: 'order_placed', count: 0, ofPrevious: null, width: 0 },
+      { step: 'order_placed', count: 0, ofPrevious: null, morePrevious: false, width: 0 },
+    ]);
+  });
+
+  it('never shows more than 100 % of the step before: people can add to the cart from a list', () => {
+    expect(
+      funnelRows([
+        { step: 'product_view', count: 10 },
+        { step: 'add_to_cart', count: 14 },
+      ]),
+    ).toEqual([
+      { step: 'product_view', count: 10, ofPrevious: null, morePrevious: false, width: 71 },
+      { step: 'add_to_cart', count: 14, ofPrevious: null, morePrevious: true, width: 100 },
     ]);
   });
 

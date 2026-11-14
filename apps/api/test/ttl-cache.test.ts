@@ -20,4 +20,27 @@ describe('TtlCache', () => {
     expect(cache.get('a')).toBeUndefined();
     expect([cache.get('b'), cache.get('c')]).toEqual([2, 3]);
   });
+
+  it('loads a missing key once for concurrent callers (single flight) and never caches a failure', async () => {
+    const cache = new TtlCache<number>(1_000, 10, () => 0);
+    let calls = 0;
+    let release: (v: number) => void = () => undefined;
+    const loader = () => {
+      calls += 1;
+      return new Promise<number>((resolve) => {
+        release = resolve;
+      });
+    };
+    const first = cache.getOrLoad('k', loader);
+    const second = cache.getOrLoad('k', loader);
+    release(7);
+    expect(await Promise.all([first, second])).toEqual([7, 7]);
+    expect(calls).toBe(1);
+    expect(await cache.getOrLoad('k', loader)).toBe(7);
+    expect(calls).toBe(1);
+
+    const failing = () => Promise.reject(new Error('db down'));
+    await expect(cache.getOrLoad('bad', failing)).rejects.toThrow('db down');
+    expect(await cache.getOrLoad('bad', () => Promise.resolve(3))).toBe(3);
+  });
 });

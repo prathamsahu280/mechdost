@@ -45,7 +45,7 @@ export function AdminAnalyticsApi() {
   const [draft, setDraft] = useState<Query>(query);
   const [rangeError, setRangeError] = useState(false);
   const [data, setData] = useState<AnalyticsDashboard | null>(null);
-  const [error, setError] = useState<CommonErrorKey | null>(null);
+  const [error, setError] = useState<CommonErrorKey | 'analytics_api_err_timeout' | null>(null);
   const [loading, setLoading] = useState(true);
   const seq = useRef(0);
 
@@ -58,7 +58,8 @@ export function AdminAnalyticsApi() {
       if (mine !== seq.current) return;
       setLoading(false);
       if (!res.ok) {
-        setError(commonErrorKey(res.code));
+        // A report over its 10 s budget (503 QUERY_TIMEOUT): say what helps, not a generic failure.
+        setError(res.code === 'QUERY_TIMEOUT' ? 'analytics_api_err_timeout' : commonErrorKey(res.code));
         return;
       }
       setError(null);
@@ -334,6 +335,9 @@ function Dashboard({
                         {t('analytics_api_funnel_ofPrevious', { n: row.ofPrevious })}
                       </span>
                     )}
+                    {row.morePrevious ? (
+                      <span className="ml-2 text-muted">{t('analytics_api_funnel_more')}</span>
+                    ) : null}
                   </span>
                 </div>
                 <div aria-hidden="true" className="mt-1 h-2 rounded-pill bg-pill">

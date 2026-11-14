@@ -51,14 +51,17 @@ const BROWSER_ONLY_SECTIONS: readonly string[] = ['quotes', 'coins'];
  * in the mixed build (real data, demo sign-in), where neither queue would show the reviews customers see.
  */
 const reviewsShown = BROWSER_ONLY_FEATURES || AUTH_MODE === 'firebase';
-/** Analytics reads only the API (no demo version): shown with real sign-in. */
-const analyticsShown = AUTH_MODE === 'firebase';
+/**
+ * Sections that only read the API and have no demo version: shown with real sign-in only. One list for all of them
+ * (Analytics 2026-11-14; add later ones here, e.g. the monitoring "errors" section).
+ */
+const REAL_SIGN_IN_ONLY: readonly string[] = ['analytics'];
 const shown = <T extends string>(all: readonly T[]): readonly T[] =>
   all.filter(
     (s) =>
       (BROWSER_ONLY_FEATURES || !BROWSER_ONLY_SECTIONS.includes(s)) &&
       (s !== 'reviews' || reviewsShown) &&
-      (s !== 'analytics' || analyticsShown),
+      (AUTH_MODE === 'firebase' || !REAL_SIGN_IN_ONLY.includes(s)),
   );
 
 /** Account sections shown in this build (navigation, routes). */

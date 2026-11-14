@@ -4,6 +4,8 @@
  */
 export class TtlCache<T> {
   private readonly entries = new Map<string, { value: T; expires: number }>();
+  /** Loads in progress: concurrent misses for one key share one load (single flight). */
+  private readonly loading = new Map<string, Promise<T>>();
 
   constructor(
     private readonly ttlMs: number,
@@ -30,5 +32,28 @@ export class TtlCache<T> {
     }
     this.entries.set(key, { value, expires: this.now() + this.ttlMs });
     return value;
+  }
+
+  /**
+   * The cached value, or the result of `load` — run once however many callers miss the same key at the same time.
+   * A failed load is not cached (the next call tries again).
+   */
+  getOrLoad(key: string, load: () => Promise<T>): Promise<T> {
+    const hit = this.get(key);
+    if (hit !== undefined) return Promise.resolve(hit);
+    const pending = this.loading.get(key);
+    if (pending) return pending;
+    const started = load().then(
+      (value) => {
+        this.loading.delete(key);
+        return this.set(key, value);
+      },
+      (err: unknown) => {
+        this.loading.delete(key);
+        throw err;
+      },
+    );
+    this.loading.set(key, started);
+    return started;
   }
 }

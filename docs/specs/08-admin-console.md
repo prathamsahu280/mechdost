@@ -169,9 +169,13 @@ Analytics section.
   - `GET /v1/admin/analytics/dashboard?city=&from=&to=` — verified staff with `analytics:read`; `from`/`to` are IST
     calendar dates (inclusive), default the last 30 days, at most 180 days, `from` not in the future (400
     `RANGE_INVALID` / `RANGE_TOO_LONG`; unknown query parameters 400). `city` is a city code inside the caller's
-    analytics scope (another city is 404); without it, every city in scope. Cached per (scope, city, range) for 2 min
-    on the instance (`TtlCache`, 200 entries) and `Cache-Control: private, max-age=60`. Queries run one after another
-    (never several pooled connections for one admin screen).
+    analytics scope (another city is 404); without it, every city in scope — always passed to SQL as an explicit
+    city-id list (never "every row"), so the `(city_id, created_at)` indexes serve the all-cities view too. Cached per
+    (cities, traffic, range) for 2 min on the instance (`TtlCache`, 200 entries; concurrent misses for one key share
+    one load) and `Cache-Control: private, max-age=60`. The whole report runs in **one read-only, repeatable-read
+    transaction** with `SET LOCAL statement_timeout = '10s'` (`readOnlyReport`): one pooled connection, one
+    consistent snapshot, queries one after another; a timeout (Postgres 57014) answers **503 `QUERY_TIMEOUT`** and
+    the page says "choose fewer days or one city".
   - `GET /v1/admin/overview` — live queue counts for the Overview: orders to route / waiting for a shop / on their
     way (`orders:read`), service requests to route (`service:read`), open support (`tickets:read`), reviews to
     moderate (`reviews:moderate`), applications (`applications:review`, all-cities grant only: applications have no
@@ -189,16 +193,20 @@ Analytics section.
 - **Definitions** (also in the repo's header): an **order** is a checkout that became one — cash on delivery, or
   online and paid (the routing queue's rule); unpaid online checkouts are counted only as "online payments not
   completed". **GMV** = value of order parts not cancelled or rejected; **AOV** = GMV ÷ orders with a live part.
-  **New customer** = first order ever in the range; **repeat** = more than one order up to the range's end. Shop
+  **New customer** = first order in the selected cities is in the range; **repeat** = more than one order in those
+  cities up to the range's end (other cities' orders are never read, so a city manager learns nothing about them). Shop
   acceptance = accepted ÷ (accepted + declined + timed out), over offers made in the range (same rule as the routing
-  ranker). Bookings "confirmed" = reached `confirmed` or any later working state; "completed" = paid or completed.
+  ranker). Bookings "confirmed" = an explicit list of `confirmed` and the later working states
+  (`BOOKED_SERVICE_STATES`, independent of the state array's order); "completed" = paid or completed. The funnel shows
+  "% of the step before" only up to 100 %; a larger visitor step (add to cart from a list without a product page)
+  reads "More than the step before" instead.
 - **Traffic is site-wide**: web events carry no city yet (spec 12), so visitors, visits, product views (`page_view`
   on `/shop/<slug>`), searches, the funnel's visitor steps (distinct visitor ids: product view → add to cart →
   checkout started) and top searches are computed only for staff whose analytics grant covers every city, and are
   null for city-scoped staff (the page says why). The order steps (placed → delivered) count orders, so the funnel
   never divides visitors by orders.
 - **Privacy** (rule 16): no personal data in responses — ids, codes, product/shop/workshop/area names and aggregated
-  search phrases; a phrase is listed only when at least two distinct visitors searched it (k-anonymity of 2), already
+  search phrases; a phrase is listed only when at least three distinct visitors searched it (k-anonymity of 3), already
   scrubbed of phone numbers and emails on both ends. "No match" = the phrase finds no live product right now
   (`catalogueHasMatch`, the catalogue's own text search).
 - **Indexes** (migration `0050_analytics_indexes`): `service_requests (city_id, created_at)` (replaces the

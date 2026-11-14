@@ -4,8 +4,8 @@
 -- order_assignments (offered_at): shop acceptance over the offers made in a range (one small btree; the table grows
 -- with offers, a few per order). Small tables at launch, so a plain CREATE INDEX inside the migration's transaction
 -- (CONCURRENTLY is not possible there) holds its lock for milliseconds; lock_timeout keeps it from queueing behind
--- a long transaction.
-SET lock_timeout = '5s';--> statement-breakpoint
+-- a long transaction. SET LOCAL: scoped to the migrator's transaction, never left on the pooled session.
+SET LOCAL lock_timeout = '5s';--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "service_requests_city_created_idx" ON "service_requests" USING btree ("city_id","created_at");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "order_assignments_offered_at_idx" ON "order_assignments" USING btree ("offered_at");--> statement-breakpoint
 DROP INDEX IF EXISTS "service_requests_city_id_index";
