@@ -32,7 +32,10 @@
     "./compare-max": "./src/compare-max.ts",
     "./admin-prices": "./src/admin-prices.ts",
     "./admin-catalogue": "./src/admin-catalogue.ts",
+    "./admin-config-api": "./src/admin-config-api.ts",
+    "./support-api": "./src/support-api.ts",
     "./partners": "./src/partners.ts",
+    "./partner-api": "./src/partner-api.ts",
     "./email-templates": "./src/email-templates.ts",
     "./service-bill": "./src/service-bill.ts"
   },
