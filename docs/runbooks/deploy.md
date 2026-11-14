@@ -291,6 +291,44 @@ When a separate production Supabase project exists, migrations move into the pip
 
 Items decided to happen before going public; tick them off here.
 
-- [ ] Hide the demo-only controls: "advance" (orders, service requests, applications), "demo reply" and "demo offer" (Q86, user 2026-11-14).
+- [x] Hide the demo-only controls: "advance" (orders, service requests, applications), "demo reply" and "demo offer" (Q86, user 2026-11-14). Done 2026-11-14: `SHOW_DEMO_CONTROLS`.
 - [ ] Switch the website from the browser demo to real sign-in and the API (data switch), so seller onboarding links the shop owner on sign-in (Q89).
 - [ ] Demo data off (Q21: "Demo off before public launch, date TBD").
+
+### The real-mode switch, step by step (launch 2026-11-16)
+
+1. **Firebase web config as repository variables.** These values are public: they ship in the browser. Copy them from the Firebase console (Project settings → Your apps → Web app):
+   - `NEXT_PUBLIC_FIREBASE_API_KEY`
+   - `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
+   - `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
+   - `NEXT_PUBLIC_FIREBASE_APP_ID`
+
+   Set each one with `gh variable set NAME --body "…"`. The deploy passes them to the website build (added 2026-11-14).
+
+2. **Firebase console → Authentication:**
+   - Settings → Authorized domains includes `mechdost.com`.
+   - Phone sign-in is enabled.
+   - SMS region policy is set to India only (security baseline).
+3. **Online payments (optional at launch):** set `NEXT_PUBLIC_RAZORPAY_KEY_ID` (public key id). Without it, checkout offers cash on delivery only. Test keys take test payments only.
+4. **Database migrations applied** (§ 6). 0044 was applied 2026-11-14.
+5. **Flip the switches:**
+   - `gh variable set NEXT_PUBLIC_AUTH_MODE --body firebase`
+   - `gh variable set NEXT_PUBLIC_DATA_MODE --body api`
+   - Re-run the Deploy workflow (`gh workflow run Deploy`) or push a commit.
+6. **First admin:**
+   - Sign up on mechdost.com with the owner's phone.
+   - Then, from a machine with the root `.env`: `pnpm db:grant-role --phone +91XXXXXXXXXX --role super_admin --reason "Launch: owner"`.
+   - Sign out and in again (staff two-step).
+7. **Content:**
+   - Admin → Catalogue → Add product / Import CSV (`docs/runbooks/catalogue-import.md`).
+   - Add shops (seller invite or application → approve with PIN codes). Set shop prices.
+   - Add workshops (Admin → Workshops). Publish and verify the location.
+8. **WhatsApp:**
+   - Once Meta approves the templates, turn each event on in Admin → Notifications (English and Hindi text).
+   - The worker sends them.
+9. **Live smoke test (Q95):**
+   - Order: sign up, place a cash-on-delivery order, route it to the shop, accept it, pack it, send it out for delivery, then deliver it with the code.
+   - Service request: book, propose, accept, receive the vehicle, estimate, bill, mark paid.
+   - Run each in English and in Hindi.
+
+Hidden in real mode until their APIs exist: bulk quotes, coins, reviews (decision 2026-11-14).
