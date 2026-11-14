@@ -106,31 +106,29 @@ export function ProductCard({
         >
           {availabilityLabel(t, product.availability)}
         </p>
-        {/* Compare sits beside Add to cart (user 2026-11-13: it was a whole extra row at the bottom of the card). */}
-        <div className="mt-auto flex items-start gap-2 pt-4">
+        {/* Foot of the card (user ruling 2026-11-15, "Checkbox style"): "☐ Compare" on its own line, then the action
+            row with only "Add to cart" (or the stepper) at full width. Both sit at the foot, so they line up across a
+            row of cards. Nothing else ever enters the row: compare questions and cart limits are told in the tray. */}
+        <div className="mt-auto flex flex-col pt-2">
           {compare ? (
             <CompareToggle
-              className="shrink-0"
               slug={product.slug}
               category={product.category.slug}
+              categoryName={categoryName}
               labels={{
                 toggle: cmp('toggle'),
                 toggleName: cmp('toggleName', { name: `${product.brand} ${product.name}` }),
                 added: cmp('added', { count: '{count}' }),
                 removed: cmp('removed'),
-                full: cmp('full'),
-                otherCategory: cmp('otherCategory'),
-                startNew: cmp('startNew'),
-                saveFailed: t('saveFailed'),
               }}
             />
           ) : null}
           {price ? (
-            <div className="min-w-0 flex-1">
+            <div data-slot="card-actions" className={compare ? 'mt-1' : 'mt-2'}>
               <AddToCartButton
                 sku={product.sku}
                 slug={product.slug}
-                className="px-3"
+                notify="tray"
                 labels={{
                   add: t('addToCart'),
                   added: t('added'),
@@ -140,6 +138,7 @@ export function ProductCard({
                   increase: t('cartIncrease', { name: `${product.brand} ${product.name}` }),
                   decrease: t('cartDecrease', { name: `${product.brand} ${product.name}` }),
                   remove: t('cartRemove', { name: `${product.brand} ${product.name}` }),
+                  removed: t('cartRemoved'),
                   inCart: t('inCart', { count: '#' }),
                 }}
               />

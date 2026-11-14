@@ -179,6 +179,11 @@ export const CLIENT_EVENT_SCHEMAS = {
   compare_removed: z.object({ slug: id, count: z.number().int().min(0).max(4) }).strict(),
   compare_opened: z.object({ count: z.number().int().min(0).max(4), category: id.nullable() }).strict(),
   compare_differences_toggled: z.object({ on: z.boolean() }).strict(),
+  // The tray's question when a product of another category is picked (redesign 2026-11-14): codes and a count.
+  compare_switch_prompted: z.object({ from: id, to: id, count: z.number().int().min(1).max(4) }).strict(),
+  compare_switch_answered: z.object({ choice: z.enum(['start_new', 'keep']), to: id }).strict(),
+  // The tray told the shopper the list is full or the browser refused to save it.
+  compare_limit_shown: z.object({ reason: z.enum(['full', 'save_failed']) }).strict(),
   remove_from_cart: z.object({ slug: id }).strict(),
   begin_checkout: z
     .object({ items: z.number().int().min(0).max(100), valuePaise: z.number().int().min(0) })

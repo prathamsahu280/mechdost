@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import * as store from '../src/lib/compare/store';
 import {
   addToCompare,
   clearCompare,
@@ -62,10 +63,12 @@ describe('compare list (design 2026-11-13)', () => {
     expect(readCompare().slugs).toEqual(['a']);
   });
 
-  it('refuses another category and can start a new comparison instead', () => {
+  it('refuses another category without changing anything, and can start a new comparison instead', () => {
     addToCompare('oil', 'lubricants');
+    sent.length = 0;
     expect(addToCompare('battery', 'batteries')).toBe('other_category');
     expect(readCompare()).toEqual({ category: 'lubricants', slugs: ['oil'] });
+    expect(sent).toEqual([]);
     expect(startNewComparison('battery', 'batteries')).toBe('added');
     expect(readCompare()).toEqual({ category: 'batteries', slugs: ['battery'] });
   });
@@ -101,5 +104,49 @@ describe('compare list (design 2026-11-13)', () => {
 
   it('builds the shareable link', () => {
     expect(compareHref(['a', 'b'])).toBe('/compare?p=a,b');
+  });
+});
+
+describe('category name kept with the list (redesign 2026-11-14)', () => {
+  beforeEach(() => {
+    fakeWindow();
+  });
+
+  it('the first product names the category in the page language; later ones keep it', () => {
+    addToCompare('oil', 'lubricants', { name: 'Lubricants', lang: 'en' });
+    addToCompare('oil-2', 'lubricants', { name: 'ignored', lang: 'hi' });
+    expect(readCompare()).toEqual({
+      category: 'lubricants',
+      slugs: ['oil', 'oil-2'],
+      name: 'Lubricants',
+      lang: 'en',
+    });
+    expect(startNewComparison('battery', 'batteries', { name: 'Batteries', lang: 'en' })).toBe('added');
+    expect(readCompare()).toMatchObject({ category: 'batteries', name: 'Batteries', lang: 'en' });
+  });
+
+  it('a stored name that is not a string is dropped (the tray validates it before showing it)', () => {
+    const data = fakeWindow();
+    data.set('mechdost-compare', JSON.stringify({ category: 'tyres', slugs: ['a'], name: 3, lang: 'en' }));
+    expect(readCompare()).toEqual({ category: 'tyres', slugs: ['a'] });
+  });
+
+  /**
+   * JS budget (review 2026-11-14, C1): the store ships on every shop page, so the tray's question logic lives in
+   * `prompt.ts`, which only the lazily loaded tray imports.
+   */
+  it('keeps no question state: that belongs to the tray', () => {
+    expect(Object.keys(store).sort()).toEqual(
+      [
+        'COMPARE_MAX',
+        'addToCompare',
+        'clearCompare',
+        'compareHref',
+        'readCompare',
+        'removeFromCompare',
+        'startNewComparison',
+        'useCompare',
+      ].sort(),
+    );
   });
 });

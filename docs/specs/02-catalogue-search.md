@@ -58,7 +58,7 @@ Plan `docs/superpowers/plans/2026-11-10-catalogue-on-api.md`. Off (`demo`) on ev
 
 ## UI
 
-Concept sections `#home-products`, `#catalogue`, `#find-parts`, product page (`05-page-product-*.png`); hero search; 6 category tiles with concept descriptions; "Check price & delivery for your area" panel; product card with `<details>` "Specification & fitment"; status lines copied from the concept; fitment badge green; "Request a product →" sourcing form (quick RFQ: brand, reference, photo optional → ticket kind Product sourcing).
+Product card actions and the compare control: spec 21 § "Redesign 2026-11-14" ("☐ Compare" checkbox under the price — user ruling 2026-11-15 — and an action row with only "Add to cart" or the stepper at full width; no message ever inside a card; the compare tray asks). Concept sections `#home-products`, `#catalogue`, `#find-parts`, product page (`05-page-product-*.png`); hero search; 6 category tiles with concept descriptions; "Check price & delivery for your area" panel; product card with `<details>` "Specification & fitment"; status lines copied from the concept; fitment badge green; "Request a product →" sourcing form (quick RFQ: brand, reference, photo optional → ticket kind Product sourcing).
 
 ## Rules
 

@@ -30,8 +30,9 @@ async function tap(target: Locator) {
   await target.click();
 }
 
+/** "☐ Compare" (user ruling 2026-11-15: a checkbox, like Amazon and Flipkart). */
 function toggle(page: Page, name: string) {
-  return page.getByRole('button', { name: `Compare ${name}`, exact: true });
+  return page.getByRole('checkbox', { name: `Compare ${name}`, exact: true });
 }
 
 /** The tray floats on screen wherever the shopper has scrolled (bug 2026-11-13: it sat at the end of the page). */
@@ -60,7 +61,7 @@ test('compare three engine oils from the shop', async ({ page }) => {
   await page.goto('/shop?category=lubricants');
   for (const name of ['Castrol Activ 4T 20W40 900 ml', 'Motul 3100 4T 10W30 1 L', 'HP Racer4 20W40 900 ml']) {
     await tap(toggle(page, name));
-    await expect(toggle(page, name)).toHaveAttribute('aria-pressed', 'true');
+    await expect(toggle(page, name)).toBeChecked();
   }
   // The card shows the unit price next to the price.
   await expect(page.getByText('₹366.67 per litre').first()).toBeVisible();
@@ -96,11 +97,11 @@ test('one category at a time: a battery starts a new comparison', async ({ page 
   await tap(toggle(page, 'Castrol Activ 4T 20W40 900 ml'));
   await page.goto(`/shop/${EXIDE}`);
   await tap(toggle(page, 'Exide XLTZ4A 24F+24P'));
-  await expect(
-    page.getByRole('status').filter({ hasText: 'You can compare one category at a time.' }),
-  ).toBeVisible();
-  await tap(page.getByRole('button', { name: 'Start a new comparison' }));
-  await expect(toggle(page, 'Exide XLTZ4A 24F+24P')).toHaveAttribute('aria-pressed', 'true');
+  // The tray asks (redesign 2026-11-14; the card no longer shows a message of its own).
+  const ask = page.getByRole('dialog', { name: 'Start a new comparison with Batteries?' });
+  await expect(ask).toBeVisible();
+  await ask.getByRole('button', { name: 'Start new' }).click();
+  await expect(toggle(page, 'Exide XLTZ4A 24F+24P')).toBeChecked();
   await expect(page.getByRole('link', { name: 'Compare (1)' })).toBeVisible();
 });
 

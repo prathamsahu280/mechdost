@@ -632,6 +632,32 @@ the write form and Admin → Reviews now work in real mode (quotes and coins unc
 - The first run is the overnight run (coordinator 2026-11-14: "dont do the tests just yet we can do them
   overnight"); the harness is type-checked, linted and unit-tested only.
 
+## 2026-11-14 — Compare control and card actions redesigned (user: "that ui is really really buggy")
+
+- **Replaces** the 2026-11-13 flow "another category shows 'You can compare one category at a time.' with Start a new
+  comparison" on the card: cards and the product page never show compare messages. The compare tray asks once
+  ("Start a new comparison with {to}? This removes {n} {from} item(s)." — **Start new** / **Keep current**) and tells
+  "full" / "save refused" with **OK**. Non-modal, inside the tray; Escape keeps the list. One shared store and prompt.
+- **Card action row:** superseded on 2026-11-15 by the checkbox ruling below. No new colours, fonts or radii.
+- **Stored list** gains optional `name` + `lang` (category name in the page language) for the tray; never shown in
+  another language. Events `compare_switch_prompted`, `compare_switch_answered`, `compare_limit_shown` (spec 12).
+- Locale keys `compare.otherCategory` and `compare.startNew` removed; `switch*` and `dismiss` added (en + hi).
+- Spec 21 § "Redesign 2026-11-14"; geometry tests written first and run overnight (user asked to hold browser runs).
+- **Review round (2026-11-15):** the question logic moved out of the always-loaded store into the lazy tray chunk
+  (controls `signal()` a CustomEvent; the loader holds the request and owns the one live region); cart limits from
+  cards are told in the tray, not inside the card; the assistant button steps aside while the tray asks; the
+  privacy banner and the tray publish their heights (`--consent-h`, `--tray-h`) for placement and scroll padding;
+  the repeated card controls' styles are component classes in `globals.css` and the compare icons CSS masks
+  (always-loaded islands 4,535 B gz vs 4,516 B before the redesign). No `cn()`/`clsx`: the project has none and
+  adding a dependency for it is not worth it here (template strings stay short).
+- **User ruling 2026-11-15 — "Checkbox style":** the compare control is a small "☐ Compare" checkbox (a real
+  `<input type="checkbox">` with its visible word, the whole label clickable, ≥ 44 px), placed under the price and
+  above the action row on product cards and right above "Add to cart" on the product page, separate from "Add to
+  cart"; checked = in the compare list; accessible name "Compare {product}"; the box in the brand colour
+  (`accent-color`). It replaces the icon-only ⇄ button and its word / icon / stacked modes, so "Add to cart" or the
+  stepper gets the full action-row width at every card width. Another category still goes through the tray question
+  and the box stays unchecked until "Start new".
+
 ## PENDING DECISIONS (ask "what's pending" to review)
 
 | #   | Topic                                                                                                                                                                                                                                                                                                            | Leaning                                                                             | When                                 |
