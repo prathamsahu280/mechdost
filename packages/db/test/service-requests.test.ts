@@ -217,8 +217,13 @@ describe('service request lifecycle', () => {
       paidAt: null,
     });
     expect(view.bill?.lines.map((l) => l.description)).toEqual(['Engine oil 1 L', 'Labour']);
+    // A paid booking earns the admin-set coins (spec 20, Q24), pending for the unlock days.
+    await db.insert(s.settings).values({ key: 'coins.workshop_booking_bonus', value: 30, cityId: null });
     const done = await markJobPaid(t(), { ...step(r.code, billed.version), method: 'upi' });
     expect(done.status).toBe('completed');
+    const [reward] = await db.select().from(s.coinRewards).where(eq(s.coinRewards.userId, f.customer));
+    expect(reward).toMatchObject({ source: 'workshop_booking', coins: 30, status: 'pending' });
+    await db.delete(s.settings).where(eq(s.settings.key, 'coins.workshop_booking_bonus'));
     const final = await getMyServiceRequest(t(), f.customer, r.code, 'en');
     expect(final.bill).toMatchObject({ method: 'upi' });
     expect(final.timeline.map((e) => e.to)).toEqual([

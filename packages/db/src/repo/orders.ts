@@ -4,6 +4,7 @@ import { orderMachine, type OrderStatus } from '@mechdost/shared/state';
 import { orderGroups, orders, payments } from '../schema';
 import { setActor, type ActorContext } from './actor';
 import { ConflictError, NotFoundError } from './errors';
+import { createOrderRewards, restoreCoinsForSubOrder } from './coins';
 import { queueOrderWhatsApp, type OrderWhatsAppEvent } from './order-notifications';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -23,7 +24,7 @@ type OrderPatch = Partial<
  * 3. zero rows updated ⇒ someone else changed it first ⇒ ConflictError (HTTP 409).
  * The `orders_status_event` trigger writes the timeline row; the bump_version trigger increments `version`.
  * Customer WhatsApp updates for milestones are queued in the same transaction (spec 10): a rolled-back change
- * never sends. Out for delivery is queued by `issueDeliveryCode`, which holds the code.
+ * never sends. Coins are restored (cancelled/rejected) or rewarded (delivered) in the same transaction too. Out for delivery is queued by `issueDeliveryCode`, which holds the code.
  */
 /**
  * Lock order (docs/specs/14-data-integrity.md "Lock order"): every transaction that changes an order and its
@@ -84,6 +85,10 @@ export async function transitionOrder(
     );
   const event = WHATSAPP_ON[args.to];
   if (event) await queueOrderWhatsApp(tx, { orderId: row.id, event, orderVersion: row.version });
+  // MechDost Coins (spec 20), same transaction: a cancelled or rejected part gives its coins back (as coins, once);
+  // a delivered part earns the admin-set reward, usable after the unlock days.
+  if (args.to === 'cancelled' || args.to === 'rejected') await restoreCoinsForSubOrder(tx, row.id);
+  if (args.to === 'delivered') await createOrderRewards(tx, row.id);
   if (orderMachine.isTerminal(args.to)) await settleGroupPayment(tx, row.groupId);
   return row;
 }

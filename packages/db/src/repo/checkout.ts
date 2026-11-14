@@ -10,6 +10,7 @@ import { blockEffects } from '@mechdost/shared/customers';
 import { setActor } from './actor';
 import { recordServerEvent } from './events';
 import { activeBlockLevels } from './customer-blocks';
+import { checkoutCoins, redeemCoins } from './coins';
 import { ConflictError, ForbiddenError, NotFoundError, pgCode, ValidationError } from './errors';
 import { reserveStock } from './inventory';
 import { localized } from './localized';
@@ -374,6 +375,9 @@ export interface PlacedOrder {
   paymentStatus: string;
   totalPaise: number;
   orders: { code: string; totalPaise: number }[];
+  /** MechDost Coins used on this checkout and the discount they gave (spec 20); 0 when none. */
+  coinsRedeemed: number;
+  coinDiscountPaise: number;
   /** True when this key had already placed the order (a retry or a double tap). */
   replayed: boolean;
 }
@@ -384,6 +388,7 @@ function requestHash(input: {
   lines: readonly CartLine[];
   note: string | null;
   business?: BusinessPurchase | null;
+  coins?: number;
 }) {
   const a = input.address;
   const canonical = JSON.stringify([
@@ -392,6 +397,8 @@ function requestHash(input: {
     input.note,
     // A different GSTIN under the same key is a different request (buyer GSTIN plan).
     input.business ? [input.business.gstin, input.business.businessName] : null,
+    // Coins asked for (spec 20); left out when none, so requests without coins keep their earlier fingerprint.
+    ...(input.coins ? [['coins', input.coins]] : []),
   ]);
   return createHash('sha256').update(canonical).digest('hex');
 }
@@ -420,6 +427,8 @@ async function existingGroup(db: Tx, userId: string, key: string, hash: string):
     paymentStatus: group.paymentStatus,
     totalPaise: group.totalPaise,
     orders: subs,
+    coinsRedeemed: group.coinsRedeemed,
+    coinDiscountPaise: group.coinDiscountPaise,
     replayed: true,
   };
 }
@@ -434,6 +443,11 @@ export interface PlaceOrderInput {
   locale: CatalogueLocale;
   /** Optional business purchase (GST invoice); validated by `BusinessPurchaseSchema` at the API. */
   business?: BusinessPurchase | null;
+  /**
+   * MechDost Coins to use (spec 20): within the cap or COINS_CHANGED; `expectedTotalPaise` already has their
+   * discount taken off. Products only, never delivery or the COD fee.
+   */
+  coins?: number;
 }
 
 /** Place a cash-on-delivery order (see `placeOrder`). */
@@ -476,13 +490,23 @@ export async function placeOrder(
           .filter((l) => l.issue)
           .map((l) => ({ sku: l.sku, issue: l.issue, available: l.available })),
       });
-    const totalPaise = online ? quote.onlineTotalPaise : quote.totalPaise;
+    // Coins (spec 20): checked against the balance and the cap here, spent by compare-and-set below.
+    const coins = await checkoutCoins(tx, {
+      userId: input.userId,
+      requested: input.coins ?? 0,
+      subtotalPaise: quote.subtotalPaise,
+      groupSubtotals: quote.groups.map((g) => g.subtotalPaise),
+    });
+    const totalPaise = (online ? quote.onlineTotalPaise : quote.totalPaise) - coins.discountPaise;
     const codFeePaise = online ? 0 : quote.codFeePaise;
     if (totalPaise !== input.expectedTotalPaise)
       throw new ConflictError('The total changed since you reviewed it', 'PRICE_CHANGED');
-    if (!online && (!quote.cod.allowed || !allowed.cod))
+    // The COD cap applies to what the customer pays at the door (after coins).
+    const codReason =
+      quote.cod.reason === 'pincode' ? 'pincode' : totalPaise > quote.cod.capPaise ? 'over_cap' : null;
+    if (!online && (codReason !== null || !allowed.cod))
       throw new ValidationError('Cash on delivery is not available for this order', 'COD_NOT_ALLOWED', {
-        reason: allowed.cod ? quote.cod.reason : 'customer',
+        reason: allowed.cod ? codReason : 'customer',
         capPaise: quote.cod.capPaise,
       });
 
@@ -499,6 +523,9 @@ export async function placeOrder(
         paymentMethod: input.method,
         paymentStatus: online ? 'created' : 'cod_pending',
         subtotalPaise: quote.subtotalPaise,
+        discountPaise: coins.discountPaise,
+        coinsRedeemed: coins.coins,
+        coinDiscountPaise: coins.discountPaise,
         shippingPaise: quote.shippingPaise,
         codFeePaise,
         totalPaise,
@@ -521,6 +548,9 @@ export async function placeOrder(
       if (!g) continue;
       const subNo = index + 1;
       const code = `${group.code}-${String(subNo)}`;
+      const subCoins = coins.perGroup[index] ?? 0;
+      const subDiscount = subCoins * coins.coinValuePaise;
+      const subTotal = g.totalPaise - subDiscount + (index === 0 ? codFeePaise : 0);
       const [order] = await tx
         .insert(orders)
         .values({
@@ -533,12 +563,16 @@ export async function placeOrder(
           shippingAddress: input.address,
           pincode: input.address.pincode,
           subtotalPaise: g.subtotalPaise,
+          // This part's share of the coins (spec 20): what the delivering shop collects is after the discount.
+          discountPaise: subDiscount,
+          coinsRedeemed: subCoins,
+          coinDiscountPaise: subDiscount,
           shippingPaise: g.shippingPaise,
           // The COD fee rides on the first sub-order, so sub-order totals add up to the group total and
           // someone collects it (code review 2026-11-03).
           codFeePaise: index === 0 ? codFeePaise : 0,
           taxPaise: g.taxPaise,
-          totalPaise: g.totalPaise + (index === 0 ? codFeePaise : 0),
+          totalPaise: subTotal,
           cancellableUntilStatus,
         })
         .returning({ id: orders.id });
@@ -572,7 +606,22 @@ export async function placeOrder(
         if (!reservation)
           throw new ConflictError('A product just sold out; please review your cart', 'OUT_OF_STOCK');
       }
-      placed.push({ code, totalPaise: g.totalPaise + (index === 0 ? codFeePaise : 0) });
+      placed.push({ code, totalPaise: subTotal });
+    }
+    if (coins.coins > 0) {
+      // Compare-and-set on the balance: a parallel checkout that spent the coins first makes this one fail
+      // (INSUFFICIENT_COINS) and the whole order rolls back. One spend per order (`redeem:<group id>`).
+      await redeemCoins(tx, {
+        userId: input.userId,
+        coins: coins.coins,
+        orderGroupId: group.id,
+        idemKey: `redeem:${group.id}`,
+      });
+      await recordServerEvent(tx, 'coins_redeemed', {
+        userId: input.userId,
+        cityId,
+        props: { orderCode: group.code, coins: coins.coins, discountPaise: coins.discountPaise },
+      });
     }
     await recordServerEvent(tx, 'purchase', {
       userId: input.userId,
@@ -596,6 +645,7 @@ export async function placeOrder(
         totalPaise,
         subOrders: placed.length,
         paymentMethod: input.method,
+        coinsRedeemed: coins.coins,
       },
     });
     return {
@@ -604,6 +654,8 @@ export async function placeOrder(
       paymentStatus: online ? 'created' : 'cod_pending',
       totalPaise,
       orders: placed,
+      coinsRedeemed: coins.coins,
+      coinDiscountPaise: coins.discountPaise,
       replayed: false,
     };
   });

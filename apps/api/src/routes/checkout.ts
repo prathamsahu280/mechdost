@@ -114,6 +114,11 @@ const PlaceBody = z
     note: Text(1, 300).nullable().optional(),
     /** Optional business purchase: GSTIN (checksum) + business name, both or neither (buyer GSTIN plan). */
     business: BusinessPurchaseSchema.nullable().optional(),
+    /**
+     * MechDost Coins to use (spec 20): whole coins within the cap (`GET /me/coins` rules + balance), products only;
+     * `expectedTotalPaise` has their discount taken off. A number no longer allowed is 409 COINS_CHANGED.
+     */
+    coins: z.number().int().min(0).max(1_000_000).optional(),
     locale: Locale,
   })
   .strict()
@@ -126,6 +131,8 @@ const Placed = z
     paymentStatus: z.string(),
     totalPaise: z.number().int(),
     orders: z.array(z.object({ code: z.string(), totalPaise: z.number().int() })),
+    coinsRedeemed: z.number().int(),
+    coinDiscountPaise: z.number().int(),
     replayed: z.boolean(),
     /** Online orders: what the browser needs to open Razorpay Checkout (null once paid or expired). */
     razorpay: z
@@ -171,7 +178,10 @@ const place = createRoute({
   responses: {
     201: json(Placed, 'Placed'),
     200: json(Placed, 'Already placed with this key'),
-    409: json(ErrorSchema, 'PRICE_CHANGED or OUT_OF_STOCK: re-quote and confirm again'),
+    409: json(
+      ErrorSchema,
+      'PRICE_CHANGED, OUT_OF_STOCK, COINS_CHANGED or INSUFFICIENT_COINS: re-quote and confirm again',
+    ),
     422: json(
       ErrorSchema,
       'CHECKOUT_UNAVAILABLE (details.lines), COD_NOT_ALLOWED, PAYMENT_METHOD_UNAVAILABLE',
@@ -260,6 +270,8 @@ const myOrder = createRoute({
       Summary.extend({
         address: z.record(z.string(), z.unknown()),
         business: z.object({ gstin: z.string(), businessName: z.string() }).nullable(),
+        /** MechDost Coins used at checkout (spec 20); null when none. */
+        coins: z.object({ coins: z.number().int(), discountPaise: z.number().int() }).nullable(),
         orders: z.array(Tracked),
       }),
       'Order',
@@ -344,6 +356,7 @@ export function checkoutRoutes(deps: AppDeps, cache: SessionCache) {
         expectedTotalPaise: body.expectedTotalPaise,
         note: body.note ?? null,
         business: body.business ?? null,
+        coins: body.coins ?? 0,
         locale: body.locale,
       });
       // The Razorpay order exists (stored) before the client sees it; a retried place reuses it.

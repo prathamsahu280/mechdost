@@ -136,6 +136,8 @@ export interface MyOrderDetail extends Omit<MyOrderSummary, 'orders'> {
   address: Record<string, unknown>;
   /** Business purchase (GST invoice) details given at checkout, or null. */
   business: { gstin: string; businessName: string } | null;
+  /** MechDost Coins used at checkout and the discount they gave (spec 20); null when none. */
+  coins: { coins: number; discountPaise: number } | null;
   orders: TrackedOrder[];
 }
 
@@ -227,6 +229,8 @@ export async function getMyOrder(
     paymentStatus: g.paymentStatus,
     address: (first?.order.shippingAddress ?? {}) as Record<string, unknown>,
     business: g.gstin && g.businessName ? { gstin: g.gstin, businessName: g.businessName } : null,
+    // MechDost Coins used at checkout (spec 20); a cancelled part's share came back as coins, never money.
+    coins: g.coinsRedeemed > 0 ? { coins: g.coinsRedeemed, discountPaise: g.coinDiscountPaise } : null,
     orders: tracked,
   };
 }

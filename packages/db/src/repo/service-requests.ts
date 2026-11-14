@@ -31,6 +31,7 @@ import {
 } from '../schema';
 import type { ActorContext } from './actor';
 import { decodeCursor, encodeCursor, pageSize } from './cursor';
+import { createServiceReward } from './coins';
 import { ConflictError, NotFoundError, pgCode, ValidationError } from './errors';
 import { recordServerEvent } from './events';
 import { localized } from './localized';
@@ -155,6 +156,9 @@ export async function transitionRequest(
       reasonCode: args.reasonCode ?? null,
     },
   });
+  // A paid workshop booking earns the admin-set coins (spec 20, Q24), pending until the unlock days pass.
+  if (args.to === 'paid')
+    await createServiceReward(tx, { requestId: r.id, userId: r.userId, cityId: r.cityId });
   // Later moves in the same transaction start from here.
   r.status = row.status as ServiceRequestStatus;
   r.version = row.version;

@@ -682,13 +682,14 @@ describe('MechDost Coins ledger (spec 20)', () => {
     expect(await coinBalance(t(), F.user!)).toBe(balance);
   });
 
-  it('manual adjustments need a reason, cannot overdraw, and are audited', async () => {
+  it('manual adjustments need a reason code (a note is 3+ characters), cannot overdraw, and are audited', async () => {
     const balance = await coinBalance(t(), F.user!);
     await expect(
       adjustCoins(t(), {
         userId: F.user!,
         delta: 10,
-        reason: '',
+        reasonCode: 'goodwill',
+        note: 'x',
         idemKey: 'adjust:x:000001',
         staffUserId: F.user!,
       }),
@@ -697,7 +698,7 @@ describe('MechDost Coins ledger (spec 20)', () => {
       adjustCoins(t(), {
         userId: F.user!,
         delta: -(balance + 1),
-        reason: 'Correction',
+        reasonCode: 'correction',
         idemKey: 'adjust:x:000002',
         staffUserId: F.user!,
       }),
@@ -705,7 +706,8 @@ describe('MechDost Coins ledger (spec 20)', () => {
     const entry = await adjustCoins(t(), {
       userId: F.user!,
       delta: 25,
-      reason: 'Goodwill for a late delivery',
+      reasonCode: 'goodwill',
+      note: 'Goodwill for a late delivery',
       idemKey: 'adjust:x:000003',
       staffUserId: F.user!,
     });
@@ -715,7 +717,8 @@ describe('MechDost Coins ledger (spec 20)', () => {
     const replay = await adjustCoins(t(), {
       userId: F.user!,
       delta: 25,
-      reason: 'Goodwill for a late delivery',
+      reasonCode: 'goodwill',
+      note: 'Goodwill for a late delivery',
       idemKey: 'adjust:x:000003',
       staffUserId: F.user!,
     });

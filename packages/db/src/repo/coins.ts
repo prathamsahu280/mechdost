@@ -1,12 +1,41 @@
-import { and, eq, gte, sql } from 'drizzle-orm';
-import { auditLog, coinAccounts, coinLedger } from '../schema';
-import { ConflictError, ValidationError } from './errors';
+import { and, desc, eq, gte, inArray, isNull, sql } from 'drizzle-orm';
+import {
+  coinRedemption,
+  expiredCoins,
+  nextExpiry,
+  orderRewardCoins,
+  splitCoins,
+  type CoinAdjustReason,
+  type CoinLedgerKind,
+  type CoinReasonCode,
+  type CoinRewardCancelReason,
+  type CoinRewardSource,
+  type CoinRules,
+} from '@mechdost/shared/coins';
+import { OPERATIONAL_SETTINGS, type SettingKey } from '@mechdost/shared/settings';
+import {
+  auditLog,
+  coinAccounts,
+  coinLedger,
+  coinRewards,
+  orderGroups,
+  orders,
+  settings,
+  users,
+} from '../schema';
+import { decodeCursor, encodeCursor, pageSize } from './cursor';
+import { ConflictError, NotFoundError, ValidationError } from './errors';
+import { recordServerEvent } from './events';
 import type { Tx } from './orders';
 
 /**
  * MechDost Coins ledger (spec 20, decision 2026-11-01): a loyalty bonus, not a wallet. Every change is one
  * transaction: an append-only ledger row (unique idempotency key) + a compare-and-set balance update that can
  * never go below zero. Retrying any call with the same key is a no-op that returns the first result.
+ *
+ * Earning (Q24, user 2026-11-13): a delivered order or a paid workshop booking creates a pending `coin_rewards` row;
+ * the worker credits it after `coins.unlock_days`. Coins added carry an expiry (`coins.expiry_days`); the worker
+ * expires what is left of lapsed lots (first-expiring used first, `@mechdost/shared/coins`).
  */
 export interface CoinEntry {
   id: string;
@@ -15,7 +44,63 @@ export interface CoinEntry {
   balanceAfter: number;
 }
 
-type Kind = 'earn' | 'redeem' | 'restore' | 'expire' | 'adjust';
+type Kind = CoinLedgerKind;
+
+// ── Rules (admin settings, hard rule 8) ─────────────────────────────────────────────────────────────────────────
+
+export interface CoinSettings extends CoinRules {
+  earnOrderBp: number;
+  firstOrderBonus: number;
+  workshopBookingBonus: number;
+  unlockDays: number;
+}
+
+const COIN_KEYS = {
+  coinValuePaise: 'coins.value_paise',
+  maxRedeemBp: 'coins.max_redeem_bp',
+  minOrderPaise: 'coins.min_order_paise',
+  expiryDays: 'coins.expiry_days',
+  earnOrderBp: 'coins.earn_order_bp',
+  firstOrderBonus: 'coins.first_order_bonus',
+  workshopBookingBonus: 'coins.workshop_booking_bonus',
+  unlockDays: 'coins.unlock_days',
+} as const satisfies Record<keyof CoinSettings, SettingKey>;
+
+/** The coin rules in force: the admin's global values, else the registry defaults (coins are site-wide). */
+export async function coinSettings(db: Tx): Promise<CoinSettings> {
+  const keys = Object.values(COIN_KEYS);
+  const rows = await db
+    .select({ key: settings.key, value: settings.value })
+    .from(settings)
+    .where(and(inArray(settings.key, keys), isNull(settings.cityId)));
+  const read = (key: SettingKey): number => {
+    const spec = OPERATIONAL_SETTINGS[key];
+    const fallback = spec.kind === 'int' && typeof spec.default === 'number' ? spec.default : 0;
+    const v = rows.find((r) => r.key === key)?.value;
+    return spec.kind === 'int' &&
+      typeof v === 'number' &&
+      Number.isSafeInteger(v) &&
+      v >= spec.min &&
+      v <= spec.max
+      ? v
+      : fallback;
+  };
+  return {
+    coinValuePaise: read(COIN_KEYS.coinValuePaise),
+    maxRedeemBp: read(COIN_KEYS.maxRedeemBp),
+    minOrderPaise: read(COIN_KEYS.minOrderPaise),
+    expiryDays: read(COIN_KEYS.expiryDays),
+    earnOrderBp: read(COIN_KEYS.earnOrderBp),
+    firstOrderBonus: read(COIN_KEYS.firstOrderBonus),
+    workshopBookingBonus: read(COIN_KEYS.workshopBookingBonus),
+    unlockDays: read(COIN_KEYS.unlockDays),
+  };
+}
+
+/** Expiry for coins added now (database clock). */
+const expiryFrom = (days: number) => sql`now() + make_interval(days => ${days})`;
+
+// ── The ledger primitive ────────────────────────────────────────────────────────────────────────────────────────
 
 function wholePositive(n: number, what: string) {
   if (!Number.isInteger(n) || n <= 0 || n > 1_000_000) {
@@ -39,12 +124,14 @@ async function apply(
     delta: number;
     kind: Kind;
     reason: string;
+    reasonCode?: CoinReasonCode | null;
     idemKey: string;
     orderGroupId?: string | null;
-    expiresAt?: Date | null;
+    /** A Date, or a database expression (`expiryFrom`). */
+    expiresAt?: Date | ReturnType<typeof sql> | null;
     createdBy?: string | null;
     /** Staff action to audit atomically with the ledger row (manual adjustments). */
-    audit?: { actorUserId: string; action: string };
+    audit?: { actorUserId: string; action: string; after?: Record<string, unknown> };
   },
 ): Promise<CoinEntry> {
   return db.transaction(async (tx) => {
@@ -55,6 +142,7 @@ async function apply(
         delta: input.delta,
         kind: input.kind,
         reason: input.reason,
+        reasonCode: input.reasonCode ?? null,
         idemKey: input.idemKey,
         orderGroupId: input.orderGroupId ?? null,
         expiresAt: input.expiresAt ?? null,
@@ -103,7 +191,6 @@ async function apply(
               input.kind === 'earn'
                 ? sql`${coinAccounts.lifetimeEarned} + ${input.delta}`
                 : sql`${coinAccounts.lifetimeEarned}`,
-            version: sql`${coinAccounts.version} + 1`,
           },
         })
         .returning({ balance: coinAccounts.balance });
@@ -113,7 +200,7 @@ async function apply(
       const spend = -input.delta;
       const [acct] = await tx
         .update(coinAccounts)
-        .set({ balance: sql`${coinAccounts.balance} - ${spend}`, version: sql`${coinAccounts.version} + 1` })
+        .set({ balance: sql`${coinAccounts.balance} - ${spend}` })
         .where(and(eq(coinAccounts.userId, input.userId), gte(coinAccounts.balance, spend)))
         .returning({ balance: coinAccounts.balance });
       if (!acct) throw new ConflictError('Not enough MechDost Coins', 'INSUFFICIENT_COINS');
@@ -129,14 +216,14 @@ async function apply(
         action: input.audit.action,
         entity: 'coin_ledger',
         entityId: entry.id,
-        after: { delta: input.delta, kind: input.kind },
+        after: { delta: input.delta, kind: input.kind, ...input.audit.after },
       });
     }
     return { id: entry.id, delta: input.delta, kind: input.kind, balanceAfter };
   });
 }
 
-/** Coins earned under the earning rules (Q24); `expiresAt` from `coinExpiry`. */
+/** Coins earned outside the reward rules (tests, seeds); `expiresAt` from `coinExpiry`. */
 export function earnCoins(
   db: Tx,
   input: {
@@ -146,6 +233,7 @@ export function earnCoins(
     idemKey: string;
     expiresAt: Date;
     orderGroupId?: string;
+    reasonCode?: CoinRewardSource;
   },
 ) {
   wholePositive(input.coins, 'Coins');
@@ -163,40 +251,404 @@ export function redeemCoins(
     delta: -input.coins,
     kind: 'redeem',
     reason: 'Used on order',
+    reasonCode: 'order_redeem',
   });
 }
 
+// ── Checkout ────────────────────────────────────────────────────────────────────────────────────────────────────
+
+export interface CheckoutCoins {
+  coins: number;
+  coinValuePaise: number;
+  discountPaise: number;
+  /** Coins per sub-order (same order as the quote's groups). */
+  perGroup: number[];
+}
+
 /**
- * Coins given back when an order that used them is cancelled or rejected before fulfilment (never as money).
- * Restores exactly what that order redeemed, once.
+ * The coins a checkout may use (inside the placing transaction): the customer asks for `requested`; it must be
+ * within the cap (`coinRedemption`: balance, `coins.max_redeem_bp` of the products, minimum order) or the order is
+ * refused with COINS_CHANGED (the screen shows the new number). The ledger's compare-and-set at `redeemCoins` is
+ * the final guard against a parallel spend.
  */
-export async function restoreCoinsForOrder(db: Tx, input: { userId: string; orderGroupId: string }) {
-  const rows = await db
+export async function checkoutCoins(
+  tx: Tx,
+  input: { userId: string; requested: number; subtotalPaise: number; groupSubtotals: readonly number[] },
+): Promise<CheckoutCoins> {
+  const rules = await coinSettings(tx);
+  if (input.requested === 0)
+    return {
+      coins: 0,
+      coinValuePaise: rules.coinValuePaise,
+      discountPaise: 0,
+      perGroup: input.groupSubtotals.map(() => 0),
+    };
+  if (!Number.isInteger(input.requested) || input.requested < 0)
+    throw new ValidationError('Coins must be a whole number', 'COINS_AMOUNT');
+  const allowed = coinRedemption(
+    await balanceOf(tx, input.userId),
+    input.subtotalPaise,
+    rules,
+    input.requested,
+  );
+  if (allowed.coins !== input.requested)
+    throw new ConflictError('Your MechDost Coins changed; please review', 'COINS_CHANGED');
+  return {
+    coins: allowed.coins,
+    coinValuePaise: rules.coinValuePaise,
+    discountPaise: allowed.discountPaise,
+    perGroup: splitCoins(allowed.coins, rules.coinValuePaise, input.groupSubtotals),
+  };
+}
+
+// ── Restore on cancel / reject ──────────────────────────────────────────────────────────────────────────────────
+
+async function outstandingFor(tx: Tx, userId: string, orderGroupId: string): Promise<number> {
+  const rows = await tx
     .select({ total: sql<number>`coalesce(sum(${coinLedger.delta}), 0)::int` })
     .from(coinLedger)
     .where(
       and(
-        eq(coinLedger.userId, input.userId),
-        eq(coinLedger.orderGroupId, input.orderGroupId),
+        eq(coinLedger.userId, userId),
+        eq(coinLedger.orderGroupId, orderGroupId),
         sql`${coinLedger.kind} in ('redeem','restore')`,
       ),
     );
-  const outstanding = -(rows[0]?.total ?? 0);
+  return -(rows[0]?.total ?? 0);
+}
+
+/**
+ * Coins given back when a whole order group is cancelled or rejected before fulfilment (never as money).
+ * Restores exactly what is still outstanding, once.
+ */
+export async function restoreCoinsForOrder(db: Tx, input: { userId: string; orderGroupId: string }) {
+  const outstanding = await outstandingFor(db, input.userId, input.orderGroupId);
   if (outstanding <= 0) return null;
+  const rules = await coinSettings(db);
   return apply(db, {
     userId: input.userId,
     delta: outstanding,
     kind: 'restore',
     reason: 'Order cancelled: coins returned',
+    reasonCode: 'order_cancelled',
     orderGroupId: input.orderGroupId,
     idemKey: `restore:${input.orderGroupId}`,
+    expiresAt: expiryFrom(rules.expiryDays),
   });
 }
 
-/** Manual grant or deduction by staff with `coins:adjust` (checked in the API); audited. */
+/**
+ * A sub-order was cancelled or rejected (`transitionOrder`, same transaction): its share of the checkout's coins
+ * comes back as coins, once (`restore:<order id>`), never more than the group still has outstanding. The returned
+ * coins get a fresh expiry, so a customer never loses them to a lot that lapsed while the order was open.
+ */
+export async function restoreCoinsForSubOrder(tx: Tx, orderId: string): Promise<CoinEntry | null> {
+  const [o] = await tx
+    .select({
+      userId: orders.userId,
+      groupId: orders.groupId,
+      cityId: orders.cityId,
+      code: orders.code,
+      coins: orders.coinsRedeemed,
+    })
+    .from(orders)
+    .where(eq(orders.id, orderId));
+  if (!o || o.coins <= 0) return null;
+  const coins = Math.min(o.coins, await outstandingFor(tx, o.userId, o.groupId));
+  if (coins <= 0) return null;
+  const rules = await coinSettings(tx);
+  const entry = await apply(tx, {
+    userId: o.userId,
+    delta: coins,
+    kind: 'restore',
+    reason: 'Order cancelled: coins returned',
+    reasonCode: 'order_cancelled',
+    orderGroupId: o.groupId,
+    idemKey: `restore:${orderId}`,
+    expiresAt: expiryFrom(rules.expiryDays),
+  });
+  await recordServerEvent(tx, 'coins_restored', {
+    userId: o.userId,
+    cityId: o.cityId,
+    props: { orderCode: o.code, coins },
+  });
+  return entry;
+}
+
+// ── Rewards (earning, Q24) ──────────────────────────────────────────────────────────────────────────────────────
+
+async function insertReward(
+  tx: Tx,
+  input: {
+    userId: string;
+    cityId: string;
+    source: CoinRewardSource;
+    coins: number;
+    unlockDays: number;
+    orderId?: string;
+    serviceRequestId?: string;
+  },
+): Promise<boolean> {
+  if (input.coins <= 0) return false;
+  const [row] = await tx
+    .insert(coinRewards)
+    .values({
+      userId: input.userId,
+      source: input.source,
+      coins: Math.min(input.coins, 1_000_000),
+      availableAt: sql`now() + make_interval(days => ${input.unlockDays})`,
+      orderId: input.orderId ?? null,
+      serviceRequestId: input.serviceRequestId ?? null,
+    })
+    // One reward per source event, one first-order bonus per customer (unique indexes): a replay adds nothing.
+    .onConflictDoNothing()
+    .returning({ id: coinRewards.id });
+  if (!row) return false;
+  await recordServerEvent(tx, 'coins_reward_created', {
+    userId: input.userId,
+    cityId: input.cityId,
+    props: { rewardId: row.id, source: input.source, coins: input.coins, unlockDays: input.unlockDays },
+  });
+  return true;
+}
+
+/**
+ * A sub-order was delivered (`transitionOrder`, same transaction): `coins.earn_order_bp` of what its products cost
+ * after discounts, plus `coins.first_order_bonus` on the customer's first delivered order — both pending until
+ * `coins.unlock_days` have passed (after the 7-day claim window, Q25). Nothing while the admin has set no reward.
+ */
+export async function createOrderRewards(tx: Tx, orderId: string): Promise<void> {
+  const rules = await coinSettings(tx);
+  if (rules.earnOrderBp === 0 && rules.firstOrderBonus === 0) return;
+  const [o] = await tx
+    .select({
+      userId: orders.userId,
+      cityId: orders.cityId,
+      subtotal: orders.subtotalPaise,
+      discount: orders.discountPaise,
+    })
+    .from(orders)
+    .where(eq(orders.id, orderId));
+  if (!o) return;
+  await insertReward(tx, {
+    userId: o.userId,
+    cityId: o.cityId,
+    source: 'order',
+    coins: orderRewardCoins(o.subtotal - o.discount, rules.earnOrderBp, rules.coinValuePaise),
+    unlockDays: rules.unlockDays,
+    orderId,
+  });
+  await insertReward(tx, {
+    userId: o.userId,
+    cityId: o.cityId,
+    source: 'first_order',
+    coins: rules.firstOrderBonus,
+    unlockDays: rules.unlockDays,
+    orderId,
+  });
+}
+
+/** A workshop booking was paid (`transitionRequest` → paid, same transaction): `coins.workshop_booking_bonus`. */
+export async function createServiceReward(
+  tx: Tx,
+  input: { requestId: string; userId: string; cityId: string },
+): Promise<void> {
+  const rules = await coinSettings(tx);
+  await insertReward(tx, {
+    userId: input.userId,
+    cityId: input.cityId,
+    source: 'workshop_booking',
+    coins: rules.workshopBookingBonus,
+    unlockDays: rules.unlockDays,
+    serviceRequestId: input.requestId,
+  });
+}
+
+/**
+ * Cancel an order's rewards that have not unlocked yet (a refund after delivery, spec 05). Credited rewards stay:
+ * the unlock wait outlasts the claim window, so a refund normally arrives first. Returns how many were cancelled.
+ */
+export async function cancelPendingOrderRewards(
+  tx: Tx,
+  input: { orderId: string; reasonCode: CoinRewardCancelReason },
+): Promise<number> {
+  const rows = await tx
+    .update(coinRewards)
+    .set({ status: 'cancelled', cancelReasonCode: input.reasonCode })
+    .where(and(eq(coinRewards.orderId, input.orderId), eq(coinRewards.status, 'pending')))
+    .returning({ id: coinRewards.id });
+  return rows.length;
+}
+
+const REWARD_REASON: Record<CoinRewardSource, string> = {
+  order: 'Earned on a delivered order',
+  first_order: 'First order bonus',
+  workshop_booking: 'Earned on a workshop booking',
+};
+
+/**
+ * Worker job: credit rewards whose wait is over. One transaction per reward; the row is locked (`skip locked`, so
+ * several workers share the work) and moved pending → credited with the ledger row (`reward:<id>`, idempotent).
+ */
+export async function releaseDueCoinRewards(
+  db: Tx,
+  opts: { limit?: number } = {},
+): Promise<{ credited: number; failed: { rewardId: string; error: unknown }[] }> {
+  const due = await db
+    .select({ id: coinRewards.id })
+    .from(coinRewards)
+    .where(and(eq(coinRewards.status, 'pending'), sql`${coinRewards.availableAt} <= now()`))
+    .orderBy(coinRewards.availableAt)
+    .limit(opts.limit ?? 200);
+  let credited = 0;
+  const failed: { rewardId: string; error: unknown }[] = [];
+  for (const { id } of due) {
+    try {
+      const done = await db.transaction(async (tx) => {
+        const [r] = await tx
+          .select()
+          .from(coinRewards)
+          .where(and(eq(coinRewards.id, id), eq(coinRewards.status, 'pending')))
+          .for('update', { skipLocked: true });
+        if (!r) return false;
+        const source = r.source as CoinRewardSource;
+        const [group] = r.orderId
+          ? await tx
+              .select({ groupId: orders.groupId, cityId: orders.cityId })
+              .from(orders)
+              .where(eq(orders.id, r.orderId))
+          : [];
+        const rules = await coinSettings(tx);
+        const entry = await apply(tx, {
+          userId: r.userId,
+          delta: r.coins,
+          kind: 'earn',
+          reason: REWARD_REASON[source],
+          reasonCode: source,
+          idemKey: `reward:${r.id}`,
+          orderGroupId: group?.groupId ?? null,
+          expiresAt: expiryFrom(rules.expiryDays),
+        });
+        const [moved] = await tx
+          .update(coinRewards)
+          .set({ status: 'credited', ledgerId: entry.id })
+          .where(
+            and(
+              eq(coinRewards.id, r.id),
+              eq(coinRewards.status, 'pending'),
+              eq(coinRewards.version, r.version),
+            ),
+          )
+          .returning({ id: coinRewards.id });
+        if (!moved) throw new ConflictError('Reward changed meanwhile', 'STALE_REWARD');
+        await recordServerEvent(tx, 'coins_earned', {
+          userId: r.userId,
+          cityId: group?.cityId ?? null,
+          props: { rewardId: r.id, source, coins: r.coins },
+        });
+        return true;
+      });
+      if (done) credited += 1;
+    } catch (error) {
+      failed.push({ rewardId: id, error });
+    }
+  }
+  return { credited, failed };
+}
+
+// ── Expiry ──────────────────────────────────────────────────────────────────────────────────────────────────────
+
+/** How far back the expiry job looks for lapsed lots (it runs hourly; this covers a long worker outage). */
+const EXPIRY_LOOKBACK_DAYS = 30;
+
+/**
+ * Worker job: expire what is left of coin lots that lapsed (first-expiring used first). One transaction per customer
+ * with the account row locked, so a checkout spending at the same moment waits; the key `expire:<last lot>:<used>`
+ * names the exact ledger state, so a rerun or a second worker adds nothing.
+ */
+export async function expireDueCoins(
+  db: Tx,
+  opts: { limit?: number } = {},
+): Promise<{ expired: number; failed: { userId: string; error: unknown }[] }> {
+  const candidates = await db
+    .selectDistinct({ userId: coinLedger.userId })
+    .from(coinLedger)
+    .innerJoin(coinAccounts, eq(coinAccounts.userId, coinLedger.userId))
+    .where(
+      and(
+        sql`${coinLedger.expiresAt} is not null and ${coinLedger.delta} > 0`,
+        sql`${coinLedger.expiresAt} <= now()`,
+        sql`${coinLedger.expiresAt} > now() - make_interval(days => ${EXPIRY_LOOKBACK_DAYS})`,
+        sql`${coinAccounts.balance} > 0`,
+      ),
+    )
+    .limit(opts.limit ?? 500);
+  let expired = 0;
+  const failed: { userId: string; error: unknown }[] = [];
+  for (const { userId } of candidates) {
+    try {
+      const done = await db.transaction(async (tx) => {
+        const [acct] = await tx
+          .select({ balance: coinAccounts.balance })
+          .from(coinAccounts)
+          .where(eq(coinAccounts.userId, userId))
+          .for('update');
+        if (!acct || acct.balance <= 0) return false;
+        const entries = await ledgerLots(tx, userId);
+        const due = expiredCoins(entries, new Date());
+        const coins = Math.min(due.coins, acct.balance);
+        if (coins <= 0 || !due.lastLotId) return false;
+        const used = entries.filter((e) => e.delta < 0).reduce((a, e) => a - e.delta, 0);
+        await apply(tx, {
+          userId,
+          delta: -coins,
+          kind: 'expire',
+          reason: 'Coins expired',
+          reasonCode: 'expired',
+          idemKey: `expire:${due.lastLotId}:${String(used)}`,
+        });
+        await recordServerEvent(tx, 'coins_expired', { userId, props: { coins } });
+        return true;
+      });
+      if (done) expired += 1;
+    } catch (error) {
+      failed.push({ userId, error });
+    }
+  }
+  return { expired, failed };
+}
+
+async function ledgerLots(tx: Tx, userId: string) {
+  const rows = await tx
+    .select({
+      id: coinLedger.id,
+      delta: coinLedger.delta,
+      kind: coinLedger.kind,
+      expiresAt: coinLedger.expiresAt,
+    })
+    .from(coinLedger)
+    .where(eq(coinLedger.userId, userId));
+  return rows.map((r) => ({ ...r, kind: r.kind as Kind }));
+}
+
+// ── Staff adjustments ───────────────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Manual grant or deduction by staff with `coins:adjust` (checked in the API): a reason code (hard rule 16), an
+ * optional note shown to the customer, audited. `expectedVersion` is the account version the screen showed (null =
+ * no account yet): a change made meanwhile is STALE_COINS. A retry with the same key returns the first entry.
+ */
 export async function adjustCoins(
   db: Tx,
-  input: { userId: string; delta: number; reason: string; idemKey: string; staffUserId: string },
+  input: {
+    userId: string;
+    delta: number;
+    reasonCode: CoinAdjustReason;
+    note?: string | null;
+    idemKey: string;
+    staffUserId: string;
+    expectedVersion?: number | null;
+  },
 ) {
   if (!Number.isInteger(input.delta) || input.delta === 0 || Math.abs(input.delta) > 100_000) {
     throw new ValidationError(
@@ -204,21 +656,228 @@ export async function adjustCoins(
       'COINS_AMOUNT',
     );
   }
-  const reason = input.reason.trim();
-  if (reason.length < 3 || reason.length > 200) {
-    throw new ValidationError('Give a reason (3 to 200 characters)', 'COINS_REASON');
+  const note = input.note?.trim() ?? '';
+  if (note.length > 200 || (note.length > 0 && note.length < 3)) {
+    throw new ValidationError('A note is 3 to 200 characters', 'COINS_REASON');
   }
-  return apply(db, {
-    userId: input.userId,
-    delta: input.delta,
-    kind: 'adjust',
-    reason,
-    idemKey: input.idemKey,
-    createdBy: input.staffUserId,
-    audit: { actorUserId: input.staffUserId, action: 'coins.adjusted' },
+  return db.transaction(async (tx) => {
+    const [customer] = await tx.select({ id: users.id }).from(users).where(eq(users.id, input.userId));
+    if (!customer) throw new NotFoundError('Customer not found');
+    const [replay] = await tx
+      .select({ id: coinLedger.id })
+      .from(coinLedger)
+      .where(eq(coinLedger.idemKey, input.idemKey));
+    if (!replay && input.expectedVersion !== undefined) {
+      const [acct] = await tx
+        .select({ version: coinAccounts.version })
+        .from(coinAccounts)
+        .where(eq(coinAccounts.userId, input.userId))
+        .for('update');
+      if ((acct?.version ?? null) !== input.expectedVersion)
+        throw new ConflictError('The coin balance changed meanwhile; reload and try again', 'STALE_COINS');
+    }
+    const rules = await coinSettings(tx);
+    const entry = await apply(tx, {
+      userId: input.userId,
+      delta: input.delta,
+      kind: 'adjust',
+      reason: note.length >= 3 ? note : `Staff: ${input.reasonCode}`,
+      reasonCode: input.reasonCode,
+      idemKey: input.idemKey,
+      createdBy: input.staffUserId,
+      expiresAt: input.delta > 0 ? expiryFrom(rules.expiryDays) : null,
+      audit: {
+        actorUserId: input.staffUserId,
+        action: 'coins.adjusted',
+        after: { reasonCode: input.reasonCode, customerId: input.userId },
+      },
+    });
+    if (!replay)
+      await recordServerEvent(tx, 'coins_adjusted', {
+        userId: input.staffUserId,
+        props: { customerId: input.userId, delta: input.delta, reasonCode: input.reasonCode },
+      });
+    return entry;
   });
 }
 
 export async function coinBalance(db: Tx, userId: string): Promise<number> {
   return balanceOf(db, userId);
+}
+
+// ── Reads (customer: own only; staff: coins:read) ───────────────────────────────────────────────────────────────
+
+export interface CoinLedgerView {
+  id: string;
+  delta: number;
+  kind: Kind;
+  reasonCode: string | null;
+  /** The staff note on an adjustment (shown to the customer); null otherwise. */
+  note: string | null;
+  orderCode: string | null;
+  createdAt: Date;
+  expiresAt: Date | null;
+}
+
+export interface PendingRewardView {
+  id: string;
+  source: CoinRewardSource;
+  coins: number;
+  availableAt: Date;
+  orderCode: string | null;
+}
+
+const LEDGER_VIEW = {
+  id: coinLedger.id,
+  delta: coinLedger.delta,
+  kind: coinLedger.kind,
+  reasonCode: coinLedger.reasonCode,
+  reason: coinLedger.reason,
+  orderCode: orderGroups.code,
+  createdAt: coinLedger.createdAt,
+  expiresAt: coinLedger.expiresAt,
+  userId: coinLedger.userId,
+  createdBy: coinLedger.createdBy,
+  sortKey: sql<string>`${coinLedger.createdAt}::text`,
+};
+
+interface LedgerRow {
+  id: string;
+  delta: number;
+  kind: string;
+  reasonCode: string | null;
+  reason: string;
+  orderCode: string | null;
+  createdAt: Date;
+  expiresAt: Date | null;
+}
+
+const toView = (r: LedgerRow): CoinLedgerView => ({
+  id: r.id,
+  delta: r.delta,
+  kind: r.kind as Kind,
+  reasonCode: r.reasonCode,
+  // Only a staff adjustment carries a note written for the customer; system rows are described by their code.
+  note: r.kind === 'adjust' && !r.reason.startsWith('Staff: ') ? r.reason : null,
+  orderCode: r.orderCode,
+  createdAt: r.createdAt,
+  expiresAt: r.expiresAt,
+});
+
+async function ledgerPage(
+  db: Tx,
+  where: ReturnType<typeof eq> | undefined,
+  page: { limit?: number; cursor?: string | null },
+) {
+  const limit = pageSize(page.limit, 20, 50);
+  const after = page.cursor ? decodeCursor(page.cursor, 'timestamp') : null;
+  const rows = await db
+    .select(LEDGER_VIEW)
+    .from(coinLedger)
+    .leftJoin(orderGroups, eq(orderGroups.id, coinLedger.orderGroupId))
+    .where(
+      and(
+        where,
+        after
+          ? sql`(${coinLedger.createdAt}, ${coinLedger.id}) < (cast(${after.k} as timestamptz), cast(${after.id} as uuid))`
+          : undefined,
+      ),
+    )
+    .orderBy(desc(coinLedger.createdAt), desc(coinLedger.id))
+    .limit(limit + 1);
+  const pageRows = rows.slice(0, limit);
+  const last = pageRows.at(-1);
+  return {
+    rows: pageRows,
+    nextCursor: rows.length > limit && last ? encodeCursor({ k: last.sortKey, id: last.id }) : null,
+  };
+}
+
+async function pendingRewards(db: Tx, userId: string): Promise<PendingRewardView[]> {
+  const rows = await db
+    .select({
+      id: coinRewards.id,
+      source: coinRewards.source,
+      coins: coinRewards.coins,
+      availableAt: coinRewards.availableAt,
+      orderCode: orders.code,
+    })
+    .from(coinRewards)
+    .leftJoin(orders, eq(orders.id, coinRewards.orderId))
+    .where(and(eq(coinRewards.userId, userId), eq(coinRewards.status, 'pending')))
+    .orderBy(coinRewards.availableAt)
+    .limit(50);
+  return rows.map((r) => ({ ...r, source: r.source as CoinRewardSource }));
+}
+
+export interface MyCoins {
+  balance: number;
+  lifetimeEarned: number;
+  pendingCoins: number;
+  pending: PendingRewardView[];
+  nextExpiry: { coins: number; at: Date } | null;
+  rules: CoinSettings;
+}
+
+/** The signed-in customer's own coins: balance, coins on the way, the next expiry and the rules in force. */
+export async function myCoins(db: Tx, userId: string): Promise<MyCoins> {
+  const [acct] = await db
+    .select({ balance: coinAccounts.balance, lifetimeEarned: coinAccounts.lifetimeEarned })
+    .from(coinAccounts)
+    .where(eq(coinAccounts.userId, userId));
+  const pending = await pendingRewards(db, userId);
+  const lots = acct && acct.balance > 0 ? await ledgerLots(db, userId) : [];
+  return {
+    balance: acct?.balance ?? 0,
+    lifetimeEarned: acct?.lifetimeEarned ?? 0,
+    pendingCoins: pending.reduce((a, r) => a + r.coins, 0),
+    pending,
+    nextExpiry: nextExpiry(lots, new Date()),
+    rules: await coinSettings(db),
+  };
+}
+
+/** The customer's own history, newest first (keyset cursor). */
+export async function myCoinLedger(
+  db: Tx,
+  userId: string,
+  page: { limit?: number; cursor?: string | null } = {},
+): Promise<{ entries: CoinLedgerView[]; nextCursor: string | null }> {
+  const { rows, nextCursor } = await ledgerPage(db, eq(coinLedger.userId, userId), page);
+  return { entries: rows.map(toView), nextCursor };
+}
+
+export interface AdminCoinAccount {
+  userId: string;
+  balance: number;
+  lifetimeEarned: number;
+  /** null = no coins yet (send null back with an adjustment). */
+  version: number | null;
+  pending: PendingRewardView[];
+  entries: (CoinLedgerView & { createdBy: string | null })[];
+}
+
+/** One customer's coins for staff (`coins:read`): 404 for an unknown account. */
+export async function adminCoinAccount(db: Tx, userId: string): Promise<AdminCoinAccount> {
+  const [user] = await db.select({ id: users.id }).from(users).where(eq(users.id, userId));
+  if (!user) throw new NotFoundError('Customer not found');
+  const [acct] = await db.select().from(coinAccounts).where(eq(coinAccounts.userId, userId));
+  const { rows } = await ledgerPage(db, eq(coinLedger.userId, userId), { limit: 50 });
+  return {
+    userId,
+    balance: acct?.balance ?? 0,
+    lifetimeEarned: acct?.lifetimeEarned ?? 0,
+    version: acct?.version ?? null,
+    pending: await pendingRewards(db, userId),
+    entries: rows.map((r) => ({ ...toView(r), createdBy: r.createdBy })),
+  };
+}
+
+/** Recent coin activity across customers for staff (`coins:read`), newest first. */
+export async function coinActivity(
+  db: Tx,
+  page: { limit?: number; cursor?: string | null } = {},
+): Promise<{ entries: (CoinLedgerView & { userId: string })[]; nextCursor: string | null }> {
+  const { rows, nextCursor } = await ledgerPage(db, undefined, page);
+  return { entries: rows.map((r) => ({ ...toView(r), userId: r.userId })), nextCursor };
 }
