@@ -726,6 +726,20 @@ Specs 03, 04, 07 and 08; migration 0051. Rulings, with the cost if wrong in brac
 - **Indexes (0050):** `service_requests (city_id, created_at)` replaces `service_requests (city_id)`;
   `order_assignments (offered_at)` added.
 
+## 2026-11-15 — Launch features round: refunds, account API, emails, give-up + warnings, push, home service, proof photos, workshop analytics, trust wording (user)
+
+User 2026-11-15 ~01:00 IST: "go ahead and work on the 1,2,3,4,5,6" (6 = shop WhatsApp alert, deferred to 2026-11-16 by the user) plus new features. Answers given in the question round:
+
+- **Refunds:** "All need approval". Every refund (rejected, cancelled, unfulfilled, support claims, part refunds) waits in a finance queue and goes to Razorpay only after a finance / super admin approves it. Refunds go to the original payment method (spec 20: never a wallet).
+- **Shop gives up an accepted order:** before packing, with a reason code, the order goes back to admin to reroute (2026-11-14 ruling) and counts against the shop's score. Admin can issue a **warning** with a reason code that the shop sees. After N warnings in 30 days (admin setting, default 3) admin is **prompted** to pause the shop; it never happens automatically.
+- **Push notifications (Firebase Cloud Messaging, web push):** customers (order/service/quote/support updates), shops and workshops (new order or request, timers, warnings), staff and admin (needs routing, gave up, applications, tickets), and **promotions only after a separate opt-in** (DPDP consent per purpose). Each person turns push on in their browser; an in-app notification bell shows the same items.
+- **Emails:** transactional emails through Resend for orders, service requests, quotes, support and refunds, en + hi, with the sender by purpose (2026-11-13 entry). Admin can edit the templates (rule 8).
+- **Home servicing:** each workshop opts in, sets its own visit fee and travel radius (km), and ticks which menu services it can do at home. The customer picks "At my home" or "At the workshop" when booking. Only workshops that cover the address are listed.
+- **Before/after photos (proof of work):** required by default (at least 1 "before" at vehicle received, at least 1 "after" before marking ready). Admin settings decide whether they are required and whether they are public (shown on the workshop profile) or private (customer and admin only).
+- **Workshop analytics:** both. Admin → Analytics gets a workshops section, and each workshop sees its own numbers in its portal.
+- **Trust wording ("genuine", "genuine parts"):** wording only, no money-back guarantee. The user picked both tones: "Genuine parts from verified Raipur shops" and the stronger "100% genuine parts" / "Only original parts". **Advisor flag:** a stronger claim is a representation under the Consumer Protection (E-Commerce) Rules, and with no guarantee every shop must actually meet it. Mitigations: the copy is admin-editable (rule 8), and a "genuine parts only" clause is proposed for the seller agreement (Q77). Queued as Q102.
+- **Process (user):** "make sure u follow the proper rules, skills and stuff for these". Each feature gets the advisor brief, a design note, a plan, TDD, docs and the gate, plus a review before merge. Agents run on Sonnet and the main session verifies their work. Market research first ("do research around more on already existing stuff + what else is out there on the market").
+
 ## PENDING DECISIONS (ask "what's pending" to review)
 
 | #   | Topic                                                                                                                                                                                                                                                                                                            | Leaning                                                                             | When                                 |
