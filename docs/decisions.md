@@ -863,3 +863,17 @@ User 2026-11-15 ~01:00 IST: "go ahead and work on the 1,2,3,4,5,6" (6 = shop Wha
 ## 2026-10-31 — Skills installed
 
 - `ui-ux-pro-max` (nextlevelbuilder) and `obra/superpowers` (15 workflow skills) installed globally for Claude Code. See `research/skills.md` for the full evaluation and picks.
+
+## 2026-11-15 — Refunds for prepaid orders (launch features round)
+
+- **User rulings (fixed):** every refund is a request that waits for approval by finance or super admin; the approver is not the requester; system-created requests (order rejected or cancelled) need approval too; refunds go to the original payment method only; coins follow spec 20. Q104 (user): cash-on-delivery refunds go to a UPI id or bank account the customer gives on the support ticket, stored encrypted, same approval queue, finance pays by hand and records the UTR. This supersedes "unfulfilled orders are refunded automatically" in spec 05 (updated there).
+- **My rulings (cost if wrong):**
+  - Reserve the amount at request time (`payments.refund_reserved_paise`, CHECK ≤ captured), not at approval: a second request can never promise the same money. Cost low (a rejection frees it).
+  - **An uncertain outcome never frees the money** (security review): after a failed Razorpay call the refund is looked up there first; only a confirmed absence fails it; otherwise `needs_reconciliation` keeps the amount reserved. A processed webhook can still settle a refund we had failed (matched by our refund id in notes), re-holding the amount. Cost: more states (medium); the alternative risked double refunds.
+  - No public refund code (admin uses the uuid). Cost low.
+  - `needs_refund` payments (captured after the order closed) still only audit; no request yet. Cost medium, follow-up.
+  - A fully refunded order's pending coin rewards are cancelled; a part refund keeps them. Cost low.
+  - The customer sees "processing" (never "refunded") until Razorpay confirms; a declined or failed refund shows a support link. Cost low.
+  - Approval SLA is the admin setting `refunds.approval_sla_hours` (default 24, city override), rule 8.
+  - The state audit lists the new screens (`ADM-REFUNDQ`, `ORD-REFUNDLINE`) but they are `test.fixme`: the screens exist only with real sign-in and the API; a real-API harness is the follow-up. Cost low (they stay unticked in the checklist).
+- **Not built** (spec 05): the ticket-side form for the payout destination, a finance action to settle an unsure refund by hand, requests for captured-after-close payments, the Overview tile and a staff alert channel, credit notes for refunds.

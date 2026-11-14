@@ -54,6 +54,12 @@ class FakeRazorpay implements RazorpayGateway {
     const p = this.payments.get(id);
     return p ? Promise.resolve(p) : Promise.reject(new Error('unknown payment'));
   }
+  createRefund(): Promise<never> {
+    return Promise.reject(new Error('refunds are not part of these tests'));
+  }
+  findRefund(): Promise<null> {
+    return Promise.resolve(null);
+  }
 }
 
 let ctx: Awaited<ReturnType<typeof buildApp>>;

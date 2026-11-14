@@ -23,6 +23,7 @@ export * from './content';
 export * from './cursor';
 export * from './checkout';
 export * from './payments';
+export * from './refunds';
 export * from './customer-blocks';
 export * from './routing';
 export * from './shop-orders';

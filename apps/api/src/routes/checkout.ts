@@ -8,6 +8,7 @@ import {
   placeOrder,
   quoteCheckout,
 } from '@mechdost/db/repo';
+import { CustomerRefundDto } from '@mechdost/shared/refunds-api';
 import { PERSON_CANCEL_REASONS } from '@mechdost/shared/state';
 import type { SessionCache } from '../auth/session-cache';
 import { ensureRazorpayOrder } from '../payments/service';
@@ -228,6 +229,7 @@ const Tracked = z.object({
   message: z.string().nullable(),
   deliveryCode: z.string().nullable(),
   canCancel: z.boolean(),
+  refunds: z.array(CustomerRefundDto),
 });
 
 const myOrders = createRoute({

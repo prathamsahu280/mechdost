@@ -56,6 +56,11 @@ export const OPERATIONAL_SETTINGS = {
    * accept (user 2026-11-14, shop working hours; spec 04).
    */
   'orders.closed_shop_grace_min': { kind: 'int', min: 15, max: 240, default: 60 },
+  /**
+   * A refund request waiting longer than this many hours is flagged overdue in Admin → Refunds (spec 05, decision
+   * 2026-11-15: every refund needs approval, so a waiting customer must not be forgotten).
+   */
+  'refunds.approval_sla_hours': { kind: 'int', min: 1, max: 720, default: 24 },
   /** Smallest bulk quote, in units across all its products (spec 19, Q20 default 10). */
   'quotes.min_units': { kind: 'int', min: 2, max: 500, default: 10 },
   /**

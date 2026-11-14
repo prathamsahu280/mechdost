@@ -159,6 +159,23 @@ export interface ServerEventProps {
   quote_expired: { quoteCode: string; reasonCode: string; offerVersion: number };
   /** The active offer ran out; the quote went back to negotiating. */
   quote_offer_expired: { quoteCode: string; offerVersion: number };
+  /** Refund requests (spec 05, 2026-11-15): ids, codes and paise only — never notes. `by` is who asked. */
+  refund_requested: {
+    refundId: string;
+    orderCode: string | null;
+    amountPaise: number;
+    source: string;
+    reasonCode: string;
+    by: 'system' | 'staff';
+  };
+  refund_approved: { refundId: string; amountPaise: number; hoursWaiting: number };
+  refund_rejected: { refundId: string; amountPaise: number; reasonCode: string };
+  /** The Razorpay refund exists (the money is on its way). */
+  refund_initiated: { refundId: string; amountPaise: number };
+  refund_processed: { refundId: string; amountPaise: number; daysFromRequest: number };
+  refund_failed: { refundId: string; amountPaise: number; failureCode: string };
+  /** We cannot tell whether Razorpay holds this refund: the amount stays reserved until it is settled. */
+  refund_needs_reconciliation: { refundId: string; amountPaise: number; code: string };
 }
 export type ServerEvent = keyof ServerEventProps;
 

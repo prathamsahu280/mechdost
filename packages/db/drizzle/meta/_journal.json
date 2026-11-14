@@ -372,6 +372,13 @@
       "when": 1794687156798,
       "tag": "0054_shop_give_up_warnings",
       "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1794688640673,
+      "tag": "0055_refunds",
+      "breakpoints": true
     }
   ]
 }

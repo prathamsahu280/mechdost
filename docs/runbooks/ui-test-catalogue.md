@@ -614,17 +614,17 @@ interaction states, cross-entity relations, data shapes or the widths between 39
 geometry (`docs/research/ui-testing-gap-2026-11-14.md`). The UI state audit models **components × dimensions**
 and measures boxes.
 
-| Part                       | Where                                                                                                                              |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| Component state model      | `apps/web/e2e/state-audit/model.ts` (65 components, their dimensions and values)                                                   |
-| Pairwise / cross generator | `apps/web/e2e/state-audit/pairwise.ts` (deterministic, no dependency, unit-tested)                                                 |
-| Cases and ids              | `apps/web/e2e/state-audit/cases.ts` (`SHOP-CARD-017` …; chunks for the overnight run)                                              |
-| Geometry assertions        | `apps/web/e2e/state-audit/geometry.ts` (runs in the page)                                                                          |
-| Runner per case            | `apps/web/e2e/state-audit/harness.ts`; tests in `state-audit.audit.ts`                                                             |
-| Known, filed bugs          | `apps/web/e2e/state-audit/known-issues.ts` (annotations only with `STATE_AUDIT_KNOWN=allow`)                                       |
-| Config                     | `apps/web/playwright.state-audit.config.ts` (one Chromium project; not part of `pnpm e2e`)                                         |
-| Written checklist          | `docs/qa/ui-state-checklist.md` (1,731 items; one test each; ticked from the report)                                               |
-| Scripts                    | `apps/web/scripts/state-audit-checklist.mjs` (regenerate), `state-audit-tick.mjs` (tick), `state-audit-run.mjs` (overnight chunks) |
+| Part                       | Where                                                                                                                                                           |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Component state model      | `apps/web/e2e/state-audit/model.ts` (67 components, their dimensions and values; `ADM-REFUNDQ` and `ORD-REFUNDLINE` are real-API screens: listed, `test.fixme`) |
+| Pairwise / cross generator | `apps/web/e2e/state-audit/pairwise.ts` (deterministic, no dependency, unit-tested)                                                                              |
+| Cases and ids              | `apps/web/e2e/state-audit/cases.ts` (`SHOP-CARD-017` …; chunks for the overnight run)                                                                           |
+| Geometry assertions        | `apps/web/e2e/state-audit/geometry.ts` (runs in the page)                                                                                                       |
+| Runner per case            | `apps/web/e2e/state-audit/harness.ts`; tests in `state-audit.audit.ts`                                                                                          |
+| Known, filed bugs          | `apps/web/e2e/state-audit/known-issues.ts` (annotations only with `STATE_AUDIT_KNOWN=allow`)                                                                    |
+| Config                     | `apps/web/playwright.state-audit.config.ts` (one Chromium project; not part of `pnpm e2e`)                                                                      |
+| Written checklist          | `docs/qa/ui-state-checklist.md` (1,844 items; one test each; ticked from the report)                                                                            |
+| Scripts                    | `apps/web/scripts/state-audit-checklist.mjs` (regenerate), `state-audit-tick.mjs` (tick), `state-audit-run.mjs` (overnight chunks)                              |
 
 ### 9.1 Dimensions
 

@@ -426,3 +426,89 @@ export type QuoteExpireReason = (typeof QUOTE_EXPIRE_REASONS)[number];
 /** A versioned offer: one `active` per quote (partial unique index); a newer one supersedes it; it may run out. */
 export const QUOTE_OFFER_STATES = ['active', 'superseded', 'accepted', 'expired', 'closed'] as const;
 export type QuoteOfferStatus = (typeof QUOTE_OFFER_STATES)[number];
+
+/**
+ * Refund request (spec 05, decision 2026-11-15 "All need approval"): every refund waits for a staff member with
+ * `refunds:approve` before Razorpay is called. `approved → processed` exists because the `refund.processed` webhook
+ * may arrive before we have stored the Razorpay refund id. `rejected`, `processed` and `failed` are final; money
+ * still owed after a failure is a new request.
+ */
+export const REFUND_STATES = [
+  'requested',
+  'approved',
+  'rejected',
+  'initiated',
+  'processed',
+  'failed',
+  'needs_reconciliation',
+] as const;
+export type RefundStatus = (typeof REFUND_STATES)[number];
+
+export const refundMachine = defineMachine(
+  'refund',
+  REFUND_STATES,
+  ['rejected', 'processed'],
+  [
+    { from: 'requested', to: 'approved', by: ['admin'] },
+    { from: 'requested', to: 'rejected', by: ['admin'] },
+    { from: 'approved', to: 'initiated', by: ['system'] },
+    // The Razorpay webhook (system) can beat our write of its refund id; finance (admin) marks a manual payout paid.
+    { from: 'approved', to: 'processed', by: ['system', 'admin'] },
+    { from: 'approved', to: 'failed', by: ['system'] },
+    { from: 'initiated', to: 'processed', by: ['system'] },
+    { from: 'initiated', to: 'failed', by: ['system'] },
+    // We cannot tell whether Razorpay holds a refund for it (a timeout on create, an amount that differs from ours,
+    // a refusal we could not double-check): the amount stays reserved and a lookup or a person settles it. Only a
+    // confirmed "no such refund" fails it. A refund we called failed can still turn out to be processed (webhook).
+    { from: 'approved', to: 'needs_reconciliation', by: ['system'] },
+    { from: 'initiated', to: 'needs_reconciliation', by: ['system'] },
+    { from: 'needs_reconciliation', to: 'initiated', by: ['system'] },
+    { from: 'needs_reconciliation', to: 'processed', by: ['system'] },
+    { from: 'needs_reconciliation', to: 'failed', by: ['system'] },
+    { from: 'failed', to: 'processed', by: ['system'] },
+  ],
+);
+
+/** Refunds that still count against what was captured (a rejected or failed one frees its amount; an unsure one holds it). */
+export const REFUND_HOLDING_STATES = [
+  'requested',
+  'approved',
+  'initiated',
+  'processed',
+  'needs_reconciliation',
+] as const satisfies readonly RefundStatus[];
+
+/** Where a refund request came from (ML-ready codes, hard rule 16). */
+export const REFUND_SOURCES = [
+  'order_rejected',
+  'order_cancelled',
+  'unfulfilled',
+  'support_claim',
+  'part_refund',
+  'other',
+] as const;
+export type RefundSource = (typeof REFUND_SOURCES)[number];
+
+/** Why money goes back. Staff pick one of these; the system sets the first two. */
+export const REFUND_REASONS = [
+  'order_rejected',
+  'order_cancelled',
+  'faulty',
+  'damaged_in_transit',
+  'wrong_item',
+  'missing_item',
+  'not_fulfilled',
+  'goodwill',
+  'other',
+] as const;
+export type RefundReason = (typeof REFUND_REASONS)[number];
+
+/** Why finance declined a refund request. */
+export const REFUND_REJECT_REASONS = [
+  'not_eligible',
+  'already_refunded',
+  'wrong_amount',
+  'suspected_fraud',
+  'other',
+] as const;
+export type RefundRejectReason = (typeof REFUND_REJECT_REASONS)[number];

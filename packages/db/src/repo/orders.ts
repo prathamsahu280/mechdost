@@ -4,6 +4,7 @@ import { orderMachine, type OrderStatus } from '@mechdost/shared/state';
 import { orderGroups, orders, payments } from '../schema';
 import { setActor, type ActorContext } from './actor';
 import { ConflictError, NotFoundError } from './errors';
+import { requestRefundForClosedOrder } from './refunds';
 import { createOrderRewards, recordShopCoinDiscount, restoreCoinsForSubOrder } from './coins';
 import { queueOrderWhatsApp, type OrderWhatsAppEvent } from './order-notifications';
 
@@ -87,7 +88,11 @@ export async function transitionOrder(
   if (event) await queueOrderWhatsApp(tx, { orderId: row.id, event, orderVersion: row.version });
   // MechDost Coins (spec 20), same transaction: a cancelled or rejected part gives its coins back (as coins, once);
   // a delivered part earns the admin-set reward, usable after the unlock days.
-  if (args.to === 'cancelled' || args.to === 'rejected') await restoreCoinsForSubOrder(tx, row.id);
+  if (args.to === 'cancelled' || args.to === 'rejected') {
+    await restoreCoinsForSubOrder(tx, row.id);
+    // A paid online part waits in the finance queue for a refund approval (spec 05, decision 2026-11-15).
+    await requestRefundForClosedOrder(tx, row.id);
+  }
   if (args.to === 'delivered') {
     await createOrderRewards(tx, row.id);
     await recordShopCoinDiscount(tx, row.id);

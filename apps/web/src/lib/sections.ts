@@ -23,6 +23,8 @@ const ALL_ADMIN_SECTIONS = [
   // Analytics from our own data (spec 08 "Analytics", 2026-11-14): real sign-in only (it reads the API).
   'analytics',
   'orders',
+  // The finance refund queue (spec 05, 2026-11-15): real sign-in only, it reads the API.
+  'refunds',
   'services',
   'quotes',
   'applications',
@@ -59,7 +61,7 @@ const reviewsShown = BROWSER_ONLY_FEATURES || AUTH_MODE === 'firebase';
  * Sections that only read the API and have no demo version: shown with real sign-in only. One list for all of them
  * (Analytics and the monitoring Errors panel, 2026-11-14; add later ones here).
  */
-const REAL_SIGN_IN_ONLY: readonly string[] = ['analytics', 'errors'];
+const REAL_SIGN_IN_ONLY: readonly string[] = ['analytics', 'errors', 'refunds'];
 const shown = <T extends string>(all: readonly T[]): readonly T[] =>
   all.filter(
     (s) =>

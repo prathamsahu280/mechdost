@@ -38,6 +38,8 @@ export interface AuditCase {
   sweep: number;
   mustShow: string | null;
   tier: 'core' | 'full';
+  /** Needs real sign-in and the API: the demo harness cannot run it (its test is `test.fixme`). */
+  realApi: boolean;
 }
 
 /**
@@ -103,6 +105,7 @@ function toCase(def: ComponentDef, row: Row, index: number): AuditCase {
     sweep: def.sweep ?? 10,
     mustShow: def.mustShow ?? null,
     tier: core ? 'core' : 'full',
+    realApi: def.realApi === true,
   };
 }
 

@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  REFUND_HOLDING_STATES,
+  REFUND_STATES,
   TICKET_STATES,
+  refundMachine,
   assignmentMachine,
   orderMachine,
   paymentMachine,
@@ -10,6 +13,7 @@ import {
   inviteMachine,
   priceRequestMachine,
 } from '../src/state';
+import { customerRefundStatus } from '../src/refunds-api';
 
 describe('order state machine', () => {
   it('follows the admin-routing happy path', () => {
@@ -130,6 +134,44 @@ describe('payment state machine', () => {
     expect(paymentMachine.can('paid', 'failed')).toBe(false);
     expect(paymentMachine.can('paid', 'partially_refunded')).toBe(true);
     expect(paymentMachine.can('partially_refunded', 'refunded')).toBe(true);
+  });
+});
+
+describe('refund state machine (decision 2026-11-15: all refunds need approval)', () => {
+  it('never reaches Razorpay without an admin approval', () => {
+    expect(refundMachine.canActor('requested', 'approved', 'admin')).toBe(true);
+    expect(refundMachine.canActor('requested', 'approved', 'system')).toBe(false);
+    expect(refundMachine.can('requested', 'initiated')).toBe(false);
+    expect(refundMachine.can('requested', 'processed')).toBe(false);
+    expect(refundMachine.canActor('requested', 'rejected', 'admin')).toBe(true);
+  });
+  it('only the system moves an approved refund on, and finished refunds stay finished', () => {
+    expect(refundMachine.canActor('approved', 'initiated', 'system')).toBe(true);
+    expect(refundMachine.canActor('approved', 'initiated', 'admin')).toBe(false);
+    expect(refundMachine.can('approved', 'processed')).toBe(true);
+    expect(refundMachine.can('initiated', 'processed')).toBe(true);
+    expect(refundMachine.can('initiated', 'failed')).toBe(true);
+    for (const done of ['rejected', 'processed'] as const) {
+      expect(refundMachine.isTerminal(done)).toBe(true);
+      expect(refundMachine.next(done)).toEqual([]);
+    }
+  });
+  it('an unsure refund holds its amount and is settled only by a lookup, a webhook or a confirmed absence', () => {
+    // Never failed straight from a timeout or an amount that differs: that would free money Razorpay may have sent.
+    expect(refundMachine.canActor('approved', 'needs_reconciliation', 'system')).toBe(true);
+    expect(refundMachine.canActor('initiated', 'needs_reconciliation', 'system')).toBe(true);
+    expect(refundMachine.canActor('needs_reconciliation', 'processed', 'system')).toBe(true);
+    expect(refundMachine.canActor('needs_reconciliation', 'failed', 'system')).toBe(true);
+    expect(refundMachine.canActor('needs_reconciliation', 'processed', 'admin')).toBe(false);
+    expect(REFUND_HOLDING_STATES).toContain('needs_reconciliation');
+    expect(customerRefundStatus('needs_reconciliation')).toBe('processing');
+    // A refund we called failed can still be processed if Razorpay says so (a webhook is the truth).
+    expect(refundMachine.canActor('failed', 'processed', 'system')).toBe(true);
+    expect(refundMachine.canActor('failed', 'approved', 'system')).toBe(false);
+  });
+  it('never shows "refunded" to the customer before Razorpay confirms', () => {
+    const shown = REFUND_STATES.filter((s) => customerRefundStatus(s) === 'refunded');
+    expect(shown).toEqual(['processed']);
   });
 });
 

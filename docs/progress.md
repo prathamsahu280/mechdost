@@ -234,3 +234,10 @@ Older entries (2026-10-31 to 2026-11-04): `docs/progress-archive.md`.
 ## Open questions waiting on the user
 
 See PENDING DECISIONS in `docs/decisions.md` (payment methods; post-purchase P1 pull-forward — answer due 2026-11-01; WhatsApp handoff; vehicle master; commission; geocoding/routing bake-off; etc.).
+
+## 2026-11-15 — Refunds for prepaid orders (branch worktree-agent-aba6725131f92a8ff)
+
+- Built (spec 05 "Built: refunds"): approval-first refund requests (system on cancel/reject, staff by API), ledger with CHECK, four-eyes, Razorpay refund with idempotency, `refund.processed|failed` webhooks, worker sweep and reconciliation (uncertain outcomes never free the money), cash-on-delivery manual payout with encrypted destination and UTR, Admin → Refunds (real sign-in), order-page refund line, en + hi, analytics events, state-audit entries (fixme), email stubs through the outbox (`refund_requested|processed|declined`).
+- Migration `0055_refunds` generated, **not applied** (the coordinator renumbers at merge). Needs RBAC sync? No new permissions.
+- User action: Q107 (add the two refund webhook events in Razorpay).
+- Not built: see spec 05 "Not built".

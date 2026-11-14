@@ -21,6 +21,10 @@ import {
   ORDER_REJECT_REASONS,
   ORDER_STATES,
   PAYMENT_STATES,
+  REFUND_REASONS,
+  REFUND_REJECT_REASONS,
+  REFUND_SOURCES,
+  REFUND_STATES,
 } from '@mechdost/shared/state';
 import { citext, createdAt, encryptedCheck, id, paise, ts, updatedAt, version } from './_common';
 import { cities } from './geography';
@@ -431,12 +435,23 @@ export const payments = pgTable(
     status: text().notNull().default('created'),
     method: text(),
     capturedAt: ts(),
+    /**
+     * Refund ledger (spec 05, 2026-11-15): money held by refunds that are requested, approved, initiated or processed,
+     * and the part Razorpay confirmed. Changed only by conditional UPDATEs under this row's lock, so the CHECK below
+     * means "refunds can never exceed what was captured" whatever the concurrency.
+     */
+    refundReservedPaise: paise().notNull().default(0),
+    refundedPaise: paise().notNull().default(0),
     version: version(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
   (t) => [
     check('payments_status_valid', sql`${t.status} in (${inList(PAYMENT_STATES)})`),
+    check(
+      'payments_refund_ledger',
+      sql`${t.refundedPaise} >= 0 and ${t.refundedPaise} <= ${t.refundReservedPaise} and ${t.refundReservedPaise} <= ${t.amountPaise}`,
+    ),
     check('payments_amount_positive', sql`${t.amountPaise} > 0`),
     check('payments_currency_inr', sql`${t.currency} = 'INR'`),
     check('payments_provider_valid', sql`${t.provider} in ('razorpay')`),
@@ -452,30 +467,98 @@ export const payments = pgTable(
   ],
 );
 
+/**
+ * Refund requests (spec 05; decision 2026-11-15 "All need approval"). Status follows `refundMachine` as a conditional
+ * UPDATE on (id, status, version); the amount is held on `payments.refund_reserved_paise` (see there). A request made
+ * by a staff member can be approved only by someone else (CHECK). `provider_refund_id` is Razorpay's refund id;
+ * `idem_key` doubles as the `X-Refund-Idempotency` header, so a retried call never refunds twice.
+ */
 export const refunds = pgTable(
   'refunds',
   {
     id: id(),
-    paymentId: uuid()
+    /** The captured Razorpay payment (mode `source`); null for cash-on-delivery orders paid out by hand (`bank_upi`). */
+    paymentId: uuid().references(() => payments.id, { onDelete: 'restrict' }),
+    /** The checkout the refund belongs to (city scope, customer); set for both modes. */
+    groupId: uuid()
       .notNull()
-      .references(() => payments.id, { onDelete: 'restrict' }),
+      .references(() => orderGroups.id, { onDelete: 'restrict' }),
     orderId: uuid().references(() => orders.id, { onDelete: 'restrict' }),
     amountPaise: paise().notNull(),
+    /** `source` = back to the original payment method through Razorpay; `bank_upi` = finance pays by hand (COD). */
     mode: text().notNull().default('source'),
     /** Bank account / UPI id for `bank_upi` refunds (COD orders), encrypted (`'refunds.destination_enc'`). */
     destinationEnc: text(),
     idemKey: text().notNull().unique(),
     providerRefundId: text().unique(),
-    status: text().notNull().default('pending'),
-    reason: text().notNull(),
+    status: text().notNull().default('requested'),
+    source: text().notNull(),
+    reasonCode: text().notNull(),
+    /** Optional free-text note (the column was the old required `reason`, never written before 2026-11-15). */
+    note: text('reason'),
+    /** Null when the system asked (an order was rejected or cancelled). */
     requestedBy: uuid().references(() => users.id, { onDelete: 'set null' }),
     approvedBy: uuid().references(() => users.id, { onDelete: 'set null' }),
+    rejectedBy: uuid().references(() => users.id, { onDelete: 'set null' }),
+    rejectReasonCode: text(),
+    decidedAt: ts(),
+    initiatedAt: ts(),
+    /** When it became `processed` or `failed`. */
+    settledAt: ts(),
+    failureCode: text(),
+    /** UTR / bank reference finance typed when it paid a `bank_upi` refund by hand. */
+    manualReference: text(),
+    /** The amount Razorpay reported when it differed from ours (status `needs_reconciliation`). */
+    providerReportedPaise: paise(),
+    /** Calls to Razorpay so far, and when the worker may try again (backoff). */
+    dispatchAttempts: integer().notNull().default(0),
+    nextAttemptAt: ts(),
     version: version(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
   (t) => [
     check('refunds_amount_positive', sql`${t.amountPaise} > 0`),
+    check('refunds_source_valid', sql`${t.source} in (${inList(REFUND_SOURCES)})`),
+    check('refunds_reason_valid', sql`${t.reasonCode} in (${inList(REFUND_REASONS)})`),
+    check(
+      'refunds_reject_reason_valid',
+      sql`(${t.status} = 'rejected') = (${t.rejectReasonCode} is not null) and (${t.rejectReasonCode} is null or ${t.rejectReasonCode} in (${inList(REFUND_REJECT_REASONS)}))`,
+    ),
+    check('refunds_note_len', sql`${t.note} is null or char_length(${t.note}) between 1 and 300`),
+    // Four-eyes: whoever asked for a refund cannot approve it.
+    check(
+      'refunds_four_eyes',
+      sql`${t.approvedBy} is null or ${t.requestedBy} is null or ${t.approvedBy} <> ${t.requestedBy}`,
+    ),
+    // The money only moves after an approval, and a Razorpay id exists once it is on its way.
+    check(
+      'refunds_approved_before_dispatch',
+      sql`${t.status} not in ('approved','initiated','processed') or ${t.decidedAt} is not null`,
+    ),
+    check(
+      'refunds_provider_id_when_sent',
+      sql`${t.mode} <> 'source' or ${t.status} not in ('initiated','processed') or ${t.providerRefundId} is not null`,
+    ),
+    // A Razorpay refund hangs on a captured payment; a manual payout has none and carries the UTR once paid.
+    check('refunds_mode_payment', sql`(${t.mode} = 'source') = (${t.paymentId} is not null)`),
+    check(
+      'refunds_manual_paid_has_reference',
+      sql`${t.mode} = 'source' or ${t.status} <> 'processed' or ${t.manualReference} ~ '^[A-Za-z0-9]{6,35}$'`,
+    ),
+    check(
+      'refunds_manual_never_initiated',
+      sql`${t.mode} = 'source' or ${t.status} not in ('initiated','needs_reconciliation')`,
+    ),
+    check(
+      'refunds_reported_positive',
+      sql`${t.providerReportedPaise} is null or ${t.providerReportedPaise} > 0`,
+    ),
+    check(
+      'refunds_settled_when_final',
+      sql`(${t.status} in ('processed','failed')) = (${t.settledAt} is not null)`,
+    ),
+    check('refunds_attempts_nonneg', sql`${t.dispatchAttempts} >= 0`),
     // No wallet (decision 2026-11-01): money goes back to the original method, or bank/UPI for COD orders.
     check('refunds_mode_valid', sql`${t.mode} in ('source','bank_upi')`),
     check('refunds_destination_encrypted', encryptedCheck(t.destinationEnc)),
@@ -483,12 +566,51 @@ export const refunds = pgTable(
       'refunds_bank_upi_needs_destination',
       sql`${t.mode} <> 'bank_upi' or ${t.destinationEnc} is not null`,
     ),
-    check('refunds_status_valid', sql`${t.status} in ('pending','initiated','processed','failed')`),
+    check('refunds_status_valid', sql`${t.status} in (${inList(REFUND_STATES)})`),
     check('refunds_idem_key_format', sql`${t.idemKey} ~ '^[A-Za-z0-9_-]{10,64}$'`),
     index().on(t.paymentId),
     index().on(t.orderId),
     index().on(t.requestedBy),
     index().on(t.approvedBy),
+    index().on(t.rejectedBy),
+    index().on(t.groupId),
+    // The finance queue: oldest waiting first, by status.
+    index().on(t.status, t.createdAt),
+    // The worker's retry sweep touches only approved refunds that are due.
+    index('refunds_dispatch_due_idx')
+      .on(t.nextAttemptAt)
+      .where(sql`${t.status} = 'approved' and ${t.mode} = 'source'`),
+  ],
+);
+
+/**
+ * Append-only refund timeline (requested, approved, rejected, initiated, processed, failed, dispatch retries). The
+ * per-entity event log beside `audit_log` (spec 14 rule 9).
+ */
+export const refundEvents = pgTable(
+  'refund_events',
+  {
+    id: bigint({ mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+    refundId: uuid()
+      .notNull()
+      .references(() => refunds.id, { onDelete: 'restrict' }),
+    kind: text().notNull(),
+    fromStatus: text(),
+    toStatus: text().notNull(),
+    actorType: text().notNull(),
+    actorId: uuid(),
+    payload: jsonb()
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    check(
+      'refund_events_kind_valid',
+      sql`${t.kind} in ('requested','approved','rejected','initiated','processed','failed','retry','needs_reconciliation')`,
+    ),
+    check('refund_events_actor_valid', sql`${t.actorType} in ('admin','system')`),
+    index().on(t.refundId, t.id),
   ],
 );
 

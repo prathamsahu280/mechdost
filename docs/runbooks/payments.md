@@ -35,7 +35,7 @@ The API will not start in production with an `rzp_test_` key (`apps/api/src/conf
 ## Webhook (Q75)
 
 - Needs a public HTTPS URL to `POST /webhooks/razorpay`: the deployed API, or a tunnel while testing.
-- Turn on the events `payment.captured`, `payment.failed` and `order.paid`.
+- Turn on the events `payment.captured`, `payment.failed` and `order.paid`, and (refunds, 2026-11-15) **`refund.processed` and `refund.failed`** (optionally `refund.created`; it is recorded and changes nothing). Without them a refund stays "sent" until the worker's lookup finds it. Q107.
 - Put the secret in `.env`.
 - Replays and out-of-order events are safe: each event id is recorded once, and the payment state only moves forward.
 
@@ -50,10 +50,18 @@ If money is captured for an order that already expired, was cancelled, or was al
 - the audit log gets `payment.captured_needs_refund` (with the payment id and amount);
 - the API logs `razorpay_webhook_needs_refund` (webhook) or `razorpay_verify_needs_refund` (checkout callback).
 
-Refund it from the Razorpay Dashboard until automatic refunds exist (spec 05).
+Ask for the refund in Admin → Refunds (API `POST /v1/admin/refunds`) once the payment is `paid`; for money captured on a closed order that never became paid, refund it from the Razorpay Dashboard (that case does not create a request yet, spec 05 "Not built").
 
 ## Not yet
 
-- Refunds for paid orders that are cancelled or rejected (spec 05).
 - The hourly reconciliation job: fetch Razorpay orders stuck in `created`/`attempted`.
 - Processing webhooks through pg-boss.
+
+## Refunds (spec 05, 2026-11-15)
+
+- **Every refund waits for a finance approval** in Admin → Refunds (finance or super admin; not the person who asked). A cancelled or rejected paid online order creates its request by itself; support and ops can ask for a part refund or a claim through the API. Nothing reaches Razorpay before the approval. The admin setting `refunds.approval_sla_hours` (default 24) marks old requests overdue.
+- **Sending:** approving sends it at once; the worker (`apps/api/src/worker.ts`, every 30 s) sends approved refunds that did not go out and retries with a growing delay. Razorpay's `X-Refund-Idempotency` header is our `refunds.idem_key`, so a retry never refunds twice.
+- **Webhook:** `refund.processed` / `refund.failed` settle it; the customer is emailed that the bank takes 5–7 working days.
+- **"Needs checking" view** (a refund whose outcome we cannot tell: a timeout, a refusal we could not double-check, an amount that differs from ours, eight failed tries): the amount stays reserved so it cannot be refunded twice. Open the refund; if Razorpay reported another amount, check it in the Razorpay Dashboard first. The worker looks again every hour and fails it only when Razorpay confirms there is no such refund; a processed webhook settles it. Logs to watch: `refunds_need_reconciliation`, `razorpay_webhook_refund_mismatch`, `razorpay_webhook_refund_unknown_refund` (a refund made in the Dashboard that we do not know: parked in `webhook_events`).
+- **Cash on delivery:** paid by hand after approval (UPI or bank details come from the support ticket, shown only to the approver); record the UTR with "Mark as paid".
+- **Test it:** place and pay a test order, cancel it from Admin → Orders, approve the request from a second staff account, then check the Razorpay test dashboard for the refund and the webhook delivery.

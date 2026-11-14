@@ -47,6 +47,7 @@ const SETTING_LABEL = {
   'orders.customer_self_cancel_online': 'api_set_orders_customer_self_cancel_online',
   'orders.acceptance_timeout_min': 'api_set_orders_acceptance_timeout_min',
   'orders.closed_shop_grace_min': 'api_set_orders_closed_shop_grace_min',
+  'refunds.approval_sla_hours': 'api_set_refunds_approval_sla_hours',
   'quotes.min_units': 'api_set_quotes_min_units',
   'quotes.cod_cap_paise': 'api_set_quotes_cod_cap_paise',
   'catalogue.require_hindi_to_publish': 'api_set_catalogue_require_hindi_to_publish',
