@@ -9,6 +9,7 @@
 # Local state and outputs
 **/node_modules
 **/.next
+**/.next-api
 **/dist
 **/.turbo
 **/coverage

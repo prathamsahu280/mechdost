@@ -4,6 +4,7 @@
  * Pure, with `.ts` imports only (Node runs it for the checklist writer).
  */
 import { cross, extendPairs, pairwise, type Param, type Row, type Value } from './pairwise.ts';
+import { API_COMPONENTS } from './model-api.ts';
 import {
   BASE_CHECKS,
   COMPARES,
@@ -40,6 +41,8 @@ export interface AuditCase {
   tier: 'core' | 'full';
   /** Needs real sign-in and the API: the demo harness cannot run it (its test is `test.fixme`). */
   realApi: boolean;
+  /** Navigation surface the `nav` check measures (see `ComponentDef.nav`), or null. */
+  nav: 'bar' | 'links' | null;
 }
 
 /**
@@ -52,11 +55,23 @@ export const CHUNKS: Readonly<Record<string, string>> = {
   C: 'PDP-,CMP-,CART-,CHK-',
   D: 'ORD-,SR-,QT-,ACC-,WS-,PTN-,SUP-,LOGIN-,POL-',
   E: 'PRT-,ADM-',
+  F: 'NAV-',
+  // Real-sign-in screens: run with playwright.state-audit-api.config.ts (mocked API), not with the demo config.
+  G: 'API-',
 };
 
 const ENV_KEYS = new Set(['width', 'theme', 'locale', 'auth', 'world']);
 /** Keys that only choose the route (they are part of `path`, not of the state the harness sets up). */
-const ROUTE_KEYS = new Set(['route', 'product', 'order', 'request', 'workshop', 'kind', 'surface']);
+const ROUTE_KEYS = new Set([
+  'route',
+  'section',
+  'product',
+  'order',
+  'request',
+  'workshop',
+  'kind',
+  'surface',
+]);
 
 function rowsFor(def: ComponentDef): Row[] {
   const valid = def.valid ?? (() => true);
@@ -106,13 +121,14 @@ function toCase(def: ComponentDef, row: Row, index: number): AuditCase {
     mustShow: def.mustShow ?? null,
     tier: core ? 'core' : 'full',
     realApi: def.realApi === true,
+    nav: def.nav ?? null,
   };
 }
 
 /** Every audit case, in checklist order (components in model order, the stepper cross after the shop pages). */
 export function buildCases(): AuditCase[] {
   const defs: ComponentDef[] = [];
-  for (const def of COMPONENTS) {
+  for (const def of [...COMPONENTS, ...API_COMPONENTS]) {
     defs.push(def);
     if (def.code === 'SHOP-TRAY') defs.push(STEPPER);
   }

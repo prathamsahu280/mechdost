@@ -8,7 +8,7 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './e2e/state-audit',
-  testMatch: '**/*.audit.ts',
+  testMatch: '**/state-audit.audit.ts',
   fullyParallel: true,
   // Low-memory development machine: one browser locally; CI runners take two.
   workers: process.env.CI ? 2 : 1,

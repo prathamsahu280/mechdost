@@ -3,6 +3,7 @@ docs/screenshots/
 pnpm-lock.yaml
 **/drizzle/meta/
 .next/
+.next-api/
 dist/
 coverage/
 next-env.d.ts

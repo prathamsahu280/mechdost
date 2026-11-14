@@ -21,6 +21,9 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Build output folder: always `.next` for the deployed image; the API-mode UI audit builds a second, real-mode copy
+  // into `.next-api` beside it (runbook ui-test-catalogue § 9.7) so the demo build is not overwritten.
+  distDir: process.env.NEXT_DIST_DIR ?? '.next',
   // Docker image (docs/runbooks/deploy.md): a self-contained server with only the files it needs.
   output: 'standalone',
   // The monorepo root, so workspace packages are traced into the standalone output.

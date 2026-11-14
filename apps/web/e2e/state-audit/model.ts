@@ -46,7 +46,8 @@ export type Check =
   | 'console'
   | 'sync'
   | 'axe'
-  | 'hindi';
+  | 'hindi'
+  | 'nav';
 
 /** What each check asserts (checklist header and failure messages). */
 export const CHECK_TEXT: Readonly<Record<Check, string>> = {
@@ -63,6 +64,7 @@ export const CHECK_TEXT: Readonly<Record<Check, string>> = {
   sync: 'controls agree with the stored state (compare pressed = in list, stepper = in cart, tray count)',
   axe: 'axe WCAG 2.2 AA on the component',
   hindi: 'on /hi no English outside the allowlist (test/hindi-allowlist.ts)',
+  nav: 'navigation: one current marker where the route is a nav target, the current item in view, and with walk=yes every item opens a page with its heading (no 404, no wrong landing)',
 };
 
 export const BASE_CHECKS: readonly Check[] = [
@@ -201,30 +203,35 @@ export interface ComponentDef {
    * `test.fixme` until a real-API harness (mocked API answers) exists. The checklist still lists every combination.
    */
   readonly realApi?: boolean;
+  /**
+   * Navigation surface (check `nav`): `bar` = a nav bar whose current item carries aria-current; `links` = links
+   * with no current marker (footer, filter chips), where only the walk (`walk=yes`) applies.
+   */
+  readonly nav?: 'bar' | 'links';
 }
 
-const width: Param = { name: 'width', values: WIDTHS };
+export const width: Param = { name: 'width', values: WIDTHS };
 const phoneWidth: Param = { name: 'width', values: PHONE_WIDTHS };
-const theme: Param = { name: 'theme', values: THEMES };
-const locale: Param = { name: 'locale', values: LOCALES };
-const authOutIn: Param = { name: 'auth', values: ['out', 'customer'] };
+export const theme: Param = { name: 'theme', values: THEMES };
+export const locale: Param = { name: 'locale', values: LOCALES };
+export const authOutIn: Param = { name: 'auth', values: ['out', 'customer'] };
 const world3: Param = { name: 'world', values: ['empty', 'cart', 'busy'] };
-const world2: Param = { name: 'world', values: ['empty', 'busy'] };
-const env = [width, theme, locale];
+export const world2: Param = { name: 'world', values: ['empty', 'busy'] };
+export const env = [width, theme, locale];
 
-const coreAt =
+export const coreAt =
   (widths: readonly number[], extra: (row: Row) => boolean = () => true) =>
   (row: Row) =>
     widths.includes(Number(row.width)) && extra(row);
 
 const CARD_ALIGN: AlignSpec[] = [{ items: 'article' }];
-const TABLE_ALIGN: AlignSpec[] = [
+export const TABLE_ALIGN: AlignSpec[] = [
   { items: '[role="cell"], [role="columnheader"]', row: '[role="row"]' },
   { items: 'td, th', row: 'tr' },
 ];
 
 /** Portal and admin routes in demo mode (one component each: the section's main content). */
-const ADMIN_SECTIONS = [
+export const ADMIN_SECTIONS = [
   'overview',
   'orders',
   'services',
@@ -242,7 +249,7 @@ const ADMIN_SECTIONS = [
   'notifications',
 ] as const;
 
-const ACCOUNT_SECTIONS = [
+export const ACCOUNT_SECTIONS = [
   'overview',
   'orders',
   'services',
@@ -256,6 +263,143 @@ const ACCOUNT_SECTIONS = [
 
 const accountPath = (s: string) => (s === 'overview' ? '/account' : `/account/${s}`);
 const adminPath = (s: string) => (s === 'overview' ? '/admin' : `/admin/${s}`);
+
+const walk: Param = { name: 'walk', values: ['no', 'yes'] };
+const NAV_CHECKS: readonly Check[] = [...BASE_CHECKS, 'nav'];
+/** Header and tab bar routes: the four primary destinations, a page that is not a nav target, and each portal. */
+const PRIMARY_ROUTES = ['/', '/shop', '/workshops', '/account/vehicles', '/cart', '/policies/returns'];
+const roleRoute = (r: Row) =>
+  (r.route !== '/account/vehicles' || r.auth === 'customer') &&
+  (r.route !== '/partner/shop' || r.auth === 'shop') &&
+  (r.route !== '/partner/workshop' || r.auth === 'workshop') &&
+  (r.route !== '/admin' || r.auth === 'admin');
+
+/**
+ * Navigation (user 2026-11-15: "update the states render test for the navigation too"): every bar a visitor or a
+ * partner uses to move between pages, per role, route, width, language and theme, with the walk (`walk=yes`: click
+ * each item and check the page that opens). The admin and account lists follow `src/lib/sections.ts` for the demo
+ * build (unit-tested); real-mode lists are the API rows `API-NAV-*` (`model-api.ts`).
+ */
+const NAVIGATION: readonly ComponentDef[] = [
+  {
+    code: 'NAV-HEADER',
+    page: 'Navigation',
+    component: 'Header nav (1024 px and up): current item, hover, focus, every role and route',
+    path: (r) => String(r.route),
+    scope: 'header.sticky nav',
+    strategy: 'cross',
+    cross: ['width', 'auth'],
+    params: [
+      { name: 'width', values: [1024, 1280, 1440, 1920] },
+      { name: 'auth', values: ['out', 'customer', 'shop', 'workshop', 'admin'] },
+      theme,
+      locale,
+      { name: 'route', values: [...PRIMARY_ROUTES, '/partner/shop', '/partner/workshop', '/admin'] },
+      walk,
+    ],
+    valid: roleRoute,
+    checks: NAV_CHECKS,
+    nav: 'bar',
+    sweep: 6,
+    core: (r) => Number(r.width) === 1024 && r.locale === 'hi' && r.walk === 'yes',
+  },
+  {
+    code: 'NAV-TABBAR',
+    page: 'Navigation',
+    component: 'Bottom tab bar (under 1024 px): current tab, long Hindi labels, every role, walk',
+    path: (r) => String(r.route),
+    scope: 'nav.fixed',
+    strategy: 'cross',
+    cross: ['width', 'locale'],
+    params: [
+      { name: 'width', values: [320, 390, 480, 768, 1023] },
+      locale,
+      theme,
+      { name: 'auth', values: ['out', 'customer'] },
+      { name: 'route', values: PRIMARY_ROUTES },
+      { name: 'cart', values: ['none', 'many20'] },
+      walk,
+    ],
+    valid: roleRoute,
+    checks: NAV_CHECKS,
+    nav: 'bar',
+    sweep: 4,
+    core: (r) => Number(r.width) === 320 && r.locale === 'hi' && r.walk === 'yes',
+  },
+  {
+    code: 'NAV-ACCOUNT',
+    page: 'Navigation',
+    component: 'Account section bar: current section on each of the nine sections (scrolls on phones)',
+    path: (r) => accountPath(String(r.section)),
+    scope: 'main nav.overflow-x-auto',
+    strategy: 'cross',
+    cross: ['width', 'section'],
+    params: [
+      { name: 'width', values: WIDTHS },
+      { name: 'section', values: ACCOUNT_SECTIONS },
+      theme,
+      locale,
+      { name: 'auth', values: ['customer'] },
+      world2,
+      walk,
+    ],
+    checks: NAV_CHECKS,
+    nav: 'bar',
+    sweep: 6,
+    core: (r) => Number(r.width) === 390 && r.locale === 'hi' && r.section === 'coins',
+  },
+  {
+    code: 'NAV-ADMIN',
+    page: 'Navigation',
+    component:
+      'Admin section bar: current section on each demo section (scrolls on phones, column from 1024 px)',
+    path: (r) => adminPath(String(r.section)),
+    scope: 'main nav.overflow-x-auto',
+    strategy: 'cross',
+    cross: ['width', 'section'],
+    params: [
+      { name: 'width', values: WIDTHS },
+      { name: 'section', values: ADMIN_SECTIONS },
+      theme,
+      locale,
+      { name: 'auth', values: ['admin'] },
+      world2,
+      walk,
+    ],
+    checks: NAV_CHECKS,
+    nav: 'bar',
+    sweep: 6,
+  },
+  {
+    code: 'NAV-CATEGORY',
+    page: 'Navigation',
+    component: 'Shop category chips (scroll row): current chip, every chip applies its filter',
+    path: (r) => String(r.route),
+    scope: 'main nav.overflow-x-auto',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      authOutIn,
+      { name: 'route', values: ['/shop', '/shop?category=batteries', '/shop?category=tyres'] },
+      walk,
+    ],
+    checks: NAV_CHECKS,
+    nav: 'links',
+    sweep: 6,
+  },
+  {
+    code: 'NAV-FOOTER',
+    page: 'Navigation',
+    component: 'Footer links: every link opens its page (help, policies, partners, support)',
+    path: '/',
+    scope: 'footer',
+    strategy: 'pairwise',
+    params: [...env, authOutIn, walk],
+    checks: NAV_CHECKS,
+    nav: 'links',
+    sweep: 4,
+  },
+];
 
 export const COMPONENTS: readonly ComponentDef[] = [
   // ───────────────────────────── Chrome (every page) ─────────────────────────────
@@ -849,62 +993,29 @@ export const COMPONENTS: readonly ComponentDef[] = [
     core: section === 'orders' ? coreAt([1440], (r) => r.world === 'busy') : undefined,
   })),
 
-  // ───────────────────────────── Refunds (2026-11-15, spec 05; real sign-in only) ─────────────────────────────
+  ...NAVIGATION,
+
+  // Seller onboarding and partner management on the admin Partners page (2026-11-13/15): invites, price requests, the
+  // agreement card, then the shop / workshop / mechanic tabs with pause and suspend prompts.
   {
-    code: 'ADM-REFUNDQ',
-    page: 'Admin console (/admin/refunds)',
+    code: 'ADM-PARTNERS-TABS',
+    page: 'Admin console (/admin/partners)',
     component:
-      'Refund queue: view buttons, list rows, detail (approve / decline with reason / pay by hand with UTR), alerts',
-    path: '/admin/refunds',
+      'Partners: invites, price requests, agreement card, shop / workshop / mechanic tabs, pause prompt',
+    path: '/admin/partners',
     scope: 'main',
     strategy: 'pairwise',
     params: [
       ...env,
       { name: 'auth', values: ['admin'] },
       world2,
-      { name: 'view', values: ['waiting', 'overdue', 'in_progress', 'attention', 'closed'] },
-      {
-        name: 'refund',
-        values: [
-          'requested',
-          'requested-own',
-          'overdue',
-          'approved-razorpay',
-          'approved-cod',
-          'processed',
-          'failed',
-          'needs-reconciliation',
-        ],
-      },
+      { name: 'tab', values: ['shop', 'workshop', 'mechanic'] },
       { name: 'form', values: ['clean', 'errors', 'filled'] },
-    ],
-    checks: [...BASE_CHECKS, 'aligned'],
-    align: [{ items: 'main ul > li' }],
-    sweep: 16,
-    note: 'Real sign-in only: no demo screen; fixme until a real-API harness exists.',
-    realApi: true,
-  },
-  {
-    code: 'ORD-REFUNDLINE',
-    page: 'Order page (/orders/{code})',
-    component:
-      'Refund status line under a part: under review, processing, refunded, declined, failed (+ support link)',
-    path: '/orders/MD-RPR-2026-HND301',
-    scope: 'main',
-    strategy: 'pairwise',
-    params: [
-      ...env,
-      { name: 'auth', values: ['customer'] },
-      { name: 'world', values: ['busy'] },
-      {
-        name: 'refund',
-        values: ['under_review', 'processing', 'refunded', 'declined', 'failed', 'two-refunds'],
-      },
       { name: 'stress', values: ['none', 'long-text'] },
     ],
-    sweep: 10,
-    note: 'Real API mode only (the demo order page has no refunds); fixme until a real-API harness exists.',
-    realApi: true,
+    checks: [...BASE_CHECKS, 'aligned'],
+    align: TABLE_ALIGN,
+    sweep: 16,
   },
 ];
 
@@ -959,7 +1070,7 @@ export const STEPPER: ComponentDef = {
  * `COMPONENTS` (they would fail `present`). Each lists the states an API-mode audit must render, in the same
  * vocabulary (width, theme and locale are crossed as for any component) and the navigation that reaches it.
  * `test/state-audit-real-views.test.ts` keeps the component files and the states honest; the runnable matrix
- * needs a seeded API-mode run (queued in docs/questions-for-user.md).
+ * is the API-mode audit (model-api.ts; runbook § 9.7): its rows are API-SHOP-PORTAL, API-ADM-SHOPS, API-ADM-QUEUE.
  */
 export const REAL_MODE_VIEWS = [
   {

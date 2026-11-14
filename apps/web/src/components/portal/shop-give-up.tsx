@@ -53,6 +53,7 @@ export function GiveUpOrder({ order, onChanged }: { order: ShopOrderDto; onChang
     return (
       <button
         type="button"
+        data-track="shop_order_give_up_open"
         onClick={() => {
           setOpen(true);
         }}

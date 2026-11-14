@@ -9,6 +9,7 @@ export default tseslint.config(
       '**/node_modules/**',
       '**/dist/**',
       '**/.next/**',
+      '**/.next-api/**',
       '**/coverage/**',
       '**/drizzle/meta/**',
       'docs/**',

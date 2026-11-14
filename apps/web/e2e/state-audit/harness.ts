@@ -23,6 +23,7 @@ import {
   type Finding,
 } from './geometry.ts';
 import { knownIssueFor } from './known-issues.ts';
+import { navCheck } from './nav-run.ts';
 import { CARTS, COMPARES, PRODUCTS } from './model.ts';
 
 /** Never measured: the map canvas, its controls and pins (dedicated map tests cover them, T10). */
@@ -151,6 +152,12 @@ async function prepare(page: Page, c: AuditCase): Promise<string[]> {
       await page.locator('.assistant-launcher').click();
     }
   }
+  const tab = c.state.tab;
+  if (tab)
+    await scope
+      .locator(`#partners-tab-${tab}`)
+      .click()
+      .catch(() => notes.push(`tab ${tab} not found`));
   const form = c.state.form;
   if (form === 'filled' || form === 'errors') {
     const root = page.locator('main');
@@ -263,7 +270,17 @@ const summarise = (fs: readonly Finding[]) => {
   return [...counts].map(([k, n]) => `${k} ×${String(n)}`).join('; ');
 };
 
-export async function runCase(page: Page, c: AuditCase, info: TestInfo): Promise<void> {
+/**
+ * What the API-mode audit adds to a case (`api-mode/`): the mocked API and session, the extra stored state, and the
+ * page set-up the real-mode screens need. Absent for the demo audit.
+ */
+export interface ApiHooks {
+  install(page: Page, c: AuditCase, now: number): Promise<{ list: string[]; expectsErrors: boolean }>;
+  seed(c: AuditCase, now: number): Record<string, string>;
+  prepare(page: Page, c: AuditCase): Promise<string[]>;
+}
+
+export async function runCase(page: Page, c: AuditCase, info: TestInfo, api?: ApiHooks): Promise<void> {
   const allowKnown = process.env.STATE_AUDIT_KNOWN === 'allow';
   const now = Date.now();
   await page.setViewportSize({ width: c.width, height: c.width < 768 ? 844 : 900 });
@@ -271,6 +288,7 @@ export async function runCase(page: Page, c: AuditCase, info: TestInfo): Promise
   // final state of every transition (T7).
   await page.emulateMedia({ colorScheme: c.theme === 'light' ? 'dark' : 'light', reducedMotion: 'reduce' });
   await page.route(/^https?:\/\/(?!localhost[:/])/, (route) => route.abort());
+  const apiState = api ? await api.install(page, c, now) : null;
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
   page.on('console', (m) => {
@@ -286,13 +304,15 @@ export async function runCase(page: Page, c: AuditCase, info: TestInfo): Promise
       window.localStorage.setItem('mechdost-e2e-seeded', '1');
       for (const [k, v] of Object.entries(seed)) window.localStorage.setItem(k, v);
     },
-    seedFor(c, now),
+    { ...seedFor(c, now), ...api?.seed(c, now) },
   );
 
   const url = localised(c.path, c.locale);
   await page.goto(url);
   await settle(page);
-  const notes = await prepare(page, c);
+  // API screens first open what the case names (a refund, a shop), then the shared form step fills or submits.
+  const notes = api ? await api.prepare(page, c) : [];
+  notes.push(...(await prepare(page, c)));
   if (c.state.stress && c.state.stress !== 'none')
     await page.evaluate(applyStress, { scope: c.scope, stress: c.state.stress, locale: c.locale });
 
@@ -437,8 +457,19 @@ export async function runCase(page: Page, c: AuditCase, info: TestInfo): Promise
       });
   }
 
+  // Last: the walk leaves the page.
+  if (has('nav')) findings.push(...(await navCheck(page, c)));
+
+  for (const p of apiState?.list ?? [])
+    findings.push({ rule: 'api-mock', severity: 'P0', where: 'mock API', detail: p });
+
+  // Error statuses the case asks for make the browser log "Failed to load resource": not a finding.
+  const consoleErrors = apiState?.expectsErrors
+    ? errors.filter((e) => !e.includes('Failed to load resource'))
+    : errors;
   if (has('console'))
-    for (const e of errors) findings.push({ rule: 'console', severity: 'P1', where: 'page', detail: e });
+    for (const e of consoleErrors)
+      findings.push({ rule: 'console', severity: 'P1', where: 'page', detail: e });
 
   // Report.
   const known: Finding[] = [];
