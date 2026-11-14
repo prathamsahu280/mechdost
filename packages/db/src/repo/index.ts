@@ -27,6 +27,7 @@ export * from './routing';
 export * from './shop-orders';
 export * from './customer-orders';
 export * from './catalogue-admin';
+export * from './catalogue-create';
 export * from './shop-inventory';
 export * from './events';
 export * from './settings-admin';

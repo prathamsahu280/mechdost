@@ -39,6 +39,10 @@ export interface ServerEventProps {
   admin_customer_blocked: { customerId: string; level: string; reasonCode: string };
   admin_customer_unblocked: { customerId: string; level: string };
   admin_product_status_changed: { productSlug: string; from: string; to: string };
+  /** A product added by staff, from the admin form or a CSV import (status draft, or live when published). */
+  admin_product_created: { productSlug: string; sku: string; status: string; source: 'form' | 'import' };
+  /** One committed CSV import (dry runs are not counted): rows in the file, products added, SKUs skipped. */
+  admin_catalogue_imported: { rows: number; created: number; skipped: number; status: string };
   admin_content_published: { key: string; locale: 'en' | 'hi'; action: 'published' | 'unpublished' };
   inventory_updated: { shopId: string; sku: string; fields: string[]; by: 'shop' | 'staff' };
   partner_application_submitted: {

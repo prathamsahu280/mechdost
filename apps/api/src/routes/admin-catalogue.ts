@@ -1,23 +1,36 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
+import type { Context } from 'hono';
 import {
+  createProduct,
   getAdminProduct,
   HIGHLIGHT_LEN,
   HIGHLIGHT_MAX,
+  importProducts,
   listAdminProducts,
+  type NewProduct,
   setProductAttributes,
   setProductStatus,
   setProductVehicleTypes,
   setVariantNetQuantity,
   updateProductTexts,
 } from '@mechdost/db/repo';
+import { AdminImportReport, AdminProductCreated, NewProductFields } from '@mechdost/shared/admin-catalogue';
+import {
+  csvImportRows,
+  FIELD_COLUMN,
+  IMPORT_MAX_CSV_CHARS,
+  type ImportRowError,
+} from '@mechdost/shared/catalogue-import';
 import { NET_QTY_MAX, NET_UNITS } from '@mechdost/shared/product-attributes';
+import { can } from '@mechdost/shared/rbac';
 import { PRODUCT_STATES } from '@mechdost/shared/state';
 import { VEHICLE_TYPES } from '@mechdost/shared/vehicles';
 import type { SessionCache } from '../auth/session-cache';
 import { authenticate, requirePermission, requireVerified } from '../middleware/auth';
-import { rateLimit, RATE_RULES } from '../middleware/rate-limit';
+import { enforceRate, rateLimit, RATE_RULES } from '../middleware/rate-limit';
 import type { AppDeps, AppEnv } from '../types';
 import { validationHook } from '../validation';
+import { ApiError, Forbidden } from '../errors';
 import { errorResponses, ErrorSchema } from './schemas';
 
 /**
@@ -265,6 +278,93 @@ const netQuantity = createRoute({
   },
 });
 
+const create = createRoute({
+  method: 'post',
+  path: '/admin/catalogue/products',
+  tags: ['admin'],
+  summary: 'Add a product with its first pack (draft; live only with products:publish and publish=true)',
+  security: [{ bearerAuth: [] }],
+  request: {
+    body: {
+      required: true,
+      content: {
+        'application/json': {
+          schema: NewProductFields.extend({ publish: z.boolean().optional() })
+            .strict()
+            .openapi('AdminNewProduct'),
+        },
+      },
+    },
+  },
+  responses: {
+    201: json(AdminProductCreated.openapi('AdminProductCreated'), 'Created'),
+    409: json(ErrorSchema, 'SKU_TAKEN or SLUG_TAKEN'),
+    422: json(ErrorSchema, 'A catalogue rule failed (code names it; details.errors by field)'),
+    ...errorResponses,
+  },
+});
+
+const importRoute = createRoute({
+  method: 'post',
+  path: '/admin/catalogue/import',
+  tags: ['admin'],
+  summary:
+    'Import products from CSV (docs/runbooks/catalogue-import.md): all rows checked first, one transaction, SKUs already present skipped',
+  security: [{ bearerAuth: [] }],
+  request: {
+    body: {
+      required: true,
+      content: {
+        'application/json': {
+          schema: z
+            .object({
+              csv: z.string().min(1).max(IMPORT_MAX_CSV_CHARS),
+              dryRun: z.boolean().optional(),
+              publish: z.boolean().optional(),
+            })
+            .strict()
+            .openapi('AdminCatalogueImport'),
+        },
+      },
+    },
+  },
+  responses: {
+    200: json(AdminImportReport.openapi('AdminImportReport'), 'Imported (or checked, on a dry run)'),
+    422: json(
+      ErrorSchema,
+      'IMPORT_FILE (details.reason) or IMPORT_ROWS_INVALID (details.errors); nothing written',
+    ),
+    ...errorResponses,
+  },
+});
+
+/** One problem per row and column, named by the CSV column (the same names the runbook and the screen use). */
+function rowIssues(row: number, input: Record<string, unknown>, issues: readonly z.core.$ZodIssue[]) {
+  const out = new Map<string, ImportRowError>();
+  for (const issue of issues) {
+    const key = String(issue.path[0] ?? '');
+    const field = FIELD_COLUMN[key];
+    if (!field || out.has(field)) continue;
+    const code = !(key in input)
+      ? 'REQUIRED'
+      : issue.code === 'too_big' && issue.origin === 'string'
+        ? 'TOO_LONG'
+        : 'INVALID';
+    out.set(field, { row, field, code });
+  }
+  return [...out.values()];
+}
+
+/** Publishing on create needs `products:publish` too (the same rule as the status route). */
+function mayPublish(c: Context<AppEnv>, publish: boolean | undefined): boolean {
+  if (publish !== true) return false;
+  const auth = c.get('auth');
+  if (can(auth.grants, 'products:publish')) return true;
+  if (can(auth.staffWithheld, 'products:publish'))
+    throw Forbidden('STAFF_2FA_REQUIRED', 'Sign in with your password and the code sent to your phone');
+  throw Forbidden();
+}
+
 export function adminCatalogueRoutes(deps: AppDeps, cache: SessionCache) {
   const app = new OpenAPIHono<AppEnv>({ defaultHook: validationHook });
   const prefix = '/admin/catalogue/*'; // one pattern per prefix (L54)
@@ -276,8 +376,47 @@ export function adminCatalogueRoutes(deps: AppDeps, cache: SessionCache) {
   app.use(prefix, requireVerified);
   app.use(prefix, requirePermission('products:write'));
   app.on('POST', '/admin/catalogue/products/:slug/status', requirePermission('products:publish'));
+  app.on('POST', '/admin/catalogue/import', requirePermission('products:import'));
 
   return app
+    .openapi(create, async (c) => {
+      const { publish, ...product } = c.req.valid('json');
+      const r = await createProduct(deps.db, {
+        product,
+        publish: mayPublish(c, publish),
+        staffUserId: c.get('auth').user.id,
+      });
+      return c.json(r, 201);
+    })
+    .openapi(importRoute, async (c) => {
+      const body = c.req.valid('json');
+      const userId = c.get('auth').user.id;
+      const publish = mayPublish(c, body.publish);
+      await enforceRate(c, deps.rateLimiter, RATE_RULES.catalogueImport, userId);
+      const file = csvImportRows(body.csv);
+      if (!file.ok)
+        throw new ApiError(422, 'IMPORT_FILE', 'The file could not be read', {
+          reason: file.code,
+          ...(file.code === 'HEADER' ? { missing: file.missing, unknown: file.unknown } : {}),
+        });
+      const rows: { row: number; input: NewProduct }[] = [];
+      const invalid: ImportRowError[] = [];
+      for (const r of file.rows) {
+        const parsed = NewProductFields.safeParse(r.input);
+        const issues = parsed.success ? [] : rowIssues(r.row, r.input, parsed.error.issues);
+        const cellFields = new Set(r.errors.map((e) => e.field));
+        invalid.push(...r.errors, ...issues.filter((i) => !cellFields.has(i.field)));
+        if (parsed.success && r.errors.length === 0) rows.push({ row: r.row, input: parsed.data });
+      }
+      const report = await importProducts(deps.db, {
+        rows,
+        invalid,
+        dryRun: body.dryRun === true,
+        publish,
+        staffUserId: userId,
+      });
+      return c.json(report, 200);
+    })
     .openapi(list, async (c) => {
       const q = c.req.valid('query');
       const page = await listAdminProducts(deps.db, {
