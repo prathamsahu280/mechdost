@@ -116,7 +116,7 @@ Staff with `products:write` set a product's typed attributes (`PUT /v1/admin/cat
 
 ## Order rules (2026-11-13)
 
-Admin → Settings → **Order rules**: "Customers may cancel their own order until the shop confirms it" (`orders.customer_self_cancel`, off by default, Q25). Spec 05.
+Admin → Settings → **Order rules**: "Customers may cancel their own order until the shop confirms it", one switch for cash on delivery (`orders.customer_self_cancel_cod`) and one for online-paid orders (`orders.customer_self_cancel_online`). Both off by default (Q25; split 2026-11-14). The browser demo keeps one switch for both. Spec 05.
 
 ## Partner pauses end by themselves (2026-11-13, Q28)
 

@@ -487,8 +487,13 @@ export async function placeOrder(
       });
 
     await setActor(tx, { type: 'customer', userId: input.userId });
-    // Snapshot of the cancel rule (Q25): customers cancel until confirmed only when the admin allows it.
-    const cancellableUntilStatus = (await flagSetting(tx, cityId, 'orders.customer_self_cancel'))
+    // Snapshot of the cancel rule (Q25): customers cancel until confirmed only when the admin allows it, set
+    // separately for online-paid and cash-on-delivery orders (user 2026-11-14).
+    const cancellableUntilStatus = (await flagSetting(
+      tx,
+      cityId,
+      online ? 'orders.customer_self_cancel_online' : 'orders.customer_self_cancel_cod',
+    ))
       ? 'confirmed'
       : 'none';
     const group = await insertGroup(tx, {
