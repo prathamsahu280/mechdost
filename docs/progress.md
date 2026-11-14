@@ -11,10 +11,13 @@ This file is the single source of truth for **where the build is right now**. It
     - the UI state-audit harness (1,731-item checklist `docs/qa/ui-state-checklist.md`, nightly 02:00 IST on GitHub);
     - the compare redesign (checkbox style; geometry specs);
     - the email-verification setting (off), price RBAC (super admin and catalogue manager), self-cancel split.
+    - shop management and hours (0051, applied live 2026-11-15 00:55; RLS on all 89 tables; RBAC synced).
+  - **CI incident 2026-11-15:** 566055e failed the shell sweep (compare checkbox 20px < 24px), so compare + coins did not deploy; fixed in ea909f3 (`size-6`, learning T70), deploy re-running.
+  - **Agents:** from 2026-11-15 subagents run on Sonnet (user); the main session reads their diffs, traces claims and runs the gate itself before merging.
   - **Queue:**
-    1. Shop management (0051): agent merging main.
-    2. Analytics (0052): re-stamp at merge.
-    3. Monitoring (0053): second privacy fix in progress.
+    1. Analytics (0052): re-stamp at merge (next).
+    2. Monitoring (0053): privacy fixes done (73fda32, 35258e7); merge after analytics.
+    3. Feature gap list (specs vs real API) being compiled for the user.
   - **Overnight (user):** browser suites and the state audit run on GitHub, not on this PC. In the morning, triage the checklist `[!]` items and fix test-first.
   - **Waiting on the user:**
     - Razorpay live keys;
