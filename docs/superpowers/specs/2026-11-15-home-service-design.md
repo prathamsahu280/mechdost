@@ -61,3 +61,18 @@ and move lift jobs to the workshop; the complaints are surprise charges and not 
 Migration shape (columns vs a `workshop_home_settings` table), how the code is stored (hashed like the delivery code),
 listing query plan (index on location already exists), whether the fee range is per city or global (spec 15 says per
 city if cheap).
+
+## Builder check (2026-11-15): coordinator calls
+
+- **The move proposal is a side record, not a new state:** `service_moves` (request_id, reason_code, transport
+  `customer_drops|workshop_picks_up`, status `proposed|accepted|declined`, decided_at). It is allowed while the request
+  is `vehicle_received` or `estimate_sent`. Accept switches `service_mode` to `workshop` (event logged; the status stays,
+  and the workshop then sends or revises the estimate). Decline moves the request `vehicle_received` → `estimate_sent`
+  with a zero-line estimate → `no_work_approved` → `billed` (visit fee only). Add the edge `vehicle_received →
+no_work_approved` (actor workshop, only through the decline path) only if that is simpler, and record it in spec 06.
+- **Odometer:** entered with the arrival code. The existing CHECK requires it after `confirmed`.
+- **Visit fee GST:** it follows the workshop's GST registration like any other bill line (`service_bills` rules; the
+  `service_bills_unregistered_no_gst` CHECK stays). It is snapshotted on the request at "confirmed". Cancelled before
+  arrival: no fee. Declined after arrival: a bill with the visit fee only, unless waived.
+- **Pickup:** `pickup_requested` is allowed only in `workshop` mode (CHECK). Home mode means no pickup.
+- `addresses.location` exists (geography point). Home booking requires a pinned address.

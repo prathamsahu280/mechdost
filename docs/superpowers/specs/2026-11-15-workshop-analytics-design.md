@@ -57,3 +57,13 @@ For a range (≤ 180 days) and city (admin) or the workshop (portal):
 
 Query shapes, whether to split the dashboard response into tabs (lazy per tab), median computation (`percentile_cont`),
 chart choices.
+
+## Builder check (2026-11-15): coordinator calls
+
+- **Portal permission:** workshop owner only. No new permission; staff do not see money figures.
+- **Comeback rate:** uses `service_requests.vehicle_id` when set, else `vehicle_key`, plus the same user and the same
+  workshop. Label it "Returned within 30 days".
+- **Line history:** "lines sent vs approved" uses the latest estimate version's lines and their decisions. Revision
+  history counts only where `service_events` already records it; no new history table.
+- **Build order:** the "by mode" and "photos attached" metrics appear only once the home-service and photos migrations
+  exist. Build analytics after them, or hide those two tiles when the columns are absent.

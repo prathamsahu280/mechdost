@@ -70,3 +70,11 @@ Staff: no emails (bell + push only).
 
 Layout HTML (table-based, inline styles, dark-mode-safe, brand tokens), template registry shape, preview sample data,
 where each outbox write lives (inside the repos that change state), test fixtures.
+
+## Builder check (2026-11-15): coordinator calls
+
+- `notification_templates` has only subject and body. **Call:** add nullable `heading` and `button_label` columns
+  (migration), and extend `repo/notification-admin.ts` rather than replace it.
+- Milestones without an event writer yet (e.g. `coins_expiring`, `quote_expiring` if no job exists): **call:** build the
+  email for every milestone whose state change exists today. For a missing scheduler, add it only if it is one small
+  pg-boss job; otherwise list it in the spec's "Not built" section. No new state machines.

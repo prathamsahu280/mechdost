@@ -55,3 +55,15 @@ capture`), thumbnails with remove, progress and errors in en + hi; customer requ
 
 Whether the image is served through an API proxy (simplest with `next/image`) or signed URLs; HEIC handling; how the
 bucket is created (migration note + runbook step if the Storage API needs the dashboard); exact error codes.
+
+## Builder check (2026-11-15): coordinator calls
+
+- **Upload window:** from `confirmed` through `in_progress`. "Before" photos can be added at `confirmed`, and the
+  `vehicle_received` gate checks for them. "After" photos from `in_progress`; the `ready` gate checks for them.
+- **sharp in the API:** add `sharp` (≥ 0.35.4, release-age policy) to apps/api, check the API Docker image builds
+  (CI images job), and allow its build script in `pnpm-workspace.yaml` (already listed). HEIC: accept only if the
+  bundled libvips decodes it (test); otherwise refuse with "Please upload JPG or PNG".
+- **Storage:** a small Supabase Storage client in the API over REST (`SUPABASE_URL` + `SUPABASE_SECRET_KEY`, both in
+  `.env.example`), with no new SDK unless the official one is lighter. The bucket `service-photos` (private) is created
+  by an idempotent startup or one-off script plus a runbook step. Images reach the browser through an API image
+  endpoint that checks rights and streams the WebP (works with `next/image` and a custom loader). No signed URLs leak.

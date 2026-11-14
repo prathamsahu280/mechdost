@@ -66,3 +66,16 @@ Safari the card explains "Add to Home Screen" first. A browser "denied" is shown
 Service worker registration path and scope (serwist-pwa skill if a PWA worker is added; otherwise a plain worker at
 `/firebase-messaging-sw.js` served with the public Firebase config), foreground message handling (toast + bell refresh),
 how the bell lazy-loads, exact retry/backoff (reuse the dispatcher).
+
+## Builder check (2026-11-15): coordinator calls
+
+- **In-app and push text:** code defaults in the locale files (`notify.*` namespace) with admin overrides through
+  `notification_templates` channels `inapp` / `push`, in the same editor as the emails (rule 8). Rendered at write time
+  in the recipient's language.
+- **`notifications` migration:** add `category` (default `transactional`), `kind`, `entity_type`, `entity_id`, all
+  nullable or defaulted for old rows. Preference categories map like this: `transactional` (order, service, quote,
+  support and refund milestones), `promotional` (offers), `reminders` (offer-expiry and service reminders),
+  `price_alerts` (not used yet).
+- **Schedulers:** the 5-minute offer-expiry reminder and the refund-SLA alert are small pg-boss jobs in the existing
+  worker. Build them if each is under one job and one repo query; otherwise list them as "Not built".
+- **Retention:** a daily worker job deletes in-app rows older than 90 days (setting `notifications.retention_days`).

@@ -61,3 +61,19 @@ genuine parts", "Only original parts"), backed by a seller clause, and a configu
 
 Where the content override is stored (existing content blocks table vs settings), the admin editor layout, Hindi
 wording (natural, reviewed), how the brand name is resolved for the product line.
+
+## Builder check (2026-11-15): coordinator calls
+
+- **Truthful claims only (advisor + CCPA):**
+  - "GST bill on every order" becomes "**Bill with every order**". "GST bill" appears only where the seller or workshop
+    is GST-registered (the product line shows "GST bill" only for registered shops; invoicing is open, Q97/Q41).
+  - "sealed pack" is dropped from the default product line (not verifiable per item): "Genuine {brand} part from a
+    verified shop".
+  - The strong tone ("100% genuine parts", "Only original parts") stays on the home strip and checkout as the user
+    chose, admin-editable, backed by the seller clause (Q102).
+- **Labour promise on bills:** the days are snapshotted on the bill at billing.
+- **"Redo under promise":** a new ticket kind code in the spec 09 enum (plus a migration if a CHECK lists the kinds).
+- **Storage:** trust-line overrides live in the existing content module if it has a key/value per locale; otherwise in
+  `settings` as `content.trust.<placement>.<locale>`.
+- **`counterfeit_confirmed`:** added to `PARTNER_STANDING_REASONS`, any DB CHECK and the label lists, with en + hi
+  labels.
