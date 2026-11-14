@@ -15,6 +15,10 @@ import {
   expireDueCoins,
   releaseDueCoinRewards,
   expireQuotes,
+  globalIntSetting,
+  purgeOldNotices,
+  queueOfferExpiryReminders,
+  queueRefundOverdueAlerts,
   queueQuoteExpiringEmails,
   readForwardableEvents,
   resumeEndedPauses,
@@ -27,6 +31,7 @@ import { ConfigError, loadConfig } from './config';
 import { pollingPublisher, type LivePublisher } from './live/publisher';
 import { startDispatcher, type ChannelAdapter } from './notify/dispatcher';
 import { createEmailAdapter } from './notify/email';
+import { createFirebaseTransport, createPushAdapter } from './notify/push';
 import { createWhatsAppAdapter } from './notify/whatsapp';
 import { startRelay } from './live/relay';
 import { createRtdbPublisher } from './live/rtdb';
@@ -62,6 +67,20 @@ const adapters: ChannelAdapter[] = [
   ...(config.email
     ? [createEmailAdapter(config.email, { loadOverride: (key, locale) => emailOverrideFor(db, key, locale) })]
     : []),
+  // Web push through Firebase Cloud Messaging (spec 10, 2026-11-15): only with the real Firebase project (the
+  // emulator and demo projects have no messaging). Tokens only exist once the VAPID key is set (Q103).
+  ...(config.usingAuthEmulator || config.firebaseProjectId.startsWith('demo-')
+    ? []
+    : [
+        createPushAdapter({
+          db,
+          webBaseUrl: config.webBaseUrl,
+          transport: createFirebaseTransport({
+            projectId: config.firebaseProjectId,
+            keyFile: config.firebaseKeyFile,
+          }),
+        }),
+      ]),
 ];
 // Encrypted payload fields (delivery codes, invite tokens) need the data keyring; a channel without it must not start.
 let keyring: Keyring | null = null;
@@ -263,6 +282,60 @@ const quoteTimer = setInterval(() => {
 }, 300_000);
 quoteTimer.unref();
 
+// Bell and push (spec 10, design 2026-11-15). Each body catches its own errors (L141): a throw in an interval would
+// become an unhandled rejection and stop the worker.
+// 1) A shop is reminded `notifications.offer_expiry_reminder_min` minutes before an order offer expires (every 60 s;
+//    one notice per offer and person, so repeated runs and several workers write nothing twice).
+let reminding = false;
+const reminderTimer = setInterval(() => {
+  if (reminding) return;
+  reminding = true;
+  void (async () => {
+    const minutes = await globalIntSetting(db, 'notifications.offer_expiry_reminder_min');
+    const sent = await queueOfferExpiryReminders(db, minutes);
+    if (sent > 0) log('info', 'offer_reminders_queued', { count: sent });
+  })()
+    .catch((err: unknown) => {
+      log('error', 'offer_reminders_failed', safeError(err));
+    })
+    .finally(() => {
+      reminding = false;
+    });
+}, 60_000);
+reminderTimer.unref();
+// 2) Refund requests past `refunds.approval_sla_hours` alert the finance staff once each (hourly).
+let alertingRefunds = false;
+const noticeHourlyTimer = setInterval(() => {
+  if (alertingRefunds) return;
+  alertingRefunds = true;
+  void (async () => {
+    const hours = await globalIntSetting(db, 'refunds.approval_sla_hours');
+    const sent = await queueRefundOverdueAlerts(db, hours);
+    if (sent > 0) log('info', 'refund_overdue_alerts_queued', { count: sent });
+  })()
+    .catch((err: unknown) => {
+      log('error', 'refund_overdue_alerts_failed', safeError(err));
+    })
+    .finally(() => {
+      alertingRefunds = false;
+    });
+}, 3_600_000);
+noticeHourlyTimer.unref();
+// 3) Retention: bell rows older than `notifications.retention_days` are deleted (every 24 h, and once at start).
+const purgeNotices = () => {
+  void globalIntSetting(db, 'notifications.retention_days')
+    .then((days) => purgeOldNotices(db, days))
+    .then((n) => {
+      if (n > 0) log('info', 'notifications_purged', { count: n });
+    })
+    .catch((err: unknown) => {
+      log('error', 'notifications_purge_failed', safeError(err));
+    });
+};
+purgeNotices();
+const retentionTimer = setInterval(purgeNotices, 24 * 3_600_000);
+retentionTimer.unref();
+
 // Event store partitions (spec 12): this month + 3 ahead, checked at start and every 12 h (idempotent).
 const partitions = () => {
   void ensureEventPartitions(db)
@@ -320,6 +393,9 @@ function shutdown(signal: string) {
   clearInterval(coinTimer);
   clearInterval(quoteTimer);
   clearInterval(partitionTimer);
+  clearInterval(reminderTimer);
+  clearInterval(noticeHourlyTimer);
+  clearInterval(retentionTimer);
   void Promise.all([relay.stop(), dispatcher.stop(), posthog?.stop()])
     .then(() => Promise.all([sql.end({ timeout: 5 }), listener?.end(), sentry.flush()]))
     .finally(() => process.exit(0));

@@ -61,6 +61,17 @@ export const OPERATIONAL_SETTINGS = {
    * 2026-11-15: every refund needs approval, so a waiting customer must not be forgotten).
    */
   'refunds.approval_sla_hours': { kind: 'int', min: 1, max: 720, default: 24 },
+  /*
+   * Notifications (spec 10, design 2026-11-15 bell and push). Site-wide: a person's bell does not depend on a city.
+   */
+  /** In-app notifications older than this many days are deleted by the daily retention job. */
+  'notifications.retention_days': { kind: 'int', min: 7, max: 365, default: 90, globalOnly: true },
+  /** "Not now" on the push prompt hides it for this many days. */
+  'notifications.push_prompt_snooze_days': { kind: 'int', min: 1, max: 90, default: 14, globalOnly: true },
+  /** Promotional notifications a person may get per week (needs their marketing consent too). */
+  'notifications.promo_per_week': { kind: 'int', min: 0, max: 14, default: 2, globalOnly: true },
+  /** A shop is reminded this many minutes before an order offer expires; 0 turns the reminder off. */
+  'notifications.offer_expiry_reminder_min': { kind: 'int', min: 0, max: 60, default: 5, globalOnly: true },
   /** Smallest bulk quote, in units across all its products (spec 19, Q20 default 10). */
   'quotes.min_units': { kind: 'int', min: 2, max: 500, default: 10 },
   /**

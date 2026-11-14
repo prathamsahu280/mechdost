@@ -13,6 +13,7 @@ import {
   users,
 } from '../schema';
 import { queueTicketEmail } from './email-events';
+import { queueStaffNotice } from './notices';
 import { ConflictError, NotFoundError, ValidationError } from './errors';
 import { notificationChannelEnabled } from './notification-admin';
 import { enqueueNotification } from './notify';
@@ -212,6 +213,14 @@ export async function createSupportTicket(
       version: 1,
       userId: input.userId,
       ticketCode: ticket.code,
+    });
+    // Support staff of the order's city (or all-city staff when there is no order) see it in their bell.
+    await queueStaffNotice(tx, {
+      kind: 'staff.new_ticket',
+      cityId,
+      entityId: ticket.id,
+      version: 1,
+      params: { ticketCode: ticket.code },
     });
     return { code: ticket.code };
   });

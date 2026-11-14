@@ -141,6 +141,11 @@ export interface ServerEventProps {
   email_sent: { template: string; locale: 'en' | 'hi' };
   /** A send that ended failed (permanent error or retries used up); `code` is the provider error code. */
   email_failed: { template: string; code: string };
+  /** Web push (spec 10): the notice kind sent, or the provider's error code; never a token or the text. */
+  push_sent: { kind: string };
+  push_failed: { code: string };
+  /** The person turned promotions on or off (marketing consent, DPDP). */
+  marketing_consent_changed: { granted: boolean; noticeVersion: string };
   coins_adjusted: { customerId: string; delta: number; reasonCode: string };
   /** Bulk quotes (spec 19): codes, counts, versions and paise only — never message text. */
   quote_requested: { quoteCode: string; lines: number; units: number; listTotalPaise: number | null };
@@ -309,6 +314,15 @@ export const CLIENT_EVENT_SCHEMAS = {
   admin_notifications_change: z
     .object({ target: id, action: z.enum(['saved', 'enabled', 'disabled', 'budget', 'reset', 'test_sent']) })
     .strict(),
+  // The bell and web push (design 2026-11-15, spec 10/12): kinds and codes only, never a token or the message text.
+  bell_opened: z.object({ unread: z.number().int().min(0).max(100) }).strict(),
+  notification_opened: z
+    .object({ kind: id.nullable(), channel: z.enum(['bell', 'centre', 'push']) })
+    .strict(),
+  push_prompt_shown: z.object({ variant: z.enum(['normal', 'ios', 'denied']) }).strict(),
+  push_prompt_answered: z.object({ answer: z.enum(['turn_on', 'not_now', 'ios_done']) }).strict(),
+  push_enabled: z.object({ source: z.enum(['card', 'settings']) }).strict(),
+  push_disabled: z.object({ source: z.enum(['settings', 'sign_out']) }).strict(),
   // Service-area PIN codes (spec 15): what was done and, when switched off, the reason code. Never the area text.
   admin_pincode_change: z
     .object({ action: z.enum(['added', 'edited', 'deactivated', 'activated']), reasonCode: id.optional() })

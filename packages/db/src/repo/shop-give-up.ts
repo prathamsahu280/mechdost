@@ -8,6 +8,7 @@ import { auditLog, orderAssignments, orders } from '../schema';
 import { ConflictError, NotFoundError, ValidationError } from './errors';
 import { recordServerEvent } from './events';
 import { restoreCommittedStock } from './inventory';
+import { queueStaffOrderNotice } from './notice-events';
 import { lockOrder, transitionOrder, type Tx } from './orders';
 import { numOrNull, rowsOf } from './sql-rows';
 
@@ -107,21 +108,30 @@ export async function giveUpShopOrder(
       shopId,
       cityId: o.cityId,
       reasonCode: input.reasonCode,
+      version: row.version,
     });
     return { status: row.status, version: row.version };
   });
 }
 
 /**
- * Staff hook for "a shop gave an order up" (spec 04, 10). Today staff are told by the live pings the order and
- * assignment triggers already write in this same transaction (migration 0014: city staff refetch the routing queue,
- * where the order waits in "needs routing" with the reason) and by that queue itself. The push / email channels
- * (being built separately) plug in here: enqueue one `notification_outbox` row per ops_manager / city_manager of
- * `cityId` with dedupe key `shop-gave-up:{orderId}:{assignmentVersion}`; ids and codes only, no customer details.
+ * Staff hook for "a shop gave an order up" (spec 04, 10). Staff who can route orders in the city get a bell notice
+ * (and a push where they turned it on), in the same transaction as the give-up; the live pings the order and
+ * assignment triggers write keep the routing queue fresh. The order code only: no customer or reason text.
  */
 export async function notifyStaffShopGaveUp(
-  _tx: Tx,
-  _info: { orderId: string; shopId: string; cityId: string; reasonCode: AssignmentGiveUpReason },
+  tx: Tx,
+  info: {
+    orderId: string;
+    shopId: string;
+    cityId: string;
+    reasonCode: AssignmentGiveUpReason;
+    version: number;
+  },
 ): Promise<void> {
-  await Promise.resolve();
+  await queueStaffOrderNotice(tx, {
+    kind: 'staff.shop_gave_up',
+    orderId: info.orderId,
+    version: info.version,
+  });
 }

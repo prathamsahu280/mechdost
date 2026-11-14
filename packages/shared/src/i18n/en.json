@@ -2693,6 +2693,10 @@
     "api_set_quotes_min_units": "Smallest bulk quote (units in total)",
     "api_set_quotes_cod_cap_paise": "Largest bulk quote paid cash on delivery",
     "api_set_refunds_approval_sla_hours": "Hours a refund may wait for approval before it is marked overdue",
+    "api_set_notifications_retention_days": "Days the notification bell keeps messages",
+    "api_set_notifications_push_prompt_snooze_days": "Days \"Not now\" hides the push notification card",
+    "api_set_notifications_promo_per_week": "Promotional notifications per person per week",
+    "api_set_notifications_offer_expiry_reminder_min": "Minutes before an order offer expires that the shop is reminded (0 = off)",
     "api_set_catalogue_require_hindi_to_publish": "Products go live only with complete Hindi texts",
     "api_set_customers_require_verified_email": "Customers must verify their email (not only their phone) before ordering, booking or reviewing",
     "api_set_support_customer_messages_per_ticket_per_day": "Customer messages per request each day",
@@ -3319,6 +3323,156 @@
     "tpl_application_rejected": "Seller application not approved",
     "tpl_shop_order_routed": "New order for a shop",
     "tpl_partner_warning_issued": "Note to a partner"
+  },
+  "notify": {
+    "order_placed": {
+      "title": "Order placed",
+      "body": "{orderCode} is placed. We are finding a seller near you."
+    },
+    "order_confirmed": {
+      "title": "Order confirmed",
+      "body": "A seller confirmed {orderCode}. It will be shipped soon."
+    },
+    "order_out_for_delivery": {
+      "title": "Out for delivery",
+      "body": "{orderCode} is on its way. Keep your delivery code ready."
+    },
+    "order_delivered": {
+      "title": "Order delivered",
+      "body": "{orderCode} was delivered. Tell us how it went."
+    },
+    "order_cancelled": { "title": "Order cancelled", "body": "{orderCode} was cancelled." },
+    "order_rejected": {
+      "title": "Order could not be fulfilled",
+      "body": "No seller could fulfil {orderCode}. Open it to see what happens next."
+    },
+    "payment_received": { "title": "Payment received", "body": "We received your payment for {orderCode}." },
+    "refund_requested": { "title": "Refund started", "body": "We started a refund for {orderCode}." },
+    "refund_processed": {
+      "title": "Refund sent",
+      "body": "Your refund for {orderCode} was sent to your original payment method."
+    },
+    "refund_failed": {
+      "title": "Refund needs attention",
+      "body": "We could not complete the refund for {orderCode}. Our team will help."
+    },
+    "refund_declined": {
+      "title": "Refund update",
+      "body": "We could not approve the refund for {orderCode}. Open support for details."
+    },
+    "service_received": {
+      "title": "Request received",
+      "body": "{requestCode}: we are finding a workshop near you."
+    },
+    "service_proposed": {
+      "title": "A workshop proposed a slot",
+      "body": "{workshopName} proposed a time and cost for {requestCode}."
+    },
+    "service_confirmed": { "title": "Booking confirmed", "body": "{workshopName} confirmed {requestCode}." },
+    "service_estimate_ready": {
+      "title": "Estimate ready",
+      "body": "Review and approve the estimate for {requestCode}."
+    },
+    "service_ready": {
+      "title": "Vehicle ready",
+      "body": "Your vehicle is ready at {workshopName} ({requestCode})."
+    },
+    "service_bill_ready": { "title": "Bill ready", "body": "The bill for {requestCode} is ready." },
+    "service_completed": {
+      "title": "Service completed",
+      "body": "{requestCode} is complete. Tell us how it went."
+    },
+    "quote_offer": { "title": "Quote ready", "body": "You have an offer for {quoteCode}." },
+    "quote_expiring": {
+      "title": "Quote expires soon",
+      "body": "The offer for {quoteCode} is about to expire."
+    },
+    "ticket_received": { "title": "Request received", "body": "We got your request {ticketCode}." },
+    "ticket_reply": { "title": "New reply from support", "body": "There is a reply on {ticketCode}." },
+    "ticket_resolved": { "title": "Request resolved", "body": "{ticketCode} is resolved." },
+    "shop_order_routed": {
+      "title": "New order to accept",
+      "body": "Order {orderCode} is waiting. Accept within {minutes} minutes."
+    },
+    "shop_offer_expiring": {
+      "title": "Offer about to expire",
+      "body": "Order {orderCode} expires in about {minutes} minutes."
+    },
+    "partner_warning": {
+      "title": "Notice about your shop",
+      "body": "A warning was added to your shop. Open the portal to read it."
+    },
+    "staff_order_needs_routing": {
+      "title": "Order needs a shop",
+      "body": "Order {orderCode} needs routing."
+    },
+    "staff_shop_declined": {
+      "title": "A shop declined",
+      "body": "A shop declined {orderCode}. Choose another shop or reject."
+    },
+    "staff_shop_timed_out": {
+      "title": "A shop did not respond",
+      "body": "A shop did not answer on {orderCode}. Choose another shop or reject."
+    },
+    "staff_shop_gave_up": {
+      "title": "A shop gave an order back",
+      "body": "A shop gave back {orderCode}. Choose another shop or reject."
+    },
+    "staff_refund_overdue": {
+      "title": "Refund waiting",
+      "body": "A refund for {orderCode} has waited past its time limit."
+    },
+    "staff_new_application": {
+      "title": "New partner application",
+      "body": "A new partner application is waiting for review."
+    },
+    "staff_new_ticket": { "title": "New support request", "body": "{ticketCode} needs a first reply." }
+  },
+  "bell": {
+    "label": "Notifications",
+    "labelUnread": "Notifications, {count} unread",
+    "live": "{count, plural, one {# new notification} other {# new notifications}}",
+    "more": "99+",
+    "seeAll": "See all notifications",
+    "markAllRead": "Mark all as read",
+    "loading": "Loading…",
+    "loadError": "Could not load notifications.",
+    "retry": "Try again",
+    "unread": "New",
+    "loadMore": "Show older",
+    "emptyTitle": "You are all caught up",
+    "emptyBody": "New updates about your orders and bookings appear here.",
+    "emptyActionShop": "Browse products",
+    "emptyActionPortal": "Back to your portal",
+    "centreTitle": "Notifications",
+    "centreIntro": "Everything we have told you, newest first.",
+    "close": "Close",
+    "promptTitle": "Get order and booking updates on this device",
+    "promptTitlePartner": "Get new orders and requests on this device",
+    "promptBody": "We send a short message when something needs you. No offers unless you ask.",
+    "turnOn": "Turn on",
+    "notNow": "Not now",
+    "working": "Turning on…",
+    "iosTitle": "Add MechDost to your Home Screen first",
+    "iosBody": "On iPhone, notifications work only from the Home Screen. Tap the Share button, choose Add to Home Screen, then open MechDost from there.",
+    "iosDone": "Got it",
+    "deniedTitle": "Notifications are blocked in this browser",
+    "deniedBody": "Open this site’s settings in your browser, set Notifications to Allow, then come back here.",
+    "unsupported": "This browser can’t show notifications.",
+    "failed": "Could not turn on notifications. Try again.",
+    "deviceOn": "Notifications are on for this device.",
+    "turnOff": "Turn off on this device",
+    "deviceOff": "Notifications are off for this device.",
+    "deviceHeading": "This device",
+    "prefsTitle": "Notifications",
+    "prefsIntro": "Updates always appear in the bell. Choose what also reaches this device.",
+    "prefsTransactional": "Order, booking and support updates",
+    "prefsTransactionalHelp": "A short message when something changes.",
+    "prefsPromo": "Offers and promotions",
+    "prefsPromoHelp": "Only if you agree. At most two a week. You can change this any time.",
+    "prefsSaved": "Saved.",
+    "prefsError": "Could not save. Try again.",
+    "newUpdate": "New update: {title}"
   },
   "gstStates": {
     "01": "Jammu and Kashmir",

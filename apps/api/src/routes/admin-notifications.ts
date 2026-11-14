@@ -5,7 +5,10 @@ import {
   WHATSAPP_BUDGET_KEY,
   getGlobalSetting,
   listEmailTemplates,
+  listNoticeTemplates,
   listNotificationTemplates,
+  resetNoticeTemplate,
+  saveNoticeTemplate,
   putGlobalSetting,
   queueEmailTest,
   resetEmailTemplate,
@@ -13,6 +16,12 @@ import {
   saveNotificationTemplate,
   whatsAppUsage,
 } from '@mechdost/db/repo';
+import {
+  NoticeTemplateListDto,
+  NoticeTemplateResetDto,
+  NoticeTemplateSaveDto,
+} from '@mechdost/shared/notice-api';
+import { NOTICE_CATALOGUE, defaultNoticeCopy, noticeKinds } from '@mechdost/shared/notice-catalogue';
 import { istParts, istStartOfDay } from '@mechdost/shared/time';
 import { WHATSAPP_TEMPLATES } from '@mechdost/shared/whatsapp';
 import type { SessionCache } from '../auth/session-cache';
@@ -261,6 +270,53 @@ const testEmail = createRoute({
   },
 });
 
+const listNotices = createRoute({
+  method: 'get',
+  path: '/admin/notifications/notices',
+  tags: ['admin'],
+  summary: 'Bell and push messages: the catalogue with default text, and saved text overrides',
+  security: [{ bearerAuth: [] }],
+  responses: {
+    200: { description: 'Messages', content: { 'application/json': { schema: NoticeTemplateListDto } } },
+    ...errorResponses,
+  },
+});
+
+const saveNotice = createRoute({
+  method: 'put',
+  path: '/admin/notifications/notices',
+  tags: ['admin'],
+  summary: 'Save the title and body of a bell or push message in one language, and its on/off switch',
+  security: [{ bearerAuth: [] }],
+  request: { body: { required: true, content: { 'application/json': { schema: NoticeTemplateSaveDto } } } },
+  responses: {
+    200: {
+      description: 'Saved',
+      content: { 'application/json': { schema: z.object({ version: z.number().int() }) } },
+    },
+    409: { description: 'Stale version', content: { 'application/json': { schema: ErrorSchema } } },
+    422: { description: 'Text not allowed', content: { 'application/json': { schema: ErrorSchema } } },
+    ...errorResponses,
+  },
+});
+
+const resetNotice = createRoute({
+  method: 'post',
+  path: '/admin/notifications/notices/reset',
+  tags: ['admin'],
+  summary: 'Back to the default text of a bell or push message in one language',
+  security: [{ bearerAuth: [] }],
+  request: { body: { required: true, content: { 'application/json': { schema: NoticeTemplateResetDto } } } },
+  responses: {
+    200: {
+      description: 'Reset',
+      content: { 'application/json': { schema: z.object({ ok: z.literal(true) }) } },
+    },
+    409: { description: 'Stale version', content: { 'application/json': { schema: ErrorSchema } } },
+    ...errorResponses,
+  },
+});
+
 function monthStartIst(now: Date): Date {
   const { year, month } = istParts(now);
   return istStartOfDay(`${String(year)}-${String(month).padStart(2, '0')}-01`);
@@ -355,6 +411,45 @@ export function adminNotificationRoutes(deps: AppDeps, cache: SessionCache) {
       await queueEmailTest(deps.db, {
         key: body.key,
         locale: body.locale,
+        staffUserId: c.get('auth').user.id,
+      });
+      return c.json({ ok: true as const }, 200);
+    })
+    .openapi(listNotices, async (c) => {
+      const templates = await listNoticeTemplates(deps.db);
+      const catalogue = noticeKinds().map((key) => ({
+        key,
+        audience: NOTICE_CATALOGUE[key].audience,
+        category: NOTICE_CATALOGUE[key].category,
+        placeholders: [...NOTICE_CATALOGUE[key].text],
+        defaults: { en: defaultNoticeCopy(key, 'en'), hi: defaultNoticeCopy(key, 'hi') },
+      }));
+      return c.json(
+        { templates: templates.map((t) => ({ ...t, updatedAt: t.updatedAt.toISOString() })), catalogue },
+        200,
+      );
+    })
+    .openapi(saveNotice, async (c) => {
+      const body = c.req.valid('json');
+      const saved = await saveNoticeTemplate(deps.db, {
+        key: body.key,
+        channel: body.channel,
+        locale: body.locale,
+        title: body.title,
+        body: body.body,
+        enabled: body.enabled,
+        expectedVersion: body.version,
+        staffUserId: c.get('auth').user.id,
+      });
+      return c.json(saved, 200);
+    })
+    .openapi(resetNotice, async (c) => {
+      const body = c.req.valid('json');
+      await resetNoticeTemplate(deps.db, {
+        key: body.key,
+        channel: body.channel,
+        locale: body.locale,
+        expectedVersion: body.version,
         staffUserId: c.get('auth').user.id,
       });
       return c.json({ ok: true as const }, 200);

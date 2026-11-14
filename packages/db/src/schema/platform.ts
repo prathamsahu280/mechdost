@@ -153,7 +153,11 @@ export const notificationOutbox = pgTable(
   ],
 );
 
-/** In-app notification centre. */
+/**
+ * In-app notification centre (spec 10, design 2026-11-15). Rows are written in the business transaction by
+ * `queueNotice`, already rendered in the recipient's language (plain text; no personal data beyond what the person
+ * sees on the page the link opens). `dedupe_key` makes a retried transaction write once.
+ */
 export const notifications = pgTable(
   'notifications',
   {
@@ -161,6 +165,13 @@ export const notifications = pgTable(
     userId: uuid()
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
+    /** `transactional` cannot be switched off in-app; `promotional` needs the marketing consent. */
+    category: text().notNull().default('transactional'),
+    /** Code such as `order.confirmed` (rule 16: a code, never free text). */
+    kind: text(),
+    entityType: text(),
+    entityId: text(),
+    dedupeKey: text(),
     title: text().notNull(),
     body: text().notNull(),
     link: text(),
@@ -168,10 +179,52 @@ export const notifications = pgTable(
     createdAt: createdAt(),
   },
   (t) => [
+    check('notifications_category_valid', sql`${t.category} in ('transactional','promotional','reminders')`),
+    check(
+      'notifications_entity_type_valid',
+      sql`${t.entityType} is null or ${t.entityType} in ('order','service_request','quote','ticket','refund','shop','application','account')`,
+    ),
+    check('notifications_link_local', sql`${t.link} is null or ${t.link} ~ '^/[^/\\\\]'`),
     index().on(t.userId, t.createdAt),
     index('notifications_unread_idx')
       .on(t.userId)
       .where(sql`${t.readAt} is null`),
+    uniqueIndex('notifications_dedupe_uq')
+      .on(t.userId, t.dedupeKey)
+      .where(sql`${t.dedupeKey} is not null`),
+    index('notifications_created_idx').on(t.createdAt),
+  ],
+);
+
+/**
+ * Browser (later app) push tokens (spec 10). A token is personal data: never in analytics or logs. `revoked_at`
+ * is set on sign-out, opt-out, or when Firebase reports the token invalid. One row per token.
+ */
+export const pushDevices = pgTable(
+  'push_devices',
+  {
+    id: id(),
+    userId: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    fcmToken: text().notNull(),
+    platform: text().notNull().default('web'),
+    /** Browser family only (`chrome`, `firefox`, `safari`, `edge`, `other`), never the full user agent. */
+    uaFamily: text().notNull().default('other'),
+    locale: text().notNull().default('en'),
+    createdAt: createdAt(),
+    lastSeenAt: ts().notNull().defaultNow(),
+    revokedAt: ts(),
+  },
+  (t) => [
+    check('push_devices_platform_valid', sql`${t.platform} in ('web','android','ios')`),
+    check('push_devices_locale_valid', sql`${t.locale} in ('en','hi')`),
+    check('push_devices_ua_valid', sql`${t.uaFamily} in ('chrome','firefox','safari','edge','other')`),
+    check('push_devices_token_len', sql`char_length(${t.fcmToken}) between 20 and 4096`),
+    uniqueIndex('push_devices_token_uq').on(t.fcmToken),
+    index('push_devices_user_live_idx')
+      .on(t.userId)
+      .where(sql`${t.revokedAt} is null`),
   ],
 );
 
