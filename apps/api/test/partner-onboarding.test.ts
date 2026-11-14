@@ -26,6 +26,7 @@ const OIL = 'CAS-ACT4T-0900';
 
 let ctx: Awaited<ReturnType<typeof buildApp>>;
 let ops: Record<string, string>;
+let catalogue: Record<string, string>;
 let marketing: Record<string, string>;
 let n = 0;
 
@@ -76,6 +77,7 @@ beforeAll(async () => {
   await seedRaipurDemo(ctx.db, fixture);
   ops = await person('ops', '+919870099001', 'ops_manager');
   marketing = await person('mkt', '+919870099002', 'marketing');
+  catalogue = await person('cat', '+919870099004', 'catalogue_manager');
 });
 
 describe('public application form', () => {
@@ -229,7 +231,7 @@ describe('invites and review', () => {
     ).toBe(200);
 
     const queue = (await (
-      await ctx.app.request('/v1/admin/price-requests?status=pending', { headers: ops })
+      await ctx.app.request('/v1/admin/price-requests?status=pending', { headers: catalogue })
     ).json()) as {
       items: { id: string; version: number; shopId: string }[];
     };
@@ -243,10 +245,20 @@ describe('invites and review', () => {
         )
       ).status,
     ).toBe(403);
+    // Prices are super admin + catalogue manager only (user 2026-11-14): operations staff are refused.
+    expect(
+      (
+        await post(
+          `/v1/admin/price-requests/${mine.id}/decide`,
+          { version: mine.version, decision: 'approved' },
+          ops,
+        )
+      ).status,
+    ).toBe(403);
     const decided = await post(
       `/v1/admin/price-requests/${mine.id}/decide`,
       { version: mine.version, decision: 'approved' },
-      ops,
+      catalogue,
     );
     expect(decided.status).toBe(200);
     const [shop] = (await ctx.db.select().from(s.shops)).filter((x) => x.id === shopId);
