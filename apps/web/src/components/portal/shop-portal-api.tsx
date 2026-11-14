@@ -152,13 +152,19 @@ function OrderLines({ order }: { order: ShopOrderDto }) {
   return (
     <>
       <p className="font-heading text-lg font-extrabold text-ink">{order.code}</p>
+      {/* The shop's own total (its prices), never the customer's price or a quote discount (review I1). */}
       <p className="text-xs text-muted">
         {t('orderMeta', {
           items: a('items', { count: order.items.length }),
-          total: formatPrice(order.totalPaise),
+          total: formatPrice(order.payoutPaise),
           pin: order.pincode,
         })}
       </p>
+      {order.collectPaise === null ? null : (
+        <p className="mt-1 text-xs font-bold text-ink">
+          {t('api_shop_collect', { amount: formatPrice(order.collectPaise) })}
+        </p>
+      )}
       <ul className="mt-3 divide-y divide-line text-sm">
         {order.items.map((l) => (
           <li key={l.sku} className="flex justify-between gap-3 py-2">

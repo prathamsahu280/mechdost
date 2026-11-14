@@ -158,7 +158,8 @@ export const quoteMessages = pgTable(
     quoteId: uuid()
       .notNull()
       .references(() => quoteRequests.id, { onDelete: 'restrict' }),
-    authorUserId: uuid().references(() => users.id, { onDelete: 'set null' }),
+    // NO ACTION, not SET NULL: the thread is append-only, and users are soft-deleted (review 2026-11-14).
+    authorUserId: uuid().references(() => users.id),
     authorRole: text().notNull(),
     body: text().notNull(),
     createdAt: createdAt(),

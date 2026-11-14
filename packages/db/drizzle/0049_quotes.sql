@@ -71,7 +71,7 @@ CREATE TABLE "quote_offers" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "quote_offers_version_uq" UNIQUE("quote_id","offer_version"),
 	CONSTRAINT "quote_offers_version_positive" CHECK ("quote_offers"."offer_version" > 0),
-	CONSTRAINT "quote_offers_status_valid" CHECK ("quote_offers"."status" in ('active','superseded','accepted','closed')),
+	CONSTRAINT "quote_offers_status_valid" CHECK ("quote_offers"."status" in ('active','superseded','accepted','expired','closed')),
 	CONSTRAINT "quote_offers_lines_array" CHECK (jsonb_typeof("quote_offers"."lines") = 'array' and jsonb_array_length("quote_offers"."lines") between 1 and 20),
 	CONSTRAINT "quote_offers_amounts" CHECK ("quote_offers"."subtotal_paise" > 0 and "quote_offers"."delivery_paise" >= 0 and "quote_offers"."total_paise" = "quote_offers"."subtotal_paise" + "quote_offers"."delivery_paise"),
 	CONSTRAINT "quote_offers_list_total_nonneg" CHECK ("quote_offers"."list_total_paise" is null or "quote_offers"."list_total_paise" >= 0),
@@ -110,7 +110,7 @@ CREATE TABLE "quote_requests" (
 	CONSTRAINT "quotes_reason_code_valid" CHECK (case "quote_requests"."status"
         when 'declined' then "quote_requests"."status_reason_code" in ('price_too_high','found_elsewhere','no_longer_needed','delivery_too_slow','other')
         when 'withdrawn' then "quote_requests"."status_reason_code" in ('cannot_supply','not_serviceable','duplicate','suspected_fraud','customer_unreachable','other')
-        when 'expired' then "quote_requests"."status_reason_code" in ('offer_expired','inactive')
+        when 'expired' then "quote_requests"."status_reason_code" in ('inactive')
         else "quote_requests"."status_reason_code" is null end),
 	CONSTRAINT "quotes_withdrawn_explained" CHECK ("quote_requests"."status" <> 'withdrawn' or char_length("quote_requests"."closing_message") between 10 and 500),
 	CONSTRAINT "quotes_closed_at" CHECK (("quote_requests"."closed_at" is null) = ("quote_requests"."status" in ('open','negotiating','offered'))),
@@ -127,12 +127,13 @@ ALTER TABLE "order_items" DROP CONSTRAINT "order_items_shop_unit_valid";--> stat
 ALTER TABLE "order_groups" ADD COLUMN "quote_id" uuid;--> statement-breakpoint
 ALTER TABLE "order_groups" ADD COLUMN "quote_offer_id" uuid;--> statement-breakpoint
 ALTER TABLE "order_items" ADD COLUMN "price_source" text DEFAULT 'catalogue' NOT NULL;--> statement-breakpoint
+ALTER TABLE "order_items" ADD COLUMN "cost_ceiling_paise" bigint;--> statement-breakpoint
 ALTER TABLE "quote_events" ADD CONSTRAINT "quote_events_quote_id_quote_requests_id_fk" FOREIGN KEY ("quote_id") REFERENCES "public"."quote_requests"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "quote_lines" ADD CONSTRAINT "quote_lines_quote_id_quote_requests_id_fk" FOREIGN KEY ("quote_id") REFERENCES "public"."quote_requests"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "quote_lines" ADD CONSTRAINT "quote_lines_product_id_products_id_fk" FOREIGN KEY ("product_id") REFERENCES "public"."products"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "quote_lines" ADD CONSTRAINT "quote_lines_variant_id_product_variants_id_fk" FOREIGN KEY ("variant_id") REFERENCES "public"."product_variants"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "quote_messages" ADD CONSTRAINT "quote_messages_quote_id_quote_requests_id_fk" FOREIGN KEY ("quote_id") REFERENCES "public"."quote_requests"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "quote_messages" ADD CONSTRAINT "quote_messages_author_user_id_users_id_fk" FOREIGN KEY ("author_user_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "quote_messages" ADD CONSTRAINT "quote_messages_author_user_id_users_id_fk" FOREIGN KEY ("author_user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "quote_offers" ADD CONSTRAINT "quote_offers_quote_id_quote_requests_id_fk" FOREIGN KEY ("quote_id") REFERENCES "public"."quote_requests"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "quote_offers" ADD CONSTRAINT "quote_offers_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "quote_requests" ADD CONSTRAINT "quote_requests_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
@@ -156,6 +157,7 @@ CREATE UNIQUE INDEX "order_groups_quote_uq" ON "order_groups" USING btree ("quot
 CREATE UNIQUE INDEX "order_groups_quote_offer_uq" ON "order_groups" USING btree ("quote_offer_id") WHERE "order_groups"."quote_offer_id" is not null;--> statement-breakpoint
 ALTER TABLE "order_groups" ADD CONSTRAINT "order_groups_quote_pair" CHECK (("order_groups"."quote_id" is null) = ("order_groups"."quote_offer_id" is null));--> statement-breakpoint
 ALTER TABLE "order_items" ADD CONSTRAINT "order_items_price_source_valid" CHECK ("order_items"."price_source" in ('catalogue','quote'));--> statement-breakpoint
+ALTER TABLE "order_items" ADD CONSTRAINT "order_items_cost_ceiling_quote_only" CHECK (("order_items"."cost_ceiling_paise" is not null) = ("order_items"."price_source" = 'quote') and ("order_items"."cost_ceiling_paise" is null or "order_items"."cost_ceiling_paise" > 0));--> statement-breakpoint
 ALTER TABLE "order_items" ADD CONSTRAINT "order_items_shop_unit_valid" CHECK ("order_items"."shop_unit_paise" is null or ("order_items"."shop_unit_paise" >= 0 and ("order_items"."shop_unit_paise" <= "order_items"."unit_paise" or "order_items"."price_source" = 'quote')));--> statement-breakpoint
 ALTER TABLE public.quote_requests ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 ALTER TABLE public.quote_lines ENABLE ROW LEVEL SECURITY;--> statement-breakpoint

@@ -20,8 +20,14 @@ export const ShopOrder = z.object({
   code: z.string(),
   status: z.string(),
   version: z.number().int(),
+  /** The customer's total for this sub-order. */
   totalPaise: z.number().int(),
+  /** What the shop is paid: its own price × qty (review I1, 2026-11-14). */
+  payoutPaise: z.number().int(),
+  /** Cash to collect at delivery (cash-on-delivery orders), else null. */
+  collectPaise: z.number().int().nullable(),
   pincode: z.string(),
+  /** `unitPaise` is the shop's own price. */
   items: z.array(ShopOrderItem),
   assignmentId: z.string().nullable(),
   expiresAt: z.string().nullable(),

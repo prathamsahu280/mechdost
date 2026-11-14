@@ -11,7 +11,13 @@ import {
 import { QUOTE_WITHDRAW_REASONS, type QuoteStatus, type QuoteWithdrawReason } from '@mechdost/shared/state';
 import { track } from '@/lib/analytics';
 import { formatDate, formatPrice } from '@/lib/format';
-import { offerDraft, quoteErrorKey, quoteStatusKey, type QuoteMessageKey } from '@/lib/quote-views';
+import {
+  lowPriceLines,
+  offerDraft,
+  quoteErrorKey,
+  quoteStatusKey,
+  type QuoteMessageKey,
+} from '@/lib/quote-views';
 import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
 
 type List =
@@ -348,6 +354,8 @@ function OfferBuilder({ quote, onChanged }: { quote: QuoteDetail; onChanged: () 
   const [terms, setTerms] = useState(current?.terms ?? '');
   const [tried, setTried] = useState(false);
   const [busy, setBusy] = useState(false);
+  // Prices below the shop price or under a tenth of list need this tick (review I2; the API refuses them without).
+  const [confirmLow, setConfirmLow] = useState(false);
   const [result, setResult] = useState<
     { ok: true; version: number } | { ok: false; key: QuoteMessageKey } | null
   >(null);
@@ -368,6 +376,10 @@ function OfferBuilder({ quote, onChanged }: { quote: QuoteDetail; onChanged: () 
   const listTotal = quote.listTotalPaise;
   const subtotal = draft.ok ? draft.totalPaise - draft.deliveryPaise : 0;
   const discount = listTotal && draft.ok ? Math.round(((listTotal - subtotal) / listTotal) * 100) : 0;
+  const low = draft.ok
+    ? lowPriceLines(quote.lineItems, draft.lines)
+    : { belowCost: [], belowTenthOfList: [] };
+  const needsConfirm = low.belowCost.length > 0 || low.belowTenthOfList.length > 0;
 
   async function submit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -380,6 +392,11 @@ function OfferBuilder({ quote, onChanged }: { quote: QuoteDetail; onChanged: () 
       track('click', { id: 'admin_quote_offer_invalid', path: window.location.pathname });
       return;
     }
+    if (needsConfirm && !confirmLow) {
+      document.getElementById('offer-confirm-low')?.focus();
+      setResult({ ok: false, key: 'api_admin_confirmLowNeeded' });
+      return;
+    }
     setBusy(true);
     const { sendAdminOffer } = await import('@/lib/quote-api');
     const res = await sendAdminOffer(locale, quote.code, {
@@ -388,6 +405,7 @@ function OfferBuilder({ quote, onChanged }: { quote: QuoteDetail; onChanged: () 
       deliveryPaise: draft.deliveryPaise,
       validDays: draft.validDays,
       terms: terms.trim() || null,
+      confirmLowPrices: needsConfirm && confirmLow,
     });
     setBusy(false);
     if (res.ok) {
@@ -438,10 +456,21 @@ function OfferBuilder({ quote, onChanged }: { quote: QuoteDetail; onChanged: () 
                 {t('aboveList', { price: formatPrice(l.listUnitPaise) })}
               </p>
             ) : null}
+            {low.belowCost.includes(l.lineNo) || low.belowTenthOfList.includes(l.lineNo) ? (
+              <p role="status" className="mt-1 text-xs font-bold text-warning">
+                {low.belowTenthOfList.includes(l.lineNo)
+                  ? q('api_admin_belowTenth')
+                  : q('api_admin_belowCost', { price: formatPrice(l.costPaise ?? 0) })}
+              </p>
+            ) : null}
             <p id={`${id}-hint`} className="mt-1 text-xs text-muted">
               {l.listUnitPaise === null
                 ? `${q('api_noPrice')} · × ${String(l.qty)}`
                 : t('listPrice', { price: formatPrice(l.listUnitPaise), qty: l.qty })}
+              {' · '}
+              {l.costPaise === null
+                ? q('api_admin_noShop', { stock: l.stock ?? 0 })
+                : q('api_admin_shopPrice', { price: formatPrice(l.costPaise), stock: l.stock ?? 0 })}
             </p>
           </div>
         );
@@ -513,6 +542,20 @@ function OfferBuilder({ quote, onChanged }: { quote: QuoteDetail; onChanged: () 
         </p>
       ) : null}
       <p className="text-xs text-muted">{q('api_cod')}</p>
+      {needsConfirm ? (
+        <label className="flex min-h-11 items-start gap-3 rounded-lg bg-warning-bg p-3 text-sm font-bold text-warning">
+          <input
+            id="offer-confirm-low"
+            type="checkbox"
+            checked={confirmLow}
+            onChange={(e) => {
+              setConfirmLow(e.target.checked);
+            }}
+            className="mt-0.5 size-5 accent-[var(--color-accent-button)]"
+          />
+          {q('api_admin_confirmLow')}
+        </label>
+      ) : null}
       <div className="flex flex-wrap items-center gap-3">
         <button type="submit" disabled={busy} className={portalPrimary}>
           {t('sendOffer')}

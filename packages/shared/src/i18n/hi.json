@@ -1278,7 +1278,15 @@
     "api_withdraw_duplicate": "दोहराया गया अनुरोध",
     "api_withdraw_suspected_fraud": "धोखाधड़ी का संदेह",
     "api_withdraw_customer_unreachable": "ग्राहक ने जवाब नहीं दिया",
-    "api_withdraw_other": "कोई और कारण"
+    "api_withdraw_other": "कोई और कारण",
+    "api_err_codCap": "यह ऑर्डर डिलीवरी पर नकद भुगतान के लिए बहुत बड़ा है। चैट में MechDost को लिखें, हम भुगतान की व्यवस्था करेंगे।",
+    "api_err_codBlocked": "थोक कोटेशन का भुगतान डिलीवरी पर नकद होता है, जो इस खाते पर उपलब्ध नहीं है। कृपया सहायता से संपर्क करें।",
+    "api_admin_confirmLowNeeded": "कुछ कीमतें दुकान की कीमत से कम या सूची कीमत के दसवें हिस्से से कम हैं। भेजने के लिए पुष्टि पर टिक करें।",
+    "api_admin_confirmLow": "मैं ये कीमतें जानबूझकर दे रहा हूँ (अंतर MechDost दुकान को देगा)।",
+    "api_admin_belowCost": "दुकान की कीमत ({price}) से कम: अंतर MechDost देगा।",
+    "api_admin_belowTenth": "सूची कीमत के दसवें हिस्से से कम: रुपये और पैसे जाँचें।",
+    "api_admin_shopPrice": "दुकान की कीमत {price} · इस पिन पर {stock} स्टॉक में",
+    "api_admin_noShop": "किसी दुकान के पास पूरी मात्रा नहीं · एक दुकान में सबसे ज़्यादा: {stock}"
   },
   "auth": {
     "title": "MechDost में साइन इन करें",
@@ -1523,6 +1531,7 @@
     "queue_rejected": "अस्वीकृत",
     "emptyQueue": "अभी यहाँ कुछ नहीं है।",
     "orderMeta": "{items} · {total} · पिन {pin}",
+    "api_shop_collect": "डिलीवरी पर ग्राहक से {amount} लें",
     "suggestions": "सुझाई गई दुकानें",
     "recommended": "सुझाया गया",
     "coverage": "{total} में से {n} कैटेगरी रखती है",
@@ -2274,6 +2283,7 @@
     "api_set_orders_customer_self_cancel_online": "दुकान के पुष्टि करने तक ग्राहक अपना ऑनलाइन भुगतान वाला ऑर्डर रद्द कर सकते हैं; पैसा उसी भुगतान तरीके में वापस जाता है",
     "api_set_orders_acceptance_timeout_min": "दुकान के पास ऑर्डर स्वीकार करने का समय",
     "api_set_quotes_min_units": "सबसे छोटा थोक कोटेशन (कुल यूनिट)",
+    "api_set_quotes_cod_cap_paise": "डिलीवरी पर नकद वाला सबसे बड़ा थोक कोटेशन",
     "api_set_catalogue_require_hindi_to_publish": "प्रोडक्ट केवल पूरे हिंदी टेक्स्ट के साथ लाइव हों",
     "api_set_support_customer_messages_per_ticket_per_day": "हर अनुरोध पर ग्राहक के रोज़ के संदेश",
     "api_set_assistant_daily_messages": "शॉपिंग सहायक के रोज़ के जवाब (0 = बंद)",

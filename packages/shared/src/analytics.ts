@@ -118,6 +118,8 @@ export interface ServerEventProps {
     reasonCode: string;
   };
   quote_expired: { quoteCode: string; reasonCode: string; offerVersion: number };
+  /** The active offer ran out; the quote went back to negotiating. */
+  quote_offer_expired: { quoteCode: string; offerVersion: number };
 }
 export type ServerEvent = keyof ServerEventProps;
 

@@ -1278,7 +1278,15 @@
     "api_withdraw_duplicate": "Duplicate request",
     "api_withdraw_suspected_fraud": "Suspected fraud",
     "api_withdraw_customer_unreachable": "Customer did not reply",
-    "api_withdraw_other": "Another reason"
+    "api_withdraw_other": "Another reason",
+    "api_err_codCap": "This order is too large for cash on delivery. Write to MechDost in the chat and we will arrange payment.",
+    "api_err_codBlocked": "Bulk quotes are paid cash on delivery, which is not available on this account. Please contact support.",
+    "api_admin_confirmLowNeeded": "Some prices are below the shop price or under a tenth of the list price. Tick the confirmation to send.",
+    "api_admin_confirmLow": "I confirm these prices on purpose (MechDost pays the shop the difference).",
+    "api_admin_belowCost": "Below the shop price ({price}): MechDost pays the difference.",
+    "api_admin_belowTenth": "Under a tenth of the list price: check rupees and paise.",
+    "api_admin_shopPrice": "Shop price {price} · {stock} in stock at this PIN",
+    "api_admin_noShop": "No shop has the full quantity · most in one shop: {stock}"
   },
   "auth": {
     "title": "Sign in to MechDost",
@@ -1523,6 +1531,7 @@
     "queue_rejected": "Rejected",
     "emptyQueue": "Nothing here right now.",
     "orderMeta": "{items} · {total} · PIN {pin}",
+    "api_shop_collect": "Collect {amount} from the customer on delivery",
     "suggestions": "Suggested shops",
     "recommended": "Recommended",
     "coverage": "Stocks {n} of {total} categories",
@@ -2274,6 +2283,7 @@
     "api_set_orders_customer_self_cancel_online": "Customers may cancel their own prepaid (online) order until the shop confirms it; the refund goes to the original payment method",
     "api_set_orders_acceptance_timeout_min": "Time a shop has to accept an order",
     "api_set_quotes_min_units": "Smallest bulk quote (units in total)",
+    "api_set_quotes_cod_cap_paise": "Largest bulk quote paid cash on delivery",
     "api_set_catalogue_require_hindi_to_publish": "Products go live only with complete Hindi texts",
     "api_set_support_customer_messages_per_ticket_per_day": "Customer messages per request each day",
     "api_set_assistant_daily_messages": "Shopping assistant answers per day (0 = off)",

@@ -359,8 +359,9 @@ export const quoteMachine = defineMachine(
     { from: 'open', to: 'offered', by: ['admin'] },
     { from: 'negotiating', to: 'offered', by: ['admin'] },
     { from: 'offered', to: 'accepted', by: ['customer'] },
-    // Spec 19: a customer message on an offered quote reopens talks and supersedes the active offer.
-    { from: 'offered', to: 'negotiating', by: ['customer'] },
+    // Spec 19: a customer message on an offered quote reopens talks and supersedes the active offer; when the
+    // offer runs out the worker reopens talks too (ruling 2026-11-14: the quote stays open for a new offer).
+    { from: 'offered', to: 'negotiating', by: ['customer', 'system'] },
     { from: 'open', to: 'declined', by: ['customer'] },
     { from: 'negotiating', to: 'declined', by: ['customer'] },
     { from: 'offered', to: 'declined', by: ['customer'] },
@@ -397,10 +398,10 @@ export const QUOTE_WITHDRAW_REASONS = [
 ] as const;
 export type QuoteWithdrawReason = (typeof QUOTE_WITHDRAW_REASONS)[number];
 
-/** Why the system expired a quote: its offer ran out, or nobody wrote for the inactivity window. */
-export const QUOTE_EXPIRE_REASONS = ['offer_expired', 'inactive'] as const;
+/** Why the system expired a quote: nobody wrote for the inactivity window (an expired offer only reopens talks). */
+export const QUOTE_EXPIRE_REASONS = ['inactive'] as const;
 export type QuoteExpireReason = (typeof QUOTE_EXPIRE_REASONS)[number];
 
-/** A versioned offer: one `active` per quote (partial unique index); a newer one supersedes it. */
-export const QUOTE_OFFER_STATES = ['active', 'superseded', 'accepted', 'closed'] as const;
+/** A versioned offer: one `active` per quote (partial unique index); a newer one supersedes it; it may run out. */
+export const QUOTE_OFFER_STATES = ['active', 'superseded', 'accepted', 'expired', 'closed'] as const;
 export type QuoteOfferStatus = (typeof QUOTE_OFFER_STATES)[number];

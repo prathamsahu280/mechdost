@@ -1,5 +1,5 @@
 {
-  "id": "5dae3927-78ed-4f65-9ab9-ebe30accd998",
+  "id": "75405827-ff5f-44bb-87fc-88a089fd4d0a",
   "prevId": "b67087c2-cf3d-423b-bf2d-4ed65a5ec50d",
   "version": "7",
   "dialect": "postgresql",
@@ -5888,6 +5888,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'catalogue'"
+        },
+        "cost_ceiling_paise": {
+          "name": "cost_ceiling_paise",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -5961,6 +5967,10 @@
         "order_items_price_source_valid": {
           "name": "order_items_price_source_valid",
           "value": "\"order_items\".\"price_source\" in ('catalogue','quote')"
+        },
+        "order_items_cost_ceiling_quote_only": {
+          "name": "order_items_cost_ceiling_quote_only",
+          "value": "(\"order_items\".\"cost_ceiling_paise\" is not null) = (\"order_items\".\"price_source\" = 'quote') and (\"order_items\".\"cost_ceiling_paise\" is null or \"order_items\".\"cost_ceiling_paise\" > 0)"
         },
         "order_items_shop_unit_valid": {
           "name": "order_items_shop_unit_valid",
@@ -13379,7 +13389,7 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "set null",
+          "onDelete": "no action",
           "onUpdate": "no action"
         }
       },
@@ -13591,7 +13601,7 @@
         },
         "quote_offers_status_valid": {
           "name": "quote_offers_status_valid",
-          "value": "\"quote_offers\".\"status\" in ('active','superseded','accepted','closed')"
+          "value": "\"quote_offers\".\"status\" in ('active','superseded','accepted','expired','closed')"
         },
         "quote_offers_lines_array": {
           "name": "quote_offers_lines_array",
@@ -13933,7 +13943,7 @@
         },
         "quotes_reason_code_valid": {
           "name": "quotes_reason_code_valid",
-          "value": "case \"quote_requests\".\"status\"\n        when 'declined' then \"quote_requests\".\"status_reason_code\" in ('price_too_high','found_elsewhere','no_longer_needed','delivery_too_slow','other')\n        when 'withdrawn' then \"quote_requests\".\"status_reason_code\" in ('cannot_supply','not_serviceable','duplicate','suspected_fraud','customer_unreachable','other')\n        when 'expired' then \"quote_requests\".\"status_reason_code\" in ('offer_expired','inactive')\n        else \"quote_requests\".\"status_reason_code\" is null end"
+          "value": "case \"quote_requests\".\"status\"\n        when 'declined' then \"quote_requests\".\"status_reason_code\" in ('price_too_high','found_elsewhere','no_longer_needed','delivery_too_slow','other')\n        when 'withdrawn' then \"quote_requests\".\"status_reason_code\" in ('cannot_supply','not_serviceable','duplicate','suspected_fraud','customer_unreachable','other')\n        when 'expired' then \"quote_requests\".\"status_reason_code\" in ('inactive')\n        else \"quote_requests\".\"status_reason_code\" is null end"
         },
         "quotes_withdrawn_explained": {
           "name": "quotes_withdrawn_explained",

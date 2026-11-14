@@ -38,6 +38,7 @@ const SETTING_LABEL = {
   'orders.customer_self_cancel_online': 'api_set_orders_customer_self_cancel_online',
   'orders.acceptance_timeout_min': 'api_set_orders_acceptance_timeout_min',
   'quotes.min_units': 'api_set_quotes_min_units',
+  'quotes.cod_cap_paise': 'api_set_quotes_cod_cap_paise',
   'catalogue.require_hindi_to_publish': 'api_set_catalogue_require_hindi_to_publish',
   'support.customer_messages_per_ticket_per_day': 'api_set_support_customer_messages_per_ticket_per_day',
   'assistant.daily_messages': 'api_set_assistant_daily_messages',

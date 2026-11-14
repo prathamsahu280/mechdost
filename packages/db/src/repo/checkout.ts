@@ -120,6 +120,8 @@ interface PricedLine {
   interState: boolean;
   /** 'quote' when the unit price was negotiated in a bulk quote (spec 19). */
   priceSource: 'catalogue' | 'quote';
+  /** Quote lines: the catalogue price this line had (the most a shop may be paid; routing ceiling). */
+  costCeilingPaise: number | null;
 }
 
 interface InternalQuote {
@@ -316,6 +318,7 @@ async function quoteInternal(
       shopUnitPaise: num(r.shop_price),
       interState,
       priceSource: 'catalogue',
+      costCeilingPaise: null,
     });
     return { ...base, unitPaise: unit, totalPaise: gross, group: g, issue: null, available: null };
   });
@@ -464,6 +467,8 @@ function applyQuotePricing(internal: InternalQuote, pricing: QuotePricing): void
   for (const line of priced) {
     const unit = pricing.unitPaiseBySku.get(line.sku);
     if (unit === undefined) throw new Error(`quote pricing has no price for ${line.sku}`);
+    // The catalogue price stays the routing ceiling: shops are never paid more than it (review C1, 2026-11-14).
+    line.costCeilingPaise = line.unitPaise;
     line.unitPaise = unit;
     line.priceSource = 'quote';
   }
@@ -624,6 +629,7 @@ export async function placeOrder(
           igstPaise: tax.igst,
           totalPaise: gross,
           priceSource: line.priceSource,
+          costCeilingPaise: line.costCeilingPaise,
         });
         const reservation = await reserveStock(tx, {
           inventoryId: line.inventoryId,

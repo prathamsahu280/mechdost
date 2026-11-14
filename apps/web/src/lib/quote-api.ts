@@ -104,6 +104,8 @@ export interface OfferInput {
   deliveryPaise: number;
   validDays: number;
   terms: string | null;
+  /** Staff ticked the confirmation for prices below the shop price or under a tenth of list (review I2). */
+  confirmLowPrices: boolean;
 }
 
 export function sendAdminOffer(locale: string, code: string, offer: OfferInput) {

@@ -46,6 +46,11 @@ export const OPERATIONAL_SETTINGS = {
   'orders.acceptance_timeout_min': { kind: 'int', min: 5, max: 120, default: 15 },
   /** Smallest bulk quote, in units across all its products (spec 19, Q20 default 10). */
   'quotes.min_units': { kind: 'int', min: 2, max: 500, default: 10 },
+  /**
+   * Largest accepted bulk quote paid by cash on delivery (paise; review 2026-11-14). Above it the customer is asked
+   * to contact MechDost (online payment for quotes is pending #18).
+   */
+  'quotes.cod_cap_paise': { kind: 'int', min: 0, max: 100_000_000, default: 5_000_000 },
   /** Launch check: products go live only with complete Hindi texts. */
   // One catalogue for every city: publishing reads the global value only.
   'catalogue.require_hindi_to_publish': { kind: 'boolean', default: false, globalOnly: true },

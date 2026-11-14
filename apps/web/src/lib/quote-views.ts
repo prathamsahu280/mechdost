@@ -21,6 +21,9 @@ export type QuoteMessageKey =
   | 'api_err_network'
   | 'api_err_notFound'
   | 'api_err_generic'
+  | 'api_err_codCap'
+  | 'api_err_codBlocked'
+  | 'api_admin_confirmLowNeeded'
   | 'stale'
   | 'expired'
   | 'blockedOrders';
@@ -43,6 +46,9 @@ const BY_CODE: Record<string, QuoteMessageKey> = {
   AUTH_REQUIRED: 'api_err_auth',
   HTTP_401: 'api_err_auth',
   QUOTE_MESSAGE_LIMIT: 'api_err_rate',
+  QUOTE_COD_CAP: 'api_err_codCap',
+  QUOTE_COD_BLOCKED: 'api_err_codBlocked',
+  QUOTE_OFFER_CONFIRM_LOW: 'api_admin_confirmLowNeeded',
   RATE_LIMITED: 'api_err_rate',
   HTTP_429: 'api_err_rate',
   NOT_FOUND: 'api_err_notFound',
@@ -127,4 +133,23 @@ export function offerDraft(
     validDays: daysValue,
     totalPaise: subtotal + d.paise,
   };
+}
+
+/**
+ * Offer lines that need the staff's explicit confirmation (review I2; the API refuses them without it): a unit price
+ * below the shop price that can supply the line, or under a tenth of the list price (rupees typed as paise).
+ */
+export function lowPriceLines(
+  lines: readonly { lineNo: number; costPaise: number | null; listUnitPaise: number | null }[],
+  offer: readonly { lineNo: number; unitPaise: number }[],
+): { belowCost: number[]; belowTenthOfList: number[] } {
+  const belowCost: number[] = [];
+  const belowTenthOfList: number[] = [];
+  for (const o of offer) {
+    const line = lines.find((l) => l.lineNo === o.lineNo);
+    if (!line) continue;
+    if (line.costPaise !== null && o.unitPaise < line.costPaise) belowCost.push(o.lineNo);
+    if (line.listUnitPaise !== null && o.unitPaise * 10 < line.listUnitPaise) belowTenthOfList.push(o.lineNo);
+  }
+  return { belowCost, belowTenthOfList };
 }

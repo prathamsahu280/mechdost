@@ -4,13 +4,25 @@
  * order with negotiated prices (one order per quote, however often or concurrently it is accepted), closing,
  * expiry, and the live recipients of a quote topic. Runs on the Raipur demo catalogue.
  */
+import { randomBytes } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { eq, sql } from 'drizzle-orm';
+import { istDateString } from '@mechdost/shared/time';
+import { loadKeyring } from '../src/crypto';
 import { seedRaipurDemo, type DemoFixture } from '../src/demo-seed';
 import {
   acceptQuoteOffer,
+  acceptShopOffer,
+  advanceShopOrder,
+  blockCustomer,
+  deliverShopOrder,
+  deliveryCodeFor,
+  listShopOrders,
+  pgCode,
+  rankShopsForOrder,
+  routeOrder,
   createQuote,
   declineQuote,
   expireQuotes,
@@ -81,6 +93,8 @@ async function offer(code: string, unitPaise: number, deliveryPaise = 0, validDa
     deliveryPaise,
     validDays,
     terms: 'Cash on delivery',
+    // These tests offer below the shop price on purpose: staff confirm it (review I2).
+    confirmLowPrices: true,
   });
 }
 
@@ -520,7 +534,7 @@ describe('closing', () => {
     });
   });
 
-  it('expires quotes whose offer ran out, and quotes nobody wrote on', async () => {
+  it('reopens talks when an offer runs out, and expires only quotes nobody wrote on', async () => {
     const offered = (await newQuote(ravi)).code;
     await offer(offered, 41_000);
     await db.execute(sql`
@@ -533,11 +547,14 @@ describe('closing', () => {
     const fresh = (await newQuote(ravi)).code;
 
     const r = await expireQuotes(t());
-    expect(r.expired).toBe(2);
-    expect(await getMyQuote(t(), ravi, offered, 'en')).toMatchObject({
-      status: 'expired',
-      reasonCode: 'offer_expired',
-    });
+    expect(r).toMatchObject({ offersExpired: 1, expired: 1, failed: [] });
+    // The quote stays open: the customer can ask for a new offer in the chat.
+    const reopened = await getMyQuote(t(), ravi, offered, 'en');
+    expect(reopened).toMatchObject({ status: 'negotiating', reasonCode: null, currentOffer: null });
+    expect(
+      (await postCustomerQuoteMessage(t(), { userId: ravi, code: offered, body: 'Please send a new offer' }))
+        .status,
+    ).toBe('negotiating');
     expect(await getMyQuote(t(), ravi, quiet, 'en')).toMatchObject({
       status: 'expired',
       reasonCode: 'inactive',
@@ -559,5 +576,199 @@ describe('live updates', () => {
     const who = (await resolveLiveRecipients(t(), `quote:${row!.id}`)).map((r) => r.firebaseUid).sort();
     expect(who).toEqual(['fb-quote-ravi', 'fb-quote-staff']);
     await closeAllOpen(ravi);
+  });
+});
+
+describe('review fixes 2026-11-14', () => {
+  const keyring = loadKeyring({
+    DATA_ENCRYPTION_KEYS: `k1:${randomBytes(32).toString('base64')}`,
+    DATA_ENCRYPTION_KEY_ID: 'k1',
+    DATA_INDEX_KEY: randomBytes(32).toString('base64'),
+  });
+  const shopId = async (name: string) =>
+    (await db.select({ id: s.shops.id }).from(s.shops).where(eq(s.shops.name, name)))[0]!.id;
+  const subOrder = async (groupCode: string) =>
+    (
+      await db
+        .select()
+        .from(s.orders)
+        .where(eq(s.orders.code, `${groupCode}-1`))
+    )[0]!;
+
+  beforeAll(async () => {
+    // The tests above reserved most of the demo stock: give every shop 50 free units again.
+    await db.execute(sql`update shop_inventory set on_hand = reserved + 50`);
+  });
+
+  it('routes, confirms and delivers a quote order priced below the shop price (C1, I1)', async () => {
+    const { code } = await newQuote(ravi);
+    await offer(code, 40_000); // Sharma is paid ₹440; the customer pays ₹400
+    const accepted = await acceptQuoteOffer(t(), {
+      userId: ravi,
+      code,
+      offerVersion: 1,
+      idempotencyKey: key(),
+      locale: 'en',
+    });
+    const sharma = await shopId('Sharma Auto Parts');
+    let order = await subOrder(accepted.orderCode);
+    const ranked = await rankShopsForOrder(t(), order.id, 'en');
+    expect(ranked.find((x) => x.shopId === sharma)).toMatchObject({ eligible: true, stockedItems: 1 });
+
+    await routeOrder(t(), {
+      scope: ALL,
+      code: order.code,
+      shopId: sharma,
+      expectedVersion: order.version,
+      staffUserId: staff,
+    });
+    // Shops see their own price, the total they are paid and what to collect on delivery — never our discount.
+    const [offered] = (await listShopOrders(t(), [sharma], 'offers')).items.filter(
+      (o) => o.code === order.code,
+    );
+    expect(offered?.items).toMatchObject([{ sku: 'CAS-ACT4T-0900', qty: 10, unitPaise: 44_000 }]);
+    expect(offered).toMatchObject({ payoutPaise: 440_000, collectPaise: 400_000 });
+
+    await acceptShopOffer(t(), {
+      shopIds: [sharma],
+      assignmentId: offered!.assignmentId!,
+      staffUserId: staff,
+    });
+    const step = async (to: 'packed' | 'shipped' | 'out_for_delivery') =>
+      advanceShopOrder(t(), {
+        shopIds: [sharma],
+        code: order.code,
+        expectedVersion: (await subOrder(accepted.orderCode)).version,
+        step: to === 'shipped' ? { to, mode: 'own' } : { to },
+        staffUserId: staff,
+        keyring,
+      });
+    await step('packed');
+    await step('shipped');
+    await step('out_for_delivery');
+    order = await subOrder(accepted.orderCode);
+    const [shipment] = await db.select().from(s.shipments).where(eq(s.shipments.orderId, order.id));
+    const deliveryCode = await deliveryCodeFor(t(), keyring, shipment!.id);
+    expect(
+      await deliverShopOrder(t(), {
+        shopIds: [sharma],
+        code: order.code,
+        deliveryCode: deliveryCode!,
+        expectedVersion: order.version,
+        staffUserId: staff,
+        keyring,
+      }),
+    ).toMatchObject({ ok: true });
+    expect((await subOrder(accepted.orderCode)).status).toBe('delivered');
+  });
+
+  it('refuses cash on delivery above the quote COD ceiling and changes nothing (I3)', async () => {
+    const { code } = await newQuote(ravi);
+    await db.insert(s.settings).values({ key: 'quotes.cod_cap_paise', value: 300_000 });
+    await offer(code, 40_000); // ₹4,000 > ₹3,000
+    await expect(
+      acceptQuoteOffer(t(), { userId: ravi, code, offerVersion: 1, idempotencyKey: key(), locale: 'en' }),
+    ).rejects.toMatchObject({ status: 422, code: 'QUOTE_COD_CAP', details: { capPaise: 300_000 } });
+    expect((await getMyQuote(t(), ravi, code, 'en')).status).toBe('offered');
+    await db.delete(s.settings).where(eq(s.settings.key, 'quotes.cod_cap_paise'));
+    await closeAllOpen(ravi);
+  });
+
+  it('shows staff each line’s shop price and stock at the PIN, never the customer (I2)', async () => {
+    const { code } = await newQuote(ravi, [
+      { slug: OIL, qty: 10 },
+      { slug: PLUG, qty: 2 },
+    ]);
+    const staffView = await getAdminQuote(t(), ALL, code, 'en');
+    expect(staffView.lineItems.map((l) => [l.sku, l.costPaise, l.stock])).toEqual([
+      ['CAS-ACT4T-0900', 44_000, 50],
+      ['PRT-SPK-IR', 62_000, 50],
+    ]);
+    const mine = await getMyQuote(t(), ravi, code, 'en');
+    expect(mine.lineItems.map((l) => [l.costPaise, l.stock])).toEqual([
+      [null, null],
+      [null, null],
+    ]);
+    await closeAllOpen(ravi);
+  });
+
+  it('asks staff to confirm a price below the shop price or under a tenth of list (I2)', async () => {
+    const { code } = await newQuote(ravi);
+    const send = async (unitPaise: number, confirmLowPrices: boolean) => {
+      const q = await getAdminQuote(t(), ALL, code, 'en');
+      return sendQuoteOffer(t(), {
+        scope: ALL,
+        staffUserId: staff,
+        code,
+        expectedVersion: q.version,
+        lines: [{ lineNo: 1, unitPaise }],
+        deliveryPaise: 0,
+        validDays: 3,
+        terms: null,
+        confirmLowPrices,
+      });
+    };
+    await expect(send(43_000, false)).rejects.toMatchObject({
+      code: 'QUOTE_OFFER_CONFIRM_LOW',
+      details: { belowCost: [1], belowTenthOfList: [] },
+    });
+    await expect(send(4_000, false)).rejects.toMatchObject({
+      details: { belowCost: [1], belowTenthOfList: [1] },
+    });
+    expect((await send(45_000, false)).offerVersion).toBe(1);
+    expect((await send(43_000, true)).offerVersion).toBe(2);
+    await closeAllOpen(ravi);
+  });
+
+  it('refuses a quote from a customer who may not order or pay cash (minor)', async () => {
+    const blocked = (await db.insert(s.users).values({ firebaseUid: 'fb-quote-blocked' }).returning())[0]!.id;
+    await blockCustomer(t(), {
+      userId: blocked,
+      level: 'cod_only',
+      reasonCode: 'cod_refused',
+      note: null,
+      endsAt: null,
+      staffUserId: staff,
+    });
+    await expect(newQuote(blocked)).rejects.toMatchObject({ status: 403, code: 'QUOTE_COD_BLOCKED' });
+  });
+
+  it('reads the minimum for the PIN code’s city, else the global value (minor)', async () => {
+    await db.insert(s.settings).values([
+      { key: 'quotes.min_units', value: 12 },
+      { key: 'quotes.min_units', value: 7, cityId },
+    ]);
+    expect((await quoteRules(t(), ravi, '492004')).minUnits).toBe(7);
+    expect((await quoteRules(t(), ravi, null)).minUnits).toBe(12);
+    await db.delete(s.settings).where(eq(s.settings.key, 'quotes.min_units'));
+    expect((await quoteRules(t(), ravi, null)).minUnits).toBe(10);
+  });
+
+  it('dates the offer email in India time (minor)', async () => {
+    const { code } = await newQuote(meera);
+    await offer(code, 42_000);
+    const [quote] = await db.select().from(s.quoteRequests).where(eq(s.quoteRequests.code, code));
+    const [latest] = await db.select().from(s.quoteOffers).where(eq(s.quoteOffers.quoteId, quote!.id));
+    const [mail] = await db
+      .select({ payload: s.notificationOutbox.payload })
+      .from(s.notificationOutbox)
+      .where(eq(s.notificationOutbox.dedupeKey, `quote_offer:${quote!.id}:v1:email`));
+    expect(mail?.payload).toMatchObject({ validUntil: istDateString(latest!.validUntil) });
+    await closeAllOpen(meera);
+  });
+
+  it('keeps the thread append-only: a user who wrote messages cannot be hard-deleted (minor)', async () => {
+    const writer = (await db.insert(s.users).values({ firebaseUid: 'fb-quote-writer' }).returning())[0]!.id;
+    const [q] = await db.select({ id: s.quoteRequests.id }).from(s.quoteRequests).limit(1);
+    await db
+      .insert(s.quoteMessages)
+      .values({ quoteId: q!.id, authorUserId: writer, authorRole: 'staff', body: 'Hi' });
+    const err = await db
+      .delete(s.users)
+      .where(eq(s.users.id, writer))
+      .then(() => null)
+      .catch((e: unknown) => e);
+    // A foreign-key refusal, not the append-only trigger tripping over ON DELETE SET NULL.
+    expect(pgCode(err)).toBe('23503');
   });
 });

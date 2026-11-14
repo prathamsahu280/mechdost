@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { QUOTE_STATES } from '@mechdost/shared/state';
-import { offerDraft, quoteErrorKey, quoteStatusKey, quoteWaitsForCustomer } from '../src/lib/quote-views';
+import {
+  lowPriceLines,
+  offerDraft,
+  quoteErrorKey,
+  quoteStatusKey,
+  quoteWaitsForCustomer,
+} from '../src/lib/quote-views';
 
 /** Real-mode bulk quotes (spec 19): API codes and states → translated copy; the staff offer builder's parsing. */
 describe('quoteErrorKey', () => {
@@ -19,6 +25,10 @@ describe('quoteErrorKey', () => {
     expect(quoteErrorKey('STALE_QUOTE')).toBe('api_err_staleQuote');
     expect(quoteErrorKey('VERIFICATION_REQUIRED')).toBe('api_err_verify');
     expect(quoteErrorKey('QUOTE_MESSAGE_LIMIT')).toBe('api_err_rate');
+    // Review 2026-11-14: COD ceiling, COD block, low-price confirmation.
+    expect(quoteErrorKey('QUOTE_COD_CAP')).toBe('api_err_codCap');
+    expect(quoteErrorKey('QUOTE_COD_BLOCKED')).toBe('api_err_codBlocked');
+    expect(quoteErrorKey('QUOTE_OFFER_CONFIRM_LOW')).toBe('api_admin_confirmLowNeeded');
   });
 
   it('never returns a raw code', () => {
@@ -73,5 +83,29 @@ describe('offerDraft', () => {
 
   it('allows free delivery', () => {
     expect(offerDraft(lines, { 1: '400', 2: '500' }, '0', '1').ok).toBe(true);
+  });
+});
+
+describe('lowPriceLines (review I2)', () => {
+  const lines = [
+    { lineNo: 1, costPaise: 44_000, listUnitPaise: 44_000 },
+    { lineNo: 2, costPaise: null, listUnitPaise: 62_000 },
+    { lineNo: 3, costPaise: 10_000, listUnitPaise: null },
+  ];
+  it('names lines below the shop price and lines under a tenth of the list price', () => {
+    expect(
+      lowPriceLines(lines, [
+        { lineNo: 1, unitPaise: 43_000 },
+        { lineNo: 2, unitPaise: 6_000 },
+        { lineNo: 3, unitPaise: 10_000 },
+      ]),
+    ).toEqual({ belowCost: [1], belowTenthOfList: [2] });
+    expect(
+      lowPriceLines(lines, [
+        { lineNo: 1, unitPaise: 44_000 },
+        { lineNo: 2, unitPaise: 6_200 },
+        { lineNo: 3, unitPaise: 12_000 },
+      ]),
+    ).toEqual({ belowCost: [], belowTenthOfList: [] });
   });
 });

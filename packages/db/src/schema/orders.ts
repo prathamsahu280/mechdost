@@ -217,10 +217,19 @@ export const orderItems = pgTable(
     recoSource: text(),
     /** Where the unit price came from: the catalogue, or a negotiated bulk quote offer (spec 19). */
     priceSource: text().notNull().default('catalogue'),
+    /**
+     * Quote lines only: the most a shop may be paid per unit — the catalogue price for the PIN when the order was
+     * placed (the checkout's admin price ceiling). Routing compares shops against it, not the negotiated price.
+     */
+    costCeilingPaise: paise(),
   },
   (t) => [
     check('order_items_qty_positive', sql`${t.qty} > 0 and ${t.qty} <= 99`),
     check('order_items_price_source_valid', sql`${t.priceSource} in ('catalogue','quote')`),
+    check(
+      'order_items_cost_ceiling_quote_only',
+      sql`(${t.costCeilingPaise} is not null) = (${t.priceSource} = 'quote') and (${t.costCeilingPaise} is null or ${t.costCeilingPaise} > 0)`,
+    ),
     // A negotiated price may sit below the shop's approved price: MechDost pays the shop its price (spec 19).
     check(
       'order_items_shop_unit_valid',

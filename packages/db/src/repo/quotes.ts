@@ -14,7 +14,9 @@ import {
   QUOTE_THREAD_LIMIT,
   quoteOfferTotal,
 } from '@mechdost/shared/quote-rules';
+import { blockEffects } from '@mechdost/shared/customers';
 import { OPERATIONAL_SETTINGS } from '@mechdost/shared/settings';
+import { istDateString } from '@mechdost/shared/time';
 import {
   QUOTE_OPEN_STATES,
   quoteMachine,
@@ -37,8 +39,9 @@ import {
   users,
 } from '../schema';
 import { placeOrder, quoteCheckout, settingOr } from './checkout';
+import { activeBlockLevels } from './customer-blocks';
 import { decodeCursor, encodeCursor, pageSize } from './cursor';
-import { ConflictError, NotFoundError, pgCode, ValidationError } from './errors';
+import { ConflictError, ForbiddenError, NotFoundError, pgCode, ValidationError } from './errors';
 import { recordServerEvent } from './events';
 import { localized } from './localized';
 import { enqueueNotification } from './notify';
@@ -75,6 +78,8 @@ export interface QuoteLineRequest {
 
 const MIN_UNITS_KEY = 'quotes.min_units';
 const MIN_UNITS = { key: MIN_UNITS_KEY, fallback: OPERATIONAL_SETTINGS[MIN_UNITS_KEY].default };
+const COD_CAP_KEY = 'quotes.cod_cap_paise';
+const COD_CAP = { key: COD_CAP_KEY, fallback: OPERATIONAL_SETTINGS[COD_CAP_KEY].default };
 const OPEN: readonly QuoteStatus[] = QUOTE_OPEN_STATES;
 const DAY_MS = 86_400_000;
 const inactiveDeadline = (from: Date) => new Date(from.getTime() + QUOTE_INACTIVE_DAYS * DAY_MS);
@@ -126,6 +131,10 @@ export interface QuoteDetailView extends QuoteSummaryView {
     qty: number;
     listUnitPaise: number | null;
     mrpPaise: number;
+    /** Staff only (null for customers): the lowest approved shop price that can supply the line at the PIN. */
+    costPaise: number | null;
+    /** Staff only (null for customers): the most units one covering shop has free right now. */
+    stock: number | null;
   }[];
   currentOffer: QuoteOfferView | null;
   messages: { id: string; from: 'customer' | 'staff' | 'system'; body: string; at: string }[];
@@ -269,6 +278,7 @@ async function detail(db: Tx, where: SQL, locale: QuoteLocale, staffView: boolea
       .limit(QUOTE_THREAD_LIMIT)
   ).reverse();
   const a = row.shipping_address;
+  const costs = staffView ? await lineCosts(db, row.id, row.pincode) : null;
   return {
     ...toSummary(row, now),
     lineItems: lines.map((l) => ({
@@ -279,6 +289,8 @@ async function detail(db: Tx, where: SQL, locale: QuoteLocale, staffView: boolea
       qty: l.qty,
       listUnitPaise: l.listUnitPaise,
       mrpPaise: l.mrpPaise,
+      costPaise: costs?.get(l.lineNo)?.costPaise ?? null,
+      stock: costs ? (costs.get(l.lineNo)?.stock ?? 0) : null,
     })),
     currentOffer: offer
       ? {
@@ -311,6 +323,34 @@ async function detail(db: Tx, where: SQL, locale: QuoteLocale, staffView: boolea
     reasonCode: row.status_reason_code,
     closingMessage: row.closing_message,
   };
+}
+
+/**
+ * Per line, at the quote's PIN: the lowest approved shop price among covering shops that have the whole quantity free
+ * (the cost floor staff should not offer below without meaning to) and the most units one shop has free.
+ */
+async function lineCosts(
+  db: Tx,
+  quoteId: string,
+  pincode: string,
+): Promise<Map<number, { costPaise: number | null; stock: number }>> {
+  const rows = rowsOf<{ line_no: number; cost: number | string | null; stock: number | string | null }>(
+    await db.execute(sql`
+      select l.line_no,
+        min(si.selling_paise) filter (where si.on_hand - si.reserved >= l.qty) as cost,
+        max(si.on_hand - si.reserved) as stock
+      from quote_lines l
+      left join shop_inventory si on si.variant_id = l.variant_id and si.active and not si.admin_blocked
+        and exists (
+          select 1 from shops s join shop_pincodes sp on sp.shop_id = s.id and sp.pincode = ${pincode} and sp.active
+          where s.id = si.shop_id and s.status = 'approved' and s.gst_status = 'registered'
+            and not (s.busy and (s.busy_until is null or s.busy_until > now())))
+      where l.quote_id = ${quoteId}
+      group by l.line_no`),
+  );
+  return new Map(
+    rows.map((r) => [r.line_no, { costPaise: numOrNull(r.cost), stock: Math.max(0, Number(r.stock ?? 0)) }]),
+  );
 }
 
 function offerLines(value: unknown): { lineNo: number; unitPaise: number }[] {
@@ -445,13 +485,17 @@ function requestHash(input: {
 
 // ── customer ──────────────────────────────────────────────────────────────────────────────────────────────────
 
-/** The bulk-quote rules for the request form: minimum units (admin setting), limits and the open count. */
+/**
+ * The bulk-quote rules for the request form: minimum units (admin setting: the PIN code's city value when a PIN is
+ * given, else the global value), limits and the customer's open count.
+ */
 export async function quoteRules(
   db: Tx,
   userId: string,
+  pincode: string | null = null,
 ): Promise<{ minUnits: number; maxLines: number; maxQty: number; openLimit: number; open: number }> {
-  const [city] = await db.select({ id: cities.id }).from(cities).where(eq(cities.status, 'live')).limit(1);
-  const minUnits = city ? await settingOr(db, city.id, MIN_UNITS) : MIN_UNITS.fallback;
+  const city = pincode ? await serviceableCity(db, pincode) : null;
+  const minUnits = city ? await settingOr(db, city.cityId, MIN_UNITS) : await globalSetting(db, MIN_UNITS);
   const open = await db.$count(
     quoteRequests,
     and(eq(quoteRequests.userId, userId), inArray(quoteRequests.status, [...OPEN])),
@@ -463,6 +507,25 @@ export async function quoteRules(
     openLimit: QUOTE_OPEN_LIMIT,
     open,
   };
+}
+
+/** The global value of a numeric setting (no city), else its registry default. */
+async function globalSetting(db: Tx, s: { key: string; fallback: number }): Promise<number> {
+  const [row] = rowsOf<{ value: unknown }>(
+    await db.execute(sql`select value from settings where key = ${s.key} and city_id is null limit 1`),
+  );
+  const v = row?.value;
+  return typeof v === 'number' && Number.isSafeInteger(v) && v >= 0 ? v : s.fallback;
+}
+
+/** The live city of an active PIN code we deliver to, else null. */
+async function serviceableCity(db: Tx, pincode: string) {
+  const [place] = await db
+    .select({ cityId: cities.id, cityCode: cities.code })
+    .from(pincodes)
+    .innerJoin(cities, eq(cities.id, pincodes.cityId))
+    .where(and(eq(pincodes.pincode, pincode), eq(pincodes.active, true), eq(cities.status, 'live')));
+  return place ?? null;
 }
 
 /**
@@ -520,11 +583,16 @@ export async function createQuote(
       };
     }
 
-    const [place] = await tx
-      .select({ cityId: cities.id, cityCode: cities.code })
-      .from(pincodes)
-      .innerJoin(cities, eq(cities.id, pincodes.cityId))
-      .where(and(eq(pincodes.pincode, input.address.pincode), eq(cities.status, 'live')));
+    // Quote orders are cash on delivery: a customer who may not order, or not pay cash, cannot ask (review minor).
+    const allowed = blockEffects(await activeBlockLevels(tx, input.userId));
+    if (!allowed.order) throw new ForbiddenError('This account cannot place orders', 'ORDERS_BLOCKED');
+    if (!allowed.cod)
+      throw new ForbiddenError(
+        'Bulk quotes are paid cash on delivery, which this account cannot use',
+        'QUOTE_COD_BLOCKED',
+      );
+
+    const place = await serviceableCity(tx, input.address.pincode);
     if (!place)
       throw new ValidationError('We do not deliver to this PIN code yet', 'PINCODE_NOT_SERVICEABLE');
 
@@ -804,6 +872,17 @@ export async function acceptQuoteOffer(
       throw new ConflictError('This offer was replaced; review the latest one', 'QUOTE_OFFER_STALE');
     if (offer.validUntil <= new Date())
       throw new ConflictError('This offer has expired; ask MechDost for a new one', 'QUOTE_OFFER_EXPIRED');
+    // Cash on delivery has a ceiling for quote orders too (review I3); above it the customer talks to MechDost
+    // (online payment for quotes: pending #18).
+    const capPaise = await settingOr(tx, q.cityId, COD_CAP);
+    if (offer.totalPaise > capPaise)
+      throw new ValidationError(
+        'This order is too large for cash on delivery; contact MechDost',
+        'QUOTE_COD_CAP',
+        {
+          capPaise,
+        },
+      );
 
     const lines = await tx
       .select({ lineNo: quoteLines.lineNo, sku: quoteLines.sku, qty: quoteLines.qty })
@@ -976,6 +1055,8 @@ export async function sendQuoteOffer(
     deliveryPaise: number;
     validDays: number;
     terms: string | null;
+    /** Staff confirmed prices below the shop price or under a tenth of the list price (review I2). */
+    confirmLowPrices?: boolean;
   },
 ): Promise<{ status: QuoteStatus; version: number; offerVersion: number }> {
   if (
@@ -990,7 +1071,7 @@ export async function sendQuoteOffer(
     if (q.version !== input.expectedVersion)
       throw new ConflictError('This quote changed; reload and try again', 'STALE_QUOTE');
     const lines = await tx
-      .select({ lineNo: quoteLines.lineNo, qty: quoteLines.qty })
+      .select({ lineNo: quoteLines.lineNo, qty: quoteLines.qty, listUnitPaise: quoteLines.listUnitPaise })
       .from(quoteLines)
       .where(eq(quoteLines.quoteId, q.id))
       .orderBy(asc(quoteLines.lineNo));
@@ -1006,6 +1087,26 @@ export async function sendQuoteOffer(
       throw new ValidationError('Delivery must be zero or more', 'QUOTE_OFFER_DELIVERY');
     const priced = lines.map((l) => ({ lineNo: l.lineNo, qty: l.qty, unitPaise: price.get(l.lineNo) ?? 0 }));
     const { subtotalPaise, totalPaise } = quoteOfferTotal(priced, input.deliveryPaise);
+    // Guard against slips (rupees typed as paise, a missing zero): a price below what the shop is paid, or under a
+    // tenth of the list price, needs an explicit confirmation (review I2). The price itself stays free (Q20).
+    const costs = await lineCosts(tx, q.id, q.shippingAddress.pincode);
+    const belowCost = priced
+      .filter((l) => {
+        const cost = costs.get(l.lineNo)?.costPaise;
+        return cost !== undefined && cost !== null && l.unitPaise < cost;
+      })
+      .map((l) => l.lineNo);
+    const belowTenthOfList = priced
+      .filter((l) => {
+        const list = lines.find((x) => x.lineNo === l.lineNo)?.listUnitPaise;
+        return list !== undefined && list !== null && l.unitPaise * 10 < list;
+      })
+      .map((l) => l.lineNo);
+    if ((belowCost.length > 0 || belowTenthOfList.length > 0) && input.confirmLowPrices !== true)
+      throw new ValidationError('Confirm the prices below the shop price', 'QUOTE_OFFER_CONFIRM_LOW', {
+        belowCost,
+        belowTenthOfList,
+      });
 
     await tx
       .update(quoteOffers)
@@ -1096,7 +1197,7 @@ async function queueOfferEmail(tx: Tx, q: LockedQuote, offerVersion: number, val
     recipient: person.email,
     templateKey: 'quote_offer',
     locale: person.language === 'hi' ? 'hi' : 'en',
-    payload: { quoteCode: q.code, validUntil: validUntil.toISOString().slice(0, 10) },
+    payload: { quoteCode: q.code, validUntil: istDateString(validUntil) },
   });
 }
 
@@ -1143,15 +1244,24 @@ export async function withdrawQuote(
 
 // ── worker ────────────────────────────────────────────────────────────────────────────────────────────────────
 
+export interface QuoteSweepFailure {
+  quoteId: string;
+  /** SQLSTATE or the domain error code — never the error text (it may quote data). */
+  code: string;
+}
+
 /**
- * Expire quotes whose active offer ran out (`offer_expired`) or that nobody wrote on until `expires_at`
- * (`inactive`). One short transaction per quote (row locked first), so several workers may run this safely.
+ * The quote sweep (worker, every few minutes). An active offer that ran out is marked `expired` and the quote goes
+ * back to `negotiating`, so the customer can ask for a new offer (ruling 2026-11-14). A quote nobody wrote on until
+ * `expires_at` closes as `expired` (`inactive`). One short transaction per quote (row locked first), so several
+ * workers may run this safely; `skip` lets the worker back off quotes that keep failing.
  */
 export async function expireQuotes(
   db: Tx,
-  opts: { limit?: number } = {},
-): Promise<{ expired: number; failed: number }> {
+  opts: { limit?: number; skip?: ReadonlySet<string> } = {},
+): Promise<{ offersExpired: number; expired: number; failed: QuoteSweepFailure[] }> {
   const limit = Math.min(Math.max(opts.limit ?? 100, 1), 500);
+  const skip = [...(opts.skip ?? [])];
   const due = rowsOf<{ id: string }>(
     await db.execute(sql`
       select q.id from quote_requests q
@@ -1159,56 +1269,92 @@ export async function expireQuotes(
         and (q.expires_at <= now()
           or (q.status = 'offered' and exists (
             select 1 from quote_offers o where o.quote_id = q.id and o.status = 'active' and o.valid_until <= now())))
+        ${
+          skip.length > 0
+            ? sql`and q.id not in (${sql.join(
+                skip.map((id) => sql`${id}::uuid`),
+                sql`, `,
+              )})`
+            : sql``
+        }
       order by q.id
       limit ${limit}`),
   );
+  let offersExpired = 0;
   let expired = 0;
-  let failed = 0;
+  const failed: QuoteSweepFailure[] = [];
   for (const { id } of due) {
     try {
       const done = await db.transaction(async (tx) => {
         const q = await lockQuote(tx, eq(quoteRequests.id, id));
-        if (!OPEN.includes(q.status)) return false;
-        const [offer] = await tx
-          .select({ validUntil: quoteOffers.validUntil })
-          .from(quoteOffers)
-          .where(and(eq(quoteOffers.quoteId, q.id), eq(quoteOffers.status, 'active')));
+        if (!OPEN.includes(q.status)) return null;
         const now = new Date();
         const [row] = await tx
           .select({ expiresAt: quoteRequests.expiresAt })
           .from(quoteRequests)
           .where(eq(quoteRequests.id, q.id));
-        const reason: QuoteExpireReason | null =
-          q.status === 'offered' && offer && offer.validUntil <= now
-            ? 'offer_expired'
-            : row && row.expiresAt <= now
-              ? 'inactive'
-              : null;
-        if (!reason) return false;
-        await tx
+        if (row && row.expiresAt <= now) {
+          const reason: QuoteExpireReason = 'inactive';
+          await tx
+            .update(quoteOffers)
+            .set({ status: 'closed' })
+            .where(and(eq(quoteOffers.quoteId, q.id), eq(quoteOffers.status, 'active')));
+          await transition(
+            tx,
+            q,
+            'expired',
+            { type: 'system', userId: null },
+            { statusReasonCode: reason },
+            {
+              reasonCode: reason,
+            },
+          );
+          await recordServerEvent(tx, 'quote_expired', {
+            cityId: q.cityId,
+            props: { quoteCode: q.code, reasonCode: reason, offerVersion: q.offerVersion },
+          });
+          return 'quote' as const;
+        }
+        if (q.status !== 'offered') return null;
+        const ranOut = await tx
           .update(quoteOffers)
-          .set({ status: 'closed' })
-          .where(and(eq(quoteOffers.quoteId, q.id), eq(quoteOffers.status, 'active')));
+          .set({ status: 'expired' })
+          .where(
+            and(
+              eq(quoteOffers.quoteId, q.id),
+              eq(quoteOffers.status, 'active'),
+              sql`${quoteOffers.validUntil} <= now()`,
+            ),
+          )
+          .returning({ offerVersion: quoteOffers.offerVersion });
+        if (ranOut.length === 0) return null;
         await transition(
           tx,
           q,
-          'expired',
+          'negotiating',
           { type: 'system', userId: null },
-          { statusReasonCode: reason },
+          {},
           {
-            reasonCode: reason,
+            reason: 'offer_expired',
+            offerVersion: q.offerVersion,
           },
         );
-        await recordServerEvent(tx, 'quote_expired', {
+        await recordServerEvent(tx, 'quote_offer_expired', {
           cityId: q.cityId,
-          props: { quoteCode: q.code, reasonCode: reason, offerVersion: q.offerVersion },
+          props: { quoteCode: q.code, offerVersion: q.offerVersion },
         });
-        return true;
+        return 'offer' as const;
       });
-      if (done) expired += 1;
-    } catch {
-      failed += 1;
+      if (done === 'quote') expired += 1;
+      if (done === 'offer') offersExpired += 1;
+    } catch (err) {
+      const domain = (err as { code?: unknown }).code;
+      failed.push({
+        quoteId: id,
+        code:
+          pgCode(err) ?? (typeof domain === 'string' ? domain : err instanceof Error ? err.name : 'UNKNOWN'),
+      });
     }
   }
-  return { expired, failed };
+  return { offersExpired, expired, failed };
 }

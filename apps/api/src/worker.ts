@@ -13,6 +13,7 @@ import {
   expireQuotes,
   resumeEndedPauses,
 } from '@mechdost/db/repo';
+import { FailureBackoff } from './backoff';
 import { ConfigError, loadConfig } from './config';
 import { pollingPublisher, type LivePublisher } from './live/publisher';
 import { startDispatcher, type ChannelAdapter } from './notify/dispatcher';
@@ -162,14 +163,21 @@ paymentTimer.unref();
 
 // Bulk quotes (spec 19): offers past `valid_until` and quotes nobody wrote on close as `expired`. Every 5 min; one
 // transaction per quote (quote row locked first), so several workers may run this safely.
+// A quote that keeps failing is skipped for a growing delay (1 min doubling to 6 h) and logged with its id and
+// error code only (no data from the error text).
 let expiringQuotes = false;
+const quoteBackoff = new FailureBackoff({ baseMs: 60_000, maxMs: 6 * 3_600_000 });
 const quoteTimer = setInterval(() => {
   if (expiringQuotes) return;
   expiringQuotes = true;
-  void expireQuotes(db)
-    .then(({ expired, failed }) => {
+  void expireQuotes(db, { skip: quoteBackoff.skipped(Date.now()) })
+    .then(({ offersExpired, expired, failed }) => {
+      if (offersExpired > 0) log('info', 'quote_offers_expired', { count: offersExpired });
       if (expired > 0) log('info', 'quotes_expired', { count: expired });
-      if (failed > 0) log('error', 'quote_expiry_failed', { failedQuotes: failed });
+      for (const f of failed) {
+        const retryInMs = quoteBackoff.fail(f.quoteId, Date.now());
+        log('error', 'quote_expiry_failed', { quoteId: f.quoteId, code: f.code, retryInMs });
+      }
     })
     .catch((err: unknown) => {
       log('error', 'quote_expiry_failed', safeError(err));

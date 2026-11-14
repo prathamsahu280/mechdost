@@ -107,6 +107,8 @@ async function sendOffer(code: string, unitPaise: number, deliveryPaise = 0) {
     deliveryPaise,
     validDays: 3,
     terms: 'Cash on delivery',
+    // Below the shop price on purpose in these tests: staff confirm it (review I2).
+    confirmLowPrices: true,
   });
 }
 
@@ -270,6 +272,40 @@ describe('staff quote desk', () => {
     const fourth = await request();
     expect(fourth.status).toBe(422);
     expect(fourth.body.error.code).toBe('QUOTE_OPEN_LIMIT');
+    await closeAll(customer);
+  });
+});
+
+describe('review fixes 2026-11-14', () => {
+  it('refuses malformed offer prices (400) and asks to confirm prices below the shop price (422)', async () => {
+    const { body } = await request();
+    const code = String(body.code);
+    const q = await adminDetail(code);
+    // Earlier tests reserved Sharma's oil: the cheapest shop with 10 free is Gupta (₹453).
+    expect(q.lineItems[0]).toMatchObject({ costPaise: 45_300, stock: 12 });
+    const offerWith = (unitPaise: unknown, extra: Record<string, unknown> = {}) =>
+      call(ops, 'POST', `/admin/quotes/${code}/offer`, {
+        version: q.version,
+        lines: q.lineItems.map((l) => ({ lineNo: l.lineNo, unitPaise })),
+        deliveryPaise: 0,
+        validDays: 3,
+        ...extra,
+      });
+    for (const bad of [0, -1, 400.5, '40000', null]) expect((await offerWith(bad)).status).toBe(400);
+    const low = await offerWith(40_000);
+    expect(low.status).toBe(422);
+    expect(low.body.error.code).toBe('QUOTE_OFFER_CONFIRM_LOW');
+    expect((await offerWith(40_000, { confirmLowPrices: true })).status).toBe(200);
+    await closeAll(customer);
+  });
+
+  it('reads the minimum for a PIN code and hides shop prices from customers', async () => {
+    const rules = QuoteRulesDto.parse((await call(customer, 'GET', '/quotes/rules?pincode=492004')).body);
+    expect(rules.minUnits).toBe(10);
+    expect((await call(customer, 'GET', '/quotes/rules?pincode=12')).status).toBe(400);
+    const { body } = await request();
+    const mine = QuoteDetailDto.parse((await call(customer, 'GET', `/quotes/${String(body.code)}`)).body);
+    expect(mine.lineItems.every((l) => l.costPaise === null && l.stock === null)).toBe(true);
     await closeAll(customer);
   });
 });

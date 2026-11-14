@@ -78,8 +78,17 @@ const rules = createRoute({
   method: 'get',
   path: '/quotes/rules',
   tags: ['quotes'],
-  summary: 'Bulk quote rules for the request form: minimum units, limits and your open quotes',
+  summary:
+    'Bulk quote rules for the request form: minimum units (for a PIN code city, else global), limits, open quotes',
   security: secured,
+  request: {
+    query: z.object({
+      pincode: z
+        .string()
+        .regex(/^[1-9][0-9]{5}$/)
+        .optional(),
+    }),
+  },
   responses: { 200: json(QuoteRulesDto, 'Rules'), ...errorResponses },
 });
 
@@ -187,7 +196,9 @@ export function quoteRoutes(deps: AppDeps, cache: SessionCache) {
   return (
     app
       // Registered before '/quotes/{code}' so the static path wins.
-      .openapi(rules, async (c) => c.json(await quoteRules(deps.db, me(c)), 200))
+      .openapi(rules, async (c) =>
+        c.json(await quoteRules(deps.db, me(c), c.req.valid('query').pincode ?? null), 200),
+      )
       .openapi(create, async (c) => {
         const b = c.req.valid('json');
         try {
@@ -370,6 +381,7 @@ export function adminQuoteRoutes(deps: AppDeps, cache: SessionCache) {
           deliveryPaise: b.deliveryPaise,
           validDays: b.validDays,
           terms: b.terms ?? null,
+          confirmLowPrices: b.confirmLowPrices === true,
         }),
         200,
       );

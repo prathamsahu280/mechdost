@@ -96,6 +96,8 @@ export const SendOfferSchema = z
     deliveryPaise: z.number().int().min(0).max(QUOTE_OFFER_MAX_DELIVERY_PAISE),
     validDays: z.number().int().min(QUOTE_OFFER_MIN_DAYS).max(QUOTE_OFFER_MAX_DAYS),
     terms: text(1, QUOTE_TERMS_MAX).nullable().optional(),
+    /** Staff confirm a unit price below the shop price or under a tenth of the list price (rupee/paise slips). */
+    confirmLowPrices: z.boolean().optional(),
   })
   .strict();
 export type SendOfferInput = z.infer<typeof SendOfferSchema>;
@@ -181,6 +183,10 @@ export const QuoteLineDto = z.object({
   qty: z.number().int(),
   listUnitPaise: z.number().int().nullable(),
   mrpPaise: z.number().int(),
+  /** Staff only (null for customers): the lowest approved shop price that can supply the line at the PIN. */
+  costPaise: z.number().int().nullable(),
+  /** Staff only (null for customers): the most units one covering shop has free right now. */
+  stock: z.number().int().nullable(),
 });
 export type QuoteLine = z.infer<typeof QuoteLineDto>;
 

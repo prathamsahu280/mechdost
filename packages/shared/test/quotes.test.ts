@@ -15,7 +15,7 @@ const ALLOWED: Record<string, readonly Actor[]> = {
   'open>offered': ['admin'],
   'negotiating>offered': ['admin'],
   'offered>accepted': ['customer'],
-  'offered>negotiating': ['customer'],
+  'offered>negotiating': ['customer', 'system'],
   'open>declined': ['customer'],
   'negotiating>declined': ['customer'],
   'offered>declined': ['customer'],
@@ -149,6 +149,8 @@ describe('quote request schemas', () => {
           qty: 12,
           listUnitPaise: 44_000,
           mrpPaise: 48_000,
+          costPaise: null,
+          stock: null,
         },
       ],
       currentOffer: {
