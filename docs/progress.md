@@ -4,6 +4,11 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Current status
 
+- **2026-11-14 (late): Admin → Analytics built on branch `worktree-agent-aec2a7191f86abd9d` (not merged).**
+  - API `GET /v1/admin/analytics/dashboard` + `GET /v1/admin/overview`; Admin → Analytics page and real-mode Overview tiles (spec 08 "Analytics (built 2026-11-14)", decisions "Admin analytics from our own data").
+  - Migration `0050_analytics_indexes` **not applied** (re-stamp its journal `when` at merge if a later-numbered branch merges first, L106).
+  - **Next at merge:** apply 0050, run `pnpm check`, render Admin → Analytics at 390/1440 in light/dark and /hi (Playwright not run here).
+
 - **2026-11-14 (night): reviews and PIN codes merged and migrated.**
   - Fresh review: no critical issues. Three findings fixed test-first; the rest are documented in specs 02/15.
   - Prechecks passed. Migrations 0046 (reviews) and 0048 (PIN codes) applied to `mechdost-dev`; advisors: INFO only.

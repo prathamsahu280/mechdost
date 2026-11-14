@@ -561,6 +561,25 @@ the write form and Admin → Reviews now work in real mode (quotes and coins unc
 - **Admin → Reviews visibility:** demo queue in the browser demo, API queue with real sign-in, hidden in the mixed
   build (real data + demo sign-in), as no queue there matches what customers see.
 
+## 2026-11-14 — Admin analytics from our own data (user: "i want to be able to view them in our website for the admin")
+
+- **Built-in page, not embedded PostHog** (user's choice): Admin → Analytics reads our tables through
+  `GET /v1/admin/analytics/dashboard` and the Overview reads `GET /v1/admin/overview` (spec 08 "Analytics").
+- **Live queries, no rollups yet:** every query is bounded by an IST date range (≤ 180 days) on an indexed column and
+  cached 2 min per instance; `metrics_daily` (spec 12) waits until volume needs it (~1M events/month or p95 > 1 s).
+  Queries run one at a time so a dashboard never takes several pooled connections from customers.
+- **City scope:** staff see only their analytics cities (another city = 404). Web events have no city yet, so site
+  traffic, the funnel's visitor steps and searches are site-wide and shown only to all-cities staff.
+- **Order = cash on delivery or paid online** (the routing queue's rule); GMV excludes cancelled/rejected parts.
+- **Search phrases need ≥ 2 distinct visitors** before an admin sees them (k-anonymity; they are user text).
+- **Analytics charts in SVG (no Recharts yet):** Recharts is the decided chart library (2026-10-31) but is not
+  installed; the dashboard needs only single-series daily bars and a funnel, so it uses small accessible SVG/HTML
+  charts on the existing tokens (accent bars, `line` gridlines, keyboard read-out, table view) instead of adding a
+  dependency (lockfile churn across parallel branches, bundle weight, release-age check) the week of launch. Recharts
+  stays the choice for richer interactive charts later, loaded with `next/dynamic`.
+- **Indexes (0050):** `service_requests (city_id, created_at)` replaces `service_requests (city_id)`;
+  `order_assignments (offered_at)` added.
+
 ## PENDING DECISIONS (ask "what's pending" to review)
 
 | #   | Topic                                                                                                                                                                                       | Leaning                                                                             | When                                 |

@@ -57,3 +57,8 @@ Goal: mechdost.com runs on real sign-in (Firebase) and the API for every flow, w
   by checkout / workshops / service requests / coverage, Admin → Settings → Service area + approval-form pick list
   (en + hi), reference file of Raipur PINs + `pnpm db:seed:pincodes` (not applied). Spec 15 "PIN codes", spec 03
   "Delivery charges".
+- 2026-11-14 (Analytics, branch `worktree-agent-aec2a7191f86abd9d`): Admin → Analytics on real data —
+  `GET /v1/admin/analytics/dashboard` (`analytics:read`, city-scoped, IST ranges ≤ 180 days, cached 2 min) and
+  `GET /v1/admin/overview` (queue counts per permission); real-mode Overview tiles from the API; migration
+  `0050_analytics_indexes` (not applied); SVG charts (no Recharts dependency yet). Spec 08 "Analytics (built
+  2026-11-14)", spec 12 note, decisions "Admin analytics from our own data". Playwright not run.

@@ -20,6 +20,8 @@ export type AccountSection = (typeof ALL_ACCOUNT_SECTIONS)[number];
 
 const ALL_ADMIN_SECTIONS = [
   'overview',
+  // Analytics from our own data (spec 08 "Analytics", 2026-11-14): real sign-in only (it reads the API).
+  'analytics',
   'orders',
   'services',
   'quotes',
@@ -49,9 +51,14 @@ const BROWSER_ONLY_SECTIONS: readonly string[] = ['quotes', 'coins'];
  * in the mixed build (real data, demo sign-in), where neither queue would show the reviews customers see.
  */
 const reviewsShown = BROWSER_ONLY_FEATURES || AUTH_MODE === 'firebase';
+/** Analytics reads only the API (no demo version): shown with real sign-in. */
+const analyticsShown = AUTH_MODE === 'firebase';
 const shown = <T extends string>(all: readonly T[]): readonly T[] =>
   all.filter(
-    (s) => (BROWSER_ONLY_FEATURES || !BROWSER_ONLY_SECTIONS.includes(s)) && (s !== 'reviews' || reviewsShown),
+    (s) =>
+      (BROWSER_ONLY_FEATURES || !BROWSER_ONLY_SECTIONS.includes(s)) &&
+      (s !== 'reviews' || reviewsShown) &&
+      (s !== 'analytics' || analyticsShown),
   );
 
 /** Account sections shown in this build (navigation, routes). */
