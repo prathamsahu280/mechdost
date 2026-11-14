@@ -4,6 +4,7 @@ import { OPERATIONAL_SETTINGS } from '@mechdost/shared/settings';
 import { priceRequestMachine, type PriceRequestStatus } from '@mechdost/shared/state';
 import {
   auditLog,
+  pincodes,
   productVariants,
   products,
   shopInventory,
@@ -315,7 +316,13 @@ async function agreementRequired(tx: Tx): Promise<boolean> {
  * A new (`pending`) shop goes live when it has accepted the agreement (if required), has at least one product on
  * sale at an approved price, and delivers somewhere. A one-time gate: live shops are never taken back offline here.
  */
-export async function maybeGoLive(tx: Tx, shopId: string, actorUserId: string | null): Promise<boolean> {
+export async function maybeGoLive(
+  tx: Tx,
+  shopId: string,
+  actorUserId: string | null,
+  /** Who caused it, for the audit row: staff (price, PIN or product), the shop (agreement) or the system. */
+  actorRole: 'staff' | 'shop' | 'system' = actorUserId ? 'staff' : 'system',
+): Promise<boolean> {
   const [shop] = await tx
     .select({ status: shops.status, cityId: shops.cityId })
     .from(shops)
@@ -342,9 +349,11 @@ export async function maybeGoLive(tx: Tx, shopId: string, actorUserId: string | 
       ),
     )
     .limit(1);
+  // Only PIN codes MechDost serves count (`pincodes.active`, spec 15).
   const [delivers] = await tx
     .select({ id: shopPincodes.shopId })
     .from(shopPincodes)
+    .innerJoin(pincodes, and(eq(pincodes.pincode, shopPincodes.pincode), eq(pincodes.active, true)))
     .where(and(eq(shopPincodes.shopId, shopId), eq(shopPincodes.active, true)))
     .limit(1);
   if (!onSale || !delivers) return false;
@@ -356,7 +365,7 @@ export async function maybeGoLive(tx: Tx, shopId: string, actorUserId: string | 
   if (live.length === 0) return false;
   await tx.insert(auditLog).values({
     actorUserId,
-    actorRole: actorUserId ? 'staff' : 'system',
+    actorRole,
     action: 'shop.went_live',
     entity: 'shop',
     entityId: shopId,

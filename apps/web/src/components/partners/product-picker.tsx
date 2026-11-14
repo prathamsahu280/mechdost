@@ -2,27 +2,41 @@
 
 import { PackageCheck } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-import { useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useMemo, useRef, useState } from 'react';
 import { CATEGORY_KEYS, DEMO_PRODUCTS } from '@/demo/catalogue';
 import { localizeProduct } from '@/demo/i18n/localize';
 import { track } from '@/lib/analytics';
+import { AUTH_MODE } from '@/lib/auth/mode';
 
-/**
- * "Products you sell" (user 2026-11-13: a tick-list instead of free text). The catalogue grouped by category with
- * a search box; the seller ticks what they stock. Prices are asked after approval, one request per product.
- * Demo catalogue until the web reads the catalogue API (data switch).
- */
-export function ProductPicker({
-  value,
-  onChange,
-  invalid,
-  describedBy,
-}: {
+export interface ProductPickerProps {
   value: readonly string[];
   onChange: (slugs: string[]) => void;
   invalid?: boolean;
   describedBy?: string;
-}) {
+}
+
+/** Real sign-in builds post the application to the API, so they pick from the live catalogue (spec 07). */
+const ProductPickerApi = lazy(() =>
+  import('./product-picker-api').then((m) => ({ default: m.ProductPickerApi })),
+);
+
+/**
+ * "Products you sell" (user 2026-11-13: a tick-list instead of free text). The catalogue grouped by category with
+ * a search box; the seller ticks what they stock. Prices are asked after approval, one request per product.
+ * Real sign-in builds (`AUTH_MODE === 'firebase'`, the mode in which the form posts to the API) use the live
+ * catalogue (`product-picker-api.tsx`, loaded on demand); the demo keeps the demo catalogue.
+ */
+export function ProductPicker(props: ProductPickerProps) {
+  if (AUTH_MODE === 'firebase')
+    return (
+      <Suspense fallback={<div className="skeleton h-11 w-48 rounded-button" aria-hidden="true" />}>
+        <ProductPickerApi {...props} />
+      </Suspense>
+    );
+  return <DemoProductPicker {...props} />;
+}
+
+function DemoProductPicker({ value, onChange, invalid, describedBy }: ProductPickerProps) {
   const t = useTranslations('apply');
   const cat = useTranslations('categories');
   const locale = useLocale();

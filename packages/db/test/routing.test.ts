@@ -6,7 +6,8 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
+import { shopOpenState, type ShopHours } from '@mechdost/shared/shop-hours';
 import { seedRaipurDemo, type DemoFixture } from '../src/demo-seed';
 import {
   expireDueAssignments,
@@ -34,6 +35,25 @@ let customer = '';
 let staff = '';
 let raipur: CityScope = { all: false, cityIds: [] };
 const shopId: Record<string, string> = {};
+
+/** Open around the clock: the routing tests below do not depend on the time they run at. */
+const ALWAYS: ShopHours = { open: '00:00', close: '24:00', days: [0, 1, 2, 3, 4, 5, 6] };
+const istWeekday = (d: Date) => new Date(d.getTime() + 330 * 60_000).getUTCDay();
+/**
+ * Closed today and tomorrow (IST): open only on the weekday three days ahead. The next opening is the same instant
+ * even if IST midnight passes during the test (code review 2026-11-14: no dependence on the midnight instant).
+ */
+const CLOSED_FOR_DAYS: ShopHours = {
+  open: '09:00',
+  close: '21:00',
+  days: [(istWeekday(new Date()) + 3) % 7],
+};
+const closedToday = (): ShopHours => CLOSED_FOR_DAYS;
+const shopOpenStateAt = (h: ShopHours) => {
+  const st = shopOpenState(h, new Date());
+  if (st.open) throw new Error('expected closed');
+  return st.opensAt;
+};
 
 async function place(key: string) {
   const lines = [{ sku: OIL, qty: 2 }];
@@ -80,6 +100,7 @@ beforeAll(async () => {
   const [city] = await db.select().from(s.cities).where(eq(s.cities.code, 'RPR'));
   raipur = { all: false, cityIds: [city!.id] };
   for (const shop of await db.select().from(s.shops)) shopId[shop.name] = shop.id;
+  await db.update(s.shops).set({ hours: ALWAYS });
 });
 
 afterAll(async () => {
@@ -220,6 +241,69 @@ describe('routing', () => {
     expect(await status(good.assignmentId)).toBe('expired');
     expect(await status(drifted.assignmentId)).toBe('withdrawn');
     expect((await getRoutingOrder(t(), raipur, good.code, 'en')).status).toBe('needs_rerouting');
+  });
+
+  it("a shop's own acceptance time wins over the city setting (admin shop profile, 2026-11-14)", async () => {
+    const code = await place('routing-key-shop-timer');
+    const gupta = shopId['Gupta Lubes & Spares']!;
+    await db.update(s.shops).set({ acceptanceTimeoutMin: 7 }).where(eq(s.shops.id, gupta));
+    const before = Date.now();
+    const routed = await routeOrder(t(), {
+      scope: raipur,
+      code,
+      shopId: gupta,
+      expectedVersion: await version(code),
+      staffUserId: staff,
+    });
+    await db.update(s.shops).set({ acceptanceTimeoutMin: null }).where(eq(s.shops.id, gupta));
+    const minutes = (new Date(routed.expiresAt).getTime() - before) / 60_000;
+    expect(minutes).toBeGreaterThan(6.5);
+    expect(minutes).toBeLessThan(7.5);
+  });
+
+  it('suggests open shops first and says when a closed one opens (shop hours, user 2026-11-14)', async () => {
+    const code = await place('routing-key-hours-rank');
+    const o = await getRoutingOrder(t(), raipur, code, 'en');
+    const eligible = o.shops.filter((x) => x.eligible).map((x) => x.shopId);
+    expect(eligible.length).toBeGreaterThanOrEqual(2);
+    const [nearest] = eligible;
+    // Close the nearest eligible shop for today (open only tomorrow, IST): it drops behind the open one.
+    await db.update(s.shops).set({ hours: closedToday() }).where(eq(s.shops.id, nearest!));
+    const again = await getRoutingOrder(t(), raipur, code, 'en');
+    const ranked = again.shops.filter((x) => x.eligible);
+    expect(ranked[0]!.shopId).not.toBe(nearest);
+    expect(ranked[0]).toMatchObject({ openNow: true, opensAt: null });
+    const closed = again.shops.find((x) => x.shopId === nearest)!;
+    expect(closed.openNow).toBe(false);
+    expect(closed.opensAt).toBe(shopOpenStateAt(closedToday()).toISOString());
+    await db.update(s.shops).set({ hours: ALWAYS }).where(eq(s.shops.id, nearest!));
+  });
+
+  it('routing to a closed shop is allowed: the offer waits until it opens + the grace setting', async () => {
+    const code = await place('routing-key-hours-closed');
+    const gupta = shopId['Gupta Lubes & Spares']!;
+    await db.update(s.shops).set({ hours: closedToday() }).where(eq(s.shops.id, gupta));
+    await db.insert(s.settings).values({ key: 'orders.closed_shop_grace_min', value: 90 });
+    const routed = await routeOrder(t(), {
+      scope: raipur,
+      code,
+      shopId: gupta,
+      expectedVersion: await version(code),
+      staffUserId: staff,
+    });
+    await db.delete(s.settings).where(eq(s.settings.key, 'orders.closed_shop_grace_min'));
+    await db.update(s.shops).set({ hours: ALWAYS }).where(eq(s.shops.id, gupta));
+    const opensAt = shopOpenStateAt(closedToday());
+    expect(new Date(routed.expiresAt).toISOString()).toBe(
+      new Date(opensAt.getTime() + 90 * 60_000).toISOString(),
+    );
+    // The stock hold lasts at least until the deadline (it would otherwise lapse overnight).
+    const [hold] = await db
+      .select({ expiresAt: s.reservations.expiresAt })
+      .from(s.reservations)
+      .innerJoin(s.orders, eq(s.orders.id, s.reservations.orderId))
+      .where(and(eq(s.orders.code, code), eq(s.reservations.status, 'active')));
+    expect(hold!.expiresAt.getTime()).toBeGreaterThanOrEqual(new Date(routed.expiresAt).getTime());
   });
 
   it('reject needs a reason code and a message, frees the stock, and only for unrouted orders', async () => {

@@ -19,3 +19,27 @@ export const APPLICATION_REJECT_REASONS = [
 export type ApplicationRejectReason = (typeof APPLICATION_REJECT_REASONS)[number];
 export const PRICE_REJECT_REASONS = ['above_market', 'mrp_mismatch', 'wrong_product', 'other'] as const;
 export type PriceRejectReason = (typeof PRICE_REJECT_REASONS)[number];
+
+/**
+ * Why staff paused, suspended or reactivated a partner (hard rule 16: a code, with the partner-visible note as the
+ * free-text extra). Shown to the partner in their language. `pause_ended` is written by the worker only (a pause
+ * whose end date passed), never offered in the console.
+ */
+export const PARTNER_STANDING_REASONS = [
+  'partner_request',
+  'documents_pending',
+  'missed_offers',
+  'late_deliveries',
+  'quality_complaints',
+  'pricing_issue',
+  'policy_violation',
+  'fraud_suspected',
+  'issue_resolved',
+  'other',
+  'pause_ended',
+] as const;
+export type PartnerStandingReason = (typeof PARTNER_STANDING_REASONS)[number];
+/** The codes staff can choose (everything but the worker's own). */
+export const STAFF_STANDING_REASONS = PARTNER_STANDING_REASONS.filter(
+  (r): r is Exclude<PartnerStandingReason, 'pause_ended'> => r !== 'pause_ended',
+);

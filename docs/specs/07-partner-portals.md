@@ -98,7 +98,7 @@ Lifecycle QA found that in the browser demo an approved or invited seller could 
 
 ## Real API mode (2026-11-14, Stream C2)
 
-With real sign-in a person whose `/v1/me` roles carry a `shopId` lands on `/partner/shop` (`demoRoleFor` → `shop`; staff still land on the admin console, workshop partners on the account area until the workshop portal moves to the API). The portal then runs on the API (details and gaps in spec 04 § Real API mode): offers with the 30 s poll, accept/decline, pack → out for delivery, the delivery code, recent delivered/cancelled orders, and **Your prices** on `GET /v1/shops/{shopId}/inventory` + `GET/POST /v1/shop-onboarding/{shopId}/price-requests` (a new price is always a request; the current stock is sent with it; price ≤ MRP checked before sending). The "stored on this device" note is hidden there. Not on the API yet: the shop header (name, area, acceptance stats), the paused/suspended banner (shop status is not exposed to the shop), the seller agreement card, and a way for a shop to pick a product it does not sell yet (staff add offers in Admin → Partners).
+With real sign-in a person whose `/v1/me` roles carry a `shopId` lands on `/partner/shop` (`demoRoleFor` → `shop`; staff still land on the admin console, workshop partners on the account area until the workshop portal moves to the API). The portal then runs on the API (details and gaps in spec 04 § Real API mode): offers with the 30 s poll, accept/decline, pack → out for delivery, the delivery code, recent delivered/cancelled orders, and **Your prices** on `GET /v1/shops/{shopId}/inventory` + `GET/POST /v1/shop-onboarding/{shopId}/price-requests` (a new price is always a request; the current stock is sent with it; price ≤ MRP checked before sending). The "stored on this device" note is hidden there. Since the shop management change (section "Shop management on the API" below), the shop header, the paused/suspended banner, the working hours, "Sell another product" and the seller agreement card are on the API too.
 
 ## Real API mode (2026-11-14)
 
@@ -119,6 +119,125 @@ API screen is a separate module loaded with `next/dynamic` / `import()` only in 
 - **Shop** (`shop-onboarding-api.tsx`): "Your prices" from `/v1/shops/{shopId}/inventory` + the shop's price requests
   (send, withdraw), and the agreement card (accept the current version). The shop id comes from `GET /v1/me` roles.
 - Response shapes: `@mechdost/shared/partner-api`. Tests: `apps/web/test/partner-onboarding-view.test.ts`.
-- Gaps: no public application status route; the product picker still lists the demo catalogue (the API refuses
-  slugs it does not have → "choose again" on the field); real shop accounts still land on the customer area
-  (`demoRoleFor`) until the shop portal moves to the API, so the shop cards are wired but not yet reachable.
+- Gaps: no public application status route. Closed since: the product picker lists the live API catalogue in this
+  mode (shop management, below); real shop accounts land on `/partner/shop` (Stream C2).
+
+## Shop management on the API (2026-11-14)
+
+Decision "Shop management and shop hours on the API" (2026-11-14). Migration **0051**: `shops.free_delivery_min_paise`,
+`shops.hours`, `partner_status_events.reason_code`. Real sign-in only; the demo screens are unchanged.
+
+**Admin → Partners → Shops**
+
+- Screen: `admin-shops-api.tsx`, loaded with `next/dynamic` by `admin-partners.tsx`. The demo shop tab is hidden in
+  this mode.
+- API: `apps/api/src/routes/admin-shops.ts`. Repositories: `packages/db/src/repo/shops-admin.ts` and
+  `setShopStanding` in `partners.ts`.
+- Permissions, city-scoped (a shop in another city is 404):
+  - `partners:read`: the list and the detail, and the shop's offers.
+  - `partners:write`: the profile, the delivery area and the offers.
+  - `partners:approve`: standing, portal access and GSTIN changes, all in the shop's own city.
+- **List** `GET /v1/admin/shops?status&cursor&limit`: by name, keyset cursor. Each row shows the status, open now or
+  closed, busy, GST enrolment only, PIN count, products on sale and missing Hindi texts.
+- **Detail** `GET /v1/admin/shops/{id}`: the profile, hours, coverage per PIN, the last 20 standing changes (reason
+  code + note) and portal members (role, last 4 digits of the phone).
+- **Profile** `PATCH /v1/admin/shops/{id}`: only the fields sent, compare-and-set on `version` (`STALE_SHOP`),
+  audited `shop.updated`.
+  - Editable: name and address in English and Hindi, legal name, phone, email, GSTIN, minutes to accept (5–120, empty
+    = city), free delivery from ₹ (empty = city, 0 = always free) and hours.
+  - A GSTIN is checksum-checked and must match the shop's state. Setting one makes an enrolled shop `registered`.
+- **Delivery area** `PUT /v1/admin/shops/{id}/coverage {version, upsert[], remove[]}`:
+  - charge ₹0–₹10,000 and 0–60 days per PIN;
+  - PIN codes of the shop's own city only (`PINCODE_OTHER_CITY`, `PINCODE_UNKNOWN`);
+  - one compare-and-set on the shop's version, audited `shop.coverage_changed`.
+- **Standing** `POST /v1/admin/shops/{id}/standing {status, reasonCode, note, pausedUntil?, version}`:
+  - pause, suspend or reactivate;
+  - the reason code comes from `STAFF_STANDING_REASONS` and is never preselected; the note (5–300 characters) is
+    what the shop reads;
+  - a pause end date must be in the future;
+  - history in `partner_status_events`, with the worker writing `pause_ended`. Pending shops go live by themselves
+    and cannot be moved by hand (`STATUS_TRANSITION`).
+- **Portal access** `POST /v1/admin/shops/{id}/members {phone, role}`:
+  - the person must have signed up (404 otherwise) and must not be a staff account (`MEMBER_IS_STAFF`);
+  - this writes the role grant and `shop_users`, which is what the live pings read. The owner link on sign-in
+    (`linkApplicantOwner`) now writes `shop_users` too.
+- **Products** `GET|POST /v1/admin/shops/{id}/inventory`, `PATCH …/inventory/{sku}`: these routes moved to the admin
+  shop router (reading needs `partners:read`). Staff pick a live product with the catalogue picker, then set the
+  price (≤ MRP), stock and on/off. They edit price, stock and on/off per row.
+- **Going live:** a pending shop goes live (`maybeGoLive`) when staff add a PIN code or a product, as well as on
+  price approval or the agreement.
+
+**Shop portal** (`shop-profile-api.tsx`, inside `shop-portal-api.tsx`)
+
+- `GET /v1/shop/me` (`orders:read`; the shops in the caller's grants) returns:
+  - name and address;
+  - status, with the standing (reason code, note, pause end);
+  - hours and open now;
+  - coverage summary (PIN count, cheapest and dearest charge, free-delivery override);
+  - products on sale and the last 30 days' accepted / answered offers;
+  - `isOwner`.
+- The portal shows a header, a paused or suspended banner (reason in the shop's language, the staff note, the end
+  date), the hours card and the delivery area. A pending shop sees what it needs to go live.
+- **Working hours** (user 2026-11-14): only the owner sets them, with `PUT /v1/shop/hours/{shopId} {version, hours}`
+  (staff of the shop get 403 `OWNER_ONLY`). The value is one window on chosen weekdays in IST; closing "24:00" means
+  open until midnight. Default 09:00–21:00, Monday to Saturday. See spec 04 for what the hours do in routing.
+- **Sell another product:** the shop searches the live catalogue, picks a pack and sends a price + stock request
+  (`POST /v1/shop-onboarding/{shopId}/price-requests`). Staff approve it in the price queue, and the approval creates
+  the listing. Waiting requests for products not on the board yet are listed.
+- **Offer deadline:** under two hours it shows a countdown; otherwise "accept by {weekday, time}" (an offer made while
+  the shop was closed).
+
+**Seller application product picker** (`product-picker-api.tsx`, `React.lazy` because this is a customer page)
+
+- In real sign-in builds (the mode in which the form posts to the API) the tick-list comes from
+  `GET /v1/catalogue/products`: live products, `q` search, 24 per page, "Show more", grouped by category.
+- The dialog has no nested form (the search runs on Enter or the button).
+- The demo keeps the demo catalogue. The real submit path never reads `DEMO_PRODUCTS`; only the demo's `categories`
+  does.
+
+**Response shapes and tests**
+
+- Shapes: `@mechdost/shared/shop-api` (request schemas strict). Form logic: `apps/web/src/lib/admin-shop-form.ts`
+  (only changed fields; rupees → paise; coverage diff). Catalogue calls from the browser:
+  `lib/catalogue-public-api.ts`.
+- Strings: `portal.shops_api_*`, `apply.picker_api_*` (en + hi).
+- Events: client `click` ids `admin_shop_saved`, `admin_shop_coverage_saved`, `admin_shop_offer_added`,
+  `admin_shop_offer_saved`, `admin_shop_{status}`, `admin_shop_member_added`, `shop_hours_saved`,
+  `shop_new_product_requested`. Server: `admin_shop_updated`, `admin_shop_coverage_changed`,
+  `admin_partner_standing_changed`, `admin_shop_member_added`, `shop_hours_changed`.
+- Tests:
+  - db `shops-admin.test.ts` (scope, cursor, compare-and-set, GSTIN approval, coverage city, go-live, standing codes
+    and pricing exclusion, members, own profile, hours), `routing.test.ts` (per-shop timer, open shops first,
+    closed-shop deadline), `checkout.test.ts` (free-delivery chain), `partner-applications.test.ts` (owner in
+    `shop_users`);
+  - API `admin-shops.test.ts` (role matrix, strict bodies, rate-limit count, owner-only hours);
+  - shared `shop-hours.test.ts`, `free-delivery.test.ts`;
+  - web `admin-shop-form.test.ts`.
+  - Playwright on the real API is not run yet (no emulator run in this change).
+- **Gaps:**
+  - no PIN-code list endpoint for the coverage editor (staff type PIN codes; another change adds PIN admin);
+  - workshop standing still takes free text without a reason code;
+  - the application's ticked products are not offered as quick picks in "Sell another product";
+  - removing someone's portal access needs `pnpm db:grant-role`-style tooling (no endpoint).
+
+**Code review fixes (2026-11-14, user rulings)**
+
+- **List cursor:** carries the last row's name and id. It is compared directly and never looked up by id: the old
+  look-up could read a shop in another city (security review), and a rename between pages skipped rows.
+- **Migration 0051** backfills `shop_users` from the shop grants in `user_roles`. The owner wins when a person
+  holds both roles; it is idempotent and only covers shops that exist.
+- **GSTIN:** a GSTIN already held by another shop, or by a seller application that is not this shop's own and not
+  rejected, is refused with 409 `GSTIN_TAKEN` (blind index with the API keyring).
+- **Pending shops:**
+  - A pending shop may be **suspended** to keep it dark while its PIN codes and products are set up.
+  - The coverage and products panels warn that saving publishes a pending shop.
+  - Reactivating it later is an explicit staff decision to go live.
+- **Active PIN codes only:**
+  - Coverage counts and the go-live check include only active PIN codes (`pincodes.active`).
+  - A shop serving only switched-off PIN codes stays pending.
+- **Audit:** going live after the shop accepts the agreement is audited as the shop, not staff.
+- **Portal access:**
+  - An owner is never downgraded to staff (409 `ALREADY_OWNER`).
+  - Deactivated accounts are refused (409 `ACCOUNT_NOT_ACTIVE`).
+- **Hindi times:** shown on the 24-hour clock (no Latin am/pm).
+- **Closing soon:** an offer whose timer would run past closing counts as closed (spec 04).

@@ -16,6 +16,7 @@ import {
   pincodes,
   products,
   shopPincodes,
+  shopUsers,
   shops,
 } from '../schema';
 import { ConflictError, NotFoundError, ValidationError } from './errors';
@@ -157,6 +158,37 @@ export async function submitSellerApplication(
     }
     return { code, status };
   });
+}
+
+/**
+ * A GSTIN staff want to set on a shop is already held by another shop, or by a seller application that is not this
+ * shop's own and not rejected (code review 2026-11-14). Without a keyring (development) only shops are checked.
+ */
+export async function gstinHeldElsewhere(
+  tx: Tx,
+  gstin: string,
+  keyring: Keyring | null,
+  shopId: string,
+): Promise<boolean> {
+  const [shop] = await tx
+    .select({ id: shops.id })
+    .from(shops)
+    .where(and(eq(shops.gstin, gstin), sql`${shops.id} <> ${shopId}`))
+    .limit(1);
+  if (shop) return true;
+  if (!keyring) return false;
+  const [app] = await tx
+    .select({ id: partnerApplications.id })
+    .from(partnerApplications)
+    .where(
+      and(
+        eq(partnerApplications.gstinIndex, blindIndex(gstin, keyring, GSTIN_PURPOSE)),
+        sql`${partnerApplications.status} <> 'rejected'`,
+        sql`${partnerApplications.convertedShopId} is distinct from ${shopId}::uuid`,
+      ),
+    )
+    .limit(1);
+  return app !== undefined;
 }
 
 /** Another application or a shop already has this GSTIN or enrolment number. */
@@ -598,6 +630,11 @@ export async function linkApplicantOwner(db: Tx, input: { userId: string; phone:
         grantedBy: a.reviewedBy,
         reason: 'seller application approved',
       });
+      // Membership = who gets live pings for the shop (live.ts); the grant above is what the API authorises.
+      await tx
+        .insert(shopUsers)
+        .values({ shopId: a.shopId, userId: input.userId, role: 'owner' })
+        .onConflictDoNothing();
     }
     return claimed.length;
   });

@@ -28,9 +28,14 @@ const AdminWorkshopsApi = dynamic(() => import('./admin-workshops-api').then((m)
   ssr: false,
   loading: () => <div className="skeleton h-64 rounded-card" aria-hidden="true" />,
 });
-/** The demo partner tabs; with real sign-in workshops live in their own API section above them. */
+/** Real sign-in: shops are listed, edited, paused and given products on the API (shop management, 2026-11-14). */
+const AdminShopsApi = dynamic(() => import('./admin-shops-api').then((m) => m.AdminShopsApi), {
+  ssr: false,
+  loading: () => <div className="skeleton h-64 rounded-card" aria-hidden="true" />,
+});
+/** The demo partner tabs; with real sign-in shops and workshops live in their own API sections above them. */
 const PARTNER_TABS: readonly PartnerKind[] =
-  AUTH_MODE === 'firebase' ? ['shop', 'mechanic'] : ['shop', 'workshop', 'mechanic'];
+  AUTH_MODE === 'firebase' ? ['mechanic'] : ['shop', 'workshop', 'mechanic'];
 
 type Action = 'pause' | 'suspend' | 'resume' | 'reactivate';
 const TARGET: Record<Action, PartnerStatus> = {
@@ -63,7 +68,7 @@ interface Partner {
 export function AdminPartners({ actor }: { actor: string }) {
   const t = useTranslations('portal');
   const locale = useLocale();
-  const [tab, setTab] = useState<PartnerKind>('shop');
+  const [tab, setTab] = useState<PartnerKind>(PARTNER_TABS[0] ?? 'mechanic');
   const history = usePartnerHistory();
   const applications = useApplications();
 
@@ -101,6 +106,8 @@ export function AdminPartners({ actor }: { actor: string }) {
       <AdminPriceRequests />
 
       <AdminAgreement />
+
+      {AUTH_MODE === 'firebase' ? <AdminShopsApi /> : null}
 
       {AUTH_MODE === 'firebase' ? <AdminWorkshopsApi /> : null}
 

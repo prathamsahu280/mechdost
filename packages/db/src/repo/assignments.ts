@@ -26,11 +26,20 @@ export async function offerOrderToShop(
     shopId: string;
     expectedOrderVersion: number;
     timeoutMinutes: number;
+    /**
+     * A fixed deadline instead of `now() + timeoutMinutes`: the shop is closed, so the offer waits until it opens
+     * plus the grace setting (`acceptanceDeadline` in `@mechdost/shared/shop-hours`). At most 8 days ahead.
+     */
+    expiresAt?: Date | null;
     actor: ActorContext;
   },
 ) {
   if (!Number.isInteger(args.timeoutMinutes) || args.timeoutMinutes < 1 || args.timeoutMinutes > 24 * 60) {
     throw new ValidationError('timeoutMinutes must be 1..1440');
+  }
+  const fixed = args.expiresAt ?? null;
+  if (fixed && (Number.isNaN(fixed.getTime()) || fixed.getTime() > Date.now() + 8 * 24 * 60 * 60_000)) {
+    throw new ValidationError('expiresAt must be within 8 days');
   }
   const [current] = await tx
     .select({ status: orders.status })
@@ -58,7 +67,10 @@ export async function offerOrderToShop(
         shopId: args.shopId,
         offeredBy: args.actor.userId ?? null,
         offeredAt: sql`now()`,
-        expiresAt: sql`now() + make_interval(mins => ${args.timeoutMinutes})`,
+        // A fixed deadline is never earlier than the normal timeout (and the CHECK keeps it after the offer).
+        expiresAt: fixed
+          ? sql`greatest(${fixed.toISOString()}::timestamptz, now() + make_interval(mins => ${args.timeoutMinutes}))`
+          : sql`now() + make_interval(mins => ${args.timeoutMinutes})`,
       })
       .returning();
     if (!assignment) throw new Error('assignment insert returned no row');

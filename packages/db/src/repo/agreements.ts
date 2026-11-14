@@ -86,6 +86,6 @@ export async function acceptAgreement(
         cityId: shop.cityId,
         props: { shopId: input.shopId, version: input.version },
       });
-    return { live: await maybeGoLive(tx, input.shopId, input.userId) };
+    return { live: await maybeGoLive(tx, input.shopId, input.userId, 'shop') };
   });
 }

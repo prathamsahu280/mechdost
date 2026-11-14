@@ -115,6 +115,18 @@ export const shops = pgTable(
     busy: boolean().notNull().default(false),
     busyUntil: ts(),
     acceptanceTimeoutMin: integer(),
+    /**
+     * Free delivery from this order value for this shop's orders (paise). NULL = the city setting
+     * `checkout.free_delivery_min_paise`; 0 = always free. A PIN override wins over it (spec 03 delivery chain).
+     */
+    freeDeliveryMinPaise: paise(),
+    /**
+     * Working hours `{open, close, days}` (IST, 0 = Sunday; `@mechdost/shared/shop-hours`), set by the owner or
+     * staff. Routing suggests open shops first; an offer to a closed shop waits until it opens + the grace setting.
+     */
+    hours: jsonb()
+      .notNull()
+      .default(sql`'{"open":"09:00","close":"21:00","days":[1,2,3,4,5,6]}'::jsonb`),
     ratingAvg: numeric({ precision: 3, scale: 2 }),
     ratingCount: integer().notNull().default(0),
     version: version(),
@@ -133,6 +145,11 @@ export const shops = pgTable(
       sql`${t.gstin} is null or ${t.gstin} ~ '^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$'`,
     ),
     check('shops_timeout_positive', sql`${t.acceptanceTimeoutMin} is null or ${t.acceptanceTimeoutMin} > 0`),
+    check('shops_hours_object', sql`jsonb_typeof(${t.hours}) = 'object'`),
+    check(
+      'shops_free_delivery_nonneg',
+      sql`${t.freeDeliveryMinPaise} is null or ${t.freeDeliveryMinPaise} >= 0`,
+    ),
     check('shops_pan_encrypted', encryptedCheck(t.panEnc)),
     index().on(t.cityId, t.status),
     index().on(t.pincode),

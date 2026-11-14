@@ -70,6 +70,19 @@ text. The change itself is in `audit_log` (`pincode.*`, before/after) in the sam
 - **Click ids (web):** `partner_application_seller`, `partner_application_seller_invite`, `partner_products_opened`, `partner_location_gps`, `partner_location_search`, `partner_location_pin`, `admin_invite_created`, `admin_invite_revoked`, `admin_price_approved`, `admin_price_rejected`, `admin_agreement_published`, `admin_application_approved`, `admin_application_rejected`, `shop_price_requested`, `shop_agreement_accepted`.
 - **No secrets in paths:** the invite link carries a bearer token, so `redactPath` (`@mechdost/shared/analytics-path`) turns `/partners/invite/<token>` into `/partners/invite/:token` in `track()`, the on-device demo log, the transport's `page` field and the API's `ANALYTICS_PATH`. Any new route with a secret in its path is added there (security review 2026-11-13).
 
+## Shop management events (2026-11-14)
+
+- **Server events** (`packages/shared/src/analytics.ts`):
+  - `admin_shop_updated`: shopId and the field names changed (never their values);
+  - `admin_shop_coverage_changed`: shopId and the counts added, changed and removed;
+  - `admin_partner_standing_changed`: partnerKind, partnerId, from, to and reasonCode;
+  - `admin_shop_member_added`: shopId and role (no phone);
+  - `shop_hours_changed`: shopId, the number of open days, by `shop`.
+- **Click ids (web):**
+  - admin: `admin_shop_saved`, `admin_shop_coverage_saved`, `admin_shop_offer_added`, `admin_shop_offer_saved`,
+    `admin_shop_paused`, `admin_shop_suspended`, `admin_shop_approved`, `admin_shop_member_added`;
+  - shop: `shop_hours_saved`, `shop_new_product_requested`.
+
 ## Product comparison events (2026-11-13)
 
 - **Client events:** `compare_added` (slug, category, count 1–4), `compare_removed` (slug, count), `compare_opened` (count, category), `compare_differences_toggled` (on). `add_to_cart` gains an optional `source: 'compare'` (optional so events from older open tabs still pass).

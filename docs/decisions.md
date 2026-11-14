@@ -658,6 +658,52 @@ the write form and Admin → Reviews now work in real mode (quotes and coins unc
   stepper gets the full action-row width at every card width. Another category still goes through the tray question
   and the box stays unchecked until "Start new".
 
+## 2026-11-14 — Shop management and shop hours on the API (rulings; user: hours "keep it configurable")
+
+Specs 03, 04, 07 and 08; migration 0051. Rulings, with the cost if wrong in brackets:
+
+- **Why a shop is paused or suspended is a code plus a note** (hard rule 16). The codes are in
+  `PARTNER_STANDING_REASONS`, stored in `partner_status_events.reason_code`. The note is the 5–300 character text the
+  shop reads. The code is never preselected. Older rows and workshops keep a null code (workshops still use free
+  text). (cheap: add codes to workshops later)
+- **Free delivery per order group** uses the first threshold set: PIN ?? shop ?? city setting. The shop value is
+  `shops.free_delivery_min_paise` (NULL = city, 0 = always free). The first set value wins even when it is higher
+  than the city's. (cheap)
+- **Staff edits:** a GSTIN change is an approval. It needs `partners:approve` covering the shop's city, the GSTIN
+  must be valid and from the shop's state, and setting it makes an enrolled shop `registered`. A GSTIN can be
+  corrected, never removed. (medium: invoices depend on it)
+- **Coverage** may only use PIN codes of the shop's own city. A shop elsewhere is another shop (spec 15). Coverage
+  edits are a compare-and-set on the shop's `version`. (cheap)
+- **Who can do what:**
+  - The admin shop inventory routes moved under one `/admin/shops/*` router (L54: no double authentication or rate
+    counting).
+  - Reading a shop's offers needs `partners:read` (was `partners:write`).
+  - Portal access refuses staff accounts (`MEMBER_IS_STAFF`).
+  - Adding a member writes `shop_users` as well as the role grant, so live pings reach shops. The owner link on
+    sign-in does too: before this, production never wrote `shop_users`. (cheap)
+- **Going live:** a pending shop also goes live when staff add a PIN code or a product, not only on price approval
+  or the agreement. A pending shop can only be suspended by hand (kept dark while it is set up).
+- **Minutes to accept:** a shop's own value (5–120) now applies when routing (the column existed but was ignored).
+- **Working hours** (user 2026-11-14):
+  - One window on chosen weekdays, in IST. The default for every shop is **09:00–21:00, Monday to Saturday**.
+    Closing "24:00" means open until midnight.
+  - The owner edits them, and so does staff. Shop staff (non-owner) cannot.
+  - Routing ranks open shops first among eligible shops (before distance). Routing to a closed shop is allowed: the
+    shop gets the offer at once and has until **opening + `orders.closed_shop_grace_min`** (default 60, 15–240,
+    city override) to accept.
+  - The stock hold is stretched to cover that.
+  - **Closing soon counts as closed** (user 2026-11-14, "Yes, treat as closed"): if the timer would run past
+    today's closing time, the deadline is the next opening + grace.
+  - Not built: lunch breaks, holidays, a per-shop grace. (cheap: the rules live in `@mechdost/shared/shop-hours`)
+- **Code review rulings (2026-11-14):**
+  - A pending shop can be suspended to keep it dark; the UI warns that saving a PIN and a product publishes it.
+  - A GSTIN held by another shop or a live application is refused (409 `GSTIN_TAKEN`).
+  - Only active PIN codes count for going live.
+  - Owners are never downgraded by "Portal access"; deactivated accounts are refused.
+  - Migration 0051 backfills `shop_users` from the shop grants.
+- **Seller application picker:** in real sign-in builds it lists the live API catalogue (the mode in which the form
+  posts to the API). (cheap)
+
 ## PENDING DECISIONS (ask "what's pending" to review)
 
 | #   | Topic                                                                                                                                                                                                                                                                                                            | Leaning                                                                             | When                                 |

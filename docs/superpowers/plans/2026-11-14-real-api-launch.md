@@ -76,3 +76,15 @@ Goal: mechdost.com runs on real sign-in (Firebase) and the API for every flow, w
   quote orders skip the checkout COD cap (their own ceiling applies), one shop money model (payout, collect on COD,
   coin line), worker runs both the quote and the coin jobs; coins migration stays **0050** (prevId = 0049,
   `when` after 0049).
+
+- 2026-11-14 (shop management, branch worktree-agent-a2bed9e12251b15fd):
+  - Admin → Partners → Shops on the API: list and detail, profile with Hindi, GSTIN, minutes to accept and
+    free delivery, delivery PIN codes, products from the live catalogue, standing with reason codes, portal access.
+  - Shop portal header, pause banner, owner's working hours, "Sell another product" (price request) and the
+    agreement card.
+  - Checkout free delivery: PIN ?? shop ?? city.
+  - Routing: open shops first; a closed shop waits until it opens + `orders.closed_shop_grace_min`.
+  - Seller application picker on the live catalogue.
+  - Migration **0051**, not applied anywhere yet.
+  - Specs 03/04/07/08, decisions, runbook "Add the first shop".
+- 2026-11-14 (shop management, code review): main merged; migration renumbered to **0051** with a `shop_users` backfill; list cursor no longer reads other cities; `GSTIN_TAKEN`; pending shops can be kept dark (suspended) with a publish warning; only active PINs count for going live; owners never downgraded; near-closing offers wait for the next opening; Hindi 24-hour times; free delivery PIN ?? shop ?? city with main's `pincodes.free_delivery_min_paise`.

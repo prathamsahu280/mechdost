@@ -65,6 +65,18 @@ e2e/compare.spec.ts e2e/cart-stepper.spec.ts --workers=1`, the Hindi gate for `/
     - Merge quotes (re-stamp its migration after 0048), coins (fraud fix in progress, re-stamp), and shop management + hours.
     - Sentry/PostHog integration (agent building).
     - Then the switch.
+- **2026-11-14 (night): shop management on the real API** (agent branch `worktree-agent-a2bed9e12251b15fd`; not merged).
+  - Built: Admin → Partners → Shops (profile with Hindi, GSTIN, minutes to accept and free delivery; PIN coverage;
+    products; standing with reason codes; portal access); shop portal header, pause banner, owner's hours, "Sell
+    another product" and the agreement card; checkout free delivery PIN ?? shop ?? city; routing with shop hours
+    (open first; a closed shop waits until it opens + `orders.closed_shop_grace_min`); seller picker on the live
+    catalogue.
+  - Migration **0051**: not applied anywhere.
+  - Docs: specs 03/04/07/08/14, decisions "Shop management and shop hours on the API", runbook "Add the first shop".
+  - **Next:**
+    - merge (done: main merged, renumbered to 0051);
+    - apply 0051 before deploying;
+    - run the real-mode e2e with the emulator.
 
 - **2026-11-14 (evening): real-API launch for Monday 2026-11-16** (plan `docs/superpowers/plans/2026-11-14-real-api-launch.md`; user: "switch to the real api", scope "Everything, accept risk").
   - **On main, verified by `pnpm check`:**

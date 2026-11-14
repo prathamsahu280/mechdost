@@ -151,7 +151,15 @@ Stream D of the real-API launch (`docs/superpowers/plans/2026-11-14-real-api-lau
 - **Settings** (`admin-site-api.tsx` `SettingsApi`): every key of the `@mechdost/shared/settings` registry with its default and range; money is typed in whole rupees and stored in paise; checked with `settingProblem` before sending; one Save sends `PUT /v1/admin/settings/{key}` (global value, compare-and-set) for the changed keys. The demo's yes/no "order rules" card is not shown: `orders.customer_self_cancel` is in the list. City overrides are API-only for now.
 - **Site content** (`ContentApi`): the live text of the announcement and home headline keys per language. "Save and publish" writes the draft (`PUT /v1/admin/content/{key}/{locale}`) and publishes it; an emptied field is unpublished (the default text shows). Policy pages are not edited here yet (API supports them).
 - **Customers** (`admin-customers-api.tsx`): the API has no customer search, so staff open a customer by account id, then block (level, reason never preselected, optional end day in IST and staff note) or lift with a reason; history shown. The block reason select starts empty (the demo still preselects one).
-- **Partner applications, invites, price requests, seller agreement** (`admin-onboarding-api.tsx`): see spec 07 "Real API mode". The partners list (pause/suspend), layout editor, coins and quotes are still demo-only.
+- **Partner applications, invites, price requests, seller agreement** (`admin-onboarding-api.tsx`): see spec 07 "Real API mode". Layout editor, coins and quotes are still demo-only.
+- **Partners → Shops** (`admin-shops-api.tsx`, 2026-11-14): the city's shops with standing, open now/closed, PIN and
+  product counts; per shop: profile (English + Hindi, GSTIN with approval rights, minutes to accept, free delivery
+  from ₹, working hours), delivery PIN codes (charge, days, on/off), products (add from the live catalogue with
+  price ≤ MRP, stock and on/off; edit per row), pause / suspend / reactivate with a reason code (never preselected)
+  and a note, an optional pause end, history, and portal access by phone. The demo shop tab is hidden in real
+  sign-in. Details: spec 07 "Shop management on the API".
+- **Settings:** new key `orders.closed_shop_grace_min` (15–240 min, default 60, per city): how long after a closed
+  shop opens it still has to accept an order routed to it while closed (spec 04).
 - **Reviews** (`admin-reviews-api.tsx`, 2026-11-14): moderation queue on the API (Waiting / Published / Hidden; approve, hide with a reason code and staff note; compare-and-set). Details: spec 02 § Reviews.
 - **Services** (`admin-services-api.tsx`) and **Partners → Workshops** (`admin-workshops-api.tsx`), Stream E: route or reject service requests; add/edit workshops (English + Hindi, hours, menu), publish / verify location, pause / suspend / reactivate with a reason, portal access by phone. The demo workshop tab is hidden in real sign-in. Details and gaps: spec 06 § Real API mode (web).
 - **Service area** (`admin-pincodes-api.tsx`, under Settings; built 2026-11-14): a city's PIN codes — add, edit (centroid, English + Hindi area, free-delivery threshold), switch off with a reason code or on; `settings:read` to see, `cities:manage` to change. The seller approval form can fill in the city's active PIN codes. Details: spec 15 "PIN codes".

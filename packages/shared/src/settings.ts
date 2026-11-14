@@ -44,6 +44,11 @@ export const OPERATIONAL_SETTINGS = {
   /** How long a shop has to accept an offered order (minutes). */
   // Same bounds as the demo `/admin/settings` screen and spec 08 (5–120 min).
   'orders.acceptance_timeout_min': { kind: 'int', min: 5, max: 120, default: 15 },
+  /**
+   * An order routed to a closed shop waits for it: the shop has until its next opening time plus these minutes to
+   * accept (user 2026-11-14, shop working hours; spec 04).
+   */
+  'orders.closed_shop_grace_min': { kind: 'int', min: 15, max: 240, default: 60 },
   /** Smallest bulk quote, in units across all its products (spec 19, Q20 default 10). */
   'quotes.min_units': { kind: 'int', min: 2, max: 500, default: 10 },
   /**

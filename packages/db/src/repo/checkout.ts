@@ -5,6 +5,7 @@ import type { BusinessPurchase } from '@mechdost/shared/business';
 import { publicCode } from '@mechdost/shared/ids';
 import { OPERATIONAL_SETTINGS, type SettingKey } from '@mechdost/shared/settings';
 import { splitInclusiveGst } from '@mechdost/shared/money';
+import { freeDeliveryMinPaise, groupShippingPaise } from '@mechdost/shared/free-delivery';
 import { auditLog, orderGroups, orderItems, orders, settings } from '../schema';
 import { blockEffects } from '@mechdost/shared/customers';
 import { setActor } from './actor';
@@ -217,11 +218,12 @@ async function quoteInternal(
     shipping: unknown;
     lead_days: unknown;
     max_free: unknown;
+    shop_free_min: unknown;
   }>(
     await db.execute(sql`
       select l.sku, l.qty, v.id as variant_id, p.name, p.name_hi, b.name as brand, p.hsn, p.gst_rate_bp,
         v.mrp_paise, o.inventory_id, o.shop_id, o.shop_name, o.shop_name_hi, o.shop_state_id, o.price, o.shop_price,
-        o.shipping, o.lead_days, best.max_free
+        o.shipping, o.lead_days, best.max_free, o.shop_free_min
       from jsonb_to_recordset(${JSON.stringify(input.lines)}::jsonb) as l(sku text, qty int)
       left join product_variants v on v.sku = l.sku and v.status = 'active'
       left join products p on p.id = v.product_id and p.status = 'live'
@@ -231,7 +233,7 @@ async function quoteInternal(
           s.state_id as shop_state_id,
           coalesce(ap_pin.selling_paise, ap_city.selling_paise, si.selling_paise) as price,
           si.selling_paise as shop_price, sp.shipping_paise as shipping,
-          coalesce(si.lead_days, sp.lead_days) as lead_days
+          coalesce(si.lead_days, sp.lead_days) as lead_days, s.free_delivery_min_paise as shop_free_min
         from shop_inventory si
         join shops s on s.id = si.shop_id
         join shop_pincodes sp on sp.shop_id = s.id and sp.pincode = ${input.pincode} and sp.active
@@ -256,6 +258,8 @@ async function quoteInternal(
   const bySku = new Map(rows.map((r) => [r.sku, r]));
 
   const groupShops: string[] = [];
+  /** Per group: the shop's own free-delivery threshold (null = follow the city). */
+  const groupShopFreeMin: (number | null)[] = [];
   const groups: QuoteGroup[] = [];
   const priced: PricedLine[] = [];
   const lines: QuoteLine[] = input.lines.map((l) => {
@@ -286,6 +290,7 @@ async function quoteInternal(
     let g = groupShops.indexOf(r.shop_id);
     if (g === -1) {
       g = groupShops.push(r.shop_id) - 1;
+      groupShopFreeMin.push(numOrNull(r.shop_free_min));
       groups.push({
         seller: localized(r.shop_name ?? '', r.shop_name_hi, input.locale),
         subtotalPaise: 0,
@@ -324,14 +329,18 @@ async function quoteInternal(
     return { ...base, unitPaise: unit, totalPaise: gross, group: g, issue: null, available: null };
   });
 
+  // Free delivery per group (spec 03): PIN override ?? shop override ?? city setting (`@mechdost/shared/free-delivery`).
   const cityFreeMin = await setting(db, place.city_id, CHECKOUT_SETTINGS.freeDeliveryMinPaise.key);
   const pinFreeMin = numOrNull(place.free_delivery_min_paise);
-  for (const g of groups) {
-    // Free-delivery threshold: PIN override ?? shop override ?? city setting (spec 03 "Delivery charges").
-    const freeMin = pinFreeMin ?? /* shop override (shops.free_delivery_min_paise) goes here */ cityFreeMin;
-    if (freeMin !== null && g.subtotalPaise >= freeMin) g.shippingPaise = 0;
+  groups.forEach((g, i) => {
+    const freeMinPaise = freeDeliveryMinPaise({
+      pin: pinFreeMin,
+      shop: groupShopFreeMin[i] ?? null,
+      city: cityFreeMin,
+    });
+    g.shippingPaise = groupShippingPaise({ ...g, freeMinPaise });
     g.totalPaise = g.subtotalPaise + g.shippingPaise;
-  }
+  });
   const subtotal = groups.reduce((a, g) => a + g.subtotalPaise, 0);
   const shipping = groups.reduce((a, g) => a + g.shippingPaise, 0);
   const tax = groups.reduce((a, g) => a + g.taxPaise, 0);

@@ -1,8 +1,14 @@
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import type { OrderRejectReason, OrderStatus } from '@mechdost/shared/state';
 import { OPERATIONAL_SETTINGS } from '@mechdost/shared/settings';
+import {
+  DEFAULT_SHOP_HOURS,
+  acceptanceDeadline,
+  isShopHours,
+  shopOpenState,
+} from '@mechdost/shared/shop-hours';
 import { ORDER_REJECT_REASONS } from '@mechdost/shared/state';
-import { auditLog, orderAssignments, orders, reservations, shipments, shopInventory } from '../schema';
+import { auditLog, orderAssignments, orders, reservations, shipments, shopInventory, shops } from '../schema';
 import { overrideShipmentInTx } from './delivery';
 import { expireAssignment, offerOrderToShop } from './assignments';
 import { ConflictError, NotFoundError, ValidationError } from './errors';
@@ -58,6 +64,10 @@ export const ROUTING_SETTINGS = {
   reservationMinutes: {
     key: 'checkout.cod_reservation_minutes',
     fallback: OPERATIONAL_SETTINGS['checkout.cod_reservation_minutes'].default,
+  },
+  closedShopGraceMin: {
+    key: 'orders.closed_shop_grace_min',
+    fallback: OPERATIONAL_SETTINGS['orders.closed_shop_grace_min'].default,
   },
 } as const;
 
@@ -209,6 +219,10 @@ export interface RankedShop {
   /** Declined or let this order expire before: never offered again. */
   triedBefore: boolean;
   eligible: boolean;
+  /** Inside its working hours now (IST); open shops are suggested first (user 2026-11-14). */
+  openNow: boolean;
+  /** When a closed shop opens next (ISO); null while open. */
+  opensAt: string | null;
 }
 
 const MIN_SAMPLE = 5;
@@ -231,6 +245,7 @@ export async function rankShopsForOrder(
     accepted: unknown;
     answered: unknown;
     tried: boolean;
+    hours: unknown;
   }>(
     await db.execute(sql`
       with o as (select id, pincode from orders where id = ${orderId}),
@@ -238,7 +253,7 @@ export async function rankShopsForOrder(
       -- price it had at checkout (review C1, 2026-11-14) — a quote below the shop price is still routable.
       items as (select variant_id, qty, coalesce(cost_ceiling_paise, unit_paise) as ceiling_paise
         from order_items where order_id = ${orderId})
-      select s.id as shop_id, s.name, s.name_hi,
+      select s.id as shop_id, s.name, s.name_hi, s.hours,
         st_distance(s.location, (select centroid from pincodes where pincode = o.pincode)) as dist_m,
         -- A shop counts for an item only if it is paid at or below what the customer pays (admin prices, Q26).
         (select count(*) from items i join shop_inventory si on si.variant_id = i.variant_id and si.shop_id = s.id
@@ -261,7 +276,9 @@ export async function rankShopsForOrder(
           count(*) filter (where a.status in ('accepted', 'declined', 'expired'))::int as answered
         from order_assignments a where a.shop_id = s.id and a.offered_at > now() - interval '30 days') stats on true`),
   );
+  const now = new Date();
   const ranked = rows.map((r): RankedShop => {
+    const open = shopOpenState(isShopHours(r.hours) ? r.hours : DEFAULT_SHOP_HOURS, now);
     const total = num(r.total);
     const stocked = num(r.stocked);
     const answered = num(r.answered ?? 0);
@@ -277,10 +294,13 @@ export async function rankShopsForOrder(
       pricePaise: stocked === total ? numOrNull(r.price) : null,
       triedBefore: r.tried,
       eligible: !r.tried && stocked === total && total > 0,
+      openNow: open.open,
+      opensAt: open.open ? null : open.opensAt.toISOString(),
     };
   });
   const key = (s: RankedShop) => [
     s.eligible ? 0 : 1,
+    s.openNow ? 0 : 1, // an open shop can answer now: suggested before a nearer closed one
     s.distanceKm ?? Number.MAX_SAFE_INTEGER,
     -(s.acceptanceRate ?? 0),
     -(s.rating ?? 0),
@@ -440,18 +460,35 @@ export async function routeOrder(
       update order_items oi set shop_unit_paise = si.selling_paise
       from shop_inventory si
       where oi.order_id = ${o.id} and si.shop_id = ${input.shopId} and si.variant_id = oi.variant_id`);
-    await moveReservations(
-      tx,
-      o.id,
-      input.shopId,
-      await citySetting(tx, o.cityId, ROUTING_SETTINGS.reservationMinutes),
+    // The shop's own acceptance time (admin shop profile) wins over the city setting. A closed shop may still be
+    // offered the order: it then has until its next opening time + the grace setting (user 2026-11-14).
+    const [own] = await tx
+      .select({ minutes: shops.acceptanceTimeoutMin, hours: shops.hours })
+      .from(shops)
+      .where(eq(shops.id, input.shopId));
+    const timeout = Math.min(
+      own?.minutes ?? (await citySetting(tx, o.cityId, ROUTING_SETTINGS.acceptanceTimeoutMin)),
+      24 * 60,
     );
-    const timeout = await citySetting(tx, o.cityId, ROUTING_SETTINGS.acceptanceTimeoutMin);
+    const now = new Date();
+    const deadline = acceptanceDeadline({
+      hours: isShopHours(own?.hours) ? own.hours : DEFAULT_SHOP_HOURS,
+      at: now,
+      timeoutMinutes: timeout,
+      graceMinutes: await citySetting(tx, o.cityId, ROUTING_SETTINGS.closedShopGraceMin),
+    });
+    // The stock hold must outlive the offer, or it lapses overnight and the morning accept fails.
+    const holdMinutes = Math.max(
+      await citySetting(tx, o.cityId, ROUTING_SETTINGS.reservationMinutes),
+      Math.ceil((deadline.expiresAt.getTime() - now.getTime()) / 60_000) + timeout,
+    );
+    await moveReservations(tx, o.id, input.shopId, holdMinutes);
     const assignment = await offerOrderToShop(tx, {
       orderId: o.id,
       shopId: input.shopId,
       expectedOrderVersion: o.version,
-      timeoutMinutes: Math.min(timeout, 24 * 60),
+      timeoutMinutes: timeout,
+      expiresAt: deadline.closed ? deadline.expiresAt : null,
       actor: { type: 'admin', userId: input.staffUserId },
     });
     await tx.insert(auditLog).values({
@@ -460,7 +497,13 @@ export async function routeOrder(
       action: o.status === 'placed' ? 'order.routed' : 'order.rerouted',
       entity: 'order',
       entityId: o.id,
-      after: { shopId: input.shopId, assignmentId: assignment.id, timeoutMinutes: timeout },
+      after: {
+        shopId: input.shopId,
+        assignmentId: assignment.id,
+        timeoutMinutes: timeout,
+        shopClosed: deadline.closed,
+        expiresAt: assignment.expiresAt,
+      },
     });
     await recordServerEvent(tx, o.status === 'placed' ? 'admin_order_routed' : 'admin_order_rerouted', {
       userId: input.staffUserId,

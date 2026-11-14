@@ -324,6 +324,8 @@ Items decided to happen before going public; tick them off here.
      - `pnpm db:seed:pincodes` adds the missing PINs and names the five existing ones. It never deletes a PIN and never
        switches an existing one on or off, so it is safe to run again.
      - Then open Admin → Settings → Service area and switch PINs on or off there (a reason is required).
+   - **Migration 0051 (shop management: free-delivery override, standing reason codes, shop hours; backfills
+     `shop_users`)** is needed by the shop screens below; apply it before deploying that code.
 5. **Flip the switches:**
    - `gh variable set NEXT_PUBLIC_AUTH_MODE --body firebase`
    - `gh variable set NEXT_PUBLIC_DATA_MODE --body api`
@@ -334,7 +336,24 @@ Items decided to happen before going public; tick them off here.
    - Sign out and in again (staff two-step).
 7. **Content:**
    - Admin → Catalogue → Add product / Import CSV (`docs/runbooks/catalogue-import.md`).
-   - Add shops (seller invite or application → approve with PIN codes). Set shop prices.
+   - **Add the first shop** (spec 07 "Shop management on the API"):
+     1. Admin → Partners → **Invite a seller** (name, email, mobile). The seller opens the link and fills the form,
+        ticking products from the live catalogue. An invited application is approved on submit with the city's
+        default delivery area. A walk-in seller can apply at `/partners/apply/seller` instead; approve it in the
+        applications list with its PIN codes, charge and days.
+     2. The seller **signs up on mechdost.com with the same mobile number**. That links them as the shop's owner. If
+        someone else must run the portal, use Admin → Partners → Shops → Manage → **Portal access** and enter their
+        phone. They must have signed up first.
+     3. Admin → Partners → Shops → Manage:
+        - **Profile:** add the Hindi name and address. Check the GSTIN, the working hours (default 09:00–21:00,
+          Monday to Saturday), the minutes to accept and the free-delivery amount. Leave these empty to use the
+          city settings.
+        - **Delivery area:** add or adjust the PIN codes, charges and days.
+     4. **Products:** Admin → Partners → Shops → Manage → **Products** → Add a product. Pick it from the catalogue,
+        then enter the shop's price (not above the MRP), the stock and "On sale". Alternatively, the shop picks
+        "Sell another product" in its portal and staff approve the price in the price queue.
+     5. The shop goes **live by itself** once it has a product on sale and a PIN code (and the agreement, if
+        `partners.agreement_required` is on). The list shows "Live".
    - Add workshops (Admin → Workshops). Publish and verify the location.
 8. **WhatsApp:**
    - Once Meta approves the templates, turn each event on in Admin → Notifications (English and Hindi text).
