@@ -4,7 +4,7 @@ import { recordAndApplyRazorpayEvent } from '@mechdost/db/repo';
 import type { SessionCache } from '../auth/session-cache';
 import { ApiError } from '../errors';
 import { log } from '../logger';
-import { authenticate, requireVerified } from '../middleware/auth';
+import { authenticate, requireCustomerVerified } from '../middleware/auth';
 import { rateLimit, RATE_RULES } from '../middleware/rate-limit';
 import { paymentFromWebhook, WebhookPayload, webhookSignatureValid } from '../payments/razorpay';
 import { paymentFact, verifyCheckout } from '../payments/service';
@@ -66,7 +66,7 @@ export function paymentRoutes(deps: AppDeps, cache: SessionCache) {
     '/payments/*',
     rateLimit(deps.rateLimiter, RATE_RULES.apiPerUser, (c) => c.get('auth').user.id),
   );
-  app.use('/payments/*', requireVerified);
+  app.use('/payments/*', requireCustomerVerified(deps));
   return app.openapi(verify, async (c) => {
     const gateway = deps.razorpay;
     const secret = deps.config.razorpay?.keySecret;

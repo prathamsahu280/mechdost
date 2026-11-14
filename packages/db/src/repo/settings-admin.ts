@@ -59,6 +59,18 @@ export async function globalIntSetting(db: Tx, key: SettingKey): Promise<number>
   return spec.kind === 'int' && typeof spec.default === 'number' ? spec.default : 0;
 }
 
+/** A whole-site yes/no setting: the admin's global value, else the registry default. */
+export async function globalFlagSetting(db: Tx, key: SettingKey): Promise<boolean> {
+  const [row] = await db
+    .select({ value: settings.value })
+    .from(settings)
+    .where(and(eq(settings.key, key), isNull(settings.cityId)))
+    .limit(1);
+  if (typeof row?.value === 'boolean') return row.value;
+  const spec = OPERATIONAL_SETTINGS[key];
+  return spec.kind === 'boolean' && Boolean(spec.default);
+}
+
 /** Create (`expectedVersion` null) or change the global value or one city's override. */
 export async function saveOperationalSetting(
   db: Tx,

@@ -2206,6 +2206,7 @@
     "api_set_orders_customer_self_cancel_online": "Customers may cancel their own prepaid (online) order until the shop confirms it; the refund goes to the original payment method",
     "api_set_orders_acceptance_timeout_min": "Time a shop has to accept an order",
     "api_set_catalogue_require_hindi_to_publish": "Products go live only with complete Hindi texts",
+    "api_set_customers_require_verified_email": "Customers must verify their email (not only their phone) before ordering, booking or reviewing",
     "api_set_support_customer_messages_per_ticket_per_day": "Customer messages per request each day",
     "api_set_assistant_daily_messages": "Shopping assistant answers per day (0 = off)",
     "api_set_unit_rupees": "rupees",

@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { seedRaipurDemo, type DemoFixture } from '@mechdost/db/demo-seed';
 import { ensureUser } from '@mechdost/db/repo';
-import { orderGroups } from '@mechdost/db/schema';
+import { orderGroups, settings } from '@mechdost/db/schema';
 import { bearer, buildApp, type ErrorJson } from './helpers';
 
 const fixture = JSON.parse(
@@ -100,6 +100,8 @@ describe('checkout API', () => {
     expect(
       (await send({ 'content-type': 'application/json', 'idempotency-key': 'order-key-0000000001' })).status,
     ).toBe(401);
+    // Email verification is an admin setting (off by default, user 2026-11-14); switched on, it refuses (left on: no later step uses an email-unverified customer).
+    await ctx.db.insert(settings).values({ key: 'customers.require_verified_email', value: true });
     const blocked = await send(keyed(unverified));
     expect(((await blocked.json()) as ErrorJson).error.code).toBe('VERIFICATION_REQUIRED');
     expect((await send(verified)).status).toBe(400); // no Idempotency-Key

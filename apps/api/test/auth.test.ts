@@ -4,7 +4,13 @@ import { deactivateUser, ensureUser, grantRole } from '@mechdost/db/repo';
 import { SessionCache } from '../src/auth/session-cache';
 import { TokenError } from '../src/auth/token-verifier';
 import { handleError } from '../src/errors';
-import { authenticate, requirePermission, requireVerified } from '../src/middleware/auth';
+import {
+  authenticate,
+  requireCustomerVerified,
+  requirePermission,
+  requireVerified,
+} from '../src/middleware/auth';
+import * as s from '@mechdost/db/schema';
 import { MemoryRateLimiter } from '../src/rate-limit/limiter';
 import type { AppEnv } from '../src/types';
 import { bearer, buildApp, type ErrorJson } from './helpers';
@@ -182,6 +188,9 @@ describe('permission and verification gates', () => {
       (c) => c.json({ ok: true }),
     );
     gated.post('/checkout', authenticate(appDeps, cache), requireVerified, (c) => c.json({ ok: true }));
+    gated.post('/customer-order', authenticate(appDeps, cache), requireCustomerVerified(appDeps), (c) =>
+      c.json({ ok: true }),
+    );
     gated.post('/refund', authenticate(appDeps, cache, { checkRevoked: true }), (c) => c.json({ ok: true }));
     return { gated, ...built };
   }
@@ -256,6 +265,40 @@ describe('permission and verification gates', () => {
     expect((await gated.request('/checkout', { method: 'POST', headers: bearer(verified) })).status).toBe(
       200,
     );
+  });
+
+  it('customers order with a verified phone; email only when the admin requires it (user 2026-11-14)', async () => {
+    const { gated, verifier, db } = await gatedApp();
+    const phoneOnly = verifier.add('token-gate-phone-only-01', {
+      firebaseUid: 'g-6',
+      phone: '+919833333336',
+      email: null,
+      emailVerified: false,
+    });
+    const post = (token: string) =>
+      gated.request('/customer-order', { method: 'POST', headers: bearer(token) });
+    // Default: the setting is off, so a verified phone is enough.
+    expect((await post(phoneOnly)).status).toBe(200);
+    // The admin switches it on: an unverified email is refused with the usual code and details.
+    await db.insert(s.settings).values({ key: 'customers.require_verified_email', value: true });
+    try {
+      const res = await post(phoneOnly);
+      expect(res.status).toBe(403);
+      const body = (await res.json()) as ErrorJson;
+      expect(body.error.code).toBe('VERIFICATION_REQUIRED');
+      expect(body.error.details).toEqual({ phoneVerified: true, emailVerified: false });
+    } finally {
+      await db.delete(s.settings);
+    }
+    // No verified phone is always refused.
+    const noPhone = verifier.add('token-gate-no-phone-0001', {
+      firebaseUid: 'g-7',
+      email: 'g7@example.com',
+      emailVerified: true,
+    });
+    // Refused even earlier: an account cannot exist without a phone (sign-in answers 422), so it never orders.
+    const res = await post(noPhone);
+    expect(res.status).toBeGreaterThanOrEqual(400);
   });
 
   it('checks token revocation on sensitive routes', async () => {

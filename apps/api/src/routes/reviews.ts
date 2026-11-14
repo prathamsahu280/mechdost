@@ -19,7 +19,12 @@ import {
   REVIEW_TARGETS,
 } from '@mechdost/shared/reviews';
 import type { SessionCache } from '../auth/session-cache';
-import { authenticate, requirePermission, requireVerified } from '../middleware/auth';
+import {
+  authenticate,
+  requireCustomerVerified,
+  requirePermission,
+  requireVerified,
+} from '../middleware/auth';
 import { rateLimit, RATE_RULES } from '../middleware/rate-limit';
 import type { RateRule } from '../rate-limit/limiter';
 import type { AppDeps, AppEnv } from '../types';
@@ -277,7 +282,7 @@ export function reviewRoutes(deps: AppDeps, cache: SessionCache) {
     );
   }
   app.use('/my-reviews/*', requirePermission('reviews:write'));
-  app.on('POST', '/my-reviews', requireVerified);
+  app.on('POST', '/my-reviews', requireCustomerVerified(deps));
   app.on(
     'POST',
     '/my-reviews',

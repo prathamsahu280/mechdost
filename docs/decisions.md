@@ -302,6 +302,12 @@ User shared Razorpay **test** keys and asked to "see how we have the stuff for r
 - **Payments at launch:** the user chose cash on delivery plus Razorpay with the test key. The API refuses test keys in production, a deliberate guard, so the copied keys took the API down for about 6 minutes. They are disabled on the server, and the public key variable was removed from GitHub. Launch is **cash on delivery only until live keys** unless the user decides otherwise (asked 2026-11-14). The webhook secret is generated and kept in the local `.env` (and disabled on the server with the keys).
 - **Smoke test:** run the emulator end-to-end test against the launch backend, then reset the data before the real catalogue goes in. Only when the user says so.
 
+## 2026-11-14 (night) — Customers order with a verified phone; email verification is an admin setting
+
+- Supersedes the early rule "phone and email verified before the first order" for **customers only**. The new setting `customers.require_verified_email` is off by default. Many Raipur customers rarely use email, and requiring it would block cash-on-delivery orders.
+- Staff and partner actions still need both.
+- Spec 01 has the details.
+
 ## 2026-11-14 — Launch scope in real mode: features with no API are hidden (ruling under "Everything, accept risk")
 
 - **Hidden in real mode** (`BROWSER_ONLY_FEATURES` in `apps/web/src/lib/data-mode.ts`): bulk quotes (spec 19), MechDost Coins (spec 20) and customer reviews. None has an API yet, and in real mode anything a customer typed there would stay on their device only.

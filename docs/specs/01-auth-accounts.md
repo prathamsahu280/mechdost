@@ -99,3 +99,12 @@ Registration-number lookup (Vahan), saved cards (gateway tokens), referral (rewa
 ## My vehicles: edit (2026-11-14, user)
 
 User: "in my vehicle theres no option to edit the already added vehicles". Each vehicle card has Edit (pencil) beside Remove; the edit form opens in place of that card, prefilled (type, make, model, year, fuel, registration, odometer), with Save and Cancel — one form open at a time. Same checks as adding. Demo store `updateVehicle`; API `PATCH /me/vehicles/:id` when the account area moves to the API. Analytics `click` id `vehicle_edited`. Test `e2e/qa-regressions.spec.ts` "account: a saved vehicle can be edited".
+
+## Email verification to order (setting, 2026-11-14)
+
+User: "make it admin-configurable".
+
+- **Customers:** placing orders (COD or online), payments, service bookings and reviews need a verified **phone**. A verified **email** is needed only when the admin switches on `customers.require_verified_email` (site-wide, off by default).
+- **Staff and partners:** they still need both (`requireVerified`).
+- **Implementation:** API middleware `requireCustomerVerified` (`apps/api/src/middleware/auth.ts`). Tests: `apps/api/test/auth.test.ts`, "customers order with a verified phone; email only when the admin requires it".
+- **Website:** it never blocks on its own. It shows "verify your email" only when the API answers `VERIFICATION_REQUIRED`.

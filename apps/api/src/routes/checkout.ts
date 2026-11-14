@@ -12,7 +12,7 @@ import { PERSON_CANCEL_REASONS } from '@mechdost/shared/state';
 import type { SessionCache } from '../auth/session-cache';
 import { ensureRazorpayOrder } from '../payments/service';
 import { ApiError } from '../errors';
-import { authenticate, requirePermission, requireVerified } from '../middleware/auth';
+import { authenticate, requireCustomerVerified, requirePermission } from '../middleware/auth';
 import { rateLimit, RATE_RULES } from '../middleware/rate-limit';
 import type { RateRule } from '../rate-limit/limiter';
 import type { AppDeps, AppEnv } from '../types';
@@ -314,7 +314,7 @@ export function checkoutRoutes(deps: AppDeps, cache: SessionCache) {
     '/orders',
     rateLimit(deps.rateLimiter, PLACE_RATE, (c) => c.get('auth').user.id),
   );
-  app.on('POST', '/orders', requireVerified);
+  app.on('POST', '/orders', requireCustomerVerified(deps));
   app.on('POST', '/orders', requirePermission('orders:place'));
 
   return app
