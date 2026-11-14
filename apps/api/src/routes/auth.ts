@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
-import { findPasswordAccount, recordSignInAudit } from '@mechdost/db/repo';
+import { findPasswordAccount, recordSignInAudit, recordStaffSignIn } from '@mechdost/db/repo';
 import { parseSignInIdentifier, STAFF_2FA_CLAIM, STAFF_CODE_MAX_AGE_SECONDS } from '@mechdost/shared/auth';
 import { TokenError } from '../auth/token-verifier';
 import { ApiError } from '../errors';
@@ -163,6 +163,8 @@ export function authRoutes(deps: AppDeps) {
       if (!once.allowed)
         throw new ApiError(401, 'STAFF_CODE_USED', 'That code was already used — request a new one');
       claims = { [STAFF_2FA_CLAIM]: true };
+      // The Staff screen's "last sign-in" (design 2026-11-15): one audit row per completed staff sign-in.
+      await recordStaffSignIn(deps.db, account.userId);
     }
 
     let customToken: string;

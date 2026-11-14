@@ -4,7 +4,13 @@
  * build (`pnpm typecheck`), and every mock carries the schema so a fixture that no longer parses fails the case
  * (and `test/state-audit-api-fixtures.test.ts`). Pure data: no Playwright import, so Vitest runs it.
  */
-import { AdminContentList } from '@mechdost/shared/admin-config-api';
+import { AdminContentList, CustomerBlockList } from '@mechdost/shared/admin-config-api';
+import {
+  AuditPageDto,
+  CustomerSearchDto,
+  CustomerViewDto,
+  StaffListDto,
+} from '@mechdost/shared/admin-people-api';
 import { AdminErrors } from '@mechdost/shared/admin-errors-api';
 import { AdminOverviewDto, AnalyticsDashboardDto } from '@mechdost/shared/admin-analytics-api';
 import { AdminCoinActivityDto } from '@mechdost/shared/coins-api';
@@ -1047,6 +1053,205 @@ function quotesMocks(): Mock[] {
   ];
 }
 
+// ── Admin people screens (design 2026-11-15) ──────────────────────────────────────────────────────────────────
+
+const ROLE_NAMES: Readonly<Record<string, string>> = {
+  super_admin: 'Super admin',
+  ops_manager: 'Operations manager',
+  city_manager: 'City manager',
+  support_agent: 'Support agent',
+  finance: 'Finance',
+  catalogue_manager: 'Catalogue manager',
+  marketing: 'Marketing',
+};
+const CITY_ID = uuid(900);
+
+function staffMocks(): Mock[] {
+  const member = (
+    n: number,
+    role: string,
+    c: AuditCase,
+    extra: Partial<{ self: boolean; phone: boolean }> = {},
+  ) => ({
+    userId: uuid(100 + n),
+    name: long(c) ? loc(c) : `Staff Member ${String(n)}`,
+    phoneMasked: '••••••4410',
+    emailMasked: 's•••@example.com',
+    status: 'active',
+    lastSignInAt: extra.phone ? null : iso(-n * 90),
+    twoFactor: extra.phone ? ('phone_missing' as const) : ('ready' as const),
+    isSelf: extra.self === true,
+    grants: [
+      {
+        grantId: uuid(200 + n),
+        role,
+        roleName: ROLE_NAMES[role] ?? role,
+        cityId: role === 'city_manager' ? CITY_ID : null,
+        grantedAt: iso(-60 * 24 * n),
+      },
+    ],
+  });
+  return [
+    meMock(),
+    {
+      method: 'GET',
+      path: /^\/admin\/staff$/,
+      schema: StaffListDto,
+      reply: ({ c }): Reply => {
+        const s = c.state.staff ?? 'several';
+        if (s === 'error') return { status: 500, code: 'INTERNAL' };
+        const staff =
+          s === 'empty'
+            ? []
+            : s === 'self-only'
+              ? [member(1, 'super_admin', c, { self: true })]
+              : s === 'phone-missing'
+                ? [member(1, 'super_admin', c, { self: true }), member(2, 'marketing', c, { phone: true })]
+                : [
+                    member(1, 'super_admin', c, { self: true }),
+                    member(2, 'city_manager', c),
+                    member(3, 'support_agent', c),
+                    member(4, 'finance', c),
+                  ];
+        return {
+          body: {
+            staff,
+            truncated: false,
+            roles: Object.entries(ROLE_NAMES).map(([key, name]) => ({
+              key,
+              name,
+              scope: key === 'city_manager' ? ('city' as const) : ('global' as const),
+              superAdminOnly: key === 'super_admin' || key === 'finance',
+            })),
+            cities: [{ id: CITY_ID, code: 'RPR', name: 'Raipur', nameHi: 'रायपुर' }],
+          } satisfies Dto<typeof StaffListDto>,
+        };
+      },
+    },
+    {
+      method: 'POST',
+      path: /^\/admin\/staff\/grants$/,
+      reply: (): Reply => ({ status: 422, code: 'ROLE_SCOPE' }),
+    },
+  ];
+}
+
+function customerMocks(): Mock[] {
+  const id = uuid(300);
+  const result = (n: number, c: AuditCase) => ({
+    id: uuid(300 + n),
+    name: long(c) ? loc(c) : `Asha Verma ${String(n)}`,
+    phoneMasked: '••••••4410',
+    emailMasked: 'a•••@example.com',
+    status: 'active',
+    createdAt: iso(-60 * 24 * 30),
+  });
+  return [
+    meMock(),
+    {
+      method: 'GET',
+      path: /^\/admin\/customers\/search$/,
+      schema: CustomerSearchDto,
+      reply: ({ c }): Reply => {
+        const s = c.state.customers ?? 'results';
+        if (s === 'error') return { status: 422, code: 'SEARCH_QUERY' };
+        return {
+          body: {
+            kind: 'name' as const,
+            results: s === 'none' ? [] : [result(0, c), result(1, c), result(2, c)],
+          } satisfies Dto<typeof CustomerSearchDto>,
+        };
+      },
+    },
+    {
+      method: 'GET',
+      path: /^\/admin\/customers\/[0-9a-f-]{36}$/,
+      schema: CustomerViewDto,
+      reply: ({ c }): Reply => {
+        const s = c.state.customers ?? 'masked';
+        const hidden = s === 'sections-hidden';
+        const unmasked = s === 'unmasked';
+        return {
+          body: {
+            profile: {
+              id,
+              name: long(c) ? loc(c) : 'Asha Verma',
+              phone: unmasked ? '+919844444410' : '••••••4410',
+              email: unmasked ? 'asha@example.com' : 'a•••@example.com',
+              masked: !unmasked,
+              phoneVerified: true,
+              emailVerified: false,
+              status: 'active',
+              language: c.locale,
+              createdAt: iso(-60 * 24 * 90),
+            },
+            orders: hidden
+              ? null
+              : [
+                  {
+                    code: 'MD-RPR-2026-7K3Q9X-1',
+                    status: 'delivered',
+                    totalPaise: 124_500,
+                    at: iso(-60 * 24 * 3),
+                  },
+                ],
+            serviceRequests: hidden ? null : [],
+            tickets: hidden ? null : [{ code: 'REQ-RPR-2026-000A01', status: 'open', at: iso(-60 * 5) }],
+            refunds: hidden
+              ? null
+              : [{ id: uuid(301), amountPaise: 50_000, status: 'processed', at: iso(-60 * 24) }],
+            coins: hidden ? null : { balance: 40, lifetimeEarned: 90 },
+            consents: [
+              { purpose: 'marketing', granted: false, at: iso(-60 * 24) },
+              { purpose: 'analytics', granted: true, at: iso(-60 * 48) },
+            ],
+          } satisfies Dto<typeof CustomerViewDto>,
+        };
+      },
+    },
+    {
+      method: 'GET',
+      path: /^\/admin\/customers\/[0-9a-f-]{36}\/blocks$/,
+      schema: CustomerBlockList,
+      reply: (): Reply => ({ body: { blocks: [] } satisfies Dto<typeof CustomerBlockList> }),
+    },
+  ];
+}
+
+function auditMocks(): Mock[] {
+  const row = (n: number, c: AuditCase) => ({
+    id: 1000 - n,
+    at: iso(-n * 17),
+    actorUserId: n % 3 === 0 ? null : uuid(100 + (n % 3)),
+    actorName: n % 3 === 0 ? null : long(c) ? loc(c) : `Staff Member ${String(n % 3)}`,
+    actorRole: n % 3 === 0 ? 'system' : 'staff',
+    action: n % 2 === 0 ? 'role.granted' : 'setting.changed',
+    entity: n % 2 === 0 ? 'user_role' : 'setting',
+    entityId: n % 2 === 0 ? uuid(200 + n) : 'delivery.free_over_paise',
+    reason: n % 2 === 0 ? (long(c) ? loc(c) : 'Joins the support desk') : null,
+    before: n % 2 === 0 ? null : { value: 49_900, phone: '••••••4410' },
+    after: n % 2 === 0 ? { role: 'support_agent', cityId: null } : { value: 59_900 },
+  });
+  return [
+    meMock(),
+    {
+      method: 'GET',
+      path: /^\/admin\/audit$/,
+      schema: AuditPageDto,
+      reply: ({ c }): Reply => {
+        const s = c.state.audit ?? 'rows';
+        if (s === 'error') return { status: 422, code: 'AUDIT_FILTER' };
+        return {
+          body: {
+            rows: s === 'empty' ? [] : Array.from({ length: 6 }, (_, i) => row(i + 1, c)),
+            nextCursor: s === 'more' ? 'MTAwMA' : null,
+          } satisfies Dto<typeof AuditPageDto>,
+        };
+      },
+    },
+  ];
+}
+
 // ── Registry ───────────────────────────────────────────────────────────────────────────────────────────────────
 
 /** The mocks of one audit case: its screen's endpoints, plus `/me`. Unmocked calls fail the case. */
@@ -1080,6 +1285,12 @@ export function mocksFor(c: AuditCase): Mock[] {
       return homeRequestMocks(c);
     case 'API-WS-HOMEJOB':
       return homeJobMocks(c);
+    case 'API-ADM-STAFF':
+      return staffMocks();
+    case 'API-ADM-CUSTOMERS':
+      return customerMocks();
+    case 'API-ADM-AUDIT':
+      return auditMocks();
     default:
       // Navigation rows: the bar is under test; the screen behind it answers "not mocked" (see `mock-api.ts`).
       return [meMock()];

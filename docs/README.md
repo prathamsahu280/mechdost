@@ -46,6 +46,7 @@ Read `../CLAUDE.md` first (hard rules). Then:
 - `runbooks/payments.md` — Razorpay keys, how to try online payment end to end (quote → place → Checkout → verify), the webhook (Q75), unpaid-order expiry (2026-11-12).
 - `runbooks/catalogue-import.md` — adding products: the admin form and the CSV import (columns, attribute codes, problem codes, limits, API); sample file `runbooks/catalogue-import-sample.csv` (2026-11-14).
 - `runbooks/firebase.md` — Firebase projects, local keys, production checklist for sign-in.
+- `runbooks/staff-roles.md` — giving and removing staff roles from Admin → Staff, finding a customer, reading the audit log; the CLI stays for the first admin (2026-11-15).
 - `runbooks/monitoring.md` — Sentry (EU) errors and PostHog EU analytics: what is wired, settings, the read-only token for Admin → Errors, reading issues and dashboards, alerts, turning each off (2026-11-14).
 - `runbooks/deploy.md` — deployment: Docker images built in GitHub Actions, the AWS server (`/opt/mechdost`, Caddy HTTPS), first-time setup (security group, deploy key, `.env`, DNS), deploys, rollback, logs, migrations, troubleshooting (2026-11-13).
 - `runbooks/ui-testing.md` — UI testing: state dimensions (role, theme, language, viewport, worlds empty/cart/busy), the state matrix and responsive sweep (`e2e/state-matrix.spec.ts`), agent review and cross-role flows, bug classes and the checks that catch them, results log (2026-11-14). Screenshots live in the git-ignored `reports/`.

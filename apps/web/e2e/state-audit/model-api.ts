@@ -39,6 +39,8 @@ export const REAL_ADMIN_SECTIONS = [
   'layout',
   'settings',
   'notifications',
+  'staff',
+  'audit',
   'errors',
 ] as const;
 
@@ -399,6 +401,64 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
       { name: 'content', values: ['default', 'long', 'hidden', 'error'] },
     ],
     sweep: 10,
+    note: API_NOTE,
+    realApi: true,
+  },
+
+  // ─────────────── Admin people screens (design 2026-11-15): staff, customers, audit log ───────────────
+  {
+    code: 'API-ADM-STAFF',
+    page: 'Admin → Staff, real sign-in',
+    component:
+      'Staff and roles: member cards (roles, city, last sign-in, phone-code state), give-a-role form, remove-with-reason, empty, load error',
+    path: '/admin/staff',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['admin'] },
+      { name: 'staff', values: ['several', 'empty', 'self-only', 'phone-missing', 'error'] },
+      { name: 'form', values: ['closed', 'give', 'give-error', 'remove'] },
+      stress,
+    ],
+    sweep: 14,
+    note: API_NOTE,
+    realApi: true,
+  },
+  {
+    code: 'API-ADM-CUSTOMERS',
+    page: 'Admin → Customers, real sign-in',
+    component:
+      'Customer search (results, none, error) and the customer view (masked, unmasked, sections hidden for the role) with blocks',
+    path: '/admin/customers',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['admin'] },
+      { name: 'customers', values: ['results', 'none', 'error', 'masked', 'unmasked', 'sections-hidden'] },
+      { name: 'form', values: ['clean', 'open'] },
+      stress,
+    ],
+    sweep: 14,
+    note: API_NOTE,
+    realApi: true,
+  },
+  {
+    code: 'API-ADM-AUDIT',
+    page: 'Admin → Audit log, real sign-in',
+    component: 'Audit log: filters, entries (closed and open with before/after), more, empty, load error',
+    path: '/admin/audit',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['admin'] },
+      { name: 'audit', values: ['rows', 'empty', 'error', 'more'] },
+      { name: 'form', values: ['closed', 'open'] },
+      stress,
+    ],
+    sweep: 12,
     note: API_NOTE,
     realApi: true,
   },

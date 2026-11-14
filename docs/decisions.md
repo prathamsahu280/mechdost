@@ -957,3 +957,18 @@ Design: `docs/superpowers/specs/2026-11-15-home-service-design.md`; built descri
 - **Declined move reuses the existing `no_work_approved` → `billed` path** (one new edge `vehicle_received → no_work_approved` by the customer, one admin actor on the arrival edge); `billJob` bills the fee alone (`service_bills.estimate_id` nullable with a one-line CHECK). Cost if wrong: none; the edges are used only by the home paths.
 - **Per-city cap in the settings registry** (`service.home_fee_max_paise`, default ₹500, DB hard cap ₹500); the admin settings label key lives in the `portal` namespace like the coin settings (the settings screen needs it there).
 - **Not built:** editing the mechanic name after the proposal; email/push for the offer and arrival (bell/push build); live tracking.
+
+## 2026-11-15 — Admin next tier part 1: staff and roles, customer search and view, audit log (builder rulings under the approved design)
+
+Built on branch `worktree-agent-ac725264bf04a59b2` (not merged). Design `docs/superpowers/specs/2026-11-15-admin-next-tier-design.md` items 1 to 3; plan `docs/superpowers/plans/2026-11-15-admin-tier1.md`.
+
+- **No new permission.** `customers:read_pii` already exists (the design said `customers:pii`), `audit:read` and `staff:manage` exist. The coordinator does not need `pnpm db:seed` for this change. Cost if wrong: none; adding a permission later is one catalogue line and a seed.
+- **"Last sign-in" is recorded by us.** No sign-in time was stored anywhere, so a completed staff sign-in (password plus fresh phone code) writes one `auth.staff_signed_in` audit row; the screen reads the latest. Customers' sign-ins are not recorded. Cost if wrong: one small audit row per staff sign-in; a column on `users` would be cheaper to read but needs a write on a hot path.
+- **"2FA state" = phone code readiness.** Second factor today is a fresh phone code, not TOTP, so the screen shows `ready` (verified phone) or `phone_missing` (that person cannot finish sign-in). It will show TOTP when TOTP exists.
+- **Search lists are always masked; the profile unmasks (audited).** An unmasked list of 20 would need 20 audit rows per search. Cost if wrong: support/admin need one extra click for full contact details.
+- **The audit viewer never unmasks**, even for a super admin: `before`/`after` JSON is redacted (phone/email masked, address and bank fields hidden). The customer view is the one audited unmasking path. Cost if wrong: an admin who needs a raw value reads it in the database.
+- **One super admin always remains**: removing the last one is refused, serialised by an advisory lock so two admins removing each other cannot leave none. Cost if wrong: someone asks for a second super admin before offboarding the first.
+- **Role removal ends the person's Firebase sessions** (best effort) besides dropping the session cache, so a removed staff member signs in again and loses staff access at once on that instance; other instances converge in 60 s.
+- **City scope is set when the role is given**; to change it, remove and give again (no in-place edit). Customers and staff have no city, so these screens need an all-cities grant (`SCOPE_REQUIRED` for city managers).
+- Customer search needs a full 10-digit number (a partial number is refused, 422 `SEARCH_QUERY`) and at least 2 letters for a name; name search is prefix only (`lower(name) like 'ab%'`), so mid-name search is not offered. Cost if wrong: trigram index and `ilike` later.
+- Migration `0060_admin_people_indexes` (6 indexes, no table change) is not applied; the coordinator renumbers at merge.

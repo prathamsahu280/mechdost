@@ -49,6 +49,40 @@ async function prepareApi(page: Page, c: AuditCase): Promise<string[]> {
     }
   }
 
+  if (c.code === 'API-ADM-STAFF' && c.state.form && c.state.form !== 'closed') {
+    const section = main.locator('section[aria-labelledby="staff-title"]');
+    if (c.state.form === 'remove') {
+      const remove = section.locator('li li button').first();
+      if ((await remove.count()) === 0) notes.push('no role to remove');
+      else await remove.click();
+    } else {
+      await section.locator('button').first().click();
+      if (c.state.form === 'give-error') await section.locator('form button[type="submit"]').click();
+    }
+    await settleApi(page);
+  }
+
+  if (c.code === 'API-ADM-CUSTOMERS') {
+    await main.locator('#customer-q').fill('asha verma');
+    await main.locator('form[role="search"] button[type="submit"]').click();
+    await settleApi(page);
+    if (c.state.form === 'open') {
+      const open = main.locator('ul li button[aria-expanded]').first();
+      if ((await open.count()) === 0) notes.push('no result to open');
+      else {
+        await open.click();
+        await settleApi(page);
+      }
+    }
+  }
+
+  if (c.code === 'API-ADM-AUDIT' && c.state.form === 'open') {
+    const summary = main.locator('details > summary').first();
+    if ((await summary.count()) === 0) notes.push('no entry to open');
+    else await summary.click();
+    await settleApi(page);
+  }
+
   if (c.code === 'API-SHOP-PORTAL' && c.state.giveup && c.state.giveup !== 'closed') {
     const open = main.locator('[data-track="shop_order_give_up_open"]').first();
     if ((await open.count()) === 0) notes.push('no give-up button (no confirmed order)');

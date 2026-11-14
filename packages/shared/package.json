@@ -20,6 +20,8 @@
     "./analytics": "./src/analytics.ts",
     "./analytics-path": "./src/analytics-path.ts",
     "./privacy": "./src/privacy.ts",
+    "./contact-mask": "./src/contact-mask.ts",
+    "./admin-people-api": "./src/admin-people-api.ts",
     "./error-scrub": "./src/error-scrub.ts",
     "./settings": "./src/settings.ts",
     "./content": "./src/content.ts",

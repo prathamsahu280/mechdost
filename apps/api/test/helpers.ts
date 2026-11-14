@@ -75,6 +75,12 @@ export class FakePasswordAuthority implements PasswordAuthority {
   customToken(uid: string, claims?: Record<string, boolean>): Promise<string> {
     return Promise.resolve(`ct:${uid}:${JSON.stringify(claims ?? {})}`);
   }
+
+  readonly revoked: string[] = [];
+  revokeSessions(uid: string): Promise<void> {
+    this.revoked.push(uid);
+    return Promise.resolve();
+  }
 }
 
 /** Fake Turnstile: only the listed tokens are human. */

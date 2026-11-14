@@ -80,7 +80,7 @@ export async function loadGrants(db: Tx, userId: string): Promise<Grant[]> {
   return [customerGrant(), ...byGrant.values()];
 }
 
-interface GrantRoleInput {
+export interface GrantRoleInput {
   userId: string;
   role: string;
   cityId?: string | null;
@@ -109,28 +109,40 @@ function assertScope(scope: RoleScope | 'custom', input: GrantRoleInput) {
   if (!ok) throw new ValidationError(`Role ${input.role} needs ${scope} scope`, 'ROLE_SCOPE');
 }
 
+/**
+ * Insert one `user_roles` row after the scope check, in the caller's transaction; null when the user already holds
+ * the role with this scope. Shared by `grantRole` and the console's `grantStaffRole`.
+ */
+export async function insertUserRole(tx: Tx, input: GrantRoleInput): Promise<string | null> {
+  if (input.role === 'customer') {
+    throw new ValidationError('Every signed-in user is already a customer', 'ROLE_IMPLICIT');
+  }
+  assertScope(isRoleKey(input.role) ? ROLES[input.role].scope : 'custom', input);
+  const [role] = await tx.select({ id: roles.id }).from(roles).where(eq(roles.key, input.role)).limit(1);
+  if (!role) throw new NotFoundError(`Unknown role ${input.role}`);
+  const inserted = await tx
+    .insert(userRoles)
+    .values({
+      userId: input.userId,
+      roleId: role.id,
+      cityId: input.cityId ?? null,
+      shopId: input.shopId ?? null,
+      workshopId: input.workshopId ?? null,
+      grantedBy: input.grantedBy,
+    })
+    .onConflictDoNothing()
+    .returning({ id: userRoles.id });
+  return inserted[0]?.id ?? null;
+}
+
 /** Grant a role (idempotent) and audit it. Customer is implicit and can never be granted. */
 export async function grantRole(db: Tx, input: GrantRoleInput): Promise<void> {
   if (input.role === 'customer') {
     throw new ValidationError('Every signed-in user is already a customer', 'ROLE_IMPLICIT');
   }
-  assertScope(isRoleKey(input.role) ? ROLES[input.role].scope : 'custom', input);
   await db.transaction(async (tx) => {
-    const [role] = await tx.select({ id: roles.id }).from(roles).where(eq(roles.key, input.role)).limit(1);
-    if (!role) throw new NotFoundError(`Unknown role ${input.role}`);
-    const inserted = await tx
-      .insert(userRoles)
-      .values({
-        userId: input.userId,
-        roleId: role.id,
-        cityId: input.cityId ?? null,
-        shopId: input.shopId ?? null,
-        workshopId: input.workshopId ?? null,
-        grantedBy: input.grantedBy,
-      })
-      .onConflictDoNothing()
-      .returning({ id: userRoles.id });
-    const row = inserted[0];
+    const id = await insertUserRole(tx, input);
+    const row = id === null ? undefined : { id };
     if (!row) return; // already held with this scope
     await tx.insert(auditLog).values({
       actorUserId: input.grantedBy,

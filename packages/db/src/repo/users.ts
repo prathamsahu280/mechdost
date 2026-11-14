@@ -269,3 +269,17 @@ export async function recordSignInAudit(
     ipTruncated: input.ipTruncated,
   });
 }
+
+/**
+ * A completed staff sign-in (password and a fresh phone code): the Staff screen's "last sign-in" reads the latest
+ * of these rows. Staff only, one row per sign-in; no address or device is stored.
+ */
+export async function recordStaffSignIn(db: Tx, userId: string): Promise<void> {
+  await db.insert(auditLog).values({
+    actorUserId: userId,
+    actorRole: 'staff',
+    action: 'auth.staff_signed_in',
+    entity: 'user',
+    entityId: userId,
+  });
+}

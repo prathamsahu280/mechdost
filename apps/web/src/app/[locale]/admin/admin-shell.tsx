@@ -90,6 +90,8 @@ export async function AdminShell({ section }: { section: AdminSection }) {
             'trust',
             // Admin → Workshops: home servicing fields (spec 06, 2026-11-15).
             'homeService',
+            // Admin → Staff, Customers (search and view) and Audit log (design 2026-11-15).
+            'adminPeople',
           ]}
         >
           <AdminConsole

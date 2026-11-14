@@ -1,7 +1,20 @@
 import type { Context } from 'hono';
+import { createMiddleware } from 'hono/factory';
 import { cityIdByCode, cityScopeFrom, NotFoundError } from '@mechdost/db/repo';
 import type { Permission } from '@mechdost/shared/rbac';
+import { Forbidden } from '../errors';
 import type { AppDeps, AppEnv } from '../types';
+
+/**
+ * Platform-wide screens (staff, customers, audit log) belong to no city: a city-scoped grant is refused with
+ * `SCOPE_REQUIRED`, an all-cities grant passes.
+ */
+export const requireAllCities = (permission: Permission) =>
+  createMiddleware<AppEnv>(async (c, next) => {
+    if (!cityScopeFrom(c.get('auth').grants, permission).all)
+      throw Forbidden('SCOPE_REQUIRED', 'This needs an all-cities role');
+    await next();
+  });
 
 /**
  * The city a staff member may act on for `permission` (null = the global value). A global value needs an

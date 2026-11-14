@@ -113,6 +113,16 @@ const RefundQueueApi = dynamic(() => import('./admin-refunds-api').then((m) => m
   loading: () => <div className="skeleton h-96 rounded-card" aria-hidden="true" />,
 });
 
+/** Real sign-in: Staff and roles, and the audit log viewer (design 2026-11-15); demo builds never load them. */
+const AdminStaffApi = dynamic(() => import('./admin-staff-api').then((m) => m.AdminStaffApi), {
+  ssr: false,
+  loading: () => <div className="skeleton h-96 rounded-card" aria-hidden="true" />,
+});
+const AdminAuditApi = dynamic(() => import('./admin-audit-api').then((m) => m.AdminAuditApi), {
+  ssr: false,
+  loading: () => <div className="skeleton h-96 rounded-card" aria-hidden="true" />,
+});
+
 const SECTION_EMOJI: Record<AdminSection, string> = {
   overview: '📊',
   analytics: '📈',
@@ -131,6 +141,8 @@ const SECTION_EMOJI: Record<AdminSection, string> = {
   layout: '🧩',
   settings: '⚙️',
   notifications: '🔔',
+  staff: '👥',
+  audit: '📜',
   errors: '🚨',
 };
 
@@ -190,6 +202,8 @@ export function AdminConsole({
             {section === 'notifications' && notifyDefaults ? (
               <AdminNotifications actor={account.name} defaults={notifyDefaults} />
             ) : null}
+            {section === 'staff' && AUTH_MODE === 'firebase' ? <AdminStaffApi /> : null}
+            {section === 'audit' && AUTH_MODE === 'firebase' ? <AdminAuditApi /> : null}
             {section === 'errors' && AUTH_MODE === 'firebase' ? <AdminErrorsApi /> : null}
           </div>
         </div>
