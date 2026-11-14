@@ -504,7 +504,7 @@ describe('arrival code', () => {
     ).rejects.toMatchObject({ code: 'OVERRIDE_REASON' });
     await expect(
       overrideArrival(t(), {
-        scope: { cityIds: [f.bhilai] },
+        scope: { all: false, cityIds: [f.bhilai] },
         code: c.code,
         reason: 'Customer unreachable, called twice',
         odometerKm: 22_000,
