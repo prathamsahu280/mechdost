@@ -1,8 +1,9 @@
 'use client';
 
 import { Minus, Plus, ShoppingCart, Trash2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { track } from '@/lib/analytics';
+import { signal } from '@/lib/compare/signal';
 import { addToCart, MAX_QTY, removeFromCart, setQuantity, useCart, type AddResult } from '@/demo/store';
 
 export interface AddToCartLabels {
@@ -16,20 +17,30 @@ export interface AddToCartLabels {
   increase: string;
   decrease: string;
   remove: string;
+  /** "Removed from the cart", read out when − at one removes the product. */
+  removed: string;
   /** "# in cart": `#` is replaced with the quantity. */
   inCart: string;
 }
 
+type Problem = Exclude<AddResult, 'added'>;
+
 /**
  * "Add to cart", then — once the product is in the cart — a − / count / + stepper in the same place (user
  * 2026-11-14: "add the quantity in there itself too just like swiggy or amazon"). − at one removes it and "Add to
- * cart" comes back; + stops at the per-product limit. Feedback is announced (aria-live), no modal, no navigation.
- * Labels arrive translated from the server so no i18n runtime ships with this island.
+ * cart" comes back; + stops at the per-product limit. No modal, no navigation. Labels arrive translated from the
+ * server so no i18n runtime ships with this island.
  *
  * Geometry (bug 2026-11-14: hovering "+" hid the count): the stepper is exactly as tall as "Add to cart" (its
- * outline is an overlay, not a border around the 44 px buttons); the count takes the space between the buttons and
+ * outline is drawn inside its box, not around the 44 px buttons); the count takes the space between the buttons and
  * clips instead of running under them; the words "3 in cart" show only from 12rem, where they fit in Hindi too; the
  * hover surface is an inset face inside each button, so it never reaches the count.
+ *
+ * Focus and feedback (review 2026-11-14, I8): when "Add to cart" turns into the stepper, focus moves to "+"; when
+ * the bin removes the product, focus moves to "Add to cart"; at the limit "+" stays focusable (`aria-disabled`).
+ * Every change is read out by the one live region (`signal({ say })`). A problem (limit, refused save) shows under
+ * the button on the product page and in the table (`notify="inline"`), and in the compare tray from product cards
+ * (`notify="tray"`), so nothing ever pushes a card's layout.
  */
 export function AddToCartButton({
   slug,
@@ -38,6 +49,7 @@ export function AddToCartButton({
   qty = 1,
   className = '',
   source,
+  notify = 'inline',
 }: {
   slug: string;
   /** The pack's SKU (products from the API): stored on the cart line for the checkout quote. */
@@ -47,72 +59,79 @@ export function AddToCartButton({
   className?: string;
   /** Where the press came from, for analytics (the comparison table). */
   source?: 'compare';
+  notify?: 'inline' | 'tray';
 }) {
-  const [result, setResult] = useState<AddResult | null>(null);
+  const [problem, setProblem] = useState<Problem | null>(null);
   const inCart = useCart().find((l) => l.slug === slug)?.qty ?? 0;
+  const addButton = useRef<HTMLButtonElement>(null);
+  const plusButton = useRef<HTMLButtonElement>(null);
+  const focusNext = useRef<'add' | 'plus' | null>(null);
 
-  // Only the success message clears itself; an error stays until the next press (a11y review 2026-11-11).
+  // The control that replaced the pressed one takes focus (it would otherwise drop to the page's start).
   useEffect(() => {
-    if (result !== 'added') return;
-    const id = window.setTimeout(() => {
-      setResult(null);
-    }, 2200);
-    return () => {
-      window.clearTimeout(id);
-    };
-  }, [result]);
+    const target =
+      focusNext.current === 'plus'
+        ? plusButton.current
+        : focusNext.current === 'add'
+          ? addButton.current
+          : null;
+    if (!target) return;
+    focusNext.current = null;
+    target.focus();
+  }, [inCart]);
 
-  function add(n: number) {
+  const problemText = (p: Problem) =>
+    p === 'max_qty' ? labels.maxQty : p === 'max_lines' ? labels.maxLines : labels.saveFailed;
+
+  function report(p: Problem, origin: HTMLElement) {
+    if (notify === 'tray') signal({ ask: 'notice', text: problemText(p), origin });
+    else {
+      setProblem(p);
+      signal({ say: problemText(p) });
+    }
+  }
+
+  function add(n: number, origin: HTMLElement) {
     const r = addToCart(slug, n, sku ?? undefined);
-    // Clear first, so the same message pressed twice changes the status text and is announced again.
-    setResult(null);
-    window.requestAnimationFrame(() => {
-      setResult(r);
-    });
-    if (r === 'added') track('add_to_cart', source ? { slug, qty: n, source } : { slug, qty: n });
-    else if (r === 'save_failed')
+    if (r === 'added') {
+      setProblem(null);
+      if (inCart === 0) focusNext.current = 'plus';
+      signal({ say: labels.inCart.replace('#', String(Math.min(inCart + n, MAX_QTY))) });
+      track('add_to_cart', source ? { slug, qty: n, source } : { slug, qty: n });
+      return;
+    }
+    report(r, origin);
+    if (r === 'save_failed')
       track('click', { id: 'add_to_cart_save_failed', path: window.location.pathname });
   }
 
-  const message =
-    result === 'added'
-      ? labels.inCart.replace('#', String(inCart))
-      : result === 'max_qty'
-        ? labels.maxQty
-        : result === 'max_lines'
-          ? labels.maxLines
-          : result === 'save_failed'
-            ? labels.saveFailed
-            : '';
-
   const [inCartBefore = '', inCartAfter = ''] = labels.inCart.split('#');
-  const stepButton =
-    'press group/step relative z-[1] inline-flex w-11 shrink-0 items-center justify-center rounded-button text-accent-soft-text disabled:opacity-40';
-  const stepFace =
-    'inline-flex size-9 items-center justify-center rounded-md transition-colors duration-[var(--duration-base)] group-hover/step:group-enabled/step:bg-surface';
+  const atMax = inCart >= MAX_QTY;
 
   return (
     <>
       {inCart > 0 ? (
-        <div
-          className={`@container relative flex min-h-11 w-full min-w-0 items-stretch rounded-button bg-accent-soft ${className}`}
-        >
+        // Styles: `.cart-stepper`, `.cart-step`, `.cart-count` in globals.css (fewer bytes on every shop page).
+        <div data-slot="cart-stepper" className={`cart-stepper ${className}`}>
           <button
             type="button"
             aria-label={inCart === 1 ? labels.remove : labels.decrease}
             onClick={() => {
+              setProblem(null);
               if (inCart === 1) {
+                focusNext.current = 'add';
                 removeFromCart(slug);
                 track('remove_from_cart', { slug });
+                signal({ say: labels.removed });
               } else {
                 setQuantity(slug, inCart - 1);
                 track('click', { id: 'cart_qty_decrease', path: window.location.pathname });
+                signal({ say: labels.inCart.replace('#', String(inCart - 1)) });
               }
-              setResult(null);
             }}
-            className={stepButton}
+            className="press cart-step"
           >
-            <span className={stepFace}>
+            <span>
               {inCart === 1 ? (
                 <Trash2 aria-hidden="true" className="size-4" />
               ) : (
@@ -123,47 +142,44 @@ export function AddToCartButton({
           {/* Narrow cards (two columns on phones) show just the number, like "− 2 +"; with room the words show too.
               The words always stay for screen readers (QA 2026-11-14: "1 in cart" widened a 480 px page). The
               count owns the space between the buttons and clips, so it can never run under them. */}
-          <span className="block min-w-0 flex-1 self-center truncate text-center text-sm font-extrabold text-accent-soft-text tabular-nums">
-            <span className="sr-only @min-[12rem]:not-sr-only">{inCartBefore}</span>
+          <span className="cart-count">
+            <span className="cart-words">{inCartBefore}</span>
             {inCart}
-            <span className="sr-only @min-[12rem]:not-sr-only">{inCartAfter}</span>
+            <span className="cart-words">{inCartAfter}</span>
           </span>
           <button
+            ref={plusButton}
             type="button"
             aria-label={labels.increase}
-            disabled={inCart >= MAX_QTY}
-            onClick={() => {
-              add(1);
+            // At the limit "+" stays focusable (a disabled button would drop focus) and explains instead.
+            aria-disabled={atMax ? 'true' : 'false'}
+            onClick={(e) => {
+              add(1, e.currentTarget);
             }}
-            className={stepButton}
+            className="press cart-step"
           >
-            <span className={stepFace}>
+            <span>
               <Plus aria-hidden="true" className="size-4" strokeWidth={3} />
             </span>
           </button>
-          {/* The outline is drawn inside the stepper's box, not around it: same height as "Add to cart" (no jump).
-              The buttons sit above it so their focus ring stays whole. */}
-          <span
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 rounded-button border-2 border-accent-button"
-          />
         </div>
       ) : (
         <button
+          ref={addButton}
+          data-slot="add-to-cart"
           type="button"
-          onClick={() => {
-            add(qty);
+          onClick={(e) => {
+            add(qty, e.currentTarget);
           }}
-          className={`press inline-flex min-h-11 w-full min-w-0 items-center justify-center gap-2 rounded-button bg-accent-button px-3 text-sm leading-tight font-bold text-white transition-colors duration-[var(--duration-base)] hover:bg-accent-button-hover ${className}`}
+          className={`press cart-add ${className}`}
         >
-          <ShoppingCart aria-hidden="true" className="size-4" />
+          <ShoppingCart aria-hidden="true" className="size-4 shrink-0" />
           {labels.add}
         </button>
       )}
-      <span role="status" aria-live="polite" className="sr-only">
-        {message}
-      </span>
-      {result && result !== 'added' ? <p className="mt-2 text-xs font-bold text-error">{message}</p> : null}
+      {notify === 'inline' && problem ? (
+        <p className="mt-2 text-xs font-bold text-error">{problemText(problem)}</p>
+      ) : null}
     </>
   );
 }

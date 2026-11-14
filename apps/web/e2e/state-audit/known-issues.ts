@@ -17,32 +17,9 @@ export interface KnownIssue {
   when: (c: AuditCase) => boolean;
 }
 
-export const KNOWN_ISSUES: readonly KnownIssue[] = [
-  {
-    bug: 'U1 compare tray of category A breaks category-B cards',
-    codes: ['SHOP-CARD', 'SHOP-ACTION', 'PDP-RELATED'],
-    rules: ['inside', 'overlap', 'covered', 'aligned', 'clipped'],
-    when: (c) => (c.state.compare ?? 'none') !== 'none',
-  },
-  {
-    bug: 'U2 "Start a new comparison" leaves other cards stale',
-    codes: ['SHOP-ACTION'],
-    rules: ['sync'],
-    when: (c) => c.state.action === 'start-new' || c.state.action === 'compare-other',
-  },
-  {
-    bug: 'U3 stepper "+" hover background covers the count',
-    codes: ['STEP'],
-    rules: ['covered', 'overlap'],
-    when: (c) => c.state.interaction === 'hover-inc' || c.state.interaction === 'active-inc',
-  },
-  {
-    bug: 'U4 compare columns misaligned; images too tall',
-    codes: ['CMP-TABLE'],
-    rules: ['aligned', 'inside', 'overlap', 'clipped'],
-    when: () => true,
-  },
-];
+// U1–U4 (the user's four from 2026-11-14) were fixed on the compare redesign branch (spec 21 § "Redesign
+// 2026-11-14"): their entries were removed in that change, so the audit now guards the fixes.
+export const KNOWN_ISSUES: readonly KnownIssue[] = [];
 
 export function knownIssueFor(c: AuditCase, f: Finding): KnownIssue | undefined {
   return KNOWN_ISSUES.find((k) => k.codes.includes(c.code) && k.rules.includes(f.rule) && k.when(c));

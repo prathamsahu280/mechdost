@@ -173,12 +173,9 @@ export function CompareTable({
                           </>
                         ) : null}
                       </div>
-                      <div className="mt-1.5 min-h-[22px]">
-                        {off !== null && off > 0 ? (
-                          <p className="w-fit rounded-md bg-success-bg px-1.5 py-0.5 text-[11px] font-bold text-success">
-                            {cat('save', { percent: off })}
-                          </p>
-                        ) : null}
+                      {/* Tall enough for the badge in Hindi too (Devanagari line height), empty or not. */}
+                      <div className="min-h-7">
+                        {off !== null && off > 0 ? badge(cat('save', { percent: off })) : null}
                       </div>
                       {p.price ? (
                         <div className="mt-auto pt-3">
@@ -195,6 +192,7 @@ export function CompareTable({
                               increase: cat('cartIncrease', { name: `${p.brand} ${p.name}` }),
                               decrease: cat('cartDecrease', { name: `${p.brand} ${p.name}` }),
                               remove: cat('cartRemove', { name: `${p.brand} ${p.name}` }),
+                              removed: cat('cartRemoved'),
                               inCart: cat('inCart', { count: '#' }),
                             }}
                           />

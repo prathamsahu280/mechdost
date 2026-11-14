@@ -760,15 +760,15 @@ export function syncFacts(): string[] {
     if (slug && card.checkVisibility()) units.push({ slug, el: card });
   }
   if (pdp) {
-    const box = document.querySelector('main button[aria-pressed]')?.closest('section, div.grid, main');
+    const box = document.querySelector('main input[data-compare-toggle]')?.closest('section, div.grid, main');
     if (box) units.push({ slug: pdp, el: box });
   }
   for (const u of units) {
-    const toggle = [...u.el.querySelectorAll('button[aria-pressed]')].find(
+    const toggle = [...u.el.querySelectorAll<HTMLInputElement>('input[data-compare-toggle]')].find(
       (b) => !b.closest('article') || u.el.matches('article'),
     );
     if (toggle) {
-      const pressed = toggle.getAttribute('aria-pressed') === 'true';
+      const pressed = toggle.checked;
       if (pressed !== inCompare.has(u.slug))
         problems.push(
           `${u.slug}: compare toggle ${pressed ? 'pressed' : 'not pressed'} but the list ${inCompare.has(u.slug) ? 'holds it' : 'does not hold it'}`,

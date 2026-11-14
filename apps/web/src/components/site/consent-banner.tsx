@@ -62,6 +62,24 @@ export function ConsentBanner({ copy }: { copy: ConsentCopy }) {
     };
   }, [visible, choice]);
 
+  // The banner's real height, for the page's scroll padding and the compare tray that floats above it on phones
+  // (review 2026-11-14, I3: a fixed 13rem guess left 4 px in Hindi at 390 px and was too short at 320 px).
+  useEffect(() => {
+    const el = region.current;
+    const root = document.documentElement;
+    if (!visible || !el) return undefined;
+    const set = () => {
+      root.style.setProperty('--consent-h', `${String(Math.ceil(el.getBoundingClientRect().height))}px`);
+    };
+    set();
+    const ro = new ResizeObserver(set);
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+      root.style.removeProperty('--consent-h');
+    };
+  }, [visible]);
+
   // Server render and first paint show nothing (the choice lives in this browser), so no layout shift for
   // visitors who already chose.
   if (!visible) return null;

@@ -144,13 +144,12 @@ async function prepare(page: Page, c: AuditCase): Promise<string[]> {
     const card = (slug: string) => page.locator(`main article:has(a[data-track="product_${slug}"])`);
     const lub = card(PRODUCTS.castrol);
     if (action === 'compare-other' || action === 'start-new') {
-      await lub.locator('button[aria-pressed]').click();
-      if (action === 'start-new') await lub.locator('[role="status"] + button').click();
+      await lub.locator('input[type="checkbox"][data-compare-toggle]').click();
+      // The tray asks (compare redesign 2026-11-14): "Start new" is the question's first button.
+      if (action === 'start-new')
+        await page.locator('[data-compare-tray] [role="dialog"] button').first().click();
     } else if (action === 'add') {
-      await card(PRODUCTS.motul)
-        .locator('button:not([aria-pressed]):not([data-track^="product_info_"])')
-        .first()
-        .click();
+      await card(PRODUCTS.motul).locator('[data-slot="add-to-cart"]').first().click();
     } else if (action === 'inc' || action === 'dec-remove') {
       const part: 'inc' | 'dec' = action === 'inc' ? 'inc' : 'dec';
       const times = action === 'inc' ? 1 : 2;

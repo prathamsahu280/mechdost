@@ -103,18 +103,25 @@ export async function expectChildrenInside(containers: Locator, selector: string
     (els, sel) =>
       els.flatMap((el, i) => {
         const outer = el.getBoundingClientRect();
-        return [...el.querySelectorAll<HTMLElement>(sel)]
-          .filter((child) => child.getClientRects().length > 0)
-          .filter((child) => {
-            const r = child.getBoundingClientRect();
-            return (
-              r.left < outer.left - 0.5 ||
-              r.right > outer.right + 0.5 ||
-              r.top < outer.top - 0.5 ||
-              r.bottom > outer.bottom + 0.5
-            );
-          })
-          .map((child) => `#${String(i)} ${child.tagName} "${child.textContent.trim().slice(0, 30)}"`);
+        return (
+          [...el.querySelectorAll<HTMLElement>(sel)]
+            .filter((child) => child.getClientRects().length > 0)
+            // Visually hidden text (sr-only: absolute, 1 × 1, clipped) is not painted, so it cannot stick out.
+            .filter((child) => {
+              const r = child.getBoundingClientRect();
+              return !(getComputedStyle(child).position === 'absolute' && r.width <= 1 && r.height <= 1);
+            })
+            .filter((child) => {
+              const r = child.getBoundingClientRect();
+              return (
+                r.left < outer.left - 0.5 ||
+                r.right > outer.right + 0.5 ||
+                r.top < outer.top - 0.5 ||
+                r.bottom > outer.bottom + 0.5
+              );
+            })
+            .map((child) => `#${String(i)} ${child.tagName} "${child.textContent.trim().slice(0, 30)}"`)
+        );
       }),
     selector,
   );

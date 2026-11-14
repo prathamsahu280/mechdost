@@ -22,7 +22,8 @@ import {
 
 const CASTROL = { slug: 'castrol-activ-4t-20w40-900ml', name: 'Castrol Activ 4T 20W40 900 ml' };
 const MOTUL = 'Motul 3100 4T 10W30 1 L';
-const WIDTHS = [360, 390, 768, 1024, 1280, 1500, 1680, 1920] as const;
+// 480 / 560 / 760: the narrowest two- and three-column cards (review 2026-11-14, I7).
+const WIDTHS = [360, 390, 480, 560, 760, 768, 1024, 1280, 1500, 1680, 1920] as const;
 
 function parts(card: Locator, qty: number) {
   const minus =
@@ -75,7 +76,8 @@ test.describe('card stepper geometry', () => {
           expect(bb.width).toBeGreaterThanOrEqual(44);
           expect(bb.height).toBeGreaterThanOrEqual(44);
         }
-        if (qty === 99) await expect(p.plus).toBeDisabled();
+        // At the limit "+" stays focusable and explains (a disabled button would drop focus, review I8).
+        if (qty === 99) await expect(p.plus).toHaveAttribute('aria-disabled', 'true');
 
         await p.plus.hover();
         await expectCountClear(p, qty, 'hovering +');
@@ -102,4 +104,71 @@ test('the product page stepper has the count clear while hovering + (both projec
   const p = parts(main, 3);
   await p.plus.first().hover();
   await expectNoOverlap([p.minus.first(), p.count.first(), p.plus.first()], 'product page');
+});
+
+test.describe('Hindi stepper geometry (review 2026-11-14, I7)', () => {
+  test.skip(({ isMobile }) => isMobile, 'sets its own widths; the phone project would only repeat it');
+  for (const width of [390, 560, 1280, 1920])
+    test(`− / 3 / + never overlap in Hindi at ${String(width)} px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await seedStorage(page, { 'mechdost-cart': JSON.stringify([{ slug: CASTROL.slug, qty: 3 }]) });
+      await page.goto('/hi/shop?category=lubricants');
+      const card = page.locator('main article').filter({ hasText: CASTROL.name });
+      const stepper = card.locator('[data-slot="cart-stepper"]');
+      const minus = stepper.locator('button').first();
+      const plus = stepper.locator('button').last();
+      const count = minus.locator('xpath=following-sibling::*[1]');
+      await plus.scrollIntoViewIfNeeded();
+      await plus.hover();
+      await expectNoOverlap([minus, count, plus], `hi @${String(width)}`);
+      const text = await textBox(count);
+      for (const b of [minus, plus]) expect(overlaps(text, await box(b))).toBe(false);
+      await expectInside(stepper, card, `hi stepper inside the card @${String(width)}`);
+    });
+});
+
+/** Focus follows the control that replaced the pressed one (review 2026-11-14, I8); changes are read out. */
+test('keyboard: Add → "+" takes focus; the bin → "Add to cart" takes focus', async ({ page }) => {
+  await page.goto(`/shop/${CASTROL.slug}`);
+  const main = page.locator('main');
+  await main.getByRole('button', { name: 'Add to cart' }).first().focus();
+  await page.keyboard.press('Enter');
+  const plus = main.getByRole('button', { name: `Add one more ${CASTROL.name}`, exact: false });
+  await expect(plus).toBeFocused();
+  await expect(page.getByRole('status').filter({ hasText: '1 in cart' })).toHaveCount(1);
+  await main.getByRole('button', { name: `Remove ${CASTROL.name} from the cart`, exact: false }).focus();
+  await page.keyboard.press('Enter');
+  await expect(main.getByRole('button', { name: 'Add to cart' }).first()).toBeFocused();
+  await expect(page.getByRole('status').filter({ hasText: 'Removed from the cart' })).toHaveCount(1);
+});
+
+test('at 99 "+" keeps focus and says why', async ({ page }) => {
+  await seedStorage(page, { 'mechdost-cart': JSON.stringify([{ slug: CASTROL.slug, qty: 98 }]) });
+  await page.goto(`/shop/${CASTROL.slug}`);
+  const plus = page
+    .locator('main')
+    .getByRole('button', { name: `Add one more ${CASTROL.name}`, exact: false });
+  await plus.focus();
+  await page.keyboard.press('Enter');
+  await expect(plus).toHaveAttribute('aria-disabled', 'true');
+  await expect(plus).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(plus).toBeFocused();
+  await expect(page.locator('main').getByText('Maximum 99 units per product.')).toBeVisible();
+});
+
+test('a cart limit on a card is told in the tray, not inside the card', async ({ page }) => {
+  await seedStorage(page, { 'mechdost-cart': JSON.stringify([{ slug: CASTROL.slug, qty: 99 }]) });
+  await page.goto('/shop?category=lubricants');
+  const card = page.locator('main article').filter({ hasText: CASTROL.name });
+  const plus = card.getByRole('button', { name: `Add one more ${CASTROL.name}`, exact: false });
+  await plus.scrollIntoViewIfNeeded();
+  const before = await box(card);
+  await plus.click();
+  const notice = page
+    .getByRole('complementary', { name: 'Products to compare' })
+    .locator('[data-slot="compare-notice"]');
+  await expect(notice).toContainText('Maximum 99 units per product.');
+  expect((await box(card)).height).toBeCloseTo(before.height, 0);
+  await expect(card.getByText('Maximum 99 units per product.')).toHaveCount(0);
 });

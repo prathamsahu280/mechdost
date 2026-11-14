@@ -22,6 +22,7 @@ const ask = (over: Partial<Parameters<typeof switchText>[0]> = {}) => ({
   kind: 'switch' as const,
   slug: 'exide-xltz4a-2w-battery',
   category: 'batteries',
+  from: 'lubricants',
   name: 'Batteries',
   lang: 'en',
   fromName: 'Lubricants',
@@ -48,7 +49,7 @@ describe('compare tray question wording', () => {
       'hi',
     );
     expect(t.title).toBe('बैटरी के साथ नई तुलना शुरू करें?');
-    expect(t.body).toBe('इससे लुब्रिकेंट के 2 आइटम हट जाएंगे।');
+    expect(t.body).toBe('इससे लुब्रिकेंट के 2 आइटम हट जाएँगे।');
     expect(`${t.title} ${t.body}`).not.toMatch(/[A-Za-z]/);
   });
 

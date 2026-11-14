@@ -1,4 +1,4 @@
-import type { ComparePrompt } from './store';
+import type { ComparePrompt } from './prompt';
 
 /** The tray's question wordings, translated on the server with `{to}`, `{from}` and `{count}` left in. */
 export interface SwitchLabels {

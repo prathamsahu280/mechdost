@@ -106,46 +106,44 @@ export function ProductCard({
         >
           {availabilityLabel(t, product.availability)}
         </p>
-        {/* Action row (redesign 2026-11-14, bug: a message inside the row pushed "Add to cart" out of the card):
-            a container, so the row adapts to the card, not the window. Add to cart first (the one primary action),
-            Compare beside it as an icon in mid widths, with its word from 18rem; on narrow cards the two stack.
-            Nothing else ever enters this row: compare questions and limits are asked in the tray. */}
-        <div className="@container mt-auto pt-4">
-          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 @max-[12.5rem]:grid-cols-1">
-            {price ? (
-              <div className="min-w-0">
-                <AddToCartButton
-                  sku={product.sku}
-                  slug={product.slug}
-                  labels={{
-                    add: t('addToCart'),
-                    added: t('added'),
-                    maxQty: t('maxQty'),
-                    maxLines: t('maxLines'),
-                    saveFailed: t('saveFailed'),
-                    increase: t('cartIncrease', { name: `${product.brand} ${product.name}` }),
-                    decrease: t('cartDecrease', { name: `${product.brand} ${product.name}` }),
-                    remove: t('cartRemove', { name: `${product.brand} ${product.name}` }),
-                    inCart: t('inCart', { count: '#' }),
-                  }}
-                />
-              </div>
-            ) : null}
-            {compare ? (
-              <CompareToggle
+        {/* Foot of the card (user ruling 2026-11-15, "Checkbox style"): "☐ Compare" on its own line, then the action
+            row with only "Add to cart" (or the stepper) at full width. Both sit at the foot, so they line up across a
+            row of cards. Nothing else ever enters the row: compare questions and cart limits are told in the tray. */}
+        <div className="mt-auto flex flex-col pt-2">
+          {compare ? (
+            <CompareToggle
+              slug={product.slug}
+              category={product.category.slug}
+              categoryName={categoryName}
+              labels={{
+                toggle: cmp('toggle'),
+                toggleName: cmp('toggleName', { name: `${product.brand} ${product.name}` }),
+                added: cmp('added', { count: '{count}' }),
+                removed: cmp('removed'),
+              }}
+            />
+          ) : null}
+          {price ? (
+            <div data-slot="card-actions" className={compare ? 'mt-1' : 'mt-2'}>
+              <AddToCartButton
+                sku={product.sku}
                 slug={product.slug}
-                category={product.category.slug}
-                categoryName={categoryName}
-                layout={price ? 'card' : 'page'}
+                notify="tray"
                 labels={{
-                  toggle: cmp('toggle'),
-                  toggleName: cmp('toggleName', { name: `${product.brand} ${product.name}` }),
-                  added: cmp('added', { count: '{count}' }),
-                  removed: cmp('removed'),
+                  add: t('addToCart'),
+                  added: t('added'),
+                  maxQty: t('maxQty'),
+                  maxLines: t('maxLines'),
+                  saveFailed: t('saveFailed'),
+                  increase: t('cartIncrease', { name: `${product.brand} ${product.name}` }),
+                  decrease: t('cartDecrease', { name: `${product.brand} ${product.name}` }),
+                  remove: t('cartRemove', { name: `${product.brand} ${product.name}` }),
+                  removed: t('cartRemoved'),
+                  inCart: t('inCart', { count: '#' }),
                 }}
               />
-            ) : null}
-          </div>
+            </div>
+          ) : null}
         </div>
       </div>
     </article>

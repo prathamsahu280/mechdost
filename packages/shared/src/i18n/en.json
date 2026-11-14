@@ -362,6 +362,7 @@
     "cartIncrease": "Add one more {name}",
     "cartDecrease": "Remove one {name}",
     "cartRemove": "Remove {name} from the cart",
+    "cartRemoved": "Removed from the cart",
     "inCart": "{count} in cart",
     "viewDetails": "View details",
     "mrp": "MRP {price}",

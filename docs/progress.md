@@ -23,6 +23,13 @@ This file is the single source of truth for **where the build is right now**. It
     geometry (same height, count clips, inset hover), fixed column slots in the table; en + hi; 3 new events.
     Spec 21 § "Redesign 2026-11-14", decisions entry, design system, UI test catalogue § 7 rows 11–13 and § 7.1.
   - Verified: unit tests (store prompt, wording en/hi, events), typecheck, lint, `pnpm check`.
+  - **Review round 2026-11-15** (skills review held the branch): main merged; C1 budget (question logic to the lazy
+    tray chunk, card control styles to `globals.css`, CSS-mask icons: always-loaded islands 4,535 B gz vs 4,516 B
+    before the redesign), I1–I8 and M1–M8 addressed (spec 21 § Redesign, decisions entry); new e2e cases written
+    (not run); UI state audit known issues U1–U4 removed, its "Start new" step drives the tray.
+  - **User ruling 2026-11-15 "Checkbox style"** built: "☐ Compare" checkbox under the price (cards) / above "Add to
+    cart" (product page); the action row holds only "Add to cart" or the stepper at full width; tests switched to
+    the checkbox role; always-loaded islands 4,527 B gz (4,516 before the redesign).
   - **Owed (user: "dont do the tests just yet we can do them overnight"):** one `next build`, then
     `playwright test e2e/compare-ui.spec.ts e2e/cart-stepper-geometry.spec.ts e2e/compare-table-geometry.spec.ts
 e2e/compare.spec.ts e2e/cart-stepper.spec.ts --workers=1`, the Hindi gate for `/hi/shop` and `/hi/compare`,

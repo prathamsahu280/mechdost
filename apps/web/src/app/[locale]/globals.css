@@ -450,25 +450,102 @@
   background: #ffffffcc;
 }
 
-/* While the privacy choice is open, the floating assistant button steps aside (consent-banner.tsx). */
-html[data-consent-open] .assistant-launcher {
+/* While the privacy choice is open, or the compare tray asks something, the floating assistant button steps aside
+   (consent-banner.tsx, compare-tray.tsx): one floating thing at a time. */
+html[data-consent-open] .assistant-launcher,
+html[data-compare-prompt] .assistant-launcher {
   visibility: hidden;
 }
 
 /* Fixed bottom UI never hides the focused element (WCAG 2.2 2.4.11): the browser scrolls focus above the mobile
-   tab bar, and above the privacy banner while it is open (banner ≈ 13rem incl. its offset). */
+   tab bar, the compare tray (its height is published as --tray-h) and the privacy banner while it is open (its
+   height is published as --consent-h; 13rem until measured). */
 html {
   scroll-padding-bottom: calc(76px + env(safe-area-inset-bottom));
 }
+html:has([data-compare-tray]) {
+  scroll-padding-bottom: calc(92px + env(safe-area-inset-bottom) + var(--tray-h, 3.5rem));
+}
 html[data-consent-open] {
-  scroll-padding-bottom: calc(76px + env(safe-area-inset-bottom) + 13rem);
+  scroll-padding-bottom: calc(84px + env(safe-area-inset-bottom) + var(--consent-h, 13rem));
+}
+html[data-consent-open]:has([data-compare-tray][data-prompt]) {
+  scroll-padding-bottom: calc(
+    92px + env(safe-area-inset-bottom) + var(--consent-h, 13rem) + var(--tray-h, 0px)
+  );
 }
 @media (min-width: 1024px) {
   html {
     scroll-padding-bottom: 0;
   }
+  html:has([data-compare-tray]) {
+    scroll-padding-bottom: calc(2rem + var(--tray-h, 3.5rem));
+  }
   html[data-consent-open] {
-    scroll-padding-bottom: 13rem;
+    scroll-padding-bottom: max(calc(2rem + var(--consent-h, 13rem)), calc(2rem + var(--tray-h, 0px)));
+  }
+}
+
+/*
+ * "Add to cart", the quantity stepper and the "Compare" checkbox (add-to-cart-button.tsx, compare-toggle.tsx). Their
+ * styles live here rather than in class strings, so the islands on every shop page ship fewer bytes (review
+ * 2026-11-14, C1: /shop sits at the 180 KB budget). Components layer: utilities passed in `className` still win.
+ */
+@layer components {
+  .cart-add {
+    @apply inline-flex min-h-11 w-full min-w-0 items-center justify-center gap-2 rounded-button bg-accent-button px-3 text-sm leading-tight font-bold text-white transition-colors duration-[var(--duration-base)] hover:bg-accent-button-hover;
+  }
+  /* Same height as "Add to cart": the outline is drawn inside the box (::after), not around the 44 px buttons. */
+  .cart-stepper {
+    @apply relative flex min-h-11 w-full min-w-0 items-stretch rounded-button bg-accent-soft;
+    container-type: inline-size;
+  }
+  .cart-stepper::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border: 2px solid var(--color-accent-button);
+    border-radius: var(--radius-button);
+  }
+  /* 44 px targets above the outline (whole focus ring); the hover face is inset, so it never reaches the count. */
+  .cart-step {
+    @apply relative z-[1] inline-flex w-11 shrink-0 items-center justify-center rounded-button text-accent-soft-text;
+  }
+  .cart-step[aria-disabled='true'] {
+    opacity: 0.4;
+  }
+  .cart-step > span {
+    @apply inline-flex size-9 items-center justify-center transition-colors duration-[var(--duration-base)];
+    border-radius: calc(var(--radius-button) - 3px);
+  }
+  @media (hover: hover) {
+    .cart-step:not([aria-disabled='true']):hover > span {
+      background-color: color-mix(in srgb, var(--color-accent-button) 15%, transparent);
+    }
+  }
+  /* The count owns the space between the buttons and clips; the words show only where they fit (12rem). */
+  .cart-count {
+    @apply block min-w-0 flex-1 self-center truncate text-center text-sm font-extrabold text-accent-soft-text tabular-nums;
+  }
+  .cart-words {
+    @apply sr-only;
+  }
+  @container (width >= 12rem) {
+    .cart-words {
+      @apply not-sr-only;
+      white-space: nowrap;
+    }
+  }
+
+  /* "☐ Compare" (user ruling 2026-11-15, "Checkbox style"): a real checkbox and its word; the whole label is the
+     target, at least 44 px tall. The box takes the brand colour (accent-color, readable in both themes). */
+  .compare-check {
+    @apply inline-flex min-h-11 w-fit cursor-pointer items-center gap-2 text-sm font-bold text-ink select-none;
+  }
+  .compare-check > input {
+    @apply size-5 shrink-0 cursor-pointer;
+    accent-color: var(--color-accent-button);
   }
 }
 
@@ -578,18 +655,20 @@ input[type='radio'] {
   }
 }
 
-/* The privacy banner sits where the compare tray floats: the tray steps aside until the banner is answered. */
+/* The privacy banner sits where the compare tray floats on phones: the tray steps aside until the banner is
+   answered, except while it asks something the shopper just triggered (redesign 2026-11-14): then it floats just
+   above the banner, whose measured height is --consent-h. From 1024 px the banner sits bottom-right, clear of it. */
 html[data-consent-open] [data-compare-tray]:not([data-prompt]) {
   display: none;
 }
-/* …except while it asks something the shopper just triggered (redesign 2026-11-14): then it floats above the
-   banner (≈ 13rem with its offset, the same figure as the scroll padding above), never over it. */
-html[data-consent-open] [data-compare-tray][data-prompt] {
-  bottom: calc(84px + env(safe-area-inset-bottom) + 13rem);
+@media (max-width: 1023.98px) {
+  html[data-consent-open] [data-compare-tray][data-prompt] {
+    bottom: calc(84px + env(safe-area-inset-bottom) + var(--consent-h, 13rem));
+  }
 }
 @media (min-width: 1024px) {
-  html[data-consent-open] [data-compare-tray][data-prompt] {
-    bottom: calc(1.5rem + 13rem);
+  html[data-consent-open] [data-compare-tray]:not([data-prompt]) {
+    display: flex;
   }
 }
 

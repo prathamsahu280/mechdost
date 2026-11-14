@@ -212,9 +212,21 @@ export default async function ProductPage({ params }: Props) {
             </li>
           </ul>
 
-          {/* Compare beside the main action (UI review 2026-11-14: it sat below the fold on phones). */}
-          <div className="mt-6 flex max-w-md items-start gap-2">
-            <div className="min-w-0 flex-1">
+          {/* "☐ Compare" right above the main action, the same control as on the cards (user ruling 2026-11-15,
+              "Checkbox style"; UI review 2026-11-14: it must not sit below the fold on phones). */}
+          <div className="mt-5 max-w-md">
+            <CompareToggle
+              slug={product.slug}
+              category={product.category.slug}
+              categoryName={categoryName}
+              labels={{
+                toggle: cmp('toggle'),
+                toggleName: cmp('toggleName', { name: `${product.brand} ${product.name}` }),
+                added: cmp('added', { count: '{count}' }),
+                removed: cmp('removed'),
+              }}
+            />
+            <div className="mt-1">
               {price ? (
                 <AddToCartButton
                   sku={product.sku}
@@ -228,6 +240,7 @@ export default async function ProductPage({ params }: Props) {
                     increase: t('cartIncrease', { name: `${product.brand} ${product.name}` }),
                     decrease: t('cartDecrease', { name: `${product.brand} ${product.name}` }),
                     remove: t('cartRemove', { name: `${product.brand} ${product.name}` }),
+                    removed: t('cartRemoved'),
                     inCart: t('inCart', { count: '#' }),
                   }}
                   className="min-h-12"
@@ -246,18 +259,6 @@ export default async function ProductPage({ params }: Props) {
                 </a>
               )}
             </div>
-            <CompareToggle
-              slug={product.slug}
-              category={product.category.slug}
-              categoryName={categoryName}
-              labels={{
-                toggle: cmp('toggle'),
-                toggleName: cmp('toggleName', { name: `${product.brand} ${product.name}` }),
-                added: cmp('added', { count: '{count}' }),
-                removed: cmp('removed'),
-              }}
-              className="shrink-0"
-            />
           </div>
           <div className="max-w-md">
             {QUOTES_AVAILABLE ? (
