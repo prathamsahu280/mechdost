@@ -15,6 +15,7 @@ import { ConfigError, loadConfig } from './config';
 import { log, safeError } from './logger';
 import { startSentry } from './monitoring/sentry';
 import { createSentryIssuesClient } from './monitoring/sentry-issues';
+import { supabaseStorage } from './photos/storage';
 import { MemoryRateLimiter } from './rate-limit/limiter';
 import { UpstashRateLimiter } from './rate-limit/upstash';
 
@@ -49,6 +50,18 @@ try {
   log('warn', 'keyring_missing', { note: 'DATA_ENCRYPTION_* not set — delivery codes unavailable' });
 }
 
+// Job photos (design 2026-11-15): a private Storage bucket, created if missing. A failure here is logged, not fatal:
+// uploads then answer 503 until it is fixed (runbook photos.md).
+const photoStorage = config.photoStorage ? supabaseStorage(config.photoStorage) : null;
+if (photoStorage)
+  void photoStorage.ensureBucket().catch((err: unknown) => {
+    log('error', 'photo_bucket_failed', safeError(err));
+  });
+else
+  log('warn', 'photos_disabled', {
+    note: 'SUPABASE_URL / SUPABASE_SECRET_KEY not set — job photos unavailable',
+  });
+
 const app = createApp({
   keyring,
   config,
@@ -67,6 +80,7 @@ const app = createApp({
   turnstile: config.turnstileSecret ? createTurnstileVerifier(config.turnstileSecret) : null,
   razorpay: config.razorpay ? httpRazorpay(config.razorpay.keyId, config.razorpay.keySecret) : null,
   sentryIssues: config.sentryIssues ? createSentryIssuesClient(config.sentryIssues) : null,
+  photoStorage,
 });
 if (!config.firebaseApiKey || !config.turnstileSecret)
   log('warn', 'password_sign_in_disabled', {

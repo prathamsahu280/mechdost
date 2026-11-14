@@ -7,3 +7,4 @@ export * from './loyalty';
 export * from './payouts';
 export * from './services';
 export * from './quotes';
+export * from './media';

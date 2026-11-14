@@ -87,3 +87,16 @@ Encrypted columns: `shops.pan_enc` (+ unique `pan_index`), `partner_applications
 ## Permission `prices:write` (2026-11-13, Q26)
 
 "Set customer prices per city and PIN code": super_admin, ops_manager and finance. Not catalogue_manager (catalogue texts only) and not city_manager until prices are city-scoped. The price board (`GET /v1/admin/prices/products/{slug}`) needs it too (one permission per area: whoever sees the margins can set them). Writes are compare-and-set on `version` (`STALE_PRICE`) and audited (`price.set` / `price.cleared` with before/after).
+
+## Uploads (job photos, 2026-11-15)
+
+Rules the one upload pipeline (`apps/api/src/photos/`) enforces; product photos reuse it next tier.
+
+- **Streamed size limit:** 8 MB (+64 KB multipart framing) on the upload route only; the global 1 MB body limit skips exactly that route. A larger file is 413 `PHOTO_TOO_LARGE` before anything is decoded. A 50-megapixel decode cap (`limitInputPixels`) guards decompression bombs; at most 2 pictures are decoded at once per instance.
+- **Type by bytes, never by name or MIME:** JPEG, PNG and WebP only (the decoder's format must equal the header's). SVG, GIF, AVIF, TIFF, PDF and text are 422 `PHOTO_TYPE`. **HEIC** (HEVC) is refused with 422 `PHOTO_HEIC` ("Please upload JPG or PNG"): the libvips bundled with sharp 0.35.5 decodes AVIF but has no HEVC decoder (checked 2026-11-15); iOS converts to JPEG for `accept="image/jpeg,…"` file inputs.
+- **Re-encode, never store the original:** auto-rotate from EXIF orientation, then WebP at 1600 px and 480 px. All metadata (GPS, camera, owner, trailing payloads) is gone; a test checks the output has no EXIF.
+- **Random object keys** (`job/{requestId}/{uuid}.webp`), enforced by a CHECK constraint; the file name is never used. No path traversal is possible because no client string reaches a storage path.
+- **Rights on every read:** listings are scoped (own workshop, own customer, city staff; foreign ids 404); images need a signed 10-minute URL or the public rule. Private bucket; the Storage secret key is server-only and never in a URL, log or error.
+- **Rate limit:** 30 uploads per 10 minutes per workshop user; image reads 600/min per IP; gallery 120/min per IP; the normal per-user and per-IP limits apply too.
+- **Audit:** add and remove each write `audit_log` (removal keeps the before row) and a server event; delete is a soft delete.
+- **Dependencies:** `sharp` 0.35.5 (released 2026-09-27, above the 0.35.4 advisory floor, older than the 3-day release-age policy); `allowBuilds` already lists sharp.

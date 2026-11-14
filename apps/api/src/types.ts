@@ -7,6 +7,7 @@ import type { TokenVerifier } from './auth/token-verifier';
 import type { TurnstileVerifier } from './auth/turnstile';
 import type { Config } from './config';
 import type { SentryIssuesClient } from './monitoring/sentry-issues';
+import type { PhotoStorage } from './photos/storage';
 import type { RazorpayGateway } from './payments/razorpay';
 import type { RateLimiter } from './rate-limit/limiter';
 
@@ -26,6 +27,8 @@ export interface AppDeps {
   turnstile?: TurnstileVerifier | null;
   /** Razorpay gateway; null when not configured → online payment answers PAYMENT_METHOD_UNAVAILABLE. */
   razorpay?: RazorpayGateway | null;
+  /** Private Storage for job photos; null when not configured → photo routes answer 503 PHOTOS_UNAVAILABLE. */
+  photoStorage?: PhotoStorage | null;
   /** Read-only Sentry issues for Admin → Errors; null when no read token is configured → "not connected". */
   sentryIssues?: SentryIssuesClient | null;
 }

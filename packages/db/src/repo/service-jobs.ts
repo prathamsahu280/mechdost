@@ -18,6 +18,7 @@ import { recordServerEvent } from './events';
 import type { Tx } from './orders';
 import { currentLabourPromiseDays } from './labour-promise';
 import { queueServiceWhatsApp } from './service-notifications';
+import { assertPhotosFor } from './service-photos';
 import {
   assertBookableDate,
   ESTIMATE_FROM,
@@ -263,6 +264,7 @@ export async function receiveVehicle(db: Tx, input: StepInput & { odometerKm: nu
     requireStatus(r, ['confirmed']);
     if (r.serviceMode === 'home')
       throw new ValidationError('Enter the arrival code the customer shows', 'ARRIVAL_CODE_REQUIRED');
+    await assertPhotosFor(tx, r.id, 'before');
     return receiveInTx(tx, r, input, workshopActor(input.staffUserId));
   });
 }
@@ -282,6 +284,8 @@ export async function markVehicleReceived(
   return db.transaction(async (tx) => {
     const r = await jobFor(tx, input);
     requireStatus(r, ['confirmed']);
+    // Before the arrival code is compared: a missing photo must not burn one of the 5 tries.
+    await assertPhotosFor(tx, r.id, 'before');
     if (r.serviceMode === 'home') {
       const check = await verifyArrivalCode(tx, input.keyring ?? null, r.id, input.arrivalCode);
       if (!check.ok) return check;
@@ -368,6 +372,7 @@ export async function advanceJob(db: Tx, input: StepInput & { to: 'in_progress' 
   return db.transaction(async (tx) => {
     const r = await jobFor(tx, input);
     requireStatus(r, [input.to === 'in_progress' ? 'approved' : 'in_progress']);
+    if (input.to === 'ready') await assertPhotosFor(tx, r.id, 'after');
     return transitionRequest(tx, {
       request: r,
       to: input.to,

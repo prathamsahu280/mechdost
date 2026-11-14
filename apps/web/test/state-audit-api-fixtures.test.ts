@@ -25,6 +25,8 @@ describe('API-mode audit fixtures (Q106)', () => {
       'API-SVC-HOMEFIND',
       'API-SVC-HOMEREQ',
       'API-WS-HOMEJOB',
+      'API-WS-PHOTOS',
+      'API-SVC-PHOTOS',
     ])
       expect(codes.has(code), code).toBe(true);
   });

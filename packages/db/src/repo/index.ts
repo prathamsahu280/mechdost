@@ -59,3 +59,4 @@ export * from './analytics';
 export * from './account';
 export * from './notice-events';
 export * from './notice-templates-admin';
+export * from './service-photos';

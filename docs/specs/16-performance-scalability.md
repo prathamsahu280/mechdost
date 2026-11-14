@@ -69,3 +69,7 @@ Lighthouse CI on home/shop/product/workshop pages per PR; k6 load test (500 VU b
 - **Strings travel as props** (the header is a Server Component; same approach as the compare tray): about 0.5 KB gz of HTML per page for the bell labels, and no i18n runtime. The centre, preferences and card pages use `ClientMessages` for the `bell` namespace only.
 - **The push worker is a static file** (`/firebase-messaging-sw.js`, no library, no precache, `Cache-Control: no-cache`), registered only after "Turn on". No full PWA: serwist adds a precache and update surface we do not need for push.
 - **Network:** one `GET /v1/me/notifications?limit=10` per 15 s (partners, staff) or 60 s (customers) per visible tab, indexed `(user_id, created_at)`; hidden tabs do not poll; errors back off to 5 minutes. Not measured with `measure-js.mjs` (no build in this change): the budget run is queued with the next measured change; expected: homepage and product-page JS unchanged within noise (header shell only).
+
+## Budget note: job photos (2026-11-15)
+
+Pictures are re-encoded once at upload (WebP 1600 and 480 px) and served as-is: `next/image` runs `unoptimized` with fixed-size boxes (no CLS), lazy-loaded, from the API (`Cache-Control: private, max-age=300`). The panel, strip and gallery are `React.lazy` chunks loaded only on the workshop portal, the request page and the workshop page; nothing in the header, layout or shop pages imports them (a unit test asserts it). Upload cost sits in the API (sharp, two decodes at a time per instance), not in the browser.

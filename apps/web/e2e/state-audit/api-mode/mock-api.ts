@@ -14,6 +14,8 @@ export interface Reply {
   /** A 2xx body (parsed with the mock's schema) or, for an error status, the error code. */
   body?: unknown;
   code?: string;
+  /** A binary body (the photo images): base64 and its content type. Skips the schema check. */
+  raw?: { contentType: string; base64: string };
 }
 
 export interface MockCtx {
@@ -72,6 +74,16 @@ export async function installApi(page: Page, c: AuditCase, mocks: readonly Mock[
     }
     const reply = mock.reply({ c, method, path, query: url.searchParams, body });
     const status = reply.status ?? 200;
+    if (reply.raw && status < 400)
+      return route.fulfill({
+        status,
+        headers: {
+          ...CORS,
+          'content-type': reply.raw.contentType,
+          'cross-origin-resource-policy': 'cross-origin',
+        },
+        body: Buffer.from(reply.raw.base64, 'base64'),
+      });
     if (status >= 400) {
       problems.expectsErrors = true;
       return route.fulfill({ status, headers: CORS, json: errorBody(reply.code ?? 'INTERNAL') });

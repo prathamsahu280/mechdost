@@ -132,6 +132,8 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | API-SVC-HOMEFIND   | Workshop finder (/workshops), real sign-in        | Mode switch (at the workshop / at my home), saved-address picker, home listing with the visit fee: none, some, at the radius edge                                       | pairwise | 8        | 0       |
 | API-SVC-HOMEREQ    | Service request (/service/{code}), real sign-in   | Home visit panel: mechanic, rating, address, visit fee, arrival code (shown / locked / used), offer to move (waiting / accepted / declined), visit-fee line on the bill | pairwise | 72       | 0       |
 | API-WS-HOMEJOB     | Workshop portal (/partner/workshop), real sign-in | Home servicing settings card; new home request (mechanic name); arrival entry (code and odometer: right / wrong / locked); offer to move; fee due after a declined move | pairwise | 56       | 0       |
+| API-WS-PHOTOS      | Workshop portal (/partner/workshop), real sign-in | Job card photo section: before or after stage, 0 / 1 / 6 photos, required or optional, an upload the API refuses, the gate message at vehicle received                  | pairwise | 40       | 0       |
+| API-SVC-PHOTOS     | Service request (/service/{code}), real sign-in   | Before and after strip: none (hidden) / 1 / 6 photos, the viewer closed or open                                                                                         | pairwise | 24       | 0       |
 | API-ADM-REFUNDQ    | Admin console (/admin/refunds)                    | Refund queue: view buttons, list rows, detail (approve / decline with reason / pay by hand with UTR), alerts                                                            | pairwise | 65       | 0       |
 | API-ORD-REFUNDLINE | Order page (/orders/{code})                       | Refund status line under a part: under review, processing, refunded, declined, failed (+ support link)                                                                  | pairwise | 48       | 0       |
 | API-SHOP-PORTAL    | Shop portal (/partner/shop), real sign-in         | Orders from the API with the give-up form, the shop's warnings, its hours and standing, its agreement                                                                   | pairwise | 63       | 0       |
@@ -145,7 +147,7 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | API-ADM-CONTENT    | Admin → Content, real sign-in                     | Trust lines editor: eight lines in English and Hindi, default, long wording, hidden with "-", load error                                                                | pairwise | 32       | 0       |
 | API-NAV-ADMIN      | Navigation, real sign-in                          | Admin section bar with every real-mode section (Analytics, Refunds, Errors included): current item, scroll, walk                                                        | cross    | 144      | 0       |
 | API-NAV-ACCOUNT    | Navigation, real sign-in                          | Account section bar in a real-sign-in build: current item, scroll, walk                                                                                                 | cross    | 80       | 0       |
-| **Total**          |                                                   |                                                                                                                                                                         |          | **3045** | **92**  |
+| **Total**          |                                                   |                                                                                                                                                                         |          | **3109** | **92**  |
 
 ## Chrome
 
@@ -2884,6 +2886,82 @@ Pairwise (all pairs of values); 56 states; scope `main`.
 - [ ] API-WS-HOMEJOB-054 · 1920px · dark · hi · workshop partner · world=empty · /partner/workshop · job=offer-move · settings=on · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
 - [ ] API-WS-HOMEJOB-055 · 1920px · light · en · workshop partner · world=empty · /partner/workshop · job=move-waiting · settings=off · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
 - [ ] API-WS-HOMEJOB-056 · 1920px · dark · hi · workshop partner · world=empty · /partner/workshop · job=fee-due · settings=on · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+
+### API-WS-PHOTOS — Job card photo section: before or after stage, 0 / 1 / 6 photos, required or optional, an upload the API refuses, the gate message at vehicle received
+
+Pairwise (all pairs of values); 40 states; scope `main`.
+
+- [ ] API-WS-PHOTOS-001 · 320px · light · en · workshop partner · world=empty · /partner/workshop · photos=none · stage=before · required=on · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-WS-PHOTOS-002 · 320px · dark · hi · workshop partner · world=empty · /partner/workshop · photos=one · stage=after · required=off · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-PHOTOS-003 · 390px · light · hi · workshop partner · world=empty · /partner/workshop · photos=six · stage=before · required=off · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-PHOTOS-004 · 390px · dark · en · workshop partner · world=empty · /partner/workshop · photos=upload-error · stage=after · required=on · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-WS-PHOTOS-005 · 480px · light · en · workshop partner · world=empty · /partner/workshop · photos=gate · stage=after · required=off · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-WS-PHOTOS-006 · 480px · dark · hi · workshop partner · world=empty · /partner/workshop · photos=none · stage=before · required=on · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-PHOTOS-007 · 768px · light · en · workshop partner · world=empty · /partner/workshop · photos=one · stage=before · required=on · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-WS-PHOTOS-008 · 768px · dark · hi · workshop partner · world=empty · /partner/workshop · photos=gate · stage=after · required=off · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-PHOTOS-009 · 1024px · light · en · workshop partner · world=empty · /partner/workshop · photos=six · stage=after · required=on · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-WS-PHOTOS-010 · 1024px · dark · hi · workshop partner · world=empty · /partner/workshop · photos=upload-error · stage=before · required=off · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-PHOTOS-011 · 1280px · light · en · workshop partner · world=empty · /partner/workshop · photos=upload-error · stage=before · required=on · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-WS-PHOTOS-012 · 1280px · dark · hi · workshop partner · world=empty · /partner/workshop · photos=six · stage=after · required=off · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-PHOTOS-013 · 1440px · light · en · workshop partner · world=empty · /partner/workshop · photos=none · stage=after · required=off · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-WS-PHOTOS-014 · 1440px · dark · hi · workshop partner · world=empty · /partner/workshop · photos=one · stage=before · required=on · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-PHOTOS-015 · 1920px · light · en · workshop partner · world=empty · /partner/workshop · photos=gate · stage=before · required=on · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-WS-PHOTOS-016 · 1920px · dark · hi · workshop partner · world=empty · /partner/workshop · photos=none · stage=after · required=off · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-PHOTOS-017 · 320px · light · en · workshop partner · world=empty · /partner/workshop · photos=six · stage=before · required=on · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-WS-PHOTOS-018 · 320px · dark · hi · workshop partner · world=empty · /partner/workshop · photos=upload-error · stage=after · required=off · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-PHOTOS-019 · 320px · light · en · workshop partner · world=empty · /partner/workshop · photos=gate · stage=before · required=on · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-WS-PHOTOS-020 · 390px · dark · hi · workshop partner · world=empty · /partner/workshop · photos=none · stage=after · required=off · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-PHOTOS-021 · 390px · light · en · workshop partner · world=empty · /partner/workshop · photos=one · stage=before · required=on · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-WS-PHOTOS-022 · 390px · dark · hi · workshop partner · world=empty · /partner/workshop · photos=gate · stage=after · required=off · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-PHOTOS-023 · 480px · light · en · workshop partner · world=empty · /partner/workshop · photos=one · stage=before · required=on · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-WS-PHOTOS-024 · 480px · dark · hi · workshop partner · world=empty · /partner/workshop · photos=six · stage=after · required=off · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-PHOTOS-025 · 480px · light · en · workshop partner · world=empty · /partner/workshop · photos=upload-error · stage=before · required=on · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-WS-PHOTOS-026 · 768px · dark · hi · workshop partner · world=empty · /partner/workshop · photos=none · stage=after · required=off · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-PHOTOS-027 · 768px · light · en · workshop partner · world=empty · /partner/workshop · photos=six · stage=before · required=on · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-WS-PHOTOS-028 · 768px · dark · hi · workshop partner · world=empty · /partner/workshop · photos=upload-error · stage=after · required=off · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-PHOTOS-029 · 1024px · light · en · workshop partner · world=empty · /partner/workshop · photos=none · stage=before · required=on · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-WS-PHOTOS-030 · 1024px · dark · hi · workshop partner · world=empty · /partner/workshop · photos=one · stage=after · required=off · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-PHOTOS-031 · 1024px · light · en · workshop partner · world=empty · /partner/workshop · photos=gate · stage=before · required=on · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-WS-PHOTOS-032 · 1280px · dark · hi · workshop partner · world=empty · /partner/workshop · photos=none · stage=after · required=off · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-PHOTOS-033 · 1280px · light · en · workshop partner · world=empty · /partner/workshop · photos=one · stage=before · required=on · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-WS-PHOTOS-034 · 1280px · dark · hi · workshop partner · world=empty · /partner/workshop · photos=gate · stage=after · required=off · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-PHOTOS-035 · 1440px · light · en · workshop partner · world=empty · /partner/workshop · photos=six · stage=before · required=on · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-WS-PHOTOS-036 · 1440px · dark · hi · workshop partner · world=empty · /partner/workshop · photos=upload-error · stage=after · required=off · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-PHOTOS-037 · 1440px · light · en · workshop partner · world=empty · /partner/workshop · photos=gate · stage=before · required=on · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-WS-PHOTOS-038 · 1920px · dark · hi · workshop partner · world=empty · /partner/workshop · photos=one · stage=after · required=off · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-PHOTOS-039 · 1920px · light · en · workshop partner · world=empty · /partner/workshop · photos=six · stage=before · required=on · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-WS-PHOTOS-040 · 1920px · dark · hi · workshop partner · world=empty · /partner/workshop · photos=upload-error · stage=after · required=off · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+
+## Service request (/service/{code}), real sign-in
+
+### API-SVC-PHOTOS — Before and after strip: none (hidden) / 1 / 6 photos, the viewer closed or open
+
+Pairwise (all pairs of values); 24 states; scope `main`.
+
+- [ ] API-SVC-PHOTOS-001 · 320px · light · en · customer · world=empty · /service/SR-RPR-2026-HND401 · photos=none · viewer=closed · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-SVC-PHOTOS-002 · 320px · dark · hi · customer · world=empty · /service/SR-RPR-2026-HND401 · photos=one · viewer=open · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-SVC-PHOTOS-003 · 390px · light · hi · customer · world=empty · /service/SR-RPR-2026-HND401 · photos=six · viewer=closed · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-SVC-PHOTOS-004 · 390px · dark · en · customer · world=empty · /service/SR-RPR-2026-HND401 · photos=none · viewer=open · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-SVC-PHOTOS-005 · 480px · light · en · customer · world=empty · /service/SR-RPR-2026-HND401 · photos=one · viewer=closed · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-SVC-PHOTOS-006 · 480px · dark · hi · customer · world=empty · /service/SR-RPR-2026-HND401 · photos=six · viewer=open · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-SVC-PHOTOS-007 · 768px · light · en · customer · world=empty · /service/SR-RPR-2026-HND401 · photos=six · viewer=open · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-SVC-PHOTOS-008 · 768px · dark · hi · customer · world=empty · /service/SR-RPR-2026-HND401 · photos=none · viewer=closed · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-SVC-PHOTOS-009 · 1024px · light · en · customer · world=empty · /service/SR-RPR-2026-HND401 · photos=one · viewer=closed · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-SVC-PHOTOS-010 · 1024px · dark · hi · customer · world=empty · /service/SR-RPR-2026-HND401 · photos=none · viewer=open · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-SVC-PHOTOS-011 · 1280px · light · en · customer · world=empty · /service/SR-RPR-2026-HND401 · photos=one · viewer=closed · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-SVC-PHOTOS-012 · 1280px · dark · hi · customer · world=empty · /service/SR-RPR-2026-HND401 · photos=six · viewer=open · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-SVC-PHOTOS-013 · 1440px · light · en · customer · world=empty · /service/SR-RPR-2026-HND401 · photos=none · viewer=closed · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-SVC-PHOTOS-014 · 1440px · dark · hi · customer · world=empty · /service/SR-RPR-2026-HND401 · photos=one · viewer=open · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-SVC-PHOTOS-015 · 1920px · light · en · customer · world=empty · /service/SR-RPR-2026-HND401 · photos=six · viewer=closed · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-SVC-PHOTOS-016 · 1920px · dark · hi · customer · world=empty · /service/SR-RPR-2026-HND401 · photos=none · viewer=open · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-SVC-PHOTOS-017 · 320px · light · en · customer · world=empty · /service/SR-RPR-2026-HND401 · photos=six · viewer=closed · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-SVC-PHOTOS-018 · 390px · dark · hi · customer · world=empty · /service/SR-RPR-2026-HND401 · photos=one · viewer=open · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-SVC-PHOTOS-019 · 480px · light · en · customer · world=empty · /service/SR-RPR-2026-HND401 · photos=none · viewer=closed · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-SVC-PHOTOS-020 · 768px · dark · hi · customer · world=empty · /service/SR-RPR-2026-HND401 · photos=one · viewer=open · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-SVC-PHOTOS-021 · 1024px · light · en · customer · world=empty · /service/SR-RPR-2026-HND401 · photos=six · viewer=closed · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-SVC-PHOTOS-022 · 1280px · dark · hi · customer · world=empty · /service/SR-RPR-2026-HND401 · photos=none · viewer=open · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-SVC-PHOTOS-023 · 1440px · light · en · customer · world=empty · /service/SR-RPR-2026-HND401 · photos=six · viewer=closed · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-SVC-PHOTOS-024 · 1920px · dark · hi · customer · world=empty · /service/SR-RPR-2026-HND401 · photos=one · viewer=open · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
 
 ## Admin console (/admin/refunds)
 

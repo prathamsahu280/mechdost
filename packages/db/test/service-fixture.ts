@@ -60,6 +60,9 @@ export async function seedServiceFixture(db: TestDb): Promise<Fixture> {
     .values({ stateId: state.id, code: 'BHI', slug: 'bhilai', name: 'Bhilai', status: 'live' })
     .returning();
   if (!raipur || !bhilai) throw new Error('city');
+  // Job photos are required by default (spec 06); the job-flow tests walk the steps without pictures, and the photo
+  // tests (service-photos.test.ts) switch the requirement back on.
+  await db.insert(s.settings).values({ cityId: null, key: 'service.photos_required', value: false });
   await db.insert(s.pincodes).values([
     { pincode: '492001', stateId: state.id, cityId: raipur.id, centroid: { lng: 81.6296, lat: 21.2514 } },
     { pincode: '492004', stateId: state.id, cityId: raipur.id, centroid: { lng: 81.6612, lat: 21.2621 } },

@@ -148,6 +148,15 @@ export const OPERATIONAL_SETTINGS = {
    * workshop sets its own fee up to this; 0 means visits must be free.
    */
   'service.home_fee_max_paise': { kind: 'int', min: 0, max: 50_000, default: 50_000 },
+  /**
+   * Job photos (spec 06, user 2026-11-15): with this on, a workshop needs a before photo to receive the vehicle and an
+   * after photo to mark it ready. On by default; the admin may make photos optional. Site-wide.
+   */
+  'service.photos_required': { kind: 'boolean', default: true, globalOnly: true },
+  /** Whether completed jobs' photos show on the workshop's public page. Private by default; the admin alone decides. */
+  'service.photos_public': { kind: 'boolean', default: false, globalOnly: true },
+  /** Most photos per stage (before, after) for one job. */
+  'service.photos_max_per_stage': { kind: 'int', min: 1, max: 12, default: 6, globalOnly: true },
 } as const satisfies Record<string, SettingSpec>;
 
 /**

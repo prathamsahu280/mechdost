@@ -127,6 +127,8 @@ beforeAll(async () => {
     .values([
       { pincode: '492001', stateId: state!.id, cityId: city!.id, centroid: { lng: 81.6296, lat: 21.2514 } },
     ]);
+  // Photos are required by default; these job-flow tests have their own photo suite elsewhere.
+  await ctx.db.insert(s.settings).values({ cityId: null, key: 'service.photos_required', value: false });
   ops = await person('01', { role: 'ops_manager' });
   support = await person('02', { role: 'support_agent' });
   customer = await person('03');

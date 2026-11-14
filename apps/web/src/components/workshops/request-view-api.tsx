@@ -17,6 +17,7 @@ import {
   serviceErrorKey,
 } from '@/lib/service-views';
 import { StatusTimeline } from '../commerce/status-timeline';
+import { JobPhotosStripLazy } from '@/components/photos/photos-lazy';
 import { ServiceBillView } from './service-estimate';
 import { HomeVisitAside, HomeVisitBox } from './home-visit-api';
 import { EstimateApprovalApi, EstimateChoicesApi } from './service-estimate-api';
@@ -225,6 +226,7 @@ export function RequestViewApi({ code }: { code: string }) {
           ) : null}
           {customerMayCancel(req.status) ? <CancelRequestApi req={req} onChanged={refresh} /> : null}
         </section>
+        <JobPhotosStripLazy code={req.code} version={req.version} />
         {req.status === 'paid' || req.status === 'completed' ? (
           <Suspense fallback={null}>
             <WriteReviewApi kind="service" code={req.code} />

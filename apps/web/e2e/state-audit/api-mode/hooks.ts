@@ -91,6 +91,35 @@ async function prepareApi(page: Page, c: AuditCase): Promise<string[]> {
       }
     }
   }
+
+  // Job photos: an upload the API refuses (workshop), the gate refusing 'vehicle received' (workshop), the viewer (customer).
+  if (c.code === 'API-WS-PHOTOS') {
+    if (c.state.photos === 'upload-error') {
+      const input = main.locator('input[type="file"]').first();
+      if ((await input.count()) === 0) notes.push('no photo input');
+      else {
+        await input.setInputFiles({
+          name: 'notes.jpg',
+          mimeType: 'image/jpeg',
+          buffer: Buffer.from('not a picture'),
+        });
+        await settleApi(page);
+      }
+    } else if (c.state.photos === 'gate') {
+      const km = main.locator('input[name="odometer"]').first();
+      if ((await km.count()) === 0) notes.push('no odometer form');
+      else {
+        await km.fill('21400');
+        await main.locator('form:has(input[name="odometer"]) button[type="submit"]').first().click();
+        await settleApi(page);
+      }
+    }
+  }
+  if (c.code === 'API-SVC-PHOTOS' && c.state.viewer === 'open') {
+    const thumb = main.locator('section[aria-labelledby$="-photos-title"] button').first();
+    if ((await thumb.count()) === 0) notes.push('no photo thumbnail');
+    else await thumb.click();
+  }
   return notes;
 }
 

@@ -32,7 +32,7 @@ const LONG_HI = 'शर्मा डोरस्टेप दोपहिया 
 const long = (c: AuditCase) => c.state.stress === 'long-text';
 const loc = (c: AuditCase) => (c.locale === 'hi' ? LONG_HI : LONG_EN);
 
-function roleMock(c: AuditCase): Mock {
+export function roleMock(c: AuditCase): Mock {
   return {
     method: 'GET',
     path: /^\/me$/,
@@ -156,7 +156,7 @@ export function homeFinderMocks(c: AuditCase): Mock[] {
 
 // ── The customer's request page ────────────────────────────────────────────────────────────────────────────────
 
-function detailOf(variant: string, c: AuditCase): Detail {
+export function detailOf(variant: string, c: AuditCase): Detail {
   const base: Detail = {
     code: CODE,
     serviceMode: 'home',
@@ -336,7 +336,7 @@ export function homeRequestMocks(c: AuditCase): Mock[] {
 
 // ── The workshop portal ─────────────────────────────────────────────────────────────────────────────────────────
 
-function summaryOf(d: Detail): Dto<typeof ServiceRequestPageDto>['items'][number] {
+export function summaryOf(d: Detail): Dto<typeof ServiceRequestPageDto>['items'][number] {
   return {
     code: d.code,
     status: d.status,

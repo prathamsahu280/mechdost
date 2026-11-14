@@ -12,6 +12,7 @@ import { formatPrice } from '@/lib/format';
 import { visitFeeGstPaise } from '@/lib/home-service-views';
 import { directionsHref, mapUi } from '@/lib/map-ui';
 import { daysLabel, durationParts } from '@/lib/service-views';
+import { WorkshopGalleryLazy } from '@/components/photos/photos-lazy';
 import { BookingFormLazy } from './booking-form-lazy';
 import { WorkshopMap } from './workshop-map';
 
@@ -170,6 +171,10 @@ export async function WorkshopProfileApi({ workshop: w }: { workshop: PublicWork
               {f('directions')}
             </a>
           </p>
+
+          <ClientMessages namespaces={['photos']}>
+            <WorkshopGalleryLazy slug={w.slug} />
+          </ClientMessages>
 
           <Suspense fallback={<ReviewsApiSkeleton />}>
             <ReviewsApiSection target="workshop" slug={w.slug} />
