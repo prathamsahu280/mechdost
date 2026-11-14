@@ -47,3 +47,9 @@ Goal: mechdost.com runs on real sign-in (Firebase) and the API for every flow, w
   the API; workshop accounts land on /partner/workshop. Response schemas `@mechdost/shared/service-api`. API gaps
   listed in spec 06 § Real API mode (web) (no API change). Playwright not run (low-memory machine) — run the service
   e2e at merge.
+- 2026-11-14: MechDost Coins on its branch (worktree-agent-a8d06d11eb05c0003): migration 0047 (`coin_rewards`,
+  per-part coin share, ledger reason codes), redeem inside `POST /v1/orders` (`coins`, 409 COINS_CHANGED), restore on
+  cancel/reject, rewards on delivery / paid booking with the 8-day unlock, expiry job, `/v1/me/coins*`,
+  `/v1/admin/coins/*`, coin rules in settings; web: account coins, checkout coins (COD + online), order coin line,
+  Admin → Coins, all behind the real-mode switches; coins un-hidden. Referrals not built (Q47). Playwright and
+  `next build` not run (low-memory machine): run the coin e2e and the JS budget at merge. Spec 20 "Built".

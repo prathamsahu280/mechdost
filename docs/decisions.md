@@ -505,6 +505,21 @@ Full answers in `docs/questions-for-user.md` (Answered log, 2026-11-13). The one
 - **Kept as built:** type-level fitment (Q76, Q10 not needed yet), deny-all RLS (Q73), suspension within 60 s (Q29), customer blocks by super admins only (Q65), English road names on the Hindi map (Q64), checked security fixes may skip the 3-day wait (Q67).
 - **Admin catalogue screen (Q82): build now**, before the website switch, including the Q26 PIN prices.
 
+## 2026-11-14 — MechDost Coins on the real API (spec 20; Q24, Q31–Q34; launch scope Q71)
+
+Coins work in real mode and are **no longer hidden** (removed from `BROWSER_ONLY_SECTIONS`; supersedes the coins part of "Launch scope in real mode: features with no API are hidden"). Rulings taken while building (cost if wrong in brackets):
+
+- **Rules are site-wide admin settings** (`coins.*` in the settings registry, global only): coin value, maximum share, minimum order, order reward (basis points), first-order bonus, workshop-booking bonus, unlock days (default 8) and expiry days (default **180**, replacing the earlier 365). Every reward is **0 until the admin sets it** (Q24, Q31). Saving a coin rule needs `coins:rules` as well as `settings:write`. (cheap: per-city values can be added later)
+- **The public quote stays anonymous.** The checkout reads the balance and rules from `GET /v1/me/coins`, computes the coins with the shared `coinRedemption`, and sends `coins` with the order; the server re-checks inside the order transaction (409 `COINS_CHANGED`). Deviates from "extend the quote" because a personal balance in a public, per-IP-limited endpoint would need optional sign-in on it. (cheap)
+- **Each sub-order carries its share** of the coins (`orders.coins_redeemed`, split by product subtotal, never above a part's subtotal), so what a shop collects for COD, what Razorpay asks for, and a part's cancellation all stay exact; a cancelled or rejected part returns its own share as coins, once. (medium: migration 0047)
+- **Returned coins get a fresh expiry**; spending, deductions and expiry use the earliest-expiring coins first. (cheap)
+- **Earned coins wait in `coin_rewards`** and the worker credits them after the unlock days; a refund before then cancels them (`cancelPendingOrderRewards`, to be called by the refund flow when it exists). No claw-back after credit: the 8-day wait outlasts the 7-day claim window (Q25). (medium)
+- **The first-order bonus** is paid on the customer's first _delivered_ order, once per customer (unique index). (cheap)
+- **Staff adjustments** need a reason code (hard rule 16) plus an optional customer-visible note, the account version the screen showed (409 `STALE_COINS`) and an `Idempotency-Key`. Four-eyes waits for an approval-threshold setting (spec 13). (cheap)
+- **Coin discounts are MechDost-funded**: invoices stay at full price (Q41 default until the CA answers). (medium: invoice copy if the CA says otherwise)
+- **Referrals are not built** although Q31–Q34 are answered: the programme itself (codes, sign-up attribution, Q35–Q38, Q44, Q45) is still open under Q47, whose default is "do not build until discussed". (cheap to add: a `referral` reward source)
+- **Migration number 0047**: 0045 and 0046 are reserved for the parallel quotes and reviews streams; renumber at merge if needed.
+
 ## PENDING DECISIONS (ask "what's pending" to review)
 
 | #   | Topic                                                                                                                                                                                       | Leaning                                                                             | When                                 |
