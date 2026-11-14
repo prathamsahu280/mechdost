@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 import { DATA_MODE } from '@/lib/data-mode';
-import { DemoLabourPromise } from './site-overrides';
+import { DemoLabourPromise } from './trust-overrides';
 
 /**
  * The labour promise (user 2026-11-15, Q105): "{days}-day labour promise" on workshop pages, and the longer sentence

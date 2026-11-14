@@ -2,7 +2,7 @@ import { getLocale, getTranslations } from 'next-intl/server';
 import { trustKey, trustLineText, type TrustPlacement } from '@mechdost/shared/content';
 import { site } from '@/lib/site';
 import { publishedTrust } from '@/lib/trust-content';
-import { TrustText } from './site-overrides';
+import { TrustText } from './trust-overrides';
 
 /**
  * One trust line ("genuine parts", design 2026-11-15): an async Server Component, so no new client code ships with
