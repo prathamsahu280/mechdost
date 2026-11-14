@@ -77,6 +77,17 @@ Plan `docs/superpowers/plans/2026-11-12-razorpay-checkout-backend.md`; user chos
   - the hourly reconciliation job;
   - pg-boss processing of webhooks.
 
+## Delivery charges (2026-11-14, user: "admin configurable per shop or per pincode")
+
+- Each shop group's delivery charge is the covering shop's `shop_pincodes.shipping_paise` for the delivery PIN.
+- It becomes **free** when the group subtotal reaches the free-delivery threshold, chosen in this order:
+  1. the **PIN's** `pincodes.free_delivery_min_paise` (Admin → Settings → Service area);
+  2. the **shop's** override (`shops.free_delivery_min_paise`, built in parallel; merged into the same chain);
+  3. the city setting `checkout.free_delivery_min_paise` (city value, else global; none = never free).
+- NULL means "no override, look further"; **0 means always free** at that level. Integer paise, ₹0–₹1,00,000
+  (CHECK). Tests: `packages/db/test/pincodes.test.ts` "free delivery per PIN" (0 = free, threshold, NULL falls back).
+- An inactive PIN (spec 15 "PIN codes") is not serviceable: the quote refuses it with `PINCODE_NOT_SERVICEABLE`.
+
 ## UI
 
 Cart drawer (concept "Your cart" modal copy), checkout pages reuse concept "Checkout · Delivery details" and "Review your order" labels; shop-group blocks "Sold by {shop} · Delivery ₹x · {n} days"; coupon field; payment selector; COD OTP screen; confirmation "Order placed" with stepper.

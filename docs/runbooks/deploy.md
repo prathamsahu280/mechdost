@@ -312,6 +312,11 @@ Items decided to happen before going public; tick them off here.
    - SMS region policy is set to India only (security baseline).
 3. **Online payments (optional at launch):** set `NEXT_PUBLIC_RAZORPAY_KEY_ID` (public key id). Without it, checkout offers cash on delivery only. Test keys take test payments only.
 4. **Database migrations applied** (§ 6). 0044 was applied 2026-11-14.
+   - **Service-area PIN codes** (after migration 0048), from a machine with the root `.env`:
+     - `pnpm db:seed:pincodes --dry-run` checks `packages/db/seed/raipur-pincodes.json` and prints how many PINs are active;
+     - `pnpm db:seed:pincodes` adds the missing PINs and names the five existing ones. It never deletes a PIN and never
+       switches an existing one on or off, so it is safe to run again.
+     - Then open Admin → Settings → Service area and switch PINs on or off there (a reason is required).
 5. **Flip the switches:**
    - `gh variable set NEXT_PUBLIC_AUTH_MODE --body firebase`
    - `gh variable set NEXT_PUBLIC_DATA_MODE --body api`
