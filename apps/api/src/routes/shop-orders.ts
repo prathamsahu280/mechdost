@@ -37,6 +37,8 @@ const ShopOrder = z
     status: z.string(),
     version: z.number().int(),
     totalPaise: z.number().int(),
+    payoutPaise: z.number().int(),
+    collectPaise: z.number().int().nullable(),
     pincode: z.string(),
     items: z.array(
       z.object({

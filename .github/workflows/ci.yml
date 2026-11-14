@@ -106,7 +106,7 @@ jobs:
   e2e-demo:
     name: Browser suites (demo mode)
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -131,6 +131,17 @@ jobs:
       # Shell + demo flows (incl. axe) and the Hindi coverage gate (hard rule 10).
       - name: Playwright
         run: pnpm --filter @mechdost/web exec playwright test e2e/shell.spec.ts e2e/demo-flows.spec.ts e2e/hindi-coverage.spec.ts
+
+      # UI state audit, per-push subset (the `core` items of docs/qa/ui-state-checklist.md, ~5 min); the nightly
+      # workflow runs every item. Bugs already filed (e2e/state-audit/known-issues.ts) are annotations here.
+      # Report-only until the first full run is triaged (docs/questions-for-user.md Q101), then blocking.
+      - name: UI state audit (core subset)
+        working-directory: apps/web
+        env:
+          STATE_AUDIT_TIER: core
+          STATE_AUDIT_KNOWN: allow
+        run: pnpm exec playwright test -c playwright.state-audit.config.ts
+        continue-on-error: true
 
       # Product-page JS budget (spec 16, hard rule 6): < 180 KB gzip.
       - name: JS budget

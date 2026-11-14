@@ -47,6 +47,11 @@ Goal: mechdost.com runs on real sign-in (Firebase) and the API for every flow, w
   the API; workshop accounts land on /partner/workshop. Response schemas `@mechdost/shared/service-api`. API gaps
   listed in spec 06 § Real API mode (web) (no API change). Playwright not run (low-memory machine) — run the service
   e2e at merge.
+- 2026-11-14 (bulk quotes, agent worktree): quotes on the API end to end — migration 0049 (`quote_requests`, lines,
+  messages, versioned offers, events; `order_groups.quote_id`/`quote_offer_id`, `order_items.price_source`; `quotes:*`
+  permissions), repo + routes (`/v1/quotes*`, `/v1/admin/quotes*`), worker expiry, offer email, web real mode (request
+  form on the live catalogue, thread, account list, admin quote desk) un-hidden with its own flag `QUOTES_ON_API`.
+  Spec 19 "Built: API + real mode", decisions "Bulk quotes on the API". Migration not applied; Playwright not run.
 - 2026-11-14: Reviews stream on its branch (worktree-agent-a31131dde8070eb42): migration 0046 (not applied),
   repo + routes `/v1/reviews/{product|workshop}/{slug}`, `/v1/my-reviews` (eligible, submit), `/v1/admin/reviews`
   (queue, moderate), product/workshop review sections (server-rendered), "Rate" on delivered orders and paid services,

@@ -20,7 +20,7 @@ import { routing, type Locale } from '@/i18n/routing';
 import { fetchCatalogueProduct, fetchCataloguePage } from '@/lib/catalogue/api-source';
 import { demoCard, demoProduct } from '@/lib/catalogue/demo-source';
 import type { CardView, ProductView } from '@/lib/catalogue/view';
-import { BROWSER_ONLY_FEATURES, DATA_MODE } from '@/lib/data-mode';
+import { DATA_MODE, QUOTES_AVAILABLE } from '@/lib/data-mode';
 import { discountPercent, formatPrice } from '@/lib/format';
 import { alternatesFor } from '@/lib/seo';
 import { whatsappLink } from '@/lib/site';
@@ -260,7 +260,7 @@ export default async function ProductPage({ params }: Props) {
             />
           </div>
           <div className="max-w-md">
-            {BROWSER_ONLY_FEATURES ? (
+            {QUOTES_AVAILABLE ? (
               <p className="mt-3 text-sm text-muted">
                 <LocalLink
                   href="/quotes/new"

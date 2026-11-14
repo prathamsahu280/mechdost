@@ -53,6 +53,11 @@ ClickHouse export, experiments (PostHog), attribution/UTM reports, data warehous
 
 Every event follows `docs/conventions/data-for-ml.md`: `noun_verb` names, typed versioned properties, enum codes instead of free text, internal ids only (no PII), source/city/locale/actor role recorded, consent per purpose before personal data is used for offers or model training.
 
+## Bulk quote events (spec 19, 2026-11-14)
+
+- **Server events** (`packages/shared/src/analytics.ts`, written in the transaction of the change): `quote_requested` (quoteCode, lines, units, listTotalPaise), `quote_message_sent` (quoteCode, by customer|staff — never the text), `quote_offer_sent` (quoteCode, offerVersion, totalPaise, listTotalPaise, validDays), `quote_accepted` (quoteCode, offerVersion, orderCode, totalPaise), `quote_closed` (quoteCode, to declined|withdrawn, by, reasonCode), `quote_expired` (quoteCode, reasonCode inactive, offerVersion), `quote_offer_expired` (quoteCode, offerVersion: the offer ran out, the quote reopened). The accepted order also records `purchase`.
+- **Click ids (web, real mode):** `quote_requested`, `quote_request_failed_<key>`, `quote_message_sent`, `quote_accepted`, `quote_accept_failed_<key>`, `quote_declined_<reason>`, `admin_quote_reply`, `admin_quote_offer_sent`, `admin_quote_offer_invalid`, `admin_quote_withdrawn_<reason>`.
+
 ## Service-area PIN codes (2026-11-14)
 
 Client event `admin_pincode_change {action: added|edited|deactivated|activated, reasonCode?}` — never the PIN's area

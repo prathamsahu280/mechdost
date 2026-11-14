@@ -37,6 +37,8 @@ const SETTING_LABEL = {
   'orders.customer_self_cancel_cod': 'api_set_orders_customer_self_cancel_cod',
   'orders.customer_self_cancel_online': 'api_set_orders_customer_self_cancel_online',
   'orders.acceptance_timeout_min': 'api_set_orders_acceptance_timeout_min',
+  'quotes.min_units': 'api_set_quotes_min_units',
+  'quotes.cod_cap_paise': 'api_set_quotes_cod_cap_paise',
   'catalogue.require_hindi_to_publish': 'api_set_catalogue_require_hindi_to_publish',
   'customers.require_verified_email': 'api_set_customers_require_verified_email',
   'support.customer_messages_per_ticket_per_day': 'api_set_support_customer_messages_per_ticket_per_day',
@@ -47,6 +49,7 @@ const UNIT_LABEL = {
   rupees: 'api_set_unit_rupees',
   minutes: 'api_set_unit_minutes',
   days: 'api_set_unit_days',
+  units: 'api_set_unit_units',
   count: 'api_set_unit_count',
 } as const;
 

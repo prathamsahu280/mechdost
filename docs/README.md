@@ -37,6 +37,8 @@ Read `../CLAUDE.md` first (hard rules). Then:
 - `research/realtime-alternatives.md` — Supabase Realtime vs own SSE (Hono + Redis) vs Firebase vs managed pub/sub; recommends Firebase RTDB pings via an outbox relay (2026-11-01).
 - `research/whatsapp.md` — WhatsApp Cloud API direct vs BSPs (MSG91, Interakt, AiSensy, WATI, Twilio, 360dialog), INR prices, OTP, compliance, setup checklist (2026-11-01).
 - `research/raipur-pincodes.md` — Raipur service-area PIN codes: sources (data.gov.in directory, India Post, OSM), centroid choices, active / switched-off / left-out lists (2026-11-14).
+- `research/ui-testing-gap-2026-11-14.md` — why the state matrix missed four layout bugs (no interaction states, cross-entity relations, data shapes, intermediate widths; presence instead of geometry) and the UI state audit that replaces it (2026-11-14).
+- `qa/ui-state-checklist.md` — the UI state checklist: 1,731 component × state items (pairwise + full crosses), one Playwright test each, ticked from the run report; found bugs and run results at the end (2026-11-14).
 - `research/repo-review-2026-11-11.md` — whole-repo review: bugs and breakable flows (B1–B16), architecture/launch readiness (A1–A12), tooling/CI/skills (T1–T15), launch blockers, features to pull forward (2026-11-11).
 - `conventions/data-for-ml.md` — hard rule 16: ML/AI-ready data collection.
 - `runbooks/collaborator-setup.md` — new collaborator setup: run the site, Claude Code project skills (auto-loaded from `.claude/skills/`), public skills, plugins and MCP servers to install.
