@@ -133,6 +133,12 @@ describe('POST /v1/auth/password', () => {
     });
     const done = await signIn({ identifier: a.email, password: 'Raipur@2026' }, bearer(fresh));
     expect(await done.json()).toEqual({ status: 'signed_in', customToken: 'ct:pw-05:{"staff_2fa":true}' });
+    // One audit row per completed staff sign-in feeds the Staff screen's "last sign-in" (design 2026-11-15);
+    // the password-only first step wrote none.
+    const signedIn = (await ctx.db.select().from(s.auditLog)).filter(
+      (r) => r.action === 'auth.staff_signed_in' && r.entityId === a.user.id,
+    );
+    expect(signedIn).toHaveLength(1);
 
     const stale = ctx.verifier.add('phone-token-staff-05-stale', {
       firebaseUid: a.firebaseUid,

@@ -13,6 +13,12 @@ export interface PasswordAuthority {
   emailOf(uid: string): Promise<string | null>;
   /** A Firebase custom token for `uid` (the client calls `signInWithCustomToken`). */
   customToken(uid: string, claims?: Record<string, boolean>): Promise<string>;
+  /**
+   * End every session of `uid` (Firebase `revokeRefreshTokens`): used when a staff role is removed, so the person
+   * signs in again and no old session lingers. Optional so a deployment without it still works (the session cache
+   * expires within a minute either way).
+   */
+  revokeSessions?(uid: string): Promise<void>;
 }
 
 /** Firebase answers these for a wrong password or an account without one: all mean "no". */
@@ -71,6 +77,9 @@ export function createFirebasePasswordAuthority(opts: {
     },
     customToken(uid, claims) {
       return auth.createCustomToken(uid, claims);
+    },
+    revokeSessions(uid) {
+      return auth.revokeRefreshTokens(uid);
     },
   };
 }

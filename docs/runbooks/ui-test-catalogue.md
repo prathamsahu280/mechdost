@@ -845,3 +845,5 @@ bill's promise line and redo link), `PTN-APPLY` (`promise`: the workshop accepta
 gap (the hero list collapses with `empty:hidden`); long Hindi wording must wrap inside its container at 320 px.
 `API-ADM-CONTENT` (chunk G, § 9.7) is the Trust lines editor on the API: `content=default|long|hidden|error`.
 `test/state-audit-trust.test.ts` keeps the model's trust keys equal to `CONTENT_KEYS` and checks the seeds.
+
+Admin people screens (2026-11-15, chunk G, § 9.7): `API-ADM-STAFF` (`staff=several|empty|self-only|phone-missing|error`, `form=closed|give|give-error|remove`, long text), `API-ADM-CUSTOMERS` (`customers=results|none|error|masked|unmasked|sections-hidden`, `form=clean|open`, long text; the hook searches "asha verma" and opens the first result), `API-ADM-AUDIT` (`audit=rows|empty|error|more`, `form=closed|open`, long text; the hook opens the first entry). The navigation rows now include Staff and Audit log. Checklist regenerated (3,046 items). Not run in a browser (no Playwright by instruction).

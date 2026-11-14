@@ -87,3 +87,12 @@ Encrypted columns: `shops.pan_enc` (+ unique `pan_index`), `partner_applications
 ## Permission `prices:write` (2026-11-13, Q26)
 
 "Set customer prices per city and PIN code": super_admin, ops_manager and finance. Not catalogue_manager (catalogue texts only) and not city_manager until prices are city-scoped. The price board (`GET /v1/admin/prices/products/{slug}`) needs it too (one permission per area: whoever sees the margins can set them). Writes are compare-and-set on `version` (`STALE_PRICE`) and audited (`price.set` / `price.cleared` with before/after).
+
+## Staff roles from the console, masking and audit viewing (2026-11-15)
+
+- No new permission: `staff:manage` (super admin), `customers:read` / `customers:read_pii` (the design called it `customers:pii`; the existing key is reused), `audit:read` (super admin, finance). All three screens also need an all-cities grant (`SCOPE_REQUIRED` otherwise) because staff, customers and the audit log have no city. `pnpm db:seed` is not needed for this change.
+- Rules enforced in the repository, not only the UI: no self role changes; `super_admin` and `finance` only by a super admin; the last super admin stays; reasons are mandatory; every change is audited with the reason and emits an analytics event.
+- Masking: phone `••••••` plus the last 4 digits, email first letter plus domain, for everyone in lists and for roles without `customers:read_pii` in the customer view. An unmasked customer view writes `customer.pii_viewed` (actor, customer, time; no contact data in the row). The audit log viewer never unmasks: its `before`/`after` are redacted for all roles (`redactAuditJson`).
+- Rate limits: search and audit queries 30 per minute per user (`adminSearch`) on top of the per-user API limit; all strict Zod bodies and query strings (unknown fields 400).
+- Sessions: a role change drops the person's cached session on the handling instance; removing a role also revokes their Firebase refresh tokens; other instances converge within the 60 s session cache. Staff sign-in completion is recorded (`auth.staff_signed_in`) for the "last sign-in" column.
+- Tests: `packages/db/test/staff-admin.test.ts`, `customer-search.test.ts`, `audit-viewer.test.ts`, `apps/api/test/admin-people.test.ts` (401 / 403 / `SCOPE_REQUIRED` / `STAFF_2FA_REQUIRED` matrix on every route, foreign ids 404, strict bodies, rate limit, session refresh at once).

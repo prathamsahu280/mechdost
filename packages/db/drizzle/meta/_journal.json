@@ -400,6 +400,13 @@
       "when": 1794696056107,
       "tag": "0058_trust_labour_promise",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1794697104328,
+      "tag": "0059_admin_people_indexes",
+      "breakpoints": true
     }
   ]
 }

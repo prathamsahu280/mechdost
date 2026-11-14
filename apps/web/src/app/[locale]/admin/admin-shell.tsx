@@ -88,6 +88,8 @@ export async function AdminShell({ section }: { section: AdminSection }) {
             'adminNotices',
             // Admin → Content trust lines, the agreement clause and the labour promise (design 2026-11-15).
             'trust',
+            // Admin → Staff, Customers (search and view) and Audit log (design 2026-11-15).
+            'adminPeople',
           ]}
         >
           <AdminConsole

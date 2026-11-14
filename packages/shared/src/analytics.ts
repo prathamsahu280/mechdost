@@ -57,6 +57,15 @@ export interface ServerEventProps {
   };
   admin_customer_blocked: { customerId: string; level: string; reasonCode: string };
   admin_customer_unblocked: { customerId: string; level: string };
+  /** Staff roles changed from the console (design 2026-11-15): role key and whether a city limits it; ids only. */
+  admin_staff_role_changed: {
+    action: 'granted' | 'revoked';
+    targetUserId: string;
+    role: string;
+    cityScoped: boolean;
+  };
+  /** A staff member opened a customer profile; `unmasked` = contact details shown (also written to the audit log). */
+  admin_customer_viewed: { customerId: string; unmasked: boolean };
   /** A verified customer review, pending moderation (spec 02 § Reviews). Rating only, never the text. */
   review_submitted: {
     reviewId: string;
@@ -328,6 +337,16 @@ export const CLIENT_EVENT_SCHEMAS = {
   // Service-area PIN codes (spec 15): what was done and, when switched off, the reason code. Never the area text.
   admin_pincode_change: z
     .object({ action: z.enum(['added', 'edited', 'deactivated', 'activated']), reasonCode: id.optional() })
+    .strict(),
+  // Admin people screens (design 2026-11-15): kinds, counts and codes only, never the query text.
+  admin_customer_search: z
+    .object({ kind: z.enum(['code', 'email', 'phone', 'name']), results: z.number().int().min(0).max(20) })
+    .strict(),
+  admin_staff_screen: z
+    .object({ action: z.enum(['grant_opened', 'grant_saved', 'revoke_confirmed']) })
+    .strict(),
+  admin_audit_search: z
+    .object({ filters: z.number().int().min(0).max(8), results: z.number().int().min(0).max(100) })
     .strict(),
 } as const;
 

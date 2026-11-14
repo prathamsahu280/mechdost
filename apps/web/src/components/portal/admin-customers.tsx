@@ -31,9 +31,12 @@ const PILL: Record<CustomerBlockLevel, string> = {
 };
 
 /** Blocks on the API (real sign-in builds only): loaded on demand so demo bundles stay the same size. */
-const AdminCustomersApi = dynamic(() => import('./admin-customers-api').then((m) => m.AdminCustomersApi), {
-  ssr: false,
-});
+const AdminCustomersApi = dynamic(
+  () => import('./admin-customer-view-api').then((m) => m.AdminCustomersApi),
+  {
+    ssr: false,
+  },
+);
 
 /**
  * Admin → Customers (research/admin-console.md §5, decision 2026-11-01): block a customer at one level with a

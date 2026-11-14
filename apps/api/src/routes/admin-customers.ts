@@ -1,6 +1,14 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
-import { blockCustomer, cityScopeFrom, liftCustomerBlock, listCustomerBlocks } from '@mechdost/db/repo';
-import type { Permission } from '@mechdost/shared/rbac';
+import {
+  blockCustomer,
+  cityScopeFrom,
+  customerView,
+  liftCustomerBlock,
+  listCustomerBlocks,
+  searchCustomers,
+} from '@mechdost/db/repo';
+import { CustomerSearchDto, CustomerViewDto } from '@mechdost/shared/admin-people-api';
+import { can, type Permission } from '@mechdost/shared/rbac';
 import { createMiddleware } from 'hono/factory';
 import { Forbidden } from '../errors';
 import { CUSTOMER_BLOCK_LEVELS, CUSTOMER_BLOCK_REASONS } from '@mechdost/shared/customers';
@@ -79,6 +87,32 @@ const create = createRoute({
   },
 });
 
+const search = createRoute({
+  method: 'get',
+  path: '/admin/customers/search',
+  tags: ['admin'],
+  summary:
+    'Find a customer by phone (10 digits), email, order/request/ticket code or name prefix (max 20, masked)',
+  security: [{ bearerAuth: [] }],
+  request: { query: z.object({ q: z.string().max(120) }).strict() },
+  responses: { 200: json(CustomerSearchDto, 'Matches'), ...errorResponses },
+});
+
+const view = createRoute({
+  method: 'get',
+  path: '/admin/customers/{userId}',
+  tags: ['admin'],
+  summary:
+    'One customer: profile, orders, requests, tickets, refunds, coins, consents (contact masked without customers:read_pii)',
+  security: [{ bearerAuth: [] }],
+  request: { params: userParam },
+  responses: {
+    200: json(CustomerViewDto, 'Customer'),
+    404: json(ErrorSchema, 'No such customer'),
+    ...errorResponses,
+  },
+});
+
 const lift = createRoute({
   method: 'post',
   path: '/admin/customers/blocks/{blockId}/lift',
@@ -118,7 +152,49 @@ export function adminCustomerRoutes(deps: AppDeps, cache: SessionCache) {
   app.use('/admin/customers/*', globalOnly('customers:read'));
   app.on('POST', '/admin/customers/*', globalOnly('customers:block'));
 
+  app.use(
+    '/admin/customers/search',
+    rateLimit(deps.rateLimiter, RATE_RULES.adminSearch, (c) => c.get('auth').user.id),
+  );
+
   return app
+    .openapi(search, async (c) => {
+      const out = await searchCustomers(deps.db, { q: c.req.valid('query').q });
+      c.header('Cache-Control', 'no-store');
+      return c.json(
+        { kind: out.kind, results: out.results.map((r) => ({ ...r, createdAt: r.createdAt.toISOString() })) },
+        200,
+      );
+    })
+    .openapi(view, async (c) => {
+      const { grants, user } = c.get('auth');
+      const v = await customerView(deps.db, {
+        customerId: c.req.valid('param').userId,
+        viewerId: user.id,
+        canReadPii: can(grants, 'customers:read_pii'),
+        sections: {
+          orders: can(grants, 'orders:read'),
+          serviceRequests: can(grants, 'service:read'),
+          tickets: can(grants, 'tickets:read'),
+          refunds: can(grants, 'refunds:read'),
+          coins: can(grants, 'coins:read'),
+        },
+      });
+      const at = <T extends { at: Date }>(r: T) => ({ ...r, at: r.at.toISOString() });
+      c.header('Cache-Control', 'no-store');
+      return c.json(
+        {
+          profile: { ...v.profile, createdAt: v.profile.createdAt.toISOString() },
+          orders: v.orders?.map(at) ?? null,
+          serviceRequests: v.serviceRequests?.map(at) ?? null,
+          tickets: v.tickets?.map(at) ?? null,
+          refunds: v.refunds?.map(at) ?? null,
+          coins: v.coins,
+          consents: v.consents.map(at),
+        },
+        200,
+      );
+    })
     .openapi(list, async (c) => {
       const rows = await listCustomerBlocks(deps.db, c.req.valid('param').userId);
       return c.json(

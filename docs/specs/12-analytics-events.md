@@ -128,3 +128,7 @@ text. The change itself is in `audit_log` (`pincode.*`, before/after) in the sam
   redo" link) and `admin_agreement_clause_added` (click). `support_ticket {action:'created', kind:'labour_redo'}` carries
   the new kind. No event on the trust lines themselves (copy only). Quote close: `quote_declined_other` now also covers
   "no reason given" (dark-pattern audit F2).
+
+## Admin people screens (2026-11-15)
+
+Server events (in the change's transaction): `admin_staff_role_changed` (action granted/revoked, target user id, role key, whether a city limits it) and `admin_customer_viewed` (customer id, whether contact details were unmasked). Client events (strict schemas, no query text): `admin_staff_screen` (grant_opened / grant_saved / revoke_confirmed), `admin_customer_search` (kind code/email/phone/name, result count) and `admin_audit_search` (number of filters filled, result count).

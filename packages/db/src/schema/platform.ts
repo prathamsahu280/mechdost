@@ -96,7 +96,15 @@ export const auditLog = pgTable(
     reason: text(),
     createdAt: createdAt(),
   },
-  (t) => [index().on(t.entity, t.entityId, t.createdAt), index().on(t.actorUserId, t.createdAt)],
+  (t) => [
+    index().on(t.entity, t.entityId, t.createdAt),
+    index().on(t.actorUserId, t.createdAt),
+    // Admin audit viewer (design 2026-11-15): newest first by id under each filter, and the IST date range.
+    index('audit_log_entity_id_idx').on(t.entity, t.id),
+    index('audit_log_action_id_idx').on(t.action, t.id),
+    index('audit_log_actor_id_idx').on(t.actorUserId, t.id),
+    index('audit_log_created_idx').on(t.createdAt),
+  ],
 );
 
 /** Transactional outbox: written in the same transaction as the business change. */

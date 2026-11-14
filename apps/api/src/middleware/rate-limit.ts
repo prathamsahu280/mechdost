@@ -12,6 +12,8 @@ export const RATE_RULES = {
   catalogueImport: { name: 'catalogue_import', limit: 30, windowSeconds: 3600 },
   /** Staff test sends of an email template to their own address (spec 10): a typo must not become a mail loop. */
   emailTest: { name: 'email_test', limit: 20, windowSeconds: 3600 },
+  /** Staff searches and audit queries (customer search, audit viewer): scans over indexes, so a typing burst is fine, a script is not. */
+  adminSearch: { name: 'admin_search', limit: 30, windowSeconds: 60 },
 } as const satisfies Record<string, RateRule>;
 
 /**

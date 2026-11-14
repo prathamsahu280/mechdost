@@ -17,7 +17,7 @@ import {
 import { adminApi } from '@/lib/admin-api';
 import { commonErrorKey, type CommonErrorKey } from '@/lib/api-error-key';
 import { track } from '@/lib/analytics';
-import { blockErrorKey, customerIdFrom, endsAtFrom, type BlockErrorKey } from '@/lib/customer-blocks-view';
+import { blockErrorKey, endsAtFrom, type BlockErrorKey } from '@/lib/customer-blocks-view';
 import { formatDate } from '@/lib/format';
 import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
 
@@ -38,72 +38,11 @@ const text = (v: FormDataEntryValue | null) => (typeof v === 'string' ? v : '');
 const errorOf = (code: string): ErrorText => blockErrorKey(code) ?? commonErrorKey(code);
 
 /**
- * Admin → Customers on the API (real sign-in builds; loaded by `admin-customers.tsx`). The API has no customer
- * search yet, so staff open a customer by account id; then block at one level with a reason (never preselected),
- * an optional end date and a staff-only note, or lift a block with a reason. History stays.
+ * The block history and actions of one customer (real sign-in builds): block at one level with a reason (never
+ * preselected), an optional end date and a staff-only note, or lift a block with a reason. History stays. Shown inside
+ * the customer view (`admin-customer-view-api.tsx`).
  */
-export function AdminCustomersApi() {
-  const t = useTranslations('portal');
-  const [raw, setRaw] = useState('');
-  const [userId, setUserId] = useState<string | null>(null);
-  const [idError, setIdError] = useState(false);
-
-  function onFind(e: SyntheticEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const id = customerIdFrom(raw);
-    setIdError(id === null);
-    if (id === null) {
-      document.getElementById('api-customer-id')?.focus();
-      return;
-    }
-    setUserId(id);
-  }
-
-  return (
-    <section aria-labelledby="customers-title" className="space-y-4">
-      <div>
-        <h2 id="customers-title" className="font-heading text-xl font-extrabold text-ink">
-          {t('nav_customers')}
-        </h2>
-        <p className="mt-1 text-sm text-muted">{t('customersLead')}</p>
-      </div>
-      <form onSubmit={onFind} className={portalCard} noValidate>
-        <label htmlFor="api-customer-id" className="text-sm font-bold text-ink">
-          {t('api_block_id_label')}
-        </label>
-        <p id="api-customer-id-help" className="text-xs text-muted">
-          {t('api_block_id_help')}
-        </p>
-        <div className="mt-1 flex flex-wrap items-end gap-2">
-          <input
-            id="api-customer-id"
-            value={raw}
-            autoComplete="off"
-            spellCheck={false}
-            maxLength={40}
-            aria-invalid={idError ? true : undefined}
-            aria-describedby={`api-customer-id-help${idError ? ' api-customer-id-error' : ''}`}
-            onChange={(e) => {
-              setRaw(e.target.value);
-            }}
-            className={`${portalField} max-w-md`}
-          />
-          <button type="submit" className={portalPrimary}>
-            {t('api_block_open')}
-          </button>
-        </div>
-        {idError ? (
-          <p id="api-customer-id-error" className="mt-1 text-sm font-bold text-error">
-            {t('api_block_id_error')}
-          </p>
-        ) : null}
-      </form>
-      {userId ? <CustomerBlocks key={userId} userId={userId} /> : null}
-    </section>
-  );
-}
-
-function CustomerBlocks({ userId }: { userId: string }) {
+export function CustomerBlocks({ userId }: { userId: string }) {
   const t = useTranslations('portal');
   const locale = useLocale();
   const [blocks, setBlocks] = useState<CustomerBlockDto[] | null>(null);

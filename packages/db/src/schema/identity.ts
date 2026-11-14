@@ -48,6 +48,13 @@ export const users = pgTable(
     uniqueIndex('users_email_active_uq')
       .on(t.email)
       .where(sql`${t.deletedAt} is null`),
+    // Admin customer search (design 2026-11-15): phone by its last 10 digits, name by prefix (`lower(name) like 'ab%'`).
+    index('users_phone_last10_idx')
+      .on(sql`right(${t.phone}, 10)`)
+      .where(sql`${t.deletedAt} is null`),
+    index('users_name_prefix_idx')
+      .on(sql`lower(${t.name}) text_pattern_ops`)
+      .where(sql`${t.deletedAt} is null`),
   ],
 );
 
