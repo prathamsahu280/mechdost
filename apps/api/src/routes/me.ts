@@ -1,5 +1,6 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { updateProfile } from '@mechdost/db/repo';
+import { ProfilePatchDto } from '@mechdost/shared/account-api';
 import { permissionsOf } from '@mechdost/shared/rbac';
 import type { SessionCache } from '../auth/session-cache';
 import { authenticate } from '../middleware/auth';
@@ -30,20 +31,6 @@ const Me = z
   })
   .openapi('Me');
 
-const ProfilePatch = z
-  .object({
-    version: z
-      .number()
-      .int()
-      .min(1)
-      .openapi({ description: 'The version you last read (optimistic locking)' }),
-    name: z.string().trim().min(1).max(80).optional(),
-    language: z.enum(['en', 'hi']).optional(),
-  })
-  .strict()
-  .refine((b) => b.name !== undefined || b.language !== undefined, { message: 'Nothing to update' })
-  .openapi('ProfilePatch');
-
 const getMe = createRoute({
   method: 'get',
   path: '/me',
@@ -62,7 +49,7 @@ const patchMe = createRoute({
   tags: ['account'],
   summary: 'Edit own name or language',
   security: [{ bearerAuth: [] }],
-  request: { body: { required: true, content: { 'application/json': { schema: ProfilePatch } } } },
+  request: { body: { required: true, content: { 'application/json': { schema: ProfilePatchDto } } } },
   responses: {
     200: { description: 'Updated user', content: { 'application/json': { schema: Me } } },
     409: { description: 'Stale version', content: { 'application/json': { schema: ErrorSchema } } },

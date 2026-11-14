@@ -159,3 +159,7 @@ next workshop action, every error code has en + hi text, decline/reject/payment 
 6. Saved vehicles are browser-side, so bookings send no `vehicleId` (odometer history keys on the vehicle text).
 7. No staff cancel for service requests (the machine allows `admin → cancelled`), no member list/remove, no standing
    history in the admin workshop read, no live pings (screens poll every 30 s).
+
+## Built: saved vehicles in the booking form (2026-11-15)
+
+In real sign-in the booking form offers "Use a saved vehicle" for the vehicle types the workshop services (`SavedVehiclePicker`, lazy). Picking one sets the vehicle type and fills the vehicle text (make, model, variant); the request body is unchanged, so `vehicleId` is still not sent (open item 6 above: odometer history keys on the vehicle text). The registration number is not sent.

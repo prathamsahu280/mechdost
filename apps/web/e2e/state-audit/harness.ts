@@ -45,6 +45,47 @@ const CART_WORLD = {
   compare: { category: 'lubricants', slugs: [PRODUCTS.castrol, PRODUCTS.motul] },
 };
 
+const LONG_HI =
+  'महात्मा गांधी मार्ग, शंकर नगर, पुरानी बस्ती के पास, रायपुर छत्तीसगढ़ की सबसे लंबी गली संख्या बयालीस';
+
+/**
+ * The signed-in demo customer with saved vehicles and addresses at a given size (state `data`): none, one, the
+ * limit of 10, or one of each with very long Hindi text. Same shape as `DemoAccount` (`src/demo/session-state.ts`).
+ */
+function customerWithSavedData(kind: string) {
+  const count = kind === 'empty' ? 0 : kind === 'limit' ? 10 : 1;
+  const long = kind === 'long';
+  const types = ['2W', '3W', '4W'] as const;
+  return {
+    id: 'demo-customer',
+    phone: '9876543210',
+    name: 'Ravi Sahu',
+    email: 'ravi.sahu@example.com',
+    role: 'customer',
+    partner: null,
+    language: 'en',
+    createdAt: '2026-09-12T10:00:00.000Z',
+    vehicles: Array.from({ length: count }, (_, i) => ({
+      id: `veh-audit-${String(i)}`,
+      type: types[i % 3],
+      make: long ? LONG_HI.slice(0, 40) : 'Honda',
+      model: long ? LONG_HI.slice(0, 60) : `Activa ${String(i + 1)}`,
+      year: 2015 + (i % 10),
+      fuel: 'petrol',
+      registration: `CG04 MK 22${String(i).padStart(2, '0')}`,
+      odometerKm: 10_000 * (i + 1),
+    })),
+    addresses: Array.from({ length: count }, (_, i) => ({
+      id: `addr-audit-${String(i)}`,
+      label: long ? LONG_HI.slice(0, 30) : '',
+      line1: long ? LONG_HI : `C-${String(605 + i)} Salasar Greens, Sarona`,
+      landmark: long ? LONG_HI.slice(0, 100) : 'Near Tatibandh chowk',
+      pincode: '492099',
+      isDefault: i === 0,
+    })),
+  };
+}
+
 const localised = (path: string, locale: string) =>
   locale === 'en' ? path : path === '/' ? '/hi' : `/hi${path}`;
 
@@ -57,6 +98,8 @@ export function seedFor(c: AuditCase, now: number): Record<string, string> {
     seed['mechdost-demo-session'] = JSON.stringify([
       { accountId: account, signedInAt: new Date(now).toISOString() },
     ]);
+  if (c.state.data !== undefined)
+    seed['mechdost-demo-accounts'] = JSON.stringify([customerWithSavedData(c.state.data)]);
   if (c.world === 'busy') for (const [k, v] of Object.entries(busyWorld(now))) seed[k] = JSON.stringify(v);
   if (c.world === 'cart') {
     seed['mechdost-cart'] = JSON.stringify(CART_WORLD.cart);

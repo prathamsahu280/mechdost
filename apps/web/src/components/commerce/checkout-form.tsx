@@ -5,7 +5,8 @@ import { GST_STATE_CODES, gstinStateCode, isGstin, normaliseGstin } from '@mechd
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { useEffect, useRef, useState, type SyntheticEvent } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState, type SyntheticEvent } from 'react';
+import type { SavedAddress } from '@mechdost/shared/account-api';
 import { AUTH_MODE } from '@/lib/auth/mode';
 import { track } from '@/lib/analytics';
 import { formatPrice } from '@/lib/format';
@@ -20,6 +21,11 @@ import { DATA_MODE } from '@/lib/data-mode';
 import { useCartPricing } from '@/lib/use-cart-pricing';
 import { codAllowedAfterCoins, coinRulesFromApi } from '@/lib/coins-view';
 import { CartView } from './cart-view';
+
+// Real sign-in: the customer's saved addresses (design 2026-11-15), loaded only for a signed-in customer.
+const SavedAddressPicker = lazy(() =>
+  import('../account/saved-pickers').then((m) => ({ default: m.SavedAddressPicker })),
+);
 import { productNameFor } from '@/demo/i18n/localize';
 
 type Field = 'name' | 'phone' | 'address' | 'pincode' | 'gstin' | 'businessName' | 'consent';
@@ -81,12 +87,25 @@ export function CheckoutForm() {
   const home = customer
     ? (customer.addresses.find((a) => a.isDefault) ?? customer.addresses[0] ?? null)
     : null;
-  const prefill = {
+  // A saved address picked from the API (real sign-in) replaces the prefill below; null = type a different one.
+  const [picked, setPicked] = useState<SavedAddress | null>(null);
+  const base = {
     name: customer?.name ?? '',
     phone: customer?.phone ?? '',
     address: home ? [home.line1, home.landmark].filter((part) => part.trim() !== '').join(', ') : '',
     pincode: home?.pincode ?? '492001',
   };
+  const prefill = picked
+    ? {
+        name: picked.contactName,
+        phone: picked.contactPhone.replace(/^\+91/, ''),
+        address: [picked.line1, picked.line2, picked.landmark]
+          .filter((part) => part !== null && part.trim() !== '')
+          .join(', '),
+        pincode: picked.pincode,
+      }
+    : base;
+  const pickKey = picked?.id ?? 'typed';
   // Real data mode re-quotes as the PIN changes (the server's prices, delivery and GST are the only numbers shown).
   const [typedPin, setTypedPin] = useState<string | null>(null);
   const pricing = useCartPricing(
@@ -405,12 +424,23 @@ export function CheckoutForm() {
           </p>
         ) : null}
         <div className="mt-4 grid gap-4 min-[600px]:grid-cols-2">
+          {AUTH_MODE === 'firebase' && customer ? (
+            <Suspense fallback={null}>
+              <SavedAddressPicker
+                onPick={(address) => {
+                  setPicked(address);
+                  setTypedPin(address ? address.pincode : null);
+                }}
+              />
+            </Suspense>
+          ) : null}
           <div>
             <label htmlFor="checkout-name" className="text-sm font-bold text-ink">
               {t('name')}
             </label>
             <input
               {...field('name')}
+              key={`name-${pickKey}`}
               defaultValue={prefill.name}
               // What the customer typed or saved: not checked for translation (hard rule 10).
               data-user-content
@@ -426,6 +456,7 @@ export function CheckoutForm() {
             </label>
             <input
               {...field('phone')}
+              key={`phone-${pickKey}`}
               defaultValue={prefill.phone}
               type="tel"
               inputMode="numeric"
@@ -442,6 +473,7 @@ export function CheckoutForm() {
             </label>
             <textarea
               {...field('address')}
+              key={`address-${pickKey}`}
               defaultValue={prefill.address}
               // What the customer typed or saved: not checked for translation (hard rule 10).
               data-user-content
@@ -464,6 +496,7 @@ export function CheckoutForm() {
               inputMode="numeric"
               autoComplete="postal-code"
               maxLength={6}
+              key={`pincode-${pickKey}`}
               defaultValue={prefill.pincode}
               className={inputClass}
             />

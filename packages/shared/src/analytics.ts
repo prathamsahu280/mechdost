@@ -176,6 +176,12 @@ export interface ServerEventProps {
   refund_failed: { refundId: string; amountPaise: number; failureCode: string };
   /** We cannot tell whether Razorpay holds this refund: the amount stays reserved until it is settled. */
   refund_needs_reconciliation: { refundId: string; amountPaise: number; code: string };
+  /** Customer account (design 2026-11-15): codes and flags only; no name, phone, address text or registration. */
+  address_saved: { addressId: string; label: string; isDefault: boolean; action: 'created' | 'updated' };
+  address_deleted: { addressId: string };
+  vehicle_saved: { vehicleId: string; type: string; fuel: string; action: 'created' | 'updated' };
+  vehicle_deleted: { vehicleId: string };
+  profile_updated: { fields: string[] };
 }
 export type ServerEvent = keyof ServerEventProps;
 

@@ -49,3 +49,4 @@ export * from './shops-admin';
 export * from './quotes';
 export * from './reviews';
 export * from './analytics';
+export * from './account';

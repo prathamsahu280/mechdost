@@ -99,3 +99,7 @@ No test in this spec may be skipped in CI; schema PRs require the `drizzle-postg
 - `refund_events`: append-only (`forbid_update_delete`). RLS on, client roles revoked, version / updated_at triggers (schema-invariants test).
 - Lock order extended: order → group → payment → refund. `transitionOrder` (cancel/reject) creates the system request inside the same transaction.
 - Guarded by `packages/db/test/refunds.test.ts` and `apps/api/test/refunds.test.ts`.
+
+## Data model note: customer account (2026-11-15)
+
+No migration. The existing `addresses` / `vehicles` rules are now used by the API: the one-default partial unique indexes, the per-customer live registration unique index (`vehicles_registration_uq`) and the version triggers. The limit of 10 per customer is enforced in the repository under a `users` row lock (`select … for update`), so concurrent creates cannot exceed it (test: 14 racing creates leave exactly 10). A default swap clears the old default before setting the new one inside one transaction, so the partial unique index holds at every statement.

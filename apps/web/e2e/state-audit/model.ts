@@ -21,6 +21,8 @@
  *   consent   decided | open
  *   open      closed | first | all     (disclosures: FAQ, quick-details popover, assistant panel)
  *   form      clean | errors | filled  (submit empty to show every error; or fill every field)
+ *   data      empty | one | limit | long   (the signed-in customer's saved vehicles and addresses: none, one, the limit
+ *             of 10, and one with very long Hindi text; account sections only)
  *
  * Pure data plus `.ts` imports only (Node runs it for the checklist writer).
  */
@@ -688,6 +690,23 @@ export const COMPONENTS: readonly ComponentDef[] = [
     params: [...env, { name: 'auth', values: ['customer'] }, world2],
     sweep: 12,
     core: section === 'overview' || section === 'orders' ? coreAt([390]) : undefined,
+  })),
+
+  // Saved vehicles and addresses (design 2026-11-15): the lists at none / one / the limit of 10 / long Hindi text.
+  ...(['vehicles', 'addresses'] as const).map((section): ComponentDef => ({
+    code: `ACC-${section.toUpperCase()}-DATA`,
+    page: 'Account (/account)',
+    component: `Account ${section}: empty, one, at the limit of 10, long Hindi text`,
+    path: accountPath(section),
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['customer'] },
+      { name: 'data', values: ['empty', 'one', 'limit', 'long'] },
+    ],
+    sweep: 12,
+    core: coreAt([390], (r) => r.data === 'limit' || r.data === 'long'),
   })),
 
   // ───────────────────────────── Workshops ─────────────────────────────

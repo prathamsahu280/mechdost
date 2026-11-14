@@ -3,6 +3,7 @@ import { isStaffGrant, type SignInIdentifier } from '@mechdost/shared/auth';
 import type { PgUpdateSetSource } from 'drizzle-orm/pg-core';
 import { auditLog, users } from '../schema';
 import { ConflictError, pgCode, ValidationError } from './errors';
+import { recordServerEvent } from './events';
 import type { Tx } from './orders';
 import { loadGrants } from './rbac';
 
@@ -182,6 +183,8 @@ export async function updateProfile(
       entityId: args.userId,
       after: { fields },
     });
+    // Field names only: the new name is personal data and never goes into analytics (hard rule 16).
+    await recordServerEvent(tx, 'profile_updated', { userId: args.userId, props: { fields } });
     return row;
   });
 }

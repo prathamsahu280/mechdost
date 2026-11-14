@@ -26,6 +26,7 @@ import { payoutRoutes } from './routes/payouts';
 import { adminContentRoutes, contentRoutes } from './routes/content';
 import { eventRoutes } from './routes/events';
 import { pincodeAdminRoutes, pincodePublicRoutes } from './routes/geo';
+import { accountRoutes } from './routes/account';
 import { meRoutes } from './routes/me';
 import { partnerAdminRoutes, partnerPublicRoutes, shopOnboardingRoutes } from './routes/partner-onboarding';
 import { shopInventoryRoutes } from './routes/shop-inventory';
@@ -84,6 +85,7 @@ export function createApp(deps: AppDeps) {
   );
   v1.route('/', authRoutes(deps));
   v1.route('/', meRoutes(deps, sessions));
+  v1.route('/', accountRoutes(deps, sessions));
   v1.route('/', assistantRoutes(deps));
   v1.route('/', catalogueRoutes(deps));
   v1.route('/', contentRoutes(deps));

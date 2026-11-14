@@ -877,3 +877,11 @@ User 2026-11-15 ~01:00 IST: "go ahead and work on the 1,2,3,4,5,6" (6 = shop Wha
   - Approval SLA is the admin setting `refunds.approval_sla_hours` (default 24, city override), rule 8.
   - The state audit lists the new screens (`ADM-REFUNDQ`, `ORD-REFUNDLINE`) but they are `test.fixme`: the screens exist only with real sign-in and the API; a real-API harness is the follow-up. Cost low (they stay unticked in the checklist).
 - **Not built** (spec 05): the ticket-side form for the payout destination, a finance action to settle an unsure refund by hand, requests for captured-after-close payments, the Overview tile and a staff alert channel, credit notes for refunds.
+
+## 2026-11-15 — Customer account on the API: builder rulings
+
+- **Gate:** the account sections switch on `AUTH_MODE === 'firebase'` (real sign-in), not `DATA_MODE`: they need a signed-in API user, not catalogue data. Demo unchanged. Cost if wrong: low (one condition).
+- **Name rule:** 2 to 60 characters after NFKC cleaning (spec 01), stricter than the old 1 to 80; too long is refused, never cut. Existing longer names stay as stored until edited.
+- **No migration:** `users.language` and both tables already had everything needed.
+- **Defaults:** first address is the default shipping address; deleting the default leaves none until the customer picks one (checkout falls back to the first). Billing default exists in the API only (no UI yet).
+- **Map pin:** the API accepts `lat`/`lng` (stored as `location`); the form has no pin picker yet. Queued as a later improvement (map adapter).
