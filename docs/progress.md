@@ -4,6 +4,18 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Current status
 
+- **2026-11-14 (late night): UI state audit written, not run yet** (branch `worktree-agent-a7b149b62f8cf6ab3`; coordinator: "write everything up and then do the tests one by one and mark them off", "dont do the tests just yet we can do them overnight").
+  - Root cause of the four layout bugs the user found: `docs/research/ui-testing-gap-2026-11-14.md`. The matrix varied pages and preferences but no interaction states, cross-entity relations, data shapes or intermediate widths, and asserted presence, not geometry.
+  - Harness `apps/web/e2e/state-audit/`: component model (65 components), deterministic pairwise generator, geometry assertions, hover/focus sweeps, data-shape stress, known-issue list. Config `apps/web/playwright.state-audit.config.ts`.
+  - Checklist `docs/qa/ui-state-checklist.md`: 1,731 items (84 `core`), one test per id; `node apps/web/scripts/state-audit-tick.mjs <report>` ticks it.
+  - Verified: tsc, ESLint (0 warnings), Prettier, 16 Vitest tests (pairwise coverage, ticking, merge, model ↔ checklist sync). Playwright and `next build` not run (by instruction).
+  - CI: core subset in `ci.yml` e2e-demo (report-only until triage, Q101); nightly `.github/workflows/ui-state-audit.yml`.
+  - Not touched: the four bugs' files (product-card, add-to-cart-button, compare tray/store, compare-table, `e2e/helpers/geometry.ts`), fixed on another branch.
+  - **Next (overnight):**
+    1. `pnpm --filter @mechdost/web build`.
+    2. `node apps/web/scripts/state-audit-run.mjs all --date <date>` (5 chunks, 3–4 h, runbook ui-test-catalogue § 9.3).
+    3. Fix harness noise, triage failures into the checklist's Found bugs, fix test-first.
+
 - **2026-11-14 (night): reviews and PIN codes merged and migrated.**
   - Fresh review: no critical issues. Three findings fixed test-first; the rest are documented in specs 02/15.
   - Prechecks passed. Migrations 0046 (reviews) and 0048 (PIN codes) applied to `mechdost-dev`; advisors: INFO only.

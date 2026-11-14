@@ -586,6 +586,23 @@ the write form and Admin → Reviews now work in real mode (quotes and coins unc
 - **Admin → Reviews visibility:** demo queue in the browser demo, API queue with real sign-in, hidden in the mixed
   build (real data + demo sign-in), as no queue there matches what customers see.
 
+## 2026-11-14 — UI state audit: component × state checklist as a test gate (coordinator, after the user's four layout bugs)
+
+- UI coverage is modelled **per component** (`apps/web/e2e/state-audit/model.ts`): interaction states, cross-entity
+  relations, data shapes and the widths 320–1920, combined by a deterministic pairwise generator, with full crosses
+  for the high-risk components. Every combination is a line in `docs/qa/ui-state-checklist.md` and one Playwright
+  test with the same id; results are ticked into the checklist from the JSON report. Why: the page matrix rendered
+  the states of bug 4 sixteen times and passed (`docs/research/ui-testing-gap-2026-11-14.md`).
+- Assertions are **geometric** (inside, overlap, painted over, clipped, aligned, ≥ 24 px, focus ring), also while
+  each control is hovered and focused; P0/P1 fail, P2 is a note.
+- CI: the 84 `core` items run on every push (report-only until the first full run is triaged, Q97); everything
+  nightly (`.github/workflows/ui-state-audit.yml`, artifact only, never commits). Not part of `pnpm e2e`.
+- Tooling: `apps/web/tsconfig.json` sets `allowImportingTsExtensions` so the audit's pure modules can use explicit
+  `.ts` imports and run directly in Node 24 (checklist writer and ticking script); no new dependency. (Cost if
+  wrong: none at runtime; `noEmit` is already on.)
+- The first run is the overnight run (coordinator 2026-11-14: "dont do the tests just yet we can do them
+  overnight"); the harness is type-checked, linted and unit-tested only.
+
 ## PENDING DECISIONS (ask "what's pending" to review)
 
 | #   | Topic                                                                                                                                                                                       | Leaning                                                                             | When                                 |

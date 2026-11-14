@@ -34,6 +34,9 @@ unit/integration tests). Then add, by area:
   (`MATRIX_SHOTS=…`). Runbook: `docs/runbooks/ui-testing.md` — dimensions, worlds, cross-role flows, bug classes.
   Floating UI is asserted with `boundingBox()` inside the viewport (a click scrolls to it and hides the bug);
   preferences (theme, language) are tested across the real interaction, both directions, and switched back.
+- any component change → the **UI state audit** rows of that component (`STATE_AUDIT_ONLY=<PREFIX>- pnpm exec
+playwright test -c playwright.state-audit.config.ts`; checklist `docs/qa/ui-state-checklist.md`, runbook
+  `docs/runbooks/ui-test-catalogue.md` § 9); the `core` subset runs on every push, all ~1,700 items nightly
 - pages → **Lighthouse CI** budgets (LCP < 2 s, INP < 200 ms, CLS < 0.05, ≥ 90 scores, JS budget)
 
 ### 2. Check the bug catalogue
@@ -62,6 +65,15 @@ For every page or component the change touches, answer these in the report. "Not
 6. **Second tab or second person:** stale `version`, `storage` event, sign-out or block while the page is open.
 7. **Combinations:** at least nothing · ongoing order + open ticket + cart · everything at once · at the limits.
 8. **Is the seeded data on screen?** Each matrix page asserts a marker of its world before the layout checks.
+9. **Geometry, not presence (T68, promoted 2026-11-14).** For every component the change touches, its rows in
+   the UI state audit (`apps/web/e2e/state-audit/model.ts` → `docs/qa/ui-state-checklist.md`) must cover:
+   interaction states (hover, keyboard focus, pressed, disabled on each control); cross-entity relations
+   (mixed categories in the compare list, partial in-cart, quantity 1/2/99); data shapes (badges on/off, long
+   names en+hi, MRP/no MRP, every stock state, ₹99 vs ₹1,00,000); and the widths where the grid changes
+   (320, 390, 480, 768, 1024, 1280, 1440, 1920). The assertions measure boxes: inside its card, no overlap,
+   nothing painted over a control, not clipped, rows aligned, ≥ 24 px targets, visible focus ring. A new
+   component or dimension goes into the model in the same change (regenerate the checklist); run its rows with
+   `STATE_AUDIT_ONLY=<PREFIX>-` before "done".
 
 ### 4. Run and read
 
