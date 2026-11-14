@@ -13,7 +13,8 @@ const ShopOrderItem = z.object({
   titleHi: z.string().nullable(),
   sku: z.string(),
   qty: z.number().int(),
-  unitPaise: z.number().int(),
+  /** Null on a `given_up` history row: its lines may now carry another shop's price (security review 2026-11-15). */
+  unitPaise: z.number().int().nullable(),
 });
 
 export const ShopOrder = z.object({
@@ -22,8 +23,8 @@ export const ShopOrder = z.object({
   version: z.number().int(),
   /** The customer's total for this sub-order. */
   totalPaise: z.number().int(),
-  /** What the shop is paid: its own price × qty (review I1, 2026-11-14). */
-  payoutPaise: z.number().int(),
+  /** What the shop is paid: its own price × qty (review I1, 2026-11-14); null on a `given_up` history row. */
+  payoutPaise: z.number().int().nullable(),
   /** Cash to collect at delivery (cash-on-delivery orders), else null. */
   collectPaise: z.number().int().nullable(),
   /** MechDost Coins discount on this part, paid by MechDost (spec 20); optional so older API answers still parse. */
