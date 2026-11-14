@@ -26,7 +26,7 @@ function errorCode(err: unknown): string | undefined {
 
 /**
  * Verifies Firebase ID tokens with firebase-admin (signature, `aud` = project, `iss`, expiry, optional
- * revocation). Credentials: Cloud Run service account (ADC) in production; `FIREBASE_AUTH_EMULATOR_HOST`
+ * revocation). Credentials: the service-account key mounted at /run/secrets on the server (Q93); `FIREBASE_AUTH_EMULATOR_HOST`
  * locally, which firebase-admin reads itself. Never use hono/jwt for Firebase tokens (key rotation, aud).
  */
 export function createFirebaseVerifier(projectId: string, keyFile: string | null = null): TokenVerifier {

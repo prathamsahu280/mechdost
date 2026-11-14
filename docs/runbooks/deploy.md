@@ -144,6 +144,7 @@ ssh -t ubuntu@13.207.157.3 'chmod 600 /opt/mechdost/.env && nano /opt/mechdost/.
 
 - the Supabase connection settings: `DATABASE_POOL_URL` (and `DATABASE_URL` for the relay);
 - `FIREBASE_PROJECT_ID` (the real project);
+- the Firebase service-account key as a file on the server, `/opt/mechdost/firebase-admin.json` (mode 600, owner uid 1000), mounted read-only at `/run/secrets/firebase-admin.json` by `compose.yml` — never in git or `.env`; production accepts a key only from `/run/secrets/` (Q93; copied 2026-11-14 and checked from the API image with a read-only `listUsers(1)`). Rotate it in the Firebase console (Project settings → Service accounts) and copy the new file the same way;
 - `FIREBASE_API_KEY`;
 - `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` (rate limits, Q4);
 - `TURNSTILE_SECRET_KEY` (bot check, Q5);

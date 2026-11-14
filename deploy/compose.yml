@@ -47,11 +47,15 @@ services:
       PORT: '4000'
       # One proxy (Caddy) in front: client IPs for rate limits come from X-Forwarded-For.
       TRUSTED_PROXY_HOPS: '1'
-      # No service-account key file in production (config check): ID tokens are verified with the project id.
+      # Firebase admin credentials (Q93, 2026-11-14): the project's service-account key, copied once to
+      # /opt/mechdost/firebase-admin.json on the server (mode 600, uid 1000 = the container's `node` user), never in
+      # git. Needed for revocation checks, sign-in tokens and the Realtime Database.
+      GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/firebase-admin.json
       # verify-full TLS to Supabase (production refuses anything less): the public Supabase Root 2021 CA.
       DATABASE_CA_CERT: /run/secrets/supabase-ca.crt
     volumes:
       - ./supabase-ca-2021.crt:/run/secrets/supabase-ca.crt:ro
+      - ./firebase-admin.json:/run/secrets/firebase-admin.json:ro
     expose:
       - '4000'
     mem_limit: 384m

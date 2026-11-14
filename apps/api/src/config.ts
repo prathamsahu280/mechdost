@@ -164,11 +164,15 @@ const schema = z
     for (const key of required) {
       if (!env[key]) ctx.addIssue({ code: 'custom', path: [key], message: 'required in production' });
     }
-    if (env.GOOGLE_APPLICATION_CREDENTIALS) {
+    // The AWS server has no automatic Google credentials (Q93, 2026-11-14): firebase-admin needs the project's
+    // service-account key for revocation checks, sign-in tokens and the Realtime Database — only as a file mounted
+    // read-only under /run/secrets (compose), never baked into an image or the repository.
+    const key = env.GOOGLE_APPLICATION_CREDENTIALS;
+    if (key && !/^\/run\/secrets\/[\w.-]+\.json$/.test(key)) {
       ctx.addIssue({
         code: 'custom',
         path: ['GOOGLE_APPLICATION_CREDENTIALS'],
-        message: 'must be unset in production (no key files: Cloud Run service account)',
+        message: 'in production, only a key file mounted under /run/secrets/',
       });
     }
     if (env.FIREBASE_AUTH_EMULATOR_HOST) {

@@ -160,6 +160,19 @@ describe('configuration', () => {
     }
   });
 
+  // AWS server (2026-11-14, Q93): no automatic Google credentials there, so firebase-admin needs the project's
+  // service-account key — only as a mounted secret file, never from anywhere else.
+  it('production accepts a Firebase key file only from /run/secrets', () => {
+    expect(
+      loadConfig({ ...prod, GOOGLE_APPLICATION_CREDENTIALS: '/run/secrets/firebase-admin.json' })
+        .firebaseKeyFile,
+    ).toBe('/run/secrets/firebase-admin.json');
+    for (const path of ['/opt/mechdost/key.json', './firebase.json', '/run/secrets/../etc/key.json'])
+      expect(() => loadConfig({ ...prod, GOOGLE_APPLICATION_CREDENTIALS: path })).toThrow(
+        /GOOGLE_APPLICATION_CREDENTIALS/,
+      );
+  });
+
   it('rejects placeholder database URLs from .env.example', () => {
     expect(() =>
       loadConfig({ DATABASE_POOL_URL: 'postgresql://postgres.<project-ref>:<db-password>@h/p' }),
