@@ -252,3 +252,7 @@ Decision "Shop management and shop hours on the API" (2026-11-14). Migration **0
   staff note, withdrawn ones marked; "N in the last 30 days"; empty is one sentence. Calm and factual: the shop never sees
   the threshold or the word "pause" here. `GET /v1/shop/warnings` (`orders:read`, scoped to the shop's grants).
 - Strings: locale namespace `shopGiveUp`. Spec 04 and 08 carry the rules.
+
+## Home servicing in the workshop portal (2026-11-15, real API mode)
+
+The owner (`service_menu:write`) sees a "Home servicing" card per workshop at the top of `/partner/workshop`: on/off, travel radius (1 to 25 km), visit fee (rupees, up to the city maximum shown under the field) and a tick list of the active menu lines done at home. Workshop staff (no menu permission) see no card. A new home request asks for the visiting mechanic's first name. A confirmed home job's next step is "Mechanic arrived": the customer's 4-digit arrival code plus the odometer (a wrong answer says how many tries are left; after 5 the form locks and points to MechDost support). After arrival the card offers "Offer to move the job to your workshop" (reason, and how the vehicle gets there) and "Waive the visit fee" (reason code); a declined offer turns the next step into "Bill the visit fee". Detail: spec 06 § Built: home servicing.
