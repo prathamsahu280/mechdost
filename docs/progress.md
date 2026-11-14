@@ -4,6 +4,16 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Current status
 
+- **2026-11-14 (night): reviews and PIN codes merged and migrated.**
+  - Fresh review: no critical issues. Three findings fixed test-first; the rest are documented in specs 02/15.
+  - Prechecks passed. Migrations 0046 (reviews) and 0048 (PIN codes) applied to `mechdost-dev`; advisors: INFO only.
+  - `db:seed:pincodes` run: 27 PINs, 21 active, 6 off.
+  - Since then: Razorpay test keys enabled with `RAZORPAY_ALLOW_TEST_KEYS` (user), Resend key and PostHog key set on the server, self-cancel split per payment method (deployed).
+  - **Next:**
+    - Merge quotes (re-stamp its migration after 0048), coins (fraud fix in progress, re-stamp), and shop management + hours.
+    - Sentry/PostHog integration (agent building).
+    - Then the switch.
+
 - **2026-11-14 (evening): real-API launch for Monday 2026-11-16** (plan `docs/superpowers/plans/2026-11-14-real-api-launch.md`; user: "switch to the real api", scope "Everything, accept risk").
   - **On main, verified by `pnpm check`:**
     - C1 (me): customer cart quote, COD checkout, order page + cancel, account orders on the API (`DATA_MODE`).
