@@ -127,3 +127,13 @@ Admin → Settings → **Order rules**: "Customers may cancel their own order un
 - **Pauses without a date:** they stay until resumed by hand.
 - **Q28 answers:** no fixed warn → pause → suspend ladder (the admin decides each time); one admin may offboard.
 - Test: db `partner-pause.test.ts`.
+
+## Admin → Catalogue screen (2026-11-14, plan 2026-11-13 admin catalogue + PIN prices, Task 5)
+
+`/admin/catalogue` (section `catalogue` in `apps/web/src/lib/sections.ts`). Real backend only: in the browser demo it says "Catalogue editing uses the real backend: available after the switch to real sign-in" and makes no API calls (test `e2e/admin-catalogue.spec.ts`; the Hindi crawl covers `/hi/admin/catalogue`). With real sign-in the editor loads on demand (`admin-catalogue-editor.tsx`, so its code and Zod schemas stay out of other admin sections):
+
+- **List**: every product (cursor "Show more"), filter "Missing Hindi", status and how many Hindi texts are missing.
+- **Texts**: English and Hindi name, short spec, fits, description — only changed fields are sent, with the product `version` (a stale save reloads and says so).
+- **Fit & specs**: vehicle types (2W/3W/4W); pack size per SKU (quantity + unit); specifications shown read-only (edited through the catalogue import for now).
+- **Prices**: city code (default RPR, any city), the city price per SKU with its floor (lowest shop price) and the MRP checked before sending, then each PIN: what customers pay and why (PIN price / city price / nearest shop), best-case margin, one-click suggestions (nearest, lowest, highest shop price) and a PIN price that can be removed.
+- Responses are validated with the shared schemas `@mechdost/shared/admin-catalogue`; calls go through `apps/web/src/lib/admin-api.ts` (Firebase ID token, error codes translated as `portal.cat_err_*`).

@@ -49,6 +49,7 @@ import { ADMIN_SECTIONS, type AdminSection } from '@/lib/sections';
 import { AdminCoins } from './admin-coins';
 import { AdminNotifications, type NotifyDefaults } from './admin-notifications';
 import { AdminSupport } from './admin-support';
+import { AdminCatalogue } from './admin-catalogue';
 import { AdminPartners } from './admin-partners';
 import { AdminCustomers } from './admin-customers';
 import {
@@ -69,6 +70,7 @@ const SECTION_EMOJI: Record<AdminSection, string> = {
   quotes: '💬',
   applications: '🤝',
   partners: '🏬',
+  catalogue: '📦',
   customers: '🙋',
   reviews: '⭐',
   support: '🛟',
@@ -111,6 +113,7 @@ export function AdminConsole({
             {section === 'support' ? <AdminSupport actor={account.name} /> : null}
             {section === 'coins' ? <AdminCoins actor={account.name} /> : null}
             {section === 'partners' ? <AdminPartners actor={account.name} /> : null}
+            {section === 'catalogue' ? <AdminCatalogue /> : null}
             {section === 'customers' ? <AdminCustomers actor={account.name} /> : null}
             {section === 'content' && contentDefaults ? (
               <ContentEditor actor={account.name} defaults={contentDefaults} />

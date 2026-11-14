@@ -22,6 +22,8 @@ export const ADMIN_SECTIONS = [
   'quotes',
   'applications',
   'partners',
+  // Product texts, fit, packs and customer prices per city/PIN (plan 2026-11-13 admin catalogue, Task 5).
+  'catalogue',
   // Customer blocks (cod_only / orders / full), research/admin-console.md §5.
   'customers',
   'reviews',
