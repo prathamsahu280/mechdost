@@ -4,6 +4,7 @@ import { auditLog, orderGroups, orders, payments, reservations, webhookEvents } 
 import { CHECKOUT_SETTINGS, settingOr } from './checkout';
 import { cancelInTx } from './customer-orders';
 import { ConflictError, NotFoundError } from './errors';
+import { queueOrderPlacedEmail, queuePaymentReceivedEmail } from './email-events';
 import { recordServerEvent } from './events';
 import { rowsOf } from './sql-rows';
 import type { Tx } from './orders';
@@ -268,6 +269,18 @@ export async function applyRazorpayPayment(
         cityId: p.cityId,
         props: { orderCode: p.groupCode, amountPaise: p.amountPaise, method: fact.method ?? 'unknown' },
       });
+    if (to === 'paid') {
+      // The receipt (billing) and the order confirmation of an online order, once each (dedupe) and only for a
+      // committed capture: a replayed webhook returned above and a rolled-back one sends nothing.
+      await queuePaymentReceivedEmail(tx, {
+        paymentId: p.id,
+        groupId: p.groupId,
+        amountPaise: p.amountPaise,
+        method: fact.method ?? null,
+        providerPaymentId: fact.providerPaymentId,
+      });
+      await queueOrderPlacedEmail(tx, p.groupId);
+    }
     return { outcome: to };
   });
 }

@@ -17,6 +17,8 @@ export * from './notification-admin';
 export * from './localized';
 export * from './support-bridge';
 export * from './order-notifications';
+export * from './email-notifications';
+export * from './email-events';
 export * from './support';
 export * from './catalogue';
 export * from './content';

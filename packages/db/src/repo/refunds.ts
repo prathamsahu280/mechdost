@@ -21,21 +21,12 @@ import {
   type RefundStatus,
 } from '@mechdost/shared/state';
 import { decryptField, encryptField, type Keyring } from '../crypto';
-import {
-  auditLog,
-  orderGroups,
-  orders,
-  payments,
-  refundEvents,
-  refunds,
-  users,
-  webhookEvents,
-} from '../schema';
+import { auditLog, orderGroups, orders, payments, refundEvents, refunds, webhookEvents } from '../schema';
 import { cancelPendingOrderRewards } from './coins';
 import { decodeCursor, encodeCursor, pageSize } from './cursor';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from './errors';
 import { recordServerEvent } from './events';
-import { enqueueNotification } from './notify';
+import { queueRefundEmail } from './email-notifications';
 import type { Tx } from './orders';
 import type { CityScope } from './routing';
 import { rowsOf } from './sql-rows';
@@ -254,20 +245,16 @@ async function notifyCustomer(
     amountPaise: number;
   },
 ): Promise<void> {
-  const [u] = await tx
-    .select({ email: users.email, language: users.language })
-    .from(users)
-    .where(eq(users.id, input.userId))
-    .limit(1);
-  if (!u?.email) return;
-  await enqueueNotification(tx, {
-    dedupeKey: `refund_${input.event}:${input.refundId}:email`,
-    channel: 'email',
-    recipientUserId: input.userId,
-    recipient: u.email,
-    templateKey: `refund_${input.event}`,
-    locale: u.language === 'hi' ? 'hi' : 'en',
-    payload: { orderCode: input.orderCode, amount: formatINR(input.amountPaise) },
+  // The shared email system (merge 2026-11-15): catalogue template, verified-email rule, language, dedupe. Each step
+  // happens once per refund, so the step itself is the version. The customer sees the order (group) code.
+  const orderCode = input.orderCode.replace(/-\d{1,2}$/, '');
+  await queueRefundEmail(tx, {
+    template: `refund_${input.event}`,
+    refundId: input.refundId,
+    refundVersion: 1,
+    userId: input.userId,
+    orderCode,
+    amount: formatINR(input.amountPaise),
   });
 }
 

@@ -67,6 +67,8 @@ const schema = z
       .default('mechdost.com'),
     /** The website origin, for links in emails. */
     WEB_BASE_URL: z.url().default('http://localhost:3000'),
+    /** Grievance officer contact shown in the email footer; the line stays hidden while this is unset (Q15b). */
+    EMAIL_GRIEVANCE_CONTACT: z.string().trim().min(3).max(200).optional(),
     WHATSAPP_ENABLED: z.enum(['on', 'off']).default('off'),
     WHATSAPP_PHONE_NUMBER_ID: z
       .string()
@@ -281,7 +283,12 @@ function toConfig(env: z.infer<typeof schema>) {
           }
         : null,
     email: env.RESEND_API_KEY
-      ? { apiKey: env.RESEND_API_KEY, domain: env.EMAIL_DOMAIN, webBaseUrl: env.WEB_BASE_URL }
+      ? {
+          apiKey: env.RESEND_API_KEY,
+          domain: env.EMAIL_DOMAIN,
+          webBaseUrl: env.WEB_BASE_URL,
+          grievanceContact: env.EMAIL_GRIEVANCE_CONTACT ?? null,
+        }
       : null,
     webBaseUrl: env.WEB_BASE_URL,
     whatsapp:

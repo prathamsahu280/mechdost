@@ -19,6 +19,7 @@ import {
   shopUsers,
   shops,
 } from '../schema';
+import { queueApplicationEmail } from './email-events';
 import { ConflictError, NotFoundError, ValidationError } from './errors';
 import { recordServerEvent } from './events';
 import { findOpenInvite } from './partner-invites';
@@ -156,6 +157,18 @@ export async function submitSellerApplication(
         .set({ convertedShopId: shopId })
         .where(eq(partnerApplications.id, row.id));
     }
+    // Email the applicant only when the address came from an admin's invite ("approved": the invite stood in for
+    // the review). A public form's address is unverified and typed by anyone, so mailing it would make us a spam /
+    // phishing relay (security review 2026-11-15); public applicants keep the reference shown on screen.
+    if (input.source === 'invite')
+      await queueApplicationEmail(tx, {
+        template: status === 'approved' ? 'application_approved' : 'application_received',
+        applicationId: row.id,
+        version: row.version,
+        name: contacts.name,
+        email: contacts.email,
+        code,
+      });
     return { code, status };
   });
 }
@@ -450,6 +463,27 @@ async function decide(
     cityId: app.city_id,
     props: { decision: to, reasonCode },
   });
+  // Email the applicant the decision (spec 10): approved with the way in, rejected with the reason in plain words.
+  const [who] = await tx
+    .select({
+      name: partnerApplications.name,
+      email: partnerApplications.email,
+      code: partnerApplications.code,
+      version: partnerApplications.version,
+    })
+    .from(partnerApplications)
+    .where(eq(partnerApplications.id, app.id))
+    .limit(1);
+  if (who)
+    await queueApplicationEmail(tx, {
+      template: to === 'approved' ? 'application_approved' : 'application_rejected',
+      applicationId: app.id,
+      version: who.version,
+      name: who.name,
+      email: who.email,
+      code: who.code,
+      reasonCode,
+    });
 }
 
 export interface ApplicationDetail {

@@ -3,6 +3,7 @@ import { assignmentMachine } from '@mechdost/shared/state';
 import { orderAssignments, orders } from '../schema';
 import type { ActorContext } from './actor';
 import { ConflictError, mapPgError, NotFoundError, ValidationError } from './errors';
+import { queueShopOrderRoutedEmail } from './email-events';
 import { lockOrder, transitionOrder, type Tx } from './orders';
 
 /** The order behind an assignment, locked first (lock order: order row, then assignment — see `lockOrder`). */
@@ -42,7 +43,7 @@ export async function offerOrderToShop(
     throw new ValidationError('expiresAt must be within 8 days');
   }
   const [current] = await tx
-    .select({ status: orders.status })
+    .select({ status: orders.status, code: orders.code })
     .from(orders)
     .where(eq(orders.id, args.orderId));
   if (!current) throw new NotFoundError('Order not found');
@@ -74,6 +75,12 @@ export async function offerOrderToShop(
       })
       .returning();
     if (!assignment) throw new Error('assignment insert returned no row');
+    await queueShopOrderRoutedEmail(tx, {
+      assignmentId: assignment.id,
+      shopId: args.shopId,
+      orderCode: current.code,
+      minutes: args.timeoutMinutes,
+    });
     return assignment;
   } catch (err) {
     mapPgError(err);

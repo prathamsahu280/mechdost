@@ -211,6 +211,33 @@ describe('placing a COD order', () => {
       ['placed', 'customer'],
     ]);
     expect(await db.$count(s.auditLog, eq(s.auditLog.action, 'order.placed'))).toBe(1);
+    // The confirmation email (spec 10) is queued in the same transaction, once, only for an address on the account.
+    expect(await db.$count(s.notificationOutbox, eq(s.notificationOutbox.templateKey, 'order_placed'))).toBe(
+      0,
+    );
+    await db
+      .update(s.users)
+      .set({ email: 'ravi.checkout@example.com', emailVerifiedAt: new Date() })
+      .where(eq(s.users.id, userId));
+    const again = await placeCodOrder(t(), {
+      userId,
+      idempotencyKey: key(2001),
+      address: address(),
+      lines: [{ sku: OIL, qty: 1 }],
+      expectedTotalPaise: (
+        await quoteCheckout(t(), { pincode: '492004', lines: [{ sku: OIL, qty: 1 }], locale: 'en' })
+      ).totalPaise,
+      note: null,
+      locale: 'en',
+    });
+    const [mail] = await db
+      .select()
+      .from(s.notificationOutbox)
+      .where(eq(s.notificationOutbox.templateKey, 'order_placed'));
+    expect(mail).toMatchObject({
+      recipient: 'ravi.checkout@example.com',
+      payload: { orderCode: again.code, paymentMethod: 'Cash on delivery' },
+    });
   });
 
   it('the same key returns the same order, even sent twice at once', async () => {

@@ -12,7 +12,10 @@ import {
   claimOutboxBatch,
   enqueueNotification,
   getGlobalSetting,
+  listEmailTemplates,
   listNotificationTemplates,
+  resetEmailTemplate,
+  saveEmailTemplate,
   markOutboxSent,
   notificationChannelEnabled,
   putGlobalSetting,
@@ -146,5 +149,92 @@ describe('budget setting and usage report', () => {
       billable: 2,
       costPaise: 23,
     });
+  });
+});
+
+describe('email templates (admin, design 2026-11-15)', () => {
+  const email = { key: 'order_confirmed', locale: 'en' as const, enabled: true };
+
+  it('saves text overrides, keeps blank fields on the code default, and audits the change', async () => {
+    const { version } = await saveEmailTemplate(t(), {
+      ...email,
+      subject: 'Great news about {orderCode}',
+      heading: '',
+      body: 'A seller in {shopArea} confirmed {orderCode}.',
+      buttonLabel: 'Track it',
+      expectedVersion: null,
+      staffUserId: staff,
+    });
+    const [row] = (await listEmailTemplates(t())).filter((r) => r.key === 'order_confirmed');
+    expect(row).toMatchObject({
+      locale: 'en',
+      subject: 'Great news about {orderCode}',
+      heading: null,
+      buttonLabel: 'Track it',
+      enabled: true,
+      version,
+    });
+    const [log] = await db.select().from(s.auditLog).where(eq(s.auditLog.action, 'email_template.saved'));
+    expect(log).toMatchObject({ actorUserId: staff, entityId: 'order_confirmed:en' });
+  });
+
+  it('refuses unknown placeholders, HTML, and the generic endpoint for the email channel', async () => {
+    const save = (body: string) =>
+      saveEmailTemplate(t(), {
+        ...email,
+        key: 'order_placed',
+        body,
+        expectedVersion: null,
+        staffUserId: staff,
+      });
+    await expect(save('Hi {nope}')).rejects.toMatchObject({ code: 'EMAIL_PLACEHOLDER' });
+    await expect(save('<b>Hi</b>')).rejects.toMatchObject({ code: 'EMAIL_HTML' });
+    await expect(
+      saveNotificationTemplate(t(), {
+        key: 'order_placed',
+        channel: 'email',
+        locale: 'en',
+        body: 'Hi',
+        enabled: true,
+        expectedVersion: null,
+        staffUserId: staff,
+      }),
+    ).rejects.toMatchObject({ code: 'TEMPLATE_EMAIL_ENDPOINT' });
+  });
+
+  it('a stale version is a conflict', async () => {
+    await expect(
+      saveEmailTemplate(t(), { ...email, expectedVersion: 99, staffUserId: staff }),
+    ).rejects.toMatchObject({ code: 'STALE_TEMPLATE' });
+  });
+
+  it('reset returns to the default text; an on template loses its row, an off one stays off', async () => {
+    const [row] = (await listEmailTemplates(t())).filter((r) => r.key === 'order_confirmed');
+    const out = await resetEmailTemplate(t(), {
+      key: 'order_confirmed',
+      locale: 'en',
+      expectedVersion: row!.version,
+      staffUserId: staff,
+    });
+    expect(out.version).toBeNull();
+    expect((await listEmailTemplates(t())).filter((r) => r.key === 'order_confirmed')).toEqual([]);
+    const off = await saveEmailTemplate(t(), {
+      key: 'order_delivered',
+      locale: 'hi',
+      enabled: false,
+      body: 'ऑर्डर {orderCode} मिल गया।',
+      expectedVersion: null,
+      staffUserId: staff,
+    });
+    const reset = await resetEmailTemplate(t(), {
+      key: 'order_delivered',
+      locale: 'hi',
+      expectedVersion: off.version,
+      staffUserId: staff,
+    });
+    expect(reset.version).toBeGreaterThan(off.version);
+    const [after] = (await listEmailTemplates(t())).filter((r) => r.key === 'order_delivered');
+    expect(after).toMatchObject({ enabled: false, body: '', subject: null });
+    expect(await db.$count(s.auditLog, eq(s.auditLog.action, 'email_template.reset'))).toBe(2);
   });
 });

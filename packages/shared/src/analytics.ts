@@ -137,6 +137,10 @@ export interface ServerEventProps {
   coins_reward_created: { rewardId: string; source: string; coins: number; unlockDays: number };
   coins_earned: { rewardId: string; source: string; coins: number };
   coins_expired: { coins: number };
+  /** Transactional email (spec 10): template key and language only, never an address or the text. */
+  email_sent: { template: string; locale: 'en' | 'hi' };
+  /** A send that ended failed (permanent error or retries used up); `code` is the provider error code. */
+  email_failed: { template: string; code: string };
   coins_adjusted: { customerId: string; delta: number; reasonCode: string };
   /** Bulk quotes (spec 19): codes, counts, versions and paise only — never message text. */
   quote_requested: { quoteCode: string; lines: number; units: number; listTotalPaise: number | null };
@@ -303,7 +307,7 @@ export const CLIENT_EVENT_SCHEMAS = {
     })
     .strict(),
   admin_notifications_change: z
-    .object({ target: id, action: z.enum(['saved', 'enabled', 'disabled', 'budget']) })
+    .object({ target: id, action: z.enum(['saved', 'enabled', 'disabled', 'budget', 'reset', 'test_sent']) })
     .strict(),
   // Service-area PIN codes (spec 15): what was done and, when switched off, the reason code. Never the area text.
   admin_pincode_change: z

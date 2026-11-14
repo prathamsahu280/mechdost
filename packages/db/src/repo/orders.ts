@@ -6,6 +6,7 @@ import { setActor, type ActorContext } from './actor';
 import { ConflictError, NotFoundError } from './errors';
 import { requestRefundForClosedOrder } from './refunds';
 import { createOrderRewards, recordShopCoinDiscount, restoreCoinsForSubOrder } from './coins';
+import { queueOrderStatusEmail } from './email-events';
 import { queueOrderWhatsApp, type OrderWhatsAppEvent } from './order-notifications';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -86,6 +87,8 @@ export async function transitionOrder(
     );
   const event = WHATSAPP_ON[args.to];
   if (event) await queueOrderWhatsApp(tx, { orderId: row.id, event, orderVersion: row.version });
+  // Customer email for the milestone (spec 10, design 2026-11-15), same transaction: a rolled-back change sends nothing.
+  await queueOrderStatusEmail(tx, { orderId: row.id, to: args.to, version: row.version });
   // MechDost Coins (spec 20), same transaction: a cancelled or rejected part gives its coins back (as coins, once);
   // a delivered part earns the admin-set reward, usable after the unlock days.
   if (args.to === 'cancelled' || args.to === 'rejected') {

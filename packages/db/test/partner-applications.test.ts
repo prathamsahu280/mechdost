@@ -97,6 +97,13 @@ describe('public seller applications', () => {
     expect(products).toHaveLength(2);
     const detail = await getApplication(t(), ALL, r.code, keyring);
     expect(detail).toMatchObject({ gstNumber: '27AAPFU0939F1ZV', duplicateGstin: false, products: 2 });
+    // A public form's email address is unverified and typed by anyone: we never mail it (security review
+    // 2026-11-15: no spam / phishing relay). The applicant keeps the reference shown on screen.
+    const mail = await db
+      .select()
+      .from(s.notificationOutbox)
+      .where(eq(s.notificationOutbox.dedupeKey, `application_received:${row!.id}:v1:email`));
+    expect(mail).toHaveLength(0);
   });
 
   it('flags a GSTIN that another application already used; refuses unknown products', async () => {

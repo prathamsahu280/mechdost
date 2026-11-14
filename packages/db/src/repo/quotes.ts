@@ -36,7 +36,6 @@ import {
   quoteMessages,
   quoteOffers,
   quoteRequests,
-  users,
 } from '../schema';
 import { placeOrder, quoteCheckout, settingOr } from './checkout';
 import { activeBlockLevels } from './customer-blocks';
@@ -44,7 +43,7 @@ import { decodeCursor, encodeCursor, pageSize } from './cursor';
 import { ConflictError, ForbiddenError, NotFoundError, pgCode, ValidationError } from './errors';
 import { recordServerEvent } from './events';
 import { localized } from './localized';
-import { enqueueNotification } from './notify';
+import { queueEmail } from './email-notifications';
 import type { Tx } from './orders';
 import type { CityScope } from './routing';
 import { rowsOf } from './sql-rows';
@@ -1185,20 +1184,49 @@ export async function sendQuoteOffer(
 
 /** Email the customer that a price is ready (only to a verified address; the dedupe key is per offer version). */
 async function queueOfferEmail(tx: Tx, q: LockedQuote, offerVersion: number, validUntil: Date) {
-  const [person] = await tx
-    .select({ email: users.email, verified: users.emailVerifiedAt, language: users.language })
-    .from(users)
-    .where(eq(users.id, q.userId));
-  if (!person?.email || !person.verified) return;
-  await enqueueNotification(tx, {
-    dedupeKey: `quote_offer:${q.id}:v${String(offerVersion)}:email`,
-    channel: 'email',
-    recipientUserId: q.userId,
-    recipient: person.email,
-    templateKey: 'quote_offer',
-    locale: person.language === 'hi' ? 'hi' : 'en',
+  await queueEmail(tx, {
+    template: 'quote_offer',
+    entityId: q.id,
+    version: offerVersion,
+    userId: q.userId,
     payload: { quoteCode: q.code, validUntil: istDateString(validUntil) },
   });
+}
+
+/**
+ * "Your offer ends soon" (design 2026-11-15): one email per active offer whose validity ends within `hoursAhead`
+ * (24 by default), queued by the worker's quote sweep. One transaction per offer, dedupe key per offer id, so a
+ * re-run or a second worker never sends twice. Only offers of still-offered quotes (open to accept) count.
+ */
+export async function queueQuoteExpiringEmails(
+  db: Tx,
+  opts: { hoursAhead?: number; limit?: number } = {},
+): Promise<number> {
+  const hours = Math.min(Math.max(Math.floor(opts.hoursAhead ?? 24), 1), 72);
+  const limit = Math.min(Math.max(opts.limit ?? 100, 1), 500);
+  const due = rowsOf<{ offer_id: string; code: string; user_id: string; valid_until: string | Date }>(
+    await db.execute(sql`
+      select o.id as offer_id, q.code, q.user_id, o.valid_until
+      from quote_offers o join quote_requests q on q.id = o.quote_id
+      where o.status = 'active' and q.status = 'offered'
+        and o.valid_until > now() and o.valid_until <= now() + make_interval(hours => ${hours})
+      order by o.valid_until
+      limit ${limit}`),
+  );
+  let queued = 0;
+  for (const r of due) {
+    const sent = await db.transaction((tx) =>
+      queueEmail(tx, {
+        template: 'quote_expiring',
+        entityId: r.offer_id,
+        version: 1,
+        userId: r.user_id,
+        payload: { quoteCode: r.code, validUntil: istDateString(new Date(r.valid_until)) },
+      }),
+    );
+    if (sent) queued += 1;
+  }
+  return queued;
 }
 
 /** Staff close a quote they cannot fulfil, with a reason code and a message the customer sees. */

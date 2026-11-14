@@ -820,6 +820,16 @@ User 2026-11-15 ~01:00 IST: "go ahead and work on the 1,2,3,4,5,6" (6 = shop Wha
   earlier "confirmed" row stays visible while the step back is hidden; the window is 30 x 24 h UTC; workshop warnings are
   built in the model and repository, HTTP/UI later.
 
+## 2026-11-15 — Email merge rulings (coordinator, security review)
+
+- **Public partner applications are not emailed.** The address on the public form is unverified and anyone can type
+  it, so mailing it would make MechDost a spam/phishing relay (security review). Invited applicants (whose address an
+  admin entered) get "received"/"approved". Public applicants keep the reference shown on screen. Staff decisions
+  (approve or reject) still mail the form's address once per human decision; that is low risk and accepted.
+- **Refund emails use the shared catalogue.** `refund_requested`, `refund_processed` and the new `refund_declined` (en +
+  hi, admin-editable) are sent through `queueRefundEmail`. The customer sees the order (group) code.
+- The email migration was renumbered **0056** at merge.
+
 ## PENDING DECISIONS (ask "what's pending" to review)
 
 | #   | Topic                                                                                                                                                                                                                                                                                                            | Leaning                                                                             | When                                 |
@@ -885,3 +895,15 @@ User 2026-11-15 ~01:00 IST: "go ahead and work on the 1,2,3,4,5,6" (6 = shop Wha
 - **No migration:** `users.language` and both tables already had everything needed.
 - **Defaults:** first address is the default shipping address; deleting the default leaves none until the customer picks one (checkout falls back to the first). Billing default exists in the API only (no UI yet).
 - **Map pin:** the API accepts `lat`/`lng` (stored as `location`); the form has no pin picker yet. Queued as a later improvement (map adapter).
+
+## 2026-11-15 — Transactional emails built (builder rulings under the approved design)
+
+Design: `docs/superpowers/specs/2026-11-15-emails-design.md`. Spec 10 "Transactional emails" is the built description.
+
+- **Quote offer email now follows the setting:** it used to require a verified address always; it now sends to the stored address unless `customers.require_verified_email` is on (design: "otherwise to the stored email"). Partners always need a verified address.
+- **Order placed (online) is sent when the payment is captured,** with the receipt, not at checkout (an unpaid online order is not "being confirmed with a seller"). COD is sent at checkout.
+- **Applicants (no account) get `application_received` / decision emails at the address on the form, in English.** The public form is behind Turnstile and the rate limits; the worst abuse is one calm acknowledgement to a third party per submission. Cost if wrong: a harassment vector (low); fix = send the first mail only after the applicant opens an emailed link, or only for invited applications.
+- **The delivery code is in the "out for delivery" email** (design); WhatsApp still never carries it. It is sealed in the outbox and opened only at send. Cost if wrong: an email account takeover could read the code; mitigation is the "only at the door" text and the delivery-code attempt limit.
+- **Button colour in emails is `#bf3c12`** (the design system's accent-soft text colour) so white label text passes AA; `#ea5728` stays the header stripe. No new token.
+- **Grievance contact** is an env var (`EMAIL_GRIEVANCE_CONTACT`), hidden until set (Q15b), because settings has no text kind yet.
+- **Not built, by the design's own rule:** `coins_expiring` (no reminder job), Resend bounce webhooks, workshop warning emails (no workshop login email), applicant language.

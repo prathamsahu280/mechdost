@@ -9,6 +9,7 @@ import { freeDeliveryMinPaise, groupShippingPaise } from '@mechdost/shared/free-
 import { auditLog, orderGroups, orderItems, orders, settings } from '../schema';
 import { blockEffects } from '@mechdost/shared/customers';
 import { setActor } from './actor';
+import { queueOrderPlacedEmail } from './email-events';
 import { recordServerEvent } from './events';
 import { activeBlockLevels } from './customer-blocks';
 import { checkoutCoins, redeemCoins } from './coins';
@@ -735,6 +736,8 @@ export async function placeOrder(
         coinsRedeemed: coins.coins,
       },
     });
+    // Cash on delivery is placed now; an online order is "placed" for the customer once the payment is captured.
+    if (!online) await queueOrderPlacedEmail(tx, group.id);
     return {
       code: group.code,
       paymentMethod: input.method,

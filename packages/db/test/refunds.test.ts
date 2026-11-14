@@ -338,7 +338,9 @@ describe('approval (all refunds need it)', () => {
     const mail = await db
       .select()
       .from(s.notificationOutbox)
-      .where(sql`${s.notificationOutbox.dedupeKey} like ${`%:${r!.id}:email`}`);
+      .where(
+        sql`${s.notificationOutbox.dedupeKey} like ${`%:${r!.id}:%`} and ${s.notificationOutbox.channel} = 'email'`,
+      );
     expect(mail.map((m) => m.templateKey).sort()).toEqual(['refund_declined', 'refund_requested']);
     expect(mail[0]).toMatchObject({ channel: 'email', recipient: 'ravi.refunds@example.com' });
   });

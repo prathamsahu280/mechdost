@@ -14,6 +14,7 @@ import { loadKeyring } from '../src/crypto';
 import { seedRaipurDemo, type DemoFixture } from '../src/demo-seed';
 import {
   acceptQuoteOffer,
+  queueQuoteExpiringEmails,
   acceptShopOffer,
   advanceShopOrder,
   blockCustomer,
@@ -382,6 +383,32 @@ describe('offer email', () => {
     const rows = await queued();
     expect(rows).toHaveLength(1);
     expect(rows[0]?.key).toMatch(/^quote_offer:.+:v2:email$/);
+    await closeAllOpen(meera);
+  });
+
+  it('reminds once, 24 hours before an offer ends, and not for offers that end later or already ended', async () => {
+    await db
+      .update(s.users)
+      .set({ email: 'meera@example.com', emailVerifiedAt: new Date() })
+      .where(eq(s.users.id, meera));
+    const { code } = await newQuote(meera);
+    await offer(code, 41_000, 0, 3); // valid for 3 days: not yet
+    const reminders = () =>
+      db
+        .select({ key: s.notificationOutbox.dedupeKey })
+        .from(s.notificationOutbox)
+        .where(eq(s.notificationOutbox.templateKey, 'quote_expiring'));
+    expect(await queueQuoteExpiringEmails(t())).toBe(0);
+    await db.execute(sql`
+      update quote_offers set created_at = now() - interval '2 days', valid_until = now() + interval '6 hours'
+      where quote_id = (select id from quote_requests where code = ${code})`);
+    expect(await queueQuoteExpiringEmails(t())).toBe(1);
+    expect(await queueQuoteExpiringEmails(t())).toBe(0); // a second sweep sends nothing
+    expect(await reminders()).toHaveLength(1);
+    await db.execute(sql`
+      update quote_offers set valid_until = now() - interval '1 minute'
+      where quote_id = (select id from quote_requests where code = ${code})`);
+    expect(await queueQuoteExpiringEmails(t())).toBe(0);
     await closeAllOpen(meera);
   });
 });

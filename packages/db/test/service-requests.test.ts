@@ -819,3 +819,96 @@ describe('workshop booking coins: anti-abuse (security review 2026-11-14)', () =
     });
   });
 });
+
+describe('service emails (spec 10, design 2026-11-15)', () => {
+  it('one email per customer-visible milestone, in the customer language, in the booking transaction', async () => {
+    await db.execute(sql`delete from notification_outbox`);
+    await db
+      .update(s.users)
+      .set({ email: 'ravi.service@example.com', emailVerifiedAt: new Date() })
+      .where(eq(s.users.id, f.customer));
+    const r = await request();
+    let v = (
+      await proposeSlot(t(), {
+        ...step(r.code, r.version),
+        date: TODAY,
+        slot: 'morning',
+        lowPaise: 80_000,
+        highPaise: 150_000,
+        note: null,
+      })
+    ).version;
+    v = (await decideProposal(t(), { userId: f.customer, code: r.code, accept: true, expectedVersion: v }))
+      .version;
+    v = (await receiveVehicle(t(), { ...step(r.code, v), odometerKm: 31_000 })).version;
+    const sent = await sendEstimate(t(), { ...step(r.code, v), lines: LINES.slice(0, 1) });
+    const [line] = await items(r.code);
+    v = (
+      await decideEstimate(t(), {
+        userId: f.customer,
+        code: r.code,
+        decision: {
+          revision: 1,
+          version: sent.version,
+          consent: true,
+          decisions: [{ itemId: line!.id, decision: 'approved' }],
+        },
+      })
+    ).version;
+    v = (await advanceJob(t(), { ...step(r.code, v), to: 'in_progress' })).version;
+    v = (await advanceJob(t(), { ...step(r.code, v), to: 'ready' })).version;
+    const billed = await billJob(t(), step(r.code, v));
+    await markJobPaid(t(), { ...step(r.code, billed.version), method: 'cash' });
+
+    const mail = await db
+      .select()
+      .from(s.notificationOutbox)
+      .where(eq(s.notificationOutbox.channel, 'email'))
+      .orderBy(s.notificationOutbox.createdAt);
+    const sentTemplates = mail.map((m) => m.templateKey);
+    for (const key of [
+      'service_request_received',
+      'service_proposed',
+      'service_confirmed',
+      'service_estimate_ready',
+      'service_ready',
+      'service_bill_ready',
+      'service_completed',
+    ])
+      expect(
+        sentTemplates.filter((k) => k === key),
+        key,
+      ).toHaveLength(1);
+    expect(mail.map((m) => [m.templateKey, m.recipient, m.locale])).toEqual(
+      mail.map((m) => [m.templateKey, 'ravi.service@example.com', 'hi']),
+    );
+    const proposed = mail.find((m) => m.templateKey === 'service_proposed')!.payload as Record<
+      string,
+      string
+    >;
+    expect(proposed).toMatchObject({ requestCode: r.code, expectedCost: '₹800.00 – ₹1,500.00' });
+    expect(proposed.slot).toContain('सुबह');
+    const bill = mail.find((m) => m.templateKey === 'service_bill_ready')!.payload as Record<string, string>;
+    expect(bill.amount).toMatch(/^₹/);
+  });
+
+  it('a rolled-back booking move queues nothing', async () => {
+    await db.execute(sql`delete from notification_outbox`);
+    const r = await request();
+    await db.execute(sql`delete from notification_outbox`);
+    await expect(
+      db.transaction(async (tx) => {
+        await proposeSlot(tx, {
+          ...step(r.code, r.version),
+          date: TODAY,
+          slot: 'morning',
+          lowPaise: 80_000,
+          highPaise: 150_000,
+          note: null,
+        });
+        throw new Error('boom');
+      }),
+    ).rejects.toThrow('boom');
+    expect(await db.$count(s.notificationOutbox)).toBe(0);
+  });
+});

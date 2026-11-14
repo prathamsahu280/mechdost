@@ -130,3 +130,8 @@ Mark each touched item ✅ / ⚠️ / ❌. Anything ❌ blocks implementation un
 - Every new event has stable ids and foreign keys, UTC timestamps, integer paise and units in the field name, and goes into the typed analytics catalogue (`packages/shared/src/analytics.ts`).
 - Analytics stay pseudonymous (no names, phones, addresses); personal data used for offers or training needs per-purpose consent (DPDP).
 - New tables and events are documented (`docs/conventions/data-for-ml.md`).
+
+## Promoted 2026-11-15
+
+- ❌ Python-in-heredoc edits that carry escapes or multi-line strings into source files (L104, promoted): use the Edit tool.
+- ❌ An email/SMS to an address or number a guest typed (no verification): spam/phishing relay. Only verified account contacts or admin-entered invites.
