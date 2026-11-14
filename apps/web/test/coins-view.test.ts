@@ -86,6 +86,8 @@ describe('coinRulesFromApi', () => {
         earnOrderBp: 0,
         firstOrderBonus: 0,
         workshopBookingBonus: 0,
+        workshopRewardMinBillPaise: 50_000,
+        workshopRewardCooldownDays: 30,
       }),
     ).toEqual({ coinValuePaise: 100, maxRedeemBp: 1_000, minOrderPaise: 0, expiryDays: 180 });
   });

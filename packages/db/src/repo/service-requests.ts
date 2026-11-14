@@ -31,7 +31,7 @@ import {
 } from '../schema';
 import type { ActorContext } from './actor';
 import { decodeCursor, encodeCursor, pageSize } from './cursor';
-import { createServiceReward } from './coins';
+import { cancelPendingServiceRewards, createServiceReward } from './coins';
 import { ConflictError, NotFoundError, pgCode, ValidationError } from './errors';
 import { recordServerEvent } from './events';
 import { localized } from './localized';
@@ -158,7 +158,15 @@ export async function transitionRequest(
   });
   // A paid workshop booking earns the admin-set coins (spec 20, Q24), pending until the unlock days pass.
   if (args.to === 'paid')
-    await createServiceReward(tx, { requestId: r.id, userId: r.userId, cityId: r.cityId });
+    await createServiceReward(tx, {
+      requestId: r.id,
+      userId: r.userId,
+      cityId: r.cityId,
+      workshopId: args.patch?.workshopId ?? r.workshopId,
+    });
+  // Any later move that undoes a payment cancels the pending booking reward (security review 2026-11-14).
+  else if ((r.status === 'paid' || r.status === 'completed') && args.to !== 'completed')
+    await cancelPendingServiceRewards(tx, { serviceRequestId: r.id, reasonCode: 'request_cancelled' });
   // Later moves in the same transaction start from here.
   r.status = row.status as ServiceRequestStatus;
   r.version = row.version;

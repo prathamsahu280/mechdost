@@ -36,6 +36,8 @@ export const CoinRulesDto = z.object({
   earnOrderBp: z.number().int(),
   firstOrderBonus: z.number().int(),
   workshopBookingBonus: z.number().int(),
+  workshopRewardMinBillPaise: z.number().int(),
+  workshopRewardCooldownDays: z.number().int(),
 });
 export type CoinRulesView = z.infer<typeof CoinRulesDto>;
 

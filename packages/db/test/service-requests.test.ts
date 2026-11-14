@@ -18,6 +18,7 @@ import {
   advanceJob,
   billJob,
   cancelMyServiceRequest,
+  cancelPendingServiceRewards,
   createServiceRequest,
   decideEstimate,
   decideProposal,
@@ -34,6 +35,7 @@ import {
   reassignServiceRequest,
   receiveVehicle,
   rejectServiceRequest,
+  releaseDueCoinRewards,
   returnVehicle,
   saveNotificationTemplate,
   sendEstimate,
@@ -701,5 +703,105 @@ describe('state machine enforcement (every pair of states)', () => {
       }
     }
     expect(checked).toBe(SERVICE_REQUEST_STATES.length ** 2);
+  });
+});
+
+describe('workshop booking coins: anti-abuse (security review 2026-11-14)', () => {
+  /** A booking at `key` taken to paid at the workshop (self-attested) with one estimate line of `unitPaise`. */
+  async function paidBooking(key: string, unitPaise: number) {
+    const r = await request({ workshopSlug: W[key]!.slug });
+    let v = (
+      await proposeSlot(t(), {
+        ...step(r.code, r.version, key),
+        date: TODAY,
+        slot: 'morning',
+        lowPaise: 10_000,
+        highPaise: 200_000,
+        note: null,
+      })
+    ).version;
+    v = (await decideProposal(t(), { userId: f.customer, code: r.code, accept: true, expectedVersion: v }))
+      .version;
+    v = (await receiveVehicle(t(), { ...step(r.code, v, key), odometerKm: 20_000 + keyN })).version;
+    const sent = await sendEstimate(t(), {
+      ...step(r.code, v, key),
+      lines: [{ description: 'Labour', serviceKey: null, qty: 1, unitPaise, gstRateBp: 1800 }],
+    });
+    const [line] = await items(r.code);
+    v = (
+      await decideEstimate(t(), {
+        userId: f.customer,
+        code: r.code,
+        decision: {
+          revision: 1,
+          version: sent.version,
+          consent: true,
+          decisions: [{ itemId: line!.id, decision: 'approved' }],
+        },
+      })
+    ).version;
+    v = (await advanceJob(t(), { ...step(r.code, v, key), to: 'in_progress' })).version;
+    v = (await advanceJob(t(), { ...step(r.code, v, key), to: 'ready' })).version;
+    const billed = await billJob(t(), step(r.code, v, key));
+    await markJobPaid(t(), { ...step(r.code, billed.version, key), method: 'cash' });
+    const [row] = await db
+      .select({ id: s.serviceRequests.id })
+      .from(s.serviceRequests)
+      .where(eq(s.serviceRequests.code, r.code));
+    return row!.id;
+  }
+  const rewardOf = async (requestId: string) =>
+    (await db.select().from(s.coinRewards).where(eq(s.coinRewards.serviceRequestId, requestId)))[0];
+
+  beforeAll(async () => {
+    await db.insert(s.settings).values([
+      { key: 'coins.workshop_booking_bonus', value: 30, cityId: null },
+      { key: 'coins.workshop_reward_min_bill_paise', value: 50_000, cityId: null },
+      { key: 'coins.workshop_reward_cooldown_days', value: 30, cityId: null },
+    ]);
+  });
+
+  it('no reward below the minimum bill', async () => {
+    const id = await paidBooking('other', 20_000); // ₹236 with GST
+    expect(await rewardOf(id)).toBeUndefined();
+  });
+
+  it('one reward per customer per workshop in the cooldown; another after it', async () => {
+    const first = await paidBooking('other', 100_000);
+    expect(await rewardOf(first)).toMatchObject({ source: 'workshop_booking', coins: 30, status: 'pending' });
+    const second = await paidBooking('other', 100_000);
+    expect(await rewardOf(second)).toBeUndefined();
+    // The cooldown has passed (moved back in time): the next paid booking earns again.
+    await db
+      .update(s.coinRewards)
+      .set({ createdAt: sql`now() - interval '31 days'` })
+      .where(eq(s.coinRewards.serviceRequestId, first));
+    const third = await paidBooking('other', 100_000);
+    expect(await rewardOf(third)).toMatchObject({ status: 'pending' });
+  });
+
+  it('a pending booking reward is cancelled when the payment is undone, and never credited', async () => {
+    const [pending] = await db
+      .select()
+      .from(s.coinRewards)
+      .where(sql`${s.coinRewards.source} = 'workshop_booking' and ${s.coinRewards.status} = 'pending'`)
+      .limit(1);
+    const n = await db.transaction((tx) =>
+      cancelPendingServiceRewards(tx as unknown as Tx, {
+        serviceRequestId: pending!.serviceRequestId!,
+        reasonCode: 'request_cancelled',
+      }),
+    );
+    expect(n).toBe(1);
+    await db
+      .update(s.coinRewards)
+      .set({ availableAt: sql`now() - interval '1 minute'` })
+      .where(eq(s.coinRewards.id, pending!.id));
+    await releaseDueCoinRewards(t());
+    expect(await rewardOf(pending!.serviceRequestId!)).toMatchObject({
+      status: 'cancelled',
+      cancelReasonCode: 'request_cancelled',
+      ledgerId: null,
+    });
   });
 });

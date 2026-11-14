@@ -63,6 +63,9 @@ const Rules = z
     earnOrderBp: z.number().int(),
     firstOrderBonus: z.number().int(),
     workshopBookingBonus: z.number().int(),
+    /** A booking earns only from this bill total, once per workshop per cooldown (anti-abuse). */
+    workshopRewardMinBillPaise: z.number().int(),
+    workshopRewardCooldownDays: z.number().int(),
   })
   .openapi('CoinRules');
 const Summary = z

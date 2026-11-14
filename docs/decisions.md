@@ -519,6 +519,7 @@ Coins work in real mode and are **no longer hidden** (removed from `BROWSER_ONLY
 - **Coin discounts are MechDost-funded**: invoices stay at full price (Q41 default until the CA answers). (medium: invoice copy if the CA says otherwise)
 - **Referrals are not built** although Q31–Q34 are answered: the programme itself (codes, sign-up attribution, Q35–Q38, Q44, Q45) is still open under Q47, whose default is "do not build until discussed". (cheap to add: a `referral` reward source)
 - **Migration number 0047**: 0045 and 0046 are reserved for the parallel quotes and reviews streams; renumber at merge if needed.
+- **Workshop booking rewards are guarded against fake bookings** (security review 2026-11-14, MEDIUM: "paid at the workshop" is self-attested): no reward below `coins.workshop_reward_min_bill_paise` (default ₹500); at most one per customer per workshop in `coins.workshop_reward_cooldown_days` (default 30), checked under a per customer + workshop lock; the reward stays pending for the unlock days and is cancelled by any later move that undoes the payment (`cancelPendingServiceRewards`). Support requests cannot name a service request yet, so cancelling on a ticket waits for that link. Spec 20 § Anti-abuse. (cheap: both limits are admin settings)
 
 ## PENDING DECISIONS (ask "what's pending" to review)
 

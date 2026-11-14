@@ -45,6 +45,8 @@ const SETTING_LABEL = {
   'coins.earn_order_bp': 'coins_api_set_earn_order_bp',
   'coins.first_order_bonus': 'coins_api_set_first_order_bonus',
   'coins.workshop_booking_bonus': 'coins_api_set_workshop_booking_bonus',
+  'coins.workshop_reward_min_bill_paise': 'coins_api_set_workshop_reward_min_bill_paise',
+  'coins.workshop_reward_cooldown_days': 'coins_api_set_workshop_reward_cooldown_days',
   'coins.unlock_days': 'coins_api_set_unlock_days',
   'coins.expiry_days': 'coins_api_set_expiry_days',
 } as const satisfies Record<SettingKey, string>;

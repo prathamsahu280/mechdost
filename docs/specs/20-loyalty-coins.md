@@ -49,6 +49,18 @@ These rules are fixed in code and copy (account page, policy page, checkout note
 - **Routes** (`apps/api/src/routes/coins.ts`): `GET /v1/me/coins` (balance, coins on the way, next expiry, rules), `GET /v1/me/coins/ledger` (cursor), `GET /v1/admin/coins/accounts/{userId}` and `GET /v1/admin/coins/activity` (`coins:read`), `POST /v1/admin/coins/accounts/{userId}/adjust` (`coins:adjust`, `Idempotency-Key`, `version`; 409 STALE_COINS / INSUFFICIENT_COINS; 30 per 10 min per staff member). `GET /v1/orders/{code}` returns `coins`. Response schemas: `@mechdost/shared/coins-api`.
 - **Web (real mode):** Account → Coins (`coins-section-api.tsx`, `React.lazy`, `DATA_MODE === 'api'`), checkout redemption for COD and online (`checkout-form.tsx`; coin API code loaded lazily), the order page's coin line, Admin → Coins (`admin-coins-api.tsx`, `next/dynamic`, `AUTH_MODE === 'firebase'`: open by account id or from activity, grant/remove with a reason code), coin rules in Admin → Settings (units: rupees, basis points, coins, days). Strings `account.coins_api_*`, `portal.coins_api_*`, `checkout.coins_api_changed`, `checkout.online_coins_changed` (en + hi). Coins are no longer in `BROWSER_ONLY_SECTIONS`.
 
+### Anti-abuse: workshop booking rewards (security review 2026-11-14)
+
+"Paid at the workshop" (cash, UPI or card, `mark-paid`) is the workshop's own word, so a colluding workshop and customer could farm coins with fake bookings. Guards, all in the paid transaction (`createServiceReward`):
+
+- **Minimum bill:** no booking reward below `coins.workshop_reward_min_bill_paise` (default ₹500).
+- **Cooldown:** at most one booking reward per customer per workshop in `coins.workshop_reward_cooldown_days` (default 30; 0 = no limit). Pending and credited rewards count; checked under a per customer + workshop advisory lock, so two bookings paid at once cannot both earn.
+- **Held, then cancellable:** the reward stays pending for the unlock days (default 8); `cancelPendingServiceRewards` cancels it, and `transitionRequest` calls it on any move out of paid/completed that undoes the payment (none exists in the state machine today, so the hook is ready for reopen/dispute states).
+- **Not yet possible:** support requests cannot name a service request (only orders), so "a ticket about it cancels the reward" waits for that link; when it is added, opening an `order_issue`/`refund` ticket about a booking in the unlock window must call `cancelPendingServiceRewards`.
+- The customer's rule text shows the minimum bill and the cooldown; both are admin settings (`coins:rules`).
+
+Tests: `packages/db/test/service-requests.test.ts` "workshop booking coins: anti-abuse" (below the minimum → none; same workshop within the cooldown → none; after it → reward; cancelled reward never credited).
+
 ### Gaps
 
 - **Referrals** (Q31–Q34 answered) are not built: the programme as a whole (codes, attribution at sign-up, abuse rules Q35–Q38, Q44, Q45) is still open under Q47 ("do not build until discussed"). The reward table has room for a `referral` source.

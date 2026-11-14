@@ -74,7 +74,13 @@ export function CoinsSectionApi() {
   const earnRules = [
     r.earnOrderBp > 0 ? t('coins_api_earn_order', { percent: r.earnOrderBp / 100 }) : null,
     r.firstOrderBonus > 0 ? t('coins_api_earn_first', { coins: r.firstOrderBonus }) : null,
-    r.workshopBookingBonus > 0 ? t('coins_api_earn_workshop', { coins: r.workshopBookingBonus }) : null,
+    r.workshopBookingBonus > 0
+      ? t('coins_api_earn_workshop', {
+          coins: r.workshopBookingBonus,
+          min: formatPrice(r.workshopRewardMinBillPaise),
+          days: r.workshopRewardCooldownDays,
+        })
+      : null,
   ].filter((x): x is string => x !== null);
 
   return (

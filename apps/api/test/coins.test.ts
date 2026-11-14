@@ -70,7 +70,16 @@ describe('customer coins', () => {
       balance: 0,
       pendingCoins: 0,
       nextExpiry: null,
-      rules: { coinValuePaise: 100, maxRedeemBp: 1_000, unlockDays: 8, expiryDays: 180, earnOrderBp: 0 },
+      rules: {
+        coinValuePaise: 100,
+        maxRedeemBp: 1_000,
+        unlockDays: 8,
+        expiryDays: 180,
+        earnOrderBp: 0,
+        // Anti-abuse defaults for self-attested workshop payments (security review 2026-11-14).
+        workshopRewardMinBillPaise: 50_000,
+        workshopRewardCooldownDays: 30,
+      },
     });
     await earnCoins(ctx.db, {
       userId: ravi.id,

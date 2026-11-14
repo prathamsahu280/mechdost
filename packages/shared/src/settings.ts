@@ -74,6 +74,19 @@ export const OPERATIONAL_SETTINGS = {
   'coins.first_order_bonus': { kind: 'int', min: 0, max: 10_000, default: 0, globalOnly: true },
   /** Coins for each paid workshop booking. */
   'coins.workshop_booking_bonus': { kind: 'int', min: 0, max: 10_000, default: 0, globalOnly: true },
+  /**
+   * Anti-abuse for workshop rewards (security review 2026-11-14): "paid at the workshop" is the workshop's own word,
+   * so no reward below this bill total (paise) ...
+   */
+  'coins.workshop_reward_min_bill_paise': {
+    kind: 'int',
+    min: 0,
+    max: 10_000_000,
+    default: 50_000,
+    globalOnly: true,
+  },
+  /** ... and at most one reward per customer per workshop in this many days (0 = no limit). */
+  'coins.workshop_reward_cooldown_days': { kind: 'int', min: 0, max: 365, default: 30, globalOnly: true },
   /** Days before earned coins can be used (after the 7-day claim window, so claims cannot farm coins). */
   'coins.unlock_days': { kind: 'int', min: 0, max: 60, default: 8, globalOnly: true },
   /** Days before unused coins expire. */

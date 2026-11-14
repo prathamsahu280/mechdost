@@ -20,6 +20,8 @@ import {
   coinRewards,
   orderGroups,
   orders,
+  serviceBills,
+  serviceRequests,
   settings,
   users,
 } from '../schema';
@@ -52,6 +54,9 @@ export interface CoinSettings extends CoinRules {
   earnOrderBp: number;
   firstOrderBonus: number;
   workshopBookingBonus: number;
+  /** Anti-abuse for self-attested workshop payments (security review 2026-11-14). */
+  workshopRewardMinBillPaise: number;
+  workshopRewardCooldownDays: number;
   unlockDays: number;
 }
 
@@ -63,6 +68,8 @@ const COIN_KEYS = {
   earnOrderBp: 'coins.earn_order_bp',
   firstOrderBonus: 'coins.first_order_bonus',
   workshopBookingBonus: 'coins.workshop_booking_bonus',
+  workshopRewardMinBillPaise: 'coins.workshop_reward_min_bill_paise',
+  workshopRewardCooldownDays: 'coins.workshop_reward_cooldown_days',
   unlockDays: 'coins.unlock_days',
 } as const satisfies Record<keyof CoinSettings, SettingKey>;
 
@@ -93,6 +100,8 @@ export async function coinSettings(db: Tx): Promise<CoinSettings> {
     earnOrderBp: read(COIN_KEYS.earnOrderBp),
     firstOrderBonus: read(COIN_KEYS.firstOrderBonus),
     workshopBookingBonus: read(COIN_KEYS.workshopBookingBonus),
+    workshopRewardMinBillPaise: read(COIN_KEYS.workshopRewardMinBillPaise),
+    workshopRewardCooldownDays: read(COIN_KEYS.workshopRewardCooldownDays),
     unlockDays: read(COIN_KEYS.unlockDays),
   };
 }
@@ -448,12 +457,46 @@ export async function createOrderRewards(tx: Tx, orderId: string): Promise<void>
   });
 }
 
-/** A workshop booking was paid (`transitionRequest` → paid, same transaction): `coins.workshop_booking_bonus`. */
+/**
+ * A workshop booking was paid (`transitionRequest` -> paid, same transaction): `coins.workshop_booking_bonus`.
+ * "Paid at the workshop" is the workshop's own word, so a colluding workshop and customer could farm coins with fake
+ * bookings (security review 2026-11-14). Guards: no reward below `coins.workshop_reward_min_bill_paise`; at most one
+ * reward per customer per workshop in `coins.workshop_reward_cooldown_days` (pending and credited rewards count;
+ * checked under a per customer + workshop lock, so two bookings paid at once cannot both pass); the reward stays
+ * pending for the unlock days and is cancelled if the payment is undone (`cancelPendingServiceRewards`).
+ */
 export async function createServiceReward(
   tx: Tx,
-  input: { requestId: string; userId: string; cityId: string },
+  input: { requestId: string; userId: string; cityId: string; workshopId: string | null },
 ): Promise<void> {
   const rules = await coinSettings(tx);
+  if (rules.workshopBookingBonus === 0 || !input.workshopId) return;
+  const [bill] = await tx
+    .select({ total: serviceBills.totalPaise })
+    .from(serviceBills)
+    .where(eq(serviceBills.requestId, input.requestId))
+    .limit(1);
+  if (!bill || bill.total < rules.workshopRewardMinBillPaise) return;
+  if (rules.workshopRewardCooldownDays > 0) {
+    await tx.execute(
+      sql`select pg_advisory_xact_lock(hashtextextended(${`coins-workshop:${input.userId}:${input.workshopId}`}, 0))`,
+    );
+    const recent = await tx
+      .select({ id: coinRewards.id })
+      .from(coinRewards)
+      .innerJoin(serviceRequests, eq(serviceRequests.id, coinRewards.serviceRequestId))
+      .where(
+        and(
+          eq(coinRewards.userId, input.userId),
+          eq(coinRewards.source, 'workshop_booking'),
+          eq(serviceRequests.workshopId, input.workshopId),
+          inArray(coinRewards.status, ['pending', 'credited']),
+          sql`${coinRewards.createdAt} > now() - make_interval(days => ${rules.workshopRewardCooldownDays})`,
+        ),
+      )
+      .limit(1);
+    if (recent.length > 0) return;
+  }
   await insertReward(tx, {
     userId: input.userId,
     cityId: input.cityId,
@@ -462,6 +505,23 @@ export async function createServiceReward(
     unlockDays: rules.unlockDays,
     serviceRequestId: input.requestId,
   });
+}
+
+/**
+ * Cancel a service request's booking reward that has not unlocked yet. Called when a request leaves paid/completed
+ * by any later move (none exists in the state machine today) and, once support requests can name a service request,
+ * when one about it is opened in the unlock window. Returns how many were cancelled.
+ */
+export async function cancelPendingServiceRewards(
+  tx: Tx,
+  input: { serviceRequestId: string; reasonCode: CoinRewardCancelReason },
+): Promise<number> {
+  const rows = await tx
+    .update(coinRewards)
+    .set({ status: 'cancelled', cancelReasonCode: input.reasonCode })
+    .where(and(eq(coinRewards.serviceRequestId, input.serviceRequestId), eq(coinRewards.status, 'pending')))
+    .returning({ id: coinRewards.id });
+  return rows.length;
 }
 
 /**
