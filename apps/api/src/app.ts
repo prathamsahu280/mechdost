@@ -27,6 +27,10 @@ import { shopOrderRoutes } from './routes/shop-orders';
 import { supportRoutes } from './routes/support';
 import { systemRoutes } from './routes/system';
 import { whatsAppWebhookRoutes } from './routes/whatsapp-webhook';
+import { adminServiceRequestRoutes } from './routes/admin-service-requests';
+import { serviceRequestRoutes } from './routes/service-requests';
+import { workshopPortalRoutes } from './routes/workshop-portal';
+import { workshopAdminRoutes, workshopPublicRoutes } from './routes/workshops';
 import type { AppDeps, AppEnv } from './types';
 import { validationHook } from './validation';
 
@@ -90,6 +94,11 @@ export function createApp(deps: AppDeps) {
   v1.route('/', partnerPublicRoutes(deps));
   v1.route('/', partnerAdminRoutes(deps, sessions));
   v1.route('/', shopOnboardingRoutes(deps, sessions));
+  v1.route('/', workshopPublicRoutes(deps));
+  v1.route('/', workshopAdminRoutes(deps, sessions));
+  v1.route('/', serviceRequestRoutes(deps, sessions));
+  v1.route('/', workshopPortalRoutes(deps, sessions));
+  v1.route('/', adminServiceRequestRoutes(deps, sessions));
   app.route('/v1', v1);
 
   app.openAPIRegistry.registerComponent('securitySchemes', 'bearerAuth', {

@@ -34,7 +34,8 @@
     "./admin-catalogue": "./src/admin-catalogue.ts",
     "./partners": "./src/partners.ts",
     "./email-templates": "./src/email-templates.ts",
-    "./service-bill": "./src/service-bill.ts"
+    "./service-bill": "./src/service-bill.ts",
+    "./service-requests": "./src/service-requests.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",

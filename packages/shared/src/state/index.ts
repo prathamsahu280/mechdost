@@ -84,6 +84,27 @@ export const SERVICE_CANCEL_REASONS = [
 ] as const;
 export type ServiceCancelReason = (typeof SERVICE_CANCEL_REASONS)[number];
 
+/** Why a workshop declined a service request (ML-ready codes; the request goes back to MechDost for routing). */
+export const SERVICE_DECLINE_REASONS = [
+  'fully_booked',
+  'vehicle_not_supported',
+  'service_not_offered',
+  'too_far',
+  'workshop_closed',
+  'other',
+] as const;
+export type ServiceDeclineReason = (typeof SERVICE_DECLINE_REASONS)[number];
+
+/** Why staff rejected a service request they could not route (spec 06; the customer also gets a message). */
+export const SERVICE_REJECT_REASONS = [
+  'no_workshop_nearby',
+  'all_workshops_declined',
+  'unserviceable_address',
+  'suspected_fraud',
+  'other',
+] as const;
+export type ServiceRejectReason = (typeof SERVICE_REJECT_REASONS)[number];
+
 /** Why a shop declined an offered order (ML-ready codes; spec 04, partner scorecards). */
 export const ASSIGNMENT_DECLINE_REASONS = [
   'out_of_stock',
@@ -167,6 +188,23 @@ export const serviceRequestMachine = defineMachine(
     { from: 'paid', to: 'completed', by: ['system', 'customer'] },
   ],
 );
+
+/** Requests a customer may still cancel (before the vehicle reaches the workshop; spec 06). */
+export const SERVICE_CUSTOMER_CANCELLABLE = [
+  'requested',
+  'needs_routing',
+  'awaiting_workshop',
+  'proposed',
+  'confirmed',
+] as const satisfies readonly ServiceRequestStatus[];
+
+/** States from which a workshop may send a (new) estimate: never while the customer is deciding one. */
+export const ESTIMATE_SENDABLE_FROM = [
+  'vehicle_received',
+  'approved',
+  'in_progress',
+  'no_work_approved',
+] as const satisfies readonly ServiceRequestStatus[];
 
 /** Online payment status — monotonic so late/out-of-order webhooks can never regress it. */
 export const PAYMENT_STATES = [

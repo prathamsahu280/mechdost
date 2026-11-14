@@ -61,6 +61,25 @@ export interface ServerEventProps {
   };
   agreement_accepted: { shopId: string; version: number };
   shop_went_live: { shopId: string };
+  /** Workshops and service requests (spec 06): codes, ids, enums and counts only. */
+  service_requested: {
+    requestCode: string;
+    workshopId: string | null;
+    routing: 'chosen' | 'mechdost';
+    services: number;
+  };
+  service_status_changed: {
+    requestCode: string;
+    workshopId: string | null;
+    from: string;
+    to: string;
+    by: 'customer' | 'workshop' | 'admin' | 'system';
+    reasonCode: string | null;
+  };
+  service_estimate_sent: { requestCode: string; workshopId: string; revision: number; lines: number };
+  service_estimate_decided: { requestCode: string; revision: number; approved: number; declined: number };
+  service_billed: { requestCode: string; workshopId: string; totalPaise: number; lines: number };
+  admin_workshop_saved: { workshopId: string; action: 'created' | 'updated'; published: boolean };
 }
 export type ServerEvent = keyof ServerEventProps;
 

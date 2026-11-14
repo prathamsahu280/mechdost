@@ -35,3 +35,8 @@ export * from './partner-applications';
 export * from './price-requests';
 export * from './agreements';
 export * from './admin-prices';
+export * from './workshops';
+export * from './service-requests';
+export * from './service-jobs';
+export * from './service-routing';
+export * from './service-notifications';
