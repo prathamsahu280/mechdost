@@ -52,74 +52,76 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 
 ## Counts
 
-| Id prefix         | Page                                        | Component                                                                           | Strategy | States   | In core |
-| ----------------- | ------------------------------------------- | ----------------------------------------------------------------------------------- | -------- | -------- | ------- |
-| CHR-HEADER        | Chrome                                      | Header (brand, nav, search, language, theme, account, cart pill)                    | cross    | 26       | 11      |
-| CHR-TABBAR        | Chrome                                      | Bottom tab bar (under 1024 px)                                                      | pairwise | 20       | 5       |
-| CHR-FOOTER        | Chrome                                      | Footer (help, columns, privacy choices, theme)                                      | pairwise | 16       | 0       |
-| CHR-FLOAT         | Chrome                                      | Floating stack: assistant launcher, compare tray, consent banner, tab bar together  | cross    | 24       | 3       |
-| CHR-ASSIST        | Chrome                                      | Assistant launcher and panel                                                        | pairwise | 16       | 0       |
-| CHR-CONSENT       | Chrome                                      | Cookie and consent banner                                                           | pairwise | 16       | 0       |
-| HOME-HERO         | Home                                        | Hero with search                                                                    | pairwise | 25       | 0       |
-| HOME-TRUST        | Home                                        | Trust strip                                                                         | pairwise | 25       | 0       |
-| HOME-CATS         | Home                                        | Category tiles                                                                      | pairwise | 25       | 0       |
-| HOME-RANGE        | Home                                        | Product range (cards without compare)                                               | pairwise | 25       | 7       |
-| HOME-ROUTE        | Home                                        | How an order travels (order route)                                                  | pairwise | 25       | 0       |
-| HOME-SERVICE      | Home                                        | Workshop service section                                                            | pairwise | 25       | 0       |
-| HOME-WORKSHOPS    | Home                                        | Top workshops                                                                       | pairwise | 25       | 0       |
-| HOME-PARTNER      | Home                                        | Partner teaser                                                                      | pairwise | 25       | 0       |
-| HOME-FAQ          | Home                                        | FAQ (details/summary accordion)                                                     | pairwise | 24       | 0       |
-| SHOP-CARD         | Shop (/shop)                                | Product card × compare list × cart (full cross)                                     | cross    | 128      | 14      |
-| SHOP-ACTION       | Shop (/shop)                                | Card actions clicked, then every card re-checked (cross-entity sync)                | cross    | 40       | 2       |
-| SHOP-FILTERS      | Shop (/shop)                                | Search, category chips, vehicle chips, sort, results count, empty result            | pairwise | 48       | 6       |
-| SHOP-POPOVER      | Shop (/shop)                                | Quick-details popover (ⓘ) on the first and the last card of a row                   | pairwise | 16       | 0       |
-| SHOP-TRAY         | Shop (/shop)                                | Compare tray (count, open, clear) over the listing                                  | cross    | 32       | 2       |
-| STEP              | Quantity stepper (card, product page, cart) | Stepper − / count / + × quantity × hover/focus/active/disabled (full cross)         | cross    | 180      | 6       |
-| PDP-BUYBOX        | Product page (/shop/[slug])                 | Buy box: price, MRP and saving, stock, add to cart / stepper, compare               | pairwise | 41       | 3       |
-| PDP-REVIEWS       | Product page (/shop/[slug])                 | Ratings summary, review list, write-a-review entry                                  | pairwise | 16       | 0       |
-| PDP-RELATED       | Product page (/shop/[slug])                 | Related products row (cards)                                                        | pairwise | 16       | 0       |
-| CMP-TABLE         | Compare (/compare)                          | Comparison table × column count × badges × partial in-cart (full cross)             | cross    | 126      | 2       |
-| CMP-EMPTY         | Compare (/compare)                          | Compare with one or no product (empty state and next action)                        | pairwise | 16       | 0       |
-| CART-LINES        | Cart (/cart)                                | Cart lines (stepper, remove, line total) and summary                                | pairwise | 40       | 10      |
-| CART-EMPTY        | Cart (/cart)                                | Empty cart (one next action, category shortcuts)                                    | pairwise | 16       | 0       |
-| CHK-FORM          | Checkout (/checkout)                        | Checkout form (contact, address, business GSTIN, payment) and summary               | pairwise | 25       | 1       |
-| ORD-VIEW          | Order (/orders/[code])                      | Order status, timeline, lines, delivery code, cancel/rate/support                   | pairwise | 24       | 1       |
-| SR-VIEW           | Service request (/service/[code])           | Request status, proposal, itemised estimate (per-line approval), bill               | pairwise | 40       | 1       |
-| QT-PAGES          | Bulk quotes (/quotes)                       | Quote request form and quote thread                                                 | pairwise | 16       | 0       |
-| ACC-OVERVIEW      | Account (/account)                          | Account section: overview (section bar + content)                                   | pairwise | 16       | 2       |
-| ACC-ORDERS        | Account (/account)                          | Account section: orders (section bar + content)                                     | pairwise | 16       | 2       |
-| ACC-SERVICES      | Account (/account)                          | Account section: services (section bar + content)                                   | pairwise | 16       | 0       |
-| ACC-QUOTES        | Account (/account)                          | Account section: quotes (section bar + content)                                     | pairwise | 16       | 0       |
-| ACC-SUPPORT       | Account (/account)                          | Account section: support (section bar + content)                                    | pairwise | 16       | 0       |
-| ACC-COINS         | Account (/account)                          | Account section: coins (section bar + content)                                      | pairwise | 16       | 0       |
-| ACC-VEHICLES      | Account (/account)                          | Account section: vehicles (section bar + content)                                   | pairwise | 16       | 0       |
-| ACC-ADDRESSES     | Account (/account)                          | Account section: addresses (section bar + content)                                  | pairwise | 16       | 0       |
-| ACC-PROFILE       | Account (/account)                          | Account section: profile (section bar + content)                                    | pairwise | 16       | 0       |
-| WS-FINDER         | Workshops (/workshops)                      | Finder: PIN, vehicle, use my location, list cards, map toggle (map canvas excluded) | pairwise | 16       | 2       |
-| WS-PROFILE        | Workshop page (/workshops/[slug])           | Workshop profile: services menu, reviews, booking form                              | pairwise | 25       | 1       |
-| PTN-LANDING       | Partners (/partners)                        | Partner landing (kinds, benefits, apply links)                                      | pairwise | 16       | 0       |
-| PTN-APPLY         | Partners (/partners/apply/[kind])           | Application form (GSTIN, tick lists, location picker; map canvas excluded)          | pairwise | 24       | 1       |
-| SUP-PAGE          | Support (/support)                          | Support page and request form                                                       | pairwise | 16       | 0       |
-| LOGIN-FORM        | Sign in (/login)                            | Sign-in form (password, errors, show password)                                      | pairwise | 16       | 0       |
-| POL-PAGE          | Policies                                    | Policy pages (sections, anchors)                                                    | pairwise | 40       | 0       |
-| PRT-SHOP          | Shop portal (/partner/shop)                 | Shop portal: offers with timer, accept/decline, orders, prices                      | pairwise | 16       | 1       |
-| PRT-WORKSHOP      | Workshop portal (/partner/workshop)         | Workshop portal: requests, proposal, estimate lines, bill                           | pairwise | 16       | 0       |
-| ADM-OVERVIEW      | Admin console (/admin)                      | Admin section: overview (section bar, tables, actions)                              | pairwise | 16       | 0       |
-| ADM-ORDERS        | Admin console (/admin)                      | Admin section: orders (section bar, tables, actions)                                | pairwise | 16       | 1       |
-| ADM-SERVICES      | Admin console (/admin)                      | Admin section: services (section bar, tables, actions)                              | pairwise | 16       | 0       |
-| ADM-QUOTES        | Admin console (/admin)                      | Admin section: quotes (section bar, tables, actions)                                | pairwise | 16       | 0       |
-| ADM-APPLICATIONS  | Admin console (/admin)                      | Admin section: applications (section bar, tables, actions)                          | pairwise | 16       | 0       |
-| ADM-PARTNERS      | Admin console (/admin)                      | Admin section: partners (section bar, tables, actions)                              | pairwise | 16       | 0       |
-| ADM-CATALOGUE     | Admin console (/admin)                      | Admin section: catalogue (section bar, tables, actions)                             | pairwise | 16       | 0       |
-| ADM-CUSTOMERS     | Admin console (/admin)                      | Admin section: customers (section bar, tables, actions)                             | pairwise | 16       | 0       |
-| ADM-REVIEWS       | Admin console (/admin)                      | Admin section: reviews (section bar, tables, actions)                               | pairwise | 16       | 0       |
-| ADM-SUPPORT       | Admin console (/admin)                      | Admin section: support (section bar, tables, actions)                               | pairwise | 16       | 0       |
-| ADM-COINS         | Admin console (/admin)                      | Admin section: coins (section bar, tables, actions)                                 | pairwise | 16       | 0       |
-| ADM-CONTENT       | Admin console (/admin)                      | Admin section: content (section bar, tables, actions)                               | pairwise | 16       | 0       |
-| ADM-LAYOUT        | Admin console (/admin)                      | Admin section: layout (section bar, tables, actions)                                | pairwise | 16       | 0       |
-| ADM-SETTINGS      | Admin console (/admin)                      | Admin section: settings (section bar, tables, actions)                              | pairwise | 16       | 0       |
-| ADM-NOTIFICATIONS | Admin console (/admin)                      | Admin section: notifications (section bar, tables, actions)                         | pairwise | 16       | 0       |
-| **Total**         |                                             |                                                                                     |          | **1731** | **84**  |
+| Id prefix          | Page                                        | Component                                                                           | Strategy | States   | In core |
+| ------------------ | ------------------------------------------- | ----------------------------------------------------------------------------------- | -------- | -------- | ------- |
+| CHR-HEADER         | Chrome                                      | Header (brand, nav, search, language, theme, account, cart pill)                    | cross    | 26       | 11      |
+| CHR-TABBAR         | Chrome                                      | Bottom tab bar (under 1024 px)                                                      | pairwise | 20       | 5       |
+| CHR-FOOTER         | Chrome                                      | Footer (help, columns, privacy choices, theme)                                      | pairwise | 16       | 0       |
+| CHR-FLOAT          | Chrome                                      | Floating stack: assistant launcher, compare tray, consent banner, tab bar together  | cross    | 24       | 3       |
+| CHR-ASSIST         | Chrome                                      | Assistant launcher and panel                                                        | pairwise | 16       | 0       |
+| CHR-CONSENT        | Chrome                                      | Cookie and consent banner                                                           | pairwise | 16       | 0       |
+| HOME-HERO          | Home                                        | Hero with search                                                                    | pairwise | 25       | 0       |
+| HOME-TRUST         | Home                                        | Trust strip                                                                         | pairwise | 25       | 0       |
+| HOME-CATS          | Home                                        | Category tiles                                                                      | pairwise | 25       | 0       |
+| HOME-RANGE         | Home                                        | Product range (cards without compare)                                               | pairwise | 25       | 7       |
+| HOME-ROUTE         | Home                                        | How an order travels (order route)                                                  | pairwise | 25       | 0       |
+| HOME-SERVICE       | Home                                        | Workshop service section                                                            | pairwise | 25       | 0       |
+| HOME-WORKSHOPS     | Home                                        | Top workshops                                                                       | pairwise | 25       | 0       |
+| HOME-PARTNER       | Home                                        | Partner teaser                                                                      | pairwise | 25       | 0       |
+| HOME-FAQ           | Home                                        | FAQ (details/summary accordion)                                                     | pairwise | 24       | 0       |
+| SHOP-CARD          | Shop (/shop)                                | Product card × compare list × cart (full cross)                                     | cross    | 128      | 14      |
+| SHOP-ACTION        | Shop (/shop)                                | Card actions clicked, then every card re-checked (cross-entity sync)                | cross    | 40       | 2       |
+| SHOP-FILTERS       | Shop (/shop)                                | Search, category chips, vehicle chips, sort, results count, empty result            | pairwise | 48       | 6       |
+| SHOP-POPOVER       | Shop (/shop)                                | Quick-details popover (ⓘ) on the first and the last card of a row                   | pairwise | 16       | 0       |
+| SHOP-TRAY          | Shop (/shop)                                | Compare tray (count, open, clear) over the listing                                  | cross    | 32       | 2       |
+| STEP               | Quantity stepper (card, product page, cart) | Stepper − / count / + × quantity × hover/focus/active/disabled (full cross)         | cross    | 180      | 6       |
+| PDP-BUYBOX         | Product page (/shop/[slug])                 | Buy box: price, MRP and saving, stock, add to cart / stepper, compare               | pairwise | 41       | 3       |
+| PDP-REVIEWS        | Product page (/shop/[slug])                 | Ratings summary, review list, write-a-review entry                                  | pairwise | 16       | 0       |
+| PDP-RELATED        | Product page (/shop/[slug])                 | Related products row (cards)                                                        | pairwise | 16       | 0       |
+| CMP-TABLE          | Compare (/compare)                          | Comparison table × column count × badges × partial in-cart (full cross)             | cross    | 126      | 2       |
+| CMP-EMPTY          | Compare (/compare)                          | Compare with one or no product (empty state and next action)                        | pairwise | 16       | 0       |
+| CART-LINES         | Cart (/cart)                                | Cart lines (stepper, remove, line total) and summary                                | pairwise | 40       | 10      |
+| CART-EMPTY         | Cart (/cart)                                | Empty cart (one next action, category shortcuts)                                    | pairwise | 16       | 0       |
+| CHK-FORM           | Checkout (/checkout)                        | Checkout form (contact, address, business GSTIN, payment) and summary               | pairwise | 25       | 1       |
+| ORD-VIEW           | Order (/orders/[code])                      | Order status, timeline, lines, delivery code, cancel/rate/support                   | pairwise | 24       | 1       |
+| SR-VIEW            | Service request (/service/[code])           | Request status, proposal, itemised estimate (per-line approval), bill               | pairwise | 40       | 1       |
+| QT-PAGES           | Bulk quotes (/quotes)                       | Quote request form and quote thread                                                 | pairwise | 16       | 0       |
+| ACC-OVERVIEW       | Account (/account)                          | Account section: overview (section bar + content)                                   | pairwise | 16       | 2       |
+| ACC-ORDERS         | Account (/account)                          | Account section: orders (section bar + content)                                     | pairwise | 16       | 2       |
+| ACC-SERVICES       | Account (/account)                          | Account section: services (section bar + content)                                   | pairwise | 16       | 0       |
+| ACC-QUOTES         | Account (/account)                          | Account section: quotes (section bar + content)                                     | pairwise | 16       | 0       |
+| ACC-SUPPORT        | Account (/account)                          | Account section: support (section bar + content)                                    | pairwise | 16       | 0       |
+| ACC-COINS          | Account (/account)                          | Account section: coins (section bar + content)                                      | pairwise | 16       | 0       |
+| ACC-VEHICLES       | Account (/account)                          | Account section: vehicles (section bar + content)                                   | pairwise | 16       | 0       |
+| ACC-ADDRESSES      | Account (/account)                          | Account section: addresses (section bar + content)                                  | pairwise | 16       | 0       |
+| ACC-PROFILE        | Account (/account)                          | Account section: profile (section bar + content)                                    | pairwise | 16       | 0       |
+| ACC-VEHICLES-DATA  | Account (/account)                          | Account vehicles: empty, one, at the limit of 10, long Hindi text                   | pairwise | 32       | 2       |
+| ACC-ADDRESSES-DATA | Account (/account)                          | Account addresses: empty, one, at the limit of 10, long Hindi text                  | pairwise | 32       | 2       |
+| WS-FINDER          | Workshops (/workshops)                      | Finder: PIN, vehicle, use my location, list cards, map toggle (map canvas excluded) | pairwise | 16       | 2       |
+| WS-PROFILE         | Workshop page (/workshops/[slug])           | Workshop profile: services menu, reviews, booking form                              | pairwise | 25       | 1       |
+| PTN-LANDING        | Partners (/partners)                        | Partner landing (kinds, benefits, apply links)                                      | pairwise | 16       | 0       |
+| PTN-APPLY          | Partners (/partners/apply/[kind])           | Application form (GSTIN, tick lists, location picker; map canvas excluded)          | pairwise | 24       | 1       |
+| SUP-PAGE           | Support (/support)                          | Support page and request form                                                       | pairwise | 16       | 0       |
+| LOGIN-FORM         | Sign in (/login)                            | Sign-in form (password, errors, show password)                                      | pairwise | 16       | 0       |
+| POL-PAGE           | Policies                                    | Policy pages (sections, anchors)                                                    | pairwise | 40       | 0       |
+| PRT-SHOP           | Shop portal (/partner/shop)                 | Shop portal: offers with timer, accept/decline, orders, prices                      | pairwise | 16       | 1       |
+| PRT-WORKSHOP       | Workshop portal (/partner/workshop)         | Workshop portal: requests, proposal, estimate lines, bill                           | pairwise | 16       | 0       |
+| ADM-OVERVIEW       | Admin console (/admin)                      | Admin section: overview (section bar, tables, actions)                              | pairwise | 16       | 0       |
+| ADM-ORDERS         | Admin console (/admin)                      | Admin section: orders (section bar, tables, actions)                                | pairwise | 16       | 1       |
+| ADM-SERVICES       | Admin console (/admin)                      | Admin section: services (section bar, tables, actions)                              | pairwise | 16       | 0       |
+| ADM-QUOTES         | Admin console (/admin)                      | Admin section: quotes (section bar, tables, actions)                                | pairwise | 16       | 0       |
+| ADM-APPLICATIONS   | Admin console (/admin)                      | Admin section: applications (section bar, tables, actions)                          | pairwise | 16       | 0       |
+| ADM-PARTNERS       | Admin console (/admin)                      | Admin section: partners (section bar, tables, actions)                              | pairwise | 16       | 0       |
+| ADM-CATALOGUE      | Admin console (/admin)                      | Admin section: catalogue (section bar, tables, actions)                             | pairwise | 16       | 0       |
+| ADM-CUSTOMERS      | Admin console (/admin)                      | Admin section: customers (section bar, tables, actions)                             | pairwise | 16       | 0       |
+| ADM-REVIEWS        | Admin console (/admin)                      | Admin section: reviews (section bar, tables, actions)                               | pairwise | 16       | 0       |
+| ADM-SUPPORT        | Admin console (/admin)                      | Admin section: support (section bar, tables, actions)                               | pairwise | 16       | 0       |
+| ADM-COINS          | Admin console (/admin)                      | Admin section: coins (section bar, tables, actions)                                 | pairwise | 16       | 0       |
+| ADM-CONTENT        | Admin console (/admin)                      | Admin section: content (section bar, tables, actions)                               | pairwise | 16       | 0       |
+| ADM-LAYOUT         | Admin console (/admin)                      | Admin section: layout (section bar, tables, actions)                                | pairwise | 16       | 0       |
+| ADM-SETTINGS       | Admin console (/admin)                      | Admin section: settings (section bar, tables, actions)                              | pairwise | 16       | 0       |
+| ADM-NOTIFICATIONS  | Admin console (/admin)                      | Admin section: notifications (section bar, tables, actions)                         | pairwise | 16       | 0       |
+| **Total**          |                                             |                                                                                     |          | **1795** | **88**  |
 
 ## Chrome
 
@@ -1655,6 +1657,80 @@ Pairwise (all pairs of values); 16 states; scope `main`.
 - [ ] ACC-PROFILE-014 · 1440px · dark · hi · customer · world=busy · /account/profile · asserts: present inside overlap covered clipped tap hscroll focus console hindi
 - [ ] ACC-PROFILE-015 · 1920px · light · en · customer · world=empty · /account/profile · asserts: present inside overlap covered clipped tap hscroll focus console
 - [ ] ACC-PROFILE-016 · 1920px · dark · hi · customer · world=busy · /account/profile · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+
+### ACC-VEHICLES-DATA — Account vehicles: empty, one, at the limit of 10, long Hindi text
+
+Pairwise (all pairs of values); 32 states; scope `main`.
+
+- [ ] ACC-VEHICLES-DATA-001 · 320px · light · en · customer · world=empty · /account/vehicles · data=empty · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] ACC-VEHICLES-DATA-002 · 320px · dark · hi · customer · world=empty · /account/vehicles · data=one · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ACC-VEHICLES-DATA-003 · 390px · light · hi · customer · world=empty · /account/vehicles · data=limit · asserts: present inside overlap covered clipped tap hscroll focus console hindi axe · core
+- [ ] ACC-VEHICLES-DATA-004 · 390px · dark · en · customer · world=empty · /account/vehicles · data=long · asserts: present inside overlap covered clipped tap hscroll focus console axe · core
+- [ ] ACC-VEHICLES-DATA-005 · 480px · light · en · customer · world=empty · /account/vehicles · data=one · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] ACC-VEHICLES-DATA-006 · 480px · dark · hi · customer · world=empty · /account/vehicles · data=empty · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ACC-VEHICLES-DATA-007 · 768px · light · en · customer · world=empty · /account/vehicles · data=limit · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] ACC-VEHICLES-DATA-008 · 768px · dark · hi · customer · world=empty · /account/vehicles · data=long · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ACC-VEHICLES-DATA-009 · 1024px · light · en · customer · world=empty · /account/vehicles · data=long · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] ACC-VEHICLES-DATA-010 · 1024px · dark · hi · customer · world=empty · /account/vehicles · data=limit · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ACC-VEHICLES-DATA-011 · 1280px · light · en · customer · world=empty · /account/vehicles · data=empty · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] ACC-VEHICLES-DATA-012 · 1280px · dark · hi · customer · world=empty · /account/vehicles · data=one · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ACC-VEHICLES-DATA-013 · 1440px · light · en · customer · world=empty · /account/vehicles · data=empty · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] ACC-VEHICLES-DATA-014 · 1440px · dark · hi · customer · world=empty · /account/vehicles · data=one · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ACC-VEHICLES-DATA-015 · 1920px · light · en · customer · world=empty · /account/vehicles · data=limit · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] ACC-VEHICLES-DATA-016 · 1920px · dark · hi · customer · world=empty · /account/vehicles · data=long · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ACC-VEHICLES-DATA-017 · 320px · light · en · customer · world=empty · /account/vehicles · data=limit · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] ACC-VEHICLES-DATA-018 · 320px · dark · hi · customer · world=empty · /account/vehicles · data=long · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ACC-VEHICLES-DATA-019 · 390px · light · en · customer · world=empty · /account/vehicles · data=empty · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] ACC-VEHICLES-DATA-020 · 390px · dark · hi · customer · world=empty · /account/vehicles · data=one · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ACC-VEHICLES-DATA-021 · 480px · light · en · customer · world=empty · /account/vehicles · data=limit · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] ACC-VEHICLES-DATA-022 · 480px · dark · hi · customer · world=empty · /account/vehicles · data=long · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ACC-VEHICLES-DATA-023 · 768px · light · en · customer · world=empty · /account/vehicles · data=empty · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] ACC-VEHICLES-DATA-024 · 768px · dark · hi · customer · world=empty · /account/vehicles · data=one · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ACC-VEHICLES-DATA-025 · 1024px · light · en · customer · world=empty · /account/vehicles · data=empty · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] ACC-VEHICLES-DATA-026 · 1024px · dark · hi · customer · world=empty · /account/vehicles · data=one · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ACC-VEHICLES-DATA-027 · 1280px · light · en · customer · world=empty · /account/vehicles · data=limit · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] ACC-VEHICLES-DATA-028 · 1280px · dark · hi · customer · world=empty · /account/vehicles · data=long · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ACC-VEHICLES-DATA-029 · 1440px · light · en · customer · world=empty · /account/vehicles · data=limit · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] ACC-VEHICLES-DATA-030 · 1440px · dark · hi · customer · world=empty · /account/vehicles · data=long · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ACC-VEHICLES-DATA-031 · 1920px · light · en · customer · world=empty · /account/vehicles · data=empty · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] ACC-VEHICLES-DATA-032 · 1920px · dark · hi · customer · world=empty · /account/vehicles · data=one · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+
+### ACC-ADDRESSES-DATA — Account addresses: empty, one, at the limit of 10, long Hindi text
+
+Pairwise (all pairs of values); 32 states; scope `main`.
+
+- [ ] ACC-ADDRESSES-DATA-001 · 320px · light · en · customer · world=empty · /account/addresses · data=empty · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] ACC-ADDRESSES-DATA-002 · 320px · dark · hi · customer · world=empty · /account/addresses · data=one · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ACC-ADDRESSES-DATA-003 · 390px · light · hi · customer · world=empty · /account/addresses · data=limit · asserts: present inside overlap covered clipped tap hscroll focus console hindi axe · core
+- [ ] ACC-ADDRESSES-DATA-004 · 390px · dark · en · customer · world=empty · /account/addresses · data=long · asserts: present inside overlap covered clipped tap hscroll focus console axe · core
+- [ ] ACC-ADDRESSES-DATA-005 · 480px · light · en · customer · world=empty · /account/addresses · data=one · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] ACC-ADDRESSES-DATA-006 · 480px · dark · hi · customer · world=empty · /account/addresses · data=empty · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ACC-ADDRESSES-DATA-007 · 768px · light · en · customer · world=empty · /account/addresses · data=limit · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] ACC-ADDRESSES-DATA-008 · 768px · dark · hi · customer · world=empty · /account/addresses · data=long · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ACC-ADDRESSES-DATA-009 · 1024px · light · en · customer · world=empty · /account/addresses · data=long · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] ACC-ADDRESSES-DATA-010 · 1024px · dark · hi · customer · world=empty · /account/addresses · data=limit · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ACC-ADDRESSES-DATA-011 · 1280px · light · en · customer · world=empty · /account/addresses · data=empty · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] ACC-ADDRESSES-DATA-012 · 1280px · dark · hi · customer · world=empty · /account/addresses · data=one · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ACC-ADDRESSES-DATA-013 · 1440px · light · en · customer · world=empty · /account/addresses · data=empty · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] ACC-ADDRESSES-DATA-014 · 1440px · dark · hi · customer · world=empty · /account/addresses · data=one · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ACC-ADDRESSES-DATA-015 · 1920px · light · en · customer · world=empty · /account/addresses · data=limit · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] ACC-ADDRESSES-DATA-016 · 1920px · dark · hi · customer · world=empty · /account/addresses · data=long · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ACC-ADDRESSES-DATA-017 · 320px · light · en · customer · world=empty · /account/addresses · data=limit · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] ACC-ADDRESSES-DATA-018 · 320px · dark · hi · customer · world=empty · /account/addresses · data=long · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ACC-ADDRESSES-DATA-019 · 390px · light · en · customer · world=empty · /account/addresses · data=empty · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] ACC-ADDRESSES-DATA-020 · 390px · dark · hi · customer · world=empty · /account/addresses · data=one · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ACC-ADDRESSES-DATA-021 · 480px · light · en · customer · world=empty · /account/addresses · data=limit · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] ACC-ADDRESSES-DATA-022 · 480px · dark · hi · customer · world=empty · /account/addresses · data=long · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ACC-ADDRESSES-DATA-023 · 768px · light · en · customer · world=empty · /account/addresses · data=empty · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] ACC-ADDRESSES-DATA-024 · 768px · dark · hi · customer · world=empty · /account/addresses · data=one · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ACC-ADDRESSES-DATA-025 · 1024px · light · en · customer · world=empty · /account/addresses · data=empty · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] ACC-ADDRESSES-DATA-026 · 1024px · dark · hi · customer · world=empty · /account/addresses · data=one · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ACC-ADDRESSES-DATA-027 · 1280px · light · en · customer · world=empty · /account/addresses · data=limit · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] ACC-ADDRESSES-DATA-028 · 1280px · dark · hi · customer · world=empty · /account/addresses · data=long · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ACC-ADDRESSES-DATA-029 · 1440px · light · en · customer · world=empty · /account/addresses · data=limit · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] ACC-ADDRESSES-DATA-030 · 1440px · dark · hi · customer · world=empty · /account/addresses · data=long · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ACC-ADDRESSES-DATA-031 · 1920px · light · en · customer · world=empty · /account/addresses · data=empty · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] ACC-ADDRESSES-DATA-032 · 1920px · dark · hi · customer · world=empty · /account/addresses · data=one · asserts: present inside overlap covered clipped tap hscroll focus console hindi
 
 ## Workshops (/workshops)
 

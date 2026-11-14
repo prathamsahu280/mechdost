@@ -77,3 +77,7 @@ No test in this spec may be skipped in CI; schema PRs require the `drizzle-postg
 ## Data model note: event store cursor index (migration 0053, 2026-11-14)
 
 - `events_received_idx` on `events (received_at, id)`, created on the partitioned parent, so every existing partition and every partition `ensure_event_partitions` makes later gets it. It serves the PostHog forwarder's read (`readForwardableEvents`: `(received_at, id) > cursor`, ordered) as an index range scan. No data change; plain build (CONCURRENTLY is not allowed on a partitioned parent; the table is small at launch). Numbered 0053 because 0049–0052 are taken by parallel branches; the journal `when` is re-stamped at merge (L106).
+
+## Data model note: customer account (2026-11-15)
+
+No migration. The existing `addresses` / `vehicles` rules are now used by the API: the one-default partial unique indexes, the per-customer live registration unique index (`vehicles_registration_uq`) and the version triggers. The limit of 10 per customer is enforced in the repository under a `users` row lock (`select … for update`), so concurrent creates cannot exceed it (test: 14 racing creates leave exactly 10). A default swap clears the old default before setting the new one inside one transaction, so the partial unique index holds at every statement.

@@ -616,14 +616,14 @@ and measures boxes.
 
 | Part                       | Where                                                                                                                              |
 | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| Component state model      | `apps/web/e2e/state-audit/model.ts` (65 components, their dimensions and values)                                                   |
+| Component state model      | `apps/web/e2e/state-audit/model.ts` (67 components, their dimensions and values)                                                   |
 | Pairwise / cross generator | `apps/web/e2e/state-audit/pairwise.ts` (deterministic, no dependency, unit-tested)                                                 |
 | Cases and ids              | `apps/web/e2e/state-audit/cases.ts` (`SHOP-CARD-017` …; chunks for the overnight run)                                              |
 | Geometry assertions        | `apps/web/e2e/state-audit/geometry.ts` (runs in the page)                                                                          |
 | Runner per case            | `apps/web/e2e/state-audit/harness.ts`; tests in `state-audit.audit.ts`                                                             |
 | Known, filed bugs          | `apps/web/e2e/state-audit/known-issues.ts` (annotations only with `STATE_AUDIT_KNOWN=allow`)                                       |
 | Config                     | `apps/web/playwright.state-audit.config.ts` (one Chromium project; not part of `pnpm e2e`)                                         |
-| Written checklist          | `docs/qa/ui-state-checklist.md` (1,731 items; one test each; ticked from the report)                                               |
+| Written checklist          | `docs/qa/ui-state-checklist.md` (1,795 items; one test each; ticked from the report)                                               |
 | Scripts                    | `apps/web/scripts/state-audit-checklist.mjs` (regenerate), `state-audit-tick.mjs` (tick), `state-audit-run.mjs` (overnight chunks) |
 
 ### 9.1 Dimensions
@@ -644,6 +644,7 @@ value one meaning (`harness.ts` `seedFor` / `prepare` / `interact`):
 | `interaction` | hover-dec, hover-inc, focus-dec, focus-inc, active-inc (disabled covered at qty 1 / 99)                   | stepper part hovered, Tab-focused or held down while measuring                                                                      |
 | `action`      | compare-other, start-new, add, inc, dec-remove                                                            | clicked before measuring; then every card is checked against the stored lists                                                       |
 | `open`        | closed, first, last, all                                                                                  | FAQ items, quick-details popover, assistant panel                                                                                   |
+| `data`        | empty, one, limit (10), long (very long Hindi text)                                                       | the demo customer's saved vehicles and addresses on `/account/vehicles` and `/account/addresses` (`customerWithSavedData`)          |
 | `form`        | clean, errors (submitted empty), filled                                                                   | forms on checkout, booking, partner application, support, sign-in, quotes                                                           |
 | `consent`     | decided, open                                                                                             | banner open = no `mechdost-consent`                                                                                                 |
 
@@ -692,7 +693,7 @@ node apps/web/scripts/state-audit-run.mjs all --date 2026-11-15
 | E     | PRT-, ADM-                                          | 272   |
 
 Expected duration: about 6–8 s per test (load, settle, a scrolling scan, up to 16 hovers and 16 focus stops,
-axe on a quarter of the tests), so **3–4 hours for all 1,731** with one worker. Each chunk takes 30–60 minutes
+axe on a quarter of the tests), so **3–4 hours for all 1,795** with one worker. Each chunk takes 30–60 minutes
 and is ticked as soon as it ends. Logs, JSON reports and screenshots are kept in
 `apps/web/test-results/state-audit-<date>/<chunk>/`, which is git-ignored. The checklist links point there.
 

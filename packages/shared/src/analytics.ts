@@ -142,6 +142,12 @@ export interface ServerEventProps {
   quote_expired: { quoteCode: string; reasonCode: string; offerVersion: number };
   /** The active offer ran out; the quote went back to negotiating. */
   quote_offer_expired: { quoteCode: string; offerVersion: number };
+  /** Customer account (design 2026-11-15): codes and flags only; no name, phone, address text or registration. */
+  address_saved: { addressId: string; label: string; isDefault: boolean; action: 'created' | 'updated' };
+  address_deleted: { addressId: string };
+  vehicle_saved: { vehicleId: string; type: string; fuel: string; action: 'created' | 'updated' };
+  vehicle_deleted: { vehicleId: string };
+  profile_updated: { fields: string[] };
 }
 export type ServerEvent = keyof ServerEventProps;
 

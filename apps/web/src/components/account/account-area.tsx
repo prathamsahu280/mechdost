@@ -43,6 +43,12 @@ const CoinsSectionApi = lazy(() =>
   import('./coins-section-api').then((m) => ({ default: m.CoinsSectionApi })),
 );
 
+// Real sign-in: addresses, vehicles and profile live on the API (design 2026-11-15); the demo keeps the browser copy.
+const AddressesApi = lazy(() => import('./account-api-sections').then((m) => ({ default: m.AddressesApi })));
+const VehiclesApi = lazy(() => import('./account-api-sections').then((m) => ({ default: m.VehiclesApi })));
+const ProfileApi = lazy(() => import('./account-api-sections').then((m) => ({ default: m.ProfileApi })));
+const sectionFallback = <div className="skeleton h-72 rounded-card" aria-hidden="true" />;
+
 const SECTION_EMOJI: Record<AccountSection, string> = {
   overview: '🏠',
   orders: '📦',
@@ -158,9 +164,33 @@ export function AccountArea({ section }: { section: AccountSection }) {
             <SupportSection account={session} />
           </Suspense>
         ) : null}
-        {section === 'vehicles' ? <Vehicles account={session} /> : null}
-        {section === 'addresses' ? <Addresses account={session} /> : null}
-        {section === 'profile' ? <Profile account={session} /> : null}
+        {section === 'vehicles' ? (
+          AUTH_MODE === 'firebase' ? (
+            <Suspense fallback={sectionFallback}>
+              <VehiclesApi />
+            </Suspense>
+          ) : (
+            <Vehicles account={session} />
+          )
+        ) : null}
+        {section === 'addresses' ? (
+          AUTH_MODE === 'firebase' ? (
+            <Suspense fallback={sectionFallback}>
+              <AddressesApi defaults={{ name: session.name, phone: session.phone }} />
+            </Suspense>
+          ) : (
+            <Addresses account={session} />
+          )
+        ) : null}
+        {section === 'profile' ? (
+          AUTH_MODE === 'firebase' ? (
+            <Suspense fallback={sectionFallback}>
+              <ProfileApi footer={<SignOutButton />} />
+            </Suspense>
+          ) : (
+            <Profile account={session} />
+          )
+        ) : null}
         {SHOW_DEMO_CONTROLS ? <p className="text-xs text-muted">{t('demoNote')}</p> : null}
       </div>
     </div>

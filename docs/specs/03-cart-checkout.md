@@ -153,3 +153,7 @@ With `NEXT_PUBLIC_DATA_MODE=api` the cart and checkout use the API, not the brow
 - **Response schemas:** `@mechdost/shared/checkout-api`.
 
 Ruling (2026-11-14): the customer screens switch on `DATA_MODE` (prices and SKUs are catalogue data); the portals switch on `AUTH_MODE`. Launch flips both together. Mixed combinations are not supported.
+
+## Built: saved addresses in the checkout (2026-11-15)
+
+In real sign-in the address step offers "Use a saved address" (`components/account/saved-pickers.tsx`, lazy, `GET /v1/me/addresses`). The default address is picked once on load and fills name, phone, address and PIN (the PIN re-quotes the cart); "A different address" goes back to typing. An address whose PIN is not serviceable shows "We don't deliver here yet." The order body is unchanged (`address` is still sent in full and snapshotted on the order); the picker only fills the form. Not done: "save this address for next time" at checkout.

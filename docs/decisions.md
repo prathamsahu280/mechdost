@@ -851,3 +851,11 @@ User 2026-11-15 ~01:00 IST: "go ahead and work on the 1,2,3,4,5,6" (6 = shop Wha
 ## 2026-10-31 — Skills installed
 
 - `ui-ux-pro-max` (nextlevelbuilder) and `obra/superpowers` (15 workflow skills) installed globally for Claude Code. See `research/skills.md` for the full evaluation and picks.
+
+## 2026-11-15 — Customer account on the API: builder rulings
+
+- **Gate:** the account sections switch on `AUTH_MODE === 'firebase'` (real sign-in), not `DATA_MODE`: they need a signed-in API user, not catalogue data. Demo unchanged. Cost if wrong: low (one condition).
+- **Name rule:** 2 to 60 characters after NFKC cleaning (spec 01), stricter than the old 1 to 80; too long is refused, never cut. Existing longer names stay as stored until edited.
+- **No migration:** `users.language` and both tables already had everything needed.
+- **Defaults:** first address is the default shipping address; deleting the default leaves none until the customer picks one (checkout falls back to the first). Billing default exists in the API only (no UI yet).
+- **Map pin:** the API accepts `lat`/`lng` (stored as `location`); the form has no pin picker yet. Queued as a later improvement (map adapter).

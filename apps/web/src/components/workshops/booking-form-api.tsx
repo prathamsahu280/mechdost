@@ -4,7 +4,19 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { VEHICLE_ICON, VEHICLE_TYPES, type VehicleType } from '@mechdost/shared/vehicles';
-import { useId, useMemo, useRef, useState, useSyncExternalStore, type SyntheticEvent } from 'react';
+import {
+  lazy,
+  Suspense,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type SyntheticEvent,
+} from 'react';
+import type { SavedVehicle } from '@mechdost/shared/account-api';
+import { useSession } from '@/demo/session';
+import { AUTH_MODE } from '@/lib/auth/mode';
 import { track } from '@/lib/analytics';
 import { formatPrice } from '@/lib/format';
 import { istDate, newIdempotencyKey, rangeOf, serviceErrorKey, servicesFor } from '@/lib/service-views';
@@ -14,6 +26,11 @@ const MAX_DAYS_AHEAD = 30;
 const SLOTS = ['morning', 'afternoon', 'evening'] as const;
 type Slot = (typeof SLOTS)[number];
 const noopSubscribe = () => () => undefined;
+
+// Real sign-in: the customer's saved vehicles (design 2026-11-15), loaded only for a signed-in customer.
+const SavedVehiclePicker = lazy(() =>
+  import('../account/saved-pickers').then((m) => ({ default: m.SavedVehiclePicker })),
+);
 
 export interface BookingWorkshop {
   slug: string;
@@ -67,6 +84,9 @@ export function BookingFormApi({
   const types = workshop ? workshop.vehicleTypes : [...VEHICLE_TYPES];
   const [vehicleType, setVehicleType] = useState<VehicleType>(types[0] ?? '2W');
   const [selected, setSelected] = useState<string[]>([]);
+  // A saved vehicle picked from the API (real sign-in) fills the type and the name below (design 2026-11-15).
+  const [savedVehicle, setSavedVehicle] = useState<SavedVehicle | null>(null);
+  const signedIn = useSession()?.role === 'customer';
   const [errors, setErrors] = useState<Partial<Record<Field, string>>>({});
   const [note, setNote] = useState<{ text: string; link?: 'sign_in' | 'verify' } | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -235,11 +255,35 @@ export function BookingFormApi({
       )}
 
       <div>
+        {AUTH_MODE === 'firebase' && signedIn ? (
+          <Suspense fallback={null}>
+            <div className="mb-3">
+              <SavedVehiclePicker
+                types={types}
+                onPick={(v) => {
+                  setSavedVehicle(v);
+                  if (v && types.includes(v.type)) {
+                    setVehicleType(v.type);
+                    setSelected([]);
+                  }
+                }}
+              />
+            </div>
+          </Suspense>
+        ) : null}
         <label htmlFor={fid('vehicle')} className="text-sm font-bold text-ink">
           {t('vehicle')}
         </label>
         <input
           {...aria('vehicle')}
+          key={savedVehicle?.id ?? 'typed'}
+          defaultValue={
+            savedVehicle
+              ? [savedVehicle.make, savedVehicle.model, savedVehicle.variant]
+                  .filter((x) => x !== null)
+                  .join(' ')
+              : ''
+          }
           name="vehicle"
           maxLength={80}
           placeholder={t('vehiclePlaceholder')}

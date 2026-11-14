@@ -40,7 +40,7 @@ export async function call<T>(
   path: string,
   schema: Schema<T>,
   init: {
-    method?: 'GET' | 'POST';
+    method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
     body?: unknown;
     bearer?: string | null;
     headers?: Record<string, string>;
@@ -77,7 +77,11 @@ export async function authed<T>(
   locale: string,
   path: string,
   schema: Schema<T>,
-  init: { method?: 'GET' | 'POST'; body?: unknown; headers?: Record<string, string> } = {},
+  init: {
+    method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
+    body?: unknown;
+    headers?: Record<string, string>;
+  } = {},
 ): Promise<ApiResult<T>> {
   const first = await token(locale);
   if (!first) return { ok: false, status: 401, code: 'AUTH_REQUIRED' };

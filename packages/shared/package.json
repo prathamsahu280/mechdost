@@ -56,7 +56,9 @@
     "./geo": "./src/geo.ts",
     "./geo-api": "./src/geo-api.ts",
     "./analytics-range": "./src/analytics-range.ts",
-    "./admin-analytics-api": "./src/admin-analytics-api.ts"
+    "./admin-analytics-api": "./src/admin-analytics-api.ts",
+    "./account": "./src/account.ts",
+    "./account-api": "./src/account-api.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
