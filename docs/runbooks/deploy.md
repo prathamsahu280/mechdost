@@ -210,6 +210,7 @@ Until `DEPLOY_ENABLED=true`, the workflow only builds and pushes images (which a
 ## 4. How a deploy works
 
 1. **Trigger:** `CI` finishes green on `main`, and `Deploy` starts (`workflow_run`). A manual run (`workflow_dispatch`) takes an optional `ref`.
+   - Since 2026-11-14, CI also builds both Docker images without pushing them (job "Docker images (build only)"). A broken Dockerfile now fails CI on every push and pull request, and never reaches the deploy.
 2. **Job `images`:**
    - checks out the exact tested commit;
    - builds `apps/api/Dockerfile` and `apps/web/Dockerfile` with the GitHub Actions cache;
