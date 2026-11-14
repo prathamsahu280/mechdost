@@ -57,6 +57,8 @@ export function templateProblem(input: { key: string; channel: Channel; body: st
   if (!CHANNELS.includes(input.channel)) return 'TEMPLATE_CHANNEL';
   // Emails have their own editor and checks (closed placeholder list per template): `saveEmailTemplate`.
   if (input.channel === 'email') return 'TEMPLATE_EMAIL_ENDPOINT';
+  // Bell and push messages have their own editor and checks (closed placeholder list per message).
+  if (input.channel === 'inapp' || input.channel === 'push') return 'TEMPLATE_NOTICE_ENDPOINT';
   const body = input.body.trim();
   if (body.length === 0) return 'TEMPLATE_EMPTY';
   if (input.channel === 'whatsapp') {
@@ -73,6 +75,7 @@ export function templateProblem(input: { key: string; channel: Channel; body: st
 const MESSAGES: Record<string, string> = {
   TEMPLATE_CHANNEL: 'Unknown channel',
   TEMPLATE_EMAIL_ENDPOINT: 'Emails are edited in the Emails tab',
+  TEMPLATE_NOTICE_ENDPOINT: 'Bell and push messages are edited in the Messages tab',
   TEMPLATE_EMPTY: 'Write the message text',
   TEMPLATE_UNKNOWN_EVENT: 'This event has no WhatsApp template',
   TEMPLATE_PROMO_WORDING:

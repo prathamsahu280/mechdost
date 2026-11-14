@@ -1,7 +1,9 @@
 import { and, eq } from 'drizzle-orm';
 import { isEmailTemplateKey, type EmailTemplateKey } from '@mechdost/shared/email-templates';
+import { NOTICE_FOR_EMAIL } from '@mechdost/shared/notice-catalogue';
 import { notificationTemplates, users } from '../schema';
 import { enqueueNotification, type Locale } from './notify';
+import { queueNotice } from './notices';
 import { globalFlagSetting } from './settings-admin';
 import type { Tx } from './orders';
 
@@ -50,6 +52,16 @@ export async function emailTemplateEnabled(tx: Tx, key: string, locale: Locale):
 
 export async function queueEmail(tx: Tx, input: QueueEmailInput): Promise<boolean> {
   if (!isEmailTemplateKey(input.template)) return false;
+  // The bell and push come with the same milestone, whether or not the person has an email address (spec 10).
+  const notice = NOTICE_FOR_EMAIL[input.template];
+  if (notice && input.userId)
+    await queueNotice(tx, {
+      kind: notice,
+      userId: input.userId,
+      entityId: input.entityId,
+      version: input.version,
+      params: input.payload,
+    });
   let email: string | null = null;
   let locale: Locale = input.fallbackLocale ?? 'en';
   let recipientUserId: string | null = null;

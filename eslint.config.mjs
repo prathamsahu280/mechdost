@@ -16,6 +16,8 @@ export default tseslint.config(
       '**/*.config.{js,mjs,cjs}',
       '**/scripts/*.mjs',
       '**/public/vendor/**',
+      // Plain browser scripts served as files (the push worker), not part of any TypeScript project.
+      '**/public/*.js',
     ],
   },
   js.configs.recommended,

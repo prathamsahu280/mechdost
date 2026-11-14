@@ -4,6 +4,12 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Current status
 
+- **2026-11-15 (morning): in-app bell and web push built** (branch `worktree-agent-a9d34f0d3fda674f2`, not merged; migration `0057_notice_push`, not applied; coordinator renumbers at merge). Design `docs/superpowers/specs/2026-11-15-bell-push-design.md`, plan `docs/superpowers/plans/2026-11-15-bell-push.md`, spec 10 "Bell and web push", runbook `docs/runbooks/push.md`, decisions "2026-11-15 — Bell and web push built".
+  - Built: `notifications` extended + `push_devices`; one writer `queueNotice` (hooked into `queueEmail`, staff alerts, shop routed); `/v1/me/notifications`, `/v1/me/push-devices`, `/v1/me/notification-preferences`; FCM `push` adapter in the dispatcher; worker jobs (offer-expiry reminder, refund-SLA alert, 90-day retention); admin Messages editor (`inapp`/`push` text, en/hi); header bell + `/notifications` centre + card + choices (Account → Notifications); shop offers list and admin routing queue refetch on arrivals; plain service worker; `@firebase/messaging` 0.13.3 loaded only after "Turn on" (import-graph test); consent + cap gate for promotions; analytics events; state-audit view rows `API-BELL`, `API-NOTICE-CENTRE`, `API-PUSH-PROMPT`, `API-NOTICE-PREFS`, `API-ADMIN-NOTICES`.
+  - Verified: `pnpm check` passes fully (2026-11-15, 12 of 12 tasks, 10 min 45 s): format, typecheck, ESLint 0 warnings, tests shared 316, db 524, web 399, api 283. New suites: `notice-catalogue` (8), db `notices` (24), api `notices` (17), web `push-lazy` and `notices-view` (16). No Playwright, no `next build`, no real push or email.
+  - **Waiting on the user:** Q103, both public values (VAPID key and Sender ID) as repository variables, then redeploy; enable the Firebase Cloud Messaging API for the project and give the server's service account permission to send (runbook push.md).
+  - **Not done:** live pings in the browser (the bell polls), foreground FCM messages, promotional senders; the measured JS budget run (no build here); Playwright/state-audit runs of the new views (API-mode audit, Q106).
+
 - **2026-11-15 (after midnight): launch merges in progress.** Each branch gets a fresh review and fixes, then is merged, re-stamped, gated, migrated live after a precheck, pushed and deploy-checked.
   - **On main and live/deploying:**
     - reviews (0046), PIN codes (0048 plus seed: 27 PINs, 21 active);

@@ -23,6 +23,7 @@ import {
   workshops,
 } from '../schema';
 import { queueEmail } from './email-notifications';
+import { queueStaffOrderPlaced } from './notice-events';
 import { localized } from './localized';
 import type { Locale } from './notify';
 import type { Tx } from './orders';
@@ -150,6 +151,8 @@ export async function queueOrderPlacedEmail(tx: Tx, groupId: string): Promise<vo
       };
     },
   });
+  // The placed checkout now waits for routing: tell the staff who route in its city (bell and push).
+  await queueStaffOrderPlaced(tx, groupId);
 }
 
 /** A captured online payment: the billing receipt. `paymentRowVersion` makes a replayed webhook mail once. */

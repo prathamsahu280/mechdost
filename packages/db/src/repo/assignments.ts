@@ -4,6 +4,7 @@ import { orderAssignments, orders } from '../schema';
 import type { ActorContext } from './actor';
 import { ConflictError, mapPgError, NotFoundError, ValidationError } from './errors';
 import { queueShopOrderRoutedEmail } from './email-events';
+import { queueStaffOrderNotice } from './notice-events';
 import { lockOrder, transitionOrder, type Tx } from './orders';
 
 /** The order behind an assignment, locked first (lock order: order row, then assignment — see `lockOrder`). */
@@ -144,13 +145,19 @@ export async function declineAssignment(
     )
     .returning();
   if (!a) throw new ConflictError('This order is no longer awaiting your response', 'ASSIGNMENT_UNAVAILABLE');
-  return transitionOrder(tx, {
+  const moved = await transitionOrder(tx, {
     orderId: a.orderId,
     from: 'awaiting_shop',
     to: 'needs_rerouting',
     expectedVersion: order.version,
     actor: args.actor,
   });
+  await queueStaffOrderNotice(tx, {
+    kind: 'staff.shop_declined',
+    orderId: a.orderId,
+    version: moved.version,
+  });
+  return moved;
 }
 
 /**
@@ -180,11 +187,17 @@ export async function expireAssignment(tx: Tx, args: { assignmentId: string }) {
     )
     .returning();
   if (!a) return null;
-  return transitionOrder(tx, {
+  const moved = await transitionOrder(tx, {
     orderId: a.orderId,
     from: 'awaiting_shop',
     to: 'needs_rerouting',
     expectedVersion: order.version,
     actor: { type: 'system' },
   });
+  await queueStaffOrderNotice(tx, {
+    kind: 'staff.shop_timed_out',
+    orderId: a.orderId,
+    version: moved.version,
+  });
+  return moved;
 }

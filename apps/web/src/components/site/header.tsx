@@ -2,6 +2,8 @@ import { useLocale, useTranslations } from 'next-intl';
 import { LocalLink } from '../ui/local-link';
 import { UI_EMOJI } from '@/lib/emoji';
 import { AccountLink } from '../auth/account-link';
+import { Bell } from '../notices/bell';
+import type { BellCopy } from '../notices/bell-copy';
 import { CartPill } from '../commerce/cart-pill';
 import { LanguageSwitcher } from './language-switcher';
 import { ThemeToggle } from './theme-toggle';
@@ -68,7 +70,27 @@ export function Header({ navItems }: { navItems: readonly NavItem[] }) {
   const language = useTranslations('language');
   const theme = useTranslations('theme');
   const auth = useTranslations('auth');
+  const bell = useTranslations('bell');
   const locale = useLocale();
+  // The bell's strings travel as props (no i18n runtime in the browser); `{count}` is filled in there.
+  const bellCopy: BellCopy = {
+    label: bell('label'),
+    labelUnread: bell('labelUnread', { count: '{count}' }),
+    liveOne: bell('liveOne'),
+    liveOther: bell('liveOther', { count: '{count}' }),
+    more: bell('more'),
+    seeAll: bell('seeAll'),
+    markAllRead: bell('markAllRead'),
+    loading: bell('loading'),
+    loadError: bell('loadError'),
+    retry: bell('retry'),
+    unread: bell('unread'),
+    emptyTitle: bell('emptyTitle'),
+    emptyBody: bell('emptyBody'),
+    emptyActionShop: bell('emptyActionShop'),
+    emptyActionPortal: bell('emptyActionPortal'),
+    close: bell('close'),
+  };
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-surface/95 shadow-header backdrop-blur">
       <div className="mx-auto flex min-h-[72px] max-w-[1600px] items-center justify-between gap-1 px-[5%] py-3 sm:gap-2 nav:min-h-[84px]">
@@ -80,6 +102,7 @@ export function Header({ navItems }: { navItems: readonly NavItem[] }) {
           <span className="hidden min-[400px]:contents">
             <ThemeToggle label={theme('toggle')} />
           </span>
+          <Bell copy={bellCopy} locale={locale} />
           <AccountLink prefix={locale === 'hi' ? '/hi' : ''} signIn={auth('signIn')} account={t('account')} />
           <CartPill
             href={localePath('/cart', locale)}

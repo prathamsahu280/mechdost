@@ -15,7 +15,7 @@ Checked on `mechdost-dev` through the Admin API (read only, 2026-11-09): Email/P
 
 `.env` (git-ignored) holds:
 
-- Web config (public): `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, `NEXT_PUBLIC_FIREBASE_APP_ID`.
+- Web config (public): `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, `NEXT_PUBLIC_FIREBASE_APP_ID`; for web push also `NEXT_PUBLIC_FIREBASE_VAPID_KEY` and `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` (`docs/runbooks/push.md`).
 - API: `FIREBASE_PROJECT_ID`, `FIREBASE_API_KEY` (same value as the web key: the API checks passwords with it), `GOOGLE_APPLICATION_CREDENTIALS` = path of the Admin key file. It sits in the repo root under Firebase's own name `<project>-firebase-adminsdk-<id>.json`, which `.gitignore` excludes (`*firebase-adminsdk*.json`; after any rename check with `git check-ignore -v <file>`). Never paste the file's contents anywhere; production uses no key file.
 - Turnstile: Cloudflare's always-pass test keys (see `.env.example`) until the real ones exist (Q5).
 

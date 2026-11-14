@@ -302,6 +302,7 @@ Items decided to happen before going public; tick them off here.
    - `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
    - `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
    - `NEXT_PUBLIC_FIREBASE_APP_ID`
+   - Web push (optional until Q103; runbook `docs/runbooks/push.md`): `NEXT_PUBLIC_FIREBASE_VAPID_KEY` and `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`. Both public; the "Turn on notifications" card shows only when both are set.
 
    Set each one with `gh variable set NAME --body "…"`. The deploy passes them to the website build (added 2026-11-14).
 

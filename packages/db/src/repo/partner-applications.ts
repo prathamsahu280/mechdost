@@ -22,6 +22,7 @@ import {
 import { queueApplicationEmail } from './email-events';
 import { ConflictError, NotFoundError, ValidationError } from './errors';
 import { recordServerEvent } from './events';
+import { queueStaffNotice } from './notices';
 import { findOpenInvite } from './partner-invites';
 import type { Tx } from './orders';
 import { grantRole } from './rbac';
@@ -143,6 +144,14 @@ export async function submitSellerApplication(
         locationSource: app.location.source,
       },
     });
+    // Staff who review applications in this city get a bell notice; an invited applicant is already approved.
+    if (status !== 'approved')
+      await queueStaffNotice(tx, {
+        kind: 'staff.new_application',
+        cityId: place.city_id,
+        entityId: row.id,
+        version: 1,
+      });
     if (status === 'approved') {
       // The invite stood in for the review: the shop starts with its city's PIN codes at the default charge.
       const coverage = await defaultCoverage(tx, app.pincode);

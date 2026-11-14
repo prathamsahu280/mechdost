@@ -70,6 +70,10 @@ export async function AdminShell({ section }: { section: AdminSection }) {
             'compare',
             // Admin → Reviews (moderation queue on the API, 2026-11-14).
             'reviews',
+            // The bell's push card on the admin home (spec 10, 2026-11-15).
+            'bell',
+            // Admin → Notifications → Messages: the bell and push texts (spec 10).
+            'adminNotices',
           ]}
         >
           <AdminConsole

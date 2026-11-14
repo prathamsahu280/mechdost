@@ -39,17 +39,29 @@ export interface ChannelAdapter {
 }
 
 /**
- * `email_sent` / `email_failed` server events (spec 12): template, language and an error code, never an address or
- * text. The row is already recorded, so an analytics failure is logged and never stops the dispatcher.
+ * `email_sent` / `email_failed` and `push_sent` / `push_failed` server events (spec 12): template or notice kind,
+ * language and an error code, never an address, token or text. The row is already recorded, so an analytics
+ * failure is logged and never stops the dispatcher.
  */
-async function recordEmailOutcome(
+async function recordOutcome(
   db: Tx,
   row: OutboxRow,
   outcome: { sent: true } | { sent: false; code: string },
 ): Promise<void> {
-  if (row.channel !== 'email') return;
+  if (row.channel !== 'email' && row.channel !== 'push') return;
   try {
-    if (outcome.sent)
+    if (row.channel === 'push') {
+      if (outcome.sent)
+        await recordServerEvent(db, 'push_sent', {
+          userId: row.recipientUserId,
+          props: { kind: row.templateKey },
+        });
+      else
+        await recordServerEvent(db, 'push_failed', {
+          userId: row.recipientUserId,
+          props: { code: outcome.code },
+        });
+    } else if (outcome.sent)
       await recordServerEvent(db, 'email_sent', {
         userId: row.recipientUserId,
         props: { template: row.templateKey, locale: row.locale },
@@ -113,21 +125,21 @@ export async function dispatchOnce(
       // code-free warning so the (rare) duplicate is visible in ops.
       if (await markOutboxSent(db, row, providerId)) {
         result.sent += 1;
-        await recordEmailOutcome(db, row, { sent: true });
+        await recordOutcome(db, row, { sent: true });
       } else log('warn', 'notify_claim_lost_after_send', { channel: row.channel });
     } catch (err) {
       const e = err instanceof ChannelError ? err : new ChannelError('retry', 'unexpected');
       if (e.failure === 'permanent') {
         if (await markOutboxFailed(db, row, e.code)) {
           result.failed += 1;
-          await recordEmailOutcome(db, row, { sent: false, code: e.code });
+          await recordOutcome(db, row, { sent: false, code: e.code });
         }
       } else {
         const delay = e.failure === 'later' ? 86_400 : backoffSeconds(row.attempts);
         const outcome = await markOutboxRetry(db, row, { error: e.code, delaySeconds: delay });
         if (outcome === 'failed') {
           result.failed += 1;
-          await recordEmailOutcome(db, row, { sent: false, code: e.code });
+          await recordOutcome(db, row, { sent: false, code: e.code });
         } else if (outcome === 'retry') result.retried += 1;
       }
       // Codes only: never log the recipient or payload (PII, rule 16).

@@ -9,6 +9,8 @@ export function signOutEverywhere(): void {
   signOut();
   if (AUTH_MODE === 'firebase')
     void import('./firebase-client').then(async (client) => {
+      // This browser stops receiving this person's push first (needs the token the sign-out is about to drop).
+      await import('../push/forget-device').then((m) => m.forgetPushDevice(document.documentElement.lang));
       await client.signOutReal();
     });
 }

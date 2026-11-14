@@ -102,7 +102,7 @@ export async function oldestPendingLiveMs(db: Tx): Promise<number> {
  * Staff who hold `permission` (through any role, including custom DB roles) for the city: least privilege, the
  * same permission the API checks when the client refetches. Partner-scoped grants (shop/workshop) never count.
  */
-const STAFF_WITH = (permission: Permission, cityId: ReturnType<typeof sql>) => sql`
+export const STAFF_WITH = (permission: Permission, cityId: ReturnType<typeof sql>) => sql`
   select u.id as user_id, u.firebase_uid from user_roles ur
   join role_permissions rp on rp.role_id = ur.role_id and rp.permission_key = ${permission}
   join users u on u.id = ur.user_id

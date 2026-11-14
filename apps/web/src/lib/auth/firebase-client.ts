@@ -44,6 +44,8 @@ function firebaseAuth(locale: string): Auth {
         authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
         projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
         appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+        // Web push (Q103) reads the same app: the sender id must be on whichever code created it first.
+        messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
       });
     auth = getAuth(app);
     const emulator = process.env.NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST;

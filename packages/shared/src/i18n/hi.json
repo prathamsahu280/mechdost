@@ -1538,6 +1538,7 @@
     "coins_api_reason_other": "अन्य",
     "labelDefault": "घर",
     "nav_support": "सहायता",
+    "nav_notifications": "सूचनाएँ",
     "emailNotVerified": "ईमेल अभी सत्यापित नहीं",
     "verifyEmailTitle": "अपना ईमेल सत्यापित करें",
     "verifyEmailBody": "हमने {email} पर एक लिंक भेजा है। इसे एक बार खोलें — पहले ऑर्डर से पहले ईमेल सत्यापित होना ज़रूरी है।",
@@ -2693,6 +2694,10 @@
     "api_set_quotes_min_units": "सबसे छोटा थोक कोटेशन (कुल यूनिट)",
     "api_set_quotes_cod_cap_paise": "डिलीवरी पर नकद वाला सबसे बड़ा थोक कोटेशन",
     "api_set_refunds_approval_sla_hours": "मंज़ूरी के लिए रिफ़ंड कितने घंटे रुक सकता है, फिर उसे देर हो चुकी माना जाता है",
+    "api_set_notifications_retention_days": "सूचना घंटी संदेश कितने दिन रखती है",
+    "api_set_notifications_push_prompt_snooze_days": "\"अभी नहीं\" दबाने पर सूचना कार्ड कितने दिन छिपा रहे",
+    "api_set_notifications_promo_per_week": "एक व्यक्ति को हफ़्ते में प्रमोशन सूचनाएँ",
+    "api_set_notifications_offer_expiry_reminder_min": "ऑर्डर ऑफ़र खत्म होने से कितने मिनट पहले दुकान को याद दिलाएँ (0 = बंद)",
     "api_set_catalogue_require_hindi_to_publish": "प्रोडक्ट केवल पूरे हिंदी टेक्स्ट के साथ लाइव हों",
     "api_set_customers_require_verified_email": "ऑर्डर, बुकिंग या समीक्षा से पहले ग्राहकों को फ़ोन के साथ अपना ईमेल भी सत्यापित करना होगा",
     "api_set_support_customer_messages_per_ticket_per_day": "हर अनुरोध पर ग्राहक के रोज़ के संदेश",
@@ -3319,6 +3324,187 @@
     "tpl_application_rejected": "विक्रेता आवेदन मंज़ूर नहीं",
     "tpl_shop_order_routed": "दुकान के लिए नया ऑर्डर",
     "tpl_partner_warning_issued": "पार्टनर के लिए नोट"
+  },
+  "notify": {
+    "order_placed": {
+      "title": "ऑर्डर हो गया",
+      "body": "{orderCode} हो गया है। हम आपके पास का विक्रेता ढूँढ रहे हैं।"
+    },
+    "order_confirmed": {
+      "title": "ऑर्डर कन्फ़र्म",
+      "body": "विक्रेता ने {orderCode} कन्फ़र्म कर दिया है। यह जल्द भेजा जाएगा।"
+    },
+    "order_out_for_delivery": {
+      "title": "डिलीवरी के लिए निकला",
+      "body": "{orderCode} रास्ते में है। अपना डिलीवरी कोड तैयार रखें।"
+    },
+    "order_delivered": { "title": "ऑर्डर पहुँच गया", "body": "{orderCode} पहुँचा दिया गया। बताइए कैसा रहा।" },
+    "order_cancelled": { "title": "ऑर्डर रद्द हुआ", "body": "{orderCode} रद्द कर दिया गया।" },
+    "order_rejected": {
+      "title": "ऑर्डर पूरा नहीं हो सका",
+      "body": "कोई विक्रेता {orderCode} पूरा नहीं कर सका। आगे क्या होगा, यह देखने के लिए खोलें।"
+    },
+    "payment_received": { "title": "पेमेंट मिल गया", "body": "हमें {orderCode} का पेमेंट मिल गया है।" },
+    "refund_requested": { "title": "रिफ़ंड शुरू हुआ", "body": "हमने {orderCode} का रिफ़ंड शुरू कर दिया है।" },
+    "refund_processed": {
+      "title": "रिफ़ंड भेज दिया गया",
+      "body": "{orderCode} का रिफ़ंड आपके पेमेंट के मूल तरीके में भेज दिया गया है।"
+    },
+    "refund_failed": {
+      "title": "रिफ़ंड पर ध्यान चाहिए",
+      "body": "हम {orderCode} का रिफ़ंड पूरा नहीं कर सके। हमारी टीम मदद करेगी।"
+    },
+    "refund_declined": {
+      "title": "रिफ़ंड की जानकारी",
+      "body": "हम {orderCode} का रिफ़ंड मंज़ूर नहीं कर सके। ब्योरे के लिए सहायता खोलें।"
+    },
+    "service_received": {
+      "title": "अनुरोध मिल गया",
+      "body": "{requestCode}: हम आपके पास का वर्कशॉप ढूँढ रहे हैं।"
+    },
+    "service_proposed": {
+      "title": "वर्कशॉप ने समय सुझाया",
+      "body": "{workshopName} ने {requestCode} के लिए समय और खर्च सुझाया है।"
+    },
+    "service_confirmed": {
+      "title": "बुकिंग कन्फ़र्म",
+      "body": "{workshopName} ने {requestCode} कन्फ़र्म कर दिया है।"
+    },
+    "service_estimate_ready": {
+      "title": "अनुमान तैयार",
+      "body": "{requestCode} का अनुमान देखें और मंज़ूर करें।"
+    },
+    "service_ready": {
+      "title": "गाड़ी तैयार",
+      "body": "आपकी गाड़ी {workshopName} में तैयार है ({requestCode})।"
+    },
+    "service_bill_ready": { "title": "बिल तैयार", "body": "{requestCode} का बिल तैयार है।" },
+    "service_completed": { "title": "सर्विस पूरी हुई", "body": "{requestCode} पूरा हो गया। बताइए कैसा रहा।" },
+    "quote_offer": { "title": "कोटेशन तैयार", "body": "{quoteCode} के लिए आपके पास एक ऑफ़र है।" },
+    "quote_expiring": {
+      "title": "कोटेशन जल्द खत्म होगा",
+      "body": "{quoteCode} का ऑफ़र जल्द खत्म होने वाला है।"
+    },
+    "ticket_received": { "title": "अनुरोध मिल गया", "body": "हमें आपका अनुरोध {ticketCode} मिल गया है।" },
+    "ticket_reply": { "title": "सहायता से नया जवाब", "body": "{ticketCode} पर जवाब आया है।" },
+    "ticket_resolved": { "title": "अनुरोध हल हुआ", "body": "{ticketCode} हल हो गया है।" },
+    "shop_order_routed": {
+      "title": "स्वीकार करने के लिए नया ऑर्डर",
+      "body": "ऑर्डर {orderCode} इंतज़ार में है। {minutes} मिनट के भीतर स्वीकार करें।"
+    },
+    "shop_offer_expiring": {
+      "title": "ऑफ़र जल्द खत्म होगा",
+      "body": "ऑर्डर {orderCode} लगभग {minutes} मिनट में खत्म हो जाएगा।"
+    },
+    "partner_warning": {
+      "title": "आपकी दुकान के बारे में सूचना",
+      "body": "आपकी दुकान पर चेतावनी जोड़ी गई है। पढ़ने के लिए पोर्टल खोलें।"
+    },
+    "staff_order_needs_routing": {
+      "title": "ऑर्डर को दुकान चाहिए",
+      "body": "ऑर्डर {orderCode} को दुकान तक भेजना है।"
+    },
+    "staff_shop_declined": {
+      "title": "एक दुकान ने मना किया",
+      "body": "एक दुकान ने {orderCode} मना कर दिया। दूसरी दुकान चुनें या अस्वीकार करें।"
+    },
+    "staff_shop_timed_out": {
+      "title": "दुकान ने जवाब नहीं दिया",
+      "body": "{orderCode} पर दुकान ने समय पर जवाब नहीं दिया। दूसरी दुकान चुनें या अस्वीकार करें।"
+    },
+    "staff_shop_gave_up": {
+      "title": "दुकान ने ऑर्डर लौटा दिया",
+      "body": "एक दुकान ने {orderCode} लौटा दिया। दूसरी दुकान चुनें या अस्वीकार करें।"
+    },
+    "staff_refund_overdue": {
+      "title": "रिफ़ंड इंतज़ार में",
+      "body": "{orderCode} का रिफ़ंड तय समय से ज़्यादा रुका है।"
+    },
+    "staff_new_application": {
+      "title": "नया पार्टनर आवेदन",
+      "body": "एक नया पार्टनर आवेदन समीक्षा के लिए इंतज़ार में है।"
+    },
+    "staff_new_ticket": { "title": "नया सहायता अनुरोध", "body": "{ticketCode} को पहला जवाब चाहिए।" }
+  },
+  "adminNotices": {
+    "tab_notices": "संदेश",
+    "intro": "घंटी में और पुश सूचना के रूप में लोगों को मिलने वाले छोटे संदेश। हर भाषा और चैनल के लिए शब्द बदलें; जो फ़ील्ड डिफ़ॉल्ट जैसा रहे वह डिफ़ॉल्ट का ही अनुसरण करता है। संदेशों में पता, फ़ोन नंबर या रकम कभी नहीं जाती।",
+    "group_customer": "ग्राहकों को",
+    "group_partner": "दुकानों और वर्कशॉप को",
+    "group_staff": "स्टाफ़ को",
+    "state_default": "डिफ़ॉल्ट टेक्स्ट",
+    "state_edited": "बदला गया",
+    "edit": "बदलें",
+    "close": "बंद करें",
+    "channel_label": "कहाँ दिखे",
+    "channel_inapp": "घंटी",
+    "channel_push": "पुश",
+    "lang_label": "भाषा",
+    "lang_en": "अंग्रेज़ी",
+    "lang_hi": "हिंदी",
+    "field_help": "जब तक आप यहाँ पुश टेक्स्ट न लिखें, पुश में घंटी वाला टेक्स्ट जाता है।",
+    "field_title": "शीर्षक",
+    "field_body": "संदेश",
+    "placeholders": "इस्तेमाल हो सकने वाले प्लेसहोल्डर: {list}",
+    "no_placeholders": "इस संदेश में कोई प्लेसहोल्डर नहीं है।",
+    "switch_inapp": "यह संदेश घंटी में दिखाएँ",
+    "switch_push": "यह संदेश पुश के रूप में भेजें",
+    "save": "टेक्स्ट सेव करें",
+    "saving": "सेव हो रहा है…",
+    "saved": "सेव हो गया।",
+    "reset": "डिफ़ॉल्ट पर लौटें",
+    "reset_done": "डिफ़ॉल्ट टेक्स्ट पर लौट आया।",
+    "err_stale": "किसी और ने यह संदेश बदल दिया है। पेज रीलोड करके फिर कोशिश करें।",
+    "problem_placeholder": "सिर्फ़ सूची वाले प्लेसहोल्डर, कर्ली ब्रैकेट में, इस्तेमाल करें।",
+    "problem_html": "सिर्फ़ सादा टेक्स्ट लिखें।",
+    "problem_long": "टेक्स्ट बहुत लंबा है (शीर्षक 80, संदेश 240 अक्षर)।"
+  },
+  "bell": {
+    "label": "सूचनाएँ",
+    "labelUnread": "सूचनाएँ, {count} नई",
+    "liveOne": "1 नई सूचना",
+    "liveOther": "{count} नई सूचनाएँ",
+    "more": "99+",
+    "seeAll": "सभी सूचनाएँ देखें",
+    "markAllRead": "सभी को पढ़ा हुआ मानें",
+    "loading": "लोड हो रहा है…",
+    "loadError": "सूचनाएँ लोड नहीं हो सकीं।",
+    "retry": "फिर कोशिश करें",
+    "unread": "नई",
+    "loadMore": "पुरानी दिखाएँ",
+    "emptyTitle": "सब कुछ देख लिया गया है",
+    "emptyBody": "आपके ऑर्डर और बुकिंग की नई जानकारी यहाँ दिखेगी।",
+    "emptyActionShop": "प्रोडक्ट देखें",
+    "emptyActionPortal": "अपने पोर्टल पर लौटें",
+    "centreTitle": "सूचनाएँ",
+    "centreIntro": "हमने आपको जो भी बताया, सबसे नया सबसे ऊपर।",
+    "close": "बंद करें",
+    "promptTitle": "इस डिवाइस पर ऑर्डर और बुकिंग की जानकारी पाएँ",
+    "promptTitlePartner": "इस डिवाइस पर नए ऑर्डर और अनुरोध पाएँ",
+    "promptBody": "जब आपको कुछ करना हो तो हम एक छोटा संदेश भेजते हैं। आप कहें तभी ऑफ़र भेजेंगे।",
+    "turnOn": "चालू करें",
+    "notNow": "अभी नहीं",
+    "working": "चालू हो रहा है…",
+    "iosTitle": "पहले MechDost को होम स्क्रीन पर जोड़ें",
+    "iosBody": "iPhone पर सूचनाएँ सिर्फ़ होम स्क्रीन से चलती हैं। शेयर बटन दबाएँ, होम स्क्रीन में जोड़ें चुनें, फिर MechDost वहीं से खोलें।",
+    "iosDone": "समझ गया",
+    "deniedTitle": "इस ब्राउज़र में सूचनाएँ बंद हैं",
+    "deniedBody": "अपने ब्राउज़र में इस साइट की सेटिंग खोलें, सूचनाएँ को अनुमति दें पर करें, फिर यहाँ लौटें।",
+    "unsupported": "यह ब्राउज़र सूचनाएँ नहीं दिखा सकता।",
+    "failed": "सूचनाएँ चालू नहीं हो सकीं। फिर कोशिश करें।",
+    "deviceOn": "इस डिवाइस पर सूचनाएँ चालू हैं।",
+    "turnOff": "इस डिवाइस पर बंद करें",
+    "deviceOff": "इस डिवाइस पर सूचनाएँ बंद हैं।",
+    "deviceHeading": "यह डिवाइस",
+    "prefsTitle": "सूचनाएँ",
+    "prefsIntro": "जानकारी हमेशा घंटी में दिखती है। चुनें कि इस डिवाइस पर और क्या पहुँचे।",
+    "prefsTransactional": "ऑर्डर, बुकिंग और सहायता की जानकारी",
+    "prefsTransactionalHelp": "कुछ बदलने पर एक छोटा संदेश।",
+    "prefsPromo": "ऑफ़र और प्रमोशन",
+    "prefsPromoHelp": "सिर्फ़ आपकी सहमति से। हफ़्ते में अधिकतम दो। आप कभी भी बदल सकते हैं।",
+    "prefsSaved": "सेव हो गया।",
+    "prefsError": "सेव नहीं हो सका। फिर कोशिश करें।",
+    "newUpdate": "नई जानकारी: {title}"
   },
   "gstStates": {
     "01": "जम्मू और कश्मीर",

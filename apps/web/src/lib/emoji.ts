@@ -28,6 +28,7 @@ export const CATEGORY_EMOJI: Record<CategoryKey, string> = {
 export const UI_EMOJI = {
   cart: '🛒',
   account: '👤',
+  bell: '🔔',
   language: '🌐',
   dark: '🌙',
   light: '☀️',

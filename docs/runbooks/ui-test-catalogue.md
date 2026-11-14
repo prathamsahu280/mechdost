@@ -821,3 +821,10 @@ Not covered yet (listed for the next round): the shop's price requests and agree
 Settings → PIN codes (`ServiceAreaApi` shares the page with the settings form calls), applications and invites on the
 API, the customer's delivery-PIN checker and review form, and server-rendered catalogue pages in a real build (their
 data is read by the Node server, which a browser route cannot intercept).
+The harness runs in demo mode, so views that only exist with real sign-in cannot be in `COMPONENTS` (they would fail
+`present`). They are listed in `REAL_MODE_VIEWS` (`model.ts`) with the navigation that reaches each and the states an
+API-mode audit must render; `test/state-audit-real-views.test.ts` checks the files and that their text comes from the
+locale namespace. Current entries (shop give-up, shop warnings, admin warnings, admin reroute-queue give-up line):
+`API-SHOP-GIVEUP`, `API-SHOP-WARNINGS`, `API-ADMIN-WARNINGS`, `API-ADMIN-GIVEUP-QUEUE`; emails `API-ADMIN-EMAILS`; bell and push (2026-11-15, spec 10): `API-BELL` (badge 0/1/99/99+, dropdown loading/list/long Hindi titles/empty/error, mark all), `API-NOTICE-CENTRE`, `API-PUSH-PROMPT` (normal, partner title, iPhone Home Screen, denied, snoozed, hidden without the key), `API-NOTICE-PREFS`, `API-ADMIN-NOTICES`. The API-mode audit must render them at 390, 768 and 1440 in light, dark and `/hi`; the real-sign-in run needs the VAPID key and Sender ID set for the card rows. Turning them into runnable
+cases needs an API-mode run on a seeded emulator database (queued as Q106); until then they are covered by the DB and
+API suites and the Hindi gate.

@@ -27,6 +27,8 @@ import { ShopPricesApi } from './shop-prices-api';
 import { ShopAgreementApi } from './shop-onboarding-api';
 import { ShopNewProductApi, ShopProfileApi } from './shop-profile-api';
 import { ShopWarningsApi } from './shop-warnings-api';
+import { PushPromptSlot } from '../notices/push-prompt-slot';
+import { useNoticeRefresh } from '../notices/use-notice-refresh';
 import { useApiList } from './use-api-list';
 
 const OFFER_POLL_MS = 30_000;
@@ -60,9 +62,13 @@ export function ShopOrdersApi() {
   const refresh = useCallback(async () => {
     await Promise.all([offers.reload(), active.reload(), done.reload()]);
   }, [offers, active, done]);
+  // A new order (or its "about to expire" reminder) reaches the bell within seconds: show it without the 30 s wait.
+  useNoticeRefresh(['shop.order_routed', 'shop.offer_expiring'], offers.reload);
 
   return (
     <>
+      <PushPromptSlot />
+
       <ShopProfileApi />
 
       <ShopAgreementApi />
