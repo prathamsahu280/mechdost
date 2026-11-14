@@ -4,6 +4,7 @@
  */
 import type { CategoryKey } from './catalogue';
 import { takesNewWork } from './partner-status';
+import { APPLICATION_STAGES, applicationsNow, type DemoApplication } from './store';
 
 export interface DemoShop {
   slug: string;
@@ -71,8 +72,40 @@ export const DEMO_SHOPS: readonly DemoShop[] = [
   },
 ];
 
+/** The shop an onboarded seller application became (stable: from the application code). */
+export const shopSlugForApplication = (code: string) => `shop-${code.toLowerCase()}`;
+
+const ONBOARDED = APPLICATION_STAGES.indexOf('onboarded');
+
+/** Approved (or invited) seller applications, as the API's `shops` row made at approval (Q89). */
+export function onboardedSellerApplications(): DemoApplication[] {
+  return applicationsNow().filter((a) => a.kind === 'seller' && !a.rejected && a.stage >= ONBOARDED);
+}
+
+function shopFromApplication(a: DemoApplication): DemoShop {
+  return {
+    slug: shopSlugForApplication(a.code),
+    name: a.shopName ?? a.business,
+    area: a.addressLine ?? a.pincode,
+    pincode: a.pincode,
+    lat: a.location?.lat ?? 21.2514,
+    lng: a.location?.lng ?? 81.6296,
+    categories: a.categories ?? [],
+    // No history yet: ranked after established shops with the same categories.
+    acceptance: 0,
+    acceptMinutes: 0,
+    rating: 0,
+  };
+}
+
+/** Every shop: the fixed demo shops, then shops onboarded on this device (approved applications). */
+export function allShops(): readonly DemoShop[] {
+  const onboarded = onboardedSellerApplications().map(shopFromApplication);
+  return onboarded.length === 0 ? DEMO_SHOPS : [...DEMO_SHOPS, ...onboarded];
+}
+
 export function findShop(slug: string | null | undefined): DemoShop | undefined {
-  return DEMO_SHOPS.find((s) => s.slug === slug);
+  return allShops().find((s) => s.slug === slug);
 }
 
 /**
@@ -84,7 +117,9 @@ export function rankShops(categories: readonly CategoryKey[], exclude: readonly 
   // Paused or suspended shops are never suggested (admin control, decision 2026-11-01). Shops stocking none of the
   // order's categories stay last, and the card warns (QA 2026-11-14, U13: a warning, not removal — the shop's
   // category list can be incomplete, and removing them left orders with no shop at all).
-  return DEMO_SHOPS.filter((s) => !exclude.includes(s.slug) && takesNewWork('shop', s.slug)).toSorted(
-    (a, b) => coverage(b) - coverage(a) || b.acceptance - a.acceptance || a.acceptMinutes - b.acceptMinutes,
-  );
+  return allShops()
+    .filter((s) => !exclude.includes(s.slug) && takesNewWork('shop', s.slug))
+    .toSorted(
+      (a, b) => coverage(b) - coverage(a) || b.acceptance - a.acceptance || a.acceptMinutes - b.acceptMinutes,
+    );
 }

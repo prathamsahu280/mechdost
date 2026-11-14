@@ -18,6 +18,7 @@ import {
   type PasswordHash,
 } from './passwords';
 import { customerAllowed } from './customer-blocks';
+import { onboardedSellerApplications, shopSlugForApplication } from './shops';
 import { demoRoleFor, type RealMe } from '@/lib/auth/real-account';
 import { demoStorage } from './store';
 import {
@@ -51,7 +52,23 @@ function saveAccount(account: DemoAccount) {
   demoStorage.write(ACCOUNTS, [...stored, account]);
 }
 
+/**
+ * An approved seller becomes the owner of their shop when they sign in with the application's phone (the OTP proved
+ * it at sign-up), as the API's `linkApplicantOwner` does: once — a shop already claimed by another account stays
+ * with it, and staff or partner accounts are never changed (Q89, lifecycle QA 2026-11-14).
+ */
+function linkApplicantShop(accountId: string) {
+  const account = accountsSnapshot().find((a) => a.id === accountId);
+  if (account?.role !== 'customer') return;
+  const app = onboardedSellerApplications().find((a) => normalisePhone(a.phone) === account.phone);
+  if (!app) return;
+  const slug = shopSlugForApplication(app.code);
+  if (accountsSnapshot().some((a) => a.partner === slug)) return;
+  saveAccount({ ...account, role: 'shop', partner: slug });
+}
+
 function startSession(accountId: string) {
+  linkApplicantShop(accountId);
   demoStorage.write(SESSION, [{ accountId, signedInAt: new Date().toISOString() }]);
 }
 

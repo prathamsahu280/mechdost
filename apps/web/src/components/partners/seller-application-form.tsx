@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
 import { isGstEnrolmentNumber, isGstin } from '@mechdost/shared/gst';
 import { SellerApplicationSchema, type Location } from '@mechdost/shared/partners';
+import { DEMO_PRODUCTS } from '@/demo/catalogue';
 import { createApplication } from '@/demo/store';
 import { track } from '@/lib/analytics';
 import { LocationPicker } from './location-picker';
@@ -128,6 +129,12 @@ export function SellerApplicationForm({
         ...(app.landmark ? { landmark: app.landmark } : {}),
         location: app.location,
         productSlugs: app.productSlugs,
+        // What the new shop is routed for once approved (Q89); the picker already loads the catalogue.
+        categories: [
+          ...new Set(
+            app.productSlugs.flatMap((s) => DEMO_PRODUCTS.find((p) => p.slug === s)?.category ?? []),
+          ),
+        ],
         source: invite ? 'invite' : 'public',
       },
       invite?.token,

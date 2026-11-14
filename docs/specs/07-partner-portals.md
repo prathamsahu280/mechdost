@@ -86,3 +86,12 @@ Design `docs/superpowers/specs/2026-11-13-seller-onboarding-design.md`; decision
 - **Data:** `partner_application_products`, `partner_invites`, `shop_price_requests`, `agreement_versions`, `shop_agreements` (append-only); `shops.gst_status`; `shop_inventory.admin_blocked` + `blocked_reason_code`; `partner_applications.owner_user_id` (migrations 0038, 0039).
 - **Website status:** the screens run on the browser demo store (`demo/store.ts`, `demo/price-requests.ts`, `demo/agreements.ts`) until the data switch; the demo checkout still charges the catalogue price (the API prices from `shop_inventory`).
 - **Tests:** `e2e/seller-onboarding.spec.ts` (16 tests: application, wrong GSTIN, invite, admin invites, review with delivery area, price queue, shop prices round trip, agreement); unit tests `demo-price-requests`, `demo-agreements`, `demo-applications`; DB and API suites `partner-applications`, `price-requests`, `partner-onboarding`.
+
+## Demo: approved sellers reach their shop (2026-11-14, Q89)
+
+Lifecycle QA found that in the browser demo an approved or invited seller could never sign in to a shop (the demo had a fixed list of four shops). Now, mirroring the API (`linkApplicantOwner` on sign-in, spec 01):
+
+- An onboarded seller application (approved by the admin, or submitted through an invite) **is a shop**: `allShops()` in `apps/web/src/demo/shops.ts` = the fixed demo shops + one shop per onboarded application (slug `shop-<application code>`, name = shop name, place and map pin from the application, categories from the products the seller ticked — the seller form stores them as `categories`). Routing suggestions (`rankShops`), the admin partners list and price requests use it; a new shop has no acceptance history, so it ranks after established shops with the same categories.
+- **Signing in with the application's phone** (sign-up with OTP, or password later) makes that account the shop's owner — once: a shop already claimed by another account stays with it, and staff/partner accounts are never changed (`linkApplicantShop` in `apps/web/src/demo/session.ts`).
+- Test: `e2e/seller-onboarding.spec.ts` "approved seller reaches their shop" (an order routed by the admin to the new shop shows up in its portal; signing in again keeps the shop).
+- Still demo-only gap: the storefront does not price by a new shop's approved prices (decision 2026-11-13 ruling; arrives with the data switch).

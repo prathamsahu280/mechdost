@@ -334,3 +334,92 @@ test.describe('application review', () => {
     await expect(mohan).toContainText('Rejected: Duplicate application');
   });
 });
+
+/**
+ * Q89 (lifecycle QA 2026-11-14): an approved seller reaches their own shop, as the API does on sign-in
+ * (`linkApplicantOwner`): the onboarded application becomes a shop, the applicant's phone account becomes its
+ * owner, and the admin can route orders to it.
+ */
+test.describe('approved seller reaches their shop', () => {
+  test('signs up with the application phone, opens their shop, and receives an order the admin routes', async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      if (window.localStorage.getItem('mechdost-demo-applications')) return;
+      window.localStorage.setItem(
+        'mechdost-demo-applications',
+        JSON.stringify([
+          {
+            code: 'PA-RPR-2026-CCCCCC',
+            createdAt: new Date().toISOString(),
+            kind: 'seller',
+            name: 'Kiran Verma',
+            phone: '9123456700',
+            business: 'Verma Lubricants LLP',
+            shopName: 'Verma Lubricants',
+            pincode: '492004',
+            vehicles: [],
+            details: '',
+            stage: 3, // onboarded
+            rejected: false,
+            gstStatus: 'registered',
+            gstNumber: '22ABVCS4888H1ZL',
+            addressLine: 'Shop 9, GE Road, Pandri',
+            location: { lat: 21.2514, lng: 81.6467, accuracyM: 100, source: 'search' },
+            productSlugs: ['castrol-activ-4t-20w40-900ml'],
+            categories: ['lubricants'],
+            coverage: { pincodes: ['492004', '492099'], shippingPaise: 3000, leadDays: 1 },
+            source: 'public',
+          },
+        ]),
+      );
+    });
+
+    // A guest orders engine oil; the admin can offer it to the new shop.
+    await page.goto('/shop/castrol-activ-4t-20w40-900ml');
+    await page.getByRole('button', { name: 'Add to cart' }).first().click();
+    await page.goto('/checkout');
+    await page.getByLabel('Full name').fill('Ravi Sahu');
+    await page.getByLabel('Mobile number').fill('9876543210');
+    await page.getByLabel('Delivery address').fill('C-605 Salasar Greens, Sarona, Raipur');
+    await page.getByLabel('PIN code').fill('492099');
+    await page.getByLabel(/I agree to share/).check();
+    await page.getByRole('button', { name: /Place order/ }).click();
+    await expect(page).toHaveURL(/\/orders\/MD-RPR-/);
+    const order = new URL(page.url()).pathname.split('/').at(-1) ?? '';
+
+    await signInAdmin(page, '/admin/orders');
+    await page
+      .locator('article')
+      .filter({ hasText: order })
+      .getByRole('button', { name: 'Route to Verma Lubricants' })
+      .click();
+    await page.goto('/admin');
+    await page.getByRole('button', { name: 'Sign out' }).first().click();
+
+    // The applicant creates their login with the application phone (OTP) and lands in their own shop.
+    await page.goto('/login');
+    await page.getByRole('button', { name: 'Create an account' }).click();
+    await page.getByLabel('Mobile number').fill('9123456700');
+    await page.getByRole('button', { name: 'Send code' }).click();
+    await page.getByLabel('One-time code').fill('123456');
+    await page.getByRole('button', { name: 'Verify and continue' }).click();
+    await page.getByLabel('Full name').fill('Kiran Verma');
+    await page.getByLabel('Email', { exact: true }).fill('kiran.verma@example.com');
+    await page.getByLabel('Create password', { exact: true }).fill('Ghadi#Chowk2026');
+    await page.getByLabel('Confirm password', { exact: true }).fill('Ghadi#Chowk2026');
+    await page.getByRole('button', { name: 'Create account' }).click();
+    await expect(page).not.toHaveURL(/\/login/);
+    await page.goto('/partner/shop');
+    await expect(page.getByRole('heading', { name: /Verma Lubricants/ })).toBeVisible();
+    await expect(page.locator('article').filter({ hasText: order })).toBeVisible();
+
+    // Signing in again later keeps the shop (claimed once, not re-linked or lost).
+    await page.getByRole('button', { name: 'Sign out' }).first().click();
+    await page.goto(`/login?next=${encodeURIComponent('/partner/shop')}`);
+    await page.getByLabel('Mobile number or email').fill('9123456700');
+    await page.getByLabel('Password', { exact: true }).fill('Ghadi#Chowk2026');
+    await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+    await expect(page.getByRole('heading', { name: /Verma Lubricants/ })).toBeVisible();
+  });
+});

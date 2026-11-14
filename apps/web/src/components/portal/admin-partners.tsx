@@ -10,7 +10,7 @@ import {
   type PartnerStatus,
 } from '@/demo/partner-status';
 import { localizeShop, localizeWorkshop } from '@/demo/i18n/localize';
-import { DEMO_SHOPS } from '@/demo/shops';
+import { allShops } from '@/demo/shops';
 import { APPLICATION_STAGES, useApplications } from '@/demo/store';
 import { DEMO_WORKSHOPS } from '@/demo/workshops';
 import { track } from '@/lib/analytics';
@@ -59,11 +59,13 @@ export function AdminPartners({ actor }: { actor: string }) {
     .filter((a) => a.kind === 'mechanic' && !a.rejected && a.stage === APPLICATION_STAGES.length - 1)
     .map((a) => ({ slug: a.code, name: a.name, area: a.pincode }));
   const lists: Record<PartnerKind, Partner[]> = {
-    shop: DEMO_SHOPS.map((s) => localizeShop(s, locale)).map((s) => ({
-      slug: s.slug,
-      name: s.name,
-      area: s.area,
-    })),
+    shop: allShops()
+      .map((s) => localizeShop(s, locale))
+      .map((s) => ({
+        slug: s.slug,
+        name: s.name,
+        area: s.area,
+      })),
     workshop: DEMO_WORKSHOPS.map((w) => localizeWorkshop(w, locale)).map((w) => ({
       slug: w.slug,
       name: w.name,

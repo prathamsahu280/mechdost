@@ -18,6 +18,7 @@ import {
 } from '@mechdost/shared/state';
 import { useSyncExternalStore } from 'react';
 import type { PricedCart } from './cart-pricing';
+import type { CategoryKey } from './categories';
 import { takesNewWork } from './partner-status';
 import { APPLICATION_REJECT_REASONS, type ApplicationRejectReason } from '@mechdost/shared/partner-codes';
 import { OPERATIONAL_SETTINGS } from '@mechdost/shared/settings';
@@ -213,6 +214,8 @@ export interface DemoApplication {
   landmark?: string;
   location?: { lat: number; lng: number; accuracyM: number; source: 'gps' | 'search' | 'pin' };
   productSlugs?: string[];
+  /** Categories of the chosen products (set by the seller form); a new shop is routed by them (Q89). */
+  categories?: CategoryKey[];
   source?: 'public' | 'invite';
   /** Set by the admin at approval (user 2026-11-13: "admin, at approval"); becomes `shop_pincodes`. */
   coverage?: Coverage;
@@ -390,6 +393,8 @@ function upgradeRequest(r: DemoServiceRequest): DemoServiceRequest {
 }
 export const requestsSnapshot = () => read(KEYS.requests, isRequest, upgradeRequest);
 const applicationsSnapshot = () => read(KEYS.applications, isApplication);
+/** Current applications outside React (shops derived from approvals, sign-in linking; Q89). */
+export const applicationsNow = applicationsSnapshot;
 const reviewsSnapshot = () => read(KEYS.reviews, isReview);
 const quotesSnapshot = () => read(KEYS.quotes, isQuote);
 const invitesSnapshot = () => read(KEYS.invites, isInvite);

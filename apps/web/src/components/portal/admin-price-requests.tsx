@@ -11,7 +11,7 @@ import {
   type DemoPriceRequest,
   type PriceRejectReason,
 } from '@/demo/price-requests';
-import { DEMO_SHOPS } from '@/demo/shops';
+import { findShop } from '@/demo/shops';
 import { track } from '@/lib/analytics';
 import { formatPrice } from '@/lib/format';
 import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
@@ -49,7 +49,7 @@ function PriceRequestRow({ request: r }: { request: DemoPriceRequest }) {
   const locale = useLocale();
   const [reason, setReason] = useState<PriceRejectReason | ''>('');
   const [missing, setMissing] = useState(false);
-  const shop = DEMO_SHOPS.find((s) => s.slug === r.shopSlug);
+  const shop = findShop(r.shopSlug);
   const product = DEMO_PRODUCTS.find((p) => p.slug === r.productSlug);
   const shopName = shop ? localizeShop(shop, locale).name : r.shopSlug;
   const productName = product
