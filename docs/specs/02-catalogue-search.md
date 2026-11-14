@@ -174,3 +174,13 @@ Decision 2026-10-31 (verified purchase only, staff approve before publish) built
   removal from public view), partner reply (`reply` column unused), photo reviews (P1), notifying the customer when
   a review is approved or hidden, "load more" on public pages (newest 10 only), on-demand revalidation of the
   product/workshop page when a review is approved (pages refresh within 60 s).
+
+### Review findings (2026-11-14, before merge)
+
+- **Fixed:** a product delivered in two parts of one order at different times could be reviewed twice. Test: "one review per product per purchase…".
+- **Known, not fixed yet:**
+  - Moderating a workshop review bumps `workshops.version`, so an admin profile form open at the same time gets a stale-version 409.
+  - A workshop can be reviewed after `no_work_approved → completed`, with no paid bill. Spec 06 says "after the bill is paid"; to confirm.
+  - Line breaks in review text are collapsed.
+  - The 1000-character limit is checked before cleaning.
+  - Public review fetches by the web server share its single IP's rate-limit bucket.

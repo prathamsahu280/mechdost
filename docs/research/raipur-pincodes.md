@@ -42,27 +42,27 @@ Reference data for `packages/db/seed/raipur-pincodes.json` (loaded with `pnpm db
 **Active: the Raipur city service area (19 PINs).** This covers Raipur Municipal Corporation, Birgaon, Nava Raipur
 and the urban fringe.
 
-| PIN    | Area (English)                           | Area (Hindi)                        | Lat      | Lng      | Centroid source                                          |
-| ------ | ---------------------------------------- | ----------------------------------- | -------- | -------- | -------------------------------------------------------- |
-| 492001 | Raipur GPO (Jaistambh Chowk)             | रायपुर जीपीओ (जयस्तंभ चौक)          | 21.23506 | 81.63902 | data.gov.in mean of 9 offices; Nominatim 1.3 km away     |
-| 492002 | Mantralaya (Nava Raipur)                 | मंत्रालय (नवा रायपुर)               | 21.15903 | 81.79554 | OSM capital complex, Sector 19 (data.gov.in point wrong) |
-| 492003 | Urla                                     | उरला                                | 21.30833 | 81.61776 | data.gov.in; OSM Urla agrees                             |
-| 492004 | Pandri / Shankar Nagar                   | पंडरी / शंकर नगर                    | 21.25457 | 81.65708 | data.gov.in mean; Nominatim agrees                       |
-| 492005 | Vidhan Sabha                             | विधानसभा                            | 21.28935 | 81.72292 | OSM Vidhan Sabha (data.gov.in copy of the HO point)      |
-| 492008 | WRS Colony / Khamtarai                   | डब्ल्यूआरएस कॉलोनी / खमतराई         | 21.27664 | 81.64028 | data.gov.in; OSM post office agrees                      |
-| 492009 | Gudhiyari / Raipur Ganj                  | गुढ़ियारी / रायपुर गंज              | 21.26619 | 81.62225 | data.gov.in (Gudhiyari); Nominatim agrees                |
-| 492010 | Ravishankar University / Science College | रविशंकर विश्वविद्यालय / साइंस कॉलेज | 21.24616 | 81.60007 | OSM university + data.gov.in Science College             |
-| 492012 | Krishak Nagar                            | कृषक नगर                            | 21.23784 | 81.70542 | data.gov.in; OSM IGKV campus agrees                      |
-| 492013 | Sunder Nagar / Raipura                   | सुंदर नगर / रायपुरा                 | 21.22746 | 81.60962 | OSM post office node + Nominatim (data.gov.in 10 km off) |
-| 492014 | Saddu                                    | सड्डू                               | 21.2667  | 81.66832 | Nominatim postcode centroid (least certain, ±2 km)       |
-| 492015 | Mana Camp                                | माना कैंप                           | 21.19331 | 81.71706 | data.gov.in; OSM Mana agrees                             |
-| 492016 | Mana Basti                               | माना बस्ती                          | 21.19515 | 81.70342 | OSM Mana (data.gov.in copy of the HO point)              |
-| 492017 | IBC Raipur (near the railway station)    | आईबीसी रायपुर (रेलवे स्टेशन के पास) | 21.2514  | 81.6296  | data.gov.in                                              |
-| 492018 | Nava Raipur Atal Nagar (Sector 27)       | नवा रायपुर अटल नगर (सेक्टर 27)      | 21.14091 | 81.78495 | OSM Sector 27 (data.gov.in near Durg, wrong)             |
-| 492099 | Tatibandh                                | टाटीबंध                             | 21.25956 | 81.57744 | data.gov.in; OSM post office and Nominatim agree         |
-| 492101 | Mandir Hasaud                            | मंदिर हसौद                          | 21.22601 | 81.77376 | OSM locality (data.gov.in 19 km off)                     |
-| 493111 | Mandhar / Siltara                        | मांढर / सिलतरा                      | 21.33763 | 81.70471 | OSM locality (data.gov.in 30 km off)                     |
-| 493221 | Birgaon                                  | बिरगांव                             | 21.30867 | 81.63692 | data.gov.in; OSM Birgaon agrees                          |
+| PIN    | Area (English)                           | Area (Hindi)                        | Lat      | Lng      | Centroid source                                                                                              |
+| ------ | ---------------------------------------- | ----------------------------------- | -------- | -------- | ------------------------------------------------------------------------------------------------------------ |
+| 492001 | Raipur GPO (Jaistambh Chowk)             | रायपुर जीपीओ (जयस्तंभ चौक)          | 21.23506 | 81.63902 | data.gov.in mean of 9 offices; Nominatim 1.3 km away                                                         |
+| 492002 | Mantralaya (Nava Raipur)                 | मंत्रालय (नवा रायपुर)               | 21.15903 | 81.79554 | OSM capital complex, Sector 19 (data.gov.in point wrong)                                                     |
+| 492003 | Urla                                     | उरला                                | 21.30833 | 81.61776 | data.gov.in; OSM Urla agrees                                                                                 |
+| 492004 | Pandri / Shankar Nagar                   | पंडरी / शंकर नगर                    | 21.25457 | 81.65708 | data.gov.in mean; Nominatim agrees                                                                           |
+| 492005 | Vidhan Sabha                             | विधानसभा                            | 21.28935 | 81.72292 | OSM Vidhan Sabha (data.gov.in copy of the HO point)                                                          |
+| 492008 | WRS Colony / Khamtarai                   | डब्ल्यूआरएस कॉलोनी / खमतराई         | 21.27664 | 81.64028 | data.gov.in; OSM post office agrees                                                                          |
+| 492009 | Gudhiyari / Raipur Ganj                  | गुढ़ियारी / रायपुर गंज              | 21.26619 | 81.62225 | data.gov.in (Gudhiyari); Nominatim agrees                                                                    |
+| 492010 | Ravishankar University / Science College | रविशंकर विश्वविद्यालय / साइंस कॉलेज | 21.24616 | 81.60007 | OSM university + data.gov.in Science College                                                                 |
+| 492012 | Krishak Nagar                            | कृषक नगर                            | 21.23784 | 81.70542 | data.gov.in; OSM IGKV campus agrees                                                                          |
+| 492013 | Sunder Nagar / Raipura                   | सुंदर नगर / रायपुरा                 | 21.22746 | 81.60962 | OSM post office node + Nominatim (data.gov.in 10 km off)                                                     |
+| 492014 | Saddu                                    | सड्डू                               | 21.2667  | 81.66832 | Nominatim postcode centroid (least certain, ±2 km)                                                           |
+| 492015 | Mana Camp                                | माना कैंप                           | 21.19331 | 81.71706 | data.gov.in; OSM Mana agrees                                                                                 |
+| 492016 | Mana Basti                               | माना बस्ती                          | 21.19515 | 81.70342 | OSM Mana (data.gov.in copy of the HO point)                                                                  |
+| 492017 | IBC Raipur (near the railway station)    | आईबीसी रायपुर (रेलवे स्टेशन के पास) | 21.25586 | 81.62954 | OSM: Raipur Junction station (data.gov.in had the city centre, a placeholder; fixed 2026-11-14 after review) |
+| 492018 | Nava Raipur Atal Nagar (Sector 27)       | नवा रायपुर अटल नगर (सेक्टर 27)      | 21.14091 | 81.78495 | OSM Sector 27 (data.gov.in near Durg, wrong)                                                                 |
+| 492099 | Tatibandh                                | टाटीबंध                             | 21.25956 | 81.57744 | data.gov.in; OSM post office and Nominatim agree                                                             |
+| 492101 | Mandir Hasaud                            | मंदिर हसौद                          | 21.22601 | 81.77376 | OSM locality (data.gov.in 19 km off)                                                                         |
+| 493111 | Mandhar / Siltara                        | मांढर / सिलतरा                      | 21.33763 | 81.70471 | OSM locality (data.gov.in 30 km off)                                                                         |
+| 493221 | Birgaon                                  | बिरगांव                             | 21.30867 | 81.63692 | data.gov.in; OSM Birgaon agrees                                                                              |
 
 **Loaded switched off, reason `outside_service_area` (6 PINs).** These are in the rest of Raipur district. The
 admin can switch any of them on in Admin → Settings → Service area.

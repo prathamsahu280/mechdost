@@ -93,7 +93,12 @@ async function candidatesFor(tx: Tx, userId: string, purchase: ReviewPurchase): 
         join product_variants v on v.id = oi.variant_id
         join products p on p.id = v.product_id
         where o.group_id = ${group.id} and o.user_id = ${userId} and o.status = 'delivered'
-        order by p.id, o.sub_no
+        -- One purchase = one review per product: a part already reviewed wins, so a product delivered in two
+        -- parts at different times never becomes reviewable twice (review finding 2026-11-14).
+        order by p.id,
+          exists (select 1 from reviews r where r.user_id = ${userId} and r.target_type = 'product'
+                  and r.target_id = p.id and r.order_id = o.id) desc,
+          o.sub_no
         limit 50`),
     );
     return rows.map((r) => ({

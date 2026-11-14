@@ -18,6 +18,11 @@ const PROTECTED: [method: string, path: string][] = [
   ['GET', '/v1/my-reviews/eligible?order=MD-RPR-2026-7K3Q9X'],
   ['POST', '/v1/my-reviews'],
   ['GET', '/v1/admin/reviews'],
+  // Service-area PIN codes (review finding 2026-11-14).
+  ['GET', '/v1/admin/pincodes?city=RPR'],
+  ['POST', '/v1/admin/pincodes'],
+  ['PATCH', '/v1/admin/pincodes/492001'],
+  ['POST', '/v1/admin/pincodes/492001/status'],
 ];
 
 describe('protected routes refuse anonymous requests under any path encoding', () => {

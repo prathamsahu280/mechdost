@@ -75,3 +75,15 @@ activated`, before/after). Client event `admin_pincode_change {action, reasonCod
   `apps/web/test/admin-pincodes-view.test.ts`.
 - **Not yet:** moving a PIN to another city; per-service serviceability (`serviceable_*`); zones/polygons; a CSV import
   in the console (the seed file is the bulk path); the customer "not serviceable yet — notify me" waitlist UI.
+
+### Review findings (2026-11-14, before merge)
+
+- **Fixed:**
+  - 492017 had the city centre as its point; it now uses Raipur Junction station (OSM).
+  - The admin PIN routes are now in the middleware-bypass test.
+- **Known, not fixed yet:**
+  - The first `db:seed:pincodes` run treats the 5 pre-existing PINs as seed-owned. It names them and moves their centres to the researched points (audited), which is accepted.
+  - An inactive PIN in workshop search says "unknown PIN".
+  - Approving a partner whose own PIN is inactive gives a generic error.
+  - Out-of-scope staff can learn which city a PIN belongs to (the data stays 404).
+  - The demo seed overwrites admin-edited PIN rows (only if `db:seed:demo` is re-run on live).

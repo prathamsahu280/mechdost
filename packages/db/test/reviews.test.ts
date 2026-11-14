@@ -234,6 +234,61 @@ describe('writing reviews', () => {
     expect(targets[0]?.review).toMatchObject({ rating: 4, status: 'pending' });
   });
 
+  it('one review per product per purchase even when it came in two parts delivered at different times (review finding)', async () => {
+    const code = await order(f.customer, P.variant!, 'packed');
+    const [g] = await db.select().from(s.orderGroups).where(eq(s.orderGroups.code, code));
+    const [second] = await db
+      .insert(s.orders)
+      .values({
+        groupId: g!.id,
+        subNo: 2,
+        code: `${code}-2`,
+        userId: f.customer,
+        cityId: f.raipur,
+        status: 'delivered',
+        shopId: P.shop,
+        shippingAddress: { line1: 'Sarona', pincode: '492001' },
+        pincode: '492001',
+        subtotalPaise: 50000,
+        totalPaise: 50000,
+      })
+      .returning();
+    await db.insert(s.orderItems).values({
+      orderId: second!.id,
+      variantId: P.variant!,
+      title: 'Activ 4T',
+      sku: 'CAS-1000',
+      hsn: '2710',
+      gstRateBp: 1800,
+      unitPaise: 50000,
+      qty: 1,
+      taxablePaise: 50000,
+      totalPaise: 50000,
+    });
+    const input = {
+      userId: f.customer,
+      purchase: { orderCode: code },
+      targetType: 'product' as const,
+      targetSlug: 'castrol-activ',
+      rating: 5,
+      body: null,
+    };
+    await submitReview(t(), input);
+    // The first part arrives later: the product must not become reviewable a second time.
+    await db
+      .update(s.orders)
+      .set({ status: 'delivered' })
+      .where(eq(s.orders.code, `${code}-1`));
+    await expect(submitReview(t(), input)).rejects.toMatchObject({ code: 'REVIEW_EXISTS', status: 409 });
+    const targets = await myReviewTargets(t(), {
+      userId: f.customer,
+      purchase: { orderCode: code },
+      locale: 'en',
+    });
+    expect(targets.filter((x) => x.slug === 'castrol-activ')).toHaveLength(1);
+    expect(targets.find((x) => x.slug === 'castrol-activ')?.review).toMatchObject({ rating: 5 });
+  });
+
   it('refuses a bad rating', async () => {
     const code = await order(f.customer, P.variant!, 'delivered');
     await expect(
