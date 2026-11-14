@@ -184,6 +184,22 @@ describe('admin workshops', () => {
     expect((await getAdminWorkshop(t(), { all: true }, W.hidden!.id)).published).toBe(false);
   });
 
+  it('moving a listed workshop to another city needs approval rights in the new city', async () => {
+    const raipurApprover = { all: false as const, cityIds: [f.raipur] };
+    const before = await getAdminWorkshop(t(), { all: true }, W.mid!.id);
+    expect(before.published).toBe(true);
+    await expect(
+      updateWorkshop(t(), {
+        scope: { all: true },
+        approveScope: raipurApprover,
+        staffUserId: f.staff,
+        workshopId: W.mid!.id,
+        patch: { version: before.version, pincode: '490001' },
+      }),
+    ).rejects.toMatchObject({ status: 403 });
+    expect((await getAdminWorkshop(t(), { all: true }, W.mid!.id)).version).toBe(before.version);
+  });
+
   it('keeps standing history and refuses the same standing twice', async () => {
     const rows = await db
       .select()

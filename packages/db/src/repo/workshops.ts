@@ -476,7 +476,6 @@ export async function updateWorkshop(
     const current = await scopedWorkshop(tx, input.scope, input.workshopId, true);
     const cityId = p.pincode ? await cityOfPincode(tx, p.pincode) : current.cityId;
     assertInScope(input.scope, cityId);
-    assertCanApprove(input.approveScope, cityId, p);
     const set: Partial<typeof workshops.$inferInsert> = {
       ...(p.name !== undefined && { name: p.name }),
       ...(p.nameHi !== undefined && { nameHi: p.nameHi }),
@@ -501,6 +500,12 @@ export async function updateWorkshop(
       set.locationVerified = false;
       set.published = false;
     }
+    // Approval is checked on the resulting state: setting the flags, or keeping them while moving to another city.
+    const movedCity = cityId !== current.cityId;
+    assertCanApprove(input.approveScope, cityId, {
+      published: set.published ?? (movedCity ? current.published : undefined),
+      locationVerified: set.locationVerified ?? (movedCity ? current.locationVerified : undefined),
+    });
     let row: { id: string; version: number } | undefined;
     try {
       [row] = await tx.transaction(async (sp) =>
