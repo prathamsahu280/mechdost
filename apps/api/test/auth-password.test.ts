@@ -151,6 +151,20 @@ describe('POST /v1/auth/password', () => {
     expect(((await mismatch.json()) as ErrorJson).error.code).toBe('STAFF_CODE_MISMATCH');
   });
 
+  // Security review 2026-11-14 ("2FA code replay"): one phone code finishes one staff sign-in, not several.
+  it('staff: a phone code is used once; a replay within its 5 minutes is refused', async () => {
+    const a = await account('12', { staff: true });
+    const phone = ctx.verifier.add('phone-token-staff-12-once', {
+      firebaseUid: a.firebaseUid,
+      phone: a.phone,
+    });
+    const first = await signIn({ identifier: a.email, password: 'Raipur@2026' }, bearer(phone));
+    expect(((await first.json()) as { status: string }).status).toBe('signed_in');
+    const replay = await signIn({ identifier: a.email, password: 'Raipur@2026' }, bearer(phone));
+    expect(replay.status).toBe(401);
+    expect(((await replay.json()) as ErrorJson).error.code).toBe('STAFF_CODE_USED');
+  });
+
   it('is unavailable (503), not open, when Firebase cannot answer', async () => {
     await account('07');
     auth.failNext = true;

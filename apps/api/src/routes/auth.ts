@@ -66,6 +66,14 @@ const unavailable = () =>
   new ApiError(503, 'AUTH_UNAVAILABLE', 'Sign-in is unavailable right now — please try again shortly');
 
 /** Rate-limit store errors on sign-in rules mean "refuse", never "allow" (Q18). */
+/** A staff phone session may finish one staff sign-in (keyed by uid and sign-in time). */
+const STAFF_CODE_ONCE: RateRule = {
+  name: 'staff_code_once',
+  limit: 1,
+  windowSeconds: STAFF_CODE_MAX_AGE_SECONDS,
+  failClosed: true,
+};
+
 async function closed<T>(f: () => Promise<T>): Promise<T> {
   try {
     return await f();
@@ -147,6 +155,13 @@ export function authRoutes(deps: AppDeps) {
         throw new ApiError(403, 'STAFF_CODE_MISMATCH', 'That code was for a different account');
       if (Date.now() / 1000 - t.authTime > STAFF_CODE_MAX_AGE_SECONDS)
         throw new ApiError(401, 'STAFF_CODE_EXPIRED', 'The code is too old — request a new one');
+      // One phone code finishes one staff sign-in: a replay of the same phone session within its lifetime is
+      // refused (security review 2026-11-14). Fails closed when the store cannot answer.
+      const once = await closed(() =>
+        deps.rateLimiter.hit(STAFF_CODE_ONCE, `${t.firebaseUid}:${String(t.authTime)}`),
+      );
+      if (!once.allowed)
+        throw new ApiError(401, 'STAFF_CODE_USED', 'That code was already used — request a new one');
       claims = { [STAFF_2FA_CLAIM]: true };
     }
 

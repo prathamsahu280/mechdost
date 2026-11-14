@@ -7,7 +7,12 @@ import { CUSTOMER_ROLE, type Grant } from './rbac';
 /** An Indian mobile number (E.164) or an email address (lower case). */
 export type SignInIdentifier = { kind: 'phone'; value: string } | { kind: 'email'; value: string };
 
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+/**
+ * Printable ASCII only (no spaces or a second @): look-alike letters from other scripts, fullwidth forms and
+ * invisible characters are refused, so two emails that look the same can never be two accounts (security review
+ * 2026-11-14, Unicode collisions).
+ */
+const EMAIL = /^[!-?A-~]+@[!-?A-~]+\.[!-?A-~]+$/;
 const INDIAN_MOBILE = /^(?:\+?91|0?91|0)?([6-9]\d{9})$/;
 
 /** Read what someone typed in "Phone number or email". Phones accept spaces, dashes, brackets, +91 and 0. */

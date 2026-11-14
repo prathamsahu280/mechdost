@@ -43,6 +43,28 @@ describe('GET /v1/me', () => {
     expect((await app.request('/v1/me', { headers: { Authorization: 'Basic abc' } })).status).toBe(401);
   });
 
+  // Security review 2026-11-14: no route asked Firebase about revocation, so a token stayed valid for up to an
+  // hour after "sign out everywhere", a password reset or disabling the account in Firebase.
+  it('asks Firebase about revocation whenever the session is not cached, on every route', async () => {
+    const { app, verifier } = await buildApp();
+    const revoked = verifier.add('token-revoked-000000001', { firebaseUid: 'rv-1', phone: '+919811111101' });
+    verifier.revoked.set(revoked, 'TOKEN_REVOKED');
+    const res = await app.request('/v1/me', { headers: bearer(revoked) });
+    expect(res.status).toBe(401);
+    expect(await code(res)).toBe('TOKEN_REVOKED');
+
+    const disabled = verifier.add('token-disabled-00000001', { firebaseUid: 'rv-2', phone: '+919811111102' });
+    verifier.revoked.set(disabled, 'USER_DISABLED');
+    expect((await app.request('/v1/me', { headers: bearer(disabled) })).status).toBe(403);
+
+    // A valid session pays for the network check once per cache period, not on every request.
+    const ok = verifier.add('token-valid-0000000001', { firebaseUid: 'rv-3', phone: '+919811111103' });
+    verifier.calls.length = 0;
+    expect((await app.request('/v1/me', { headers: bearer(ok) })).status).toBe(200);
+    expect((await app.request('/v1/me', { headers: bearer(ok) })).status).toBe(200);
+    expect(verifier.calls.filter((c) => c.checkRevoked)).toHaveLength(1);
+  });
+
   it('provisions the user on first call with the customer role only', async () => {
     const { app, verifier } = await buildApp();
     const token = verifier.add('token-first-call-00000001', { firebaseUid: 'me-1', phone: '+919822222221' });
@@ -55,7 +77,8 @@ describe('GET /v1/me', () => {
     expect(me.roles.map((r) => r.role)).toEqual(['customer']);
     expect(me.permissions).toContain('orders:place');
     expect(me.permissions).not.toContain('orders:route');
-    expect(verifier.calls.at(-1)).toEqual({ checkRevoked: false });
+    // Signature check first, then one revocation check while the session is loaded (security review 2026-11-14).
+    expect(verifier.calls.slice(-2)).toEqual([{ checkRevoked: false }, { checkRevoked: true }]);
   });
 
   it('refuses deactivated accounts', async () => {

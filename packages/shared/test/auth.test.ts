@@ -27,6 +27,18 @@ describe('sign-in identifiers (spec 01 password sign-in)', () => {
     ])
       expect(parseSignInIdentifier(typed)).toBeNull();
   });
+
+  // Security review 2026-11-14 (Unicode look-alikes, the 2013 Spotify case): an email that only looks like another
+  // one (Cyrillic "а", fullwidth letters, a dotless "ı" that lower-cases oddly) is refused, not normalised.
+  it.each([
+    'rаvi@example.com',
+    'ｒａｖｉ@example.com',
+    'ravı@example.com',
+    'ravi@exämple.com',
+    `ra${String.fromCharCode(0x200b)}vi@example.com`, // a zero-width space (kept out of the source, hygiene test)
+  ])('refuses a look-alike email %s', (typed) => {
+    expect(parseSignInIdentifier(typed)).toBeNull();
+  });
 });
 
 describe('staff grants', () => {

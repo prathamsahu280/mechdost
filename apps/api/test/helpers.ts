@@ -17,6 +17,8 @@ export const ALLOWED_ORIGIN = 'http://localhost:3000';
 export class FakeVerifier implements TokenVerifier {
   readonly tokens = new Map<string, VerifiedToken | TokenError>();
   readonly calls: { checkRevoked: boolean }[] = [];
+  /** Tokens Firebase would report revoked or disabled — only when the caller asks it to check (as the real one). */
+  readonly revoked = new Map<string, 'TOKEN_REVOKED' | 'USER_DISABLED'>();
 
   add(token: string, identity: Partial<VerifiedToken> & { firebaseUid: string }) {
     this.tokens.set(token, {
@@ -37,6 +39,8 @@ export class FakeVerifier implements TokenVerifier {
     const t = this.tokens.get(token);
     if (!t) return Promise.reject(new TokenError('TOKEN_INVALID'));
     if (t instanceof TokenError) return Promise.reject(t);
+    const revoked = this.revoked.get(token);
+    if (opts.checkRevoked && revoked) return Promise.reject(new TokenError(revoked));
     return Promise.resolve(t);
   }
 }

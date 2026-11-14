@@ -12,6 +12,18 @@ import type { AppDeps, AppEnv } from '../types';
 
 export const BEARER = /^Bearer ([A-Za-z0-9._-]{20,4096})$/;
 
+async function verifyOrThrow(verifier: AppDeps['verifier'], token: string, checkRevoked: boolean) {
+  try {
+    return await verifier.verify(token, { checkRevoked });
+  } catch (err) {
+    if (err instanceof TokenError) {
+      if (err.code === 'USER_DISABLED') throw Forbidden('ACCOUNT_DISABLED', 'This account is disabled');
+      throw Unauthorized(err.code, 'Your session is invalid or expired — sign in again');
+    }
+    throw err;
+  }
+}
+
 /**
  * Verify the Firebase ID token, load (or auto-provision) the user and their grants
  * (skill firebase-phone-auth-rbac). Identity comes only from the verified token — never from the body.
@@ -27,22 +39,17 @@ export function authenticate(
     const token = match?.[1];
     if (!token) throw Unauthorized();
 
-    let identity;
-    try {
-      identity = await deps.verifier.verify(token, { checkRevoked });
-    } catch (err) {
-      if (err instanceof TokenError) {
-        if (err.code === 'USER_DISABLED') throw Forbidden('ACCOUNT_DISABLED', 'This account is disabled');
-        throw Unauthorized(err.code, 'Your session is invalid or expired — sign in again');
-      }
-      throw err;
-    }
+    const identity = await verifyOrThrow(deps.verifier, token, checkRevoked);
 
     // `authTime` is in the key: token refreshes of one sign-in share the entry, while every new sign-in loads the
     // user's roles, status and blocks again on every instance (a role granted moments ago works on next sign-in).
     const key = `${identity.firebaseUid}|${String(identity.authTime)}|${identity.phone ?? ''}|${identity.email ?? ''}|${String(identity.emailVerified)}`;
     let session = cache.get(key);
     if (!session) {
+      // Revocation (sign out everywhere, password reset) and accounts disabled in Firebase are checked whenever
+      // the session is loaded, so they apply within the cache period on every route at one network call per
+      // user per period (security review 2026-11-14: no route checked it before).
+      if (!checkRevoked) await verifyOrThrow(deps.verifier, token, true);
       const user = await ensureUser(deps.db, identity);
       // An approved seller applicant becomes the owner of their shop on sign-in (the phone was proved by OTP).
       if (
