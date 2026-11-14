@@ -129,6 +129,7 @@ User: "after we click add to cart we should be able to add the quantity in there
 With `NEXT_PUBLIC_DATA_MODE=api` the cart and checkout use the API, not the browser demo:
 
 - **Cart lines carry the SKU.** "Add to cart" stores it (`CartLine.sku`). Lines saved without one, from the demo, cannot be priced and are left out.
+- **The cart page prices at the Raipur-centre PIN (492001).** It doesn't read the saved address, because that would pull the demo account store into `/cart`, which sits at 179.8 of its 180 KB JS budget. Checkout re-prices at the PIN the customer types.
 - **Prices come from the API only.** `useCartPricing` (`apps/web/src/lib/use-cart-pricing.ts`) calls `POST /v1/checkout/quote` for the cart at the typed PIN. It re-quotes 250 ms after the cart or PIN changes and keeps the last good numbers on screen while it loads. Loading and error panels say so instead of showing ₹0.
 - **Cash on delivery places the order on the API.** `POST /v1/orders` (`lib/orders-api.ts`) uses one idempotency key per attempt, so a retry never makes a second order. The key is renewed after a price or stock change.
   - API error codes become messages: sign in, verify email, price changed (re-quote), cart changed, COD not allowed, orders blocked. A PIN the API cannot serve shows on the PIN field.

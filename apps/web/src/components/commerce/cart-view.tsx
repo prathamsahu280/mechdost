@@ -6,7 +6,6 @@ import { useLocale, useTranslations } from 'next-intl';
 import { CATEGORY_KEYS, CATEGORY_SLUGS } from '@/demo/catalogue';
 import { useCategoryEmoji, useSiteSettings } from '@/demo/site-config';
 import { removeFromCart, setQuantity, useCart, MAX_QTY } from '@/demo/store';
-import { useSession } from '@/demo/session';
 import { BROWSER_ONLY_FEATURES, DATA_MODE } from '@/lib/data-mode';
 import { DEFAULT_PIN, useCartPricing } from '@/lib/use-cart-pricing';
 import { CATEGORY_EMOJI, UI_EMOJI } from '@/lib/emoji';
@@ -27,11 +26,9 @@ export function CartView() {
   const settings = useSiteSettings();
   const locale = useLocale();
   const lines = useCart();
-  const session = useSession();
-  // Real data mode: the API prices the cart at the customer's default address PIN (checkout re-prices at the
-  // PIN typed there); guests see Raipur-centre prices.
-  const home = session?.addresses.find((a) => a.isDefault) ?? session?.addresses[0];
-  const pricing = useCartPricing(lines, home?.pincode ?? DEFAULT_PIN, locale);
+  // Real data mode: the API prices the cart at the Raipur-centre PIN; checkout re-prices at the PIN typed there.
+  // (Not the saved address: reading the session here would pull the demo account store into /cart, JS budget.)
+  const pricing = useCartPricing(lines, DEFAULT_PIN, locale);
   const { priced, subtotalPaise, deliveryPaise, totalPaise } = pricing;
   const checkoutT = useTranslations('checkout');
   const base = prefix(locale);
