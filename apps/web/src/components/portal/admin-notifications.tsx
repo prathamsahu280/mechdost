@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useLocale, useTranslations } from 'next-intl';
 import { useId, useState, type SyntheticEvent } from 'react';
 import { WHATSAPP_TEMPLATES, type WhatsAppTemplateKey } from '@mechdost/shared/whatsapp';
@@ -14,29 +15,19 @@ import {
   type NotifyLocale,
   type TemplateProblem,
 } from '@/demo/notification-settings';
+import { AUTH_MODE } from '@/lib/auth/mode';
 import { track } from '@/lib/analytics';
 import { formatPrice } from '@/lib/format';
+import { EVENT_LABEL, PROBLEM_LABEL, SAMPLES } from './notify-labels';
 import { portalCard, portalField, portalPrimary } from './portal-guard';
+
+/** The API editor (real sign-in builds only): loaded on demand so demo bundles stay the same size. */
+const NotificationsApi = dynamic(() => import('./admin-notifications-api').then((m) => m.NotificationsApi), {
+  ssr: false,
+});
 
 /** Default message text per event in both languages (from the locale files, read raw on the server). */
 export type NotifyDefaults = Record<WhatsAppTemplateKey, Record<NotifyLocale, string>>;
-
-const EVENT_LABEL = {
-  'order.confirmed': 'notify_ev_order_confirmed',
-  'order.out_for_delivery': 'notify_ev_order_out_for_delivery',
-  'order.rejected': 'notify_ev_order_rejected',
-  'service.estimate_sent': 'notify_ev_service_estimate_sent',
-  'ticket.replied': 'notify_ev_ticket_replied',
-  'order.routed': 'notify_ev_order_routed',
-} as const satisfies Record<WhatsAppTemplateKey, string>;
-
-const PROBLEM_LABEL = {
-  empty: 'notify_problem_empty',
-  promo_wording: 'notify_problem_promo_wording',
-  too_long: 'notify_problem_too_long',
-  missing: 'notify_problem_missing',
-  unknown: 'notify_problem_unknown',
-} as const satisfies Record<TemplateProblem, string>;
 
 const CHANGE_LABEL = {
   saved: 'notify_change_saved',
@@ -44,15 +35,6 @@ const CHANGE_LABEL = {
   disabled: 'notify_change_disabled',
   budget: 'notify_change_budget',
 } as const;
-
-/** Sample values for the preview; codes are shown as-is in both languages. */
-const SAMPLES: Record<string, string> = {
-  orderCode: 'MD-RPR-2026-7K3QWX',
-  deliveryCode: '4821',
-  requestCode: 'SR-RPR-2026-4M8T2B',
-  ticketCode: 'REQ-RPR-2026-9F2KQA',
-  acceptMinutes: '15',
-};
 
 const isEvent = (v: string): v is WhatsAppTemplateKey => (WHATSAPP_EVENTS as readonly string[]).includes(v);
 
@@ -62,6 +44,14 @@ const isEvent = (v: string): v is WhatsAppTemplateKey => (WHATSAPP_EVENTS as rea
  * placeholders), saved with compare-and-set. Monthly budget alert and recent changes below.
  */
 export function AdminNotifications({ actor, defaults }: { actor: string; defaults: NotifyDefaults }) {
+  return AUTH_MODE === 'firebase' ? (
+    <NotificationsApi defaults={defaults} />
+  ) : (
+    <DemoNotifications actor={actor} defaults={defaults} />
+  );
+}
+
+function DemoNotifications({ actor, defaults }: { actor: string; defaults: NotifyDefaults }) {
   const t = useTranslations('portal');
   const config = useNotifyConfig();
   return (
