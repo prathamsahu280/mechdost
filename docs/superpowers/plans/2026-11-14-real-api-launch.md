@@ -47,3 +47,7 @@ Goal: mechdost.com runs on real sign-in (Firebase) and the API for every flow, w
   the API; workshop accounts land on /partner/workshop. Response schemas `@mechdost/shared/service-api`. API gaps
   listed in spec 06 § Real API mode (web) (no API change). Playwright not run (low-memory machine) — run the service
   e2e at merge.
+- 2026-11-14: Reviews stream on its branch (worktree-agent-a31131dde8070eb42): migration 0046 (not applied),
+  repo + routes `/v1/reviews/{product|workshop}/{slug}`, `/v1/my-reviews` (eligible, submit), `/v1/admin/reviews`
+  (queue, moderate), product/workshop review sections (server-rendered), "Rate" on delivered orders and paid services,
+  Admin → Reviews on the API; spec 02 § Reviews, decisions "Customer reviews on the API". Playwright not run.

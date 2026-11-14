@@ -505,6 +505,32 @@ Full answers in `docs/questions-for-user.md` (Answered log, 2026-11-13). The one
 - **Kept as built:** type-level fitment (Q76, Q10 not needed yet), deny-all RLS (Q73), suspension within 60 s (Q29), customer blocks by super admins only (Q65), English road names on the Hindi map (Q64), checked security fixes may skip the 3-day wait (Q67).
 - **Admin catalogue screen (Q82): build now**, before the website switch, including the Q26 PIN prices.
 
+## 2026-11-14 — Customer reviews on the API (launch stream; user: "BUILD ALL OF THEM WE NEED THEM ALL")
+
+Built per decision 2026-10-31 (verified purchase only, admin approves before publish). Details: spec 02 § Reviews.
+**Supersedes for reviews only** the 2026-11-14 ruling "features with no API are hidden in real mode": review sections,
+the write form and Admin → Reviews now work in real mode (quotes and coins unchanged by this entry).
+
+- **Verified = one purchase:** a delivered sub-order containing the product, or a service request in `paid` /
+  `completed` at the workshop (spec 06 "review after paid"; `completed` also covers a returned vehicle with no work).
+  One review per customer, target and purchase; buying the same product again allows another review. (Cost if
+  wrong: low — tighten to one per customer and target with a unique index change.)
+- **Velocity follows spec 13 ("Reviews 5/user/day"):** 5 accepted reviews per customer per 24 h, counted in the
+  database; plus 20 attempts per hour on the write route. (Cost if wrong: a customer with more than 5 delivered
+  products waits a day for the rest; the number is one constant.)
+- **Plain text only**, ≤ 1000 characters, stars required, text optional; no title field (the demo's title is not
+  carried over: fewer fields, same signal). Reviewer shown publicly as first name + last initial.
+- **Moderation is reversible** (hidden → approved allowed); hiding needs a reason **code** (spam, abusive,
+  personal_data, off_topic, not_genuine, other) with an optional staff-only note (hard rule 16). Customer edits after
+  sending, staff text edits, delete and partner reply are **not built** (queued in spec 02 § Reviews "Not built yet").
+- **Who moderates:** the existing `reviews:moderate` permission (super admin, catalogue manager, marketing), verified
+  staff, city-scoped by the purchase's city; the RBAC catalogue is unchanged.
+- **Ratings:** workshop `rating_avg` / `rating_count` are recomputed in the moderation transaction (workshop row
+  locked first); product ratings stay computed live from approved rows (no new product columns). Public reads are
+  cached 60 s (HTTP + Next fetch cache), so an approval shows within a minute.
+- **Admin → Reviews visibility:** demo queue in the browser demo, API queue with real sign-in, hidden in the mixed
+  build (real data + demo sign-in), as no queue there matches what customers see.
+
 ## PENDING DECISIONS (ask "what's pending" to review)
 
 | #   | Topic                                                                                                                                                                                       | Leaning                                                                             | When                                 |

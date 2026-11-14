@@ -67,6 +67,12 @@ const OrderRoutingApi = dynamic(() => import('./admin-orders-api').then((m) => m
   loading: () => <div className="skeleton h-96 rounded-card" aria-hidden="true" />,
 });
 
+/** Real sign-in: review moderation on the API (spec 02 § Reviews, 2026-11-14); demo builds never load it. */
+const AdminReviewsApi = dynamic(() => import('./admin-reviews-api').then((m) => m.AdminReviewsApi), {
+  ssr: false,
+  loading: () => <div className="skeleton h-96 rounded-card" aria-hidden="true" />,
+});
+
 /** Real sign-in: service routing on the API (Stream E, 2026-11-14); demo builds never load it. */
 const ServiceRoutingApi = dynamic(() => import('./admin-services-api').then((m) => m.ServiceRoutingApi), {
   ssr: false,
@@ -125,7 +131,7 @@ export function AdminConsole({
             ) : null}
             {section === 'quotes' ? <QuoteDesk /> : null}
             {section === 'applications' ? <Applications /> : null}
-            {section === 'reviews' ? <Reviews /> : null}
+            {section === 'reviews' ? AUTH_MODE === 'firebase' ? <AdminReviewsApi /> : <Reviews /> : null}
             {section === 'support' ? <AdminSupport actor={account.name} /> : null}
             {section === 'coins' ? <AdminCoins actor={account.name} /> : null}
             {section === 'partners' ? <AdminPartners actor={account.name} /> : null}
