@@ -156,7 +156,6 @@ async function paidOrder() {
       }),
     }),
   );
-  if (!placed.razorpay) throw new Error('order not placed: ' + JSON.stringify(placed));
   const paymentId = `pay_RfPaid${String(n).padStart(6, '0')}`;
   razorpay.payments.set(paymentId, {
     id: paymentId,

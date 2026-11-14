@@ -58,6 +58,10 @@ export interface RazorpayRefund {
   status: string;
 }
 
+/** Refund lookup: page size and the most pages scanned (1,000 refunds on one payment is far beyond any real case). */
+const REFUND_LOOKUP_PAGE = 100;
+const REFUND_LOOKUP_MAX_PAGES = 10;
+
 export class RazorpayError extends Error {
   constructor(
     readonly httpStatus: number,
@@ -121,11 +125,20 @@ export function httpRazorpay(keyId: string, keySecret: string): RazorpayGateway 
     async findRefund(input) {
       if (!/^pay_[A-Za-z0-9]{1,40}$/.test(input.paymentId))
         throw new RazorpayError(400, 'Invalid payment id');
-      const list = RefundListJson.parse(
-        await call(`/payments/${input.paymentId}/refunds?count=100`, { method: 'GET' }),
-      );
-      const hit = list.items.find((r) => noteOf(r) === input.refundId || r.receipt === input.refundId);
-      return hit ? toRefund(hit) : null;
+      // Page with `skip` until a page comes back short: only a complete scan without a match is a confirmed absence.
+      // A scan cut off at the page cap, or any failing page call, throws: "could not tell" is never "not there".
+      for (let pageNo = 0; pageNo < REFUND_LOOKUP_MAX_PAGES; pageNo += 1) {
+        const list = RefundListJson.parse(
+          await call(
+            `/payments/${input.paymentId}/refunds?count=${String(REFUND_LOOKUP_PAGE)}&skip=${String(pageNo * REFUND_LOOKUP_PAGE)}`,
+            { method: 'GET' },
+          ),
+        );
+        const hit = list.items.find((r) => noteOf(r) === input.refundId || r.receipt === input.refundId);
+        if (hit) return toRefund(hit);
+        if (list.items.length < REFUND_LOOKUP_PAGE) return null;
+      }
+      throw new RazorpayError(502, 'Refund lookup incomplete');
     },
     async createRefund(input) {
       if (!/^pay_[A-Za-z0-9]{1,40}$/.test(input.paymentId))

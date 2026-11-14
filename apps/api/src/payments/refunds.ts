@@ -33,7 +33,11 @@ const isRefusal = (err: unknown): err is RazorpayError =>
   err.httpStatus !== 408 &&
   err.httpStatus !== 429;
 
-type Job = { refundId: string; amountPaise: number; providerPaymentId: string };
+interface Job {
+  refundId: string;
+  amountPaise: number;
+  providerPaymentId: string;
+}
 type Lookup = { kind: 'found'; refund: RazorpayRefund } | { kind: 'absent' } | { kind: 'unknown' };
 
 async function lookup(gateway: RazorpayGateway, job: Job): Promise<Lookup> {

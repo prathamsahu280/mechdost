@@ -698,11 +698,10 @@ describe('unsure outcomes never free the money (security review 2026-11-15)', ()
 });
 
 describe('Razorpay refund webhooks (chaos)', () => {
-  async function initiated(amountOverride?: number) {
+  async function initiated() {
     const o = await paidOrder();
     await cancelAsStaff(o.subs[0]!);
     const [r] = await refundsOf(o.payment.id);
-    void amountOverride;
     await approveRefund(t(), { scope: ALL, staffUserId: bob, refundId: r!.id, expectedVersion: r!.version });
     await claimRefundDispatch(t(), r!.id);
     await recordRefundSent(t(), r!.id, `rfnd_${r!.id.slice(0, 12)}`);

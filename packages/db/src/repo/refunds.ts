@@ -60,8 +60,11 @@ const SLA = OPERATIONAL_SETTINGS['refunds.approval_sla_hours'];
 /** AAD of the encrypted payout destination (`table.column`, like every encrypted column). */
 const DESTINATION_AAD = 'refunds.destination_enc';
 
+interface EventActor {
+  type: 'admin' | 'system';
+  id: string | null;
+}
 const sysActor = { type: 'system' as const, id: null };
-type EventActor = { type: 'admin' | 'system'; id: string | null };
 
 // ── internals ─────────────────────────────────────────────────────────────────────────────────────────────────
 
