@@ -91,6 +91,7 @@ export async function addWorkshop(
   n += 1;
   const w = await createWorkshop(db, {
     scope: { all: true },
+    approveScope: { all: true },
     staffUserId: f.staff,
     workshop: {
       slug: `workshop-${String(n)}`,

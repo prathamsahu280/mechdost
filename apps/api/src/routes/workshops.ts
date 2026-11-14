@@ -302,6 +302,7 @@ export function workshopAdminRoutes(deps: AppDeps, cache: SessionCache) {
       needsApproval(c, b);
       const r = await createWorkshop(deps.db, {
         scope: cityScopeFrom(c.get('auth').grants, 'partners:write'),
+        approveScope: cityScopeFrom(c.get('auth').grants, 'partners:approve'),
         staffUserId: c.get('auth').user.id,
         workshop: b,
       });
@@ -312,6 +313,7 @@ export function workshopAdminRoutes(deps: AppDeps, cache: SessionCache) {
       needsApproval(c, b);
       const r = await updateWorkshop(deps.db, {
         scope: cityScopeFrom(c.get('auth').grants, 'partners:write'),
+        approveScope: cityScopeFrom(c.get('auth').grants, 'partners:approve'),
         staffUserId: c.get('auth').user.id,
         workshopId: c.req.valid('param').id,
         patch: b,

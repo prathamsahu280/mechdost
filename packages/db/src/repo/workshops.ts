@@ -7,7 +7,7 @@ import type {
 } from '@mechdost/shared/service-requests';
 import type { VehicleType } from '@mechdost/shared/vehicles';
 import { auditLog, partnerStatusEvents, pincodes, workshops, workshopServices } from '../schema';
-import { ConflictError, mapPgError, NotFoundError, pgCode, ValidationError } from './errors';
+import { ConflictError, ForbiddenError, mapPgError, NotFoundError, pgCode, ValidationError } from './errors';
 import { recordServerEvent } from './events';
 import { localized } from './localized';
 import type { Tx } from './orders';
@@ -310,6 +310,22 @@ function assertInScope(scope: CityScope, cityId: string) {
   if (!scope.all && !scope.cityIds.includes(cityId)) throw new NotFoundError('City not found');
 }
 
+/**
+ * Listing a workshop (published) or vouching for its pin (location verified) is an approval: the caller needs
+ * `partners:approve` covering the workshop's city, not just somewhere (security review 2026-11-14).
+ */
+function assertCanApprove(
+  approveScope: CityScope,
+  cityId: string,
+  w: { published?: boolean; locationVerified?: boolean },
+) {
+  if (w.published !== true && w.locationVerified !== true) return;
+  if (!approveScope.all && !approveScope.cityIds.includes(cityId))
+    throw new ForbiddenError(
+      'Publishing a workshop or verifying its location needs approval rights in its city',
+    );
+}
+
 async function saveMenu(tx: Tx, workshopId: string, menu: readonly MenuItemInput[]) {
   const keys = menu.map((m) => m.key);
   if (new Set(keys).size !== keys.length)
@@ -368,12 +384,13 @@ async function auditWorkshop(
 /** Staff add a workshop with its menu. The city comes from the PIN code and must be in the caller's scope. */
 export async function createWorkshop(
   db: Tx,
-  input: { scope: CityScope; staffUserId: string; workshop: CreateWorkshopInput },
+  input: { scope: CityScope; approveScope: CityScope; staffUserId: string; workshop: CreateWorkshopInput },
 ): Promise<{ id: string; slug: string; version: number }> {
   const w = input.workshop;
   return db.transaction(async (tx) => {
     const cityId = await cityOfPincode(tx, w.pincode);
     assertInScope(input.scope, cityId);
+    assertCanApprove(input.approveScope, cityId, w);
     let row: { id: string; slug: string; version: number } | undefined;
     try {
       [row] = await tx.transaction(async (sp) =>
@@ -446,13 +463,20 @@ async function scopedWorkshop(tx: Tx, scope: CityScope, workshopId: string, lock
 /** Edit any subset of fields (compare-and-set on `version`); `menu`, when given, replaces the menu by key. */
 export async function updateWorkshop(
   db: Tx,
-  input: { scope: CityScope; staffUserId: string; workshopId: string; patch: UpdateWorkshopInput },
+  input: {
+    scope: CityScope;
+    approveScope: CityScope;
+    staffUserId: string;
+    workshopId: string;
+    patch: UpdateWorkshopInput;
+  },
 ): Promise<{ id: string; version: number }> {
   const p = input.patch;
   return db.transaction(async (tx) => {
     const current = await scopedWorkshop(tx, input.scope, input.workshopId, true);
     const cityId = p.pincode ? await cityOfPincode(tx, p.pincode) : current.cityId;
     assertInScope(input.scope, cityId);
+    assertCanApprove(input.approveScope, cityId, p);
     const set: Partial<typeof workshops.$inferInsert> = {
       ...(p.name !== undefined && { name: p.name }),
       ...(p.nameHi !== undefined && { nameHi: p.nameHi }),

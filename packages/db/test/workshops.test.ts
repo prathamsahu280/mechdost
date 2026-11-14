@@ -51,6 +51,7 @@ beforeAll(async () => {
   const busy = await getAdminWorkshop(t(), { all: true }, W.busy.id);
   await updateWorkshop(t(), {
     scope: { all: true },
+    approveScope: { all: true },
     staffUserId: f.staff,
     workshopId: W.busy.id,
     patch: { version: busy.version, busy: true },
@@ -121,6 +122,7 @@ describe('admin workshops', () => {
     expect(before.missingHindi).toEqual([]);
     const saved = await updateWorkshop(t(), {
       scope: { all: true },
+      approveScope: { all: true },
       staffUserId: f.staff,
       workshopId: W.far!.id,
       patch: {
@@ -142,11 +144,44 @@ describe('admin workshops', () => {
     await expect(
       updateWorkshop(t(), {
         scope: { all: true },
+        approveScope: { all: true },
         staffUserId: f.staff,
         workshopId: W.far!.id,
         patch: { version: before.version, name: 'Stale' },
       }),
     ).rejects.toMatchObject({ code: 'STALE_WORKSHOP' });
+  });
+
+  it('publishing or verifying the pin needs approval rights in the city of the workshop', async () => {
+    const bhilaiApprover = { all: false as const, cityIds: [f.bhilai] };
+    const before = await getAdminWorkshop(t(), { all: true }, W.hidden!.id);
+    await expect(
+      updateWorkshop(t(), {
+        scope: { all: true },
+        approveScope: bhilaiApprover,
+        staffUserId: f.staff,
+        workshopId: W.hidden!.id,
+        patch: { version: before.version, published: true },
+      }),
+    ).rejects.toMatchObject({ status: 403 });
+    await expect(
+      updateWorkshop(t(), {
+        scope: { all: true },
+        approveScope: bhilaiApprover,
+        staffUserId: f.staff,
+        workshopId: W.hidden!.id,
+        patch: { version: before.version, locationVerified: true },
+      }),
+    ).rejects.toMatchObject({ status: 403 });
+    // Other edits still work with write rights alone.
+    await updateWorkshop(t(), {
+      scope: { all: true },
+      approveScope: bhilaiApprover,
+      staffUserId: f.staff,
+      workshopId: W.hidden!.id,
+      patch: { version: before.version, phone: '+919876543210' },
+    });
+    expect((await getAdminWorkshop(t(), { all: true }, W.hidden!.id)).published).toBe(false);
   });
 
   it('keeps standing history and refuses the same standing twice', async () => {
