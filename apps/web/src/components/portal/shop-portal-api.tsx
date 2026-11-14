@@ -1,7 +1,11 @@
 'use client';
 
 import { ShopOrderList, OrderChanged, DeliveryCheck, type ShopOrderDto } from '@mechdost/shared/order-views';
-import { ASSIGNMENT_DECLINE_REASONS, type AssignmentDeclineReason } from '@mechdost/shared/state';
+import {
+  ASSIGNMENT_DECLINE_REASONS,
+  ASSIGNMENT_GIVE_UP_REASONS,
+  type AssignmentDeclineReason,
+} from '@mechdost/shared/state';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useState, type SyntheticEvent } from 'react';
 import { adminApi } from '@/lib/admin-api';
@@ -18,9 +22,11 @@ import {
 } from '@/lib/order-views';
 import { ApiError, ApiListState, LoadMore } from './api-list-state';
 import { portalCard, portalField, portalPrimary, portalQuiet, useNow } from './portal-guard';
+import { GiveUpOrder } from './shop-give-up';
 import { ShopPricesApi } from './shop-prices-api';
 import { ShopAgreementApi } from './shop-onboarding-api';
 import { ShopNewProductApi, ShopProfileApi } from './shop-profile-api';
+import { ShopWarningsApi } from './shop-warnings-api';
 import { useApiList } from './use-api-list';
 
 const OFFER_POLL_MS = 30_000;
@@ -120,15 +126,18 @@ export function ShopOrdersApi() {
         {done.items.length > 0 ? (
           <ul className="mt-3 grid gap-3 nav:grid-cols-2">
             {done.items.map((o) => (
-              <li key={o.code} className={portalCard}>
+              <li key={`${o.code}-${o.status}`} className={portalCard}>
                 <StatusPill status={o.status} />
                 <OrderLines order={o} />
+                <GivenUpWhy reason={o.givenUpReason} />
               </li>
             ))}
           </ul>
         ) : null}
         <LoadMore show={Boolean(done.next)} onClick={() => void done.loadMore()} />
       </section>
+
+      <ShopWarningsApi />
 
       <ShopPricesApi />
 
@@ -140,15 +149,30 @@ export function ShopOrdersApi() {
 function StatusPill({ status }: { status: string }) {
   const t = useTranslations('portal');
   const o = useTranslations('order');
-  const cancelled = status === 'cancelled';
+  const g = useTranslations('shopGiveUp');
+  const muted = status === 'cancelled' || status === 'given_up';
   return (
     <p
       className={`mb-2 inline-flex rounded-pill px-3 py-1 text-xs font-extrabold ${
-        cancelled ? 'bg-pill text-muted' : 'bg-success-bg text-success'
+        muted ? 'bg-pill text-muted' : 'bg-success-bg text-success'
       }`}
     >
-      {cancelled ? t('queue_cancelled') : o(shopStageKey(status))}
+      {status === 'given_up'
+        ? g('givenUp')
+        : status === 'cancelled'
+          ? t('queue_cancelled')
+          : o(shopStageKey(status))}
     </p>
+  );
+}
+
+/** History row of an order this shop gave back: the reason code it chose, in the shop's language. */
+function GivenUpWhy({ reason }: { reason: string | null | undefined }) {
+  const g = useTranslations('shopGiveUp');
+  const code = ASSIGNMENT_GIVE_UP_REASONS.find((r) => r === reason);
+  if (!code) return null;
+  return (
+    <p className="mt-2 text-xs font-bold text-muted">{g('givenUpWhy', { reason: g(`reason_${code}`) })}</p>
   );
 }
 
@@ -162,11 +186,14 @@ function OrderLines({ order }: { order: ShopOrderDto }) {
       <p className="font-heading text-lg font-extrabold text-ink">{order.code}</p>
       {/* The shop's own total (its prices), never the customer's price or a quote discount (review I1). */}
       <p className="text-xs text-muted">
-        {t('orderMeta', {
-          items: a('items', { count: order.items.length }),
-          total: formatPrice(order.payoutPaise),
-          pin: order.pincode,
-        })}
+        {/* A given-up order carries no prices: its lines may now hold another shop's price (security review). */}
+        {order.payoutPaise === null
+          ? t('orderMetaNoTotal', { items: a('items', { count: order.items.length }), pin: order.pincode })
+          : t('orderMeta', {
+              items: a('items', { count: order.items.length }),
+              total: formatPrice(order.payoutPaise),
+              pin: order.pincode,
+            })}
       </p>
       {order.collectPaise === null ? null : (
         <p className="mt-1 text-xs font-bold text-ink">
@@ -397,6 +424,8 @@ function ActiveOrder({ order, onChanged }: { order: ShopOrderDto; onChanged: () 
           {t(action.label)}
         </button>
       ) : null}
+      {/* Before packing only: the shop can still hand the order back to MechDost (spec 04). */}
+      {order.status === 'confirmed' ? <GiveUpOrder order={order} onChanged={onChanged} /> : null}
     </article>
   );
 }

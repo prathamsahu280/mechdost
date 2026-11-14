@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import {
+  type AnyPgColumn,
   bigint,
   boolean,
   check,
@@ -16,6 +17,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { CUSTOMER_BLOCK_LEVELS, CUSTOMER_BLOCK_REASONS } from '@mechdost/shared/customers';
 import { GST_STATUSES, LOCATION_SOURCES, PARTNER_STANDING_REASONS } from '@mechdost/shared/partner-codes';
+import { PARTNER_WARNING_REASONS, WARNING_PARTNER_KINDS } from '@mechdost/shared/partner-warnings';
 import { REVIEW_HIDE_REASONS, REVIEW_STATES } from '@mechdost/shared/reviews';
 import { APPLICATION_STATES, INVITE_STATES } from '@mechdost/shared/state';
 import { citext, createdAt, encryptedCheck, geographyPoint, id, ts, updatedAt, version } from './_common';
@@ -23,7 +25,7 @@ import { cities } from './geography';
 import { users } from './identity';
 import { orders } from './orders';
 import { products, shops } from './catalogue';
-import { serviceRequests } from './services';
+import { serviceRequests, workshops } from './services';
 
 /** Brandur-style idempotency keys for money-moving endpoints (docs/research/data-integrity.md §4). */
 
@@ -597,6 +599,56 @@ export const partnerStatusEvents = pgTable(
     ),
     index().on(t.partnerKind, t.partnerId, t.createdAt),
     index().on(t.changedBy),
+  ],
+);
+
+/**
+ * Warnings staff give a shop or workshop (spec 08, design 2026-11-15). Append-only (trigger in the migration): an
+ * `issued` row is the warning; revoking one appends a `withdrawn` row pointing at it (`withdraws_id`, at most one per
+ * warning), never an edit. Exactly one of `shop_id` / `workshop_id` is set, with real foreign keys. `reason_code` is
+ * the code (rule 16); `note` the optional extra the partner reads. The count of live warnings in the rolling window
+ * only prompts staff to consider a pause (settings `partners.warning_threshold` / `partners.warning_window_days`).
+ */
+export const partnerWarnings = pgTable(
+  'partner_warnings',
+  {
+    id: id(),
+    event: text().notNull().default('issued'),
+    partnerKind: text().notNull(),
+    shopId: uuid().references(() => shops.id, { onDelete: 'restrict' }),
+    workshopId: uuid().references(() => workshops.id, { onDelete: 'restrict' }),
+    reasonCode: text().notNull(),
+    note: text(),
+    withdrawsId: uuid().references((): AnyPgColumn => partnerWarnings.id, { onDelete: 'restrict' }),
+    createdBy: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    check('partner_warnings_event_valid', sql`${t.event} in ('issued','withdrawn')`),
+    check('partner_warnings_kind_valid', sql`${t.partnerKind} in (${inList(WARNING_PARTNER_KINDS)})`),
+    check(
+      'partner_warnings_one_partner',
+      sql`(${t.partnerKind} = 'shop' and ${t.shopId} is not null and ${t.workshopId} is null)
+        or (${t.partnerKind} = 'workshop' and ${t.workshopId} is not null and ${t.shopId} is null)`,
+    ),
+    check('partner_warnings_reason_code_valid', sql`${t.reasonCode} in (${inList(PARTNER_WARNING_REASONS)})`),
+    check('partner_warnings_note_length', sql`${t.note} is null or char_length(${t.note}) between 5 and 300`),
+    check(
+      'partner_warnings_withdraws_consistent',
+      sql`(${t.event} = 'withdrawn') = (${t.withdrawsId} is not null)`,
+    ),
+    check(
+      'partner_warnings_other_needs_note',
+      sql`${t.event} = 'withdrawn' or ${t.reasonCode} <> 'other' or ${t.note} is not null`,
+    ),
+    uniqueIndex('partner_warnings_one_withdrawal_uq')
+      .on(t.withdrawsId)
+      .where(sql`${t.withdrawsId} is not null`),
+    index('partner_warnings_shop_idx').on(t.shopId, t.createdAt),
+    index('partner_warnings_workshop_idx').on(t.workshopId, t.createdAt),
+    index().on(t.createdBy),
   ],
 );
 

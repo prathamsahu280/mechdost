@@ -79,6 +79,25 @@ export async function releaseReservation(
 }
 
 /**
+ * Put back what a shop's accept took (a committed sale becomes `released`, `on_hand` goes up by the same qty): the
+ * exact reverse of `commitReservation`, in the caller's transaction (the order row is already locked). Idempotent:
+ * only `committed` rows move, once. Returns how many holds were reversed.
+ */
+export async function restoreCommittedStock(tx: Tx, orderId: string): Promise<number> {
+  const moved = await tx
+    .update(reservations)
+    .set({ status: 'released' })
+    .where(and(eq(reservations.orderId, orderId), eq(reservations.status, 'committed')))
+    .returning({ qty: reservations.qty, inventoryId: reservations.inventoryId });
+  for (const r of moved)
+    await tx
+      .update(shopInventory)
+      .set({ onHand: sql`${shopInventory.onHand} + ${r.qty}` })
+      .where(eq(shopInventory.id, r.inventoryId));
+  return moved.length;
+}
+
+/**
  * Hold-expiry job (worker, every 60 s; spec 04): frees active holds past their DB-clock expiry, so stock held by
  * an order nobody routed or accepted goes back on sale. One transaction per hold, locking the **order row first**
  * (spec 14 lock order — the same order as accept and cancel, so they cannot deadlock), and a failure on one hold

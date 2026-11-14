@@ -33,6 +33,8 @@ export const orderMachine = defineMachine(
     { from: 'needs_rerouting', to: 'rejected', by: ['admin'] },
     { from: 'needs_rerouting', to: 'cancelled', by: ['customer', 'admin'] },
     { from: 'confirmed', to: 'packed', by: ['shop'] },
+    // The shop gives the order up before packing: back to admin to reroute (user ruling 2026-11-15).
+    { from: 'confirmed', to: 'needs_rerouting', by: ['shop'] },
     { from: 'confirmed', to: 'cancelled', by: ['customer', 'admin', 'shop'] },
     { from: 'packed', to: 'shipped', by: ['shop'] },
     { from: 'packed', to: 'cancelled', by: ['admin'] },
@@ -116,16 +118,35 @@ export const ASSIGNMENT_DECLINE_REASONS = [
 ] as const;
 export type AssignmentDeclineReason = (typeof ASSIGNMENT_DECLINE_REASONS)[number];
 
+/** Why a shop gave up an accepted order before packing (ML-ready codes; counts against the shop's score, spec 04). */
+export const ASSIGNMENT_GIVE_UP_REASONS = [
+  'out_of_stock',
+  'stock_damaged',
+  'cannot_deliver',
+  'shop_closed',
+  'price_issue',
+  'other',
+] as const;
+export type AssignmentGiveUpReason = (typeof ASSIGNMENT_GIVE_UP_REASONS)[number];
+
 /** An offer of an order or service request to one partner (one active per order — partial unique index). */
-export const ASSIGNMENT_STATES = ['offered', 'accepted', 'declined', 'expired', 'withdrawn'] as const;
+export const ASSIGNMENT_STATES = [
+  'offered',
+  'accepted',
+  'declined',
+  'expired',
+  'withdrawn',
+  'given_up',
+] as const;
 export type AssignmentStatus = (typeof ASSIGNMENT_STATES)[number];
 
 export const assignmentMachine = defineMachine(
   'assignment',
   ASSIGNMENT_STATES,
-  ['accepted', 'declined', 'expired', 'withdrawn'],
+  ['declined', 'expired', 'withdrawn', 'given_up'],
   [
     { from: 'offered', to: 'accepted', by: ['shop', 'workshop'] },
+    { from: 'accepted', to: 'given_up', by: ['shop'] },
     { from: 'offered', to: 'declined', by: ['shop', 'workshop'] },
     { from: 'offered', to: 'expired', by: ['system'] },
     { from: 'offered', to: 'withdrawn', by: ['admin', 'system'] },

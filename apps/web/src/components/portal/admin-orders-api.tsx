@@ -9,7 +9,11 @@ import {
   type RoutingOrderDto,
   type RoutingQueueItemDto,
 } from '@mechdost/shared/order-views';
-import { ORDER_REJECT_REASONS, PERSON_CANCEL_REASONS } from '@mechdost/shared/state';
+import {
+  ASSIGNMENT_GIVE_UP_REASONS,
+  ORDER_REJECT_REASONS,
+  PERSON_CANCEL_REASONS,
+} from '@mechdost/shared/state';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState, type SyntheticEvent } from 'react';
 import { adminApi, type ResponseSchema } from '@/lib/admin-api';
@@ -122,6 +126,7 @@ function RoutingCard({
   onChanged: () => Promise<void>;
 }) {
   const t = useTranslations('portal');
+  const g = useTranslations('shopGiveUp');
   const a = useTranslations('account');
   const ord = useTranslations('order');
   const locale = useLocale();
@@ -201,6 +206,16 @@ function RoutingCard({
         </div>
       ) : null}
 
+      {(detail?.history ?? [])
+        .filter((h) => h.status === 'given_up')
+        .map((h) => {
+          const code = ASSIGNMENT_GIVE_UP_REASONS.find((r) => r === h.giveUpReason);
+          return (
+            <p key={`gu-${h.shop}-${h.offeredAt}`} className="mt-2 text-xs font-bold text-warning">
+              {g('adminGaveUp', { shop: h.shop, reason: code ? g(`reason_${code}`) : g('reason_other') })}
+            </p>
+          );
+        })}
       {(detail?.history ?? [])
         .filter((h) => h.status === 'declined' || h.status === 'expired')
         .map((h) => (
@@ -332,12 +347,14 @@ function RoutingCard({
 
 function ShopFacts({ shop }: { shop: RankedShopDto }) {
   const t = useTranslations('portal');
+  const g = useTranslations('shopGiveUp');
   const facts = [
     shop.distanceKm === null ? null : t('api_distanceKm', { km: shop.distanceKm.toFixed(1) }),
     t('api_stockItems', { n: shop.stockedItems, total: shop.totalItems }),
     shop.acceptanceRate === null
       ? t('api_acceptanceNew')
       : t('api_acceptanceRate', { rate: Math.round(shop.acceptanceRate * 100) }),
+    shop.gaveUpBefore ? g('adminGaveUpBefore') : null,
   ].filter((f): f is string => f !== null);
   return <span className="block text-xs text-muted">{facts.join(' · ')}</span>;
 }

@@ -35,6 +35,8 @@ export const ShopOrder = z.object({
   expiresAt: z.string().nullable(),
   /** Only while the shop fulfils the order (`active` view); the customer is hidden on offers. */
   address: z.record(z.string(), z.unknown()).nullable(),
+  /** History only: the reason code when this row is an order the shop accepted and gave up (status `given_up`). */
+  givenUpReason: z.string().nullable().optional(),
 });
 export type ShopOrderDto = z.infer<typeof ShopOrder>;
 
@@ -97,6 +99,8 @@ export const RoutingQueueItem = z.object({
   items: z.number().int(),
   version: z.number().int(),
   attempts: z.number().int(),
+  /** Set when the latest attempt was a shop giving the order up after accepting it. */
+  gaveUpReason: z.string().nullable(),
   offer: z.object({ shop: z.string(), expiresAt: z.string() }).nullable(),
 });
 export type RoutingQueueItemDto = z.infer<typeof RoutingQueueItem>;
@@ -112,6 +116,8 @@ export const RankedShop = z.object({
   rating: z.number().nullable(),
   pricePaise: z.number().int().nullable(),
   triedBefore: z.boolean(),
+  /** This shop accepted the order and gave it up before. */
+  gaveUpBefore: z.boolean(),
   eligible: z.boolean(),
   /** Inside its working hours now (IST); a closed shop's offer waits until `opensAt` + the grace setting. */
   openNow: z.boolean(),
@@ -135,6 +141,7 @@ export const RoutingOrder = z.object({
       offeredAt: z.string(),
       respondedAt: z.string().nullable(),
       declineReason: z.string().nullable(),
+      giveUpReason: z.string().nullable(),
     }),
   ),
   shops: z.array(RankedShop),

@@ -77,3 +77,17 @@ No test in this spec may be skipped in CI; schema PRs require the `drizzle-postg
 ## Data model note: event store cursor index (migration 0053, 2026-11-14)
 
 - `events_received_idx` on `events (received_at, id)`, created on the partitioned parent, so every existing partition and every partition `ensure_event_partitions` makes later gets it. It serves the PostHog forwarder's read (`readForwardableEvents`: `(received_at, id) > cursor`, ordered) as an index range scan. No data change; plain build (CONCURRENTLY is not allowed on a partitioned parent; the table is small at launch). Numbered 0053 because 0049–0052 are taken by parallel branches; the journal `when` is re-stamped at merge (L106).
+
+## Give-up and warnings (2026-11-15, migration 0054)
+
+- **Give-up is one transaction:** order row locked first (lock order), assignment `accepted -> given_up` as a compare-and-set
+  on its status, order `confirmed -> needs_rerouting` as a conditional UPDATE on (status, version), committed holds reversed
+  (`on_hand` + qty, status `released`). A concurrent pack, second give-up or staff cancel loses with 409; stock is restored
+  exactly once. The one-active-assignment partial unique index is unchanged (`given_up` leaves the active set).
+- **CHECKs:** `order_assignments_give_up_explained` (a given-up row has its code and time, no other status does),
+  `..._give_up_note_length`; the status CHECK lists `given_up`.
+- **`partner_warnings`:** append-only (`forbid_update_delete`), RLS on, REVOKE from anon/authenticated, CHECKs for kind,
+  one partner FK, reason code, note length, "other needs a note", `withdrawn` rows point at an `issued` row; unique
+  `withdraws_id` (one withdrawal per warning). No version/updated_at: rows never change.
+- **Customer timeline:** `log_order_status_change` writes the `confirmed -> needs_rerouting` row with
+  `visible_to_customer = false`.

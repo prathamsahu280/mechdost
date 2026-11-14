@@ -27,6 +27,13 @@ export const OPERATIONAL_SETTINGS = {
   'partners.default_shipping_paise': { kind: 'int', min: 0, max: 50_000, default: 4_000 },
   /** Delivery days pre-filled for each PIN when approving a new shop. */
   'partners.default_lead_days': { kind: 'int', min: 0, max: 14, default: 2 },
+  /**
+   * Warnings in the rolling window (below) at which admin is prompted to consider pausing a partner. Only a prompt:
+   * nothing pauses by itself (user ruling 2026-11-15).
+   */
+  'partners.warning_threshold': { kind: 'int', min: 1, max: 20, default: 3, globalOnly: true },
+  /** The rolling window, in days (24-hour days from now, UTC), over which warnings count toward the prompt. */
+  'partners.warning_window_days': { kind: 'int', min: 7, max: 180, default: 30, globalOnly: true },
   /** Days a seller invite link stays valid. */
   'partners.invite_days': { kind: 'int', min: 1, max: 30, default: 7 },
   /**

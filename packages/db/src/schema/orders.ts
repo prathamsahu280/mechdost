@@ -15,6 +15,7 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 import {
+  ASSIGNMENT_GIVE_UP_REASONS,
   ASSIGNMENT_STATES,
   ORDER_CANCEL_REASONS,
   ORDER_REJECT_REASONS,
@@ -277,10 +278,25 @@ export const orderAssignments = pgTable(
     expiresAt: ts().notNull(),
     respondedAt: ts(),
     declineReason: text(),
+    /** A shop that accepted and then gave the order up before packing (spec 04; user ruling 2026-11-15). */
+    givenUpAt: ts(),
+    giveUpReason: text(),
+    /** The extra free-text note (rule 16): staff-only, never shown to the customer. */
+    giveUpNote: text(),
     version: version(),
   },
   (t) => [
     check('order_assignments_status_valid', sql`${t.status} in (${inList(ASSIGNMENT_STATES)})`),
+    // A given-up offer carries its reason code and time; no other status does.
+    check(
+      'order_assignments_give_up_explained',
+      sql`(${t.status} = 'given_up') = (${t.givenUpAt} is not null and ${t.giveUpReason} in (${inList(ASSIGNMENT_GIVE_UP_REASONS)}))
+        and (${t.status} = 'given_up' or (${t.givenUpAt} is null and ${t.giveUpReason} is null and ${t.giveUpNote} is null))`,
+    ),
+    check(
+      'order_assignments_give_up_note_length',
+      sql`${t.giveUpNote} is null or char_length(${t.giveUpNote}) <= 300`,
+    ),
     check('order_assignments_expiry_after_offer', sql`${t.expiresAt} > ${t.offeredAt}`),
     check(
       'order_assignments_decline_reason',

@@ -72,16 +72,24 @@ export interface ShopOrderItem {
   version: number;
   /** The customer's total for this sub-order. */
   totalPaise: number;
-  /** What the shop is paid: its own price × qty over the lines (never the customer price or a quote discount). */
-  payoutPaise: number;
+  /**
+   * What the shop is paid: its own price × qty over the lines (never the customer price or a quote discount).
+   * Null on a `given_up` history row: the order may since be priced for another shop (security review 2026-11-15).
+   */
+  payoutPaise: number | null;
   /** Cash to collect from the customer at delivery (cash-on-delivery orders), else null. */
   collectPaise: number | null;
   /** MechDost Coins discount on this part (paid by MechDost, never by the shop; spec 20); 0 when none. */
   coinDiscountPaise: number;
   pincode: string;
-  /** `unitPaise` is the shop's own price per unit (review I1, 2026-11-14), not the customer's. */
-  items: { title: string; titleHi: string | null; sku: string; qty: number; unitPaise: number }[];
+  /**
+   * `unitPaise` is the shop's own price per unit (review I1, 2026-11-14), not the customer's; null on a `given_up`
+   * row, whose lines now carry the next shop's price (never shown to a competitor, security review 2026-11-15).
+   */
+  items: { title: string; titleHi: string | null; sku: string; qty: number; unitPaise: number | null }[];
   /** Offers only. */
+  /** History only: the reason code of an order this shop accepted and gave up (status `given_up`). */
+  givenUpReason: string | null;
   assignmentId: string | null;
   expiresAt: Date | null;
   /** Accepted orders only (null on offers: the customer's details are shared once the shop accepts). */
@@ -109,6 +117,7 @@ export async function listShopOrders(
     coin_discount_paise: unknown;
     pincode: string;
     shipping_address: Record<string, unknown>;
+    give_up_reason?: string | null;
     payment_method: string;
     assignment_id: string | null;
     expires_at: string | Date | null;
@@ -133,15 +142,29 @@ export async function listShopOrders(
           where ${inShops(shopIds, 'o.shop_id')} and o.status in ('confirmed', 'packed', 'shipped', 'out_for_delivery')
           order by o.placed_at limit 100`)
         : await db.execute(sql`
-          select o.id, o.code, o.status, o.version, o.total_paise, o.coin_discount_paise,
-            (select g.payment_method from order_groups g where g.id = o.group_id) as payment_method,
-            o.pincode, o.shipping_address,
-            null::uuid as assignment_id, null::timestamptz as expires_at, o.updated_at::text as sort_key
-          from orders o
-          where ${inShops(shopIds, 'o.shop_id')} and o.status in ('delivered', 'cancelled')
-            and o.updated_at > now() - interval '30 days'
-            ${after ? sql`and (o.updated_at, o.id) < (cast(${after.k} as timestamptz), cast(${after.id} as uuid))` : sql``}
-          order by o.updated_at desc, o.id desc limit ${doneLimit + 1}`),
+          select u.id, u.code, u.status, u.version, u.total_paise, u.coin_discount_paise, u.payment_method,
+            u.pincode, u.shipping_address, u.give_up_reason, u.assignment_id, u.expires_at,
+            u.sort_ts::text as sort_key
+          from (
+            select o.id, o.code, o.status, o.version, o.total_paise, o.coin_discount_paise,
+              (select g.payment_method from order_groups g where g.id = o.group_id) as payment_method,
+              o.pincode, o.shipping_address, null::text as give_up_reason,
+              null::uuid as assignment_id, null::timestamptz as expires_at, o.updated_at as sort_ts
+            from orders o
+            where ${inShops(shopIds, 'o.shop_id')} and o.status in ('delivered', 'cancelled')
+              and o.updated_at > now() - interval '30 days'
+            union all
+            select o.id, o.code, 'given_up' as status, o.version, o.total_paise, o.coin_discount_paise,
+              (select g.payment_method from order_groups g where g.id = o.group_id) as payment_method,
+              o.pincode, o.shipping_address, a.give_up_reason,
+              null::uuid as assignment_id, null::timestamptz as expires_at, a.given_up_at as sort_ts
+            from order_assignments a join orders o on o.id = a.order_id
+            where a.status = 'given_up' and ${inShops(shopIds, 'a.shop_id')}
+              and a.given_up_at > now() - interval '30 days'
+          ) u
+          where true
+            ${after ? sql`and (u.sort_ts, u.id) < (cast(${after.k} as timestamptz), cast(${after.id} as uuid))` : sql``}
+          order by u.sort_ts desc, u.id desc limit ${doneLimit + 1}`),
   );
   const more = view === 'done' && fetched.length > doneLimit;
   const rows = more ? fetched.slice(0, doneLimit) : fetched;
@@ -165,13 +188,14 @@ export async function listShopOrders(
           .where(inArray(orderItems.orderId, ids));
   const list = rows.map((r) => {
     const lines = items.filter((i) => i.orderId === r.id);
+    const priced = r.status !== 'given_up';
     return {
       code: r.code,
       status: r.status,
       version: num(r.version),
       totalPaise: num(r.total_paise),
       coinDiscountPaise: num(r.coin_discount_paise),
-      payoutPaise: lines.reduce((sum, i) => sum + num(i.unitPaise) * num(i.qty), 0),
+      payoutPaise: priced ? lines.reduce((sum, i) => sum + num(i.unitPaise) * num(i.qty), 0) : null,
       collectPaise: r.payment_method === 'cod' ? num(r.total_paise) : null,
       pincode: r.pincode,
       items: lines.map((i) => ({
@@ -179,8 +203,9 @@ export async function listShopOrders(
         titleHi: i.titleHi,
         sku: i.sku,
         qty: num(i.qty),
-        unitPaise: num(i.unitPaise),
+        unitPaise: priced ? num(i.unitPaise) : null,
       })),
+      givenUpReason: r.give_up_reason ?? null,
       assignmentId: r.assignment_id,
       expiresAt: r.expires_at ? new Date(r.expires_at) : null,
       // Shared only while the shop is fulfilling the order (DPDP minimisation, advisor review 2026-11-03).

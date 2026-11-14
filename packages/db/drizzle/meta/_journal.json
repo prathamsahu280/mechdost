@@ -365,6 +365,13 @@
       "when": 1794685340898,
       "tag": "0053_events_received_index",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1794687156798,
+      "tag": "0054_shop_give_up_warnings",
+      "breakpoints": true
     }
   ]
 }

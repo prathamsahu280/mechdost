@@ -92,6 +92,14 @@ text. The change itself is in `audit_log` (`pincode.*`, before/after) in the sam
     `admin_shop_paused`, `admin_shop_suspended`, `admin_shop_approved`, `admin_shop_member_added`;
   - shop: `shop_hours_saved`, `shop_new_product_requested`.
 
+## Give-up and warning events (2026-11-15)
+
+- **Server events (same transaction):** `seller_order_given_up` (orderCode, shopId, reasonCode, minutesSinceAccept),
+  `admin_partner_warning_issued` (partnerKind, partnerId, warningId, reasonCode, counting, suggestPause),
+  `admin_partner_warning_withdrawn` (partnerKind, partnerId, warningId). Codes, ids and counts only; notes never leave the
+  database.
+- **Click ids:** `shop_order_given_up`, `admin_partner_warning_issued`, `admin_partner_warning_withdrawn`.
+
 ## Product comparison events (2026-11-13)
 
 - **Client events:** `compare_added` (slug, category, count 1–4), `compare_removed` (slug, count), `compare_opened` (count, category), `compare_differences_toggled` (on). `add_to_cart` gains an optional `source: 'compare'` (optional so events from older open tabs still pass).

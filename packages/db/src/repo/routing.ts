@@ -98,6 +98,8 @@ export interface QueueItem {
   version: number;
   /** Shops already tried (declined or expired). */
   attempts: number;
+  /** The reason code when the latest attempt was a shop giving the order up after accepting it, else null. */
+  gaveUpReason: string | null;
   offer: { shop: string; expiresAt: Date } | null;
 }
 
@@ -131,6 +133,7 @@ export async function listRoutingQueue(
     items: unknown;
     version: unknown;
     attempts: unknown;
+    gave_up_reason: string | null;
     shop_name: string | null;
     shop_name_hi: string | null;
     expires_at: string | Date | null;
@@ -139,8 +142,10 @@ export async function listRoutingQueue(
       select o.id, o.code, o.status, o.pincode, o.placed_at, o.placed_at::text as placed_key, o.total_paise,
         o.version,
         (select count(*) from order_items i where i.order_id = o.id)::int as items,
-        (select count(*) from order_assignments a where a.order_id = o.id and a.status in ('declined', 'expired'))::int
+        (select count(*) from order_assignments a where a.order_id = o.id and a.status in ('declined', 'expired', 'given_up'))::int
           as attempts,
+        (select a.give_up_reason from order_assignments a where a.order_id = o.id and a.status = 'given_up'
+          order by a.given_up_at desc limit 1) as gave_up_reason,
         cur.shop_name, cur.shop_name_hi, cur.expires_at
       from orders o
       left join lateral (
@@ -164,6 +169,7 @@ export async function listRoutingQueue(
       items: num(r.items),
       version: num(r.version),
       attempts: num(r.attempts),
+      gaveUpReason: r.gave_up_reason,
       offer:
         r.shop_name && r.expires_at
           ? { shop: localized(r.shop_name, r.shop_name_hi, opts.locale), expiresAt: new Date(r.expires_at) }
@@ -218,6 +224,8 @@ export interface RankedShop {
   pricePaise: number | null;
   /** Declined or let this order expire before: never offered again. */
   triedBefore: boolean;
+  /** Accepted this order and then gave it up: still offerable (stock may be sorted), but flagged to admin. */
+  gaveUpBefore: boolean;
   eligible: boolean;
   /** Inside its working hours now (IST); open shops are suggested first (user 2026-11-14). */
   openNow: boolean;
@@ -245,6 +253,7 @@ export async function rankShopsForOrder(
     accepted: unknown;
     answered: unknown;
     tried: boolean;
+    gave_up: boolean;
     hours: unknown;
   }>(
     await db.execute(sql`
@@ -266,14 +275,16 @@ export async function rankShopsForOrder(
         s.rating_avg::float8 as rating,
         stats.accepted, stats.answered,
         exists (select 1 from order_assignments a where a.order_id = o.id and a.shop_id = s.id
-          and a.status in ('declined', 'expired')) as tried
+          and a.status in ('declined', 'expired')) as tried,
+        exists (select 1 from order_assignments a where a.order_id = o.id and a.shop_id = s.id
+          and a.status = 'given_up') as gave_up
       from o
       join shop_pincodes sp on sp.pincode = o.pincode and sp.active
       join shops s on s.id = sp.shop_id and s.status = 'approved' and s.gst_status = 'registered'
         and not (s.busy and (s.busy_until is null or s.busy_until > now()))
       left join lateral (
         select count(*) filter (where a.status = 'accepted')::int as accepted,
-          count(*) filter (where a.status in ('accepted', 'declined', 'expired'))::int as answered
+          count(*) filter (where a.status in ('accepted', 'declined', 'expired', 'given_up'))::int as answered
         from order_assignments a where a.shop_id = s.id and a.offered_at > now() - interval '30 days') stats on true`),
   );
   const now = new Date();
@@ -293,6 +304,7 @@ export async function rankShopsForOrder(
       rating: numOrNull(r.rating),
       pricePaise: stocked === total ? numOrNull(r.price) : null,
       triedBefore: r.tried,
+      gaveUpBefore: r.gave_up,
       eligible: !r.tried && stocked === total && total > 0,
       openNow: open.open,
       opensAt: open.open ? null : open.opensAt.toISOString(),
@@ -330,6 +342,7 @@ export interface RoutingOrderView {
     offeredAt: Date;
     respondedAt: Date | null;
     declineReason: string | null;
+    giveUpReason: string | null;
   }[];
   shops: RankedShop[];
 }
@@ -359,8 +372,9 @@ export async function getRoutingOrder(
     offered_at: string | Date;
     responded_at: string | Date | null;
     decline_reason: string | null;
+    give_up_reason: string | null;
   }>(
-    await db.execute(sql`select s.name, s.name_hi, a.status, a.offered_at, a.responded_at, a.decline_reason
+    await db.execute(sql`select s.name, s.name_hi, a.status, a.offered_at, a.responded_at, a.decline_reason, a.give_up_reason
       from order_assignments a join shops s on s.id = a.shop_id where a.order_id = ${o.id} order by a.offered_at`),
   );
   const [total] = rowsOf<{ total_paise: unknown }>(
@@ -384,6 +398,7 @@ export async function getRoutingOrder(
       offeredAt: new Date(h.offered_at),
       respondedAt: h.responded_at ? new Date(h.responded_at) : null,
       declineReason: h.decline_reason,
+      giveUpReason: h.give_up_reason,
     })),
     shops: ['placed', 'needs_rerouting'].includes(o.status) ? await rankShopsForOrder(db, o.id, locale) : [],
   };

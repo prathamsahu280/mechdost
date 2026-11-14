@@ -23,6 +23,23 @@ export interface ServerEventProps {
   admin_order_rejected: { orderCode: string; reasonCode: string };
   seller_order_accepted: { orderCode: string; shopId: string; secondsToAccept: number };
   seller_order_declined: { orderCode: string; shopId: string; reasonCode: string };
+  /** A shop gave up an order it had accepted (before packing); the order is back with admin (spec 04). */
+  seller_order_given_up: {
+    orderCode: string;
+    shopId: string;
+    reasonCode: string;
+    minutesSinceAccept: number;
+  };
+  /** Staff warned a partner (spec 08); `counting` = warnings in the window after this one. */
+  admin_partner_warning_issued: {
+    partnerKind: 'shop' | 'workshop';
+    partnerId: string;
+    warningId: string;
+    reasonCode: string;
+    counting: number;
+    suggestPause: boolean;
+  };
+  admin_partner_warning_withdrawn: { partnerKind: 'shop' | 'workshop'; partnerId: string; warningId: string };
   order_cancelled: {
     orderCode: string;
     by: 'customer' | 'staff' | 'system';

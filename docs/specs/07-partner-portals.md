@@ -241,3 +241,14 @@ Decision "Shop management and shop hours on the API" (2026-11-14). Migration **0
   - Deactivated accounts are refused (409 `ACCOUNT_NOT_ACTIVE`).
 - **Hindi times:** shown on the 24-hour clock (no Latin am/pm).
 - **Closing soon:** an offer whose timer would run past closing counts as closed (spec 04).
+
+## Give up an order and "Notes from MechDost" (2026-11-15, real API mode)
+
+- **Can't fulfil this order:** on an order in progress that is still `confirmed`, one quiet button opens an inline form
+  (reason code required, optional note) with one primary action "Give up this order" and "Keep this order". No modal. The
+  order leaves "Orders in progress" and appears in "Delivered" history as "Given up" with the reason. Errors: stale/other
+  step reload the list; reason and note errors show under the form.
+- **Notes from MechDost:** a section (`#warnings`) after the history: each warning with its reason (en/hi), date and the
+  staff note, withdrawn ones marked; "N in the last 30 days"; empty is one sentence. Calm and factual: the shop never sees
+  the threshold or the word "pause" here. `GET /v1/shop/warnings` (`orders:read`, scoped to the shop's grants).
+- Strings: locale namespace `shopGiveUp`. Spec 04 and 08 carry the rules.

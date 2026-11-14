@@ -37,6 +37,7 @@ import { parseRupees } from '@/lib/money-input';
 import { ApiListState, LoadMore } from './api-list-state';
 import { CatalogueSkuPicker, type SkuChoice } from './catalogue-sku-picker';
 import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { PausePrompt, useShopWarnings, WarningsPanel } from './admin-shop-warnings';
 import { ShopHoursFields } from './shop-hours-fields';
 import { useApiList } from './use-api-list';
 
@@ -46,8 +47,8 @@ const PILL: Record<ShopStatus, string> = {
   paused: 'bg-warning-bg text-warning',
   suspended: 'bg-pill text-error',
 };
-type Panel = 'profile' | 'coverage' | 'products' | 'standing' | 'members';
-const PANELS: readonly Panel[] = ['profile', 'coverage', 'products', 'standing', 'members'];
+type Panel = 'profile' | 'coverage' | 'products' | 'standing' | 'warnings' | 'members';
+const PANELS: readonly Panel[] = ['profile', 'coverage', 'products', 'standing', 'warnings', 'members'];
 
 function ShopError({ code }: { code: string }) {
   const t = useTranslations('portal');
@@ -213,6 +214,8 @@ function ShopManager({ shopId, onChanged }: { shopId: string; onChanged: () => P
   const [detail, setDetail] = useState<AdminShopDetailDto | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [panel, setPanel] = useState<Panel>('profile');
+  const w = useShopWarnings(shopId);
+  const tw = useTranslations('shopGiveUp');
   const load = useCallback(async () => {
     const res = await adminApi(locale, `/admin/shops/${shopId}`, AdminShopDetail);
     if (res.ok) {
@@ -244,6 +247,12 @@ function ShopManager({ shopId, onChanged }: { shopId: string; onChanged: () => P
     );
   return (
     <div className="mt-4 space-y-4 border-t border-line pt-4">
+      <PausePrompt
+        warnings={w.warnings}
+        onReview={() => {
+          setPanel('standing');
+        }}
+      />
       <div role="tablist" aria-label={t('shops_api_sections')} className="flex flex-wrap gap-2">
         {PANELS.map((p) => (
           <button
@@ -262,7 +271,7 @@ function ShopManager({ shopId, onChanged }: { shopId: string; onChanged: () => P
                 : 'border border-line-card text-ink hover:bg-pill'
             }`}
           >
-            {t(`shops_api_tab_${p}`)}
+            {p === 'warnings' ? tw('a_tab') : t(`shops_api_tab_${p}`)}
           </button>
         ))}
       </div>
@@ -273,6 +282,16 @@ function ShopManager({ shopId, onChanged }: { shopId: string; onChanged: () => P
         {panel === 'coverage' ? <CoverageForm key={detail.version} shop={detail} onSaved={saved} /> : null}
         {panel === 'products' ? <ProductsPanel shop={detail} onChanged={saved} /> : null}
         {panel === 'standing' ? <StandingPanel shop={detail} onSaved={saved} /> : null}
+        {panel === 'warnings' ? (
+          <WarningsPanel
+            shopId={shopId}
+            warnings={w.warnings}
+            onChanged={w.set}
+            onReviewStanding={() => {
+              setPanel('standing');
+            }}
+          />
+        ) : null}
         {panel === 'members' ? <MembersPanel shop={detail} onSaved={saved} /> : null}
       </div>
     </div>
