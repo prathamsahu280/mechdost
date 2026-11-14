@@ -53,3 +53,17 @@ Goal: mechdost.com runs on real sign-in (Firebase) and the API for every flow, w
   `/v1/admin/coins/*`, coin rules in settings; web: account coins, checkout coins (COD + online), order coin line,
   Admin → Coins, all behind the real-mode switches; coins un-hidden. Referrals not built (Q47). Playwright and
   `next build` not run (low-memory machine): run the coin e2e and the JS budget at merge. Spec 20 "Built".
+- 2026-11-14: Reviews stream on its branch (worktree-agent-a31131dde8070eb42): migration 0046 (not applied),
+  repo + routes `/v1/reviews/{product|workshop}/{slug}`, `/v1/my-reviews` (eligible, submit), `/v1/admin/reviews`
+  (queue, moderate), product/workshop review sections (server-rendered), "Rate" on delivered orders and paid services,
+  Admin → Reviews on the API; spec 02 § Reviews, decisions "Customer reviews on the API". Playwright not run.
+- 2026-11-14 (PIN codes, branch `worktree-agent-a1386983dfc859158`): service-area PIN codes admin-configurable —
+  migration 0048 (`active` + reason, Hindi area name, `source`, per-PIN free-delivery threshold, `version`), admin API
+  `/v1/admin/pincodes*` (`settings:read` / `cities:manage`), public `/v1/cities/{city}/pincodes`, inactive PINs refused
+  by checkout / workshops / service requests / coverage, Admin → Settings → Service area + approval-form pick list
+  (en + hi), reference file of Raipur PINs + `pnpm db:seed:pincodes` (not applied). Spec 15 "PIN codes", spec 03
+  "Delivery charges".
+- 2026-11-14: Coins code review fixed on the coins branch (user rulings: adjustments super admin only + daily cap;
+  order rewards refused above 0 until a guard is chosen; shops see the coin line and are owed it in the new
+  `shop_payout_entries`, finance report `/v1/admin/payouts/entries`), minor fixes (lock order, expiry paging,
+  self-booking, order page coins); merged `main`; migration renumbered **0050** (prevId = 0048).

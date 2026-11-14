@@ -104,7 +104,7 @@ beforeAll(async () => {
   staff = await user('fb-co-staff');
   sharma = (await db.select().from(s.shops).where(eq(s.shops.name, 'Sharma Auto Parts')))[0]!.id;
   // These tests exercise customer cancelling, which is off by default (Q25: cancel through support only).
-  await db.insert(s.settings).values({ key: 'orders.customer_self_cancel', value: true });
+  await db.insert(s.settings).values({ key: 'orders.customer_self_cancel_cod', value: true });
 });
 
 afterAll(async () => {
@@ -113,7 +113,7 @@ afterAll(async () => {
 
 describe('my orders', () => {
   it('by default the customer cannot cancel; support (staff) cancels (Q25, user 2026-11-13)', async () => {
-    await db.delete(s.settings).where(eq(s.settings.key, 'orders.customer_self_cancel'));
+    await db.delete(s.settings).where(eq(s.settings.key, 'orders.customer_self_cancel_cod'));
     try {
       const { code, group } = await place();
       expect((await row(code)).cancellableUntilStatus).toBe('none');
@@ -131,8 +131,22 @@ describe('my orders', () => {
       });
       expect((await row(code)).status).toBe('cancelled');
     } finally {
-      await db.insert(s.settings).values({ key: 'orders.customer_self_cancel', value: true });
+      await db.insert(s.settings).values({ key: 'orders.customer_self_cancel_cod', value: true });
     }
+  });
+
+  it('COD and online self-cancel are separate settings: the online rule never opens COD orders (user 2026-11-14)', async () => {
+    await db.delete(s.settings).where(eq(s.settings.key, 'orders.customer_self_cancel_cod'));
+    await db.insert(s.settings).values({ key: 'orders.customer_self_cancel_online', value: true });
+    try {
+      const { code } = await place();
+      expect((await row(code)).cancellableUntilStatus).toBe('none');
+    } finally {
+      await db.delete(s.settings).where(eq(s.settings.key, 'orders.customer_self_cancel_online'));
+      await db.insert(s.settings).values({ key: 'orders.customer_self_cancel_cod', value: true });
+    }
+    const { code } = await place();
+    expect((await row(code)).cancellableUntilStatus).toBe('confirmed');
   });
 
   it('cancelling a placed order needs a reason and frees the held stock; strangers get 404', async () => {

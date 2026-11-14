@@ -11,6 +11,7 @@ import {
   type CoinRewardCancelReason,
   type CoinRewardSource,
   type CoinRules,
+  type ShopPayoutEntryKind,
 } from '@mechdost/shared/coins';
 import { OPERATIONAL_SETTINGS, type SettingKey } from '@mechdost/shared/settings';
 import {
@@ -23,10 +24,13 @@ import {
   serviceBills,
   serviceRequests,
   settings,
+  shopPayoutEntries,
+  shops,
+  userRoles,
   users,
 } from '../schema';
 import { decodeCursor, encodeCursor, pageSize } from './cursor';
-import { ConflictError, NotFoundError, ValidationError } from './errors';
+import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from './errors';
 import { recordServerEvent } from './events';
 import type { Tx } from './orders';
 
@@ -57,6 +61,8 @@ export interface CoinSettings extends CoinRules {
   /** Anti-abuse for self-attested workshop payments (security review 2026-11-14). */
   workshopRewardMinBillPaise: number;
   workshopRewardCooldownDays: number;
+  /** Most coins staff may change for one customer per IST day. */
+  adjustDailyCap: number;
   unlockDays: number;
 }
 
@@ -70,6 +76,7 @@ const COIN_KEYS = {
   workshopBookingBonus: 'coins.workshop_booking_bonus',
   workshopRewardMinBillPaise: 'coins.workshop_reward_min_bill_paise',
   workshopRewardCooldownDays: 'coins.workshop_reward_cooldown_days',
+  adjustDailyCap: 'coins.adjust_daily_cap',
   unlockDays: 'coins.unlock_days',
 } as const satisfies Record<keyof CoinSettings, SettingKey>;
 
@@ -102,6 +109,7 @@ export async function coinSettings(db: Tx): Promise<CoinSettings> {
     workshopBookingBonus: read(COIN_KEYS.workshopBookingBonus),
     workshopRewardMinBillPaise: read(COIN_KEYS.workshopRewardMinBillPaise),
     workshopRewardCooldownDays: read(COIN_KEYS.workshopRewardCooldownDays),
+    adjustDailyCap: read(COIN_KEYS.adjustDailyCap),
     unlockDays: read(COIN_KEYS.unlockDays),
   };
 }
@@ -327,26 +335,6 @@ async function outstandingFor(tx: Tx, userId: string, orderGroupId: string): Pro
 }
 
 /**
- * Coins given back when a whole order group is cancelled or rejected before fulfilment (never as money).
- * Restores exactly what is still outstanding, once.
- */
-export async function restoreCoinsForOrder(db: Tx, input: { userId: string; orderGroupId: string }) {
-  const outstanding = await outstandingFor(db, input.userId, input.orderGroupId);
-  if (outstanding <= 0) return null;
-  const rules = await coinSettings(db);
-  return apply(db, {
-    userId: input.userId,
-    delta: outstanding,
-    kind: 'restore',
-    reason: 'Order cancelled: coins returned',
-    reasonCode: 'order_cancelled',
-    orderGroupId: input.orderGroupId,
-    idemKey: `restore:${input.orderGroupId}`,
-    expiresAt: expiryFrom(rules.expiryDays),
-  });
-}
-
-/**
  * A sub-order was cancelled or rejected (`transitionOrder`, same transaction): its share of the checkout's coins
  * comes back as coins, once (`restore:<order id>`), never more than the group still has outstanding. The returned
  * coins get a fresh expiry, so a customer never loses them to a lot that lapsed while the order was open.
@@ -477,6 +465,13 @@ export async function createServiceReward(
     .where(eq(serviceBills.requestId, input.requestId))
     .limit(1);
   if (!bill || bill.total < rules.workshopRewardMinBillPaise) return;
+  // Self-booking (code review 2026-11-14): someone who works at the workshop earns nothing there.
+  const [staffOf] = await tx
+    .select({ id: userRoles.id })
+    .from(userRoles)
+    .where(and(eq(userRoles.userId, input.userId), eq(userRoles.workshopId, input.workshopId)))
+    .limit(1);
+  if (staffOf) return;
   if (rules.workshopRewardCooldownDays > 0) {
     await tx.execute(
       sql`select pg_advisory_xact_lock(hashtextextended(${`coins-workshop:${input.userId}:${input.workshopId}`}, 0))`,
@@ -538,6 +533,87 @@ export async function cancelPendingOrderRewards(
     .where(and(eq(coinRewards.orderId, input.orderId), eq(coinRewards.status, 'pending')))
     .returning({ id: coinRewards.id });
   return rows.length;
+}
+
+/**
+ * A sub-order was delivered (`transitionOrder`, same transaction): the coin discount the shop did not collect is
+ * owed to it by MechDost (user 2026-11-14: "show line + payout ledger"). One append-only row per order
+ * (`coin_discount:<order id>`); nothing for parts without coins or without a shop.
+ */
+export async function recordShopCoinDiscount(tx: Tx, orderId: string): Promise<void> {
+  const [o] = await tx
+    .select({ shopId: orders.shopId, coinDiscountPaise: orders.coinDiscountPaise })
+    .from(orders)
+    .where(eq(orders.id, orderId));
+  if (!o?.shopId || o.coinDiscountPaise <= 0) return;
+  await tx
+    .insert(shopPayoutEntries)
+    .values({
+      shopId: o.shopId,
+      orderId,
+      kind: 'coin_discount',
+      amountPaise: o.coinDiscountPaise,
+      idemKey: `coin_discount:${orderId}`,
+    })
+    .onConflictDoNothing({ target: shopPayoutEntries.idemKey });
+}
+
+export interface ShopPayoutEntryView {
+  id: string;
+  shopId: string;
+  shopName: string;
+  orderCode: string | null;
+  kind: ShopPayoutEntryKind;
+  amountPaise: number;
+  createdAt: Date;
+}
+
+/**
+ * Finance report (`payouts:read`): what MechDost owes shops, newest first, optionally for one shop (keyset cursor),
+ * with the total of the page's shop filter.
+ */
+export async function listShopPayoutEntries(
+  db: Tx,
+  input: { shopId?: string | null; cursor?: string | null; limit?: number },
+): Promise<{ entries: ShopPayoutEntryView[]; nextCursor: string | null; totalPaise: number }> {
+  const limit = pageSize(input.limit, 50, 100);
+  const after = input.cursor ? decodeCursor(input.cursor, 'timestamp') : null;
+  const scope = input.shopId ? eq(shopPayoutEntries.shopId, input.shopId) : undefined;
+  const rows = await db
+    .select({
+      id: shopPayoutEntries.id,
+      shopId: shopPayoutEntries.shopId,
+      shopName: shops.name,
+      orderCode: orders.code,
+      kind: shopPayoutEntries.kind,
+      amountPaise: shopPayoutEntries.amountPaise,
+      createdAt: shopPayoutEntries.createdAt,
+      sortKey: sql<string>`${shopPayoutEntries.createdAt}::text`,
+    })
+    .from(shopPayoutEntries)
+    .innerJoin(shops, eq(shops.id, shopPayoutEntries.shopId))
+    .leftJoin(orders, eq(orders.id, shopPayoutEntries.orderId))
+    .where(
+      and(
+        scope,
+        after
+          ? sql`(${shopPayoutEntries.createdAt}, ${shopPayoutEntries.id}) < (cast(${after.k} as timestamptz), cast(${after.id} as uuid))`
+          : undefined,
+      ),
+    )
+    .orderBy(desc(shopPayoutEntries.createdAt), desc(shopPayoutEntries.id))
+    .limit(limit + 1);
+  const [sum] = await db
+    .select({ total: sql<string>`coalesce(sum(${shopPayoutEntries.amountPaise}), 0)::text` })
+    .from(shopPayoutEntries)
+    .where(scope);
+  const page = rows.slice(0, limit);
+  const last = page.at(-1);
+  return {
+    entries: page.map(({ sortKey: _k, ...r }) => ({ ...r, kind: r.kind as ShopPayoutEntryKind })),
+    nextCursor: rows.length > limit && last ? encodeCursor({ k: last.sortKey, id: last.id }) : null,
+    totalPaise: Number(sum?.total ?? '0'),
+  };
 }
 
 const REWARD_REASON: Record<CoinRewardSource, string> = {
@@ -628,24 +704,49 @@ const EXPIRY_LOOKBACK_DAYS = 30;
  */
 export async function expireDueCoins(
   db: Tx,
+  /** `limit`: candidates per page; every page is processed in one run (code review 2026-11-14: no starvation). */
   opts: { limit?: number } = {},
 ): Promise<{ expired: number; failed: { userId: string; error: unknown }[] }> {
-  const candidates = await db
-    .selectDistinct({ userId: coinLedger.userId })
-    .from(coinLedger)
-    .innerJoin(coinAccounts, eq(coinAccounts.userId, coinLedger.userId))
-    .where(
-      and(
-        sql`${coinLedger.expiresAt} is not null and ${coinLedger.delta} > 0`,
-        sql`${coinLedger.expiresAt} <= now()`,
-        sql`${coinLedger.expiresAt} > now() - make_interval(days => ${EXPIRY_LOOKBACK_DAYS})`,
-        sql`${coinAccounts.balance} > 0`,
-      ),
-    )
-    .limit(opts.limit ?? 500);
+  const pageSize = opts.limit ?? 500;
   let expired = 0;
   const failed: { userId: string; error: unknown }[] = [];
-  for (const { userId } of candidates) {
+  let after: string | null = null;
+  for (;;) {
+    const page = await db
+      .selectDistinct({ userId: coinLedger.userId })
+      .from(coinLedger)
+      .innerJoin(coinAccounts, eq(coinAccounts.userId, coinLedger.userId))
+      .where(
+        and(
+          sql`${coinLedger.expiresAt} is not null and ${coinLedger.delta} > 0`,
+          sql`${coinLedger.expiresAt} <= now()`,
+          sql`${coinLedger.expiresAt} > now() - make_interval(days => ${EXPIRY_LOOKBACK_DAYS})`,
+          sql`${coinAccounts.balance} > 0`,
+          after ? sql`${coinLedger.userId} > ${after}` : undefined,
+        ),
+      )
+      .orderBy(coinLedger.userId)
+      .limit(pageSize);
+    const res = await expirePage(
+      db,
+      page.map((r) => r.userId),
+    );
+    expired += res.expired;
+    failed.push(...res.failed);
+    const last = page.at(-1);
+    if (page.length < pageSize || !last) break;
+    after = last.userId;
+  }
+  return { expired, failed };
+}
+
+async function expirePage(
+  db: Tx,
+  candidates: readonly string[],
+): Promise<{ expired: number; failed: { userId: string; error: unknown }[] }> {
+  let expired = 0;
+  const failed: { userId: string; error: unknown }[] = [];
+  for (const userId of candidates) {
     try {
       const done = await db.transaction(async (tx) => {
         const [acct] = await tx
@@ -694,7 +795,7 @@ async function ledgerLots(tx: Tx, userId: string) {
 // ── Staff adjustments ───────────────────────────────────────────────────────────────────────────────────────────
 
 /**
- * Manual grant or deduction by staff with `coins:adjust` (checked in the API): a reason code (hard rule 16), an
+ * Manual grant or deduction by staff with `coins:adjust` (super admin only, user 2026-11-14; checked in the API): a reason code (hard rule 16), an
  * optional note shown to the customer, audited. `expectedVersion` is the account version the screen showed (null =
  * no account yet): a change made meanwhile is STALE_COINS. A retry with the same key returns the first entry.
  */
@@ -720,9 +821,17 @@ export async function adjustCoins(
   if (note.length > 200 || (note.length > 0 && note.length < 3)) {
     throw new ValidationError('A note is 3 to 200 characters', 'COINS_REASON');
   }
+  // Never to the staff member's own account (code review 2026-11-14).
+  if (input.userId === input.staffUserId)
+    throw new ForbiddenError('Staff cannot change their own coins', 'COINS_SELF');
   return db.transaction(async (tx) => {
     const [customer] = await tx.select({ id: users.id }).from(users).where(eq(users.id, input.userId));
     if (!customer) throw new NotFoundError('Customer not found');
+    // One staff change per customer at a time (the account row may not exist yet): the daily cap below is
+    // read and written under this lock.
+    await tx.execute(
+      sql`select pg_advisory_xact_lock(hashtextextended(${`coins-adjust:${input.userId}`}, 0))`,
+    );
     const [replay] = await tx
       .select({ id: coinLedger.id })
       .from(coinLedger)
@@ -737,6 +846,24 @@ export async function adjustCoins(
         throw new ConflictError('The coin balance changed meanwhile; reload and try again', 'STALE_COINS');
     }
     const rules = await coinSettings(tx);
+    if (!replay) {
+      // Daily cap: grants and deductions together, per customer, per IST day (user ruling 2026-11-14).
+      const [today] = await tx
+        .select({ total: sql<number>`coalesce(sum(abs(${coinLedger.delta})), 0)::int` })
+        .from(coinLedger)
+        .where(
+          and(
+            eq(coinLedger.userId, input.userId),
+            eq(coinLedger.kind, 'adjust'),
+            sql`${coinLedger.createdAt} >= (date_trunc('day', now() at time zone 'Asia/Kolkata') at time zone 'Asia/Kolkata')`,
+          ),
+        );
+      if ((today?.total ?? 0) + Math.abs(input.delta) > rules.adjustDailyCap)
+        throw new ValidationError(
+          `At most ${String(rules.adjustDailyCap)} coins can be changed for one customer in a day`,
+          'COINS_DAILY_CAP',
+        );
+    }
     const entry = await apply(tx, {
       userId: input.userId,
       delta: input.delta,

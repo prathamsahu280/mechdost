@@ -18,6 +18,7 @@ import { clearCart, placeDemoOrder, useCart } from '@/demo/store';
 import { priceCart } from '@/demo/cart-pricing';
 import { DATA_MODE } from '@/lib/data-mode';
 import { useCartPricing } from '@/lib/use-cart-pricing';
+import { codAllowedAfterCoins, coinRulesFromApi } from '@/lib/coins-view';
 import { CartView } from './cart-view';
 import { productNameFor } from '@/demo/i18n/localize';
 
@@ -65,11 +66,10 @@ export function CheckoutForm() {
   useEffect(() => {
     if (!realCustomer) return;
     let live = true;
-    void Promise.all([import('@/lib/coins-api'), import('@/lib/coins-view')]).then(async ([api, view]) => {
+    void import('@/lib/coins-api').then(async (api) => {
       const res = await api.fetchMyCoins(locale);
       // Coins are optional at checkout: without an answer the section stays hidden and the order goes ahead.
-      if (live && res.ok)
-        setApiCoins({ balance: res.data.balance, rules: view.coinRulesFromApi(res.data.rules) });
+      if (live && res.ok) setApiCoins({ balance: res.data.balance, rules: coinRulesFromApi(res.data.rules) });
     });
     return () => {
       live = false;
@@ -172,7 +172,8 @@ export function CheckoutForm() {
       setOnlineNote({ text: pricing.status === 'error' ? t('pricesError') : t('pricesLoading') });
       return;
     }
-    if (!quote.cod.allowed) {
+    // Judged on what the customer pays at the door, after coins (the server checks the same).
+    if (!codAllowedAfterCoins(quote, coinDiscount)) {
       setOnlineNote({ text: t('cod_not_allowed') });
       return;
     }

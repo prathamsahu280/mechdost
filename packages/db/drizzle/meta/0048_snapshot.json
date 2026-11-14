@@ -1,6 +1,6 @@
 {
-  "id": "2e4460d9-865d-407c-82ca-acfa5e20d904",
-  "prevId": "05e971ea-feb7-443c-b32a-5e1906a12714",
+  "id": "b67087c2-cf3d-423b-bf2d-4ed65a5ec50d",
+  "prevId": "7cf3e83a-af39-4204-a506-c19b27fee60f",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -193,11 +193,43 @@
           "primaryKey": false,
           "notNull": false
         },
+        "locality_hi": {
+          "name": "locality_hi",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "centroid": {
           "name": "centroid",
           "type": "geography(Point,4326)",
           "primaryKey": false,
           "notNull": false
+        },
+        "active": {
+          "name": "active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "inactive_reason": {
+          "name": "inactive_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "inactive_note": {
+          "name": "inactive_note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'seed'"
         },
         "serviceable_parts": {
           "name": "serviceable_parts",
@@ -226,6 +258,19 @@
           "primaryKey": false,
           "notNull": true,
           "default": true
+        },
+        "free_delivery_min_paise": {
+          "name": "free_delivery_min_paise",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
         },
         "created_at": {
           "name": "created_at",
@@ -309,6 +354,30 @@
         "pincodes_format": {
           "name": "pincodes_format",
           "value": "\"pincodes\".\"pincode\" ~ '^[1-9][0-9]{5}$'"
+        },
+        "pincodes_locality_pair": {
+          "name": "pincodes_locality_pair",
+          "value": "(\"pincodes\".\"locality\" is null) = (\"pincodes\".\"locality_hi\" is null)"
+        },
+        "pincodes_locality_len": {
+          "name": "pincodes_locality_len",
+          "value": "\"pincodes\".\"locality\" is null or (char_length(\"pincodes\".\"locality\") between 2 and 80 and char_length(\"pincodes\".\"locality_hi\") between 2 and 80)"
+        },
+        "pincodes_inactive_reason": {
+          "name": "pincodes_inactive_reason",
+          "value": "(\"pincodes\".\"active\" and \"pincodes\".\"inactive_reason\" is null and \"pincodes\".\"inactive_note\" is null) or (not \"pincodes\".\"active\" and \"pincodes\".\"inactive_reason\" is not null and \"pincodes\".\"inactive_reason\" in ('outside_service_area','not_launched_yet','no_partners','operational_pause','other'))"
+        },
+        "pincodes_inactive_note_len": {
+          "name": "pincodes_inactive_note_len",
+          "value": "\"pincodes\".\"inactive_note\" is null or char_length(\"pincodes\".\"inactive_note\") between 1 and 300"
+        },
+        "pincodes_free_delivery_min": {
+          "name": "pincodes_free_delivery_min",
+          "value": "\"pincodes\".\"free_delivery_min_paise\" is null or \"pincodes\".\"free_delivery_min_paise\" between 0 and 10000000"
+        },
+        "pincodes_source_valid": {
+          "name": "pincodes_source_valid",
+          "value": "\"pincodes\".\"source\" in ('seed','admin')"
         }
       },
       "isRLSEnabled": false
@@ -5943,20 +6012,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "coins_redeemed": {
-          "name": "coins_redeemed",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "coin_discount_paise": {
-          "name": "coin_discount_paise",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
         "cancellable_until_status": {
           "name": "cancellable_until_status",
           "type": "text",
@@ -6232,10 +6287,6 @@
         "orders_total_matches": {
           "name": "orders_total_matches",
           "value": "\"orders\".\"total_paise\" = \"orders\".\"subtotal_paise\" - \"orders\".\"discount_paise\" + \"orders\".\"shipping_paise\" + \"orders\".\"cod_fee_paise\""
-        },
-        "orders_coins_consistent": {
-          "name": "orders_coins_consistent",
-          "value": "\"orders\".\"coins_redeemed\" >= 0 and \"orders\".\"coin_discount_paise\" >= 0 and \"orders\".\"coin_discount_paise\" <= \"orders\".\"discount_paise\" and (\"orders\".\"coins_redeemed\" = 0) = (\"orders\".\"coin_discount_paise\" = 0)"
         },
         "orders_shop_when_confirmed": {
           "name": "orders_shop_when_confirmed",
@@ -9434,6 +9485,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "city_id": {
+          "name": "city_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
         "order_id": {
           "name": "order_id",
           "type": "uuid",
@@ -9477,6 +9534,18 @@
           "notNull": true,
           "default": "'pending'"
         },
+        "hidden_reason": {
+          "name": "hidden_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "moderation_note": {
+          "name": "moderation_note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "reply": {
           "name": "reply",
           "type": "text",
@@ -9495,8 +9564,22 @@
           "primaryKey": false,
           "notNull": false
         },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
         "created_at": {
           "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
@@ -9504,8 +9587,8 @@
         }
       },
       "indexes": {
-        "reviews_target_type_target_id_status_index": {
-          "name": "reviews_target_type_target_id_status_index",
+        "reviews_target_public_idx": {
+          "name": "reviews_target_public_idx",
           "columns": [
             {
               "expression": "target_type",
@@ -9524,6 +9607,81 @@
               "isExpression": false,
               "asc": true,
               "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "reviews_status_created_idx": {
+          "name": "reviews_status_created_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "reviews_user_created_idx": {
+          "name": "reviews_user_created_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "reviews_city_id_index": {
+          "name": "reviews_city_id_index",
+          "columns": [
+            {
+              "expression": "city_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
             }
           ],
           "isUnique": false,
@@ -9536,6 +9694,21 @@
           "columns": [
             {
               "expression": "order_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "reviews_service_request_id_index": {
+          "name": "reviews_service_request_id_index",
+          "columns": [
+            {
+              "expression": "service_request_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -9576,6 +9749,19 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
+        "reviews_city_id_cities_id_fk": {
+          "name": "reviews_city_id_cities_id_fk",
+          "tableFrom": "reviews",
+          "tableTo": "cities",
+          "columnsFrom": [
+            "city_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
         "reviews_order_id_orders_id_fk": {
           "name": "reviews_order_id_orders_id_fk",
           "tableFrom": "reviews",
@@ -9587,6 +9773,19 @@
             "id"
           ],
           "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "reviews_service_request_id_service_requests_id_fk": {
+          "name": "reviews_service_request_id_service_requests_id_fk",
+          "tableFrom": "reviews",
+          "tableTo": "service_requests",
+          "columnsFrom": [
+            "service_request_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
           "onUpdate": "no action"
         },
         "reviews_moderated_by_users_id_fk": {
@@ -9634,6 +9833,26 @@
         "reviews_verified": {
           "name": "reviews_verified",
           "value": "\"reviews\".\"order_id\" is not null or \"reviews\".\"service_request_id\" is not null"
+        },
+        "reviews_purchase_matches_target": {
+          "name": "reviews_purchase_matches_target",
+          "value": "(\"reviews\".\"target_type\" <> 'product' or \"reviews\".\"order_id\" is not null) and (\"reviews\".\"target_type\" <> 'workshop' or \"reviews\".\"service_request_id\" is not null)"
+        },
+        "reviews_body_length": {
+          "name": "reviews_body_length",
+          "value": "\"reviews\".\"body\" is null or char_length(\"reviews\".\"body\") between 1 and 1000"
+        },
+        "reviews_hidden_reason": {
+          "name": "reviews_hidden_reason",
+          "value": "(\"reviews\".\"status\" = 'hidden') = (\"reviews\".\"hidden_reason\" is not null) and (\"reviews\".\"hidden_reason\" is null or \"reviews\".\"hidden_reason\" in ('spam','abusive','personal_data','off_topic','not_genuine','other'))"
+        },
+        "reviews_note_length": {
+          "name": "reviews_note_length",
+          "value": "\"reviews\".\"moderation_note\" is null or char_length(\"reviews\".\"moderation_note\") <= 300"
+        },
+        "reviews_moderated": {
+          "name": "reviews_moderated",
+          "value": "\"reviews\".\"status\" = 'pending' or \"reviews\".\"moderated_at\" is not null"
         }
       },
       "isRLSEnabled": false
@@ -10557,12 +10776,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "reason_code": {
-          "name": "reason_code",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
         "order_group_id": {
           "name": "order_group_id",
           "type": "uuid",
@@ -10646,43 +10859,6 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
-        },
-        "coin_ledger_created_at_id_index": {
-          "name": "coin_ledger_created_at_id_index",
-          "columns": [
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "coin_ledger_expiring_idx": {
-          "name": "coin_ledger_expiring_idx",
-          "columns": [
-            {
-              "expression": "expires_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "where": "\"coin_ledger\".\"expires_at\" is not null and \"coin_ledger\".\"delta\" > 0",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
         }
       },
       "foreignKeys": {
@@ -10758,10 +10934,6 @@
           "name": "coin_ledger_adjust_has_staff",
           "value": "\"coin_ledger\".\"kind\" <> 'adjust' or \"coin_ledger\".\"created_by\" is not null"
         },
-        "coin_ledger_reason_code_valid": {
-          "name": "coin_ledger_reason_code_valid",
-          "value": "\"coin_ledger\".\"reason_code\" is null or \"coin_ledger\".\"reason_code\" in ('order','first_order','workshop_booking','goodwill','service_recovery','promotion','correction','fraud_reversal','other','order_redeem','order_cancelled','expired')"
-        },
         "coin_ledger_reason_length": {
           "name": "coin_ledger_reason_length",
           "value": "char_length(\"coin_ledger\".\"reason\") between 3 and 200"
@@ -10769,307 +10941,6 @@
         "coin_ledger_idem_key_format": {
           "name": "coin_ledger_idem_key_format",
           "value": "\"coin_ledger\".\"idem_key\" ~ '^[A-Za-z0-9:_-]{10,100}$'"
-        }
-      },
-      "isRLSEnabled": false
-    },
-    "public.coin_rewards": {
-      "name": "coin_rewards",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "source": {
-          "name": "source",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "coins": {
-          "name": "coins",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'pending'"
-        },
-        "available_at": {
-          "name": "available_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "order_id": {
-          "name": "order_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "service_request_id": {
-          "name": "service_request_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "ledger_id": {
-          "name": "ledger_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "cancel_reason_code": {
-          "name": "cancel_reason_code",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "version": {
-          "name": "version",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 1
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "coin_rewards_order_source_uq": {
-          "name": "coin_rewards_order_source_uq",
-          "columns": [
-            {
-              "expression": "source",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "order_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "where": "\"coin_rewards\".\"order_id\" is not null",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "coin_rewards_service_uq": {
-          "name": "coin_rewards_service_uq",
-          "columns": [
-            {
-              "expression": "service_request_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "where": "\"coin_rewards\".\"service_request_id\" is not null",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "coin_rewards_first_order_uq": {
-          "name": "coin_rewards_first_order_uq",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "where": "\"coin_rewards\".\"source\" = 'first_order'",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "coin_rewards_status_available_at_index": {
-          "name": "coin_rewards_status_available_at_index",
-          "columns": [
-            {
-              "expression": "status",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "available_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "coin_rewards_user_id_created_at_index": {
-          "name": "coin_rewards_user_id_created_at_index",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "coin_rewards_order_id_index": {
-          "name": "coin_rewards_order_id_index",
-          "columns": [
-            {
-              "expression": "order_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "coin_rewards_ledger_id_index": {
-          "name": "coin_rewards_ledger_id_index",
-          "columns": [
-            {
-              "expression": "ledger_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "coin_rewards_user_id_users_id_fk": {
-          "name": "coin_rewards_user_id_users_id_fk",
-          "tableFrom": "coin_rewards",
-          "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
-        },
-        "coin_rewards_order_id_orders_id_fk": {
-          "name": "coin_rewards_order_id_orders_id_fk",
-          "tableFrom": "coin_rewards",
-          "tableTo": "orders",
-          "columnsFrom": [
-            "order_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
-        },
-        "coin_rewards_service_request_id_service_requests_id_fk": {
-          "name": "coin_rewards_service_request_id_service_requests_id_fk",
-          "tableFrom": "coin_rewards",
-          "tableTo": "service_requests",
-          "columnsFrom": [
-            "service_request_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
-        },
-        "coin_rewards_ledger_id_coin_ledger_id_fk": {
-          "name": "coin_rewards_ledger_id_coin_ledger_id_fk",
-          "tableFrom": "coin_rewards",
-          "tableTo": "coin_ledger",
-          "columnsFrom": [
-            "ledger_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "coin_rewards_source_valid": {
-          "name": "coin_rewards_source_valid",
-          "value": "\"coin_rewards\".\"source\" in ('order','first_order','workshop_booking')"
-        },
-        "coin_rewards_status_valid": {
-          "name": "coin_rewards_status_valid",
-          "value": "\"coin_rewards\".\"status\" in ('pending','credited','cancelled')"
-        },
-        "coin_rewards_coins_positive": {
-          "name": "coin_rewards_coins_positive",
-          "value": "\"coin_rewards\".\"coins\" > 0 and \"coin_rewards\".\"coins\" <= 1000000"
-        },
-        "coin_rewards_credited_has_ledger": {
-          "name": "coin_rewards_credited_has_ledger",
-          "value": "(\"coin_rewards\".\"status\" = 'credited') = (\"coin_rewards\".\"ledger_id\" is not null)"
-        },
-        "coin_rewards_cancel_reason": {
-          "name": "coin_rewards_cancel_reason",
-          "value": "(\"coin_rewards\".\"status\" = 'cancelled') = (\"coin_rewards\".\"cancel_reason_code\" is not null) and (\"coin_rewards\".\"cancel_reason_code\" is null or \"coin_rewards\".\"cancel_reason_code\" in ('order_cancelled','order_refunded','request_cancelled'))"
-        },
-        "coin_rewards_has_source_ref": {
-          "name": "coin_rewards_has_source_ref",
-          "value": "case \"coin_rewards\".\"source\" when 'workshop_booking' then \"coin_rewards\".\"service_request_id\" is not null else \"coin_rewards\".\"order_id\" is not null end"
         }
       },
       "isRLSEnabled": false

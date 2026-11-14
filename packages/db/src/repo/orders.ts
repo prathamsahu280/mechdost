@@ -4,7 +4,7 @@ import { orderMachine, type OrderStatus } from '@mechdost/shared/state';
 import { orderGroups, orders, payments } from '../schema';
 import { setActor, type ActorContext } from './actor';
 import { ConflictError, NotFoundError } from './errors';
-import { createOrderRewards, restoreCoinsForSubOrder } from './coins';
+import { createOrderRewards, recordShopCoinDiscount, restoreCoinsForSubOrder } from './coins';
 import { queueOrderWhatsApp, type OrderWhatsAppEvent } from './order-notifications';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -88,7 +88,10 @@ export async function transitionOrder(
   // MechDost Coins (spec 20), same transaction: a cancelled or rejected part gives its coins back (as coins, once);
   // a delivered part earns the admin-set reward, usable after the unlock days.
   if (args.to === 'cancelled' || args.to === 'rejected') await restoreCoinsForSubOrder(tx, row.id);
-  if (args.to === 'delivered') await createOrderRewards(tx, row.id);
+  if (args.to === 'delivered') {
+    await createOrderRewards(tx, row.id);
+    await recordShopCoinDiscount(tx, row.id);
+  }
   if (orderMachine.isTerminal(args.to)) await settleGroupPayment(tx, row.groupId);
   return row;
 }

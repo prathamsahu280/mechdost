@@ -296,6 +296,18 @@ User shared Razorpay **test** keys and asked to "see how we have the stuff for r
 - **Switch the website to real sign-in and the API** (user: "switch on the real api"); launch Monday, scope **everything including workshops and service requests, risk accepted** (plan `docs/superpowers/plans/2026-11-14-real-api-launch.md`).
 - **Database:** keep the `mechdost-dev` Supabase project for production; **full reset** done 2026-11-14 with the user's approval (no real data: Firebase had 0 users, the 2 orders were Razorpay tests). Rebuilt from migrations; RBAC seed; Raipur, 5 PIN codes and 9 categories kept from the reference data; no products, shops, users or orders.
 
+## 2026-11-14 (evening) — Quotes, coins and reviews are built on the API before launch (user: "BUILD ALL OF THEM WE NEED THEM ALL")
+
+- This overrides the earlier "hidden in real mode" ruling for these three features. Each one gets its API, its real-mode screens and tests, built by parallel agents. Migration numbers: quotes 0045, reviews 0046, coins 0047, each only if needed.
+- **Payments at launch:** the user chose cash on delivery plus Razorpay with the test key. The API refuses test keys in production, a deliberate guard, so the copied keys took the API down for about 6 minutes. They are disabled on the server, and the public key variable was removed from GitHub. Launch is **cash on delivery only until live keys** unless the user decides otherwise (asked 2026-11-14). The webhook secret is generated and kept in the local `.env` (and disabled on the server with the keys).
+- **Smoke test:** run the emulator end-to-end test against the launch backend, then reset the data before the real catalogue goes in. Only when the user says so.
+
+## 2026-11-14 (night) — Customers order with a verified phone; email verification is an admin setting
+
+- Supersedes the early rule "phone and email verified before the first order" for **customers only**. The new setting `customers.require_verified_email` is off by default. Many Raipur customers rarely use email, and requiring it would block cash-on-delivery orders.
+- Staff and partner actions still need both.
+- Spec 01 has the details.
+
 ## 2026-11-14 — Launch scope in real mode: features with no API are hidden (ruling under "Everything, accept risk")
 
 - **Hidden in real mode** (`BROWSER_ONLY_FEATURES` in `apps/web/src/lib/data-mode.ts`): bulk quotes (spec 19), MechDost Coins (spec 20) and customer reviews. None has an API yet, and in real mode anything a customer typed there would stay on their device only.
@@ -350,6 +362,30 @@ Full review and evidence: `docs/research/security-vulnerabilities.md` § Review 
 - **Paid at the workshop** completes the job in one step (`billed → paid` by the workshop, `paid → completed` by the system), as the demo. Online payment of bills later.
 - **`user_roles.workshop_id` gets its FK** to `workshops` (it had none because the table did not exist).
 - **Zod-free constants for the db layer**: `SERVICE_CUSTOMER_CANCELLABLE` and `ESTIMATE_SENDABLE_FROM` live in `@mechdost/shared/state`; the db package must not import the Zod DTO module at runtime, or its schemas are built before `@hono/zod-openapi` extends Zod and lose `.openapi()` (found by the API test).
+
+## 2026-11-14 — Service-area PIN codes, admin-configurable (user: "do all Raipur PINs but make it admin configurable"; "admin configurable per shop or per pincode")
+
+Advisor brief 2026-11-14; spec 15 "PIN codes", spec 03 "Delivery charges". Rulings (cost if wrong in brackets):
+
+- **One master switch `pincodes.active`** decides serviceability for parts and services. Spec 15's model lists
+  per-service flags (`serviceable_for {parts_delivery, doorstep_service, pickup_drop, rsa}`); those columns stay,
+  unread, until a service is offered in some PINs and not others. [Low: one migration and a filter per flow later.]
+- **Inactive = unknown** for new business (checkout, catalogue PIN price, nearby workshops, new service requests,
+  new shop coverage); existing orders, coverage rows and partner addresses are untouched. Rows are never deleted.
+- **Reason code + optional note** to switch off (rule 16); switching on needs a centroid. History = `audit_log`
+  (no separate `pincode_events` table: there is no state machine). [Low.]
+- **Permissions:** read with `settings:read`, write with the existing `cities:manage` ("Launch cities and manage
+  pincodes": super admin; city manager for their city). No new permission. [Low.]
+- **`source` column:** the reference seed refreshes only rows it added (`seed`); any admin write makes a row
+  `admin` and the seed never touches it again; the seed never switches a PIN on or off. [Low.]
+- **Sanity checks:** centroid inside India's box (Zod) and ≤ 150 km from the city centre (`PINCODE_FAR_FROM_CITY`);
+  Hindi area name must contain Devanagari (rule 10).
+- **Reference data:** Raipur's urban PINs active, the rest of Raipur district loaded switched off
+  (`outside_service_area`) so the admin can switch them on; PINs that could not be verified are left out
+  (`docs/research/raipur-pincodes.md`).
+- **Free delivery chain:** PIN `free_delivery_min_paise` ?? shop override ?? city setting; NULL = no override,
+  0 = always free.
+- **Migration number 0048** (0045–0047 reserved for streams merging in parallel).
 
 ## 2026-11-14 — Cart on sign-out, demo controls, demo service estimates and bills (user)
 
@@ -518,28 +554,62 @@ Coins work in real mode and are **no longer hidden** (removed from `BROWSER_ONLY
 - **Staff adjustments** need a reason code (hard rule 16) plus an optional customer-visible note, the account version the screen showed (409 `STALE_COINS`) and an `Idempotency-Key`. Four-eyes waits for an approval-threshold setting (spec 13). (cheap)
 - **Coin discounts are MechDost-funded**: invoices stay at full price (Q41 default until the CA answers). (medium: invoice copy if the CA says otherwise)
 - **Referrals are not built** although Q31–Q34 are answered: the programme itself (codes, sign-up attribution, Q35–Q38, Q44, Q45) is still open under Q47, whose default is "do not build until discussed". (cheap to add: a `referral` reward source)
-- **Migration number 0047**: 0045 and 0046 are reserved for the parallel quotes and reviews streams; renumber at merge if needed.
+- **Migration number 0047**: 0045 and 0046 are reserved for the parallel quotes and reviews streams; renumber at merge if needed. (Renumbered to **0050** at the merge, see "Coins code review: user rulings".)
 - **Workshop booking rewards are guarded against fake bookings** (security review 2026-11-14, MEDIUM: "paid at the workshop" is self-attested): no reward below `coins.workshop_reward_min_bill_paise` (default ₹500); at most one per customer per workshop in `coins.workshop_reward_cooldown_days` (default 30), checked under a per customer + workshop lock; the reward stays pending for the unlock days and is cancelled by any later move that undoes the payment (`cancelPendingServiceRewards`). Support requests cannot name a service request yet, so cancelling on a ticket waits for that link. Spec 20 § Anti-abuse. (cheap: both limits are admin settings)
+
+## 2026-11-14 — Coins code review: user rulings (spec 20)
+
+- **Staff coin adjustments: super admin only + daily cap** (user). `coins:adjust` is removed from marketing (RBAC stays the single source); never to one's own account (`COINS_SELF`); `coins.adjust_daily_cap` (default 5,000 coins per customer per IST day, grants and deductions together, under a per-customer lock). (cheap)
+- **Order rewards: "decide when enabling"** (user). `coins.earn_order_bp` and `coins.first_order_bonus` can only be saved as 0 (`COIN_GUARD_REQUIRED`) until an anti-farming guard is chosen — pending decision added below. (cheap)
+- **Shops: "show line + payout ledger"** (user). Shop order cards show the coin discount (paid by MechDost) and the cash to collect; delivery writes the owed amount to the new append-only `shop_payout_entries` (`coin_discount`); finance report `GET /v1/admin/payouts/entries`. Weekly payouts (Q11) will read this ledger. (medium: migration 0050)
+- **Migration renumbered to 0050** at the merge with main (0046 reviews and 0048 PIN service area are applied live; 0049 quotes, 0051 shops).
+
+## 2026-11-14 — Customer reviews on the API (launch stream; user: "BUILD ALL OF THEM WE NEED THEM ALL")
+
+Built per decision 2026-10-31 (verified purchase only, admin approves before publish). Details: spec 02 § Reviews.
+**Supersedes for reviews only** the 2026-11-14 ruling "features with no API are hidden in real mode": review sections,
+the write form and Admin → Reviews now work in real mode (quotes and coins unchanged by this entry).
+
+- **Verified = one purchase:** a delivered sub-order containing the product, or a service request in `paid` /
+  `completed` at the workshop (spec 06 "review after paid"; `completed` also covers a returned vehicle with no work).
+  One review per customer, target and purchase; buying the same product again allows another review. (Cost if
+  wrong: low — tighten to one per customer and target with a unique index change.)
+- **Velocity follows spec 13 ("Reviews 5/user/day"):** 5 accepted reviews per customer per 24 h, counted in the
+  database; plus 20 attempts per hour on the write route. (Cost if wrong: a customer with more than 5 delivered
+  products waits a day for the rest; the number is one constant.)
+- **Plain text only**, ≤ 1000 characters, stars required, text optional; no title field (the demo's title is not
+  carried over: fewer fields, same signal). Reviewer shown publicly as first name + last initial.
+- **Moderation is reversible** (hidden → approved allowed); hiding needs a reason **code** (spam, abusive,
+  personal_data, off_topic, not_genuine, other) with an optional staff-only note (hard rule 16). Customer edits after
+  sending, staff text edits, delete and partner reply are **not built** (queued in spec 02 § Reviews "Not built yet").
+- **Who moderates:** the existing `reviews:moderate` permission (super admin, catalogue manager, marketing), verified
+  staff, city-scoped by the purchase's city; the RBAC catalogue is unchanged.
+- **Ratings:** workshop `rating_avg` / `rating_count` are recomputed in the moderation transaction (workshop row
+  locked first); product ratings stay computed live from approved rows (no new product columns). Public reads are
+  cached 60 s (HTTP + Next fetch cache), so an approval shows within a minute.
+- **Admin → Reviews visibility:** demo queue in the browser demo, API queue with real sign-in, hidden in the mixed
+  build (real data + demo sign-in), as no queue there matches what customers see.
 
 ## PENDING DECISIONS (ask "what's pending" to review)
 
-| #   | Topic                                                                                                                                                                                       | Leaning                                                                             | When                                 |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------ |
-| 1   | Payment methods at launch (COD + Razorpay vs COD only vs Razorpay only)                                                                                                                     | Most probably COD + Razorpay                                                        | Later                                |
-| 2   | Post-purchase P1 items at launch (exchanges, reminders, disputes, order chat)                                                                                                               | Probably include all (option 3)                                                     | Later (user, 2026-11-01)             |
-| 3   | WhatsApp handoff from support tickets — **built 2026-11-03**: inbound WhatsApp → tickets, replies inside the 24 h window (spec 09)                                                          | —                                                                                   | Later                                |
-| 4   | Vehicle master data source (curated CSV vs licensed DB)                                                                                                                                     | Most probably curated CSV, admin-editable, Vahan later                              | Later                                |
-| 5   | Vehicle fields may change                                                                                                                                                                   | Option 1 for now                                                                    | Open                                 |
-| 6   | Messaging provider (MSG91 vs Twilio) — **SMS only**; WhatsApp decided 2026-11-02: Meta Cloud API direct                                                                                     | MSG91                                                                               | Later (setup only, not during build) |
-| 7   | Geocoding/autocomplete + routing provider (Google Places vs Ola Maps; OSRM/Ola routing)                                                                                                     | Decide via 50-address Raipur bake-off                                               | During service-flow build (Phase 2)  |
-| 8   | ~~Hindi UI at launch or P1~~ decided: both at launch                                                                                                                                        | —                                                                                   | Done                                 |
-| 9   | Commission and payout model for shops/workshops                                                                                                                                             | Ledger built generically; rates configurable per category/partner; user will decide | Later ("ill tell u on this later")   |
-| 11  | GSTIN + address confirmed 2026-11-01; CIN + grievance officer name still needed                                                                                                             | —                                                                                   | Before launch                        |
-| 12  | Razorpay MCP connection (test keys)                                                                                                                                                         | Add when Razorpay account is ready                                                  | Later                                |
-| 13  | ~~"ux superpower" skill identity~~ confirmed obra/superpowers (2026-11-01)                                                                                                                  | —                                                                                   | Done                                 |
-| 15  | Vehicle fields, commission, payment methods, post-purchase P1 — see rows 1, 2, 5, 9                                                                                                         | —                                                                                   | —                                    |
-| 14  | Baseline walkthrough: remaining untouched P0 items use the baseline defaults (coupons engine, attribute sets, part numbers, SEO, OOS handling, admin CRUD conventions, impersonation in P1) | Defaults                                                                            | Confirm anytime                      |
-| 16  | Hindi map: roads without `name:hi` in OSM show their local (English) name on `/hi` — keep, or hide them (inbox Q64)                                                                         | Keep showing the local name; refs (NH30) always                                     | Before launch                        |
+| #   | Topic                                                                                                                                                                                                                                                                                                            | Leaning                                                                             | When                                 |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------ |
+| 1   | Payment methods at launch (COD + Razorpay vs COD only vs Razorpay only)                                                                                                                                                                                                                                          | Most probably COD + Razorpay                                                        | Later                                |
+| 2   | Post-purchase P1 items at launch (exchanges, reminders, disputes, order chat)                                                                                                                                                                                                                                    | Probably include all (option 3)                                                     | Later (user, 2026-11-01)             |
+| 3   | WhatsApp handoff from support tickets — **built 2026-11-03**: inbound WhatsApp → tickets, replies inside the 24 h window (spec 09)                                                                                                                                                                               | —                                                                                   | Later                                |
+| 4   | Vehicle master data source (curated CSV vs licensed DB)                                                                                                                                                                                                                                                          | Most probably curated CSV, admin-editable, Vahan later                              | Later                                |
+| 5   | Vehicle fields may change                                                                                                                                                                                                                                                                                        | Option 1 for now                                                                    | Open                                 |
+| 6   | Messaging provider (MSG91 vs Twilio) — **SMS only**; WhatsApp decided 2026-11-02: Meta Cloud API direct                                                                                                                                                                                                          | MSG91                                                                               | Later (setup only, not during build) |
+| 7   | Geocoding/autocomplete + routing provider (Google Places vs Ola Maps; OSRM/Ola routing)                                                                                                                                                                                                                          | Decide via 50-address Raipur bake-off                                               | During service-flow build (Phase 2)  |
+| 8   | ~~Hindi UI at launch or P1~~ decided: both at launch                                                                                                                                                                                                                                                             | —                                                                                   | Done                                 |
+| 9   | Commission and payout model for shops/workshops                                                                                                                                                                                                                                                                  | Ledger built generically; rates configurable per category/partner; user will decide | Later ("ill tell u on this later")   |
+| 11  | GSTIN + address confirmed 2026-11-01; CIN + grievance officer name still needed                                                                                                                                                                                                                                  | —                                                                                   | Before launch                        |
+| 12  | Razorpay MCP connection (test keys)                                                                                                                                                                                                                                                                              | Add when Razorpay account is ready                                                  | Later                                |
+| 13  | ~~"ux superpower" skill identity~~ confirmed obra/superpowers (2026-11-01)                                                                                                                                                                                                                                       | —                                                                                   | Done                                 |
+| 15  | Vehicle fields, commission, payment methods, post-purchase P1 — see rows 1, 2, 5, 9                                                                                                                                                                                                                              | —                                                                                   | —                                    |
+| 14  | Baseline walkthrough: remaining untouched P0 items use the baseline defaults (coupons engine, attribute sets, part numbers, SEO, OOS handling, admin CRUD conventions, impersonation in P1)                                                                                                                      | Defaults                                                                            | Confirm anytime                      |
+| 16  | Hindi map: roads without `name:hi` in OSM show their local (English) name on `/hi` — keep, or hide them (inbox Q64)                                                                                                                                                                                              | Keep showing the local name; refs (NH30) always                                     | Before launch                        |
+| 17  | Coin order-reward guard: what stops order → delivery → claim → repeat farming before `coins.earn_order_bp` / `coins.first_order_bonus` can be above 0 (options: rewards only after the claim window with no open ticket, per-customer monthly cap, minimum order, first order only for verified phone + address) | Decide when enabling (user 2026-11-14); saving above 0 is refused meanwhile         | Before order rewards are switched on |
 
 ## 2026-10-31 — Tooling (see `research/tooling-audit.md`)
 

@@ -53,6 +53,8 @@ const schema = z
     RAZORPAY_KEY_SECRET: z.string().min(16).max(64).optional(),
     /** Webhook secret (Razorpay Dashboard → Webhooks); the webhook route answers 404 until it is set. */
     RAZORPAY_WEBHOOK_SECRET: z.string().min(8).max(128).optional(),
+    /** Pre-launch testing only (user 2026-11-14): lets production start with `rzp_test_` keys. Remove before real customers. */
+    RAZORPAY_ALLOW_TEST_KEYS: z.enum(['true', 'false']).optional(),
     /** Email through Resend (plan 2026-11-13): sending is on when the key is set. */
     RESEND_API_KEY: z
       .string()
@@ -131,7 +133,7 @@ const schema = z
     if (!env.WEB_BASE_URL.startsWith('https://')) {
       ctx.addIssue({ code: 'custom', path: ['WEB_BASE_URL'], message: 'https required in production' });
     }
-    if (env.RAZORPAY_KEY_ID?.startsWith('rzp_test_')) {
+    if (env.RAZORPAY_KEY_ID?.startsWith('rzp_test_') && env.RAZORPAY_ALLOW_TEST_KEYS !== 'true') {
       ctx.addIssue({
         code: 'custom',
         path: ['RAZORPAY_KEY_ID'],
@@ -221,6 +223,8 @@ function toConfig(env: z.infer<typeof schema>) {
             keyId: env.RAZORPAY_KEY_ID,
             keySecret: env.RAZORPAY_KEY_SECRET,
             webhookSecret: env.RAZORPAY_WEBHOOK_SECRET ?? null,
+            /** Test keys: payments are free and fake. Logged loudly at start-up in production. */
+            testMode: env.RAZORPAY_KEY_ID.startsWith('rzp_test_'),
           }
         : null,
     email: env.RESEND_API_KEY

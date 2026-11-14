@@ -17,12 +17,16 @@ import {
   coinBalance,
   earnCoins,
   expireDueCoins,
+  getMyOrder,
+  listShopOrders,
   myCoinLedger,
   myCoins,
   placeCodOrder,
   placeOrder,
   quoteCheckout,
   releaseDueCoinRewards,
+  saveOperationalSetting,
+  listShopPayoutEntries,
   transitionOrder,
   type ShippingAddress,
   type Tx,
@@ -446,5 +450,213 @@ describe('a customer sees only their own coins', () => {
     const activity = await coinActivity(t(), { limit: 5 });
     expect(activity.entries.length).toBe(5);
     expect(activity.entries[0]).toHaveProperty('userId');
+  });
+});
+
+describe('code review 2026-11-14: staff adjustments (super admin only, user ruling)', () => {
+  it('never to the staff member’s own account', async () => {
+    await expect(
+      adjustCoins(t(), {
+        userId: staff,
+        delta: 10,
+        reasonCode: 'goodwill',
+        idemKey: `adjust:${key()}`,
+        staffUserId: staff,
+      }),
+    ).rejects.toMatchObject({ code: 'COINS_SELF' });
+  });
+
+  it('at most `coins.adjust_daily_cap` coins per customer per IST day, grants and deductions together', async () => {
+    await setSetting('coins.adjust_daily_cap', 100);
+    const fresh = (await db.insert(s.users).values({ firebaseUid: 'fb-coins-cap' }).returning())[0]!.id;
+    const adjust = (delta: number) =>
+      adjustCoins(t(), {
+        userId: fresh,
+        delta,
+        reasonCode: 'correction',
+        idemKey: `adjust:${key()}`,
+        staffUserId: staff,
+      });
+    await adjust(60);
+    await adjust(-30);
+    await expect(adjust(20)).rejects.toMatchObject({ code: 'COINS_DAILY_CAP' });
+    await adjust(10); // 60 + 30 + 10 = 100: exactly the cap
+    expect(await coinBalance(t(), fresh)).toBe(40);
+    await setSetting('coins.adjust_daily_cap', 5_000);
+  });
+});
+
+describe('code review 2026-11-14: order rewards stay off until a guard is chosen (user: "decide when enabling")', () => {
+  it('saving an order or first-order reward above 0 is refused; 0 is fine', async () => {
+    for (const k of ['coins.earn_order_bp', 'coins.first_order_bonus'] as const) {
+      await expect(
+        saveOperationalSetting(t(), {
+          key: k,
+          cityId: null,
+          value: 100,
+          expectedVersion: null,
+          staffUserId: staff,
+        }),
+      ).rejects.toMatchObject({ code: 'COIN_GUARD_REQUIRED' });
+    }
+    const [row] = await db.select().from(s.settings).where(eq(s.settings.key, 'coins.earn_order_bp'));
+    await expect(
+      saveOperationalSetting(t(), {
+        key: 'coins.earn_order_bp',
+        cityId: null,
+        value: 0,
+        expectedVersion: row?.version ?? null,
+        staffUserId: staff,
+      }),
+    ).resolves.toMatchObject({ version: expect.any(Number) as number });
+  });
+});
+
+describe('code review 2026-11-14: shops see the coin discount; MechDost owes it to them on delivery', () => {
+  it('the shop view shows the discount and the cash to collect; delivery records the amount owed, once', async () => {
+    await grant(ravi, 200);
+    const placed = await place([{ sku: OIL, qty: 2 }], 50);
+    const { subs } = await groupOf(placed.code);
+    const part = subs[0]!;
+    await deliver(part.id);
+    const [shop] = await db.select({ id: s.orders.shopId }).from(s.orders).where(eq(s.orders.id, part.id));
+    const done = await listShopOrders(t(), [shop!.id!], 'done');
+    const row = done.items.find((i) => i.code === part.code);
+    expect(row).toMatchObject({
+      coinDiscountPaise: 5_000,
+      cashToCollectPaise: part.totalPaise, // cash on delivery: the discounted total
+      totalPaise: part.totalPaise,
+    });
+    const owed = await listShopPayoutEntries(t(), { shopId: shop!.id! });
+    expect(owed.entries.filter((e) => e.orderCode === part.code)).toEqual([
+      expect.objectContaining({ kind: 'coin_discount', amountPaise: 5_000, shopId: shop!.id }),
+    ]);
+    // Append-only: money owed is history.
+    const [entry] = await db
+      .select()
+      .from(s.shopPayoutEntries)
+      .where(eq(s.shopPayoutEntries.orderId, part.id));
+    await expect(
+      db.update(s.shopPayoutEntries).set({ amountPaise: 1 }).where(eq(s.shopPayoutEntries.id, entry!.id)),
+    ).rejects.toThrow();
+  });
+
+  it('nothing is owed for a cancelled part or an order without coins', async () => {
+    const withCoins = await place([{ sku: OIL, qty: 1 }], 10);
+    const a = (await groupOf(withCoins.code)).subs[0]!;
+    await cancel(a.id);
+    const plain = await place([{ sku: OIL, qty: 1 }], 0);
+    const b = (await groupOf(plain.code)).subs[0]!;
+    await deliver(b.id);
+    expect(await db.$count(s.shopPayoutEntries, eq(s.shopPayoutEntries.orderId, a.id))).toBe(0);
+    expect(await db.$count(s.shopPayoutEntries, eq(s.shopPayoutEntries.orderId, b.id))).toBe(0);
+  });
+});
+
+describe('code review 2026-11-14: minor fixes', () => {
+  it('lock order: checkout spends coins before reserving stock, as a cancel restores coins before releasing it', async () => {
+    await db.execute(sql`create table if not exists lock_trace (seq serial primary key, what text not null)`);
+    await db.execute(sql`create or replace function trace_lock() returns trigger language plpgsql as $$
+      begin insert into lock_trace (what) values (tg_argv[0]); return null; end $$`);
+    await db.execute(
+      sql`create trigger trace_coins after update on coin_accounts for each row execute function trace_lock('coins')`,
+    );
+    await db.execute(
+      sql`create trigger trace_stock after insert or update on reservations for each row execute function trace_lock('stock')`,
+    );
+    await grant(ravi, 50);
+    await db.execute(sql`delete from lock_trace`);
+    const placed = await place([{ sku: OIL, qty: 1 }], 10);
+    const placing = (await db.execute(sql`select what from lock_trace order by seq`)) as unknown as {
+      rows: { what: string }[];
+    };
+    expect(placing.rows.map((r) => r.what)[0]).toBe('coins');
+    await db.execute(sql`delete from lock_trace`);
+    await cancel((await groupOf(placed.code)).subs[0]!.id);
+    const cancelling = (await db.execute(sql`select what from lock_trace order by seq`)) as unknown as {
+      rows: { what: string }[];
+    };
+    expect(cancelling.rows.map((r) => r.what)[0]).toBe('coins');
+    await db.execute(sql`drop trigger trace_coins on coin_accounts`);
+    await db.execute(sql`drop trigger trace_stock on reservations`);
+  });
+
+  it('the order page counts only the coins of parts still on their way', async () => {
+    await grant(ravi, 100);
+    const placed = await place(
+      [
+        { sku: OIL, qty: 2 },
+        { sku: TYRE(), qty: 1 },
+      ],
+      30,
+    );
+    const { subs } = await groupOf(placed.code);
+    await cancel(subs[0]!.id);
+    const view = await getMyOrder(t(), ravi, placed.code, { locale: 'en', keyring: null });
+    expect(view.coins).toEqual({ coins: subs[1]!.coinsRedeemed, discountPaise: subs[1]!.coinDiscountPaise });
+  });
+
+  it('a cancelled first-order bonus does not block a later one', async () => {
+    await setSetting('coins.first_order_bonus', 25);
+    const fresh = (await db.insert(s.users).values({ firebaseUid: 'fb-coins-first2' }).returning())[0]!.id;
+    const first = await place([{ sku: OIL, qty: 1 }], 0, { userId: fresh });
+    const a = (await groupOf(first.code)).subs[0]!;
+    await db.insert(s.coinRewards).values({
+      userId: fresh,
+      source: 'first_order',
+      coins: 25,
+      status: 'cancelled',
+      cancelReasonCode: 'order_refunded',
+      availableAt: new Date(),
+      orderId: a.id,
+    });
+    const second = await place([{ sku: OIL, qty: 1 }], 0, { userId: fresh });
+    const b = (await groupOf(second.code)).subs[0]!;
+    await deliver(b.id);
+    const bonus = await db
+      .select()
+      .from(s.coinRewards)
+      .where(and(eq(s.coinRewards.userId, fresh), eq(s.coinRewards.status, 'pending')));
+    expect(bonus).toEqual([expect.objectContaining({ source: 'first_order', orderId: b.id })]);
+    await setSetting('coins.first_order_bonus', 0);
+  });
+
+  it('expiry pages through every candidate, so customers with nothing left to expire cannot starve the rest', async () => {
+    const lapsed = new Date(Date.now() - 86_400_000);
+    const users = await db
+      .insert(s.users)
+      .values([1, 2, 3, 4].map((i) => ({ firebaseUid: `fb-coins-starve-${String(i)}` })))
+      .returning();
+    for (const u of users) {
+      await earnCoins(t(), {
+        userId: u.id,
+        coins: 10,
+        reason: 'Old coins',
+        idemKey: `earn:old:${key()}`,
+        expiresAt: lapsed,
+      });
+    }
+    // Three customers already used their lapsed coins (nothing left to expire) but keep a balance, so they stay
+    // candidates; with a page of one they used to fill every run.
+    for (const u of users.slice(0, 3)) {
+      await earnCoins(t(), {
+        userId: u.id,
+        coins: 5,
+        reason: 'New coins',
+        idemKey: `earn:new:${key()}`,
+        expiresAt: later,
+      });
+      await adjustCoins(t(), {
+        userId: u.id,
+        delta: -10,
+        reasonCode: 'correction',
+        idemKey: `adjust:${key()}`,
+        staffUserId: staff,
+      });
+    }
+    const last = users[3]!;
+    await expireDueCoins(t(), { limit: 1 });
+    expect(await coinBalance(t(), last.id)).toBe(0);
+    expect(await coinBalance(t(), users[0]!.id)).toBe(5);
   });
 });

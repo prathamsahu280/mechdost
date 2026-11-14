@@ -35,16 +35,23 @@ export const OPERATIONAL_SETTINGS = {
    */
   'partners.agreement_required': { kind: 'boolean', default: false },
   /**
-   * Customers may cancel their own order until the shop confirms it. Off by default: cancelling goes through
-   * support (Q25, user 2026-11-13). Copied onto each order at checkout (`orders.cancellable_until_status`).
+   * Customers may cancel their own cash-on-delivery order until the shop confirms it. Off by default: cancelling
+   * goes through support (Q25, user 2026-11-13). Copied onto each order at checkout (`orders.cancellable_until_status`).
    */
-  'orders.customer_self_cancel': { kind: 'boolean', default: false },
+  'orders.customer_self_cancel_cod': { kind: 'boolean', default: false },
+  /** The same rule for orders paid online (refund to the original method on cancel); separate (user 2026-11-14). */
+  'orders.customer_self_cancel_online': { kind: 'boolean', default: false },
   /** How long a shop has to accept an offered order (minutes). */
   // Same bounds as the demo `/admin/settings` screen and spec 08 (5–120 min).
   'orders.acceptance_timeout_min': { kind: 'int', min: 5, max: 120, default: 15 },
   /** Launch check: products go live only with complete Hindi texts. */
   // One catalogue for every city: publishing reads the global value only.
   'catalogue.require_hindi_to_publish': { kind: 'boolean', default: false, globalOnly: true },
+  /**
+   * Customers must verify their email (not only their phone) before ordering, booking or reviewing. Off by default:
+   * phone OTP is enough (user 2026-11-14). Staff and partners always need both.
+   */
+  'customers.require_verified_email': { kind: 'boolean', default: false, globalOnly: true },
   /** Customer messages (the first one included) allowed on one support request in 24 hours (review B9). */
   'support.customer_messages_per_ticket_per_day': {
     kind: 'int',
@@ -87,11 +94,27 @@ export const OPERATIONAL_SETTINGS = {
   },
   /** ... and at most one reward per customer per workshop in this many days (0 = no limit). */
   'coins.workshop_reward_cooldown_days': { kind: 'int', min: 0, max: 365, default: 30, globalOnly: true },
+  /** Most coins staff may grant and deduct together for one customer in one IST day (code review 2026-11-14). */
+  'coins.adjust_daily_cap': { kind: 'int', min: 1, max: 1_000_000, default: 5_000, globalOnly: true },
   /** Days before earned coins can be used (after the 7-day claim window, so claims cannot farm coins). */
   'coins.unlock_days': { kind: 'int', min: 0, max: 60, default: 8, globalOnly: true },
   /** Days before unused coins expire. */
   'coins.expiry_days': { kind: 'int', min: 30, max: 1_095, default: 180, globalOnly: true },
 } as const satisfies Record<string, SettingSpec>;
+
+/**
+ * Order rewards can be farmed (order, cancel after delivery, re-order) until an anti-abuse guard is chosen (user
+ * 2026-11-14: "decide when enabling"; pending decisions). Until then they can only be saved as 0.
+ */
+export const COIN_GUARDED_SETTINGS: readonly SettingKey[] = [
+  'coins.earn_order_bp',
+  'coins.first_order_bonus',
+];
+
+/** True when `value` would switch on a reward that still needs its guard (COIN_GUARD_REQUIRED). */
+export function needsCoinGuard(key: SettingKey, value: unknown): boolean {
+  return COIN_GUARDED_SETTINGS.includes(key) && typeof value === 'number' && value > 0;
+}
 
 /** Coin rule keys: saving one also needs the `coins:rules` permission (spec 20). */
 export const isCoinSettingKey = (key: string): boolean => key.startsWith('coins.');

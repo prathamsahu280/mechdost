@@ -55,7 +55,9 @@ export type CoinErrorKey =
   | 'coins_api_err_stale'
   | 'coins_api_err_amount'
   | 'coins_api_err_note'
-  | 'coins_api_err_customer';
+  | 'coins_api_err_customer'
+  | 'coins_api_err_self'
+  | 'coins_api_err_daily_cap';
 
 /** Coin error codes → their own messages; null = use the screen's common message for that code. */
 export function coinErrorKey(code: string): CoinErrorKey | null {
@@ -70,6 +72,10 @@ export function coinErrorKey(code: string): CoinErrorKey | null {
       return 'coins_api_err_amount';
     case 'COINS_REASON':
       return 'coins_api_err_note';
+    case 'COINS_SELF':
+      return 'coins_api_err_self';
+    case 'COINS_DAILY_CAP':
+      return 'coins_api_err_daily_cap';
     case 'NOT_FOUND':
     case 'HTTP_404':
       return 'coins_api_err_customer';
@@ -87,6 +93,19 @@ export function adjustDeltaFrom(direction: string, amount: string): number | nul
   if (direction === 'add') return n;
   if (direction === 'remove') return -n;
   return null;
+}
+
+/**
+ * Cash on delivery after the coin discount (code review 2026-11-14): the server checks the COD cap on what the
+ * customer pays at the door, so a cart just over the cap is fine once coins bring it under. A PIN without COD stays
+ * without it.
+ */
+export function codAllowedAfterCoins(
+  quote: { totalPaise: number; cod: { reason: 'over_cap' | 'pincode' | null; capPaise: number } },
+  coinDiscountPaise: number,
+): boolean {
+  if (quote.cod.reason === 'pincode') return false;
+  return quote.totalPaise - coinDiscountPaise <= quote.cod.capPaise;
 }
 
 /** The API's rules → the shared redemption rules (`coinRedemption`). */

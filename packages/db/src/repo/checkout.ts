@@ -182,11 +182,14 @@ async function quoteInternal(
     state_id: string;
     state_gst_code: string;
     cod_allowed: boolean;
+    free_delivery_min_paise: unknown;
   }>(
+    // An inactive PIN is not serviceable (spec 15 "PIN codes"): refused like an unknown one.
     await db.execute(sql`
-      select c.id as city_id, c.code as city_code, pc.state_id, st.gst_state_code as state_gst_code, pc.cod_allowed
+      select c.id as city_id, c.code as city_code, pc.state_id, st.gst_state_code as state_gst_code, pc.cod_allowed,
+        pc.free_delivery_min_paise
       from pincodes pc join cities c on c.id = pc.city_id join states st on st.id = pc.state_id
-      where pc.pincode = ${input.pincode} and c.status = 'live'`),
+      where pc.pincode = ${input.pincode} and pc.active and c.status = 'live'`),
   );
   if (!place) throw new ValidationError('We do not deliver to this PIN code yet', 'PINCODE_NOT_SERVICEABLE');
 
@@ -315,8 +318,11 @@ async function quoteInternal(
     return { ...base, unitPaise: unit, totalPaise: gross, group: g, issue: null, available: null };
   });
 
-  const freeMin = await setting(db, place.city_id, CHECKOUT_SETTINGS.freeDeliveryMinPaise.key);
+  const cityFreeMin = await setting(db, place.city_id, CHECKOUT_SETTINGS.freeDeliveryMinPaise.key);
+  const pinFreeMin = numOrNull(place.free_delivery_min_paise);
   for (const g of groups) {
+    // Free-delivery threshold: PIN override ?? shop override ?? city setting (spec 03 "Delivery charges").
+    const freeMin = pinFreeMin ?? /* shop override (shops.free_delivery_min_paise) goes here */ cityFreeMin;
     if (freeMin !== null && g.subtotalPaise >= freeMin) g.shippingPaise = 0;
     g.totalPaise = g.subtotalPaise + g.shippingPaise;
   }
@@ -511,8 +517,13 @@ export async function placeOrder(
       });
 
     await setActor(tx, { type: 'customer', userId: input.userId });
-    // Snapshot of the cancel rule (Q25): customers cancel until confirmed only when the admin allows it.
-    const cancellableUntilStatus = (await flagSetting(tx, cityId, 'orders.customer_self_cancel'))
+    // Snapshot of the cancel rule (Q25): customers cancel until confirmed only when the admin allows it, set
+    // separately for online-paid and cash-on-delivery orders (user 2026-11-14).
+    const cancellableUntilStatus = (await flagSetting(
+      tx,
+      cityId,
+      online ? 'orders.customer_self_cancel_online' : 'orders.customer_self_cancel_cod',
+    ))
       ? 'confirmed'
       : 'none';
     const group = await insertGroup(tx, {
@@ -537,6 +548,23 @@ export async function placeOrder(
       },
     });
 
+    if (coins.coins > 0) {
+      // Lock order (spec 14): coins are spent before any stock is reserved, the order a cancel uses too (coins
+      // restored in `transitionOrder`, then stock released), so the two can never wait on each other.
+      // Compare-and-set on the balance: a parallel checkout that spent the coins first makes this one fail
+      // (INSUFFICIENT_COINS) and the whole order rolls back. One spend per order (`redeem:<group id>`).
+      await redeemCoins(tx, {
+        userId: input.userId,
+        coins: coins.coins,
+        orderGroupId: group.id,
+        idemKey: `redeem:${group.id}`,
+      });
+      await recordServerEvent(tx, 'coins_redeemed', {
+        userId: input.userId,
+        cityId,
+        props: { orderCode: group.code, coins: coins.coins, discountPaise: coins.discountPaise },
+      });
+    }
     const ttl = await settingOr(
       tx,
       cityId,
@@ -607,21 +635,6 @@ export async function placeOrder(
           throw new ConflictError('A product just sold out; please review your cart', 'OUT_OF_STOCK');
       }
       placed.push({ code, totalPaise: subTotal });
-    }
-    if (coins.coins > 0) {
-      // Compare-and-set on the balance: a parallel checkout that spent the coins first makes this one fail
-      // (INSUFFICIENT_COINS) and the whole order rolls back. One spend per order (`redeem:<group id>`).
-      await redeemCoins(tx, {
-        userId: input.userId,
-        coins: coins.coins,
-        orderGroupId: group.id,
-        idemKey: `redeem:${group.id}`,
-      });
-      await recordServerEvent(tx, 'coins_redeemed', {
-        userId: input.userId,
-        cityId,
-        props: { orderCode: group.code, coins: coins.coins, discountPaise: coins.discountPaise },
-      });
     }
     await recordServerEvent(tx, 'purchase', {
       userId: input.userId,

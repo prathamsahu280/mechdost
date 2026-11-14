@@ -138,9 +138,10 @@ export const coinRewards = pgTable(
     uniqueIndex('coin_rewards_service_uq')
       .on(t.serviceRequestId)
       .where(sql`${t.serviceRequestId} is not null`),
+    // One live first-order bonus per customer; a cancelled one (order refunded) does not block a later one.
     uniqueIndex('coin_rewards_first_order_uq')
       .on(t.userId)
-      .where(sql`${t.source} = 'first_order'`),
+      .where(sql`${t.source} = 'first_order' and ${t.status} <> 'cancelled'`),
     index().on(t.status, t.availableAt),
     index().on(t.userId, t.createdAt),
     index().on(t.orderId),

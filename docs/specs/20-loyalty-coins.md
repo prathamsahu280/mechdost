@@ -25,16 +25,19 @@ These rules are fixed in code and copy (account page, policy page, checkout note
 - **Earning (Q24, user 2026-11-13; every reward admin-set, 0 until configured):** `coins.earn_order_bp` of what a delivered order's products cost after discounts; `coins.first_order_bonus` on the first delivered order (once per customer); `coins.workshop_booking_bonus` per paid workshop booking. Earned coins become usable after `coins.unlock_days` (default **8**, after the 7-day claim window of Q25).
 - **Referrals (Q31–Q34 answered; Q35–Q38, Q44, Q45, Q47 open):** not built — see "Gaps".
 - **Cancelled or rejected order:** the coins it used are restored once, as coins — per sub-order (each part carries its share), with a fresh expiry.
-- **Manual grants/deductions:** staff with `coins:adjust` (marketing; super admin) only, each with a **reason code** (`goodwill`, `service_recovery`, `promotion`, `correction`, `fraud_reversal`, `other`) and an optional note the customer sees, audited. Four-eyes above `settings.approval_threshold` (spec 13) once real money-equivalent volumes exist (not built: no threshold setting yet).
+- **Manual grants/deductions:** **super admin only** (`coins:adjust`; marketing lost it, user 2026-11-14), never to the staff member's own account (403 `COINS_SELF`), at most `coins.adjust_daily_cap` coins per customer per IST day (default 5,000, grants and deductions together, checked under a per-customer lock; 422 `COINS_DAILY_CAP`), each with a **reason code** (`goodwill`, `service_recovery`, `promotion`, `correction`, `fraud_reversal`, `other`) and an optional note the customer sees, audited. Four-eyes above `settings.approval_threshold` (spec 13) once real money-equivalent volumes exist (not built: no threshold setting yet).
 - **Coin rules:** edited in Admin → Settings; saving needs `settings:write` **and** `coins:rules`. Site-wide only (no city overrides: coins belong to the account, not a city).
 - **Viewing balances:** `coins:read` for ops, support, finance and marketing.
+- **Order rewards stay off until a guard is chosen** (user 2026-11-14: "decide when enabling"): saving `coins.earn_order_bp` or `coins.first_order_bonus` above 0 is refused with 422 `COIN_GUARD_REQUIRED` (API and settings screen) — pending decision "Coin order-reward guard" in `docs/decisions.md`.
+- **Shops see the coin discount and are owed it** (user 2026-11-14: "show line + payout ledger"): the shop's order cards show "MechDost Coins −₹X (paid by MechDost)" and the cash to collect; on delivery the part's `coin_discount_paise` is written to the append-only `shop_payout_entries` (`coin_discount`, once per order). Finance reads it at `GET /v1/admin/payouts/entries` (`payouts:read`).
 
-## Data (migrations 0006–0007, 0047)
+## Data (migrations 0006–0007, 0050)
 
 - `coin_accounts`: `user_id` PK, `balance` CHECK ≥ 0, `lifetime_earned`, `version`.
-- `coin_ledger`: append-only (trigger), `delta` ≠ 0 with sign matching `kind` (earn/restore > 0, redeem/expire < 0, adjust either), unique `idem_key`, `order_group_id` required for redeem/restore, `created_by` required for adjust, `expires_at` on every row that adds coins, `reason_code` (CHECK in `COIN_REASON_CODES`, 0047).
-- `coin_rewards` (0047): pending → credited | cancelled; `available_at`; one row per source event (unique `(source, order_id)`, unique `service_request_id`), one first-order bonus per customer (partial unique index); credited ⇔ `ledger_id`; cancelled ⇔ `cancel_reason_code`. RLS on, version/updated_at triggers.
-- `order_groups.coins_redeemed` + `coin_discount_paise`, and per sub-order `orders.coins_redeemed` + `coin_discount_paise` (0047), consistent with each other and ≤ `discount_paise`.
+- `coin_ledger`: append-only (trigger), `delta` ≠ 0 with sign matching `kind` (earn/restore > 0, redeem/expire < 0, adjust either), unique `idem_key`, `order_group_id` required for redeem/restore, `created_by` required for adjust, `expires_at` on every row that adds coins, `reason_code` (CHECK in `COIN_REASON_CODES`, 0050).
+- `coin_rewards` (0050): pending → credited | cancelled; `available_at`; one row per source event (unique `(source, order_id)`, unique `service_request_id`), one live first-order bonus per customer (partial unique index excluding cancelled rows); credited ⇔ `ledger_id`; cancelled ⇔ `cancel_reason_code`. RLS on, version/updated_at triggers.
+- `shop_payout_entries` (0050): append-only (trigger) amounts MechDost owes a shop; kind `coin_discount` (one per delivered order with coins, unique idempotency key), integer paise > 0.
+- `order_groups.coins_redeemed` + `coin_discount_paise`, and per sub-order `orders.coins_redeemed` + `coin_discount_paise` (0050), consistent with each other and ≤ `discount_paise`.
 - RLS on, no end-user grants.
 
 ## Repository (`packages/db/src/repo/coins.ts`)
@@ -61,11 +64,21 @@ These rules are fixed in code and copy (account page, policy page, checkout note
 
 Tests: `packages/db/test/service-requests.test.ts` "workshop booking coins: anti-abuse" (below the minimum → none; same workshop within the cooldown → none; after it → reward; cancelled reward never credited).
 
+### Code review fixes (2026-11-14, user rulings)
+
+- **Lock order** (spec 14): checkout spends the coins right after the group row, before any stock is reserved; a cancel restores coins (in `transitionOrder`) before releasing stock — coin account first, then stock, everywhere. Test: a trigger trace in `packages/db/test/coins.test.ts`.
+- **Expiry job** pages through every candidate by user id in one run, so customers with nothing left to expire cannot starve others.
+- The whole-group `restoreCoinsForOrder` is removed: only per-part restores exist.
+- The **order page** counts only the coins of parts still on their way.
+- **Self-booking:** a customer who holds a role at the workshop (`user_roles.workshop_id`) earns no booking reward there.
+- `COIN_RULE_LIMITS.coinValuePaise` starts at 100, like the admin setting.
+- The web checkout judges cash on delivery after the coin discount, like the server.
+
 ### Gaps
 
 - **Referrals** (Q31–Q34 answered) are not built: the programme as a whole (codes, attribution at sign-up, abuse rules Q35–Q38, Q44, Q45) is still open under Q47 ("do not build until discussed"). The reward table has room for a `referral` source.
 - **Refund after delivery:** no refund flow exists yet; when it is built it must call `cancelPendingOrderRewards` so a refunded order's reward never unlocks. Credited rewards are not clawed back (the 8-day wait outlasts the 7-day claim window).
-- **Four-eyes** for large adjustments waits for `settings.approval_threshold`.
+- **Four-eyes** for large adjustments waits for `settings.approval_threshold` (meanwhile: super admin only + the daily cap).
 - **Line-level allocation** of the coin discount (for a partial refund of one line) is per sub-order only; the refund flow must allocate per line from the stored sub-order share.
 - **GST:** invoices stay at full price with the coin discount paid by MechDost (Q41 default; ask the CA).
 - **Customer search** in Admin → Coins: staff open a customer by account id or from recent activity (no search API yet, same as Admin → Customers).

@@ -40,6 +40,21 @@ export interface ServerEventProps {
   };
   admin_customer_blocked: { customerId: string; level: string; reasonCode: string };
   admin_customer_unblocked: { customerId: string; level: string };
+  /** A verified customer review, pending moderation (spec 02 § Reviews). Rating only, never the text. */
+  review_submitted: {
+    reviewId: string;
+    targetType: 'product' | 'workshop';
+    targetId: string;
+    rating: number;
+    hasText: boolean;
+  };
+  admin_review_moderated: {
+    reviewId: string;
+    targetType: 'product' | 'workshop';
+    from: string;
+    to: string;
+    reasonCode: string | null;
+  };
   admin_product_status_changed: { productSlug: string; from: string; to: string };
   /** A product added by staff, from the admin form or a CSV import (status draft, or live when published). */
   admin_product_created: { productSlug: string; sku: string; status: string; source: 'form' | 'import' };
@@ -210,6 +225,10 @@ export const CLIENT_EVENT_SCHEMAS = {
     .strict(),
   admin_notifications_change: z
     .object({ target: id, action: z.enum(['saved', 'enabled', 'disabled', 'budget']) })
+    .strict(),
+  // Service-area PIN codes (spec 15): what was done and, when switched off, the reason code. Never the area text.
+  admin_pincode_change: z
+    .object({ action: z.enum(['added', 'edited', 'deactivated', 'activated']), reasonCode: id.optional() })
     .strict(),
 } as const;
 

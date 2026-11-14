@@ -19,7 +19,7 @@ import {
   coinBalance,
   earnCoins,
   redeemCoins,
-  restoreCoinsForOrder,
+  restoreCoinsForSubOrder,
   acceptAssignment,
   allocateInvoiceNumber,
   commitReservation,
@@ -677,12 +677,24 @@ describe('MechDost Coins ledger (spec 20)', () => {
     expect(await coinBalance(t(), F.user!)).toBe(0);
     // The cancelled order gets its coins back exactly once.
     const winner = results[0].status === 'fulfilled' ? a : b;
-    await restoreCoinsForOrder(t(), { userId: F.user!, orderGroupId: winner.groupId });
-    await restoreCoinsForOrder(t(), { userId: F.user!, orderGroupId: winner.groupId });
+    // (The part records its share, as checkout does; restores are per part since code review 2026-11-14.)
+    await db
+      .update(s.orders)
+      .set({
+        coinsRedeemed: balance,
+        coinDiscountPaise: balance * 100,
+        discountPaise: balance * 100,
+        totalPaise: sql`${s.orders.totalPaise} - ${balance * 100}`,
+      })
+      .where(eq(s.orders.id, winner.id));
+    await restoreCoinsForSubOrder(t(), winner.id);
+    await restoreCoinsForSubOrder(t(), winner.id);
     expect(await coinBalance(t(), F.user!)).toBe(balance);
   });
 
   it('manual adjustments need a reason code (a note is 3+ characters), cannot overdraw, and are audited', async () => {
+    // Staff never adjust their own account (code review 2026-11-14): a separate staff user.
+    const staffId = (await db.insert(s.users).values({ firebaseUid: 'fb-staff-coins-1' }).returning())[0]!.id;
     const balance = await coinBalance(t(), F.user!);
     await expect(
       adjustCoins(t(), {
@@ -691,7 +703,7 @@ describe('MechDost Coins ledger (spec 20)', () => {
         reasonCode: 'goodwill',
         note: 'x',
         idemKey: 'adjust:x:000001',
-        staffUserId: F.user!,
+        staffUserId: staffId,
       }),
     ).rejects.toMatchObject({ code: 'COINS_REASON' });
     await expect(
@@ -700,7 +712,7 @@ describe('MechDost Coins ledger (spec 20)', () => {
         delta: -(balance + 1),
         reasonCode: 'correction',
         idemKey: 'adjust:x:000002',
-        staffUserId: F.user!,
+        staffUserId: staffId,
       }),
     ).rejects.toMatchObject({ code: 'INSUFFICIENT_COINS' });
     const entry = await adjustCoins(t(), {
@@ -709,7 +721,7 @@ describe('MechDost Coins ledger (spec 20)', () => {
       reasonCode: 'goodwill',
       note: 'Goodwill for a late delivery',
       idemKey: 'adjust:x:000003',
-      staffUserId: F.user!,
+      staffUserId: staffId,
     });
     expect(entry.balanceAfter).toBe(balance + 25);
     expect(await db.$count(s.auditLog, eq(s.auditLog.action, 'coins.adjusted'))).toBe(1);
@@ -720,7 +732,7 @@ describe('MechDost Coins ledger (spec 20)', () => {
       reasonCode: 'goodwill',
       note: 'Goodwill for a late delivery',
       idemKey: 'adjust:x:000003',
-      staffUserId: F.user!,
+      staffUserId: staffId,
     });
     expect(replay.id).toBe(entry.id);
     expect(await coinBalance(t(), F.user!)).toBe(balance + 25);

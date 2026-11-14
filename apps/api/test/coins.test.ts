@@ -137,10 +137,11 @@ describe('customer coins', () => {
 });
 
 describe('admin coins', () => {
-  it('coins:read to view, coins:adjust to change (reason code, version, idempotency key)', async () => {
+  it('coins:read to view; only a super admin adjusts (reason code, version, idempotency key)', async () => {
     const customer = await person('01', null);
     const support = await person('11', 'support_agent');
     const marketing = await person('12', 'marketing');
+    const admin = await person('13', 'super_admin');
     const url = `/v1/admin/coins/accounts/${customer.id}`;
     expect((await ctx.app.request(url, { headers: customer.headers })).status).toBe(403);
     const view = await ctx.app.request(url, { headers: support.headers });
@@ -163,15 +164,24 @@ describe('admin coins', () => {
       });
     const body = { delta: 25, reasonCode: 'goodwill', note: 'Late delivery', version: acct.version };
     expect((await adjust(support, body)).status).toBe(403);
-    expect((await adjust(marketing, { ...body, reasonCode: 'he asked nicely' })).status).toBe(400);
+    // User ruling 2026-11-14: super admin only (marketing no longer holds coins:adjust).
+    expect((await adjust(marketing, body)).status).toBe(403);
+    expect((await adjust(admin, { ...body, reasonCode: 'he asked nicely' })).status).toBe(400);
+    const own = await ctx.app.request(`/v1/admin/coins/accounts/${admin.id}/adjust`, {
+      method: 'POST',
+      headers: { ...admin.headers, 'idempotency-key': idem() },
+      body: JSON.stringify({ ...body, version: null }),
+    });
+    expect(own.status).toBe(403);
+    expect(((await own.json()) as ErrorJson).error.code).toBe('COINS_SELF');
     const key = idem();
-    const first = await adjust(marketing, body, key);
+    const first = await adjust(admin, body, key);
     expect(first.status).toBe(200);
     const entry = (await first.json()) as { id: string; balanceAfter: number };
     expect(entry.balanceAfter).toBe(acct.balance + 25);
-    const replay = await adjust(marketing, body, key);
+    const replay = await adjust(admin, body, key);
     expect(((await replay.json()) as { id: string }).id).toBe(entry.id);
-    const stale = await adjust(marketing, body);
+    const stale = await adjust(admin, body);
     expect(stale.status).toBe(409);
     expect(((await stale.json()) as ErrorJson).error.code).toBe('STALE_COINS');
 
@@ -182,20 +192,34 @@ describe('admin coins', () => {
     );
   });
 
-  it('coin rules are site-wide settings (no city override)', async () => {
+  it('coin rules are site-wide settings (no city override); order rewards stay 0 until a guard is chosen', async () => {
     const admin = await person('21', 'super_admin');
-    const save = (city: string | null) =>
-      ctx.app.request('/v1/admin/settings/coins.earn_order_bp', {
+    const save = (key: string, city: string | null, value: number) =>
+      ctx.app.request(`/v1/admin/settings/${key}`, {
         method: 'PUT',
         headers: admin.headers,
-        body: JSON.stringify({ city, value: 200, version: null }),
+        body: JSON.stringify({ city, value, version: null }),
       });
-    expect((await save('RPR')).status).toBe(422);
-    expect((await save(null)).status).toBe(200);
+    expect((await save('coins.expiry_days', 'RPR', 200)).status).toBe(422);
+    expect((await save('coins.expiry_days', null, 200)).status).toBe(200);
+    const guarded = await save('coins.earn_order_bp', null, 200);
+    expect(guarded.status).toBe(422);
+    expect(((await guarded.json()) as ErrorJson).error.code).toBe('COIN_GUARD_REQUIRED');
     const customer = await person('01', null);
     const mine = (await (await ctx.app.request('/v1/me/coins', { headers: customer.headers })).json()) as {
-      rules: { earnOrderBp: number };
+      rules: { expiryDays: number; earnOrderBp: number };
     };
-    expect(mine.rules.earnOrderBp).toBe(200);
+    expect(mine.rules).toMatchObject({ expiryDays: 200, earnOrderBp: 0 });
+  });
+
+  it('finance reads what MechDost owes shops (payouts:read)', async () => {
+    const finance = await person('31', null);
+    await grantRole(ctx.db, { userId: finance.id, role: 'finance', grantedBy: null });
+    const support = await person('11', 'support_agent');
+    const url = '/v1/admin/payouts/entries?limit=10';
+    expect((await ctx.app.request(url, { headers: support.headers })).status).toBe(403);
+    const res = await ctx.app.request(url, { headers: finance.headers });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ entries: [], nextCursor: null, totalPaise: 0 });
   });
 });

@@ -15,7 +15,14 @@ import { CONTENT_KEYS, contentMax, type ContentKey } from '@mechdost/shared/cont
 import { SETTING_KEYS, isSettingKey, type SettingKey } from '@mechdost/shared/settings';
 import { adminApi } from '@/lib/admin-api';
 import { contentField, contentStep } from '@/lib/admin-content-view';
-import { fromInput, isNullable, settingBounds, settingUnit, toInput } from '@/lib/admin-settings-view';
+import {
+  fromInput,
+  isNullable,
+  settingBounds,
+  settingUnit,
+  toInput,
+  type InputProblem,
+} from '@/lib/admin-settings-view';
 import { commonErrorKey, type CommonErrorKey } from '@/lib/api-error-key';
 import { track } from '@/lib/analytics';
 import type { ContentDefaults } from './admin-site';
@@ -34,9 +41,11 @@ const SETTING_LABEL = {
   'partners.default_lead_days': 'api_set_partners_default_lead_days',
   'partners.invite_days': 'api_set_partners_invite_days',
   'partners.agreement_required': 'api_set_partners_agreement_required',
-  'orders.customer_self_cancel': 'api_set_orders_customer_self_cancel',
+  'orders.customer_self_cancel_cod': 'api_set_orders_customer_self_cancel_cod',
+  'orders.customer_self_cancel_online': 'api_set_orders_customer_self_cancel_online',
   'orders.acceptance_timeout_min': 'api_set_orders_acceptance_timeout_min',
   'catalogue.require_hindi_to_publish': 'api_set_catalogue_require_hindi_to_publish',
+  'customers.require_verified_email': 'api_set_customers_require_verified_email',
   'support.customer_messages_per_ticket_per_day': 'api_set_support_customer_messages_per_ticket_per_day',
   'assistant.daily_messages': 'api_set_assistant_daily_messages',
   'coins.value_paise': 'coins_api_set_value_paise',
@@ -47,6 +56,7 @@ const SETTING_LABEL = {
   'coins.workshop_booking_bonus': 'coins_api_set_workshop_booking_bonus',
   'coins.workshop_reward_min_bill_paise': 'coins_api_set_workshop_reward_min_bill_paise',
   'coins.workshop_reward_cooldown_days': 'coins_api_set_workshop_reward_cooldown_days',
+  'coins.adjust_daily_cap': 'coins_api_set_adjust_daily_cap',
   'coins.unlock_days': 'coins_api_set_unlock_days',
   'coins.expiry_days': 'coins_api_set_expiry_days',
 } as const satisfies Record<SettingKey, string>;
@@ -166,12 +176,12 @@ function SettingsForm({ rows, onSaved }: { rows: AdminSettingRowDto[]; onSaved: 
   const [draft, setDraft] = useState<Record<string, string>>(() =>
     Object.fromEntries(known.map((r) => [r.key, toInput(r.key, r.global?.value ?? r.default)])),
   );
-  const [errors, setErrors] = useState<Partial<Record<SettingKey, 'type' | 'range'>>>({});
+  const [errors, setErrors] = useState<Partial<Record<SettingKey, InputProblem>>>({});
   const [status, setStatus] = useState<SaveStatus>('idle');
 
   async function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
-    const nextErrors: Partial<Record<SettingKey, 'type' | 'range'>> = {};
+    const nextErrors: Partial<Record<SettingKey, InputProblem>> = {};
     const changes: { key: SettingKey; value: number | boolean | null; version: number | null }[] = [];
     for (const row of known) {
       const parsed = fromInput(row.key, draft[row.key] ?? '');
@@ -276,7 +286,11 @@ function SettingsForm({ rows, onSaved }: { rows: AdminSettingRowDto[]; onSaved: 
               </p>
               {problem ? (
                 <p id={`${id}-error`} className="mt-1 text-xs font-bold text-error">
-                  {bounds ? t('settings_err', { min: num(bounds[0]), max: num(bounds[1]) }) : null}
+                  {problem === 'guard'
+                    ? t('coins_api_err_guard')
+                    : bounds
+                      ? t('settings_err', { min: num(bounds[0]), max: num(bounds[1]) })
+                      : null}
                 </p>
               ) : null}
             </div>

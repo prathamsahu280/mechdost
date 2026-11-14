@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { settingUnit } from '../src/lib/admin-settings-view';
-import { adjustDeltaFrom, coinEntryLabel, coinErrorKey, coinRulesFromApi } from '../src/lib/coins-view';
+import { fromInput, settingUnit } from '../src/lib/admin-settings-view';
+import {
+  adjustDeltaFrom,
+  codAllowedAfterCoins,
+  coinEntryLabel,
+  coinErrorKey,
+  coinRulesFromApi,
+} from '../src/lib/coins-view';
 
 /** MechDost Coins on the API (spec 20): helpers behind the account, checkout and admin coin screens. */
 describe('coinEntryLabel', () => {
@@ -99,5 +105,31 @@ describe('coin settings units', () => {
     expect(settingUnit('coins.first_order_bonus')).toBe('coins');
     expect(settingUnit('coins.value_paise')).toBe('rupees');
     expect(settingUnit('coins.expiry_days')).toBe('days');
+  });
+});
+
+describe('code review 2026-11-14', () => {
+  it('cash on delivery is judged on the total after the coins (as the server does)', () => {
+    const quote = {
+      totalPaise: 510_000,
+      cod: { allowed: false, reason: 'over_cap' as const, capPaise: 500_000 },
+    };
+    expect(codAllowedAfterCoins(quote, 0)).toBe(false);
+    expect(codAllowedAfterCoins(quote, 10_000)).toBe(true);
+    expect(
+      codAllowedAfterCoins({ ...quote, cod: { ...quote.cod, reason: 'pincode' as const } }, 50_000),
+    ).toBe(false);
+  });
+
+  it('maps the new adjustment refusals to their own messages', () => {
+    expect(coinErrorKey('COINS_SELF')).toBe('coins_api_err_self');
+    expect(coinErrorKey('COINS_DAILY_CAP')).toBe('coins_api_err_daily_cap');
+  });
+
+  it('order rewards cannot be switched on from the settings screen until a guard is chosen', () => {
+    expect(fromInput('coins.earn_order_bp', '200')).toEqual({ ok: false, problem: 'guard' });
+    expect(fromInput('coins.first_order_bonus', '50')).toEqual({ ok: false, problem: 'guard' });
+    expect(fromInput('coins.earn_order_bp', '0')).toEqual({ ok: true, value: 0 });
+    expect(fromInput('coins.workshop_booking_bonus', '50')).toEqual({ ok: true, value: 50 });
   });
 });

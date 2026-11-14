@@ -581,7 +581,8 @@ export async function createServiceRequest(
       .select({ cityId: pincodes.cityId, cityCode: cities.code })
       .from(pincodes)
       .innerJoin(cities, eq(cities.id, pincodes.cityId))
-      .where(eq(pincodes.pincode, b.pincode))
+      // An inactive PIN is not serviceable (spec 15 "PIN codes").
+      .where(and(eq(pincodes.pincode, b.pincode), eq(pincodes.active, true)))
       .limit(1);
     if (!place?.cityId) throw new ValidationError('We do not serve this PIN code yet', 'PINCODE_NOT_SERVED');
 

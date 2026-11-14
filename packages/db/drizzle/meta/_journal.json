@@ -318,10 +318,24 @@
       "breakpoints": true
     },
     {
-      "idx": 47,
+      "idx": 46,
       "version": "7",
-      "when": 1794669232741,
-      "tag": "0047_coins",
+      "when": 1794668886334,
+      "tag": "0046_reviews",
+      "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1794669041990,
+      "tag": "0048_pincode_service_area",
+      "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1794676969184,
+      "tag": "0050_coins",
       "breakpoints": true
     }
   ]

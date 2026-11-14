@@ -6,11 +6,16 @@ import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { PERSON_CANCEL_REASONS } from '@mechdost/shared/state';
 import type { MyOrder, TrackedOrder } from '@mechdost/shared/checkout-api';
-import { useCallback, useEffect, useState, type SyntheticEvent } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState, type SyntheticEvent } from 'react';
 import { track } from '@/lib/analytics';
 import { formatDate, formatPrice } from '@/lib/format';
 import { ORDER_STEPS, isClosedStatus, orderStepIndex } from '@/lib/order-status';
 import { StatusTimeline } from './status-timeline';
+
+/** Reviews of delivered products (spec 02 § Reviews): its own chunk, fetched only when something was delivered. */
+const WriteReviewApi = lazy(() =>
+  import('../reviews/write-review-api').then((m) => ({ default: m.WriteReviewApi })),
+);
 
 type Load = { kind: 'loading' } | { kind: 'error'; code: string } | { kind: 'ok'; order: MyOrder };
 
@@ -112,6 +117,11 @@ export function OrderViewApi({ code }: { code: string }) {
           onChanged={refresh}
         />
       ))}
+      {parts.some((p) => p.status === 'delivered') ? (
+        <Suspense fallback={null}>
+          <WriteReviewApi kind="order" code={order.code} />
+        </Suspense>
+      ) : null}
       <p className="text-sm text-muted">{t('help')}</p>
     </div>
   );

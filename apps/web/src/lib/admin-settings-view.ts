@@ -1,4 +1,5 @@
 import {
+  needsCoinGuard,
   OPERATIONAL_SETTINGS,
   settingProblem,
   type SettingKey,
@@ -44,8 +45,10 @@ export function toInput(key: SettingKey, value: number | boolean | null): string
   return String(settingUnit(key) === 'rupees' ? value / 100 : value);
 }
 
-export type InputResult =
-  { ok: true; value: number | boolean | null } | { ok: false; problem: 'type' | 'range' };
+/** `guard`: an order reward that stays 0 until an anti-abuse guard is chosen (spec 20, COIN_GUARD_REQUIRED). */
+export type InputProblem = 'type' | 'range' | 'guard';
+
+export type InputResult = { ok: true; value: number | boolean | null } | { ok: false; problem: InputProblem };
 
 /** What the person typed → the value the API stores, checked like the API (`settingProblem`). */
 export function fromInput(key: SettingKey, raw: string): InputResult {
@@ -61,5 +64,6 @@ export function fromInput(key: SettingKey, raw: string): InputResult {
     else value = Number(text) * (unit === 'rupees' ? 100 : 1);
   }
   const problem = settingProblem(key, value);
-  return problem ? { ok: false, problem } : { ok: true, value };
+  if (problem) return { ok: false, problem };
+  return needsCoinGuard(key, value) ? { ok: false, problem: 'guard' } : { ok: true, value };
 }

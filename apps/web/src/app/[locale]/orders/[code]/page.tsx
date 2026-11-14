@@ -32,7 +32,9 @@ export default async function OrderPage({ params }: Props) {
         {t('title', { code: safe || code.slice(0, 40) })}
       </h1>
       <div className="mt-8">
-        <ClientMessages namespaces={['order', 'cart', 'demo']}>
+        <ClientMessages
+          namespaces={DATA_MODE === 'api' ? ['order', 'cart', 'demo', 'reviews'] : ['order', 'cart', 'demo']}
+        >
           <Suspense>
             {DATA_MODE === 'api' ? <OrderViewApi code={safe} /> : <OrderView code={safe} />}
           </Suspense>

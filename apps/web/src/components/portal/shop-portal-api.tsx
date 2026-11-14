@@ -167,6 +167,19 @@ function OrderLines({ order }: { order: ShopOrderDto }) {
           </li>
         ))}
       </ul>
+      {/* MechDost Coins (spec 20): the shop sees the discount MechDost pays it and what to collect at the door. */}
+      {order.coinDiscountPaise ? (
+        <p className="mt-2 text-sm text-ink">
+          {t('coins_api_shop_discount', { amount: formatPrice(order.coinDiscountPaise) })}
+        </p>
+      ) : null}
+      {order.cashToCollectPaise !== undefined ? (
+        <p className="mt-1 text-sm font-bold text-ink">
+          {order.cashToCollectPaise > 0
+            ? t('coins_api_shop_collect', { amount: formatPrice(order.cashToCollectPaise) })
+            : t('coins_api_shop_prepaid')}
+        </p>
+      ) : null}
       {address ? (
         <div className="mt-3 rounded-lg bg-pill p-3 text-sm">
           <p className="text-xs font-extrabold text-muted">{t('api_address')}</p>

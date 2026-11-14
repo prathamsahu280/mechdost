@@ -19,8 +19,10 @@ import { catalogueRoutes } from './routes/catalogue';
 import { paymentRoutes, razorpayWebhookRoutes } from './routes/payments';
 import { checkoutRoutes } from './routes/checkout';
 import { coinRoutes } from './routes/coins';
+import { payoutRoutes } from './routes/payouts';
 import { adminContentRoutes, contentRoutes } from './routes/content';
 import { eventRoutes } from './routes/events';
+import { pincodeAdminRoutes, pincodePublicRoutes } from './routes/geo';
 import { meRoutes } from './routes/me';
 import { partnerAdminRoutes, partnerPublicRoutes, shopOnboardingRoutes } from './routes/partner-onboarding';
 import { shopInventoryRoutes } from './routes/shop-inventory';
@@ -32,6 +34,7 @@ import { adminServiceRequestRoutes } from './routes/admin-service-requests';
 import { serviceRequestRoutes } from './routes/service-requests';
 import { workshopPortalRoutes } from './routes/workshop-portal';
 import { workshopAdminRoutes, workshopPublicRoutes } from './routes/workshops';
+import { reviewPublicRoutes, reviewRoutes } from './routes/reviews';
 import type { AppDeps, AppEnv } from './types';
 import { validationHook } from './validation';
 
@@ -83,6 +86,7 @@ export function createApp(deps: AppDeps) {
   v1.route('/', checkoutRoutes(deps, sessions));
   v1.route('/', paymentRoutes(deps, sessions));
   v1.route('/', coinRoutes(deps, sessions));
+  v1.route('/', payoutRoutes(deps, sessions));
   v1.route('/', adminNotificationRoutes(deps, sessions));
   v1.route('/', supportRoutes(deps, sessions));
   v1.route('/', adminCustomerRoutes(deps, sessions));
@@ -101,6 +105,10 @@ export function createApp(deps: AppDeps) {
   v1.route('/', serviceRequestRoutes(deps, sessions));
   v1.route('/', workshopPortalRoutes(deps, sessions));
   v1.route('/', adminServiceRequestRoutes(deps, sessions));
+  v1.route('/', reviewPublicRoutes(deps));
+  v1.route('/', reviewRoutes(deps, sessions));
+  v1.route('/', pincodePublicRoutes(deps));
+  v1.route('/', pincodeAdminRoutes(deps, sessions));
   app.route('/v1', v1);
 
   app.openAPIRegistry.registerComponent('securitySchemes', 'bearerAuth', {

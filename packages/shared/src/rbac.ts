@@ -208,7 +208,7 @@ export const ROLES = {
       'content:publish',
       'coupons:write',
       'coins:read',
-      'coins:adjust',
+      // Coin grants and deductions are super admin only (user 2026-11-14); marketing keeps the rules.
       'coins:rules',
       'notifications:manage',
       'reviews:moderate',

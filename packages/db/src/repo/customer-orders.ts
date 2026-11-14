@@ -50,6 +50,15 @@ export interface MyOrderSummary {
   orders: { code: string; status: string; totalPaise: number }[];
 }
 
+/** Coins of the parts still on their way or delivered (code review 2026-11-14); null when none. */
+function liveCoins(
+  subs: readonly { status: string; coinsRedeemed: number; coinDiscountPaise: number }[],
+): { coins: number; discountPaise: number } | null {
+  const live = subs.filter((x) => x.status !== 'cancelled' && x.status !== 'rejected');
+  const coins = live.reduce((n, x) => n + x.coinsRedeemed, 0);
+  return coins > 0 ? { coins, discountPaise: live.reduce((n, x) => n + x.coinDiscountPaise, 0) } : null;
+}
+
 /** Sum of the sub-orders still on their way or delivered; cancelled and rejected parts are not payable. */
 function payable(subs: readonly { status: string; totalPaise: number }[]): number {
   return subs.reduce(
@@ -230,7 +239,7 @@ export async function getMyOrder(
     address: (first?.order.shippingAddress ?? {}) as Record<string, unknown>,
     business: g.gstin && g.businessName ? { gstin: g.gstin, businessName: g.businessName } : null,
     // MechDost Coins used at checkout (spec 20); a cancelled part's share came back as coins, never money.
-    coins: g.coinsRedeemed > 0 ? { coins: g.coinsRedeemed, discountPaise: g.coinDiscountPaise } : null,
+    coins: liveCoins(subs.map((x) => x.order)),
     orders: tracked,
   };
 }

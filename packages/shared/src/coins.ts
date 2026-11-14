@@ -25,7 +25,8 @@ export const DEFAULT_COIN_RULES: CoinRules = {
 
 /** Admin-editable ranges (spec 08 settings). */
 export const COIN_RULE_LIMITS: Record<keyof CoinRules, readonly [number, number]> = {
-  coinValuePaise: [1, 1_000],
+  // Same floor as the admin setting `coins.value_paise` (₹1; the screen takes whole rupees).
+  coinValuePaise: [100, 1_000],
   maxRedeemBp: [0, 5_000],
   minOrderPaise: [0, 10_000_000],
   expiryDays: [30, 1_095],
@@ -81,6 +82,10 @@ export type CoinRewardState = (typeof COIN_REWARD_STATES)[number];
 /** Why a pending reward was cancelled before it unlocked. */
 export const COIN_REWARD_CANCEL_REASONS = ['order_cancelled', 'order_refunded', 'request_cancelled'] as const;
 export type CoinRewardCancelReason = (typeof COIN_REWARD_CANCEL_REASONS)[number];
+
+/** Kinds of `shop_payout_entries` rows (what MechDost owes a shop). */
+export const SHOP_PAYOUT_ENTRY_KINDS = ['coin_discount'] as const;
+export type ShopPayoutEntryKind = (typeof SHOP_PAYOUT_ENTRY_KINDS)[number];
 
 /** Reason codes for a staff grant or deduction (hard rule 16: codes, the note is extra). */
 export const COIN_ADJUST_REASONS = [

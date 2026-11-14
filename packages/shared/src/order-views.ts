@@ -21,6 +21,10 @@ export const ShopOrder = z.object({
   status: z.string(),
   version: z.number().int(),
   totalPaise: z.number().int(),
+  /** MechDost Coins discount paid to the shop by MechDost; optional so older API answers still parse. */
+  coinDiscountPaise: z.number().int().optional(),
+  /** Cash to collect at the door (0 when paid online). */
+  cashToCollectPaise: z.number().int().optional(),
   pincode: z.string(),
   items: z.array(ShopOrderItem),
   assignmentId: z.string().nullable(),

@@ -41,6 +41,8 @@ import {
   sendEstimate,
   setWorkshopStanding,
   getAdminWorkshop,
+  grantRole,
+  syncRbacCatalogue,
   transitionRequest,
   type Tx,
 } from '../src/repo';
@@ -778,6 +780,18 @@ describe('workshop booking coins: anti-abuse (security review 2026-11-14)', () =
       .where(eq(s.coinRewards.serviceRequestId, first));
     const third = await paidBooking('other', 100_000);
     expect(await rewardOf(third)).toMatchObject({ status: 'pending' });
+  });
+
+  it('a customer who works at the workshop earns nothing there (self-booking, code review 2026-11-14)', async () => {
+    await syncRbacCatalogue(t());
+    await grantRole(t(), {
+      userId: f.customer,
+      role: 'workshop_staff',
+      workshopId: W.unregistered!.id,
+      grantedBy: null,
+    });
+    const id = await paidBooking('unregistered', 100_000);
+    expect(await rewardOf(id)).toBeUndefined();
   });
 
   it('a pending booking reward is cancelled when the payment is undone, and never credited', async () => {
