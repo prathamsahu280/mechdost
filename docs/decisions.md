@@ -291,6 +291,11 @@ User shared Razorpay **test** keys and asked to "see how we have the stuff for r
 - An online order holds stock for 30 minutes (admin setting) and is never routed before it is paid.
 - A valid checkout signature alone never marks an order paid: the server fetches the payment from Razorpay first (Razorpay docs).
 
+## 2026-11-14 — Real-API launch on Monday 2026-11-16 (user)
+
+- **Switch the website to real sign-in and the API** (user: "switch on the real api"); launch Monday, scope **everything including workshops and service requests, risk accepted** (plan `docs/superpowers/plans/2026-11-14-real-api-launch.md`).
+- **Database:** keep the `mechdost-dev` Supabase project for production; **full reset** done 2026-11-14 with the user's approval (no real data: Firebase had 0 users, the 2 orders were Razorpay tests). Rebuilt from migrations; RBAC seed; Raipur, 5 PIN codes and 9 categories kept from the reference data; no products, shops, users or orders.
+
 ## 2026-11-14 — Cart stepper and editable vehicles (user)
 
 - **Quantity on the product card** (user: "just like swiggy or amazon"): after "Add to cart" the button becomes − / count / +; − at one removes the product (spec 03).
