@@ -26,9 +26,9 @@ import { CoinsSection } from './coins-section';
 import { useTickets } from '@/demo/support';
 import { SupportSection } from './support-section';
 import { useHydrated } from '@/demo/store';
-import { useQuotes } from '@/demo/quote-store';
 import { useOrderRows } from '@/lib/use-order-rows';
 import { useServiceRows } from '@/lib/use-service-rows';
+import { useQuoteRows } from '@/lib/use-quote-rows';
 import { DATA_MODE, SHOW_DEMO_CONTROLS } from '@/lib/data-mode';
 import { track } from '@/lib/analytics';
 import { AUTH_MODE } from '@/lib/auth/mode';
@@ -175,11 +175,11 @@ function SectionNav({ current }: { current: AccountSection }) {
   // workshop proposal to accept or an estimate to approve (spec 06).
   const session = useSession();
   const tickets = useTickets();
-  const quotes = useQuotes();
+  const quotes = useQuoteRows().rows;
   const requests = useServiceRows().rows;
   const waiting: Partial<Record<AccountSection, number>> = {
     support: tickets.filter((x) => x.accountId === session?.id && x.status === 'awaiting_customer').length,
-    quotes: quotes.filter((q) => q.status === 'offered').length,
+    quotes: quotes.filter((q) => q.waiting).length,
     services: requests.filter((x) => x.waiting).length,
   };
   return (
@@ -227,7 +227,7 @@ function Overview({ account }: { account: DemoAccount }) {
   const prefix = usePrefix();
   const orders = useOrderRows().rows;
   const requests = useServiceRows().rows;
-  const quotes = useQuotes();
+  const quotes = useQuoteRows().rows;
   const vehicle = account.vehicles[0];
   // Real sign-in: the email's verification state from Firebase (demo accounts count as verified).
   const { state: emailState } = useEmailStatus(locale);
@@ -511,12 +511,21 @@ function QuotesList({ limit }: { limit?: number }) {
   const q = useTranslations('quote');
   const locale = useLocale();
   const prefix = usePrefix();
-  const quotes = useQuotes().slice(0, limit ?? 50);
+  const { rows, status } = useQuoteRows();
+  const quotes = rows.slice(0, limit ?? 50);
   return (
     <ListSection
       id={`quotes-${String(limit ?? 'all')}`}
       title={t('nav_quotes')}
-      empty={quotes.length === 0 ? t('quotesEmpty') : null}
+      empty={
+        status === 'loading'
+          ? q('api_loading')
+          : status === 'error'
+            ? q('api_listError')
+            : quotes.length === 0
+              ? t('quotesEmpty')
+              : null
+      }
       emoji="💬"
       next={{ href: `${prefix}/quotes/new`, label: t('newQuote'), track: 'account_next_quotes' }}
     >
@@ -527,7 +536,7 @@ function QuotesList({ limit }: { limit?: number }) {
             <span className="min-w-0 flex-1">
               <span className="block font-bold text-ink">{quote.code}</span>
               <span className="block text-xs text-muted">
-                {formatDate(quote.createdAt, locale)} · {q(`status_${quote.status}`)}
+                {formatDate(quote.createdAt, locale)} · {q(quote.statusKey)}
               </span>
             </span>
             <ChevronRight aria-hidden="true" className="size-4 text-muted" />

@@ -6,3 +6,4 @@ export * from './platform';
 export * from './loyalty';
 export * from './payouts';
 export * from './services';
+export * from './quotes';

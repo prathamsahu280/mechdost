@@ -97,6 +97,12 @@ async function place(
   });
 }
 
+/** What a shop is paid for a part: its own price × qty (spec 19 I1), from the order snapshot. */
+async function payoutOf(orderId: string) {
+  const rows = await db.select().from(s.orderItems).where(eq(s.orderItems.orderId, orderId));
+  return rows.reduce((sum, i) => sum + (i.shopUnitPaise ?? i.unitPaise) * i.qty, 0);
+}
+
 async function groupOf(code: string) {
   const [g] = await db.select().from(s.orderGroups).where(eq(s.orderGroups.code, code));
   if (!g) throw new Error('group');
@@ -522,9 +528,12 @@ describe('code review 2026-11-14: shops see the coin discount; MechDost owes it 
     const [shop] = await db.select({ id: s.orders.shopId }).from(s.orders).where(eq(s.orders.id, part.id));
     const done = await listShopOrders(t(), [shop!.id!], 'done');
     const row = done.items.find((i) => i.code === part.code);
+    // One shop money model (spec 19 I1 + spec 20): the payout is the shop's own price × qty whatever the coins;
+    // the coin line is paid by MechDost; on cash on delivery the shop collects the discounted total.
     expect(row).toMatchObject({
+      payoutPaise: await payoutOf(part.id),
       coinDiscountPaise: 5_000,
-      cashToCollectPaise: part.totalPaise, // cash on delivery: the discounted total
+      collectPaise: part.totalPaise,
       totalPaise: part.totalPaise,
     });
     const owed = await listShopPayoutEntries(t(), { shopId: shop!.id! });
@@ -539,6 +548,54 @@ describe('code review 2026-11-14: shops see the coin discount; MechDost owes it 
     await expect(
       db.update(s.shopPayoutEntries).set({ amountPaise: 1 }).where(eq(s.shopPayoutEntries.id, entry!.id)),
     ).rejects.toThrow();
+  });
+
+  it('every combination: no coins on COD, coins paid online, and never coins on a bulk quote order', async () => {
+    // Top up the oil's stock: this file places many orders against the demo catalogue.
+    await db.execute(sql`update shop_inventory set on_hand = on_hand + 100
+      where variant_id = (select id from product_variants where sku = ${OIL})`);
+    const plain = await place([{ sku: OIL, qty: 1 }], 0);
+    const a = (await groupOf(plain.code)).subs[0]!;
+    await deliver(a.id);
+    await grant(ravi, 100);
+    const online = await place([{ sku: OIL, qty: 1 }], 20, { method: 'online' });
+    const b = (await groupOf(online.code)).subs[0]!;
+    await deliver(b.id);
+    const shopId = (await db.select({ id: s.orders.shopId }).from(s.orders).where(eq(s.orders.id, a.id)))[0]!
+      .id!;
+    const done = (await listShopOrders(t(), [shopId], 'done')).items;
+    expect(done.find((i) => i.code === a.code)).toMatchObject({
+      payoutPaise: await payoutOf(a.id),
+      coinDiscountPaise: 0,
+      collectPaise: a.totalPaise,
+    });
+    // Paid online: nothing to collect; the coin line still shows and the payout is the same.
+    expect(done.find((i) => i.code === b.code)).toMatchObject({
+      payoutPaise: await payoutOf(b.id),
+      coinDiscountPaise: 2_000,
+      collectPaise: null,
+    });
+    // A bulk quote order's prices were negotiated: coins are refused (ruling 2026-11-14). The check runs before
+    // anything is written, so placeholder ids are enough here.
+    await expect(
+      placeOrder(t(), {
+        method: 'cod',
+        userId: ravi,
+        idempotencyKey: key(),
+        address: address(),
+        lines: [{ sku: OIL, qty: 1 }],
+        expectedTotalPaise: 1,
+        note: null,
+        locale: 'en',
+        coins: 10,
+        quotePricing: {
+          quoteId: '01900000-0000-7000-8000-000000000001',
+          offerId: '01900000-0000-7000-8000-000000000002',
+          unitPaiseBySku: new Map([[OIL, 40_000]]),
+          deliveryPaise: 0,
+        },
+      }),
+    ).rejects.toMatchObject({ code: 'COINS_NOT_ON_QUOTES' });
   });
 
   it('nothing is owed for a cancelled part or an order without coins', async () => {

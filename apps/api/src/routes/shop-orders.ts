@@ -37,10 +37,10 @@ const ShopOrder = z
     status: z.string(),
     version: z.number().int(),
     totalPaise: z.number().int(),
-    /** MechDost Coins discount on this part, paid to the shop by MechDost (spec 20). */
+    payoutPaise: z.number().int(),
+    collectPaise: z.number().int().nullable(),
+    /** MechDost Coins discount on this part, paid by MechDost (never by the shop; spec 20); 0 when none. */
     coinDiscountPaise: z.number().int(),
-    /** Cash the shop collects at the door (0 when paid online). */
-    cashToCollectPaise: z.number().int(),
     pincode: z.string(),
     items: z.array(
       z.object({

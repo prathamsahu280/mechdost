@@ -333,3 +333,75 @@ export const priceRequestMachine = defineMachine(
     { from: 'pending', to: 'superseded', by: ['system'] },
   ],
 );
+
+/**
+ * Bulk quote status (spec 19). Staff talk and send versioned offers; a newer offer supersedes the active one while
+ * the quote stays `offered`; a customer message on an offered quote reopens talks (`negotiating`, offer superseded). The customer accepts the active, unexpired offer (→ a normal order) or closes the
+ * quote; staff may withdraw it with a reason; the worker expires quotes whose offer ran out or that went quiet.
+ */
+export const QUOTE_STATES = [
+  'open',
+  'negotiating',
+  'offered',
+  'accepted',
+  'declined',
+  'expired',
+  'withdrawn',
+] as const;
+export type QuoteStatus = (typeof QUOTE_STATES)[number];
+
+export const quoteMachine = defineMachine(
+  'quote',
+  QUOTE_STATES,
+  ['accepted', 'declined', 'expired', 'withdrawn'],
+  [
+    { from: 'open', to: 'negotiating', by: ['admin'] },
+    { from: 'open', to: 'offered', by: ['admin'] },
+    { from: 'negotiating', to: 'offered', by: ['admin'] },
+    { from: 'offered', to: 'accepted', by: ['customer'] },
+    // Spec 19: a customer message on an offered quote reopens talks and supersedes the active offer; when the
+    // offer runs out the worker reopens talks too (ruling 2026-11-14: the quote stays open for a new offer).
+    { from: 'offered', to: 'negotiating', by: ['customer', 'system'] },
+    { from: 'open', to: 'declined', by: ['customer'] },
+    { from: 'negotiating', to: 'declined', by: ['customer'] },
+    { from: 'offered', to: 'declined', by: ['customer'] },
+    { from: 'open', to: 'withdrawn', by: ['admin'] },
+    { from: 'negotiating', to: 'withdrawn', by: ['admin'] },
+    { from: 'offered', to: 'withdrawn', by: ['admin'] },
+    { from: 'open', to: 'expired', by: ['system'] },
+    { from: 'negotiating', to: 'expired', by: ['system'] },
+    { from: 'offered', to: 'expired', by: ['system'] },
+  ],
+);
+
+/** Quotes still being negotiated (they count toward the customer's open-quote limit). */
+export const QUOTE_OPEN_STATES = ['open', 'negotiating', 'offered'] as const satisfies readonly QuoteStatus[];
+
+/** Why a customer closed their quote (ML-ready codes, hard rule 16). */
+export const QUOTE_DECLINE_REASONS = [
+  'price_too_high',
+  'found_elsewhere',
+  'no_longer_needed',
+  'delivery_too_slow',
+  'other',
+] as const;
+export type QuoteDeclineReason = (typeof QUOTE_DECLINE_REASONS)[number];
+
+/** Why staff withdrew a quote (the customer also gets a message). */
+export const QUOTE_WITHDRAW_REASONS = [
+  'cannot_supply',
+  'not_serviceable',
+  'duplicate',
+  'suspected_fraud',
+  'customer_unreachable',
+  'other',
+] as const;
+export type QuoteWithdrawReason = (typeof QUOTE_WITHDRAW_REASONS)[number];
+
+/** Why the system expired a quote: nobody wrote for the inactivity window (an expired offer only reopens talks). */
+export const QUOTE_EXPIRE_REASONS = ['inactive'] as const;
+export type QuoteExpireReason = (typeof QUOTE_EXPIRE_REASONS)[number];
+
+/** A versioned offer: one `active` per quote (partial unique index); a newer one supersedes it; it may run out. */
+export const QUOTE_OFFER_STATES = ['active', 'superseded', 'accepted', 'expired', 'closed'] as const;
+export type QuoteOfferStatus = (typeof QUOTE_OFFER_STATES)[number];

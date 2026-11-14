@@ -53,6 +53,11 @@ Goal: mechdost.com runs on real sign-in (Firebase) and the API for every flow, w
   `/v1/admin/coins/*`, coin rules in settings; web: account coins, checkout coins (COD + online), order coin line,
   Admin → Coins, all behind the real-mode switches; coins un-hidden. Referrals not built (Q47). Playwright and
   `next build` not run (low-memory machine): run the coin e2e and the JS budget at merge. Spec 20 "Built".
+- 2026-11-14 (bulk quotes, agent worktree): quotes on the API end to end — migration 0049 (`quote_requests`, lines,
+  messages, versioned offers, events; `order_groups.quote_id`/`quote_offer_id`, `order_items.price_source`; `quotes:*`
+  permissions), repo + routes (`/v1/quotes*`, `/v1/admin/quotes*`), worker expiry, offer email, web real mode (request
+  form on the live catalogue, thread, account list, admin quote desk) un-hidden with its own flag `QUOTES_ON_API`.
+  Spec 19 "Built: API + real mode", decisions "Bulk quotes on the API". Migration not applied; Playwright not run.
 - 2026-11-14: Reviews stream on its branch (worktree-agent-a31131dde8070eb42): migration 0046 (not applied),
   repo + routes `/v1/reviews/{product|workshop}/{slug}`, `/v1/my-reviews` (eligible, submit), `/v1/admin/reviews`
   (queue, moderate), product/workshop review sections (server-rendered), "Rate" on delivered orders and paid services,
@@ -67,3 +72,7 @@ Goal: mechdost.com runs on real sign-in (Firebase) and the API for every flow, w
   order rewards refused above 0 until a guard is chosen; shops see the coin line and are owed it in the new
   `shop_payout_entries`, finance report `/v1/admin/payouts/entries`), minor fixes (lock order, expiry paging,
   self-booking, order page coins); merged `main`; migration renumbered **0050** (prevId = 0048).
+- 2026-11-14: Merged `main` (quotes, 0049 live) into the coins branch: no coins on quote orders (`COINS_NOT_ON_QUOTES`),
+  quote orders skip the checkout COD cap (their own ceiling applies), one shop money model (payout, collect on COD,
+  coin line), worker runs both the quote and the coin jobs; coins migration stays **0050** (prevId = 0049,
+  `when` after 0049).

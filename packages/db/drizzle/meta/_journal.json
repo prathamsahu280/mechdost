@@ -332,9 +332,16 @@
       "breakpoints": true
     },
     {
+      "idx": 49,
+      "version": "7",
+      "when": 1794675298832,
+      "tag": "0049_quotes",
+      "breakpoints": true
+    },
+    {
       "idx": 50,
       "version": "7",
-      "when": 1794676969184,
+      "when": 1794680289002,
       "tag": "0050_coins",
       "breakpoints": true
     }

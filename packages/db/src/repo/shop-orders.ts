@@ -70,12 +70,16 @@ export interface ShopOrderItem {
   code: string;
   status: string;
   version: number;
+  /** The customer's total for this sub-order. */
   totalPaise: number;
-  /** MechDost Coins discount on this part, paid to the shop by MechDost (spec 20); 0 when none. */
+  /** What the shop is paid: its own price × qty over the lines (never the customer price or a quote discount). */
+  payoutPaise: number;
+  /** Cash to collect from the customer at delivery (cash-on-delivery orders), else null. */
+  collectPaise: number | null;
+  /** MechDost Coins discount on this part (paid by MechDost, never by the shop; spec 20); 0 when none. */
   coinDiscountPaise: number;
-  /** What the shop collects at the door: the total for cash on delivery, 0 when paid online. */
-  cashToCollectPaise: number;
   pincode: string;
+  /** `unitPaise` is the shop's own price per unit (review I1, 2026-11-14), not the customer's. */
   items: { title: string; titleHi: string | null; sku: string; qty: number; unitPaise: number }[];
   /** Offers only. */
   assignmentId: string | null;
@@ -103,9 +107,9 @@ export async function listShopOrders(
     version: unknown;
     total_paise: unknown;
     coin_discount_paise: unknown;
-    payment_method: string;
     pincode: string;
     shipping_address: Record<string, unknown>;
+    payment_method: string;
     assignment_id: string | null;
     expires_at: string | Date | null;
     sort_key: string;
@@ -154,32 +158,35 @@ export async function listShopOrders(
             titleHi: orderItems.titleHi,
             sku: orderItems.sku,
             qty: orderItems.qty,
-            unitPaise: orderItems.unitPaise,
+            // The shop's own price (snapshot at routing); older orders without one fall back to the unit price.
+            unitPaise: sql<number>`coalesce(${orderItems.shopUnitPaise}, ${orderItems.unitPaise})`,
           })
           .from(orderItems)
           .where(inArray(orderItems.orderId, ids));
-  const list = rows.map((r) => ({
-    code: r.code,
-    status: r.status,
-    version: num(r.version),
-    totalPaise: num(r.total_paise),
-    coinDiscountPaise: num(r.coin_discount_paise),
-    cashToCollectPaise: r.payment_method === 'cod' ? num(r.total_paise) : 0,
-    pincode: r.pincode,
-    items: items
-      .filter((i) => i.orderId === r.id)
-      .map((i) => ({
+  const list = rows.map((r) => {
+    const lines = items.filter((i) => i.orderId === r.id);
+    return {
+      code: r.code,
+      status: r.status,
+      version: num(r.version),
+      totalPaise: num(r.total_paise),
+      coinDiscountPaise: num(r.coin_discount_paise),
+      payoutPaise: lines.reduce((sum, i) => sum + num(i.unitPaise) * num(i.qty), 0),
+      collectPaise: r.payment_method === 'cod' ? num(r.total_paise) : null,
+      pincode: r.pincode,
+      items: lines.map((i) => ({
         title: i.title,
         titleHi: i.titleHi,
         sku: i.sku,
         qty: num(i.qty),
         unitPaise: num(i.unitPaise),
       })),
-    assignmentId: r.assignment_id,
-    expiresAt: r.expires_at ? new Date(r.expires_at) : null,
-    // Shared only while the shop is fulfilling the order (DPDP minimisation, advisor review 2026-11-03).
-    address: view === 'active' ? r.shipping_address : null,
-  }));
+      assignmentId: r.assignment_id,
+      expiresAt: r.expires_at ? new Date(r.expires_at) : null,
+      // Shared only while the shop is fulfilling the order (DPDP minimisation, advisor review 2026-11-03).
+      address: view === 'active' ? r.shipping_address : null,
+    };
+  });
   return { items: list, nextCursor };
 }
 

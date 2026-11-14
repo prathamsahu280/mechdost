@@ -1,6 +1,6 @@
 {
-  "id": "091a304d-2b09-4d92-9e78-077f8a8a7929",
-  "prevId": "b67087c2-cf3d-423b-bf2d-4ed65a5ec50d",
+  "id": "ecbda80f-f00b-44f0-b3c2-901b21a91db1",
+  "prevId": "75405827-ff5f-44bb-87fc-88a089fd4d0a",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -5538,6 +5538,18 @@
           "primaryKey": false,
           "notNull": false
         },
+        "quote_id": {
+          "name": "quote_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "quote_offer_id": {
+          "name": "quote_offer_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
         "version": {
           "name": "version",
           "type": "integer",
@@ -5561,6 +5573,38 @@
         }
       },
       "indexes": {
+        "order_groups_quote_uq": {
+          "name": "order_groups_quote_uq",
+          "columns": [
+            {
+              "expression": "quote_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"order_groups\".\"quote_id\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "order_groups_quote_offer_uq": {
+          "name": "order_groups_quote_offer_uq",
+          "columns": [
+            {
+              "expression": "quote_offer_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"order_groups\".\"quote_offer_id\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "order_groups_user_id_created_at_index": {
           "name": "order_groups_user_id_created_at_index",
           "columns": [
@@ -5630,6 +5674,32 @@
           ],
           "onDelete": "restrict",
           "onUpdate": "no action"
+        },
+        "order_groups_quote_id_quote_requests_id_fk": {
+          "name": "order_groups_quote_id_quote_requests_id_fk",
+          "tableFrom": "order_groups",
+          "tableTo": "quote_requests",
+          "columnsFrom": [
+            "quote_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "order_groups_quote_offer_id_quote_offers_id_fk": {
+          "name": "order_groups_quote_offer_id_quote_offers_id_fk",
+          "tableFrom": "order_groups",
+          "tableTo": "quote_offers",
+          "columnsFrom": [
+            "quote_offer_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -5687,6 +5757,10 @@
         "order_groups_total_consistent": {
           "name": "order_groups_total_consistent",
           "value": "\"order_groups\".\"total_paise\" = \"order_groups\".\"subtotal_paise\" - \"order_groups\".\"discount_paise\" + \"order_groups\".\"shipping_paise\" + \"order_groups\".\"cod_fee_paise\""
+        },
+        "order_groups_quote_pair": {
+          "name": "order_groups_quote_pair",
+          "value": "(\"order_groups\".\"quote_id\" is null) = (\"order_groups\".\"quote_offer_id\" is null)"
         }
       },
       "isRLSEnabled": false
@@ -5807,6 +5881,19 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "price_source": {
+          "name": "price_source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'catalogue'"
+        },
+        "cost_ceiling_paise": {
+          "name": "cost_ceiling_paise",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -5877,9 +5964,17 @@
           "name": "order_items_qty_positive",
           "value": "\"order_items\".\"qty\" > 0 and \"order_items\".\"qty\" <= 99"
         },
+        "order_items_price_source_valid": {
+          "name": "order_items_price_source_valid",
+          "value": "\"order_items\".\"price_source\" in ('catalogue','quote')"
+        },
+        "order_items_cost_ceiling_quote_only": {
+          "name": "order_items_cost_ceiling_quote_only",
+          "value": "(\"order_items\".\"cost_ceiling_paise\" is not null) = (\"order_items\".\"price_source\" = 'quote') and (\"order_items\".\"cost_ceiling_paise\" is null or \"order_items\".\"cost_ceiling_paise\" > 0)"
+        },
         "order_items_shop_unit_valid": {
           "name": "order_items_shop_unit_valid",
-          "value": "\"order_items\".\"shop_unit_paise\" is null or (\"order_items\".\"shop_unit_paise\" >= 0 and \"order_items\".\"shop_unit_paise\" <= \"order_items\".\"unit_paise\")"
+          "value": "\"order_items\".\"shop_unit_paise\" is null or (\"order_items\".\"shop_unit_paise\" >= 0 and (\"order_items\".\"shop_unit_paise\" <= \"order_items\".\"unit_paise\" or \"order_items\".\"price_source\" = 'quote'))"
         },
         "order_items_cgst_equals_sgst": {
           "name": "order_items_cgst_equals_sgst",
@@ -13401,6 +13496,1025 @@
         "workshops_rating_count_nonneg": {
           "name": "workshops_rating_count_nonneg",
           "value": "\"workshops\".\"rating_count\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.quote_events": {
+      "name": "quote_events",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "quote_events_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "quote_id": {
+          "name": "quote_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "from_status": {
+          "name": "from_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "to_status": {
+          "name": "to_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor_type": {
+          "name": "actor_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor_id": {
+          "name": "actor_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "payload": {
+          "name": "payload",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "quote_events_quote_id_id_index": {
+          "name": "quote_events_quote_id_id_index",
+          "columns": [
+            {
+              "expression": "quote_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "quote_events_quote_id_quote_requests_id_fk": {
+          "name": "quote_events_quote_id_quote_requests_id_fk",
+          "tableFrom": "quote_events",
+          "tableTo": "quote_requests",
+          "columnsFrom": [
+            "quote_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "quote_events_kind_valid": {
+          "name": "quote_events_kind_valid",
+          "value": "\"quote_events\".\"kind\" in ('requested','message','offer','status')"
+        },
+        "quote_events_actor_valid": {
+          "name": "quote_events_actor_valid",
+          "value": "\"quote_events\".\"actor_type\" in ('customer','admin','system')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.quote_lines": {
+      "name": "quote_lines",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "quote_id": {
+          "name": "quote_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "line_no": {
+          "name": "line_no",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "product_id": {
+          "name": "product_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "variant_id": {
+          "name": "variant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sku": {
+          "name": "sku",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title_hi": {
+          "name": "title_hi",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "qty": {
+          "name": "qty",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "list_unit_paise": {
+          "name": "list_unit_paise",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "mrp_paise": {
+          "name": "mrp_paise",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "quote_lines_product_id_index": {
+          "name": "quote_lines_product_id_index",
+          "columns": [
+            {
+              "expression": "product_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "quote_lines_variant_id_index": {
+          "name": "quote_lines_variant_id_index",
+          "columns": [
+            {
+              "expression": "variant_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "quote_lines_quote_id_quote_requests_id_fk": {
+          "name": "quote_lines_quote_id_quote_requests_id_fk",
+          "tableFrom": "quote_lines",
+          "tableTo": "quote_requests",
+          "columnsFrom": [
+            "quote_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "quote_lines_product_id_products_id_fk": {
+          "name": "quote_lines_product_id_products_id_fk",
+          "tableFrom": "quote_lines",
+          "tableTo": "products",
+          "columnsFrom": [
+            "product_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "quote_lines_variant_id_product_variants_id_fk": {
+          "name": "quote_lines_variant_id_product_variants_id_fk",
+          "tableFrom": "quote_lines",
+          "tableTo": "product_variants",
+          "columnsFrom": [
+            "variant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "quote_lines_line_uq": {
+          "name": "quote_lines_line_uq",
+          "nullsNotDistinct": false,
+          "columns": [
+            "quote_id",
+            "line_no"
+          ]
+        },
+        "quote_lines_variant_uq": {
+          "name": "quote_lines_variant_uq",
+          "nullsNotDistinct": false,
+          "columns": [
+            "quote_id",
+            "variant_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "quote_lines_line_no": {
+          "name": "quote_lines_line_no",
+          "value": "\"quote_lines\".\"line_no\" between 1 and 20"
+        },
+        "quote_lines_qty_range": {
+          "name": "quote_lines_qty_range",
+          "value": "\"quote_lines\".\"qty\" between 1 and 99"
+        },
+        "quote_lines_prices_nonneg": {
+          "name": "quote_lines_prices_nonneg",
+          "value": "\"quote_lines\".\"mrp_paise\" >= 0 and (\"quote_lines\".\"list_unit_paise\" is null or \"quote_lines\".\"list_unit_paise\" >= 0)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.quote_messages": {
+      "name": "quote_messages",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "quote_id": {
+          "name": "quote_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "author_user_id": {
+          "name": "author_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "author_role": {
+          "name": "author_role",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "body": {
+          "name": "body",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "quote_messages_quote_id_created_at_index": {
+          "name": "quote_messages_quote_id_created_at_index",
+          "columns": [
+            {
+              "expression": "quote_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "quote_messages_author_user_id_index": {
+          "name": "quote_messages_author_user_id_index",
+          "columns": [
+            {
+              "expression": "author_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "quote_messages_quote_id_quote_requests_id_fk": {
+          "name": "quote_messages_quote_id_quote_requests_id_fk",
+          "tableFrom": "quote_messages",
+          "tableTo": "quote_requests",
+          "columnsFrom": [
+            "quote_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "quote_messages_author_user_id_users_id_fk": {
+          "name": "quote_messages_author_user_id_users_id_fk",
+          "tableFrom": "quote_messages",
+          "tableTo": "users",
+          "columnsFrom": [
+            "author_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "quote_messages_role_valid": {
+          "name": "quote_messages_role_valid",
+          "value": "\"quote_messages\".\"author_role\" in ('customer','staff','system')"
+        },
+        "quote_messages_body_len": {
+          "name": "quote_messages_body_len",
+          "value": "char_length(\"quote_messages\".\"body\") between 1 and 1000"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.quote_offers": {
+      "name": "quote_offers",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "quote_id": {
+          "name": "quote_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "offer_version": {
+          "name": "offer_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'active'"
+        },
+        "lines": {
+          "name": "lines",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "subtotal_paise": {
+          "name": "subtotal_paise",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "delivery_paise": {
+          "name": "delivery_paise",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "total_paise": {
+          "name": "total_paise",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "list_total_paise": {
+          "name": "list_total_paise",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "payment_method": {
+          "name": "payment_method",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'cod'"
+        },
+        "valid_until": {
+          "name": "valid_until",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "terms": {
+          "name": "terms",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "decided_at": {
+          "name": "decided_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "quote_offers_one_active_uq": {
+          "name": "quote_offers_one_active_uq",
+          "columns": [
+            {
+              "expression": "quote_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"quote_offers\".\"status\" = 'active'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "quote_offers_created_by_index": {
+          "name": "quote_offers_created_by_index",
+          "columns": [
+            {
+              "expression": "created_by",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "quote_offers_quote_id_quote_requests_id_fk": {
+          "name": "quote_offers_quote_id_quote_requests_id_fk",
+          "tableFrom": "quote_offers",
+          "tableTo": "quote_requests",
+          "columnsFrom": [
+            "quote_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "quote_offers_created_by_users_id_fk": {
+          "name": "quote_offers_created_by_users_id_fk",
+          "tableFrom": "quote_offers",
+          "tableTo": "users",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "quote_offers_version_uq": {
+          "name": "quote_offers_version_uq",
+          "nullsNotDistinct": false,
+          "columns": [
+            "quote_id",
+            "offer_version"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "quote_offers_version_positive": {
+          "name": "quote_offers_version_positive",
+          "value": "\"quote_offers\".\"offer_version\" > 0"
+        },
+        "quote_offers_status_valid": {
+          "name": "quote_offers_status_valid",
+          "value": "\"quote_offers\".\"status\" in ('active','superseded','accepted','expired','closed')"
+        },
+        "quote_offers_lines_array": {
+          "name": "quote_offers_lines_array",
+          "value": "jsonb_typeof(\"quote_offers\".\"lines\") = 'array' and jsonb_array_length(\"quote_offers\".\"lines\") between 1 and 20"
+        },
+        "quote_offers_amounts": {
+          "name": "quote_offers_amounts",
+          "value": "\"quote_offers\".\"subtotal_paise\" > 0 and \"quote_offers\".\"delivery_paise\" >= 0 and \"quote_offers\".\"total_paise\" = \"quote_offers\".\"subtotal_paise\" + \"quote_offers\".\"delivery_paise\""
+        },
+        "quote_offers_list_total_nonneg": {
+          "name": "quote_offers_list_total_nonneg",
+          "value": "\"quote_offers\".\"list_total_paise\" is null or \"quote_offers\".\"list_total_paise\" >= 0"
+        },
+        "quote_offers_payment_valid": {
+          "name": "quote_offers_payment_valid",
+          "value": "\"quote_offers\".\"payment_method\" in ('cod')"
+        },
+        "quote_offers_valid_after_created": {
+          "name": "quote_offers_valid_after_created",
+          "value": "\"quote_offers\".\"valid_until\" > \"quote_offers\".\"created_at\""
+        },
+        "quote_offers_terms_len": {
+          "name": "quote_offers_terms_len",
+          "value": "\"quote_offers\".\"terms\" is null or char_length(\"quote_offers\".\"terms\") between 1 and 500"
+        },
+        "quote_offers_decided": {
+          "name": "quote_offers_decided",
+          "value": "\"quote_offers\".\"status\" <> 'accepted' or \"quote_offers\".\"decided_at\" is not null"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.quote_requests": {
+      "name": "quote_requests",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "city_id": {
+          "name": "city_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "pincode": {
+          "name": "pincode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "shipping_address": {
+          "name": "shipping_address",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'open'"
+        },
+        "status_reason_code": {
+          "name": "status_reason_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "closing_message": {
+          "name": "closing_message",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "offer_version": {
+          "name": "offer_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "list_total_paise": {
+          "name": "list_total_paise",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "units": {
+          "name": "units",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_message_at": {
+          "name": "last_message_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_message_by": {
+          "name": "last_message_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "closed_at": {
+          "name": "closed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "idempotency_key": {
+          "name": "idempotency_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "request_hash": {
+          "name": "request_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "quote_requests_user_id_created_at_index": {
+          "name": "quote_requests_user_id_created_at_index",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "quote_requests_status_city_id_updated_at_index": {
+          "name": "quote_requests_status_city_id_updated_at_index",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "city_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "quote_requests_status_expires_at_index": {
+          "name": "quote_requests_status_expires_at_index",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "quote_requests_city_id_index": {
+          "name": "quote_requests_city_id_index",
+          "columns": [
+            {
+              "expression": "city_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "quote_requests_pincode_index": {
+          "name": "quote_requests_pincode_index",
+          "columns": [
+            {
+              "expression": "pincode",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "quote_requests_user_id_users_id_fk": {
+          "name": "quote_requests_user_id_users_id_fk",
+          "tableFrom": "quote_requests",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "quote_requests_city_id_cities_id_fk": {
+          "name": "quote_requests_city_id_cities_id_fk",
+          "tableFrom": "quote_requests",
+          "tableTo": "cities",
+          "columnsFrom": [
+            "city_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "quote_requests_pincode_pincodes_pincode_fk": {
+          "name": "quote_requests_pincode_pincodes_pincode_fk",
+          "tableFrom": "quote_requests",
+          "tableTo": "pincodes",
+          "columnsFrom": [
+            "pincode"
+          ],
+          "columnsTo": [
+            "pincode"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "quote_requests_code_unique": {
+          "name": "quote_requests_code_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "code"
+          ]
+        },
+        "quote_requests_idempotency_uq": {
+          "name": "quote_requests_idempotency_uq",
+          "nullsNotDistinct": false,
+          "columns": [
+            "user_id",
+            "idempotency_key"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "quote_requests_code_format": {
+          "name": "quote_requests_code_format",
+          "value": "\"quote_requests\".\"code\" ~ '^QT-[A-Z]{3}-[0-9]{4}-[0-9A-HJKMNP-TV-Z]{6}$'"
+        },
+        "quote_requests_status_valid": {
+          "name": "quote_requests_status_valid",
+          "value": "\"quote_requests\".\"status\" in ('open','negotiating','offered','accepted','declined','expired','withdrawn')"
+        },
+        "quotes_reason_code_valid": {
+          "name": "quotes_reason_code_valid",
+          "value": "case \"quote_requests\".\"status\"\n        when 'declined' then \"quote_requests\".\"status_reason_code\" in ('price_too_high','found_elsewhere','no_longer_needed','delivery_too_slow','other')\n        when 'withdrawn' then \"quote_requests\".\"status_reason_code\" in ('cannot_supply','not_serviceable','duplicate','suspected_fraud','customer_unreachable','other')\n        when 'expired' then \"quote_requests\".\"status_reason_code\" in ('inactive')\n        else \"quote_requests\".\"status_reason_code\" is null end"
+        },
+        "quotes_withdrawn_explained": {
+          "name": "quotes_withdrawn_explained",
+          "value": "\"quote_requests\".\"status\" <> 'withdrawn' or char_length(\"quote_requests\".\"closing_message\") between 10 and 500"
+        },
+        "quotes_closed_at": {
+          "name": "quotes_closed_at",
+          "value": "(\"quote_requests\".\"closed_at\" is null) = (\"quote_requests\".\"status\" in ('open','negotiating','offered'))"
+        },
+        "quote_requests_offered_has_offer": {
+          "name": "quote_requests_offered_has_offer",
+          "value": "\"quote_requests\".\"status\" not in ('offered','accepted') or \"quote_requests\".\"offer_version\" > 0"
+        },
+        "quote_requests_offer_version_nonneg": {
+          "name": "quote_requests_offer_version_nonneg",
+          "value": "\"quote_requests\".\"offer_version\" >= 0"
+        },
+        "quote_requests_units_range": {
+          "name": "quote_requests_units_range",
+          "value": "\"quote_requests\".\"units\" between 1 and 1980"
+        },
+        "quote_requests_list_total_nonneg": {
+          "name": "quote_requests_list_total_nonneg",
+          "value": "\"quote_requests\".\"list_total_paise\" is null or \"quote_requests\".\"list_total_paise\" >= 0"
+        },
+        "quotes_last_message_by_valid": {
+          "name": "quotes_last_message_by_valid",
+          "value": "\"quote_requests\".\"last_message_by\" is null or \"quote_requests\".\"last_message_by\" in ('customer','staff')"
+        },
+        "quote_requests_address_object": {
+          "name": "quote_requests_address_object",
+          "value": "jsonb_typeof(\"quote_requests\".\"shipping_address\") = 'object'"
+        },
+        "quote_requests_idempotency_format": {
+          "name": "quote_requests_idempotency_format",
+          "value": "\"quote_requests\".\"idempotency_key\" ~ '^[A-Za-z0-9_-]{16,64}$'"
         }
       },
       "isRLSEnabled": false

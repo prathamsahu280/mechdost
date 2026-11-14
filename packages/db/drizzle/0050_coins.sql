@@ -3,7 +3,7 @@
 -- on every ledger row (hard rule 16), shop_payout_entries (append-only: what MechDost owes a shop, e.g. the coin
 -- discount of a delivered part) and indexes for admin activity and the expiry job. RLS on, client roles revoked,
 -- version/updated_at triggers on coin_rewards, append-only trigger on shop_payout_entries.
--- Numbered 0050 (0049 quotes, 0051 shops; launch plan 2026-11-14).
+-- Numbered 0050 (after 0049 quotes; 0051 shops; launch plan 2026-11-14).
 SET lock_timeout = '5s';--> statement-breakpoint
 CREATE TABLE "coin_rewards" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
