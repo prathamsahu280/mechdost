@@ -1,5 +1,5 @@
 import { redactPath } from './analytics-path';
-import { maskPersonalDataKeepIds } from './privacy';
+import { maskPersonalDataKeepCodes } from './privacy';
 
 /**
  * Error reports leave our servers (Sentry, decision 2026-11-14), so they are scrubbed in `beforeSend` on the web
@@ -54,7 +54,7 @@ const URL_KEYS = new Set(['url', 'from', 'to']);
 
 /** An error message without personal data or secrets (capped at 500 characters). */
 export function scrubErrorText(text: string): string {
-  return maskPersonalDataKeepIds(
+  return maskPersonalDataKeepCodes(
     text
       .slice(0, MAX_TEXT * 4)
       .replace(FAILED_QUERY, 'Failed query [redacted]')
@@ -74,7 +74,7 @@ export function scrubUrl(url: string): string {
   const m = /^([a-z][a-z0-9+.-]*:\/\/[^/]+)?(.*)$/iu.exec(base);
   const origin = m?.[1] ?? '';
   const path = m?.[2] ?? '';
-  return origin + maskPersonalDataKeepIds(redactPath(path)).replace(LONG_TOKEN, '[token]');
+  return origin + maskPersonalDataKeepCodes(redactPath(path)).replace(LONG_TOKEN, '[token]');
 }
 
 /**

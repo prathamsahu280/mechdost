@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isPseudonymousId, maskPersonalDataKeepIds, scrubFreeText } from '../src/privacy';
+import { isPseudonymousId, maskPersonalDataKeepCodes, scrubFreeText } from '../src/privacy';
 
 describe('pseudonymous ids survive masking (reviews 2026-11-14)', () => {
   it('recognises only ids we issue, exactly: UUIDs with version/variant, codes with our prefixes', () => {
@@ -29,15 +29,22 @@ describe('pseudonymous ids survive masking (reviews 2026-11-14)', () => {
       expect([not, isPseudonymousId(not)]).toEqual([not, false]);
   });
 
-  it('keeps every embedded id (more than 26 too) and still masks phone numbers', () => {
+  it('keeps every embedded public code (more than 26 too) and still masks phone numbers', () => {
     const ids = Array.from({ length: 30 }, (_, i) => `MD-RPR-2026-${String(10000 + i)}K`);
-    expect(maskPersonalDataKeepIds(`${ids.join(' ')} call 9876543210`)).toBe(`${ids.join(' ')} call #`);
+    expect(maskPersonalDataKeepCodes(`${ids.join(' ')} call 9876543210`)).toBe(`${ids.join(' ')} call #`);
   });
 
   it('a phone number dressed up as a code is still masked', () => {
-    expect(maskPersonalDataKeepIds('MD-RPR-2026-9876543210')).toBe('MD-RPR-#');
-    expect(maskPersonalDataKeepIds('ref MD-RPR-9876-543210')).toBe('ref MD-RPR-#');
-    expect(maskPersonalDataKeepIds('MD-RPR-2026-234567')).toBe('MD-RPR-#');
+    expect(maskPersonalDataKeepCodes('MD-RPR-2026-9876543210')).toBe('MD-RPR-#');
+    expect(maskPersonalDataKeepCodes('ref MD-RPR-9876-543210')).toBe('ref MD-RPR-#');
+    expect(maskPersonalDataKeepCodes('MD-RPR-2026-234567')).toBe('MD-RPR-#');
+  });
+
+  it('embedded UUIDs get no exemption in free text (a phone can hide across their groups)', () => {
+    expect(maskPersonalDataKeepCodes('row 98765432-10ab-7cde-8f01-23456789abcd')).not.toContain('98765432');
+    expect(maskPersonalDataKeepCodes('row 0a1bcdef-abcd-7abc-8abc-abcdefabcdef')).toBe(
+      'row 0a1bcdef-abcd-7abc-8abc-abcdefabcdef',
+    );
   });
 });
 

@@ -8,7 +8,8 @@
  * PostHog (`consentAllowsForwarding`); the distinct id is the random visitor id, events are personless (no person
  * profiles) and GeoIP is off. Server events (purchase, routing …) carry no user at all — consent is not known on the
  * server — so they use one fixed id with business codes only. Props pass `scrubProps` on top of the registry's own
- * validation: personal keys, free text, emails and phone-like numbers never leave.
+ * validation: personal keys, free text, emails and phone-like numbers never leave; only server events keep ids the
+ * phone mask would remove (client props could disguise a number as an id).
  */
 import { consentAllowsForwarding, isPseudonymousId, maskPersonalData } from '@mechdost/shared/privacy';
 import type { EventCursor, ForwardableEvent } from '@mechdost/db/repo';
@@ -34,12 +35,23 @@ const PERSONAL_KEY =
 // targetIds). User-linking ids are dropped earlier by PERSONAL_KEY.
 const ID_KEY = /^(?:id|ids|code|codes)$|[a-z0-9](?:Id|Ids|Code|Codes)$/u;
 
-function cleanValue(value: unknown, depth: number, idKey: boolean): { keep: boolean; value?: unknown } {
+/**
+ * Who wrote the props: `server` = our own code with database-issued ids (server events); `client` = the browser
+ * (web/app events), which could shape a phone number like a UUID (`98765432-10ab-7…`, security review 2026-11-14).
+ */
+export type PropsSource = 'server' | 'client';
+
+function cleanValue(
+  value: unknown,
+  depth: number,
+  exemptIds: boolean,
+  source: PropsSource,
+): { keep: boolean; value?: unknown } {
   if (typeof value === 'string') {
     if (value.length > MAX_STRING) return { keep: false };
-    // UUIDs (v7: digit runs) and public codes (MD-RPR-2026-…) identify rows, not people — but only under keys that
-    // hold ids; anywhere else an id-shaped value is free text and goes through the mask (reviews 2026-11-14).
-    if (idKey && isPseudonymousId(value)) return { keep: true, value };
+    // UUIDs (v7: digit runs) and public codes (MD-RPR-2026-…) identify rows, not people — kept only when our server
+    // wrote them and the key holds ids; client values and other keys go through the mask (reviews 2026-11-14).
+    if (exemptIds && isPseudonymousId(value)) return { keep: true, value };
     if (maskPersonalData(value) !== value) return { keep: false };
     return { keep: true, value };
   }
@@ -49,15 +61,19 @@ function cleanValue(value: unknown, depth: number, idKey: boolean): { keep: bool
   if (Array.isArray(value)) {
     const items = value
       .slice(0, MAX_ITEMS)
-      .map((v) => cleanValue(v, depth + 1, idKey))
+      .map((v) => cleanValue(v, depth + 1, exemptIds, source))
       .filter((r) => r.keep)
       .map((r) => r.value);
     return { keep: true, value: items };
   }
-  return { keep: true, value: scrubObject(value as Record<string, unknown>, depth + 1) };
+  return { keep: true, value: scrubObject(value as Record<string, unknown>, depth + 1, source) };
 }
 
-function scrubObject(props: Record<string, unknown>, depth: number): Record<string, unknown> {
+function scrubObject(
+  props: Record<string, unknown>,
+  depth: number,
+  source: PropsSource,
+): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(props)) {
     if (key === 'query') {
@@ -66,16 +82,19 @@ function scrubObject(props: Record<string, unknown>, depth: number): Record<stri
       continue;
     }
     if (PERSONAL_KEY.test(key)) continue;
-    const r = cleanValue(value, depth, ID_KEY.test(key));
+    const r = cleanValue(value, depth, source === 'server' && ID_KEY.test(key), source);
     if (r.keep) out[key] = r.value;
   }
   return out;
 }
 
-/** Event props without personal keys, free text, emails, phone-like numbers or long strings. */
-export function scrubProps(props: unknown): Record<string, unknown> {
+/**
+ * Event props without personal keys, free text, emails, phone-like numbers or long strings. `source` says who wrote
+ * them; only `server` props keep ids that the phone mask would remove (client props: the mask applies to all).
+ */
+export function scrubProps(props: unknown, source: PropsSource = 'client'): Record<string, unknown> {
   if (props === null || typeof props !== 'object' || Array.isArray(props)) return {};
-  return scrubObject(props as Record<string, unknown>, 0);
+  return scrubObject(props as Record<string, unknown>, 0, source);
 }
 
 /** One stored event as a PostHog batch item, or null when it must not be forwarded. */
@@ -84,7 +103,7 @@ export function toPosthogEvent(row: ForwardableEvent, webBaseUrl: string): Posth
   if (!server) {
     if (!row.anonymousId || !consentAllowsForwarding(row.consentVersion)) return null;
   }
-  const props = scrubProps(row.props);
+  const props = scrubProps(row.props, server ? 'server' : 'client');
   const pathProp = typeof props.path === 'string' ? props.path : null;
   const path = row.page ?? pathProp;
   const pageView = row.event === 'page_view';

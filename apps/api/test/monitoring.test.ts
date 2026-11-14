@@ -267,15 +267,15 @@ describe('PostHog props keep pseudonymous ids, only under id keys (reviews 2026-
       '019a8f00-0000-7000-8000-000000000001',
       ...uuidV7Sample(200),
     ];
-    for (const id of ids) expect(scrubProps({ shopId: id })).toEqual({ shopId: id });
+    for (const id of ids) expect(scrubProps({ shopId: id }, 'server')).toEqual({ shopId: id });
     for (const code of [
       'MD-RPR-2026-23456K',
       'SR-RPR-2026-7K2M9Q',
       'REQ-RPR-2026-00000Z',
       'QT-RPR-2026-99999Z',
     ])
-      expect(scrubProps({ orderCode: code })).toEqual({ orderCode: code });
-    expect(scrubProps({ ids: ['01a1db2d-e45a-7f47-8659-9433601cf99d', '9876543210'] })).toEqual({
+      expect(scrubProps({ orderCode: code }, 'server')).toEqual({ orderCode: code });
+    expect(scrubProps({ ids: ['01a1db2d-e45a-7f47-8659-9433601cf99d', '9876543210'] }, 'server')).toEqual({
       ids: ['01a1db2d-e45a-7f47-8659-9433601cf99d'],
     });
     expect(scrubProps({ ref: '98765 43210', other: '+91-9876543210' })).toEqual({});
@@ -283,17 +283,64 @@ describe('PostHog props keep pseudonymous ids, only under id keys (reviews 2026-
 
   it('id-shaped values outside id keys, and fake ids under id keys, are masked', () => {
     // Free-text keys never get the exemption, however much the value looks like an id.
-    expect(scrubProps({ label: 'MD-RPR-2026-23456K', path: '01a1db2d-e45a-7f47-8659-9433601cf99d' })).toEqual(
-      {},
-    );
+    expect(
+      scrubProps({ label: 'MD-RPR-2026-23456K', path: '01a1db2d-e45a-7f47-8659-9433601cf99d' }, 'server'),
+    ).toEqual({});
     // All-digit tails, digit-only "UUIDs" and phones dressed as codes are not ids we issue.
     expect(
-      scrubProps({
-        orderCode: 'MD-RPR-2026-234567',
-        shopId: '98765432-1098-7654-8210-987654321098',
-        requestCode: 'SR-RPR-2026-9876543210',
-      }),
+      scrubProps(
+        {
+          orderCode: 'MD-RPR-2026-234567',
+          shopId: '98765432-1098-7654-8210-987654321098',
+          requestCode: 'SR-RPR-2026-9876543210',
+        },
+        'server',
+      ),
     ).toEqual({});
+  });
+
+  it('by source: a phone smuggled in a UUID shape is masked in client events, kept only from our server code', () => {
+    const crafted = '98765432-10ab-7cde-8f01-23456789abcd';
+    // Browser-supplied props (consent-gated web events): no id exemption, the digit runs are masked.
+    expect(scrubProps({ shopId: crafted }, 'client')).toEqual({});
+    expect(
+      toPosthogEvent(row({ props: { shopId: crafted, slug: 'castrol' } }), WEB)?.properties,
+    ).not.toHaveProperty('shopId');
+    // Server events carry ids our code wrote (database-issued): the strict-shape exemption applies.
+    const server = toPosthogEvent(
+      row({
+        source: 'server',
+        event: 'order_delivered',
+        anonymousId: null,
+        sessionId: null,
+        page: null,
+        consentVersion: null,
+        props: { shopId: crafted },
+      }),
+      WEB,
+    );
+    expect(server?.properties).toMatchObject({ shopId: crafted });
+    // Every real-shaped v7 id in a server event survives.
+    const sample = uuidV7Sample(200);
+    for (const id of sample) {
+      const e = toPosthogEvent(
+        row({
+          source: 'server',
+          event: 'order_delivered',
+          anonymousId: null,
+          sessionId: null,
+          page: null,
+          consentVersion: null,
+          props: { shopId: id },
+        }),
+        WEB,
+      );
+      expect(e?.properties.shopId).toBe(id);
+    }
+    // A client event's real v7 ids survive only when they have no 7+ digit run (the rest are masked: accepted).
+    const kept = sample.filter((id) => scrubProps({ shopId: id }, 'client').shopId === id).length;
+    expect(kept).toBeGreaterThan(100);
+    expect(kept).toBeLessThan(200);
   });
 });
 

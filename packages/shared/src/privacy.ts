@@ -34,12 +34,15 @@ const UUID =
   /(?=[0-9a-f-]{0,35}[a-f])[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/u;
 const PUBLIC_CODE =
   /(?:MD|SR|REQ|QT|PA)-[A-Z]{3}-20\d{2}-(?=[0-9A-HJKMNP-TV-Z]{0,5}[A-HJKMNP-TV-Z])[0-9A-HJKMNP-TV-Z]{6}/u;
-const ID_ANYWHERE = new RegExp(`(?<![\\w-])(?:${UUID.source}|${PUBLIC_CODE.source})(?![\\w-])`, 'gu');
+// In free text only codes are kept: a UUID-shaped string with one hex letter can still carry a phone number across
+// its groups (`98765432-10ab-7…`, security review 2026-11-14), while a code holds at most a 9-digit run.
+const CODE_ANYWHERE = new RegExp(`(?<![\\w-])${PUBLIC_CODE.source}(?![\\w-])`, 'gu');
 const ID_EXACT = new RegExp(`^(?:${UUID.source}|${PUBLIC_CODE.source})$`, 'u');
 
 /**
- * True when the whole value is a UUID or a public code we issue. Callers exempt it from the phone mask only where a
- * field is known to hold an id (`…Id` / `…Code` keys in analytics props); free text never gets the exemption.
+ * True when the whole value is a UUID or a public code we issue. Only for values our own server code wrote
+ * (database-issued ids in server events) under keys known to hold ids (`…Id` / `…Code`): a browser could shape a
+ * phone number like a UUID, so client-supplied values never get this exemption (security review 2026-11-14).
  */
 export function isPseudonymousId(value: string): boolean {
   return ID_EXACT.test(value);
@@ -52,12 +55,13 @@ const CLOSE = '\uE001';
 const PLACEHOLDER = /\uE000([a-z]+)\uE001/gu;
 
 /**
- * `maskPersonalData` that leaves embedded UUIDs and public codes intact (error messages: an order code or a row id
- * is what makes a report useful). The ids are swapped for letter-only placeholders while masking, then put back.
+ * `maskPersonalData` that leaves embedded public codes intact (error messages: an order code is what makes a report
+ * useful). UUIDs get the plain digit-run rule. Codes are swapped for letter-only placeholders while masking, then
+ * put back.
  */
-export function maskPersonalDataKeepIds(text: string): string {
+export function maskPersonalDataKeepCodes(text: string): string {
   const kept: string[] = [];
-  const marked = text.replace(ID_ANYWHERE, (m) => {
+  const marked = text.replace(CODE_ANYWHERE, (m) => {
     kept.push(m);
     return `${OPEN}${placeholder(kept.length - 1)}${CLOSE}`;
   });
