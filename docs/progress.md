@@ -14,7 +14,11 @@ This file is the single source of truth for **where the build is right now**. It
     - Q86: demo controls hidden in real mode.
     - Decision: quotes, coins and reviews hidden in real mode (no API).
     - Security fixes: workshop publish/verify needs `partners:approve` in that workshop's city, checked on the resulting state.
-  - **Running:** Stream E (agent): workshop screens on the API.
+  - **Stream E merged** (workshop finder, booking, request page, workshop portal, admin services and workshops on the API).
+  - **Pushed:** `4694fbe`.
+  - **Budgets:** demo and real-mode builds measured; `/shop` and `/cart` at 179.9–180.0 KB with no headroom (spec 16 note).
+  - **Firebase web config:** passed to the website build (Dockerfile + deploy). The four `NEXT_PUBLIC_FIREBASE_*` repository variables still have to be set by the user.
+  - **Live API:** `/v1/workshops` and `/v1/checkout/quote` answer 200.
   - **Next (Stream F):**
     1. Push and check CI/deploy.
     2. Merge E.
