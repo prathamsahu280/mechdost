@@ -53,8 +53,10 @@ export async function generateMetadata({
   if (!hasLocale(routing.locales, locale)) return {};
   const t = await getTranslations({ locale, namespace: 'meta' });
   const city = (await getTranslations({ locale, namespace: 'cities' }))(site.defaultCity);
+  // A Docker build passes an unset build arg as "" (not undefined), so an empty value also falls back.
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
   return {
-    metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'),
+    metadataBase: new URL(appUrl !== undefined && appUrl !== '' ? appUrl : 'http://localhost:3000'),
     title: { default: t('title'), template: `%s · MechDost` },
     description: t('description', { city }),
     applicationName: 'MechDost',

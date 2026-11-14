@@ -83,6 +83,25 @@ jobs:
           push: false
           provenance: false
           cache-from: type=gha,scope=${{ matrix.image }}
+          # The same public settings as the deploy (repository variables, never secrets), so CI builds what
+          # production builds. The API image declares none of these and ignores them.
+          build-args: |
+            NEXT_PUBLIC_APP_URL=${{ vars.NEXT_PUBLIC_APP_URL }}
+            NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
+            NEXT_PUBLIC_DATA_MODE=${{ vars.NEXT_PUBLIC_DATA_MODE }}
+            NEXT_PUBLIC_AUTH_MODE=${{ vars.NEXT_PUBLIC_AUTH_MODE }}
+            NEXT_PUBLIC_MAPTILER_KEY=${{ vars.NEXT_PUBLIC_MAPTILER_KEY }}
+            NEXT_PUBLIC_SATELLITE_TILES=${{ vars.NEXT_PUBLIC_SATELLITE_TILES }}
+            NEXT_PUBLIC_SATELLITE_ATTRIBUTION=${{ vars.NEXT_PUBLIC_SATELLITE_ATTRIBUTION }}
+            NEXT_PUBLIC_POSTHOG_KEY=${{ vars.NEXT_PUBLIC_POSTHOG_KEY }}
+            NEXT_PUBLIC_POSTHOG_HOST=${{ vars.NEXT_PUBLIC_POSTHOG_HOST }}
+            NEXT_PUBLIC_SENTRY_DSN=${{ vars.NEXT_PUBLIC_SENTRY_DSN }}
+            NEXT_PUBLIC_RAZORPAY_KEY_ID=${{ vars.NEXT_PUBLIC_RAZORPAY_KEY_ID }}
+            NEXT_PUBLIC_TURNSTILE_SITE_KEY=${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
+            NEXT_PUBLIC_FIREBASE_API_KEY=${{ vars.NEXT_PUBLIC_FIREBASE_API_KEY }}
+            NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${{ vars.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+            NEXT_PUBLIC_FIREBASE_PROJECT_ID=${{ vars.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
+            NEXT_PUBLIC_FIREBASE_APP_ID=${{ vars.NEXT_PUBLIC_FIREBASE_APP_ID }}
 
   e2e-demo:
     name: Browser suites (demo mode)
