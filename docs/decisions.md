@@ -328,6 +328,17 @@ Full review and evidence: `docs/research/security-vulnerabilities.md` § Review 
 - Answered later the same day: **Q90** keep first-come email ownership ("if a person has added an email then another person cant add it"); **Q92** no Cloudflare in front of the site for now. Still open: Q91 assistant Turnstile (with the web transport).
 - **Admin prices plan complete (Task 6, docs):** customer price = PIN price, else city price, else (interim, Q83) the shop's price; never above MRP or below what a shop is paid; routing only to shops at or below the customer price; `order_items.shop_unit_paise` keeps the margin; `prices:write` for super_admin, ops_manager, finance (specs 02, 04, 08, 13, 14; runbook firebase.md).
 
+## 2026-11-14 — Workshops backend (real-API launch, stream A; rulings, cost if wrong in brackets)
+
+- **Bookable = published ∧ location verified ∧ standing approved ∧ not busy** — the only workshops listed, bookable or assignable by staff (admin reassign included). Staff-created workshops start `approved` (standing) but unpublished; publishing or vouching for the pin needs `partners:approve`, other edits `partners:write`. [low: one flag]
+- **Proposals use the demo's three parts of the day** (morning / afternoon / evening) instead of hourly `workshop_slots` with capacity; slot capacity, the acceptance timeout for `awaiting_workshop` and customer reschedule come later (spec 06 "Not built yet"). [medium: a slot-capacity migration later]
+- **A workshop decline detaches the workshop** (`workshop_id` null in `needs_routing`), so it no longer sees the request; who declined and why stays in `service_events` (staff only). [low]
+- **Odometer history key** = the saved vehicle's id, else the normalised vehicle text, per customer. [low: free-text spelling changes start a new history]
+- **Service bills are frozen snapshots without a gapless GST invoice number** for now: the workshop is the supplier and issues its own tax invoice; whether MechDost numbers service bills (spec 06 "gapless series") is queued with the payout model (pending #9). [medium if MechDost must invoice]
+- **Paid at the workshop** completes the job in one step (`billed → paid` by the workshop, `paid → completed` by the system), as the demo. Online payment of bills later.
+- **`user_roles.workshop_id` gets its FK** to `workshops` (it had none because the table did not exist).
+- **Zod-free constants for the db layer**: `SERVICE_CUSTOMER_CANCELLABLE` and `ESTIMATE_SENDABLE_FROM` live in `@mechdost/shared/state`; the db package must not import the Zod DTO module at runtime, or its schemas are built before `@hono/zod-openapi` extends Zod and lose `.openapi()` (found by the API test).
+
 ## 2026-11-14 — Cart on sign-out, demo controls, demo service estimates and bills (user)
 
 - **Cart and compare list stay on sign-out** (Q85): they belong to the device, as for a guest.

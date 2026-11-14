@@ -15,6 +15,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { citext, createdAt, encryptedCheck, geographyPoint, id, ts, updatedAt, version } from './_common';
 import { cities, pincodes, states } from './geography';
+import { workshops } from './services';
 
 /** docs/specs/01-auth-accounts.md. Identity comes from Firebase; this row is our profile. */
 export const users = pgTable(
@@ -95,7 +96,8 @@ export const userRoles = pgTable(
       .references(() => roles.id, { onDelete: 'restrict' }),
     cityId: uuid().references(() => cities.id, { onDelete: 'cascade' }),
     shopId: uuid(),
-    workshopId: uuid(),
+    // Lazy reference: services.ts imports users from this file (the ESM cycle resolves at build time).
+    workshopId: uuid().references(() => workshops.id, { onDelete: 'cascade' }),
     grantedBy: uuid().references(() => users.id, { onDelete: 'set null' }),
     createdAt: createdAt(),
   },
