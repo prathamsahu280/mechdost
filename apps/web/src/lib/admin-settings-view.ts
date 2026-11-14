@@ -10,7 +10,7 @@ import {
  * registry (`@mechdost/shared/settings`) holds money in paise and durations in minutes or days; the screen shows
  * money in whole rupees and checks every value with the same rules before sending it.
  */
-export type SettingUnit = 'rupees' | 'minutes' | 'days' | 'count' | 'switch';
+export type SettingUnit = 'rupees' | 'minutes' | 'days' | 'count' | 'bp' | 'coins' | 'switch';
 
 export function settingUnit(key: SettingKey): SettingUnit {
   const spec: SettingSpec = OPERATIONAL_SETTINGS[key];
@@ -18,6 +18,9 @@ export function settingUnit(key: SettingKey): SettingUnit {
   if (key.endsWith('_paise')) return 'rupees';
   if (key.endsWith('_minutes') || key.endsWith('_min')) return 'minutes';
   if (key.endsWith('_days')) return 'days';
+  // Coin rules (spec 20): shares in basis points (100 = 1%), bonuses in coins.
+  if (key.endsWith('_bp')) return 'bp';
+  if (key.endsWith('_bonus')) return 'coins';
   return 'count';
 }
 

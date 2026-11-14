@@ -42,7 +42,7 @@ const ALL_ADMIN_SECTIONS = [
 export type AdminSection = (typeof ALL_ADMIN_SECTIONS)[number];
 
 /** Sections for features that have no API yet (`BROWSER_ONLY_FEATURES`): hidden in real mode. */
-const BROWSER_ONLY_SECTIONS: readonly string[] = ['quotes', 'coins', 'reviews'];
+const BROWSER_ONLY_SECTIONS: readonly string[] = ['quotes', 'reviews'];
 const shown = <T extends string>(all: readonly T[]): readonly T[] =>
   BROWSER_ONLY_FEATURES ? all : all.filter((s) => !BROWSER_ONLY_SECTIONS.includes(s));
 

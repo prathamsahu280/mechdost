@@ -39,6 +39,14 @@ const SETTING_LABEL = {
   'catalogue.require_hindi_to_publish': 'api_set_catalogue_require_hindi_to_publish',
   'support.customer_messages_per_ticket_per_day': 'api_set_support_customer_messages_per_ticket_per_day',
   'assistant.daily_messages': 'api_set_assistant_daily_messages',
+  'coins.value_paise': 'coins_api_set_value_paise',
+  'coins.max_redeem_bp': 'coins_api_set_max_redeem_bp',
+  'coins.min_order_paise': 'coins_api_set_min_order_paise',
+  'coins.earn_order_bp': 'coins_api_set_earn_order_bp',
+  'coins.first_order_bonus': 'coins_api_set_first_order_bonus',
+  'coins.workshop_booking_bonus': 'coins_api_set_workshop_booking_bonus',
+  'coins.unlock_days': 'coins_api_set_unlock_days',
+  'coins.expiry_days': 'coins_api_set_expiry_days',
 } as const satisfies Record<SettingKey, string>;
 
 const UNIT_LABEL = {
@@ -46,6 +54,8 @@ const UNIT_LABEL = {
   minutes: 'api_set_unit_minutes',
   days: 'api_set_unit_days',
   count: 'api_set_unit_count',
+  bp: 'coins_api_unit_bp',
+  coins: 'coins_api_unit_coins',
 } as const;
 
 const CONTENT_LABEL = {

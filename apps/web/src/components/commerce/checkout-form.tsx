@@ -1,11 +1,11 @@
 'use client';
 
-import { coinRedemption } from '@mechdost/shared/coins';
+import { coinRedemption, type CoinRules } from '@mechdost/shared/coins';
 import { GST_STATE_CODES, gstinStateCode, isGstin, normaliseGstin } from '@mechdost/shared/gst';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { useRef, useState, type SyntheticEvent } from 'react';
+import { useEffect, useRef, useState, type SyntheticEvent } from 'react';
 import { AUTH_MODE } from '@/lib/auth/mode';
 import { track } from '@/lib/analytics';
 import { formatPrice } from '@/lib/format';
@@ -56,8 +56,25 @@ export function CheckoutForm() {
   // MechDost Coins (spec 20): signed-in customers may use coins for part of the products, never delivery.
   const session = useSession();
   const settings = useSiteSettings();
-  // Coins live in the demo store; on the API they come later (spec 20), so real data mode does not offer them.
+  // Demo data mode: coins live in the demo store. Real data mode: the API's balance and rules (`GET /me/coins`,
+  // loaded lazily), and the API re-checks the coins inside the order (409 COINS_CHANGED).
   const coinAccount = !realData && session?.role === 'customer' ? session.id : null;
+  const realCustomer = realData && session?.role === 'customer' ? session.id : null;
+  const [apiCoins, setApiCoins] = useState<{ balance: number; rules: CoinRules } | null>(null);
+  const [coinsReload, setCoinsReload] = useState(0);
+  useEffect(() => {
+    if (!realCustomer) return;
+    let live = true;
+    void Promise.all([import('@/lib/coins-api'), import('@/lib/coins-view')]).then(async ([api, view]) => {
+      const res = await api.fetchMyCoins(locale);
+      // Coins are optional at checkout: without an answer the section stays hidden and the order goes ahead.
+      if (live && res.ok)
+        setApiCoins({ balance: res.data.balance, rules: view.coinRulesFromApi(res.data.rules) });
+    });
+    return () => {
+      live = false;
+    };
+  }, [realCustomer, locale, coinsReload]);
   // A signed-in customer starts from their name, number and default address (QA 2026-11-14, U6 / crawler F3:
   // everything was empty and the PIN fixed at 492001). Guests keep the Raipur PIN hint.
   const customer = session?.role === 'customer' ? session : null;
@@ -89,11 +106,17 @@ export function CheckoutForm() {
         ? t('blockedCod')
         : t('blockedOrders')
       : null;
-  const { balance } = useCoins(coinAccount);
-  const redemption = coinRedemption(balance, subtotalPaise, coinRulesFrom(settings));
+  const demoCoins = useCoins(coinAccount);
+  const balance = realData ? (apiCoins?.balance ?? 0) : demoCoins.balance;
+  const redemption = coinRedemption(
+    balance,
+    subtotalPaise,
+    realData ? (apiCoins?.rules ?? { ...coinRulesFrom(settings), maxRedeemBp: 0 }) : coinRulesFrom(settings),
+  );
   const [useCoinsOn, setUseCoinsOn] = useState(false);
-  // Coins are a demo-store discount: not applied to online payments (the API prices the order).
-  const coinDiscount = useCoinsOn && method === 'cod' ? redemption.discountPaise : 0;
+  // Demo: coins are a demo-store discount on cash on delivery only. Real data: the API applies them to both methods.
+  const coinDiscount = useCoinsOn && (realData || method === 'cod') ? redemption.discountPaise : 0;
+  const showCoins = (coinAccount !== null || realCustomer !== null) && balance > 0;
   const payablePaise = totalPaise - coinDiscount;
   const prefix = locale === 'hi' ? '/hi' : '';
   // Business purchase (buyer GSTIN plan 2026-11-13): optional; checked with the shared, Zod-free GST helpers.
@@ -166,8 +189,9 @@ export function CheckoutForm() {
           pincode: details.pincode,
         },
         lines: priced.map(({ product, qty }) => ({ sku: product.sku, qty })),
-        expectedTotalPaise: quote.totalPaise,
+        expectedTotalPaise: quote.totalPaise - coinDiscount,
         business,
+        coins: coinDiscount > 0 ? redemption.coins : 0,
       },
       attemptKey.current,
     );
@@ -185,8 +209,24 @@ export function CheckoutForm() {
       return;
     }
     track('click', { id: `checkout_cod_${res.code.toLowerCase()}`, path: window.location.pathname });
-    if (['PRICE_CHANGED', 'OUT_OF_STOCK', 'CHECKOUT_UNAVAILABLE', 'IDEMPOTENCY_MISMATCH'].includes(res.code))
+    if (
+      [
+        'PRICE_CHANGED',
+        'OUT_OF_STOCK',
+        'CHECKOUT_UNAVAILABLE',
+        'IDEMPOTENCY_MISMATCH',
+        'COINS_CHANGED',
+        'INSUFFICIENT_COINS',
+      ].includes(res.code)
+    )
       attemptKey.current = null;
+    // The coins changed (spent elsewhere, or the rules changed): reload them and let the customer check again.
+    if (res.code === 'COINS_CHANGED' || res.code === 'INSUFFICIENT_COINS') {
+      setUseCoinsOn(false);
+      setCoinsReload((n) => n + 1);
+      setOnlineNote({ text: t('coins_api_changed') });
+      return;
+    }
     const note =
       res.code === 'AUTH_REQUIRED'
         ? { text: t('cod_sign_in'), link: 'sign_in' as const }
@@ -223,6 +263,7 @@ export function CheckoutForm() {
         pincode: details.pincode,
       },
       business,
+      coins: coinDiscount > 0 ? { count: redemption.coins, discountPaise: coinDiscount } : null,
     });
     setSubmitting(false);
     if (result.ok) {
@@ -239,9 +280,14 @@ export function CheckoutForm() {
       result.reason === 'cart_changed' ||
       result.reason === 'price_changed' ||
       result.reason === 'expired' ||
-      result.reason === 'details_changed'
+      result.reason === 'details_changed' ||
+      result.reason === 'coins_changed'
     )
       attemptKey.current = null;
+    if (result.reason === 'coins_changed') {
+      setUseCoinsOn(false);
+      setCoinsReload((n) => n + 1);
+    }
     setOnlineNote({
       text: t(`online_${result.reason}`),
       link: result.reason === 'sign_in' || result.reason === 'verify_email' ? result.reason : undefined,
@@ -519,7 +565,7 @@ export function CheckoutForm() {
             </div>
           ) : null}
         </div>
-        {coinAccount && balance > 0 ? (
+        {showCoins ? (
           <div className="mt-5 rounded-tile border border-line-card bg-surface-alt p-4">
             {redemption.coins > 0 ? (
               <label className="flex items-start gap-3 text-sm text-ink">
@@ -528,6 +574,10 @@ export function CheckoutForm() {
                   checked={useCoinsOn}
                   onChange={(e) => {
                     setUseCoinsOn(e.target.checked);
+                    track('click', {
+                      id: e.target.checked ? 'checkout_coins_on' : 'checkout_coins_off',
+                      path: window.location.pathname,
+                    });
                   }}
                   className="mt-0.5 size-6 shrink-0 accent-[var(--color-accent-button)]"
                 />

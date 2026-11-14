@@ -90,6 +90,11 @@ export function OrderViewApi({ code }: { code: string }) {
               ? t('api_paidOnline')
               : t('api_payPending')}
         </p>
+        {order.coins ? (
+          <p className="mt-1 text-success">
+            {t('coinsLine', { coins: order.coins.coins })}: −{formatPrice(order.coins.discountPaise)}
+          </p>
+        ) : null}
         <p className="mt-1 font-heading text-lg font-extrabold text-ink">
           {t('api_total')}: {formatPrice(order.totalPaise)}
         </p>

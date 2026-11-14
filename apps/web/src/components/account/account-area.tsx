@@ -3,7 +3,7 @@
 import { BadgeCheck, ChevronRight, MessagesSquare, Package, Pencil, Trash2, Wrench } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import { Suspense, useEffect, useRef, useState, type ReactNode, type SyntheticEvent } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState, type ReactNode, type SyntheticEvent } from 'react';
 import { useCenterCurrent } from '@/lib/use-center-current';
 import {
   MAX_ACCOUNT_ITEMS,
@@ -29,7 +29,7 @@ import { useHydrated } from '@/demo/store';
 import { useQuotes } from '@/demo/quote-store';
 import { useOrderRows } from '@/lib/use-order-rows';
 import { useServiceRows } from '@/lib/use-service-rows';
-import { SHOW_DEMO_CONTROLS } from '@/lib/data-mode';
+import { DATA_MODE, SHOW_DEMO_CONTROLS } from '@/lib/data-mode';
 import { track } from '@/lib/analytics';
 import { AUTH_MODE } from '@/lib/auth/mode';
 import { signOutEverywhere } from '@/lib/auth/sign-out';
@@ -37,6 +37,11 @@ import { useEmailStatus } from '@/lib/auth/use-email-status';
 import { EmailPill, VerifyEmailCard } from './verify-email';
 import { formatDate, formatPrice } from '@/lib/format';
 import { ACCOUNT_SECTIONS, type AccountSection } from '@/lib/sections';
+
+// Real data mode: coins from the API (spec 20), loaded only when the section opens (L103: React.lazy on customer pages).
+const CoinsSectionApi = lazy(() =>
+  import('./coins-section-api').then((m) => ({ default: m.CoinsSectionApi })),
+);
 
 const SECTION_EMOJI: Record<AccountSection, string> = {
   overview: '🏠',
@@ -138,7 +143,15 @@ export function AccountArea({ section }: { section: AccountSection }) {
         {section === 'orders' ? <OrdersList /> : null}
         {section === 'services' ? <ServicesList /> : null}
         {section === 'quotes' ? <QuotesList /> : null}
-        {section === 'coins' ? <CoinsSection account={session} /> : null}
+        {section === 'coins' ? (
+          DATA_MODE === 'api' ? (
+            <Suspense fallback={<div className="skeleton h-72 rounded-card" aria-hidden="true" />}>
+              <CoinsSectionApi />
+            </Suspense>
+          ) : (
+            <CoinsSection account={session} />
+          )
+        ) : null}
         {section === 'support' ? (
           // useSearchParams (preset order) needs a Suspense boundary on statically built pages.
           <Suspense fallback={null}>

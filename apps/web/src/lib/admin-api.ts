@@ -33,7 +33,12 @@ export async function adminApi<T>(
   locale: string,
   path: string,
   schema: ResponseSchema<T>,
-  init: { method?: 'GET' | 'PATCH' | 'PUT' | 'POST' | 'DELETE'; body?: unknown } = {},
+  init: {
+    method?: 'GET' | 'PATCH' | 'PUT' | 'POST' | 'DELETE';
+    body?: unknown;
+    /** Extra request headers, e.g. `Idempotency-Key` for a staff change that must apply once. */
+    headers?: Record<string, string>;
+  } = {},
 ): Promise<AdminResult<T>> {
   if (!API) return { ok: false, status: 0, code: 'UNAVAILABLE' };
   const { currentIdToken } = await import('./auth/firebase-client');
@@ -46,6 +51,7 @@ export async function adminApi<T>(
       headers: {
         Authorization: `Bearer ${token}`,
         ...(init.body === undefined ? {} : { 'Content-Type': 'application/json' }),
+        ...init.headers,
       },
       ...(init.body === undefined ? {} : { body: JSON.stringify(init.body) }),
       cache: 'no-store',
