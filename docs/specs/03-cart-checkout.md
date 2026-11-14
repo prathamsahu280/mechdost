@@ -73,7 +73,7 @@ Plan `docs/superpowers/plans/2026-11-12-razorpay-checkout-backend.md`; user chos
   - The website: a retry of a paid attempt is a success; a closed window or changed details start a new order; once Razorpay took the money, a failed confirmation says "not confirmed yet" (it checks the order, which the webhook may have confirmed), never "choose cash on delivery".
 - **Website:** checkout offers "Pay online" in real sign-in builds (`apps/web/src/lib/payments/pay-online.ts`); local test steps in `docs/runbooks/payments.md`.
 - **Not yet:**
-  - refunds for paid orders that are cancelled or rejected (spec 05);
+  - (built 2026-11-15) refunds for paid orders that are cancelled or rejected: a request that finance approves, spec 05 "Built: refunds"; captured-after-close payments (`needs_refund`) still only audit;
   - the hourly reconciliation job;
   - pg-boss processing of webhooks.
 

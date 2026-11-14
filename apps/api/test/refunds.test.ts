@@ -12,8 +12,13 @@ import { seedRaipurDemo, type DemoFixture } from '@mechdost/db/demo-seed';
 import { ensureUser, grantRole } from '@mechdost/db/repo';
 import * as s from '@mechdost/db/schema';
 import { eq } from '@mechdost/db/testing';
-import { RazorpayError, type RazorpayGateway, type RazorpayPayment } from '../src/payments/razorpay';
-import { dispatchDueRefunds } from '../src/payments/refunds';
+import {
+  RazorpayError,
+  type RazorpayGateway,
+  type RazorpayPayment,
+  type RazorpayRefund,
+} from '../src/payments/razorpay';
+import { dispatchDueRefunds, reconcileDueRefunds } from '../src/payments/refunds';
 import { bearer, buildApp, type ErrorJson } from './helpers';
 
 const fixture = JSON.parse(
@@ -42,6 +47,14 @@ class FakeRazorpay implements RazorpayGateway {
   refundCalls: RefundCall[] = [];
   /** What the next refund call does: answer, or throw this Razorpay HTTP status. */
   failWith: number | null = null;
+  /** Razorpay creates the refund, then the answer is lost (timeout): the classic uncertain outcome. */
+  loseAnswer: { status: string } | null = null;
+  /** Razorpay creates a refund for another amount than we asked. */
+  otherAmount: number | null = null;
+  /** The lookup itself cannot be answered (Razorpay is down). */
+  lookupDown = false;
+  /** Refunds Razorpay holds, by our refund id. */
+  held = new Map<string, RazorpayRefund>();
   createOrder(input: { amountPaise: number }) {
     this.orders += 1;
     return Promise.resolve({
@@ -57,12 +70,19 @@ class FakeRazorpay implements RazorpayGateway {
   createRefund(input: RefundCall) {
     this.refundCalls.push(input);
     if (this.failWith) return Promise.reject(new RazorpayError(this.failWith, 'refused'));
-    return Promise.resolve({
+    const made: RazorpayRefund = {
       id: `rfnd_${input.idemKey.replace(/[^A-Za-z0-9]/g, '').slice(0, 14)}`,
       paymentId: input.paymentId,
-      amountPaise: input.amountPaise,
-      status: 'pending',
-    });
+      amountPaise: this.otherAmount ?? input.amountPaise,
+      status: this.loseAnswer?.status ?? 'pending',
+    };
+    this.held.set(input.refundId, made);
+    if (this.loseAnswer) return Promise.reject(new Error('timeout'));
+    return Promise.resolve(made);
+  }
+  findRefund(input: { refundId: string }) {
+    if (this.lookupDown) return Promise.reject(new Error('lookup down'));
+    return Promise.resolve(this.held.get(input.refundId) ?? null);
   }
 }
 
@@ -116,6 +136,8 @@ async function paidOrder() {
     }),
   );
   n += 1;
+  // A fresh customer per order: placing orders is rate limited per user.
+  const buyer = await person(`buyer${String(n)}`, null);
   const placed = await json<{
     code: string;
     totalPaise: number;
@@ -124,7 +146,7 @@ async function paidOrder() {
   }>(
     await ctx.app.request('/v1/orders', {
       method: 'POST',
-      headers: { ...ravi, 'idempotency-key': `refunds-api-key-${String(n).padStart(6, '0')}` },
+      headers: { ...buyer, 'idempotency-key': `refunds-api-key-${String(n).padStart(6, '0')}` },
       body: JSON.stringify({
         address: { contactName: 'Ravi', contactPhone: '+919876543210', line1: 'House 12', pincode: '492004' },
         lines,
@@ -134,6 +156,7 @@ async function paidOrder() {
       }),
     }),
   );
+  if (!placed.razorpay) throw new Error('order not placed: ' + JSON.stringify(placed));
   const paymentId = `pay_RfPaid${String(n).padStart(6, '0')}`;
   razorpay.payments.set(paymentId, {
     id: paymentId,
@@ -148,7 +171,7 @@ async function paidOrder() {
     .digest('hex');
   const verified = await ctx.app.request('/v1/payments/razorpay/verify', {
     method: 'POST',
-    headers: ravi,
+    headers: buyer,
     body: JSON.stringify({
       razorpayOrderId: placed.razorpay.orderId,
       razorpayPaymentId: paymentId,
@@ -156,7 +179,7 @@ async function paidOrder() {
     }),
   });
   expect(verified.status).toBe(200);
-  return { group: placed.code, sub: placed.orders[0]!.code, total: placed.totalPaise, paymentId };
+  return { buyer, group: placed.code, sub: placed.orders[0]!.code, total: placed.totalPaise, paymentId };
 }
 
 async function cancelByStaff(sub: string) {
@@ -170,7 +193,7 @@ async function cancelByStaff(sub: string) {
 }
 
 const queue = async (headers: Record<string, string>, view = 'waiting') =>
-  json<{ items: RefundJson[]; counts: { waiting: number; overdue: number } }>(
+  json<{ items: RefundJson[]; counts: { waiting: number; overdue: number; attention: number } }>(
     await ctx.app.request(`/v1/admin/refunds?view=${view}&limit=50`, { headers }),
   );
 const approve = (headers: Record<string, string>, r: RefundJson) =>
@@ -191,10 +214,10 @@ const webhook = (event: string, refund: Record<string, unknown>, eventId: string
     body: raw,
   });
 };
-const customerRefunds = async (group: string) =>
+const customerRefunds = async (group: string, buyer: Record<string, string>) =>
   (
     await json<{ orders: { refunds: { status: string; amountPaise: number }[] }[] }>(
-      await ctx.app.request(`/v1/orders/${group}`, { headers: ravi }),
+      await ctx.app.request(`/v1/orders/${group}`, { headers: buyer }),
     )
   ).orders[0]!.refunds;
 
@@ -202,6 +225,8 @@ beforeAll(async () => {
   razorpay = new FakeRazorpay();
   ctx = await buildApp({ env: ENV, razorpay });
   await seedRaipurDemo(ctx.db, fixture);
+  // Plenty of stock: these tests place many orders for the same battery.
+  await ctx.db.update(s.shopInventory).set({ onHand: 500 });
   ravi = await person('ravi', null);
   finance = await person('finance', 'finance');
   ops = await person('ops', 'ops_manager');
@@ -217,7 +242,7 @@ describe('refund requests over HTTP', () => {
     const r = q.items.find((i) => i.orderCode === o.sub)!;
     expect(r).toMatchObject({ status: 'requested', canApprove: true, mode: 'source' });
     expect(q.counts.waiting).toBeGreaterThanOrEqual(1);
-    expect((await customerRefunds(o.group))[0]).toMatchObject({
+    expect((await customerRefunds(o.group, o.buyer))[0]).toMatchObject({
       status: 'under_review',
       amountPaise: o.total,
     });
@@ -248,7 +273,7 @@ describe('refund requests over HTTP', () => {
     expect(done.status).toBe('initiated');
     expect(done.providerRefundId).toMatch(/^rfnd_/);
     // "Processing" for the customer: never "refunded" until Razorpay confirms.
-    expect((await customerRefunds(o.group))[0]!.status).toBe('processing');
+    expect((await customerRefunds(o.group, o.buyer))[0]!.status).toBe('processing');
   });
 
   it('the signed refund.processed webhook settles it; replays and a wrong signature change nothing', async () => {
@@ -279,7 +304,10 @@ describe('refund requests over HTTP', () => {
       await ctx.app.request(`/v1/admin/refunds/${r.id}`, { headers: finance }),
     );
     expect(done.status).toBe('processed');
-    expect((await customerRefunds(o.group))[0]).toMatchObject({ status: 'refunded', amountPaise: o.total });
+    expect((await customerRefunds(o.group, o.buyer))[0]).toMatchObject({
+      status: 'refunded',
+      amountPaise: o.total,
+    });
     const [payment] = await ctx.db
       .select()
       .from(s.payments)
@@ -314,7 +342,7 @@ describe('refund requests over HTTP', () => {
     razorpay.failWith = null;
     const [failed] = await ctx.db.select().from(s.refunds).where(eq(s.refunds.id, r2.id));
     expect(failed).toMatchObject({ status: 'failed', failureCode: 'razorpay_400' });
-    expect((await customerRefunds(p.group))[0]!.status).toBe('failed');
+    expect((await customerRefunds(p.group, p.buyer))[0]!.status).toBe('failed');
   });
 
   it('staff ask for a part refund with an Idempotency-Key; the requester cannot approve it (four-eyes)', async () => {
@@ -360,6 +388,120 @@ describe('refund requests over HTTP', () => {
       (await ctx.app.request('/v1/admin/refunds/00000000-0000-4000-8000-000000000000', { headers: finance }))
         .status,
     ).toBe(404);
-    expect((await customerRefunds(o.group))[0]!.status).toBe('declined');
+    expect((await customerRefunds(o.group, o.buyer))[0]!.status).toBe('declined');
+  });
+});
+
+describe('uncertain outcomes never free the money (security review 2026-11-15)', () => {
+  async function approvedWith(setup: () => void) {
+    const o = await paidOrder();
+    await cancelByStaff(o.sub);
+    const r = (await queue(finance)).items.find((i) => i.orderCode === o.sub)!;
+    setup();
+    expect((await approve(finance, r)).status).toBe(200);
+    razorpay.failWith = null;
+    razorpay.loseAnswer = null;
+    razorpay.otherAmount = null;
+    razorpay.lookupDown = false;
+    const row = async () => (await ctx.db.select().from(s.refunds).where(eq(s.refunds.id, r.id)))[0]!;
+    const payment = async () =>
+      (await ctx.db.select().from(s.payments).where(eq(s.payments.providerPaymentId, o.paymentId)))[0]!;
+    return { o, r, row, payment };
+  }
+
+  it('a timeout on create: the lookup finds the refund, so it is recorded and never created twice', async () => {
+    const calls = razorpay.refundCalls.length;
+    const a = await approvedWith(() => {
+      razorpay.loseAnswer = { status: 'processed' };
+    });
+    expect(await a.row()).toMatchObject({ status: 'processed' });
+    expect(razorpay.refundCalls.length).toBe(calls + 1); // exactly one create
+    expect(await dispatchDueRefunds(ctx.db, razorpay)).toMatchObject({ sent: 0 });
+    expect(razorpay.refundCalls.length).toBe(calls + 1);
+    expect(await a.payment()).toMatchObject({ status: 'refunded', refundedPaise: a.o.total });
+  });
+
+  it('a refusal that Razorpay confirms it never created fails the refund and frees the amount', async () => {
+    const a = await approvedWith(() => {
+      razorpay.failWith = 400;
+    });
+    expect(await a.row()).toMatchObject({ status: 'failed', failureCode: 'razorpay_400' });
+    expect((await a.payment()).refundReservedPaise).toBe(0);
+  });
+
+  it('a refusal that could not be double-checked keeps the amount reserved (needs reconciliation)', async () => {
+    const a = await approvedWith(() => {
+      razorpay.failWith = 400;
+      razorpay.lookupDown = true;
+    });
+    expect(await a.row()).toMatchObject({ status: 'needs_reconciliation', failureCode: 'razorpay_400' });
+    expect((await a.payment()).refundReservedPaise).toBe(a.o.total);
+    expect((await customerRefunds(a.o.group, a.o.buyer))[0]!.status).toBe('processing');
+  });
+
+  it('an amount that differs from ours is never failed: unsure, id and reported amount stored, amount reserved', async () => {
+    const a = await approvedWith(() => {
+      razorpay.otherAmount = 100;
+    });
+    expect(await a.row()).toMatchObject({
+      status: 'needs_reconciliation',
+      failureCode: 'provider_amount_mismatch',
+      providerReportedPaise: 100,
+    });
+    expect((await a.row()).providerRefundId).toMatch(/^rfnd_/);
+    expect((await a.payment()).refundReservedPaise).toBe(a.o.total);
+    const queueAttention = await queue(finance, 'attention');
+    expect(queueAttention.items.map((i) => i.id)).toContain(a.r.id);
+    expect(queueAttention.counts.attention).toBeGreaterThanOrEqual(1);
+  });
+
+  it('the worker re-checks an unsure refund: found, it is recorded; confirmed absent, it fails and frees the money', async () => {
+    const lost = await approvedWith(() => {
+      razorpay.failWith = 400;
+      razorpay.lookupDown = true;
+    });
+    const gone = await approvedWith(() => {
+      razorpay.failWith = 400;
+      razorpay.lookupDown = true;
+    });
+    // Razorpay did create the first one after all.
+    razorpay.held.set(lost.r.id, {
+      id: 'rfnd_found0000001',
+      paymentId: lost.o.paymentId,
+      amountPaise: lost.o.total,
+      status: 'processed',
+    });
+    for (const a of [lost, gone])
+      await ctx.db
+        .update(s.refunds)
+        .set({ nextAttemptAt: new Date(Date.now() - 60_000) })
+        .where(eq(s.refunds.id, a.r.id));
+    expect(await reconcileDueRefunds(ctx.db, razorpay)).toMatchObject({ found: 1, absent: 1 });
+    expect(await lost.row()).toMatchObject({ status: 'processed', providerRefundId: 'rfnd_found0000001' });
+    expect(await gone.row()).toMatchObject({ status: 'failed' });
+    expect((await gone.payment()).refundReservedPaise).toBe(0);
+    expect(await reconcileDueRefunds(ctx.db, razorpay)).toMatchObject({ found: 0, absent: 0 });
+  });
+
+  it('a processed webhook for a refund we had failed settles it and leaves an alert', async () => {
+    const a = await approvedWith(() => {
+      razorpay.failWith = 400;
+    });
+    expect((await a.row()).status).toBe('failed');
+    const entity = {
+      id: 'rfnd_latewebhook01',
+      payment_id: a.o.paymentId,
+      amount: a.o.total,
+      currency: 'INR',
+      status: 'processed',
+      notes: { refundId: a.r.id },
+    };
+    expect((await webhook('refund.processed', entity, 'evt_rflate0001')).status).toBe(200);
+    expect(await a.row()).toMatchObject({ status: 'processed' });
+    expect(await a.payment()).toMatchObject({ refundReservedPaise: a.o.total, refundedPaise: a.o.total });
+    const audit = await ctx.db.select().from(s.auditLog);
+    expect(
+      audit.some((x) => x.entityId === a.r.id && x.action === 'refund.alert.processed_after_failed'),
+    ).toBe(true);
   });
 });

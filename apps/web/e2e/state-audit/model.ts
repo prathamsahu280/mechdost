@@ -194,6 +194,11 @@ export interface ComponentDef {
   /** Rows that also run in the per-push CI subset. */
   readonly core?: (row: Row) => boolean;
   readonly note?: string;
+  /**
+   * Rendered only with real sign-in and the API (no demo version): the demo harness cannot drive it, so its tests are
+   * `test.fixme` until a real-API harness (mocked API answers) exists. The checklist still lists every combination.
+   */
+  readonly realApi?: boolean;
 }
 
 const width: Param = { name: 'width', values: WIDTHS };
@@ -824,6 +829,64 @@ export const COMPONENTS: readonly ComponentDef[] = [
     sweep: 16,
     core: section === 'orders' ? coreAt([1440], (r) => r.world === 'busy') : undefined,
   })),
+
+  // ───────────────────────────── Refunds (2026-11-15, spec 05; real sign-in only) ─────────────────────────────
+  {
+    code: 'ADM-REFUNDQ',
+    page: 'Admin console (/admin/refunds)',
+    component:
+      'Refund queue: view buttons, list rows, detail (approve / decline with reason / pay by hand with UTR), alerts',
+    path: '/admin/refunds',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['admin'] },
+      world2,
+      { name: 'view', values: ['waiting', 'overdue', 'in_progress', 'attention', 'closed'] },
+      {
+        name: 'refund',
+        values: [
+          'requested',
+          'requested-own',
+          'overdue',
+          'approved-razorpay',
+          'approved-cod',
+          'processed',
+          'failed',
+          'needs-reconciliation',
+        ],
+      },
+      { name: 'form', values: ['clean', 'errors', 'filled'] },
+    ],
+    checks: [...BASE_CHECKS, 'aligned'],
+    align: [{ items: 'main ul > li' }],
+    sweep: 16,
+    note: 'Real sign-in only: no demo screen; fixme until a real-API harness exists.',
+    realApi: true,
+  },
+  {
+    code: 'ORD-REFUNDLINE',
+    page: 'Order page (/orders/{code})',
+    component:
+      'Refund status line under a part: under review, processing, refunded, declined, failed (+ support link)',
+    path: '/orders/MD-RPR-2026-HND301',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['customer'] },
+      { name: 'world', values: ['busy'] },
+      {
+        name: 'refund',
+        values: ['under_review', 'processing', 'refunded', 'declined', 'failed', 'two-refunds'],
+      },
+      { name: 'stress', values: ['none', 'long-text'] },
+    ],
+    sweep: 10,
+    note: 'Real API mode only (the demo order page has no refunds); fixme until a real-API harness exists.',
+    realApi: true,
+  },
 ];
 
 /**

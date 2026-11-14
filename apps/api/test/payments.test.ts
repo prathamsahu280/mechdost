@@ -57,6 +57,9 @@ class FakeRazorpay implements RazorpayGateway {
   createRefund(): Promise<never> {
     return Promise.reject(new Error('refunds are not part of these tests'));
   }
+  findRefund(): Promise<null> {
+    return Promise.resolve(null);
+  }
 }
 
 let ctx: Awaited<ReturnType<typeof buildApp>>;

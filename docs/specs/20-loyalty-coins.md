@@ -106,3 +106,7 @@ The seeded demo customer has 250 labelled demo coins.
 ## Answered (Q24, 2026-11-13)
 
 Earned on delivered orders (%), the first order, workshop bookings and referrals, at admin-set rates; credited automatically after 8 days; expiry 180 days; both admin-configurable. Built except referrals (see Gaps). Coins are spent on product orders only (not on workshop bills).
+
+### Refunds (built 2026-11-15, spec 05)
+
+- A **fully refunded** sub-order's pending coin rewards are cancelled when Razorpay (or finance, for a manual payout) confirms the refund (`cancelPendingOrderRewards`, reason `order_refunded`); a part refund keeps the reward. Credited rewards are not clawed back. Coins used on a cancelled or rejected part are restored by the order transition as before; the cash refund is the part's `total_paise` (already net of the coin discount), never coins.

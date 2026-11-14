@@ -194,7 +194,48 @@ function OrderPart({
           ))}
         </ul>
       </div>
+      {part.refunds?.length ? <RefundLines part={part} /> : null}
       {part.canCancel ? <CancelPart part={part} onChanged={onChanged} /> : null}
+    </section>
+  );
+}
+
+/**
+ * Refund status of one part (spec 05, decision 2026-11-15: every refund is approved by our team first). One line per
+ * refund. Never "refunded" before Razorpay confirms, and never a promise of an automatic or instant refund; a declined
+ * or failed refund points to support.
+ */
+function RefundLines({ part }: { part: TrackedOrder }) {
+  const t = useTranslations('refunds');
+  const locale = useLocale();
+  const prefix = locale === 'hi' ? '/hi' : '';
+  return (
+    <section aria-labelledby={`refund-${part.code}`} className="rounded-tile border border-line-card p-4">
+      <h3 id={`refund-${part.code}`} className="text-sm font-bold text-ink">
+        {t('customerTitle')}
+      </h3>
+      <ul className="mt-2 space-y-2 text-sm text-ink">
+        {part.refunds?.map((r) => (
+          <li key={`${r.requestedAt}-${String(r.amountPaise)}`} role="status">
+            {t(`customer_${r.status}`, {
+              amount: formatPrice(r.amountPaise),
+              date: formatDate(r.processedAt ?? r.requestedAt, locale),
+            })}
+            {r.status === 'declined' || r.status === 'failed' ? (
+              <>
+                {' '}
+                <Link
+                  href={`${prefix}/account/support?order=${encodeURIComponent(part.code)}`}
+                  data-track="order_refund_contact_support"
+                  className="font-bold underline underline-offset-4"
+                >
+                  {t('customerSupport')}
+                </Link>
+              </>
+            ) : null}
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }

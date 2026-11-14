@@ -61,6 +61,8 @@ which are automated. Add new classes at the end of the relevant section.
 - **E6 · Refund API failure after DB commit** → reconciliation job resends with same idempotency key.
 - **E7 · Gapless invoice numbers** → rollback test; Rule 46 format CHECK.
 - **E8 · COD refund without UPI/bank details** → validation test.
+- **E9 · Uncertain provider outcome frees the money** (a timeout or a differing amount marks the refund failed and releases the reserved amount while Razorpay did create it → double refund) → `needs_reconciliation` keeps the amount reserved; look the refund up at the provider (our id in notes/receipt) before failing; only a confirmed absence may fail + release; tests: timeout after create → lookup finds it, one create call; refusal + lookup down → unsure; amount mismatch → unsure with the amount reserved.
+- **E10 · Our own refund id on a webhook is parked or ignored** (matched only while `approved`, so a processed event for a failed or unsure refund is lost) → match by Razorpay id, else by our id in notes in any state; failed/unsure → processed re-holds the amount (CHECK still caps the sum) and alerts; a never-sent refund id is an alert, never `parked`; tests for each.
 
 ## F. Service requests & workshops
 

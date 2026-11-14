@@ -492,6 +492,8 @@ export const refunds = pgTable(
     failureCode: text(),
     /** UTR / bank reference finance typed when it paid a `bank_upi` refund by hand. */
     manualReference: text(),
+    /** The amount Razorpay reported when it differed from ours (status `needs_reconciliation`). */
+    providerReportedPaise: paise(),
     /** Calls to Razorpay so far, and when the worker may try again (backoff). */
     dispatchAttempts: integer().notNull().default(0),
     nextAttemptAt: ts(),
@@ -528,7 +530,14 @@ export const refunds = pgTable(
       'refunds_manual_paid_has_reference',
       sql`${t.mode} = 'source' or ${t.status} <> 'processed' or ${t.manualReference} ~ '^[A-Za-z0-9]{6,35}$'`,
     ),
-    check('refunds_manual_never_initiated', sql`${t.mode} = 'source' or ${t.status} <> 'initiated'`),
+    check(
+      'refunds_manual_never_initiated',
+      sql`${t.mode} = 'source' or ${t.status} not in ('initiated','needs_reconciliation')`,
+    ),
+    check(
+      'refunds_reported_positive',
+      sql`${t.providerReportedPaise} is null or ${t.providerReportedPaise} > 0`,
+    ),
     check(
       'refunds_settled_when_final',
       sql`(${t.status} in ('processed','failed')) = (${t.settledAt} is not null)`,
@@ -582,7 +591,7 @@ export const refundEvents = pgTable(
   (t) => [
     check(
       'refund_events_kind_valid',
-      sql`${t.kind} in ('requested','approved','rejected','initiated','processed','failed','retry')`,
+      sql`${t.kind} in ('requested','approved','rejected','initiated','processed','failed','retry','needs_reconciliation')`,
     ),
     check('refund_events_actor_valid', sql`${t.actorType} in ('admin','system')`),
     index().on(t.refundId, t.id),

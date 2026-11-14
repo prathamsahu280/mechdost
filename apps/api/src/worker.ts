@@ -16,7 +16,7 @@ import {
   resumeEndedPauses,
 } from '@mechdost/db/repo';
 import { FailureBackoff } from './backoff';
-import { dispatchDueRefunds } from './payments/refunds';
+import { dispatchDueRefunds, reconcileDueRefunds } from './payments/refunds';
 import { httpRazorpay } from './payments/razorpay';
 import { ConfigError, loadConfig } from './config';
 import { pollingPublisher, type LivePublisher } from './live/publisher';
@@ -174,11 +174,15 @@ const refundTimer = refundGateway
   ? setInterval(() => {
       if (sendingRefunds) return;
       sendingRefunds = true;
-      void dispatchDueRefunds(db, refundGateway)
-        .then((r) => {
-          if (r.sent + r.retry + r.failed > 0) log('info', 'refunds_dispatched', { ...r });
-          if (r.failed > 0) log('error', 'refunds_failed', { count: r.failed });
-        })
+      void (async () => {
+        const r = await dispatchDueRefunds(db, refundGateway);
+        if (r.sent + r.retry + r.failed + r.reconcile > 0) log('info', 'refunds_dispatched', { ...r });
+        if (r.failed > 0) log('error', 'refunds_failed', { count: r.failed });
+        // Finance must look at these: Razorpay's outcome is unknown and the amount stays reserved.
+        if (r.reconcile > 0) log('error', 'refunds_need_reconciliation', { count: r.reconcile });
+        const c = await reconcileDueRefunds(db, refundGateway);
+        if (c.found + c.absent > 0) log('info', 'refunds_reconciled', { ...c });
+      })()
         .catch((err: unknown) => {
           log('error', 'refund_dispatch_failed', safeError(err));
         })

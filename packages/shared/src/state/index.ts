@@ -419,13 +419,14 @@ export const REFUND_STATES = [
   'initiated',
   'processed',
   'failed',
+  'needs_reconciliation',
 ] as const;
 export type RefundStatus = (typeof REFUND_STATES)[number];
 
 export const refundMachine = defineMachine(
   'refund',
   REFUND_STATES,
-  ['rejected', 'processed', 'failed'],
+  ['rejected', 'processed'],
   [
     { from: 'requested', to: 'approved', by: ['admin'] },
     { from: 'requested', to: 'rejected', by: ['admin'] },
@@ -435,15 +436,25 @@ export const refundMachine = defineMachine(
     { from: 'approved', to: 'failed', by: ['system'] },
     { from: 'initiated', to: 'processed', by: ['system'] },
     { from: 'initiated', to: 'failed', by: ['system'] },
+    // We cannot tell whether Razorpay holds a refund for it (a timeout on create, an amount that differs from ours,
+    // a refusal we could not double-check): the amount stays reserved and a lookup or a person settles it. Only a
+    // confirmed "no such refund" fails it. A refund we called failed can still turn out to be processed (webhook).
+    { from: 'approved', to: 'needs_reconciliation', by: ['system'] },
+    { from: 'initiated', to: 'needs_reconciliation', by: ['system'] },
+    { from: 'needs_reconciliation', to: 'initiated', by: ['system'] },
+    { from: 'needs_reconciliation', to: 'processed', by: ['system'] },
+    { from: 'needs_reconciliation', to: 'failed', by: ['system'] },
+    { from: 'failed', to: 'processed', by: ['system'] },
   ],
 );
 
-/** Refunds that still count against what was captured (a rejected or failed one frees its amount). */
+/** Refunds that still count against what was captured (a rejected or failed one frees its amount; an unsure one holds it). */
 export const REFUND_HOLDING_STATES = [
   'requested',
   'approved',
   'initiated',
   'processed',
+  'needs_reconciliation',
 ] as const satisfies readonly RefundStatus[];
 
 /** Where a refund request came from (ML-ready codes, hard rule 16). */

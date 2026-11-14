@@ -52,74 +52,76 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 
 ## Counts
 
-| Id prefix         | Page                                        | Component                                                                           | Strategy | States   | In core |
-| ----------------- | ------------------------------------------- | ----------------------------------------------------------------------------------- | -------- | -------- | ------- |
-| CHR-HEADER        | Chrome                                      | Header (brand, nav, search, language, theme, account, cart pill)                    | cross    | 26       | 11      |
-| CHR-TABBAR        | Chrome                                      | Bottom tab bar (under 1024 px)                                                      | pairwise | 20       | 5       |
-| CHR-FOOTER        | Chrome                                      | Footer (help, columns, privacy choices, theme)                                      | pairwise | 16       | 0       |
-| CHR-FLOAT         | Chrome                                      | Floating stack: assistant launcher, compare tray, consent banner, tab bar together  | cross    | 24       | 3       |
-| CHR-ASSIST        | Chrome                                      | Assistant launcher and panel                                                        | pairwise | 16       | 0       |
-| CHR-CONSENT       | Chrome                                      | Cookie and consent banner                                                           | pairwise | 16       | 0       |
-| HOME-HERO         | Home                                        | Hero with search                                                                    | pairwise | 25       | 0       |
-| HOME-TRUST        | Home                                        | Trust strip                                                                         | pairwise | 25       | 0       |
-| HOME-CATS         | Home                                        | Category tiles                                                                      | pairwise | 25       | 0       |
-| HOME-RANGE        | Home                                        | Product range (cards without compare)                                               | pairwise | 25       | 7       |
-| HOME-ROUTE        | Home                                        | How an order travels (order route)                                                  | pairwise | 25       | 0       |
-| HOME-SERVICE      | Home                                        | Workshop service section                                                            | pairwise | 25       | 0       |
-| HOME-WORKSHOPS    | Home                                        | Top workshops                                                                       | pairwise | 25       | 0       |
-| HOME-PARTNER      | Home                                        | Partner teaser                                                                      | pairwise | 25       | 0       |
-| HOME-FAQ          | Home                                        | FAQ (details/summary accordion)                                                     | pairwise | 24       | 0       |
-| SHOP-CARD         | Shop (/shop)                                | Product card × compare list × cart (full cross)                                     | cross    | 128      | 14      |
-| SHOP-ACTION       | Shop (/shop)                                | Card actions clicked, then every card re-checked (cross-entity sync)                | cross    | 40       | 2       |
-| SHOP-FILTERS      | Shop (/shop)                                | Search, category chips, vehicle chips, sort, results count, empty result            | pairwise | 48       | 6       |
-| SHOP-POPOVER      | Shop (/shop)                                | Quick-details popover (ⓘ) on the first and the last card of a row                   | pairwise | 16       | 0       |
-| SHOP-TRAY         | Shop (/shop)                                | Compare tray (count, open, clear) over the listing                                  | cross    | 32       | 2       |
-| STEP              | Quantity stepper (card, product page, cart) | Stepper − / count / + × quantity × hover/focus/active/disabled (full cross)         | cross    | 180      | 6       |
-| PDP-BUYBOX        | Product page (/shop/[slug])                 | Buy box: price, MRP and saving, stock, add to cart / stepper, compare               | pairwise | 41       | 3       |
-| PDP-REVIEWS       | Product page (/shop/[slug])                 | Ratings summary, review list, write-a-review entry                                  | pairwise | 16       | 0       |
-| PDP-RELATED       | Product page (/shop/[slug])                 | Related products row (cards)                                                        | pairwise | 16       | 0       |
-| CMP-TABLE         | Compare (/compare)                          | Comparison table × column count × badges × partial in-cart (full cross)             | cross    | 126      | 2       |
-| CMP-EMPTY         | Compare (/compare)                          | Compare with one or no product (empty state and next action)                        | pairwise | 16       | 0       |
-| CART-LINES        | Cart (/cart)                                | Cart lines (stepper, remove, line total) and summary                                | pairwise | 40       | 10      |
-| CART-EMPTY        | Cart (/cart)                                | Empty cart (one next action, category shortcuts)                                    | pairwise | 16       | 0       |
-| CHK-FORM          | Checkout (/checkout)                        | Checkout form (contact, address, business GSTIN, payment) and summary               | pairwise | 25       | 1       |
-| ORD-VIEW          | Order (/orders/[code])                      | Order status, timeline, lines, delivery code, cancel/rate/support                   | pairwise | 24       | 1       |
-| SR-VIEW           | Service request (/service/[code])           | Request status, proposal, itemised estimate (per-line approval), bill               | pairwise | 40       | 1       |
-| QT-PAGES          | Bulk quotes (/quotes)                       | Quote request form and quote thread                                                 | pairwise | 16       | 0       |
-| ACC-OVERVIEW      | Account (/account)                          | Account section: overview (section bar + content)                                   | pairwise | 16       | 2       |
-| ACC-ORDERS        | Account (/account)                          | Account section: orders (section bar + content)                                     | pairwise | 16       | 2       |
-| ACC-SERVICES      | Account (/account)                          | Account section: services (section bar + content)                                   | pairwise | 16       | 0       |
-| ACC-QUOTES        | Account (/account)                          | Account section: quotes (section bar + content)                                     | pairwise | 16       | 0       |
-| ACC-SUPPORT       | Account (/account)                          | Account section: support (section bar + content)                                    | pairwise | 16       | 0       |
-| ACC-COINS         | Account (/account)                          | Account section: coins (section bar + content)                                      | pairwise | 16       | 0       |
-| ACC-VEHICLES      | Account (/account)                          | Account section: vehicles (section bar + content)                                   | pairwise | 16       | 0       |
-| ACC-ADDRESSES     | Account (/account)                          | Account section: addresses (section bar + content)                                  | pairwise | 16       | 0       |
-| ACC-PROFILE       | Account (/account)                          | Account section: profile (section bar + content)                                    | pairwise | 16       | 0       |
-| WS-FINDER         | Workshops (/workshops)                      | Finder: PIN, vehicle, use my location, list cards, map toggle (map canvas excluded) | pairwise | 16       | 2       |
-| WS-PROFILE        | Workshop page (/workshops/[slug])           | Workshop profile: services menu, reviews, booking form                              | pairwise | 25       | 1       |
-| PTN-LANDING       | Partners (/partners)                        | Partner landing (kinds, benefits, apply links)                                      | pairwise | 16       | 0       |
-| PTN-APPLY         | Partners (/partners/apply/[kind])           | Application form (GSTIN, tick lists, location picker; map canvas excluded)          | pairwise | 24       | 1       |
-| SUP-PAGE          | Support (/support)                          | Support page and request form                                                       | pairwise | 16       | 0       |
-| LOGIN-FORM        | Sign in (/login)                            | Sign-in form (password, errors, show password)                                      | pairwise | 16       | 0       |
-| POL-PAGE          | Policies                                    | Policy pages (sections, anchors)                                                    | pairwise | 40       | 0       |
-| PRT-SHOP          | Shop portal (/partner/shop)                 | Shop portal: offers with timer, accept/decline, orders, prices                      | pairwise | 16       | 1       |
-| PRT-WORKSHOP      | Workshop portal (/partner/workshop)         | Workshop portal: requests, proposal, estimate lines, bill                           | pairwise | 16       | 0       |
-| ADM-OVERVIEW      | Admin console (/admin)                      | Admin section: overview (section bar, tables, actions)                              | pairwise | 16       | 0       |
-| ADM-ORDERS        | Admin console (/admin)                      | Admin section: orders (section bar, tables, actions)                                | pairwise | 16       | 1       |
-| ADM-SERVICES      | Admin console (/admin)                      | Admin section: services (section bar, tables, actions)                              | pairwise | 16       | 0       |
-| ADM-QUOTES        | Admin console (/admin)                      | Admin section: quotes (section bar, tables, actions)                                | pairwise | 16       | 0       |
-| ADM-APPLICATIONS  | Admin console (/admin)                      | Admin section: applications (section bar, tables, actions)                          | pairwise | 16       | 0       |
-| ADM-PARTNERS      | Admin console (/admin)                      | Admin section: partners (section bar, tables, actions)                              | pairwise | 16       | 0       |
-| ADM-CATALOGUE     | Admin console (/admin)                      | Admin section: catalogue (section bar, tables, actions)                             | pairwise | 16       | 0       |
-| ADM-CUSTOMERS     | Admin console (/admin)                      | Admin section: customers (section bar, tables, actions)                             | pairwise | 16       | 0       |
-| ADM-REVIEWS       | Admin console (/admin)                      | Admin section: reviews (section bar, tables, actions)                               | pairwise | 16       | 0       |
-| ADM-SUPPORT       | Admin console (/admin)                      | Admin section: support (section bar, tables, actions)                               | pairwise | 16       | 0       |
-| ADM-COINS         | Admin console (/admin)                      | Admin section: coins (section bar, tables, actions)                                 | pairwise | 16       | 0       |
-| ADM-CONTENT       | Admin console (/admin)                      | Admin section: content (section bar, tables, actions)                               | pairwise | 16       | 0       |
-| ADM-LAYOUT        | Admin console (/admin)                      | Admin section: layout (section bar, tables, actions)                                | pairwise | 16       | 0       |
-| ADM-SETTINGS      | Admin console (/admin)                      | Admin section: settings (section bar, tables, actions)                              | pairwise | 16       | 0       |
-| ADM-NOTIFICATIONS | Admin console (/admin)                      | Admin section: notifications (section bar, tables, actions)                         | pairwise | 16       | 0       |
-| **Total**         |                                             |                                                                                     |          | **1731** | **84**  |
+| Id prefix         | Page                                        | Component                                                                                                    | Strategy | States   | In core |
+| ----------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | -------- | -------- | ------- |
+| CHR-HEADER        | Chrome                                      | Header (brand, nav, search, language, theme, account, cart pill)                                             | cross    | 26       | 11      |
+| CHR-TABBAR        | Chrome                                      | Bottom tab bar (under 1024 px)                                                                               | pairwise | 20       | 5       |
+| CHR-FOOTER        | Chrome                                      | Footer (help, columns, privacy choices, theme)                                                               | pairwise | 16       | 0       |
+| CHR-FLOAT         | Chrome                                      | Floating stack: assistant launcher, compare tray, consent banner, tab bar together                           | cross    | 24       | 3       |
+| CHR-ASSIST        | Chrome                                      | Assistant launcher and panel                                                                                 | pairwise | 16       | 0       |
+| CHR-CONSENT       | Chrome                                      | Cookie and consent banner                                                                                    | pairwise | 16       | 0       |
+| HOME-HERO         | Home                                        | Hero with search                                                                                             | pairwise | 25       | 0       |
+| HOME-TRUST        | Home                                        | Trust strip                                                                                                  | pairwise | 25       | 0       |
+| HOME-CATS         | Home                                        | Category tiles                                                                                               | pairwise | 25       | 0       |
+| HOME-RANGE        | Home                                        | Product range (cards without compare)                                                                        | pairwise | 25       | 7       |
+| HOME-ROUTE        | Home                                        | How an order travels (order route)                                                                           | pairwise | 25       | 0       |
+| HOME-SERVICE      | Home                                        | Workshop service section                                                                                     | pairwise | 25       | 0       |
+| HOME-WORKSHOPS    | Home                                        | Top workshops                                                                                                | pairwise | 25       | 0       |
+| HOME-PARTNER      | Home                                        | Partner teaser                                                                                               | pairwise | 25       | 0       |
+| HOME-FAQ          | Home                                        | FAQ (details/summary accordion)                                                                              | pairwise | 24       | 0       |
+| SHOP-CARD         | Shop (/shop)                                | Product card × compare list × cart (full cross)                                                              | cross    | 128      | 14      |
+| SHOP-ACTION       | Shop (/shop)                                | Card actions clicked, then every card re-checked (cross-entity sync)                                         | cross    | 40       | 2       |
+| SHOP-FILTERS      | Shop (/shop)                                | Search, category chips, vehicle chips, sort, results count, empty result                                     | pairwise | 48       | 6       |
+| SHOP-POPOVER      | Shop (/shop)                                | Quick-details popover (ⓘ) on the first and the last card of a row                                            | pairwise | 16       | 0       |
+| SHOP-TRAY         | Shop (/shop)                                | Compare tray (count, open, clear) over the listing                                                           | cross    | 32       | 2       |
+| STEP              | Quantity stepper (card, product page, cart) | Stepper − / count / + × quantity × hover/focus/active/disabled (full cross)                                  | cross    | 180      | 6       |
+| PDP-BUYBOX        | Product page (/shop/[slug])                 | Buy box: price, MRP and saving, stock, add to cart / stepper, compare                                        | pairwise | 41       | 3       |
+| PDP-REVIEWS       | Product page (/shop/[slug])                 | Ratings summary, review list, write-a-review entry                                                           | pairwise | 16       | 0       |
+| PDP-RELATED       | Product page (/shop/[slug])                 | Related products row (cards)                                                                                 | pairwise | 16       | 0       |
+| CMP-TABLE         | Compare (/compare)                          | Comparison table × column count × badges × partial in-cart (full cross)                                      | cross    | 126      | 2       |
+| CMP-EMPTY         | Compare (/compare)                          | Compare with one or no product (empty state and next action)                                                 | pairwise | 16       | 0       |
+| CART-LINES        | Cart (/cart)                                | Cart lines (stepper, remove, line total) and summary                                                         | pairwise | 40       | 10      |
+| CART-EMPTY        | Cart (/cart)                                | Empty cart (one next action, category shortcuts)                                                             | pairwise | 16       | 0       |
+| CHK-FORM          | Checkout (/checkout)                        | Checkout form (contact, address, business GSTIN, payment) and summary                                        | pairwise | 25       | 1       |
+| ORD-VIEW          | Order (/orders/[code])                      | Order status, timeline, lines, delivery code, cancel/rate/support                                            | pairwise | 24       | 1       |
+| SR-VIEW           | Service request (/service/[code])           | Request status, proposal, itemised estimate (per-line approval), bill                                        | pairwise | 40       | 1       |
+| QT-PAGES          | Bulk quotes (/quotes)                       | Quote request form and quote thread                                                                          | pairwise | 16       | 0       |
+| ACC-OVERVIEW      | Account (/account)                          | Account section: overview (section bar + content)                                                            | pairwise | 16       | 2       |
+| ACC-ORDERS        | Account (/account)                          | Account section: orders (section bar + content)                                                              | pairwise | 16       | 2       |
+| ACC-SERVICES      | Account (/account)                          | Account section: services (section bar + content)                                                            | pairwise | 16       | 0       |
+| ACC-QUOTES        | Account (/account)                          | Account section: quotes (section bar + content)                                                              | pairwise | 16       | 0       |
+| ACC-SUPPORT       | Account (/account)                          | Account section: support (section bar + content)                                                             | pairwise | 16       | 0       |
+| ACC-COINS         | Account (/account)                          | Account section: coins (section bar + content)                                                               | pairwise | 16       | 0       |
+| ACC-VEHICLES      | Account (/account)                          | Account section: vehicles (section bar + content)                                                            | pairwise | 16       | 0       |
+| ACC-ADDRESSES     | Account (/account)                          | Account section: addresses (section bar + content)                                                           | pairwise | 16       | 0       |
+| ACC-PROFILE       | Account (/account)                          | Account section: profile (section bar + content)                                                             | pairwise | 16       | 0       |
+| WS-FINDER         | Workshops (/workshops)                      | Finder: PIN, vehicle, use my location, list cards, map toggle (map canvas excluded)                          | pairwise | 16       | 2       |
+| WS-PROFILE        | Workshop page (/workshops/[slug])           | Workshop profile: services menu, reviews, booking form                                                       | pairwise | 25       | 1       |
+| PTN-LANDING       | Partners (/partners)                        | Partner landing (kinds, benefits, apply links)                                                               | pairwise | 16       | 0       |
+| PTN-APPLY         | Partners (/partners/apply/[kind])           | Application form (GSTIN, tick lists, location picker; map canvas excluded)                                   | pairwise | 24       | 1       |
+| SUP-PAGE          | Support (/support)                          | Support page and request form                                                                                | pairwise | 16       | 0       |
+| LOGIN-FORM        | Sign in (/login)                            | Sign-in form (password, errors, show password)                                                               | pairwise | 16       | 0       |
+| POL-PAGE          | Policies                                    | Policy pages (sections, anchors)                                                                             | pairwise | 40       | 0       |
+| PRT-SHOP          | Shop portal (/partner/shop)                 | Shop portal: offers with timer, accept/decline, orders, prices                                               | pairwise | 16       | 1       |
+| PRT-WORKSHOP      | Workshop portal (/partner/workshop)         | Workshop portal: requests, proposal, estimate lines, bill                                                    | pairwise | 16       | 0       |
+| ADM-OVERVIEW      | Admin console (/admin)                      | Admin section: overview (section bar, tables, actions)                                                       | pairwise | 16       | 0       |
+| ADM-ORDERS        | Admin console (/admin)                      | Admin section: orders (section bar, tables, actions)                                                         | pairwise | 16       | 1       |
+| ADM-SERVICES      | Admin console (/admin)                      | Admin section: services (section bar, tables, actions)                                                       | pairwise | 16       | 0       |
+| ADM-QUOTES        | Admin console (/admin)                      | Admin section: quotes (section bar, tables, actions)                                                         | pairwise | 16       | 0       |
+| ADM-APPLICATIONS  | Admin console (/admin)                      | Admin section: applications (section bar, tables, actions)                                                   | pairwise | 16       | 0       |
+| ADM-PARTNERS      | Admin console (/admin)                      | Admin section: partners (section bar, tables, actions)                                                       | pairwise | 16       | 0       |
+| ADM-CATALOGUE     | Admin console (/admin)                      | Admin section: catalogue (section bar, tables, actions)                                                      | pairwise | 16       | 0       |
+| ADM-CUSTOMERS     | Admin console (/admin)                      | Admin section: customers (section bar, tables, actions)                                                      | pairwise | 16       | 0       |
+| ADM-REVIEWS       | Admin console (/admin)                      | Admin section: reviews (section bar, tables, actions)                                                        | pairwise | 16       | 0       |
+| ADM-SUPPORT       | Admin console (/admin)                      | Admin section: support (section bar, tables, actions)                                                        | pairwise | 16       | 0       |
+| ADM-COINS         | Admin console (/admin)                      | Admin section: coins (section bar, tables, actions)                                                          | pairwise | 16       | 0       |
+| ADM-CONTENT       | Admin console (/admin)                      | Admin section: content (section bar, tables, actions)                                                        | pairwise | 16       | 0       |
+| ADM-LAYOUT        | Admin console (/admin)                      | Admin section: layout (section bar, tables, actions)                                                         | pairwise | 16       | 0       |
+| ADM-SETTINGS      | Admin console (/admin)                      | Admin section: settings (section bar, tables, actions)                                                       | pairwise | 16       | 0       |
+| ADM-NOTIFICATIONS | Admin console (/admin)                      | Admin section: notifications (section bar, tables, actions)                                                  | pairwise | 16       | 0       |
+| ADM-REFUNDQ       | Admin console (/admin/refunds)              | Refund queue: view buttons, list rows, detail (approve / decline with reason / pay by hand with UTR), alerts | pairwise | 65       | 0       |
+| ORD-REFUNDLINE    | Order page (/orders/{code})                 | Refund status line under a part: under review, processing, refunded, declined, failed (+ support link)       | pairwise | 48       | 0       |
+| **Total**         |                                             |                                                                                                              |          | **1844** | **84**  |
 
 ## Chrome
 
@@ -2220,6 +2222,133 @@ Pairwise (all pairs of values); 16 states; scope `main`.
 - [ ] ADM-NOTIFICATIONS-014 · 1440px · dark · hi · admin · world=busy · /admin/notifications · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
 - [ ] ADM-NOTIFICATIONS-015 · 1920px · light · en · admin · world=empty · /admin/notifications · asserts: present inside overlap covered clipped tap hscroll focus console aligned
 - [ ] ADM-NOTIFICATIONS-016 · 1920px · dark · hi · admin · world=busy · /admin/notifications · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+
+## Admin console (/admin/refunds)
+
+### ADM-REFUNDQ — Refund queue: view buttons, list rows, detail (approve / decline with reason / pay by hand with UTR), alerts
+
+Pairwise (all pairs of values); 65 states; scope `main`.
+
+- [ ] ADM-REFUNDQ-001 · 320px · light · en · admin · world=empty · /admin/refunds · view=waiting · refund=requested · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console aligned axe
+- [ ] ADM-REFUNDQ-002 · 320px · dark · hi · admin · world=busy · /admin/refunds · view=overdue · refund=requested-own · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] ADM-REFUNDQ-003 · 390px · light · hi · admin · world=empty · /admin/refunds · view=in_progress · refund=overdue · form=filled · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] ADM-REFUNDQ-004 · 390px · dark · en · admin · world=busy · /admin/refunds · view=attention · refund=approved-razorpay · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console aligned
+- [ ] ADM-REFUNDQ-005 · 480px · light · en · admin · world=busy · /admin/refunds · view=closed · refund=approved-cod · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console aligned axe
+- [ ] ADM-REFUNDQ-006 · 480px · dark · hi · admin · world=empty · /admin/refunds · view=waiting · refund=processed · form=filled · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] ADM-REFUNDQ-007 · 768px · light · en · admin · world=empty · /admin/refunds · view=overdue · refund=failed · form=filled · asserts: present inside overlap covered clipped tap hscroll focus console aligned
+- [ ] ADM-REFUNDQ-008 · 768px · dark · hi · admin · world=busy · /admin/refunds · view=in_progress · refund=needs-reconciliation · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] ADM-REFUNDQ-009 · 1024px · light · en · admin · world=empty · /admin/refunds · view=attention · refund=requested-own · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console aligned axe
+- [ ] ADM-REFUNDQ-010 · 1024px · dark · hi · admin · world=busy · /admin/refunds · view=closed · refund=requested · form=filled · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] ADM-REFUNDQ-011 · 1280px · light · en · admin · world=empty · /admin/refunds · view=in_progress · refund=approved-razorpay · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console aligned
+- [ ] ADM-REFUNDQ-012 · 1280px · dark · hi · admin · world=busy · /admin/refunds · view=waiting · refund=failed · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] ADM-REFUNDQ-013 · 1440px · light · en · admin · world=empty · /admin/refunds · view=closed · refund=needs-reconciliation · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console aligned axe
+- [ ] ADM-REFUNDQ-014 · 1440px · dark · hi · admin · world=busy · /admin/refunds · view=attention · refund=overdue · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] ADM-REFUNDQ-015 · 1920px · light · en · admin · world=empty · /admin/refunds · view=overdue · refund=processed · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console aligned
+- [ ] ADM-REFUNDQ-016 · 1920px · dark · hi · admin · world=busy · /admin/refunds · view=waiting · refund=approved-cod · form=filled · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] ADM-REFUNDQ-017 · 320px · light · en · admin · world=empty · /admin/refunds · view=in_progress · refund=approved-cod · form=filled · asserts: present inside overlap covered clipped tap hscroll focus console aligned axe
+- [ ] ADM-REFUNDQ-018 · 320px · dark · hi · admin · world=busy · /admin/refunds · view=attention · refund=processed · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] ADM-REFUNDQ-019 · 320px · light · en · admin · world=empty · /admin/refunds · view=closed · refund=overdue · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console aligned
+- [ ] ADM-REFUNDQ-020 · 390px · dark · hi · admin · world=busy · /admin/refunds · view=waiting · refund=requested-own · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] ADM-REFUNDQ-021 · 390px · light · en · admin · world=empty · /admin/refunds · view=overdue · refund=requested · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console aligned axe
+- [ ] ADM-REFUNDQ-022 · 390px · dark · hi · admin · world=busy · /admin/refunds · view=closed · refund=approved-razorpay · form=filled · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] ADM-REFUNDQ-023 · 480px · light · en · admin · world=empty · /admin/refunds · view=overdue · refund=needs-reconciliation · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console aligned
+- [ ] ADM-REFUNDQ-024 · 480px · dark · hi · admin · world=busy · /admin/refunds · view=in_progress · refund=failed · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] ADM-REFUNDQ-025 · 480px · light · en · admin · world=empty · /admin/refunds · view=attention · refund=requested · form=filled · asserts: present inside overlap covered clipped tap hscroll focus console aligned axe
+- [ ] ADM-REFUNDQ-026 · 768px · dark · hi · admin · world=busy · /admin/refunds · view=waiting · refund=overdue · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] ADM-REFUNDQ-027 · 768px · light · en · admin · world=empty · /admin/refunds · view=attention · refund=approved-cod · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console aligned
+- [ ] ADM-REFUNDQ-028 · 768px · dark · hi · admin · world=busy · /admin/refunds · view=closed · refund=requested-own · form=filled · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] ADM-REFUNDQ-029 · 1024px · light · en · admin · world=empty · /admin/refunds · view=waiting · refund=approved-razorpay · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console aligned axe
+- [ ] ADM-REFUNDQ-030 · 1024px · dark · hi · admin · world=busy · /admin/refunds · view=overdue · refund=overdue · form=filled · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] ADM-REFUNDQ-031 · 1024px · light · en · admin · world=empty · /admin/refunds · view=in_progress · refund=processed · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console aligned
+- [ ] ADM-REFUNDQ-032 · 1280px · dark · hi · admin · world=busy · /admin/refunds · view=overdue · refund=approved-cod · form=filled · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] ADM-REFUNDQ-033 · 1280px · light · en · admin · world=empty · /admin/refunds · view=attention · refund=needs-reconciliation · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console aligned axe
+- [ ] ADM-REFUNDQ-034 · 1280px · dark · hi · admin · world=busy · /admin/refunds · view=closed · refund=processed · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] ADM-REFUNDQ-035 · 1440px · light · en · admin · world=empty · /admin/refunds · view=waiting · refund=failed · form=filled · asserts: present inside overlap covered clipped tap hscroll focus console aligned
+- [ ] ADM-REFUNDQ-036 · 1440px · dark · hi · admin · world=busy · /admin/refunds · view=overdue · refund=approved-razorpay · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] ADM-REFUNDQ-037 · 1440px · light · en · admin · world=empty · /admin/refunds · view=in_progress · refund=requested · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console aligned axe
+- [ ] ADM-REFUNDQ-038 · 1920px · dark · hi · admin · world=busy · /admin/refunds · view=in_progress · refund=requested-own · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] ADM-REFUNDQ-039 · 1920px · light · en · admin · world=empty · /admin/refunds · view=attention · refund=failed · form=filled · asserts: present inside overlap covered clipped tap hscroll focus console aligned
+- [ ] ADM-REFUNDQ-040 · 1920px · dark · hi · admin · world=busy · /admin/refunds · view=closed · refund=needs-reconciliation · form=filled · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] ADM-REFUNDQ-041 · 320px · light · en · admin · world=empty · /admin/refunds · view=waiting · refund=approved-razorpay · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console aligned axe
+- [ ] ADM-REFUNDQ-042 · 320px · dark · hi · admin · world=busy · /admin/refunds · view=closed · refund=failed · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] ADM-REFUNDQ-043 · 320px · light · en · admin · world=empty · /admin/refunds · view=waiting · refund=needs-reconciliation · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console aligned
+- [ ] ADM-REFUNDQ-044 · 390px · dark · hi · admin · world=busy · /admin/refunds · view=overdue · refund=approved-cod · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] ADM-REFUNDQ-045 · 390px · light · en · admin · world=empty · /admin/refunds · view=in_progress · refund=processed · form=filled · asserts: present inside overlap covered clipped tap hscroll focus console aligned axe
+- [ ] ADM-REFUNDQ-046 · 390px · dark · hi · admin · world=busy · /admin/refunds · view=attention · refund=failed · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] ADM-REFUNDQ-047 · 390px · light · en · admin · world=empty · /admin/refunds · view=overdue · refund=needs-reconciliation · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console aligned
+- [ ] ADM-REFUNDQ-048 · 480px · dark · hi · admin · world=busy · /admin/refunds · view=in_progress · refund=requested-own · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] ADM-REFUNDQ-049 · 480px · light · en · admin · world=empty · /admin/refunds · view=attention · refund=overdue · form=filled · asserts: present inside overlap covered clipped tap hscroll focus console aligned axe
+- [ ] ADM-REFUNDQ-050 · 480px · dark · hi · admin · world=busy · /admin/refunds · view=closed · refund=approved-razorpay · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] ADM-REFUNDQ-051 · 768px · light · en · admin · world=empty · /admin/refunds · view=waiting · refund=requested · form=filled · asserts: present inside overlap covered clipped tap hscroll focus console aligned
+- [ ] ADM-REFUNDQ-052 · 768px · dark · hi · admin · world=busy · /admin/refunds · view=overdue · refund=approved-razorpay · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] ADM-REFUNDQ-053 · 768px · light · en · admin · world=empty · /admin/refunds · view=in_progress · refund=processed · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console aligned axe
+- [ ] ADM-REFUNDQ-054 · 1024px · dark · hi · admin · world=busy · /admin/refunds · view=attention · refund=approved-cod · form=filled · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] ADM-REFUNDQ-055 · 1024px · light · en · admin · world=empty · /admin/refunds · view=closed · refund=failed · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console aligned
+- [ ] ADM-REFUNDQ-056 · 1024px · dark · hi · admin · world=busy · /admin/refunds · view=waiting · refund=needs-reconciliation · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] ADM-REFUNDQ-057 · 1280px · light · en · admin · world=empty · /admin/refunds · view=overdue · refund=requested · form=filled · asserts: present inside overlap covered clipped tap hscroll focus console aligned axe
+- [ ] ADM-REFUNDQ-058 · 1280px · dark · hi · admin · world=busy · /admin/refunds · view=in_progress · refund=requested-own · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] ADM-REFUNDQ-059 · 1280px · light · en · admin · world=empty · /admin/refunds · view=attention · refund=overdue · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console aligned
+- [ ] ADM-REFUNDQ-060 · 1440px · dark · hi · admin · world=busy · /admin/refunds · view=closed · refund=requested-own · form=filled · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] ADM-REFUNDQ-061 · 1440px · light · en · admin · world=empty · /admin/refunds · view=waiting · refund=approved-cod · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console aligned axe
+- [ ] ADM-REFUNDQ-062 · 1440px · dark · hi · admin · world=busy · /admin/refunds · view=overdue · refund=processed · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] ADM-REFUNDQ-063 · 1920px · light · en · admin · world=empty · /admin/refunds · view=in_progress · refund=requested · form=filled · asserts: present inside overlap covered clipped tap hscroll focus console aligned
+- [ ] ADM-REFUNDQ-064 · 1920px · dark · hi · admin · world=busy · /admin/refunds · view=attention · refund=overdue · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] ADM-REFUNDQ-065 · 1920px · light · en · admin · world=empty · /admin/refunds · view=closed · refund=approved-razorpay · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console aligned axe
+
+## Order page (/orders/{code})
+
+### ORD-REFUNDLINE — Refund status line under a part: under review, processing, refunded, declined, failed (+ support link)
+
+Pairwise (all pairs of values); 48 states; scope `main`.
+
+- [ ] ORD-REFUNDLINE-001 · 320px · light · en · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=under_review · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] ORD-REFUNDLINE-002 · 320px · dark · hi · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=processing · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ORD-REFUNDLINE-003 · 390px · light · hi · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=refunded · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ORD-REFUNDLINE-004 · 390px · dark · en · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=declined · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] ORD-REFUNDLINE-005 · 480px · light · en · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=failed · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] ORD-REFUNDLINE-006 · 480px · dark · hi · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=two-refunds · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ORD-REFUNDLINE-007 · 768px · light · en · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=processing · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] ORD-REFUNDLINE-008 · 768px · dark · hi · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=under_review · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ORD-REFUNDLINE-009 · 1024px · light · en · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=two-refunds · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] ORD-REFUNDLINE-010 · 1024px · dark · hi · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=failed · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ORD-REFUNDLINE-011 · 1280px · light · en · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=refunded · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] ORD-REFUNDLINE-012 · 1280px · dark · hi · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=declined · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ORD-REFUNDLINE-013 · 1440px · light · en · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=declined · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] ORD-REFUNDLINE-014 · 1440px · dark · hi · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=refunded · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ORD-REFUNDLINE-015 · 1920px · light · en · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=under_review · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] ORD-REFUNDLINE-016 · 1920px · dark · hi · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=processing · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ORD-REFUNDLINE-017 · 320px · light · en · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=refunded · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] ORD-REFUNDLINE-018 · 320px · dark · hi · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=declined · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ORD-REFUNDLINE-019 · 320px · light · en · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=failed · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] ORD-REFUNDLINE-020 · 320px · dark · hi · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=two-refunds · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ORD-REFUNDLINE-021 · 390px · light · en · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=under_review · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] ORD-REFUNDLINE-022 · 390px · dark · hi · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=processing · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ORD-REFUNDLINE-023 · 390px · light · en · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=failed · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] ORD-REFUNDLINE-024 · 390px · dark · hi · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=two-refunds · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ORD-REFUNDLINE-025 · 480px · light · en · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=under_review · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] ORD-REFUNDLINE-026 · 480px · dark · hi · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=processing · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ORD-REFUNDLINE-027 · 480px · light · en · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=refunded · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] ORD-REFUNDLINE-028 · 480px · dark · hi · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=declined · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ORD-REFUNDLINE-029 · 768px · light · en · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=refunded · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] ORD-REFUNDLINE-030 · 768px · dark · hi · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=declined · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ORD-REFUNDLINE-031 · 768px · light · en · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=failed · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] ORD-REFUNDLINE-032 · 768px · dark · hi · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=two-refunds · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ORD-REFUNDLINE-033 · 1024px · light · en · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=under_review · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] ORD-REFUNDLINE-034 · 1024px · dark · hi · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=processing · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ORD-REFUNDLINE-035 · 1024px · light · en · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=refunded · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] ORD-REFUNDLINE-036 · 1024px · dark · hi · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=declined · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ORD-REFUNDLINE-037 · 1280px · light · en · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=under_review · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] ORD-REFUNDLINE-038 · 1280px · dark · hi · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=processing · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ORD-REFUNDLINE-039 · 1280px · light · en · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=failed · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] ORD-REFUNDLINE-040 · 1280px · dark · hi · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=two-refunds · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ORD-REFUNDLINE-041 · 1440px · light · en · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=under_review · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] ORD-REFUNDLINE-042 · 1440px · dark · hi · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=processing · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ORD-REFUNDLINE-043 · 1440px · light · en · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=failed · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] ORD-REFUNDLINE-044 · 1440px · dark · hi · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=two-refunds · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ORD-REFUNDLINE-045 · 1920px · light · en · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=refunded · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] ORD-REFUNDLINE-046 · 1920px · dark · hi · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=declined · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] ORD-REFUNDLINE-047 · 1920px · light · en · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=failed · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] ORD-REFUNDLINE-048 · 1920px · dark · hi · customer · world=busy · /orders/MD-RPR-2026-HND301 · refund=two-refunds · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
 
 ## Found bugs
 

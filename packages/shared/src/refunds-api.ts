@@ -13,7 +13,7 @@ import {
 } from './state';
 
 /** Admin queue views: waiting for a decision, past the approval SLA, on its way to the customer, finished. */
-export const ADMIN_REFUND_VIEWS = ['waiting', 'overdue', 'in_progress', 'closed'] as const;
+export const ADMIN_REFUND_VIEWS = ['waiting', 'overdue', 'in_progress', 'attention', 'closed'] as const;
 export type AdminRefundView = (typeof ADMIN_REFUND_VIEWS)[number];
 
 /** What the customer sees. Never "refunded" before Razorpay confirms; `declined` and `failed` point to support. */
@@ -32,6 +32,7 @@ export function customerRefundStatus(status: RefundStatus): CustomerRefundStatus
       return 'under_review';
     case 'approved':
     case 'initiated':
+    case 'needs_reconciliation':
       return 'processing';
     case 'processed':
       return 'refunded';
@@ -150,6 +151,8 @@ export const AdminRefundDto = z.object({
   processedAt: z.string().nullable(),
   rejectReasonCode: z.enum(REFUND_REJECT_REASONS).nullable(),
   failureCode: z.string().nullable(),
+  /** Amount Razorpay reported when it differed from ours (status `needs_reconciliation`), else null. */
+  providerReportedPaise: z.number().int().nullable(),
   /** Razorpay's refund id once it exists (support looks it up in the dashboard). */
   providerRefundId: z.string().nullable(),
   /** Still `requested` after `refunds.approval_sla_hours`. */
@@ -163,6 +166,6 @@ export const AdminRefundPageDto = z.object({
   items: z.array(AdminRefundDto),
   nextCursor: z.string().nullable(),
   /** For the Overview tile: refunds waiting for approval, and how many are past the SLA. */
-  counts: z.object({ waiting: z.number().int(), overdue: z.number().int() }),
+  counts: z.object({ waiting: z.number().int(), overdue: z.number().int(), attention: z.number().int() }),
 });
 export type AdminRefundPage = z.infer<typeof AdminRefundPageDto>;

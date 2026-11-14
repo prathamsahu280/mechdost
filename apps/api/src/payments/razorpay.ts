@@ -42,6 +42,12 @@ export interface RazorpayGateway {
     /** Our refund id: sent as the receipt and in `notes`, so a webhook can be matched before we store Razorpay's id. */
     refundId: string;
   }): Promise<RazorpayRefund>;
+  /**
+   * Look up the refund we asked for on a payment (Razorpay lists a payment's refunds): matched by our refund id in
+   * its `notes` / `receipt`. Null only when Razorpay answered and there is no such refund (a confirmed absence);
+   * any error is thrown, because "could not ask" is not "there is none".
+   */
+  findRefund(input: { paymentId: string; refundId: string }): Promise<RazorpayRefund | null>;
 }
 
 export interface RazorpayRefund {
@@ -112,6 +118,15 @@ export function httpRazorpay(keyId: string, keySecret: string): RazorpayGateway 
       if (!/^pay_[A-Za-z0-9]{1,40}$/.test(paymentId)) throw new RazorpayError(400, 'Invalid payment id');
       return toPayment(PaymentJson.parse(await call(`/payments/${paymentId}`, { method: 'GET' })));
     },
+    async findRefund(input) {
+      if (!/^pay_[A-Za-z0-9]{1,40}$/.test(input.paymentId))
+        throw new RazorpayError(400, 'Invalid payment id');
+      const list = RefundListJson.parse(
+        await call(`/payments/${input.paymentId}/refunds?count=100`, { method: 'GET' }),
+      );
+      const hit = list.items.find((r) => noteOf(r) === input.refundId || r.receipt === input.refundId);
+      return hit ? toRefund(hit) : null;
+    },
     async createRefund(input) {
       if (!/^pay_[A-Za-z0-9]{1,40}$/.test(input.paymentId))
         throw new RazorpayError(400, 'Invalid payment id');
@@ -143,7 +158,16 @@ const RefundJson = z.object({
   currency: z.string().optional(),
   status: z.string().max(30),
   notes: z.union([z.record(z.string(), z.unknown()), z.array(z.unknown())]).optional(),
+  receipt: z.string().nullable().optional(),
 });
+const RefundListJson = z.object({ items: z.array(RefundJson).max(100) });
+
+/** Our refund id from a refund's `notes` (Razorpay answers an empty array when there are none). */
+function noteOf(r: z.infer<typeof RefundJson>): string {
+  if (!r.notes || Array.isArray(r.notes)) return '';
+  const v = r.notes.refundId;
+  return typeof v === 'string' ? v : '';
+}
 
 function toRefund(r: z.infer<typeof RefundJson>): RazorpayRefund {
   return { id: r.id, paymentId: r.payment_id, amountPaise: r.amount, status: r.status };
@@ -210,13 +234,13 @@ export function refundFromWebhook(body: z.infer<typeof WebhookPayload>): {
 } | null {
   const e = body.payload.refund?.entity;
   if (!e) return null;
-  const noted = Array.isArray(e.notes) ? undefined : e.notes?.refundId;
+  const noted = noteOf(e);
   return {
     id: e.id,
     paymentId: e.payment_id,
     amountPaise: e.amount,
     currency: e.currency ?? 'INR',
     status: e.status,
-    refundId: typeof noted === 'string' ? noted : '',
+    refundId: noted,
   };
 }

@@ -69,7 +69,15 @@ async function recordRefundEvent(
   tx: Tx,
   input: {
     refund: { id: string };
-    kind: 'requested' | 'approved' | 'rejected' | 'initiated' | 'processed' | 'failed' | 'retry';
+    kind:
+      | 'requested'
+      | 'approved'
+      | 'rejected'
+      | 'initiated'
+      | 'processed'
+      | 'failed'
+      | 'retry'
+      | 'needs_reconciliation';
     from: RefundStatus | null;
     to: RefundStatus;
     actor: EventActor;
@@ -623,21 +631,31 @@ export async function dueRefundIds(db: Tx, limit: number): Promise<string[]> {
   return rows.map((r) => r.id);
 }
 
-/** Razorpay accepted the refund: store its id and move to `initiated`. False when it already moved past `approved`. */
+/**
+ * Razorpay accepted the refund (or a lookup found it): store its id and move to `initiated`. From `approved`, or from
+ * `needs_reconciliation` once the lookup finds the refund. False when it already moved on.
+ */
 export async function recordRefundSent(db: Tx, refundId: string, providerRefundId: string): Promise<boolean> {
   return db.transaction(async (tx) => {
+    const [before] = await tx
+      .select({ status: refunds.status })
+      .from(refunds)
+      .where(eq(refunds.id, refundId))
+      .limit(1);
+    const from = before?.status;
+    if (from !== 'approved' && from !== 'needs_reconciliation') return false;
     const rows = await tx
       .update(refunds)
       .set({ status: 'initiated', providerRefundId, initiatedAt: sql`now()`, failureCode: null })
-      .where(and(eq(refunds.id, refundId), eq(refunds.status, 'approved')))
+      .where(and(eq(refunds.id, refundId), eq(refunds.status, from)))
       .returning({ id: refunds.id, amountPaise: refunds.amountPaise, orderId: refunds.orderId });
     const row = rows[0];
     if (!row) return false;
-    refundMachine.assert('approved', 'initiated', 'system');
+    refundMachine.assert(from, 'initiated', 'system');
     await recordRefundEvent(tx, {
       refund: row,
       kind: 'initiated',
-      from: 'approved',
+      from,
       to: 'initiated',
       actor: sysActor,
       payload: { providerRefundId },
@@ -650,8 +668,10 @@ export async function recordRefundSent(db: Tx, refundId: string, providerRefundI
 }
 
 /**
- * Razorpay did not take it. A refusal (4xx), or the eighth failed try, fails the refund and frees its amount;
- * anything else leaves it `approved` for the worker's next try. The code is Razorpay's HTTP status or `network`.
+ * Razorpay did not take it. `permanent` is for a refusal that the caller has **double-checked at Razorpay** (a lookup
+ * confirmed no such refund): it fails the refund and frees its amount. A temporary error leaves it `approved` for the
+ * worker's next try; the eighth failed try does **not** free the money (a timeout can mean Razorpay did create the
+ * refund): it becomes `needs_reconciliation`. The code is Razorpay's HTTP status or `network`.
  */
 export async function recordRefundDispatchError(
   db: Tx,
@@ -671,32 +691,178 @@ export async function recordRefundDispatchError(
       .where(eq(refunds.id, refundId))
       .limit(1);
     if (r?.status !== 'approved') return;
-    const giveUp = input.permanent || r.attempts >= REFUND_DISPATCH_MAX_ATTEMPTS;
-    const code = input.permanent ? input.code : giveUp ? 'dispatch_exhausted' : input.code;
-    if (!giveUp) {
-      await tx
-        .update(refunds)
-        .set({ failureCode: code })
-        .where(and(eq(refunds.id, r.id), eq(refunds.status, 'approved')));
-      await recordRefundEvent(tx, {
-        refund: r,
-        kind: 'retry',
-        from: 'approved',
-        to: 'approved',
-        actor: sysActor,
-        payload: { code, attempts: r.attempts },
-      });
+    if (input.permanent) {
+      await failInTx(tx, r, 'approved', input.code);
       return;
     }
-    await failInTx(tx, r, 'approved', code);
+    if (r.attempts >= REFUND_DISPATCH_MAX_ATTEMPTS) {
+      await needsReconciliationInTx(tx, r, 'approved', { code: 'dispatch_exhausted' });
+      return;
+    }
+    await tx
+      .update(refunds)
+      .set({ failureCode: input.code })
+      .where(and(eq(refunds.id, r.id), eq(refunds.status, 'approved')));
+    await recordRefundEvent(tx, {
+      refund: r,
+      kind: 'retry',
+      from: 'approved',
+      to: 'approved',
+      actor: sysActor,
+      payload: { code: input.code, attempts: r.attempts },
+    });
   });
 }
 
-/** `approved|initiated → failed`: payment (group first) locked, amount freed, event written. */
-async function failInTx(
+/**
+ * We cannot tell whether Razorpay holds this refund (an amount that differs from ours, a refusal that could not be
+ * double-checked, a give-up after timeouts). The amount **stays reserved** so it can never be refunded twice; a lookup,
+ * the refund webhook, or a person settles it. Audited as an alert (`refund.alert.needs_reconciliation`).
+ */
+export async function recordRefundNeedsReconciliation(
+  db: Tx,
+  refundId: string,
+  input: { code: string; providerRefundId?: string | undefined; reportedPaise?: number | undefined },
+): Promise<boolean> {
+  return db.transaction(async (tx) => {
+    const [r] = await tx
+      .select({
+        id: refunds.id,
+        status: refunds.status,
+        paymentId: refunds.paymentId,
+        amountPaise: refunds.amountPaise,
+      })
+      .from(refunds)
+      .where(eq(refunds.id, refundId))
+      .limit(1);
+    // Already unsure and now a refund turned up with another amount: remember what Razorpay holds (no new transition).
+    if (r?.status === 'needs_reconciliation' && input.providerRefundId) {
+      const rows = await tx
+        .update(refunds)
+        .set({
+          providerRefundId: input.providerRefundId,
+          ...(input.reportedPaise ? { providerReportedPaise: input.reportedPaise } : {}),
+          failureCode: input.code,
+        })
+        .where(and(eq(refunds.id, r.id), eq(refunds.status, 'needs_reconciliation')))
+        .returning({ id: refunds.id });
+      return rows.length > 0;
+    }
+    if (r?.status !== 'approved' && r?.status !== 'initiated') return false;
+    return needsReconciliationInTx(tx, r, r.status, input);
+  });
+}
+
+async function needsReconciliationInTx(
   tx: Tx,
   r: { id: string; paymentId: string | null; amountPaise: number },
   from: 'approved' | 'initiated',
+  input: { code: string; providerRefundId?: string | undefined; reportedPaise?: number | undefined },
+): Promise<boolean> {
+  if (!r.paymentId) return false; // a manual payout is never sent
+  const rows = await tx
+    .update(refunds)
+    .set({
+      status: 'needs_reconciliation',
+      failureCode: input.code,
+      ...(input.providerRefundId ? { providerRefundId: input.providerRefundId } : {}),
+      ...(input.reportedPaise ? { providerReportedPaise: input.reportedPaise } : {}),
+      // The worker looks again in ten minutes.
+      nextAttemptAt: sql`now() + interval '10 minutes'`,
+    })
+    .where(and(eq(refunds.id, r.id), eq(refunds.status, from)))
+    .returning({ id: refunds.id });
+  if (rows.length === 0) return false;
+  refundMachine.assert(from, 'needs_reconciliation', 'system');
+  await recordRefundEvent(tx, {
+    refund: r,
+    kind: 'needs_reconciliation',
+    from,
+    to: 'needs_reconciliation',
+    actor: sysActor,
+    payload: { code: input.code, reportedPaise: input.reportedPaise ?? null },
+  });
+  await auditMismatch(tx, r.id, 'refund.alert.needs_reconciliation', {
+    code: input.code,
+    expectedPaise: r.amountPaise,
+    reportedPaise: input.reportedPaise ?? null,
+  });
+  await recordServerEvent(tx, 'refund_needs_reconciliation', {
+    props: { refundId: r.id, amountPaise: r.amountPaise, code: input.code },
+  });
+  return true;
+}
+
+/** Unsure refunds without a Razorpay id the worker should look up again (their wait is over). */
+export async function dueReconciliationIds(db: Tx, limit: number): Promise<string[]> {
+  const rows = await db
+    .select({ id: refunds.id })
+    .from(refunds)
+    .where(
+      and(
+        eq(refunds.status, 'needs_reconciliation'),
+        eq(refunds.mode, 'source'),
+        sql`${refunds.providerRefundId} is null`,
+        sql`${refunds.nextAttemptAt} <= now()`,
+      ),
+    )
+    .orderBy(refunds.nextAttemptAt)
+    .limit(limit);
+  return rows.map((r) => r.id);
+}
+
+/** One checker at a time per unsure refund: pushes the next look an hour out in the same conditional UPDATE. */
+export async function claimRefundReconcile(
+  db: Tx,
+  refundId: string,
+): Promise<{ refundId: string; amountPaise: number; providerPaymentId: string } | null> {
+  const [row] = rowsOf<{ id: string; amount_paise: unknown; payment_id: string }>(
+    await db.execute(sql`
+      update refunds set next_attempt_at = now() + interval '1 hour'
+      where id = ${refundId} and status = 'needs_reconciliation' and mode = 'source' and provider_refund_id is null
+        and next_attempt_at <= now()
+      returning id, amount_paise, payment_id`),
+  );
+  if (!row) return null;
+  const [p] = await db
+    .select({ providerPaymentId: payments.providerPaymentId })
+    .from(payments)
+    .where(eq(payments.id, row.payment_id))
+    .limit(1);
+  return {
+    refundId: row.id,
+    amountPaise: Number(row.amount_paise),
+    providerPaymentId: p?.providerPaymentId ?? '',
+  };
+}
+
+/**
+ * A lookup at Razorpay confirmed there is **no** refund for this one. Only an unsure refund without a Razorpay id can
+ * be failed this way; the amount is freed. False for anything else (Razorpay does hold a refund, or it moved on).
+ */
+export async function resolveRefundAbsent(db: Tx, refundId: string): Promise<boolean> {
+  return db.transaction(async (tx) => {
+    const [r] = await tx
+      .select({
+        id: refunds.id,
+        status: refunds.status,
+        paymentId: refunds.paymentId,
+        amountPaise: refunds.amountPaise,
+        providerRefundId: refunds.providerRefundId,
+      })
+      .from(refunds)
+      .where(eq(refunds.id, refundId))
+      .limit(1);
+    if (r?.status !== 'needs_reconciliation' || r.providerRefundId !== null) return false;
+    return failInTx(tx, r, 'needs_reconciliation', 'confirmed_not_sent');
+  });
+}
+
+/** `approved|initiated|needs_reconciliation → failed`: payment (group first) locked, amount freed, event written. */
+async function failInTx(
+  tx: Tx,
+  r: { id: string; paymentId: string | null; amountPaise: number },
+  from: 'approved' | 'initiated' | 'needs_reconciliation',
   code: string,
 ): Promise<boolean> {
   if (!r.paymentId) return false; // a manual payout is never sent, so it never fails here
@@ -750,7 +916,13 @@ async function auditMismatch(tx: Tx, refundId: string, action: string, after: Re
   });
 }
 
-/** Apply one Razorpay refund fact: amount and payment asserted, state moves forward only, replays change nothing. */
+/**
+ * Apply one Razorpay refund fact: amount and payment asserted, replays change nothing. A refund is found by Razorpay's
+ * id, else by **our** id in the notes whatever its state: a processed event for one we had failed or were unsure about
+ * (and had sent at least once) moves it to processed and holds its amount again (the CHECK still caps the sum). One of
+ * our own ids is never silently parked: anything that cannot be applied is an audited alert (`refund.alert.*`) with
+ * outcome `mismatch`, which the webhook route logs as an error for finance.
+ */
 export async function applyRazorpayRefund(
   tx: Tx,
   fact: RazorpayRefundFact,
@@ -766,7 +938,7 @@ export async function applyRazorpayRefund(
       [found] = await inner
         .select({ id: refunds.id, paymentId: refunds.paymentId })
         .from(refunds)
-        .where(and(eq(refunds.id, fact.refundId), eq(refunds.status, 'approved')))
+        .where(eq(refunds.id, fact.refundId))
         .limit(1);
     if (!found?.paymentId) return { outcome: 'unknown_refund' as const };
     const payment = await lockLedger(inner, found.paymentId);
@@ -786,8 +958,41 @@ export async function applyRazorpayRefund(
       return { outcome: 'mismatch' as const };
     }
     const from = r.status as RefundStatus;
+    // A refund that was never sent (or never approved) cannot have a Razorpay refund: someone created it elsewhere.
+    if (
+      from === 'requested' ||
+      from === 'rejected' ||
+      (r.dispatchAttempts === 0 && r.providerRefundId === null)
+    ) {
+      await auditMismatch(inner, r.id, 'refund.alert.unexpected_provider_refund', {
+        status: from,
+        providerRefundId: fact.providerRefundId,
+        amountPaise: fact.amountPaise,
+      });
+      return { outcome: 'mismatch' as const };
+    }
     if (from === fact.status || !refundMachine.canActor(from, fact.status, 'system'))
       return { outcome: 'unchanged' as const };
+    // Money moved for a refund we had failed: hold its amount again first (the CHECK keeps the sum within the capture).
+    if (from === 'failed' && fact.status === 'processed') {
+      const held = await inner
+        .update(payments)
+        .set({ refundReservedPaise: sql`${payments.refundReservedPaise} + ${r.amountPaise}` })
+        .where(
+          and(
+            eq(payments.id, payment.id),
+            sql`${payments.refundReservedPaise} + ${r.amountPaise} <= ${payments.amountPaise}`,
+          ),
+        )
+        .returning({ id: payments.id });
+      if (held.length === 0) {
+        await auditMismatch(inner, r.id, 'refund.alert.ledger_full', {
+          providerRefundId: fact.providerRefundId,
+          amountPaise: r.amountPaise,
+        });
+        return { outcome: 'mismatch' as const };
+      }
+    }
     const rows = await inner
       .update(refunds)
       .set({
@@ -815,6 +1020,11 @@ export async function applyRazorpayRefund(
       });
       return { outcome: 'failed' as const };
     }
+    if (from === 'failed')
+      await auditMismatch(inner, r.id, 'refund.alert.processed_after_failed', {
+        providerRefundId: fact.providerRefundId,
+        amountPaise: r.amountPaise,
+      });
     await settleProcessed(inner, r, from, payment);
     return { outcome: 'processed' as const };
   });
@@ -956,6 +1166,7 @@ interface RefundRow {
   mode: AdminRefund['mode'];
   destination_enc: string | null;
   manual_reference: string | null;
+  provider_reported_paise: unknown;
   overdue: boolean;
   created_key: string;
 }
@@ -977,7 +1188,7 @@ const FROM = sql`from refunds r
 const SELECT = sql`select r.id, r.status, r.version, r.source, r.reason_code, r.reason as note, r.amount_paise,
   o.code as order_code, g.code as group_code, g.payment_method, r.requested_by, r.approved_by, r.created_at,
   r.decided_at, r.settled_at, r.reject_reason_code, r.failure_code, r.provider_refund_id,
-  r.mode, r.destination_enc, r.manual_reference,
+  r.mode, r.destination_enc, r.manual_reference, r.provider_reported_paise,
   (r.status = 'requested' and r.created_at < now() - make_interval(hours => ${slaHours})) as overdue,
   r.created_at::text as created_key
   ${FROM}`;
@@ -1026,6 +1237,7 @@ function toView(r: RefundRow, staffUserId: string, keyring?: Keyring): AdminRefu
     rejectReasonCode: r.reject_reason_code as AdminRefund['rejectReasonCode'],
     failureCode: r.failure_code,
     providerRefundId: r.provider_refund_id,
+    providerReportedPaise: r.provider_reported_paise === null ? null : Number(r.provider_reported_paise),
     overdue: r.overdue,
     canApprove: r.status === 'requested' && r.requested_by !== staffUserId,
   };
@@ -1156,6 +1368,7 @@ const VIEW_WHERE: Record<AdminRefundView, SQL> = {
   waiting: sql`r.status = 'requested'`,
   overdue: sql`r.status = 'requested' and r.created_at < now() - make_interval(hours => ${slaHours})`,
   in_progress: sql`r.status in ('approved', 'initiated')`,
+  attention: sql`r.status = 'needs_reconciliation'`,
   closed: sql`r.status in ('processed', 'rejected', 'failed')`,
 };
 
@@ -1186,15 +1399,20 @@ export async function listAdminRefunds(
       limit ${limit + 1}`),
   );
   const last = rows.length > limit ? rows[limit - 1] : undefined;
-  const [counts] = rowsOf<{ waiting: number; overdue: number }>(
+  const [counts] = rowsOf<{ waiting: number; overdue: number; attention: number }>(
     await db.execute(sql`select count(*) filter (where r.status = 'requested')::int as waiting,
-        count(*) filter (where r.status = 'requested' and r.created_at < now() - make_interval(hours => ${slaHours}))::int as overdue
-      ${FROM} where r.status = 'requested' and ${scopeSql(scope)}`),
+        count(*) filter (where r.status = 'requested' and r.created_at < now() - make_interval(hours => ${slaHours}))::int as overdue,
+        count(*) filter (where r.status = 'needs_reconciliation')::int as attention
+      ${FROM} where r.status in ('requested', 'needs_reconciliation') and ${scopeSql(scope)}`),
   );
   return {
     items: rows.slice(0, limit).map((r) => toView(r, input.staffUserId, input.keyring)),
     nextCursor: last ? encodeCursor({ k: last.created_key, id: last.id }) : null,
-    counts: { waiting: counts?.waiting ?? 0, overdue: counts?.overdue ?? 0 },
+    counts: {
+      waiting: counts?.waiting ?? 0,
+      overdue: counts?.overdue ?? 0,
+      attention: counts?.attention ?? 0,
+    },
   };
 }
 

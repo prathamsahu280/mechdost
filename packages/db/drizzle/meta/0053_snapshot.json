@@ -1,5 +1,5 @@
 {
-  "id": "4b268fa1-7b2e-4172-a9e2-df02307055e6",
+  "id": "177ada2d-78d2-476f-b782-4facb36d4b42",
   "prevId": "1dee8ebe-ffe6-463a-9d18-a9c8f165b88c",
   "version": "7",
   "dialect": "postgresql",
@@ -6770,7 +6770,7 @@
       "checkConstraints": {
         "refund_events_kind_valid": {
           "name": "refund_events_kind_valid",
-          "value": "\"refund_events\".\"kind\" in ('requested','approved','rejected','initiated','processed','failed','retry')"
+          "value": "\"refund_events\".\"kind\" in ('requested','approved','rejected','initiated','processed','failed','retry','needs_reconciliation')"
         },
         "refund_events_actor_valid": {
           "name": "refund_events_actor_valid",
@@ -6915,6 +6915,12 @@
         "manual_reference": {
           "name": "manual_reference",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "provider_reported_paise": {
+          "name": "provider_reported_paise",
+          "type": "bigint",
           "primaryKey": false,
           "notNull": false
         },
@@ -7223,7 +7229,11 @@
         },
         "refunds_manual_never_initiated": {
           "name": "refunds_manual_never_initiated",
-          "value": "\"refunds\".\"mode\" = 'source' or \"refunds\".\"status\" <> 'initiated'"
+          "value": "\"refunds\".\"mode\" = 'source' or \"refunds\".\"status\" not in ('initiated','needs_reconciliation')"
+        },
+        "refunds_reported_positive": {
+          "name": "refunds_reported_positive",
+          "value": "\"refunds\".\"provider_reported_paise\" is null or \"refunds\".\"provider_reported_paise\" > 0"
         },
         "refunds_settled_when_final": {
           "name": "refunds_settled_when_final",
@@ -7247,7 +7257,7 @@
         },
         "refunds_status_valid": {
           "name": "refunds_status_valid",
-          "value": "\"refunds\".\"status\" in ('requested','approved','rejected','initiated','processed','failed')"
+          "value": "\"refunds\".\"status\" in ('requested','approved','rejected','initiated','processed','failed','needs_reconciliation')"
         },
         "refunds_idem_key_format": {
           "name": "refunds_idem_key_format",

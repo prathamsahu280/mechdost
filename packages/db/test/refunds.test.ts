@@ -15,8 +15,10 @@ import {
   approveRefund,
   cancelOrderAsStaff,
   claimRefundDispatch,
+  claimRefundReconcile,
   createStaffRefund,
   customerRefundsByOrder,
+  dueReconciliationIds,
   dueRefundIds,
   getAdminRefund,
   listAdminRefunds,
@@ -25,9 +27,11 @@ import {
   recordAndApplyRazorpayRefundEvent,
   recordRazorpayOrder,
   recordRefundDispatchError,
+  recordRefundNeedsReconciliation,
   recordRefundSent,
   markRefundPaid,
   rejectRefund,
+  resolveRefundAbsent,
   revealRefundDestination,
   type Tx,
 } from '../src/repo';
@@ -519,7 +523,7 @@ describe('sending to Razorpay (dispatch)', () => {
     expect((await paymentRow(a.o.payment.id)).refundReservedPaise).toBe(0);
   });
 
-  it('gives up after eight tries', async () => {
+  it('gives up after eight tries without freeing the money: Razorpay may have sent it (needs reconciliation)', async () => {
     const a = await approvedRefund();
     for (let i = 0; i < 8; i += 1) {
       await db
@@ -530,9 +534,166 @@ describe('sending to Razorpay (dispatch)', () => {
       await recordRefundDispatchError(t(), a.id, { permanent: false, code: 'network' });
     }
     expect((await db.select().from(s.refunds).where(eq(s.refunds.id, a.id)))[0]).toMatchObject({
-      status: 'failed',
+      status: 'needs_reconciliation',
       failureCode: 'dispatch_exhausted',
     });
+    expect((await paymentRow(a.o.payment.id)).refundReservedPaise).toBe(a.o.total);
+  });
+});
+
+describe('unsure outcomes never free the money (security review 2026-11-15)', () => {
+  async function dispatched() {
+    const o = await paidOrder();
+    await cancelAsStaff(o.subs[0]!);
+    const [r] = await refundsOf(o.payment.id);
+    await approveRefund(t(), { scope: ALL, staffUserId: bob, refundId: r!.id, expectedVersion: r!.version });
+    await claimRefundDispatch(t(), r!.id);
+    return { o, id: r!.id };
+  }
+  const row = async (id: string) => (await db.select().from(s.refunds).where(eq(s.refunds.id, id)))[0]!;
+
+  it('an amount Razorpay reports differently keeps the refund unsure, its id stored and the amount reserved', async () => {
+    const { o, id } = await dispatched();
+    await recordRefundNeedsReconciliation(t(), id, {
+      code: 'provider_amount_mismatch',
+      providerRefundId: 'rfnd_other000001',
+      reportedPaise: o.total - 500,
+    });
+    expect(await row(id)).toMatchObject({
+      status: 'needs_reconciliation',
+      providerRefundId: 'rfnd_other000001',
+      providerReportedPaise: o.total - 500,
+      failureCode: 'provider_amount_mismatch',
+    });
+    expect((await paymentRow(o.payment.id)).refundReservedPaise).toBe(o.total);
+    const alert = await db
+      .select()
+      .from(s.auditLog)
+      .where(eq(s.auditLog.action, 'refund.alert.needs_reconciliation'));
+    expect(alert.some((a) => a.entityId === id)).toBe(true);
+    // Nobody can send it again meanwhile, and the customer is not told it failed.
+    expect(await claimRefundDispatch(t(), id)).toBeNull();
+    const [mine] = [...(await customerRefundsByOrder(t(), customer, [o.subs[0]!.id])).values()].flat();
+    expect(mine?.status).toBe('processing');
+  });
+
+  it('a processed webhook for a refund we had failed moves it to processed, holds the amount again and alerts', async () => {
+    const { o, id } = await dispatched();
+    await recordRefundDispatchError(t(), id, { permanent: true, code: 'razorpay_400' });
+    expect(await row(id)).toMatchObject({ status: 'failed' });
+    expect((await paymentRow(o.payment.id)).refundReservedPaise).toBe(0);
+    const payment = await paymentRow(o.payment.id);
+    const res = await webhook(
+      refundFact({ id, providerRefundId: null }, payment, o.total, 'processed', 'rfnd_late00000001'),
+    );
+    expect(res.outcome).toBe('processed');
+    expect(await row(id)).toMatchObject({ status: 'processed', providerRefundId: 'rfnd_late00000001' });
+    expect(await paymentRow(o.payment.id)).toMatchObject({
+      status: 'refunded',
+      refundReservedPaise: o.total,
+      refundedPaise: o.total,
+    });
+    const alert = await db
+      .select()
+      .from(s.auditLog)
+      .where(eq(s.auditLog.action, 'refund.alert.processed_after_failed'));
+    expect(alert.some((a) => a.entityId === id)).toBe(true);
+  });
+
+  it('cannot re-hold the amount when the ledger filled up meanwhile: refused, alerted, never parked', async () => {
+    const { o, id } = await dispatched();
+    await recordRefundDispatchError(t(), id, { permanent: true, code: 'razorpay_400' });
+    await createStaffRefund(t(), {
+      scope: ALL,
+      staffUserId: alice,
+      orderCode: o.subs[0]!.code,
+      amountPaise: o.total,
+      source: 'part_refund',
+      reasonCode: 'goodwill',
+      idempotencyKey: `req-${String((n += 1))}-refill`,
+    });
+    const payment = await paymentRow(o.payment.id);
+    const res = await webhook(
+      refundFact({ id, providerRefundId: null }, payment, o.total, 'processed', 'rfnd_late00000002'),
+    );
+    expect(res.outcome).toBe('mismatch');
+    expect(await row(id)).toMatchObject({ status: 'failed' });
+    const alert = await db.select().from(s.auditLog).where(eq(s.auditLog.action, 'refund.alert.ledger_full'));
+    expect(alert.some((a) => a.entityId === id)).toBe(true);
+    expect((await paymentRow(o.payment.id)).refundReservedPaise).toBe(o.total);
+  });
+
+  it('a processed webhook for an unsure refund settles it; a failed one frees it', async () => {
+    const a = await dispatched();
+    await recordRefundNeedsReconciliation(t(), a.id, { code: 'razorpay_timeout' });
+    const payment = await paymentRow(a.o.payment.id);
+    expect(
+      (await webhook(refundFact({ id: a.id, providerRefundId: null }, payment, a.o.total))).outcome,
+    ).toBe('processed');
+    expect(await row(a.id)).toMatchObject({ status: 'processed' });
+    expect((await paymentRow(a.o.payment.id)).refundedPaise).toBe(a.o.total);
+
+    const b = await dispatched();
+    await recordRefundNeedsReconciliation(t(), b.id, { code: 'razorpay_timeout' });
+    const paymentB = await paymentRow(b.o.payment.id);
+    expect(
+      (await webhook(refundFact({ id: b.id, providerRefundId: null }, paymentB, b.o.total, 'failed')))
+        .outcome,
+    ).toBe('failed');
+    expect((await paymentRow(b.o.payment.id)).refundReservedPaise).toBe(0);
+  });
+
+  it('our own refund id on a webhook is never silently parked, whatever its state (here: never sent)', async () => {
+    const o = await paidOrder();
+    await cancelAsStaff(o.subs[0]!);
+    const [r] = await refundsOf(o.payment.id); // still requested: nothing was ever sent
+    const payment = await paymentRow(o.payment.id);
+    const res = await webhook(
+      refundFact({ id: r!.id, providerRefundId: null }, payment, o.total, 'processed', 'rfnd_stray0000001'),
+    );
+    expect(res.outcome).toBe('mismatch');
+    expect((await row(r!.id)).status).toBe('requested');
+    const alert = await db
+      .select()
+      .from(s.auditLog)
+      .where(eq(s.auditLog.action, 'refund.alert.unexpected_provider_refund'));
+    expect(alert.some((a) => a.entityId === r!.id)).toBe(true);
+    const [ev] = await db
+      .select()
+      .from(s.webhookEvents)
+      .where(
+        sql`${s.webhookEvents.status} = 'parked' and ${s.webhookEvents.payload}::text like ${'%stray%'}`,
+      );
+    expect(ev).toBeUndefined();
+  });
+
+  it('only an unsure refund with no Razorpay id can be failed on a confirmed absence, which frees the amount', async () => {
+    const a = await dispatched();
+    await recordRefundNeedsReconciliation(t(), a.id, { code: 'razorpay_timeout' });
+    expect(await resolveRefundAbsent(t(), a.id)).toBe(true);
+    expect(await row(a.id)).toMatchObject({ status: 'failed' });
+    expect((await paymentRow(a.o.payment.id)).refundReservedPaise).toBe(0);
+    const b = await dispatched();
+    await recordRefundNeedsReconciliation(t(), b.id, {
+      code: 'provider_amount_mismatch',
+      providerRefundId: 'rfnd_exists00001',
+      reportedPaise: 1,
+    });
+    expect(await resolveRefundAbsent(t(), b.id)).toBe(false); // Razorpay does hold one
+    expect((await row(b.id)).status).toBe('needs_reconciliation');
+  });
+
+  it('the worker re-checks unsure refunds without a Razorpay id once their wait is over, one claimer at a time', async () => {
+    const a = await dispatched();
+    await recordRefundNeedsReconciliation(t(), a.id, { code: 'razorpay_timeout' });
+    expect(await dueReconciliationIds(t(), 20)).not.toContain(a.id); // not yet
+    await db
+      .update(s.refunds)
+      .set({ nextAttemptAt: sql`now() - interval '1 minute'` })
+      .where(eq(s.refunds.id, a.id));
+    expect(await dueReconciliationIds(t(), 20)).toContain(a.id);
+    const claims = await Promise.all([claimRefundReconcile(t(), a.id), claimRefundReconcile(t(), a.id)]);
+    expect(claims.filter((c) => c !== null)).toHaveLength(1);
   });
 });
 
@@ -641,7 +802,7 @@ describe('Razorpay refund webhooks (chaos)', () => {
     expect(ev).toBeDefined();
   });
 
-  it('failed: the amount is freed and a late processed event cannot revive it', async () => {
+  it('failed: the amount is freed; a second failed event changes nothing; a late processed event is honoured (money moved)', async () => {
     const { o, refund, payment } = await initiated();
     expect((await webhook(refundFact(refund, payment, o.total, 'failed'))).outcome).toBe('failed');
     expect(await paymentRow(o.payment.id)).toMatchObject({
@@ -649,8 +810,11 @@ describe('Razorpay refund webhooks (chaos)', () => {
       refundedPaise: 0,
       status: 'paid',
     });
-    expect((await webhook(refundFact(refund, payment, o.total))).outcome).toBe('unchanged');
-    expect((await db.select().from(s.refunds).where(eq(s.refunds.id, refund.id)))[0]!.status).toBe('failed');
+    expect((await webhook(refundFact(refund, payment, o.total, 'failed'))).outcome).toBe('unchanged');
+    expect((await webhook(refundFact(refund, payment, o.total))).outcome).toBe('processed');
+    expect((await db.select().from(s.refunds).where(eq(s.refunds.id, refund.id)))[0]!.status).toBe(
+      'processed',
+    );
   });
 
   it('a refund for another payment id is refused (mismatch)', async () => {

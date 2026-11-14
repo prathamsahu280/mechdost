@@ -73,3 +73,11 @@ No test in this spec may be skipped in CI; schema PRs require the `drizzle-postg
   - server events in the typed catalogue.
 - Offer deadlines for closed shops are a fixed `expires_at` (opening + grace) in the same insert, never earlier than
   the normal timeout (`greatest(...)`), so the CHECK `expires_at > offered_at` and the timer job are unchanged.
+
+## Data model note: refunds (migration 0053, 2026-11-15)
+
+- `refunds` (expanded, see spec 05 "Built: refunds"): status CHECK from `REFUND_STATES`; one conditional UPDATE per change (id, status, version); four-eyes CHECK (`approved_by <> requested_by`); `idem_key` unique (Razorpay's idempotency header); `provider_refund_id` unique; `mode` ⇔ `payment_id` (CHECK); reject code ⇔ rejected; settled time ⇔ processed/failed; a manual paid refund carries its UTR; the dispatch sweep has a partial index on approved Razorpay refunds.
+- `payments.refund_reserved_paise` / `refunded_paise`: CHECK `0 ≤ refunded ≤ reserved ≤ amount`; changed only by conditional UPDATEs under the payment row lock (group row first). **The ledger is the guarantee that refunds never exceed what was captured.** An unsure refund keeps its amount reserved.
+- `refund_events`: append-only (`forbid_update_delete`). RLS on, client roles revoked, version / updated_at triggers (schema-invariants test).
+- Lock order extended: order → group → payment → refund. `transitionOrder` (cancel/reject) creates the system request inside the same transaction.
+- Guarded by `packages/db/test/refunds.test.ts` and `apps/api/test/refunds.test.ts`.

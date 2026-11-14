@@ -101,10 +101,17 @@ const AdminOverviewApi = dynamic(() => import('./admin-overview-api').then((m) =
   loading: () => <div className="skeleton h-48 rounded-card" aria-hidden="true" />,
 });
 
+/** Real sign-in: the finance refund queue (spec 05, decision 2026-11-15); demo builds never load it. */
+const RefundQueueApi = dynamic(() => import('./admin-refunds-api').then((m) => m.RefundQueueApi), {
+  ssr: false,
+  loading: () => <div className="skeleton h-96 rounded-card" aria-hidden="true" />,
+});
+
 const SECTION_EMOJI: Record<AdminSection, string> = {
   overview: '📊',
   analytics: '📈',
   orders: '🧭',
+  refunds: '💸',
   services: '🔧',
   quotes: '💬',
   applications: '🤝',
@@ -145,6 +152,7 @@ export function AdminConsole({
           <div className="min-w-0 space-y-6">
             {section === 'overview' ? AUTH_MODE === 'firebase' ? <AdminOverviewApi /> : <Overview /> : null}
             {section === 'analytics' && AUTH_MODE === 'firebase' ? <AdminAnalyticsApi /> : null}
+            {section === 'refunds' && AUTH_MODE === 'firebase' ? <RefundQueueApi /> : null}
             {section === 'orders' ? AUTH_MODE === 'firebase' ? <OrderRoutingApi /> : <OrderRouting /> : null}
             {section === 'services' ? (
               AUTH_MODE === 'firebase' ? (

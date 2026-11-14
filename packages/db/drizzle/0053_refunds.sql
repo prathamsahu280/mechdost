@@ -16,7 +16,7 @@ CREATE TABLE "refund_events" (
 	"actor_id" uuid,
 	"payload" jsonb DEFAULT '{}'::jsonb NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "refund_events_kind_valid" CHECK ("refund_events"."kind" in ('requested','approved','rejected','initiated','processed','failed','retry')),
+	CONSTRAINT "refund_events_kind_valid" CHECK ("refund_events"."kind" in ('requested','approved','rejected','initiated','processed','failed','retry','needs_reconciliation')),
 	CONSTRAINT "refund_events_actor_valid" CHECK ("refund_events"."actor_type" in ('admin','system'))
 );
 --> statement-breakpoint
@@ -41,6 +41,7 @@ ALTER TABLE "refunds" ADD COLUMN "initiated_at" timestamp with time zone;--> sta
 ALTER TABLE "refunds" ADD COLUMN "settled_at" timestamp with time zone;--> statement-breakpoint
 ALTER TABLE "refunds" ADD COLUMN "failure_code" text;--> statement-breakpoint
 ALTER TABLE "refunds" ADD COLUMN "manual_reference" text;--> statement-breakpoint
+ALTER TABLE "refunds" ADD COLUMN "provider_reported_paise" bigint;--> statement-breakpoint
 ALTER TABLE "refunds" ADD COLUMN "dispatch_attempts" integer DEFAULT 0 NOT NULL;--> statement-breakpoint
 ALTER TABLE "refunds" ADD COLUMN "next_attempt_at" timestamp with time zone;--> statement-breakpoint
 ALTER TABLE "refund_events" ADD CONSTRAINT "refund_events_refund_id_refunds_id_fk" FOREIGN KEY ("refund_id") REFERENCES "public"."refunds"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
@@ -61,10 +62,11 @@ ALTER TABLE "refunds" ADD CONSTRAINT "refunds_approved_before_dispatch" CHECK ("
 ALTER TABLE "refunds" ADD CONSTRAINT "refunds_provider_id_when_sent" CHECK ("refunds"."mode" <> 'source' or "refunds"."status" not in ('initiated','processed') or "refunds"."provider_refund_id" is not null);--> statement-breakpoint
 ALTER TABLE "refunds" ADD CONSTRAINT "refunds_mode_payment" CHECK (("refunds"."mode" = 'source') = ("refunds"."payment_id" is not null));--> statement-breakpoint
 ALTER TABLE "refunds" ADD CONSTRAINT "refunds_manual_paid_has_reference" CHECK ("refunds"."mode" = 'source' or "refunds"."status" <> 'processed' or "refunds"."manual_reference" ~ '^[A-Za-z0-9]{6,35}$');--> statement-breakpoint
-ALTER TABLE "refunds" ADD CONSTRAINT "refunds_manual_never_initiated" CHECK ("refunds"."mode" = 'source' or "refunds"."status" <> 'initiated');--> statement-breakpoint
+ALTER TABLE "refunds" ADD CONSTRAINT "refunds_manual_never_initiated" CHECK ("refunds"."mode" = 'source' or "refunds"."status" not in ('initiated','needs_reconciliation'));--> statement-breakpoint
+ALTER TABLE "refunds" ADD CONSTRAINT "refunds_reported_positive" CHECK ("refunds"."provider_reported_paise" is null or "refunds"."provider_reported_paise" > 0);--> statement-breakpoint
 ALTER TABLE "refunds" ADD CONSTRAINT "refunds_settled_when_final" CHECK (("refunds"."status" in ('processed','failed')) = ("refunds"."settled_at" is not null));--> statement-breakpoint
 ALTER TABLE "refunds" ADD CONSTRAINT "refunds_attempts_nonneg" CHECK ("refunds"."dispatch_attempts" >= 0);--> statement-breakpoint
-ALTER TABLE "refunds" ADD CONSTRAINT "refunds_status_valid" CHECK ("refunds"."status" in ('requested','approved','rejected','initiated','processed','failed'));--> statement-breakpoint
+ALTER TABLE "refunds" ADD CONSTRAINT "refunds_status_valid" CHECK ("refunds"."status" in ('requested','approved','rejected','initiated','processed','failed','needs_reconciliation'));--> statement-breakpoint
 ALTER TABLE public.refund_events ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 REVOKE ALL ON public.refund_events FROM anon, authenticated;--> statement-breakpoint
 CREATE TRIGGER refund_events_append_only BEFORE UPDATE OR DELETE ON public.refund_events

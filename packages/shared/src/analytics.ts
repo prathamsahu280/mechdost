@@ -157,6 +157,8 @@ export interface ServerEventProps {
   refund_initiated: { refundId: string; amountPaise: number };
   refund_processed: { refundId: string; amountPaise: number; daysFromRequest: number };
   refund_failed: { refundId: string; amountPaise: number; failureCode: string };
+  /** We cannot tell whether Razorpay holds this refund: the amount stays reserved until it is settled. */
+  refund_needs_reconciliation: { refundId: string; amountPaise: number; code: string };
 }
 export type ServerEvent = keyof ServerEventProps;
 

@@ -16,7 +16,10 @@ domain-modeling, razorpay-payments, drizzle-postgis-supabase, supabase-postgres-
 - **Refund request** = a claim for money back against one captured **payment**, optionally tied to one **sub-order**.
   Not a wallet entry. The existing table `refunds` (never written so far) is expanded, not replaced.
 - States (`refundMachine`): `requested` -> `approved` | `rejected`; `approved` -> `initiated` (Razorpay refund id stored)
-  | `processed` | `failed`; `initiated` -> `processed` | `failed`. `rejected`, `processed`, `failed` are terminal.
+  | `processed` | `failed` | `needs_reconciliation`; `initiated` -> `processed` | `failed` | `needs_reconciliation`;
+  `needs_reconciliation` -> `initiated` | `processed` | `failed`; `failed` -> `processed` (a webhook is the truth).
+  `rejected` and `processed` are terminal. An unsure refund holds its amount: only a confirmed absence at Razorpay fails it.
+- Cash on delivery (Q104): `mode = bank_upi`, no payment, encrypted destination, finance pays by hand and records the UTR.
   (`approved -> processed` exists because the webhook may beat our own write of the Razorpay refund id.)
 - Sources (`REFUND_SOURCES`): `order_rejected`, `order_cancelled`, `unfulfilled`, `support_claim`, `part_refund`, `other`.
   Reason codes (`REFUND_REASONS`) and reject codes (`REFUND_REJECT_REASONS`) are enums; free text is only a note.
