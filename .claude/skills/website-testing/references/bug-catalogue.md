@@ -134,6 +134,10 @@ which are automated. Add new classes at the end of the relevant section.
 - **K1 · Duplicate or missing notifications** → outbox dedupe + relay retry tests.
 - **K2 · Analytics event missing/duplicated** (esp. purchase) → server-side purchase event exactly once per order.
 - **K3 · PII in analytics props** → schema validation rejects phone/email in props.
+- **K4 · PII or secrets in off-site telemetry** (error reports carrying request bodies, headers, query strings, DB error messages with SQL parameters; analytics forwarded with user ids or free text) → scrubber unit tests on hostile fixtures (`packages/shared/test/error-scrub.test.ts`, `apps/api/test/monitoring.test.ts` scrubProps) asserting the serialised payload has no phone/email/token.
+- **K5 · Events forwarded to a processor without matching consent** (no consent, or consent given under an older notice that did not name the processor) → forwarder consent-gate tests (`toPosthogEvent` with null / older `consentVersion`) and the reader's SQL filter (`packages/db/test/events.test.ts`).
+- **K6 · Telemetry outage breaks the product** (provider down, 429, bad key) → sender tests: bounded retries, no throw, drop with a count; cursor still advances.
+- **K7 · Provider read-token or admin panel leaks data to the browser** → route test asserts the token, emails and raw payload fields never appear in the answer; role matrix (super admin / ops 200, city manager 404, customer 403, stranger 401).
 
 ## L. Admin & CMS
 

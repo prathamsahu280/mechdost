@@ -122,8 +122,7 @@ Add the map key from your `.env` (public by design, but it lives in `.env`, so y
 These are optional, set them when the service exists:
 
 - `NEXT_PUBLIC_SATELLITE_TILES`, `NEXT_PUBLIC_SATELLITE_ATTRIBUTION`;
-- `NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST`;
-- `NEXT_PUBLIC_SENTRY_DSN`;
+- `NEXT_PUBLIC_SENTRY_DSN`, and for source maps `SENTRY_ORG`, `SENTRY_PROJECT_WEB`, `SENTRY_URL` (variables) plus the **secret** `SENTRY_AUTH_TOKEN` (set 2026-11-14; `runbooks/monitoring.md`). There is no PostHog browser key: PostHog is fed by the worker (`POSTHOG_KEY` in the server `.env`).
 - `NEXT_PUBLIC_RAZORPAY_KEY_ID`;
 - `NEXT_PUBLIC_TURNSTILE_SITE_KEY`.
 

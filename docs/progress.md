@@ -19,6 +19,7 @@ This file is the single source of truth for **where the build is right now**. It
   - **Budgets:** demo and real-mode builds measured; `/shop` and `/cart` at 179.9–180.0 KB with no headroom (spec 16 note).
   - **Firebase web config:** passed to the website build (Dockerfile + deploy). The four `NEXT_PUBLIC_FIREBASE_*` repository variables still have to be set by the user.
   - **Live API:** `/v1/workshops` and `/v1/checkout/quote` answer 200.
+  - **Monitoring (agent, branch `worktree-agent-a2669c70113cd7e74`, not merged):** Sentry EU (API, worker, website server, browser after the first error; scrubbed; source maps in Deploy when the secret is set), PostHog EU forwarding of consented events by the worker, Admin → Errors (`GET /v1/admin/errors`, read-only token), consent notice `2026-11-14` (banner asks again), privacy copy en + hi. Budgets: `/shop` and `/cart` 176.9 KB (+0.7–0.8). Decision "Monitoring"; runbook `docs/runbooks/monitoring.md`. Next: merge, deploy, check one test error per project in Sentry and `posthog_forwarded` in the worker log; upgrade `@hono/node-server` to 2.1.6 (two moderate advisories, queued).
   - **Next (Stream F):**
     1. Push and check CI/deploy.
     2. Merge E.

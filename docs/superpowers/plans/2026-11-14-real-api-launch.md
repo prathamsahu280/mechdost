@@ -47,3 +47,4 @@ Goal: mechdost.com runs on real sign-in (Firebase) and the API for every flow, w
   the API; workshop accounts land on /partner/workshop. Response schemas `@mechdost/shared/service-api`. API gaps
   listed in spec 06 § Real API mode (web) (no API change). Playwright not run (low-memory machine) — run the service
   e2e at merge.
+- 2026-11-14: Monitoring on branch `worktree-agent-a2669c70113cd7e74`: Sentry EU (API, worker, website server, browser loaded after the first error; scrubbed; source maps uploaded in Deploy when the secret is set), PostHog EU forwarding of consented events by the worker (plain fetch), Admin → Errors (`GET /v1/admin/errors`, read-only token), consent notice `2026-11-14` naming PostHog, privacy copy en + hi. Runbook `docs/runbooks/monitoring.md`.
