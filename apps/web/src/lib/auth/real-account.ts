@@ -15,11 +15,12 @@ export interface RealMe {
 
 /**
  * Which screen a real account lands on (Q69 default). Staff → admin (the API only lists staff roles for a two-step
- * session); shop owners/staff → the shop portal, which runs on the API in real sign-in (Stream C2, 2026-11-14);
- * everyone else → customer, including workshop partners until the workshop portal moves to the API.
+ * session); shop owners/staff → the shop portal (Stream C2, 2026-11-14); workshop owners/staff → the workshop
+ * portal (Stream E, 2026-11-14), both on the API in real sign-in; everyone else → customer.
  */
 export function demoRoleFor(me: RealMe): DemoRole {
   const staff = me.roles.some((r) => r.role !== 'customer' && r.shopId === null && r.workshopId === null);
   if (staff) return 'admin';
-  return me.roles.some((r) => r.shopId !== null) ? 'shop' : 'customer';
+  if (me.roles.some((r) => r.shopId !== null)) return 'shop';
+  return me.roles.some((r) => r.workshopId !== null) ? 'workshop' : 'customer';
 }

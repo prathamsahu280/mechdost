@@ -4,6 +4,7 @@ import { ClientMessages } from '@/components/ui/client-messages';
 import { Container, PageIntro } from '@/components/ui/page-intro';
 import { WorkshopFinder } from '@/components/workshops/workshop-finder';
 import type { Locale } from '@/i18n/routing';
+import { DATA_MODE } from '@/lib/data-mode';
 import { alternatesFor } from '@/lib/seo';
 
 interface Props {
@@ -29,7 +30,10 @@ export default async function WorkshopsPage() {
     <Container className="py-10 tab:py-14">
       <PageIntro eyebrow={t('eyebrow')} line1={t('titleLine1')} line2={t('titleLine2')} lead={t('lead')} />
       <div className="mt-8">
-        <ClientMessages namespaces={['finder', 'map']}>
+        {/* Real data mode also books from here ("Let MechDost choose") and explains API errors. */}
+        <ClientMessages
+          namespaces={DATA_MODE === 'api' ? ['finder', 'map', 'workshop', 'request'] : ['finder', 'map']}
+        >
           <WorkshopFinder />
         </ClientMessages>
       </div>

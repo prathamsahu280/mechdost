@@ -8,9 +8,16 @@ import { ButtonLink } from '../ui/button-link';
 import { VEHICLE_ICON } from '@mechdost/shared/vehicles';
 import { LocalLink } from '../ui/local-link';
 import { Container, Eyebrow } from '../ui/page-intro';
+import { DATA_MODE } from '@/lib/data-mode';
+import { TopWorkshopsApi } from './top-workshops-api';
+
+/** Top-rated workshops: from the API in real data mode (Stream E), else the demo data. Server-only. */
+export function TopWorkshops({ city }: { city: string }) {
+  return DATA_MODE === 'api' ? <TopWorkshopsApi city={city} /> : <DemoTopWorkshops city={city} />;
+}
 
 /** Top-rated workshops (demo data; the API ranks by rating × review count per city). Server-only. */
-export function TopWorkshops({ city }: { city: string }) {
+function DemoTopWorkshops({ city }: { city: string }) {
   const t = useTranslations('home.workshops');
   const finder = useTranslations('finder');
   const locale = useLocale();

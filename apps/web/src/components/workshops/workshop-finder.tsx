@@ -16,6 +16,7 @@ import { localizeWorkshop } from '@/demo/i18n/localize';
 import { usePartnerHistory, usePartnerStatus, visibleToCustomers } from '@/demo/partner-status';
 import { formatPrice } from '@/lib/format';
 import { track } from '@/lib/analytics';
+import { DATA_MODE } from '@/lib/data-mode';
 import { mapUi } from '@/lib/map-ui';
 import type { MapPoint } from './workshop-map';
 
@@ -25,6 +26,10 @@ import type { MapPoint } from './workshop-map';
  */
 const WorkshopMap = lazy(() => import('./workshop-map').then((m) => ({ default: m.WorkshopMap })));
 const MAP_SIZE = 'h-[340px] tab:h-[420px] nav:h-[calc(100vh-9rem)] nav:max-h-[700px]';
+/** Real data mode (Stream E): the finder on the API, loaded on demand so the demo build never carries it. */
+const WorkshopFinderApi = lazy(() =>
+  import('./workshop-finder-api').then((m) => ({ default: m.WorkshopFinderApi })),
+);
 
 type VehicleFilter = 'any' | VehicleType;
 type Origin = { lat: number; lng: number; source: 'gps' | 'pin'; pin?: string; area?: string } | null;
@@ -41,11 +46,22 @@ async function lookupPincode(pos: { lat: number; lng: number }) {
   }
 }
 
+/** The workshop finder: on the API in real data mode, else the demo data. */
+export function WorkshopFinder() {
+  return DATA_MODE === 'api' ? (
+    <Suspense fallback={<div className="skeleton h-64 rounded-card" aria-hidden="true" />}>
+      <WorkshopFinderApi />
+    </Suspense>
+  ) : (
+    <DemoWorkshopFinder />
+  );
+}
+
 /**
  * Location-first workshop finder (spec 06): PIN or device location → nearby workshops sorted by distance,
  * filtered by vehicle type and EV capability. Demo data; the API uses PostGIS ST_DWithin + KNN ordering.
  */
-export function WorkshopFinder() {
+function DemoWorkshopFinder() {
   const t = useTranslations('finder');
   const m = useTranslations('map');
   const locale = useLocale();

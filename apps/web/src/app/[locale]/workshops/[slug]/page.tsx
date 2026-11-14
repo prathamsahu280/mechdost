@@ -1,6 +1,7 @@
 import { BadgeCheck, Clock, MapPin, Star, Truck, Zap } from 'lucide-react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { cache } from 'react';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { ClientMessages } from '@/components/ui/client-messages';
 import { LocalLink } from '@/components/ui/local-link';
@@ -8,24 +9,42 @@ import { Container } from '@/components/ui/page-intro';
 import { ReviewsSection } from '@/components/reviews/reviews-section';
 import { BookingForm } from '@/components/workshops/booking-form';
 import { WorkshopMap } from '@/components/workshops/workshop-map';
+import { WorkshopProfileApi } from '@/components/workshops/workshop-profile-api';
 import { localizeWorkshop } from '@/demo/i18n/localize';
 import { workshopRating, workshopReviews } from '@/demo/reviews';
 import { DEMO_WORKSHOPS, findWorkshop } from '@/demo/workshops';
 import { routing, type Locale } from '@/i18n/routing';
+import { DATA_MODE } from '@/lib/data-mode';
 import { formatDate, formatPrice } from '@/lib/format';
 import { directionsHref, mapUi } from '@/lib/map-ui';
 import { alternatesFor } from '@/lib/seo';
+import { fetchWorkshopProfile } from '@/lib/workshops-api-source';
 
 interface Props {
   params: Promise<{ locale: Locale; slug: string }>;
 }
 
+/** API mode prerenders nothing at build (pages render on first visit, kept 30 s by the fetch cache); demo mode
+ * prerenders every demo workshop. */
 export function generateStaticParams() {
+  if (DATA_MODE === 'api') return [];
   return routing.locales.flatMap((locale) => DEMO_WORKSHOPS.map((w) => ({ locale, slug: w.slug })));
 }
 
+/** The workshop from the API (real data mode), cached per request for metadata + page; `null` → 404. */
+const loadApi = cache((slug: string, locale: Locale) => fetchWorkshopProfile(slug, locale));
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, slug } = await params;
+  if (DATA_MODE === 'api') {
+    const w = await loadApi(slug, locale);
+    if (!w) return {};
+    return {
+      title: w.name,
+      description: `${w.address} · ${w.services.map((s) => s.title).join(', ')}`,
+      alternates: alternatesFor(`/workshops/${slug}`, locale),
+    };
+  }
   const found = findWorkshop(slug);
   if (!found) return {};
   const w = localizeWorkshop(found, locale);
@@ -38,7 +57,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 /** Workshop profile (spec 06): verification, hours, service menu with price ranges, appointment request. */
 export default async function WorkshopPage({ params }: Props) {
-  const { slug } = await params;
+  const { slug, locale: pageLocale } = await params;
+  if (DATA_MODE === 'api') {
+    const w = await loadApi(slug, pageLocale);
+    if (!w) notFound();
+    return <WorkshopProfileApi workshop={w} />;
+  }
   const found = findWorkshop(slug);
   if (!found) notFound();
   const [t, f, m, locale] = await Promise.all([

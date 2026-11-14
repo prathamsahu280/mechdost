@@ -40,12 +40,15 @@ describe('real sign-in → the screens that still run on browser data (Q69 defau
     expect(demoRoleFor(me({ roles: [{ role: 'ops_manager', shopId: null, workshopId: null }] }))).toBe(
       'admin',
     );
-    // The shop portal runs on the API in real sign-in (Stream C2); workshops still land on the account area.
+    // The shop (Stream C2) and workshop (Stream E) portals run on the API in real sign-in.
     expect(demoRoleFor(me({ roles: [{ role: 'seller_owner', shopId: 's1', workshopId: null }] }))).toBe(
       'shop',
     );
     expect(demoRoleFor(me({ roles: [{ role: 'workshop_owner', shopId: null, workshopId: 'w1' }] }))).toBe(
-      'customer',
+      'workshop',
+    );
+    expect(demoRoleFor(me({ roles: [{ role: 'workshop_staff', shopId: null, workshopId: 'w1' }] }))).toBe(
+      'workshop',
     );
     // Staff who also run a shop land on the admin console.
     expect(

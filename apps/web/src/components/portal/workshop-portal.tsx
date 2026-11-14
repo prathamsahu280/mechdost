@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
 import { localizeWorkshop } from '@/demo/i18n/localize';
@@ -13,6 +14,7 @@ import {
   type RequestStage,
 } from '@/demo/store';
 import { track } from '@/lib/analytics';
+import { AUTH_MODE } from '@/lib/auth/mode';
 import { formatPrice } from '@/lib/format';
 import { PartnerGate } from './partner-gate';
 import { JobCard, RequestSummary } from './workshop-job';
@@ -20,18 +22,29 @@ import { PortalGuard, portalCard, portalField, portalPrimary, portalQuiet } from
 
 const SLOTS = ['morning', 'afternoon', 'evening'] as const;
 
+/** Real sign-in: the portal reads and acts through the API; demo builds never load it (Stream E, 2026-11-14). */
+const WorkshopRequestsApi = dynamic(
+  () => import('./workshop-portal-api').then((m) => m.WorkshopRequestsApi),
+  { ssr: false, loading: () => <div className="skeleton h-96 rounded-card" aria-hidden="true" /> },
+);
+
 /**
  * Workshop portal (spec 07): propose slot + expected cost; then the job card — vehicle received (odometer),
  * itemised estimate, work on approved lines, bill, paid at the workshop.
  */
 export function WorkshopPortal() {
+  const api = AUTH_MODE === 'firebase';
   return (
-    <PortalGuard role="workshop" path="/partner/workshop">
-      {(account) => (
-        <PartnerGate kind="workshop" slug={account.partner ?? ''}>
-          <WorkshopRequests workshopSlug={account.partner ?? ''} />
-        </PartnerGate>
-      )}
+    <PortalGuard role="workshop" path="/partner/workshop" demoNote={!api}>
+      {(account) =>
+        api ? (
+          <WorkshopRequestsApi />
+        ) : (
+          <PartnerGate kind="workshop" slug={account.partner ?? ''}>
+            <WorkshopRequests workshopSlug={account.partner ?? ''} />
+          </PartnerGate>
+        )
+      }
     </PortalGuard>
   );
 }
