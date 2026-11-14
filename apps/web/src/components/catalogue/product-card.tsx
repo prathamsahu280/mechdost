@@ -136,6 +136,10 @@ export function ProductCard({
                   maxQty: t('maxQty'),
                   maxLines: t('maxLines'),
                   saveFailed: t('saveFailed'),
+                  increase: t('cartIncrease', { name: `${product.brand} ${product.name}` }),
+                  decrease: t('cartDecrease', { name: `${product.brand} ${product.name}` }),
+                  remove: t('cartRemove', { name: `${product.brand} ${product.name}` }),
+                  inCart: t('inCart', { count: '#' }),
                 }}
               />
             </div>

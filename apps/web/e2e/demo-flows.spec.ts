@@ -19,7 +19,8 @@ test.describe('shop → cart → checkout → tracking', () => {
     await expect(page.getByRole('heading', { level: 1, name: 'XLTZ4A 24F+24P' })).toBeVisible();
 
     await page.getByRole('button', { name: 'Add to cart' }).first().click();
-    await expect(page.getByRole('button', { name: 'Added to cart' }).first()).toBeVisible();
+    // The button becomes a quantity stepper once the product is in the cart (user 2026-11-14).
+    await expect(page.getByText('1 in cart').first()).toBeVisible();
     await expect(page.getByRole('link', { name: /Cart\s*,\s*1 item/ })).toBeVisible();
 
     await page.goto('/cart');

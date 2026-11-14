@@ -1,6 +1,6 @@
 'use client';
 
-import { BadgeCheck, ChevronRight, MessagesSquare, Package, Trash2, Wrench } from 'lucide-react';
+import { BadgeCheck, ChevronRight, MessagesSquare, Package, Pencil, Trash2, Wrench } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { Suspense, useEffect, useRef, useState, type ReactNode, type SyntheticEvent } from 'react';
@@ -12,6 +12,7 @@ import {
   homeFor,
   removeAddress,
   removeVehicle,
+  updateVehicle,
   setDefaultAddress,
   updateProfile,
   useSession,
@@ -33,6 +34,7 @@ import {
   useQuotes,
   useRequests,
 } from '@/demo/store';
+import { track } from '@/lib/analytics';
 import { AUTH_MODE } from '@/lib/auth/mode';
 import { signOutEverywhere } from '@/lib/auth/sign-out';
 import { useEmailStatus } from '@/lib/auth/use-email-status';
@@ -512,12 +514,122 @@ function QuotesList({ limit }: { limit?: number }) {
   );
 }
 
+type VehicleDraft = Omit<DemoVehicle, 'id'>;
+
+/**
+ * My vehicles: add, edit (user 2026-11-14: "no option to edit the already added vehicles") and remove. One form at
+ * a time (calm UI): the add form, or the edit form in place of the card being edited.
+ */
 function Vehicles({ account }: { account: DemoAccount }) {
   const t = useTranslations('account');
-  const [adding, setAdding] = useState(account.vehicles.length === 0);
+  // 'add' = the add form; a vehicle id = that vehicle's edit form; null = just the list.
+  const [open, setOpen] = useState<string | null>(account.vehicles.length === 0 ? 'add' : null);
+  const full = account.vehicles.length >= MAX_ACCOUNT_ITEMS;
+
+  return (
+    <section aria-labelledby="vehicles-title" className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 id="vehicles-title" className="font-heading text-xl font-extrabold text-ink">
+          {t('nav_vehicles')}
+        </h2>
+        {open === null && !full ? (
+          <button
+            type="button"
+            onClick={() => {
+              setOpen('add');
+            }}
+            className={primary}
+          >
+            + {t('addVehicle')}
+          </button>
+        ) : null}
+      </div>
+      {account.vehicles.length === 0 ? <p className="text-sm text-muted">{t('vehiclesEmpty')}</p> : null}
+      <ul className="grid gap-3 tab:grid-cols-2">
+        {account.vehicles.map((v) =>
+          open === v.id ? (
+            <li key={v.id} className="tab:col-span-2">
+              <VehicleForm
+                title={t('editVehicle')}
+                initial={v}
+                onSave={(draft) => {
+                  updateVehicle(v.id, draft);
+                  track('click', { id: 'vehicle_edited', path: window.location.pathname });
+                  setOpen(null);
+                  return true;
+                }}
+                onCancel={() => {
+                  setOpen(null);
+                }}
+              />
+            </li>
+          ) : (
+            <li key={v.id} className={`${card} flex items-start justify-between gap-3`}>
+              <VehicleSummary vehicle={v} />
+              <div className="flex shrink-0 gap-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(v.id);
+                  }}
+                  aria-label={t('editItem', { name: `${v.make} ${v.model}` })}
+                  className="press inline-flex size-11 shrink-0 items-center justify-center rounded-button text-muted hover:bg-pill"
+                >
+                  <Pencil aria-hidden="true" className="size-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    removeVehicle(v.id);
+                  }}
+                  aria-label={t('remove', { name: `${v.make} ${v.model}` })}
+                  className="press inline-flex size-11 shrink-0 items-center justify-center rounded-button text-muted hover:bg-pill"
+                >
+                  <Trash2 aria-hidden="true" className="size-5" />
+                </button>
+              </div>
+            </li>
+          ),
+        )}
+      </ul>
+      {open === 'add' ? (
+        <VehicleForm
+          title={t('addVehicle')}
+          initial={null}
+          onSave={(draft) => {
+            if (!addVehicle(draft)) return false;
+            setOpen(null);
+            return true;
+          }}
+          onCancel={
+            account.vehicles.length > 0
+              ? () => {
+                  setOpen(null);
+                }
+              : null
+          }
+        />
+      ) : null}
+    </section>
+  );
+}
+
+function VehicleForm({
+  title,
+  initial,
+  onSave,
+  onCancel,
+}: {
+  title: string;
+  initial: DemoVehicle | null;
+  /** False when the account is full (add only). */
+  onSave: (draft: VehicleDraft) => boolean;
+  onCancel: (() => void) | null;
+}) {
+  const t = useTranslations('account');
   const [error, setError] = useState<string | null>(null);
   const thisYear = new Date().getFullYear();
-  const full = account.vehicles.length >= MAX_ACCOUNT_ITEMS;
+  const titleId = initial ? `veh-edit-${initial.id}` : 'veh-add';
 
   function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -531,7 +643,7 @@ function Vehicles({ account }: { account: DemoAccount }) {
       setError(t('errVehicle', { year: thisYear + 1 }));
       return;
     }
-    const ok = addVehicle({
+    const ok = onSave({
       type: VEHICLE_TYPES.find((v) => v === text('type')) ?? '2W',
       make: text('make').slice(0, 40),
       model: text('model').slice(0, 60),
@@ -545,143 +657,121 @@ function Vehicles({ account }: { account: DemoAccount }) {
       return;
     }
     setError(null);
-    setAdding(false);
   }
 
+  const id = (k: string) => (initial ? `veh-${initial.id}-${k}` : `veh-${k}`);
   return (
-    <section aria-labelledby="vehicles-title" className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 id="vehicles-title" className="font-heading text-xl font-extrabold text-ink">
-          {t('nav_vehicles')}
-        </h2>
-        {!adding && !full ? (
-          <button
-            type="button"
-            onClick={() => {
-              setAdding(true);
-            }}
-            className={primary}
-          >
-            + {t('addVehicle')}
+    <form noValidate aria-labelledby={titleId} onSubmit={onSubmit} className={`${card} space-y-4`}>
+      <h3 id={titleId} className="font-heading text-lg font-extrabold text-ink">
+        {title}
+      </h3>
+      <fieldset>
+        <legend className="text-sm font-bold text-ink">{t('vehicleType')}</legend>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {VEHICLE_TYPES.map((type, i) => (
+            <label
+              key={type}
+              className="press inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-button border border-input-border px-4 text-sm font-bold text-ink has-checked:border-accent-button has-checked:bg-accent-soft has-checked:text-accent-soft-text"
+            >
+              <input
+                type="radio"
+                name="type"
+                value={type}
+                defaultChecked={initial ? initial.type === type : i === 0}
+                className="size-5 accent-[var(--color-accent-button)]"
+              />
+              {`${VEHICLE_ICON[type]} ${t(VEHICLE_LABEL_KEY[type])}`}
+            </label>
+          ))}
+        </div>
+      </fieldset>
+      <div className="grid gap-4 tab:grid-cols-2">
+        <div>
+          <label htmlFor={id('make')} className="text-sm font-bold text-ink">
+            {t('make')}
+          </label>
+          <input id={id('make')} name="make" maxLength={40} defaultValue={initial?.make} className={field} />
+        </div>
+        <div>
+          <label htmlFor={id('model')} className="text-sm font-bold text-ink">
+            {t('model')}
+          </label>
+          <input
+            id={id('model')}
+            name="model"
+            maxLength={60}
+            defaultValue={initial?.model}
+            className={field}
+          />
+        </div>
+        <div>
+          <label htmlFor={id('year')} className="text-sm font-bold text-ink">
+            {t('year')}
+          </label>
+          <input
+            id={id('year')}
+            name="year"
+            inputMode="numeric"
+            maxLength={4}
+            defaultValue={initial ? String(initial.year) : undefined}
+            className={field}
+          />
+        </div>
+        <div>
+          <label htmlFor={id('fuel')} className="text-sm font-bold text-ink">
+            {t('fuel')}
+          </label>
+          <select id={id('fuel')} name="fuel" defaultValue={initial?.fuel} className={field}>
+            {(['petrol', 'diesel', 'cng', 'ev'] as Fuel[]).map((f) => (
+              <option key={f} value={f}>
+                {t(`fuel_${f}`)}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label htmlFor={id('registration')} className="text-sm font-bold text-ink">
+            {t('registration')}
+          </label>
+          <input
+            id={id('registration')}
+            name="registration"
+            maxLength={16}
+            placeholder={t('registrationHint')}
+            defaultValue={initial?.registration}
+            className={`${field} uppercase`}
+          />
+        </div>
+        <div>
+          <label htmlFor={id('odometer')} className="text-sm font-bold text-ink">
+            {t('odometerLabel')}
+          </label>
+          <input
+            id={id('odometer')}
+            name="odometer"
+            inputMode="numeric"
+            maxLength={7}
+            defaultValue={initial ? String(initial.odometerKm) : undefined}
+            className={field}
+          />
+        </div>
+      </div>
+      {error ? (
+        <p role="alert" className="text-sm font-bold text-error">
+          {error}
+        </p>
+      ) : null}
+      <div className="flex flex-wrap gap-3">
+        <button type="submit" className={primary}>
+          {t('save')}
+        </button>
+        {onCancel ? (
+          <button type="button" onClick={onCancel} className={quiet}>
+            {t('cancel')}
           </button>
         ) : null}
       </div>
-      {account.vehicles.length === 0 ? <p className="text-sm text-muted">{t('vehiclesEmpty')}</p> : null}
-      <ul className="grid gap-3 tab:grid-cols-2">
-        {account.vehicles.map((v) => (
-          <li key={v.id} className={`${card} flex items-start justify-between gap-3`}>
-            <VehicleSummary vehicle={v} />
-            <button
-              type="button"
-              onClick={() => {
-                removeVehicle(v.id);
-              }}
-              aria-label={t('remove', { name: `${v.make} ${v.model}` })}
-              className="press inline-flex size-11 shrink-0 items-center justify-center rounded-button text-muted hover:bg-pill"
-            >
-              <Trash2 aria-hidden="true" className="size-5" />
-            </button>
-          </li>
-        ))}
-      </ul>
-      {adding ? (
-        <form noValidate onSubmit={onSubmit} className={`${card} space-y-4`}>
-          <h3 className="font-heading text-lg font-extrabold text-ink">{t('addVehicle')}</h3>
-          <fieldset>
-            <legend className="text-sm font-bold text-ink">{t('vehicleType')}</legend>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {VEHICLE_TYPES.map((type, i) => (
-                <label
-                  key={type}
-                  className="press inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-button border border-input-border px-4 text-sm font-bold text-ink has-checked:border-accent-button has-checked:bg-accent-soft has-checked:text-accent-soft-text"
-                >
-                  <input
-                    type="radio"
-                    name="type"
-                    value={type}
-                    defaultChecked={i === 0}
-                    className="size-5 accent-[var(--color-accent-button)]"
-                  />
-                  {`${VEHICLE_ICON[type]} ${t(VEHICLE_LABEL_KEY[type])}`}
-                </label>
-              ))}
-            </div>
-          </fieldset>
-          <div className="grid gap-4 tab:grid-cols-2">
-            <div>
-              <label htmlFor="veh-make" className="text-sm font-bold text-ink">
-                {t('make')}
-              </label>
-              <input id="veh-make" name="make" maxLength={40} className={field} />
-            </div>
-            <div>
-              <label htmlFor="veh-model" className="text-sm font-bold text-ink">
-                {t('model')}
-              </label>
-              <input id="veh-model" name="model" maxLength={60} className={field} />
-            </div>
-            <div>
-              <label htmlFor="veh-year" className="text-sm font-bold text-ink">
-                {t('year')}
-              </label>
-              <input id="veh-year" name="year" inputMode="numeric" maxLength={4} className={field} />
-            </div>
-            <div>
-              <label htmlFor="veh-fuel" className="text-sm font-bold text-ink">
-                {t('fuel')}
-              </label>
-              <select id="veh-fuel" name="fuel" className={field}>
-                {(['petrol', 'diesel', 'cng', 'ev'] as Fuel[]).map((f) => (
-                  <option key={f} value={f}>
-                    {t(`fuel_${f}`)}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="veh-registration" className="text-sm font-bold text-ink">
-                {t('registration')}
-              </label>
-              <input
-                id="veh-registration"
-                name="registration"
-                maxLength={16}
-                placeholder={t('registrationHint')}
-                className={`${field} uppercase`}
-              />
-            </div>
-            <div>
-              <label htmlFor="veh-odometer" className="text-sm font-bold text-ink">
-                {t('odometerLabel')}
-              </label>
-              <input id="veh-odometer" name="odometer" inputMode="numeric" maxLength={7} className={field} />
-            </div>
-          </div>
-          {error ? (
-            <p role="alert" className="text-sm font-bold text-error">
-              {error}
-            </p>
-          ) : null}
-          <div className="flex flex-wrap gap-3">
-            <button type="submit" className={primary}>
-              {t('save')}
-            </button>
-            {account.vehicles.length > 0 ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setAdding(false);
-                  setError(null);
-                }}
-                className={quiet}
-              >
-                {t('cancel')}
-              </button>
-            ) : null}
-          </div>
-        </form>
-      ) : null}
-    </section>
+    </form>
   );
 }
 

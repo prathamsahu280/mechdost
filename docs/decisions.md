@@ -291,6 +291,11 @@ User shared Razorpay **test** keys and asked to "see how we have the stuff for r
 - An online order holds stock for 30 minutes (admin setting) and is never routed before it is paid.
 - A valid checkout signature alone never marks an order paid: the server fetches the payment from Razorpay first (Razorpay docs).
 
+## 2026-11-14 — Cart stepper and editable vehicles (user)
+
+- **Quantity on the product card** (user: "just like swiggy or amazon"): after "Add to cart" the button becomes − / count / +; − at one removes the product (spec 03).
+- **Saved vehicles can be edited** (user: "no option to edit the already added vehicles"), in place, one form at a time (spec 01).
+
 ## 2026-11-14 — Security review of 20 attack classes and fixes (user: "fix the other security stuff too")
 
 Full review and evidence: `docs/research/security-vulnerabilities.md` § Review 2026-11-14. Decisions taken:

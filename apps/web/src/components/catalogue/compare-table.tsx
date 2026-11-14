@@ -178,6 +178,10 @@ export function CompareTable({
                               maxQty: cat('maxQty'),
                               maxLines: cat('maxLines'),
                               saveFailed: cat('saveFailed'),
+                              increase: cat('cartIncrease', { name: `${p.brand} ${p.name}` }),
+                              decrease: cat('cartDecrease', { name: `${p.brand} ${p.name}` }),
+                              remove: cat('cartRemove', { name: `${p.brand} ${p.name}` }),
+                              inCart: cat('inCart', { count: '#' }),
                             }}
                           />
                         </div>

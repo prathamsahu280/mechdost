@@ -87,7 +87,8 @@ test('compare three engine oils from the shop', async ({ page }) => {
 
   // Add to cart sits in the summary row under each product (third column = HP).
   await tap(table.getByRole('button', { name: 'Add to cart' }).nth(2));
-  await expect(table.getByRole('button', { name: 'Added' })).toHaveCount(1);
+  // The button becomes the quantity stepper once the product is in the cart (user 2026-11-14).
+  await expect(table.getByRole('button', { name: /^Add one more HP/ })).toHaveCount(1);
 });
 
 test('one category at a time: a battery starts a new comparison', async ({ page }) => {

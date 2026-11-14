@@ -95,3 +95,7 @@ Registration-number lookup (Vahan), saved cards (gateway tokens), referral (rewa
 **Analytics.** `login_<role>`, `login_password_failed`, `signup_otp_sent`, `sign_up`, `reset_otp_sent`, `password_reset_phone`, `password_reset_email`, `password_reset_link`.
 
 **Demo** (`apps/web/src/demo/session.ts`, `demo/passwords.ts`, `components/auth/login-flow.tsx`): same screens on the browser store; PBKDF2-SHA-256 + salt (WebCrypto), lockout and single-use reset links in localStorage; demo password `Raipur@2026`, code `123456`; the email route shows an on-screen "demo inbox" instead of sending mail. Acceptance tests: `e2e/roles.spec.ts` "sign-in (spec 01 …)" — generic error, lockout, sign-up password checks, plain text never stored, both reset routes, staff two-step, safe `next`.
+
+## My vehicles: edit (2026-11-14, user)
+
+User: "in my vehicle theres no option to edit the already added vehicles". Each vehicle card has Edit (pencil) beside Remove; the edit form opens in place of that card, prefilled (type, make, model, year, fuel, registration, odometer), with Save and Cancel — one form open at a time. Same checks as adding. Demo store `updateVehicle`; API `PATCH /me/vehicles/:id` when the account area moves to the API. Analytics `click` id `vehicle_edited`. Test `e2e/qa-regressions.spec.ts` "account: a saved vehicle can be edited".

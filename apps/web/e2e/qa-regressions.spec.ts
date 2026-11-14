@@ -601,3 +601,28 @@ test('U16: the portals drop the shopper tab bar and cart; the storefront keeps t
   await expect(tabs.first()).toBeVisible();
   await expect(cart).toBeVisible();
 });
+
+// User 2026-11-14: "in my vehicle theres no option to edit the already added vehicles".
+test('account: a saved vehicle can be edited, and cancelling changes nothing', async ({ page }) => {
+  await signIn(page, '9876543210');
+  await page.goto('/account/vehicles');
+  const activa = page.getByRole('listitem').filter({ hasText: 'Honda Activa 6G' });
+  await activa.getByRole('button', { name: 'Edit Honda Activa 6G' }).click();
+  const form = page.getByRole('form', { name: 'Edit vehicle' });
+  await expect(form.getByLabel('Make')).toHaveValue('Honda');
+  await expect(form.getByLabel('Registration number')).toHaveValue('CG04 MK 2201');
+  await form.getByLabel('Odometer (km)').fill('19200');
+  await form.getByRole('button', { name: 'Cancel' }).click();
+  await expect(activa).toContainText('18,450 km');
+
+  await activa.getByRole('button', { name: 'Edit Honda Activa 6G' }).click();
+  await form.getByLabel('Odometer (km)').fill('19200');
+  await form.getByLabel('Registration number').fill('cg04 mk 9999');
+  await form.getByRole('button', { name: 'Save' }).click();
+  await expect(form).toHaveCount(0);
+  await expect(activa).toContainText('CG04 MK 9999');
+  await expect(activa).toContainText('19,200 km');
+  // The edit survives a reload (saved on the account, not only on screen).
+  await page.reload();
+  await expect(page.getByRole('listitem').filter({ hasText: 'Honda Activa 6G' })).toContainText('19,200 km');
+});
