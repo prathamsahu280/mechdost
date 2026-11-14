@@ -29,3 +29,4 @@ Goal: mechdost.com runs on real sign-in (Firebase) and the API for every flow, w
 ## Progress
 
 - 2026-11-14: DB reset + reference seed; worker service deployed; plan written.
+- 2026-11-14 (Stream B, branch `feat/catalogue-create-import`): `POST /v1/admin/catalogue/products` + `POST /v1/admin/catalogue/import` (dry run, all-or-nothing, SKU-idempotent, 500 rows, 30/h), Admin → Catalogue "Add product" + "Import CSV" (en + hi), runbook + sample CSV, decisions entry. No migration needed. Tests: shared 12, db 6, api 4 new; `pnpm check` green.

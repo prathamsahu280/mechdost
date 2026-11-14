@@ -28,6 +28,7 @@ import {
 } from '@/lib/admin-prices-view';
 import { track } from '@/lib/analytics';
 import { formatPrice } from '@/lib/format';
+import { AddProductForm, ImportCsv } from './admin-catalogue-add';
 import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
 
 type Notice = { kind: 'ok' | 'error'; text: string } | null;
@@ -54,6 +55,7 @@ export function CatalogueEditor() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
+  const [adding, setAdding] = useState<'product' | 'import' | null>(null);
 
   const load = useCallback(
     async (after: string | null) => {
@@ -78,6 +80,32 @@ export function CatalogueEditor() {
     void load(null);
   }, [load]);
 
+  if (adding && !editing)
+    return (
+      <div className="space-y-4">
+        <button
+          type="button"
+          onClick={() => {
+            setAdding(null);
+            void load(null);
+          }}
+          className={portalQuiet}
+        >
+          {t('cat_back')}
+        </button>
+        {adding === 'product' ? (
+          <AddProductForm
+            onCreated={(slug) => {
+              setAdding(null);
+              setEditing(slug);
+            }}
+          />
+        ) : (
+          <ImportCsv onImported={() => void load(null)} />
+        )}
+      </div>
+    );
+
   if (editing)
     return (
       <ProductEditor
@@ -91,6 +119,26 @@ export function CatalogueEditor() {
 
   return (
     <div className="space-y-4">
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            setAdding('product');
+          }}
+          className={portalPrimary}
+        >
+          {t('cat_add_open')}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setAdding('import');
+          }}
+          className={portalQuiet}
+        >
+          {t('cat_import_open')}
+        </button>
+      </div>
       <div className="flex flex-wrap gap-2">
         {([false, true] as const).map((on) => (
           <button
@@ -432,7 +480,7 @@ function PackForm({
             <option value="">{t('cat_packNone')}</option>
             {NET_UNITS.map((u) => (
               <option key={u} value={u}>
-                {u}
+                {t(`cat_add_unit_${u}`)}
               </option>
             ))}
           </select>
