@@ -101,7 +101,9 @@ export function latinOffenders(text: string, extra: readonly string[] = []): str
   let rest = text
     .replace(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g, ' ')
     .replace(/https?:\/\/\S+/g, ' ')
-    .replace(/\b(?:[\w-]+\.)+(?:com|in|org|net|example)\b\S*/g, ' ');
+    .replace(/\b(?:[\w-]+\.)+(?:com|in|org|net|example)\b\S*/g, ' ')
+    // Template placeholders shown in admin editors ({brand}, {orderCode}) are code the admin types, not English.
+    .replace(/\{[A-Za-z][A-Za-z0-9]*\}/g, ' ');
   for (const phrase of phrases) {
     rest = rest.replace(new RegExp(`(?<![A-Za-z])${escape(phrase)}(?![A-Za-z])`, 'g'), ' ');
   }

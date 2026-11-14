@@ -123,8 +123,12 @@ test.describe('navigation chrome', () => {
           for (const el of document.querySelectorAll<HTMLElement>('a, button, input')) {
             const r = el.getBoundingClientRect();
             if (r.width > 0 && r.height > 0 && (r.width < 24 || r.height < 24)) {
+              // Name the element (tag, accessible name, classes) and keep two decimals: "24x24" hid a 23.6 px box.
+              const name =
+                el.getAttribute('aria-label') ?? el.getAttribute('name') ?? el.getAttribute('type') ?? '';
               out.push(
-                `small target "${el.textContent.trim().slice(0, 20)}" ${Math.round(r.width)}x${Math.round(r.height)}`,
+                `small target <${el.tagName.toLowerCase()}> "${(el.textContent || name).trim().slice(0, 30)}" ` +
+                  `${r.width.toFixed(2)}x${r.height.toFixed(2)} .${el.className.slice(0, 60)}`,
               );
             }
           }

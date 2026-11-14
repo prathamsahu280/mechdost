@@ -75,6 +75,14 @@ describe('Hindi content overlays', () => {
     expect(latinOffenders('front/rear (check size)')).toEqual(['front', 'rear', 'check', 'size']);
   });
 
+  it('treats template placeholders in braces as code, not English (admin editors show {brand}, {orderCode})', () => {
+    expect(latinOffenders('प्रोडक्ट पेज (ब्रांड के नाम के लिए {brand} लिखें)')).toEqual([]);
+    expect(latinOffenders('ऑर्डर {orderCode} की पुष्टि हुई')).toEqual([]);
+    // A bare word is still English, and so is a word inside other brackets.
+    expect(latinOffenders('ब्रांड brand')).toEqual(['brand']);
+    expect(latinOffenders('(brand)')).toEqual(['brand']);
+  });
+
   it('return English data unchanged', () => {
     const p = DEMO_PRODUCTS[2];
     const w = DEMO_WORKSHOPS[0];
