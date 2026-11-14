@@ -1,5 +1,7 @@
 import { and, asc, eq, inArray, ne, sql, type SQL } from 'drizzle-orm';
 import { computeServiceBill, estimateLineError, type EstimateLine } from '@mechdost/shared/service-bill';
+import type { Keyring } from '../crypto';
+import { verifyArrivalCode, type ArrivalCheck } from './arrival-code';
 import type { SendEstimateInput, ServicePaymentMethod, ServiceSlot } from '@mechdost/shared/service-requests';
 import type { ServiceDeclineReason, ServiceRequestStatus } from '@mechdost/shared/state';
 import {
@@ -144,6 +146,8 @@ export async function proposeSlot(
     lowPaise: number;
     highPaise: number;
     note: string | null;
+    /** First name of the visiting mechanic; required for a home visit. */
+    mechanicName?: string | null;
   },
 ) {
   if (input.highPaise < input.lowPaise) throw new ValidationError('High is below low', 'RANGE');
@@ -151,11 +155,14 @@ export async function proposeSlot(
   return db.transaction(async (tx) => {
     const r = await jobFor(tx, input, { newWork: true });
     requireStatus(r, ['awaiting_workshop']);
+    if (r.serviceMode === 'home' && !input.mechanicName)
+      throw new ValidationError('Name the mechanic who will visit', 'MECHANIC_REQUIRED');
     const out = await transitionRequest(tx, {
       request: r,
       to: 'proposed',
       expectedVersion: input.expectedVersion,
       actor: workshopActor(input.staffUserId),
+      patch: { visitingMechanic: r.serviceMode === 'home' ? (input.mechanicName ?? null) : null },
       payload: { date: input.date, slot: input.slot, lowPaise: input.lowPaise, highPaise: input.highPaise },
     });
     await tx.insert(serviceProposals).values({
@@ -192,42 +199,94 @@ export async function declineRequest(db: Tx, input: StepInput & { reasonCode: Se
 }
 
 /**
- * The vehicle is at the workshop (confirmed → vehicle_received). The odometer may not go back: it must be at least
- * the highest reading recorded for this customer's vehicle (earlier requests and the saved vehicle).
+ * The odometer may not go back: it must be at least the highest reading recorded for this customer's vehicle
+ * (earlier requests and the saved vehicle). Shared by the workshop arrival and the admin arrival override.
+ */
+export async function assertOdometerNotBelowLast(tx: Tx, r: RequestCore, odometerKm: number) {
+  const [prev] = rowsOf<{ km: unknown }>(
+    await tx.execute(sql`select max(odometer_km) as km from service_requests
+      where user_id = ${r.userId} and vehicle_key = ${r.vehicleKey} and id <> ${r.id} and odometer_km is not null`),
+  );
+  let last = prev?.km === null || prev?.km === undefined ? null : num(prev.km);
+  if (r.vehicleId) {
+    const [v] = await tx
+      .select({ km: vehicles.odometerKm })
+      .from(vehicles)
+      .where(eq(vehicles.id, r.vehicleId))
+      .limit(1);
+    if (v?.km !== undefined && v.km !== null) last = Math.max(last ?? 0, v.km);
+  }
+  if (last !== null && odometerKm < last)
+    throw new ValidationError('The odometer reading is below the last one recorded', 'ODOMETER_BELOW_LAST', {
+      lastKm: last,
+    });
+}
+
+/** confirmed → vehicle_received, with the odometer (and for a home visit, the proof of arrival in the event). */
+export async function receiveInTx(
+  tx: Tx,
+  r: RequestCore,
+  input: { expectedVersion: number; odometerKm: number },
+  actor: { type: 'workshop' | 'admin'; userId: string },
+  extra: { patch?: Parameters<typeof transitionRequest>[1]['patch']; payload?: Record<string, unknown> } = {},
+) {
+  await assertOdometerNotBelowLast(tx, r, input.odometerKm);
+  const out = await transitionRequest(tx, {
+    request: r,
+    to: 'vehicle_received',
+    expectedVersion: input.expectedVersion,
+    actor,
+    patch: { odometerKm: input.odometerKm, receivedAt: new Date(), ...extra.patch },
+    payload: { odometerKm: input.odometerKm, ...extra.payload },
+  });
+  if (r.serviceMode === 'home')
+    await recordServerEvent(tx, 'home_visit_arrived', {
+      userId: actor.userId,
+      cityId: r.cityId,
+      props: {
+        requestCode: r.code,
+        workshopId: workshopOf(r),
+        via: actor.type === 'admin' ? 'override' : 'code',
+      },
+    });
+  return out;
+}
+
+/**
+ * The vehicle is at the workshop (confirmed → vehicle_received) for a request booked at the workshop. A home visit
+ * needs the arrival code: use `markVehicleReceived`.
  */
 export async function receiveVehicle(db: Tx, input: StepInput & { odometerKm: number }) {
   return db.transaction(async (tx) => {
     const r = await jobFor(tx, input);
     requireStatus(r, ['confirmed']);
-    const [prev] = rowsOf<{ km: unknown }>(
-      await tx.execute(sql`select max(odometer_km) as km from service_requests
-        where user_id = ${r.userId} and vehicle_key = ${r.vehicleKey} and id <> ${r.id} and odometer_km is not null`),
-    );
-    let last = prev?.km === null || prev?.km === undefined ? null : num(prev.km);
-    if (r.vehicleId) {
-      const [v] = await tx
-        .select({ km: vehicles.odometerKm })
-        .from(vehicles)
-        .where(eq(vehicles.id, r.vehicleId))
-        .limit(1);
-      if (v?.km !== undefined && v.km !== null) last = Math.max(last ?? 0, v.km);
+    if (r.serviceMode === 'home')
+      throw new ValidationError('Enter the arrival code the customer shows', 'ARRIVAL_CODE_REQUIRED');
+    return receiveInTx(tx, r, input, workshopActor(input.staffUserId));
+  });
+}
+
+export type ArrivalResult =
+  { ok: true; status: ServiceRequestStatus; version: number } | Extract<ArrivalCheck, { ok: false }>;
+
+/**
+ * The workshop step "vehicle received / mechanic arrived" for either mode. A home visit checks the customer's arrival
+ * code first: a wrong try is counted and committed (returned, not thrown), five wrong tries lock it and only an
+ * audited admin override gets past (spec 06, design 2026-11-15).
+ */
+export async function markVehicleReceived(
+  db: Tx,
+  input: StepInput & { odometerKm: number; arrivalCode?: string; keyring?: Keyring | null },
+): Promise<ArrivalResult> {
+  return db.transaction(async (tx) => {
+    const r = await jobFor(tx, input);
+    requireStatus(r, ['confirmed']);
+    if (r.serviceMode === 'home') {
+      const check = await verifyArrivalCode(tx, input.keyring ?? null, r.id, input.arrivalCode);
+      if (!check.ok) return check;
     }
-    if (last !== null && input.odometerKm < last)
-      throw new ValidationError(
-        'The odometer reading is below the last one recorded',
-        'ODOMETER_BELOW_LAST',
-        {
-          lastKm: last,
-        },
-      );
-    return transitionRequest(tx, {
-      request: r,
-      to: 'vehicle_received',
-      expectedVersion: input.expectedVersion,
-      actor: workshopActor(input.staffUserId),
-      patch: { odometerKm: input.odometerKm, receivedAt: new Date() },
-      payload: { odometerKm: input.odometerKm },
-    });
+    const out = await receiveInTx(tx, r, input, workshopActor(input.staffUserId));
+    return { ok: true as const, ...out };
   });
 }
 
@@ -317,22 +376,43 @@ export async function advanceJob(db: Tx, input: StepInput & { to: 'in_progress' 
   });
 }
 
-/** Bill the approved lines of the decided estimate (ready → billed): a frozen snapshot with GST and round-off. */
+/** The home visit fee of a request: null when it was booked at the workshop. */
+export async function visitFeeOf(tx: Tx, requestId: string) {
+  const [f] = await tx
+    .select({ paise: serviceRequests.visitFeePaise, waived: serviceRequests.visitFeeWaivedReason })
+    .from(serviceRequests)
+    .where(eq(serviceRequests.id, requestId))
+    .limit(1);
+  return f?.paise === null || f?.paise === undefined ? null : { paise: f.paise, waived: f.waived !== null };
+}
+
+/**
+ * Bill the approved lines of the decided estimate (ready → billed): a frozen snapshot with GST and round-off. A home
+ * job adds the visit fee line (a waived fee stays as a 0 line). A home job where no work was approved
+ * (no_work_approved) is billed the visit fee alone, unless it was waived.
+ */
 export async function billJob(db: Tx, input: StepInput) {
   return db.transaction(async (tx) => {
     const r = await jobFor(tx, input);
-    requireStatus(r, ['ready']);
+    requireStatus(r, ['ready', 'no_work_approved']);
+    const fee = await visitFeeOf(tx, r.id);
+    const visitOnly = r.status === 'no_work_approved';
+    if (visitOnly && (!fee || fee.waived || fee.paise === 0))
+      throw new ConflictError('There is nothing to bill', 'NO_APPROVED_ESTIMATE');
     const [est] = await tx
       .select({ id: estimates.id })
       .from(estimates)
       .where(and(eq(estimates.requestId, r.id), eq(estimates.status, 'decided')))
       .limit(1);
-    if (!est) throw new ConflictError('There is no approved estimate to bill', 'NO_APPROVED_ESTIMATE');
-    const items = await tx
-      .select()
-      .from(estimateItems)
-      .where(eq(estimateItems.estimateId, est.id))
-      .orderBy(asc(estimateItems.lineNo));
+    if (!est && !visitOnly)
+      throw new ConflictError('There is no approved estimate to bill', 'NO_APPROVED_ESTIMATE');
+    const items = est
+      ? await tx
+          .select()
+          .from(estimateItems)
+          .where(eq(estimateItems.estimateId, est.id))
+          .orderBy(asc(estimateItems.lineNo))
+      : [];
     const [w] = await tx
       .select({ gstRegistered: workshops.gstRegistered })
       .from(workshops)
@@ -349,8 +429,10 @@ export async function billJob(db: Tx, input: StepInput) {
         decision: i.decision as EstimateLine['decision'],
       })),
       { gstRegistered: w.gstRegistered },
+      fee,
     );
-    if (bill.lines.length === 0) throw new ConflictError('No approved line to bill', 'NO_APPROVED_LINES');
+    if (bill.lines.filter((l) => l.kind !== 'visit_fee').length === 0 && !visitOnly)
+      throw new ConflictError('No approved line to bill', 'NO_APPROVED_LINES');
     const out = await transitionRequest(tx, {
       request: r,
       to: 'billed',
@@ -360,7 +442,7 @@ export async function billJob(db: Tx, input: StepInput) {
     });
     await tx.insert(serviceBills).values({
       requestId: r.id,
-      estimateId: est.id,
+      estimateId: est?.id ?? null,
       lines: bill.lines,
       gstRegistered: w.gstRegistered,
       taxablePaise: bill.taxablePaise,
@@ -418,6 +500,10 @@ export async function returnVehicle(db: Tx, input: StepInput) {
   return db.transaction(async (tx) => {
     const r = await jobFor(tx, input);
     requireStatus(r, ['no_work_approved']);
+    // A home visit with a fee due is billed (or the fee waived) before the job closes: no silent free visit.
+    const fee = await visitFeeOf(tx, r.id);
+    if (fee && !fee.waived && fee.paise > 0)
+      throw new ConflictError('Bill the home visit fee or waive it first', 'VISIT_FEE_DUE');
     return transitionRequest(tx, {
       request: r,
       to: 'completed',

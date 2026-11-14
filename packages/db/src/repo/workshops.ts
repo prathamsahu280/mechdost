@@ -11,6 +11,7 @@ import { ConflictError, ForbiddenError, mapPgError, NotFoundError, pgCode, Valid
 import { recordServerEvent } from './events';
 import { localized } from './localized';
 import type { Tx } from './orders';
+import { assertHomeFeeWithinCap } from './home-settings';
 import { grantRole } from './rbac';
 import type { CityScope } from './routing';
 import { num, numOrNull, rowsOf } from './sql-rows';
@@ -63,6 +64,8 @@ export interface MenuItem {
   minMinutes: number;
   maxMinutes: number;
   vehicleType: VehicleType | null;
+  /** Can be done at the customer's home. */
+  homeAvailable: boolean;
 }
 
 export interface NearbyWorkshop {
@@ -82,6 +85,8 @@ export interface NearbyWorkshop {
   ratingAvg: number | null;
   ratingCount: number;
   gstRegistered: boolean;
+  /** Home servicing (null when the workshop does not do home visits). */
+  home: { radiusKm: number; visitFeePaise: number } | null;
   services: MenuItem[];
 }
 
@@ -97,6 +102,7 @@ interface MenuRow {
   min_minutes: unknown;
   max_minutes: unknown;
   vehicle_type: VehicleType | null;
+  home_available: boolean;
 }
 
 async function activeMenus(db: Tx, ids: readonly string[], locale: ServiceLocale) {
@@ -104,7 +110,7 @@ async function activeMenus(db: Tx, ids: readonly string[], locale: ServiceLocale
   const rows = rowsOf<MenuRow>(
     await db.execute(sql`
       select workshop_id, key, title, title_hi, included, included_hi, low_paise, high_paise, min_minutes,
-        max_minutes, vehicle_type
+        max_minutes, vehicle_type, home_available
       from workshop_services
       where active and workshop_id in (${sql.join(
         ids.map((id) => sql`${id}::uuid`),
@@ -124,6 +130,7 @@ async function activeMenus(db: Tx, ids: readonly string[], locale: ServiceLocale
       minMinutes: num(r.min_minutes),
       maxMinutes: num(r.max_minutes),
       vehicleType: r.vehicle_type,
+      homeAvailable: r.home_available,
     });
     out.set(r.workshop_id, list);
   }
@@ -150,11 +157,15 @@ interface WorkshopRow {
   rating_avg: unknown;
   rating_count: unknown;
   gst_registered: boolean;
+  home_service: boolean;
+  home_radius_km: unknown;
+  home_visit_fee_paise: unknown;
 }
 
 const WORKSHOP_COLUMNS = sql.raw(`w.id, w.slug, w.name, w.name_hi, w.area, w.area_hi, w.address_line,
   w.address_line_hi, w.pincode, ST_Y(w.location::geometry) as lat, ST_X(w.location::geometry) as lng,
-  w.vehicle_types, w.ev_basic, w.pickup, w.hours, w.rating_avg, w.rating_count, w.gst_registered`);
+  w.vehicle_types, w.ev_basic, w.pickup, w.hours, w.rating_avg, w.rating_count, w.gst_registered,
+  w.home_service, w.home_radius_km, w.home_visit_fee_paise`);
 
 function toPublic(r: WorkshopRow, locale: ServiceLocale, services: MenuItem[]): NearbyWorkshop {
   return {
@@ -174,6 +185,9 @@ function toPublic(r: WorkshopRow, locale: ServiceLocale, services: MenuItem[]): 
     ratingAvg: numOrNull(r.rating_avg),
     ratingCount: num(r.rating_count),
     gstRegistered: r.gst_registered,
+    home: r.home_service
+      ? { radiusKm: num(r.home_radius_km), visitFeePaise: num(r.home_visit_fee_paise) }
+      : null,
     services,
   };
 }
@@ -202,9 +216,17 @@ export async function findNearbyWorkshops(
     ev?: boolean;
     pickup?: boolean;
     serviceKey?: string | null;
+    /**
+     * `home`: only workshops that opted in and whose own radius covers the point (the point must be a pin, not a PIN
+     * code); the radius argument is ignored. Default `workshop`.
+     */
+    mode?: 'workshop' | 'home';
     locale: ServiceLocale;
   },
 ): Promise<{ origin: { lat: number; lng: number }; workshops: NearbyWorkshop[] }> {
+  const home = input.mode === 'home';
+  if (home && !('lat' in input.at))
+    throw new ValidationError('Pin your address on the map to see home visits', 'HOME_NEEDS_PIN');
   const origin = await originOf(db, input.at);
   const point = sql`ST_SetSRID(ST_MakePoint(${origin.lng}, ${origin.lat}), 4326)::geography`;
   const rows = rowsOf<WorkshopRow>(
@@ -212,7 +234,16 @@ export async function findNearbyWorkshops(
       select ${WORKSHOP_COLUMNS}, ST_Distance(w.location, ${point}) as distance_m
       from workshops w
       where ${BOOKABLE_SQL}
-        and ST_DWithin(w.location, ${point}, ${Math.round(input.radiusKm * 1000)})
+        and ${
+          home
+            ? // The GIST index serves the first, constant bound (the 25 km maximum); the second is each workshop's own radius.
+              sql`w.home_service and ST_DWithin(w.location, ${point}, 25000)
+                and ST_DWithin(w.location, ${point}, w.home_radius_km * 1000)
+                and exists (select 1 from workshop_services h
+                  where h.workshop_id = w.id and h.active and h.home_available
+                    ${input.serviceKey ? sql`and h.key = ${input.serviceKey}` : sql``})`
+            : sql`ST_DWithin(w.location, ${point}, ${Math.round(input.radiusKm * 1000)})`
+        }
         ${input.vehicleType ? sql`and ${input.vehicleType} = any(w.vehicle_types)` : sql``}
         ${input.ev ? sql`and w.ev_basic` : sql``}
         ${input.pickup ? sql`and w.pickup` : sql``}
@@ -276,6 +307,9 @@ export interface AdminWorkshop {
   status: 'approved' | 'paused' | 'suspended';
   statusReason: string | null;
   busy: boolean;
+  homeService: boolean;
+  homeRadiusKm: number;
+  homeVisitFeePaise: number;
   version: number;
   /** Customer-visible English fields without Hindi (hard rule 10: flagged in the editor). */
   missingHindi: string[];
@@ -294,6 +328,7 @@ export interface AdminMenuItem {
   maxMinutes: number;
   vehicleType: VehicleType | null;
   active: boolean;
+  homeAvailable: boolean;
 }
 
 async function cityOfPincode(tx: Tx, pincode: string): Promise<string> {
@@ -351,6 +386,8 @@ async function saveMenu(tx: Tx, workshopId: string, menu: readonly MenuItemInput
       maxMinutes: m.maxMinutes,
       vehicleType: m.vehicleType ?? null,
       active: m.active,
+      // Left out = keep what the workshop chose (an admin menu edit must not switch home services off).
+      ...(m.homeAvailable !== undefined && { homeAvailable: m.homeAvailable }),
       sortOrder: i,
     };
     await tx
@@ -494,7 +531,11 @@ export async function updateWorkshop(
       ...(p.locationVerified !== undefined && { locationVerified: p.locationVerified }),
       ...(p.published !== undefined && { published: p.published }),
       ...(p.busy !== undefined && { busy: p.busy }),
+      ...(p.homeService !== undefined && { homeService: p.homeService }),
+      ...(p.homeRadiusKm !== undefined && { homeRadiusKm: p.homeRadiusKm }),
+      ...(p.homeVisitFeePaise !== undefined && { homeVisitFeePaise: p.homeVisitFeePaise }),
     };
+    if (p.homeVisitFeePaise !== undefined) await assertHomeFeeWithinCap(tx, cityId, p.homeVisitFeePaise);
     // A moved workshop must be checked on the map again before it is listed (spec 06 "location_verified").
     if (set.location && p.locationVerified === undefined) {
       set.locationVerified = false;
@@ -667,6 +708,7 @@ async function adminMenus(db: Tx, ids: readonly string[]) {
       maxMinutes: r.maxMinutes,
       vehicleType: r.vehicleType as VehicleType | null,
       active: r.active,
+      homeAvailable: r.homeAvailable,
     });
     out.set(r.workshopId, list);
   }
@@ -699,6 +741,9 @@ function toAdmin(r: AdminRow, menu: AdminWorkshop['menu']): AdminWorkshop {
     status: r.status,
     statusReason: r.status_reason,
     busy: r.busy,
+    homeService: r.home_service,
+    homeRadiusKm: num(r.home_radius_km),
+    homeVisitFeePaise: num(r.home_visit_fee_paise),
     version: num(r.version),
     missingHindi: missingHindiOf(r, menu),
     menu,

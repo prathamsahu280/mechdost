@@ -5,7 +5,15 @@
  */
 import { z } from 'zod';
 import { ESTIMATE_GST_RATES_BP, ESTIMATE_MAX_LINES, ESTIMATE_MAX_UNIT_PAISE } from './service-bill';
-import { SERVICE_CANCEL_REASONS, SERVICE_DECLINE_REASONS, SERVICE_REJECT_REASONS } from './state';
+import {
+  MOVE_REASONS,
+  MOVE_TRANSPORTS,
+  SERVICE_CANCEL_REASONS,
+  SERVICE_DECLINE_REASONS,
+  SERVICE_MODES,
+  SERVICE_REJECT_REASONS,
+  VISIT_FEE_WAIVE_REASONS,
+} from './state';
 import { VEHICLE_TYPES } from './vehicles';
 
 /** Part of the day the customer prefers or the workshop proposes (the demo's three slots). */
@@ -27,6 +35,13 @@ export const NEARBY_MAX_RADIUS_KM = 50;
 export const MAX_REQUEST_SERVICES = 8;
 export const MAX_MENU_ITEMS = 40;
 export const ODOMETER_MAX_KM = 2_000_000;
+/** Home servicing bounds (spec 06): travel radius in km and the visit fee in paise (the per-city setting caps it further). */
+export const HOME_RADIUS_MIN_KM = 1;
+export const HOME_RADIUS_MAX_KM = 25;
+export const HOME_RADIUS_DEFAULT_KM = 5;
+export const HOME_FEE_MAX_PAISE = 50_000;
+export const HOME_FEE_DEFAULT_PAISE = 9_900;
+export const ARRIVAL_CODE_RE = /^\d{4}$/;
 
 export const SERVICE_CODE_RE = /^SR-[A-Z]{3}-\d{4}-[0-9A-HJKMNP-TV-Z]{6}$/;
 export const WORKSHOP_SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -45,6 +60,9 @@ const isoDate = z
   .string()
   .regex(DATE_RE)
   .refine((d) => !Number.isNaN(Date.parse(`${d}T00:00:00Z`)), 'invalid date');
+
+const HomeRadius = z.number().int().min(HOME_RADIUS_MIN_KM).max(HOME_RADIUS_MAX_KM);
+const HomeFee = z.number().int().min(0).max(HOME_FEE_MAX_PAISE);
 
 /** Opening hours: one window on the listed weekdays (0 = Sunday), times in IST. */
 export const WorkshopHoursSchema = z
@@ -73,6 +91,8 @@ export const MenuItemSchema = z
     /** null: every vehicle type the workshop serves. */
     vehicleType: z.enum(VEHICLE_TYPES).nullable().optional(),
     active: z.boolean().default(true),
+    /** Can be done at the customer's home (home servicing). */
+    homeAvailable: z.boolean().optional(),
   })
   .strict()
   .refine((m) => m.highPaise >= m.lowPaise, { message: 'high below low', path: ['highPaise'] })
@@ -139,6 +159,9 @@ export const UpdateWorkshopSchema = z
     locationVerified: z.boolean().optional(),
     published: z.boolean().optional(),
     busy: z.boolean().optional(),
+    homeService: z.boolean().optional(),
+    homeRadiusKm: HomeRadius.optional(),
+    homeVisitFeePaise: HomeFee.optional(),
     menu: z.array(MenuItemSchema).max(MAX_MENU_ITEMS).optional(),
   })
   .strict()
@@ -185,8 +208,21 @@ export const CreateServiceRequestSchema = z
     preferredDate: isoDate,
     preferredSlot: z.enum(SERVICE_SLOTS),
     pickup: z.boolean().default(false),
+    /** Where the service happens; `home` needs a chosen workshop, a pinned saved address and the fee the customer saw. */
+    mode: z.enum(SERVICE_MODES).optional(),
+    addressId: z.uuid().nullable().optional(),
+    visitFeePaise: HomeFee.nullable().optional(),
   })
   .strict()
+  .refine(
+    (b) =>
+      (b.mode ?? 'workshop') === 'workshop' ||
+      (b.workshopSlug !== null && Boolean(b.addressId) && !b.pickup && typeof b.visitFeePaise === 'number'),
+    {
+      message: 'a home visit needs a workshop, a saved address, no pickup and the visit fee',
+      path: ['mode'],
+    },
+  )
   .refine((b) => (b.lat === undefined || b.lat === null) === (b.lng === undefined || b.lng === null), {
     message: 'lat and lng go together',
     path: ['lng'],
@@ -234,6 +270,15 @@ export const ProposeSchema = z
     lowPaise: paise,
     highPaise: paise,
     note: text(1, 300).nullable().optional(),
+    /** First name of the visiting mechanic (required for a home visit; shown to the customer). */
+    mechanicName: z
+      .string()
+      .trim()
+      .min(2)
+      .max(30)
+      .regex(/^[\p{L}\p{M}][\p{L}\p{M} .'-]*$/u)
+      .nullable()
+      .optional(),
     version: z.number().int().min(1),
   })
   .strict()
@@ -244,8 +289,53 @@ export const WorkshopDeclineSchema = z
   .strict();
 
 export const VehicleReceivedSchema = z
-  .object({ odometerKm: z.number().int().min(0).max(ODOMETER_MAX_KM), version: z.number().int().min(1) })
+  .object({
+    odometerKm: z.number().int().min(0).max(ODOMETER_MAX_KM),
+    /** Home visits: the code the customer shows at the door. */
+    arrivalCode: z.string().regex(ARRIVAL_CODE_RE).optional(),
+    version: z.number().int().min(1),
+  })
   .strict();
+
+/** Workshop: offer to move a home job to the workshop. */
+export const MoveProposalSchema = z
+  .object({
+    reasonCode: z.enum(MOVE_REASONS),
+    transport: z.enum(MOVE_TRANSPORTS),
+    version: z.number().int().min(1),
+  })
+  .strict();
+
+/** Customer: accept or decline the offer to move the job to the workshop. */
+export const MoveDecisionSchema = z
+  .object({ accept: z.boolean(), version: z.number().int().min(1) })
+  .strict();
+
+/** Workshop: waive the home visit fee (the bill keeps the line at 0). */
+export const WaiveVisitFeeSchema = z
+  .object({ reasonCode: z.enum(VISIT_FEE_WAIVE_REASONS), version: z.number().int().min(1) })
+  .strict();
+
+/** Admin: confirm the mechanic's arrival without the code (audited with a reason). */
+export const ArrivalOverrideSchema = z
+  .object({
+    reason: text(5, 300),
+    odometerKm: z.number().int().min(0).max(ODOMETER_MAX_KM),
+    version: z.number().int().min(1),
+  })
+  .strict();
+
+/** Workshop portal: the workshop's own home settings and which menu lines it does at home. */
+export const HomeSettingsSchema = z
+  .object({
+    homeService: z.boolean(),
+    homeRadiusKm: HomeRadius,
+    homeVisitFeePaise: HomeFee,
+    homeServiceKeys: z.array(z.string().min(2).max(40).regex(SERVICE_KEY_RE)).max(MAX_MENU_ITEMS),
+    version: z.number().int().min(1),
+  })
+  .strict();
+export type HomeSettingsInput = z.infer<typeof HomeSettingsSchema>;
 
 export const EstimateLineSchema = z
   .object({

@@ -4,6 +4,7 @@ import {
   cancelMyServiceRequest,
   createServiceRequest,
   decideEstimate,
+  decideMove,
   decideProposal,
   getMyServiceRequest,
   listMyServiceRequests,
@@ -12,6 +13,7 @@ import {
   CancelServiceRequestSchema,
   CreateServiceRequestSchema,
   EstimateDecisionSchema,
+  MoveDecisionSchema,
   ProposalDecisionSchema,
 } from '@mechdost/shared/service-requests';
 import type { SessionCache } from '../auth/session-cache';
@@ -103,6 +105,20 @@ const proposal = createRoute({
   responses: { 200: json(Changed, 'Decided'), ...conflict, ...errorResponses },
 });
 
+const move = createRoute({
+  method: 'post',
+  path: '/service-requests/{code}/move',
+  tags: ['services'],
+  summary:
+    "Answer the workshop's offer to move a home job to its workshop (accept: it becomes a workshop job; decline: the visit fee is billed)",
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: z.object({ code: RequestCode }),
+    body: body(MoveDecisionSchema.openapi('MoveDecision')),
+  },
+  responses: { 200: json(Changed, 'Answered'), ...conflict, ...errorResponses },
+});
+
 const cancel = createRoute({
   method: 'post',
   path: '/service-requests/{code}/cancel',
@@ -172,12 +188,24 @@ export function serviceRequestRoutes(deps: AppDeps, cache: SessionCache) {
         me(c),
         c.req.valid('param').code,
         c.req.valid('query').locale,
+        deps.keyring ?? null,
       );
       return c.json(toDetailJson(v), 200);
     })
     .openapi(proposal, async (c) => {
       const b = c.req.valid('json');
       const r = await decideProposal(deps.db, {
+        userId: me(c),
+        code: c.req.valid('param').code,
+        accept: b.accept,
+        expectedVersion: b.version,
+        keyring: deps.keyring ?? null,
+      });
+      return c.json(r, 200);
+    })
+    .openapi(move, async (c) => {
+      const b = c.req.valid('json');
+      const r = await decideMove(deps.db, {
         userId: me(c),
         code: c.req.valid('param').code,
         accept: b.accept,

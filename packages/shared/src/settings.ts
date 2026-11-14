@@ -124,6 +124,11 @@ export const OPERATIONAL_SETTINGS = {
   'coins.unlock_days': { kind: 'int', min: 0, max: 60, default: 8, globalOnly: true },
   /** Days before unused coins expire. */
   'coins.expiry_days': { kind: 'int', min: 30, max: 1_095, default: 180, globalOnly: true },
+  /**
+   * Home servicing (spec 06, 15): the most a workshop may charge as its home visit fee in this city (paise). Each
+   * workshop sets its own fee up to this; 0 means visits must be free.
+   */
+  'service.home_fee_max_paise': { kind: 'int', min: 0, max: 50_000, default: 50_000 },
 } as const satisfies Record<string, SettingSpec>;
 
 /**

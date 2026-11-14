@@ -74,6 +74,8 @@ const nearby = createRoute({
         ev: bool,
         pickup: bool,
         service: z.string().max(40).regex(SERVICE_KEY_RE).optional(),
+        /** `home`: workshops whose own radius covers the pin (needs lat and lng); the radius is ignored. */
+        mode: z.enum(['workshop', 'home']).default('workshop'),
         locale: Locale,
       })
       .refine((q) => (q.lat !== undefined && q.lng !== undefined) || q.pincode !== undefined, {
@@ -119,6 +121,7 @@ const AdminMenuItem = z.object({
   maxMinutes: z.number().int(),
   vehicleType: z.enum(VEHICLE_TYPES).nullable(),
   active: z.boolean(),
+  homeAvailable: z.boolean(),
 });
 
 const AdminWorkshop = z
@@ -147,6 +150,9 @@ const AdminWorkshop = z
     status: z.enum(['approved', 'paused', 'suspended']),
     statusReason: z.string().nullable(),
     busy: z.boolean(),
+    homeService: z.boolean(),
+    homeRadiusKm: z.number().int(),
+    homeVisitFeePaise: z.number().int(),
     version: z.number().int(),
     missingHindi: z.array(z.string()),
     menu: z.array(AdminMenuItem),
@@ -252,6 +258,7 @@ export function workshopPublicRoutes(deps: AppDeps) {
         ev: q.ev,
         pickup: q.pickup,
         serviceKey: q.service ?? null,
+        mode: q.mode,
         locale: q.locale,
       });
       c.header('Cache-Control', CACHE);
