@@ -8,6 +8,8 @@ import type { AppEnv } from '../types';
 export const RATE_RULES = {
   apiPerIp: { name: 'api_ip', limit: 600, windowSeconds: 60 },
   apiPerUser: { name: 'api_user', limit: 120, windowSeconds: 60 },
+  /** CSV catalogue imports (checks and real runs) per staff user: up to 500 rows each (plan 2026-11-14 B). */
+  catalogueImport: { name: 'catalogue_import', limit: 30, windowSeconds: 3600 },
 } as const satisfies Record<string, RateRule>;
 
 /**

@@ -296,6 +296,20 @@ User shared Razorpay **test** keys and asked to "see how we have the stuff for r
 - **Switch the website to real sign-in and the API** (user: "switch on the real api"); launch Monday, scope **everything including workshops and service requests, risk accepted** (plan `docs/superpowers/plans/2026-11-14-real-api-launch.md`).
 - **Database:** keep the `mechdost-dev` Supabase project for production; **full reset** done 2026-11-14 with the user's approval (no real data: Firebase had 0 users, the 2 orders were Razorpay tests). Rebuilt from migrations; RBAC seed; Raipur, 5 PIN codes and 9 categories kept from the reference data; no products, shops, users or orders.
 
+## 2026-11-14 — Adding products: admin form and CSV import (plan 2026-11-14, Stream B)
+
+The reset database has no products, so staff add them (runbook `docs/runbooks/catalogue-import.md`). Rulings taken while building (cost if wrong in brackets):
+
+- **Permissions:** the form needs `products:write`; the import needs `products:import` (the RBAC catalogue already had it; `catalogue_manager` and `super_admin` hold both). Creating as **live** needs `products:publish` too and goes through `productMachine` (draft → live); otherwise products start as drafts. (cheap: one middleware line)
+- **CSV in rupees and per cent** (`mrp_rupees`, `gst_rate_percent`), converted exactly to integer paise / basis points by string parsing (`toPaise`, `percentToBp`); the JSON API takes `mrpPaise` / `gstRateBp`. Staff type rupees, never paise. (cheap)
+- **GST slabs accepted:** 0, 5, 12, 18, 28, 40 % (`PRODUCT_GST_RATES_BP`), the old slabs kept so a product is never blocked by the GST 2.0 change. (cheap)
+- **All or nothing:** every row is checked first (file shape, Zod body, catalogue rules); any problem → nothing written, every problem listed by row and column. A **dry run** ("Check file") is the first step in the screen. Valid rows go in **one transaction** under an advisory lock shared with the form, so concurrent imports cannot race on a slug or SKU.
+- **Idempotent on SKU:** SKUs already in the catalogue are reported as skipped, never updated (updates stay in the editor, versioned). A slug already used by another product is an error (`SLUG_TAKEN`), not auto-suffixed — two products with the same brand + name need distinct names. (cheap: suffixing can be added)
+- **Brands are created on the fly** from the brand name (slug of the name), audited `brand.created`; a brand editor comes later. (cheap)
+- **Limits:** 500 rows and 300,000 characters per file, 30 checks/imports per person per hour (`catalogue_import` rate rule).
+- **CSV only** for the import endpoint (no JSON rows): scripts can call the single-product endpoint. (cheap to add)
+- CSV parsing is our own RFC 4180 reader in `@mechdost/shared/catalogue-import` (no new dependency).
+
 ## 2026-11-14 — Cart stepper and editable vehicles (user)
 
 - **Quantity on the product card** (user: "just like swiggy or amazon"): after "Add to cart" the button becomes − / count / +; − at one removes the product (spec 03).

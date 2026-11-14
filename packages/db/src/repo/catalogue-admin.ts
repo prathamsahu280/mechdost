@@ -276,7 +276,8 @@ export async function updateProductTexts(
   });
 }
 
-async function requireHindiToPublish(tx: Tx): Promise<boolean> {
+/** Setting `catalogue.require_hindi_to_publish` (global only): going live needs complete Hindi. */
+export async function requireHindiToPublish(tx: Tx): Promise<boolean> {
   const [row] = await tx
     .select({ value: settings.value })
     .from(settings)

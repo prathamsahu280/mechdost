@@ -65,6 +65,9 @@ export async function AdminShell({ section }: { section: AdminSection }) {
             'apply',
             'categories',
             'support',
+            // Admin → Catalogue: vehicle type labels and specification names/values (plan 2026-11-14 B).
+            'catalogue',
+            'compare',
           ]}
         >
           <AdminConsole

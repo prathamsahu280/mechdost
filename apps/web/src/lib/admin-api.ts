@@ -10,7 +10,16 @@ export interface ResponseSchema<T> {
   safeParse(value: unknown): { success: true; data: T } | { success: false };
 }
 
-export type AdminResult<T> = { ok: true; data: T } | { ok: false; status: number; code: string };
+export type AdminResult<T> =
+  | { ok: true; data: T }
+  /** `details` is the API's `error.details` (e.g. the rows of a refused import), unchecked: parse before use. */
+  | { ok: false; status: number; code: string; details?: unknown };
+
+function errorDetails(body: unknown): unknown {
+  if (typeof body !== 'object' || body === null || !('error' in body)) return undefined;
+  const { error } = body;
+  return typeof error === 'object' && error !== null && 'details' in error ? error.details : undefined;
+}
 
 function errorCode(body: unknown): string | null {
   if (typeof body !== 'object' || body === null || !('error' in body)) return null;
@@ -46,7 +55,12 @@ export async function adminApi<T>(
   }
   const body: unknown = await res.json().catch(() => null);
   if (!res.ok)
-    return { ok: false, status: res.status, code: errorCode(body) ?? `HTTP_${String(res.status)}` };
+    return {
+      ok: false,
+      status: res.status,
+      code: errorCode(body) ?? `HTTP_${String(res.status)}`,
+      details: errorDetails(body),
+    };
   const parsed = schema.safeParse(body);
   return parsed.success
     ? { ok: true, data: parsed.data }

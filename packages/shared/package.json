@@ -24,6 +24,7 @@
     "./policy": "./src/policy.ts",
     "./auth": "./src/auth.ts",
     "./catalogue": "./src/catalogue.ts",
+    "./catalogue-import": "./src/catalogue-import.ts",
     "./vehicles": "./src/vehicles.ts",
     "./business": "./src/business.ts",
     "./gst": "./src/gst.ts",

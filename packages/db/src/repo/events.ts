@@ -45,6 +45,25 @@ export async function recordServerEvent<E extends ServerEvent>(
   });
 }
 
+/** Many server events of one kind in one statement (bulk actions such as a catalogue import). */
+export async function recordServerEvents<E extends ServerEvent>(
+  tx: Tx,
+  event: E,
+  input: { userId?: string | null; cityId?: string | null; props: ServerEventProps[E] }[],
+): Promise<void> {
+  if (input.length === 0) return;
+  await tx.insert(events).values(
+    input.map((i) => ({
+      id: uuidv7(),
+      source: 'server',
+      event,
+      userId: i.userId ?? null,
+      cityId: i.cityId ?? null,
+      props: i.props,
+    })),
+  );
+}
+
 /** Create this month's and the next `monthsAhead` months' partitions (worker, daily). Returns how many were new. */
 export async function ensureEventPartitions(db: Tx, monthsAhead = 3): Promise<number> {
   const [row] = rowsOf<{ created: unknown }>(

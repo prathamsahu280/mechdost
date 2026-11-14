@@ -97,6 +97,14 @@ Hero, trust strip, category tiles, popular products, order-route band, workshop 
 - `POST …/{slug}/status {to, version, rejectionReason?}` (`products:publish`): through the machine; going live needs an active variant (`NO_VARIANT`) and, when setting `catalogue.require_hindi_to_publish` is `true` (the launch-blocking check; off until the catalogue team is ready), complete Hindi (`HINDI_MISSING` with the fields).
 - Not yet: the console screen (en/hi side by side, gap badges), category and brand editors, photos, variants and fitment editing, shop submissions.
 
+## Built: adding products — form and CSV import (2026-11-14)
+
+Plan `docs/superpowers/plans/2026-11-14-real-api-launch.md` (Stream B); runbook `docs/runbooks/catalogue-import.md` (columns, codes, sample file).
+
+- `POST /v1/admin/catalogue/products` (`products:write`, verified staff): category slug, brand name (created if new), English name (+ Hindi), optional slug (default brand + name), texts en/hi, highlights, vehicle types, typed attributes (strict per category, parent category's list for sub-categories, spreadsheet text such as `"12"` or `yes` typed first), and the first pack: SKU (upper-cased, unique), MRP paise, net quantity; HSN and GST rate on the product. Starts as `draft`; `publish: true` needs `products:publish` and goes draft → live through `productMachine` (with the Hindi rule when that setting is on). 201 `{slug, sku, status, version}`; 409 `SKU_TAKEN` / `SLUG_TAKEN`.
+- `POST /v1/admin/catalogue/import` (`products:import`): `{ csv, dryRun?, publish? }`, ≤ 500 rows. All rows checked first; any problem → 422 `IMPORT_ROWS_INVALID` with `{row, field, code}` per problem and nothing written; existing SKUs skipped and reported; the rest inserted in one transaction.
+- Code: `packages/shared/src/catalogue-import.ts` (CSV reader, columns, codes), `packages/shared/src/admin-catalogue.ts` (`NewProductFields`, report schemas), `packages/db/src/repo/catalogue-create.ts`, `apps/api/src/routes/admin-catalogue.ts`. Tests: `packages/shared/test/catalogue-import.test.ts`, `packages/db/test/catalogue-create.test.ts`, `apps/api/test/admin-catalogue.test.ts`.
+
 ## Built: comparison, typed attributes and unit price (2026-11-13)
 
 Spec 21 (`21-product-comparison.md`). Typed attributes per category in `products.spec` (definitions in `@mechdost/shared/product-attributes`), a net quantity per pack (`product_variants.net_qty` / `net_unit`, migration 0042), the catalogue offer's `netQuantity` (the pack it prices), and "₹ … per litre / kg / piece / metre" on cards and the product page. Admin endpoints: `PUT /v1/admin/catalogue/products/{slug}/attributes`, `PUT /v1/admin/catalogue/variants/{sku}/net-quantity`.

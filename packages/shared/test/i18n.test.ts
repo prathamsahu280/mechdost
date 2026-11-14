@@ -56,6 +56,11 @@ describe('locale messages', () => {
       'checkout.gstin', // the buyer's GSTIN field label at checkout (a code)
       'request.lineGst', // "GST {rate}%" on an estimate line: the tax's name is used as is, like GSTIN
       'portal.field_gst', // the same tax name as a field label in the estimate builder
+      'portal.cat_add_sku', // SKU: a stock-keeping code, as on the shop's own labels
+      'portal.cat_add_mrp', // "MRP (₹)", like catalogue.mrp
+      'portal.cat_add_unit_ml', // units stay Latin (hard rule 10)
+      'portal.cat_add_unit_g',
+      'portal.cat_add_unit_m',
     ]);
     for (const [key, value] of hiLeaves) {
       if (allowedLatin.has(key)) continue;

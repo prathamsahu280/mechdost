@@ -55,6 +55,9 @@ const TECHNICAL = [
   'UPI',
   'MRP',
   'SKU',
+  // Admin catalogue import (plan 2026-11-14 B): the file type and the tax code as printed on bills.
+  'CSV',
+  'HSN',
   'SMS',
   'SUV',
   'OEM',
