@@ -84,6 +84,25 @@ export interface ServerEventProps {
   service_estimate_decided: { requestCode: string; revision: number; approved: number; declined: number };
   service_billed: { requestCode: string; workshopId: string; totalPaise: number; lines: number };
   admin_workshop_saved: { workshopId: string; action: 'created' | 'updated'; published: boolean };
+  /** Bulk quotes (spec 19): codes, counts, versions and paise only — never message text. */
+  quote_requested: { quoteCode: string; lines: number; units: number; listTotalPaise: number | null };
+  quote_message_sent: { quoteCode: string; by: 'customer' | 'staff' };
+  quote_offer_sent: {
+    quoteCode: string;
+    offerVersion: number;
+    totalPaise: number;
+    listTotalPaise: number | null;
+    validDays: number;
+  };
+  quote_accepted: { quoteCode: string; offerVersion: number; orderCode: string; totalPaise: number };
+  /** Declined by the customer or withdrawn by staff (expiry is `quote_expired`). */
+  quote_closed: {
+    quoteCode: string;
+    to: 'declined' | 'withdrawn';
+    by: 'customer' | 'staff';
+    reasonCode: string;
+  };
+  quote_expired: { quoteCode: string; reasonCode: string; offerVersion: number };
 }
 export type ServerEvent = keyof ServerEventProps;
 

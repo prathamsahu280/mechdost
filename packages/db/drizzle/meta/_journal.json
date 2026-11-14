@@ -316,6 +316,13 @@
       "when": 1794659009844,
       "tag": "0044_workshops_service_requests",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1794669134590,
+      "tag": "0045_quotes",
+      "breakpoints": true
     }
   ]
 }

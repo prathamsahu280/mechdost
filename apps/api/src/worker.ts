@@ -10,6 +10,7 @@ import {
   expireDueAssignments,
   releaseExpiredReservations,
   expireUnpaidOnlineOrders,
+  expireQuotes,
   resumeEndedPauses,
 } from '@mechdost/db/repo';
 import { ConfigError, loadConfig } from './config';
@@ -159,6 +160,26 @@ const paymentTimer = setInterval(() => {
 }, 60_000);
 paymentTimer.unref();
 
+// Bulk quotes (spec 19): offers past `valid_until` and quotes nobody wrote on close as `expired`. Every 5 min; one
+// transaction per quote (quote row locked first), so several workers may run this safely.
+let expiringQuotes = false;
+const quoteTimer = setInterval(() => {
+  if (expiringQuotes) return;
+  expiringQuotes = true;
+  void expireQuotes(db)
+    .then(({ expired, failed }) => {
+      if (expired > 0) log('info', 'quotes_expired', { count: expired });
+      if (failed > 0) log('error', 'quote_expiry_failed', { failedQuotes: failed });
+    })
+    .catch((err: unknown) => {
+      log('error', 'quote_expiry_failed', safeError(err));
+    })
+    .finally(() => {
+      expiringQuotes = false;
+    });
+}, 300_000);
+quoteTimer.unref();
+
 // Event store partitions (spec 12): this month + 3 ahead, checked at start and every 12 h (idempotent).
 const partitions = () => {
   void ensureEventPartitions(db)
@@ -198,6 +219,7 @@ function shutdown(signal: string) {
   clearInterval(holdTimer);
   clearInterval(pauseTimer);
   clearInterval(paymentTimer);
+  clearInterval(quoteTimer);
   clearInterval(partitionTimer);
   void Promise.all([relay.stop(), dispatcher.stop()])
     .then(() => Promise.all([sql.end({ timeout: 5 }), listener?.end()]))

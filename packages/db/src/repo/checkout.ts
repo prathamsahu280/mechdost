@@ -118,6 +118,8 @@ interface PricedLine {
   /** The chosen shop's approved price (what it is paid); unitPaise - this = MechDost's margin (Q11). */
   shopUnitPaise: number;
   interState: boolean;
+  /** 'quote' when the unit price was negotiated in a bulk quote (spec 19). */
+  priceSource: 'catalogue' | 'quote';
 }
 
 interface InternalQuote {
@@ -310,6 +312,7 @@ async function quoteInternal(
       unitPaise: unit,
       shopUnitPaise: num(r.shop_price),
       interState,
+      priceSource: 'catalogue',
     });
     return { ...base, unitPaise: unit, totalPaise: gross, group: g, issue: null, available: null };
   });
@@ -434,6 +437,49 @@ export interface PlaceOrderInput {
   locale: CatalogueLocale;
   /** Optional business purchase (GST invoice); validated by `BusinessPurchaseSchema` at the API. */
   business?: BusinessPurchase | null;
+  /**
+   * An accepted bulk quote offer (spec 19; only `acceptQuoteOffer` sets it): the negotiated GST-inclusive unit prices
+   * and the offer's delivery charge replace the catalogue prices, delivery and COD fee. The COD cap does not apply
+   * (staff agreed the order with the customer); the PIN's COD rule and customer blocks still do.
+   */
+  quotePricing?: QuotePricing | null;
+}
+
+export interface QuotePricing {
+  quoteId: string;
+  offerId: string;
+  unitPaiseBySku: ReadonlyMap<string, number>;
+  deliveryPaise: number;
+}
+
+/** Replace catalogue prices with the negotiated ones and recompute every group (exact paise, same GST rule). */
+function applyQuotePricing(internal: InternalQuote, pricing: QuotePricing): void {
+  const { quote, priced, groupShops } = internal;
+  for (const line of priced) {
+    const unit = pricing.unitPaiseBySku.get(line.sku);
+    if (unit === undefined) throw new Error(`quote pricing has no price for ${line.sku}`);
+    line.unitPaise = unit;
+    line.priceSource = 'quote';
+  }
+  quote.groups.forEach((g, index) => {
+    const lines = priced.filter((p) => p.shopId === groupShops[index]);
+    g.subtotalPaise = lines.reduce((sum, l) => sum + l.unitPaise * l.qty, 0);
+    g.taxPaise = lines.reduce((sum, l) => {
+      const tax = splitInclusiveGst(l.unitPaise * l.qty, l.gstRateBp, l.interState);
+      return sum + tax.cgst + tax.sgst + tax.igst;
+    }, 0);
+    // The whole negotiated delivery charge rides on the first sub-order (like the COD fee).
+    g.shippingPaise = index === 0 ? pricing.deliveryPaise : 0;
+    g.totalPaise = g.subtotalPaise + g.shippingPaise;
+  });
+  quote.subtotalPaise = quote.groups.reduce((a, g) => a + g.subtotalPaise, 0);
+  quote.shippingPaise = quote.groups.reduce((a, g) => a + g.shippingPaise, 0);
+  quote.taxPaise = quote.groups.reduce((a, g) => a + g.taxPaise, 0);
+  quote.codFeePaise = 0;
+  quote.totalPaise = quote.subtotalPaise + quote.shippingPaise;
+  quote.onlineTotalPaise = quote.totalPaise;
+  const pincodeCod = quote.cod.reason !== 'pincode';
+  quote.cod = { allowed: pincodeCod, reason: pincodeCod ? null : 'pincode', capPaise: quote.cod.capPaise };
 }
 
 /** Place a cash-on-delivery order (see `placeOrder`). */
@@ -465,17 +511,19 @@ export async function placeOrder(
     const allowed = blockEffects(await activeBlockLevels(tx, input.userId));
     if (!allowed.order) throw new ForbiddenError('This account cannot place orders', 'ORDERS_BLOCKED');
 
-    const { quote, priced, groupShops, cityId } = await quoteInternal(tx, {
+    const internal = await quoteInternal(tx, {
       pincode: input.address.pincode,
       lines: input.lines,
       locale: input.locale,
     });
+    const { quote, priced, groupShops, cityId } = internal;
     if (!quote.ok)
       throw new ValidationError('Some products changed; please review your cart', 'CHECKOUT_UNAVAILABLE', {
         lines: quote.lines
           .filter((l) => l.issue)
           .map((l) => ({ sku: l.sku, issue: l.issue, available: l.available })),
       });
+    if (input.quotePricing) applyQuotePricing(internal, input.quotePricing);
     const totalPaise = online ? quote.onlineTotalPaise : quote.totalPaise;
     const codFeePaise = online ? 0 : quote.codFeePaise;
     if (totalPaise !== input.expectedTotalPaise)
@@ -507,6 +555,8 @@ export async function placeOrder(
         businessName: input.business?.businessName ?? null,
         idempotencyKey: input.idempotencyKey,
         requestHash: hash,
+        quoteId: input.quotePricing?.quoteId ?? null,
+        quoteOfferId: input.quotePricing?.offerId ?? null,
       },
     });
 
@@ -562,6 +612,7 @@ export async function placeOrder(
           sgstPaise: tax.sgst,
           igstPaise: tax.igst,
           totalPaise: gross,
+          priceSource: line.priceSource,
         });
         const reservation = await reserveStock(tx, {
           inventoryId: line.inventoryId,
