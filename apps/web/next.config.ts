@@ -27,6 +27,13 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: fileURLToPath(new URL('../../', import.meta.url)),
   poweredByHeader: false,
   reactStrictMode: true,
+  // The two build switches are always defined, so they are inlined as constants and the code for the other mode is
+  // dropped from the bundle (an unset NEXT_PUBLIC_ variable is left as a runtime lookup). Unset means demo, as
+  // `lib/data-mode.ts` and `lib/auth/mode.ts` already read it.
+  env: {
+    NEXT_PUBLIC_DATA_MODE: process.env.NEXT_PUBLIC_DATA_MODE === 'api' ? 'api' : 'demo',
+    NEXT_PUBLIC_AUTH_MODE: process.env.NEXT_PUBLIC_AUTH_MODE === 'firebase' ? 'firebase' : 'demo',
+  },
   // CSS is ~7 KB gzipped: inlining removes the render-blocking request (≈0.5 s LCP on slow 4G, trace 2026-11-01).
   experimental: { inlineCss: true },
   transpilePackages: ['@mechdost/shared', '@mechdost/ui'],

@@ -42,8 +42,33 @@ export const DEFAULT_PIN = '492001';
  * numbers shown (spec 03), re-quoted when the cart or the PIN changes. Lines saved without a SKU (from the demo)
  * cannot be priced by the API and are left out.
  */
-export function useCartPricing(lines: readonly CartLine[], pincode: string, locale: string): CartPricing {
-  const demo = useMemo(() => (DATA_MODE === 'api' ? null : priceCart(lines)), [lines]);
+function useDemoCartPricing(lines: readonly CartLine[]): CartPricing {
+  return useMemo(() => {
+    const demo = priceCart(lines);
+    return {
+      priced: demo.priced.map(({ product, qty, linePaise }) => ({
+        product: {
+          slug: product.slug,
+          sku: product.sku,
+          name: product.name,
+          brand: product.brand,
+          category: product.category,
+          pricePaise: product.pricePaise,
+        },
+        qty,
+        linePaise,
+      })),
+      subtotalPaise: demo.subtotalPaise,
+      deliveryPaise: demo.deliveryPaise,
+      totalPaise: demo.totalPaise,
+      quote: null,
+      status: 'ready' as const,
+      error: null,
+    };
+  }, [lines]);
+}
+
+function useApiCartPricing(lines: readonly CartLine[], pincode: string, locale: string): CartPricing {
   const [state, setState] = useState<{
     key: string;
     quote: CheckoutQuote | null;
@@ -58,7 +83,7 @@ export function useCartPricing(lines: readonly CartLine[], pincode: string, loca
   const key = `${pincode}|${locale}|${apiLines.map((l) => `${l.sku}:${String(l.qty)}`).join(',')}`;
 
   useEffect(() => {
-    if (DATA_MODE !== 'api' || apiLines.length === 0 || !/^\d{6}$/.test(pincode)) return;
+    if (apiLines.length === 0 || !/^\d{6}$/.test(pincode)) return;
     let live = true;
     const timer = window.setTimeout(() => {
       void import('./orders-api').then(async ({ quoteCart }) => {
@@ -80,29 +105,6 @@ export function useCartPricing(lines: readonly CartLine[], pincode: string, loca
       window.clearTimeout(timer);
     };
   }, [key, apiLines, pincode, locale]);
-
-  if (demo) {
-    return {
-      priced: demo.priced.map(({ product, qty, linePaise }) => ({
-        product: {
-          slug: product.slug,
-          sku: product.sku,
-          name: product.name,
-          brand: product.brand,
-          category: product.category,
-          pricePaise: product.pricePaise,
-        },
-        qty,
-        linePaise,
-      })),
-      subtotalPaise: demo.subtotalPaise,
-      deliveryPaise: demo.deliveryPaise,
-      totalPaise: demo.totalPaise,
-      quote: null,
-      status: 'ready',
-      error: null,
-    };
-  }
 
   const fresh = state.key === key;
   const current = fresh ? state.quote : null;
@@ -138,3 +140,10 @@ export function useCartPricing(lines: readonly CartLine[], pincode: string, loca
     error: fresh ? state.error : null,
   };
 }
+
+/**
+ * Picked once at build time (`NEXT_PUBLIC_DATA_MODE` is inlined), so the demo bundle carries no API pricing code and
+ * the API bundle no demo pricing. Same hook order on every render either way.
+ */
+export const useCartPricing: (lines: readonly CartLine[], pincode: string, locale: string) => CartPricing =
+  DATA_MODE === 'api' ? useApiCartPricing : useDemoCartPricing;

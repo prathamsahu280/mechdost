@@ -53,3 +53,8 @@ Sentry (web + API) with release tags; structured JSON logs (Cloud Logging); Open
 ## Acceptance
 
 Lighthouse CI on home/shop/product/workshop pages per PR; k6 load test (500 VU browse, 50 VU checkout) before launch; chaos test: Redis down → degraded but working; DB failover drill.
+
+## Budget notes (2026-11-14)
+
+- `NEXT_PUBLIC_DATA_MODE` and `NEXT_PUBLIC_AUTH_MODE` are always defined at build time (`next.config.ts` `env`, default `demo`), so the CI budget build inlines them like production does and drops the other mode's code. Mode-specific hooks are chosen at module level (`useCartPricing`).
+- **Headroom is gone** on `/shop` (180.0) and `/cart` (179.9) in the demo build. The next change on these pages must first make room. The best candidate is splitting `apps/web/src/demo/store.ts`: one ~9.8 KB chunk on every page that also carries quotes, requests, applications and invites.
