@@ -4,6 +4,7 @@
  * build (`pnpm typecheck`), and every mock carries the schema so a fixture that no longer parses fails the case
  * (and `test/state-audit-api-fixtures.test.ts`). Pure data: no Playwright import, so Vitest runs it.
  */
+import { AdminContentList } from '@mechdost/shared/admin-config-api';
 import { AdminErrors } from '@mechdost/shared/admin-errors-api';
 import { AdminOverviewDto, AnalyticsDashboardDto } from '@mechdost/shared/admin-analytics-api';
 import { AdminCoinActivityDto } from '@mechdost/shared/coins-api';
@@ -949,6 +950,51 @@ function reviewsMocks(): Mock[] {
   ];
 }
 
+/** Admin -> Content: the eight trust lines, published in both languages (long wording, hidden, or none yet). */
+function contentMocks(): Mock[] {
+  const KEYS = [
+    'trust.homeGenuine',
+    'trust.homeBill',
+    'trust.homeEstimates',
+    'trust.product',
+    'trust.checkout',
+    'trust.emailFooter',
+    'trust.workshop',
+    'trust.partner',
+  ];
+  return [
+    meMock(),
+    {
+      method: 'GET',
+      path: /^\/admin\/content$/,
+      schema: AdminContentList,
+      reply: ({ c }): Reply => {
+        const mode = c.state.content ?? 'default';
+        if (mode === 'error') return { status: 500, code: 'INTERNAL' };
+        const value = (locale: 'en' | 'hi') =>
+          mode === 'hidden'
+            ? '-'
+            : `${locale === 'hi' ? LONG_HI : LONG_EN} ${locale === 'hi' ? LONG_HI : LONG_EN}`.slice(0, 140);
+        return {
+          body: {
+            entries:
+              mode === 'default'
+                ? []
+                : KEYS.flatMap((key) =>
+                    (['en', 'hi'] as const).map((locale) => ({
+                      key,
+                      locale,
+                      draft: null,
+                      published: { value: value(locale), version: 1, publishedAt: iso(-60) },
+                    })),
+                  ),
+          } satisfies Dto<typeof AdminContentList>,
+        };
+      },
+    },
+  ];
+}
+
 function quotesMocks(): Mock[] {
   const statuses = [
     'open',
@@ -1025,6 +1071,8 @@ export function mocksFor(c: AuditCase): Mock[] {
       return reviewsMocks();
     case 'API-ADM-QUOTES':
       return quotesMocks();
+    case 'API-ADM-CONTENT':
+      return contentMocks();
     default:
       // Navigation rows: the bar is under test; the screen behind it answers "not mocked" (see `mock-api.ts`).
       return [meMock()];

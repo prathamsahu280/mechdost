@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic';
 import { useLocale, useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
+import { SERVICE_CODE_RE } from '@mechdost/shared/service-requests';
 import { useState, type SyntheticEvent } from 'react';
 import type { DemoAccount } from '@/demo/session';
 import { useOrders } from '@/demo/store';
@@ -46,6 +47,12 @@ function usePresetOrder(): string | null {
   return code && ORDER_CODE.test(code) ? code : null;
 }
 
+/** `?redo=SR-…` from a bill's "Ask for a free redo" link (labour promise, 2026-11-15). */
+function usePresetRedo(): string | null {
+  const code = useSearchParams().get('redo');
+  return code && SERVICE_CODE_RE.test(code) ? code : null;
+}
+
 const ORDER_CODE = /^MD-[A-Z]{3}-[0-9]{4}-[0-9A-Z]{6}$/;
 
 /** Requests on the API (real sign-in builds only): loaded on demand so demo bundles stay the same size. */
@@ -55,19 +62,30 @@ const SupportSectionApi = dynamic(() => import('./support-section-api').then((m)
 
 export function SupportSection({ account }: { account: DemoAccount }) {
   const presetOrder = usePresetOrder();
+  const presetRedo = usePresetRedo();
   return AUTH_MODE === 'firebase' ? (
-    <SupportSectionApi presetOrder={presetOrder} />
+    <SupportSectionApi presetOrder={presetOrder} presetRedo={presetRedo} />
   ) : (
-    <DemoSupportSection account={account} presetOrder={presetOrder} />
+    <DemoSupportSection account={account} presetOrder={presetOrder} presetRedo={presetRedo} />
   );
 }
 
-function DemoSupportSection({ account, presetOrder }: { account: DemoAccount; presetOrder: string | null }) {
+function DemoSupportSection({
+  account,
+  presetOrder,
+  presetRedo,
+}: {
+  account: DemoAccount;
+  presetOrder: string | null;
+  presetRedo: string | null;
+}) {
   const t = useTranslations('support');
   const labels = useTicketLabels();
   const orders = useOrders();
   const tickets = useTickets().filter((ticket) => ticket.accountId === account.id);
-  const [kind, setKind] = useState<TicketKind>(presetOrder ? 'order_issue' : 'other');
+  const [kind, setKind] = useState<TicketKind>(
+    presetRedo ? 'labour_redo' : presetOrder ? 'order_issue' : 'other',
+  );
   const [orderCode, setOrderCode] = useState(presetOrder ?? '');
   const [body, setBody] = useState('');
   const [error, setError] = useState<SupportError | null>(null);
@@ -106,7 +124,10 @@ function DemoSupportSection({ account, presetOrder }: { account: DemoAccount; pr
       </div>
 
       <form onSubmit={onSubmit} className={portalCard} noValidate>
-        <h3 className="font-heading text-base font-extrabold text-ink">{t('new')}</h3>
+        <h3 className="font-heading text-base font-extrabold text-ink">
+          {presetRedo ? t('labourFormTitle', { code: presetRedo }) : t('new')}
+        </h3>
+        {presetRedo ? <p className="mt-1 text-sm text-muted">{t('labourFormIntro')}</p> : null}
         <div className="mt-3 grid gap-3 tab:grid-cols-2">
           <div>
             <label htmlFor="support-kind" className="text-xs font-bold text-muted">
@@ -121,14 +142,14 @@ function DemoSupportSection({ account, presetOrder }: { account: DemoAccount; pr
               }}
               className={portalField}
             >
-              {TICKET_KINDS.map((k) => (
+              {TICKET_KINDS.filter((k) => k !== 'labour_redo' || presetRedo).map((k) => (
                 <option key={k} value={k}>
                   {labels.kind(k)}
                 </option>
               ))}
             </select>
           </div>
-          <div>
+          <div hidden={presetRedo !== null}>
             <label htmlFor="support-order" className="text-xs font-bold text-muted">
               {t('orderLabel')}
             </label>

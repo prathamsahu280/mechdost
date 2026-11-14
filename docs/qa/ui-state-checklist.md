@@ -61,7 +61,7 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | CHR-FLOAT          | Chrome                                       | Floating stack: assistant launcher, compare tray, consent banner, tab bar together                                              | cross    | 24       | 3       |
 | CHR-ASSIST         | Chrome                                       | Assistant launcher and panel                                                                                                    | pairwise | 16       | 0       |
 | CHR-CONSENT        | Chrome                                       | Cookie and consent banner                                                                                                       | pairwise | 16       | 0       |
-| HOME-HERO          | Home                                         | Hero with search                                                                                                                | pairwise | 25       | 0       |
+| HOME-HERO          | Home                                         | Hero with search                                                                                                                | pairwise | 32       | 0       |
 | HOME-TRUST         | Home                                         | Trust strip                                                                                                                     | pairwise | 25       | 0       |
 | HOME-CATS          | Home                                         | Category tiles                                                                                                                  | pairwise | 25       | 0       |
 | HOME-RANGE         | Home                                         | Product range (cards without compare)                                                                                           | pairwise | 25       | 7       |
@@ -76,14 +76,14 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | SHOP-POPOVER       | Shop (/shop)                                 | Quick-details popover (ⓘ) on the first and the last card of a row                                                               | pairwise | 16       | 0       |
 | SHOP-TRAY          | Shop (/shop)                                 | Compare tray (count, open, clear) over the listing                                                                              | cross    | 32       | 2       |
 | STEP               | Quantity stepper (card, product page, cart)  | Stepper − / count / + × quantity × hover/focus/active/disabled (full cross)                                                     | cross    | 180      | 6       |
-| PDP-BUYBOX         | Product page (/shop/[slug])                  | Buy box: price, MRP and saving, stock, add to cart / stepper, compare                                                           | pairwise | 41       | 3       |
+| PDP-BUYBOX         | Product page (/shop/[slug])                  | Buy box: price, MRP and saving, stock, add to cart / stepper, compare                                                           | pairwise | 42       | 3       |
 | PDP-REVIEWS        | Product page (/shop/[slug])                  | Ratings summary, review list, write-a-review entry                                                                              | pairwise | 16       | 0       |
 | PDP-RELATED        | Product page (/shop/[slug])                  | Related products row (cards)                                                                                                    | pairwise | 16       | 0       |
 | CMP-TABLE          | Compare (/compare)                           | Comparison table × column count × badges × partial in-cart (full cross)                                                         | cross    | 126      | 2       |
 | CMP-EMPTY          | Compare (/compare)                           | Compare with one or no product (empty state and next action)                                                                    | pairwise | 16       | 0       |
 | CART-LINES         | Cart (/cart)                                 | Cart lines (stepper, remove, line total) and summary                                                                            | pairwise | 40       | 10      |
-| CART-EMPTY         | Cart (/cart)                                 | Empty cart (one next action, category shortcuts)                                                                                | pairwise | 16       | 0       |
-| CHK-FORM           | Checkout (/checkout)                         | Checkout form (contact, address, business GSTIN, payment) and summary                                                           | pairwise | 25       | 1       |
+| CART-EMPTY         | Cart (/cart)                                 | Empty cart (one next action, category shortcuts)                                                                                | pairwise | 32       | 0       |
+| CHK-FORM           | Checkout (/checkout)                         | Checkout form (contact, address, business GSTIN, payment) and summary                                                           | pairwise | 32       | 1       |
 | ORD-VIEW           | Order (/orders/[code])                       | Order status, timeline, lines, delivery code, cancel/rate/support                                                               | pairwise | 24       | 1       |
 | SR-VIEW            | Service request (/service/[code])            | Request status, proposal, itemised estimate (per-line approval), bill                                                           | pairwise | 40       | 1       |
 | QT-PAGES           | Bulk quotes (/quotes)                        | Quote request form and quote thread                                                                                             | pairwise | 16       | 0       |
@@ -99,8 +99,8 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | ACC-VEHICLES-DATA  | Account (/account)                           | Account vehicles: empty, one, at the limit of 10, long Hindi text                                                               | pairwise | 32       | 2       |
 | ACC-ADDRESSES-DATA | Account (/account)                           | Account addresses: empty, one, at the limit of 10, long Hindi text                                                              | pairwise | 32       | 2       |
 | WS-FINDER          | Workshops (/workshops)                       | Finder: PIN, vehicle, use my location, list cards, map toggle (map canvas excluded)                                             | pairwise | 16       | 2       |
-| WS-PROFILE         | Workshop page (/workshops/[slug])            | Workshop profile: services menu, reviews, booking form                                                                          | pairwise | 25       | 1       |
-| PTN-LANDING        | Partners (/partners)                         | Partner landing (kinds, benefits, apply links)                                                                                  | pairwise | 16       | 0       |
+| WS-PROFILE         | Workshop page (/workshops/[slug])            | Workshop profile: services menu, reviews, booking form                                                                          | pairwise | 32       | 1       |
+| PTN-LANDING        | Partners (/partners)                         | Partner landing (kinds, benefits, apply links)                                                                                  | pairwise | 32       | 0       |
 | PTN-APPLY          | Partners (/partners/apply/[kind])            | Application form (GSTIN, tick lists, location picker; map canvas excluded)                                                      | pairwise | 24       | 1       |
 | SUP-PAGE           | Support (/support)                           | Support page and request form                                                                                                   | pairwise | 16       | 0       |
 | LOGIN-FORM         | Sign in (/login)                             | Sign-in form (password, errors, show password)                                                                                  | pairwise | 16       | 0       |
@@ -139,9 +139,10 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | API-ADM-COINS      | Admin → Coins, real sign-in                  | Coin activity list (earn, redeem, adjust, expire, restore), account look-up and adjust form                                     | pairwise | 40       | 0       |
 | API-ADM-REVIEWS    | Admin → Reviews, real sign-in                | Review moderation queue: pending / approved / hidden, long text, hide reasons                                                   | pairwise | 40       | 0       |
 | API-ADM-QUOTES     | Admin → Bulk quotes, real sign-in            | Quote desk: queue views, every quote status, offer and order chips                                                              | pairwise | 32       | 0       |
+| API-ADM-CONTENT    | Admin → Content, real sign-in                | Trust lines editor: eight lines in English and Hindi, default, long wording, hidden with "-", load error                        | pairwise | 32       | 0       |
 | API-NAV-ADMIN      | Navigation, real sign-in                     | Admin section bar with every real-mode section (Analytics, Refunds, Errors included): current item, scroll, walk                | cross    | 144      | 0       |
 | API-NAV-ACCOUNT    | Navigation, real sign-in                     | Account section bar in a real-sign-in build: current item, scroll, walk                                                         | cross    | 80       | 0       |
-| **Total**          |                                              |                                                                                                                                 |          | **2823** | **92**  |
+| **Total**          |                                              |                                                                                                                                 |          | **2909** | **92**  |
 
 ## Chrome
 
@@ -297,33 +298,40 @@ Pairwise (all pairs of values); 16 states; scope `[data-testid="consent-banner"]
 
 ### HOME-HERO — Hero with search
 
-Pairwise (all pairs of values); 25 states; scope `section[aria-labelledby="hero-title"]`.
+Pairwise (all pairs of values); 32 states; scope `section[aria-labelledby="hero-title"]`.
 
-- [ ] HOME-HERO-001 · 320px · light · en · signed out · world=empty · / · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
-- [ ] HOME-HERO-002 · 320px · dark · hi · customer · world=cart · / · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] HOME-HERO-003 · 390px · light · hi · signed out · world=busy · / · stress=long-price · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] HOME-HERO-004 · 390px · dark · en · customer · world=empty · / · stress=long-price · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] HOME-HERO-005 · 480px · light · en · customer · world=cart · / · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
-- [ ] HOME-HERO-006 · 480px · dark · hi · signed out · world=busy · / · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] HOME-HERO-007 · 768px · light · en · signed out · world=cart · / · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] HOME-HERO-008 · 768px · dark · hi · customer · world=empty · / · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] HOME-HERO-009 · 1024px · light · en · signed out · world=busy · / · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
-- [ ] HOME-HERO-010 · 1024px · dark · hi · customer · world=empty · / · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] HOME-HERO-011 · 1280px · light · en · signed out · world=cart · / · stress=long-price · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] HOME-HERO-012 · 1280px · dark · hi · customer · world=busy · / · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] HOME-HERO-013 · 1440px · light · en · signed out · world=empty · / · stress=long-price · asserts: present inside overlap covered clipped tap hscroll focus console axe
-- [ ] HOME-HERO-014 · 1440px · dark · hi · customer · world=cart · / · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] HOME-HERO-015 · 1920px · light · en · signed out · world=busy · / · stress=long-price · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] HOME-HERO-016 · 1920px · dark · hi · customer · world=empty · / · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] HOME-HERO-017 · 320px · light · en · signed out · world=busy · / · stress=long-price · asserts: present inside overlap covered clipped tap hscroll focus console axe
-- [ ] HOME-HERO-018 · 390px · dark · hi · customer · world=cart · / · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] HOME-HERO-019 · 480px · light · en · signed out · world=empty · / · stress=long-price · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] HOME-HERO-020 · 768px · dark · hi · customer · world=busy · / · stress=long-price · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] HOME-HERO-021 · 1024px · light · en · signed out · world=cart · / · stress=long-price · asserts: present inside overlap covered clipped tap hscroll focus console axe
-- [ ] HOME-HERO-022 · 1280px · dark · hi · customer · world=empty · / · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] HOME-HERO-023 · 1440px · light · en · signed out · world=busy · / · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] HOME-HERO-024 · 1920px · dark · hi · customer · world=cart · / · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] HOME-HERO-025 · 390px · light · en · signed out · world=empty · / · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] HOME-HERO-001 · 320px · light · en · signed out · world=empty · / · stress=none · trust=default · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] HOME-HERO-002 · 320px · dark · hi · customer · world=cart · / · stress=long-text · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-HERO-003 · 390px · light · hi · signed out · world=busy · / · stress=long-price · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-HERO-004 · 390px · dark · en · customer · world=empty · / · stress=long-price · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] HOME-HERO-005 · 480px · light · en · customer · world=cart · / · stress=none · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] HOME-HERO-006 · 480px · dark · hi · signed out · world=busy · / · stress=long-text · trust=default · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-HERO-007 · 768px · light · en · signed out · world=cart · / · stress=long-text · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] HOME-HERO-008 · 768px · dark · hi · customer · world=empty · / · stress=none · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-HERO-009 · 1024px · light · en · signed out · world=busy · / · stress=none · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] HOME-HERO-010 · 1024px · dark · hi · customer · world=empty · / · stress=long-text · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-HERO-011 · 1280px · light · en · signed out · world=cart · / · stress=long-price · trust=default · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] HOME-HERO-012 · 1280px · dark · hi · customer · world=busy · / · stress=none · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-HERO-013 · 1440px · light · en · signed out · world=empty · / · stress=long-price · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] HOME-HERO-014 · 1440px · dark · hi · customer · world=cart · / · stress=long-text · trust=default · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-HERO-015 · 1920px · light · en · signed out · world=busy · / · stress=long-price · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] HOME-HERO-016 · 1920px · dark · hi · customer · world=empty · / · stress=none · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-HERO-017 · 320px · light · en · signed out · world=busy · / · stress=long-price · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] HOME-HERO-018 · 390px · dark · hi · customer · world=cart · / · stress=long-text · trust=default · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-HERO-019 · 480px · light · en · signed out · world=empty · / · stress=long-price · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] HOME-HERO-020 · 768px · dark · hi · customer · world=busy · / · stress=long-price · trust=default · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-HERO-021 · 1024px · light · en · signed out · world=cart · / · stress=long-price · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] HOME-HERO-022 · 1280px · dark · hi · customer · world=empty · / · stress=long-text · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-HERO-023 · 1440px · light · en · signed out · world=busy · / · stress=none · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] HOME-HERO-024 · 1920px · dark · hi · customer · world=cart · / · stress=long-text · trust=default · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-HERO-025 · 390px · light · en · signed out · world=empty · / · stress=none · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] HOME-HERO-026 · 320px · dark · hi · customer · world=cart · / · stress=none · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-HERO-027 · 480px · light · en · signed out · world=busy · / · stress=long-text · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] HOME-HERO-028 · 768px · dark · hi · customer · world=empty · / · stress=none · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-HERO-029 · 1024px · light · en · signed out · world=cart · / · stress=long-text · trust=default · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] HOME-HERO-030 · 1280px · dark · hi · customer · world=busy · / · stress=long-price · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-HERO-031 · 1440px · light · en · signed out · world=empty · / · stress=none · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] HOME-HERO-032 · 1920px · dark · hi · customer · world=cart · / · stress=long-text · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console hindi
 
 ### HOME-TRUST — Trust strip
 
@@ -1046,49 +1054,50 @@ Full cross of the high-risk dimensions, the rest pairwise; 180 states; scope `ma
 
 ### PDP-BUYBOX — Buy box: price, MRP and saving, stock, add to cart / stepper, compare
 
-Pairwise (all pairs of values); 41 states; scope `main`.
+Pairwise (all pairs of values); 42 states; scope `main`.
 
-- [ ] PDP-BUYBOX-001 · 320px · light · en · signed out · world=empty · /shop/castrol-activ-4t-20w40-900ml · cart=none · compare=none · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console sync axe
-- [ ] PDP-BUYBOX-002 · 320px · dark · hi · signed out · world=empty · /shop/heavy-duty-battery-90ah · cart=c1 · compare=lub-2 · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console sync hindi
-- [ ] PDP-BUYBOX-003 · 390px · light · hi · signed out · world=empty · /shop/car-tyre-185-65-r15 · cart=c99 · compare=bat-3 · stress=long-price · asserts: present inside overlap covered clipped tap hscroll focus console sync hindi
-- [ ] PDP-BUYBOX-004 · 390px · dark · en · signed out · world=empty · /shop/ev-portable-charger-15a · cart=none · compare=lub-2 · stress=long-price · asserts: present inside overlap covered clipped tap hscroll focus console sync
-- [ ] PDP-BUYBOX-005 · 480px · light · en · signed out · world=empty · /shop/motorcycle-wheel-bearing-6301 · cart=c1 · compare=bat-3 · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console sync axe
-- [ ] PDP-BUYBOX-006 · 480px · dark · hi · signed out · world=empty · /shop/castrol-activ-4t-20w40-900ml · cart=c99 · compare=none · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console sync hindi
-- [ ] PDP-BUYBOX-007 · 768px · light · en · signed out · world=empty · /shop/heavy-duty-battery-90ah · cart=c99 · compare=lub-2 · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console sync
-- [ ] PDP-BUYBOX-008 · 768px · dark · hi · signed out · world=empty · /shop/motorcycle-wheel-bearing-6301 · cart=none · compare=bat-3 · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console sync hindi
-- [ ] PDP-BUYBOX-009 · 1024px · light · en · signed out · world=empty · /shop/car-tyre-185-65-r15 · cart=c1 · compare=none · stress=long-price · asserts: present inside overlap covered clipped tap hscroll focus console sync axe
-- [ ] PDP-BUYBOX-010 · 1024px · dark · hi · signed out · world=empty · /shop/ev-portable-charger-15a · cart=c99 · compare=bat-3 · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console sync hindi
-- [ ] PDP-BUYBOX-011 · 1280px · light · en · signed out · world=empty · /shop/ev-portable-charger-15a · cart=c1 · compare=none · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console sync
-- [ ] PDP-BUYBOX-012 · 1280px · dark · hi · signed out · world=empty · /shop/car-tyre-185-65-r15 · cart=none · compare=lub-2 · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console sync hindi
-- [ ] PDP-BUYBOX-013 · 1440px · light · en · signed out · world=empty · /shop/castrol-activ-4t-20w40-900ml · cart=c1 · compare=lub-2 · stress=long-price · asserts: present inside overlap covered clipped tap hscroll focus console sync axe · core
-- [ ] PDP-BUYBOX-014 · 1440px · dark · hi · signed out · world=empty · /shop/heavy-duty-battery-90ah · cart=none · compare=none · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console sync hindi
-- [ ] PDP-BUYBOX-015 · 1920px · light · en · signed out · world=empty · /shop/motorcycle-wheel-bearing-6301 · cart=c99 · compare=none · stress=long-price · asserts: present inside overlap covered clipped tap hscroll focus console sync
-- [ ] PDP-BUYBOX-016 · 1920px · dark · hi · signed out · world=empty · /shop/castrol-activ-4t-20w40-900ml · cart=none · compare=bat-3 · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console sync hindi
-- [ ] PDP-BUYBOX-017 · 320px · light · en · signed out · world=empty · /shop/car-tyre-185-65-r15 · cart=c99 · compare=bat-3 · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console sync axe
-- [ ] PDP-BUYBOX-018 · 320px · dark · hi · signed out · world=empty · /shop/ev-portable-charger-15a · cart=c1 · compare=lub-2 · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console sync hindi
-- [ ] PDP-BUYBOX-019 · 320px · light · en · signed out · world=empty · /shop/motorcycle-wheel-bearing-6301 · cart=none · compare=lub-2 · stress=long-price · asserts: present inside overlap covered clipped tap hscroll focus console sync
-- [ ] PDP-BUYBOX-020 · 390px · dark · hi · signed out · world=empty · /shop/castrol-activ-4t-20w40-900ml · cart=c1 · compare=none · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console sync hindi axe · core
-- [ ] PDP-BUYBOX-021 · 390px · light · en · signed out · world=empty · /shop/heavy-duty-battery-90ah · cart=c99 · compare=bat-3 · stress=long-price · asserts: present inside overlap covered clipped tap hscroll focus console sync axe
-- [ ] PDP-BUYBOX-022 · 390px · dark · hi · signed out · world=empty · /shop/motorcycle-wheel-bearing-6301 · cart=none · compare=none · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console sync hindi
-- [ ] PDP-BUYBOX-023 · 480px · light · en · signed out · world=empty · /shop/heavy-duty-battery-90ah · cart=none · compare=lub-2 · stress=long-price · asserts: present inside overlap covered clipped tap hscroll focus console sync
-- [ ] PDP-BUYBOX-024 · 480px · dark · hi · signed out · world=empty · /shop/car-tyre-185-65-r15 · cart=c1 · compare=bat-3 · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console sync hindi
-- [ ] PDP-BUYBOX-025 · 480px · light · en · signed out · world=empty · /shop/ev-portable-charger-15a · cart=c99 · compare=none · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console sync axe
-- [ ] PDP-BUYBOX-026 · 768px · dark · hi · signed out · world=empty · /shop/castrol-activ-4t-20w40-900ml · cart=c1 · compare=none · stress=long-price · asserts: present inside overlap covered clipped tap hscroll focus console sync hindi
-- [ ] PDP-BUYBOX-027 · 768px · light · en · signed out · world=empty · /shop/car-tyre-185-65-r15 · cart=c99 · compare=lub-2 · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console sync
-- [ ] PDP-BUYBOX-028 · 768px · dark · hi · signed out · world=empty · /shop/ev-portable-charger-15a · cart=none · compare=bat-3 · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console sync hindi
-- [ ] PDP-BUYBOX-029 · 1024px · light · en · signed out · world=empty · /shop/castrol-activ-4t-20w40-900ml · cart=none · compare=lub-2 · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console sync axe
-- [ ] PDP-BUYBOX-030 · 1024px · dark · hi · signed out · world=empty · /shop/heavy-duty-battery-90ah · cart=c1 · compare=bat-3 · stress=long-price · asserts: present inside overlap covered clipped tap hscroll focus console sync hindi
-- [ ] PDP-BUYBOX-031 · 1024px · light · en · signed out · world=empty · /shop/motorcycle-wheel-bearing-6301 · cart=c99 · compare=none · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console sync
-- [ ] PDP-BUYBOX-032 · 1280px · dark · hi · signed out · world=empty · /shop/castrol-activ-4t-20w40-900ml · cart=c99 · compare=bat-3 · stress=long-price · asserts: present inside overlap covered clipped tap hscroll focus console sync hindi
-- [ ] PDP-BUYBOX-033 · 1280px · light · en · signed out · world=empty · /shop/heavy-duty-battery-90ah · cart=c1 · compare=lub-2 · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console sync axe
-- [ ] PDP-BUYBOX-034 · 1280px · dark · hi · signed out · world=empty · /shop/motorcycle-wheel-bearing-6301 · cart=none · compare=none · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console sync hindi
-- [ ] PDP-BUYBOX-035 · 1440px · light · en · signed out · world=empty · /shop/car-tyre-185-65-r15 · cart=c99 · compare=bat-3 · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console sync
-- [ ] PDP-BUYBOX-036 · 1440px · dark · hi · signed out · world=empty · /shop/ev-portable-charger-15a · cart=c1 · compare=lub-2 · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console sync hindi
-- [ ] PDP-BUYBOX-037 · 1440px · light · en · signed out · world=empty · /shop/motorcycle-wheel-bearing-6301 · cart=none · compare=none · stress=long-price · asserts: present inside overlap covered clipped tap hscroll focus console sync axe
-- [ ] PDP-BUYBOX-038 · 1920px · dark · hi · signed out · world=empty · /shop/heavy-duty-battery-90ah · cart=c1 · compare=lub-2 · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console sync hindi
-- [ ] PDP-BUYBOX-039 · 1920px · light · en · signed out · world=empty · /shop/car-tyre-185-65-r15 · cart=c99 · compare=bat-3 · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console sync
-- [ ] PDP-BUYBOX-040 · 1920px · dark · hi · signed out · world=empty · /shop/ev-portable-charger-15a · cart=none · compare=none · stress=long-price · asserts: present inside overlap covered clipped tap hscroll focus console sync hindi
-- [ ] PDP-BUYBOX-041 · 390px · light · en · signed out · world=empty · /shop/castrol-activ-4t-20w40-900ml · cart=c1 · compare=lub-2 · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console sync axe · core
+- [ ] PDP-BUYBOX-001 · 320px · light · en · signed out · world=empty · /shop/castrol-activ-4t-20w40-900ml · cart=none · compare=none · stress=none · trust=default · asserts: present inside overlap covered clipped tap hscroll focus console sync axe
+- [ ] PDP-BUYBOX-002 · 320px · dark · hi · signed out · world=empty · /shop/heavy-duty-battery-90ah · cart=c1 · compare=lub-2 · stress=long-text · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console sync hindi
+- [ ] PDP-BUYBOX-003 · 390px · light · hi · signed out · world=empty · /shop/car-tyre-185-65-r15 · cart=c99 · compare=bat-3 · stress=long-price · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console sync hindi
+- [ ] PDP-BUYBOX-004 · 390px · dark · en · signed out · world=empty · /shop/ev-portable-charger-15a · cart=none · compare=lub-2 · stress=long-price · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console sync
+- [ ] PDP-BUYBOX-005 · 480px · light · en · signed out · world=empty · /shop/motorcycle-wheel-bearing-6301 · cart=c1 · compare=bat-3 · stress=long-text · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console sync axe
+- [ ] PDP-BUYBOX-006 · 480px · dark · hi · signed out · world=empty · /shop/castrol-activ-4t-20w40-900ml · cart=c99 · compare=none · stress=none · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console sync hindi
+- [ ] PDP-BUYBOX-007 · 768px · light · en · signed out · world=empty · /shop/heavy-duty-battery-90ah · cart=c99 · compare=lub-2 · stress=none · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console sync
+- [ ] PDP-BUYBOX-008 · 768px · dark · hi · signed out · world=empty · /shop/motorcycle-wheel-bearing-6301 · cart=none · compare=bat-3 · stress=long-text · trust=default · asserts: present inside overlap covered clipped tap hscroll focus console sync hindi
+- [ ] PDP-BUYBOX-009 · 1024px · light · en · signed out · world=empty · /shop/car-tyre-185-65-r15 · cart=c1 · compare=none · stress=long-price · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console sync axe
+- [ ] PDP-BUYBOX-010 · 1024px · dark · hi · signed out · world=empty · /shop/ev-portable-charger-15a · cart=c99 · compare=bat-3 · stress=none · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console sync hindi
+- [ ] PDP-BUYBOX-011 · 1280px · light · en · signed out · world=empty · /shop/ev-portable-charger-15a · cart=c1 · compare=none · stress=long-text · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console sync
+- [ ] PDP-BUYBOX-012 · 1280px · dark · hi · signed out · world=empty · /shop/car-tyre-185-65-r15 · cart=none · compare=lub-2 · stress=none · trust=default · asserts: present inside overlap covered clipped tap hscroll focus console sync hindi
+- [ ] PDP-BUYBOX-013 · 1440px · light · en · signed out · world=empty · /shop/castrol-activ-4t-20w40-900ml · cart=c1 · compare=lub-2 · stress=long-price · trust=default · asserts: present inside overlap covered clipped tap hscroll focus console sync axe · core
+- [ ] PDP-BUYBOX-014 · 1440px · dark · hi · signed out · world=empty · /shop/heavy-duty-battery-90ah · cart=none · compare=none · stress=long-text · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console sync hindi
+- [ ] PDP-BUYBOX-015 · 1920px · light · en · signed out · world=empty · /shop/motorcycle-wheel-bearing-6301 · cart=c99 · compare=none · stress=long-price · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console sync
+- [ ] PDP-BUYBOX-016 · 1920px · dark · hi · signed out · world=empty · /shop/castrol-activ-4t-20w40-900ml · cart=none · compare=bat-3 · stress=long-text · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console sync hindi
+- [ ] PDP-BUYBOX-017 · 320px · light · en · signed out · world=empty · /shop/car-tyre-185-65-r15 · cart=c99 · compare=bat-3 · stress=long-text · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console sync axe
+- [ ] PDP-BUYBOX-018 · 320px · dark · hi · signed out · world=empty · /shop/ev-portable-charger-15a · cart=c1 · compare=lub-2 · stress=none · trust=default · asserts: present inside overlap covered clipped tap hscroll focus console sync hindi
+- [ ] PDP-BUYBOX-019 · 320px · light · en · signed out · world=empty · /shop/motorcycle-wheel-bearing-6301 · cart=none · compare=lub-2 · stress=long-price · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console sync
+- [ ] PDP-BUYBOX-020 · 390px · dark · hi · signed out · world=empty · /shop/castrol-activ-4t-20w40-900ml · cart=c1 · compare=none · stress=none · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console sync hindi axe · core
+- [ ] PDP-BUYBOX-021 · 390px · light · en · signed out · world=empty · /shop/heavy-duty-battery-90ah · cart=c99 · compare=bat-3 · stress=long-price · trust=default · asserts: present inside overlap covered clipped tap hscroll focus console sync axe
+- [ ] PDP-BUYBOX-022 · 390px · dark · hi · signed out · world=empty · /shop/motorcycle-wheel-bearing-6301 · cart=none · compare=none · stress=none · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console sync hindi
+- [ ] PDP-BUYBOX-023 · 480px · light · en · signed out · world=empty · /shop/heavy-duty-battery-90ah · cart=none · compare=lub-2 · stress=long-price · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console sync
+- [ ] PDP-BUYBOX-024 · 480px · dark · hi · signed out · world=empty · /shop/car-tyre-185-65-r15 · cart=c1 · compare=bat-3 · stress=long-text · trust=default · asserts: present inside overlap covered clipped tap hscroll focus console sync hindi
+- [ ] PDP-BUYBOX-025 · 480px · light · en · signed out · world=empty · /shop/ev-portable-charger-15a · cart=c99 · compare=none · stress=none · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console sync axe
+- [ ] PDP-BUYBOX-026 · 768px · dark · hi · signed out · world=empty · /shop/castrol-activ-4t-20w40-900ml · cart=c1 · compare=none · stress=long-price · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console sync hindi
+- [ ] PDP-BUYBOX-027 · 768px · light · en · signed out · world=empty · /shop/car-tyre-185-65-r15 · cart=c99 · compare=lub-2 · stress=long-text · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console sync
+- [ ] PDP-BUYBOX-028 · 768px · dark · hi · signed out · world=empty · /shop/ev-portable-charger-15a · cart=none · compare=bat-3 · stress=none · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console sync hindi
+- [ ] PDP-BUYBOX-029 · 1024px · light · en · signed out · world=empty · /shop/castrol-activ-4t-20w40-900ml · cart=none · compare=lub-2 · stress=long-text · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console sync axe
+- [ ] PDP-BUYBOX-030 · 1024px · dark · hi · signed out · world=empty · /shop/heavy-duty-battery-90ah · cart=c1 · compare=bat-3 · stress=long-price · trust=default · asserts: present inside overlap covered clipped tap hscroll focus console sync hindi
+- [ ] PDP-BUYBOX-031 · 1024px · light · en · signed out · world=empty · /shop/motorcycle-wheel-bearing-6301 · cart=c99 · compare=none · stress=none · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console sync
+- [ ] PDP-BUYBOX-032 · 1280px · dark · hi · signed out · world=empty · /shop/castrol-activ-4t-20w40-900ml · cart=c99 · compare=bat-3 · stress=long-price · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console sync hindi
+- [ ] PDP-BUYBOX-033 · 1280px · light · en · signed out · world=empty · /shop/heavy-duty-battery-90ah · cart=c1 · compare=lub-2 · stress=long-text · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console sync axe
+- [ ] PDP-BUYBOX-034 · 1280px · dark · hi · signed out · world=empty · /shop/motorcycle-wheel-bearing-6301 · cart=none · compare=none · stress=none · trust=default · asserts: present inside overlap covered clipped tap hscroll focus console sync hindi
+- [ ] PDP-BUYBOX-035 · 1440px · light · en · signed out · world=empty · /shop/car-tyre-185-65-r15 · cart=c99 · compare=bat-3 · stress=none · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console sync
+- [ ] PDP-BUYBOX-036 · 1440px · dark · hi · signed out · world=empty · /shop/ev-portable-charger-15a · cart=c1 · compare=lub-2 · stress=long-text · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console sync hindi
+- [ ] PDP-BUYBOX-037 · 1440px · light · en · signed out · world=empty · /shop/motorcycle-wheel-bearing-6301 · cart=none · compare=none · stress=long-price · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console sync axe
+- [ ] PDP-BUYBOX-038 · 1920px · dark · hi · signed out · world=empty · /shop/heavy-duty-battery-90ah · cart=c1 · compare=lub-2 · stress=none · trust=default · asserts: present inside overlap covered clipped tap hscroll focus console sync hindi
+- [ ] PDP-BUYBOX-039 · 1920px · light · en · signed out · world=empty · /shop/car-tyre-185-65-r15 · cart=c99 · compare=bat-3 · stress=long-text · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console sync
+- [ ] PDP-BUYBOX-040 · 1920px · dark · hi · signed out · world=empty · /shop/ev-portable-charger-15a · cart=none · compare=none · stress=long-price · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console sync hindi
+- [ ] PDP-BUYBOX-041 · 390px · light · en · signed out · world=empty · /shop/castrol-activ-4t-20w40-900ml · cart=c1 · compare=lub-2 · stress=long-text · trust=default · asserts: present inside overlap covered clipped tap hscroll focus console sync axe · core
+- [ ] PDP-BUYBOX-042 · 320px · dark · hi · signed out · world=empty · /shop/heavy-duty-battery-90ah · cart=c99 · compare=bat-3 · stress=long-price · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console sync hindi
 
 ### PDP-REVIEWS — Ratings summary, review list, write-a-review entry
 
@@ -1335,56 +1344,79 @@ Pairwise (all pairs of values); 40 states; scope `main`.
 
 ### CART-EMPTY — Empty cart (one next action, category shortcuts)
 
-Pairwise (all pairs of values); 16 states; scope `main`.
+Pairwise (all pairs of values); 32 states; scope `main`.
 
-- [ ] CART-EMPTY-001 · 320px · light · en · signed out · world=empty · /cart · cart=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
-- [ ] CART-EMPTY-002 · 320px · dark · hi · customer · world=empty · /cart · cart=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] CART-EMPTY-003 · 390px · light · hi · signed out · world=empty · /cart · cart=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] CART-EMPTY-004 · 390px · dark · en · customer · world=empty · /cart · cart=none · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] CART-EMPTY-005 · 480px · light · en · customer · world=empty · /cart · cart=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
-- [ ] CART-EMPTY-006 · 480px · dark · hi · signed out · world=empty · /cart · cart=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] CART-EMPTY-007 · 768px · light · en · signed out · world=empty · /cart · cart=none · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] CART-EMPTY-008 · 768px · dark · hi · customer · world=empty · /cart · cart=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] CART-EMPTY-009 · 1024px · light · en · signed out · world=empty · /cart · cart=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
-- [ ] CART-EMPTY-010 · 1024px · dark · hi · customer · world=empty · /cart · cart=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] CART-EMPTY-011 · 1280px · light · en · signed out · world=empty · /cart · cart=none · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] CART-EMPTY-012 · 1280px · dark · hi · customer · world=empty · /cart · cart=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] CART-EMPTY-013 · 1440px · light · en · signed out · world=empty · /cart · cart=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
-- [ ] CART-EMPTY-014 · 1440px · dark · hi · customer · world=empty · /cart · cart=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] CART-EMPTY-015 · 1920px · light · en · signed out · world=empty · /cart · cart=none · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] CART-EMPTY-016 · 1920px · dark · hi · customer · world=empty · /cart · cart=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CART-EMPTY-001 · 320px · light · en · signed out · world=empty · /cart · cart=none · trust=default · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] CART-EMPTY-002 · 320px · dark · hi · customer · world=empty · /cart · cart=none · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CART-EMPTY-003 · 390px · light · hi · signed out · world=empty · /cart · cart=none · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CART-EMPTY-004 · 390px · dark · en · customer · world=empty · /cart · cart=none · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] CART-EMPTY-005 · 480px · light · en · customer · world=empty · /cart · cart=none · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] CART-EMPTY-006 · 480px · dark · hi · signed out · world=empty · /cart · cart=none · trust=default · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CART-EMPTY-007 · 768px · light · en · signed out · world=empty · /cart · cart=none · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] CART-EMPTY-008 · 768px · dark · hi · customer · world=empty · /cart · cart=none · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CART-EMPTY-009 · 1024px · light · en · signed out · world=empty · /cart · cart=none · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] CART-EMPTY-010 · 1024px · dark · hi · customer · world=empty · /cart · cart=none · trust=default · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CART-EMPTY-011 · 1280px · light · en · signed out · world=empty · /cart · cart=none · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] CART-EMPTY-012 · 1280px · dark · hi · customer · world=empty · /cart · cart=none · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CART-EMPTY-013 · 1440px · light · en · signed out · world=empty · /cart · cart=none · trust=default · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] CART-EMPTY-014 · 1440px · dark · hi · customer · world=empty · /cart · cart=none · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CART-EMPTY-015 · 1920px · light · en · signed out · world=empty · /cart · cart=none · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] CART-EMPTY-016 · 1920px · dark · hi · customer · world=empty · /cart · cart=none · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CART-EMPTY-017 · 320px · light · en · signed out · world=empty · /cart · cart=none · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] CART-EMPTY-018 · 320px · dark · hi · customer · world=empty · /cart · cart=none · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CART-EMPTY-019 · 390px · light · en · signed out · world=empty · /cart · cart=none · trust=default · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] CART-EMPTY-020 · 390px · dark · hi · customer · world=empty · /cart · cart=none · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CART-EMPTY-021 · 480px · light · en · signed out · world=empty · /cart · cart=none · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] CART-EMPTY-022 · 480px · dark · hi · customer · world=empty · /cart · cart=none · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CART-EMPTY-023 · 768px · light · en · signed out · world=empty · /cart · cart=none · trust=default · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] CART-EMPTY-024 · 768px · dark · hi · customer · world=empty · /cart · cart=none · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CART-EMPTY-025 · 1024px · light · en · signed out · world=empty · /cart · cart=none · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] CART-EMPTY-026 · 1024px · dark · hi · customer · world=empty · /cart · cart=none · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CART-EMPTY-027 · 1280px · light · en · signed out · world=empty · /cart · cart=none · trust=default · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] CART-EMPTY-028 · 1280px · dark · hi · customer · world=empty · /cart · cart=none · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CART-EMPTY-029 · 1440px · light · en · signed out · world=empty · /cart · cart=none · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] CART-EMPTY-030 · 1440px · dark · hi · customer · world=empty · /cart · cart=none · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CART-EMPTY-031 · 1920px · light · en · signed out · world=empty · /cart · cart=none · trust=default · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] CART-EMPTY-032 · 1920px · dark · hi · customer · world=empty · /cart · cart=none · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console hindi
 
 ## Checkout (/checkout)
 
 ### CHK-FORM — Checkout form (contact, address, business GSTIN, payment) and summary
 
-Pairwise (all pairs of values); 25 states; scope `main`.
+Pairwise (all pairs of values); 32 states; scope `main`.
 
-- [ ] CHK-FORM-001 · 320px · light · en · signed out · world=empty · /checkout · cart=c1 · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console axe
-- [ ] CHK-FORM-002 · 320px · dark · hi · customer · world=empty · /checkout · cart=mixed · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] CHK-FORM-003 · 390px · light · hi · signed out · world=empty · /checkout · cart=max · form=filled · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] CHK-FORM-004 · 390px · dark · en · customer · world=empty · /checkout · cart=c1 · form=filled · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] CHK-FORM-005 · 480px · light · en · customer · world=empty · /checkout · cart=mixed · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console axe
-- [ ] CHK-FORM-006 · 480px · dark · hi · signed out · world=empty · /checkout · cart=max · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] CHK-FORM-007 · 768px · light · en · signed out · world=empty · /checkout · cart=mixed · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] CHK-FORM-008 · 768px · dark · hi · customer · world=empty · /checkout · cart=c1 · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] CHK-FORM-009 · 1024px · light · en · signed out · world=empty · /checkout · cart=max · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console axe
-- [ ] CHK-FORM-010 · 1024px · dark · hi · customer · world=empty · /checkout · cart=c1 · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] CHK-FORM-011 · 1280px · light · en · signed out · world=empty · /checkout · cart=mixed · form=filled · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] CHK-FORM-012 · 1280px · dark · hi · customer · world=empty · /checkout · cart=max · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] CHK-FORM-013 · 1440px · light · en · signed out · world=empty · /checkout · cart=c1 · form=filled · asserts: present inside overlap covered clipped tap hscroll focus console axe
-- [ ] CHK-FORM-014 · 1440px · dark · hi · customer · world=empty · /checkout · cart=mixed · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] CHK-FORM-015 · 1920px · light · en · signed out · world=empty · /checkout · cart=max · form=filled · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] CHK-FORM-016 · 1920px · dark · hi · customer · world=empty · /checkout · cart=c1 · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] CHK-FORM-017 · 320px · light · en · signed out · world=empty · /checkout · cart=max · form=filled · asserts: present inside overlap covered clipped tap hscroll focus console axe
-- [ ] CHK-FORM-018 · 390px · dark · hi · customer · world=empty · /checkout · cart=mixed · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console hindi axe · core
-- [ ] CHK-FORM-019 · 480px · light · en · signed out · world=empty · /checkout · cart=c1 · form=filled · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] CHK-FORM-020 · 768px · dark · hi · customer · world=empty · /checkout · cart=max · form=filled · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] CHK-FORM-021 · 1024px · light · en · signed out · world=empty · /checkout · cart=mixed · form=filled · asserts: present inside overlap covered clipped tap hscroll focus console axe
-- [ ] CHK-FORM-022 · 1280px · dark · hi · customer · world=empty · /checkout · cart=c1 · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] CHK-FORM-023 · 1440px · light · en · signed out · world=empty · /checkout · cart=max · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] CHK-FORM-024 · 1920px · dark · hi · customer · world=empty · /checkout · cart=mixed · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] CHK-FORM-025 · 390px · light · en · signed out · world=empty · /checkout · cart=c1 · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] CHK-FORM-001 · 320px · light · en · signed out · world=empty · /checkout · cart=c1 · form=clean · trust=default · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] CHK-FORM-002 · 320px · dark · hi · customer · world=empty · /checkout · cart=mixed · form=errors · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CHK-FORM-003 · 390px · light · hi · signed out · world=empty · /checkout · cart=max · form=filled · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CHK-FORM-004 · 390px · dark · en · customer · world=empty · /checkout · cart=c1 · form=filled · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] CHK-FORM-005 · 480px · light · en · customer · world=empty · /checkout · cart=mixed · form=clean · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] CHK-FORM-006 · 480px · dark · hi · signed out · world=empty · /checkout · cart=max · form=errors · trust=default · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CHK-FORM-007 · 768px · light · en · signed out · world=empty · /checkout · cart=mixed · form=errors · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] CHK-FORM-008 · 768px · dark · hi · customer · world=empty · /checkout · cart=c1 · form=clean · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CHK-FORM-009 · 1024px · light · en · signed out · world=empty · /checkout · cart=max · form=clean · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] CHK-FORM-010 · 1024px · dark · hi · customer · world=empty · /checkout · cart=c1 · form=errors · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CHK-FORM-011 · 1280px · light · en · signed out · world=empty · /checkout · cart=mixed · form=filled · trust=default · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] CHK-FORM-012 · 1280px · dark · hi · customer · world=empty · /checkout · cart=max · form=clean · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CHK-FORM-013 · 1440px · light · en · signed out · world=empty · /checkout · cart=c1 · form=filled · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] CHK-FORM-014 · 1440px · dark · hi · customer · world=empty · /checkout · cart=mixed · form=errors · trust=default · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CHK-FORM-015 · 1920px · light · en · signed out · world=empty · /checkout · cart=max · form=filled · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] CHK-FORM-016 · 1920px · dark · hi · customer · world=empty · /checkout · cart=c1 · form=clean · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CHK-FORM-017 · 320px · light · en · signed out · world=empty · /checkout · cart=max · form=filled · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] CHK-FORM-018 · 390px · dark · hi · customer · world=empty · /checkout · cart=mixed · form=errors · trust=default · asserts: present inside overlap covered clipped tap hscroll focus console hindi axe · core
+- [ ] CHK-FORM-019 · 480px · light · en · signed out · world=empty · /checkout · cart=c1 · form=filled · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] CHK-FORM-020 · 768px · dark · hi · customer · world=empty · /checkout · cart=max · form=filled · trust=default · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CHK-FORM-021 · 1024px · light · en · signed out · world=empty · /checkout · cart=mixed · form=filled · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] CHK-FORM-022 · 1280px · dark · hi · customer · world=empty · /checkout · cart=c1 · form=errors · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CHK-FORM-023 · 1440px · light · en · signed out · world=empty · /checkout · cart=max · form=clean · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] CHK-FORM-024 · 1920px · dark · hi · customer · world=empty · /checkout · cart=mixed · form=errors · trust=default · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CHK-FORM-025 · 390px · light · en · signed out · world=empty · /checkout · cart=c1 · form=clean · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] CHK-FORM-026 · 320px · dark · hi · customer · world=empty · /checkout · cart=mixed · form=clean · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CHK-FORM-027 · 480px · light · en · signed out · world=empty · /checkout · cart=max · form=errors · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] CHK-FORM-028 · 768px · dark · hi · customer · world=empty · /checkout · cart=c1 · form=clean · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CHK-FORM-029 · 1024px · light · en · signed out · world=empty · /checkout · cart=mixed · form=errors · trust=default · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] CHK-FORM-030 · 1280px · dark · hi · customer · world=empty · /checkout · cart=max · form=filled · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CHK-FORM-031 · 1440px · light · en · signed out · world=empty · /checkout · cart=c1 · form=clean · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] CHK-FORM-032 · 1920px · dark · hi · customer · world=empty · /checkout · cart=mixed · form=errors · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console hindi
 
 ## Order (/orders/[code])
 
@@ -1423,46 +1455,46 @@ Pairwise (all pairs of values); 24 states; scope `main`.
 
 Pairwise (all pairs of values); 40 states; scope `main`.
 
-- [ ] SR-VIEW-001 · 320px · light · en · customer · world=busy · /service/SR-RPR-2026-HND101 · asserts: present inside overlap covered clipped tap hscroll focus console axe
-- [ ] SR-VIEW-002 · 320px · dark · hi · customer · world=busy · /service/SR-RPR-2026-HND102 · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] SR-VIEW-003 · 390px · light · hi · customer · world=busy · /service/SR-RPR-2026-HND103 · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] SR-VIEW-004 · 390px · dark · en · customer · world=busy · /service/SR-RPR-2026-HND104 · asserts: present inside overlap covered clipped tap hscroll focus console axe · core
-- [ ] SR-VIEW-005 · 480px · light · en · customer · world=busy · /service/SR-RPR-2026-HND105 · asserts: present inside overlap covered clipped tap hscroll focus console axe
-- [ ] SR-VIEW-006 · 480px · dark · hi · customer · world=busy · /service/SR-RPR-2026-HND101 · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] SR-VIEW-007 · 768px · light · en · customer · world=busy · /service/SR-RPR-2026-HND102 · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] SR-VIEW-008 · 768px · dark · hi · customer · world=busy · /service/SR-RPR-2026-HND105 · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] SR-VIEW-009 · 1024px · light · en · customer · world=busy · /service/SR-RPR-2026-HND103 · asserts: present inside overlap covered clipped tap hscroll focus console axe
-- [ ] SR-VIEW-010 · 1024px · dark · hi · customer · world=busy · /service/SR-RPR-2026-HND104 · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] SR-VIEW-011 · 1280px · light · en · customer · world=busy · /service/SR-RPR-2026-HND104 · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] SR-VIEW-012 · 1280px · dark · hi · customer · world=busy · /service/SR-RPR-2026-HND103 · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] SR-VIEW-013 · 1440px · light · en · customer · world=busy · /service/SR-RPR-2026-HND101 · asserts: present inside overlap covered clipped tap hscroll focus console axe
-- [ ] SR-VIEW-014 · 1440px · dark · hi · customer · world=busy · /service/SR-RPR-2026-HND102 · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] SR-VIEW-015 · 1920px · light · en · customer · world=busy · /service/SR-RPR-2026-HND105 · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] SR-VIEW-016 · 1920px · dark · hi · customer · world=busy · /service/SR-RPR-2026-HND101 · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] SR-VIEW-017 · 320px · light · en · customer · world=busy · /service/SR-RPR-2026-HND103 · asserts: present inside overlap covered clipped tap hscroll focus console axe
-- [ ] SR-VIEW-018 · 320px · dark · hi · customer · world=busy · /service/SR-RPR-2026-HND104 · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] SR-VIEW-019 · 320px · light · en · customer · world=busy · /service/SR-RPR-2026-HND105 · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] SR-VIEW-020 · 390px · dark · hi · customer · world=busy · /service/SR-RPR-2026-HND101 · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] SR-VIEW-021 · 390px · light · en · customer · world=busy · /service/SR-RPR-2026-HND102 · asserts: present inside overlap covered clipped tap hscroll focus console axe
-- [ ] SR-VIEW-022 · 390px · dark · hi · customer · world=busy · /service/SR-RPR-2026-HND105 · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] SR-VIEW-023 · 480px · light · en · customer · world=busy · /service/SR-RPR-2026-HND102 · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] SR-VIEW-024 · 480px · dark · hi · customer · world=busy · /service/SR-RPR-2026-HND103 · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] SR-VIEW-025 · 480px · light · en · customer · world=busy · /service/SR-RPR-2026-HND104 · asserts: present inside overlap covered clipped tap hscroll focus console axe
-- [ ] SR-VIEW-026 · 768px · dark · hi · customer · world=busy · /service/SR-RPR-2026-HND101 · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] SR-VIEW-027 · 768px · light · en · customer · world=busy · /service/SR-RPR-2026-HND103 · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] SR-VIEW-028 · 768px · dark · hi · customer · world=busy · /service/SR-RPR-2026-HND104 · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] SR-VIEW-029 · 1024px · light · en · customer · world=busy · /service/SR-RPR-2026-HND101 · asserts: present inside overlap covered clipped tap hscroll focus console axe
-- [ ] SR-VIEW-030 · 1024px · dark · hi · customer · world=busy · /service/SR-RPR-2026-HND102 · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] SR-VIEW-031 · 1024px · light · en · customer · world=busy · /service/SR-RPR-2026-HND105 · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] SR-VIEW-032 · 1280px · dark · hi · customer · world=busy · /service/SR-RPR-2026-HND101 · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] SR-VIEW-033 · 1280px · light · en · customer · world=busy · /service/SR-RPR-2026-HND102 · asserts: present inside overlap covered clipped tap hscroll focus console axe
-- [ ] SR-VIEW-034 · 1280px · dark · hi · customer · world=busy · /service/SR-RPR-2026-HND105 · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] SR-VIEW-035 · 1440px · light · en · customer · world=busy · /service/SR-RPR-2026-HND103 · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] SR-VIEW-036 · 1440px · dark · hi · customer · world=busy · /service/SR-RPR-2026-HND104 · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] SR-VIEW-037 · 1440px · light · en · customer · world=busy · /service/SR-RPR-2026-HND105 · asserts: present inside overlap covered clipped tap hscroll focus console axe
-- [ ] SR-VIEW-038 · 1920px · dark · hi · customer · world=busy · /service/SR-RPR-2026-HND102 · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] SR-VIEW-039 · 1920px · light · en · customer · world=busy · /service/SR-RPR-2026-HND103 · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] SR-VIEW-040 · 1920px · dark · hi · customer · world=busy · /service/SR-RPR-2026-HND104 · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] SR-VIEW-001 · 320px · light · en · customer · world=busy · /service/SR-RPR-2026-HND101 · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] SR-VIEW-002 · 320px · dark · hi · customer · world=busy · /service/SR-RPR-2026-HND102 · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] SR-VIEW-003 · 390px · light · hi · customer · world=busy · /service/SR-RPR-2026-HND103 · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] SR-VIEW-004 · 390px · dark · en · customer · world=busy · /service/SR-RPR-2026-HND104 · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console axe · core
+- [ ] SR-VIEW-005 · 480px · light · en · customer · world=busy · /service/SR-RPR-2026-HND105 · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] SR-VIEW-006 · 480px · dark · hi · customer · world=busy · /service/SR-RPR-2026-HND101 · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] SR-VIEW-007 · 768px · light · en · customer · world=busy · /service/SR-RPR-2026-HND102 · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] SR-VIEW-008 · 768px · dark · hi · customer · world=busy · /service/SR-RPR-2026-HND105 · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] SR-VIEW-009 · 1024px · light · en · customer · world=busy · /service/SR-RPR-2026-HND103 · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] SR-VIEW-010 · 1024px · dark · hi · customer · world=busy · /service/SR-RPR-2026-HND104 · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] SR-VIEW-011 · 1280px · light · en · customer · world=busy · /service/SR-RPR-2026-HND104 · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] SR-VIEW-012 · 1280px · dark · hi · customer · world=busy · /service/SR-RPR-2026-HND103 · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] SR-VIEW-013 · 1440px · light · en · customer · world=busy · /service/SR-RPR-2026-HND101 · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] SR-VIEW-014 · 1440px · dark · hi · customer · world=busy · /service/SR-RPR-2026-HND102 · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] SR-VIEW-015 · 1920px · light · en · customer · world=busy · /service/SR-RPR-2026-HND105 · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] SR-VIEW-016 · 1920px · dark · hi · customer · world=busy · /service/SR-RPR-2026-HND101 · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] SR-VIEW-017 · 320px · light · en · customer · world=busy · /service/SR-RPR-2026-HND103 · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] SR-VIEW-018 · 320px · dark · hi · customer · world=busy · /service/SR-RPR-2026-HND104 · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] SR-VIEW-019 · 320px · light · en · customer · world=busy · /service/SR-RPR-2026-HND105 · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] SR-VIEW-020 · 390px · dark · hi · customer · world=busy · /service/SR-RPR-2026-HND101 · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] SR-VIEW-021 · 390px · light · en · customer · world=busy · /service/SR-RPR-2026-HND102 · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] SR-VIEW-022 · 390px · dark · hi · customer · world=busy · /service/SR-RPR-2026-HND105 · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] SR-VIEW-023 · 480px · light · en · customer · world=busy · /service/SR-RPR-2026-HND102 · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] SR-VIEW-024 · 480px · dark · hi · customer · world=busy · /service/SR-RPR-2026-HND103 · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] SR-VIEW-025 · 480px · light · en · customer · world=busy · /service/SR-RPR-2026-HND104 · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] SR-VIEW-026 · 768px · dark · hi · customer · world=busy · /service/SR-RPR-2026-HND101 · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] SR-VIEW-027 · 768px · light · en · customer · world=busy · /service/SR-RPR-2026-HND103 · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] SR-VIEW-028 · 768px · dark · hi · customer · world=busy · /service/SR-RPR-2026-HND104 · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] SR-VIEW-029 · 1024px · light · en · customer · world=busy · /service/SR-RPR-2026-HND101 · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] SR-VIEW-030 · 1024px · dark · hi · customer · world=busy · /service/SR-RPR-2026-HND102 · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] SR-VIEW-031 · 1024px · light · en · customer · world=busy · /service/SR-RPR-2026-HND105 · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] SR-VIEW-032 · 1280px · dark · hi · customer · world=busy · /service/SR-RPR-2026-HND101 · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] SR-VIEW-033 · 1280px · light · en · customer · world=busy · /service/SR-RPR-2026-HND102 · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] SR-VIEW-034 · 1280px · dark · hi · customer · world=busy · /service/SR-RPR-2026-HND105 · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] SR-VIEW-035 · 1440px · light · en · customer · world=busy · /service/SR-RPR-2026-HND103 · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] SR-VIEW-036 · 1440px · dark · hi · customer · world=busy · /service/SR-RPR-2026-HND104 · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] SR-VIEW-037 · 1440px · light · en · customer · world=busy · /service/SR-RPR-2026-HND105 · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] SR-VIEW-038 · 1920px · dark · hi · customer · world=busy · /service/SR-RPR-2026-HND102 · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] SR-VIEW-039 · 1920px · light · en · customer · world=busy · /service/SR-RPR-2026-HND103 · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] SR-VIEW-040 · 1920px · dark · hi · customer · world=busy · /service/SR-RPR-2026-HND104 · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console hindi
 
 ## Bulk quotes (/quotes)
 
@@ -1779,56 +1811,79 @@ Pairwise (all pairs of values); 16 states; scope `main`.
 
 ### WS-PROFILE — Workshop profile: services menu, reviews, booking form
 
-Pairwise (all pairs of values); 25 states; scope `main`.
+Pairwise (all pairs of values); 32 states; scope `main`.
 
-- [ ] WS-PROFILE-001 · 320px · light · en · signed out · world=empty · /workshops/telibandha-car-clinic · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console axe
-- [ ] WS-PROFILE-002 · 320px · dark · hi · customer · world=empty · /workshops/mowa-ev-and-bike-point · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] WS-PROFILE-003 · 390px · light · hi · signed out · world=empty · /workshops/pachpedi-naka-two-wheeler-care · form=filled · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] WS-PROFILE-004 · 390px · dark · en · customer · world=empty · /workshops/telibandha-car-clinic · form=filled · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] WS-PROFILE-005 · 480px · light · en · customer · world=empty · /workshops/mowa-ev-and-bike-point · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console axe
-- [ ] WS-PROFILE-006 · 480px · dark · hi · signed out · world=empty · /workshops/pachpedi-naka-two-wheeler-care · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] WS-PROFILE-007 · 768px · light · en · signed out · world=empty · /workshops/mowa-ev-and-bike-point · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] WS-PROFILE-008 · 768px · dark · hi · customer · world=empty · /workshops/telibandha-car-clinic · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] WS-PROFILE-009 · 1024px · light · en · signed out · world=empty · /workshops/pachpedi-naka-two-wheeler-care · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console axe
-- [ ] WS-PROFILE-010 · 1024px · dark · hi · customer · world=empty · /workshops/telibandha-car-clinic · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] WS-PROFILE-011 · 1280px · light · en · signed out · world=empty · /workshops/mowa-ev-and-bike-point · form=filled · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] WS-PROFILE-012 · 1280px · dark · hi · customer · world=empty · /workshops/pachpedi-naka-two-wheeler-care · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] WS-PROFILE-013 · 1440px · light · en · signed out · world=empty · /workshops/telibandha-car-clinic · form=filled · asserts: present inside overlap covered clipped tap hscroll focus console axe
-- [ ] WS-PROFILE-014 · 1440px · dark · hi · customer · world=empty · /workshops/mowa-ev-and-bike-point · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] WS-PROFILE-015 · 1920px · light · en · signed out · world=empty · /workshops/pachpedi-naka-two-wheeler-care · form=filled · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] WS-PROFILE-016 · 1920px · dark · hi · customer · world=empty · /workshops/telibandha-car-clinic · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] WS-PROFILE-017 · 320px · light · en · signed out · world=empty · /workshops/pachpedi-naka-two-wheeler-care · form=filled · asserts: present inside overlap covered clipped tap hscroll focus console axe
-- [ ] WS-PROFILE-018 · 390px · dark · hi · customer · world=empty · /workshops/mowa-ev-and-bike-point · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console hindi axe · core
-- [ ] WS-PROFILE-019 · 480px · light · en · signed out · world=empty · /workshops/telibandha-car-clinic · form=filled · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] WS-PROFILE-020 · 768px · dark · hi · customer · world=empty · /workshops/pachpedi-naka-two-wheeler-care · form=filled · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] WS-PROFILE-021 · 1024px · light · en · signed out · world=empty · /workshops/mowa-ev-and-bike-point · form=filled · asserts: present inside overlap covered clipped tap hscroll focus console axe
-- [ ] WS-PROFILE-022 · 1280px · dark · hi · customer · world=empty · /workshops/telibandha-car-clinic · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] WS-PROFILE-023 · 1440px · light · en · signed out · world=empty · /workshops/pachpedi-naka-two-wheeler-care · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] WS-PROFILE-024 · 1920px · dark · hi · customer · world=empty · /workshops/mowa-ev-and-bike-point · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] WS-PROFILE-025 · 390px · light · en · signed out · world=empty · /workshops/telibandha-car-clinic · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] WS-PROFILE-001 · 320px · light · en · signed out · world=empty · /workshops/telibandha-car-clinic · form=clean · trust=default · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] WS-PROFILE-002 · 320px · dark · hi · customer · world=empty · /workshops/mowa-ev-and-bike-point · form=errors · trust=override · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] WS-PROFILE-003 · 390px · light · hi · signed out · world=empty · /workshops/pachpedi-naka-two-wheeler-care · form=filled · trust=long · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] WS-PROFILE-004 · 390px · dark · en · customer · world=empty · /workshops/telibandha-car-clinic · form=filled · trust=hidden · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] WS-PROFILE-005 · 480px · light · en · customer · world=empty · /workshops/mowa-ev-and-bike-point · form=clean · trust=long · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] WS-PROFILE-006 · 480px · dark · hi · signed out · world=empty · /workshops/pachpedi-naka-two-wheeler-care · form=errors · trust=default · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] WS-PROFILE-007 · 768px · light · en · signed out · world=empty · /workshops/mowa-ev-and-bike-point · form=errors · trust=hidden · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] WS-PROFILE-008 · 768px · dark · hi · customer · world=empty · /workshops/telibandha-car-clinic · form=clean · trust=override · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] WS-PROFILE-009 · 1024px · light · en · signed out · world=empty · /workshops/pachpedi-naka-two-wheeler-care · form=clean · trust=override · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] WS-PROFILE-010 · 1024px · dark · hi · customer · world=empty · /workshops/telibandha-car-clinic · form=errors · trust=long · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] WS-PROFILE-011 · 1280px · light · en · signed out · world=empty · /workshops/mowa-ev-and-bike-point · form=filled · trust=default · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] WS-PROFILE-012 · 1280px · dark · hi · customer · world=empty · /workshops/pachpedi-naka-two-wheeler-care · form=clean · trust=hidden · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] WS-PROFILE-013 · 1440px · light · en · signed out · world=empty · /workshops/telibandha-car-clinic · form=filled · trust=override · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] WS-PROFILE-014 · 1440px · dark · hi · customer · world=empty · /workshops/mowa-ev-and-bike-point · form=errors · trust=default · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] WS-PROFILE-015 · 1920px · light · en · signed out · world=empty · /workshops/pachpedi-naka-two-wheeler-care · form=filled · trust=long · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] WS-PROFILE-016 · 1920px · dark · hi · customer · world=empty · /workshops/telibandha-car-clinic · form=clean · trust=hidden · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] WS-PROFILE-017 · 320px · light · en · signed out · world=empty · /workshops/pachpedi-naka-two-wheeler-care · form=filled · trust=long · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] WS-PROFILE-018 · 390px · dark · hi · customer · world=empty · /workshops/mowa-ev-and-bike-point · form=errors · trust=default · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console hindi axe · core
+- [ ] WS-PROFILE-019 · 480px · light · en · signed out · world=empty · /workshops/telibandha-car-clinic · form=filled · trust=override · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] WS-PROFILE-020 · 768px · dark · hi · customer · world=empty · /workshops/pachpedi-naka-two-wheeler-care · form=filled · trust=default · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] WS-PROFILE-021 · 1024px · light · en · signed out · world=empty · /workshops/mowa-ev-and-bike-point · form=filled · trust=hidden · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] WS-PROFILE-022 · 1280px · dark · hi · customer · world=empty · /workshops/telibandha-car-clinic · form=errors · trust=override · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] WS-PROFILE-023 · 1440px · light · en · signed out · world=empty · /workshops/pachpedi-naka-two-wheeler-care · form=clean · trust=long · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] WS-PROFILE-024 · 1920px · dark · hi · customer · world=empty · /workshops/mowa-ev-and-bike-point · form=errors · trust=default · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] WS-PROFILE-025 · 390px · light · en · signed out · world=empty · /workshops/telibandha-car-clinic · form=clean · trust=override · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] WS-PROFILE-026 · 320px · dark · hi · customer · world=empty · /workshops/mowa-ev-and-bike-point · form=clean · trust=hidden · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] WS-PROFILE-027 · 480px · light · en · signed out · world=empty · /workshops/pachpedi-naka-two-wheeler-care · form=errors · trust=hidden · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] WS-PROFILE-028 · 768px · dark · hi · customer · world=empty · /workshops/telibandha-car-clinic · form=clean · trust=long · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] WS-PROFILE-029 · 1024px · light · en · signed out · world=empty · /workshops/mowa-ev-and-bike-point · form=errors · trust=default · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] WS-PROFILE-030 · 1280px · dark · hi · customer · world=empty · /workshops/pachpedi-naka-two-wheeler-care · form=filled · trust=long · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] WS-PROFILE-031 · 1440px · light · en · signed out · world=empty · /workshops/telibandha-car-clinic · form=clean · trust=hidden · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] WS-PROFILE-032 · 1920px · dark · hi · customer · world=empty · /workshops/mowa-ev-and-bike-point · form=errors · trust=override · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console hindi
 
 ## Partners (/partners)
 
 ### PTN-LANDING — Partner landing (kinds, benefits, apply links)
 
-Pairwise (all pairs of values); 16 states; scope `main`.
+Pairwise (all pairs of values); 32 states; scope `main`.
 
-- [ ] PTN-LANDING-001 · 320px · light · en · signed out · world=empty · /partners · asserts: present inside overlap covered clipped tap hscroll focus console axe
-- [ ] PTN-LANDING-002 · 320px · dark · hi · customer · world=empty · /partners · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] PTN-LANDING-003 · 390px · light · hi · signed out · world=empty · /partners · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] PTN-LANDING-004 · 390px · dark · en · customer · world=empty · /partners · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] PTN-LANDING-005 · 480px · light · en · customer · world=empty · /partners · asserts: present inside overlap covered clipped tap hscroll focus console axe
-- [ ] PTN-LANDING-006 · 480px · dark · hi · signed out · world=empty · /partners · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] PTN-LANDING-007 · 768px · light · en · signed out · world=empty · /partners · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] PTN-LANDING-008 · 768px · dark · hi · customer · world=empty · /partners · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] PTN-LANDING-009 · 1024px · light · en · signed out · world=empty · /partners · asserts: present inside overlap covered clipped tap hscroll focus console axe
-- [ ] PTN-LANDING-010 · 1024px · dark · hi · customer · world=empty · /partners · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] PTN-LANDING-011 · 1280px · light · en · signed out · world=empty · /partners · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] PTN-LANDING-012 · 1280px · dark · hi · customer · world=empty · /partners · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] PTN-LANDING-013 · 1440px · light · en · signed out · world=empty · /partners · asserts: present inside overlap covered clipped tap hscroll focus console axe
-- [ ] PTN-LANDING-014 · 1440px · dark · hi · customer · world=empty · /partners · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] PTN-LANDING-015 · 1920px · light · en · signed out · world=empty · /partners · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] PTN-LANDING-016 · 1920px · dark · hi · customer · world=empty · /partners · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] PTN-LANDING-001 · 320px · light · en · signed out · world=empty · /partners · trust=default · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] PTN-LANDING-002 · 320px · dark · hi · customer · world=empty · /partners · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] PTN-LANDING-003 · 390px · light · hi · signed out · world=empty · /partners · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] PTN-LANDING-004 · 390px · dark · en · customer · world=empty · /partners · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] PTN-LANDING-005 · 480px · light · en · customer · world=empty · /partners · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] PTN-LANDING-006 · 480px · dark · hi · signed out · world=empty · /partners · trust=default · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] PTN-LANDING-007 · 768px · light · en · signed out · world=empty · /partners · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] PTN-LANDING-008 · 768px · dark · hi · customer · world=empty · /partners · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] PTN-LANDING-009 · 1024px · light · en · signed out · world=empty · /partners · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] PTN-LANDING-010 · 1024px · dark · hi · customer · world=empty · /partners · trust=default · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] PTN-LANDING-011 · 1280px · light · en · signed out · world=empty · /partners · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] PTN-LANDING-012 · 1280px · dark · hi · customer · world=empty · /partners · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] PTN-LANDING-013 · 1440px · light · en · signed out · world=empty · /partners · trust=default · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] PTN-LANDING-014 · 1440px · dark · hi · customer · world=empty · /partners · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] PTN-LANDING-015 · 1920px · light · en · signed out · world=empty · /partners · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] PTN-LANDING-016 · 1920px · dark · hi · customer · world=empty · /partners · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] PTN-LANDING-017 · 320px · light · en · signed out · world=empty · /partners · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] PTN-LANDING-018 · 320px · dark · hi · customer · world=empty · /partners · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] PTN-LANDING-019 · 390px · light · en · signed out · world=empty · /partners · trust=default · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] PTN-LANDING-020 · 390px · dark · hi · customer · world=empty · /partners · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] PTN-LANDING-021 · 480px · light · en · signed out · world=empty · /partners · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] PTN-LANDING-022 · 480px · dark · hi · customer · world=empty · /partners · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] PTN-LANDING-023 · 768px · light · en · signed out · world=empty · /partners · trust=default · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] PTN-LANDING-024 · 768px · dark · hi · customer · world=empty · /partners · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] PTN-LANDING-025 · 1024px · light · en · signed out · world=empty · /partners · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] PTN-LANDING-026 · 1024px · dark · hi · customer · world=empty · /partners · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] PTN-LANDING-027 · 1280px · light · en · signed out · world=empty · /partners · trust=default · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] PTN-LANDING-028 · 1280px · dark · hi · customer · world=empty · /partners · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] PTN-LANDING-029 · 1440px · light · en · signed out · world=empty · /partners · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] PTN-LANDING-030 · 1440px · dark · hi · customer · world=empty · /partners · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] PTN-LANDING-031 · 1920px · light · en · signed out · world=empty · /partners · trust=default · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] PTN-LANDING-032 · 1920px · dark · hi · customer · world=empty · /partners · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console hindi
 
 ## Partners (/partners/apply/[kind])
 
@@ -1836,30 +1891,30 @@ Pairwise (all pairs of values); 16 states; scope `main`.
 
 Pairwise (all pairs of values); 24 states; scope `main`.
 
-- [ ] PTN-APPLY-001 · 320px · light · en · signed out · world=empty · /partners/apply/seller · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console axe
-- [ ] PTN-APPLY-002 · 320px · dark · hi · signed out · world=empty · /partners/apply/garage · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] PTN-APPLY-003 · 390px · light · hi · signed out · world=empty · /partners/apply/mechanic · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] PTN-APPLY-004 · 390px · dark · en · signed out · world=empty · /partners/apply/seller · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console axe · core
-- [ ] PTN-APPLY-005 · 480px · light · en · signed out · world=empty · /partners/apply/garage · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console axe
-- [ ] PTN-APPLY-006 · 480px · dark · hi · signed out · world=empty · /partners/apply/mechanic · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] PTN-APPLY-007 · 768px · light · en · signed out · world=empty · /partners/apply/mechanic · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] PTN-APPLY-008 · 768px · dark · hi · signed out · world=empty · /partners/apply/seller · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] PTN-APPLY-009 · 1024px · light · en · signed out · world=empty · /partners/apply/garage · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console axe
-- [ ] PTN-APPLY-010 · 1024px · dark · hi · signed out · world=empty · /partners/apply/seller · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] PTN-APPLY-011 · 1280px · light · en · signed out · world=empty · /partners/apply/garage · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] PTN-APPLY-012 · 1280px · dark · hi · signed out · world=empty · /partners/apply/mechanic · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] PTN-APPLY-013 · 1440px · light · en · signed out · world=empty · /partners/apply/seller · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console axe
-- [ ] PTN-APPLY-014 · 1440px · dark · hi · signed out · world=empty · /partners/apply/garage · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] PTN-APPLY-015 · 1920px · light · en · signed out · world=empty · /partners/apply/mechanic · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] PTN-APPLY-016 · 1920px · dark · hi · signed out · world=empty · /partners/apply/seller · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] PTN-APPLY-017 · 320px · light · en · signed out · world=empty · /partners/apply/mechanic · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console axe
-- [ ] PTN-APPLY-018 · 390px · dark · hi · signed out · world=empty · /partners/apply/garage · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] PTN-APPLY-019 · 480px · light · en · signed out · world=empty · /partners/apply/seller · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] PTN-APPLY-020 · 768px · dark · hi · signed out · world=empty · /partners/apply/garage · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] PTN-APPLY-021 · 1024px · light · en · signed out · world=empty · /partners/apply/mechanic · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console axe
-- [ ] PTN-APPLY-022 · 1280px · dark · hi · signed out · world=empty · /partners/apply/seller · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] PTN-APPLY-023 · 1440px · light · en · signed out · world=empty · /partners/apply/mechanic · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] PTN-APPLY-024 · 1920px · dark · hi · signed out · world=empty · /partners/apply/garage · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] PTN-APPLY-001 · 320px · light · en · signed out · world=empty · /partners/apply/seller · form=clean · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] PTN-APPLY-002 · 320px · dark · hi · signed out · world=empty · /partners/apply/garage · form=errors · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] PTN-APPLY-003 · 390px · light · hi · signed out · world=empty · /partners/apply/mechanic · form=clean · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] PTN-APPLY-004 · 390px · dark · en · signed out · world=empty · /partners/apply/seller · form=errors · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console axe · core
+- [ ] PTN-APPLY-005 · 480px · light · en · signed out · world=empty · /partners/apply/garage · form=clean · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] PTN-APPLY-006 · 480px · dark · hi · signed out · world=empty · /partners/apply/mechanic · form=errors · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] PTN-APPLY-007 · 768px · light · en · signed out · world=empty · /partners/apply/mechanic · form=errors · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] PTN-APPLY-008 · 768px · dark · hi · signed out · world=empty · /partners/apply/seller · form=clean · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] PTN-APPLY-009 · 1024px · light · en · signed out · world=empty · /partners/apply/garage · form=clean · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] PTN-APPLY-010 · 1024px · dark · hi · signed out · world=empty · /partners/apply/seller · form=errors · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] PTN-APPLY-011 · 1280px · light · en · signed out · world=empty · /partners/apply/garage · form=clean · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] PTN-APPLY-012 · 1280px · dark · hi · signed out · world=empty · /partners/apply/mechanic · form=errors · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] PTN-APPLY-013 · 1440px · light · en · signed out · world=empty · /partners/apply/seller · form=clean · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] PTN-APPLY-014 · 1440px · dark · hi · signed out · world=empty · /partners/apply/garage · form=errors · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] PTN-APPLY-015 · 1920px · light · en · signed out · world=empty · /partners/apply/mechanic · form=clean · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] PTN-APPLY-016 · 1920px · dark · hi · signed out · world=empty · /partners/apply/seller · form=errors · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] PTN-APPLY-017 · 320px · light · en · signed out · world=empty · /partners/apply/mechanic · form=clean · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] PTN-APPLY-018 · 390px · dark · hi · signed out · world=empty · /partners/apply/garage · form=errors · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] PTN-APPLY-019 · 480px · light · en · signed out · world=empty · /partners/apply/seller · form=clean · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] PTN-APPLY-020 · 768px · dark · hi · signed out · world=empty · /partners/apply/garage · form=errors · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] PTN-APPLY-021 · 1024px · light · en · signed out · world=empty · /partners/apply/mechanic · form=clean · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] PTN-APPLY-022 · 1280px · dark · hi · signed out · world=empty · /partners/apply/seller · form=errors · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] PTN-APPLY-023 · 1440px · light · en · signed out · world=empty · /partners/apply/mechanic · form=clean · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] PTN-APPLY-024 · 1920px · dark · hi · signed out · world=empty · /partners/apply/garage · form=errors · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console hindi
 
 ## Support (/support)
 
@@ -3229,6 +3284,45 @@ Pairwise (all pairs of values); 32 states; scope `main`.
 - [ ] API-ADM-QUOTES-030 · 1440px · dark · hi · admin · world=empty · /admin/quotes · quotes=error · asserts: present inside overlap covered clipped tap hscroll focus console hindi
 - [ ] API-ADM-QUOTES-031 · 1920px · light · en · admin · world=empty · /admin/quotes · quotes=none · asserts: present inside overlap covered clipped tap hscroll focus console
 - [ ] API-ADM-QUOTES-032 · 1920px · dark · hi · admin · world=empty · /admin/quotes · quotes=one · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+
+## Admin → Content, real sign-in
+
+### API-ADM-CONTENT — Trust lines editor: eight lines in English and Hindi, default, long wording, hidden with "-", load error
+
+Pairwise (all pairs of values); 32 states; scope `main`.
+
+- [ ] API-ADM-CONTENT-001 · 320px · light · en · admin · world=empty · /admin/content · content=default · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ADM-CONTENT-002 · 320px · dark · hi · admin · world=empty · /admin/content · content=long · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-CONTENT-003 · 390px · light · hi · admin · world=empty · /admin/content · content=hidden · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-CONTENT-004 · 390px · dark · en · admin · world=empty · /admin/content · content=error · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ADM-CONTENT-005 · 480px · light · en · admin · world=empty · /admin/content · content=long · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ADM-CONTENT-006 · 480px · dark · hi · admin · world=empty · /admin/content · content=default · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-CONTENT-007 · 768px · light · en · admin · world=empty · /admin/content · content=hidden · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ADM-CONTENT-008 · 768px · dark · hi · admin · world=empty · /admin/content · content=error · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-CONTENT-009 · 1024px · light · en · admin · world=empty · /admin/content · content=error · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ADM-CONTENT-010 · 1024px · dark · hi · admin · world=empty · /admin/content · content=hidden · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-CONTENT-011 · 1280px · light · en · admin · world=empty · /admin/content · content=default · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ADM-CONTENT-012 · 1280px · dark · hi · admin · world=empty · /admin/content · content=long · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-CONTENT-013 · 1440px · light · en · admin · world=empty · /admin/content · content=default · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ADM-CONTENT-014 · 1440px · dark · hi · admin · world=empty · /admin/content · content=long · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-CONTENT-015 · 1920px · light · en · admin · world=empty · /admin/content · content=hidden · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ADM-CONTENT-016 · 1920px · dark · hi · admin · world=empty · /admin/content · content=error · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-CONTENT-017 · 320px · light · en · admin · world=empty · /admin/content · content=hidden · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ADM-CONTENT-018 · 320px · dark · hi · admin · world=empty · /admin/content · content=error · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-CONTENT-019 · 390px · light · en · admin · world=empty · /admin/content · content=default · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ADM-CONTENT-020 · 390px · dark · hi · admin · world=empty · /admin/content · content=long · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-CONTENT-021 · 480px · light · en · admin · world=empty · /admin/content · content=hidden · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ADM-CONTENT-022 · 480px · dark · hi · admin · world=empty · /admin/content · content=error · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-CONTENT-023 · 768px · light · en · admin · world=empty · /admin/content · content=default · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ADM-CONTENT-024 · 768px · dark · hi · admin · world=empty · /admin/content · content=long · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-CONTENT-025 · 1024px · light · en · admin · world=empty · /admin/content · content=default · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ADM-CONTENT-026 · 1024px · dark · hi · admin · world=empty · /admin/content · content=long · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-CONTENT-027 · 1280px · light · en · admin · world=empty · /admin/content · content=hidden · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ADM-CONTENT-028 · 1280px · dark · hi · admin · world=empty · /admin/content · content=error · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-CONTENT-029 · 1440px · light · en · admin · world=empty · /admin/content · content=hidden · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ADM-CONTENT-030 · 1440px · dark · hi · admin · world=empty · /admin/content · content=error · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-CONTENT-031 · 1920px · light · en · admin · world=empty · /admin/content · content=default · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ADM-CONTENT-032 · 1920px · dark · hi · admin · world=empty · /admin/content · content=long · asserts: present inside overlap covered clipped tap hscroll focus console hindi
 
 ## Navigation, real sign-in
 

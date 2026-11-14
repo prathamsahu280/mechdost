@@ -87,3 +87,13 @@ export function computeServiceBill(
     totalPaise: rounded,
   };
 }
+
+/** The labour promise runs for whole 24-hour days from the moment of billing (user 2026-11-15, Q105). */
+export function labourPromiseEndsAt(billedAt: Date, days: number): Date {
+  return new Date(billedAt.getTime() + days * 86_400_000);
+}
+
+/** True while a bill's frozen promise is still running (`days` null = the bill carries no promise). */
+export function labourPromiseOpen(billedAt: Date, days: number | null, now: Date): boolean {
+  return days !== null && now.getTime() <= labourPromiseEndsAt(billedAt, days).getTime();
+}

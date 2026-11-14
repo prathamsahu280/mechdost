@@ -1,3 +1,4 @@
+import { defaultEmailTrustLine } from '@mechdost/shared/email-layout';
 import {
   EMAIL_TEMPLATES,
   composeEmail,
@@ -28,11 +29,19 @@ export interface EmailConfig {
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/** The admin's published `trust.emailFooter` for a language: the line to show, or `null` to hide it. */
+export type TrustLineLoader = (locale: 'en' | 'hi') => Promise<string | null>;
+
 export type OverrideLoader = (key: string, locale: 'en' | 'hi') => Promise<EmailOverride | null>;
 
 export function createEmailAdapter(
   cfg: EmailConfig,
-  opts: { fetchImpl?: typeof fetch; timeoutMs?: number; loadOverride?: OverrideLoader } = {},
+  opts: {
+    fetchImpl?: typeof fetch;
+    timeoutMs?: number;
+    loadOverride?: OverrideLoader;
+    loadTrustLine?: TrustLineLoader;
+  } = {},
 ): ChannelAdapter {
   const fetchImpl = opts.fetchImpl ?? fetch;
   return {
@@ -58,9 +67,18 @@ export function createEmailAdapter(
         { webBaseUrl: cfg.webBaseUrl, grievanceContact: cfg.grievanceContact ?? null },
         override,
       );
+      // Order emails carry the "genuine parts" line (design 2026-11-15); the admin can reword or hide it. Like the
+      // template override, a database hiccup falls back to the safe default text.
+      let trustLine: string | null = null;
+      if (row.templateKey.startsWith('order_')) {
+        trustLine = await (
+          opts.loadTrustLine?.(locale) ?? Promise.resolve(defaultEmailTrustLine(locale))
+        ).catch(() => defaultEmailTrustLine(locale));
+      }
       const { text, html } = renderEmail(composed, {
         locale,
         grievanceContact: cfg.grievanceContact ?? null,
+        trustLine,
       });
       // A staff test send (Admin → Emails) is marked so nobody mistakes it for a real notification.
       const subject =

@@ -68,6 +68,8 @@ export const PublicWorkshop = z
     ratingCount: z.number().int(),
     gstRegistered: z.boolean(),
     services: z.array(MenuItem),
+    /** Only on one workshop's page: days of the labour promise while it is on (admin setting), else null. */
+    labourPromiseDays: z.number().int().nullable().optional(),
   })
   .openapi('PublicWorkshop');
 
@@ -178,6 +180,7 @@ export const RequestDetail = z
         roundOffPaise: z.number().int(),
         totalPaise: z.number().int(),
         billedAt: z.string(),
+        labourPromiseDays: z.number().int().nullable(),
         paidAt: z.string().nullable(),
         method: z.string().nullable(),
       })

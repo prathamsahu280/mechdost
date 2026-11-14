@@ -21,12 +21,29 @@
  *   consent   decided | open
  *   open      closed | first | all     (disclosures: FAQ, quick-details popover, assistant panel)
  *   form      clean | errors | filled  (submit empty to show every error; or fill every field)
+ *   trust     default | override | long | hidden   (trust lines, design 2026-11-15: the locale-file text; a short
+ *             admin wording; 140-character English/Hindi wording; every line hidden with "-". Seeds the demo site config)
+ *   promise   off | on     (labour promise, Q105: off, or 30 days on workshop pages and the bill)
  *   data      empty | one | limit | long   (the signed-in customer's saved vehicles and addresses: none, one, the limit
  *             of 10, and one with very long Hindi text; account sections only)
  *
  * Pure data plus `.ts` imports only (Node runs it for the checklist writer).
  */
 import type { Param, Row, Valid } from './pairwise.ts';
+
+/** The content keys of the trust lines (`packages/shared/src/content.ts`; `test/state-audit-trust.test.ts` keeps them in sync). */
+export const TRUST_KEYS = [
+  'trust.homeGenuine',
+  'trust.homeBill',
+  'trust.homeEstimates',
+  'trust.product',
+  'trust.checkout',
+  'trust.emailFooter',
+  'trust.workshop',
+  'trust.partner',
+] as const;
+export const TRUST_STATES = ['default', 'override', 'long', 'hidden'] as const;
+export const PROMISE_STATES = ['off', 'on'] as const;
 
 export const WIDTHS = [320, 390, 480, 768, 1024, 1280, 1440, 1920] as const;
 export const PHONE_WIDTHS = [320, 390, 480, 768] as const;
@@ -514,7 +531,13 @@ export const COMPONENTS: readonly ComponentDef[] = [
     path: '/',
     scope,
     strategy: 'pairwise',
-    params: [...env, authOutIn, world3, { name: 'stress', values: ['none', 'long-text', 'long-price'] }],
+    params: [
+      ...env,
+      authOutIn,
+      world3,
+      { name: 'stress', values: ['none', 'long-text', 'long-price'] },
+      ...(code === 'HOME-HERO' ? [{ name: 'trust', values: [...TRUST_STATES] }] : []),
+    ],
     align: code === 'HOME-RANGE' ? CARD_ALIGN : undefined,
     sweep: 10,
     core: code === 'HOME-RANGE' ? coreAt([390, 1440]) : undefined,
@@ -651,6 +674,7 @@ export const COMPONENTS: readonly ComponentDef[] = [
       { name: 'cart', values: ['none', 'c1', 'c99'] },
       { name: 'compare', values: ['none', 'lub-2', 'bat-3'] },
       { name: 'stress', values: ['none', 'long-text', 'long-price'] },
+      { name: 'trust', values: [...TRUST_STATES] },
     ],
     checks: [...BASE_CHECKS, 'sync'],
     sweep: 12,
@@ -742,7 +766,12 @@ export const COMPONENTS: readonly ComponentDef[] = [
     path: '/cart',
     scope: 'main',
     strategy: 'pairwise',
-    params: [...env, authOutIn, { name: 'cart', values: ['none'] }],
+    params: [
+      ...env,
+      authOutIn,
+      { name: 'cart', values: ['none'] },
+      { name: 'trust', values: [...TRUST_STATES] },
+    ],
     sweep: 8,
   },
   {
@@ -757,6 +786,7 @@ export const COMPONENTS: readonly ComponentDef[] = [
       authOutIn,
       { name: 'cart', values: ['c1', 'mixed', 'max'] },
       { name: 'form', values: ['clean', 'errors', 'filled'] },
+      { name: 'trust', values: [...TRUST_STATES] },
     ],
     sweep: 16,
     core: coreAt([390], (r) => r.form === 'errors'),
@@ -801,6 +831,7 @@ export const COMPONENTS: readonly ComponentDef[] = [
       },
       { name: 'auth', values: ['customer'] },
       { name: 'world', values: ['busy'] },
+      { name: 'promise', values: [...PROMISE_STATES] },
     ],
     mustShow: 'SR-RPR-2026-HND',
     sweep: 14,
@@ -882,6 +913,8 @@ export const COMPONENTS: readonly ComponentDef[] = [
         values: ['telibandha-car-clinic', 'mowa-ev-and-bike-point', 'pachpedi-naka-two-wheeler-care'],
       },
       { name: 'form', values: ['clean', 'errors', 'filled'] },
+      { name: 'trust', values: [...TRUST_STATES] },
+      { name: 'promise', values: [...PROMISE_STATES] },
     ],
     sweep: 16,
     core: coreAt([390], (r) => r.form === 'errors'),
@@ -895,7 +928,7 @@ export const COMPONENTS: readonly ComponentDef[] = [
     path: '/partners',
     scope: 'main',
     strategy: 'pairwise',
-    params: [...env, authOutIn],
+    params: [...env, authOutIn, { name: 'trust', values: [...TRUST_STATES] }],
     sweep: 10,
   },
   {
@@ -909,6 +942,7 @@ export const COMPONENTS: readonly ComponentDef[] = [
       ...env,
       { name: 'kind', values: ['seller', 'garage', 'mechanic'] },
       { name: 'form', values: ['clean', 'errors'] },
+      { name: 'promise', values: [...PROMISE_STATES] },
     ],
     sweep: 16,
     core: coreAt([390], (r) => r.kind === 'seller' && r.form === 'errors'),

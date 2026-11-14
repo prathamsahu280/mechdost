@@ -19,6 +19,7 @@ describe('API-mode audit fixtures (Q106)', () => {
       'API-ADM-COINS',
       'API-ADM-REVIEWS',
       'API-ADM-QUOTES',
+      'API-ADM-CONTENT',
       'API-NAV-ADMIN',
       'API-NAV-ACCOUNT',
     ])

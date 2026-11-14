@@ -13,6 +13,7 @@ import {
   type DemoServiceRequest,
   type RequestStage,
 } from './store';
+import { siteSettings } from './site-config';
 import { workshopGstRegistered } from './workshops';
 
 /**
@@ -176,6 +177,8 @@ function withBill(r: DemoServiceRequest, now: string): DemoServiceRequest | null
       ...bill,
       lines: bill.lines.map((l) => ({ ...l, serviceKey: keys.get(l.id) })),
       billedAt: now,
+      // The promise as of now, frozen on the bill like the API does (0 = off).
+      labourPromiseDays: siteSettings().labourPromiseDays || null,
       paidAt: null,
     },
   };

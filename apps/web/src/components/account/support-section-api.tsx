@@ -49,7 +49,14 @@ function useProblemText() {
  * Account → Support on the API (spec 09; real sign-in builds, loaded by `support-section.tsx`). Same form and
  * conversation as the demo: raise a request (optionally about one of your orders), follow the thread and reply.
  */
-export function SupportSectionApi({ presetOrder }: { presetOrder: string | null }) {
+export function SupportSectionApi({
+  presetOrder,
+  presetRedo,
+}: {
+  presetOrder: string | null;
+  /** A billed service job (SR-…) to claim the labour promise on: the form is then a redo request (2026-11-15). */
+  presetRedo: string | null;
+}) {
   const t = useTranslations('support');
   const p = useTranslations('portal');
   const locale = useLocale();
@@ -58,7 +65,9 @@ export function SupportSectionApi({ presetOrder }: { presetOrder: string | null 
   const [tickets, setTickets] = useState<SupportTicketDto[] | null>(null);
   const [loadError, setLoadError] = useState<CommonErrorKey | null>(null);
   const [orders, setOrders] = useState<string[]>([]);
-  const [kind, setKind] = useState<SupportTicketKind>(presetOrder ? 'order_issue' : 'other');
+  const [kind, setKind] = useState<SupportTicketKind>(
+    presetRedo ? 'labour_redo' : presetOrder ? 'order_issue' : 'other',
+  );
   const [orderCode, setOrderCode] = useState(presetOrder ?? '');
   const [body, setBody] = useState('');
   const [error, setError] = useState<Problem | null>(null);
@@ -95,12 +104,21 @@ export function SupportSectionApi({ presetOrder }: { presetOrder: string | null 
     setBusy(true);
     const res = await adminApi(locale, '/support/tickets', SupportCreated, {
       method: 'POST',
-      body: { kind, orderCode: orderCode || null, body: body.trim() },
+      body: {
+        kind,
+        orderCode: presetRedo ? null : orderCode || null,
+        ...(presetRedo ? { serviceCode: presetRedo } : {}),
+        body: body.trim(),
+      },
     });
     setBusy(false);
     if (!res.ok) {
       // A 404 on create means the chosen order is not this customer's (or no longer exists).
-      setError(res.code === 'NOT_FOUND' ? { ns: 'support', key: 'api_err_order' } : problemOf(res.code));
+      setError(
+        res.code === 'NOT_FOUND'
+          ? { ns: 'support', key: presetRedo ? 'api_err_service' : 'api_err_order' }
+          : problemOf(res.code),
+      );
       document.getElementById('support-body')?.focus();
       return;
     }
@@ -130,7 +148,10 @@ export function SupportSectionApi({ presetOrder }: { presetOrder: string | null 
         className={portalCard}
         noValidate
       >
-        <h3 className="font-heading text-base font-extrabold text-ink">{t('new')}</h3>
+        <h3 className="font-heading text-base font-extrabold text-ink">
+          {presetRedo ? t('labourFormTitle', { code: presetRedo }) : t('new')}
+        </h3>
+        {presetRedo ? <p className="mt-1 text-sm text-muted">{t('labourFormIntro')}</p> : null}
         <div className="mt-3 grid gap-3 tab:grid-cols-2">
           <div>
             <label htmlFor="support-kind" className="text-xs font-bold text-muted">
@@ -145,14 +166,14 @@ export function SupportSectionApi({ presetOrder }: { presetOrder: string | null 
               }}
               className={portalField}
             >
-              {SUPPORT_TICKET_KINDS.map((k) => (
+              {SUPPORT_TICKET_KINDS.filter((k) => k !== 'labour_redo' || presetRedo).map((k) => (
                 <option key={k} value={k}>
                   {labels.kind(k)}
                 </option>
               ))}
             </select>
           </div>
-          <div>
+          <div hidden={presetRedo !== null}>
             <label htmlFor="support-order" className="text-xs font-bold text-muted">
               {t('orderLabel')}
             </label>

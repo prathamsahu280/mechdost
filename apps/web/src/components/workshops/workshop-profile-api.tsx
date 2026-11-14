@@ -3,6 +3,8 @@ import { getLocale, getTranslations } from 'next-intl/server';
 import type { PublicWorkshop } from '@mechdost/shared/service-api';
 import { Suspense } from 'react';
 import { ReviewsApiSection, ReviewsApiSkeleton } from '@/components/reviews/reviews-api-section';
+import { LabourPromise } from '@/components/site/labour-promise';
+import { TrustLine } from '@/components/site/trust-line';
 import { ClientMessages } from '@/components/ui/client-messages';
 import { LocalLink } from '@/components/ui/local-link';
 import { Container } from '@/components/ui/page-intro';
@@ -73,6 +75,16 @@ export async function WorkshopProfileApi({ workshop: w }: { workshop: PublicWork
               {f('ev')}
             </li>
           ) : null}
+          {/* Trust lines (design 2026-11-15): the verified-workshop line, and the labour promise while the admin has it on. */}
+          <TrustLine
+            placement="workshop"
+            as="li"
+            className="before:mr-1.5 before:font-bold before:text-accent-light before:content-['✓']"
+          />
+          <LabourPromise
+            days={w.labourPromiseDays}
+            className="before:mr-1.5 before:font-bold before:text-accent-light before:content-['✓']"
+          />
         </ul>
       </header>
 
@@ -156,6 +168,12 @@ export async function WorkshopProfileApi({ workshop: w }: { workshop: PublicWork
             {t('bookTitle')}
           </h2>
           <p className="mt-2 text-sm text-muted">{t('bookIntro')}</p>
+          <LabourPromise
+            days={w.labourPromiseDays}
+            variant="full"
+            as="p"
+            className="mt-2 text-sm font-bold text-ink"
+          />
           <div className="mt-5">
             <ClientMessages namespaces={['workshop', 'request']}>
               <BookingFormLazy

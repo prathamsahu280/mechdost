@@ -114,3 +114,23 @@ describe('resumeEndedPauses', () => {
     expect(await resumeEndedPauses(t(), now)).toBe(0);
   });
 });
+
+describe('counterfeit_confirmed (the "genuine parts only" clause, 2026-11-15)', () => {
+  it('suspends a shop with the code, which is kept in its history', async () => {
+    const id = await shop('Fake Parts Seller');
+    await setShopStanding(t(), {
+      shopId: id,
+      to: 'suspended',
+      reason: 'A counterfeit filter was confirmed',
+      reasonCode: 'counterfeit_confirmed',
+      staffUserId: staff,
+      expectedVersion: await version(id),
+    });
+    expect(await status(id)).toBe('suspended');
+    const [event] = await db
+      .select()
+      .from(s.partnerStatusEvents)
+      .where(eq(s.partnerStatusEvents.partnerId, id));
+    expect(event?.reasonCode).toBe('counterfeit_confirmed');
+  });
+});

@@ -18,6 +18,7 @@ const KIND_LABEL = {
   refund: 'kind_refund',
   fitment: 'kind_fitment',
   account: 'kind_account',
+  labour_redo: 'kind_labour_redo',
   other: 'kind_other',
 } as const;
 

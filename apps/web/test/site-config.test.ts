@@ -132,6 +132,33 @@ describe('site config (admin customisation, spec 08)', () => {
     expect(deliveryFeePaise(0, s)).toBe(0);
   });
 
+  it('the labour promise is off by default, accepts 0 or 7 to 90 days and raises 1 to 6 to a week', () => {
+    expect(DEFAULT_SETTINGS.labourPromiseDays).toBe(0);
+    for (const [asked, kept] of [
+      [0, 0],
+      [3, 7],
+      [7, 7],
+      [30, 30],
+      [500, 90],
+    ] as const) {
+      saveSettings(siteConfig().versions.settings, 'Ops', { ...DEFAULT_SETTINGS, labourPromiseDays: asked });
+      expect(siteConfig().settings.labourPromiseDays, String(asked)).toBe(kept);
+    }
+  });
+
+  it('trust lines are content keys: saved per language, "-" kept as the hide marker, trimmed and capped', () => {
+    expect(
+      saveContent(siteConfig().versions.content, 'Ops', {
+        'trust.homeBill': { en: '-', hi: 'हर ऑर्डर के साथ बिल' },
+        'trust.checkout': { en: `  Only   original parts ${'x'.repeat(400)}` },
+      }),
+    ).toBe(true);
+    const c = siteConfig().content;
+    expect(c['trust.homeBill']).toEqual({ en: '-', hi: 'हर ऑर्डर के साथ बिल' });
+    expect(c['trust.checkout']?.en?.startsWith('Only original parts')).toBe(true);
+    expect(c['trust.checkout']?.en?.length).toBe(140);
+  });
+
   it('the pre-paint script only lets plain keys into CSS selectors', () => {
     let css = '';
     const style = {

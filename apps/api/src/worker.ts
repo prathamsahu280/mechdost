@@ -5,10 +5,13 @@
  */
 import { createDb, createListener } from '@mechdost/db';
 import { loadKeyring, type Keyring } from '@mechdost/db/crypto';
+import { trustLineText } from '@mechdost/shared/content';
+import { defaultEmailTrustLine } from '@mechdost/shared/email-layout';
 import {
   bridgeInboundWhatsApp,
   emailOverrideFor,
   ensureEventPartitions,
+  getPublishedContent,
   expireDueAssignments,
   releaseExpiredReservations,
   expireUnpaidOnlineOrders,
@@ -65,7 +68,17 @@ const relay = startRelay({ db, publisher });
 const adapters: ChannelAdapter[] = [
   ...(config.whatsapp ? [createWhatsAppAdapter(config.whatsapp)] : []),
   ...(config.email
-    ? [createEmailAdapter(config.email, { loadOverride: (key, locale) => emailOverrideFor(db, key, locale) })]
+    ? [
+        createEmailAdapter(config.email, {
+          loadOverride: (key, locale) => emailOverrideFor(db, key, locale),
+          // Order emails' "genuine parts" footer line (Admin -> Content `trust.emailFooter`; design 2026-11-15).
+          loadTrustLine: async (locale) =>
+            trustLineText(
+              (await getPublishedContent(db, { locale, cityId: null }))['trust.emailFooter'],
+              defaultEmailTrustLine(locale),
+            ),
+        }),
+      ]
     : []),
   // Web push through Firebase Cloud Messaging (spec 10, 2026-11-15): only with the real Firebase project (the
   // emulator and demo projects have no messaging). Tokens only exist once the VAPID key is set (Q103).

@@ -34,6 +34,7 @@ Read `../CLAUDE.md` first (hard rules). Then:
 - `research/admin-console.md` — admin controls benchmarks, enforcement ladder, scorecards, dashboards, legal hooks, build plan (2026-11-01).
 - `research/realtime.md` — real-time architecture (Supabase Broadcast from DB, topics, load, security, tests) (2026-11-01).
 - `research/promotions-referrals.md` — promotions, sponsored placements and an abuse-resistant referral programme (2026-11-01).
+- `research/dark-patterns-audit-2026-11.md` — the first dark-pattern self-audit (13 CCPA patterns × checkout, booking, coins, quotes, push prompt), findings and fixes (2026-11-15).
 - `research/realtime-alternatives.md` — Supabase Realtime vs own SSE (Hono + Redis) vs Firebase vs managed pub/sub; recommends Firebase RTDB pings via an outbox relay (2026-11-01).
 - `research/whatsapp.md` — WhatsApp Cloud API direct vs BSPs (MSG91, Interakt, AiSensy, WATI, Twilio, 360dialog), INR prices, OTP, compliance, setup checklist (2026-11-01).
 - `research/raipur-pincodes.md` — Raipur service-area PIN codes: sources (data.gov.in directory, India Post, OSM), centroid choices, active / switched-off / left-out lists (2026-11-14).

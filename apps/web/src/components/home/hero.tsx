@@ -4,6 +4,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import heroImage from '../../../public/images/automotive-hero.jpg';
 import insetImage from '../../../public/images/motorcycle.jpg';
 import { SiteText } from '../site/site-overrides';
+import { TrustLine } from '../site/trust-line';
 import { ButtonLink } from '../ui/button-link';
 import { localePath } from '@/lib/locale-path';
 
@@ -14,6 +15,7 @@ import { localePath } from '@/lib/locale-path';
  */
 export function Hero({ city }: { city: string }) {
   const t = useTranslations('home.hero');
+  const trust = useTranslations('trust');
   const locale = useLocale();
   const shopPath = localePath('/shop', locale);
 
@@ -82,6 +84,21 @@ export function Hero({ city }: { city: string }) {
               </button>
             </div>
           </form>
+
+          {/* Trust lines (design 2026-11-15): admin-editable per language, hidden when the admin hides all three. */}
+          <ul
+            aria-label={trust('homeLabel')}
+            className="mt-6 flex max-w-md flex-col gap-1.5 text-[13px] text-hero-copy empty:hidden"
+          >
+            {(['homeGenuine', 'homeBill', 'homeEstimates'] as const).map((placement) => (
+              <TrustLine
+                key={placement}
+                placement={placement}
+                as="li"
+                className="before:mr-2 before:font-bold before:text-accent-light before:content-['✓']"
+              />
+            ))}
+          </ul>
         </div>
 
         <figure className="relative aspect-[16/10] nav:aspect-auto nav:min-h-full">

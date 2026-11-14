@@ -11,7 +11,15 @@ import {
   type AdminContentEntryDto,
   type AdminSettingRowDto,
 } from '@mechdost/shared/admin-config-api';
-import { CONTENT_KEYS, contentMax, type ContentKey } from '@mechdost/shared/content';
+import {
+  CONTENT_KEYS,
+  contentMax,
+  isTrustKey,
+  trustPlacementOf,
+  TRUST_HIDDEN,
+  type ContentKey,
+  type TrustKey,
+} from '@mechdost/shared/content';
 import { SETTING_KEYS, isSettingKey, type SettingKey } from '@mechdost/shared/settings';
 import { adminApi } from '@/lib/admin-api';
 import { contentField, contentStep } from '@/lib/admin-content-view';
@@ -69,6 +77,8 @@ const SETTING_LABEL = {
   'coins.adjust_daily_cap': 'coins_api_set_adjust_daily_cap',
   'coins.unlock_days': 'coins_api_set_unlock_days',
   'coins.expiry_days': 'coins_api_set_expiry_days',
+  'service.labour_promise_enabled': 'api_set_service_labour_promise_enabled',
+  'service.labour_promise_days': 'api_set_service_labour_promise_days',
 } as const satisfies Record<SettingKey, string>;
 
 const UNIT_LABEL = {
@@ -88,11 +98,24 @@ const CONTENT_LABEL = {
   'hero.titleLine1': 'field_hero_titleLine1',
   'hero.titleLine2': 'field_hero_titleLine2',
   'hero.lead': 'field_hero_lead',
-} as const satisfies Record<ContentKey, string>;
+} as const satisfies Record<Exclude<ContentKey, TrustKey>, string>;
 
-const CONTENT_GROUPS: { id: 'announcement' | 'hero'; keys: ContentKey[] }[] = [
+const CONTENT_GROUPS: { id: 'announcement' | 'hero' | 'trust'; keys: ContentKey[] }[] = [
   { id: 'announcement', keys: ['announcement.orders', 'announcement.workshops'] },
   { id: 'hero', keys: ['hero.eyebrow', 'hero.titleLine1', 'hero.titleLine2', 'hero.lead'] },
+  {
+    id: 'trust',
+    keys: [
+      'trust.homeGenuine',
+      'trust.homeBill',
+      'trust.homeEstimates',
+      'trust.product',
+      'trust.checkout',
+      'trust.emailFooter',
+      'trust.workshop',
+      'trust.partner',
+    ],
+  },
 ];
 
 function StatusLine({ status }: { status: SaveStatus }) {
@@ -379,6 +402,7 @@ function ContentForm({
   onSaved: () => Promise<void>;
 }) {
   const t = useTranslations('portal');
+  const tt = useTranslations('trust');
   const locale = useLocale();
   const [draft, setDraft] = useState<Record<string, string>>(() =>
     Object.fromEntries(
@@ -439,15 +463,20 @@ function ContentForm({
       {CONTENT_GROUPS.map((group) => (
         <fieldset key={group.id} className="mt-2 first:mt-0">
           <legend className="font-heading text-lg font-extrabold text-ink">
-            {t(`content_group_${group.id}`)}
+            {group.id === 'trust' ? tt('group') : t(`content_group_${group.id}`)}
           </legend>
+          {group.id === 'trust' ? <p className="mt-1 text-xs text-muted">{tt('hideHint')}</p> : null}
           <div className="mt-3 space-y-5">
             {group.keys.map((key) => {
               const max = contentMax(key);
               const long = max > 120;
               return (
                 <div key={key} className="rounded-tile border border-line-card p-4">
-                  <p className="text-sm font-bold text-ink">{t(CONTENT_LABEL[key])}</p>
+                  <p className="text-sm font-bold text-ink">
+                    {isTrustKey(key)
+                      ? tt(`lineLabel_${trustPlacementOf(key) ?? 'product'}`)
+                      : t(CONTENT_LABEL[key])}
+                  </p>
                   <div className="mt-2 grid gap-3 tab:grid-cols-2">
                     {(['en', 'hi'] as const).map((lang) => {
                       const inputId = `api-content-${key.replace('.', '_')}-${lang}`;
@@ -487,9 +516,11 @@ function ContentForm({
                             />
                           )}
                           <p id={`${inputId}-hint`} className="mt-1 text-xs text-muted">
-                            {value
-                              ? t('content_count', { count: value.length, max })
-                              : t('content_usingDefault')}
+                            {value.trim() === TRUST_HIDDEN && isTrustKey(key)
+                              ? tt('hidden')
+                              : value
+                                ? t('content_count', { count: value.length, max })
+                                : t('content_usingDefault')}
                           </p>
                         </div>
                       );

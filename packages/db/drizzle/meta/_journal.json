@@ -393,6 +393,13 @@
       "when": 1794691960202,
       "tag": "0057_notice_push",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1794696056107,
+      "tag": "0058_trust_labour_promise",
+      "breakpoints": true
     }
   ]
 }

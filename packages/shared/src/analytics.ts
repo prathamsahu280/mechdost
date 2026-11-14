@@ -77,6 +77,8 @@ export interface ServerEventProps {
   admin_product_created: { productSlug: string; sku: string; status: string; source: 'form' | 'import' };
   /** One committed CSV import (dry runs are not counted): rows in the file, products added, SKUs skipped. */
   admin_catalogue_imported: { rows: number; created: number; skipped: number; status: string };
+  /** A trust line ("genuine parts") was published or taken down in Admin -> Content (placement = the line's slot). */
+  trust_line_edited: { placement: string; locale: 'en' | 'hi'; action: 'published' | 'unpublished' };
   admin_content_published: { key: string; locale: 'en' | 'hi'; action: 'published' | 'unpublished' };
   inventory_updated: { shopId: string; sku: string; fields: string[]; by: 'shop' | 'staff' };
   partner_application_submitted: {

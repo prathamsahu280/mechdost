@@ -368,13 +368,14 @@ function CloseQuote({
 
   async function submit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!reason) return;
+    // The reason is optional (dark-pattern audit 2026-11-15, "forced action"): none given is recorded as "other".
+    const chosen: QuoteDeclineReason = reason ?? 'other';
     setBusy(true);
     const { declineQuote } = await import('@/lib/quote-api');
-    const res = await declineQuote(locale, code, reason);
+    const res = await declineQuote(locale, code, chosen);
     setBusy(false);
     if (res.ok) {
-      track('click', { id: `quote_declined_${reason}`, path: window.location.pathname });
+      track('click', { id: `quote_declined_${chosen}`, path: window.location.pathname });
       await onChanged();
     } else setProblem(quoteErrorKey(res.code));
   }
@@ -409,7 +410,7 @@ function CloseQuote({
       <div className="flex flex-wrap items-center gap-3">
         <button
           type="submit"
-          disabled={!reason || busy}
+          disabled={busy}
           className="press inline-flex min-h-11 items-center rounded-button border border-input-border px-4 text-sm font-bold text-ink hover:bg-pill disabled:opacity-50"
         >
           {t('decline')}

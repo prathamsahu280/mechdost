@@ -828,3 +828,20 @@ locale namespace. Current entries (shop give-up, shop warnings, admin warnings, 
 `API-SHOP-GIVEUP`, `API-SHOP-WARNINGS`, `API-ADMIN-WARNINGS`, `API-ADMIN-GIVEUP-QUEUE`; emails `API-ADMIN-EMAILS`; bell and push (2026-11-15, spec 10): `API-BELL` (badge 0/1/99/99+, dropdown loading/list/long Hindi titles/empty/error, mark all), `API-NOTICE-CENTRE`, `API-PUSH-PROMPT` (normal, partner title, iPhone Home Screen, denied, snoozed, hidden without the key), `API-NOTICE-PREFS`, `API-ADMIN-NOTICES`. The API-mode audit must render them at 390, 768 and 1440 in light, dark and `/hi`; the real-sign-in run needs the VAPID key and Sender ID set for the card rows. Turning them into runnable
 cases needs an API-mode run on a seeded emulator database (queued as Q106); until then they are covered by the DB and
 API suites and the Hindi gate.
+
+### 9.8 Trust-line and labour-promise rows (2026-11-15)
+
+Design `docs/superpowers/specs/2026-11-15-trust-wording-design.md`. Two state keys seed the demo site config before the
+first load (`harness.ts` `trustSeed`):
+
+| Key       | Values                                  | Meaning                                                                                                               |
+| --------- | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `trust`   | `default`, `override`, `long`, `hidden` | the locale-file text; a short admin wording; 140-character English or Hindi wording; every trust line hidden with `-` |
+| `promise` | `off`, `on`                             | labour promise off, or 30 days (also written onto the busy world's billed request, so the bill shows it)              |
+
+Rows that carry them: `HOME-HERO` (`trust`), `PDP-BUYBOX` (`trust`), `CART-EMPTY` and `CHK-FORM` (`trust`), `WS-PROFILE`
+(`trust`, `promise`: header line, booking sentence), `PTN-LANDING` (`trust`: seller pitch), `SR-VIEW` (`promise`: the
+bill's promise line and redo link), `PTN-APPLY` (`promise`: the workshop acceptance tick). A hidden line must leave no empty
+gap (the hero list collapses with `empty:hidden`); long Hindi wording must wrap inside its container at 320 px.
+`API-ADM-CONTENT` (chunk G, § 9.7) is the Trust lines editor on the API: `content=default|long|hidden|error`.
+`test/state-audit-trust.test.ts` keeps the model's trust keys equal to `CONTENT_KEYS` and checks the seeds.

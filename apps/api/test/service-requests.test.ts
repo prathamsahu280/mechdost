@@ -163,6 +163,21 @@ describe('workshops API', () => {
     expect((await call(null, 'GET', `/workshops/${WORKSHOP.slug}`)).body.services).toHaveLength(1);
     expect((await call(null, 'GET', '/workshops/no-such-workshop')).status).toBe(404);
   });
+
+  it('the workshop page carries the labour promise only while the admin has it on (default off)', async () => {
+    const page = () => call(null, 'GET', `/workshops/${WORKSHOP.slug}?locale=en`);
+    expect((await page()).body.labourPromiseDays).toBeNull();
+    // the nearby list never carries it (one workshop's page only)
+    const list = await call(null, 'GET', '/workshops?lat=21.2514&lng=81.6296&locale=en');
+    expect((list.body.workshops as Record<string, unknown>[])[0]).not.toHaveProperty('labourPromiseDays');
+    await ctx.db.insert(s.settings).values([
+      { key: 'service.labour_promise_enabled', value: true, cityId: null },
+      { key: 'service.labour_promise_days', value: 45, cityId: null },
+    ]);
+    expect((await page()).body.labourPromiseDays).toBe(45);
+    await ctx.db.delete(s.settings);
+    expect((await page()).body.labourPromiseDays).toBeNull();
+  });
 });
 
 describe('service requests API', () => {

@@ -112,3 +112,11 @@ In real sign-in builds (`AUTH_MODE === 'firebase'`; Stream D of `docs/superpower
 - **Admin → Support** (`apps/web/src/components/portal/admin-support-api.tsx`): inbox by view (`GET /v1/admin/support/tickets?view=active|done`, earliest deadline first, overdue flags), the conversation with internal notes loads when a request is opened, reply or internal note, resolve / reopen with the ticket `version` (stale → reload).
 - Answers validated with `@mechdost/shared/support-api`; codes mapped in `apps/web/src/lib/support-view.ts` (`TICKET_DAILY_LIMIT`, `REPLY_LIMIT`, `TICKET_CLOSED`, `STALE_TICKET` → messages next to the field).
 - **Gaps:** the inbox has no customer name or masked phone (the API does not return them) and messages carry no author name (customer view shows "MechDost support" / "You", staff view "Customer" / "MechDost support").
+
+## Redo under the labour promise (2026-11-15)
+
+New ticket kind `labour_redo` ("Redo under the labour promise"; enum in `packages/shared/src/support-api.ts` and the db
+repo, CHECK `support_tickets_kind_valid` in migration 0058). It is raised from the customer's bill (link
+`/account/support?redo=SR-…`), never from the generic kind list, and needs `serviceCode`: see spec 06 "Labour promise"
+for the checks and error codes. The form shows "Redo request for {code}" and hides the order picker. SLA and statuses are
+the same as any request; staff see it with the kind label in the inbox. Demo: the kind exists in the browser store.

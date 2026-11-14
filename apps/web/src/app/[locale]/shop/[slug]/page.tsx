@@ -12,6 +12,7 @@ import { ReviewsApiSection, ReviewsApiSkeleton } from '@/components/reviews/revi
 import { ReviewsSection } from '@/components/reviews/reviews-section';
 import { StarRating } from '@/components/reviews/star-rating';
 import { SettingValue } from '@/components/site/site-overrides';
+import { TrustLine } from '@/components/site/trust-line';
 import { LocalLink } from '@/components/ui/local-link';
 import { Container } from '@/components/ui/page-intro';
 import { DEMO_PRODUCTS, findProduct } from '@/demo/catalogue';
@@ -188,6 +189,14 @@ export default async function ProductPage({ params }: Props) {
               <p className="mt-1 text-xs text-muted">{t('inclusive')}</p>
             </>
           ) : null}
+
+          {/* Trust line near the price (design 2026-11-15). "GST bill" is added only for a GST-registered selling shop;
+              the product page does not know the shop yet, so it is left out (never a blanket claim). */}
+          <TrustLine
+            placement="product"
+            brand={product.brand}
+            className="mt-3 text-sm font-bold text-ink before:mr-2 before:text-success before:content-['✓']"
+          />
 
           <ul className="mt-5 space-y-2 text-sm">
             <li

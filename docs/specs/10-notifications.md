@@ -150,3 +150,7 @@ In-app bell for every signed-in role and Firebase Cloud Messaging web push. Real
 - **Sign-out** revokes this browser's push device before the Firebase sign-out (`forgetPushDevice`).
 - **Tests:** `packages/shared/test/notice-catalogue.test.ts`, `packages/db/test/notices.test.ts`, `apps/api/test/notices.test.ts`, `apps/web/test/push-lazy.test.ts` (import graph: the library is lazy), `apps/web/test/notices-view.test.ts`, `apps/web/test/csp.test.ts`.
 - **Not built:** live pings consumed in the browser (the bell polls; the Realtime Database client transport is still the planned step, so partners wait up to 15 s without a push); foreground FCM messages (the poll and the worker's tab message cover it); promotional senders and quiet hours; Android/iOS native tokens (the table accepts them); a push for workshop warnings (no workshop login yet).
+
+## Order-email trust line (2026-11-15)
+
+Order emails (`order_*` templates) carry one footer line above the company line: "Genuine parts from verified Raipur shops." (Hindi: "रायपुर की सत्यापित दुकानों से असली पार्ट्स।"). The admin rewords or hides it in Admin → Content → Trust lines (`trust.emailFooter`, spec 08); the worker reads the published text at send time and falls back to the default if the lookup fails. Other emails (refunds, service, quotes, support, partners) do not carry it.

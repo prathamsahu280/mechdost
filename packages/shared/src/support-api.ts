@@ -6,7 +6,14 @@
 import { z } from 'zod';
 import { TICKET_STATES } from './state';
 
-export const SUPPORT_TICKET_KINDS = ['order_issue', 'refund', 'fitment', 'account', 'other'] as const;
+export const SUPPORT_TICKET_KINDS = [
+  'order_issue',
+  'refund',
+  'fitment',
+  'account',
+  'labour_redo',
+  'other',
+] as const;
 export type SupportTicketKind = (typeof SUPPORT_TICKET_KINDS)[number];
 /** Same limits as the API (`TICKET_BODY_MAX`, `DAILY_TICKET_LIMIT` in packages/db). */
 export const SUPPORT_BODY_MAX = 2000;

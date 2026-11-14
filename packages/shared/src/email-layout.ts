@@ -16,6 +16,8 @@ export interface EmailLayoutOptions {
   locale: 'en' | 'hi';
   /** Shown in the footer only once set (the grievance officer contact is still to come, Q15b). */
   grievanceContact: string | null;
+  /** The trust line ("genuine parts", design 2026-11-15) shown above the company line; order emails only. */
+  trustLine?: string | null;
 }
 
 const NAVY = '#101f34';
@@ -25,18 +27,26 @@ const BUTTON = '#bf3c12';
 
 const FOOTER = {
   en: {
+    genuine: 'Genuine parts from verified Raipur shops.',
     company: 'Shourya Integrated Services Pvt Ltd, Raipur',
     support: 'Need help? Call or WhatsApp MechDost support on',
     why: 'You are getting this email because of activity on your MechDost account.',
     grievance: 'Grievance contact:',
   },
   hi: {
+    genuine: 'रायपुर की सत्यापित दुकानों से असली पार्ट्स।',
     company: 'शौर्य इंटीग्रेटेड सर्विसेज़ प्राइवेट लिमिटेड, रायपुर',
     support: 'मदद चाहिए? MechDost सहायता को कॉल या WhatsApp करें:',
     why: 'आपको यह ईमेल आपके MechDost खाते की गतिविधि के कारण मिल रहा है।',
     grievance: 'शिकायत संपर्क:',
   },
 } as const;
+
+/**
+ * Default order-email trust line (Admin -> Content `trust.emailFooter` overrides it). Same text as the locale files'
+ * `trust.emailFooter` for Raipur; a test keeps the two equal.
+ */
+export const defaultEmailTrustLine = (locale: 'en' | 'hi'): string => FOOTER[locale].genuine;
 
 export const EMAIL_SUPPORT_PHONE = '7978776551';
 
@@ -51,7 +61,9 @@ export function renderEmailLayout(
 ): { html: string; text: string } {
   const f = FOOTER[options.locale];
   const grievance = options.grievanceContact?.trim() ? options.grievanceContact.trim() : null;
+  const trustLine = options.trustLine?.trim() ? options.trustLine.trim() : null;
   const footerLines = [
+    ...(trustLine ? [trustLine] : []),
     f.company,
     `${f.support} ${EMAIL_SUPPORT_PHONE}`,
     ...(grievance ? [`${f.grievance} ${grievance}`] : []),

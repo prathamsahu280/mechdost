@@ -163,3 +163,27 @@ next workshop action, every error code has en + hi text, decline/reject/payment 
 ## Built: saved vehicles in the booking form (2026-11-15)
 
 In real sign-in the booking form offers "Use a saved vehicle" for the vehicle types the workshop services (`SavedVehiclePicker`, lazy). Picking one sets the vehicle type and fills the vehicle text (make, model, variant); the request body is unchanged, so `vehicleId` is still not sent (open item 6 above: odometer history keys on the vehicle text). The registration number is not sent.
+
+## Labour promise (2026-11-15, Q105)
+
+Admin settings `service.labour_promise_enabled` (default **off**) and `service.labour_promise_days` (7–90, default 30),
+both site-wide. While on:
+
+- **Workshop page:** the header shows "{days}-day labour promise" and the booking card the sentence "If the labour was not
+  right, the workshop redoes it free within {days} days of your bill." (`GET /v1/workshops/{slug}` carries
+  `labourPromiseDays`, null when off; the list does not.) Demo: read from the demo setting.
+- **Bill:** the days are **frozen on the bill when it is made** (`service_bills.labour_promise_days`, null = none, CHECK
+  7–90), so a later change never rewrites a promise already given; the customer's bill shows "{days}-day labour promise,
+  valid until {date}" (24-hour days from `billed_at`) with the link "Labour not right? Ask for a free redo".
+  Bills made while the promise was off never carry one, even if it is turned on later.
+- **Claim:** a support request of kind `labour_redo` (spec 09) about the billed job (`POST /v1/support/tickets`
+  `{kind:'labour_redo', serviceCode, body}`); only your own job (404 otherwise), only while the promise runs
+  (`LABOUR_PROMISE_UNAVAILABLE`, 422), one open claim per job (`LABOUR_REDO_OPEN`, 409), `SERVICE_CODE_REQUIRED` (422).
+  The ticket stores `service_request_id` and the job's city. Support mediates with the workshop; no new state machine.
+- **Workshop onboarding:** the demo application form for a workshop asks for a tick "If MechDost runs a labour promise,
+  my workshop will redo faulty labour free within the number of days shown on the bill" while the promise is on. The API
+  application for workshops and a workshop agreement do not exist yet (queued Q111).
+- The booking review (one card, no extra step) carries the sentence above; there is no separate review screen.
+- Server helper `currentLabourPromiseDays` (`packages/db/src/repo/labour-promise.ts`); pure helpers `labourPromiseEndsAt`
+  and `labourPromiseOpen` in `packages/shared/src/service-bill.ts`. Migration `0058_trust_labour_promise` (renumbered by
+  the coordinator at merge).

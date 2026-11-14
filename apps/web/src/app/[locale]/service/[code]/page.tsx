@@ -30,7 +30,9 @@ export default async function ServiceRequestPage({ params }: Props) {
       <div className="mt-8">
         <ClientMessages
           namespaces={
-            DATA_MODE === 'api' ? ['request', 'workshop', 'demo', 'reviews'] : ['request', 'workshop', 'demo']
+            DATA_MODE === 'api'
+              ? ['request', 'workshop', 'demo', 'reviews', 'trust']
+              : ['request', 'workshop', 'demo', 'trust']
           }
         >
           <Suspense>
