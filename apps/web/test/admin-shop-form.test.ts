@@ -22,6 +22,7 @@ const shop: AdminShopDetailDto = {
   status: 'approved',
   gstStatus: 'registered',
   busy: false,
+  busyUntil: null,
   coveragePincodes: 2,
   offersOnSale: 3,
   freeDeliveryMinPaise: null,

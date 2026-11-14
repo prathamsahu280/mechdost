@@ -155,7 +155,7 @@ describe('offers', () => {
         assignmentId: late.assignmentId,
         staffUserId: shopUser,
       }),
-    ).rejects.toMatchObject({ code: 'ASSIGNMENT_UNAVAILABLE' });
+    ).rejects.toMatchObject({ code: 'OFFER_EXPIRED' });
 
     const declined = await placeAndRoute('Gupta Lubes & Spares');
     const ids = [shop['Gupta Lubes & Spares']!];
@@ -368,6 +368,9 @@ describe('delivery override (review B2, spec 04)', () => {
         keyring,
       });
     expect(last).toEqual({ ok: false, reason: 'locked' });
+    // The lock is server state: a reloaded list says so (assessment 2026-11-15, item 5), not just the page that saw it.
+    const active = (await listShopOrders(t(), ids, 'active')).items.find((i) => i.code === code);
+    expect(active?.deliveryLocked).toBe(true);
 
     // Another city's staff cannot see it; a short reason is refused; nothing changes.
     await expect(

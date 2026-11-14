@@ -407,6 +407,13 @@
       "when": 1794696752741,
       "tag": "0059_home_service",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1794699271918,
+      "tag": "0060_shop_staff_invites",
+      "breakpoints": true
     }
   ]
 }

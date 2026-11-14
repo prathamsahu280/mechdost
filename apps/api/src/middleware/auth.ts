@@ -3,6 +3,7 @@ import { createMiddleware } from 'hono/factory';
 import { log } from '../logger';
 import {
   activeBlockLevels,
+  claimShopStaffInvites,
   ensureUser,
   globalFlagSetting,
   linkApplicantOwner,
@@ -63,6 +64,12 @@ export function authenticate(
         (await linkApplicantOwner(deps.db, { userId: user.id, phone: identity.phone })) > 0
       )
         log('info', 'applicant_owner_linked', { userId: user.id });
+      // A shop owner's staff invite is claimed the same way: the phone code proved the number (design 2026-11-15).
+      if (
+        identity.phone &&
+        (await claimShopStaffInvites(deps.db, { userId: user.id, phone: identity.phone })) > 0
+      )
+        log('info', 'shop_staff_invite_claimed', { userId: user.id });
       session = {
         user,
         grants: await loadGrants(deps.db, user.id),

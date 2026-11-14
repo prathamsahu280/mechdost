@@ -132,3 +132,8 @@ text. The change itself is in `audit_log` (`pincode.*`, before/after) in the sam
 ## Home servicing events (2026-11-15)
 
 Server events (same transaction as the change; codes, ids and enums only): `service_requested.mode` and `service_status_changed.mode` (`workshop|home`, optional on events stored before this), `home_visit_arrived { requestCode, workshopId, via: code|override }`, `home_move_proposed { requestCode, workshopId, reasonCode, transport }`, `home_move_answered { requestCode, workshopId, accepted }`, `home_visit_fee_waived { requestCode, workshopId, reasonCode }`, `workshop_home_settings_saved { workshopId, homeService, radiusKm, feePaise, homeServices, by }`. Client event: `service_mode_selected { mode }` (finder and booking form). Click ids via `track('click')`: `workshop_home_arrived`, `workshop_home_move_offered`, `workshop_home_fee_waived`, `workshop_home_settings_saved`; `data-track`: `address_pin_use_location`, `address_pin_remove`, `workshop_home_move_open`, `workshop_home_waive_open`.
+
+## Shop portal tier 1 events (2026-11-15)
+
+- **Server events** (`packages/shared/src/analytics.ts`): `shop_busy_set` (shopId, mode `closed_today|hours|clear`, hours or null); `shop_team_invited`, `shop_team_invite_cancelled`, `shop_team_invite_accepted`, `shop_team_member_removed` (shopId only; never a phone or name).
+- **Click ids (web):** `shop_busy_closed_today`, `shop_busy_hours`, `shop_busy_clear`, `shop_team_invited`, `shop_team_invite_cancelled`, `shop_team_member_removed`; existing `shop_order_accepted`, `shop_order_declined`, `shop_delivery_confirmed` unchanged.

@@ -17,7 +17,9 @@ import { parseRupees } from '@/lib/money-input';
 import { daysLabel } from '@/lib/service-views';
 import { CatalogueSkuPicker, type SkuChoice } from './catalogue-sku-picker';
 import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { BusyCard } from './shop-busy-api';
 import { ShopHoursFields } from './shop-hours-fields';
+import { ShopTeamApi } from './shop-team-api';
 
 type Load = { kind: 'loading' } | { kind: 'error'; code: string } | { kind: 'ok'; shops: MyShopDto[] };
 
@@ -127,6 +129,7 @@ function ShopHeader({ shop: s, onChanged }: { shop: MyShopDto; onChanged: () => 
       ) : null}
 
       <div className="grid gap-3 nav:grid-cols-2">
+        <BusyCard shop={s} onChanged={onChanged} />
         <HoursCard shop={s} onChanged={onChanged} />
         <section aria-labelledby={`shop-cov-${s.id}`} className={portalCard}>
           <h3 id={`shop-cov-${s.id}`} className="font-heading text-lg font-extrabold text-ink">
@@ -151,6 +154,7 @@ function ShopHeader({ shop: s, onChanged }: { shop: MyShopDto; onChanged: () => 
           <p className="mt-1 text-xs text-muted">{t('shops_api_meDeliveryNote')}</p>
         </section>
       </div>
+      {s.isOwner ? <ShopTeamApi shopId={s.id} /> : null}
     </div>
   );
 }

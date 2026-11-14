@@ -25,6 +25,7 @@ import {
   shopErrorKey,
   shopPatch,
   standingTargets,
+  istDayTime,
   type CoverageProblem,
   type CoverageRow,
   type ShopField,
@@ -175,7 +176,11 @@ function ShopRow({
               {s.openNow ? t('shops_api_openNow') : t('shops_api_closedNow')}
             </li>
             {s.busy ? (
-              <li className="rounded-pill bg-warning-bg px-3 py-1 text-warning">{t('shops_api_busy')}</li>
+              <li className="rounded-pill bg-warning-bg px-3 py-1 text-warning">
+                {s.busyUntil
+                  ? `${t('shops_api_busy')} · ${istDayTime(s.busyUntil, locale)}`
+                  : t('shops_api_busy')}
+              </li>
             ) : null}
             {s.gstStatus !== 'registered' ? (
               <li className="rounded-pill bg-warning-bg px-3 py-1 text-warning">

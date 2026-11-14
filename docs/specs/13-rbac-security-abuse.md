@@ -87,3 +87,7 @@ Encrypted columns: `shops.pan_enc` (+ unique `pan_index`), `partner_applications
 ## Permission `prices:write` (2026-11-13, Q26)
 
 "Set customer prices per city and PIN code": super_admin, ops_manager and finance. Not catalogue_manager (catalogue texts only) and not city_manager until prices are city-scoped. The price board (`GET /v1/admin/prices/products/{slug}`) needs it too (one permission per area: whoever sees the margins can set them). Writes are compare-and-set on `version` (`STALE_PRICE`) and audited (`price.set` / `price.cleared` with before/after).
+
+## Shop team and money visibility (2026-11-15)
+
+Owner-only routes for the busy toggle and the team check the caller's own `seller_owner` grant for the shop id (404 for any other shop, 403 `OWNER_ONLY` for staff of that shop, 403 for everyone else, 401 anonymous). Staff invites are bound to a phone that is proved by the sign-in code, never by a link; they are skipped for MechDost staff accounts (one person, one side) and cannot be claimed twice. Removing a member revokes the role in the same transaction and drops their cached session. `payoutPaise` and the shop's own line prices are returned only for shops where the caller holds `payouts:read` (owners, not staff). Rate limit on invites: 20 an hour per user. Role-leak matrix: `apps/api/test/shop-team.test.ts`.

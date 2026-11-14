@@ -12,7 +12,12 @@ import {
   shops,
 } from '../schema';
 import { acceptAssignment, declineAssignment } from './assignments';
-import { issueDeliveryCode, verifyDeliveryCode, type DeliveryCheck } from './delivery';
+import {
+  DELIVERY_CODE_MAX_ATTEMPTS,
+  issueDeliveryCode,
+  verifyDeliveryCode,
+  type DeliveryCheck,
+} from './delivery';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from './errors';
 import { commitReservation, reserveStock } from './inventory';
 import { decodeCursor, encodeCursor, pageSize } from './cursor';
@@ -94,6 +99,8 @@ export interface ShopOrderItem {
   expiresAt: Date | null;
   /** Accepted orders only (null on offers: the customer's details are shared once the shop accepts). */
   address: Record<string, unknown> | null;
+  /** Active orders: 5 wrong delivery codes were entered (server state; support takes over). */
+  deliveryLocked: boolean;
 }
 
 /**
@@ -104,14 +111,19 @@ export async function listShopOrders(
   db: Tx,
   shopIds: readonly string[],
   view: ShopView,
-  page: { cursor?: string | null; limit?: number } = {},
+  page: { cursor?: string | null; limit?: number; moneyShopIds?: readonly string[] } = {},
 ): Promise<{ items: ShopOrderItem[]; nextCursor: string | null }> {
+  // Staff never see what the shop is paid (design 2026-11-15, spec 13): money only for shops where the caller holds
+  // `payouts:read` (the API passes those ids). Default: all the shops, for callers that already checked.
+  const moneyShops = new Set(page.moneyShopIds ?? shopIds);
   const doneLimit = pageSize(page.limit, 30, 50);
   const after = view === 'done' && page.cursor ? decodeCursor(page.cursor, 'timestamp') : null;
   const fetched = rowsOf<{
     id: string;
     code: string;
     status: string;
+    shop_id: string;
+    delivery_locked?: boolean;
     version: unknown;
     total_paise: unknown;
     coin_discount_paise: unknown;
@@ -125,7 +137,7 @@ export async function listShopOrders(
   }>(
     view === 'offers'
       ? await db.execute(sql`
-          select o.id, o.code, o.status, o.version, o.total_paise, o.coin_discount_paise,
+          select o.id, o.code, o.status, a.shop_id, o.version, o.total_paise, o.coin_discount_paise,
             (select g.payment_method from order_groups g where g.id = o.group_id) as payment_method,
             o.pincode, o.shipping_address,
             a.id as assignment_id, a.expires_at, '' as sort_key
@@ -134,19 +146,21 @@ export async function listShopOrders(
           order by a.expires_at limit 100`)
       : view === 'active'
         ? await db.execute(sql`
-          select o.id, o.code, o.status, o.version, o.total_paise, o.coin_discount_paise,
+          select o.id, o.code, o.status, o.shop_id, o.version, o.total_paise, o.coin_discount_paise,
             (select g.payment_method from order_groups g where g.id = o.group_id) as payment_method,
             o.pincode, o.shipping_address,
+            exists (select 1 from shipments sh where sh.order_id = o.id
+              and sh.delivery_code_attempts >= ${DELIVERY_CODE_MAX_ATTEMPTS}) as delivery_locked,
             null::uuid as assignment_id, null::timestamptz as expires_at, '' as sort_key
           from orders o
           where ${inShops(shopIds, 'o.shop_id')} and o.status in ('confirmed', 'packed', 'shipped', 'out_for_delivery')
           order by o.placed_at limit 100`)
         : await db.execute(sql`
-          select u.id, u.code, u.status, u.version, u.total_paise, u.coin_discount_paise, u.payment_method,
+          select u.id, u.code, u.status, u.shop_id, u.version, u.total_paise, u.coin_discount_paise, u.payment_method,
             u.pincode, u.shipping_address, u.give_up_reason, u.assignment_id, u.expires_at,
             u.sort_ts::text as sort_key
           from (
-            select o.id, o.code, o.status, o.version, o.total_paise, o.coin_discount_paise,
+            select o.id, o.code, o.status, o.shop_id, o.version, o.total_paise, o.coin_discount_paise,
               (select g.payment_method from order_groups g where g.id = o.group_id) as payment_method,
               o.pincode, o.shipping_address, null::text as give_up_reason,
               null::uuid as assignment_id, null::timestamptz as expires_at, o.updated_at as sort_ts
@@ -154,7 +168,7 @@ export async function listShopOrders(
             where ${inShops(shopIds, 'o.shop_id')} and o.status in ('delivered', 'cancelled')
               and o.updated_at > now() - interval '30 days'
             union all
-            select o.id, o.code, 'given_up' as status, o.version, o.total_paise, o.coin_discount_paise,
+            select o.id, o.code, 'given_up' as status, a.shop_id, o.version, o.total_paise, o.coin_discount_paise,
               (select g.payment_method from order_groups g where g.id = o.group_id) as payment_method,
               o.pincode, o.shipping_address, a.give_up_reason,
               null::uuid as assignment_id, null::timestamptz as expires_at, a.given_up_at as sort_ts
@@ -189,13 +203,14 @@ export async function listShopOrders(
   const list = rows.map((r) => {
     const lines = items.filter((i) => i.orderId === r.id);
     const priced = r.status !== 'given_up';
+    const shows = priced && moneyShops.has(r.shop_id);
     return {
       code: r.code,
       status: r.status,
       version: num(r.version),
       totalPaise: num(r.total_paise),
       coinDiscountPaise: num(r.coin_discount_paise),
-      payoutPaise: priced ? lines.reduce((sum, i) => sum + num(i.unitPaise) * num(i.qty), 0) : null,
+      payoutPaise: shows ? lines.reduce((sum, i) => sum + num(i.unitPaise) * num(i.qty), 0) : null,
       collectPaise: r.payment_method === 'cod' ? num(r.total_paise) : null,
       pincode: r.pincode,
       items: lines.map((i) => ({
@@ -203,13 +218,14 @@ export async function listShopOrders(
         titleHi: i.titleHi,
         sku: i.sku,
         qty: num(i.qty),
-        unitPaise: priced ? num(i.unitPaise) : null,
+        unitPaise: shows ? num(i.unitPaise) : null,
       })),
       givenUpReason: r.give_up_reason ?? null,
       assignmentId: r.assignment_id,
       expiresAt: r.expires_at ? new Date(r.expires_at) : null,
       // Shared only while the shop is fulfilling the order (DPDP minimisation, advisor review 2026-11-03).
       address: view === 'active' ? r.shipping_address : null,
+      deliveryLocked: r.delivery_locked === true,
     };
   });
   return { items: list, nextCursor };

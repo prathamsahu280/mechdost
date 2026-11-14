@@ -32,6 +32,7 @@ import {
   type AdminShopRowDto,
   type MyShopDto,
 } from '@mechdost/shared/shop-api';
+import { ShopTeam } from '@mechdost/shared/shop-team';
 import type { AuditCase } from '../cases.ts';
 import { homeFinderMocks, homeJobMocks, homeRequestMocks } from './home-fixtures.ts';
 import type { Mock, MockCtx, Reply } from './mock-api.ts';
@@ -272,7 +273,13 @@ function myShop(c: AuditCase): MyShopDto {
             until: status === 'paused' ? iso(60 * 48) : null,
             since: iso(-60 * 5),
           },
-    busy: false,
+    busy: c.state.busy === 'closed' || c.state.busy === 'hours',
+    busyUntil:
+      c.state.busy === 'closed'
+        ? new Date(Date.now() + 8 * 3_600_000).toISOString()
+        : c.state.busy === 'hours'
+          ? new Date(Date.now() + 2 * 3_600_000).toISOString()
+          : null,
     coverage: { pincodes: 21, minShippingPaise: 0, maxShippingPaise: 9_900 },
     freeDeliveryMinPaise: 99_900,
     hours: { open: '09:00', close: '21:00', days: [1, 2, 3, 4, 5, 6] },
@@ -280,7 +287,7 @@ function myShop(c: AuditCase): MyShopDto {
     version: 4,
     offersOnSale: 38,
     offers30d: { accepted: 41, answered: 48 },
-    isOwner: true,
+    isOwner: c.state.role !== 'staff',
   };
 }
 
@@ -322,8 +329,23 @@ function shopOrders(c: AuditCase, view: string): ShopOrderDto[] {
   if (kind === 'none') return [];
   if (view === 'offers')
     return kind === 'offer' || kind === 'many'
-      ? [shopOrder(c, 1, { status: 'awaiting_shop', expiresAt: iso(25), address: null })]
-      : [];
+      ? [
+          shopOrder(c, 1, {
+            status: 'awaiting_shop',
+            // The page compares with the browser's clock, so the end time is relative to it.
+            expiresAt: new Date(Date.now() + 25 * 60_000).toISOString(),
+            address: null,
+          }),
+        ]
+      : kind === 'expired-offer'
+        ? [
+            shopOrder(c, 1, {
+              status: 'awaiting_shop',
+              expiresAt: new Date(Date.now() - 60_000).toISOString(),
+              address: null,
+            }),
+          ]
+        : [];
   if (view === 'done')
     return kind === 'given-up-history'
       ? [
@@ -340,6 +362,25 @@ function shopOrders(c: AuditCase, view: string): ShopOrderDto[] {
         ? [shopOrder(c, 4, { status: 'delivered', address: null })]
         : [];
   if (kind === 'confirmed') return [shopOrder(c, 2, { status: 'confirmed' })];
+  if (kind === 'locked-delivery')
+    return [shopOrder(c, 2, { status: 'out_for_delivery', deliveryLocked: true })];
+  // Staff never see what the shop is paid (spec 13).
+  if (kind === 'staff-view')
+    return [
+      shopOrder(c, 2, {
+        status: 'packed',
+        payoutPaise: null,
+        items: [
+          {
+            title: 'Castrol Activ 4T 20W-40 900 ml',
+            titleHi: null,
+            sku: 'CAS-4T-900',
+            qty: 2,
+            unitPaise: null,
+          },
+        ],
+      }),
+    ];
   if (kind === 'packed') return [shopOrder(c, 2, { status: 'packed' })];
   if (kind === 'many')
     return [
@@ -403,6 +444,44 @@ function shopPortalMocks(): Mock[] {
       path: /^\/shop\/me$/,
       schema: MyShops,
       reply: ({ c }) => ({ body: { shops: [myShop(c)] } satisfies Dto<typeof MyShops> }),
+    },
+    {
+      method: 'GET',
+      path: /^\/shop\/team\/[^/]+$/,
+      schema: ShopTeam,
+      reply: ({ c }): Reply => {
+        const kind = c.state.team ?? 'only-you';
+        if (kind === 'error') return { status: 500, code: 'INTERNAL' };
+        const member = (n: number, name: string | null) => ({
+          userId: uuid(300 + n),
+          role: 'staff' as const,
+          name,
+          phoneLast4: String(1000 + n),
+          isYou: false,
+        });
+        const members = [
+          { userId: uuid(300), role: 'owner' as const, name: 'Audit User', phoneLast4: '3210', isYou: true },
+          ...(kind === 'only-you'
+            ? []
+            : kind === 'full'
+              ? Array.from({ length: 9 }, (_, i) =>
+                  member(i + 1, long(c) ? loc(c) : `Helper ${String(i + 1)}`),
+                )
+              : [member(1, long(c) ? loc(c) : 'Mohan Lal'), member(2, null)]),
+        ];
+        const invites =
+          kind === 'invite-open'
+            ? [
+                {
+                  id: uuid(400),
+                  name: long(c) ? loc(c) : 'Sita Devi',
+                  phoneLast4: '2299',
+                  expiresAt: iso(60 * 24 * 5),
+                },
+              ]
+            : [];
+        return { body: { members, invites, max: 10 } satisfies Dto<typeof ShopTeam> };
+      },
     },
     {
       method: 'GET',
@@ -478,6 +557,7 @@ function adminShopRow(c: AuditCase, n: number, over: Partial<AdminShopRowDto> = 
     status: 'approved',
     gstStatus: 'registered',
     busy: false,
+    busyUntil: null,
     coveragePincodes: 21,
     offersOnSale: 38,
     freeDeliveryMinPaise: 99_900,
@@ -499,7 +579,7 @@ function shopRows(c: AuditCase): AdminShopRowDto[] {
       return [
         adminShopRow(c, 1),
         adminShopRow(c, 2, { status: 'pending', gstStatus: 'enrolled', openNow: false }),
-        adminShopRow(c, 3, { status: 'paused', busy: true }),
+        adminShopRow(c, 3, { status: 'paused', busy: true, busyUntil: iso(60 * 6) }),
         adminShopRow(c, 4, { status: 'suspended', openNow: false }),
       ];
     default:
