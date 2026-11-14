@@ -92,3 +92,15 @@ Out for delivery → `issueDeliveryCode(shipment)` (4 digits, `crypto.randomInt`
 - Routing suggestions, quotes and order placement only consider shops whose approved price for every line is **at or below the customer price** of the order (the admin's PIN or city price, spec 02). A declined order can therefore be rerouted only to shops at or below that price.
 - **Order items keep both prices**: `unit_paise` = what the customer pays; `shop_unit_paise` = the chosen shop's approved price at that moment (nullable on older rows; CHECK `>= 0` and `<= unit_paise`), so the margin per line is known for payouts and analytics. Snapshots: raising an admin price later never changes an existing order.
 - Interim (Q83): with no admin price set, the customer pays the nearest shop's price, so rerouting cannot go to a dearer shop ("block it": never below what a shop is paid). Routing tests set admin city prices at MRP to keep testing the routing mechanics.
+
+## Real API mode — customer side (2026-11-14, launch)
+
+With `NEXT_PUBLIC_DATA_MODE=api`, `/orders/{code}` renders `OrderViewApi` (`components/commerce/order-view-api.tsx`):
+
+- `GET /v1/orders/{code}` for the signed-in customer, refreshed every 30 s.
+- Each part (one per shop) shows its seller, the six-step stepper, items and line totals.
+- The delivery code appears only while the API returns it (out for delivery). A cancelled or rejected part shows its message.
+- "Cancel" appears while the API says `canCancel`. The reason is never preselected (`PERSON_CANCEL_REASONS`), and the call sends the part's `version`.
+- Signed out: a "sign in" link that returns to the order. Not yours or missing: "not found".
+
+The account order list uses `GET /v1/orders` through `useOrderRows` (`lib/use-order-rows.ts`). One request serves the overview count and the list. The status label comes from `lib/order-status.ts` (unit test `apps/web/test/order-status.test.ts` covers every `ORDER_STATES` value).

@@ -6,7 +6,9 @@ import { useLocale, useTranslations } from 'next-intl';
 import { CATEGORY_KEYS, CATEGORY_SLUGS } from '@/demo/catalogue';
 import { useCategoryEmoji, useSiteSettings } from '@/demo/site-config';
 import { removeFromCart, setQuantity, useCart, MAX_QTY } from '@/demo/store';
-import { priceCart } from '@/demo/cart-pricing';
+import { useSession } from '@/demo/session';
+import { DATA_MODE } from '@/lib/data-mode';
+import { DEFAULT_PIN, useCartPricing } from '@/lib/use-cart-pricing';
 import { CATEGORY_EMOJI, UI_EMOJI } from '@/lib/emoji';
 import { formatPrice } from '@/lib/format';
 import { track } from '@/lib/analytics';
@@ -25,9 +27,24 @@ export function CartView() {
   const settings = useSiteSettings();
   const locale = useLocale();
   const lines = useCart();
-  const { priced, subtotalPaise, deliveryPaise, totalPaise } = priceCart(lines);
+  const session = useSession();
+  // Real data mode: the API prices the cart at the customer's default address PIN (checkout re-prices at the
+  // PIN typed there); guests see Raipur-centre prices.
+  const home = session?.addresses.find((a) => a.isDefault) ?? session?.addresses[0];
+  const pricing = useCartPricing(lines, home?.pincode ?? DEFAULT_PIN, locale);
+  const { priced, subtotalPaise, deliveryPaise, totalPaise } = pricing;
+  const checkoutT = useTranslations('checkout');
   const base = prefix(locale);
 
+  if (DATA_MODE === 'api' && priced.length === 0 && lines.length > 0 && pricing.status !== 'ready')
+    return (
+      <p
+        role={pricing.status === 'error' ? 'alert' : 'status'}
+        className="rounded-card border border-line-card bg-surface p-6 text-sm font-bold text-ink shadow-card"
+      >
+        {pricing.status === 'error' ? checkoutT('pricesError') : checkoutT('pricesLoading')}
+      </p>
+    );
   if (priced.length === 0) {
     // Empty state: one primary action (shop) plus category shortcuts as quiet secondary links.
     return (
@@ -76,7 +93,9 @@ export function CartView() {
           >
             <ProductVisualClient category={product.category} />
             <div className="min-w-0">
-              <p className="text-[11px] font-bold text-muted uppercase">{product.brand}</p>
+              {product.brand ? (
+                <p className="text-[11px] font-bold text-muted uppercase">{product.brand}</p>
+              ) : null}
               <Link
                 href={`${base}/shop/${product.slug}`}
                 className="font-heading font-bold text-ink hover:underline"

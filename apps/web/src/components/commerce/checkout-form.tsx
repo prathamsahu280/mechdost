@@ -16,6 +16,8 @@ import { coinRulesFrom, useSiteSettings } from '@/demo/site-config';
 import { DEMO_CITY } from '@/demo/city';
 import { clearCart, placeDemoOrder, useCart } from '@/demo/store';
 import { priceCart } from '@/demo/cart-pricing';
+import { DATA_MODE } from '@/lib/data-mode';
+import { useCartPricing } from '@/lib/use-cart-pricing';
 import { CartView } from './cart-view';
 import { productNameFor } from '@/demo/i18n/localize';
 
@@ -25,9 +27,10 @@ const PHONE = /^[6-9]\d{9}$/;
 const PIN = /^[1-9]\d{5}$/;
 
 /**
- * Checkout step (spec 03): labelled fields, inline errors, error summary focus. Cash on delivery uses the demo
- * store; "Pay online" (real sign-in builds) places the order on the API and opens Razorpay Checkout
- * (`lib/payments/pay-online.ts`, loaded only when chosen).
+ * Checkout step (spec 03): labelled fields, inline errors, error summary focus. Demo data mode: cash on delivery
+ * uses the demo store. Real data mode (`NEXT_PUBLIC_DATA_MODE=api`, launch 2026-11-16): the API quotes the cart
+ * for the typed PIN and both payment methods place the order on the API (`lib/orders-api.ts`, idempotency key per
+ * attempt); "Pay online" opens Razorpay Checkout (`lib/payments/pay-online.ts`, loaded only when chosen).
  */
 export function CheckoutForm() {
   const t = useTranslations('checkout');
@@ -36,7 +39,7 @@ export function CheckoutForm() {
   const locale = useLocale();
   const router = useRouter();
   const lines = useCart();
-  const { priced, subtotalPaise, deliveryPaise, totalPaise } = priceCart(lines);
+  const realData = DATA_MODE === 'api';
   const [errors, setErrors] = useState<Partial<Record<Field, string>>>({});
   const [submitting, setSubmitting] = useState(false);
   const [blockedNote, setBlockedNote] = useState<string | null>(null);
@@ -53,7 +56,8 @@ export function CheckoutForm() {
   // MechDost Coins (spec 20): signed-in customers may use coins for part of the products, never delivery.
   const session = useSession();
   const settings = useSiteSettings();
-  const coinAccount = session?.role === 'customer' ? session.id : null;
+  // Coins live in the demo store; on the API they come later (spec 20), so real data mode does not offer them.
+  const coinAccount = !realData && session?.role === 'customer' ? session.id : null;
   // A signed-in customer starts from their name, number and default address (QA 2026-11-14, U6 / crawler F3:
   // everything was empty and the PIN fixed at 492001). Guests keep the Raipur PIN hint.
   const customer = session?.role === 'customer' ? session : null;
@@ -66,10 +70,19 @@ export function CheckoutForm() {
     address: home ? [home.line1, home.landmark].filter((part) => part.trim() !== '').join(', ') : '',
     pincode: home?.pincode ?? '492001',
   };
+  // Real data mode re-quotes as the PIN changes (the server's prices, delivery and GST are the only numbers shown).
+  const [typedPin, setTypedPin] = useState<string | null>(null);
+  const pricing = useCartPricing(
+    lines,
+    typedPin !== null && PIN.test(typedPin) ? typedPin : prefill.pincode,
+    locale,
+  );
+  const { priced, subtotalPaise, deliveryPaise, totalPaise } = pricing;
   // A signed-in customer's block is known before they type anything: say so at once and stop the order
   // (QA 2026-11-14, crawler F2: it was only shown after submitting). The typed-phone check below stays.
   useCustomerBlocks();
-  const signedInAllowed = session ? customerAllowed(session.id) : null;
+  // The API enforces blocks itself in real data mode (403 ORDERS_BLOCKED); the demo checks them here.
+  const signedInAllowed = session && !realData ? customerAllowed(session.id) : null;
   const knownBlock =
     signedInAllowed && (!signedInAllowed.order || !signedInAllowed.cod)
       ? signedInAllowed.order
@@ -109,7 +122,87 @@ export function CheckoutForm() {
       </section>
     );
 
+  if (realData && priced.length === 0 && pricing.status !== 'ready' && !submitting)
+    return (
+      <p
+        role={pricing.status === 'error' ? 'alert' : 'status'}
+        className="rounded-card border border-line-card bg-surface p-6 text-sm font-bold text-ink shadow-card"
+      >
+        {pricing.status === 'error' ? t('pricesError') : t('pricesLoading')}
+      </p>
+    );
   if (priced.length === 0 && !submitting) return <CartView />;
+
+  /** Real data mode, cash on delivery: the API places the order (one key per attempt, never a second order). */
+  async function placeCodApi(
+    details: { name: string; phone: string; address: string; pincode: string },
+    business: { gstin: string; businessName: string } | null,
+  ) {
+    const quote = pricing.quote;
+    setOnlineNote(null);
+    if (pricing.error === 'PINCODE_NOT_SERVICEABLE') {
+      setErrors({ pincode: t('errService') });
+      document.getElementById('checkout-pincode')?.focus();
+      return;
+    }
+    if (!quote) {
+      setOnlineNote({ text: pricing.status === 'error' ? t('pricesError') : t('pricesLoading') });
+      return;
+    }
+    if (!quote.cod.allowed) {
+      setOnlineNote({ text: t('cod_not_allowed') });
+      return;
+    }
+    setSubmitting(true);
+    attemptKey.current ??= crypto.randomUUID().replace(/-/g, '');
+    const { placeCodOrder } = await import('@/lib/orders-api');
+    const res = await placeCodOrder(
+      locale,
+      {
+        address: {
+          contactName: details.name,
+          contactPhone: `+91${details.phone}`,
+          line1: details.address,
+          pincode: details.pincode,
+        },
+        lines: priced.map(({ product, qty }) => ({ sku: product.sku, qty })),
+        expectedTotalPaise: quote.totalPaise,
+        business,
+      },
+      attemptKey.current,
+    );
+    setSubmitting(false);
+    if (res.ok) {
+      track('purchase_submitted', {
+        code: res.data.code,
+        valuePaise: res.data.totalPaise,
+        demo: false,
+        businessPurchase: business !== null,
+      });
+      clearCart();
+      attemptKey.current = null;
+      router.push(`${prefix}/orders/${res.data.code}?new=1`);
+      return;
+    }
+    track('click', { id: `checkout_cod_${res.code.toLowerCase()}`, path: window.location.pathname });
+    if (['PRICE_CHANGED', 'OUT_OF_STOCK', 'CHECKOUT_UNAVAILABLE', 'IDEMPOTENCY_MISMATCH'].includes(res.code))
+      attemptKey.current = null;
+    const note =
+      res.code === 'AUTH_REQUIRED'
+        ? { text: t('cod_sign_in'), link: 'sign_in' as const }
+        : res.code === 'VERIFICATION_REQUIRED'
+          ? { text: t('cod_verify_email'), link: 'verify_email' as const }
+          : res.code === 'PRICE_CHANGED'
+            ? { text: t('cod_price_changed') }
+            : res.code === 'OUT_OF_STOCK' || res.code === 'CHECKOUT_UNAVAILABLE'
+              ? { text: t('online_cart_changed') }
+              : res.code === 'COD_NOT_ALLOWED'
+                ? { text: t('cod_not_allowed') }
+                : res.code === 'ORDERS_BLOCKED'
+                  ? { text: t('blockedOrders') }
+                  : { text: t('cod_unavailable') };
+    setOnlineNote(note);
+  }
 
   async function payOnlineNow(
     details: { name: string; phone: string; address: string; pincode: string },
@@ -171,7 +264,8 @@ export function CheckoutForm() {
     if (!PHONE.test(phone)) next.phone = t('errPhone');
     if (value('address').length < 10) next.address = t('errAddress');
     if (!PIN.test(pincode)) next.pincode = t('errPincode');
-    else if (!pincode.startsWith('4920')) next.pincode = t('errService');
+    // Demo: Raipur only. Real data mode: the API decides which PINs are served (any city, rule 7).
+    else if (!realData && !pincode.startsWith('4920')) next.pincode = t('errService');
     const business = isBusiness
       ? { gstin: normaliseGstin(value('gstin')), businessName: value('businessName') }
       : null;
@@ -187,7 +281,9 @@ export function CheckoutForm() {
     }
     // Customer blocks (spec 08): the signed-in account, or the account behind the phone number typed in, so
     // signing out does not get round a block. The demo takes cash on delivery only, so a COD block stops ordering.
-    const allowed = customerAllowed(session?.id ?? findAccount(phone)?.id ?? null);
+    const allowed = realData
+      ? { order: true, cod: true }
+      : customerAllowed(session?.id ?? findAccount(phone)?.id ?? null);
     if (!allowed.order || !allowed.cod) {
       setBlockedNote(allowed.order ? t('blockedCod') : t('blockedOrders'));
       track('click', {
@@ -199,6 +295,10 @@ export function CheckoutForm() {
     setBlockedNote(null);
     if (method === 'online') {
       void payOnlineNow({ name: value('name'), phone, address: value('address'), pincode }, business);
+      return;
+    }
+    if (realData) {
+      void placeCodApi({ name: value('name'), phone, address: value('address'), pincode }, business);
       return;
     }
     setSubmitting(true);
@@ -311,6 +411,9 @@ export function CheckoutForm() {
             </label>
             <input
               {...field('pincode')}
+              onChange={(e) => {
+                setTypedPin(e.currentTarget.value.trim());
+              }}
               inputMode="numeric"
               autoComplete="postal-code"
               maxLength={6}

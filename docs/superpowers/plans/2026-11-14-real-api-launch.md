@@ -29,3 +29,5 @@ Goal: mechdost.com runs on real sign-in (Firebase) and the API for every flow, w
 ## Progress
 
 - 2026-11-14: DB reset + reference seed; worker service deployed; plan written.
+- 2026-11-14: Stream C1 done on main (customer cart and quote, COD checkout, order page and cancel, account orders on the API; spec 03/04 "Real API mode"). Ruling: customer screens switch on `DATA_MODE`, portals on `AUTH_MODE`; launch flips both.
+- 2026-11-14: Stream C2 (shop portal + admin orders) and Stream D (partners, support, settings, content, blocks, notifications) handed back by agents; merging.

@@ -123,3 +123,17 @@ Design `docs/superpowers/specs/2026-11-13-buyer-gstin-design.md`, plan `docs/sup
 ## Quantity where the product is (2026-11-14, user)
 
 User: "after we click add to cart we should be able to add the quantity in there itself too just like swiggy or amazon". Once a product is in the cart, its "Add to cart" button (product cards, product page, comparison) becomes a stepper: − / "{n} in cart" / +. − at one shows a bin and removes the product, and "Add to cart" comes back; + stops at the 99-per-product limit; the header cart count follows every press; the change is announced to screen readers. Same cart store as the cart page (`setQuantity`, `removeFromCart`), so both always agree. Analytics: `add_to_cart` (qty 1 per +), `remove_from_cart`, `click` id `cart_qty_decrease`. Component `apps/web/src/components/catalogue/add-to-cart-button.tsx`; test `e2e/cart-stepper.spec.ts`. Budget: `/shop` 179.5 KB gz of 180 — almost no headroom left on the shop list.
+
+## Real API mode (2026-11-14, launch)
+
+With `NEXT_PUBLIC_DATA_MODE=api` the cart and checkout use the API, not the browser demo:
+
+- **Cart lines carry the SKU.** "Add to cart" stores it (`CartLine.sku`). Lines saved without one, from the demo, cannot be priced and are left out.
+- **Prices come from the API only.** `useCartPricing` (`apps/web/src/lib/use-cart-pricing.ts`) calls `POST /v1/checkout/quote` for the cart at the typed PIN. It re-quotes 250 ms after the cart or PIN changes and keeps the last good numbers on screen while it loads. Loading and error panels say so instead of showing ₹0.
+- **Cash on delivery places the order on the API.** `POST /v1/orders` (`lib/orders-api.ts`) uses one idempotency key per attempt, so a retry never makes a second order. The key is renewed after a price or stock change.
+  - API error codes become messages: sign in, verify email, price changed (re-quote), cart changed, COD not allowed, orders blocked. A PIN the API cannot serve shows on the PIN field.
+  - On success: `purchase_submitted` with `demo: false`, the cart clears, and the customer goes to `/orders/{code}?new=1`.
+- **Not in real mode:** coins (spec 20, later). Blocks are enforced by the API (`ORDERS_BLOCKED`), not the browser.
+- **Response schemas:** `@mechdost/shared/checkout-api`.
+
+Ruling (2026-11-14): the customer screens switch on `DATA_MODE` (prices and SKUs are catalogue data); the portals switch on `AUTH_MODE`. Launch flips both together. Mixed combinations are not supported.

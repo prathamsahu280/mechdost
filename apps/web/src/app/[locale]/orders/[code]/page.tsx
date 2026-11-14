@@ -2,9 +2,11 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import { OrderView } from '@/components/commerce/order-view';
+import { OrderViewApi } from '@/components/commerce/order-view-api';
 import { ClientMessages } from '@/components/ui/client-messages';
 import { Container } from '@/components/ui/page-intro';
 import type { Locale } from '@/i18n/routing';
+import { DATA_MODE } from '@/lib/data-mode';
 
 interface Props {
   params: Promise<{ locale: Locale; code: string }>;
@@ -16,7 +18,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: t('title', { code }), robots: { index: false } };
 }
 
-/** Order tracking (spec 04). Codes are MD-{CITY}-{YYYY}-{6 base32}; anything else is not looked up. */
+/**
+ * Order tracking (spec 04). Codes are MD-{CITY}-{YYYY}-{6 base32}; anything else is not looked up. Real data mode
+ * (`NEXT_PUBLIC_DATA_MODE=api`) reads the order from the API for the signed-in customer; demo mode from the browser.
+ */
 export default async function OrderPage({ params }: Props) {
   const { code } = await params;
   const safe = /^MD-[A-Z]{3}-\d{4}-[0-9A-Z]{6}$/.test(code) ? code : '';
@@ -29,7 +34,7 @@ export default async function OrderPage({ params }: Props) {
       <div className="mt-8">
         <ClientMessages namespaces={['order', 'cart', 'demo']}>
           <Suspense>
-            <OrderView code={safe} />
+            {DATA_MODE === 'api' ? <OrderViewApi code={safe} /> : <OrderView code={safe} />}
           </Suspense>
         </ClientMessages>
       </div>

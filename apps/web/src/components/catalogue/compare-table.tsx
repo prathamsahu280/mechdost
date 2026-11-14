@@ -170,6 +170,7 @@ export function CompareTable({
                       {p.price ? (
                         <div className="mt-3">
                           <AddToCartButton
+                            sku={p.sku}
                             slug={p.slug}
                             source="compare"
                             labels={{

@@ -577,7 +577,14 @@
     "businessName": "Business name (as on GST)",
     "errGstin": "Check the GSTIN: 15 characters, as on the GST certificate.",
     "errBusinessName": "Enter the business name as on its GST registration.",
-    "gstStateNote": "This GSTIN is registered in {state}. Goods delivered in {deliveryState} are invoiced with {deliveryState} as the place of supply."
+    "gstStateNote": "This GSTIN is registered in {state}. Goods delivered in {deliveryState} are invoiced with {deliveryState} as the place of supply.",
+    "cod_sign_in": "Sign in to place your order.",
+    "cod_verify_email": "Verify your email to place an order: open the link we sent you, then try again.",
+    "cod_unavailable": "We could not place your order right now. Try again in a moment.",
+    "cod_not_allowed": "Cash on delivery is not available for this order. Choose online payment.",
+    "cod_price_changed": "A price changed. Please check the totals and place the order again.",
+    "pricesLoading": "Checking prices and delivery for your PIN…",
+    "pricesError": "We could not price your cart right now. Try again in a moment."
   },
   "order": {
     "title": "Order {code}",
@@ -651,7 +658,16 @@
     "rejectedBecause_pricing_error": "The price shown was wrong, so we could not accept the order.",
     "rejectedBecause_other": "We can't fulfil this order right now.",
     "rejectedCod": "This was cash on delivery, so nothing was charged.",
-    "rejectedNote": "Note from MechDost:"
+    "rejectedNote": "Note from MechDost:",
+    "api_notFound": "We could not find this order in your account.",
+    "api_signIn": "Sign in to see this order.",
+    "api_signInLink": "Sign in",
+    "api_loading": "Loading your order…",
+    "api_error": "We could not load this order. Try again in a moment.",
+    "api_paidOnline": "Paid online",
+    "api_payPending": "Online payment pending",
+    "api_total": "Total",
+    "api_part": "Part {n} of {count}"
   },
   "finder": {
     "title": "Where is your vehicle?",

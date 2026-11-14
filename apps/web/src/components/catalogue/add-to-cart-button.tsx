@@ -28,12 +28,15 @@ export interface AddToCartLabels {
  */
 export function AddToCartButton({
   slug,
+  sku,
   labels,
   qty = 1,
   className = '',
   source,
 }: {
   slug: string;
+  /** The pack's SKU (products from the API): stored on the cart line for the checkout quote. */
+  sku?: string | null;
   labels: AddToCartLabels;
   qty?: number;
   className?: string;
@@ -55,7 +58,7 @@ export function AddToCartButton({
   }, [result]);
 
   function add(n: number) {
-    const r = addToCart(slug, n);
+    const r = addToCart(slug, n, sku ?? undefined);
     // Clear first, so the same message pressed twice changes the status text and is announced again.
     setResult(null);
     window.requestAnimationFrame(() => {

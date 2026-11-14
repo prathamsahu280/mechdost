@@ -11,3 +11,4 @@ playwright-report/
 *.tsbuildinfo
 apps/web/public/vendor/
 .playwright-mcp/
+.claude/worktrees/

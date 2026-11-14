@@ -214,6 +214,7 @@ export default async function ProductPage({ params }: Props) {
             <div className="min-w-0 flex-1">
               {price ? (
                 <AddToCartButton
+                  sku={product.sku}
                   slug={product.slug}
                   labels={{
                     add: t('addToCart'),

@@ -25,15 +25,8 @@ import { VEHICLE_ICON, VEHICLE_LABEL_KEY, VEHICLE_TYPES } from '@mechdost/shared
 import { CoinsSection } from './coins-section';
 import { useTickets } from '@/demo/support';
 import { SupportSection } from './support-section';
-import {
-  ORDER_STAGES,
-  REQUEST_STAGES,
-  requestStage,
-  useHydrated,
-  useOrders,
-  useQuotes,
-  useRequests,
-} from '@/demo/store';
+import { REQUEST_STAGES, requestStage, useHydrated, useQuotes, useRequests } from '@/demo/store';
+import { useOrderRows } from '@/lib/use-order-rows';
 import { track } from '@/lib/analytics';
 import { AUTH_MODE } from '@/lib/auth/mode';
 import { signOutEverywhere } from '@/lib/auth/sign-out';
@@ -219,7 +212,7 @@ function Overview({ account }: { account: DemoAccount }) {
   const t = useTranslations('account');
   const locale = useLocale();
   const prefix = usePrefix();
-  const orders = useOrders();
+  const orders = useOrderRows().rows;
   const requests = useRequests();
   const quotes = useQuotes();
   const vehicle = account.vehicles[0];
@@ -421,12 +414,21 @@ function OrdersList({ limit }: { limit?: number }) {
   const o = useTranslations('order');
   const locale = useLocale();
   const prefix = usePrefix();
-  const orders = useOrders().slice(0, limit ?? 50);
+  const { rows, status } = useOrderRows();
+  const orders = rows.slice(0, limit ?? 50);
   return (
     <ListSection
       id={`orders-${String(limit ?? 'all')}`}
       title={t('nav_orders')}
-      empty={orders.length === 0 ? t('ordersEmpty') : null}
+      empty={
+        status === 'loading'
+          ? o('api_loading')
+          : status === 'error'
+            ? o('api_error')
+            : orders.length === 0
+              ? t('ordersEmpty')
+              : null
+      }
       emoji="📦"
       next={{ href: `${prefix}/shop`, label: t('shopNow'), track: 'account_next_orders' }}
     >
@@ -437,8 +439,9 @@ function OrdersList({ limit }: { limit?: number }) {
             <span className="min-w-0 flex-1">
               <span className="block font-bold text-ink">{order.code}</span>
               <span className="block text-xs text-muted">
-                {formatDate(order.createdAt, locale)} · {t('items', { count: order.lines.length })} ·{' '}
-                {formatPrice(order.totalPaise)} · {o(`stage_${ORDER_STAGES[order.stage] ?? 'placed'}`)}
+                {formatDate(order.placedAt, locale)} ·{' '}
+                {order.items === null ? '' : `${t('items', { count: order.items })} · `}
+                {formatPrice(order.totalPaise)} · {o(order.statusKey)}
               </span>
             </span>
             <ChevronRight aria-hidden="true" className="size-4 text-muted" />

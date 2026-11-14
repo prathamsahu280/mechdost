@@ -32,6 +32,8 @@ export const MAX_QTY = 99;
 export interface CartLine {
   slug: string;
   qty: number;
+  /** The pack's SKU when the product came from the API (real data mode): the checkout quote prices by SKU. */
+  sku?: string;
 }
 
 export const ORDER_STAGES = ['placed', 'routing', 'confirmed', 'packed', 'shipped', 'delivered'] as const;
@@ -360,7 +362,8 @@ const isCartLine = (v: unknown): v is CartLine =>
   typeof v.qty === 'number' &&
   Number.isInteger(v.qty) &&
   v.qty >= 1 &&
-  v.qty <= MAX_QTY;
+  v.qty <= MAX_QTY &&
+  (v.sku === undefined || (typeof v.sku === 'string' && /^[A-Z0-9][A-Z0-9-]{0,63}$/.test(v.sku)));
 const isOrder = (v: unknown): v is DemoOrder =>
   isRecord(v) &&
   typeof v.code === 'string' &&
@@ -723,7 +726,7 @@ export function useRequests(): readonly DemoServiceRequest[] {
 export type AddResult = 'added' | 'max_qty' | 'max_lines' | 'save_failed';
 
 /** Concept limits: at most 20 different products and 99 units of each. */
-export function addToCart(slug: string, qty = 1): AddResult {
+export function addToCart(slug: string, qty = 1, sku?: string): AddResult {
   const lines = [...cartSnapshot()];
   const existing = lines.find((l) => l.slug === slug);
   if (existing) {
@@ -736,7 +739,10 @@ export function addToCart(slug: string, qty = 1): AddResult {
     return saved ? 'added' : 'save_failed';
   }
   if (lines.length >= MAX_LINES) return 'max_lines';
-  return write(KEYS.cart, [...lines, { slug, qty: Math.min(MAX_QTY, Math.max(1, qty)) }])
+  return write(KEYS.cart, [
+    ...lines,
+    { slug, qty: Math.min(MAX_QTY, Math.max(1, qty)), ...(sku ? { sku } : {}) },
+  ])
     ? 'added'
     : 'save_failed';
 }

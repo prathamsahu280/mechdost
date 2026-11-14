@@ -128,6 +128,7 @@ export function ProductCard({
           {price ? (
             <div className="min-w-0 flex-1">
               <AddToCartButton
+                sku={product.sku}
                 slug={product.slug}
                 className="px-3"
                 labels={{
