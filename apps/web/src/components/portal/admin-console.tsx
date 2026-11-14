@@ -67,6 +67,12 @@ const OrderRoutingApi = dynamic(() => import('./admin-orders-api').then((m) => m
   loading: () => <div className="skeleton h-96 rounded-card" aria-hidden="true" />,
 });
 
+/** Real sign-in: the bulk quote desk on the API (spec 19, 2026-11-14); demo builds never load it. */
+const QuoteDeskApi = dynamic(() => import('./admin-quotes-api').then((m) => m.QuoteDeskApi), {
+  ssr: false,
+  loading: () => <div className="skeleton h-96 rounded-card" aria-hidden="true" />,
+});
+
 /** Real sign-in: service routing on the API (Stream E, 2026-11-14); demo builds never load it. */
 const ServiceRoutingApi = dynamic(() => import('./admin-services-api').then((m) => m.ServiceRoutingApi), {
   ssr: false,
@@ -123,7 +129,7 @@ export function AdminConsole({
                 <ServiceRouting />
               )
             ) : null}
-            {section === 'quotes' ? <QuoteDesk /> : null}
+            {section === 'quotes' ? AUTH_MODE === 'firebase' ? <QuoteDeskApi /> : <QuoteDesk /> : null}
             {section === 'applications' ? <Applications /> : null}
             {section === 'reviews' ? <Reviews /> : null}
             {section === 'support' ? <AdminSupport actor={account.name} /> : null}

@@ -3,12 +3,13 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import { QuoteRequestForm } from '@/components/quotes/quote-request-form';
+import { QuoteRequestFormLazy } from '@/components/quotes/quote-lazy';
 import { ClientMessages } from '@/components/ui/client-messages';
 import { LocalLink } from '@/components/ui/local-link';
 import { Container, PageIntro } from '@/components/ui/page-intro';
 import type { Locale } from '@/i18n/routing';
 import { alternatesFor } from '@/lib/seo';
-import { BROWSER_ONLY_FEATURES } from '@/lib/data-mode';
+import { QUOTES_AVAILABLE, QUOTES_ON_API } from '@/lib/data-mode';
 
 interface Props {
   params: Promise<{ locale: Locale }>;
@@ -20,10 +21,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: t('title'), alternates: alternatesFor('/quotes/new', locale), robots: { index: false } };
 }
 
-/** Bulk quote request (spec 19). `?product=slug` or `?from=cart` prefill the lines (read on the client). */
+/**
+ * Bulk quote request (spec 19). `?product=slug` or `?from=cart` prefill the lines (read on the client). Real data
+ * mode: the API form (products from the live catalogue), loaded on demand; demo: the browser store.
+ */
 export default async function NewQuotePage() {
-  // No quote desk on the API yet: real mode hides bulk quotes (BROWSER_ONLY_FEATURES).
-  if (!BROWSER_ONLY_FEATURES) notFound();
+  if (!QUOTES_AVAILABLE) notFound();
   const t = await getTranslations('quote');
   return (
     <Container className="py-10 tab:py-14">
@@ -35,7 +38,7 @@ export default async function NewQuotePage() {
         <div className="rounded-card border border-line-card bg-surface p-6 shadow-card tab:p-8">
           <ClientMessages namespaces={['quote']}>
             <Suspense fallback={<div className="skeleton h-96 rounded-tile" aria-hidden="true" />}>
-              <QuoteRequestForm />
+              {QUOTES_ON_API ? <QuoteRequestFormLazy /> : <QuoteRequestForm />}
             </Suspense>
           </ClientMessages>
         </div>
