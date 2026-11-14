@@ -15,14 +15,10 @@ import { useCallback, useEffect, useState, type SyntheticEvent } from 'react';
 import { adminApi } from '@/lib/admin-api';
 import { track } from '@/lib/analytics';
 import { formatDate, formatPrice } from '@/lib/format';
-import {
-  rangeOf,
-  requestStatusKey,
-  rupeesToPaise,
-  workshopMayRevise,
-  workshopNextAction,
-} from '@/lib/service-views';
+import { homeJobNextAction, validMechanicName } from '@/lib/home-service-views';
+import { rangeOf, requestStatusKey, rupeesToPaise, workshopMayRevise } from '@/lib/service-views';
 import { ApiListState, LoadMore } from './api-list-state';
+import { ArrivalFormApi, HomeJobExtrasApi, HomeSettingsApi } from './home-visit-portal-api';
 import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
 import { ServiceApiError } from './service-api-error';
 import { useApiList } from './use-api-list';
@@ -68,6 +64,8 @@ export function WorkshopRequestsApi() {
           <h2 className="font-heading text-2xl font-extrabold">🔧 {name}</h2>
         </section>
       ) : null}
+
+      <HomeSettingsApi />
 
       <section aria-labelledby="new-requests">
         <h2 id="new-requests" className="font-heading text-xl font-extrabold text-ink">
@@ -212,10 +210,12 @@ function NewRequestApi({
   onChanged: () => Promise<void>;
 }) {
   const t = useTranslations('portal');
+  const h = useTranslations('homeService');
   const locale = useLocale();
   const [detail, setDetail] = useState<ServiceRequestDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [formError, setFormError] = useState(false);
+  const [mechanicError, setMechanicError] = useState(false);
   const [declining, setDeclining] = useState(false);
   const [reason, setReason] = useState<ServiceDeclineReason | ''>('');
   const [missing, setMissing] = useState(false);
@@ -274,10 +274,24 @@ function NewRequestApi({
       return;
     }
     setFormError(false);
+    const mechanic = text('mechanic');
+    if (r.serviceMode === 'home' && !validMechanicName(mechanic)) {
+      setMechanicError(true);
+      document.getElementById(id('mechanic'))?.focus();
+      return;
+    }
+    setMechanicError(false);
     const note = text('note').slice(0, 300);
     void post(
       'propose',
-      { date, slot, lowPaise: low, highPaise: high, ...(note ? { note } : {}) },
+      {
+        date,
+        slot,
+        lowPaise: low,
+        highPaise: high,
+        ...(note ? { note } : {}),
+        ...(r.serviceMode === 'home' ? { mechanicName: mechanic } : {}),
+      },
       'workshop_proposal_sent',
     );
   }
@@ -397,6 +411,28 @@ function NewRequestApi({
               />
             </div>
           </div>
+          {r.serviceMode === 'home' ? (
+            <div>
+              <label htmlFor={id('mechanic')} className="text-xs font-bold text-muted">
+                {h('mechanicLabel')}
+              </label>
+              <input
+                id={id('mechanic')}
+                name="mechanic"
+                maxLength={30}
+                autoComplete="off"
+                aria-invalid={mechanicError ? true : undefined}
+                aria-describedby={id('mechanic-hint')}
+                className={portalField}
+              />
+              <p
+                id={id('mechanic-hint')}
+                className={`mt-1 text-xs ${mechanicError ? 'font-bold text-error' : 'text-muted'}`}
+              >
+                {mechanicError ? h('errMechanic') : h('mechanicHint')}
+              </p>
+            </div>
+          ) : null}
           <div>
             <label htmlFor={id('note')} className="text-xs font-bold text-muted">
               {t('proposalNote')}
@@ -482,7 +518,7 @@ function JobCardApi({
       </article>
     );
 
-  const action = workshopNextAction(detail.status);
+  const action = homeJobNextAction(detail);
   const est = detail.estimate;
   // The estimate's full value as sent, whatever the customer decided (the bill counts approved lines only).
   const estTotal = est
@@ -506,6 +542,7 @@ function JobCardApi({
           {t('ws_api_odometerAt', { km: new Intl.NumberFormat('en-IN').format(detail.odometerKm) })}
         </p>
       ) : null}
+      <HomeJobExtrasApi detail={detail} onDone={changed} />
       {est && !revising && action !== 'estimate' ? (
         <div className="mt-3 rounded-lg bg-surface-alt p-3 text-sm">
           <p className="font-bold text-ink">
@@ -540,7 +577,11 @@ function JobCardApi({
           }}
         />
       ) : action === 'receive' ? (
-        <OdometerFormApi detail={detail} onDone={changed} />
+        detail.serviceMode === 'home' ? (
+          <ArrivalFormApi detail={detail} onDone={changed} />
+        ) : (
+          <OdometerFormApi detail={detail} onDone={changed} />
+        )
       ) : action === 'estimate' ? (
         <EstimateBuilderApi
           detail={detail}

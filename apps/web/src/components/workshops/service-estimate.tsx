@@ -20,13 +20,24 @@ import { formatDate, formatPrice } from '@/lib/format';
 export const ratePct = (bp: number) => String(bp / 100);
 
 /** A line's text: the localised service name when it came from the menu, else what the workshop typed. */
-export function LineName({ line }: { line: { description: string; serviceKey?: string } }) {
+export function LineName({
+  line,
+}: {
+  line: { description: string; serviceKey?: string; kind?: 'visit_fee'; unitPaise?: number };
+}) {
   const locale = useLocale();
+  if (line.kind === 'visit_fee') return <VisitFeeLineName waived={line.unitPaise === 0} />;
   return line.serviceKey ? (
     <>{serviceNameFor(line.serviceKey, line.description, locale)}</>
   ) : (
     <span data-user-content>{line.description}</span>
   );
+}
+
+/** The home visit fee line, named in the reader's language (it is a bill line, never typed text). */
+function VisitFeeLineName({ waived }: { waived: boolean }) {
+  const h = useTranslations('homeService');
+  return <>{h(waived ? 'billLine_waived' : 'billLine_visit_fee')}</>;
 }
 
 /** A line with its GST, computed exactly as the bill will (the rate is already 0 for unregistered workshops). */

@@ -1,17 +1,22 @@
 'use client';
 
-import { BadgeCheck, LocateFixed, MapPin, Star, Truck, Zap } from 'lucide-react';
+import { BadgeCheck, Home, LocateFixed, MapPin, Star, Truck, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import type { PublicWorkshop } from '@mechdost/shared/service-api';
+import type { ServiceMode } from '@mechdost/shared/state';
 import { VEHICLE_LABEL_KEY, VEHICLE_TYPES, isVehicleType, type VehicleType } from '@mechdost/shared/vehicles';
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useSession } from '@/demo/session';
+import { AUTH_MODE } from '@/lib/auth/mode';
 import { track } from '@/lib/analytics';
 import { formatPrice } from '@/lib/format';
+import { visitFeeGstPaise } from '@/lib/home-service-views';
 import { mapUi } from '@/lib/map-ui';
 import type { NearbyQuery } from '@/lib/service-api';
 import { fromPaise, serviceErrorKey } from '@/lib/service-views';
 import { BookingFormApi } from './booking-form-api';
+import { HomeAddressPicker, ServiceModeSwitch, useHomeAddresses } from './home-mode-fields';
 import type { MapPoint } from './workshop-map';
 
 const WorkshopMap = lazy(() => import('./workshop-map').then((m) => ({ default: m.WorkshopMap })));
@@ -47,6 +52,7 @@ export function WorkshopFinderApi() {
   const w = useTranslations('workshop');
   const r = useTranslations('request');
   const m = useTranslations('map');
+  const h = useTranslations('homeService');
   const locale = useLocale();
   const mapRef = useRef<HTMLDivElement>(null);
   const [pin, setPin] = useState('');
@@ -59,16 +65,28 @@ export function WorkshopFinderApi() {
   const [selected, setSelected] = useState<string | null>(null);
   const [results, setResults] = useState<Results>({ kind: 'idle' });
   const [choosing, setChoosing] = useState(false);
+  const [mode, setMode] = useState<ServiceMode>('workshop');
+  const [addressId, setAddressId] = useState('');
+  const signedIn = useSession()?.role === 'customer';
+  const home = mode === 'home';
+  const addresses = useHomeAddresses(home && signedIn && AUTH_MODE === 'firebase');
+  const homeAddress =
+    addresses.state === 'ready' ? (addresses.pinned.find((a) => a.id === addressId) ?? null) : null;
   const seq = useRef(0);
 
   // Device location wins over a typed PIN (it is more precise; the PIN it fills in does not search again).
   const searchPin = gps ? '' : pin;
   const query = useMemo((): NearbyQuery | null => {
     const filters = { ...(vehicle === 'any' ? {} : { vehicleType: vehicle }), ev: evOnly };
+    // Home visits: the pinned address decides, with each workshop's own travel radius (no PIN or GPS search).
+    if (home)
+      return homeAddress?.lat != null && homeAddress.lng != null
+        ? { lat: homeAddress.lat, lng: homeAddress.lng, mode: 'home', ...filters, ev: false }
+        : null;
     if (gps) return { ...gps, ...filters };
     if (/^[1-9]\d{5}$/.test(searchPin)) return { pincode: searchPin, ...filters };
     return null;
-  }, [gps, searchPin, vehicle, evOnly]);
+  }, [gps, searchPin, vehicle, evOnly, home, homeAddress]);
 
   const search = useCallback(
     async (q: NearbyQuery) => {
@@ -130,7 +148,11 @@ export function WorkshopFinderApi() {
   }
 
   const base = locale === 'hi' ? '/hi' : '';
-  const pinQuery = /^[1-9]\d{5}$/.test(pin) ? `?pin=${pin}` : '';
+  const pinQuery = home
+    ? `?mode=home&address=${encodeURIComponent(homeAddress?.id ?? '')}`
+    : /^[1-9]\d{5}$/.test(pin)
+      ? `?pin=${pin}`
+      : '';
   const list = results.kind === 'ok' ? results.workshops : [];
   const points: MapPoint[] = useMemo(
     () =>
@@ -157,7 +179,33 @@ export function WorkshopFinderApi() {
         <h2 id="finder-title" className="font-heading text-lg font-extrabold text-ink">
           {t('title')}
         </h2>
-        <div className="mt-4 grid gap-3 tab:grid-cols-[1fr_1fr_auto] tab:items-end">
+        <div className="mt-4">
+          <ServiceModeSwitch
+            mode={mode}
+            onChange={(next) => {
+              setMode(next);
+              setSelected(null);
+              setResults({ kind: 'idle' });
+              track('service_mode_selected', { mode: next });
+            }}
+          />
+        </div>
+        {home ? (
+          <div className="mt-4 max-w-xl space-y-3">
+            <p className="text-sm text-muted">{h('homeFinderIntro')}</p>
+            <HomeAddressPicker
+              addresses={addresses}
+              signedIn={signedIn}
+              value={homeAddress?.id ?? ''}
+              onChange={(id) => {
+                setAddressId(id);
+                setSelected(null);
+              }}
+              fieldId="finder-home-address"
+            />
+          </div>
+        ) : null}
+        <div className={`mt-4 grid gap-3 tab:grid-cols-[1fr_1fr_auto] tab:items-end ${home ? 'hidden' : ''}`}>
           <div>
             <label htmlFor="finder-pin" className="text-xs font-bold text-muted">
               {t('pinLabel')}
@@ -208,7 +256,9 @@ export function WorkshopFinderApi() {
             {locating ? t('locating') : t('useLocation')}
           </button>
         </div>
-        <label className="mt-4 inline-flex min-h-11 items-center gap-2 text-sm text-ink">
+        <label
+          className={`mt-4 inline-flex min-h-11 items-center gap-2 text-sm text-ink ${home ? 'hidden' : ''}`}
+        >
           <input
             type="checkbox"
             checked={evOnly}
@@ -230,12 +280,12 @@ export function WorkshopFinderApi() {
       <div className="mt-6" aria-live="polite">
         {results.kind === 'idle' ? (
           <p className="rounded-card border border-line-card bg-surface p-6 text-muted">
-            {w('api_finderStart')}
+            {home ? h('homeFinderStart') : w('api_finderStart')}
           </p>
         ) : null}
         {results.kind === 'loading' ? (
           <p role="status" className="rounded-card border border-line-card bg-surface p-6 text-muted">
-            {w('api_finderLoading')}
+            {home ? h('homeFinderLoading') : w('api_finderLoading')}
           </p>
         ) : null}
         {results.kind === 'error' && !pinUnknown ? (
@@ -274,7 +324,7 @@ export function WorkshopFinderApi() {
 
       {results.kind === 'ok' && list.length === 0 ? (
         <p className="mt-4 rounded-card border border-line-card bg-surface p-6 text-muted">
-          {w('api_noneNearby')}
+          {home ? h('homeNone') : w('api_noneNearby')}
         </p>
       ) : null}
 
@@ -317,6 +367,7 @@ export function WorkshopFinderApi() {
                   workshop={ws}
                   href={`${base}/workshops/${ws.slug}${pinQuery}`}
                   active={selected === ws.slug}
+                  showFee={home}
                   onShowOnMap={() => {
                     track('map_action', { action: 'show_on_map', workshop: ws.slug });
                     setSelected(ws.slug);
@@ -332,36 +383,42 @@ export function WorkshopFinderApi() {
         </div>
       ) : null}
 
-      <section
-        aria-labelledby="choose-title"
-        className="mt-8 rounded-card border border-line-card bg-surface p-5 shadow-card tab:p-6"
-      >
-        <h2 id="choose-title" className="font-heading text-lg font-extrabold text-ink">
-          {w('api_chooseTitle')}
-        </h2>
-        <p className="mt-1 text-sm text-muted">{w('api_chooseIntro')}</p>
-        {choosing ? (
-          <div className="mt-5 max-w-xl">
-            <BookingFormApi
-              key={pin}
-              workshop={null}
-              pincode={/^[1-9]\d{5}$/.test(pin) ? pin : ''}
-              origin={gps}
-            />
-          </div>
-        ) : (
-          <button
-            type="button"
-            data-track="finder_let_mechdost_choose"
-            onClick={() => {
-              setChoosing(true);
-            }}
-            className="press mt-4 inline-flex min-h-11 items-center rounded-button bg-accent-button px-5 text-sm font-bold text-white hover:bg-accent-button-hover"
-          >
-            {w('api_chooseOpen')}
-          </button>
-        )}
-      </section>
+      {home ? (
+        <p className="mt-8 rounded-card border border-line-card bg-surface p-5 text-sm text-muted">
+          {h('homeLetMechdost')}
+        </p>
+      ) : (
+        <section
+          aria-labelledby="choose-title"
+          className="mt-8 rounded-card border border-line-card bg-surface p-5 shadow-card tab:p-6"
+        >
+          <h2 id="choose-title" className="font-heading text-lg font-extrabold text-ink">
+            {w('api_chooseTitle')}
+          </h2>
+          <p className="mt-1 text-sm text-muted">{w('api_chooseIntro')}</p>
+          {choosing ? (
+            <div className="mt-5 max-w-xl">
+              <BookingFormApi
+                key={pin}
+                workshop={null}
+                pincode={/^[1-9]\d{5}$/.test(pin) ? pin : ''}
+                origin={gps}
+              />
+            </div>
+          ) : (
+            <button
+              type="button"
+              data-track="finder_let_mechdost_choose"
+              onClick={() => {
+                setChoosing(true);
+              }}
+              className="press mt-4 inline-flex min-h-11 items-center rounded-button bg-accent-button px-5 text-sm font-bold text-white hover:bg-accent-button-hover"
+            >
+              {w('api_chooseOpen')}
+            </button>
+          )}
+        </section>
+      )}
     </div>
   );
 }
@@ -370,15 +427,19 @@ function WorkshopCardApi({
   workshop: ws,
   href,
   active,
+  showFee,
   onShowOnMap,
 }: {
   workshop: PublicWorkshop;
   href: string;
   active: boolean;
+  /** Home mode: the visit fee is the price that matters, shown on the card before booking. */
+  showFee: boolean;
   onShowOnMap: () => void;
 }) {
   const t = useTranslations('finder');
   const w = useTranslations('workshop');
+  const h = useTranslations('homeService');
   const from = fromPaise(ws.services);
   return (
     <article
@@ -433,6 +494,12 @@ function WorkshopCardApi({
           </li>
         ) : null}
         <li className="rounded-md bg-pill px-2 py-1 text-ink">{ws.vehicleTypes.join(' · ')}</li>
+        {ws.home ? (
+          <li className="inline-flex items-center gap-1 rounded-md bg-pill px-2 py-1 text-ink">
+            <Home aria-hidden="true" className="size-3.5" />
+            {h('homeBadge')} · {h('cardRadius', { km: ws.home.radiusKm })}
+          </li>
+        ) : null}
       </ul>
       <p className="mt-3 line-clamp-2 text-sm text-muted">
         {ws.services
@@ -443,6 +510,18 @@ function WorkshopCardApi({
       <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-4">
         {from !== null ? (
           <p className="text-sm font-bold text-ink">{t('from', { price: formatPrice(from) })}</p>
+        ) : null}
+        {showFee && ws.home ? (
+          <p className="text-sm font-bold text-ink">
+            {ws.home.visitFeePaise === 0
+              ? h('cardFeeFree')
+              : visitFeeGstPaise(ws.home.visitFeePaise, ws.gstRegistered) > 0
+                ? h('cardFeeGst', {
+                    fee: formatPrice(ws.home.visitFeePaise),
+                    gst: formatPrice(visitFeeGstPaise(ws.home.visitFeePaise, ws.gstRegistered)),
+                  })
+                : h('cardFee', { fee: formatPrice(ws.home.visitFeePaise) })}
+          </p>
         ) : null}
         <button
           type="button"

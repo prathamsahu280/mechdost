@@ -274,6 +274,8 @@ export interface BillView {
 export interface HomeVisitView {
   /** Visit fee the customer saw when booking (paise), kept after a move to the workshop unless waived. */
   visitFeePaise: number;
+  /** Whether the workshop charges GST (the fee then carries GST on the bill, shown next to it). */
+  gstRegistered: boolean;
   feeWaivedReason: string | null;
   mechanicName: string | null;
   /** Where the mechanic goes: the customer, the workshop and staff see it once the visit is confirmed. */
@@ -361,6 +363,7 @@ export async function loadRequestView(
       wArea: workshops.area,
       wAreaHi: workshops.areaHi,
       wPhone: workshops.phone,
+      wGstRegistered: workshops.gstRegistered,
       wRatingAvg: workshops.ratingAvg,
       wRatingCount: workshops.ratingCount,
       customerName: users.name,
@@ -430,6 +433,7 @@ export async function loadRequestView(
       ? null
       : {
           visitFeePaise: req.visitFeePaise,
+          gstRegistered: r.wGstRegistered ?? false,
           feeWaivedReason: req.visitFeeWaivedReason,
           mechanicName: req.visitingMechanic,
           address:

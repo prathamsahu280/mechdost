@@ -70,6 +70,8 @@ export async function AdminShell({ section }: { section: AdminSection }) {
             'compare',
             // Admin → Reviews (moderation queue on the API, 2026-11-14).
             'reviews',
+            // Admin → Workshops: home servicing fields (spec 06, 2026-11-15).
+            'homeService',
           ]}
         >
           <AdminConsole

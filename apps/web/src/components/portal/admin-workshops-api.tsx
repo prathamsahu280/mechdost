@@ -444,6 +444,7 @@ const FIELD_ERROR_API: Record<string, string> = {
   SLUG_TAKEN: 'slug',
   PINCODE_NOT_SERVED: 'pincode',
   MENU_KEY_DUPLICATE: 'menu',
+  FEE_ABOVE_CAP: 'homeVisitFee',
 };
 
 /** Add (original null) or edit a workshop with its menu. */
@@ -457,6 +458,7 @@ function WorkshopEditor({
   onCancel: () => void;
 }) {
   const t = useTranslations('portal');
+  const h = useTranslations('homeService');
   const locale = useLocale();
   const [form, setForm] = useState<WorkshopForm>(() =>
     original ? formFromWorkshop(original) : emptyWorkshopForm(),
@@ -531,7 +533,10 @@ function WorkshopEditor({
       />
     </Field>
   );
-  const check = (k: 'evBasic' | 'pickup' | 'locationVerified' | 'published' | 'busy', label: string) => (
+  const check = (
+    k: 'evBasic' | 'pickup' | 'locationVerified' | 'published' | 'busy' | 'homeService',
+    label: string,
+  ) => (
     <label className="flex min-h-11 items-center gap-3 text-sm text-ink">
       <input
         type="checkbox"
@@ -656,6 +661,17 @@ function WorkshopEditor({
       </div>
       <p className="text-xs text-muted">{t('ws_api_approvalNote')}</p>
 
+      {original ? (
+        <fieldset className="space-y-2 rounded-lg border border-line-card p-3">
+          <legend className="px-1 font-heading font-bold text-ink">{h('adminHomeTitle')}</legend>
+          {check('homeService', h('settingsOn'))}
+          <div className="grid gap-3 tab:grid-cols-2">
+            {text('homeRadiusKm', h('radiusLabel'), { max: 2 })}
+            {text('homeVisitFee', h('feeLabel'), { max: 7 })}
+          </div>
+        </fieldset>
+      ) : null}
+
       <fieldset id={fid('menu')} tabIndex={-1}>
         <legend className="font-heading font-bold text-ink">{t('ws_api_menu')}</legend>
         {bad('menu') ? <p className="text-xs font-bold text-error">{t('ws_api_menuInvalid')}</p> : null}
@@ -696,6 +712,19 @@ function WorkshopEditor({
                     />
                     {t('ws_api_menuActive')}
                   </label>
+                  {original ? (
+                    <label className="flex min-h-11 items-center gap-2 text-sm text-ink">
+                      <input
+                        type="checkbox"
+                        checked={m.homeAvailable}
+                        onChange={(e) => {
+                          setRow(i, { homeAvailable: e.target.checked });
+                        }}
+                        className="size-5 accent-[var(--color-accent-button)]"
+                      />
+                      {h('adminHomeServices')}
+                    </label>
+                  ) : null}
                 </div>
                 <div className="grid gap-2 tab:grid-cols-2">
                   {cell('key', t('ws_api_menuKey'), 40)}

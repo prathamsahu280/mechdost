@@ -1,4 +1,4 @@
-import { BadgeCheck, Clock, MapPin, Star, Truck, Zap } from 'lucide-react';
+import { BadgeCheck, Clock, Home, MapPin, Star, Truck, Zap } from 'lucide-react';
 import { getLocale, getTranslations } from 'next-intl/server';
 import type { PublicWorkshop } from '@mechdost/shared/service-api';
 import { Suspense } from 'react';
@@ -7,6 +7,7 @@ import { ClientMessages } from '@/components/ui/client-messages';
 import { LocalLink } from '@/components/ui/local-link';
 import { Container } from '@/components/ui/page-intro';
 import { formatPrice } from '@/lib/format';
+import { visitFeeGstPaise } from '@/lib/home-service-views';
 import { directionsHref, mapUi } from '@/lib/map-ui';
 import { daysLabel, durationParts } from '@/lib/service-views';
 import { BookingFormLazy } from './booking-form-lazy';
@@ -18,10 +19,11 @@ import { WorkshopMap } from './workshop-map';
  * Approved reviews stream in below the map (`ReviewsApiSection`, server-rendered).
  */
 export async function WorkshopProfileApi({ workshop: w }: { workshop: PublicWorkshop }) {
-  const [t, f, m, locale] = await Promise.all([
+  const [t, f, m, h, locale] = await Promise.all([
     getTranslations('workshop'),
     getTranslations('finder'),
     getTranslations('map'),
+    getTranslations('homeService'),
     getLocale(),
   ]);
   const hours = `${daysLabel(w.hours.days, locale)} · ${w.hours.open}–${w.hours.close}`;
@@ -71,6 +73,20 @@ export async function WorkshopProfileApi({ workshop: w }: { workshop: PublicWork
             <li className="flex items-center gap-1.5">
               <Zap aria-hidden="true" className="size-4" />
               {f('ev')}
+            </li>
+          ) : null}
+          {w.home ? (
+            <li className="flex items-center gap-1.5">
+              <Home aria-hidden="true" className="size-4" />
+              {h('homeBadge')} · {h('cardRadius', { km: w.home.radiusKm })} ·{' '}
+              {w.home.visitFeePaise === 0
+                ? h('cardFeeFree')
+                : visitFeeGstPaise(w.home.visitFeePaise, w.gstRegistered) > 0
+                  ? h('cardFeeGst', {
+                      fee: formatPrice(w.home.visitFeePaise),
+                      gst: formatPrice(visitFeeGstPaise(w.home.visitFeePaise, w.gstRegistered)),
+                    })
+                  : h('cardFee', { fee: formatPrice(w.home.visitFeePaise) })}
             </li>
           ) : null}
         </ul>
@@ -157,19 +173,22 @@ export async function WorkshopProfileApi({ workshop: w }: { workshop: PublicWork
           </h2>
           <p className="mt-2 text-sm text-muted">{t('bookIntro')}</p>
           <div className="mt-5">
-            <ClientMessages namespaces={['workshop', 'request']}>
+            <ClientMessages namespaces={['workshop', 'request', 'homeService']}>
               <BookingFormLazy
                 workshop={{
                   slug: w.slug,
                   name: w.name,
                   vehicleTypes: w.vehicleTypes,
                   pickup: w.pickup,
+                  gstRegistered: w.gstRegistered,
+                  home: w.home,
                   services: w.services.map((s) => ({
                     key: s.key,
                     title: s.title,
                     lowPaise: s.lowPaise,
                     highPaise: s.highPaise,
                     vehicleType: s.vehicleType,
+                    homeAvailable: s.homeAvailable,
                   })),
                 }}
               />

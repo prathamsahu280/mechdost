@@ -1,4 +1,5 @@
 import {
+  MoveProposedDto,
   NearbyWorkshopsDto,
   PublicWorkshopDto,
   ServiceChangedDto,
@@ -22,7 +23,7 @@ const loc = (locale: string) => (locale === 'hi' ? 'hi' : 'en');
 
 export type NearbyQuery =
   | { pincode: string; vehicleType?: VehicleType; ev?: boolean }
-  | { lat: number; lng: number; vehicleType?: VehicleType; ev?: boolean };
+  | { lat: number; lng: number; vehicleType?: VehicleType; ev?: boolean; mode?: 'workshop' | 'home' };
 
 /** Bookable workshops near a point or a PIN code, nearest first (public; 422 `PINCODE_UNKNOWN`). */
 export function fetchNearbyWorkshops(locale: string, q: NearbyQuery): Promise<ApiResult<NearbyWorkshops>> {
@@ -31,6 +32,7 @@ export function fetchNearbyWorkshops(locale: string, q: NearbyQuery): Promise<Ap
   else {
     p.set('lat', q.lat.toFixed(5));
     p.set('lng', q.lng.toFixed(5));
+    if (q.mode === 'home') p.set('mode', 'home');
   }
   if (q.vehicleType) p.set('vehicleType', q.vehicleType);
   if (q.ev) p.set('ev', 'true');
@@ -54,6 +56,10 @@ export interface NewServiceRequest {
   preferredDate: string;
   preferredSlot: 'morning' | 'afternoon' | 'evening';
   pickup: boolean;
+  /** Home servicing: `home` needs the saved address (pinned) and the visit fee the customer saw. */
+  mode?: 'workshop' | 'home';
+  addressId?: string | null;
+  visitFeePaise?: number | null;
 }
 
 /** Book. The same key for a retry of the same attempt never makes a second request (200 replay). */
@@ -93,6 +99,11 @@ const act = (locale: string, code: string, step: string, body: unknown) =>
 
 export function decideProposal(locale: string, code: string, accept: boolean, version: number) {
   return act(locale, code, 'proposal', { accept, version });
+}
+
+/** Answer the workshop's offer to move a home job to its workshop. */
+export function answerMove(locale: string, code: string, accept: boolean, version: number) {
+  return act(locale, code, 'move', { accept, version });
 }
 
 export function cancelServiceRequest(locale: string, code: string, reasonCode: string, version: number) {

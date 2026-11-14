@@ -115,6 +115,7 @@ export const RequestDetail = z
     home: z
       .object({
         visitFeePaise: z.number().int(),
+        gstRegistered: z.boolean(),
         feeWaivedReason: z.string().nullable(),
         mechanicName: z.string().nullable(),
         address: z

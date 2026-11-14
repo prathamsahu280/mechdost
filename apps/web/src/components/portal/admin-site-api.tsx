@@ -65,6 +65,7 @@ const SETTING_LABEL = {
   'coins.adjust_daily_cap': 'coins_api_set_adjust_daily_cap',
   'coins.unlock_days': 'coins_api_set_unlock_days',
   'coins.expiry_days': 'coins_api_set_expiry_days',
+  'service.home_fee_max_paise': 'api_set_service_home_fee_max_paise',
 } as const satisfies Record<SettingKey, string>;
 
 const UNIT_LABEL = {
