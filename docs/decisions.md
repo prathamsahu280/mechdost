@@ -795,6 +795,19 @@ User 2026-11-15 ~01:00 IST: "go ahead and work on the 1,2,3,4,5,6" (6 = shop Wha
   dark-patterns self-audit of checkout and booking before launch). The P1 items (fixed-price inspection package, "responds
   within X min", service reminders) are queued after the next tier.
 
+## 2026-11-15 — Test runs and GitHub Actions minutes (user)
+
+- The repo is private, and GitHub's free plan includes 2,000 Actions minutes a month. Estimated use this month is
+  already about 2,000–2,500 billable minutes (about 1,000 minutes of run time, with CI running about 4 jobs in parallel).
+  Running out would stop CI and the deploy.
+- **The full UI state audit is manual only** (the nightly 02:00 schedule was removed; the workflow keeps its Run button).
+  Full runs happen **on the development PC**, in the early morning with one browser
+  (`node apps/web/scripts/state-audit-run.mjs all`, runbook § 9.3), **once everything in the build queue is done**
+  (user: "After everything"). The result is a bug report with screenshots in `docs/qa/`, and fixes follow with the user.
+- **CI skips docs-only pushes** (`paths-ignore: docs/**, **/*.md` on push and pull request; no deploy follows). Code
+  changes run every check as before. This also stops docs pushes from cancelling a running code CI.
+- Supersedes the 2026-11-14 "nightly" line in the UI state audit entry. The per-push `core` subset stays in CI.
+
 ## PENDING DECISIONS (ask "what's pending" to review)
 
 | #   | Topic                                                                                                                                                                                                                                                                                                            | Leaning                                                                             | When                                 |

@@ -1,15 +1,14 @@
-# Nightly UI state audit (docs/qa/ui-state-checklist.md, docs/research/ui-testing-gap-2026-11-14.md): every
+# Full UI state audit, on demand (docs/qa/ui-state-checklist.md, docs/research/ui-testing-gap-2026-11-14.md): every
 # checklist item (~1,700 Playwright tests: widths 320-1920, themes, languages, stored states, hover/focus sweeps,
 # geometry assertions) against a demo-mode production build. The per-push subset runs in ci.yml (e2e-demo).
 # The run never commits: the ticked checklist, the JSON report and the failure screenshots are uploaded as an
 # artifact for triage (runbook docs/runbooks/ui-test-catalogue.md § 9).
 # Supply-chain rules as in ci.yml: actions pinned by full commit SHA, read-only token, frozen lockfile.
-name: UI state audit (nightly)
+name: UI state audit (full, manual)
 
+# Manual only (user 2026-11-15): a full run costs ~200-240 Actions minutes on the private repo's monthly allowance;
+# full runs normally happen on the development PC (node apps/web/scripts/state-audit-run.mjs, runbook § 9.3).
 on:
-  schedule:
-    # 02:00 IST.
-    - cron: '30 20 * * *'
   workflow_dispatch:
     inputs:
       only:

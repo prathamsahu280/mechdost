@@ -36,7 +36,7 @@ unit/integration tests). Then add, by area:
   preferences (theme, language) are tested across the real interaction, both directions, and switched back.
 - any component change → the **UI state audit** rows of that component (`STATE_AUDIT_ONLY=<PREFIX>- pnpm exec
 playwright test -c playwright.state-audit.config.ts`; checklist `docs/qa/ui-state-checklist.md`, runbook
-  `docs/runbooks/ui-test-catalogue.md` § 9); the `core` subset runs on every push, all ~1,700 items nightly
+  `docs/runbooks/ui-test-catalogue.md` § 9); the `core` subset runs on every push, all ~1,700 items in a full run (manual: on the PC, or the GitHub workflow by hand)
 - pages → **Lighthouse CI** budgets (LCP < 2 s, INP < 200 ms, CLS < 0.05, ≥ 90 scores, JS budget)
 
 ### 2. Check the bug catalogue
