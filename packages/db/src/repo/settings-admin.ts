@@ -46,6 +46,19 @@ export async function listOperationalSettings(db: Tx, cityId: string | null): Pr
 const scopeWhere = (key: string, cityId: string | null) =>
   and(eq(settings.key, key), cityId ? eq(settings.cityId, cityId) : isNull(settings.cityId));
 
+/** A whole-site number setting: the admin's global value, else the registry default. */
+export async function globalIntSetting(db: Tx, key: SettingKey): Promise<number> {
+  const [row] = await db
+    .select({ value: settings.value })
+    .from(settings)
+    .where(and(eq(settings.key, key), isNull(settings.cityId)))
+    .limit(1);
+  const v = row?.value;
+  const spec = OPERATIONAL_SETTINGS[key];
+  if (typeof v === 'number' && Number.isSafeInteger(v) && v >= 0) return v;
+  return spec.kind === 'int' && typeof spec.default === 'number' ? spec.default : 0;
+}
+
 /** Create (`expectedVersion` null) or change the global value or one city's override. */
 export async function saveOperationalSetting(
   db: Tx,

@@ -40,3 +40,60 @@ describe('schema invariants', () => {
     expect(await tablesWithout('updated_at', '_touch_updated_at')).toEqual([]);
   });
 });
+
+/**
+ * Row-level security stays on for everything the Supabase Data API could reach (security review 2026-11-14,
+ * "views bypass RLS"): every public table has RLS, every view runs as the caller (`security_invoker`), and the
+ * `anon` / `authenticated` roles hold no table privileges. The API connects as the owner; these guard direct access.
+ */
+const tablesWithoutRls = async () =>
+  (
+    (
+      await db.execute(sql`
+    select c.relname from pg_class c join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public' and c.relkind in ('r', 'p') and not c.relrowsecurity order by 1`)
+    ).rows as { relname: string }[]
+  ).map((r) => r.relname);
+
+const viewsWithoutInvoker = async () =>
+  (
+    (
+      await db.execute(sql`
+    select c.relname from pg_class c join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public' and c.relkind in ('v', 'm')
+      and not coalesce('security_invoker=true' = any(c.reloptions), false) order by 1`)
+    ).rows as { relname: string }[]
+  ).map((r) => r.relname);
+
+const clientGrants = async () =>
+  (
+    (
+      await db.execute(sql`
+    select table_name || ':' || grantee || ':' || privilege_type as g from information_schema.role_table_grants
+    where table_schema = 'public' and grantee in ('anon', 'authenticated') order by 1`)
+    ).rows as { g: string }[]
+  ).map((r) => r.g);
+
+describe('row-level security', () => {
+  it('is on for every public table (a new table without it is caught)', async () => {
+    expect(await tablesWithoutRls()).toEqual([]);
+    await db.execute(sql`create table zz_rls_probe (id int)`);
+    expect(await tablesWithoutRls()).toEqual(['zz_rls_probe']);
+    await db.execute(sql`drop table zz_rls_probe`);
+  });
+
+  it('cannot be bypassed by a view (every view runs as the caller)', async () => {
+    expect(await viewsWithoutInvoker()).toEqual([]);
+    await db.execute(sql`create view zz_view_probe as select 1 as x`);
+    expect(await viewsWithoutInvoker()).toEqual(['zz_view_probe']);
+    await db.execute(sql`drop view zz_view_probe`);
+  });
+
+  it('leaves no table privileges to the anon and authenticated roles', async () => {
+    expect(await clientGrants()).toEqual([]);
+    await db.execute(sql`create table zz_grant_probe (id int)`);
+    await db.execute(sql`grant select on zz_grant_probe to anon`);
+    expect(await clientGrants()).toEqual(['zz_grant_probe:anon:SELECT']);
+    await db.execute(sql`drop table zz_grant_probe`);
+  });
+});

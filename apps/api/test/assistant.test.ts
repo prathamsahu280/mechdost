@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { ensureUser, saveOperationalSetting } from '@mechdost/db/repo';
 import {
   AssistantUnavailableError,
   type AssistantProvider,
@@ -102,5 +103,44 @@ describe('POST /v1/assistant/messages (spec 18)', () => {
     expect(limited.status).toBe(429);
     expect(await code(limited)).toBe('RATE_LIMITED');
     expect(provider.calls).toHaveLength(ASSISTANT_RATE.limit);
+  });
+
+  // Security review 2026-11-14 (Q91): many IPs together must not run up the provider bill. A site-wide daily
+  // cap, set by the admin (`assistant.daily_messages`, 0 = off); the website falls back to its canned answers.
+  it('stops at the admin daily cap for the whole site, across IPs, before calling the provider', async () => {
+    const provider = new FakeProvider();
+    const { app, db } = await buildApp({
+      assistant: provider,
+      rateLimiter: new MemoryRateLimiter(() => 2_000_000),
+    });
+    const admin = await ensureUser(db, {
+      firebaseUid: 'assistant-cap-admin',
+      phone: '+919800000777',
+      email: null,
+      emailVerified: false,
+    });
+    const set = (value: number, expectedVersion: number | null) =>
+      saveOperationalSetting(db, {
+        key: 'assistant.daily_messages',
+        cityId: null,
+        value,
+        expectedVersion,
+        staffUserId: admin.id,
+      });
+    const { version } = await set(2, null);
+    try {
+      const from = (ip: string) => ({
+        ...ask('Battery?'),
+        headers: { 'Content-Type': 'application/json', 'X-Forwarded-For': ip },
+      });
+      expect((await app.request('/v1/assistant/messages', from('203.0.113.1'))).status).toBe(200);
+      expect((await app.request('/v1/assistant/messages', from('203.0.113.2'))).status).toBe(200);
+      const over = await app.request('/v1/assistant/messages', from('203.0.113.3'));
+      expect(over.status).toBe(429);
+      expect(await code(over)).toBe('ASSISTANT_DAILY_LIMIT');
+      expect(provider.calls).toHaveLength(2);
+    } finally {
+      await set(500, version);
+    }
   });
 });

@@ -53,6 +53,11 @@ export const OPERATIONAL_SETTINGS = {
     default: 20,
     globalOnly: true,
   },
+  /**
+   * Messages the shoppers' AI assistant may answer per day for the whole site (cost cap, security review
+   * 2026-11-14, Q91); 0 turns the AI answers off. Over the cap the website shows its built-in answers.
+   */
+  'assistant.daily_messages': { kind: 'int', min: 0, max: 100_000, default: 500, globalOnly: true },
 } as const satisfies Record<string, SettingSpec>;
 
 export type SettingKey = keyof typeof OPERATIONAL_SETTINGS;

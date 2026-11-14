@@ -291,6 +291,18 @@ User shared Razorpay **test** keys and asked to "see how we have the stuff for r
 - An online order holds stock for 30 minutes (admin setting) and is never routed before it is paid.
 - A valid checkout signature alone never marks an order paid: the server fetches the payment from Razorpay first (Razorpay docs).
 
+## 2026-11-14 — Security review of 20 attack classes and fixes (user: "fix the other security stuff too")
+
+Full review and evidence: `docs/research/security-vulnerabilities.md` § Review 2026-11-14. Decisions taken:
+
+- **Token revocation is checked whenever a session is loaded**, on every route (once per 60-s cache period per user per instance), not only on chosen routes — a revoked or disabled account stops working within a minute everywhere, at one Firebase call per user per minute.
+- **A staff phone code finishes one staff sign-in** (`STAFF_CODE_USED` on a replay; fails closed without Redis).
+- **Sign-in emails are printable ASCII only** (no normalisation of look-alikes: they are refused).
+- **Firebase admin credentials on the AWS server** (Q93, user: "just push it there too"): the project's service-account key is a server-only file mounted at `/run/secrets/firebase-admin.json`; production accepts a key file only from `/run/secrets/`. Replaces the 2026-11-13 "no key files (Cloud Run)" rule, which no longer applies on AWS.
+- **AI assistant site-wide daily budget**: admin setting `assistant.daily_messages` (default 500, 0 = off). Turnstile follows with the web transport.
+- **Docker images follow `.nvmrc`** (Node 24.22.3), enforced by a test; RLS on every table, no RLS-bypassing views and no client-role privileges enforced by a schema test.
+- Open (questions inbox): Q90 email verification before linking (Firebase-level), Q91 assistant Turnstile, Q92 Cloudflare.
+
 ## 2026-11-14 — Cart on sign-out, demo controls, demo service estimates and bills (user)
 
 - **Cart and compare list stay on sign-out** (Q85): they belong to the device, as for a guest.

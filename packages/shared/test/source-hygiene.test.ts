@@ -37,4 +37,21 @@ describe('source hygiene', () => {
     );
     expect(offenders).toEqual([]);
   }, 30_000); // reads every tracked file: slower than a unit test on a busy machine
+
+  // Security review 2026-11-14: the images ran Node 24.22.1 while .nvmrc (CI, local) said 24.22.3, a security
+  // release. Every image's Node is the .nvmrc version, pinned by digest.
+  it('every Docker image runs the .nvmrc Node version, pinned by digest', () => {
+    const want = readFileSync(join(ROOT, '.nvmrc'), 'utf8').trim();
+    for (const file of ['apps/api/Dockerfile', 'apps/web/Dockerfile']) {
+      const froms = readFileSync(join(ROOT, file), 'utf8')
+        .split(/\r?\n/)
+        .filter((l) => l.startsWith('FROM node:'));
+      expect(froms.length, file).toBeGreaterThan(0);
+      for (const line of froms) {
+        const [, version, digest] = /^FROM node:([\d.]+)-[a-z-]+@sha256:([0-9a-f]+)\s/.exec(line) ?? [];
+        expect(version, `${file}: ${line}`).toBe(want);
+        expect(digest, `${file}: ${line}`).toHaveLength(64);
+      }
+    }
+  });
 });
