@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { useLocale, useTranslations } from 'next-intl';
 import {
   ASSIGNMENT_DECLINE_REASONS,
@@ -43,6 +44,7 @@ import {
 import { takesNewWork } from '@/demo/partner-status';
 import { DEMO_WORKSHOPS } from '@/demo/workshops';
 import { track } from '@/lib/analytics';
+import { AUTH_MODE } from '@/lib/auth/mode';
 import { parseRupees } from '@/lib/money-input';
 import { formatDate, formatPrice } from '@/lib/format';
 import { ADMIN_SECTIONS, type AdminSection } from '@/lib/sections';
@@ -62,6 +64,12 @@ import {
 import { PortalGuard, portalCard, portalField, portalPrimary, portalQuiet, useNow } from './portal-guard';
 import { Applications } from './admin-applications';
 import { GstInvoiceLine } from '@/components/commerce/gst-invoice-line';
+
+/** Real sign-in: order routing reads and acts through the API; demo builds never load it (Stream C2, 2026-11-14). */
+const OrderRoutingApi = dynamic(() => import('./admin-orders-api').then((m) => m.OrderRoutingApi), {
+  ssr: false,
+  loading: () => <div className="skeleton h-96 rounded-card" aria-hidden="true" />,
+});
 
 const SECTION_EMOJI: Record<AdminSection, string> = {
   overview: '📊',
@@ -105,7 +113,7 @@ export function AdminConsole({
           <AdminNav current={section} />
           <div className="min-w-0 space-y-6">
             {section === 'overview' ? <Overview /> : null}
-            {section === 'orders' ? <OrderRouting /> : null}
+            {section === 'orders' ? AUTH_MODE === 'firebase' ? <OrderRoutingApi /> : <OrderRouting /> : null}
             {section === 'services' ? <ServiceRouting /> : null}
             {section === 'quotes' ? <QuoteDesk /> : null}
             {section === 'applications' ? <Applications /> : null}

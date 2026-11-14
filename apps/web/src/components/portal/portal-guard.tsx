@@ -14,10 +14,13 @@ import { useHydrated } from '@/demo/store';
 export function PortalGuard({
   role,
   path,
+  demoNote = true,
   children,
 }: {
   role: DemoRole;
   path: string;
+  /** "Stored on this device" note; off for screens that run on the API (real sign-in). */
+  demoNote?: boolean;
   children: (account: DemoAccount) => ReactNode;
 }) {
   const t = useTranslations('portal');
@@ -69,7 +72,7 @@ export function PortalGuard({
         </button>
       </div>
       {children(session)}
-      <p className="text-xs text-muted">{t('demoNote')}</p>
+      {demoNote ? <p className="text-xs text-muted">{t('demoNote')}</p> : null}
     </div>
   );
 }

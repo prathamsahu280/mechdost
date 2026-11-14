@@ -137,3 +137,7 @@ Admin → Settings → **Order rules**: "Customers may cancel their own order un
 - **Fit & specs**: vehicle types (2W/3W/4W); pack size per SKU (quantity + unit); specifications shown read-only (edited through the catalogue import for now).
 - **Prices**: city code (default RPR, any city), the city price per SKU with its floor (lowest shop price) and the MRP checked before sending, then each PIN: what customers pay and why (PIN price / city price / nearest shop), best-case margin, one-click suggestions (nearest, lowest, highest shop price) and a PIN price that can be removed.
 - Responses are validated with the shared schemas `@mechdost/shared/admin-catalogue`; calls go through `apps/web/src/lib/admin-api.ts` (Firebase ID token, error codes translated as `portal.cat_err_*`).
+
+## Admin → Orders on the API (2026-11-14, Stream C2)
+
+With real sign-in `/admin/orders` loads `admin-orders-api.tsx` on demand (other sections unchanged): routing queue, ranked shops from the API (paused, suspended, busy and already-tried shops never offered), one-click routing, reject with a reason code and customer message, cancel with a reason code, delivery override with a written reason. Details and remaining gaps: spec 04 § Real API mode.
