@@ -4,6 +4,27 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Current status
 
+- **2026-11-15 (after midnight): launch merges in progress.** Each branch gets a fresh review and fixes, then is merged, re-stamped, gated, migrated live after a precheck, pushed and deploy-checked.
+  - **On main and live/deploying:**
+    - reviews (0046), PIN codes (0048 plus seed: 27 PINs, 21 active);
+    - quotes (0049); coins (0050, earning locked until a guard is chosen);
+    - the UI state-audit harness (1,731-item checklist `docs/qa/ui-state-checklist.md`, nightly 02:00 IST on GitHub);
+    - the compare redesign (checkbox style; geometry specs);
+    - the email-verification setting (off), price RBAC (super admin and catalogue manager), self-cancel split.
+  - **Queue:**
+    1. Shop management (0051): agent merging main.
+    2. Analytics (0052): re-stamp at merge.
+    3. Monitoring (0053): second privacy fix in progress.
+  - **Overnight (user):** browser suites and the state audit run on GitHub, not on this PC. In the morning, triage the checklist `[!]` items and fix test-first.
+  - **Waiting on the user:**
+    - Razorpay live keys;
+    - the first admin phone;
+    - the product list and vendor;
+    - Q100 (WhatsApp authentication template), Q97 (invoicing), Q98 (support@ inbox);
+    - the go-ahead for the emulator test and data reset;
+    - flipping the switch (`NEXT_PUBLIC_AUTH_MODE` / `NEXT_PUBLIC_DATA_MODE`).
+  - **To build:** shop gives up an accepted order → back to admin (user ruling); delivery code by WhatsApp once the template exists.
+
 - **2026-11-14 (late night): UI state audit written, not run yet** (branch `worktree-agent-a7b149b62f8cf6ab3`; coordinator: "write everything up and then do the tests one by one and mark them off", "dont do the tests just yet we can do them overnight").
   - Root cause of the four layout bugs the user found: `docs/research/ui-testing-gap-2026-11-14.md`. The matrix varied pages and preferences but no interaction states, cross-entity relations, data shapes or intermediate widths, and asserted presence, not geometry.
   - Harness `apps/web/e2e/state-audit/`: component model (65 components), deterministic pairwise generator, geometry assertions, hover/focus sweeps, data-shape stress, known-issue list. Config `apps/web/playwright.state-audit.config.ts`.
