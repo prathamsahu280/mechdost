@@ -98,7 +98,7 @@ text. The change itself is in `audit_log` (`pincode.*`, before/after) in the sam
   `admin_partner_warning_issued` (partnerKind, partnerId, warningId, reasonCode, counting, suggestPause),
   `admin_partner_warning_withdrawn` (partnerKind, partnerId, warningId). Codes, ids and counts only; notes never leave the
   database.
-- **Click ids:** `shop_order_given_up`, `admin_partner_warning_issued`, `admin_partner_warning_withdrawn`.
+- **Click ids:** `shop_order_give_up_open` (the "can't fulfil" button opens its form), `shop_order_given_up`, `admin_partner_warning_issued`, `admin_partner_warning_withdrawn`.
 
 ## Product comparison events (2026-11-13)
 

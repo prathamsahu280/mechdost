@@ -875,7 +875,7 @@ User 2026-11-15 ~01:00 IST: "go ahead and work on the 1,2,3,4,5,6" (6 = shop Wha
   - A fully refunded order's pending coin rewards are cancelled; a part refund keeps them. Cost low.
   - The customer sees "processing" (never "refunded") until Razorpay confirms; a declined or failed refund shows a support link. Cost low.
   - Approval SLA is the admin setting `refunds.approval_sla_hours` (default 24, city override), rule 8.
-  - The state audit lists the new screens (`ADM-REFUNDQ`, `ORD-REFUNDLINE`) but they are `test.fixme`: the screens exist only with real sign-in and the API; a real-API harness is the follow-up. Cost low (they stay unticked in the checklist).
+  - The state audit lists the new screens (`ADM-REFUNDQ`, `ORD-REFUNDLINE`) (renamed `API-ADM-REFUNDQ`, `API-ORD-REFUNDLINE` on 2026-11-15) and they now run in the API-mode audit (runbook § 9.7). Cost low (they stay unticked in the checklist).
 - **Not built** (spec 05): the ticket-side form for the payout destination, a finance action to settle an unsure refund by hand, requests for captured-after-close payments, the Overview tile and a staff alert channel, credit notes for refunds.
 
 ## 2026-11-15 — Customer account on the API: builder rulings
@@ -885,3 +885,9 @@ User 2026-11-15 ~01:00 IST: "go ahead and work on the 1,2,3,4,5,6" (6 = shop Wha
 - **No migration:** `users.language` and both tables already had everything needed.
 - **Defaults:** first address is the default shipping address; deleting the default leaves none until the customer picks one (checkout falls back to the first). Billing default exists in the API only (no UI yet).
 - **Map pin:** the API accepts `lat`/`lng` (stored as `location`); the form has no pin picker yet. Queued as a later improvement (map adapter).
+
+## 2026-11-15 — UI state audit covers navigation and real-sign-in screens
+
+- **Navigation is audited** like any component: header nav, tab bar, account and admin section bars, shop chips and footer links, per role, route, width (320 to 1920), language and theme, with a click-through walk (runbook ui-test-catalogue § 9.6). The section lists per build mode are unit-tested against `src/lib/sections.ts` so a new section cannot ship without a row.
+- **Real-sign-in screens are audited on a mocked API** (Q106 answered by implementation): a real-mode build in `.next-api`, a signed-in Firebase user seeded in the browser, and typed fixtures parsed with the shared Zod schemas; no emulator, no test switch in `src/`. Manual only, no CI job (the "Test runs and GitHub Actions minutes" ruling stands); whether to add API-mode rows to the per-push subset is Q108 (default: no).
+- Only production-file edits: `distDir` follows `NEXT_DIST_DIR` in `next.config.ts` (default `.next`, unchanged for the deployed image) and a `data-track="shop_order_give_up_open"` attribute on the give-up button (hard rule 9; spec 12 lists the id).

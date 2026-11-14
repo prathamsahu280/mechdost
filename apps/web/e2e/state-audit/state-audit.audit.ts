@@ -21,11 +21,9 @@ const cases = buildCases().filter(
     (tier !== 'core' || c.tier === 'core') && (only.length === 0 || only.some((p) => c.id.startsWith(p))),
 );
 
-// Real-API screens (refund queue, order refund line) have no demo version: listed, not run, until a real-API harness.
-for (const c of cases)
-  if (c.realApi) test.fixme(titleOf(c), () => undefined);
-  else
-    test(titleOf(c), async ({ page }, info) => {
-      test.setTimeout(Number(process.env.STATE_AUDIT_TIMEOUT ?? 90_000));
-      await runCase(page, c, info);
-    });
+// Real-API screens run under playwright.state-audit-api.config.ts (state-audit-api.audit.ts), never here.
+for (const c of cases.filter((x) => !x.realApi))
+  test(titleOf(c), async ({ page }, info) => {
+    test.setTimeout(Number(process.env.STATE_AUDIT_TIMEOUT ?? 90_000));
+    await runCase(page, c, info);
+  });

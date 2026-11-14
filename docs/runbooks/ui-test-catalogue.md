@@ -614,28 +614,18 @@ interaction states, cross-entity relations, data shapes or the widths between 39
 geometry (`docs/research/ui-testing-gap-2026-11-14.md`). The UI state audit models **components × dimensions**
 and measures boxes.
 
-| Part                       | Where                                                                                                                                                           |
-| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Component state model      | `apps/web/e2e/state-audit/model.ts` (67 components, their dimensions and values; `ADM-REFUNDQ` and `ORD-REFUNDLINE` are real-API screens: listed, `test.fixme`) |
-| Pairwise / cross generator | `apps/web/e2e/state-audit/pairwise.ts` (deterministic, no dependency, unit-tested)                                                                              |
-| Cases and ids              | `apps/web/e2e/state-audit/cases.ts` (`SHOP-CARD-017` …; chunks for the overnight run)                                                                           |
-| Geometry assertions        | `apps/web/e2e/state-audit/geometry.ts` (runs in the page)                                                                                                       |
-| Runner per case            | `apps/web/e2e/state-audit/harness.ts`; tests in `state-audit.audit.ts`                                                                                          |
-| Known, filed bugs          | `apps/web/e2e/state-audit/known-issues.ts` (annotations only with `STATE_AUDIT_KNOWN=allow`)                                                                    |
-| Config                     | `apps/web/playwright.state-audit.config.ts` (one Chromium project; not part of `pnpm e2e`)                                                                      |
-| Written checklist          | `docs/qa/ui-state-checklist.md` (1,844 items; one test each; ticked from the report)                                                                            |
-| Scripts                    | `apps/web/scripts/state-audit-checklist.mjs` (regenerate), `state-audit-tick.mjs` (tick), `state-audit-run.mjs` (overnight chunks)                              |
-| Part                       | Where                                                                                                                                                           |
-| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------                              |
-| Component state model      | `apps/web/e2e/state-audit/model.ts` (67 components, their dimensions and values)                                                                                |
-| Pairwise / cross generator | `apps/web/e2e/state-audit/pairwise.ts` (deterministic, no dependency, unit-tested)                                                                              |
-| Cases and ids              | `apps/web/e2e/state-audit/cases.ts` (`SHOP-CARD-017` …; chunks for the overnight run)                                                                           |
-| Geometry assertions        | `apps/web/e2e/state-audit/geometry.ts` (runs in the page)                                                                                                       |
-| Runner per case            | `apps/web/e2e/state-audit/harness.ts`; tests in `state-audit.audit.ts`                                                                                          |
-| Known, filed bugs          | `apps/web/e2e/state-audit/known-issues.ts` (annotations only with `STATE_AUDIT_KNOWN=allow`)                                                                    |
-| Config                     | `apps/web/playwright.state-audit.config.ts` (one Chromium project; not part of `pnpm e2e`)                                                                      |
-| Written checklist          | `docs/qa/ui-state-checklist.md` (1,795 items; one test each; ticked from the report)                                                                            |
-| Scripts                    | `apps/web/scripts/state-audit-checklist.mjs` (regenerate), `state-audit-tick.mjs` (tick), `state-audit-run.mjs` (overnight chunks)                              |
+| Part                       | Where                                                                                                                                                                        |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Component state model      | `apps/web/e2e/state-audit/model.ts` (74 demo-mode components, navigation included) and `model-api.ts` (12 real-sign-in components): dimensions and values                    |
+| Pairwise / cross generator | `apps/web/e2e/state-audit/pairwise.ts` (deterministic, no dependency, unit-tested)                                                                                           |
+| Cases and ids              | `apps/web/e2e/state-audit/cases.ts` (`SHOP-CARD-017` …; chunks A–G for the overnight run)                                                                                    |
+| Geometry assertions        | `apps/web/e2e/state-audit/geometry.ts` (runs in the page); navigation rules in `nav.ts` and `nav-run.ts`                                                                     |
+| Runner per case            | `apps/web/e2e/state-audit/harness.ts`; tests in `state-audit.audit.ts` (demo) and `state-audit-api.audit.ts` (API mode)                                                      |
+| API-mode fixture           | `apps/web/e2e/state-audit/api-mode/` (`session.ts`, `mock-api.ts`, `fixtures.ts`, `hooks.ts`), § 9.7                                                                         |
+| Known, filed bugs          | `apps/web/e2e/state-audit/known-issues.ts` (annotations only with `STATE_AUDIT_KNOWN=allow`)                                                                                 |
+| Config                     | `apps/web/playwright.state-audit.config.ts` (demo build, :3100) and `playwright.state-audit-api.config.ts` (real-mode build, :3101); neither is part of `pnpm e2e`           |
+| Written checklist          | `docs/qa/ui-state-checklist.md` (2,815 items; one test each; ticked from the report)                                                                                         |
+| Scripts                    | `apps/web/scripts/state-audit-checklist.mjs` (regenerate), `state-audit-tick.mjs` (tick), `state-audit-run.mjs` (overnight chunks), `state-audit-api-build.mjs` (real build) |
 
 ### 9.1 Dimensions
 
@@ -657,6 +647,10 @@ value one meaning (`harness.ts` `seedFor` / `prepare` / `interact`):
 | `open`        | closed, first, last, all                                                                                  | FAQ items, quick-details popover, assistant panel                                                                                   |
 | `data`        | empty, one, limit (10), long (very long Hindi text)                                                       | the demo customer's saved vehicles and addresses on `/account/vehicles` and `/account/addresses` (`customerWithSavedData`)          |
 | `form`        | clean, errors (submitted empty), filled                                                                   | forms on checkout, booking, partner application, support, sign-in, quotes                                                           |
+| `walk`        | no, yes                                                                                                   | navigation rows: `yes` clicks every item of the bar in turn and checks the page it opens (heading, no "not found", marker moved)    |
+| `section`     | the sections of the bar                                                                                   | route of the account and admin section bars (`NAV-ACCOUNT`, `NAV-ADMIN`, `API-NAV-*`)                                               |
+| `tab`         | shop, workshop, mechanic                                                                                  | `ADM-PARTNERS-TABS`: the partner tab clicked first                                                                                  |
+| API fixtures  | `refund`, `shop`, `orders`, `warnings`, `giveup`, `panel`, `queue`, `errors`, `analytics`, … (§ 9.7)      | which typed answer the mocked API gives (`api-mode/fixtures.ts`)                                                                    |
 | `consent`     | decided, open                                                                                             | banner open = no `mechdost-consent`                                                                                                 |
 
 Strategy: pairwise (all pairs) for every component; a **full cross** for the high-risk ones (card × compare ×
@@ -700,11 +694,17 @@ node apps/web/scripts/state-audit-run.mjs all --date 2026-11-15
 | A     | CHR-, HOME-                                         | 342   |
 | B     | SHOP-, STEP-                                        | 444   |
 | C     | PDP-, CMP-, CART-, CHK-                             | 296   |
-| D     | ORD-, SR-, QT-, ACC-, WS-, PTN-, SUP-, LOGIN-, POL- | 377   |
-| E     | PRT-, ADM-                                          | 272   |
+| D     | ORD-, SR-, QT-, ACC-, WS-, PTN-, SUP-, LOGIN-, POL- | 441   |
+| E     | PRT-, ADM- (incl. `ADM-PARTNERS-TABS`)              | 297   |
+| F     | NAV- (navigation, demo build)                       | 289   |
+| G     | API- (real sign-in, mocked API, § 9.7)              | 706   |
+
+Chunks A–F use the demo build and `playwright.state-audit.config.ts`; `all` runs those. Chunk G needs the real-mode
+build and its own config: build it with `node scripts/state-audit-api-build.mjs` (from `apps/web`), then run
+`node apps/web/scripts/state-audit-run.mjs G` (or `all --api` for everything). Details in § 9.7.
 
 Expected duration: about 6–8 s per test (load, settle, a scrolling scan, up to 16 hovers and 16 focus stops,
-axe on a quarter of the tests), so **3–4 hours for all 1,795** with one worker. Each chunk takes 30–60 minutes
+axe on a quarter of the tests), so **about 4–5 hours for chunks A–F (2,109 items) and about 1.5 hours for chunk G (706)** with one worker. Each chunk takes 30–60 minutes
 and is ticked as soon as it ends. Logs, JSON reports and screenshots are kept in
 `apps/web/test-results/state-audit-<date>/<chunk>/`, which is git-ignored. The checklist links point there.
 
@@ -724,7 +724,7 @@ After the run:
 
 ### 9.4 CI
 
-- **Every push** (`ci.yml` job `e2e-demo`, step "UI state audit (core subset)"): the 84 `core` items, about
+- **Every push** (`ci.yml` job `e2e-demo`, step "UI state audit (core subset)"): the 92 `core` items (84 + 8 navigation rows), about
   5 minutes on two workers, with `STATE_AUDIT_KNOWN=allow`. The step is **report-only**
   (`continue-on-error`) until the first overnight run is triaged (Q101), then it blocks.
 - **Full run** (user 2026-11-15: manual only, no nightly schedule — Actions minutes on the private repo): normally on the development PC with `node apps/web/scripts/state-audit-run.mjs all --date <date>` (§ 9.3, early morning, one browser); `.github/workflows/ui-state-audit.yml` can be started by hand on GitHub (id prefixes optional, ~200–240 min). Every item.
@@ -743,12 +743,81 @@ After the run:
    renumbers that component's items, and they start unticked.
 4. Run the new rows: `STATE_AUDIT_ONLY=<CODE>-`.
 
-### 9.6 Real-API-mode views (2026-11-15)
+### 9.6 Navigation rows (2026-11-15)
 
-The harness runs in demo mode, so views that only exist with real sign-in cannot be in `COMPONENTS` (they would fail
-`present`). They are listed in `REAL_MODE_VIEWS` (`model.ts`) with the navigation that reaches each and the states an
-API-mode audit must render; `test/state-audit-real-views.test.ts` checks the files and that their text comes from the
-locale namespace. Current entries (shop give-up, shop warnings, admin warnings, admin reroute-queue give-up line):
-`API-SHOP-GIVEUP`, `API-SHOP-WARNINGS`, `API-ADMIN-WARNINGS`, `API-ADMIN-GIVEUP-QUEUE`. Turning them into runnable
-cases needs an API-mode run on a seeded emulator database (queued as Q106); until then they are covered by the DB and
-API suites and the Hindi gate.
+User, 2026-11-15: "update the states render test for the navigation too so those tests dont miss out the new
+features". Navigation is modelled as components with the new check `nav` (`nav.ts`, `nav-run.ts`):
+
+| Row                                | Surface                                                                       | Dimensions                                                              |
+| ---------------------------------- | ----------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `NAV-HEADER`                       | header nav (≥ 1024 px): current item, hover, focus, the account link per role | width 1024–1920 × role (cross), route (incl. each portal), theme, en/hi |
+| `NAV-TABBAR`                       | bottom tab bar (< 1024 px): long Hindi labels, cart badge                     | width 320–1023 × language (cross), route, role, theme, cart             |
+| `NAV-ACCOUNT`, `NAV-ADMIN`         | section bars (scroll on phones, a column from 1024 px)                        | all 8 widths × every section (cross), theme, language                   |
+| `NAV-CATEGORY`, `NAV-FOOTER`       | shop category chips, footer links                                             | pairwise; `links` kind: no current marker, only the walk applies        |
+| `API-NAV-ADMIN`, `API-NAV-ACCOUNT` | the same bars in a real-sign-in build (Analytics, Refunds, Errors shown)      | § 9.7                                                                   |
+
+What `nav` asserts (on top of the base geometry checks, which also run while each item is hovered and focused):
+
+1. exactly one item carries `aria-current="page"` when the route is a nav target, and none when it is not
+   (`currentHref`: longest path match, home only exact, locale prefix ignored);
+2. every target is at least 24 × 24 px (WCAG 2.5.8);
+3. a bar wider than its box scrolls (`overflow-x: auto`), and the current item is in view in it;
+4. with `walk=yes`, each item is clicked in turn: the URL is the item's path (a sign-in redirect is correct for a
+   signed-out visitor), `main h1` exists and is not "not found", and the bar's current marker moved to the item.
+
+The sections each bar shows per build mode come from `src/lib/sections.ts`. The demo rows list the demo build's
+sections, the `API-NAV-*` rows the real build's (`REAL_SIGN_IN_ONLY`, reviews and quotes by mode).
+`test/state-audit-sections.test.ts` loads `sections.ts` once per build mode (demo, real, the two mixed builds) and
+fails if either model list drifts, so a new section cannot be added without a row.
+
+### 9.7 API-mode audit: real-sign-in screens on a mocked API (2026-11-15, Q106)
+
+Screens compiled only with `NEXT_PUBLIC_AUTH_MODE=firebase` and `NEXT_PUBLIC_DATA_MODE=api` (refund queue, order
+refund line, shop portal on the API, admin shops, reroute queue, errors, analytics, coins, reviews, bulk-quote desk,
+and the real-mode section bars) have no demo version. They run in a second audit configuration. Rows are in
+`model-api.ts` (ids `API-…`, chunk G), the checklist lists them with the others.
+
+How it works, with no test switch in the shipped code:
+
+1. **Own build.** `node scripts/state-audit-api-build.mjs` (from `apps/web`) runs `next build` with the two real-mode
+   switches, a **fake** Firebase key (`audit-fake-api-key`, project `demo-audit`) and the API origin
+   `http://127.0.0.1:4100`, into `.next-api` (`NEXT_DIST_DIR`, the only change in `next.config.ts`; default `.next`).
+   The demo build stays untouched. One build at a time, about 3 GB free RAM.
+2. **Signed in.** The screens read two things after a real sign-in: the browser session the portal gates use (seeded
+   exactly like the demo audit) and Firebase's persisted user, from which every `/v1` call gets its bearer token.
+   `api-mode/session.ts` writes that user into `localStorage` in the SDK's own format with an unsigned far-future token
+   and answers the SDK's two network calls (`accounts:lookup`, token refresh) with `page.route`. No emulator, no Java.
+3. **Mocked API.** `api-mode/mock-api.ts` answers every request to the API origin from `api-mode/fixtures.ts`.
+   Fixtures are typed with the shared DTOs (`pnpm typecheck` breaks when a contract changes) and every 2xx body is
+   parsed with the same Zod schema the screen uses: a fixture that drifts **fails the case** (`api-mock` finding) and
+   `test/state-audit-api-fixtures.test.ts` fails in `pnpm check`. A request nobody mocked is a P0 finding, except on
+   navigation walks, where other screens' calls answer `501 NOT_MOCKED` and "Failed to load resource" console lines for
+   intended error statuses are not findings.
+4. **State per row.** The state keys choose the fixture (for example `refund=approved-cod`, `orders=confirmed`,
+   `warnings=threshold`, `panel=warnings`, `errors=one-down`) and `api-mode/hooks.ts` opens what the row names (a refund's
+   detail, a shop and its tab, the give-up form, then the shared form step).
+
+Why it cannot leak into production: nothing in `src/` knows about the mock. The fake key and API origin are only in the
+audit build's environment; the production image is built by the Docker workflow from `.env`/Secret Manager values, never
+from this script; the fixtures and the `page.route` hooks live in `e2e/`, which no image copies; a `.next-api` folder is
+git- and Docker-ignored. The mock cannot make a real API accept a request: the token is unsigned and the API is never
+contacted (the abort-all-other-origins route stays on). The one production-file edit besides `next.config.ts` is a
+`data-track="shop_order_give_up_open"` attribute on the give-up button (it also logs the click, hard rule 9).
+
+Run it (manual only, decision 2026-11-15 "Test runs and GitHub Actions minutes"; no CI job):
+
+```bash
+cd apps/web && node scripts/state-audit-api-build.mjs     # once, or after a web change
+cd ../.. && node apps/web/scripts/state-audit-run.mjs G    # ticks the checklist (or: all --api)
+# one component: STATE_AUDIT_ONLY=API-ADM-REFUNDQ pnpm --filter @mechdost/web exec playwright test -c playwright.state-audit-api.config.ts
+```
+
+Adding a real-mode screen: add its component to `model-api.ts`, its endpoints to `fixtures.ts` (`mocksFor`), any
+opening step to `hooks.ts`, run `node apps/web/scripts/state-audit-checklist.mjs`. `REAL_MODE_VIEWS` in `model.ts` keeps
+the give-up and warnings view list (files and locale namespace are unit-tested); its rows are now `API-SHOP-PORTAL`,
+`API-ADM-SHOPS` and `API-ADM-QUEUE`.
+
+Not covered yet (listed for the next round): the shop's price requests and agreement actions (read-only here), admin
+Settings → PIN codes (`ServiceAreaApi` shares the page with the settings form calls), applications and invites on the
+API, the customer's delivery-PIN checker and review form, and server-rendered catalogue pages in a real build (their
+data is read by the Node server, which a browser route cannot intercept).

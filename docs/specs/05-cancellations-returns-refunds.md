@@ -134,4 +134,4 @@ Only after delivery (the cash was collected). Staff enter the customer's UPI id 
 - **Captured-after-close payments** (`payment.captured_needs_refund`) still only audit; they do not create a request yet.
 - The Overview tile and a staff notification channel for `refund.alert.*` (today: audit rows, error logs `razorpay_webhook_refund_*`, `refunds_need_reconciliation`, and the "Needs checking" view).
 - Credit notes for refunds of invoiced items (the series exists in the spec; no refund-to-credit-note link yet).
-- A real-API harness for the state audit (`ADM-REFUNDQ`, `ORD-REFUNDLINE` are listed and `test.fixme`).
+- State audit rows for the refund screens: `API-ADM-REFUNDQ` and `API-ORD-REFUNDLINE` run in the API-mode audit (mocked API, runbook ui-test-catalogue § 9.7, 2026-11-15).

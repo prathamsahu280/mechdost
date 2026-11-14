@@ -166,6 +166,8 @@ which are automated. Add new classes at the end of the relevant section.
   fixture times computed from one `now`.
 - **N8 · Demo store not scoped to the account** — orders, requests and quotes show for whoever is signed in on
   this browser → role-leak e2e asserts guards, and the API suites own the real isolation.
+- **N9 · Navigation never walked** — the current marker stuck on the old item after a click, a new section missing from a bar in one build mode, a bar that overflows with no scroll at 320 px or with long Hindi labels, a tab bar item under 24 px, a link that lands on a "not found" or the wrong page → the audit models every bar as a component (`NAV-*`, check `nav`, `walk=yes` clicks each item); the model lists are unit-tested against `src/lib/sections.ts` for demo, real and both mixed builds.
+- **N10 · Real-sign-in screens have no demo twin** — a screen compiled only with `AUTH_MODE=firebase` / `DATA_MODE=api` is invisible to the demo audit and rots (refund queue, give-up, errors, analytics were all unlisted for days) → every such screen needs an `API-…` row in `model-api.ts` with typed fixtures; fixtures must parse with the same shared Zod schema as the screen (a friendlier fixture than the API hides a contract bug), and an unmocked API call fails the case.
 
 ## M. Test-suite hygiene
 
