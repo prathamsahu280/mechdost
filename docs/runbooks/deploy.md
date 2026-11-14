@@ -310,7 +310,14 @@ Items decided to happen before going public; tick them off here.
    - Settings → Authorized domains includes `mechdost.com`.
    - Phone sign-in is enabled.
    - SMS region policy is set to India only (security baseline).
-3. **Online payments (optional at launch):** set `NEXT_PUBLIC_RAZORPAY_KEY_ID` (public key id). Without it, checkout offers cash on delivery only. Test keys take test payments only.
+3. **Before real customers: Razorpay live.**
+   - Remove `RAZORPAY_ALLOW_TEST_KEYS` from `/opt/mechdost/.env`.
+   - Set the live `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET`.
+   - Add a live-mode webhook with its secret in `RAZORPAY_WEBHOOK_SECRET`.
+   - Set `NEXT_PUBLIC_RAZORPAY_KEY_ID` to the live key id.
+   - Redeploy.
+   - Test keys are allowed only during pre-launch testing (payments runbook).
+     **Online payments:** set `NEXT_PUBLIC_RAZORPAY_KEY_ID` (public key id). Without it, checkout offers cash on delivery only. Test keys take test payments only.
 4. **Database migrations applied** (§ 6). 0044 was applied 2026-11-14.
 5. **Flip the switches:**
    - `gh variable set NEXT_PUBLIC_AUTH_MODE --body firebase`
