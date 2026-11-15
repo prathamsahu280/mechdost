@@ -22,16 +22,16 @@ export function BrandMark() {
     >
       <span
         aria-hidden="true"
-        className="font-heading text-[30px] leading-none font-extrabold text-accent min-[380px]:text-[34px] tab:text-[40px]"
+        className="font-heading text-[30px] leading-none font-extrabold text-accent min-[460px]:text-[34px] tab:text-[40px]"
       >
         m<span className="align-top text-[22px] tab:text-[26px]">↗</span>
       </span>
       <span className="flex flex-col">
-        {/* A little smaller under 380 px so logo, language, account and cart fit a 360 px phone (QA 2026-11-14). */}
-        <span className="font-heading text-[19px] leading-none font-extrabold tracking-[-0.04em] text-ink min-[380px]:text-[21px] tab:text-[24px]">
+        {/* A little smaller under 460 px so logo, language, account and cart fit a 360 px phone (QA 2026-11-14). */}
+        <span className="font-heading text-[19px] leading-none font-extrabold tracking-[-0.04em] text-ink min-[460px]:text-[21px] tab:text-[24px]">
           {t('brand')}
         </span>
-        <span className="eyebrow mt-1.5 hidden text-[7px] whitespace-nowrap text-ink sm:block nav:hidden xl:block tab:text-[8px]">
+        <span className="eyebrow mt-1.5 hidden text-[7px] whitespace-nowrap text-ink tab:block nav:hidden xl:block tab:text-[8px]">
           {t('tagline')}
         </span>
       </span>
@@ -93,7 +93,7 @@ export function Header({ navItems }: { navItems: readonly NavItem[] }) {
   };
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-surface/95 shadow-header backdrop-blur">
-      <div className="mx-auto flex min-h-[72px] max-w-[1600px] items-center justify-between gap-1 px-[5%] py-3 sm:gap-2 nav:min-h-[84px]">
+      <div className="mx-auto flex min-h-[72px] max-w-[1600px] items-center justify-between gap-1 px-[5%] py-3 nav:px-6 xl:px-[5%] sm:gap-2 nav:min-h-[84px]">
         <BrandMark />
         <div className="flex shrink-0 items-center gap-0.5 min-[440px]:gap-1 sm:gap-2">
           <NavLinks label={t('label')} items={navItems} />

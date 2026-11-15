@@ -75,7 +75,7 @@ export default function BellController({
           if (!open) track('bell_opened', { unread: Math.min(feed.unread, 100) });
           setOpen((o) => !o);
         }}
-        className="press relative inline-flex size-11 items-center justify-center rounded-lg text-ink hover:bg-pill"
+        className="press relative inline-flex size-10 min-[440px]:size-11 items-center justify-center rounded-lg text-ink hover:bg-pill"
       >
         <span aria-hidden="true" className="text-[18px] leading-none">
           {UI_EMOJI.bell}

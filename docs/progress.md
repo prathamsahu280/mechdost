@@ -394,3 +394,5 @@ only; item 3 verified as a checker issue (header 85 px max < 96 px scroll paddin
 (en/hi, signed in/out, cart 99), re-run the audit rows. Rulings: decisions 2026-11-16.
 
 - **2026-11-16: audit batch 2a built** (branch worktree-agent-a301c32bdb9137cb2, not merged): `ScrollRegion` for analytics/demand/workshop tables, refund list markup, analytics KPI tiles shrink at 320 px, cart label from 560 px, UPI example in Hindi. Guard: `test/audit-batch-2a.test.ts` (8 tests). Not run: Playwright, next build. Coordinator: re-run rows API-ADM-ANALYTICS/COMPANY/DEMAND, API-ORD-REFUNDLINE, account rows (header hscroll at 390 hi may remain: `components/site/header.tsx` belongs to batch 2B). Rulings: decisions 2026-11-16.
+
+- **2026-11-16: signed-in header fit (batch 2a, coordinator follow-up):** account name from xl, cart label from 560 px, compact targets under 440 px, tighter 1024-1279 px row; source guard `test/signed-in-header-fit.test.ts` (5 tests, seen red first) and 18 e2e cases written in `e2e/chrome-fit.spec.ts` (not run). Coordinator: build, run chrome-fit, re-run the account/service/order rows.

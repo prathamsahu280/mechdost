@@ -38,7 +38,7 @@ export function CartPill({
         href={href}
         data-track="header_cart"
         title={label}
-        className="press inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-pill border border-line-card bg-pill px-3 font-bold text-[13px] text-ink min-[440px]:px-4"
+        className="press inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-pill border border-line-card bg-pill px-2.5 font-bold text-[13px] text-ink min-[440px]:px-4"
       >
         <span aria-hidden="true" className="text-[18px] leading-none">
           {UI_EMOJI.cart}

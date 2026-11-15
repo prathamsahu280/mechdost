@@ -91,3 +91,82 @@ test.describe('privacy banner leaves the last controls reachable', () => {
         expect(l.y + l.height, 'the assistant button sits above the banner').toBeLessThanOrEqual(b?.y ?? 0);
     });
 });
+
+// Signed-in header (audit 2026-11-16): the bell makes the row wider; it must fit from 320 to 1280 px for every role.
+// Portals hide the cart pill, so there the check is the sideways scroll and the right-most header control.
+const SIGNED_IN_ROLES = [
+  { role: 'customer', phone: '9876543210', home: '/account', cart: true },
+  { role: 'shop', phone: '9000000001', home: '/partner/shop', cart: false },
+  { role: 'workshop', phone: '9000000002', home: '/partner/workshop', cart: false },
+] as const;
+
+test.describe('signed-in header fits at phone, tablet and desktop widths', () => {
+  test.use({ storageState: { cookies: [], origins: [] } });
+  test.skip(({ isMobile }) => isMobile, 'sets its own widths');
+
+  for (const { role, phone, home, cart } of SIGNED_IN_ROLES)
+    for (const prefix of ['', '/hi'])
+      for (const width of [320, 390, 480, 768, 1024, 1280])
+        test(`${role}, ${prefix || '/'} at ${String(width)} px${cart ? ', cart 99' : ''}`, async ({
+          page,
+        }) => {
+          await page.setViewportSize({ width, height: 900 });
+          await page.goto(`${prefix}/login?next=${encodeURIComponent(`${prefix}${home}`)}`);
+          await page.locator('input[name="identifier"], input[autocomplete="username"]').first().fill(phone);
+          await page.locator('input[type="password"]').first().fill('Raipur@2026');
+          await page.locator('form button[type="submit"]').first().click();
+          await expect(page).toHaveURL(new RegExp(home));
+          if (cart) await seedCart(page, 99);
+          await page.goto(prefix || '/');
+          await page.evaluate(() => document.fonts.ready);
+          const m = await page.evaluate(() => {
+            const right = [...document.querySelectorAll('header a, header button')]
+              .map((el) => el.getBoundingClientRect())
+              .filter((r) => r.width > 0)
+              .reduce((max, r) => Math.max(max, r.right), 0);
+            return {
+              overflow: document.documentElement.scrollWidth - window.innerWidth,
+              right,
+              width: window.innerWidth,
+              account: !!document.querySelector('[data-track="header_account"]'),
+            };
+          });
+          expect(m.account, 'the account entry is in the header').toBe(true);
+          expect(m.overflow, 'the page scrolls sideways').toBeLessThanOrEqual(0);
+          expect(m.right, 'a header control sticks out').toBeLessThanOrEqual(m.width);
+        });
+});
+
+// Account section menu (audit 2026-11-16, API-NAV-ACCOUNT): the strip scrolls itself; the page never scrolls sideways.
+test.describe('account menu stays inside the page', () => {
+  test.use({ storageState: { cookies: [], origins: [] } });
+  test.skip(({ isMobile }) => isMobile, 'sets its own widths');
+
+  for (const prefix of ['', '/hi'])
+    for (const width of [320, 390, 480, 768])
+      test(`/account, ${prefix || '/'} at ${String(width)} px`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 });
+        await page.goto(`${prefix}/login?next=${encodeURIComponent(`${prefix}/account`)}`);
+        await page
+          .locator('input[name="identifier"], input[autocomplete="username"]')
+          .first()
+          .fill('9876543210');
+        await page.locator('input[type="password"]').first().fill('Raipur@2026');
+        await page.locator('form button[type="submit"]').first().click();
+        await expect(page).toHaveURL(/\/account/);
+        await page.evaluate(() => document.fonts.ready);
+        const m = await page.evaluate(() => {
+          const nav = document.querySelector<HTMLElement>('main nav[aria-label]');
+          const cs = nav ? getComputedStyle(nav) : null;
+          return {
+            overflow: document.documentElement.scrollWidth - window.innerWidth,
+            navScrolls: cs?.overflowX === 'auto' || cs?.overflowX === 'scroll',
+            navRight: nav?.getBoundingClientRect().right ?? 0,
+            width: window.innerWidth,
+          };
+        });
+        expect(m.overflow, 'the page scrolls sideways').toBeLessThanOrEqual(0);
+        expect(m.navScrolls, 'the menu is its own scroll box').toBe(true);
+        expect(m.navRight, 'the menu box sticks out of the page').toBeLessThanOrEqual(m.width);
+      });
+});

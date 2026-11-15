@@ -14,7 +14,8 @@ describe('header at 1024-1279 px', () => {
   it('shows the cart and account as icons only until xl', () => {
     expect(src('components/commerce/cart-pill.tsx')).toMatch(/nav:sr-only xl:not-sr-only/);
     const account = src('components/auth/account-link.tsx');
-    expect(account.match(/nav:sr-only xl:not-sr-only/g)?.length).toBe(2);
+    expect(account.match(/nav:sr-only xl:not-sr-only/g)?.length).toBe(1);
+    expect(account).toContain('truncate xl:not-sr-only');
   });
 
   it('gives the icon-only cart and sign-in a hover title (sighted users still get the word)', () => {
@@ -22,8 +23,8 @@ describe('header at 1024-1279 px', () => {
     expect(src('components/auth/account-link.tsx')).toMatch(/title=\{signIn\}/);
   });
 
-  it('shows the brand tagline from xl only', () => {
-    expect(src('components/site/header.tsx')).toMatch(/sm:block nav:hidden xl:block/);
+  it('shows the brand tagline from the tablet width, not at 1024-1279 px', () => {
+    expect(src('components/site/header.tsx')).toMatch(/tab:block nav:hidden xl:block/);
   });
 });
 
