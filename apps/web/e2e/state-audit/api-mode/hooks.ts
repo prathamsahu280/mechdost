@@ -7,6 +7,7 @@ import type { Page } from '@playwright/test';
 import type { AuditCase } from '../cases.ts';
 import type { ApiHooks } from '../harness.ts';
 import { auditMocksFor } from './baseline-fixtures.ts';
+import { clickIfPresent } from './hook-click.ts';
 import { installApi } from './mock-api.ts';
 import { mockFirebase, persistedUser } from './session.ts';
 
@@ -54,10 +55,11 @@ async function prepareApi(page: Page, c: AuditCase): Promise<string[]> {
         .first()
         .waitFor({ timeout: 5_000 })
         .catch(() => notes.push('shop detail did not load'));
-      await main
-        .locator(`[role="tab"][id$="-tab-${c.state.panel}"]`)
-        .click()
-        .catch(() => notes.push('panel tab not found'));
+      await clickIfPresent(
+        main.locator(`[role="tab"][id$="-tab-${c.state.panel}"]`),
+        notes,
+        'panel tab not found',
+      );
       await settleApi(page);
     }
   }
@@ -69,8 +71,13 @@ async function prepareApi(page: Page, c: AuditCase): Promise<string[]> {
       if ((await remove.count()) === 0) notes.push('no role to remove');
       else await remove.click();
     } else {
-      await section.locator('button').first().click();
-      if (c.state.form === 'give-error') await section.locator('form button[type="submit"]').click();
+      const opened = await clickIfPresent(section.locator('button'), notes, 'no give-role button');
+      if (opened && c.state.form === 'give-error')
+        await clickIfPresent(
+          section.locator('form button[type="submit"]:visible:enabled'),
+          notes,
+          'no enabled submit in the give-role form',
+        );
     }
     await settleApi(page);
   }
@@ -129,7 +136,7 @@ async function prepareApi(page: Page, c: AuditCase): Promise<string[]> {
   if (c.code === 'API-ADM-POLICIES' && c.state.form && c.state.form !== 'closed') {
     const section = main.locator('section[aria-labelledby="policies-title"]');
     if (c.state.policies === 'none') {
-      await section.locator('button').first().click();
+      await clickIfPresent(section.locator('button'), notes, 'no button to start from the built-in text');
       await main
         .locator('button[aria-pressed]')
         .first()
@@ -137,8 +144,14 @@ async function prepareApi(page: Page, c: AuditCase): Promise<string[]> {
         .catch(() => notes.push('the editor did not open from the built-in text'));
     }
     if (c.state.policies !== 'error') {
-      if (c.state.form === 'preview') await main.locator('button[aria-pressed]').first().click();
-      else await section.locator('section[aria-labelledby$="-history"] li button').first().click();
+      if (c.state.form === 'preview')
+        await clickIfPresent(main.locator('button[aria-pressed]'), notes, 'no preview toggle');
+      else
+        await clickIfPresent(
+          section.locator('section[aria-labelledby$="-history"] li button'),
+          notes,
+          'no version in the history to restore (nothing published)',
+        );
     }
     await settleApi(page);
   }

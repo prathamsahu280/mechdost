@@ -704,7 +704,18 @@ export async function auditDom(opts: DomAuditOptions): Promise<Finding[]> {
                 null,
               );
               // The foot, not the top: a button that wraps to two lines is taller but still sits on the card foot.
-              return last?.getBoundingClientRect().bottom;
+              // A panel around the last control that ends with it (the open give-up form, `p-3`) counts as the
+              // foot: same walk as `footBottom`.
+              if (!last) return undefined;
+              let foot = last.getBoundingClientRect().bottom;
+              for (let a = last.parentElement; a && a !== el; a = a.parentElement) {
+                const cs = getComputedStyle(a);
+                const ab = a.getBoundingClientRect().bottom;
+                const inner = foot + parseFloat(cs.paddingBottom) + parseFloat(cs.borderBottomWidth);
+                if (Math.abs(ab - inner) > 1) break;
+                foot = ab;
+              }
+              return foot;
             })
             .filter((t): t is number => t !== undefined);
           // Inner rows (user report 2026-11-15: prices and "In stock" at different heights while the buttons lined
@@ -758,9 +769,33 @@ export function behindOpenLayer(node: Element): boolean {
   const cy = (r.top + r.bottom) / 2;
   return layers.some((m) => {
     if (m.contains(node)) return false;
+    // A modal dialog's ::backdrop covers the whole viewport and belongs to the dialog: nothing outside it is reachable.
+    if (m.matches(':modal')) return true;
     const b = m.getBoundingClientRect();
     return cx >= b.left && cx <= b.right && cy >= b.top && cy <= b.bottom;
   });
+}
+
+/** One ancestor between a card's last control and the card, as `footBottom` reads it. */
+export interface FootAncestor {
+  bottom: number;
+  paddingBottom: number;
+  borderBottom: number;
+}
+
+/**
+ * The foot of a card's action area: the bottom of its last control, or of the outermost panel around it that ends
+ * with that control (the padding and border of a panel are part of the foot, not a misalignment). `ancestors` run
+ * from the control's parent up to the card's child. Climbing stops at an ancestor with anything after the control.
+ * `auditDom` applies the same walk inline (it is serialised into the page and cannot import).
+ */
+export function footBottom(controlBottom: number, ancestors: readonly FootAncestor[]): number {
+  let foot = controlBottom;
+  for (const a of ancestors) {
+    if (Math.abs(a.bottom - (foot + a.paddingBottom + a.borderBottom)) > 1) break;
+    foot = a.bottom;
+  }
+  return foot;
 }
 
 /** What the overlap rule knows about one of two overlapping items (see `insetOverlapAllowed`). */

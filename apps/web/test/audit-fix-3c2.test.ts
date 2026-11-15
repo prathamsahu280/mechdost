@@ -24,7 +24,8 @@ describe('shop availability card (320 px)', () => {
 describe('audit checker truth', () => {
   it('aligns action rows by the card foot', () => {
     const g = read('e2e/state-audit/geometry.ts');
-    expect(g).toMatch(/return last\?\.getBoundingClientRect\(\)\.bottom;/);
+    // The foot is the last control's bottom, widened to a panel that ends with it (batch 3c-4, `footBottom`).
+    expect(g).toMatch(/let foot = last\.getBoundingClientRect\(\)\.bottom;/);
   });
   it('presses enabled submit buttons only, with a short timeout', () => {
     const h = read('e2e/state-audit/harness.ts');

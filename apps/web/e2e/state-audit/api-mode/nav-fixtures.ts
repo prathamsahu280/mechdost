@@ -3,6 +3,7 @@
  * nothing waiting, no coins, no applications. Every body carries its shared schema (hard rule 4). A section row's
  * own mock is listed before these (`auditMocksFor`), so a row that cares about a screen keeps its own answer.
  */
+import { NotificationTemplateList, WhatsAppUsage } from '@mechdost/shared/admin-config-api';
 import { CoinLedgerDto, MyCoinsDto } from '@mechdost/shared/coins-api';
 import { NoticePreferencesViewDto } from '@mechdost/shared/notice-api';
 import { ApplicationPage } from '@mechdost/shared/partner-api';
@@ -18,6 +19,35 @@ export function navQuietMocks(): Mock[] {
       path: /^\/admin\/partner-applications$/,
       schema: ApplicationPage,
       reply: (): Reply => ({ body: { items: [], nextCursor: null } satisfies Dto<typeof ApplicationPage> }),
+    },
+    {
+      method: 'GET',
+      path: /^\/admin\/notifications\/templates$/,
+      schema: NotificationTemplateList,
+      reply: (): Reply => ({
+        body: { templates: [], whatsappCatalogue: [], whatsappStatusSyncedAt: null } satisfies Dto<
+          typeof NotificationTemplateList
+        >,
+      }),
+    },
+    {
+      method: 'GET',
+      path: /^\/admin\/notifications\/whatsapp$/,
+      schema: WhatsAppUsage,
+      reply: (): Reply => ({
+        body: {
+          budgetPaise: null,
+          budgetVersion: null,
+          monthStart: '2026-11-01',
+          sent: 0,
+          delivered: 0,
+          read: 0,
+          failed: 0,
+          costPaise: 0,
+          overBudget: false,
+          byCategory: [],
+        } satisfies Dto<typeof WhatsAppUsage>,
+      }),
     },
     {
       method: 'GET',

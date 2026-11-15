@@ -30,6 +30,7 @@ import {
 } from './geometry.ts';
 import { isBlockedOriginNoise } from './console-noise.ts';
 import { dismissCheck } from './dismiss.ts';
+import { filledFieldValue } from './fill-values.ts';
 import { echoedWords, withoutEcho } from './hindi-echo.ts';
 import { knownIssueFor } from './known-issues.ts';
 import { navCheck } from './nav-run.ts';
@@ -234,17 +235,8 @@ async function prepare(page: Page, c: AuditCase): Promise<string[]> {
         const type = (await f.getAttribute('type')) ?? 'text';
         const name =
           `${(await f.getAttribute('name')) ?? ''} ${(await f.getAttribute('id')) ?? ''}`.toLowerCase();
-        const value =
-          type === 'tel' || /phone|mobile/.test(name)
-            ? '9876543210'
-            : type === 'email'
-              ? 'ravi.sahu@example.com'
-              : name.includes('pin')
-                ? '492001'
-                : name.includes('gstin')
-                  ? '22ABVCS4888H1ZL'
-                  : 'Plot 14, Near Hanuman Mandir, Shankar Nagar Main Road';
-        await f.fill(value).catch(() => notes.push(`could not fill field ${String(i)}`));
+        const value = filledFieldValue(type, name, c.locale);
+        await f.fill(value, { timeout: 3_000 }).catch(() => notes.push(`could not fill field ${String(i)}`));
       }
     } else {
       const submit = root.locator(SUBMIT_SELECTOR).first();

@@ -26,6 +26,8 @@ describe('navigation rows answer every call of the sections they open (batch 3c-
     '/admin/exports/options',
     '/admin/overview',
     '/admin/shops',
+    '/admin/notifications/templates',
+    '/admin/notifications/whatsapp',
     '/support/tickets',
   ];
   const accountGets = [
@@ -60,7 +62,7 @@ describe('navigation rows answer every call of the sections they open (batch 3c-
           if ((reply?.status ?? 200) >= 400) continue;
           expect(() => mock?.schema?.parse(reply?.body), `${c.id} ${path}`).not.toThrow();
         }
-    });
+    }, 30_000);
 
   it('API-ADM-PHOTOS: no English product name on /hi, in the queue or the product list', () => {
     const hi = apiCases.filter((x) => x.code === 'API-ADM-PHOTOS' && x.locale === 'hi');
