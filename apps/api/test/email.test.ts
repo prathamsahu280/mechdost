@@ -152,7 +152,8 @@ describe('email adapter (Resend)', () => {
     const body = JSON.parse(resend.calls[0]!.init.body as string) as { from: string; html: string };
     expect(body.from).toBe('MechDost Billing <billing@mechdost.com>');
     expect(body.html).toContain('&lt;img src=x&gt;');
-    expect(body.html).not.toContain('<img');
+    // The injected value never appears raw (the header's own logo <img> is fine since 2026-11-16).
+    expect(body.html).not.toContain('<img src=x>');
   });
 
   describe('the "genuine parts" footer line on order emails (design 2026-11-15)', () => {
