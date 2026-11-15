@@ -104,6 +104,25 @@ describe('email adapter (Resend)', () => {
     expect(body.html.replace(/href="[^"]*"/g, '')).not.toContain('tok_0123456789');
   });
 
+  it('the grievance officer from Company details wins over the env value; a failed or empty load falls back to it', async () => {
+    const config = {
+      apiKey: KEY,
+      domain: 'mechdost.com',
+      webBaseUrl: 'https://mechdost.com',
+      grievanceContact: 'env-grievance@mechdost.com',
+    };
+    const textFor = async (loadGrievanceContact: () => Promise<string | null>) => {
+      const resend = fakeResend();
+      await createEmailAdapter(config, { fetchImpl: resend.fetchImpl, loadGrievanceContact }).send(row());
+      return (JSON.parse(resend.calls[0]!.init.body as string) as { text: string }).text;
+    };
+    const fromSetting = await textFor(() => Promise.resolve('Asha Rao · g@mechdost.com'));
+    expect(fromSetting).toContain('Asha Rao · g@mechdost.com');
+    expect(fromSetting).not.toContain('env-grievance@mechdost.com');
+    expect(await textFor(() => Promise.resolve(null))).toContain('env-grievance@mechdost.com');
+    expect(await textFor(() => Promise.reject(new Error('db down')))).toContain('env-grievance@mechdost.com');
+  });
+
   it('a test send is marked in the subject; Hindi mail carries the Hindi subject', async () => {
     const resend = fakeResend();
     await adapter(resend.fetchImpl).send(row({ payload: { ...row().payload, test: 'true' } }));

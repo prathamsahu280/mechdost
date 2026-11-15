@@ -405,6 +405,62 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
     realApi: true,
   },
 
+  // ─────────────── Admin configuration (design 2026-11-15 items 5 to 8) ───────────────
+  {
+    code: 'API-ADM-POLICIES',
+    page: 'Admin → Content → Policy pages, real sign-in',
+    component:
+      'Policy page editor: policy and language pickers, sections form, preview, version history with restore, nothing published, a draft waiting, load error',
+    path: '/admin/content',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['admin'] },
+      { name: 'policies', values: ['none', 'published', 'draft', 'error'] },
+      { name: 'form', values: ['closed', 'preview', 'restore-ask'] },
+      stress,
+    ],
+    sweep: 14,
+    note: API_NOTE,
+    realApi: true,
+  },
+  {
+    code: 'API-ADM-LAYOUT',
+    page: 'Admin → Home layout, real sign-in',
+    component:
+      'Home layout editor on the API: section order and visibility, category tiles with emoji, map default, city picker; default, saved layout, load error',
+    path: '/admin/layout',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['admin'] },
+      { name: 'layout', values: ['default', 'custom', 'error'] },
+    ],
+    sweep: 8,
+    note: API_NOTE,
+    realApi: true,
+  },
+  {
+    code: 'API-ADM-COMPANY',
+    page: 'Admin → Settings → City values and company details, real sign-in',
+    component:
+      'Settings city picker (all cities, inherited, overridden with reset to inherited) and the company details form (empty, filled, long text, load error)',
+    path: '/admin/settings',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['admin'] },
+      { name: 'company', values: ['empty', 'filled', 'long', 'error'] },
+      { name: 'city', values: ['all', 'inherited', 'overridden'] },
+    ],
+    sweep: 12,
+    note: API_NOTE,
+    realApi: true,
+  },
+
   // ─────────────── Admin people screens (design 2026-11-15): staff, customers, audit log ───────────────
   {
     code: 'API-ADM-STAFF',

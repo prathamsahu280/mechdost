@@ -4,7 +4,9 @@ import {
   getPublishedContent,
   getPublishedPolicy,
   listContentForAdmin,
+  listContentVersions,
   publishContent,
+  restoreContentVersion,
   saveContentDraft,
   unpublishContent,
 } from '@mechdost/db/repo';
@@ -13,6 +15,7 @@ import { POLICY_KEYS, POLICY_LIMITS } from '@mechdost/shared/policy';
 import type { SessionCache } from '../auth/session-cache';
 import { authenticate, requirePermission, requireVerified } from '../middleware/auth';
 import { rateLimit, RATE_RULES } from '../middleware/rate-limit';
+import { revalidateWeb } from '../revalidate';
 import type { AppDeps, AppEnv } from '../types';
 import { validationHook } from '../validation';
 import { scopedCity } from './city-scope';
@@ -166,6 +169,64 @@ const unpublish = createRoute({
   },
 });
 
+const PolicyKeyParam = z.enum(POLICY_KEYS);
+const policyParams = {
+  params: z.object({
+    key: PolicyKeyParam.openapi({ param: { name: 'key', in: 'path' }, example: 'policy.privacy' }),
+    locale: Locale.openapi({ param: { name: 'locale', in: 'path' } }),
+  }),
+};
+
+const versions = createRoute({
+  method: 'get',
+  path: '/admin/content/{key}/{locale}/versions',
+  tags: ['admin'],
+  summary: 'What went live for a policy page, newest first (append-only history)',
+  security: [{ bearerAuth: [] }],
+  request: { ...policyParams, query: z.object({ city: CityCode.optional() }) },
+  responses: {
+    200: json(
+      z.object({
+        versions: z.array(
+          z.object({
+            versionNo: z.number().int(),
+            action: z.enum(['published', 'restored']),
+            restoredFrom: z.number().int().nullable(),
+            value: Value,
+            createdAt: z.string(),
+            by: z.string().nullable(),
+          }),
+        ),
+      }),
+      'History',
+    ),
+    ...errorResponses,
+  },
+});
+
+const restore = createRoute({
+  method: 'post',
+  path: '/admin/content/{key}/{locale}/restore',
+  tags: ['admin'],
+  summary: 'Put an earlier version live again as a new version',
+  security: [{ bearerAuth: [] }],
+  request: {
+    ...policyParams,
+    ...body(
+      z
+        .object({ city: CityCode.nullable(), versionNo: z.number().int().min(1) })
+        .strict()
+        .openapi('AdminContentRestore'),
+    ),
+  },
+  responses: {
+    200: json(z.object({ version: z.number().int() }), 'Restored as this version'),
+    404: json(ErrorSchema, 'Out of scope / no such version'),
+    422: json(ErrorSchema, 'POLICY_INVALID'),
+    ...errorResponses,
+  },
+});
+
 /** Public content: cacheable for a minute in browsers, five at the CDN (publishing shows within that window). */
 export function contentRoutes(deps: AppDeps) {
   const app = new OpenAPIHono<AppEnv>({ defaultHook: validationHook });
@@ -244,7 +305,28 @@ export function adminContentRoutes(deps: AppDeps, cache: SessionCache) {
         expectedDraftVersion: b.version,
         staffUserId: c.get('auth').user.id,
       });
+      await revalidateWeb(deps, ['content']);
       return c.json(live, 200);
+    })
+    .openapi(versions, async (c) => {
+      const { key, locale } = c.req.valid('param');
+      const cityId = await scopedCity(deps, c, c.req.valid('query').city, 'content:write');
+      const rows = await listContentVersions(deps.db, { key, locale, cityId });
+      return c.json({ versions: rows.map((v) => ({ ...v, createdAt: v.createdAt.toISOString() })) }, 200);
+    })
+    .openapi(restore, async (c) => {
+      const { key, locale } = c.req.valid('param');
+      const b = c.req.valid('json');
+      const cityId = await scopedCity(deps, c, b.city, 'content:publish');
+      const done = await restoreContentVersion(deps.db, {
+        key,
+        locale,
+        cityId,
+        versionNo: b.versionNo,
+        staffUserId: c.get('auth').user.id,
+      });
+      await revalidateWeb(deps, ['content']);
+      return c.json(done, 200);
     })
     .openapi(unpublish, async (c) => {
       const { key, locale } = c.req.valid('param');
@@ -257,6 +339,7 @@ export function adminContentRoutes(deps: AppDeps, cache: SessionCache) {
         expectedVersion: b.version,
         staffUserId: c.get('auth').user.id,
       });
+      await revalidateWeb(deps, ['content']);
       return c.json({ ok: true as const }, 200);
     });
 }

@@ -20,7 +20,7 @@ import {
   type ContentKey,
   type TrustKey,
 } from '@mechdost/shared/content';
-import { SETTING_KEYS, isSettingKey, type SettingKey } from '@mechdost/shared/settings';
+import { SETTING_KEYS, isGlobalOnly, isSettingKey, type SettingKey } from '@mechdost/shared/settings';
 import { adminApi } from '@/lib/admin-api';
 import { contentField, contentStep } from '@/lib/admin-content-view';
 import {
@@ -34,6 +34,7 @@ import {
 import { commonErrorKey, type CommonErrorKey } from '@/lib/api-error-key';
 import { track } from '@/lib/analytics';
 import type { ContentDefaults } from './admin-site';
+import { CityPicker } from './admin-city-picker';
 import { portalCard, portalPrimary, portalQuiet, portalField } from './portal-guard';
 
 type SaveStatus = 'idle' | 'busy' | 'saved' | 'invalid' | CommonErrorKey;
@@ -138,7 +139,7 @@ function StatusLine({ status }: { status: SaveStatus }) {
   );
 }
 
-function LoadState({ error, onRetry }: { error: CommonErrorKey | null; onRetry: () => void }) {
+export function LoadState({ error, onRetry }: { error: CommonErrorKey | null; onRetry: () => void }) {
   const t = useTranslations('portal');
   return error ? (
     <div role="alert" className={`${portalCard} space-y-3`}>
@@ -165,18 +166,21 @@ export function SettingsApi() {
   const locale = useLocale();
   const [rows, setRows] = useState<AdminSettingRowDto[] | null>(null);
   const [error, setError] = useState<CommonErrorKey | null>(null);
+  // City code, '' = the all-cities values (design 2026-11-15 item 7).
+  const [city, setCity] = useState('');
 
   const load = useCallback(async () => {
-    const res = await adminApi(locale, '/admin/settings', AdminSettingList);
+    const res = await adminApi(locale, `/admin/settings${city ? `?city=${city}` : ''}`, AdminSettingList);
     if (!res.ok) {
       setError(commonErrorKey(res.code));
       return;
     }
     setError(null);
     setRows(res.data.settings);
-  }, [locale]);
+  }, [locale, city]);
 
   useEffect(() => {
+    setRows(null);
     void load();
   }, [load]);
 
@@ -188,8 +192,9 @@ export function SettingsApi() {
         </h2>
         <p className="mt-1 text-sm text-muted">{t('api_set_lead')}</p>
       </div>
+      <CityPicker id="settings-city" value={city} onChange={setCity} />
       {rows ? (
-        <SettingsForm rows={rows} onSaved={load} />
+        <SettingsForm key={city} city={city} rows={rows} onSaved={load} />
       ) : (
         <LoadState
           error={error}
@@ -203,16 +208,50 @@ export function SettingsApi() {
   );
 }
 
-function SettingsForm({ rows, onSaved }: { rows: AdminSettingRowDto[]; onSaved: () => Promise<void> }) {
+/**
+ * With a city chosen (design 2026-11-15 item 7) only the settings the system reads per city are listed; each shows
+ * whether it is inherited from the all-cities value or overridden for this city, and an overridden one can be reset.
+ */
+function SettingsForm({
+  city,
+  rows,
+  onSaved,
+}: {
+  city: string;
+  rows: AdminSettingRowDto[];
+  onSaved: () => Promise<void>;
+}) {
   const t = useTranslations('portal');
+  const c = useTranslations('adminTier2');
   const locale = useLocale();
   const num = (n: number) => new Intl.NumberFormat(locale === 'hi' ? 'hi-IN' : 'en-IN').format(n);
-  const known = rows.filter((r): r is AdminSettingRowDto & { key: SettingKey } => isSettingKey(r.key));
+  const known = rows.filter(
+    (r): r is AdminSettingRowDto & { key: SettingKey } =>
+      isSettingKey(r.key) && (!city || !isGlobalOnly(r.key)),
+  );
+  // What this scope holds now: the city's own value, else (city) the all-cities value, else the default.
+  const scoped = (row: AdminSettingRowDto) =>
+    city ? ((row.city ?? row.global)?.value ?? row.default) : (row.global?.value ?? row.default);
+  const scopedVersion = (row: AdminSettingRowDto) => (city ? row.city?.version : row.global?.version) ?? null;
   const [draft, setDraft] = useState<Record<string, string>>(() =>
-    Object.fromEntries(known.map((r) => [r.key, toInput(r.key, r.global?.value ?? r.default)])),
+    Object.fromEntries(known.map((r) => [r.key, toInput(r.key, scoped(r))])),
   );
   const [errors, setErrors] = useState<Partial<Record<SettingKey, InputProblem>>>({});
   const [status, setStatus] = useState<SaveStatus>('idle');
+
+  async function onReset(key: SettingKey, version: number) {
+    setStatus('busy');
+    const res = await adminApi(locale, `/admin/settings/${key}/clear`, OkTrue, {
+      method: 'POST',
+      body: { city, version },
+    });
+    if (!res.ok) setStatus(commonErrorKey(res.code));
+    else {
+      setStatus('saved');
+      track('admin_site_change', { area: 'settings', action: 'reset', fields: 1 });
+    }
+    await onSaved();
+  }
 
   async function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -224,9 +263,8 @@ function SettingsForm({ rows, onSaved }: { rows: AdminSettingRowDto[]; onSaved: 
         nextErrors[row.key] = parsed.problem;
         continue;
       }
-      const current = row.global?.value ?? row.default;
-      if (parsed.value !== current)
-        changes.push({ key: row.key, value: parsed.value, version: row.global?.version ?? null });
+      if (parsed.value !== scoped(row))
+        changes.push({ key: row.key, value: parsed.value, version: scopedVersion(row) });
     }
     setErrors(nextErrors);
     const first = SETTING_KEYS.find((k) => nextErrors[k]);
@@ -239,7 +277,7 @@ function SettingsForm({ rows, onSaved }: { rows: AdminSettingRowDto[]; onSaved: 
     for (const change of changes) {
       const res = await adminApi(locale, `/admin/settings/${change.key}`, SavedVersion, {
         method: 'PUT',
-        body: { city: null, value: change.value, version: change.version },
+        body: { city: city || null, value: change.value, version: change.version },
       });
       if (!res.ok) {
         setStatus(commonErrorKey(res.code));
@@ -260,6 +298,11 @@ function SettingsForm({ rows, onSaved }: { rows: AdminSettingRowDto[]; onSaved: 
       className={portalCard}
       noValidate
     >
+      {city ? (
+        <p role="note" className="mb-4 rounded-tile bg-pill px-4 py-3 text-sm text-ink">
+          {c('set_cityNote')}
+        </p>
+      ) : null}
       <div className="grid gap-5 tab:grid-cols-2">
         {known.map((row) => {
           const key = row.key;
@@ -267,26 +310,50 @@ function SettingsForm({ rows, onSaved }: { rows: AdminSettingRowDto[]; onSaved: 
           const id = `api-setting-${key}`;
           const problem = errors[key];
           const bounds = settingBounds(key);
+          const own = row.city;
+          // Inherited or overridden for the chosen city; an override can be reset to the all-cities value.
+          const origin = city ? (
+            <p className="mt-1 flex flex-wrap items-center gap-2 text-xs">
+              <span className={own ? 'font-bold text-ink' : 'text-muted'}>
+                {own ? c('set_overridden') : c('set_inherited')}
+              </span>
+              {own ? (
+                <button
+                  type="button"
+                  disabled={status === 'busy'}
+                  onClick={() => {
+                    void onReset(key, own.version);
+                  }}
+                  className={portalQuiet}
+                >
+                  {c('set_resetRow')}
+                </button>
+              ) : null}
+            </p>
+          ) : null;
           if (unit === 'switch')
             return (
-              <label key={key} className="flex items-start gap-3 text-sm text-ink">
-                <input
-                  id={id}
-                  type="checkbox"
-                  checked={draft[key] === 'true'}
-                  onChange={(e) => {
-                    setStatus('idle');
-                    setDraft((d) => ({ ...d, [key]: e.target.checked ? 'true' : 'false' }));
-                  }}
-                  className="mt-0.5 size-6 shrink-0 accent-[var(--color-accent-button)]"
-                />
-                <span>
-                  <span className="font-bold">{t(SETTING_LABEL[key])}</span>
-                  <span className="block text-xs text-muted">
-                    {t('api_set_default', { value: t(row.default === true ? 'notify_on' : 'notify_off') })}
+              <div key={key}>
+                <label className="flex items-start gap-3 text-sm text-ink">
+                  <input
+                    id={id}
+                    type="checkbox"
+                    checked={draft[key] === 'true'}
+                    onChange={(e) => {
+                      setStatus('idle');
+                      setDraft((d) => ({ ...d, [key]: e.target.checked ? 'true' : 'false' }));
+                    }}
+                    className="mt-0.5 size-6 shrink-0 accent-[var(--color-accent-button)]"
+                  />
+                  <span>
+                    <span className="font-bold">{t(SETTING_LABEL[key])}</span>
+                    <span className="block text-xs text-muted">
+                      {t('api_set_default', { value: t(row.default === true ? 'notify_on' : 'notify_off') })}
+                    </span>
                   </span>
-                </span>
-              </label>
+                </label>
+                {origin}
+              </div>
             );
           return (
             <div key={key}>
@@ -319,6 +386,7 @@ function SettingsForm({ rows, onSaved }: { rows: AdminSettingRowDto[]; onSaved: 
                 {t('api_set_default', { value: toInput(key, row.default) || t('api_set_none') })}
                 {isNullable(key) ? ` · ${t('api_set_emptyIsNone')}` : null}
               </p>
+              {origin}
               {problem ? (
                 <p id={`${id}-error`} className="mt-1 text-xs font-bold text-error">
                   {problem === 'guard'

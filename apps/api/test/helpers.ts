@@ -10,6 +10,7 @@ import { loadConfig } from '../src/config';
 import type { RazorpayGateway } from '../src/payments/razorpay';
 import type { SentryIssuesClient } from '../src/monitoring/sentry-issues';
 import { setLogSink } from '../src/logger';
+import type { Revalidator } from '../src/revalidate';
 import { MemoryRateLimiter, type RateLimiter } from '../src/rate-limit/limiter';
 
 export const ALLOWED_ORIGIN = 'http://localhost:3000';
@@ -112,6 +113,7 @@ export async function buildApp(
     turnstile?: TurnstileVerifier | null;
     razorpay?: RazorpayGateway | null;
     sentryIssues?: SentryIssuesClient | null;
+    revalidate?: Revalidator;
   } = {},
 ) {
   setLogSink(() => undefined);
@@ -134,6 +136,7 @@ export async function buildApp(
     turnstile: opts.turnstile ?? null,
     razorpay: opts.razorpay ?? null,
     sentryIssues: opts.sentryIssues ?? null,
+    ...(opts.revalidate ? { revalidate: opts.revalidate } : {}),
   });
   return { app, db, verifier };
 }

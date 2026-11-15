@@ -1,9 +1,10 @@
 import { MessageCircle, Phone } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { CATEGORY_SLUGS } from '@/demo/catalogue';
-import { companyFacts, site, whatsappLink } from '@/lib/site';
+import { site, whatsappLink } from '@/lib/site';
 import { ExternalButtonLink } from '../ui/button-link';
 import { LocalLink } from '../ui/local-link';
+import { CompanyCopyright, CompanyLegal } from './company-legal';
 import { ConsentChoicesButton } from './consent-banner';
 import { BrandMark } from './header';
 import { ThemeToggle } from './theme-toggle';
@@ -41,8 +42,7 @@ export function Footer() {
   const cat = useTranslations('categories');
   const account = useTranslations('account');
   const partners = useTranslations('pages.partners');
-  const year = new Date().getFullYear();
-  const { company, registeredAddress } = companyFacts(useLocale());
+  const locale = useLocale();
 
   const columns: { id: string; title: string; links: FooterLink[] }[] = [
     {
@@ -160,13 +160,7 @@ export function Footer() {
           <div className="space-y-3">
             <BrandMark />
             <p className="max-w-xl text-sm text-muted">{t('accountNote')}</p>
-            <p className="text-xs leading-relaxed text-muted">
-              {t('operatedBy')} <span className="font-bold text-ink uppercase">{company}</span>
-              <br />
-              {t('gstin', { gstin: site.gstin })}
-              <br />
-              {t('registered', { address: registeredAddress })}
-            </p>
+            <CompanyLegal locale={locale} />
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle label={theme('toggle')} className="border border-line-card" />
@@ -192,7 +186,7 @@ export function Footer() {
         </nav>
         <ConsentChoicesButton label={consent('choices')} />
         <p className="mt-2 text-xs leading-relaxed text-muted">{t('credits')}</p>
-        <p className="mt-2 text-xs text-muted">{t('copyright', { year, company })}</p>
+        <CompanyCopyright locale={locale} />
       </div>
     </footer>
   );

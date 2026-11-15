@@ -4,7 +4,9 @@ import { getTranslations } from 'next-intl/server';
 import { Container, PageIntro } from '@/components/ui/page-intro';
 import type { Locale } from '@/i18n/routing';
 import { alternatesFor } from '@/lib/seo';
-import { companyFacts, site, whatsappLink } from '@/lib/site';
+import { GrievanceOfficer } from '@/components/site/company-legal';
+import { companyFactsFor } from '@/lib/company-facts';
+import { site, whatsappLink } from '@/lib/site';
 
 interface Props {
   params: Promise<{ locale: Locale }>;
@@ -29,11 +31,14 @@ export default async function CompanyPage({ params }: Props) {
   const { locale } = await params;
   const t = await getTranslations('policies.company');
   const wa = await getTranslations('whatsapp');
-  const { company, registeredAddress } = companyFacts(locale);
+  const own = await companyFactsFor(locale);
+  const siteCompany = await getTranslations('siteCompany');
   const facts = [
-    { label: t('companyLabel'), value: company },
-    { label: t('officeLabel'), value: registeredAddress },
-    { label: t('gstinLabel'), value: site.gstin },
+    { label: t('companyLabel'), value: own.company },
+    { label: t('officeLabel'), value: own.registeredAddress },
+    { label: t('gstinLabel'), value: own.gstin },
+    // The CIN shows only once the admin has filled it (design 2026-11-15 item 8).
+    ...(own.cin ? [{ label: siteCompany('cinLabel'), value: own.cin }] : []),
   ];
   return (
     <Container className="py-12 tab:py-16">
@@ -86,6 +91,7 @@ export default async function CompanyPage({ params }: Props) {
           </div>
         </section>
       </div>
+      <GrievanceOfficer locale={locale} />
       <p className="mt-6 max-w-4xl text-xs text-muted">{t('updated')}</p>
     </Container>
   );

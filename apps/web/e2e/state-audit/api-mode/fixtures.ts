@@ -39,6 +39,7 @@ import {
   type MyShopDto,
 } from '@mechdost/shared/shop-api';
 import type { AuditCase } from '../cases.ts';
+import { layoutMocks, policyMocks, settingsMocks } from './admin-config-fixtures.ts';
 import { homeFinderMocks, homeJobMocks, homeRequestMocks } from './home-fixtures.ts';
 import type { Mock, MockCtx, Reply } from './mock-api.ts';
 
@@ -1278,7 +1279,14 @@ export function mocksFor(c: AuditCase): Mock[] {
     case 'API-ADM-QUOTES':
       return quotesMocks();
     case 'API-ADM-CONTENT':
-      return contentMocks();
+      // The trust lines plus the policy editor under them (no policy published: it lists none and no history).
+      return [...contentMocks(), ...policyMocks({ ...c, state: { ...c.state, policies: 'none' } }).slice(1)];
+    case 'API-ADM-POLICIES':
+      return [meMock(), ...policyMocks(c)];
+    case 'API-ADM-LAYOUT':
+      return [meMock(), ...layoutMocks(c)];
+    case 'API-ADM-COMPANY':
+      return [meMock(), ...settingsMocks(c)];
     case 'API-SVC-HOMEFIND':
       return homeFinderMocks(c);
     case 'API-SVC-HOMEREQ':

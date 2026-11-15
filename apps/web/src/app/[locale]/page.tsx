@@ -12,7 +12,8 @@ import { TrustStrip } from '@/components/home/trust-strip';
 import type { Locale } from '@/i18n/routing';
 import { alternatesFor } from '@/lib/seo';
 import { site } from '@/lib/site';
-import { HOME_SECTIONS, type HomeSection } from '@/lib/site-layout';
+import { featuredCategories, visibleSections, type HomeSection } from '@mechdost/shared/site-layout';
+import { publishedLayout } from '@/lib/site-config-content';
 import type { ReactNode } from 'react';
 
 export async function generateMetadata({
@@ -31,9 +32,12 @@ export async function generateMetadata({
  */
 export default async function HomePage() {
   const city = (await getTranslations('cities'))(site.defaultCity);
+  // The admin's saved layout (real mode), applied here on the server: no client code, refreshed by tag on publish.
+  // The demo build shows the default order and the browser-stored choices are applied by the pre-paint script.
+  const layout = await publishedLayout();
   const sections: Record<HomeSection, ReactNode> = {
     trust: <TrustStrip />,
-    categories: <CategoryTiles />,
+    categories: <CategoryTiles featured={featuredCategories(layout)} emoji={layout.emoji} />,
     products: <ProductRange />,
     route: <OrderRoute />,
     service: <ServiceSection city={city} />,
@@ -45,7 +49,7 @@ export default async function HomePage() {
     <>
       <Hero city={city} />
       <div className="flex flex-col">
-        {HOME_SECTIONS.map((key) => (
+        {visibleSections(layout).map((key) => (
           <div key={key} data-home-section={key}>
             {sections[key]}
           </div>

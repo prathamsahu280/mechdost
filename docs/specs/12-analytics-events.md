@@ -136,3 +136,7 @@ Server events (same transaction as the change; codes, ids and enums only): `serv
 ## Admin people screens (2026-11-15)
 
 Server events (in the change's transaction): `admin_staff_role_changed` (action granted/revoked, target user id, role key, whether a city limits it) and `admin_customer_viewed` (customer id, whether contact details were unmasked). Client events (strict schemas, no query text): `admin_staff_screen` (grant_opened / grant_saved / revoke_confirmed), `admin_customer_search` (kind code/email/phone/name, result count) and `admin_audit_search` (number of filters filled, result count).
+
+## Admin next tier part 2 events (2026-11-15)
+
+Server events (same transaction as the change; codes, counts and ids only): `admin_policy_restored { key, locale, fromVersion, version }` (next to `admin_content_published` for every publish), `admin_layout_published { scope: global|city, action: saved|reset, hidden, tiles, mapDefault }`, `admin_setting_city_changed { key, action: overridden|reset }`, `admin_company_saved { filled, grievanceShown }`. Client event `admin_site_change` gained areas `policies` and `company` and actions `publish`, `restore`, `preview` (area `layout` action `publish` for the real-mode layout save); `fields` is a count. Click id `admin_policy_preview_call` (preview call link), `footer_grievance_email` and `footer_grievance_phone` (footer links, only once the admin fills the officer).

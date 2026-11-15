@@ -26,6 +26,7 @@ import { checkoutRoutes } from './routes/checkout';
 import { coinRoutes } from './routes/coins';
 import { payoutRoutes } from './routes/payouts';
 import { adminContentRoutes, contentRoutes } from './routes/content';
+import { siteConfigAdminRoutes, siteConfigPublicRoutes } from './routes/site-config';
 import { eventRoutes } from './routes/events';
 import { pincodeAdminRoutes, pincodePublicRoutes } from './routes/geo';
 import { accountRoutes } from './routes/account';
@@ -93,6 +94,8 @@ export function createApp(deps: AppDeps) {
   v1.route('/', assistantRoutes(deps));
   v1.route('/', catalogueRoutes(deps));
   v1.route('/', contentRoutes(deps));
+  v1.route('/', siteConfigPublicRoutes(deps));
+  v1.route('/', siteConfigAdminRoutes(deps, sessions));
   v1.route('/', eventRoutes(deps));
   v1.route('/', checkoutRoutes(deps, sessions));
   v1.route('/', paymentRoutes(deps, sessions));

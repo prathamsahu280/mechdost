@@ -303,6 +303,39 @@ export const contentBlocks = pgTable(
   ],
 );
 
+/**
+ * Append-only history of what went live for a content entry (policy pages above all; design 2026-11-15 item 5).
+ * One row per publish or restore, numbered per entry (key, locale, city) from 1; restoring an old version writes a
+ * new row (`action` 'restored', `restoredFrom`), old rows are never changed (trigger `content_versions_append_only`).
+ */
+export const contentVersions = pgTable(
+  'content_versions',
+  {
+    id: id(),
+    key: text().notNull(),
+    locale: text().notNull(),
+    cityId: uuid().references(() => cities.id, { onDelete: 'cascade' }),
+    versionNo: integer().notNull(),
+    value: jsonb().notNull(),
+    action: text().notNull(),
+    restoredFrom: integer(),
+    createdBy: uuid().references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    unique('content_versions_entry_uq').on(t.key, t.locale, t.cityId, t.versionNo).nullsNotDistinct(),
+    check('content_versions_locale_valid', sql`${t.locale} in ('en','hi')`),
+    check('content_versions_action_valid', sql`${t.action} in ('published','restored')`),
+    check('content_versions_no_positive', sql`${t.versionNo} >= 1`),
+    check(
+      'content_versions_restored_from',
+      sql`(${t.action} = 'restored') = (${t.restoredFrom} is not null)`,
+    ),
+    index().on(t.createdBy),
+    index().on(t.cityId),
+  ],
+);
+
 export const featureFlags = pgTable('feature_flags', {
   key: text().primaryKey(),
   enabled: boolean().notNull().default(false),

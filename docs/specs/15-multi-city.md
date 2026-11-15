@@ -91,3 +91,7 @@ activated`, before/after). Client event `admin_pincode_change {action, reasonCod
 ## Home servicing per city (2026-11-15)
 
 `service.home_fee_max_paise` (settings registry, global with per-city override, default 50 000 = ₹500, hard DB cap 50 000): the highest visit fee a workshop of that city may set (`FEE_ABOVE_CAP`; also checked at booking, so a lowered cap blocks bookings of a workshop still above it until it lowers its fee). Home listing and booking are city-scoped like workshops (the PIN of the address decides the city; a workshop in another city is `WORKSHOP_OUT_OF_AREA`).
+
+## City values in the admin (built 2026-11-15, admin next tier part 2)
+
+Admin -> Settings gets a city picker (the cities in the staff member's `settings:write` scope). With a city chosen the screen lists only settings that are not `globalOnly`, marks each "Same as all cities" or "Set for this city", saves overrides with `PUT /admin/settings/{key}` (`city`) and removes one with the clear route ("Use the all-cities value"). `GET /admin/settings/cities` feeds the picker. The home layout (`site.home_layout`) can also be set per city: a city with no row inherits the all-cities one. Company details are global (one legal entity). Server event `admin_setting_city_changed { key, action: overridden|reset }` (and `admin_layout_published.scope`).

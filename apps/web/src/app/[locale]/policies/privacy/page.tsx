@@ -4,7 +4,10 @@ import { Container, PageIntro } from '@/components/ui/page-intro';
 import { PolicySections } from '@/components/ui/policy-sections';
 import type { Locale } from '@/i18n/routing';
 import { alternatesFor } from '@/lib/seo';
-import { companyFacts } from '@/lib/site';
+import { GrievanceOfficer } from '@/components/site/company-legal';
+import { PublishedPolicy } from '@/components/ui/published-policy';
+import { companyFactsFor } from '@/lib/company-facts';
+import { publishedPolicy } from '@/lib/site-config-content';
 
 interface Props {
   params: Promise<{ locale: Locale }>;
@@ -13,9 +16,10 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'policies.privacy' });
+  const published = await publishedPolicy('policy.privacy', locale);
   return {
-    title: t('title'),
-    description: t('lead'),
+    title: published?.title ?? t('title'),
+    description: published?.lead ?? t('lead'),
     alternates: alternatesFor('/policies/privacy', locale),
   };
 }
@@ -40,7 +44,18 @@ const SECTIONS = [
 export default async function PrivacyPolicyPage({ params }: Props) {
   const { locale } = await params;
   const t = await getTranslations('policies.privacy');
-  const { company, registeredAddress } = companyFacts(locale);
+  const published = await publishedPolicy('policy.privacy', locale);
+  if (published)
+    return (
+      <PublishedPolicy
+        doc={published}
+        locale={locale}
+        eyebrow={t('eyebrow')}
+        help={t('help')}
+        track="policy_privacy_call"
+      />
+    );
+  const { company, registeredAddress } = await companyFactsFor(locale);
   return (
     <Container className="py-12 tab:py-16">
       <PageIntro eyebrow={t('eyebrow')} line1={t('title')} lead={t('lead')} />
@@ -54,6 +69,7 @@ export default async function PrivacyPolicyPage({ params }: Props) {
         updated={t('updated')}
         track="policy_privacy_call"
       />
+      <GrievanceOfficer locale={locale} />
     </Container>
   );
 }

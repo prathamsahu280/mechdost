@@ -5,12 +5,14 @@
  */
 import { createDb, createListener } from '@mechdost/db';
 import { loadKeyring, type Keyring } from '@mechdost/db/crypto';
+import { grievanceContactLine } from '@mechdost/shared/company';
 import { trustLineText } from '@mechdost/shared/content';
 import { defaultEmailTrustLine } from '@mechdost/shared/email-layout';
 import {
   bridgeInboundWhatsApp,
   emailOverrideFor,
   ensureEventPartitions,
+  getCompany,
   getPublishedContent,
   expireDueAssignments,
   releaseExpiredReservations,
@@ -71,6 +73,8 @@ const adapters: ChannelAdapter[] = [
     ? [
         createEmailAdapter(config.email, {
           loadOverride: (key, locale) => emailOverrideFor(db, key, locale),
+          // The grievance officer from Admin -> Company details; EMAIL_GRIEVANCE_CONTACT stays the fallback.
+          loadGrievanceContact: async () => grievanceContactLine((await getCompany(db)).details),
           // Order emails' "genuine parts" footer line (Admin -> Content `trust.emailFooter`; design 2026-11-15).
           loadTrustLine: async (locale) =>
             trustLineText(
