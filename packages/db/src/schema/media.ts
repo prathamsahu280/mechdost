@@ -13,7 +13,12 @@ import { productVariants, products, shops } from './catalogue';
 import { users } from './identity';
 import { serviceRequests } from './services';
 
-export const MEDIA_OWNER_KINDS = ['service_photo', 'ticket_message', 'product_photo'] as const;
+export const MEDIA_OWNER_KINDS = [
+  'service_photo',
+  'ticket_message',
+  'product_photo',
+  'quote_message',
+] as const;
 
 export const mediaObjects = pgTable(
   'media_objects',

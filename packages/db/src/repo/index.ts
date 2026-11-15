@@ -70,6 +70,7 @@ export * from './home-service';
 export * from './home-settings';
 export * from './arrival-code';
 export * from './service-notifications';
+export * from './quote-notifications';
 export * from './shops-admin';
 export * from './quotes';
 export * from './reviews';

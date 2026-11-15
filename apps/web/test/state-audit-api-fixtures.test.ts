@@ -23,6 +23,7 @@ describe('API-mode audit fixtures (Q106)', () => {
       'API-ADM-COINS',
       'API-ADM-REVIEWS',
       'API-ADM-QUOTES',
+      'API-QUOTE-THREAD',
       'API-ADM-CONTENT',
       'API-ADM-POLICIES',
       'API-ADM-LAYOUT',

@@ -68,7 +68,12 @@ export type QuoteMessageInput = z.infer<typeof QuoteMessageSchema>;
 
 /** Accept exactly the offer version the customer saw. */
 export const AcceptQuoteSchema = z
-  .object({ offerVersion: version, locale: z.enum(['en', 'hi']).default('en') })
+  .object({
+    offerVersion: version,
+    /** Cash on delivery (default; capped by `quotes.cod_cap_paise`) or online with Razorpay. */
+    paymentMethod: z.enum(['cod', 'online']).default('cod'),
+    locale: z.enum(['en', 'hi']).default('en'),
+  })
   .strict();
 export type AcceptQuoteInput = z.infer<typeof AcceptQuoteSchema>;
 
@@ -143,8 +148,39 @@ export const QuoteAcceptedDto = z.object({
   orderCode: z.string(),
   totalPaise: z.number().int(),
   replayed: z.boolean(),
+  paymentMethod: z.enum(['cod', 'online']),
+  /** Online only: what the browser needs to open Razorpay Checkout (null once paid or expired). */
+  razorpay: z
+    .object({
+      keyId: z.string(),
+      orderId: z.string(),
+      amountPaise: z.number().int(),
+      currency: z.literal('INR'),
+    })
+    .nullable()
+    .optional(),
 });
 export type QuoteAccepted = z.infer<typeof QuoteAcceptedDto>;
+
+/** `POST /quotes/{code}/pay`: the Razorpay handle of the quote's unpaid online order (null once paid or expired). */
+export const QuotePayDto = z.object({
+  orderCode: z.string(),
+  razorpay: z
+    .object({
+      keyId: z.string(),
+      orderId: z.string(),
+      amountPaise: z.number().int(),
+      currency: z.literal('INR'),
+    })
+    .nullable(),
+});
+export type QuotePay = z.infer<typeof QuotePayDto>;
+
+/** `POST …/read`: the time of the newest message this side has now seen (null for an empty thread). */
+export const QuoteReadDto = z.object({ readThrough: z.string().nullable() });
+
+/** `POST /payments/razorpay/verify` answer: what Razorpay's confirmation did to the order. */
+export const QuotePaymentVerifiedDto = z.object({ orderCode: z.string(), outcome: z.string() });
 
 const OfferBrief = z.object({
   version: z.number().int(),
@@ -166,6 +202,8 @@ export const QuoteSummaryDto = z.object({
   lastMessageBy: z.enum(['customer', 'staff']).nullable(),
   offer: OfferBrief.nullable(),
   orderCode: z.string().nullable(),
+  /** Payment method and status of the order made from this quote (null before it is accepted). */
+  orderPayment: z.object({ method: z.string(), status: z.string() }).nullable(),
   createdAt: z.string(),
   version: z.number().int(),
 });
@@ -204,11 +242,24 @@ export const QuoteOfferDto = z.object({
 });
 export type QuoteOffer = z.infer<typeof QuoteOfferDto>;
 
+/** One photo on a message: short-lived signed URLs the API issues after its rights check (never a storage path). */
+export const QuoteAttachmentDto = z.object({
+  id: z.string(),
+  width: z.number().int(),
+  height: z.number().int(),
+  thumbUrl: z.string(),
+  largeUrl: z.string(),
+});
+export type QuoteAttachment = z.infer<typeof QuoteAttachmentDto>;
+
 export const QuoteMessageDto = z.object({
   id: z.string(),
   from: z.enum(['customer', 'staff', 'system']),
   body: z.string(),
   at: z.string(),
+  attachments: z.array(QuoteAttachmentDto),
+  /** Written by the viewer's own side and already seen by the other side. Never says who saw it. */
+  seen: z.boolean(),
 });
 export type QuoteMessage = z.infer<typeof QuoteMessageDto>;
 

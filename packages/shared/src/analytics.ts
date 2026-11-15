@@ -303,6 +303,7 @@ export interface ServerEventProps {
   /** Bulk quotes (spec 19): codes, counts, versions and paise only — never message text. */
   quote_requested: { quoteCode: string; lines: number; units: number; listTotalPaise: number | null };
   quote_message_sent: { quoteCode: string; by: 'customer' | 'staff' };
+  quote_attachment_added: { quoteCode: string; by: 'customer' | 'staff'; count: number; bytes: number };
   quote_offer_sent: {
     quoteCode: string;
     offerVersion: number;
@@ -310,7 +311,13 @@ export interface ServerEventProps {
     listTotalPaise: number | null;
     validDays: number;
   };
-  quote_accepted: { quoteCode: string; offerVersion: number; orderCode: string; totalPaise: number };
+  quote_accepted: {
+    quoteCode: string;
+    offerVersion: number;
+    orderCode: string;
+    totalPaise: number;
+    paymentMethod?: 'cod' | 'online';
+  };
   /** Declined by the customer or withdrawn by staff (expiry is `quote_expired`). */
   quote_closed: {
     quoteCode: string;

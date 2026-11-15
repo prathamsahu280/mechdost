@@ -23,6 +23,8 @@
    - Razorpay Checkout opens in test mode. Pay with a test card or the test UPI id `success@razorpay`.
    - The API verifies the payment before the order counts as paid.
 
+**Bulk quotes (2026-11-16):** on an accepted-quote thread the offer card offers "Pay online". `POST /v1/quotes/{code}/accept` with `paymentMethod: 'online'` places the order and returns the same Razorpay handle shape as `POST /v1/orders`; `POST /v1/quotes/{code}/pay` returns it again ("Pay now"). Verify and the webhook are the same routes, so everything under "A payment that needs a refund" applies unchanged.
+
 **Without the website:** `POST /v1/checkout/quote`, then `POST /v1/orders` with `paymentMethod: 'online'` and an `Idempotency-Key`. After paying, call `POST /v1/payments/razorpay/verify`.
 
 ## Production refuses test keys

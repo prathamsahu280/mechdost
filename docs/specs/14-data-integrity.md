@@ -49,6 +49,7 @@ No test in this spec may be skipped in CI; schema PRs require the `drizzle-postg
 - `order_groups.quote_id` / `quote_offer_id`: both or neither, **partial unique on each** → one order per quote and per offer whatever the concurrency; the accept's Idempotency-Key is the order's key (a retry returns the same order).
 - `order_items.price_source` (`catalogue` | `quote`): a negotiated unit may be below the shop's approved price only for `quote` lines (CHECK). `cost_ceiling_paise` is set exactly on quote lines (CHECK): the catalogue price at checkout, which routing uses as the most a shop may be paid; routing snapshots the routed shop's price into `shop_unit_paise`.
 - `quote_lines`, `quote_messages`, `quote_events`: append-only (`forbid_update_delete`). All five tables: RLS on, client roles revoked, version / updated_at triggers, FKs indexed.
+- `quote_reads` (migration 0073, 2026-11-16): read receipts, one row per (quote, side `customer|staff`) by composite primary key; `read_through_at` only moves forward (`greatest` in one conditional upsert, no read-then-write); `read_by_user_id` is for audit and never leaves the server. RLS on, client roles revoked, version / updated_at triggers, FK indexed, `quote_reads_live` pings the quote topic. Quote photos are `media_objects` rows (`owner_kind = 'quote_message'`, `owner_id` = the message id, uuid v7), written in the same transaction as the message.
 
 ## Data model note: workshops and service requests (migration 0044, 2026-11-14)
 

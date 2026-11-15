@@ -4,7 +4,7 @@
  * order with negotiated prices (one order per quote, however often or concurrently it is accepted), closing,
  * expiry, and the live recipients of a quote topic. Runs on the Raipur demo catalogue.
  */
-import { randomBytes } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -14,6 +14,10 @@ import { loadKeyring } from '../src/crypto';
 import { seedRaipurDemo, type DemoFixture } from '../src/demo-seed';
 import {
   acceptQuoteOffer,
+  assertCanAttachToQuote,
+  findQuoteMediaForServing,
+  markQuoteRead,
+  uuidv7,
   queueQuoteExpiringEmails,
   acceptShopOffer,
   advanceShopOrder,
@@ -34,6 +38,7 @@ import {
   listMyQuotes,
   postCustomerQuoteMessage,
   postStaffQuoteMessage,
+  quoteOrderCodeToPay,
   quoteRules,
   resolveLiveRecipients,
   sendQuoteOffer,
@@ -413,6 +418,202 @@ describe('offer email', () => {
   });
 });
 
+describe('photo attachments and read receipts in the thread', () => {
+  const img = (n = 1) =>
+    Array.from({ length: n }, () => {
+      const mediaId = uuidv7();
+      const folder = randomUUID();
+      return {
+        mediaId,
+        bucket: 'photos-test',
+        path: `quote/${folder}/${mediaId}.webp`,
+        thumbPath: `quote/${folder}/${mediaId}-thumb.webp`,
+        width: 800,
+        height: 600,
+        bytes: 40_000,
+        thumbBytes: 4_000,
+        sha256: randomBytes(32).toString('hex'),
+      };
+    });
+
+  it('attaches up to four photos to a message; both sides see them; nothing leaks across customers', async () => {
+    const { code } = await newQuote(ravi);
+    const photos = img(2);
+    await postCustomerQuoteMessage(t(), {
+      userId: ravi,
+      code,
+      body: 'Photo of the old filter',
+      images: photos,
+    });
+    const mine = await getMyQuote(t(), ravi, code, 'en');
+    const message = mine.messages.at(-1);
+    expect(message?.attachments.map((a) => a.mediaId)).toEqual(photos.map((p) => p.mediaId));
+    expect(message?.attachments[0]).toMatchObject({ width: 800, height: 600 });
+    expect((await getAdminQuote(t(), ALL, code, 'en')).messages.at(-1)?.attachments).toHaveLength(2);
+    await expect(getMyQuote(t(), meera, code, 'en')).rejects.toMatchObject({ status: 404 });
+    // The staff reply may carry photos too.
+    await postStaffQuoteMessage(t(), {
+      scope: ALL,
+      staffUserId: staff,
+      code,
+      body: 'This is the one we mean',
+      images: img(1),
+    });
+    expect((await getMyQuote(t(), ravi, code, 'en')).messages.at(-1)?.attachments).toHaveLength(1);
+    const kinds = await db
+      .select({ kind: s.mediaObjects.ownerKind })
+      .from(s.mediaObjects)
+      .where(eq(s.mediaObjects.uploadedBy, ravi));
+    expect(kinds.every((k) => k.kind === 'quote_message')).toBe(true);
+    await closeAllOpen(ravi);
+  });
+
+  it('refuses a fifth photo and ids that are not time-ordered, and stores nothing then', async () => {
+    const { code } = await newQuote(ravi);
+    const before = await db.$count(s.mediaObjects);
+    await expect(
+      postCustomerQuoteMessage(t(), { userId: ravi, code, body: 'Too many', images: img(5) }),
+    ).rejects.toMatchObject({ code: 'ATTACHMENT_LIMIT' });
+    const bad = img(1).map((p) => ({ ...p, mediaId: randomUUID() }));
+    await expect(
+      postCustomerQuoteMessage(t(), { userId: ravi, code, body: 'Bad id', images: bad }),
+    ).rejects.toMatchObject({ code: 'ATTACHMENT_ID' });
+    expect(await db.$count(s.mediaObjects)).toBe(before);
+    expect((await getMyQuote(t(), ravi, code, 'en')).messages).toHaveLength(1); // only the opening note
+    await closeAllOpen(ravi);
+  });
+
+  it('checks rights before any upload work: 404 for another customer or another city, 409 once closed', async () => {
+    const { code } = await newQuote(ravi);
+    await expect(assertCanAttachToQuote(t(), { userId: meera }, code)).rejects.toMatchObject({ status: 404 });
+    await expect(assertCanAttachToQuote(t(), { scope: elsewhere }, code)).rejects.toMatchObject({
+      status: 404,
+    });
+    await expect(assertCanAttachToQuote(t(), { userId: ravi }, code)).resolves.toBeUndefined();
+    await expect(assertCanAttachToQuote(t(), { scope: ALL }, code)).resolves.toBeUndefined();
+    await declineQuote(t(), { userId: ravi, code, reasonCode: 'no_longer_needed' });
+    await expect(assertCanAttachToQuote(t(), { userId: ravi }, code)).rejects.toMatchObject({
+      code: 'QUOTE_CLOSED',
+    });
+  });
+
+  it('serves only quote photos through the signed image route lookup', async () => {
+    const { code } = await newQuote(ravi);
+    const [photo] = img(1);
+    await postCustomerQuoteMessage(t(), { userId: ravi, code, body: 'Look', images: [photo!] });
+    expect(await findQuoteMediaForServing(t(), photo!.mediaId)).toMatchObject({ path: photo!.path });
+    expect(await findQuoteMediaForServing(t(), uuidv7())).toBeNull();
+    await closeAllOpen(ravi);
+  });
+
+  it('marks messages seen per side, forward only, without showing the other side who read', async () => {
+    const { code } = await newQuote(ravi);
+    await postStaffQuoteMessage(t(), { scope: ALL, staffUserId: staff, code, body: 'Can you take 12?' });
+    const customerSees = async () => (await getMyQuote(t(), ravi, code, 'en')).messages;
+    const staffSees = async () => (await getAdminQuote(t(), ALL, code, 'en')).messages;
+    expect((await customerSees()).every((m) => !m.seen)).toBe(true);
+    expect((await staffSees()).every((m) => !m.seen)).toBe(true);
+
+    // The customer opens the thread: the staff's reply (and nothing else) shows as seen to staff.
+    await markQuoteRead(t(), { side: 'customer', userId: ravi, code });
+    expect((await staffSees()).map((m) => [m.from, m.seen])).toEqual([
+      ['customer', false], // the customer's own note: staff have not marked the thread read yet
+      ['staff', true],
+    ]);
+    // The customer's view: their own note is not seen yet; the staff message is not theirs to flag.
+    expect((await customerSees()).map((m) => [m.from, m.seen])).toEqual([
+      ['customer', false],
+      ['staff', false],
+    ]);
+
+    await markQuoteRead(t(), { side: 'staff', scope: ALL, userId: staff, code });
+    expect((await customerSees()).map((m) => [m.from, m.seen])).toEqual([
+      ['customer', true],
+      ['staff', false],
+    ]);
+
+    // Forward only: reading again later never moves the marker back, and a new message is unseen.
+    const [marker] = await db.select().from(s.quoteReads).where(eq(s.quoteReads.side, 'customer'));
+    await markQuoteRead(t(), { side: 'customer', userId: ravi, code });
+    const [again] = await db.select().from(s.quoteReads).where(eq(s.quoteReads.side, 'customer'));
+    expect(again!.readThroughAt.getTime()).toBeGreaterThanOrEqual(marker!.readThroughAt.getTime());
+    await postCustomerQuoteMessage(t(), { userId: ravi, code, body: 'And delivery by Friday?' });
+    expect((await customerSees()).at(-1)).toMatchObject({ from: 'customer', seen: false });
+
+    // Rights: another customer and another city's staff are 404.
+    await expect(markQuoteRead(t(), { side: 'customer', userId: meera, code })).rejects.toMatchObject({
+      status: 404,
+    });
+    await expect(
+      markQuoteRead(t(), { side: 'staff', scope: elsewhere, userId: staff, code }),
+    ).rejects.toMatchObject({ status: 404 });
+    await closeAllOpen(ravi);
+  });
+});
+
+describe('WhatsApp notices (templates off until staff switch them on)', () => {
+  const queued = () =>
+    db
+      .select({
+        key: s.notificationOutbox.dedupeKey,
+        template: s.notificationOutbox.templateKey,
+        recipient: s.notificationOutbox.recipient,
+        payload: s.notificationOutbox.payload,
+      })
+      .from(s.notificationOutbox)
+      .where(eq(s.notificationOutbox.channel, 'whatsapp'));
+  const turnOn = (key: string) =>
+    db
+      .insert(s.notificationTemplates)
+      .values({ key, channel: 'whatsapp', locale: 'en', body: 'Quote {{1}} updated.', enabled: true })
+      .onConflictDoNothing();
+
+  it('queues nothing while the events are off, then one message per offer version, reply and withdrawal', async () => {
+    await db.update(s.users).set({ phone: '+919876500011', language: 'hi' }).where(eq(s.users.id, ravi));
+    const { code } = await newQuote(ravi);
+    await offer(code, 42_000);
+    await postStaffQuoteMessage(t(), { scope: ALL, staffUserId: staff, code, body: 'Can you take 12?' });
+    expect(await queued()).toEqual([]);
+
+    await turnOn('quote.offer_sent');
+    await turnOn('quote.message');
+    await turnOn('quote.withdrawn');
+    await offer(code, 41_000);
+    await postStaffQuoteMessage(t(), { scope: ALL, staffUserId: staff, code, body: 'Delivery is free.' });
+    const rows = await queued();
+    expect(rows.map((r) => r.template).sort()).toEqual(['quote.message', 'quote.offer_sent']);
+    const sent = rows.find((r) => r.template === 'quote.offer_sent');
+    expect(sent?.key).toMatch(/^quote\.offer_sent:.+:o2:whatsapp$/);
+    expect(sent).toMatchObject({ recipient: '+919876500011', payload: { quoteCode: code } });
+    const { version } = await getAdminQuote(t(), ALL, code, 'en');
+    await withdrawQuote(t(), {
+      scope: ALL,
+      staffUserId: staff,
+      code,
+      expectedVersion: version,
+      reasonCode: 'cannot_supply',
+      message: 'We cannot source these this month.',
+    });
+    expect((await queued()).map((r) => r.template)).toContain('quote.withdrawn');
+    expect((await queued()).every((r) => (r.payload as { quoteCode?: string }).quoteCode === code)).toBe(
+      true,
+    );
+  });
+
+  it('reminds on WhatsApp once, from the same sweep as the expiring email', async () => {
+    await turnOn('quote.expiring');
+    const { code } = await newQuote(ravi);
+    await offer(code, 41_000, 0, 3);
+    await db.execute(sql`
+      update quote_offers set created_at = now() - interval '2 days', valid_until = now() + interval '6 hours'
+      where quote_id = (select id from quote_requests where code = ${code})`);
+    await queueQuoteExpiringEmails(t());
+    await queueQuoteExpiringEmails(t());
+    expect((await queued()).filter((r) => r.template === 'quote.expiring')).toHaveLength(1);
+    await closeAllOpen(ravi);
+  });
+});
+
 describe('accepting an offer', () => {
   it('creates a normal COD order with the negotiated prices (below the shop price allowed)', async () => {
     const { code } = await newQuote(ravi, [
@@ -700,6 +901,41 @@ describe('review fixes 2026-11-14', () => {
     expect((await getMyQuote(t(), ravi, code, 'en')).status).toBe('offered');
     await db.delete(s.settings).where(eq(s.settings.key, 'quotes.cod_cap_paise'));
     await closeAllOpen(ravi);
+  });
+
+  it('places an online order above the cash ceiling: unpaid until Razorpay says so, the same key replays it', async () => {
+    const { code } = await newQuote(ravi);
+    await db.insert(s.settings).values({ key: 'quotes.cod_cap_paise', value: 300_000 });
+    await offer(code, 40_000, 2_000); // ₹4,020 > the ₹3,000 cash ceiling
+    const accept = (idempotencyKey: string) =>
+      acceptQuoteOffer(t(), {
+        userId: ravi,
+        code,
+        offerVersion: 1,
+        idempotencyKey,
+        locale: 'en',
+        paymentMethod: 'online',
+      });
+    const k = key();
+    const r = await accept(k);
+    expect(r).toMatchObject({ totalPaise: 10 * 40_000 + 2_000, replayed: false });
+    const [group] = await db.select().from(s.orderGroups).where(eq(s.orderGroups.code, r.orderCode));
+    expect(group).toMatchObject({
+      paymentMethod: 'online',
+      paymentStatus: 'created',
+      codFeePaise: 0,
+      totalPaise: r.totalPaise,
+    });
+    expect(group!.quoteId).not.toBeNull();
+    expect(await accept(k)).toMatchObject({ orderCode: r.orderCode, replayed: true });
+    expect(await db.$count(s.orderGroups, eq(s.orderGroups.quoteId, group!.quoteId!))).toBe(1);
+    const mine = await getMyQuote(t(), ravi, code, 'en');
+    expect(mine.status).toBe('accepted');
+    // The thread shows whether the order still waits for money (so "Pay now" can be offered after a reload).
+    expect(mine.orderPayment).toEqual({ method: 'online', status: 'created' });
+    await expect(quoteOrderCodeToPay(t(), { userId: ravi, code })).resolves.toBe(r.orderCode);
+    await expect(quoteOrderCodeToPay(t(), { userId: meera, code })).rejects.toMatchObject({ status: 404 });
+    await db.delete(s.settings).where(eq(s.settings.key, 'quotes.cod_cap_paise'));
   });
 
   it('shows staff each line’s shop price and stock at the PIN, never the customer (I2)', async () => {

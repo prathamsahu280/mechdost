@@ -1,7 +1,7 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import { useCallback, useEffect, useState, type SyntheticEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type SyntheticEvent } from 'react';
 import {
   ADMIN_QUOTE_VIEWS,
   type AdminQuoteView,
@@ -15,9 +15,11 @@ import {
   lowPriceLines,
   offerDraft,
   quoteErrorKey,
+  quotePhotoProblem,
   quoteStatusKey,
   type QuoteMessageKey,
 } from '@/lib/quote-views';
+import { PhotoPicker, QuoteAttachments, SeenMark } from '@/components/quotes/quote-attachments';
 import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 
 type List =
@@ -258,6 +260,15 @@ function QuoteWork({ quote, onChanged }: { quote: QuoteDetail; onChanged: () => 
 function Thread({ quote }: { quote: QuoteDetail }) {
   const q = useTranslations('quote');
   const locale = useLocale();
+  // The team has now seen the thread: tell the customer ("Seen"), once per newest message; a failure is silent.
+  const markedFor = useRef<string | null>(null);
+  const newestId = quote.messages.at(-1)?.id ?? null;
+  const code = quote.code;
+  useEffect(() => {
+    if (!newestId || markedFor.current === newestId || document.visibilityState !== 'visible') return;
+    markedFor.current = newestId;
+    void import('@/lib/quote-api').then(({ markQuoteRead }) => markQuoteRead(locale, code, true));
+  }, [newestId, code, locale]);
   return (
     <ol className="mt-4 max-h-80 space-y-3 overflow-y-auto">
       {quote.messages.length === 0 ? <li className="text-sm text-muted">{q('noMessages')}</li> : null}
@@ -275,6 +286,12 @@ function Thread({ quote }: { quote: QuoteDetail }) {
               <p data-user-content className="mt-0.5 whitespace-pre-wrap">
                 {m.body}
               </p>
+              <QuoteAttachments attachments={m.attachments} />
+              {m.seen ? (
+                <p className="text-right">
+                  <SeenMark />
+                </p>
+              ) : null}
             </div>
           </li>
         );
@@ -290,18 +307,38 @@ function Reply({ quote, onChanged }: { quote: QuoteDetail; onChanged: () => Prom
   const [reply, setReply] = useState('');
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<QuoteMessageKey | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
 
   async function submit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!reply.trim()) return;
-    setBusy(true);
+    const text = reply.trim();
+    if (busy || (!text && files.length === 0)) return;
     setProblem(null);
-    const { postAdminQuoteMessage } = await import('@/lib/quote-api');
-    const res = await postAdminQuoteMessage(locale, quote.code, reply.trim());
+    if (files.length > 0) {
+      const bad = quotePhotoProblem(files);
+      if (bad) {
+        setProblem(quoteErrorKey(bad));
+        return;
+      }
+      if (!text) {
+        setProblem('api_err_photoNote');
+        return;
+      }
+    }
+    setBusy(true);
+    const { postAdminQuoteMessage, sendQuotePhotoMessage } = await import('@/lib/quote-api');
+    const res =
+      files.length > 0
+        ? await sendQuotePhotoMessage(locale, quote.code, text, files, true)
+        : await postAdminQuoteMessage(locale, quote.code, text);
     setBusy(false);
     if (res.ok) {
       setReply('');
-      track('click', { id: 'admin_quote_reply', path: window.location.pathname });
+      setFiles([]);
+      track('click', {
+        id: files.length > 0 ? 'admin_quote_photo_reply' : 'admin_quote_reply',
+        path: window.location.pathname,
+      });
       await onChanged();
     } else setProblem(quoteErrorKey(res.code));
   }
@@ -313,6 +350,12 @@ function Reply({ quote, onChanged }: { quote: QuoteDetail; onChanged: () => Prom
           {q(problem)}
         </p>
       ) : null}
+      <div className="mb-2">
+        <PhotoPicker files={files} onChange={setFiles} disabled={busy} describedBy="admin-attach-hint" />
+        <p id="admin-attach-hint" className="mt-1 text-xs text-muted">
+          {q('api_attachHint')}
+        </p>
+      </div>
       <div className="flex items-end gap-2">
         <label htmlFor="admin-reply" className="sr-only">
           {t('replyAs')}
@@ -328,7 +371,11 @@ function Reply({ quote, onChanged }: { quote: QuoteDetail; onChanged: () => Prom
           }}
           className={`${portalField} mt-0 resize-none py-2.5`}
         />
-        <button type="submit" disabled={!reply.trim() || busy} className={portalPrimary}>
+        <button
+          type="submit"
+          disabled={(!reply.trim() && files.length === 0) || busy}
+          className={portalPrimary}
+        >
           {q('send')}
         </button>
       </div>

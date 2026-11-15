@@ -83,6 +83,7 @@ const NONE = [
   'quote_lines',
   'quote_messages',
   'quote_offers',
+  'quote_reads',
   'quote_requests',
   'recommendation_rules',
   'refund_events',

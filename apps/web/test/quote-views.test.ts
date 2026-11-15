@@ -4,17 +4,53 @@ import {
   lowPriceLines,
   offerDraft,
   quoteErrorKey,
+  quotePhotoProblem,
+  quoteRulesPath,
   quoteStatusKey,
   quoteWaitsForCustomer,
 } from '../src/lib/quote-views';
 
 /** Real-mode bulk quotes (spec 19): API codes and states → translated copy; the staff offer builder's parsing. */
+describe('quotePhotoProblem', () => {
+  const file = (type: string, size = 1000) => new File([new Uint8Array(size)], 'p', { type });
+  it('refuses, before any upload, what the API would refuse: count, size and type (PDF included)', () => {
+    expect(quotePhotoProblem([file('image/jpeg'), file('image/png'), file('image/webp')])).toBeNull();
+    expect(quotePhotoProblem([])).toBeNull();
+    expect(quotePhotoProblem(Array.from({ length: 5 }, () => file('image/jpeg')))).toBe('ATTACHMENT_LIMIT');
+    expect(quotePhotoProblem([file('image/jpeg', 8 * 1024 * 1024 + 1)])).toBe('PHOTO_TOO_LARGE');
+    expect(quotePhotoProblem([file('application/pdf')])).toBe('PHOTO_TYPE');
+    expect(quotePhotoProblem([file('image/gif')])).toBe('PHOTO_TYPE');
+  });
+  it('maps the upload error codes to their own messages', () => {
+    expect(quoteErrorKey('ATTACHMENT_LIMIT')).toBe('api_err_attachLimit');
+    expect(quoteErrorKey('PHOTO_TOO_LARGE')).toBe('api_err_photoLarge');
+    expect(quoteErrorKey('HTTP_413')).toBe('api_err_photoLarge');
+    expect(quoteErrorKey('PHOTO_TYPE')).toBe('api_err_photoType');
+    expect(quoteErrorKey('PHOTO_HEIC')).toBe('api_err_photoHeic');
+    expect(quoteErrorKey('PHOTO_UNREADABLE')).toBe('api_err_photoType');
+    expect(quoteErrorKey('PHOTOS_UNAVAILABLE')).toBe('api_err_photosUnavailable');
+  });
+});
+
+describe('quoteRulesPath', () => {
+  it('asks for the PIN code’s city value only once the PIN is a full valid PIN code', () => {
+    expect(quoteRulesPath('492004')).toBe('/quotes/rules?pincode=492004');
+    expect(quoteRulesPath(' 492004 ')).toBe('/quotes/rules?pincode=492004');
+    expect(quoteRulesPath('4920')).toBe('/quotes/rules');
+    expect(quoteRulesPath('092004')).toBe('/quotes/rules');
+    expect(quoteRulesPath('49200a')).toBe('/quotes/rules');
+    expect(quoteRulesPath(null)).toBe('/quotes/rules');
+  });
+});
+
 describe('quoteErrorKey', () => {
   it('maps the quote API codes to their own messages', () => {
     expect(quoteErrorKey('QUOTE_MIN_UNITS')).toBe('api_err_min');
     expect(quoteErrorKey('QUOTE_OPEN_LIMIT')).toBe('api_err_openLimit');
     expect(quoteErrorKey('QUOTE_PRODUCT_UNAVAILABLE')).toBe('api_err_product');
     expect(quoteErrorKey('PINCODE_NOT_SERVICEABLE')).toBe('api_err_pincode');
+    expect(quoteErrorKey('PAYMENT_METHOD_UNAVAILABLE')).toBe('api_err_payUnavailable');
+    expect(quoteErrorKey('QUOTE_NOT_PAYABLE')).toBe('api_err_notPayable');
     expect(quoteErrorKey('QUOTE_OFFER_STALE')).toBe('stale');
     expect(quoteErrorKey('QUOTE_OFFER_EXPIRED')).toBe('expired');
     expect(quoteErrorKey('QUOTE_CLOSED')).toBe('api_err_closed');

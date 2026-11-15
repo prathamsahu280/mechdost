@@ -3,6 +3,7 @@ import { and, asc, desc, eq, gt, inArray, sql, type SQL } from 'drizzle-orm';
 import { publicCode } from '@mechdost/shared/ids';
 import type { AdminQuoteView } from '@mechdost/shared/quote-api';
 import {
+  QUOTE_ATTACH_MAX,
   QUOTE_CUSTOMER_MESSAGES_PER_HOUR,
   QUOTE_INACTIVE_DAYS,
   QUOTE_LINE_MAX_QTY,
@@ -30,13 +31,16 @@ import {
   auditLog,
   cities,
   orderGroups,
+  mediaObjects,
   pincodes,
   quoteEvents,
   quoteLines,
   quoteMessages,
   quoteOffers,
+  quoteReads,
   quoteRequests,
 } from '../schema';
+import type { StoredImage } from './service-photos';
 import { placeOrder, quoteCheckout, settingOr } from './checkout';
 import { activeBlockLevels } from './customer-blocks';
 import { decodeCursor, encodeCursor, pageSize } from './cursor';
@@ -44,6 +48,7 @@ import { ConflictError, ForbiddenError, NotFoundError, pgCode, ValidationError }
 import { recordServerEvent } from './events';
 import { localized } from './localized';
 import { queueEmail } from './email-notifications';
+import { queueQuoteWhatsApp } from './quote-notifications';
 import type { Tx } from './orders';
 import type { CityScope } from './routing';
 import { rowsOf } from './sql-rows';
@@ -104,6 +109,8 @@ export interface QuoteSummaryView {
   lastMessageBy: 'customer' | 'staff' | null;
   offer: QuoteOfferBrief | null;
   orderCode: string | null;
+  /** How the order made from this quote is paid and whether it is: lets the thread offer "Pay now" after a reload. */
+  orderPayment: { method: string; status: string } | null;
   createdAt: string;
   version: number;
 }
@@ -136,7 +143,16 @@ export interface QuoteDetailView extends QuoteSummaryView {
     stock: number | null;
   }[];
   currentOffer: QuoteOfferView | null;
-  messages: { id: string; from: 'customer' | 'staff' | 'system'; body: string; at: string }[];
+  messages: {
+    id: string;
+    from: 'customer' | 'staff' | 'system';
+    body: string;
+    at: string;
+    /** Photos on the message (the API turns each id into a short-lived signed URL; no storage path leaves here). */
+    attachments: { mediaId: string; width: number; height: number }[];
+    /** Written by the viewer's own side and already seen by the other side (never says who saw it). */
+    seen: boolean;
+  }[];
   address: QuoteAddress;
   reasonCode: string | null;
   closingMessage: string | null;
@@ -157,6 +173,8 @@ interface SummaryRow {
   offer_total: number | string | null;
   offer_valid_until: Date | string | null;
   order_code: string | null;
+  order_payment_method: string | null;
+  order_payment_status: string | null;
   created_at: Date | string;
   created_key: string;
   version: number;
@@ -171,7 +189,8 @@ const SUMMARY_SELECT = sql`
     (select count(*) from quote_lines l where l.quote_id = q.id) as lines,
     q.units, q.list_total_paise, q.last_message_at, q.last_message_by,
     o.offer_version, o.total_paise as offer_total, o.valid_until as offer_valid_until,
-    g.code as order_code, q.created_at, q.created_at::text as created_key, q.version
+    g.code as order_code, g.payment_method as order_payment_method, g.payment_status as order_payment_status,
+    q.created_at, q.created_at::text as created_key, q.version
   from quote_requests q
   join cities c on c.id = q.city_id
   left join lateral (
@@ -203,6 +222,10 @@ function toSummary(r: SummaryRow, now: Date): QuoteSummaryView {
       r.last_message_by === 'customer' || r.last_message_by === 'staff' ? r.last_message_by : null,
     offer,
     orderCode: r.order_code,
+    orderPayment:
+      r.order_payment_method === null || r.order_payment_status === null
+        ? null
+        : { method: r.order_payment_method, status: r.order_payment_status },
     createdAt: iso(r.created_at),
     version: r.version,
   };
@@ -276,6 +299,12 @@ async function detail(db: Tx, where: SQL, locale: QuoteLocale, staffView: boolea
       .orderBy(desc(quoteMessages.createdAt), desc(quoteMessages.id))
       .limit(QUOTE_THREAD_LIMIT)
   ).reverse();
+  const extras = await threadExtras(
+    db,
+    row.id,
+    messages.map((m) => m.id),
+    staffView ? 'staff' : 'customer',
+  );
   const a = row.shipping_address;
   const costs = staffView ? await lineCosts(db, row.id, row.pincode) : null;
   return {
@@ -310,6 +339,11 @@ async function detail(db: Tx, where: SQL, locale: QuoteLocale, staffView: boolea
       from: m.role === 'staff' || m.role === 'system' ? m.role : 'customer',
       body: m.body,
       at: m.at.toISOString(),
+      attachments: extras.attachments.get(m.id) ?? [],
+      seen:
+        m.role === (staffView ? 'staff' : 'customer') &&
+        extras.otherReadAt !== null &&
+        m.at <= extras.otherReadAt,
     })),
     address: {
       contactName: a.contactName,
@@ -764,16 +798,15 @@ async function addMessage(
   q: LockedQuote,
   author: { role: 'customer' | 'staff'; userId: string },
   body: string,
-): Promise<void> {
+): Promise<string> {
   const text = body.trim();
   if (text.length === 0 || text.length > QUOTE_MESSAGE_MAX)
     throw new ValidationError('Write a message of up to 1000 characters', 'QUOTE_MESSAGE_LENGTH');
-  await tx.insert(quoteMessages).values({
-    quoteId: q.id,
-    authorUserId: author.userId,
-    authorRole: author.role,
-    body: text,
-  });
+  const [message] = await tx
+    .insert(quoteMessages)
+    .values({ quoteId: q.id, authorUserId: author.userId, authorRole: author.role, body: text })
+    .returning({ id: quoteMessages.id });
+  if (!message) throw new Error('quote message was not stored');
   await tx.insert(quoteEvents).values({
     quoteId: q.id,
     kind: 'message',
@@ -787,6 +820,170 @@ async function addMessage(
     cityId: q.cityId,
     props: { quoteCode: q.code, by: author.role },
   });
+  return message.id;
+}
+
+const UUID_V7 = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+/** The photos of a page of messages and how far the other side has read (one small query each, both indexed). */
+async function threadExtras(db: Tx, quoteId: string, messageIds: string[], side: 'customer' | 'staff') {
+  const attachments = new Map<string, { mediaId: string; width: number; height: number }[]>();
+  if (messageIds.length > 0) {
+    const media = await db
+      .select({
+        id: mediaObjects.id,
+        messageId: mediaObjects.ownerId,
+        width: mediaObjects.width,
+        height: mediaObjects.height,
+      })
+      .from(mediaObjects)
+      .where(
+        and(
+          eq(mediaObjects.ownerKind, 'quote_message'),
+          inArray(mediaObjects.ownerId, messageIds),
+          sql`${mediaObjects.deletedAt} is null`,
+        ),
+      )
+      .orderBy(asc(mediaObjects.createdAt), asc(mediaObjects.id));
+    for (const m of media)
+      attachments.set(m.messageId, [
+        ...(attachments.get(m.messageId) ?? []),
+        { mediaId: m.id, width: m.width, height: m.height },
+      ]);
+  }
+  const [other] = await db
+    .select({ at: quoteReads.readThroughAt })
+    .from(quoteReads)
+    .where(
+      and(eq(quoteReads.quoteId, quoteId), eq(quoteReads.side, side === 'customer' ? 'staff' : 'customer')),
+    );
+  return { attachments, otherReadAt: other?.at ?? null };
+}
+
+/** Store the photos of one message (at most `QUOTE_ATTACH_MAX`, time-ordered ids), in the message's transaction. */
+async function attachQuoteImages(
+  tx: Tx,
+  q: LockedQuote,
+  input: { messageId: string; userId: string; role: 'customer' | 'staff'; images: readonly StoredImage[] },
+): Promise<void> {
+  if (input.images.length === 0) return;
+  if (input.images.length > QUOTE_ATTACH_MAX)
+    throw new ValidationError(`Up to ${String(QUOTE_ATTACH_MAX)} photos per message`, 'ATTACHMENT_LIMIT');
+  // The thread lists photos by (created_at, id); one insert shares created_at, so only time-ordered (v7) ids keep
+  // the order they were attached in.
+  if (input.images.some((img) => !UUID_V7.test(img.mediaId)))
+    throw new ValidationError('Photo ids must be uuid v7', 'ATTACHMENT_ID');
+  await tx.insert(mediaObjects).values(
+    input.images.map((img) => ({
+      id: img.mediaId,
+      ownerKind: 'quote_message',
+      ownerId: input.messageId,
+      bucket: img.bucket,
+      path: img.path,
+      thumbPath: img.thumbPath,
+      width: img.width,
+      height: img.height,
+      bytes: img.bytes,
+      thumbBytes: img.thumbBytes,
+      sha256: img.sha256,
+      uploadedBy: input.userId,
+    })),
+  );
+  await tx.insert(auditLog).values({
+    actorUserId: input.userId,
+    actorRole: input.role === 'staff' ? 'staff' : 'customer',
+    action: 'quote.photos_added',
+    entity: 'quote_request',
+    entityId: q.id,
+    after: { messageId: input.messageId, count: input.images.length },
+  });
+  await recordServerEvent(tx, 'quote_attachment_added', {
+    userId: input.userId,
+    cityId: q.cityId,
+    props: {
+      quoteCode: q.code,
+      by: input.role,
+      count: input.images.length,
+      bytes: input.images.reduce((sum, img) => sum + img.bytes, 0),
+    },
+  });
+}
+
+/** Who is acting on a quote thread: the customer who owns it, or staff within a city scope. */
+export type QuoteThreadWho = { userId: string } | { scope: CityScope };
+
+const whoWhere = (who: QuoteThreadWho, code: string): SQL =>
+  'scope' in who ? staffWhere(who.scope, code) : mineWhere(who.userId, code);
+
+/**
+ * Before any image work: the thread must be the caller's (404 otherwise) and still open (409 `QUOTE_CLOSED`). The
+ * message limit and the state are checked again under the lock when the message is saved.
+ */
+export async function assertCanAttachToQuote(db: Tx, who: QuoteThreadWho, code: string): Promise<void> {
+  const [q] = await db
+    .select({ status: quoteRequests.status })
+    .from(quoteRequests)
+    .where(whoWhere(who, code))
+    .limit(1);
+  if (!q) throw new NotFoundError('Quote not found');
+  if (!OPEN.includes(q.status as QuoteStatus))
+    throw new ConflictError('This quote is closed', 'QUOTE_CLOSED');
+}
+
+export interface ServedQuoteMedia {
+  bucket: string;
+  path: string;
+  thumbPath: string;
+}
+
+/** Object keys of one live quote photo for the image route (which checks the signed URL), or null. */
+export async function findQuoteMediaForServing(db: Tx, mediaId: string): Promise<ServedQuoteMedia | null> {
+  const [row] = await db
+    .select({ bucket: mediaObjects.bucket, path: mediaObjects.path, thumbPath: mediaObjects.thumbPath })
+    .from(mediaObjects)
+    .innerJoin(quoteMessages, eq(quoteMessages.id, mediaObjects.ownerId))
+    .where(
+      and(
+        eq(mediaObjects.id, mediaId),
+        eq(mediaObjects.ownerKind, 'quote_message'),
+        sql`${mediaObjects.deletedAt} is null`,
+      ),
+    )
+    .limit(1);
+  return row ?? null;
+}
+
+/**
+ * The reader's side has now seen the whole thread: the marker moves to the newest message and never backwards
+ * (`greatest`, one row per quote and side). A read is not a quote change, so it does not touch `quote_requests`
+ * (its own trigger pings the topic). 404 for a quote that is not theirs.
+ */
+export async function markQuoteRead(
+  db: Tx,
+  input: ({ side: 'customer'; userId: string } | { side: 'staff'; scope: CityScope; userId: string }) & {
+    code: string;
+  },
+): Promise<{ readThrough: string | null }> {
+  const where =
+    input.side === 'staff' ? staffWhere(input.scope, input.code) : mineWhere(input.userId, input.code);
+  const [q] = await db.select({ id: quoteRequests.id }).from(quoteRequests).where(where).limit(1);
+  if (!q) throw new NotFoundError('Quote not found');
+  const [newest] = await db
+    .select({ at: quoteMessages.createdAt })
+    .from(quoteMessages)
+    .where(eq(quoteMessages.quoteId, q.id))
+    .orderBy(desc(quoteMessages.createdAt))
+    .limit(1);
+  if (!newest) return { readThrough: null };
+  await db
+    .insert(quoteReads)
+    .values({ quoteId: q.id, side: input.side, readThroughAt: newest.at, readByUserId: input.userId })
+    .onConflictDoUpdate({
+      target: [quoteReads.quoteId, quoteReads.side],
+      set: { readThroughAt: newest.at, readByUserId: input.userId },
+      setWhere: sql`${quoteReads.readThroughAt} < ${newest.at.toISOString()}::timestamptz`,
+    });
+  return { readThrough: newest.at.toISOString() };
 }
 
 /**
@@ -795,7 +992,7 @@ async function addMessage(
  */
 export async function postCustomerQuoteMessage(
   db: Tx,
-  input: { userId: string; code: string; body: string },
+  input: { userId: string; code: string; body: string; images?: readonly StoredImage[] },
 ): Promise<{ status: QuoteStatus; version: number }> {
   return db.transaction(async (tx) => {
     const q = await lockQuote(tx, mineWhere(input.userId, input.code));
@@ -810,7 +1007,13 @@ export async function postCustomerQuoteMessage(
     );
     if (recent >= QUOTE_CUSTOMER_MESSAGES_PER_HOUR)
       throw new ValidationError('Too many messages on this quote this hour', 'QUOTE_MESSAGE_LIMIT');
-    await addMessage(tx, q, { role: 'customer', userId: input.userId }, input.body);
+    const messageId = await addMessage(tx, q, { role: 'customer', userId: input.userId }, input.body);
+    await attachQuoteImages(tx, q, {
+      messageId,
+      userId: input.userId,
+      role: 'customer',
+      images: input.images ?? [],
+    });
     const now = new Date();
     const touch = { lastMessageAt: now, lastMessageBy: 'customer', expiresAt: inactiveDeadline(now) };
     if (q.status === 'offered') {
@@ -845,8 +1048,22 @@ export async function postCustomerQuoteMessage(
  */
 export async function acceptQuoteOffer(
   db: Tx,
-  input: { userId: string; code: string; offerVersion: number; idempotencyKey: string; locale: QuoteLocale },
-): Promise<{ orderCode: string; totalPaise: number; replayed: boolean }> {
+  input: {
+    userId: string;
+    code: string;
+    offerVersion: number;
+    idempotencyKey: string;
+    locale: QuoteLocale;
+    /** Default cash on delivery. `online` places the order unpaid; the API then opens a Razorpay order for it. */
+    paymentMethod?: 'cod' | 'online';
+  },
+): Promise<{
+  orderCode: string;
+  totalPaise: number;
+  replayed: boolean;
+  paymentMethod: 'cod' | 'online';
+}> {
+  const method = input.paymentMethod ?? 'cod';
   return db.transaction(async (tx) => {
     const q = await lockQuote(tx, mineWhere(input.userId, input.code));
     if (q.status === 'accepted') {
@@ -855,11 +1072,17 @@ export async function acceptQuoteOffer(
           code: orderGroups.code,
           totalPaise: orderGroups.totalPaise,
           key: orderGroups.idempotencyKey,
+          method: orderGroups.paymentMethod,
         })
         .from(orderGroups)
         .where(eq(orderGroups.quoteId, q.id));
       if (group?.key === input.idempotencyKey)
-        return { orderCode: group.code, totalPaise: group.totalPaise, replayed: true };
+        return {
+          orderCode: group.code,
+          totalPaise: group.totalPaise,
+          replayed: true,
+          paymentMethod: group.method === 'online' ? 'online' : 'cod',
+        };
     }
     assertOpen(q);
     const [offer] = await tx
@@ -871,10 +1094,10 @@ export async function acceptQuoteOffer(
       throw new ConflictError('This offer was replaced; review the latest one', 'QUOTE_OFFER_STALE');
     if (offer.validUntil <= new Date())
       throw new ConflictError('This offer has expired; ask MechDost for a new one', 'QUOTE_OFFER_EXPIRED');
-    // Cash on delivery has a ceiling for quote orders too (review I3); above it the customer talks to MechDost
-    // (online payment for quotes: pending #18).
+    // Cash on delivery has a ceiling for quote orders too (review I3); above it the customer pays online (the
+    // ceiling is a limit on cash at the door, not on card or UPI).
     const capPaise = await settingOr(tx, q.cityId, COD_CAP);
-    if (offer.totalPaise > capPaise)
+    if (method === 'cod' && offer.totalPaise > capPaise)
       throw new ValidationError(
         'This order is too large for cash on delivery; contact MechDost',
         'QUOTE_COD_CAP',
@@ -897,7 +1120,7 @@ export async function acceptQuoteOffer(
     }
     const a = q.shippingAddress;
     const placed = await placeOrder(tx, {
-      method: 'cod',
+      method,
       userId: input.userId,
       idempotencyKey: input.idempotencyKey,
       address: {
@@ -944,10 +1167,37 @@ export async function acceptQuoteOffer(
         offerVersion: offer.offerVersion,
         orderCode: placed.code,
         totalPaise: placed.totalPaise,
+        paymentMethod: method,
       },
     });
-    return { orderCode: placed.code, totalPaise: placed.totalPaise, replayed: false };
+    return { orderCode: placed.code, totalPaise: placed.totalPaise, replayed: false, paymentMethod: method };
   });
+}
+
+/**
+ * The order code of the customer's accepted quote when that order is paid online and not paid yet, for "Pay now"
+ * after the Razorpay window was closed (the API then reuses or creates the one open Razorpay order of the group).
+ * 404 for anyone else's quote; 409 `QUOTE_NOT_PAYABLE` when nothing is waiting for money.
+ */
+export async function quoteOrderCodeToPay(db: Tx, input: { userId: string; code: string }): Promise<string> {
+  const [row] = await db
+    .select({
+      orderCode: orderGroups.code,
+      method: orderGroups.paymentMethod,
+      status: orderGroups.paymentStatus,
+    })
+    .from(quoteRequests)
+    .leftJoin(orderGroups, eq(orderGroups.quoteId, quoteRequests.id))
+    .where(mineWhere(input.userId, input.code))
+    .limit(1);
+  if (!row) throw new NotFoundError('Quote not found');
+  if (
+    !row.orderCode ||
+    row.method !== 'online' ||
+    !['created', 'attempted', 'failed'].includes(row.status ?? '')
+  )
+    throw new ConflictError('Nothing is waiting for payment on this quote', 'QUOTE_NOT_PAYABLE');
+  return row.orderCode;
 }
 
 /** The customer closes their quote (any time before accepting), with a reason code. */
@@ -1011,12 +1261,30 @@ export function getAdminQuote(db: Tx, scope: CityScope, code: string, locale: Qu
 /** Staff reply as MechDost. The first reply moves a new request to `negotiating`; an active offer stays. */
 export async function postStaffQuoteMessage(
   db: Tx,
-  input: { scope: CityScope; staffUserId: string; code: string; body: string },
+  input: {
+    scope: CityScope;
+    staffUserId: string;
+    code: string;
+    body: string;
+    images?: readonly StoredImage[];
+  },
 ): Promise<{ status: QuoteStatus; version: number }> {
   return db.transaction(async (tx) => {
     const q = await lockQuote(tx, staffWhere(input.scope, input.code));
     assertOpen(q);
-    await addMessage(tx, q, { role: 'staff', userId: input.staffUserId }, input.body);
+    const messageId = await addMessage(tx, q, { role: 'staff', userId: input.staffUserId }, input.body);
+    await attachQuoteImages(tx, q, {
+      messageId,
+      userId: input.staffUserId,
+      role: 'staff',
+      images: input.images ?? [],
+    });
+    await queueQuoteWhatsApp(tx, {
+      userId: q.userId,
+      quoteCode: q.code,
+      event: 'quote.message',
+      dedupe: messageId,
+    });
     const now = new Date();
     const touch = { lastMessageAt: now, lastMessageBy: 'staff', expiresAt: inactiveDeadline(now) };
     if (q.status === 'open') {
@@ -1178,6 +1446,12 @@ export async function sendQuoteOffer(
       props: { quoteCode: q.code, ...payload },
     });
     await queueOfferEmail(tx, q, offerVersion, validUntil);
+    await queueQuoteWhatsApp(tx, {
+      userId: q.userId,
+      quoteCode: q.code,
+      event: 'quote.offer_sent',
+      dedupe: `${q.id}:o${String(offerVersion)}`,
+    });
     return { status: 'offered', version, offerVersion };
   });
 }
@@ -1215,15 +1489,22 @@ export async function queueQuoteExpiringEmails(
   );
   let queued = 0;
   for (const r of due) {
-    const sent = await db.transaction((tx) =>
-      queueEmail(tx, {
+    const sent = await db.transaction(async (tx) => {
+      // The WhatsApp reminder shares the sweep; its own dedupe key (offer id) keeps it to one per offer.
+      await queueQuoteWhatsApp(tx, {
+        userId: r.user_id,
+        quoteCode: r.code,
+        event: 'quote.expiring',
+        dedupe: r.offer_id,
+      });
+      return queueEmail(tx, {
         template: 'quote_expiring',
         entityId: r.offer_id,
         version: 1,
         userId: r.user_id,
         payload: { quoteCode: r.code, validUntil: istDateString(new Date(r.valid_until)) },
-      }),
-    );
+      });
+    });
     if (sent) queued += 1;
   }
   return queued;
@@ -1265,6 +1546,12 @@ export async function withdrawQuote(
       userId: input.staffUserId,
       cityId: q.cityId,
       props: { quoteCode: q.code, to: 'withdrawn', by: 'staff', reasonCode: input.reasonCode },
+    });
+    await queueQuoteWhatsApp(tx, {
+      userId: q.userId,
+      quoteCode: q.code,
+      event: 'quote.withdrawn',
+      dedupe: q.id,
     });
     return { status: 'withdrawn', version };
   });

@@ -99,7 +99,15 @@ describe('quote request schemas', () => {
 
   it('needs a positive offer version to accept', () => {
     expect(AcceptQuoteSchema.safeParse({ offerVersion: 0 }).success).toBe(false);
-    expect(AcceptQuoteSchema.parse({ offerVersion: 2 })).toEqual({ offerVersion: 2, locale: 'en' });
+    expect(AcceptQuoteSchema.parse({ offerVersion: 2 })).toEqual({
+      offerVersion: 2,
+      paymentMethod: 'cod',
+      locale: 'en',
+    });
+    expect(AcceptQuoteSchema.parse({ offerVersion: 2, paymentMethod: 'online' }).paymentMethod).toBe(
+      'online',
+    );
+    expect(AcceptQuoteSchema.safeParse({ offerVersion: 2, paymentMethod: 'card' }).success).toBe(false);
   });
 
   it('validates offers: one price per line, ₹0 refused, validity 1–30 days', () => {
@@ -138,6 +146,7 @@ describe('quote request schemas', () => {
       lastMessageBy: 'staff',
       offer: { version: 1, totalPaise: 492_000, validUntil: now, expired: false },
       orderCode: null,
+      orderPayment: null,
       createdAt: now,
       version: 4,
       lineItems: [
@@ -165,7 +174,24 @@ describe('quote request schemas', () => {
         terms: null,
         createdAt: now,
       },
-      messages: [{ id: 'm1', from: 'customer', body: 'Need these by Friday', at: now }],
+      messages: [
+        {
+          id: 'm1',
+          from: 'customer',
+          body: 'Need these by Friday',
+          at: now,
+          attachments: [
+            {
+              id: 'p1',
+              width: 800,
+              height: 600,
+              thumbUrl: '/quote-photos/p1/thumb?e=1&s=x',
+              largeUrl: '/quote-photos/p1/large?e=1&s=x',
+            },
+          ],
+          seen: true,
+        },
+      ],
       address: {
         contactName: 'Ravi',
         contactPhone: '••••3210',

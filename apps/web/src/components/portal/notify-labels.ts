@@ -8,6 +8,10 @@ export const EVENT_LABEL = {
   'service.estimate_sent': 'notify_ev_service_estimate_sent',
   'ticket.replied': 'notify_ev_ticket_replied',
   'order.routed': 'notify_ev_order_routed',
+  'quote.offer_sent': 'notify_ev_quote_offer_sent',
+  'quote.message': 'notify_ev_quote_message',
+  'quote.expiring': 'notify_ev_quote_expiring',
+  'quote.withdrawn': 'notify_ev_quote_withdrawn',
 } as const satisfies Record<WhatsAppTemplateKey, string>;
 
 export const PROBLEM_LABEL = {
@@ -24,5 +28,6 @@ export const SAMPLES: Record<string, string> = {
   deliveryCode: '4821',
   requestCode: 'SR-RPR-2026-4M8T2B',
   ticketCode: 'REQ-RPR-2026-9F2KQA',
+  quoteCode: 'QT-RPR-2026-6K2M9P',
   acceptMinutes: '15',
 };
