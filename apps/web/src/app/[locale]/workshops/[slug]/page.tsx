@@ -196,7 +196,7 @@ export default async function WorkshopPage({ params }: Props) {
 
         <section
           aria-labelledby="book-title"
-          className="rounded-card border border-line-card bg-surface p-6 shadow-card nav:sticky nav:top-28"
+          className="rounded-card border border-line-card bg-surface p-6 shadow-card sticky-aside"
         >
           <h2 id="book-title" className="font-heading text-xl font-extrabold text-ink">
             {t('bookTitle')}

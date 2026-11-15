@@ -640,7 +640,12 @@ function PolicyEditor({
                 <span className="font-bold text-ink">{t('pol_versionN', { n: v.versionNo })}</span>
                 <span className="text-muted">
                   {formatDate(v.createdAt, locale)}
-                  {v.by ? ` · ${v.by}` : ''}
+                  {v.by ? (
+                    <>
+                      {' · '}
+                      <span data-user-content>{v.by}</span>
+                    </>
+                  ) : null}
                   {v.action === 'restored' && v.restoredFrom !== null
                     ? ` · ${t('pol_restoredFrom', { n: v.restoredFrom })}`
                     : ''}

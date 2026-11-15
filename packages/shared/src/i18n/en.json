@@ -4537,7 +4537,7 @@
     "csvFile_EMPTY": "The file has no lines to read.",
     "csvFile_MALFORMED": "The file could not be read as a CSV. Save it again as CSV (comma separated).",
     "csvFile_TOO_MANY_ROWS": "The file has more than {rows} lines. Split it into smaller files.",
-    "csvFile_HEADER": "The first line must have the column names: sku, and any of stock, active, requested_price.",
+    "csvFile_HEADER": "The first line must have the column names: <code>sku</code>, and any of <code>stock</code>, <code>active</code>, <code>requested_price</code>.",
     "csvFile_TOO_LARGE": "The file is bigger than 1 MB.",
     "csvFile_TYPE": "Choose a CSV file.",
     "csvFile_HAS_ERRORS": "The file has lines with problems. Check it again and fix them.",

@@ -142,7 +142,10 @@ export function ShopCsvCard({ shopId }: { shopId: string }) {
 
       {error ? (
         <p role="alert" className="mt-3 text-sm font-bold text-error">
-          {t(csvFileKey(error), { rows: SHOP_CSV_MAX_ROWS })}
+          {t.rich(csvFileKey(error), {
+            rows: SHOP_CSV_MAX_ROWS,
+            code: (parts) => <code lang="en">{parts}</code>,
+          })}
         </p>
       ) : null}
 

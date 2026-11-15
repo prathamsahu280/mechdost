@@ -4537,7 +4537,7 @@
     "csvFile_EMPTY": "फ़ाइल में पढ़ने के लिए कोई पंक्ति नहीं है।",
     "csvFile_MALFORMED": "फ़ाइल को पढ़ा नहीं जा सका। उसे फिर से कॉमा से अलग की गई फ़ाइल के रूप में सहेजें।",
     "csvFile_TOO_MANY_ROWS": "फ़ाइल में {rows} से ज़्यादा पंक्तियाँ हैं। उसे छोटी फ़ाइलों में बाँटें।",
-    "csvFile_HEADER": "पहली पंक्ति में कॉलम के नाम होने चाहिए: sku, और चाहें तो stock, active, requested_price।",
+    "csvFile_HEADER": "पहली पंक्ति में कॉलम के नाम होने चाहिए: <code>sku</code>, और चाहें तो <code>stock</code>, <code>active</code>, <code>requested_price</code>।",
     "csvFile_TOO_LARGE": "फ़ाइल 1 MB से बड़ी है।",
     "csvFile_TYPE": "एक फ़ाइल चुनें।",
     "csvFile_HAS_ERRORS": "फ़ाइल में कुछ पंक्तियों में समस्या है। फिर से जाँचें और ठीक करें।",

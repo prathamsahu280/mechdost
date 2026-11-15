@@ -189,7 +189,7 @@ export function OrderView({ code }: { code: string }) {
               <Link
                 href={`${locale === 'hi' ? '/hi' : ''}/account/support?order=${encodeURIComponent(order.code)}`}
                 data-track="order_cancel_via_support"
-                className="font-bold text-accent underline-offset-4 hover:underline"
+                className="font-bold text-accent-soft-text underline-offset-4 hover:underline"
               >
                 {t('cancelViaSupportLink')}
               </Link>
@@ -261,7 +261,7 @@ export function OrderView({ code }: { code: string }) {
         <Link
           href={`${locale === 'hi' ? '/hi' : ''}/account/support?order=${encodeURIComponent(order.code)}`}
           data-track="order_report_problem"
-          className="press inline-flex min-h-11 items-center text-sm font-bold text-accent underline-offset-4 hover:underline"
+          className="press inline-flex min-h-11 items-center text-sm font-bold text-accent-soft-text underline-offset-4 hover:underline"
         >
           {t('reportProblem')}
         </Link>

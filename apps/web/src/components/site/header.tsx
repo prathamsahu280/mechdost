@@ -27,9 +27,15 @@ export const BRAND_LOGO_SIZE = { width: 160, height: 29 } as const;
 export function BrandMark() {
   const t = useTranslations('common');
   // A little narrower under 460 px so logo, language, account and cart fit a 360 px phone (QA 2026-11-14).
-  const size = 'h-auto w-[132px] min-[460px]:w-[152px] tab:w-[176px]';
+  // `max-w-full` + a shrinkable link: when the buttons next to it need the room (signed in with the bell, a long
+  // language name), the logo gives way instead of the page scrolling sideways (audit 2026-11-16, 4-31 px at 390/480/1024).
+  const size = 'h-auto w-[132px] max-w-full min-[460px]:w-[152px] tab:w-[176px]';
   return (
-    <LocalLink href="/" className="group inline-flex flex-col items-start" data-track="brand_home">
+    <LocalLink
+      href="/"
+      className="group inline-flex min-w-0 shrink flex-col items-start"
+      data-track="brand_home"
+    >
       <Image
         src={BRAND_LOGO.light}
         alt={t('brand')}

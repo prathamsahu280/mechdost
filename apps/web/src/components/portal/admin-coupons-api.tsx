@@ -11,6 +11,7 @@ import { dateToIstLocal, type CouponKind } from '@mechdost/shared/coupon';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState, type ReactNode, type SyntheticEvent } from 'react';
 import { adminApi } from '@/lib/admin-api';
+import { localName } from '@/lib/admin-analytics-view';
 import { track } from '@/lib/analytics';
 import {
   adminErrorKey,
@@ -35,6 +36,7 @@ type Load =
 interface Shop {
   id: string;
   name: string;
+  nameHi: string | null;
 }
 interface Editing {
   coupon: AdminCoupon | null;
@@ -76,7 +78,7 @@ export function AdminCouponsApi() {
   }, [reload]);
   useEffect(() => {
     void adminApi(locale, '/admin/shops?status=approved&limit=100', AdminShopList).then((res) => {
-      if (res.ok) setShops(res.data.items.map((s) => ({ id: s.id, name: s.name })));
+      if (res.ok) setShops(res.data.items.map((s) => ({ id: s.id, name: s.name, nameHi: s.nameHi })));
     });
   }, [locale]);
 
@@ -463,7 +465,7 @@ export function AdminCouponsApi() {
                   <option value="">{t('f_shop_pick')}</option>
                   {shops.map((s) => (
                     <option key={s.id} value={s.id}>
-                      {s.name}
+                      {localName(s, locale)}
                     </option>
                   ))}
                 </select>
@@ -591,7 +593,7 @@ export function AdminCouponsApi() {
                   </div>
                   <p className="text-sm text-ink">
                     {c.funder === 'shop' && c.shop
-                      ? t('funder_shop_named', { shop: c.shop.name })
+                      ? t('funder_shop_named', { shop: localName(c.shop, locale) })
                       : t('funder_mechdost')}
                   </p>
                 </div>

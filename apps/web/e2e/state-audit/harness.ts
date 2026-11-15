@@ -510,6 +510,11 @@ export async function runCase(page: Page, c: AuditCase, info: TestInfo, api?: Ap
   }
 
   if (has('axe')) {
+    // From the top of the page: a sticky side bar that has slid under the sticky header at the end of a scan is not
+    // a target a visitor can use there (axe counts the header over it as an overlap; triage 2026-11-16, ACC-COINS).
+    await page.evaluate(() => {
+      window.scrollTo(0, 0);
+    });
     const result = await new AxeBuilder({ page })
       .include(c.scope)
       .exclude(IGNORE)

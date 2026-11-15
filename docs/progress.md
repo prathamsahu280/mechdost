@@ -448,3 +448,5 @@ merge, new catalogue entries (quote events) need a `META_TEMPLATE_COPY` entry an
 
 - Fixed from the full re-run: Escape with focus on the page (PanelDismiss remembers the last opener), shop Availability fit at 320 px, and three checker truths (action-row foot, compare tray under the privacy banner below 1024 px, enabled-only submit in the "errors" step). See decisions 2026-11-16 "Full re-run triage 3c-2".
 - Tests: `panel-dismiss`, `state-audit-checker`, new `audit-fix-3c2` (vitest). No Playwright / next build / pnpm check (instruction). Needs the next GitHub audit run to confirm the 120 dismiss rows, the 7 tray rows, the 7 QT rows and the Availability rows.
+
+- 2026-11-16 audit batch 3c-1 (builder): nav-current-hidden, assistant launcher stacking/ARIA/focus, sticky-aside above launcher, compare Detail scroll-padding, order link contrast, header logo shrink, Hindi gate items (header name, admin names, coupon shop nameHi, catalogue editor nameHi, company lang=en, CSV header code). Tests: apps/web/test/audit-batch-3c1.test.ts. Not run: Playwright/build (low-memory PC); real geometry to be confirmed by the next GitHub audit.

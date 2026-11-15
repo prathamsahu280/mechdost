@@ -88,6 +88,7 @@ async function toView(tx: Tx, row: CouponRow): Promise<AdminCoupon> {
     .select({
       cityCode: cities.code,
       shopName: shops.name,
+      shopNameHi: shops.nameHi,
       shopTerms: couponShopTerms.status,
       categoryName: categories.name,
       categorySlug: categories.slug,
@@ -105,6 +106,7 @@ async function toView(tx: Tx, row: CouponRow): Promise<AdminCoupon> {
 interface Extra {
   cityCode: string | null;
   shopName: string | null;
+  shopNameHi: string | null;
   shopTerms: string | null;
   categoryName: string | null;
   categorySlug: string | null;
@@ -144,7 +146,9 @@ function view(row: CouponRow, extra: Extra | undefined): AdminCoupon {
     firstOrderOnly: row.firstOrderOnly,
     cityCode: extra?.cityCode ?? null,
     funder: row.funder === 'shop' ? 'shop' : 'mechdost',
-    shop: row.shopId ? { id: row.shopId, name: extra?.shopName ?? '' } : null,
+    shop: row.shopId
+      ? { id: row.shopId, name: extra?.shopName ?? '', nameHi: extra?.shopNameHi ?? null }
+      : null,
     shopTerms,
     isPublic: row.isPublic,
     autoApply: row.autoApply,
@@ -168,6 +172,7 @@ export async function listCoupons(
       c: coupons,
       cityCode: cities.code,
       shopName: shops.name,
+      shopNameHi: shops.nameHi,
       shopTerms: couponShopTerms.status,
       categoryName: categories.name,
       categorySlug: categories.slug,
