@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState, type ComponentType } from 'react';
 import { useCart } from '@/demo/store';
-import { AUTH_MODE } from '@/lib/auth/mode';
 import { UI_EMOJI } from '@/lib/emoji';
 import { isPortalPath } from '@/lib/portal-path';
 
@@ -86,4 +85,5 @@ function NoCartSync() {
 }
 
 /** Chosen at build time: the demo build drops the sync entirely. */
-const CartSync = AUTH_MODE === 'firebase' ? RealCartSync : NoCartSync;
+// The env value is inlined here (not the imported AUTH_MODE): the minifier folds a literal only inside one module.
+const CartSync = process.env.NEXT_PUBLIC_AUTH_MODE === 'firebase' ? RealCartSync : NoCartSync;

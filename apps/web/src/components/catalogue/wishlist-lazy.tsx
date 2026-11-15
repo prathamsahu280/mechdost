@@ -1,7 +1,6 @@
 'use client';
 
 import { lazy, Suspense } from 'react';
-import { AUTH_MODE } from '@/lib/auth/mode';
 import type { WishlistLabels } from './wishlist-heart';
 
 /**
@@ -38,4 +37,5 @@ function NoHeart(_props: HeartProps) {
 }
 
 /** Chosen at build time (budget incident 2026-11-15): the demo build keeps only the empty function on every card. */
-export const WishlistHeartLazy = AUTH_MODE === 'firebase' ? RealHeart : NoHeart;
+// Inlined env value (the minifier folds a literal only inside one module).
+export const WishlistHeartLazy = process.env.NEXT_PUBLIC_AUTH_MODE === 'firebase' ? RealHeart : NoHeart;

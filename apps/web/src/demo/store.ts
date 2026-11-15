@@ -22,7 +22,6 @@ import type { CategoryKey } from './categories';
 import { takesNewWork } from './partner-status';
 import type { ApplicationRejectReason } from '@mechdost/shared/partner-codes';
 import { siteSettings } from './site-config';
-import { DATA_MODE } from '@/lib/data-mode';
 import type { EstimateLine, ServiceBill } from '@mechdost/shared/service-bill';
 
 export const MAX_LINES = 20;
@@ -350,7 +349,7 @@ function mirrorCartSlugs(lines: readonly unknown[]) {
 /** False when the browser refused to save (storage full or blocked): callers tell the user (review B11). */
 function write(key: Key, value: readonly unknown[]): boolean {
   // Real data only: the cart suggestions that read this cookie exist in api data mode (the demo build drops it).
-  if (DATA_MODE === 'api' && key === KEYS.cart) mirrorCartSlugs(value);
+  if (process.env.NEXT_PUBLIC_DATA_MODE === 'api' && key === KEYS.cart) mirrorCartSlugs(value);
   let saved = true;
   try {
     window.localStorage.setItem(key, JSON.stringify(value));
