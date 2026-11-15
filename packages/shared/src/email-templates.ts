@@ -135,11 +135,17 @@ export function composeEmail(
 /** Plain text and branded HTML for a composed email (see `email-layout.ts`). */
 export function renderEmail(
   content: EmailBody,
-  options: { locale: EmailLocale; grievanceContact?: string | null; trustLine?: string | null },
+  options: {
+    locale: EmailLocale;
+    grievanceContact?: string | null;
+    trustLine?: string | null;
+    webBaseUrl?: string | null;
+  },
 ): { text: string; html: string } {
   return renderEmailLayout(content, {
     locale: options.locale,
     grievanceContact: options.grievanceContact ?? null,
     trustLine: options.trustLine ?? null,
+    webBaseUrl: options.webBaseUrl ?? null,
   });
 }

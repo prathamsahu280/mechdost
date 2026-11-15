@@ -183,3 +183,5 @@ T148 · 2026-11-15 · real-sign-in build (launch config) · the API-mode build (
   T160 · 2026-11-16 · worktrees · a fresh worktree has no node_modules: `pnpm install --offline --frozen-lockfile --ignore-scripts` (about 90 s) before any vitest or drizzle-kit run; workspace links must point at the worktree, never at the main checkout.
 
   T161 · 2026-11-16 · RLS · test policies as the real role: `set role authenticated` + `set_config('request.jwt.claims', json, false)` on the PGlite client, reset in `finally`; cover own vs foreign rows, unknown uid, deactivated account, no token, column denied, write denied, anon, helper EXECUTE rights and fixed search_path; a matrix test over an inventory file catches a new table with no decision. Run on real Postgres too once a CI job has one.
+
+  T162 · 2026-11-16 · brand/assets · assert asset files by header bytes (PNG IHDR width/height) and SVG hygiene (viewBox, title, no width/height, no metadata) in a unit test, plus source checks that the header uses both artworks with width/height; geometry (320-1280 px fit) stays in e2e chrome-fit.

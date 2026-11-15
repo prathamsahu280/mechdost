@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
 import { LocalLink } from '../ui/local-link';
 import { UI_EMOJI } from '@/lib/emoji';
@@ -11,29 +12,40 @@ import { NavLinks, type NavItem } from './nav-links';
 import { SiteText } from './site-overrides';
 import { localePath } from '@/lib/locale-path';
 
-/** Concept brand lock-up: orange "m↗" mark, MechDost wordmark, tracked tagline. */
+/** Brand SVGs (traced from the supplied logo, Q172): navy + orange for light, white + orange for dark. */
+export const BRAND_LOGO = {
+  light: '/brand/mechdost-logo.svg',
+  dark: '/brand/mechdost-logo-dark.svg',
+} as const;
+/** The logo's intrinsic ratio (viewBox 1087.2 x 196.7); width and height reserve the space, so CLS stays 0. */
+export const BRAND_LOGO_SIZE = { width: 160, height: 29 } as const;
+
+/**
+ * Brand lock-up: the MechDost logo (light and dark artwork swapped by CSS, no JS) with the tracked tagline under it.
+ * The hidden image is `display:none`, so the browser never fetches it.
+ */
 export function BrandMark() {
   const t = useTranslations('common');
+  // A little narrower under 460 px so logo, language, account and cart fit a 360 px phone (QA 2026-11-14).
+  const size = 'h-auto w-[132px] min-[460px]:w-[152px] tab:w-[176px]';
   return (
-    <LocalLink
-      href="/"
-      className="group inline-flex items-center gap-1.5 min-[380px]:gap-2"
-      data-track="brand_home"
-    >
-      <span
-        aria-hidden="true"
-        className="font-heading text-[30px] leading-none font-extrabold text-accent min-[460px]:text-[34px] tab:text-[40px]"
-      >
-        m<span className="align-top text-[22px] tab:text-[26px]">↗</span>
-      </span>
-      <span className="flex flex-col">
-        {/* A little smaller under 460 px so logo, language, account and cart fit a 360 px phone (QA 2026-11-14). */}
-        <span className="font-heading text-[19px] leading-none font-extrabold tracking-[-0.04em] text-ink min-[460px]:text-[21px] tab:text-[24px]">
-          {t('brand')}
-        </span>
-        <span className="eyebrow mt-1.5 hidden text-[7px] whitespace-nowrap text-ink tab:block nav:hidden xl:block tab:text-[8px]">
-          {t('tagline')}
-        </span>
+    <LocalLink href="/" className="group inline-flex flex-col items-start" data-track="brand_home">
+      <Image
+        src={BRAND_LOGO.light}
+        alt={t('brand')}
+        {...BRAND_LOGO_SIZE}
+        unoptimized
+        className={`brand-logo-light ${size}`}
+      />
+      <Image
+        src={BRAND_LOGO.dark}
+        alt={t('brand')}
+        {...BRAND_LOGO_SIZE}
+        unoptimized
+        className={`brand-logo-dark ${size}`}
+      />
+      <span className="eyebrow mt-1.5 hidden text-[7px] whitespace-nowrap text-ink tab:block nav:hidden xl:block tab:text-[8px]">
+        {t('tagline')}
       </span>
     </LocalLink>
   );
