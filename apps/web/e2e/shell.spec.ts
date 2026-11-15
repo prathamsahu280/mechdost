@@ -116,21 +116,42 @@ test.describe('navigation chrome', () => {
       await page.setViewportSize({ width, height: 900 });
       for (const path of paths) {
         await page.goto(path);
-        const found = await page.evaluate(() => {
+        // Measure the settled page (CI flake 2026-11-15: 24 px checkboxes read as 23.99 while the Hindi font and the
+        // entry animations were still settling on a slow runner): fonts loaded, running animations finished.
+        await page.evaluate(async () => {
+          await document.fonts.ready;
+          // Only animations that end (a shimmer or spinner loops forever), and never longer than 2 s.
+          const ending = document
+            .getAnimations()
+            .filter((a) => Number.isFinite(Number(a.effect?.getComputedTiming().endTime ?? Infinity)));
+          await Promise.race([
+            Promise.all(ending.map((a) => a.finished.catch(() => undefined))),
+            new Promise((resolve) => setTimeout(resolve, 2000)),
+          ]);
+        });
+        const found = await page.evaluate(async () => {
           const out: string[] = [];
           const overflow = document.documentElement.scrollWidth - window.innerWidth;
           if (overflow > 0) out.push(`overflow ${overflow}px`);
-          for (const el of document.querySelectorAll<HTMLElement>('a, button, input')) {
+          const small = (el: HTMLElement) => {
             const r = el.getBoundingClientRect();
-            if (r.width > 0 && r.height > 0 && (r.width < 24 || r.height < 24)) {
-              // Name the element (tag, accessible name, classes) and keep two decimals: "24x24" hid a 23.6 px box.
-              const name =
-                el.getAttribute('aria-label') ?? el.getAttribute('name') ?? el.getAttribute('type') ?? '';
-              out.push(
-                `small target <${el.tagName.toLowerCase()}> "${(el.textContent || name).trim().slice(0, 30)}" ` +
-                  `${r.width.toFixed(2)}x${r.height.toFixed(2)} .${el.className.slice(0, 60)}`,
-              );
-            }
+            return r.width > 0 && r.height > 0 && (r.width < 24 || r.height < 24);
+          };
+          let suspects = [...document.querySelectorAll<HTMLElement>('a, button, input')].filter(small);
+          // A box that is small for one frame is not a tap target problem: look again once before reporting it.
+          if (suspects.length > 0) {
+            await new Promise((resolve) => setTimeout(resolve, 400));
+            suspects = suspects.filter(small);
+          }
+          for (const el of suspects) {
+            const r = el.getBoundingClientRect();
+            // Name the element (tag, accessible name, classes) and keep two decimals: "24x24" hid a 23.6 px box.
+            const name =
+              el.getAttribute('aria-label') ?? el.getAttribute('name') ?? el.getAttribute('type') ?? '';
+            out.push(
+              `small target <${el.tagName.toLowerCase()}> "${(el.textContent || name).trim().slice(0, 30)}" ` +
+                `${r.width.toFixed(2)}x${r.height.toFixed(2)} .${el.className.slice(0, 60)}`,
+            );
           }
           return out;
         });
