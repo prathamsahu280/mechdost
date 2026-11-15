@@ -5,6 +5,12 @@ import { parseRupees, type RupeeError } from './money-input';
  * Pure helpers for the real-mode bulk quote screens (spec 19): API error codes and quote states → `quote` locale
  * keys (no raw code ever reaches the screen), and the staff offer builder's input parsing (integer paise).
  */
+/** Where the request form reads the rules: the PIN code's city value once the PIN is complete, else the global one. */
+export function quoteRulesPath(pincode: string | null): string {
+  const pin = pincode?.trim() ?? '';
+  return /^[1-9]\d{5}$/.test(pin) ? `/quotes/rules?pincode=${pin}` : '/quotes/rules';
+}
+
 export type QuoteMessageKey =
   | 'api_err_min'
   | 'api_err_openLimit'

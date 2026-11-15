@@ -14,6 +14,7 @@ import {
 import type { QuoteDeclineReason } from '@mechdost/shared/state';
 import { adminApi } from './admin-api';
 import { authed, type ApiResult } from './orders-api';
+import { quoteRulesPath } from './quote-views';
 
 /**
  * Bulk quotes on the MechDost API (real data mode; spec 19). Customer calls use the signed-in customer's token
@@ -25,8 +26,11 @@ const loc = (locale: string) => (locale === 'hi' ? 'hi' : 'en');
 const path = (code: string) => `/quotes/${encodeURIComponent(code)}`;
 const adminPath = (code: string) => `/admin/quotes/${encodeURIComponent(code)}`;
 
-export function fetchQuoteRules(locale: string): Promise<ApiResult<QuoteRules>> {
-  return authed(locale, '/quotes/rules', QuoteRulesDto);
+export function fetchQuoteRules(
+  locale: string,
+  pincode: string | null = null,
+): Promise<ApiResult<QuoteRules>> {
+  return authed(locale, quoteRulesPath(pincode), QuoteRulesDto);
 }
 
 export interface NewQuote {

@@ -4,11 +4,23 @@ import {
   lowPriceLines,
   offerDraft,
   quoteErrorKey,
+  quoteRulesPath,
   quoteStatusKey,
   quoteWaitsForCustomer,
 } from '../src/lib/quote-views';
 
 /** Real-mode bulk quotes (spec 19): API codes and states → translated copy; the staff offer builder's parsing. */
+describe('quoteRulesPath', () => {
+  it('asks for the PIN code’s city value only once the PIN is a full valid PIN code', () => {
+    expect(quoteRulesPath('492004')).toBe('/quotes/rules?pincode=492004');
+    expect(quoteRulesPath(' 492004 ')).toBe('/quotes/rules?pincode=492004');
+    expect(quoteRulesPath('4920')).toBe('/quotes/rules');
+    expect(quoteRulesPath('092004')).toBe('/quotes/rules');
+    expect(quoteRulesPath('49200a')).toBe('/quotes/rules');
+    expect(quoteRulesPath(null)).toBe('/quotes/rules');
+  });
+});
+
 describe('quoteErrorKey', () => {
   it('maps the quote API codes to their own messages', () => {
     expect(quoteErrorKey('QUOTE_MIN_UNITS')).toBe('api_err_min');

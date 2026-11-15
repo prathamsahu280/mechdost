@@ -83,6 +83,26 @@ export function QuoteRequestFormApi() {
     void loadRules();
   }, [loadRules]);
 
+  // Once the PIN is complete the minimum is the PIN city's value (spec 19). Quiet update: the form stays as it is,
+  // an older answer never overwrites a newer one, and a failed read keeps the rules already shown.
+  const rulesPin = useRef('');
+  const rulesForPin = useCallback(
+    async (pin: string) => {
+      const wanted = /^[1-9]\d{5}$/.test(pin) ? pin : '';
+      if (wanted === rulesPin.current) return;
+      rulesPin.current = wanted;
+      const { fetchQuoteRules } = await import('@/lib/quote-api');
+      const res = await fetchQuoteRules(locale, wanted || null);
+      if (res.ok && rulesPin.current === wanted) setRules({ kind: 'ok', rules: res.data });
+    },
+    [locale],
+  );
+  const addresses = session?.role === 'customer' ? session.addresses : null;
+  const savedPin = (addresses?.find((a) => a.isDefault) ?? addresses?.[0])?.pincode;
+  useEffect(() => {
+    if (savedPin) void rulesForPin(savedPin);
+  }, [savedPin, rulesForPin]);
+
   // Prefill once: the product of `?product=`, or the cart's lines (with their packs) for `?from=cart`.
   const product = params.get('product');
   const fromCart = params.get('from') === 'cart';
@@ -473,6 +493,9 @@ export function QuoteRequestFormApi() {
             inputMode="numeric"
             autoComplete="postal-code"
             maxLength={6}
+            onChange={(e) => {
+              void rulesForPin(e.target.value.trim());
+            }}
             defaultValue={saved?.pincode ?? ''}
             className={input}
           />
