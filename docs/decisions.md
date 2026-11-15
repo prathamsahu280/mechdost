@@ -986,3 +986,11 @@ Design: `docs/superpowers/specs/2026-11-15-service-photos-design.md`; built desc
 - **Soft delete keeps the objects** (audit and complaints) until a purge job exists; added to PENDING DECISIONS.
 - **The bucket is created by the API on start** (idempotent; refuses a public bucket), with the dashboard route as the manual fallback (runbook photos.md).
 - **State audit:** two API rows (`API-WS-PHOTOS`, `API-SVC-PHOTOS`); the public gallery is covered by API and repository tests because its page fetches the workshop on the server (the browser mock cannot feed it).
+
+## 2026-11-15 — Workshop analytics built (rulings)
+
+- Portal Performance is for the `workshop_owner` grant only (staff would see money); no new permission. Admin needs `analytics:read`, one city at a time.
+- City medians are medians of workshops' own figures and are shown only from three workshops with requests (anonymity). The portal never carries another workshop's name.
+- Acceptance = proposed ÷ (proposed + declined): workshops have no response timer, so "timed out" does not exist. Services are paid at the workshop only, so "paid online vs at the workshop" is by method (cash / UPI / card).
+- "Returned within 30 days": same customer, same vehicle (saved id, else vehicle key) and same workshop, a new request that is not cancelled or rejected within 30 days of completion. Label is neutral on purpose.
+- Migration `0062_workshop_analytics` adds `service_requests (workshop_id, created_at)` only. Events use camelCase props (`rangeDays`), like the rest of the catalogue. Plan: `docs/superpowers/plans/2026-11-15-workshop-analytics.md`.

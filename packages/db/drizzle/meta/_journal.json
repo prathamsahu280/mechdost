@@ -421,6 +421,13 @@
       "when": 1794700767913,
       "tag": "0061_service_photos",
       "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1794703220716,
+      "tag": "0062_workshop_analytics",
+      "breakpoints": true
     }
   ]
 }

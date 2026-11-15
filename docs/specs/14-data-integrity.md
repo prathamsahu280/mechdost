@@ -132,3 +132,7 @@ No table changes. Indexes for the search and audit filters: `users_phone_last10_
 - **Integrity:** the per-stage limit is counted under the request row lock (`FOR UPDATE`), so parallel uploads cannot exceed it; the gates read photo counts in the status move's own transaction; a media id is unique across photos; no hard deletes (soft delete + audit row).
 - **Indexes:** `(request_id, stage, sort_order) where deleted_at is null`, unique `(bucket, path)`, `(owner_kind, owner_id)`, foreign keys `uploaded_by`, `created_by`.
 - **Orphans:** objects are uploaded before the row is saved; a failed save removes them best-effort. A crash in between leaves unreachable random-key objects (no row, no URL); a purge job for these and for soft-deleted media is a pending decision.
+
+## Workshop analytics: index (migration `0062_workshop_analytics`, 2026-11-15)
+
+No table changes and nothing written. One index: `service_requests_workshop_created_idx` on `(workshop_id, created_at)` (one workshop's requests in a date range, every status). The reports are read-only (`readOnlyReport`: repeatable read, 10 s statement timeout), city-scoped by an explicit id list, and aggregate-only: the portal never receives another workshop's name or row, and medians are given only from three workshops with requests. Not applied live; the coordinator renumbers at merge.

@@ -140,3 +140,7 @@ Server events (in the change's transaction): `admin_staff_role_changed` (action 
 ## Job photos (2026-11-15)
 
 Server events (same transaction; ids, codes and counts only, never a path or file name): `service_photo_added { requestCode, workshopId, stage: before|after, bytes }`, `service_photo_removed { requestCode, workshopId, stage }`. Client event: `service_photos_viewed { surface: request|workshop, count }` when a viewer opens.
+
+## Workshop analytics events (2026-11-15)
+
+Client (strict schemas in `packages/shared/src/analytics.ts`): `workshop_analytics_viewed {rangeDays}` (portal Performance loaded for a range of 1 to 180 days; the design wrote `range_days`, the catalogue uses camelCase like every other prop) and `admin_analytics_tab {tab: overview | workshops}`. Click ids: `workshop_performance_toggle`, `workshop_analytics_preset_{30|90}`, `workshop_analytics_retry`, `admin_analytics_tab_{overview|workshops}`, `admin_workshop_analytics_sort`, `admin_workshop_analytics_retry`.

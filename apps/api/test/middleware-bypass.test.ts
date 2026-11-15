@@ -26,7 +26,11 @@ const PROTECTED: [method: string, path: string][] = [
   // Admin analytics and Overview counts (2026-11-14).
   ['GET', '/v1/admin/analytics/dashboard'],
   ['GET', '/v1/admin/analytics/dashboard?city=RPR&from=2026-11-01&to=2026-11-14'],
+  ['GET', '/v1/admin/analytics/workshops'],
   ['GET', '/v1/admin/overview'],
+  // Workshop portal Performance (2026-11-15).
+  ['GET', '/v1/workshop/analytics'],
+  ['GET', '/v1/workshop/analytics?from=2026-11-01&to=2026-11-14'],
   // Admin → Errors (Sentry issues, review 2026-11-14).
   ['GET', '/v1/admin/errors'],
 ];

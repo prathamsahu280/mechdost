@@ -42,6 +42,7 @@ import { adminServiceRequestRoutes } from './routes/admin-service-requests';
 import { serviceRequestRoutes } from './routes/service-requests';
 import { adminQuoteRoutes, quoteRoutes } from './routes/quotes';
 import { workshopPortalRoutes } from './routes/workshop-portal';
+import { workshopAnalyticsRoutes } from './routes/workshop-analytics';
 import { servicePhotoRoutes } from './routes/service-photos';
 import { workshopAdminRoutes, workshopPublicRoutes } from './routes/workshops';
 import { reviewPublicRoutes, reviewRoutes } from './routes/reviews';
@@ -122,6 +123,7 @@ export function createApp(deps: AppDeps) {
   v1.route('/', workshopAdminRoutes(deps, sessions));
   v1.route('/', serviceRequestRoutes(deps, sessions));
   v1.route('/', workshopPortalRoutes(deps, sessions));
+  v1.route('/', workshopAnalyticsRoutes(deps, sessions));
   v1.route('/', servicePhotoRoutes(deps, sessions));
   v1.route('/', adminServiceRequestRoutes(deps, sessions));
   v1.route('/', quoteRoutes(deps, sessions));

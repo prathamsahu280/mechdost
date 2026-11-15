@@ -377,6 +377,46 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
     realApi: true,
   },
   {
+    code: 'API-ADM-WORKSHOPS',
+    page: 'Admin → Analytics → Workshops, real sign-in',
+    component:
+      'Workshops tab: city note, totals with city medians, sortable table; no / one / two (no medians) / many workshops, a quiet one among them, a city-scoped staff member, a timeout',
+    path: '/admin/analytics',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['admin'] },
+      { name: 'wsa', values: ['empty', 'one', 'few', 'many', 'city-scoped', 'error'] },
+      stress,
+    ],
+    checks: [...BASE_CHECKS, 'aligned'],
+    align: TABLE_ALIGN,
+    sweep: 14,
+    note:
+      API_NOTE +
+      ' Long workshop names in the table and the narrow widths (320 to 1920) are the stress state.',
+    realApi: true,
+  },
+  {
+    code: 'API-WS-PERFORMANCE',
+    page: 'Workshop portal (/partner/workshop), real sign-in',
+    component:
+      'Performance section behind its button: own numbers beside the anonymised city median, no median below three workshops, nothing in the range, 90 days, a timeout, a staff account refused',
+    path: '/partner/workshop',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['workshop'] },
+      { name: 'perf', values: ['empty', 'full', 'no-median', 'ninety', 'error', 'staff'] },
+      stress,
+    ],
+    sweep: 12,
+    note: API_NOTE,
+    realApi: true,
+  },
+  {
     code: 'API-ADM-COINS',
     page: 'Admin → Coins, real sign-in',
     component: 'Coin activity list (earn, redeem, adjust, expire, restore), account look-up and adjust form',

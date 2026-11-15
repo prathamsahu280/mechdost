@@ -126,6 +126,28 @@ async function prepareApi(page: Page, c: AuditCase): Promise<string[]> {
     }
   }
 
+  // Workshop analytics (design 2026-11-15): open the admin Workshops tab; open Performance (and the 90-day preset).
+  if (c.code === 'API-ADM-WORKSHOPS') {
+    const tab = main.locator('[data-track="admin_analytics_tab_workshops"]');
+    if ((await tab.count()) === 0) notes.push('no Workshops tab');
+    else {
+      await tab.click();
+      await settleApi(page);
+    }
+  }
+  if (c.code === 'API-WS-PERFORMANCE') {
+    const open = main.locator('[data-track="workshop_performance_toggle"]');
+    if ((await open.count()) === 0) notes.push('no Performance button');
+    else {
+      await open.click();
+      await settleApi(page);
+      if (c.state.perf === 'ninety') {
+        await main.locator('[data-track="workshop_analytics_preset_90"]').click();
+        await settleApi(page);
+      }
+    }
+  }
+
   // Job photos: an upload the API refuses (workshop), the gate refusing 'vehicle received' (workshop), the viewer (customer).
   if (c.code === 'API-WS-PHOTOS') {
     if (c.state.photos === 'upload-error') {

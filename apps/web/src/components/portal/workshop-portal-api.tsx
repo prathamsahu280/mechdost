@@ -25,6 +25,7 @@ import { PushPromptSlot } from '../notices/push-prompt-slot';
 import { useApiList } from './use-api-list';
 import { JobPhotosPanelLazy } from '../photos/photos-lazy';
 import { EstimateBuilderApi, JobStepsApi, OdometerFormApi } from './workshop-job-api';
+import { WorkshopPerformanceLazy } from './workshop-performance-lazy';
 
 const NEW_POLL_MS = 30_000;
 const SLOTS = ['morning', 'afternoon', 'evening'] as const;
@@ -69,6 +70,7 @@ export function WorkshopRequestsApi() {
       ) : null}
 
       <HomeSettingsApi />
+      <WorkshopPerformanceLazy />
 
       <section aria-labelledby="new-requests">
         <h2 id="new-requests" className="font-heading text-xl font-extrabold text-ink">

@@ -1,0 +1,46 @@
+import type { WorkshopStats } from '@mechdost/shared/workshop-analytics-api';
+
+/** A workshop's stats with every number zero, for the view tests; `over` changes some of them. */
+export function emptyStats(over: Partial<WorkshopStats> = {}): WorkshopStats {
+  return {
+    requests: 0,
+    byMode: { workshop: 0, home: 0 },
+    funnel: {
+      requested: 0,
+      proposed: 0,
+      confirmed: 0,
+      received: 0,
+      estimateSent: 0,
+      approved: 0,
+      completed: 0,
+    },
+    cancelled: 0,
+    cancelReasons: [],
+    rejected: 0,
+    rejectReasons: [],
+    offersProposed: 0,
+    offersDeclined: 0,
+    medianMinutesToPropose: null,
+    medianMinutesToEstimate: null,
+    medianMinutesJob: null,
+    estimates: 0,
+    estimatesWithDeclinedLine: 0,
+    linesSent: 0,
+    linesApproved: 0,
+    linesSentPaise: 0,
+    linesApprovedPaise: 0,
+    billed: 0,
+    billedPaise: 0,
+    visitFeesPaise: 0,
+    paidCash: 0,
+    paidUpi: 0,
+    paidCard: 0,
+    billsUnpaid: 0,
+    ratingTenths: null,
+    ratingCount: 0,
+    completedJobs: 0,
+    returnedWithin30Days: 0,
+    withPhotos: 0,
+    ...over,
+  };
+}

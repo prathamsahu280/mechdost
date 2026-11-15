@@ -280,6 +280,8 @@ export const serviceRequests = pgTable(
     ),
     index().on(t.userId, t.createdAt),
     index().on(t.workshopId, t.status),
+    // Workshop analytics (0062): one workshop's requests in a date range, every status.
+    index('service_requests_workshop_created_idx').on(t.workshopId, t.createdAt),
     index().on(t.status, t.cityId, t.createdAt),
     // Admin analytics (0050): requests of a city in a date range, every status; also serves the city_id FK
     // (replaces the single-column index).

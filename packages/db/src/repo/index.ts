@@ -56,6 +56,7 @@ export * from './shops-admin';
 export * from './quotes';
 export * from './reviews';
 export * from './analytics';
+export * from './workshop-analytics';
 export * from './account';
 export * from './notice-events';
 export * from './notice-templates-admin';

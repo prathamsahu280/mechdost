@@ -40,6 +40,7 @@ import {
 } from '@mechdost/shared/shop-api';
 import type { AuditCase } from '../cases.ts';
 import { homeFinderMocks, homeJobMocks, homeRequestMocks } from './home-fixtures.ts';
+import { adminWorkshopAnalyticsMocks, workshopPerformanceMocks } from './workshop-analytics-fixtures.ts';
 import { customerPhotoMocks, workshopPhotoMocks } from './photo-fixtures.ts';
 import type { Mock, MockCtx, Reply } from './mock-api.ts';
 
@@ -1272,6 +1273,10 @@ export function mocksFor(c: AuditCase): Mock[] {
       return errorsMocks();
     case 'API-ADM-ANALYTICS':
       return analyticsMocks();
+    case 'API-ADM-WORKSHOPS':
+      return [...analyticsMocks(), ...adminWorkshopAnalyticsMocks(c)];
+    case 'API-WS-PERFORMANCE':
+      return workshopPerformanceMocks(c);
     case 'API-ADM-COINS':
       return coinsMocks();
     case 'API-ADM-REVIEWS':
