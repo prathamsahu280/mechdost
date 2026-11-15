@@ -1,11 +1,15 @@
 import { getTranslations } from 'next-intl/server';
-import { AccountArea } from '@/components/account/account-area';
-import type { AccountSection } from '@/lib/sections';
+import type { ReactNode } from 'react';
+import { AccountFrame } from '@/components/account/account-area';
 import { ClientMessages } from '@/components/ui/client-messages';
 import { Container, PageIntro } from '@/components/ui/page-intro';
 
-/** Shared account page frame (spec 01): heading + the client account area for one section. */
-export async function AccountShell({ section }: { section: AccountSection }) {
+/**
+ * Account frame (spec 01), shared by `/account` and `/account/[section]`: heading, message bundles, session check and
+ * section bar stay mounted when a section link is clicked, so only the section swaps (user rule 2026-11-16,
+ * decisions.md "No page may feel like a reload").
+ */
+export default async function AccountLayout({ children }: { children: ReactNode }) {
   const t = await getTranslations('pages.account');
   return (
     <Container className="py-10 tab:py-14">
@@ -32,7 +36,7 @@ export async function AccountShell({ section }: { section: AccountSection }) {
             'supportThread',
           ]}
         >
-          <AccountArea section={section} />
+          <AccountFrame>{children}</AccountFrame>
         </ClientMessages>
       </div>
     </Container>

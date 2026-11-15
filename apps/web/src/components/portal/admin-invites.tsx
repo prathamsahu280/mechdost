@@ -1,6 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
 import { InviteSchema } from '@mechdost/shared/partners';
@@ -142,9 +143,9 @@ function DemoAdminInvites() {
                 </div>
                 {status === 'sent' ? (
                   <div className="flex flex-wrap gap-2">
-                    <a href={linkOf(i)} className={portalQuiet}>
+                    <Link href={linkOf(i)} className={portalQuiet}>
                       {t('inviteOpen')}
-                    </a>
+                    </Link>
                     <button type="button" onClick={() => void copy(i)} className={portalQuiet}>
                       {copied === i.token ? t('inviteCopied') : t('inviteCopy')}
                     </button>

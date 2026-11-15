@@ -191,3 +191,7 @@ which are automated. Add new classes at the end of the relevant section.
 ## P. i18n bundles (client messages)
 
 - P1. A client component calls `useTranslations('ns')` but no page or layout on the route passes `ns` to `ClientMessages`: the screen shows raw keys (`workshopTier1.f_low`) and the console logs `MISSING_MESSAGE: ns`, only in the real-sign-in (api) build where the lazily loaded `*-api` components render. Happened twice (shopTier1 2026-11-15; workshopTier1, supportThread, workshopAnalytics, portal, refunds 2026-11-16). Gate: `apps/web/test/client-messages-coverage.test.ts` (no allowlist). Fix pattern: add the namespace to the page/shell list (api branch of a conditional list); keep shared style constants out of translated client modules (`portal-styles.ts`).
+
+## Q. Navigation feel
+
+- Q1. Section switch remounts the frame: a route group whose pages each render the shell (guard, side bar, heading, message provider) tears the frame down on every click and Next scrolls to the page top; internal plain `<a href>` or `window.location` does a full document load. Test: layout-holds-frame source test, no-internal-plain-anchor scan, e2e frame-node/window-marker/scrollY survive.

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import type { Locale } from '@/i18n/routing';
-import { AdminShell } from './admin-shell';
+import { AdminSectionContent } from './admin-section';
 
 export async function generateMetadata({
   params,
@@ -14,5 +14,5 @@ export async function generateMetadata({
 }
 
 export default function AdminPage() {
-  return <AdminShell section="overview" />;
+  return <AdminSectionContent section="overview" />;
 }

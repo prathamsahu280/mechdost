@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { ADMIN_SECTIONS, type AdminSection } from '@/lib/sections';
 import { routing, type Locale } from '@/i18n/routing';
-import { AdminShell } from '../admin-shell';
+import { AdminSectionContent } from '../admin-section';
 
 type Section = Exclude<AdminSection, 'overview'>;
 const SECTIONS = ADMIN_SECTIONS.filter((s): s is Section => s !== 'overview');
@@ -29,5 +29,5 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function AdminSectionPage({ params }: Props) {
   const { section } = await params;
   if (!isSection(section)) notFound();
-  return <AdminShell section={section} />;
+  return <AdminSectionContent section={section} />;
 }

@@ -136,3 +136,5 @@ Built as a support request: `POST /v1/support/deletion-request` (spec 09 "Accoun
 ## Built: Account → Wishlist (2026-11-15)
 
 A new account section `wishlist` (real sign-in only; `lib/sections.ts`): saved products newest first with photo, brand, name and a remove button; empty state with "Browse the shop". See spec 02. At sign-in or sign-up the guest cart is merged into the saved cart (spec 03).
+
+**Account frame (2026-11-16):** `app/[locale]/account/layout.tsx` holds the heading, `ClientMessages` and `AccountFrame` (signed-out card, partner pointer, section bar); `/account` and `/account/[section]` render `AccountSectionBody` only, so switching sections never remounts the frame or reloads (decisions 2026-11-16; `e2e/no-reload-navigation.spec.ts`).
