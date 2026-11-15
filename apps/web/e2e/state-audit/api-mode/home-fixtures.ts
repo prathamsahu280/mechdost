@@ -74,7 +74,7 @@ const address = (n: number, pinned: boolean) => ({
   version: 1,
 });
 
-function workshop(n: number, c: AuditCase, over: Partial<Workshop> = {}): Workshop {
+export function workshop(n: number, c: AuditCase, over: Partial<Workshop> = {}): Workshop {
   return {
     id: uuid(40 + n),
     slug: `home-garage-${String(n)}`,

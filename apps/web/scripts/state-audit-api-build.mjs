@@ -2,8 +2,13 @@
 // .next is left alone). Every value below is a public, fake audit value: nothing here is a secret and nothing is
 // read from .env (process values win over .env files in Next). The audit's mocked API lives in the browser
 // (e2e/state-audit/api-mode); NEXT_PUBLIC_API_URL only names the origin the page.route mock answers.
-// Usage (apps/web): node scripts/state-audit-api-build.mjs   (needs about 3 GB free RAM, one build at a time)
+// Usage (repo root or apps/web): node apps/web/scripts/state-audit-api-build.mjs   (needs about 3 GB free RAM, one build at a time)
 import { spawnSync } from 'node:child_process';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+// Everything resolves from this file, so it works from the repo root and from apps/web.
+const webDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 const env = {
   ...process.env,
@@ -25,10 +30,10 @@ for (const key of [
   delete env[key];
 
 const run = (args) => {
-  const r = spawnSync('pnpm', args, { stdio: 'inherit', env, shell: true });
+  const r = spawnSync('pnpm', args, { cwd: webDir, stdio: 'inherit', env, shell: true });
   if (r.status !== 0) process.exit(r.status ?? 1);
 };
-run(['exec', 'node', 'scripts/copy-map-worker.mjs']);
+run(['exec', 'node', resolve(webDir, 'scripts', 'copy-map-worker.mjs')]);
 run(['exec', 'next', 'build']);
 console.log(
   'built apps/web/.next-api: run the audit with pnpm exec playwright test -c playwright.state-audit-api.config.ts',

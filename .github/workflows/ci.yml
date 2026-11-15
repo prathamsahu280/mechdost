@@ -107,6 +107,41 @@ jobs:
             NEXT_PUBLIC_FIREBASE_VAPID_KEY=${{ vars.NEXT_PUBLIC_FIREBASE_VAPID_KEY }}
             NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${{ vars.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
 
+  # The launch configuration (real sign-in, data from the API) builds differently from the demo build: pages that
+  # render without an intl provider or read the locale from the wrong place pass the demo build and fail here
+  # (2026-11-15: the wishlist heart broke prerendering of the home page only in this mode; Q171). Build only, no
+  # deploy, no secrets: the Firebase values are public, fake audit values (same as state-audit-api-build.mjs).
+  web-real-mode:
+    name: Web build (real sign-in + API data)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Build the web (NEXT_PUBLIC_AUTH_MODE=firebase, NEXT_PUBLIC_DATA_MODE=api)
+        env:
+          NEXT_PUBLIC_AUTH_MODE: firebase
+          NEXT_PUBLIC_DATA_MODE: api
+          NEXT_PUBLIC_API_URL: http://127.0.0.1:4100
+          NEXT_PUBLIC_FIREBASE_API_KEY: audit-fake-api-key
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: audit.invalid
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: demo-audit
+          NEXT_PUBLIC_FIREBASE_APP_ID: '1:000000000000:web:audit'
+          NEXT_PUBLIC_APP_URL: http://localhost:3101
+        run: pnpm --filter @mechdost/web build
+
   e2e-demo:
     name: Browser suites (demo mode)
     runs-on: ubuntu-latest

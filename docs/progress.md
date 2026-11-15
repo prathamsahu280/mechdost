@@ -365,3 +365,9 @@ See PENDING DECISIONS in `docs/decisions.md` (payment methods; post-purchase P1 
 - Built: online payment of the service bill (same payments table and webhook, purpose `service_bill`, one open order per bill, settles billed -> paid -> completed; a late capture after "paid at the workshop" or a cancel is recorded and refunded once), staff cancel (`service:cancel`, reason codes, slot released once, one refund request for a paid bill, en + hi email, bell and push), ranked workshop suggestions (pure ranking in shared, two-statement SQL, admin UI with reasons and one-click send), UI on the request page and Admin -> Services, state-audit rows `API-SVC-PAYBILL` and `API-ADM-SVCROUTE` (checklist regenerated, 3,826 items, not run in a browser).
 - Needs at merge: renumber the migration; run `pnpm db:seed` (new permission `service:cancel`). No Razorpay dashboard change. Questions Q150 to Q153.
 - Not built: see spec 06 "Built: workshops tier 3".
+
+## 2026-11-16 — Batch 0b: audit harness, tooling, CI (branch worktree-agent-aad7042a0247cf3cf, not merged)
+
+- Built: baseline mocks for chunk G (`api-mode/baseline-fixtures.ts`), six checker fixes (per-line boxes, modal skip, Hindi echo, pointer-events overlays, consent version root cause, compare rule with `[data-compare-hint]`), runner builds `.next-api`, build script path fix, CI job `web-real-mode` (Q171 answered by default). Runbook § 9.9, decisions entry 2026-11-16.
+- Verified (targeted): vitest state-audit-checker 11 + api-fixtures + trust + checklist + nav + sections (39 tests, 6 files); eslint zero warnings and prettier on touched files; `tsc --noEmit` shows only the two missing hero images of this worktree. No Playwright, no build (by instruction).
+- Needs at merge: batch 1a adds `data-compare-hint`; re-run chunks A, B, C, G and compare counts (banner findings may drop).

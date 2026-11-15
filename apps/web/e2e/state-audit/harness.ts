@@ -6,12 +6,15 @@
  */
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Page, type TestInfo } from '@playwright/test';
+import { CONSENT_NOTICE_VERSION } from '@mechdost/shared/privacy';
 import { latinOffenders } from '../../test/hindi-allowlist';
 import { busyWorld } from '../fixtures/demo-world';
 import { describeCase, type AuditCase } from './cases.ts';
 import {
   applyStress,
   auditDom,
+  compareFacts,
+  compareProblems,
   focusFacts,
   markControls,
   markStepper,
@@ -22,6 +25,7 @@ import {
   type Box,
   type Finding,
 } from './geometry.ts';
+import { echoedWords, withoutEcho } from './hindi-echo.ts';
 import { knownIssueFor } from './known-issues.ts';
 import { navCheck } from './nav-run.ts';
 import { CARTS, COMPARES, PRODUCTS, TRUST_KEYS } from './model.ts';
@@ -29,7 +33,12 @@ import { CARTS, COMPARES, PRODUCTS, TRUST_KEYS } from './model.ts';
 /** Never measured: the map canvas, its controls and pins (dedicated map tests cover them, T10). */
 const IGNORE =
   '.maplibregl-map, .maplibregl-canvas-container, .maplibregl-control-container, [data-sa-paint]';
-const CONSENT = JSON.stringify({ analytics: false, version: '2026-11', at: '2026-11-01T00:00:00.000Z' });
+/** "Essential only" answered on the current notice: a stale version would show the banner again over the row. */
+const CONSENT = JSON.stringify({
+  analytics: false,
+  version: CONSENT_NOTICE_VERSION,
+  at: '2026-11-01T00:00:00.000Z',
+});
 const ACCOUNTS: Readonly<Record<string, string | null>> = {
   out: null,
   customer: 'demo-customer',
@@ -396,7 +405,10 @@ export async function runCase(page: Page, c: AuditCase, info: TestInfo, api?: Ap
     findings.push({ rule: 'present', severity: 'P0', where: c.scope, detail: `must show "${c.mustShow}"` });
 
   if (has('sync'))
-    for (const p of await page.evaluate(syncFacts))
+    for (const p of [
+      ...(await page.evaluate(syncFacts)),
+      ...compareProblems(await page.evaluate(compareFacts)),
+    ])
       findings.push({ rule: 'sync', severity: 'P0', where: 'store', detail: p });
 
   // Hover sweep: every kind of control once, then more up to the cap.
@@ -490,7 +502,8 @@ export async function runCase(page: Page, c: AuditCase, info: TestInfo, api?: Ap
   }
 
   if (has('hindi') && c.locale === 'hi') {
-    const words = latinOffenders((await page.evaluate(scopeText, { scope: c.scope })).join('\n'));
+    const text = (await page.evaluate(scopeText, { scope: c.scope })).join('\n');
+    const words = latinOffenders(withoutEcho(text, echoedWords(c.path)));
     if (words.length > 0)
       findings.push({
         rule: 'hindi',
