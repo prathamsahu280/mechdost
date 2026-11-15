@@ -192,7 +192,10 @@ export function AccountFrame({ children }: { children: ReactNode }) {
 export function AccountSectionBody({ section }: { section: AccountSection }) {
   const t = useTranslations('account');
   const session = useSession();
-  if (session?.role !== 'customer') return null;
+  // Always render the section box (empty until the session is known): when a side-bar click rendered nothing at
+  // first, Next.js found no element to scroll into view and jumped to the top of the page (user rule "no page may
+  // feel like a reload", 2026-11-16; e2e/no-reload-navigation.spec.ts).
+  if (session?.role !== 'customer') return <div className="min-w-0 scroll-mt-28" />;
   return (
     <div className="min-w-0 scroll-mt-28 space-y-6">
       {section === 'overview' && AUTH_MODE === 'firebase' ? (

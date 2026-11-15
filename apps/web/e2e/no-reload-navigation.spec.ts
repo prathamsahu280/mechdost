@@ -46,6 +46,10 @@ async function expectNoJumpToTop(page: Page, isMobile: boolean) {
 }
 
 async function scrollALittle(page: Page) {
+  // A short window so even a short section page can scroll (at 900 px the account page did not scroll at all and the
+  // "no jump to top" check measured 0 before and after).
+  const size = page.viewportSize();
+  if (size) await page.setViewportSize({ width: size.width, height: 480 });
   await page.evaluate(() => {
     window.scrollTo(0, Math.min(240, document.documentElement.scrollHeight - window.innerHeight));
   });
@@ -61,9 +65,9 @@ test('admin: a side-bar click keeps the frame, the document and the scroll posit
   await scrollALittle(page);
 
   const nav = page.getByRole('navigation', { name: 'Console sections' });
-  await nav.getByRole('link', { name: 'Orders' }).click();
+  await nav.getByRole('link', { name: 'Order routing' }).click();
   await expect(page).toHaveURL(/\/admin\/orders$/);
-  await expect(nav.locator('[aria-current="page"]')).toContainText('Orders');
+  await expect(nav.locator('[aria-current="page"]')).toContainText('Order routing');
   await expectFrameSurvived(page, 'Console sections');
   await expectNoJumpToTop(page, isMobile);
 
@@ -93,15 +97,19 @@ test('account: a side-bar click keeps the frame, the document and the scroll pos
   await expectFrameSurvived(page, 'Account sections');
 });
 
-test('the privacy notice link in the consent banner is an in-app move (no reload)', async ({ browser }) => {
-  const context = await browser.newContext();
-  const page = await context.newPage();
-  await page.goto('/');
-  await page.evaluate(() => {
-    (window as unknown as { __noReload: number }).__noReload = 1;
+test.describe('consent banner', () => {
+  // A visitor who has not answered the banner yet (the file's default storage state has it answered).
+  test.use({ storageState: { cookies: [], origins: [] } });
+
+  test('the privacy notice link in the consent banner is an in-app move (no reload)', async ({ page }) => {
+    await page.goto('/');
+    await page.evaluate(() => {
+      (window as unknown as { __noReload: number }).__noReload = 1;
+    });
+    const banner = page.getByTestId('consent-banner');
+    await expect(banner).toBeVisible();
+    await banner.getByRole('link').click();
+    await expect(page).toHaveURL(/\/policies\/privacy$/);
+    expect(await page.evaluate(() => (window as unknown as { __noReload?: number }).__noReload)).toBe(1);
   });
-  await page.getByTestId('consent-banner').getByRole('link').click();
-  await expect(page).toHaveURL(/\/policies\/privacy$/);
-  expect(await page.evaluate(() => (window as unknown as { __noReload?: number }).__noReload)).toBe(1);
-  await context.close();
 });
