@@ -69,3 +69,18 @@ export type ShopTeamDto = z.infer<typeof ShopTeam>;
 export const ShopBusySaved = z.object({ busy: z.boolean(), busyUntil: z.string().nullable() });
 export const ShopInviteSaved = z.object({ id: z.string(), expiresAt: z.string() });
 export const ShopTeamOk = z.object({ ok: z.literal(true) });
+
+/** An invite waiting for the signed-in person (their account shows "Join {shop} as staff?"). */
+export const MyShopInvites = z.object({
+  invites: z.array(
+    z.object({
+      id: z.string(),
+      shopName: z.string(),
+      shopNameHi: z.string().nullable(),
+      /** The name the owner typed for this person. */
+      invitedAs: z.string(),
+      expiresAt: z.string(),
+    }),
+  ),
+});
+export const ShopInviteAccepted = z.object({ shopId: z.string() });

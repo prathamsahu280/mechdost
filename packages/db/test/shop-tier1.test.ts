@@ -12,7 +12,9 @@ import { seedRaipurDemo, type DemoFixture } from '../src/demo-seed';
 import {
   acceptShopOffer,
   cancelShopStaffInvite,
-  claimShopStaffInvites,
+  acceptShopStaffInvite,
+  declineShopStaffInvite,
+  listMyShopInvites,
   getMyShops,
   getRoutingOrder,
   grantRole,
@@ -77,7 +79,12 @@ const eligibleShops = async (code: string) =>
 async function member(phone: string) {
   const [u] = await db
     .insert(s.users)
-    .values({ firebaseUid: `fb-tier1-${phone}`, phone, name: 'Helper' })
+    .values({
+      firebaseUid: `fb-tier1-${phone}`,
+      phone,
+      phoneVerifiedAt: new Date(),
+      name: 'Account Real Name',
+    })
     .returning();
   return u!.id;
 }
@@ -190,23 +197,78 @@ describe('shop team', () => {
   const sharma = () => shop['Sharma Auto Parts']!;
   const base = () => ({ shopId: sharma(), ownedShopIds: [sharma()], userId: owner });
 
-  it('an invite is claimed when the person signs in with that phone; they become staff of that shop only', async () => {
+  it('signing in grants nothing; the invitee accepts once, by the right phone, and the owner sees the typed name only', async () => {
     const phone = nextPhone();
     const inv = await inviteShopStaff(t(), { ...base(), name: 'Mohan', phone });
-    expect((await listShopTeam(t(), base())).invites.map((i) => i.id)).toContain(inv.id);
+    const before = await listShopTeam(t(), base());
+    expect(before.invites).toEqual([expect.objectContaining({ id: inv.id, name: 'Mohan' })]);
 
+    // The person exists and has signed in: no grant, the invite stays open and is shown to them.
     const helper = await member(phone);
-    expect(await claimShopStaffInvites(t(), { userId: helper, phone })).toBe(1);
+    expect((await loadGrants(t(), helper)).filter((g) => g.shopId !== null)).toEqual([]);
+    const mine = await listMyShopInvites(t(), { userId: helper });
+    expect(mine).toEqual([
+      expect.objectContaining({ id: inv.id, invitedAs: 'Mohan', shopName: 'Sharma Auto Parts' }),
+    ]);
+    expect((await listShopTeam(t(), base())).members.map((m) => m.userId)).not.toContain(helper);
+    // The owner never sees the account's own name before accepting.
+    expect(JSON.stringify(before)).not.toContain('Account Real Name');
+
+    // Another person (other phone) or an unverified phone cannot accept it: 404.
+    const stranger = await member(nextPhone());
+    await expect(acceptShopStaffInvite(t(), { userId: stranger, inviteId: inv.id })).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    });
+
+    // Two parallel accepts: one grant, the other is refused.
+    const results = await Promise.allSettled([
+      acceptShopStaffInvite(t(), { userId: helper, inviteId: inv.id }),
+      acceptShopStaffInvite(t(), { userId: helper, inviteId: inv.id }),
+    ]);
+    expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
     const grants = (await loadGrants(t(), helper)).filter((g) => g.shopId !== null);
     expect(grants).toEqual([expect.objectContaining({ role: 'seller_staff', shopId: sharma() })]);
     expect(grants[0]!.permissions).not.toContain('payouts:read');
-    const team = await listShopTeam(t(), base());
-    expect(team.members.find((m) => m.userId === helper)).toMatchObject({ role: 'staff', isYou: false });
-    expect(team.invites.map((i) => i.id)).not.toContain(inv.id);
-    // Single use: a second sign-in claims nothing.
-    expect(await claimShopStaffInvites(t(), { userId: helper, phone })).toBe(0);
+    await expect(acceptShopStaffInvite(t(), { userId: helper, inviteId: inv.id })).rejects.toMatchObject({
+      code: 'INVITE_USED',
+    });
     const [row] = await db.select().from(s.shopStaffInvites).where(eq(s.shopStaffInvites.id, inv.id));
     expect(row).toMatchObject({ status: 'used', usedBy: helper });
+    expect(await listMyShopInvites(t(), { userId: helper })).toEqual([]);
+
+    // After accepting: a member, shown under the typed name, not the account name.
+    const after = await listShopTeam(t(), base());
+    expect(after.members.find((m) => m.userId === helper)).toMatchObject({ role: 'staff', name: 'Mohan' });
+    expect(after.invites.map((i) => i.id)).not.toContain(inv.id);
+    expect(JSON.stringify(after)).not.toContain('Account Real Name');
+  });
+
+  it('a phone that was never verified cannot accept', async () => {
+    const phone = nextPhone();
+    const inv = await inviteShopStaff(t(), { ...base(), name: 'Ravi', phone });
+    const unverified = (
+      await db.insert(s.users).values({ firebaseUid: 'fb-tier1-unverified', phone }).returning()
+    )[0]!.id;
+    await expect(acceptShopStaffInvite(t(), { userId: unverified, inviteId: inv.id })).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    });
+    expect(await listMyShopInvites(t(), { userId: unverified })).toEqual([]);
+  });
+
+  it('declining closes the invite: nothing is granted and the owner no longer sees it waiting', async () => {
+    const phone = nextPhone();
+    const inv = await inviteShopStaff(t(), { ...base(), name: 'Sita', phone });
+    const person = await member(phone);
+    await declineShopStaffInvite(t(), { userId: person, inviteId: inv.id });
+    expect((await loadGrants(t(), person)).filter((g) => g.shopId !== null)).toEqual([]);
+    expect((await listShopTeam(t(), base())).invites.map((i) => i.id)).not.toContain(inv.id);
+    await expect(acceptShopStaffInvite(t(), { userId: person, inviteId: inv.id })).rejects.toMatchObject({
+      code: 'INVITE_CLOSED',
+    });
+    const other = await member(nextPhone());
+    await expect(declineShopStaffInvite(t(), { userId: other, inviteId: inv.id })).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    });
   });
 
   it('refuses a second open invite for the same number, an existing member and another shop owner’s ids', async () => {
@@ -239,7 +301,9 @@ describe('shop team', () => {
       code: 'NOT_FOUND',
     });
     const person = await member(phone);
-    expect(await claimShopStaffInvites(t(), { userId: person, phone })).toBe(0);
+    await expect(acceptShopStaffInvite(t(), { userId: person, inviteId: inv.id })).rejects.toMatchObject({
+      code: 'INVITE_CLOSED',
+    });
 
     const phone2 = nextPhone();
     const old = await inviteShopStaff(t(), { ...base(), name: 'Old', phone: phone2 });
@@ -248,7 +312,9 @@ describe('shop team', () => {
       .set({ expiresAt: sql`now() - interval '1 minute'` })
       .where(eq(s.shopStaffInvites.id, old.id));
     const person2 = await member(phone2);
-    expect(await claimShopStaffInvites(t(), { userId: person2, phone: phone2 })).toBe(0);
+    await expect(acceptShopStaffInvite(t(), { userId: person2, inviteId: old.id })).rejects.toMatchObject({
+      code: 'INVITE_EXPIRED',
+    });
     const again = await inviteShopStaff(t(), { ...base(), name: 'New', phone: phone2 });
     expect(again.id).not.toBe(old.id);
     const [expired] = await db.select().from(s.shopStaffInvites).where(eq(s.shopStaffInvites.id, old.id));
@@ -257,18 +323,22 @@ describe('shop team', () => {
 
   it('a MechDost staff account is never made shop staff by an invite', async () => {
     const phone = nextPhone();
-    await inviteShopStaff(t(), { ...base(), name: 'Admin Person', phone });
+    const adminInvite = await inviteShopStaff(t(), { ...base(), name: 'Admin Person', phone });
     const adminUser = await member(phone);
     await grantRole(t(), { userId: adminUser, role: 'support_agent', grantedBy: null });
-    expect(await claimShopStaffInvites(t(), { userId: adminUser, phone })).toBe(0);
+    await expect(
+      acceptShopStaffInvite(t(), { userId: adminUser, inviteId: adminInvite.id }),
+    ).rejects.toMatchObject({
+      code: 'MEMBER_IS_STAFF',
+    });
     expect((await loadGrants(t(), adminUser)).some((g) => g.role === 'seller_staff')).toBe(false);
   });
 
   it('the owner removes access: grant and membership go together; the owner and yourself stay', async () => {
     const phone = nextPhone();
-    await inviteShopStaff(t(), { ...base(), name: 'Gone Soon', phone });
+    const goneInvite = await inviteShopStaff(t(), { ...base(), name: 'Gone Soon', phone });
     const helper = await member(phone);
-    await claimShopStaffInvites(t(), { userId: helper, phone });
+    await acceptShopStaffInvite(t(), { userId: helper, inviteId: goneInvite.id });
     await removeShopMember(t(), { ...base(), memberUserId: helper });
     expect((await loadGrants(t(), helper)).some((g) => g.shopId !== null)).toBe(false);
     expect((await listShopTeam(t(), base())).members.map((m) => m.userId)).not.toContain(helper);

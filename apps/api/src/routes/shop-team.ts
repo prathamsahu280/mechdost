@@ -1,7 +1,10 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import type { Context } from 'hono';
 import {
+  acceptShopStaffInvite,
   cancelShopStaffInvite,
+  declineShopStaffInvite,
+  listMyShopInvites,
   inviteShopStaff,
   listShopTeam,
   NotFoundError,
@@ -10,8 +13,10 @@ import {
   shopIdsFrom,
 } from '@mechdost/db/repo';
 import {
+  MyShopInvites,
   ShopBusyBodySchema,
   ShopBusySaved,
+  ShopInviteAccepted,
   ShopInviteSaved,
   ShopTeam,
   ShopTeamOk,
@@ -94,6 +99,35 @@ const cancel = createRoute({
   responses: { 200: json(ShopTeamOk, 'Cancelled'), ...notFound, ...errorResponses },
 });
 
+const myInvites = createRoute({
+  method: 'get',
+  path: '/me/shop-invites',
+  tags: ['shop'],
+  summary: 'Shop staff invites waiting for your verified phone (nothing is granted until you accept)',
+  security: [{ bearerAuth: [] }],
+  responses: { 200: json(MyShopInvites, 'Invites'), ...errorResponses },
+});
+
+const acceptInvite = createRoute({
+  method: 'post',
+  path: '/me/shop-invites/{inviteId}/accept',
+  tags: ['shop'],
+  summary: 'Accept a shop staff invite addressed to your verified phone (once, before it expires)',
+  security: [{ bearerAuth: [] }],
+  request: { params: z.object({ inviteId: InviteId }) },
+  responses: { 200: json(ShopInviteAccepted, 'Joined'), ...notFound, ...conflict, ...errorResponses },
+});
+
+const declineInvite = createRoute({
+  method: 'post',
+  path: '/me/shop-invites/{inviteId}/decline',
+  tags: ['shop'],
+  summary: 'Decline a shop staff invite addressed to your verified phone',
+  security: [{ bearerAuth: [] }],
+  request: { params: z.object({ inviteId: InviteId }) },
+  responses: { 200: json(ShopTeamOk, 'Declined'), ...notFound, ...conflict, ...errorResponses },
+});
+
 const remove = createRoute({
   method: 'delete',
   path: '/shop/team/{shopId}/members/{userId}',
@@ -115,6 +149,13 @@ export function shopTeamRoutes(deps: AppDeps, cache: SessionCache) {
     app.use(prefix, requireVerified);
     app.use(prefix, requirePermission('inventory:write'));
   }
+  for (const prefix of ['/me/shop-invites', '/me/shop-invites/*']) {
+    app.use(prefix, authenticate(deps, cache));
+    app.use(
+      prefix,
+      rateLimit(deps.rateLimiter, RATE_RULES.apiPerUser, (c) => c.get('auth').user.id),
+    );
+  }
   app.on(
     'POST',
     '/shop/team/:shopId/invites',
@@ -131,6 +172,23 @@ export function shopTeamRoutes(deps: AppDeps, cache: SessionCache) {
   }
 
   return app
+    .openapi(myInvites, async (c) =>
+      c.json({ invites: await listMyShopInvites(deps.db, { userId: c.get('auth').user.id }) }, 200),
+    )
+    .openapi(acceptInvite, async (c) => {
+      const me = c.get('auth').user.id;
+      const r = await acceptShopStaffInvite(deps.db, { userId: me, inviteId: c.req.valid('param').inviteId });
+      // Their grants are loaded again on the next request on this instance (others within the cache period).
+      cache.invalidateUser(me);
+      return c.json(r, 200);
+    })
+    .openapi(declineInvite, async (c) => {
+      await declineShopStaffInvite(deps.db, {
+        userId: c.get('auth').user.id,
+        inviteId: c.req.valid('param').inviteId,
+      });
+      return c.json({ ok: true as const }, 200);
+    })
     .openapi(busy, async (c) => {
       const { shopId } = c.req.valid('param');
       const ownedShopIds = owned(c, shopId);

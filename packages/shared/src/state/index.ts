@@ -369,7 +369,7 @@ export const shopStaffInviteMachine = defineMachine(
   [
     { from: 'sent', to: 'used', by: ['system'] },
     { from: 'sent', to: 'expired', by: ['system'] },
-    { from: 'sent', to: 'revoked', by: ['shop'] },
+    { from: 'sent', to: 'revoked', by: ['shop', 'customer'] },
   ],
 );
 

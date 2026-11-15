@@ -9,14 +9,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { seedRaipurDemo, type DemoFixture } from '@mechdost/db/demo-seed';
-import {
-  ensureUser,
-  grantRole,
-  placeCodOrder,
-  quoteCheckout,
-  routeOrder,
-  claimShopStaffInvites,
-} from '@mechdost/db/repo';
+import { ensureUser, grantRole, placeCodOrder, quoteCheckout, routeOrder } from '@mechdost/db/repo';
 import * as s from '@mechdost/db/schema';
 import { bearer, buildApp, type ErrorJson } from './helpers';
 
@@ -140,7 +133,23 @@ describe('shop team and busy: role-leak matrix', () => {
       emailVerified: true,
     });
     const invitee: Who = { id: '', headers: { ...bearer(token), 'content-type': 'application/json' } };
-    // The first signed-in request claims the invite (like an applicant owner), so the shop shows at once.
+    // Signing in grants nothing: no shop, and the invite waits for the person's answer.
+    expect((await call(invitee, 'GET', '/shop/me')).status).toBe(403);
+    const waiting = (await (await call(invitee, 'GET', '/me/shop-invites')).json()) as {
+      invites: { id: string; invitedAs: string; shopName: string }[];
+    };
+    expect(waiting.invites).toEqual([
+      expect.objectContaining({ invitedAs: 'Mohan Lal', shopName: 'Sharma Auto Parts' }),
+    ]);
+    // Another signed-in person cannot accept or decline it (404), and the invite is still there.
+    const nosy = await person('22', null);
+    const inviteId = waiting.invites[0]!.id;
+    expect((await call(nosy, 'POST', `/me/shop-invites/${inviteId}/accept`)).status).toBe(404);
+    expect((await call(nosy, 'POST', `/me/shop-invites/${inviteId}/decline`)).status).toBe(404);
+    expect((await call(null, 'GET', '/me/shop-invites')).status).toBe(401);
+    const accepted = await call(invitee, 'POST', `/me/shop-invites/${inviteId}/accept`);
+    expect(accepted.status).toBe(200);
+    expect((await call(invitee, 'POST', `/me/shop-invites/${inviteId}/accept`)).status).toBe(409);
     const mine = await call(invitee, 'GET', '/shop/me');
     expect(mine.status).toBe(200);
     const shops = ((await mine.json()) as { shops: { id: string; isOwner: boolean }[] }).shops;
@@ -149,11 +158,19 @@ describe('shop team and busy: role-leak matrix', () => {
     expect((await call(invitee, 'GET', `/shop/team/${sharma}`)).status).toBe(403);
 
     const list = (await (await call(owner, 'GET', `/shop/team/${sharma}`)).json()) as {
-      members: { userId: string; role: string; isYou: boolean; phoneLast4: string | null }[];
+      members: {
+        userId: string;
+        role: string;
+        isYou: boolean;
+        phoneLast4: string | null;
+        name: string | null;
+      }[];
       invites: unknown[];
     };
     const member = list.members.find((m) => m.phoneLast4 === '2299')!;
     expect(list.invites).toEqual([]);
+    // Shown under the name the owner typed, never the account's own name.
+    expect(member.name).toBe('Mohan Lal');
     expect(list.members.find((m) => m.isYou)?.role).toBe('owner');
 
     expect((await call(owner, 'DELETE', `/shop/team/${sharma}/members/${owner.id}`)).status).toBe(409);
@@ -163,10 +180,21 @@ describe('shop team and busy: role-leak matrix', () => {
     expect((await call(invitee, 'GET', '/shop/me')).status).toBe(403);
   });
 
-  it('a signed-in person who is not invited gets nothing; claiming twice is harmless', async () => {
+  it('a signed-in person who is not invited gets nothing; a declined invite grants nothing', async () => {
     const stranger = await person('21', null);
     expect((await call(stranger, 'GET', '/shop/me')).status).toBe(403);
-    expect(await claimShopStaffInvites(ctx.db, { userId: stranger.id, phone: '+9198222222' + '21' })).toBe(0);
+    expect(await (await call(stranger, 'GET', '/me/shop-invites')).json()).toEqual({ invites: [] });
+
+    const sharma = shop['Sharma Auto Parts']!;
+    const owner = await person('23', 'seller_owner', sharma);
+    await call(owner, 'POST', `/shop/team/${sharma}/invites`, { name: 'Sita', phone: '+919822222224' });
+    const sita = await person('24', null);
+    const [inv] = (
+      (await (await call(sita, 'GET', '/me/shop-invites')).json()) as { invites: { id: string }[] }
+    ).invites;
+    expect((await call(sita, 'POST', `/me/shop-invites/${inv!.id}/decline`)).status).toBe(200);
+    expect((await call(sita, 'GET', '/shop/me')).status).toBe(403);
+    expect((await call(sita, 'POST', `/me/shop-invites/${inv!.id}/accept`)).status).toBe(409);
   });
 
   it('staff see no payout money in the order lists; the owner does; cash to collect stays', async () => {

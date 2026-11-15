@@ -11,8 +11,8 @@ import { grantRole, loadGrants } from './rbac';
 
 /**
  * The shop's team (design 2026-11-15, spec 07/13). The owner invites a helper by phone and name; the invite is bound
- * to that number, single use and expires (`partners.invite_days`). When the invitee signs in with a code sent to
- * that phone (the OTP proves it, as for seller applicants), `claimShopStaffInvites` makes them `seller_staff` for
+ * to that number, single use and expires (`partners.invite_days`). Signing in grants nothing: the invitee, whose
+ * verified phone the invite names, sees it in their account and accepts (`acceptShopStaffInvite`), which makes them `seller_staff` for
  * this shop only. The owner can cancel an invite or remove a member; at most `SHOP_TEAM_MAX` people per shop
  * (owner + staff + invites still waiting), counted under the shop row lock so two parallel invites cannot pass it.
  * Every function takes the shops the caller OWNS from the API's grants: another shop's id is a 404.
@@ -63,6 +63,12 @@ export async function listShopTeam(
     .innerJoin(users, eq(users.id, shopUsers.userId))
     .where(eq(shopUsers.shopId, input.shopId))
     .orderBy(asc(shopUsers.role), asc(shopUsers.createdAt), asc(shopUsers.id));
+  // A helper is shown under the name the owner typed in the invite, never the account's own name (privacy).
+  const typed = await db
+    .select({ usedBy: shopStaffInvites.usedBy, name: shopStaffInvites.name })
+    .from(shopStaffInvites)
+    .where(and(eq(shopStaffInvites.shopId, input.shopId), eq(shopStaffInvites.status, 'used')));
+  const typedName = new Map(typed.map((t) => [t.usedBy, t.name]));
   const invites = await db
     .select({
       id: shopStaffInvites.id,
@@ -83,7 +89,7 @@ export async function listShopTeam(
     members: members.map((m) => ({
       userId: m.userId,
       role: m.role === 'owner' ? ('owner' as const) : ('staff' as const),
-      name: m.name,
+      name: m.role === 'owner' ? m.name : (typedName.get(m.userId) ?? null),
       phoneLast4: last4(m.phone),
       isYou: m.userId === input.userId,
     })),
@@ -265,56 +271,104 @@ export async function removeShopMember(
   });
 }
 
+export interface MyShopInvite {
+  id: string;
+  shopName: string;
+  shopNameHi: string | null;
+  invitedAs: string;
+  expiresAt: string;
+}
+
+/** The person's own verified phone, or a 404 (an unverified number proves nothing). */
+async function verifiedPhone(tx: Tx, userId: string): Promise<string> {
+  const [u] = await tx
+    .select({ phone: users.phone, verifiedAt: users.phoneVerifiedAt })
+    .from(users)
+    .where(eq(users.id, userId));
+  if (!u?.phone || !u.verifiedAt) throw new NotFoundError('Invite not found');
+  return u.phone;
+}
+
 /**
- * On sign-in: open invites for this verified phone become `seller_staff` grants (once each). MechDost staff
- * accounts are skipped (one person, one side: their invite stays open until it lapses), as is a full team.
- * Returns how many shops the person joined. The common case (no invite) is one indexed read, no transaction.
+ * Invites waiting for the signed-in person's verified phone (shown in their account). Signing in never grants
+ * anything: the person reads "Join {shop} as staff?" and accepts or declines (security review 2026-11-15).
  */
-export async function claimShopStaffInvites(
-  db: Tx,
-  input: { userId: string; phone: string },
-): Promise<number> {
-  const open = await db
-    .select({ id: shopStaffInvites.id })
+export async function listMyShopInvites(db: Tx, input: { userId: string }): Promise<MyShopInvite[]> {
+  const [u] = await db
+    .select({ phone: users.phone, verifiedAt: users.phoneVerifiedAt })
+    .from(users)
+    .where(eq(users.id, input.userId));
+  if (!u?.phone || !u.verifiedAt) return [];
+  const rows = await db
+    .select({
+      id: shopStaffInvites.id,
+      shopName: shops.name,
+      shopNameHi: shops.nameHi,
+      invitedAs: shopStaffInvites.name,
+      expiresAt: shopStaffInvites.expiresAt,
+    })
     .from(shopStaffInvites)
+    .innerJoin(shops, eq(shops.id, shopStaffInvites.shopId))
     .where(
       and(
-        eq(shopStaffInvites.phone, input.phone),
+        eq(shopStaffInvites.phone, u.phone),
         eq(shopStaffInvites.status, 'sent'),
         gt(shopStaffInvites.expiresAt, sql`now()`),
       ),
     )
-    .limit(1);
-  if (open.length === 0) return 0;
-  if ((await loadGrants(db, input.userId)).some(isStaffGrant)) return 0;
+    .orderBy(asc(shopStaffInvites.createdAt), asc(shopStaffInvites.id));
+  return rows.map((r) => ({ ...r, expiresAt: r.expiresAt.toISOString() }));
+}
+
+/** The open invite addressed to this person's phone, locked; anything else is a 404 (never reveal other numbers). */
+async function ownOpenInvite(tx: Tx, userId: string, inviteId: string) {
+  const phone = await verifiedPhone(tx, userId);
+  const [inv] = await tx
+    .select()
+    .from(shopStaffInvites)
+    .where(and(eq(shopStaffInvites.id, inviteId), eq(shopStaffInvites.phone, phone)))
+    .for('update');
+  if (!inv) throw new NotFoundError('Invite not found');
+  if (inv.status === 'used') throw new ConflictError('This invite was already accepted', 'INVITE_USED');
+  if (inv.status === 'revoked') throw new ConflictError('This invite is closed', 'INVITE_CLOSED');
+  if (inv.status === 'expired' || inv.expiresAt.getTime() <= Date.now())
+    throw new ConflictError('This invite has expired', 'INVITE_EXPIRED');
+  return inv;
+}
+
+/**
+ * The invitee accepts: only the person whose verified phone the invite names, once, before it lapses. The status
+ * move is a compare-and-set on the invite's version; the `seller_staff` grant and the `shop_users` membership
+ * follow in the same transaction. MechDost staff accounts cannot join a shop (one person, one side).
+ */
+export async function acceptShopStaffInvite(
+  db: Tx,
+  input: { userId: string; inviteId: string },
+): Promise<{ shopId: string }> {
   return db.transaction(async (tx) => {
-    const invites = await tx
-      .select({ id: shopStaffInvites.id, shopId: shopStaffInvites.shopId })
-      .from(shopStaffInvites)
+    const inv = await ownOpenInvite(tx, input.userId, input.inviteId);
+    if ((await loadGrants(tx, input.userId)).some(isStaffGrant))
+      throw new ConflictError('This is a MechDost staff account; use a separate account', 'MEMBER_IS_STAFF');
+    const shop = await lockShop(tx, inv.shopId);
+    shopStaffInviteMachine.assert('sent', 'used', 'system');
+    const [used] = await tx
+      .update(shopStaffInvites)
+      .set({ status: 'used', usedAt: new Date(), usedBy: input.userId })
       .where(
         and(
-          eq(shopStaffInvites.phone, input.phone),
+          eq(shopStaffInvites.id, inv.id),
           eq(shopStaffInvites.status, 'sent'),
-          gt(shopStaffInvites.expiresAt, sql`now()`),
+          eq(shopStaffInvites.version, inv.version),
         ),
       )
-      .orderBy(asc(shopStaffInvites.createdAt), asc(shopStaffInvites.id));
-    let joined = 0;
-    for (const invite of invites) {
-      const shop = await lockShop(tx, invite.shopId);
-      const [already] = await tx
-        .select({ id: shopUsers.id })
-        .from(shopUsers)
-        .where(and(eq(shopUsers.shopId, shop.id), eq(shopUsers.userId, input.userId)));
-      // Someone who is already on the team (the owner, say) is never changed by an invite; it is just closed.
-      // The invite itself held a place when it was made (`teamSize`), so a claim cannot exceed the maximum.
-      shopStaffInviteMachine.assert('sent', 'used', 'system');
-      const [used] = await tx
-        .update(shopStaffInvites)
-        .set({ status: 'used', usedAt: new Date(), usedBy: input.userId })
-        .where(and(eq(shopStaffInvites.id, invite.id), eq(shopStaffInvites.status, 'sent')))
-        .returning({ id: shopStaffInvites.id });
-      if (!used || already) continue;
+      .returning({ id: shopStaffInvites.id });
+    if (!used) throw new ConflictError('This invite changed; reload and try again', 'INVITE_STALE');
+    const [already] = await tx
+      .select({ id: shopUsers.id })
+      .from(shopUsers)
+      .where(and(eq(shopUsers.shopId, shop.id), eq(shopUsers.userId, input.userId)));
+    // Someone already on the team (the owner, say) is never changed by an invite; it is just closed.
+    if (!already) {
       await grantRole(tx, {
         userId: input.userId,
         role: 'seller_staff',
@@ -328,8 +382,38 @@ export async function claimShopStaffInvites(
         cityId: shop.cityId,
         props: { shopId: shop.id },
       });
-      joined += 1;
     }
-    return joined;
+    return { shopId: shop.id };
+  });
+}
+
+/** The invitee declines: the invite closes (nothing is granted) and the owner no longer sees it waiting. */
+export async function declineShopStaffInvite(
+  db: Tx,
+  input: { userId: string; inviteId: string },
+): Promise<void> {
+  await db.transaction(async (tx) => {
+    const inv = await ownOpenInvite(tx, input.userId, input.inviteId);
+    shopStaffInviteMachine.assert('sent', 'revoked', 'customer');
+    const [closed] = await tx
+      .update(shopStaffInvites)
+      .set({ status: 'revoked' })
+      .where(
+        and(
+          eq(shopStaffInvites.id, inv.id),
+          eq(shopStaffInvites.status, 'sent'),
+          eq(shopStaffInvites.version, inv.version),
+        ),
+      )
+      .returning({ id: shopStaffInvites.id });
+    if (!closed) throw new ConflictError('This invite changed; reload and try again', 'INVITE_STALE');
+    await tx.insert(auditLog).values({
+      actorUserId: input.userId,
+      actorRole: 'customer',
+      action: 'shop_staff.invite_declined',
+      entity: 'shop_staff_invite',
+      entityId: inv.id,
+      after: { shopId: inv.shopId },
+    });
   });
 }

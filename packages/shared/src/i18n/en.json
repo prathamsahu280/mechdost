@@ -3804,6 +3804,17 @@
     "err_NOT_FOUND": "Not found. Reload the page and try again.",
     "err_NETWORK": "No connection. Try again.",
     "err_RATE_LIMITED": "Too many tries. Wait a little and try again.",
+    "inviteTitle": "Join {shop} as staff?",
+    "inviteBody": "The shop owner added you as {name}. As staff you handle orders and stock; you never see payouts. The owner sees only that name.",
+    "inviteUntil": "Valid until {date}",
+    "inviteAccept": "Accept",
+    "inviteDecline": "Decline",
+    "inviteAccepted": "You joined {shop}. Open the shop portal from the menu.",
+    "inviteDeclined": "Invite declined.",
+    "err_INVITE_USED": "This invite was already accepted.",
+    "err_INVITE_CLOSED": "This invite is closed.",
+    "err_INVITE_EXPIRED": "This invite has expired. Ask the owner to send a new one.",
+    "err_MEMBER_IS_STAFF": "A MechDost staff account cannot join a shop. Use a separate account.",
     "err_generic": "Something went wrong. Try again."
   }
 }

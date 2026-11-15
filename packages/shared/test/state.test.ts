@@ -207,7 +207,7 @@ describe('seller onboarding machines (design 2026-11-13)', () => {
     expect(inviteMachine.can('used', 'sent')).toBe(false);
   });
 
-  it('shop staff invites: used or expired by the system, cancelled by the shop, never reopened', () => {
+  it('shop staff invites: used or expired by the system, cancelled by the shop or declined by the invitee, never reopened', () => {
     expect(shopStaffInviteMachine.canActor('sent', 'used', 'system')).toBe(true);
     expect(shopStaffInviteMachine.canActor('sent', 'expired', 'system')).toBe(true);
     expect(shopStaffInviteMachine.canActor('sent', 'revoked', 'shop')).toBe(true);
