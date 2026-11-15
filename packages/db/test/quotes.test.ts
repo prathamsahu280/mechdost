@@ -595,7 +595,9 @@ describe('WhatsApp notices (templates off until staff switch them on)', () => {
       message: 'We cannot source these this month.',
     });
     expect((await queued()).map((r) => r.template)).toContain('quote.withdrawn');
-    expect((await queued()).every((r) => r.payload.quoteCode === code)).toBe(true);
+    expect((await queued()).every((r) => (r.payload as { quoteCode?: string }).quoteCode === code)).toBe(
+      true,
+    );
   });
 
   it('reminds on WhatsApp once, from the same sweep as the expiring email', async () => {

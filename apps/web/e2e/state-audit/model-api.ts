@@ -884,6 +884,24 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
     realApi: true,
   },
 
+  {
+    code: 'API-QUOTE-THREAD',
+    page: 'Bulk quote thread, real sign-in',
+    component:
+      'Quote thread: offer card with the payment choice, "Pay now" on an unpaid online order, a paid order, photos and "Seen" on messages, failed load with retry',
+    path: '/quotes/QT-RPR-2026-HND901',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['customer'] },
+      { name: 'thread', values: ['offered', 'accepted_unpaid', 'accepted_paid', 'photos_seen', 'error'] },
+    ],
+    sweep: 12,
+    note: API_NOTE,
+    realApi: true,
+  },
+
   // ─────────────── Admin → Content: trust lines (design 2026-11-15) ───────────────
   {
     code: 'API-ADM-CONTENT',

@@ -15,7 +15,7 @@ import { AdminErrors } from '@mechdost/shared/admin-errors-api';
 import { EXPORT_DATASETS, ExportOptionsDto, ExportTicketDto } from '@mechdost/shared/exports';
 import { AdminOverviewDto, AnalyticsDashboardDto } from '@mechdost/shared/admin-analytics-api';
 import { AdminCoinActivityDto } from '@mechdost/shared/coins-api';
-import { QuotePageDto } from '@mechdost/shared/quote-api';
+import { QuoteDetailDto, QuotePageDto, QuoteReadDto } from '@mechdost/shared/quote-api';
 import { AdminReviewsDto } from '@mechdost/shared/reviews-api';
 import { MyOrderDto } from '@mechdost/shared/checkout-api';
 import {
@@ -1265,6 +1265,120 @@ function quotesMocks(): Mock[] {
   ];
 }
 
+/**
+ * The customer's quote thread (spec 19, 2026-11-16): an offer with the payment choice, an accepted quote whose online
+ * order is unpaid ("Pay now") or paid, and a thread with photos and "Seen" marks. One tiny PNG answers the photo URLs.
+ */
+const QUOTE_PIXEL =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+
+function quoteThreadMocks(): Mock[] {
+  const photo = (n: number) => ({
+    id: uuid(700 + n),
+    width: 800,
+    height: 600,
+    thumbUrl: `/quote-photos/${uuid(700 + n)}/thumb?e=9999999999&s=audit`,
+    largeUrl: `/quote-photos/${uuid(700 + n)}/large?e=9999999999&s=audit`,
+  });
+  return [
+    meMock(),
+    {
+      method: 'GET',
+      path: /^\/quote-photos\//,
+      reply: (): Reply => ({ raw: { contentType: 'image/png', base64: QUOTE_PIXEL } }),
+    },
+    {
+      method: 'POST',
+      path: /^\/quotes\/[^/]+\/read$/,
+      schema: QuoteReadDto,
+      reply: (): Reply => ({ body: { readThrough: null } satisfies Dto<typeof QuoteReadDto> }),
+    },
+    {
+      method: 'GET',
+      path: /^\/quotes\/[^/]+$/,
+      schema: QuoteDetailDto,
+      reply: ({ c }): Reply => {
+        const mode = c.state.thread ?? 'offered';
+        if (mode === 'error') return { status: 500, code: 'INTERNAL' };
+        const accepted = mode === 'accepted_unpaid' || mode === 'accepted_paid';
+        const photos = mode === 'photos_seen';
+        return {
+          body: {
+            code: 'QT-RPR-2026-HND901',
+            status: accepted ? 'accepted' : 'offered',
+            cityCode: 'RPR',
+            pincode: '492001',
+            lines: 1,
+            units: 120,
+            listTotalPaise: 4_590_000,
+            lastMessageAt: iso(-30),
+            lastMessageBy: 'staff',
+            offer: { version: 1, totalPaise: 4_250_000, validUntil: iso(60 * 20), expired: false },
+            orderCode: accepted ? 'MD-RPR-2026-HND901' : null,
+            orderPayment: accepted
+              ? { method: 'online', status: mode === 'accepted_paid' ? 'paid' : 'created' }
+              : null,
+            createdAt: iso(-600),
+            version: 3,
+            lineItems: [
+              {
+                lineNo: 1,
+                slug: 'audit-product-1',
+                sku: 'AUD-0001',
+                title: 'Audit engine oil 1 L',
+                qty: 120,
+                listUnitPaise: 38_250,
+                mrpPaise: 42_000,
+                costPaise: null,
+                stock: null,
+              },
+            ],
+            currentOffer: {
+              version: 1,
+              status: accepted ? 'accepted' : 'active',
+              lines: [{ lineNo: 1, unitPaise: 35_000 }],
+              subtotalPaise: 4_200_000,
+              deliveryPaise: 50_000,
+              totalPaise: 4_250_000,
+              validUntil: iso(60 * 20),
+              expired: false,
+              terms: null,
+              createdAt: iso(-60),
+            },
+            messages: [
+              {
+                id: uuid(600),
+                from: 'customer',
+                body: 'Need 120 for the workshop, delivery by Friday.',
+                at: iso(-600),
+                attachments: photos ? [photo(1), photo(2)] : [],
+                seen: photos,
+              },
+              {
+                id: uuid(601),
+                from: 'staff',
+                body: 'We can do ₹350 each with free delivery above ₹40,000.',
+                at: iso(-30),
+                attachments: photos ? [photo(3)] : [],
+                seen: false,
+              },
+            ],
+            address: {
+              contactName: 'Audit User',
+              contactPhone: '+919876543210',
+              line1: 'House 12, Pandri',
+              landmark: null,
+              pincode: '492001',
+            },
+            reasonCode: null,
+            closingMessage: null,
+          } satisfies Dto<typeof QuoteDetailDto>,
+        };
+      },
+    },
+  ];
+}
+
 // ── Admin people screens (design 2026-11-15) ──────────────────────────────────────────────────────────────────
 
 const ROLE_NAMES: Readonly<Record<string, string>> = {
@@ -1559,6 +1673,8 @@ export function mocksFor(c: AuditCase): Mock[] {
       return couponsMocks(c);
     case 'API-ADM-REVIEWS':
       return reviewsMocks();
+    case 'API-QUOTE-THREAD':
+      return quoteThreadMocks();
     case 'API-ADM-QUOTES':
       return quotesMocks();
     case 'API-ADM-CONTENT':
