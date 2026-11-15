@@ -375,6 +375,7 @@ function NewRequestApi({
               {t('ws_api_declineConfirm')}
             </button>
             <button
+              data-panel-cancel={`decline-${r.code}`}
               type="button"
               onClick={() => {
                 setDeclining(false);
@@ -476,6 +477,7 @@ function NewRequestApi({
               {t('sendProposal')}
             </button>
             <button
+              data-disclosure-trigger={`decline-${r.code}`}
               type="button"
               onClick={() => {
                 setDeclining(true);

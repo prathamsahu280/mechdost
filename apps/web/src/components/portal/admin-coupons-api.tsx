@@ -160,6 +160,7 @@ export function AdminCouponsApi() {
         </div>
         {!editing ? (
           <button
+            data-disclosure-trigger="coupon-new"
             type="button"
             className={portalPrimary}
             onClick={() => {
@@ -470,6 +471,7 @@ export function AdminCouponsApi() {
               {working ? t('a_saving') : t('a_save')}
             </button>
             <button
+              data-panel-cancel={editing.coupon ? `coupon-${editing.coupon.id}` : 'coupon-new'}
               type="button"
               className={portalQuiet}
               onClick={() => {
@@ -566,6 +568,7 @@ export function AdminCouponsApi() {
                       {t('a_pause_confirm')}
                     </button>
                     <button
+                      data-panel-cancel={`pause-${c.id}`}
                       type="button"
                       className={portalQuiet}
                       onClick={() => {
@@ -578,6 +581,7 @@ export function AdminCouponsApi() {
                 ) : (
                   <div className="mt-3 flex flex-wrap gap-2">
                     <button
+                      data-disclosure-trigger={`coupon-${c.id}`}
                       type="button"
                       className={portalQuiet}
                       onClick={() => {
@@ -590,6 +594,7 @@ export function AdminCouponsApi() {
                     </button>
                     {c.active ? (
                       <button
+                        data-disclosure-trigger={`pause-${c.id}`}
                         type="button"
                         className={portalQuiet}
                         onClick={() => {

@@ -52,6 +52,7 @@ export function GiveUpOrder({ order, onChanged }: { order: ShopOrderDto; onChang
   if (!open)
     return (
       <button
+        data-disclosure-trigger={`give-up-${order.code}`}
         type="button"
         data-track="shop_order_give_up_open"
         onClick={() => {
@@ -126,6 +127,7 @@ export function GiveUpOrder({ order, onChanged }: { order: ShopOrderDto; onChang
           {t('confirm')}
         </button>
         <button
+          data-panel-cancel={`give-up-${order.code}`}
           type="button"
           onClick={() => {
             setOpen(false);

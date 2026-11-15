@@ -27,6 +27,7 @@ import {
   type Finding,
 } from './geometry.ts';
 import { isBlockedOriginNoise } from './console-noise.ts';
+import { dismissCheck } from './dismiss.ts';
 import { echoedWords, withoutEcho } from './hindi-echo.ts';
 import { knownIssueFor } from './known-issues.ts';
 import { navCheck } from './nav-run.ts';
@@ -516,6 +517,9 @@ export async function runCase(page: Page, c: AuditCase, info: TestInfo, api?: Ap
         detail: `English on /hi: ${words.slice(0, 12).join(', ')}`,
       });
   }
+
+  // Panels opened by a button can be closed (clicks the openers, so it runs after the measurements).
+  if (has('dismiss')) findings.push(...(await dismissCheck(page, c.scope)));
 
   // Last: the walk leaves the page.
   if (has('nav')) findings.push(...(await navCheck(page, c)));

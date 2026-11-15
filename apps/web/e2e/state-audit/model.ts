@@ -64,7 +64,8 @@ export type Check =
   | 'sync'
   | 'axe'
   | 'hindi'
-  | 'nav';
+  | 'nav'
+  | 'dismiss';
 
 /** What each check asserts (checklist header and failure messages). */
 export const CHECK_TEXT: Readonly<Record<Check, string>> = {
@@ -81,6 +82,8 @@ export const CHECK_TEXT: Readonly<Record<Check, string>> = {
   sync: 'controls agree with the stored state (compare pressed = in list, stepper = in cart, tray count)',
   axe: 'axe WCAG 2.2 AA on the component',
   hindi: 'on /hi no English outside the allowlist (test/hindi-allowlist.ts)',
+  dismiss:
+    'every button-opened panel has a visible close control (44 px), Escape closes it and focus returns to the opener (e2e/state-audit/dismiss.ts)',
   nav: 'navigation: one current marker where the route is a nav target, the current item in view, and with walk=yes every item opens a page with its heading (no 404, no wrong landing)',
 };
 
@@ -704,6 +707,7 @@ export const COMPONENTS: readonly ComponentDef[] = [
     component: 'Ratings summary, review list, write-a-review entry',
     path: (r) => `/shop/${String(r.product)}`,
     scope: 'section[aria-labelledby^="reviews-"]',
+    checks: [...BASE_CHECKS, 'dismiss'],
     strategy: 'pairwise',
     params: [...env, authOutIn, world2, { name: 'product', values: [PRODUCTS.castrol, PRODUCTS.spark] }],
     sweep: 8,
@@ -816,6 +820,7 @@ export const COMPONENTS: readonly ComponentDef[] = [
     component: 'Order status, timeline, lines, delivery code, cancel/rate/support',
     path: (r) => `/orders/${String(r.order)}`,
     scope: 'main',
+    checks: [...BASE_CHECKS, 'dismiss'],
     strategy: 'pairwise',
     params: [
       ...env,
@@ -833,6 +838,7 @@ export const COMPONENTS: readonly ComponentDef[] = [
     component: 'Request status, proposal, itemised estimate (per-line approval), bill',
     path: (r) => `/service/${String(r.request)}`,
     scope: 'main',
+    checks: [...BASE_CHECKS, 'dismiss'],
     strategy: 'pairwise',
     params: [
       ...env,
@@ -1015,6 +1021,7 @@ export const COMPONENTS: readonly ComponentDef[] = [
     component: 'Shop portal: offers with timer, accept/decline, orders, prices',
     path: '/partner/shop',
     scope: 'main',
+    checks: [...BASE_CHECKS, 'dismiss'],
     strategy: 'pairwise',
     params: [...env, { name: 'auth', values: ['shop'] }, world2],
     sweep: 16,
@@ -1026,6 +1033,7 @@ export const COMPONENTS: readonly ComponentDef[] = [
     component: 'Workshop portal: requests, proposal, estimate lines, bill',
     path: '/partner/workshop',
     scope: 'main',
+    checks: [...BASE_CHECKS, 'dismiss'],
     strategy: 'pairwise',
     params: [...env, { name: 'auth', values: ['workshop'] }, world2],
     sweep: 16,

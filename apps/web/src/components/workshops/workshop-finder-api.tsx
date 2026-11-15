@@ -404,11 +404,23 @@ export function WorkshopFinderApi() {
                 pincode={/^[1-9]\d{5}$/.test(pin) ? pin : ''}
                 origin={gps}
               />
+              <button
+                type="button"
+                data-panel-cancel="finder-choose"
+                data-track="finder_let_mechdost_choose_cancel"
+                onClick={() => {
+                  setChoosing(false);
+                }}
+                className="press mt-3 inline-flex min-h-11 items-center rounded-button border border-input-border px-4 text-sm font-bold text-ink hover:bg-pill"
+              >
+                {w('api_chooseCancel')}
+              </button>
             </div>
           ) : (
             <button
               type="button"
               data-track="finder_let_mechdost_choose"
+              data-disclosure-trigger="finder-choose"
               onClick={() => {
                 setChoosing(true);
               }}

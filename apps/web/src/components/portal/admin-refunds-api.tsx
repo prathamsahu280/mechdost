@@ -341,6 +341,7 @@ function RefundDetail({
                     {busy ? t('approveBusy') : t('approve')}
                   </button>
                   <button
+                    data-disclosure-trigger={`reject-${refund.id}`}
                     type="button"
                     onClick={() => {
                       setDeclining(true);
@@ -382,6 +383,7 @@ function RefundDetail({
                       {t('rejectConfirm')}
                     </button>
                     <button
+                      data-panel-cancel={`reject-${refund.id}`}
                       type="button"
                       onClick={() => {
                         setDeclining(false);

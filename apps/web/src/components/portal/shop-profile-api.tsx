@@ -238,6 +238,7 @@ function HoursCard({ shop: s, onChanged }: { shop: MyShopDto; onChanged: () => P
               {t('shops_api_hoursSave')}
             </button>
             <button
+              data-panel-cancel="hours"
               type="button"
               onClick={() => {
                 setEditing(false);
@@ -257,6 +258,7 @@ function HoursCard({ shop: s, onChanged }: { shop: MyShopDto; onChanged: () => P
           <p className="mt-1 text-xs text-muted">{t('shops_api_hoursNote')}</p>
           {s.isOwner ? (
             <button
+              data-disclosure-trigger="hours"
               type="button"
               onClick={() => {
                 setEditing(true);
@@ -386,6 +388,7 @@ function NewProduct({ shopId }: { shopId: string }) {
       {error ? <Problem code={error} /> : null}
       {!open ? (
         <button
+          data-disclosure-trigger="new-product"
           type="button"
           disabled={listed === null}
           onClick={() => {
@@ -471,6 +474,7 @@ function NewProduct({ shopId }: { shopId: string }) {
             <CatalogueSkuPicker idPrefix={id} listed={pendingSkus} onPick={setChoice} />
           )}
           <button
+            data-panel-cancel="new-product"
             type="button"
             onClick={() => {
               setOpen(false);

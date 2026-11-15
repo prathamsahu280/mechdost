@@ -191,3 +191,7 @@ which are automated. Add new classes at the end of the relevant section.
 ## P. i18n bundles (client messages)
 
 - P1. A client component calls `useTranslations('ns')` but no page or layout on the route passes `ns` to `ClientMessages`: the screen shows raw keys (`workshopTier1.f_low`) and the console logs `MISSING_MESSAGE: ns`, only in the real-sign-in (api) build where the lazily loaded `*-api` components render. Happened twice (shopTier1 2026-11-15; workshopTier1, supportThread, workshopAnalytics, portal, refunds 2026-11-16). Gate: `apps/web/test/client-messages-coverage.test.ts` (no allowlist). Fix pattern: add the namespace to the page/shell list (api branch of a conditional list); keep shared style constants out of translated client modules (`portal-styles.ts`).
+
+## Q. Opened panels
+
+- **Q1 · Opened panel cannot be closed** — a button opens a form/panel/sheet in place and there is no Cancel, Escape does nothing, or focus is lost on close. Recipe: click every `[data-disclosure-trigger]`, expect a visible `[data-panel-cancel]` (>= 44 px), press Escape, expect it gone and focus on the opener (`e2e/state-audit/dismiss.ts`, rule `dismiss`); source guard `test/panel-dismiss.test.ts` fails any component with `setOpen(true)`-style openers and no `data-panel-cancel`.

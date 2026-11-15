@@ -164,6 +164,7 @@ function ApplicationCard({ app: a }: { app: DemoApplication }) {
         <div className="mt-4 flex flex-wrap gap-2">
           {readyToApprove ? (
             <button
+              data-disclosure-trigger={`approve-${a.code}`}
               type="button"
               onClick={() => {
                 setMode('approve');
@@ -184,6 +185,7 @@ function ApplicationCard({ app: a }: { app: DemoApplication }) {
             </button>
           )}
           <button
+            data-disclosure-trigger={`reject-${a.code}`}
             type="button"
             onClick={() => {
               setMode('reject');
@@ -277,7 +279,12 @@ function CoverageForm({ code, onCancel }: { code: string; onCancel: () => void }
         <button type="submit" className={portalPrimary}>
           {t('appApproveOnboard')}
         </button>
-        <button type="button" onClick={onCancel} className={portalQuiet}>
+        <button
+          data-panel-cancel={`approve-${code}`}
+          type="button"
+          onClick={onCancel}
+          className={portalQuiet}
+        >
           {t('appCancel')}
         </button>
       </div>
@@ -336,7 +343,7 @@ function RejectForm({ code, onCancel }: { code: string; onCancel: () => void }) 
       <button type="submit" className={portalPrimary}>
         {t('appRejectConfirm')}
       </button>
-      <button type="button" onClick={onCancel} className={portalQuiet}>
+      <button data-panel-cancel={`reject-${code}`} type="button" onClick={onCancel} className={portalQuiet}>
         {t('appCancel')}
       </button>
       {missing ? (

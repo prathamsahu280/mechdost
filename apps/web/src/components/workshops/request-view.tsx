@@ -370,6 +370,7 @@ function CancelRequest({ request }: { request: DemoServiceRequest }) {
           {t('cancelConfirm')}
         </button>
         <button
+          data-panel-cancel="request-cancel"
           type="button"
           onClick={() => {
             setOpen(false);

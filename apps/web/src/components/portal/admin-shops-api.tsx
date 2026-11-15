@@ -203,11 +203,22 @@ function ShopRow({
             <p className="mt-2 text-sm text-muted">{t('shops_api_pendingNote')}</p>
           ) : null}
         </div>
-        <button type="button" aria-expanded={expanded} onClick={onToggle} className={portalQuiet}>
+        <button
+          type="button"
+          aria-expanded={expanded}
+          data-disclosure-trigger={`shop-${s.id}`}
+          data-panel-cancel={expanded ? `shop-${s.id}` : undefined}
+          onClick={onToggle}
+          className={portalQuiet}
+        >
           {expanded ? t('shops_api_close') : t('shops_api_manage')}
         </button>
       </div>
-      {expanded ? <ShopManager shopId={s.id} onChanged={onChanged} /> : null}
+      {expanded ? (
+        <div data-panel-for={`shop-${s.id}`}>
+          <ShopManager shopId={s.id} onChanged={onChanged} />
+        </div>
+      ) : null}
     </article>
   );
 }
@@ -768,6 +779,7 @@ function ProductsPanel({ shop, onChanged }: { shop: AdminShopDetailDto; onChange
         />
       ) : (
         <button
+          data-disclosure-trigger={`offer-add-${shop.id}`}
           type="button"
           onClick={() => {
             setAdding(true);
@@ -1052,7 +1064,12 @@ function AddOffer({
       ) : (
         <CatalogueSkuPicker idPrefix={id} listed={listed} onPick={setChoice} />
       )}
-      <button type="button" onClick={onCancel} className={portalQuiet}>
+      <button
+        type="button"
+        data-panel-cancel={`offer-add-${shopId}`}
+        onClick={onCancel}
+        className={portalQuiet}
+      >
         {t('shops_api_cancel')}
       </button>
     </div>

@@ -81,6 +81,7 @@ export function AdminWorkshopsApi() {
         </div>
         {open.kind === 'none' ? (
           <button
+            data-disclosure-trigger="workshop-new"
             type="button"
             onClick={() => {
               setOpen({ kind: 'create' });
@@ -196,13 +197,20 @@ function WorkshopRow({
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
         {onEdit ? (
-          <button type="button" onClick={onEdit} className={portalQuiet}>
+          <button
+            data-disclosure-trigger={`workshop-${w.id}`}
+            type="button"
+            onClick={onEdit}
+            className={portalQuiet}
+          >
             {t('ws_api_edit')}
           </button>
         ) : null}
         <button
           type="button"
           aria-expanded={panel === 'standing'}
+          data-disclosure-trigger={`standing-${w.id}`}
+          data-panel-cancel={panel === 'standing' ? `standing-${w.id}` : undefined}
           onClick={() => {
             setPanel(panel === 'standing' ? 'none' : 'standing');
           }}
@@ -213,6 +221,8 @@ function WorkshopRow({
         <button
           type="button"
           aria-expanded={panel === 'member'}
+          data-disclosure-trigger={`member-${w.id}`}
+          data-panel-cancel={panel === 'member' ? `member-${w.id}` : undefined}
           onClick={() => {
             setPanel(panel === 'member' ? 'none' : 'member');
           }}
@@ -222,15 +232,21 @@ function WorkshopRow({
         </button>
       </div>
       {panel === 'standing' ? (
-        <StandingForm
-          workshop={w}
-          onDone={async () => {
-            setPanel('none');
-            await onChanged();
-          }}
-        />
+        <div data-panel-for={`standing-${w.id}`}>
+          <StandingForm
+            workshop={w}
+            onDone={async () => {
+              setPanel('none');
+              await onChanged();
+            }}
+          />
+        </div>
       ) : null}
-      {panel === 'member' ? <MemberForm workshop={w} /> : null}
+      {panel === 'member' ? (
+        <div data-panel-for={`member-${w.id}`}>
+          <MemberForm workshop={w} />
+        </div>
+      ) : null}
     </article>
   );
 }
@@ -789,7 +805,12 @@ function WorkshopEditor({
         <button type="submit" disabled={busy} className={portalPrimary}>
           {original ? t('ws_api_save') : t('ws_api_create')}
         </button>
-        <button type="button" onClick={onCancel} className={portalQuiet}>
+        <button
+          data-panel-cancel={original ? `workshop-${original.id}` : 'workshop-new'}
+          type="button"
+          onClick={onCancel}
+          className={portalQuiet}
+        >
           {t('ws_api_cancel')}
         </button>
       </div>

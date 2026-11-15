@@ -262,11 +262,22 @@ function EmailItem({
         </p>
       ) : null}
       <div className="mt-3">
-        <button type="button" aria-expanded={open} className={portalQuiet} onClick={onToggle}>
+        <button
+          type="button"
+          aria-expanded={open}
+          data-disclosure-trigger={`email-${templateKey}`}
+          data-panel-cancel={open ? `email-${templateKey}` : undefined}
+          className={portalQuiet}
+          onClick={onToggle}
+        >
           {open ? t('close') : t('edit')}
         </button>
       </div>
-      {open ? <Editor templateKey={templateKey} rows={rows} onReload={onReload} /> : null}
+      {open ? (
+        <div data-panel-for={`email-${templateKey}`}>
+          <Editor templateKey={templateKey} rows={rows} onReload={onReload} />
+        </div>
+      ) : null}
     </div>
   );
 }

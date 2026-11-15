@@ -103,6 +103,8 @@ export function CannedRepliesEditor({
         <button
           type="button"
           aria-expanded={open}
+          data-disclosure-trigger="canned-replies"
+          data-panel-cancel={open ? 'canned-replies' : undefined}
           className={portalQuiet}
           onClick={() => {
             setOpen(!open);
@@ -112,7 +114,7 @@ export function CannedRepliesEditor({
         </button>
       </div>
       {open ? (
-        <>
+        <div data-panel-for="canned-replies" className="space-y-3">
           <p className="max-w-prose text-sm text-muted">{t('cannedIntro')}</p>
           {replies.length === 0 ? <p className="text-sm text-muted">{t('cannedEmpty')}</p> : null}
           <ul className="space-y-2">
@@ -172,7 +174,7 @@ export function CannedRepliesEditor({
               {t('cannedSave')}
             </button>
           </form>
-        </>
+        </div>
       ) : null}
     </section>
   );

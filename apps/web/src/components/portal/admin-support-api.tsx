@@ -348,6 +348,7 @@ ${text}`
         type="button"
         aria-expanded={open}
         aria-controls={`${field}-body`}
+        data-disclosure-trigger={`ticket-${item.code}`}
         onClick={onToggle}
         className="flex w-full flex-wrap items-baseline justify-between gap-2 text-left"
       >
@@ -396,7 +397,17 @@ ${text}`
         </span>
       </button>
       {open ? (
-        <div id={`${field}-body`} className="mt-4 space-y-3">
+        <div id={`${field}-body`} data-panel-for={`ticket-${item.code}`} className="mt-4 space-y-3">
+          <div className="flex justify-end">
+            <button
+              type="button"
+              data-panel-cancel={`ticket-${item.code}`}
+              onClick={onToggle}
+              className={portalQuiet}
+            >
+              {p('close')}
+            </button>
+          </div>
           {loadError ? (
             <p role="alert" className="text-sm font-bold text-error">
               {p(loadError)}

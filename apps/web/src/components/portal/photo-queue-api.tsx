@@ -150,6 +150,7 @@ export function PhotoQueueApi() {
                       {t('photoReject')}
                     </button>
                     <button
+                      data-panel-cancel={`photo-reject-${i.photoId}`}
                       type="button"
                       className={portalQuiet}
                       onClick={() => {
@@ -170,6 +171,7 @@ export function PhotoQueueApi() {
                       {t('photoApprove')}
                     </button>
                     <button
+                      data-disclosure-trigger={`photo-reject-${i.photoId}`}
                       type="button"
                       disabled={busy}
                       className={portalQuiet}

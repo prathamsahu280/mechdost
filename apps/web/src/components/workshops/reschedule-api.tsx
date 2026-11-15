@@ -71,6 +71,7 @@ export function RescheduleRequestApi({
           </p>
         ) : null}
         <button
+          data-disclosure-trigger="reschedule"
           type="button"
           onClick={() => {
             setOpen(true);
@@ -141,6 +142,7 @@ export function RescheduleRequestApi({
           {t('rescheduleConfirm')}
         </button>
         <button
+          data-panel-cancel="reschedule"
           type="button"
           onClick={() => {
             setOpen(false);

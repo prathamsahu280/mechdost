@@ -226,13 +226,15 @@ function ApplicationCard({ row: a, onChanged }: { row: ApplicationRowDto; onChan
         type="button"
         aria-expanded={open}
         aria-controls={`${field}-detail`}
+        data-disclosure-trigger={`review-${a.code}`}
+        data-panel-cancel={open ? `review-${a.code}` : undefined}
         onClick={toggle}
         className={`${portalQuiet} mt-3`}
       >
         {open ? t('api_on_hide') : t('api_on_review', { code: a.code })}
       </button>
       {open ? (
-        <div id={`${field}-detail`} className="mt-3">
+        <div id={`${field}-detail`} data-panel-for={`review-${a.code}`} className="mt-3">
           <Alert text={error} />
           {!detail && !error ? (
             <p role="status" className="text-sm text-muted">
@@ -261,6 +263,7 @@ function ApplicationCard({ row: a, onChanged }: { row: ApplicationRowDto; onChan
               <div className="mt-4 flex flex-wrap gap-2">
                 {a.kind === 'seller' ? (
                   <button
+                    data-disclosure-trigger={`approve-${a.code}`}
                     type="button"
                     onClick={() => {
                       setMode('approve');
@@ -271,6 +274,7 @@ function ApplicationCard({ row: a, onChanged }: { row: ApplicationRowDto; onChan
                   </button>
                 ) : null}
                 <button
+                  data-disclosure-trigger={`reject-${a.code}`}
                   type="button"
                   onClick={() => {
                     setMode('reject');
@@ -496,7 +500,12 @@ function CoverageForm({
         <button type="submit" disabled={busy} className={portalPrimary}>
           {t('appApproveOnboard')}
         </button>
-        <button type="button" onClick={onCancel} className={portalQuiet}>
+        <button
+          type="button"
+          data-panel-cancel={`approve-${app.code}`}
+          onClick={onCancel}
+          className={portalQuiet}
+        >
           {t('appCancel')}
         </button>
       </div>
@@ -593,7 +602,12 @@ function RejectForm({
         <button type="submit" disabled={busy} className={portalPrimary}>
           {t('appRejectConfirm')}
         </button>
-        <button type="button" onClick={onCancel} className={portalQuiet}>
+        <button
+          type="button"
+          data-panel-cancel={`reject-${app.code}`}
+          onClick={onCancel}
+          className={portalQuiet}
+        >
           {t('appCancel')}
         </button>
       </div>

@@ -422,12 +422,26 @@ function DeliveryOverride({
               {t('overrideReasonError')}
             </p>
           ) : null}
-          <button type="submit" disabled={busy} className={`${portalQuiet} mt-2`}>
-            {t('overrideConfirm')}
-          </button>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button type="submit" disabled={busy} className={portalQuiet}>
+              {t('overrideConfirm')}
+            </button>
+            <button
+              type="button"
+              data-panel-cancel={fieldId}
+              onClick={() => {
+                setOpen(false);
+                setError(false);
+              }}
+              className={portalQuiet}
+            >
+              {t('cancel')}
+            </button>
+          </div>
         </form>
       ) : (
         <button
+          data-disclosure-trigger={fieldId}
           type="button"
           onClick={() => {
             setOpen(true);
@@ -488,6 +502,7 @@ function ReasonForm({
   if (!open)
     return (
       <button
+        data-disclosure-trigger={`${kind}-${code}`}
         type="button"
         onClick={() => {
           setOpen(true);
@@ -555,6 +570,7 @@ function ReasonForm({
           {kind === 'cancel' ? t('cancelConfirm', { code }) : t('rejectSend')}
         </button>
         <button
+          data-panel-cancel={`${kind}-${code}`}
           type="button"
           onClick={() => {
             setOpen(false);

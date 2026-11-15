@@ -73,6 +73,9 @@ export function WriteReviewApi({ kind, code }: { kind: 'order' | 'service'; code
               onOpen={() => {
                 setOpen(target.slug);
               }}
+              onCancel={() => {
+                setOpen(null);
+              }}
               onDone={(review) => {
                 setOpen(null);
                 setLoad((l) =>
@@ -98,6 +101,7 @@ function TargetRow({
   target,
   open,
   onOpen,
+  onCancel,
   onDone,
   onStale,
 }: {
@@ -105,6 +109,7 @@ function TargetRow({
   target: ReviewTargetItem;
   open: boolean;
   onOpen: () => void;
+  onCancel: () => void;
   onDone: (review: MyReview) => void;
   onStale: () => Promise<void>;
 }) {
@@ -140,6 +145,7 @@ function TargetRow({
         <button
           type="button"
           onClick={onOpen}
+          data-disclosure-trigger={id}
           data-track={`review_open_${target.targetType}`}
           className="press inline-flex min-h-11 items-center rounded-button border border-input-border bg-surface px-5 text-sm font-bold text-ink hover:bg-pill"
         >
@@ -243,13 +249,25 @@ function TargetRow({
           {error}
         </p>
       ) : null}
-      <button
-        type="submit"
-        disabled={busy}
-        className="press inline-flex min-h-11 items-center rounded-button bg-accent-button px-5 text-sm font-bold text-white hover:bg-accent-button-hover disabled:opacity-60"
-      >
-        {busy ? t('api_sending') : t('submit')}
-      </button>
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          type="submit"
+          disabled={busy}
+          className="press inline-flex min-h-11 items-center rounded-button bg-accent-button px-5 text-sm font-bold text-white hover:bg-accent-button-hover disabled:opacity-60"
+        >
+          {busy ? t('api_sending') : t('submit')}
+        </button>
+        <button
+          type="button"
+          disabled={busy}
+          data-panel-cancel={id}
+          data-track={`review_cancel_${target.targetType}`}
+          onClick={onCancel}
+          className="press inline-flex min-h-11 items-center rounded-button px-4 text-sm font-bold text-ink underline hover:bg-pill disabled:opacity-60"
+        >
+          {t('cancel')}
+        </button>
+      </div>
     </form>
   );
 }

@@ -113,6 +113,8 @@ export function NoticesPanel() {
                       <button
                         type="button"
                         aria-expanded={open === entry.key}
+                        data-disclosure-trigger={`notice-${entry.key}`}
+                        data-panel-cancel={open === entry.key ? `notice-${entry.key}` : undefined}
                         className={portalQuiet}
                         onClick={() => {
                           setOpen(open === entry.key ? null : entry.key);
@@ -121,7 +123,11 @@ export function NoticesPanel() {
                         {open === entry.key ? t('close') : t('edit')}
                       </button>
                     </div>
-                    {open === entry.key ? <NoticeEditor entry={entry} rows={rows} onReload={load} /> : null}
+                    {open === entry.key ? (
+                      <div data-panel-for={`notice-${entry.key}`}>
+                        <NoticeEditor entry={entry} rows={rows} onReload={load} />
+                      </div>
+                    ) : null}
                   </li>
                 ))}
               </ul>

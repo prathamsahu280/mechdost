@@ -584,6 +584,7 @@ function Withdraw({ quote, onChanged }: { quote: QuoteDetail; onChanged: () => P
   if (!open)
     return (
       <button
+        data-disclosure-trigger={`withdraw-${quote.code}`}
         type="button"
         onClick={() => {
           setOpen(true);
@@ -664,6 +665,7 @@ function Withdraw({ quote, onChanged }: { quote: QuoteDetail; onChanged: () => P
           {q('api_admin_withdraw')}
         </button>
         <button
+          data-panel-cancel={`withdraw-${quote.code}`}
           type="button"
           onClick={() => {
             setOpen(false);

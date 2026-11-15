@@ -220,6 +220,7 @@ export function CustomerBlocks({ userId }: { userId: string }) {
                   {t('customersLiftConfirm')}
                 </button>
                 <button
+                  data-panel-cancel={`lift-${b.id}`}
                   type="button"
                   className={portalQuiet}
                   onClick={() => {
@@ -233,6 +234,7 @@ export function CustomerBlocks({ userId }: { userId: string }) {
             </form>
           ) : (
             <button
+              data-disclosure-trigger={`lift-${b.id}`}
               type="button"
               className={`${portalQuiet} mt-1`}
               onClick={() => {
@@ -319,6 +321,7 @@ export function CustomerBlocks({ userId }: { userId: string }) {
                 {t('api_block_confirm')}
               </button>
               <button
+                data-panel-cancel="customer-block"
                 type="button"
                 className={portalQuiet}
                 onClick={() => {
@@ -334,6 +337,7 @@ export function CustomerBlocks({ userId }: { userId: string }) {
       ) : mode === 'idle' ? (
         <div className="mt-3">
           <button
+            data-disclosure-trigger="customer-block"
             type="button"
             className={portalQuiet}
             onClick={() => {
