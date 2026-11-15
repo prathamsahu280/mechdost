@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import en from '../src/i18n/en.json';
+import hi from '../src/i18n/hi.json';
 import {
   WHATSAPP_TEMPLATES,
   classifyWhatsAppError,
@@ -8,6 +10,8 @@ import {
   utilityTemplateProblem,
   whatsAppParamProblem,
 } from '../src/whatsapp';
+
+type QuoteEvent = keyof typeof en.notifyTemplates.quote;
 
 describe('WhatsApp templates (decision 2026-11-02: Meta direct, cheapest)', () => {
   it('every template is utility at launch, with Meta-valid names and listed params', () => {
@@ -19,6 +23,25 @@ describe('WhatsApp templates (decision 2026-11-02: Meta direct, cheapest)', () =
     }
     expect(isWhatsAppTemplateKey('order.confirmed')).toBe(true);
     expect(isWhatsAppTemplateKey('toString')).toBe(false);
+  });
+
+  it('has Meta-compliant English and Hindi bodies for the bulk quote events', () => {
+    const keys = ['quote.offer_sent', 'quote.message', 'quote.expiring', 'quote.withdrawn'] as const;
+    for (const key of keys) {
+      const t = WHATSAPP_TEMPLATES[key];
+      expect(t.audience).toBe('customer');
+      expect(t.params).toEqual(['quoteCode']);
+      for (const locale of ['en', 'hi'] as const) {
+        const body = (locale === 'en' ? en : hi).notifyTemplates.quote[
+          key.slice('quote.'.length) as QuoteEvent
+        ];
+        expect(utilityTemplateProblem(body), `${key} ${locale}`).toBeNull();
+        expect(placeholderProblem(body, t.params.length), `${key} ${locale}`).toBeNull();
+        // Meta rejects a body that starts or ends with a variable.
+        expect(body.trim()).not.toMatch(/^\{\{|\}\}$/);
+      }
+    }
+    expect(WHATSAPP_TEMPLATES['quote.offer_sent'].name).toBe('quote_price_ready');
   });
 
   it('refuses offer wording in utility templates (Meta would bill them as marketing)', () => {

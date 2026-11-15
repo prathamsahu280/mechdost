@@ -2372,6 +2372,10 @@
     "notify_ev_order_rejected": "Order could not be fulfilled",
     "notify_ev_service_estimate_sent": "Workshop estimate ready",
     "notify_ev_ticket_replied": "Support replied",
+    "notify_ev_quote_offer_sent": "Bulk quote price ready",
+    "notify_ev_quote_message": "Bulk quote reply",
+    "notify_ev_quote_expiring": "Bulk quote price ending",
+    "notify_ev_quote_withdrawn": "Bulk quote closed",
     "notify_ev_order_routed": "New order for a shop",
     "notify_audience_customer": "To customers",
     "notify_audience_partner": "To shops",
@@ -3109,6 +3113,12 @@
     },
     "service": {
       "estimate_sent": "The workshop has sent an estimate for your service request {{1}}. Review and approve each item before any work starts."
+    },
+    "quote": {
+      "offer_sent": "The final price for your bulk quote {{1}} is ready. Tap below to review and accept it.",
+      "message": "MechDost replied on your bulk quote {{1}}. Tap below to read the message.",
+      "expiring": "The price on your bulk quote {{1}} ends within a day. Tap below to review it.",
+      "withdrawn": "MechDost closed your bulk quote {{1}}. Tap below to see the reason."
     },
     "ticket": {
       "replied": "MechDost support replied to your request {{1}}. Open it to read the reply."

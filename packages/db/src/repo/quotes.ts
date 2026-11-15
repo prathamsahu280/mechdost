@@ -44,6 +44,7 @@ import { ConflictError, ForbiddenError, NotFoundError, pgCode, ValidationError }
 import { recordServerEvent } from './events';
 import { localized } from './localized';
 import { queueEmail } from './email-notifications';
+import { queueQuoteWhatsApp } from './quote-notifications';
 import type { Tx } from './orders';
 import type { CityScope } from './routing';
 import { rowsOf } from './sql-rows';
@@ -764,16 +765,15 @@ async function addMessage(
   q: LockedQuote,
   author: { role: 'customer' | 'staff'; userId: string },
   body: string,
-): Promise<void> {
+): Promise<string> {
   const text = body.trim();
   if (text.length === 0 || text.length > QUOTE_MESSAGE_MAX)
     throw new ValidationError('Write a message of up to 1000 characters', 'QUOTE_MESSAGE_LENGTH');
-  await tx.insert(quoteMessages).values({
-    quoteId: q.id,
-    authorUserId: author.userId,
-    authorRole: author.role,
-    body: text,
-  });
+  const [message] = await tx
+    .insert(quoteMessages)
+    .values({ quoteId: q.id, authorUserId: author.userId, authorRole: author.role, body: text })
+    .returning({ id: quoteMessages.id });
+  if (!message) throw new Error('quote message was not stored');
   await tx.insert(quoteEvents).values({
     quoteId: q.id,
     kind: 'message',
@@ -787,6 +787,7 @@ async function addMessage(
     cityId: q.cityId,
     props: { quoteCode: q.code, by: author.role },
   });
+  return message.id;
 }
 
 /**
@@ -1016,7 +1017,13 @@ export async function postStaffQuoteMessage(
   return db.transaction(async (tx) => {
     const q = await lockQuote(tx, staffWhere(input.scope, input.code));
     assertOpen(q);
-    await addMessage(tx, q, { role: 'staff', userId: input.staffUserId }, input.body);
+    const messageId = await addMessage(tx, q, { role: 'staff', userId: input.staffUserId }, input.body);
+    await queueQuoteWhatsApp(tx, {
+      userId: q.userId,
+      quoteCode: q.code,
+      event: 'quote.message',
+      dedupe: messageId,
+    });
     const now = new Date();
     const touch = { lastMessageAt: now, lastMessageBy: 'staff', expiresAt: inactiveDeadline(now) };
     if (q.status === 'open') {
@@ -1178,6 +1185,12 @@ export async function sendQuoteOffer(
       props: { quoteCode: q.code, ...payload },
     });
     await queueOfferEmail(tx, q, offerVersion, validUntil);
+    await queueQuoteWhatsApp(tx, {
+      userId: q.userId,
+      quoteCode: q.code,
+      event: 'quote.offer_sent',
+      dedupe: `${q.id}:o${String(offerVersion)}`,
+    });
     return { status: 'offered', version, offerVersion };
   });
 }
@@ -1215,15 +1228,22 @@ export async function queueQuoteExpiringEmails(
   );
   let queued = 0;
   for (const r of due) {
-    const sent = await db.transaction((tx) =>
-      queueEmail(tx, {
+    const sent = await db.transaction(async (tx) => {
+      // The WhatsApp reminder shares the sweep; its own dedupe key (offer id) keeps it to one per offer.
+      await queueQuoteWhatsApp(tx, {
+        userId: r.user_id,
+        quoteCode: r.code,
+        event: 'quote.expiring',
+        dedupe: r.offer_id,
+      });
+      return queueEmail(tx, {
         template: 'quote_expiring',
         entityId: r.offer_id,
         version: 1,
         userId: r.user_id,
         payload: { quoteCode: r.code, validUntil: istDateString(new Date(r.valid_until)) },
-      }),
-    );
+      });
+    });
     if (sent) queued += 1;
   }
   return queued;
@@ -1265,6 +1285,12 @@ export async function withdrawQuote(
       userId: input.staffUserId,
       cityId: q.cityId,
       props: { quoteCode: q.code, to: 'withdrawn', by: 'staff', reasonCode: input.reasonCode },
+    });
+    await queueQuoteWhatsApp(tx, {
+      userId: q.userId,
+      quoteCode: q.code,
+      event: 'quote.withdrawn',
+      dedupe: q.id,
     });
     return { status: 'withdrawn', version };
   });

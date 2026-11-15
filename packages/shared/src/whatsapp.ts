@@ -62,6 +62,36 @@ export const WHATSAPP_TEMPLATES = {
     urlParam: 'ticketCode',
     audience: 'customer',
   },
+  // Bulk quotes (spec 19, 2026-11-16). Wired through the outbox; sending stays off until staff switch an event on.
+  // Default bodies: locale files `notifyTemplates.quote.*` (no offer/discount wording; no variable at either end).
+  'quote.offer_sent': {
+    name: 'quote_price_ready',
+    category: 'utility',
+    params: ['quoteCode'],
+    urlParam: 'quoteCode',
+    audience: 'customer',
+  },
+  'quote.message': {
+    name: 'quote_reply',
+    category: 'utility',
+    params: ['quoteCode'],
+    urlParam: 'quoteCode',
+    audience: 'customer',
+  },
+  'quote.expiring': {
+    name: 'quote_price_ending',
+    category: 'utility',
+    params: ['quoteCode'],
+    urlParam: 'quoteCode',
+    audience: 'customer',
+  },
+  'quote.withdrawn': {
+    name: 'quote_closed',
+    category: 'utility',
+    params: ['quoteCode'],
+    urlParam: 'quoteCode',
+    audience: 'customer',
+  },
   'order.routed': {
     name: 'partner_new_order',
     category: 'utility',

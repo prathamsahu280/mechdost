@@ -413,6 +413,67 @@ describe('offer email', () => {
   });
 });
 
+describe('WhatsApp notices (templates off until staff switch them on)', () => {
+  const queued = () =>
+    db
+      .select({
+        key: s.notificationOutbox.dedupeKey,
+        template: s.notificationOutbox.templateKey,
+        recipient: s.notificationOutbox.recipient,
+        payload: s.notificationOutbox.payload,
+      })
+      .from(s.notificationOutbox)
+      .where(eq(s.notificationOutbox.channel, 'whatsapp'));
+  const turnOn = (key: string) =>
+    db
+      .insert(s.notificationTemplates)
+      .values({ key, channel: 'whatsapp', locale: 'en', body: 'Quote {{1}} updated.', enabled: true })
+      .onConflictDoNothing();
+
+  it('queues nothing while the events are off, then one message per offer version, reply and withdrawal', async () => {
+    await db.update(s.users).set({ phone: '+919876500011', language: 'hi' }).where(eq(s.users.id, ravi));
+    const { code } = await newQuote(ravi);
+    await offer(code, 42_000);
+    await postStaffQuoteMessage(t(), { scope: ALL, staffUserId: staff, code, body: 'Can you take 12?' });
+    expect(await queued()).toEqual([]);
+
+    await turnOn('quote.offer_sent');
+    await turnOn('quote.message');
+    await turnOn('quote.withdrawn');
+    await offer(code, 41_000);
+    await postStaffQuoteMessage(t(), { scope: ALL, staffUserId: staff, code, body: 'Delivery is free.' });
+    const rows = await queued();
+    expect(rows.map((r) => r.template).sort()).toEqual(['quote.message', 'quote.offer_sent']);
+    const sent = rows.find((r) => r.template === 'quote.offer_sent');
+    expect(sent?.key).toMatch(/^quote\.offer_sent:.+:o2:whatsapp$/);
+    expect(sent).toMatchObject({ recipient: '+919876500011', payload: { quoteCode: code } });
+    const { version } = await getAdminQuote(t(), ALL, code, 'en');
+    await withdrawQuote(t(), {
+      scope: ALL,
+      staffUserId: staff,
+      code,
+      expectedVersion: version,
+      reasonCode: 'cannot_supply',
+      message: 'We cannot source these this month.',
+    });
+    expect((await queued()).map((r) => r.template)).toContain('quote.withdrawn');
+    expect((await queued()).every((r) => r.payload.quoteCode === code)).toBe(true);
+  });
+
+  it('reminds on WhatsApp once, from the same sweep as the expiring email', async () => {
+    await turnOn('quote.expiring');
+    const { code } = await newQuote(ravi);
+    await offer(code, 41_000, 0, 3);
+    await db.execute(sql`
+      update quote_offers set created_at = now() - interval '2 days', valid_until = now() + interval '6 hours'
+      where quote_id = (select id from quote_requests where code = ${code})`);
+    await queueQuoteExpiringEmails(t());
+    await queueQuoteExpiringEmails(t());
+    expect((await queued()).filter((r) => r.template === 'quote.expiring')).toHaveLength(1);
+    await closeAllOpen(ravi);
+  });
+});
+
 describe('accepting an offer', () => {
   it('creates a normal COD order with the negotiated prices (below the shop price allowed)', async () => {
     const { code } = await newQuote(ravi, [
