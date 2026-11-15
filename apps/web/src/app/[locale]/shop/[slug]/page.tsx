@@ -271,6 +271,7 @@ export default async function ProductPage({ params }: Props) {
                 toggleName: cmp('toggleName', { name: `${product.brand} ${product.name}` }),
                 added: cmp('added', { count: '{count}' }),
                 removed: cmp('removed'),
+                hint: cmp('hint'),
               }}
             />
             <div className="mt-3">

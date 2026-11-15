@@ -64,7 +64,9 @@ export function ProductCard({
             pageSaved: w('pageSaved'),
           }}
         />
-        <div className="pointer-events-none absolute bottom-3 left-3 flex gap-1.5">
+        {/* Badges under the picture, in normal flow (audit 2026-11-15, item 1: over the picture they covered the SKU
+            printed at its foot on narrow cards). They wrap, so no width or language can make them overlap anything. */}
+        <div data-slot="card-badges" className="mt-2 flex flex-wrap gap-1.5 px-1">
           {product.popular ? (
             <span className="rounded-md bg-accent-button px-2 py-0.5 text-[11px] font-bold text-white">
               {t('bestseller')}
@@ -155,6 +157,7 @@ export function ProductCard({
                 toggleName: cmp('toggleName', { name: `${product.brand} ${product.name}` }),
                 added: cmp('added', { count: '{count}' }),
                 removed: cmp('removed'),
+                hint: cmp('hint'),
               }}
             />
           ) : null}

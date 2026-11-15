@@ -1166,3 +1166,15 @@ Design: `docs/superpowers/specs/2026-11-15-support-next-tier-design.md` items 1 
   MechDost) sit above it. The audit keeps "covered by the banner" as a real finding.
 - **Footer "Privacy choices" link covered by the open banner:** still open (Q170 part 3); default: acceptable, since the
   link reopens the same banner.
+
+## 2026-11-16 — Audit batch 1a, builder rulings
+
+- **Product card badges (audit item 1).** "Bestseller", the vehicle type and "Fitment not listed" sit in normal flow in a
+  wrapping row directly under the picture (`data-slot="card-badges"`), not absolutely over it. The SKU stays printed at
+  the picture's foot, so nothing can cover it at any width or language. Same colours and shapes; the badge row belongs
+  to the card's first grid row, so the card still has eight rows. Spec 02 and 21 updated.
+- **Names are never cut (items 2, 3).** The compare column header and the workshop finder's service list wrap (no
+  `line-clamp`); the service list keeps its first four services joined with " · " (no "+N more" needed).
+- **Compare with one product (item 4, Q170).** The box shows `data-compare-hint` ("Added to compare — pick one more" /
+  "तुलना में जुड़ा — एक और चुनें") only while its product is the single one in the list; the live region reads the
+  same text instead of "(1 of 4)". A few lines inside the existing toggle (no new chunk, no new import).
