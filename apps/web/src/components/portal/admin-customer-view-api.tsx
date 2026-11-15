@@ -132,7 +132,9 @@ export function AdminCustomersApi() {
                   }}
                 >
                   {t('customer_open')}
-                  <span className="sr-only"> {r.name ?? ''}</span>
+                  <span className="sr-only" data-user-content>
+                    {` ${r.name ?? ''}`}
+                  </span>
                 </button>
               </li>
             ))}

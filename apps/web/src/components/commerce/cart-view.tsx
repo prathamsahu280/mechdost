@@ -156,7 +156,7 @@ export function CartView() {
 
       <aside
         aria-labelledby="summary"
-        className="rounded-card border border-line-card bg-surface p-6 shadow-card nav:sticky nav:top-28"
+        className="rounded-card border border-line-card bg-surface p-6 shadow-card sticky-aside"
       >
         <h2 id="summary" className="font-heading text-lg font-extrabold text-ink">
           {t('summary')}

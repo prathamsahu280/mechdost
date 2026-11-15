@@ -38,6 +38,7 @@ export function AccountLink({
       href={`${prefix}${homeFor(session.role)}`}
       data-track="header_account"
       title={first}
+      data-user-content
       className={className}
     >
       <span

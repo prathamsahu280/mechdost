@@ -94,7 +94,12 @@ export function CompareTable({
           data-compare-head=""
           className="sticky top-[71px] z-20 border-b border-line-card bg-bg/95 tab:bg-surface/95 backdrop-blur nav:top-[83px] tab:rounded-t-card tab:border tab:px-0"
         >
-          <div data-compare-scroll="head" className="no-scrollbar overflow-x-auto overscroll-x-contain">
+          <div
+            data-compare-scroll="head"
+            // The sticky "Detail" column (11rem) covers the first product when the strip scrolls sideways: focus and
+            // keyboard scrolling stop 11rem short of the edge (audit 2026-11-16, CMP-TABLE at 768 px).
+            className="no-scrollbar overflow-x-auto overscroll-x-contain tab:scroll-pl-44"
+          >
             <div role="row" className="compare-track compare-grid">
               {/* A real header cell in every layout, so each product's cells sit under its own name for screen
                 readers; on phones it is visually hidden and out of the grid (review 2026-11-14). */}

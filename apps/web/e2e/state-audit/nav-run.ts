@@ -16,6 +16,11 @@ const pathOf = (page: Page) => new URL(page.url()).pathname;
 export async function navCheck(page: Page, c: AuditCase): Promise<Finding[]> {
   const findings: Finding[] = [];
   const start = page.url();
+  // The measurements before this check moved keyboard focus around; a bar scrolled to the focused item is a
+  // keyboard user's view, not the resting one (the bar re-centres when focus leaves it).
+  await page.evaluate(() => {
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+  });
   const facts = await page.evaluate(readNav, c.scope);
   if (facts.items.length === 0)
     return [{ rule: 'nav-items', severity: 'P0', where: c.scope, detail: 'the navigation has no links' }];

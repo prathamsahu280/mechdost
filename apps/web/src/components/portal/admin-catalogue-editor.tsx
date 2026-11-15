@@ -17,6 +17,7 @@ import {
 import { NET_UNITS } from '@mechdost/shared/product-attributes';
 import { VEHICLE_TYPES } from '@mechdost/shared/vehicles';
 import { DEMO_CITY } from '@/demo/city';
+import { localName } from '@/lib/admin-analytics-view';
 import { adminApi } from '@/lib/admin-api';
 import {
   cityFloorPaise,
@@ -169,7 +170,7 @@ export function CatalogueEditor() {
           <li key={p.slug} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-3">
             <div className="min-w-0">
               <p className="font-heading font-extrabold text-ink" data-user-content>
-                {p.brand} {p.name}
+                {p.brand} {localName(p, locale)}
               </p>
               <p className="text-xs text-muted">
                 {t(`cat_status_${p.status}` as 'cat_status_live')}
@@ -185,7 +186,7 @@ export function CatalogueEditor() {
               }}
               className={portalQuiet}
             >
-              {t('cat_edit', { name: p.name })}
+              {t('cat_edit', { name: localName(p, locale) })}
             </button>
           </li>
         ))}
@@ -229,7 +230,7 @@ function ProductEditor({ slug, onBack }: { slug: string; onBack: () => void }) {
       {detail ? (
         <>
           <h3 className="font-heading text-lg font-extrabold text-ink" data-user-content>
-            {detail.brand} {detail.name}
+            {detail.brand} {localName(detail, locale)}
           </h3>
           <div role="tablist" aria-label={t('cat_title')} className="flex flex-wrap gap-2">
             {TABS.map((k) => (

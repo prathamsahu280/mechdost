@@ -180,7 +180,8 @@ function CompanyForm({
                 value: draft[f],
                 maxLength: COMPANY_MAX[f],
                 placeholder: builtIn[f] ?? '',
-                lang: HI_FIELDS.includes(f) ? 'hi' : undefined,
+                // English fields are declared `en`: the statutory legal name and address stay English on /hi (audit 2C ruling).
+                lang: HI_FIELDS.includes(f) ? 'hi' : 'en',
                 'aria-invalid': bad === f ? true : undefined,
                 'aria-describedby': `${id}-hint${bad === f ? ` ${id}-error` : ''}`,
                 className: `${portalField} ${long ? 'min-h-20 py-2' : ''}`,

@@ -114,7 +114,7 @@ export const AdminCouponDto = z.object({
   firstOrderOnly: z.boolean(),
   cityCode: z.string().nullable(),
   funder: z.enum(COUPON_FUNDERS),
-  shop: z.object({ id: z.string(), name: z.string() }).nullable(),
+  shop: z.object({ id: z.string(), name: z.string(), nameHi: z.string().nullable() }).nullable(),
   /** Shop-funded only: has the shop accepted the offer terms (it cannot be used until it has). */
   shopTerms: ShopTermsStatus.nullable(),
   isPublic: z.boolean(),

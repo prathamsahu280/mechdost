@@ -817,7 +817,7 @@ function queueMocks(): Mock[] {
         const tag = q === 'tag-on-suggestion' || q === 'both';
         const ranked = (n: number, gaveUpBefore: boolean) => ({
           shopId: uuid(n),
-          name: long(c) ? loc(c) : `Shop ${String(n)}`,
+          name: long(c) ? loc(c) : c.locale === 'hi' ? `दुकान ${String(n)}` : `Shop ${String(n)}`,
           distanceKm: 1.5 * n,
           stockedItems: 2,
           totalItems: 2,
@@ -842,7 +842,7 @@ function queueMocks(): Mock[] {
             ],
             history: [
               {
-                shop: 'Sharma Auto Parts',
+                shop: c.locale === 'hi' ? 'शर्मा ऑटो पार्ट्स' : 'Sharma Auto Parts',
                 status: 'given_up',
                 offeredAt: iso(-90),
                 respondedAt: iso(-60),
@@ -1041,7 +1041,7 @@ function analyticsMocks(): Mock[] {
                   {
                     id: SHOP_ID,
                     name: long(c) ? loc(c) : 'Sharma Auto Parts',
-                    nameHi: null,
+                    nameHi: 'शर्मा ऑटो पार्ट्स',
                     offers: 80,
                     accepted: 71,
                     declined: 5,
@@ -1200,7 +1200,7 @@ function couponsMocks(c0: AuditCase): Mock[] {
                         kind: 'flat' as const,
                         value: 5_000,
                         maxDiscountPaise: null,
-                        shop: { id: uuid(900), name: 'Sharma Auto Parts' },
+                        shop: { id: uuid(900), name: 'Sharma Auto Parts', nameHi: 'शर्मा ऑटो पार्ट्स' },
                         shopTerms: 'pending' as const,
                         live: false,
                       }

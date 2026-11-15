@@ -755,3 +755,17 @@ html[data-consent-open] [data-compare-tray]:not([data-prompt]) {
 body:has([data-compare-tray]) main {
   padding-bottom: 4.5rem;
 }
+
+/* A side card that sticks while the page scrolls (workshop booking form, cart summary) ends above the floating
+   "Ask MechDost" button and scrolls inside itself when it is taller: its controls are never under the button at any
+   scroll position (decision 2026-11-15 "banner/launcher never cover buttons"; audit 2026-11-16, WS-PROFILE at
+   1024 px: the slot select sat under the launcher). 7rem = the sticky top, 6rem = launcher (3rem) + its gap + air. */
+@media (min-width: 1024px) {
+  .sticky-aside {
+    position: sticky;
+    top: 7rem;
+    max-height: calc(100dvh - 7rem - 6rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
