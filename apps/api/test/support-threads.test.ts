@@ -234,7 +234,8 @@ describe('opening a thread', () => {
     const mine = await json(asha, 'GET', `/v1/support/tickets/${made.body.code}`);
     expect(mine.status).toBe(200);
     expect(mine.body).toMatchObject({ kind: 'order_issue', issueCode: 'damaged', orderCode: o.group });
-    const att = mine.body.messages[0].attachments[0];
+    const att = mine.body.messages[0]?.attachments[0];
+    if (!att) throw new Error('the message has no photo');
     expect(att.thumbUrl).toMatch(/^\/support-photos\/[0-9a-f-]{36}\/thumb\?e=\d+&s=/);
     expect(JSON.stringify(mine.body)).not.toMatch(/supabase|storage\/v1|ticket\/[0-9a-f-]{36}\//);
 
@@ -260,7 +261,7 @@ describe('opening a thread', () => {
 
     // staff see the same photos; another customer's request is 404 for the customer
     const staff = await json(agent, 'GET', `/v1/admin/support/tickets/${made.body.code}`);
-    expect(staff.body.messages[0].attachments).toHaveLength(1);
+    expect(staff.body.messages[0]?.attachments).toHaveLength(1);
     expect((await json(ravi, 'GET', `/v1/support/tickets/${made.body.code}`)).status).toBe(404);
   });
 
