@@ -28,7 +28,7 @@ describe('navigation lists in the UI state model follow src/lib/sections.ts', ()
     const s = await sectionsFor('firebase', 'api');
     expect([...REAL_ADMIN_SECTIONS]).toEqual([...s.ADMIN_SECTIONS]);
     expect([...REAL_ACCOUNT_SECTIONS]).toEqual([...s.ACCOUNT_SECTIONS]);
-    for (const only of ['analytics', 'refunds', 'errors', 'staff', 'audit']) {
+    for (const only of ['analytics', 'refunds', 'errors', 'staff', 'audit', 'exports']) {
       expect(s.ADMIN_SECTIONS).toContain(only);
       expect(MODEL_DEMO_ADMIN).not.toContain(only);
     }

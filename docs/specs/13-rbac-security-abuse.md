@@ -97,6 +97,13 @@ Encrypted columns: `shops.pan_enc` (+ unique `pan_index`), `partner_applications
 - Sessions: a role change drops the person's cached session on the handling instance; removing a role also revokes their Firebase refresh tokens; other instances converge within the 60 s session cache. Staff sign-in completion is recorded (`auth.staff_signed_in`) for the "last sign-in" column.
 - Tests: `packages/db/test/staff-admin.test.ts`, `customer-search.test.ts`, `audit-viewer.test.ts`, `apps/api/test/admin-people.test.ts` (401 / 403 / `SCOPE_REQUIRED` / `STAFF_2FA_REQUIRED` matrix on every route, foreign ids 404, strict bodies, rate limit, session refresh at once).
 
+## CSV exports (2026-11-15)
+
+- **New permission `exports:run`** (super admin through "all", ops manager, city manager, finance). **`pnpm db:seed` is needed** on the live database to add it to `permissions` and `role_permissions` (idempotent catalogue sync); until it runs, the permission does not exist in the database and the export routes answer 403 for everyone, super admin included. Each dataset also needs its own read permission (orders and sub-orders `orders:read`, refunds `refunds:read`, service requests `service:read`, partners `partners:read`, customers `customers:read`); customers need an all-cities grant (`SCOPE_REQUIRED`); a city-scoped staff member exports only their cities (the narrower of the `exports:run` and dataset scopes; another city is 404).
+- **Contact masking:** the customers file masks phone and email unless the viewer holds `customers:read_pii` in an all-cities grant; the audit row records `masked`. No bank, UPI, address or note columns exist in any export.
+- **Download link:** `base64url(payload).base64url(HMAC-SHA256)` with the payload `{user, dataset, from, to, city, expiry, nonce}`, key derived from the data keyring's index key, valid 600 seconds, only for the staff member it was issued to (user mismatch is `EXPORT_LINK_INVALID`, expiry `EXPORT_LINK_EXPIRED`). The route still authenticates, re-checks permissions and scope on every download; a link grants nothing by itself. It is replayable by the same person inside the 10 minutes (each download is audited).
+- **Abuse limits:** 40 export calls an hour per staff user (request and download each count), 180 days and 50,000 rows per file, keyset reads on indexed time columns, CSV formula neutralising. Role-leak matrix: `apps/api/test/admin-exports.test.ts`.
+
 ## Uploads (job photos, 2026-11-15)
 
 Rules the one upload pipeline (`apps/api/src/photos/`) enforces; product photos reuse it next tier.

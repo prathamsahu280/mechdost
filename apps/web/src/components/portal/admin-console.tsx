@@ -122,6 +122,11 @@ const AdminAuditApi = dynamic(() => import('./admin-audit-api').then((m) => m.Ad
   ssr: false,
   loading: () => <div className="skeleton h-96 rounded-card" aria-hidden="true" />,
 });
+/** Real sign-in: CSV exports (design 2026-11-15 item 4); demo builds never load it. */
+const AdminExportsApi = dynamic(() => import('./admin-exports-api').then((m) => m.AdminExportsApi), {
+  ssr: false,
+  loading: () => <div className="skeleton h-72 rounded-card" aria-hidden="true" />,
+});
 
 /**
  * Real sign-in: the policy page editor, the home layout and the company details on the API (design 2026-11-15
@@ -160,6 +165,7 @@ const SECTION_EMOJI: Record<AdminSection, string> = {
   notifications: '🔔',
   staff: '👥',
   audit: '📜',
+  exports: '📤',
   errors: '🚨',
 };
 
@@ -231,6 +237,7 @@ export function AdminConsole({
             ) : null}
             {section === 'staff' && AUTH_MODE === 'firebase' ? <AdminStaffApi /> : null}
             {section === 'audit' && AUTH_MODE === 'firebase' ? <AdminAuditApi /> : null}
+            {section === 'exports' && AUTH_MODE === 'firebase' ? <AdminExportsApi /> : null}
             {section === 'errors' && AUTH_MODE === 'firebase' ? <AdminErrorsApi /> : null}
           </div>
         </div>

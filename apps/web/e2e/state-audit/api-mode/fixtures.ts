@@ -12,6 +12,7 @@ import {
   StaffListDto,
 } from '@mechdost/shared/admin-people-api';
 import { AdminErrors } from '@mechdost/shared/admin-errors-api';
+import { EXPORT_DATASETS, ExportOptionsDto, ExportTicketDto } from '@mechdost/shared/exports';
 import { AdminOverviewDto, AnalyticsDashboardDto } from '@mechdost/shared/admin-analytics-api';
 import { AdminCoinActivityDto } from '@mechdost/shared/coins-api';
 import { QuotePageDto } from '@mechdost/shared/quote-api';
@@ -1336,6 +1337,61 @@ function auditMocks(): Mock[] {
   ];
 }
 
+/** Admin → Exports: the options, the request (done, empty, too large) and the file itself (or an expired link). */
+function exportsMocks(): Mock[] {
+  const csv = Buffer.from('﻿code,placed_at_ist\r\nMD-RPR-2026-ABCDEF,2026-11-15 10:00:00\r\n').toString(
+    'base64',
+  );
+  return [
+    meMock(),
+    {
+      method: 'GET',
+      path: /^\/admin\/exports\/options$/,
+      schema: ExportOptionsDto,
+      reply: ({ c }): Reply => {
+        const s = c.state.exports ?? 'form';
+        if (s === 'load-error') return { status: 403, code: 'FORBIDDEN' };
+        return {
+          body: {
+            datasets: s === 'none' ? [] : [...EXPORT_DATASETS],
+            cities: [
+              { code: 'RPR', name: 'Raipur', nameHi: 'रायपुर' },
+              { code: 'BPL', name: 'Bilaspur', nameHi: 'बिलासपुर' },
+            ],
+            contactsMasked: s !== 'customers-open',
+          } satisfies Dto<typeof ExportOptionsDto>,
+        };
+      },
+    },
+    {
+      method: 'POST',
+      path: /^\/admin\/exports$/,
+      schema: ExportTicketDto,
+      reply: ({ c }): Reply => {
+        const s = c.state.exports ?? 'form';
+        if (s === 'error-large') return { status: 422, code: 'EXPORT_TOO_LARGE' };
+        return {
+          body: {
+            downloadPath: '/admin/exports/download?t=audit-token-audit-token',
+            expiresAt: iso(10),
+            fileName: 'mechdost-orders-2026-10-17_to_2026-11-15.csv',
+            rowCount: s === 'done-empty' ? 0 : 1,
+            masked: false,
+          } satisfies Dto<typeof ExportTicketDto>,
+        };
+      },
+    },
+    {
+      method: 'GET',
+      path: /^\/admin\/exports\/download$/,
+      reply: ({ c }): Reply =>
+        c.state.exports === 'error-link'
+          ? { status: 403, code: 'EXPORT_LINK_EXPIRED' }
+          : { raw: { contentType: 'text/csv; charset=utf-8', base64: csv } },
+    },
+  ];
+}
+
 // ── Registry ───────────────────────────────────────────────────────────────────────────────────────────────────
 
 /** The mocks of one audit case: its screen's endpoints, plus `/me`. Unmocked calls fail the case. */
@@ -1386,6 +1442,8 @@ export function mocksFor(c: AuditCase): Mock[] {
       return customerMocks();
     case 'API-ADM-AUDIT':
       return auditMocks();
+    case 'API-ADM-EXPORTS':
+      return exportsMocks();
     case 'API-WS-PHOTOS':
       return workshopPhotoMocks(c);
     case 'API-SVC-PHOTOS':

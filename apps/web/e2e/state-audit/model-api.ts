@@ -41,6 +41,7 @@ export const REAL_ADMIN_SECTIONS = [
   'notifications',
   'staff',
   'audit',
+  'exports',
   'errors',
 ] as const;
 
@@ -661,6 +662,39 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
       stress,
     ],
     sweep: 12,
+    note: API_NOTE,
+    realApi: true,
+  },
+
+  {
+    code: 'API-ADM-EXPORTS',
+    page: 'Admin → Exports, real sign-in',
+    component:
+      'CSV exports: the form (dataset, city, dates), customers with masked or open contacts, done, empty file, too many rows, expired link, range over 180 days, nothing allowed, load error',
+    path: '/admin/exports',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['admin'] },
+      {
+        name: 'exports',
+        values: [
+          'form',
+          'customers-masked',
+          'customers-open',
+          'done',
+          'done-empty',
+          'error-large',
+          'error-link',
+          'range-error',
+          'none',
+          'load-error',
+        ],
+      },
+      stress,
+    ],
+    sweep: 14,
     note: API_NOTE,
     realApi: true,
   },

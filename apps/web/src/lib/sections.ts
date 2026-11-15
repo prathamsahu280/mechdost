@@ -48,6 +48,8 @@ const ALL_ADMIN_SECTIONS = [
   // Staff and roles, and the audit log viewer (design 2026-11-15): real sign-in only (they read the API).
   'staff',
   'audit',
+  // CSV exports (design 2026-11-15 item 4): real sign-in only (they read the API).
+  'exports',
   // Latest Sentry issues of the website and the API (decision 2026-11-14); real sign-in only (it reads the API).
   'errors',
 ] as const;
@@ -66,7 +68,7 @@ const reviewsShown = BROWSER_ONLY_FEATURES || AUTH_MODE === 'firebase';
  * Sections that only read the API and have no demo version: shown with real sign-in only. One list for all of them
  * (Analytics and the monitoring Errors panel, 2026-11-14; add later ones here).
  */
-const REAL_SIGN_IN_ONLY: readonly string[] = ['analytics', 'errors', 'refunds', 'staff', 'audit'];
+const REAL_SIGN_IN_ONLY: readonly string[] = ['analytics', 'errors', 'refunds', 'staff', 'audit', 'exports'];
 const shown = <T extends string>(all: readonly T[]): readonly T[] =>
   all.filter(
     (s) =>
