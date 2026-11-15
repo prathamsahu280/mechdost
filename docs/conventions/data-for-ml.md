@@ -25,3 +25,5 @@ The goal: any data we collect can later feed recommendations, offers, demand for
 ## Later (Phase 3+)
 
 Nightly export of pseudonymised facts to a warehouse (Postgres replica or BigQuery) as partitioned tables; feature tables for recommendations (spec 11) and risk scoring; model cards for anything that affects customers or partners (offers, routing, fraud flags), with a human in the loop for enforcement decisions.
+
+- **Consent (2026-11-15):** Account -> Privacy writes `consents` rows (purposes `marketing`, `analytics`; append-only, notice version kept). Co-purchase counts are derived from delivered orders as product ids and counts only (`copurchase_pairs`); PIN waitlist events carry the PIN, never the person's contact.

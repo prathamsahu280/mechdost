@@ -57,6 +57,8 @@ export const REAL_ACCOUNT_SECTIONS = [
   'addresses',
   // The bell's choices and this device's push (bell + push merge 2026-11-15): real sign-in only.
   'notifications',
+  // Consents, data download and the deletion request (design 2026-11-15 item 6): real sign-in only.
+  'privacy',
   'profile',
 ] as const;
 
@@ -236,6 +238,80 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
       ...env,
       { name: 'auth', values: ['admin'] },
       { name: 'tickets', values: ['open-photos', 'cod-none', 'cod-saved', 'resolved'] },
+      stress,
+    ],
+    sweep: 8,
+    note: API_NOTE,
+    realApi: true,
+  },
+  // ─────────────── Catalogue tier 2 (design 2026-11-15 items 4, 6, 7) ───────────────
+  {
+    code: 'API-ACC-PRIVACY',
+    page: 'Account → Privacy, real sign-in',
+    component:
+      'Consents per purpose with dates and one allow / withdraw button each (never asked, allowed, withdrawn); data download card (none, preparing, ready, expired, failed); the delete-my-account request link; load error',
+    path: '/account/privacy',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['customer'] },
+      { name: 'consent', values: ['never', 'allowed', 'withdrawn', 'error'] },
+      { name: 'export', values: ['none', 'requested', 'ready', 'expired', 'failed'] },
+      stress,
+    ],
+    sweep: 10,
+    note: API_NOTE,
+    realApi: true,
+  },
+  {
+    code: 'API-ACC-NOTIFYME',
+    page: 'Account → Addresses with an unserved PIN, real sign-in',
+    component:
+      '"Tell me when MechDost reaches this PIN code" under a saved address that is not served: not waiting, waiting with stop, five-PIN limit message, save error; long names',
+    path: '/account/addresses',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['customer'] },
+      { name: 'waitlist', values: ['none', 'waiting', 'full', 'error'] },
+      stress,
+    ],
+    sweep: 8,
+    note: API_NOTE,
+    realApi: true,
+  },
+  {
+    code: 'API-ADM-RECO',
+    page: 'Admin → Catalogue, "goes well with" rules, real sign-in',
+    component:
+      'Rule list under the catalogue editor (none, a few, many, one switched off, load error), English and Hindi reasons, long text, the add-a-rule form',
+    path: '/admin/catalogue',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['admin'] },
+      { name: 'rules', values: ['none', 'few', 'many', 'paused', 'error'] },
+      stress,
+    ],
+    sweep: 10,
+    note: API_NOTE,
+    realApi: true,
+  },
+  {
+    code: 'API-ADM-DEMAND',
+    page: 'Admin → Settings, PIN waiting list, real sign-in',
+    component:
+      'Customers waiting per PIN (none, a few, many; a PIN with no city; a PIN served now), long area names, load error',
+    path: '/admin/settings',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['admin'] },
+      { name: 'demand', values: ['none', 'few', 'many', 'error'] },
       stress,
     ],
     sweep: 8,

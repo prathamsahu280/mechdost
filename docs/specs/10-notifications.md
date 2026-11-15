@@ -154,3 +154,7 @@ In-app bell for every signed-in role and Firebase Cloud Messaging web push. Real
 ## Order-email trust line (2026-11-15)
 
 Order emails (`order_*` templates) carry one footer line above the company line: "Genuine parts from verified Raipur shops." (Hindi: "रायपुर की सत्यापित दुकानों से असली पार्ट्स।"). The admin rewords or hides it in Admin → Content → Trust lines (`trust.emailFooter`, spec 08); the worker reads the published text at send time and falls back to the default if the lookup fails. Other emails (refunds, service, quotes, support, partners) do not carry it.
+
+## Notice kind added 2026-11-15
+
+`account.pin_served` (customer, transactional, entity `account`, placeholder `pincode`, opens /shop): "We now deliver to {pincode}", written by the worker when a PIN someone waited for is switched on (spec 15). English and Hindi defaults under `notify.account_pin_served`; editable in Admin -> Notifications like the others.

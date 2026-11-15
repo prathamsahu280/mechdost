@@ -330,8 +330,25 @@ function read<T>(key: Key, isItem: (v: unknown) => v is T, upgrade?: (v: T) => T
   return value;
 }
 
+/**
+ * The cart page is a Server Component and cannot read localStorage, so the product slugs in the cart are mirrored into
+ * a first-party cookie (slugs only: no quantities, no person) for its "Add before checkout" suggestions (spec 11).
+ * Goes away when the server cart (design 2026-11-15 item 3) replaces this store.
+ */
+function mirrorCartSlugs(lines: readonly unknown[]) {
+  try {
+    const slugs = lines
+      .flatMap((l) => (isRecord(l) && typeof l.slug === 'string' ? [l.slug] : []))
+      .slice(0, 20);
+    document.cookie = `mechdost-cart-slugs=${encodeURIComponent(slugs.join(','))};path=/;max-age=2592000;samesite=lax`;
+  } catch {
+    // Cookies blocked: the cart still works, it just gets no suggestions.
+  }
+}
+
 /** False when the browser refused to save (storage full or blocked): callers tell the user (review B11). */
 function write(key: Key, value: readonly unknown[]): boolean {
+  if (key === KEYS.cart) mirrorCartSlugs(value);
   let saved = true;
   try {
     window.localStorage.setItem(key, JSON.stringify(value));

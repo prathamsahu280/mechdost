@@ -131,3 +131,7 @@ Owner-only routes for the busy toggle and the team check the caller's own `selle
 
 - Guest ticket routes (`/v1/support-guest/*`) are public: Turnstile on creation, limits per IP, per phone and per reference (key guessing), strict bodies, key stored as SHA-256 and compared in constant time, identical 404 for wrong key / unknown reference, nothing sent to guest-typed contact details.
 - `tickets:assign` is evaluated for the request's own city; agents with only `tickets:reply` can take a free request or release their own. Canned replies are global: editing needs a platform-wide `content:write` grant. Deletion confirmation needs `customers:block`.
+
+## Catalogue tier 2 (2026-11-15)
+
+No new permission (no `db:seed`). Recommendation rules: `categories:write`; PIN waitlist demand: `cities:manage` with city scope; Privacy and notify-me: `account:read` / `account:write` plus the session user id (a foreign export id is 404). Rate limits: `reco_ip` 240/min per IP (public read), `privacy_write` 30/h/person, `data_export_request` 5/h/person, `waitlist_write` 20/h/person. The data download is a private authenticated route, never a public URL, and never cached.

@@ -19,7 +19,11 @@ import {
   expireDueServiceRequests,
   releaseExpiredReservations,
   expireUnpaidOnlineOrders,
+  buildDueDataExports,
+  expireDataExports,
   expireDueCoins,
+  notifyServedWaitlist,
+  recomputeCopurchase,
   releaseDueCoinRewards,
   expireQuotes,
   globalIntSetting,
@@ -396,6 +400,72 @@ purgeNotices();
 const retentionTimer = setInterval(purgeNotices, 24 * 3_600_000);
 retentionTimer.unref();
 
+// Catalogue tier 2 (design 2026-11-15): background jobs that must not live in request handlers. Each body catches its
+// own errors (L141) and is skipped while the previous run is still going.
+// 1) "Bought together" counts (spec 11): rebuilt from delivered orders once a night (03:00 IST, checked hourly) and once
+//    a minute after start, so a fresh deploy has them. One transaction under an advisory lock: two workers never overlap
+//    and a repeat gives the same table.
+let recomputing = false;
+const recomputeCopurchaseNow = () => {
+  if (recomputing) return;
+  recomputing = true;
+  void recomputeCopurchase(db, {})
+    .then((r) => {
+      if (r.ran) log('info', 'copurchase_computed', { pairs: r.pairs });
+    })
+    .catch((err: unknown) => {
+      log('error', 'copurchase_failed', safeError(err));
+    })
+    .finally(() => {
+      recomputing = false;
+    });
+};
+const copurchaseStart = setTimeout(recomputeCopurchaseNow, 60_000);
+copurchaseStart.unref();
+const copurchaseTimer = setInterval(() => {
+  const istHour = new Date(Date.now() + 5.5 * 3_600_000).getUTCHours();
+  if (istHour === 3) recomputeCopurchaseNow();
+}, 3_600_000);
+copurchaseTimer.unref();
+// 2) Data downloads (Account -> Privacy): build the waiting ones (a few per run, each its own transaction with a row
+//    lock) and clear the files past their 24 hours. Every 30 s.
+let exporting = false;
+const exportTimer = setInterval(() => {
+  if (exporting) return;
+  exporting = true;
+  void (async () => {
+    const built = await buildDueDataExports(db, {});
+    if (built.ready + built.failed > 0) log('info', 'data_exports_built', built);
+    const cleared = await expireDataExports(db, {});
+    if (cleared > 0) log('info', 'data_exports_expired', { count: cleared });
+  })()
+    .catch((err: unknown) => {
+      log('error', 'data_exports_failed', safeError(err));
+    })
+    .finally(() => {
+      exporting = false;
+    });
+}, 30_000);
+exportTimer.unref();
+// 3) "Notify me": customers waiting for a PIN that is now served are told once (every 5 min; the row flips to
+//    notified in the same transaction as the notice).
+let tellingWaitlist = false;
+const waitlistTimer = setInterval(() => {
+  if (tellingWaitlist) return;
+  tellingWaitlist = true;
+  void notifyServedWaitlist(db, {})
+    .then((n) => {
+      if (n > 0) log('info', 'waitlist_notified', { count: n });
+    })
+    .catch((err: unknown) => {
+      log('error', 'waitlist_notify_failed', safeError(err));
+    })
+    .finally(() => {
+      tellingWaitlist = false;
+    });
+}, 300_000);
+waitlistTimer.unref();
+
 // Event store partitions (spec 12): this month + 3 ahead, checked at start and every 12 h (idempotent).
 const partitions = () => {
   void ensureEventPartitions(db)
@@ -458,6 +528,10 @@ function shutdown(signal: string) {
   clearInterval(reminderTimer);
   clearInterval(noticeHourlyTimer);
   clearInterval(retentionTimer);
+  clearTimeout(copurchaseStart);
+  clearInterval(copurchaseTimer);
+  clearInterval(exportTimer);
+  clearInterval(waitlistTimer);
   void Promise.all([relay.stop(), dispatcher.stop(), posthog?.stop()])
     .then(() => Promise.all([sql.end({ timeout: 5 }), listener?.end(), sentry.flush()]))
     .finally(() => process.exit(0));

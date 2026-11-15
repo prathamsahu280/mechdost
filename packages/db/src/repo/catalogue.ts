@@ -93,6 +93,8 @@ export interface CatalogueQuery {
   /** Only products tagged for this vehicle type. */
   vehicleType?: VehicleType | null;
   q?: string | null;
+  /** Only these products (recommendations read cards for ids they already ranked; at most 48). */
+  productIds?: readonly string[] | null;
   sort?: CatalogueSort | null;
   availableOnly?: boolean;
   cursor?: string | null;
@@ -319,6 +321,15 @@ export async function listCatalogue(db: Tx, query: CatalogueQuery): Promise<Cata
       sql`(c.slug = ${query.category} or c.parent_id = (select id from categories where slug = ${query.category}))`,
     );
   if (query.brand) filters.push(sql`b.slug = ${query.brand}`);
+  if (query.productIds)
+    filters.push(
+      query.productIds.length === 0
+        ? sql`false`
+        : sql`p.id in (${sql.join(
+            query.productIds.slice(0, CATALOGUE_PAGE_MAX).map((id) => sql`${id}::uuid`),
+            sql`, `,
+          )})`,
+    );
   if (query.vehicleType) filters.push(sql`p.vehicle_types @> array[${query.vehicleType}]::text[]`);
   if (query.availableOnly) filters.push(sql`o.price is not null`);
 

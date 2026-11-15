@@ -6,6 +6,7 @@ import { adminApi, type ResponseSchema } from '@/lib/admin-api';
 import { track } from '@/lib/analytics';
 import { commonErrorKey } from '@/lib/api-error-key';
 import { portalCard, portalField, portalPrimary, portalQuiet } from '@/components/portal/portal-guard';
+import { DELETION_SECTION_ID } from '@/lib/privacy-hooks';
 
 const BLOCKERS = ['OPEN_ORDERS', 'OPEN_SERVICE', 'OPEN_REFUND'] as const;
 type Blocker = (typeof BLOCKERS)[number];
@@ -69,7 +70,11 @@ export function DeletionRequestApi({ onOpened }: { onOpened: () => Promise<void>
   }
 
   return (
-    <section aria-labelledby={`${id}-title`} className={`${portalCard} space-y-3`}>
+    <section
+      id={DELETION_SECTION_ID}
+      aria-labelledby={`${id}-title`}
+      className={`${portalCard} scroll-mt-24 space-y-3`}
+    >
       <h3 id={`${id}-title`} className="font-heading text-base font-extrabold text-ink">
         {t('deletionTitle')}
       </h3>

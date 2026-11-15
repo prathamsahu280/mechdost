@@ -40,7 +40,7 @@ export async function call<T>(
   path: string,
   schema: Schema<T>,
   init: {
-    method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
+    method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
     body?: unknown;
     bearer?: string | null;
     headers?: Record<string, string>;
@@ -78,7 +78,7 @@ export async function authed<T>(
   path: string,
   schema: Schema<T>,
   init: {
-    method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
+    method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
     body?: unknown;
     headers?: Record<string, string>;
   } = {},

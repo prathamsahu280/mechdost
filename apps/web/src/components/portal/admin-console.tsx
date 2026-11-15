@@ -151,6 +151,16 @@ const AdminCouponsApi = dynamic(() => import('./admin-coupons-api').then((m) => 
   loading: () => <div className="skeleton h-96 rounded-card" aria-hidden="true" />,
 });
 
+/** Real sign-in: "goes well with" rules (spec 11) and the PIN waiting list (spec 15), design 2026-11-15; demo builds never load them. */
+const AdminRecoApi = dynamic(() => import('./admin-reco-api').then((m) => m.AdminRecoApi), {
+  ssr: false,
+  loading: () => <div className="skeleton h-64 rounded-card" aria-hidden="true" />,
+});
+const AdminDemandApi = dynamic(() => import('./admin-demand-api').then((m) => m.AdminDemandApi), {
+  ssr: false,
+  loading: () => <div className="skeleton h-48 rounded-card" aria-hidden="true" />,
+});
+
 const SECTION_EMOJI: Record<AdminSection, string> = {
   overview: '📊',
   analytics: '📈',
@@ -217,7 +227,12 @@ export function AdminConsole({
             {section === 'coins' ? <AdminCoins actor={account.name} /> : null}
             {section === 'coupons' && AUTH_MODE === 'firebase' ? <AdminCouponsApi /> : null}
             {section === 'partners' ? <AdminPartners actor={account.name} /> : null}
-            {section === 'catalogue' ? <AdminCatalogue /> : null}
+            {section === 'catalogue' ? (
+              <div className="space-y-6">
+                <AdminCatalogue />
+                {AUTH_MODE === 'firebase' ? <AdminRecoApi /> : null}
+              </div>
+            ) : null}
             {section === 'customers' ? <AdminCustomers actor={account.name} /> : null}
             {section === 'content' && contentDefaults ? (
               <div className="space-y-8">
@@ -237,6 +252,7 @@ export function AdminConsole({
                 <SettingsEditor actor={account.name} />
                 <OrderRulesEditor />
                 {AUTH_MODE === 'firebase' ? <ServiceAreaApi /> : null}
+                {AUTH_MODE === 'firebase' ? <AdminDemandApi /> : null}
                 {AUTH_MODE === 'firebase' ? <CompanyApi /> : null}
               </div>
             ) : null}

@@ -265,6 +265,20 @@ export interface ServerEventProps {
   coupon_released: { couponId: string; orderCode: string };
   admin_coupon_saved: { couponId: string; action: 'created' | 'updated'; funder: 'mechdost' | 'shop' };
   admin_coupon_paused: { couponId: string; paused: boolean };
+  /** Recommendations (spec 11, 2026-11-15): rule ids and enums only. */
+  admin_reco_rule_saved: { ruleId: string; action: 'created' | 'updated' | 'deleted'; active: boolean };
+  /** The nightly co-purchase job finished (a count, never who bought). */
+  copurchase_computed: { pairs: number };
+  /** Privacy (DPDP, 2026-11-15): a consent switched in Account -> Privacy (marketing has its own event above). */
+  consent_changed: { purpose: 'marketing' | 'analytics'; granted: boolean; noticeVersion: string };
+  data_export_requested: { exportId: string };
+  data_export_ready: { exportId: string; bytes: number };
+  data_export_failed: { exportId: string; errorCode: string };
+  data_export_downloaded: { exportId: string };
+  /** "Notify me" for a PIN not served yet (spec 15): the PIN is a place, not a person; the city when known. */
+  waitlist_joined: { pincode: string };
+  waitlist_left: { pincode: string };
+  waitlist_notified: { pincode: string };
   shop_coupon_decided: { couponId: string; shopId: string; decision: 'accepted' | 'declined' };
   /** Bulk quotes (spec 19): codes, counts, versions and paise only — never message text. */
   quote_requested: { quoteCode: string; lines: number; units: number; listTotalPaise: number | null };

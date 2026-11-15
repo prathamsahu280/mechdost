@@ -136,6 +136,10 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | API-SVC-PHOTOS        | Service request (/service/{code}), real sign-in                  | Before and after strip: none (hidden) / 1 / 6 photos, the viewer closed or open                                                                                                                                                                                                 | pairwise | 24       | 0       |
 | API-ACC-SUPPORT       | Account → Support from an order link, real sign-in               | Talk to MechDost support: issue chips, message, photo picker, the one conversation with photos, the cash on delivery refund destination (none, saved, masked); none, open with photos, COD without destination, COD saved, resolved; the empty-message error                    | pairwise | 40       | 0       |
 | API-ADM-SUPPORT       | Admin → Support inbox with a thread, real sign-in                | Inbox conversation: issue badge, customer photos, the cash on delivery refund panel (no destination, masked destination); open with photos, COD without destination, COD saved, resolved                                                                                        | pairwise | 32       | 0       |
+| API-ACC-PRIVACY       | Account → Privacy, real sign-in                                  | Consents per purpose with dates and one allow / withdraw button each (never asked, allowed, withdrawn); data download card (none, preparing, ready, expired, failed); the delete-my-account request link; load error                                                            | pairwise | 43       | 0       |
+| API-ACC-NOTIFYME      | Account → Addresses with an unserved PIN, real sign-in           | "Tell me when MechDost reaches this PIN code" under a saved address that is not served: not waiting, waiting with stop, five-PIN limit message, save error; long names                                                                                                          | pairwise | 32       | 0       |
+| API-ADM-RECO          | Admin → Catalogue, "goes well with" rules, real sign-in          | Rule list under the catalogue editor (none, a few, many, one switched off, load error), English and Hindi reasons, long text, the add-a-rule form                                                                                                                               | pairwise | 40       | 0       |
+| API-ADM-DEMAND        | Admin → Settings, PIN waiting list, real sign-in                 | Customers waiting per PIN (none, a few, many; a PIN with no city; a PIN served now), long area names, load error                                                                                                                                                                | pairwise | 32       | 0       |
 | API-WS-MYWORKSHOP     | Workshop portal (/partner/workshop), real sign-in                | My workshop card: profile text in English and Hindi, hours, busy mode, capacity per hour, menu ranges, pin and GSTIN requests (plain / busy / a waiting pin request)                                                                                                            | pairwise | 24       | 0       |
 | API-SVC-RESCHEDULE    | Service request (/service/{code}), real sign-in                  | Change date or time: link only, or the open form (date, part of the day, changes left)                                                                                                                                                                                          | pairwise | 16       | 0       |
 | API-ADM-SUPPORT-TOOLS | Admin → Support inbox tools, real sign-in                        | Inbox row and conversation: customer name (signed-in, guest with masked phone), assignee, first-reply clock (replied, overdue), assignee picker, canned reply picker and the editor (agent, content editor), account deletion confirmation; assigned, overdue, guest, deletion  | pairwise | 32       | 0       |
@@ -168,8 +172,8 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | API-ADM-AUDIT         | Admin → Audit log, real sign-in                                  | Audit log: filters, entries (closed and open with before/after), more, empty, load error                                                                                                                                                                                        | pairwise | 32       | 0       |
 | API-ADM-EXPORTS       | Admin → Exports, real sign-in                                    | CSV exports: the form (dataset, city, dates), customers with masked or open contacts, done, empty file, too many rows, expired link, range over 180 days, nothing allowed, load error                                                                                           | pairwise | 80       | 0       |
 | API-NAV-ADMIN         | Navigation, real sign-in                                         | Admin section bar with every real-mode section (Analytics, Refunds, Errors included): current item, scroll, walk                                                                                                                                                                | cross    | 176      | 0       |
-| API-NAV-ACCOUNT       | Navigation, real sign-in                                         | Account section bar in a real-sign-in build: current item, scroll, walk                                                                                                                                                                                                         | cross    | 80       | 0       |
-| **Total**             |                                                                  |                                                                                                                                                                                                                                                                                 |          | **3946** | **92**  |
+| API-NAV-ACCOUNT       | Navigation, real sign-in                                         | Account section bar in a real-sign-in build: current item, scroll, walk                                                                                                                                                                                                         | cross    | 88       | 0       |
+| **Total**             |                                                                  |                                                                                                                                                                                                                                                                                 |          | **4101** | **92**  |
 
 ## Chrome
 
@@ -3071,6 +3075,181 @@ Pairwise (all pairs of values); 32 states; scope `main`.
 - [ ] API-ADM-SUPPORT-031 · 1920px · light · en · admin · world=empty · /admin/support · tickets=open-photos · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
 - [ ] API-ADM-SUPPORT-032 · 1920px · dark · hi · admin · world=empty · /admin/support · tickets=cod-none · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
 
+## Account → Privacy, real sign-in
+
+### API-ACC-PRIVACY — Consents per purpose with dates and one allow / withdraw button each (never asked, allowed, withdrawn); data download card (none, preparing, ready, expired, failed); the delete-my-account request link; load error
+
+Pairwise (all pairs of values); 43 states; scope `main`.
+
+- [ ] API-ACC-PRIVACY-001 · 320px · light · en · customer · world=empty · /account/privacy · consent=never · export=none · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ACC-PRIVACY-002 · 320px · dark · hi · customer · world=empty · /account/privacy · consent=allowed · export=requested · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ACC-PRIVACY-003 · 390px · light · hi · customer · world=empty · /account/privacy · consent=withdrawn · export=ready · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ACC-PRIVACY-004 · 390px · dark · en · customer · world=empty · /account/privacy · consent=error · export=expired · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ACC-PRIVACY-005 · 480px · light · en · customer · world=empty · /account/privacy · consent=allowed · export=failed · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ACC-PRIVACY-006 · 480px · dark · hi · customer · world=empty · /account/privacy · consent=never · export=none · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ACC-PRIVACY-007 · 768px · light · en · customer · world=empty · /account/privacy · consent=withdrawn · export=requested · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ACC-PRIVACY-008 · 768px · dark · hi · customer · world=empty · /account/privacy · consent=error · export=failed · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ACC-PRIVACY-009 · 1024px · light · en · customer · world=empty · /account/privacy · consent=error · export=ready · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ACC-PRIVACY-010 · 1024px · dark · hi · customer · world=empty · /account/privacy · consent=withdrawn · export=expired · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ACC-PRIVACY-011 · 1280px · light · en · customer · world=empty · /account/privacy · consent=never · export=expired · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ACC-PRIVACY-012 · 1280px · dark · hi · customer · world=empty · /account/privacy · consent=allowed · export=ready · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ACC-PRIVACY-013 · 1440px · light · en · customer · world=empty · /account/privacy · consent=never · export=requested · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ACC-PRIVACY-014 · 1440px · dark · hi · customer · world=empty · /account/privacy · consent=allowed · export=none · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ACC-PRIVACY-015 · 1920px · light · en · customer · world=empty · /account/privacy · consent=withdrawn · export=failed · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ACC-PRIVACY-016 · 1920px · dark · hi · customer · world=empty · /account/privacy · consent=error · export=none · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ACC-PRIVACY-017 · 320px · light · en · customer · world=empty · /account/privacy · consent=withdrawn · export=ready · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ACC-PRIVACY-018 · 320px · dark · hi · customer · world=empty · /account/privacy · consent=error · export=requested · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ACC-PRIVACY-019 · 390px · light · en · customer · world=empty · /account/privacy · consent=never · export=failed · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ACC-PRIVACY-020 · 390px · dark · hi · customer · world=empty · /account/privacy · consent=allowed · export=expired · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ACC-PRIVACY-021 · 480px · light · en · customer · world=empty · /account/privacy · consent=withdrawn · export=none · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ACC-PRIVACY-022 · 480px · dark · hi · customer · world=empty · /account/privacy · consent=error · export=requested · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ACC-PRIVACY-023 · 768px · light · en · customer · world=empty · /account/privacy · consent=never · export=ready · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ACC-PRIVACY-024 · 768px · dark · hi · customer · world=empty · /account/privacy · consent=allowed · export=expired · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ACC-PRIVACY-025 · 1024px · light · en · customer · world=empty · /account/privacy · consent=never · export=failed · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ACC-PRIVACY-026 · 1024px · dark · hi · customer · world=empty · /account/privacy · consent=allowed · export=none · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ACC-PRIVACY-027 · 1280px · light · en · customer · world=empty · /account/privacy · consent=withdrawn · export=requested · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ACC-PRIVACY-028 · 1280px · dark · hi · customer · world=empty · /account/privacy · consent=error · export=failed · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ACC-PRIVACY-029 · 1440px · light · en · customer · world=empty · /account/privacy · consent=withdrawn · export=ready · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ACC-PRIVACY-030 · 1440px · dark · hi · customer · world=empty · /account/privacy · consent=error · export=expired · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ACC-PRIVACY-031 · 1920px · light · en · customer · world=empty · /account/privacy · consent=never · export=requested · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ACC-PRIVACY-032 · 1920px · dark · hi · customer · world=empty · /account/privacy · consent=allowed · export=ready · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ACC-PRIVACY-033 · 320px · light · en · customer · world=empty · /account/privacy · consent=never · export=expired · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ACC-PRIVACY-034 · 320px · dark · hi · customer · world=empty · /account/privacy · consent=allowed · export=failed · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ACC-PRIVACY-035 · 390px · light · en · customer · world=empty · /account/privacy · consent=withdrawn · export=none · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ACC-PRIVACY-036 · 390px · dark · hi · customer · world=empty · /account/privacy · consent=error · export=requested · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ACC-PRIVACY-037 · 480px · light · en · customer · world=empty · /account/privacy · consent=never · export=ready · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ACC-PRIVACY-038 · 480px · dark · hi · customer · world=empty · /account/privacy · consent=allowed · export=expired · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ACC-PRIVACY-039 · 768px · light · en · customer · world=empty · /account/privacy · consent=withdrawn · export=none · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ACC-PRIVACY-040 · 1024px · dark · hi · customer · world=empty · /account/privacy · consent=error · export=requested · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ACC-PRIVACY-041 · 1280px · light · en · customer · world=empty · /account/privacy · consent=never · export=none · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ACC-PRIVACY-042 · 1440px · dark · hi · customer · world=empty · /account/privacy · consent=allowed · export=failed · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ACC-PRIVACY-043 · 1920px · light · en · customer · world=empty · /account/privacy · consent=withdrawn · export=expired · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+
+## Account → Addresses with an unserved PIN, real sign-in
+
+### API-ACC-NOTIFYME — "Tell me when MechDost reaches this PIN code" under a saved address that is not served: not waiting, waiting with stop, five-PIN limit message, save error; long names
+
+Pairwise (all pairs of values); 32 states; scope `main`.
+
+- [ ] API-ACC-NOTIFYME-001 · 320px · light · en · customer · world=empty · /account/addresses · waitlist=none · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ACC-NOTIFYME-002 · 320px · dark · hi · customer · world=empty · /account/addresses · waitlist=waiting · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ACC-NOTIFYME-003 · 390px · light · hi · customer · world=empty · /account/addresses · waitlist=full · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ACC-NOTIFYME-004 · 390px · dark · en · customer · world=empty · /account/addresses · waitlist=error · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ACC-NOTIFYME-005 · 480px · light · en · customer · world=empty · /account/addresses · waitlist=waiting · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ACC-NOTIFYME-006 · 480px · dark · hi · customer · world=empty · /account/addresses · waitlist=none · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ACC-NOTIFYME-007 · 768px · light · en · customer · world=empty · /account/addresses · waitlist=full · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ACC-NOTIFYME-008 · 768px · dark · hi · customer · world=empty · /account/addresses · waitlist=error · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ACC-NOTIFYME-009 · 1024px · light · en · customer · world=empty · /account/addresses · waitlist=error · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ACC-NOTIFYME-010 · 1024px · dark · hi · customer · world=empty · /account/addresses · waitlist=full · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ACC-NOTIFYME-011 · 1280px · light · en · customer · world=empty · /account/addresses · waitlist=none · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ACC-NOTIFYME-012 · 1280px · dark · hi · customer · world=empty · /account/addresses · waitlist=waiting · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ACC-NOTIFYME-013 · 1440px · light · en · customer · world=empty · /account/addresses · waitlist=none · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ACC-NOTIFYME-014 · 1440px · dark · hi · customer · world=empty · /account/addresses · waitlist=waiting · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ACC-NOTIFYME-015 · 1920px · light · en · customer · world=empty · /account/addresses · waitlist=full · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ACC-NOTIFYME-016 · 1920px · dark · hi · customer · world=empty · /account/addresses · waitlist=error · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ACC-NOTIFYME-017 · 320px · light · en · customer · world=empty · /account/addresses · waitlist=full · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ACC-NOTIFYME-018 · 320px · dark · hi · customer · world=empty · /account/addresses · waitlist=error · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ACC-NOTIFYME-019 · 390px · light · en · customer · world=empty · /account/addresses · waitlist=none · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ACC-NOTIFYME-020 · 390px · dark · hi · customer · world=empty · /account/addresses · waitlist=waiting · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ACC-NOTIFYME-021 · 480px · light · en · customer · world=empty · /account/addresses · waitlist=full · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ACC-NOTIFYME-022 · 480px · dark · hi · customer · world=empty · /account/addresses · waitlist=error · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ACC-NOTIFYME-023 · 768px · light · en · customer · world=empty · /account/addresses · waitlist=none · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ACC-NOTIFYME-024 · 768px · dark · hi · customer · world=empty · /account/addresses · waitlist=waiting · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ACC-NOTIFYME-025 · 1024px · light · en · customer · world=empty · /account/addresses · waitlist=none · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ACC-NOTIFYME-026 · 1024px · dark · hi · customer · world=empty · /account/addresses · waitlist=waiting · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ACC-NOTIFYME-027 · 1280px · light · en · customer · world=empty · /account/addresses · waitlist=full · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ACC-NOTIFYME-028 · 1280px · dark · hi · customer · world=empty · /account/addresses · waitlist=error · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ACC-NOTIFYME-029 · 1440px · light · en · customer · world=empty · /account/addresses · waitlist=full · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ACC-NOTIFYME-030 · 1440px · dark · hi · customer · world=empty · /account/addresses · waitlist=error · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ACC-NOTIFYME-031 · 1920px · light · en · customer · world=empty · /account/addresses · waitlist=none · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ACC-NOTIFYME-032 · 1920px · dark · hi · customer · world=empty · /account/addresses · waitlist=waiting · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+
+## Admin → Catalogue, "goes well with" rules, real sign-in
+
+### API-ADM-RECO — Rule list under the catalogue editor (none, a few, many, one switched off, load error), English and Hindi reasons, long text, the add-a-rule form
+
+Pairwise (all pairs of values); 40 states; scope `main`.
+
+- [ ] API-ADM-RECO-001 · 320px · light · en · admin · world=empty · /admin/catalogue · rules=none · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ADM-RECO-002 · 320px · dark · hi · admin · world=empty · /admin/catalogue · rules=few · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-RECO-003 · 390px · light · hi · admin · world=empty · /admin/catalogue · rules=many · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-RECO-004 · 390px · dark · en · admin · world=empty · /admin/catalogue · rules=paused · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ADM-RECO-005 · 480px · light · en · admin · world=empty · /admin/catalogue · rules=error · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ADM-RECO-006 · 480px · dark · hi · admin · world=empty · /admin/catalogue · rules=none · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-RECO-007 · 768px · light · en · admin · world=empty · /admin/catalogue · rules=few · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ADM-RECO-008 · 768px · dark · hi · admin · world=empty · /admin/catalogue · rules=error · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-RECO-009 · 1024px · light · en · admin · world=empty · /admin/catalogue · rules=many · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ADM-RECO-010 · 1024px · dark · hi · admin · world=empty · /admin/catalogue · rules=paused · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-RECO-011 · 1280px · light · en · admin · world=empty · /admin/catalogue · rules=paused · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ADM-RECO-012 · 1280px · dark · hi · admin · world=empty · /admin/catalogue · rules=many · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-RECO-013 · 1440px · light · en · admin · world=empty · /admin/catalogue · rules=none · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ADM-RECO-014 · 1440px · dark · hi · admin · world=empty · /admin/catalogue · rules=few · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-RECO-015 · 1920px · light · en · admin · world=empty · /admin/catalogue · rules=error · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ADM-RECO-016 · 1920px · dark · hi · admin · world=empty · /admin/catalogue · rules=none · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-RECO-017 · 320px · light · en · admin · world=empty · /admin/catalogue · rules=many · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ADM-RECO-018 · 320px · dark · hi · admin · world=empty · /admin/catalogue · rules=paused · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-RECO-019 · 320px · light · en · admin · world=empty · /admin/catalogue · rules=error · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ADM-RECO-020 · 390px · dark · hi · admin · world=empty · /admin/catalogue · rules=none · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-RECO-021 · 390px · light · en · admin · world=empty · /admin/catalogue · rules=few · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ADM-RECO-022 · 390px · dark · hi · admin · world=empty · /admin/catalogue · rules=error · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-RECO-023 · 480px · light · en · admin · world=empty · /admin/catalogue · rules=few · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ADM-RECO-024 · 480px · dark · hi · admin · world=empty · /admin/catalogue · rules=many · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-RECO-025 · 480px · light · en · admin · world=empty · /admin/catalogue · rules=paused · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ADM-RECO-026 · 768px · dark · hi · admin · world=empty · /admin/catalogue · rules=none · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-RECO-027 · 768px · light · en · admin · world=empty · /admin/catalogue · rules=many · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ADM-RECO-028 · 768px · dark · hi · admin · world=empty · /admin/catalogue · rules=paused · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-RECO-029 · 1024px · light · en · admin · world=empty · /admin/catalogue · rules=none · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ADM-RECO-030 · 1024px · dark · hi · admin · world=empty · /admin/catalogue · rules=few · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-RECO-031 · 1024px · light · en · admin · world=empty · /admin/catalogue · rules=error · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ADM-RECO-032 · 1280px · dark · hi · admin · world=empty · /admin/catalogue · rules=none · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-RECO-033 · 1280px · light · en · admin · world=empty · /admin/catalogue · rules=few · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ADM-RECO-034 · 1280px · dark · hi · admin · world=empty · /admin/catalogue · rules=error · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-RECO-035 · 1440px · light · en · admin · world=empty · /admin/catalogue · rules=many · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ADM-RECO-036 · 1440px · dark · hi · admin · world=empty · /admin/catalogue · rules=paused · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-RECO-037 · 1440px · light · en · admin · world=empty · /admin/catalogue · rules=error · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ADM-RECO-038 · 1920px · dark · hi · admin · world=empty · /admin/catalogue · rules=few · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-RECO-039 · 1920px · light · en · admin · world=empty · /admin/catalogue · rules=many · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ADM-RECO-040 · 1920px · dark · hi · admin · world=empty · /admin/catalogue · rules=paused · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+
+## Admin → Settings, PIN waiting list, real sign-in
+
+### API-ADM-DEMAND — Customers waiting per PIN (none, a few, many; a PIN with no city; a PIN served now), long area names, load error
+
+Pairwise (all pairs of values); 32 states; scope `main`.
+
+- [ ] API-ADM-DEMAND-001 · 320px · light · en · admin · world=empty · /admin/settings · demand=none · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ADM-DEMAND-002 · 320px · dark · hi · admin · world=empty · /admin/settings · demand=few · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-DEMAND-003 · 390px · light · hi · admin · world=empty · /admin/settings · demand=many · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-DEMAND-004 · 390px · dark · en · admin · world=empty · /admin/settings · demand=error · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ADM-DEMAND-005 · 480px · light · en · admin · world=empty · /admin/settings · demand=few · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ADM-DEMAND-006 · 480px · dark · hi · admin · world=empty · /admin/settings · demand=none · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-DEMAND-007 · 768px · light · en · admin · world=empty · /admin/settings · demand=many · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ADM-DEMAND-008 · 768px · dark · hi · admin · world=empty · /admin/settings · demand=error · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-DEMAND-009 · 1024px · light · en · admin · world=empty · /admin/settings · demand=error · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ADM-DEMAND-010 · 1024px · dark · hi · admin · world=empty · /admin/settings · demand=many · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-DEMAND-011 · 1280px · light · en · admin · world=empty · /admin/settings · demand=none · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ADM-DEMAND-012 · 1280px · dark · hi · admin · world=empty · /admin/settings · demand=few · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-DEMAND-013 · 1440px · light · en · admin · world=empty · /admin/settings · demand=none · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ADM-DEMAND-014 · 1440px · dark · hi · admin · world=empty · /admin/settings · demand=few · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-DEMAND-015 · 1920px · light · en · admin · world=empty · /admin/settings · demand=many · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ADM-DEMAND-016 · 1920px · dark · hi · admin · world=empty · /admin/settings · demand=error · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-DEMAND-017 · 320px · light · en · admin · world=empty · /admin/settings · demand=many · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ADM-DEMAND-018 · 320px · dark · hi · admin · world=empty · /admin/settings · demand=error · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-DEMAND-019 · 390px · light · en · admin · world=empty · /admin/settings · demand=none · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ADM-DEMAND-020 · 390px · dark · hi · admin · world=empty · /admin/settings · demand=few · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-DEMAND-021 · 480px · light · en · admin · world=empty · /admin/settings · demand=many · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ADM-DEMAND-022 · 480px · dark · hi · admin · world=empty · /admin/settings · demand=error · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-DEMAND-023 · 768px · light · en · admin · world=empty · /admin/settings · demand=none · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ADM-DEMAND-024 · 768px · dark · hi · admin · world=empty · /admin/settings · demand=few · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-DEMAND-025 · 1024px · light · en · admin · world=empty · /admin/settings · demand=none · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ADM-DEMAND-026 · 1024px · dark · hi · admin · world=empty · /admin/settings · demand=few · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-DEMAND-027 · 1280px · light · en · admin · world=empty · /admin/settings · demand=many · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ADM-DEMAND-028 · 1280px · dark · hi · admin · world=empty · /admin/settings · demand=error · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-DEMAND-029 · 1440px · light · en · admin · world=empty · /admin/settings · demand=many · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ADM-DEMAND-030 · 1440px · dark · hi · admin · world=empty · /admin/settings · demand=error · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-DEMAND-031 · 1920px · light · en · admin · world=empty · /admin/settings · demand=none · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ADM-DEMAND-032 · 1920px · dark · hi · admin · world=empty · /admin/settings · demand=few · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+
 ## Workshop portal (/partner/workshop), real sign-in
 
 ### API-WS-MYWORKSHOP — My workshop card: profile text in English and Hindi, hours, busy mode, capacity per hour, menu ranges, pin and GSTIN requests (plain / busy / a waiting pin request)
@@ -4726,7 +4905,7 @@ Full cross of the high-risk dimensions, the rest pairwise; 176 states; scope `ma
 
 ### API-NAV-ACCOUNT — Account section bar in a real-sign-in build: current item, scroll, walk
 
-Full cross of the high-risk dimensions, the rest pairwise; 80 states; scope `main nav.overflow-x-auto`.
+Full cross of the high-risk dimensions, the rest pairwise; 88 states; scope `main nav.overflow-x-auto`.
 
 - [ ] API-NAV-ACCOUNT-001 · 320px · light · en · customer · world=empty · /account · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
 - [ ] API-NAV-ACCOUNT-002 · 320px · dark · hi · customer · world=empty · /account/orders · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
@@ -4737,77 +4916,85 @@ Full cross of the high-risk dimensions, the rest pairwise; 80 states; scope `mai
 - [ ] API-NAV-ACCOUNT-007 · 320px · light · en · customer · world=empty · /account/vehicles · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
 - [ ] API-NAV-ACCOUNT-008 · 320px · dark · hi · customer · world=empty · /account/addresses · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
 - [ ] API-NAV-ACCOUNT-009 · 320px · light · en · customer · world=empty · /account/notifications · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ACCOUNT-010 · 320px · dark · hi · customer · world=empty · /account/profile · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ACCOUNT-011 · 390px · dark · hi · customer · world=empty · /account · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ACCOUNT-012 · 390px · light · en · customer · world=empty · /account/orders · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ACCOUNT-013 · 390px · dark · en · customer · world=empty · /account/services · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ACCOUNT-014 · 390px · light · hi · customer · world=empty · /account/quotes · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ACCOUNT-015 · 390px · dark · hi · customer · world=empty · /account/support · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ACCOUNT-016 · 390px · light · en · customer · world=empty · /account/coins · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ACCOUNT-017 · 390px · dark · hi · customer · world=empty · /account/vehicles · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi axe
-- [ ] API-NAV-ACCOUNT-018 · 390px · light · en · customer · world=empty · /account/addresses · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ACCOUNT-019 · 390px · dark · hi · customer · world=empty · /account/notifications · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ACCOUNT-020 · 390px · light · en · customer · world=empty · /account/profile · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ACCOUNT-021 · 480px · light · en · customer · world=empty · /account · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ACCOUNT-022 · 480px · dark · hi · customer · world=empty · /account/orders · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ACCOUNT-023 · 480px · light · en · customer · world=empty · /account/services · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ACCOUNT-024 · 480px · dark · hi · customer · world=empty · /account/quotes · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ACCOUNT-025 · 480px · light · en · customer · world=empty · /account/support · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ACCOUNT-026 · 480px · dark · hi · customer · world=empty · /account/coins · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ACCOUNT-027 · 480px · light · en · customer · world=empty · /account/vehicles · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ACCOUNT-028 · 480px · dark · hi · customer · world=empty · /account/addresses · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ACCOUNT-029 · 480px · light · en · customer · world=empty · /account/notifications · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ACCOUNT-030 · 480px · dark · hi · customer · world=empty · /account/profile · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ACCOUNT-031 · 768px · light · en · customer · world=empty · /account · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ACCOUNT-032 · 768px · dark · hi · customer · world=empty · /account/orders · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ACCOUNT-033 · 768px · light · en · customer · world=empty · /account/services · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ACCOUNT-034 · 768px · dark · hi · customer · world=empty · /account/quotes · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ACCOUNT-035 · 768px · light · en · customer · world=empty · /account/support · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ACCOUNT-036 · 768px · dark · hi · customer · world=empty · /account/coins · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ACCOUNT-037 · 768px · light · en · customer · world=empty · /account/vehicles · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ACCOUNT-038 · 768px · dark · hi · customer · world=empty · /account/addresses · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ACCOUNT-039 · 768px · light · en · customer · world=empty · /account/notifications · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ACCOUNT-040 · 768px · dark · hi · customer · world=empty · /account/profile · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ACCOUNT-041 · 1024px · light · en · customer · world=empty · /account · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ACCOUNT-042 · 1024px · dark · hi · customer · world=empty · /account/orders · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ACCOUNT-043 · 1024px · light · en · customer · world=empty · /account/services · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ACCOUNT-044 · 1024px · dark · hi · customer · world=empty · /account/quotes · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ACCOUNT-045 · 1024px · light · en · customer · world=empty · /account/support · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ACCOUNT-046 · 1024px · dark · hi · customer · world=empty · /account/coins · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ACCOUNT-047 · 1024px · light · en · customer · world=empty · /account/vehicles · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ACCOUNT-048 · 1024px · dark · hi · customer · world=empty · /account/addresses · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ACCOUNT-049 · 1024px · light · en · customer · world=empty · /account/notifications · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ACCOUNT-050 · 1024px · dark · hi · customer · world=empty · /account/profile · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ACCOUNT-051 · 1280px · light · en · customer · world=empty · /account · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ACCOUNT-052 · 1280px · dark · hi · customer · world=empty · /account/orders · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ACCOUNT-053 · 1280px · light · en · customer · world=empty · /account/services · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ACCOUNT-054 · 1280px · dark · hi · customer · world=empty · /account/quotes · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ACCOUNT-055 · 1280px · light · en · customer · world=empty · /account/support · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ACCOUNT-056 · 1280px · dark · hi · customer · world=empty · /account/coins · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ACCOUNT-057 · 1280px · light · en · customer · world=empty · /account/vehicles · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ACCOUNT-058 · 1280px · dark · hi · customer · world=empty · /account/addresses · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ACCOUNT-059 · 1280px · light · en · customer · world=empty · /account/notifications · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ACCOUNT-060 · 1280px · dark · hi · customer · world=empty · /account/profile · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ACCOUNT-061 · 1440px · light · en · customer · world=empty · /account · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ACCOUNT-062 · 1440px · dark · hi · customer · world=empty · /account/orders · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ACCOUNT-063 · 1440px · light · en · customer · world=empty · /account/services · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ACCOUNT-064 · 1440px · dark · hi · customer · world=empty · /account/quotes · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ACCOUNT-065 · 1440px · light · en · customer · world=empty · /account/support · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ACCOUNT-066 · 1440px · dark · hi · customer · world=empty · /account/coins · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ACCOUNT-067 · 1440px · light · en · customer · world=empty · /account/vehicles · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ACCOUNT-068 · 1440px · dark · hi · customer · world=empty · /account/addresses · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ACCOUNT-069 · 1440px · light · en · customer · world=empty · /account/notifications · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ACCOUNT-070 · 1440px · dark · hi · customer · world=empty · /account/profile · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ACCOUNT-071 · 1920px · light · en · customer · world=empty · /account · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ACCOUNT-072 · 1920px · dark · hi · customer · world=empty · /account/orders · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ACCOUNT-073 · 1920px · light · en · customer · world=empty · /account/services · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ACCOUNT-074 · 1920px · dark · hi · customer · world=empty · /account/quotes · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ACCOUNT-075 · 1920px · light · en · customer · world=empty · /account/support · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ACCOUNT-076 · 1920px · dark · hi · customer · world=empty · /account/coins · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ACCOUNT-077 · 1920px · light · en · customer · world=empty · /account/vehicles · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ACCOUNT-078 · 1920px · dark · hi · customer · world=empty · /account/addresses · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ACCOUNT-079 · 1920px · light · en · customer · world=empty · /account/notifications · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ACCOUNT-080 · 1920px · dark · hi · customer · world=empty · /account/profile · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ACCOUNT-010 · 320px · dark · hi · customer · world=empty · /account/privacy · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ACCOUNT-011 · 320px · light · en · customer · world=empty · /account/profile · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ACCOUNT-012 · 390px · dark · hi · customer · world=empty · /account · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ACCOUNT-013 · 390px · light · en · customer · world=empty · /account/orders · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ACCOUNT-014 · 390px · dark · en · customer · world=empty · /account/services · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ACCOUNT-015 · 390px · light · hi · customer · world=empty · /account/quotes · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ACCOUNT-016 · 390px · dark · hi · customer · world=empty · /account/support · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ACCOUNT-017 · 390px · light · en · customer · world=empty · /account/coins · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ACCOUNT-018 · 390px · dark · hi · customer · world=empty · /account/vehicles · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ACCOUNT-019 · 390px · light · en · customer · world=empty · /account/addresses · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ACCOUNT-020 · 390px · dark · hi · customer · world=empty · /account/notifications · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ACCOUNT-021 · 390px · light · en · customer · world=empty · /account/privacy · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ACCOUNT-022 · 390px · dark · hi · customer · world=empty · /account/profile · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ACCOUNT-023 · 480px · light · en · customer · world=empty · /account · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ACCOUNT-024 · 480px · dark · hi · customer · world=empty · /account/orders · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ACCOUNT-025 · 480px · light · en · customer · world=empty · /account/services · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ACCOUNT-026 · 480px · dark · hi · customer · world=empty · /account/quotes · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ACCOUNT-027 · 480px · light · en · customer · world=empty · /account/support · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ACCOUNT-028 · 480px · dark · hi · customer · world=empty · /account/coins · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ACCOUNT-029 · 480px · light · en · customer · world=empty · /account/vehicles · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ACCOUNT-030 · 480px · dark · hi · customer · world=empty · /account/addresses · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ACCOUNT-031 · 480px · light · en · customer · world=empty · /account/notifications · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ACCOUNT-032 · 480px · dark · hi · customer · world=empty · /account/privacy · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ACCOUNT-033 · 480px · light · en · customer · world=empty · /account/profile · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ACCOUNT-034 · 768px · dark · hi · customer · world=empty · /account · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ACCOUNT-035 · 768px · light · en · customer · world=empty · /account/orders · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ACCOUNT-036 · 768px · dark · hi · customer · world=empty · /account/services · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ACCOUNT-037 · 768px · light · en · customer · world=empty · /account/quotes · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ACCOUNT-038 · 768px · dark · hi · customer · world=empty · /account/support · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ACCOUNT-039 · 768px · light · en · customer · world=empty · /account/coins · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ACCOUNT-040 · 768px · dark · hi · customer · world=empty · /account/vehicles · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ACCOUNT-041 · 768px · light · en · customer · world=empty · /account/addresses · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ACCOUNT-042 · 768px · dark · hi · customer · world=empty · /account/notifications · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ACCOUNT-043 · 768px · light · en · customer · world=empty · /account/privacy · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ACCOUNT-044 · 768px · dark · hi · customer · world=empty · /account/profile · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ACCOUNT-045 · 1024px · light · en · customer · world=empty · /account · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ACCOUNT-046 · 1024px · dark · hi · customer · world=empty · /account/orders · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ACCOUNT-047 · 1024px · light · en · customer · world=empty · /account/services · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ACCOUNT-048 · 1024px · dark · hi · customer · world=empty · /account/quotes · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ACCOUNT-049 · 1024px · light · en · customer · world=empty · /account/support · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ACCOUNT-050 · 1024px · dark · hi · customer · world=empty · /account/coins · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ACCOUNT-051 · 1024px · light · en · customer · world=empty · /account/vehicles · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ACCOUNT-052 · 1024px · dark · hi · customer · world=empty · /account/addresses · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ACCOUNT-053 · 1024px · light · en · customer · world=empty · /account/notifications · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ACCOUNT-054 · 1024px · dark · hi · customer · world=empty · /account/privacy · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ACCOUNT-055 · 1024px · light · en · customer · world=empty · /account/profile · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ACCOUNT-056 · 1280px · dark · hi · customer · world=empty · /account · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ACCOUNT-057 · 1280px · light · en · customer · world=empty · /account/orders · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ACCOUNT-058 · 1280px · dark · hi · customer · world=empty · /account/services · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ACCOUNT-059 · 1280px · light · en · customer · world=empty · /account/quotes · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ACCOUNT-060 · 1280px · dark · hi · customer · world=empty · /account/support · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ACCOUNT-061 · 1280px · light · en · customer · world=empty · /account/coins · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ACCOUNT-062 · 1280px · dark · hi · customer · world=empty · /account/vehicles · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ACCOUNT-063 · 1280px · light · en · customer · world=empty · /account/addresses · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ACCOUNT-064 · 1280px · dark · hi · customer · world=empty · /account/notifications · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ACCOUNT-065 · 1280px · light · en · customer · world=empty · /account/privacy · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ACCOUNT-066 · 1280px · dark · hi · customer · world=empty · /account/profile · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ACCOUNT-067 · 1440px · light · en · customer · world=empty · /account · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ACCOUNT-068 · 1440px · dark · hi · customer · world=empty · /account/orders · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ACCOUNT-069 · 1440px · light · en · customer · world=empty · /account/services · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ACCOUNT-070 · 1440px · dark · hi · customer · world=empty · /account/quotes · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ACCOUNT-071 · 1440px · light · en · customer · world=empty · /account/support · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ACCOUNT-072 · 1440px · dark · hi · customer · world=empty · /account/coins · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ACCOUNT-073 · 1440px · light · en · customer · world=empty · /account/vehicles · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ACCOUNT-074 · 1440px · dark · hi · customer · world=empty · /account/addresses · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ACCOUNT-075 · 1440px · light · en · customer · world=empty · /account/notifications · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ACCOUNT-076 · 1440px · dark · hi · customer · world=empty · /account/privacy · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ACCOUNT-077 · 1440px · light · en · customer · world=empty · /account/profile · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ACCOUNT-078 · 1920px · dark · hi · customer · world=empty · /account · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ACCOUNT-079 · 1920px · light · en · customer · world=empty · /account/orders · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ACCOUNT-080 · 1920px · dark · hi · customer · world=empty · /account/services · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ACCOUNT-081 · 1920px · light · en · customer · world=empty · /account/quotes · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ACCOUNT-082 · 1920px · dark · hi · customer · world=empty · /account/support · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ACCOUNT-083 · 1920px · light · en · customer · world=empty · /account/coins · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ACCOUNT-084 · 1920px · dark · hi · customer · world=empty · /account/vehicles · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ACCOUNT-085 · 1920px · light · en · customer · world=empty · /account/addresses · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ACCOUNT-086 · 1920px · dark · hi · customer · world=empty · /account/notifications · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ACCOUNT-087 · 1920px · light · en · customer · world=empty · /account/privacy · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ACCOUNT-088 · 1920px · dark · hi · customer · world=empty · /account/profile · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
 
 ## Found bugs
 

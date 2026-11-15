@@ -49,6 +49,7 @@ import { customerPhotoMocks, workshopPhotoMocks } from './photo-fixtures.ts';
 import { accountDeletionMocks, accountSupportMocks, adminSupportMocks } from './support-fixtures.ts';
 import { myWorkshopMocks, profileMocks } from './tier1-fixtures.ts';
 import { slipMocks, tier2PortalMocks } from './tier2-fixtures.ts';
+import { adminRecoMocks, demandMocks, notifyMeMocks, privacyMocks } from './catalogue-tier2-fixtures.ts';
 import type { Mock, MockCtx, Reply } from './mock-api.ts';
 
 const NOW = Date.parse('2026-11-15T10:00:00.000Z');
@@ -1554,7 +1555,16 @@ export function mocksFor(c: AuditCase): Mock[] {
     case 'API-ADM-LAYOUT':
       return [meMock(), ...layoutMocks(c)];
     case 'API-ADM-COMPANY':
-      return [meMock(), ...settingsMocks(c)];
+      // The PIN waiting list sits under Service area on the same screen (design 2026-11-15 item 7).
+      return [meMock(), ...settingsMocks(c), ...demandMocks(c)];
+    case 'API-ADM-DEMAND':
+      return [meMock(), ...settingsMocks(c), ...demandMocks(c)];
+    case 'API-ACC-PRIVACY':
+      return privacyMocks(c);
+    case 'API-ACC-NOTIFYME':
+      return notifyMeMocks(c);
+    case 'API-ADM-RECO':
+      return adminRecoMocks(c);
     case 'API-SVC-HOMEFIND':
       return homeFinderMocks(c);
     case 'API-SVC-HOMEREQ':

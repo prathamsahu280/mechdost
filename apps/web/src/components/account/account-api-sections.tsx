@@ -17,6 +17,7 @@ import * as api from '@/lib/account-api';
 import type { ApiResult } from '@/lib/orders-api';
 
 // The map pin step loads MapLibre only when an address form opens (design 2026-11-15: home servicing).
+const NotifyMe = lazy(() => import('./notify-me').then((m) => ({ default: m.NotifyMe })));
 const AddressPinMap = lazy(() => import('./address-pin-map').then((m) => ({ default: m.AddressPinMap })));
 
 const card = 'rounded-card border border-line-card bg-surface p-5 shadow-card tab:p-6';
@@ -191,7 +192,12 @@ export function AddressesApi({ defaults }: { defaults: { name: string; phone: st
                       : a('placeNoCity', { state: addr.stateName, pincode: addr.pincode })}
                   </p>
                   {!addr.serviceable ? (
-                    <p className="mt-1 text-sm font-bold text-warning">{a('notServiceable')}</p>
+                    <>
+                      <p className="mt-1 text-sm font-bold text-warning">{a('notServiceable')}</p>
+                      <Suspense fallback={null}>
+                        <NotifyMe pincode={addr.pincode} />
+                      </Suspense>
+                    </>
                   ) : null}
                   <p className="text-xs text-muted">
                     {addr.lat !== null && addr.lng !== null ? h('pinSet') : h('pinNone')}

@@ -16,6 +16,8 @@ const ALL_ACCOUNT_SECTIONS = [
   'addresses',
   // The bell's choices and this device's push (spec 10, 2026-11-15): real sign-in only, it reads the API.
   'notifications',
+  // Consents per purpose, data download, account deletion request (DPDP, design 2026-11-15): real sign-in only.
+  'privacy',
   'profile',
 ] as const;
 export type AccountSection = (typeof ALL_ACCOUNT_SECTIONS)[number];
@@ -92,7 +94,7 @@ const shown = <T extends string>(all: readonly T[]): readonly T[] =>
 // (The bell's choices read the API, so the account section exists with real sign-in only; the admin section of the
 // same name is the WhatsApp screen and stays in the demo.)
 export const ACCOUNT_SECTIONS = shown(ALL_ACCOUNT_SECTIONS).filter(
-  (s) => s !== 'notifications' || AUTH_MODE === 'firebase',
+  (s) => (s !== 'notifications' && s !== 'privacy') || AUTH_MODE === 'firebase',
 );
 /** Admin sections shown in this build (navigation, routes). */
 export const ADMIN_SECTIONS = shown(ALL_ADMIN_SECTIONS);

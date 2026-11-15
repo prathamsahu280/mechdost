@@ -47,6 +47,10 @@ const CoinsSectionApi = lazy(() =>
 const AddressesApi = lazy(() => import('./account-api-sections').then((m) => ({ default: m.AddressesApi })));
 const VehiclesApi = lazy(() => import('./account-api-sections').then((m) => ({ default: m.VehiclesApi })));
 const ProfileApi = lazy(() => import('./account-api-sections').then((m) => ({ default: m.ProfileApi })));
+// Consents, data download and the deletion request (design 2026-11-15 item 6), real sign-in only.
+const PrivacySectionApi = lazy(() =>
+  import('./privacy-section-api').then((m) => ({ default: m.PrivacySectionApi })),
+);
 // Bell and push (spec 10, 2026-11-15), real sign-in only: the choices, and the "get updates on this device" card.
 const NoticeSettings = lazy(() =>
   import('../notices/notice-prefs').then((m) => ({ default: m.NoticeSettings })),
@@ -66,6 +70,7 @@ const SECTION_EMOJI: Record<AccountSection, string> = {
   vehicles: '🚗',
   addresses: '📍',
   notifications: '🔔',
+  privacy: '🔒',
   profile: '👤',
 };
 
@@ -170,6 +175,11 @@ export function AccountArea({ section }: { section: AccountSection }) {
         {section === 'notifications' ? (
           <Suspense fallback={sectionFallback}>
             <NoticeSettings role="customer" />
+          </Suspense>
+        ) : null}
+        {section === 'privacy' ? (
+          <Suspense fallback={sectionFallback}>
+            <PrivacySectionApi />
           </Suspense>
         ) : null}
         {section === 'overview' ? <Overview account={session} /> : null}

@@ -8,6 +8,7 @@ import { CompareToggle } from '@/components/catalogue/compare-toggle';
 import { UnitPrice } from '@/components/catalogue/unit-price';
 import { availabilityLabel, ProductCard } from '@/components/catalogue/product-card';
 import { ProductVisual } from '@/components/catalogue/product-visual';
+import { RecommendationsSection } from '@/components/catalogue/recommendations-section';
 import { ReviewsApiSection, ReviewsApiSkeleton } from '@/components/reviews/reviews-api-section';
 import { ReviewsSection } from '@/components/reviews/reviews-section';
 import { StarRating } from '@/components/reviews/star-rating';
@@ -334,6 +335,13 @@ export default async function ProductPage({ params }: Props) {
       {DATA_MODE === 'api' ? (
         <Suspense fallback={<ReviewsApiSkeleton />}>
           <ReviewsApiSection target="product" slug={product.slug} />
+        </Suspense>
+      ) : null}
+
+      {/* "Goes well with this" (spec 11): rules, then what customers bought together; streams in, nothing when empty. */}
+      {DATA_MODE === 'api' ? (
+        <Suspense fallback={null}>
+          <RecommendationsSection slugs={[product.slug]} slot="product" locale={locale} />
         </Suspense>
       ) : null}
 
