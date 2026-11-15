@@ -69,6 +69,11 @@ const schema = z
     WEB_BASE_URL: z.url().default('http://localhost:3000'),
     /** Grievance officer contact shown in the email footer; the line stays hidden while this is unset (Q15b). */
     EMAIL_GRIEVANCE_CONTACT: z.string().trim().min(3).max(200).optional(),
+    /**
+     * Shared secret with the website's `/api/revalidate` route: after staff publish content, the API asks the website
+     * to refresh what it cached by tag (design 2026-11-15 items 5, 6, 8). Unset = the website refreshes within 60 s.
+     */
+    REVALIDATE_SECRET: z.string().trim().min(32).max(200).optional(),
     WHATSAPP_ENABLED: z.enum(['on', 'off']).default('off'),
     WHATSAPP_PHONE_NUMBER_ID: z
       .string()
@@ -307,6 +312,7 @@ function toConfig(env: z.infer<typeof schema>) {
         }
       : null,
     webBaseUrl: env.WEB_BASE_URL,
+    revalidateSecret: env.REVALIDATE_SECRET ?? null,
     whatsapp:
       env.WHATSAPP_ENABLED === 'on' &&
       env.WHATSAPP_PHONE_NUMBER_ID &&

@@ -26,6 +26,8 @@
     "./settings": "./src/settings.ts",
     "./content": "./src/content.ts",
     "./policy": "./src/policy.ts",
+    "./company": "./src/company.ts",
+    "./site-layout": "./src/site-layout.ts",
     "./auth": "./src/auth.ts",
     "./catalogue": "./src/catalogue.ts",
     "./catalogue-import": "./src/catalogue-import.ts",

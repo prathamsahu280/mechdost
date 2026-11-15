@@ -1,6 +1,8 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import {
+  cityScopeFrom,
   clearCitySetting,
+  listCitiesInScope,
   listOperationalSettings,
   NotFoundError,
   saveOperationalSetting,
@@ -49,6 +51,23 @@ const list = createRoute({
   security: [{ bearerAuth: [] }],
   request: { query: z.object({ city: CityCode.optional() }) },
   responses: { 200: json(z.object({ settings: z.array(Row) }), 'Settings'), ...errorResponses },
+});
+
+const cityList = createRoute({
+  method: 'get',
+  path: '/admin/settings/cities',
+  tags: ['admin'],
+  summary: 'The cities this staff member may set values for (the picker on the settings screen)',
+  security: [{ bearerAuth: [] }],
+  responses: {
+    200: json(
+      z.object({
+        cities: z.array(z.object({ code: z.string(), name: z.string(), nameHi: z.string().nullable() })),
+      }),
+      'Cities in scope',
+    ),
+    ...errorResponses,
+  },
 });
 
 const save = createRoute({
@@ -125,6 +144,10 @@ export function adminSettingsRoutes(deps: AppDeps, cache: SessionCache) {
       const cityId = await scopedCity(deps, c, c.req.valid('query').city, 'settings:read');
       const rows = await listOperationalSettings(deps.db, cityId);
       return c.json({ settings: rows.map((r) => Row.parse(r)) }, 200);
+    })
+    .openapi(cityList, async (c) => {
+      const scope = cityScopeFrom(c.get('auth').grants, 'settings:write');
+      return c.json({ cities: await listCitiesInScope(deps.db, scope) }, 200);
     })
     .openapi(save, async (c) => {
       const b = c.req.valid('json');

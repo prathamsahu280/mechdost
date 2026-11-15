@@ -30,6 +30,9 @@ services:
       # One proxy (Caddy) in front: the location search's per-visitor limits read the client from
       # X-Forwarded-For. Without it `/api/geo/*` refuses every request in production (security review 2026-11-14).
       TRUSTED_PROXY_HOPS: '1'
+      # Shared with the API (REVALIDATE_SECRET in .env): lets `/api/revalidate` accept the API's cache refresh after a
+      # publish. Empty = the route answers 404 and pages refresh within 60 s.
+      REVALIDATE_SECRET: ${REVALIDATE_SECRET:-}
     expose:
       - '3000'
     mem_limit: 512m

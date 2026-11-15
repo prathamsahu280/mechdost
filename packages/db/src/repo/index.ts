@@ -39,6 +39,7 @@ export * from './catalogue-create';
 export * from './shop-inventory';
 export * from './events';
 export * from './settings-admin';
+export * from './site-config';
 export * from './partner-invites';
 export * from './partner-applications';
 export * from './price-requests';

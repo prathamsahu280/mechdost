@@ -428,6 +428,13 @@
       "when": 1794702165290,
       "tag": "0062_shop_staff_invites",
       "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
+      "when": 1794703163242,
+      "tag": "0063_admin_policy_history",
+      "breakpoints": true
     }
   ]
 }

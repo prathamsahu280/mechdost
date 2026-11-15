@@ -41,6 +41,8 @@ export function createEmailAdapter(
     timeoutMs?: number;
     loadOverride?: OverrideLoader;
     loadTrustLine?: TrustLineLoader;
+    /** The grievance officer line from Admin -> Company details; null/empty or a failure uses `cfg.grievanceContact`. */
+    loadGrievanceContact?: () => Promise<string | null>;
   } = {},
 ): ChannelAdapter {
   const fetchImpl = opts.fetchImpl ?? fetch;
@@ -60,11 +62,16 @@ export function createEmailAdapter(
       const override: EmailOverride | null = await (
         opts.loadOverride?.(row.templateKey, locale) ?? Promise.resolve(null)
       ).catch(() => null);
+      // The admin's company details win; the env value is the fallback (and a database hiccup must not stop the mail).
+      const grievanceContact =
+        (await (opts.loadGrievanceContact?.() ?? Promise.resolve(null)).catch(() => null)) ??
+        cfg.grievanceContact ??
+        null;
       const composed = composeEmail(
         row.templateKey,
         locale,
         params,
-        { webBaseUrl: cfg.webBaseUrl, grievanceContact: cfg.grievanceContact ?? null },
+        { webBaseUrl: cfg.webBaseUrl, grievanceContact },
         override,
       );
       // Order emails carry the "genuine parts" line (design 2026-11-15); the admin can reword or hide it. Like the
@@ -77,7 +84,7 @@ export function createEmailAdapter(
       }
       const { text, html } = renderEmail(composed, {
         locale,
-        grievanceContact: cfg.grievanceContact ?? null,
+        grievanceContact,
         trustLine,
       });
       // A staff test send (Admin → Emails) is marked so nobody mistakes it for a real notification.

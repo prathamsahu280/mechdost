@@ -1,9 +1,12 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { Container, PageIntro } from '@/components/ui/page-intro';
+import { GrievanceOfficer } from '@/components/site/company-legal';
 import { PolicySections } from '@/components/ui/policy-sections';
+import { PublishedPolicy } from '@/components/ui/published-policy';
 import type { Locale } from '@/i18n/routing';
 import { alternatesFor } from '@/lib/seo';
+import { publishedPolicy } from '@/lib/site-config-content';
 
 interface Props {
   params: Promise<{ locale: Locale }>;
@@ -12,9 +15,10 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'policies.delivery' });
+  const published = await publishedPolicy('policy.delivery', locale);
   return {
-    title: t('title'),
-    description: t('lead'),
+    title: published?.title ?? t('title'),
+    description: published?.lead ?? t('lead'),
     alternates: alternatesFor('/policies/delivery', locale),
   };
 }
@@ -34,8 +38,20 @@ const SECTIONS = [
  * referred to as "shown at checkout" so this page never contradicts the settings. Admin-editable as
  * `policy.delivery` on the content API (spec 08).
  */
-export default async function DeliveryPolicyPage() {
+export default async function DeliveryPolicyPage({ params }: Props) {
+  const { locale } = await params;
   const t = await getTranslations('policies.delivery');
+  const published = await publishedPolicy('policy.delivery', locale);
+  if (published)
+    return (
+      <PublishedPolicy
+        doc={published}
+        locale={locale}
+        eyebrow={t('eyebrow')}
+        help={t('help')}
+        track="policy_delivery_call"
+      />
+    );
   return (
     <Container className="py-12 tab:py-16">
       <PageIntro eyebrow={t('eyebrow')} line1={t('title')} lead={t('lead')} />
@@ -49,6 +65,7 @@ export default async function DeliveryPolicyPage() {
         updated={t('updated')}
         track="policy_delivery_call"
       />
+      <GrievanceOfficer locale={locale} />
     </Container>
   );
 }

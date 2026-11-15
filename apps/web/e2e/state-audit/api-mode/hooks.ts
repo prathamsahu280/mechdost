@@ -83,6 +83,30 @@ async function prepareApi(page: Page, c: AuditCase): Promise<string[]> {
     await settleApi(page);
   }
 
+  // Policy editor: with nothing published, start from the built-in text; then open the preview or the restore question.
+  if (c.code === 'API-ADM-POLICIES' && c.state.form && c.state.form !== 'closed') {
+    const section = main.locator('section[aria-labelledby="policies-title"]');
+    if (c.state.policies === 'none') {
+      await section.locator('button').first().click();
+      await main
+        .locator('button[aria-pressed]')
+        .first()
+        .waitFor({ timeout: 5_000 })
+        .catch(() => notes.push('the editor did not open from the built-in text'));
+    }
+    if (c.state.policies !== 'error') {
+      if (c.state.form === 'preview') await main.locator('button[aria-pressed]').first().click();
+      else await section.locator('section[aria-labelledby$="-history"] li button').first().click();
+    }
+    await settleApi(page);
+  }
+
+  // Settings: pick the city so the values show as inherited or overridden.
+  if (c.code === 'API-ADM-COMPANY' && c.state.city !== 'all') {
+    await main.locator('#settings-city').selectOption('RPR');
+    await settleApi(page);
+  }
+
   if (c.code === 'API-SHOP-PORTAL' && c.state.giveup && c.state.giveup !== 'closed') {
     const open = main.locator('[data-track="shop_order_give_up_open"]').first();
     if ((await open.count()) === 0) notes.push('no give-up button (no confirmed order)');

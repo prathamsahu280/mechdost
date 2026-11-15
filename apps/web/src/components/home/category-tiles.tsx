@@ -7,14 +7,20 @@ import { LocalLink } from '../ui/local-link';
 import { ButtonLink } from '../ui/button-link';
 import { Container, Eyebrow } from '../ui/page-intro';
 
-const isDefault = (key: string) => DEFAULT_FEATURED.some((k) => k === key);
-
 /**
- * Home category shortcuts. All nine tiles are rendered; the default six show, and the admin's choice (demo:
- * /admin/layout, applied by the pre-paint layout script via `data-home-category`) can feature any 3–6 of them.
- * Emoji are admin-editable too. Admin-managed categories replace this list in Phase 1 (spec 08).
+ * Home category shortcuts. All nine tiles are rendered; the featured ones show (the default six, or the admin's 3 to 6
+ * from the saved layout, chosen on the server), and in the demo the pre-paint layout script can still change which
+ * show via `data-home-category`. Emoji are admin-editable too (`emoji` from the saved layout wins over the demo's
+ * browser-stored one). Admin-managed categories replace this list in Phase 1 (spec 08).
  */
-export function CategoryTiles() {
+export function CategoryTiles({
+  featured = DEFAULT_FEATURED,
+  emoji = {},
+}: {
+  featured?: readonly string[];
+  emoji?: Partial<Record<string, string>>;
+}) {
+  const isDefault = (key: string) => featured.includes(key);
   const t = useTranslations('home.products');
   const c = useTranslations('home.categories');
   const hints = useTranslations('home.categoryHints');
@@ -50,7 +56,7 @@ export function CategoryTiles() {
                     aria-hidden="true"
                     className="grid size-14 place-items-center rounded-full bg-accent-soft text-[28px] leading-none transition-transform duration-[var(--duration-base)] group-hover:scale-110"
                   >
-                    <CategoryEmoji k={key} fallback={CATEGORY_EMOJI[key]} />
+                    {emoji[key] ?? <CategoryEmoji k={key} fallback={CATEGORY_EMOJI[key]} />}
                   </span>
                   <span>
                     <span className="block text-[15px] font-bold text-ink">{c(key)}</span>

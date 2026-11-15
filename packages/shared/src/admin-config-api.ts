@@ -118,6 +118,47 @@ export type AdminContentEntryDto = z.infer<typeof AdminContentEntry>;
 export const AdminContentList = z.object({ entries: z.array(AdminContentEntry) });
 export const AdminContentSaved = z.object({ version: Int, value: ContentValue });
 
+/** What went live for one policy page, newest first (`GET /admin/content/{key}/{locale}/versions`). */
+export const PolicyVersionList = z.object({
+  versions: z.array(
+    z.object({
+      versionNo: Int,
+      action: z.enum(['published', 'restored']),
+      restoredFrom: Int.nullable(),
+      value: ContentValue,
+      createdAt: z.string(),
+      by: z.string().nullable(),
+    }),
+  ),
+});
+export type PolicyVersionDto = z.infer<typeof PolicyVersionList>['versions'][number];
+
+// Home layout, company details, city picker (design 2026-11-15 items 6 to 8) ----------------------------------
+
+const HomeLayoutDto = z.object({
+  order: z.array(z.string()),
+  hidden: z.array(z.string()),
+  featured: z.array(z.string()).nullable(),
+  emoji: z.record(z.string(), z.string()),
+  mapDefault: z.enum(['satellite', 'map']),
+});
+export const AdminHomeLayout = z.object({
+  layout: HomeLayoutDto,
+  version: Int.nullable(),
+  inherited: z.boolean(),
+});
+export type AdminHomeLayoutDto = z.infer<typeof AdminHomeLayout>;
+export const AdminLayoutSaved = z.object({ version: Int, layout: HomeLayoutDto });
+
+export const AdminCompany = z.object({ details: z.record(z.string(), z.string()), version: Int.nullable() });
+export type AdminCompanyDto = z.infer<typeof AdminCompany>;
+export const AdminCompanySaved = z.object({ version: Int, details: z.record(z.string(), z.string()) });
+
+export const AdminCityList = z.object({
+  cities: z.array(z.object({ code: z.string(), name: z.string(), nameHi: z.string().nullable() })),
+});
+export type AdminCityDto = z.infer<typeof AdminCityList>['cities'][number];
+
 // Customer blocks (research/admin-console.md §5) --------------------------------------------------------------
 
 export const CustomerBlock = z.object({

@@ -145,3 +145,7 @@ Server events (same transaction; ids, codes and counts only, never a path or fil
 
 - **Server events** (`packages/shared/src/analytics.ts`): `shop_busy_set` (shopId, mode `closed_today|hours|clear`, hours or null); `shop_team_invited`, `shop_team_invite_cancelled`, `shop_team_invite_accepted`, `shop_team_member_removed` (shopId only; never a phone or name).
 - **Click ids (web):** `shop_busy_closed_today`, `shop_busy_hours`, `shop_busy_clear`, `shop_team_invited`, `shop_team_invite_cancelled`, `shop_team_invite_accepted`, `shop_team_invite_declined`, `shop_team_member_removed`; existing `shop_order_accepted`, `shop_order_declined`, `shop_delivery_confirmed` unchanged.
+
+## Admin next tier part 2 events (2026-11-15)
+
+Server events (same transaction as the change; codes, counts and ids only): `admin_policy_restored { key, locale, fromVersion, version }` (next to `admin_content_published` for every publish), `admin_layout_published { scope: global|city, action: saved|reset, hidden, tiles, mapDefault }`, `admin_setting_city_changed { key, action: overridden|reset }`, `admin_company_saved { filled, grievanceShown }`. Client event `admin_site_change` gained areas `policies` and `company` and actions `publish`, `restore`, `preview` (area `layout` action `publish` for the real-mode layout save); `fields` is a count. Click id `admin_policy_preview_call` (preview call link), `footer_grievance_email` and `footer_grievance_phone` (footer links, only once the admin fills the officer).

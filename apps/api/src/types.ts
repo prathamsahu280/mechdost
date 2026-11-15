@@ -10,6 +10,7 @@ import type { SentryIssuesClient } from './monitoring/sentry-issues';
 import type { PhotoStorage } from './photos/storage';
 import type { RazorpayGateway } from './payments/razorpay';
 import type { RateLimiter } from './rate-limit/limiter';
+import type { Revalidator } from './revalidate';
 
 /** Everything the app needs from the outside world — injected so tests use PGlite and fakes. */
 export interface AppDeps {
@@ -31,6 +32,8 @@ export interface AppDeps {
   photoStorage?: PhotoStorage | null;
   /** Read-only Sentry issues for Admin → Errors; null when no read token is configured → "not connected". */
   sentryIssues?: SentryIssuesClient | null;
+  /** Refreshes the website's cache by tag after a publish; absent = the configured one (tests inject a spy). */
+  revalidate?: Revalidator;
 }
 
 export interface AuthContext {

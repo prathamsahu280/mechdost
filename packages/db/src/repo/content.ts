@@ -1,4 +1,4 @@
-import { and, eq, isNull, or, sql } from 'drizzle-orm';
+import { and, desc, eq, isNull, or, sql } from 'drizzle-orm';
 import {
   cleanContentText,
   CONTENT_KEYS,
@@ -14,7 +14,7 @@ import {
   type PolicyDoc,
   type PolicyKey,
 } from '@mechdost/shared/policy';
-import { auditLog, contentBlocks } from '../schema';
+import { auditLog, contentBlocks, contentVersions, users } from '../schema';
 import { ConflictError, NotFoundError, ValidationError } from './errors';
 import { recordServerEvent } from './events';
 import type { Tx } from './orders';
@@ -236,6 +236,175 @@ export async function saveContentDraft(
   });
 }
 
+interface EntryRef {
+  key: EditableKey;
+  locale: ContentLocale;
+  cityId: string | null;
+  staffUserId: string;
+}
+
+/** Put `value` live for the entry (update the published row or create it); returns what was live before. */
+async function writeLive(
+  tx: Tx,
+  input: EntryRef,
+  value: unknown,
+): Promise<{ before: { value: unknown; version: number } | undefined; live: { version: number } }> {
+  const [before] = await tx
+    .select({ value: contentBlocks.value, version: contentBlocks.version })
+    .from(contentBlocks)
+    .where(scope(input.key, input.locale, input.cityId, 'published'))
+    .for('update');
+  let live: { version: number } | undefined;
+  if (before) {
+    [live] = await tx
+      .update(contentBlocks)
+      .set({ value, publishedAt: sql`now()`, updatedBy: input.staffUserId })
+      .where(scope(input.key, input.locale, input.cityId, 'published'))
+      .returning({ version: contentBlocks.version });
+  } else {
+    [live] = await tx
+      .insert(contentBlocks)
+      .values({
+        key: input.key,
+        locale: input.locale,
+        cityId: input.cityId,
+        value,
+        status: 'published',
+        publishedAt: sql`now()`,
+        updatedBy: input.staffUserId,
+      })
+      .returning({ version: contentBlocks.version });
+  }
+  if (!live) throw new Error('publish wrote no row');
+  return { before, live };
+}
+
+/**
+ * Append one row to the entry's history (what went live; `content_versions` is append-only) and return its number.
+ * An advisory lock per entry numbers concurrent publishes and restores one after the other; the unique index backs it.
+ */
+async function appendVersion(
+  tx: Tx,
+  input: EntryRef,
+  value: unknown,
+  how: { action: 'published' } | { action: 'restored'; restoredFrom: number },
+): Promise<number> {
+  const entry = entityKey(input.key, input.locale, input.cityId);
+  await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`content_versions:${entry}`}, 0))`);
+  const [top] = await tx
+    .select({ n: sql<number>`coalesce(max(${contentVersions.versionNo}), 0)::int` })
+    .from(contentVersions)
+    .where(
+      and(
+        eq(contentVersions.key, input.key),
+        eq(contentVersions.locale, input.locale),
+        input.cityId ? eq(contentVersions.cityId, input.cityId) : isNull(contentVersions.cityId),
+      ),
+    );
+  const versionNo = (top?.n ?? 0) + 1;
+  await tx.insert(contentVersions).values({
+    key: input.key,
+    locale: input.locale,
+    cityId: input.cityId,
+    versionNo,
+    value,
+    action: how.action,
+    restoredFrom: how.action === 'restored' ? how.restoredFrom : null,
+    createdBy: input.staffUserId,
+  });
+  return versionNo;
+}
+
+export interface ContentVersion {
+  versionNo: number;
+  action: 'published' | 'restored';
+  restoredFrom: number | null;
+  value: EditableValue;
+  createdAt: Date;
+  /** The staff member's name when the account has one. */
+  by: string | null;
+}
+
+/** What went live for one entry, newest first (the history of a policy page; at most `limit`, default 50). */
+export async function listContentVersions(
+  db: Tx,
+  input: { key: EditableKey; locale: ContentLocale; cityId: string | null; limit?: number },
+): Promise<ContentVersion[]> {
+  const rows = await db
+    .select({
+      versionNo: contentVersions.versionNo,
+      action: contentVersions.action,
+      restoredFrom: contentVersions.restoredFrom,
+      value: contentVersions.value,
+      createdAt: contentVersions.createdAt,
+      by: users.name,
+    })
+    .from(contentVersions)
+    .leftJoin(users, eq(users.id, contentVersions.createdBy))
+    .where(
+      and(
+        eq(contentVersions.key, input.key),
+        eq(contentVersions.locale, input.locale),
+        input.cityId ? eq(contentVersions.cityId, input.cityId) : isNull(contentVersions.cityId),
+      ),
+    )
+    .orderBy(desc(contentVersions.versionNo))
+    .limit(Math.min(input.limit ?? 50, 100));
+  return rows.map((r) => ({
+    versionNo: r.versionNo,
+    action: r.action === 'restored' ? 'restored' : 'published',
+    restoredFrom: r.restoredFrom,
+    value: valueOf(input.key, r.value),
+    createdAt: r.createdAt,
+    by: r.by,
+  }));
+}
+
+/**
+ * Put an earlier version live again as a NEW version (the old row stays; design 2026-11-15 item 5). The text is
+ * checked again with today's rules, so a version that no longer passes (a placeholder since removed) is refused.
+ */
+export async function restoreContentVersion(
+  db: Tx,
+  input: EntryRef & { versionNo: number },
+): Promise<{ version: number }> {
+  return db.transaction(async (tx) => {
+    const [old] = await tx
+      .select({ value: contentVersions.value })
+      .from(contentVersions)
+      .where(
+        and(
+          eq(contentVersions.key, input.key),
+          eq(contentVersions.locale, input.locale),
+          input.cityId ? eq(contentVersions.cityId, input.cityId) : isNull(contentVersions.cityId),
+          eq(contentVersions.versionNo, input.versionNo),
+        ),
+      );
+    if (!old) throw new NotFoundError('That version does not exist');
+    const value = cleanEditable(input.key, old.value);
+    const { before, live } = await writeLive(tx, input, value);
+    const version = await appendVersion(tx, input, value, {
+      action: 'restored',
+      restoredFrom: input.versionNo,
+    });
+    await tx.insert(auditLog).values({
+      actorUserId: input.staffUserId,
+      actorRole: 'staff',
+      action: 'content.restored',
+      entity: 'content',
+      entityId: entityKey(input.key, input.locale, input.cityId),
+      before: before ? { value: before.value, version: before.version } : null,
+      after: { value, version: live.version, historyVersion: version, restoredFrom: input.versionNo },
+    });
+    await recordServerEvent(tx, 'admin_policy_restored', {
+      userId: input.staffUserId,
+      cityId: input.cityId,
+      props: { key: input.key, locale: input.locale, fromVersion: input.versionNo, version },
+    });
+    return { version };
+  });
+}
+
 /** Publish the draft (compare-and-set on its version): it replaces the live text and the draft is removed. */
 export async function publishContent(
   db: Tx,
@@ -258,33 +427,8 @@ export async function publishContent(
       )
       .returning({ value: contentBlocks.value });
     if (!draft) throw STALE();
-    const [before] = await tx
-      .select({ value: contentBlocks.value, version: contentBlocks.version })
-      .from(contentBlocks)
-      .where(scope(input.key, input.locale, input.cityId, 'published'))
-      .for('update');
-    let live: { version: number } | undefined;
-    if (before) {
-      [live] = await tx
-        .update(contentBlocks)
-        .set({ value: draft.value, publishedAt: sql`now()`, updatedBy: input.staffUserId })
-        .where(scope(input.key, input.locale, input.cityId, 'published'))
-        .returning({ version: contentBlocks.version });
-    } else {
-      [live] = await tx
-        .insert(contentBlocks)
-        .values({
-          key: input.key,
-          locale: input.locale,
-          cityId: input.cityId,
-          value: draft.value,
-          status: 'published',
-          publishedAt: sql`now()`,
-          updatedBy: input.staffUserId,
-        })
-        .returning({ version: contentBlocks.version });
-    }
-    if (!live) throw new Error('publish wrote no row');
+    const { before, live } = await writeLive(tx, input, draft.value);
+    const historyVersion = await appendVersion(tx, input, draft.value, { action: 'published' });
     await tx.insert(auditLog).values({
       actorUserId: input.staffUserId,
       actorRole: 'staff',
@@ -292,7 +436,7 @@ export async function publishContent(
       entity: 'content',
       entityId: entityKey(input.key, input.locale, input.cityId),
       before: before ? { value: before.value, version: before.version } : null,
-      after: { value: draft.value, version: live.version },
+      after: { value: draft.value, version: live.version, historyVersion },
     });
     await recordServerEvent(tx, 'admin_content_published', {
       userId: input.staffUserId,

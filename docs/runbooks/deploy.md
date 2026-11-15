@@ -150,6 +150,8 @@ ssh -t ubuntu@13.207.157.3 'chmod 600 /opt/mechdost/.env && nano /opt/mechdost/.
 - `WEB_BASE_URL` and `CORS_ORIGINS` as `https://` addresses;
 - live Razorpay keys if any Razorpay key is set (test keys are refused in production).
 
+**Optional, once real sign-in is live:** `REVALIDATE_SECRET` (32 or more random characters, for example `openssl rand -hex 24`). The API and the website must see the same value (`compose.yml` passes it to the web container from this file). With it, a published policy page, home layout or company detail shows on the website at once (the API calls the website's `/api/revalidate`); without it the change shows within 60 seconds. Rotating it is a normal edit of `.env` plus a redeploy of both.
+
 The checks are in `apps/api/src/config.ts`. No service-account key file goes on the server: the API verifies sign-in tokens with the project id. When all of these are filled in, uncomment `COMPOSE_PROFILES=api` and deploy (§ 5).
 
 ### 3.5a Turn the API on (api.mechdost.com)

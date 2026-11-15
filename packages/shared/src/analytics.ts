@@ -89,6 +89,20 @@ export interface ServerEventProps {
   /** A trust line ("genuine parts") was published or taken down in Admin -> Content (placement = the line's slot). */
   trust_line_edited: { placement: string; locale: 'en' | 'hi'; action: 'published' | 'unpublished' };
   admin_content_published: { key: string; locale: 'en' | 'hi'; action: 'published' | 'unpublished' };
+  /** An earlier policy text was put live again as a new version (design 2026-11-15 item 5). */
+  admin_policy_restored: { key: string; locale: 'en' | 'hi'; fromVersion: number; version: number };
+  /** The home layout was saved (live at once) or reset to the default (item 6). `hidden`/`tiles` are counts. */
+  admin_layout_published: {
+    scope: 'global' | 'city';
+    action: 'saved' | 'reset';
+    hidden: number;
+    tiles: number;
+    mapDefault: 'map' | 'satellite';
+  };
+  /** A city's setting was overridden or reset to the global value (item 7). */
+  admin_setting_city_changed: { key: string; action: 'overridden' | 'reset' };
+  /** Company details saved (item 8); `filled` = how many of the fields have text. */
+  admin_company_saved: { filled: number; grievanceShown: boolean };
   inventory_updated: { shopId: string; sku: string; fields: string[]; by: 'shop' | 'staff' };
   partner_application_submitted: {
     kind: string;
@@ -335,8 +349,8 @@ export const CLIENT_EVENT_SCHEMAS = {
   location_detected: z.object({ source: z.enum(['finder', 'map']), pincodeFound: z.boolean() }).strict(),
   admin_site_change: z
     .object({
-      area: z.enum(['content', 'layout', 'categories', 'settings']),
-      action: z.enum(['save', 'reset']),
+      area: z.enum(['content', 'layout', 'categories', 'settings', 'policies', 'company']),
+      action: z.enum(['save', 'reset', 'publish', 'restore', 'preview']),
       fields: z.number().int().min(0).max(1000),
     })
     .strict(),

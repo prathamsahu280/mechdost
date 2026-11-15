@@ -1,4 +1,4 @@
-import { and, eq, isNull, or, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNull, or, sql } from 'drizzle-orm';
 import {
   OPERATIONAL_SETTINGS,
   isGlobalOnly,
@@ -9,6 +9,7 @@ import {
 } from '@mechdost/shared/settings';
 import { auditLog, cities, settings } from '../schema';
 import { ConflictError, NotFoundError, ValidationError } from './errors';
+import { recordServerEvent } from './events';
 import type { Tx } from './orders';
 
 /**
@@ -129,6 +130,12 @@ export async function saveOperationalSetting(
       before: before ? { value: before.value, version: before.version } : null,
       after: { value: input.value, version: saved.version },
     });
+    if (input.cityId)
+      await recordServerEvent(tx, 'admin_setting_city_changed', {
+        userId: input.staffUserId,
+        cityId: input.cityId,
+        props: { key: input.key, action: 'overridden' },
+      });
     return saved;
   });
 }
@@ -154,7 +161,25 @@ export async function clearCitySetting(
       before: { value: gone.value, version: gone.version },
       after: null,
     });
+    await recordServerEvent(tx, 'admin_setting_city_changed', {
+      userId: input.staffUserId,
+      cityId: input.cityId,
+      props: { key: input.key, action: 'reset' },
+    });
   });
+}
+
+/** The cities a staff member may set values for (the picker on the settings screen): code and both names. */
+export async function listCitiesInScope(
+  db: Tx,
+  scope: { all: true } | { all: false; cityIds: readonly string[] },
+): Promise<{ code: string; name: string; nameHi: string | null }[]> {
+  if (!scope.all && scope.cityIds.length === 0) return [];
+  return db
+    .select({ code: cities.code, name: cities.name, nameHi: cities.nameHi })
+    .from(cities)
+    .where(scope.all ? undefined : inArray(cities.id, [...scope.cityIds]))
+    .orderBy(cities.name);
 }
 
 /** City id by its public code (RPR), or 404. */

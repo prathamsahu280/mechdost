@@ -123,6 +123,23 @@ const AdminAuditApi = dynamic(() => import('./admin-audit-api').then((m) => m.Ad
   loading: () => <div className="skeleton h-96 rounded-card" aria-hidden="true" />,
 });
 
+/**
+ * Real sign-in: the policy page editor, the home layout and the company details on the API (design 2026-11-15
+ * items 5, 6, 8); demo builds never load them.
+ */
+const PoliciesApi = dynamic(() => import('./admin-policies-api').then((m) => m.PoliciesApi), {
+  ssr: false,
+  loading: () => <div className="skeleton h-96 rounded-card" aria-hidden="true" />,
+});
+const LayoutApi = dynamic(() => import('./admin-layout-api').then((m) => m.LayoutApi), {
+  ssr: false,
+  loading: () => <div className="skeleton h-96 rounded-card" aria-hidden="true" />,
+});
+const CompanyApi = dynamic(() => import('./admin-company-api').then((m) => m.CompanyApi), {
+  ssr: false,
+  loading: () => <div className="skeleton h-64 rounded-card" aria-hidden="true" />,
+});
+
 const SECTION_EMOJI: Record<AdminSection, string> = {
   overview: '📊',
   analytics: '📈',
@@ -189,14 +206,24 @@ export function AdminConsole({
             {section === 'catalogue' ? <AdminCatalogue /> : null}
             {section === 'customers' ? <AdminCustomers actor={account.name} /> : null}
             {section === 'content' && contentDefaults ? (
-              <ContentEditor actor={account.name} defaults={contentDefaults} />
+              <div className="space-y-8">
+                <ContentEditor actor={account.name} defaults={contentDefaults} />
+                {AUTH_MODE === 'firebase' ? <PoliciesApi /> : null}
+              </div>
             ) : null}
-            {section === 'layout' ? <LayoutEditor actor={account.name} /> : null}
+            {section === 'layout' ? (
+              AUTH_MODE === 'firebase' ? (
+                <LayoutApi />
+              ) : (
+                <LayoutEditor actor={account.name} />
+              )
+            ) : null}
             {section === 'settings' ? (
               <div className="space-y-6">
                 <SettingsEditor actor={account.name} />
                 <OrderRulesEditor />
                 {AUTH_MODE === 'firebase' ? <ServiceAreaApi /> : null}
+                {AUTH_MODE === 'firebase' ? <CompanyApi /> : null}
               </div>
             ) : null}
             {section === 'notifications' && notifyDefaults ? (
