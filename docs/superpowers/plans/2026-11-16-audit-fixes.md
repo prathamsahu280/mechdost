@@ -68,3 +68,24 @@ coordinator merges, runs the gate, measures the JS budget and re-runs the affect
 1. Coordinator: merge, `pnpm check`, JS budget, re-run the affected audit rows (A–G) and compare counts.
 2. Deploy.
 3. Real-API pass and audits against the real website (decisions 2026-11-16 limits).
+
+## Re-run results after batches 0–1 (2026-11-16, fixed checker, fixed site)
+
+| Chunk | Failed before | Failed now        |
+| ----- | ------------- | ----------------- |
+| A     | 94 / 365      | 12 / 365          |
+| B     | 368 / 444     | 73 / 444          |
+| C     | 220 / 320     | 139 / 320         |
+| G     | (old harness) | running in slices |
+
+## Batch 2 (after G)
+
+- **2a · Compare tray with one product (decision 2026-11-15).** The tray still opens with one product (≈50 sync findings,
+  SHOP-CARD / SHOP-ACTION / SHOP-TRAY); batch 1a added the hint but did not hide the tray. Show the tray from 2 only.
+- **2b · Compare table sticky product row.** With names now wrapping, the sticky row grows and table rows / remove
+  buttons scroll under it; `scroll-padding-top` covers the site header only. Make the page's top scroll padding include
+  the sticky row (CSS variable from its height), or cap the sticky row (names wrap below the sticky part).
+- **2c · Checker scrolling.** Before "covered" checks, bring the element into view with `scrollIntoView({block:
+'center'})` (honours scroll padding, like keyboard focus) instead of Playwright's own scroll, which ignores it
+  (header "covers" the cart bulk-quote link and compare rows only in the checker).
+- G findings to be added here when the slices finish.
