@@ -123,8 +123,13 @@ export const WorkshopMediansDto = z.object({
 });
 export type WorkshopMedians = z.infer<typeof WorkshopMediansDto>;
 
-/** Medians are shown only when at least this many workshops have data (a median of one or two names a workshop). */
+/** Admin medians are shown only when at least this many workshops have data (admin sees every workshop by name). */
 export const WORKSHOP_MEDIAN_MIN = 3;
+/**
+ * The anonymous benchmark in a workshop's own portal needs this many OTHER workshops with the figure (security review
+ * 2026-11-15): a median is always one real workshop's value, so more peers make it untraceable.
+ */
+export const WORKSHOP_BENCHMARK_MIN = 5;
 
 function median(values: readonly number[]): number | null {
   if (values.length === 0) return null;
@@ -137,21 +142,21 @@ function median(values: readonly number[]): number | null {
 
 /**
  * City medians over the workshops that had requests in the range. Anonymity (security review 2026-11-15): each
- * metric needs at least `WORKSHOP_MEDIAN_MIN` workshops that have that figure, else it is null; and `excludeId` (the
- * asking workshop in its portal) is left out, so a workshop cannot combine its own figure with the median to work back
- * to another workshop's.
+ * metric needs at least `minimum` workshops that have that figure, else it is null; and `excludeIds` (every workshop
+ * the asking owner holds, in the portal) are left out, so an owner cannot combine their own figures with the median to
+ * work back to another workshop's. The portal passes `WORKSHOP_BENCHMARK_MIN`.
  */
 export function workshopMedians(
   all: readonly (WorkshopStats & { id?: string })[],
-  opts: { excludeId?: string } = {},
+  opts: { excludeIds?: readonly string[]; minimum?: number } = {},
 ): WorkshopMedians {
-  const active = all.filter(
-    (s) => s.requests > 0 && (opts.excludeId === undefined || s.id !== opts.excludeId),
-  );
+  const minimum = opts.minimum ?? WORKSHOP_MEDIAN_MIN;
+  const exclude = new Set(opts.excludeIds ?? []);
+  const active = all.filter((s) => s.requests > 0 && !(s.id !== undefined && exclude.has(s.id)));
   const rates = active.map((s) => ({ s, r: workshopRates(s) }));
   const pick = (f: (x: { s: WorkshopStats; r: WorkshopRates }) => number | null) => {
     const values = rates.map(f).filter((v): v is number => v !== null);
-    return values.length < WORKSHOP_MEDIAN_MIN ? null : median(values);
+    return values.length < minimum ? null : median(values);
   };
   return {
     workshops: active.length,

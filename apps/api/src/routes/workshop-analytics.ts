@@ -1,7 +1,11 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { NotFoundError, ownWorkshopAnalytics, workshopCityId } from '@mechdost/db/repo';
 import { resolveAnalyticsRange } from '@mechdost/shared/analytics-range';
-import { PortalWorkshopAnalyticsDto, workshopMedians } from '@mechdost/shared/workshop-analytics-api';
+import {
+  PortalWorkshopAnalyticsDto,
+  WORKSHOP_BENCHMARK_MIN,
+  workshopMedians,
+} from '@mechdost/shared/workshop-analytics-api';
 import type { SessionCache } from '../auth/session-cache';
 import { ApiError, Forbidden } from '../errors';
 import { authenticate, requireVerified } from '../middleware/auth';
@@ -88,8 +92,9 @@ export function workshopAnalyticsRoutes(deps: AppDeps, cache: SessionCache) {
         range: { from: range.fromDate, to: range.toDate, days: range.days },
         workshop: { id, name, nameHi },
         stats,
-        // The asking workshop is left out of its own benchmark (anonymity, security review 2026-11-15).
-        cityMedians: workshopMedians(city.workshops, { excludeId: id }),
+        // Every workshop this owner holds is left out of the benchmark, which needs five others (anonymity,
+        // security review 2026-11-15).
+        cityMedians: workshopMedians(city.workshops, { excludeIds: owned, minimum: WORKSHOP_BENCHMARK_MIN }),
       },
       200,
     );

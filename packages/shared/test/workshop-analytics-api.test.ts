@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   WORKSHOP_MEDIAN_MIN,
+  WORKSHOP_BENCHMARK_MIN,
   workshopMedians,
   workshopRates,
   WorkshopStatsDto,
@@ -110,12 +111,24 @@ describe('workshopMedians', () => {
     expect(m.values.averageBillPaise).toBeNull();
   });
 
-  it("leaves the asking workshop out, so it cannot work back to another workshop's figure", () => {
+  it('portal benchmark: leaves out every workshop the caller owns and needs five others (anonymity)', () => {
+    expect(WORKSHOP_BENCHMARK_MIN).toBe(5);
     const row = (id: string, requests: number) => ({ ...w({ requests }), id });
-    const four = [row('a', 10), row('b', 20), row('c', 30), row('d', 40)];
-    // Without "a": 20, 30, 40 -> 30.
-    expect(workshopMedians(four, { excludeId: 'a' }).values.requests).toBe(30);
-    // With "a" left out only two others remain: no benchmark.
-    expect(workshopMedians(four.slice(0, 3), { excludeId: 'a' }).values.requests).toBeNull();
+    const seven = [
+      row('a', 10),
+      row('b', 20),
+      row('c', 30),
+      row('d', 40),
+      row('e', 50),
+      row('f', 60),
+      row('g', 70),
+    ];
+    // The caller owns "a" and "b": the other five are 30..70 -> 50.
+    const portal = workshopMedians(seven, { excludeIds: ['a', 'b'], minimum: WORKSHOP_BENCHMARK_MIN });
+    expect(portal.workshops).toBe(5);
+    expect(portal.values.requests).toBe(50);
+    // Owning a third workshop leaves four others: no benchmark at all.
+    const fewer = workshopMedians(seven, { excludeIds: ['a', 'b', 'c'], minimum: WORKSHOP_BENCHMARK_MIN });
+    expect(fewer.values.requests).toBeNull();
   });
 });

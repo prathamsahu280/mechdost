@@ -830,6 +830,14 @@ User 2026-11-15 ~01:00 IST: "go ahead and work on the 1,2,3,4,5,6" (6 = shop Wha
   hi, admin-editable) are sent through `queueRefundEmail`. The customer sees the order (group) code.
 - The email migration was renumbered **0056** at merge.
 
+## 2026-11-15 — Workshop benchmark anonymity (coordinator, security review)
+
+- The city benchmark in a workshop's own portal leaves out **every workshop the asking owner holds** and needs at least
+  **five other workshops** with each figure (`WORKSHOP_BENCHMARK_MIN`). A median is always one real workshop's value, so
+  a small group would let an owner work back to a competitor's numbers. Admin medians (admin sees every workshop by
+  name) keep the per-metric minimum of three. Cost if wrong: small cities show no benchmark until five workshops have
+  data.
+
 ## PENDING DECISIONS (ask "what's pending" to review)
 
 | #   | Topic                                                                                                                                                                                                                                                                                                            | Leaning                                                                             | When                                 |
