@@ -58,7 +58,7 @@ describe('V1 offer countdown', () => {
 describe('V3 rating stays together', () => {
   it('shopStats and the workshop header glue the star to the number', () => {
     for (const l of ['en', 'hi'] as const) expect(msgs(l).portal.shopStats).toContain('★ {rating}');
-    expect(src('components/portal/workshop-portal.tsx')).toContain('★ {workshop.rating');
+    expect(src('components/portal/workshop-portal.tsx')).toContain('★&nbsp;{workshop.rating');
   });
 });
 
