@@ -82,10 +82,14 @@ describe('JS budget guards', () => {
         /wishlist|product-photos-api|cart-sync|product-photo['"]|photo-queue/,
       );
     }
+    // The pill reaches the sync through a lazily fetched mount (budget incident 2026-11-15, test/cart-pill-lazy.test.ts).
     const pill = read('../src/components/commerce/cart-pill.tsx');
-    expect(pill).toMatch(/import\('@\/lib\/cart-sync'\)/);
-    expect(pill).not.toMatch(/^import [^;]*cart-sync/m);
-    expect(pill).toContain("AUTH_MODE !== 'firebase'");
+    expect(pill).toMatch(/import\('\.\/cart-sync-mount'\)/);
+    expect(pill).not.toMatch(/^import [^;]*(cart-sync|session-state)/m);
+    expect(pill).toContain("AUTH_MODE === 'firebase' ?");
+    const mount = read('../src/components/commerce/cart-sync-mount.tsx');
+    expect(mount).toMatch(/import\('@\/lib\/cart-sync'\)/);
+    expect(mount).not.toMatch(/^import [^;]*cart-sync'/m);
   });
 
   it('the sign-in screen merges the guest cart through a dynamic import', () => {

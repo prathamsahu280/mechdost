@@ -2,8 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect } from 'react';
-import { useSession } from '@/demo/session-state';
+import { useEffect, useState, type ComponentType } from 'react';
 import { useCart } from '@/demo/store';
 import { AUTH_MODE } from '@/lib/auth/mode';
 import { UI_EMOJI } from '@/lib/emoji';
@@ -24,35 +23,8 @@ export function CartPill({
 }) {
   const lines = useCart();
   const pathname = usePathname();
-  const signedIn = useSession() !== null;
   const locale = pathname === '/hi' || pathname.startsWith('/hi/') ? 'hi' : 'en';
-  // Real sign-in mode only (build-time constants: the demo build drops all of this). The saved cart and wishlist follow
-  // the customer between devices (user 2026-11-15): a local change is sent after a short pause, the server is re-read
-  // every 60 s while this tab is visible and when it comes back, and when the cart or checkout opens. The sync module
-  // is fetched only when someone is signed in, so a signed-out visit loads nothing extra.
   const onCartPage = /\/(cart|checkout)(\/|$)/.test(pathname);
-  useEffect(() => {
-    if (AUTH_MODE !== 'firebase' || !signedIn) return;
-    void import('@/lib/cart-sync').then((m) => {
-      m.syncCart(locale);
-    });
-  }, [signedIn, lines, locale]);
-  useEffect(() => {
-    if (AUTH_MODE !== 'firebase' || !signedIn) return;
-    let stop: (() => void) | undefined;
-    let cancelled = false;
-    void import('@/lib/storefront-sync').then((m) => {
-      if (!cancelled) stop = m.startStorefrontSync(locale);
-    });
-    return () => {
-      cancelled = true;
-      stop?.();
-    };
-  }, [signedIn, locale]);
-  useEffect(() => {
-    if (AUTH_MODE !== 'firebase' || !signedIn || !onCartPage) return;
-    void import('@/lib/storefront-sync').then((m) => m.refreshStorefront(locale));
-  }, [signedIn, locale, onCartPage]);
   const count = lines.reduce((n, l) => n + l.qty, 0);
   const sr = (count === 0 ? countText.zero : count === 1 ? countText.one : countText.other).replace(
     '#',
@@ -61,24 +33,57 @@ export function CartPill({
   // Partners and staff at work in a portal are not shopping (QA 2026-11-14, U16); the storefront keeps the cart.
   if (isPortalPath(pathname)) return null;
   return (
-    <Link
-      href={href}
-      data-track="header_cart"
-      className="press inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-pill border border-line-card bg-pill px-3 font-bold text-[13px] text-ink min-[440px]:px-4"
-    >
-      <span aria-hidden="true" className="text-[18px] leading-none">
-        {UI_EMOJI.cart}
-      </span>
-      <span className="sr-only min-[480px]:not-sr-only">{label}</span>
-      <span
-        aria-hidden="true"
-        className={`min-w-[1.25rem] rounded-full text-center font-bold tabular-nums ${
-          count > 0 ? 'bg-accent-button px-1.5 text-white' : 'text-accent-soft-text'
-        }`}
+    <>
+      <CartSync locale={locale} onCartPage={onCartPage} />
+      <Link
+        href={href}
+        data-track="header_cart"
+        className="press inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-pill border border-line-card bg-pill px-3 font-bold text-[13px] text-ink min-[440px]:px-4"
       >
-        {count}
-      </span>
-      <span className="sr-only">, {sr}</span>
-    </Link>
+        <span aria-hidden="true" className="text-[18px] leading-none">
+          {UI_EMOJI.cart}
+        </span>
+        <span className="sr-only min-[480px]:not-sr-only">{label}</span>
+        <span
+          aria-hidden="true"
+          className={`min-w-[1.25rem] rounded-full text-center font-bold tabular-nums ${
+            count > 0 ? 'bg-accent-button px-1.5 text-white' : 'text-accent-soft-text'
+          }`}
+        >
+          {count}
+        </span>
+        <span className="sr-only">, {sr}</span>
+      </Link>
+    </>
   );
 }
+
+interface SyncProps {
+  locale: 'en' | 'hi';
+  onCartPage: boolean;
+}
+
+/**
+ * Real sign-in mode only: fetches the sync after the page loads (`import()` in an effect, not `next/dynamic`, so nothing
+ * rides in the header's first load — spec 16 budget incident, guard `test/cart-pill-lazy.test.ts`).
+ */
+function RealCartSync(props: SyncProps) {
+  const [Mount, setMount] = useState<ComponentType<SyncProps> | null>(null);
+  useEffect(() => {
+    let live = true;
+    void import('./cart-sync-mount').then((m) => {
+      if (live) setMount(() => m.default);
+    });
+    return () => {
+      live = false;
+    };
+  }, []);
+  return Mount ? <Mount {...props} /> : null;
+}
+
+function NoCartSync() {
+  return null;
+}
+
+/** Chosen at build time: the demo build drops the sync entirely. */
+const CartSync = AUTH_MODE === 'firebase' ? RealCartSync : NoCartSync;
