@@ -26,6 +26,7 @@ import { ShopPrices } from './shop-prices';
 import { PortalGuard } from './portal-guard';
 import { useNow } from './use-now';
 import { portalCard, portalPrimary, portalQuiet, portalField } from './portal-styles';
+import { offerLeftParams } from '@/lib/offer-time';
 import { GstInvoiceLine } from '@/components/commerce/gst-invoice-line';
 
 /** Real sign-in: the portal reads and acts through the API; demo builds never load it (Stream C2, 2026-11-14). */
@@ -227,7 +228,7 @@ function OfferedOrder({ order, shopSlug, now }: { order: DemoOrder; shopSlug: st
     <article className={`${portalCard} border-accent-button/50`}>
       <p className="mb-2 inline-flex rounded-pill bg-warning-bg px-3 py-1 text-xs font-extrabold text-warning">
         <span aria-hidden="true">⏱️ </span>
-        {t('expiresIn', { minutes })}
+        {t('expiresIn', offerLeftParams(minutes))}
       </p>
       <OrderLines order={order} />
       {declining ? (
@@ -391,7 +392,7 @@ function DeliveryCodeForm({ order, shopSlug }: { order: DemoOrder; shopSlug: str
       <p id={`${inputId}-hint`} className="text-xs text-muted">
         {t('deliveryCodeHint')}
       </p>
-      <div className="mt-2 flex gap-2">
+      <div className="mt-2 flex flex-col gap-2 min-[420px]:flex-row">
         <input
           id={inputId}
           inputMode="numeric"
@@ -403,9 +404,12 @@ function DeliveryCodeForm({ order, shopSlug }: { order: DemoOrder; shopSlug: str
           onChange={(e) => {
             setCode(e.target.value.replace(/\D/g, '').slice(0, 4));
           }}
-          className={`${portalField} mt-0 w-32 text-center font-heading text-xl font-extrabold tracking-[0.4em] tabular-nums`}
+          className={`${portalField} mt-0 w-full min-[420px]:w-32 text-center font-heading text-xl font-extrabold tracking-[0.4em] tabular-nums`}
         />
-        <button type="submit" className={`${portalPrimary} flex-1`}>
+        <button
+          type="submit"
+          className={`${portalPrimary} min-h-11 w-full min-[420px]:w-auto min-[420px]:flex-1`}
+        >
           {t('deliveryConfirm')}
         </button>
       </div>

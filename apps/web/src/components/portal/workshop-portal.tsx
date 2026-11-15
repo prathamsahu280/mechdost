@@ -68,7 +68,7 @@ function WorkshopRequests({ workshopSlug }: { workshopSlug: string }) {
         <section className="blueprint rounded-card p-6 text-white shadow-card">
           <h2 className="font-heading text-2xl font-extrabold">🔧 {workshop.name}</h2>
           <p className="mt-1 text-sm text-white/80">
-            {workshop.area} · {workshop.pincode} · ★ {workshop.rating.toFixed(1)}
+            {workshop.area} · {workshop.pincode} · ★ {workshop.rating.toFixed(1)}
           </p>
         </section>
       ) : null}

@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import { ClientMessages } from '@/components/ui/client-messages';
 import { Container } from '@/components/ui/page-intro';
+import { withCode } from '@/components/ui/code-text';
 import { RequestView } from '@/components/workshops/request-view';
 import type { Locale } from '@/i18n/routing';
 import { DATA_MODE } from '@/lib/data-mode';
@@ -25,7 +26,7 @@ export default async function ServiceRequestPage({ params }: Props) {
   return (
     <Container className="py-10 tab:py-14">
       <h1 className="font-heading text-[clamp(22px,3vw,40px)] font-extrabold tracking-[-0.02em] break-words text-ink">
-        {t('title', { code: safe || code.slice(0, 40) })}
+        {withCode(t('title', { code: safe || code.slice(0, 40) }), safe || code.slice(0, 40))}
       </h1>
       <div className="mt-8">
         <ClientMessages

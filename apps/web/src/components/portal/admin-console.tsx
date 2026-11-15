@@ -63,6 +63,7 @@ import { PortalGuard, usePortalAccount } from './portal-guard';
 import { PortalNavLink } from './portal-nav-link';
 import { useNow } from './use-now';
 import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { offerLeftParams } from '@/lib/offer-time';
 import { Applications } from './admin-applications';
 import { GstInvoiceLine } from '@/components/commerce/gst-invoice-line';
 
@@ -641,9 +642,10 @@ function RoutingCard({ order, now }: { order: DemoOrder; now: number }) {
         <p className="mt-3 rounded-lg bg-warning-bg p-3 text-sm font-bold text-warning">
           <span aria-hidden="true">⏱️ </span>
           {t('offeredTo', { shop: shopName(order.shop.slug) })} ·{' '}
-          {t('expiresIn', {
-            minutes: Math.max(0, Math.ceil((new Date(order.shop.expiresAt).getTime() - now) / 60_000)),
-          })}
+          {t(
+            'expiresIn',
+            offerLeftParams(Math.ceil((new Date(order.shop.expiresAt).getTime() - now) / 60_000)),
+          )}
         </p>
       ) : null}
       {state === 'expired' && order.shop ? (
