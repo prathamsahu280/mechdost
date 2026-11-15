@@ -474,9 +474,35 @@
 
 /* While the privacy choice is open, or the compare tray asks something, the floating assistant button steps aside
    (consent-banner.tsx, compare-tray.tsx): one floating thing at a time. */
-html[data-consent-open] .assistant-launcher,
 html[data-compare-prompt] .assistant-launcher {
   visibility: hidden;
+}
+
+/* While the privacy choice is open the page ends with room for it (the banner is fixed, so without this its last
+   controls could never scroll clear: cart "Proceed to checkout", bulk quote, booking form; audit 2026-11-15 item 8),
+   and the assistant button rides just above the banner, never under it. --consent-h is the banner's measured height
+   (13rem until measured). Phones: the banner sits above the 76 px tab bar; from 1024 px it is bottom-right. */
+html[data-consent-open] body {
+  padding-bottom: calc(76px + env(safe-area-inset-bottom) + var(--consent-h, 13rem) + 1rem);
+}
+html[data-consent-open]:has([data-compare-tray][data-prompt]) body {
+  padding-bottom: calc(
+    76px + env(safe-area-inset-bottom) + var(--consent-h, 13rem) + var(--tray-h, 3.5rem) + 1rem
+  );
+}
+html[data-consent-open] .assistant-launcher {
+  bottom: calc(84px + env(safe-area-inset-bottom) + var(--consent-h, 13rem) + 0.5rem);
+}
+@media (min-width: 1024px) {
+  html[data-consent-open] body {
+    padding-bottom: calc(var(--consent-h, 13rem) + 2.5rem);
+  }
+  html[data-consent-open]:has([data-compare-tray][data-prompt]) body {
+    padding-bottom: calc(var(--consent-h, 13rem) + var(--tray-h, 3.5rem) + 2.5rem);
+  }
+  html[data-consent-open] .assistant-launcher {
+    bottom: calc(var(--consent-h, 13rem) + 2.25rem);
+  }
 }
 
 /* Fixed bottom UI never hides the focused element (WCAG 2.2 2.4.11): the browser scrolls focus above the mobile

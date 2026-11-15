@@ -37,12 +37,13 @@ export function CartPill({
       <Link
         href={href}
         data-track="header_cart"
+        title={label}
         className="press inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-pill border border-line-card bg-pill px-3 font-bold text-[13px] text-ink min-[440px]:px-4"
       >
         <span aria-hidden="true" className="text-[18px] leading-none">
           {UI_EMOJI.cart}
         </span>
-        <span className="sr-only min-[480px]:not-sr-only">{label}</span>
+        <span className="sr-only min-[480px]:not-sr-only nav:sr-only xl:not-sr-only">{label}</span>
         <span
           aria-hidden="true"
           className={`min-w-[1.25rem] rounded-full text-center font-bold tabular-nums ${

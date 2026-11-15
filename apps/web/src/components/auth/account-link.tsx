@@ -24,11 +24,11 @@ export function AccountLink({
     'hidden min-h-11 min-w-11 items-center justify-center gap-2 rounded-lg px-2 text-[13px] font-bold text-ink hover:bg-pill min-[360px]:inline-flex sm:px-3';
   if (!session) {
     return (
-      <Link href={`${prefix}/login`} data-track="header_sign_in" className={className}>
-        <span aria-hidden="true" className="text-[16px] leading-none sm:hidden xl:inline">
+      <Link href={`${prefix}/login`} data-track="header_sign_in" title={signIn} className={className}>
+        <span aria-hidden="true" className="text-[16px] leading-none sm:hidden nav:inline">
           {UI_EMOJI.account}
         </span>
-        <span className="sr-only sm:not-sr-only">{signIn}</span>
+        <span className="sr-only sm:not-sr-only nav:sr-only xl:not-sr-only">{signIn}</span>
       </Link>
     );
   }
@@ -41,7 +41,10 @@ export function AccountLink({
       >
         {first.charAt(0).toUpperCase()}
       </span>
-      <span data-user-content className="sr-only max-w-[9ch] truncate sm:not-sr-only">
+      <span
+        data-user-content
+        className="sr-only max-w-[9ch] truncate sm:not-sr-only nav:sr-only xl:not-sr-only"
+      >
         {first}
       </span>
       <span className="sr-only">, {account}</span>

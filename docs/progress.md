@@ -383,3 +383,10 @@ See PENDING DECISIONS in `docs/decisions.md` (payment methods; post-purchase P1 
 ## 2026-11-16 — Audit batch 1c (portal/forms) built on branch worktree-agent-a7cae956fbcd1032f, not merged
 
 Job photos remove button beside thumbnail; portal style constants carry focus-visible ring; demo login picker stacks and wraps; workshop menu price fields stack at phone width. Guard: apps/web/test/portal-forms-layout.test.ts (9 tests). Coordinator re-runs audit rows API-SVC-PHOTOS, PRT-WORKSHOP, LOGIN-FORM.
+
+## 2026-11-16 — Site chrome batch 1b (worktree-agent-a09a3cf20a6048957, not merged)
+
+Audit items 2 (header too wide at 1024 px) and 8 (privacy banner covers controls on phones) fixed in CSS/class names
+only; item 3 verified as a checker issue (header 85 px max < 96 px scroll padding). Guards: `test/site-chrome-fit.test.ts`
+(4 tests); Playwright specs written, not run: `e2e/chrome-fit.spec.ts`. Coordinator: build, measure at 1024-1100 px
+(en/hi, signed in/out, cart 99), re-run the audit rows. Rulings: decisions 2026-11-16.

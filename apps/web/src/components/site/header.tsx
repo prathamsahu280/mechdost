@@ -31,7 +31,7 @@ export function BrandMark() {
         <span className="font-heading text-[19px] leading-none font-extrabold tracking-[-0.04em] text-ink min-[380px]:text-[21px] tab:text-[24px]">
           {t('brand')}
         </span>
-        <span className="eyebrow mt-1.5 hidden text-[7px] whitespace-nowrap text-ink sm:block tab:text-[8px]">
+        <span className="eyebrow mt-1.5 hidden text-[7px] whitespace-nowrap text-ink sm:block nav:hidden xl:block tab:text-[8px]">
           {t('tagline')}
         </span>
       </span>
