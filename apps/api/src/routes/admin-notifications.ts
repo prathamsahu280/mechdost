@@ -4,6 +4,7 @@ import {
   NotFoundError,
   WHATSAPP_BUDGET_KEY,
   getGlobalSetting,
+  getWhatsAppTemplateStatuses,
   listEmailTemplates,
   listNoticeTemplates,
   listNotificationTemplates,
@@ -58,10 +59,16 @@ const CatalogueEntry = z.object({
   category: z.string(),
   params: z.array(z.string()),
   audience: z.string(),
+  /** Meta review status per language: approved, pending, rejected …; `unknown` before the first sync, `missing` when Meta has none. */
+  status: z.object({ en: z.string(), hi: z.string() }),
 });
 
 const TemplateList = z
-  .object({ templates: z.array(Template), whatsappCatalogue: z.array(CatalogueEntry) })
+  .object({
+    templates: z.array(Template),
+    whatsappCatalogue: z.array(CatalogueEntry),
+    whatsappStatusSyncedAt: z.string().nullable(),
+  })
   .openapi('NotificationTemplateList');
 
 const TemplateSave = z
@@ -345,17 +352,23 @@ export function adminNotificationRoutes(deps: AppDeps, cache: SessionCache) {
   return app
     .openapi(listTemplates, async (c) => {
       const templates = await listNotificationTemplates(deps.db);
+      // Meta's review result per language, as last synced by `pnpm wa:templates --status --save`.
+      const synced = await getWhatsAppTemplateStatuses(deps.db);
+      const statusOf = (key: string, locale: 'en' | 'hi'): string =>
+        synced ? (synced.templates[key]?.[locale] ?? 'missing') : 'unknown';
       const whatsappCatalogue = Object.entries(WHATSAPP_TEMPLATES).map(([key, t]) => ({
         key,
         metaName: t.name,
         category: t.category,
         params: [...t.params],
         audience: t.audience,
+        status: { en: statusOf(key, 'en'), hi: statusOf(key, 'hi') },
       }));
       return c.json(
         {
           templates: templates.map((t) => ({ ...t, updatedAt: t.updatedAt.toISOString() })),
           whatsappCatalogue,
+          whatsappStatusSyncedAt: synced?.syncedAt ?? null,
         },
         200,
       );

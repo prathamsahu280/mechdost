@@ -9,6 +9,7 @@
     "start": "node dist/server.mjs",
     "worker": "tsx --env-file-if-exists=../../.env src/worker.ts",
     "start:worker": "node dist/worker.mjs",
+    "wa:templates": "tsx --env-file-if-exists=../../.env src/wa-templates.ts",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
     "lint": "eslint . --max-warnings=0"

@@ -60,6 +60,25 @@ export function templateSaves(
   }));
 }
 
+const META_STATUS_LABEL = {
+  approved: 'notify_meta_approved',
+  pending: 'notify_meta_pending',
+  rejected: 'notify_meta_rejected',
+  paused: 'notify_meta_paused',
+  disabled: 'notify_meta_disabled',
+  missing: 'notify_meta_missing',
+  unknown: 'notify_meta_unknown',
+} as const;
+
+/** Meta's review status of a template → the locale key shown in the card (`portal.notify_meta_*`). */
+export function metaStatusLabel(
+  status: string,
+): (typeof META_STATUS_LABEL)[keyof typeof META_STATUS_LABEL] | 'notify_meta_other' {
+  return Object.hasOwn(META_STATUS_LABEL, status)
+    ? META_STATUS_LABEL[status as keyof typeof META_STATUS_LABEL]
+    : 'notify_meta_other';
+}
+
 export type SaveProblem = 'empty' | 'promo_wording' | 'missing' | 'too_long' | 'stale' | null;
 
 /** API template codes → the editor's field messages (`portal.notify_problem_*`); null = not a field problem. */

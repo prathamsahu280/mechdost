@@ -3,7 +3,7 @@
  * checked for offer wording and placeholders; stale edits are refused; budget + usage round-trip.
  */
 import { describe, expect, it } from 'vitest';
-import { ensureUser, grantRole } from '@mechdost/db/repo';
+import { ensureUser, grantRole, saveWhatsAppTemplateStatuses } from '@mechdost/db/repo';
 import * as s from '@mechdost/db/schema';
 import { bearer, buildApp, type ErrorJson } from './helpers';
 
@@ -141,6 +141,33 @@ describe('admin notifications API', () => {
     expect(json.whatsappCatalogue.find((c) => c.key === 'order.out_for_delivery')?.params).toEqual([
       'orderCode',
     ]);
+  });
+
+  it('shows each WhatsApp template’s Meta status (en + hi) once the CLI has synced it', async () => {
+    const { app, headers, db } = await staffApp('marketing', '08');
+    const read = async () =>
+      (await (await app.request('/v1/admin/notifications/templates', { headers })).json()) as {
+        whatsappCatalogue: { key: string; status: { en: string; hi: string } }[];
+        whatsappStatusSyncedAt: string | null;
+      };
+    const before = await read();
+    expect(before.whatsappStatusSyncedAt).toBeNull();
+    expect(before.whatsappCatalogue.find((c) => c.key === 'order.confirmed')?.status).toEqual({
+      en: 'unknown',
+      hi: 'unknown',
+    });
+    await saveWhatsAppTemplateStatuses(db, { 'order.confirmed': { en: 'approved', hi: 'pending' } });
+    const after = await read();
+    expect(after.whatsappStatusSyncedAt).not.toBeNull();
+    expect(after.whatsappCatalogue.find((c) => c.key === 'order.confirmed')?.status).toEqual({
+      en: 'approved',
+      hi: 'pending',
+    });
+    // Synced, but Meta does not have this one: shown as missing.
+    expect(after.whatsappCatalogue.find((c) => c.key === 'order.routed')?.status).toEqual({
+      en: 'missing',
+      hi: 'missing',
+    });
   });
 
   it('sets the WhatsApp budget and reports this month’s usage against it', async () => {

@@ -16,6 +16,8 @@ import {
   listNotificationTemplates,
   resetEmailTemplate,
   saveEmailTemplate,
+  getWhatsAppTemplateStatuses,
+  saveWhatsAppTemplateStatuses,
   markOutboxSent,
   notificationChannelEnabled,
   putGlobalSetting,
@@ -236,5 +238,36 @@ describe('email templates (admin, design 2026-11-15)', () => {
     const [after] = (await listEmailTemplates(t())).filter((r) => r.key === 'order_delivered');
     expect(after).toMatchObject({ enabled: false, body: '', subject: null });
     expect(await db.$count(s.auditLog, eq(s.auditLog.action, 'email_template.reset'))).toBe(2);
+  });
+});
+
+describe('WhatsApp template approval status (Meta sync, `pnpm wa:templates --status --save`)', () => {
+  it('changes nothing before the first sync; afterwards only approved templates can be switched on', async () => {
+    const key = 'ticket.replied';
+    const body = 'MechDost सपोर्ट ने आपकी रिक्वेस्ट {{1}} का जवाब दिया है। जवाब पढ़ने के लिए खोलें।';
+    await saveNotificationTemplate(t(), {
+      key,
+      channel: 'whatsapp',
+      locale: 'hi',
+      body,
+      enabled: true,
+      expectedVersion: null,
+      staffUserId: staff,
+    });
+    expect(await getWhatsAppTemplateStatuses(t())).toBeNull();
+    expect(await notificationChannelEnabled(t(), key, 'whatsapp')).toBe(true);
+
+    await saveWhatsAppTemplateStatuses(t(), { 'ticket.replied': { hi: 'pending', en: 'approved' } });
+    expect(await getWhatsAppTemplateStatuses(t())).toMatchObject({
+      templates: { 'ticket.replied': { hi: 'pending' } },
+    });
+    // The enabled row is Hindi and Meta has not approved the Hindi template yet.
+    expect(await notificationChannelEnabled(t(), key, 'whatsapp')).toBe(false);
+
+    await saveWhatsAppTemplateStatuses(t(), { 'ticket.replied': { hi: 'approved', en: 'approved' } });
+    expect(await notificationChannelEnabled(t(), key, 'whatsapp')).toBe(true);
+    // Other channels are never gated by Meta status.
+    expect(await notificationChannelEnabled(t(), key, 'email')).toBe(false);
+    expect(await db.$count(s.auditLog, eq(s.auditLog.action, 'whatsapp.template_status_synced'))).toBe(2);
   });
 });

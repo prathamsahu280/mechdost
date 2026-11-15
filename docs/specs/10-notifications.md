@@ -176,3 +176,10 @@ One shared, lazily loaded Firebase Realtime Database subscription per signed-in 
 - **Tests:** `test/live-hub.test.ts`, `test/live-listener.test.ts`, `test/live-lazy.test.ts` (bundle guard), `test/csp.test.ts`, API `live.test.ts` (rule clauses). Real emulator rule tests are queued (Q160).
 
 - **Staff cancel of a service request (2026-11-15):** email template `service_cancelled` (en + hi; reason in words, honest refund line) with bell notice `service.cancelled` and push, queued in the cancel transaction (`queueServiceCancelledEmail`); the reason phrases live in `email-phrases.ts`.
+
+## WhatsApp template CLI and approval gate (2026-11-16)
+
+- **CLI** `pnpm wa:templates` (runbook `docs/runbooks/whatsapp-templates.md`): builds one Meta create payload per catalogue template and language (`en`, `hi`; category from the catalogue; BODY with `{{n}}` and sample values; a URL button where the catalogue has `urlParam`), validates it offline (name pattern, placeholder numbering, one sample per variable, 1024 characters, no variable at the start or end, button label 25 characters, no offer wording), and offers `--dry-run` (default), `--status [--save]` and `--submit --yes` (missing only, never edits or deletes). Rate limits retried with backoff; the token is read from env by name and scrubbed from every output line.
+- **Approval status:** `--status --save` writes `notifications.whatsapp_template_status` (`{ syncedAt, templates: { key: { en, hi } } }`, Meta status lower case; missing ones are absent). `notificationChannelEnabled(key, 'whatsapp')` then requires an enabled template row whose language Meta approved; before the first sync only the admin switch counts.
+- **Admin:** each WhatsApp event card shows the approval per language; `GET /v1/admin/notifications/templates` carries `status` and `whatsappStatusSyncedAt`.
+- **Tests:** `packages/shared/test/whatsapp-meta.test.ts`, `apps/api/test/wa-templates-cli.test.ts` (fake fetch), `packages/db/test/notification-admin.test.ts` (gate), `apps/api/test/admin-notifications.test.ts` (status in the list), `apps/web/test/admin-api-views.test.ts`.

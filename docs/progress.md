@@ -406,3 +406,13 @@ only; item 3 verified as a checker issue (header 85 px max < 96 px scroll paddin
 - **2026-11-16: signed-in header fit (batch 2a, coordinator follow-up):** account name from xl, cart label from 560 px, compact targets under 440 px, tighter 1024-1279 px row; source guard `test/signed-in-header-fit.test.ts` (5 tests, seen red first) and 18 e2e cases written in `e2e/chrome-fit.spec.ts` (not run). Coordinator: build, run chrome-fit, re-run the account/service/order rows.
 - **2026-11-16: portal frames moved to layouts (builder, branch worktree-agent-a694ca66648b21cdc, not merged):** `admin/layout.tsx` + `account/layout.tsx` hold the frame; pages render the section only; `PortalNavLink` pending cue; consent banner and admin invite links are `Link`. Guards: `test/no-reload-navigation.test.ts` (10 tests), e2e `e2e/no-reload-navigation.spec.ts` (written, not run). Not run: Playwright, next build, full pnpm check. Rulings: decisions 2026-11-16 (portal frames in layouts).
 - 2026-11-16 closeable panels (builder): bug "opened panel cannot be closed" fixed everywhere (shared PanelDismiss + Cancel on about 45 panels, review forms first); guards panel-dismiss.test.ts (51), audit check `dismiss` on 11 rows (checklist regenerated, 4229 items), e2e/panel-dismiss.spec.ts written, not run. Needs at merge: Playwright for the new spec and the dismiss rows; no migration.
+
+## 2026-11-16 — WhatsApp template CLI (branch worktree-agent-a1d4e4a82d67e8829, not merged; no migration)
+
+Built `pnpm wa:templates` (dry run / status [--save] / submit --yes), Meta payload builder and offline rule checks
+(`packages/shared/src/whatsapp-meta.ts`), status storage (`getWhatsAppTemplateStatuses` / `saveWhatsAppTemplateStatuses`,
+setting `notifications.whatsapp_template_status`, system audit row), the send gate (approved once synced), API status
+fields and the Admin → Notifications approval line (en + hi). Runbook `docs/runbooks/whatsapp-templates.md` has the
+catalogue table. **Nothing was sent to Meta** (fake fetch only). Waiting on the user: Q173 go-ahead. Coordinator: after
+merge, new catalogue entries (quote events) need a `META_TEMPLATE_COPY` entry and locale text under `notifyTemplates`
+(typecheck forces it); no Playwright / next build was run.
