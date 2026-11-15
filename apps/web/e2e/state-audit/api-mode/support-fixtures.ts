@@ -182,7 +182,7 @@ export function adminSupportMocks(c: AuditCase): Mock[] {
   });
   const long = c.state.stress === 'long-text';
   const sla = variant.overdue ? 'overdue' : 'met';
-  const customerName = long ? `${LONG.slice(0, 70)}` : variant.guest ? 'Mohan Lal' : 'Asha Verma';
+  const customerName = long ? LONG.slice(0, 70) : variant.guest ? 'Mohan Lal' : 'Asha Verma';
   const assignee = variant.assigned ? AGENTS[0] : null;
   const staff = {
     customerName,
