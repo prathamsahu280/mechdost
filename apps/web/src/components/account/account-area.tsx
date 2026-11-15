@@ -1,6 +1,8 @@
 'use client';
 
 import { BadgeCheck, ChevronRight, MessagesSquare, Package, Pencil, Trash2, Wrench } from 'lucide-react';
+import { useSelectedLayoutSegment } from 'next/navigation';
+import { PortalNavLink } from '@/components/portal/portal-nav-link';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { lazy, Suspense, useEffect, useRef, useState, type ReactNode, type SyntheticEvent } from 'react';
@@ -92,11 +94,20 @@ function usePrefix() {
   return useLocale() === 'hi' ? '/hi' : '';
 }
 
+/** The section named by the URL under /account (the layout's child segment); `null` is the overview. */
+function useAccountSection(): AccountSection {
+  const segment = useSelectedLayoutSegment();
+  return ACCOUNT_SECTIONS.find((s) => s === segment) ?? 'overview';
+}
+
 /**
- * Customer account (spec 01): section navigation + the chosen section. Signed-out visitors get a sign-in card and
- * what was done on this device; partners and staff are pointed to their portal.
+ * Customer account frame (spec 01), rendered once by `account/layout.tsx` so it stays mounted while people move
+ * between sections: the side bar, the session check and the message bundles are not rebuilt on a click (bug
+ * 2026-11-16, "the page feels refreshed"). Signed-out visitors get a sign-in card and what was done on this device;
+ * partners and staff are pointed to their portal; customers get the section bar around `children` (the section page).
  */
-export function AccountArea({ section }: { section: AccountSection }) {
+export function AccountFrame({ children }: { children: ReactNode }) {
+  const section = useAccountSection();
   const t = useTranslations('account');
   const auth = useTranslations('auth');
   const hydrated = useHydrated();
@@ -169,76 +180,89 @@ export function AccountArea({ section }: { section: AccountSection }) {
   return (
     <div className="grid gap-6 nav:grid-cols-[220px_minmax(0,1fr)] nav:items-start">
       <SectionNav current={section} />
-      <div className="min-w-0 space-y-6">
-        {section === 'overview' && AUTH_MODE === 'firebase' ? (
-          <Suspense fallback={null}>
-            <ShopInviteCard />
-            <PushPrompt />
+      {children}
+    </div>
+  );
+}
+
+/**
+ * The chosen section's content (spec 01), rendered by the section pages inside `AccountFrame`. `scroll-mt-28` keeps
+ * the section's top clear of the sticky header when Next brings a section that is above the viewport into view.
+ */
+export function AccountSectionBody({ section }: { section: AccountSection }) {
+  const t = useTranslations('account');
+  const session = useSession();
+  if (session?.role !== 'customer') return null;
+  return (
+    <div className="min-w-0 scroll-mt-28 space-y-6">
+      {section === 'overview' && AUTH_MODE === 'firebase' ? (
+        <Suspense fallback={null}>
+          <ShopInviteCard />
+          <PushPrompt />
+        </Suspense>
+      ) : null}
+      {section === 'notifications' ? (
+        <Suspense fallback={sectionFallback}>
+          <NoticeSettings role="customer" />
+        </Suspense>
+      ) : null}
+      {section === 'privacy' ? (
+        <Suspense fallback={sectionFallback}>
+          <PrivacySectionApi />
+        </Suspense>
+      ) : null}
+      {section === 'overview' ? <Overview account={session} /> : null}
+      {section === 'orders' ? <OrdersList /> : null}
+      {section === 'services' ? <ServicesList /> : null}
+      {section === 'quotes' ? <QuotesList /> : null}
+      {section === 'coins' ? (
+        DATA_MODE === 'api' ? (
+          <Suspense fallback={<div className="skeleton h-72 rounded-card" aria-hidden="true" />}>
+            <CoinsSectionApi />
           </Suspense>
-        ) : null}
-        {section === 'notifications' ? (
+        ) : (
+          <CoinsSection account={session} />
+        )
+      ) : null}
+      {section === 'support' ? (
+        // useSearchParams (preset order) needs a Suspense boundary on statically built pages.
+        <Suspense fallback={null}>
+          <SupportSection account={session} />
+        </Suspense>
+      ) : null}
+      {section === 'vehicles' ? (
+        AUTH_MODE === 'firebase' ? (
           <Suspense fallback={sectionFallback}>
-            <NoticeSettings role="customer" />
+            <VehiclesApi />
           </Suspense>
-        ) : null}
-        {section === 'privacy' ? (
+        ) : (
+          <Vehicles account={session} />
+        )
+      ) : null}
+      {section === 'addresses' ? (
+        AUTH_MODE === 'firebase' ? (
           <Suspense fallback={sectionFallback}>
-            <PrivacySectionApi />
+            <AddressesApi defaults={{ name: session.name, phone: session.phone }} />
           </Suspense>
-        ) : null}
-        {section === 'overview' ? <Overview account={session} /> : null}
-        {section === 'orders' ? <OrdersList /> : null}
-        {section === 'services' ? <ServicesList /> : null}
-        {section === 'quotes' ? <QuotesList /> : null}
-        {section === 'coins' ? (
-          DATA_MODE === 'api' ? (
-            <Suspense fallback={<div className="skeleton h-72 rounded-card" aria-hidden="true" />}>
-              <CoinsSectionApi />
-            </Suspense>
-          ) : (
-            <CoinsSection account={session} />
-          )
-        ) : null}
-        {section === 'support' ? (
-          // useSearchParams (preset order) needs a Suspense boundary on statically built pages.
-          <Suspense fallback={null}>
-            <SupportSection account={session} />
-          </Suspense>
-        ) : null}
-        {section === 'vehicles' ? (
-          AUTH_MODE === 'firebase' ? (
-            <Suspense fallback={sectionFallback}>
-              <VehiclesApi />
-            </Suspense>
-          ) : (
-            <Vehicles account={session} />
-          )
-        ) : null}
-        {section === 'addresses' ? (
-          AUTH_MODE === 'firebase' ? (
-            <Suspense fallback={sectionFallback}>
-              <AddressesApi defaults={{ name: session.name, phone: session.phone }} />
-            </Suspense>
-          ) : (
-            <Addresses account={session} />
-          )
-        ) : null}
-        {section === 'wishlist' && AUTH_MODE === 'firebase' ? (
+        ) : (
+          <Addresses account={session} />
+        )
+      ) : null}
+      {section === 'wishlist' && AUTH_MODE === 'firebase' ? (
+        <Suspense fallback={sectionFallback}>
+          <WishlistApi />
+        </Suspense>
+      ) : null}
+      {section === 'profile' ? (
+        AUTH_MODE === 'firebase' ? (
           <Suspense fallback={sectionFallback}>
-            <WishlistApi />
+            <ProfileApi footer={<SignOutButton />} />
           </Suspense>
-        ) : null}
-        {section === 'profile' ? (
-          AUTH_MODE === 'firebase' ? (
-            <Suspense fallback={sectionFallback}>
-              <ProfileApi footer={<SignOutButton />} />
-            </Suspense>
-          ) : (
-            <Profile account={session} />
-          )
-        ) : null}
-        {SHOW_DEMO_CONTROLS ? <p className="text-xs text-muted">{t('demoNote')}</p> : null}
-      </div>
+        ) : (
+          <Profile account={session} />
+        )
+      ) : null}
+      {SHOW_DEMO_CONTROLS ? <p className="text-xs text-muted">{t('demoNote')}</p> : null}
     </div>
   );
 }
@@ -269,7 +293,7 @@ function SectionNav({ current }: { current: AccountSection }) {
           const active = s === current;
           return (
             <li key={s}>
-              <Link
+              <PortalNavLink
                 href={`${prefix}/account${s === 'overview' ? '' : `/${s}`}`}
                 aria-current={active ? 'page' : undefined}
                 // `relative` keeps the badge's screen-reader text inside the link: positioned against the page, it
@@ -288,7 +312,7 @@ function SectionNav({ current }: { current: AccountSection }) {
                     <span className="sr-only">{t('navWaiting', { count: waiting[s] })}</span>
                   </span>
                 ) : null}
-              </Link>
+              </PortalNavLink>
             </li>
           );
         })}
