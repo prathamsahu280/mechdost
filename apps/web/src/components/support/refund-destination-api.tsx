@@ -7,7 +7,7 @@ import { SupportDestinationSaved, type SupportRefundInfoDto } from '@mechdost/sh
 import { adminApi } from '@/lib/admin-api';
 import { track } from '@/lib/analytics';
 import { threadErrorKey } from '@/lib/support-thread-api';
-import { portalCard, portalField, portalPrimary } from '@/components/portal/portal-guard';
+import { portalCard, portalField, portalPrimary } from '@/components/portal/portal-styles';
 
 /**
  * Where a cash-on-delivery refund goes (Q104): the customer gives a UPI id or bank account on the request. Shown only

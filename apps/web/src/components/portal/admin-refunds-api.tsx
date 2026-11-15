@@ -12,7 +12,7 @@ import { REFUND_REJECT_REASONS, type RefundRejectReason } from '@mechdost/shared
 import { track } from '@/lib/analytics';
 import { formatDate, formatPrice } from '@/lib/format';
 import { isRefundReference, refundErrorKey } from '@/lib/refund-views';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 
 type List =
   | { kind: 'loading' }

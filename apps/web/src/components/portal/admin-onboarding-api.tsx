@@ -32,7 +32,7 @@ import { track } from '@/lib/analytics';
 import { formatDate, formatPrice } from '@/lib/format';
 import { parseCoverage } from '@/lib/partner-onboarding-view';
 import { GenuineClauseButton } from './genuine-clause';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 
 /**
  * Seller onboarding in the admin console on the API (Stream D, 2026-11-14; spec 07/08): applications (review,

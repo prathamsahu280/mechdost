@@ -36,7 +36,7 @@ import {
   HOME_SECTIONS,
   type HomeSection,
 } from '@/lib/site-layout';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 
 /** The API editors (real sign-in builds only): loaded on demand so demo bundles stay the same size. */
 const SettingsApi = dynamic(() => import('./admin-site-api').then((m) => m.SettingsApi), { ssr: false });

@@ -23,7 +23,9 @@ import { formatDate, formatPrice } from '@/lib/format';
 import { ShopAgreement } from './agreement-cards';
 import { PartnerGate } from './partner-gate';
 import { ShopPrices } from './shop-prices';
-import { PortalGuard, portalCard, portalPrimary, portalQuiet, portalField, useNow } from './portal-guard';
+import { PortalGuard } from './portal-guard';
+import { useNow } from './use-now';
+import { portalCard, portalPrimary, portalQuiet, portalField } from './portal-styles';
 import { GstInvoiceLine } from '@/components/commerce/gst-invoice-line';
 
 /** Real sign-in: the portal reads and acts through the API; demo builds never load it (Stream C2, 2026-11-14). */

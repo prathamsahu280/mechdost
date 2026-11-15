@@ -26,7 +26,7 @@ import {
 import { track } from '@/lib/analytics';
 import { daysLabel } from '@/lib/service-views';
 import { ApiListState } from './api-list-state';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 import { ServiceApiError } from './service-api-error';
 
 type Load =

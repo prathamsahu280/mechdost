@@ -2,7 +2,7 @@
 
 import { useLocale, useTranslations } from 'next-intl';
 import { WEEK_ORDER, weekdayShort } from '@/lib/admin-shop-form';
-import { portalField } from './portal-guard';
+import { portalField } from './portal-styles';
 
 /**
  * Working hours inputs (IST): opening and closing time and the open weekdays. Shared by the admin shop editor and

@@ -18,7 +18,7 @@ import { track } from '@/lib/analytics';
 import { formatPrice } from '@/lib/format';
 import { ORDER_STATES, SERVICE_REQUEST_STATES } from '@mechdost/shared/state';
 import { CustomerBlocks } from './admin-customers-api';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 
 const text = (v: FormDataEntryValue | null) => (typeof v === 'string' ? v : '');
 

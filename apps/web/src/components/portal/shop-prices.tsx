@@ -11,7 +11,7 @@ import { track } from '@/lib/analytics';
 import { AUTH_MODE } from '@/lib/auth/mode';
 import { formatPrice } from '@/lib/format';
 import { parseRupees } from '@/lib/money-input';
-import { portalCard, portalField, portalPrimary } from './portal-guard';
+import { portalCard, portalField, portalPrimary } from './portal-styles';
 
 /**
  * "Your prices" (user 2026-11-13, design § Prices): every new price is a request the admin approves; the live

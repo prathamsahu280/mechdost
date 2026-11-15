@@ -26,7 +26,18 @@ export default async function CheckoutPage() {
       </h1>
       <TrustLine placement="checkout" className="mt-3 max-w-prose text-[15px] text-muted" />
       <div className="mt-8">
-        <ClientMessages namespaces={['checkout', 'cart', 'catalogue', 'quote', 'categories', 'gstStates']}>
+        <ClientMessages
+          namespaces={[
+            'checkout',
+            'cart',
+            'catalogue',
+            'quote',
+            'categories',
+            'gstStates',
+            'coupons',
+            'accountApi',
+          ]}
+        >
           <CheckoutForm />
         </ClientMessages>
       </div>

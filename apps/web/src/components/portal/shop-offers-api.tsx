@@ -7,7 +7,7 @@ import { adminApi } from '@/lib/admin-api';
 import { track } from '@/lib/analytics';
 import { adminErrorKey, conditionLines, type AdminErrorKey } from '@/lib/coupon-view';
 import { formatDate, formatPrice } from '@/lib/format';
-import { portalCard, portalPrimary, portalQuiet } from './portal-guard';
+import { portalCard, portalPrimary, portalQuiet } from './portal-styles';
 
 type Load = { kind: 'loading' } | { kind: 'error'; code: string } | { kind: 'ok'; offers: ShopOffer[] };
 

@@ -9,7 +9,7 @@ import { createInvite, revokeInvite, useInvites } from '@/demo/partner-store';
 import { track } from '@/lib/analytics';
 import { AUTH_MODE } from '@/lib/auth/mode';
 import { formatDate } from '@/lib/format';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 
 type Field = 'name' | 'email' | 'phone';
 const FIELDS: Field[] = ['name', 'email', 'phone'];

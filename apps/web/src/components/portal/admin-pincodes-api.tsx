@@ -17,7 +17,7 @@ import {
 import { commonErrorKey } from '@/lib/api-error-key';
 import { track } from '@/lib/analytics';
 import { formatPrice } from '@/lib/format';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 
 /**
  * Admin → Settings → Service area on the API (spec 15 "PIN codes", spec 08; real sign-in builds only, loaded with

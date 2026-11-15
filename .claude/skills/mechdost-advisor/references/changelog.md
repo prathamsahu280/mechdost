@@ -9,3 +9,4 @@
 - 2026-11-04 — checklist § Tooling: added commit-gate pipefail rule (T44 + L64) and invisible-character rule (L65).
 - 2026-11-13 — checklist § Performance: JS budget import rule promoted from L79 + L90 (comparison pushed /shop over 180 KB via client-imported demo data and translations).
 - 2026-11-14 · checklist UI/UX: state matrix + five bug classes from the UI review (fixed-in-transform, <html> attributes on locale change, header widths, inner scroll boxes, every-page imports). website-testing step 1: state matrix + runbook `docs/runbooks/ui-testing.md`.
+- 2026-11-16 - L234 promoted: client-messages coverage guard is part of the i18n check (hard rule 10).

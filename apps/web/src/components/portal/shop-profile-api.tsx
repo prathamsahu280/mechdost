@@ -16,7 +16,7 @@ import { formatDate, formatPrice } from '@/lib/format';
 import { parseRupees } from '@/lib/money-input';
 import { daysLabel } from '@/lib/service-views';
 import { CatalogueSkuPicker, type SkuChoice } from './catalogue-sku-picker';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 import { BusyCard } from './shop-busy-api';
 import { ShopHoursFields } from './shop-hours-fields';
 import { ShopOffersApi } from './shop-offers-api';

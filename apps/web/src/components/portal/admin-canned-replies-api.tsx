@@ -5,7 +5,7 @@ import { useState, type SyntheticEvent } from 'react';
 import { CannedReplyDto, type CannedReply } from '@mechdost/shared/support-inbox';
 import { adminApi } from '@/lib/admin-api';
 import { commonErrorKey, type CommonErrorKey } from '@/lib/api-error-key';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 
 const EMPTY = { key: '', titleEn: '', titleHi: '', bodyEn: '', bodyHi: '', active: true, sortOrder: 100 };
 type Draft = typeof EMPTY;

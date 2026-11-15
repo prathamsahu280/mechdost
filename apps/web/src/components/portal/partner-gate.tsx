@@ -5,7 +5,7 @@ import type { ReactNode } from 'react';
 import { usePartnerStatus, type PartnerKind } from '@/demo/partner-status';
 import { formatDate } from '@/lib/format';
 import { site } from '@/lib/site';
-import { portalCard } from './portal-guard';
+import { portalCard } from './portal-styles';
 
 /**
  * Applies the admin's partner status inside a portal (decision 2026-11-01): suspended → the portal is locked and

@@ -10,7 +10,7 @@ import {
 import { durationParts, formatCount } from '@/lib/admin-analytics-view';
 import { formatPrice } from '@/lib/format';
 import { funnelBars, ratingText, reasonKey } from '@/lib/workshop-analytics-view';
-import { portalCard } from './portal-guard';
+import { portalCard } from './portal-styles';
 
 /**
  * The numbers of one workshop (the portal's Performance) or of all workshops of a city (the admin Workshops tab),

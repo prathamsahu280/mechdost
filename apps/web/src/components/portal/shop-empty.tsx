@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import { portalQuiet } from './portal-guard';
+import { portalQuiet } from './portal-styles';
 import { site } from '@/lib/site';
 
 /** An empty list with one next action (assessment 2026-11-15, item 6): a sentence and one link to where to go next. */

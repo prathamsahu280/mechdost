@@ -28,7 +28,7 @@ import { builtInPolicy, POLICY_PATH } from '@/lib/policy-view';
 import { companyFacts, site } from '@/lib/site';
 import { PolicySections } from '../ui/policy-sections';
 import { LoadState } from './admin-site-api';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 
 /**
  * Admin -> Content -> Policy pages (design 2026-11-15 item 5; spec 08). Per policy and language: edit the sections,

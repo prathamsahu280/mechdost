@@ -8,7 +8,7 @@ import { adminApi } from '@/lib/admin-api';
 import { track } from '@/lib/analytics';
 import { formatDate } from '@/lib/format';
 import { ApiError } from './api-list-state';
-import { portalPrimary, portalQuiet } from './portal-guard';
+import { portalPrimary, portalQuiet } from './portal-styles';
 
 type Load = { kind: 'loading' } | { kind: 'error'; code: string } | { kind: 'ok'; slip: PackingSlipDto };
 

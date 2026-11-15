@@ -9,7 +9,7 @@ import {
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useId, useState, type SyntheticEvent } from 'react';
 import { adminApi } from '@/lib/admin-api';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 
 interface Category {
   id: string;

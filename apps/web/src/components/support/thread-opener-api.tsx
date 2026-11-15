@@ -10,7 +10,7 @@ import {
 } from '@mechdost/shared/support-thread';
 import { track } from '@/lib/analytics';
 import { openThread, threadErrorKey } from '@/lib/support-thread-api';
-import { portalCard, portalField, portalPrimary, portalQuiet } from '@/components/portal/portal-guard';
+import { portalCard, portalField, portalPrimary, portalQuiet } from '@/components/portal/portal-styles';
 
 const BODY_MAX = 2000;
 

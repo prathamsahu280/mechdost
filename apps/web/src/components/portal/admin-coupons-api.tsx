@@ -20,7 +20,7 @@ import {
   type FormField,
 } from '@/lib/coupon-view';
 import { formatDate, formatPrice } from '@/lib/format';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 
 type Load =
   | { kind: 'loading' }

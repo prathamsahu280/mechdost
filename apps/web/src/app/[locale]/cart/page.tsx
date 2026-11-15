@@ -46,7 +46,7 @@ export default async function CartPage({ params }: { params: Promise<{ locale: L
       </h1>
       <TrustLine placement="checkout" className="mt-3 max-w-prose text-[15px] text-muted" />
       <div className="mt-8">
-        <ClientMessages namespaces={['cart', 'catalogue', 'quote', 'categories']}>
+        <ClientMessages namespaces={['cart', 'catalogue', 'quote', 'categories', 'checkout']}>
           <CartView />
         </ClientMessages>
       </div>

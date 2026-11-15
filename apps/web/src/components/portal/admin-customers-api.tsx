@@ -19,7 +19,7 @@ import { commonErrorKey, type CommonErrorKey } from '@/lib/api-error-key';
 import { track } from '@/lib/analytics';
 import { blockErrorKey, endsAtFrom, type BlockErrorKey } from '@/lib/customer-blocks-view';
 import { formatDate } from '@/lib/format';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 
 const PILL: Record<CustomerBlockLevel, string> = {
   cod_only: 'bg-warning-bg text-warning',

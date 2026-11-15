@@ -7,7 +7,7 @@ import { adminApi } from '@/lib/admin-api';
 import { track } from '@/lib/analytics';
 import { formatDate } from '@/lib/format';
 import { isValidIndianMobile, isValidStaffName, tier1ErrorKey } from '@/lib/shop-tier1';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 import { FlashNote, useFlash } from './shop-flash';
 
 type Load = { kind: 'loading' } | { kind: 'error'; code: string } | { kind: 'ok'; team: ShopTeamDto };

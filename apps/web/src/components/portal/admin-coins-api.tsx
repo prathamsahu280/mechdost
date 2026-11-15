@@ -17,7 +17,7 @@ import { track } from '@/lib/analytics';
 import { adjustDeltaFrom, coinEntryLabel, coinErrorKey, type CoinErrorKey } from '@/lib/coins-view';
 import { customerIdFrom } from '@/lib/customer-blocks-view';
 import { formatDate } from '@/lib/format';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 
 type ErrorText = CoinErrorKey | CommonErrorKey | 'coins_api_err_reason';
 const errorOf = (code: string): ErrorText => coinErrorKey(code) ?? commonErrorKey(code);

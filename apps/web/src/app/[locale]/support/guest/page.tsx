@@ -31,7 +31,7 @@ export default async function GuestSupportPage() {
       </LocalLink>
       <div className="mt-5 grid gap-8 nav:grid-cols-[1fr_minmax(0,640px)] nav:items-start">
         <PageIntro eyebrow={t('eyebrow')} line1={t('title')} lead={t('intro')} />
-        <ClientMessages namespaces={['supportGuest', 'support']}>
+        <ClientMessages namespaces={['supportGuest', 'support', 'supportThread']}>
           <GuestSupport />
         </ClientMessages>
       </div>

@@ -14,7 +14,7 @@ import { track } from '@/lib/analytics';
 import { formatPrice } from '@/lib/format';
 import { rupeesToPaise } from '@/lib/service-views';
 import { Tier1Error } from '../workshops/tier1-error';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 
 type Profile = WorkshopProfiles['workshops'][number];
 type TextField = 'name' | 'nameHi' | 'addressLine' | 'addressLineHi' | 'area' | 'areaHi' | 'phone';

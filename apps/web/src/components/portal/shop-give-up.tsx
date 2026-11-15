@@ -7,7 +7,7 @@ import { useState, type SyntheticEvent } from 'react';
 import { adminApi } from '@/lib/admin-api';
 import { track } from '@/lib/analytics';
 import { ApiError } from './api-list-state';
-import { portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { portalField, portalPrimary, portalQuiet } from './portal-styles';
 
 const GIVE_UP_ERRORS = new Set(['GIVE_UP_REASON', 'GIVE_UP_NOTE']);
 

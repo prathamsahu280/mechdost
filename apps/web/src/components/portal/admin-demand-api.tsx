@@ -4,7 +4,7 @@ import { WaitlistDemandDto, type WaitlistDemand } from '@mechdost/shared/waitlis
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useId, useState } from 'react';
 import { adminApi } from '@/lib/admin-api';
-import { portalCard } from './portal-guard';
+import { portalCard } from './portal-styles';
 
 type Load = { kind: 'loading' } | { kind: 'error' } | { kind: 'ok'; demand: WaitlistDemand };
 

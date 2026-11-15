@@ -18,7 +18,7 @@ import { DEMO_WORKSHOPS } from '@/demo/workshops';
 import { track } from '@/lib/analytics';
 import { AUTH_MODE } from '@/lib/auth/mode';
 import { formatDate } from '@/lib/format';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 import { AdminInvites } from './admin-invites';
 import { AdminAgreement } from './agreement-cards';
 import { AdminPriceRequests } from './admin-price-requests';

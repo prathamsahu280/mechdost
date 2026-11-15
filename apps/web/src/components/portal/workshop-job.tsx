@@ -25,7 +25,7 @@ import { workshopGstRegistered } from '@/demo/workshops';
 import { track } from '@/lib/analytics';
 import { formatDate, formatPrice } from '@/lib/format';
 import { LineName, ratePct } from '../workshops/service-estimate';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 
 export function RequestSummary({ request: r }: { request: DemoServiceRequest }) {
   const t = useTranslations('portal');

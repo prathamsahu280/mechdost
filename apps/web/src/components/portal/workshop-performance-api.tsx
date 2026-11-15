@@ -6,7 +6,7 @@ import type { PortalWorkshopAnalytics } from '@mechdost/shared/workshop-analytic
 import { rangePreset, type RangePreset } from '@/lib/admin-analytics-view';
 import { commonErrorKey, type CommonErrorKey } from '@/lib/api-error-key';
 import { track } from '@/lib/analytics';
-import { portalCard, portalPrimary } from './portal-guard';
+import { portalCard, portalPrimary } from './portal-styles';
 import { WorkshopStatsView } from './workshop-stats-view';
 
 const PRESETS: readonly RangePreset[] = [30, 90];

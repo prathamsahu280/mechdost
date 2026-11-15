@@ -8,7 +8,7 @@ import { findAccount, normalisePhone, useAccounts } from '@/demo/session';
 import { AUTH_MODE } from '@/lib/auth/mode';
 import { track } from '@/lib/analytics';
 import { formatDate } from '@/lib/format';
-import { portalCard, portalField, portalPrimary } from './portal-guard';
+import { portalCard, portalField, portalPrimary } from './portal-styles';
 
 // Real sign-in builds: the API desk (accounts, activity, adjustments), loaded only there.
 const AdminCoinsApi = dynamic(() => import('./admin-coins-api').then((m) => m.AdminCoinsApi), {

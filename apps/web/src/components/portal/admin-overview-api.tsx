@@ -9,7 +9,7 @@ import { formatCount } from '@/lib/admin-analytics-view';
 import { formatPrice } from '@/lib/format';
 import { ADMIN_SECTIONS, type AdminSection } from '@/lib/sections';
 import { PushPromptSlot } from '../notices/push-prompt-slot';
-import { portalCard, portalPrimary } from './portal-guard';
+import { portalCard, portalPrimary } from './portal-styles';
 
 interface Tile {
   label: string;

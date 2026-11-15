@@ -31,7 +31,17 @@ export default async function ServiceRequestPage({ params }: Props) {
         <ClientMessages
           namespaces={
             DATA_MODE === 'api'
-              ? ['request', 'workshop', 'demo', 'reviews', 'trust', 'homeService', 'photos']
+              ? [
+                  'request',
+                  'workshop',
+                  'demo',
+                  'reviews',
+                  'trust',
+                  'homeService',
+                  'photos',
+                  'supportThread',
+                  'workshopTier1',
+                ]
               : ['request', 'workshop', 'demo', 'trust']
           }
         >

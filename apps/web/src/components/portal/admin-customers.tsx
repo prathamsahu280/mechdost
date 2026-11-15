@@ -22,7 +22,7 @@ import { track } from '@/lib/analytics';
 import { formatDate } from '@/lib/format';
 import { useDisclosureFocus } from '@/lib/use-disclosure-focus';
 import { maskPhone } from './admin-support';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 
 const PILL: Record<CustomerBlockLevel, string> = {
   cod_only: 'bg-warning-bg text-warning',

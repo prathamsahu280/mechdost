@@ -29,7 +29,8 @@ import {
 } from '@/lib/order-views';
 import { deadlineView, istDayTime } from '@/lib/admin-shop-form';
 import { ApiError, ApiListState, LoadMore } from './api-list-state';
-import { portalCard, portalField, portalPrimary, portalQuiet, useNow } from './portal-guard';
+import { useNow } from './use-now';
+import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 import { useNoticeRefresh } from '../notices/use-notice-refresh';
 import { useApiList, type ApiList } from './use-api-list';
 

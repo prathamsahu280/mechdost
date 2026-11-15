@@ -19,7 +19,7 @@ import { homeJobNextAction, validMechanicName } from '@/lib/home-service-views';
 import { rangeOf, requestStatusKey, rupeesToPaise, workshopMayRevise } from '@/lib/service-views';
 import { ApiListState, LoadMore } from './api-list-state';
 import { ArrivalFormApi, HomeJobExtrasApi, HomeSettingsApi } from './home-visit-portal-api';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 import { ServiceApiError } from './service-api-error';
 import { PushPromptSlot } from '../notices/push-prompt-slot';
 import { useApiList } from './use-api-list';

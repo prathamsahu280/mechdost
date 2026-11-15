@@ -95,6 +95,16 @@ export async function AdminShell({ section }: { section: AdminSection }) {
             // Admin -> Catalogue rules for "goes well with" and Settings -> PIN waiting list (design 2026-11-15).
             'adminReco',
             'adminDemand',
+            // Real-sign-in (API) admin screens (audit 2026-11-16).
+            'adminEmails',
+            'adminTier2',
+            'coupons',
+            'adminExports',
+            'refunds',
+            'workshopAnalytics',
+            'shopGiveUp',
+            'supportThread',
+            'storefront',
           ]}
         >
           <AdminConsole

@@ -16,7 +16,7 @@ import { findShop } from '@/demo/shops';
 import { track } from '@/lib/analytics';
 import { AUTH_MODE } from '@/lib/auth/mode';
 import { formatPrice } from '@/lib/format';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 
 /**
  * Price approval queue (user 2026-11-13, design § Prices, permission `prices:approve`): every seller price waits

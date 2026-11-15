@@ -21,7 +21,7 @@ import { track } from '@/lib/analytics';
 import { formatPrice } from '@/lib/format';
 import { parseRupees } from '@/lib/money-input';
 import { newestRequestBySku, priceRowState, shopIdFromRoles } from '@/lib/partner-onboarding-view';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 
 /**
  * The shop side of seller onboarding on the API (Stream D, 2026-11-14; spec 07): "Your prices" (every new price is

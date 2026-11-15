@@ -21,7 +21,8 @@ import {
   shopStageKey,
 } from '@/lib/order-views';
 import { ApiError, ApiListState, LoadMore } from './api-list-state';
-import { portalCard, portalField, portalPrimary, portalQuiet, useNow } from './portal-guard';
+import { useNow } from './use-now';
+import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 import { liveOffers, stepFlashKey } from '@/lib/shop-tier1';
 import { DeliveryLocked, EmptyWithAction } from './shop-empty';
 import { FlashNote, useFlash, type Flash } from './shop-flash';

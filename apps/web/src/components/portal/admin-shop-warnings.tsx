@@ -13,7 +13,7 @@ import { adminApi } from '@/lib/admin-api';
 import { track } from '@/lib/analytics';
 import { formatDate } from '@/lib/format';
 import { ApiError } from './api-list-state';
-import { portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { portalField, portalPrimary, portalQuiet } from './portal-styles';
 
 const WARNING_ERRORS = new Set(['WARNING_REASON', 'WARNING_NOTE', 'WARNING_WITHDRAWN', 'NOT_FOUND']);
 

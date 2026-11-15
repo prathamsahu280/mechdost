@@ -19,7 +19,7 @@ import { AUTH_MODE } from '@/lib/auth/mode';
 import { track } from '@/lib/analytics';
 import { formatPrice } from '@/lib/format';
 import { EVENT_LABEL, PROBLEM_LABEL, SAMPLES } from './notify-labels';
-import { portalCard, portalField, portalPrimary } from './portal-guard';
+import { portalCard, portalField, portalPrimary } from './portal-styles';
 
 /** The API editor (real sign-in builds only): loaded on demand so demo bundles stay the same size. */
 const NotificationsApi = dynamic(() => import('./admin-notifications-api').then((m) => m.NotificationsApi), {
