@@ -47,6 +47,7 @@ import { adminWorkshopAnalyticsMocks, workshopPerformanceMocks } from './worksho
 import { customerPhotoMocks, workshopPhotoMocks } from './photo-fixtures.ts';
 import { accountSupportMocks, adminSupportMocks } from './support-fixtures.ts';
 import { myWorkshopMocks, profileMocks } from './tier1-fixtures.ts';
+import { slipMocks, tier2PortalMocks } from './tier2-fixtures.ts';
 import type { Mock, MockCtx, Reply } from './mock-api.ts';
 
 const NOW = Date.parse('2026-11-15T10:00:00.000Z');
@@ -1463,6 +1464,10 @@ export function mocksFor(c: AuditCase): Mock[] {
       return [meMock(), orderRefundMock()];
     case 'API-SHOP-PORTAL':
       return shopPortalMocks();
+    case 'API-SHOP-TIER2':
+      return [...shopPortalMocks(), ...tier2PortalMocks()];
+    case 'API-SHOP-SLIP':
+      return [meMock(), ...slipMocks()];
     case 'API-ADM-SHOPS':
       return adminShopsMocks();
     case 'API-ADM-QUEUE':

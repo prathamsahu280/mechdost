@@ -27,7 +27,7 @@ export default async function ApplicationPage({ params }: Props) {
         {t('reference', { code: safe || code.slice(0, 40) })}
       </h1>
       <div className="mt-8">
-        <ClientMessages namespaces={['apply', 'demo']}>
+        <ClientMessages namespaces={['apply', 'demo', 'shopTier2']}>
           <Suspense>
             <ApplicationStatus code={safe} />
           </Suspense>

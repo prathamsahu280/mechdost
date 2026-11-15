@@ -18,6 +18,7 @@ const UID: Readonly<Record<string, string>> = {
 };
 const PHONE = '9876543210';
 
+const CSV_SAMPLE = ['sku,stock', 'AB-12,1', ''].join(String.fromCharCode(10));
 const settleApi = (page: Page) => page.waitForTimeout(500);
 
 /** Opens what the case's state names: a refund's detail, a shop and its panel, the give-up form. */
@@ -138,6 +139,26 @@ async function prepareApi(page: Page, c: AuditCase): Promise<string[]> {
       }
       await settleApi(page);
     }
+  }
+  // Shop portal tier 2: choose a file and check it (or apply it), so the card shows the answer of the mocked API.
+  if (c.code === 'API-SHOP-TIER2' && c.state.csv && c.state.csv !== 'idle') {
+    const card = main.locator('#shop-csv');
+    const input = card.locator('input[type="file"]');
+    if ((await input.count()) === 0) notes.push('no CSV card');
+    else {
+      await input.setInputFiles({ name: 'stock.csv', mimeType: 'text/csv', buffer: Buffer.from(CSV_SAMPLE) });
+      await card.locator('button.bg-accent-button').first().click();
+      await settleApi(page);
+      if (c.state.csv === 'applied') {
+        await card.locator('button.bg-accent-button').first().click();
+        await settleApi(page);
+      }
+    }
+  }
+  // Public status form: submit it empty so the field errors show.
+  if (c.code === 'API-PARTNER-STATUS' && c.state.form === 'invalid') {
+    await main.locator('form button[type="submit"]').first().click();
+    await settleApi(page);
   }
   // Home servicing: switch the finder to "At my home" and pick the first pinned address.
   if (c.code === 'API-SVC-HOMEFIND' && c.state.mode === 'home') {

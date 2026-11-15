@@ -54,12 +54,16 @@ export const noStore = createMiddleware<AppEnv>(async (c, next) => {
 const PHOTO_UPLOAD_PATH =
   /^\/v1\/(workshop\/requests\/[^/]+\/photos|support\/threads|support\/tickets\/[^/]+\/photo-messages)\/?$/;
 
+/** Shop stock CSV uploads carry up to 1 MB of file plus the form envelope; that route has its own limit (routes/shop-tools.ts). */
+const SHOP_CSV_PATH = /^\/v1\/shop\/csv\/[^/]+\/(preview|apply)\/?$/;
+
 const defaultBodyLimit = bodyLimit({
   maxSize: MAX_BODY_BYTES,
   onError: (c) => c.json(errorBody(c, 'PAYLOAD_TOO_LARGE', 'Request body is too large'), 413),
 });
 const bodyLimitExceptPhotos = createMiddleware<AppEnv>(async (c, next) => {
-  if (c.req.method === 'POST' && PHOTO_UPLOAD_PATH.test(c.req.path)) return next();
+  if (c.req.method === 'POST' && (PHOTO_UPLOAD_PATH.test(c.req.path) || SHOP_CSV_PATH.test(c.req.path)))
+    return next();
   return defaultBodyLimit(c, next);
 });
 

@@ -21,6 +21,7 @@ export function ApplicationStatus({ code }: { code: string }) {
  */
 function ReceivedApi({ code }: { code: string }) {
   const t = useTranslations('apply');
+  const t2 = useTranslations('shopTier2');
   const isNew = useSearchParams().get('new') === '1';
   const base = useLocale() === 'hi' ? '/hi' : '';
   return (
@@ -36,6 +37,12 @@ function ReceivedApi({ code }: { code: string }) {
       ) : null}
       <p className="text-sm text-ink">{code ? t('api_statusBody', { code }) : t('notFound')}</p>
       <p className="mt-2 text-sm text-muted">{t('api_statusOffline')}</p>
+      <Link
+        href={`${base}/partners/status`}
+        className="mt-3 inline-block text-sm font-bold text-ink underline"
+      >
+        {t2('statusLink')}
+      </Link>
       <Link
         href={`${base}/partners`}
         className="press mt-5 inline-flex min-h-11 items-center rounded-button bg-accent-button px-5 text-sm font-bold text-white"

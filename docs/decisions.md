@@ -1065,3 +1065,12 @@ Design: `docs/superpowers/specs/2026-11-15-support-next-tier-design.md` items 1 
 - **A self-service pin change stays inside the workshop's city** (security review): approving a PIN of another city would move the workshop out of the approver's scope without its `city_id`. City moves remain an admin edit.
 - **Busy mode and menu ranges reuse `service_menu:write`**; no new permission, so no `db:seed`.
 - **No new email or bell templates** for the timeout and the reschedule: the timeout is internal (like a decline) and the customer started the reschedule. Queued as Q117.
+
+## 2026-11-15 — Shop portal tier 2 (stock CSV, packing slip, performance, status lookup)
+
+- **CSV is all-or-nothing and re-checked on apply.** The preview is advice; apply parses and checks the file again inside one transaction and refuses the whole file on any line error. A price in the file is only a price request (decision 2026-11-13 "shop prices need approval" stands). A price for a SKU not yet sold is a request to start selling (needs stock). Cost if wrong: a shop that wants direct price edits still uses the price-request screen; nothing is bypassed.
+- **No new CSV dependency; own QR encoder.** The existing RFC 4180 parser is reused; the packing-slip QR is a small encoder in `packages/shared/src/qr.ts` (byte mode, level L, versions 1 to 4) instead of a package (`docs/research/security-vulnerabilities.md`: smaller supply chain, no install scripts). It is verified by reading the symbol back (format bits, Reed-Solomon syndromes, text); a real scan is Q119, and the order code is printed beside it. Cost if wrong: re-draw with a package, the slip layout stays.
+- **Packing slip shows first name and masked phone** (Q99 pending; masked by default), no prices, no street address, no delivery code; only while the shop is fulfilling the order.
+- **Performance: owner only; anonymity as the workshop benchmark.** Median of other shops in the city, all of the owner's shops left out, at least 5 others per metric, none shown for an owner spanning cities. "On time" = shipped within 24 h of accepting, a constant for now (Q118).
+- **Status lookup proves the phone with a Firebase one-time code, not an account.** The API verifies the ID token directly and creates no user; the answer is the stage only and identical for a wrong reference or phone; no Turnstile on top of Firebase's reCAPTCHA plus limits (Q120).
+- **Fix:** the shop portal page now loads the `shopTier1` namespace too (it was missing from its `ClientMessages` list).
