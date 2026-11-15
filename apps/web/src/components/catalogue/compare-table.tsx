@@ -105,7 +105,7 @@ export function CompareTable({
                   <div className="flex items-start justify-between gap-1">
                     <LocalLink
                       href={`/shop/${p.slug}`}
-                      className="line-clamp-2 min-h-[2lh] font-heading text-[14px] leading-snug font-bold text-ink hover:underline tab:text-[15px]"
+                      className="min-w-0 font-heading break-words text-[14px] leading-snug font-bold text-ink hover:underline tab:text-[15px]"
                     >
                       {p.brand} {p.name}
                     </LocalLink>

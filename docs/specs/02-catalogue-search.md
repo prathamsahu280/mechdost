@@ -213,3 +213,7 @@ real stock), never from an admin switch (dark-pattern audit F4, `docs/research/d
 - Not built: "notify on price drop" (later), prices on the wishlist page, sharing.
 
 **Wishlist on shared devices:** the cached list is keyed by the signed-in uid and reset on sign-out or a uid change (see spec 03 "Shared devices").
+
+## Audit batch 1a (2026-11-16)
+
+Product card: the badges (Bestseller, vehicle type, fitment not listed) are a wrapping row under the picture (`data-slot="card-badges"`), never over it, so they cannot cover the SKU. Workshop finder (spec 07 listing): the service list under each workshop wraps, no ellipsis.

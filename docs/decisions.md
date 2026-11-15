@@ -1194,3 +1194,15 @@ Design: `docs/superpowers/specs/2026-11-15-support-next-tier-design.md` items 1 
 - **CI builds the launch configuration (Q171, default yes):** job `web-real-mode`, `NEXT_PUBLIC_AUTH_MODE=firebase` + `NEXT_PUBLIC_DATA_MODE=api`, fake public Firebase values, build only. Costs about 3 more build minutes per push.
 - **Tooling:** `state-audit-run.mjs G` builds `.next-api` when missing; `state-audit-api-build.mjs` resolves its paths from its own file.
 - **2026-11-16 (builder ruling, batch 1c):** portal/forms audit fixes. Job-photo remove button sits beside its thumbnail (44 px, no overlay); portalField/portalPrimary/portalQuiet draw their own 3 px focus-visible outline in the focus token (both themes); a static test forbids outline-none without a focus-visible replacement (allowed: the main landmark and consent banner, programmatic focus only); demo login picker is one column under 640 px and wraps names; the workshop menu low/high price fields stack under 640 px. No new colours or radii.
+
+## 2026-11-16 — Audit batch 1a, builder rulings
+
+- **Product card badges (audit item 1).** "Bestseller", the vehicle type and "Fitment not listed" sit in normal flow in a
+  wrapping row directly under the picture (`data-slot="card-badges"`), not absolutely over it. The SKU stays printed at
+  the picture's foot, so nothing can cover it at any width or language. Same colours and shapes; the badge row belongs
+  to the card's first grid row, so the card still has eight rows. Spec 02 and 21 updated.
+- **Names are never cut (items 2, 3).** The compare column header and the workshop finder's service list wrap (no
+  `line-clamp`); the service list keeps its first four services joined with " · " (no "+N more" needed).
+- **Compare with one product (item 4, Q170).** The box shows `data-compare-hint` ("Added to compare — pick one more" /
+  "तुलना में जुड़ा — एक और चुनें") only while its product is the single one in the list; the live region reads the
+  same text instead of "(1 of 4)". A few lines inside the existing toggle (no new chunk, no new import).

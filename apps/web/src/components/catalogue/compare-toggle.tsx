@@ -12,6 +12,8 @@ export interface CompareToggleLabels {
   /** "Added to compare ({count} of 4)" with {count} left in for the island to fill. */
   added: string;
   removed: string;
+  /** "Added to compare — pick one more": shown next to the box while it is the only product, and announced. */
+  hint: string;
 }
 
 /**
@@ -22,6 +24,8 @@ export interface CompareToggleLabels {
  * It never shows a message of its own: another category, a full list or a refused save is signalled to the compare
  * tray, which asks or tells once, and the box stays unchecked until the tray's "Start new" (it is controlled by
  * the shared list, so every card follows at once). Added/removed are read out by the loader's one live region.
+ * The tray appears from two products, so the first tick gets a short visible hint next to the box (user 2026-11-15,
+ * Q170), which is also what the live region reads; it goes when a second product is added or the first is unticked.
  * Kept small: it ships on every shop page (JS budget, spec 16); its look is `.compare-check` in globals.css.
  */
 export function CompareToggle({
@@ -39,7 +43,8 @@ export function CompareToggle({
   labels: CompareToggleLabels;
   className?: string;
 }) {
-  const on = useCompare().slugs.includes(slug);
+  const { slugs } = useCompare();
+  const on = slugs.includes(slug);
 
   return (
     <label data-slot="compare-toggle" className={`compare-check ${className}`}>
@@ -60,7 +65,7 @@ export function CompareToggle({
           if (r === 'added') {
             const count = readCompare().slugs.length;
             track('compare_added', { slug, category, count });
-            signal({ say: labels.added.replace('{count}', String(count)) });
+            signal({ say: count === 1 ? labels.hint : labels.added.replace('{count}', String(count)) });
           } else
             signal({
               ask: r === 'other_category' ? 'switch' : r,
@@ -72,6 +77,11 @@ export function CompareToggle({
         }}
       />
       {labels.toggle}
+      {on && slugs.length === 1 ? (
+        <span data-compare-hint className="text-xs font-normal text-muted">
+          {labels.hint}
+        </span>
+      ) : null}
     </label>
   );
 }

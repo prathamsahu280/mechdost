@@ -374,7 +374,7 @@ function WorkshopCard({
         ) : null}
         <li className="rounded-md bg-pill px-2 py-1 text-ink">{w.vehicles.join(' · ')}</li>
       </ul>
-      <p className="mt-3 line-clamp-2 text-sm text-muted">
+      <p className="mt-3 text-sm text-muted">
         {w.services
           .slice(0, 4)
           .map((s) => s.name)

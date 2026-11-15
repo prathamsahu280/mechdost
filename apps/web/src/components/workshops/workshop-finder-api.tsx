@@ -501,7 +501,7 @@ function WorkshopCardApi({
           </li>
         ) : null}
       </ul>
-      <p className="mt-3 line-clamp-2 text-sm text-muted">
+      <p className="mt-3 text-sm text-muted">
         {ws.services
           .slice(0, 4)
           .map((s) => s.title)

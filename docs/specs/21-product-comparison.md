@@ -181,3 +181,7 @@ A rider choosing between engine oils (or batteries, tyres) sees what each costs,
 - `e2e/compare-table-geometry.spec.ts`; helpers `e2e/helpers/geometry.ts` (sr-only text is ignored by `expectChildrenInside`).
 - Unit: `test/compare-store.test.ts` (no question state in the store), `test/compare-prompt.test.ts` (signals, prompts, names, start new), `test/compare-prompt-text.test.ts` (wording, en + hi).
 - The UI state audit (`e2e/state-audit/`) drives "Start new" through the tray; its known-issue entries U1–U4 were removed in this change.
+
+## Audit batch 1a (2026-11-16)
+
+Compare column headers wrap (no line-clamp: product names are never cut). Ticking the first product shows `data-compare-hint` ("Added to compare — pick one more", hi "तुलना में जुड़ा — एक और चुनें") next to the box, read by the live region; it goes with a second product or an untick. Tray still from 2 products. Guard: `apps/web/test/audit-batch-1a.test.ts`.

@@ -416,6 +416,7 @@
     "toggleName": "Compare {name}",
     "added": "Added to compare ({count} of 4)",
     "removed": "Removed from compare",
+    "hint": "Added to compare — pick one more",
     "full": "You can compare up to 4 products. Remove one first.",
     "switchTitle": "Start a new comparison with {to}?",
     "switchTitleNoName": "Start a new comparison?",

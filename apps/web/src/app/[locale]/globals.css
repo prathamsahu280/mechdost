@@ -563,7 +563,7 @@ html[data-consent-open]:has([data-compare-tray][data-prompt]) {
   /* "☐ Compare" (user ruling 2026-11-15, "Checkbox style"): a real checkbox and its word; the whole label is the
      target, at least 44 px tall. The box takes the brand colour (accent-color, readable in both themes). */
   .compare-check {
-    @apply inline-flex min-h-11 w-fit cursor-pointer items-center gap-2 text-sm font-bold text-ink select-none;
+    @apply inline-flex min-h-11 w-fit max-w-full cursor-pointer flex-wrap items-center gap-x-2 text-sm font-bold text-ink select-none;
   }
   .compare-check > input {
     /* 24px: the WCAG 2.2 target-size minimum (2.5.8) for the box itself; the 44px label row stays the full hit area. */
