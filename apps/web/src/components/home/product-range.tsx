@@ -21,7 +21,7 @@ export function ProductRange() {
           </h2>
           <p className="text-xs text-muted">{t('rangeNote')}</p>
         </div>
-        <ul className="mt-6 grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 nav:grid-cols-4">
+        <ul className="card-grid mt-6 grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 nav:grid-cols-4">
           {popular.map((p) => (
             <li key={p.slug}>
               <ProductCard product={p} scope="home" compare={false} />

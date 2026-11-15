@@ -404,7 +404,7 @@ export default async function ProductPage({ params }: Props) {
           <h2 id="related" className="font-heading text-2xl font-extrabold tracking-[-0.02em] text-ink">
             {categoryName ? t('related', { category: categoryName }) : t('relatedAny')}
           </h2>
-          <ul className="mt-5 grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 nav:grid-cols-4">
+          <ul className="card-grid mt-5 grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 nav:grid-cols-4">
             {related.map((p) => (
               <li key={p.slug}>
                 <ProductCard product={p} scope="related" />

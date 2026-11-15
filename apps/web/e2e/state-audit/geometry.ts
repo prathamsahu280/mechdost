@@ -608,6 +608,26 @@ export async function auditDom(opts: DomAuditOptions): Promise<Finding[]> {
               return last?.getBoundingClientRect().top;
             })
             .filter((t): t is number => t !== undefined);
+          // Inner rows (user report 2026-11-15: prices and "In stock" at different heights while the buttons lined
+          // up): every `[data-align=key]` part of the cards in one row starts at the same height.
+          const keys = new Set(
+            row.flatMap((el) =>
+              [...el.querySelectorAll('[data-align]')].map((p) => p.getAttribute('data-align') ?? ''),
+            ),
+          );
+          for (const key of keys) {
+            const parts = row.map((el) => el.querySelector(`[data-align="${key}"]`));
+            if (!parts.every((p) => p && visible(p))) continue;
+            const tops = parts.map((p) => p?.getBoundingClientRect().top ?? 0);
+            if (spread(tops) > 3)
+              add({
+                rule: 'aligned',
+                severity: 'P1',
+                where: describe(parts[0] ?? row[0] ?? document.body),
+                detail: `"${key}" rows in one row of cards start at different heights (spread ${String(Math.round(spread(tops)))} px)`,
+                box: parts[0] ? toBox(parts[0].getBoundingClientRect()) : undefined,
+              });
+          }
           if (lastTops.length === row.length && spread(lastTops) > 3)
             add({
               rule: 'aligned',
