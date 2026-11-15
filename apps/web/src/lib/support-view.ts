@@ -47,7 +47,8 @@ export type SupportErrorKey =
   | 'api_err_order'
   | 'api_err_labour'
   | 'api_err_labour_open'
-  | 'api_err_service';
+  | 'api_err_service'
+  | 'api_err_assignee';
 
 /** API support codes → `support.*` messages; null = not a support-specific code (use the common message). */
 export function supportErrorKey(code: string): SupportErrorKey | null {
@@ -65,6 +66,8 @@ export function supportErrorKey(code: string): SupportErrorKey | null {
       return 'api_err_labour_open';
     case 'REPLY_LIMIT':
       return 'api_err_reply_limit';
+    case 'ASSIGNEE_INVALID':
+      return 'api_err_assignee';
     case 'TICKET_CLOSED':
       return 'err_not_allowed';
     case 'STALE_TICKET':

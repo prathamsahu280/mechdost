@@ -1,4 +1,7 @@
 import { and, desc, eq, gt, inArray, isNull, lt, sql } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
+import { maskPhone } from '@mechdost/shared/contact-mask';
+import { firstReplySla, type SlaState } from '@mechdost/shared/support-sla';
 import { publicCode } from '@mechdost/shared/ids';
 import { labourPromiseOpen } from '@mechdost/shared/service-bill';
 import { ticketMachine, type TicketStatus } from '@mechdost/shared/state';
@@ -21,6 +24,7 @@ import { queueTicketEmail } from './email-events';
 import { queueStaffNotice } from './notices';
 import { ConflictError, NotFoundError, ValidationError } from './errors';
 import { recordServerEvent } from './events';
+import { firstReplyDueAt } from './support-sla';
 import { notificationChannelEnabled } from './notification-admin';
 import { enqueueNotification } from './notify';
 import type { Tx } from './orders';
@@ -37,7 +41,6 @@ export const TICKET_KINDS = ['order_issue', 'refund', 'fitment', 'account', 'lab
 export type TicketKind = (typeof TICKET_KINDS)[number];
 export const DAILY_TICKET_LIMIT = 5;
 export const TICKET_BODY_MAX = 2000;
-export const ACK_MS = 48 * 3_600_000;
 export const RESOLVE_MS = 30 * 86_400_000;
 const ACTIVE: TicketStatus[] = ['open', 'in_review', 'awaiting_customer'];
 
@@ -231,6 +234,8 @@ export async function createSupportTicket(
     serviceCode?: string | null;
     body: string;
     defaultCityCode: string;
+    /** The clock; tests pass a fixed instant (first-reply deadline in support hours). */
+    now?: Date;
   },
 ): Promise<{ code: string }> {
   if (!TICKET_KINDS.includes(input.kind)) throw new ValidationError('Unknown request type', 'TICKET_KIND');
@@ -240,7 +245,7 @@ export async function createSupportTicket(
     await tx.execute(
       sql`select pg_advisory_xact_lock(hashtextextended(${`ticket-create:${input.userId}`}, 0))`,
     );
-    const now = new Date();
+    const now = input.now ?? new Date();
     const recent = await tx.$count(
       supportTickets,
       and(
@@ -318,7 +323,7 @@ export async function createSupportTicket(
         serviceRequestId,
         cityId,
         channel: 'web',
-        slaAckDue: new Date(now.getTime() + ACK_MS),
+        slaAckDue: await firstReplyDueAt(tx, now),
         slaResolveDue: new Date(now.getTime() + RESOLVE_MS),
       })
       .returning({ id: supportTickets.id, code: supportTickets.code });
@@ -538,35 +543,85 @@ export interface InboxRow {
   createdAt: Date;
   version: number;
   issueCode: string | null;
+  serviceCode: string | null;
   /** True once staff have replied to the customer at least once (acknowledged). */
   acknowledged: boolean;
+  firstRepliedAt: Date | null;
+  /** First-reply SLA at the time of the read: met, on track, or overdue (support hours, IST). */
+  sla: SlaState;
+  /** The signed-in customer's name, or the guest's; the phone is masked (`+91 98•••••11`) and only for guests. */
+  customerName: string | null;
+  customerPhoneMasked: string | null;
+  isGuest: boolean;
+  assignee: { id: string; name: string | null } | null;
 }
 
-export async function listInbox(
-  db: Tx,
-  scope: TicketScope,
-  opts: { view?: 'active' | 'done'; limit?: number } = {},
-): Promise<InboxRow[]> {
+export interface InboxFilter {
+  view?: 'active' | 'done';
+  limit?: number;
+  /** `me` needs `staffUserId`; `unassigned`; or a staff user id. */
+  assignee?: string;
+  staffUserId?: string;
+  /** Only requests of this status (inside the chosen view). */
+  status?: TicketStatus;
+}
+
+export async function listInbox(db: Tx, scope: TicketScope, opts: InboxFilter = {}): Promise<InboxRow[]> {
   const limit = Math.min(Math.max(opts.limit ?? 50, 1), 100);
-  const statusFilter =
+  const viewFilter =
     (opts.view ?? 'active') === 'active'
       ? inArray(supportTickets.status, ACTIVE)
       : inArray(supportTickets.status, ['resolved', 'closed']);
+  const assigneeFilter =
+    opts.assignee === 'unassigned'
+      ? isNull(supportTickets.assigneeId)
+      : opts.assignee === 'me'
+        ? opts.staffUserId
+          ? eq(supportTickets.assigneeId, opts.staffUserId)
+          : sql`false`
+        : opts.assignee
+          ? eq(supportTickets.assigneeId, opts.assignee)
+          : undefined;
+  const assignee = alias(users, 'assignee');
   const rows = await db
     .select({
       ...baseColumns,
       issueCode: supportTickets.issueCode,
+      serviceCode: serviceRequests.code,
+      firstRepliedAt: supportTickets.firstRepliedAt,
       acknowledged: sql<boolean>`exists (select 1 from ${ticketMessages} m where m.ticket_id = ${supportTickets.id} and m.author_role = 'staff' and m.internal = false)`,
+      userId: supportTickets.userId,
+      userName: users.name,
+      guestName: supportTickets.guestName,
+      guestPhone: supportTickets.guestPhone,
+      assigneeId: supportTickets.assigneeId,
+      assigneeName: assignee.name,
     })
     .from(supportTickets)
     .leftJoin(orders, eq(orders.id, supportTickets.orderId))
     .leftJoin(orderGroups, eq(orderGroups.id, orders.groupId))
-    .where(and(statusFilter, scopeFilter(scope)))
+    .leftJoin(serviceRequests, eq(serviceRequests.id, supportTickets.serviceRequestId))
+    .leftJoin(users, eq(users.id, supportTickets.userId))
+    .leftJoin(assignee, eq(assignee.id, supportTickets.assigneeId))
+    .where(
+      and(
+        viewFilter,
+        opts.status ? eq(supportTickets.status, opts.status) : undefined,
+        assigneeFilter,
+        scopeFilter(scope),
+      ),
+    )
     .orderBy(supportTickets.slaAckDue)
     .limit(limit);
-  return rows.map(({ id: _id, ...r }) => ({
+  const now = new Date();
+  return rows.map(({ id: _id, userId, userName, guestName, guestPhone, assigneeId, assigneeName, ...r }) => ({
     ...r,
     status: r.status as TicketStatus,
+    sla: firstReplySla(now, r.slaAckDue, r.firstRepliedAt),
+    customerName: userId ? userName : guestName,
+    customerPhoneMasked: userId || !guestPhone ? null : maskPhone(guestPhone),
+    isGuest: userId === null,
+    assignee: assigneeId ? { id: assigneeId, name: assigneeName } : null,
   }));
 }
 
@@ -589,17 +644,70 @@ async function lockScoped(tx: Tx, scope: TicketScope, code: string) {
   return t;
 }
 
-export async function getInboxTicket(db: Tx, scope: TicketScope, code: string): Promise<TicketView> {
+/** What staff see besides the conversation: who asked, who owns it, the SLA, the deletion step. */
+export interface InboxTicketView extends TicketView {
+  staff: {
+    customerName: string | null;
+    customerPhoneMasked: string | null;
+    isGuest: boolean;
+    assignee: { id: string; name: string | null } | null;
+    assignedAt: Date | null;
+    firstRepliedAt: Date | null;
+    sla: SlaState;
+    deletionConfirmedAt: Date | null;
+  };
+}
+
+export async function getInboxTicket(db: Tx, scope: TicketScope, code: string): Promise<InboxTicketView> {
+  const assignee = alias(users, 'assignee');
   const [row] = await db
-    .select(ticketColumns)
+    .select({
+      ...ticketColumns,
+      userId: supportTickets.userId,
+      userName: users.name,
+      guestName: supportTickets.guestName,
+      guestPhone: supportTickets.guestPhone,
+      assigneeId: supportTickets.assigneeId,
+      assigneeName: assignee.name,
+      assignedAt: supportTickets.assignedAt,
+      firstRepliedAt: supportTickets.firstRepliedAt,
+      deletionConfirmedAt: supportTickets.deletionConfirmedAt,
+    })
     .from(supportTickets)
     .leftJoin(orders, eq(orders.id, supportTickets.orderId))
     .leftJoin(orderGroups, eq(orderGroups.id, orders.groupId))
     .leftJoin(serviceRequests, eq(serviceRequests.id, supportTickets.serviceRequestId))
+    .leftJoin(users, eq(users.id, supportTickets.userId))
+    .leftJoin(assignee, eq(assignee.id, supportTickets.assigneeId))
     .where(and(eq(supportTickets.code, code), scopeFilter(scope)))
     .limit(1);
   if (!row) throw new NotFoundError('Request not found');
-  return view(db, { ...row, status: row.status as TicketStatus }, true);
+  const {
+    userId,
+    userName,
+    guestName,
+    guestPhone,
+    assigneeId,
+    assigneeName,
+    assignedAt,
+    firstRepliedAt,
+    deletionConfirmedAt,
+    ...ticketRow
+  } = row;
+  const base = await view(db, { ...ticketRow, status: ticketRow.status as TicketStatus }, true);
+  return {
+    ...base,
+    staff: {
+      customerName: userId ? userName : guestName,
+      customerPhoneMasked: userId || !guestPhone ? null : maskPhone(guestPhone),
+      isGuest: userId === null,
+      assignee: assigneeId ? { id: assigneeId, name: assigneeName } : null,
+      assignedAt,
+      firstRepliedAt,
+      sla: firstReplySla(new Date(), base.slaAckDue, firstRepliedAt),
+      deletionConfirmedAt,
+    },
+  };
 }
 
 /**
@@ -636,6 +744,12 @@ export async function staffReplyTicket(
         channel: 'console',
       })
       .returning({ id: ticketMessages.id });
+    // The first public answer stops the first-reply clock; an internal note never does.
+    if (!input.internal)
+      await tx
+        .update(supportTickets)
+        .set({ firstRepliedAt: new Date() })
+        .where(and(eq(supportTickets.id, t.id), isNull(supportTickets.firstRepliedAt)));
     if (
       !input.internal &&
       message &&
@@ -687,6 +801,8 @@ export async function setTicketStatus(
       .set({
         status: input.to,
         resolvedAt: input.to === 'resolved' ? new Date() : input.to === 'in_review' ? null : undefined,
+        closedAt: input.to === 'closed' ? new Date() : undefined,
+        closeReason: input.to === 'closed' ? 'staff' : undefined,
       })
       .where(and(eq(supportTickets.id, t.id), eq(supportTickets.version, input.expectedVersion)))
       .returning({ version: supportTickets.version });

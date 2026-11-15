@@ -1,3 +1,4 @@
+import { firstReplyDueAt } from './support-sla';
 import { createHash, randomBytes } from 'node:crypto';
 import { and, desc, eq, gt, inArray, isNull, or, sql } from 'drizzle-orm';
 import { publicCode } from '@mechdost/shared/ids';
@@ -18,7 +19,6 @@ import type { Tx } from './orders';
  * Staff reply in the admin inbox; the reply goes back on WhatsApp as a free-form message inside the 24 h window.
  */
 const REOPEN_DAYS = 7;
-const ACK_HOURS = 48;
 const RESOLVE_DAYS = 30;
 const ACTIVE: TicketStatus[] = ['open', 'in_review', 'awaiting_customer'];
 
@@ -140,7 +140,7 @@ export async function bridgeInboundWhatsApp(
               accessKeyHash: user ? null : createHash('sha256').update(randomBytes(32)).digest('hex'),
               kind: 'other',
               channel: 'whatsapp',
-              slaAckDue: new Date(now.getTime() + ACK_HOURS * 3_600_000),
+              slaAckDue: await firstReplyDueAt(tx, now),
               slaResolveDue: new Date(now.getTime() + RESOLVE_DAYS * 86_400_000),
             })
             .returning({ id: supportTickets.id, code: supportTickets.code });

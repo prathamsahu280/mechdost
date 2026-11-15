@@ -47,6 +47,8 @@
     "./admin-errors-api": "./src/admin-errors-api.ts",
     "./support-api": "./src/support-api.ts",
     "./support-thread": "./src/support-thread.ts",
+    "./support-sla": "./src/support-sla.ts",
+    "./support-inbox": "./src/support-inbox.ts",
     "./partners": "./src/partners.ts",
     "./partner-api": "./src/partner-api.ts",
     "./email-templates": "./src/email-templates.ts",

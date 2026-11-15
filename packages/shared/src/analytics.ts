@@ -178,6 +178,14 @@ export interface ServerEventProps {
     amountPaise: number;
     reasonCode: string;
   };
+  /** Support inbox (design 2026-11-15 items 4 to 7): assignment, canned replies, closes, guests, deletion requests. Codes and counts only. */
+  support_ticket_assigned: { assigned: boolean; self: boolean };
+  support_canned_reply_saved: { created: boolean; active: boolean };
+  support_ticket_closed: { reason: 'auto' | 'staff'; kind: string };
+  support_guest_ticket_created: { kind: string };
+  support_guest_reply: { ticketCode: string };
+  support_deletion_requested: { ticketCode: string };
+  support_deletion_confirmed: { ticketCode: string };
   service_estimate_sent: { requestCode: string; workshopId: string; revision: number; lines: number };
   service_estimate_decided: { requestCode: string; revision: number; approved: number; declined: number };
   service_billed: { requestCode: string; workshopId: string; totalPaise: number; lines: number };
@@ -386,6 +394,13 @@ export const CLIENT_EVENT_SCHEMAS = {
         'photos_attached',
         'destination_saved',
         'refund_requested',
+        'assigned',
+        'canned_inserted',
+        'guest_created',
+        'guest_looked_up',
+        'guest_reply',
+        'deletion_requested',
+        'deletion_confirmed',
       ]),
       kind: id.optional(),
       /** Quick issue code of a thread (a code, never text). */

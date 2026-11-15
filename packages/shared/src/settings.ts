@@ -95,6 +95,14 @@ export const OPERATIONAL_SETTINGS = {
     default: 20,
     globalOnly: true,
   },
+  /*
+   * Support inbox (design 2026-11-15 item 4 to 5; spec 09). Support hours are minutes after IST midnight; the first
+   * reply target counts only working minutes inside them. A resolved request closes by itself after the days below.
+   */
+  'support.hours_start_minute': { kind: 'int', min: 0, max: 1_439, default: 540, globalOnly: true },
+  'support.hours_end_minute': { kind: 'int', min: 1, max: 1_440, default: 1_260, globalOnly: true },
+  'support.first_reply_working_minutes': { kind: 'int', min: 15, max: 1_440, default: 120, globalOnly: true },
+  'support.auto_close_days': { kind: 'int', min: 1, max: 60, default: 7, globalOnly: true },
   /**
    * Messages the shoppers' AI assistant may answer per day for the whole site (cost cap, security review
    * 2026-11-14, Q91); 0 turns the AI answers off. Over the cap the website shows its built-in answers.
