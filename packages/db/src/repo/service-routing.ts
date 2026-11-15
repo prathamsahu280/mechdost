@@ -1,6 +1,13 @@
 import { and, eq, inArray, sql, type SQL } from 'drizzle-orm';
-import type { ServiceRejectReason } from '@mechdost/shared/state';
-import { auditLog, serviceEvents, serviceRequests } from '../schema';
+import type {
+  ServiceRejectReason,
+  ServiceRequestStatus,
+  ServiceStaffCancelReason,
+} from '@mechdost/shared/state';
+import { auditLog, serviceBills, serviceEvents, serviceRequests } from '../schema';
+import { queueServiceCancelledEmail } from './email-events';
+import { recordServerEvent } from './events';
+import { requestRefundForServiceBill } from './refunds';
 import { ConflictError, NotFoundError, ValidationError } from './errors';
 import type { Tx } from './orders';
 import type { CityScope } from './routing';
@@ -196,5 +203,83 @@ export async function rejectServiceRequest(
       payload: { reasonCode: input.reasonCode },
       reasonCode: input.reasonCode,
     });
+  });
+}
+
+/** States a staff cancel may start from: every live one (the machine lists the same edges for `admin`). */
+const STAFF_CANCELLABLE: readonly ServiceRequestStatus[] = [
+  'requested',
+  'needs_routing',
+  'awaiting_workshop',
+  'proposed',
+  'confirmed',
+  'vehicle_received',
+  'estimate_sent',
+  'approved',
+  'no_work_approved',
+  'in_progress',
+  'ready',
+  'billed',
+  'paid',
+];
+
+/**
+ * Staff cancel (spec 06 "Staff cancel", permission `service:cancel`, city-scoped): a reason code, the held workshop hour
+ * goes back (once, in `transitionRequest`), pending proposals are withdrawn, and when the bill was paid online ONE
+ * refund request is raised through the refunds queue (finance approves; idempotent per payment). The customer is
+ * told through the email / bell / push catalogues in the same transaction. An unpaid open Razorpay order is left
+ * alone: a capture that still arrives is recorded and refunded (`applyBillPayment`).
+ */
+export async function cancelServiceRequestByStaff(
+  db: Tx,
+  input: {
+    scope: CityScope;
+    code: string;
+    reasonCode: ServiceStaffCancelReason;
+    expectedVersion: number;
+    staffUserId: string;
+  },
+) {
+  return db.transaction(async (tx) => {
+    const r = await lockRequest(tx, scoped(input.scope, input.code));
+    requireStatus(r, STAFF_CANCELLABLE);
+    const fromStatus = r.status;
+    const workshopId = r.workshopId;
+    const out = await transitionRequest(tx, {
+      request: r,
+      to: 'cancelled',
+      expectedVersion: input.expectedVersion,
+      actor: { type: 'admin', userId: input.staffUserId },
+      patch: { statusReasonCode: input.reasonCode },
+      payload: { reasonCode: input.reasonCode, by: 'staff', fromStatus },
+      reasonCode: input.reasonCode,
+    });
+    await withdrawPendingProposals(tx, r.id);
+    const [bill] = await tx
+      .select({ id: serviceBills.id })
+      .from(serviceBills)
+      .where(eq(serviceBills.requestId, r.id))
+      .limit(1);
+    const refundId = bill
+      ? await requestRefundForServiceBill(tx, { billId: bill.id, source: 'service_cancelled' })
+      : null;
+    await queueServiceCancelledEmail(tx, {
+      request: { id: r.id, code: r.code, userId: r.userId, workshopId },
+      version: out.version,
+      reasonCode: input.reasonCode,
+      refundRequested: refundId !== null,
+    });
+    await recordServerEvent(tx, 'service_cancelled_by_staff', {
+      userId: input.staffUserId,
+      cityId: r.cityId,
+      props: {
+        requestCode: r.code,
+        workshopId,
+        fromStatus,
+        reasonCode: input.reasonCode,
+        refundRequested: refundId !== null,
+      },
+    });
+    return { ...out, refundRequested: refundId !== null };
   });
 }

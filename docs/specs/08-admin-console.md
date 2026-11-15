@@ -355,3 +355,7 @@ Admin → Coupons (real sign-in builds; `coupons:write`, held by marketing and s
 ## Catalogue tier 2 panels (2026-11-15)
 
 Admin -> Catalogue: "Goes well with: rules" (add, edit, switch off, delete; both languages; priority; version-checked; `categories:write`). Admin -> Settings: "Waiting for a PIN code" (read only launch checklist; `cities:manage`, city scoped). Real sign-in builds only (they read the API). State-audit rows `API-ADM-RECO` and `API-ADM-DEMAND`.
+
+## Services: ranked suggestions and staff cancel (2026-11-15)
+
+Admin -> Services: a request needing routing lists the ranked workshops with "Best match" and the reasons (distance, rating, share of offers taken, time to propose, open jobs and places an hour); one click sends it. Every live request (routing queue, active, waiting) has "Cancel this request" with a reason code (permission `service:cancel`; a paid bill is refunded through Admin -> Refunds). Click ids: `admin_service_routed_top`, `admin_service_routed_other`, `admin_service_cancelled`.

@@ -6,6 +6,7 @@ import {
   paymentMethodPhrase,
   refundNotePhrase,
   rejectReasonPhrase,
+  serviceCancelReasonPhrase,
   rupees,
   slotPhrase,
   warningReasonPhrase,
@@ -271,6 +272,33 @@ export async function queueServiceStatusEmail(
       slot: proposal ? `${emailDate(proposal.date, locale)}, ${slotPhrase(proposal.slot, locale)}` : '',
       expectedCost: proposal ? `${rupees(proposal.low)} – ${rupees(proposal.high)}` : '',
       amount: rupees(asNumber(input.payload?.totalPaise) ?? 0),
+    }),
+  });
+}
+
+/**
+ * Staff cancelled a service request: the reason in words (never the code), and an honest money line. Nothing is called
+ * "refunded" here (the refund email says that once it is processed); a paid bill says a refund was asked for.
+ */
+export async function queueServiceCancelledEmail(
+  tx: Tx,
+  input: { request: ServiceRef; version: number; reasonCode: string; refundRequested: boolean },
+): Promise<void> {
+  await queueEmail(tx, {
+    template: 'service_cancelled',
+    entityId: input.request.id,
+    version: input.version,
+    userId: input.request.userId,
+    payload: (locale) => ({
+      requestCode: input.request.code,
+      reason: serviceCancelReasonPhrase(input.reasonCode, locale),
+      refundNote: input.refundRequested
+        ? locale === 'hi'
+          ? 'आपने इसके लिए भुगतान किया था। हमने रिफंड का अनुरोध कर दिया है; मंज़ूरी के बाद पैसा उसी भुगतान माध्यम में लौटेगा।'
+          : 'You had paid for it. We have asked for a refund; once approved, the money goes back to the way you paid.'
+        : locale === 'hi'
+          ? 'आपने अभी कोई भुगतान नहीं किया है, इसलिए रिफंड की कोई ज़रूरत नहीं है।'
+          : 'You have not paid anything for this request, so there is nothing to refund.',
     }),
   });
 }

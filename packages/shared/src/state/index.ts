@@ -86,6 +86,23 @@ export const SERVICE_CANCEL_REASONS = [
 ] as const;
 export type ServiceCancelReason = (typeof SERVICE_CANCEL_REASONS)[number];
 
+/** Why staff cancelled a service request (spec 06 "Staff cancel", permission `service:cancel`); customer reasons stay above. */
+export const SERVICE_STAFF_CANCEL_REASONS = [
+  'workshop_unavailable',
+  'workshop_unresponsive',
+  'customer_asked',
+  'duplicate_booking',
+  'policy_violation',
+  'other',
+] as const;
+export type ServiceStaffCancelReason = (typeof SERVICE_STAFF_CANCEL_REASONS)[number];
+
+/** Every code a cancelled request may carry (the database CHECK): the customer's and staff's. */
+export const SERVICE_ANY_CANCEL_REASONS = [
+  ...SERVICE_CANCEL_REASONS,
+  ...SERVICE_STAFF_CANCEL_REASONS.filter((r) => !(SERVICE_CANCEL_REASONS as readonly string[]).includes(r)),
+] as const;
+
 /** Where a service happens: the vehicle goes to the workshop, or a workshop mechanic comes to the customer's home. */
 export const SERVICE_MODES = ['workshop', 'home'] as const;
 export type ServiceMode = (typeof SERVICE_MODES)[number];
@@ -213,6 +230,15 @@ export const serviceRequestMachine = /* @__PURE__ */ defineMachine(
     // Customer reschedule (spec 06): the confirmed slot is released and the workshop answers the new time.
     { from: 'confirmed', to: 'awaiting_workshop', by: ['customer'] },
     { from: 'confirmed', to: 'cancelled', by: ['customer', 'admin', 'workshop'] },
+    // Staff cancel after the vehicle arrived (spec 06 'Staff cancel'): an abandoned or disputed job; a paid bill is refunded.
+    { from: 'vehicle_received', to: 'cancelled', by: ['admin'] },
+    { from: 'estimate_sent', to: 'cancelled', by: ['admin'] },
+    { from: 'approved', to: 'cancelled', by: ['admin'] },
+    { from: 'no_work_approved', to: 'cancelled', by: ['admin'] },
+    { from: 'in_progress', to: 'cancelled', by: ['admin'] },
+    { from: 'ready', to: 'cancelled', by: ['admin'] },
+    { from: 'billed', to: 'cancelled', by: ['admin'] },
+    { from: 'paid', to: 'cancelled', by: ['admin'] },
     { from: 'vehicle_received', to: 'estimate_sent', by: ['workshop'] },
     // Home servicing: the customer declined the offer to move the job to the workshop (spec 06); only that path uses it.
     { from: 'vehicle_received', to: 'no_work_approved', by: ['customer'] },
@@ -518,6 +544,8 @@ export const REFUND_HOLDING_STATES = [
 export const REFUND_SOURCES = [
   'order_rejected',
   'order_cancelled',
+  'service_cancelled',
+  'duplicate_payment',
   'unfulfilled',
   'support_claim',
   'part_refund',
@@ -529,6 +557,8 @@ export type RefundSource = (typeof REFUND_SOURCES)[number];
 export const REFUND_REASONS = [
   'order_rejected',
   'order_cancelled',
+  'service_cancelled',
+  'duplicate_payment',
   'faulty',
   'damaged_in_transit',
   'wrong_item',

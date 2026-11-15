@@ -7,6 +7,7 @@
 import { z } from 'zod';
 import { SERVICE_MODES, SERVICE_REQUEST_STATES } from './state';
 import { VEHICLE_TYPES } from './vehicles';
+import { RANK_FACTORS } from './workshop-ranking';
 
 const SLOTS = ['morning', 'afternoon', 'evening'] as const;
 const Status = z.enum(SERVICE_REQUEST_STATES);
@@ -89,6 +90,8 @@ export type ServiceRequestSummary = z.infer<typeof ServiceRequestSummaryDto>;
 export const ServiceRequestPageDto = z.object({
   items: z.array(ServiceRequestSummaryDto),
   nextCursor: z.string().nullable(),
+  /** Admin list only: whether this person holds `service:cancel` (the screen shows the cancel form only then). */
+  canCancel: z.boolean().optional(),
 });
 export type ServiceRequestPage = z.infer<typeof ServiceRequestPageDto>;
 
@@ -391,3 +394,37 @@ export const WorkshopSavedDto = z.object({ id: z.string(), version: z.number().i
 export const WorkshopCreatedDto = WorkshopSavedDto.extend({ slug: z.string() });
 export const WorkshopStandingSavedDto = z.object({ status: z.string(), version: z.number().int() });
 export const WorkshopMemberAddedDto = z.object({ userId: z.string() });
+
+// ── Ranked suggestions for admin routing (GET /v1/admin/service-requests/{code}/suggestions) ──────────────────
+
+export const WorkshopSuggestionDto = z.object({
+  workshopId: z.string(),
+  slug: z.string(),
+  name: z.string(),
+  pincode: z.string(),
+  rank: z.number().int().min(1),
+  scoreBp: z.number().int().min(0).max(10_000),
+  /** Metres from the customer pin; null when the request has no pin. */
+  distanceM: z.number().int().nullable(),
+  ratingX100: z.number().int().nullable(),
+  acceptancePercent: z.number().int().nullable(),
+  medianMinutesToPropose: z.number().int().nullable(),
+  openJobs: z.number().int(),
+  slotCapacity: z.number().int(),
+  reasons: z.array(z.object({ factor: z.enum(RANK_FACTORS), scoreBp: z.number().int(), known: z.boolean() })),
+});
+export type WorkshopSuggestion = z.infer<typeof WorkshopSuggestionDto>;
+export const WorkshopSuggestionsDto = z.object({ items: z.array(WorkshopSuggestionDto) });
+
+// ── Online payment of the bill (POST /v1/service-requests/{code}/pay) ───────────────────────────────────────
+
+export const BillCheckoutDto = z.object({
+  keyId: z.string(),
+  orderId: z.string(),
+  amountPaise: z.number().int(),
+  currency: z.literal('INR'),
+});
+export type BillCheckout = z.infer<typeof BillCheckoutDto>;
+
+/** Staff cancel result: the new status, and whether a refund was asked for in the Refunds queue (paid bill). */
+export const ServiceCancelledDto = ServiceChangedDto.extend({ refundRequested: z.boolean() });

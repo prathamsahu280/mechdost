@@ -162,3 +162,5 @@ Order emails (`order_*` templates) carry one footer line above the company line:
 ## Live updates: cart and wishlist pings (2026-11-15)
 
 `live_outbox` kinds gain `cart` and `wishlist` (events `cart.changed`, `wishlist.changed`; topic `user:<id>`, ids and a version only). Written by triggers on `carts` and `wishlist_items`, relayed like the others; **no browser listener yet** (decision 2026-11-15 "Polling, not live pings, feeds the bell for now"). Until then the website polls every 60 s while the tab is visible (spec 03 "Several devices"). **Next step:** one lazy-loaded shared RTDB listener (outside the shop bundles) for the bell, shop offers, cart and wishlist.
+
+- **Staff cancel of a service request (2026-11-15):** email template `service_cancelled` (en + hi; reason in words, honest refund line) with bell notice `service.cancelled` and push, queued in the cancel transaction (`queueServiceCancelledEmail`); the reason phrases live in `email-phrases.ts`.

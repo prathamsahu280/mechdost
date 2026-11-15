@@ -31,6 +31,7 @@ import { cities } from './geography';
 import { users } from './identity';
 import { productVariants, shopInventory, shops } from './catalogue';
 import { quoteOffers, quoteRequests } from './quotes';
+import { serviceBills } from './services';
 
 const inList = (values: readonly string[]) => sql.raw(values.map((v) => `'${v}'`).join(','));
 
@@ -452,9 +453,11 @@ export const payments = pgTable(
   'payments',
   {
     id: id(),
-    groupId: uuid()
-      .notNull()
-      .references(() => orderGroups.id, { onDelete: 'restrict' }),
+    /** The checkout this pays (purpose `order`); null for a service bill (migration 0068). */
+    groupId: uuid().references(() => orderGroups.id, { onDelete: 'restrict' }),
+    /** What the Razorpay order is for: a product checkout, or the bill of a workshop service request. */
+    purpose: text().notNull().default('order'),
+    billId: uuid().references(() => serviceBills.id, { onDelete: 'restrict' }),
     provider: text().notNull().default('razorpay'),
     providerOrderId: text().notNull().unique(),
     providerPaymentId: text().unique(),
@@ -483,6 +486,19 @@ export const payments = pgTable(
     check('payments_amount_positive', sql`${t.amountPaise} > 0`),
     check('payments_currency_inr', sql`${t.currency} = 'INR'`),
     check('payments_provider_valid', sql`${t.provider} in ('razorpay')`),
+    check('payments_purpose_valid', sql`${t.purpose} in ('order','service_bill')`),
+    check(
+      'payments_purpose_target',
+      sql`(${t.purpose} = 'order' and ${t.groupId} is not null and ${t.billId} is null) or (${t.purpose} = 'service_bill' and ${t.billId} is not null and ${t.groupId} is null)`,
+    ),
+    // One captured payment per bill, and one Razorpay order a customer can still pay: a double-click never makes two.
+    uniqueIndex('payments_one_success_per_bill_uq')
+      .on(t.billId)
+      .where(sql`${t.status} in ('paid','partially_refunded','refunded')`),
+    uniqueIndex('payments_one_open_per_bill_uq')
+      .on(t.billId)
+      .where(sql`${t.status} in ('created','attempted','failed')`),
+    index().on(t.billId),
     uniqueIndex('payments_one_success_per_group_uq')
       .on(t.groupId)
       .where(sql`${t.status} in ('paid','partially_refunded','refunded')`),
@@ -508,9 +524,9 @@ export const refunds = pgTable(
     /** The captured Razorpay payment (mode `source`); null for cash-on-delivery orders paid out by hand (`bank_upi`). */
     paymentId: uuid().references(() => payments.id, { onDelete: 'restrict' }),
     /** The checkout the refund belongs to (city scope, customer); set for both modes. */
-    groupId: uuid()
-      .notNull()
-      .references(() => orderGroups.id, { onDelete: 'restrict' }),
+    groupId: uuid().references(() => orderGroups.id, { onDelete: 'restrict' }),
+    /** The service bill a refund belongs to (a cancelled or double-paid workshop bill); then `group_id` and `order_id` are null. */
+    billId: uuid().references(() => serviceBills.id, { onDelete: 'restrict' }),
     orderId: uuid().references(() => orders.id, { onDelete: 'restrict' }),
     amountPaise: paise().notNull(),
     /** `source` = back to the original payment method through Razorpay; `bank_upi` = finance pays by hand (COD). */
@@ -547,6 +563,8 @@ export const refunds = pgTable(
   },
   (t) => [
     check('refunds_amount_positive', sql`${t.amountPaise} > 0`),
+    check('refunds_group_or_bill', sql`(${t.groupId} is not null) <> (${t.billId} is not null)`),
+    index().on(t.billId),
     check('refunds_source_valid', sql`${t.source} in (${inList(REFUND_SOURCES)})`),
     check('refunds_reason_valid', sql`${t.reasonCode} in (${inList(REFUND_REASONS)})`),
     check(

@@ -105,6 +105,33 @@ const APPLICATION_REASON: Readonly<Record<string, Pair>> = {
   },
 };
 
+const SERVICE_CANCEL_REASON: Readonly<Record<string, Pair>> = {
+  workshop_unavailable: {
+    en: 'The workshop could not take your booking.',
+    hi: 'वर्कशॉप आपकी बुकिंग नहीं ले पाई।',
+  },
+  workshop_unresponsive: {
+    en: 'The workshop did not respond in time.',
+    hi: 'वर्कशॉप ने समय पर जवाब नहीं दिया।',
+  },
+  customer_asked: {
+    en: 'You asked us to cancel it.',
+    hi: 'आपने हमसे इसे रद्द करने को कहा था।',
+  },
+  duplicate_booking: {
+    en: 'It was a duplicate of another booking.',
+    hi: 'यह किसी दूसरी बुकिंग की दोहरी प्रति थी।',
+  },
+  policy_violation: {
+    en: 'It could not go ahead under our service rules.',
+    hi: 'हमारे नियमों के तहत यह आगे नहीं बढ़ सका।',
+  },
+  other: {
+    en: 'We were not able to go ahead with this booking.',
+    hi: 'हम इस बुकिंग को आगे नहीं बढ़ा पाए।',
+  },
+};
+
 const METHOD: Readonly<Record<string, Pair>> = {
   cod: { en: 'Cash on delivery', hi: 'डिलीवरी पर नकद' },
   online: { en: 'Online payment', hi: 'ऑनलाइन पेमेंट' },
@@ -127,6 +154,8 @@ const pick = (table: Readonly<Record<string, Pair>>, code: string | null | undef
 
 export const cancelReasonPhrase = (code: string | null, locale: PhraseLocale): string =>
   pick(CANCEL_REASON, code, locale);
+export const serviceCancelReasonPhrase = (code: string | null, locale: PhraseLocale): string =>
+  pick(SERVICE_CANCEL_REASON, code, locale);
 export const rejectReasonPhrase = (code: string | null, locale: PhraseLocale): string =>
   pick(REJECT_REASON, code, locale);
 export const warningReasonPhrase = (code: string | null, locale: PhraseLocale): string =>

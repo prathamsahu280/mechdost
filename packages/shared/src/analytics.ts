@@ -217,6 +217,26 @@ export interface ServerEventProps {
   service_estimate_sent: { requestCode: string; workshopId: string; revision: number; lines: number };
   service_estimate_decided: { requestCode: string; revision: number; approved: number; declined: number };
   service_billed: { requestCode: string; workshopId: string; totalPaise: number; lines: number };
+  /** Online payment of a service bill (spec 03/06, 2026-11-15): codes, ids and paise only. */
+  service_bill_pay_started: { requestCode: string; amountPaise: number };
+  service_bill_paid: {
+    requestCode: string;
+    workshopId: string | null;
+    amountPaise: number;
+    via: 'online' | 'workshop';
+    method: string;
+  };
+  service_bill_payment_failed: { requestCode: string; amountPaise: number; method: string };
+  /** Money captured for a bill that was already settled or cancelled: a refund request was raised. */
+  service_bill_late_capture: { requestCode: string; amountPaise: number; reason: 'settled' | 'cancelled' };
+  /** Staff cancelled a request (permission `service:cancel`); `refundRequested` when a paid bill is refunded. */
+  service_cancelled_by_staff: {
+    requestCode: string;
+    workshopId: string | null;
+    fromStatus: string;
+    reasonCode: string;
+    refundRequested: boolean;
+  };
   admin_workshop_saved: { workshopId: string; action: 'created' | 'updated'; published: boolean };
   /** Shop management (decision 2026-11-14 "Shop management"; specs 07/08). */
   admin_partner_standing_changed: {

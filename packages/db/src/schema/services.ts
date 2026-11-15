@@ -24,7 +24,7 @@ import {
 import {
   MOVE_REASONS,
   MOVE_TRANSPORTS,
-  SERVICE_CANCEL_REASONS,
+  SERVICE_ANY_CANCEL_REASONS,
   SERVICE_REJECT_REASONS,
   SERVICE_REQUEST_STATES,
 } from '@mechdost/shared/state';
@@ -277,7 +277,7 @@ export const serviceRequests = pgTable(
       'service_requests_reason_code_valid',
       sql`case ${t.status}
         when 'rejected' then ${t.statusReasonCode} in (${inList(SERVICE_REJECT_REASONS)})
-        when 'cancelled' then ${t.statusReasonCode} in (${inList(SERVICE_CANCEL_REASONS)})
+        when 'cancelled' then ${t.statusReasonCode} in (${inList(SERVICE_ANY_CANCEL_REASONS)})
         else ${t.statusReasonCode} is null end`,
     ),
     check(
@@ -456,7 +456,10 @@ export const serviceBills = pgTable(
       'service_bills_estimate_or_visit_only',
       sql`${t.estimateId} is not null or (jsonb_typeof(${t.lines}) = 'array' and jsonb_array_length(${t.lines}) = 1)`,
     ),
-    check('service_bills_method_valid', sql`${t.method} is null or ${t.method} in ('cash','upi','card')`),
+    check(
+      'service_bills_method_valid',
+      sql`${t.method} is null or ${t.method} in ('cash','upi','card','online')`,
+    ),
     check('service_bills_paid_pair', sql`(${t.paidAt} is null) = (${t.method} is null)`),
     index().on(t.estimateId),
     index().on(t.billedBy),

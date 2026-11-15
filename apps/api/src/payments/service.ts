@@ -2,8 +2,13 @@ import {
   ConflictError,
   applyRazorpayPayment,
   onlineGroupOfUser,
+  openPaymentForBill,
   openPaymentForGroup,
+  payableBillOfUser,
+  paymentOfUserBill,
+  recordBillRazorpayOrder,
   paymentOfUserGroup,
+  NotFoundError,
   recordRazorpayOrder,
   type PaymentOutcome,
   type Tx,
@@ -101,9 +106,17 @@ export async function verifyCheckout(
   keySecret: string,
   input: { userId: string; providerOrderId: string; paymentId: string; signature: string },
 ): Promise<{ orderCode: string; outcome: PaymentOutcome }> {
+  // A product order first; a service bill (purpose `service_bill`) when the Razorpay order is not an order's.
   const payment = await paymentOfUserGroup(db, {
     userId: input.userId,
     providerOrderId: input.providerOrderId,
+  }).catch(async (err: unknown) => {
+    if (!(err instanceof NotFoundError)) throw err;
+    const bill = await paymentOfUserBill(db, {
+      userId: input.userId,
+      providerOrderId: input.providerOrderId,
+    });
+    return { ...bill, groupCode: bill.requestCode, paymentStatus: bill.status };
   });
   if (
     !checkoutSignatureValid({
@@ -121,4 +134,43 @@ export async function verifyCheckout(
   if (!fact) return { orderCode: payment.groupCode, outcome: 'unchanged' };
   const { outcome } = await applyRazorpayPayment(db, fact);
   return { orderCode: payment.groupCode, outcome };
+}
+
+/**
+ * The Razorpay order of a service bill (spec 03 "Service bill payments"): the amount is the bill total read from the
+ * database, never from the client; reused while it can still be paid, so a double click or a retry returns the same
+ * order (one open order per bill, `payments_one_open_per_bill_uq`); stored before the client sees it.
+ */
+export async function ensureBillRazorpayOrder(
+  db: Tx,
+  gateway: RazorpayGateway,
+  input: { userId: string; code: string },
+): Promise<CheckoutHandle> {
+  const bill = await payableBillOfUser(db, input);
+  const open = await openPaymentForBill(db, bill.billId);
+  if (open)
+    return {
+      keyId: gateway.keyId,
+      orderId: open.providerOrderId,
+      amountPaise: open.amountPaise,
+      currency: 'INR',
+    };
+  const created = await gateway.createOrder({
+    amountPaise: bill.totalPaise,
+    receipt: bill.requestCode, // SR-XXX-YYYY-XXXXXX, within the 40 character limit
+    notes: { requestCode: bill.requestCode, purpose: 'service_bill' },
+  });
+  if (created.amountPaise !== bill.totalPaise || created.currency !== 'INR')
+    throw new ApiError(502, 'PAYMENT_PROVIDER_MISMATCH', 'The payment provider returned a different amount');
+  const stored = await recordBillRazorpayOrder(db, {
+    billId: bill.billId,
+    providerOrderId: created.id,
+    amountPaise: bill.totalPaise,
+  });
+  return {
+    keyId: gateway.keyId,
+    orderId: stored.providerOrderId,
+    amountPaise: stored.amountPaise,
+    currency: 'INR',
+  };
 }

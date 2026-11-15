@@ -518,6 +518,22 @@ export async function markJobPaid(db: Tx, input: StepInput & { method: ServicePa
       actor: workshopActor(input.staffUserId),
       payload: { method: input.method, at: 'workshop' },
     });
+    const [paidBill] = await tx
+      .select({ totalPaise: serviceBills.totalPaise })
+      .from(serviceBills)
+      .where(eq(serviceBills.id, paid.id))
+      .limit(1);
+    await recordServerEvent(tx, 'service_bill_paid', {
+      userId: input.staffUserId,
+      cityId: r.cityId,
+      props: {
+        requestCode: r.code,
+        workshopId: r.workshopId,
+        amountPaise: paidBill?.totalPaise ?? 0,
+        via: 'workshop',
+        method: input.method,
+      },
+    });
     return transitionRequest(tx, {
       request: r,
       to: 'completed',

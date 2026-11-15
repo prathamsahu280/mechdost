@@ -48,6 +48,7 @@ import { adminWorkshopAnalyticsMocks, workshopPerformanceMocks } from './worksho
 import { customerPhotoMocks, workshopPhotoMocks } from './photo-fixtures.ts';
 import { accountDeletionMocks, accountSupportMocks, adminSupportMocks } from './support-fixtures.ts';
 import { myWorkshopMocks, profileMocks } from './tier1-fixtures.ts';
+import { adminRoutingMocks, billPayMocks } from './tier3-fixtures.ts';
 import { slipMocks, tier2PortalMocks } from './tier2-fixtures.ts';
 import { adminRecoMocks, demandMocks, notifyMeMocks, privacyMocks } from './catalogue-tier2-fixtures.ts';
 import { photoQueueMocks, wishlistMocks } from './storefront-fixtures.ts';
@@ -1590,6 +1591,10 @@ export function mocksFor(c: AuditCase): Mock[] {
       return myWorkshopMocks(c);
     case 'API-SVC-RESCHEDULE':
       return homeRequestMocks(c);
+    case 'API-SVC-PAYBILL':
+      return billPayMocks(c);
+    case 'API-ADM-SVCROUTE':
+      return adminRoutingMocks(c);
     case 'API-SVC-PHOTOS':
       return customerPhotoMocks(c);
     case 'API-ACC-SUPPORT':

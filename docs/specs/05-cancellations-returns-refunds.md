@@ -139,3 +139,7 @@ Only after delivery (the cash was collected). Staff enter the customer's UPI id 
 ### COD refund from the support ticket (built 2026-11-15)
 
 The customer gives the UPI id or bank account on their own support thread (spec 09 "Order and request threads, photos and the COD refund destination"); staff create the `bank_upi` refund from the ticket instead of retyping it (`POST /v1/admin/support/tickets/{code}/refund`, needs `tickets:reply` and `refunds:initiate`). The destination is copied (re-encrypted under `refunds.destination_enc`) into the refund at creation, after which the ticket's copy is locked (`DESTINATION_LOCKED`). Finance approval, four-eyes, the order-total cap, delivered-only and the masked reveal are unchanged.
+
+## Service bill refunds (2026-11-15)
+
+Refunds of a service bill use the same queue, ledger, four-eyes approval, Razorpay refund with idempotency and webhooks as order refunds; `refunds.bill_id` replaces the group, the finance queue shows the request code (`SR-...`) in the order column's place and the payment method "online", and the city scope comes from the request. Sources `service_cancelled` (staff cancelled a request with a captured payment) and `duplicate_payment` (a capture after the bill was settled another way). The refund request is idempotent per payment and source (`sys_svc_<source>_<payment id>`). The processed email uses the request code and raises no coin or order logic.

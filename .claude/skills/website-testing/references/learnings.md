@@ -155,3 +155,6 @@ T130 · 2026-11-15 · order fixtures · `orders` CHECKs (`shop_when_confirmed`, 
 
 - T141 · 2026-11-15 · multi-device · The first design (whole-cart PUT) passed every single-device test and still lost updates; only a test with a second device changing the server between snapshots exposes it. → For any client cache of server-owned state, write the "other device" test first (see bug N1), and assert on the request log (which writes were sent), not only on the final state.
 - T142 · 2026-11-15 · migrations/tests · A `$$` in a JavaScript string passed to `String.replace` as the replacement collapses to `$` (the SQL function body broke at the first PGlite run). → Build SQL files with a function replacement or the Write tool, and run the db suite right after touching a migration.
+
+T143 · 2026-11-15 · payments · A concurrency test on the single-connection PGlite harness only proves serial outcomes; the invariant (exactly one settlement, the other a conflict or one refund) must hold in either order, so assert the invariant per outcome, not one fixed winner, and keep the real-Postgres run for the CI database.
+T144 · 2026-11-15 · payments · Test fixtures that give every webhook the same default payment id collide on the unique provider payment id; generate ids per call.

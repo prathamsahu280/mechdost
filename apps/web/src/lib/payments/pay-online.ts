@@ -55,7 +55,7 @@ interface RazorpayHandle {
   currency: 'INR';
 }
 
-interface RazorpaySuccess {
+export interface RazorpaySuccess {
   razorpay_payment_id: string;
   razorpay_order_id: string;
   razorpay_signature: string;
@@ -66,7 +66,7 @@ interface RazorpayInstance {
   on(event: 'payment.failed', handler: () => void): void;
 }
 
-type RazorpayConstructor = new (options: Record<string, unknown>) => RazorpayInstance;
+export type RazorpayConstructor = new (options: Record<string, unknown>) => RazorpayInstance;
 
 declare global {
   interface Window {
@@ -77,7 +77,7 @@ declare global {
 let loading: Promise<RazorpayConstructor | null> | null = null;
 
 /** Load checkout.js once (allowed by the CSP in real-sign-in builds). */
-function loadCheckout(): Promise<RazorpayConstructor | null> {
+export function loadCheckout(): Promise<RazorpayConstructor | null> {
   if (window.Razorpay) return Promise.resolve(window.Razorpay);
   loading ??= new Promise((resolve) => {
     const script = document.createElement('script');

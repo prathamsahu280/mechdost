@@ -68,6 +68,7 @@
     "./product-photos": "./src/product-photos.ts",
     "./cart-api": "./src/cart-api.ts",
     "./wishlist-api": "./src/wishlist-api.ts",
+    "./workshop-ranking": "./src/workshop-ranking.ts",
     "./service-requests": "./src/service-requests.ts",
     "./service-api": "./src/service-api.ts",
     "./free-delivery": "./src/free-delivery.ts",

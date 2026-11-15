@@ -65,3 +65,9 @@ Ask for the refund in Admin → Refunds (API `POST /v1/admin/refunds`) once the 
 - **"Needs checking" view** (a refund whose outcome we cannot tell: a timeout, a refusal we could not double-check, an amount that differs from ours, eight failed tries): the amount stays reserved so it cannot be refunded twice. Open the refund; if Razorpay reported another amount, check it in the Razorpay Dashboard first. The worker looks again every hour and fails it only when Razorpay confirms there is no such refund; a processed webhook settles it. Logs to watch: `refunds_need_reconciliation`, `razorpay_webhook_refund_mismatch`, `razorpay_webhook_refund_unknown_refund` (a refund made in the Dashboard that we do not know: parked in `webhook_events`).
 - **Cash on delivery:** paid by hand after approval (UPI or bank details come from the support ticket, shown only to the approver); record the UTR with "Mark as paid".
 - **Test it:** place and pay a test order, cancel it from Admin → Orders, approve the request from a second staff account, then check the Razorpay test dashboard for the refund and the webhook delivery.
+
+## Service bill payments (2026-11-15)
+
+- A customer pays a workshop bill from the request page ("Pay online"); it uses the same Razorpay webhook as orders (no new webhook events). Test: bill a request in the demo, pay with a Razorpay test card, watch the request turn completed.
+- A capture that arrives after the workshop marked the bill paid (or after staff cancelled) appears in Admin -> Refunds as "Paid twice" or "Service request cancelled", approval first; the bill is not settled again. The log line `razorpay_webhook_needs_refund` fires as for orders.
+- Staff cancel of a request whose bill was paid online raises one refund request the same way.
