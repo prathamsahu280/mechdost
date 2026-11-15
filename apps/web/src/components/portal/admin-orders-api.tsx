@@ -31,6 +31,7 @@ import { deadlineView, istDayTime } from '@/lib/admin-shop-form';
 import { ApiError, ApiListState, LoadMore } from './api-list-state';
 import { useNow } from './use-now';
 import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { offerLeftParams } from '@/lib/offer-time';
 import { useNoticeRefresh } from '../notices/use-notice-refresh';
 import { useApiList, type ApiList } from './use-api-list';
 
@@ -239,7 +240,7 @@ function RoutingCard({
             // Routed while the shop was closed: the offer waits for its opening (+ grace), so show that time.
             const d = deadlineView(item.offer.expiresAt, now);
             return d.kind === 'minutes'
-              ? t('expiresIn', { minutes: d.minutes })
+              ? t('expiresIn', offerLeftParams(d.minutes))
               : t('shops_api_waitsUntil', { time: istDayTime(d.at, locale) });
           })()}
         </p>

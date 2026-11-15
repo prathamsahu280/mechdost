@@ -172,7 +172,7 @@ export default function AssistantPanel({
       </ol>
 
       <div className="border-t border-line px-3 pt-2">
-        <ul aria-label={copy.suggestionsLabel} className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-2">
+        <ul aria-label={copy.suggestionsLabel} className="flex flex-wrap gap-2 pb-2">
           {copy.suggestions.map((s) => (
             <li key={s.intent}>
               <button
@@ -180,7 +180,7 @@ export default function AssistantPanel({
                 onClick={() => {
                   void ask(s.label);
                 }}
-                className="press inline-flex min-h-9 items-center rounded-pill border border-line-card px-3 text-xs font-bold whitespace-nowrap text-ink hover:bg-pill"
+                className="press inline-flex min-h-9 items-center py-1 text-start rounded-pill border border-line-card px-3 text-xs font-bold text-ink hover:bg-pill"
               >
                 {s.label}
               </button>

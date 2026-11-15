@@ -1145,11 +1145,15 @@ function couponsMocks(c0: AuditCase): Mock[] {
       method: 'GET',
       path: /^\/catalogue\/categories$/,
       schema: CouponCategoryListDto,
-      reply: (): Reply => ({
+      reply: ({ query }): Reply => ({
         body: {
           categories: [
-            { slug: 'tyres', parentSlug: null, name: 'Tyres' },
-            { slug: 'batteries', parentSlug: null, name: 'Batteries' },
+            { slug: 'tyres', parentSlug: null, name: query.get('locale') === 'hi' ? 'टायर' : 'Tyres' },
+            {
+              slug: 'batteries',
+              parentSlug: null,
+              name: query.get('locale') === 'hi' ? 'बैटरी' : 'Batteries',
+            },
           ],
         } satisfies Dto<typeof CouponCategoryListDto>,
       }),

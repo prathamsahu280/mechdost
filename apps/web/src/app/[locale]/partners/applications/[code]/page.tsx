@@ -4,6 +4,7 @@ import { Suspense } from 'react';
 import { ApplicationStatus } from '@/components/partners/application-status';
 import { ClientMessages } from '@/components/ui/client-messages';
 import { Container } from '@/components/ui/page-intro';
+import { withCode } from '@/components/ui/code-text';
 import type { Locale } from '@/i18n/routing';
 
 interface Props {
@@ -24,7 +25,7 @@ export default async function ApplicationPage({ params }: Props) {
   return (
     <Container className="py-10 tab:py-14">
       <h1 className="font-heading text-[clamp(22px,3vw,40px)] font-extrabold tracking-[-0.02em] break-words text-ink">
-        {t('reference', { code: safe || code.slice(0, 40) })}
+        {withCode(t('reference', { code: safe || code.slice(0, 40) }), safe || code.slice(0, 40))}
       </h1>
       <div className="mt-8">
         <ClientMessages namespaces={['apply', 'demo', 'shopTier2']}>

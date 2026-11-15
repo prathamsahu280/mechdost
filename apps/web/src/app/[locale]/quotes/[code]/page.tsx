@@ -6,6 +6,7 @@ import { QuoteThread } from '@/components/quotes/quote-thread';
 import { QuoteThreadLazy } from '@/components/quotes/quote-lazy';
 import { ClientMessages } from '@/components/ui/client-messages';
 import { Container } from '@/components/ui/page-intro';
+import { withCode } from '@/components/ui/code-text';
 import type { Locale } from '@/i18n/routing';
 import { QUOTES_AVAILABLE, QUOTES_ON_API } from '@/lib/data-mode';
 
@@ -30,7 +31,7 @@ export default async function QuotePage({ params }: Props) {
   return (
     <Container className="py-10 tab:py-14">
       <h1 className="font-heading text-[clamp(22px,3vw,40px)] font-extrabold tracking-[-0.02em] break-words text-ink">
-        {t('reference', { code: safe || code.slice(0, 40) })}
+        {withCode(t('reference', { code: safe || code.slice(0, 40) }), safe || code.slice(0, 40))}
       </h1>
       <div className="mt-6">
         <ClientMessages namespaces={['quote', 'demo']}>

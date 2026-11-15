@@ -303,7 +303,7 @@ export function ServiceBillView({
             <Link
               href={`${locale === 'hi' ? '/hi' : ''}/account/support?redo=${encodeURIComponent(requestCode)}`}
               data-track="labour_redo_claim_open"
-              className="mt-1 inline-flex min-h-11 items-center font-bold text-accent-soft-text underline-offset-4 hover:underline"
+              className="mt-1 inline-flex min-h-11 items-center font-bold text-ink underline decoration-accent decoration-2 underline-offset-4 hover:decoration-4"
             >
               {trust('labourClaim')}
             </Link>

@@ -156,3 +156,17 @@ Found (fixed in the visual-fix batch unless noted):
 - **V5** (minor, not fixed) Workshop profile at 1440 px, page at the top: the floating "Ask MechDost" launcher sits over
   one price in the booking form's service list; it clears once the form is sticky. Candidate: hide the launcher while
   the booking form is in view, or reserve space.
+
+### Visual review fixes (builder, V1–V4 and V7–V9)
+
+Coordinator's full-page screenshots (390 px light en, dark hi) and the final audit run.
+
+| Id  | Finding                                                                | Cause                                                                                                                       | Fix                                                                                                                 |
+| --- | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| V1  | "1440 min left to accept" (shop portal, admin routing, hi "1440 मिनट") | `expiresIn` printed raw minutes                                                                                             | `offerLeftParams()` + ICU plural message: "24 h", "1 h 30 min", hi "24 घंटे", "1 घंटा 30 मिनट"; all four call sites |
+| V2  | Hindi delivery button wrapped to 3 lines beside the code field         | row layout at 390 px                                                                                                        | `flex-col` under 420 px, full-width field and button (`min-h-11`), row above; demo and API shop portal              |
+| V3  | "★" and "4.6" split across lines                                       | plain space                                                                                                                 | NBSP in `shopStats` (en, hi) and the workshop header                                                                |
+| V4  | `SR-RPR-2026-` / `HND104` broke in headings                            | browsers break after hyphens                                                                                                | `CodeText` / `withCode()` (`whitespace-nowrap`) in service, order, quote and application headings                   |
+| V7  | Assistant chip cut by 55 px at 320 px hi dark                          | `overflow-x-auto` row inside `overflow-hidden` panel                                                                        | chips `flex-wrap`, text may wrap                                                                                    |
+| V8  | `labour_redo_claim_open` contrast                                      | `text-accent-soft-text` (#bf3c12) on `surface-alt` (#e2e8ef) is 4.4:1; other small `text-accent` links on these pages: none | ink text, accent underline                                                                                          |
+| V9  | /hi coupon form showed "Tyres, Batteries"                              | fixture ignored `?locale=hi` on `/catalogue/categories` (picker reads the localised `name`)                                 | fixture answers Hindi names for `locale=hi`                                                                         |

@@ -23,6 +23,7 @@ import {
 import { ApiError, ApiListState, LoadMore } from './api-list-state';
 import { useNow } from './use-now';
 import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { offerLeftParams } from '@/lib/offer-time';
 import { liveOffers, stepFlashKey } from '@/lib/shop-tier1';
 import { DeliveryLocked, EmptyWithAction } from './shop-empty';
 import { FlashNote, useFlash, type Flash } from './shop-flash';
@@ -330,7 +331,7 @@ function OfferedOrder({
       <p className="mb-2 inline-flex rounded-pill bg-warning-bg px-3 py-1 text-xs font-extrabold text-warning">
         <span aria-hidden="true">⏱️ </span>
         {deadline.kind === 'minutes'
-          ? t('expiresIn', { minutes: deadline.minutes })
+          ? t('expiresIn', offerLeftParams(deadline.minutes))
           : t('shops_api_waitsUntil', { time: istDayTime(deadline.at, locale) })}
       </p>
       <OrderLines order={order} />
@@ -573,7 +574,7 @@ function DeliveryCodeForm({
       <p id={`${inputId}-hint`} className="text-xs text-muted">
         {t('deliveryCodeHint')}
       </p>
-      <div className="mt-2 flex gap-2">
+      <div className="mt-2 flex flex-col gap-2 min-[420px]:flex-row">
         <input
           id={inputId}
           inputMode="numeric"
@@ -585,9 +586,13 @@ function DeliveryCodeForm({
           onChange={(e) => {
             setCode(e.target.value.replace(/\D/g, '').slice(0, 4));
           }}
-          className={`${portalField} mt-0 w-32 text-center font-heading text-xl font-extrabold tracking-[0.4em] tabular-nums`}
+          className={`${portalField} mt-0 w-full min-[420px]:w-32 text-center font-heading text-xl font-extrabold tracking-[0.4em] tabular-nums`}
         />
-        <button type="submit" disabled={busy} className={`${portalPrimary} flex-1`}>
+        <button
+          type="submit"
+          disabled={busy}
+          className={`${portalPrimary} min-h-11 w-full min-[420px]:w-auto min-[420px]:flex-1`}
+        >
           {t('deliveryConfirm')}
         </button>
       </div>
