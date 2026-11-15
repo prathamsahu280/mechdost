@@ -70,6 +70,7 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | HOME-WORKSHOPS     | Home                                                             | Top workshops                                                                                                                                                                                                                                                                   | pairwise | 25       | 0       |
 | HOME-PARTNER       | Home                                                             | Partner teaser                                                                                                                                                                                                                                                                  | pairwise | 25       | 0       |
 | HOME-FAQ           | Home                                                             | FAQ (details/summary accordion)                                                                                                                                                                                                                                                 | pairwise | 24       | 0       |
+| HOME-PRODUCTS      | Home                                                             | Browse our product range: product cards in a row (name, rating, price, unit price, stock, button)                                                                                                                                                                               | pairwise | 16       | 4       |
 | SHOP-CARD          | Shop (/shop)                                                     | Product card × compare list × cart (full cross)                                                                                                                                                                                                                                 | cross    | 128      | 14      |
 | SHOP-ACTION        | Shop (/shop)                                                     | Card actions clicked, then every card re-checked (cross-entity sync)                                                                                                                                                                                                            | cross    | 40       | 2       |
 | SHOP-FILTERS       | Shop (/shop)                                                     | Search, category chips, vehicle chips, sort, results count, empty result                                                                                                                                                                                                        | pairwise | 48       | 6       |
@@ -166,7 +167,7 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | API-ADM-EXPORTS    | Admin → Exports, real sign-in                                    | CSV exports: the form (dataset, city, dates), customers with masked or open contacts, done, empty file, too many rows, expired link, range over 180 days, nothing allowed, load error                                                                                           | pairwise | 80       | 0       |
 | API-NAV-ADMIN      | Navigation, real sign-in                                         | Admin section bar with every real-mode section (Analytics, Refunds, Errors included): current item, scroll, walk                                                                                                                                                                | cross    | 176      | 0       |
 | API-NAV-ACCOUNT    | Navigation, real sign-in                                         | Account section bar in a real-sign-in build: current item, scroll, walk                                                                                                                                                                                                         | cross    | 80       | 0       |
-| **Total**          |                                                                  |                                                                                                                                                                                                                                                                                 |          | **3866** | **92**  |
+| **Total**          |                                                                  |                                                                                                                                                                                                                                                                                 |          | **3882** | **96**  |
 
 ## Chrome
 
@@ -595,6 +596,27 @@ Pairwise (all pairs of values); 24 states; scope `section[aria-labelledby="faq-t
 - [ ] HOME-FAQ-022 · 1280px · dark · hi · signed out · world=empty · / · open=closed · asserts: present inside overlap covered clipped tap hscroll focus console hindi
 - [ ] HOME-FAQ-023 · 1440px · light · en · signed out · world=empty · / · open=all · asserts: present inside overlap covered clipped tap hscroll focus console
 - [ ] HOME-FAQ-024 · 1920px · dark · hi · signed out · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+
+### HOME-PRODUCTS — Browse our product range: product cards in a row (name, rating, price, unit price, stock, button)
+
+Pairwise (all pairs of values); 16 states; scope `section[aria-labelledby="range-title"]`.
+
+- [ ] HOME-PRODUCTS-001 · 320px · light · en · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console aligned axe
+- [ ] HOME-PRODUCTS-002 · 320px · dark · hi · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] HOME-PRODUCTS-003 · 390px · light · hi · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi axe · core
+- [ ] HOME-PRODUCTS-004 · 390px · dark · en · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console aligned axe · core
+- [ ] HOME-PRODUCTS-005 · 480px · light · en · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console aligned axe
+- [ ] HOME-PRODUCTS-006 · 480px · dark · hi · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] HOME-PRODUCTS-007 · 768px · light · en · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console aligned
+- [ ] HOME-PRODUCTS-008 · 768px · dark · hi · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] HOME-PRODUCTS-009 · 1024px · light · en · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console aligned axe
+- [ ] HOME-PRODUCTS-010 · 1024px · dark · hi · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] HOME-PRODUCTS-011 · 1280px · light · en · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console aligned
+- [ ] HOME-PRODUCTS-012 · 1280px · dark · hi · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] HOME-PRODUCTS-013 · 1440px · light · en · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console aligned axe · core
+- [ ] HOME-PRODUCTS-014 · 1440px · dark · hi · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi axe · core
+- [ ] HOME-PRODUCTS-015 · 1920px · light · en · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console aligned
+- [ ] HOME-PRODUCTS-016 · 1920px · dark · hi · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
 
 ## Shop (/shop)
 

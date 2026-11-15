@@ -552,6 +552,22 @@ export const COMPONENTS: readonly ComponentDef[] = [
     params: [...env, { name: 'open', values: ['closed', 'first', 'all'] }],
     sweep: 8,
   },
+  {
+    // User report 2026-11-15 (screenshot of this grid): prices and "In stock" sat at different heights when one name
+    // took two lines or one card had a unit price; the card rows carry `data-align` and the aligned check compares them.
+    code: 'HOME-PRODUCTS',
+    page: 'Home',
+    component:
+      'Browse our product range: product cards in a row (name, rating, price, unit price, stock, button)',
+    path: '/',
+    scope: 'section[aria-labelledby="range-title"]',
+    strategy: 'pairwise',
+    params: [...env],
+    checks: [...BASE_CHECKS, 'aligned'],
+    align: CARD_ALIGN,
+    sweep: 8,
+    core: coreAt([390, 1440]),
+  },
 
   // ───────────────────────────── Shop listing ─────────────────────────────
   {

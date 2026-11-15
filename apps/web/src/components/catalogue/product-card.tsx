@@ -62,29 +62,35 @@ export function ProductCard({
       </div>
       <div className="flex flex-1 flex-col px-1 pt-3">
         {categoryName ? <p className="text-xs text-muted">{categoryName}</p> : null}
-        <h3 className="mt-0.5 font-heading text-[16px] leading-snug font-bold text-ink">
+        {/* Rows line up across a row of cards (user report 2026-11-15): the name always takes two lines (longer
+            names end with "…", the full name stays in the link text and its title), the rating and unit-price rows
+            keep their height when empty, and each row carries `data-align` for the UI state audit's aligned check. */}
+        <h3 className="mt-0.5 min-h-[calc(2lh+0.25rem)] font-heading text-[16px] leading-snug font-bold text-ink">
           <LocalLink
             href={`/shop/${product.slug}`}
-            className="inline-block py-0.5 hover:underline"
+            className="line-clamp-2 py-0.5 hover:underline"
+            title={`${product.brand} ${product.name}`}
             data-track={`product_${product.slug}`}
           >
             {product.brand} {product.name}
           </LocalLink>
         </h3>
-        {rating ? (
-          <p className="mt-1 flex items-center gap-1.5 text-xs text-muted">
-            <StarRating
-              rating={rating.avg}
-              label={r('ratedBy', { rating: rating.avg.toFixed(1), count: rating.count })}
-            />
-            <span aria-hidden="true" className="font-bold text-ink">
-              {rating.avg.toFixed(1)}
-            </span>
-            <span aria-hidden="true">({rating.count})</span>
-          </p>
-        ) : null}
+        <div data-align="rating" className="mt-1 min-h-5">
+          {rating ? (
+            <p className="flex items-center gap-1.5 text-xs text-muted">
+              <StarRating
+                rating={rating.avg}
+                label={r('ratedBy', { rating: rating.avg.toFixed(1), count: rating.count })}
+              />
+              <span aria-hidden="true" className="font-bold text-ink">
+                {rating.avg.toFixed(1)}
+              </span>
+              <span aria-hidden="true">({rating.count})</span>
+            </p>
+          ) : null}
+        </div>
         {price ? (
-          <div className="mt-3 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+          <div data-align="price" className="mt-3 flex flex-wrap items-baseline gap-x-2 gap-y-1">
             <span className="font-heading text-[22px] font-extrabold text-ink">
               {formatPrice(price.pricePaise)}
             </span>
@@ -100,8 +106,11 @@ export function ProductCard({
             ) : null}
           </div>
         ) : null}
-        {price ? <UnitPrice pricePaise={price.pricePaise} pack={product.pack} className="mt-0.5" /> : null}
+        <div className="mt-0.5 min-h-[1lh] text-xs">
+          {price ? <UnitPrice pricePaise={price.pricePaise} pack={product.pack} /> : null}
+        </div>
         <p
+          data-align="stock"
           className={`mt-1 text-xs font-bold ${product.availability === 'on_request' ? 'text-warning' : 'text-success'}`}
         >
           {availabilityLabel(t, product.availability)}
