@@ -89,3 +89,11 @@ coordinator merges, runs the gate, measures the JS budget and re-runs the affect
 'center'})` (honours scroll padding, like keyboard focus) instead of Playwright's own scroll, which ignores it
   (header "covers" the cart bulk-quote link and compare rows only in the checker).
 - G findings to be added here when the slices finish.
+
+## After batch 2 is deployed: visual review pass (user 2026-11-16)
+
+The audit checks rendered pages by rules (geometry, text, focus, Hindi, axe) and keeps screenshots of failures only;
+nobody has looked at the pages as a person would. User: "u can do what u proposed after the fix is done and deployed".
+Capture full-page screenshots of every page in 390/1440 px × light/dark × en/hi × signed out/in (passing or not),
+make one contact sheet per page, review every sheet by eye (layout, spacing, colours, text, alignment, empty states),
+log findings with screenshots in the QA report, and fix the real ones in the next batch. Then the real-API pass.
