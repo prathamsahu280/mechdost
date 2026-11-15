@@ -149,3 +149,7 @@ Server events (same transaction; ids, codes and counts only, never a path or fil
 ## Admin next tier part 2 events (2026-11-15)
 
 Server events (same transaction as the change; codes, counts and ids only): `admin_policy_restored { key, locale, fromVersion, version }` (next to `admin_content_published` for every publish), `admin_layout_published { scope: global|city, action: saved|reset, hidden, tiles, mapDefault }`, `admin_setting_city_changed { key, action: overridden|reset }`, `admin_company_saved { filled, grievanceShown }`. Client event `admin_site_change` gained areas `policies` and `company` and actions `publish`, `restore`, `preview` (area `layout` action `publish` for the real-mode layout save); `fields` is a count. Click id `admin_policy_preview_call` (preview call link), `footer_grievance_email` and `footer_grievance_phone` (footer links, only once the admin fills the officer).
+
+## Workshops tier 1 events (2026-11-15)
+
+Server (same transaction; ids, codes, counts only): `workshop_slot_capacity_set {workshopId, hour, capacity}`, `workshop_profile_saved {workshopId, fields[], busy, by}`, `workshop_change_requested {workshopId, kind}`, `workshop_change_decided {workshopId, kind, approved}`, `service_slot_booked {requestCode, workshopId, hour}`, `service_rescheduled {requestCode, workshopId, count, fromDate, toDate}`, `service_acceptance_expired {requestCode, workshopId, waitedMinutes}`. Client: `booking_rescheduled {code, workshop, slot}`, `workshop_profile_viewed {}`.

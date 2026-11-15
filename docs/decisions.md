@@ -998,3 +998,14 @@ Design: `docs/superpowers/specs/2026-11-15-service-photos-design.md`; built desc
 - **City values screen shows the picker only to staff with `settings:write`** (super admin today, unchanged); city managers do not get write access to settings. The layout screen uses the same picker (marketing sees "All cities" only).
 - **No new permission** (reused `content:write`, `content:publish`, `settings:read`, `settings:write`); so no `db:seed`. Migration `0063_admin_policy_history` is not applied; the coordinator renumbers at merge.
 - **Not done:** the map default is stored and served but the workshop map still reads the browser store (the map is a client component under three pages; passing the value from the server is a follow-up); public policy pages read the launch city only until the city selector (spec 15).
+
+## Workshops tier 1 rulings (2026-11-15)
+
+- **Slots are a table with a unique hour row and a CHECK, not an exclusion constraint.** Spec 06 mentioned an exclusion constraint for capacity 1; the unique row plus `booked <= capacity` covers every capacity with one mechanism. Cost if wrong: none visible; a per-bay model would need a different table.
+- **Slots are made on demand**, not by a nightly job: no job to fail, no rows for closed or far-future days. Changing the default capacity affects hours not yet touched; existing rows keep their own number.
+- **`hour` is optional in the propose API for now** (the older hourless form still works, takes no capacity) so existing clients and tests keep working; the web portal always sends an hour. Cost if wrong: a client that skips `hour` bypasses capacity. Queued as Q115 to make it mandatory.
+- **A reschedule that the workshop does not answer goes back to routing** (the old booking was released at once). Cost if wrong: the customer loses their confirmed slot on a timeout; the alternative (keeping the old slot until the new one is accepted) needs a second live proposal per request.
+- **Pin and GSTIN changes are requests; the old values stay live meanwhile** (instead of setting `location_verified` false, which would unlist the workshop). Cost if wrong: a moved workshop keeps its old pin on the map until staff act.
+- **A self-service pin change stays inside the workshop's city** (security review): approving a PIN of another city would move the workshop out of the approver's scope without its `city_id`. City moves remain an admin edit.
+- **Busy mode and menu ranges reuse `service_menu:write`**; no new permission, so no `db:seed`.
+- **No new email or bell templates** for the timeout and the reschedule: the timeout is internal (like a decline) and the customer started the reschedule. Queued as Q116.

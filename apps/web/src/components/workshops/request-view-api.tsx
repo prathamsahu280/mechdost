@@ -20,6 +20,7 @@ import { StatusTimeline } from '../commerce/status-timeline';
 import { JobPhotosStripLazy } from '@/components/photos/photos-lazy';
 import { ServiceBillView } from './service-estimate';
 import { HomeVisitAside, HomeVisitBox } from './home-visit-api';
+import { RescheduleRequestApi } from './reschedule-api';
 import { EstimateApprovalApi, EstimateChoicesApi } from './service-estimate-api';
 
 /** Workshop review once the service is paid (spec 06): its own chunk, fetched only then. */
@@ -223,6 +224,9 @@ export function RequestViewApi({ code }: { code: string }) {
               gstRegistered={req.bill.gstRegistered}
               requestCode={req.code}
             />
+          ) : null}
+          {req.status === 'proposed' || req.status === 'confirmed' ? (
+            <RescheduleRequestApi req={req} onChanged={refresh} />
           ) : null}
           {customerMayCancel(req.status) ? <CancelRequestApi req={req} onChanged={refresh} /> : null}
         </section>

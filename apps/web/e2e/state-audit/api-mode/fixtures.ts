@@ -43,6 +43,7 @@ import type { AuditCase } from '../cases.ts';
 import { layoutMocks, policyMocks, settingsMocks } from './admin-config-fixtures.ts';
 import { homeFinderMocks, homeJobMocks, homeRequestMocks } from './home-fixtures.ts';
 import { customerPhotoMocks, workshopPhotoMocks } from './photo-fixtures.ts';
+import { myWorkshopMocks, profileMocks } from './tier1-fixtures.ts';
 import type { Mock, MockCtx, Reply } from './mock-api.ts';
 
 const NOW = Date.parse('2026-11-15T10:00:00.000Z');
@@ -1374,7 +1375,7 @@ export function mocksFor(c: AuditCase): Mock[] {
     case 'API-SVC-HOMEREQ':
       return homeRequestMocks(c);
     case 'API-WS-HOMEJOB':
-      return homeJobMocks(c);
+      return [...homeJobMocks(c), ...profileMocks(c)];
     case 'API-ADM-STAFF':
       return staffMocks();
     case 'API-ADM-CUSTOMERS':
@@ -1382,7 +1383,11 @@ export function mocksFor(c: AuditCase): Mock[] {
     case 'API-ADM-AUDIT':
       return auditMocks();
     case 'API-WS-PHOTOS':
-      return workshopPhotoMocks(c);
+      return [...workshopPhotoMocks(c), ...profileMocks(c)];
+    case 'API-WS-MYWORKSHOP':
+      return myWorkshopMocks(c);
+    case 'API-SVC-RESCHEDULE':
+      return homeRequestMocks(c);
     case 'API-SVC-PHOTOS':
       return customerPhotoMocks(c);
     default:

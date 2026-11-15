@@ -331,7 +331,7 @@ export interface AdminMenuItem {
   homeAvailable: boolean;
 }
 
-async function cityOfPincode(tx: Tx, pincode: string): Promise<string> {
+export async function cityOfPincode(tx: Tx, pincode: string): Promise<string> {
   const [p] = await tx
     .select({ cityId: pincodes.cityId })
     .from(pincodes)

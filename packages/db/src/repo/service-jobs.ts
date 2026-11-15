@@ -159,7 +159,6 @@ export async function proposeSlot(
 ) {
   if (input.highPaise < input.lowPaise) throw new ValidationError('High is below low', 'RANGE');
   const hour = input.hour ?? null;
-  if (hour === null && !input.slot) throw new ValidationError('Pick an hour', 'SLOT_REQUIRED');
   assertBookableDate(input.date, 60, input.now);
   return db.transaction(async (tx) => {
     const r = await jobFor(tx, input, { newWork: true });
@@ -167,10 +166,11 @@ export async function proposeSlot(
     if (r.serviceMode === 'home' && !input.mechanicName)
       throw new ValidationError('Name the mechanic who will visit', 'MECHANIC_REQUIRED');
     // A place in the hour first: a full hour (409 SLOT_FULL) rolls the whole proposal back.
-    const slot =
-      hour === null
-        ? (input.slot as ServiceSlot)
-        : await bookSlot(tx, { workshopId: workshopOf(r), date: input.date, hour, now: input.now });
+    let slot: ServiceSlot;
+    if (hour !== null)
+      slot = await bookSlot(tx, { workshopId: workshopOf(r), date: input.date, hour, now: input.now });
+    else if (input.slot) slot = input.slot;
+    else throw new ValidationError('Pick an hour', 'SLOT_REQUIRED');
     const out = await transitionRequest(tx, {
       request: r,
       to: 'proposed',

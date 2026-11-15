@@ -334,6 +334,9 @@ export const CLIENT_EVENT_SCHEMAS = {
   service_mode_selected: z.object({ mode: z.enum(['workshop', 'home']) }).strict(),
   booking_confirmed: z.object({ code: id, workshop: id, demo: z.boolean() }).strict(),
   booking_cancelled: z.object({ code: id, workshop: id, reasonCode: id }).strict(),
+  // Workshops tier 1 (spec 06): the customer asked to move a booking; the workshop opened "My workshop" or saved it.
+  booking_rescheduled: z.object({ code: id, workshop: id, slot: id }).strict(),
+  workshop_profile_viewed: z.object({}).strict(),
   // Workshop estimates (spec 06): the version and line counts only.
   estimate_viewed: z
     .object({ code: id, version: z.number().int().min(1).max(99), lines: z.number().int().min(1).max(20) })

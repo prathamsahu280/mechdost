@@ -173,6 +173,7 @@ export function detailOf(variant: string, c: AuditCase): Detail {
     },
     status: 'confirmed',
     version: 4,
+    reschedule: { count: 0, max: 2, from: null },
     routingMode: 'chosen',
     workshop: {
       id: WORKSHOP_ID,
@@ -204,6 +205,7 @@ export function detailOf(variant: string, c: AuditCase): Detail {
       id: uuid(50),
       date: '2026-11-16',
       slot: 'morning',
+      hour: null,
       lowPaise: 80_000,
       highPaise: 150_000,
       note: null,

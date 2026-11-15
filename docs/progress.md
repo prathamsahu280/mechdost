@@ -293,3 +293,10 @@ See PENDING DECISIONS in `docs/decisions.md` (payment methods; post-purchase P1 
 - Migration `0055_refunds` generated, **not applied** (the coordinator renumbers at merge). Needs RBAC sync? No new permissions.
 - User action: Q107 (add the two refund webhook events in Razorpay).
 - Not built: see spec 05 "Not built".
+
+## 2026-11-15 - Workshops next tier, part 1 (branch worktree-agent-aaa8647e3fcc0b9fb, not merged; migration `workshops_tier1` generated as 0064, not applied, coordinator renumbers)
+
+- Built: "My workshop" self-edit (profile text en + hi, hours, menu ranges, busy mode, capacity) with staff-approved pin and GSTIN requests; hourly `workshop_slots` with capacity and atomic booking and release; acceptance timeout (setting `service.acceptance_timeout_min`, worker loop, `expired` in workshop analytics); customer reschedule (`confirmed -> awaiting_workshop`, 2 per booking, history in `service_events`). Specs 06, 07, 12, 14 and decisions updated; state-audit rows `API-WS-MYWORKSHOP`, `API-SVC-RESCHEDULE` (checklist regenerated, profile mocks added to the other workshop-portal rows).
+- Security review fix: pin change PIN code must be in the workshop's city (filing and decision).
+- Needs at merge: renumber the migration; no `db:seed` (no new permission). Questions Q115, Q116.
+- Not built: items 5 to 7 of the design (online bill payment, staff cancel, ranking); staff screen for change requests; admin analytics column; customer email for the timeout.

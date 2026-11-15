@@ -171,7 +171,7 @@ describe('hourly slots', () => {
     expect(results.filter((x) => x.status === 'fulfilled')).toHaveLength(1);
     const lost = results.filter((x) => x.status === 'rejected');
     expect(lost).toHaveLength(3);
-    for (const l of lost) expect((l as PromiseRejectedResult).reason).toMatchObject({ code: 'SLOT_FULL' });
+    for (const l of lost) expect(l.reason).toMatchObject({ code: 'SLOT_FULL' });
     const row = await booked('other', 12, date);
     expect(row).toMatchObject({ capacity: 1, booked: 1, free: 0 });
     // Losers stay waiting for the workshop (the whole proposal rolled back).
@@ -464,7 +464,7 @@ describe('acceptance timeout', () => {
 
   it('a workshop that declines first is not counted as an expiry', async () => {
     const r = await request('main');
-    await declineRequest(t(), { ...step(r.code, r.version), reasonCode: 'too_busy' });
+    await declineRequest(t(), { ...step(r.code, r.version), reasonCode: 'fully_booked' });
     const expired = await db
       .select()
       .from(s.serviceEvents)
@@ -640,6 +640,45 @@ describe('"My workshop" self-edit', () => {
       gstin: '22AAAAA0000A1Z5',
       gstRegistered: true,
     });
+  });
+
+  it('keeps a pin change inside the workshop city: foreign or unserved PIN codes are refused at filing and at decision', async () => {
+    const own = { workshopIds: [W.bhilai!.id], workshopId: W.bhilai!.id, userId: f.staff };
+    // Raipur PIN for a Bhilai workshop, and a PIN that is not served at all.
+    await expect(
+      requestWorkshopChange(t(), {
+        ...own,
+        change: { kind: 'location', lat: 21.2, lng: 81.4, pincode: '492001' },
+      }),
+    ).rejects.toMatchObject({ code: 'PINCODE_OTHER_CITY' });
+    await expect(
+      requestWorkshopChange(t(), {
+        ...own,
+        change: { kind: 'location', lat: 21.2, lng: 81.4, pincode: '499999' },
+      }),
+    ).rejects.toMatchObject({ code: 'PINCODE_NOT_SERVED' });
+    // A request that slipped in with a foreign PIN (older row) is refused when staff approve, whoever they are.
+    const [row] = await db
+      .insert(s.workshopChangeRequests)
+      .values({
+        workshopId: W.bhilai!.id,
+        kind: 'location',
+        payload: { lat: 21.2, lng: 81.4, pincode: '492001' },
+      })
+      .returning({ id: s.workshopChangeRequests.id });
+    await expect(
+      decideWorkshopChange(t(), {
+        scope: { all: true },
+        changeId: row!.id,
+        approve: true,
+        note: null,
+        version: 1,
+        staffUserId: f.staff,
+      }),
+    ).rejects.toMatchObject({ code: 'PINCODE_OTHER_CITY' });
+    const w = await getAdminWorkshop(t(), { all: true }, W.bhilai!.id);
+    expect(w.pincode).toBe('490001');
+    expect(w.cityId).toBe(f.bhilai);
   });
 
   it('validates change bodies strictly', () => {

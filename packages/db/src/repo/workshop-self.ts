@@ -5,7 +5,17 @@ import { ConflictError, mapPgError, NotFoundError, ValidationError } from './err
 import { recordServerEvent } from './events';
 import type { Tx } from './orders';
 import type { CityScope } from './routing';
-import { getAdminWorkshop, saveMenu, type AdminWorkshop } from './workshops';
+import { cityOfPincode, getAdminWorkshop, saveMenu, type AdminWorkshop } from './workshops';
+
+/**
+ * A self-service pin change stays in the workshop's own city (ruling 2026-11-15, security review): a PIN of another
+ * city would move the workshop out of the approver's scope without its `city_id`. Unserved PINs are refused too.
+ */
+async function assertPinInCity(tx: Tx, pincode: string | null | undefined, cityId: string) {
+  if (!pincode) return;
+  if ((await cityOfPincode(tx, pincode)) !== cityId)
+    throw new ValidationError('That PIN code is in another city', 'PINCODE_OTHER_CITY');
+}
 
 /**
  * "My workshop" (spec 07, workshops tier 1; design 2026-11-15): the owner edits the profile text (English and Hindi),
@@ -133,6 +143,7 @@ export async function requestWorkshopChange(
       .where(eq(workshops.id, input.workshopId))
       .for('update');
     if (!w) throw new NotFoundError('Workshop not found');
+    if (c.kind === 'location') await assertPinInCity(tx, c.pincode, w.cityId);
     let row: { id: string } | undefined;
     try {
       [row] = await tx.transaction(async (sp) =>
@@ -266,26 +277,30 @@ export async function decideWorkshopChange(
       throw new ValidationError('Say why it was turned down (5 to 300 characters)', 'NOTE_REQUIRED');
     if (input.approve) {
       const p = c.payload as { lat?: number; lng?: number; pincode?: string | null; gstin?: string | null };
+      if (c.kind === 'location') await assertPinInCity(tx, p.pincode, c.cityId);
       try {
-        if (c.kind === 'location' && p.lat !== undefined && p.lng !== undefined)
+        if (c.kind === 'location' && p.lat !== undefined && p.lng !== undefined) {
+          const location = { lat: p.lat, lng: p.lng };
           await tx.transaction(async (sp) =>
             sp
               .update(workshops)
               .set({
-                location: { lat: p.lat as number, lng: p.lng as number },
+                location,
                 locationVerified: true,
                 ...(p.pincode ? { pincode: p.pincode } : {}),
                 updatedAt: new Date(),
               })
               .where(eq(workshops.id, c.workshopId)),
           );
-        else if (c.kind === 'gstin')
+        } else if (c.kind === 'gstin') {
+          const gstin = p.gstin ?? null;
           await tx.transaction(async (sp) =>
             sp
               .update(workshops)
-              .set({ gstin: p.gstin ?? null, gstRegistered: p.gstin != null, updatedAt: new Date() })
+              .set({ gstin, gstRegistered: gstin !== null, updatedAt: new Date() })
               .where(eq(workshops.id, c.workshopId)),
           );
+        }
       } catch (err) {
         mapPgError(err);
       }
