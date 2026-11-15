@@ -440,3 +440,8 @@ merge, new catalogue entries (quote events) need a `META_TEMPLATE_COPY` entry an
 - Migration `0073_coupon_offers_reports` generated, **not applied** (coordinator renumbers; latest on merge/fix2 was 0072).
 - Tests green: shared coupon (15), db coupon-offers (12) + coupons/exports/refunds/checkout, api coupon-offers + coupons + enumeration + admin-exports, web coupon-view (12) + client-messages-coverage + panel-dismiss. Not run: Playwright, next build, pnpm check, full suites. UI state audit: rows `OFFERS-PAGE`, `API-ADM-COUPONS` (usage param) added, checklist regenerated.
 - User action: none queued. Known gap: shop payout `coupon_discount` entry is not reversed on refund.
+
+## 2026-11-16 - Audit fixes 3c-2 (builder, branch worktree-agent-aa45d1f743e75ef18)
+
+- Fixed from the full re-run: Escape with focus on the page (PanelDismiss remembers the last opener), shop Availability fit at 320 px, and three checker truths (action-row foot, compare tray under the privacy banner below 1024 px, enabled-only submit in the "errors" step). See decisions 2026-11-16 "Full re-run triage 3c-2".
+- Tests: `panel-dismiss`, `state-audit-checker`, new `audit-fix-3c2` (vitest). No Playwright / next build / pnpm check (instruction). Needs the next GitHub audit run to confirm the 120 dismiss rows, the 7 tray rows, the 7 QT rows and the Availability rows.

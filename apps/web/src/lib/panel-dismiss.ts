@@ -27,21 +27,29 @@ const cancelSelector = `[${CANCEL_ATTR}]:not([disabled])`;
 
 /**
  * The Cancel button for the panel around `active`: walking up from the focused element, the first ancestor that
- * names its key (`data-panel-for`) or contains a Cancel button. With focus outside every panel (the page body),
- * the only Cancel button on the page, if there is exactly one.
+ * names its key (`data-panel-for`) or contains a Cancel button (the one opened last, `lastKey`, when it holds
+ * several). With focus outside every panel (the page body: the opener unmounts when its panel opens, so focus
+ * drops), Escape closes the panel opened most recently: `lastKey`'s Cancel, else the last Cancel in page order.
  */
-export function findPanelCancel(active: PanelNode | null, doc: PanelDocument): PanelNode | null {
+export function findPanelCancel(
+  active: PanelNode | null,
+  doc: PanelDocument,
+  lastKey?: string | null,
+): PanelNode | null {
+  const sel = (key: string) => `[${CANCEL_ATTR}="${key.replace(/["\\]/g, '\\$&')}"]:not([disabled])`;
   for (let el = active; el; el = el.parentElement) {
     const key = el.getAttribute(PANEL_ATTR);
     if (key) {
-      const named = doc.querySelector(`[${CANCEL_ATTR}="${key}"]:not([disabled])`);
+      const named = doc.querySelector(sel(key));
       if (named) return named;
     }
     const inside = el.querySelector(cancelSelector);
-    if (inside) return inside;
+    if (inside) return (lastKey ? el.querySelector(sel(lastKey)) : null) ?? inside;
   }
+  const viaKey = lastKey ? doc.querySelector(sel(lastKey)) : null;
+  if (viaKey) return viaKey;
   const all = doc.querySelectorAll(cancelSelector);
-  return all.length === 1 ? (all[0] ?? null) : null;
+  return all.length > 0 ? (all[all.length - 1] ?? null) : null;
 }
 
 /** True for a plain Escape that nothing else has handled (no modifier, not while composing text). */
