@@ -93,6 +93,11 @@ describe('header and footer brand', () => {
     expect(header).toContain('brand-logo-light');
     expect(header).toContain('brand-logo-dark');
     expect(header).not.toContain('m<span');
+    // A plain <img> for the vector logo, not next/image: next/image adds ~6 KB of client JS to every page that has no
+    // other image and does nothing for an unoptimized SVG (budget incident 2026-11-16, /shop 185.7 KB gz).
+    expect(header).not.toContain("from 'next/image'");
+    expect(header.match(/^\s*<img$/gm)?.length).toBe(2);
+    expect(header).toContain('decoding="async"');
     const css = read('src/app/[locale]/globals.css');
     expect(css).toMatch(/:root\[data-theme='dark'\] \.brand-logo-light\s*\{\s*display: none/);
     expect(css).toMatch(/:root:not\(\[data-theme='light'\]\) \.brand-logo-dark\s*\{\s*display: block/);

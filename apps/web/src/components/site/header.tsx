@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
 import { LocalLink } from '../ui/local-link';
 import { UI_EMOJI } from '@/lib/emoji';
@@ -29,6 +28,8 @@ export function BrandMark() {
   // A little narrower under 460 px so logo, language, account and cart fit a 360 px phone (QA 2026-11-14).
   // `max-w-full` + a shrinkable link: when the buttons next to it need the room (signed in with the bell, a long
   // language name), the logo gives way instead of the page scrolling sideways (audit 2026-11-16, 4-31 px at 390/480/1024).
+  // Plain <img>: a vector logo gains nothing from next/image (unoptimized) and next/image would add ~6 KB of client JS
+  // to every page without another image (budget incident 2026-11-16; decisions same date).
   const size = 'h-auto w-[132px] max-w-full min-[460px]:w-[152px] tab:w-[176px]';
   return (
     <LocalLink
@@ -36,18 +37,18 @@ export function BrandMark() {
       className="group inline-flex min-w-0 shrink flex-col items-start"
       data-track="brand_home"
     >
-      <Image
+      <img
         src={BRAND_LOGO.light}
         alt={t('brand')}
         {...BRAND_LOGO_SIZE}
-        unoptimized
+        decoding="async"
         className={`brand-logo-light ${size}`}
       />
-      <Image
+      <img
         src={BRAND_LOGO.dark}
         alt={t('brand')}
         {...BRAND_LOGO_SIZE}
-        unoptimized
+        decoding="async"
         className={`brand-logo-dark ${size}`}
       />
       <span className="eyebrow mt-1.5 hidden text-[7px] whitespace-nowrap text-ink tab:block nav:hidden xl:block tab:text-[8px]">

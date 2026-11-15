@@ -1404,3 +1404,13 @@ User: "we can work on building ... the smaller items too". Rulings (plan `docs/s
 - **QT-PAGES timeouts (all `form=errors` on the thread)**: the "errors" step clicked the first visible submit, the quote chat's Send, which is disabled while empty; Playwright waited for it to enable and used up the 90 s budget. The step now presses an enabled submit only, 3 s timeout. Checker fix. The same step serves API-ADM-POLICIES/SHOPS/STAFF (6 OTHER timeouts), expected to clear; not confirmed (no browser run).
 
 - **2026-11-16 (builder 3c-1, audit fixes):** (1) Section bars re-centre the current item on load, section change, font arrival and when focus leaves the bar (`useCenterCurrent`); the audit blurs focus before the nav check. (2) The assistant button is `visibility:hidden` while its panel is open (an invisible button must not sit over content); `aria-controls` only once the panel exists; focus returns after it is visible. Sticky side cards (workshop booking form, cart summary) use `.sticky-aside`: capped above the button, scroll inside. (3) Compare head strip gets `scroll-padding-inline-start: 11rem` (sticky "Detail" column). (4) Text links use `accent-soft-text`, never brand `accent` (AA). (5) The header logo link may shrink (`min-w-0 shrink`, `max-w-full`) so the signed-in row cannot widen the page. (6) Hindi: header account link, admin person names are user content; admin coupon `shop` DTO carries `nameHi`; admin catalogue editor shows `nameHi`; company legal name/address inputs are `lang="en"` (statutory, English on purpose); stock-file header message renders column names as `<code lang="en">`. Audit harness: axe runs from scrollY 0. No new colours.
+
+## 2026-11-16 — Brand SVG logo uses a plain `<img>` (budget incident; coordinator ruling)
+
+The traced logo (Q172) was rendered with `next/image` (`unoptimized`) in the header. That pulled the `next/image` client
+code into the first load of every page that has no other image: `/shop` 185.7, product 183.9, `/workshops` 184.6,
+`/cart` 185.6 KB gz (budget 180, spec 16; home unchanged because its hero already loads it). Hard rule 6 says
+"`next/image` always" for its raster benefits (AVIF/WebP, sizes, LQIP), none of which apply to an unoptimized SVG, and
+the budget is also a hard gate. Ruling: brand vector assets (logo light/dark) use a plain `<img>` with `width`/`height`
+(no CLS) and `decoding="async"`; every raster image still uses `next/image`. Guard:
+`apps/web/test/brand-assets.test.ts`. User may revisit (it narrows rule 6 for vector brand files only).
