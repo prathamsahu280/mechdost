@@ -37,3 +37,18 @@ describe('UI state audit workflow', () => {
     for (const u of uses) expect(u, u).toMatch(/@[0-9a-f]{40}$/);
   });
 });
+
+describe('visual review workflow (2026-11-16)', () => {
+  const visual = readFileSync(
+    join(__dirname, '..', '..', '..', '.github', 'workflows', 'visual-review.yml'),
+    'utf8',
+  );
+  it('captures in parallel shards, never commits and pins every action', () => {
+    expect(visual).toContain('--shard=${{ matrix.shard }}/5');
+    expect(visual).toContain('VISUAL_SHOTS');
+    expect(visual).toContain('contents: read');
+    expect(visual).not.toMatch(/git (commit|push)/);
+    for (const u of [...visual.matchAll(/uses: (\S+)/g)].map((m) => m[1] ?? ''))
+      expect(u, u).toMatch(/@[0-9a-f]{40}$/);
+  });
+});

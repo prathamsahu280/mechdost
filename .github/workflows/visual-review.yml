@@ -1,0 +1,65 @@
+# Visual review capture, on demand (user 2026-11-16): full-page screenshots of every page for every role at 390 and
+# 1440 px, light/dark, en/hi, from a demo-mode production build (e2e/visual-review.spec.ts). Uploaded as artifacts
+# for review by eye; never commits. Manual only; minutes are free while the repository is public.
+# Supply-chain rules as in ci.yml: actions pinned by full commit SHA, read-only token, frozen lockfile.
+name: Visual review capture (manual)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: visual-review-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TURBO_TELEMETRY_DISABLED: '1'
+  NEXT_TELEMETRY_DISABLED: '1'
+
+jobs:
+  capture:
+    name: Visual review (shard ${{ matrix.shard }}/5)
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Build the web (demo data)
+        run: pnpm --filter @mechdost/web build
+
+      - name: Install Chromium for Playwright
+        run: pnpm --filter @mechdost/web exec playwright install --with-deps chromium
+
+      - name: Capture (shard ${{ matrix.shard }} of 5)
+        working-directory: apps/web
+        env:
+          VISUAL_SHOTS: test-results/visual-review
+        run: pnpm exec playwright test e2e/visual-review.spec.ts --project=desktop --shard=${{ matrix.shard }}/5 --reporter=line
+        continue-on-error: true
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: visual-review-${{ matrix.shard }}
+          retention-days: 14
+          if-no-files-found: ignore
+          path: apps/web/test-results/visual-review/**/*.png
