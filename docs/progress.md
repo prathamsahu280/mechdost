@@ -379,6 +379,13 @@ See PENDING DECISIONS in `docs/decisions.md` (payment methods; post-purchase P1 
 
 - 2026-11-16 batch 0a (audit fixes): ClientMessages gaps closed on account, admin, cart, checkout, orders, partner shop/workshop, service, support guest, workshops pages; coverage guard test green with no allowlist; portal-guard split (portal-styles.ts, use-now.ts). Docs: decisions, learnings L234/T149, bug catalogue P1.
 
+## 2026-11-16 — Quote follow-ups (branch worktree-agent-abf45a48049964656, not merged; migration `quote_attachments_reads` generated as 0073, not applied, coordinator renumbers)
+
+- Built (spec 19 "Quote follow-ups", plan `docs/superpowers/plans/2026-11-16-quote-followups.md`): (1) online payment of an accepted quote (accept `paymentMethod`, Razorpay handle, `POST /v1/quotes/{code}/pay`, payment choice and "Pay now" in the thread); (2) photos on quote messages (images only, signed image route) and per-side read receipts (`quote_reads`, "Seen"); (3) four WhatsApp quote templates in the catalogue with en + hi bodies, queued through the outbox (sending off); (4) the request form re-reads the minimum for the PIN's city. Decline panel closes with Escape and returns focus. State audit row `API-QUOTE-THREAD`.
+- Tests red then green: `packages/shared/test/whatsapp.test.ts` (+1), `packages/db/test/quotes.test.ts` (31 → 37), `apps/api/test/quote-payments.test.ts` (7, new), `apps/api/test/quote-thread-media.test.ts` (6, new), `apps/web/test/quote-views.test.ts` (+4 groups). Targeted vitest per package, eslint on touched files, prettier, `tsc --noEmit` per touched package (web shows only the two missing hero images of this worktree). Not run: Playwright, `next build`, `pnpm check`, the audit run for the new row, a real Razorpay test payment.
+- Queued: Q190 (PDF), Q191 (unpaid online quote order), Q192 (photo needs text), Q193 (WhatsApp templates for Meta).
+- Needs at merge: renumber 0073; `apps/api/src/middleware/security.ts` got two path patterns (photo upload bodies, CORP for `/v1/quote-photos/`); `support-threads.ts` still has its own copy of the upload helpers (`photos/message-upload.ts` is the shared version for quotes; a later cleanup can point support at it).
+
 ## 2026-11-16 — Batch 0b: audit harness, tooling, CI (branch worktree-agent-aad7042a0247cf3cf, not merged)
 
 - Built: baseline mocks for chunk G (`api-mode/baseline-fixtures.ts`), six checker fixes (per-line boxes, modal skip, Hindi echo, pointer-events overlays, consent version root cause, compare rule with `[data-compare-hint]`), runner builds `.next-api`, build script path fix, CI job `web-real-mode` (Q171 answered by default). Runbook § 9.9, decisions entry 2026-11-16.

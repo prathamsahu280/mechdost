@@ -57,6 +57,7 @@ Plan `docs/superpowers/plans/2026-11-12-razorpay-checkout-backend.md`; user chos
 - **Unpaid online orders:**
   - They never appear in the routing queue, and `routeOrder` refuses them (`409 AWAITING_PAYMENT`).
   - The worker cancels them after the payment window (system, reason `payment_not_completed`), puts the stock back, and marks the group and payment `expired`.
+- **Bulk quote orders paid online (2026-11-16, spec 19):** accepting a quote offer with `paymentMethod: 'online'` places the same unpaid online order (negotiated prices, no COD fee, no coins or coupon) through `placeOrder`; the API then returns the handle of the group's single open Razorpay order (`ensureRazorpayOrder`) and `POST /v1/quotes/{code}/pay` returns it again later. Everything after that is this section unchanged: verify route, webhook, amount assert, expiry by the worker. The COD ceiling for quotes (`quotes.cod_cap_paise`) limits cash only.
 - **Security review fixes (2026-11-12):**
   - A webhook event is recorded only together with its payment fact (one transaction), so a failed apply is retried.
   - Locks are taken group first, then payment (the expiry job takes orders, then group, then payments).
