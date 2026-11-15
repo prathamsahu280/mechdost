@@ -1,52 +1,49 @@
 'use client';
 
 import { useEffect } from 'react';
-import {
-  CANCEL_ATTR,
-  TRIGGER_ATTR,
-  findPanelCancel,
-  isDismissKey,
-  triggerSelector,
-} from '@/lib/panel-dismiss';
+import type * as RuntimeModule from '@/lib/panel-dismiss-runtime';
+
+/** Same value as `TRIGGER_ATTR` in `lib/panel-dismiss.ts` (not imported: that module loads lazily). */
+const TRIGGER = 'data-disclosure-trigger';
+
+type Runtime = typeof RuntimeModule;
 
 /**
- * Escape closes the open in-page panel (by clicking its Cancel button, so the component's own close logic and its
- * analytics event run), and focus returns to the button that opened it. See `lib/panel-dismiss.ts` for the markup
- * contract. Dialogs and menus with their own Escape handling call `preventDefault` and are left alone.
+ * Escape closes the open in-page panel and focus returns to its opener (user rule 2026-11-16, markup contract in
+ * `lib/panel-dismiss.ts`). Mounted once in the locale layout, so this part stays tiny: the behaviour
+ * (`lib/panel-dismiss-runtime.ts`) loads on the first panel-opener click or the first Escape, which keeps it out of
+ * every page's first load (JS budget, spec 16; /shop and /cart went over 180 KB gz with a static import).
  */
 export function PanelDismiss() {
   useEffect(() => {
-    let lastKey: string | null = null;
-    function onKey(e: KeyboardEvent) {
-      if (!isDismissKey(e)) return;
-      if (e.target instanceof Element && e.target.closest('dialog[open], [aria-modal="true"]')) return;
-      const active = document.activeElement === document.body ? null : document.activeElement;
-      const cancel = findPanelCancel(active, document, lastKey);
-      if (!(cancel instanceof HTMLElement)) return;
-      e.preventDefault();
-      cancel.click();
-    }
+    let runtime: Promise<Runtime> | null = null;
+    let cleanup: (() => void) | undefined;
+    let cancelled = false;
+    const load = (firstKey: string | null) => {
+      runtime ??= import('@/lib/panel-dismiss-runtime').then((m) => {
+        if (!cancelled) cleanup = m.installPanelDismiss(firstKey);
+        return m;
+      });
+      return runtime;
+    };
     function onClick(e: MouseEvent) {
-      const opener = e.target instanceof Element ? e.target.closest(`[${TRIGGER_ATTR}]`) : null;
-      if (opener) lastKey = opener.getAttribute(TRIGGER_ATTR);
-      const cancel = e.target instanceof Element ? e.target.closest(`[${CANCEL_ATTR}]`) : null;
-      const key = cancel?.getAttribute(CANCEL_ATTR);
-      if (!key) return;
-      // Once the panel has unmounted the opener is back in the page; focus it unless focus already sits on
-      // something real (the visitor tabbed or clicked elsewhere meanwhile).
-      window.requestAnimationFrame(() => {
-        window.requestAnimationFrame(() => {
-          const active = document.activeElement;
-          if (active && active !== document.body && active.isConnected) return;
-          document.querySelector<HTMLElement>(triggerSelector(key))?.focus();
-        });
+      if (runtime) return;
+      const opener = e.target instanceof Element ? e.target.closest(`[${TRIGGER}]`) : null;
+      if (opener) void load(opener.getAttribute(TRIGGER));
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key !== 'Escape') return;
+      void load(null).then((m) => {
+        m.onDismissKey(e);
       });
     }
-    document.addEventListener('keydown', onKey);
     document.addEventListener('click', onClick, true);
+    document.addEventListener('keydown', onKey);
     return () => {
-      document.removeEventListener('keydown', onKey);
+      cancelled = true;
+      cleanup?.();
       document.removeEventListener('click', onClick, true);
+      document.removeEventListener('keydown', onKey);
     };
   }, []);
   return null;

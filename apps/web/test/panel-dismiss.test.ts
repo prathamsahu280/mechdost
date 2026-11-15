@@ -10,6 +10,7 @@ import { describe, expect, it } from 'vitest';
 import en from '../../../packages/shared/src/i18n/en.json';
 import hi from '../../../packages/shared/src/i18n/hi.json';
 import {
+  TRIGGER_ATTR,
   findPanelCancel,
   isDismissKey,
   triggerSelector,
@@ -132,6 +133,17 @@ describe('the review forms', () => {
   });
   it('the layout mounts PanelDismiss once', () => {
     expect(read('app/[locale]/layout.tsx')).toMatch(/<PanelDismiss\s*\/>/);
+  });
+  it('loads the dismiss logic only on the first opener click or Escape (JS budget, 2026-11-16)', () => {
+    // Mounted on every page: a static import put ~0.6 KB gz in every first load (/shop 180.2, /cart 180.0 > 180).
+    const mount = read('components/site/panel-dismiss.tsx');
+    // Type-only imports are erased; a value import would put the module back in the first load.
+    expect(mount).not.toMatch(/^import (?!type )[^;]*from '@\/lib\/panel-dismiss/m);
+    expect(mount).toMatch(/import\('@\/lib\/panel-dismiss-runtime'\)/);
+    const runtime = read('lib/panel-dismiss-runtime.ts');
+    expect(runtime).toMatch(/export function installPanelDismiss/);
+    // The mount repeats the trigger attribute as a literal; it must match the contract.
+    expect(mount).toContain(`const TRIGGER = '${TRIGGER_ATTR}';`);
   });
 });
 
