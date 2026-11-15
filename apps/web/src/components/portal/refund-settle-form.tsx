@@ -42,6 +42,9 @@ export function RefundSettleForm({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const first = useRef<HTMLInputElement>(null);
+  const idRef = useRef<HTMLInputElement>(null);
+  const amountRef = useRef<HTMLInputElement>(null);
+  const noteRef = useRef<HTMLTextAreaElement>(null);
   const hasProviderId = refund.providerRefundId !== null;
   const needsId = form.outcome !== 'not_refunded';
 
@@ -55,6 +58,10 @@ export function RefundSettleForm({
 
   const fail = (e: SettleFormError) => {
     setError(e === 'note' ? 'SETTLE_NOTE' : e === 'amount' ? 'SETTLE_AMOUNT' : 'SETTLE_PROVIDER_ID');
+    // Focus goes to the first field with a problem (the form order is id, amount, note).
+    window.setTimeout(() => {
+      (e === 'note' ? noteRef : e === 'amount' ? amountRef : idRef).current?.focus();
+    }, 0);
   };
 
   const submit = async (e: SyntheticEvent) => {
@@ -118,7 +125,7 @@ export function RefundSettleForm({
                 onChange={() => {
                   set('outcome', o);
                 }}
-                className="size-5 accent-[var(--accent-button)]"
+                className="size-5 accent-[var(--color-accent-button)]"
               />
               {t(`settleOutcome_${o}`)}
             </label>
@@ -129,6 +136,10 @@ export function RefundSettleForm({
         <label className="block text-sm font-bold text-ink">
           {t('settleProviderIdLabel')}
           <input
+            ref={idRef}
+            name="providerRefundId"
+            spellCheck={false}
+            aria-invalid={error === 'SETTLE_PROVIDER_ID'}
             value={form.providerRefundId}
             onChange={(e) => {
               set('providerRefundId', e.target.value);
@@ -147,6 +158,9 @@ export function RefundSettleForm({
         <label className="block text-sm font-bold text-ink">
           {t('settleAmountLabel')}
           <input
+            ref={amountRef}
+            name="amount"
+            aria-invalid={error === 'SETTLE_AMOUNT'}
             value={form.amount}
             onChange={(e) => {
               set('amount', e.target.value);
@@ -180,6 +194,9 @@ export function RefundSettleForm({
       <label className="block text-sm font-bold text-ink">
         {t('settleNoteLabel')}
         <textarea
+          ref={noteRef}
+          name="note"
+          aria-invalid={error === 'SETTLE_NOTE'}
           value={form.note}
           onChange={(e) => {
             set('note', e.target.value);

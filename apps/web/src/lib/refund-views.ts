@@ -103,9 +103,9 @@ export function settleBody(
   opts: { hasProviderId?: boolean } = {},
 ): { ok: true; body: SettleRefundInput } | { ok: false; error: SettleFormError } {
   const note = form.note.trim();
-  if (note.length < 10 || note.length > 300) return { ok: false, error: 'note' };
+  const noteOk = note.length >= 10 && note.length <= 300;
   const body: SettleRefundInput = { version, outcome: form.outcome, reasonCode: form.reasonCode, note };
-  if (form.outcome === 'not_refunded') return { ok: true, body };
+  if (form.outcome === 'not_refunded') return noteOk ? { ok: true, body } : { ok: false, error: 'note' };
   const id = form.providerRefundId.trim();
   if (id !== '' || !opts.hasProviderId) {
     if (!PROVIDER_REFUND_ID.test(id)) return { ok: false, error: 'providerRefundId' };
@@ -116,5 +116,7 @@ export function settleBody(
     if (!amount.ok) return { ok: false, error: 'amount' };
     body.providerAmountPaise = amount.paise;
   }
+  // Fields are checked in form order (id, amount, note) so focus can go to the first problem.
+  if (!noteOk) return { ok: false, error: 'note' };
   return { ok: true, body };
 }

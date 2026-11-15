@@ -615,6 +615,32 @@ describe('credit notes for refunds of invoiced orders', () => {
     expect(sum('sgstPaise')).toBe(o.invoice.sgstPaise);
   });
 
+  it('a credit note that cannot be written releases its number, never undoes the processed refund, and alerts (E7)', async () => {
+    const o = await invoicedOrder();
+    const [counter] = await db.select().from(s.invoiceCounters).where(eq(s.invoiceCounters.series, 'CN'));
+    const last = counter?.last ?? 0;
+    const fy = counter?.fy ?? o.invoice.fy;
+    // Someone already holds the next number: the insert collides inside the savepoint.
+    await db.insert(s.invoices).values({
+      kind: 'credit_note',
+      series: 'CN',
+      fy,
+      seq: last + 1,
+      number: `CN/${fy}/${String(last + 1).padStart(6, '0')}`,
+      orderId: o.sub.id,
+      creditNoteFor: o.invoice.id,
+      taxablePaise: 1,
+      totalPaise: 1,
+    });
+    const refundId = await refundAndProcess(o, 1000);
+    expect((await refundRow(refundId)).status).toBe('processed');
+    expect(await db.select().from(s.invoices).where(eq(s.invoices.refundId, refundId))).toHaveLength(0);
+    const alerts = await db.select().from(s.auditLog).where(eq(s.auditLog.entityId, refundId));
+    expect(alerts.some((a) => a.action === 'credit_note.alert.not_issued')).toBe(true);
+    const [after] = await db.select().from(s.invoiceCounters).where(eq(s.invoiceCounters.series, 'CN'));
+    expect(after?.last ?? 0).toBe(last);
+  });
+
   it('an order without a tax invoice gets none; a credit note must point at an invoice (CHECK) and one per refund (unique)', async () => {
     const o = await paidOrder();
     await cancelOrderAsStaff(t(), {
