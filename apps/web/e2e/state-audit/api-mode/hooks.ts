@@ -62,6 +62,13 @@ async function prepareApi(page: Page, c: AuditCase): Promise<string[]> {
     await settleApi(page);
   }
 
+  if (c.code === 'API-ADM-COUPONS' && c.state.form && c.state.form !== 'closed') {
+    const section = main.locator('section[aria-labelledby="coupons-admin-title"]');
+    await section.locator('button').first().click();
+    if (c.state.form === 'errors') await section.locator('form button[type="submit"]').click();
+    await settleApi(page);
+  }
+
   if (c.code === 'API-ADM-CUSTOMERS') {
     await main.locator('#customer-q').fill('asha verma');
     await main.locator('form[role="search"] button[type="submit"]').click();

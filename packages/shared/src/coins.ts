@@ -84,7 +84,7 @@ export const COIN_REWARD_CANCEL_REASONS = ['order_cancelled', 'order_refunded', 
 export type CoinRewardCancelReason = (typeof COIN_REWARD_CANCEL_REASONS)[number];
 
 /** Kinds of `shop_payout_entries` rows (what MechDost owes a shop). */
-export const SHOP_PAYOUT_ENTRY_KINDS = ['coin_discount'] as const;
+export const SHOP_PAYOUT_ENTRY_KINDS = ['coin_discount', 'coupon_discount'] as const;
 export type ShopPayoutEntryKind = (typeof SHOP_PAYOUT_ENTRY_KINDS)[number];
 
 /** Reason codes for a staff grant or deduction (hard rule 16: codes, the note is extra). */

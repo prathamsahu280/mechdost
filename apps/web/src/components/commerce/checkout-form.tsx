@@ -28,6 +28,10 @@ const SavedAddressPicker = lazy(() =>
   import('../account/saved-pickers').then((m) => ({ default: m.SavedAddressPicker })),
 );
 import { productNameFor } from '@/demo/i18n/localize';
+import type { AppliedCoupon } from '@/lib/coupon-api';
+
+// Real data mode: the coupon field (spec 03), loaded only when the customer opens checkout, never with the page shell.
+const CheckoutCoupon = lazy(() => import('./checkout-coupon'));
 
 type Field = 'name' | 'phone' | 'address' | 'pincode' | 'gstin' | 'businessName' | 'consent';
 
@@ -44,6 +48,7 @@ export function CheckoutForm() {
   const t = useTranslations('checkout');
   const states = useTranslations('gstStates');
   const cartT = useTranslations('cart');
+  const couponT = useTranslations('coupons');
   const locale = useLocale();
   const router = useRouter();
   const lines = useCart();
@@ -115,6 +120,11 @@ export function CheckoutForm() {
     locale,
   );
   const { priced, subtotalPaise, deliveryPaise, totalPaise } = pricing;
+  // One coupon (spec 03, real data mode): taken off first; the server re-checks it when the order is placed.
+  const [coupon, setCoupon] = useState<AppliedCoupon | null>(null);
+  const couponDiscount = coupon?.discountPaise ?? 0;
+  const couponProducts = coupon?.productDiscountPaise ?? 0;
+  const quotePin = typedPin !== null && PIN.test(typedPin) ? typedPin : prefill.pincode;
   // A signed-in customer's block is known before they type anything: say so at once and stop the order
   // (QA 2026-11-14, crawler F2: it was only shown after submitting). The typed-phone check below stays.
   useCustomerBlocks();
@@ -128,9 +138,10 @@ export function CheckoutForm() {
       : null;
   const demoCoins = useCoins(coinAccount);
   const balance = realData ? (apiCoins?.balance ?? 0) : demoCoins.balance;
+  // Coins come after the coupon: on what the products cost once the coupon's share is off (spec 20).
   const redemption = coinRedemption(
     balance,
-    subtotalPaise,
+    subtotalPaise - couponProducts,
     realData ? (apiCoins?.rules ?? { ...coinRulesFrom(settings), maxRedeemBp: 0 }) : coinRulesFrom(settings),
   );
   const [useCoinsOn, setUseCoinsOn] = useState(false);
@@ -144,6 +155,7 @@ export function CheckoutForm() {
     codFeePaise: pricing.codFeePaise,
     onlineTotalPaise: pricing.onlineTotalPaise,
     coinDiscountPaise: coinDiscount,
+    couponDiscountPaise: couponDiscount,
   });
   const prefix = locale === 'hi' ? '/hi' : '';
   // Business purchase (buyer GSTIN plan 2026-11-13): optional; checked with the shared, Zod-free GST helpers.
@@ -200,7 +212,7 @@ export function CheckoutForm() {
       return;
     }
     // Judged on what the customer pays at the door, after coins (the server checks the same).
-    if (!codAllowedAfterCoins(quote, coinDiscount)) {
+    if (!codAllowedAfterCoins(quote, coinDiscount + couponDiscount)) {
       setOnlineNote({ text: t('cod_not_allowed') });
       return;
     }
@@ -217,9 +229,10 @@ export function CheckoutForm() {
           pincode: details.pincode,
         },
         lines: priced.map(({ product, qty }) => ({ sku: product.sku, qty })),
-        expectedTotalPaise: quote.totalPaise - coinDiscount,
+        expectedTotalPaise: quote.totalPaise - couponDiscount - coinDiscount,
         business,
         coins: coinDiscount > 0 ? redemption.coins : 0,
+        couponCode: coupon?.coupon.code ?? null,
       },
       attemptKey.current,
     );
@@ -245,9 +258,16 @@ export function CheckoutForm() {
         'IDEMPOTENCY_MISMATCH',
         'COINS_CHANGED',
         'INSUFFICIENT_COINS',
+        'COUPON_INVALID',
       ].includes(res.code)
     )
       attemptKey.current = null;
+    // The coupon no longer applies (used up, ended, cart changed): drop it, show the new total, let them choose again.
+    if (res.code === 'COUPON_INVALID') {
+      setCoupon(null);
+      setOnlineNote({ text: couponT('err_changed') });
+      return;
+    }
     // The coins changed (spent elsewhere, or the rules changed): reload them and let the customer check again.
     if (res.code === 'COINS_CHANGED' || res.code === 'INSUFFICIENT_COINS') {
       setUseCoinsOn(false);
@@ -292,6 +312,7 @@ export function CheckoutForm() {
       },
       business,
       coins: coinDiscount > 0 ? { count: redemption.coins, discountPaise: coinDiscount } : null,
+      coupon: coupon ? { code: coupon.coupon.code, discountPaise: couponDiscount } : null,
     });
     setSubmitting(false);
     if (result.ok) {
@@ -315,6 +336,11 @@ export function CheckoutForm() {
     if (result.reason === 'coins_changed') {
       setUseCoinsOn(false);
       setCoinsReload((n) => n + 1);
+    }
+    if (result.reason === 'coupon_invalid') {
+      setCoupon(null);
+      setOnlineNote({ text: couponT('err_changed') });
+      return;
     }
     setOnlineNote({
       text: t(`online_${result.reason}`),
@@ -607,6 +633,22 @@ export function CheckoutForm() {
             </div>
           ) : null}
         </div>
+        {realData && AUTH_MODE === 'firebase' && priced.length > 0 ? (
+          <div className="mt-5">
+            <Suspense fallback={null}>
+              <CheckoutCoupon
+                pincode={quotePin}
+                lines={priced.map(({ product, qty }) => ({ sku: product.sku, qty }))}
+                applied={coupon}
+                onApply={(c) => {
+                  setCoupon(c);
+                  // Coins were worked out on the products before the coupon: ask again on the new amount.
+                  setUseCoinsOn(false);
+                }}
+              />
+            </Suspense>
+          </div>
+        ) : null}
         {showCoins ? (
           <div className="mt-5 rounded-tile border border-line-card bg-surface-alt p-4">
             {redemption.coins > 0 ? (
@@ -720,6 +762,12 @@ export function CheckoutForm() {
             <div className="flex justify-between">
               <dt className="text-muted">{t('codFee')}</dt>
               <dd className="font-bold">{formatPrice(feePaise)}</dd>
+            </div>
+          ) : null}
+          {couponDiscount > 0 ? (
+            <div className="flex justify-between text-success">
+              <dt>{couponT('line', { code: coupon?.coupon.code ?? '' })}</dt>
+              <dd className="font-bold">−{formatPrice(couponDiscount)}</dd>
             </div>
           ) : null}
           {coinDiscount > 0 ? (

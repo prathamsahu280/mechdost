@@ -6,6 +6,7 @@ import { setActor, type ActorContext } from './actor';
 import { ConflictError, NotFoundError } from './errors';
 import { requestRefundForClosedOrder } from './refunds';
 import { createOrderRewards, recordShopCoinDiscount, restoreCoinsForSubOrder } from './coins';
+import { recordShopCouponDiscount, releaseCouponIfOrderDead } from './coupons';
 import { queueOrderStatusEmail } from './email-events';
 import { queueOrderWhatsApp, type OrderWhatsAppEvent } from './order-notifications';
 
@@ -93,12 +94,15 @@ export async function transitionOrder(
   // a delivered part earns the admin-set reward, usable after the unlock days.
   if (args.to === 'cancelled' || args.to === 'rejected') {
     await restoreCoinsForSubOrder(tx, row.id);
+    // The coupon's use goes back once the whole order is dead (after the coins, the order a place takes them in).
+    await releaseCouponIfOrderDead(tx, row.groupId);
     // A paid online part waits in the finance queue for a refund approval (spec 05, decision 2026-11-15).
     await requestRefundForClosedOrder(tx, row.id);
   }
   if (args.to === 'delivered') {
     await createOrderRewards(tx, row.id);
     await recordShopCoinDiscount(tx, row.id);
+    await recordShopCouponDiscount(tx, row.id);
   }
   if (orderMachine.isTerminal(args.to)) await settleGroupPayment(tx, row.groupId);
   return row;

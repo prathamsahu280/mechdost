@@ -13,6 +13,8 @@ import { queueOrderPlacedEmail } from './email-events';
 import { recordServerEvent } from './events';
 import { activeBlockLevels } from './customer-blocks';
 import { checkoutCoins, redeemCoins } from './coins';
+import { couponRefusal, evaluateCoupon, redeemCoupon, type CouponEvaluation } from './coupons';
+import type { CouponGroup } from '@mechdost/shared/coupon';
 import { ConflictError, ForbiddenError, NotFoundError, pgCode, ValidationError } from './errors';
 import { reserveStock } from './inventory';
 import { localized } from './localized';
@@ -127,11 +129,35 @@ interface PricedLine {
   costCeilingPaise: number | null;
 }
 
-interface InternalQuote {
+export interface InternalQuote {
   quote: CheckoutQuote;
   cityId: string;
   priced: PricedLine[];
   groupShops: string[];
+}
+
+/** The cart as the coupon maths sees it: per sub-order its shop, product line totals (cart order) and delivery. */
+export function couponGroupsOf(internal: InternalQuote): CouponGroup[] {
+  return internal.groupShops.map((shopId, index) => ({
+    shopId,
+    lineTotals: internal.priced.filter((p) => p.shopId === shopId).map((p) => p.unitPaise * p.qty),
+    shippingPaise: internal.quote.groups[index]?.shippingPaise ?? 0,
+  }));
+}
+
+/** Check the coupon on a priced cart for one customer (the preview and the placing transaction share this). */
+export function evaluateCouponOnQuote(
+  tx: Tx,
+  internal: InternalQuote,
+  input: { code: string; userId: string; locale: CatalogueLocale },
+): Promise<CouponEvaluation> {
+  return evaluateCoupon(tx, {
+    code: input.code,
+    userId: input.userId,
+    cityId: internal.cityId,
+    groups: couponGroupsOf(internal),
+    locale: input.locale,
+  });
 }
 
 function validateLines(lines: readonly CartLine[]): void {
@@ -177,7 +203,7 @@ export async function settingOr(
   return (await setting(db, cityId, s.key)) ?? s.fallback;
 }
 
-async function quoteInternal(
+export async function quoteInternal(
   db: Tx,
   input: { pincode: string; lines: readonly CartLine[]; locale: CatalogueLocale },
 ): Promise<InternalQuote> {
@@ -400,6 +426,8 @@ export interface PlacedOrder {
   /** MechDost Coins used on this checkout and the discount they gave (spec 20); 0 when none. */
   coinsRedeemed: number;
   coinDiscountPaise: number;
+  /** The coupon's discount on this checkout (spec 03); 0 when none. Taken off before the coins. */
+  couponDiscountPaise: number;
   /** True when this key had already placed the order (a retry or a double tap). */
   replayed: boolean;
 }
@@ -411,6 +439,7 @@ function requestHash(input: {
   note: string | null;
   business?: BusinessPurchase | null;
   coins?: number;
+  couponCode?: string | null;
 }) {
   const a = input.address;
   const canonical = JSON.stringify([
@@ -421,6 +450,8 @@ function requestHash(input: {
     input.business ? [input.business.gstin, input.business.businessName] : null,
     // Coins asked for (spec 20); left out when none, so requests without coins keep their earlier fingerprint.
     ...(input.coins ? [['coins', input.coins]] : []),
+    // The coupon asked for (any letter case is one code); left out when none, like the coins.
+    ...(input.couponCode ? [['coupon', input.couponCode.trim().toUpperCase()]] : []),
   ]);
   return createHash('sha256').update(canonical).digest('hex');
 }
@@ -451,6 +482,7 @@ async function existingGroup(db: Tx, userId: string, key: string, hash: string):
     orders: subs,
     coinsRedeemed: group.coinsRedeemed,
     coinDiscountPaise: group.coinDiscountPaise,
+    couponDiscountPaise: group.couponDiscountPaise,
     replayed: true,
   };
 }
@@ -470,6 +502,12 @@ export interface PlaceOrderInput {
    * discount taken off. Products only, never delivery or the COD fee.
    */
   coins?: number;
+  /**
+   * One coupon code (spec 03): checked again here against the re-priced cart, counted by conditional UPDATE in this
+   * transaction; `expectedTotalPaise` already has its discount (and then the coins') taken off. A coupon that no
+   * longer applies is 422 COUPON_INVALID with `details.reason`. Not allowed on a bulk quote order.
+   */
+  couponCode?: string | null;
   /**
    * An accepted bulk quote offer (spec 19; only `acceptQuoteOffer` sets it): the negotiated GST-inclusive unit prices
    * and the offer's delivery charge replace the catalogue prices, delivery and COD fee. The COD cap does not apply
@@ -562,14 +600,33 @@ export async function placeOrder(
     // Coins are never used on a bulk quote order: its prices were negotiated with staff (ruling 2026-11-14).
     if (input.quotePricing && (input.coins ?? 0) > 0)
       throw new ValidationError('MechDost Coins cannot be used on a bulk quote order', 'COINS_NOT_ON_QUOTES');
-    // Coins (spec 20): checked against the balance and the cap here, spent by compare-and-set below.
+    // One coupon (spec 03), first in the order of discounts: checked again on the re-priced cart; counted below.
+    const couponCode = input.couponCode?.trim() ?? '';
+    if (couponCode && input.quotePricing) throw couponRefusal('quote_order');
+    let couponEval: Extract<CouponEvaluation, { ok: true }> | null = null;
+    if (couponCode) {
+      const checked = await evaluateCouponOnQuote(tx, internal, {
+        code: couponCode,
+        userId: input.userId,
+        locale: input.locale,
+      });
+      if (!checked.ok) throw couponRefusal(checked.reason);
+      couponEval = checked;
+    }
+    const couponShare = (index: number) => couponEval?.discount.perGroup[index];
+    const couponDiscountPaise = couponEval?.discount.discountPaise ?? 0;
+    // Coins (spec 20) come after the coupon: on what the products cost once the coupon's share is off.
+    const netGroupSubtotals = quote.groups.map(
+      (g, i) => g.subtotalPaise - (couponShare(i)?.productPaise ?? 0),
+    );
     const coins = await checkoutCoins(tx, {
       userId: input.userId,
       requested: input.coins ?? 0,
-      subtotalPaise: quote.subtotalPaise,
-      groupSubtotals: quote.groups.map((g) => g.subtotalPaise),
+      subtotalPaise: netGroupSubtotals.reduce((a, b) => a + b, 0),
+      groupSubtotals: netGroupSubtotals,
     });
-    const totalPaise = (online ? quote.onlineTotalPaise : quote.totalPaise) - coins.discountPaise;
+    const totalPaise =
+      (online ? quote.onlineTotalPaise : quote.totalPaise) - couponDiscountPaise - coins.discountPaise;
     const codFeePaise = online ? 0 : quote.codFeePaise;
     if (totalPaise !== input.expectedTotalPaise)
       throw new ConflictError('The total changed since you reviewed it', 'PRICE_CHANGED');
@@ -605,9 +662,13 @@ export async function placeOrder(
         paymentMethod: input.method,
         paymentStatus: online ? 'created' : 'cod_pending',
         subtotalPaise: quote.subtotalPaise,
-        discountPaise: coins.discountPaise,
+        discountPaise: couponDiscountPaise + coins.discountPaise,
         coinsRedeemed: coins.coins,
         coinDiscountPaise: coins.discountPaise,
+        couponId: couponEval?.coupon.id ?? null,
+        couponCode: couponEval?.coupon.code ?? null,
+        couponDiscountPaise,
+        couponSnapshot: couponEval ? couponSnapshot(couponEval, internal) : null,
         shippingPaise: quote.shippingPaise,
         codFeePaise,
         totalPaise,
@@ -638,6 +699,27 @@ export async function placeOrder(
         props: { orderCode: group.code, coins: coins.coins, discountPaise: coins.discountPaise },
       });
     }
+    if (couponEval) {
+      // After the coins and before any stock (the order a cancel gives them back in): the authoritative count.
+      await redeemCoupon(tx, {
+        couponId: couponEval.coupon.id,
+        userId: input.userId,
+        groupId: group.id,
+        funder: couponEval.coupon.rule.funder,
+        discountPaise: couponDiscountPaise,
+      });
+      await recordServerEvent(tx, 'coupon_redeemed', {
+        userId: input.userId,
+        cityId,
+        props: {
+          couponId: couponEval.coupon.id,
+          orderCode: group.code,
+          discountPaise: couponDiscountPaise,
+          funder: couponEval.coupon.rule.funder,
+          kind: couponEval.coupon.rule.kind,
+        },
+      });
+    }
     const ttl = await settingOr(
       tx,
       cityId,
@@ -650,7 +732,10 @@ export async function placeOrder(
       const subNo = index + 1;
       const code = `${group.code}-${String(subNo)}`;
       const subCoins = coins.perGroup[index] ?? 0;
-      const subDiscount = subCoins * coins.coinValuePaise;
+      const subCoinDiscount = subCoins * coins.coinValuePaise;
+      const subCoupon = couponShare(index);
+      const subCouponDiscount = subCoupon?.discountPaise ?? 0;
+      const subDiscount = subCouponDiscount + subCoinDiscount;
       const subTotal = g.totalPaise - subDiscount + (index === 0 ? codFeePaise : 0);
       const [order] = await tx
         .insert(orders)
@@ -664,10 +749,13 @@ export async function placeOrder(
           shippingAddress: input.address,
           pincode: input.address.pincode,
           subtotalPaise: g.subtotalPaise,
-          // This part's share of the coins (spec 20): what the delivering shop collects is after the discount.
+          // This part's share of the coupon, then of the coins (spec 03 / 20): what the delivering shop collects is
+          // after both.
           discountPaise: subDiscount,
           coinsRedeemed: subCoins,
-          coinDiscountPaise: subDiscount,
+          coinDiscountPaise: subCoinDiscount,
+          couponDiscountPaise: subCouponDiscount,
+          couponFunder: subCouponDiscount > 0 ? (couponEval?.coupon.rule.funder ?? null) : null,
           shippingPaise: g.shippingPaise,
           // The COD fee rides on the first sub-order, so sub-order totals add up to the group total and
           // someone collects it (code review 2026-11-03).
@@ -678,7 +766,7 @@ export async function placeOrder(
         })
         .returning({ id: orders.id });
       if (!order) throw new Error('order insert returned no row');
-      for (const line of priced.filter((p) => p.shopId === shopId)) {
+      for (const [lineIndex, line] of priced.filter((p) => p.shopId === shopId).entries()) {
         const gross = line.unitPaise * line.qty;
         const tax = splitInclusiveGst(gross, line.gstRateBp, line.interState);
         await tx.insert(orderItems).values({
@@ -692,6 +780,7 @@ export async function placeOrder(
           unitPaise: line.unitPaise,
           shopUnitPaise: line.shopUnitPaise,
           qty: line.qty,
+          lineDiscountPaise: subCoupon?.lines[lineIndex] ?? 0,
           taxablePaise: tax.taxable,
           cgstPaise: tax.cgst,
           sgstPaise: tax.sgst,
@@ -734,6 +823,7 @@ export async function placeOrder(
         subOrders: placed.length,
         paymentMethod: input.method,
         coinsRedeemed: coins.coins,
+        couponDiscountPaise,
       },
     });
     // Cash on delivery is placed now; an online order is "placed" for the customer once the payment is captured.
@@ -746,9 +836,40 @@ export async function placeOrder(
       orders: placed,
       coinsRedeemed: coins.coins,
       coinDiscountPaise: coins.discountPaise,
+      couponDiscountPaise,
       replayed: false,
     };
   });
+}
+
+/**
+ * What the order keeps of the coupon (spec 14 snapshot rule): its rules as they were at placement and the split of the
+ * discount over sub-orders and SKUs, so later edits or a pause of the coupon never change an old order.
+ */
+function couponSnapshot(ev: Extract<CouponEvaluation, { ok: true }>, internal: InternalQuote) {
+  const { coupon, discount } = ev;
+  return {
+    code: coupon.code,
+    title: coupon.view.title,
+    kind: coupon.rule.kind,
+    value: coupon.rule.value,
+    maxDiscountPaise: coupon.rule.maxDiscountPaise,
+    minSubtotalPaise: coupon.rule.minSubtotalPaise,
+    funder: coupon.rule.funder,
+    shopId: coupon.rule.shopId,
+    discountPaise: discount.discountPaise,
+    productDiscountPaise: discount.productDiscountPaise,
+    shippingDiscountPaise: discount.shippingDiscountPaise,
+    allocation: internal.groupShops.map((shopId, index) => ({
+      subNo: index + 1,
+      shopId,
+      discountPaise: discount.perGroup[index]?.discountPaise ?? 0,
+      shippingPaise: discount.perGroup[index]?.shippingPaise ?? 0,
+      lines: internal.priced
+        .filter((p) => p.shopId === shopId)
+        .map((p, i) => ({ sku: p.sku, paise: discount.perGroup[index]?.lines[i] ?? 0 })),
+    })),
+  };
 }
 
 /** Insert the group with a fresh public code; a (vanishingly rare) code collision retries in a savepoint. */

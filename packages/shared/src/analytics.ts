@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { redactPath } from './analytics-path';
 import { scrubFreeText } from './privacy';
+import { COUPON_FUNDERS, COUPON_REASONS } from './coupon';
 import { ORDER_CANCEL_REASONS } from './state';
 
 /**
@@ -199,6 +200,18 @@ export interface ServerEventProps {
   /** The person turned promotions on or off (marketing consent, DPDP). */
   marketing_consent_changed: { granted: boolean; noticeVersion: string };
   coins_adjusted: { customerId: string; delta: number; reasonCode: string };
+  /** Coupons (spec 03, 2026-11-15): ids, codes (enum) and paise only; the code a customer typed is never recorded. */
+  coupon_redeemed: {
+    couponId: string;
+    orderCode: string;
+    discountPaise: number;
+    funder: 'mechdost' | 'shop';
+    kind: 'percent' | 'flat' | 'free_shipping';
+  };
+  coupon_released: { couponId: string; orderCode: string };
+  admin_coupon_saved: { couponId: string; action: 'created' | 'updated'; funder: 'mechdost' | 'shop' };
+  admin_coupon_paused: { couponId: string; paused: boolean };
+  shop_coupon_decided: { couponId: string; shopId: string; decision: 'accepted' | 'declined' };
   /** Bulk quotes (spec 19): codes, counts, versions and paise only — never message text. */
   quote_requested: { quoteCode: string; lines: number; units: number; listTotalPaise: number | null };
   quote_message_sent: { quoteCode: string; by: 'customer' | 'staff' };
@@ -299,6 +312,14 @@ export const CLIENT_EVENT_SCHEMAS = {
   // The tray told the shopper the list is full or the browser refused to save it.
   compare_limit_shown: z.object({ reason: z.enum(['full', 'save_failed']) }).strict(),
   remove_from_cart: z.object({ slug: id }).strict(),
+  // Checkout coupon (spec 03, 2026-11-15): the check result and, when refused, the reason code; never the typed code.
+  apply_coupon: z
+    .object({
+      result: z.enum(['applicable', 'refused', 'applied', 'removed']),
+      reason: z.enum(COUPON_REASONS).nullable(),
+      funder: z.enum(COUPON_FUNDERS).nullable(),
+    })
+    .strict(),
   begin_checkout: z
     .object({ items: z.number().int().min(0).max(100), valuePaise: z.number().int().min(0) })
     .strict(),

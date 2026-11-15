@@ -120,6 +120,11 @@ const PlaceBody = z
      * `expectedTotalPaise` has their discount taken off. A number no longer allowed is 409 COINS_CHANGED.
      */
     coins: z.number().int().min(0).max(1_000_000).optional(),
+    /**
+     * One coupon code (spec 03): checked again on the re-priced cart and counted in the placing transaction;
+     * `expectedTotalPaise` has its discount taken off first, then the coins'. 422 COUPON_INVALID with `details.reason`.
+     */
+    couponCode: z.string().trim().min(1).max(40).nullable().optional(),
     locale: Locale,
   })
   .strict()
@@ -134,6 +139,7 @@ const Placed = z
     orders: z.array(z.object({ code: z.string(), totalPaise: z.number().int() })),
     coinsRedeemed: z.number().int(),
     coinDiscountPaise: z.number().int(),
+    couponDiscountPaise: z.number().int(),
     replayed: z.boolean(),
     /** Online orders: what the browser needs to open Razorpay Checkout (null once paid or expired). */
     razorpay: z
@@ -185,7 +191,7 @@ const place = createRoute({
     ),
     422: json(
       ErrorSchema,
-      'CHECKOUT_UNAVAILABLE (details.lines), COD_NOT_ALLOWED, PAYMENT_METHOD_UNAVAILABLE',
+      'CHECKOUT_UNAVAILABLE (details.lines), COD_NOT_ALLOWED, COUPON_INVALID (details.reason), PAYMENT_METHOD_UNAVAILABLE',
     ),
     ...errorResponses,
   },
@@ -359,6 +365,7 @@ export function checkoutRoutes(deps: AppDeps, cache: SessionCache) {
         note: body.note ?? null,
         business: body.business ?? null,
         coins: body.coins ?? 0,
+        couponCode: body.couponCode ?? null,
         locale: body.locale,
       });
       // The Razorpay order exists (stored) before the client sees it; a retried place reuses it.

@@ -39,6 +39,8 @@ const ALL_ADMIN_SECTIONS = [
   // Customer requests from the website and WhatsApp (spec 09).
   'support',
   'coins',
+  // Coupons, MechDost- and shop-funded (spec 08 Promotions, 2026-11-15): real sign-in only (it reads the API).
+  'coupons',
   // Site customisation (spec 08 "Content" + "Settings", hard rule 8).
   'content',
   'layout',
@@ -66,7 +68,7 @@ const reviewsShown = BROWSER_ONLY_FEATURES || AUTH_MODE === 'firebase';
  * Sections that only read the API and have no demo version: shown with real sign-in only. One list for all of them
  * (Analytics and the monitoring Errors panel, 2026-11-14; add later ones here).
  */
-const REAL_SIGN_IN_ONLY: readonly string[] = ['analytics', 'errors', 'refunds', 'staff', 'audit'];
+const REAL_SIGN_IN_ONLY: readonly string[] = ['analytics', 'errors', 'refunds', 'staff', 'audit', 'coupons'];
 const shown = <T extends string>(all: readonly T[]): readonly T[] =>
   all.filter(
     (s) =>

@@ -293,3 +293,12 @@ See PENDING DECISIONS in `docs/decisions.md` (payment methods; post-purchase P1 
 - Migration `0055_refunds` generated, **not applied** (the coordinator renumbers at merge). Needs RBAC sync? No new permissions.
 - User action: Q107 (add the two refund webhook events in Razorpay).
 - Not built: see spec 05 "Not built".
+
+## 2026-11-15 — Coupons built (branch worktree-agent-a13af7e961d616c89)
+
+- Built (spec 03 § Built: coupons; 07 offers; 08 Coupons; 12 events; 14 data model; 19 no quote coupons; decisions "Coupons built"): admin-only coupons (percent with cap, flat, free delivery; min order; IST window; total + per-customer limits; first order only; city; funder MechDost or shop with the shop's acceptance record), applied in the server pricing path inside the placing transaction (coupon, then coins, COD cap after both), snapshot + exact per-line allocation (largest remainder), conditional-UPDATE redemption counting with a DB trigger for the per-customer limit, release when every part of an order is cancelled or rejected, `coupon_discount` payout entries for MechDost-funded discounts, admin CRUD + pause (audited), shop "Offers to accept", customer checkout field (lazy) that shows the conditions before applying.
+- Migration `0064_coupons` generated, **not applied** (the coordinator renumbers at merge). No new permissions (`coupons:write` existed).
+- Tests: shared `coupon.test.ts` (property), db `coupons.test.ts` (18), api `coupons.test.ts` (6), web `coupon-view.test.ts` (9); checkout/coins/integrity/quotes/refunds/shop-orders/payments suites still green; state-audit rows `API-ADM-COUPONS`, `API-SHOP-OFFERS` and checklist regenerated (3,481 items; not run in a browser).
+- Locale: new namespace `coupons` (en + hi) and one key `portal.nav_coupons`.
+- User action: Q114 (GST on coupon discounts; default: tax on the gross price). Nothing else.
+- Not built: public offers list, coupon usage reports, whole-order refund after delivery releasing the use, a state-audit row for the checkout field (needs a priced real cart), automatic offers/campaigns.
