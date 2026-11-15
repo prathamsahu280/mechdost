@@ -176,6 +176,9 @@ export const QuotePayDto = z.object({
 });
 export type QuotePay = z.infer<typeof QuotePayDto>;
 
+/** `POST …/read`: the time of the newest message this side has now seen (null for an empty thread). */
+export const QuoteReadDto = z.object({ readThrough: z.string().nullable() });
+
 /** `POST /payments/razorpay/verify` answer: what Razorpay's confirmation did to the order. */
 export const QuotePaymentVerifiedDto = z.object({ orderCode: z.string(), outcome: z.string() });
 
@@ -239,11 +242,24 @@ export const QuoteOfferDto = z.object({
 });
 export type QuoteOffer = z.infer<typeof QuoteOfferDto>;
 
+/** One photo on a message: short-lived signed URLs the API issues after its rights check (never a storage path). */
+export const QuoteAttachmentDto = z.object({
+  id: z.string(),
+  width: z.number().int(),
+  height: z.number().int(),
+  thumbUrl: z.string(),
+  largeUrl: z.string(),
+});
+export type QuoteAttachment = z.infer<typeof QuoteAttachmentDto>;
+
 export const QuoteMessageDto = z.object({
   id: z.string(),
   from: z.enum(['customer', 'staff', 'system']),
   body: z.string(),
   at: z.string(),
+  attachments: z.array(QuoteAttachmentDto),
+  /** Written by the viewer's own side and already seen by the other side. Never says who saw it. */
+  seen: z.boolean(),
 });
 export type QuoteMessage = z.infer<typeof QuoteMessageDto>;
 

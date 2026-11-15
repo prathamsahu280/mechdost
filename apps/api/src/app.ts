@@ -48,7 +48,7 @@ import { systemRoutes } from './routes/system';
 import { whatsAppWebhookRoutes } from './routes/whatsapp-webhook';
 import { adminServiceRequestRoutes } from './routes/admin-service-requests';
 import { serviceRequestRoutes } from './routes/service-requests';
-import { adminQuoteRoutes, quoteRoutes } from './routes/quotes';
+import { adminQuoteRoutes, quotePhotoRoutes, quoteRoutes } from './routes/quotes';
 import { workshopPortalRoutes } from './routes/workshop-portal';
 import { workshopAnalyticsRoutes } from './routes/workshop-analytics';
 import { servicePhotoRoutes } from './routes/service-photos';
@@ -149,6 +149,7 @@ export function createApp(deps: AppDeps) {
   v1.route('/', adminServiceRequestRoutes(deps, sessions));
   v1.route('/', quoteRoutes(deps, sessions));
   v1.route('/', adminQuoteRoutes(deps, sessions));
+  v1.route('/', quotePhotoRoutes(deps));
   v1.route('/', reviewPublicRoutes(deps));
   v1.route('/', recommendationRoutes(deps, sessions));
   v1.route('/', privacyRoutes(deps, sessions));

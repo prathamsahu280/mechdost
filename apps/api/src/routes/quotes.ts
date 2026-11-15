@@ -1,14 +1,18 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
-import type { Context } from 'hono';
+import { Hono, type Context } from 'hono';
+import { bodyLimit } from 'hono/body-limit';
 import {
   acceptQuoteOffer,
+  assertCanAttachToQuote,
   cityScopeFrom,
   createQuote,
   declineQuote,
+  findQuoteMediaForServing,
   getAdminQuote,
   getMyQuote,
   listAdminQuotes,
   listMyQuotes,
+  markQuoteRead,
   postCustomerQuoteMessage,
   postStaffQuoteMessage,
   quoteOrderCodeToPay,
@@ -28,17 +32,27 @@ import {
   QuoteDetailDto,
   QuoteMessageSchema,
   QuoteOfferSentDto,
+  QuoteReadDto,
   QuotePayDto,
   QuotePageDto,
   QuoteRulesDto,
   SendOfferSchema,
   WithdrawQuoteSchema,
 } from '@mechdost/shared/quote-api';
-import { QUOTE_CODE_RE, QUOTE_CUSTOMER_MESSAGES_PER_HOUR } from '@mechdost/shared/quote-rules';
+import {
+  QUOTE_ATTACH_MAX,
+  QUOTE_CODE_RE,
+  QUOTE_CUSTOMER_MESSAGES_PER_HOUR,
+  QUOTE_UPLOAD_WINDOW_SECONDS,
+  QUOTE_UPLOADS_PER_WINDOW,
+} from '@mechdost/shared/quote-rules';
+import { PHOTO_MAX_BYTES } from '@mechdost/shared/service-photos';
 import type { SessionCache } from '../auth/session-cache';
-import { ApiError } from '../errors';
+import { ApiError, errorBody } from '../errors';
 import { authenticate, requirePermission, requireVerified } from '../middleware/auth';
-import { rateLimit, RATE_RULES } from '../middleware/rate-limit';
+import { enforceRate, rateLimit, RATE_RULES } from '../middleware/rate-limit';
+import { formFiles, signQuotePhoto, storeImages, uploadKit, type UploadKit } from '../photos/message-upload';
+import { verifyPhotoUrl } from '../photos/url-token';
 import { ensureRazorpayOrder } from '../payments/service';
 import type { RateRule } from '../rate-limit/limiter';
 import type { AppDeps, AppEnv } from '../types';
@@ -62,6 +76,52 @@ export const QUOTE_MESSAGE_RATE: RateRule = {
   windowSeconds: 3600,
 };
 export const QUOTE_ACCEPT_RATE: RateRule = { name: 'quote_accept_user', limit: 20, windowSeconds: 600 };
+/** Photo messages per person per window (an upload is the expensive call); counted once per upload. */
+export const QUOTE_UPLOAD_RATE: RateRule = {
+  name: 'quote_upload_user',
+  limit: QUOTE_UPLOADS_PER_WINDOW,
+  windowSeconds: QUOTE_UPLOAD_WINDOW_SECONDS,
+};
+const IMAGE_RATE: RateRule = { name: 'quote_photo_read_ip', limit: 600, windowSeconds: 60 };
+
+/** Four photos of the upload limit each, plus multipart framing and the text field. */
+const PHOTO_MESSAGE_BODY_MAX = QUOTE_ATTACH_MAX * PHOTO_MAX_BYTES + 256 * 1024;
+const MessageText = QuoteMessageSchema.shape.body;
+const tooLarge = bodyLimit({
+  maxSize: PHOTO_MESSAGE_BODY_MAX,
+  onError: (c) => c.json(errorBody(c, 'PHOTO_TOO_LARGE', 'The photos are too big'), 413),
+});
+
+/** The text and the photos of a multipart photo message (a message with photos has at least one). */
+async function photoMessageForm(c: Context<AppEnv>): Promise<{ text: string; files: File[] }> {
+  const type = (c.req.header('content-type') ?? '').toLowerCase();
+  if (!type.startsWith('multipart/form-data'))
+    throw new ApiError(422, 'PHOTO_TYPE', 'Send the message as a form');
+  const form = await c.req.parseBody({ all: true });
+  const text = MessageText.safeParse(form.body);
+  if (!text.success) throw new ApiError(400, 'VALIDATION_ERROR', 'Write a message of up to 1000 characters');
+  const files = formFiles(form.file, QUOTE_ATTACH_MAX, PHOTO_MAX_BYTES);
+  if (files.length === 0) throw new ApiError(422, 'PHOTO_TYPE', 'Add at least one photo');
+  return { text: text.data, files };
+}
+
+/** A thread with its photos as short-lived signed URLs (issued only after the caller's rights were checked). */
+function withPhotoUrls(view: Awaited<ReturnType<typeof getMyQuote>>, keyring: UploadKit['keyring'] | null) {
+  return {
+    ...view,
+    messages: view.messages.map(({ attachments, ...m }) => ({
+      ...m,
+      attachments: keyring
+        ? attachments.map((a) => ({
+            id: a.mediaId,
+            width: a.width,
+            height: a.height,
+            ...signQuotePhoto(keyring, a.mediaId),
+          }))
+        : [],
+    })),
+  };
+}
 
 const Code = z
   .string()
@@ -140,6 +200,16 @@ const message = createRoute({
   responses: { 200: json(QuoteChangedDto, 'Sent'), ...conflict, ...errorResponses },
 });
 
+const read = createRoute({
+  method: 'post',
+  path: '/quotes/{code}/read',
+  tags: ['quotes'],
+  summary: 'Mark the thread as read (the newest message you have now seen; never moves back)',
+  security: secured,
+  request: { params: z.object({ code: Code }) },
+  responses: { 200: json(QuoteReadDto, 'Marked'), ...errorResponses },
+});
+
 const accept = createRoute({
   method: 'post',
   path: '/quotes/{code}/accept',
@@ -214,6 +284,35 @@ export function quoteRoutes(deps: AppDeps, cache: SessionCache) {
   );
   const me = (c: Context<AppEnv>) => c.get('auth').user.id;
 
+  // A message with photos. Multipart: body + file x 1..4 (not an OpenAPI route; its own, larger body limit). Rights
+  // and state first (404 / 409 before any image work), then the pipeline, then the message in one transaction.
+  app.post(
+    '/quotes/:code/photo-messages',
+    rateLimit(deps.rateLimiter, QUOTE_MESSAGE_RATE, (c) => me(c)),
+    tooLarge,
+    async (c) => {
+      const code = Code.safeParse(c.req.param('code'));
+      if (!code.success) throw new ApiError(404, 'NOT_FOUND', 'Not found');
+      const { text, files } = await photoMessageForm(c);
+      const kit = uploadKit(deps);
+      await assertCanAttachToQuote(deps.db, { userId: me(c) }, code.data);
+      await enforceRate(c, deps.rateLimiter, QUOTE_UPLOAD_RATE, me(c));
+      const stored = await storeImages(files, kit, 'quote');
+      try {
+        const done = await postCustomerQuoteMessage(deps.db, {
+          userId: me(c),
+          code: code.data,
+          body: text,
+          images: stored.images,
+        });
+        return c.json(done, 200);
+      } catch (err) {
+        await stored.cleanup();
+        throw err;
+      }
+    },
+  );
+
   return (
     app
       // Registered before '/quotes/{code}' so the static path wins.
@@ -248,7 +347,19 @@ export function quoteRoutes(deps: AppDeps, cache: SessionCache) {
         );
       })
       .openapi(detail, async (c) =>
-        c.json(await getMyQuote(deps.db, me(c), c.req.valid('param').code, c.req.valid('query').locale), 200),
+        c.json(
+          withPhotoUrls(
+            await getMyQuote(deps.db, me(c), c.req.valid('param').code, c.req.valid('query').locale),
+            deps.keyring ?? null,
+          ),
+          200,
+        ),
+      )
+      .openapi(read, async (c) =>
+        c.json(
+          await markQuoteRead(deps.db, { side: 'customer', userId: me(c), code: c.req.valid('param').code }),
+          200,
+        ),
       )
       .openapi(message, async (c) =>
         c.json(
@@ -332,6 +443,16 @@ const adminDetail = createRoute({
   responses: { 200: json(QuoteDetailDto, 'Quote'), ...conflict, ...errorResponses },
 });
 
+const adminRead = createRoute({
+  method: 'post',
+  path: '/admin/quotes/{code}/read',
+  tags: ['admin'],
+  summary: 'Mark the thread as read by the MechDost team (never moves back)',
+  security: secured,
+  request: { params: z.object({ code: Code }) },
+  responses: { 200: json(QuoteReadDto, 'Marked'), ...errorResponses },
+});
+
 const adminMessage = createRoute({
   method: 'post',
   path: '/admin/quotes/{code}/messages',
@@ -376,6 +497,36 @@ export function adminQuoteRoutes(deps: AppDeps, cache: SessionCache) {
   const scope = (c: Context<AppEnv>, permission: 'quotes:read' | 'quotes:negotiate') =>
     cityScopeFrom(c.get('auth').grants, permission);
 
+  // The staff reply with photos (same pipeline and limits as the customer's).
+  app.post(
+    '/admin/quotes/:code/photo-messages',
+    rateLimit(deps.rateLimiter, QUOTE_MESSAGE_RATE, (c) => staff(c)),
+    tooLarge,
+    async (c) => {
+      const code = Code.safeParse(c.req.param('code'));
+      if (!code.success) throw new ApiError(404, 'NOT_FOUND', 'Not found');
+      const { text, files } = await photoMessageForm(c);
+      const kit = uploadKit(deps);
+      const where = scope(c, 'quotes:negotiate');
+      await assertCanAttachToQuote(deps.db, { scope: where }, code.data);
+      await enforceRate(c, deps.rateLimiter, QUOTE_UPLOAD_RATE, staff(c));
+      const stored = await storeImages(files, kit, 'quote');
+      try {
+        const done = await postStaffQuoteMessage(deps.db, {
+          scope: where,
+          staffUserId: staff(c),
+          code: code.data,
+          body: text,
+          images: stored.images,
+        });
+        return c.json(done, 200);
+      } catch (err) {
+        await stored.cleanup();
+        throw err;
+      }
+    },
+  );
+
   return app
     .openapi(adminList, async (c) => {
       const q = c.req.valid('query');
@@ -392,12 +543,26 @@ export function adminQuoteRoutes(deps: AppDeps, cache: SessionCache) {
     })
     .openapi(adminDetail, async (c) =>
       c.json(
-        await getAdminQuote(
-          deps.db,
-          scope(c, 'quotes:read'),
-          c.req.valid('param').code,
-          c.req.valid('query').locale,
+        withPhotoUrls(
+          await getAdminQuote(
+            deps.db,
+            scope(c, 'quotes:read'),
+            c.req.valid('param').code,
+            c.req.valid('query').locale,
+          ),
+          deps.keyring ?? null,
         ),
+        200,
+      ),
+    )
+    .openapi(adminRead, async (c) =>
+      c.json(
+        await markQuoteRead(deps.db, {
+          side: 'staff',
+          scope: scope(c, 'quotes:negotiate'),
+          userId: staff(c),
+          code: c.req.valid('param').code,
+        }),
         200,
       ),
     )
@@ -443,4 +608,38 @@ export function adminQuoteRoutes(deps: AppDeps, cache: SessionCache) {
         200,
       );
     });
+}
+
+/**
+ * The image route of quote photos: the signed URL (10 minutes, one photo) is the capability, so it sits outside the
+ * sign-in stack like job and support photos. Anything else is 404, never a hint why.
+ */
+export function quotePhotoRoutes(deps: AppDeps) {
+  const app = new Hono<AppEnv>();
+  app.get(
+    '/quote-photos/:mediaId/:variant',
+    rateLimit(deps.rateLimiter, IMAGE_RATE, (c) => c.get('clientIp')),
+    async (c) => {
+      const kit = uploadKit(deps);
+      const mediaId = z.uuid().safeParse(c.req.param('mediaId'));
+      const variant = z.enum(['thumb', 'large']).safeParse(c.req.param('variant'));
+      if (!mediaId.success || !variant.success) throw new ApiError(404, 'NOT_FOUND', 'Not found');
+      const exp = Number(c.req.query('e'));
+      const sig = c.req.query('s');
+      if (sig === undefined || !verifyPhotoUrl(kit.keyring, mediaId.data, exp, sig))
+        throw new ApiError(404, 'NOT_FOUND', 'Not found');
+      const media = await findQuoteMediaForServing(deps.db, mediaId.data);
+      if (!media) throw new ApiError(404, 'NOT_FOUND', 'Not found');
+      const bytes = await kit.storage.get(variant.data === 'thumb' ? media.thumbPath : media.path);
+      if (!bytes) throw new ApiError(404, 'NOT_FOUND', 'Not found');
+      return c.body(new Uint8Array(bytes), 200, {
+        'Content-Type': 'image/webp',
+        'Content-Disposition': 'inline; filename="photo.webp"',
+        'X-Content-Type-Options': 'nosniff',
+        'Cache-Control': 'private, max-age=300',
+        'Cross-Origin-Resource-Policy': 'cross-origin',
+      });
+    },
+  );
+  return app;
 }
