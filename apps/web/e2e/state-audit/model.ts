@@ -658,7 +658,8 @@ export const COMPONENTS: readonly ComponentDef[] = [
     page: 'Shop (/shop)',
     component: 'Compare tray (count, open, clear) over the listing',
     path: '/shop',
-    scope: '[data-compare-tray]',
+    // One product: no tray yet, the "pick one more" line stands in (tray-visible.ts, batch 2B); two or more: the tray.
+    scope: '[data-compare-tray], [data-compare-hint]',
     strategy: 'cross',
     cross: ['width', 'compare'],
     params: [

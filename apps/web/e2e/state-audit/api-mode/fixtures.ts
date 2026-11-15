@@ -275,9 +275,9 @@ function myShop(c: AuditCase): MyShopDto {
   const status = shop === 'paused' ? 'paused' : shop === 'suspended' ? 'suspended' : 'approved';
   return {
     id: SHOP_ID,
-    name: long(c) ? LONG_EN : 'Sharma Auto Parts',
+    name: long(c) ? loc(c) : 'Sharma Auto Parts',
     nameHi: long(c) ? LONG_HI : 'शर्मा ऑटो पार्ट्स',
-    addressLine: long(c) ? LONG_EN : 'Shop 4, Telibandha Main Road',
+    addressLine: long(c) ? loc(c) : 'Shop 4, Telibandha Main Road',
     addressLineHi: long(c) ? LONG_HI : 'दुकान 4, तेलीबांधा मेन रोड',
     pincode: '492006',
     status,
@@ -325,7 +325,13 @@ function shopOrder(c: AuditCase, n: number, over: Partial<ShopOrderDto>): ShopOr
         qty: 2,
         unitPaise: 132_000,
       },
-      { title: 'Spark plug iridium', titleHi: null, sku: 'SPK-IR', qty: 1, unitPaise: 38_000 },
+      {
+        title: 'Spark plug iridium',
+        titleHi: 'स्पार्क प्लग इरिडियम',
+        sku: 'SPK-IR',
+        qty: 1,
+        unitPaise: 38_000,
+      },
     ],
     assignmentId: uuid(100 + n),
     expiresAt: null,
@@ -440,10 +446,10 @@ function warningsView(c: AuditCase): Dto<typeof PartnerWarningsView> {
   return { windowDays: 30, counting: warnings.filter((x) => !x.withdrawn).length, warnings };
 }
 
-function shopPortalMocks(): Mock[] {
+function shopPortalMocks(c0: AuditCase): Mock[] {
   const offer = (n: number) => ({
     sku: `SKU-${String(n)}`,
-    product: `Engine oil ${String(n)}`,
+    product: c0.locale === 'hi' ? `इंजन ऑयल ${String(n)}` : `Engine oil ${String(n)}`,
     productSlug: `engine-oil-${String(n)}`,
     mrpPaise: 99_900,
     sellingPaise: 89_900,
@@ -602,10 +608,10 @@ function adminShopRow(c: AuditCase, n: number, over: Partial<AdminShopRowDto> = 
   return {
     id: n === 1 ? SHOP_ID : uuid(n),
     cityId: uuid(900),
-    name: long(c) ? LONG_EN : `Sharma Auto Parts ${String(n)}`,
-    nameHi: long(c) ? LONG_HI : n % 3 === 0 ? null : `शर्मा ऑटो पार्ट्स ${String(n)}`,
-    addressLine: long(c) ? LONG_EN : 'Shop 4, Telibandha Main Road',
-    addressLineHi: long(c) ? LONG_HI : null,
+    name: long(c) ? loc(c) : `Sharma Auto Parts ${String(n)}`,
+    nameHi: long(c) ? LONG_HI : `शर्मा ऑटो पार्ट्स ${String(n)}`,
+    addressLine: long(c) ? loc(c) : 'Shop 4, Telibandha Main Road',
+    addressLineHi: long(c) ? LONG_HI : 'दुकान 4, तेलीबांधा मेन रोड',
     pincode: '492006',
     status: 'approved',
     gstStatus: 'registered',
@@ -760,7 +766,7 @@ function queueMocks(): Mock[] {
         const tag = q === 'tag-on-suggestion' || q === 'both';
         const ranked = (n: number, gaveUpBefore: boolean) => ({
           shopId: uuid(n),
-          name: long(c) ? LONG_EN : `Shop ${String(n)}`,
+          name: long(c) ? loc(c) : `Shop ${String(n)}`,
           distanceKm: 1.5 * n,
           stockedItems: 2,
           totalItems: 2,
@@ -889,7 +895,7 @@ function analyticsMocks(): Mock[] {
         const mode = c.state.analytics ?? 'full';
         if (mode === 'error') return { status: 503, code: 'QUERY_TIMEOUT' };
         const full = mode === 'full' || mode === 'long-text';
-        const name = mode === 'long-text' ? LONG_EN : 'Castrol Activ 4T 20W-40 900 ml';
+        const name = mode === 'long-text' ? loc(c) : 'Castrol Activ 4T 20W-40 900 ml';
         const n = (v: number) => (full ? v : 0);
         return {
           body: {
@@ -981,7 +987,7 @@ function analyticsMocks(): Mock[] {
               ? [
                   {
                     id: SHOP_ID,
-                    name: long(c) ? LONG_EN : 'Sharma Auto Parts',
+                    name: long(c) ? loc(c) : 'Sharma Auto Parts',
                     nameHi: null,
                     offers: 80,
                     accepted: 71,
@@ -1033,7 +1039,7 @@ function coinsMocks(): Mock[] {
               delta: i % 2 === 0 ? 50 + i : -(20 + i),
               kind: kinds[i % kinds.length] ?? 'earn',
               reasonCode: i % 3 === 0 ? 'order' : null,
-              note: mode === 'long-text' ? LONG_EN : null,
+              note: mode === 'long-text' ? loc(c) : null,
               orderCode: i % 2 === 0 ? `MD-RPR-2026-HND60${String(i)}` : null,
               createdAt: iso(-i * 90),
               expiresAt: i % 2 === 0 ? iso(60 * 24 * 300) : null,
@@ -1141,7 +1147,7 @@ function reviewsMocks(): Mock[] {
               id: `rv-${String(i)}`,
               targetType: i % 2 === 0 ? ('product' as const) : ('workshop' as const),
               targetSlug: 'castrol-activ-4t-20w40-900ml',
-              targetName: mode === 'long-text' ? LONG_EN : 'Castrol Activ 4T 20W-40 900 ml',
+              targetName: mode === 'long-text' ? loc(c) : 'Castrol Activ 4T 20W-40 900 ml',
               rating: (i % 5) + 1,
               body: mode === 'long-text' ? `${LONG_HI} ${LONG_HI}` : 'Good oil, bike runs smoother',
               author: 'Ravi S.',
@@ -1522,9 +1528,11 @@ export function mocksFor(c: AuditCase): Mock[] {
     case 'API-ORD-REFUNDLINE':
       return [meMock(), orderRefundMock()];
     case 'API-SHOP-PORTAL':
-      return shopPortalMocks();
+    case 'API-SHOP-TIER1':
+    case 'API-SHOP-OFFERS':
     case 'API-SHOP-TIER2':
-      return [...shopPortalMocks(), ...tier2PortalMocks()];
+      // The portal also loads its performance card and CSV tool: the tier 2 mocks sit under every portal row.
+      return [...shopPortalMocks(c), ...tier2PortalMocks()];
     case 'API-SHOP-SLIP':
       return [meMock(), ...slipMocks()];
     case 'API-ADM-SHOPS':
@@ -1538,19 +1546,18 @@ export function mocksFor(c: AuditCase): Mock[] {
     case 'API-ADM-WORKSHOPS':
       return [...analyticsMocks(), ...adminWorkshopAnalyticsMocks(c)];
     case 'API-WS-PERFORMANCE':
-      return workshopPerformanceMocks(c);
+      return [...workshopPerformanceMocks(c), ...profileMocks(c)];
     case 'API-ADM-COINS':
       return coinsMocks();
     case 'API-WISHLIST':
       return [meMock(), ...wishlistMocks(c)];
     case 'API-ADM-PHOTOS':
-      return [meMock(), ...photoQueueMocks(c)];
+      // The catalogue page also shows the recommendation rules under the queue.
+      return [meMock(), ...photoQueueMocks(c), ...adminRecoMocks(c)];
     case 'API-ADM-COUPONS':
       return couponsMocks(c);
     case 'API-ADM-REVIEWS':
       return reviewsMocks();
-    case 'API-SHOP-OFFERS':
-      return shopPortalMocks();
     case 'API-ADM-QUOTES':
       return quotesMocks();
     case 'API-ADM-CONTENT':
@@ -1592,7 +1599,8 @@ export function mocksFor(c: AuditCase): Mock[] {
     case 'API-SVC-RESCHEDULE':
       return homeRequestMocks(c);
     case 'API-SVC-PAYBILL':
-      return billPayMocks(c);
+      // The request page also lists the request's photos (the bill's own detail mock stays first).
+      return [...billPayMocks(c), ...customerPhotoMocks(c).filter((m) => String(m.path).includes('photos'))];
     case 'API-ADM-SVCROUTE':
       return adminRoutingMocks(c);
     case 'API-SVC-PHOTOS':

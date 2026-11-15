@@ -96,6 +96,24 @@ describe('consent seed of the audit rows', () => {
     expect(stored.analytics).toBe(false);
     expect(stored.version).toBe(CONSENT_NOTICE_VERSION);
   });
+  it('holds for every row of every chunk, API rows included: the banner is open only on consent=open rows', () => {
+    const all = buildCases();
+    expect(all.length).toBeGreaterThan(3000);
+    const openComponents = new Set<string>();
+    for (const x of all) {
+      const stored = seedFor(x, 0)['mechdost-consent'];
+      if (x.state.consent === 'open') {
+        expect(stored, x.id).toBeUndefined();
+        openComponents.add(x.code);
+      } else {
+        expect(stored, x.id).toBeDefined();
+        expect((JSON.parse(stored ?? '{}') as { version: string }).version, x.id).toBe(
+          CONSENT_NOTICE_VERSION,
+        );
+      }
+    }
+    expect([...openComponents].toSorted()).toEqual(['CHR-CONSENT', 'CHR-FLOAT', 'SHOP-TRAY']);
+  });
   it('leaves the banner open only for rows that say so', () => {
     const open = buildCases().find((x) => x.state.consent === 'open');
     if (!open) throw new Error('no open row');

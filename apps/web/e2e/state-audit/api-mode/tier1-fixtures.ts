@@ -16,7 +16,14 @@ const long = (c: AuditCase) => c.state.stress === 'long-text';
 
 function profile(c: AuditCase): Dto<typeof WorkshopProfilesDto> {
   const state = c.state.myws ?? 'plain';
-  const name = long(c) ? 'Shri Ganesh Automobiles and Two Wheeler Service Centre Raipur' : 'Home Garage 1';
+  const hi = c.locale === 'hi';
+  const name = long(c)
+    ? hi
+      ? 'श्री गणेश ऑटोमोबाइल्स और टू व्हीलर सर्विस सेंटर रायपुर'
+      : 'Shri Ganesh Automobiles and Two Wheeler Service Centre Raipur'
+    : hi
+      ? 'होम गैराज 1'
+      : 'Home Garage 1';
   return {
     workshops: [
       {

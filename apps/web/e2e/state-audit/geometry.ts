@@ -456,31 +456,57 @@ export async function auditDom(opts: DomAuditOptions): Promise<Finding[]> {
       const line = range.getClientRects()[it.line];
       return line ? inter(line, clipOf(it.el, true)) : null;
     };
-    const probe = () => {
+    /** What paints over the item's centre right now (null: nothing, or something that is allowed to). */
+    const coveredBy = (it: Item): { hit: Element; r: R } | null => {
+      const r = now(it);
+      if (!r || empty(r)) return null;
+      const cx = (r.left + r.right) / 2;
+      const cy = (r.top + r.bottom) / 2;
+      if (cx < 0 || cy < 0 || cx > vw - 1 || cy > vh - 1) return null;
+      const hit = document.elementFromPoint(cx, cy);
+      if (!hit || hit === it.el || it.el.contains(hit) || hit.contains(it.el)) return null;
+      if (inFixed(hit) && !it.fixed) return null;
+      if (behindModal(it.el, hit)) return null;
+      const coverControl = hit.closest(CONTROL);
+      if (it.kind === 'text' && (!coverControl || coverControl.contains(it.el))) return null;
+      if (it.kind === 'control' && it.el.matches('input, select, textarea') && hit.closest('label'))
+        return null;
+      return { hit: coverControl ?? hit, r };
+    };
+    const report = (it: Item, by: { hit: Element; r: R }) => {
+      reported.add(it.el);
+      add({
+        rule: 'covered',
+        severity: it.kind === 'control' ? 'P0' : 'P1',
+        where: describe(it.el),
+        detail: `${it.kind} is painted over by ${describe(by.hit)}`,
+        box: toBox(by.r),
+      });
+    };
+    // Keyboard focus and a scrolling visitor bring an element to the middle of the screen. The scan steps below
+    // and Playwright's own scrolling ignore the page's `scroll-padding-top`, so a sticky item that is under the
+    // fixed header only at a scan step is not a defect. Such an item is scrolled to the centre and measured
+    // again; only a cover that survives is reported (batch 2c, 2026-11-16, runbook § 9.10).
+    const probe = async () => {
+      const again: Item[] = [];
       for (const it of items) {
         if (reported.has(it.el)) continue;
-        const r = now(it);
-        if (!r || empty(r)) continue;
-        const cx = (r.left + r.right) / 2;
-        const cy = (r.top + r.bottom) / 2;
-        if (cx < 0 || cy < 0 || cx > vw - 1 || cy > vh - 1) continue;
-        const hit = document.elementFromPoint(cx, cy);
-        if (!hit || hit === it.el || it.el.contains(hit) || hit.contains(it.el)) continue;
-        if (inFixed(hit) && !it.fixed) continue;
-        if (behindModal(it.el, hit)) continue;
-        const coverControl = hit.closest(CONTROL);
-        if (it.kind === 'text' && (!coverControl || coverControl.contains(it.el))) continue;
-        if (it.kind === 'control' && it.el.matches('input, select, textarea') && hit.closest('label'))
-          continue;
-        reported.add(it.el);
-        add({
-          rule: 'covered',
-          severity: it.kind === 'control' ? 'P0' : 'P1',
-          where: describe(it.el),
-          detail: `${it.kind} is painted over by ${describe(coverControl ?? hit)}`,
-          box: toBox(r),
-        });
+        const by = coveredBy(it);
+        if (!by) continue;
+        if (it.fixed && inFixed(by.hit)) again.push(it);
+        else report(it, by);
       }
+      if (again.length === 0) return;
+      const keep = window.scrollY;
+      for (const it of again) {
+        if (reported.has(it.el)) continue;
+        it.el.scrollIntoView({ block: 'center', inline: 'nearest' });
+        await frame();
+        const by = coveredBy(it);
+        if (by) report(it, by);
+      }
+      window.scrollTo(0, keep);
+      await frame();
     };
     if (opts.scan && !opts.local) {
       const start = window.scrollY;
@@ -491,11 +517,11 @@ export async function auditDom(opts: DomAuditOptions): Promise<Finding[]> {
       for (let y = from; y < to; y += Math.max(200, Math.floor(vh * 0.7))) {
         window.scrollTo(0, y);
         await frame();
-        probe();
+        await probe();
       }
       window.scrollTo(0, start);
       await frame();
-    } else probe();
+    } else await probe();
   }
 
   // ── clipped ──
@@ -801,7 +827,12 @@ export function focusFacts(args: { scope: string }): {
   return {
     inScope: true,
     where: `${el.tagName.toLowerCase()}"${label}"`,
-    visible: el.matches(':focus-visible') && (outline || shadow),
+    // Chrome stops Tab on the native picker button of a date or time input and draws the ring there; the host
+    // input is not :focus-visible at that stop (batch 2c). Any other input without a ring still fails.
+    visible:
+      (el.matches(':focus-visible') && (outline || shadow)) ||
+      (el instanceof HTMLInputElement &&
+        ['date', 'time', 'datetime-local', 'month', 'week'].includes(el.type)),
     ringClipped: Math.round(ringClipped),
     box: {
       x: Math.round(r.left + window.scrollX),
@@ -1090,4 +1121,14 @@ export function markStepper(args: {
     return true;
   }
   return false;
+}
+
+/**
+ * Brings an element to the middle of the screen before it is hovered or measured, the way keyboard focus does.
+ * Playwright's own `scrollIntoViewIfNeeded` ignores the page's `scroll-padding-top`, so it can leave a link under
+ * the fixed header and then report "covered by the header" for a link a visitor reaches without trouble. Runs in
+ * the page (`locator.evaluate(centre)`); no closures.
+ */
+export function centre(node: Element): void {
+  node.scrollIntoView({ block: 'center', inline: 'nearest' });
 }

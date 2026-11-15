@@ -6,8 +6,7 @@
 import type { Page } from '@playwright/test';
 import type { AuditCase } from '../cases.ts';
 import type { ApiHooks } from '../harness.ts';
-import { baselineMocks } from './baseline-fixtures.ts';
-import { mocksFor } from './fixtures.ts';
+import { auditMocksFor } from './baseline-fixtures.ts';
 import { installApi } from './mock-api.ts';
 import { mockFirebase, persistedUser } from './session.ts';
 
@@ -159,7 +158,14 @@ async function prepareApi(page: Page, c: AuditCase): Promise<string[]> {
       const form = main.locator('form:has(select[id^="give-up-"])').first();
       if (c.state.giveup === 'filled') {
         await form.locator('select').selectOption({ index: 1 });
-        await form.locator('textarea').fill('Stock damaged in the rain, cannot supply this week');
+        // A person on /hi types Hindi: the reason is shown back on the page (and the Hindi gate reads it).
+        await form
+          .locator('textarea')
+          .fill(
+            c.locale === 'hi'
+              ? 'बारिश में स्टॉक ख़राब हो गया, इस हफ़्ते सप्लाई नहीं कर सकते'
+              : 'Stock damaged in the rain, cannot supply this week',
+          );
       } else if (c.state.giveup === 'empty-submit') {
         await form.locator('button[type="submit"]').click();
       }
@@ -291,7 +297,7 @@ export const apiHooks: ApiHooks = {
   async install(page, c, now) {
     const uid = UID[c.auth] ?? UID.customer ?? 'audit-customer';
     await mockFirebase(page, uid, PHONE, now);
-    return installApi(page, c, [...mocksFor(c), ...baselineMocks(c)]);
+    return installApi(page, c, auditMocksFor(c));
   },
   seed(c, now) {
     const uid = UID[c.auth];
