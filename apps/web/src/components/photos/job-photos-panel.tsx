@@ -159,7 +159,7 @@ export function JobPhotosPanel({
             {mine.length > 0 ? (
               <ul className="mt-2 flex flex-wrap gap-2">
                 {mine.map((p, i) => (
-                  <li key={p.id} className="relative">
+                  <li key={p.id} className="flex items-center gap-1">
                     <PhotoThumb
                       photo={p}
                       index={i}
@@ -173,7 +173,7 @@ export function JobPhotosPanel({
                         type="button"
                         onClick={() => void onRemove(stage, p.id)}
                         aria-label={t('remove', { stage: t(`stage_${stage}`), n: i + 1 })}
-                        className="absolute -end-2 -top-2 inline-flex size-11 items-center justify-center"
+                        className="press inline-flex size-11 shrink-0 items-center justify-center rounded-full"
                       >
                         <span className="inline-flex size-6 items-center justify-center rounded-full bg-ink text-white">
                           <X aria-hidden="true" className="size-3.5" />

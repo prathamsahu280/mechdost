@@ -365,3 +365,7 @@ See PENDING DECISIONS in `docs/decisions.md` (payment methods; post-purchase P1 
 - Built: online payment of the service bill (same payments table and webhook, purpose `service_bill`, one open order per bill, settles billed -> paid -> completed; a late capture after "paid at the workshop" or a cancel is recorded and refunded once), staff cancel (`service:cancel`, reason codes, slot released once, one refund request for a paid bill, en + hi email, bell and push), ranked workshop suggestions (pure ranking in shared, two-statement SQL, admin UI with reasons and one-click send), UI on the request page and Admin -> Services, state-audit rows `API-SVC-PAYBILL` and `API-ADM-SVCROUTE` (checklist regenerated, 3,826 items, not run in a browser).
 - Needs at merge: renumber the migration; run `pnpm db:seed` (new permission `service:cancel`). No Razorpay dashboard change. Questions Q150 to Q153.
 - Not built: see spec 06 "Built: workshops tier 3".
+
+## 2026-11-16 — Audit batch 1c (portal/forms) built on branch worktree-agent-a7cae956fbcd1032f, not merged
+
+Job photos remove button beside thumbnail; portal style constants carry focus-visible ring; demo login picker stacks and wraps; workshop menu price fields stack at phone width. Guard: apps/web/test/portal-forms-layout.test.ts (9 tests). Coordinator re-runs audit rows API-SVC-PHOTOS, PRT-WORKSHOP, LOGIN-FORM.

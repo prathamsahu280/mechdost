@@ -1166,3 +1166,5 @@ Design: `docs/superpowers/specs/2026-11-15-support-next-tier-design.md` items 1 
   MechDost) sit above it. The audit keeps "covered by the banner" as a real finding.
 - **Footer "Privacy choices" link covered by the open banner:** still open (Q170 part 3); default: acceptable, since the
   link reopens the same banner.
+
+- **2026-11-16 (builder ruling, batch 1c):** portal/forms audit fixes. Job-photo remove button sits beside its thumbnail (44 px, no overlay); portalField/portalPrimary/portalQuiet draw their own 3 px focus-visible outline in the focus token (both themes); a static test forbids outline-none without a focus-visible replacement (allowed: the main landmark and consent banner, programmatic focus only); demo login picker is one column under 640 px and wraps names; the workshop menu low/high price fields stack under 640 px. No new colours or radii.
