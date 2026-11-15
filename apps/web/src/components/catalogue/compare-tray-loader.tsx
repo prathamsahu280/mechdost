@@ -13,11 +13,12 @@ interface TrayProps {
   request: Ask | null;
 }
 
-/** Something is stored under the compare key (the tray itself validates it). */
+/** Two or more products are stored under the compare key (the tray itself validates it). */
 function hasList(): boolean {
   try {
     const raw = window.localStorage.getItem(COMPARE_KEY);
-    return raw?.includes('"slugs":["') ?? false;
+    // Two or more products: one has nothing to compare, the bar appears from two (decision 2026-11-15).
+    return raw ? /"slugs":\["[^"]+","/.test(raw) : false;
   } catch {
     return false;
   }

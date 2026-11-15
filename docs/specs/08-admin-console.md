@@ -359,3 +359,7 @@ Admin -> Catalogue: "Goes well with: rules" (add, edit, switch off, delete; both
 ## Services: ranked suggestions and staff cancel (2026-11-15)
 
 Admin -> Services: a request needing routing lists the ranked workshops with "Best match" and the reasons (distance, rating, share of offers taken, time to propose, open jobs and places an hour); one click sends it. Every live request (routing queue, active, waiting) has "Cancel this request" with a reason code (permission `service:cancel`; a paid bill is refunded through Admin -> Refunds). Click ids: `admin_service_routed_top`, `admin_service_routed_other`, `admin_service_cancelled`.
+
+## Revision 2026-11-16 (audit log, refunds, coupons)
+
+- Audit log: entity and action filters are selects of known codes; rows and options show translated wording (`adminPeople.auditWord`, `auditAction`); unknown codes show as code. Refund failure codes are worded (`refunds.failure_*`), never shown raw. Staff-typed reasons and notes are marked as user content.

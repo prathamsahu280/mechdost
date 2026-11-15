@@ -537,7 +537,9 @@ export function AdminCouponsApi() {
                   <li>{c.cityCode ?? t('a_all_cities')}</li>
                 </ul>
                 {c.pausedReason ? (
-                  <p className="mt-2 text-sm text-muted">{t('a_paused_why', { reason: c.pausedReason })}</p>
+                  <p className="mt-2 text-sm text-muted">
+                    {t('a_paused_why')} <span data-user-content>{c.pausedReason}</span>
+                  </p>
                 ) : null}
                 {pausing?.id === c.id ? (
                   <div className="mt-3 flex flex-wrap items-end gap-2">

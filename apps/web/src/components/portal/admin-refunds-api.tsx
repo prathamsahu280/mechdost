@@ -11,7 +11,7 @@ import {
 import { REFUND_REJECT_REASONS, type RefundRejectReason } from '@mechdost/shared/state';
 import { track } from '@/lib/analytics';
 import { formatDate, formatPrice } from '@/lib/format';
-import { isRefundReference, refundErrorKey } from '@/lib/refund-views';
+import { isRefundReference, refundErrorKey, refundFailureKey } from '@/lib/refund-views';
 import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 
 type List =
@@ -272,7 +272,9 @@ function RefundDetail({
         {refund.note ? (
           <div className="sm:col-span-2">
             <dt className="text-muted">{t('note')}</dt>
-            <dd className="text-ink">{refund.note}</dd>
+            <dd className="text-ink" data-user-content>
+              {refund.note}
+            </dd>
           </div>
         ) : null}
         {refund.providerRefundId ? (
@@ -285,7 +287,7 @@ function RefundDetail({
       {refund.overdue ? <p className="mt-3 text-sm font-bold text-ink">{t('overdueNote')}</p> : null}
       {refund.status === 'needs_reconciliation' ? (
         <p className="mt-3 text-sm font-bold text-ink">
-          {t('reconcileNote', { code: refund.failureCode ?? '' })}
+          {t('reconcileNote', { reason: t(refundFailureKey(refund.failureCode ?? '')) })}
         </p>
       ) : null}
       {refund.providerReportedPaise ? (
@@ -294,13 +296,17 @@ function RefundDetail({
         </p>
       ) : null}
       {refund.status === 'failed' ? (
-        <p className="mt-3 text-sm text-ink">{t('failureNote', { code: refund.failureCode ?? '' })}</p>
+        <p className="mt-3 text-sm text-ink">
+          {t('failureNote', { reason: t(refundFailureKey(refund.failureCode ?? '')) })}
+        </p>
       ) : null}
       {refund.status === 'rejected' && refund.rejectReasonCode ? (
         <p className="mt-3 text-sm text-ink">{t(`rejectReason_${refund.rejectReasonCode}`)}</p>
       ) : null}
       {refund.manualReference ? (
-        <p className="mt-3 text-sm font-bold text-ink">{t('paidWith', { value: refund.manualReference })}</p>
+        <p className="mt-3 text-sm font-bold text-ink">
+          <span>{t('paidWith')}</span> <span data-user-content>{refund.manualReference}</span>
+        </p>
       ) : null}
       {refund.destinationMasked && !destination ? (
         <p className="mt-3 text-sm text-ink">{t('destinationMasked', { value: refund.destinationMasked })}</p>

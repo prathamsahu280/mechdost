@@ -26,6 +26,23 @@ const KNOWN: Record<string, RefundErrorKey> = {
   UNAVAILABLE: 'err_NETWORK',
 };
 
+const FAILURES = [
+  'bad_request_error',
+  'gateway_error',
+  'server_error',
+  'razorpay_failed',
+  'dispatch_exhausted',
+  'provider_amount_mismatch',
+  'payment_not_captured',
+] as const;
+export type RefundFailureKey = `failure_${(typeof FAILURES)[number] | 'other'}`;
+
+/** A stored failure code (ours or the payment partner's, any letter case) → `refunds.failure_*`; unknown codes get the general wording, never the raw code. */
+export function refundFailureKey(code: string): RefundFailureKey {
+  const known = FAILURES.find((f) => f === code.toLowerCase());
+  return known ? `failure_${known}` : 'failure_other';
+}
+
 export function refundErrorKey(code: string): RefundErrorKey {
   return KNOWN[code] ?? 'err_GENERIC';
 }

@@ -133,7 +133,7 @@ export function ShopOrdersApi() {
         {active.items.length > 0 ? (
           <ul className="mt-3 grid gap-3 nav:grid-cols-2">
             {active.items.map((o) => (
-              <li key={o.code}>
+              <li key={o.code} className="flex">
                 <ActiveOrder order={o} onChanged={refresh} onFlash={show} />
               </li>
             ))}
@@ -464,8 +464,8 @@ function ActiveOrder({
   }
 
   return (
-    <article className={portalCard} aria-busy={busy || undefined}>
-      <p className="mb-2 inline-flex rounded-pill bg-success-bg px-3 py-1 text-xs font-extrabold text-success">
+    <article className={`${portalCard} flex w-full flex-col`} aria-busy={busy || undefined}>
+      <p className="mb-2 inline-flex w-fit rounded-pill bg-success-bg px-3 py-1 text-xs font-extrabold text-success">
         {o(shopStageKey(order.status))}
       </p>
       <OrderLines order={order} />
@@ -480,25 +480,28 @@ function ActiveOrder({
       >
         {t2('slipOpen')}
       </a>
-      {error ? (
-        <div className="mt-3">
-          <ApiError code={error} />
-        </div>
-      ) : null}
-      {action?.kind === 'code' ? (
-        <DeliveryCodeForm order={order} onChanged={onChanged} onFlash={onFlash} />
-      ) : action ? (
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => void advance(action.steps)}
-          className={`${portalPrimary} mt-4 w-full`}
-        >
-          {t(action.label)}
-        </button>
-      ) : null}
-      {/* Before packing only: the shop can still hand the order back to MechDost (spec 04). */}
-      {order.status === 'confirmed' ? <GiveUpOrder order={order} onChanged={onChanged} /> : null}
+      {/* The actions sit at the card's foot, so cards side by side line their buttons up (audit 2026-11-16). */}
+      <div className="mt-auto">
+        {error ? (
+          <div className="mt-3">
+            <ApiError code={error} />
+          </div>
+        ) : null}
+        {action?.kind === 'code' ? (
+          <DeliveryCodeForm order={order} onChanged={onChanged} onFlash={onFlash} />
+        ) : action ? (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void advance(action.steps)}
+            className={`${portalPrimary} mt-4 w-full`}
+          >
+            {t(action.label)}
+          </button>
+        ) : null}
+        {/* Before packing only: the shop can still hand the order back to MechDost (spec 04). */}
+        {order.status === 'confirmed' ? <GiveUpOrder order={order} onChanged={onChanged} /> : null}
+      </div>
     </article>
   );
 }

@@ -96,7 +96,9 @@ export function ShopCsvCard({ shopId }: { shopId: string }) {
         {t('csvTitle')}
       </h3>
       <p className="mt-1 text-sm text-muted">{t('csvLead')}</p>
-      <p className="mt-1 text-xs text-muted">{t('csvRules', { rows: SHOP_CSV_MAX_ROWS })}</p>
+      <p className="mt-1 text-xs text-muted">
+        {t.rich('csvRules', { rows: SHOP_CSV_MAX_ROWS, code: (parts) => <code lang="en">{parts}</code> })}
+      </p>
       <FlashNote flash={flash} />
 
       <div className="mt-3 flex flex-wrap items-center gap-2" aria-busy={working || undefined}>
