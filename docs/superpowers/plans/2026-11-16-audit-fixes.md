@@ -138,3 +138,24 @@ No deploy per batch. Merge batch 3 (a, b, c), the refund and bulk quote follow-u
 the smaller items (if ready) into `merge/fix2`; renumber migrations; one full verification (`pnpm check`, JS budget,
 chrome-fit, no-reload e2e, closable-panels e2e, Hindi crawl, affected audit rows); then one push to main and one
 deploy (migrations first, runbook § 6). The visual review runs on that deploy.
+
+## Full re-run on GitHub (2026-11-16, `merge/fix2` with batch 2 + 3a + 3b; runs 43744244096, 43744248459)
+
+| Run      | Passed           | Failed | Before                    |
+| -------- | ---------------- | ------ | ------------------------- |
+| demo A–F | 2,037 (+2 flaky) | 140    | ~800 failing in A–C alone |
+| api G    | 1,676            | 374    | ~1,416                    |
+
+Triage by finding class: `docs/qa/triage-2026-11-16/demo-A-F.txt`, `api-G.txt`. Batch 3c:
+
+- **3c-1 chrome/nav/Hindi (real):** current item hidden in the narrow side-bar strip (NAV-ADMIN/ACCOUNT, 176);
+  Ask MechDost launcher painted under page content + invalid ARIA + over the workshop booking select at 1024;
+  compare sticky "Detail" cell over focused links; order/service view link contrast; coins page target size;
+  4 px sideways scroll on some signed-in pages; Hindi: signed-in name in the header, customer/staff names, shop names,
+  company legal identifiers, CSV column names.
+- **3c-2 portals/compare/quotes (real or to verify):** Escape does not close some API-mode panels (120: admin shops,
+  service routing, shop portal, reschedule); shop "Availability" controls overflow at 320; shop card action rows
+  misaligned; compare tray missing with 2 products (SHOP-TRAY, 7); quote pages time out in the busy world (QT-PAGES).
+- **3c-3 harness:** navigation rows need the destination pages' mocks; footer tel/WhatsApp links checked by href;
+  login password field's inset "Show password" button is not an overlap; no hover behind an open viewer/sheet;
+  Hindi fixture for "Audit product" in the photo queue.

@@ -1,0 +1,181 @@
+api {'expected': 1676, 'fail': 374}
+  120 P0 dismiss | Escape did not close the panel
+      rows: API-ADM-SHOPS,API-ADM-SVCROUTE,API-SHOP-PORTAL,API-SVC-RESCHEDULE
+      e.g. API-SVC-RESCHEDULE-002 · 320px · dark · hi · customer · world=empty ·  :: request-cancel · Escape did not close the panel
+  112 P1 nav-current-hidden | the current item is scrolled out of sight in the bar
+      rows: API-NAV-ACCOUNT,API-NAV-ADMIN
+      e.g. API-NAV-ADMIN-068 · 768px · dark · hi · admin · world=empty · /admin/a :: 📈विश्लेषण · the current item is scrolled out of sight in the bar
+   28 P0 api-mock | unmocked API call: GET /admin/orders
+      rows: API-NAV-ADMIN
+      e.g. API-NAV-ADMIN-069 · 768px · light · en · admin · world=empty · /admin/ :: mock API · unmocked API call: GET /admin/orders
+   26 P1 hindi | English on /hi: Sharma, Auto, Parts
+      rows: API-ADM-ANALYTICS,API-ADM-COUPONS,API-ADM-QUEUE
+      e.g. API-ADM-QUEUE-002 · 320px · dark · hi · admin · world=empty · /admin/o :: main · English on /hi: Sharma, Auto, Parts
+   19 P1 hindi | English on /hi: Shourya, Integrated, Services, Pvt, Ltd, Salasar, Greens, Sarona
+      rows: API-ADM-COMPANY,API-ADM-DEMAND
+      e.g. API-ADM-DEMAND-002 · 320px · dark · hi · admin · world=empty · /admin/ :: main · English on /hi: Shourya, Integrated, Services, Pvt, Ltd, Salasar, Greens, Sarona, Tatibandh, Raipur
+   18 P1 hscroll | page scrolls sideways by N px; widest: unknown
+      rows: API-ACC-DELETION,API-ACC-PRIVACY,API-ACC-SUPPORT,API-NAV-ACCOUNT,API-ORD-REFUNDLINE,API-SVC-HOMEREQ,API-SVC-PAYBILL,API-SVC-PHOTOS,API-SVC-RESCHEDULE
+      e.g. API-SVC-HOMEREQ-006 · 480px · dark · hi · customer · world=empty · /se :: page · page scrolls sideways by 4 px; widest: unknown
+   15 P0 api-mock | unmocked API call: GET /orders
+      rows: API-NAV-ACCOUNT
+      e.g. API-NAV-ACCOUNT-001 · 320px · light · en · customer · world=empty · /a :: mock API · unmocked API call: GET /orders
+   14 P0 api-mock | unmocked API call: GET /admin/content
+      rows: API-NAV-ADMIN
+      e.g. API-NAV-ADMIN-081 · 768px · light · en · admin · world=empty · /admin/ :: mock API · unmocked API call: GET /admin/content
+   14 P1 inside | while hovering "Closed today": control sticks out of its container section"Avail
+      rows: API-SHOP-OFFERS,API-SHOP-PORTAL,API-SHOP-TIER1,API-SHOP-TIER2
+      e.g. API-SHOP-PORTAL-001 · 320px · light · en · shop partner · world=empty  :: button"Set busy" in "Availability" · while hovering "Closed today": control sticks out of its container section"AvailabilityTaking ordersWhile you are c" by 
+   14 P1 inside | while hovering "N hourN hoursN hoursN hours": control sticks out of its containe
+      rows: API-SHOP-OFFERS,API-SHOP-PORTAL,API-SHOP-TIER1,API-SHOP-TIER2
+      e.g. API-SHOP-PORTAL-001 · 320px · light · en · shop partner · world=empty  :: button"Set busy" in "Availability" · while hovering "1 hour2 hours4 hours8 hours": control sticks out of its container section"AvailabilityTaking ordersWhile
+   14 P1 inside | while hovering "Set busy": control sticks out of its container section"Availabil
+      rows: API-SHOP-OFFERS,API-SHOP-PORTAL,API-SHOP-TIER1,API-SHOP-TIER2
+      e.g. API-SHOP-PORTAL-001 · 320px · light · en · shop partner · world=empty  :: button"Set busy" in "Availability" · while hovering "Set busy": control sticks out of its container section"AvailabilityTaking ordersWhile you are c" by 2 px
+   14 P1 inside | while focused on button"Closed today": control sticks out of its container secti
+      rows: API-SHOP-OFFERS,API-SHOP-PORTAL,API-SHOP-TIER1,API-SHOP-TIER2
+      e.g. API-SHOP-PORTAL-001 · 320px · light · en · shop partner · world=empty  :: button"Set busy" in "Availability" · while focused on button"Closed today": control sticks out of its container section"AvailabilityTaking ordersWhile you ar
+   14 P1 inside | while focused on select"N hourN hoursN hoursN hours": control sticks out of its 
+      rows: API-SHOP-OFFERS,API-SHOP-PORTAL,API-SHOP-TIER1,API-SHOP-TIER2
+      e.g. API-SHOP-PORTAL-001 · 320px · light · en · shop partner · world=empty  :: button"Set busy" in "Availability" · while focused on select"1 hour2 hours4 hours8 hours": control sticks out of its container section"AvailabilityTaking ord
+   14 P1 inside | while focused on button"Set busy": control sticks out of its container section"A
+      rows: API-SHOP-OFFERS,API-SHOP-PORTAL,API-SHOP-TIER1,API-SHOP-TIER2
+      e.g. API-SHOP-PORTAL-001 · 320px · light · en · shop partner · world=empty  :: button"Set busy" in "Availability" · while focused on button"Set busy": control sticks out of its container section"AvailabilityTaking ordersWhile you are c"
+   13 P1 aligned | action rows in one row of cards are at different heights (spread N px)
+      rows: API-SHOP-PORTAL
+      e.g. API-SHOP-PORTAL-009 · 1024px · light · en · shop partner · world=empty :: li"Confirmed — will be shippedMD-RPR-2026-H" · action rows in one row of cards are at different heights (spread 12 px)
+   12 P1 inside | control sticks out of its container section"AvailabilityTaking ordersWhile you a
+      rows: API-SHOP-OFFERS,API-SHOP-PORTAL,API-SHOP-TIER1,API-SHOP-TIER2
+      e.g. API-SHOP-PORTAL-001 · 320px · light · en · shop partner · world=empty  :: button"Set busy" in "Availability" · control sticks out of its container section"AvailabilityTaking ordersWhile you are c" by 2 px
+   12 P1 hindi | English on /hi: Audit, product
+      rows: API-ADM-PHOTOS
+      e.g. API-ADM-PHOTOS-002 · 320px · dark · hi · admin · world=empty · /admin/ :: main · English on /hi: Audit, product
+    9 P1 hindi | English on /hi: sku, stock, active
+      rows: API-SHOP-TIER2
+      e.g. API-SHOP-TIER2-002 · 320px · dark · hi · shop partner · world=empty ·  :: main · English on /hi: sku, stock, active
+    9 P1 hindi | English on /hi: Asha, Rao
+      rows: API-ADM-POLICIES
+      e.g. API-ADM-POLICIES-002 · 320px · dark · hi · admin · world=empty · /admi :: main · English on /hi: Asha, Rao
+    8 P0 covered | cannot hover:     - <img loading="lazy" decoding="async" data-nimg="fill" class=
+      rows: API-SVC-PHOTOS
+      e.g. API-SVC-PHOTOS-002 · 320px · dark · hi · customer · world=empty · /ser :: वर्कशॉप को कॉल करें · cannot hover:     - <img loading="lazy" decoding="async" data-nimg="fill" class="object-contain" alt="1 में से पहले की फ
+    8 P0 api-mock | unmocked API call: GET /admin/settings/cities
+      rows: API-NAV-ADMIN
+      e.g. API-NAV-ADMIN-083 · 768px · light · en · admin · world=empty · /admin/ :: mock API · unmocked API call: GET /admin/settings/cities
+    7 P0 api-mock | unmocked API call: GET /admin/service-requests
+      rows: API-NAV-ADMIN
+      e.g. API-NAV-ADMIN-071 · 768px · light · en · admin · world=empty · /admin/ :: mock API · unmocked API call: GET /admin/service-requests
+    7 P0 api-mock | unmocked API call: GET /admin/partner-applications
+      rows: API-NAV-ADMIN
+      e.g. API-NAV-ADMIN-073 · 768px · light · en · admin · world=empty · /admin/ :: mock API · unmocked API call: GET /admin/partner-applications
+    7 P0 api-mock | unmocked API call: GET /admin/catalogue/products
+      rows: API-NAV-ADMIN
+      e.g. API-NAV-ADMIN-075 · 768px · light · en · admin · world=empty · /admin/ :: mock API · unmocked API call: GET /admin/catalogue/products
+    7 P0 api-mock | unmocked API call: GET /admin/recommendation-rules
+      rows: API-NAV-ADMIN
+      e.g. API-NAV-ADMIN-075 · 768px · light · en · admin · world=empty · /admin/ :: mock API · unmocked API call: GET /admin/recommendation-rules
+    7 P0 api-mock | unmocked API call: GET /admin/recommendation-categories
+      rows: API-NAV-ADMIN
+      e.g. API-NAV-ADMIN-075 · 768px · light · en · admin · world=empty · /admin/ :: mock API · unmocked API call: GET /admin/recommendation-categories
+    7 P0 api-mock | unmocked API call: GET /admin/reviews
+      rows: API-NAV-ADMIN
+      e.g. API-NAV-ADMIN-077 · 768px · light · en · admin · world=empty · /admin/ :: mock API · unmocked API call: GET /admin/reviews
+    7 P0 api-mock | unmocked API call: GET /admin/coins/activity
+      rows: API-NAV-ADMIN
+      e.g. API-NAV-ADMIN-079 · 768px · light · en · admin · world=empty · /admin/ :: mock API · unmocked API call: GET /admin/coins/activity
+    7 P0 api-mock | unmocked API call: GET /admin/settings
+      rows: API-NAV-ADMIN
+      e.g. API-NAV-ADMIN-083 · 768px · light · en · admin · world=empty · /admin/ :: mock API · unmocked API call: GET /admin/settings
+    7 P0 api-mock | unmocked API call: GET /admin/pincodes
+      rows: API-NAV-ADMIN
+      e.g. API-NAV-ADMIN-083 · 768px · light · en · admin · world=empty · /admin/ :: mock API · unmocked API call: GET /admin/pincodes
+    7 P0 api-mock | unmocked API call: GET /admin/pincode-waitlist
+      rows: API-NAV-ADMIN
+      e.g. API-NAV-ADMIN-083 · 768px · light · en · admin · world=empty · /admin/ :: mock API · unmocked API call: GET /admin/pincode-waitlist
+    7 P0 api-mock | unmocked API call: GET /admin/company
+      rows: API-NAV-ADMIN
+      e.g. API-NAV-ADMIN-083 · 768px · light · en · admin · world=empty · /admin/ :: mock API · unmocked API call: GET /admin/company
+    7 P0 api-mock | unmocked API call: GET /admin/staff
+      rows: API-NAV-ADMIN
+      e.g. API-NAV-ADMIN-085 · 768px · light · en · admin · world=empty · /admin/ :: mock API · unmocked API call: GET /admin/staff
+    7 P0 api-mock | unmocked API call: GET /admin/exports/options
+      rows: API-NAV-ADMIN
+      e.g. API-NAV-ADMIN-087 · 768px · light · en · admin · world=empty · /admin/ :: mock API · unmocked API call: GET /admin/exports/options
+    7 P0 api-mock | unmocked API call: GET /admin/overview
+      rows: API-NAV-ADMIN
+      e.g. API-NAV-ADMIN-089 · 1024px · light · en · admin · world=empty · /admin :: mock API · unmocked API call: GET /admin/overview
+    7 P0 api-mock | unmocked API call: GET /me/shop-invites
+      rows: API-NAV-ACCOUNT
+      e.g. API-NAV-ACCOUNT-001 · 320px · light · en · customer · world=empty · /a :: mock API · unmocked API call: GET /me/shop-invites
+    7 P0 api-mock | unmocked API call: GET /me/vehicles
+      rows: API-NAV-ACCOUNT
+      e.g. API-NAV-ACCOUNT-007 · 320px · light · en · customer · world=empty · /a :: mock API · unmocked API call: GET /me/vehicles
+    7 P0 api-mock | unmocked API call: GET /me/privacy
+      rows: API-NAV-ACCOUNT
+      e.g. API-NAV-ACCOUNT-011 · 320px · light · en · customer · world=empty · /a :: mock API · unmocked API call: GET /me/privacy
+    7 P0 api-mock | unmocked API call: GET /support/tickets
+      rows: API-NAV-ACCOUNT
+      e.g. API-NAV-ACCOUNT-017 · 390px · dark · hi · customer · world=empty · /ac :: mock API · unmocked API call: GET /support/tickets
+    7 P1 hindi | English on /hi: Salasar, Greens, Sarona, Tatibandh, Raipur, Shourya, Integrated,
+      rows: API-ADM-COMPANY
+      e.g. API-ADM-COMPANY-002 · 320px · dark · hi · admin · world=empty · /admin :: main · English on /hi: Salasar, Greens, Sarona, Tatibandh, Raipur, Shourya, Integrated, Services, Pvt, Ltd
+    6 OTHER | Test timeout of 90000ms exceeded.
+      rows: API-ADM-POLICIES,API-ADM-SHOPS,API-ADM-STAFF
+      e.g. API-ADM-SHOPS-003 · 390px · light · hi · admin · world=empty · /admin/ :: Test timeout of 90000ms exceeded.
+    5 P0 covered | cannot hover:       - <img loading="lazy" decoding="async" data-nimg="fill" clas
+      rows: API-SVC-PHOTOS
+      e.g. API-SVC-PHOTOS-012 · 1280px · dark · hi · customer · world=empty · /se :: वर्कशॉप को कॉल करें · cannot hover:       - <img loading="lazy" decoding="async" data-nimg="fill" class="object-contain" alt="6 में से पहले की
+    4 P0 covered | cannot hover:       - <dialog open="" aria-label="काम की फ़ोटो" class="m-auto w-
+      rows: API-SVC-PHOTOS
+      e.g. API-SVC-PHOTOS-012 · 1280px · dark · hi · customer · world=empty · /se :: पहले की फ़ोटो 1 खोलें · cannot hover:       - <dialog open="" aria-label="काम की फ़ोटो" class="m-auto w-[min(96vw,900px)] max-w-none rounded-car
+    3 P1 hscroll | page scrolls sideways by N px; widest: li"🔔सूचनाएँ"
+      rows: API-ACC-NOTIFYME,API-NAV-ACCOUNT
+      e.g. API-NAV-ACCOUNT-032 · 480px · dark · hi · customer · world=empty · /ac :: page · page scrolls sideways by 4 px; widest: li"🔔सूचनाएँ"
+    3 P1 hindi | English on /hi: Sharma, Auto, Parts, Shop
+      rows: API-ADM-QUEUE
+      e.g. API-ADM-QUEUE-003 · 390px · light · hi · admin · world=empty · /admin/ :: main · English on /hi: Sharma, Auto, Parts, Shop
+    2 P1 inside | control sticks out of its container section"AvailabilityBusy until Mon, N:N amWh
+      rows: API-SHOP-TIER1
+      e.g. API-SHOP-TIER1-017 · 320px · light · en · shop partner · world=empty · :: button"Set busy" in "Availability" · control sticks out of its container section"AvailabilityBusy until Mon, 1:37 amWhile" by 2 px
+    2 P1 inside | while hovering "Open again": control sticks out of its container section"Availab
+      rows: API-SHOP-TIER1
+      e.g. API-SHOP-TIER1-017 · 320px · light · en · shop partner · world=empty · :: button"Set busy" in "Availability" · while hovering "Open again": control sticks out of its container section"AvailabilityBusy until Mon, 1:37 amWhile" by 2 
+    2 P1 inside | while focused on button"Open again": control sticks out of its container section
+      rows: API-SHOP-TIER1
+      e.g. API-SHOP-TIER1-017 · 320px · light · en · shop partner · world=empty · :: button"Set busy" in "Availability" · while focused on button"Open again": control sticks out of its container section"AvailabilityBusy until Mon, 1:37 amWhil
+    2 P1 hindi | English on /hi: Plot, Near, Hanuman, Mandir, Shankar, Nagar, Main, Road
+      rows: API-ADM-SHOPS
+      e.g. API-ADM-SHOPS-048 · 768px · dark · hi · admin · world=empty · /admin/p :: main · English on /hi: Plot, Near, Hanuman, Mandir, Shankar, Nagar, Main, Road
+    2 P1 hscroll | page scrolls sideways by N px; widest: li"🔒निजता"
+      rows: API-WISHLIST
+      e.g. API-WISHLIST-006 · 480px · dark · hi · customer · world=empty · /accou :: page · page scrolls sideways by 4 px; widest: li"🔒निजता"
+    2 P1 hindi | English on /hi: Asha, Verma
+      rows: API-ADM-CUSTOMERS
+      e.g. API-ADM-CUSTOMERS-006 · 480px · dark · hi · admin · world=empty · /adm :: main · English on /hi: Asha, Verma
+    2 P0 api-mock | unmocked API call: GET /admin/shops
+      rows: API-NAV-ADMIN
+      e.g. API-NAV-ADMIN-030 · 390px · light · en · admin · world=empty · /admin/ :: mock API · unmocked API call: GET /admin/shops
+    1 P0 covered | cannot hover:       - <div class="p-N">…</div> from <div class="space-y-N">…</di
+      rows: API-SVC-PHOTOS
+      e.g. API-SVC-PHOTOS-024 · 1920px · dark · hi · customer · world=empty · /se :: MechDost सहायता से बात करें · cannot hover:       - <div class="p-3">…</div> from <div class="space-y-6">…</div> subtree intercepts pointer events
+    1 P0 api-mock | unmocked API call: GET /me/coins
+      rows: API-NAV-ACCOUNT
+      e.g. API-NAV-ACCOUNT-006 · 320px · dark · hi · customer · world=empty · /ac :: mock API · unmocked API call: GET /me/coins
+    1 P0 api-mock | unmocked API call: GET /me/coins/ledger
+      rows: API-NAV-ACCOUNT
+      e.g. API-NAV-ACCOUNT-006 · 320px · dark · hi · customer · world=empty · /ac :: mock API · unmocked API call: GET /me/coins/ledger
+    1 P0 api-mock | unmocked API call: GET /me/addresses
+      rows: API-NAV-ACCOUNT
+      e.g. API-NAV-ACCOUNT-020 · 390px · light · en · customer · world=empty · /a :: mock API · unmocked API call: GET /me/addresses
+    1 P0 api-mock | unmocked API call: GET /me/notification-preferences
+      rows: API-NAV-ACCOUNT
+      e.g. API-NAV-ACCOUNT-022 · 390px · light · en · customer · world=empty · /a :: mock API · unmocked API call: GET /me/notification-preferences
+    1 P1 hscroll | page scrolls sideways by N px; widest: li"💬बल्क कोटेशन"
+      rows: API-NAV-ACCOUNT
+      e.g. API-NAV-ACCOUNT-026 · 480px · dark · hi · customer · world=empty · /ac :: page · page scrolls sideways by 4 px; widest: li"💬बल्क कोटेशन"
+    1 P1 hscroll | page scrolls sideways by N px; widest: li"🪙MechDost कॉइन"
+      rows: API-NAV-ACCOUNT
+      e.g. API-NAV-ACCOUNT-028 · 480px · dark · hi · customer · world=empty · /ac :: page · page scrolls sideways by 4 px; widest: li"🪙MechDost कॉइन"
+    1 P1 hscroll | page scrolls sideways by N px; widest: li"📍पते"
+      rows: API-NAV-ACCOUNT
+      e.g. API-NAV-ACCOUNT-030 · 480px · dark · hi · customer · world=empty · /ac :: page · page scrolls sideways by 4 px; widest: li"📍पते"

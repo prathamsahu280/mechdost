@@ -1,0 +1,181 @@
+demo {'expected': 2037, 'fail': 140, 'flaky': 2}
+   64 P1 nav-current-hidden | the current item is scrolled out of sight in the bar
+      rows: NAV-ACCOUNT,NAV-ADMIN
+      e.g. NAV-ADMIN-001 · 320px · light · en · admin · world=empty · /admin · wa :: 📊Overview · the current item is scrolled out of sight in the bar
+   16 P0 overlap | while hovering "": control overlaps control button"Show password" by N×N px
+      rows: LOGIN-FORM
+      e.g. LOGIN-FORM-001 · 320px · light · en · signed out · world=empty · /logi :: input#login-password"" · while hovering "": control overlaps control button"Show password" by 44×44 px
+   16 P0 overlap | while focused on input"": control overlaps control button"Show password" by N×N 
+      rows: LOGIN-FORM
+      e.g. LOGIN-FORM-001 · 320px · light · en · signed out · world=empty · /logi :: input#login-password"" · while focused on input"": control overlaps control button"Show password" by 44×44 px
+   16 P0 overlap | while hovering "": control overlaps control button"पासवर्ड दिखाएँ" by N×N px
+      rows: LOGIN-FORM
+      e.g. LOGIN-FORM-002 · 320px · dark · hi · signed out · world=empty · /login :: input#login-password"" · while hovering "": control overlaps control button"पासवर्ड दिखाएँ" by 44×44 px
+   16 P0 overlap | while focused on input"": control overlaps control button"पासवर्ड दिखाएँ" by N×N
+      rows: LOGIN-FORM
+      e.g. LOGIN-FORM-002 · 320px · dark · hi · signed out · world=empty · /login :: input#login-password"" · while focused on input"": control overlaps control button"पासवर्ड दिखाएँ" by 44×44 px
+   11 P1 hindi | English on /hi: Ravi
+      rows: CHR-HEADER
+      e.g. CHR-HEADER-004 @core · 390px · light · hi · customer · world=empty · / :: header.sticky · English on /hi: Ravi
+    8 P1 axe:color-contrast | Elements must meet minimum color contrast ratio thresholds (N nodes)
+      rows: ORD-VIEW,SR-VIEW
+      e.g. ORD-VIEW-001 · 320px · light · en · customer · world=busy · /orders/MD :: a[data-track="order_cancel_via_support"] · Elements must meet minimum color contrast ratio thresholds (2 nodes)
+    8 P0 overlap | control overlaps control button"Show password" by N×N px
+      rows: LOGIN-FORM
+      e.g. LOGIN-FORM-001 · 320px · light · en · signed out · world=empty · /logi :: input#login-password"" · control overlaps control button"Show password" by 44×44 px
+    8 P0 overlap | while hovering "Show password": control overlaps control button"Show password" b
+      rows: LOGIN-FORM
+      e.g. LOGIN-FORM-001 · 320px · light · en · signed out · world=empty · /logi :: input#login-password"" · while hovering "Show password": control overlaps control button"Show password" by 44×44 px
+    8 P0 overlap | while hovering "Forgot password?": control overlaps control button"Show password
+      rows: LOGIN-FORM
+      e.g. LOGIN-FORM-001 · 320px · light · en · signed out · world=empty · /logi :: input#login-password"" · while hovering "Forgot password?": control overlaps control button"Show password" by 44×44 px
+    8 P0 overlap | while hovering "Sign in": control overlaps control button"Show password" by N×N 
+      rows: LOGIN-FORM
+      e.g. LOGIN-FORM-001 · 320px · light · en · signed out · world=empty · /logi :: input#login-password"" · while hovering "Sign in": control overlaps control button"Show password" by 44×44 px
+    8 P0 overlap | while hovering "Create an account": control overlaps control button"Show passwor
+      rows: LOGIN-FORM
+      e.g. LOGIN-FORM-001 · 320px · light · en · signed out · world=empty · /logi :: input#login-password"" · while hovering "Create an account": control overlaps control button"Show password" by 44×44 px
+    8 P0 overlap | while focused on button"Show password": control overlaps control button"Show pas
+      rows: LOGIN-FORM
+      e.g. LOGIN-FORM-001 · 320px · light · en · signed out · world=empty · /logi :: input#login-password"" · while focused on button"Show password": control overlaps control button"Show password" by 44×44 px
+    8 P0 overlap | while focused on button"Forgot password?": control overlaps control button"Show 
+      rows: LOGIN-FORM
+      e.g. LOGIN-FORM-001 · 320px · light · en · signed out · world=empty · /logi :: input#login-password"" · while focused on button"Forgot password?": control overlaps control button"Show password" by 44×44 px
+    8 P0 overlap | while focused on button"Sign in": control overlaps control button"Show password"
+      rows: LOGIN-FORM
+      e.g. LOGIN-FORM-001 · 320px · light · en · signed out · world=empty · /logi :: input#login-password"" · while focused on button"Sign in": control overlaps control button"Show password" by 44×44 px
+    8 P0 overlap | while focused on button"Create an account": control overlaps control button"Show
+      rows: LOGIN-FORM
+      e.g. LOGIN-FORM-001 · 320px · light · en · signed out · world=empty · /logi :: input#login-password"" · while focused on button"Create an account": control overlaps control button"Show password" by 44×44 px
+    8 P0 overlap | control overlaps control button"पासवर्ड दिखाएँ" by N×N px
+      rows: LOGIN-FORM
+      e.g. LOGIN-FORM-002 · 320px · dark · hi · signed out · world=empty · /login :: input#login-password"" · control overlaps control button"पासवर्ड दिखाएँ" by 44×44 px
+    8 P0 overlap | while hovering "पासवर्ड दिखाएँ": control overlaps control button"पासवर्ड दिखाएँ"
+      rows: LOGIN-FORM
+      e.g. LOGIN-FORM-002 · 320px · dark · hi · signed out · world=empty · /login :: input#login-password"" · while hovering "पासवर्ड दिखाएँ": control overlaps control button"पासवर्ड दिखाएँ" by 44×44 px
+    8 P0 overlap | while hovering "पासवर्ड भूल गए?": control overlaps control button"पासवर्ड दिखाएँ
+      rows: LOGIN-FORM
+      e.g. LOGIN-FORM-002 · 320px · dark · hi · signed out · world=empty · /login :: input#login-password"" · while hovering "पासवर्ड भूल गए?": control overlaps control button"पासवर्ड दिखाएँ" by 44×44 px
+    8 P0 overlap | while hovering "साइन इन करें": control overlaps control button"पासवर्ड दिखाएँ" b
+      rows: LOGIN-FORM
+      e.g. LOGIN-FORM-002 · 320px · dark · hi · signed out · world=empty · /login :: input#login-password"" · while hovering "साइन इन करें": control overlaps control button"पासवर्ड दिखाएँ" by 44×44 px
+    8 P0 overlap | while hovering "अकाउंट बनाएँ": control overlaps control button"पासवर्ड दिखाएँ" b
+      rows: LOGIN-FORM
+      e.g. LOGIN-FORM-002 · 320px · dark · hi · signed out · world=empty · /login :: input#login-password"" · while hovering "अकाउंट बनाएँ": control overlaps control button"पासवर्ड दिखाएँ" by 44×44 px
+    8 P0 overlap | while focused on button"पासवर्ड दिखाएँ": control overlaps control button"पासवर्ड
+      rows: LOGIN-FORM
+      e.g. LOGIN-FORM-002 · 320px · dark · hi · signed out · world=empty · /login :: input#login-password"" · while focused on button"पासवर्ड दिखाएँ": control overlaps control button"पासवर्ड दिखाएँ" by 44×44 px
+    8 P0 overlap | while focused on button"पासवर्ड भूल गए?": control overlaps control button"पासवर्
+      rows: LOGIN-FORM
+      e.g. LOGIN-FORM-002 · 320px · dark · hi · signed out · world=empty · /login :: input#login-password"" · while focused on button"पासवर्ड भूल गए?": control overlaps control button"पासवर्ड दिखाएँ" by 44×44 px
+    8 P0 overlap | while focused on button"साइन इन करें": control overlaps control button"पासवर्ड द
+      rows: LOGIN-FORM
+      e.g. LOGIN-FORM-002 · 320px · dark · hi · signed out · world=empty · /login :: input#login-password"" · while focused on button"साइन इन करें": control overlaps control button"पासवर्ड दिखाएँ" by 44×44 px
+    8 P0 overlap | while focused on button"अकाउंट बनाएँ": control overlaps control button"पासवर्ड द
+      rows: LOGIN-FORM
+      e.g. LOGIN-FORM-002 · 320px · dark · hi · signed out · world=empty · /login :: input#login-password"" · while focused on button"अकाउंट बनाएँ": control overlaps control button"पासवर्ड दिखाएँ" by 44×44 px
+    7 P0 nav-load | opened /hi, expected /N
+      rows: NAV-FOOTER
+      e.g. NAV-FOOTER-002 · 320px · dark · hi · customer · world=empty · / · walk :: WhatsApp 7978776551 (WhatsApp खुलेगा) · opened /hi, expected /917978776551
+    7 P0 nav-load | opened /hi, expected +N
+      rows: NAV-FOOTER
+      e.g. NAV-FOOTER-002 · 320px · dark · hi · customer · world=empty · / · walk :: कॉल करें · opened /hi, expected +917978776551
+    7 P0 present | component not rendered (scope not found)
+      rows: SHOP-TRAY
+      e.g. SHOP-TRAY-002 · 320px · dark · hi · signed out · world=empty · /shop · :: [data-compare-tray], [data-compare-hint] · component not rendered (scope not found)
+    7 P0 sync | compare list holds N but no tray is shown
+      rows: SHOP-TRAY
+      e.g. SHOP-TRAY-002 · 320px · dark · hi · signed out · world=empty · /shop · :: store · compare list holds 2 but no tray is shown
+    7 OTHER | Test timeout of 90000ms exceeded.
+      rows: QT-PAGES
+      e.g. QT-PAGES-002 · 320px · dark · hi · customer · world=busy · /quotes/QT- :: Test timeout of 90000ms exceeded.
+    3 P0 covered | cannot hover:     - <div class="grid grid-cols-[Npx_Nfr] gap-N px-N py-N">…</div
+      rows: SHOP-POPOVER
+      e.g. SHOP-POPOVER-003 · 390px · light · hi · signed out · world=empty · /sh ::  · cannot hover:     - <div class="grid grid-cols-[120px_1fr] gap-3 px-3 py-2.5">…</div> from <ul class="card-grid mt-5 gri
+    3 P1 axe:target-size | All touch targets must be Npx large, or leave sufficient space (N nodes)
+      rows: ACC-COINS,LOGIN-FORM
+      e.g. ACC-COINS-013 · 1440px · light · en · customer · world=empty · /accoun :: a[href$="addresses"] · All touch targets must be 24px large, or leave sufficient space (1 nodes)
+    3 P0 covered | control is painted over by button"MechDost से पूछें"
+      rows: WS-PROFILE
+      e.g. WS-PROFILE-010 · 1024px · dark · hi · customer · world=empty · /worksh :: select#book-slot"सुबह (9–12)दोपहर (12–4)शाम (4–7)" in "अपॉइं · control is painted over by button"MechDost से पूछें"
+    2 P0 covered | cannot hover:     - <dt class="font-bold">Part reference</dt> from <ul class="ca
+      rows: SHOP-POPOVER
+      e.g. SHOP-POPOVER-001 · 320px · light · en · signed out · world=empty · /sh ::  · cannot hover:     - <dt class="font-bold">Part reference</dt> from <ul class="card-grid mt-5 grid grid-cols-1 gap-4 min-
+    2 P0 covered | while focused on a"Castrol Activ NT NWN N ml": control is painted over by div"De
+      rows: CMP-TABLE
+      e.g. CMP-TABLE-039 · 768px · light · en · signed out · world=empty · /compa :: a"Castrol Activ 4T 20W40 900 ml" · while focused on a"Castrol Activ 4T 20W40 900 ml": control is painted over by div"Detail"
+    2 P0 covered | while focused on button"Remove Castrol Activ NT NWN N ml": control is painted ov
+      rows: CMP-TABLE
+      e.g. CMP-TABLE-039 · 768px · light · en · signed out · world=empty · /compa :: a"Castrol Activ 4T 20W40 900 ml" · while focused on button"Remove Castrol Activ 4T 20W40 900 ml": control is painted over by div"Detail"
+    1 P0 covered | control is painted over by span"जाँचे हुए स्थानीय पार्टनर"
+      rows: CHR-ASSIST
+      e.g. CHR-ASSIST-002 · 320px · dark · hi · signed out · world=empty · / · op :: button"MechDost से पूछें" · control is painted over by span"जाँचे हुए स्थानीय पार्टनर"
+    1 P0 covered | control is painted over by span"Shops and workshops are verified by our "
+      rows: CHR-ASSIST
+      e.g. CHR-ASSIST-004 · 390px · dark · en · signed out · world=empty · / · op :: button"Ask MechDost" · control is painted over by span"Shops and workshops are verified by our "
+    1 P0 covered | control is painted over by li"✅Checked local partnersShops and worksho"
+      rows: CHR-ASSIST
+      e.g. CHR-ASSIST-005 · 480px · light · en · signed out · world=empty · / · o :: button"Ask MechDost" · control is painted over by li"✅Checked local partnersShops and worksho"
+    1 P1 axe:aria-valid-attr-value | ARIA attributes must conform to valid values (N nodes)
+      rows: CHR-ASSIST
+      e.g. CHR-ASSIST-005 · 480px · light · en · signed out · world=empty · / · o :: .assistant-launcher · ARIA attributes must conform to valid values (1 nodes)
+    1 P0 covered | control is painted over by div"वाहन की ज़रूरी चीज़ें ख़रीदेंआपके वाहन क" in "आपक
+      rows: CHR-ASSIST
+      e.g. CHR-ASSIST-008 · 768px · dark · hi · signed out · world=empty · / · op :: button"MechDost से पूछें" · control is painted over by div"वाहन की ज़रूरी चीज़ें ख़रीदेंआपके वाहन क" in "आपके वाहन को क्या चाहिए?"
+    1 P0 covered | control is painted over by a"product_car-starter-battery-Nah" in "Amaron कार स्ट
+      rows: CHR-ASSIST
+      e.g. CHR-ASSIST-010 · 1024px · dark · hi · signed out · world=empty · / · o :: button"MechDost से पूछें" · control is painted over by a"product_car-starter-battery-45ah" in "Amaron कार स्टार्टर बैटरी 45 Ah"
+    1 P1 covered | text is painted over by a"product_car-starter-battery-Nah" in "Amaron कार स्टार्
+      rows: CHR-ASSIST
+      e.g. CHR-ASSIST-010 · 1024px · dark · hi · signed out · world=empty · / · o :: span"MechDost से पूछें" · text is painted over by a"product_car-starter-battery-45ah" in "Amaron कार स्टार्टर बैटरी 45 Ah"
+    1 P0 covered | control is painted over by div"बेस्टसेलरवाहन का प्रकार: NW" in "Amaron कार स्टार
+      rows: CHR-ASSIST
+      e.g. CHR-ASSIST-012 · 1280px · dark · hi · signed out · world=empty · / · o :: button"MechDost से पूछें" · control is painted over by div"बेस्टसेलरवाहन का प्रकार: 4W" in "Amaron कार स्टार्टर बैटरी 45 Ah"
+    1 P0 covered | control is painted over by a"AmaronBAT-NW-NAH" in "Amaron कार स्टार्टर बैटरी N A
+      rows: CHR-ASSIST
+      e.g. CHR-ASSIST-014 · 1440px · dark · hi · signed out · world=empty · / · o :: button"MechDost से पूछें" · control is painted over by a"AmaronBAT-4W-45AH" in "Amaron कार स्टार्टर बैटरी 45 Ah"
+    1 P1 covered | text is painted over by a"AmaronBAT-NW-NAH" in "Amaron कार स्टार्टर बैटरी N Ah"
+      rows: CHR-ASSIST
+      e.g. CHR-ASSIST-014 · 1440px · dark · hi · signed out · world=empty · / · o :: span"MechDost से पूछें" · text is painted over by a"AmaronBAT-4W-45AH" in "Amaron कार स्टार्टर बैटरी 45 Ah"
+    1 P0 covered | control is painted over by section"हमारे प्रोडक्ट देखेंदेखने के लिए पिन कोड"
+      rows: CHR-ASSIST
+      e.g. CHR-ASSIST-016 · 1920px · dark · hi · signed out · world=empty · / · o :: button"MechDost से पूछें" · control is painted over by section"हमारे प्रोडक्ट देखेंदेखने के लिए पिन कोड"
+    1 P0 nav-load | opened /, expected /N
+      rows: NAV-FOOTER
+      e.g. NAV-FOOTER-005 · 480px · light · en · customer · world=empty · / · wal :: WhatsApp 7978776551 (Opens WhatsApp) · opened /, expected /917978776551
+    1 P0 nav-load | opened /, expected +N
+      rows: NAV-FOOTER
+      e.g. NAV-FOOTER-005 · 480px · light · en · customer · world=empty · / · wal :: Call us · opened /, expected +917978776551
+    1 P1 hindi | English on /hi: BAT
+      rows: SHOP-FILTERS
+      e.g. SHOP-FILTERS-010 · 1024px · dark · hi · signed out · world=empty · /sh :: main · English on /hi: BAT
+    1 P0 covered | cannot hover:     - <dd class="text-muted">CAS-ACTNT-N</dd> from <ul class="card
+      rows: SHOP-POPOVER
+      e.g. SHOP-POPOVER-001 · 320px · light · en · signed out · world=empty · /sh :: 🛢️Lubricants · cannot hover:     - <dd class="text-muted">CAS-ACT4T-0900</dd> from <ul class="card-grid mt-5 grid grid-cols-1 gap-4 min
+    1 P1 inside | control sticks out of its container li"CastrolActiv NT NWN N ml₹N,N,N ea" by N p
+      rows: CART-LINES
+      e.g. CART-LINES-017 @core · 320px · light · en · signed out · world=empty · :: button"Remove" · control sticks out of its container li"CastrolActiv 4T 20W40 900 ml₹1,00,000 ea" by 6 px
+    1 P1 inside | control sticks out of its container li"MotulN NT NWN N L₹N,N,N eachN₹N," by N px
+      rows: CART-LINES
+      e.g. CART-LINES-017 @core · 320px · light · en · signed out · world=empty · :: button"Remove" · control sticks out of its container li"Motul3100 4T 10W30 1 L₹1,00,000 each2₹1," by 6 px
+    1 P1 inside | control sticks out of its container li"ShellAdvance AXN NWN N L₹N,N,N each" by N
+      rows: CART-LINES
+      e.g. CART-LINES-017 @core · 320px · light · en · signed out · world=empty · :: button"Remove" · control sticks out of its container li"ShellAdvance AX7 10W30 1 L₹1,00,000 each" by 6 px
+    1 P1 inside | control sticks out of its container li"HPRacerN NWN N ml₹N,N,N eachN₹N,N" by N p
+      rows: CART-LINES
+      e.g. CART-LINES-017 @core · 320px · light · en · signed out · world=empty · :: button"Remove" · control sticks out of its container li"HPRacer4 20W40 900 ml₹1,00,000 each1₹1,0" by 6 px
+    1 P1 inside | control sticks out of its container li"ExideXLTZNA NF+NP₹N,N,N eachN₹N,N," by N 
+      rows: CART-LINES
+      e.g. CART-LINES-017 @core · 320px · light · en · signed out · world=empty · :: button"Remove" · control sticks out of its container li"ExideXLTZ4A 24F+24P₹1,00,000 each2₹1,00," by 6 px
+    1 P1 inside | control sticks out of its container li"MRFTubeless scooter tyre N/N-N₹N,N,N" by 
+      rows: CART-LINES
+      e.g. CART-LINES-017 @core · 320px · light · en · signed out · world=empty · :: button"Remove" · control sticks out of its container li"MRFTubeless scooter tyre 90/90-12₹1,00,0" by 6 px
+    1 P1 inside | control sticks out of its container li"CEATPassenger car tyre N/N RN₹N,N,N" by N
+      rows: CART-LINES
+      e.g. CART-LINES-017 @core · 320px · light · en · signed out · world=empty · :: button"Remove" · control sticks out of its container li"CEATPassenger car tyre 185/65 R15₹1,00,0" by 6 px
+    1 P1 inside | control sticks out of its container li"AmaronAutomotive starter battery N Ah₹N" 
+      rows: CART-LINES
+      e.g. CART-LINES-017 @core · 320px · light · en · signed out · world=empty · :: button"Remove" · control sticks out of its container li"AmaronAutomotive starter battery 45 Ah₹1" by 6 px
+    1 P1 inside | control sticks out of its container li"ExideHeavy-duty vehicle battery N Ah₹N," 
+      rows: CART-LINES
+      e.g. CART-LINES-017 @core · 320px · light · en · signed out · world=empty · :: button"Remove" · control sticks out of its container li"ExideHeavy-duty vehicle battery 90 Ah₹1," by 6 px
