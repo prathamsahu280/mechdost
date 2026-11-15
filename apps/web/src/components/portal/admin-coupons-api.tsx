@@ -616,7 +616,9 @@ export function AdminCouponsApi() {
                   <li>{c.cityCode ?? t('a_all_cities')}</li>
                   {c.isPublic ? <li>{t('badge_public')}</li> : null}
                   {c.autoApply ? <li>{t('badge_auto')}</li> : null}
-                  {c.category ? <li>{t('badge_category', { name: c.category.name })}</li> : null}
+                  {c.category ? (
+                    <li>{t('badge_category', { name: localName(c.category, locale) })}</li>
+                  ) : null}
                 </ul>
                 {c.pausedReason ? (
                   <p className="mt-2 text-sm text-muted">

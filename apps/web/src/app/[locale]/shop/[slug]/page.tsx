@@ -332,7 +332,7 @@ export default async function ProductPage({ params }: Props) {
                   href="/quotes/new"
                   query={{ product: product.slug }}
                   data-track="product_bulk_quote"
-                  className="font-bold text-accent-soft-text underline-offset-4 hover:underline"
+                  className="inline-flex min-h-6 items-center font-bold text-accent-soft-text underline-offset-4 hover:underline"
                 >
                   {t.rich('bulkHint', {
                     min: (chunks) => <SettingValue setting="bulkMinUnits" fallback={chunks} />,

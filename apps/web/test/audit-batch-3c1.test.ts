@@ -68,8 +68,8 @@ describe('NAV-ADMIN / NAV-ACCOUNT: the current item is brought into view', () =>
 describe('CHR-ASSIST: the assistant button never lies invisible over the page', () => {
   const launcher = src('components/assistant/assistant-launcher.tsx');
   it('is hidden (not only transparent) while the panel is open, so it cannot be "under" content', () => {
-    expect(launcher).toMatch(/open \? 'invisible pointer-events-none/);
-    expect(launcher).toContain('transition-[opacity,transform,visibility]');
+    expect(launcher).toMatch(/open\s*\?\s*'invisible pointer-events-none/);
+    // 3c-2: no transition on the way out (a fading, pointer-less ghost was "painted over"); see audit-batch-3c2.
   });
   it('gives focus back after it is visible again, not while still hidden', () => {
     expect(launcher).toMatch(/useEffect\(\(\) => \{[\s\S]*buttonRef\.current\?\.focus\(\)/);

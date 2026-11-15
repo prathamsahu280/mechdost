@@ -213,6 +213,8 @@ async function prepare(page: Page, c: AuditCase): Promise<string[]> {
       await (open === 'first' ? infos.first() : infos.nth(Math.max(0, (await infos.count()) - 1))).click();
     } else if (c.code === 'CHR-ASSIST') {
       await page.locator('.assistant-launcher').click();
+      // The panel is a lazy chunk: wait for it, so the audit never measures the gap between click and mount.
+      await page.locator('#assistant-panel').waitFor({ state: 'visible' });
     }
   }
   const tab = c.state.tab;

@@ -61,7 +61,10 @@ export function ProductVisual({
         {brand}
       </span>
       {sku ? (
-        <span className="absolute right-3 bottom-3 text-[10px] font-bold tracking-wider text-white/70">
+        <span
+          lang="en"
+          className="absolute right-3 bottom-3 text-[10px] font-bold tracking-wider text-white/70"
+        >
           {sku}
         </span>
       ) : null}

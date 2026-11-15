@@ -4511,7 +4511,7 @@
     "csvSummary": "{rows} पंक्तियाँ पढ़ी गईं: {stock} स्टॉक बदलाव, {active} चालू/बंद बदलाव, {prices} दाम के अनुरोध, {unchanged} पहले से सही हैं।",
     "csvNoChanges": "इस फ़ाइल से आपके स्टॉक में कुछ नहीं बदलेगा।",
     "csvErrorsTitle": "{count, plural, one {# पंक्ति ठीक करनी है।} other {# पंक्तियाँ ठीक करनी हैं।}} कुछ भी नहीं बदला गया।",
-    "csvErrorLine": "पंक्ति {line}, {column}: {problem}",
+    "csvErrorLine": "पंक्ति {line}, <code>{column}</code>: {problem}",
     "csvChangesTitle": "क्या बदलेगा",
     "csvChangeStock": "स्टॉक {from} से {to}",
     "csvChangeOn": "चालू करें",

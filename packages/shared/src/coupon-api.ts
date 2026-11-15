@@ -119,7 +119,7 @@ export const AdminCouponDto = z.object({
   shopTerms: ShopTermsStatus.nullable(),
   isPublic: z.boolean(),
   autoApply: z.boolean(),
-  category: z.object({ slug: z.string(), name: z.string() }).nullable(),
+  category: z.object({ slug: z.string(), name: z.string(), nameHi: z.string().nullable() }).nullable(),
   active: z.boolean(),
   pausedReason: z.string().nullable(),
   /** Live right now: active, started, not ended, uses left and (shop-funded) accepted. */
