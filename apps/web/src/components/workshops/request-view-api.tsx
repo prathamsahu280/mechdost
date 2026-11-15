@@ -39,6 +39,7 @@ const box = 'rounded-card border border-line-card bg-surface p-6 shadow-card';
  */
 export function RequestViewApi({ code }: { code: string }) {
   const t = useTranslations('request');
+  const ts = useTranslations('supportThread');
   const w = useTranslations('workshop');
   const h = useTranslations('homeService');
   const locale = useLocale();
@@ -247,6 +248,13 @@ export function RequestViewApi({ code }: { code: string }) {
             </a>
           ) : null}
           <p className="text-muted">{formatDate(req.createdAt, locale)}</p>
+          <Link
+            href={`${prefix}/account/support?service=${encodeURIComponent(req.code)}`}
+            data-track="service_support_thread"
+            className="inline-flex min-h-11 items-center font-bold text-accent-soft-text underline-offset-4 hover:underline"
+          >
+            {ts('askHelpLink')}
+          </Link>
         </div>
         <HomeVisitAside req={req} />
         <div>

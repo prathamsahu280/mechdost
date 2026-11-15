@@ -44,6 +44,7 @@ import { layoutMocks, policyMocks, settingsMocks } from './admin-config-fixtures
 import { homeFinderMocks, homeJobMocks, homeRequestMocks } from './home-fixtures.ts';
 import { adminWorkshopAnalyticsMocks, workshopPerformanceMocks } from './workshop-analytics-fixtures.ts';
 import { customerPhotoMocks, workshopPhotoMocks } from './photo-fixtures.ts';
+import { accountSupportMocks, adminSupportMocks } from './support-fixtures.ts';
 import type { Mock, MockCtx, Reply } from './mock-api.ts';
 
 const NOW = Date.parse('2026-11-15T10:00:00.000Z');
@@ -1389,6 +1390,10 @@ export function mocksFor(c: AuditCase): Mock[] {
       return workshopPhotoMocks(c);
     case 'API-SVC-PHOTOS':
       return customerPhotoMocks(c);
+    case 'API-ACC-SUPPORT':
+      return accountSupportMocks(c);
+    case 'API-ADM-SUPPORT':
+      return adminSupportMocks(c);
     default:
       // Navigation rows: the bar is under test; the screen behind it answers "not mocked" (see `mock-api.ts`).
       return [meMock()];

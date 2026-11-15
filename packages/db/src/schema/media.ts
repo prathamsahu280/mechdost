@@ -11,7 +11,7 @@ import { createdAt, id, ts, updatedAt, version } from './_common';
 import { users } from './identity';
 import { serviceRequests } from './services';
 
-export const MEDIA_OWNER_KINDS = ['service_photo'] as const;
+export const MEDIA_OWNER_KINDS = ['service_photo', 'ticket_message'] as const;
 
 export const mediaObjects = pgTable(
   'media_objects',
@@ -38,7 +38,10 @@ export const mediaObjects = pgTable(
     deletedAt: ts(),
   },
   (t) => [
-    check('media_objects_owner_kind_valid', sql`${t.ownerKind} in ('service_photo')`),
+    check(
+      'media_objects_owner_kind_valid',
+      sql`${t.ownerKind} in (${sql.raw(MEDIA_OWNER_KINDS.map((k) => `'${k}'`).join(','))})`,
+    ),
     check('media_objects_mime_valid', sql`${t.mime} = 'image/webp'`),
     check('media_objects_dims', sql`${t.width} between 1 and 4000 and ${t.height} between 1 and 4000`),
     check(

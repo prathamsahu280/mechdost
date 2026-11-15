@@ -1,9 +1,11 @@
 'use client';
 
+import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
 import type { TicketStatus } from '@mechdost/shared/state';
 import type { SupportTicketKind } from '@mechdost/shared/support-api';
 import { formatDate } from '@/lib/format';
+import { photoSrc } from '@/lib/photo-src';
 
 const STATUS_LABEL = {
   open: 'status_open',
@@ -40,6 +42,8 @@ export interface ThreadMessage {
   internal: boolean;
   channel: string;
   at: string;
+  /** Photos sent with the message (real mode): short-lived URLs from the API, shown as thumbnails that open the large copy. */
+  attachments?: readonly { id: string; width: number; height: number; thumbUrl: string; largeUrl: string }[];
 }
 
 /**
@@ -54,6 +58,7 @@ export function TicketThread({
   viewer: 'customer' | 'staff';
 }) {
   const t = useTranslations('support');
+  const tt = useTranslations('supportThread');
   const locale = useLocale();
   const messages = ticket.messages.filter((m) => viewer === 'staff' || !m.internal);
   return (
@@ -91,6 +96,29 @@ export function TicketThread({
             <p data-user-content className="mt-1 whitespace-pre-line text-ink">
               {m.body}
             </p>
+            {m.attachments?.length ? (
+              <ul aria-label={tt('attachmentsLabel')} className="mt-2 flex flex-wrap gap-2">
+                {m.attachments.map((a, i) => (
+                  <li key={a.id}>
+                    <a
+                      href={photoSrc(a.largeUrl)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="relative block size-20 overflow-hidden rounded-lg border border-line-card bg-pill focus-visible:outline-2 focus-visible:outline-offset-2"
+                    >
+                      <Image
+                        src={photoSrc(a.thumbUrl)}
+                        alt={tt('attachmentAlt', { n: i + 1, total: m.attachments?.length ?? 0 })}
+                        fill
+                        sizes="80px"
+                        unoptimized
+                        className="object-cover"
+                      />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </li>
         );
       })}

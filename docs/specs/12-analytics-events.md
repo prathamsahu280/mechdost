@@ -153,3 +153,7 @@ Server events (same transaction as the change; codes, counts and ids only): `adm
 ## Workshop analytics events (2026-11-15)
 
 Client (strict schemas in `packages/shared/src/analytics.ts`): `workshop_analytics_viewed {rangeDays}` (portal Performance loaded for a range of 1 to 180 days; the design wrote `range_days`, the catalogue uses camelCase like every other prop) and `admin_analytics_tab {tab: overview | workshops}`. Click ids: `workshop_performance_toggle`, `workshop_analytics_preset_{30|90}`, `workshop_analytics_retry`, `admin_analytics_tab_{overview|workshops}`, `admin_workshop_analytics_sort`, `admin_workshop_analytics_retry`.
+
+## Support threads (2026-11-15)
+
+Server events (same transaction; ids, codes and counts only, never text, a path or a payout value): `support_thread_opened { ticketCode, subject: order|service, issueCode, reopened, photos }`, `support_attachment_added { count, bytes }`, `support_refund_destination_saved { ticketCode, kind: upi|bank, replaced }`, `support_refund_from_ticket { ticketCode, orderCode, amountPaise, reasonCode }`. Client event `support_ticket` gains actions `thread_opened`, `thread_reopened`, `photos_attached`, `destination_saved`, `refund_requested` and the optional `issue` (code). Click ids: `order_support_thread`, `service_support_thread`.

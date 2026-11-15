@@ -135,3 +135,7 @@ Only after delivery (the cash was collected). Staff enter the customer's UPI id 
 - The Overview tile and a staff notification channel for `refund.alert.*` (today: audit rows, error logs `razorpay_webhook_refund_*`, `refunds_need_reconciliation`, and the "Needs checking" view).
 - Credit notes for refunds of invoiced items (the series exists in the spec; no refund-to-credit-note link yet).
 - State audit rows for the refund screens: `API-ADM-REFUNDQ` and `API-ORD-REFUNDLINE` run in the API-mode audit (mocked API, runbook ui-test-catalogue § 9.7, 2026-11-15).
+
+### COD refund from the support ticket (built 2026-11-15)
+
+The customer gives the UPI id or bank account on their own support thread (spec 09 "Order and request threads, photos and the COD refund destination"); staff create the `bank_upi` refund from the ticket instead of retyping it (`POST /v1/admin/support/tickets/{code}/refund`, needs `tickets:reply` and `refunds:initiate`). The destination is copied (re-encrypted under `refunds.destination_enc`) into the refund at creation, after which the ticket's copy is locked (`DESTINATION_LOCKED`). Finance approval, four-eyes, the order-total cap, delivered-only and the masked reveal are unchanged.

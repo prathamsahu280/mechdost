@@ -107,6 +107,16 @@ async function prepareApi(page: Page, c: AuditCase): Promise<string[]> {
     await settleApi(page);
   }
 
+  // Support threads: submit the opener empty (its own error), or open the inbox conversation.
+  if (c.code === 'API-ACC-SUPPORT' && c.state.form === 'error') {
+    await main.locator('form:has(fieldset) button[type="submit"]').first().click();
+    await settleApi(page);
+  }
+  if (c.code === 'API-ADM-SUPPORT') {
+    await main.locator('section[aria-labelledby="inbox-title"] ul li button').first().click();
+    await settleApi(page);
+  }
+
   if (c.code === 'API-SHOP-PORTAL' && c.state.giveup && c.state.giveup !== 'closed') {
     const open = main.locator('[data-track="shop_order_give_up_open"]').first();
     if ((await open.count()) === 0) notes.push('no give-up button (no confirmed order)');

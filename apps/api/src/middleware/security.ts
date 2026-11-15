@@ -51,7 +51,8 @@ export const noStore = createMiddleware<AppEnv>(async (c, next) => {
 });
 
 /** Job photo uploads carry up to 8 MB; that route has its own, larger limit (routes/service-photos.ts). */
-const PHOTO_UPLOAD_PATH = /^\/v1\/workshop\/requests\/[^/]+\/photos\/?$/;
+const PHOTO_UPLOAD_PATH =
+  /^\/v1\/(workshop\/requests\/[^/]+\/photos|support\/threads|support\/tickets\/[^/]+\/photo-messages)\/?$/;
 
 const defaultBodyLimit = bodyLimit({
   maxSize: MAX_BODY_BYTES,
@@ -68,7 +69,10 @@ const bodyLimitExceptPhotos = createMiddleware<AppEnv>(async (c, next) => {
  */
 const imageCorp = createMiddleware<AppEnv>(async (c, next) => {
   await next();
-  if (c.req.path.startsWith('/v1/service-photos/') && c.res.status === 200)
+  if (
+    (c.req.path.startsWith('/v1/service-photos/') || c.req.path.startsWith('/v1/support-photos/')) &&
+    c.res.status === 200
+  )
     c.res.headers.set('Cross-Origin-Resource-Policy', 'cross-origin');
 });
 

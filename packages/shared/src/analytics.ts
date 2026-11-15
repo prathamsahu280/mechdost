@@ -159,6 +159,25 @@ export interface ServerEventProps {
   /** Job photos (spec 06): a workshop added or removed a before/after photo. Ids and counts only, never paths. */
   service_photo_added: { requestCode: string; workshopId: string; stage: 'before' | 'after'; bytes: number };
   service_photo_removed: { requestCode: string; workshopId: string; stage: 'before' | 'after' };
+  /** Support threads (design 2026-11-15): a customer opened or re-opened the one thread of an order or service job. */
+  support_thread_opened: {
+    ticketCode: string;
+    subject: 'order' | 'service';
+    issueCode: string;
+    reopened: boolean;
+    photos: number;
+  };
+  /** Photos on a support message: counts and bytes only, never a path or file name. */
+  support_attachment_added: { count: number; bytes: number };
+  /** A COD customer gave a payout destination (kind only, never the value). */
+  support_refund_destination_saved: { ticketCode: string; kind: 'upi' | 'bank'; replaced: boolean };
+  /** Staff created the manual refund request from the ticket. */
+  support_refund_from_ticket: {
+    ticketCode: string;
+    orderCode: string;
+    amountPaise: number;
+    reasonCode: string;
+  };
   service_estimate_sent: { requestCode: string; workshopId: string; revision: number; lines: number };
   service_estimate_decided: { requestCode: string; revision: number; approved: number; declined: number };
   service_billed: { requestCode: string; workshopId: string; totalPaise: number; lines: number };
@@ -356,8 +375,21 @@ export const CLIENT_EVENT_SCHEMAS = {
     .strict(),
   support_ticket: z
     .object({
-      action: z.enum(['created', 'customer_reply', 'staff_reply', 'internal_note', 'status']),
+      action: z.enum([
+        'created',
+        'customer_reply',
+        'staff_reply',
+        'internal_note',
+        'status',
+        'thread_opened',
+        'thread_reopened',
+        'photos_attached',
+        'destination_saved',
+        'refund_requested',
+      ]),
       kind: id.optional(),
+      /** Quick issue code of a thread (a code, never text). */
+      issue: id.optional(),
       channel: z.enum(['web', 'whatsapp']).optional(),
       to: id.optional(),
     })

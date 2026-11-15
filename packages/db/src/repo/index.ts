@@ -21,6 +21,7 @@ export * from './email-notifications';
 export * from './notices';
 export * from './email-events';
 export * from './support';
+export * from './support-threads';
 export * from './catalogue';
 export * from './content';
 export * from './cursor';

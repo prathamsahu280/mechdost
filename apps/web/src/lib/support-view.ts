@@ -9,6 +9,7 @@ export interface ApiMessage {
   internal: boolean;
   channel: string;
   createdAt: string;
+  attachments?: readonly { id: string; width: number; height: number; thumbUrl: string; largeUrl: string }[];
 }
 
 export interface ApiThreadTicket {
@@ -26,6 +27,7 @@ export function threadFromApi(ticket: { messages: readonly ApiMessage[] }) {
       internal: m.internal,
       channel: m.channel,
       at: m.createdAt,
+      attachments: m.attachments ?? [],
     })),
   };
 }
@@ -78,6 +80,14 @@ export function bodyError(body: string, max: number): 'err_empty' | 'err_too_lon
   const text = body.trim();
   if (text.length === 0) return 'err_empty';
   return text.length > max ? 'err_too_long' : null;
+}
+
+/** Rupees typed by staff ("499" or "499.50", commas allowed) → whole paise by string maths; null when invalid or above ₹10,00,000. */
+export function rupeesTextToPaise(text: string): number | null {
+  const m = /^(\d{1,7})(?:\.(\d{1,2}))?$/.exec(text.replace(/[,\s₹]/g, ''));
+  if (!m) return null;
+  const paise = Number(m[1]) * 100 + Number((m[2] ?? '').padEnd(2, '0') || '0');
+  return paise >= 1 && paise <= 100_000_000 ? paise : null;
 }
 
 const ACTIVE = new Set(['open', 'in_review', 'awaiting_customer']);

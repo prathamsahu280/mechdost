@@ -26,10 +26,17 @@ import {
   type SupportErrorKey,
 } from '@/lib/support-view';
 import { TicketThread, useTicketLabels } from '@/components/support/ticket-thread';
+import { RefundDestinationApi } from '@/components/support/refund-destination-api';
+import { PhotoPicker, ThreadOpenerApi } from '@/components/support/thread-opener-api';
+import { sendPhotoMessage, threadErrorKey } from '@/lib/support-thread-api';
 import { portalCard, portalField, portalPrimary, portalQuiet } from '@/components/portal/portal-guard';
 
 /** A support-specific message, or a common one from `portal.api_common_err_*`. */
-type Problem = { ns: 'support'; key: SupportErrorKey } | { ns: 'portal'; key: CommonErrorKey };
+type Problem =
+  | { ns: 'support'; key: SupportErrorKey }
+  | { ns: 'portal'; key: CommonErrorKey }
+  /** A `supportThread.*` error key (photo uploads). */
+  | { ns: 'thread'; key: string };
 
 function problemOf(code: string): Problem {
   const key = supportErrorKey(code);
@@ -39,10 +46,13 @@ function problemOf(code: string): Problem {
 function useProblemText() {
   const t = useTranslations('support');
   const p = useTranslations('portal');
+  const tt = useTranslations('supportThread');
   return (problem: Problem) =>
     problem.ns === 'support'
       ? t(problem.key, { max: problem.key === 'err_limit' ? SUPPORT_DAILY_LIMIT : SUPPORT_BODY_MAX })
-      : p(problem.key);
+      : problem.ns === 'thread'
+        ? tt(problem.key as 'err_generic')
+        : p(problem.key);
 }
 
 /**
@@ -52,11 +62,22 @@ function useProblemText() {
 export function SupportSectionApi({
   presetOrder,
   presetRedo,
+  presetService,
 }: {
   presetOrder: string | null;
   /** A billed service job (SR-…) to claim the labour promise on: the form is then a redo request (2026-11-15). */
   presetRedo: string | null;
+  /** A service job (SR-…) to talk to support about: the thread opener (support threads, 2026-11-15). */
+  presetService: string | null;
 }) {
+  // With an order or a job in the link, the thread opener replaces the free-form form (one main action).
+  const subject = presetRedo
+    ? null
+    : presetOrder
+      ? ({ kind: 'order', code: presetOrder } as const)
+      : presetService
+        ? ({ kind: 'service', code: presetService } as const)
+        : null;
   const t = useTranslations('support');
   const p = useTranslations('portal');
   const locale = useLocale();
@@ -141,11 +162,14 @@ export function SupportSectionApi({
         </p>
       </div>
 
+      {subject ? <ThreadOpenerApi subject={subject} onOpened={load} /> : null}
+
       <form
         onSubmit={(e) => {
           void onSubmit(e);
         }}
         className={portalCard}
+        hidden={subject !== null}
         noValidate
       >
         <h3 className="font-heading text-base font-extrabold text-ink">
@@ -268,9 +292,11 @@ function CustomerTicket({ ticket, onChanged }: { ticket: SupportTicketDto; onCha
   const labels = useTicketLabels();
   const problemText = useProblemText();
   const [reply, setReply] = useState('');
+  const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState<Problem | null>(null);
   const [busy, setBusy] = useState(false);
   const field = `reply-${ticket.code}`;
+  const tt = useTranslations('supportThread');
 
   async function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -280,18 +306,25 @@ function CustomerTicket({ ticket, onChanged }: { ticket: SupportTicketDto; onCha
       return;
     }
     setBusy(true);
-    const res = await adminApi(locale, `/support/tickets/${ticket.code}/messages`, SupportReplied, {
-      method: 'POST',
-      body: { body: reply.trim() },
-    });
+    // With photos the message goes as a form to the photo route; without, the plain JSON reply.
+    const res =
+      files.length > 0
+        ? await sendPhotoMessage(locale, ticket.code, reply.trim(), files)
+        : await adminApi(locale, `/support/tickets/${ticket.code}/messages`, SupportReplied, {
+            method: 'POST',
+            body: { body: reply.trim() },
+          });
     setBusy(false);
     if (!res.ok) {
-      setError(problemOf(res.code));
+      setError(files.length > 0 ? { ns: 'thread', key: threadErrorKey(res.code) } : problemOf(res.code));
       return;
     }
     setError(null);
     setReply('');
     track('support_ticket', { action: 'customer_reply', kind: ticket.kind, channel: ticket.channel });
+    if (files.length > 0)
+      track('support_ticket', { action: 'photos_attached', kind: ticket.kind, channel: 'web' });
+    setFiles([]);
     await onChanged();
   }
 
@@ -307,7 +340,9 @@ function CustomerTicket({ ticket, onChanged }: { ticket: SupportTicketDto; onCha
       </div>
       <p className="mt-1 text-xs text-muted">
         {[
+          ticket.issueCode ? tt('issueBadge', { issue: tt(`issue_${ticket.issueCode}`) }) : null,
           ticket.orderCode ? t('orderRef', { code: ticket.orderCode }) : null,
+          ticket.serviceCode,
           acknowledged(ticket) ? null : t('ackBy', { date: formatDate(ticket.slaAckDue, locale) }),
         ]
           .filter((part): part is string => part !== null)
@@ -339,6 +374,9 @@ function CustomerTicket({ ticket, onChanged }: { ticket: SupportTicketDto; onCha
             }}
             className={`${portalField} py-2`}
           />
+          <div className="mt-2">
+            <PhotoPicker files={files} onChange={setFiles} label={tt('replyPhotos')} />
+          </div>
           {error ? (
             <p id={`${field}-error`} className="mt-1 text-sm font-bold text-error">
               {problemText(error)}
@@ -348,6 +386,9 @@ function CustomerTicket({ ticket, onChanged }: { ticket: SupportTicketDto; onCha
             {t('sendReply')}
           </button>
         </form>
+      )}
+      {ticket.status === 'closed' ? null : (
+        <RefundDestinationApi code={ticket.code} refund={ticket.refund} onSaved={onChanged} />
       )}
     </article>
   );

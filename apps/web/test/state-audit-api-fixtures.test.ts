@@ -30,6 +30,8 @@ describe('API-mode audit fixtures (Q106)', () => {
       'API-WS-HOMEJOB',
       'API-WS-PHOTOS',
       'API-SVC-PHOTOS',
+      'API-ACC-SUPPORT',
+      'API-ADM-SUPPORT',
     ])
       expect(codes.has(code), code).toBe(true);
   });

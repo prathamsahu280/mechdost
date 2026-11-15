@@ -1014,3 +1014,18 @@ Design: `docs/superpowers/specs/2026-11-15-service-photos-design.md`; built desc
 - Acceptance = proposed ÷ (proposed + declined): workshops have no response timer, so "timed out" does not exist. Services are paid at the workshop only, so "paid online vs at the workshop" is by method (cash / UPI / card).
 - "Returned within 30 days": same customer, same vehicle (saved id, else vehicle key) and same workshop, a new request that is not cancelled or rejected within 30 days of completion. Label is neutral on purpose.
 - Migration `0064_workshop_analytics` adds `service_requests (workshop_id, created_at)` only. Events use camelCase props (`rangeDays`), like the rest of the catalogue. Plan: `docs/superpowers/plans/2026-11-15-workshop-analytics.md`.
+
+## 2026-11-15 — Support threads, photo attachments and the COD refund destination built (builder rulings under the approved design)
+
+Design: `docs/superpowers/specs/2026-11-15-support-next-tier-design.md` items 1 to 3; built description: spec 09 § "Order and request threads, photos and the COD refund destination"; security: spec 13 § "Support attachments and payout details".
+
+- **One open thread per customer and order or job, by database index; a closed thread frees the slot.** The design says "one open ticket", and `closed` is terminal in `ticketMachine`, so the partial unique indexes exclude closed. Cost if wrong: after a close the customer's next help gets a new `REQ-` code instead of reopening the old one.
+- **The subject is the checkout group code; the ticket links its first sub-order.** A multi-shop order has one conversation (customers do not think in sub-orders). Cost if wrong: a refund made from the ticket targets that one sub-order; staff use the refunds screen for the others.
+- **Attachments are `media_objects` rows with owner kind `ticket_message`**, not the unused jsonb `ticket_messages.attachments` column. Cost if wrong: a dead jsonb column stays (dropping it is a later migration).
+- **Image URLs reuse the job-photo signing key and rule** (10 minutes, one photo; media ids are unique, so a signature for one photo opens no other). Cost if wrong: rotating the keyring invalidates both families at once, which is harmless (URLs are re-issued on every listing).
+- **A message must have text; photos alone are not a message** (the body CHECK is 1 to 5000 characters and a photo-only row would need placeholder text in the database). Cost if wrong: customers type one line with their photos.
+- **The payout destination lives on the ticket (encrypted + mask) and is copied into the refund; the ticket copy is locked once a manual refund exists.** Cost if wrong: two encrypted copies exist until a purge job runs; a purge after payout is queued (`docs/questions-for-user.md` Q115, default keep 30 days after the ticket closes, not built).
+- **The refund from a ticket needs both `tickets:reply` and `refunds:initiate`** (support agents and ops have both). Cost if wrong: a role with only one cannot use the button; they use the refunds screen.
+- **Staff cannot attach photos** (items 1 to 3 are customer evidence). Cost if wrong: staff describe in words.
+- **No new notification template**: `ticket_received` and the `staff.new_ticket` bell fire on a new thread, `ticket_reply` and `ticket_resolved` as before. A customer message on an existing thread does not bell staff yet (pre-existing gap for every ticket). Cost if wrong: a reply waits in the inbox until someone looks; follow-up with inbox tools (item 4).
+- **Rate limits:** threads 20 an hour, photo uploads 20 per 10 minutes, payout destination 10 an hour, per customer.
