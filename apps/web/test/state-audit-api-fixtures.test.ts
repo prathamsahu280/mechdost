@@ -65,7 +65,9 @@ describe('API-mode audit fixtures (Q106)', () => {
       }
     }
     expect(checked).toBeGreaterThan(100);
-  });
+    // Parses every fixture of every API case (thousands since batch 2C); took 14 s while the audit and builds
+    // shared the CPU (2026-11-16), so the 5 s default is too short here.
+  }, 60_000);
 
   it('every refund variant the model names has a fixture', () => {
     for (const c of apiCases.filter((x) => x.code === 'API-ADM-REFUNDQ')) {
