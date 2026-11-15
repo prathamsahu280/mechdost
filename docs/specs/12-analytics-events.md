@@ -161,3 +161,7 @@ Server events (same transaction; ids, codes and counts only, never text, a path 
 ## Coupon events (2026-11-15)
 
 Client `apply_coupon { result: applicable|refused|applied|removed, reason: <COUPON_REASONS code>|null, funder: mechdost|shop|null }` (the typed code is never recorded; hard rules 9 and 16). Server events in the same transaction: `coupon_redeemed { couponId, orderCode, discountPaise, funder, kind }`, `coupon_released { couponId, orderCode }`, `admin_coupon_saved { couponId, action, funder }`, `admin_coupon_paused { couponId, paused }`, `shop_coupon_decided { couponId, shopId, decision }`.
+
+## Product photos, cart and wishlist events (2026-11-15)
+
+Server (same transaction as the change; ids, codes and counts only): `product_photo_added { productId, photoId, by: staff|shop, status }`, `product_photo_removed { productId, photoId }`, `product_photo_reviewed { productId, photoId, decision, reasonCode|null }`, `product_photos_reordered { productId, count }`, `cart_merged { kept, added, dropped }`, `cart_replaced { lines, dropped }` (no prices), `wishlist_changed { productId, on, count }` (only real changes). Client: `wishlist_toggled { slug, on, source: card|page|account }`, `wishlist_sign_in_prompted { slug }`; photo editor and queue buttons use `click` ids `product_photo_added_staff|added_shop|reordered|removed|approved|rejected`.

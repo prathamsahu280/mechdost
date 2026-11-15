@@ -15,15 +15,23 @@ import { authed } from './orders-api';
  * Prices are never part of any of this: the cart is SKUs and quantities; prices come from the checkout quote.
  * Failures are silent on purpose: the browser cart keeps working, and the next change tries again. Loaded only by
  * dynamic import from the header and the sign-in screen, never by demo builds.
+ *
+ * Shared devices (security review 2026-11-15): the browser cart remembers which account it was adopted for
+ * (`OWNER_KEY`). A cart that belongs to another account is never merged or sent: it is dropped. Sign-out calls
+ * `resetCartSync`, which clears the browser cart, forgets the owner and all sync state, and makes every answer still
+ * in flight stale (a generation counter), so nothing of the previous person reaches the next one.
  */
 type Locale = 'en' | 'hi';
 
 const PUSH_DELAY_MS = 800;
+const OWNER_KEY = 'mechdost-cart-owner';
 let started = false;
 let timer: ReturnType<typeof setTimeout> | undefined;
 /** What the server is known to hold, as `sku:qty` pairs, so a pulled cart is not sent straight back. */
 let known = '';
 let settled: Promise<void> = Promise.resolve();
+/** Bumped by every reset: an answer from an earlier generation is dropped. */
+let generation = 0;
 
 const skuLines = (lines: readonly CartLine[]): { sku: string; qty: number }[] =>
   lines.flatMap((l) => (l.sku ? [{ sku: l.sku, qty: l.qty }] : [])).slice(0, CART_MAX_LINES);
@@ -35,32 +43,71 @@ const fingerprint = (lines: readonly { sku: string; qty: number }[]): string =>
 const toLocal = (cart: ServerCart): CartLine[] =>
   cart.lines.map((l) => ({ slug: l.slug, sku: l.sku, qty: l.qty }));
 
-/** Make the browser cart the server's answer, and remember that the two now agree. */
-function adopt(cart: ServerCart): void {
+function readOwner(): string | null {
+  try {
+    return window.localStorage.getItem(OWNER_KEY);
+  } catch {
+    return null;
+  }
+}
+function writeOwner(uid: string | null): void {
+  try {
+    if (uid === null) window.localStorage.removeItem(OWNER_KEY);
+    else window.localStorage.setItem(OWNER_KEY, uid);
+  } catch {
+    // Private mode: the owner is not remembered, and the sign-out reset still clears the cart.
+  }
+}
+async function uidNow(locale: Locale): Promise<string | null> {
+  const { currentUid } = await import('./auth/firebase-client');
+  return currentUid(locale).catch(() => null);
+}
+
+/** Make the browser cart the server's answer, and remember that the two now agree and whose they are. */
+function adopt(cart: ServerCart, uid: string): void {
   known = fingerprint(cart.lines);
+  writeOwner(uid);
   if (fingerprint(skuLines(cartNow())) !== known) replaceCart(toLocal(cart));
+}
+
+/** A browser cart adopted for someone else is dropped: only a genuine guest cart (no owner) or your own is used. */
+function dropForeignCart(uid: string): void {
+  const owner = readOwner();
+  if (owner !== null && owner !== uid) {
+    replaceCart([]);
+    known = '';
+    writeOwner(null);
+  }
 }
 
 /** After sign-in or sign-up: fold the guest cart into the server cart. */
 export function mergeAtSignIn(locale: Locale): Promise<void> {
   started = true;
-  const lines = skuLines(cartNow());
+  const gen = generation;
   // Every later send waits for this one: sending the guest cart as "the cart" first would wipe the saved one.
-  settled = authed(locale, `/me/cart/merge?locale=${locale}`, CartDto, {
-    method: 'POST',
-    body: { lines },
-  }).then((res) => {
-    if (res.ok) adopt(res.data);
-  });
+  settled = (async () => {
+    const uid = await uidNow(locale);
+    if (gen !== generation || !uid) return;
+    dropForeignCart(uid);
+    const res = await authed(locale, `/me/cart/merge?locale=${locale}`, CartDto, {
+      method: 'POST',
+      body: { lines: skuLines(cartNow()) },
+    });
+    if (gen !== generation) return;
+    if (res.ok) adopt(res.data, uid);
+  })();
   return settled;
 }
 
-async function push(locale: Locale): Promise<void> {
+async function push(locale: Locale, gen: number): Promise<void> {
   await settled;
+  const uid = await uidNow(locale);
+  if (gen !== generation || !uid) return;
+  dropForeignCart(uid);
   const lines = skuLines(cartNow());
   if (fingerprint(lines) === known) return;
   const res = await authed(locale, `/me/cart?locale=${locale}`, CartDto, { method: 'PUT', body: { lines } });
-  if (res.ok) adopt(res.data);
+  if (gen === generation && res.ok) adopt(res.data, uid);
 }
 
 /**
@@ -68,17 +115,38 @@ async function push(locale: Locale): Promise<void> {
  * load reads the server cart; later calls send the change after a pause.
  */
 export function syncCart(locale: Locale): void {
+  const gen = generation;
   if (!started) {
     started = true;
-    void authed(locale, `/me/cart?locale=${locale}`, CartDto).then((res) => {
-      if (!res.ok) return;
-      if (res.data.lines.length > 0) adopt(res.data);
-      else void push(locale);
-    });
+    void (async () => {
+      const uid = await uidNow(locale);
+      if (gen !== generation || !uid) return;
+      dropForeignCart(uid);
+      const res = await authed(locale, `/me/cart?locale=${locale}`, CartDto);
+      if (gen !== generation || !res.ok) return;
+      if (res.data.lines.length > 0) adopt(res.data, uid);
+      else await push(locale, gen);
+    })();
     return;
   }
   clearTimeout(timer);
   timer = setTimeout(() => {
-    void push(locale);
+    void push(locale, gen);
   }, PUSH_DELAY_MS);
+}
+
+/**
+ * Sign-out: this browser's cart is no longer anyone's. Clears it, forgets the owner and every piece of sync state, and
+ * makes answers still on their way stale.
+ */
+export function resetCartSync(): Promise<void> {
+  generation += 1;
+  started = false;
+  known = '';
+  clearTimeout(timer);
+  timer = undefined;
+  settled = Promise.resolve();
+  writeOwner(null);
+  replaceCart([]);
+  return Promise.resolve();
 }

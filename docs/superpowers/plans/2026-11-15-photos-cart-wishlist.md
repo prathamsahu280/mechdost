@@ -27,8 +27,8 @@
 
 ## Tasks
 
-- [ ] 1. Shared: DTOs (`product-photos`, `cart-api`, `wishlist-api`), setting key, analytics events, error codes. Tests: schemas.
-- [ ] 2. DB: schema + migration + repos (test first: limit race, order, approval, cart merge, wishlist limit, role-leak).
-- [ ] 3. API: image processing variants (`processProductPhoto`), routes, tests via `app.request`.
-- [ ] 4. Web: `ProductPhoto`, card + product page, lazy wishlist heart, cart sync, account Wishlist, admin editor, state-audit rows.
-- [ ] 5. Docs, learnings, targeted checks, commits.
+- [x] 1. Shared: DTOs (`product-photos`, `cart-api`, `wishlist-api`), setting key, analytics events, error codes. Tests: schemas.
+- [x] 2. DB: schema + migration + repos (test first: limit race, order, approval, cart merge, wishlist limit, role-leak).
+- [x] 3. API: image processing variants (`processProductPhoto`), routes, tests via `app.request`.
+- [x] 4. Web: `ProductPhoto`, card + product page, lazy wishlist heart, cart sync, account Wishlist, admin editor, state-audit rows.
+- [x] 5. Docs, learnings, targeted checks, commits.

@@ -82,3 +82,7 @@ builds: the header bell's module-level `next/dynamic` (+1.5 KB on every page) an
 `/* @__PURE__ */` on every machine: `/shop` 179.4, `/cart` 179.6, `/workshops` 178.6. Rules: no `next/dynamic` in modules
 the header/layout import; module-level factory calls in shared packages are marked pure; headroom is ~0.5 KB, so any
 change to always-loaded code is measured with a local build (`node apps/web/scripts/measure-js.mjs`) before merge.
+
+## Budget note: product photos, wishlist and cart sync (2026-11-15)
+
+Product photos are rendered by a **Server Component** with `getImageProps` (a plain `<img>`, no client runtime); the heart is a lazy chunk behind `wishlist-lazy.tsx` and exists only in real sign-in builds (build-time constant); the cart sync is fetched by dynamic import from the header's cart pill only when signed in, and from the sign-in screen. Net eager cost in header/card/cart bundles: the wrapper (a few hundred bytes) plus one effect in the cart pill; the real numbers must be measured with a local build (`node apps/web/scripts/measure-js.mjs`) before merge (not run here: builds are not allowed on this branch's job). Only the first product-page photo is `preload`/high priority.

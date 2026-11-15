@@ -249,6 +249,7 @@ export function ProductPhotosEditor({ slug, scope }: { slug: string; scope: Phot
             <input
               type="text"
               name="alt"
+              autoComplete="off"
               required
               minLength={3}
               maxLength={160}
@@ -261,6 +262,7 @@ export function ProductPhotosEditor({ slug, scope }: { slug: string; scope: Phot
             <input
               type="text"
               name="altHi"
+              autoComplete="off"
               required
               minLength={3}
               maxLength={160}

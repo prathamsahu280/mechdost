@@ -1054,3 +1054,17 @@ Design: `docs/superpowers/specs/2026-11-15-support-next-tier-design.md` items 1 
 - **Admin edits compare-and-set on `config_version`**, not `version` (the usage counter bumps `version` with every order). Funder, kind and shop lock after the first use; money changes on a shop-funded coupon re-ask the shop.
 - **Largest-remainder allocation across lines** (ties to the earlier line); recorded in spec 03.
 - Not built (queued in the ledger): public offers list, coupon reports (usage per coupon in analytics), campaigns/automatic offers, whole-order refund after delivery releasing the use.
+
+## 2026-11-15 — Product photos, server cart and wishlist built (builder rulings under the user's "Next tier answers")
+
+- **Public photo serving goes through the API by id with a one-year immutable cache, not through a public bucket.** Reason: the bucket stays private (a refused or removed photo stops at once; no Storage URL or key ever leaves the server; Storage keys are still unverified, Q112); the id is never reused, so a long cache is safe. Cost if wrong: images read Storage once per cache miss; put Caddy or a CDN in front of the path (Q131) or switch to a public bucket for approved photos only (one repository function and the web loader change).
+- **No Next image optimizer for product photos.** The API already stores 320/640/1600 WebP; the web loader maps widths onto them, so no remote pattern and no resize work on the web server. Cost if wrong: add the Storage/API host to `images.remotePatterns` and drop the loader.
+- **`product_photos` reshaped in place and emptied by the migration** (it was never written). Cost if wrong: none (no data existed).
+- **Photos limit counts pending and approved together** (8 live rows), so shops cannot crowd out the cover; refused photos free their slot.
+- **Cart merge takes the larger quantity (idempotent), the server cart wins on the first visit of a page load, later edits are last-writer-wins.** Cost if wrong: two devices editing in the same second can overwrite each other; a per-line version would fix it.
+- **Only merge is audited in `audit_log`; cart replaces and wishlist changes write events only** (high-volume, customer-owned data; the event store is append-only). Cost if wrong: add one insert per write.
+- **The wishlist and the server cart exist in real sign-in builds only**; the demo build keeps its browser cart and has no wishlist.
+- **The cart holds SKU + quantity only; prices are never stored or accepted.** The "re-validate prices" requirement is met by pricing every cart through the checkout quote.
+- Questions queued: Q130 (shop photo uploads on/off at launch), Q131 (cache in front of the photo route; Hindi word for wishlist).
+
+- **Shared-device rule for storefront client state (security review follow-up, 2026-11-15):** the browser cart carries an owner uid and is cleared on sign-out; the wishlist cache is keyed by uid and reset on sign-out and uid change; both ignore late answers (generation counter). Cost if wrong: a stray cart line is lost when a customer signs out and back in on a device without the server having it yet (the server copy returns it at sign-in).

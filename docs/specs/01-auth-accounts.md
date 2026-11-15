@@ -120,3 +120,7 @@ User: "make it admin-configurable".
 - **Website** (real sign-in, `AUTH_MODE === 'firebase'`; the demo keeps its browser copy): `components/account/account-api-sections.tsx` (lazy) renders addresses, vehicles and profile from the API; a stale save reloads the list and says so; empty states offer one action. Profile edits also update the browser account used for the greeting. Strings: namespace `accountApi` (en + hi).
 - **Not built:** a map pin picker in the address form (the API accepts `lat`/`lng`; the form does not ask yet), phone/email change (re-verification flow), account deletion (support flow, spec 09), billing-default control in the UI (API has it).
 - **Tests:** `packages/db/test/account.test.ts`, `apps/api/test/account.test.ts`, `packages/shared/test/account.test.ts`; UI state audit rows `ACC-VEHICLES-DATA`, `ACC-ADDRESSES-DATA` (none / one / limit / long Hindi text).
+
+## Built: Account → Wishlist (2026-11-15)
+
+A new account section `wishlist` (real sign-in only; `lib/sections.ts`): saved products newest first with photo, brand, name and a remove button; empty state with "Browse the shop". See spec 02. At sign-in or sign-up the guest cart is merged into the saved cart (spec 03).
