@@ -310,7 +310,13 @@ export interface ServerEventProps {
     listTotalPaise: number | null;
     validDays: number;
   };
-  quote_accepted: { quoteCode: string; offerVersion: number; orderCode: string; totalPaise: number };
+  quote_accepted: {
+    quoteCode: string;
+    offerVersion: number;
+    orderCode: string;
+    totalPaise: number;
+    paymentMethod?: 'cod' | 'online';
+  };
   /** Declined by the customer or withdrawn by staff (expiry is `quote_expired`). */
   quote_closed: {
     quoteCode: string;

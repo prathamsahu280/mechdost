@@ -68,7 +68,12 @@ export type QuoteMessageInput = z.infer<typeof QuoteMessageSchema>;
 
 /** Accept exactly the offer version the customer saw. */
 export const AcceptQuoteSchema = z
-  .object({ offerVersion: version, locale: z.enum(['en', 'hi']).default('en') })
+  .object({
+    offerVersion: version,
+    /** Cash on delivery (default; capped by `quotes.cod_cap_paise`) or online with Razorpay. */
+    paymentMethod: z.enum(['cod', 'online']).default('cod'),
+    locale: z.enum(['en', 'hi']).default('en'),
+  })
   .strict();
 export type AcceptQuoteInput = z.infer<typeof AcceptQuoteSchema>;
 
@@ -143,6 +148,17 @@ export const QuoteAcceptedDto = z.object({
   orderCode: z.string(),
   totalPaise: z.number().int(),
   replayed: z.boolean(),
+  paymentMethod: z.enum(['cod', 'online']),
+  /** Online only: what the browser needs to open Razorpay Checkout (null once paid or expired). */
+  razorpay: z
+    .object({
+      keyId: z.string(),
+      orderId: z.string(),
+      amountPaise: z.number().int(),
+      currency: z.literal('INR'),
+    })
+    .nullable()
+    .optional(),
 });
 export type QuoteAccepted = z.infer<typeof QuoteAcceptedDto>;
 

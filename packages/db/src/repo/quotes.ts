@@ -846,8 +846,22 @@ export async function postCustomerQuoteMessage(
  */
 export async function acceptQuoteOffer(
   db: Tx,
-  input: { userId: string; code: string; offerVersion: number; idempotencyKey: string; locale: QuoteLocale },
-): Promise<{ orderCode: string; totalPaise: number; replayed: boolean }> {
+  input: {
+    userId: string;
+    code: string;
+    offerVersion: number;
+    idempotencyKey: string;
+    locale: QuoteLocale;
+    /** Default cash on delivery. `online` places the order unpaid; the API then opens a Razorpay order for it. */
+    paymentMethod?: 'cod' | 'online';
+  },
+): Promise<{
+  orderCode: string;
+  totalPaise: number;
+  replayed: boolean;
+  paymentMethod: 'cod' | 'online';
+}> {
+  const method = input.paymentMethod ?? 'cod';
   return db.transaction(async (tx) => {
     const q = await lockQuote(tx, mineWhere(input.userId, input.code));
     if (q.status === 'accepted') {
@@ -856,11 +870,17 @@ export async function acceptQuoteOffer(
           code: orderGroups.code,
           totalPaise: orderGroups.totalPaise,
           key: orderGroups.idempotencyKey,
+          method: orderGroups.paymentMethod,
         })
         .from(orderGroups)
         .where(eq(orderGroups.quoteId, q.id));
       if (group?.key === input.idempotencyKey)
-        return { orderCode: group.code, totalPaise: group.totalPaise, replayed: true };
+        return {
+          orderCode: group.code,
+          totalPaise: group.totalPaise,
+          replayed: true,
+          paymentMethod: group.method === 'online' ? 'online' : 'cod',
+        };
     }
     assertOpen(q);
     const [offer] = await tx
@@ -872,10 +892,10 @@ export async function acceptQuoteOffer(
       throw new ConflictError('This offer was replaced; review the latest one', 'QUOTE_OFFER_STALE');
     if (offer.validUntil <= new Date())
       throw new ConflictError('This offer has expired; ask MechDost for a new one', 'QUOTE_OFFER_EXPIRED');
-    // Cash on delivery has a ceiling for quote orders too (review I3); above it the customer talks to MechDost
-    // (online payment for quotes: pending #18).
+    // Cash on delivery has a ceiling for quote orders too (review I3); above it the customer pays online (the
+    // ceiling is a limit on cash at the door, not on card or UPI).
     const capPaise = await settingOr(tx, q.cityId, COD_CAP);
-    if (offer.totalPaise > capPaise)
+    if (method === 'cod' && offer.totalPaise > capPaise)
       throw new ValidationError(
         'This order is too large for cash on delivery; contact MechDost',
         'QUOTE_COD_CAP',
@@ -898,7 +918,7 @@ export async function acceptQuoteOffer(
     }
     const a = q.shippingAddress;
     const placed = await placeOrder(tx, {
-      method: 'cod',
+      method,
       userId: input.userId,
       idempotencyKey: input.idempotencyKey,
       address: {
@@ -945,9 +965,10 @@ export async function acceptQuoteOffer(
         offerVersion: offer.offerVersion,
         orderCode: placed.code,
         totalPaise: placed.totalPaise,
+        paymentMethod: method,
       },
     });
-    return { orderCode: placed.code, totalPaise: placed.totalPaise, replayed: false };
+    return { orderCode: placed.code, totalPaise: placed.totalPaise, replayed: false, paymentMethod: method };
   });
 }
 

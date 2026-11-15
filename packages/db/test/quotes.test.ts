@@ -763,6 +763,36 @@ describe('review fixes 2026-11-14', () => {
     await closeAllOpen(ravi);
   });
 
+  it('places an online order above the cash ceiling: unpaid until Razorpay says so, the same key replays it', async () => {
+    const { code } = await newQuote(ravi);
+    await db.insert(s.settings).values({ key: 'quotes.cod_cap_paise', value: 300_000 });
+    await offer(code, 40_000, 2_000); // ₹4,020 > the ₹3,000 cash ceiling
+    const accept = (idempotencyKey: string) =>
+      acceptQuoteOffer(t(), {
+        userId: ravi,
+        code,
+        offerVersion: 1,
+        idempotencyKey,
+        locale: 'en',
+        paymentMethod: 'online',
+      });
+    const k = key();
+    const r = await accept(k);
+    expect(r).toMatchObject({ totalPaise: 10 * 40_000 + 2_000, replayed: false });
+    const [group] = await db.select().from(s.orderGroups).where(eq(s.orderGroups.code, r.orderCode));
+    expect(group).toMatchObject({
+      paymentMethod: 'online',
+      paymentStatus: 'created',
+      codFeePaise: 0,
+      totalPaise: r.totalPaise,
+    });
+    expect(group!.quoteId).not.toBeNull();
+    expect(await accept(k)).toMatchObject({ orderCode: r.orderCode, replayed: true });
+    expect(await db.$count(s.orderGroups, eq(s.orderGroups.quoteId, group!.quoteId!))).toBe(1);
+    expect((await getMyQuote(t(), ravi, code, 'en')).status).toBe('accepted');
+    await db.delete(s.settings).where(eq(s.settings.key, 'quotes.cod_cap_paise'));
+  });
+
   it('shows staff each line’s shop price and stock at the PIN, never the customer (I2)', async () => {
     const { code } = await newQuote(ravi, [
       { slug: OIL, qty: 10 },

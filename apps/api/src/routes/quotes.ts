@@ -37,6 +37,7 @@ import type { SessionCache } from '../auth/session-cache';
 import { ApiError } from '../errors';
 import { authenticate, requirePermission, requireVerified } from '../middleware/auth';
 import { rateLimit, RATE_RULES } from '../middleware/rate-limit';
+import { ensureRazorpayOrder } from '../payments/service';
 import type { RateRule } from '../rate-limit/limiter';
 import type { AppDeps, AppEnv } from '../types';
 import { validationHook } from '../validation';
@@ -141,7 +142,8 @@ const accept = createRoute({
   method: 'post',
   path: '/quotes/{code}/accept',
   tags: ['quotes'],
-  summary: 'Accept the active offer version (cash on delivery) → a normal order; Idempotency-Key required',
+  summary:
+    'Accept the active offer version (cash on delivery or online) → a normal order; Idempotency-Key required',
   security: secured,
   request: {
     params: z.object({ code: Code }),
@@ -241,14 +243,25 @@ export function quoteRoutes(deps: AppDeps, cache: SessionCache) {
       )
       .openapi(accept, async (c) => {
         const b = c.req.valid('json');
+        const razorpay = deps.razorpay ?? null;
+        // Refused before anything is placed: an unpaid online order must never exist without a way to pay it.
+        if (b.paymentMethod === 'online' && !razorpay)
+          throw new ApiError(422, 'PAYMENT_METHOD_UNAVAILABLE', 'Online payment is not available yet');
         const r = await acceptQuoteOffer(deps.db, {
           userId: me(c),
           code: c.req.valid('param').code,
           offerVersion: b.offerVersion,
           idempotencyKey: c.req.valid('header')['idempotency-key'],
           locale: b.locale,
+          paymentMethod: b.paymentMethod,
         });
-        return c.json(r, r.replayed ? 200 : 201);
+        // The Razorpay order exists (stored, one open per group) before the client sees it; a retry reuses it, and a
+        // replay of an accept whose Razorpay call failed creates it now.
+        const handle =
+          r.paymentMethod === 'online' && razorpay
+            ? await ensureRazorpayOrder(deps.db, razorpay, { userId: me(c), groupCode: r.orderCode })
+            : undefined;
+        return c.json(handle === undefined ? r : { ...r, razorpay: handle }, r.replayed ? 200 : 201);
       })
       .openapi(decline, async (c) =>
         c.json(
