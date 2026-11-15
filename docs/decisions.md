@@ -1361,3 +1361,15 @@ Built the Supabase RLS mirror (spec 13, `docs/research/rls-matrix.md`). Rulings:
 - **"Earnings" = the shop's payout ledger** (`shop_payout_entries`: MechDost Coins and coupon discounts owed on delivered orders), integer paise, **IST days** (window from midnight IST of its first day). Shop sales are not in the ledger until weekly payouts exist (Q11); the screen's lead text says so. Queued as Q178.
 - **Live pings for service requests use one `request` topic** (customer, users of the workshop holding it, city staff with `service:read`) and one trigger on `service_requests` (migration `0073`); the pings stay hints and **polling is never removed** (no `LIVE_TRANSPORT=rtdb` or no database URL: exactly the old behaviour). The RTDB rules need no new path (the inbox is generic and read-only for its owner; rule-text test added). Rules are not deployed by the builder (Q160).
 - Tests and docs: plan `docs/superpowers/plans/2026-11-16-shop-staff-live-pings.md`; specs 06, 07, 10, 12, 14.
+
+## 2026-11-16 — WhatsApp go-ahead and real-API test sends (user)
+
+- WhatsApp Business Account: **Shourya Integrated** (user confirmed). Token (system user, never expires, has
+  `whatsapp_business_management` + `whatsapp_business_messaging`) and account id set in the local `.env` and the
+  server `.env` by the coordinator at the user's request ("u do it"), without printing either file. The user should
+  rotate the token later (it was pasted in chat).
+- User: "yes u can submit the 14 missing whatsapp templates to meta" — the Hindi versions of the six approved English
+  templates and the four quote templates (en + hi), via `pnpm wa:templates --submit --yes` after a read-only
+  `--status`; never edits or deletes existing templates.
+- User: "yes u can send whatsapp messages to [the user's number] and emails to [the user's inbox]" — real-API pass
+  test sends go only to the user's own number and inbox (kept out of the public repo; Razorpay stays on test keys).
