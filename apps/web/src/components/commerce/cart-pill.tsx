@@ -2,7 +2,10 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect } from 'react';
+import { useSession } from '@/demo/session-state';
 import { useCart } from '@/demo/store';
+import { AUTH_MODE } from '@/lib/auth/mode';
 import { UI_EMOJI } from '@/lib/emoji';
 import { isPortalPath } from '@/lib/portal-path';
 
@@ -21,6 +24,16 @@ export function CartPill({
 }) {
   const lines = useCart();
   const pathname = usePathname();
+  const signedIn = useSession() !== null;
+  const locale = pathname === '/hi' || pathname.startsWith('/hi/') ? 'hi' : 'en';
+  // Real sign-in mode only (a build-time constant: the demo build drops this): the saved cart follows the customer.
+  // The sync module is fetched only when someone is signed in, so a signed-out visit loads nothing extra.
+  useEffect(() => {
+    if (AUTH_MODE !== 'firebase' || !signedIn) return;
+    void import('@/lib/cart-sync').then((m) => {
+      m.syncCart(locale);
+    });
+  }, [signedIn, lines, locale]);
   const count = lines.reduce((n, l) => n + l.qty, 0);
   const sr = (count === 0 ? countText.zero : count === 1 ? countText.one : countText.other).replace(
     '#',

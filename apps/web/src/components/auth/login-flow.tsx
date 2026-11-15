@@ -232,6 +232,8 @@ export function LoginFlow() {
       failForm(t('errUnavailable'));
       return undefined;
     }
+    // Real mode: fold the guest cart into the saved one. Started before the session flips so the header's sync waits for it.
+    void import('@/lib/cart-sync').then((m) => m.mergeAtSignIn(locale === 'hi' ? 'hi' : 'en'));
     const account = adoptRealAccount(me);
     return done(account, event(account.role));
   }
@@ -630,6 +632,7 @@ export function LoginFlow() {
         return undefined;
       }
       const saved = (await r.saveProfile(me, { name, language })) ?? me;
+      void import('@/lib/cart-sync').then((m) => m.mergeAtSignIn(locale === 'hi' ? 'hi' : 'en'));
       setCreated({ account: adoptRealAccount({ ...saved, name }), email });
       track('click', { id: 'sign_up', path: window.location.pathname });
       goTo('signup-done');

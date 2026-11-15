@@ -54,6 +54,8 @@ export const REAL_ACCOUNT_SECTIONS = [
   'coins',
   'vehicles',
   'addresses',
+  // Saved products (design 2026-11-15 item 5): real sign-in only.
+  'wishlist',
   // The bell's choices and this device's push (bell + push merge 2026-11-15): real sign-in only.
   'notifications',
   'profile',
@@ -540,6 +542,44 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
     checks: [...BASE_CHECKS, 'aligned'],
     align: [{ items: 'main section ul > li' }],
     sweep: 14,
+    note: API_NOTE,
+    realApi: true,
+  },
+  {
+    code: 'API-WISHLIST',
+    page: 'Account → Wishlist, real sign-in',
+    component:
+      'Saved products (with and without a photo, long names), empty state with one next step, failed load with retry, a full list (100)',
+    path: '/account/wishlist',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['customer'] },
+      { name: 'list', values: ['items', 'empty', 'error', 'full'] },
+      stress,
+    ],
+    checks: [...BASE_CHECKS, 'aligned'],
+    align: [{ items: 'main section ul > li' }],
+    sweep: 10,
+    note: API_NOTE,
+    realApi: true,
+  },
+  {
+    code: 'API-ADM-PHOTOS',
+    page: 'Admin → Catalogue, real sign-in',
+    component:
+      'Photos waiting for approval (shop name, preview, approve / refuse with a reason), empty queue, and the card staying out of the way when the API says no access',
+    path: '/admin/catalogue',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['admin'] },
+      { name: 'queue', values: ['items', 'empty', 'forbidden'] },
+      stress,
+    ],
+    sweep: 8,
     note: API_NOTE,
     realApi: true,
   },

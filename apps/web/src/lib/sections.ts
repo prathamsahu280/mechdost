@@ -14,6 +14,8 @@ const ALL_ACCOUNT_SECTIONS = [
   'coins',
   'vehicles',
   'addresses',
+  // Saved products (design 2026-11-15 item 5): real sign-in only, the list lives on the server.
+  'wishlist',
   // The bell's choices and this device's push (spec 10, 2026-11-15): real sign-in only, it reads the API.
   'notifications',
   'profile',
@@ -68,7 +70,15 @@ const reviewsShown = BROWSER_ONLY_FEATURES || AUTH_MODE === 'firebase';
  * Sections that only read the API and have no demo version: shown with real sign-in only. One list for all of them
  * (Analytics and the monitoring Errors panel, 2026-11-14; add later ones here).
  */
-const REAL_SIGN_IN_ONLY: readonly string[] = ['analytics', 'errors', 'refunds', 'staff', 'audit', 'coupons'];
+const REAL_SIGN_IN_ONLY: readonly string[] = [
+  'analytics',
+  'errors',
+  'refunds',
+  'staff',
+  'audit',
+  'coupons',
+  'wishlist',
+];
 const shown = <T extends string>(all: readonly T[]): readonly T[] =>
   all.filter(
     (s) =>

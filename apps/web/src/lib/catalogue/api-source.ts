@@ -114,6 +114,7 @@ export function apiProduct(p: CatalogueProduct, locale: Locale): ProductView {
   const offer = sold?.offer ?? null;
   return {
     ...apiCard({ ...p, offer, photo: p.photos[0] ?? null }),
+    photos: p.photos,
     sku: sold?.sku ?? p.variants[0]?.sku ?? null,
     compatibility: p.compatibility,
     description: p.description,

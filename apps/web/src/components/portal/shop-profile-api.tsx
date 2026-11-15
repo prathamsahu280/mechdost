@@ -20,6 +20,7 @@ import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-gu
 import { BusyCard } from './shop-busy-api';
 import { ShopHoursFields } from './shop-hours-fields';
 import { ShopOffersApi } from './shop-offers-api';
+import { ShopPhotosApi } from './shop-photos-api';
 import { ShopTeamApi } from './shop-team-api';
 
 type Load = { kind: 'loading' } | { kind: 'error'; code: string } | { kind: 'ok'; shops: MyShopDto[] };
@@ -156,6 +157,7 @@ function ShopHeader({ shop: s, onChanged }: { shop: MyShopDto; onChanged: () => 
         </section>
       </div>
       {s.isOwner ? <ShopOffersApi shopId={s.id} /> : null}
+      <ShopPhotosApi shopId={s.id} />
       {s.isOwner ? <ShopTeamApi shopId={s.id} /> : null}
     </div>
   );

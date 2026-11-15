@@ -45,6 +45,7 @@ import { layoutMocks, policyMocks, settingsMocks } from './admin-config-fixtures
 import { homeFinderMocks, homeJobMocks, homeRequestMocks } from './home-fixtures.ts';
 import { adminWorkshopAnalyticsMocks, workshopPerformanceMocks } from './workshop-analytics-fixtures.ts';
 import { customerPhotoMocks, workshopPhotoMocks } from './photo-fixtures.ts';
+import { photoQueueMocks, wishlistMocks } from './storefront-fixtures.ts';
 import { accountSupportMocks, adminSupportMocks } from './support-fixtures.ts';
 import type { Mock, MockCtx, Reply } from './mock-api.ts';
 
@@ -1475,6 +1476,10 @@ export function mocksFor(c: AuditCase): Mock[] {
       return workshopPerformanceMocks(c);
     case 'API-ADM-COINS':
       return coinsMocks();
+    case 'API-WISHLIST':
+      return [meMock(), ...wishlistMocks(c)];
+    case 'API-ADM-PHOTOS':
+      return [meMock(), ...photoQueueMocks(c)];
     case 'API-ADM-COUPONS':
       return couponsMocks(c);
     case 'API-ADM-REVIEWS':

@@ -7,7 +7,9 @@ import { AddToCartButton } from '@/components/catalogue/add-to-cart-button';
 import { CompareToggle } from '@/components/catalogue/compare-toggle';
 import { UnitPrice } from '@/components/catalogue/unit-price';
 import { availabilityLabel, ProductCard } from '@/components/catalogue/product-card';
+import { ProductPhoto, productPhotoLoader } from '@/components/catalogue/product-photo';
 import { ProductVisual } from '@/components/catalogue/product-visual';
+import { WishlistHeartLazy } from '@/components/catalogue/wishlist-lazy';
 import { ReviewsApiSection, ReviewsApiSkeleton } from '@/components/reviews/reviews-api-section';
 import { ReviewsSection } from '@/components/reviews/reviews-section';
 import { StarRating } from '@/components/reviews/star-rating';
@@ -90,12 +92,13 @@ export default async function ProductPage({ params }: Props) {
   if (!data) notFound();
   const { product, related, reviews } = data;
 
-  const [t, c, r, footer, cmp] = await Promise.all([
+  const [t, c, r, footer, cmp, w] = await Promise.all([
     getTranslations('catalogue'),
     getTranslations('categories'),
     getTranslations('reviews'),
     getTranslations('footer'),
     getTranslations('compare'),
+    getTranslations('storefront'),
   ]);
   const categoryName = product.category.name ?? (product.category.key ? c(product.category.key) : null);
   // The star row links to the reviews section, so it shows only when that section does (approved reviews only:
@@ -138,7 +141,41 @@ export default async function ProductPage({ params }: Props) {
       </nav>
 
       <div className="mt-6 grid gap-8 tab:grid-cols-2 nav:gap-14">
-        <ProductVisual category={product.category.key} brand={product.brand} sku={product.sku} size="hero" />
+        <div>
+          {product.photo ? (
+            // The first photo is the page's largest paint: the one image with `priority` (spec 16).
+            <ProductPhoto
+              photo={product.photo}
+              size="hero"
+              priority
+              sizes="(min-width: 1024px) 560px, 100vw"
+            />
+          ) : (
+            <ProductVisual
+              category={product.category.key}
+              brand={product.brand}
+              sku={product.sku}
+              size="hero"
+            />
+          )}
+          {(product.photos ?? []).length > 1 ? (
+            <ul className="mt-3 grid grid-cols-4 gap-2">
+              {(product.photos ?? []).slice(1).map((p, i) => (
+                <li key={p.path}>
+                  <a
+                    href={productPhotoLoader({ src: p.path, width: 1600 })}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block rounded-tile border border-line-card"
+                  >
+                    <ProductPhoto photo={p} size="thumb" sizes="(min-width: 1024px) 130px, 22vw" />
+                    <span className="sr-only">{w('photoOpens', { n: i + 2 })}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
 
         <div>
           <p className="text-xs text-muted">
@@ -235,6 +272,23 @@ export default async function ProductPage({ params }: Props) {
                 removed: cmp('removed'),
               }}
             />
+            <div className="mt-3">
+              <WishlistHeartLazy
+                slug={product.slug}
+                source="page"
+                labels={{
+                  add: w('wishlistAdd', { name: `${product.brand} ${product.name}` }),
+                  remove: w('wishlistRemove', { name: `${product.brand} ${product.name}` }),
+                  saved: w('wishlistSaved'),
+                  removed: w('wishlistRemoved'),
+                  full: w('wishlistFull', { max: 100 }),
+                  failed: w('wishlistFailed'),
+                  signIn: w('wishlistSignIn'),
+                  pageSave: w('pageSave'),
+                  pageSaved: w('pageSaved'),
+                }}
+              />
+            </div>
             <div className="mt-1">
               {price ? (
                 <AddToCartButton

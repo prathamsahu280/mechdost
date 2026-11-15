@@ -440,6 +440,14 @@ export function setQuantity(slug: string, qty: number) {
   );
 }
 
+/** The saved cart read outside React (the server-cart sync in real sign-in mode, `lib/cart-sync.ts`). */
+export const cartNow = cartSnapshot;
+
+/** Replace the whole cart (the server's cart after sign-in or on a new device). */
+export function replaceCart(lines: readonly CartLine[]): boolean {
+  return write(KEYS.cart, lines.slice(0, MAX_LINES));
+}
+
 /** Empty the cart (after an order paid online on the API). */
 export function clearCart(): boolean {
   return write(KEYS.cart, []);
