@@ -3337,6 +3337,7 @@
     "tpl_service_ready": "Vehicle ready",
     "tpl_service_bill_ready": "Bill ready",
     "tpl_service_completed": "Service complete",
+    "tpl_service_cancelled": "Service request cancelled",
     "tpl_quote_offer": "Bulk price offer",
     "tpl_quote_expiring": "Bulk price ends soon",
     "tpl_ticket_received": "Support request received",
@@ -3407,6 +3408,7 @@
       "title": "Service completed",
       "body": "{requestCode} is complete. Tell us how it went."
     },
+    "service_cancelled": { "title": "Service cancelled", "body": "{requestCode} was cancelled." },
     "quote_offer": { "title": "Quote ready", "body": "You have an offer for {quoteCode}." },
     "quote_expiring": {
       "title": "Quote expires soon",

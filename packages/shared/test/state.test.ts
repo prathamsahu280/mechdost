@@ -120,9 +120,23 @@ describe('service request state machine', () => {
     expect(serviceRequestMachine.can('approved', 'estimate_sent')).toBe(true);
     expect(serviceRequestMachine.can('estimate_sent', 'no_work_approved')).toBe(true);
   });
-  it('blocks cancellation once work starts', () => {
+  it('blocks customer and workshop cancellation once work starts; only staff may cancel a live job', () => {
     expect(serviceRequestMachine.canActor('confirmed', 'cancelled', 'customer')).toBe(true);
-    expect(serviceRequestMachine.can('in_progress', 'cancelled')).toBe(false);
+    for (const from of [
+      'vehicle_received',
+      'estimate_sent',
+      'approved',
+      'in_progress',
+      'ready',
+      'billed',
+      'paid',
+    ] as const) {
+      expect(serviceRequestMachine.canActor(from, 'cancelled', 'customer')).toBe(false);
+      expect(serviceRequestMachine.canActor(from, 'cancelled', 'workshop')).toBe(false);
+      expect(serviceRequestMachine.canActor(from, 'cancelled', 'system')).toBe(false);
+      expect(serviceRequestMachine.canActor(from, 'cancelled', 'admin')).toBe(true);
+    }
+    expect(serviceRequestMachine.can('completed', 'cancelled')).toBe(false);
   });
 });
 

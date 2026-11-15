@@ -457,6 +457,32 @@ export const EMAIL_CATALOGUE = {
       button: 'वर्कशॉप का रिव्यू लिखें',
     },
   }),
+  /** Staff cancelled a service request (spec 06 'Staff cancel'); a paid bill is refunded through the refunds queue. */
+  service_cancelled: def({
+    purpose: 'updates',
+    category: 'transactional',
+    audience: T.customer,
+    text: ['requestCode', 'reason', 'refundNote'],
+    params: ['requestCode', 'reason', 'refundNote'],
+    button: service,
+    sample: {
+      requestCode: 'SR-RPR-2026-7M2P9X',
+      reason: 'The workshop could not take your booking.',
+      refundNote: 'You have not paid anything for this request, so there is nothing to refund.',
+    },
+    en: {
+      subject: 'Your service request was cancelled ({requestCode})',
+      heading: 'Your service request was cancelled',
+      body: 'We cancelled your service request {requestCode}.\n\n{reason}\n\n{refundNote}\n\nYou can book another workshop any time.',
+      button: 'View your request',
+    },
+    hi: {
+      subject: 'आपका सर्विस अनुरोध रद्द किया गया ({requestCode})',
+      heading: 'आपका सर्विस अनुरोध रद्द किया गया',
+      body: 'हमने आपका सर्विस अनुरोध {requestCode} रद्द कर दिया है।\n\n{reason}\n\n{refundNote}\n\nआप कभी भी दूसरी वर्कशॉप बुक कर सकते हैं।',
+      button: 'अनुरोध देखें',
+    },
+  }),
   // ----- Bulk quotes -----------------------------------------------------------------------------------------
   /** MechDost sent (or revised) a bulk price offer (spec 19); the customer accepts it on the quote page. */
   quote_offer: def({

@@ -169,6 +169,13 @@ export const NOTICE_CATALOGUE = {
     text: ['requestCode'],
     link: service,
   }),
+  'service.cancelled': def({
+    category: T,
+    entity: 'service_request',
+    audience: 'customer',
+    text: ['requestCode'],
+    link: service,
+  }),
   'quote.offer': def({
     category: T,
     entity: 'quote',
@@ -306,6 +313,7 @@ export const NOTICE_FOR_EMAIL: Partial<Record<EmailTemplateKey, NoticeKind>> = {
   service_ready: 'service.ready',
   service_bill_ready: 'service.bill_ready',
   service_completed: 'service.completed',
+  service_cancelled: 'service.cancelled',
   quote_offer: 'quote.offer',
   quote_expiring: 'quote.expiring',
   ticket_received: 'ticket.received',

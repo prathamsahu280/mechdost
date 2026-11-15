@@ -21,7 +21,17 @@ import {
   type RefundStatus,
 } from '@mechdost/shared/state';
 import { decryptField, encryptField, type Keyring } from '../crypto';
-import { auditLog, orderGroups, orders, payments, refundEvents, refunds, webhookEvents } from '../schema';
+import {
+  auditLog,
+  orderGroups,
+  orders,
+  payments,
+  refundEvents,
+  refunds,
+  serviceBills,
+  serviceRequests,
+  webhookEvents,
+} from '../schema';
 import { cancelPendingOrderRewards } from './coins';
 import { decodeCursor, encodeCursor, pageSize } from './cursor';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from './errors';
@@ -100,16 +110,36 @@ async function recordRefundEvent(
 /** Group row, then payment row (lock order). Returns the payment as it is under the lock. */
 async function lockLedger(tx: Tx, paymentId: string) {
   const [ref] = await tx
-    .select({ groupId: payments.groupId })
+    .select({ groupId: payments.groupId, billId: payments.billId })
     .from(payments)
     .where(eq(payments.id, paymentId))
     .limit(1);
   if (!ref) throw new NotFoundError('Payment not found');
-  await tx
-    .select({ id: orderGroups.id })
-    .from(orderGroups)
-    .where(eq(orderGroups.id, ref.groupId))
-    .for('update');
+  if (ref.groupId)
+    await tx
+      .select({ id: orderGroups.id })
+      .from(orderGroups)
+      .where(eq(orderGroups.id, ref.groupId))
+      .for('update');
+  else if (ref.billId) {
+    // A service bill: the request row first (spec 14 lock order request -> bill -> payment), then the bill.
+    const [bill] = await tx
+      .select({ requestId: serviceBills.requestId })
+      .from(serviceBills)
+      .where(eq(serviceBills.id, ref.billId))
+      .limit(1);
+    if (bill)
+      await tx
+        .select({ id: serviceRequests.id })
+        .from(serviceRequests)
+        .where(eq(serviceRequests.id, bill.requestId))
+        .for('update');
+    await tx
+      .select({ id: serviceBills.id })
+      .from(serviceBills)
+      .where(eq(serviceBills.id, ref.billId))
+      .for('update');
+  }
   const [p] = await tx
     .select({
       id: payments.id,
@@ -147,9 +177,12 @@ async function releaseReservation(tx: Tx, paymentId: string, amountPaise: number
 interface NewRefund {
   /** The locked payment ledger for a Razorpay refund; null for a cash-on-delivery refund paid by hand. */
   payment: { id: string } | null;
-  groupId: string;
+  /** The checkout (order refunds), or null with `billId` set (service bill refunds): exactly one (CHECK). */
+  groupId: string | null;
+  billId?: string | null;
   destinationEnc?: string | null;
-  order: { id: string; code: string; cityId: string; userId: string };
+  /** `id` is null for a service bill refund; `code` is then the request code. */
+  order: { id: string | null; code: string; cityId: string; userId: string };
   amountPaise: number;
   source: RefundSource;
   reasonCode: RefundReason;
@@ -165,6 +198,7 @@ async function insertRequest(tx: Tx, input: NewRefund): Promise<{ id: string; fr
     .values({
       paymentId: input.payment?.id ?? null,
       groupId: input.groupId,
+      billId: input.billId ?? null,
       mode: input.payment ? 'source' : 'bank_upi',
       destinationEnc: input.destinationEnc ?? null,
       orderId: input.order.id,
@@ -423,18 +457,31 @@ async function loadInScope(tx: Tx, scope: CityScope, refundId: string) {
       amountPaise: refunds.amountPaise,
       requestedBy: refunds.requestedBy,
       createdAt: refunds.createdAt,
-      cityId: orderGroups.cityId,
-      userId: orderGroups.userId,
+      billId: refunds.billId,
+      cityId: sql<string>`coalesce(${orderGroups.cityId}, ${serviceRequests.cityId})`,
+      userId: sql<string>`coalesce(${orderGroups.userId}, ${serviceRequests.userId})`,
     })
     .from(refunds)
-    .innerJoin(orderGroups, eq(orderGroups.id, refunds.groupId))
+    .leftJoin(orderGroups, eq(orderGroups.id, refunds.groupId))
+    .leftJoin(serviceBills, eq(serviceBills.id, refunds.billId))
+    .leftJoin(serviceRequests, eq(serviceRequests.id, serviceBills.requestId))
     .where(eq(refunds.id, refundId))
     .limit(1);
   if (!r || (!scope.all && !scope.cityIds.includes(r.cityId))) throw new NotFoundError('Refund not found');
   return r;
 }
 
-async function orderCodeOf(tx: Tx, orderId: string | null): Promise<string> {
+/** The code the customer sees: the order's, or the request's for a service bill refund. */
+async function orderCodeOf(tx: Tx, orderId: string | null, billId: string | null = null): Promise<string> {
+  if (billId) {
+    const [b] = await tx
+      .select({ code: serviceRequests.code })
+      .from(serviceBills)
+      .innerJoin(serviceRequests, eq(serviceRequests.id, serviceBills.requestId))
+      .where(eq(serviceBills.id, billId))
+      .limit(1);
+    return b?.code ?? '';
+  }
   if (!orderId) return '';
   const [o] = await tx.select({ code: orders.code }).from(orders).where(eq(orders.id, orderId)).limit(1);
   return o?.code ?? '';
@@ -552,7 +599,7 @@ export async function rejectRefund(
       refundId: r.id,
       userId: r.userId,
       event: 'declined',
-      orderCode: await orderCodeOf(tx, r.orderId),
+      orderCode: await orderCodeOf(tx, r.orderId, r.billId),
       amountPaise: r.amountPaise,
     });
     return viewOf(tx, r.id, input.staffUserId);
@@ -1023,9 +1070,9 @@ export async function applyRazorpayRefund(
 /** A Razorpay refund is confirmed: the payment ledger and status follow, then the common tail. */
 async function settleProcessed(
   tx: Tx,
-  r: { id: string; orderId: string | null; amountPaise: number; createdAt: Date },
+  r: { id: string; orderId: string | null; billId?: string | null; amountPaise: number; createdAt: Date },
   from: RefundStatus,
-  payment: { id: string; groupId: string; status: string; amountPaise: number; refunded: number },
+  payment: { id: string; groupId: string | null; status: string; amountPaise: number; refunded: number },
 ): Promise<void> {
   const refunded = payment.refunded + r.amountPaise;
   await tx.update(payments).set({ refundedPaise: refunded }).where(eq(payments.id, payment.id));
@@ -1036,15 +1083,16 @@ async function settleProcessed(
       .update(payments)
       .set({ status: to })
       .where(and(eq(payments.id, payment.id), eq(payments.status, was)));
-    await tx
-      .update(orderGroups)
-      .set({ paymentStatus: to })
-      .where(
-        and(
-          eq(orderGroups.id, payment.groupId),
-          inArray(orderGroups.paymentStatus, ['paid', 'partially_refunded']),
-        ),
-      );
+    if (payment.groupId)
+      await tx
+        .update(orderGroups)
+        .set({ paymentStatus: to })
+        .where(
+          and(
+            eq(orderGroups.id, payment.groupId),
+            inArray(orderGroups.paymentStatus, ['paid', 'partially_refunded']),
+          ),
+        );
   }
   await afterProcessed(tx, r, from, sysActor, {});
 }
@@ -1052,7 +1100,7 @@ async function settleProcessed(
 /** Common to both modes once the money is confirmed gone: event, analytics, customer email, coin rewards (spec 20). */
 async function afterProcessed(
   tx: Tx,
-  r: { id: string; orderId: string | null; amountPaise: number; createdAt: Date },
+  r: { id: string; orderId: string | null; billId?: string | null; amountPaise: number; createdAt: Date },
   from: RefundStatus,
   actor: EventActor,
   payload: Record<string, string | number | null>,
@@ -1085,6 +1133,24 @@ async function afterProcessed(
     cityId: order?.cityId ?? null,
     props: { refundId: r.id, amountPaise: r.amountPaise, daysFromRequest: days },
   });
+  if (!order && r.billId) {
+    // A service bill refund: the customer is told once it is processed, with the request code (no order, no coins).
+    const [bill] = await tx
+      .select({ code: serviceRequests.code, userId: serviceRequests.userId })
+      .from(serviceBills)
+      .innerJoin(serviceRequests, eq(serviceRequests.id, serviceBills.requestId))
+      .where(eq(serviceBills.id, r.billId))
+      .limit(1);
+    if (bill)
+      await notifyCustomer(tx, {
+        refundId: r.id,
+        userId: bill.userId,
+        event: 'processed',
+        orderCode: bill.code,
+        amountPaise: r.amountPaise,
+      });
+    return;
+  }
   if (!order || !r.orderId) return;
   await notifyCustomer(tx, {
     refundId: r.id,
@@ -1170,13 +1236,15 @@ const slaHours = sql`coalesce(
   ${SLA.default})`;
 
 const FROM = sql`from refunds r
-  join order_groups g on g.id = r.group_id
+  left join order_groups g on g.id = r.group_id
+  left join service_bills sb on sb.id = r.bill_id
+  left join service_requests sr on sr.id = sb.request_id
   left join orders o on o.id = r.order_id
-  left join settings cs on cs.key = 'refunds.approval_sla_hours' and cs.city_id = g.city_id
+  left join settings cs on cs.key = 'refunds.approval_sla_hours' and cs.city_id = coalesce(g.city_id, sr.city_id)
   left join settings gs on gs.key = 'refunds.approval_sla_hours' and gs.city_id is null`;
 
 const SELECT = sql`select r.id, r.status, r.version, r.source, r.reason_code, r.reason as note, r.amount_paise,
-  o.code as order_code, g.code as group_code, g.payment_method, r.requested_by, r.approved_by, r.created_at,
+  o.code as order_code, coalesce(g.code, sr.code) as group_code, coalesce(g.payment_method, 'online') as payment_method, r.requested_by, r.approved_by, r.created_at,
   r.decided_at, r.settled_at, r.reject_reason_code, r.failure_code, r.provider_refund_id,
   r.mode, r.destination_enc, r.manual_reference, r.provider_reported_paise,
   (r.status = 'requested' and r.created_at < now() - make_interval(hours => ${slaHours})) as overdue,
@@ -1249,7 +1317,7 @@ const scopeSql = (scope: CityScope): SQL =>
     ? sql`true`
     : scope.cityIds.length === 0
       ? sql`false`
-      : sql`g.city_id in (${sql.join(
+      : sql`coalesce(g.city_id, sr.city_id) in (${sql.join(
           scope.cityIds.map((id) => sql`${id}::uuid`),
           sql`, `,
         )})`;
@@ -1438,4 +1506,57 @@ export async function customerRefundsByOrder(
     out.set(r.orderId, list);
   }
   return out;
+}
+
+const BILL_REFUNDABLE = ['paid', 'partially_refunded'];
+
+/**
+ * A service bill was paid online and the money must go back (the request was cancelled by staff, or the customer paid
+ * twice / after the bill was settled another way): one approval-first refund request for what the payment still holds
+ * (idempotent per bill and reason, so a retry or a second cancel never makes a second one). Locks request, bill and
+ * payment in that order; the caller already holds the request row. Returns the refund id, or null when nothing is held.
+ */
+export async function requestRefundForServiceBill(
+  tx: Tx,
+  input: { billId: string; paymentId?: string; source: 'service_cancelled' | 'duplicate_payment' },
+): Promise<string | null> {
+  const [bill] = await tx
+    .select({
+      requestId: serviceBills.requestId,
+      code: serviceRequests.code,
+      cityId: serviceRequests.cityId,
+      userId: serviceRequests.userId,
+    })
+    .from(serviceBills)
+    .innerJoin(serviceRequests, eq(serviceRequests.id, serviceBills.requestId))
+    .where(eq(serviceBills.id, input.billId))
+    .limit(1);
+  if (!bill) return null;
+  let paymentId = input.paymentId ?? null;
+  if (!paymentId) {
+    const [paid] = await tx
+      .select({ id: payments.id })
+      .from(payments)
+      .where(and(eq(payments.billId, input.billId), inArray(payments.status, BILL_REFUNDABLE)))
+      .limit(1);
+    paymentId = paid?.id ?? null;
+  }
+  if (!paymentId) return null;
+  const payment = await lockLedger(tx, paymentId);
+  const amount = payment.amountPaise - payment.reserved;
+  if (amount <= 0) return null;
+  const made = await insertRequest(tx, {
+    payment,
+    groupId: null,
+    billId: input.billId,
+    order: { id: null, code: bill.code, cityId: bill.cityId, userId: bill.userId },
+    amountPaise: amount,
+    source: input.source,
+    reasonCode: input.source,
+    note: null,
+    requestedBy: null,
+    // One per payment and reason: a repeated cancel, retry or late webhook finds this one instead of making another.
+    idemKey: `sys_svc_${input.source}_${paymentId}`,
+  });
+  return made.fresh ? made.id : null;
 }

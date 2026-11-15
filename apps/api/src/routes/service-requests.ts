@@ -18,7 +18,10 @@ import {
   MoveDecisionSchema,
   ProposalDecisionSchema,
 } from '@mechdost/shared/service-requests';
+import { BillCheckoutDto } from '@mechdost/shared/service-api';
 import type { SessionCache } from '../auth/session-cache';
+import { ApiError } from '../errors';
+import { ensureBillRazorpayOrder } from '../payments/service';
 import { authenticate, requireCustomerVerified, requirePermission } from '../middleware/auth';
 import { rateLimit, RATE_RULES } from '../middleware/rate-limit';
 import type { RateRule } from '../rate-limit/limiter';
@@ -162,6 +165,24 @@ const estimate = createRoute({
   responses: { 200: json(Changed, 'Decided'), ...conflict, ...errorResponses },
 });
 
+/** Starting an online payment of a bill: a few a minute is plenty (a double click reuses the same Razorpay order). */
+export const SERVICE_PAY_RATE: RateRule = { name: 'service_pay_user', limit: 20, windowSeconds: 600 };
+
+const pay = createRoute({
+  method: 'post',
+  path: '/service-requests/{code}/pay',
+  tags: ['services'],
+  summary:
+    'Start paying the bill online: returns the Razorpay order for the bill total (server amount; the same order on a repeat)',
+  security: [{ bearerAuth: [] }],
+  request: { params: z.object({ code: RequestCode }) },
+  responses: {
+    200: json(BillCheckoutDto.openapi('BillCheckout'), 'Razorpay order'),
+    ...conflict,
+    ...errorResponses,
+  },
+});
+
 export function serviceRequestRoutes(deps: AppDeps, cache: SessionCache) {
   const app = new OpenAPIHono<AppEnv>({ defaultHook: validationHook });
   // One pattern: '/service-requests/*' also matches '/service-requests'.
@@ -175,6 +196,11 @@ export function serviceRequestRoutes(deps: AppDeps, cache: SessionCache) {
     'POST',
     '/service-requests',
     rateLimit(deps.rateLimiter, SERVICE_CREATE_RATE, (c) => c.get('auth').user.id),
+  );
+  app.on(
+    'POST',
+    '/service-requests/:code/pay',
+    rateLimit(deps.rateLimiter, SERVICE_PAY_RATE, (c) => c.get('auth').user.id),
   );
   const me = (c: Context<AppEnv>) => c.get('auth').user.id;
 
@@ -249,6 +275,16 @@ export function serviceRequestRoutes(deps: AppDeps, cache: SessionCache) {
         expectedVersion: b.version,
       });
       return c.json(r, 200);
+    })
+    .openapi(pay, async (c) => {
+      const gateway = deps.razorpay;
+      if (!gateway)
+        throw new ApiError(422, 'PAYMENT_METHOD_UNAVAILABLE', 'Online payment is not available yet');
+      const handle = await ensureBillRazorpayOrder(deps.db, gateway, {
+        userId: me(c),
+        code: c.req.valid('param').code,
+      });
+      return c.json(handle, 200);
     })
     .openapi(estimate, async (c) => {
       const r = await decideEstimate(deps.db, {

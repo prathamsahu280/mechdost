@@ -7,6 +7,7 @@ import { ConflictError, NotFoundError } from './errors';
 import { queueOrderPlacedEmail, queuePaymentReceivedEmail } from './email-events';
 import { recordServerEvent } from './events';
 import { rowsOf } from './sql-rows';
+import { applyBillPayment } from './service-bill-payments';
 import type { Tx } from './orders';
 
 /**
@@ -28,7 +29,8 @@ export interface PaymentRow {
 
 const columns = {
   id: payments.id,
-  groupId: payments.groupId,
+  /** Order payments only (every caller filters on the group), so never null here; bill payments live in service-bill-payments. */
+  groupId: sql<string>`${payments.groupId}`,
   providerOrderId: payments.providerOrderId,
   amountPaise: payments.amountPaise,
   status: payments.status,
@@ -169,11 +171,14 @@ export async function applyRazorpayPayment(
   return db.transaction(async (tx) => {
     // Lock order: group row, then the payment row (the expiry job takes orders → group → payments; security review).
     const [ref] = await tx
-      .select({ groupId: payments.groupId })
+      .select({ groupId: payments.groupId, billId: payments.billId })
       .from(payments)
       .where(eq(payments.providerOrderId, fact.providerOrderId))
       .limit(1);
     if (!ref) return { outcome: 'unknown_order' as const };
+    // A workshop service bill (purpose `service_bill`): its own lock order and settlement, same table and webhook.
+    if (ref.billId) return applyBillPayment(tx, fact, ref.billId);
+    if (!ref.groupId) return { outcome: 'unknown_order' as const };
     const [group] = await tx
       .select({
         cityId: orderGroups.cityId,

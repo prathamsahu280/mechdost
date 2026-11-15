@@ -31,6 +31,8 @@ export * from './coupons';
 export * from './coupons-admin';
 export * from './coupons-shop';
 export * from './payments';
+export * from './service-bill-payments';
+export * from './service-ranking';
 export * from './refunds';
 export * from './customer-blocks';
 export * from './routing';

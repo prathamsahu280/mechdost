@@ -3337,6 +3337,7 @@
     "tpl_service_ready": "वाहन तैयार",
     "tpl_service_bill_ready": "बिल तैयार",
     "tpl_service_completed": "सर्विस पूरी हुई",
+    "tpl_service_cancelled": "सर्विस अनुरोध रद्द हुआ",
     "tpl_quote_offer": "थोक कीमत का ऑफ़र",
     "tpl_quote_expiring": "थोक कीमत जल्द खत्म",
     "tpl_ticket_received": "सहायता अनुरोध मिला",
@@ -3404,6 +3405,7 @@
     },
     "service_bill_ready": { "title": "बिल तैयार", "body": "{requestCode} का बिल तैयार है।" },
     "service_completed": { "title": "सर्विस पूरी हुई", "body": "{requestCode} पूरा हो गया। बताइए कैसा रहा।" },
+    "service_cancelled": { "title": "सर्विस रद्द हुई", "body": "{requestCode} रद्द कर दिया गया।" },
     "quote_offer": { "title": "कोटेशन तैयार", "body": "{quoteCode} के लिए आपके पास एक ऑफ़र है।" },
     "quote_expiring": {
       "title": "कोटेशन जल्द खत्म होगा",

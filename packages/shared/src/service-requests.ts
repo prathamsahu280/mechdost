@@ -12,6 +12,7 @@ import {
   SERVICE_DECLINE_REASONS,
   SERVICE_MODES,
   SERVICE_REJECT_REASONS,
+  SERVICE_STAFF_CANCEL_REASONS,
   VISIT_FEE_WAIVE_REASONS,
 } from './state';
 import { VEHICLE_TYPES } from './vehicles';
@@ -428,6 +429,11 @@ export const MarkPaidSchema = z
 
 /** Admin: send the request to an eligible workshop (from needs_routing, awaiting_workshop or proposed). */
 export const ReassignSchema = z.object({ workshopId: z.uuid(), version: z.number().int().min(1) }).strict();
+
+/** Staff cancel (permission `service:cancel`): a reason code from the closed list, no free text. */
+export const StaffCancelServiceRequestSchema = z
+  .object({ reasonCode: z.enum(SERVICE_STAFF_CANCEL_REASONS), version: z.number().int().min(1) })
+  .strict();
 
 export const RejectServiceRequestSchema = z
   .object({
