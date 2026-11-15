@@ -1,0 +1,40 @@
+api {'expected': 2074, 'fail': 73}
+   17 P1 hindi | English on /hi: Audit, engine, oil
+      rows: API-QUOTE-THREAD
+      e.g. API-QUOTE-THREAD-002 · 320px · dark · hi · customer · world=empty · /q :: main · English on /hi: Audit, engine, oil
+   15 P1 hindi | English on /hi: Tyres, Batteries
+      rows: API-ADM-COUPONS
+      e.g. API-ADM-COUPONS-002 · 320px · dark · hi · admin · world=empty · /admin :: main · English on /hi: Tyres, Batteries
+    8 P1 axe:definition-list | <dl> elements must only directly contain properly-ordered <dt> and <dd> groups, 
+      rows: API-QUOTE-THREAD
+      e.g. API-QUOTE-THREAD-001 · 320px · light · en · customer · world=empty · / :: dl · <dl> elements must only directly contain properly-ordered <dt> and <dd> groups, <script>, <template> or <div> elements (
+    7 P1 aligned | action rows in one row of cards are at different heights (spread N px)
+      rows: API-SHOP-PORTAL
+      e.g. API-SHOP-PORTAL-009 · 1024px · light · en · shop partner · world=empty :: li"Confirmed — will be shippedMD-RPR-2026-H" · action rows in one row of cards are at different heights (spread 12 px)
+    7 OTHER | Test timeout of 90000ms exceeded.
+      rows: API-ADM-POLICIES,API-ADM-SHOPS,API-ADM-STAFF
+      e.g. API-ADM-SHOPS-003 · 390px · light · hi · admin · world=empty · /admin/ :: Test timeout of 90000ms exceeded.
+    6 P1 hindi | English on /hi: Tyres
+      rows: API-ADM-COUPONS
+      e.g. API-ADM-COUPONS-010 · 1024px · dark · hi · admin · world=empty · /admi :: main · English on /hi: Tyres
+    4 P0 covered | cannot hover:       - <dialog open="" aria-label="काम की फ़ोटो" class="m-auto w-
+      rows: API-SVC-PHOTOS
+      e.g. API-SVC-PHOTOS-012 · 1280px · dark · hi · customer · world=empty · /se :: पहले की फ़ोटो 1 खोलें · cannot hover:       - <dialog open="" aria-label="काम की फ़ोटो" class="m-auto w-[min(96vw,900px)] max-w-none rounded-car
+    4 P1 hindi | English on /hi: sku, stock, active
+      rows: API-SHOP-TIER2
+      e.g. API-SHOP-TIER2-002 · 320px · dark · hi · shop partner · world=empty ·  :: main · English on /hi: sku, stock, active
+    3 P1 hindi | English on /hi: Plot, Near, Hanuman, Mandir, Shankar, Nagar, Main, Road
+      rows: API-ADM-REFUNDQ,API-ADM-SHOPS
+      e.g. API-ADM-REFUNDQ-090 · 1440px · dark · hi · admin · world=busy · /admin :: main · English on /hi: Plot, Near, Hanuman, Mandir, Shankar, Nagar, Main, Road
+    1 P1 hindi | English on /hi: Audit, User
+      rows: API-SHOP-STAFF
+      e.g. API-SHOP-STAFF-008 · 768px · dark · hi · shop partner · world=empty ·  :: main · English on /hi: Audit, User
+    1 P1 hindi | English on /hi: Engine, oil
+      rows: API-ADM-SHOPS
+      e.g. API-ADM-SHOPS-014 · 1440px · dark · hi · admin · world=empty · /admin/ :: main · English on /hi: Engine, oil
+    1 P0 api-mock | unmocked API call: GET /admin/notifications/templates
+      rows: API-NAV-ADMIN
+      e.g. API-NAV-ADMIN-040 · 390px · light · en · admin · world=empty · /admin/ :: mock API · unmocked API call: GET /admin/notifications/templates
+    1 P0 api-mock | unmocked API call: GET /admin/notifications/whatsapp
+      rows: API-NAV-ADMIN
+      e.g. API-NAV-ADMIN-040 · 390px · light · en · admin · world=empty · /admin/ :: mock API · unmocked API call: GET /admin/notifications/whatsapp

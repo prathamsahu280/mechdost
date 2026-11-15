@@ -1,0 +1,139 @@
+demo {'expected': 2180, 'fail': 14, 'flaky': 1}
+    2 P0 present | component not rendered (scope not found)
+      rows: CHR-ASSIST
+      e.g. CHR-ASSIST-002 · 320px · dark · hi · signed out · world=empty · / · op :: .assistant-launcher, [role="dialog"] · component not rendered (scope not found)
+    1 P1 tap | target N×N px, under N px with a neighbour inside N px
+      rows: CHR-FLOAT
+      e.g. CHR-FLOAT-020 · 768px · light · hi · signed out · world=empty · /shop/ :: a"product_bulk_quote" · target 199×18 px, under 24 px with a neighbour inside 24 px
+    1 P0 covered | control is painted over by span"Shops and workshops are verified by our "
+      rows: CHR-ASSIST
+      e.g. CHR-ASSIST-004 · 390px · dark · en · signed out · world=empty · / · op :: button"Ask MechDost" · control is painted over by span"Shops and workshops are verified by our "
+    1 P0 covered | control is painted over by li"✅Checked local partnersShops and worksho"
+      rows: CHR-ASSIST
+      e.g. CHR-ASSIST-005 · 480px · light · en · signed out · world=empty · / · o :: button"Ask MechDost" · control is painted over by li"✅Checked local partnersShops and worksho"
+    1 P0 covered | control is painted over by div"वाहन की ज़रूरी चीज़ें ख़रीदेंआपके वाहन क" in "आपक
+      rows: CHR-ASSIST
+      e.g. CHR-ASSIST-008 · 768px · dark · hi · signed out · world=empty · / · op :: button"MechDost से पूछें" · control is painted over by div"वाहन की ज़रूरी चीज़ें ख़रीदेंआपके वाहन क" in "आपके वाहन को क्या चाहिए?"
+    1 P0 covered | control is painted over by div"बेस्टसेलरवाहन का प्रकार: NW" in "Amaron कार स्टार
+      rows: CHR-ASSIST
+      e.g. CHR-ASSIST-012 · 1280px · dark · hi · signed out · world=empty · / · o :: button"MechDost से पूछें" · control is painted over by div"बेस्टसेलरवाहन का प्रकार: 4W" in "Amaron कार स्टार्टर बैटरी 45 Ah"
+    1 P0 covered | control is painted over by a"AmaronBAT-NW-NAH" in "Amaron कार स्टार्टर बैटरी N A
+      rows: CHR-ASSIST
+      e.g. CHR-ASSIST-014 · 1440px · dark · hi · signed out · world=empty · / · o :: button"MechDost से पूछें" · control is painted over by a"AmaronBAT-4W-45AH" in "Amaron कार स्टार्टर बैटरी 45 Ah"
+    1 P1 covered | text is painted over by a"AmaronBAT-NW-NAH" in "Amaron कार स्टार्टर बैटरी N Ah"
+      rows: CHR-ASSIST
+      e.g. CHR-ASSIST-014 · 1440px · dark · hi · signed out · world=empty · / · o :: span"MechDost से पूछें" · text is painted over by a"AmaronBAT-4W-45AH" in "Amaron कार स्टार्टर बैटरी 45 Ah"
+    1 P0 covered | control is painted over by section"हमारे प्रोडक्ट देखेंदेखने के लिए पिन कोड"
+      rows: CHR-ASSIST
+      e.g. CHR-ASSIST-016 · 1920px · dark · hi · signed out · world=empty · / · o :: button"MechDost से पूछें" · control is painted over by section"हमारे प्रोडक्ट देखेंदेखने के लिए पिन कोड"
+    1 P1 hindi | English on /hi: BAT
+      rows: SHOP-FILTERS
+      e.g. SHOP-FILTERS-010 · 1024px · dark · hi · signed out · world=empty · /sh :: main · English on /hi: BAT
+    1 P1 inside | control sticks out of its container li"CastrolActiv NT NWN N ml₹N,N,N ea" by N p
+      rows: CART-LINES
+      e.g. CART-LINES-017 @core · 320px · light · en · signed out · world=empty · :: button"Remove" · control sticks out of its container li"CastrolActiv 4T 20W40 900 ml₹1,00,000 ea" by 6 px
+    1 P1 inside | control sticks out of its container li"MotulN NT NWN N L₹N,N,N eachN₹N," by N px
+      rows: CART-LINES
+      e.g. CART-LINES-017 @core · 320px · light · en · signed out · world=empty · :: button"Remove" · control sticks out of its container li"Motul3100 4T 10W30 1 L₹1,00,000 each2₹1," by 6 px
+    1 P1 inside | control sticks out of its container li"ShellAdvance AXN NWN N L₹N,N,N each" by N
+      rows: CART-LINES
+      e.g. CART-LINES-017 @core · 320px · light · en · signed out · world=empty · :: button"Remove" · control sticks out of its container li"ShellAdvance AX7 10W30 1 L₹1,00,000 each" by 6 px
+    1 P1 inside | control sticks out of its container li"HPRacerN NWN N ml₹N,N,N eachN₹N,N" by N p
+      rows: CART-LINES
+      e.g. CART-LINES-017 @core · 320px · light · en · signed out · world=empty · :: button"Remove" · control sticks out of its container li"HPRacer4 20W40 900 ml₹1,00,000 each1₹1,0" by 6 px
+    1 P1 inside | control sticks out of its container li"ExideXLTZNA NF+NP₹N,N,N eachN₹N,N," by N 
+      rows: CART-LINES
+      e.g. CART-LINES-017 @core · 320px · light · en · signed out · world=empty · :: button"Remove" · control sticks out of its container li"ExideXLTZ4A 24F+24P₹1,00,000 each2₹1,00," by 6 px
+    1 P1 inside | control sticks out of its container li"MRFTubeless scooter tyre N/N-N₹N,N,N" by 
+      rows: CART-LINES
+      e.g. CART-LINES-017 @core · 320px · light · en · signed out · world=empty · :: button"Remove" · control sticks out of its container li"MRFTubeless scooter tyre 90/90-12₹1,00,0" by 6 px
+    1 P1 inside | control sticks out of its container li"CEATPassenger car tyre N/N RN₹N,N,N" by N
+      rows: CART-LINES
+      e.g. CART-LINES-017 @core · 320px · light · en · signed out · world=empty · :: button"Remove" · control sticks out of its container li"CEATPassenger car tyre 185/65 R15₹1,00,0" by 6 px
+    1 P1 inside | control sticks out of its container li"AmaronAutomotive starter battery N Ah₹N" 
+      rows: CART-LINES
+      e.g. CART-LINES-017 @core · 320px · light · en · signed out · world=empty · :: button"Remove" · control sticks out of its container li"AmaronAutomotive starter battery 45 Ah₹1" by 6 px
+    1 P1 inside | control sticks out of its container li"ExideHeavy-duty vehicle battery N Ah₹N," 
+      rows: CART-LINES
+      e.g. CART-LINES-017 @core · 320px · light · en · signed out · world=empty · :: button"Remove" · control sticks out of its container li"ExideHeavy-duty vehicle battery 90 Ah₹1," by 6 px
+    1 P1 inside | control sticks out of its container li"Shell HelixFully synthetic engine oil NW"
+      rows: CART-LINES
+      e.g. CART-LINES-017 @core · 320px · light · en · signed out · world=empty · :: button"Remove" · control sticks out of its container li"Shell HelixFully synthetic engine oil 5W" by 6 px
+    1 P1 inside | control sticks out of its container li"BoschEngine oil filter₹N,N,N eachN₹N," by
+      rows: CART-LINES
+      e.g. CART-LINES-017 @core · 320px · light · en · signed out · world=empty · :: button"Remove" · control sticks out of its container li"BoschEngine oil filter₹1,00,000 each2₹1," by 6 px
+    1 P1 inside | control sticks out of its container li"Mann-FilterDiesel fuel filter₹N,N,N e" by
+      rows: CART-LINES
+      e.g. CART-LINES-017 @core · 320px · light · en · signed out · world=empty · :: button"Remove" · control sticks out of its container li"Mann-FilterDiesel fuel filter₹1,00,000 e" by 6 px
+    1 P1 inside | control sticks out of its container li"SKFFront wheel bearing kit₹N,N,N each" by
+      rows: CART-LINES
+      e.g. CART-LINES-017 @core · 320px · light · en · signed out · world=empty · :: button"Remove" · control sticks out of its container li"SKFFront wheel bearing kit₹1,00,000 each" by 6 px
+    1 P1 inside | control sticks out of its container li"NBCWheel bearing N-NRS₹N,N,N eachN" by N 
+      rows: CART-LINES
+      e.g. CART-LINES-017 @core · 320px · light · en · signed out · world=empty · :: button"Remove" · control sticks out of its container li"NBCWheel bearing 6301-2RS₹1,00,000 each2" by 6 px
+    1 P1 inside | control sticks out of its container li"BremboFront brake pad set₹N,N,N eachN" by
+      rows: CART-LINES
+      e.g. CART-LINES-017 @core · 320px · light · en · signed out · world=empty · :: button"Remove" · control sticks out of its container li"BremboFront brake pad set₹1,00,000 each3" by 6 px
+    1 P1 inside | control sticks out of its container li"RolonChain sprocket kit₹N,N,N eachN₹N" by
+      rows: CART-LINES
+      e.g. CART-LINES-017 @core · 320px · light · en · signed out · world=empty · :: button"Remove" · control sticks out of its container li"RolonChain sprocket kit₹1,00,000 each1₹1" by 6 px
+    1 P1 inside | control sticks out of its container li"NGKIridium spark plug₹N,N,N eachN₹N,N" by
+      rows: CART-LINES
+      e.g. CART-LINES-017 @core · 320px · light · en · signed out · world=empty · :: button"Remove" · control sticks out of its container li"NGKIridium spark plug₹1,00,000 each2₹1,0" by 6 px
+    1 P1 inside | control sticks out of its container li"ElegantAll-weather car floor mat set₹N,N"
+      rows: CART-LINES
+      e.g. CART-LINES-017 @core · 320px · light · en · signed out · world=empty · :: button"Remove" · control sticks out of its container li"ElegantAll-weather car floor mat set₹1,0" by 6 px
+    1 P1 inside | control sticks out of its container li"AutoRightTwo-wheeler protective cover₹N,"
+      rows: CART-LINES
+      e.g. CART-LINES-017 @core · 320px · light · en · signed out · world=empty · :: button"Remove" · control sticks out of its container li"AutoRightTwo-wheeler protective cover₹1," by 6 px
+    1 P1 inside | control sticks out of its container li"TapariaWorkshop socket tool set N pc₹N," 
+      rows: CART-LINES
+      e.g. CART-LINES-017 @core · 320px · light · en · signed out · world=empty · :: button"Remove" · control sticks out of its container li"TapariaWorkshop socket tool set 46 pc₹1," by 6 px
+    1 P1 inside | while hovering "Activ NT NWN N ml": control sticks out of its container li"Castr
+      rows: CART-LINES
+      e.g. CART-LINES-017 @core · 320px · light · en · signed out · world=empty · :: button"Remove" · while hovering "Activ 4T 20W40 900 ml": control sticks out of its container li"CastrolActiv 4T 20W40 900 ml₹1,00,000 ea"
+    1 P1 inside | while hovering "Remove": control sticks out of its container li"CastrolActiv NT 
+      rows: CART-LINES
+      e.g. CART-LINES-017 @core · 320px · light · en · signed out · world=empty · :: button"Remove" · while hovering "Remove": control sticks out of its container li"CastrolActiv 4T 20W40 900 ml₹1,00,000 ea" by 6 px
+    1 P1 inside | while hovering "N NT NWN N L": control sticks out of its container li"MotulN NT 
+      rows: CART-LINES
+      e.g. CART-LINES-017 @core · 320px · light · en · signed out · world=empty · :: button"Remove" · while hovering "3100 4T 10W30 1 L": control sticks out of its container li"Motul3100 4T 10W30 1 L₹1,00,000 each2₹1," by 
+    1 P1 inside | while hovering "Remove": control sticks out of its container li"MotulN NT NWN N 
+      rows: CART-LINES
+      e.g. CART-LINES-017 @core · 320px · light · en · signed out · world=empty · :: button"Remove" · while hovering "Remove": control sticks out of its container li"Motul3100 4T 10W30 1 L₹1,00,000 each2₹1," by 6 px
+    1 P1 inside | while hovering "Advance AXN NWN N L": control sticks out of its container li"She
+      rows: CART-LINES
+      e.g. CART-LINES-017 @core · 320px · light · en · signed out · world=empty · :: button"Remove" · while hovering "Advance AX7 10W30 1 L": control sticks out of its container li"ShellAdvance AX7 10W30 1 L₹1,00,000 each"
+    1 P1 inside | while hovering "Remove": control sticks out of its container li"ShellAdvance AXN
+      rows: CART-LINES
+      e.g. CART-LINES-017 @core · 320px · light · en · signed out · world=empty · :: button"Remove" · while hovering "Remove": control sticks out of its container li"ShellAdvance AX7 10W30 1 L₹1,00,000 each" by 6 px
+    1 P1 inside | while focused on a"Activ NT NWN N ml": control sticks out of its container li"Ca
+      rows: CART-LINES
+      e.g. CART-LINES-017 @core · 320px · light · en · signed out · world=empty · :: button"Remove" · while focused on a"Activ 4T 20W40 900 ml": control sticks out of its container li"CastrolActiv 4T 20W40 900 ml₹1,00,000 
+    1 P1 inside | while focused on button"Remove": control sticks out of its container li"CastrolA
+      rows: CART-LINES
+      e.g. CART-LINES-017 @core · 320px · light · en · signed out · world=empty · :: button"Remove" · while focused on button"Remove": control sticks out of its container li"CastrolActiv 4T 20W40 900 ml₹1,00,000 ea" by 6 p
+    1 P1 inside | while focused on a"N NT NWN N L": control sticks out of its container li"MotulN 
+      rows: CART-LINES
+      e.g. CART-LINES-017 @core · 320px · light · en · signed out · world=empty · :: button"Remove" · while focused on a"3100 4T 10W30 1 L": control sticks out of its container li"Motul3100 4T 10W30 1 L₹1,00,000 each2₹1," 
+    1 P1 inside | control sticks out of its container li"Tata Power EZPortable EV charging cable "
+      rows: CART-LINES
+      e.g. CART-LINES-019 @core · 320px · light · en · signed out · world=empty · :: button"Remove" · control sticks out of its container li"Tata Power EZPortable EV charging cable " by 13 px
+    1 P1 inside | while hovering "Portable EV charging cable N ": control sticks out of its contai
+      rows: CART-LINES
+      e.g. CART-LINES-019 @core · 320px · light · en · signed out · world=empty · :: button"Remove" · while hovering "Portable EV charging cable 15 ": control sticks out of its container li"Tata Power EZPortable EV chargin
+    1 P1 inside | while hovering "Remove": control sticks out of its container li"Tata Power EZPor
+      rows: CART-LINES
+      e.g. CART-LINES-019 @core · 320px · light · en · signed out · world=empty · :: button"Remove" · while hovering "Remove": control sticks out of its container li"Tata Power EZPortable EV charging cable " by 13 px
+    1 P1 inside | while focused on a"Portable EV charging cable N A": control sticks out of its co
+      rows: CART-LINES
+      e.g. CART-LINES-019 @core · 320px · light · en · signed out · world=empty · :: button"Remove" · while focused on a"Portable EV charging cable 15 A": control sticks out of its container li"Tata Power EZPortable EV cha
+    1 P1 inside | while focused on button"Remove": control sticks out of its container li"Tata Pow
+      rows: CART-LINES
+      e.g. CART-LINES-019 @core · 320px · light · en · signed out · world=empty · :: button"Remove" · while focused on button"Remove": control sticks out of its container li"Tata Power EZPortable EV charging cable " by 13 
+    1 P1 axe:color-contrast | Elements must meet minimum color contrast ratio thresholds (N nodes)
+      rows: SR-VIEW
+      e.g. SR-VIEW-005 · 480px · light · en · customer · world=busy · /service/SR :: a[data-track="labour_redo_claim_open"] · Elements must meet minimum color contrast ratio thresholds (1 nodes)
+    1 P1 axe:definition-list | <dl> elements must only directly contain properly-ordered <dt> and <dd> groups, 
+      rows: QT-PAGES
+      e.g. QT-PAGES-005 · 480px · light · en · customer · world=busy · /quotes/QT :: dl · <dl> elements must only directly contain properly-ordered <dt> and <dd> groups, <script>, <template> or <div> elements (
