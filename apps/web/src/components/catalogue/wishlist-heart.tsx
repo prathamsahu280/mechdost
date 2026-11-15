@@ -1,8 +1,7 @@
 'use client';
 
 import { Heart } from 'lucide-react';
-import { useLocale } from 'next-intl';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { useSession } from '@/demo/session-state';
 import { track } from '@/lib/analytics';
@@ -39,7 +38,10 @@ export default function WishlistHeart({
   labels: WishlistLabels;
   source: 'card' | 'page';
 }) {
-  const locale = useLocale();
+  // From the path, not next-intl: the heart also sits on cards outside the shop's intl provider (the home page), where
+  // useLocale() throws while prerendering (real-sign-in build 2026-11-15).
+  const pathname = usePathname();
+  const locale = pathname === '/hi' || pathname.startsWith('/hi/') ? 'hi' : 'en';
   const router = useRouter();
   const signedIn = useSession() !== null;
   const { ready, slugs } = useWishlistState();

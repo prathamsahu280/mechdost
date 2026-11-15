@@ -46,3 +46,12 @@ describe('cart page suggestions stay client-free', () => {
     for (const s of [cart, core]) expect(s).not.toMatch(/product-card'/);
   });
 });
+
+describe('card islands work outside the shop intl provider', () => {
+  it('the wishlist heart reads the locale from the path, not next-intl (the home page has no client provider)', () => {
+    // Real-sign-in build 2026-11-15: prerendering "/en" failed at useLocale() in wishlist-heart.tsx.
+    const heart = src('components/catalogue/wishlist-heart.tsx');
+    expect(heart).not.toMatch(/from 'next-intl'/);
+    expect(heart).toMatch(/usePathname/);
+  });
+});
