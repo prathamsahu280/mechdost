@@ -50,7 +50,9 @@ describe('Firebase messaging loads only after "Turn on"', () => {
 
   it('the bell shell loads its chunk dynamically and imports no API or Firebase code itself', () => {
     const shell = all.find((f) => f.path === 'components/notices/bell.tsx')?.text ?? '';
-    expect(shell).toMatch(/dynamic\(\(\) => import\('\.\/bell-controller'\)/);
+    expect(shell).toMatch(/import\('\.\/bell-controller'\)/);
+    // No `next/dynamic` in the header path: its loader runtime cost every page 1.5 KB gz (A/B build 2026-11-15).
+    expect(shell).not.toMatch(/from\s+['"]next\/dynamic['"]/);
     expect(shell).not.toMatch(/from\s+['"]@\/lib\/(notices-api|push|auth\/firebase)/);
     expect(shell).not.toMatch(/@firebase|firebase\//);
   });

@@ -17,7 +17,7 @@ export const ORDER_STATES = [
 ] as const;
 export type OrderStatus = (typeof ORDER_STATES)[number];
 
-export const orderMachine = defineMachine(
+export const orderMachine = /* @__PURE__ */ defineMachine(
   'order',
   ORDER_STATES,
   ['delivered', 'cancelled', 'rejected'],
@@ -156,7 +156,7 @@ export const ASSIGNMENT_STATES = [
 ] as const;
 export type AssignmentStatus = (typeof ASSIGNMENT_STATES)[number];
 
-export const assignmentMachine = defineMachine(
+export const assignmentMachine = /* @__PURE__ */ defineMachine(
   'assignment',
   ASSIGNMENT_STATES,
   ['declined', 'expired', 'withdrawn', 'given_up'],
@@ -190,7 +190,7 @@ export const SERVICE_REQUEST_STATES = [
 ] as const;
 export type ServiceRequestStatus = (typeof SERVICE_REQUEST_STATES)[number];
 
-export const serviceRequestMachine = defineMachine(
+export const serviceRequestMachine = /* @__PURE__ */ defineMachine(
   'service_request',
   SERVICE_REQUEST_STATES,
   ['completed', 'cancelled', 'rejected'],
@@ -258,7 +258,7 @@ export const PAYMENT_STATES = [
 ] as const;
 export type PaymentStatus = (typeof PAYMENT_STATES)[number];
 
-export const paymentMachine = defineMachine(
+export const paymentMachine = /* @__PURE__ */ defineMachine(
   'payment',
   PAYMENT_STATES,
   ['refunded', 'expired'],
@@ -286,7 +286,7 @@ export const paymentMachine = defineMachine(
 export const TICKET_STATES = ['open', 'in_review', 'awaiting_customer', 'resolved', 'closed'] as const;
 export type TicketStatus = (typeof TICKET_STATES)[number];
 
-export const ticketMachine = defineMachine(
+export const ticketMachine = /* @__PURE__ */ defineMachine(
   'ticket',
   TICKET_STATES,
   ['closed'],
@@ -311,7 +311,7 @@ export const ticketMachine = defineMachine(
 export const PRODUCT_STATES = ['draft', 'submitted', 'live', 'rejected', 'archived'] as const;
 export type ProductStatus = (typeof PRODUCT_STATES)[number];
 
-export const productMachine = defineMachine(
+export const productMachine = /* @__PURE__ */ defineMachine(
   'product',
   PRODUCT_STATES,
   [],
@@ -330,7 +330,7 @@ export const productMachine = defineMachine(
 export const APPLICATION_STATES = ['new', 'in_review', 'approved', 'rejected'] as const;
 export type ApplicationStatus = (typeof APPLICATION_STATES)[number];
 
-export const applicationMachine = defineMachine(
+export const applicationMachine = /* @__PURE__ */ defineMachine(
   'partner_application',
   APPLICATION_STATES,
   ['approved', 'rejected'],
@@ -347,7 +347,7 @@ export const applicationMachine = defineMachine(
 export const INVITE_STATES = ['sent', 'used', 'expired', 'revoked'] as const;
 export type InviteStatus = (typeof INVITE_STATES)[number];
 
-export const inviteMachine = defineMachine(
+export const inviteMachine = /* @__PURE__ */ defineMachine(
   'partner_invite',
   INVITE_STATES,
   ['used', 'expired', 'revoked'],
@@ -362,7 +362,7 @@ export const inviteMachine = defineMachine(
 export const PRICE_REQUEST_STATES = ['pending', 'approved', 'rejected', 'withdrawn', 'superseded'] as const;
 export type PriceRequestStatus = (typeof PRICE_REQUEST_STATES)[number];
 
-export const priceRequestMachine = defineMachine(
+export const priceRequestMachine = /* @__PURE__ */ defineMachine(
   'price_request',
   PRICE_REQUEST_STATES,
   ['approved', 'rejected', 'withdrawn', 'superseded'],
@@ -390,7 +390,7 @@ export const QUOTE_STATES = [
 ] as const;
 export type QuoteStatus = (typeof QUOTE_STATES)[number];
 
-export const quoteMachine = defineMachine(
+export const quoteMachine = /* @__PURE__ */ defineMachine(
   'quote',
   QUOTE_STATES,
   ['accepted', 'declined', 'expired', 'withdrawn'],
@@ -463,7 +463,7 @@ export const REFUND_STATES = [
 ] as const;
 export type RefundStatus = (typeof REFUND_STATES)[number];
 
-export const refundMachine = defineMachine(
+export const refundMachine = /* @__PURE__ */ defineMachine(
   'refund',
   REFUND_STATES,
   ['rejected', 'processed'],

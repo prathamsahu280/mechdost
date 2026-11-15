@@ -73,3 +73,12 @@ Lighthouse CI on home/shop/product/workshop pages per PR; k6 load test (500 VU b
 ## Budget note: job photos (2026-11-15)
 
 Pictures are re-encoded once at upload (WebP 1600 and 480 px) and served as-is: `next/image` runs `unoptimized` with fixed-size boxes (no CLS), lazy-loaded, from the API (`Cache-Control: private, max-age=300`). The panel, strip and gallery are `React.lazy` chunks loaded only on the workshop portal, the request page and the workshop page; nothing in the header, layout or shop pages imports them (a unit test asserts it). Upload cost sits in the API (sharp, two decodes at a time per instance), not in the browser.
+
+## Budget incident 2026-11-15
+
+The bell + push merge pushed `/shop`, `/cart` and `/workshops` over 180 KB gz (181.3). Root cause found by local A/B
+builds: the header bell's module-level `next/dynamic` (+1.5 KB on every page) and unannotated module-level
+`defineMachine(...)` calls in `@mechdost/shared/state`. Fixed with a plain `import()` for the bell chunk and
+`/* @__PURE__ */` on every machine: `/shop` 179.4, `/cart` 179.6, `/workshops` 178.6. Rules: no `next/dynamic` in modules
+the header/layout import; module-level factory calls in shared packages are marked pure; headroom is ~0.5 KB, so any
+change to always-loaded code is measured with a local build (`node apps/web/scripts/measure-js.mjs`) before merge.
