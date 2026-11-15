@@ -361,7 +361,7 @@ function assertCanApprove(
     );
 }
 
-async function saveMenu(tx: Tx, workshopId: string, menu: readonly MenuItemInput[]) {
+export async function saveMenu(tx: Tx, workshopId: string, menu: readonly MenuItemInput[]) {
   const keys = menu.map((m) => m.key);
   if (new Set(keys).size !== keys.length)
     throw new ValidationError('Menu keys must be unique', 'MENU_KEY_DUPLICATE');

@@ -956,6 +956,7 @@ function analyticsMocks(): Mock[] {
                     confirmed: 22,
                     completed: 18,
                     cancelled: 3,
+                    expired: 1,
                     medianMinutesToPropose: 25,
                   },
                 ]

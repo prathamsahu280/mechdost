@@ -2,6 +2,7 @@ import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import type { Context } from 'hono';
 import {
   cancelMyServiceRequest,
+  rescheduleMyServiceRequest,
   createServiceRequest,
   decideEstimate,
   decideMove,
@@ -11,6 +12,7 @@ import {
 } from '@mechdost/db/repo';
 import {
   CancelServiceRequestSchema,
+  RescheduleServiceRequestSchema,
   CreateServiceRequestSchema,
   EstimateDecisionSchema,
   MoveDecisionSchema,
@@ -132,6 +134,20 @@ const cancel = createRoute({
   responses: { 200: json(Changed, 'Cancelled'), ...conflict, ...errorResponses },
 });
 
+const reschedule = createRoute({
+  method: 'post',
+  path: '/service-requests/{code}/reschedule',
+  tags: ['services'],
+  summary:
+    'Move the booking to another date and part of the day before the vehicle arrives (at most twice); the workshop answers the new time',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: z.object({ code: RequestCode }),
+    body: body(RescheduleServiceRequestSchema.openapi('RescheduleServiceRequest')),
+  },
+  responses: { 200: json(Changed, 'Moved'), ...conflict, ...errorResponses },
+});
+
 const estimate = createRoute({
   method: 'post',
   path: '/service-requests/{code}/estimate',
@@ -219,6 +235,17 @@ export function serviceRequestRoutes(deps: AppDeps, cache: SessionCache) {
         userId: me(c),
         code: c.req.valid('param').code,
         reasonCode: b.reasonCode,
+        expectedVersion: b.version,
+      });
+      return c.json(r, 200);
+    })
+    .openapi(reschedule, async (c) => {
+      const b = c.req.valid('json');
+      const r = await rescheduleMyServiceRequest(deps.db, {
+        userId: me(c),
+        code: c.req.valid('param').code,
+        date: b.date,
+        slot: b.slot,
         expectedVersion: b.version,
       });
       return c.json(r, 200);

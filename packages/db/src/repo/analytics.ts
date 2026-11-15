@@ -245,6 +245,8 @@ async function workshopPerformance(db: Tx, cities: AnalyticsCities, b: Bounds) {
         count(*) filter (where sr.status in ${list(BOOKED)})::int as confirmed,
         count(*) filter (where sr.status in ('paid', 'completed'))::int as completed,
         count(*) filter (where sr.status in ('cancelled', 'rejected'))::int as cancelled,
+        (select count(*)::int from service_events ev where ev.to_status = 'needs_routing'
+          and ev.payload ->> 'expiredWorkshopId' = w.id::text and ${between('ev.created_at', b)}) as expired,
         percentile_cont(0.5) within group (order by extract(epoch from (fp.first_at - sr.created_at)) / 60) as median_m
       from service_requests sr
       join workshops w on w.id = sr.workshop_id
@@ -263,6 +265,7 @@ async function workshopPerformance(db: Tx, cities: AnalyticsCities, b: Bounds) {
     confirmed: num(r.confirmed),
     completed: num(r.completed),
     cancelled: num(r.cancelled),
+    expired: num(r.expired),
     medianMinutesToPropose: medianInt(r.median_m),
   }));
 }

@@ -3,16 +3,22 @@ import type { Context } from 'hono';
 import {
   advanceJob,
   billJob,
+  cancelWorkshopChange,
   declineRequest,
   getWorkshopHomeSettings,
+  getWorkshopProfiles,
   getWorkshopRequest,
+  listSlots,
   listWorkshopRequests,
   markJobPaid,
   markVehicleReceived,
   proposeMove,
   proposeSlot,
+  requestWorkshopChange,
   returnVehicle,
   saveWorkshopHomeSettings,
+  saveWorkshopProfile,
+  setSlotCapacity,
   sendEstimate,
   waiveVisitFee,
   workshopIdsFrom,
@@ -24,10 +30,13 @@ import {
   MoveProposalSchema,
   ProposeSchema,
   SendEstimateSchema,
+  SlotCapacitySchema,
   VehicleReceivedSchema,
   WaiveVisitFeeSchema,
   VersionSchema,
+  WorkshopChangeSchema,
   WorkshopDeclineSchema,
+  WorkshopSelfEditSchema,
 } from '@mechdost/shared/service-requests';
 import type { SessionCache } from '../auth/session-cache';
 import { authenticate, requirePermission, requireVerified } from '../middleware/auth';
@@ -57,6 +66,8 @@ import {
  * carries the request `version` (compare-and-set). Another workshop's code is 404.
  */
 /** Arrival-code guesses: the database locks the code after 5 wrong tries; this also slows scripted tries. */
+/** Filing a pin or GSTIN change for staff review: rare, so a small allowance. */
+export const CHANGE_RATE: RateRule = { name: 'workshop_change_user', limit: 10, windowSeconds: 3600 };
 export const ARRIVAL_RATE: RateRule = { name: 'workshop_arrival_user', limit: 20, windowSeconds: 600 };
 
 const params = { params: z.object({ code: RequestCode }) };
@@ -206,6 +217,140 @@ const homeSave = createRoute({
   },
   responses: { 200: json(z.object({ version: z.number().int() }), 'Saved'), ...conflict, ...errorResponses },
 });
+const WorkshopIdParam = z.object({
+  workshopId: z.uuid().openapi({ param: { name: 'workshopId', in: 'path' } }),
+});
+const Profile = z.object({
+  workshopId: z.string(),
+  slug: z.string(),
+  name: z.string(),
+  nameHi: z.string().nullable(),
+  addressLine: z.string(),
+  addressLineHi: z.string().nullable(),
+  area: z.string(),
+  areaHi: z.string().nullable(),
+  pincode: z.string(),
+  lat: z.number(),
+  lng: z.number(),
+  phone: z.string().nullable(),
+  hours: z.object({ open: z.string(), close: z.string(), days: z.array(z.number().int()) }),
+  gstin: z.string().nullable(),
+  locationVerified: z.boolean(),
+  published: z.boolean(),
+  status: z.enum(['approved', 'paused', 'suspended']),
+  busy: z.boolean(),
+  slotCapacity: z.number().int(),
+  version: z.number().int(),
+  missingHindi: z.array(z.string()),
+  menu: z.array(
+    z.object({
+      key: z.string(),
+      title: z.string(),
+      titleHi: z.string().nullable(),
+      included: z.string().nullable(),
+      includedHi: z.string().nullable(),
+      lowPaise: z.number().int(),
+      highPaise: z.number().int(),
+      minMinutes: z.number().int(),
+      maxMinutes: z.number().int(),
+      vehicleType: z.enum(['2W', '3W', '4W']).nullable(),
+      active: z.boolean(),
+      homeAvailable: z.boolean(),
+    }),
+  ),
+  pending: z.array(
+    z.object({
+      id: z.string(),
+      kind: z.enum(['location', 'gstin']),
+      payload: z.record(z.string(), z.unknown()),
+      createdAt: z.string(),
+    }),
+  ),
+});
+const profileList = createRoute({
+  method: 'get',
+  path: '/workshop/profile',
+  tags: ['workshop'],
+  summary:
+    'My workshop: the profile, hours, menu ranges, busy mode and waiting pin or GSTIN requests of your workshops',
+  security: sec,
+  responses: { 200: json(z.object({ workshops: z.array(Profile) }), 'Profiles'), ...errorResponses },
+});
+const profileSave = createRoute({
+  method: 'put',
+  path: '/workshop/profile/{workshopId}',
+  tags: ['workshop'],
+  summary:
+    'Save profile text (English and Hindi), hours, menu ranges, busy mode and default hourly capacity: audited, live at once. The pin and GSTIN are not accepted here',
+  security: sec,
+  request: { params: WorkshopIdParam, body: body(WorkshopSelfEditSchema.openapi('SaveWorkshopProfile')) },
+  responses: { 200: json(z.object({ version: z.number().int() }), 'Saved'), ...conflict, ...errorResponses },
+});
+const changeFile = createRoute({
+  method: 'post',
+  path: '/workshop/profile/{workshopId}/changes',
+  tags: ['workshop'],
+  summary:
+    'Ask staff to move the pin or change the GSTIN; the live values stay until staff approve (one waiting request per kind)',
+  security: sec,
+  request: { params: WorkshopIdParam, body: body(WorkshopChangeSchema.openapi('RequestWorkshopChange')) },
+  responses: { 201: json(z.object({ id: z.string() }), 'Filed'), ...conflict, ...errorResponses },
+});
+const changeWithdraw = createRoute({
+  method: 'delete',
+  path: '/workshop/profile/changes/{changeId}',
+  tags: ['workshop'],
+  summary: 'Withdraw a waiting pin or GSTIN request',
+  security: sec,
+  request: { params: z.object({ changeId: z.uuid().openapi({ param: { name: 'changeId', in: 'path' } }) }) },
+  responses: { 200: json(z.object({ ok: z.boolean() }), 'Withdrawn'), ...errorResponses },
+});
+const slotsList = createRoute({
+  method: 'get',
+  path: '/workshop/slots',
+  tags: ['workshop'],
+  summary: 'The open hours of a day with their capacity and bookings',
+  security: sec,
+  request: {
+    query: z.object({
+      workshopId: z.uuid(),
+      date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    }),
+  },
+  responses: {
+    200: json(
+      z.object({
+        slots: z.array(
+          z.object({
+            hour: z.number().int(),
+            part: z.enum(['morning', 'afternoon', 'evening']),
+            capacity: z.number().int(),
+            booked: z.number().int(),
+            free: z.number().int(),
+          }),
+        ),
+      }),
+      'Slots',
+    ),
+    ...errorResponses,
+  },
+});
+const slotCapacity = createRoute({
+  method: 'put',
+  path: '/workshop/slots/{workshopId}',
+  tags: ['workshop'],
+  summary: 'Change the capacity of one hour (never below what is booked; 0 closes the hour to new bookings)',
+  security: sec,
+  request: { params: WorkshopIdParam, body: body(SlotCapacitySchema.openapi('SetSlotCapacity')) },
+  responses: {
+    200: json(
+      z.object({ hour: z.number().int(), capacity: z.number().int(), booked: z.number().int() }),
+      'Saved',
+    ),
+    ...conflict,
+    ...errorResponses,
+  },
+});
 const estimates = action(
   'estimates',
   'Send an itemised estimate (new revision; every approval starts again). Not while the customer is deciding',
@@ -276,6 +421,27 @@ export function workshopPortalRoutes(deps: AppDeps, cache: SessionCache) {
   app.use('/workshop/home-settings/*', requireVerified);
   app.use('/workshop/home-settings/*', requirePermission('service_menu:write'));
 
+  // My workshop and slot capacity: the owner's menu permission, scoped to their workshop's grants. Reading a day's hours
+  // needs only service:read (the proposal form shows them).
+  for (const base of ['/workshop/profile', '/workshop/profile/*', '/workshop/slots', '/workshop/slots/*']) {
+    app.use(base, authenticate(deps, cache));
+    app.use(
+      base,
+      rateLimit(deps.rateLimiter, RATE_RULES.apiPerUser, (c) => c.get('auth').user.id),
+    );
+    app.use(base, requireVerified);
+  }
+  app.use('/workshop/profile', requirePermission('service_menu:write'));
+  app.use('/workshop/profile/*', requirePermission('service_menu:write'));
+  app.on('PUT', '/workshop/slots/*', requirePermission('service_menu:write'));
+  app.on('GET', '/workshop/slots', requirePermission('service:read'));
+  // Filing a pin or GSTIN request is rare: a tighter per-user limit on top of the general one.
+  app.on(
+    'POST',
+    '/workshop/profile/:workshopId/changes',
+    rateLimit(deps.rateLimiter, CHANGE_RATE, (c) => c.get('auth').user.id),
+  );
+
   const ids = (c: Context<AppEnv>, p: Permission) => workshopIdsFrom(c.get('auth').grants, p);
   const stepOf = (c: Context<AppEnv>, p: Permission, code: string, version: number) => ({
     workshopIds: ids(c, p),
@@ -310,6 +476,7 @@ export function workshopPortalRoutes(deps: AppDeps, cache: SessionCache) {
       const r = await proposeSlot(deps.db, {
         ...stepOf(c, 'service:respond', c.req.valid('param').code, b.version),
         date: b.date,
+        hour: b.hour ?? null,
         slot: b.slot,
         lowPaise: b.lowPaise,
         highPaise: b.highPaise,
@@ -365,6 +532,95 @@ export function workshopPortalRoutes(deps: AppDeps, cache: SessionCache) {
         settings: b,
       });
       return c.json(r, 200);
+    })
+    .openapi(profileList, async (c) => {
+      const rows = await getWorkshopProfiles(deps.db, ids(c, 'service_menu:write'));
+      return c.json(
+        {
+          workshops: rows.map((p) => ({
+            workshopId: p.workshop.id,
+            slug: p.workshop.slug,
+            name: p.workshop.name,
+            nameHi: p.workshop.nameHi,
+            addressLine: p.workshop.addressLine,
+            addressLineHi: p.workshop.addressLineHi,
+            area: p.workshop.area,
+            areaHi: p.workshop.areaHi,
+            pincode: p.workshop.pincode,
+            lat: p.workshop.lat,
+            lng: p.workshop.lng,
+            phone: p.workshop.phone,
+            hours: p.workshop.hours,
+            gstin: p.workshop.gstin,
+            locationVerified: p.workshop.locationVerified,
+            published: p.workshop.published,
+            status: p.workshop.status,
+            busy: p.workshop.busy,
+            slotCapacity: p.slotCapacity,
+            version: p.workshop.version,
+            missingHindi: p.workshop.missingHindi,
+            menu: p.workshop.menu,
+            pending: p.pending.map((x) => ({
+              id: x.id,
+              kind: x.kind,
+              payload: x.payload as Record<string, unknown>,
+              createdAt: x.createdAt.toISOString(),
+            })),
+          })),
+        },
+        200,
+      );
+    })
+    .openapi(profileSave, async (c) => {
+      const r = await saveWorkshopProfile(deps.db, {
+        workshopIds: ids(c, 'service_menu:write'),
+        workshopId: c.req.valid('param').workshopId,
+        userId: c.get('auth').user.id,
+        edit: c.req.valid('json'),
+      });
+      return c.json(r, 200);
+    })
+    .openapi(changeFile, async (c) => {
+      const r = await requestWorkshopChange(deps.db, {
+        workshopIds: ids(c, 'service_menu:write'),
+        workshopId: c.req.valid('param').workshopId,
+        userId: c.get('auth').user.id,
+        change: c.req.valid('json'),
+      });
+      return c.json(r, 201);
+    })
+    .openapi(changeWithdraw, async (c) => {
+      await cancelWorkshopChange(deps.db, {
+        workshopIds: ids(c, 'service_menu:write'),
+        changeId: c.req.valid('param').changeId,
+        userId: c.get('auth').user.id,
+      });
+      return c.json({ ok: true }, 200);
+    })
+    .openapi(slotsList, async (c) => {
+      const q = c.req.valid('query');
+      return c.json(
+        {
+          slots: await listSlots(deps.db, {
+            workshopIds: ids(c, 'service:read'),
+            workshopId: q.workshopId,
+            date: q.date,
+          }),
+        },
+        200,
+      );
+    })
+    .openapi(slotCapacity, async (c) => {
+      const b = c.req.valid('json');
+      const r = await setSlotCapacity(deps.db, {
+        workshopIds: ids(c, 'service_menu:write'),
+        workshopId: c.req.valid('param').workshopId,
+        date: b.date,
+        hour: b.hour,
+        capacity: b.capacity,
+        userId: c.get('auth').user.id,
+      });
+      return c.json({ hour: r.hour, capacity: r.capacity, booked: r.booked }, 200);
     })
     .openapi(estimates, async (c) => {
       const b = c.req.valid('json');

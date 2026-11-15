@@ -2701,6 +2701,7 @@
     "api_set_service_photos_required": "वर्कशॉप को हर काम में पहले और बाद की फ़ोटो जोड़नी होंगी",
     "api_set_service_photos_public": "पूरे हुए कामों की फ़ोटो वर्कशॉप के पेज पर दिखाएँ",
     "api_set_service_photos_max_per_stage": "एक काम में हर चरण (पहले, बाद) की ज़्यादा से ज़्यादा फ़ोटो",
+    "api_set_service_acceptance_timeout_min": "नई रिक्वेस्ट पर वर्कशॉप के जवाब देने के मिनट, उसके बाद वह वापस रूटिंग में जाती है",
     "api_set_orders_customer_self_cancel_cod": "दुकान के पुष्टि करने तक ग्राहक अपना कैश ऑन डिलीवरी ऑर्डर रद्द कर सकते हैं",
     "api_set_orders_customer_self_cancel_online": "दुकान के पुष्टि करने तक ग्राहक अपना ऑनलाइन भुगतान वाला ऑर्डर रद्द कर सकते हैं; पैसा उसी भुगतान तरीके में वापस जाता है",
     "api_set_orders_acceptance_timeout_min": "दुकान के पास ऑर्डर स्वीकार करने का समय",

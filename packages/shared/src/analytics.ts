@@ -155,6 +155,20 @@ export interface ServerEventProps {
     homeServices: number;
     by: 'workshop' | 'admin';
   };
+  /** Workshops tier 1 (spec 06, 07): hourly slots, self-edit, reschedule and the acceptance timeout. */
+  workshop_slot_capacity_set: { workshopId: string; hour: number; capacity: number };
+  workshop_profile_saved: { workshopId: string; fields: string[]; busy: boolean; by: 'workshop' };
+  workshop_change_requested: { workshopId: string; kind: 'location' | 'gstin' };
+  workshop_change_decided: { workshopId: string; kind: 'location' | 'gstin'; approved: boolean };
+  service_slot_booked: { requestCode: string; workshopId: string; hour: number };
+  service_rescheduled: {
+    requestCode: string;
+    workshopId: string;
+    count: number;
+    fromDate: string;
+    toDate: string;
+  };
+  service_acceptance_expired: { requestCode: string; workshopId: string; waitedMinutes: number };
   home_visit_fee_waived: { requestCode: string; workshopId: string; reasonCode: string };
   /** Job photos (spec 06): a workshop added or removed a before/after photo. Ids and counts only, never paths. */
   service_photo_added: { requestCode: string; workshopId: string; stage: 'before' | 'after'; bytes: number };

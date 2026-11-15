@@ -5,10 +5,12 @@ import {
   cityScopeFrom,
   createWorkshop,
   currentLabourPromiseDays,
+  decideWorkshopChange,
   findNearbyWorkshops,
   getAdminWorkshop,
   getPublicWorkshop,
   listAdminWorkshops,
+  listWorkshopChanges,
   setWorkshopStanding,
   updateWorkshop,
 } from '@mechdost/db/repo';
@@ -20,6 +22,7 @@ import {
   SERVICE_KEY_RE,
   UpdateWorkshopSchema,
   WORKSHOP_SLUG_RE,
+  WorkshopChangeDecisionSchema,
   WorkshopMemberSchema,
   WorkshopStandingSchema,
 } from '@mechdost/shared/service-requests';
@@ -239,6 +242,53 @@ const adminMember = createRoute({
   responses: { 200: json(z.object({ userId: z.string() }), 'Granted'), ...conflict, ...errorResponses },
 });
 
+const ChangeId = z.uuid().openapi({ param: { name: 'id', in: 'path' } });
+
+const changesList = createRoute({
+  method: 'get',
+  path: '/admin/workshop-changes',
+  tags: ['admin'],
+  summary: "Workshops' waiting requests to move the pin or change the GSTIN (staff re-verify; oldest first)",
+  security: [{ bearerAuth: [] }],
+  responses: {
+    200: json(
+      z.object({
+        changes: z.array(
+          z.object({
+            id: z.string(),
+            workshopId: z.string(),
+            workshopName: z.string(),
+            kind: z.enum(['location', 'gstin']),
+            version: z.number().int(),
+            payload: z.record(z.string(), z.unknown()),
+            createdAt: z.string(),
+          }),
+        ),
+      }),
+      'Waiting requests',
+    ),
+    ...errorResponses,
+  },
+});
+
+const changeDecide = createRoute({
+  method: 'post',
+  path: '/admin/workshop-changes/{id}/decide',
+  tags: ['admin'],
+  summary:
+    'Approve (the pin or GSTIN goes live, the pin counts as verified) or turn down with a reason; compare-and-set on the request version',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: z.object({ id: ChangeId }),
+    body: body(WorkshopChangeDecisionSchema.openapi('DecideWorkshopChange')),
+  },
+  responses: {
+    200: json(z.object({ status: z.enum(['approved', 'rejected']) }), 'Decided'),
+    ...conflict,
+    ...errorResponses,
+  },
+});
+
 /** Public reads: per-IP limit on top of the global one. */
 export function workshopPublicRoutes(deps: AppDeps) {
   const app = new OpenAPIHono<AppEnv>({ defaultHook: validationHook });
@@ -286,6 +336,15 @@ export function workshopAdminRoutes(deps: AppDeps, cache: SessionCache) {
   app.on(['POST', 'PATCH'], '/admin/workshops/*', requirePermission('partners:write'));
   app.on('POST', '/admin/workshops/:id/standing', requirePermission('partners:approve'));
   app.on('POST', '/admin/workshops/:id/members', requirePermission('partners:approve'));
+
+  app.use('/admin/workshop-changes/*', authenticate(deps, cache));
+  app.use(
+    '/admin/workshop-changes/*',
+    rateLimit(deps.rateLimiter, RATE_RULES.apiPerUser, (c) => c.get('auth').user.id),
+  );
+  app.use('/admin/workshop-changes/*', requireVerified);
+  app.use('/admin/workshop-changes/*', requirePermission('partners:read'));
+  app.on('POST', '/admin/workshop-changes/*', requirePermission('partners:approve'));
 
   /** Listing a workshop (published) or vouching for its pin is an approval, not an edit. */
   const needsApproval = (c: Context<AppEnv>, b: { published?: boolean; locationVerified?: boolean }) => {
@@ -337,6 +396,35 @@ export function workshopAdminRoutes(deps: AppDeps, cache: SessionCache) {
         status: b.status,
         reason: b.reason,
         expectedVersion: b.version,
+      });
+      return c.json(r, 200);
+    })
+    .openapi(changesList, async (c) => {
+      const rows = await listWorkshopChanges(deps.db, cityScopeFrom(c.get('auth').grants, 'partners:read'));
+      return c.json(
+        {
+          changes: rows.map((r) => ({
+            id: r.id,
+            workshopId: r.workshopId,
+            workshopName: r.workshopName,
+            kind: r.kind,
+            version: r.version,
+            payload: r.payload as Record<string, unknown>,
+            createdAt: r.createdAt.toISOString(),
+          })),
+        },
+        200,
+      );
+    })
+    .openapi(changeDecide, async (c) => {
+      const b = c.req.valid('json');
+      const r = await decideWorkshopChange(deps.db, {
+        scope: cityScopeFrom(c.get('auth').grants, 'partners:approve'),
+        changeId: c.req.valid('param').id,
+        approve: b.approve,
+        note: b.note ?? null,
+        version: b.version,
+        staffUserId: c.get('auth').user.id,
       });
       return c.json(r, 200);
     })

@@ -19,6 +19,7 @@ import type { Tx } from './orders';
 import { currentLabourPromiseDays } from './labour-promise';
 import { queueServiceWhatsApp } from './service-notifications';
 import { assertPhotosFor } from './service-photos';
+import { bookSlot } from './workshop-slots';
 import {
   assertBookableDate,
   ESTIMATE_FROM,
@@ -144,39 +145,63 @@ export async function proposeSlot(
   db: Tx,
   input: StepInput & {
     date: string;
-    slot: ServiceSlot;
+    /** Part of the day; derived from `hour` when an hour is given (hourless proposals are the older, uncapped form). */
+    slot?: ServiceSlot;
+    /** The hourly slot (IST start hour): takes one place of that hour's capacity (spec 06). */
+    hour?: number | null;
     lowPaise: number;
     highPaise: number;
     note: string | null;
     /** First name of the visiting mechanic; required for a home visit. */
     mechanicName?: string | null;
+    now?: Date;
   },
 ) {
   if (input.highPaise < input.lowPaise) throw new ValidationError('High is below low', 'RANGE');
-  assertBookableDate(input.date, 60);
+  const hour = input.hour ?? null;
+  if (hour === null && !input.slot) throw new ValidationError('Pick an hour', 'SLOT_REQUIRED');
+  assertBookableDate(input.date, 60, input.now);
   return db.transaction(async (tx) => {
     const r = await jobFor(tx, input, { newWork: true });
     requireStatus(r, ['awaiting_workshop']);
     if (r.serviceMode === 'home' && !input.mechanicName)
       throw new ValidationError('Name the mechanic who will visit', 'MECHANIC_REQUIRED');
+    // A place in the hour first: a full hour (409 SLOT_FULL) rolls the whole proposal back.
+    const slot =
+      hour === null
+        ? (input.slot as ServiceSlot)
+        : await bookSlot(tx, { workshopId: workshopOf(r), date: input.date, hour, now: input.now });
     const out = await transitionRequest(tx, {
       request: r,
       to: 'proposed',
       expectedVersion: input.expectedVersion,
       actor: workshopActor(input.staffUserId),
       patch: { visitingMechanic: r.serviceMode === 'home' ? (input.mechanicName ?? null) : null },
-      payload: { date: input.date, slot: input.slot, lowPaise: input.lowPaise, highPaise: input.highPaise },
+      payload: {
+        date: input.date,
+        slot,
+        ...(hour !== null && { hour }),
+        lowPaise: input.lowPaise,
+        highPaise: input.highPaise,
+      },
     });
     await tx.insert(serviceProposals).values({
       requestId: r.id,
       workshopId: workshopOf(r),
       proposedDate: input.date,
-      slot: input.slot,
+      slot,
+      slotHour: hour,
       lowPaise: input.lowPaise,
       highPaise: input.highPaise,
       note: input.note,
       createdBy: input.staffUserId,
     });
+    if (hour !== null)
+      await recordServerEvent(tx, 'service_slot_booked', {
+        userId: input.staffUserId,
+        cityId: r.cityId,
+        props: { requestCode: r.code, workshopId: workshopOf(r), hour },
+      });
     return out;
   });
 }
