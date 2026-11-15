@@ -218,6 +218,29 @@ describe('support inbox API', () => {
   it('a city-limited assigner cannot reach a request of another city (security review)', async () => {
     const ctx = await buildApp();
     const customer = await person(ctx, '20', null);
+    const rpr = await cityRow(ctx, 'RPR', 'raipur');
+    const bls = await cityRow(ctx, 'BLS', 'bilaspur');
+    const blsManager = await person(ctx, '21', 'city_manager', bls);
+    const rprManager = await person(ctx, '22', 'city_manager', rpr);
+    const code = await raise(ctx, customer.headers);
+    await ctx.db.update(schema.supportTickets).set({ cityId: rpr });
+    const version = (
+      (await (
+        await ctx.app.request(`/v1/admin/support/tickets/${code}`, { headers: rprManager.headers })
+      ).json()) as { version: number }
+    ).version;
+    const assign = (who: typeof blsManager) =>
+      ctx.app.request(`/v1/admin/support/tickets/${code}/assign`, {
+        method: 'POST',
+        headers: who.headers,
+        body: JSON.stringify({ assigneeId: who.id, version }),
+      });
+    expect((await assign(blsManager)).status).toBe(404);
+    expect((await assign(rprManager)).status).toBe(200);
+  });
+
+  it('a city-limited content editor cannot edit the global canned replies (security review)', async () => {
+    const ctx = await buildApp();
     const cityEditor = await person(ctx, '30', 'city_manager', await cityRow(ctx, 'RPR', 'raipur'));
     const body = {
       key: 'city_try',

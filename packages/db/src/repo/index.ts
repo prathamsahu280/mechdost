@@ -71,3 +71,4 @@ export * from './service-photos';
 export { uuidv7 } from '../schema/_common';
 export * from './support-sla';
 export * from './support-inbox';
+export * from './support-guest';

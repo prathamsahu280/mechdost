@@ -49,6 +49,7 @@
     "./support-thread": "./src/support-thread.ts",
     "./support-sla": "./src/support-sla.ts",
     "./support-inbox": "./src/support-inbox.ts",
+    "./support-guest": "./src/support-guest.ts",
     "./partners": "./src/partners.ts",
     "./partner-api": "./src/partner-api.ts",
     "./email-templates": "./src/email-templates.ts",
