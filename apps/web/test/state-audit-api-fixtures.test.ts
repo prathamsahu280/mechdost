@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildCases } from '../e2e/state-audit/cases.ts';
-import { baselineMocks } from '../e2e/state-audit/api-mode/baseline-fixtures.ts';
+import { auditMocksFor, baselineMocks } from '../e2e/state-audit/api-mode/baseline-fixtures.ts';
 import { mocksFor } from '../e2e/state-audit/api-mode/fixtures.ts';
 import { fakeIdToken, persistedUser } from '../e2e/state-audit/api-mode/session.ts';
 
@@ -87,6 +87,48 @@ describe('API-mode audit fixtures (Q106)', () => {
     expect(claims.iss).toContain('demo-audit');
     const stored = persistedUser('audit-admin', '9876543210', now);
     expect(Object.keys(stored)[0]).toBe('firebase:authUser:audit-fake-api-key:[DEFAULT]');
+  });
+});
+
+describe('API-mode rows answer every call their screen makes (batch 2c, 2026-11-16)', () => {
+  // Each pair was logged as "unmocked API call" by the chunk G run of 2026-11-15: the row's screen asks for it.
+  const asked: readonly (readonly [string, string])[] = [
+    ['API-SHOP-TIER1', '/shop/me'],
+    ['API-SHOP-TIER1', '/shop/orders'],
+    ['API-SHOP-TIER1', '/shop/warnings'],
+    ['API-SHOP-TIER1', '/shop-onboarding/00000000-0000-4000-8000-000000000001/agreement'],
+    ['API-SHOP-TIER1', '/shop-onboarding/00000000-0000-4000-8000-000000000001/price-requests'],
+    ['API-SHOP-TIER1', '/shops/00000000-0000-4000-8000-000000000001/inventory'],
+    ['API-SHOP-TIER1', '/shop/performance/00000000-0000-4000-8000-000000000001'],
+    ['API-SHOP-PORTAL', '/shop/performance/00000000-0000-4000-8000-000000000001'],
+    ['API-SHOP-PORTAL', '/shop/products/engine-oil-1/photos'],
+    ['API-SHOP-OFFERS', '/shop/performance/00000000-0000-4000-8000-000000000001'],
+    ['API-SHOP-OFFERS', '/shop/products/engine-oil-1/photos'],
+    ['API-SHOP-TIER2', '/shop/products/engine-oil-1/photos'],
+    ['API-ADM-SHOPS', '/admin/partner-invites'],
+    ['API-ADM-SHOPS', '/admin/price-requests'],
+    ['API-ADM-SHOPS', '/admin/agreements/current'],
+    ['API-ADM-SHOPS', '/admin/workshops'],
+    ['API-ADM-PHOTOS', '/admin/recommendation-rules'],
+    ['API-ADM-PHOTOS', '/admin/recommendation-categories'],
+    ['API-ORD-REFUNDLINE', '/my-reviews/eligible'],
+    ['API-SVC-PAYBILL', '/my-reviews/eligible'],
+    ['API-SVC-PAYBILL', '/service-requests/SR-RPR-2026-HND401/photos'],
+    ['API-WS-PERFORMANCE', '/workshop/profile'],
+  ];
+
+  it('has a mock, with a body that satisfies its schema, for each of them in every case of the row', () => {
+    for (const [code, path] of asked) {
+      const rows = apiCases.filter((x) => x.code === code);
+      expect(rows.length, code).toBeGreaterThan(0);
+      for (const c of rows) {
+        const mock = auditMocksFor(c).find((m) => m.method === 'GET' && m.path.test(path));
+        expect(mock, `${c.id} ${path}`).toBeDefined();
+        const reply = mock?.reply({ c, method: 'GET', path, query: new URLSearchParams(), body: null });
+        if ((reply?.status ?? 200) >= 400) continue;
+        expect(() => mock?.schema?.parse(reply?.body), `${c.id} ${path}`).not.toThrow();
+      }
+    }
   });
 });
 

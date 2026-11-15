@@ -1,0 +1,103 @@
+/**
+ * The audit catalogue: one definition of the products the API-mode audit shows (wishlist, photo queue, and what the
+ * Next server reads while rendering a product page), typed with the shared catalogue DTOs. Like real content data,
+ * every text carries a Hindi version (hard rule 10): the API answers in the language the page asks for, so the
+ * mocks do too. The brand (Castrol) stays in Latin script; the seller's name is transliterated.
+ */
+import type { CatalogueCard, CatalogueProduct } from '@mechdost/shared/catalogue';
+
+export type AuditLocale = 'en' | 'hi';
+
+export const AUDIT_BRAND = 'Castrol';
+/** How many audit products exist: a full wishlist holds 100. */
+export const AUDIT_PRODUCT_COUNT = 100;
+const AUDIT_SLUG = /^audit-product-(\d+)$/;
+
+export const auditSlug = (i: number): string => `audit-product-${String(i)}`;
+
+/** The index in an audit slug, or null for a slug that is not an audit product. */
+export function auditIndex(slug: string): number | null {
+  const m = AUDIT_SLUG.exec(slug);
+  const i = m ? Number(m[1]) : NaN;
+  return Number.isInteger(i) && i >= 0 && i < AUDIT_PRODUCT_COUNT ? i : null;
+}
+
+export const auditProductName = (i: number, locale: AuditLocale): string =>
+  locale === 'hi' ? `ऑडिट उत्पाद ${String(i + 1)}` : `Audit product ${String(i + 1)}`;
+
+const COPY = {
+  en: {
+    category: 'Lubricants',
+    spec: 'Fully synthetic · 900 ml',
+    highlights: ['Smooth starts', 'Long drain interval'],
+    description: 'A product made only for the audit.',
+    compatibility: 'Fits most two-wheelers.',
+    seller: 'Sharma Auto Parts',
+  },
+  hi: {
+    category: 'लुब्रिकेंट',
+    spec: 'पूरी तरह सिंथेटिक · 900 ml',
+    highlights: ['आसान स्टार्ट', 'लंबा ड्रेन अंतराल'],
+    description: 'सिर्फ़ ऑडिट के लिए बना उत्पाद।',
+    compatibility: 'ज़्यादातर दोपहिया वाहनों में लगता है।',
+    seller: 'शर्मा ऑटो पार्ट्स',
+  },
+} as const;
+
+const offer = (i: number) => ({
+  pricePaise: 89_900 + i * 100,
+  mrpPaise: 99_900 + i * 100,
+  netQuantity: { qty: 900, unit: 'ml' as const },
+  shippingPaise: 4_900,
+  leadDays: 1,
+});
+
+export function auditCard(i: number, locale: AuditLocale): CatalogueCard {
+  const t = COPY[locale];
+  return {
+    slug: auditSlug(i),
+    name: auditProductName(i, locale),
+    brand: { slug: 'castrol', name: AUDIT_BRAND },
+    category: { slug: 'lubricants', name: t.category },
+    specSummary: t.spec,
+    highlights: [...t.highlights],
+    vehicleTypes: ['2W'],
+    rating: null,
+    offer: offer(i),
+    photo: null,
+  };
+}
+
+export function auditProduct(i: number, locale: AuditLocale): CatalogueProduct {
+  const t = COPY[locale];
+  return {
+    slug: auditSlug(i),
+    name: auditProductName(i, locale),
+    brand: { slug: 'castrol', name: AUDIT_BRAND },
+    category: { slug: 'lubricants', name: t.category },
+    specSummary: t.spec,
+    highlights: [...t.highlights],
+    vehicleTypes: ['2W'],
+    rating: null,
+    description: t.description,
+    compatibility: t.compatibility,
+    spec: {},
+    attributeSet: null,
+    attributes: {},
+    countryOfOrigin: 'India',
+    warranty: null,
+    gstRateBp: 1800,
+    partNumbers: [],
+    photos: [],
+    variants: [
+      {
+        sku: `AUDIT-${String(i + 1)}`,
+        options: {},
+        mrpPaise: offer(i).mrpPaise,
+        netQuantity: offer(i).netQuantity,
+        offer: { ...offer(i), seller: t.seller },
+      },
+    ],
+    place: { cityCode: 'RPR', pincode: null, pincodeKnown: null },
+  };
+}

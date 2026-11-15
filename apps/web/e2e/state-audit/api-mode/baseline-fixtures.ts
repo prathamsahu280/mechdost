@@ -7,13 +7,21 @@
  */
 import { CartDto, CartUnchangedDto } from '@mechdost/shared/cart-api';
 import { NoticeCountDto, NoticePageDto } from '@mechdost/shared/notice-api';
-import { PhotoQueueDto } from '@mechdost/shared/product-photos';
+import { CurrentAgreement, InvitePage, PriceRequestPage } from '@mechdost/shared/partner-api';
+import { AdminProductPhotosDto, PhotoQueueDto } from '@mechdost/shared/product-photos';
+import { ReviewTargetsDto } from '@mechdost/shared/reviews-api';
 import { QuotePageDto } from '@mechdost/shared/quote-api';
-import { HomeSettingsListDto, PublicWorkshopDto, ServiceRequestPageDto } from '@mechdost/shared/service-api';
+import {
+  AdminWorkshopListDto,
+  HomeSettingsListDto,
+  PublicWorkshopDto,
+  ServiceRequestPageDto,
+} from '@mechdost/shared/service-api';
 import { WishlistDto, WishlistUnchangedDto } from '@mechdost/shared/wishlist-api';
 import type { AuditCase } from '../cases.ts';
 import type { Mock, Reply } from './mock-api.ts';
 import { workshop } from './home-fixtures.ts';
+import { mocksFor } from './fixtures.ts';
 
 type Dto<S extends { parse(value: unknown): unknown }> = ReturnType<S['parse']>;
 
@@ -104,5 +112,50 @@ export function baselineMocks(c: AuditCase): Mock[] {
       schema: PhotoQueueDto,
       reply: (): Reply => ({ body: { items: [] } satisfies Dto<typeof PhotoQueueDto> }),
     },
+    // Second round (batch 2c, 2026-11-16): the cards a portal or order page loads next to its own screen. Quiet
+    // answers (nothing pending, nothing to review, no photos); a row that is about them lists its own mock first.
+    {
+      method: 'GET',
+      path: /^\/admin\/partner-invites$/,
+      schema: InvitePage,
+      reply: (): Reply => ({ body: { items: [], nextCursor: null } satisfies Dto<typeof InvitePage> }),
+    },
+    {
+      method: 'GET',
+      path: /^\/admin\/price-requests$/,
+      schema: PriceRequestPage,
+      reply: (): Reply => ({ body: { items: [], nextCursor: null } satisfies Dto<typeof PriceRequestPage> }),
+    },
+    {
+      method: 'GET',
+      path: /^\/admin\/agreements\/current$/,
+      schema: CurrentAgreement,
+      reply: (): Reply => ({ body: { agreement: null } satisfies Dto<typeof CurrentAgreement> }),
+    },
+    {
+      method: 'GET',
+      path: /^\/admin\/workshops$/,
+      schema: AdminWorkshopListDto,
+      reply: (): Reply => ({ body: { workshops: [] } satisfies Dto<typeof AdminWorkshopListDto> }),
+    },
+    {
+      method: 'GET',
+      path: /^\/my-reviews\/eligible$/,
+      schema: ReviewTargetsDto,
+      reply: (): Reply => ({ body: { targets: [] } satisfies Dto<typeof ReviewTargetsDto> }),
+    },
+    {
+      method: 'GET',
+      path: /^\/(?:shop|admin\/catalogue)\/products\/[^/]+\/photos$/,
+      schema: AdminProductPhotosDto,
+      reply: (): Reply => ({
+        body: { photos: [], max: 8, shopUploadsEnabled: true } satisfies Dto<typeof AdminProductPhotosDto>,
+      }),
+    },
   ];
+}
+
+/** Everything the mocked API answers for one case: its row's mocks first, then the baseline (first match wins). */
+export function auditMocksFor(c: AuditCase): Mock[] {
+  return [...mocksFor(c), ...baselineMocks(c)];
 }

@@ -90,6 +90,34 @@ export const HINDI_ALLOWLIST: readonly string[] = [
   ...PEOPLE,
 ];
 
+/**
+ * Codes, not words (batch 2c, 2026-11-16): matched by shape, never added to the word list above.
+ *  - city codes as printed in the city picker and coupon scopes (`RPR` Raipur, `BSP` Bilaspur; the same codes sit
+ *    inside order codes such as MD-RPR-2026-…); a new launch city adds its code here;
+ *  - file formats named in upload hints ("JPG, PNG या WebP"), in any letter case;
+ *  - labels of registration and bank numbers whose value is a code: CIN (company), UTR (bank transfer reference).
+ */
+export const CITY_CODES: readonly string[] = ['RPR', 'BSP'];
+export const FILE_FORMATS: readonly string[] = [
+  'JPG',
+  'JPEG',
+  'PNG',
+  'WEBP',
+  'HEIC',
+  'GIF',
+  'PDF',
+  'SVG',
+  'XLSX',
+];
+const NUMBER_LABELS: readonly string[] = ['CIN', 'UTR'];
+
+/** True for a city code, a file format or a registration-number label (see above). */
+export function isCodeWord(word: string): boolean {
+  return (
+    CITY_CODES.includes(word) || NUMBER_LABELS.includes(word) || FILE_FORMATS.includes(word.toUpperCase())
+  );
+}
+
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /**
@@ -99,7 +127,7 @@ const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 export function latinOffenders(text: string, extra: readonly string[] = []): string[] {
   const phrases = [...HINDI_ALLOWLIST, ...extra].toSorted((a, b) => b.length - a.length);
   let rest = text
-    .replace(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g, ' ')
+    .replace(/[\w.+*-]+@[\w-]+(?:\.[\w-]+)*/g, ' ')
     .replace(/https?:\/\/\S+/g, ' ')
     .replace(/\b(?:[\w-]+\.)+(?:com|in|org|net|example)\b\S*/g, ' ')
     // Template placeholders shown in admin editors ({brand}, {orderCode}) are code the admin types, not English.
@@ -112,7 +140,10 @@ export function latinOffenders(text: string, extra: readonly string[] = []): str
     // Codes: anything with a digit (MD-RPR-2026-…, 20W40, Raipur@2026) or upper-case segments joined by hyphens
     // (SKUs such as PRT-SPK-IR).
     if (/\d/.test(token) || /^[A-Z]+(?:-[A-Z]+)+$/.test(token)) continue;
-    for (const word of token.match(/[A-Za-z]{3,}/g) ?? []) found.add(word);
+    // Identifiers: snake_case or dotted lower-case names of two or more letters per part (CSV column names such as
+    // requested_price, audit-log codes such as role.granted). A trailing full stop belongs to the sentence.
+    if (/^[a-z]{2,}[a-z0-9]*(?:[._][a-z0-9]{2,})+$/.test(token.replace(/[.,;:]+$/, ''))) continue;
+    for (const word of token.match(/[A-Za-z]{3,}/g) ?? []) if (!isCodeWord(word)) found.add(word);
   }
   return [...found];
 }

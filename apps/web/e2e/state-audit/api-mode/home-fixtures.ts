@@ -29,8 +29,8 @@ type Workshop = Dto<typeof NearbyWorkshopsDto>['workshops'][number];
 const LONG_EN =
   'Sharma Doorstep Two-Wheeler Garage and Authorised Service Centre, Telibandha Main Road, Raipur';
 const LONG_HI = 'शर्मा डोरस्टेप दोपहिया गैराज और अधिकृत सर्विस सेंटर, तेलीबांधा मुख्य मार्ग, रायपुर';
-const long = (c: AuditCase) => c.state.stress === 'long-text';
-const loc = (c: AuditCase) => (c.locale === 'hi' ? LONG_HI : LONG_EN);
+const long = (c: Pick<AuditCase, 'locale' | 'state'>) => c.state.stress === 'long-text';
+const loc = (c: Pick<AuditCase, 'locale' | 'state'>) => (c.locale === 'hi' ? LONG_HI : LONG_EN);
 
 export function roleMock(c: AuditCase): Mock {
   return {
@@ -74,7 +74,11 @@ const address = (n: number, pinned: boolean) => ({
   version: 1,
 });
 
-export function workshop(n: number, c: AuditCase, over: Partial<Workshop> = {}): Workshop {
+export function workshop(
+  n: number,
+  c: Pick<AuditCase, 'locale' | 'state'>,
+  over: Partial<Workshop> = {},
+): Workshop {
   return {
     id: uuid(40 + n),
     slug: `home-garage-${String(n)}`,
@@ -424,7 +428,7 @@ export function homeJobMocks(c: AuditCase): Mock[] {
           workshops: [
             {
               workshopId: WORKSHOP_ID,
-              name: long(c) ? loc(c) : 'Home Garage 1',
+              name: long(c) ? loc(c) : c.locale === 'hi' ? 'होम गैराज 1' : 'Home Garage 1',
               homeService: c.state.settings === 'on',
               homeRadiusKm: 5,
               homeVisitFeePaise: 9_900,

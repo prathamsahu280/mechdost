@@ -24,6 +24,9 @@ export default defineConfig({
     screenshot: 'off',
     ...devices['Desktop Chrome'],
   },
+  // The Next server fetches the catalogue from the API origin while it renders; the browser mock cannot answer
+  // that, so a small local server does (`e2e/state-audit/api-mode/server-mock.ts`, runbook § 9.10).
+  globalSetup: './e2e/state-audit/api-mode/server-mock-setup.ts',
   projects: [{ name: 'audit-api' }],
   webServer: {
     command: 'pnpm exec next start --port 3101',

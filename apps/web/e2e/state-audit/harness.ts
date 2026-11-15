@@ -13,6 +13,7 @@ import { describeCase, type AuditCase } from './cases.ts';
 import {
   applyStress,
   auditDom,
+  centre,
   compareFacts,
   compareProblems,
   focusFacts,
@@ -25,6 +26,7 @@ import {
   type Box,
   type Finding,
 } from './geometry.ts';
+import { isBlockedOriginNoise } from './console-noise.ts';
 import { echoedWords, withoutEcho } from './hindi-echo.ts';
 import { knownIssueFor } from './known-issues.ts';
 import { navCheck } from './nav-run.ts';
@@ -283,7 +285,7 @@ async function interact(page: Page, c: AuditCase, run: (label: string) => Promis
     return notes;
   }
   const target = page.locator('[data-sa-target]');
-  await target.scrollIntoViewIfNeeded();
+  await target.evaluate(centre);
   const disabled = await target.isDisabled();
   if (interaction.startsWith('hover')) {
     await target.hover({ force: disabled });
@@ -344,7 +346,8 @@ export async function runCase(page: Page, c: AuditCase, info: TestInfo, api?: Ap
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
   page.on('console', (m) => {
-    if (m.type() === 'error') errors.push(`console: ${m.text().slice(0, 200)}`);
+    if (m.type() === 'error' && !isBlockedOriginNoise(m.text(), m.location().url))
+      errors.push(`console: ${m.text().slice(0, 200)}`);
   });
   page.on('response', (r) => {
     if (r.url().startsWith('http://localhost') && r.status() >= 400)
@@ -419,6 +422,7 @@ export async function runCase(page: Page, c: AuditCase, info: TestInfo, api?: Ap
       const name =
         (await el.getAttribute('aria-label')) ?? ((await el.textContent()) ?? '').trim().slice(0, 30);
       try {
+        await el.evaluate(centre);
         await el.hover({ timeout: 2_000 });
       } catch (e) {
         const msg = (e instanceof Error ? e.message : String(e))

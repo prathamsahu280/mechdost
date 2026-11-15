@@ -9,6 +9,7 @@ import { PhotoQueueDto } from '@mechdost/shared/product-photos';
 import { WishlistDto } from '@mechdost/shared/wishlist-api';
 import type { AuditCase } from '../cases.ts';
 import type { Mock, Reply } from './mock-api.ts';
+import { auditProductName } from './audit-products.ts';
 
 type Dto<S extends { parse(value: unknown): unknown }> = ReturnType<S['parse']>;
 
@@ -28,7 +29,7 @@ const LONG_HI = 'दोपहिया वाहनों के लिए म�
 export function wishlistMocks(c: AuditCase): Mock[] {
   const state = c.state.list ?? 'items';
   const name = (i: number) =>
-    long(c) ? (c.locale === 'hi' ? LONG_HI : LONG) : `Audit product ${String(i + 1)}`;
+    long(c) ? (c.locale === 'hi' ? LONG_HI : LONG) : auditProductName(i, c.locale);
   const item = (i: number) => ({
     slug: `audit-product-${String(i)}`,
     name: name(i),
@@ -65,8 +66,8 @@ export function photoQueueMocks(c: AuditCase): Mock[] {
     version: 1,
     brand: 'Castrol',
     category: 'Lubricants',
-    name: `Audit product ${String(i + 1)}`,
-    nameHi: `ऑडिट उत्पाद ${String(i + 1)}`,
+    name: auditProductName(i, 'en'),
+    nameHi: auditProductName(i, 'hi'),
     specSummary: null,
     specSummaryHi: null,
     compatibility: null,
@@ -106,14 +107,14 @@ export function photoQueueMocks(c: AuditCase): Mock[] {
                       ? c.locale === 'hi'
                         ? LONG_HI
                         : LONG
-                      : `Audit product ${String(i + 1)}`,
+                      : auditProductName(i, c.locale),
                     alt: 'Front of the pack',
                     altHi: 'पैक का सामने का हिस्सा',
                     width: 1200,
                     height: 900,
                     lqip: null,
                     shopId: uuid(900),
-                    shopName: 'Sharma Auto Parts',
+                    shopName: c.locale === 'hi' ? 'शर्मा ऑटो पार्ट्स' : 'Sharma Auto Parts',
                     createdAt: '2026-11-15T09:00:00.000Z',
                     previewUrl: `/product-photos/${uuid(400 + i)}/640?e=9999999999&s=audit`,
                   })),
