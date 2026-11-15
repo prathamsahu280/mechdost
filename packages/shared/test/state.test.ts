@@ -147,6 +147,10 @@ describe('payment state machine', () => {
     expect(paymentMachine.can('failed', 'attempted')).toBe(true);
     expect(paymentMachine.can('failed', 'paid')).toBe(true);
     expect(paymentMachine.can('paid', 'failed')).toBe(false);
+    // A capture after the window closed is real money: recorded as paid so it can be refunded (spec 05).
+    expect(paymentMachine.canActor('expired', 'paid', 'system')).toBe(true);
+    expect(paymentMachine.canActor('expired', 'paid', 'admin')).toBe(false);
+    expect(paymentMachine.can('expired', 'attempted')).toBe(false);
     expect(paymentMachine.can('paid', 'partially_refunded')).toBe(true);
     expect(paymentMachine.can('partially_refunded', 'refunded')).toBe(true);
   });
@@ -177,7 +181,10 @@ describe('refund state machine (decision 2026-11-15: all refunds need approval)'
     expect(refundMachine.canActor('initiated', 'needs_reconciliation', 'system')).toBe(true);
     expect(refundMachine.canActor('needs_reconciliation', 'processed', 'system')).toBe(true);
     expect(refundMachine.canActor('needs_reconciliation', 'failed', 'system')).toBe(true);
-    expect(refundMachine.canActor('needs_reconciliation', 'processed', 'admin')).toBe(false);
+    // Finance settles it by hand after checking the dashboard (spec 05 "Settling by hand").
+    expect(refundMachine.canActor('needs_reconciliation', 'processed', 'admin')).toBe(true);
+    expect(refundMachine.canActor('needs_reconciliation', 'failed', 'admin')).toBe(true);
+    expect(refundMachine.canActor('needs_reconciliation', 'initiated', 'admin')).toBe(false);
     expect(REFUND_HOLDING_STATES).toContain('needs_reconciliation');
     expect(customerRefundStatus('needs_reconciliation')).toBe('processing');
     // A refund we called failed can still be processed if Razorpay says so (a webhook is the truth).

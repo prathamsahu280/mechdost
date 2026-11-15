@@ -7,6 +7,7 @@ import { ConflictError, NotFoundError } from './errors';
 import { removeOrderedCartLines } from './cart';
 import { queueOrderPlacedEmail, queuePaymentReceivedEmail } from './email-events';
 import { recordServerEvent } from './events';
+import { requestRefundForClosedOrder } from './refunds';
 import { rowsOf } from './sql-rows';
 import { applyBillPayment } from './service-bill-payments';
 import type { Tx } from './orders';
@@ -231,6 +232,7 @@ export async function applyRazorpayPayment(
       (from === 'expired' || p.paymentStatus === 'expired' || !(await hasLiveOrder(tx, p.groupId)))
     ) {
       await flagForRefund(tx, fact, p.groupCode);
+      await recordLateCapture(tx, { paymentId: p.id, from, groupId: p.groupId, fact });
       return { outcome: 'needs_refund' as const };
     }
     if (from === to || !paymentMachine.canActor(from, to, 'system')) return { outcome: 'unchanged' as const };
@@ -400,6 +402,45 @@ export async function recordAndApplyRazorpayEvent(
     const { outcome } = await applyRazorpayPayment(tx, input.fact);
     return { fresh: true, outcome };
   });
+}
+
+/**
+ * Money was captured for an order that had already closed (the payment window ended, or the customer cancelled while
+ * the Razorpay sheet was still open). The payment is recorded as captured (the money is real: the refund ledger and
+ * Razorpay's refund call hang on it) and each closed sub-order gets ONE approval-first refund request, source
+ * `payment_after_close`, idempotent per sub-order (`sys_late_<order id>`), so a replayed webhook asks for nothing
+ * more. The order itself is never completed by it. Lock order: group (held by the caller), payment, refund.
+ */
+async function recordLateCapture(
+  tx: Tx,
+  input: { paymentId: string; from: PaymentStatus; groupId: string; fact: RazorpayPaymentFact },
+): Promise<void> {
+  paymentMachine.assert(input.from, 'paid', 'system');
+  const moved = await tx
+    .update(payments)
+    .set({
+      status: 'paid',
+      providerPaymentId: input.fact.providerPaymentId,
+      method: input.fact.method,
+      capturedAt: sql`now()`,
+    })
+    .where(and(eq(payments.id, input.paymentId), eq(payments.status, input.from)))
+    .returning({ id: payments.id });
+  if (moved.length === 0) return;
+  await tx.insert(auditLog).values({
+    actorUserId: null,
+    actorRole: 'system',
+    action: 'payment.paid_after_close',
+    entity: 'payment',
+    entityId: input.paymentId,
+    after: { providerPaymentId: input.fact.providerPaymentId, method: input.fact.method, from: input.from },
+  });
+  const closed = await tx
+    .select({ id: orders.id })
+    .from(orders)
+    .where(and(eq(orders.groupId, input.groupId), inArray(orders.status, ['cancelled', 'rejected'])))
+    .orderBy(orders.subNo);
+  for (const o of closed) await requestRefundForClosedOrder(tx, o.id, { lateCapture: true });
 }
 
 /** Audit a captured payment that must be refunded (once per Razorpay payment id). */

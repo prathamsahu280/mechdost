@@ -17,6 +17,8 @@ import {
   type PaymentStatus,
   type RefundReason,
   type RefundRejectReason,
+  type RefundSettleOutcome,
+  type RefundSettleReason,
   type RefundSource,
   type RefundStatus,
 } from '@mechdost/shared/state';
@@ -36,7 +38,9 @@ import { cancelPendingOrderRewards } from './coins';
 import { decodeCursor, encodeCursor, pageSize } from './cursor';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from './errors';
 import { recordServerEvent } from './events';
+import { issueCreditNoteForRefund } from './credit-notes';
 import { queueRefundEmail } from './email-notifications';
+import { queueStaffNotice } from './notices';
 import type { Tx } from './orders';
 import type { CityScope } from './routing';
 import { rowsOf } from './sql-rows';
@@ -299,7 +303,11 @@ async function notifyCustomer(
  * group was paid online, ask for what the customer paid for it that is not already being refunded. It still waits for
  * an approval. Returns the new refund id, or null when there is nothing to refund (COD, unpaid, already covered).
  */
-export async function requestRefundForClosedOrder(tx: Tx, orderId: string): Promise<string | null> {
+export async function requestRefundForClosedOrder(
+  tx: Tx,
+  orderId: string,
+  opts: { lateCapture?: boolean } = {},
+): Promise<string | null> {
   const [o] = await tx
     .select({
       id: orders.id,
@@ -329,7 +337,12 @@ export async function requestRefundForClosedOrder(tx: Tx, orderId: string): Prom
   const payment = await lockLedger(tx, paid.id);
   const amount = o.totalPaise - (await heldForOrder(tx, o.id));
   if (amount <= 0) return null;
-  const source = o.status === 'rejected' ? 'order_rejected' : 'order_cancelled';
+  // A capture after the payment window closed is its own source, so finance sees why money arrived for a dead order.
+  const source: RefundSource = opts.lateCapture
+    ? 'payment_after_close'
+    : o.status === 'rejected'
+      ? 'order_rejected'
+      : 'order_cancelled';
   const made = await insertRequest(tx, {
     payment,
     groupId: o.groupId,
@@ -339,8 +352,14 @@ export async function requestRefundForClosedOrder(tx: Tx, orderId: string): Prom
     reasonCode: source,
     note: null,
     requestedBy: null,
-    idemKey: `sys_${o.id}`,
+    idemKey: opts.lateCapture ? `sys_late_${o.id}` : `sys_${o.id}`,
   });
+  if (made.fresh && opts.lateCapture)
+    await recordServerEvent(tx, 'refund_requested_after_close', {
+      userId: o.userId,
+      cityId: o.cityId,
+      props: { refundId: made.id, paymentId: payment.id, amountPaise: amount },
+    });
   return made.fresh ? made.id : null;
 }
 
@@ -951,6 +970,31 @@ async function auditMismatch(tx: Tx, refundId: string, action: string, after: Re
     entityId: refundId,
     after,
   });
+  await alertFinance(tx, refundId, action);
+}
+
+/**
+ * Every refund alert (`refund.alert.*`, `refund.amount_mismatch`) rings the bell of the finance staff of the refund's
+ * city, once per refund and alert (the dedupe key carries the action), and links to Admin → Refunds. Same transaction
+ * as the alert, so a rolled-back alert never rings.
+ */
+async function alertFinance(tx: Tx, refundId: string, action: string): Promise<void> {
+  const [row] = rowsOf<{ city_id: string | null; code: string | null }>(
+    await tx.execute(sql`select coalesce(g.city_id, sr.city_id) as city_id, coalesce(g.code, sr.code) as code
+      from refunds r
+      left join order_groups g on g.id = r.group_id
+      left join service_bills sb on sb.id = r.bill_id
+      left join service_requests sr on sr.id = sb.request_id
+      where r.id = ${refundId}`),
+  );
+  if (!row) return;
+  await queueStaffNotice(tx, {
+    kind: 'staff.refund_alert',
+    cityId: row.city_id,
+    entityId: refundId,
+    version: action,
+    params: { orderCode: row.code ?? '' },
+  });
 }
 
 /**
@@ -1073,6 +1117,10 @@ async function settleProcessed(
   r: { id: string; orderId: string | null; billId?: string | null; amountPaise: number; createdAt: Date },
   from: RefundStatus,
   payment: { id: string; groupId: string | null; status: string; amountPaise: number; refunded: number },
+  by: { actor: EventActor; payload: Record<string, string | number | null> } = {
+    actor: sysActor,
+    payload: {},
+  },
 ): Promise<void> {
   const refunded = payment.refunded + r.amountPaise;
   await tx.update(payments).set({ refundedPaise: refunded }).where(eq(payments.id, payment.id));
@@ -1094,7 +1142,7 @@ async function settleProcessed(
           ),
         );
   }
-  await afterProcessed(tx, r, from, sysActor, {});
+  await afterProcessed(tx, r, from, by.actor, by.payload);
 }
 
 /** Common to both modes once the money is confirmed gone: event, analytics, customer email, coin rewards (spec 20). */
@@ -1114,6 +1162,9 @@ async function afterProcessed(
     actor,
     payload: { amountPaise: r.amountPaise, ...payload },
   });
+  // Paperwork for an invoiced order (the savepoint inside keeps a failure from undoing the settled money).
+  if (r.orderId)
+    await issueCreditNoteForRefund(tx, { refundId: r.id, orderId: r.orderId, amountPaise: r.amountPaise });
   const order = r.orderId
     ? (
         await tx
@@ -1223,6 +1274,10 @@ interface RefundRow {
   destination_enc: string | null;
   manual_reference: string | null;
   provider_reported_paise: unknown;
+  settle_reason_code: string | null;
+  cn_number: string | null;
+  cn_total_paise: unknown;
+  cn_issued_at: Date | string | null;
   overdue: boolean;
   created_key: string;
 }
@@ -1240,13 +1295,15 @@ const FROM = sql`from refunds r
   left join service_bills sb on sb.id = r.bill_id
   left join service_requests sr on sr.id = sb.request_id
   left join orders o on o.id = r.order_id
+  left join invoices cn on cn.refund_id = r.id and cn.kind = 'credit_note'
   left join settings cs on cs.key = 'refunds.approval_sla_hours' and cs.city_id = coalesce(g.city_id, sr.city_id)
   left join settings gs on gs.key = 'refunds.approval_sla_hours' and gs.city_id is null`;
 
 const SELECT = sql`select r.id, r.status, r.version, r.source, r.reason_code, r.reason as note, r.amount_paise,
   o.code as order_code, coalesce(g.code, sr.code) as group_code, coalesce(g.payment_method, 'online') as payment_method, r.requested_by, r.approved_by, r.created_at,
   r.decided_at, r.settled_at, r.reject_reason_code, r.failure_code, r.provider_refund_id,
-  r.mode, r.destination_enc, r.manual_reference, r.provider_reported_paise,
+  r.mode, r.destination_enc, r.manual_reference, r.provider_reported_paise, r.settle_reason_code,
+  cn.number as cn_number, cn.total_paise as cn_total_paise, cn.issued_at as cn_issued_at,
   (r.status = 'requested' and r.created_at < now() - make_interval(hours => ${slaHours})) as overdue,
   r.created_at::text as created_key
   ${FROM}`;
@@ -1296,8 +1353,14 @@ function toView(r: RefundRow, staffUserId: string, keyring?: Keyring): AdminRefu
     failureCode: r.failure_code,
     providerRefundId: r.provider_refund_id,
     providerReportedPaise: r.provider_reported_paise === null ? null : Number(r.provider_reported_paise),
+    settleReasonCode: r.settle_reason_code as AdminRefund['settleReasonCode'],
+    creditNote:
+      r.cn_number && r.cn_issued_at
+        ? { number: r.cn_number, totalPaise: Number(r.cn_total_paise), issuedAt: iso(r.cn_issued_at) }
+        : null,
     overdue: r.overdue,
     canApprove: r.status === 'requested' && r.requested_by !== staffUserId,
+    canSettle: r.status === 'needs_reconciliation' && r.requested_by !== staffUserId,
   };
 }
 
@@ -1418,6 +1481,188 @@ export async function markRefundPaid(
       { type: 'admin', id: input.staffUserId },
       { reference: input.reference },
     );
+    return viewOf(tx, r.id, input.staffUserId, input.keyring);
+  });
+}
+
+export interface SettleRefundInput {
+  scope: CityScope;
+  staffUserId: string;
+  refundId: string;
+  expectedVersion: number;
+  outcome: RefundSettleOutcome;
+  reasonCode: RefundSettleReason;
+  note: string;
+  /** Razorpay's refund id (`rfnd_...`) from the dashboard; needed unless we already stored one. */
+  providerRefundId?: string | undefined;
+  /** The amount Razorpay refunded when it is not ours (`refunded_other_amount`). */
+  providerAmountPaise?: number | undefined;
+  keyring?: Keyring | undefined;
+}
+
+/**
+ * Finance settles a refund stuck in `needs_reconciliation` by hand, after checking the Razorpay dashboard (spec 05
+ * "Settling by hand", decision 2026-11-16). One conditional UPDATE on (status, version) decides between two people;
+ * the requester can never settle (four-eyes, also a CHECK); a reason code and a written note are required and kept on
+ * the row, in `refund_events` and in `audit_log` (`refund.reconciled`).
+ *
+ * - `not_refunded`: Razorpay holds no refund, so it fails and the amount is freed. Refused when Razorpay already
+ *   reported a refund id: that money did move.
+ * - `refunded_full`: Razorpay refunded exactly our amount, so it is processed; the id is required.
+ * - `refunded_other_amount`: Razorpay refunded another amount (typed, and equal to what it reported when we know it):
+ *   the refund takes that amount, the ledger is moved to match (never above the capture), and it is processed.
+ * Lock order: payment, then refund (spec 14 rule 10).
+ */
+export async function settleUnsureRefund(db: Tx, input: SettleRefundInput): Promise<AdminRefund> {
+  const note = input.note.trim();
+  if (note.length < 10 || note.length > 300)
+    throw new ValidationError('Write a note of 10 to 300 characters', 'VALIDATION');
+  return db.transaction(async (tx) => {
+    const found = await loadInScope(tx, input.scope, input.refundId);
+    if (found.requestedBy === input.staffUserId)
+      throw new ForbiddenError('Another staff member must settle a refund you asked for', 'FOUR_EYES');
+    if (!found.paymentId) throw new ConflictError('Only a Razorpay refund can be unsure', 'NOT_UNSURE');
+    const payment = await lockLedger(tx, found.paymentId);
+    const [r] = await tx.select().from(refunds).where(eq(refunds.id, found.id)).for('update');
+    if (r?.status !== 'needs_reconciliation')
+      throw new ConflictError('This refund is not waiting to be settled', 'NOT_UNSURE');
+    if (r.version !== input.expectedVersion)
+      throw new ConflictError('The refund changed; reload it', 'STALE_REFUND');
+
+    const settleFields = {
+      settledAt: sql`now()`,
+      settledBy: input.staffUserId,
+      settleReasonCode: input.reasonCode,
+      settleNote: note,
+    };
+    const actor: EventActor = { type: 'admin', id: input.staffUserId };
+    let amountPaise = r.amountPaise;
+
+    if (input.outcome === 'not_refunded') {
+      if (r.providerRefundId !== null)
+        throw new ConflictError(
+          'Razorpay already reported a refund for it; it cannot be "not refunded"',
+          'PROVIDER_HOLDS_REFUND',
+        );
+      const rows = await tx
+        .update(refunds)
+        .set({ status: 'failed', failureCode: 'settled_by_hand', ...settleFields })
+        .where(
+          and(
+            eq(refunds.id, r.id),
+            eq(refunds.status, 'needs_reconciliation'),
+            eq(refunds.version, input.expectedVersion),
+          ),
+        )
+        .returning({ id: refunds.id });
+      if (rows.length === 0) throw new ConflictError('The refund changed; reload it', 'STALE_REFUND');
+      refundMachine.assert('needs_reconciliation', 'failed', 'admin');
+      await releaseReservation(tx, payment.id, r.amountPaise);
+      await recordRefundEvent(tx, {
+        refund: r,
+        kind: 'failed',
+        from: 'needs_reconciliation',
+        to: 'failed',
+        actor,
+        payload: { code: 'settled_by_hand', outcome: input.outcome, reasonCode: input.reasonCode },
+      });
+      await recordServerEvent(tx, 'refund_failed', {
+        userId: input.staffUserId,
+        props: { refundId: r.id, amountPaise: r.amountPaise, failureCode: 'settled_by_hand' },
+      });
+    } else {
+      const providerRefundId = r.providerRefundId ?? input.providerRefundId ?? null;
+      if (providerRefundId === null)
+        throw new ValidationError("Enter Razorpay's refund id (rfnd_...)", 'PROVIDER_REFUND_ID_REQUIRED');
+      if (
+        r.providerRefundId !== null &&
+        input.providerRefundId &&
+        input.providerRefundId !== r.providerRefundId
+      )
+        throw new ConflictError('Razorpay reported another refund id for it', 'PROVIDER_ID_DIFFERS');
+      if (input.outcome === 'refunded_other_amount') {
+        const typed = input.providerAmountPaise;
+        if (typed === undefined || !Number.isInteger(typed) || typed < 1)
+          throw new ValidationError('Enter the amount Razorpay refunded', 'PROVIDER_AMOUNT_REQUIRED');
+        if (typed > payment.amountPaise)
+          throw new ConflictError('The refund is more than the payment holds', 'REFUND_EXCEEDS_PAYMENT');
+        if (typed === r.amountPaise)
+          throw new ValidationError('That is our amount: settle it as "refunded in full"', 'AMOUNT_SAME');
+        if (r.providerReportedPaise !== null && r.providerReportedPaise !== typed)
+          throw new ConflictError('Razorpay reported a different amount', 'AMOUNT_DIFFERS_FROM_REPORT');
+        amountPaise = typed;
+      } else if (r.providerReportedPaise !== null && r.providerReportedPaise !== r.amountPaise) {
+        throw new ConflictError(
+          'Razorpay reported another amount: settle it as "another amount"',
+          'AMOUNT_DIFFERS_FROM_REPORT',
+        );
+      }
+      // Hold the real amount on the payment first (a conditional UPDATE under the payment lock: never above the capture).
+      if (amountPaise !== r.amountPaise) {
+        const moved = await tx
+          .update(payments)
+          .set({
+            refundReservedPaise: sql`${payments.refundReservedPaise} - ${r.amountPaise} + ${amountPaise}`,
+          })
+          .where(
+            and(
+              eq(payments.id, payment.id),
+              sql`${payments.refundReservedPaise} - ${r.amountPaise} + ${amountPaise} <= ${payments.amountPaise}`,
+            ),
+          )
+          .returning({ id: payments.id });
+        if (moved.length === 0)
+          throw new ConflictError(
+            'The refund is more than the payment still holds',
+            'REFUND_EXCEEDS_PAYMENT',
+          );
+      }
+      const rows = await tx
+        .update(refunds)
+        .set({
+          status: 'processed',
+          amountPaise,
+          providerRefundId,
+          initiatedAt: r.initiatedAt ?? sql`now()`,
+          failureCode: null,
+          ...settleFields,
+        })
+        .where(
+          and(
+            eq(refunds.id, r.id),
+            eq(refunds.status, 'needs_reconciliation'),
+            eq(refunds.version, input.expectedVersion),
+          ),
+        )
+        .returning({ id: refunds.id });
+      if (rows.length === 0) throw new ConflictError('The refund changed; reload it', 'STALE_REFUND');
+      refundMachine.assert('needs_reconciliation', 'processed', 'admin');
+      await settleProcessed(
+        tx,
+        { id: r.id, orderId: r.orderId, billId: r.billId, amountPaise, createdAt: r.createdAt },
+        'needs_reconciliation',
+        payment,
+        { actor, payload: { outcome: input.outcome, reasonCode: input.reasonCode, providerRefundId } },
+      );
+    }
+    await tx.insert(auditLog).values({
+      actorUserId: input.staffUserId,
+      actorRole: 'staff',
+      action: 'refund.reconciled',
+      entity: 'refund',
+      entityId: r.id,
+      after: {
+        outcome: input.outcome,
+        reasonCode: input.reasonCode,
+        amountPaise,
+        previousAmountPaise: r.amountPaise,
+      },
+    });
+    await recordServerEvent(tx, 'refund_reconciled', {
+      userId: input.staffUserId,
+      cityId: found.cityId,
+      props: { refundId: r.id, amountPaise, outcome: input.outcome, reasonCode: input.reasonCode },
+    });
     return viewOf(tx, r.id, input.staffUserId, input.keyring);
   });
 }

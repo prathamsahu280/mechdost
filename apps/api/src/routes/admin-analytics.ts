@@ -187,6 +187,7 @@ export function adminAnalyticsRoutes(deps: AppDeps, cache: SessionCache) {
         reviews: scopeOrNull(grants, 'reviews:moderate'),
         applications: scopeOrNull(grants, 'applications:review'),
         prices: scopeOrNull(grants, 'prices:approve'),
+        refunds: scopeOrNull(grants, 'refunds:read'),
         analytics: scopeOrNull(grants, 'analytics:read'),
       };
       if (Object.values(scopes).every((s) => s === null)) {

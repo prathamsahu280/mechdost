@@ -277,6 +277,13 @@ export const NOTICE_CATALOGUE = {
     text: ['orderCode'],
     link: at('/admin/refunds'),
   }),
+  'staff.refund_alert': def({
+    category: T,
+    entity: 'refund',
+    audience: 'staff',
+    text: ['orderCode'],
+    link: at('/admin/refunds'),
+  }),
   'staff.new_application': def({
     category: T,
     entity: 'application',

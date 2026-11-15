@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import {
+  type AnyPgColumn,
   bigint,
   boolean,
   check,
@@ -23,6 +24,7 @@ import {
   PAYMENT_STATES,
   REFUND_REASONS,
   REFUND_REJECT_REASONS,
+  REFUND_SETTLE_REASONS,
   REFUND_SOURCES,
   REFUND_STATES,
 } from '@mechdost/shared/state';
@@ -554,6 +556,10 @@ export const refunds = pgTable(
     manualReference: text(),
     /** The amount Razorpay reported when it differed from ours (status `needs_reconciliation`). */
     providerReportedPaise: paise(),
+    /** Finance settled an unsure refund by hand: who, why (code) and the required note (spec 05 "Settling by hand"). */
+    settledBy: uuid().references(() => users.id, { onDelete: 'set null' }),
+    settleReasonCode: text(),
+    settleNote: text(),
     /** Calls to Razorpay so far, and when the worker may try again (backoff). */
     dispatchAttempts: integer().notNull().default(0),
     nextAttemptAt: ts(),
@@ -605,6 +611,16 @@ export const refunds = pgTable(
       sql`(${t.status} in ('processed','failed')) = (${t.settledAt} is not null)`,
     ),
     check('refunds_attempts_nonneg', sql`${t.dispatchAttempts} >= 0`),
+    check(
+      'refunds_settle_valid',
+      sql`(${t.settleReasonCode} is null and ${t.settleNote} is null) or (${t.settleReasonCode} in (${inList(REFUND_SETTLE_REASONS)}) and char_length(${t.settleNote}) between 10 and 300)`,
+    ),
+    // Four-eyes also when settling by hand: whoever asked for the refund cannot settle it.
+    check(
+      'refunds_settle_four_eyes',
+      sql`${t.settledBy} is null or ${t.requestedBy} is null or ${t.settledBy} <> ${t.requestedBy}`,
+    ),
+    index().on(t.settledBy),
     // No wallet (decision 2026-11-01): money goes back to the original method, or bank/UPI for COD orders.
     check('refunds_mode_valid', sql`${t.mode} in ('source','bank_upi')`),
     check('refunds_destination_encrypted', encryptedCheck(t.destinationEnc)),
@@ -688,7 +704,10 @@ export const invoices = pgTable(
     number: text().notNull().unique(),
     orderId: uuid().references(() => orders.id, { onDelete: 'restrict' }),
     serviceRequestId: uuid(),
-    creditNoteFor: uuid(),
+    /** A credit note points at the tax invoice it reduces. */
+    creditNoteFor: uuid().references((): AnyPgColumn => invoices.id, { onDelete: 'restrict' }),
+    /** The refund a credit note was issued for (one credit note per refund, by a unique index). */
+    refundId: uuid().references(() => refunds.id, { onDelete: 'restrict' }),
     status: text().notNull().default('issued'),
     taxablePaise: paise().notNull(),
     cgstPaise: paise().notNull().default(0),
@@ -705,6 +724,13 @@ export const invoices = pgTable(
     check('invoices_status_valid', sql`${t.status} in ('issued','cancelled')`),
     check('invoices_number_rule46', sql`length(${t.number}) <= 16 and ${t.number} ~ '^[A-Z0-9][A-Z0-9/-]*$'`),
     check('invoices_seq_positive', sql`${t.seq} > 0`),
+    // A credit note always reduces one invoice; only a credit note can carry a refund.
+    check('invoices_credit_note_link', sql`(${t.kind} = 'credit_note') = (${t.creditNoteFor} is not null)`),
+    check('invoices_refund_only_credit_note', sql`${t.refundId} is null or ${t.kind} = 'credit_note'`),
+    uniqueIndex('invoices_one_credit_note_per_refund_uq')
+      .on(t.refundId)
+      .where(sql`${t.refundId} is not null`),
+    index().on(t.creditNoteFor),
     check('invoices_round_off_range', sql`${t.roundOffPaise} between -50 and 50`),
     index().on(t.orderId),
     index().on(t.serviceRequestId),

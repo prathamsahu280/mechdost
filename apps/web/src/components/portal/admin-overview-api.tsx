@@ -61,6 +61,8 @@ export function AdminOverviewApi() {
         { label: t('kpi_reviews'), value: data.reviewsPending, href: 'reviews' },
         { label: t('kpi_applications'), value: data.applicationsPending, href: 'applications' },
         { label: t('kpi_priceRequests'), value: data.priceRequestsPending, href: 'partners', alert: true },
+        { label: t('kpi_refundsWaiting'), value: data.refundsWaiting, href: 'refunds' },
+        { label: t('kpi_refundsChecking'), value: data.refundsNeedChecking, href: 'refunds', alert: true },
         { label: t('analytics_api_today_orders'), value: data.ordersToday, href: 'analytics' },
         { label: t('analytics_api_today_value'), value: data.gmvTodayPaise, money: true, href: 'analytics' },
       ]

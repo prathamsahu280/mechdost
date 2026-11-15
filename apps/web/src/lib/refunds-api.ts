@@ -6,6 +6,7 @@ import {
   type AdminRefundPage,
   type AdminRefundView,
   type RefundDestinationInput,
+  type SettleRefundInput,
 } from '@mechdost/shared/refunds-api';
 import type { RefundRejectReason } from '@mechdost/shared/state';
 import { adminApi, type AdminResult } from './admin-api';
@@ -57,6 +58,17 @@ export function markRefundPaid(
   input: { version: number; reference: string },
 ): Promise<AdminResult<AdminRefund>> {
   return adminApi(locale, `/admin/refunds/${encodeURIComponent(id)}/mark-paid`, AdminRefundDto, {
+    method: 'POST',
+    body: input,
+  });
+}
+
+export function settleRefund(
+  locale: string,
+  id: string,
+  input: SettleRefundInput,
+): Promise<AdminResult<AdminRefund>> {
+  return adminApi(locale, `/admin/refunds/${encodeURIComponent(id)}/settle`, AdminRefundDto, {
     method: 'POST',
     body: input,
   });

@@ -7,6 +7,8 @@ import { z } from 'zod';
 import {
   REFUND_REASONS,
   REFUND_REJECT_REASONS,
+  REFUND_SETTLE_OUTCOMES,
+  REFUND_SETTLE_REASONS,
   REFUND_SOURCES,
   REFUND_STATES,
   type RefundStatus,
@@ -126,6 +128,35 @@ export const RejectRefundBody = z
   .object({ version: Version, reasonCode: z.enum(REFUND_REJECT_REASONS), note: Note.optional() })
   .strict();
 
+/**
+ * Finance settles a `needs_reconciliation` refund after checking Razorpay (`refunds:approve`, never the one who asked).
+ * `refunded_full` / `refunded_other_amount` carry Razorpay's refund id (`rfnd_...`) unless we already stored it;
+ * `refunded_other_amount` also carries the amount Razorpay actually refunded. `not_refunded` frees the amount.
+ */
+export const SettleRefundBody = z
+  .object({
+    version: Version,
+    outcome: z.enum(REFUND_SETTLE_OUTCOMES),
+    reasonCode: z.enum(REFUND_SETTLE_REASONS),
+    note: z.string().trim().min(10).max(300),
+    providerRefundId: z
+      .string()
+      .trim()
+      .regex(/^rfnd_[A-Za-z0-9]{6,32}$/)
+      .optional(),
+    providerAmountPaise: z.number().int().min(1).max(100_000_000).optional(),
+  })
+  .strict();
+export type SettleRefundInput = z.infer<typeof SettleRefundBody>;
+
+/** The credit note issued for a processed refund of an invoiced order (spec 05 "Credit notes"). */
+export const RefundCreditNoteDto = z.object({
+  number: z.string(),
+  totalPaise: z.number().int(),
+  issuedAt: z.string(),
+});
+export type RefundCreditNote = z.infer<typeof RefundCreditNoteDto>;
+
 export const AdminRefundDto = z.object({
   id: z.string(),
   status: z.enum(REFUND_STATES),
@@ -155,10 +186,16 @@ export const AdminRefundDto = z.object({
   providerReportedPaise: z.number().int().nullable(),
   /** Razorpay's refund id once it exists (support looks it up in the dashboard). */
   providerRefundId: z.string().nullable(),
+  /** Who settled an unsure refund by hand and why (null otherwise). */
+  settleReasonCode: z.enum(REFUND_SETTLE_REASONS).nullable(),
+  /** The credit note for this refund when its order had a tax invoice; null otherwise. */
+  creditNote: RefundCreditNoteDto.nullable(),
   /** Still `requested` after `refunds.approval_sla_hours`. */
   overdue: z.boolean(),
   /** The signed-in staff member may approve it (right permission and not the one who asked). */
   canApprove: z.boolean(),
+  /** The signed-in staff member may settle it by hand (it is unsure and they are not the one who asked). */
+  canSettle: z.boolean(),
 });
 export type AdminRefund = z.infer<typeof AdminRefundDto>;
 

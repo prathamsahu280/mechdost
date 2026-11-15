@@ -143,6 +143,9 @@ export const AdminOverviewDto = z.object({
   reviewsPending: Count.nullable(),
   applicationsPending: Count.nullable(),
   priceRequestsPending: Count.nullable(),
+  /** Refunds waiting for approval, and refunds that need checking at Razorpay (needs `refunds:read`). */
+  refundsWaiting: Count.nullable(),
+  refundsNeedChecking: Count.nullable(),
   /** Today (IST): orders placed and their value; null without `analytics:read`. */
   ordersToday: Count.nullable(),
   gmvTodayPaise: Paise.nullable(),

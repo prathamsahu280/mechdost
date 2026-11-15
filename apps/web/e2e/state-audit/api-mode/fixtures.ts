@@ -123,8 +123,11 @@ function refundBase(over: Partial<Refund>): Refund {
     failureCode: null,
     providerReportedPaise: null,
     providerRefundId: null,
+    settleReasonCode: null,
+    creditNote: null,
     overdue: false,
     canApprove: true,
+    canSettle: false,
     ...over,
   };
 }
@@ -174,6 +177,41 @@ export function refundVariant(name: string): Refund {
         providerReportedPaise: 489_000,
         approvedBy: 'staff-3',
         canApprove: false,
+        canSettle: true,
+      });
+    case 'needs-reconciliation-own':
+      return refundBase({
+        status: 'needs_reconciliation',
+        requestedBy: 'me',
+        approvedBy: 'staff-3',
+        canApprove: false,
+        canSettle: false,
+      });
+    case 'settled-by-hand':
+      return refundBase({
+        status: 'processed',
+        approvedBy: 'staff-3',
+        decidedAt: iso(-300),
+        processedAt: iso(-20),
+        providerRefundId: 'rfnd_audit000003',
+        settleReasonCode: 'dashboard_checked',
+        canApprove: false,
+      });
+    case 'processed-credit-note':
+      return refundBase({
+        status: 'processed',
+        approvedBy: 'staff-3',
+        decidedAt: iso(-300),
+        processedAt: iso(-20),
+        providerRefundId: 'rfnd_audit000004',
+        creditNote: { number: 'CN/2627/000012', totalPaise: 489_900, issuedAt: iso(-20) },
+        canApprove: false,
+      });
+    case 'after-close':
+      return refundBase({
+        source: 'payment_after_close',
+        reasonCode: 'payment_after_close',
+        requestedBy: null,
       });
     default:
       return refundBase({});
@@ -206,6 +244,14 @@ function refundMocks(): Mock[] {
       path: /^\/admin\/refunds\/[^/]+$/,
       schema: AdminRefundDto,
       reply: ({ c }) => ({ body: refundVariant(c.state.refund ?? 'requested') }),
+    },
+    {
+      method: 'POST',
+      path: /^\/admin\/refunds\/[^/]+\/settle$/,
+      schema: AdminRefundDto,
+      reply: () => ({
+        body: refundVariant('settled-by-hand'),
+      }),
     },
   ];
 }
@@ -882,6 +928,8 @@ function analyticsMocks(): Mock[] {
           reviewsPending: 5,
           applicationsPending: 2,
           priceRequestsPending: 1,
+          refundsWaiting: 3,
+          refundsNeedChecking: 1,
           ordersToday: 12,
           gmvTodayPaise: 4_589_900,
         } satisfies Dto<typeof AdminOverviewDto>,
