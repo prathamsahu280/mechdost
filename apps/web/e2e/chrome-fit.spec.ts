@@ -78,8 +78,10 @@ test.describe('privacy banner leaves the last controls reachable', () => {
       const banner = page.getByTestId('consent-banner');
       await expect(banner).toBeVisible();
       const checkout = page.getByText('Proceed to checkout').first();
-      await page.evaluate(() => {
-        window.scrollTo(0, document.documentElement.scrollHeight);
+      // Bring the button into view the way keyboard focus does (honours the page's bottom scroll padding, which
+      // reserves the open banner). Scrolling to the page end would put the footer on screen and the button above it.
+      await checkout.evaluate((el) => {
+        el.scrollIntoView({ block: 'end' });
       });
       const [b, c] = await Promise.all([banner.boundingBox(), checkout.boundingBox()]);
       expect(c?.y ?? -1, 'the button is on screen').toBeGreaterThanOrEqual(0);
