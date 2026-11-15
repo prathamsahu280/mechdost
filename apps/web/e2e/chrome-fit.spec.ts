@@ -118,6 +118,11 @@ test.describe('signed-in header fits at phone, tablet and desktop widths', () =>
           await expect(page).toHaveURL(new RegExp(home));
           if (cart) await seedCart(page, 99);
           await page.goto(prefix || '/');
+          // The signed-in entry replaces the sign-in link after the session loads; measure only that header.
+          await expect(
+            page.locator('[data-track="header_account"]'),
+            'the account entry is in the header',
+          ).toBeAttached();
           await page.evaluate(() => document.fonts.ready);
           const m = await page.evaluate(() => {
             const right = [...document.querySelectorAll('header a, header button')]
