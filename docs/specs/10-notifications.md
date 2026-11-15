@@ -163,6 +163,14 @@ Order emails (`order_*` templates) carry one footer line above the company line:
 
 `live_outbox` kinds gain `cart` and `wishlist` (events `cart.changed`, `wishlist.changed`; topic `user:<id>`, ids and a version only). Written by triggers on `carts` and `wishlist_items`, relayed like the others.
 
+## Live updates: service request pings (2026-11-16)
+
+Migration `0073_live_service_requests`: a trigger on `service_requests` (insert and every update) writes one `live_outbox` row per change, topic **`request:<id>`**, kind `request`, event `request.status_changed`, the request's `version` (ids and a version only). The relay resolves the topic from Postgres only (`resolveLiveRecipients`): the request's **customer**, the **users who hold a role for the workshop holding the request** (`user_roles.workshop_id`), and the **city's staff who hold `service:read`** (an id that is no request resolves to nobody; deactivated users are never addressed). Written to the same `inbox/<firebaseUid>/request~<id>` node as every kind, so **the RTDB rules need no new path** (rule-text test: no rule names a ping kind, every `.write` stays false). `request~<uuid>` can be wiped like an order node (`inboxRemovals`).
+
+Consumers (all keep their polling, which is the fallback and the only path when `LIVE_TRANSPORT` is not `rtdb` or `NEXT_PUBLIC_FIREBASE_DATABASE_URL` is missing; `startLive` then connects nothing): the customer's request page (`request-view-api.tsx`, was 30 s polling), the workshop portal's new and active feeds, and the admin service queue (every view). `useLivePings(kinds, onPing, enabled)` (`lib/live/use-live-pings.ts`, light: hub only) and the optional third argument of `useApiList(fetch, pollMs, liveKinds)` do the wiring. A workshop that loses a request keeps a harmless `request~id` node (an id and a version; the refetch is permission-checked and 404s).
+
+Tests: `packages/db/test/live-requests.test.ts` (trigger per change, rollback leaves none, recipients, fail closed, deactivated), `apps/api/test/live.test.ts` (node path, removals, rules), `apps/web/test/live-request-wiring.test.ts`, `packages/shared/test/live.test.ts`. Rules still untested against the real emulator (Q160); the rules are not deployed by the builder.
+
 ## Live updates: the browser listener (2026-11-15)
 
 One shared, lazily loaded Firebase Realtime Database subscription per signed-in tab (`apps/web/src/lib/live/`). The relay resolves every topic (order, shop, workshop, staff city, quote, user) to **user ids in Postgres** and writes only `inbox/<firebaseUid>/<kind>~<id>`, so the browser needs exactly one read path.

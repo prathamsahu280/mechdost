@@ -116,6 +116,8 @@ export interface ServerEventProps {
   shop_packing_slip_viewed: { shopId: string; orderCode: string };
   /** The owner opened the performance page (item 6). */
   shop_performance_viewed: { shopId: string };
+  /** The staff performance and earnings view was opened (design 2026-11-16); `scope` owner = whole team, self = own row. */
+  shop_staff_performance_viewed: { shopId: string; scope: 'owner' | 'self'; days: 30 | 90 };
   /** Public application status lookup (item 7): `found` false when the phone did not match the reference. */
   partner_status_checked: { found: boolean };
   partner_application_submitted: {

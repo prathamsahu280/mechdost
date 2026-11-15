@@ -59,7 +59,7 @@ describe('the live listener loads lazily', () => {
     for (const f of layouts) expect(f.text, f.path).not.toMatch(/\/live\//);
   });
 
-  it('only signed-in code starts it: cart sync and the notice feed, behind the configured check', () => {
+  it('only signed-in code starts it: cart sync, the notice feed and the use-live-pings hook, behind the configured check', () => {
     const starters = all
       .filter((f) => /\bstartLive\(/.test(f.text))
       .map((f) => f.path)
@@ -67,6 +67,7 @@ describe('the live listener loads lazily', () => {
     expect(starters).toEqual([
       'components/notices/use-notice-feed.ts',
       'lib/live/live-hub.ts',
+      'lib/live/use-live-pings.ts',
       'lib/storefront-sync.ts',
     ]);
     expect(text('lib/live/live-hub.ts')).toMatch(/AUTH_MODE === 'firebase'/);

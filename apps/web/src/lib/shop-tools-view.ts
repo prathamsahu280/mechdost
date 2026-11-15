@@ -1,4 +1,6 @@
+import type { ShopPayoutEntryKind } from '@mechdost/shared/coins';
 import type { SHOP_CSV_ERROR_CODES } from '@mechdost/shared/shop-csv';
+import type { ShopStaffPerformanceDto } from '@mechdost/shared/shop-staff-performance';
 
 /**
  * Pure helpers of the shop portal's next tier, part 2 (design 2026-11-15, items 4 to 7): words for API codes and the
@@ -59,6 +61,36 @@ export function acceptTime(seconds: number): { unit: 'seconds' | 'minutes'; coun
   return seconds < 120
     ? { unit: 'seconds', count: seconds }
     : { unit: 'minutes', count: Math.round(seconds / 60) };
+}
+
+/** Days listed in the by-day earnings chart (the newest ones; the total covers the whole window). */
+export const STAFF_DAYS_SHOWN = 14;
+
+/** Width (0 to 100) of a day's bar against the largest day shown. */
+export const paiseBarWidth = (paise: number, max: number): number =>
+  max <= 0 ? 0 : Math.min(100, Math.max(0, Math.round((paise * 100) / max)));
+
+/** The `shopTier2` key naming a payout ledger kind. */
+export const staffKindKey = (kind: ShopPayoutEntryKind): `staffKind_${ShopPayoutEntryKind}` =>
+  `staffKind_${kind}`;
+
+/** An IST calendar day (`YYYY-MM-DD`) written short in the language, never shifted by the viewer's time zone. */
+export function istDayLabel(day: string, locale: string): string {
+  const [y, m, d] = day.split('-').map(Number);
+  if (!y || !m || !d) return day;
+  return new Intl.DateTimeFormat(locale === 'hi' ? 'hi-IN' : 'en-IN', {
+    day: 'numeric',
+    month: 'short',
+    timeZone: 'UTC',
+  }).format(new Date(Date.UTC(y, m - 1, d)));
+}
+
+/** Nobody did anything in the window and nothing is owed: the screen shows its empty state instead of zeros. */
+export function staffIsEmpty(r: ShopStaffPerformanceDto): boolean {
+  const worked = r.members.some(
+    (m) => m.accepted + m.packed + m.handedOver + m.delivered + m.giveUps > 0 || m.deliveredLedgerPaise > 0,
+  );
+  return !worked && (r.earnings?.totalPaise ?? 0) === 0;
 }
 
 /** Stars × 100 as one decimal ("4.4"); null stays null. */

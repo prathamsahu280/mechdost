@@ -49,7 +49,7 @@ import { customerPhotoMocks, workshopPhotoMocks } from './photo-fixtures.ts';
 import { accountDeletionMocks, accountSupportMocks, adminSupportMocks } from './support-fixtures.ts';
 import { myWorkshopMocks, profileMocks } from './tier1-fixtures.ts';
 import { adminRoutingMocks, billPayMocks } from './tier3-fixtures.ts';
-import { slipMocks, tier2PortalMocks } from './tier2-fixtures.ts';
+import { slipMocks, staffPortalMocks, tier2PortalMocks } from './tier2-fixtures.ts';
 import { adminRecoMocks, demandMocks, notifyMeMocks, privacyMocks } from './catalogue-tier2-fixtures.ts';
 import { photoQueueMocks, wishlistMocks } from './storefront-fixtures.ts';
 import type { Mock, MockCtx, Reply } from './mock-api.ts';
@@ -1533,6 +1533,8 @@ export function mocksFor(c: AuditCase): Mock[] {
     case 'API-SHOP-TIER2':
       // The portal also loads its performance card and CSV tool: the tier 2 mocks sit under every portal row.
       return [...shopPortalMocks(c), ...tier2PortalMocks()];
+    case 'API-SHOP-STAFF':
+      return [...shopPortalMocks(c), ...tier2PortalMocks(), ...staffPortalMocks()];
     case 'API-SHOP-SLIP':
       return [meMock(), ...slipMocks()];
     case 'API-ADM-SHOPS':

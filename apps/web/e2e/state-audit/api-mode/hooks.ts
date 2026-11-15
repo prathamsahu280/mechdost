@@ -187,6 +187,15 @@ async function prepareApi(page: Page, c: AuditCase): Promise<string[]> {
       }
     }
   }
+  // Shop portal, staff performance: open the section from its toggle so the mocked API answers it.
+  if (c.code === 'API-SHOP-STAFF') {
+    const toggle = main.locator('[data-disclosure-trigger="shop-staff-performance"]');
+    if ((await toggle.count()) === 0) notes.push('no staff performance toggle');
+    else {
+      await toggle.click();
+      await settleApi(page);
+    }
+  }
   // Public status form: submit it empty so the field errors show.
   if (c.code === 'API-PARTNER-STATUS' && c.state.form === 'invalid') {
     await main.locator('form button[type="submit"]').first().click();

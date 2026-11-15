@@ -3,6 +3,7 @@
  * with problems, a clean check, a refused file, applied), the performance card (with and without the city median, no
  * data, error), the packing slip page and the public status form. Every body carries its shared schema.
  */
+import { ShopStaffPerformance } from '@mechdost/shared/shop-staff-performance';
 import { PackingSlip, ShopCsvApplied, ShopCsvPreview, ShopPerformance } from '@mechdost/shared/shop-tools';
 import type { AuditCase } from '../cases.ts';
 import type { Mock, Reply } from './mock-api.ts';
@@ -160,6 +161,90 @@ export function tier2PortalMocks(): Mock[] {
       path: /^\/shop\/performance\/[^/]+$/,
       schema: ShopPerformance,
       reply: ({ c }) => performance(c),
+    },
+  ];
+}
+
+/**
+ * The staff performance and earnings section (design 2026-11-16): the owner's answer carries every person, the shop
+ * totals and the ledger; a staff member's only their own row (no shop numbers, no ledger).
+ */
+function staffPerformance(c: AuditCase): Reply {
+  const kind = c.state.staffdata ?? 'full';
+  if (kind === 'error') return { status: 500, code: 'INTERNAL' };
+  const staff = c.state.role === 'staff';
+  const empty = kind === 'empty';
+  const row = (n: number, role: 'owner' | 'staff', name: string | null, you: boolean) => ({
+    userId: uuid(300 + n),
+    name:
+      long(c) && name
+        ? `${name} ${c.locale === 'hi' ? 'सहायक भंडार प्रबंधक' : 'Assistant Store Manager'}`
+        : name,
+    role,
+    isYou: you,
+    accepted: empty ? 0 : 12 - n,
+    packed: empty ? 0 : 10 - n,
+    handedOver: empty ? 0 : 9 - n,
+    delivered: empty ? 0 : 8 - n,
+    giveUps: empty ? 0 : n,
+    medianAcceptSeconds: empty ? null : 90 + n * 120,
+    onTimeBp: empty ? null : 9000 - n * 500,
+    deliveredLedgerPaise: empty ? 0 : 124_500 - n * 20_000,
+  });
+  const all = [
+    row(0, 'owner', 'Audit User', !staff),
+    row(1, 'staff', 'Anil Verma', staff),
+    row(2, 'staff', null, false),
+  ];
+  const members = staff ? all.filter((m) => m.isYou) : all;
+  return {
+    body: {
+      shopId: uuid(1),
+      days: 30,
+      from: '2026-10-18',
+      scope: staff ? 'self' : 'owner',
+      onTimeHours: 24,
+      members,
+      shop: staff
+        ? null
+        : {
+            accepted: empty ? 0 : 30,
+            packed: empty ? 0 : 27,
+            handedOver: empty ? 0 : 24,
+            delivered: empty ? 0 : 22,
+            giveUps: empty ? 0 : 3,
+            medianAcceptSeconds: empty ? null : 210,
+            onTimeBp: empty ? null : 8700,
+          },
+      earnings: staff
+        ? null
+        : {
+            totalPaise: empty ? 0 : 289_000,
+            byKind: empty
+              ? []
+              : [
+                  { kind: 'coin_discount', paise: 214_000, entries: 11 },
+                  { kind: 'coupon_discount', paise: 75_000, entries: 4 },
+                ],
+            byDay: empty
+              ? []
+              : [
+                  { day: '2026-11-15', paise: 99_000 },
+                  { day: '2026-11-12', paise: 150_000 },
+                  { day: '2026-11-02', paise: 40_000 },
+                ],
+          },
+    } satisfies Dto<typeof ShopStaffPerformance>,
+  };
+}
+
+export function staffPortalMocks(): Mock[] {
+  return [
+    {
+      method: 'GET',
+      path: /^\/shop\/staff-performance\/[^/]+$/,
+      schema: ShopStaffPerformance,
+      reply: ({ c }) => staffPerformance(c),
     },
   ];
 }

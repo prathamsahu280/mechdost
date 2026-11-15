@@ -60,7 +60,7 @@ export function ServiceRoutingApi() {
     },
     [locale, view],
   );
-  const list = useApiList(page, view === 'needs_routing' ? POLL_MS : undefined);
+  const list = useApiList(page, view === 'needs_routing' ? POLL_MS : undefined, ['request']);
   const routable = view === 'needs_routing' || view === 'awaiting';
 
   return (

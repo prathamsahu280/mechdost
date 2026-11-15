@@ -53,8 +53,8 @@ export function WorkshopRequestsApi() {
   const newPage = useCallback((c: string | null) => page('new')(c), [page]);
   const activePage = useCallback((c: string | null) => page('active')(c), [page]);
   const donePage = useCallback((c: string | null) => page('done')(c), [page]);
-  const fresh = useApiList(newPage, NEW_POLL_MS);
-  const active = useApiList(activePage, NEW_POLL_MS);
+  const fresh = useApiList(newPage, NEW_POLL_MS, ['request']);
+  const active = useApiList(activePage, NEW_POLL_MS, ['request']);
   const done = useApiList(donePage);
   const refresh = useCallback(async () => {
     await Promise.all([fresh.reload(), active.reload(), done.reload()]);

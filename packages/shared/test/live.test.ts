@@ -54,3 +54,16 @@ describe('live ping contract (decision 2026-11-01)', () => {
     expect([0, 1, 2, 3, 4, 10].map(nextPollDelay)).toEqual([15_000, 15_000, 30_000, 30_000, 60_000, 60_000]);
   });
 });
+
+describe('service request pings (design 2026-11-16)', () => {
+  it('a request topic is a known kind with a uuid', () => {
+    expect(liveTopic('request', ID)).toBe(`request:${ID}`);
+    expect(parseLiveTopic(`request:${ID}`)).toEqual({ kind: 'request', id: ID });
+    expect(parseLiveTopic('request:SR-RPR-2026-AAAAAA')).toBeNull();
+  });
+  it('the request ping stays thin', () => {
+    const p = { e: 'request.status_changed', k: 'request', id: ID, v: 2, at: '2026-11-16T10:00:00.000Z' };
+    expect(parseLivePing(p)).toEqual(p);
+    expect(parseLivePing({ ...p, status: 'confirmed' })).toBeNull();
+  });
+});

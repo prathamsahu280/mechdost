@@ -153,6 +153,23 @@ export async function resolveLiveRecipients(db: Tx, topic: string): Promise<Live
         from (${STAFF_WITH('quotes:read', sql`select city_id from quote_requests where id = ${quoteId}`)}) staff
         -- An id that is no quote resolves to nobody (an all-city grant would otherwise match a null city).
         where exists (select 1 from quote_requests where id = ${quoteId})`;
+  } else if (parsed.kind === 'request') {
+    // A service request (design 2026-11-16): its customer, the users of the workshop holding it, and the city's staff
+    // who can read service requests. An id that is no request resolves to nobody (an all-city grant would otherwise
+    // match a null city).
+    const requestId = parsed.id;
+    query = sql`
+      select u.id as user_id, u.firebase_uid from service_requests r join users u on u.id = r.user_id
+        where r.id = ${requestId} and u.status = 'active'
+      union
+      select u.id, u.firebase_uid from service_requests r
+        join user_roles ur on ur.workshop_id = r.workshop_id
+        join users u on u.id = ur.user_id
+        where r.id = ${requestId} and r.workshop_id is not null and u.status = 'active'
+      union
+      select staff.user_id, staff.firebase_uid
+        from (${STAFF_WITH('service:read', sql`select city_id from service_requests where id = ${requestId}`)}) staff
+        where exists (select 1 from service_requests where id = ${requestId})`;
   } else {
     // workshop topics resolve once their tables carry membership (Phase 2); fail closed until then.
     return [];

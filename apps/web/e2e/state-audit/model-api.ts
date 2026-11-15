@@ -610,6 +610,26 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
     realApi: true,
   },
   {
+    code: 'API-SHOP-STAFF',
+    page: 'Shop portal (/partner/shop), real sign-in',
+    component:
+      'Team performance and earnings, opened from its toggle: the owner sees every person, the whole shop and the ledger by kind and IST day; a staff member only their own row; with data, nothing to show yet (one next action) and error with retry',
+    path: '/partner/shop',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['shop'] },
+      { name: 'staffdata', values: ['full', 'empty', 'error'] },
+      { name: 'role', values: ['owner', 'staff'] },
+      stress,
+    ],
+    checks: [...BASE_CHECKS],
+    sweep: 8,
+    note: `${API_NOTE} The page hook opens the section; the mocked API answers by role (owner: team, shop and ledger; staff: own row only, no shop money). Closing it with the same button is covered by the unit test; the toggle is a disclosure the Escape hook closes.`,
+    realApi: true,
+  },
+  {
     code: 'API-SHOP-SLIP',
     page: 'Packing slip (/partner/shop/slip/{code}), real sign-in',
     component:

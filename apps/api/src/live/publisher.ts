@@ -16,7 +16,7 @@ export interface LiveDelivery {
 
 export interface ForgetTarget {
   firebaseUid: string;
-  /** Null = the whole inbox; otherwise `order~{uuid}` / `assignment~{uuid}`. */
+  /** Null = the whole inbox; otherwise `order~{uuid}`, `assignment~{uuid}` or `request~{uuid}`. */
   node: string | null;
 }
 
@@ -36,7 +36,7 @@ export const pollingPublisher: LivePublisher = {
 /** RTDB keys may not contain `. # $ [ ] /`; uuids and kind codes never do, but refuse anything else. */
 const SAFE_KEY = /^[A-Za-z0-9_-]{1,128}$/;
 
-const NODE = /^(order|assignment)~[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+const NODE = /^(order|assignment|request)~[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 /** Multi-path update that removes inboxes or single nodes; never a path outside `inbox/{uid}`. */
 export function inboxRemovals(targets: readonly ForgetTarget[]): Record<string, null> {

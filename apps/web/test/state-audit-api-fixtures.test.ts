@@ -14,6 +14,7 @@ describe('API-mode audit fixtures (Q106)', () => {
       'API-ORD-REFUNDLINE',
       'API-SHOP-PORTAL',
       'API-SHOP-TIER2',
+      'API-SHOP-STAFF',
       'API-SHOP-SLIP',
       'API-PARTNER-STATUS',
       'API-ADM-SHOPS',
