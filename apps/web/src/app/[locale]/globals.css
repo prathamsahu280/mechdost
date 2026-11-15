@@ -30,6 +30,21 @@
     border-radius: 4px;
   }
 
+  /* Product cards in a list share the list's rows (user report 2026-11-15: prices and "In stock" at different
+     heights): each item and its card span the card's eight rows as a subgrid, so a row of cards lines up whatever
+     the name length (ProductCard; checked by the UI state audit's aligned rule). */
+  .card-grid > li {
+    display: grid;
+    grid-row: span 8;
+    grid-template-rows: subgrid;
+    row-gap: 0;
+  }
+  .card-grid > li > article {
+    grid-row: span 8;
+    grid-template-rows: subgrid;
+    row-gap: 0;
+  }
+
   /* A picker for a visually hidden file input draws the input's focus ring (test/file-picker-focus.test.ts). */
   .file-pick:has(input[type='file']:focus-visible),
   .file-pick:has(+ input[type='file']:focus-visible) {

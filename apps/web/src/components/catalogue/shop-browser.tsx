@@ -408,7 +408,7 @@ export function ShopBrowser({
         <>
           <ul
             aria-busy={navigating || undefined}
-            className="mt-5 grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 tab:grid-cols-3 nav:grid-cols-4"
+            className="card-grid mt-5 grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 tab:grid-cols-3 nav:grid-cols-4"
           >
             {[...results.map((p) => ({ slug: p.slug, node: cards[p.slug] })), ...(appended?.cards ?? [])].map(
               (card) => (
