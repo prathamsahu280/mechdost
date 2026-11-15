@@ -365,3 +365,10 @@ See PENDING DECISIONS in `docs/decisions.md` (payment methods; post-purchase P1 
 - Built: online payment of the service bill (same payments table and webhook, purpose `service_bill`, one open order per bill, settles billed -> paid -> completed; a late capture after "paid at the workshop" or a cancel is recorded and refunded once), staff cancel (`service:cancel`, reason codes, slot released once, one refund request for a paid bill, en + hi email, bell and push), ranked workshop suggestions (pure ranking in shared, two-statement SQL, admin UI with reasons and one-click send), UI on the request page and Admin -> Services, state-audit rows `API-SVC-PAYBILL` and `API-ADM-SVCROUTE` (checklist regenerated, 3,826 items, not run in a browser).
 - Needs at merge: renumber the migration; run `pnpm db:seed` (new permission `service:cancel`). No Razorpay dashboard change. Questions Q150 to Q153.
 - Not built: see spec 06 "Built: workshops tier 3".
+
+## 2026-11-16 — Site chrome batch 1b (worktree-agent-a09a3cf20a6048957, not merged)
+
+Audit items 2 (header too wide at 1024 px) and 8 (privacy banner covers controls on phones) fixed in CSS/class names
+only; item 3 verified as a checker issue (header 85 px max < 96 px scroll padding). Guards: `test/site-chrome-fit.test.ts`
+(4 tests); Playwright specs written, not run: `e2e/chrome-fit.spec.ts`. Coordinator: build, measure at 1024-1100 px
+(en/hi, signed in/out, cart 99), re-run the audit rows. Rulings: decisions 2026-11-16.

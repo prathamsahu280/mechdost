@@ -1166,3 +1166,18 @@ Design: `docs/superpowers/specs/2026-11-15-support-next-tier-design.md` items 1 
   MechDost) sit above it. The audit keeps "covered by the banner" as a real finding.
 - **Footer "Privacy choices" link covered by the open banner:** still open (Q170 part 3); default: acceptable, since the
   link reopens the same banner.
+
+## 2026-11-16 — Site chrome fixes, batch 1b (builder rulings)
+
+- **Header at 1024-1279 px is icon-only for cart and account.** The cart label, the "Sign in" / first-name text and
+  the brand tagline show from `xl` (1280 px); between 1024 and 1279 px the cart pill is emoji + count, the account
+  entry is its icon or initial (the screen-reader name stays), nav links use `px-2.5`. A two-digit cart count and the
+  signed-in header now fit at 1024 px in English and Hindi (audit item 2). CSS only, no new client code.
+- **Open privacy banner reserves its height.** While `html[data-consent-open]`, `body` gets bottom padding of the
+  banner height (`--consent-h`) plus the tab bar (phones) plus the compare tray when it asks; the assistant button
+  rides just above the banner on every width instead of hiding (user, 2026-11-15, Q170: the banner never covers a
+  button). Supersedes "the assistant button is hidden while the banner is open" (design-system, 2026-11-03).
+- **Sticky header height is fixed, so `scroll-padding-top: 96px` stays.** Header = 72 px (84 px from 1024) + 1 px
+  border, never taller (nothing in it wraps: labels are nowrap or icon-only); the account side menu is itself
+  sticky at `top-28` (112 px) and the admin menu does not stick. The audit's "covered by the header" findings on
+  side-menu links come from the checker scrolling with Playwright's own method (ignores scroll padding).

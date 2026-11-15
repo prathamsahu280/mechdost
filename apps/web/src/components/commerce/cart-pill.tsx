@@ -42,7 +42,7 @@ export function CartPill({
         <span aria-hidden="true" className="text-[18px] leading-none">
           {UI_EMOJI.cart}
         </span>
-        <span className="sr-only min-[480px]:not-sr-only">{label}</span>
+        <span className="sr-only min-[480px]:not-sr-only nav:sr-only xl:not-sr-only">{label}</span>
         <span
           aria-hidden="true"
           className={`min-w-[1.25rem] rounded-full text-center font-bold tabular-nums ${

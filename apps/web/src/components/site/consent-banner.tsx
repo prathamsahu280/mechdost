@@ -46,8 +46,8 @@ export function ConsentBanner({ copy }: { copy: ConsentCopy }) {
 
   const visible = mounted && (!choice || reopened);
 
-  // One floating thing at a time (calm UI, no stacked overlays): the assistant button hides while the choice is
-  // open (it would sit under the banner on phones). Escape closes a reopened banner; a first visit must choose.
+  // One floating thing at a time (calm UI, no stacked overlays): the assistant button rides above the banner
+  // while the choice is open and the page reserves the banner's height (globals.css). Escape closes a reopened banner; a first visit must choose.
   useEffect(() => {
     const root = document.documentElement;
     if (visible) root.dataset.consentOpen = '';
