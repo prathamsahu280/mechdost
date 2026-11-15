@@ -153,3 +153,18 @@ describe('send gate', () => {
     expect(whatsAppTemplateApproved(synced, 'order.routed', 'en')).toBe(false);
   });
 });
+
+describe('quote templates reach Meta (2026-11-16 merge: quote catalogue entries had no Meta copy)', () => {
+  it('builds every catalogue template with a body, a sample per variable and a button when it links', () => {
+    const built = buildMetaTemplates();
+    for (const name of ['quote_price_ready', 'quote_reply', 'quote_price_ending', 'quote_closed'])
+      for (const language of ['en', 'hi'])
+        expect(
+          built.some((t) => t.payload.name === name && t.payload.language === language),
+          `${name} ${language}`,
+        ).toBe(true);
+    const ready = built.find((t) => t.payload.name === 'quote_price_ready' && t.payload.language === 'en');
+    expect(JSON.stringify(ready)).toContain('QT-RPR-2026');
+    expect(JSON.stringify(ready)).toContain('/quotes/{{1}}');
+  });
+});

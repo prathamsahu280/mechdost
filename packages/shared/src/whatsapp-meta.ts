@@ -59,6 +59,7 @@ const SAMPLE: Record<string, string> = {
   orderCode: 'MD-RPR-2026-7K3QWX',
   requestCode: 'SR-RPR-2026-4H2MNP',
   ticketCode: 'REQ-RPR-2026-9D5TXA',
+  quoteCode: 'QT-RPR-2026-8N3R4T',
   acceptMinutes: '10',
 };
 
@@ -83,12 +84,23 @@ export const META_TEMPLATE_COPY: Record<WhatsAppTemplateKey, { button?: ButtonCo
   'ticket.replied': {
     button: { label: { en: 'Open request', hi: 'रिक्वेस्ट खोलें' }, path: '/account/support?ticket={{1}}' },
   },
+  'quote.offer_sent': {
+    button: { label: { en: 'Review price', hi: 'कीमत देखें' }, path: '/quotes/{{1}}' },
+  },
+  'quote.message': { button: { label: { en: 'Read message', hi: 'संदेश पढ़ें' }, path: '/quotes/{{1}}' } },
+  'quote.expiring': { button: { label: { en: 'Review quote', hi: 'कोटेशन देखें' }, path: '/quotes/{{1}}' } },
+  'quote.withdrawn': { button: { label: { en: 'See reason', hi: 'कारण देखें' }, path: '/quotes/{{1}}' } },
   'order.routed': {},
 };
 
 const BODIES: Record<
   WhatsAppLocale,
-  { order: Record<string, string>; service: Record<string, string>; ticket: Record<string, string> }
+  {
+    order: Record<string, string>;
+    service: Record<string, string>;
+    ticket: Record<string, string>;
+    quote: Record<string, string>;
+  }
 > = {
   en: en.notifyTemplates,
   hi: hi.notifyTemplates,
@@ -96,7 +108,7 @@ const BODIES: Record<
 
 /** The locale-file text of a catalogue event, e.g. `order.confirmed` → `notifyTemplates.order.confirmed`. */
 export function whatsAppBodyText(key: WhatsAppTemplateKey, locale: WhatsAppLocale): string {
-  const [group, event] = key.split('.') as ['order' | 'service' | 'ticket', string];
+  const [group, event] = key.split('.') as ['order' | 'service' | 'ticket' | 'quote', string];
   return BODIES[locale][group][event] ?? '';
 }
 
