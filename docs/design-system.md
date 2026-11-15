@@ -84,6 +84,7 @@ Source: `style.css`, `premium.css`, `simple.css`, `service-hub.css`, `service-wo
 - Images: AVIF/WebP with srcset and exact `sizes`; width/height always; lazy below the fold; `priority` only on the hero; reserve space (CLS < 0.1).
 - Charts (admin): bullet/KPI tiles for targets; label every range with text, never colour alone; legends + tooltips; keyboard focus reveals the same detail as hover.
 - Product-type guidance: booking apps → trust blue/available green/booked grey states; marketplaces → category colours + success green; keep motion subtle (micro-interactions only).
+- **No page feels like a reload (user 2026-11-16, decisions same date):** internal moves never reload the document; shared frames (portal side bars, account menu, tabs) stay mounted in a layout and only the changing part swaps; no jump to the top when switching sections; instant click feedback without blanking the frame; the change is announced. **Every opened form or panel can be closed** (Cancel, Escape, focus back to the opener).
 
 ## Additions 2026-11-01 (see decisions)
 
