@@ -176,6 +176,14 @@ export const NOTICE_CATALOGUE = {
     text: ['quoteCode'],
     link: quote,
   }),
+  // "Notify me" for a PIN that was not served (spec 15, design 2026-11-15 item 7): the customer asked for it.
+  'account.pin_served': def({
+    category: T,
+    entity: 'account',
+    audience: 'customer',
+    text: ['pincode'],
+    link: at('/shop'),
+  }),
   'quote.expiring': def({
     category: 'reminders',
     entity: 'quote',

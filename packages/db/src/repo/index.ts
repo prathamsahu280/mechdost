@@ -75,4 +75,7 @@ export * from './staff-admin';
 export * from './customer-search';
 export * from './audit-viewer';
 export * from './service-photos';
+export * from './recommendations';
+export * from './privacy';
+export * from './pincode-waitlist';
 export { uuidv7 } from '../schema/_common';

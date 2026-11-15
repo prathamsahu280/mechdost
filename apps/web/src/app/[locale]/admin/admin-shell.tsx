@@ -92,6 +92,9 @@ export async function AdminShell({ section }: { section: AdminSection }) {
             'homeService',
             // Admin → Staff, Customers (search and view) and Audit log (design 2026-11-15).
             'adminPeople',
+            // Admin -> Catalogue rules for "goes well with" and Settings -> PIN waiting list (design 2026-11-15).
+            'adminReco',
+            'adminDemand',
           ]}
         >
           <AdminConsole

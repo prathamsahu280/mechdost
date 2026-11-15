@@ -49,6 +49,9 @@ import { workshopAnalyticsRoutes } from './routes/workshop-analytics';
 import { servicePhotoRoutes } from './routes/service-photos';
 import { workshopAdminRoutes, workshopPublicRoutes } from './routes/workshops';
 import { reviewPublicRoutes, reviewRoutes } from './routes/reviews';
+import { recommendationRoutes } from './routes/recommendations';
+import { privacyRoutes } from './routes/privacy';
+import { pincodeWaitlistRoutes } from './routes/pincode-waitlist';
 import type { AppDeps, AppEnv } from './types';
 import { validationHook } from './validation';
 
@@ -136,6 +139,9 @@ export function createApp(deps: AppDeps) {
   v1.route('/', quoteRoutes(deps, sessions));
   v1.route('/', adminQuoteRoutes(deps, sessions));
   v1.route('/', reviewPublicRoutes(deps));
+  v1.route('/', recommendationRoutes(deps, sessions));
+  v1.route('/', privacyRoutes(deps, sessions));
+  v1.route('/', pincodeWaitlistRoutes(deps, sessions));
   v1.route('/', reviewRoutes(deps, sessions));
   v1.route('/', pincodePublicRoutes(deps));
   v1.route('/', pincodeAdminRoutes(deps, sessions));

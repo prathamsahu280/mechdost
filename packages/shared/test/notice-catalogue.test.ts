@@ -21,6 +21,7 @@ const SAMPLE = {
   ticketCode: 'REQ-RPR-2026-9F2KQA',
   workshopName: 'Sharma Garage',
   minutes: '15',
+  pincode: '492001',
 };
 
 describe('notice catalogue', () => {

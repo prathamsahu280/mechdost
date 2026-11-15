@@ -398,6 +398,7 @@ export async function setNoticePreferences(
   userId: string,
   change: Partial<NoticePreferences>,
   noticeVersion: string,
+  source: 'account_notifications' | 'account_privacy' = 'account_notifications',
 ): Promise<NoticePreferences> {
   if (change.pushTransactional !== undefined) {
     await upsertPreference(tx, userId, 'push', 'transactional', change.pushTransactional);
@@ -411,7 +412,7 @@ export async function setNoticePreferences(
         purpose: 'marketing',
         granted: change.promotions,
         noticeVersion,
-        source: 'account_notifications',
+        source,
       });
       await recordServerEvent(tx, 'marketing_consent_changed', {
         userId,

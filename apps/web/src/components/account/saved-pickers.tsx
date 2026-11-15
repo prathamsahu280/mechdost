@@ -1,10 +1,12 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import { useEffect, useId, useState } from 'react';
+import { lazy, Suspense, useEffect, useId, useState } from 'react';
 import type { SavedAddress, SavedVehicle } from '@mechdost/shared/account-api';
 import type { VehicleType } from '@mechdost/shared/vehicles';
 import { fetchAddresses, fetchVehicles } from '@/lib/account-api';
+
+const NotifyMe = lazy(() => import('./notify-me').then((m) => ({ default: m.NotifyMe })));
 
 const select =
   'mt-1 min-h-11 w-full rounded-input border border-input-border bg-surface px-3 text-[15px] text-ink';
@@ -63,7 +65,12 @@ export function SavedAddressPicker({ onPick }: { onPick: (address: SavedAddress 
         <option value="">{t('pickAddressNew')}</option>
       </select>
       {picked && !picked.serviceable ? (
-        <p className="mt-1 text-xs font-bold text-warning">{t('notServiceable')}</p>
+        <>
+          <p className="mt-1 text-xs font-bold text-warning">{t('notServiceable')}</p>
+          <Suspense fallback={null}>
+            <NotifyMe pincode={picked.pincode} />
+          </Suspense>
+        </>
       ) : null}
     </div>
   );

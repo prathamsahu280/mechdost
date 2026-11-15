@@ -1,10 +1,14 @@
 import type { Metadata } from 'next';
+import { cookies } from 'next/headers';
+import { Suspense } from 'react';
 import { getTranslations } from 'next-intl/server';
+import { RecommendationsSection } from '@/components/catalogue/recommendations-section';
 import { CartView } from '@/components/commerce/cart-view';
 import { TrustLine } from '@/components/site/trust-line';
 import { ClientMessages } from '@/components/ui/client-messages';
 import { Container } from '@/components/ui/page-intro';
 import type { Locale } from '@/i18n/routing';
+import { DATA_MODE } from '@/lib/data-mode';
 
 export async function generateMetadata({
   params,
@@ -16,8 +20,24 @@ export async function generateMetadata({
   return { title: t('title'), robots: { index: false } };
 }
 
+/** Product slugs the browser mirrored into its cookie (`demo/store.ts`); anything that is not a slug is dropped. */
+async function cartSlugs(): Promise<string[]> {
+  const raw = (await cookies()).get('mechdost-cart-slugs')?.value ?? '';
+  return raw
+    .split(',')
+    .filter((s) => /^[a-z0-9][a-z0-9-]{0,78}$/.test(s))
+    .slice(0, 20);
+}
+
+async function CartSuggestions({ locale }: { locale: Locale }) {
+  const slugs = await cartSlugs();
+  if (slugs.length === 0) return null;
+  return <RecommendationsSection slugs={slugs} slot="cart" locale={locale} />;
+}
+
 /** Cart (spec 03) — demo store until the server cart with re-pricing ships in Phase 1. */
-export default async function CartPage() {
+export default async function CartPage({ params }: { params: Promise<{ locale: Locale }> }) {
+  const { locale } = await params;
   const t = await getTranslations('cart');
   return (
     <Container className="py-10 tab:py-14">
@@ -30,6 +50,12 @@ export default async function CartPage() {
           <CartView />
         </ClientMessages>
       </div>
+      {/* "Add before checkout" (spec 11): a Server Component under the cart, real data mode only. */}
+      {DATA_MODE === 'api' ? (
+        <Suspense fallback={null}>
+          <CartSuggestions locale={locale} />
+        </Suspense>
+      ) : null}
     </Container>
   );
 }

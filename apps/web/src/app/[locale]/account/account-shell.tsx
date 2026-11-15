@@ -22,6 +22,8 @@ export async function AccountShell({ section }: { section: AccountSection }) {
             'support',
             'bell',
             'homeService',
+            // Account -> Privacy (consents, data download, deletion request; design 2026-11-15).
+            'privacy',
           ]}
         >
           <AccountArea section={section} />
