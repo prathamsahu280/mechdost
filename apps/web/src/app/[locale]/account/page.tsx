@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import type { Locale } from '@/i18n/routing';
-import { AccountShell } from './account-shell';
+import { AccountSectionBody } from '@/components/account/account-area';
 
 export async function generateMetadata({
   params,
@@ -14,5 +14,5 @@ export async function generateMetadata({
 }
 
 export default function AccountPage() {
-  return <AccountShell section="overview" />;
+  return <AccountSectionBody section="overview" />;
 }

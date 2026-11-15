@@ -9,7 +9,8 @@ import {
   ORDER_REJECT_REASONS,
   type AssignmentDeclineReason,
 } from '@mechdost/shared/state';
-import { useState, type SyntheticEvent } from 'react';
+import { useSelectedLayoutSegment } from 'next/navigation';
+import { useState, type ReactNode, type SyntheticEvent } from 'react';
 import { useCenterCurrent } from '@/lib/use-center-current';
 import { findProduct } from '@/demo/catalogue';
 import { restoreCoinsForOrder } from '@/demo/coins';
@@ -57,7 +58,8 @@ import {
   SettingsEditor,
   type ContentDefaults,
 } from './admin-site';
-import { PortalGuard } from './portal-guard';
+import { PortalGuard, usePortalAccount } from './portal-guard';
+import { PortalNavLink } from './portal-nav-link';
 import { useNow } from './use-now';
 import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 import { Applications } from './admin-applications';
@@ -204,68 +206,82 @@ export function AdminConsole({
   /** Default WhatsApp message text in both locales (only passed for the notifications section). */
   notifyDefaults?: NotifyDefaults;
 }) {
+  const account = usePortalAccount();
+  if (!account) return null;
+  return (
+    <div className="min-w-0 scroll-mt-28 space-y-6">
+      {section === 'overview' ? AUTH_MODE === 'firebase' ? <AdminOverviewApi /> : <Overview /> : null}
+      {section === 'analytics' && AUTH_MODE === 'firebase' ? <AdminAnalyticsApi /> : null}
+      {section === 'refunds' && AUTH_MODE === 'firebase' ? <RefundQueueApi /> : null}
+      {section === 'orders' ? AUTH_MODE === 'firebase' ? <OrderRoutingApi /> : <OrderRouting /> : null}
+      {section === 'services' ? AUTH_MODE === 'firebase' ? <ServiceRoutingApi /> : <ServiceRouting /> : null}
+      {section === 'quotes' ? AUTH_MODE === 'firebase' ? <QuoteDeskApi /> : <QuoteDesk /> : null}
+      {section === 'applications' ? <Applications /> : null}
+      {section === 'reviews' ? AUTH_MODE === 'firebase' ? <AdminReviewsApi /> : <Reviews /> : null}
+      {section === 'support' ? <AdminSupport actor={account.name} /> : null}
+      {section === 'coins' ? <AdminCoins actor={account.name} /> : null}
+      {section === 'coupons' && AUTH_MODE === 'firebase' ? <AdminCouponsApi /> : null}
+      {section === 'partners' ? <AdminPartners actor={account.name} /> : null}
+      {section === 'catalogue' ? (
+        <div className="space-y-6">
+          <AdminCatalogue />
+          {AUTH_MODE === 'firebase' ? <AdminRecoApi /> : null}
+        </div>
+      ) : null}
+      {section === 'customers' ? <AdminCustomers actor={account.name} /> : null}
+      {section === 'content' && contentDefaults ? (
+        <div className="space-y-8">
+          <ContentEditor actor={account.name} defaults={contentDefaults} />
+          {AUTH_MODE === 'firebase' ? <PoliciesApi /> : null}
+        </div>
+      ) : null}
+      {section === 'layout' ? (
+        AUTH_MODE === 'firebase' ? (
+          <LayoutApi />
+        ) : (
+          <LayoutEditor actor={account.name} />
+        )
+      ) : null}
+      {section === 'settings' ? (
+        <div className="space-y-6">
+          <SettingsEditor actor={account.name} />
+          <OrderRulesEditor />
+          {AUTH_MODE === 'firebase' ? <ServiceAreaApi /> : null}
+          {AUTH_MODE === 'firebase' ? <AdminDemandApi /> : null}
+          {AUTH_MODE === 'firebase' ? <CompanyApi /> : null}
+        </div>
+      ) : null}
+      {section === 'notifications' && notifyDefaults ? (
+        <AdminNotifications actor={account.name} defaults={notifyDefaults} />
+      ) : null}
+      {section === 'staff' && AUTH_MODE === 'firebase' ? <AdminStaffApi /> : null}
+      {section === 'audit' && AUTH_MODE === 'firebase' ? <AdminAuditApi /> : null}
+      {section === 'exports' && AUTH_MODE === 'firebase' ? <AdminExportsApi /> : null}
+      {section === 'errors' && AUTH_MODE === 'firebase' ? <AdminErrorsApi /> : null}
+    </div>
+  );
+}
+
+/** The section named by the URL under /admin (the layout's child segment); `null` is the overview. */
+function useAdminSection(): AdminSection {
+  const segment = useSelectedLayoutSegment();
+  return ADMIN_SECTIONS.find((s) => s === segment) ?? 'overview';
+}
+
+/**
+ * Admin frame (spec 08), rendered once by `admin/layout.tsx`: the role guard and the side bar stay mounted while the
+ * admin moves between sections, so a click swaps only the section (bug 2026-11-16, "the page feels refreshed"). The
+ * section page is `children`; it renders only inside the guard.
+ */
+export function AdminFrame({ children }: { children: ReactNode }) {
+  const section = useAdminSection();
   const path = `/admin${section === 'overview' ? '' : `/${section}`}`;
   return (
     <PortalGuard role="admin" path={path}>
-      {(account) => (
+      {() => (
         <div className="grid gap-6 nav:grid-cols-[220px_minmax(0,1fr)] nav:items-start">
           <AdminNav current={section} />
-          <div className="min-w-0 space-y-6">
-            {section === 'overview' ? AUTH_MODE === 'firebase' ? <AdminOverviewApi /> : <Overview /> : null}
-            {section === 'analytics' && AUTH_MODE === 'firebase' ? <AdminAnalyticsApi /> : null}
-            {section === 'refunds' && AUTH_MODE === 'firebase' ? <RefundQueueApi /> : null}
-            {section === 'orders' ? AUTH_MODE === 'firebase' ? <OrderRoutingApi /> : <OrderRouting /> : null}
-            {section === 'services' ? (
-              AUTH_MODE === 'firebase' ? (
-                <ServiceRoutingApi />
-              ) : (
-                <ServiceRouting />
-              )
-            ) : null}
-            {section === 'quotes' ? AUTH_MODE === 'firebase' ? <QuoteDeskApi /> : <QuoteDesk /> : null}
-            {section === 'applications' ? <Applications /> : null}
-            {section === 'reviews' ? AUTH_MODE === 'firebase' ? <AdminReviewsApi /> : <Reviews /> : null}
-            {section === 'support' ? <AdminSupport actor={account.name} /> : null}
-            {section === 'coins' ? <AdminCoins actor={account.name} /> : null}
-            {section === 'coupons' && AUTH_MODE === 'firebase' ? <AdminCouponsApi /> : null}
-            {section === 'partners' ? <AdminPartners actor={account.name} /> : null}
-            {section === 'catalogue' ? (
-              <div className="space-y-6">
-                <AdminCatalogue />
-                {AUTH_MODE === 'firebase' ? <AdminRecoApi /> : null}
-              </div>
-            ) : null}
-            {section === 'customers' ? <AdminCustomers actor={account.name} /> : null}
-            {section === 'content' && contentDefaults ? (
-              <div className="space-y-8">
-                <ContentEditor actor={account.name} defaults={contentDefaults} />
-                {AUTH_MODE === 'firebase' ? <PoliciesApi /> : null}
-              </div>
-            ) : null}
-            {section === 'layout' ? (
-              AUTH_MODE === 'firebase' ? (
-                <LayoutApi />
-              ) : (
-                <LayoutEditor actor={account.name} />
-              )
-            ) : null}
-            {section === 'settings' ? (
-              <div className="space-y-6">
-                <SettingsEditor actor={account.name} />
-                <OrderRulesEditor />
-                {AUTH_MODE === 'firebase' ? <ServiceAreaApi /> : null}
-                {AUTH_MODE === 'firebase' ? <AdminDemandApi /> : null}
-                {AUTH_MODE === 'firebase' ? <CompanyApi /> : null}
-              </div>
-            ) : null}
-            {section === 'notifications' && notifyDefaults ? (
-              <AdminNotifications actor={account.name} defaults={notifyDefaults} />
-            ) : null}
-            {section === 'staff' && AUTH_MODE === 'firebase' ? <AdminStaffApi /> : null}
-            {section === 'audit' && AUTH_MODE === 'firebase' ? <AdminAuditApi /> : null}
-            {section === 'exports' && AUTH_MODE === 'firebase' ? <AdminExportsApi /> : null}
-            {section === 'errors' && AUTH_MODE === 'firebase' ? <AdminErrorsApi /> : null}
-          </div>
+          {children}
         </div>
       )}
     </PortalGuard>
@@ -300,7 +316,7 @@ function AdminNav({ current }: { current: AdminSection }) {
       <ul className="flex gap-2 nav:flex-col nav:gap-1">
         {ADMIN_SECTIONS.map((s) => (
           <li key={s}>
-            <Link
+            <PortalNavLink
               href={`${prefix}/admin${s === 'overview' ? '' : `/${s}`}`}
               aria-current={s === current ? 'page' : undefined}
               className={`press flex min-h-11 items-center gap-2 rounded-pill px-4 text-sm font-bold whitespace-nowrap nav:rounded-button ${
@@ -311,7 +327,7 @@ function AdminNav({ current }: { current: AdminSection }) {
                 {SECTION_EMOJI[s]}
               </span>
               {t(`nav_${s}`)}
-            </Link>
+            </PortalNavLink>
           </li>
         ))}
       </ul>

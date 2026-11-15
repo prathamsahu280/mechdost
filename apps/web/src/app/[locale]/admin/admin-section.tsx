@@ -7,8 +7,6 @@ import type { NotifyDefaults } from '@/components/portal/admin-notifications';
 import { WHATSAPP_TEMPLATES, type WhatsAppTemplateKey } from '@mechdost/shared/whatsapp';
 import type { AdminSection } from '@/lib/sections';
 import { site } from '@/lib/site';
-import { ClientMessages } from '@/components/ui/client-messages';
-import { Container, PageIntro } from '@/components/ui/page-intro';
 
 /** Default text for every admin-editable content key, in both locales (the editor shows them side by side). */
 async function contentDefaults(): Promise<ContentDefaults> {
@@ -59,61 +57,17 @@ async function notifyDefaults(): Promise<NotifyDefaults> {
   ) as NotifyDefaults;
 }
 
-/** Admin console frame (spec 08). Demo mode: data from the browser store, role from the demo session. */
-export async function AdminShell({ section }: { section: AdminSection }) {
-  const t = await getTranslations('portal');
+/**
+ * One admin section's content (spec 08). The frame (guard, side bar, heading, message bundles) is `layout.tsx` and
+ * stays mounted between sections; only this part is replaced on a click. Demo mode: data from the browser store,
+ * role from the demo session.
+ */
+export async function AdminSectionContent({ section }: { section: AdminSection }) {
   return (
-    <Container className="py-10 tab:py-14">
-      <PageIntro eyebrow="MechDost" line1={t('adminTitle')} />
-      <div className="mt-8">
-        <ClientMessages
-          namespaces={[
-            'portal',
-            'account',
-            'auth',
-            'order',
-            'request',
-            'quote',
-            'apply',
-            'categories',
-            'support',
-            // Admin → Catalogue: vehicle type labels and specification names/values (plan 2026-11-14 B).
-            'catalogue',
-            'compare',
-            // Admin → Reviews (moderation queue on the API, 2026-11-14).
-            'reviews',
-            // The bell's push card on the admin home (spec 10, 2026-11-15).
-            'bell',
-            // Admin → Notifications → Messages: the bell and push texts (spec 10).
-            'adminNotices',
-            // Admin → Content trust lines, the agreement clause and the labour promise (design 2026-11-15).
-            'trust',
-            // Admin → Workshops: home servicing fields (spec 06, 2026-11-15).
-            'homeService',
-            // Admin → Staff, Customers (search and view) and Audit log (design 2026-11-15).
-            'adminPeople',
-            // Admin -> Catalogue rules for "goes well with" and Settings -> PIN waiting list (design 2026-11-15).
-            'adminReco',
-            'adminDemand',
-            // Real-sign-in (API) admin screens (audit 2026-11-16).
-            'adminEmails',
-            'adminTier2',
-            'coupons',
-            'adminExports',
-            'refunds',
-            'workshopAnalytics',
-            'shopGiveUp',
-            'supportThread',
-            'storefront',
-          ]}
-        >
-          <AdminConsole
-            section={section}
-            contentDefaults={section === 'content' ? await contentDefaults() : undefined}
-            notifyDefaults={section === 'notifications' ? await notifyDefaults() : undefined}
-          />
-        </ClientMessages>
-      </div>
-    </Container>
+    <AdminConsole
+      section={section}
+      contentDefaults={section === 'content' ? await contentDefaults() : undefined}
+      notifyDefaults={section === 'notifications' ? await notifyDefaults() : undefined}
+    />
   );
 }

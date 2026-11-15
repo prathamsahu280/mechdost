@@ -363,3 +363,7 @@ Admin -> Services: a request needing routing lists the ranked workshops with "Be
 ## Revision 2026-11-16 (audit log, refunds, coupons)
 
 - Audit log: entity and action filters are selects of known codes; rows and options show translated wording (`adminPeople.auditWord`, `auditAction`); unknown codes show as code. Refund failure codes are worded (`refunds.failure_*`), never shown raw. Staff-typed reasons and notes are marked as user content.
+
+## Frame (2026-11-16)
+
+`/admin` and `/admin/[section]` share `app/[locale]/admin/layout.tsx`: heading, `ClientMessages`, `AdminFrame` (role guard + side bar). Sections are pages that render `AdminSectionContent` only, so a side-bar click swaps just the section: the guard, bar and heading stay mounted, no reload, no jump to the top (Next scrolls to the section only if it is above the viewport; `scroll-mt-28`), a pending dot shows on the clicked link. New sections go into `lib/sections.ts` and `AdminConsole`; new client namespaces go into the layout's `ClientMessages`. Tests: `test/no-reload-navigation.test.ts`, `e2e/no-reload-navigation.spec.ts`. The account area (spec 01) follows the same pattern (`account/layout.tsx`, `AccountFrame`).

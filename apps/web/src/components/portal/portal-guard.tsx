@@ -2,10 +2,20 @@
 
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import type { ReactNode } from 'react';
+import { createContext, useContext, type ReactNode } from 'react';
 import { useSession, type DemoAccount, type DemoRole } from '@/demo/session';
 import { signOutEverywhere } from '@/lib/auth/sign-out';
 import { useHydrated } from '@/demo/store';
+
+const PortalAccountContext = createContext<DemoAccount | null>(null);
+
+/**
+ * The signed-in account of the portal whose guard is above. Section pages are rendered by a layout's guard (so the
+ * guard stays mounted between sections) and read the account here instead of through the guard's render function.
+ */
+export function usePortalAccount(): DemoAccount | null {
+  return useContext(PortalAccountContext);
+}
 
 /**
  * Role gate for the demo portals. The real check happens in the API (`requirePermission`, spec 13) — this only
@@ -71,7 +81,7 @@ export function PortalGuard({
           {t('signOut')}
         </button>
       </div>
-      {children(session)}
+      <PortalAccountContext.Provider value={session}>{children(session)}</PortalAccountContext.Provider>
       {demoNote ? <p className="text-xs text-muted">{t('demoNote')}</p> : null}
     </div>
   );

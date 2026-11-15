@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { onConsentOpen, openConsentChoices, saveConsent, useConsent } from '@/lib/consent';
 
@@ -103,9 +104,9 @@ export function ConsentBanner({ copy }: { copy: ConsentCopy }) {
       <h2 className="font-heading text-sm font-extrabold text-ink nav:text-[15px]">{copy.title}</h2>
       <p className="mt-1 text-[13px] leading-snug text-muted nav:mt-1.5 nav:text-sm nav:leading-relaxed">
         {copy.body}{' '}
-        <a href={copy.policyHref} className="font-bold text-ink underline underline-offset-4">
+        <Link href={copy.policyHref} className="font-bold text-ink underline underline-offset-4">
           {copy.policy}
-        </a>
+        </Link>
       </p>
       <div className="mt-2 flex gap-2 nav:mt-3">
         <button

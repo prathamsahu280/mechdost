@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { ACCOUNT_SECTIONS, type AccountSection } from '@/lib/sections';
 import { routing, type Locale } from '@/i18n/routing';
-import { AccountShell } from '../account-shell';
+import { AccountSectionBody } from '@/components/account/account-area';
 
 type Section = Exclude<AccountSection, 'overview'>;
 const SECTIONS = ACCOUNT_SECTIONS.filter((s): s is Section => s !== 'overview');
@@ -30,5 +30,5 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function AccountSectionPage({ params }: Props) {
   const { section } = await params;
   if (!isSection(section)) notFound();
-  return <AccountShell section={section} />;
+  return <AccountSectionBody section={section} />;
 }

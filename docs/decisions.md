@@ -1275,3 +1275,13 @@ takes me to the top"). Rule for every page, now and for new work:
 - Screen readers hear the change (focus or announcement on the new heading).
 - Guarded by a source test (portals have layouts; no internal plain anchors) and an e2e test (frame node survives,
   no reload, no scroll jump). Checked in every UI review (`docs/design-system.md` § Calm UI).
+
+## 2026-11-16 — Builder ruling: portal frames live in layouts (section switch no longer remounts)
+
+Cause of the user's "page got refreshed" report: `admin/page.tsx` and `admin/[section]/page.tsx` (and the account pair) each rendered the whole frame (container, heading, message provider, role guard, side bar) from the page, and there was no `layout.tsx`. On every side-bar click the dynamic segment changed, so React unmounted and rebuilt the entire frame, and Next scrolled to the changed segment's top, which was the page top. Ruling (implements "No page may feel like a reload"):
+
+- `admin/layout.tsx` and `account/layout.tsx` hold Container, PageIntro, `ClientMessages` (the union of namespaces) and the client frame (`AdminFrame` / `AccountFrame`: guard or session branches + side bar). Pages render only the section (`AdminSectionContent`, `AccountSectionBody`). The current section comes from `useSelectedLayoutSegment()`, not a prop. `PortalGuard` publishes the account through `usePortalAccount()` so the section reads it without the render function.
+- The clicked side-bar link shows a pending dot (`PortalNavLink`, `useLinkStatus`), absolutely positioned, so no layout shift. Section roots carry `scroll-mt-28`: Next brings the new section into view only when its top is above the viewport, clear of the sticky header.
+- Screen readers: Next's route announcer reads the new page title (each section page has its own `generateMetadata` title); focus stays on the clicked link so keyboard users keep their place in the bar. No extra focus move.
+- Internal plain `<a>` fixed: the consent banner privacy link and the admin invite "Open" now use `Link`. Deliberate exception kept: the language switcher does a full document load (bugs 2026-11-13: cookie and theme).
+- Guards: `test/no-reload-navigation.test.ts` (layouts hold frames, pages do not, no internal plain anchors, `window.location` only in the switcher) and `e2e/no-reload-navigation.spec.ts` (frame node survives, no reload, no scroll jump).
