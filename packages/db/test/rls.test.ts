@@ -29,8 +29,23 @@ let keyN = 0;
 type Role = 'anon' | 'authenticated';
 
 /** Run one query as a client role carrying a JWT (or none), then go back to the owner. */
-async function as(role: Role, uid: string | null, query: string): Promise<Record<string, unknown>[]> {
-  const claims = uid === null ? '' : JSON.stringify({ sub: uid, role: 'authenticated' });
+const PROJECT = 'mechdost-test';
+async function as(
+  role: Role,
+  uid: string | null,
+  query: string,
+  extra: Record<string, unknown> = {},
+): Promise<Record<string, unknown>[]> {
+  const claims =
+    uid === null
+      ? ''
+      : JSON.stringify({
+          sub: uid,
+          role: 'authenticated',
+          iss: `https://securetoken.google.com/${PROJECT}`,
+          aud: PROJECT,
+          ...extra,
+        });
   await client.exec(`set role ${role}`);
   await client.query(`select set_config('request.jwt.claims', $1, false)`, [claims]);
   try {
@@ -108,6 +123,8 @@ beforeAll(async () => {
   // A signed-out (deleted) account must see nothing even with a valid token.
   await db.insert(s.notifications).values({ userId: ids.gone!, title: 'hello gone', body: 'x' });
   await db.update(s.users).set({ status: 'deactivated' }).where(eq(s.users.id, ids.gone!));
+  // The one-row config the user fills when Supabase third-party auth is set up (rls-matrix.md); empty = dormant.
+  await db.execute(sql`insert into private.auth_config (firebase_project_id) values (${PROJECT})`);
 });
 
 afterAll(async () => {
@@ -155,6 +172,38 @@ describe('customer rows', () => {
       `delete from notifications`,
     ]) {
       await expect(asUser('fb-rls-a', q)).rejects.toThrow(/permission denied/);
+    }
+  });
+});
+
+describe('token issuer and audience (a foreign token cannot borrow a Firebase uid)', () => {
+  const q = 'select id from orders';
+  it('shows nothing for another issuer, another audience, or a missing claim', async () => {
+    expect(await as('authenticated', 'fb-rls-a', q, { iss: 'https://evil.example/auth/v1' })).toEqual([]);
+    expect(
+      await as('authenticated', 'fb-rls-a', q, { iss: 'https://securetoken.google.com/other-project' }),
+    ).toEqual([]);
+    expect(await as('authenticated', 'fb-rls-a', q, { aud: 'other-project' })).toEqual([]);
+    expect(await as('authenticated', 'fb-rls-a', q, { aud: undefined })).toEqual([]);
+    expect(await as('authenticated', 'fb-rls-a', q, { iss: undefined })).toEqual([]);
+  });
+
+  it('shows the own rows with the right issuer and audience', async () => {
+    expect(await asUser('fb-rls-a', q)).toEqual([{ id: ids.orderA }]);
+  });
+
+  it('is dormant while the config table is empty, and the client roles cannot read or change it', async () => {
+    await expect(asUser('fb-rls-a', 'select * from private.auth_config')).rejects.toThrow(
+      /permission denied/,
+    );
+    await expect(
+      asUser('fb-rls-a', `update private.auth_config set firebase_project_id = 'x'`),
+    ).rejects.toThrow(/permission denied/);
+    await db.execute(sql`delete from private.auth_config`);
+    try {
+      expect(await asUser('fb-rls-a', q)).toEqual([]);
+    } finally {
+      await db.execute(sql`insert into private.auth_config (firebase_project_id) values (${PROJECT})`);
     }
   });
 });

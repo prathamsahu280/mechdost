@@ -13,8 +13,24 @@ GRANT USAGE ON SCHEMA private TO authenticated;--> statement-breakpoint
 
 -- Same read Supabase's auth.jwt() does (PostgREST/Realtime set request.jwt.claims from the verified token), so it
 -- also runs in PGlite tests where the `auth` schema does not exist.
-CREATE FUNCTION private.jwt_sub() RETURNS text LANGUAGE sql STABLE SET search_path = ''
-AS $$ SELECT nullif(nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub', '') $$;--> statement-breakpoint
+-- The Firebase project the tokens must come from (public id, not a secret). Empty = every policy sees nothing
+-- (dormant until the user inserts the row when Supabase third-party auth is configured; rls-matrix.md).
+CREATE TABLE private.auth_config (
+  firebase_project_id text PRIMARY KEY CHECK (firebase_project_id ~ '^[a-z0-9-]{4,64}$')
+);--> statement-breakpoint
+ALTER TABLE private.auth_config ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+REVOKE ALL ON private.auth_config FROM PUBLIC, anon, authenticated;--> statement-breakpoint
+-- One row at most: a second project id would let two issuers in.
+CREATE UNIQUE INDEX auth_config_single_row ON private.auth_config ((true));--> statement-breakpoint
+
+-- `sub` counts only when the token's issuer and audience are this project's Firebase ones: a token another issuer
+-- Supabase accepts (its own Auth, a later provider) cannot borrow a Firebase uid. Definer so it can read the config.
+CREATE FUNCTION private.jwt_sub() RETURNS text LANGUAGE sql STABLE SECURITY DEFINER SET search_path = ''
+AS $$ SELECT nullif(j.c ->> 'sub', '')
+      FROM (SELECT nullif(current_setting('request.jwt.claims', true), '')::jsonb AS c) j
+      JOIN private.auth_config a
+        ON j.c ->> 'iss' = 'https://securetoken.google.com/' || a.firebase_project_id
+       AND j.c ->> 'aud' = a.firebase_project_id $$;--> statement-breakpoint
 
 CREATE FUNCTION private.current_user_id() RETURNS uuid LANGUAGE sql STABLE SECURITY DEFINER SET search_path = ''
 AS $$ SELECT u.id FROM public.users u

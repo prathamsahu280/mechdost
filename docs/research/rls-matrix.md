@@ -8,7 +8,7 @@ The API connects as the owner role and bypasses RLS; scope is enforced in reposi
 
 ## How identity reaches Postgres
 
-- Supabase is configured with **Firebase as a third-party JWT issuer** (user step, Q174). The verified token's `sub` is the Firebase uid; PostgREST/Realtime expose the claims as `request.jwt.claims`.
+- Supabase is configured with **Firebase as a third-party JWT issuer** (user step, Q177). The verified token's `sub` is the Firebase uid; PostgREST/Realtime expose the claims as `request.jwt.claims`.
 - `private.jwt_sub()` reads `sub` (the same read `auth.jwt()` does, so it also runs in PGlite). `private.current_user_id()` maps it to `users.id` through `users.firebase_uid`, only for an active, undeleted account (a deactivated or deleted account sees nothing).
 - **No policy trusts a role claim.** Shop and workshop membership come from `shop_users` and `user_roles`; staff have no direct access at all (staff work through the API). Reason: Supabase needs the token's `role` claim to be `authenticated` (the database role), while spec 01 reserves `role` for the app role; reading memberships from tables removes the clash.
 - Helpers (`private` schema, `SECURITY DEFINER`, `search_path = ''`, not exposed by the Data API, `anon` has no EXECUTE): `jwt_sub`, `current_user_id`, `my_shop_ids`, `my_workshop_ids`, `owns_order`, `owns_cart`. Policies call them as `(select private.…())` so Postgres evaluates them once per statement.
@@ -56,3 +56,13 @@ Run `get_advisors` (security + performance) after migrating. Expected notices:
 ## Applying it (not done by the builder)
 
 Apply `0073` (renumbered on merge) with `pnpm db:migrate` after the usual dry run on a copy. It changes no table or row: only grants, policies and the `private` schema. Rollback: drop the policies, `REVOKE SELECT` from `anon, authenticated` on the listed tables, drop schema `private` cascade. Nothing in the API changes (it uses the owner role).
+
+## Issuer and audience pinning (security review 2026-11-16)
+
+`private.jwt_sub()` yields NULL unless the token's `iss` is `https://securetoken.google.com/<project id>` and `aud` is the project id, read from `private.auth_config` (one row at most; RLS on; no grant to `anon`/`authenticated`). While the table is empty every policy sees nothing. **When Supabase third-party auth (Firebase) is configured, run once in the SQL editor with the public Firebase project id:**
+
+````sql
+insert into private.auth_config (firebase_project_id) values ('<your-firebase-project-id>');
+```n
+To rotate or switch project: `delete from private.auth_config;` then insert again. Tests: `rls.test.ts` 'token issuer and audience' (foreign issuer, other project, wrong or missing aud/iss, empty config, own rows with the right pair, config not readable by clients).
+````
