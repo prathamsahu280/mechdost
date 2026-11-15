@@ -4,11 +4,17 @@
  */
 import { describe, expect, it } from 'vitest';
 import { ensureUser, grantRole } from '@mechdost/db/repo';
+import * as schema from '@mechdost/db/schema';
 import { bearer, buildApp, type ErrorJson } from './helpers';
 
 type Ctx = Awaited<ReturnType<typeof buildApp>>;
 
-async function person(ctx: Ctx, n: string, role: 'support_agent' | 'ops_manager' | 'super_admin' | null) {
+async function person(
+  ctx: Ctx,
+  n: string,
+  role: 'support_agent' | 'ops_manager' | 'super_admin' | 'city_manager' | null,
+  cityId?: string,
+) {
   const phone = `+9198666666${n}`;
   const email = `si-${n}@example.com`;
   const token = ctx.verifier.add(`token-inbox-tools-0000${n}`, {
@@ -18,8 +24,29 @@ async function person(ctx: Ctx, n: string, role: 'support_agent' | 'ops_manager'
     emailVerified: true,
   });
   const user = await ensureUser(ctx.db, { firebaseUid: `si-${n}`, phone, email, emailVerified: true });
-  if (role) await grantRole(ctx.db, { userId: user.id, role, grantedBy: null });
+  if (role)
+    await grantRole(ctx.db, { userId: user.id, role, grantedBy: null, ...(cityId ? { cityId } : {}) });
   return { id: user.id, headers: { ...bearer(token), 'content-type': 'application/json' } };
+}
+
+/** A city row (and its state) created once per database; tests of one file share the database. */
+async function cityRow(ctx: Ctx, code: string, slug: string) {
+  const [existingState] = await ctx.db.select().from(schema.states);
+  const state =
+    existingState ??
+    (
+      await ctx.db
+        .insert(schema.states)
+        .values({ code: 'CG', name: 'Chhattisgarh', gstStateCode: '22' })
+        .returning()
+    )[0];
+  const found = (await ctx.db.select().from(schema.cities)).find((c) => c.code === code);
+  if (found) return found.id;
+  const [row] = await ctx.db
+    .insert(schema.cities)
+    .values({ stateId: state!.id, code, slug, name: slug, status: 'live' })
+    .returning();
+  return row!.id;
 }
 
 async function raise(ctx: Ctx, headers: Record<string, string>) {
@@ -152,5 +179,64 @@ describe('support inbox API', () => {
     ).json()) as { replies: { key: string }[]; canEdit: boolean };
     expect(forAdmin.canEdit).toBe(true);
     expect(forAdmin.replies.map((r) => r.key)).toContain('api_test_reply');
+  });
+
+  it('an agent cannot clear or take over a request someone else holds (security review)', async () => {
+    const ctx = await buildApp();
+    const customer = await person(ctx, '10', null);
+    const agent = await person(ctx, '11', 'support_agent');
+    const other = await person(ctx, '12', 'support_agent');
+    const manager = await person(ctx, '13', 'ops_manager');
+    const code = await raise(ctx, customer.headers);
+    const read = async () =>
+      (await (
+        await ctx.app.request(`/v1/admin/support/tickets/${code}`, { headers: manager.headers })
+      ).json()) as {
+        version: number;
+        staff: { assignee: { id: string } | null };
+      };
+    const assign = (who: typeof agent, assigneeId: string | null, version: number) =>
+      ctx.app.request(`/v1/admin/support/tickets/${code}/assign`, {
+        method: 'POST',
+        headers: who.headers,
+        body: JSON.stringify({ assigneeId, version }),
+      });
+    let t = await read();
+    expect((await assign(manager, other.id, t.version)).status).toBe(200);
+    t = await read();
+    const clear = await assign(agent, null, t.version);
+    expect(clear.status).toBe(403);
+    expect(((await clear.json()) as ErrorJson).error.code).toBe('ASSIGN_NOT_ALLOWED');
+    expect((await assign(agent, agent.id, t.version)).status).toBe(403);
+    expect((await read()).staff.assignee?.id).toBe(other.id);
+    // The holder may release it; a free request may be taken.
+    expect((await assign(other, null, t.version)).status).toBe(200);
+    t = await read();
+    expect((await assign(agent, agent.id, t.version)).status).toBe(200);
+  });
+
+  it('a city-limited assigner cannot reach a request of another city (security review)', async () => {
+    const ctx = await buildApp();
+    const customer = await person(ctx, '20', null);
+    const cityEditor = await person(ctx, '30', 'city_manager', await cityRow(ctx, 'RPR', 'raipur'));
+    const body = {
+      key: 'city_try',
+      titleEn: 'T',
+      titleHi: 'ट',
+      bodyEn: 'B',
+      bodyHi: 'ब',
+      active: true,
+      sortOrder: 1,
+    };
+    const post = await ctx.app.request('/v1/admin/support/canned-replies', {
+      method: 'POST',
+      headers: cityEditor.headers,
+      body: JSON.stringify(body),
+    });
+    expect(post.status).toBe(403);
+    const list = (await (
+      await ctx.app.request('/v1/admin/support/canned-replies', { headers: cityEditor.headers })
+    ).json()) as { canEdit: boolean };
+    expect(list.canEdit).toBe(false);
   });
 });

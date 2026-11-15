@@ -2,7 +2,7 @@ import { and, asc, eq, inArray, isNull, lte, or, sql } from 'drizzle-orm';
 import { isRoleKey, ROLES } from '@mechdost/shared/rbac';
 import { ticketMachine } from '@mechdost/shared/state';
 import { auditLog, cannedReplies, roles, supportTickets, userRoles, users } from '../schema';
-import { ConflictError, NotFoundError, ValidationError } from './errors';
+import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from './errors';
 import { recordServerEvent } from './events';
 import type { Tx } from './orders';
 import { loadGrants } from './rbac';
@@ -59,11 +59,27 @@ export async function listAssignableAgents(db: Tx, scope: TicketScope): Promise<
  * (an all-city grant covers any; a request without a city needs an all-city agent). Staff outside the request's
  * scope get "not found". Compare-and-set on `version`; audited.
  */
+/**
+ * Two scopes (security review 2026-11-15): `reply` decides which requests the staff member can see at all (else
+ * "not found"); `assign` (from their `tickets:assign` grants) decides whether they may assign THIS request to anyone.
+ * Without it they may only take an unassigned request for themselves or release one they hold (checked on the locked
+ * row), never take over or clear someone else's.
+ */
+export interface AssignScopes {
+  reply: TicketScope;
+  assign: TicketScope;
+}
+
+function covers(scope: TicketScope, cityId: string | null): boolean {
+  return scope.all || (cityId !== null && scope.cityIds.includes(cityId));
+}
+
 export async function assignTicket(
   db: Tx,
-  scope: TicketScope,
+  scopes: AssignScopes,
   input: { staffUserId: string; code: string; assigneeId: string | null; expectedVersion: number },
 ): Promise<{ version: number; assignee: AssigneeView | null }> {
+  const scope = scopes.reply;
   return db.transaction(async (tx) => {
     const [t] = await tx
       .select({
@@ -87,6 +103,15 @@ export async function assignTicket(
       .for('update');
     if (!t) throw new NotFoundError('Request not found');
     if (t.status === 'closed') throw new ConflictError('This request is closed', 'TICKET_CLOSED');
+    if (!covers(scopes.assign, t.cityId)) {
+      const takes = input.assigneeId === input.staffUserId && t.assigneeId === null;
+      const releases = input.assigneeId === null && t.assigneeId === input.staffUserId;
+      if (!takes && !releases)
+        throw new ForbiddenError(
+          'You can only take a free request or release your own',
+          'ASSIGN_NOT_ALLOWED',
+        );
+    }
     let assignee: AssigneeView | null = null;
     if (input.assigneeId) {
       const [person] = await tx

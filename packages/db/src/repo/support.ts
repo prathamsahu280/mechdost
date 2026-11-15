@@ -43,6 +43,7 @@ export const DAILY_TICKET_LIMIT = 5;
 export const TICKET_BODY_MAX = 2000;
 export const RESOLVE_MS = 30 * 86_400_000;
 const ACTIVE: TicketStatus[] = ['open', 'in_review', 'awaiting_customer'];
+export const ACTIVE_STATUSES: readonly TicketStatus[] = ACTIVE;
 
 /** Staff scope from their grants: every city, or a list of city ids. */
 export type TicketScope = { all: true } | { all: false; cityIds: readonly string[] };
@@ -153,7 +154,7 @@ const THREAD_LIMIT = 200;
 const REPLY_CAP_KEY = 'support.customer_messages_per_ticket_per_day';
 
 /** The admin's reply cap (global setting), else the registry default. */
-async function replyCap(tx: Tx): Promise<number> {
+export async function replyCap(tx: Tx): Promise<number> {
   const [row] = await tx
     .select({ value: settings.value })
     .from(settings)
@@ -384,6 +385,20 @@ export async function listMyTickets(
     .orderBy(desc(supportTickets.createdAt))
     .limit(limit);
   return Promise.all(rows.map((r) => view(db, { ...r, status: r.status as TicketStatus }, false)));
+}
+
+/** One request's customer-facing view by id (no internal notes), for the guest repository after its key check. */
+export async function getTicketViewById(db: Tx, ticketId: string): Promise<TicketView> {
+  const [row] = await db
+    .select(ticketColumns)
+    .from(supportTickets)
+    .leftJoin(orders, eq(orders.id, supportTickets.orderId))
+    .leftJoin(orderGroups, eq(orderGroups.id, orders.groupId))
+    .leftJoin(serviceRequests, eq(serviceRequests.id, supportTickets.serviceRequestId))
+    .where(eq(supportTickets.id, ticketId))
+    .limit(1);
+  if (!row) throw new NotFoundError('Request not found');
+  return view(db, { ...row, status: row.status as TicketStatus }, false);
 }
 
 export async function getMyTicket(db: Tx, userId: string, code: string): Promise<TicketView> {
@@ -840,7 +855,7 @@ export function ticketScopeFrom(
     shopId: string | null;
     workshopId: string | null;
   }[],
-  permission: 'tickets:read' | 'tickets:reply' = 'tickets:read',
+  permission: 'tickets:read' | 'tickets:reply' | 'tickets:assign' = 'tickets:read',
 ): TicketScope {
   const relevant = grants.filter(
     (g) => g.permissions.includes(permission) && g.shopId === null && g.workshopId === null,

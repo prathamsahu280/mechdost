@@ -25,8 +25,9 @@ import { CannedReplyBody } from '@mechdost/shared/support-inbox';
 import type { SessionCache } from '../auth/session-cache';
 import { SupportAttachment, SupportRefundInfo } from '@mechdost/shared/support-thread';
 import type { Context } from 'hono';
-import { can } from '@mechdost/shared/rbac';
-import { ApiError } from '../errors';
+import { createMiddleware } from 'hono/factory';
+import type { Grant, Permission } from '@mechdost/shared/rbac';
+import { Forbidden } from '../errors';
 import { authenticate, requirePermission, requireVerified } from '../middleware/auth';
 import { rateLimit, RATE_RULES } from '../middleware/rate-limit';
 import type { AppDeps, AppEnv } from '../types';
@@ -375,6 +376,17 @@ const cannedUpdate = createRoute({
   },
 });
 
+/**
+ * Canned replies are one global list, so editing needs the permission on a platform-wide grant: a city-scoped
+ * `content:write` (city manager) must not change what every city's agents send (security review 2026-11-15).
+ */
+function hasGlobalGrant(grants: readonly Grant[], permission: Permission): boolean {
+  return grants.some(
+    (g) =>
+      g.permissions.includes(permission) && g.cityId === null && g.shopId === null && g.workshopId === null,
+  );
+}
+
 export function supportRoutes(deps: AppDeps, cache: SessionCache) {
   const app = new OpenAPIHono<AppEnv>({ defaultHook: validationHook });
   for (const path of ['/support/*', '/admin/support/*']) {
@@ -402,9 +414,13 @@ export function supportRoutes(deps: AppDeps, cache: SessionCache) {
     },
   });
   // Canned replies: anyone who can reply may read the active ones; editing is `content:write` (checked per call).
-  const editsCannedReplies = (c: Context<AppEnv>) => can(c.get('auth').grants, 'content:write');
-  app.on(['POST', 'PUT'], '/admin/support/canned-replies/*', requirePermission('content:write'));
-  app.on('POST', '/admin/support/canned-replies', requirePermission('content:write'));
+  const editsCannedReplies = (c: Context<AppEnv>) => hasGlobalGrant(c.get('auth').grants, 'content:write');
+  const requireGlobalContentWrite = createMiddleware<AppEnv>(async (c, next) => {
+    if (!hasGlobalGrant(c.get('auth').grants, 'content:write')) throw Forbidden();
+    await next();
+  });
+  app.on(['POST', 'PUT'], '/admin/support/canned-replies/*', requireGlobalContentWrite);
+  app.on('POST', '/admin/support/canned-replies', requireGlobalContentWrite);
   app.on('GET', '/admin/support/canned-replies', requirePermission('tickets:reply'));
   app.route('/', supportThreadRoutes(deps));
 
@@ -489,17 +505,21 @@ export function supportRoutes(deps: AppDeps, cache: SessionCache) {
     .openapi(assign, async (c) => {
       const body = c.req.valid('json');
       const { grants, user } = c.get('auth');
-      // Managers (`tickets:assign`) assign anyone; an agent with only `tickets:reply` may take a request or release
-      // one they hold, never hand it to someone else.
-      const self = body.assigneeId === user.id || body.assigneeId === null;
-      if (!can(grants, 'tickets:assign') && !self)
-        throw new ApiError(403, 'FORBIDDEN', 'You cannot assign requests to other people');
-      const result = await assignTicket(deps.db, ticketScopeFrom(grants, 'tickets:reply'), {
-        staffUserId: user.id,
-        code: c.req.valid('param').code,
-        assigneeId: body.assigneeId,
-        expectedVersion: body.version,
-      });
+      // The repository checks `tickets:assign` for this request's own city and, without it, lets the caller only
+      // take a free request or release their own (security review 2026-11-15).
+      const result = await assignTicket(
+        deps.db,
+        {
+          reply: ticketScopeFrom(grants, 'tickets:reply'),
+          assign: ticketScopeFrom(grants, 'tickets:assign'),
+        },
+        {
+          staffUserId: user.id,
+          code: c.req.valid('param').code,
+          assigneeId: body.assigneeId,
+          expectedVersion: body.version,
+        },
+      );
       return c.json(result, 200);
     })
     .openapi(agents, async (c) => {

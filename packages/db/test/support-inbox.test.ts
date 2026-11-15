@@ -31,6 +31,8 @@ let client: Awaited<ReturnType<typeof createTestDb>>['client'];
 const t = () => db as unknown as Tx;
 const F: Record<string, string> = {};
 const ALL = { all: true } as const;
+const BOTH = { reply: ALL, assign: ALL } as const;
+const NONE = { all: false, cityIds: [] as string[] };
 const ist = (iso: string) => new Date(`${iso}+05:30`);
 const DAY = 86_400_000;
 
@@ -168,7 +170,7 @@ describe('assignment', () => {
     const asha = await freshCustomer('Asha Verma');
     const code = await raiseIn(F.raipur!, asha);
     const before = await row(code);
-    const res = await assignTicket(t(), ALL, {
+    const res = await assignTicket(t(), BOTH, {
       staffUserId: F.lead!,
       code,
       assigneeId: F.agent!,
@@ -194,22 +196,22 @@ describe('assignment', () => {
     const code = await raiseIn(F.raipur!);
     const v = (await row(code)).version;
     await expect(
-      assignTicket(t(), ALL, { staffUserId: F.lead!, code, assigneeId: F.asha!, expectedVersion: v }),
+      assignTicket(t(), BOTH, { staffUserId: F.lead!, code, assigneeId: F.asha!, expectedVersion: v }),
     ).rejects.toMatchObject({ code: 'ASSIGNEE_INVALID' });
     // Bilaspur's agent has no reach into a Raipur request.
     await expect(
-      assignTicket(t(), ALL, { staffUserId: F.lead!, code, assigneeId: F.agentBls!, expectedVersion: v }),
+      assignTicket(t(), BOTH, { staffUserId: F.lead!, code, assigneeId: F.agentBls!, expectedVersion: v }),
     ).rejects.toMatchObject({ code: 'ASSIGNEE_INVALID' });
     await expect(
-      assignTicket(t(), ALL, { staffUserId: F.lead!, code, assigneeId: F.lead!, expectedVersion: v + 5 }),
+      assignTicket(t(), BOTH, { staffUserId: F.lead!, code, assigneeId: F.lead!, expectedVersion: v + 5 }),
     ).rejects.toMatchObject({ code: 'STALE_TICKET' });
-    const ok = await assignTicket(t(), ALL, {
+    const ok = await assignTicket(t(), BOTH, {
       staffUserId: F.lead!,
       code,
       assigneeId: F.lead!,
       expectedVersion: v,
     });
-    await assignTicket(t(), ALL, {
+    await assignTicket(t(), BOTH, {
       staffUserId: F.lead!,
       code,
       assigneeId: null,
@@ -223,10 +225,106 @@ describe('assignment', () => {
     await expect(
       assignTicket(
         t(),
-        { all: false, cityIds: [F.bilaspur!] },
+        { reply: { all: false, cityIds: [F.bilaspur!] }, assign: { all: false, cityIds: [F.bilaspur!] } },
         { staffUserId: F.agentBls!, code, assigneeId: F.agentBls!, expectedVersion: 1 },
       ),
     ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+  });
+
+  it('without tickets:assign an agent may only take an unassigned request or release their own (security review)', async () => {
+    const code = await raiseIn(F.raipur!);
+    const v0 = (await row(code)).version;
+    const agentOnly = { reply: ALL, assign: NONE };
+    // Someone else holds it: the agent can neither unassign nor take it over.
+    const held = await assignTicket(t(), BOTH, {
+      staffUserId: F.lead!,
+      code,
+      assigneeId: F.lead!,
+      expectedVersion: v0,
+    });
+    await expect(
+      assignTicket(t(), agentOnly, {
+        staffUserId: F.agent!,
+        code,
+        assigneeId: null,
+        expectedVersion: held.version,
+      }),
+    ).rejects.toMatchObject({ code: 'ASSIGN_NOT_ALLOWED' });
+    await expect(
+      assignTicket(t(), agentOnly, {
+        staffUserId: F.agent!,
+        code,
+        assigneeId: F.agent!,
+        expectedVersion: held.version,
+      }),
+    ).rejects.toMatchObject({ code: 'ASSIGN_NOT_ALLOWED' });
+    expect((await row(code)).assigneeId).toBe(F.lead);
+    // The holder releases it; then an agent takes the unassigned request and releases it again.
+    const freed = await assignTicket(t(), agentOnly, {
+      staffUserId: F.lead!,
+      code,
+      assigneeId: null,
+      expectedVersion: held.version,
+    });
+    const taken = await assignTicket(t(), agentOnly, {
+      staffUserId: F.agent!,
+      code,
+      assigneeId: F.agent!,
+      expectedVersion: freed.version,
+    });
+    expect((await row(code)).assigneeId).toBe(F.agent);
+    await assignTicket(t(), agentOnly, {
+      staffUserId: F.agent!,
+      code,
+      assigneeId: null,
+      expectedVersion: taken.version,
+    });
+    expect((await row(code)).assigneeId).toBeNull();
+    // Never to a third person.
+    await expect(
+      assignTicket(t(), agentOnly, {
+        staffUserId: F.agent!,
+        code,
+        assigneeId: F.lead!,
+        expectedVersion: (await row(code)).version,
+      }),
+    ).rejects.toMatchObject({ code: 'ASSIGN_NOT_ALLOWED' });
+  });
+
+  it('tickets:assign is checked for the ticket’s own city, not widened by the reply scope (security review)', async () => {
+    const bls = await raiseIn(F.bilaspur!);
+    const v = (await row(bls)).version;
+    const rprAssigner = { reply: ALL, assign: { all: false, cityIds: [F.raipur!] } };
+    await expect(
+      assignTicket(t(), rprAssigner, {
+        staffUserId: F.agent!,
+        code: bls,
+        assigneeId: F.lead!,
+        expectedVersion: v,
+      }),
+    ).rejects.toMatchObject({ code: 'ASSIGN_NOT_ALLOWED' });
+    // Not even visible to a staff member whose reply scope is Raipur only.
+    const rprOnly = {
+      reply: { all: false, cityIds: [F.raipur!] },
+      assign: { all: false, cityIds: [F.raipur!] },
+    };
+    await expect(
+      assignTicket(t(), rprOnly, {
+        staffUserId: F.agent!,
+        code: bls,
+        assigneeId: F.lead!,
+        expectedVersion: v,
+      }),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    // In its own city the same assigner may assign others.
+    const rpr = await raiseIn(F.raipur!);
+    await assignTicket(t(), rprAssigner, {
+      staffUserId: F.agent!,
+      code: rpr,
+      assigneeId: F.lead!,
+      expectedVersion: (await row(rpr)).version,
+    });
+    expect((await row(rpr)).assigneeId).toBe(F.lead);
   });
 
   it('lists the agents a scope may assign to (all-city agents always, city agents of the scope)', async () => {
