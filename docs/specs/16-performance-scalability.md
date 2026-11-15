@@ -104,6 +104,7 @@ Product photos are rendered by a **Server Component** with `getImageProps` (a pl
   lean card only); the cart pill imported the session store for the sync (now a build-time switch + `import()` of
   `cart-sync-mount.tsx` after load); and build-time switches compared imported constants, which the minifier does not
   fold across modules (now `process.env.NEXT_PUBLIC_*` inline in the switch).
-- Result: `/` 164.1, `/shop` 180.0, product 178.1, `/workshops` 179.0, `/cart` 179.9 KB gz. **Headroom on `/shop` is
-  zero**; next: inline env in every remaining `AUTH_MODE`/`DATA_MODE` switch (bell, push, header) to win it back.
+- Result: `/` 164.1, `/shop` 180.0, product 178.1, `/workshops` 179.0, `/cart` 179.9 KB gz; CI measured `/shop` 180.0
+  as OVER (a few bytes above), so the bell's switch got the same inline-env fix: `/` 164.0, `/shop` 179.8, product
+  177.9, `/workshops` 178.8, `/cart` 179.8 KB gz. **Headroom on `/shop` is 0.2 KB**; next: inline env in every remaining `AUTH_MODE`/`DATA_MODE` switch (bell, push, header) to win it back.
 - Guards: `apps/web/test/cart-pill-lazy.test.ts`, `apps/web/test/storefront-next-tier.test.ts`.
