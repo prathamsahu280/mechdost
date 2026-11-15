@@ -154,3 +154,5 @@ In-app bell for every signed-in role and Firebase Cloud Messaging web push. Real
 ## Order-email trust line (2026-11-15)
 
 Order emails (`order_*` templates) carry one footer line above the company line: "Genuine parts from verified Raipur shops." (Hindi: "रायपुर की सत्यापित दुकानों से असली पार्ट्स।"). The admin rewords or hides it in Admin → Content → Trust lines (`trust.emailFooter`, spec 08); the worker reads the published text at send time and falls back to the default if the lookup fails. Other emails (refunds, service, quotes, support, partners) do not carry it.
+
+- **Staff cancel of a service request (2026-11-15):** email template `service_cancelled` (en + hi; reason in words, honest refund line) with bell notice `service.cancelled` and push, queued in the cancel transaction (`queueServiceCancelledEmail`); the reason phrases live in `email-phrases.ts`.

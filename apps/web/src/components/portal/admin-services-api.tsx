@@ -2,17 +2,22 @@
 
 import { useLocale, useTranslations } from 'next-intl';
 import {
+  ServiceCancelledDto,
   ServiceChangedDto,
   ServiceRequestDetailDto,
   ServiceRequestPageDto,
+  WorkshopSuggestionsDto,
   type AdminWorkshop,
   type ServiceRequestDetail,
   type ServiceRequestSummary,
+  type WorkshopSuggestion,
 } from '@mechdost/shared/service-api';
 import {
   SERVICE_DECLINE_REASONS,
   SERVICE_REJECT_REASONS,
+  SERVICE_STAFF_CANCEL_REASONS,
   type ServiceRejectReason,
+  type ServiceStaffCancelReason,
 } from '@mechdost/shared/state';
 import { VEHICLE_ICON } from '@mechdost/shared/vehicles';
 import { useCallback, useEffect, useState, type SyntheticEvent } from 'react';
@@ -102,7 +107,7 @@ export function ServiceRoutingApi() {
                     onChanged={list.reload}
                   />
                 ) : (
-                  <RequestCard request={r} />
+                  <RequestCard request={r} onChanged={list.reload} />
                 )}
               </li>
             ))}
@@ -136,11 +141,158 @@ function RequestHead({ request: r }: { request: ServiceRequestSummary }) {
   );
 }
 
-function RequestCard({ request }: { request: ServiceRequestSummary }) {
+const FINISHED: readonly string[] = ['completed', 'cancelled', 'rejected'];
+
+function RequestCard({
+  request,
+  onChanged,
+}: {
+  request: ServiceRequestSummary;
+  onChanged: () => Promise<void>;
+}) {
   return (
     <article className={portalCard}>
       <RequestHead request={request} />
+      {FINISHED.includes(request.status) ? null : <StaffCancel request={request} onDone={onChanged} />}
     </article>
+  );
+}
+
+/**
+ * Staff cancel (permission `service:cancel`, enforced by the API): a reason code from the closed list, no free text.
+ * The customer is told; a paid bill is refunded through the Refunds queue after finance approves.
+ */
+function StaffCancel({
+  request: r,
+  onDone,
+}: {
+  request: ServiceRequestSummary;
+  onDone: () => Promise<void>;
+}) {
+  const t = useTranslations('portal');
+  const locale = useLocale();
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState<ServiceStaffCancelReason | ''>('');
+  const [missing, setMissing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const id = `cancel-${r.code}`;
+
+  if (!open)
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          setOpen(true);
+        }}
+        className="mt-3 inline-flex min-h-11 items-center text-sm font-bold text-muted underline-offset-4 hover:text-ink hover:underline"
+      >
+        {t('ws_api_cancelRequest')}
+      </button>
+    );
+
+  async function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!reason) {
+      setMissing(true);
+      document.getElementById(`${id}-reason`)?.focus();
+      return;
+    }
+    setBusy(true);
+    const res = await adminApi(
+      locale,
+      `/admin/service-requests/${encodeURIComponent(r.code)}/cancel`,
+      ServiceCancelledDto,
+      { method: 'POST', body: { reasonCode: reason, version: r.version } },
+    );
+    setBusy(false);
+    if (!res.ok) {
+      setError(res.code);
+      return;
+    }
+    track('click', { id: 'admin_service_cancelled', path: window.location.pathname });
+    await onDone();
+  }
+
+  return (
+    <form
+      noValidate
+      onSubmit={(e) => void onSubmit(e)}
+      aria-busy={busy || undefined}
+      className="mt-3 space-y-2 border-t border-line pt-3"
+    >
+      <p className="text-sm text-muted">{t('ws_api_cancelNote')}</p>
+      <label htmlFor={`${id}-reason`} className="text-xs font-bold text-muted">
+        {t('ws_api_cancelReasonLabel')}
+      </label>
+      <select
+        id={`${id}-reason`}
+        value={reason}
+        aria-invalid={missing ? true : undefined}
+        aria-describedby={missing ? `${id}-error` : undefined}
+        onChange={(e) => {
+          setReason(SERVICE_STAFF_CANCEL_REASONS.find((x) => x === e.target.value) ?? '');
+          setMissing(false);
+        }}
+        className={portalField}
+      >
+        <option value="">{t('ws_api_reasonChoose')}</option>
+        {SERVICE_STAFF_CANCEL_REASONS.map((x) => (
+          <option key={x} value={x}>
+            {t(`ws_api_cancelReason_${x}`)}
+          </option>
+        ))}
+      </select>
+      {missing ? (
+        <p id={`${id}-error`} className="text-xs font-bold text-error">
+          {t('ws_api_reasonRequired')}
+        </p>
+      ) : null}
+      {error ? <ServiceApiError code={error} /> : null}
+      <div className="flex flex-wrap gap-2">
+        <button type="submit" disabled={busy} className={portalPrimary}>
+          {busy ? t('ws_api_cancelBusy') : t('ws_api_cancelConfirm')}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setOpen(false);
+          }}
+          className={portalQuiet}
+        >
+          {t('ws_api_cancel')}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+/** One ranked suggestion's reasons in words, one line per factor (spec 06 "Ranking": shown with the reasons). */
+function SuggestionReasons({ s }: { s: WorkshopSuggestion }) {
+  const t = useTranslations('portal');
+  const locale = useLocale();
+  const nf = new Intl.NumberFormat(locale, { maximumFractionDigits: 1 });
+  const lines = [
+    s.distanceM === null
+      ? t('ws_api_suggestNoPin')
+      : t('ws_api_suggestDistance', { km: nf.format(s.distanceM / 1000) }),
+    s.ratingX100 === null
+      ? t('ws_api_suggestNoRating')
+      : t('ws_api_suggestRating', { rating: nf.format(s.ratingX100 / 100) }),
+    s.acceptancePercent === null
+      ? t('ws_api_suggestNoAccept')
+      : t('ws_api_suggestAccept', { percent: s.acceptancePercent }),
+    s.medianMinutesToPropose === null
+      ? t('ws_api_suggestNoSpeed')
+      : t('ws_api_suggestSpeed', { minutes: s.medianMinutesToPropose }),
+    t('ws_api_suggestLoad', { open: s.openJobs, capacity: s.slotCapacity }),
+  ];
+  return (
+    <ul className="mt-1 space-y-0.5 text-xs text-muted">
+      {lines.map((line) => (
+        <li key={line}>{line}</li>
+      ))}
+    </ul>
   );
 }
 
@@ -176,6 +328,22 @@ function RoutingCard({
     };
   }, [locale, r.code]);
 
+  // Ranked suggestions (distance, rating, acceptance, speed, load); the plain nearest-PIN list below is the fallback.
+  const [ranked, setRanked] = useState<WorkshopSuggestion[] | null | 'failed'>(null);
+  useEffect(() => {
+    let live = true;
+    void adminApi(
+      locale,
+      `/admin/service-requests/${encodeURIComponent(r.code)}/suggestions?locale=${loc(locale)}`,
+      WorkshopSuggestionsDto,
+    ).then((res) => {
+      if (live) setRanked(res.ok ? res.data.items : 'failed');
+    });
+    return () => {
+      live = false;
+    };
+  }, [locale, r.code, r.version]);
+
   const lastDecline = SERVICE_DECLINE_REASONS.find((x) => x === detail?.reasonCode);
   const options = workshops
     ? routableWorkshops(workshops, {
@@ -185,7 +353,7 @@ function RoutingCard({
       }).slice(0, SUGGESTIONS)
     : [];
 
-  async function send(workshopId: string) {
+  async function send(workshopId: string, rank: number | null = null) {
     setBusy(true);
     setError(null);
     const res = await adminApi(
@@ -199,10 +367,19 @@ function RoutingCard({
       setError(res.code);
       return;
     }
-    track('click', { id: 'admin_service_routed', path: window.location.pathname });
+    track('click', {
+      id:
+        rank === null
+          ? 'admin_service_routed'
+          : rank === 1
+            ? 'admin_service_routed_top'
+            : 'admin_service_routed_other',
+      path: window.location.pathname,
+    });
     await onChanged();
   }
 
+  const showRanked = Array.isArray(ranked) && ranked.length > 0;
   return (
     <article className={`${portalCard} border-accent-button/60`} aria-busy={busy || undefined}>
       <RequestHead request={r} />
@@ -232,10 +409,37 @@ function RoutingCard({
           <ServiceApiError code={workshopsError} />
         </div>
       ) : null}
-      {workshops && options.length === 0 ? (
+      {ranked === 'failed' && options.length > 0 ? (
+        <p className="mt-3 text-xs text-muted">{t('ws_api_suggestFallback')}</p>
+      ) : null}
+      {showRanked ? (
+        <ol className="mt-3 space-y-3">
+          {ranked.map((s) => (
+            <li key={s.workshopId}>
+              <button
+                type="button"
+                disabled={busy}
+                aria-describedby={`why-${r.code}-${s.workshopId}`}
+                onClick={() => void send(s.workshopId, s.rank)}
+                className={`${s.rank === 1 ? portalPrimary : portalQuiet} w-full justify-between`}
+              >
+                <span>🔧 {t('assignTo', { workshop: s.name })}</span>
+                <span className="text-xs">
+                  {s.rank === 1 ? `${t('ws_api_suggestBest')} · ` : ''}
+                  {t('ws_api_suggestScore', { percent: Math.round(s.scoreBp / 100) })}
+                </span>
+              </button>
+              <div id={`why-${r.code}-${s.workshopId}`}>
+                <SuggestionReasons s={s} />
+              </div>
+            </li>
+          ))}
+        </ol>
+      ) : null}
+      {workshops && !showRanked && options.length === 0 && ranked !== null ? (
         <p className="mt-3 text-sm text-muted">{t('ws_api_noEligible')}</p>
       ) : null}
-      {options.length > 0 ? (
+      {!showRanked && ranked !== null && options.length > 0 ? (
         <ul className="mt-3 space-y-2">
           {options.map((w, i) => (
             <li key={w.id}>
@@ -274,6 +478,7 @@ function RoutingCard({
           {t('ws_api_reject')}
         </button>
       )}
+      <StaffCancel request={r} onDone={onChanged} />
     </article>
   );
 }

@@ -278,6 +278,44 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
     realApi: true,
   },
 
+  {
+    code: 'API-SVC-PAYBILL',
+    page: 'Service request (/service/{code}), real sign-in',
+    component:
+      'Billed request: bill, "Pay online" with its hint, the answer when the bill can no longer be paid, and the paid bill',
+    path: '/service/SR-RPR-2026-HND401',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['customer'] },
+      { name: 'pay', values: ['idle', 'error', 'paid'] },
+      stress,
+    ],
+    sweep: 8,
+    note: API_NOTE,
+    realApi: true,
+  },
+  {
+    code: 'API-ADM-SVCROUTE',
+    page: 'Admin console (/admin/services), real sign-in',
+    component:
+      'Request needing routing: ranked suggestions with reasons (best match first), no eligible workshop, ranking unavailable; staff cancel form with reason',
+    path: '/admin/services',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['admin'] },
+      { name: 'rank', values: ['ranked', 'none', 'error'] },
+      { name: 'form', values: ['closed', 'cancel'] },
+      stress,
+    ],
+    sweep: 10,
+    note: API_NOTE,
+    realApi: true,
+  },
+
   // ─────────────── Refunds (2026-11-15, spec 05) ───────────────
   {
     code: 'API-ADM-REFUNDQ',

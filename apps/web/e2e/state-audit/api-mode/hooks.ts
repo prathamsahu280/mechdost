@@ -239,6 +239,20 @@ async function prepareApi(page: Page, c: AuditCase): Promise<string[]> {
     if ((await link.count()) === 0) notes.push('no reschedule link');
     else await link.click();
   }
+  // Workshops tier 3: the tap on "Pay online" answered with BILL_NOT_PAYABLE; the staff cancel form.
+  if (c.code === 'API-SVC-PAYBILL' && c.state.pay === 'error') {
+    const pay = main.getByRole('button', { name: /pay online|ऑनलाइन भुगतान करें/i }).first();
+    if ((await pay.count()) === 0) notes.push('no pay online button');
+    else {
+      await pay.click();
+      await settleApi(page);
+    }
+  }
+  if (c.code === 'API-ADM-SVCROUTE' && c.state.form === 'cancel') {
+    const open = main.getByRole('button', { name: /cancel this request|यह अनुरोध रद्द करें/i }).first();
+    if ((await open.count()) === 0) notes.push('no staff cancel button');
+    else await open.click();
+  }
   if (c.code === 'API-SVC-PHOTOS' && c.state.viewer === 'open') {
     const thumb = main.locator('section[aria-labelledby$="-photos-title"] button').first();
     if ((await thumb.count()) === 0) notes.push('no photo thumbnail');

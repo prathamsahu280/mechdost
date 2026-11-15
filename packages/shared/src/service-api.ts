@@ -423,3 +423,6 @@ export const BillCheckoutDto = z.object({
   currency: z.literal('INR'),
 });
 export type BillCheckout = z.infer<typeof BillCheckoutDto>;
+
+/** Staff cancel result: the new status, and whether a refund was asked for in the Refunds queue (paid bill). */
+export const ServiceCancelledDto = ServiceChangedDto.extend({ refundRequested: z.boolean() });

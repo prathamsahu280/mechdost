@@ -138,6 +138,8 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | API-ADM-SUPPORT    | Admin → Support inbox with a thread, real sign-in                | Inbox conversation: issue badge, customer photos, the cash on delivery refund panel (no destination, masked destination); open with photos, COD without destination, COD saved, resolved                                                                                        | pairwise | 32       | 0       |
 | API-WS-MYWORKSHOP  | Workshop portal (/partner/workshop), real sign-in                | My workshop card: profile text in English and Hindi, hours, busy mode, capacity per hour, menu ranges, pin and GSTIN requests (plain / busy / a waiting pin request)                                                                                                            | pairwise | 24       | 0       |
 | API-SVC-RESCHEDULE | Service request (/service/{code}), real sign-in                  | Change date or time: link only, or the open form (date, part of the day, changes left)                                                                                                                                                                                          | pairwise | 16       | 0       |
+| API-SVC-PAYBILL    | Service request (/service/{code}), real sign-in                  | Billed request: bill, "Pay online" with its hint, the answer when the bill can no longer be paid, and the paid bill                                                                                                                                                             | pairwise | 24       | 0       |
+| API-ADM-SVCROUTE   | Admin console (/admin/services), real sign-in                    | Request needing routing: ranked suggestions with reasons (best match first), no eligible workshop, ranking unavailable; staff cancel form with reason                                                                                                                           | pairwise | 24       | 0       |
 | API-ADM-REFUNDQ    | Admin console (/admin/refunds)                                   | Refund queue: view buttons, list rows, detail (approve / decline with reason / pay by hand with UTR), alerts                                                                                                                                                                    | pairwise | 65       | 0       |
 | API-ORD-REFUNDLINE | Order page (/orders/{code})                                      | Refund status line under a part: under review, processing, refunded, declined, failed (+ support link)                                                                                                                                                                          | pairwise | 48       | 0       |
 | API-SHOP-PORTAL    | Shop portal (/partner/shop), real sign-in                        | Orders from the API with the give-up form, the shop's warnings, its hours and standing, its agreement                                                                                                                                                                           | pairwise | 63       | 0       |
@@ -165,7 +167,7 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | API-ADM-AUDIT      | Admin → Audit log, real sign-in                                  | Audit log: filters, entries (closed and open with before/after), more, empty, load error                                                                                                                                                                                        | pairwise | 32       | 0       |
 | API-NAV-ADMIN      | Navigation, real sign-in                                         | Admin section bar with every real-mode section (Analytics, Refunds, Errors included): current item, scroll, walk                                                                                                                                                                | cross    | 168      | 0       |
 | API-NAV-ACCOUNT    | Navigation, real sign-in                                         | Account section bar in a real-sign-in build: current item, scroll, walk                                                                                                                                                                                                         | cross    | 80       | 0       |
-| **Total**          |                                                                  |                                                                                                                                                                                                                                                                                 |          | **3778** | **92**  |
+| **Total**          |                                                                  |                                                                                                                                                                                                                                                                                 |          | **3826** | **92**  |
 
 ## Chrome
 
@@ -3120,6 +3122,66 @@ Pairwise (all pairs of values); 16 states; scope `main`.
 - [ ] API-SVC-RESCHEDULE-014 · 1440px · dark · hi · customer · world=empty · /service/SR-RPR-2026-HND401 · form=open · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
 - [ ] API-SVC-RESCHEDULE-015 · 1920px · light · en · customer · world=empty · /service/SR-RPR-2026-HND401 · form=closed · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
 - [ ] API-SVC-RESCHEDULE-016 · 1920px · dark · hi · customer · world=empty · /service/SR-RPR-2026-HND401 · form=open · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+
+### API-SVC-PAYBILL — Billed request: bill, "Pay online" with its hint, the answer when the bill can no longer be paid, and the paid bill
+
+Pairwise (all pairs of values); 24 states; scope `main`.
+
+- [ ] API-SVC-PAYBILL-001 · 320px · light · en · customer · world=empty · /service/SR-RPR-2026-HND401 · pay=idle · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-SVC-PAYBILL-002 · 320px · dark · hi · customer · world=empty · /service/SR-RPR-2026-HND401 · pay=error · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-SVC-PAYBILL-003 · 390px · light · hi · customer · world=empty · /service/SR-RPR-2026-HND401 · pay=paid · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-SVC-PAYBILL-004 · 390px · dark · en · customer · world=empty · /service/SR-RPR-2026-HND401 · pay=idle · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-SVC-PAYBILL-005 · 480px · light · en · customer · world=empty · /service/SR-RPR-2026-HND401 · pay=error · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-SVC-PAYBILL-006 · 480px · dark · hi · customer · world=empty · /service/SR-RPR-2026-HND401 · pay=paid · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-SVC-PAYBILL-007 · 768px · light · en · customer · world=empty · /service/SR-RPR-2026-HND401 · pay=paid · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-SVC-PAYBILL-008 · 768px · dark · hi · customer · world=empty · /service/SR-RPR-2026-HND401 · pay=idle · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-SVC-PAYBILL-009 · 1024px · light · en · customer · world=empty · /service/SR-RPR-2026-HND401 · pay=error · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-SVC-PAYBILL-010 · 1024px · dark · hi · customer · world=empty · /service/SR-RPR-2026-HND401 · pay=idle · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-SVC-PAYBILL-011 · 1280px · light · en · customer · world=empty · /service/SR-RPR-2026-HND401 · pay=error · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-SVC-PAYBILL-012 · 1280px · dark · hi · customer · world=empty · /service/SR-RPR-2026-HND401 · pay=paid · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-SVC-PAYBILL-013 · 1440px · light · en · customer · world=empty · /service/SR-RPR-2026-HND401 · pay=idle · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-SVC-PAYBILL-014 · 1440px · dark · hi · customer · world=empty · /service/SR-RPR-2026-HND401 · pay=error · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-SVC-PAYBILL-015 · 1920px · light · en · customer · world=empty · /service/SR-RPR-2026-HND401 · pay=paid · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-SVC-PAYBILL-016 · 1920px · dark · hi · customer · world=empty · /service/SR-RPR-2026-HND401 · pay=idle · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-SVC-PAYBILL-017 · 320px · light · en · customer · world=empty · /service/SR-RPR-2026-HND401 · pay=paid · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-SVC-PAYBILL-018 · 390px · dark · hi · customer · world=empty · /service/SR-RPR-2026-HND401 · pay=error · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-SVC-PAYBILL-019 · 480px · light · en · customer · world=empty · /service/SR-RPR-2026-HND401 · pay=idle · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-SVC-PAYBILL-020 · 768px · dark · hi · customer · world=empty · /service/SR-RPR-2026-HND401 · pay=error · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-SVC-PAYBILL-021 · 1024px · light · en · customer · world=empty · /service/SR-RPR-2026-HND401 · pay=paid · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-SVC-PAYBILL-022 · 1280px · dark · hi · customer · world=empty · /service/SR-RPR-2026-HND401 · pay=idle · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-SVC-PAYBILL-023 · 1440px · light · en · customer · world=empty · /service/SR-RPR-2026-HND401 · pay=paid · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-SVC-PAYBILL-024 · 1920px · dark · hi · customer · world=empty · /service/SR-RPR-2026-HND401 · pay=error · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+
+## Admin console (/admin/services), real sign-in
+
+### API-ADM-SVCROUTE — Request needing routing: ranked suggestions with reasons (best match first), no eligible workshop, ranking unavailable; staff cancel form with reason
+
+Pairwise (all pairs of values); 24 states; scope `main`.
+
+- [ ] API-ADM-SVCROUTE-001 · 320px · light · en · admin · world=empty · /admin/services · rank=ranked · form=closed · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ADM-SVCROUTE-002 · 320px · dark · hi · admin · world=empty · /admin/services · rank=none · form=cancel · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-SVCROUTE-003 · 390px · light · hi · admin · world=empty · /admin/services · rank=error · form=closed · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-SVCROUTE-004 · 390px · dark · en · admin · world=empty · /admin/services · rank=ranked · form=cancel · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ADM-SVCROUTE-005 · 480px · light · en · admin · world=empty · /admin/services · rank=none · form=closed · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ADM-SVCROUTE-006 · 480px · dark · hi · admin · world=empty · /admin/services · rank=error · form=cancel · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-SVCROUTE-007 · 768px · light · en · admin · world=empty · /admin/services · rank=error · form=cancel · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ADM-SVCROUTE-008 · 768px · dark · hi · admin · world=empty · /admin/services · rank=ranked · form=closed · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-SVCROUTE-009 · 1024px · light · en · admin · world=empty · /admin/services · rank=none · form=closed · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ADM-SVCROUTE-010 · 1024px · dark · hi · admin · world=empty · /admin/services · rank=ranked · form=cancel · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-SVCROUTE-011 · 1280px · light · en · admin · world=empty · /admin/services · rank=none · form=closed · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ADM-SVCROUTE-012 · 1280px · dark · hi · admin · world=empty · /admin/services · rank=error · form=cancel · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-SVCROUTE-013 · 1440px · light · en · admin · world=empty · /admin/services · rank=ranked · form=closed · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ADM-SVCROUTE-014 · 1440px · dark · hi · admin · world=empty · /admin/services · rank=none · form=cancel · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-SVCROUTE-015 · 1920px · light · en · admin · world=empty · /admin/services · rank=error · form=closed · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ADM-SVCROUTE-016 · 1920px · dark · hi · admin · world=empty · /admin/services · rank=ranked · form=cancel · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-SVCROUTE-017 · 320px · light · en · admin · world=empty · /admin/services · rank=error · form=closed · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ADM-SVCROUTE-018 · 390px · dark · hi · admin · world=empty · /admin/services · rank=none · form=cancel · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-SVCROUTE-019 · 480px · light · en · admin · world=empty · /admin/services · rank=ranked · form=closed · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ADM-SVCROUTE-020 · 768px · dark · hi · admin · world=empty · /admin/services · rank=none · form=cancel · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-SVCROUTE-021 · 1024px · light · en · admin · world=empty · /admin/services · rank=error · form=closed · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ADM-SVCROUTE-022 · 1280px · dark · hi · admin · world=empty · /admin/services · rank=ranked · form=cancel · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-SVCROUTE-023 · 1440px · light · en · admin · world=empty · /admin/services · rank=error · form=closed · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ADM-SVCROUTE-024 · 1920px · dark · hi · admin · world=empty · /admin/services · rank=none · form=cancel · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
 
 ## Admin console (/admin/refunds)
 

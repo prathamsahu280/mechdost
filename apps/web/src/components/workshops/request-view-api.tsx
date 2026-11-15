@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import type { ServiceRequestDetail } from '@mechdost/shared/service-api';
-import { SERVICE_CANCEL_REASONS } from '@mechdost/shared/state';
+import { SERVICE_ANY_CANCEL_REASONS, SERVICE_CANCEL_REASONS } from '@mechdost/shared/state';
 import { lazy, Suspense, useCallback, useEffect, useState, type SyntheticEvent } from 'react';
 import { track } from '@/lib/analytics';
 import { formatDate, formatPrice } from '@/lib/format';
@@ -18,6 +18,7 @@ import {
 } from '@/lib/service-views';
 import { StatusTimeline } from '../commerce/status-timeline';
 import { JobPhotosStripLazy } from '@/components/photos/photos-lazy';
+import { PayBillApi } from './pay-bill-api';
 import { ServiceBillView } from './service-estimate';
 import { HomeVisitAside, HomeVisitBox } from './home-visit-api';
 import { RescheduleRequestApi } from './reschedule-api';
@@ -133,7 +134,10 @@ export function RequestViewApi({ code }: { code: string }) {
   }));
   const noWork = req.status === 'no_work_approved' || (req.status === 'completed' && req.bill === null);
   const estimate = req.estimate;
-  const cancelReason = SERVICE_CANCEL_REASONS.find((x) => x === req.reasonCode);
+  const cancelReason = SERVICE_ANY_CANCEL_REASONS.find((x) => x === req.reasonCode);
+  // A reason the customer cannot pick means MechDost cancelled the request.
+  const byStaff =
+    cancelReason !== undefined && !(SERVICE_CANCEL_REASONS as readonly string[]).includes(cancelReason);
 
   return (
     <div className="grid gap-6 nav:grid-cols-[1fr_380px] nav:items-start">
@@ -163,9 +167,12 @@ export function RequestViewApi({ code }: { code: string }) {
             <div id="request-cancelled" role="status" tabIndex={-1} className="mt-5 rounded-tile bg-pill p-5">
               <p className="font-heading font-bold text-ink">{t('cancelledTitle')}</p>
               <p className="mt-1 text-sm text-muted">
-                {t('api_cancelledOn', { date: formatDate(req.updatedAt, locale) })}
+                {t(byStaff ? 'api_cancelledByStaff' : 'api_cancelledOn', {
+                  date: formatDate(req.updatedAt, locale),
+                })}
                 {cancelReason ? ` · ${t(`cancelReason_${cancelReason}`)}` : ''}
               </p>
+              {byStaff ? <p className="mt-1 text-sm text-muted">{t('api_cancelledRefund')}</p> : null}
             </div>
           ) : req.status === 'rejected' ? (
             <div role="status" className="mt-5 rounded-tile bg-pill p-5">
@@ -225,6 +232,9 @@ export function RequestViewApi({ code }: { code: string }) {
               gstRegistered={req.bill.gstRegistered}
               requestCode={req.code}
             />
+          ) : null}
+          {req.status === 'billed' && req.bill && !req.bill.paidAt ? (
+            <PayBillApi code={req.code} totalPaise={req.bill.totalPaise} onChanged={refresh} />
           ) : null}
           {req.status === 'proposed' || req.status === 'confirmed' ? (
             <RescheduleRequestApi req={req} onChanged={refresh} />

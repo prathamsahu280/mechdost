@@ -331,3 +331,9 @@ See PENDING DECISIONS in `docs/decisions.md` (payment methods; post-purchase P1 
 - Security review fix: pin change PIN code must be in the workshop's city (filing and decision).
 - Needs at merge: renumber the migration; no `db:seed` (no new permission). Questions Q116, Q117 (renumbered at merge).
 - Not built: items 5 to 7 of the design (online bill payment, staff cancel, ranking); staff screen for change requests; admin analytics column; customer email for the timeout.
+
+## 2026-11-15 - Workshops next tier, items 5 to 7 (branch worktree-agent-a11670f8e1fca26f6, not merged; migration `service_bill_payments` generated as 0068, not applied, coordinator renumbers)
+
+- Built: online payment of the service bill (same payments table and webhook, purpose `service_bill`, one open order per bill, settles billed -> paid -> completed; a late capture after "paid at the workshop" or a cancel is recorded and refunded once), staff cancel (`service:cancel`, reason codes, slot released once, one refund request for a paid bill, en + hi email, bell and push), ranked workshop suggestions (pure ranking in shared, two-statement SQL, admin UI with reasons and one-click send), UI on the request page and Admin -> Services, state-audit rows `API-SVC-PAYBILL` and `API-ADM-SVCROUTE` (checklist regenerated, 3,826 items, not run in a browser).
+- Needs at merge: renumber the migration; run `pnpm db:seed` (new permission `service:cancel`). No Razorpay dashboard change. Questions Q150 to Q153.
+- Not built: see spec 06 "Built: workshops tier 3".
