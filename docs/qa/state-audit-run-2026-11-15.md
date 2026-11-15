@@ -7,21 +7,31 @@ PC). Representative screenshots are copied to `docs/qa/screenshots/2026-11-15/`.
 
 ## What ran
 
-| Chunk | Pages                                                                                          | Items | Passed | Failed | Notes                                                                               |
-| ----- | ---------------------------------------------------------------------------------------------- | ----- | ------ | ------ | ----------------------------------------------------------------------------------- |
-| A     | Header, footer, floating UI, home                                                              | 365   | 271    | 94     |                                                                                     |
-| B     | Shop listing, filters, compare tray, cart steps                                                | 444   | 76     | 368    | Most failures are one card bug (below)                                              |
-| C     | Product page, compare, cart, checkout                                                          | 320   | 100    | 220    |                                                                                     |
-| D     | Orders, service requests, quotes, account, workshops, partners, support, login                 | 464   | 277    | 187    |                                                                                     |
-| E     | Partner portals, admin console                                                                 | 297   | 157    | 140    |                                                                                     |
-| F     | Navigation (every link, both themes and languages)                                             | —     | —      | —      | **Not finished**: the PC ran out of memory during F and Claude Code stopped the run |
-| G     | Real-sign-in screens against the mocked API (support, coupons, workshops, exports, catalogue…) | —     | —      | —      | **Not run** (comes after F)                                                         |
+| Chunk | Pages                                                                                          | Items | Passed | Failed | Notes                                          |
+| ----- | ---------------------------------------------------------------------------------------------- | ----- | ------ | ------ | ---------------------------------------------- |
+| A     | Header, footer, floating UI, home                                                              | 365   | 271    | 94     |                                                |
+| B     | Shop listing, filters, compare tray, cart steps                                                | 444   | 76     | 368    | Most failures are one card bug (below)         |
+| C     | Product page, compare, cart, checkout                                                          | 320   | 100    | 220    |                                                |
+| D     | Orders, service requests, quotes, account, workshops, partners, support, login                 | 464   | 277    | 187    |                                                |
+| E     | Partner portals, admin console                                                                 | 297   | 157    | 140    |                                                |
+| F     | Navigation (every link, both themes and languages)                                             | 289   | 156    | 133    | Run separately after A–E (user: "run f and g") |
+| G     | Real-sign-in screens against the mocked API (support, coupons, workshops, exports, catalogue…) | —     | —      | —      | **Not run** (comes after F)                    |
 
-1,890 of the 4,229 checklist items ran (A–E). F and G need a re-run (see "Next").
+2,179 of the 4,229 checklist items ran (A–F); G is being run (see below).
 
 A failing item usually carries several findings, and one bug repeats across many items and states (hover, focus,
 both themes, both languages), so the counts below are findings, not separate bugs. The findings reduce to the bugs in
 the next section.
+
+## Found and fixed during the run
+
+- **P0 (launch blocker for real sign-in) · the real-sign-in build failed.** Building the web with
+  `NEXT_PUBLIC_AUTH_MODE=firebase` and `NEXT_PUBLIC_DATA_MODE=api` (the audit's chunk G build, and the configuration
+  production will switch to) stopped while prerendering the home page: `useLocale()` in the new wishlist heart throws
+  there, because the home page has no intl client provider. Production builds in demo mode today, so neither CI nor
+  the live site built this path; the first deploy with real sign-in would have failed. Fixed the same day: the heart
+  reads the locale from the path (guard in `apps/web/test/cart-pill-lazy.test.ts`); the API-mode build now prerenders
+  all 118 pages. Follow-up (Q171): CI should build the firebase + api configuration on every push.
 
 ## Real bugs (fix tomorrow), most important first
 
@@ -94,6 +104,20 @@ Both are now bugs to fix tomorrow (items 7 and 8 below); the footer link (third 
   the checker should test paint overlap, not hit-testing, for decorative overlays.
 - **Rows that must answer the privacy banner first**: CHR-ASSIST (and the cart and compare rows above) should choose
   "Essential only" before measuring, unless the row is about the banner.
+
+## Chunk F (navigation) adds nothing new
+
+The 133 failing navigation items repeat bugs above: the 1024 px header (cart button outside the header, sideways
+scroll on `/cart` and `/account` for signed-in users and partners), the admin side menu under the sticky header (64 ×,
+to verify with a real keyboard), and the map tile network errors on this PC.
+
+## Audit tooling problems found while running G
+
+- `state-audit-run.mjs G --api` does not build the API-mode app it needs (`.next-api`); it fails at once with "Could
+  not find a production build". Run `node scripts/state-audit-api-build.mjs` first.
+- `state-audit-api-build.mjs` only works from `apps/web` (it calls `scripts/copy-map-worker.mjs` relative to the
+  current folder); from the repo root it stops with "Cannot find module". Fix: resolve the helper from the script's own
+  folder, and have the runner build `.next-api` itself when G is requested.
 
 ## Environment (not code)
 
