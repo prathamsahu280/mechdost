@@ -1181,3 +1181,5 @@ Design: `docs/superpowers/specs/2026-11-15-support-next-tier-design.md` items 1 
   border, never taller (nothing in it wraps: labels are nowrap or icon-only); the account side menu is itself
   sticky at `top-28` (112 px) and the admin menu does not stick. The audit's "covered by the header" findings on
   side-menu links come from the checker scrolling with Playwright's own method (ignores scroll padding).
+
+- **Icon-only header entries keep a hover title (2026-11-16 review).** The cart pill and the signed-out sign-in link carry itle={label} / itle={signIn} (same locale strings, so Hindi too) so sighted users still get the word at 1024-1279 px.

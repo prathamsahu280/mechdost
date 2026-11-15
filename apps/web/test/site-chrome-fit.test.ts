@@ -17,6 +17,11 @@ describe('header at 1024-1279 px', () => {
     expect(account.match(/nav:sr-only xl:not-sr-only/g)?.length).toBe(2);
   });
 
+  it('gives the icon-only cart and sign-in a hover title (sighted users still get the word)', () => {
+    expect(src('components/commerce/cart-pill.tsx')).toMatch(/title=\{label\}/);
+    expect(src('components/auth/account-link.tsx')).toMatch(/title=\{signIn\}/);
+  });
+
   it('shows the brand tagline from xl only', () => {
     expect(src('components/site/header.tsx')).toMatch(/sm:block nav:hidden xl:block/);
   });
