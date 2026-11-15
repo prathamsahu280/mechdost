@@ -887,7 +887,7 @@ export function LoginFlow() {
               <p className="mt-1 text-xs text-muted">
                 {t('demoAccountsLead', { password: DEMO_PASSWORD, otp: DEMO_OTP })}
               </p>
-              <ul className="mt-3 grid grid-cols-2 gap-2">
+              <ul className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {SEEDED_ACCOUNTS.map((a) => (
                   <li key={a.id}>
                     <button
@@ -898,14 +898,14 @@ export function LoginFlow() {
                         setError(null);
                         passwordRef.current?.focus();
                       }}
-                      className="press flex min-h-14 w-full items-center gap-2 rounded-button border border-line-card bg-surface px-3 text-left hover:bg-pill"
+                      className="press flex min-h-14 w-full items-center gap-2 rounded-button border border-line-card bg-surface px-3 py-2 text-left hover:bg-pill"
                     >
                       <span aria-hidden="true" className="text-[20px] leading-none">
                         {ROLE_EMOJI[a.role]}
                       </span>
-                      <span className="min-w-0">
+                      <span className="min-w-0 break-words">
                         <span className="block text-sm font-bold text-ink">{t(`role_${a.role}`)}</span>
-                        <span data-user-content className="block truncate text-xs text-muted">
+                        <span data-user-content className="block break-words text-xs text-muted">
                           {a.name}
                         </span>
                         <span className="block text-xs text-muted tabular-nums">{a.phone}</span>

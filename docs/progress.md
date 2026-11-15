@@ -377,3 +377,7 @@ See PENDING DECISIONS in `docs/decisions.md` (payment methods; post-purchase P1 
 - Built: baseline mocks for chunk G (`api-mode/baseline-fixtures.ts`), six checker fixes (per-line boxes, modal skip, Hindi echo, pointer-events overlays, consent version root cause, compare rule with `[data-compare-hint]`), runner builds `.next-api`, build script path fix, CI job `web-real-mode` (Q171 answered by default). Runbook § 9.9, decisions entry 2026-11-16.
 - Verified (targeted): vitest state-audit-checker 11 + api-fixtures + trust + checklist + nav + sections (39 tests, 6 files); eslint zero warnings and prettier on touched files; `tsc --noEmit` shows only the two missing hero images of this worktree. No Playwright, no build (by instruction).
 - Needs at merge: batch 1a adds `data-compare-hint`; re-run chunks A, B, C, G and compare counts (banner findings may drop).
+
+## 2026-11-16 — Audit batch 1c (portal/forms) built on branch worktree-agent-a7cae956fbcd1032f, not merged
+
+Job photos remove button beside thumbnail; portal style constants carry focus-visible ring; demo login picker stacks and wraps; workshop menu price fields stack at phone width. Guard: apps/web/test/portal-forms-layout.test.ts (9 tests). Coordinator re-runs audit rows API-SVC-PHOTOS, PRT-WORKSHOP, LOGIN-FORM.

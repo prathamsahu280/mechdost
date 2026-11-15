@@ -352,7 +352,7 @@ function WorkshopEditor({ w, onSaved }: { w: Profile; onSaved: () => Promise<voi
                   <input type="checkbox" name={`on-${m.key}`} defaultChecked={m.active} className="size-6" />
                   <span data-user-content>{locale === 'hi' && m.titleHi ? m.titleHi : m.title}</span>
                 </label>
-                <div className="mt-2 grid grid-cols-2 gap-3">
+                <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
                     <label htmlFor={id(`low-${m.key}`)} className="text-xs font-bold text-muted">
                       {t('f_low')}
