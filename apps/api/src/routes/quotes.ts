@@ -11,6 +11,7 @@ import {
   listMyQuotes,
   postCustomerQuoteMessage,
   postStaffQuoteMessage,
+  quoteOrderCodeToPay,
   quoteRules,
   sendQuoteOffer,
   ValidationError,
@@ -27,6 +28,7 @@ import {
   QuoteDetailDto,
   QuoteMessageSchema,
   QuoteOfferSentDto,
+  QuotePayDto,
   QuotePageDto,
   QuoteRulesDto,
   SendOfferSchema,
@@ -158,6 +160,17 @@ const accept = createRoute({
   },
 });
 
+const pay = createRoute({
+  method: 'post',
+  path: '/quotes/{code}/pay',
+  tags: ['quotes'],
+  summary:
+    'Pay now: the Razorpay handle of the accepted quote’s unpaid online order (the same order every time)',
+  security: secured,
+  request: { params: z.object({ code: Code }) },
+  responses: { 200: json(QuotePayDto, 'Handle (null once paid or expired)'), ...conflict, ...errorResponses },
+});
+
 const decline = createRoute({
   method: 'post',
   path: '/quotes/{code}/decline',
@@ -191,6 +204,12 @@ export function quoteRoutes(deps: AppDeps, cache: SessionCache) {
   app.on(
     'POST',
     '/quotes/:code/accept',
+    rateLimit(deps.rateLimiter, QUOTE_ACCEPT_RATE, (c) => c.get('auth').user.id),
+  );
+  // "Pay now" may create a Razorpay order: same limit as accepting.
+  app.on(
+    'POST',
+    '/quotes/:code/pay',
     rateLimit(deps.rateLimiter, QUOTE_ACCEPT_RATE, (c) => c.get('auth').user.id),
   );
   const me = (c: Context<AppEnv>) => c.get('auth').user.id;
@@ -262,6 +281,17 @@ export function quoteRoutes(deps: AppDeps, cache: SessionCache) {
             ? await ensureRazorpayOrder(deps.db, razorpay, { userId: me(c), groupCode: r.orderCode })
             : undefined;
         return c.json(handle === undefined ? r : { ...r, razorpay: handle }, r.replayed ? 200 : 201);
+      })
+      .openapi(pay, async (c) => {
+        const razorpay = deps.razorpay ?? null;
+        if (!razorpay)
+          throw new ApiError(422, 'PAYMENT_METHOD_UNAVAILABLE', 'Online payment is not available yet');
+        const orderCode = await quoteOrderCodeToPay(deps.db, {
+          userId: me(c),
+          code: c.req.valid('param').code,
+        });
+        const handle = await ensureRazorpayOrder(deps.db, razorpay, { userId: me(c), groupCode: orderCode });
+        return c.json({ orderCode, razorpay: handle }, 200);
       })
       .openapi(decline, async (c) =>
         c.json(

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState, type SyntheticEvent } from 'react';
-import type { QuoteDetail, QuoteOffer } from '@mechdost/shared/quote-api';
+import type { QuoteDetail, QuoteOffer, QuotePay } from '@mechdost/shared/quote-api';
 import { QUOTE_DECLINE_REASONS, type QuoteDeclineReason, type QuoteStatus } from '@mechdost/shared/state';
 import { track } from '@/lib/analytics';
 import { formatDate, formatPrice } from '@/lib/format';
@@ -46,6 +46,33 @@ export function QuoteThreadApi({ code }: { code: string }) {
     const res = await fetchMyQuote(locale, code);
     setLoad(res.ok ? { kind: 'ok', quote: res.data } : { kind: 'error', code: res.code });
   }, [code, locale]);
+
+  // Online payment of the accepted quote's order (spec 19): the checkout runs here so the result survives the offer
+  // card leaving the screen once the quote is accepted.
+  const [payNote, setPayNote] = useState<PayNote | null>(null);
+  const [paying, setPaying] = useState(false);
+  const startPayment = useCallback(
+    async (handle: NonNullable<QuotePay['razorpay']> | null, orderCode: string, prefill: Prefill) => {
+      if (!handle) {
+        // Paid meanwhile, or the payment window closed: the refreshed thread tells which.
+        setPayNote('expired');
+        await refresh();
+        return;
+      }
+      setPaying(true);
+      setPayNote(null);
+      const { checkoutQuote } = await import('@/lib/payments/pay-quote');
+      const result = await checkoutQuote({ locale, orderCode, handle, prefill });
+      setPaying(false);
+      setPayNote(result.ok ? 'paid' : result.reason);
+      track('click', {
+        id: result.ok ? 'quote_paid_online' : `quote_pay_${result.reason}`,
+        path: window.location.pathname,
+      });
+      await refresh();
+    },
+    [locale, refresh],
+  );
 
   useEffect(() => {
     if (!code) return;
@@ -127,17 +154,17 @@ export function QuoteThreadApi({ code }: { code: string }) {
       <div className="grid gap-6 nav:grid-cols-[minmax(0,1fr)_400px] nav:items-start">
         <div className="space-y-6 nav:order-2 nav:sticky nav:top-28">
           {quote.status === 'accepted' && quote.orderCode ? (
-            <section className={card}>
-              <h2 className="font-heading text-lg font-extrabold text-success">{t('acceptedTitle')}</h2>
-              <p className="mt-2 text-sm text-ink">{t('acceptedBody', { code: quote.orderCode })}</p>
-              <Link href={`${prefix}/orders/${quote.orderCode}`} className={`${primary} mt-4`}>
-                {t('viewOrder')}
-              </Link>
-            </section>
+            <AcceptedCard
+              quote={quote}
+              orderCode={quote.orderCode}
+              note={payNote}
+              paying={paying}
+              onPay={startPayment}
+            />
           ) : null}
           <ClosedNote quote={quote} />
           {offer && (quote.status === 'offered' || quote.status === 'accepted') ? (
-            <OfferCard quote={quote} offer={offer} onChanged={refresh} />
+            <OfferCard quote={quote} offer={offer} onChanged={refresh} onPay={startPayment} />
           ) : (
             <RequestedLines quote={quote} waiting={open} />
           )}
@@ -146,6 +173,116 @@ export function QuoteThreadApi({ code }: { code: string }) {
         <Chat quote={quote} open={open} onChanged={refresh} />
       </div>
     </div>
+  );
+}
+
+type PayNote = 'paid' | 'cancelled' | 'failed' | 'unavailable' | 'not_confirmed' | 'expired';
+interface Prefill {
+  name: string;
+  phone: string;
+}
+type OnPay = (
+  handle: NonNullable<QuotePay['razorpay']> | null,
+  orderCode: string,
+  prefill: Prefill,
+) => Promise<void>;
+const PAY_NOTE_KEY = {
+  paid: 'api_payPaid',
+  cancelled: 'api_payCancelled',
+  failed: 'api_payFailed',
+  unavailable: 'api_err_payUnavailable',
+  not_confirmed: 'api_payNotConfirmed',
+  expired: 'api_payExpired',
+} as const satisfies Record<PayNote, string>;
+/** Payment states of an online order that still waits for money. */
+const UNPAID: readonly string[] = ['created', 'attempted', 'failed'];
+
+/** The accepted quote: the order, and for an unpaid online order "Pay now" (the one primary action then). */
+function AcceptedCard({
+  quote,
+  orderCode,
+  note,
+  paying,
+  onPay,
+}: {
+  quote: QuoteDetail;
+  orderCode: string;
+  note: PayNote | null;
+  paying: boolean;
+  onPay: OnPay;
+}) {
+  const t = useTranslations('quote');
+  const locale = useLocale();
+  const prefix = locale === 'hi' ? '/hi' : '';
+  const [problem, setProblem] = useState<QuoteMessageKey | null>(null);
+  const [starting, setStarting] = useState(false);
+  const waiting = quote.orderPayment?.method === 'online' && UNPAID.includes(quote.orderPayment.status);
+  const paid = quote.orderPayment?.method === 'online' && quote.orderPayment.status === 'paid';
+
+  async function payNow() {
+    setStarting(true);
+    setProblem(null);
+    const { fetchQuotePay } = await import('@/lib/quote-api');
+    const res = await fetchQuotePay(locale, quote.code);
+    setStarting(false);
+    if (!res.ok) {
+      setProblem(quoteErrorKey(res.code));
+      return;
+    }
+    await onPay(res.data.razorpay, orderCode, {
+      name: quote.address.contactName,
+      phone: quote.address.contactPhone,
+    });
+  }
+
+  return (
+    <section className={card} aria-labelledby="accepted-title">
+      <h2 id="accepted-title" className="font-heading text-lg font-extrabold text-success">
+        {t('acceptedTitle')}
+      </h2>
+      <p className="mt-2 text-sm text-ink">{t('acceptedBody', { code: orderCode })}</p>
+      {waiting ? <p className="mt-3 text-sm text-ink">{t('api_payWaiting', { code: orderCode })}</p> : null}
+      {paid && note !== 'paid' ? (
+        <p role="status" className="mt-3 text-sm font-bold text-success">
+          {t('api_payPaid', { code: orderCode })}
+        </p>
+      ) : null}
+      {note ? (
+        <p
+          role={note === 'paid' ? 'status' : 'alert'}
+          className={`mt-3 rounded-lg p-3 text-sm font-bold ${note === 'paid' ? 'bg-success-bg text-success' : 'bg-warning-bg text-warning'}`}
+        >
+          {t(PAY_NOTE_KEY[note], { code: orderCode })}
+        </p>
+      ) : null}
+      {problem ? (
+        <p role="alert" className="mt-3 rounded-lg bg-warning-bg p-3 text-sm font-bold text-warning">
+          {t(problem)}
+        </p>
+      ) : null}
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        {waiting ? (
+          <button
+            type="button"
+            onClick={() => void payNow()}
+            disabled={paying || starting}
+            className={`${primary} disabled:opacity-70`}
+          >
+            {paying || starting ? t('api_paying') : t('api_payNow')}
+          </button>
+        ) : null}
+        <Link
+          href={`${prefix}/orders/${orderCode}`}
+          className={
+            waiting
+              ? 'inline-flex min-h-11 items-center px-2 text-sm font-bold text-muted underline-offset-4 hover:underline'
+              : primary
+          }
+        >
+          {t('viewOrder')}
+        </Link>
+      </div>
+    </section>
   );
 }
 
@@ -192,37 +329,51 @@ function OfferCard({
   quote,
   offer,
   onChanged,
+  onPay,
 }: {
   quote: QuoteDetail;
   offer: QuoteOffer;
   onChanged: () => Promise<void>;
+  onPay: OnPay;
 }) {
   const t = useTranslations('quote');
   const locale = useLocale();
   const [problem, setProblem] = useState<QuoteMessageKey | null>(null);
   const [busy, setBusy] = useState(false);
   const [closing, setClosing] = useState(false);
-  // One key per offer version: a retry after a network error never places a second order.
-  const keys = useRef(new Map<number, string>());
+  const [method, setMethod] = useState<'cod' | 'online'>('cod');
+  const declineButton = useRef<HTMLButtonElement>(null);
+  // One key per offer version and method: a retry after a network error never places a second order.
+  const keys = useRef(new Map<string, string>());
   const unitOf = (lineNo: number) => offer.lines.find((x) => x.lineNo === lineNo)?.unitPaise ?? 0;
   const listTotal = quote.listTotalPaise;
   const saving = listTotal === null ? 0 : listTotal + offer.deliveryPaise - offer.totalPaise;
   const canAccept = quote.status === 'offered' && !offer.expired;
 
   async function accept() {
-    const key = keys.current.get(offer.version) ?? newQuoteKey();
-    keys.current.set(offer.version, key);
+    const slot = `${String(offer.version)}:${method}`;
+    const key = keys.current.get(slot) ?? newQuoteKey();
+    keys.current.set(slot, key);
     setBusy(true);
     setProblem(null);
     const { acceptQuote } = await import('@/lib/quote-api');
-    const res = await acceptQuote(locale, quote.code, offer.version, key);
-    setBusy(false);
+    const res = await acceptQuote(locale, quote.code, offer.version, key, method);
     if (res.ok) {
-      track('click', { id: 'quote_accepted', path: window.location.pathname });
+      track('click', { id: `quote_accepted_${method}`, path: window.location.pathname });
       await onChanged();
+      // Online: the order exists and is held; Razorpay opens now (and "Pay now" stays on the accepted card).
+      if (res.data.paymentMethod === 'online')
+        await onPay(res.data.razorpay ?? null, res.data.orderCode, {
+          name: quote.address.contactName,
+          phone: quote.address.contactPhone,
+        });
+      setBusy(false);
       return;
     }
+    setBusy(false);
     const k = quoteErrorKey(res.code);
+    // Too large for cash: the way forward is already on the screen, so select it.
+    if (k === 'api_err_codCap') setMethod('online');
     setProblem(k);
     track('click', { id: `quote_accept_failed_${k}`, path: window.location.pathname });
     // A replaced, expired or closed offer: show the latest state.
@@ -286,7 +437,45 @@ function OfferCard({
             {offer.terms}
           </p>
         ) : null}
-        {canAccept ? <p className="mt-3 text-xs text-muted">{t('api_cod')}</p> : null}
+        {canAccept ? (
+          <fieldset className="mt-4">
+            <legend className="text-sm font-bold text-ink">{t('api_payMethod')}</legend>
+            <div className="mt-1 space-y-1">
+              <label className="flex min-h-11 items-start gap-3 py-1.5 text-sm text-ink">
+                <input
+                  type="radio"
+                  name="quote-pay-method"
+                  value="cod"
+                  checked={method === 'cod'}
+                  onChange={() => {
+                    setMethod('cod');
+                  }}
+                  className="mt-0.5 size-5 shrink-0 accent-[var(--color-accent-button)]"
+                />
+                <span>
+                  <span className="font-bold">{t('api_payCod')}</span>
+                  <span className="block text-xs text-muted">{t('api_cod')}</span>
+                </span>
+              </label>
+              <label className="flex min-h-11 items-start gap-3 py-1.5 text-sm text-ink">
+                <input
+                  type="radio"
+                  name="quote-pay-method"
+                  value="online"
+                  checked={method === 'online'}
+                  onChange={() => {
+                    setMethod('online');
+                  }}
+                  className="mt-0.5 size-5 shrink-0 accent-[var(--color-accent-button)]"
+                />
+                <span>
+                  <span className="font-bold">{t('api_payOnline')}</span>
+                  <span className="block text-xs text-muted">{t('api_payOnlineNote')}</span>
+                </span>
+              </label>
+            </div>
+          </fieldset>
+        ) : null}
         {problem ? (
           <p role="alert" className="mt-4 rounded-lg bg-warning-bg p-3 text-sm font-bold text-warning">
             {t(problem)}
@@ -305,10 +494,17 @@ function OfferCard({
                 disabled={busy}
                 className="press inline-flex min-h-12 flex-1 items-center justify-center rounded-button bg-accent-button px-6 text-sm font-bold text-white hover:bg-accent-button-hover disabled:opacity-70"
               >
-                {busy ? t('api_accepting') : t('accept')}
+                {busy
+                  ? method === 'online'
+                    ? t('api_paying')
+                    : t('api_accepting')
+                  : method === 'online'
+                    ? t('api_acceptPay')
+                    : t('accept')}
               </button>
             ) : null}
             <button
+              ref={declineButton}
               type="button"
               onClick={() => {
                 setClosing(true);
@@ -325,6 +521,8 @@ function OfferCard({
             onChanged={onChanged}
             onCancel={() => {
               setClosing(false);
+              // Focus returns to the button that opened the panel once it is back on screen.
+              window.setTimeout(() => declineButton.current?.focus(), 0);
             }}
             inline
           />
@@ -352,10 +550,19 @@ function CloseQuote({
   const [reason, setReason] = useState<QuoteDeclineReason | null>(null);
   const [problem, setProblem] = useState<QuoteMessageKey | null>(null);
   const [busy, setBusy] = useState(false);
+  const trigger = useRef<HTMLButtonElement>(null);
+
+  // Cancel and Escape close the panel; focus goes back to the button that opened it.
+  function close() {
+    setOpen(false);
+    onCancel?.();
+    window.setTimeout(() => trigger.current?.focus(), 0);
+  }
 
   if (!open)
     return (
       <button
+        ref={trigger}
         type="button"
         onClick={() => {
           setOpen(true);
@@ -381,7 +588,16 @@ function CloseQuote({
   }
 
   return (
-    <form onSubmit={(e) => void submit(e)} className={inline ? 'mt-5 space-y-3' : `${card} space-y-3`}>
+    <form
+      onSubmit={(e) => void submit(e)}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') {
+          e.stopPropagation();
+          close();
+        }
+      }}
+      className={inline ? 'mt-5 space-y-3' : `${card} space-y-3`}
+    >
       <fieldset>
         <legend className="text-sm font-bold text-ink">{t('api_declineTitle')}</legend>
         <div className="mt-2 space-y-1">
@@ -417,10 +633,7 @@ function CloseQuote({
         </button>
         <button
           type="button"
-          onClick={() => {
-            setOpen(false);
-            onCancel?.();
-          }}
+          onClick={close}
           className="inline-flex min-h-11 items-center px-2 text-sm font-bold text-muted underline-offset-4 hover:underline"
         >
           {t('api_keepOpen')}

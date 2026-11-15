@@ -105,6 +105,8 @@ export interface QuoteSummaryView {
   lastMessageBy: 'customer' | 'staff' | null;
   offer: QuoteOfferBrief | null;
   orderCode: string | null;
+  /** How the order made from this quote is paid and whether it is: lets the thread offer "Pay now" after a reload. */
+  orderPayment: { method: string; status: string } | null;
   createdAt: string;
   version: number;
 }
@@ -158,6 +160,8 @@ interface SummaryRow {
   offer_total: number | string | null;
   offer_valid_until: Date | string | null;
   order_code: string | null;
+  order_payment_method: string | null;
+  order_payment_status: string | null;
   created_at: Date | string;
   created_key: string;
   version: number;
@@ -172,7 +176,8 @@ const SUMMARY_SELECT = sql`
     (select count(*) from quote_lines l where l.quote_id = q.id) as lines,
     q.units, q.list_total_paise, q.last_message_at, q.last_message_by,
     o.offer_version, o.total_paise as offer_total, o.valid_until as offer_valid_until,
-    g.code as order_code, q.created_at, q.created_at::text as created_key, q.version
+    g.code as order_code, g.payment_method as order_payment_method, g.payment_status as order_payment_status,
+    q.created_at, q.created_at::text as created_key, q.version
   from quote_requests q
   join cities c on c.id = q.city_id
   left join lateral (
@@ -204,6 +209,10 @@ function toSummary(r: SummaryRow, now: Date): QuoteSummaryView {
       r.last_message_by === 'customer' || r.last_message_by === 'staff' ? r.last_message_by : null,
     offer,
     orderCode: r.order_code,
+    orderPayment:
+      r.order_payment_method === null || r.order_payment_status === null
+        ? null
+        : { method: r.order_payment_method, status: r.order_payment_status },
     createdAt: iso(r.created_at),
     version: r.version,
   };
@@ -970,6 +979,32 @@ export async function acceptQuoteOffer(
     });
     return { orderCode: placed.code, totalPaise: placed.totalPaise, replayed: false, paymentMethod: method };
   });
+}
+
+/**
+ * The order code of the customer's accepted quote when that order is paid online and not paid yet, for "Pay now"
+ * after the Razorpay window was closed (the API then reuses or creates the one open Razorpay order of the group).
+ * 404 for anyone else's quote; 409 `QUOTE_NOT_PAYABLE` when nothing is waiting for money.
+ */
+export async function quoteOrderCodeToPay(db: Tx, input: { userId: string; code: string }): Promise<string> {
+  const [row] = await db
+    .select({
+      orderCode: orderGroups.code,
+      method: orderGroups.paymentMethod,
+      status: orderGroups.paymentStatus,
+    })
+    .from(quoteRequests)
+    .leftJoin(orderGroups, eq(orderGroups.quoteId, quoteRequests.id))
+    .where(mineWhere(input.userId, input.code))
+    .limit(1);
+  if (!row) throw new NotFoundError('Quote not found');
+  if (
+    !row.orderCode ||
+    row.method !== 'online' ||
+    !['created', 'attempted', 'failed'].includes(row.status ?? '')
+  )
+    throw new ConflictError('Nothing is waiting for payment on this quote', 'QUOTE_NOT_PAYABLE');
+  return row.orderCode;
 }
 
 /** The customer closes their quote (any time before accepting), with a reason code. */

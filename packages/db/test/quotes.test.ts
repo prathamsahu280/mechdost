@@ -34,6 +34,7 @@ import {
   listMyQuotes,
   postCustomerQuoteMessage,
   postStaffQuoteMessage,
+  quoteOrderCodeToPay,
   quoteRules,
   resolveLiveRecipients,
   sendQuoteOffer,
@@ -789,7 +790,12 @@ describe('review fixes 2026-11-14', () => {
     expect(group!.quoteId).not.toBeNull();
     expect(await accept(k)).toMatchObject({ orderCode: r.orderCode, replayed: true });
     expect(await db.$count(s.orderGroups, eq(s.orderGroups.quoteId, group!.quoteId!))).toBe(1);
-    expect((await getMyQuote(t(), ravi, code, 'en')).status).toBe('accepted');
+    const mine = await getMyQuote(t(), ravi, code, 'en');
+    expect(mine.status).toBe('accepted');
+    // The thread shows whether the order still waits for money (so "Pay now" can be offered after a reload).
+    expect(mine.orderPayment).toEqual({ method: 'online', status: 'created' });
+    await expect(quoteOrderCodeToPay(t(), { userId: ravi, code })).resolves.toBe(r.orderCode);
+    await expect(quoteOrderCodeToPay(t(), { userId: meera, code })).rejects.toMatchObject({ status: 404 });
     await db.delete(s.settings).where(eq(s.settings.key, 'quotes.cod_cap_paise'));
   });
 

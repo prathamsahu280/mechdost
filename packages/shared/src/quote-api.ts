@@ -162,6 +162,23 @@ export const QuoteAcceptedDto = z.object({
 });
 export type QuoteAccepted = z.infer<typeof QuoteAcceptedDto>;
 
+/** `POST /quotes/{code}/pay`: the Razorpay handle of the quote's unpaid online order (null once paid or expired). */
+export const QuotePayDto = z.object({
+  orderCode: z.string(),
+  razorpay: z
+    .object({
+      keyId: z.string(),
+      orderId: z.string(),
+      amountPaise: z.number().int(),
+      currency: z.literal('INR'),
+    })
+    .nullable(),
+});
+export type QuotePay = z.infer<typeof QuotePayDto>;
+
+/** `POST /payments/razorpay/verify` answer: what Razorpay's confirmation did to the order. */
+export const QuotePaymentVerifiedDto = z.object({ orderCode: z.string(), outcome: z.string() });
+
 const OfferBrief = z.object({
   version: z.number().int(),
   totalPaise: z.number().int(),
@@ -182,6 +199,8 @@ export const QuoteSummaryDto = z.object({
   lastMessageBy: z.enum(['customer', 'staff']).nullable(),
   offer: OfferBrief.nullable(),
   orderCode: z.string().nullable(),
+  /** Payment method and status of the order made from this quote (null before it is accepted). */
+  orderPayment: z.object({ method: z.string(), status: z.string() }).nullable(),
   createdAt: z.string(),
   version: z.number().int(),
 });

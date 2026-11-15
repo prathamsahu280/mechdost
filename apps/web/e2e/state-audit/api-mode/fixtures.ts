@@ -1252,6 +1252,7 @@ function quotesMocks(): Mock[] {
                     ? { version: 1, totalPaise: 4_250_000, validUntil: iso(60 * 20), expired: false }
                     : null,
                 orderCode: status === 'accepted' ? 'MD-RPR-2026-HND801' : null,
+                orderPayment: status === 'accepted' ? { method: 'cod', status: 'cod_pending' } : null,
                 createdAt: iso(-i * 300),
                 version: 2,
               };

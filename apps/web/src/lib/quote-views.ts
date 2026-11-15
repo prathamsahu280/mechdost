@@ -29,6 +29,8 @@ export type QuoteMessageKey =
   | 'api_err_generic'
   | 'api_err_codCap'
   | 'api_err_codBlocked'
+  | 'api_err_payUnavailable'
+  | 'api_err_notPayable'
   | 'api_admin_confirmLowNeeded'
   | 'stale'
   | 'expired'
@@ -54,6 +56,8 @@ const BY_CODE: Record<string, QuoteMessageKey> = {
   QUOTE_MESSAGE_LIMIT: 'api_err_rate',
   QUOTE_COD_CAP: 'api_err_codCap',
   QUOTE_COD_BLOCKED: 'api_err_codBlocked',
+  PAYMENT_METHOD_UNAVAILABLE: 'api_err_payUnavailable',
+  QUOTE_NOT_PAYABLE: 'api_err_notPayable',
   QUOTE_OFFER_CONFIRM_LOW: 'api_admin_confirmLowNeeded',
   RATE_LIMITED: 'api_err_rate',
   HTTP_429: 'api_err_rate',

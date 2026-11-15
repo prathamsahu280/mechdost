@@ -4,6 +4,8 @@ import {
   QuoteCreatedDto,
   QuoteDetailDto,
   QuoteOfferSentDto,
+  QuotePayDto,
+  QuotePaymentVerifiedDto,
   QuotePageDto,
   QuoteRulesDto,
   type AdminQuoteView,
@@ -74,11 +76,33 @@ export function postQuoteMessage(locale: string, code: string, body: string) {
 }
 
 /** Accept exactly this offer version. The same key for a retry never places a second order. */
-export function acceptQuote(locale: string, code: string, offerVersion: number, idempotencyKey: string) {
+export function acceptQuote(
+  locale: string,
+  code: string,
+  offerVersion: number,
+  idempotencyKey: string,
+  paymentMethod: 'cod' | 'online' = 'cod',
+) {
   return authed(locale, `${path(code)}/accept`, QuoteAcceptedDto, {
     method: 'POST',
     headers: { 'idempotency-key': idempotencyKey },
-    body: { offerVersion, locale: loc(locale) },
+    body: { offerVersion, paymentMethod, locale: loc(locale) },
+  });
+}
+
+/** "Pay now": the Razorpay handle of the accepted quote's unpaid online order (the same order every time). */
+export function fetchQuotePay(locale: string, code: string) {
+  return authed(locale, `${path(code)}/pay`, QuotePayDto, { method: 'POST' });
+}
+
+/** After Razorpay Checkout: the API checks the signature and fetches the payment before the order counts as paid. */
+export function verifyQuotePayment(
+  locale: string,
+  input: { razorpayOrderId: string; razorpayPaymentId: string; razorpaySignature: string },
+) {
+  return authed(locale, '/payments/razorpay/verify', QuotePaymentVerifiedDto, {
+    method: 'POST',
+    body: input,
   });
 }
 

@@ -27,6 +27,8 @@ describe('quoteErrorKey', () => {
     expect(quoteErrorKey('QUOTE_OPEN_LIMIT')).toBe('api_err_openLimit');
     expect(quoteErrorKey('QUOTE_PRODUCT_UNAVAILABLE')).toBe('api_err_product');
     expect(quoteErrorKey('PINCODE_NOT_SERVICEABLE')).toBe('api_err_pincode');
+    expect(quoteErrorKey('PAYMENT_METHOD_UNAVAILABLE')).toBe('api_err_payUnavailable');
+    expect(quoteErrorKey('QUOTE_NOT_PAYABLE')).toBe('api_err_notPayable');
     expect(quoteErrorKey('QUOTE_OFFER_STALE')).toBe('stale');
     expect(quoteErrorKey('QUOTE_OFFER_EXPIRED')).toBe('expired');
     expect(quoteErrorKey('QUOTE_CLOSED')).toBe('api_err_closed');

@@ -11,7 +11,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { seedRaipurDemo, type DemoFixture } from '@mechdost/db/demo-seed';
 import { ensureUser, grantRole } from '@mechdost/db/repo';
 import * as s from '@mechdost/db/schema';
-import { QuoteAcceptedDto, QuoteDetailDto, QuotePageDto } from '@mechdost/shared/quote-api';
+import { QuoteAcceptedDto, QuoteDetailDto, QuotePageDto, QuotePayDto } from '@mechdost/shared/quote-api';
 import type { RazorpayGateway, RazorpayPayment } from '../src/payments/razorpay';
 import { bearer, buildApp, type ErrorJson } from './helpers';
 
@@ -92,7 +92,7 @@ const call = async (
 };
 
 /** A quote of 10 oils (₹400 each, ₹4,000: above a ₹3,000 cash ceiling) with an active offer; returns its code. */
-async function offeredQuote(customer = ravi): Promise<string> {
+async function offeredQuote(customer = ravi, unitPaise = 40_000): Promise<string> {
   const made = await call(
     customer,
     'POST',
@@ -114,7 +114,7 @@ async function offeredQuote(customer = ravi): Promise<string> {
   const q = QuoteDetailDto.parse((await call(ops, 'GET', `/admin/quotes/${code}`)).body);
   const offer = await call(ops, 'POST', `/admin/quotes/${code}/offer`, {
     version: q.version,
-    lines: q.lineItems.map((l) => ({ lineNo: l.lineNo, unitPaise: 40_000 })),
+    lines: q.lineItems.map((l) => ({ lineNo: l.lineNo, unitPaise })),
     deliveryPaise: 0,
     validDays: 3,
     confirmLowPrices: true,
@@ -255,6 +255,29 @@ describe('accepting a quote offer online', () => {
     expect((await hook()).status).toBe(200);
     expect((await hook()).status).toBe(200);
     expect(await paymentStatus(ravi, body.orderCode)).toBe('paid');
+  });
+
+  it('"Pay now" after a closed window reuses the same Razorpay order; other customers get 404, cash orders 409', async () => {
+    const code = await offeredQuote();
+    const body = QuoteAcceptedDto.parse((await accept(code, 'online')).body);
+    const before = razorpay.ordersCreated;
+    const pay = await call(ravi, 'POST', `/quotes/${code}/pay`);
+    expect(pay.status).toBe(200);
+    expect(QuotePayDto.parse(pay.body)).toMatchObject({
+      orderCode: body.orderCode,
+      razorpay: { orderId: body.razorpay?.orderId, amountPaise: 400_000 },
+    });
+    expect(razorpay.ordersCreated).toBe(before);
+    expect((await call(asha, 'POST', `/quotes/${code}/pay`)).status).toBe(404);
+    const detail = QuoteDetailDto.parse((await call(ravi, 'GET', `/quotes/${code}`)).body);
+    expect(detail.orderPayment).toEqual({ method: 'online', status: 'created' });
+
+    // A quote accepted for cash on delivery has nothing to pay online.
+    const cash = await offeredQuote(ravi, 20_000); // ₹2,000: within the cash ceiling
+    await accept(cash, 'cod');
+    const refused = await call(ravi, 'POST', `/quotes/${cash}/pay`);
+    expect(refused.status).toBe(409);
+    expect(refused.body.error.code).toBe('QUOTE_NOT_PAYABLE');
   });
 
   it('is refused with 422 and changes nothing when online payment is not set up', async () => {
