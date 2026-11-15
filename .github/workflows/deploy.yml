@@ -150,10 +150,14 @@ jobs:
             deploy/compose.yml deploy/Caddyfile deploy/supabase-ca-2021.crt deploy/set-env.sh "$SSH_USER@$HOST:/opt/mechdost/"
           printf '%s' "$GHCR_TOKEN" | ssh_ "docker login ghcr.io -u '$GHCR_USER' --password-stdin" >/dev/null
           # IMAGE_TAG lives in .env (one line, replaced on every deploy) so manual `docker compose` commands work.
-          ssh_ "cd /opt/mechdost && sed -i '/^IMAGE_TAG=/d' .env && echo 'IMAGE_TAG=$TAG' >> .env && rm -f .image-tag \
+          # Disk (incident 2026-11-15, "no space left on device"): every deploy left its tagged images behind. Remove
+          # every image no container uses before the pull (room for the new layers; the running stack keeps its own)
+          # and again after the stack is up (the previous release's images). Older releases stay in GHCR for a rollback.
+          ssh_ "cd /opt/mechdost && df -h / | tail -1 && docker image prune -af >/dev/null \
+            && sed -i '/^IMAGE_TAG=/d' .env && echo 'IMAGE_TAG=$TAG' >> .env && rm -f .image-tag \
             && docker compose pull --quiet \
             && docker compose up -d --wait --wait-timeout 120 --remove-orphans; rc=\$?; \
-            docker logout ghcr.io >/dev/null; docker image prune -f >/dev/null; \
+            docker logout ghcr.io >/dev/null; docker image prune -af >/dev/null; df -h / | tail -1; \
             docker compose ps; exit \$rc"
       - name: Public check (informational until DNS points at the server)
         continue-on-error: true
