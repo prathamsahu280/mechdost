@@ -8,7 +8,7 @@ import { CompanyCopyright, CompanyLegal } from './company-legal';
 import { ConsentChoicesButton } from './consent-banner';
 import { BrandMark } from './header';
 import { ThemeToggle } from './theme-toggle';
-import { QUOTES_AVAILABLE } from '@/lib/data-mode';
+import { DATA_MODE, QUOTES_AVAILABLE } from '@/lib/data-mode';
 
 interface FooterLink {
   href: string;
@@ -55,6 +55,8 @@ export function Footer() {
           label: cat(key),
           track: `footer_shop_${key}`,
         })),
+        // Offers come from the API (the demo build has none), so the link exists only in real data mode.
+        ...(DATA_MODE === 'api' ? [{ href: '/offers', label: nav('offers'), track: 'footer_offers' }] : []),
         ...(QUOTES_AVAILABLE ? [{ href: '/quotes/new', label: t('bulkPrice'), track: 'footer_bulk' }] : []),
       ],
     },

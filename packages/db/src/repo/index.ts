@@ -27,6 +27,7 @@ export * from './content';
 export * from './cursor';
 export * from './checkout';
 export * from './checkout-coupon';
+export * from './coupon-offers';
 export * from './coupons';
 export * from './coupons-admin';
 export * from './coupons-shop';

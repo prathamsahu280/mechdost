@@ -45,7 +45,7 @@ export interface PayOnlineInput {
   /** MechDost Coins to use and the discount they give (spec 20); the API re-checks both. */
   coins?: { count: number; discountPaise: number } | null;
   /** One coupon (spec 03) and the discount it gave on the screen; the API re-checks it and the total. */
-  coupon?: { code: string; discountPaise: number } | null;
+  coupon?: { code: string | null; discountPaise: number } | null;
 }
 
 interface RazorpayHandle {
@@ -147,7 +147,7 @@ export async function payOnline(input: PayOnlineInput): Promise<PayOnlineResult>
       paymentMethod: 'online',
       ...(input.business ? { business: input.business } : {}),
       ...(input.coins && input.coins.count > 0 ? { coins: input.coins.count } : {}),
-      ...(input.coupon ? { couponCode: input.coupon.code } : {}),
+      ...(input.coupon?.code ? { couponCode: input.coupon.code } : {}),
       locale: input.locale === 'hi' ? 'hi' : 'en',
     };
     const idem = { 'idempotency-key': input.idempotencyKey };

@@ -133,6 +133,44 @@ describe('coupon maths', () => {
   });
 });
 
+describe('category offers: only the marked lines count (2026-11-16)', () => {
+  const grp = (eligible: boolean[]): CouponGroup => ({
+    shopId: 's1',
+    lineTotals: [10_000, 30_000, 20_000],
+    shippingPaise: 0,
+    lineEligible: eligible,
+  });
+
+  it('takes the percent from the eligible lines only and shares it only among them', () => {
+    const r = applyCoupon(rule({ value: 10 }), [grp([true, false, true])]);
+    if ('reason' in r) throw new Error('expected a discount');
+    expect(r.discountPaise).toBe(3_000);
+    expect(r.perGroup[0]?.lines).toEqual([1_000, 0, 2_000]);
+  });
+
+  it('measures the minimum order on the eligible lines', () => {
+    expect(applyCoupon(rule({ minSubtotalPaise: 40_000 }), [grp([true, false, true])])).toEqual({
+      reason: 'min_order',
+    });
+  });
+
+  it('is not for the cart when no line is eligible', () => {
+    expect(applyCoupon(rule(), [grp([false, false, false])])).toEqual({ reason: 'not_for_cart' });
+  });
+
+  it('a flat amount never exceeds the eligible lines', () => {
+    const r = applyCoupon(rule({ kind: 'flat', value: 50_000 }), [grp([true, false, false])]);
+    if ('reason' in r) throw new Error('expected a discount');
+    expect(r.discountPaise).toBe(10_000);
+  });
+
+  it('no mask means every line (unchanged behaviour)', () => {
+    const r = applyCoupon(rule({ value: 10 }), [g('s1', [10_000, 30_000])]);
+    if ('reason' in r) throw new Error('expected a discount');
+    expect(r.discountPaise).toBe(4_000);
+  });
+});
+
 describe('IST input', () => {
   it('reads a wall-clock IST value as the right instant', () => {
     expect(istLocalToDate('2026-11-20T10:30').toISOString()).toBe('2026-11-20T05:00:00.000Z');

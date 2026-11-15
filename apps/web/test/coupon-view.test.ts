@@ -57,6 +57,69 @@ describe('customer messages', () => {
   });
 });
 
+describe('offers flags in the admin form (2026-11-16)', () => {
+  it('starts private and manual, and carries public / automatic / category into the API input', () => {
+    const empty = emptyForm('2026-11-15T10:00');
+    expect(empty).toMatchObject({ isPublic: false, autoApply: false, categorySlug: '' });
+    expect(inputFromForm(base())).toMatchObject({
+      ok: true,
+      input: { isPublic: false, autoApply: false, categorySlug: null },
+    });
+    const cat = 'engine-oil';
+    expect(inputFromForm(base({ isPublic: true, autoApply: true, categorySlug: cat }))).toMatchObject({
+      ok: true,
+      input: { isPublic: true, autoApply: true, categorySlug: cat },
+    });
+  });
+
+  it('an automatic offer cannot be paid by a shop, and free delivery has no category', () => {
+    expect(inputFromForm(base({ autoApply: true, funder: 'shop', shopId: 's1' }))).toMatchObject({
+      ok: false,
+      field: 'autoApply',
+      error: 'f_err_auto_shop',
+    });
+    expect(
+      inputFromForm(base({ kind: 'free_shipping', value: '', categorySlug: 'engine-oil' })),
+    ).toMatchObject({ ok: true, input: { categorySlug: null } });
+  });
+
+  it('reads the flags back when editing, and maps a missing category to its message', () => {
+    const coupon = {
+      id: 'c1',
+      code: 'AUTO1',
+      title: 'Welcome',
+      titleHi: 'स्वागत',
+      terms: null,
+      termsHi: null,
+      kind: 'flat',
+      value: 5_000,
+      minSubtotalPaise: 0,
+      maxDiscountPaise: null,
+      startsAt: '2026-11-15T04:30:00.000Z',
+      endsAt: null,
+      startsAtIst: '2026-11-15T10:00',
+      endsAtIst: null,
+      usageLimitTotal: null,
+      usageLimitPerUser: 1,
+      usedCount: 0,
+      firstOrderOnly: true,
+      cityCode: null,
+      funder: 'mechdost',
+      shop: null,
+      shopTerms: null,
+      isPublic: true,
+      autoApply: true,
+      category: { slug: 'tyres', name: 'Tyres' },
+      active: true,
+      pausedReason: null,
+      live: true,
+      version: 1,
+    } satisfies AdminCoupon;
+    expect(formFromCoupon(coupon)).toMatchObject({ isPublic: true, autoApply: true, categorySlug: 'tyres' });
+    expect(adminErrorKey('COUPON_CATEGORY')).toBe('a_err_category');
+  });
+});
+
 describe('admin form → API input', () => {
   it('turns rupees into integer paise and keeps IST times as typed', () => {
     const r = inputFromForm(base({ kind: 'flat', value: '99.50', minRupees: '1,000', capRupees: '' }));
@@ -135,6 +198,9 @@ describe('admin form → API input', () => {
       funder: 'mechdost',
       shop: null,
       shopTerms: null,
+      isPublic: false,
+      autoApply: false,
+      category: null,
       active: true,
       pausedReason: null,
       live: true,
@@ -172,6 +238,9 @@ describe('status and errors', () => {
     funder: 'mechdost',
     shop: null,
     shopTerms: null,
+    isPublic: false,
+    autoApply: false,
+    category: null,
     active: true,
     pausedReason: null,
     live: true,

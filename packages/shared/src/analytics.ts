@@ -283,8 +283,13 @@ export interface ServerEventProps {
     discountPaise: number;
     funder: 'mechdost' | 'shop';
     kind: 'percent' | 'flat' | 'free_shipping';
+    /** A typed code, or an automatic offer applied without one (2026-11-16). */
+    source: 'code' | 'automatic';
   };
-  coupon_released: { couponId: string; orderCode: string };
+  /** The use went back: every part cancelled or rejected, or every delivered part refunded in full (2026-11-16). */
+  coupon_released: { couponId: string; orderCode: string; reason: 'order_closed' | 'order_refunded' };
+  /** Admin opened a coupon's usage report (ids only). */
+  admin_coupon_usage_viewed: { couponId: string };
   admin_coupon_saved: { couponId: string; action: 'created' | 'updated'; funder: 'mechdost' | 'shop' };
   admin_coupon_paused: { couponId: string; paused: boolean };
   /** Recommendations (spec 11, 2026-11-15): rule ids and enums only. */
@@ -447,9 +452,12 @@ export const CLIENT_EVENT_SCHEMAS = {
   // The wishlist heart was pressed while signed out and sent the shopper to sign in.
   wishlist_sign_in_prompted: z.object({ slug: id }).strict(),
   // Checkout coupon (spec 03, 2026-11-15): the check result and, when refused, the reason code; never the typed code.
+  // The public offers page (2026-11-16): how many offers were listed, and which kind of offer's code was copied.
+  offers_viewed: z.object({ count: z.number().int().min(0).max(200) }).strict(),
+  offer_code_copied: z.object({ kind: z.enum(['percent', 'flat', 'free_shipping']) }).strict(),
   apply_coupon: z
     .object({
-      result: z.enum(['applicable', 'refused', 'applied', 'removed']),
+      result: z.enum(['applicable', 'refused', 'applied', 'removed', 'automatic']),
       reason: z.enum(COUPON_REASONS).nullable(),
       funder: z.enum(COUPON_FUNDERS).nullable(),
     })
@@ -579,7 +587,15 @@ export const CLIENT_EVENT_SCHEMAS = {
   // CSV exports (design 2026-11-15): which dataset and what happened; never the range text or any row content.
   admin_export_action: z
     .object({
-      dataset: z.enum(['orders', 'sub_orders', 'refunds', 'service_requests', 'partners', 'customers']),
+      dataset: z.enum([
+        'orders',
+        'sub_orders',
+        'refunds',
+        'service_requests',
+        'partners',
+        'customers',
+        'coupon_usage',
+      ]),
       action: z.enum(['requested', 'downloaded', 'refused']),
     })
     .strict(),

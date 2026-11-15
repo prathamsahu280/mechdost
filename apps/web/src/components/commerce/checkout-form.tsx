@@ -232,7 +232,8 @@ export function CheckoutForm() {
         expectedTotalPaise: quote.totalPaise - couponDiscount - coinDiscount,
         business,
         coins: coinDiscount > 0 ? redemption.coins : 0,
-        couponCode: coupon?.coupon.code ?? null,
+        // An automatic offer is not sent: the server finds it again (never stacked with a code, 2026-11-16).
+        couponCode: coupon?.source === 'code' ? coupon.coupon.code : null,
       },
       attemptKey.current,
     );
@@ -312,7 +313,9 @@ export function CheckoutForm() {
       },
       business,
       coins: coinDiscount > 0 ? { count: redemption.coins, discountPaise: coinDiscount } : null,
-      coupon: coupon ? { code: coupon.coupon.code, discountPaise: couponDiscount } : null,
+      coupon: coupon
+        ? { code: coupon.source === 'code' ? coupon.coupon.code : null, discountPaise: couponDiscount }
+        : null,
     });
     setSubmitting(false);
     if (result.ok) {
@@ -766,7 +769,11 @@ export function CheckoutForm() {
           ) : null}
           {couponDiscount > 0 ? (
             <div className="flex justify-between text-success">
-              <dt>{couponT('line', { code: coupon?.coupon.code ?? '' })}</dt>
+              <dt>
+                {coupon?.source === 'automatic'
+                  ? couponT('auto_applied', { title: coupon.coupon.title })
+                  : couponT('line', { code: coupon?.coupon.code ?? '' })}
+              </dt>
               <dd className="font-bold">−{formatPrice(couponDiscount)}</dd>
             </div>
           ) : null}

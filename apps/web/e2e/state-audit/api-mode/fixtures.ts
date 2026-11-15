@@ -40,7 +40,12 @@ import {
   type MyShopDto,
 } from '@mechdost/shared/shop-api';
 import { ShopTeam } from '@mechdost/shared/shop-team';
-import { AdminCouponListDto, ShopOffersDto } from '@mechdost/shared/coupon-api';
+import {
+  AdminCouponListDto,
+  CouponCategoryListDto,
+  CouponUsageReportDto,
+  ShopOffersDto,
+} from '@mechdost/shared/coupon-api';
 import type { AuditCase } from '../cases.ts';
 import { layoutMocks, policyMocks, settingsMocks } from './admin-config-fixtures.ts';
 import { homeFinderMocks, homeJobMocks, homeRequestMocks } from './home-fixtures.ts';
@@ -1124,6 +1129,10 @@ function couponsMocks(c0: AuditCase): Mock[] {
     funder: 'mechdost' as const,
     shop: null,
     shopTerms: null,
+    // 2026-11-16: shown on the offers page, applied without a code, limited to a category.
+    isPublic: i % 2 === 0,
+    autoApply: i === 1,
+    category: i === 2 ? { slug: 'tyres', name: 'Tyres' } : null,
     active: true,
     pausedReason: null,
     live: true,
@@ -1132,6 +1141,43 @@ function couponsMocks(c0: AuditCase): Mock[] {
   });
   return [
     meMock(),
+    {
+      method: 'GET',
+      path: /^\/catalogue\/categories$/,
+      schema: CouponCategoryListDto,
+      reply: (): Reply => ({
+        body: {
+          categories: [
+            { slug: 'tyres', parentSlug: null, name: 'Tyres' },
+            { slug: 'batteries', parentSlug: null, name: 'Batteries' },
+          ],
+        } satisfies Dto<typeof CouponCategoryListDto>,
+      }),
+    },
+    {
+      method: 'GET',
+      path: /^\/admin\/coupons\/[0-9a-f-]{36}\/usage$/,
+      schema: CouponUsageReportDto,
+      reply: ({ c }): Reply => {
+        const empty = c.state.usage === 'empty';
+        return {
+          body: {
+            couponId: uuid(800),
+            code: 'AUDIT10',
+            totals: empty
+              ? { orders: 0, released: 0, uses: 0, discountPaise: 0, uniqueCustomers: 0 }
+              : { orders: 14, released: 2, uses: 12, discountPaise: 84_000, uniqueCustomers: 9 },
+            days: empty
+              ? []
+              : [
+                  { day: '2026-11-15', orders: 6, released: 1, discountPaise: 36_000, uniqueCustomers: 4 },
+                  { day: '2026-11-14', orders: 8, released: 1, discountPaise: 48_000, uniqueCustomers: 6 },
+                ],
+            nextCursor: null,
+          } satisfies Dto<typeof CouponUsageReportDto>,
+        };
+      },
+    },
     {
       method: 'GET',
       path: /^\/admin\/coupons$/,

@@ -526,6 +526,13 @@
       "when": 1794769237476,
       "tag": "0076_live_service_requests",
       "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "7",
+      "when": 1794769432124,
+      "tag": "0077_coupon_offers_reports",
+      "breakpoints": true
     }
   ]
 }

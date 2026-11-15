@@ -10,8 +10,11 @@ import { formatDate, formatPrice } from '@/lib/format';
 /**
  * The coupon field of the checkout (spec 03 "Coupons"; real data mode, loaded lazily so it costs the page nothing
  * until a customer opens it). Calm and honest: the code is checked first, its conditions and the saving are shown,
- * and only then does the customer choose to use it (CCPA / dark-pattern rules). One coupon per order; coins come after
- * it. The server checks again when the order is placed, so a stale offer is refused there with a clear reason.
+ * and only then does the customer choose to use it (CCPA / dark-pattern rules). One offer per order and never added
+ * together (2026-11-16): an automatic offer is found by the server with no code and applied on its own (it cannot be
+ * removed, it is not a choice); a typed code competes with it and the larger discount wins, the customer is told which
+ * one and what the other would have given. The server checks again when the order is placed, so a stale offer is
+ * refused there with a clear reason (a gone automatic offer is a price change, never "your code").
  */
 export default function CheckoutCoupon({
   pincode,
@@ -22,7 +25,7 @@ export default function CheckoutCoupon({
   pincode: string;
   lines: readonly { sku: string; qty: number }[];
   applied: AppliedCoupon | null;
-  /** The coupon to price with (or null to remove it); the parent re-quotes the totals. */
+  /** The offer to price with (or null to remove it); the parent re-quotes the totals. */
   onApply: (coupon: AppliedCoupon | null) => void;
 }) {
   const t = useTranslations('coupons');
@@ -34,24 +37,43 @@ export default function CheckoutCoupon({
   const [error, setError] = useState<CouponErrorKey | null>(null);
   const field = useRef<HTMLInputElement>(null);
   const signature = `${pincode}|${lines.map((l) => `${l.sku}:${String(l.qty)}`).join(',')}`;
+  // The latest applied offer, for async callbacks that must not act on a stale copy.
+  const appliedRef = useRef(applied);
+  appliedRef.current = applied;
 
-  async function run(codeText: string): Promise<AppliedCoupon | null> {
+  async function run(codeText: string | null): Promise<AppliedCoupon | null> {
     const res = await checkCoupon(locale, { code: codeText, pincode, lines });
     if (!res.ok) {
-      setError(couponErrorKey(res.code));
-      track('apply_coupon', { result: 'refused', reason: null, funder: null });
+      // Asking for the automatic offer is silent: a failure there is simply "no automatic offer shown".
+      if (codeText !== null) {
+        setError(couponErrorKey(res.code));
+        track('apply_coupon', { result: 'refused', reason: null, funder: null });
+      }
       return null;
     }
     if (!res.data.ok) {
-      setError(couponErrorKey(res.data.reason));
-      track('apply_coupon', {
-        result: 'refused',
-        reason: res.data.reason,
-        funder: res.data.coupon?.funder ?? null,
-      });
+      if (codeText !== null) {
+        setError(couponErrorKey(res.data.reason));
+        track('apply_coupon', {
+          result: 'refused',
+          reason: res.data.reason,
+          funder: res.data.coupon?.funder ?? null,
+        });
+      }
       return null;
     }
     return res.data;
+  }
+
+  /** Ask the server which automatic offer this cart gets (none when the customer has a code applied). */
+  async function syncAutomatic(): Promise<void> {
+    const auto = await run(null);
+    if (appliedRef.current?.source === 'code') return;
+    if (auto?.source === 'automatic') {
+      if (appliedRef.current?.coupon.code !== auto.coupon.code)
+        track('apply_coupon', { result: 'automatic', reason: null, funder: auto.coupon.funder });
+      onApply(auto);
+    } else if (appliedRef.current) onApply(null);
   }
 
   async function onCheck() {
@@ -72,66 +94,86 @@ export default function CheckoutCoupon({
     } else field.current?.focus();
   }
 
-  // The cart or the PIN changed while a coupon is applied: check it again on the new cart; drop it if it no longer fits.
-  const appliedCode = applied?.coupon.code ?? null;
-  const first = useRef(true);
+  // The cart or the PIN changed (and once on opening checkout): look for the automatic offer again, or check the typed
+  // code again on the new cart and drop it if it no longer fits.
+  const appliedCode = applied?.source === 'code' ? applied.coupon.code : null;
   useEffect(() => {
-    if (first.current) {
-      first.current = false;
-      return;
-    }
-    if (appliedCode === null) return;
     let live = true;
-    void run(appliedCode).then((again) => {
-      if (live) onApply(again);
-    });
+    if (appliedCode === null) void syncAutomatic();
+    else
+      void run(appliedCode).then((again) => {
+        if (live) onApply(again);
+      });
     return () => {
       live = false;
     };
-    // `run` and `onApply` change every render; the cart signature is what should trigger the re-check.
+    // `run`, `syncAutomatic` and `onApply` change every render; the cart signature is what should trigger the check.
   }, [signature]);
 
-  if (applied) {
-    return (
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-card border border-line-card bg-surface p-3">
+  const appliedBlock = applied ? (
+    <div className="space-y-2 rounded-card border border-line-card bg-surface p-3" aria-live="polite">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm font-bold text-ink">
-          {t('applied', { code: applied.coupon.code })} ·{' '}
-          {t('saving', { amount: formatPrice(applied.discountPaise) })}
+          {applied.source === 'automatic'
+            ? t('auto_applied', { title: applied.coupon.title })
+            : t('applied', { code: applied.coupon.code })}{' '}
+          · {t('saving', { amount: formatPrice(applied.discountPaise) })}
         </p>
-        <button
-          type="button"
-          className="press min-h-11 rounded-button px-3 text-sm font-bold text-accent-soft-text underline"
-          onClick={() => {
-            track('apply_coupon', { result: 'removed', reason: null, funder: applied.coupon.funder });
-            onApply(null);
-            setFound(null);
-            setCode('');
-          }}
-        >
-          {t('remove')}
-        </button>
+        {applied.source === 'code' ? (
+          <button
+            type="button"
+            className="press min-h-11 rounded-button px-3 text-sm font-bold text-accent-soft-text underline"
+            onClick={() => {
+              track('apply_coupon', { result: 'removed', reason: null, funder: applied.coupon.funder });
+              onApply(null);
+              setFound(null);
+              setCode('');
+              // The automatic offer (if any) comes back: it was only out of the way while the code won.
+              void syncAutomatic();
+            }}
+          >
+            {t('remove')}
+          </button>
+        ) : null}
       </div>
-    );
-  }
+      {applied.source === 'automatic' ? <p className="text-sm text-muted">{t('auto_note')}</p> : null}
+      {applied.beaten ? (
+        <p className="text-sm text-muted">
+          {t(applied.beaten.source === 'code' ? 'beaten_code' : 'beaten_auto', {
+            // beaten_code names the offer that won; beaten_auto names the automatic offer that lost.
+            title: applied.beaten.source === 'code' ? applied.coupon.title : applied.beaten.title,
+            amount: formatPrice(applied.beaten.discountPaise),
+          })}
+        </p>
+      ) : null}
+    </div>
+  ) : null;
+
+  // A typed code that is applied has nothing more to ask; an automatic offer leaves the code field available.
+  if (applied?.source === 'code') return appliedBlock;
 
   if (!open)
     return (
-      <button
-        type="button"
-        className="press min-h-11 rounded-button text-sm font-bold text-accent-soft-text underline"
-        aria-expanded="false"
-        data-disclosure-trigger="checkout-coupon"
-        onClick={() => {
-          setOpen(true);
-          window.requestAnimationFrame(() => field.current?.focus());
-        }}
-      >
-        {t('have')}
-      </button>
+      <div className="space-y-3">
+        {appliedBlock}
+        <button
+          type="button"
+          className="press min-h-11 rounded-button text-sm font-bold text-accent-soft-text underline"
+          aria-expanded="false"
+          data-disclosure-trigger="checkout-coupon"
+          onClick={() => {
+            setOpen(true);
+            window.requestAnimationFrame(() => field.current?.focus());
+          }}
+        >
+          {t('have')}
+        </button>
+      </div>
     );
 
   return (
     <div className="space-y-3">
+      {appliedBlock}
       <div>
         <label htmlFor="checkout-coupon" className="block text-sm font-bold text-ink">
           {t('label')}
@@ -189,7 +231,19 @@ export default function CheckoutCoupon({
         ) : null}
       </div>
 
-      {found ? (
+      {found?.source === 'automatic' ? (
+        // The code is valid but the automatic offer saves more: it stays applied, and the customer is told why.
+        <p
+          className="rounded-card border border-line-card bg-surface p-4 text-sm text-ink"
+          aria-live="polite"
+        >
+          {t('beaten_code', {
+            title: found.coupon.title,
+            amount: formatPrice(found.beaten?.discountPaise ?? 0),
+          })}
+        </p>
+      ) : null}
+      {found?.source === 'code' ? (
         <div className="rounded-card border border-line-card bg-surface p-4" aria-live="polite">
           <p className="font-heading text-base font-extrabold text-ink">
             {found.coupon.title || found.coupon.code}
@@ -213,6 +267,14 @@ export default function CheckoutCoupon({
           <p className="mt-3 text-sm font-bold text-ink">
             {t('saving', { amount: formatPrice(found.discountPaise) })}
           </p>
+          {found.beaten ? (
+            <p className="mt-1 text-sm text-muted">
+              {t('beaten_auto', {
+                title: found.beaten.title,
+                amount: formatPrice(found.beaten.discountPaise),
+              })}
+            </p>
+          ) : null}
           <button
             type="button"
             className="press mt-3 min-h-11 rounded-button bg-accent-button px-4 text-sm font-bold text-white hover:bg-accent-button-hover"

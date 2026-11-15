@@ -1384,3 +1384,13 @@ The user's logo image (`apps/web/public/brand/source/logo-source.jpeg`, 1280x426
 4. **Contrast (WCAG 2.2):** navy `#092349` on white 15.6:1, white `#f4f7fb` on dark surface `#101d31` 15.7:1, orange on dark surface 6.0:1 (pass); orange `#f67411` on white is **2.83:1**, under 3:1. Logotypes are exempt from 1.4.3 and the brand name is always available as the image's alt text and in the page title, so the logo stays as supplied; no UI text uses this orange (button text keeps `#d2461a`, link text `#bf3c12`).
 5. **Brand alt text is "MechDost" in both languages** (Latin, hard rule 10). Tagline under the logo unchanged (en "Your automotive connection", hi locale string), shown from the tablet width as before.
 6. Icons: SVG favicon with a dark-scheme rule, `favicon.ico` (32 px), apple-touch 180, PWA 192/512 plus maskable 192/512 on navy (mark inside the 80 % safe zone), 1200x630 share image, email header PNG (`/brand/icons/email-logo.png`, absolute URL from the site origin; plain wordmark if no origin). `src/app/manifest.ts` serves the manifest (the service worker still comes with Serwist).
+
+## 2026-11-16 - Coupon follow-ups: public list, usage reports, refund release, automatic offers (builder rulings)
+
+User: "we can work on building ... the smaller items too". Rulings (plan `docs/superpowers/plans/2026-11-16-coupon-followups.md`, spec 03 § "coupon follow-ups"):
+
+- **An automatic offer is a coupon row** (`auto_apply`), not a new table, so counters, snapshot, allocation, release, payouts and reports are the existing tested pipeline. MechDost-funded only (a shop cannot be asked to accept terms nobody shows it). Its code is internal; typing it is "not valid".
+- **Stacking: never.** One discount per order. A typed code and the best automatic offer compete; the larger discount wins, a tie goes to the typed code; the customer is shown what the other would have given. Replaces the open "default no stacking" question.
+- **Public offers are an admin choice** (`is_public`, off by default), city-scoped, live only, no usage numbers, an automatic offer never prints its code. No home or shop teaser (JS budget gates stay untouched; revisit with a measured server-rendered strip).
+- **Release after refund:** a delivered order's use goes back when every live sub-order is refunded in full; a partial refund keeps it (spec 03 earlier said "a delivered order keeps the use": amended). Not reversing the shop payout entry is a known gap.
+- **Reports** count orders, released, uses kept (= `used_count`), discount given on kept uses, unique customers, IST days; the CSV dataset `coupon_usage` needs `exports:run` + `coupons:write` and carries a hashed customer reference only.

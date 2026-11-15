@@ -14,6 +14,7 @@ export const EXPORT_DATASETS = [
   'service_requests',
   'partners',
   'customers',
+  'coupon_usage',
 ] as const;
 export type ExportDataset = (typeof EXPORT_DATASETS)[number];
 
@@ -35,6 +36,8 @@ export const EXPORT_DATASET_PERMISSION = {
   service_requests: 'service:read',
   partners: 'partners:read',
   customers: 'customers:read',
+  /** One row per coupon use (2026-11-16); the people who manage coupons read their usage. */
+  coupon_usage: 'coupons:write',
 } as const satisfies Record<ExportDataset, Permission>;
 
 const Day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);

@@ -190,3 +190,5 @@ T148 · 2026-11-15 · real-sign-in build (launch config) · the API-mode build (
   T164 · 2026-11-16 · live ping wiring · a source-level wiring test (screens call the hook with the kind, polling still present, the hook imports the hub only, the hub is the single gate that makes it a no-op when live is off) is enough without a browser; remember the lazy-load guard lists every file that calls `startLive` · active
 
   T165 · 2026-11-16 · brand/assets · assert asset files by header bytes (PNG IHDR width/height) and SVG hygiene (viewBox, title, no width/height, no metadata) in a unit test, plus source checks that the header uses both artworks with width/height; geometry (320-1280 px fit) stays in e2e chrome-fit.
+
+- 2026-11-16 · coupons: test "never stacks" with three cases (smaller code, bigger code, tie) and assert the loser's counter did not move; test a stale expected total (409) for server-only automatic pricing; test that a typed automatic code is "not valid" and that two refunds paid together release once.

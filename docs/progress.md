@@ -433,3 +433,10 @@ fields and the Admin → Notifications approval line (en + hi). Runbook `docs/ru
 catalogue table. **Nothing was sent to Meta** (fake fetch only). Waiting on the user: Q173 go-ahead. Coordinator: after
 merge, new catalogue entries (quote events) need a `META_TEMPLATE_COPY` entry and locale text under `notifyTemplates`
 (typecheck forces it); no Playwright / next build was run.
+
+## 2026-11-16 - Coupon follow-ups built (branch worktree-agent-aa4e8bf67badfcb74)
+
+- Built (spec 03 § "coupon follow-ups", 08, 12, 14; decisions 2026-11-16): public offers page `/offers` (+ `GET /v1/offers`), admin usage report + `coupon_usage` CSV export, release of the coupon use after a whole-order refund, automatic offers (category, first order, minimum; never stacked, larger wins, tie to the code), admin form flags, checkout auto offer.
+- Migration `0073_coupon_offers_reports` generated, **not applied** (coordinator renumbers; latest on merge/fix2 was 0072).
+- Tests green: shared coupon (15), db coupon-offers (12) + coupons/exports/refunds/checkout, api coupon-offers + coupons + enumeration + admin-exports, web coupon-view (12) + client-messages-coverage + panel-dismiss. Not run: Playwright, next build, pnpm check, full suites. UI state audit: rows `OFFERS-PAGE`, `API-ADM-COUPONS` (usage param) added, checklist regenerated.
+- User action: none queued. Known gap: shop payout `coupon_discount` entry is not reversed on refund.

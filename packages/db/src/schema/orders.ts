@@ -31,7 +31,7 @@ import {
 import { citext, createdAt, encryptedCheck, id, paise, ts, updatedAt, version } from './_common';
 import { cities } from './geography';
 import { users } from './identity';
-import { productVariants, shopInventory, shops } from './catalogue';
+import { categories, productVariants, shopInventory, shops } from './catalogue';
 import { quoteOffers, quoteRequests } from './quotes';
 import { serviceBills } from './services';
 
@@ -767,6 +767,12 @@ export const coupons = pgTable(
     funder: text().notNull().default('mechdost'),
     /** The funding shop (shop-funded only). */
     shopId: uuid().references(() => shops.id, { onDelete: 'restrict' }),
+    /** Listed on the public offers page (admin chooses; 2026-11-16). Never lists usage numbers or an automatic offer's code. */
+    isPublic: boolean().notNull().default(false),
+    /** Applied at checkout with no code (2026-11-16): the best automatic offer competes with a typed code. MechDost-funded only. */
+    autoApply: boolean().notNull().default(false),
+    /** Category offer: only the lines of this category count (minimum order, percent, shares). */
+    categoryId: uuid().references(() => categories.id, { onDelete: 'restrict' }),
     /** Paused by admin (history in the audit log); the code then answers "paused". */
     active: boolean().notNull().default(true),
     pausedReason: text(),
@@ -804,7 +810,16 @@ export const coupons = pgTable(
     check('coupons_per_user_range', sql`${t.usageLimitPerUser} between 1 and 100`),
     check('coupons_first_order_once', sql`not ${t.firstOrderOnly} or ${t.usageLimitPerUser} = 1`),
     check('coupons_paused_reason', sql`${t.active} or char_length(${t.pausedReason}) between 3 and 300`),
+    // 2026-11-16: an automatic offer is funded by MechDost (a shop would have to accept terms nobody shows it); a category
+    // offer takes a percent or flat amount off lines, free delivery has no lines.
+    check('coupons_auto_mechdost', sql`not ${t.autoApply} or ${t.funder} = 'mechdost'`),
+    check('coupons_category_not_delivery', sql`${t.categoryId} is null or ${t.kind} <> 'free_shipping'`),
     index().on(t.cityId),
+    index().on(t.categoryId),
+    // The public offers page and the checkout's automatic offers read live rows of these two kinds only.
+    index('coupons_public_live_idx')
+      .on(t.cityId, t.startsAt)
+      .where(sql`${t.active} and (${t.isPublic} or ${t.autoApply})`),
     index().on(t.shopId),
     index().on(t.createdBy),
     index().on(t.active, t.startsAt),
@@ -891,5 +906,7 @@ export const couponRedemptions = pgTable(
     check('coupon_redemptions_funder_valid', sql`${t.funder} in ('mechdost','shop')`),
     index().on(t.userId, t.couponId),
     index().on(t.groupId),
+    // Usage reports and the export page one coupon's uses by time (2026-11-16).
+    index('coupon_redemptions_coupon_created_idx').on(t.couponId, t.createdAt, t.id),
   ],
 );

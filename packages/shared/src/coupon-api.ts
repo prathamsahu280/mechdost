@@ -41,6 +41,15 @@ export const CouponInputSchema = z
       .nullable(),
     funder: z.enum(COUPON_FUNDERS),
     shopId: z.uuid().nullable(),
+    /** Listed on the public offers page (admin chooses; never by default). */
+    isPublic: z.boolean(),
+    /** Applied at checkout without a code (the code is then only a name for staff). MechDost-funded only. */
+    autoApply: z.boolean(),
+    /** Category offer: only the lines of this category count. */
+    categorySlug: z
+      .string()
+      .regex(/^[a-z0-9][a-z0-9-]{0,119}$/)
+      .nullable(),
   })
   .strict()
   .superRefine((v, ctx) => {
@@ -58,6 +67,9 @@ export const CouponInputSchema = z
     if (v.funder === 'shop' && v.shopId === null) bad('shopId', 'A shop-funded coupon names its shop');
     if (v.funder === 'mechdost' && v.shopId !== null) bad('shopId', 'A MechDost-funded coupon has no shop');
     if (v.funder === 'shop' && v.kind === 'free_shipping') bad('kind', 'A shop cannot fund free delivery');
+    if (v.autoApply && v.funder !== 'mechdost') bad('autoApply', 'An automatic offer is funded by MechDost');
+    if (v.categorySlug !== null && v.kind === 'free_shipping')
+      bad('categorySlug', 'Free delivery does not depend on a category');
     if (v.firstOrderOnly && v.usageLimitPerUser !== 1)
       bad('usageLimitPerUser', 'First order only means once each');
     if ((v.terms === null) !== (v.termsHi === null))
@@ -105,6 +117,9 @@ export const AdminCouponDto = z.object({
   shop: z.object({ id: z.string(), name: z.string() }).nullable(),
   /** Shop-funded only: has the shop accepted the offer terms (it cannot be used until it has). */
   shopTerms: ShopTermsStatus.nullable(),
+  isPublic: z.boolean(),
+  autoApply: z.boolean(),
+  category: z.object({ slug: z.string(), name: z.string() }).nullable(),
   active: z.boolean(),
   pausedReason: z.string().nullable(),
   /** Live right now: active, started, not ended, uses left and (shop-funded) accepted. */
@@ -168,10 +183,20 @@ export const CouponViewDto = z.object({
 });
 export type CouponViewDto = z.infer<typeof CouponViewDto>;
 
+/** Which kind of offer won the order (2026-11-16 ruling: never stacked, the larger discount wins, a tie goes to the code). */
+export const OFFER_SOURCES = ['code', 'automatic'] as const;
+export type OfferSource = (typeof OFFER_SOURCES)[number];
+
 export const CouponPreviewDto = z.discriminatedUnion('ok', [
   z.object({
     ok: z.literal(true),
     coupon: CouponViewDto,
+    /** `automatic` = applied without a code (the code in `coupon` is only its internal name, shown as `title`). */
+    source: z.enum(OFFER_SOURCES),
+    /** The offer that lost to this one, so the customer sees what they did not get (never stacked). */
+    beaten: z
+      .object({ source: z.enum(OFFER_SOURCES), title: z.string(), discountPaise: z.number().int() })
+      .nullable(),
     discountPaise: z.number().int(),
     productDiscountPaise: z.number().int(),
     shippingDiscountPaise: z.number().int(),
@@ -187,3 +212,60 @@ export const CouponPreviewDto = z.discriminatedUnion('ok', [
   z.object({ ok: z.literal(false), reason: z.enum(COUPON_REASONS), coupon: CouponViewDto.nullable() }),
 ]);
 export type CouponPreview = z.infer<typeof CouponPreviewDto>;
+
+/**
+ * One offer on the public offers page (2026-11-16). Only what a customer may read: no usage numbers, no internal
+ * codes of automatic offers (`code` is null for them: "applied automatically at checkout"), text in the page language.
+ */
+export const PublicOfferDto = z.object({
+  id: z.string(),
+  /** The code to copy; null for an automatic offer. */
+  code: z.string().nullable(),
+  title: z.string(),
+  terms: z.string().nullable(),
+  kind: z.enum(COUPON_KINDS),
+  value: z.number().int(),
+  minSubtotalPaise: z.number().int(),
+  maxDiscountPaise: z.number().int().nullable(),
+  endsAt: z.string().nullable(),
+  firstOrderOnly: z.boolean(),
+  automatic: z.boolean(),
+  categoryName: z.string().nullable(),
+  funder: z.enum(COUPON_FUNDERS),
+  shopName: z.string().nullable(),
+});
+export type PublicOffer = z.infer<typeof PublicOfferDto>;
+export const PublicOffersDto = z.object({ offers: z.array(PublicOfferDto) });
+
+/** The category picker of the coupon form reads the public `/catalogue/categories` answer: only what it shows. */
+export const CouponCategoryListDto = z.object({
+  categories: z.array(z.object({ slug: z.string(), parentSlug: z.string().nullable(), name: z.string() })),
+});
+
+/** Admin → Coupons → Usage (2026-11-16). Uses never count a released order (cancelled, rejected or fully refunded). */
+export const CouponUsageDayDto = z.object({
+  /** IST calendar day, YYYY-MM-DD. */
+  day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  orders: z.number().int(),
+  released: z.number().int(),
+  discountPaise: z.number().int(),
+  uniqueCustomers: z.number().int(),
+});
+export const CouponUsageReportDto = z.object({
+  couponId: z.string(),
+  code: z.string(),
+  totals: z.object({
+    /** Orders placed with the coupon (one per checkout). */
+    orders: z.number().int(),
+    /** Of those, uses given back. */
+    released: z.number().int(),
+    /** Net uses = orders - released (matches the coupon's `usedCount`). */
+    uses: z.number().int(),
+    /** Discount given on the orders that kept the use. */
+    discountPaise: z.number().int(),
+    uniqueCustomers: z.number().int(),
+  }),
+  days: z.array(CouponUsageDayDto),
+  nextCursor: z.string().nullable(),
+});
+export type CouponUsageReport = z.infer<typeof CouponUsageReportDto>;
