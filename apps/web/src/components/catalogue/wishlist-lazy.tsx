@@ -11,10 +11,15 @@ import type { WishlistLabels } from './wishlist-heart';
  * demo build contains neither the wrapper's lazy import nor the chunk: the wishlist exists with real sign-in only
  * (it lives on the server).
  */
-const Heart = AUTH_MODE === 'firebase' ? lazy(() => import('./wishlist-heart')) : null;
+const Heart = /* @__PURE__ */ lazy(() => import('./wishlist-heart'));
 
-export function WishlistHeartLazy(props: { slug: string; labels: WishlistLabels; source: 'card' | 'page' }) {
-  if (!Heart) return null;
+interface HeartProps {
+  slug: string;
+  labels: WishlistLabels;
+  source: 'card' | 'page';
+}
+
+function RealHeart(props: HeartProps) {
   return (
     <Suspense
       fallback={
@@ -27,3 +32,10 @@ export function WishlistHeartLazy(props: { slug: string; labels: WishlistLabels;
     </Suspense>
   );
 }
+
+function NoHeart(_props: HeartProps) {
+  return null;
+}
+
+/** Chosen at build time (budget incident 2026-11-15): the demo build keeps only the empty function on every card. */
+export const WishlistHeartLazy = AUTH_MODE === 'firebase' ? RealHeart : NoHeart;

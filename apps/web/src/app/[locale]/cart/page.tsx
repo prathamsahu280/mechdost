@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { Suspense } from 'react';
 import { getTranslations } from 'next-intl/server';
-import { RecommendationsSection } from '@/components/catalogue/recommendations-section';
+import { CartRecommendations } from '@/components/catalogue/recommendations-cart';
 import { CartView } from '@/components/commerce/cart-view';
 import { TrustLine } from '@/components/site/trust-line';
 import { ClientMessages } from '@/components/ui/client-messages';
@@ -32,7 +32,7 @@ async function cartSlugs(): Promise<string[]> {
 async function CartSuggestions({ locale }: { locale: Locale }) {
   const slugs = await cartSlugs();
   if (slugs.length === 0) return null;
-  return <RecommendationsSection slugs={slugs} slot="cart" locale={locale} />;
+  return <CartRecommendations slugs={slugs} locale={locale} />;
 }
 
 /** Cart (spec 03) — demo store until the server cart with re-pricing ships in Phase 1. */

@@ -32,3 +32,17 @@ describe('cart pill keeps the header light', () => {
     expect(src('demo/store.ts')).toMatch(/DATA_MODE === 'api' && key === KEYS\.cart/);
   });
 });
+
+describe('cart page suggestions stay client-free', () => {
+  it('the cart page and its suggestions never import the full product card', () => {
+    const cartPage = readFileSync(
+      join(__dirname, '..', 'src', 'app', '[locale]', 'cart', 'page.tsx'),
+      'utf8',
+    );
+    expect(cartPage).not.toMatch(/recommendations-section'/);
+    expect(cartPage).toMatch(/recommendations-cart'/);
+    const cart = src('components/catalogue/recommendations-cart.tsx');
+    const core = src('components/catalogue/recommendations-core.tsx');
+    for (const s of [cart, core]) expect(s).not.toMatch(/product-card'/);
+  });
+});
