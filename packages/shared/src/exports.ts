@@ -99,7 +99,7 @@ export function exportWindow(from: string, to: string): { start: Date; end: Date
 }
 
 /** Excel opens a UTF-8 CSV correctly (Hindi included) only with this byte order mark first. */
-export const CSV_BOM = '﻿';
+export const CSV_BOM = String.fromCharCode(0xfeff);
 
 export type CsvValue = string | number | boolean | null | undefined;
 

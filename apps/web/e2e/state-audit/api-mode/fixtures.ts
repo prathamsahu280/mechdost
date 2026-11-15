@@ -1456,9 +1456,9 @@ function auditMocks(): Mock[] {
 
 /** Admin → Exports: the options, the request (done, empty, too large) and the file itself (or an expired link). */
 function exportsMocks(): Mock[] {
-  const csv = Buffer.from('﻿code,placed_at_ist\r\nMD-RPR-2026-ABCDEF,2026-11-15 10:00:00\r\n').toString(
-    'base64',
-  );
+  const csv = Buffer.from(
+    String.fromCharCode(0xfeff) + 'code,placed_at_ist\r\nMD-RPR-2026-ABCDEF,2026-11-15 10:00:00\r\n',
+  ).toString('base64');
   return [
     meMock(),
     {

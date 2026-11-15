@@ -41,7 +41,10 @@ describe('csvLine', () => {
     expect(csvLine(['a', 'b,c', null])).toBe('a,"b,c",\r\n');
   });
   it('has a UTF-8 BOM constant for Excel', () => {
-    expect(CSV_BOM).toBe('﻿');
+    // Compare by code point: a source-level literal or escape slip must not pass both sides alike.
+    expect(CSV_BOM.length).toBe(1);
+    expect(CSV_BOM.codePointAt(0)).toBe(0xfeff);
+    expect(Buffer.from(CSV_BOM, 'utf8')).toEqual(Buffer.from([0xef, 0xbb, 0xbf]));
   });
 });
 

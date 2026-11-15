@@ -135,3 +135,5 @@ Mark each touched item ✅ / ⚠️ / ❌. Anything ❌ blocks implementation un
 
 - ❌ Python-in-heredoc edits that carry escapes or multi-line strings into source files (L104, promoted): use the Edit tool.
 - ❌ An email/SMS to an address or number a guest typed (no verification): spam/phishing relay. Only verified account contacts or admin-entered invites.
+
+- **Invisible/special characters in source** (L211): write them as `String.fromCharCode(0x…)`; never a literal and never through perl/sed/Edit escape sequences (they get mangled or decoded); tests assert code points/bytes, not the same constant on both sides.
