@@ -15,10 +15,11 @@ const rect = (left: number, top: number, right: number, bottom: number): Rect =>
 });
 
 /** A stand-in element: just the members `behindOpenLayer` reads. */
-const fake = (r: Rect, opts: { visible?: boolean; children?: unknown[] } = {}) => {
+const fake = (r: Rect, opts: { visible?: boolean; children?: unknown[]; modal?: boolean } = {}) => {
   const self: Record<string, unknown> = {
     getBoundingClientRect: () => r,
     checkVisibility: () => opts.visible ?? true,
+    matches: (sel: string) => sel === ':modal' && opts.modal === true,
     contains: (x: unknown) => x === self || (opts.children ?? []).includes(x),
   };
   return self;
@@ -44,6 +45,19 @@ describe('behindOpenLayer: no hover under an open dialog, popover or viewer (bat
     expect(behindOpenLayer(fake(rect(600, 600, 660, 644)) as unknown as Element)).toBe(false);
     withLayers([fake(rect(100, 100, 500, 500), { visible: false })]);
     expect(behindOpenLayer(fake(rect(200, 200, 260, 244)) as unknown as Element)).toBe(false);
+  });
+  it('a modal dialog (showModal) blocks every control outside it: its ::backdrop covers the whole viewport (batch 3c-4)', () => {
+    // API-SVC-PHOTOS at 1280: the opener buttons sit beside the 900 px dialog box, not under it, yet Playwright
+    // reports "<dialog open> intercepts pointer events" because the backdrop belongs to the dialog.
+    withLayers([fake(rect(190, 100, 1090, 700), { modal: true })]);
+    expect(behindOpenLayer(fake(rect(20, 300, 80, 344)) as unknown as Element)).toBe(true);
+  });
+  it('a modal dialog never blocks its own controls, and a non-modal open dialog still blocks only its box', () => {
+    const inside = fake(rect(300, 300, 360, 344));
+    withLayers([fake(rect(190, 100, 1090, 700), { modal: true, children: [inside] })]);
+    expect(behindOpenLayer(inside as unknown as Element)).toBe(false);
+    withLayers([fake(rect(190, 100, 1090, 700))]);
+    expect(behindOpenLayer(fake(rect(20, 300, 80, 344)) as unknown as Element)).toBe(false);
   });
   it('is false with no open layer', () => {
     withLayers([]);

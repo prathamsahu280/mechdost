@@ -739,12 +739,12 @@ function adminShopsMocks(): Mock[] {
       method: 'GET',
       path: /^\/admin\/shops\/[^/]+\/inventory$/,
       schema: ShopOffers,
-      reply: () => ({
+      reply: ({ c }) => ({
         body: {
           offers: [
             {
               sku: 'SKU-1',
-              product: 'Engine oil 1',
+              product: c.locale === 'hi' ? 'इंजन ऑयल 1' : 'Engine oil 1',
               productSlug: 'engine-oil-1',
               mrpPaise: 99_900,
               sellingPaise: 89_900,
@@ -1419,7 +1419,7 @@ function quoteThreadMocks(): Mock[] {
                 lineNo: 1,
                 slug: 'audit-product-1',
                 sku: 'AUD-0001',
-                title: 'Audit engine oil 1 L',
+                title: c.locale === 'hi' ? 'ऑडिट इंजन ऑयल 1 L' : 'Audit engine oil 1 L',
                 qty: 120,
                 listUnitPaise: 38_250,
                 mrpPaise: 42_000,
