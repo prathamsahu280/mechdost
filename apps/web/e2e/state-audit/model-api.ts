@@ -312,6 +312,68 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
     realApi: true,
   },
 
+  // ─────────────── Shop portal tier 2 (stock CSV, performance, packing slip, status lookup; design 2026-11-15 items 4 to 7) ───────────────
+  {
+    code: 'API-SHOP-TIER2',
+    page: 'Shop portal (/partner/shop), real sign-in',
+    component:
+      'Update stock with a file (idle, checked with problems, checked clean, file refused, applied) and, for the owner, "How your shop is doing" (30 and 90 days, with and without the city median, no data, error)',
+    path: '/partner/shop',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['shop'] },
+      { name: 'csv', values: ['idle', 'errors', 'clean', 'file-error', 'applied'] },
+      { name: 'perf', values: ['full', 'no-city', 'empty', 'error'] },
+      { name: 'role', values: ['owner', 'staff'] },
+      stress,
+    ],
+    // Staff do not see the performance card, so one value of it is enough for them.
+    valid: (r: Row) => r.role !== 'staff' || r.perf === 'full',
+    checks: [...BASE_CHECKS],
+    sweep: 14,
+    note: `${API_NOTE} The file is chosen and checked by the page hook; the mocked API answers the check by the csv state. Performance is owner only (403 OWNER_ONLY for staff).`,
+    realApi: true,
+  },
+  {
+    code: 'API-SHOP-SLIP',
+    page: 'Packing slip (/partner/shop/slip/{code}), real sign-in',
+    component:
+      'The printable A5 slip: order code and QR, items and quantities, PIN and area, first name and masked phone',
+    path: '/partner/shop/slip/MD-RPR-2026-HND401-1',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['shop'] },
+      { name: 'slip', values: ['one-item', 'many-items', 'unavailable', 'error'] },
+      stress,
+    ],
+    checks: [...BASE_CHECKS],
+    sweep: 8,
+    note: `${API_NOTE} No prices and no street address by design (the API test asserts it); print layout is checked by hand with the browser's print preview.`,
+    realApi: true,
+  },
+  {
+    code: 'API-PARTNER-STATUS',
+    page: 'Application status (/partners/status), real sign-in build',
+    component: 'Reference + phone form for the public application status lookup (empty, with field errors)',
+    path: '/partners/status',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['out'] },
+      { name: 'form', values: ['empty', 'invalid'] },
+      stress,
+    ],
+    checks: [...BASE_CHECKS],
+    sweep: 6,
+    note: `${API_NOTE} The one-time code and the result need a real phone, so they are covered by the API and unit tests.`,
+    realApi: true,
+  },
+
   // ─────────────── Admin → Partners → Shops (management, hours, warnings; specs 07, 08) ───────────────
   {
     code: 'API-ADM-SHOPS',

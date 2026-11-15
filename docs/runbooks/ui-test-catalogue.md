@@ -833,6 +833,8 @@ API suites and the Hindi gate.
 
 Shop portal tier 1 (2026-11-15): row `API-SHOP-TIER1` (chunk G) with state keys `orders` (`none`, `offer`, `expired-offer`, `locked-delivery`, `staff-view`), `busy` (`none`, `closed`, `hours`), `team` (`only-you`, `some`, `full`, `invite-open`, `error`), `role` (`owner`, `staff`) and `stress`. Offer end times in these fixtures come from the browser clock (the page hides an expired offer), not from the fixed fixture NOW.
 
+Shop portal tier 2 (2026-11-15): rows `API-SHOP-TIER2` (`/partner/shop`; state keys `csv` = `idle`, `errors`, `clean`, `file-error`, `applied`; `perf` = `full`, `no-city`, `empty`, `error`; `role`; `stress`; the page hook chooses a file and presses Check, and Apply for `applied`), `API-SHOP-SLIP` (`/partner/shop/slip/{code}`; `slip` = `one-item`, `many-items`, `unavailable`, `error`) and `API-PARTNER-STATUS` (`/partners/status`; `form` = `empty`, `invalid`). Fixtures in `api-mode/tier2-fixtures.ts`. Not run in a browser yet (by instruction); the print layout is checked by hand in the print preview.
+
 ### 9.8 Trust-line and labour-promise rows (2026-11-15)
 
 Design `docs/superpowers/specs/2026-11-15-trust-wording-design.md`. Two state keys seed the demo site config before the

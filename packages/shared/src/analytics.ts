@@ -104,6 +104,15 @@ export interface ServerEventProps {
   /** Company details saved (item 8); `filled` = how many of the fields have text. */
   admin_company_saved: { filled: number; grievanceShown: boolean };
   inventory_updated: { shopId: string; sku: string; fields: string[]; by: 'shop' | 'staff' };
+  /** Shop stock and price CSV (design 2026-11-15 item 4): a check (dry run) and the one all-or-nothing apply; counts only. */
+  shop_csv_previewed: { shopId: string; rows: number; errors: number; changes: number };
+  shop_csv_applied: { shopId: string; stock: number; active: number; priceRequests: number };
+  /** A packing slip was opened for printing (item 5). */
+  shop_packing_slip_viewed: { shopId: string; orderCode: string };
+  /** The owner opened the performance page (item 6). */
+  shop_performance_viewed: { shopId: string };
+  /** Public application status lookup (item 7): `found` false when the phone did not match the reference. */
+  partner_status_checked: { found: boolean };
   partner_application_submitted: {
     kind: string;
     source: 'public' | 'invite';

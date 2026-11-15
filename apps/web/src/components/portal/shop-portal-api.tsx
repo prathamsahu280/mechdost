@@ -431,6 +431,7 @@ function ActiveOrder({
 }) {
   const t = useTranslations('portal');
   const tt = useTranslations('shopTier1');
+  const t2 = useTranslations('shopTier2');
   const o = useTranslations('order');
   const locale = useLocale();
   const [busy, setBusy] = useState(false);
@@ -467,6 +468,17 @@ function ActiveOrder({
         {o(shopStageKey(order.status))}
       </p>
       <OrderLines order={order} />
+      <a
+        href={`${locale === 'hi' ? '/hi' : ''}/partner/shop/slip/${order.code}`}
+        target="_blank"
+        rel="noopener"
+        onClick={() => {
+          track('click', { id: 'shop_slip_open', path: window.location.pathname });
+        }}
+        className={`${portalQuiet} mt-3`}
+      >
+        {t2('slipOpen')}
+      </a>
       {error ? (
         <div className="mt-3">
           <ApiError code={error} />

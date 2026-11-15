@@ -23,7 +23,18 @@ export default async function PartnerPage() {
       <PageIntro eyebrow={t('partnerEyebrow')} line1={t('shopTitle')} />
       <div className="mt-8">
         <ClientMessages
-          namespaces={['portal', 'account', 'auth', 'order', 'request', 'quote', 'apply', 'bell']}
+          namespaces={[
+            'portal',
+            'account',
+            'auth',
+            'order',
+            'request',
+            'quote',
+            'apply',
+            'bell',
+            'shopTier1',
+            'shopTier2',
+          ]}
         >
           <ShopPortal />
         </ClientMessages>
