@@ -1,3 +1,5 @@
+Job photos (2026-11-15; chunk G, § 9.7): `API-WS-PHOTOS` is the workshop job card's photo section (`photos=none|one|six|upload-error|gate`, `stage=before|after`, `required=on|off`; `upload-error` selects a file the mocked API refuses with `PHOTO_TYPE`, `gate` submits the odometer form and the mocked API answers `409 PHOTOS_REQUIRED`); `API-SVC-PHOTOS` is the customer's before/after strip (`photos=none|one|six`, `viewer=closed|open`; none renders nothing). Images are one 1x1 PNG answered for every `/service-photos/*` call (`api-mode/photo-fixtures.ts`, `Reply.raw`). The public gallery on a workshop page is server-rendered (the workshop is fetched on the server), so the browser mock cannot feed it: gallery on/off is covered by `apps/api/test/service-photos.test.ts` and `packages/db/test/service-photos.test.ts`.
+
 # MechDost test catalogue: states, world states, routes, flows, permutations
 
 Written 2026-11-14 from a read of the code (no browser run). Scope: `apps/web` in demo mode (`NEXT_PUBLIC_DATA_MODE`

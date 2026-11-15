@@ -852,6 +852,7 @@ User 2026-11-15 ~01:00 IST: "go ahead and work on the 1,2,3,4,5,6" (6 = shop Wha
 | 17  | Bulk quotes: attachments (≤ 5 MB images/PDF) and read receipts in the thread (spec 19)                                                                                                                                                                                                                           | Build with Supabase Storage after launch                                            | After launch                         |
 | 18  | Bulk quotes: online payment (Razorpay) for an accepted offer, and whether staff choose COD / online per offer                                                                                                                                                                                                    | COD only at launch; add online with the Razorpay live keys                          | After launch                         |
 | 19  | Coin order-reward guard: what stops order → delivery → claim → repeat farming before `coins.earn_order_bp` / `coins.first_order_bonus` can be above 0 (options: rewards only after the claim window with no open ticket, per-customer monthly cap, minimum order, first order only for verified phone + address) | Decide when enabling (user 2026-11-14); saving above 0 is refused meanwhile         | Before order rewards are switched on |
+| 20  | Job photo purge: how long soft-deleted and orphaned photo objects stay in the private bucket, and who may restore one                                                                                                                                                                                            | Keep them (audit and complaints) until a retention job is chosen                    | Before launch                        |
 
 ## 2026-10-31 — Tooling (see `research/tooling-audit.md`)
 
@@ -972,3 +973,16 @@ Built on branch `worktree-agent-ac725264bf04a59b2` (not merged). Design `docs/su
 - **City scope is set when the role is given**; to change it, remove and give again (no in-place edit). Customers and staff have no city, so these screens need an all-cities grant (`SCOPE_REQUIRED` for city managers).
 - Customer search needs a full 10-digit number (a partial number is refused, 422 `SEARCH_QUERY`) and at least 2 letters for a name; name search is prefix only (`lower(name) like 'ab%'`), so mid-name search is not offered. Cost if wrong: trigram index and `ilike` later.
 - Migration `0060_admin_people_indexes` (6 indexes, no table change) is not applied; the coordinator renumbers at merge.
+
+## 2026-11-15 — Job photos built (builder rulings under the approved design)
+
+Design: `docs/superpowers/specs/2026-11-15-service-photos-design.md`; built description: spec 06 § "Built: job photos"; security: spec 13 § "Uploads".
+
+- **Images reach the browser through the API with short-lived signed URLs, not through bearer-authenticated fetches.** An `<img>` cannot send the token, and blob URLs break `next/image`. The listing (rights-checked) issues a 10-minute HMAC URL for one photo; the image route verifies it on each read. Cost if wrong: a URL copied within 10 minutes shows that one photo to whoever holds it; shorten the TTL or move to cookie auth.
+- **HEIC is refused** (clear message, JPG/PNG), because the bundled libvips has no HEVC decoder. Cost if wrong: Android/iOS users who force HEIC uploads must switch format; adding a decoder later is a dependency decision.
+- **The audited admin arrival override skips the photo gate** (staff cannot upload on the workshop's behalf). Cost if wrong: an override can start a job without a before photo; it is audited with its reason.
+- **Photo settings are site-wide** (`globalOnly`), like the labour promise. Cost if wrong: no per-city difference.
+- **Gallery URLs carry no token**; the image route re-checks setting + completed + published on every read, so turning public off hides pictures at once (cached copies live up to 5 minutes in browsers).
+- **Soft delete keeps the objects** (audit and complaints) until a purge job exists; added to PENDING DECISIONS.
+- **The bucket is created by the API on start** (idempotent; refuses a public bucket), with the dashboard route as the manual fallback (runbook photos.md).
+- **State audit:** two API rows (`API-WS-PHOTOS`, `API-SVC-PHOTOS`); the public gallery is covered by API and repository tests because its page fetches the workshop on the server (the browser mock cannot feed it).

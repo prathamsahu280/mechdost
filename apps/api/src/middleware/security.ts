@@ -8,7 +8,7 @@ import type { Config } from '../config';
 import { ApiError, errorBody } from '../errors';
 import type { AppEnv } from '../types';
 
-export const MAX_BODY_BYTES = 1024 * 1024; // 1 MB; uploads go straight to Storage via signed URLs
+export const MAX_BODY_BYTES = 1024 * 1024; // 1 MB; photo uploads have their own limit (see below)
 
 /** Client IP: the socket address, or the entry appended by the outermost trusted proxy. */
 export function clientIp(config: Config) {
@@ -50,10 +50,33 @@ export const noStore = createMiddleware<AppEnv>(async (c, next) => {
   if (!c.res.headers.has('cache-control')) c.header('Cache-Control', 'no-store');
 });
 
+/** Job photo uploads carry up to 8 MB; that route has its own, larger limit (routes/service-photos.ts). */
+const PHOTO_UPLOAD_PATH = /^\/v1\/workshop\/requests\/[^/]+\/photos\/?$/;
+
+const defaultBodyLimit = bodyLimit({
+  maxSize: MAX_BODY_BYTES,
+  onError: (c) => c.json(errorBody(c, 'PAYLOAD_TOO_LARGE', 'Request body is too large'), 413),
+});
+const bodyLimitExceptPhotos = createMiddleware<AppEnv>(async (c, next) => {
+  if (c.req.method === 'POST' && PHOTO_UPLOAD_PATH.test(c.req.path)) return next();
+  return defaultBodyLimit(c, next);
+});
+
+/**
+ * Photo images are embedded by the website, which may sit on another origin of the same site; the signed URL is the
+ * capability. Runs outside secureHeaders so it can replace its same-site default for this one route.
+ */
+const imageCorp = createMiddleware<AppEnv>(async (c, next) => {
+  await next();
+  if (c.req.path.startsWith('/v1/service-photos/') && c.res.status === 200)
+    c.res.headers.set('Cross-Origin-Resource-Policy', 'cross-origin');
+});
+
 export function securityMiddleware(config: Config) {
   return [
     requestId({ headerName: 'X-Request-Id', limitLength: 64 }),
     clientIp(config),
+    imageCorp,
     secureHeaders({
       contentSecurityPolicy: { defaultSrc: ["'none'"], frameAncestors: ["'none'"] },
       strictTransportSecurity: 'max-age=63072000; includeSubDomains; preload',
@@ -75,10 +98,7 @@ export function securityMiddleware(config: Config) {
       credentials: false, // bearer tokens, not cookies → no CSRF surface on the API
     }),
     rejectEncodedBodies,
-    bodyLimit({
-      maxSize: MAX_BODY_BYTES,
-      onError: (c) => c.json(errorBody(c, 'PAYLOAD_TOO_LARGE', 'Request body is too large'), 413),
-    }),
+    bodyLimitExceptPhotos,
     noStore,
   ];
 }

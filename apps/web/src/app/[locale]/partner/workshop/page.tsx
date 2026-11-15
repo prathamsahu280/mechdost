@@ -33,6 +33,7 @@ export default async function PartnerPage() {
             'apply',
             'bell',
             'homeService',
+            'photos',
           ]}
         >
           <WorkshopPortal />

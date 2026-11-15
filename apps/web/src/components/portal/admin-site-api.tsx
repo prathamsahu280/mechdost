@@ -80,6 +80,9 @@ const SETTING_LABEL = {
   'service.labour_promise_enabled': 'api_set_service_labour_promise_enabled',
   'service.labour_promise_days': 'api_set_service_labour_promise_days',
   'service.home_fee_max_paise': 'api_set_service_home_fee_max_paise',
+  'service.photos_required': 'api_set_service_photos_required',
+  'service.photos_public': 'api_set_service_photos_public',
+  'service.photos_max_per_stage': 'api_set_service_photos_max_per_stage',
 } as const satisfies Record<SettingKey, string>;
 
 const UNIT_LABEL = {

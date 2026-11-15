@@ -44,6 +44,7 @@ Read `../CLAUDE.md` first (hard rules). Then:
 - `conventions/data-for-ml.md` — hard rule 16: ML/AI-ready data collection.
 - `runbooks/collaborator-setup.md` — new collaborator setup: run the site, Claude Code project skills (auto-loaded from `.claude/skills/`), public skills, plugins and MCP servers to install.
 - `runbooks/payments.md` — Razorpay keys, how to try online payment end to end (quote → place → Checkout → verify), the webhook (Q75), unpaid-order expiry (2026-11-12).
+- `runbooks/photos.md` — job photos: the private `service-photos` bucket (created by the API on start), how pictures are served, limits, orphans, first live check (2026-11-15).
 - `runbooks/catalogue-import.md` — adding products: the admin form and the CSV import (columns, attribute codes, problem codes, limits, API); sample file `runbooks/catalogue-import-sample.csv` (2026-11-14).
 - `runbooks/firebase.md` — Firebase projects, local keys, production checklist for sign-in.
 - `runbooks/staff-roles.md` — giving and removing staff roles from Admin → Staff, finding a customer, reading the audit log; the CLI stays for the first admin (2026-11-15).

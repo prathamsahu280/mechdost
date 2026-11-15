@@ -297,6 +297,7 @@ Design: `docs/superpowers/specs/2026-11-15-trust-wording-design.md`; plan `docs/
   pack", no blanket "GST bill".
 - **Event:** `trust_line_edited {placement, locale, action}` (server, written with the publish or unpublish, besides
   `admin_content_published`).
+- **Job photo settings** (Admin → Settings, site-wide, 2026-11-15): `service.photos_required` (default on: a before photo to receive the vehicle, an after photo to mark it ready), `service.photos_public` (default off: show completed jobs' photos on the workshop page; the admin alone decides) and `service.photos_max_per_stage` (6, 1 to 12). Labels: `portal.api_set_service_photos_*`. Spec 06 "Built: job photos".
 - **Labour promise settings** (Admin → Settings, site-wide): `service.labour_promise_enabled` (default off) and
   `service.labour_promise_days` (7–90, default 30). The demo settings screen has one field, `labourPromiseDays`
   (0 = off, 1–6 are raised to 7).

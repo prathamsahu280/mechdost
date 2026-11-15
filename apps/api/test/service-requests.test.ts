@@ -116,6 +116,8 @@ beforeAll(async () => {
       .returning();
     city[code] = row!.id;
   }
+  // Photos are required by default; these job-flow tests have their own photo suite elsewhere.
+  await ctx.db.insert(s.settings).values({ cityId: null, key: 'service.photos_required', value: false });
   await ctx.db.insert(s.pincodes).values([
     { pincode: '492001', stateId: state!.id, cityId: city.RPR!, centroid: { lng: 81.6296, lat: 21.2514 } },
     { pincode: '490001', stateId: state!.id, cityId: city.BHI!, centroid: { lng: 81.38, lat: 21.21 } },
@@ -176,6 +178,7 @@ describe('workshops API', () => {
     ]);
     expect((await page()).body.labourPromiseDays).toBe(45);
     await ctx.db.delete(s.settings);
+    await ctx.db.insert(s.settings).values({ cityId: null, key: 'service.photos_required', value: false });
     expect((await page()).body.labourPromiseDays).toBeNull();
   });
 });

@@ -142,6 +142,9 @@ export interface ServerEventProps {
     by: 'workshop' | 'admin';
   };
   home_visit_fee_waived: { requestCode: string; workshopId: string; reasonCode: string };
+  /** Job photos (spec 06): a workshop added or removed a before/after photo. Ids and counts only, never paths. */
+  service_photo_added: { requestCode: string; workshopId: string; stage: 'before' | 'after'; bytes: number };
+  service_photo_removed: { requestCode: string; workshopId: string; stage: 'before' | 'after' };
   service_estimate_sent: { requestCode: string; workshopId: string; revision: number; lines: number };
   service_estimate_decided: { requestCode: string; revision: number; approved: number; declined: number };
   service_billed: { requestCode: string; workshopId: string; totalPaise: number; lines: number };
@@ -289,6 +292,10 @@ export const CLIENT_EVENT_SCHEMAS = {
     .strict(),
   booking_started: z.object({ workshop: id }).strict(),
   // Home servicing (spec 06): the customer chose where the service happens.
+  // Job photos (spec 06): the customer opened the photo viewer on their request, or a visitor on a workshop page.
+  service_photos_viewed: z
+    .object({ surface: z.enum(['request', 'workshop']), count: z.number().int().min(0).max(24) })
+    .strict(),
   service_mode_selected: z.object({ mode: z.enum(['workshop', 'home']) }).strict(),
   booking_confirmed: z.object({ code: id, workshop: id, demo: z.boolean() }).strict(),
   booking_cancelled: z.object({ code: id, workshop: id, reasonCode: id }).strict(),

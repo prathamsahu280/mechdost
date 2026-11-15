@@ -23,6 +23,7 @@ import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-gu
 import { ServiceApiError } from './service-api-error';
 import { PushPromptSlot } from '../notices/push-prompt-slot';
 import { useApiList } from './use-api-list';
+import { JobPhotosPanelLazy } from '../photos/photos-lazy';
 import { EstimateBuilderApi, JobStepsApi, OdometerFormApi } from './workshop-job-api';
 
 const NEW_POLL_MS = 30_000;
@@ -545,6 +546,7 @@ function JobCardApi({
         </p>
       ) : null}
       <HomeJobExtrasApi detail={detail} onDone={changed} />
+      <JobPhotosPanelLazy code={detail.code} status={detail.status} />
       {est && !revising && action !== 'estimate' ? (
         <div className="mt-3 rounded-lg bg-surface-alt p-3 text-sm">
           <p className="font-bold text-ink">

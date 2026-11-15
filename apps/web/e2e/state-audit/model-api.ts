@@ -162,6 +162,46 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
     realApi: true,
   },
 
+  // ─────────────── Job photos (2026-11-15, spec 06) ───────────────
+  {
+    code: 'API-WS-PHOTOS',
+    page: 'Workshop portal (/partner/workshop), real sign-in',
+    component:
+      'Job card photo section: before or after stage, 0 / 1 / 6 photos, required or optional, an upload the API refuses, the gate message at vehicle received',
+    path: '/partner/workshop',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['workshop'] },
+      { name: 'photos', values: ['none', 'one', 'six', 'upload-error', 'gate'] },
+      { name: 'stage', values: ['before', 'after'] },
+      { name: 'required', values: ['on', 'off'] },
+      stress,
+    ],
+    sweep: 10,
+    note: API_NOTE,
+    realApi: true,
+  },
+  {
+    code: 'API-SVC-PHOTOS',
+    page: 'Service request (/service/{code}), real sign-in',
+    component: 'Before and after strip: none (hidden) / 1 / 6 photos, the viewer closed or open',
+    path: '/service/SR-RPR-2026-HND401',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['customer'] },
+      { name: 'photos', values: ['none', 'one', 'six'] },
+      { name: 'viewer', values: ['closed', 'open'] },
+      stress,
+    ],
+    sweep: 8,
+    note: API_NOTE,
+    realApi: true,
+  },
+
   // ─────────────── Refunds (2026-11-15, spec 05) ───────────────
   {
     code: 'API-ADM-REFUNDQ',

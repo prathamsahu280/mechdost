@@ -125,3 +125,10 @@ No migration. The existing `addresses` / `vehicles` rules are now used by the AP
 ## Admin people screens: indexes and audit actions (migration `0060_admin_people_indexes`, 2026-11-15)
 
 No table changes. Indexes for the search and audit filters: `users_phone_last10_idx` on `right(phone, 10)` and `users_name_prefix_idx` on `lower(name) text_pattern_ops` (both partial, `deleted_at is null`); `audit_log_entity_id_idx (entity, id)`, `audit_log_action_id_idx (action, id)`, `audit_log_actor_id_idx (actor_user_id, id)`, `audit_log_created_idx (created_at)`. Email and codes use existing unique indexes. New audit actions: `role.granted` and `role.revoked` (entity `user_role`, with reason), `customer.pii_viewed` (entity `user`), `auth.staff_signed_in` (entity `user`, one row per completed staff sign-in). Not applied by the builder; the coordinator renumbers at merge.
+
+## Data model note: job photos (migration `service_photos`, 2026-11-15)
+
+- `media_objects` (generic image record: owner kind + owner id, bucket, `path` and `thumb_path` under a CHECK-enforced random-key shape, mime fixed to `image/webp`, dimensions 1 to 4000, bytes up to 8 MB, sha256 hex, uploaded_by, soft delete) and `service_photos` (request, stage `before|after`, unique media, caption 1 to 80, sort, soft delete). Both have `version`, timestamps, bump/touch triggers, RLS on and all client grants revoked.
+- **Integrity:** the per-stage limit is counted under the request row lock (`FOR UPDATE`), so parallel uploads cannot exceed it; the gates read photo counts in the status move's own transaction; a media id is unique across photos; no hard deletes (soft delete + audit row).
+- **Indexes:** `(request_id, stage, sort_order) where deleted_at is null`, unique `(bucket, path)`, `(owner_kind, owner_id)`, foreign keys `uploaded_by`, `created_by`.
+- **Orphans:** objects are uploaded before the row is saved; a failed save removes them best-effort. A crash in between leaves unreachable random-key objects (no row, no URL); a purge job for these and for soft-deleted media is a pending decision.

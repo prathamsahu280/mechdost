@@ -40,6 +40,7 @@ import {
 } from '@mechdost/shared/shop-api';
 import type { AuditCase } from '../cases.ts';
 import { homeFinderMocks, homeJobMocks, homeRequestMocks } from './home-fixtures.ts';
+import { customerPhotoMocks, workshopPhotoMocks } from './photo-fixtures.ts';
 import type { Mock, MockCtx, Reply } from './mock-api.ts';
 
 const NOW = Date.parse('2026-11-15T10:00:00.000Z');
@@ -1291,6 +1292,10 @@ export function mocksFor(c: AuditCase): Mock[] {
       return customerMocks();
     case 'API-ADM-AUDIT':
       return auditMocks();
+    case 'API-WS-PHOTOS':
+      return workshopPhotoMocks(c);
+    case 'API-SVC-PHOTOS':
+      return customerPhotoMocks(c);
     default:
       // Navigation rows: the bar is under test; the screen behind it answers "not mocked" (see `mock-api.ts`).
       return [meMock()];

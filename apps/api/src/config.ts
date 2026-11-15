@@ -137,6 +137,22 @@ const schema = z
       .string()
       .regex(/^phc_[A-Za-z0-9]{20,80}$/, 'a PostHog project API key (phc_…)')
       .optional(),
+    /**
+     * Supabase Storage for job photos (design 2026-11-15): the project URL and the SECRET key (server only, never sent
+     * to a browser). A placeholder or empty value counts as unset: photo routes then answer 503 PHOTOS_UNAVAILABLE.
+     */
+    SUPABASE_URL: z
+      .string()
+      .optional()
+      .transform((v) =>
+        v && /^https:\/\/[a-z0-9]{8,40}\.supabase\.co\/?$/.test(v.trim())
+          ? v.trim().replace(/\/$/, '')
+          : undefined,
+      ),
+    SUPABASE_SECRET_KEY: z
+      .string()
+      .optional()
+      .transform((v) => (v && v.trim().length >= 20 && !v.includes('<') ? v.trim() : undefined)),
     /** PostHog ingestion host; EU cloud by default (decision 2026-11-14). */
     POSTHOG_HOST: z.url().default('https://eu.i.posthog.com'),
   })
@@ -306,6 +322,11 @@ function toConfig(env: z.infer<typeof schema>) {
           }
         : null,
     defaultCityCode: env.DEFAULT_CITY_CODE,
+    /** Private Storage bucket for job photos; null = photos unavailable (503), everything else works. */
+    photoStorage:
+      env.SUPABASE_URL && env.SUPABASE_SECRET_KEY
+        ? { url: env.SUPABASE_URL, secretKey: env.SUPABASE_SECRET_KEY, bucket: 'service-photos' }
+        : null,
     live: {
       transport: env.LIVE_TRANSPORT,
       databaseUrl: env.FIREBASE_DATABASE_URL ?? null,

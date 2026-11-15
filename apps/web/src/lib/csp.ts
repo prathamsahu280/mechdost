@@ -107,7 +107,10 @@ export function contentSecurityPolicy(input: CspInput): string {
     ['default-src', ["'self'"]],
     ['script-src', script],
     ['style-src', ["'self'", "'unsafe-inline'"]],
-    ['img-src', ["'self'", 'data:', 'blob:', ...MAP_ORIGINS, ...(real ? RAZORPAY_IMAGES : [])]],
+    [
+      'img-src',
+      ["'self'", 'data:', 'blob:', ...MAP_ORIGINS, ...(api ? [api] : []), ...(real ? RAZORPAY_IMAGES : [])],
+    ],
     ['font-src', ["'self'", 'data:']],
     ['connect-src', connect],
     ['worker-src', ["'self'", 'blob:']],
