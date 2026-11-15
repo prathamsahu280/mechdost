@@ -51,6 +51,8 @@ const ProfileApi = lazy(() => import('./account-api-sections').then((m) => ({ de
 const NoticeSettings = lazy(() =>
   import('../notices/notice-prefs').then((m) => ({ default: m.NoticeSettings })),
 );
+// Shop staff invite (design 2026-11-15, security review): the invitee accepts or declines; real sign-in only.
+const ShopInviteCard = lazy(() => import('./shop-invites-api').then((m) => ({ default: m.ShopInviteCard })));
 const PushPrompt = lazy(() => import('../notices/push-card').then((m) => ({ default: m.PushPrompt })));
 const sectionFallback = <div className="skeleton h-72 rounded-card" aria-hidden="true" />;
 
@@ -153,6 +155,7 @@ export function AccountArea({ section }: { section: AccountSection }) {
       <div className="min-w-0 space-y-6">
         {section === 'overview' && AUTH_MODE === 'firebase' ? (
           <Suspense fallback={null}>
+            <ShopInviteCard />
             <PushPrompt />
           </Suspense>
         ) : null}

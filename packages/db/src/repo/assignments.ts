@@ -112,7 +112,22 @@ export async function acceptAssignment(
       ),
     )
     .returning();
-  if (!a) throw new ConflictError('This order is no longer available to accept', 'ASSIGNMENT_UNAVAILABLE');
+  if (!a) {
+    // Say why: a shop that answered after its timer should be told it ran out (assessment 2026-11-15, item 2).
+    const [late] = await tx
+      .select({
+        status: orderAssignments.status,
+        pastTime: sql<boolean>`${orderAssignments.expiresAt} <= now()`,
+      })
+      .from(orderAssignments)
+      .where(and(eq(orderAssignments.id, args.assignmentId), eq(orderAssignments.shopId, args.shopId)))
+      .limit(1);
+    const lapsed =
+      late !== undefined && (late.status === 'expired' || (late.status === 'offered' && late.pastTime));
+    throw lapsed
+      ? new ConflictError('This offer expired', 'OFFER_EXPIRED')
+      : new ConflictError('This order is no longer available to accept', 'ASSIGNMENT_UNAVAILABLE');
+  }
   return transitionOrder(tx, {
     orderId: a.orderId,
     from: 'awaiting_shop',

@@ -31,6 +31,8 @@ export * from './customer-blocks';
 export * from './routing';
 export * from './shop-orders';
 export * from './shop-give-up';
+export * from './shop-busy';
+export * from './shop-staff';
 export * from './customer-orders';
 export * from './catalogue-admin';
 export * from './catalogue-create';

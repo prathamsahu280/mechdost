@@ -285,6 +285,33 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
     realApi: true,
   },
 
+  // ─────────────── Shop portal tier 1 (busy toggle, team, polish; specs 04, 07, 13; design 2026-11-15) ───────────────
+  {
+    code: 'API-SHOP-TIER1',
+    page: 'Shop portal (/partner/shop), real sign-in',
+    component:
+      'Availability card (open / closed today / busy for hours, owner or staff), "Your team" (only you, members, full, invite waiting, error; owner only), expired offer gone with its empty state, delivery code locked from the server with support, staff list without payout money',
+    path: '/partner/shop',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['shop'] },
+      { name: 'orders', values: ['none', 'offer', 'expired-offer', 'locked-delivery', 'staff-view'] },
+      { name: 'busy', values: ['none', 'closed', 'hours'] },
+      { name: 'team', values: ['only-you', 'some', 'full', 'invite-open', 'error'] },
+      { name: 'role', values: ['owner', 'staff'] },
+      stress,
+    ],
+    // The staff list (no payout) is what a staff member sees; owners see money.
+    valid: (r: Row) => (r.orders === 'staff-view') === (r.role === 'staff'),
+    checks: [...BASE_CHECKS, 'aligned'],
+    align: [{ items: 'main ul > li' }],
+    sweep: 14,
+    note: `${API_NOTE} Staff never see the team card (the API answers 403 OWNER_ONLY); the busy card shows them the state only.`,
+    realApi: true,
+  },
+
   // ─────────────── Admin → Partners → Shops (management, hours, warnings; specs 07, 08) ───────────────
   {
     code: 'API-ADM-SHOPS',

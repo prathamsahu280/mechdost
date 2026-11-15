@@ -38,6 +38,8 @@ export const ShopOrder = z.object({
   address: z.record(z.string(), z.unknown()).nullable(),
   /** History only: the reason code when this row is an order the shop accepted and gave up (status `given_up`). */
   givenUpReason: z.string().nullable().optional(),
+  /** Active orders: the delivery code was entered wrongly too often (server state; support takes over). */
+  deliveryLocked: z.boolean().optional(),
 });
 export type ShopOrderDto = z.infer<typeof ShopOrder>;
 

@@ -56,6 +56,7 @@
     "./free-delivery": "./src/free-delivery.ts",
     "./shop-hours": "./src/shop-hours.ts",
     "./shop-api": "./src/shop-api.ts",
+    "./shop-team": "./src/shop-team.ts",
     "./quote-rules": "./src/quote-rules.ts",
     "./quote-api": "./src/quote-api.ts",
     "./refunds-api": "./src/refunds-api.ts",

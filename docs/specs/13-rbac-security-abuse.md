@@ -109,3 +109,7 @@ Rules the one upload pipeline (`apps/api/src/photos/`) enforces; product photos 
 - **Rate limit:** 30 uploads per 10 minutes per workshop user; image reads 600/min per IP; gallery 120/min per IP; the normal per-user and per-IP limits apply too.
 - **Audit:** add and remove each write `audit_log` (removal keeps the before row) and a server event; delete is a soft delete.
 - **Dependencies:** `sharp` 0.35.5 (released 2026-09-27, above the 0.35.4 advisory floor, older than the 3-day release-age policy); `allowBuilds` already lists sharp.
+
+## Shop team and money visibility (2026-11-15)
+
+Owner-only routes for the busy toggle and the team check the caller's own `seller_owner` grant for the shop id (404 for any other shop, 403 `OWNER_ONLY` for staff of that shop, 403 for everyone else, 401 anonymous). Staff invites are bound to a phone that is proved by the sign-in code, never by a link, and grant nothing until the invitee accepts them (consent; accept and decline are invitee-only, 404 for any other person or an unverified phone, single use, compare-and-set on the invite version). MechDost staff accounts cannot accept (one person, one side). The owner sees the name they typed, never the account name. Removing a member revokes the role in the same transaction and drops their cached session. `payoutPaise` and the shop's own line prices are returned only for shops where the caller holds `payouts:read` (owners, not staff). Rate limit on invites: 20 an hour per user. Role-leak matrix: `apps/api/test/shop-team.test.ts`.

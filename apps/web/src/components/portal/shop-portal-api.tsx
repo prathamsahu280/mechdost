@@ -22,6 +22,9 @@ import {
 } from '@/lib/order-views';
 import { ApiError, ApiListState, LoadMore } from './api-list-state';
 import { portalCard, portalField, portalPrimary, portalQuiet, useNow } from './portal-guard';
+import { liveOffers, stepFlashKey } from '@/lib/shop-tier1';
+import { DeliveryLocked, EmptyWithAction } from './shop-empty';
+import { FlashNote, useFlash, type Flash } from './shop-flash';
 import { GiveUpOrder } from './shop-give-up';
 import { ShopPricesApi } from './shop-prices-api';
 import { ShopAgreementApi } from './shop-onboarding-api';
@@ -41,7 +44,10 @@ const OFFER_POLL_MS = 30_000;
  */
 export function ShopOrdersApi() {
   const t = useTranslations('portal');
+  const tt = useTranslations('shopTier1');
   const locale = useLocale();
+  const now = useNow();
+  const { flash, show } = useFlash();
   const view = useCallback(
     (name: 'offers' | 'active' | 'done') => async (cursor: string | null) => {
       const q = new URLSearchParams({ view: name });
@@ -64,10 +70,14 @@ export function ShopOrdersApi() {
   }, [offers, active, done]);
   // A new order (or its "about to expire" reminder) reaches the bell within seconds: show it without the 30 s wait.
   useNoticeRefresh(['shop.order_routed', 'shop.offer_expiring'], offers.reload);
+  // An offer leaves the list at its end time, not at the next poll (assessment 2026-11-15, item 2).
+  const openOffers = liveOffers(offers.items, now);
 
   return (
     <>
       <PushPromptSlot />
+
+      <FlashNote flash={flash} sticky />
 
       <ShopProfileApi />
 
@@ -76,20 +86,26 @@ export function ShopOrdersApi() {
       <section aria-labelledby="offered-title">
         <h2 id="offered-title" className="font-heading text-xl font-extrabold text-ink">
           {t('offered')}{' '}
-          {offers.loading ? null : <span className="text-muted tabular-nums">({offers.items.length})</span>}
+          {offers.loading ? null : <span className="text-muted tabular-nums">({openOffers.length})</span>}
         </h2>
         <ApiListState
           loading={offers.loading}
           error={offers.error}
-          count={offers.items.length}
-          empty={t('noneOffered')}
+          count={openOffers.length}
+          empty={
+            <EmptyWithAction
+              text={tt('emptyOffers')}
+              actionLabel={tt('emptyOffersAction')}
+              href="#prices-title"
+            />
+          }
           onRetry={() => void offers.reload()}
         />
-        {offers.items.length > 0 ? (
+        {openOffers.length > 0 ? (
           <ul className="mt-3 grid gap-3 nav:grid-cols-2">
-            {offers.items.map((o) => (
+            {openOffers.map((o) => (
               <li key={o.assignmentId ?? o.code}>
-                <OfferedOrder order={o} onChanged={refresh} />
+                <OfferedOrder order={o} onChanged={refresh} onFlash={show} />
               </li>
             ))}
           </ul>
@@ -104,14 +120,20 @@ export function ShopOrdersApi() {
           loading={active.loading}
           error={active.error}
           count={active.items.length}
-          empty={t('noneActive')}
+          empty={
+            <EmptyWithAction
+              text={tt('emptyActive')}
+              actionLabel={tt('emptyActiveAction')}
+              href="#offered-title"
+            />
+          }
           onRetry={() => void active.reload()}
         />
         {active.items.length > 0 ? (
           <ul className="mt-3 grid gap-3 nav:grid-cols-2">
             {active.items.map((o) => (
               <li key={o.code}>
-                <ActiveOrder order={o} onChanged={refresh} />
+                <ActiveOrder order={o} onChanged={refresh} onFlash={show} />
               </li>
             ))}
           </ul>
@@ -126,7 +148,13 @@ export function ShopOrdersApi() {
           loading={done.loading}
           error={done.error}
           count={done.items.length}
-          empty={t('shopDeliveredNone')}
+          empty={
+            <EmptyWithAction
+              text={tt('emptyDone')}
+              actionLabel={tt('emptyDoneAction')}
+              href="#new-product-title"
+            />
+          }
           onRetry={() => void done.reload()}
         />
         {done.items.length > 0 ? (
@@ -246,8 +274,17 @@ function OrderLines({ order }: { order: ShopOrderDto }) {
   );
 }
 
-function OfferedOrder({ order, onChanged }: { order: ShopOrderDto; onChanged: () => Promise<void> }) {
+function OfferedOrder({
+  order,
+  onChanged,
+  onFlash,
+}: {
+  order: ShopOrderDto;
+  onChanged: () => Promise<void>;
+  onFlash: (f: Flash) => void;
+}) {
   const t = useTranslations('portal');
+  const tt = useTranslations('shopTier1');
   const a = useTranslations('account');
   const locale = useLocale();
   const now = useNow();
@@ -270,13 +307,19 @@ function OfferedOrder({ order, onChanged }: { order: ShopOrderDto; onChanged: ()
     });
     setBusy(false);
     if (!res.ok) {
-      setError(res.code);
+      // Answered after the timer: say so plainly (the card is about to leave the list, so the note lives above it).
+      if (res.code === 'OFFER_EXPIRED') onFlash({ tone: 'warn', text: tt('offerExpired') });
+      else setError(res.code);
       await onChanged();
       return;
     }
     track('click', {
       id: accept ? 'shop_order_accepted' : 'shop_order_declined',
       path: window.location.pathname,
+    });
+    onFlash({
+      tone: 'ok',
+      text: accept ? tt('flashAccepted', { code: order.code }) : tt('flashDeclined'),
     });
     await onChanged();
   }
@@ -377,8 +420,17 @@ function OfferedOrder({ order, onChanged }: { order: ShopOrderDto; onChanged: ()
   );
 }
 
-function ActiveOrder({ order, onChanged }: { order: ShopOrderDto; onChanged: () => Promise<void> }) {
+function ActiveOrder({
+  order,
+  onChanged,
+  onFlash,
+}: {
+  order: ShopOrderDto;
+  onChanged: () => Promise<void>;
+  onFlash: (f: Flash) => void;
+}) {
   const t = useTranslations('portal');
+  const tt = useTranslations('shopTier1');
   const o = useTranslations('order');
   const locale = useLocale();
   const [busy, setBusy] = useState(false);
@@ -403,6 +455,8 @@ function ActiveOrder({ order, onChanged }: { order: ShopOrderDto; onChanged: () 
     }
     setBusy(false);
     setError(null);
+    const last = steps.at(-1);
+    if (last) onFlash({ tone: 'ok', text: tt(stepFlashKey(last), { code: order.code }) });
     // The API records order_packed / order_shipped / order_out_for_delivery as server events (spec 12).
     await onChanged();
   }
@@ -419,7 +473,7 @@ function ActiveOrder({ order, onChanged }: { order: ShopOrderDto; onChanged: () 
         </div>
       ) : null}
       {action?.kind === 'code' ? (
-        <DeliveryCodeForm order={order} onChanged={onChanged} />
+        <DeliveryCodeForm order={order} onChanged={onChanged} onFlash={onFlash} />
       ) : action ? (
         <button
           type="button"
@@ -440,12 +494,22 @@ function ActiveOrder({ order, onChanged }: { order: ShopOrderDto; onChanged: () 
  * Proof of delivery: the delivery person asks the customer for their 4-digit code and enters it here. Only the
  * right code marks the order delivered; 5 wrong codes lock it and support takes over (the API counts).
  */
-function DeliveryCodeForm({ order, onChanged }: { order: ShopOrderDto; onChanged: () => Promise<void> }) {
+function DeliveryCodeForm({
+  order,
+  onChanged,
+  onFlash,
+}: {
+  order: ShopOrderDto;
+  onChanged: () => Promise<void>;
+  onFlash: (f: Flash) => void;
+}) {
   const t = useTranslations('portal');
+  const tt = useTranslations('shopTier1');
   const locale = useLocale();
   const [code, setCode] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [locked, setLocked] = useState(false);
+  // The lock is server state (5 wrong codes): it shows again after a reload, not only on the page that saw it.
+  const [locked, setLocked] = useState(order.deliveryLocked === true);
   const [busy, setBusy] = useState(false);
   const inputId = `delivery-code-${order.code}`;
 
@@ -469,6 +533,7 @@ function DeliveryCodeForm({ order, onChanged }: { order: ShopOrderDto; onChanged
     }
     if (res.data.ok) {
       track('click', { id: 'shop_delivery_confirmed', path: window.location.pathname });
+      onFlash({ tone: 'ok', text: tt('flashDelivered', { code: order.code }) });
       await onChanged();
       return;
     }
@@ -480,13 +545,7 @@ function DeliveryCodeForm({ order, onChanged }: { order: ShopOrderDto; onChanged
     setError(t('deliveryCodeWrong', { left: res.data.attemptsLeft ?? 0 }));
   }
 
-  if (locked) {
-    return (
-      <p role="alert" className="mt-4 rounded-lg bg-warning-bg p-3 text-sm font-bold text-warning">
-        {t('deliveryCodeLocked')}
-      </p>
-    );
-  }
+  if (locked) return <DeliveryLocked />;
 
   return (
     <form noValidate onSubmit={(e) => void onSubmit(e)} className="mt-4">

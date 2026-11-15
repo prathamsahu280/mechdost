@@ -61,6 +61,8 @@ const ShopOrder = z
     address: z.record(z.string(), z.unknown()).nullable(),
     /** History only: why this shop gave the order up (status `given_up`), else null. */
     givenUpReason: z.string().nullable(),
+    /** Active orders: five wrong delivery codes were entered (server state). */
+    deliveryLocked: z.boolean(),
   })
   .openapi('ShopOrder');
 const Changed = z.object({ status: z.string(), version: z.number().int() });
@@ -250,6 +252,8 @@ export function shopOrderRoutes(deps: AppDeps, cache: SessionCache) {
       const q = c.req.valid('query');
       const page = await listShopOrders(deps.db, shops(c, 'orders:read'), q.view, {
         cursor: q.cursor ?? null,
+        // Staff do not see what the shop is paid (spec 13): money only for shops where the caller reads payouts.
+        moneyShopIds: shops(c, 'payouts:read'),
       });
       return c.json(
         {

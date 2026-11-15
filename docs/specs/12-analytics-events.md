@@ -140,3 +140,8 @@ Server events (in the change's transaction): `admin_staff_role_changed` (action 
 ## Job photos (2026-11-15)
 
 Server events (same transaction; ids, codes and counts only, never a path or file name): `service_photo_added { requestCode, workshopId, stage: before|after, bytes }`, `service_photo_removed { requestCode, workshopId, stage }`. Client event: `service_photos_viewed { surface: request|workshop, count }` when a viewer opens.
+
+## Shop portal tier 1 events (2026-11-15)
+
+- **Server events** (`packages/shared/src/analytics.ts`): `shop_busy_set` (shopId, mode `closed_today|hours|clear`, hours or null); `shop_team_invited`, `shop_team_invite_cancelled`, `shop_team_invite_accepted`, `shop_team_member_removed` (shopId only; never a phone or name).
+- **Click ids (web):** `shop_busy_closed_today`, `shop_busy_hours`, `shop_busy_clear`, `shop_team_invited`, `shop_team_invite_cancelled`, `shop_team_invite_accepted`, `shop_team_invite_declined`, `shop_team_member_removed`; existing `shop_order_accepted`, `shop_order_declined`, `shop_delivery_confirmed` unchanged.

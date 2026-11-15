@@ -21,7 +21,8 @@ export function hashInviteToken(token: string): string {
   return createHash('sha256').update(token, 'utf8').digest('hex');
 }
 
-async function inviteDays(db: Tx): Promise<number> {
+/** Days an invite stays valid (`partners.invite_days`); shop staff invites use the same setting. */
+export async function inviteDays(db: Tx): Promise<number> {
   const [row] = await db
     .select({ value: settings.value })
     .from(settings)

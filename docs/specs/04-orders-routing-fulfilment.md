@@ -168,3 +168,7 @@ Design: `docs/superpowers/specs/2026-11-15-shop-give-up-warnings-design.md`.
 - **Tests:** `packages/db/test/shop-give-up.test.ts` (stock back, re-route to the same or another shop, one active
   assignment, hidden from the customer, packed/foreign/stale/reason/note refusals, races: five give-ups, give-up vs pack,
   give-up vs staff cancel), `apps/api/test/shop-give-up.test.ts`, `packages/shared/test/state.test.ts`.
+
+## Built: busy shops and late accepts (2026-11-15)
+
+A shop that is busy or "closed today" (`busy` and `busy_until` in the future, set by its owner, spec 07 "Shop portal tier 1") is never ranked, suggested or offered (`rankShopsForOrder` and `routeOrder` answer `SHOP_NOT_ELIGIBLE`), skipped at checkout and in catalogue prices, and comes back when the time ends (database clock, no job). Tests: `packages/db/test/shop-tier1.test.ts` (closed today, busy for hours and its expiry). An accept after the offer's end time answers `OFFER_EXPIRED` (409) instead of `ASSIGNMENT_UNAVAILABLE`; an offer taken or withdrawn keeps the old code. The active-orders list carries `deliveryLocked`.

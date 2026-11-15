@@ -17,7 +17,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { GST_STATUSES } from '@mechdost/shared/partners';
 import { NET_UNITS } from '@mechdost/shared/product-attributes';
-import { PRICE_REQUEST_STATES } from '@mechdost/shared/state';
+import { INVITE_STATES, PRICE_REQUEST_STATES } from '@mechdost/shared/state';
 import {
   createdAt,
   encryptedCheck,
@@ -179,6 +179,52 @@ export const shopUsers = pgTable(
     unique().on(t.shopId, t.userId),
     check('shop_users_role_valid', sql`${t.role} in ('owner','staff')`),
     index().on(t.userId),
+  ],
+);
+
+/**
+ * An owner's invite for a helper to join the shop (design 2026-11-15, spec 07): bound to the invitee's phone (their
+ * OTP at sign-in is the proof, as for seller applicants), single use, expires. Claimed in `repo/shop-staff.ts`,
+ * which grants `seller_staff` and writes the `shop_users` membership in the same transaction.
+ */
+export const shopStaffInvites = pgTable(
+  'shop_staff_invites',
+  {
+    id: id(),
+    shopId: uuid()
+      .notNull()
+      .references(() => shops.id, { onDelete: 'cascade' }),
+    name: text().notNull(),
+    phone: text().notNull(),
+    status: text().notNull().default('sent'),
+    createdBy: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    expiresAt: ts().notNull(),
+    usedAt: ts(),
+    usedBy: uuid().references(() => users.id, { onDelete: 'restrict' }),
+    version: version(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    check('shop_staff_invites_status_valid', sql`${t.status} in (${inList(INVITE_STATES)})`),
+    check('shop_staff_invites_phone', sql`${t.phone} ~ '^\\+91[6-9][0-9]{9}$'`),
+    check('shop_staff_invites_name', sql`char_length(${t.name}) between 2 and 60`),
+    check(
+      'shop_staff_invites_used_has_user',
+      sql`${t.status} <> 'used' or (${t.usedAt} is not null and ${t.usedBy} is not null)`,
+    ),
+    // One open invite per person per shop (a second one for the same number is refused, not queued).
+    uniqueIndex('shop_staff_invites_one_open_uq')
+      .on(t.shopId, t.phone)
+      .where(sql`${t.status} = 'sent'`),
+    // The sign-in lookup: open invites for a phone.
+    index('shop_staff_invites_open_phone_idx')
+      .on(t.phone)
+      .where(sql`${t.status} = 'sent'`),
+    index().on(t.createdBy),
+    index().on(t.usedBy),
   ],
 );
 

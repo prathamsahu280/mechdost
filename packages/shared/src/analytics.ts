@@ -162,6 +162,13 @@ export interface ServerEventProps {
   admin_shop_member_added: { shopId: string; role: 'seller_owner' | 'seller_staff' };
   /** Working hours changed by the owner (`by: 'shop'`); staff edits are `admin_shop_updated` with `hours`. */
   shop_hours_changed: { shopId: string; days: number; by: 'shop' };
+  /** Busy / closed-today toggle (spec 04/07, 2026-11-15): the mode and, for `hours`, how many; never free text. */
+  shop_busy_set: { shopId: string; mode: 'closed_today' | 'hours' | 'clear'; hours: number | null };
+  /** Shop team (spec 07/13, 2026-11-15): ids and counts only, never the invitee's phone or name. */
+  shop_team_invited: { shopId: string };
+  shop_team_invite_cancelled: { shopId: string };
+  shop_team_invite_accepted: { shopId: string };
+  shop_team_member_removed: { shopId: string };
   /** MechDost Coins (spec 20): counts and codes only; `customerId` is the pseudonymous account id. */
   coins_redeemed: { orderCode: string; coins: number; discountPaise: number };
   coins_restored: { orderCode: string; coins: number };

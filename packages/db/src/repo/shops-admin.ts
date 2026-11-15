@@ -48,6 +48,8 @@ export interface AdminShopRow {
   status: ShopStatus;
   gstStatus: string;
   busy: boolean;
+  /** When the busy toggle ends (ISO); null when not busy or busy with no end. */
+  busyUntil: string | null;
   coveragePincodes: number;
   offersOnSale: number;
   freeDeliveryMinPaise: number | null;
@@ -100,6 +102,7 @@ interface ShopSqlRow {
   status: ShopStatus;
   gst_status: string;
   busy: boolean;
+  busy_until: string | null;
   coverage: unknown;
   on_sale: unknown;
   free_delivery_min_paise: unknown;
@@ -107,8 +110,13 @@ interface ShopSqlRow {
   version: unknown;
 }
 
+/** The end of an active busy toggle as UTC ISO text; null when not busy (or busy with no end). */
+const BUSY_UNTIL_SQL = sql`(case when s.busy and s.busy_until > now()
+    then to_char(s.busy_until at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') end)`;
+
 const ROW_COLUMNS = sql`s.id, s.city_id, s.name, s.name_hi, s.address_line, s.address_line_hi, s.pincode, s.status,
   s.gst_status, (s.busy and (s.busy_until is null or s.busy_until > now())) as busy,
+  ${BUSY_UNTIL_SQL} as busy_until,
   (select count(*) from shop_pincodes sp join pincodes pc on pc.pincode = sp.pincode and pc.active
     where sp.shop_id = s.id and sp.active)::int as coverage,
   (select count(*) from shop_inventory si where si.shop_id = s.id and si.active and not si.admin_blocked)::int
@@ -147,6 +155,7 @@ function toRow(r: ShopSqlRow): AdminShopRow {
     status: r.status,
     gstStatus: r.gst_status,
     busy: r.busy,
+    busyUntil: r.busy_until,
     coveragePincodes: num(r.coverage),
     offersOnSale: num(r.on_sale),
     freeDeliveryMinPaise: numOrNull(r.free_delivery_min_paise),
@@ -505,6 +514,7 @@ export interface MyShop {
     since: string | null;
   } | null;
   busy: boolean;
+  busyUntil: string | null;
   coverage: { pincodes: number; minShippingPaise: number | null; maxShippingPaise: number | null };
   freeDeliveryMinPaise: number | null;
   hours: ShopHours;
@@ -532,6 +542,7 @@ export async function getMyShops(db: Tx, shopIds: readonly string[]): Promise<My
     status_changed_at: string | null;
     reason_code: PartnerStandingReason | null;
     busy: boolean;
+    busy_until: string | null;
     coverage: unknown;
     min_ship: unknown;
     max_ship: unknown;
@@ -547,7 +558,7 @@ export async function getMyShops(db: Tx, shopIds: readonly string[]): Promise<My
         to_char(s.status_changed_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') as status_changed_at,
         (select e.reason_code from partner_status_events e where e.partner_kind = 'shop' and e.partner_id = s.id
            and e.to_status = s.status order by e.created_at desc, e.id desc limit 1) as reason_code,
-        (s.busy and (s.busy_until is null or s.busy_until > now())) as busy,
+        (s.busy and (s.busy_until is null or s.busy_until > now())) as busy, ${BUSY_UNTIL_SQL} as busy_until,
         cov.n as coverage, cov.min_ship, cov.max_ship, s.free_delivery_min_paise,
         (select count(*) from shop_inventory si where si.shop_id = s.id and si.active and not si.admin_blocked)::int
           as on_sale,
@@ -583,6 +594,7 @@ export async function getMyShops(db: Tx, shopIds: readonly string[]): Promise<My
           }
         : null,
     busy: r.busy,
+    busyUntil: r.busy_until,
     coverage: {
       pincodes: num(r.coverage),
       minShippingPaise: numOrNull(r.min_ship),

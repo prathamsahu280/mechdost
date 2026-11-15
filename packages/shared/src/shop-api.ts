@@ -111,6 +111,8 @@ export const AdminShopRow = z.object({
   status: z.enum(SHOP_STATUSES),
   gstStatus: z.string(),
   busy: z.boolean(),
+  /** When the busy toggle ends (ISO); null when not busy or busy with no end set. */
+  busyUntil: z.string().nullable(),
   coveragePincodes: z.number().int(),
   offersOnSale: z.number().int(),
   freeDeliveryMinPaise: z.number().int().nullable(),
@@ -182,6 +184,8 @@ export const MyShop = z.object({
     })
     .nullable(),
   busy: z.boolean(),
+  /** When the busy toggle ends (ISO); null when not busy or busy with no end set. */
+  busyUntil: z.string().nullable(),
   coverage: z.object({
     pincodes: z.number().int(),
     minShippingPaise: z.number().int().nullable(),

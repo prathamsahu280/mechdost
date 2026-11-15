@@ -358,6 +358,21 @@ export const inviteMachine = /* @__PURE__ */ defineMachine(
   ],
 );
 
+/**
+ * An owner's invite for a helper to join the shop (design 2026-11-15): bound to the invitee's phone, claimed when
+ * they sign in with it (system), cancelled by the shop, expired by the system. Same states as `inviteMachine`.
+ */
+export const shopStaffInviteMachine = defineMachine(
+  'shop_staff_invite',
+  INVITE_STATES,
+  ['used', 'expired', 'revoked'],
+  [
+    { from: 'sent', to: 'used', by: ['system'] },
+    { from: 'sent', to: 'expired', by: ['system'] },
+    { from: 'sent', to: 'revoked', by: ['shop', 'customer'] },
+  ],
+);
+
 /** A seller's price for one product, approved or rejected by staff line by line (user 2026-11-13). */
 export const PRICE_REQUEST_STATES = ['pending', 'approved', 'rejected', 'withdrawn', 'superseded'] as const;
 export type PriceRequestStatus = (typeof PRICE_REQUEST_STATES)[number];

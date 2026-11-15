@@ -831,6 +831,8 @@ locale namespace. Current entries (shop give-up, shop warnings, admin warnings, 
 cases needs an API-mode run on a seeded emulator database (queued as Q106); until then they are covered by the DB and
 API suites and the Hindi gate.
 
+Shop portal tier 1 (2026-11-15): row `API-SHOP-TIER1` (chunk G) with state keys `orders` (`none`, `offer`, `expired-offer`, `locked-delivery`, `staff-view`), `busy` (`none`, `closed`, `hours`), `team` (`only-you`, `some`, `full`, `invite-open`, `error`), `role` (`owner`, `staff`) and `stress`. Offer end times in these fixtures come from the browser clock (the page hides an expired offer), not from the fixed fixture NOW.
+
 ### 9.8 Trust-line and labour-promise rows (2026-11-15)
 
 Design `docs/superpowers/specs/2026-11-15-trust-wording-design.md`. Two state keys seed the demo site config before the

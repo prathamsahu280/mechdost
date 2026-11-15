@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import type { ReactNode } from 'react';
 import { apiErrorKey } from '@/lib/order-views';
 import { portalQuiet } from './portal-guard';
 
@@ -28,7 +29,8 @@ export function ApiListState({
   loading: boolean;
   error: string | null;
   count: number;
-  empty: string;
+  /** A sentence, or a node when the empty state carries its one next action. */
+  empty: ReactNode;
   onRetry: () => void;
 }) {
   const t = useTranslations('portal');
@@ -44,7 +46,8 @@ export function ApiListState({
         </button>
       </div>
     );
-  if (count === 0) return <p className="mt-3 text-sm text-muted">{empty}</p>;
+  if (count === 0)
+    return typeof empty === 'string' ? <p className="mt-3 text-sm text-muted">{empty}</p> : empty;
   return null;
 }
 
