@@ -1236,3 +1236,25 @@ Design: `docs/superpowers/specs/2026-11-15-support-next-tier-design.md` items 1 
 
 - **Signed-in header fits by construction (2026-11-16, builder; replaces ruling 3 of batch 2a).** The bell makes the signed-in row wider, so: the account name is text only from `xl` (an avatar with the name as `title` and screen-reader text before that; was from 640 px); the cart label from 560 px; the tagline from 760 px; brand 30/19 px until 460 px; bell, account, cart and language targets 40 px under 440 px (24 px AA minimum kept, 44 px from 440 px); primary-nav links `px-2` and the row gutter `px-6` between 1024 and 1279 px. Guards: `test/signed-in-header-fit.test.ts`, `test/site-chrome-fit.test.ts`, and signed-in cases (customer, shop, workshop; en + hi; 320-1280 px) in `e2e/chrome-fit.spec.ts`.
 - **2026-11-16 (builder ruling, audit batch 2c): the audit harness answers server-side fetches and classifies its own noise.** A local server on `127.0.0.1:4100` (Playwright `globalSetup`, `e2e/state-audit/api-mode/server-mock*.ts`) answers the Next server's catalogue, product and workshop reads from the same typed fixtures as the browser mock; sticky or fixed items "covered by the header" are re-measured after `scrollIntoView({ block: 'center' })`; the Hindi gate accepts codes by shape (city codes, file formats, CIN/UTR, UPI ids, snake_case and dotted identifiers) but never generic words; fixtures carry Hindi like real content data; console errors caused by the audit's own blocking of third-party origins are not findings; the focus check accepts the native picker stop of date and time inputs. Details and manual checks: `docs/runbooks/ui-test-catalogue.md` § 9.10. No change to the shipped site.
+
+## 2026-11-16 — Next builds, WhatsApp ready, Product Lens dropped (user)
+
+- **Build next** (user: "we can work on building the refunds, bulk qoutes, and the smaller items too"): the refund
+  follow-ups (spec 05 "Not built"), bulk quote follow-ups (spec 19 "Not built yet") and the smaller items (coupons
+  public list / usage reports / automatic offers, shop staff performance and earnings, live service-request pings,
+  RLS policies, review follow-ups). Order: after the audit fixes are deployed, alongside the visual review and the
+  real-API pass.
+- **WhatsApp is ready** (user: "the meta account is ready and the templates u gave me earlier have been approved"):
+  Meta Cloud API direct (decision 2026-11-02). The approved templates are switched on per template once their names
+  and languages are confirmed against the catalogue; sending stays off until the real-API pass proves it with the
+  user's own number.
+- **Templates created from the repo** (user: "can u like create the templates urself too like from here?"): yes, by a
+  CLI that submits the repo's template catalogue to the WhatsApp Business Management API (create if missing, report
+  status; token and WABA id from env, never printed). Submitting templates is outward-facing: the list is shown to
+  the user and submitted only on their go-ahead (Q173).
+- **Product Lens dropped** from the later phases (user: "for the later phases we will drop the product lens").
+  Spec and plan updated to say so; nothing built for it.
+- **Every opened form or panel can be closed** (user: "if we click write a review we cant really close the form …
+  check those type of stuff too"): bug class. Every in-page form, panel, sheet or menu opened by a button has a
+  visible Cancel/close, closes on Escape, and returns focus to the button that opened it. Guarded by a UI state audit
+  rule and unit tests.

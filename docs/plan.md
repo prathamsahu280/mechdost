@@ -173,7 +173,7 @@ cancelled (customer, before in_progress) · declined (workshop) · rejected (adm
 - `/workshops` finder (location-first hub with map), `/workshops/[slug]` profile + service menu → `/service/new` wizard → `/service/[code]` (stepper, proposal accept, estimate approval per line, bill, pay, review).
 - `/account`: Orders · Service requests · My vehicles (+history, reminders) · Addresses · Support · Profile.
 - `/support` (guest reference + key kept), `/partners` (3 application forms), `/policies/*` (concept copy, grievance officer per Consumer Protection e-commerce rules), `/about`.
-- Phase 4 extras: `/discover` (vehicle discovery, compare, EMI, test-drive), `/academy`, product lens (QR/barcode → product), `/assistance` (roadside, pickup), `/mechanics` directory.
+- Phase 4 extras: `/discover` (vehicle discovery, compare, EMI, test-drive), `/academy`, `/assistance` (roadside, pickup), `/mechanics` directory.
 
 ## 11. Multi-city readiness (built in from day one)
 
@@ -185,7 +185,7 @@ cancelled (customer, before in_progress) · declined (workshop) · rejected (adm
 1. **Customer storefront + orders + admin routing + shop portal** (core loop end-to-end with in-app + email notifications, COD, Razorpay test mode).
 2. **Workshops**: finder, profiles, service request wizard, workshop portal, proposals, estimates, bills; partner applications & approval; support tickets.
 3. **Returns/refunds/replacements, cancellations, Razorpay live + webhooks, invoices (GST), reviews, reminders, WhatsApp/SMS adapters, full admin analytics, multi-city controls.**
-4. **Extra modules**: vehicle discovery, academy, product lens, roadside/pickup, mechanic network directory & portal.
+4. **Extra modules**: vehicle discovery, academy, roadside/pickup, mechanic network directory & portal.
 5. **Hardening**: e2e suite for every state transition, visual regression vs concept, perf budget (LCP < 2s on 4G), a11y audit, security review (RLS, rate limits, webhook signatures), DPDP consent records, runbooks, deployment to Vercel + Cloud Run + Supabase.
 
 Each phase ends with a demo checklist the user can click through.
