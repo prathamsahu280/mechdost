@@ -193,6 +193,8 @@ export const orders = pgTable(
       sql`${t.status} in ('placed','awaiting_shop','needs_rerouting','cancelled','rejected') or ${t.shopId} is not null`,
     ),
     index().on(t.status, t.cityId, t.placedAt),
+    // CSV exports (design 2026-11-15): a city's sub-orders in an IST window, keyset-paged on (placed_at, id).
+    index('orders_city_placed_id_idx').on(t.cityId, t.placedAt, t.id),
     index().on(t.shopId, t.status),
     index().on(t.userId, t.placedAt),
     index().on(t.suggestedShopId),
@@ -576,6 +578,8 @@ export const refunds = pgTable(
     index().on(t.groupId),
     // The finance queue: oldest waiting first, by status.
     index().on(t.status, t.createdAt),
+    // CSV exports (design 2026-11-15): refunds in an IST window, keyset-paged on (created_at, id).
+    index('refunds_created_id_idx').on(t.createdAt, t.id),
     // The worker's retry sweep touches only approved refunds that are due.
     index('refunds_dispatch_due_idx')
       .on(t.nextAttemptAt)

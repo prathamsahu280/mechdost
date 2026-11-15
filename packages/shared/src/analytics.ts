@@ -66,6 +66,10 @@ export interface ServerEventProps {
   };
   /** A staff member opened a customer profile; `unmasked` = contact details shown (also written to the audit log). */
   admin_customer_viewed: { customerId: string; unmasked: boolean };
+  /** A CSV export was prepared (design 2026-11-15): dataset, length of the range in days, rows and whether contact columns were masked. */
+  admin_export_run: { dataset: string; rangeDays: number; rowCount: number; masked: boolean };
+  /** The prepared file was streamed to the same staff member (rows actually written). */
+  admin_export_downloaded: { dataset: string; rowCount: number };
   /** A verified customer review, pending moderation (spec 02 § Reviews). Rating only, never the text. */
   review_submitted: {
     reviewId: string;
@@ -430,6 +434,13 @@ export const CLIENT_EVENT_SCHEMAS = {
   // Workshop analytics (design 2026-11-15): the owner opened Performance for a range; admin switched the tab.
   workshop_analytics_viewed: z.object({ rangeDays: z.number().int().min(1).max(180) }).strict(),
   admin_analytics_tab: z.object({ tab: z.enum(['overview', 'workshops']) }).strict(),
+  // CSV exports (design 2026-11-15): which dataset and what happened; never the range text or any row content.
+  admin_export_action: z
+    .object({
+      dataset: z.enum(['orders', 'sub_orders', 'refunds', 'service_requests', 'partners', 'customers']),
+      action: z.enum(['requested', 'downloaded', 'refused']),
+    })
+    .strict(),
 } as const;
 
 export type ClientEvents = {

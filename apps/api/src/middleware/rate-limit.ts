@@ -14,6 +14,8 @@ export const RATE_RULES = {
   emailTest: { name: 'email_test', limit: 20, windowSeconds: 3600 },
   /** Staff searches and audit queries (customer search, audit viewer): scans over indexes, so a typing burst is fine, a script is not. */
   adminSearch: { name: 'admin_search', limit: 30, windowSeconds: 60 },
+  /** CSV exports (request and download each count): a few per hour per staff member is plenty, a script is not. */
+  adminExport: { name: 'admin_export', limit: 40, windowSeconds: 3600 },
 } as const satisfies Record<string, RateRule>;
 
 /**
