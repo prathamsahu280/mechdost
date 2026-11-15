@@ -4,7 +4,7 @@
  * order with negotiated prices (one order per quote, however often or concurrently it is accepted), closing,
  * expiry, and the live recipients of a quote topic. Runs on the Raipur demo catalogue.
  */
-import { randomBytes } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -14,6 +14,10 @@ import { loadKeyring } from '../src/crypto';
 import { seedRaipurDemo, type DemoFixture } from '../src/demo-seed';
 import {
   acceptQuoteOffer,
+  assertCanAttachToQuote,
+  findQuoteMediaForServing,
+  markQuoteRead,
+  uuidv7,
   queueQuoteExpiringEmails,
   acceptShopOffer,
   advanceShopOrder,
@@ -411,6 +415,139 @@ describe('offer email', () => {
       where quote_id = (select id from quote_requests where code = ${code})`);
     expect(await queueQuoteExpiringEmails(t())).toBe(0);
     await closeAllOpen(meera);
+  });
+});
+
+describe('photo attachments and read receipts in the thread', () => {
+  const img = (n = 1) =>
+    Array.from({ length: n }, () => {
+      const mediaId = uuidv7();
+      const folder = randomUUID();
+      return {
+        mediaId,
+        bucket: 'photos-test',
+        path: `quote/${folder}/${mediaId}.webp`,
+        thumbPath: `quote/${folder}/${mediaId}-thumb.webp`,
+        width: 800,
+        height: 600,
+        bytes: 40_000,
+        thumbBytes: 4_000,
+        sha256: randomBytes(32).toString('hex'),
+      };
+    });
+
+  it('attaches up to four photos to a message; both sides see them; nothing leaks across customers', async () => {
+    const { code } = await newQuote(ravi);
+    const photos = img(2);
+    await postCustomerQuoteMessage(t(), {
+      userId: ravi,
+      code,
+      body: 'Photo of the old filter',
+      images: photos,
+    });
+    const mine = await getMyQuote(t(), ravi, code, 'en');
+    const message = mine.messages.at(-1);
+    expect(message?.attachments.map((a) => a.mediaId)).toEqual(photos.map((p) => p.mediaId));
+    expect(message?.attachments[0]).toMatchObject({ width: 800, height: 600 });
+    expect((await getAdminQuote(t(), ALL, code, 'en')).messages.at(-1)?.attachments).toHaveLength(2);
+    await expect(getMyQuote(t(), meera, code, 'en')).rejects.toMatchObject({ status: 404 });
+    // The staff reply may carry photos too.
+    await postStaffQuoteMessage(t(), {
+      scope: ALL,
+      staffUserId: staff,
+      code,
+      body: 'This is the one we mean',
+      images: img(1),
+    });
+    expect((await getMyQuote(t(), ravi, code, 'en')).messages.at(-1)?.attachments).toHaveLength(1);
+    const kinds = await db
+      .select({ kind: s.mediaObjects.ownerKind })
+      .from(s.mediaObjects)
+      .where(eq(s.mediaObjects.uploadedBy, ravi));
+    expect(kinds.every((k) => k.kind === 'quote_message')).toBe(true);
+    await closeAllOpen(ravi);
+  });
+
+  it('refuses a fifth photo and ids that are not time-ordered, and stores nothing then', async () => {
+    const { code } = await newQuote(ravi);
+    const before = await db.$count(s.mediaObjects);
+    await expect(
+      postCustomerQuoteMessage(t(), { userId: ravi, code, body: 'Too many', images: img(5) }),
+    ).rejects.toMatchObject({ code: 'ATTACHMENT_LIMIT' });
+    const bad = img(1).map((p) => ({ ...p, mediaId: randomUUID() }));
+    await expect(
+      postCustomerQuoteMessage(t(), { userId: ravi, code, body: 'Bad id', images: bad }),
+    ).rejects.toMatchObject({ code: 'ATTACHMENT_ID' });
+    expect(await db.$count(s.mediaObjects)).toBe(before);
+    expect((await getMyQuote(t(), ravi, code, 'en')).messages).toHaveLength(1); // only the opening note
+    await closeAllOpen(ravi);
+  });
+
+  it('checks rights before any upload work: 404 for another customer or another city, 409 once closed', async () => {
+    const { code } = await newQuote(ravi);
+    await expect(assertCanAttachToQuote(t(), { userId: meera }, code)).rejects.toMatchObject({ status: 404 });
+    await expect(assertCanAttachToQuote(t(), { scope: elsewhere }, code)).rejects.toMatchObject({
+      status: 404,
+    });
+    await expect(assertCanAttachToQuote(t(), { userId: ravi }, code)).resolves.toBeUndefined();
+    await expect(assertCanAttachToQuote(t(), { scope: ALL }, code)).resolves.toBeUndefined();
+    await declineQuote(t(), { userId: ravi, code, reasonCode: 'no_longer_needed' });
+    await expect(assertCanAttachToQuote(t(), { userId: ravi }, code)).rejects.toMatchObject({
+      code: 'QUOTE_CLOSED',
+    });
+  });
+
+  it('serves only quote photos through the signed image route lookup', async () => {
+    const { code } = await newQuote(ravi);
+    const [photo] = img(1);
+    await postCustomerQuoteMessage(t(), { userId: ravi, code, body: 'Look', images: [photo!] });
+    expect(await findQuoteMediaForServing(t(), photo!.mediaId)).toMatchObject({ path: photo!.path });
+    expect(await findQuoteMediaForServing(t(), uuidv7())).toBeNull();
+    await closeAllOpen(ravi);
+  });
+
+  it('marks messages seen per side, forward only, without showing the other side who read', async () => {
+    const { code } = await newQuote(ravi);
+    await postStaffQuoteMessage(t(), { scope: ALL, staffUserId: staff, code, body: 'Can you take 12?' });
+    const customerSees = async () => (await getMyQuote(t(), ravi, code, 'en')).messages;
+    const staffSees = async () => (await getAdminQuote(t(), ALL, code, 'en')).messages;
+    expect((await customerSees()).every((m) => !m.seen)).toBe(true);
+    expect((await staffSees()).every((m) => !m.seen)).toBe(true);
+
+    // The customer opens the thread: the staff's reply (and nothing else) shows as seen to staff.
+    await markQuoteRead(t(), { side: 'customer', userId: ravi, code });
+    expect((await staffSees()).map((m) => [m.from, m.seen])).toEqual([
+      ['customer', false], // the customer's own note: staff have not marked the thread read yet
+      ['staff', true],
+    ]);
+    // The customer's view: their own note is not seen yet; the staff message is not theirs to flag.
+    expect((await customerSees()).map((m) => [m.from, m.seen])).toEqual([
+      ['customer', false],
+      ['staff', false],
+    ]);
+
+    await markQuoteRead(t(), { side: 'staff', scope: ALL, userId: staff, code });
+    expect((await customerSees()).map((m) => [m.from, m.seen])).toEqual([
+      ['customer', true],
+      ['staff', false],
+    ]);
+
+    // Forward only: reading again later never moves the marker back, and a new message is unseen.
+    const [marker] = await db.select().from(s.quoteReads).where(eq(s.quoteReads.side, 'customer'));
+    await markQuoteRead(t(), { side: 'customer', userId: ravi, code });
+    const [again] = await db.select().from(s.quoteReads).where(eq(s.quoteReads.side, 'customer'));
+    expect(again!.readThroughAt.getTime()).toBeGreaterThanOrEqual(marker!.readThroughAt.getTime());
+    await postCustomerQuoteMessage(t(), { userId: ravi, code, body: 'And delivery by Friday?' });
+    expect((await customerSees()).at(-1)).toMatchObject({ from: 'customer', seen: false });
+
+    // Rights: another customer and another city's staff are 404.
+    await expect(markQuoteRead(t(), { side: 'customer', userId: meera, code })).rejects.toMatchObject({
+      status: 404,
+    });
+    await expect(
+      markQuoteRead(t(), { side: 'staff', scope: elsewhere, userId: staff, code }),
+    ).rejects.toMatchObject({ status: 404 });
+    await closeAllOpen(ravi);
   });
 });
 

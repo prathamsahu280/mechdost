@@ -18,6 +18,11 @@ export const QUOTE_OPEN_LIMIT = 3;
 export const QUOTE_MESSAGE_MAX = 1000;
 export const QUOTE_CUSTOMER_MESSAGES_PER_HOUR = 30;
 
+/** Photos on one message, and photo messages one person may send per window (an upload is the expensive call). */
+export const QUOTE_ATTACH_MAX = 4;
+export const QUOTE_UPLOADS_PER_WINDOW = 20;
+export const QUOTE_UPLOAD_WINDOW_SECONDS = 600;
+
 /** A thread returns its newest messages (no unbounded reads); older ones stay in the database. */
 export const QUOTE_THREAD_LIMIT = 200;
 

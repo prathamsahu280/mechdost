@@ -6,6 +6,7 @@ import {
   integer,
   jsonb,
   pgTable,
+  primaryKey,
   smallint,
   text,
   unique,
@@ -247,5 +248,31 @@ export const quoteEvents = pgTable(
     check('quote_events_kind_valid', sql`${t.kind} in ('requested','message','offer','status')`),
     check('quote_events_actor_valid', sql`${t.actorType} in ('customer','admin','system')`),
     index().on(t.quoteId, t.id),
+  ],
+);
+
+/**
+ * Read receipts (spec 19): per quote and per side (the customer, the MechDost staff team) the time of the newest
+ * thread message that side has seen. One row per (quote, side), moved forward only. A message shows as "seen" to its
+ * author once the other side's marker is at or past it. No user ids or names ever reach the other side: they only see
+ * their own message flagged as seen. `read_by_user_id` is for audit.
+ */
+export const quoteReads = pgTable(
+  'quote_reads',
+  {
+    quoteId: uuid()
+      .notNull()
+      .references(() => quoteRequests.id, { onDelete: 'restrict' }),
+    side: text().notNull(),
+    readThroughAt: ts().notNull(),
+    readByUserId: uuid().references(() => users.id, { onDelete: 'set null' }),
+    version: version(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.quoteId, t.side] }),
+    check('quote_reads_side_valid', sql`${t.side} in ('customer','staff')`),
+    index().on(t.readByUserId),
   ],
 );
