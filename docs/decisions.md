@@ -1065,3 +1065,18 @@ Design: `docs/superpowers/specs/2026-11-15-support-next-tier-design.md` items 1 
 - **A self-service pin change stays inside the workshop's city** (security review): approving a PIN of another city would move the workshop out of the approver's scope without its `city_id`. City moves remain an admin edit.
 - **Busy mode and menu ranges reuse `service_menu:write`**; no new permission, so no `db:seed`.
 - **No new email or bell templates** for the timeout and the reschedule: the timeout is internal (like a decline) and the customer started the reschedule. Queued as Q117.
+
+## 2026-11-15 — Catalogue tier 2 built: recommendations, privacy, notify me (builder rulings)
+
+- **Co-purchase at product level, by order group, delivered only, min 3 checkouts, top 20 per product, nightly** (03:00 IST) plus once a minute after the worker starts. Cost if wrong: counts for pack sizes merge (a variant table is a migration); three checkouts is a low bar on a tiny catalogue (one setting).
+- **Rules first, then co-purchase; rules fill the cap if they have enough products.** Spec 11 order kept. Cost if wrong: a busy rule hides co-purchase results (a per-rule limit or an interleave is a small change in `recommendFor`).
+- **Cart suggestions use a cookie of product slugs** because the cart page is a Server Component and the cart is in localStorage until the server cart lands. Slugs only, no person, no consent needed (functional). Cost if wrong: a few bytes in the cart bundle and a per-request cart page (Q141); the server cart removes it.
+- **Cart uses a client-free card, the product page the full card** (JS budget). Cost if wrong: a customer opens the product to add; one more tap.
+- **Rules reuse `categories:write`; waitlist demand reuses `cities:manage`.** No new permission or `db:seed`. Cost if wrong: finance or marketing cannot manage rules without the catalogue role.
+- **Privacy lists only purposes that have an effect today (`marketing`, `analytics`).** Showing `whatsapp`, `location` or `share_with_partner` toggles that do nothing would be a dark pattern. Cost if wrong: add rows to one constant when a feature uses them.
+- **Analytics consent is both the server row and this browser's choice.** The server row is the record; the browser choice is what stops events. Cost if wrong: another browser of the same person keeps its own choice until they open Privacy there.
+- **The data download is the authenticated API route, not a signed public URL**, with the JSON kept in the export row for 24 h and cleared by the worker; no Storage bucket, no new secret. Cost if wrong: a larger export (over 2 MB) is refused (`too_large`) until a Storage-backed export is built.
+- **One export per person at a time and one a day; a failed one does not count.** Cost if wrong: support gets "I need it again today" requests.
+- **Account deletion is a hook, not a system.** The Privacy page links to Account -> Support with `topic=account_deletion` (`ACCOUNT_DELETION_HOOK`) until the support ticket kind from "Support next tier" is merged; then swap the constant (Q140). Cost if wrong: the support screen ignores the topic and the customer types the request.
+- **Notify me needs a verified phone or email on the account, joins are idempotent, five per person, the PIN need not be listed, "now served" is a bell notice (push per choices).** Email/WhatsApp for it needs a template and consent (Q142). Cost if wrong: customers who never open the app miss the message.
+- **Migration `0068_catalogue_tier2`** (four tables, RLS, triggers); not applied; the coordinator renumbers at merge.

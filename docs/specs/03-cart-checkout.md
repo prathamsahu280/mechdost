@@ -173,3 +173,7 @@ Only admin creates and configures coupons (permission `coupons:write`, spec 08).
 **Payouts:** a MechDost-funded discount is made good to the delivering shop on delivery (`shop_payout_entries.kind = coupon_discount`, once per order); a shop-funded discount is not (its payout is the lower amount). If the order is routed to a different shop than the funder, MechDost makes the delivering shop whole (the funder never pays for another shop's goods).
 
 **Customer UI:** the checkout field (`components/commerce/checkout-coupon.tsx`) is lazy, real data mode only: "Have a coupon code?" opens a field; "Check code" shows the card with the conditions (what it gives, cap, minimum, end date, first order only, who funds it) and the saving **before** "Use this offer"; applied state with Remove; the total summary shows the coupon line before the coins line. Codes are never listed publicly (guessing is rate limited). Events: client `apply_coupon` (result, reason code, funder; the typed code is never recorded), server `coupon_redeemed`, `coupon_released`. Locale: namespace `coupons` (en + hi).
+
+## "Add before checkout" (2026-11-15)
+
+Under the cart: up to four suggestions from spec 11 (server rendered, lean cards, real data mode). The browser mirrors the slugs of the cart into the cookie `mechdost-cart-slugs` (slugs only) so the server can ask for them until the server cart exists.

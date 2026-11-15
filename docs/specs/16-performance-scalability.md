@@ -82,3 +82,7 @@ builds: the header bell's module-level `next/dynamic` (+1.5 KB on every page) an
 `/* @__PURE__ */` on every machine: `/shop` 179.4, `/cart` 179.6, `/workshops` 178.6. Rules: no `next/dynamic` in modules
 the header/layout import; module-level factory calls in shared packages are marked pure; headroom is ~0.5 KB, so any
 change to always-loaded code is measured with a local build (`node apps/web/scripts/measure-js.mjs`) before merge.
+
+## Catalogue tier 2 (2026-11-15)
+
+Recommendations are Server Components behind Suspense: no client JS added to the product page, and the cart uses a client-free card (the cart and /shop are at 179.6 of 180 KB gz). The cart-slug cookie mirror in `demo/store.ts` adds a few lines to every bundle that contains the store: **measure with `next build` before release** (not run here, Q141). The cart page now reads a cookie, so it renders per request (it is noindex). The suggestions call is cached 5 minutes (`max-age=300` on the API, `revalidate: 300` in the website's fetch) and times out after 2 s without failing the page. The co-purchase job is one set-based statement per night. Privacy, Notify me and the two admin panels are lazy chunks loaded only on their screens.

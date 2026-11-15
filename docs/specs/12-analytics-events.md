@@ -165,3 +165,7 @@ Client `apply_coupon { result: applicable|refused|applied|removed, reason: <COUP
 ## Workshops tier 1 events (2026-11-15)
 
 Server (same transaction; ids, codes, counts only): `workshop_slot_capacity_set {workshopId, hour, capacity}`, `workshop_profile_saved {workshopId, fields[], busy, by}`, `workshop_change_requested {workshopId, kind}`, `workshop_change_decided {workshopId, kind, approved}`, `service_slot_booked {requestCode, workshopId, hour}`, `service_rescheduled {requestCode, workshopId, count, fromDate, toDate}`, `service_acceptance_expired {requestCode, workshopId, waitedMinutes}`. Client: `booking_rescheduled {code, workshop, slot}`, `workshop_profile_viewed {}`.
+
+## Catalogue tier 2 events (2026-11-15)
+
+Server (same transaction; ids, codes, counts, enums only): `admin_reco_rule_saved {ruleId, action created|updated|deleted, active}`, `copurchase_computed {pairs}`, `consent_changed {purpose marketing|analytics, granted, noticeVersion}`, `data_export_requested {exportId}`, `data_export_ready {exportId, bytes}`, `data_export_failed {exportId, errorCode}`, `data_export_downloaded {exportId}`, `waitlist_joined|left|notified {pincode}`. The PIN is a place, not a person; no contact detail, no export content, no rule text. Client: generic `click` through `data-track` ids `privacy_delete_request` (deletion hook) and `waitlist_join_click`; recommendation cards are Server Components, so there is no `reco_impression` yet (spec 11 lists `reco_*` for later).
