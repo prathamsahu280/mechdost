@@ -338,7 +338,7 @@ describe('pin and GSTIN requests (API)', () => {
       (await call(ownerA, 'POST', `/workshop/profile/${idA}/changes`, { kind: 'gstin', gstin: 'bad' }))
         .status,
     ).toBe(400);
-    const stillLive = (await call(ops, 'GET', `/admin/workshops/${idA}`)).body as { lat: number };
+    const stillLive = (await call(ops, 'GET', `/admin/workshops/${idA}`)).body as unknown as { lat: number };
     expect(stillLive.lat).toBe(21.2514);
 
     const support = await person('07', { role: 'support_agent' });
@@ -380,7 +380,7 @@ describe('pin and GSTIN requests (API)', () => {
       version: waiting[0]!.version,
     });
     expect(ok.body.status).toBe('approved');
-    const moved = (await call(ops, 'GET', `/admin/workshops/${idA}`)).body as {
+    const moved = (await call(ops, 'GET', `/admin/workshops/${idA}`)).body as unknown as {
       lat: number;
       locationVerified: boolean;
     };
