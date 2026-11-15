@@ -24,6 +24,7 @@
     "./privacy": "./src/privacy.ts",
     "./contact-mask": "./src/contact-mask.ts",
     "./admin-people-api": "./src/admin-people-api.ts",
+    "./exports": "./src/exports.ts",
     "./error-scrub": "./src/error-scrub.ts",
     "./settings": "./src/settings.ts",
     "./content": "./src/content.ts",

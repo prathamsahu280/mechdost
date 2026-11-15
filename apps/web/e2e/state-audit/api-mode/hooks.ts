@@ -84,6 +84,18 @@ async function prepareApi(page: Page, c: AuditCase): Promise<string[]> {
     }
   }
 
+  // Exports: ask for the file (done, empty, too large, expired link), or send a range over 180 days.
+  if (
+    c.code === 'API-ADM-EXPORTS' &&
+    ['done', 'done-empty', 'error-large', 'error-link', 'range-error'].includes(String(c.state.exports))
+  ) {
+    const form = main.locator('form[aria-busy]');
+    await form.waitFor({ timeout: 5_000 }).catch(() => notes.push('the export form did not appear'));
+    if (c.state.exports === 'range-error') await main.locator('#export-from').fill('2020-01-01');
+    await form.locator('button[type="submit"]').click();
+    await settleApi(page);
+  }
+
   if (c.code === 'API-ADM-AUDIT' && c.state.form === 'open') {
     const summary = main.locator('details > summary').first();
     if ((await summary.count()) === 0) notes.push('no entry to open');

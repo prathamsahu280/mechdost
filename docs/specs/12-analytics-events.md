@@ -137,6 +137,10 @@ Server events (same transaction as the change; codes, ids and enums only): `serv
 
 Server events (in the change's transaction): `admin_staff_role_changed` (action granted/revoked, target user id, role key, whether a city limits it) and `admin_customer_viewed` (customer id, whether contact details were unmasked). Client events (strict schemas, no query text): `admin_staff_screen` (grant_opened / grant_saved / revoke_confirmed), `admin_customer_search` (kind code/email/phone/name, result count) and `admin_audit_search` (number of filters filled, result count).
 
+## CSV exports (2026-11-15)
+
+Server events (in the same transaction as the audit row): `admin_export_run { dataset, rangeDays, rowCount, masked }` when a file is prepared and `admin_export_downloaded { dataset, rowCount }` when it was streamed. Client event `admin_export_action { dataset, action: requested | downloaded | refused }` (strict; never the dates, the city or any row content).
+
 ## Job photos (2026-11-15)
 
 Server events (same transaction; ids, codes and counts only, never a path or file name): `service_photo_added { requestCode, workshopId, stage: before|after, bytes }`, `service_photo_removed { requestCode, workshopId, stage }`. Client event: `service_photos_viewed { surface: request|workshop, count }` when a viewer opens.

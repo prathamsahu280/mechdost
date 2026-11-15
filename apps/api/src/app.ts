@@ -13,6 +13,7 @@ import { adminPriceRoutes } from './routes/admin-prices';
 import { adminCustomerRoutes } from './routes/admin-customers';
 import { adminStaffRoutes } from './routes/admin-staff';
 import { adminAuditRoutes } from './routes/admin-audit';
+import { adminExportRoutes } from './routes/admin-exports';
 import { adminNotificationRoutes } from './routes/admin-notifications';
 import { adminOrderRoutes } from './routes/admin-orders';
 import { adminSettingsRoutes } from './routes/admin-settings';
@@ -113,6 +114,7 @@ export function createApp(deps: AppDeps) {
   v1.route('/', adminCustomerRoutes(deps, sessions));
   v1.route('/', adminStaffRoutes(deps, sessions));
   v1.route('/', adminAuditRoutes(deps, sessions));
+  v1.route('/', adminExportRoutes(deps, sessions));
   v1.route('/', adminCatalogueRoutes(deps, sessions));
   v1.route('/', adminPriceRoutes(deps, sessions));
   v1.route('/', adminOrderRoutes(deps, sessions));

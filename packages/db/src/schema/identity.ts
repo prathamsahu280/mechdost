@@ -55,6 +55,10 @@ export const users = pgTable(
     index('users_name_prefix_idx')
       .on(sql`lower(${t.name}) text_pattern_ops`)
       .where(sql`${t.deletedAt} is null`),
+    // CSV exports of accounts (design 2026-11-15): created in an IST window, keyset-paged on (created_at, id).
+    index('users_created_id_idx')
+      .on(t.createdAt, t.id)
+      .where(sql`${t.deletedAt} is null`),
   ],
 );
 

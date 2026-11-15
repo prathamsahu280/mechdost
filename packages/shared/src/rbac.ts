@@ -68,6 +68,7 @@ export const PERMISSIONS = {
   'staff:manage': 'Invite, deactivate and scope staff',
   'roles:manage': 'Edit roles and permissions',
   'audit:read': 'Read the audit log',
+  'exports:run': 'Download CSV exports of orders, refunds, service requests, partners and customers',
   'analytics:read': 'Read dashboards and reports',
 } as const satisfies Record<string, string>;
 
@@ -102,6 +103,7 @@ const OPS: readonly Permission[] = [
   'orders:route',
   'orders:cancel',
   'orders:export',
+  'exports:run',
   'service:read',
   'service:route',
   'quotes:read',
@@ -174,6 +176,7 @@ export const ROLES = {
     permissions: [
       'orders:read',
       'orders:export',
+      'exports:run',
       'refunds:read',
       'refunds:initiate',
       'refunds:approve',
