@@ -97,3 +97,18 @@ nobody has looked at the pages as a person would. User: "u can do what u propose
 Capture full-page screenshots of every page in 390/1440 px × light/dark × en/hi × signed out/in (passing or not),
 make one contact sheet per page, review every sheet by eye (layout, spacing, colours, text, alignment, empty states),
 log findings with screenshots in the QA report, and fix the real ones in the next batch. Then the real-API pass.
+
+## G re-run (fixed site, harness before batch 2C), 2026-11-16
+
+| Slice                                                                      | Rows                                                        | Failed / items |
+| -------------------------------------------------------------------------- | ----------------------------------------------------------- | -------------- |
+| g1 account, wishlist, orders, guest, partner                               | API-ACC-, API-WISHLIST-, API-ORD-, API-GUEST-, API-PARTNER- | 180 / 259      |
+| g2 admin analytics, audit, coins, coupons, customers                       | API-ADM-AN/AU/CO/CU                                         | 172 / 272      |
+| g3 admin demand, errors, exports, layout, photos, policies                 | API-ADM-D/E/L/P                                             | 149 / 240      |
+| g4 admin queue, quotes, refunds, reviews, shops, staff, support, workshops | API-ADM-Q/R/S/W                                             | 292 / 468      |
+| g5 shop portal, service, workshop                                          | API-SHOP-, API-SVC-, API-WS-                                | 374 / 539      |
+| g6 navigation                                                              | API-NAV-                                                    | 249 / 272      |
+
+Most failures are harness (server-side 500s from the browser-only mock, side-menu "covered" from Playwright's scroll,
+code allowlist, mock data, unmocked shop endpoints) — batch 2C. Real ones went to 2A (signed-in header and account menu
+overflow, scroll regions, refund list, analytics tiles) and 2B (Hindi wording, compare tray, compare strip).
