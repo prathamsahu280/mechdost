@@ -246,6 +246,13 @@ describe('RTDB rules audit (firebase-security-rules-auditor, 2026-11-15)', () =>
     expect(reads).toEqual(['/inbox/$uid']);
   });
 
+  it('request pings (design 2026-11-16) need no new rule path: they sit under the owner-only inbox like every kind', async () => {
+    const paths = walk(await load(), '', []).map((x) => x.path);
+    // No rule names a ping kind: `request~<uuid>` is one more `$node` under `inbox/$uid`, readable by its owner only.
+    expect(paths.every((p) => ['', '/inbox/$uid', '/inbox/$uid/$node'].includes(p))).toBe(true);
+    expect(paths.join(' ')).not.toMatch(/request|workshop|order/);
+  });
+
   it('a ping node under the owner inbox repeats write:false and validate:false (defence in depth, no cascade surprises)', async () => {
     const rules = await load();
     const owner = (rules.inbox as Node).$uid as Node;
@@ -316,6 +323,37 @@ describe('lost access wipes the live inbox (security review follow-ups)', () => 
         { firebaseUid: 'uidB', node: `order~${id}` },
       ]),
     ).toEqual({ 'inbox/uidA': null, [`inbox/uidB/order~${id}`]: null });
+  });
+
+  it('a request node can be removed too (service request pings, design 2026-11-16)', () => {
+    const id = '0192f3a4-5b6c-7d8e-9f01-23456789abcd';
+    expect(inboxRemovals([{ firebaseUid: 'uidA', node: `request~${id}` }])).toEqual({
+      [`inbox/uidA/request~${id}`]: null,
+    });
+    expect(inboxRemovals([{ firebaseUid: 'uidA', node: 'request~not-a-uuid' }])).toEqual({});
+  });
+
+  it('a service request ping lands in each recipient inbox under request~id, thin and nothing else', () => {
+    const id = '0192f3a4-5b6c-7d8e-9f01-23456789abcd';
+    const ping = {
+      e: 'request.status_changed' as const,
+      k: 'request' as const,
+      id,
+      v: 4,
+      at: '2026-11-16T10:00:00.000Z',
+    };
+    const updates = inboxUpdates([{ recipients: ['customerUid', 'workshopUid'], ping }]);
+    expect(Object.keys(updates).sort()).toEqual([
+      `inbox/customerUid/request~${id}`,
+      `inbox/workshopUid/request~${id}`,
+    ]);
+    expect(Object.keys(updates[`inbox/customerUid/request~${id}`] ?? {}).sort()).toEqual([
+      'at',
+      'e',
+      'id',
+      'k',
+      'v',
+    ]);
   });
 
   it('only ever removes paths inside inbox/{uid}', () => {

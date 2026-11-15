@@ -867,7 +867,7 @@ export const liveOutbox = pgTable(
   (t) => [
     check(
       'live_outbox_topic_format',
-      sql`${t.topic} ~ '^(order|shop|workshop|user|staff_city|quote):[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'`,
+      sql`${t.topic} ~ '^(order|shop|workshop|user|staff_city|quote|request):[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'`,
     ),
     check(
       'live_outbox_kind_valid',

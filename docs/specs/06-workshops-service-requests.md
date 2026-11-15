@@ -158,7 +158,7 @@ next workshop action, every error code has en + hi text, decline/reject/payment 
    (`WriteReviewApi`); the workshop page shows approved reviews; `rating_avg` / `rating_count` follow moderation.
 6. Saved vehicles are browser-side, so bookings send no `vehicleId` (odometer history keys on the vehicle text).
 7. No staff cancel for service requests (the machine allows `admin → cancelled`), no member list/remove, no standing
-   history in the admin workshop read, no live pings (screens poll every 30 s).
+   history in the admin workshop read, no live pings (built 2026-11-16, spec 10 "service request pings"; the screens still poll every 30 s as the fallback).
 
 ## Built: saved vehicles in the booking form (2026-11-15)
 

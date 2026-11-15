@@ -9,6 +9,7 @@ import { SERVICE_ANY_CANCEL_REASONS, SERVICE_CANCEL_REASONS } from '@mechdost/sh
 import { lazy, Suspense, useCallback, useEffect, useState, type SyntheticEvent } from 'react';
 import { track } from '@/lib/analytics';
 import { formatDate, formatPrice } from '@/lib/format';
+import { useLivePings } from '@/lib/live/use-live-pings';
 import {
   CUSTOMER_STEPS,
   customerMayCancel,
@@ -37,7 +38,7 @@ const box = 'rounded-card border border-line-card bg-surface p-6 shadow-card';
  * Service request on the API (real data mode; spec 06, Stream E): `GET /v1/service-requests/{code}` for the signed-in
  * customer — status stepper, the workshop's proposal to accept or turn down, the estimate to approve line by line
  * with consent, the bill, and "cancel" until the workshop has the vehicle. Every action sends the request's
- * `version` and reloads; the page also refreshes every 30 seconds while open (live pings come later).
+ * `version` and reloads; the page also refreshes every 30 seconds while open (and at once on a live ping).
  */
 export function RequestViewApi({ code }: { code: string }) {
   const t = useTranslations('request');
@@ -66,6 +67,15 @@ export function RequestViewApi({ code }: { code: string }) {
       window.clearInterval(id);
     };
   }, [code, refresh]);
+
+  // A live ping about a request refreshes it at once; the 30 s poll above is the fallback.
+  useLivePings(
+    ['request'],
+    () => {
+      void refresh();
+    },
+    Boolean(code),
+  );
 
   if (!code || (load.kind === 'error' && (load.code === 'NOT_FOUND' || load.code === 'HTTP_404')))
     return (

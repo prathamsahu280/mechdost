@@ -44,6 +44,7 @@ export * from './shop-staff';
 export * from './shop-csv';
 export * from './shop-slip';
 export * from './shop-performance';
+export * from './shop-staff-performance';
 export * from './partner-status';
 export * from './customer-orders';
 export * from './catalogue-admin';

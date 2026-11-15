@@ -182,3 +182,9 @@ No table changes and nothing written. One index: `service_requests_workshop_crea
 ## RLS mirror (2026-11-16)
 
 `0074_rls_mirror_policies` adds the `private` helper schema, SELECT-only column grants and read policies for the tables listed in `docs/research/rls-matrix.md`; no table, column or row changes. New rule for every new table: add it to `packages/db/test/rls-inventory.ts` (default `none` = RLS on, no policy, no grant); the matrix test fails until you do. Spec 13 "RLS mirror" has the design.
+
+## Data model note: live pings for service requests (migration `0073_live_service_requests`, 2026-11-16)
+
+- `live_outbox_topic_format` now also allows `request:<uuid>` (the kind `request` was already allowed). Function `live_request_changed()` and trigger `service_requests_live` (AFTER INSERT OR UPDATE, per row) call `live_enqueue('request:'||id, 'request', id, version, 'request.status_changed')` in the same transaction as the change (a rolled-back change never pings); the row holds an id and a version only. No new table, no new column, no RLS change (the outbox stays closed to client roles).
+- Recipients are resolved in `resolveLiveRecipients` from Postgres at relay time: the request's customer, `user_roles.workshop_id = service_requests.workshop_id`, and city staff holding `service:read` (all-city grants included); unknown ids resolve to nobody; deactivated users are skipped.
+- Staff performance and earnings (spec 07, 2026-11-16) add **no schema**: reads use `order_assignments(shop_id)`, `order_events(order_id, id)` and `shop_payout_entries(shop_id, created_at, id)`, all existing indexes; nothing is written except the analytics event.

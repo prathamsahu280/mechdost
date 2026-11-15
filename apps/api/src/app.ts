@@ -39,6 +39,7 @@ import { meRoutes } from './routes/me';
 import { partnerAdminRoutes, partnerPublicRoutes, shopOnboardingRoutes } from './routes/partner-onboarding';
 import { shopInventoryRoutes } from './routes/shop-inventory';
 import { shopTeamRoutes } from './routes/shop-team';
+import { shopStaffPerformanceRoutes } from './routes/shop-staff-performance';
 import { partnerStatusRoutes, shopToolsRoutes } from './routes/shop-tools';
 import { adminShopRoutes } from './routes/admin-shops';
 import { shopOrderRoutes } from './routes/shop-orders';
@@ -134,6 +135,7 @@ export function createApp(deps: AppDeps) {
   v1.route('/', shopInventoryRoutes(deps, sessions));
   v1.route('/', shopTeamRoutes(deps, sessions));
   v1.route('/', shopToolsRoutes(deps, sessions));
+  v1.route('/', shopStaffPerformanceRoutes(deps, sessions));
   v1.route('/', adminShopRoutes(deps, sessions));
   v1.route('/', partnerPublicRoutes(deps));
   v1.route('/', partnerStatusRoutes(deps));

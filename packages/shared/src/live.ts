@@ -37,7 +37,16 @@ export const LIVE_EVENTS = [
 export type LiveEvent = (typeof LIVE_EVENTS)[number];
 
 /** Who a ping concerns. The relay turns a topic into recipients from Postgres; clients never pick topics. */
-export const LIVE_TOPIC_KINDS = ['order', 'shop', 'workshop', 'user', 'staff_city', 'quote'] as const;
+/** `request`: a service request (design 2026-11-16): its customer, the workshop holding it and the city's service staff. */
+export const LIVE_TOPIC_KINDS = [
+  'order',
+  'shop',
+  'workshop',
+  'user',
+  'staff_city',
+  'quote',
+  'request',
+] as const;
 export type LiveTopicKind = (typeof LIVE_TOPIC_KINDS)[number];
 export type LiveTopic = `${LiveTopicKind}:${string}`;
 

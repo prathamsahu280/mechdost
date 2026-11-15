@@ -1,7 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { LiveKind } from '@mechdost/shared/live';
 import type { AdminResult } from '@/lib/admin-api';
+import { useLivePings } from '@/lib/live/use-live-pings';
 
 export interface ApiList<T> {
   items: T[];
@@ -16,12 +18,14 @@ export interface ApiList<T> {
 
 /**
  * One paged list from the API for the real-API portal screens: first page on mount, `reload` after every action,
- * optional polling while the tab is visible (offer timers), "Load more" with the API's cursor. A failed call is
- * reported, never shown as an empty list.
+ * optional polling while the tab is visible (offer timers), optional live pings (`liveKinds`: a ping of one of those
+ * kinds reloads the first page at once; the polling stays as the fallback), "Load more" with the API's cursor. A
+ * failed call is reported, never shown as an empty list.
  */
 export function useApiList<T>(
   fetchPage: (cursor: string | null) => Promise<AdminResult<{ items: T[]; next: string | null }>>,
   pollMs?: number,
+  liveKinds?: readonly LiveKind[],
 ): ApiList<T> {
   const [items, setItems] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,6 +72,14 @@ export function useApiList<T>(
       window.clearInterval(id);
     };
   }, [reload, pollMs]);
+
+  useLivePings(
+    liveKinds ?? [],
+    () => {
+      void reload();
+    },
+    liveKinds !== undefined,
+  );
 
   return { items, loading, error, next, reload, loadMore };
 }
