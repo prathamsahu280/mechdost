@@ -1166,3 +1166,16 @@ Design: `docs/superpowers/specs/2026-11-15-support-next-tier-design.md` items 1 
   MechDost) sit above it. The audit keeps "covered by the banner" as a real finding.
 - **Footer "Privacy choices" link covered by the open banner:** still open (Q170 part 3); default: acceptable, since the
   link reopens the same banner.
+
+## 2026-11-16 — Testing against the real API and live database (user)
+
+- **User: "idm u using real api and real deployed website for testing either bc like we are going to reset the
+  database before launch anyway".** Tests may use the real API (`api.mechdost.com`) and the live database; the database
+  is reset before launch, which removes test data.
+- **Ruling (coordinator):** the live website runs in demo mode (`NEXT_PUBLIC_AUTH_MODE` / `NEXT_PUBLIC_DATA_MODE` =
+  `demo`), so real-sign-in screens are tested with a local real-sign-in build pointed at the real API, using only the
+  seeded demo accounts (`docs/runbooks/demo.md`). Before such a run: the demo accounts' email addresses point at inboxes
+  the user controls (no mail to strangers), Razorpay stays on test keys, WhatsApp/SMS stay off. Plan: the mocked UI state
+  audit (chunk G) keeps covering states real data cannot produce; a real-API pass covers the main flows end to end
+  (order → shop accept → delivery code; service request → estimate → bill → pay; support ticket → reply; refund →
+  finance approval; coupons; wishlist and cart across two sessions).
