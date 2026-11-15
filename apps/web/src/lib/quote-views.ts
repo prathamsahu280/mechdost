@@ -1,3 +1,5 @@
+import { QUOTE_ATTACH_MAX } from '@mechdost/shared/quote-rules';
+import { PHOTO_MAX_BYTES } from '@mechdost/shared/service-photos';
 import type { QuoteStatus } from '@mechdost/shared/state';
 import { parseRupees, type RupeeError } from './money-input';
 
@@ -9,6 +11,15 @@ import { parseRupees, type RupeeError } from './money-input';
 export function quoteRulesPath(pincode: string | null): string {
   const pin = pincode?.trim() ?? '';
   return /^[1-9]\d{5}$/.test(pin) ? `/quotes/rules?pincode=${pin}` : '/quotes/rules';
+}
+
+/** Photos the API would refuse, refused here first (count, size, type) so the message shows without a round trip. */
+export function quotePhotoProblem(
+  files: readonly File[],
+): 'ATTACHMENT_LIMIT' | 'PHOTO_TOO_LARGE' | 'PHOTO_TYPE' | null {
+  if (files.length > QUOTE_ATTACH_MAX) return 'ATTACHMENT_LIMIT';
+  if (files.some((f) => !['image/jpeg', 'image/png', 'image/webp'].includes(f.type))) return 'PHOTO_TYPE';
+  return files.some((f) => f.size > PHOTO_MAX_BYTES) ? 'PHOTO_TOO_LARGE' : null;
 }
 
 export type QuoteMessageKey =
@@ -30,6 +41,12 @@ export type QuoteMessageKey =
   | 'api_err_codCap'
   | 'api_err_codBlocked'
   | 'api_err_payUnavailable'
+  | 'api_err_attachLimit'
+  | 'api_err_photoLarge'
+  | 'api_err_photoType'
+  | 'api_err_photoHeic'
+  | 'api_err_photosUnavailable'
+  | 'api_err_photoNote'
   | 'api_err_notPayable'
   | 'api_admin_confirmLowNeeded'
   | 'stale'
@@ -57,6 +74,13 @@ const BY_CODE: Record<string, QuoteMessageKey> = {
   QUOTE_COD_CAP: 'api_err_codCap',
   QUOTE_COD_BLOCKED: 'api_err_codBlocked',
   PAYMENT_METHOD_UNAVAILABLE: 'api_err_payUnavailable',
+  ATTACHMENT_LIMIT: 'api_err_attachLimit',
+  PHOTO_TOO_LARGE: 'api_err_photoLarge',
+  HTTP_413: 'api_err_photoLarge',
+  PHOTO_TYPE: 'api_err_photoType',
+  PHOTO_UNREADABLE: 'api_err_photoType',
+  PHOTO_HEIC: 'api_err_photoHeic',
+  PHOTOS_UNAVAILABLE: 'api_err_photosUnavailable',
   QUOTE_NOT_PAYABLE: 'api_err_notPayable',
   QUOTE_OFFER_CONFIRM_LOW: 'api_admin_confirmLowNeeded',
   RATE_LIMITED: 'api_err_rate',

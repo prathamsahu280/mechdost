@@ -6,6 +6,7 @@ import {
   QuoteOfferSentDto,
   QuotePayDto,
   QuotePaymentVerifiedDto,
+  QuoteReadDto,
   QuotePageDto,
   QuoteRulesDto,
   type AdminQuoteView,
@@ -73,6 +74,51 @@ export function fetchMyQuote(locale: string, code: string): Promise<ApiResult<Qu
 
 export function postQuoteMessage(locale: string, code: string, body: string) {
   return authed(locale, `${path(code)}/messages`, QuoteChangedDto, { method: 'POST', body: { body } });
+}
+
+/** The thread has been seen by this side (the newest message it shows). Quiet: a failure changes nothing on screen. */
+export function markQuoteRead(locale: string, code: string, staff = false) {
+  return staff
+    ? adminApi(locale, `${adminPath(code)}/read`, QuoteReadDto, { method: 'POST' })
+    : authed(locale, `${path(code)}/read`, QuoteReadDto, { method: 'POST' });
+}
+
+const API = (process.env.NEXT_PUBLIC_API_URL ?? '').replace(/\/$/, '');
+
+/**
+ * A message with photos (multipart: text + up to four images). The same token and shared answer schema as the other
+ * calls; the API decides types by their bytes, so the checks in `quotePhotoProblem` only save a round trip.
+ */
+export async function sendQuotePhotoMessage(
+  locale: string,
+  code: string,
+  body: string,
+  files: readonly File[],
+  staff = false,
+): Promise<{ ok: true } | { ok: false; code: string }> {
+  if (!API) return { ok: false, code: 'UNAVAILABLE' };
+  const { currentIdToken } = await import('./auth/firebase-client');
+  const token = await currentIdToken(locale);
+  if (!token) return { ok: false, code: 'AUTH_REQUIRED' };
+  const form = new FormData();
+  form.set('body', body);
+  for (const file of files) form.append('file', file);
+  let res: Response;
+  try {
+    res = await fetch(`${API}/v1${staff ? adminPath(code) : path(code)}/photo-messages`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: form,
+      cache: 'no-store',
+    });
+  } catch {
+    return { ok: false, code: 'NETWORK' };
+  }
+  const answer: unknown = await res.json().catch(() => null);
+  if (res.ok)
+    return QuoteChangedDto.safeParse(answer).success ? { ok: true } : { ok: false, code: 'BAD_RESPONSE' };
+  const error = (answer as { error?: { code?: unknown } } | null)?.error;
+  return { ok: false, code: typeof error?.code === 'string' ? error.code : `HTTP_${String(res.status)}` };
 }
 
 /** Accept exactly this offer version. The same key for a retry never places a second order. */

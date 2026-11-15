@@ -9,7 +9,14 @@ import type { QuoteDetail, QuoteOffer, QuotePay } from '@mechdost/shared/quote-a
 import { QUOTE_DECLINE_REASONS, type QuoteDeclineReason, type QuoteStatus } from '@mechdost/shared/state';
 import { track } from '@/lib/analytics';
 import { formatDate, formatPrice } from '@/lib/format';
-import { newQuoteKey, quoteErrorKey, quoteStatusKey, type QuoteMessageKey } from '@/lib/quote-views';
+import {
+  newQuoteKey,
+  quoteErrorKey,
+  quotePhotoProblem,
+  quoteStatusKey,
+  type QuoteMessageKey,
+} from '@/lib/quote-views';
+import { PhotoPicker, QuoteAttachments, SeenMark } from './quote-attachments';
 
 type Load = { kind: 'loading' } | { kind: 'error'; code: string } | { kind: 'ok'; quote: QuoteDetail };
 const POLL_MS = 20_000;
@@ -657,25 +664,55 @@ function Chat({
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<QuoteMessageKey | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const end = useRef<HTMLLIElement>(null);
   const count = quote.messages.length;
+  const newest = quote.messages.at(-1);
 
   useEffect(() => {
     if (count > 0) end.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }, [count]);
 
+  // The customer has now seen the thread: tell MechDost (once per newest message; a failure changes nothing).
+  const markedFor = useRef<string | null>(null);
+  const code = quote.code;
+  const newestId = newest?.id ?? null;
+  useEffect(() => {
+    if (!newestId || markedFor.current === newestId || document.visibilityState !== 'visible') return;
+    markedFor.current = newestId;
+    void import('@/lib/quote-api').then(({ markQuoteRead }) => markQuoteRead(locale, code));
+  }, [newestId, code, locale]);
+
   async function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     const body = draft.trim();
-    if (!body || busy) return;
-    setBusy(true);
+    if (busy || (!body && files.length === 0)) return;
     setProblem(null);
-    const { postQuoteMessage } = await import('@/lib/quote-api');
-    const res = await postQuoteMessage(locale, quote.code, body);
+    if (files.length > 0) {
+      const bad = quotePhotoProblem(files);
+      if (bad) {
+        setProblem(quoteErrorKey(bad));
+        return;
+      }
+      if (!body) {
+        setProblem('api_err_photoNote');
+        return;
+      }
+    }
+    setBusy(true);
+    const { postQuoteMessage, sendQuotePhotoMessage } = await import('@/lib/quote-api');
+    const res =
+      files.length > 0
+        ? await sendQuotePhotoMessage(locale, quote.code, body, files)
+        : await postQuoteMessage(locale, quote.code, body);
     setBusy(false);
     if (res.ok) {
-      track('click', { id: 'quote_message_sent', path: window.location.pathname });
+      track('click', {
+        id: files.length > 0 ? 'quote_photo_message_sent' : 'quote_message_sent',
+        path: window.location.pathname,
+      });
       setDraft('');
+      setFiles([]);
       await onChanged();
     } else setProblem(quoteErrorKey(res.code));
   }
@@ -708,6 +745,12 @@ function Chat({
                 <p data-user-content className="mt-0.5 whitespace-pre-wrap">
                   {m.body}
                 </p>
+                <QuoteAttachments attachments={m.attachments} />
+                {m.seen ? (
+                  <p className="text-right">
+                    <SeenMark />
+                  </p>
+                ) : null}
               </div>
             </li>
           );
@@ -726,6 +769,12 @@ function Chat({
               {t(problem)}
             </p>
           ) : null}
+          <div className="mb-2">
+            <PhotoPicker files={files} onChange={setFiles} disabled={busy} describedBy="quote-attach-hint" />
+            <p id="quote-attach-hint" className="mt-1 text-xs text-muted">
+              {t('api_attachHint')}
+            </p>
+          </div>
           <div className="flex items-end gap-2">
             <label htmlFor="quote-message" className="sr-only">
               {t('messageLabel')}
@@ -751,7 +800,7 @@ function Chat({
             <button
               type="submit"
               aria-label={t('send')}
-              disabled={!draft.trim() || busy}
+              disabled={(!draft.trim() && files.length === 0) || busy}
               className="press inline-flex size-11 shrink-0 items-center justify-center rounded-button bg-accent-button text-white hover:bg-accent-button-hover disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Send aria-hidden="true" className="size-4" />
