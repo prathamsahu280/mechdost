@@ -415,7 +415,8 @@ describe('routing: one shop at a time', () => {
           actor: { type: 'shop' },
         }),
       ),
-    ).rejects.toMatchObject({ code: 'ASSIGNMENT_UNAVAILABLE' });
+      // A late accept says the offer expired (shop portal tier 1, 2026-11-15), not the generic "unavailable".
+    ).rejects.toMatchObject({ code: 'OFFER_EXPIRED' });
     const expired = await db.transaction((tx) =>
       expireAssignment(tx as unknown as Tx, { assignmentId: a.id }),
     );
