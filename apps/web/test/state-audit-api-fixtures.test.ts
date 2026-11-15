@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildCases } from '../e2e/state-audit/cases.ts';
+import { baselineMocks } from '../e2e/state-audit/api-mode/baseline-fixtures.ts';
 import { mocksFor } from '../e2e/state-audit/api-mode/fixtures.ts';
 import { fakeIdToken, persistedUser } from '../e2e/state-audit/api-mode/session.ts';
 
@@ -86,5 +87,46 @@ describe('API-mode audit fixtures (Q106)', () => {
     expect(claims.iss).toContain('demo-audit');
     const stored = persistedUser('audit-admin', '9876543210', now);
     expect(Object.keys(stored)[0]).toBe('firebase:authUser:audit-fake-api-key:[DEFAULT]');
+  });
+});
+
+describe('API-mode baseline mocks (the calls every signed-in page makes)', () => {
+  const c = apiCases[0];
+  const ask = (path: string, query = '') => {
+    if (!c) throw new Error('no API case');
+    const mock = baselineMocks(c).find((m) => m.method === 'GET' && m.path.test(path));
+    expect(mock, path).toBeDefined();
+    const reply = mock?.reply({ c, method: 'GET', path, query: new URLSearchParams(query), body: null });
+    expect(() => mock?.schema?.parse(reply?.body), path).not.toThrow();
+    return reply?.body;
+  };
+
+  it('answers every call the chunk G run logged as unmocked, with a body that satisfies its schema', () => {
+    for (const path of [
+      '/me/notifications',
+      '/me/notifications/unread-count',
+      '/me/cart',
+      '/me/wishlist',
+      '/workshop/home-settings',
+      '/service-requests',
+      '/quotes',
+      '/workshops/home-garage-1',
+      '/admin/catalogue/photo-queue',
+    ])
+      ask(path);
+  });
+
+  it('answers the cart and wishlist refreshes with "unchanged"', () => {
+    expect(ask('/me/cart', 'since=3')).toMatchObject({ unchanged: true });
+    expect(ask('/me/wishlist', 'since=0')).toMatchObject({ unchanged: true });
+  });
+
+  it('a row mock listed first wins over the baseline', () => {
+    const wish = apiCases.find((x) => x.code === 'API-WISHLIST');
+    if (!wish) throw new Error('no wishlist row');
+    const own = mocksFor(wish);
+    const all = [...own, ...baselineMocks(wish)];
+    const first = all.find((m) => m.method === 'GET' && m.path.test('/me/wishlist'));
+    expect(first).toBe(own.find((m) => m.path.test('/me/wishlist')));
   });
 });

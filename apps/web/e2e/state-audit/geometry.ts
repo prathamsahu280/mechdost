@@ -242,10 +242,20 @@ export async function auditDom(opts: DomAuditOptions): Promise<Finding[]> {
       if (el.matches('[disabled][type="hidden"]')) continue;
       const r = el.getBoundingClientRect();
       if (r.width < 1 || r.height < 1) continue;
-      const vis = inter(r, clipOf(el, true));
+      const clip = clipOf(el, true);
+      const vis = inter(r, clip);
       if (empty(vis)) continue;
       controls.push(el);
-      items.push({ el, kind: 'control', rect: vis, fixed: inFixed(el) });
+      // An inline control that wraps over lines is measured per line box: its one bounding box also covers the
+      // text beside the lines (false overlap, audit 2026-11-15).
+      const lines = [...el.getClientRects()];
+      if (lines.length > 1 && getComputedStyle(el).display === 'inline') {
+        lines.forEach((line, index) => {
+          if (line.width < 1 || line.height < 1) return;
+          const part = inter(line, clip);
+          if (!empty(part)) items.push({ el, kind: 'control', rect: part, fixed: inFixed(el), line: index });
+        });
+      } else items.push({ el, kind: 'control', rect: vis, fixed: inFixed(el) });
     }
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     for (let node = walker.nextNode(); node; node = walker.nextNode()) {
@@ -299,13 +309,13 @@ export async function auditDom(opts: DomAuditOptions): Promise<Finding[]> {
   if (has('inside')) {
     const seen = new Set<Element>();
     for (const it of items) {
-      if (it.kind === 'text' && seen.has(it.el)) continue;
+      if ((it.kind === 'text' || it.line !== undefined) && seen.has(it.el)) continue;
       const c = containerOf(it.el);
       if (!c || c === it.el) continue;
       if (it.fixed !== inFixed(c)) continue;
       const cr = c.getBoundingClientRect();
       const s = scrollsBetween(it.el, c);
-      const r = it.kind === 'control' ? it.el.getBoundingClientRect() : it.rect;
+      const r = it.kind === 'control' && it.line === undefined ? it.el.getBoundingClientRect() : it.rect;
       const out = {
         left: s.x ? 0 : cr.left - r.left,
         right: s.x ? 0 : r.right - cr.right,
@@ -385,8 +395,61 @@ export async function auditDom(opts: DomAuditOptions): Promise<Finding[]> {
   // ── covered ──
   if (has('covered')) {
     const reported = new Set<Element>();
+    // Open modals (aria-modal, dialog[open], an open popover sheet): what lies under one is blocked on purpose.
+    const modals = [...document.querySelectorAll('[aria-modal="true"], dialog[open], [popover]:popover-open')]
+      .filter((m) => m.checkVisibility({ visibilityProperty: true }))
+      .filter((m) => getComputedStyle(m).display !== 'none');
+    const behindModal = (el: Element, hit: Element): boolean =>
+      modals.some((m) => m.contains(hit) && !m.contains(el));
+
+    // Decorative overlays that ignore the pointer (`pointer-events: none`) are invisible to `elementFromPoint`,
+    // so the hit test cannot see them: judge them by paint order and box overlap. An overlay counts when it
+    // paints something (an opaque background, an image or its own text) after the item in document order.
+    const opaque = (c: string) => {
+      const m = /rgba?\(([^)]+)\)/.exec(c);
+      if (!m) return false;
+      const parts = (m[1] ?? '').split(/[ ,/]+/).filter(Boolean);
+      return parts.length < 4 || parseFloat(parts[3] ?? '1') >= 0.5;
+    };
+    const overlays: { el: Element; rect: R }[] = [];
+    for (const el of document.body.querySelectorAll('*')) {
+      if (ignored(el) || !visible(el)) continue;
+      const cs = getComputedStyle(el);
+      if (cs.pointerEvents !== 'none' || cs.position === 'static') continue;
+      const paints =
+        opaque(cs.backgroundColor) ||
+        el.matches('img, svg, canvas, video, picture') ||
+        [...el.childNodes].some((n) => n.nodeType === 3 && (n.textContent ?? '').trim() !== '');
+      if (!paints) continue;
+      const part = inter(el.getBoundingClientRect(), clipOf(el, true));
+      if (!empty(part)) overlays.push({ el, rect: part });
+    }
+    for (const it of items) {
+      if (reported.has(it.el)) continue;
+      const mine = it.kind === 'text' ? trim(it.rect, 0.2) : it.rect;
+      for (const o of overlays) {
+        if (o.el === it.el || o.el.contains(it.el) || it.el.contains(o.el)) continue;
+        if (!(it.el.compareDocumentPosition(o.el) & Node.DOCUMENT_POSITION_FOLLOWING)) continue;
+        if (inFixed(o.el) !== it.fixed) continue;
+        const x = inter(mine, o.rect);
+        if (x.right - x.left <= 2 || x.bottom - x.top <= 2) continue;
+        reported.add(it.el);
+        add({
+          rule: 'covered',
+          severity: it.kind === 'control' ? 'P0' : 'P1',
+          where: describe(it.el),
+          detail: `${it.kind} is painted over by ${describe(o.el)} (ignores the pointer, found by box overlap)`,
+          box: toBox(x),
+        });
+        break;
+      }
+    }
     const now = (it: Item): R | null => {
-      if (it.kind === 'control') return inter(it.el.getBoundingClientRect(), clipOf(it.el, true));
+      if (it.kind === 'control') {
+        if (it.line === undefined) return inter(it.el.getBoundingClientRect(), clipOf(it.el, true));
+        const part = it.el.getClientRects()[it.line];
+        return part ? inter(part, clipOf(it.el, true)) : null;
+      }
       if (!it.node || it.line === undefined) return it.rect;
       const range = document.createRange();
       range.selectNodeContents(it.node);
@@ -404,6 +467,7 @@ export async function auditDom(opts: DomAuditOptions): Promise<Finding[]> {
         const hit = document.elementFromPoint(cx, cy);
         if (!hit || hit === it.el || it.el.contains(hit) || hit.contains(it.el)) continue;
         if (inFixed(hit) && !it.fixed) continue;
+        if (behindModal(it.el, hit)) continue;
         const coverControl = hit.closest(CONTROL);
         if (it.kind === 'text' && (!coverControl || coverControl.contains(it.el))) continue;
         if (it.kind === 'control' && it.el.matches('input, select, textarea') && hit.closest('label'))
@@ -650,6 +714,20 @@ export function markControls(args: { scope: string; max: number; ignore: string 
     'a[href], button, input:not([type="hidden"]), select, textarea, summary, [role="button"], [role="tab"], [role="checkbox"], [role="switch"]';
   for (const el of document.querySelectorAll('[data-sa-i]')) el.removeAttribute('data-sa-i');
   const roots = [...document.querySelectorAll(args.scope)];
+  // Controls under an open modal (aria-modal, dialog[open], an open popover sheet) cannot be hovered: skipped.
+  const modals = [
+    ...document.querySelectorAll('[aria-modal="true"], dialog[open], [popover]:popover-open'),
+  ].filter((m) => m.checkVisibility({ visibilityProperty: true }));
+  const behindModal = (el: Element): boolean => {
+    const r = el.getBoundingClientRect();
+    const cx = (r.left + r.right) / 2;
+    const cy = (r.top + r.bottom) / 2;
+    return modals.some((m) => {
+      if (m.contains(el)) return false;
+      const b = m.getBoundingClientRect();
+      return cx >= b.left && cx <= b.right && cy >= b.top && cy <= b.bottom;
+    });
+  };
   const all: Element[] = [];
   for (const root of roots)
     for (const el of [...(root.matches(CONTROL) ? [root] : []), ...root.querySelectorAll(CONTROL)]) {
@@ -658,6 +736,7 @@ export function markControls(args: { scope: string; max: number; ignore: string 
       if (!el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) continue;
       const r = el.getBoundingClientRect();
       if (r.width < 4 || r.height < 4) continue;
+      if (behindModal(el)) continue;
       all.push(el);
     }
   const kind = (el: Element) =>
@@ -805,17 +884,64 @@ export function syncFacts(): string[] {
         problems.push(`${u.slug}: stepper does not show the stored quantity ${String(qty)}`);
     }
   }
-  if (location.pathname.includes('/shop')) {
-    const tray = document.querySelector('[data-compare-tray]');
-    const shown = tray?.checkVisibility() ?? false;
-    if (inCompare.size > 0 && !shown)
-      problems.push(`compare list holds ${String(inCompare.size)} but no tray is shown`);
-    if (inCompare.size === 0 && shown) problems.push('tray shown with an empty compare list');
-    const href = tray?.querySelector('a[href*="/compare?p="]')?.getAttribute('href') ?? '';
-    for (const s of inCompare)
-      if (shown && !decodeURIComponent(href).includes(s)) problems.push(`tray link misses ${s}`);
-  }
   return problems;
+}
+
+/** What the page shows of the compare list (read in the page; judged by `compareProblems`). */
+export interface CompareFacts {
+  onShop: boolean;
+  /** Products in the stored compare list. */
+  size: number;
+  slugs: string[];
+  trayShown: boolean;
+  trayHref: string;
+  /** A visible `[data-compare-hint]` ("added, pick one more") anywhere on the page. */
+  hintShown: boolean;
+}
+
+export function compareFacts(): CompareFacts {
+  let slugs: string[];
+  try {
+    const raw = JSON.parse(window.localStorage.getItem('mechdost-compare') ?? 'null') as {
+      slugs?: string[];
+    } | null;
+    slugs = raw?.slugs ?? [];
+  } catch {
+    slugs = [];
+  }
+  const tray = document.querySelector('[data-compare-tray]');
+  const hint = document.querySelector('[data-compare-hint]');
+  return {
+    onShop: location.pathname.includes('/shop'),
+    size: slugs.length,
+    slugs,
+    trayShown: tray?.checkVisibility() ?? false,
+    trayHref: tray?.querySelector('a[href*="/compare?p="]')?.getAttribute('href') ?? '',
+    hintShown: hint?.checkVisibility({ visibilityProperty: true }) ?? false,
+  };
+}
+
+/**
+ * The compare rule (decision 2026-11-15, 'UI audit decisions'): the list holds 1 -> no tray, but a visible
+ * confirmation (`[data-compare-hint]`) near the control; 2 or more -> the tray, linking every product; empty -> neither.
+ * Pure: runs in Node, unit-tested.
+ */
+export function compareProblems(f: CompareFacts): string[] {
+  if (!f.onShop) return [];
+  const out: string[] = [];
+  if (f.size === 0 && f.trayShown) out.push('tray shown with an empty compare list');
+  if (f.size === 1) {
+    if (f.trayShown) out.push('tray shown with one product in the compare list (it appears from 2)');
+    if (!f.hintShown)
+      out.push('compare list holds 1 but no visible confirmation ([data-compare-hint]) is shown');
+  }
+  if (f.size >= 2) {
+    if (!f.trayShown) out.push(`compare list holds ${String(f.size)} but no tray is shown`);
+    else
+      for (const s of f.slugs)
+        if (!decodeURIComponent(f.trayHref).includes(s)) out.push(`tray link misses ${s}`);
+  }
+  return out;
 }
 
 /**

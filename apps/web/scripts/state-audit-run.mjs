@@ -7,7 +7,7 @@
 // (node scripts/state-audit-api-build.mjs, runbook § 9.7): `all` leaves it out, name it (G) or add --api.
 // Usage (repo root): node apps/web/scripts/state-audit-run.mjs [A B C D E F G | all] [--api] [--date YYYY-MM-DD]
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, openSync, closeSync } from 'node:fs';
+import { closeSync, existsSync, mkdirSync, openSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CHUNKS } from '../e2e/state-audit/cases.ts';
@@ -25,6 +25,22 @@ for (const c of chunks)
     console.error(`unknown chunk ${c}; use ${Object.keys(CHUNKS).join(' ')} or all`);
     process.exit(2);
   }
+
+// Chunk G needs the real-sign-in build (.next-api); build it here when it is missing (about 3 GB RAM, once).
+if (chunks.includes('G') && !existsSync(resolve(webDir, '.next-api', 'BUILD_ID'))) {
+  console.log(
+    '.next-api/BUILD_ID is missing: building the real-sign-in copy first (state-audit-api-build.mjs)',
+  );
+  const built = spawnSync('node scripts/state-audit-api-build.mjs', {
+    cwd: webDir,
+    shell: true,
+    stdio: 'inherit',
+  });
+  if (built.status !== 0) {
+    console.error('the real-sign-in build failed: chunk G not run');
+    process.exit(built.status ?? 1);
+  }
+}
 
 let failed = false;
 for (const chunk of chunks) {

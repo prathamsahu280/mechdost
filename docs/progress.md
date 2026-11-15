@@ -370,3 +370,9 @@ See PENDING DECISIONS in `docs/decisions.md` (payment methods; post-purchase P1 
 - Not built: see spec 06 "Built: workshops tier 3".
 
 - 2026-11-16 batch 0a (audit fixes): ClientMessages gaps closed on account, admin, cart, checkout, orders, partner shop/workshop, service, support guest, workshops pages; coverage guard test green with no allowlist; portal-guard split (portal-styles.ts, use-now.ts). Docs: decisions, learnings L234/T149, bug catalogue P1.
+
+## 2026-11-16 — Batch 0b: audit harness, tooling, CI (branch worktree-agent-aad7042a0247cf3cf, not merged)
+
+- Built: baseline mocks for chunk G (`api-mode/baseline-fixtures.ts`), six checker fixes (per-line boxes, modal skip, Hindi echo, pointer-events overlays, consent version root cause, compare rule with `[data-compare-hint]`), runner builds `.next-api`, build script path fix, CI job `web-real-mode` (Q171 answered by default). Runbook § 9.9, decisions entry 2026-11-16.
+- Verified (targeted): vitest state-audit-checker 11 + api-fixtures + trust + checklist + nav + sections (39 tests, 6 files); eslint zero warnings and prettier on touched files; `tsc --noEmit` shows only the two missing hero images of this worktree. No Playwright, no build (by instruction).
+- Needs at merge: batch 1a adds `data-compare-hint`; re-run chunks A, B, C, G and compare counts (banner findings may drop).

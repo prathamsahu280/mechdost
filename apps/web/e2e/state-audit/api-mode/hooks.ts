@@ -6,6 +6,7 @@
 import type { Page } from '@playwright/test';
 import type { AuditCase } from '../cases.ts';
 import type { ApiHooks } from '../harness.ts';
+import { baselineMocks } from './baseline-fixtures.ts';
 import { mocksFor } from './fixtures.ts';
 import { installApi } from './mock-api.ts';
 import { mockFirebase, persistedUser } from './session.ts';
@@ -290,7 +291,7 @@ export const apiHooks: ApiHooks = {
   async install(page, c, now) {
     const uid = UID[c.auth] ?? UID.customer ?? 'audit-customer';
     await mockFirebase(page, uid, PHONE, now);
-    return installApi(page, c, mocksFor(c));
+    return installApi(page, c, [...mocksFor(c), ...baselineMocks(c)]);
   },
   seed(c, now) {
     const uid = UID[c.auth];
