@@ -149,3 +149,7 @@ Server events (same transaction; ids, codes and counts only, never a path or fil
 ## Admin next tier part 2 events (2026-11-15)
 
 Server events (same transaction as the change; codes, counts and ids only): `admin_policy_restored { key, locale, fromVersion, version }` (next to `admin_content_published` for every publish), `admin_layout_published { scope: global|city, action: saved|reset, hidden, tiles, mapDefault }`, `admin_setting_city_changed { key, action: overridden|reset }`, `admin_company_saved { filled, grievanceShown }`. Client event `admin_site_change` gained areas `policies` and `company` and actions `publish`, `restore`, `preview` (area `layout` action `publish` for the real-mode layout save); `fields` is a count. Click id `admin_policy_preview_call` (preview call link), `footer_grievance_email` and `footer_grievance_phone` (footer links, only once the admin fills the officer).
+
+## Workshop analytics events (2026-11-15)
+
+Client (strict schemas in `packages/shared/src/analytics.ts`): `workshop_analytics_viewed {rangeDays}` (portal Performance loaded for a range of 1 to 180 days; the design wrote `range_days`, the catalogue uses camelCase like every other prop) and `admin_analytics_tab {tab: overview | workshops}`. Click ids: `workshop_performance_toggle`, `workshop_analytics_preset_{30|90}`, `workshop_analytics_retry`, `admin_analytics_tab_{overview|workshops}`, `admin_workshop_analytics_sort`, `admin_workshop_analytics_retry`.

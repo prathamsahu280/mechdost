@@ -435,6 +435,13 @@
       "when": 1794703163242,
       "tag": "0063_admin_policy_history",
       "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "7",
+      "when": 1794704294808,
+      "tag": "0064_workshop_analytics",
+      "breakpoints": true
     }
   ]
 }

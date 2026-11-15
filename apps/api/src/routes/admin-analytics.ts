@@ -11,6 +11,8 @@ import {
 } from '@mechdost/db/repo';
 import { AdminOverviewDto, AnalyticsDashboardDto } from '@mechdost/shared/admin-analytics-api';
 import { resolveAnalyticsRange } from '@mechdost/shared/analytics-range';
+import { AdminWorkshopAnalyticsDto, workshopMedians } from '@mechdost/shared/workshop-analytics-api';
+import { cachedCityWorkshopAnalytics } from '../workshop-analytics-cache';
 import type { Grant, Permission } from '@mechdost/shared/rbac';
 import type { SessionCache } from '../auth/session-cache';
 import { ApiError, Forbidden } from '../errors';
@@ -57,6 +59,21 @@ const dashboardRoute = createRoute({
   request: { query: DashboardQuery },
   responses: {
     200: json(AnalyticsDashboardDto, 'Dashboard'),
+    404: json(ErrorSchema, 'City outside the staff member’s scope'),
+    ...errorResponses,
+  },
+});
+
+const workshopsRoute = createRoute({
+  method: 'get',
+  path: '/admin/analytics/workshops',
+  tags: ['admin'],
+  summary:
+    'Workshop analytics of one city for an IST date range (default the last 30 days, at most 180): totals, city medians and a row per workshop',
+  security: [{ bearerAuth: [] }],
+  request: { query: DashboardQuery },
+  responses: {
+    200: json(AdminWorkshopAnalyticsDto, 'Workshop analytics'),
     404: json(ErrorSchema, 'City outside the staff member’s scope'),
     ...errorResponses,
   },
@@ -126,6 +143,37 @@ export function adminAnalyticsRoutes(deps: AppDeps, cache: SessionCache) {
           city: chosen?.code ?? null,
           cities: cities.map(({ code, name, nameHi }) => ({ code, name, nameHi })),
           ...data,
+        },
+        200,
+      );
+    })
+    .openapi(workshopsRoute, async (c) => {
+      const q = c.req.valid('query');
+      const range = resolveAnalyticsRange({ from: q.from, to: q.to }, new Date());
+      if (!range.ok)
+        throw new ApiError(
+          400,
+          range.code,
+          range.code === 'RANGE_TOO_LONG'
+            ? 'The range is longer than 180 days'
+            : 'The date range is not valid',
+        );
+      const scope = cityScopeFrom(c.get('auth').grants, 'analytics:read');
+      const cities = await analyticsCities(deps.db, scope);
+      // One city at a time: medians across cities would mean nothing. Default: the first city in the scope.
+      const chosen = q.city ? cities.find((x) => x.code === q.city) : cities[0];
+      if (q.city && !chosen) throw new NotFoundError('City not found');
+      if (!chosen) throw new NotFoundError('City not found');
+      const data = await cachedCityWorkshopAnalytics(deps.db, chosen.id, range);
+      c.header('Cache-Control', CACHE_HEADER);
+      return c.json(
+        {
+          range: { from: range.fromDate, to: range.toDate, days: range.days },
+          city: chosen.code,
+          cities: cities.map(({ code, name, nameHi }) => ({ code, name, nameHi })),
+          totals: data.totals,
+          medians: workshopMedians(data.workshops),
+          workshops: data.workshops,
         },
         200,
       );

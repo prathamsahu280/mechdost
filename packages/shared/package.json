@@ -68,6 +68,7 @@
     "./geo-api": "./src/geo-api.ts",
     "./analytics-range": "./src/analytics-range.ts",
     "./admin-analytics-api": "./src/admin-analytics-api.ts",
+    "./workshop-analytics-api": "./src/workshop-analytics-api.ts",
     "./account": "./src/account.ts",
     "./account-api": "./src/account-api.ts",
     "./notice-api": "./src/notice-api.ts",

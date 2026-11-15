@@ -1,7 +1,17 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import { useCallback, useEffect, useRef, useState, type ReactNode, type SyntheticEvent } from 'react';
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+  type SyntheticEvent,
+} from 'react';
+import { track } from '@/lib/analytics';
 import type { AnalyticsDashboard } from '@mechdost/shared/admin-analytics-api';
 import { resolveAnalyticsRange } from '@mechdost/shared/analytics-range';
 import { commonErrorKey, type CommonErrorKey } from '@/lib/api-error-key';
@@ -18,6 +28,11 @@ import {
 import { formatPrice } from '@/lib/format';
 import { DailyBars, DataTable } from './analytics-charts';
 import { portalCard, portalField, portalPrimary } from './portal-guard';
+
+/** The Workshops tab loads its own chunk when first opened (JS budget; the screen is already behind the admin lazy). */
+const WorkshopsTab = lazy(() =>
+  import('./admin-workshop-analytics-api').then((m) => ({ default: m.AdminWorkshopAnalyticsApi })),
+);
 
 const PRESETS: readonly RangePreset[] = [7, 30, 90];
 const PRESET_LABEL = {
@@ -40,7 +55,9 @@ interface Query {
  */
 export function AdminAnalyticsApi() {
   const t = useTranslations('portal');
+  const w = useTranslations('workshopAnalytics');
   const locale = useLocale();
+  const [tab, setTab] = useState<'overview' | 'workshops'>('overview');
   const [query, setQuery] = useState<Query>(() => ({ city: null, ...rangePreset(30, new Date()) }));
   const [draft, setDraft] = useState<Query>(query);
   const [rangeError, setRangeError] = useState(false);
@@ -186,7 +203,31 @@ export function AdminAnalyticsApi() {
         ) : null}
       </form>
 
-      {error ? (
+      <div role="group" aria-label={w('admin_tabs')} className="flex flex-wrap gap-2">
+        {(['overview', 'workshops'] as const).map((id) => (
+          <button
+            key={id}
+            type="button"
+            aria-pressed={tab === id}
+            data-track={`admin_analytics_tab_${id}`}
+            onClick={() => {
+              setTab(id);
+              track('admin_analytics_tab', { tab: id });
+            }}
+            className={`press min-h-11 rounded-pill px-4 text-sm font-bold ${
+              tab === id ? 'bg-accent-soft text-accent-soft-text' : 'bg-pill text-ink'
+            }`}
+          >
+            {w(`admin_tab_${id}`)}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'workshops' ? (
+        <Suspense fallback={<div className="skeleton h-64 rounded-card" aria-hidden="true" />}>
+          <WorkshopsTab query={query} />
+        </Suspense>
+      ) : error ? (
         <div role="alert" className={`${portalCard} space-y-3`}>
           <p className="text-sm font-bold text-error">{t(error)}</p>
           <button

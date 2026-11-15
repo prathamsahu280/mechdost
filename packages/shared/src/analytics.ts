@@ -395,6 +395,9 @@ export const CLIENT_EVENT_SCHEMAS = {
   admin_audit_search: z
     .object({ filters: z.number().int().min(0).max(8), results: z.number().int().min(0).max(100) })
     .strict(),
+  // Workshop analytics (design 2026-11-15): the owner opened Performance for a range; admin switched the tab.
+  workshop_analytics_viewed: z.object({ rangeDays: z.number().int().min(1).max(180) }).strict(),
+  admin_analytics_tab: z.object({ tab: z.enum(['overview', 'workshops']) }).strict(),
 } as const;
 
 export type ClientEvents = {

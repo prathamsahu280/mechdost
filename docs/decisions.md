@@ -998,3 +998,11 @@ Design: `docs/superpowers/specs/2026-11-15-service-photos-design.md`; built desc
 - **City values screen shows the picker only to staff with `settings:write`** (super admin today, unchanged); city managers do not get write access to settings. The layout screen uses the same picker (marketing sees "All cities" only).
 - **No new permission** (reused `content:write`, `content:publish`, `settings:read`, `settings:write`); so no `db:seed`. Migration `0063_admin_policy_history` is not applied; the coordinator renumbers at merge.
 - **Not done:** the map default is stored and served but the workshop map still reads the browser store (the map is a client component under three pages; passing the value from the server is a follow-up); public policy pages read the launch city only until the city selector (spec 15).
+
+## 2026-11-15 — Workshop analytics built (rulings)
+
+- Portal Performance is for the `workshop_owner` grant only (staff would see money); no new permission. Admin needs `analytics:read`, one city at a time.
+- City medians are medians of workshops' own figures and are shown only from three workshops with requests (anonymity). The portal never carries another workshop's name.
+- Acceptance = proposed ÷ (proposed + declined): workshops have no response timer, so "timed out" does not exist. Services are paid at the workshop only, so "paid online vs at the workshop" is by method (cash / UPI / card).
+- "Returned within 30 days": same customer, same vehicle (saved id, else vehicle key) and same workshop, a new request that is not cancelled or rejected within 30 days of completion. Label is neutral on purpose.
+- Migration `0064_workshop_analytics` adds `service_requests (workshop_id, created_at)` only. Events use camelCase props (`rangeDays`), like the rest of the catalogue. Plan: `docs/superpowers/plans/2026-11-15-workshop-analytics.md`.

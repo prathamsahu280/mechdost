@@ -142,6 +142,8 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | API-ADM-QUEUE      | Admin → Orders (needs routing), real sign-in                     | Reroute queue card with the shop's give-up reason and the "gave this order up before" tag                                                                                                                                                                                       | pairwise | 56       | 0       |
 | API-ADM-ERRORS     | Admin → Errors, real sign-in                                     | Sentry issues of the website and the API: not connected, none, many, one project down                                                                                                                                                                                           | pairwise | 48       | 0       |
 | API-ADM-ANALYTICS  | Admin → Analytics, real sign-in                                  | Dashboard: KPI tiles, daily chart, funnel, top lists, areas, shop and workshop tables, range and city                                                                                                                                                                           | pairwise | 40       | 0       |
+| API-ADM-WORKSHOPS  | Admin → Analytics → Workshops, real sign-in                      | Workshops tab: city note, totals with city medians, sortable table; no / one / two (no medians) / many workshops, a quiet one among them, a city-scoped staff member, a timeout                                                                                                 | pairwise | 48       | 0       |
+| API-WS-PERFORMANCE | Workshop portal (/partner/workshop), real sign-in                | Performance section behind its button: own numbers beside the anonymised city median, no median below three workshops, nothing in the range, 90 days, a timeout, a staff account refused                                                                                        | pairwise | 48       | 0       |
 | API-ADM-COINS      | Admin → Coins, real sign-in                                      | Coin activity list (earn, redeem, adjust, expire, restore), account look-up and adjust form                                                                                                                                                                                     | pairwise | 40       | 0       |
 | API-ADM-REVIEWS    | Admin → Reviews, real sign-in                                    | Review moderation queue: pending / approved / hidden, long text, hide reasons                                                                                                                                                                                                   | pairwise | 40       | 0       |
 | API-ADM-QUOTES     | Admin → Bulk quotes, real sign-in                                | Quote desk: queue views, every quote status, offer and order chips                                                                                                                                                                                                              | pairwise | 32       | 0       |
@@ -154,7 +156,7 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | API-ADM-AUDIT      | Admin → Audit log, real sign-in                                  | Audit log: filters, entries (closed and open with before/after), more, empty, load error                                                                                                                                                                                        | pairwise | 32       | 0       |
 | API-NAV-ADMIN      | Navigation, real sign-in                                         | Admin section bar with every real-mode section (Analytics, Refunds, Errors included): current item, scroll, walk                                                                                                                                                                | cross    | 160      | 0       |
 | API-NAV-ACCOUNT    | Navigation, real sign-in                                         | Account section bar in a real-sign-in build: current item, scroll, walk                                                                                                                                                                                                         | cross    | 80       | 0       |
-| **Total**          |                                                                  |                                                                                                                                                                                                                                                                                 |          | **3377** | **92**  |
+| **Total**          |                                                                  |                                                                                                                                                                                                                                                                                 |          | **3473** | **92**  |
 
 ## Chrome
 
@@ -3444,6 +3446,116 @@ Pairwise (all pairs of values); 40 states; scope `main`.
 - [ ] API-ADM-ANALYTICS-038 · 1920px · dark · hi · admin · world=empty · /admin/analytics · analytics=full · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
 - [ ] API-ADM-ANALYTICS-039 · 1920px · light · en · admin · world=empty · /admin/analytics · analytics=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned
 - [ ] API-ADM-ANALYTICS-040 · 1920px · dark · hi · admin · world=empty · /admin/analytics · analytics=city-scoped · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+
+## Admin → Analytics → Workshops, real sign-in
+
+### API-ADM-WORKSHOPS — Workshops tab: city note, totals with city medians, sortable table; no / one / two (no medians) / many workshops, a quiet one among them, a city-scoped staff member, a timeout
+
+Pairwise (all pairs of values); 48 states; scope `main`.
+
+- [ ] API-ADM-WORKSHOPS-001 · 320px · light · en · admin · world=empty · /admin/analytics · wsa=empty · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned axe
+- [ ] API-ADM-WORKSHOPS-002 · 320px · dark · hi · admin · world=empty · /admin/analytics · wsa=one · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] API-ADM-WORKSHOPS-003 · 390px · light · hi · admin · world=empty · /admin/analytics · wsa=few · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] API-ADM-WORKSHOPS-004 · 390px · dark · en · admin · world=empty · /admin/analytics · wsa=many · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned
+- [ ] API-ADM-WORKSHOPS-005 · 480px · light · en · admin · world=empty · /admin/analytics · wsa=city-scoped · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned axe
+- [ ] API-ADM-WORKSHOPS-006 · 480px · dark · hi · admin · world=empty · /admin/analytics · wsa=error · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] API-ADM-WORKSHOPS-007 · 768px · light · en · admin · world=empty · /admin/analytics · wsa=one · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned
+- [ ] API-ADM-WORKSHOPS-008 · 768px · dark · hi · admin · world=empty · /admin/analytics · wsa=empty · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] API-ADM-WORKSHOPS-009 · 1024px · light · en · admin · world=empty · /admin/analytics · wsa=error · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned axe
+- [ ] API-ADM-WORKSHOPS-010 · 1024px · dark · hi · admin · world=empty · /admin/analytics · wsa=city-scoped · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] API-ADM-WORKSHOPS-011 · 1280px · light · en · admin · world=empty · /admin/analytics · wsa=few · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned
+- [ ] API-ADM-WORKSHOPS-012 · 1280px · dark · hi · admin · world=empty · /admin/analytics · wsa=many · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] API-ADM-WORKSHOPS-013 · 1440px · light · en · admin · world=empty · /admin/analytics · wsa=many · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned axe
+- [ ] API-ADM-WORKSHOPS-014 · 1440px · dark · hi · admin · world=empty · /admin/analytics · wsa=few · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] API-ADM-WORKSHOPS-015 · 1920px · light · en · admin · world=empty · /admin/analytics · wsa=empty · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned
+- [ ] API-ADM-WORKSHOPS-016 · 1920px · dark · hi · admin · world=empty · /admin/analytics · wsa=one · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] API-ADM-WORKSHOPS-017 · 320px · light · en · admin · world=empty · /admin/analytics · wsa=few · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned axe
+- [ ] API-ADM-WORKSHOPS-018 · 320px · dark · hi · admin · world=empty · /admin/analytics · wsa=many · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] API-ADM-WORKSHOPS-019 · 320px · light · en · admin · world=empty · /admin/analytics · wsa=city-scoped · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned
+- [ ] API-ADM-WORKSHOPS-020 · 320px · dark · hi · admin · world=empty · /admin/analytics · wsa=error · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] API-ADM-WORKSHOPS-021 · 390px · light · en · admin · world=empty · /admin/analytics · wsa=empty · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned axe
+- [ ] API-ADM-WORKSHOPS-022 · 390px · dark · hi · admin · world=empty · /admin/analytics · wsa=one · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] API-ADM-WORKSHOPS-023 · 390px · light · en · admin · world=empty · /admin/analytics · wsa=city-scoped · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned
+- [ ] API-ADM-WORKSHOPS-024 · 390px · dark · hi · admin · world=empty · /admin/analytics · wsa=error · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] API-ADM-WORKSHOPS-025 · 480px · light · en · admin · world=empty · /admin/analytics · wsa=empty · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned axe
+- [ ] API-ADM-WORKSHOPS-026 · 480px · dark · hi · admin · world=empty · /admin/analytics · wsa=one · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] API-ADM-WORKSHOPS-027 · 480px · light · en · admin · world=empty · /admin/analytics · wsa=few · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned
+- [ ] API-ADM-WORKSHOPS-028 · 480px · dark · hi · admin · world=empty · /admin/analytics · wsa=many · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] API-ADM-WORKSHOPS-029 · 768px · light · en · admin · world=empty · /admin/analytics · wsa=few · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned axe
+- [ ] API-ADM-WORKSHOPS-030 · 768px · dark · hi · admin · world=empty · /admin/analytics · wsa=many · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] API-ADM-WORKSHOPS-031 · 768px · light · en · admin · world=empty · /admin/analytics · wsa=city-scoped · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned
+- [ ] API-ADM-WORKSHOPS-032 · 768px · dark · hi · admin · world=empty · /admin/analytics · wsa=error · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] API-ADM-WORKSHOPS-033 · 1024px · light · en · admin · world=empty · /admin/analytics · wsa=empty · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned axe
+- [ ] API-ADM-WORKSHOPS-034 · 1024px · dark · hi · admin · world=empty · /admin/analytics · wsa=one · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] API-ADM-WORKSHOPS-035 · 1024px · light · en · admin · world=empty · /admin/analytics · wsa=few · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned
+- [ ] API-ADM-WORKSHOPS-036 · 1024px · dark · hi · admin · world=empty · /admin/analytics · wsa=many · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] API-ADM-WORKSHOPS-037 · 1280px · light · en · admin · world=empty · /admin/analytics · wsa=empty · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned axe
+- [ ] API-ADM-WORKSHOPS-038 · 1280px · dark · hi · admin · world=empty · /admin/analytics · wsa=one · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] API-ADM-WORKSHOPS-039 · 1280px · light · en · admin · world=empty · /admin/analytics · wsa=city-scoped · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned
+- [ ] API-ADM-WORKSHOPS-040 · 1280px · dark · hi · admin · world=empty · /admin/analytics · wsa=error · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] API-ADM-WORKSHOPS-041 · 1440px · light · en · admin · world=empty · /admin/analytics · wsa=empty · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned axe
+- [ ] API-ADM-WORKSHOPS-042 · 1440px · dark · hi · admin · world=empty · /admin/analytics · wsa=one · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] API-ADM-WORKSHOPS-043 · 1440px · light · en · admin · world=empty · /admin/analytics · wsa=city-scoped · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned
+- [ ] API-ADM-WORKSHOPS-044 · 1440px · dark · hi · admin · world=empty · /admin/analytics · wsa=error · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] API-ADM-WORKSHOPS-045 · 1920px · light · en · admin · world=empty · /admin/analytics · wsa=few · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned axe
+- [ ] API-ADM-WORKSHOPS-046 · 1920px · dark · hi · admin · world=empty · /admin/analytics · wsa=many · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] API-ADM-WORKSHOPS-047 · 1920px · light · en · admin · world=empty · /admin/analytics · wsa=city-scoped · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned
+- [ ] API-ADM-WORKSHOPS-048 · 1920px · dark · hi · admin · world=empty · /admin/analytics · wsa=error · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+
+## Workshop portal (/partner/workshop), real sign-in
+
+### API-WS-PERFORMANCE — Performance section behind its button: own numbers beside the anonymised city median, no median below three workshops, nothing in the range, 90 days, a timeout, a staff account refused
+
+Pairwise (all pairs of values); 48 states; scope `main`.
+
+- [ ] API-WS-PERFORMANCE-001 · 320px · light · en · workshop partner · world=empty · /partner/workshop · perf=empty · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-WS-PERFORMANCE-002 · 320px · dark · hi · workshop partner · world=empty · /partner/workshop · perf=full · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-PERFORMANCE-003 · 390px · light · hi · workshop partner · world=empty · /partner/workshop · perf=no-median · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-PERFORMANCE-004 · 390px · dark · en · workshop partner · world=empty · /partner/workshop · perf=ninety · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-WS-PERFORMANCE-005 · 480px · light · en · workshop partner · world=empty · /partner/workshop · perf=error · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-WS-PERFORMANCE-006 · 480px · dark · hi · workshop partner · world=empty · /partner/workshop · perf=staff · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-PERFORMANCE-007 · 768px · light · en · workshop partner · world=empty · /partner/workshop · perf=full · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-WS-PERFORMANCE-008 · 768px · dark · hi · workshop partner · world=empty · /partner/workshop · perf=empty · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-PERFORMANCE-009 · 1024px · light · en · workshop partner · world=empty · /partner/workshop · perf=staff · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-WS-PERFORMANCE-010 · 1024px · dark · hi · workshop partner · world=empty · /partner/workshop · perf=error · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-PERFORMANCE-011 · 1280px · light · en · workshop partner · world=empty · /partner/workshop · perf=no-median · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-WS-PERFORMANCE-012 · 1280px · dark · hi · workshop partner · world=empty · /partner/workshop · perf=ninety · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-PERFORMANCE-013 · 1440px · light · en · workshop partner · world=empty · /partner/workshop · perf=ninety · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-WS-PERFORMANCE-014 · 1440px · dark · hi · workshop partner · world=empty · /partner/workshop · perf=no-median · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-PERFORMANCE-015 · 1920px · light · en · workshop partner · world=empty · /partner/workshop · perf=empty · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-WS-PERFORMANCE-016 · 1920px · dark · hi · workshop partner · world=empty · /partner/workshop · perf=full · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-PERFORMANCE-017 · 320px · light · en · workshop partner · world=empty · /partner/workshop · perf=no-median · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-WS-PERFORMANCE-018 · 320px · dark · hi · workshop partner · world=empty · /partner/workshop · perf=ninety · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-PERFORMANCE-019 · 320px · light · en · workshop partner · world=empty · /partner/workshop · perf=error · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-WS-PERFORMANCE-020 · 320px · dark · hi · workshop partner · world=empty · /partner/workshop · perf=staff · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-PERFORMANCE-021 · 390px · light · en · workshop partner · world=empty · /partner/workshop · perf=empty · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-WS-PERFORMANCE-022 · 390px · dark · hi · workshop partner · world=empty · /partner/workshop · perf=full · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-PERFORMANCE-023 · 390px · light · en · workshop partner · world=empty · /partner/workshop · perf=error · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-WS-PERFORMANCE-024 · 390px · dark · hi · workshop partner · world=empty · /partner/workshop · perf=staff · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-PERFORMANCE-025 · 480px · light · en · workshop partner · world=empty · /partner/workshop · perf=empty · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-WS-PERFORMANCE-026 · 480px · dark · hi · workshop partner · world=empty · /partner/workshop · perf=full · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-PERFORMANCE-027 · 480px · light · en · workshop partner · world=empty · /partner/workshop · perf=no-median · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-WS-PERFORMANCE-028 · 480px · dark · hi · workshop partner · world=empty · /partner/workshop · perf=ninety · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-PERFORMANCE-029 · 768px · light · en · workshop partner · world=empty · /partner/workshop · perf=no-median · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-WS-PERFORMANCE-030 · 768px · dark · hi · workshop partner · world=empty · /partner/workshop · perf=ninety · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-PERFORMANCE-031 · 768px · light · en · workshop partner · world=empty · /partner/workshop · perf=error · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-WS-PERFORMANCE-032 · 768px · dark · hi · workshop partner · world=empty · /partner/workshop · perf=staff · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-PERFORMANCE-033 · 1024px · light · en · workshop partner · world=empty · /partner/workshop · perf=empty · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-WS-PERFORMANCE-034 · 1024px · dark · hi · workshop partner · world=empty · /partner/workshop · perf=full · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-PERFORMANCE-035 · 1024px · light · en · workshop partner · world=empty · /partner/workshop · perf=no-median · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-WS-PERFORMANCE-036 · 1024px · dark · hi · workshop partner · world=empty · /partner/workshop · perf=ninety · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-PERFORMANCE-037 · 1280px · light · en · workshop partner · world=empty · /partner/workshop · perf=empty · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-WS-PERFORMANCE-038 · 1280px · dark · hi · workshop partner · world=empty · /partner/workshop · perf=full · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-PERFORMANCE-039 · 1280px · light · en · workshop partner · world=empty · /partner/workshop · perf=error · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-WS-PERFORMANCE-040 · 1280px · dark · hi · workshop partner · world=empty · /partner/workshop · perf=staff · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-PERFORMANCE-041 · 1440px · light · en · workshop partner · world=empty · /partner/workshop · perf=empty · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-WS-PERFORMANCE-042 · 1440px · dark · hi · workshop partner · world=empty · /partner/workshop · perf=full · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-PERFORMANCE-043 · 1440px · light · en · workshop partner · world=empty · /partner/workshop · perf=error · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-WS-PERFORMANCE-044 · 1440px · dark · hi · workshop partner · world=empty · /partner/workshop · perf=staff · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-PERFORMANCE-045 · 1920px · light · en · workshop partner · world=empty · /partner/workshop · perf=no-median · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-WS-PERFORMANCE-046 · 1920px · dark · hi · workshop partner · world=empty · /partner/workshop · perf=ninety · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-PERFORMANCE-047 · 1920px · light · en · workshop partner · world=empty · /partner/workshop · perf=error · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-WS-PERFORMANCE-048 · 1920px · dark · hi · workshop partner · world=empty · /partner/workshop · perf=staff · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
 
 ## Admin → Coins, real sign-in
 
