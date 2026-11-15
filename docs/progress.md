@@ -400,3 +400,13 @@ only; item 3 verified as a checker issue (header 85 px max < 96 px scroll paddin
 - **2026-11-16: audit batch 2a built** (branch worktree-agent-a301c32bdb9137cb2, not merged): `ScrollRegion` for analytics/demand/workshop tables, refund list markup, analytics KPI tiles shrink at 320 px, cart label from 560 px, UPI example in Hindi. Guard: `test/audit-batch-2a.test.ts` (8 tests). Not run: Playwright, next build. Coordinator: re-run rows API-ADM-ANALYTICS/COMPANY/DEMAND, API-ORD-REFUNDLINE, account rows (header hscroll at 390 hi may remain: `components/site/header.tsx` belongs to batch 2B). Rulings: decisions 2026-11-16.
 
 - **2026-11-16: signed-in header fit (batch 2a, coordinator follow-up):** account name from xl, cart label from 560 px, compact targets under 440 px, tighter 1024-1279 px row; source guard `test/signed-in-header-fit.test.ts` (5 tests, seen red first) and 18 e2e cases written in `e2e/chrome-fit.spec.ts` (not run). Coordinator: build, run chrome-fit, re-run the account/service/order rows.
+
+## 2026-11-16 — WhatsApp template CLI (branch worktree-agent-a1d4e4a82d67e8829, not merged; no migration)
+
+Built `pnpm wa:templates` (dry run / status [--save] / submit --yes), Meta payload builder and offline rule checks
+(`packages/shared/src/whatsapp-meta.ts`), status storage (`getWhatsAppTemplateStatuses` / `saveWhatsAppTemplateStatuses`,
+setting `notifications.whatsapp_template_status`, system audit row), the send gate (approved once synced), API status
+fields and the Admin → Notifications approval line (en + hi). Runbook `docs/runbooks/whatsapp-templates.md` has the
+catalogue table. **Nothing was sent to Meta** (fake fetch only). Waiting on the user: Q173 go-ahead. Coordinator: after
+merge, new catalogue entries (quote events) need a `META_TEMPLATE_COPY` entry and locale text under `notifyTemplates`
+(typecheck forces it); no Playwright / next build was run.

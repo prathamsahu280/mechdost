@@ -10,7 +10,13 @@ import {
   isWhatsAppTemplateKey,
   placeholderProblem,
   utilityTemplateProblem,
+  type WhatsAppLocale,
 } from '@mechdost/shared/whatsapp';
+import {
+  WhatsAppStatusSetting,
+  whatsAppTemplateApproved,
+  type WhatsAppTemplateStatuses,
+} from '@mechdost/shared/whatsapp-meta';
 import { auditLog, notificationOutbox, notificationTemplates, settings, users } from '../schema';
 import { ConflictError, ValidationError } from './errors';
 import { enqueueNotification, type Channel, type Locale } from './notify';
@@ -151,10 +157,58 @@ export async function saveNotificationTemplate(
  */
 export async function notificationChannelEnabled(db: Tx, key: string, channel: Channel): Promise<boolean> {
   const rows = await db
-    .select({ enabled: notificationTemplates.enabled })
+    .select({ enabled: notificationTemplates.enabled, locale: notificationTemplates.locale })
     .from(notificationTemplates)
     .where(and(eq(notificationTemplates.key, key), eq(notificationTemplates.channel, channel)));
-  return rows.some((r) => r.enabled);
+  if (channel !== 'whatsapp') return rows.some((r) => r.enabled);
+  // WhatsApp: once Meta's statuses have been synced, a language counts as on only while Meta approved it.
+  const synced = await getWhatsAppTemplateStatuses(db);
+  return rows.some(
+    (r) => r.enabled && whatsAppTemplateApproved(synced?.templates ?? null, key, r.locale as WhatsAppLocale),
+  );
+}
+
+export const WHATSAPP_TEMPLATE_STATUS_KEY = 'notifications.whatsapp_template_status';
+
+/** Meta approval status per catalogue template and language, as last synced; null = never synced (no gate). */
+export async function getWhatsAppTemplateStatuses(db: Tx): Promise<WhatsAppStatusSetting | null> {
+  const row = await getGlobalSetting(db, WHATSAPP_TEMPLATE_STATUS_KEY);
+  const parsed = WhatsAppStatusSetting.safeParse(row?.value);
+  return parsed.success ? parsed.data : null;
+}
+
+/**
+ * Stores Meta's statuses (the template CLI, `--status --save`). A mirror of Meta's state, not an edit by a person,
+ * so it overwrites; the system audit row keeps the history.
+ */
+export async function saveWhatsAppTemplateStatuses(
+  db: Tx,
+  templates: WhatsAppTemplateStatuses,
+  now: Date = new Date(),
+): Promise<void> {
+  const value: WhatsAppStatusSetting = {
+    syncedAt: now.toISOString(),
+    templates,
+  };
+  await db.transaction(async (tx) => {
+    const before = await getGlobalSetting(tx, WHATSAPP_TEMPLATE_STATUS_KEY);
+    await tx
+      .insert(settings)
+      .values({ key: WHATSAPP_TEMPLATE_STATUS_KEY, value })
+      .onConflictDoUpdate({
+        target: [settings.cityId, settings.key],
+        set: { value, version: sql`${settings.version} + 1` },
+      });
+    await tx.insert(auditLog).values({
+      actorUserId: null,
+      actorRole: 'system',
+      action: 'whatsapp.template_status_synced',
+      entity: 'setting',
+      entityId: WHATSAPP_TEMPLATE_STATUS_KEY,
+      before: before ? { value: before.value, version: before.version } : null,
+      after: { value },
+    });
+  });
 }
 
 export const WHATSAPP_BUDGET_KEY = 'notifications.whatsapp_monthly_budget_paise';

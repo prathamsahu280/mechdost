@@ -3,6 +3,7 @@ import { contentField, contentStep } from '../src/lib/admin-content-view';
 import {
   budgetPaiseFrom,
   eventView,
+  metaStatusLabel,
   templateErrorProblem,
   templateSaves,
   type TemplateRow,
@@ -193,5 +194,15 @@ describe('customer blocks view', () => {
     expect(endsAtFrom('2026-12-01')).toBe('2026-12-01T18:29:59.000Z');
     expect(endsAtFrom('')).toBeNull();
     expect(endsAtFrom('01/12/2026')).toBeNull();
+  });
+});
+
+describe('Meta approval label (Admin → Notifications)', () => {
+  it('maps Meta statuses to locale keys and unknown words to a neutral one', () => {
+    expect(metaStatusLabel('approved')).toBe('notify_meta_approved');
+    expect(metaStatusLabel('pending')).toBe('notify_meta_pending');
+    expect(metaStatusLabel('unknown')).toBe('notify_meta_unknown');
+    expect(metaStatusLabel('missing')).toBe('notify_meta_missing');
+    expect(metaStatusLabel('in_appeal')).toBe('notify_meta_other');
   });
 });

@@ -22,6 +22,7 @@ import { adminApi } from '@/lib/admin-api';
 import {
   budgetPaiseFrom,
   eventView,
+  metaStatusLabel,
   templateErrorProblem,
   templateSaves,
   type EventView,
@@ -40,6 +41,8 @@ const EmailsPanel = dynamic(() => import('./admin-emails-api').then((m) => m.Ema
 
 interface Loaded {
   templates: NotificationTemplateDto[];
+  /** Meta approval per catalogue key and language, from the template CLI's last sync. */
+  metaStatus: Record<string, { en: string; hi: string } | undefined>;
   usage: WhatsAppUsageDto;
 }
 
@@ -71,7 +74,13 @@ export function NotificationsApi({ defaults }: { defaults: NotifyDefaults }) {
       return;
     }
     setError(null);
-    setData({ templates: templates.data.templates, usage: usage.data });
+    setData({
+      templates: templates.data.templates,
+      metaStatus: Object.fromEntries(
+        templates.data.whatsappCatalogue.map((entry) => [entry.key, entry.status]),
+      ),
+      usage: usage.data,
+    });
   }, [locale]);
 
   useEffect(() => {
@@ -147,7 +156,7 @@ export function NotificationsApi({ defaults }: { defaults: NotifyDefaults }) {
           <ul className="grid gap-4">
             {views.map(([event, view]) => (
               <li key={event}>
-                <EventCard event={event} view={view} onReload={load} />
+                <EventCard event={event} view={view} meta={data.metaStatus[event]} onReload={load} />
               </li>
             ))}
           </ul>
@@ -161,10 +170,12 @@ export function NotificationsApi({ defaults }: { defaults: NotifyDefaults }) {
 function EventCard({
   event,
   view,
+  meta,
   onReload,
 }: {
   event: WhatsAppTemplateKey;
   view: EventView;
+  meta: { en: string; hi: string } | undefined;
   onReload: () => Promise<void>;
 }) {
   const t = useTranslations('portal');
@@ -232,6 +243,14 @@ function EventCard({
             {t(template.audience === 'partner' ? 'notify_audience_partner' : 'notify_audience_customer')} ·{' '}
             {t('notify_placeholders', { list: placeholders })}
           </p>
+          {meta ? (
+            <p className="mt-0.5 text-xs font-bold text-muted">
+              {t('notify_meta_status', {
+                en: t(metaStatusLabel(meta.en)),
+                hi: t(metaStatusLabel(meta.hi)),
+              })}
+            </p>
+          ) : null}
         </div>
         <label className="inline-flex min-h-11 cursor-pointer items-center gap-3 text-sm font-bold text-ink">
           {t('notify_switch')}

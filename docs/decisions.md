@@ -1275,3 +1275,27 @@ takes me to the top"). Rule for every page, now and for new work:
 - Screen readers hear the change (focus or announcement on the new heading).
 - Guarded by a source test (portals have layouts; no internal plain anchors) and an e2e test (frame node survives,
   no reload, no scroll jump). Checked in every UI review (`docs/design-system.md` § Calm UI).
+
+## 2026-11-16 — WhatsApp template CLI built (builder rulings; Q173 stays open for the go-ahead)
+
+`pnpm wa:templates` exists (`apps/api/src/notify/wa-templates-cli.ts`, runbook `docs/runbooks/whatsapp-templates.md`).
+Rulings made while building it:
+
+- **Modes:** `--dry-run` (default, no network, no credentials), `--status [--save]` (read-only GET), `--submit --yes`
+  (creates only the missing name/language pairs; never edits or deletes). Submitting stays the user's call (Q173).
+- **Text source:** template bodies are the existing `notifyTemplates` locale text (the same defaults the admin edits);
+  button labels (en + hi) and sample values live in `packages/shared/src/whatsapp-meta.ts`. `META_TEMPLATE_COPY` is
+  typed over the catalogue keys, so a new catalogue entry (quote events) cannot be added without its Meta copy.
+- **Token:** reuses `WHATSAPP_ACCESS_TOKEN`; `WHATSAPP_MANAGEMENT_TOKEN` overrides it when set (different permission).
+  New names in `.env.example`: `WHATSAPP_BUSINESS_ACCOUNT_ID`, `WHATSAPP_MANAGEMENT_TOKEN`. Meta's `paging.next` URL embeds
+  the access token, so paging uses the cursor only; every output line is scrubbed of the token.
+- **Per-template switch-on:** the admin's per-event switch (enabled template row) already existed. New: Meta approval
+  status stored in the `notifications.whatsapp_template_status` setting by `--status --save`. **Once that setting
+  exists**, `notificationChannelEnabled` for WhatsApp also requires `approved` for the language of the enabled row, so a
+  template Meta has not approved (or rejected, paused) is never queued. Before the first sync nothing changes (admin
+  switch only), so existing behaviour and tests are untouched. Global `WHATSAPP_ENABLED` stays `off` by default.
+- **Admin view:** Admin → Notifications shows "WhatsApp approval: English …, Hindi …" on each event card (en + hi labels);
+  API `GET /v1/admin/notifications/templates` adds `status` per catalogue entry and `whatsappStatusSyncedAt`.
+- **Hindi button labels and the `https://mechdost.com` button origin are builder choices** (labels at most 25 characters);
+  the English templates the user already registered by hand are not touched by `--submit` (it only creates missing ones),
+  so their text may differ slightly from the catalogue; compare with the runbook table.

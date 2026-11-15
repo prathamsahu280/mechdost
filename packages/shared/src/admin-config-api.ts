@@ -37,8 +37,11 @@ export const NotificationTemplateList = z.object({
       category: z.string(),
       params: z.array(z.string()),
       audience: z.string(),
+      /** Meta review status per language (`unknown` before the first `pnpm wa:templates --status --save`). */
+      status: z.object({ en: z.string(), hi: z.string() }).optional(),
     }),
   ),
+  whatsappStatusSyncedAt: z.string().nullable().optional(),
 });
 
 /** One saved email override per template and language (no row = the code default, on). Spec 10, design 2026-11-15. */
