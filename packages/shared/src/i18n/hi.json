@@ -4705,7 +4705,7 @@
     "teamPendingUntil": "{date} तक मान्य",
     "teamCancel": "आमंत्रण रद्द करें",
     "teamRemove": "हटाएँ",
-    "teamRemoveAsk": "{name} को हटाएँ? उनकी इस दुकान तक पहुँच बंद हो जाएगी।",
+    "teamRemoveAsk": "<who>{name}</who> को हटाएँ? उनकी इस दुकान तक पहुँच बंद हो जाएगी।",
     "teamRemoveYes": "हाँ, हटाएँ",
     "teamRemoveKeep": "रहने दें",
     "teamAdd": "किसी को जोड़ें",

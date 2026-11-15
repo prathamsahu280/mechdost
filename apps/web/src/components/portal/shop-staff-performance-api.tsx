@@ -198,7 +198,7 @@ function People({ data }: { data: ShopStaffPerformanceDto }) {
             <Stats
               title={
                 <>
-                  <span className="font-bold text-ink">
+                  <span data-user-content className="font-bold text-ink">
                     {m.name ?? (m.role === 'owner' ? t('staffOwner') : t('staffUnnamed'))}
                   </span>
                   <span className="ml-2 rounded-full bg-pill px-2 py-0.5 text-xs font-bold text-ink">

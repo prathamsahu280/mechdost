@@ -96,7 +96,12 @@ export function ShopTeamApi({ shopId }: { shopId: string }) {
                   {m.role === 'staff' ? (
                     removing === m.userId ? (
                       <div className="mt-2 rounded-lg bg-pill p-3">
-                        <p className="text-sm text-ink">{t('teamRemoveAsk', { name })}</p>
+                        <p className="text-sm text-ink">
+                          {t.rich('teamRemoveAsk', {
+                            name,
+                            who: (chunks) => <span data-user-content>{chunks}</span>,
+                          })}
+                        </p>
                         <div className="mt-2 flex flex-wrap gap-2">
                           <button
                             type="button"

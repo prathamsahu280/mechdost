@@ -4705,7 +4705,7 @@
     "teamPendingUntil": "valid until {date}",
     "teamCancel": "Cancel invite",
     "teamRemove": "Remove",
-    "teamRemoveAsk": "Remove {name}? They lose access to this shop.",
+    "teamRemoveAsk": "Remove <who>{name}</who>? They lose access to this shop.",
     "teamRemoveYes": "Yes, remove",
     "teamRemoveKeep": "Keep",
     "teamAdd": "Add a person",
