@@ -188,3 +188,5 @@ T148 · 2026-11-15 · real-sign-in build (launch config) · the API-mode build (
 
   T163 · 2026-11-16 · attribution tests · per-person numbers read from the order timeline are only trusted when the test drives the real flow (accept, pack, hand over, deliver, give up with different staff ids), not hand-inserted events; ledger tests pin the IST day edge with an entry one minute either side of the window start and keep edge entries on an undelivered order so they do not leak into a person's share · active
   T164 · 2026-11-16 · live ping wiring · a source-level wiring test (screens call the hook with the kind, polling still present, the hook imports the hub only, the hub is the single gate that makes it a no-op when live is off) is enough without a browser; remember the lazy-load guard lists every file that calls `startLive` · active
+
+  T165 · 2026-11-16 · brand/assets · assert asset files by header bytes (PNG IHDR width/height) and SVG hygiene (viewBox, title, no width/height, no metadata) in a unit test, plus source checks that the header uses both artworks with width/height; geometry (320-1280 px fit) stays in e2e chrome-fit.

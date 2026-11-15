@@ -24,10 +24,8 @@ describe('signed-in header fits at every width', () => {
     expect(header).toMatch(/px-\[5%\] py-3 nav:px-6 xl:px-\[5%\]/);
   });
 
-  it('the brand is smaller until 460 px and the tagline waits for the tablet width', () => {
-    expect(header).toContain('min-[460px]:text-[21px]');
-    expect(header).toContain('min-[460px]:text-[34px]');
-    expect(header).not.toContain('min-[380px]:text-[21px]');
+  it('the logo is narrower until 460 px and the tagline waits for the tablet width', () => {
+    expect(header).toContain('w-[132px] min-[460px]:w-[152px] tab:w-[176px]');
     expect(header).toMatch(/tab:block nav:hidden xl:block/);
   });
 

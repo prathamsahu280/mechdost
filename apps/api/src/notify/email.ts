@@ -86,6 +86,7 @@ export function createEmailAdapter(
         locale,
         grievanceContact,
         trustLine,
+        webBaseUrl: cfg.webBaseUrl,
       });
       // A staff test send (Admin → Emails) is marked so nobody mistakes it for a real notification.
       const subject =

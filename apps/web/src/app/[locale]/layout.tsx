@@ -61,7 +61,19 @@ export async function generateMetadata({
     title: { default: t('title'), template: `%s · MechDost` },
     description: t('description', { city }),
     applicationName: 'MechDost',
-    openGraph: { siteName: 'MechDost', locale: locale === 'hi' ? 'hi_IN' : 'en_IN', type: 'website' },
+    icons: {
+      icon: [
+        { url: '/brand/favicon.svg', type: 'image/svg+xml' },
+        { url: '/favicon.ico', sizes: '32x32' },
+      ],
+      apple: [{ url: '/brand/icons/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+    },
+    openGraph: {
+      siteName: 'MechDost',
+      locale: locale === 'hi' ? 'hi_IN' : 'en_IN',
+      type: 'website',
+      images: [{ url: '/brand/icons/og-image.png', width: 1200, height: 630, alt: 'MechDost' }],
+    },
   };
 }
 

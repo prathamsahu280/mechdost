@@ -175,6 +175,25 @@
   }
 }
 
+/* Brand logo artwork swap without JS: navy + orange on light, white + orange on dark (same trigger as the theme icon). */
+.brand-logo-dark {
+  display: none;
+}
+:root[data-theme='dark'] .brand-logo-light {
+  display: none;
+}
+:root[data-theme='dark'] .brand-logo-dark {
+  display: block;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .brand-logo-light {
+    display: none;
+  }
+  :root:not([data-theme='light']) .brand-logo-dark {
+    display: block;
+  }
+}
+
 /* Theme icon swap without JS (the toggle's state is the <html data-theme> / system preference). */
 .theme-icon-sun {
   display: none;

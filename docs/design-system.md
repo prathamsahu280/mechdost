@@ -50,7 +50,7 @@ Source: `style.css`, `premium.css`, `simple.css`, `service-hub.css`, `service-wo
 
 - `main` max 1600px, 5% side gutters (hero 3%). Section padding 55–65px desktop, 35–40px mobile.
 - **Announcement bar** (navy, 9–10px letter-spaced): "MECHDOST · Product orders by confirmation · Workshop requests in Raipur" → becomes city-aware.
-- **Header** sticky white: brand (`m↗` 42px accent + "MechDost" Manrope 800 25px + small "YOUR AUTOMOTIVE CONNECTION"), nav links 13px/700 with 8px radius and `--accent-soft` current state: Home · Shop Products · Find Workshops · My Vehicles; "Account" text button; Cart pill (`#edf2f7`, count in accent).
+- **Header** sticky white: brand (the MechDost logo SVG, see "Logo" below, + small "YOUR AUTOMOTIVE CONNECTION" tagline; replaced the `m↗` text mark 2026-11-16), nav links 13px/700 with 8px radius and `--accent-soft` current state: Home · Shop Products · Find Workshops · My Vehicles; "Account" text button; Cart pill (`#edf2f7`, count in accent).
 - **Mobile (<760px)**: nav hidden; fixed bottom tab bar (Home ⌂ / Shop ▦ / Find Workshops ⚙ / My Vehicles ◉), 21px icons, 9px labels, active `--accent-soft`; body padding-bottom 76px; `env(safe-area-inset-bottom)`.
 - **Hero**: navy rounded panel, two columns (copy / imagery), eyebrow in `--accent-light`, h1 clamp(40px,4.8vw,70px) with `em` in `#ff8b59`, white search box with accent icon button, image label chip, rotated bike inset card with 6px white border.
 - **Category tiles**: 6-up (3 tablet, 2 mobile), white 15px radius, 35px accent icon, label.
@@ -66,6 +66,13 @@ Source: `style.css`, `premium.css`, `simple.css`, `service-hub.css`, `service-wo
 - **Dialog**: `min(600px,94vw)` (member 800px), 18px radius, head with 33px round close button; body forms grid gap 13px; `.help` 10px muted.
 - **Toast**: fixed bottom centre, navy, 6px radius, 3.5 s.
 - **Admin/partner shell**: 80px white header; 240px navy sidebar; main padding 40px 5%; h1 38px −1.3px; stat cards 3-up (34px numbers); white 14px panels 24px padding; tables 12px with `#edf2f7` headers; badges 6px radius; buttons 8px radius.
+
+## Logo (2026-11-16, Q172)
+
+- Files in `apps/web/public/brand/`: `mechdost-logo.svg` (light backgrounds), `mechdost-logo-dark.svg` (navy parts near-white), `mechdost-mark.svg` / `mechdost-mark-dark.svg` (the "D" with wrench and smile only), `favicon.svg`, `icons/*.png` (apple-touch 180, PWA 192/512 and maskable, favicon 32, email logo, share image), `source/logo-source.jpeg` (original). Regenerate PNGs with `node apps/web/scripts/make-brand-icons.mjs`.
+- **Brand-asset colours (not UI tokens):** navy `#092349`, orange `#f67411`, dark-theme navy replacement `#f4f7fb`. The site accent stays `#ea5728` (decisions 2026-11-16).
+- Header and footer: `BrandMark` (`components/site/header.tsx`) renders both artworks with width/height 160x29 (ratio 5.53:1), shown at 132 px (under 460 px), 152 px (460 px up) and 176 px (tablet up) wide; CSS swaps light/dark. Tagline stays under it from the tablet width. Alt text "MechDost" in both languages.
+- Clear space: at least the height of the "D" counter's smile around the logo; do not recolour, stretch or add effects.
 
 ## Copy to preserve (examples; full lists in `concept/*.md`)
 
