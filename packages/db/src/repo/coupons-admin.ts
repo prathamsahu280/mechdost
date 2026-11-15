@@ -91,6 +91,7 @@ async function toView(tx: Tx, row: CouponRow): Promise<AdminCoupon> {
       shopNameHi: shops.nameHi,
       shopTerms: couponShopTerms.status,
       categoryName: categories.name,
+      categoryNameHi: categories.nameHi,
       categorySlug: categories.slug,
       now: sql<Date>`now()`,
     })
@@ -109,6 +110,7 @@ interface Extra {
   shopNameHi: string | null;
   shopTerms: string | null;
   categoryName: string | null;
+  categoryNameHi: string | null;
   categorySlug: string | null;
   now: Date | string;
 }
@@ -152,7 +154,13 @@ function view(row: CouponRow, extra: Extra | undefined): AdminCoupon {
     shopTerms,
     isPublic: row.isPublic,
     autoApply: row.autoApply,
-    category: row.categoryId ? { slug: extra?.categorySlug ?? '', name: extra?.categoryName ?? '' } : null,
+    category: row.categoryId
+      ? {
+          slug: extra?.categorySlug ?? '',
+          name: extra?.categoryName ?? '',
+          nameHi: extra?.categoryNameHi ?? null,
+        }
+      : null,
     active: row.active,
     pausedReason: row.pausedReason,
     live,
@@ -175,6 +183,7 @@ export async function listCoupons(
       shopNameHi: shops.nameHi,
       shopTerms: couponShopTerms.status,
       categoryName: categories.name,
+      categoryNameHi: categories.nameHi,
       categorySlug: categories.slug,
       now: sql<Date>`now()`,
       sortKey: sql<string>`${coupons.createdAt}::text`,

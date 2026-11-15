@@ -4511,7 +4511,7 @@
     "csvSummary": "{rows} lines read: {stock} stock changes, {active} on/off changes, {prices} price requests, {unchanged} already match.",
     "csvNoChanges": "Nothing in this file changes your stock.",
     "csvErrorsTitle": "{count, plural, one {# line needs fixing.} other {# lines need fixing.}} Nothing was changed.",
-    "csvErrorLine": "Line {line}, {column}: {problem}",
+    "csvErrorLine": "Line {line}, <code>{column}</code>: {problem}",
     "csvChangesTitle": "What will change",
     "csvChangeStock": "Stock {from} to {to}",
     "csvChangeOn": "Switch on",

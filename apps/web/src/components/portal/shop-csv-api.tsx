@@ -167,10 +167,11 @@ export function ShopCsvCard({ shopId }: { shopId: string }) {
               <ul className="mt-2 space-y-1">
                 {preview.errors.slice(0, ERRORS_SHOWN).map((e) => (
                   <li key={`${String(e.line)}-${e.column}-${e.code}`}>
-                    {t('csvErrorLine', {
+                    {t.rich('csvErrorLine', {
                       line: e.line,
                       column: e.column,
                       problem: t(csvProblemKey(e.code)),
+                      code: (parts) => <code lang="en">{parts}</code>,
                     })}
                   </li>
                 ))}

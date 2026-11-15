@@ -1132,7 +1132,7 @@ function couponsMocks(c0: AuditCase): Mock[] {
     // 2026-11-16: shown on the offers page, applied without a code, limited to a category.
     isPublic: i % 2 === 0,
     autoApply: i === 1,
-    category: i === 2 ? { slug: 'tyres', name: 'Tyres' } : null,
+    category: i === 2 ? { slug: 'tyres', name: 'Tyres', nameHi: 'टायर' } : null,
     active: true,
     pausedReason: null,
     live: true,

@@ -50,8 +50,10 @@ export function AssistantLauncher({ copy }: { copy: AssistantCopy }) {
           setLoaded(true);
           setOpen((v) => !v);
         }}
-        className={`assistant-launcher press fixed right-4 z-40 inline-flex size-13 items-center justify-center gap-2 rounded-full bg-navy text-sm font-bold sm:size-auto sm:min-h-12 sm:rounded-pill sm:px-4 text-white shadow-dialog transition-[opacity,transform,visibility] duration-[var(--duration-base)] hover:-translate-y-0.5 bottom-[calc(84px+env(safe-area-inset-bottom))] nav:right-6 nav:bottom-6 ${
-          open ? 'invisible pointer-events-none translate-y-2 opacity-0' : 'opacity-100'
+        className={`assistant-launcher press fixed right-4 z-40 inline-flex size-13 items-center justify-center gap-2 rounded-full bg-navy text-sm font-bold sm:size-auto sm:min-h-12 sm:rounded-pill sm:px-4 text-white shadow-dialog hover:-translate-y-0.5 bottom-[calc(84px+env(safe-area-inset-bottom))] nav:right-6 nav:bottom-6 ${
+          open
+            ? 'invisible pointer-events-none'
+            : 'opacity-100 transition-[opacity,transform] duration-[var(--duration-base)]'
         }`}
       >
         <MessageCircleQuestion aria-hidden="true" className="size-6 text-accent-light sm:size-5" />

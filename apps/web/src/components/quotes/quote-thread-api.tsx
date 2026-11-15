@@ -433,12 +433,12 @@ function OfferCard({
             <dt className="font-bold text-ink">{t('total')}</dt>
             <dd className="font-heading text-2xl font-extrabold text-ink">{formatPrice(offer.totalPaise)}</dd>
           </div>
-          {saving > 0 ? (
-            <p className="text-right text-xs font-bold text-success">
-              {t('saving', { price: formatPrice(saving) })}
-            </p>
-          ) : null}
         </dl>
+        {saving > 0 ? (
+          <p className="mt-2 text-right text-xs font-bold text-success">
+            {t('saving', { price: formatPrice(saving) })}
+          </p>
+        ) : null}
         {offer.terms ? (
           <p data-user-content className="mt-3 rounded-lg bg-surface-alt p-3 text-sm text-ink">
             {offer.terms}

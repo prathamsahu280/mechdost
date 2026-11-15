@@ -109,7 +109,7 @@ describe('offers flags in the admin form (2026-11-16)', () => {
       shopTerms: null,
       isPublic: true,
       autoApply: true,
-      category: { slug: 'tyres', name: 'Tyres' },
+      category: { slug: 'tyres', name: 'Tyres', nameHi: 'टायर' },
       active: true,
       pausedReason: null,
       live: true,
