@@ -2,26 +2,38 @@ import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import {
   TICKET_BODY_MAX,
   TICKET_KINDS,
+  assignTicket,
   createSupportTicket,
   customerReplyTicket,
   getInboxTicket,
   getMyTicket,
+  listAssignableAgents,
+  listCannedReplies,
   listInbox,
   listMyTickets,
+  saveCannedReply,
   setTicketStatus,
   staffReplyTicket,
   ticketScopeFrom,
+  type InboxTicketView,
   type TicketView,
 } from '@mechdost/db/repo';
 import { SERVICE_CODE_RE } from '@mechdost/shared/service-requests';
 import { TICKET_STATES } from '@mechdost/shared/state';
+import { SLA_STATES } from '@mechdost/shared/support-sla';
+import { CannedReplyBody } from '@mechdost/shared/support-inbox';
 import type { SessionCache } from '../auth/session-cache';
 import { SupportAttachment, SupportRefundInfo } from '@mechdost/shared/support-thread';
+import type { Context } from 'hono';
+import { createMiddleware } from 'hono/factory';
+import type { Grant, Permission } from '@mechdost/shared/rbac';
+import { Forbidden } from '../errors';
 import { authenticate, requirePermission, requireVerified } from '../middleware/auth';
 import { rateLimit, RATE_RULES } from '../middleware/rate-limit';
 import type { AppDeps, AppEnv } from '../types';
 import { validationHook } from '../validation';
 import { errorResponses, ErrorSchema } from './schemas';
+import { supportDeletionRoutes } from './support-deletion';
 import { supportThreadRoutes, withAttachmentUrls } from './support-threads';
 
 /**
@@ -55,6 +67,7 @@ const Ticket = z
     issueCode: z.string().nullable(),
     serviceCode: z.string().nullable(),
     refund: SupportRefundInfo,
+    deletionConfirmedAt: z.string().nullable(),
     slaAckDue: z.string(),
     slaResolveDue: z.string(),
     resolvedAt: z.string().nullable(),
@@ -76,9 +89,47 @@ const InboxItem = z
     slaResolveDue: z.string(),
     createdAt: z.string(),
     version: z.number().int(),
+    serviceCode: z.string().nullable(),
     acknowledged: z.boolean(),
+    firstRepliedAt: z.string().nullable(),
+    sla: z.enum(SLA_STATES),
+    customerName: z.string().nullable(),
+    customerPhoneMasked: z.string().nullable(),
+    isGuest: z.boolean(),
+    assignee: z.object({ id: z.string(), name: z.string().nullable() }).nullable(),
   })
   .openapi('SupportInboxItem');
+
+const InboxTicket = Ticket.extend({
+  staff: z.object({
+    customerName: z.string().nullable(),
+    customerPhoneMasked: z.string().nullable(),
+    isGuest: z.boolean(),
+    assignee: z.object({ id: z.string(), name: z.string().nullable() }).nullable(),
+    assignedAt: z.string().nullable(),
+    firstRepliedAt: z.string().nullable(),
+    sla: z.enum(SLA_STATES),
+    deletionConfirmedAt: z.string().nullable(),
+  }),
+}).openapi('SupportInboxTicket');
+
+const CannedReply = z
+  .object({
+    id: z.string(),
+    key: z.string(),
+    titleEn: z.string(),
+    titleHi: z.string(),
+    bodyEn: z.string(),
+    bodyHi: z.string(),
+    active: z.boolean(),
+    sortOrder: z.number().int(),
+    version: z.number().int(),
+  })
+  .openapi('SupportCannedReply');
+const Assign = z
+  .object({ assigneeId: z.uuid().nullable(), version: z.number().int().min(1) })
+  .strict()
+  .openapi('SupportAssign');
 
 const NewTicket = z
   .object({
@@ -104,7 +155,10 @@ const StaffReply = z
   .strict()
   .openapi('SupportStaffReply');
 const StatusChange = z
-  .object({ to: z.enum(['in_review', 'resolved', 'closed']), version: z.number().int().min(1) })
+  .object({
+    to: z.enum(['in_review', 'awaiting_customer', 'resolved', 'closed']),
+    version: z.number().int().min(1),
+  })
   .strict()
   .openapi('SupportStatusChange');
 
@@ -178,7 +232,14 @@ const inbox = createRoute({
   tags: ['admin'],
   summary: 'Support inbox in your cities, earliest reply deadline first',
   security: [{ bearerAuth: [] }],
-  request: { query: z.object({ view: z.enum(['active', 'done']).optional() }) },
+  request: {
+    query: z.object({
+      view: z.enum(['active', 'done']).optional(),
+      /** `me`, `unassigned` or a staff user id. */
+      assignee: z.union([z.enum(['me', 'unassigned']), z.uuid()]).optional(),
+      status: z.enum(TICKET_STATES).optional(),
+    }),
+  },
   responses: { 200: json(z.object({ tickets: z.array(InboxItem) }), 'Inbox'), ...errorResponses },
 });
 
@@ -189,7 +250,7 @@ const inboxTicket = createRoute({
   summary: 'A request with its full conversation, including internal notes',
   security: [{ bearerAuth: [] }],
   request: { params: z.object({ code: Code }) },
-  responses: { 200: json(Ticket, 'Request'), 404: json(ErrorSchema, 'Not found'), ...errorResponses },
+  responses: { 200: json(InboxTicket, 'Request'), 404: json(ErrorSchema, 'Not found'), ...errorResponses },
 });
 
 const staffReply = createRoute({
@@ -226,6 +287,108 @@ const changeStatus = createRoute({
   },
 });
 
+const assign = createRoute({
+  method: 'post',
+  path: '/admin/support/tickets/{code}/assign',
+  tags: ['admin'],
+  summary:
+    'Assign a request to a support agent, or clear it (managers; an agent may take or release their own)',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: z.object({ code: Code }),
+    body: { required: true, content: { 'application/json': { schema: Assign } } },
+  },
+  responses: {
+    200: json(
+      z.object({
+        version: z.number().int(),
+        assignee: z.object({ id: z.string(), name: z.string().nullable() }).nullable(),
+      }),
+      'Assigned',
+    ),
+    ...conflict,
+    422: json(ErrorSchema, 'ASSIGNEE_INVALID'),
+    ...errorResponses,
+  },
+});
+
+const agents = createRoute({
+  method: 'get',
+  path: '/admin/support/agents',
+  tags: ['admin'],
+  summary: 'Support agents a request in your scope can be assigned to',
+  security: [{ bearerAuth: [] }],
+  responses: {
+    200: json(
+      z.object({ agents: z.array(z.object({ id: z.string(), name: z.string().nullable() })) }),
+      'Agents',
+    ),
+    ...errorResponses,
+  },
+});
+
+const cannedList = createRoute({
+  method: 'get',
+  path: '/admin/support/canned-replies',
+  tags: ['admin'],
+  summary: 'Canned replies in English and Hindi (editors also see the switched-off ones)',
+  security: [{ bearerAuth: [] }],
+  responses: {
+    200: json(z.object({ replies: z.array(CannedReply), canEdit: z.boolean() }), 'Replies'),
+    ...errorResponses,
+  },
+});
+
+const cannedCreate = createRoute({
+  method: 'post',
+  path: '/admin/support/canned-replies',
+  tags: ['admin'],
+  summary: 'Add a canned reply (needs content:write)',
+  security: [{ bearerAuth: [] }],
+  request: { body: { required: true, content: { 'application/json': { schema: CannedReplyBody } } } },
+  responses: {
+    201: json(CannedReply, 'Created'),
+    409: json(ErrorSchema, 'CANNED_REPLY_KEY_TAKEN'),
+    422: json(ErrorSchema, 'CANNED_REPLY_INVALID'),
+    ...errorResponses,
+  },
+});
+
+const cannedUpdate = createRoute({
+  method: 'put',
+  path: '/admin/support/canned-replies/{id}',
+  tags: ['admin'],
+  summary: 'Edit or switch off a canned reply (needs content:write; compare-and-set on version)',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: z.object({ id: z.uuid().openapi({ param: { name: 'id', in: 'path' } }) }),
+    body: {
+      required: true,
+      content: {
+        'application/json': { schema: CannedReplyBody.extend({ version: z.number().int().min(1) }) },
+      },
+    },
+  },
+  responses: {
+    200: json(CannedReply, 'Saved'),
+    404: json(ErrorSchema, 'Not found'),
+    409: json(ErrorSchema, 'STALE_CANNED_REPLY or CANNED_REPLY_KEY_TAKEN'),
+    422: json(ErrorSchema, 'CANNED_REPLY_INVALID'),
+    ...errorResponses,
+  },
+});
+
+/**
+ * Canned replies are one global list, so editing needs the permission on a platform-wide grant: a city-scoped
+ * `content:write` (city manager) must not change what every city's agents send (security review 2026-11-15).
+ */
+function hasGlobalGrant(grants: readonly Grant[], permission: Permission): boolean {
+  return grants.some(
+    (g) =>
+      g.permissions.includes(permission) && g.cityId === null && g.shopId === null && g.workshopId === null,
+  );
+}
+
 export function supportRoutes(deps: AppDeps, cache: SessionCache) {
   const app = new OpenAPIHono<AppEnv>({ defaultHook: validationHook });
   for (const path of ['/support/*', '/admin/support/*']) {
@@ -243,7 +406,26 @@ export function supportRoutes(deps: AppDeps, cache: SessionCache) {
   // The manual refund from a ticket also needs the right to ask for refunds (finance approves it later).
   app.on('POST', '/admin/support/tickets/:code/refund', requirePermission('refunds:initiate'));
   const toJson = (t: TicketView) => withAttachmentUrls(t, deps.keyring);
+  const toStaffJson = (t: InboxTicketView) => ({
+    ...withAttachmentUrls(t, deps.keyring),
+    staff: {
+      ...t.staff,
+      assignedAt: t.staff.assignedAt ? t.staff.assignedAt.toISOString() : null,
+      firstRepliedAt: t.staff.firstRepliedAt ? t.staff.firstRepliedAt.toISOString() : null,
+      deletionConfirmedAt: t.staff.deletionConfirmedAt ? t.staff.deletionConfirmedAt.toISOString() : null,
+    },
+  });
+  // Canned replies: anyone who can reply may read the active ones; editing is `content:write` (checked per call).
+  const editsCannedReplies = (c: Context<AppEnv>) => hasGlobalGrant(c.get('auth').grants, 'content:write');
+  const requireGlobalContentWrite = createMiddleware<AppEnv>(async (c, next) => {
+    if (!hasGlobalGrant(c.get('auth').grants, 'content:write')) throw Forbidden();
+    await next();
+  });
+  app.on(['POST', 'PUT'], '/admin/support/canned-replies/*', requireGlobalContentWrite);
+  app.on('POST', '/admin/support/canned-replies', requireGlobalContentWrite);
+  app.on('GET', '/admin/support/canned-replies', requirePermission('tickets:reply'));
   app.route('/', supportThreadRoutes(deps));
+  app.route('/', supportDeletionRoutes(deps));
 
   return app
     .openapi(createTicket, async (c) => {
@@ -275,8 +457,12 @@ export function supportRoutes(deps: AppDeps, cache: SessionCache) {
       return c.json(result, 200);
     })
     .openapi(inbox, async (c) => {
+      const q = c.req.valid('query');
       const rows = await listInbox(deps.db, ticketScopeFrom(c.get('auth').grants), {
-        view: c.req.valid('query').view ?? 'active',
+        view: q.view ?? 'active',
+        assignee: q.assignee,
+        status: q.status,
+        staffUserId: c.get('auth').user.id,
       });
       return c.json(
         {
@@ -285,6 +471,7 @@ export function supportRoutes(deps: AppDeps, cache: SessionCache) {
             slaAckDue: r.slaAckDue.toISOString(),
             slaResolveDue: r.slaResolveDue.toISOString(),
             createdAt: r.createdAt.toISOString(),
+            firstRepliedAt: r.firstRepliedAt ? r.firstRepliedAt.toISOString() : null,
           })),
         },
         200,
@@ -296,7 +483,7 @@ export function supportRoutes(deps: AppDeps, cache: SessionCache) {
         ticketScopeFrom(c.get('auth').grants),
         c.req.valid('param').code,
       );
-      return c.json(toJson(ticket), 200);
+      return c.json(toStaffJson(ticket), 200);
     })
     .openapi(staffReply, async (c) => {
       const body = c.req.valid('json');
@@ -317,5 +504,54 @@ export function supportRoutes(deps: AppDeps, cache: SessionCache) {
         expectedVersion: body.version,
       });
       return c.json(result, 200);
+    })
+    .openapi(assign, async (c) => {
+      const body = c.req.valid('json');
+      const { grants, user } = c.get('auth');
+      // The repository checks `tickets:assign` for this request's own city and, without it, lets the caller only
+      // take a free request or release their own (security review 2026-11-15).
+      const result = await assignTicket(
+        deps.db,
+        {
+          reply: ticketScopeFrom(grants, 'tickets:reply'),
+          assign: ticketScopeFrom(grants, 'tickets:assign'),
+        },
+        {
+          staffUserId: user.id,
+          code: c.req.valid('param').code,
+          assigneeId: body.assigneeId,
+          expectedVersion: body.version,
+        },
+      );
+      return c.json(result, 200);
+    })
+    .openapi(agents, async (c) => {
+      const list = await listAssignableAgents(
+        deps.db,
+        ticketScopeFrom(c.get('auth').grants, 'tickets:reply'),
+      );
+      return c.json({ agents: list }, 200);
+    })
+    .openapi(cannedList, async (c) => {
+      const canEdit = editsCannedReplies(c);
+      const replies = await listCannedReplies(deps.db, { includeInactive: canEdit });
+      return c.json({ replies, canEdit }, 200);
+    })
+    .openapi(cannedCreate, async (c) => {
+      const reply = await saveCannedReply(deps.db, {
+        staffUserId: c.get('auth').user.id,
+        ...c.req.valid('json'),
+      });
+      return c.json(reply, 201);
+    })
+    .openapi(cannedUpdate, async (c) => {
+      const { version, ...body } = c.req.valid('json');
+      const reply = await saveCannedReply(deps.db, {
+        staffUserId: c.get('auth').user.id,
+        id: c.req.valid('param').id,
+        expectedVersion: version,
+        ...body,
+      });
+      return c.json(reply, 200);
     });
 }

@@ -110,6 +110,14 @@ export function AccountArea({ section }: { section: AccountSection }) {
             ) : (
               <p className="mt-1 text-sm text-muted">{t('signedOutBody')}</p>
             )}
+            {section === 'support' ? (
+              <Link
+                href={`${prefix}/support/guest`}
+                className="mt-2 inline-block text-sm font-bold text-ink underline"
+              >
+                {t('guestSupportLink')}
+              </Link>
+            ) : null}
           </div>
           <Link
             href={`${prefix}/login?next=${encodeURIComponent(`${prefix}/account${section === 'overview' ? '' : `/${section}`}`)}`}

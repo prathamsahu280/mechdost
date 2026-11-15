@@ -120,3 +120,7 @@ User: "make it admin-configurable".
 - **Website** (real sign-in, `AUTH_MODE === 'firebase'`; the demo keeps its browser copy): `components/account/account-api-sections.tsx` (lazy) renders addresses, vehicles and profile from the API; a stale save reloads the list and says so; empty states offer one action. Profile edits also update the browser account used for the greeting. Strings: namespace `accountApi` (en + hi).
 - **Not built:** a map pin picker in the address form (the API accepts `lat`/`lng`; the form does not ask yet), phone/email change (re-verification flow), account deletion (support flow, spec 09), billing-default control in the UI (API has it).
 - **Tests:** `packages/db/test/account.test.ts`, `apps/api/test/account.test.ts`, `packages/shared/test/account.test.ts`; UI state audit rows `ACC-VEHICLES-DATA`, `ACC-ADDRESSES-DATA` (none / one / limit / long Hindi text).
+
+## Account deletion request (2026-11-15, support next tier item 7)
+
+Built as a support request: `POST /v1/support/deletion-request` (spec 09 "Account deletion request"; the route lives in the support stack, not under `/me`, so it shares the ticket guards and limits). The request is blocked while the customer has an open order, service job or refund, and support confirms it as a step of its own (`customers:block`). **The deletion itself (what is anonymised, what is kept) is not built**: Q122. `users.deletion_requested_at` is stamped when the request opens.

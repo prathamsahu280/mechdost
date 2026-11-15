@@ -9,6 +9,7 @@ import { grievanceContactLine } from '@mechdost/shared/company';
 import { trustLineText } from '@mechdost/shared/content';
 import { defaultEmailTrustLine } from '@mechdost/shared/email-layout';
 import {
+  autoCloseResolvedTickets,
   bridgeInboundWhatsApp,
   emailOverrideFor,
   ensureEventPartitions,
@@ -214,6 +215,25 @@ const holdTimer = setInterval(() => {
     });
 }, 60_000);
 holdTimer.unref();
+
+// Support auto-close (design 2026-11-15 item 5): a request "resolved" `support.auto_close_days` ago with no customer
+// reply is closed. Every 10 min; one conditional UPDATE per request on its version, so several workers are safe.
+let closingTickets = false;
+const ticketCloseTimer = setInterval(() => {
+  if (closingTickets) return;
+  closingTickets = true;
+  void autoCloseResolvedTickets(db, new Date())
+    .then(({ closed, skipped }) => {
+      if (closed > 0 || skipped > 0) log('info', 'support_auto_closed', { closed, skipped });
+    })
+    .catch((err: unknown) => {
+      log('error', 'support_auto_close_failed', safeError(err));
+    })
+    .finally(() => {
+      closingTickets = false;
+    });
+}, 600_000);
+ticketCloseTimer.unref();
 
 // Unpaid online orders (Razorpay, plan 2026-11-12): after `checkout.online_payment_minutes` of the order's city the
 // order is cancelled and its stock goes back on sale. Every 60 s; one transaction per group.
@@ -428,6 +448,7 @@ function shutdown(signal: string) {
   clearInterval(expiryTimer);
   clearInterval(requestTimer);
   clearInterval(holdTimer);
+  clearInterval(ticketCloseTimer);
   clearInterval(pauseTimer);
   clearInterval(paymentTimer);
   if (refundTimer) clearInterval(refundTimer);

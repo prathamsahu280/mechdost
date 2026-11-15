@@ -376,9 +376,20 @@ export const supportTickets = pgTable(
     status: text().notNull().default('open'),
     priority: text().notNull().default('normal'),
     assigneeId: uuid().references(() => users.id, { onDelete: 'set null' }),
+    /** First-reply target: working minutes inside the support hours (IST, admin settings; design 2026-11-15 item 4). */
     slaAckDue: ts().notNull(),
     slaResolveDue: ts().notNull(),
+    /** When staff first answered the customer (an internal note does not count); null until then. */
+    firstRepliedAt: ts(),
+    /** When the current assignee took the request (audited in `audit_log`). */
+    assignedAt: ts(),
     resolvedAt: ts(),
+    /** Closed by the worker 7 days after "resolved" (`auto`), or by staff (`staff`); null while open. */
+    closedAt: ts(),
+    closeReason: text(),
+    /** Account deletion requests only: the support agent who confirmed it (nothing is deleted by this; Q122). */
+    deletionConfirmedAt: ts(),
+    deletionConfirmedBy: uuid().references(() => users.id, { onDelete: 'set null' }),
     version: version(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
@@ -398,6 +409,21 @@ export const supportTickets = pgTable(
       sql`${t.userId} is not null or (${t.guestPhone} is not null and ${t.accessKeyHash} is not null)`,
     ),
     check('support_tickets_channel_valid', sql`${t.channel} in ('web','app','whatsapp','email')`),
+    check(
+      'support_tickets_close_reason_valid',
+      sql`${t.closeReason} is null or ${t.closeReason} in ('auto','staff')`,
+    ),
+    check(
+      'support_tickets_deletion_confirm_kind',
+      sql`${t.deletionConfirmedAt} is null or ${t.kind} = 'deletion_request'`,
+    ),
+    uniqueIndex('support_tickets_one_deletion_uq')
+      .on(t.userId)
+      .where(sql`${t.kind} = 'deletion_request' and ${t.status} <> 'closed'`),
+    index('support_tickets_auto_close_idx')
+      .on(t.resolvedAt)
+      .where(sql`${t.status} = 'resolved'`),
+    index().on(t.deletionConfirmedBy),
     check(
       'support_tickets_issue_code_valid',
       sql`${t.issueCode} is null or ${t.issueCode} in (${sql.raw(SUPPORT_ISSUE_CODES.map((c) => `'${c}'`).join(','))})`,
@@ -455,6 +481,42 @@ export const ticketMessages = pgTable(
     check('ticket_messages_body_len', sql`length(${t.body}) between 1 and 5000`),
     index().on(t.ticketId, t.createdAt),
     index().on(t.authorUserId),
+  ],
+);
+
+/**
+ * Canned replies (design 2026-11-15 item 4): admin-edited answer texts, one per language. Staff insert one into the
+ * reply box and edit it before sending, so the stored text is never sent unchecked. Rows are switched off, not deleted.
+ */
+export const cannedReplies = pgTable(
+  'canned_replies',
+  {
+    id: id(),
+    /** Stable slug (the analytics code of the reply), e.g. `refund_started`. */
+    key: text().notNull().unique(),
+    titleEn: text().notNull(),
+    titleHi: text().notNull(),
+    bodyEn: text().notNull(),
+    bodyHi: text().notNull(),
+    active: boolean().notNull().default(true),
+    sortOrder: integer().notNull().default(100),
+    createdBy: uuid().references(() => users.id, { onDelete: 'set null' }),
+    version: version(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    check('canned_replies_key_valid', sql`${t.key} ~ '^[a-z][a-z0-9_]{2,39}$'`),
+    check(
+      'canned_replies_title_len',
+      sql`length(${t.titleEn}) between 1 and 80 and length(${t.titleHi}) between 1 and 80`,
+    ),
+    check(
+      'canned_replies_body_len',
+      sql`length(${t.bodyEn}) between 1 and 2000 and length(${t.bodyHi}) between 1 and 2000`,
+    ),
+    index().on(t.active, t.sortOrder),
+    index().on(t.createdBy),
   ],
 );
 

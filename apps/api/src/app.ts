@@ -41,6 +41,7 @@ import { partnerStatusRoutes, shopToolsRoutes } from './routes/shop-tools';
 import { adminShopRoutes } from './routes/admin-shops';
 import { shopOrderRoutes } from './routes/shop-orders';
 import { supportRoutes } from './routes/support';
+import { supportGuestRoutes } from './routes/support-guest';
 import { systemRoutes } from './routes/system';
 import { whatsAppWebhookRoutes } from './routes/whatsapp-webhook';
 import { adminServiceRequestRoutes } from './routes/admin-service-requests';
@@ -110,6 +111,7 @@ export function createApp(deps: AppDeps) {
   v1.route('/', coinRoutes(deps, sessions));
   v1.route('/', payoutRoutes(deps, sessions));
   v1.route('/', adminNotificationRoutes(deps, sessions));
+  v1.route('/', supportGuestRoutes(deps));
   v1.route('/', supportRoutes(deps, sessions));
   v1.route('/', adminCustomerRoutes(deps, sessions));
   v1.route('/', adminStaffRoutes(deps, sessions));

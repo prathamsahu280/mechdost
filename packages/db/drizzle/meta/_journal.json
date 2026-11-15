@@ -470,6 +470,13 @@
       "when": 1794722398698,
       "tag": "0068_export_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1794725937869,
+      "tag": "0069_support_inbox",
+      "breakpoints": true
     }
   ]
 }

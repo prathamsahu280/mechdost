@@ -6,6 +6,8 @@
 import { z } from 'zod';
 import { TICKET_STATES } from './state';
 import { SUPPORT_ISSUE_CODES, SupportAttachment, SupportRefundInfo } from './support-thread';
+import { SupportAgent } from './support-inbox';
+import { SLA_STATES } from './support-sla';
 
 export const SUPPORT_TICKET_KINDS = [
   'order_issue',
@@ -13,6 +15,7 @@ export const SUPPORT_TICKET_KINDS = [
   'fitment',
   'account',
   'labour_redo',
+  'deletion_request',
   'other',
 ] as const;
 export type SupportTicketKind = (typeof SUPPORT_TICKET_KINDS)[number];
@@ -48,6 +51,8 @@ export const SupportTicket = z.object({
   serviceCode: z.string().nullable().default(null),
   /** COD refund: whether the customer must give a payout destination, and the masked one they gave. */
   refund: SupportRefundInfo.default({ eligible: false, destination: null }),
+  /** Account deletion requests: when support confirmed it; null otherwise. */
+  deletionConfirmedAt: z.string().nullable().default(null),
   slaAckDue: z.string(),
   slaResolveDue: z.string(),
   resolvedAt: z.string().nullable(),
@@ -56,6 +61,20 @@ export const SupportTicket = z.object({
   messages: z.array(SupportMessage),
 });
 export type SupportTicketDto = z.infer<typeof SupportTicket>;
+
+/** Staff-only block of an inbox thread: who asked, who owns it, the first-reply clock (design 2026-11-15 item 4). */
+export const SupportStaffMeta = z.object({
+  customerName: z.string().nullable(),
+  customerPhoneMasked: z.string().nullable(),
+  isGuest: z.boolean(),
+  assignee: SupportAgent.nullable(),
+  assignedAt: z.string().nullable(),
+  firstRepliedAt: z.string().nullable(),
+  sla: z.enum(SLA_STATES),
+  deletionConfirmedAt: z.string().nullable().default(null),
+});
+export const SupportInboxTicket = SupportTicket.extend({ staff: SupportStaffMeta });
+export type SupportInboxTicketDto = z.infer<typeof SupportInboxTicket>;
 
 export const SupportTicketList = z.object({ tickets: z.array(SupportTicket) });
 export const SupportCreated = z.object({ code: z.string() });
@@ -74,6 +93,14 @@ export const SupportInboxItem = z.object({
   createdAt: z.string(),
   version: z.number().int(),
   acknowledged: z.boolean(),
+  serviceCode: z.string().nullable().default(null),
+  firstRepliedAt: z.string().nullable().default(null),
+  /** First-reply clock: met once staff answered, overdue after the deadline (support hours, IST). */
+  sla: z.enum(SLA_STATES).catch('on_track').default('on_track'),
+  customerName: z.string().nullable().default(null),
+  customerPhoneMasked: z.string().nullable().default(null),
+  isGuest: z.boolean().default(false),
+  assignee: SupportAgent.nullable().default(null),
 });
 export type SupportInboxItemDto = z.infer<typeof SupportInboxItem>;
 export const SupportInbox = z.object({ tickets: z.array(SupportInboxItem) });

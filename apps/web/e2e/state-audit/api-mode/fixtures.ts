@@ -46,7 +46,7 @@ import { layoutMocks, policyMocks, settingsMocks } from './admin-config-fixtures
 import { homeFinderMocks, homeJobMocks, homeRequestMocks } from './home-fixtures.ts';
 import { adminWorkshopAnalyticsMocks, workshopPerformanceMocks } from './workshop-analytics-fixtures.ts';
 import { customerPhotoMocks, workshopPhotoMocks } from './photo-fixtures.ts';
-import { accountSupportMocks, adminSupportMocks } from './support-fixtures.ts';
+import { accountDeletionMocks, accountSupportMocks, adminSupportMocks } from './support-fixtures.ts';
 import { myWorkshopMocks, profileMocks } from './tier1-fixtures.ts';
 import { slipMocks, tier2PortalMocks } from './tier2-fixtures.ts';
 import type { Mock, MockCtx, Reply } from './mock-api.ts';
@@ -1580,7 +1580,12 @@ export function mocksFor(c: AuditCase): Mock[] {
     case 'API-ACC-SUPPORT':
       return accountSupportMocks(c);
     case 'API-ADM-SUPPORT':
+    case 'API-ADM-SUPPORT-TOOLS':
       return adminSupportMocks(c);
+    case 'API-ACC-DELETION':
+      return accountDeletionMocks(c);
+    case 'API-GUEST-SUPPORT':
+      return [];
     default:
       // Navigation rows: the bar is under test; the screen behind it answers "not mocked" (see `mock-api.ts`).
       return [meMock()];

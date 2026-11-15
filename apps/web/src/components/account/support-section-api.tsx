@@ -28,6 +28,7 @@ import {
 import { TicketThread, useTicketLabels } from '@/components/support/ticket-thread';
 import { RefundDestinationApi } from '@/components/support/refund-destination-api';
 import { PhotoPicker, ThreadOpenerApi } from '@/components/support/thread-opener-api';
+import { DeletionRequestApi } from '@/components/support/deletion-request-api';
 import { sendPhotoMessage, threadErrorKey } from '@/lib/support-thread-api';
 import { portalCard, portalField, portalPrimary, portalQuiet } from '@/components/portal/portal-guard';
 
@@ -163,6 +164,8 @@ export function SupportSectionApi({
       </div>
 
       {subject ? <ThreadOpenerApi subject={subject} onOpened={load} /> : null}
+
+      <DeletionRequestApi onOpened={load} />
 
       <form
         onSubmit={(e) => {

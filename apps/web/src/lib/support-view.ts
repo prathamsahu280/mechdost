@@ -47,7 +47,11 @@ export type SupportErrorKey =
   | 'api_err_order'
   | 'api_err_labour'
   | 'api_err_labour_open'
-  | 'api_err_service';
+  | 'api_err_service'
+  | 'api_err_assignee'
+  | 'err_DELETION_BLOCKED'
+  | 'err_DELETION_ALREADY_CONFIRMED'
+  | 'err_FORBIDDEN_DELETION';
 
 /** API support codes → `support.*` messages; null = not a support-specific code (use the common message). */
 export function supportErrorKey(code: string): SupportErrorKey | null {
@@ -65,6 +69,12 @@ export function supportErrorKey(code: string): SupportErrorKey | null {
       return 'api_err_labour_open';
     case 'REPLY_LIMIT':
       return 'api_err_reply_limit';
+    case 'ASSIGNEE_INVALID':
+      return 'api_err_assignee';
+    case 'DELETION_BLOCKED':
+      return 'err_DELETION_BLOCKED';
+    case 'DELETION_ALREADY_CONFIRMED':
+      return 'err_DELETION_ALREADY_CONFIRMED';
     case 'TICKET_CLOSED':
       return 'err_not_allowed';
     case 'STALE_TICKET':

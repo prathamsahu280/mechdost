@@ -14,6 +14,8 @@ export interface Reply {
   /** A 2xx body (parsed with the mock's schema) or, for an error status, the error code. */
   body?: unknown;
   code?: string;
+  /** `error.details` of an error status (e.g. the blockers of a refused deletion). */
+  details?: unknown;
   /** A binary body (the photo images): base64 and its content type. Skips the schema check. */
   raw?: { contentType: string; base64: string };
 }
@@ -48,7 +50,9 @@ const CORS = {
   'access-control-allow-methods': 'GET, POST, PATCH, PUT, DELETE, OPTIONS',
 };
 
-const errorBody = (code: string) => ({ error: { code, message: code } });
+const errorBody = (code: string, details?: unknown) => ({
+  error: { code, message: code, ...(details === undefined ? {} : { details }) },
+});
 
 export async function installApi(page: Page, c: AuditCase, mocks: readonly Mock[]): Promise<ApiProblems> {
   const problems: ApiProblems = { list: [], expectsErrors: false };
@@ -86,7 +90,11 @@ export async function installApi(page: Page, c: AuditCase, mocks: readonly Mock[
       });
     if (status >= 400) {
       problems.expectsErrors = true;
-      return route.fulfill({ status, headers: CORS, json: errorBody(reply.code ?? 'INTERNAL') });
+      return route.fulfill({
+        status,
+        headers: CORS,
+        json: errorBody(reply.code ?? 'INTERNAL', reply.details),
+      });
     }
     try {
       mock.schema?.parse(reply.body);

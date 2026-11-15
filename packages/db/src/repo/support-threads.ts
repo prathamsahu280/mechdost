@@ -28,13 +28,13 @@ import {
 import { queueTicketEmail } from './email-events';
 import { ConflictError, NotFoundError, ValidationError } from './errors';
 import { recordServerEvent } from './events';
+import { firstReplyDueAt } from './support-sla';
 import { queueStaffNotice } from './notices';
 import type { Tx } from './orders';
 import { createStaffRefund } from './refunds';
 import type { CityScope } from './routing';
 import type { StoredImage } from './service-photos';
 import {
-  ACK_MS,
   attachMessageImages,
   cleanBody,
   customerReplyTicket,
@@ -133,7 +133,7 @@ export async function openSupportThread(
         serviceRequestId: subject.serviceRequestId,
         cityId: subject.cityId,
         channel: 'web',
-        slaAckDue: new Date(now.getTime() + ACK_MS),
+        slaAckDue: await firstReplyDueAt(tx, now),
         slaResolveDue: new Date(now.getTime() + RESOLVE_MS),
       })
       .returning({ id: supportTickets.id, code: supportTickets.code });

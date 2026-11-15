@@ -5,12 +5,20 @@ import { useCallback, useEffect, useState, type SyntheticEvent } from 'react';
 import {
   SUPPORT_BODY_MAX,
   SupportInbox,
+  SupportInboxTicket,
   SupportReplied,
   SupportStatusChanged,
-  SupportTicket,
   type SupportInboxItemDto,
-  type SupportTicketDto,
+  type SupportInboxTicketDto,
 } from '@mechdost/shared/support-api';
+import {
+  CannedReplyList,
+  SupportAgentList,
+  SupportAssigned,
+  SupportConfirmed,
+  type CannedReply,
+  type SupportAgentDto,
+} from '@mechdost/shared/support-inbox';
 import { adminApi } from '@/lib/admin-api';
 import { commonErrorKey, type CommonErrorKey } from '@/lib/api-error-key';
 import { track } from '@/lib/analytics';
@@ -23,6 +31,7 @@ import {
   threadFromApi,
   type SupportErrorKey,
 } from '@/lib/support-view';
+import { CannedRepliesEditor } from './admin-canned-replies-api';
 import { StaffRefundApi } from '@/components/support/staff-refund-api';
 import { TicketThread, useTicketLabels } from '@/components/support/ticket-thread';
 import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
@@ -44,23 +53,44 @@ export function AdminSupportApi() {
   const p = useTranslations('portal');
   const locale = useLocale();
   const [filter, setFilter] = useState<'active' | 'done'>('active');
+  const [assignee, setAssignee] = useState<'all' | 'me' | 'unassigned'>('all');
+  const [agents, setAgents] = useState<SupportAgentDto[]>([]);
+  const [canned, setCanned] = useState<{ replies: CannedReply[]; canEdit: boolean }>({
+    replies: [],
+    canEdit: false,
+  });
   const [items, setItems] = useState<SupportInboxItemDto[] | null>(null);
   const [error, setError] = useState<CommonErrorKey | null>(null);
   const [openCode, setOpenCode] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const res = await adminApi(locale, `/admin/support/tickets?view=${filter}`, SupportInbox);
+    const query = assignee === 'all' ? '' : `&assignee=${assignee}`;
+    const res = await adminApi(locale, `/admin/support/tickets?view=${filter}${query}`, SupportInbox);
     if (!res.ok) {
       setError(commonErrorKey(res.code));
       return;
     }
     setError(null);
     setItems(res.data.tickets);
-  }, [locale, filter]);
+  }, [locale, filter, assignee]);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  const loadCanned = useCallback(async () => {
+    const res = await adminApi(locale, '/admin/support/canned-replies', CannedReplyList);
+    if (res.ok) setCanned(res.data);
+  }, [locale]);
+
+  // The agents and canned replies change rarely: loaded once per visit, not per request.
+  useEffect(() => {
+    void (async () => {
+      const res = await adminApi(locale, '/admin/support/agents', SupportAgentList);
+      if (res.ok) setAgents(res.data.agents);
+    })();
+    void loadCanned();
+  }, [locale, loadCanned]);
 
   return (
     <section aria-labelledby="inbox-title" className="space-y-4">
@@ -88,6 +118,27 @@ export function AdminSupportApi() {
           </button>
         ))}
       </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <label htmlFor="inbox-assignee" className="text-xs font-bold text-muted">
+          {t('assignFilterLabel')}
+        </label>
+        <select
+          id="inbox-assignee"
+          value={assignee}
+          onChange={(e) => {
+            setItems(null);
+            setAssignee(e.target.value as 'all' | 'me' | 'unassigned');
+          }}
+          className={`${portalField} w-auto min-w-40`}
+        >
+          {(['all', 'me', 'unassigned'] as const).map((a) => (
+            <option key={a} value={a}>
+              {t(`assignFilter_${a}`)}
+            </option>
+          ))}
+        </select>
+      </div>
+      {canned.canEdit ? <CannedRepliesEditor replies={canned.replies} onChanged={loadCanned} /> : null}
       {error ? (
         <div role="alert" className={`${portalCard} space-y-3`}>
           <p className="text-sm font-bold text-error">{p(error)}</p>
@@ -116,6 +167,8 @@ export function AdminSupportApi() {
             <li key={item.code}>
               <InboxTicket
                 item={item}
+                agents={agents}
+                canned={canned.replies}
                 open={openCode === item.code}
                 onToggle={() => {
                   setOpenCode(openCode === item.code ? null : item.code);
@@ -132,11 +185,15 @@ export function AdminSupportApi() {
 
 function InboxTicket({
   item,
+  agents,
+  canned,
   open,
   onToggle,
   onChanged,
 }: {
   item: SupportInboxItemDto;
+  agents: readonly SupportAgentDto[];
+  canned: readonly CannedReply[];
   open: boolean;
   onToggle: () => void;
   onChanged: () => Promise<void>;
@@ -146,7 +203,7 @@ function InboxTicket({
   const p = useTranslations('portal');
   const locale = useLocale();
   const labels = useTicketLabels();
-  const [ticket, setTicket] = useState<SupportTicketDto | null>(null);
+  const [ticket, setTicket] = useState<SupportInboxTicketDto | null>(null);
   const [loadError, setLoadError] = useState<CommonErrorKey | null>(null);
   const [reply, setReply] = useState('');
   const [internal, setInternal] = useState(false);
@@ -156,7 +213,7 @@ function InboxTicket({
   const field = `inbox-${item.code}`;
 
   const loadThread = useCallback(async () => {
-    const res = await adminApi(locale, `/admin/support/tickets/${item.code}`, SupportTicket);
+    const res = await adminApi(locale, `/admin/support/tickets/${item.code}`, SupportInboxTicket);
     if (!res.ok) {
       setLoadError(commonErrorKey(res.code));
       return;
@@ -201,7 +258,66 @@ function InboxTicket({
     await refresh();
   }
 
-  async function move(to: 'resolved' | 'in_review') {
+  async function assign(assigneeId: string | null) {
+    const version = ticket?.version ?? item.version;
+    setBusy(true);
+    const res = await adminApi(locale, `/admin/support/tickets/${item.code}/assign`, SupportAssigned, {
+      method: 'POST',
+      body: { assigneeId, version },
+    });
+    setBusy(false);
+    if (!res.ok) {
+      setError(res.code === 'FORBIDDEN' ? { ns: 'support', key: 'api_err_assignee' } : problemOf(res.code));
+      await refresh();
+      return;
+    }
+    setError(null);
+    track('support_ticket', { action: 'assigned', kind: item.kind, channel: item.channel });
+    await refresh();
+  }
+
+  function insertCanned(key: string) {
+    const picked = canned.find((r) => r.key === key);
+    if (!picked) return;
+    // The text of the viewer's language goes into the box; the agent edits it before sending.
+    const text = locale === 'hi' ? picked.bodyHi : picked.bodyEn;
+    setReply((current) =>
+      current.trim()
+        ? `${current.trim()}
+
+${text}`
+        : text,
+    );
+    track('support_ticket', { action: 'canned_inserted', kind: item.kind, channel: item.channel });
+    document.getElementById(field)?.focus();
+  }
+
+  async function confirmDeletion() {
+    const version = ticket?.version ?? item.version;
+    setBusy(true);
+    const res = await adminApi(
+      locale,
+      `/admin/support/tickets/${item.code}/deletion/confirm`,
+      SupportConfirmed,
+      {
+        method: 'POST',
+        body: { version },
+      },
+    );
+    setBusy(false);
+    if (!res.ok) {
+      setError(
+        res.code === 'FORBIDDEN' ? { ns: 'support', key: 'err_FORBIDDEN_DELETION' } : problemOf(res.code),
+      );
+      await refresh();
+      return;
+    }
+    setError(null);
+    track('support_ticket', { action: 'deletion_confirmed', kind: item.kind, channel: item.channel });
+    await refresh();
+  }
+
+  async function move(to: 'resolved' | 'in_review' | 'awaiting_customer') {
     const version = ticket?.version ?? item.version;
     setBusy(true);
     const res = await adminApi(locale, `/admin/support/tickets/${item.code}/status`, SupportStatusChanged, {
@@ -240,10 +356,20 @@ function InboxTicket({
             {item.channel === 'whatsapp' ? <span aria-hidden="true">💬 </span> : null}
             {labels.kind(item.kind)} · {item.code}
           </span>
+          <span className="mt-0.5 block text-sm text-ink" data-user-content>
+            {item.customerName ?? t('customerUnknown')}
+            {item.isGuest ? <span className="ms-2 text-xs text-muted">({t('guestTag')})</span> : null}
+            {item.assignee ? (
+              <span className="ms-2 text-xs text-muted">
+                · {t('assignedTo', { name: item.assignee.name ?? '' })}
+              </span>
+            ) : null}
+          </span>
           <span className="mt-0.5 block text-xs text-muted">
             {[
               item.channel === 'whatsapp' ? t('viaWhatsApp') : null,
               item.orderCode ? t('orderRef', { code: item.orderCode }) : null,
+              item.serviceCode ? t('serviceRef', { code: item.serviceCode }) : null,
               formatDate(item.createdAt, locale),
             ]
               .filter((part): part is string => part !== null)
@@ -252,7 +378,9 @@ function InboxTicket({
         </span>
         <span className="flex flex-wrap gap-2">
           {sla === 'ok' ? (
-            item.acknowledged || !isActive(item.status) ? null : (
+            item.sla === 'met' && isActive(item.status) ? (
+              <span className="rounded-pill bg-pill px-3 py-1 text-xs font-bold text-ink">{t('slaMet')}</span>
+            ) : item.acknowledged || !isActive(item.status) ? null : (
               <span className="rounded-pill bg-pill px-3 py-1 text-xs font-bold text-ink">
                 {t('dueAck', { date: formatDate(item.slaAckDue, locale) })}
               </span>
@@ -284,6 +412,54 @@ function InboxTicket({
                   {tt('issueBadge', { issue: tt(`issue_${ticket.issueCode}`) })}
                 </p>
               ) : null}
+              <p className="text-sm text-ink" data-user-content>
+                {t('customerLine', { name: ticket.staff.customerName ?? t('customerUnknown') })}
+                {ticket.staff.customerPhoneMasked ? ` · ${ticket.staff.customerPhoneMasked}` : ''}
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <label htmlFor={`${field}-assignee`} className="text-xs font-bold text-muted">
+                  {t('assigneeLabel')}
+                </label>
+                <select
+                  id={`${field}-assignee`}
+                  disabled={busy || status === 'closed'}
+                  value={ticket.staff.assignee?.id ?? ''}
+                  onChange={(e) => {
+                    void assign(e.target.value === '' ? null : e.target.value);
+                  }}
+                  className={`${portalField} w-auto min-w-48`}
+                >
+                  <option value="">{t('assigneeNone')}</option>
+                  {agents.map((a) => (
+                    <option key={a.id} value={a.id} data-user-content>
+                      {a.name ?? a.id}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {ticket.kind === 'deletion_request' ? (
+                <div className="space-y-2 rounded-lg bg-private-bg p-3 text-sm text-private">
+                  <p>{t('deletionConfirmHelp')}</p>
+                  {ticket.staff.deletionConfirmedAt ? (
+                    <p className="font-bold">
+                      {t('deletionConfirmedAt', {
+                        date: formatDate(ticket.staff.deletionConfirmedAt, locale),
+                      })}
+                    </p>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={busy || status === 'closed'}
+                      className={portalQuiet}
+                      onClick={() => {
+                        void confirmDeletion();
+                      }}
+                    >
+                      {t('deletionConfirmBtn')}
+                    </button>
+                  )}
+                </div>
+              ) : null}
               <TicketThread ticket={threadFromApi(ticket)} viewer="staff" />
               <StaffRefundApi code={ticket.code} refund={ticket.refund} onDone={refresh} />
             </>
@@ -298,6 +474,29 @@ function InboxTicket({
               <label htmlFor={field} className="text-xs font-bold text-muted">
                 {t('staffReplyLabel')}
               </label>
+              {canned.length > 0 ? (
+                <div className="mb-2">
+                  <label htmlFor={`${field}-canned`} className="text-xs font-bold text-muted">
+                    {t('cannedLabel')}
+                  </label>
+                  <select
+                    id={`${field}-canned`}
+                    value=""
+                    onChange={(e) => {
+                      insertCanned(e.target.value);
+                    }}
+                    className={portalField}
+                  >
+                    <option value="">{t('cannedNone')}</option>
+                    {canned.map((r) => (
+                      <option key={r.key} value={r.key}>
+                        {locale === 'hi' ? r.titleHi : r.titleEn}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-1 text-xs text-muted">{t('cannedHint')}</p>
+                </div>
+              ) : null}
               <textarea
                 id={field}
                 rows={3}
@@ -343,6 +542,18 @@ function InboxTicket({
                 >
                   {t(status === 'resolved' ? 'reopen' : 'resolve')}
                 </button>
+                {status === 'open' || status === 'in_review' ? (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    className={portalQuiet}
+                    onClick={() => {
+                      void move('awaiting_customer');
+                    }}
+                  >
+                    {t('waitingMove')}
+                  </button>
+                ) : null}
               </div>
             </form>
           )}

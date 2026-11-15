@@ -367,6 +367,7 @@ export function withAttachmentUrls(t: TicketView, keyring: AppDeps['keyring']) {
     slaAckDue: t.slaAckDue.toISOString(),
     slaResolveDue: t.slaResolveDue.toISOString(),
     resolvedAt: t.resolvedAt ? t.resolvedAt.toISOString() : null,
+    deletionConfirmedAt: t.deletionConfirmedAt ? t.deletionConfirmedAt.toISOString() : null,
     createdAt: t.createdAt.toISOString(),
     messages: t.messages.map(({ attachments, ...m }) => ({
       ...m,

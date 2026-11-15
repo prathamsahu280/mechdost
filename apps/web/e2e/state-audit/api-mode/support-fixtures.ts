@@ -4,8 +4,10 @@
  * photos, the COD refund destination) and the admin inbox conversation (issue badge, photos, the cash on delivery
  * refund panel). Every body carries its shared schema; the images are one tiny PNG answered for `/support-photos/*`.
  */
+import { CannedReplyList, SupportAgentList } from '@mechdost/shared/support-inbox';
 import {
   SupportInbox,
+  SupportInboxTicket,
   SupportOrderChoices,
   SupportTicket,
   SupportTicketList,
@@ -136,10 +138,63 @@ export function accountSupportMocks(c: AuditCase): Mock[] {
   ];
 }
 
-/** Admin -> Support: the inbox with one open request, its conversation and the COD refund panel. */
+/** The inbox variants of the support tools rows: who asked, who owns it, the first-reply clock, the deletion step. */
+function inboxVariant(c: AuditCase) {
+  const v = c.state.inbox ?? 'default';
+  return {
+    guest: v === 'guest',
+    deletion: v === 'deletion',
+    assigned: v === 'assigned' || v === 'default',
+    overdue: v === 'overdue',
+  };
+}
+
+const AGENTS = [
+  { id: uuid(901), name: 'Meera Sahu' },
+  { id: uuid(902), name: 'Kiran Verma' },
+];
+
+const CANNED = [
+  ['looking_into_it', 'Looking into it', 'जाँच कर रहे हैं'],
+  ['need_photos', 'Please send photos', 'कृपया फ़ोटो भेजें'],
+].map(([key, en, hi], i) => ({
+  id: uuid(950 + i),
+  key: key ?? '',
+  titleEn: en ?? '',
+  titleHi: hi ?? '',
+  bodyEn: `${en ?? ''}. We will update you here.`,
+  bodyHi: `${hi ?? ''}। हम यहीं बताएँगे।`,
+  active: true,
+  sortOrder: i * 10,
+  version: 1,
+}));
+
+/** Admin -> Support: the inbox with one open request, its conversation, the tools and the COD refund panel. */
 export function adminSupportMocks(c: AuditCase): Mock[] {
   const state = c.state.tickets ?? 'open-photos';
-  const t = ticket(c);
+  const variant = inboxVariant(c);
+  const base = ticket(c);
+  const t = SupportTicket.parse({
+    ...base,
+    kind: variant.deletion ? 'deletion_request' : base.kind,
+    orderCode: variant.deletion || variant.guest ? null : base.orderCode,
+    issueCode: variant.deletion || variant.guest ? null : base.issueCode,
+  });
+  const long = c.state.stress === 'long-text';
+  const sla = variant.overdue ? 'overdue' : 'met';
+  const customerName = long ? `${LONG.slice(0, 70)}` : variant.guest ? 'Mohan Lal' : 'Asha Verma';
+  const assignee = variant.assigned ? AGENTS[0] : null;
+  const staff = {
+    customerName,
+    customerPhoneMasked: variant.guest ? '••••••2233' : null,
+    isGuest: variant.guest,
+    assignee,
+    assignedAt: assignee ? at(-90) : null,
+    firstRepliedAt: sla === 'met' ? at(-60) : null,
+    sla,
+    deletionConfirmedAt: null,
+  };
+  const editor = c.state.canned === 'editor';
   return [
     meFor(c),
     {
@@ -156,11 +211,18 @@ export function adminSupportMocks(c: AuditCase): Mock[] {
               channel: t.channel,
               orderCode: t.orderCode,
               issueCode: t.issueCode,
-              slaAckDue: t.slaAckDue,
+              serviceCode: null,
+              slaAckDue: variant.overdue ? at(-30) : t.slaAckDue,
               slaResolveDue: t.slaResolveDue,
               createdAt: t.createdAt,
               version: t.version,
-              acknowledged: state !== 'none',
+              acknowledged: state !== 'none' && !variant.overdue,
+              firstRepliedAt: staff.firstRepliedAt,
+              sla,
+              customerName,
+              customerPhoneMasked: staff.customerPhoneMasked,
+              isGuest: variant.guest,
+              assignee,
             },
           ],
         },
@@ -169,8 +231,20 @@ export function adminSupportMocks(c: AuditCase): Mock[] {
     {
       method: 'GET',
       path: /^\/admin\/support\/tickets\/REQ-[^/]+$/,
-      schema: SupportTicket,
-      reply: (): Reply => ({ body: t }),
+      schema: SupportInboxTicket,
+      reply: (): Reply => ({ body: { ...t, staff } }),
+    },
+    {
+      method: 'GET',
+      path: /^\/admin\/support\/agents$/,
+      schema: SupportAgentList,
+      reply: (): Reply => ({ body: { agents: AGENTS } }),
+    },
+    {
+      method: 'GET',
+      path: /^\/admin\/support\/canned-replies$/,
+      schema: CannedReplyList,
+      reply: (): Reply => ({ body: { replies: CANNED, canEdit: editor } }),
     },
     {
       method: 'POST',
@@ -181,5 +255,22 @@ export function adminSupportMocks(c: AuditCase): Mock[] {
           : { status: 403, code: 'FORBIDDEN' },
     },
     imageMock,
+  ];
+}
+
+/** Account -> Support deletion card: the request answers "sent", "already open" or refused with its reasons. */
+export function accountDeletionMocks(c: AuditCase): Mock[] {
+  const mocks = accountSupportMocks({ ...c, state: { ...c.state, tickets: 'none' } });
+  const blocked = c.state.deletion === 'blocked';
+  return [
+    ...mocks,
+    {
+      method: 'POST',
+      path: /^\/support\/deletion-request$/,
+      reply: (): Reply =>
+        blocked
+          ? { status: 409, code: 'DELETION_BLOCKED', details: { blockers: ['OPEN_ORDERS', 'OPEN_REFUND'] } }
+          : { status: 201, body: { code: 'REQ-RPR-2026-AB12CD', created: true } },
+    },
   ];
 }

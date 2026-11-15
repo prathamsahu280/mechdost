@@ -1549,7 +1549,8 @@
     "verifyEmailSent": "Sent. Check your inbox and spam folder.",
     "verifyEmailFailed": "Couldn't send the link. Try again in a few minutes.",
     "verifyEmailDone": "Email verified. You're all set to order.",
-    "navWaiting": "{count} waiting for you"
+    "navWaiting": "{count} waiting for you",
+    "guestSupportLink": "No account? Write to support as a guest"
   },
   "portal": {
     "shops_api_title": "Shops",
@@ -2853,7 +2854,11 @@
     "ws_api_formInvalid": "Some fields need attention. They are marked above.",
     "ws_api_nothingChanged": "Nothing changed.",
     "ws_api_save": "Save workshop",
-    "ws_api_create": "Add workshop"
+    "ws_api_create": "Add workshop",
+    "api_set_support_hours_start_minute": "Support opens (minutes after midnight IST, 540 = 9:00)",
+    "api_set_support_hours_end_minute": "Support closes (minutes after midnight IST, 1260 = 21:00)",
+    "api_set_support_first_reply_working_minutes": "First reply target (working minutes inside support hours)",
+    "api_set_support_auto_close_days": "Days after resolved before a request closes by itself"
   },
   "shopGiveUp": {
     "action": "Can't fulfil this order",
@@ -3119,7 +3124,51 @@
     "api_err_labour_open": "You already have an open redo request for this job.",
     "api_err_service": "We could not find that service job on your account.",
     "labourFormTitle": "Redo request for {code}",
-    "labourFormIntro": "Tell us what is not right. MechDost support will contact the workshop under the labour promise."
+    "labourFormIntro": "Tell us what is not right. MechDost support will contact the workshop under the labour promise.",
+    "assigneeLabel": "Assigned to",
+    "assigneeNone": "Nobody yet",
+    "assignMe": "Take it",
+    "assignFilterLabel": "Show requests",
+    "assignFilter_all": "Everyone's",
+    "assignFilter_me": "Mine",
+    "assignFilter_unassigned": "Not assigned",
+    "assignedTo": "Assigned to {name}",
+    "slaMet": "Replied",
+    "customerLine": "Customer: {name}",
+    "customerUnknown": "Customer",
+    "guestTag": "Guest",
+    "serviceRef": "Service job {code}",
+    "cannedLabel": "Insert a canned reply",
+    "cannedNone": "Choose a reply…",
+    "cannedHint": "You can edit it before sending.",
+    "waitingMove": "Wait for the customer",
+    "api_err_assignee": "Choose a support agent who covers this request's city.",
+    "api_err_forbidden": "You can only take a request for yourself.",
+    "cannedTitle": "Canned replies",
+    "cannedIntro": "Answers staff can insert and edit before sending. Write each in English and Hindi.",
+    "cannedNew": "Add a reply",
+    "cannedEdit": "Edit",
+    "cannedKey": "Short name (letters, numbers, _)",
+    "cannedTitleEn": "Title in English",
+    "cannedTitleHi": "Title in Hindi",
+    "cannedBodyEn": "Text in English",
+    "cannedBodyHi": "Text in Hindi",
+    "cannedActive": "Offer this reply to staff",
+    "cannedSave": "Save reply",
+    "cannedSaved": "Saved.",
+    "cannedOff": "Switched off",
+    "cannedEmpty": "No canned replies yet.",
+    "cannedClose": "Close the editor",
+    "err_CANNED_REPLY_INVALID": "Fill in every title and text in both languages (key: lowercase letters, numbers and _).",
+    "err_CANNED_REPLY_KEY_TAKEN": "That short name is already used.",
+    "err_STALE_CANNED_REPLY": "Someone just changed this reply. Reload and try again.",
+    "kind_deletion_request": "Account deletion",
+    "deletionConfirmBtn": "Confirm deletion request",
+    "deletionConfirmHelp": "Check who asked before you confirm. Confirming records the step; nothing is erased yet.",
+    "deletionConfirmedAt": "Deletion confirmed on {date}",
+    "err_DELETION_BLOCKED": "The customer still has an open order, service job or refund.",
+    "err_DELETION_ALREADY_CONFIRMED": "This deletion request is already confirmed.",
+    "err_FORBIDDEN_DELETION": "Only an account administrator can confirm deletions."
   },
   "consent": {
     "label": "Privacy choice",
@@ -3367,13 +3416,22 @@
       "title": "Order delivered",
       "body": "{orderCode} was delivered. Tell us how it went."
     },
-    "order_cancelled": { "title": "Order cancelled", "body": "{orderCode} was cancelled." },
+    "order_cancelled": {
+      "title": "Order cancelled",
+      "body": "{orderCode} was cancelled."
+    },
     "order_rejected": {
       "title": "Order could not be fulfilled",
       "body": "No seller could fulfil {orderCode}. Open it to see what happens next."
     },
-    "payment_received": { "title": "Payment received", "body": "We received your payment for {orderCode}." },
-    "refund_requested": { "title": "Refund started", "body": "We started a refund for {orderCode}." },
+    "payment_received": {
+      "title": "Payment received",
+      "body": "We received your payment for {orderCode}."
+    },
+    "refund_requested": {
+      "title": "Refund started",
+      "body": "We started a refund for {orderCode}."
+    },
     "refund_processed": {
       "title": "Refund sent",
       "body": "Your refund for {orderCode} was sent to your original payment method."
@@ -3394,7 +3452,10 @@
       "title": "A workshop proposed a slot",
       "body": "{workshopName} proposed a time and cost for {requestCode}."
     },
-    "service_confirmed": { "title": "Booking confirmed", "body": "{workshopName} confirmed {requestCode}." },
+    "service_confirmed": {
+      "title": "Booking confirmed",
+      "body": "{workshopName} confirmed {requestCode}."
+    },
     "service_estimate_ready": {
       "title": "Estimate ready",
       "body": "Review and approve the estimate for {requestCode}."
@@ -3403,19 +3464,34 @@
       "title": "Vehicle ready",
       "body": "Your vehicle is ready at {workshopName} ({requestCode})."
     },
-    "service_bill_ready": { "title": "Bill ready", "body": "The bill for {requestCode} is ready." },
+    "service_bill_ready": {
+      "title": "Bill ready",
+      "body": "The bill for {requestCode} is ready."
+    },
     "service_completed": {
       "title": "Service completed",
       "body": "{requestCode} is complete. Tell us how it went."
     },
-    "quote_offer": { "title": "Quote ready", "body": "You have an offer for {quoteCode}." },
+    "quote_offer": {
+      "title": "Quote ready",
+      "body": "You have an offer for {quoteCode}."
+    },
     "quote_expiring": {
       "title": "Quote expires soon",
       "body": "The offer for {quoteCode} is about to expire."
     },
-    "ticket_received": { "title": "Request received", "body": "We got your request {ticketCode}." },
-    "ticket_reply": { "title": "New reply from support", "body": "There is a reply on {ticketCode}." },
-    "ticket_resolved": { "title": "Request resolved", "body": "{ticketCode} is resolved." },
+    "ticket_received": {
+      "title": "Request received",
+      "body": "We got your request {ticketCode}."
+    },
+    "ticket_reply": {
+      "title": "New reply from support",
+      "body": "There is a reply on {ticketCode}."
+    },
+    "ticket_resolved": {
+      "title": "Request resolved",
+      "body": "{ticketCode} is resolved."
+    },
     "shop_order_routed": {
       "title": "New order to accept",
       "body": "Order {orderCode} is waiting. Accept within {minutes} minutes."
@@ -3452,7 +3528,10 @@
       "title": "New partner application",
       "body": "A new partner application is waiting for review."
     },
-    "staff_new_ticket": { "title": "New support request", "body": "{ticketCode} needs a first reply." }
+    "staff_new_ticket": {
+      "title": "New support request",
+      "body": "{ticketCode} needs a first reply."
+    }
   },
   "adminNotices": {
     "tab_notices": "Messages",
@@ -4473,7 +4552,21 @@
     "err_FORBIDDEN": "You do not have permission to ask for refunds.",
     "askHelp": "Need help with this order?",
     "askHelpService": "Need help with this job?",
-    "askHelpLink": "Talk to MechDost support"
+    "askHelpLink": "Talk to MechDost support",
+    "deletionTitle": "Delete my account",
+    "deletionIntro": "Ask MechDost to delete your account. Support checks the request with you first and nothing is deleted before that. Records the law makes us keep, such as GST invoices, stay with us.",
+    "deletionNoteLabel": "Anything we should know? (optional)",
+    "deletionAsk": "Ask to delete my account",
+    "deletionConfirmPrompt": "Send the request? Support will check it with you before anything is deleted.",
+    "deletionConfirm": "Yes, send the request",
+    "deletionCancel": "Not now",
+    "deletionSent": "Request {code} sent. Support will check it with you.",
+    "deletionExists": "You already have a deletion request: {code}.",
+    "deletionBlockedTitle": "We cannot start this yet:",
+    "deletion_blocker_OPEN_ORDERS": "You have an order that is not delivered or cancelled yet.",
+    "deletion_blocker_OPEN_SERVICE": "You have a service job that is not finished yet.",
+    "deletion_blocker_OPEN_REFUND": "A refund to you is still being processed.",
+    "deletionConfirmedNote": "Support has confirmed your request."
   },
   "coupons": {
     "have": "Have a coupon code?",
@@ -4691,5 +4784,45 @@
     "err_CHANGE_PENDING": "You already have a request of this kind waiting.",
     "err_STALE_WORKSHOP": "Your workshop changed meanwhile. The latest is loaded; check it and save again.",
     "err_generic": "That did not work. Try again in a moment."
+  },
+  "supportGuest": {
+    "title": "Write to MechDost support",
+    "eyebrow": "Support without an account",
+    "intro": "No account needed. You get a reference and a private key to come back with. We do not call or message the number you give.",
+    "signInInstead": "Sign in instead",
+    "demoNote": "Guest requests work on the live site. Sign in to use support here.",
+    "newTitle": "Ask a question",
+    "newIntro": "Tell us what you need. Keep the reference and key safe: they are the only way back to this conversation.",
+    "nameLabel": "Your name",
+    "phoneLabel": "Mobile number",
+    "phoneHelp": "Only so our team knows who wrote. We will not call or message it.",
+    "kindLabel": "What is it about?",
+    "messageLabel": "Your message",
+    "securityCheck": "Quick security check",
+    "send": "Send to support",
+    "createdTitle": "We got your request",
+    "createdIntro": "Save these two now. The key is shown only once and we cannot show it again.",
+    "referenceLabel": "Reference",
+    "keyLabel": "Private key",
+    "keyOnce": "Anyone with the reference and key can read this conversation. Do not share them.",
+    "copy": "Copy reference and key",
+    "copied": "Copied.",
+    "openRequest": "Open my request",
+    "checkTitle": "Check a request",
+    "checkIntro": "Enter the reference and private key you saved.",
+    "check": "Open request",
+    "replyLabel": "Write a reply",
+    "sendReply": "Send reply",
+    "closedNote": "This request is closed. Write a new one if you still need help.",
+    "back": "Back",
+    "err_GUEST_DAILY_LIMIT": "This number has sent enough requests today. Try again tomorrow.",
+    "err_GUEST_PHONE_INVALID": "Enter a valid 10-digit mobile number.",
+    "err_TURNSTILE_FAILED": "The security check did not finish. Try again.",
+    "err_NOT_FOUND": "We could not find a request with that reference and key.",
+    "err_TICKET_CLOSED": "This request is closed.",
+    "err_REPLY_LIMIT": "Too many messages on this request today. We will answer soon.",
+    "err_RATE_LIMITED": "Too many tries. Please wait a while.",
+    "err_VALIDATION": "Fill in your name, mobile number and message.",
+    "err_GENERIC": "Something went wrong. Please try again."
   }
 }
