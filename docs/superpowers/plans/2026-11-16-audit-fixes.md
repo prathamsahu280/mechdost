@@ -159,3 +159,12 @@ Triage by finding class: `docs/qa/triage-2026-11-16/demo-A-F.txt`, `api-G.txt`. 
 - **3c-3 harness:** navigation rows need the destination pages' mocks; footer tel/WhatsApp links checked by href;
   login password field's inset "Show password" button is not an overlap; no hover behind an open viewer/sheet;
   Hindi fixture for "Audit product" in the photo queue.
+
+## Final audit runs on GitHub (2026-11-16, ~04:50 IST, `merge/fix2` with every fix)
+
+| Run                        | Failing                                                                      |
+| -------------------------- | ---------------------------------------------------------------------------- |
+| demo A–F (run 43770779228) | **0 / 2,195** (all 10 shards green)                                          |
+| api G (run 43770782294)    | **1 / 2,147** — API-WS-PHOTOS-003 checker timeout (90 s), not a site finding |
+
+History: A–F 140 → 14 → 4 → 0; G 374 → 73 → 16 → 1. Deploy waits only on `pnpm db:migrate` (user).

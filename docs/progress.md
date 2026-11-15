@@ -4,6 +4,8 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Current status
 
+- **2026-11-16 ~04:50 IST: final audit on GitHub — A–F 0/2195, G 1/2147 (a checker timeout).** Everything verified on `merge/fix2`. Deploy waits only on the user running `pnpm db:migrate` (0073–0077).
+
 - **2026-11-16 ~04:35 IST: visual fixes V1–V4, V7–V9 merged and verified** (`pnpm check` 12/12; budget unchanged, /shop 179.9; e2e 84/84). Still READY TO DEPLOY.
 - **2026-11-16 ~04:05 IST — READY TO DEPLOY, waiting on the user for the database migration.** `merge/fix2` holds everything (audit batches 2–3d, refunds, RLS, quotes, coupons, shop staff + live pings, WhatsApp CLI, logo, no-reload portal frames, closable panels). Verified: `pnpm check` 12/12; JS budget all ≤ 180 (/shop 179.9); e2e chrome-fit + panel-dismiss + no-reload 84/84 (side-bar no-jump 40/40 repeated). GitHub audit run 3: A–F 4/2195, G 16/2147 failing (triage `docs/qa/triage-2026-11-16/*-run3.txt`). Visual review done (`docs/qa/state-audit-run-2026-11-15.md` § Visual review): V1–V4 + V7–V9 being fixed by one builder; V5 minor, open. **Blocked:** `pnpm db:migrate` (0073–0077, all expand-only) was refused by the auto-mode permission check (live DB). The user runs it (or allows it); then: merge `merge/fix2` → `main`, push, watch CI + deploy, then the real-API pass. 14 WhatsApp templates submitted to Meta (pending review).
 
