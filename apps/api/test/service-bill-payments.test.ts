@@ -223,7 +223,7 @@ const hook = (raw: string, eventId: string, signature?: string) =>
     body: raw,
   });
 const requestStatus = async (code: string) =>
-  ((await call(customer, 'GET', `/service-requests/${code}`)).body as { status: string }).status;
+  ((await call(customer, 'GET', `/service-requests/${code}`)).body as unknown as { status: string }).status;
 const refundsOfRequest = async (code: string) => {
   const r = (await ctx.db.select().from(s.serviceRequests)).find((x) => x.code === code);
   const b = (await ctx.db.select().from(s.serviceBills)).find((x) => x.requestId === r!.id);
@@ -336,7 +336,7 @@ describe('Pay online on the service bill', () => {
 
   it('the callback needs a valid signature and a fetched capture; then the bill and request are paid', async () => {
     const b = await billed();
-    const handle = (await call(customer, 'POST', `/service-requests/${b.code}/pay`)).body as {
+    const handle = (await call(customer, 'POST', `/service-requests/${b.code}/pay`)).body as unknown as {
       orderId: string;
     };
     const bad = await verify(
@@ -374,7 +374,7 @@ describe('Pay online on the service bill', () => {
 
   it('webhook: bad signature refused; replay x3, out-of-order and wrong amount change nothing more', async () => {
     const b = await billed();
-    const handle = (await call(customer, 'POST', `/service-requests/${b.code}/pay`)).body as {
+    const handle = (await call(customer, 'POST', `/service-requests/${b.code}/pay`)).body as unknown as {
       orderId: string;
     };
     const raw = event(handle.orderId, b.totalPaise, 'pay_BillHook001');
@@ -404,7 +404,7 @@ describe('Pay online on the service bill', () => {
 
   it('a capture after "paid at the workshop" never settles twice: one refund request, bill unchanged', async () => {
     const b = await billed();
-    const handle = (await call(customer, 'POST', `/service-requests/${b.code}/pay`)).body as {
+    const handle = (await call(customer, 'POST', `/service-requests/${b.code}/pay`)).body as unknown as {
       orderId: string;
     };
     const paid = await call(owner, 'POST', `/workshop/requests/${b.code}/mark-paid`, {
