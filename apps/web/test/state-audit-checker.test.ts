@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { CONSENT_NOTICE_VERSION } from '@mechdost/shared/privacy';
 import { describe, expect, it } from 'vitest';
 import { buildCases } from '../e2e/state-audit/cases.ts';
-import { compareProblems, type CompareFacts } from '../e2e/state-audit/geometry.ts';
+import { compareProblems, trayHiddenByBanner, type CompareFacts } from '../e2e/state-audit/geometry.ts';
 import { seedFor } from '../e2e/state-audit/harness.ts';
 import { dismissVerdict } from '../e2e/state-audit/dismiss.ts';
 import { echoedWords, withoutEcho } from '../e2e/state-audit/hindi-echo.ts';
@@ -16,7 +16,24 @@ const facts = (over: Partial<CompareFacts> = {}): CompareFacts => ({
   trayShown: false,
   trayHref: '',
   hintShown: false,
+  bannerHidesTray: false,
   ...over,
+});
+
+describe('compare tray under the privacy banner (decision 2026-11-14: hidden below 1024 px until answered)', () => {
+  const two = { size: 2, slugs: ['a', 'b'], trayHref: '/compare?p=a,b' };
+  it('does not demand the tray while the open privacy banner hides it, but still demands it otherwise', () => {
+    expect(compareProblems(facts({ ...two, bannerHidesTray: true }))).toEqual([]);
+    expect(compareProblems(facts({ ...two, bannerHidesTray: false }))).toEqual([
+      'compare list holds 2 but no tray is shown',
+    ]);
+  });
+  it('the harness skips the scope-present rule for exactly that state', () => {
+    expect(trayHiddenByBanner({ consentOpen: true, width: 768, compare: 2 })).toBe(true);
+    expect(trayHiddenByBanner({ consentOpen: true, width: 1024, compare: 2 })).toBe(false);
+    expect(trayHiddenByBanner({ consentOpen: false, width: 320, compare: 4 })).toBe(false);
+    expect(trayHiddenByBanner({ consentOpen: true, width: 320, compare: 1 })).toBe(false);
+  });
 });
 
 describe('compare rule (decision 2026-11-15: 1 gives a confirmation, 2+ gives the tray)', () => {

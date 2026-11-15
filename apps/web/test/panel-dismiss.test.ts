@@ -37,7 +37,7 @@ class Fake implements PanelNode {
     return this.attrs[name] ?? null;
   }
   matches(selector: string): boolean {
-    if (this.attrs['disabled'] !== undefined) return false;
+    if ('disabled' in this.attrs) return false;
     const m = /^\[([a-z-]+)(?:="([^"]*)")?\]:not\(\[disabled\]\)$/.exec(selector);
     if (!m) return false;
     const v = this.attrs[m[1] ?? ''];
@@ -73,14 +73,24 @@ describe('findPanelCancel', () => {
     expect(findPanelCancel(field, root as PanelDocument)).toBe(toggle);
   });
 
-  it('with focus on the page body, closes the only open panel, but never guesses between several', () => {
+  it('with focus on the page body (the opener unmounted), closes the most recently opened panel', () => {
     const one = new Fake({ 'data-panel-cancel': 'a' });
     expect(findPanelCancel(null, new Fake({}, [one]) as PanelDocument)).toBe(one);
-    const two = new Fake({}, [
-      new Fake({ 'data-panel-cancel': 'a' }),
-      new Fake({ 'data-panel-cancel': 'b' }),
-    ]);
-    expect(findPanelCancel(null, two as PanelDocument)).toBeNull();
+    const a = new Fake({ 'data-panel-cancel': 'a' });
+    const b = new Fake({ 'data-panel-cancel': 'b' });
+    const two = new Fake({}, [a, b]);
+    expect(findPanelCancel(null, two as PanelDocument, 'a')).toBe(a);
+    expect(findPanelCancel(null, two as PanelDocument, 'gone')).toBe(b);
+    expect(findPanelCancel(null, two as PanelDocument)).toBe(b);
+  });
+
+  it('with focus on an opener whose container holds several panels, prefers the one just opened', () => {
+    const a = new Fake({ 'data-panel-cancel': 'a' });
+    const b = new Fake({ 'data-panel-cancel': 'b' });
+    const opener = new Fake({ 'data-disclosure-trigger': 'b' });
+    const root = new Fake({}, [new Fake({}, [opener, a, b])]);
+    expect(findPanelCancel(opener, root as PanelDocument, 'b')).toBe(b);
+    expect(findPanelCancel(opener, root as PanelDocument)).toBe(a);
   });
 
   it('ignores a disabled Cancel button (a sending form) and a page with no panel', () => {

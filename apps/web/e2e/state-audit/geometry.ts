@@ -695,7 +695,8 @@ export async function auditDom(opts: DomAuditOptions): Promise<Finding[]> {
                 (m, c) => (!m || c.getBoundingClientRect().bottom > m.getBoundingClientRect().bottom ? c : m),
                 null,
               );
-              return last?.getBoundingClientRect().top;
+              // The foot, not the top: a button that wraps to two lines is taller but still sits on the card foot.
+              return last?.getBoundingClientRect().bottom;
             })
             .filter((t): t is number => t !== undefined);
           // Inner rows (user report 2026-11-15: prices and "In stock" at different heights while the buttons lined
@@ -928,6 +929,13 @@ export interface CompareFacts {
   trayHref: string;
   /** A visible `[data-compare-hint]` ("added, pick one more") anywhere on the page. */
   hintShown: boolean;
+  /** The privacy banner is open on a viewport under 1024 px: by design (2026-11-14) the tray waits for the answer. */
+  bannerHidesTray: boolean;
+}
+
+/** Pure twin of `bannerHidesTray` for the harness (which knows the width and the case's consent state). */
+export function trayHiddenByBanner(a: { consentOpen: boolean; width: number; compare: number }): boolean {
+  return a.consentOpen && a.width < 1024 && a.compare >= 2;
 }
 
 export function compareFacts(): CompareFacts {
@@ -949,6 +957,10 @@ export function compareFacts(): CompareFacts {
     trayShown: tray?.checkVisibility() ?? false,
     trayHref: tray?.querySelector('a[href*="/compare?p="]')?.getAttribute('href') ?? '',
     hintShown: hint?.checkVisibility({ visibilityProperty: true }) ?? false,
+    bannerHidesTray:
+      document.documentElement.hasAttribute('data-consent-open') &&
+      window.innerWidth < 1024 &&
+      !tray?.hasAttribute('data-prompt'),
   };
 }
 
@@ -967,7 +979,8 @@ export function compareProblems(f: CompareFacts): string[] {
       out.push('compare list holds 1 but no visible confirmation ([data-compare-hint]) is shown');
   }
   if (f.size >= 2) {
-    if (!f.trayShown) out.push(`compare list holds ${String(f.size)} but no tray is shown`);
+    if (!f.trayShown && !f.bannerHidesTray)
+      out.push(`compare list holds ${String(f.size)} but no tray is shown`);
     else
       for (const s of f.slugs)
         if (!decodeURIComponent(f.trayHref).includes(s)) out.push(`tray link misses ${s}`);

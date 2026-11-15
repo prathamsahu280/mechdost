@@ -75,18 +75,18 @@ export function BusyCard({ shop: s, onChanged }: { shop: MyShopDto; onChanged: (
             >
               {t('busyClosedToday')}
             </button>
-            <div className="min-w-0 flex-1">
+            <div className="min-w-[14rem] flex-1">
               <label htmlFor={`${id}-hours`} className="text-xs font-bold text-muted">
                 {t('busyHoursLabel')}
               </label>
-              <div className="flex gap-2">
+              <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
                 <select
                   id={`${id}-hours`}
                   value={hours}
                   onChange={(e) => {
                     setHours(Number(e.target.value));
                   }}
-                  className={`${portalField} mt-1`}
+                  className={`${portalField} mt-1 min-w-0`}
                 >
                   {SHOP_BUSY_HOUR_CHOICES.map((h) => (
                     <option key={h} value={h}>
@@ -98,7 +98,7 @@ export function BusyCard({ shop: s, onChanged }: { shop: MyShopDto; onChanged: (
                   type="button"
                   disabled={working}
                   onClick={() => void save({ mode: 'hours', hours })}
-                  className={`${portalQuiet} mt-1 shrink-0`}
+                  className={`${portalQuiet} mt-1`}
                 >
                   {t('busyApply')}
                 </button>

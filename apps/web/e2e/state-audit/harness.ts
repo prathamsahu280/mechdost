@@ -16,6 +16,7 @@ import {
   centre,
   compareFacts,
   compareProblems,
+  trayHiddenByBanner,
   focusFacts,
   markControls,
   markStepper,
@@ -180,6 +181,12 @@ export function seedFor(c: AuditCase, now: number): Record<string, string> {
   return seed;
 }
 
+/**
+ * The first submit button the "errors" step presses. Enabled ones only: a disabled one (the quote chat's Send with
+ * nothing typed) makes Playwright wait for it to turn on, which used up the 90 s test budget (QT-PAGES, 2026-11-16).
+ */
+export const SUBMIT_SELECTOR = 'form button[type="submit"]:visible:enabled';
+
 async function settle(page: Page) {
   await page.waitForLoadState('networkidle', { timeout: 5_000 }).catch(() => undefined);
   await page.evaluate(async () => {
@@ -239,9 +246,10 @@ async function prepare(page: Page, c: AuditCase): Promise<string[]> {
         await f.fill(value).catch(() => notes.push(`could not fill field ${String(i)}`));
       }
     } else {
-      const submit = root.locator('form button[type="submit"]:visible').first();
-      if ((await submit.count()) > 0) await submit.click().catch(() => notes.push('submit not clickable'));
-      else notes.push('no submit button found');
+      const submit = root.locator(SUBMIT_SELECTOR).first();
+      if ((await submit.count()) > 0)
+        await submit.click({ timeout: 3_000 }).catch(() => notes.push('submit not clickable'));
+      else notes.push('no enabled submit button found');
     }
   }
   const action = c.state.action;
@@ -374,8 +382,16 @@ export async function runCase(page: Page, c: AuditCase, info: TestInfo, api?: Ap
 
   const findings: Finding[] = [];
   const has = (k: string) => (c.checks as readonly string[]).includes(k);
+  // The privacy banner hides the compare tray below 1024 px until it is answered (decision 2026-11-14): by design.
+  const trayWaits =
+    c.code === 'SHOP-TRAY' &&
+    trayHiddenByBanner({
+      consentOpen: c.state.consent === 'open',
+      width: c.width,
+      compare: COMPARES[c.state.compare ?? 'none']?.slugs.length ?? 0,
+    });
   const domRules = ['present', 'inside', 'overlap', 'covered', 'clipped', 'aligned', 'tap', 'hscroll'].filter(
-    has,
+    (k) => has(k) && !(trayWaits && k === 'present'),
   );
   const localRules = ['inside', 'overlap', 'covered'].filter(has);
   const local = async (label: string) => {
