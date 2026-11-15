@@ -223,8 +223,10 @@ describe('GET /workshop/analytics', () => {
     const body = PortalWorkshopAnalyticsDto.parse(JSON.parse(text));
     expect(body.workshop).toMatchObject({ id: W.a, name: 'Alpha Garage' });
     expect(body.stats.requests).toBe(2);
-    expect(body.cityMedians.workshops).toBe(3);
-    expect(body.cityMedians.values.requests).toBe(1);
+    // The asking workshop is left out of its own benchmark (security review 2026-11-15): two others remain, which is
+    // below the anonymity minimum of three, so no median is shown.
+    expect(body.cityMedians.workshops).toBe(2);
+    expect(body.cityMedians.values.requests).toBeNull();
     for (const other of ['Bravo', 'Charlie', 'Delta']) expect(text).not.toContain(other);
     expect(text).not.toContain(W.b);
   });

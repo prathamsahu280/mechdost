@@ -88,7 +88,8 @@ export function workshopAnalyticsRoutes(deps: AppDeps, cache: SessionCache) {
         range: { from: range.fromDate, to: range.toDate, days: range.days },
         workshop: { id, name, nameHi },
         stats,
-        cityMedians: workshopMedians(city.workshops),
+        // The asking workshop is left out of its own benchmark (anonymity, security review 2026-11-15).
+        cityMedians: workshopMedians(city.workshops, { excludeId: id }),
       },
       200,
     );

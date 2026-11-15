@@ -94,18 +94,28 @@ describe('workshopMedians', () => {
     expect(Object.values(two.values).every((v) => v === null)).toBe(true);
   });
 
-  it('takes the median of the workshops that have the figure, ignoring those without', () => {
+  it('takes the median of the workshops that have the figure, and only when at least three do', () => {
     const m = workshopMedians([
       w({ requests: 10, medianMinutesToPropose: 20, ratingTenths: 40 }),
       w({ requests: 30, medianMinutesToPropose: 60, ratingTenths: null }),
-      w({ requests: 20, medianMinutesToPropose: null, ratingTenths: 50 }),
+      w({ requests: 20, medianMinutesToPropose: 30, ratingTenths: 50 }),
       w({ requests: 0, medianMinutesToPropose: 5 }),
     ]);
     expect(m.workshops).toBe(3);
     expect(m.values.requests).toBe(20);
-    // 20 and 60 -> 40; the workshop without a figure and the one without requests are left out
-    expect(m.values.minutesToPropose).toBe(40);
-    expect(m.values.ratingTenths).toBe(45);
+    // 20, 30, 60 -> 30; the workshop without requests is left out
+    expect(m.values.minutesToPropose).toBe(30);
+    // Only two workshops have a rating: a median of two would reveal the other one's figure (security review).
+    expect(m.values.ratingTenths).toBeNull();
     expect(m.values.averageBillPaise).toBeNull();
+  });
+
+  it("leaves the asking workshop out, so it cannot work back to another workshop's figure", () => {
+    const row = (id: string, requests: number) => ({ ...w({ requests }), id });
+    const four = [row('a', 10), row('b', 20), row('c', 30), row('d', 40)];
+    // Without "a": 20, 30, 40 -> 30.
+    expect(workshopMedians(four, { excludeId: 'a' }).values.requests).toBe(30);
+    // With "a" left out only two others remain: no benchmark.
+    expect(workshopMedians(four.slice(0, 3), { excludeId: 'a' }).values.requests).toBeNull();
   });
 });

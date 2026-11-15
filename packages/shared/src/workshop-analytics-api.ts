@@ -135,12 +135,24 @@ function median(values: readonly number[]): number | null {
   return sorted.length % 2 === 1 ? high : Math.round((low + high) / 2);
 }
 
-/** City medians over the workshops that had requests in the range; every value null below `WORKSHOP_MEDIAN_MIN`. */
-export function workshopMedians(all: readonly WorkshopStats[]): WorkshopMedians {
-  const active = all.filter((s) => s.requests > 0);
+/**
+ * City medians over the workshops that had requests in the range. Anonymity (security review 2026-11-15): each
+ * metric needs at least `WORKSHOP_MEDIAN_MIN` workshops that have that figure, else it is null; and `excludeId` (the
+ * asking workshop in its portal) is left out, so a workshop cannot combine its own figure with the median to work back
+ * to another workshop's.
+ */
+export function workshopMedians(
+  all: readonly (WorkshopStats & { id?: string })[],
+  opts: { excludeId?: string } = {},
+): WorkshopMedians {
+  const active = all.filter(
+    (s) => s.requests > 0 && (opts.excludeId === undefined || s.id !== opts.excludeId),
+  );
   const rates = active.map((s) => ({ s, r: workshopRates(s) }));
-  const pick = (f: (x: { s: WorkshopStats; r: WorkshopRates }) => number | null) =>
-    active.length < WORKSHOP_MEDIAN_MIN ? null : median(rates.map(f).filter((v): v is number => v !== null));
+  const pick = (f: (x: { s: WorkshopStats; r: WorkshopRates }) => number | null) => {
+    const values = rates.map(f).filter((v): v is number => v !== null);
+    return values.length < WORKSHOP_MEDIAN_MIN ? null : median(values);
+  };
   return {
     workshops: active.length,
     values: {
