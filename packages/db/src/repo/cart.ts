@@ -88,7 +88,7 @@ async function readLines(tx: Tx, cartId: string, locale: CartLocale): Promise<Se
     slug: r.slug,
     name: localized(r.name, r.name_hi, locale),
     brand: r.brand,
-    qty: Number(r.qty),
+    qty: r.qty,
   }));
 }
 

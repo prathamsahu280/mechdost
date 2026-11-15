@@ -71,6 +71,8 @@ export const AdminProductPhotoDto = z.object({
   width: z.number().int(),
   height: z.number().int(),
   lqip: z.string().nullable(),
+  /** Signed, short-lived URL of the 640 px variant so staff and shops can see photos that are not public yet. */
+  previewUrl: z.string(),
   /** Set when a shop added it (shown to staff in the queue). */
   submittedByShopId: z.uuid().nullable(),
   version: z.number().int(),
@@ -101,6 +103,8 @@ export const PhotoQueueDto = z.object({
       width: z.number().int(),
       height: z.number().int(),
       lqip: z.string().nullable(),
+      /** Signed, short-lived image URL (staff only; the photo is not public yet). */
+      previewUrl: z.string(),
       shopId: z.uuid().nullable(),
       shopName: z.string().nullable(),
       createdAt: z.string(),

@@ -3,11 +3,13 @@
  * most `WISHLIST_MAX`. The product is named by its slug in the URL; the customer by the session, never by an id.
  */
 import { z } from 'zod';
-import { CATALOGUE_SLUG_RE } from './catalogue';
+// A product slug as the catalogue accepts it. Not imported from ./catalogue: that module's schemas must load after
+// @hono/zod-openapi in the API (see routes/catalogue.ts), and the database package imports this file early.
+export const PRODUCT_SLUG_RE = /^[a-z0-9][a-z0-9-]{0,119}$/;
 
 export const WISHLIST_MAX = 100;
 
-export const WishlistSlug = z.string().regex(CATALOGUE_SLUG_RE);
+export const WishlistSlug = z.string().regex(PRODUCT_SLUG_RE);
 
 export const WishlistItemDto = z.object({
   slug: z.string(),

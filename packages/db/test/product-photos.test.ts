@@ -132,7 +132,7 @@ describe('staff photos', () => {
     for (let i = 0; i < 7; i += 1) await add();
     const results = await Promise.allSettled([add(), add()]);
     expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
-    const rejected = results.find((r) => r.status === 'rejected') as PromiseRejectedResult;
+    const rejected = results.find((r): r is PromiseRejectedResult => r.status === 'rejected')!;
     expect(rejected.reason).toMatchObject({ code: 'PRODUCT_PHOTO_LIMIT' });
     expect(await live()).toHaveLength(8);
     await expect(add()).rejects.toMatchObject({ code: 'PRODUCT_PHOTO_LIMIT' });
@@ -250,7 +250,7 @@ describe('shop photos', () => {
     // not served, not in the public catalogue
     expect(await findProductPhotoForServing(t(), p.id)).toMatchObject({ approved: false });
     const pub = await getCatalogueProduct(t(), slug, { locale: 'en', pincode: null, cityCode: 'RPR' });
-    expect(pub?.photos ?? []).toHaveLength(0);
+    expect(pub.photos).toHaveLength(0);
     // the queue shows it with the shop
     const q = await listPhotoQueue(t());
     expect(q.items.map((i) => i.photoId)).toContain(p.id);
@@ -265,8 +265,8 @@ describe('shop photos', () => {
     const served = await findProductPhotoForServing(t(), a.id);
     expect(served).toMatchObject({ approved: true });
     const pub = await getCatalogueProduct(t(), slug, { locale: 'hi', pincode: null, cityCode: 'RPR' });
-    expect(pub?.photos).toHaveLength(1);
-    expect(pub?.photos[0]).toMatchObject({ path: a.id, alt: 'तेल के डिब्बे का सामने का हिस्सा' });
+    expect(pub.photos).toHaveLength(1);
+    expect(pub.photos[0]).toMatchObject({ path: a.id, alt: 'तेल के डिब्बे का सामने का हिस्सा' });
     await reviewProductPhoto(t(), {
       photoId: b.id,
       decision: 'rejected',
@@ -326,11 +326,11 @@ describe('public catalogue', () => {
     const b = await add();
     await reorderProductPhotos(t(), { slug, ids: [b.id, a.id], userId: staff.userId });
     const pub = await getCatalogueProduct(t(), slug, { locale: 'en', pincode: null, cityCode: 'RPR' });
-    expect(pub?.photos.map((p) => p.path)).toEqual([b.id, a.id]);
-    expect(pub?.photos[0]).toMatchObject({
+    expect(pub.photos.map((p) => p.path)).toEqual([b.id, a.id]);
+    expect(pub.photos[0]).toMatchObject({
       width: 1200,
       height: 900,
-      lqip: expect.stringContaining('data:'),
+      lqip: expect.stringContaining('data:') as unknown,
     });
     const [only] = await db
       .select()

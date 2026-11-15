@@ -31,6 +31,8 @@ import { siteConfigAdminRoutes, siteConfigPublicRoutes } from './routes/site-con
 import { eventRoutes } from './routes/events';
 import { pincodeAdminRoutes, pincodePublicRoutes } from './routes/geo';
 import { accountRoutes } from './routes/account';
+import { storefrontRoutes } from './routes/storefront';
+import { productPhotoRoutes } from './routes/product-photos';
 import { noticeRoutes } from './routes/notices';
 import { meRoutes } from './routes/me';
 import { partnerAdminRoutes, partnerPublicRoutes, shopOnboardingRoutes } from './routes/partner-onboarding';
@@ -94,6 +96,7 @@ export function createApp(deps: AppDeps) {
   v1.route('/', authRoutes(deps));
   v1.route('/', meRoutes(deps, sessions));
   v1.route('/', accountRoutes(deps, sessions));
+  v1.route('/', storefrontRoutes(deps, sessions));
   v1.route('/', noticeRoutes(deps, sessions));
   v1.route('/', assistantRoutes(deps));
   v1.route('/', catalogueRoutes(deps));
@@ -132,6 +135,7 @@ export function createApp(deps: AppDeps) {
   v1.route('/', workshopPortalRoutes(deps, sessions));
   v1.route('/', workshopAnalyticsRoutes(deps, sessions));
   v1.route('/', servicePhotoRoutes(deps, sessions));
+  v1.route('/', productPhotoRoutes(deps, sessions));
   v1.route('/', adminServiceRequestRoutes(deps, sessions));
   v1.route('/', quoteRoutes(deps, sessions));
   v1.route('/', adminQuoteRoutes(deps, sessions));

@@ -245,7 +245,7 @@ describe('wishlist', () => {
       setWishlisted(t(), u, extra[WISHLIST_MAX + 1]!, true),
     ]);
     expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
-    const full = results.find((r) => r.status === 'rejected') as PromiseRejectedResult;
+    const full = results.find((r): r is PromiseRejectedResult => r.status === 'rejected')!;
     expect(full.reason).toMatchObject({ code: 'WISHLIST_FULL' });
     expect((await listWishlist(t(), u, 'en')).items).toHaveLength(WISHLIST_MAX);
     // removing one makes room; adding something already on the list never counts against the limit
