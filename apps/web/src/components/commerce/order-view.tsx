@@ -351,6 +351,7 @@ function CancelOrder({ order }: { order: DemoOrder }) {
           {t('cancelConfirm')}
         </button>
         <button
+          data-panel-cancel="order-cancel"
           type="button"
           onClick={() => {
             setOpen(false);

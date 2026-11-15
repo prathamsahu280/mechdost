@@ -139,6 +139,7 @@ export function AdminStaffApi() {
         </div>
         {data && mode !== 'grant' ? (
           <button
+            data-disclosure-trigger="staff-grant"
             type="button"
             className={portalPrimary}
             onClick={() => {
@@ -264,6 +265,7 @@ export function AdminStaffApi() {
               {t('staff_save')}
             </button>
             <button
+              data-panel-cancel="staff-grant"
               type="button"
               className={portalQuiet}
               onClick={() => {
@@ -371,6 +373,7 @@ function MemberCard({
                 </p>
                 {!m.isSelf && !removing ? (
                   <button
+                    data-disclosure-trigger={`revoke-${g.grantId}`}
                     type="button"
                     className={portalQuiet}
                     onClick={() => {
@@ -407,6 +410,7 @@ function MemberCard({
                       {t('staff_removeConfirm')}
                     </button>
                     <button
+                      data-panel-cancel={`revoke-${g.grantId}`}
                       type="button"
                       className={portalQuiet}
                       onClick={() => {

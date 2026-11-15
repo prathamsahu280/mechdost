@@ -345,6 +345,7 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
     component: 'Change date or time: link only, or the open form (date, part of the day, changes left)',
     path: '/service/SR-RPR-2026-HND401',
     scope: 'main',
+    checks: [...BASE_CHECKS, 'dismiss'],
     strategy: 'pairwise',
     params: [
       ...env,
@@ -402,6 +403,7 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
       'Delete my account card: the ask button, the inline confirmation with the optional note, the sent message, the refused state naming open orders and refunds',
     path: '/account/support',
     scope: 'main',
+    checks: [...BASE_CHECKS, 'dismiss'],
     strategy: 'pairwise',
     params: [
       ...env,
@@ -438,6 +440,7 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
       'Request needing routing: ranked suggestions with reasons (best match first), no eligible workshop, ranking unavailable; staff cancel form with reason',
     path: '/admin/services',
     scope: 'main',
+    checks: [...BASE_CHECKS, 'dismiss'],
     strategy: 'pairwise',
     params: [
       ...env,
@@ -469,7 +472,7 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
       { name: 'detail', values: ['closed', 'open'] },
       { name: 'form', values: ['clean', 'errors', 'filled'] },
     ],
-    checks: [...BASE_CHECKS, 'aligned'],
+    checks: [...BASE_CHECKS, 'aligned', 'dismiss'],
     align: [{ items: 'main ul > li' }],
     sweep: 16,
     note: API_NOTE,
@@ -526,7 +529,7 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
       r.giveup === 'closed' ||
       r.orders === 'confirmed' ||
       r.orders === 'many',
-    checks: [...BASE_CHECKS, 'aligned'],
+    checks: [...BASE_CHECKS, 'aligned', 'dismiss'],
     align: [{ items: 'main ul > li' }],
     sweep: 16,
     core: undefined,
@@ -652,6 +655,7 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
       'Shop list with status filter and one shop open: profile (hours), PIN codes, products, standing, warnings (pause prompt), access',
     path: '/admin/partners',
     scope: 'main',
+    checks: [...BASE_CHECKS, 'dismiss'],
     strategy: 'pairwise',
     params: [
       ...env,

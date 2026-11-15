@@ -189,6 +189,7 @@ function StaffCancel({
   if (!open)
     return (
       <button
+        data-disclosure-trigger={`cancel-${r.code}`}
         type="button"
         onClick={() => {
           setOpen(true);
@@ -262,6 +263,7 @@ function StaffCancel({
           {busy ? t('ws_api_cancelBusy') : t('ws_api_cancelConfirm')}
         </button>
         <button
+          data-panel-cancel={`cancel-${r.code}`}
           type="button"
           onClick={() => {
             setOpen(false);
@@ -479,6 +481,7 @@ function RoutingCard({
         />
       ) : (
         <button
+          data-disclosure-trigger={`reject-${r.code}`}
           type="button"
           onClick={() => {
             setRejecting(true);
@@ -592,7 +595,12 @@ function RejectForm({
         <button type="submit" disabled={busy} className={portalPrimary}>
           {t('ws_api_rejectConfirm')}
         </button>
-        <button type="button" onClick={onCancel} className={portalQuiet}>
+        <button
+          data-panel-cancel={`reject-${r.code}`}
+          type="button"
+          onClick={onCancel}
+          className={portalQuiet}
+        >
           {t('ws_api_cancel')}
         </button>
       </div>

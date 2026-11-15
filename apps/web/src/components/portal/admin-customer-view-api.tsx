@@ -126,6 +126,7 @@ export function AdminCustomersApi() {
                   type="button"
                   className={portalQuiet}
                   aria-expanded={openId === r.id}
+                  data-disclosure-trigger={`customer-${r.id}`}
                   onClick={() => {
                     setOpenId(r.id);
                   }}
@@ -139,7 +140,23 @@ export function AdminCustomersApi() {
         </div>
       ) : null}
 
-      {openId ? <CustomerView key={openId} id={openId} /> : null}
+      {openId ? (
+        <div data-panel-for={`customer-${openId}`} className="space-y-3">
+          <div className="flex justify-end">
+            <button
+              type="button"
+              data-panel-cancel={`customer-${openId}`}
+              onClick={() => {
+                setOpenId(null);
+              }}
+              className={portalQuiet}
+            >
+              {tc('close')}
+            </button>
+          </div>
+          <CustomerView key={openId} id={openId} />
+        </div>
+      ) : null}
     </section>
   );
 }

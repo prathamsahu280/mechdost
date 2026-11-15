@@ -195,3 +195,7 @@ which are automated. Add new classes at the end of the relevant section.
 ## Q. Navigation feel
 
 - Q1. Section switch remounts the frame: a route group whose pages each render the shell (guard, side bar, heading, message provider) tears the frame down on every click and Next scrolls to the page top; internal plain `<a href>` or `window.location` does a full document load. Test: layout-holds-frame source test, no-internal-plain-anchor scan, e2e frame-node/window-marker/scrollY survive.
+
+## R. Opened panels
+
+- **R1 · Opened panel cannot be closed** — a button opens a form/panel/sheet in place and there is no Cancel, Escape does nothing, or focus is lost on close. Recipe: click every `[data-disclosure-trigger]`, expect a visible `[data-panel-cancel]` (>= 44 px), press Escape, expect it gone and focus on the opener (`e2e/state-audit/dismiss.ts`, rule `dismiss`); source guard `test/panel-dismiss.test.ts` fails any component with `setOpen(true)`-style openers and no `data-panel-cancel`.

@@ -218,6 +218,7 @@ function CustomerRow({
                   {t('customersLiftConfirm')}
                 </button>
                 <button
+                  data-panel-cancel={`${idBase}-lift-${b.id}`}
                   type="button"
                   className={portalQuiet}
                   onClick={() => {
@@ -303,6 +304,7 @@ function CustomerRow({
                 {t('customersBlockConfirm', { name: account.name })}
               </button>
               <button
+                data-panel-cancel={blockKey}
                 type="button"
                 className={portalQuiet}
                 onClick={() => {

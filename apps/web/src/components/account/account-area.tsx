@@ -671,6 +671,7 @@ function Vehicles({ account }: { account: DemoAccount }) {
             onClick={() => {
               setOpen('add');
             }}
+            data-disclosure-trigger="vehicle-add"
             className={primary}
           >
             + {t('addVehicle')}
@@ -702,6 +703,7 @@ function Vehicles({ account }: { account: DemoAccount }) {
               <div className="flex shrink-0 gap-1">
                 <button
                   type="button"
+                  data-disclosure-trigger={`vehicle-${v.id}`}
                   onClick={() => {
                     setOpen(v.id);
                   }}
@@ -899,7 +901,12 @@ function VehicleForm({
           {t('save')}
         </button>
         {onCancel ? (
-          <button type="button" onClick={onCancel} className={quiet}>
+          <button
+            type="button"
+            data-panel-cancel={initial ? `vehicle-${initial.id}` : 'vehicle-add'}
+            onClick={onCancel}
+            className={quiet}
+          >
             {t('cancel')}
           </button>
         ) : null}
@@ -953,6 +960,7 @@ function Addresses({ account }: { account: DemoAccount }) {
             onClick={() => {
               setAdding(true);
             }}
+            data-disclosure-trigger="address-add"
             className={primary}
           >
             + {t('addAddress')}
@@ -1071,6 +1079,7 @@ function Addresses({ account }: { account: DemoAccount }) {
             {account.addresses.length > 0 ? (
               <button
                 type="button"
+                data-panel-cancel="address-add"
                 onClick={() => {
                   setAdding(false);
                   setError(null);

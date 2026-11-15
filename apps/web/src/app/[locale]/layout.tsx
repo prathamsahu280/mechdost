@@ -8,6 +8,7 @@ import { ERROR_COPY_ID } from '@/lib/error-copy';
 import type { ReactNode } from 'react';
 import { assistantCopy } from '@/assistant/server-copy';
 import { AssistantLauncher } from '@/components/assistant/assistant-launcher';
+import { PanelDismiss } from '@/components/site/panel-dismiss';
 import { AnalyticsListener } from '@/components/site/analytics-listener';
 import { ConsentBanner } from '@/components/site/consent-banner';
 import { Footer } from '@/components/site/footer';
@@ -149,6 +150,7 @@ export default async function LocaleLayout({
         />
         <AssistantLauncher copy={await assistantCopy(locale)} />
         <AnalyticsListener locale={locale} />
+        <PanelDismiss />
         <ConsentBanner
           copy={{
             label: consent('label'),

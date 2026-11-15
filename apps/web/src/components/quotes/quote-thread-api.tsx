@@ -309,6 +309,7 @@ function OfferCard({
               </button>
             ) : null}
             <button
+              data-disclosure-trigger="quote-decline"
               type="button"
               onClick={() => {
                 setClosing(true);
@@ -416,6 +417,7 @@ function CloseQuote({
           {t('decline')}
         </button>
         <button
+          data-panel-cancel="quote-decline"
           type="button"
           onClick={() => {
             setOpen(false);

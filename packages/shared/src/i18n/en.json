@@ -717,6 +717,7 @@
     "pinUnknown": "We don't know this PIN code yet, so workshops are not sorted by distance. Check the number or use your location."
   },
   "workshop": {
+    "api_chooseCancel": "Close this form",
     "services": "Service menu",
     "hours": "Opening hours",
     "address": "Address",
@@ -1089,6 +1090,7 @@
     "body": "Your review",
     "bodyHint": "What did you like or dislike? Keep it about the product or service.",
     "submit": "Submit review",
+    "cancel": "Cancel",
     "pending": "Thanks! Your review will appear after our team checks it.",
     "awaiting": "Awaiting approval",
     "errRating": "Choose a star rating.",
@@ -1577,6 +1579,8 @@
     "guestSupportLink": "No account? Write to support as a guest"
   },
   "portal": {
+    "close": "Close",
+    "cancel": "Cancel",
     "shops_api_title": "Shops",
     "shops_api_lead": "Shops in your cities: profile, hours, delivery PIN codes, products, pause or suspend, portal access.",
     "shops_api_filter": "Show",
@@ -3115,6 +3119,7 @@
     }
   },
   "support": {
+    "panelClose": "Close",
     "title": "Support & requests",
     "intro": "Something wrong with a part or an order? Tell us here. We reply within 48 hours.",
     "policyNote": "We don’t take returns or exchanges. Faulty, damaged or wrong parts are replaced or refunded through a request here.",
@@ -4811,6 +4816,7 @@
     "col_returned": "Returned in 30 days"
   },
   "supportThread": {
+    "cancel": "Cancel",
     "openTitleOrder": "Talk to MechDost support about order {code}",
     "openTitleService": "Talk to MechDost support about service job {code}",
     "openIntro": "You talk to MechDost support only. We check with the shop or workshop for you and answer here.",
@@ -4905,6 +4911,7 @@
     "deletionConfirmedNote": "Support has confirmed your request."
   },
   "coupons": {
+    "cancel": "Cancel",
     "have": "Have a coupon code?",
     "label": "Coupon code",
     "check": "Check code",

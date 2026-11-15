@@ -159,6 +159,7 @@ function InboxTicket({
         type="button"
         aria-expanded={open}
         aria-controls={`${field}-body`}
+        data-disclosure-trigger={`ticket-${ticket.code}`}
         onClick={onToggle}
         className="flex w-full flex-wrap items-baseline justify-between gap-2 text-left"
       >
@@ -191,7 +192,17 @@ function InboxTicket({
         </span>
       </button>
       {open ? (
-        <div id={`${field}-body`} className="mt-4 space-y-3">
+        <div id={`${field}-body`} data-panel-for={`ticket-${ticket.code}`} className="mt-4 space-y-3">
+          <div className="flex justify-end">
+            <button
+              type="button"
+              data-panel-cancel={`ticket-${ticket.code}`}
+              onClick={onToggle}
+              className={portalQuiet}
+            >
+              {t('panelClose')}
+            </button>
+          </div>
           <TicketThread ticket={ticket} viewer="staff" />
           {ticket.status === 'closed' ? null : (
             <form onSubmit={onSubmit} noValidate>

@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { buildCases } from '../e2e/state-audit/cases.ts';
 import { compareProblems, type CompareFacts } from '../e2e/state-audit/geometry.ts';
 import { seedFor } from '../e2e/state-audit/harness.ts';
+import { dismissVerdict } from '../e2e/state-audit/dismiss.ts';
 import { echoedWords, withoutEcho } from '../e2e/state-audit/hindi-echo.ts';
 import { latinOffenders } from './hindi-allowlist';
 
@@ -118,5 +119,38 @@ describe('consent seed of the audit rows', () => {
     const open = buildCases().find((x) => x.state.consent === 'open');
     if (!open) throw new Error('no open row');
     expect(seedFor(open, Date.now())['mechdost-consent']).toBeUndefined();
+  });
+});
+
+describe('dismiss rule (opened panel can be closed, 2026-11-16)', () => {
+  const ok = {
+    key: 'review-x',
+    cancelVisible: true,
+    cancelHeight: 44,
+    closedByEscape: true,
+    focusOnOpener: true,
+  };
+  it('passes a panel with a 44 px Cancel, Escape and focus return', () => {
+    expect(dismissVerdict([ok])).toEqual([]);
+  });
+  it('fails a panel that opens with no visible close control (the review form)', () => {
+    const [f] = dismissVerdict([{ ...ok, cancelVisible: false, cancelHeight: 0, closedByEscape: false }]);
+    expect(f).toMatchObject({ rule: 'dismiss', severity: 'P0', where: 'review-x' });
+  });
+  it('fails when Escape does not close it, and when focus is lost', () => {
+    expect(dismissVerdict([{ ...ok, closedByEscape: false }])[0]?.detail).toContain('Escape');
+    expect(dismissVerdict([{ ...ok, focusOnOpener: false }])[0]?.detail).toContain('focus');
+  });
+  it('flags a close control under 44 px', () => {
+    expect(dismissVerdict([{ ...ok, cancelHeight: 32 }])[0]?.detail).toContain('32 px');
+  });
+  it('the model puts the rule on the review, order and request rows', () => {
+    const codes = new Set(
+      buildCases()
+        .filter((c) => c.checks.includes('dismiss'))
+        .map((c) => c.code),
+    );
+    for (const code of ['PDP-REVIEWS', 'ORD-VIEW', 'SR-VIEW', 'PRT-SHOP', 'PRT-WORKSHOP'])
+      expect(codes.has(code), code).toBe(true);
   });
 });

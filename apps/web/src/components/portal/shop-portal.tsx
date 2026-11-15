@@ -275,6 +275,7 @@ function OfferedOrder({ order, shopSlug, now }: { order: DemoOrder; shopSlug: st
               {t('decline')}
             </button>
             <button
+              data-panel-cancel={`decline-${order.code}`}
               type="button"
               onClick={() => {
                 setDeclining(false);
@@ -299,6 +300,7 @@ function OfferedOrder({ order, shopSlug, now }: { order: DemoOrder; shopSlug: st
             {t('accept')}
           </button>
           <button
+            data-disclosure-trigger={`decline-${order.code}`}
             type="button"
             onClick={() => {
               setDeclining(true);

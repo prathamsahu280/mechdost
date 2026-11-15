@@ -423,6 +423,7 @@ function CancelRequestApi({ req, onChanged }: { req: ServiceRequestDetail; onCha
   if (!open)
     return (
       <button
+        data-disclosure-trigger="request-cancel"
         type="button"
         onClick={() => {
           setOpen(true);
@@ -479,6 +480,7 @@ function CancelRequestApi({ req, onChanged }: { req: ServiceRequestDetail; onCha
           {t('cancelConfirm')}
         </button>
         <button
+          data-panel-cancel="request-cancel"
           type="button"
           onClick={() => {
             setOpen(false);

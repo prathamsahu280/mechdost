@@ -169,16 +169,33 @@ export function LocalReviews({ target, slug }: { target: ReviewTarget; slug: str
             <p className="mt-1 text-xs text-muted">{t('bodyHint')}</p>
             {err('body')}
           </div>
-          <button
-            type="submit"
-            className="press inline-flex min-h-11 items-center rounded-button bg-accent-button px-5 text-sm font-bold text-white hover:bg-accent-button-hover"
-          >
-            {t('submit')}
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="submit"
+              className="press inline-flex min-h-11 items-center rounded-button bg-accent-button px-5 text-sm font-bold text-white hover:bg-accent-button-hover"
+            >
+              {t('submit')}
+            </button>
+            <button
+              type="button"
+              data-panel-cancel={`review-${slug}`}
+              data-track={`review_cancel_${target}`}
+              onClick={() => {
+                setOpen(false);
+                setRating(0);
+                setErrors({});
+              }}
+              className="press inline-flex min-h-11 items-center rounded-button px-4 text-sm font-bold text-ink underline hover:bg-pill"
+            >
+              {t('cancel')}
+            </button>
+          </div>
         </form>
       ) : (
         <button
           type="button"
+          data-disclosure-trigger={`review-${slug}`}
+          data-track={`review_open_${target}`}
           onClick={() => {
             setOpen(true);
             setSent(false);

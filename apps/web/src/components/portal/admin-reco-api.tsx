@@ -179,6 +179,7 @@ export function AdminRecoApi() {
         </div>
         {!form ? (
           <button
+            data-disclosure-trigger="reco-new"
             type="button"
             onClick={() => {
               setSaid(null);
@@ -287,6 +288,7 @@ export function AdminRecoApi() {
               {t('save')}
             </button>
             <button
+              data-panel-cancel={form.id ? `reco-${form.id}` : 'reco-new'}
               type="button"
               onClick={() => {
                 setForm(null);
@@ -337,6 +339,7 @@ export function AdminRecoApi() {
                 </div>
                 <div className="flex gap-2">
                   <button
+                    data-disclosure-trigger={`reco-${r.id}`}
                     type="button"
                     aria-label={t('editNamed', names)}
                     onClick={() => {

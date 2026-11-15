@@ -224,6 +224,7 @@ function MoveOfferForm({ detail, onDone }: { detail: ServiceRequestDetail; onDon
   if (!open)
     return (
       <button
+        data-disclosure-trigger={`move-${detail.code}`}
         type="button"
         data-track="workshop_home_move_open"
         onClick={() => {
@@ -289,6 +290,7 @@ function MoveOfferForm({ detail, onDone }: { detail: ServiceRequestDetail; onDon
           {h('moveOfferSend')}
         </button>
         <button
+          data-panel-cancel={`move-${detail.code}`}
           type="button"
           onClick={() => {
             setOpen(false);
@@ -333,6 +335,7 @@ function WaiveForm({ detail, onDone }: { detail: ServiceRequestDetail; onDone: (
   if (!open)
     return (
       <button
+        data-disclosure-trigger={`waive-${detail.code}`}
         type="button"
         data-track="workshop_home_waive_open"
         onClick={() => {
@@ -377,6 +380,7 @@ function WaiveForm({ detail, onDone }: { detail: ServiceRequestDetail; onDone: (
           {h('waiveAction')}
         </button>
         <button
+          data-panel-cancel={`waive-${detail.code}`}
           type="button"
           onClick={() => {
             setOpen(false);

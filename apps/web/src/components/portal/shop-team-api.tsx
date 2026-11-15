@@ -114,6 +114,7 @@ export function ShopTeamApi({ shopId }: { shopId: string }) {
                             {t('teamRemoveYes')}
                           </button>
                           <button
+                            data-panel-cancel={`remove-${m.userId}`}
                             type="button"
                             onClick={() => {
                               setRemoving(null);
@@ -126,6 +127,7 @@ export function ShopTeamApi({ shopId }: { shopId: string }) {
                       </div>
                     ) : (
                       <button
+                        data-disclosure-trigger={`remove-${m.userId}`}
                         type="button"
                         onClick={() => {
                           setRemoving(m.userId);
@@ -198,6 +200,7 @@ export function ShopTeamApi({ shopId }: { shopId: string }) {
             />
           ) : (
             <button
+              data-disclosure-trigger="team-invite"
               type="button"
               onClick={() => {
                 setAdding(true);
@@ -323,7 +326,7 @@ function InviteForm({
         <button type="submit" disabled={working} className={portalPrimary}>
           {t('teamSend')}
         </button>
-        <button type="button" onClick={onCancel} className={portalQuiet}>
+        <button data-panel-cancel="team-invite" type="button" onClick={onCancel} className={portalQuiet}>
           {t('teamFormCancel')}
         </button>
       </div>

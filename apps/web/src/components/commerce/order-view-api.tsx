@@ -284,6 +284,7 @@ function CancelPart({ part, onChanged }: { part: TrackedOrder; onChanged: () => 
   if (!open)
     return (
       <button
+        data-disclosure-trigger="order-cancel"
         type="button"
         onClick={() => {
           setOpen(true);
@@ -330,6 +331,7 @@ function CancelPart({ part, onChanged }: { part: TrackedOrder; onChanged: () => 
           {t('cancelConfirm')}
         </button>
         <button
+          data-panel-cancel="order-cancel"
           type="button"
           onClick={() => {
             setOpen(false);

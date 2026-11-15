@@ -22,6 +22,8 @@ export function WorkshopPerformanceLazy() {
         type="button"
         aria-expanded={open}
         aria-controls="performance-panel"
+        data-disclosure-trigger="workshop-performance"
+        data-panel-cancel={open ? 'workshop-performance' : undefined}
         data-track="workshop_performance_toggle"
         className={portalQuiet}
         onClick={() => {
@@ -31,7 +33,7 @@ export function WorkshopPerformanceLazy() {
         {open ? t('portal_hide') : t('portal_show')}
       </button>
       {open ? (
-        <div id="performance-panel" className="mt-4">
+        <div id="performance-panel" data-panel-for="workshop-performance" className="mt-4">
           <Suspense fallback={<div className="skeleton h-64 rounded-card" aria-hidden="true" />}>
             <Screen />
           </Suspense>

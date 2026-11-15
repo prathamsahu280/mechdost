@@ -7,7 +7,7 @@ import { SupportDestinationSaved, type SupportRefundInfoDto } from '@mechdost/sh
 import { adminApi } from '@/lib/admin-api';
 import { track } from '@/lib/analytics';
 import { threadErrorKey } from '@/lib/support-thread-api';
-import { portalCard, portalField, portalPrimary } from '@/components/portal/portal-styles';
+import { portalCard, portalField, portalPrimary, portalQuiet } from '@/components/portal/portal-styles';
 
 /**
  * Where a cash-on-delivery refund goes (Q104): the customer gives a UPI id or bank account on the request. Shown only
@@ -213,14 +213,31 @@ export function RefundDestinationApi({
               {t(error as 'err_generic')}
             </p>
           ) : null}
-          <button type="submit" disabled={busy} className={portalPrimary}>
-            {refund.destination ? t('refundReplace') : t('refundSave')}
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <button type="submit" disabled={busy} className={portalPrimary}>
+              {refund.destination ? t('refundReplace') : t('refundSave')}
+            </button>
+            {refund.destination ? (
+              <button
+                type="button"
+                disabled={busy}
+                data-panel-cancel="refund-destination"
+                onClick={() => {
+                  setEditing(false);
+                  setError(null);
+                }}
+                className={portalQuiet}
+              >
+                {t('cancel')}
+              </button>
+            ) : null}
+          </div>
         </form>
       ) : (
         <button
           type="button"
           className="press mt-2 min-h-11 rounded-pill bg-pill px-4 text-sm font-bold text-ink"
+          data-disclosure-trigger="refund-destination"
           onClick={() => {
             setEditing(true);
             setDone(false);

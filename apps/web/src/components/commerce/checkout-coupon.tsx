@@ -120,6 +120,7 @@ export default function CheckoutCoupon({
         type="button"
         className="press min-h-11 rounded-button text-sm font-bold text-accent-soft-text underline"
         aria-expanded="false"
+        data-disclosure-trigger="checkout-coupon"
         onClick={() => {
           setOpen(true);
           window.requestAnimationFrame(() => field.current?.focus());
@@ -166,6 +167,19 @@ export default function CheckoutCoupon({
             className="press min-h-11 shrink-0 rounded-button border border-input-border px-4 text-sm font-bold text-ink hover:bg-pill disabled:opacity-60"
           >
             {working ? t('checking') : t('check')}
+          </button>
+          <button
+            type="button"
+            data-panel-cancel="checkout-coupon"
+            onClick={() => {
+              setOpen(false);
+              setCode('');
+              setError(null);
+              setFound(null);
+            }}
+            className="press min-h-11 shrink-0 rounded-button px-3 text-sm font-bold text-ink underline hover:bg-pill"
+          >
+            {t('cancel')}
           </button>
         </div>
         {error ? (

@@ -96,6 +96,7 @@ export function DeletionRequestApi({ onOpened }: { onOpened: () => Promise<void>
             </div>
           ) : null}
           <button
+            data-disclosure-trigger="deletion-request"
             type="button"
             className={portalQuiet}
             data-track="support_deletion_ask"
@@ -140,6 +141,7 @@ export function DeletionRequestApi({ onOpened }: { onOpened: () => Promise<void>
               {t('deletionConfirm')}
             </button>
             <button
+              data-panel-cancel="deletion-request"
               type="button"
               className={portalQuiet}
               onClick={() => {

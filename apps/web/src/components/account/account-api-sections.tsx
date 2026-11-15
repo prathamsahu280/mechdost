@@ -127,6 +127,7 @@ export function AddressesApi({ defaults }: { defaults: { name: string; phone: st
           <button
             type="button"
             data-track="account_address_add"
+            data-disclosure-trigger="address-add"
             onClick={() => {
               setOpen('add');
             }}
@@ -206,6 +207,7 @@ export function AddressesApi({ defaults }: { defaults: { name: string; phone: st
                 <div className="flex shrink-0 gap-1">
                   <button
                     type="button"
+                    data-disclosure-trigger={`address-${addr.id}`}
                     onClick={() => {
                       setError(null);
                       setOpen(addr.id);
@@ -463,7 +465,12 @@ function AddressForm({
           {t('save')}
         </button>
         {onCancel ? (
-          <button type="button" onClick={onCancel} className={quiet}>
+          <button
+            type="button"
+            data-panel-cancel={initial ? `address-${initial.id}` : 'address-add'}
+            onClick={onCancel}
+            className={quiet}
+          >
             {t('cancel')}
           </button>
         ) : null}
@@ -523,6 +530,7 @@ export function VehiclesApi() {
           <button
             type="button"
             data-track="account_vehicle_add"
+            data-disclosure-trigger="vehicle-add"
             onClick={() => {
               setOpen('add');
             }}
@@ -584,6 +592,7 @@ export function VehiclesApi() {
               <div className="flex shrink-0 gap-1">
                 <button
                   type="button"
+                  data-disclosure-trigger={`vehicle-${v.id}`}
                   onClick={() => {
                     setError(null);
                     setOpen(v.id);
@@ -820,7 +829,12 @@ function VehicleFormApi({
           {t('save')}
         </button>
         {onCancel ? (
-          <button type="button" onClick={onCancel} className={quiet}>
+          <button
+            type="button"
+            data-panel-cancel={initial ? `vehicle-${initial.id}` : 'vehicle-add'}
+            onClick={onCancel}
+            className={quiet}
+          >
             {t('cancel')}
           </button>
         ) : null}

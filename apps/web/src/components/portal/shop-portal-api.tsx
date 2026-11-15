@@ -384,6 +384,7 @@ function OfferedOrder({
               {t('decline')}
             </button>
             <button
+              data-panel-cancel={`decline-${order.code}`}
               type="button"
               onClick={() => {
                 setDeclining(false);
@@ -406,6 +407,7 @@ function OfferedOrder({
             {t('accept')}
           </button>
           <button
+            data-disclosure-trigger={`decline-${order.code}`}
             type="button"
             disabled={busy || !id}
             onClick={() => {

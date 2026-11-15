@@ -497,12 +497,26 @@ function DeliveryOverride({ order }: { order: DemoOrder }) {
               {error}
             </p>
           ) : null}
-          <button type="submit" className={`${portalQuiet} mt-2`}>
-            {t('overrideConfirm')}
-          </button>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button type="submit" className={portalQuiet}>
+              {t('overrideConfirm')}
+            </button>
+            <button
+              type="button"
+              data-panel-cancel={fieldId}
+              onClick={() => {
+                setOpen(false);
+                setError(null);
+              }}
+              className={portalQuiet}
+            >
+              {t('cancel')}
+            </button>
+          </div>
         </form>
       ) : (
         <button
+          data-disclosure-trigger={fieldId}
           type="button"
           onClick={() => {
             setOpen(true);
@@ -753,6 +767,7 @@ function RoutingCard({ order, now }: { order: DemoOrder; now: number }) {
                 {t('cancelConfirm', { code: order.code })}
               </button>
               <button
+                data-panel-cancel={`cancel-${order.code}`}
                 type="button"
                 onClick={() => {
                   setCancelling(false);
@@ -765,6 +780,7 @@ function RoutingCard({ order, now }: { order: DemoOrder; now: number }) {
           </form>
         ) : (
           <button
+            data-disclosure-trigger={`cancel-${order.code}`}
             type="button"
             onClick={() => {
               setCancelling(true);
@@ -829,6 +845,7 @@ function RoutingCard({ order, now }: { order: DemoOrder; now: number }) {
                 {t('rejectSend')}
               </button>
               <button
+                data-panel-cancel={`reject-${order.code}`}
                 type="button"
                 onClick={() => {
                   setRejecting(false);
@@ -841,6 +858,7 @@ function RoutingCard({ order, now }: { order: DemoOrder; now: number }) {
           </form>
         ) : (
           <button
+            data-disclosure-trigger={`reject-${order.code}`}
             type="button"
             onClick={() => {
               setRejecting(true);

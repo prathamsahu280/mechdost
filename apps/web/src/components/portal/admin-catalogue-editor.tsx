@@ -86,6 +86,7 @@ export function CatalogueEditor() {
     return (
       <div className="space-y-4">
         <button
+          data-panel-cancel="catalogue-add"
           type="button"
           onClick={() => {
             setAdding(null);
@@ -123,6 +124,7 @@ export function CatalogueEditor() {
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
         <button
+          data-disclosure-trigger="catalogue-add"
           type="button"
           onClick={() => {
             setAdding('product');
@@ -132,6 +134,7 @@ export function CatalogueEditor() {
           {t('cat_add_open')}
         </button>
         <button
+          data-disclosure-trigger="catalogue-add"
           type="button"
           onClick={() => {
             setAdding('import');

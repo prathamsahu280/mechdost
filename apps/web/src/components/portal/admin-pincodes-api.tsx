@@ -182,6 +182,7 @@ export function ServiceAreaApi() {
           />
         ) : (
           <button
+            data-disclosure-trigger="pin-add"
             type="button"
             className={portalPrimary}
             onClick={() => {
@@ -345,11 +346,21 @@ function RowActions({
 
   return (
     <div className="mt-3 flex flex-wrap gap-2">
-      <button type="button" className={portalQuiet} onClick={onEdit}>
+      <button
+        data-disclosure-trigger={`pin-edit-${row.pincode}`}
+        type="button"
+        className={portalQuiet}
+        onClick={onEdit}
+      >
         {t('geo_api_edit')}
       </button>
       {row.active ? (
-        <button type="button" className={portalQuiet} onClick={onSwitchOff}>
+        <button
+          data-disclosure-trigger={`pin-off-${row.pincode}`}
+          type="button"
+          className={portalQuiet}
+          onClick={onSwitchOff}
+        >
           {t('geo_api_switchOff')}
         </button>
       ) : (
@@ -478,7 +489,12 @@ function PincodeEditor({
         <button type="submit" disabled={busy} className={portalPrimary}>
           {t('geo_api_save')}
         </button>
-        <button type="button" onClick={onCancel} className={portalQuiet}>
+        <button
+          data-panel-cancel={row ? `pin-edit-${row.pincode}` : 'pin-add'}
+          type="button"
+          onClick={onCancel}
+          className={portalQuiet}
+        >
           {t('geo_api_cancel')}
         </button>
       </div>
@@ -584,7 +600,12 @@ function SwitchOffForm({
         <button type="submit" disabled={busy} className={portalPrimary}>
           {t('geo_api_confirmOff')}
         </button>
-        <button type="button" onClick={onCancel} className={portalQuiet}>
+        <button
+          data-panel-cancel={`pin-off-${row.pincode}`}
+          type="button"
+          onClick={onCancel}
+          className={portalQuiet}
+        >
           {t('geo_api_cancel')}
         </button>
       </div>
