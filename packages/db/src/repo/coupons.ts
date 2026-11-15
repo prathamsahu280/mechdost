@@ -141,14 +141,17 @@ export async function evaluateCoupon(
   const view = viewOf(r, input.locale);
   // A code the caller may not know about (paused, not started, waiting for its shop, another city) answers exactly like
   // an unknown code, on the preview and on placing, so neither path tells which codes exist (security review 2026-11-15).
-  const hidden: readonly CouponReason[] = ['paused', 'not_started', 'shop_terms_pending', 'wrong_city'];
-  const refuse = (reason: CouponReason): CouponEvaluation =>
-    hidden.includes(reason) ? { ok: false, reason: 'not_found', view: null } : { ok: false, reason, view };
-  if (!r.active) return refuse('paused');
-  if (r.not_started) return refuse('not_started');
+  // All of those checks come first, so a code in a hidden state can never leak a showable reason (expired ...). A
+  // refusal never carries the coupon (title, terms, shop): only an applicable code is shown.
+  if (
+    !r.active ||
+    r.not_started ||
+    (r.funder === 'shop' && r.terms_status !== 'accepted') ||
+    (r.city_id !== null && r.city_id !== input.cityId)
+  )
+    return { ok: false, reason: 'not_found', view: null };
+  const refuse = (reason: CouponReason): CouponEvaluation => ({ ok: false, reason, view: null });
   if (r.ended) return refuse('expired');
-  if (r.funder === 'shop' && r.terms_status !== 'accepted') return refuse('shop_terms_pending');
-  if (r.city_id !== null && r.city_id !== input.cityId) return refuse('wrong_city');
   const total = numOrNull(r.usage_limit_total);
   if (total !== null && num(r.used_count) >= total) return refuse('exhausted');
   if (num(r.my_uses) >= num(r.usage_limit_per_user)) return refuse('user_limit');

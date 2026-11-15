@@ -7,7 +7,6 @@ import {
   listMyOrders,
   placeOrder,
   quoteCheckout,
-  ValidationError,
 } from '@mechdost/db/repo';
 import { CustomerRefundDto } from '@mechdost/shared/refunds-api';
 import { PERSON_CANCEL_REASONS } from '@mechdost/shared/state';
@@ -350,6 +349,12 @@ export function checkoutRoutes(deps: AppDeps, cache: SessionCache) {
       if (body.paymentMethod === 'online' && !razorpay)
         throw new ApiError(422, 'PAYMENT_METHOD_UNAVAILABLE', 'Online payment is not available yet');
       const userId = c.get('auth').user.id;
+      // Every attempt that carries a code is charged to the same per-user and per-IP limits as `POST /checkout/coupon`
+      // BEFORE the code is looked at (security review 2026-11-15): over the limit it is 429 without evaluating it.
+      if (body.couponCode) {
+        await enforceRate(c, deps.rateLimiter, COUPON_CHECK_USER_RATE, userId);
+        await enforceRate(c, deps.rateLimiter, COUPON_CHECK_IP_RATE, c.get('clientIp'));
+      }
       const placed = await placeOrder(deps.db, {
         method: body.paymentMethod,
         userId,
@@ -369,14 +374,6 @@ export function checkoutRoutes(deps: AppDeps, cache: SessionCache) {
         coins: body.coins ?? 0,
         couponCode: body.couponCode ?? null,
         locale: body.locale,
-      }).catch(async (err: unknown) => {
-        // A refused coupon on placing is one more guess at a code: it counts against the same per-user and per-IP
-        // limits as `POST /checkout/coupon` (security review 2026-11-15), so placing cannot be used to enumerate codes.
-        if (err instanceof ValidationError && err.code === 'COUPON_INVALID') {
-          await enforceRate(c, deps.rateLimiter, COUPON_CHECK_USER_RATE, userId);
-          await enforceRate(c, deps.rateLimiter, COUPON_CHECK_IP_RATE, c.get('clientIp'));
-        }
-        throw err;
       });
       // The Razorpay order exists (stored) before the client sees it; a retried place reuses it.
       const handle =

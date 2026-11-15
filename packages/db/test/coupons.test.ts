@@ -729,6 +729,28 @@ describe('security review: the shop accepts exactly what it was shown', () => {
   });
 });
 
+describe('security review: a refusal never carries the coupon or tells which hidden state it is in', () => {
+  it('paused and expired is still not_found; every refusal has no view', async () => {
+    const lines = [{ sku: OIL, qty: 1 }];
+    const c = await make({ startsAtIst: '2020-01-01T00:00', endsAtIst: '2020-02-01T00:00' });
+    await setCouponPaused(t(), {
+      couponId: c.id,
+      paused: true,
+      reason: 'Pause test',
+      expectedVersion: c.version,
+      staffUserId: staff,
+      scope: ALL,
+    });
+    const look = (code: string) =>
+      previewCoupon(t(), { userId: ravi, code, pincode: '492004', lines, locale: 'en' });
+    expect(await look(c.code)).toEqual({ ok: false, reason: 'not_found', coupon: null });
+    const ended = await make({ startsAtIst: '2020-01-01T00:00', endsAtIst: '2020-02-01T00:00' });
+    expect(await look(ended.code)).toEqual({ ok: false, reason: 'expired', coupon: null });
+    const min = await make({ minSubtotalPaise: 9_999_900 });
+    expect(await look(min.code)).toEqual({ ok: false, reason: 'min_order', coupon: null });
+  });
+});
+
 describe('security review: a failed code on place does not reveal what exists', () => {
   const lines = [{ sku: OIL, qty: 1 }];
   const refusal = async (codeText: string) => {

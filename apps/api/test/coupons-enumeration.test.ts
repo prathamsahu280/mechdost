@@ -123,4 +123,56 @@ describe('coupon code enumeration through placing an order', () => {
     });
     expect(over.status).toBe(429);
   });
+
+  it('over the limit, a request carrying a code is refused before the code is looked at', async () => {
+    const marketing = await person('01', 'marketing');
+    const user = await person('03', null);
+    await call(marketing, 'POST', '/admin/coupons', {
+      code: 'ENUMLIVE',
+      title: 'Live',
+      titleHi: 'लाइव',
+      terms: null,
+      termsHi: null,
+      kind: 'flat',
+      value: 1_000,
+      minSubtotalPaise: 0,
+      maxDiscountPaise: null,
+      startsAtIst: '2020-01-01T00:00',
+      endsAtIst: null,
+      usageLimitTotal: null,
+      usageLimitPerUser: 1,
+      firstOrderOnly: false,
+      city: null,
+      funder: 'mechdost',
+      shopId: null,
+    });
+    for (let i = 0; i < 30; i += 1)
+      await call(user, 'POST', '/checkout/coupon', {
+        code: `USEUPX${String(i)}AB`,
+        pincode: '492004',
+        lines,
+        locale: 'en',
+      });
+    const quote = (await (
+      await call({ 'content-type': 'application/json' }, 'POST', '/checkout/quote', {
+        pincode: '492004',
+        lines,
+      })
+    ).json()) as { totalPaise: number };
+    // A valid code with the right total would be placed (201) if it were evaluated; it must be 429 instead.
+    const r = await call(
+      user,
+      'POST',
+      '/orders',
+      {
+        address,
+        lines,
+        expectedTotalPaise: quote.totalPaise - 1_000,
+        paymentMethod: 'cod',
+        couponCode: 'ENUMLIVE',
+      },
+      { 'idempotency-key': 'enum-key-over-limit-0001' },
+    );
+    expect(r.status).toBe(429);
+  });
 });
