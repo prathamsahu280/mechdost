@@ -30,6 +30,13 @@
     border-radius: 4px;
   }
 
+  /* A picker for a visually hidden file input draws the input's focus ring (test/file-picker-focus.test.ts). */
+  .file-pick:has(input[type='file']:focus-visible),
+  .file-pick:has(+ input[type='file']:focus-visible) {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 3px;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,

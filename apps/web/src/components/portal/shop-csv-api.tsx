@@ -103,7 +103,7 @@ export function ShopCsvCard({ shopId }: { shopId: string }) {
         <button type="button" onClick={() => void onTemplate()} className={portalQuiet}>
           {t('csvTemplate')}
         </button>
-        <label className={`${portalQuiet} cursor-pointer`}>
+        <label className={`file-pick ${portalQuiet} cursor-pointer`}>
           {t('csvChoose')}
           <input
             ref={input}

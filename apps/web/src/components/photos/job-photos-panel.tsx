@@ -189,7 +189,7 @@ export function JobPhotosPanel({
                 <label
                   htmlFor={inputId}
                   aria-disabled={uploading || undefined}
-                  className={`${portalQuiet} cursor-pointer gap-2 ${uploading ? 'pointer-events-none opacity-60' : ''}`}
+                  className={`file-pick ${portalQuiet} cursor-pointer gap-2 ${uploading ? 'pointer-events-none opacity-60' : ''}`}
                 >
                   <Camera aria-hidden="true" className="size-4" />
                   {t(stage === 'before' ? 'addBefore' : 'addAfter')}
