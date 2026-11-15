@@ -131,3 +131,10 @@ overflow, scroll regions, refund list, analytics tiles) and 2B (Hindi wording, c
   persistent portal layouts, section pages render only the section, no jump to top, pending state, e2e guard.
 - **3c** (after the A–G re-run): real bugs it finds + queued leftovers (Hindi CSV column names, names marked as user
   text).
+
+## One deploy for everything (user 2026-11-16: "we can like push it all at once")
+
+No deploy per batch. Merge batch 3 (a, b, c), the refund and bulk quote follow-ups, the WhatsApp templates CLI and
+the smaller items (if ready) into `merge/fix2`; renumber migrations; one full verification (`pnpm check`, JS budget,
+chrome-fit, no-reload e2e, closable-panels e2e, Hindi crawl, affected audit rows); then one push to main and one
+deploy (migrations first, runbook § 6). The visual review runs on that deploy.
