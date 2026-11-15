@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useId, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { chartTicks, shortDay } from '@/lib/admin-analytics-view';
+import { ScrollRegion } from '../ui/scroll-region';
 
 /**
  * Small dependency-free charts for Admin → Analytics (decision 2026-11-14 "Analytics charts in SVG"): one series per
@@ -189,7 +190,7 @@ export function DataTable({
 }) {
   if (rows.length === 0) return <p className="mt-2 text-sm text-muted">{empty}</p>;
   return (
-    <div className="mt-2 overflow-x-auto">
+    <ScrollRegion label={caption} className="mt-2">
       <table className="w-full min-w-max border-collapse text-sm">
         <caption className={hideCaption ? 'sr-only' : 'pb-2 text-left font-bold text-ink'}>{caption}</caption>
         <thead>
@@ -223,6 +224,6 @@ export function DataTable({
           ))}
         </tbody>
       </table>
-    </div>
+    </ScrollRegion>
   );
 }

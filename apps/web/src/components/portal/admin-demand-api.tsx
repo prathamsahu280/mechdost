@@ -4,6 +4,7 @@ import { WaitlistDemandDto, type WaitlistDemand } from '@mechdost/shared/waitlis
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useId, useState } from 'react';
 import { adminApi } from '@/lib/admin-api';
+import { ScrollRegion } from '../ui/scroll-region';
 import { portalCard } from './portal-styles';
 
 type Load = { kind: 'loading' } | { kind: 'error' } | { kind: 'ok'; demand: WaitlistDemand };
@@ -48,7 +49,7 @@ export function AdminDemandApi() {
       {load.kind === 'ok' && load.demand.rows.length > 0 ? (
         <>
           <p className="text-sm font-bold text-ink">{t('total', { count: load.demand.totalWaiting })}</p>
-          <div className="overflow-x-auto">
+          <ScrollRegion labelledBy={titleId}>
             <table className="w-full min-w-[34rem] text-left text-sm">
               <thead className="text-[13px] text-muted">
                 <tr>
@@ -87,7 +88,7 @@ export function AdminDemandApi() {
                 ))}
               </tbody>
             </table>
-          </div>
+          </ScrollRegion>
         </>
       ) : null}
     </section>

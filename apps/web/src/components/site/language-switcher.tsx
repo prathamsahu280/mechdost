@@ -27,7 +27,7 @@ export function LanguageSwitcher({ target, text }: { target: SiteLocale; text: s
       lang={target}
       hrefLang={target}
       data-track={`language_${target}`}
-      className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-[13px] font-bold text-ink hover:bg-pill min-[440px]:px-3"
+      className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-1.5 text-[13px] font-bold text-ink hover:bg-pill min-[440px]:px-3"
     >
       <span aria-hidden="true" className="hidden text-[15px] leading-none xl:inline">
         {UI_EMOJI.language}

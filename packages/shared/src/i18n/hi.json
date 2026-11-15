@@ -4861,7 +4861,7 @@
     "refundKindUpi": "UPI आईडी",
     "refundKindBank": "बैंक खाता",
     "upiLabel": "UPI आईडी",
-    "upiHelp": "जैसे name@bank",
+    "upiHelp": "जैसे 9876543210@upi",
     "accountNameLabel": "खाते पर नाम",
     "accountNumberLabel": "खाता संख्या",
     "accountNumberHelp": "9 से 18 अंक",
