@@ -48,11 +48,24 @@ export interface CouponRow {
   code: string;
   rule: CouponRule;
   view: CouponView;
+  /** Category offer: the category the discount is limited to (its lines and sub-categories). */
+  categoryId: string | null;
 }
 
 export type CouponEvaluation =
   | { ok: true; coupon: CouponRow; discount: CouponDiscount }
   | { ok: false; reason: CouponReason; view: CouponView | null };
+
+/**
+ * The one offer a checkout gets (2026-11-16): a typed code or an automatic offer, never both. `beaten` is the other
+ * one, when there was one, so the customer is told what they did not get.
+ */
+export type OfferChoice =
+  | (Extract<CouponEvaluation, { ok: true }> & {
+      source: 'code' | 'automatic';
+      beaten: { source: 'code' | 'automatic'; title: string; discountPaise: number } | null;
+    })
+  | Extract<CouponEvaluation, { ok: false }>;
 
 interface RawCoupon {
   id: string;
@@ -81,6 +94,9 @@ interface RawCoupon {
   shop_name_hi: string | null;
   my_uses: unknown;
   had_order: boolean;
+  category_id: string | null;
+  /** The category and every sub-category (recursive), for category offers. */
+  category_ids: string[] | null;
 }
 
 /** What a person types: trimmed; the database compares case-insensitively (citext). Letters and digits only. */
@@ -113,31 +129,72 @@ function viewOf(r: RawCoupon, locale: CatalogueLocale): CouponView {
  */
 export async function evaluateCoupon(
   tx: Tx,
-  input: {
-    code: string;
-    userId: string;
-    cityId: string;
-    groups: readonly CouponGroup[];
-    locale: CatalogueLocale;
-  },
+  input: CouponCart & { code: string },
 ): Promise<CouponEvaluation> {
   const code = normalizeCouponCode(input.code);
+  // An automatic offer's code is only its internal name: typing it is "not valid" (2026-11-16), like an unknown code.
   const [r] = rowsOf<RawCoupon>(
-    await tx.execute(sql`
+    await tx.execute(sql`${couponSelect(input.userId)} where c.code = ${code}::citext and not c.auto_apply`),
+  );
+  if (!r) return { ok: false, reason: 'not_found', view: null };
+  return evaluateRow(r, input);
+}
+
+/** What a coupon is checked against: who, which city, the priced cart (and each line's category for category offers). */
+export interface CouponCart {
+  userId: string;
+  cityId: string;
+  groups: readonly CouponGroup[];
+  /** Per sub-order, per product line: its category id (same shape as `groups[].lineTotals`). */
+  lineCategories?: readonly (readonly string[])[];
+  locale: CatalogueLocale;
+}
+
+/** The coupon row with everything the rules need for one customer (one statement, no read-then-write). */
+function couponSelect(userId: string) {
+  return sql`
       select c.id, c.code::text as code, c.title, c.title_hi, c.terms, c.terms_hi, c.kind, c.value, c.min_subtotal_paise,
         c.max_discount_paise, c.ends_at, c.usage_limit_total, c.usage_limit_per_user, c.used_count, c.first_order_only,
         c.city_id, c.funder, c.shop_id, c.active, now() < c.starts_at as not_started,
         (c.ends_at is not null and now() >= c.ends_at) as ended, st.status as terms_status,
-        sh.name as shop_name, sh.name_hi as shop_name_hi,
-        coalesce((select u.uses from coupon_user_usage u where u.coupon_id = c.id and u.user_id = ${input.userId}), 0) as my_uses,
-        exists (select 1 from order_groups g where g.user_id = ${input.userId}
+        sh.name as shop_name, sh.name_hi as shop_name_hi, c.auto_apply, c.category_id,
+        case when c.category_id is null then null else (
+          with recursive d(id) as (
+            select ct.id from categories ct where ct.id = c.category_id
+            union all
+            select ch.id from categories ch join d on ch.parent_id = d.id)
+          select array_agg(d.id::text) from d) end as category_ids,
+        coalesce((select u.uses from coupon_user_usage u where u.coupon_id = c.id and u.user_id = ${userId}), 0) as my_uses,
+        exists (select 1 from order_groups g where g.user_id = ${userId}
           and exists (select 1 from orders o where o.group_id = g.id and o.status not in ('cancelled','rejected'))) as had_order
       from coupons c
       left join coupon_shop_terms st on st.coupon_id = c.id
-      left join shops sh on sh.id = c.shop_id
-      where c.code = ${code}::citext`),
+      left join shops sh on sh.id = c.shop_id`;
+}
+
+/**
+ * The best automatic offer this cart gets (2026-11-16): every live automatic offer of the city is checked with the same
+ * rules as a typed code; the largest discount wins, ties to the older offer (stable). Null when none applies.
+ */
+export async function evaluateAutomaticOffer(
+  tx: Tx,
+  input: CouponCart,
+): Promise<Extract<CouponEvaluation, { ok: true }> | null> {
+  const rows = rowsOf<RawCoupon>(
+    await tx.execute(sql`${couponSelect(input.userId)}
+      where c.auto_apply and c.active and c.starts_at <= now() and (c.ends_at is null or c.ends_at > now())
+        and (c.city_id is null or c.city_id = ${input.cityId})
+      order by c.created_at, c.id limit 50`),
   );
-  if (!r) return { ok: false, reason: 'not_found', view: null };
+  let best: Extract<CouponEvaluation, { ok: true }> | null = null;
+  for (const r of rows) {
+    const e = evaluateRow(r, input);
+    if (e.ok && (!best || e.discount.discountPaise > best.discount.discountPaise)) best = e;
+  }
+  return best;
+}
+
+function evaluateRow(r: RawCoupon, input: CouponCart): CouponEvaluation {
   const view = viewOf(r, input.locale);
   // A code the caller may not know about (paused, not started, waiting for its shop, another city) answers exactly like
   // an unknown code, on the preview and on placing, so neither path tells which codes exist (security review 2026-11-15).
@@ -164,9 +221,20 @@ export async function evaluateCoupon(
     funder: r.funder === 'shop' ? 'shop' : 'mechdost',
     shopId: r.shop_id,
   };
-  const discount = applyCoupon(rule, input.groups);
+  const discount = applyCoupon(rule, groupsFor(r, input));
   if ('reason' in discount) return refuse(discount.reason);
-  return { ok: true, coupon: { id: r.id, code: r.code, rule, view }, discount };
+  return { ok: true, coupon: { id: r.id, code: r.code, rule, view, categoryId: r.category_id }, discount };
+}
+
+/** A category offer only touches the lines of its category (and sub-categories): mark them for the maths. */
+function groupsFor(r: RawCoupon, input: CouponCart): readonly CouponGroup[] {
+  const ids = r.category_ids;
+  if (ids === null) return input.groups;
+  const inCategory = new Set(ids);
+  return input.groups.map((g, i) => ({
+    ...g,
+    lineEligible: g.lineTotals.map((_, j) => inCategory.has(input.lineCategories?.[i]?.[j] ?? '')),
+  }));
 }
 
 const REFUSAL_TEXT: Record<CouponReason, string> = {
@@ -240,6 +308,65 @@ export async function releaseCouponIfOrderDead(tx: Tx, groupId: string): Promise
     .where(and(eq(orders.groupId, groupId), sql`${orders.status} not in ('cancelled','rejected')`))
     .limit(1);
   if (alive.length > 0) return false;
+  return giveUseBack(tx, {
+    groupId,
+    couponId: g.couponId,
+    userId: g.userId,
+    code: g.code,
+    reason: 'order_closed',
+  });
+}
+
+/**
+ * A refund was paid (`afterProcessed`, same transaction). When every part of the order that was not cancelled or
+ * rejected has been refunded in full (processed refunds of at least its total), the order is as good as returned and the
+ * coupon's use goes back (2026-11-16 ruling; a partial refund keeps it). Locks the group row first, then reads the
+ * refunds, so two refunds paid at the same moment cannot both miss each other. Once only (`released_at`).
+ */
+export async function releaseCouponIfOrderRefunded(tx: Tx, orderId: string): Promise<boolean> {
+  const [o] = await tx.select({ groupId: orders.groupId }).from(orders).where(eq(orders.id, orderId));
+  if (!o) return false;
+  const [g] = await tx
+    .select({ couponId: orderGroups.couponId, userId: orderGroups.userId, code: orderGroups.code })
+    .from(orderGroups)
+    .where(eq(orderGroups.id, o.groupId))
+    .for('update');
+  if (!g?.couponId) return false;
+  const [open] = rowsOf<{ open: unknown }>(
+    await tx.execute(sql`
+      select count(*) as open from orders o
+      where o.group_id = ${o.groupId} and o.status not in ('cancelled','rejected')
+        and coalesce((select sum(r.amount_paise) from refunds r where r.order_id = o.id and r.status = 'processed'), 0)
+          < o.total_paise`),
+  );
+  if (num(open?.open ?? 0) > 0) return false;
+  const [live] = rowsOf<{ live: unknown }>(
+    await tx.execute(
+      sql`select count(*) as live from orders o where o.group_id = ${o.groupId} and o.status not in ('cancelled','rejected')`,
+    ),
+  );
+  // Every part cancelled or rejected is the other rule's case (`releaseCouponIfOrderDead`); nothing refunded yet either.
+  if (num(live?.live ?? 0) === 0) return false;
+  return giveUseBack(tx, {
+    groupId: o.groupId,
+    couponId: g.couponId,
+    userId: g.userId,
+    code: g.code,
+    reason: 'order_refunded',
+  });
+}
+
+async function giveUseBack(
+  tx: Tx,
+  g: {
+    groupId: string;
+    couponId: string;
+    userId: string;
+    code: string;
+    reason: 'order_closed' | 'order_refunded';
+  },
+): Promise<boolean> {
+  const groupId = g.groupId;
   const released = await tx
     .update(couponRedemptions)
     .set({ releasedAt: sql`now()` })
@@ -254,7 +381,7 @@ export async function releaseCouponIfOrderDead(tx: Tx, groupId: string): Promise
   );
   await recordServerEvent(tx, 'coupon_released', {
     userId: g.userId,
-    props: { couponId: g.couponId, orderCode: g.code },
+    props: { couponId: g.couponId, orderCode: g.code, reason: g.reason },
   });
   return true;
 }

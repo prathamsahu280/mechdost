@@ -12,6 +12,18 @@ export function discountPercent(pricePaise: number, mrpPaise?: number): number |
   return Math.round(((mrpPaise - pricePaise) * 100) / mrpPaise);
 }
 
+/** Date and time in IST for an end time, e.g. "1 Nov 2026, 11:59 pm" (the caller says "IST" in its own words). */
+export function formatDateTimeIst(iso: string, locale: string): string {
+  return new Intl.DateTimeFormat(locale === 'hi' ? 'hi-IN' : 'en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: 'Asia/Kolkata',
+  }).format(new Date(iso));
+}
+
 /** Date in IST for display, e.g. "1 Nov 2026". */
 export function formatDate(iso: string, locale: string): string {
   return new Intl.DateTimeFormat(locale === 'hi' ? 'hi-IN' : 'en-IN', {

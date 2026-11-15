@@ -14,7 +14,14 @@ import { queueOrderPlacedEmail } from './email-events';
 import { recordServerEvent } from './events';
 import { activeBlockLevels } from './customer-blocks';
 import { checkoutCoins, redeemCoins } from './coins';
-import { couponRefusal, evaluateCoupon, redeemCoupon, type CouponEvaluation } from './coupons';
+import {
+  couponRefusal,
+  evaluateAutomaticOffer,
+  evaluateCoupon,
+  redeemCoupon,
+  type CouponEvaluation,
+  type OfferChoice,
+} from './coupons';
 import type { CouponGroup } from '@mechdost/shared/coupon';
 import { ConflictError, ForbiddenError, NotFoundError, pgCode, ValidationError } from './errors';
 import { reserveStock } from './inventory';
@@ -116,6 +123,8 @@ interface PricedLine {
   variantId: string;
   inventoryId: string;
   shopId: string;
+  /** The product's category (category offers, 2026-11-16). */
+  categoryId: string;
   title: string;
   titleHi: string | null;
   hsn: string;
@@ -146,6 +155,13 @@ export function couponGroupsOf(internal: InternalQuote): CouponGroup[] {
   }));
 }
 
+/** Each product line's category, per sub-order in the same order as `couponGroupsOf` (category offers). */
+export function couponLineCategoriesOf(internal: InternalQuote): string[][] {
+  return internal.groupShops.map((shopId) =>
+    internal.priced.filter((p) => p.shopId === shopId).map((p) => p.categoryId),
+  );
+}
+
 /** Check the coupon on a priced cart for one customer (the preview and the placing transaction share this). */
 export function evaluateCouponOnQuote(
   tx: Tx,
@@ -157,8 +173,51 @@ export function evaluateCouponOnQuote(
     userId: input.userId,
     cityId: internal.cityId,
     groups: couponGroupsOf(internal),
+    lineCategories: couponLineCategoriesOf(internal),
     locale: input.locale,
   });
+}
+
+/**
+ * The one offer a checkout gets (2026-11-16 ruling: offers never stack). A typed code and the best automatic offer
+ * compete; the larger discount wins and a tie goes to the code the customer typed. The loser is returned so the
+ * screen can say what the customer did not get. A typed code that cannot be used is refused whatever the automatic
+ * offer would give (the customer typed it on purpose). Bulk quote orders never get an automatic offer (their prices
+ * were negotiated, spec 19). The preview and the placing transaction share this, so they can never disagree.
+ */
+export async function chooseOffer(
+  tx: Tx,
+  internal: InternalQuote,
+  input: { code: string | null; userId: string; locale: CatalogueLocale; allowAutomatic: boolean },
+): Promise<OfferChoice> {
+  const typed = input.code ? await evaluateCouponOnQuote(tx, internal, { ...input, code: input.code }) : null;
+  if (typed && !typed.ok) return typed;
+  const auto = input.allowAutomatic
+    ? await evaluateAutomaticOffer(tx, {
+        userId: input.userId,
+        cityId: internal.cityId,
+        groups: couponGroupsOf(internal),
+        lineCategories: couponLineCategoriesOf(internal),
+        locale: input.locale,
+      })
+    : null;
+  if (typed && (!auto || typed.discount.discountPaise >= auto.discount.discountPaise))
+    return {
+      ...typed,
+      source: 'code',
+      beaten: auto
+        ? { source: 'automatic', title: auto.coupon.view.title, discountPaise: auto.discount.discountPaise }
+        : null,
+    };
+  if (auto)
+    return {
+      ...auto,
+      source: 'automatic',
+      beaten: typed
+        ? { source: 'code', title: typed.coupon.view.title, discountPaise: typed.discount.discountPaise }
+        : null,
+    };
+  return { ok: false, reason: 'not_found', view: null };
 }
 
 function validateLines(lines: readonly CartLine[]): void {
@@ -230,6 +289,7 @@ export async function quoteInternal(
     sku: string;
     qty: unknown;
     variant_id: string | null;
+    category_id: string | null;
     name: string | null;
     name_hi: string | null;
     brand: string | null;
@@ -249,7 +309,7 @@ export async function quoteInternal(
     shop_free_min: unknown;
   }>(
     await db.execute(sql`
-      select l.sku, l.qty, v.id as variant_id, p.name, p.name_hi, b.name as brand, p.hsn, p.gst_rate_bp,
+      select l.sku, l.qty, v.id as variant_id, p.category_id, p.name, p.name_hi, b.name as brand, p.hsn, p.gst_rate_bp,
         v.mrp_paise, o.inventory_id, o.shop_id, o.shop_name, o.shop_name_hi, o.shop_state_id, o.price, o.shop_price,
         o.shipping, o.lead_days, best.max_free, o.shop_free_min
       from jsonb_to_recordset(${JSON.stringify(input.lines)}::jsonb) as l(sku text, qty int)
@@ -343,6 +403,7 @@ export async function quoteInternal(
       variantId: r.variant_id,
       inventoryId: r.inventory_id,
       shopId: r.shop_id,
+      categoryId: r.category_id ?? '',
       // Snapshot both languages, whatever the customer's locale (code review 2026-11-03, hard rule 10).
       title: `${r.brand ?? ''} ${r.name}`.trim(),
       titleHi: r.name_hi ? `${r.brand ?? ''} ${r.name_hi}`.trim() : null,
@@ -604,16 +665,16 @@ export async function placeOrder(
     // One coupon (spec 03), first in the order of discounts: checked again on the re-priced cart; counted below.
     const couponCode = input.couponCode?.trim() ?? '';
     if (couponCode && input.quotePricing) throw couponRefusal('quote_order');
-    let couponEval: Extract<CouponEvaluation, { ok: true }> | null = null;
-    if (couponCode) {
-      const checked = await evaluateCouponOnQuote(tx, internal, {
-        code: couponCode,
-        userId: input.userId,
-        locale: input.locale,
-      });
-      if (!checked.ok) throw couponRefusal(checked.reason);
-      couponEval = checked;
-    }
+    // 2026-11-16: the best automatic offer competes with a typed code (never stacked); the winner is counted below.
+    let couponEval: Extract<OfferChoice, { ok: true }> | null = null;
+    const chosen = await chooseOffer(tx, internal, {
+      code: couponCode || null,
+      userId: input.userId,
+      locale: input.locale,
+      allowAutomatic: !input.quotePricing,
+    });
+    if (chosen.ok) couponEval = chosen;
+    else if (couponCode) throw couponRefusal(chosen.reason);
     const couponShare = (index: number) => couponEval?.discount.perGroup[index];
     const couponDiscountPaise = couponEval?.discount.discountPaise ?? 0;
     // Coins (spec 20) come after the coupon: on what the products cost once the coupon's share is off.
@@ -702,13 +763,20 @@ export async function placeOrder(
     }
     if (couponEval) {
       // After the coins and before any stock (the order a cancel gives them back in): the authoritative count.
-      await redeemCoupon(tx, {
-        couponId: couponEval.coupon.id,
-        userId: input.userId,
-        groupId: group.id,
-        funder: couponEval.coupon.rule.funder,
-        discountPaise: couponDiscountPaise,
-      });
+      try {
+        await redeemCoupon(tx, {
+          couponId: couponEval.coupon.id,
+          userId: input.userId,
+          groupId: group.id,
+          funder: couponEval.coupon.rule.funder,
+          discountPaise: couponDiscountPaise,
+        });
+      } catch (err) {
+        // An automatic offer the customer never typed ran out while they paid: the price changed, not "your code".
+        if (couponEval.source === 'automatic' && err instanceof ValidationError)
+          throw new ConflictError('The total changed since you reviewed it', 'PRICE_CHANGED');
+        throw err;
+      }
       await recordServerEvent(tx, 'coupon_redeemed', {
         userId: input.userId,
         cityId,
@@ -718,6 +786,7 @@ export async function placeOrder(
           discountPaise: couponDiscountPaise,
           funder: couponEval.coupon.rule.funder,
           kind: couponEval.coupon.rule.kind,
+          source: couponEval.source,
         },
       });
     }
@@ -851,10 +920,15 @@ export async function placeOrder(
  * What the order keeps of the coupon (spec 14 snapshot rule): its rules as they were at placement and the split of the
  * discount over sub-orders and SKUs, so later edits or a pause of the coupon never change an old order.
  */
-function couponSnapshot(ev: Extract<CouponEvaluation, { ok: true }>, internal: InternalQuote) {
+function couponSnapshot(ev: Extract<OfferChoice, { ok: true }>, internal: InternalQuote) {
   const { coupon, discount } = ev;
   return {
     code: coupon.code,
+    /** Applied without a code (2026-11-16); `code` is then the offer's internal name. */
+    automatic: ev.source === 'automatic',
+    categoryId: coupon.categoryId,
+    /** What the other offer would have given (never stacked); null when there was none. */
+    beaten: ev.beaten,
     title: coupon.view.title,
     kind: coupon.rule.kind,
     value: coupon.rule.value,

@@ -367,3 +367,7 @@ Admin -> Services: a request needing routing lists the ranked workshops with "Be
 ## Frame (2026-11-16)
 
 `/admin` and `/admin/[section]` share `app/[locale]/admin/layout.tsx`: heading, `ClientMessages`, `AdminFrame` (role guard + side bar). Sections are pages that render `AdminSectionContent` only, so a side-bar click swaps just the section: the guard, bar and heading stay mounted, no reload, no jump to the top (Next scrolls to the section only if it is above the viewport; `scroll-mt-28`), a pending dot shows on the clicked link. New sections go into `lib/sections.ts` and `AdminConsole`; new client namespaces go into the layout's `ClientMessages`. Tests: `test/no-reload-navigation.test.ts`, `e2e/no-reload-navigation.spec.ts`. The account area (spec 01) follows the same pattern (`account/layout.tsx`, `AccountFrame`).
+
+## Revision 2026-11-16 (coupon follow-ups)
+
+Admin → Coupons: the form has "Show on the public offers page", "Apply automatically (no code)" (disabled for shop-funded) and "Only for one category" (public category list); each coupon card shows the badges and a **Usage** panel (totals, IST days, "Show earlier days", link to the Exports screen where **Coupon use** is a new dataset needing `exports:run` + `coupons:write`). The panel closes with its button or Escape. Audit rows carry `isPublic`, `autoApply`, `categoryId`. Spec 03 § "coupon follow-ups" has the rules.

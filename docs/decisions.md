@@ -1298,3 +1298,13 @@ up … since the minutes are free atleast for the time i keep the repo public". 
 with the mocked API); reports and screenshots come back as artifacts, ticked locally. With the minutes free, full runs
 replace the "failed and changed only" re-run. If the repo goes private again, return to manual targeted runs (decision
 2026-11-15). Guard: `packages/shared/test/audit-workflow.test.ts`.
+
+## 2026-11-16 - Coupon follow-ups: public list, usage reports, refund release, automatic offers (builder rulings)
+
+User: "we can work on building ... the smaller items too". Rulings (plan `docs/superpowers/plans/2026-11-16-coupon-followups.md`, spec 03 § "coupon follow-ups"):
+
+- **An automatic offer is a coupon row** (`auto_apply`), not a new table, so counters, snapshot, allocation, release, payouts and reports are the existing tested pipeline. MechDost-funded only (a shop cannot be asked to accept terms nobody shows it). Its code is internal; typing it is "not valid".
+- **Stacking: never.** One discount per order. A typed code and the best automatic offer compete; the larger discount wins, a tie goes to the typed code; the customer is shown what the other would have given. Replaces the open "default no stacking" question.
+- **Public offers are an admin choice** (`is_public`, off by default), city-scoped, live only, no usage numbers, an automatic offer never prints its code. No home or shop teaser (JS budget gates stay untouched; revisit with a measured server-rendered strip).
+- **Release after refund:** a delivered order's use goes back when every live sub-order is refunded in full; a partial refund keeps it (spec 03 earlier said "a delivered order keeps the use": amended). Not reversing the shop payout entry is a known gap.
+- **Reports** count orders, released, uses kept (= `used_count`), discount given on kept uses, unique customers, IST days; the CSV dataset `coupon_usage` needs `exports:run` + `coupons:write` and carries a hashed customer reference only.

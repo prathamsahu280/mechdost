@@ -70,6 +70,16 @@ async function prepareApi(page: Page, c: AuditCase): Promise<string[]> {
     await settleApi(page);
   }
 
+  // Coupon usage panel (2026-11-16): open the first coupon's report.
+  if (c.code === 'API-ADM-COUPONS' && (c.state.usage === 'open' || c.state.usage === 'empty')) {
+    const open = main.locator('button[data-disclosure-trigger^="usage-"]').first();
+    if ((await open.count()) === 0) notes.push('no coupon to open usage for');
+    else {
+      await open.click();
+      await settleApi(page);
+    }
+  }
+
   if (c.code === 'API-ADM-CUSTOMERS') {
     await main.locator('#customer-q').fill('asha verma');
     await main.locator('form[role="search"] button[type="submit"]').click();

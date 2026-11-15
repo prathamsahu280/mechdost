@@ -7,11 +7,21 @@ import { authed, type ApiResult } from './orders-api';
  */
 export function checkCoupon(
   locale: string,
-  input: { code: string; pincode: string; lines: readonly { sku: string; qty: number }[] },
+  input: {
+    /** The typed code; null asks only for the automatic offer this cart gets (2026-11-16). */
+    code: string | null;
+    pincode: string;
+    lines: readonly { sku: string; qty: number }[];
+  },
 ): Promise<ApiResult<CouponPreview>> {
   return authed(locale, '/checkout/coupon', CouponPreviewDto, {
     method: 'POST',
-    body: { ...input, locale: locale === 'hi' ? 'hi' : 'en' },
+    body: {
+      pincode: input.pincode,
+      lines: input.lines,
+      ...(input.code ? { code: input.code } : {}),
+      locale: locale === 'hi' ? 'hi' : 'en',
+    },
   });
 }
 

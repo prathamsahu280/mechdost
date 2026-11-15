@@ -92,6 +92,12 @@ export interface CouponForm {
   city: string;
   funder: 'mechdost' | 'shop';
   shopId: string;
+  /** Listed on the public offers page; private by default. */
+  isPublic: boolean;
+  /** Applied at checkout with no code (MechDost-funded only). */
+  autoApply: boolean;
+  /** Category slug, or '' for every product. */
+  categorySlug: string;
 }
 
 export const emptyForm = (nowIst: string): CouponForm => ({
@@ -112,6 +118,9 @@ export const emptyForm = (nowIst: string): CouponForm => ({
   city: '',
   funder: 'mechdost',
   shopId: '',
+  isPublic: false,
+  autoApply: false,
+  categorySlug: '',
 });
 
 const rupees = (paise: number) => (paise % 100 === 0 ? String(paise / 100) : (paise / 100).toFixed(2));
@@ -135,6 +144,9 @@ export function formFromCoupon(c: AdminCoupon): CouponForm {
     city: c.cityCode ?? '',
     funder: c.funder,
     shopId: c.shop?.id ?? '',
+    isPublic: c.isPublic,
+    autoApply: c.autoApply,
+    categorySlug: c.category?.slug ?? '',
   };
 }
 
@@ -150,7 +162,8 @@ export type FormField =
   | 'endsAtIst'
   | 'usageLimitTotal'
   | 'usageLimitPerUser'
-  | 'shopId';
+  | 'shopId'
+  | 'autoApply';
 export type FormErrorKey =
   | 'f_err_code'
   | 'f_err_title'
@@ -163,7 +176,8 @@ export type FormErrorKey =
   | 'f_err_start'
   | 'f_err_limit'
   | 'f_err_per_user'
-  | 'f_err_shop';
+  | 'f_err_shop'
+  | 'f_err_auto_shop';
 
 const IST = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
 const whole = (v: string, min: number, max: number): number | null => {
@@ -215,6 +229,7 @@ export function inputFromForm(
   if (perUser === null || (f.firstOrderOnly && perUser !== 1))
     return bad('usageLimitPerUser', 'f_err_per_user');
   if (f.funder === 'shop' && f.shopId === '') return bad('shopId', 'f_err_shop');
+  if (f.autoApply && f.funder === 'shop') return bad('autoApply', 'f_err_auto_shop');
 
   return {
     ok: true,
@@ -236,6 +251,10 @@ export function inputFromForm(
       city: f.city.trim() === '' ? null : f.city.trim().toUpperCase(),
       funder: f.funder,
       shopId: f.funder === 'shop' ? f.shopId : null,
+      isPublic: f.isPublic,
+      autoApply: f.autoApply,
+      // Free delivery depends on no category (the server refuses the combination).
+      categorySlug: f.kind === 'free_shipping' || f.categorySlug === '' ? null : f.categorySlug,
     },
   };
 }
@@ -261,6 +280,7 @@ export type AdminErrorKey =
   | 'a_err_locked'
   | 'a_err_rule'
   | 'a_err_shop'
+  | 'a_err_category'
   | 'a_err_forbidden'
   | 'a_err_network'
   | 'a_err_generic';
@@ -279,6 +299,8 @@ export function adminErrorKey(code: string): AdminErrorKey {
       return 'a_err_rule';
     case 'COUPON_SHOP':
       return 'a_err_shop';
+    case 'COUPON_CATEGORY':
+      return 'a_err_category';
     case 'FORBIDDEN':
     case 'HTTP_403':
     case 'NOT_FOUND':

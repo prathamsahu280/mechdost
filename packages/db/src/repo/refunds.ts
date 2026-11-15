@@ -33,6 +33,7 @@ import {
   webhookEvents,
 } from '../schema';
 import { cancelPendingOrderRewards } from './coins';
+import { releaseCouponIfOrderRefunded } from './coupons';
 import { decodeCursor, encodeCursor, pageSize } from './cursor';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from './errors';
 import { recordServerEvent } from './events';
@@ -1166,6 +1167,8 @@ async function afterProcessed(
     .where(and(eq(refunds.orderId, r.orderId), eq(refunds.status, 'processed')));
   if (Number(done?.sum ?? 0) >= order.totalPaise)
     await cancelPendingOrderRewards(tx, { orderId: r.orderId, reasonCode: 'order_refunded' });
+  // 2026-11-16: when every live part of the order is refunded in full, the coupon's use goes back (once, idempotent).
+  await releaseCouponIfOrderRefunded(tx, r.orderId);
 }
 
 /**

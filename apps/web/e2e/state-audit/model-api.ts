@@ -809,6 +809,8 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
       { name: 'auth', values: ['admin'] },
       { name: 'coupons', values: ['none', 'few', 'many', 'paused', 'waiting-shop', 'error'] },
       { name: 'form', values: ['closed', 'new', 'errors'] },
+      // 2026-11-16: the usage report panel on a coupon (orders, uses, discount, days) and its empty state.
+      { name: 'usage', values: ['closed', 'open', 'empty'] },
       stress,
     ],
     checks: [...BASE_CHECKS, 'aligned'],

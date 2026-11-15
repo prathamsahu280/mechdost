@@ -55,6 +55,11 @@ export interface CouponGroup {
   shopId: string;
   lineTotals: readonly number[];
   shippingPaise: number;
+  /**
+   * Category offers (2026-11-16): which lines the offer may touch, same order as `lineTotals`. Left out = every line.
+   * Lines marked false count for nothing: not in the minimum order, not in the percent, never given a share.
+   */
+  lineEligible?: readonly boolean[];
 }
 
 export interface CouponGroupShare {
@@ -114,7 +119,9 @@ export function applyCoupon(
   groups: readonly CouponGroup[],
 ): CouponDiscount | { reason: 'min_order' | 'not_for_cart' } {
   const eligible = groups.map((g) => rule.funder === 'mechdost' || g.shopId === rule.shopId);
-  const productBase = sum(groups.flatMap((g, i) => (eligible[i] ? [...g.lineTotals] : [])));
+  const weightsOf = (g: CouponGroup): number[] =>
+    g.lineTotals.map((v, j) => (g.lineEligible?.[j] === false ? 0 : v));
+  const productBase = sum(groups.flatMap((g, i) => (eligible[i] ? weightsOf(g) : [])));
   const shippingBase = sum(groups.map((g, i) => (eligible[i] ? g.shippingPaise : 0)));
   if (!eligible.some(Boolean) || (rule.kind === 'free_shipping' ? shippingBase : productBase) === 0)
     return { reason: 'not_for_cart' };
@@ -129,7 +136,7 @@ export function applyCoupon(
   }
   if (rule.kind !== 'free_shipping' && productDiscount <= 0) return { reason: 'not_for_cart' };
 
-  const eligibleLines = groups.flatMap((g, i) => (eligible[i] ? [...g.lineTotals] : []));
+  const eligibleLines = groups.flatMap((g, i) => (eligible[i] ? weightsOf(g) : []));
   const shares = allocateLargestRemainder(productDiscount, eligibleLines);
   let cursor = 0;
   const perGroup = groups.map((g, i): CouponGroupShare => {

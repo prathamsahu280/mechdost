@@ -84,7 +84,7 @@ describe('exportRangeError', () => {
 });
 
 describe('catalogue', () => {
-  it('lists the six datasets', () => {
+  it('lists the seven datasets', () => {
     expect([...EXPORT_DATASETS]).toEqual([
       'orders',
       'sub_orders',
@@ -92,6 +92,7 @@ describe('catalogue', () => {
       'service_requests',
       'partners',
       'customers',
+      'coupon_usage',
     ]);
   });
 });

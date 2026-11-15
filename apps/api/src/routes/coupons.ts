@@ -1,8 +1,11 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import type { Context } from 'hono';
 import {
+  cityIdByCode,
   cityScopeFrom,
+  couponUsageReport,
   createCoupon,
+  listPublicOffers,
   decideShopOffer,
   listCoupons,
   listShopOffers,
@@ -19,6 +22,8 @@ import {
   CouponPauseBodySchema,
   CouponPreviewDto,
   CouponUpdateBodySchema,
+  CouponUsageReportDto,
+  PublicOffersDto,
   ShopOfferDecidedDto,
   ShopOfferDecisionBodySchema,
   ShopOffersDto,
@@ -47,6 +52,8 @@ import { errorResponses, ErrorSchema } from './schemas';
  */
 export const COUPON_CHECK_USER_RATE: RateRule = { name: 'coupon_check_user', limit: 30, windowSeconds: 3600 };
 export const COUPON_CHECK_IP_RATE: RateRule = { name: 'coupon_check_ip', limit: 60, windowSeconds: 3600 };
+/** The public offers list: generous (the web caches it), but a script cannot hammer the query. */
+export const OFFERS_IP_RATE: RateRule = { name: 'offers_ip', limit: 120, windowSeconds: 60 };
 
 const Pincode = z.string().regex(/^[1-9][0-9]{5}$/);
 const Lines = z
@@ -61,7 +68,8 @@ const Lines = z
 
 const CheckBody = z
   .object({
-    code: z.string().trim().min(1).max(40),
+    /** Left out (or null) = ask only for the automatic offer this cart gets (2026-11-16). */
+    code: z.string().trim().min(1).max(40).nullish(),
     pincode: Pincode,
     lines: Lines,
     locale: z.enum(['en', 'hi']).default('en'),
@@ -98,6 +106,37 @@ const check = createRoute({
   security: [{ bearerAuth: [] }],
   request: { body: body(CheckBody) },
   responses: { 200: json(CouponPreviewDto, 'Applicable, or refused with a reason code'), ...errorResponses },
+});
+
+const publicOffers = createRoute({
+  method: 'get',
+  path: '/offers',
+  tags: ['public'],
+  summary: 'Offers the admin made public for a city: live, in the page language (no sign-in)',
+  request: {
+    query: z.object({
+      city: z.string().regex(/^[A-Z]{3}$/),
+      locale: z.enum(['en', 'hi']).default('en'),
+    }),
+  },
+  responses: { 200: json(PublicOffersDto, 'Offers (maybe none)'), ...notFound, ...errorResponses },
+});
+
+const adminUsage = createRoute({
+  method: 'get',
+  path: '/admin/coupons/{id}/usage',
+  tags: ['admin'],
+  summary:
+    "One coupon's use: orders, released uses, discount given, unique customers and IST days (newest first)",
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: z.object({ id: Id }),
+    query: z.object({
+      cursor: z.string().max(300).optional(),
+      limit: z.coerce.number().int().min(1).max(92).optional(),
+    }),
+  },
+  responses: { 200: json(CouponUsageReportDto, 'Usage'), ...notFound, ...errorResponses },
 });
 
 const adminList = createRoute({
@@ -177,6 +216,12 @@ const shopDecide = createRoute({
 export function couponRoutes(deps: AppDeps, cache: SessionCache) {
   const app = new OpenAPIHono<AppEnv>({ defaultHook: validationHook });
 
+  // Public offers list: anonymous, so an IP limit (cheap) before any query; cacheable at the edge.
+  app.use(
+    '/offers',
+    rateLimit(deps.rateLimiter, OFFERS_IP_RATE, (c) => c.get('clientIp')),
+  );
+
   // Customer: one pattern per prefix (L54). Anonymous IP limit first (cheap), then sign-in, then the per-user limit.
   app.use(
     '/checkout/coupon',
@@ -224,12 +269,35 @@ export function couponRoutes(deps: AppDeps, cache: SessionCache) {
       const b = c.req.valid('json');
       const r = await previewCoupon(deps.db, {
         userId: c.get('auth').user.id,
-        code: b.code,
+        code: b.code ?? null,
         pincode: b.pincode,
         lines: b.lines,
         locale: b.locale,
       });
       return c.json(r, 200);
+    })
+    .openapi(publicOffers, async (c) => {
+      const q = c.req.valid('query');
+      const offers = await listPublicOffers(deps.db, {
+        cityId: await cityIdByCode(deps.db, q.city),
+        locale: q.locale,
+      });
+      // Short shared cache: an offer ending or a pause shows within a minute; never personal data.
+      c.header('Cache-Control', 'public, max-age=30, s-maxage=60');
+      return c.json({ offers }, 200);
+    })
+    .openapi(adminUsage, async (c) => {
+      const q = c.req.valid('query');
+      return c.json(
+        await couponUsageReport(deps.db, {
+          scope: scopeOf(c),
+          couponId: c.req.valid('param').id,
+          staffUserId: c.get('auth').user.id,
+          cursor: q.cursor ?? null,
+          ...(q.limit ? { limit: q.limit } : {}),
+        }),
+        200,
+      );
     })
     .openapi(adminList, async (c) =>
       c.json(await listCoupons(deps.db, { scope: scopeOf(c), ...c.req.valid('query') }), 200),

@@ -498,6 +498,13 @@
       "when": 1794726415488,
       "tag": "0072_service_bill_payments",
       "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "7",
+      "when": 1794766129646,
+      "tag": "0073_coupon_offers_reports",
+      "breakpoints": true
     }
   ]
 }

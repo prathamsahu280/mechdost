@@ -311,6 +311,7 @@ describe('download', () => {
       ['refunds', 'refund_id,order_code'],
       ['service_requests', 'code,created_at_ist'],
       ['partners', 'kind,id'],
+      ['coupon_usage', 'coupon_code,order_code'],
     ] as const) {
       const ticket = await ticketOf(await post(boss.headers, { dataset, ...range }));
       const { bom, text } = await bytesOf(await download(ticket.downloadPath, boss.headers));
@@ -345,6 +346,7 @@ describe('options', () => {
       'service_requests',
       'partners',
       'customers',
+      'coupon_usage',
     ]);
     expect(all.contactsMasked).toBe(false);
     expect(all.cities.map((c) => c.code)).toEqual(expect.arrayContaining(['RPR', 'BPL']));

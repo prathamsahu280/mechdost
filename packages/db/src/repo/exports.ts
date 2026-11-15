@@ -201,6 +201,36 @@ function source(q: ExportQuery): Source {
         id: 'p.id',
       };
     }
+    case 'coupon_usage':
+      // One row per coupon use, by the order's city (a coupon for every city still belongs to the orders' cities).
+      // The customer is a short hash, never a name, phone, email or id: enough to count repeat use, nothing to identify.
+      return {
+        columns: [
+          'coupon_code',
+          'order_code',
+          'used_at_ist',
+          'city_code',
+          'funder',
+          'source',
+          'status',
+          'released_at_ist',
+          { money: 'discount' },
+          'customer_ref',
+        ],
+        select: sql.raw(
+          `k.code::text as coupon_code, g.code as order_code, ${IST('r.created_at')} as used_at_ist, c.code as city_code,
+           r.funder, case when coalesce((g.coupon_snapshot ->> 'automatic')::boolean, false) then 'automatic' else 'code' end as source,
+           case when r.released_at is null then 'kept' else 'released' end as status,
+           ${IST('r.released_at')} as released_at_ist, r.discount_paise::text as discount,
+           left(md5(r.user_id::text), 12) as customer_ref, ${UTC_TEXT('r.created_at')} as ct, r.id::text as cid`,
+        ),
+        from: sql.raw(
+          'coupon_redemptions r join coupons k on k.id = r.coupon_id join order_groups g on g.id = r.group_id join cities c on c.id = g.city_id',
+        ),
+        where: sql`${win('r.created_at')} and ${inCities('g.city_id', q.cityIds)}`,
+        ts: 'r.created_at',
+        id: 'r.id',
+      };
     case 'customers':
       return {
         columns: [

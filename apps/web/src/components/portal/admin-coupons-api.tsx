@@ -1,6 +1,11 @@
 'use client';
 
-import { AdminCouponDto, AdminCouponListDto, type AdminCoupon } from '@mechdost/shared/coupon-api';
+import {
+  AdminCouponDto,
+  AdminCouponListDto,
+  CouponCategoryListDto,
+  type AdminCoupon,
+} from '@mechdost/shared/coupon-api';
 import { AdminShopList } from '@mechdost/shared/shop-api';
 import { dateToIstLocal, type CouponKind } from '@mechdost/shared/coupon';
 import { useLocale, useTranslations } from 'next-intl';
@@ -20,6 +25,7 @@ import {
   type FormField,
 } from '@/lib/coupon-view';
 import { formatDate, formatPrice } from '@/lib/format';
+import { AdminCouponUsage } from './admin-coupon-usage';
 import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 
 type Load =
@@ -48,6 +54,8 @@ export function AdminCouponsApi() {
   const locale = useLocale();
   const [load, setLoad] = useState<Load>({ kind: 'loading' });
   const [shops, setShops] = useState<Shop[]>([]);
+  const [categories, setCategories] = useState<{ slug: string; name: string }[]>([]);
+  const [usageFor, setUsageFor] = useState<string | null>(null);
   const [editing, setEditing] = useState<Editing | null>(null);
   const [pausing, setPausing] = useState<{ id: string; reason: string } | null>(null);
   const [fieldError, setFieldError] = useState<{ field: FormField; key: FormErrorKey } | null>(null);
@@ -69,6 +77,17 @@ export function AdminCouponsApi() {
   useEffect(() => {
     void adminApi(locale, '/admin/shops?status=approved&limit=100', AdminShopList).then((res) => {
       if (res.ok) setShops(res.data.items.map((s) => ({ id: s.id, name: s.name })));
+    });
+  }, [locale]);
+
+  useEffect(() => {
+    // The public category list (the same names the shop shows); the form names the category by slug.
+    void adminApi(
+      locale,
+      `/catalogue/categories?locale=${locale === 'hi' ? 'hi' : 'en'}`,
+      CouponCategoryListDto,
+    ).then((res) => {
+      if (res.ok) setCategories(res.data.categories.map((c) => ({ slug: c.slug, name: c.name })));
     });
   }, [locale]);
 
@@ -450,7 +469,63 @@ export function AdminCouponsApi() {
                 </select>
               </Field>
             ) : null}
+            {editing.form.kind !== 'free_shipping' ? (
+              <Field id="categorySlug" label={t('f_category')} hint={t('f_category_hint')}>
+                <select
+                  id="coupon-categorySlug"
+                  value={editing.form.categorySlug}
+                  onChange={(e) => {
+                    set('categorySlug', e.target.value);
+                  }}
+                  className={portalField}
+                >
+                  <option value="">{t('f_category_any')}</option>
+                  {categories.map((c) => (
+                    <option key={c.slug} value={c.slug}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            ) : null}
           </div>
+          <label className="flex items-start gap-3 text-sm text-ink">
+            <input
+              id="coupon-isPublic"
+              type="checkbox"
+              checked={editing.form.isPublic}
+              onChange={(e) => {
+                set('isPublic', e.target.checked);
+              }}
+              className="mt-0.5 size-6 shrink-0 accent-[var(--color-accent-button)]"
+            />
+            <span>
+              {t('f_public')}
+              <span className="block text-xs text-muted">{t('f_public_hint')}</span>
+            </span>
+          </label>
+          <label className="flex items-start gap-3 text-sm text-ink">
+            <input
+              id="coupon-autoApply"
+              type="checkbox"
+              checked={editing.form.autoApply}
+              disabled={editing.form.funder === 'shop'}
+              aria-invalid={fieldError?.field === 'autoApply'}
+              onChange={(e) => {
+                set('autoApply', e.target.checked);
+              }}
+              className="mt-0.5 size-6 shrink-0 accent-[var(--color-accent-button)]"
+            />
+            <span>
+              {t('f_auto')}
+              <span className="block text-xs text-muted">{t('f_auto_hint')}</span>
+              {errorFor(fieldError, 'autoApply', t) ? (
+                <span role="alert" className="block text-xs font-bold text-error">
+                  {errorFor(fieldError, 'autoApply', t)}
+                </span>
+              ) : null}
+            </span>
+          </label>
           <label className="flex items-start gap-3 text-sm text-ink">
             <input
               type="checkbox"
@@ -537,6 +612,9 @@ export function AdminCouponsApi() {
                   </li>
                   <li>{t('a_per_user', { n: c.usageLimitPerUser })}</li>
                   <li>{c.cityCode ?? t('a_all_cities')}</li>
+                  {c.isPublic ? <li>{t('badge_public')}</li> : null}
+                  {c.autoApply ? <li>{t('badge_auto')}</li> : null}
+                  {c.category ? <li>{t('badge_category', { name: c.category.name })}</li> : null}
                 </ul>
                 {c.pausedReason ? (
                   <p className="mt-2 text-sm text-muted">
@@ -592,6 +670,17 @@ export function AdminCouponsApi() {
                     >
                       {t('a_edit_btn')}
                     </button>
+                    <button
+                      data-disclosure-trigger={`usage-${c.id}`}
+                      type="button"
+                      aria-expanded={usageFor === c.id}
+                      className={portalQuiet}
+                      onClick={() => {
+                        setUsageFor(usageFor === c.id ? null : c.id);
+                      }}
+                    >
+                      {t('u_open')}
+                    </button>
                     {c.active ? (
                       <button
                         data-disclosure-trigger={`pause-${c.id}`}
@@ -615,6 +704,14 @@ export function AdminCouponsApi() {
                     )}
                   </div>
                 )}
+                {usageFor === c.id ? (
+                  <AdminCouponUsage
+                    couponId={c.id}
+                    onClose={() => {
+                      setUsageFor(null);
+                    }}
+                  />
+                ) : null}
               </li>
             );
           })}

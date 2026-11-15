@@ -132,6 +132,7 @@ const PUBLIC_PAGES = [
   '/shop?category=batteries',
   '/shop?q=बैटरी',
   '/workshops',
+  '/offers',
   '/cart',
   '/checkout',
   '/login',

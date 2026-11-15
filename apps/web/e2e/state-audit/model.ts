@@ -922,6 +922,19 @@ export const COMPONENTS: readonly ComponentDef[] = [
     core: coreAt([390]),
   },
   {
+    code: 'OFFERS-PAGE',
+    page: 'Offers (/offers)',
+    component:
+      'Public offers list (2026-11-16): offer cards with conditions, IST end time and copy-code button; the demo build has no offers, so it shows the empty state with one next action',
+    path: '/offers',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [...env, authOutIn],
+    checks: [...BASE_CHECKS],
+    sweep: 14,
+    core: coreAt([390]),
+  },
+  {
     code: 'WS-PROFILE',
     page: 'Workshop page (/workshops/[slug])',
     component: 'Workshop profile: services menu, reviews, booking form',

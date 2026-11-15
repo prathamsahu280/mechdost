@@ -1,7 +1,7 @@
 import { and, desc, eq, sql, type SQL } from 'drizzle-orm';
 import { dateToIstLocal, istLocalToDate, type CouponKind } from '@mechdost/shared/coupon';
 import type { AdminCoupon, CouponInput } from '@mechdost/shared/coupon-api';
-import { auditLog, cities, couponShopTerms, coupons, shops } from '../schema';
+import { auditLog, categories, cities, couponShopTerms, coupons, shops } from '../schema';
 import { decodeCursor, encodeCursor, pageSize } from './cursor';
 import { ConflictError, NotFoundError, pgCode, ValidationError } from './errors';
 import { recordServerEvent } from './events';
@@ -35,9 +35,12 @@ function termsSnapshot(
     | 'cityId'
     | 'funder'
     | 'shopId'
+    | 'categoryId'
   >,
 ) {
   return {
+    // Only when set, so a shop's earlier acceptance of a coupon without a category is not asked again (2026-11-16).
+    ...(c.categoryId ? { categoryId: c.categoryId } : {}),
     funder: c.funder,
     shopId: c.shopId,
     kind: c.kind,
@@ -86,12 +89,15 @@ async function toView(tx: Tx, row: CouponRow): Promise<AdminCoupon> {
       cityCode: cities.code,
       shopName: shops.name,
       shopTerms: couponShopTerms.status,
+      categoryName: categories.name,
+      categorySlug: categories.slug,
       now: sql<Date>`now()`,
     })
     .from(coupons)
     .leftJoin(cities, eq(cities.id, coupons.cityId))
     .leftJoin(shops, eq(shops.id, coupons.shopId))
     .leftJoin(couponShopTerms, eq(couponShopTerms.couponId, coupons.id))
+    .leftJoin(categories, eq(categories.id, coupons.categoryId))
     .where(eq(coupons.id, row.id));
   return view(row, extra);
 }
@@ -100,6 +106,8 @@ interface Extra {
   cityCode: string | null;
   shopName: string | null;
   shopTerms: string | null;
+  categoryName: string | null;
+  categorySlug: string | null;
   now: Date | string;
 }
 
@@ -138,6 +146,9 @@ function view(row: CouponRow, extra: Extra | undefined): AdminCoupon {
     funder: row.funder === 'shop' ? 'shop' : 'mechdost',
     shop: row.shopId ? { id: row.shopId, name: extra?.shopName ?? '' } : null,
     shopTerms,
+    isPublic: row.isPublic,
+    autoApply: row.autoApply,
+    category: row.categoryId ? { slug: extra?.categorySlug ?? '', name: extra?.categoryName ?? '' } : null,
     active: row.active,
     pausedReason: row.pausedReason,
     live,
@@ -158,6 +169,8 @@ export async function listCoupons(
       cityCode: cities.code,
       shopName: shops.name,
       shopTerms: couponShopTerms.status,
+      categoryName: categories.name,
+      categorySlug: categories.slug,
       now: sql<Date>`now()`,
       sortKey: sql<string>`${coupons.createdAt}::text`,
     })
@@ -165,6 +178,7 @@ export async function listCoupons(
     .leftJoin(cities, eq(cities.id, coupons.cityId))
     .leftJoin(shops, eq(shops.id, coupons.shopId))
     .leftJoin(couponShopTerms, eq(couponShopTerms.couponId, coupons.id))
+    .leftJoin(categories, eq(categories.id, coupons.categoryId))
     .where(
       and(
         scopeSql(input.scope),
@@ -193,6 +207,17 @@ async function resolveCity(tx: Tx, scope: CityScope, code: string | null): Promi
   return id;
 }
 
+/** A category offer names its category by slug (what the catalogue shows); unknown or archived is a 422. */
+async function resolveCategory(tx: Tx, slug: string | null): Promise<string | null> {
+  if (slug === null) return null;
+  const [row] = await tx
+    .select({ id: categories.id, archivedAt: categories.archivedAt })
+    .from(categories)
+    .where(eq(categories.slug, slug));
+  if (row?.archivedAt === null) return row.id;
+  throw new ValidationError('That category does not exist', 'COUPON_CATEGORY');
+}
+
 /** A shop-funded coupon needs an approved shop, in the coupon's city when it has one. */
 async function checkShop(tx: Tx, input: CouponInput, cityId: string | null): Promise<void> {
   if (input.funder !== 'shop' || input.shopId === null) return;
@@ -207,7 +232,7 @@ async function checkShop(tx: Tx, input: CouponInput, cityId: string | null): Pro
     throw new ValidationError('The shop is in another city', 'COUPON_SHOP');
 }
 
-function valuesFrom(input: CouponInput, cityId: string | null) {
+function valuesFrom(input: CouponInput, cityId: string | null, categoryId: string | null) {
   return {
     code: input.code,
     title: input.title,
@@ -226,12 +251,16 @@ function valuesFrom(input: CouponInput, cityId: string | null) {
     cityId,
     funder: input.funder,
     shopId: input.shopId,
+    isPublic: input.isPublic,
+    autoApply: input.autoApply,
+    categoryId,
   };
 }
 
 function mapWriteError(err: unknown): never {
   const code = pgCode(err);
   if (code === '23505') throw new ConflictError('That coupon code is already used', 'COUPON_CODE_TAKEN');
+  if (code === '23503') throw new ValidationError('That category does not exist', 'COUPON_CATEGORY');
   if (code === '23514')
     throw new ValidationError('That combination is not allowed for a coupon', 'COUPON_RULE');
   throw err;
@@ -248,7 +277,10 @@ export async function createCoupon(
     try {
       [row] = await tx
         .insert(coupons)
-        .values({ ...valuesFrom(input.coupon, cityId), createdBy: input.staffUserId })
+        .values({
+          ...valuesFrom(input.coupon, cityId, await resolveCategory(tx, input.coupon.categorySlug)),
+          createdBy: input.staffUserId,
+        })
         .returning();
     } catch (err) {
       mapWriteError(err);
@@ -264,7 +296,15 @@ export async function createCoupon(
       action: 'coupon.created',
       entity: 'coupon',
       entityId: row.id,
-      after: { code: row.code, kind: row.kind, funder: row.funder, value: row.value },
+      after: {
+        code: row.code,
+        kind: row.kind,
+        funder: row.funder,
+        value: row.value,
+        isPublic: row.isPublic,
+        autoApply: row.autoApply,
+        categoryId: row.categoryId,
+      },
     });
     await recordServerEvent(tx, 'admin_coupon_saved', {
       userId: input.staffUserId,
@@ -297,7 +337,7 @@ export async function updateCoupon(
       throw new ConflictError('The coupon changed meanwhile; reload it', 'STALE_COUPON');
     const cityId = await resolveCity(tx, input.scope, input.coupon.city);
     await checkShop(tx, input.coupon, cityId);
-    const next = valuesFrom(input.coupon, cityId);
+    const next = valuesFrom(input.coupon, cityId, await resolveCategory(tx, input.coupon.categorySlug));
     if (
       before.usedCount > 0 &&
       (next.funder !== before.funder || next.shopId !== before.shopId || next.kind !== before.kind)
@@ -346,11 +386,19 @@ export async function updateCoupon(
       action: 'coupon.updated',
       entity: 'coupon',
       entityId: row.id,
-      before: { terms: termsSnapshot(before), code: before.code, shopId: before.shopId },
+      before: {
+        terms: termsSnapshot(before),
+        code: before.code,
+        shopId: before.shopId,
+        isPublic: before.isPublic,
+        autoApply: before.autoApply,
+      },
       after: {
         terms,
         code: row.code,
         shopId: row.shopId,
+        isPublic: row.isPublic,
+        autoApply: row.autoApply,
         reaskedShop: moneyChanged && row.funder === 'shop',
       },
     });

@@ -91,6 +91,9 @@ const input = (over: Partial<CouponInput> = {}): CouponInput => ({
   city: null,
   funder: 'mechdost',
   shopId: null,
+  isPublic: false,
+  autoApply: false,
+  categorySlug: null,
   ...over,
 });
 const idem = () => `coupon-api-key-${String((n += 1)).padStart(6, '0')}`;

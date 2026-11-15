@@ -1,5 +1,5 @@
 import type { CouponReason } from '@mechdost/shared/coupon';
-import { evaluateCouponOnQuote, quoteInternal, type CartLine } from './checkout';
+import { chooseOffer, quoteInternal, type CartLine } from './checkout';
 import type { CouponView } from './coupons';
 import type { CatalogueLocale } from './catalogue';
 import type { Tx } from './orders';
@@ -14,6 +14,10 @@ export type CouponPreview =
   | {
       ok: true;
       coupon: CouponView;
+      /** A typed code or an automatic offer (2026-11-16: never both; the larger discount won). */
+      source: 'code' | 'automatic';
+      /** The offer that lost, so the customer sees what they did not get. */
+      beaten: { source: 'code' | 'automatic'; title: string; discountPaise: number } | null;
       discountPaise: number;
       productDiscountPaise: number;
       shippingDiscountPaise: number;
@@ -31,7 +35,8 @@ export async function previewCoupon(
   db: Tx,
   input: {
     userId: string;
-    code: string;
+    /** The typed code, or null to ask only for the automatic offer the cart gets. */
+    code: string | null;
     pincode: string;
     lines: readonly CartLine[];
     locale: CatalogueLocale;
@@ -42,7 +47,12 @@ export async function previewCoupon(
     lines: input.lines,
     locale: input.locale,
   });
-  const checked = await evaluateCouponOnQuote(db, internal, input);
+  const checked = await chooseOffer(db, internal, {
+    code: input.code?.trim() ? input.code.trim() : null,
+    userId: input.userId,
+    locale: input.locale,
+    allowAutomatic: true,
+  });
   if (!checked.ok) return { ok: false, reason: checked.reason, coupon: checked.view };
   const { quote } = internal;
   const d = checked.discount;
@@ -52,6 +62,8 @@ export async function previewCoupon(
   return {
     ok: true,
     coupon: checked.coupon.view,
+    source: checked.source,
+    beaten: checked.beaten,
     discountPaise: d.discountPaise,
     productDiscountPaise: d.productDiscountPaise,
     shippingDiscountPaise: d.shippingDiscountPaise,
