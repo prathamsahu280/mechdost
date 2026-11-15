@@ -1029,3 +1029,15 @@ Design: `docs/superpowers/specs/2026-11-15-support-next-tier-design.md` items 1 
 - **Staff cannot attach photos** (items 1 to 3 are customer evidence). Cost if wrong: staff describe in words.
 - **No new notification template**: `ticket_received` and the `staff.new_ticket` bell fire on a new thread, `ticket_reply` and `ticket_resolved` as before. A customer message on an existing thread does not bell staff yet (pre-existing gap for every ticket). Cost if wrong: a reply waits in the inbox until someone looks; follow-up with inbox tools (item 4).
 - **Rate limits:** threads 20 an hour, photo uploads 20 per 10 minutes, payout destination 10 an hour, per customer.
+
+## 2026-11-15 — Repository public for now (Q113)
+
+- **User (2026-11-15):** "ive made the repo public just for now" — GitHub Actions minutes ran out; a public repository makes
+  standard runners free, so CI and deploy run again.
+- **Checked first:** full-history secret scan (counts and masked values only): no `.env` file ever committed; Razorpay,
+  `sk_live`, PostHog and Postgres-URL matches are all test fakes or `.env.example` placeholders. Deploy runs only on a push
+  to `main` of this repository (`workflow_run` guard); fork pull requests get no secrets (GitHub default).
+- **Rules while public:** never commit real keys (already a hard rule); keep fork-PR workflows on "require approval";
+  security findings are fixed before they are described in commit messages in detail.
+- **Later:** before going private again, set an Actions spending limit or move CI to a self-hosted runner that is not
+  the production server (Docker builds would starve the live site of memory).
