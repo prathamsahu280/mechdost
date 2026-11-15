@@ -5,8 +5,19 @@ import { useSelectedLayoutSegment } from 'next/navigation';
 import { PortalNavLink } from '@/components/portal/portal-nav-link';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import { lazy, Suspense, useEffect, useRef, useState, type ReactNode, type SyntheticEvent } from 'react';
+import {
+  createContext,
+  lazy,
+  Suspense,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+  type SyntheticEvent,
+} from 'react';
 import { useCenterCurrent } from '@/lib/use-center-current';
+import { useRevealSection } from '@/lib/reveal-section';
 import {
   MAX_ACCOUNT_ITEMS,
   addAddress,
@@ -108,6 +119,7 @@ function useAccountSection(): AccountSection {
  */
 export function AccountFrame({ children }: { children: ReactNode }) {
   const section = useAccountSection();
+  useRevealSection(section);
   const t = useTranslations('account');
   const auth = useTranslations('auth');
   const hydrated = useHydrated();
@@ -180,10 +192,17 @@ export function AccountFrame({ children }: { children: ReactNode }) {
   return (
     <div className="grid gap-6 nav:grid-cols-[220px_minmax(0,1fr)] nav:items-start">
       <SectionNav current={section} />
-      {children}
+      <CustomerContext.Provider value={session}>{children}</CustomerContext.Provider>
     </div>
   );
 }
+
+/**
+ * The signed-in customer, handed from the frame to the section (as `usePortalAccount` does for admin): the section
+ * renders at once on a side-bar click instead of waiting for its own store subscription, which let Next.js scroll the
+ * page to the top in 3 of 5 runs (e2e/no-reload-navigation.spec.ts, 2026-11-16).
+ */
+const CustomerContext = createContext<ReturnType<typeof useSession>>(null);
 
 /**
  * The chosen section's content (spec 01), rendered by the section pages inside `AccountFrame`. `scroll-mt-28` keeps
@@ -191,13 +210,13 @@ export function AccountFrame({ children }: { children: ReactNode }) {
  */
 export function AccountSectionBody({ section }: { section: AccountSection }) {
   const t = useTranslations('account');
-  const session = useSession();
+  const session = useContext(CustomerContext);
   // Always render the section box (empty until the session is known): when a side-bar click rendered nothing at
   // first, Next.js found no element to scroll into view and jumped to the top of the page (user rule "no page may
   // feel like a reload", 2026-11-16; e2e/no-reload-navigation.spec.ts).
-  if (session?.role !== 'customer') return <div className="min-w-0 scroll-mt-28" />;
+  if (session?.role !== 'customer') return <div data-portal-section className="min-w-0 scroll-mt-28" />;
   return (
-    <div className="min-w-0 scroll-mt-28 space-y-6">
+    <div data-portal-section className="min-w-0 scroll-mt-28 space-y-6">
       {section === 'overview' && AUTH_MODE === 'firebase' ? (
         <Suspense fallback={null}>
           <ShopInviteCard />

@@ -18,11 +18,12 @@ function PendingDot() {
 
 /**
  * Side-bar link of the account and admin portals. The bars live in a layout and stay mounted between sections; this
- * link only adds a light "loading" cue on the link that was clicked, instead of blanking the frame.
+ * link only adds a light "loading" cue on the link that was clicked, instead of blanking the frame. Next's own scroll is off
+ * (`scroll={false}`): the frame reveals the new section itself only when it is out of view (`useRevealSection`).
  */
 export function PortalNavLink({ className, children, ...rest }: ComponentProps<typeof Link>) {
   return (
-    <Link {...rest} className={`relative ${className ?? ''}`}>
+    <Link scroll={false} {...rest} className={`relative ${className ?? ''}`}>
       {children}
       <PendingDot />
     </Link>

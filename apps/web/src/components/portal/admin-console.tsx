@@ -12,6 +12,7 @@ import {
 import { useSelectedLayoutSegment } from 'next/navigation';
 import { useState, type ReactNode, type SyntheticEvent } from 'react';
 import { useCenterCurrent } from '@/lib/use-center-current';
+import { useRevealSection } from '@/lib/reveal-section';
 import { findProduct } from '@/demo/catalogue';
 import { restoreCoinsForOrder } from '@/demo/coins';
 import { useSession } from '@/demo/session';
@@ -209,7 +210,7 @@ export function AdminConsole({
   const account = usePortalAccount();
   if (!account) return null;
   return (
-    <div className="min-w-0 scroll-mt-28 space-y-6">
+    <div data-portal-section className="min-w-0 scroll-mt-28 space-y-6">
       {section === 'overview' ? AUTH_MODE === 'firebase' ? <AdminOverviewApi /> : <Overview /> : null}
       {section === 'analytics' && AUTH_MODE === 'firebase' ? <AdminAnalyticsApi /> : null}
       {section === 'refunds' && AUTH_MODE === 'firebase' ? <RefundQueueApi /> : null}
@@ -275,6 +276,7 @@ function useAdminSection(): AdminSection {
  */
 export function AdminFrame({ children }: { children: ReactNode }) {
   const section = useAdminSection();
+  useRevealSection(section);
   const path = `/admin${section === 'overview' ? '' : `/${section}`}`;
   return (
     <PortalGuard role="admin" path={path}>

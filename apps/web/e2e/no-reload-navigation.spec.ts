@@ -4,7 +4,7 @@
  * not reloaded (a window marker survives), the sticky header and heading are not redrawn, and the page does not jump
  * to the top when the user had scrolled.
  */
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { CONSENT_DECIDED } from './fixtures/consent';
 
 test.use({ storageState: CONSENT_DECIDED });
@@ -45,6 +45,16 @@ async function expectNoJumpToTop(page: Page, isMobile: boolean) {
   expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
 }
 
+/**
+ * A plain DOM click: Playwright's `click()` first scrolls the link into view, which moved the page by itself and made
+ * the "no jump to top" check measure Playwright's scroll, not the site's (2026-11-16).
+ */
+async function domClick(link: Locator) {
+  await link.evaluate((el) => {
+    (el as HTMLElement).click();
+  });
+}
+
 async function scrollALittle(page: Page) {
   // A short window so even a short section page can scroll (at 900 px the account page did not scroll at all and the
   // "no jump to top" check measured 0 before and after).
@@ -65,13 +75,13 @@ test('admin: a side-bar click keeps the frame, the document and the scroll posit
   await scrollALittle(page);
 
   const nav = page.getByRole('navigation', { name: 'Console sections' });
-  await nav.getByRole('link', { name: 'Order routing' }).click();
+  await domClick(nav.getByRole('link', { name: 'Order routing' }));
   await expect(page).toHaveURL(/\/admin\/orders$/);
   await expect(nav.locator('[aria-current="page"]')).toContainText('Order routing');
   await expectFrameSurvived(page, 'Console sections');
   await expectNoJumpToTop(page, isMobile);
 
-  await nav.getByRole('link', { name: 'Settings' }).click();
+  await domClick(nav.getByRole('link', { name: 'Settings' }));
   await expect(page).toHaveURL(/\/admin\/settings$/);
   await expectFrameSurvived(page, 'Console sections');
 });
@@ -86,13 +96,13 @@ test('account: a side-bar click keeps the frame, the document and the scroll pos
   await scrollALittle(page);
 
   const nav = page.getByRole('navigation', { name: 'Account sections' });
-  await nav.getByRole('link', { name: 'Orders' }).click();
+  await domClick(nav.getByRole('link', { name: 'Orders' }));
   await expect(page).toHaveURL(/\/account\/orders$/);
   await expect(nav.locator('[aria-current="page"]')).toContainText('Orders');
   await expectFrameSurvived(page, 'Account sections');
   await expectNoJumpToTop(page, isMobile);
 
-  await nav.getByRole('link', { name: 'Profile' }).click();
+  await domClick(nav.getByRole('link', { name: 'Profile' }));
   await expect(page).toHaveURL(/\/account\/profile$/);
   await expectFrameSurvived(page, 'Account sections');
 });
