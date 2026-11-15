@@ -732,7 +732,7 @@ After the run:
 - **Every push** (`ci.yml` job `e2e-demo`, step "UI state audit (core subset)"): the 92 `core` items (84 + 8 navigation rows), about
   5 minutes on two workers, with `STATE_AUDIT_KNOWN=allow`. The step is **report-only**
   (`continue-on-error`) until the first overnight run is triaged (Q101), then it blocks.
-- **Full run** (user 2026-11-15: manual only, no nightly schedule — Actions minutes on the private repo): normally on the development PC with `node apps/web/scripts/state-audit-run.mjs all --date <date>` (§ 9.3, early morning, one browser); `.github/workflows/ui-state-audit.yml` can be started by hand on GitHub (id prefixes optional, ~200–240 min). Every item.
+- **Full run** (user 2026-11-15: manual only, no nightly schedule — Actions minutes on the private repo): normally on the development PC with `node apps/web/scripts/state-audit-run.mjs all --date <date>` (§ 9.3, early morning, one browser); `.github/workflows/ui-state-audit.yml` can be started by hand on GitHub (id prefixes optional). Every item. **Since 2026-11-16 (repo public, minutes free; user: "offload some to github actions") full runs go to GitHub**: 10 parallel shards, `mode: demo` for A–F, `mode: api` for G (`gh workflow run ui-state-audit.yml --ref <branch> -f mode=demo|api [-f only=PREFIX-,…]`); download the `ui-state-audit-<mode>-<n>` artifacts and tick locally with `node apps/web/scripts/state-audit-tick.mjs <report>`.
   It ticks the checklist and uploads the ticked checklist, the JSON report and the screenshots as the
   `ui-state-audit` artifact (14 days). It never commits.
 - `pnpm check` runs `apps/web/test/state-audit-*.test.ts`. These cover the pairwise coverage, the ticking and

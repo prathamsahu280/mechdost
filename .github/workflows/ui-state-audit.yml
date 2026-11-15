@@ -1,26 +1,34 @@
-# Full UI state audit, on demand (docs/qa/ui-state-checklist.md, docs/research/ui-testing-gap-2026-11-14.md): every
-# checklist item (~1,700 Playwright tests: widths 320-1920, themes, languages, stored states, hover/focus sweeps,
-# geometry assertions) against a demo-mode production build. The per-push subset runs in ci.yml (e2e-demo).
-# The run never commits: the ticked checklist, the JSON report and the failure screenshots are uploaded as an
-# artifact for triage (runbook docs/runbooks/ui-test-catalogue.md § 9).
+# UI state audit, on demand (docs/qa/ui-state-checklist.md, runbook docs/runbooks/ui-test-catalogue.md § 9): every
+# checklist item (widths 320-1920, themes, languages, stored states, hover/focus sweeps, geometry assertions), split
+# over parallel shards. `mode: demo` runs chunks A-F against a demo-mode production build; `mode: api` runs chunk G
+# (real-sign-in screens) against the real-mode build with the mocked API (`.next-api`, runbook § 9.7 / § 9.10).
+# The run never commits: each shard uploads its JSON report and failure screenshots as an artifact; the coordinator
+# ticks the checklist locally (`node apps/web/scripts/state-audit-tick.mjs <report>`).
 # Supply-chain rules as in ci.yml: actions pinned by full commit SHA, read-only token, frozen lockfile.
 name: UI state audit (full, manual)
 
-# Manual only (user 2026-11-15): a full run costs ~200-240 Actions minutes on the private repo's monthly allowance;
-# full runs normally happen on the development PC (node apps/web/scripts/state-audit-run.mjs, runbook § 9.3).
+# Manual only. While the repository is public, Actions minutes are free (user 2026-11-16: "offload some to github
+# actions to speed things up … the minutes are free atleast for the time i keep the repo public"), so full runs are
+# sharded here instead of on the low-memory development PC.
 on:
   workflow_dispatch:
     inputs:
       only:
-        description: 'Checklist id prefixes to run (comma-separated, e.g. SHOP-,STEP-); empty = all'
+        description: 'Checklist id prefixes to run (comma-separated, e.g. SHOP-,STEP-); empty = all of the mode'
         required: false
         default: ''
+      mode:
+        description: 'demo = chunks A-F (demo build); api = chunk G (real-sign-in build, mocked API)'
+        required: false
+        default: demo
+        type: choice
+        options: [demo, api]
 
 permissions:
   contents: read
 
 concurrency:
-  group: ui-state-audit
+  group: ui-state-audit-${{ inputs.mode }}-${{ github.ref }}
   cancel-in-progress: true
 
 env:
@@ -29,9 +37,13 @@ env:
 
 jobs:
   audit:
-    name: UI state audit (full)
+    name: UI state audit (${{ inputs.mode }}, shard ${{ matrix.shard }}/10)
     runs-on: ubuntu-latest
-    timeout-minutes: 240
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -48,34 +60,37 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build the web (demo data)
+        if: inputs.mode != 'api'
         run: pnpm --filter @mechdost/web build
+
+      - name: Build the web (real sign-in + API data, fake public audit values)
+        if: inputs.mode == 'api'
+        run: node apps/web/scripts/state-audit-api-build.mjs
 
       - name: Install Chromium for Playwright
         run: pnpm --filter @mechdost/web exec playwright install --with-deps chromium
 
-      - name: Playwright (every checklist item)
+      - name: Playwright (shard ${{ matrix.shard }} of 10)
         id: audit
         working-directory: apps/web
         env:
           STATE_AUDIT_ONLY: ${{ inputs.only }}
-          STATE_AUDIT_REPORT: test-results/state-audit-report.json
-        run: pnpm exec playwright test -c playwright.state-audit.config.ts
+          STATE_AUDIT_REPORT: test-results/state-audit-report-${{ inputs.mode }}-${{ matrix.shard }}.json
+          STATE_AUDIT_OUTPUT: test-results/state-audit-${{ inputs.mode }}-${{ matrix.shard }}
+          AUDIT_CONFIG: ${{ inputs.mode == 'api' && 'playwright.state-audit-api.config.ts' || 'playwright.state-audit.config.ts' }}
+        run: pnpm exec playwright test -c "$AUDIT_CONFIG" --shard=${{ matrix.shard }}/10
         continue-on-error: true
 
-      - name: Tick the checklist from the report
-        if: always()
-        run: node apps/web/scripts/state-audit-tick.mjs apps/web/test-results/state-audit-report.json
-
-      - name: Upload checklist, report and screenshots
+      - name: Upload report and screenshots
         if: always()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
-          name: ui-state-audit
+          name: ui-state-audit-${{ inputs.mode }}-${{ matrix.shard }}
           retention-days: 14
+          if-no-files-found: ignore
           path: |
-            docs/qa/ui-state-checklist.md
-            apps/web/test-results/state-audit-report.json
-            apps/web/test-results/state-audit/**/*.png
+            apps/web/test-results/state-audit-report-${{ inputs.mode }}-${{ matrix.shard }}.json
+            apps/web/test-results/state-audit-${{ inputs.mode }}-${{ matrix.shard }}/**/*.png
 
       - name: Fail when items failed
         if: steps.audit.outcome == 'failure'

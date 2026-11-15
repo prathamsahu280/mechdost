@@ -1289,3 +1289,12 @@ Cause of the user's "page got refreshed" report: `admin/page.tsx` and `admin/[se
 ## 2026-11-16 — Builder: every opened panel can be closed (built)
 
 - **Built (2026-11-16, builder):** the rule above is now mechanical. `PanelDismiss` (mounted once in the layout) maps Escape to the Cancel button of the panel that holds focus and returns focus to the opener; markup contract in `apps/web/src/lib/panel-dismiss.ts` (`data-disclosure-trigger` on the opener, `data-panel-cancel` on a visible 44 px Cancel, `data-panel-for` for toggles). Review forms (product page and order/service) got Cancel (`reviews.cancel`, event `review_cancel_<target>`); about 45 other panels were fixed in the same sweep (account, checkout coupon, portals, admin). Rulings: Escape discards unsent text (no confirm modal); the product editor in admin (`ProductEditor`) keeps its Back button only and is not wired to Escape because it has many unsaved fields; master-detail selection lists (refunds, quotes), tab panels and native `<details>`/`<dialog>`/popover are not button-opened forms. Guards: `test/panel-dismiss.test.ts`, audit check `dismiss` (`e2e/state-audit/dismiss.ts`), `e2e/panel-dismiss.spec.ts`.
+
+## 2026-11-16 — Full UI audits run on GitHub while the repo is public
+
+User: "u can only rerun the failed and changed checks and maybe even offload some to github actions to speed things
+up … since the minutes are free atleast for the time i keep the repo public". The manual workflow
+`ui-state-audit.yml` now runs 10 parallel shards and has `mode: demo` (A–F) and `mode: api` (G, real-sign-in build
+with the mocked API); reports and screenshots come back as artifacts, ticked locally. With the minutes free, full runs
+replace the "failed and changed only" re-run. If the repo goes private again, return to manual targeted runs (decision
+2026-11-15). Guard: `packages/shared/test/audit-workflow.test.ts`.
