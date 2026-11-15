@@ -192,7 +192,64 @@ describe('RTDB security rules (firebase/database.rules.json)', () => {
     expect(rules.rules['.read']).toBe(false);
     expect(rules.rules['.write']).toBe(false);
     expect(Object.keys(rules.rules).sort()).toEqual(['.read', '.write', 'inbox']);
-    expect(rules.rules.inbox.$uid).toEqual({ '.read': 'auth != null && auth.uid === $uid', '.write': false });
+    expect(rules.rules.inbox.$uid['.write']).toBe(false);
+    expect(Object.keys(rules.rules.inbox.$uid).sort()).toEqual(['$node', '.read', '.write']);
+    // The read rule, evaluated clause by clause for the callers that matter; an unknown clause fails the test, so
+    // loosening or rewording the rule forces this test to be revisited.
+    interface Auth {
+      uid: string;
+      token: { firebase: { sign_in_provider: string } };
+    }
+    const clauses: Record<string, (auth: Auth | null, uid: string) => boolean> = {
+      'auth != null': (auth) => auth !== null,
+      'auth.uid === $uid': (auth, uid) => auth?.uid === uid,
+      "auth.token.firebase.sign_in_provider != 'anonymous'": (auth) =>
+        auth?.token.firebase.sign_in_provider !== 'anonymous',
+    };
+    const allowed = (auth: Auth | null, uid: string) =>
+      (rules.rules.inbox.$uid['.read'] as string).split(' && ').every((c) => {
+        const clause = clauses[c];
+        if (!clause) throw new Error(`unreviewed rule clause: ${c}`);
+        return clause(auth, uid);
+      });
+    const token = (provider: string) => ({ firebase: { sign_in_provider: provider } });
+    expect(allowed({ uid: 'u1', token: token('custom') }, 'u1')).toBe(true);
+    expect(allowed({ uid: 'u1', token: token('phone') }, 'u1')).toBe(true);
+    expect(allowed({ uid: 'u1', token: token('custom') }, 'u2')).toBe(false); // someone else's inbox
+    expect(allowed({ uid: 'u1', token: token('anonymous') }, 'u1')).toBe(false); // anonymous gets nothing
+    expect(allowed(null, 'u1')).toBe(false); // signed out
+  });
+});
+
+describe('RTDB rules audit (firebase-security-rules-auditor, 2026-11-15)', () => {
+  interface Node {
+    [key: string]: Node | string | boolean;
+  }
+  const load = async (): Promise<Node> => {
+    const { readFile } = await import('node:fs/promises');
+    const raw = await readFile(new URL('../../../firebase/database.rules.json', import.meta.url), 'utf8');
+    return (JSON.parse(raw) as { rules: Node }).rules;
+  };
+  const walk = (node: Node, path: string, out: { path: string; key: string; value: unknown }[]) => {
+    for (const [key, value] of Object.entries(node)) {
+      if (key.startsWith('.')) out.push({ path, key, value });
+      else walk(value as Node, `${path}/${key}`, out);
+    }
+    return out;
+  };
+
+  it('every .write in the tree is false and no .read is true or sits anywhere but the inbox owner node', async () => {
+    const all = walk(await load(), '', []);
+    for (const w of all.filter((x) => x.key === '.write')) expect(w.value, w.path).toBe(false);
+    for (const r of all.filter((x) => x.key === '.read')) expect(r.value, r.path).not.toBe(true);
+    const reads = all.filter((x) => x.key === '.read' && x.value !== false).map((x) => x.path);
+    expect(reads).toEqual(['/inbox/$uid']);
+  });
+
+  it('a ping node under the owner inbox repeats write:false and validate:false (defence in depth, no cascade surprises)', async () => {
+    const rules = await load();
+    const owner = (rules.inbox as Node).$uid as Node;
+    expect(owner.$node).toEqual({ '.write': false, '.validate': false });
   });
 });
 

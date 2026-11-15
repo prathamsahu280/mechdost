@@ -90,3 +90,7 @@ Recommendations are Server Components behind Suspense: no client JS added to the
 ## Budget note: product photos, wishlist and cart sync (2026-11-15)
 
 Product photos are rendered by a **Server Component** with `getImageProps` (a plain `<img>`, no client runtime); the heart is a lazy chunk behind `wishlist-lazy.tsx` and exists only in real sign-in builds (build-time constant); the cart sync is fetched by dynamic import from the header's cart pill only when signed in, and from the sign-in screen. Net eager cost in header/card/cart bundles: the wrapper (a few hundred bytes) plus one effect in the cart pill; the real numbers must be measured with a local build (`node apps/web/scripts/measure-js.mjs`) before merge (not run here: builds are not allowed on this branch's job). Only the first product-page photo is `preload`/high priority.
+
+## Budget note: the live listener (2026-11-15)
+
+`@firebase/database` (~30 KB gz) must never enter an initial bundle. `lib/live/live-hub.ts` is light (no Firebase) and is imported only by code that runs for signed-in users (`storefront-sync`, `use-notice-feed`); the heavy `live-listener.ts` is reached only by the hub's dynamic import and only when `AUTH_MODE` is firebase, the database URL is set and a consumer started. No header or layout module imports the hub, and no `next/dynamic` is used (budget incident above). Guard: `apps/web/test/live-lazy.test.ts`. The cart pill is unchanged. **Measure `/shop` and `/cart` with `node apps/web/scripts/measure-js.mjs` before merge** (not run here: no builds on this machine).

@@ -4,8 +4,12 @@
     ".write": false,
     "inbox": {
       "$uid": {
-        ".read": "auth != null && auth.uid === $uid",
-        ".write": false
+        ".read": "auth != null && auth.uid === $uid && auth.token.firebase.sign_in_provider != 'anonymous'",
+        ".write": false,
+        "$node": {
+          ".write": false,
+          ".validate": false
+        }
       }
     }
   }

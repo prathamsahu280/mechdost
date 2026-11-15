@@ -57,6 +57,23 @@ describe('content security policy (ruling 2026-11-09)', () => {
     expect(p).not.toContain('http://127.0.0.1');
   });
 
+  it('live updates: the Firebase database host (https and wss) only in real mode and only for a Firebase host', () => {
+    const url = 'https://mechdost-default-rtdb.asia-southeast1.firebasedatabase.app';
+    const real = contentSecurityPolicy({ dev: false, authMode: 'firebase', databaseUrl: url });
+    expect(directive(real, 'connect-src')).toEqual(
+      expect.arrayContaining([url, 'wss://mechdost-default-rtdb.asia-southeast1.firebasedatabase.app']),
+    );
+    expect(
+      directive(contentSecurityPolicy({ dev: false, authMode: 'demo', databaseUrl: url }), 'connect-src'),
+    ).not.toContain(url);
+    const evil = contentSecurityPolicy({
+      dev: false,
+      authMode: 'firebase',
+      databaseUrl: 'https://evil.example.com',
+    });
+    expect(evil).not.toContain('evil.example.com');
+  });
+
   it('Sentry: only the ingest host of the configured DSN (EU region), only when a DSN is set', () => {
     const dsn =
       'https://0123456789abcdef0123456789abcdef@o4500000000000000.ingest.de.sentry.io/4500000000000001';

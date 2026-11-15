@@ -4,6 +4,7 @@ import {
   EmailAuthProvider,
   getAuth,
   linkWithCredential,
+  onAuthStateChanged,
   RecaptchaVerifier,
   sendEmailVerification,
   sendPasswordResetEmail,
@@ -260,6 +261,13 @@ export async function currentUid(locale: string): Promise<string | null> {
   const a = firebaseAuth(locale);
   await a.authStateReady();
   return a.currentUser?.uid ?? null;
+}
+
+/** Calls `cb` with the signed-in user's id now and whenever it changes (null = signed out). Returns the stop function. */
+export function watchUid(locale: string, cb: (uid: string | null) => void): () => void {
+  return onAuthStateChanged(firebaseAuth(locale), (user) => {
+    cb(user?.uid ?? null);
+  });
 }
 
 /**

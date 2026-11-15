@@ -1142,3 +1142,13 @@ Design: `docs/superpowers/specs/2026-11-15-support-next-tier-design.md` items 1 
 - **Ranking constants are builder choices** (Q152): equal weights, 25 km, load = open jobs / (capacity x 4), 90-day window, neutral score for a missing value (a new workshop is neither punished nor favoured), timeouts count against acceptance (design 2026-11-15). Cost if wrong: change constants in one file; no stored data.
 - **Bill orders never expire** (Q153): the amount of a bill cannot change, so an old open order stays valid and a late capture is refunded. Cost if wrong: a sweep job later.
 - **Idempotency of "pay online" is structural:** the unique open-order index returns the same Razorpay order to a double click, so no `Idempotency-Key` header was added to the new route.
+
+### 2026-11-15 - Browser live listener (builder rulings)
+
+- **Single read path:** the browser reads only `inbox/<uid>`; shop, workshop and city staff topics are resolved to user ids by the relay (permission-based, Postgres), so no topic rules exist in RTDB. Cost if wrong: a new rule per topic family and a second listener; the relay would not change.
+- **Rules harden anonymous:** the read rule also requires `sign_in_provider != 'anonymous'` (anonymous Firebase users have `auth != null`). No code uses anonymous auth, so nothing breaks.
+- **Hub plus listener split:** a light hub (no Firebase) is imported by consumers; the heavy listener only by dynamic import from the hub. Connection closed while the tab is hidden, one catch-up refresh on return. Polling is never switched off (a ping is an accelerator). Cost if wrong: a few more conditional reads per minute; no data risk.
+- **New public config `NEXT_PUBLIC_FIREBASE_DATABASE_URL`:** unset means the browser never connects (Q160). New web dependency `@firebase/database` pinned to 1.1.5 (already in the lockfile through firebase-admin, so no new release to vet; it is lazily loaded).
+- **No analytics event for the connection** (no catalogue place; spec 12 untouched). Rule emulator tests queued (Q160) because the repo's emulator setup has Auth only.
+- Supersedes the "no browser listener yet" note of 2026-11-15 "Polling, not live pings, feeds the bell for now": the bell and shop offers now also refresh on a ping; polling stays as the fallback.
+- **Audit round (same day):** hub fetches the listener only when idle and visible and closes 2 s after the last release (no churn on effect re-runs); listener callbacks are uid-bound; rules gained a `$node` guard (`.write` and `.validate` false). Cost if wrong: a one-second later first connection; nothing stored.

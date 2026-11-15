@@ -14,6 +14,9 @@ export function signOutEverywhere(): void {
     // next person who signs in.
     clearCart();
     void import('../cart-sync').then((m) => m.resetCartSync());
+    void import('../live/live-hub').then((m) => {
+      m.resetLive();
+    });
     void import('../wishlist-store').then((m) => {
       m.resetWishlist();
     });
