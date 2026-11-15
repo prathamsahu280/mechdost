@@ -45,9 +45,11 @@ export function wishlistMocks(c: AuditCase): Mock[] {
         if (state === 'error') return { status: 500, code: 'INTERNAL' };
         const count = state === 'empty' ? 0 : state === 'full' ? 100 : 5;
         return {
-          body: { items: Array.from({ length: count }, (_, i) => item(i)), max: 100 } satisfies Dto<
-            typeof WishlistDto
-          >,
+          body: {
+            items: Array.from({ length: count }, (_, i) => item(i)),
+            max: 100,
+            version: count,
+          } satisfies Dto<typeof WishlistDto>,
         };
       },
     },

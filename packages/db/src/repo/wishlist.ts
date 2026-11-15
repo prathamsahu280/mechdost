@@ -15,6 +15,32 @@ import { rowsOf } from './sql-rows';
  */
 export type WishlistLocale = 'en' | 'hi';
 
+/**
+ * A fingerprint of the saved products: the sum of a hash of each product id, kept inside a positive 31-bit number.
+ * An add or a remove changes it, an unchanged list gives the same number, and it needs one indexed read of at most
+ * 100 rows. The refresh sends it back as `since`.
+ */
+export async function wishlistVersion(db: Tx, userId: string): Promise<number> {
+  const [row] = rowsOf<{ v: number | string | null }>(
+    await db.execute(
+      sql`select (coalesce(sum(hashtext(product_id::text)::bigint), 0) % 2147483647 + 2147483647) % 2147483647 as v
+        from wishlist_items where user_id = ${userId}`,
+    ),
+  );
+  return Number(row?.v ?? 0);
+}
+
+/** The refresh: the list, or `{ unchanged: true }` when it is still the one the caller already has. */
+export async function getWishlistIfChanged(
+  db: Tx,
+  userId: string,
+  locale: WishlistLocale,
+  since: number,
+): Promise<Wishlist | { unchanged: true; version: number }> {
+  const version = await wishlistVersion(db, userId);
+  return version === since ? { unchanged: true, version } : listWishlist(db, userId, locale);
+}
+
 export async function listWishlist(db: Tx, userId: string, locale: WishlistLocale = 'en'): Promise<Wishlist> {
   const rows = rowsOf<{
     slug: string;
@@ -44,6 +70,7 @@ export async function listWishlist(db: Tx, userId: string, locale: WishlistLocal
   );
   return {
     max: WISHLIST_MAX,
+    version: await wishlistVersion(db, userId),
     items: rows.map((r) => ({
       slug: r.slug,
       name: localized(r.name, r.name_hi, locale),
@@ -68,7 +95,7 @@ export async function setWishlisted(
   userId: string,
   slug: string,
   on: boolean,
-): Promise<{ slug: string; on: boolean; count: number }> {
+): Promise<{ slug: string; on: boolean; count: number; version: number }> {
   return db.transaction(async (tx) => {
     const [u] = await tx.select({ id: users.id }).from(users).where(eq(users.id, userId)).for('update');
     if (!u) throw new NotFoundError('User not found');
@@ -90,7 +117,7 @@ export async function setWishlisted(
         .select({ id: wishlistItems.id })
         .from(wishlistItems)
         .where(and(eq(wishlistItems.userId, userId), eq(wishlistItems.productId, p.id)));
-      if (exists) return { slug, on: true, count: before };
+      if (exists) return { slug, on: true, count: before, version: await wishlistVersion(tx, userId) };
       if (before >= WISHLIST_MAX)
         throw new ValidationError(`Your wishlist can hold ${String(WISHLIST_MAX)} products`, 'WISHLIST_FULL');
       await tx.insert(wishlistItems).values({ userId, productId: p.id });
@@ -98,17 +125,18 @@ export async function setWishlisted(
         userId,
         props: { productId: p.id, on: true, count: before + 1 },
       });
-      return { slug, on: true, count: before + 1 };
+      return { slug, on: true, count: before + 1, version: await wishlistVersion(tx, userId) };
     }
     const gone = await tx
       .delete(wishlistItems)
       .where(and(eq(wishlistItems.userId, userId), eq(wishlistItems.productId, p.id)))
       .returning({ id: wishlistItems.id });
-    if (gone.length === 0) return { slug, on: false, count: before };
+    if (gone.length === 0)
+      return { slug, on: false, count: before, version: await wishlistVersion(tx, userId) };
     await recordServerEvent(tx, 'wishlist_changed', {
       userId,
       props: { productId: p.id, on: false, count: before - 1 },
     });
-    return { slug, on: false, count: before - 1 };
+    return { slug, on: false, count: before - 1, version: await wishlistVersion(tx, userId) };
   });
 }

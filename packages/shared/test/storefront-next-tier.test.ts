@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CartMergeBody, CartPutBody, CART_MAX_LINES } from '../src/cart-api';
+import { CartMergeBody, CartLineQtyBody, CART_MAX_LINES } from '../src/cart-api';
 import {
   PRODUCT_PHOTO_MAX,
   PRODUCT_PHOTO_WIDTHS,
@@ -45,17 +45,23 @@ describe('product photo constants', () => {
 });
 
 describe('cart bodies', () => {
-  it('hold a SKU and a quantity of 1 to 99, never a price, at most 20 lines', () => {
+  it('a line holds a quantity of 1 to 99 and nothing else (no price, no extra field)', () => {
+    expect(CartLineQtyBody.safeParse({ qty: 2 }).success).toBe(true);
+    expect(CartLineQtyBody.safeParse({ qty: 99 }).success).toBe(true);
+    expect(CartLineQtyBody.safeParse({ qty: 2, pricePaise: 1 }).success).toBe(false);
+    expect(CartLineQtyBody.safeParse({ qty: 100 }).success).toBe(false);
+    expect(CartLineQtyBody.safeParse({ qty: 0 }).success).toBe(false);
+    expect(CartLineQtyBody.safeParse({ qty: 1.5 }).success).toBe(false);
+  });
+
+  it('the guest merge holds SKUs and quantities, at most 20 lines, never a price', () => {
     const ok = { lines: [{ sku: 'CAS-ACT4T-0900', qty: 2 }] };
-    expect(CartPutBody.safeParse(ok).success).toBe(true);
     expect(CartMergeBody.safeParse(ok).success).toBe(true);
-    expect(CartPutBody.safeParse({ lines: [{ sku: 'CAS-ACT4T-0900', qty: 2, pricePaise: 1 }] }).success).toBe(
-      false,
-    );
-    expect(CartPutBody.safeParse({ lines: [{ sku: 'CAS-ACT4T-0900', qty: 100 }] }).success).toBe(false);
-    expect(CartPutBody.safeParse({ lines: [{ sku: 'CAS-ACT4T-0900', qty: 0 }] }).success).toBe(false);
+    expect(
+      CartMergeBody.safeParse({ lines: [{ sku: 'CAS-ACT4T-0900', qty: 2, pricePaise: 1 }] }).success,
+    ).toBe(false);
     const many = Array.from({ length: CART_MAX_LINES + 1 }, (_, i) => ({ sku: `SKU-${String(i)}X`, qty: 1 }));
-    expect(CartPutBody.safeParse({ lines: many }).success).toBe(false);
+    expect(CartMergeBody.safeParse({ lines: many }).success).toBe(false);
   });
 });
 

@@ -7,7 +7,8 @@ import {
   type ServerCart,
 } from '@mechdost/shared/cart-api';
 import { auditLog, cartItems, carts, users } from '../schema';
-import { NotFoundError } from './errors';
+import { uuidv7 } from '../schema/_common';
+import { NotFoundError, ValidationError } from './errors';
 import { recordServerEvent } from './events';
 import { localized } from './localized';
 import type { Tx } from './orders';
@@ -20,6 +21,13 @@ import { rowsOf } from './sql-rows';
  * come from the checkout quote when the cart is priced, so a client cannot make up a price (hard rule 3). Writes lock
  * the customer's user row first, so two devices writing together queue up instead of racing past the 20-line limit.
  * Lines whose pack stopped being sold are removed when the cart is read, and reported (`not_for_sale`).
+ *
+ * Several devices (user 2026-11-15: phone and laptop at the same time, nothing may be lost): the server cart is the
+ * source of truth and the browser copy is a cache, so writes are **one line at a time** — add (increment; adds from two
+ * devices sum), set (that line's quantity, last write wins for that line only) and remove (idempotent). Each is one
+ * conditional statement under the customer's row lock, so the 20-line and 99-quantity limits hold under parallel
+ * requests. Every *effective* change touches the cart row, which moves its `version` (a trigger) and writes one live
+ * ping (trigger `carts_live`); a no-op changes and pings nothing. The version doubles as the refresh's ETag.
  */
 export type CartLocale = 'en' | 'hi';
 export interface MergeResult {
@@ -104,6 +112,21 @@ async function pruneUnsellable(tx: Tx, cartId: string): Promise<ServerCart['drop
   return gone.map((g) => ({ sku: g.sku, reason: 'not_for_sale' as const }));
 }
 
+/** Moves the cart's version (the bump trigger) and with it writes the live ping. Call only after a real change. */
+async function touch(tx: Tx, cartId: string): Promise<void> {
+  await tx.update(carts).set({ updatedAt: new Date() }).where(eq(carts.id, cartId));
+}
+
+async function snapshot(
+  tx: Tx,
+  cartId: string,
+  locale: CartLocale,
+  dropped: ServerCart['dropped'] = [],
+): Promise<ServerCart> {
+  const [row] = await tx.select({ version: carts.version }).from(carts).where(eq(carts.id, cartId));
+  return { lines: await readLines(tx, cartId, locale), dropped, version: row?.version ?? 0 };
+}
+
 /** The cart as it stands, with unsellable lines removed (and reported once). */
 export async function getCart(db: Tx, userId: string, locale: CartLocale = 'en'): Promise<ServerCart> {
   return db.transaction(async (tx) => {
@@ -111,9 +134,120 @@ export async function getCart(db: Tx, userId: string, locale: CartLocale = 'en')
       .select({ id: carts.id })
       .from(carts)
       .where(and(eq(carts.userId, userId), eq(carts.status, 'active')));
-    if (!cart) return { lines: [], dropped: [] };
+    if (!cart) return { lines: [], dropped: [], version: 0 };
     const dropped = await pruneUnsellable(tx, cart.id);
-    return { lines: await readLines(tx, cart.id, locale), dropped };
+    if (dropped.length > 0) await touch(tx, cart.id);
+    return snapshot(tx, cart.id, locale, dropped);
+  });
+}
+
+/** The refresh: the cart, or `{ unchanged: true }` when its version is still the one the caller already has. */
+export async function getCartIfChanged(
+  db: Tx,
+  userId: string,
+  locale: CartLocale,
+  since: number,
+): Promise<ServerCart | { unchanged: true; version: number }> {
+  const [cart] = await db
+    .select({ id: carts.id, version: carts.version })
+    .from(carts)
+    .where(and(eq(carts.userId, userId), eq(carts.status, 'active')));
+  if (!cart) return since === 0 ? { unchanged: true, version: 0 } : getCart(db, userId, locale);
+  // One indexed read when nothing changed (a pack that stopped being sold is noticed by the next real read).
+  if (cart.version === since) return { unchanged: true, version: since };
+  return getCart(db, userId, locale);
+}
+
+async function sellableVariant(tx: Tx, sku: string): Promise<string> {
+  const r = (await resolve(tx, [sku])).get(sku);
+  if (!r?.variantId || !r.sellable)
+    throw new ValidationError('This product is not available', 'CART_LINE_UNAVAILABLE');
+  return r.variantId;
+}
+
+/**
+ * One conditional statement: insert the line (only while the cart has room, or the line already exists) or update it
+ * (`add`: increase, capped at 99; `set`: that quantity). Returns whether a row changed.
+ */
+async function upsertLine(
+  tx: Tx,
+  cartId: string,
+  variantId: string,
+  qty: number,
+  mode: 'add' | 'set',
+): Promise<boolean> {
+  const onConflict =
+    mode === 'add'
+      ? sql`update set qty = least(cart_items.qty + excluded.qty, ${CART_MAX_QTY}) where cart_items.qty < ${CART_MAX_QTY}`
+      : sql`update set qty = excluded.qty where cart_items.qty <> excluded.qty`;
+  const rows = rowsOf<{ n: number }>(
+    await tx.execute(sql`
+      with up as (
+        insert into cart_items (id, cart_id, variant_id, qty)
+        select ${uuidv7()}::uuid, ${cartId}::uuid, ${variantId}::uuid, least(${qty}::int, ${CART_MAX_QTY})
+        where (select count(*) from cart_items where cart_id = ${cartId}::uuid) < ${CART_MAX_LINES}
+          or exists (select 1 from cart_items where cart_id = ${cartId}::uuid and variant_id = ${variantId}::uuid)
+        on conflict (cart_id, variant_id) do ${onConflict}
+        returning 1)
+      select count(*)::int as n from up`),
+  );
+  if ((rows[0]?.n ?? 0) > 0) return true;
+  const [exists] = await tx
+    .select({ id: cartItems.id })
+    .from(cartItems)
+    .where(and(eq(cartItems.cartId, cartId), eq(cartItems.variantId, variantId)));
+  if (!exists)
+    throw new ValidationError(`A cart holds up to ${String(CART_MAX_LINES)} products`, 'CART_MAX_LINES');
+  return false;
+}
+
+async function lineChange(
+  db: Tx,
+  userId: string,
+  sku: string,
+  qty: number,
+  mode: 'add' | 'set',
+  locale: CartLocale,
+): Promise<ServerCart> {
+  return db.transaction(async (tx) => {
+    const cartId = await lockedCart(tx, userId);
+    const variantId = await sellableVariant(tx, sku);
+    if (await upsertLine(tx, cartId, variantId, qty, mode)) await touch(tx, cartId);
+    return snapshot(tx, cartId, locale);
+  });
+}
+
+/** Add `qty` of a pack (several devices adding the same pack sum; the line stops at 99). */
+export const addCartLine = (db: Tx, userId: string, sku: string, qty: number, locale: CartLocale = 'en') =>
+  lineChange(db, userId, sku, qty, 'add', locale);
+
+/** Set a pack's quantity (last write wins for this line only; other lines are untouched). */
+export const setCartLine = (db: Tx, userId: string, sku: string, qty: number, locale: CartLocale = 'en') =>
+  lineChange(db, userId, sku, qty, 'set', locale);
+
+/** Remove a pack. Removing what is not there changes nothing (and never creates a cart). */
+export async function removeCartLine(
+  db: Tx,
+  userId: string,
+  sku: string,
+  locale: CartLocale = 'en',
+): Promise<ServerCart> {
+  return db.transaction(async (tx) => {
+    const [u] = await tx.select({ id: users.id }).from(users).where(eq(users.id, userId)).for('update');
+    if (!u) throw new NotFoundError('User not found');
+    const [cart] = await tx
+      .select({ id: carts.id })
+      .from(carts)
+      .where(and(eq(carts.userId, userId), eq(carts.status, 'active')));
+    if (!cart) return { lines: [], dropped: [], version: 0 };
+    const gone = rowsOf<{ id: string }>(
+      await tx.execute(sql`
+        delete from cart_items ci using product_variants v
+        where ci.cart_id = ${cart.id} and v.id = ci.variant_id and v.sku = ${sku}
+        returning ci.id`),
+    );
+    if (gone.length > 0) await touch(tx, cart.id);
+    return snapshot(tx, cart.id, locale);
   });
 }
 
@@ -161,7 +295,8 @@ export async function replaceCart(
       userId,
       props: { lines: keep.length, dropped: dropped.length },
     });
-    return { lines: await readLines(tx, cartId, locale), dropped };
+    await touch(tx, cartId);
+    return snapshot(tx, cartId, locale, dropped);
   });
 }
 
@@ -194,6 +329,7 @@ export async function mergeCart(
     );
     const dropped: ServerCart['dropped'] = [];
     let added = 0;
+    let raised = 0;
     let total = existing.size;
     for (const l of guest) {
       const r = resolved.get(l.sku);
@@ -208,6 +344,7 @@ export async function mergeCart(
             .update(cartItems)
             .set({ qty: l.qty })
             .where(and(eq(cartItems.cartId, cartId), eq(cartItems.variantId, r.variantId)));
+        if (l.qty > have) raised += 1;
         continue;
       }
       if (total >= CART_MAX_LINES) {
@@ -219,6 +356,7 @@ export async function mergeCart(
       added += 1;
     }
     const pruned = await pruneUnsellable(tx, cartId);
+    if (added + raised + pruned.length > 0) await touch(tx, cartId);
     await tx.insert(auditLog).values({
       actorUserId: userId,
       actorRole: 'customer',
@@ -232,9 +370,45 @@ export async function mergeCart(
       props: { kept, added, dropped: dropped.length },
     });
     return {
-      cart: { lines: await readLines(tx, cartId, locale), dropped: [...dropped, ...pruned] },
+      cart: await snapshot(tx, cartId, locale, [...dropped, ...pruned]),
       kept,
       added,
     };
   });
+}
+
+/**
+ * An order was placed (cash on delivery) or paid (online): the packs it contains leave the customer's saved cart in the
+ * same transaction, so their other devices show it on the next refresh and a stale browser copy cannot offer them again.
+ * Either the SKUs of the order or the order group is given. A cart with nothing of the order is left alone (no version
+ * move, no ping).
+ */
+export async function removeOrderedCartLines(
+  tx: Tx,
+  userId: string,
+  ordered: { skus: readonly string[] } | { groupId: string },
+): Promise<void> {
+  const [cart] = await tx
+    .select({ id: carts.id })
+    .from(carts)
+    .where(and(eq(carts.userId, userId), eq(carts.status, 'active')));
+  if (!cart) return;
+  const gone =
+    'skus' in ordered
+      ? rowsOf<{ id: string }>(
+          await tx.execute(sql`
+            delete from cart_items ci using product_variants v
+            where ci.cart_id = ${cart.id} and v.id = ci.variant_id
+              and v.sku in (select jsonb_array_elements_text(${JSON.stringify(ordered.skus)}::jsonb))
+            returning ci.id`),
+        )
+      : rowsOf<{ id: string }>(
+          await tx.execute(sql`
+            delete from cart_items ci
+            where ci.cart_id = ${cart.id} and ci.variant_id in (
+              select oi.variant_id from order_items oi join orders o on o.id = oi.order_id
+              where o.group_id = ${ordered.groupId})
+            returning ci.id`),
+        );
+  if (gone.length > 0) await touch(tx, cart.id);
 }

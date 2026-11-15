@@ -1,8 +1,28 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import type { Context } from 'hono';
-import { getCart, listWishlist, mergeCart, replaceCart, setWishlisted } from '@mechdost/db/repo';
-import { CartDto, CartMergeBody, CartPutBody } from '@mechdost/shared/cart-api';
-import { PRODUCT_SLUG_RE, WishlistChangeDto, WishlistDto } from '@mechdost/shared/wishlist-api';
+import {
+  addCartLine,
+  getCart,
+  getCartIfChanged,
+  getWishlistIfChanged,
+  mergeCart,
+  removeCartLine,
+  setCartLine,
+  setWishlisted,
+} from '@mechdost/db/repo';
+import {
+  CART_SKU_RE,
+  CartDto,
+  CartLineQtyBody,
+  CartMergeBody,
+  CartUnchangedDto,
+} from '@mechdost/shared/cart-api';
+import {
+  PRODUCT_SLUG_RE,
+  WishlistChangeDto,
+  WishlistDto,
+  WishlistUnchangedDto,
+} from '@mechdost/shared/wishlist-api';
 import type { SessionCache } from '../auth/session-cache';
 import { authenticate } from '../middleware/auth';
 import { rateLimit, RATE_RULES } from '../middleware/rate-limit';
@@ -35,6 +55,12 @@ const problems = {
   ...errorResponses,
 };
 const localeQuery = z.object({ locale: z.enum(['en', 'hi']).optional() });
+/** `since` = the version the caller already holds: an unchanged cart or list answers with no body worth sending. */
+const refreshQuery = localeQuery.extend({ since: z.coerce.number().int().min(0).optional() });
+const Sku = z
+  .string()
+  .regex(CART_SKU_RE)
+  .openapi({ param: { name: 'sku', in: 'path' } });
 const Slug = z
   .string()
   .regex(PRODUCT_SLUG_RE)
@@ -46,18 +72,46 @@ const cartGet = createRoute({
   method: 'get',
   path: '/me/cart',
   tags,
-  summary: 'Your saved cart (lines that are no longer sold are removed and reported)',
+  summary:
+    'Your saved cart (lines that are no longer sold are removed and reported). With ?since=<version>: { unchanged: true } when it has not changed',
   security,
-  request: { query: localeQuery },
-  responses: { 200: json(CartDto, 'Cart'), ...errorResponses },
+  request: { query: refreshQuery },
+  responses: { 200: json(CartDto.or(CartUnchangedDto), 'Cart'), ...errorResponses },
 });
-const cartPut = createRoute({
-  method: 'put',
-  path: '/me/cart',
+const lineParams = { params: z.object({ sku: Sku }), query: localeQuery };
+const cartAdd = createRoute({
+  method: 'post',
+  path: '/me/cart/lines/{sku}/add',
   tags,
-  summary: 'Make your saved cart exactly these lines (SKU and quantity only; never a price)',
+  summary: 'Add to a line (adds from two devices sum; the line stops at 99; up to 20 lines)',
   security,
-  request: { query: localeQuery, ...body(CartPutBody) },
+  request: { ...lineParams, ...body(CartLineQtyBody) },
+  responses: {
+    200: json(CartDto, 'Cart'),
+    422: json(ErrorSchema, 'Not available, or the cart is full'),
+    ...errorResponses,
+  },
+});
+const cartSet = createRoute({
+  method: 'put',
+  path: '/me/cart/lines/{sku}',
+  tags,
+  summary: "Set a line's quantity (last write wins for this line only; other lines are untouched)",
+  security,
+  request: { ...lineParams, ...body(CartLineQtyBody) },
+  responses: {
+    200: json(CartDto, 'Cart'),
+    422: json(ErrorSchema, 'Not available, or the cart is full'),
+    ...errorResponses,
+  },
+});
+const cartRemove = createRoute({
+  method: 'delete',
+  path: '/me/cart/lines/{sku}',
+  tags,
+  summary: 'Remove a line (removing what is not there changes nothing)',
+  security,
+  request: lineParams,
   responses: { 200: json(CartDto, 'Cart'), ...errorResponses },
 });
 const cartMerge = createRoute({
@@ -73,10 +127,10 @@ const wishlistGet = createRoute({
   method: 'get',
   path: '/me/wishlist',
   tags,
-  summary: 'Your wishlist, newest first',
+  summary: 'Your wishlist, newest first. With ?since=<version>: { unchanged: true } when it has not changed',
   security,
-  request: { query: localeQuery },
-  responses: { 200: json(WishlistDto, 'Wishlist'), ...errorResponses },
+  request: { query: refreshQuery },
+  responses: { 200: json(WishlistDto.or(WishlistUnchangedDto), 'Wishlist'), ...errorResponses },
 });
 const wishlistAdd = createRoute({
   method: 'put',
@@ -109,8 +163,13 @@ export function storefrontRoutes(deps: AppDeps, cache: SessionCache) {
   }
   const user = (c: Context<AppEnv>) => c.get('auth').user.id;
   app.on(
-    'PUT',
-    '/me/cart',
+    ['POST', 'PUT', 'DELETE'],
+    '/me/cart/lines/:sku',
+    rateLimit(deps.rateLimiter, CART_WRITE_RATE, (c) => c.get('auth').user.id),
+  );
+  app.on(
+    'POST',
+    '/me/cart/lines/:sku/add',
     rateLimit(deps.rateLimiter, CART_WRITE_RATE, (c) => c.get('auth').user.id),
   );
   app.on(
@@ -127,15 +186,46 @@ export function storefrontRoutes(deps: AppDeps, cache: SessionCache) {
     asked ?? (c.get('auth').user.language === 'hi' ? 'hi' : 'en');
 
   return app
-    .openapi(cartGet, async (c) =>
-      c.json(await getCart(deps.db, user(c), localeOf(c, c.req.valid('query').locale)), 200),
-    )
-    .openapi(cartPut, async (c) =>
+    .openapi(cartGet, async (c) => {
+      const { locale, since } = c.req.valid('query');
+      const loc = localeOf(c, locale);
+      return c.json(
+        since === undefined
+          ? await getCart(deps.db, user(c), loc)
+          : await getCartIfChanged(deps.db, user(c), loc, since),
+        200,
+      );
+    })
+    .openapi(cartAdd, async (c) =>
       c.json(
-        await replaceCart(
+        await addCartLine(
           deps.db,
           user(c),
-          c.req.valid('json').lines,
+          c.req.valid('param').sku,
+          c.req.valid('json').qty,
+          localeOf(c, c.req.valid('query').locale),
+        ),
+        200,
+      ),
+    )
+    .openapi(cartSet, async (c) =>
+      c.json(
+        await setCartLine(
+          deps.db,
+          user(c),
+          c.req.valid('param').sku,
+          c.req.valid('json').qty,
+          localeOf(c, c.req.valid('query').locale),
+        ),
+        200,
+      ),
+    )
+    .openapi(cartRemove, async (c) =>
+      c.json(
+        await removeCartLine(
+          deps.db,
+          user(c),
+          c.req.valid('param').sku,
           localeOf(c, c.req.valid('query').locale),
         ),
         200,
@@ -150,9 +240,10 @@ export function storefrontRoutes(deps: AppDeps, cache: SessionCache) {
       );
       return c.json(r.cart, 200);
     })
-    .openapi(wishlistGet, async (c) =>
-      c.json(await listWishlist(deps.db, user(c), localeOf(c, c.req.valid('query').locale)), 200),
-    )
+    .openapi(wishlistGet, async (c) => {
+      const { locale, since } = c.req.valid('query');
+      return c.json(await getWishlistIfChanged(deps.db, user(c), localeOf(c, locale), since ?? -1), 200);
+    })
     .openapi(wishlistAdd, async (c) =>
       c.json(await setWishlisted(deps.db, user(c), c.req.valid('param').slug, true), 200),
     )

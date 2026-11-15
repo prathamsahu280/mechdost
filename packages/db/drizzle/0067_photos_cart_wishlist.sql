@@ -75,6 +75,31 @@ ALTER TABLE "product_photos" ADD CONSTRAINT "product_photos_lqip_len" CHECK ("pr
 ALTER TABLE "product_photos" ADD CONSTRAINT "product_photos_path640_safe" CHECK ("product_photos"."path640" ~ '^[a-z0-9-]+/[0-9a-f-]{36}/[0-9a-f-]{36}-640[.]webp$');--> statement-breakpoint
 ALTER TABLE "product_photos" ADD CONSTRAINT "product_photos_rejected_has_reason" CHECK ("product_photos"."reject_reason" is null or "product_photos"."deleted_at" is not null);--> statement-breakpoint
 ALTER TABLE "media_objects" ADD CONSTRAINT "media_objects_owner_kind_valid" CHECK ("media_objects"."owner_kind" in ('service_photo','ticket_message','product_photo'));--> statement-breakpoint
+-- Live pings for the saved cart and wishlist (design 2026-11-15): a hint to re-read on the customer's other devices.
+-- The cart row's version moves on every effective change (the repository touches it), so the ping carries a real
+-- monotonic version; the wishlist ping carries the commit time in seconds (pings are hints; polling covers a repeat).
+ALTER TABLE "live_outbox" DROP CONSTRAINT "live_outbox_kind_valid";--> statement-breakpoint
+ALTER TABLE "live_outbox" ADD CONSTRAINT "live_outbox_kind_valid" CHECK ("live_outbox"."kind" in ('order','assignment','shop','workshop','request','quote','coins','cart','wishlist'));--> statement-breakpoint
+CREATE OR REPLACE FUNCTION public.live_cart_changed() RETURNS trigger
+LANGUAGE plpgsql SET search_path = '' AS $$
+BEGIN
+  PERFORM public.live_enqueue('user:' || NEW.user_id, 'cart', NEW.id, NEW.version, 'cart.changed');
+  RETURN NULL;
+END;
+$$;--> statement-breakpoint
+CREATE TRIGGER carts_live AFTER INSERT OR UPDATE ON public.carts
+  FOR EACH ROW EXECUTE FUNCTION public.live_cart_changed();--> statement-breakpoint
+CREATE OR REPLACE FUNCTION public.live_wishlist_changed() RETURNS trigger
+LANGUAGE plpgsql SET search_path = '' AS $$
+DECLARE
+  v_user uuid := CASE WHEN TG_OP = 'DELETE' THEN OLD.user_id ELSE NEW.user_id END;
+BEGIN
+  PERFORM public.live_enqueue('user:' || v_user, 'wishlist', v_user, GREATEST(1, (extract(epoch from clock_timestamp()) - 1700000000)::integer), 'wishlist.changed');
+  RETURN NULL;
+END;
+$$;--> statement-breakpoint
+CREATE TRIGGER wishlist_items_live AFTER INSERT OR DELETE ON public.wishlist_items
+  FOR EACH ROW EXECUTE FUNCTION public.live_wishlist_changed();--> statement-breakpoint
 -- New tables: RLS on, no direct client access (the API connects as owner); version + updated_at triggers on the mutable ones (spec 14).
 ALTER TABLE public.carts ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 ALTER TABLE public.cart_items ENABLE ROW LEVEL SECURITY;--> statement-breakpoint

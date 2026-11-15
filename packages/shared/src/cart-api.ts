@@ -19,8 +19,10 @@ export const CartLineIn = z
 export type CartLineInput = z.infer<typeof CartLineIn>;
 
 const Lines = z.array(CartLineIn).max(CART_MAX_LINES);
-/** Replace the stored cart with exactly these lines (an empty list empties it). */
-export const CartPutBody = z.object({ lines: Lines }).strict();
+/** Add to a line (several devices adding the same pack sum) or set a line's quantity (last write wins for that line). */
+export const CartLineQtyBody = z.object({ qty: z.number().int().min(1).max(CART_MAX_QTY) }).strict();
+/** The pack in the path of the line routes. */
+export const CartSkuParam = z.string().regex(CART_SKU_RE);
 /** Fold a guest cart into the stored one (idempotent: the larger quantity wins, never the sum). */
 export const CartMergeBody = z.object({ lines: Lines }).strict();
 
@@ -39,5 +41,9 @@ export const CartDto = z.object({
   lines: z.array(CartLineDto),
   /** Lines of the request the server did not keep, with a code (the website words it in the locale). */
   dropped: z.array(z.object({ sku: z.string(), reason: z.enum(CART_DROP_REASONS) })),
+  /** The cart's version: moves on every effective change; 0 before the first one. The refresh sends it back as `since`. */
+  version: z.number().int().min(0),
 });
+/** The answer to `GET /me/cart?since=` when nothing changed: no body worth sending. */
+export const CartUnchangedDto = z.object({ unchanged: z.literal(true), version: z.number().int().min(0) });
 export type ServerCart = z.infer<typeof CartDto>;

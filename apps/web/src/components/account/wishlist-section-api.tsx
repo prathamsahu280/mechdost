@@ -8,7 +8,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Wishlist } from '@mechdost/shared/wishlist-api';
 import { track } from '@/lib/analytics';
 import { productPhotoLoader } from '@/lib/product-photo-loader';
-import { fetchWishlist, setWishlisted } from '@/lib/wishlist-store';
+import { fetchWishlist, setWishlisted, useWishlistState } from '@/lib/wishlist-store';
 
 type Load = { kind: 'loading' } | { kind: 'error' } | { kind: 'ok'; list: Wishlist };
 
@@ -37,6 +37,13 @@ export function WishlistSectionApi() {
       live.current = false;
     };
   }, [reload]);
+
+  // The shared list moved (the poll, a tab coming back, or the other device): show the new list.
+  const { version } = useWishlistState();
+  const shown = load.kind === 'ok' ? load.list.version : null;
+  useEffect(() => {
+    if (shown !== null && version >= 0 && version !== shown) void reload();
+  }, [version, shown, reload]);
 
   async function remove(slug: string) {
     const code = await setWishlisted(locale, slug, false);

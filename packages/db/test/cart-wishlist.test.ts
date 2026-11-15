@@ -54,7 +54,7 @@ afterAll(async () => {
 describe('server cart', () => {
   it('starts empty and creates the one active cart on first write', async () => {
     const u = await user();
-    expect(await getCart(t(), u, 'en')).toEqual({ lines: [], dropped: [] });
+    expect(await getCart(t(), u, 'en')).toEqual({ lines: [], dropped: [], version: 0 });
     await replaceCart(t(), u, [{ sku: skus[0]!, qty: 2 }]);
     await replaceCart(t(), u, [{ sku: skus[0]!, qty: 3 }]);
     const carts = await db.select().from(s.carts).where(eq(s.carts.userId, u));
@@ -188,7 +188,7 @@ describe('wishlist', () => {
   it('adds and removes a product, idempotently, newest first', async () => {
     const u = await user();
     const a = await setWishlisted(t(), u, slugs[0]!, true);
-    expect(a).toEqual({ slug: slugs[0], on: true, count: 1 });
+    expect(a).toMatchObject({ slug: slugs[0], on: true, count: 1 });
     expect((await setWishlisted(t(), u, slugs[0]!, true)).count).toBe(1);
     await setWishlisted(t(), u, slugs[1]!, true);
     const list = await listWishlist(t(), u, 'en');

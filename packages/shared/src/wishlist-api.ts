@@ -25,7 +25,20 @@ export const WishlistItemDto = z.object({
 export const WishlistDto = z.object({
   items: z.array(WishlistItemDto),
   max: z.number().int(),
+  /** A fingerprint of the saved products: changes on every add or remove; sent back as `since` by the refresh. */
+  version: z.number().int().min(0),
+});
+/** The answer to `GET /me/wishlist?since=` when nothing changed. */
+export const WishlistUnchangedDto = z.object({
+  unchanged: z.literal(true),
+  version: z.number().int().min(0),
 });
 export type Wishlist = z.infer<typeof WishlistDto>;
 
-export const WishlistChangeDto = z.object({ slug: z.string(), on: z.boolean(), count: z.number().int() });
+/** The result of an add or remove, with the list's new version (so the next refresh does not fetch what this device just did). */
+export const WishlistChangeDto = z.object({
+  slug: z.string(),
+  on: z.boolean(),
+  count: z.number().int(),
+  version: z.number().int().min(0),
+});

@@ -154,3 +154,7 @@ In-app bell for every signed-in role and Firebase Cloud Messaging web push. Real
 ## Order-email trust line (2026-11-15)
 
 Order emails (`order_*` templates) carry one footer line above the company line: "Genuine parts from verified Raipur shops." (Hindi: "रायपुर की सत्यापित दुकानों से असली पार्ट्स।"). The admin rewords or hides it in Admin → Content → Trust lines (`trust.emailFooter`, spec 08); the worker reads the published text at send time and falls back to the default if the lookup fails. Other emails (refunds, service, quotes, support, partners) do not carry it.
+
+## Live updates: cart and wishlist pings (2026-11-15)
+
+`live_outbox` kinds gain `cart` and `wishlist` (events `cart.changed`, `wishlist.changed`; topic `user:<id>`, ids and a version only). Written by triggers on `carts` and `wishlist_items`, relayed like the others; **no browser listener yet** (decision 2026-11-15 "Polling, not live pings, feeds the bell for now"). Until then the website polls every 60 s while the tab is visible (spec 03 "Several devices"). **Next step:** one lazy-loaded shared RTDB listener (outside the shop bundles) for the bell, shop offers, cart and wishlist.

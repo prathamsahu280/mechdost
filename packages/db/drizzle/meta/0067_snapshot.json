@@ -1,5 +1,5 @@
 {
-  "id": "6b44bfec-bfac-4429-83ef-6dfb6b915270",
+  "id": "b3c85892-599f-47b5-9bda-f6ab205ef080",
   "prevId": "d163ca05-aeec-48f6-aa30-6eea13ff6784",
   "version": "7",
   "dialect": "postgresql",
@@ -9389,7 +9389,7 @@
         },
         "live_outbox_kind_valid": {
           "name": "live_outbox_kind_valid",
-          "value": "\"live_outbox\".\"kind\" in ('order','assignment','shop','workshop','request','quote','coins')"
+          "value": "\"live_outbox\".\"kind\" in ('order','assignment','shop','workshop','request','quote','coins','cart','wishlist')"
         },
         "live_outbox_event_format": {
           "name": "live_outbox_event_format",
