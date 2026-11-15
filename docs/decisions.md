@@ -1223,3 +1223,12 @@ Design: `docs/superpowers/specs/2026-11-15-support-next-tier-design.md` items 1 
   side-menu links come from the checker scrolling with Playwright's own method (ignores scroll padding).
 
 - **Icon-only header entries keep a hover title (2026-11-16 review).** The cart pill and the signed-out sign-in link carry itle={label} / itle={signIn} (same locale strings, so Hindi too) so sighted users still get the word at 1024-1279 px.
+
+## 2026-11-16 — Audit batch 2B builder rulings (admin audit log, coupons, refunds, shop CSV, compare)
+
+- **The compare bar appears from two products** (UI audit decisions, 2026-11-15, now built): `trayVisible()` in `lib/compare/tray-visible.ts`; with one product the card shows the `[data-compare-hint]` line and the bar stays away (a question or notice still opens it). The tray loader no longer loads the tray for a list of one.
+- **Compare page scroll padding includes the sticky product strip:** `[data-compare-head]` is measured (ResizeObserver, `--compare-head-h`) and `html:has([data-compare-head])` adds it to `scroll-padding-top` (71 px / 83 px from 1024 px + height + 12 px), so focused names and remove buttons are never left under the strip. The strip stays as is.
+- **Audit log shows codes as words:** entity and action filters are selects of the known codes; rows show `auditLabel()` wording from `adminPeople.auditWord` (per token) and `auditAction` (whole code); an unworded code is shown in `<code lang="en">`. Diff paths are shown as code.
+- **Refund failure codes are worded:** `refunds.failure_*` through `refundFailureKey()`; the raw provider code is never shown. Staff notes and finance references carry `data-user-content`.
+- **Stock file column names and yes/no values are shown as `<code lang="en">`** (the file's literal text; the API also accepts 1/0, which the Hindi problem line names). A coupon's pause reason and the shop's give-up note are staff or shop typed text: `data-user-content`.
+- **Shop active-order cards:** actions sit at the foot of the card (`mt-auto`) so side-by-side cards line their buttons up.

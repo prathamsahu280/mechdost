@@ -92,7 +92,10 @@ describe('texts', () => {
     const offenders: string[] = [];
     for (const [key, value] of Object.entries(hi.shopTier2)) {
       // ICU arguments, plural words and the example reference are not copy.
-      const text = value.replace(/\{[^}]*\}/g, ' ').replace(/PA-[A-Z0-9-]+/g, ' ');
+      const text = value
+        .replace(/<\/?code>/g, ' ')
+        .replace(/\{[^}]*\}/g, ' ')
+        .replace(/PA-[A-Z0-9-]+/g, ' ');
       for (const word of text.match(/[A-Za-z_]{2,}/g) ?? [])
         if (!allowed.has(word.toLowerCase())) offenders.push(`${key}: ${word}`);
     }

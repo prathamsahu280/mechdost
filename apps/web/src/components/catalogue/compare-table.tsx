@@ -91,6 +91,7 @@ export function CompareTable({
         {/* Sticky product strip: scrolls sideways with the body (kept in step by CompareScrollSync). */}
         <div
           role="rowgroup"
+          data-compare-head=""
           className="sticky top-[71px] z-20 border-b border-line-card bg-bg/95 tab:bg-surface/95 backdrop-blur nav:top-[83px] tab:rounded-t-card tab:border tab:px-0"
         >
           <div data-compare-scroll="head" className="no-scrollbar overflow-x-auto overscroll-x-contain">

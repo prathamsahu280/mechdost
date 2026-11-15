@@ -67,6 +67,26 @@ export function DifferencesToggle({
  * shopper swipes, the other follows. Passive listeners; a frame guard stops the two from echoing each other.
  */
 function useScrollSync() {
+  // The sticky product strip grows when names wrap: its measured height goes to the page's top scroll padding
+  // (globals.css), so a focused link or remove button is never left under it (audit 2026-11-16, CMP-TABLE).
+  useEffect(() => {
+    const strip = document.querySelector<HTMLElement>('[data-compare-head]');
+    if (!strip) return undefined;
+    const root = document.documentElement;
+    const set = () => {
+      root.style.setProperty(
+        '--compare-head-h',
+        `${String(Math.ceil(strip.getBoundingClientRect().height))}px`,
+      );
+    };
+    set();
+    const ro = new ResizeObserver(set);
+    ro.observe(strip);
+    return () => {
+      ro.disconnect();
+      root.style.removeProperty('--compare-head-h');
+    };
+  }, []);
   useEffect(() => {
     const head = document.querySelector<HTMLElement>('[data-compare-scroll="head"]');
     const body = document.querySelector<HTMLElement>('[data-compare-scroll="body"]');

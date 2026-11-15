@@ -8,6 +8,7 @@ import { track } from '@/lib/analytics';
 import { cleanLabel, startNew, toPrompt, type CompareAsk, type ComparePrompt } from '@/lib/compare/prompt';
 import { nameIn, switchText, type SwitchLabels } from '@/lib/compare/prompt-text';
 import { signal } from '@/lib/compare/signal';
+import { COMPARE_TRAY_MIN, trayVisible } from '@/lib/compare/tray-visible';
 import { clearCompare, compareHref, readCompare, useCompare } from '@/lib/compare/store';
 
 export interface CompareTrayLabels extends SwitchLabels {
@@ -105,7 +106,7 @@ export function CompareTray({
   }, [prompt]);
 
   // Focus never ends up under the tray (WCAG 2.4.11): its height is published for the page's scroll padding.
-  const visible = !hidden && (list.slugs.length > 0 || prompt !== null);
+  const visible = trayVisible({ count: list.slugs.length, hiddenPage: hidden, asking: prompt !== null });
   useEffect(() => {
     const el = tray.current;
     const root = document.documentElement;
@@ -179,7 +180,7 @@ export function CompareTray({
           }}
         />
       ) : null}
-      {list.slugs.length > 0 ? (
+      {list.slugs.length >= COMPARE_TRAY_MIN ? (
         // Below the desktop layout the bar ends before the assistant button (52 px at the right edge, I2).
         <div
           data-slot="compare-bar"

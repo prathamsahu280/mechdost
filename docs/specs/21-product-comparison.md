@@ -17,7 +17,7 @@ A rider choosing between engine oils (or batteries, tyres) sees what each costs,
    - **Another category:** the tray asks once — "Start a new comparison with Batteries?" / "This removes 1 Lubricants item." — with **Start new** (primary) and **Keep current**. Start new replaces the list with that product; every card and the product page follow at once (one shared store).
    - **A fifth product:** the tray says "You can compare up to 4 products. Remove one first." with **OK**.
    - **The browser refuses to save:** the tray says so (the shared "Not added…" wording) with **OK**.
-2. **Tray:** "Compare (n)", the category name and "Clear" at the bottom left (above the tab bar on phones, clear of the assistant button); on every page while something is picked, except `/compare` and `/checkout` (revised 2026-11-14; see "Layout revision" below). The question or notice opens above the bar, inside the tray (not a modal).
+2. **Tray (appears from 2 products, 2026-11-16; with one the card shows the hint line instead):** "Compare (n)", the category name and "Clear" at the bottom left (above the tab bar on phones, clear of the assistant button); on every page while something is picked, except `/compare` and `/checkout` (revised 2026-11-14; see "Layout revision" below). The question or notice opens above the bar, inside the tray (not a modal).
 3. **Compare page `/compare?p=a,b,c`:** server-rendered from the URL, so the link can be shared. The page:
    - keeps valid, distinct slugs, at most 4;
    - keeps only the first product's category and notes when anything was left out;
@@ -185,3 +185,7 @@ A rider choosing between engine oils (or batteries, tyres) sees what each costs,
 ## Audit batch 1a (2026-11-16)
 
 Compare column headers wrap (no line-clamp: product names are never cut). Ticking the first product shows `data-compare-hint` ("Added to compare — pick one more", hi "तुलना में जुड़ा — एक और चुनें") next to the box, read by the live region; it goes with a second product or an untick. Tray still from 2 products. Guard: `apps/web/test/audit-batch-1a.test.ts`.
+
+## Revision 2026-11-16
+
+- The bar shows from two products or while a question or notice is open. The sticky product strip on `/compare` publishes its height (`--compare-head-h`) into the page's top scroll padding so focused controls stay clear of it.

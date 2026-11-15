@@ -8,10 +8,30 @@ import { formatDateTimeIst, peopleErrorKey } from '@/lib/admin-people-view';
 import { commonErrorKey } from '@/lib/api-error-key';
 import { track } from '@/lib/analytics';
 import { diffJson } from '@/lib/audit-diff';
+import { ACTION_CODES, ENTITY_CODES, auditLabel, type AuditDict } from '@/lib/audit-label';
 import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 
 const EMPTY: AuditQuery = { entity: '', entityId: '', code: '', actor: '', action: '', from: '', to: '' };
 const text = (v: FormDataEntryValue | null) => (typeof v === 'string' ? v : '');
+
+/** The locale wording of audit codes (`adminPeople.auditWord` per token, `auditAction` per whole code). */
+function useAuditDict(): AuditDict {
+  const t = useTranslations('adminPeople');
+  return {
+    word: (token) =>
+      t.has(`auditWord.${token}` as 'auditWord.order') ? t(`auditWord.${token}` as 'auditWord.order') : null,
+    action: (key) =>
+      t.has(`auditAction.${key}` as 'auditAction.shop_went_live')
+        ? t(`auditAction.${key}` as 'auditAction.shop_went_live')
+        : null,
+  };
+}
+
+/** A code as a label in the page language; an unworded one stays as stored, in code style. */
+function CodeLabel({ code, dict }: { code: string; dict: AuditDict }) {
+  const { text, known } = auditLabel(code, dict);
+  return known ? <>{text}</> : <code lang="en">{text}</code>;
+}
 
 /**
  * Admin → Audit log (real sign-in builds; design 2026-11-15, spec 13): who changed what and when, newest first.
@@ -79,6 +99,7 @@ export function AdminAuditApi() {
     void run(q);
   }
 
+  const dict = useAuditDict();
   const own = error ? peopleErrorKey(error) : null;
   const field = (name: keyof AuditQuery, label: string, extra: { type?: string; max?: number } = {}) => (
     <div>
@@ -98,6 +119,27 @@ export function AdminAuditApi() {
     </div>
   );
 
+  const choice = (name: 'entity' | 'action', label: string, codes: readonly string[]) => {
+    const options = codes
+      .map((code) => ({ code, text: auditLabel(code, dict).text }))
+      .sort((a, b) => a.text.localeCompare(b.text, locale));
+    return (
+      <div>
+        <label htmlFor={`audit-${name}`} className="text-sm font-bold text-ink">
+          {label}
+        </label>
+        <select id={`audit-${name}`} name={name} className={portalField} defaultValue={query[name]}>
+          <option value="">{t('audit_any')}</option>
+          {options.map((o) => (
+            <option key={o.code} value={o.code}>
+              {o.text}
+            </option>
+          ))}
+        </select>
+      </div>
+    );
+  };
+
   return (
     <section aria-labelledby="audit-title" className="space-y-4">
       <div>
@@ -114,11 +156,11 @@ export function AdminAuditApi() {
         role="search"
         className={`${portalCard} grid gap-3 min-[600px]:grid-cols-2 min-[1000px]:grid-cols-3`}
       >
-        {field('entity', t('audit_entity'))}
+        {choice('entity', t('audit_entity'), ENTITY_CODES)}
         {field('entityId', t('audit_entityId'))}
         {field('code', t('audit_code'), { max: 40 })}
         {field('actor', t('audit_actor'), { max: 40 })}
-        {field('action', t('audit_action'))}
+        {choice('action', t('audit_action'), ACTION_CODES)}
         <div className="grid grid-cols-2 gap-2">
           {field('from', t('audit_from'), { type: 'date', max: 10 })}
           {field('to', t('audit_to'), { type: 'date', max: 10 })}
@@ -171,7 +213,7 @@ export function AdminAuditApi() {
       {rows.length > 0 ? (
         <ul className="space-y-2">
           {rows.map((r) => (
-            <AuditRow key={r.id} row={r} onOnlyActor={onlyActor} />
+            <AuditRow key={r.id} row={r} dict={dict} onOnlyActor={onlyActor} />
           ))}
         </ul>
       ) : null}
@@ -191,7 +233,15 @@ export function AdminAuditApi() {
   );
 }
 
-function AuditRow({ row: r, onOnlyActor }: { row: AuditRowDto; onOnlyActor: (actor: string) => void }) {
+function AuditRow({
+  row: r,
+  dict,
+  onOnlyActor,
+}: {
+  row: AuditRowDto;
+  dict: AuditDict;
+  onOnlyActor: (actor: string) => void;
+}) {
   const t = useTranslations('adminPeople');
   const locale = useLocale();
   const lines = diffJson(r.before, r.after);
@@ -199,15 +249,18 @@ function AuditRow({ row: r, onOnlyActor }: { row: AuditRowDto; onOnlyActor: (act
     <li className={`${portalCard} !p-0`}>
       <details className="group">
         <summary className="flex min-h-11 cursor-pointer flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-3">
-          <span className="min-w-0 text-sm font-bold break-all text-ink" lang="en">
-            {r.action}
+          <span className="min-w-0 text-sm font-bold break-words text-ink">
+            <CodeLabel code={r.action} dict={dict} />
           </span>
           <span className="text-xs text-muted">{formatDateTimeIst(r.at, locale)}</span>
           <span className="w-full text-xs break-all text-muted">
-            <span lang="en">
-              {r.entity}
-              {r.entityId ? ` · ${r.entityId}` : ''}
-            </span>
+            <CodeLabel code={r.entity} dict={dict} />
+            {r.entityId ? (
+              <>
+                {' · '}
+                <span lang="en">{r.entityId}</span>
+              </>
+            ) : null}
             {' · '}
             {r.actorUserId ? (
               <span data-user-content>{r.actorName ?? t('audit_actorUnknown')}</span>
@@ -233,7 +286,7 @@ function AuditRow({ row: r, onOnlyActor }: { row: AuditRowDto; onOnlyActor: (act
                     <span className="mr-2 rounded-pill bg-pill px-2 py-0.5 text-muted">
                       {t(`audit_${l.kind}`)}
                     </span>
-                    <span lang="en">{l.path === '' ? t('audit_wholeValue') : l.path}</span>
+                    {l.path === '' ? t('audit_wholeValue') : <code lang="en">{l.path}</code>}
                   </p>
                   <p className="mt-1 font-mono text-xs break-all text-ink" lang="en">
                     {l.before !== null ? <span className="text-muted">{l.before}</span> : null}

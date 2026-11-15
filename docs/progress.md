@@ -392,3 +392,5 @@ Audit items 2 (header too wide at 1024 px) and 8 (privacy banner covers controls
 only; item 3 verified as a checker issue (header 85 px max < 96 px scroll padding). Guards: `test/site-chrome-fit.test.ts`
 (4 tests); Playwright specs written, not run: `e2e/chrome-fit.spec.ts`. Coordinator: build, measure at 1024-1100 px
 (en/hi, signed in/out, cart 99), re-run the audit rows. Rulings: decisions 2026-11-16.
+
+- 2026-11-16 audit batch 2B (builder): admin audit log (word labels, select filters), coupons pause reason, refund failure wording, shop CSV code-style columns, shop active cards aligned, compare tray from 2 plus compare strip scroll padding. Tests: audit-label, refund-views, shop-csv-copy, compare-tray-visible (web 87 files / 638 tests green, shared 441). Not run: Playwright, next build. Rulings: decisions 2026-11-16 (batch 2B). For agent 2C: the audit-log entity/action filters are now selects, and e2e that expected the tray with one product must expect only the hint.

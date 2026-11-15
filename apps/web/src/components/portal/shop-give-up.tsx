@@ -109,6 +109,7 @@ export function GiveUpOrder({ order, onChanged }: { order: ShopOrderDto; onChang
         onChange={(e) => {
           setNote(e.target.value);
         }}
+        data-user-content
         className={`${portalField} py-2`}
       />
       {error ? (

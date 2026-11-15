@@ -534,6 +534,17 @@ html[data-consent-open]:has([data-compare-tray][data-prompt]) {
   }
 }
 
+/* The compare page's sticky product strip (sticky under the site header: top 71 px, 83 px from 1024 px) hides what
+   it covers: the top scroll padding grows by its measured height (published as --compare-head-h by the page). */
+html:has([data-compare-head]) {
+  scroll-padding-top: calc(71px + var(--compare-head-h, 6rem) + 0.75rem);
+}
+@media (min-width: 1024px) {
+  html:has([data-compare-head]) {
+    scroll-padding-top: calc(83px + var(--compare-head-h, 6rem) + 0.75rem);
+  }
+}
+
 /*
  * "Add to cart", the quantity stepper and the "Compare" checkbox (add-to-cart-button.tsx, compare-toggle.tsx). Their
  * styles live here rather than in class strings, so the islands on every shop page ship fewer bytes (review
