@@ -108,3 +108,18 @@ Product photos are rendered by a **Server Component** with `getImageProps` (a pl
   as OVER (a few bytes above), so the bell's switch got the same inline-env fix: `/` 164.0, `/shop` 179.8, product
   177.9, `/workshops` 178.8, `/cart` 179.8 KB gz. **Headroom on `/shop` is 0.2 KB**; next: inline env in every remaining `AUTH_MODE`/`DATA_MODE` switch (bell, push, header) to win it back.
 - Guards: `apps/web/test/cart-pill-lazy.test.ts`, `apps/web/test/storefront-next-tier.test.ts`.
+
+## Budget incident 2026-11-16 (night): feature merges
+
+After merging the logo, closable panels, refunds, quotes, coupons and shop staff work, `/shop` measured 185.7, product
+183.9, `/workshops` 184.6, `/cart` 185.6 KB gz (budget 180). Causes and fixes:
+
+- The header logo used `next/image`, which pulled its client code (~5.5 KB gz) into every page without another
+  image. Fixed with a plain `<img>` for the vector logo (decisions 2026-11-16; guard `test/brand-assets.test.ts`).
+- `PanelDismiss` (Escape closes panels, mounted on every page) imported its logic statically (~0.6 KB gz). Fixed: the
+  logic lives in `lib/panel-dismiss-runtime.ts`, loaded on the first opener click or Escape (guard
+  `test/panel-dismiss.test.ts`).
+
+After: `/` 164.0, `/shop` 179.9, product 178.1, `/workshops` 178.9, `/cart` 179.8, compare 159.2 KB gz. **`/shop` has
+0.1 KB of room**: the next addition to the shop first load needs a matching cut (candidates: lazy compare tray code,
+the filter sheet).
