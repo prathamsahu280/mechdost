@@ -1829,7 +1829,7 @@
     "reason_price_mismatch": "price has changed",
     "reason_other": "another reason",
     "offeredTo": "Offered to {shop}",
-    "expiresIn": "{hours, plural, =0 {{mins} min left to accept} other {{mins, plural, =0 {{hours} h left to accept} other {{hours} h {mins} min left to accept}}}}",
+    "expiresIn": "{hours, plural, =0 {{mins} min left to accept} one {{mins, plural, =0 {1 h left to accept} other {1 h {mins} min left to accept}}} other {{mins, plural, =0 {{hours} h left to accept} other {{hours} h {mins} min left to accept}}}}",
     "expired": "No answer from {shop} — reroute or reject",
     "acceptedBy": "Accepted by {shop}",
     "reject": "Reject with a message",
