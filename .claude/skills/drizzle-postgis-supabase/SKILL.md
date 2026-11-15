@@ -56,7 +56,7 @@ Package: `packages/db`. Read `docs/specs/14-data-integrity.md` and `docs/researc
 
 Use `(select auth.uid())` style, `to authenticated`, separate policies per operation with `with check`, index the policy
 columns. API connects as the owner role (bypasses RLS) and enforces scope in repositories; RLS is the mirror for
-Realtime/Storage/any direct client access. Test with SQL as `authenticated` role.
+Realtime/Storage/any direct client access. Test with SQL as `authenticated` role. **Built (0074, 2026-11-16):** policies in `drizzle/0074_rls_mirror_policies.sql`, helpers in schema `private` (`current_user_id()` maps JWT `sub` to `users.firebase_uid`), SELECT-only deny-list column grants; every new table must be added to `packages/db/test/rls-inventory.ts` (default `none`); see `docs/research/rls-matrix.md`, `test/rls.test.ts`.
 
 ## Test harness
 

@@ -70,7 +70,8 @@ const clientGrants = async () =>
     (
       await db.execute(sql`
     select table_name || ':' || grantee || ':' || privilege_type as g from information_schema.role_table_grants
-    where table_schema = 'public' and grantee in ('anon', 'authenticated') order by 1`)
+    where table_schema = 'public' and grantee in ('anon', 'authenticated')
+      and table_name not in (select tablename from pg_policies where schemaname = 'public') order by 1`)
     ).rows as { g: string }[]
   ).map((r) => r.g);
 
@@ -89,7 +90,8 @@ describe('row-level security', () => {
     await db.execute(sql`drop view zz_view_probe`);
   });
 
-  it('leaves no table privileges to the anon and authenticated roles', async () => {
+  // Tables with a read policy (the RLS mirror, rls.test.ts) are the only ones a client role may hold SELECT on.
+  it('leaves no table privileges to the anon and authenticated roles on tables without a policy', async () => {
     expect(await clientGrants()).toEqual([]);
     await db.execute(sql`create table zz_grant_probe (id int)`);
     await db.execute(sql`grant select on zz_grant_probe to anon`);
