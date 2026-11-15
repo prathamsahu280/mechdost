@@ -157,6 +157,11 @@ export const OPERATIONAL_SETTINGS = {
   'service.photos_public': { kind: 'boolean', default: false, globalOnly: true },
   /** Most photos per stage (before, after) for one job. */
   'service.photos_max_per_stage': { kind: 'int', min: 1, max: 12, default: 6, globalOnly: true },
+  /**
+   * Product photos (spec 02, user 2026-11-15): staff always add photos; with this on, shops may also add photos for the
+   * products they sell, shown only after staff approve each one. Off by default. Site-wide.
+   */
+  'catalogue.shop_photo_uploads': { kind: 'boolean', default: false, globalOnly: true },
 } as const satisfies Record<string, SettingSpec>;
 
 /**

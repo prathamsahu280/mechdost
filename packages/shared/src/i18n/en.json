@@ -2702,6 +2702,7 @@
     "api_set_service_photos_required": "Workshops must add before and after photos to a job",
     "api_set_service_photos_public": "Show completed jobs’ photos on the workshop page",
     "api_set_service_photos_max_per_stage": "Most photos per stage (before, after) for one job",
+    "api_set_catalogue_shop_photo_uploads": "Let shops add photos to products they sell (shown after approval)",
     "api_set_orders_customer_self_cancel_cod": "Customers may cancel their own cash-on-delivery order until the shop confirms it",
     "api_set_orders_customer_self_cancel_online": "Customers may cancel their own prepaid (online) order until the shop confirms it; the refund goes to the original payment method",
     "api_set_orders_acceptance_timeout_min": "Time a shop has to accept an order",

@@ -6,12 +6,14 @@
  */
 import { sql } from 'drizzle-orm';
 import { check, index, integer, pgTable, smallint, text, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import { PRODUCT_PHOTO_MAX, PRODUCT_PHOTO_STATUSES } from '@mechdost/shared/product-photos';
 import { PHOTO_STAGES } from '@mechdost/shared/service-photos';
 import { createdAt, id, ts, updatedAt, version } from './_common';
+import { productVariants, products, shops } from './catalogue';
 import { users } from './identity';
 import { serviceRequests } from './services';
 
-export const MEDIA_OWNER_KINDS = ['service_photo', 'ticket_message'] as const;
+export const MEDIA_OWNER_KINDS = ['service_photo', 'ticket_message', 'product_photo'] as const;
 
 export const mediaObjects = pgTable(
   'media_objects',
@@ -92,5 +94,75 @@ export const servicePhotos = pgTable(
       .on(t.requestId, t.stage, t.sortOrder)
       .where(sql`${t.deletedAt} is null`),
     index().on(t.createdBy),
+  ],
+);
+
+/**
+ * A product's photos (spec 02 "Product photos", design 2026-11-15). One row per picture: the 1600 and 320 WebP live in
+ * its `media_objects` row (`path`, `thumb_path`), the 640 here, plus a tiny inline placeholder. Position is the explicit
+ * `sort` (0 = cover), changed only by the repository under the product row lock, which also holds the limit of
+ * `PRODUCT_PHOTO_MAX` live rows. A shop's photo is `pending` until staff approve it; a refused or removed photo is
+ * soft deleted (kept for the audit trail) and never served.
+ */
+export const productPhotos = pgTable(
+  'product_photos',
+  {
+    id: id(),
+    productId: uuid()
+      .notNull()
+      .references(() => products.id, { onDelete: 'cascade' }),
+    variantId: uuid().references(() => productVariants.id, { onDelete: 'cascade' }),
+    mediaId: uuid()
+      .notNull()
+      .references(() => mediaObjects.id, { onDelete: 'restrict' }),
+    /** Object key of the 640 px variant (the 1600 and 320 keys are on the media row). */
+    path640: text().notNull(),
+    alt: text().notNull(),
+    altHi: text().notNull(),
+    sort: smallint().notNull().default(0),
+    /** A 16 px WebP as a data URL, shown while the photo loads. */
+    lqip: text(),
+    width: integer().notNull(),
+    height: integer().notNull(),
+    status: text().notNull().default('approved'),
+    submittedByShopId: uuid().references(() => shops.id, { onDelete: 'set null' }),
+    reviewedBy: uuid().references(() => users.id, { onDelete: 'set null' }),
+    reviewedAt: ts(),
+    /** Why staff refused it (a code); set together with `deleted_at`. */
+    rejectReason: text(),
+    createdBy: uuid().references(() => users.id, { onDelete: 'set null' }),
+    version: version(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    deletedAt: ts(),
+  },
+  (t) => [
+    check(
+      'product_photos_status_valid',
+      sql`${t.status} in (${sql.raw(PRODUCT_PHOTO_STATUSES.map((s) => `'${s}'`).join(','))})`,
+    ),
+    check(
+      'product_photos_sort_range',
+      sql`${t.sort} between 0 and ${sql.raw(String(PRODUCT_PHOTO_MAX - 1))}`,
+    ),
+    check(
+      'product_photos_alt_len',
+      sql`char_length(${t.alt}) between 3 and 160 and char_length(${t.altHi}) between 3 and 160`,
+    ),
+    check('product_photos_lqip_len', sql`${t.lqip} is null or char_length(${t.lqip}) <= 2000`),
+    check(
+      'product_photos_path640_safe',
+      sql`${t.path640} ~ '^[a-z0-9-]+/[0-9a-f-]{36}/[0-9a-f-]{36}-640[.]webp$'`,
+    ),
+    check('product_photos_rejected_has_reason', sql`${t.rejectReason} is null or ${t.deletedAt} is not null`),
+    uniqueIndex('product_photos_media_uq').on(t.mediaId),
+    index('product_photos_product_live_idx')
+      .on(t.productId, t.sort)
+      .where(sql`${t.deletedAt} is null`),
+    index('product_photos_pending_idx')
+      .on(t.createdAt)
+      .where(sql`${t.status} = 'pending' and ${t.deletedAt} is null`),
+    index().on(t.variantId),
+    index().on(t.submittedByShopId),
   ],
 );

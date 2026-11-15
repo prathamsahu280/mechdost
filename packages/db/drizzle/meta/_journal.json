@@ -456,6 +456,13 @@
       "when": 1794717754530,
       "tag": "0066_coupons",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1794720206031,
+      "tag": "0067_photos_cart_wishlist",
+      "breakpoints": true
     }
   ]
 }

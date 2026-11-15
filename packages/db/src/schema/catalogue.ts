@@ -370,26 +370,6 @@ export const productVariants = pgTable(
   ],
 );
 
-export const productPhotos = pgTable(
-  'product_photos',
-  {
-    id: id(),
-    productId: uuid()
-      .notNull()
-      .references(() => products.id, { onDelete: 'cascade' }),
-    variantId: uuid().references(() => productVariants.id, { onDelete: 'cascade' }),
-    storagePath: text().notNull(),
-    alt: text().notNull(),
-    altHi: text(),
-    sort: integer().notNull().default(0),
-    blurhash: text(),
-    width: integer().notNull(),
-    height: integer().notNull(),
-    createdAt: createdAt(),
-  },
-  (t) => [index().on(t.productId, t.sort), index().on(t.variantId)],
-);
-
 export const partNumbers = pgTable(
   'part_numbers',
   {
