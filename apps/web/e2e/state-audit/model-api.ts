@@ -35,6 +35,7 @@ export const REAL_ADMIN_SECTIONS = [
   'reviews',
   'support',
   'coins',
+  'coupons',
   'content',
   'layout',
   'settings',
@@ -351,6 +352,28 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
     realApi: true,
   },
 
+  // ─────────────── Shop offers to accept (coupons funded by the shop; spec 07; design 2026-11-15) ───────────────
+  {
+    code: 'API-SHOP-OFFERS',
+    page: 'Shop portal (/partner/shop) → Offers to accept, real sign-in',
+    component:
+      'Offers a shop is asked to fund: waiting, accepted, declined, many, long Hindi/English text, error; accept / decline / withdraw; nothing shown when there are none',
+    path: '/partner/shop',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['shop'] },
+      { name: 'offers', values: ['none', 'pending', 'accepted', 'declined', 'many', 'error'] },
+      stress,
+    ],
+    checks: [...BASE_CHECKS, 'aligned'],
+    align: [{ items: 'main #shop-offers ul > li' }],
+    sweep: 12,
+    note: `${API_NOTE} Owner view only (staff get 403 OWNER_ONLY and the card stays hidden).`,
+    realApi: true,
+  },
+
   // ─────────────── Admin → Partners → Shops (management, hours, warnings; specs 07, 08) ───────────────
   {
     code: 'API-ADM-SHOPS',
@@ -496,6 +519,27 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
       { name: 'form', values: ['clean', 'errors', 'filled'] },
     ],
     sweep: 12,
+    note: API_NOTE,
+    realApi: true,
+  },
+  {
+    code: 'API-ADM-COUPONS',
+    page: 'Admin → Coupons, real sign-in',
+    component:
+      'Coupon list (live, waiting for the shop, declined, paused, scheduled, ended, used up; MechDost- and shop-funded), new/edit form with field errors, pause with a reason',
+    path: '/admin/coupons',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['admin'] },
+      { name: 'coupons', values: ['none', 'few', 'many', 'paused', 'waiting-shop', 'error'] },
+      { name: 'form', values: ['closed', 'new', 'errors'] },
+      stress,
+    ],
+    checks: [...BASE_CHECKS, 'aligned'],
+    align: [{ items: 'main section ul > li' }],
+    sweep: 14,
     note: API_NOTE,
     realApi: true,
   },

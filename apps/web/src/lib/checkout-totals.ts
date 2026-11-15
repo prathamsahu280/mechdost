@@ -9,10 +9,15 @@ export function checkoutTotals(input: {
   codFeePaise: number;
   onlineTotalPaise: number;
   coinDiscountPaise: number;
+  /** The coupon's discount (spec 03), taken off before the coins; 0 when none. */
+  couponDiscountPaise?: number;
 }): { feePaise: number; payablePaise: number } {
   const cod = input.method === 'cod';
   return {
     feePaise: cod ? input.codFeePaise : 0,
-    payablePaise: (cod ? input.totalPaise : input.onlineTotalPaise) - input.coinDiscountPaise,
+    payablePaise:
+      (cod ? input.totalPaise : input.onlineTotalPaise) -
+      (input.couponDiscountPaise ?? 0) -
+      input.coinDiscountPaise,
   };
 }

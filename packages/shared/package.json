@@ -8,6 +8,8 @@
     "./money": "./src/money.ts",
     "./coins": "./src/coins.ts",
     "./coins-api": "./src/coins-api.ts",
+    "./coupon": "./src/coupon.ts",
+    "./coupon-api": "./src/coupon-api.ts",
     "./ids": "./src/ids.ts",
     "./time": "./src/time.ts",
     "./invoice": "./src/invoice.ts",

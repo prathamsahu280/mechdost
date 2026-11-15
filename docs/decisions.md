@@ -1041,3 +1041,16 @@ Design: `docs/superpowers/specs/2026-11-15-support-next-tier-design.md` items 1 
   security findings are fixed before they are described in commit messages in detail.
 - **Later:** before going private again, set an Actions spending limit or move CI to a self-hosted runner that is not
   the production server (Docker builds would starve the live site of memory).
+
+## 2026-11-15 — Coupons built (builder rulings under the user's "Next tier answers")
+
+- **Who funds what is money in the payout ledger.** MechDost-funded: the delivering shop is paid in full, so a `coupon_discount` payout entry (positive, like `coin_discount`) makes it whole for the discount it did not collect. Shop-funded: no entry, the shop's payout is simply the lower amount, and the shop must have accepted the terms first. A shop-funded discount on an order routed to a different shop is made good by MechDost (the funder never pays for another shop's goods). Cost if wrong: finance changes one function (`recordShopCouponDiscount`); the order keeps its snapshot, so no history is lost.
+- **Free delivery is always MechDost-funded** (CHECK). A shop does not control the delivery charge. Cost if wrong: one CHECK and the admin form.
+- **Minimum order is measured on the products the coupon applies to** (a shop's offer cannot be unlocked by another shop's goods). Cost if wrong: one line in `applyCoupon`.
+- **Coins after the coupon, on the net products; COD cap after both; GST stays on the gross line** (the same as coins today). Under CGST s.15(3)(a) a discount shown on the invoice reduces the taxable value, which matters for shop-funded coupons: queued as Q114 with the current behaviour as the default. Cost if wrong: invoice tax lines change (needs a design for tax on the net line).
+- **Release on cancel or reject only when every part of the order is dead; partial refunds, partial cancels and delivered orders keep the use.** Cost if wrong: customers on a multi-shop order cannot reuse a limit-1 coupon after one part is cancelled (they can still get the money back).
+- **No coupons on bulk quote orders** (spec 19), same as coins.
+- **Codes are never listed publicly.** The customer types a code and sees its conditions and saving before applying; checks are rate limited (30 per hour per user, 60 per IP). Cost if wrong: a public "offers for you" list needs a new endpoint and a visibility flag per coupon.
+- **Admin edits compare-and-set on `config_version`**, not `version` (the usage counter bumps `version` with every order). Funder, kind and shop lock after the first use; money changes on a shop-funded coupon re-ask the shop.
+- **Largest-remainder allocation across lines** (ties to the earlier line); recorded in spec 03.
+- Not built (queued in the ledger): public offers list, coupon reports (usage per coupon in analytics), campaigns/automatic offers, whole-order refund after delivery releasing the use.

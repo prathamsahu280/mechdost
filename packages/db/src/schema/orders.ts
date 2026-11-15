@@ -59,7 +59,11 @@ export const orderGroups = pgTable(
     /** MechDost Coins used on this checkout and the part of `discountPaise` they paid (spec 20). */
     coinsRedeemed: integer().notNull().default(0),
     coinDiscountPaise: paise().notNull().default(0),
-    couponId: uuid(),
+    /** The one coupon used (spec 03): id, the code as typed, its discount and a snapshot of its rules and the per-line allocation. */
+    couponId: uuid().references(() => coupons.id, { onDelete: 'restrict' }),
+    couponCode: text(),
+    couponDiscountPaise: paise().notNull().default(0),
+    couponSnapshot: jsonb(),
     gstin: text(),
     businessName: text(),
     note: text(),
@@ -98,6 +102,15 @@ export const orderGroups = pgTable(
     check(
       'order_groups_coins_consistent',
       sql`${t.coinsRedeemed} >= 0 and ${t.coinDiscountPaise} >= 0 and ${t.coinDiscountPaise} <= ${t.discountPaise} and (${t.coinsRedeemed} = 0) = (${t.coinDiscountPaise} = 0)`,
+    ),
+    // The discount is exactly the coupon plus the coins (coupon first, then coins; spec 03 / 20).
+    check(
+      'order_groups_discount_parts',
+      sql`${t.discountPaise} = ${t.couponDiscountPaise} + ${t.coinDiscountPaise} and ${t.couponDiscountPaise} >= 0`,
+    ),
+    check(
+      'order_groups_coupon_set',
+      sql`(${t.couponId} is null) = (${t.couponCode} is null) and (${t.couponId} is null) = (${t.couponSnapshot} is null) and (${t.couponId} is not null or ${t.couponDiscountPaise} = 0)`,
     ),
     check(
       'order_groups_total_consistent',
@@ -146,6 +159,9 @@ export const orders = pgTable(
     /** This sub-order's share of the checkout's MechDost Coins and the part of `discountPaise` they paid (spec 20). */
     coinsRedeemed: integer().notNull().default(0),
     coinDiscountPaise: paise().notNull().default(0),
+    /** This sub-order's share of the coupon (products + delivery) and who funds it; `discount_paise` = coupon + coins. */
+    couponDiscountPaise: paise().notNull().default(0),
+    couponFunder: text(),
     cancellableUntilStatus: text().notNull().default('confirmed'),
     /** Reject (later: cancel) reason code and the message shown to the customer (spec 04). */
     statusReasonCode: text(),
@@ -189,6 +205,14 @@ export const orders = pgTable(
       sql`${t.coinsRedeemed} >= 0 and ${t.coinDiscountPaise} >= 0 and ${t.coinDiscountPaise} <= ${t.discountPaise} and (${t.coinsRedeemed} = 0) = (${t.coinDiscountPaise} = 0)`,
     ),
     check(
+      'orders_discount_parts',
+      sql`${t.discountPaise} = ${t.couponDiscountPaise} + ${t.coinDiscountPaise} and ${t.couponDiscountPaise} >= 0`,
+    ),
+    check(
+      'orders_coupon_funder',
+      sql`(${t.couponDiscountPaise} = 0) = (${t.couponFunder} is null) and (${t.couponFunder} is null or ${t.couponFunder} in ('mechdost','shop'))`,
+    ),
+    check(
       'orders_shop_when_confirmed',
       sql`${t.status} in ('placed','awaiting_shop','needs_rerouting','cancelled','rejected') or ${t.shopId} is not null`,
     ),
@@ -220,6 +244,7 @@ export const orderItems = pgTable(
     /** The chosen shop's approved price per unit (what it is paid); `unit_paise` - this = MechDost's margin (Q11). Null on orders before 2026-11-13. */
     shopUnitPaise: paise(),
     qty: integer().notNull(),
+    /** This line's share of the coupon discount (largest-remainder allocation; the shares add up to the coupon). */
     lineDiscountPaise: paise().notNull().default(0),
     taxablePaise: paise().notNull(),
     cgstPaise: paise().notNull().default(0),
@@ -247,6 +272,7 @@ export const orderItems = pgTable(
       'order_items_shop_unit_valid',
       sql`${t.shopUnitPaise} is null or (${t.shopUnitPaise} >= 0 and (${t.shopUnitPaise} <= ${t.unitPaise} or ${t.priceSource} = 'quote'))`,
     ),
+    check('order_items_line_discount_max', sql`${t.lineDiscountPaise} <= ${t.unitPaise} * ${t.qty}`),
     check('order_items_cgst_equals_sgst', sql`${t.cgstPaise} = ${t.sgstPaise}`),
     check('order_items_intra_or_inter', sql`${t.igstPaise} = 0 or ${t.cgstPaise} = 0`),
     check(
@@ -663,11 +689,22 @@ export const invoices = pgTable(
   ],
 );
 
+/**
+ * Coupons (spec 03, design 2026-11-15 catalogue/storefront next tier). Only admin creates and configures them
+ * (`coupons:write`). Each says who funds it: MechDost (the shop is paid in full) or one shop (its payout is lower, and
+ * it must have accepted the offer in its portal first: `coupon_shop_terms`). `used_count` and the per-user counter
+ * only move by conditional UPDATEs (never oversold); `first_order_only` implies one use per customer.
+ */
 export const coupons = pgTable(
   'coupons',
   {
     id: id(),
     code: citext().notNull().unique(),
+    /** What the customer reads before applying: a short name and the conditions (en + hi, hard rule 10). */
+    title: text().notNull().default(''),
+    titleHi: text(),
+    terms: text(),
+    termsHi: text(),
     kind: text().notNull(),
     value: integer().notNull(),
     minSubtotalPaise: paise().notNull().default(0),
@@ -679,23 +716,105 @@ export const coupons = pgTable(
     usedCount: integer().notNull().default(0),
     firstOrderOnly: boolean().notNull().default(false),
     cityId: uuid().references(() => cities.id, { onDelete: 'cascade' }),
+    funder: text().notNull().default('mechdost'),
+    /** The funding shop (shop-funded only). */
+    shopId: uuid().references(() => shops.id, { onDelete: 'restrict' }),
+    /** Paused by admin (history in the audit log); the code then answers "paused". */
     active: boolean().notNull().default(true),
+    pausedReason: text(),
+    createdBy: uuid().references(() => users.id, { onDelete: 'set null' }),
+    /**
+     * Counts admin edits and pauses only: the admin screens compare-and-set on this, because `version` also moves with
+     * every redemption (the usage counter), which would make a busy coupon impossible to edit.
+     */
+    configVersion: integer().notNull().default(1),
     version: version(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
   (t) => [
     check('coupons_kind_valid', sql`${t.kind} in ('percent','flat','free_shipping')`),
+    check('coupons_funder_valid', sql`${t.funder} in ('mechdost','shop')`),
+    check('coupons_funder_shop', sql`(${t.funder} = 'shop') = (${t.shopId} is not null)`),
+    // A shop cannot fund a delivery charge it does not control; free delivery is MechDost's offer.
+    check('coupons_shop_not_free_delivery', sql`${t.funder} = 'mechdost' or ${t.kind} <> 'free_shipping'`),
+    check('coupons_code_format', sql`${t.code} ~ '^[A-Za-z0-9]{4,20}$'`),
     check(
       'coupons_value_range',
-      sql`(${t.kind} <> 'percent' or ${t.value} between 1 and 100) and ${t.value} >= 0`,
+      sql`case ${t.kind} when 'percent' then ${t.value} between 1 and 90 when 'flat' then ${t.value} between 1 and 10000000 else ${t.value} = 0 end`,
     ),
+    check(
+      'coupons_cap_percent_only',
+      sql`${t.maxDiscountPaise} is null or (${t.kind} = 'percent' and ${t.maxDiscountPaise} > 0)`,
+    ),
+    check('coupons_min_nonneg', sql`${t.minSubtotalPaise} >= 0`),
     check('coupons_window', sql`${t.endsAt} is null or ${t.endsAt} > ${t.startsAt}`),
     check(
       'coupons_usage_within_limit',
-      sql`${t.usedCount} >= 0 and (${t.usageLimitTotal} is null or ${t.usedCount} <= ${t.usageLimitTotal})`,
+      sql`${t.usedCount} >= 0 and (${t.usageLimitTotal} is null or (${t.usageLimitTotal} >= 1 and ${t.usedCount} <= ${t.usageLimitTotal}))`,
     ),
+    check('coupons_per_user_range', sql`${t.usageLimitPerUser} between 1 and 100`),
+    check('coupons_first_order_once', sql`not ${t.firstOrderOnly} or ${t.usageLimitPerUser} = 1`),
+    check('coupons_paused_reason', sql`${t.active} or char_length(${t.pausedReason}) between 3 and 300`),
     index().on(t.cityId),
+    index().on(t.shopId),
+    index().on(t.createdBy),
+    index().on(t.active, t.startsAt),
+  ],
+);
+
+/**
+ * A shop's acceptance of the terms of a coupon that it funds (one row per shop-funded coupon). The coupon cannot be
+ * redeemed until `status = 'accepted'`; changing the money terms puts it back to `pending`. `terms` is the snapshot
+ * of what the shop saw and accepted (kind, value, cap, minimum, window, limits).
+ */
+export const couponShopTerms = pgTable(
+  'coupon_shop_terms',
+  {
+    id: id(),
+    couponId: uuid()
+      .notNull()
+      .unique()
+      .references(() => coupons.id, { onDelete: 'restrict' }),
+    shopId: uuid()
+      .notNull()
+      .references(() => shops.id, { onDelete: 'restrict' }),
+    status: text().notNull().default('pending'),
+    terms: jsonb().notNull(),
+    decidedBy: uuid().references(() => users.id, { onDelete: 'set null' }),
+    decidedAt: ts(),
+    version: version(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    check('coupon_shop_terms_status_valid', sql`${t.status} in ('pending','accepted','declined')`),
+    check(
+      'coupon_shop_terms_decided',
+      sql`(${t.status} = 'pending') = (${t.decidedAt} is null) and (${t.status} = 'pending') = (${t.decidedBy} is null)`,
+    ),
+    index().on(t.shopId, t.status),
+    index().on(t.decidedBy),
+  ],
+);
+
+/** How often one customer has used a coupon. Moves only by a conditional upsert; a trigger repeats the limit. */
+export const couponUserUsage = pgTable(
+  'coupon_user_usage',
+  {
+    couponId: uuid()
+      .notNull()
+      .references(() => coupons.id, { onDelete: 'restrict' }),
+    userId: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    uses: integer().notNull().default(0),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.couponId, t.userId] }),
+    check('coupon_user_usage_nonneg', sql`${t.uses} >= 0`),
+    index().on(t.userId),
   ],
 );
 
@@ -713,11 +832,15 @@ export const couponRedemptions = pgTable(
       .notNull()
       .references(() => orderGroups.id, { onDelete: 'restrict' }),
     discountPaise: paise().notNull(),
+    funder: text().notNull().default('mechdost'),
+    /** Set when the order was cancelled or rejected in full: the use went back to the coupon and the customer. */
+    releasedAt: ts(),
     createdAt: createdAt(),
   },
   (t) => [
     unique().on(t.couponId, t.groupId),
     check('coupon_redemptions_discount_nonneg', sql`${t.discountPaise} >= 0`),
+    check('coupon_redemptions_funder_valid', sql`${t.funder} in ('mechdost','shop')`),
     index().on(t.userId, t.couponId),
     index().on(t.groupId),
   ],

@@ -111,6 +111,8 @@ export interface PlaceInput {
   business: { gstin: string; businessName: string } | null;
   /** MechDost Coins to use (spec 20); `expectedTotalPaise` already has their discount taken off. */
   coins?: number;
+  /** One coupon code (spec 03); `expectedTotalPaise` already has its discount taken off first. */
+  couponCode?: string | null;
 }
 
 /** Cash on delivery. The same idempotency key for a retry of the same attempt never makes a second order. */
@@ -125,6 +127,7 @@ export function placeCodOrder(locale: string, input: PlaceInput, idempotencyKey:
       paymentMethod: 'cod',
       ...(input.business ? { business: input.business } : {}),
       ...(input.coins ? { coins: input.coins } : {}),
+      ...(input.couponCode ? { couponCode: input.couponCode } : {}),
       locale: locale === 'hi' ? 'hi' : 'en',
     },
   });

@@ -140,6 +140,12 @@ const CompanyApi = dynamic(() => import('./admin-company-api').then((m) => m.Com
   loading: () => <div className="skeleton h-64 rounded-card" aria-hidden="true" />,
 });
 
+/** Real sign-in: coupons, MechDost- and shop-funded (spec 08, 2026-11-15); demo builds never load it. */
+const AdminCouponsApi = dynamic(() => import('./admin-coupons-api').then((m) => m.AdminCouponsApi), {
+  ssr: false,
+  loading: () => <div className="skeleton h-96 rounded-card" aria-hidden="true" />,
+});
+
 const SECTION_EMOJI: Record<AdminSection, string> = {
   overview: '📊',
   analytics: '📈',
@@ -154,6 +160,7 @@ const SECTION_EMOJI: Record<AdminSection, string> = {
   reviews: '⭐',
   support: '🛟',
   coins: '🪙',
+  coupons: '🎟️',
   content: '✏️',
   layout: '🧩',
   settings: '⚙️',
@@ -202,6 +209,7 @@ export function AdminConsole({
             {section === 'reviews' ? AUTH_MODE === 'firebase' ? <AdminReviewsApi /> : <Reviews /> : null}
             {section === 'support' ? <AdminSupport actor={account.name} /> : null}
             {section === 'coins' ? <AdminCoins actor={account.name} /> : null}
+            {section === 'coupons' && AUTH_MODE === 'firebase' ? <AdminCouponsApi /> : null}
             {section === 'partners' ? <AdminPartners actor={account.name} /> : null}
             {section === 'catalogue' ? <AdminCatalogue /> : null}
             {section === 'customers' ? <AdminCustomers actor={account.name} /> : null}

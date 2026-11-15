@@ -30,7 +30,10 @@ export const shopPayoutEntries = pgTable(
   (t) => [
     check('shop_payout_entries_kind_valid', sql`${t.kind} in (${inList(SHOP_PAYOUT_ENTRY_KINDS)})`),
     check('shop_payout_entries_amount_positive', sql`${t.amountPaise} > 0`),
-    check('shop_payout_entries_order_kind', sql`${t.kind} <> 'coin_discount' or ${t.orderId} is not null`),
+    check(
+      'shop_payout_entries_order_kind',
+      sql`${t.kind} not in ('coin_discount','coupon_discount') or ${t.orderId} is not null`,
+    ),
     index().on(t.shopId, t.createdAt, t.id),
     index().on(t.orderId),
     index().on(t.createdAt, t.id),

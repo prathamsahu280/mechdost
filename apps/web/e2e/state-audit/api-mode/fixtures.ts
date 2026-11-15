@@ -39,6 +39,7 @@ import {
   type MyShopDto,
 } from '@mechdost/shared/shop-api';
 import { ShopTeam } from '@mechdost/shared/shop-team';
+import { AdminCouponListDto, ShopOffersDto } from '@mechdost/shared/coupon-api';
 import type { AuditCase } from '../cases.ts';
 import { layoutMocks, policyMocks, settingsMocks } from './admin-config-fixtures.ts';
 import { homeFinderMocks, homeJobMocks, homeRequestMocks } from './home-fixtures.ts';
@@ -491,6 +492,42 @@ function shopPortalMocks(): Mock[] {
               ]
             : [];
         return { body: { members, invites, max: 10 } satisfies Dto<typeof ShopTeam> };
+      },
+    },
+    {
+      method: 'GET',
+      path: /^\/shop\/offers\/[^/]+$/,
+      schema: ShopOffersDto,
+      reply: ({ c }): Reply => {
+        const kind = c.state.offers ?? 'none';
+        if (kind === 'error') return { status: 500, code: 'INTERNAL' };
+        const status = kind === 'accepted' ? 'accepted' : kind === 'declined' ? 'declined' : 'pending';
+        const count = kind === 'none' ? 0 : kind === 'many' ? 6 : 1;
+        return {
+          body: {
+            offers: Array.from({ length: count }, (_, i) => ({
+              couponId: uuid(700 + i),
+              code: `SHOP${String(10 + i)}OFF`,
+              title: long(c) ? loc(c) : 'Ten percent off engine oil',
+              titleHi: long(c) ? loc(c) : 'इंजन ऑयल पर दस प्रतिशत छूट',
+              terms: long(c) ? loc(c) : 'Valid on your products only.',
+              termsHi: long(c) ? loc(c) : 'केवल आपके उत्पादों पर मान्य।',
+              kind: i % 2 === 0 ? ('percent' as const) : ('flat' as const),
+              value: i % 2 === 0 ? 10 : 5_000,
+              minSubtotalPaise: 50_000,
+              maxDiscountPaise: i % 2 === 0 ? 20_000 : null,
+              startsAt: iso(-60 * 24),
+              endsAt: iso(60 * 24 * 20),
+              usageLimitTotal: 200,
+              usageLimitPerUser: 1,
+              usedCount: i * 3,
+              firstOrderOnly: i === 1,
+              status: i === 0 ? status : ('pending' as const),
+              version: 1,
+              decidedAt: status === 'pending' || i > 0 ? null : iso(-30),
+            })),
+          } satisfies Dto<typeof ShopOffersDto>,
+        };
       },
     },
     {
@@ -1002,6 +1039,83 @@ function coinsMocks(): Mock[] {
   ];
 }
 
+function couponsMocks(c0: AuditCase): Mock[] {
+  const coupon = (c: AuditCase, i: number, over: Record<string, unknown> = {}) => ({
+    id: uuid(800 + i),
+    code: `AUDIT${String(10 + i)}`,
+    title: long(c) ? loc(c) : 'Festival offer',
+    titleHi: long(c) ? loc(c) : 'त्योहार ऑफ़र',
+    terms: i % 2 === 0 ? (long(c) ? loc(c) : 'Valid on products only.') : null,
+    termsHi: i % 2 === 0 ? (long(c) ? loc(c) : 'केवल उत्पादों पर मान्य।') : null,
+    kind: (['percent', 'flat', 'free_shipping'] as const)[i % 3] ?? ('percent' as const),
+    value: i % 3 === 0 ? 10 : i % 3 === 1 ? 5_000 : 0,
+    minSubtotalPaise: i % 2 === 0 ? 50_000 : 0,
+    maxDiscountPaise: i % 3 === 0 ? 20_000 : null,
+    startsAt: iso(-60 * 24 * 3),
+    endsAt: i % 2 === 0 ? iso(60 * 24 * 20) : null,
+    startsAtIst: '2026-11-12T10:00',
+    endsAtIst: i % 2 === 0 ? '2026-12-05T10:00' : null,
+    usageLimitTotal: i % 2 === 0 ? 200 : null,
+    usageLimitPerUser: 1,
+    usedCount: i * 4,
+    firstOrderOnly: i === 2,
+    cityCode: i % 2 === 0 ? 'RPR' : null,
+    funder: 'mechdost' as const,
+    shop: null,
+    shopTerms: null,
+    active: true,
+    pausedReason: null,
+    live: true,
+    version: 1,
+    ...over,
+  });
+  return [
+    meMock(),
+    {
+      method: 'GET',
+      path: /^\/admin\/coupons$/,
+      schema: AdminCouponListDto,
+      reply: ({ c }): Reply => {
+        const mode = c.state.coupons ?? 'few';
+        if (mode === 'error') return { status: 500, code: 'INTERNAL' };
+        const count = mode === 'none' ? 0 : mode === 'many' ? 20 : 4;
+        return {
+          body: {
+            coupons: Array.from({ length: count }, (_, i) =>
+              coupon(
+                c,
+                i,
+                mode === 'paused' && i === 0
+                  ? { active: false, pausedReason: 'Budget used up', live: false }
+                  : mode === 'waiting-shop' && i === 0
+                    ? {
+                        funder: 'shop' as const,
+                        kind: 'flat' as const,
+                        value: 5_000,
+                        maxDiscountPaise: null,
+                        shop: { id: uuid(900), name: 'Sharma Auto Parts' },
+                        shopTerms: 'pending' as const,
+                        live: false,
+                      }
+                    : {},
+              ),
+            ),
+            nextCursor: mode === 'many' ? 'next' : null,
+          } satisfies Dto<typeof AdminCouponListDto>,
+        };
+      },
+    },
+    {
+      method: 'GET',
+      path: /^\/admin\/shops$/,
+      schema: AdminShopList,
+      reply: () => ({
+        body: { items: [adminShopRow(c0, 1)], nextCursor: null } satisfies Dto<typeof AdminShopList>,
+      }),
+    },
+  ];
+}
+
 function reviewsMocks(): Mock[] {
   return [
     meMock(),
@@ -1361,8 +1475,12 @@ export function mocksFor(c: AuditCase): Mock[] {
       return workshopPerformanceMocks(c);
     case 'API-ADM-COINS':
       return coinsMocks();
+    case 'API-ADM-COUPONS':
+      return couponsMocks(c);
     case 'API-ADM-REVIEWS':
       return reviewsMocks();
+    case 'API-SHOP-OFFERS':
+      return shopPortalMocks();
     case 'API-ADM-QUOTES':
       return quotesMocks();
     case 'API-ADM-CONTENT':

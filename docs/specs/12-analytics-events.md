@@ -157,3 +157,7 @@ Client (strict schemas in `packages/shared/src/analytics.ts`): `workshop_analyti
 ## Support threads (2026-11-15)
 
 Server events (same transaction; ids, codes and counts only, never text, a path or a payout value): `support_thread_opened { ticketCode, subject: order|service, issueCode, reopened, photos }`, `support_attachment_added { count, bytes }`, `support_refund_destination_saved { ticketCode, kind: upi|bank, replaced }`, `support_refund_from_ticket { ticketCode, orderCode, amountPaise, reasonCode }`. Client event `support_ticket` gains actions `thread_opened`, `thread_reopened`, `photos_attached`, `destination_saved`, `refund_requested` and the optional `issue` (code). Click ids: `order_support_thread`, `service_support_thread`.
+
+## Coupon events (2026-11-15)
+
+Client `apply_coupon { result: applicable|refused|applied|removed, reason: <COUPON_REASONS code>|null, funder: mechdost|shop|null }` (the typed code is never recorded; hard rules 9 and 16). Server events in the same transaction: `coupon_redeemed { couponId, orderCode, discountPaise, funder, kind }`, `coupon_released { couponId, orderCode }`, `admin_coupon_saved { couponId, action, funder }`, `admin_coupon_paused { couponId, paused }`, `shop_coupon_decided { couponId, shopId, decision }`.

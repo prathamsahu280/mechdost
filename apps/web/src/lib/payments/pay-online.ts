@@ -21,6 +21,8 @@ export type PayOnlineResult =
         | 'price_changed'
         /** The coins chosen are no longer allowed (balance or cap changed): re-check them. */
         | 'coins_changed'
+        /** The coupon no longer applies (used up, ended, or the cart changed): it is dropped and the total re-quoted. */
+        | 'coupon_invalid'
         | 'blocked'
         | 'cancelled'
         | 'failed'
@@ -42,6 +44,8 @@ export interface PayOnlineInput {
   business?: { gstin: string; businessName: string } | null;
   /** MechDost Coins to use and the discount they give (spec 20); the API re-checks both. */
   coins?: { count: number; discountPaise: number } | null;
+  /** One coupon (spec 03) and the discount it gave on the screen; the API re-checks it and the total. */
+  coupon?: { code: string; discountPaise: number } | null;
 }
 
 interface RazorpayHandle {
@@ -138,10 +142,12 @@ export async function payOnline(input: PayOnlineInput): Promise<PayOnlineResult>
     const order = {
       address: input.address,
       lines: input.lines,
-      expectedTotalPaise: quote.onlineTotalPaise - (input.coins?.discountPaise ?? 0),
+      expectedTotalPaise:
+        quote.onlineTotalPaise - (input.coupon?.discountPaise ?? 0) - (input.coins?.discountPaise ?? 0),
       paymentMethod: 'online',
       ...(input.business ? { business: input.business } : {}),
       ...(input.coins && input.coins.count > 0 ? { coins: input.coins.count } : {}),
+      ...(input.coupon ? { couponCode: input.coupon.code } : {}),
       locale: input.locale === 'hi' ? 'hi' : 'en',
     };
     const idem = { 'idempotency-key': input.idempotencyKey };
@@ -161,6 +167,7 @@ export async function payOnline(input: PayOnlineInput): Promise<PayOnlineResult>
       if (code === 'PRICE_CHANGED') return { ok: false, reason: 'price_changed' };
       if (code === 'COINS_CHANGED' || code === 'INSUFFICIENT_COINS')
         return { ok: false, reason: 'coins_changed' };
+      if (code === 'COUPON_INVALID') return { ok: false, reason: 'coupon_invalid' };
       if (code === 'ORDERS_BLOCKED') return { ok: false, reason: 'blocked' };
       if (code === 'VERIFICATION_REQUIRED') return { ok: false, reason: 'verify_email' };
       if (code === 'AUTH_REQUIRED') return { ok: false, reason: 'sign_in' };

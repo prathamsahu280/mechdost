@@ -19,6 +19,7 @@ import { CatalogueSkuPicker, type SkuChoice } from './catalogue-sku-picker';
 import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
 import { BusyCard } from './shop-busy-api';
 import { ShopHoursFields } from './shop-hours-fields';
+import { ShopOffersApi } from './shop-offers-api';
 import { ShopTeamApi } from './shop-team-api';
 
 type Load = { kind: 'loading' } | { kind: 'error'; code: string } | { kind: 'ok'; shops: MyShopDto[] };
@@ -154,6 +155,7 @@ function ShopHeader({ shop: s, onChanged }: { shop: MyShopDto; onChanged: () => 
           <p className="mt-1 text-xs text-muted">{t('shops_api_meDeliveryNote')}</p>
         </section>
       </div>
+      {s.isOwner ? <ShopOffersApi shopId={s.id} /> : null}
       {s.isOwner ? <ShopTeamApi shopId={s.id} /> : null}
     </div>
   );
