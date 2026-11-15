@@ -1041,3 +1041,12 @@ Design: `docs/superpowers/specs/2026-11-15-support-next-tier-design.md` items 1 
   security findings are fixed before they are described in commit messages in detail.
 - **Later:** before going private again, set an Actions spending limit or move CI to a self-hosted runner that is not
   the production server (Docker builds would starve the live site of memory).
+
+## 2026-11-15 — Support next tier items 4 to 7: builder rulings
+
+- **First-reply SLA replaces the 48-hour acknowledgement** (`sla_ack_due` is the first-reply deadline: 120 working minutes inside support hours 9:00 to 21:00 IST, every day; admin settings `support.hours_start_minute`, `support.hours_end_minute`, `support.first_reply_working_minutes`). Support hours are minutes after IST midnight (the settings registry holds integers and booleans only), and an inverted window falls back to the defaults. The WhatsApp bridge and thread routes use the same helper.
+- **Auto-close:** setting `support.auto_close_days` (default 7); only `resolved` closes by itself (waiting-on-customer requests stay open). Worker sweep every 10 minutes, one conditional UPDATE per request on `version`.
+- **Assignment permissions:** `tickets:assign` managers assign anyone in their city scope; agents with only `tickets:reply` may take a free request or release their own (security review). Canned reply editing needs an all-cities `content:write` (global list); reading needs `tickets:reply`.
+- **Guest ticket key:** 16 base-32 characters (80 bits), shown once, SHA-256 stored (high entropy, no salt needed), constant-time compare; per-reference limit of 10 attempts an hour deliberately also blocks the right key once spent. Guests can ask about order, fitment, account or other (no refund or redo: they have no account). **No email, WhatsApp or SMS to anything a guest typed**, so the key is the only way back (it cannot be recovered; the guest opens a new request if lost). Public routes live under `/support-guest` because `/support/*` is the signed-in stack.
+- **Deletion request route:** `POST /v1/support/deletion-request` instead of `/me/deletion-request` (spec 01) so it uses the support guards and limits; confirming needs `customers:block` (super admin today). Confirming records the step only; the erase job is Q116.
+- **No new ticket events table:** `audit_log` rows (`ticket.assigned`, `ticket.auto_closed`, `ticket.guest_created`, `user.deletion_requested`, `user.deletion_confirmed`, `canned_reply.created|updated`) plus server events cover it, as the existing ticket actions do.

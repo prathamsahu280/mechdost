@@ -52,3 +52,6 @@ export const SUPPORT_INBOX_ERROR_CODES = [
   'CANNED_REPLY_KEY_TAKEN',
   'CANNED_REPLY_INVALID',
 ] as const;
+
+/** `POST /admin/support/tickets/{code}/deletion/confirm` (item 7). */
+export const SupportConfirmed = z.object({ version: z.number().int() });

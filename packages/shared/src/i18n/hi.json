@@ -3158,7 +3158,14 @@
     "cannedClose": "संपादक बंद करें",
     "err_CANNED_REPLY_INVALID": "हर शीर्षक और पाठ दोनों भाषाओं में भरें (नाम: छोटे अक्षर, अंक और _)।",
     "err_CANNED_REPLY_KEY_TAKEN": "यह छोटा नाम पहले से इस्तेमाल में है।",
-    "err_STALE_CANNED_REPLY": "किसी ने अभी यह जवाब बदला है। फिर से लोड करके देखें।"
+    "err_STALE_CANNED_REPLY": "किसी ने अभी यह जवाब बदला है। फिर से लोड करके देखें।",
+    "kind_deletion_request": "अकाउंट हटाना",
+    "deletionConfirmBtn": "हटाने का अनुरोध पक्का करें",
+    "deletionConfirmHelp": "पक्का करने से पहले जाँचें कि किसने कहा है। पक्का करने पर बस यह चरण दर्ज होता है; अभी कुछ मिटाया नहीं जाता।",
+    "deletionConfirmedAt": "हटाना {date} को पक्का किया गया",
+    "err_DELETION_BLOCKED": "ग्राहक का कोई ऑर्डर, सर्विस जॉब या रिफ़ंड अभी खुला है।",
+    "err_DELETION_ALREADY_CONFIRMED": "यह हटाने का अनुरोध पहले ही पक्का हो चुका है।",
+    "err_FORBIDDEN_DELETION": "हटाना केवल अकाउंट एडमिनिस्ट्रेटर ही पक्का कर सकता है।"
   },
   "consent": {
     "label": "प्राइवेसी पसंद",
@@ -4340,7 +4347,21 @@
     "err_FORBIDDEN": "आपको रिफ़ंड माँगने की अनुमति नहीं है।",
     "askHelp": "इस ऑर्डर में मदद चाहिए?",
     "askHelpService": "इस जॉब में मदद चाहिए?",
-    "askHelpLink": "MechDost सहायता से बात करें"
+    "askHelpLink": "MechDost सहायता से बात करें",
+    "deletionTitle": "मेरा अकाउंट हटाएँ",
+    "deletionIntro": "MechDost से अपना अकाउंट हटाने को कहें। सपोर्ट पहले आपसे अनुरोध की जाँच करता है और उससे पहले कुछ नहीं हटता। क़ानून के अनुसार जो रिकॉर्ड रखने पड़ते हैं, जैसे GST इनवॉइस, हमारे पास रहते हैं।",
+    "deletionNoteLabel": "कुछ बताना है? (वैकल्पिक)",
+    "deletionAsk": "अकाउंट हटाने के लिए कहें",
+    "deletionConfirmPrompt": "अनुरोध भेजें? कुछ भी हटाने से पहले सपोर्ट आपसे इसकी जाँच करेगा।",
+    "deletionConfirm": "हाँ, अनुरोध भेजें",
+    "deletionCancel": "अभी नहीं",
+    "deletionSent": "अनुरोध {code} भेज दिया गया। सपोर्ट आपसे इसकी जाँच करेगा।",
+    "deletionExists": "आपका हटाने का अनुरोध पहले से है: {code}।",
+    "deletionBlockedTitle": "अभी इसे शुरू नहीं कर सकते:",
+    "deletion_blocker_OPEN_ORDERS": "आपका एक ऑर्डर अभी डिलीवर या रद्द नहीं हुआ है।",
+    "deletion_blocker_OPEN_SERVICE": "आपका एक सर्विस जॉब अभी पूरा नहीं हुआ है।",
+    "deletion_blocker_OPEN_REFUND": "आपका एक रिफ़ंड अभी प्रोसेस हो रहा है।",
+    "deletionConfirmedNote": "सपोर्ट ने आपका अनुरोध पक्का कर लिया है।"
   },
   "supportGuest": {
     "title": "MechDost सपोर्ट को लिखें",

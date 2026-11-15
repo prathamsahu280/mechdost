@@ -241,6 +241,63 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
     realApi: true,
   },
 
+  // ─────────────── Support tools, guest tickets, deletion request (design 2026-11-15 items 4 to 7) ───────────────
+  {
+    code: 'API-ADM-SUPPORT-TOOLS',
+    page: 'Admin → Support inbox tools, real sign-in',
+    component:
+      'Inbox row and conversation: customer name (signed-in, guest with masked phone), assignee, first-reply clock (replied, overdue), assignee picker, canned reply picker and the editor (agent, content editor), account deletion confirmation; assigned, overdue, guest, deletion',
+    path: '/admin/support',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['admin'] },
+      { name: 'inbox', values: ['assigned', 'overdue', 'guest', 'deletion'] },
+      { name: 'canned', values: ['agent', 'editor'] },
+      stress,
+    ],
+    sweep: 8,
+    note: API_NOTE,
+    realApi: true,
+  },
+  {
+    code: 'API-GUEST-SUPPORT',
+    page: 'Support without an account (/support/guest), real sign-in build',
+    component:
+      'Guest form (name, mobile number, topic, message, security check) and the "check a request" form; clean, empty submit error',
+    path: '/support/guest',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['out'] },
+      { name: 'form', values: ['clean', 'errors'] },
+      stress,
+    ],
+    sweep: 6,
+    note: API_NOTE,
+    realApi: true,
+  },
+  {
+    code: 'API-ACC-DELETION',
+    page: 'Account → Support deletion request card, real sign-in',
+    component:
+      'Delete my account card: the ask button, the inline confirmation with the optional note, the sent message, the refused state naming open orders and refunds',
+    path: '/account/support',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['customer'] },
+      { name: 'deletion', values: ['card', 'confirm', 'blocked', 'sent'] },
+      stress,
+    ],
+    sweep: 6,
+    note: API_NOTE,
+    realApi: true,
+  },
+
   // ─────────────── Refunds (2026-11-15, spec 05) ───────────────
   {
     code: 'API-ADM-REFUNDQ',

@@ -15,6 +15,7 @@ import {
   CannedReplyList,
   SupportAgentList,
   SupportAssigned,
+  SupportConfirmed,
   type CannedReply,
   type SupportAgentDto,
 } from '@mechdost/shared/support-inbox';
@@ -291,6 +292,31 @@ ${text}`
     document.getElementById(field)?.focus();
   }
 
+  async function confirmDeletion() {
+    const version = ticket?.version ?? item.version;
+    setBusy(true);
+    const res = await adminApi(
+      locale,
+      `/admin/support/tickets/${item.code}/deletion/confirm`,
+      SupportConfirmed,
+      {
+        method: 'POST',
+        body: { version },
+      },
+    );
+    setBusy(false);
+    if (!res.ok) {
+      setError(
+        res.code === 'FORBIDDEN' ? { ns: 'support', key: 'err_FORBIDDEN_DELETION' } : problemOf(res.code),
+      );
+      await refresh();
+      return;
+    }
+    setError(null);
+    track('support_ticket', { action: 'deletion_confirmed', kind: item.kind, channel: item.channel });
+    await refresh();
+  }
+
   async function move(to: 'resolved' | 'in_review' | 'awaiting_customer') {
     const version = ticket?.version ?? item.version;
     setBusy(true);
@@ -411,6 +437,29 @@ ${text}`
                   ))}
                 </select>
               </div>
+              {ticket.kind === 'deletion_request' ? (
+                <div className="space-y-2 rounded-lg bg-private-bg p-3 text-sm text-private">
+                  <p>{t('deletionConfirmHelp')}</p>
+                  {ticket.staff.deletionConfirmedAt ? (
+                    <p className="font-bold">
+                      {t('deletionConfirmedAt', {
+                        date: formatDate(ticket.staff.deletionConfirmedAt, locale),
+                      })}
+                    </p>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={busy || status === 'closed'}
+                      className={portalQuiet}
+                      onClick={() => {
+                        void confirmDeletion();
+                      }}
+                    >
+                      {t('deletionConfirmBtn')}
+                    </button>
+                  )}
+                </div>
+              ) : null}
               <TicketThread ticket={threadFromApi(ticket)} viewer="staff" />
               <StaffRefundApi code={ticket.code} refund={ticket.refund} onDone={refresh} />
             </>

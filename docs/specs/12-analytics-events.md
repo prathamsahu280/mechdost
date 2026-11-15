@@ -157,3 +157,7 @@ Client (strict schemas in `packages/shared/src/analytics.ts`): `workshop_analyti
 ## Support threads (2026-11-15)
 
 Server events (same transaction; ids, codes and counts only, never text, a path or a payout value): `support_thread_opened { ticketCode, subject: order|service, issueCode, reopened, photos }`, `support_attachment_added { count, bytes }`, `support_refund_destination_saved { ticketCode, kind: upi|bank, replaced }`, `support_refund_from_ticket { ticketCode, orderCode, amountPaise, reasonCode }`. Client event `support_ticket` gains actions `thread_opened`, `thread_reopened`, `photos_attached`, `destination_saved`, `refund_requested` and the optional `issue` (code). Click ids: `order_support_thread`, `service_support_thread`.
+
+### Support next tier items 4 to 7 (2026-11-15)
+
+Server events (same transaction; codes and counts only): `support_ticket_assigned { assigned, self }`, `support_canned_reply_saved { created, active }`, `support_ticket_closed { reason: auto|staff, kind }`, `support_guest_ticket_created { kind }`, `support_guest_reply { ticketCode }`, `support_deletion_requested { ticketCode }`, `support_deletion_confirmed { ticketCode }`. Client event `support_ticket` gains actions `assigned`, `canned_inserted`, `guest_created`, `guest_looked_up`, `guest_reply`, `deletion_requested`, `deletion_confirmed`. Click ids: `support_deletion_ask`, `support_deletion_confirm`. No name, phone, key or message text is ever an event property.

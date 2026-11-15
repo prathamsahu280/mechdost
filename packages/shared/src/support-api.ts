@@ -15,6 +15,7 @@ export const SUPPORT_TICKET_KINDS = [
   'fitment',
   'account',
   'labour_redo',
+  'deletion_request',
   'other',
 ] as const;
 export type SupportTicketKind = (typeof SUPPORT_TICKET_KINDS)[number];
@@ -50,6 +51,8 @@ export const SupportTicket = z.object({
   serviceCode: z.string().nullable().default(null),
   /** COD refund: whether the customer must give a payout destination, and the masked one they gave. */
   refund: SupportRefundInfo.default({ eligible: false, destination: null }),
+  /** Account deletion requests: when support confirmed it; null otherwise. */
+  deletionConfirmedAt: z.string().nullable().default(null),
   slaAckDue: z.string(),
   slaResolveDue: z.string(),
   resolvedAt: z.string().nullable(),

@@ -130,6 +130,7 @@ export function supportGuestRoutes(deps: AppDeps) {
     slaAckDue: t.slaAckDue.toISOString(),
     slaResolveDue: t.slaResolveDue.toISOString(),
     resolvedAt: t.resolvedAt ? t.resolvedAt.toISOString() : null,
+    deletionConfirmedAt: null,
     createdAt: t.createdAt.toISOString(),
     // A guest sees the conversation only; guests have no photos, orders or refund.
     refund: { eligible: false, destination: null },

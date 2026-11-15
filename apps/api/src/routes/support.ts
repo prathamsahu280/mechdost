@@ -33,6 +33,7 @@ import { rateLimit, RATE_RULES } from '../middleware/rate-limit';
 import type { AppDeps, AppEnv } from '../types';
 import { validationHook } from '../validation';
 import { errorResponses, ErrorSchema } from './schemas';
+import { supportDeletionRoutes } from './support-deletion';
 import { supportThreadRoutes, withAttachmentUrls } from './support-threads';
 
 /**
@@ -66,6 +67,7 @@ const Ticket = z
     issueCode: z.string().nullable(),
     serviceCode: z.string().nullable(),
     refund: SupportRefundInfo,
+    deletionConfirmedAt: z.string().nullable(),
     slaAckDue: z.string(),
     slaResolveDue: z.string(),
     resolvedAt: z.string().nullable(),
@@ -423,6 +425,7 @@ export function supportRoutes(deps: AppDeps, cache: SessionCache) {
   app.on('POST', '/admin/support/canned-replies', requireGlobalContentWrite);
   app.on('GET', '/admin/support/canned-replies', requirePermission('tickets:reply'));
   app.route('/', supportThreadRoutes(deps));
+  app.route('/', supportDeletionRoutes(deps));
 
   return app
     .openapi(createTicket, async (c) => {

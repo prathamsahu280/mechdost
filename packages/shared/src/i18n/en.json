@@ -3158,7 +3158,14 @@
     "cannedClose": "Close the editor",
     "err_CANNED_REPLY_INVALID": "Fill in every title and text in both languages (key: lowercase letters, numbers and _).",
     "err_CANNED_REPLY_KEY_TAKEN": "That short name is already used.",
-    "err_STALE_CANNED_REPLY": "Someone just changed this reply. Reload and try again."
+    "err_STALE_CANNED_REPLY": "Someone just changed this reply. Reload and try again.",
+    "kind_deletion_request": "Account deletion",
+    "deletionConfirmBtn": "Confirm deletion request",
+    "deletionConfirmHelp": "Check who asked before you confirm. Confirming records the step; nothing is erased yet.",
+    "deletionConfirmedAt": "Deletion confirmed on {date}",
+    "err_DELETION_BLOCKED": "The customer still has an open order, service job or refund.",
+    "err_DELETION_ALREADY_CONFIRMED": "This deletion request is already confirmed.",
+    "err_FORBIDDEN_DELETION": "Only an account administrator can confirm deletions."
   },
   "consent": {
     "label": "Privacy choice",
@@ -4343,7 +4350,21 @@
     "err_FORBIDDEN": "You do not have permission to ask for refunds.",
     "askHelp": "Need help with this order?",
     "askHelpService": "Need help with this job?",
-    "askHelpLink": "Talk to MechDost support"
+    "askHelpLink": "Talk to MechDost support",
+    "deletionTitle": "Delete my account",
+    "deletionIntro": "Ask MechDost to delete your account. Support checks the request with you first and nothing is deleted before that. Records the law makes us keep, such as GST invoices, stay with us.",
+    "deletionNoteLabel": "Anything we should know? (optional)",
+    "deletionAsk": "Ask to delete my account",
+    "deletionConfirmPrompt": "Send the request? Support will check it with you before anything is deleted.",
+    "deletionConfirm": "Yes, send the request",
+    "deletionCancel": "Not now",
+    "deletionSent": "Request {code} sent. Support will check it with you.",
+    "deletionExists": "You already have a deletion request: {code}.",
+    "deletionBlockedTitle": "We cannot start this yet:",
+    "deletion_blocker_OPEN_ORDERS": "You have an order that is not delivered or cancelled yet.",
+    "deletion_blocker_OPEN_SERVICE": "You have a service job that is not finished yet.",
+    "deletion_blocker_OPEN_REFUND": "A refund to you is still being processed.",
+    "deletionConfirmedNote": "Support has confirmed your request."
   },
   "supportGuest": {
     "title": "Write to MechDost support",

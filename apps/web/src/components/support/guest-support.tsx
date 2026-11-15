@@ -247,6 +247,7 @@ export function GuestSupport() {
           <form
             noValidate
             onSubmit={(e) => void onCreate(e)}
+            id="guest-new-form"
             aria-labelledby="guest-new"
             className="space-y-3 rounded-card border border-line-card bg-surface p-5"
           >

@@ -112,8 +112,21 @@ async function prepareApi(page: Page, c: AuditCase): Promise<string[]> {
     await main.locator('form:has(fieldset) button[type="submit"]').first().click();
     await settleApi(page);
   }
-  if (c.code === 'API-ADM-SUPPORT') {
+  if (c.code === 'API-ADM-SUPPORT' || c.code === 'API-ADM-SUPPORT-TOOLS') {
     await main.locator('section[aria-labelledby="inbox-title"] ul li button').first().click();
+    await settleApi(page);
+  }
+
+  // Support tools: the deletion card (ask, then the inline confirmation, then send) and the guest form's empty submit.
+  if (c.code === 'API-ACC-DELETION' && c.state.deletion !== 'card') {
+    await main.locator('[data-track="support_deletion_ask"]').click();
+    if (c.state.deletion !== 'confirm') {
+      await main.locator('[data-track="support_deletion_confirm"]').click();
+      await settleApi(page);
+    }
+  }
+  if (c.code === 'API-GUEST-SUPPORT' && c.state.form === 'errors') {
+    await main.locator('form#guest-new-form button[type="submit"]').click();
     await settleApi(page);
   }
 

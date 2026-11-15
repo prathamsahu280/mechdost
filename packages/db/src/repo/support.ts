@@ -77,6 +77,8 @@ export interface TicketView {
   serviceCode: string | null;
   /** COD refund: whether the order was cash on delivery, and the masked destination the customer gave (never the full value). */
   refund: { eligible: boolean; destination: { kind: 'upi' | 'bank'; masked: string } | null };
+  /** Account deletion requests: when support confirmed it (nothing is deleted by this step yet; Q116). */
+  deletionConfirmedAt: Date | null;
   slaAckDue: Date;
   slaResolveDue: Date;
   resolvedAt: Date | null;
@@ -187,6 +189,7 @@ const ticketColumns = {
   serviceCode: serviceRequests.code,
   paymentMethod: orderGroups.paymentMethod,
   destinationMask: supportTickets.refundDestinationMask,
+  deletionConfirmedAt: supportTickets.deletionConfirmedAt,
 };
 
 async function view(
@@ -207,6 +210,7 @@ async function view(
     serviceCode: string | null;
     paymentMethod: string | null;
     destinationMask: string | null;
+    deletionConfirmedAt: Date | null;
   },
   internal: boolean,
 ): Promise<TicketView> {
@@ -686,7 +690,6 @@ export async function getInboxTicket(db: Tx, scope: TicketScope, code: string): 
       assigneeName: assignee.name,
       assignedAt: supportTickets.assignedAt,
       firstRepliedAt: supportTickets.firstRepliedAt,
-      deletionConfirmedAt: supportTickets.deletionConfirmedAt,
     })
     .from(supportTickets)
     .leftJoin(orders, eq(orders.id, supportTickets.orderId))
@@ -706,7 +709,6 @@ export async function getInboxTicket(db: Tx, scope: TicketScope, code: string): 
     assigneeName,
     assignedAt,
     firstRepliedAt,
-    deletionConfirmedAt,
     ...ticketRow
   } = row;
   const base = await view(db, { ...ticketRow, status: ticketRow.status as TicketStatus }, true);
@@ -720,7 +722,7 @@ export async function getInboxTicket(db: Tx, scope: TicketScope, code: string): 
       assignedAt,
       firstRepliedAt,
       sla: firstReplySla(new Date(), base.slaAckDue, firstRepliedAt),
-      deletionConfirmedAt,
+      deletionConfirmedAt: base.deletionConfirmedAt,
     },
   };
 }
