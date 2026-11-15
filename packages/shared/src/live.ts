@@ -9,7 +9,18 @@
  */
 
 /** What changed. The client maps each kind to the queries it must refetch. */
-export const LIVE_KINDS = ['order', 'assignment', 'shop', 'workshop', 'request', 'quote', 'coins'] as const;
+export const LIVE_KINDS = [
+  'order',
+  'assignment',
+  'shop',
+  'workshop',
+  'request',
+  'quote',
+  'coins',
+  // Saved cart and wishlist (design 2026-11-15): a hint to re-read it on the customer's other devices.
+  'cart',
+  'wishlist',
+] as const;
 export type LiveKind = (typeof LIVE_KINDS)[number];
 
 /** Event codes (`noun.verb`), one catalogue for analytics and live pings alike. */
@@ -20,6 +31,8 @@ export const LIVE_EVENTS = [
   'request.status_changed',
   'quote.changed',
   'coins.changed',
+  'cart.changed',
+  'wishlist.changed',
 ] as const;
 export type LiveEvent = (typeof LIVE_EVENTS)[number];
 

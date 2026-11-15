@@ -29,7 +29,9 @@ import {
 import { track } from '@/lib/analytics';
 import { formatPrice } from '@/lib/format';
 import { AddProductForm, ImportCsv } from './admin-catalogue-add';
+import { PhotoQueueApi } from './photo-queue-api';
 import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { ProductPhotosEditor } from './product-photos-editor';
 
 type Notice = { kind: 'ok' | 'error'; text: string } | null;
 
@@ -154,6 +156,7 @@ export function CatalogueEditor() {
           </button>
         ))}
       </div>
+      <PhotoQueueApi />
       {error ? <NoticeLine notice={{ kind: 'error', text: t(error as 'cat_err_generic') }} /> : null}
       {!loading && items.length === 0 && !error ? (
         <p className="text-sm text-muted">{t('cat_empty')}</p>
@@ -194,7 +197,7 @@ export function CatalogueEditor() {
   );
 }
 
-const TABS = ['texts', 'specs', 'prices'] as const;
+const TABS = ['texts', 'specs', 'photos', 'prices'] as const;
 type Tab = (typeof TABS)[number];
 
 function ProductEditor({ slug, onBack }: { slug: string; onBack: () => void }) {
@@ -251,6 +254,7 @@ function ProductEditor({ slug, onBack }: { slug: string; onBack: () => void }) {
           >
             {tab === 'texts' ? <TextsTab key={detail.version} detail={detail} onSaved={reload} /> : null}
             {tab === 'specs' ? <SpecsTab detail={detail} onSaved={reload} /> : null}
+            {tab === 'photos' ? <ProductPhotosEditor slug={slug} scope="staff" /> : null}
             {tab === 'prices' ? <PricesTab slug={slug} /> : null}
           </div>
         </>

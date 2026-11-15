@@ -31,6 +31,7 @@ import { enforceRate, rateLimit, RATE_RULES } from '../middleware/rate-limit';
 import type { AppDeps, AppEnv } from '../types';
 import { validationHook } from '../validation';
 import { ApiError, Forbidden } from '../errors';
+import { productPhotoAdminRoutes } from './product-photos';
 import { errorResponses, ErrorSchema } from './schemas';
 
 /**
@@ -377,6 +378,8 @@ export function adminCatalogueRoutes(deps: AppDeps, cache: SessionCache) {
   app.use(prefix, requirePermission('products:write'));
   app.on('POST', '/admin/catalogue/products/:slug/status', requirePermission('products:publish'));
   app.on('POST', '/admin/catalogue/import', requirePermission('products:import'));
+  // Product photos share this stack (sign-in, limits, products:write) and add publish rights for the queue (L190).
+  app.route('/', productPhotoAdminRoutes(deps));
 
   return app
     .openapi(create, async (c) => {

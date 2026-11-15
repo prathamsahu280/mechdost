@@ -9,6 +9,7 @@ import { freeDeliveryMinPaise, groupShippingPaise } from '@mechdost/shared/free-
 import { auditLog, orderGroups, orderItems, orders, settings } from '../schema';
 import { blockEffects } from '@mechdost/shared/customers';
 import { setActor } from './actor';
+import { removeOrderedCartLines } from './cart';
 import { queueOrderPlacedEmail } from './email-events';
 import { recordServerEvent } from './events';
 import { activeBlockLevels } from './customer-blocks';
@@ -827,7 +828,11 @@ export async function placeOrder(
       },
     });
     // Cash on delivery is placed now; an online order is "placed" for the customer once the payment is captured.
-    if (!online) await queueOrderPlacedEmail(tx, group.id);
+    if (!online) {
+      await queueOrderPlacedEmail(tx, group.id);
+      // The ordered packs leave the saved cart (the customer's other devices show it on their next refresh).
+      await removeOrderedCartLines(tx, input.userId, { skus: priced.map((p) => p.sku) });
+    }
     return {
       code: group.code,
       paymentMethod: input.method,

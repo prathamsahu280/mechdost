@@ -2,7 +2,10 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect } from 'react';
+import { useSession } from '@/demo/session-state';
 import { useCart } from '@/demo/store';
+import { AUTH_MODE } from '@/lib/auth/mode';
 import { UI_EMOJI } from '@/lib/emoji';
 import { isPortalPath } from '@/lib/portal-path';
 
@@ -21,6 +24,35 @@ export function CartPill({
 }) {
   const lines = useCart();
   const pathname = usePathname();
+  const signedIn = useSession() !== null;
+  const locale = pathname === '/hi' || pathname.startsWith('/hi/') ? 'hi' : 'en';
+  // Real sign-in mode only (build-time constants: the demo build drops all of this). The saved cart and wishlist follow
+  // the customer between devices (user 2026-11-15): a local change is sent after a short pause, the server is re-read
+  // every 60 s while this tab is visible and when it comes back, and when the cart or checkout opens. The sync module
+  // is fetched only when someone is signed in, so a signed-out visit loads nothing extra.
+  const onCartPage = /\/(cart|checkout)(\/|$)/.test(pathname);
+  useEffect(() => {
+    if (AUTH_MODE !== 'firebase' || !signedIn) return;
+    void import('@/lib/cart-sync').then((m) => {
+      m.syncCart(locale);
+    });
+  }, [signedIn, lines, locale]);
+  useEffect(() => {
+    if (AUTH_MODE !== 'firebase' || !signedIn) return;
+    let stop: (() => void) | undefined;
+    let cancelled = false;
+    void import('@/lib/storefront-sync').then((m) => {
+      if (!cancelled) stop = m.startStorefrontSync(locale);
+    });
+    return () => {
+      cancelled = true;
+      stop?.();
+    };
+  }, [signedIn, locale]);
+  useEffect(() => {
+    if (AUTH_MODE !== 'firebase' || !signedIn || !onCartPage) return;
+    void import('@/lib/storefront-sync').then((m) => m.refreshStorefront(locale));
+  }, [signedIn, locale, onCartPage]);
   const count = lines.reduce((n, l) => n + l.qty, 0);
   const sr = (count === 0 ? countText.zero : count === 1 ? countText.one : countText.other).replace(
     '#',

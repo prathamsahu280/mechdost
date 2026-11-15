@@ -46,6 +46,9 @@ const CoinsSectionApi = lazy(() =>
 // Real sign-in: addresses, vehicles and profile live on the API (design 2026-11-15); the demo keeps the browser copy.
 const AddressesApi = lazy(() => import('./account-api-sections').then((m) => ({ default: m.AddressesApi })));
 const VehiclesApi = lazy(() => import('./account-api-sections').then((m) => ({ default: m.VehiclesApi })));
+const WishlistApi = lazy(() =>
+  import('./wishlist-section-api').then((m) => ({ default: m.WishlistSectionApi })),
+);
 const ProfileApi = lazy(() => import('./account-api-sections').then((m) => ({ default: m.ProfileApi })));
 // Consents, data download and the deletion request (design 2026-11-15 item 6), real sign-in only.
 const PrivacySectionApi = lazy(() =>
@@ -69,6 +72,7 @@ const SECTION_EMOJI: Record<AccountSection, string> = {
   support: '🛟',
   vehicles: '🚗',
   addresses: '📍',
+  wishlist: '💛',
   notifications: '🔔',
   privacy: '🔒',
   profile: '👤',
@@ -218,6 +222,11 @@ export function AccountArea({ section }: { section: AccountSection }) {
           ) : (
             <Addresses account={session} />
           )
+        ) : null}
+        {section === 'wishlist' && AUTH_MODE === 'firebase' ? (
+          <Suspense fallback={sectionFallback}>
+            <WishlistApi />
+          </Suspense>
         ) : null}
         {section === 'profile' ? (
           AUTH_MODE === 'firebase' ? (

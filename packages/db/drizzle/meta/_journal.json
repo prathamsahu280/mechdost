@@ -484,6 +484,13 @@
       "when": 1794726047689,
       "tag": "0070_catalogue_tier2",
       "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "7",
+      "when": 1794726277290,
+      "tag": "0071_photos_cart_wishlist",
+      "breakpoints": true
     }
   ]
 }

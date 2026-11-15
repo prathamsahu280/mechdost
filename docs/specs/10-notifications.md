@@ -158,3 +158,7 @@ Order emails (`order_*` templates) carry one footer line above the company line:
 ## Notice kind added 2026-11-15
 
 `account.pin_served` (customer, transactional, entity `account`, placeholder `pincode`, opens /shop): "We now deliver to {pincode}", written by the worker when a PIN someone waited for is switched on (spec 15). English and Hindi defaults under `notify.account_pin_served`; editable in Admin -> Notifications like the others.
+
+## Live updates: cart and wishlist pings (2026-11-15)
+
+`live_outbox` kinds gain `cart` and `wishlist` (events `cart.changed`, `wishlist.changed`; topic `user:<id>`, ids and a version only). Written by triggers on `carts` and `wishlist_items`, relayed like the others; **no browser listener yet** (decision 2026-11-15 "Polling, not live pings, feeds the bell for now"). Until then the website polls every 60 s while the tab is visible (spec 03 "Several devices"). **Next step:** one lazy-loaded shared RTDB listener (outside the shop bundles) for the bell, shop offers, cart and wishlist.

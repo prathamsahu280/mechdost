@@ -52,7 +52,7 @@ export const noStore = createMiddleware<AppEnv>(async (c, next) => {
 
 /** Job photo uploads carry up to 8 MB; that route has its own, larger limit (routes/service-photos.ts). */
 const PHOTO_UPLOAD_PATH =
-  /^\/v1\/(workshop\/requests\/[^/]+\/photos|support\/threads|support\/tickets\/[^/]+\/photo-messages)\/?$/;
+  /^\/v1\/(workshop\/requests\/[^/]+\/photos|support\/threads|support\/tickets\/[^/]+\/photo-messages|admin\/catalogue\/products\/[^/]+\/photos|shop\/products\/[^/]+\/photos)\/?$/;
 
 /** Shop stock CSV uploads carry up to 1 MB of file plus the form envelope; that route has its own limit (routes/shop-tools.ts). */
 const SHOP_CSV_PATH = /^\/v1\/shop\/csv\/[^/]+\/(preview|apply)\/?$/;
@@ -74,7 +74,9 @@ const bodyLimitExceptPhotos = createMiddleware<AppEnv>(async (c, next) => {
 const imageCorp = createMiddleware<AppEnv>(async (c, next) => {
   await next();
   if (
-    (c.req.path.startsWith('/v1/service-photos/') || c.req.path.startsWith('/v1/support-photos/')) &&
+    (c.req.path.startsWith('/v1/service-photos/') ||
+      c.req.path.startsWith('/v1/support-photos/') ||
+      c.req.path.startsWith('/v1/product-photos/')) &&
     c.res.status === 200
   )
     c.res.headers.set('Cross-Origin-Resource-Policy', 'cross-origin');

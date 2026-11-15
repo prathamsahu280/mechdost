@@ -255,6 +255,13 @@ export async function currentIdToken(locale: string, forceRefresh = false): Prom
   return a.currentUser ? a.currentUser.getIdToken(forceRefresh) : null;
 }
 
+/** The signed-in Firebase user's id (waits for Firebase to restore the session), or null. */
+export async function currentUid(locale: string): Promise<string | null> {
+  const a = firebaseAuth(locale);
+  await a.authStateReady();
+  return a.currentUser?.uid ?? null;
+}
+
 /**
  * `GET /v1/me` for the signed-in Firebase user (creates the profile row on first sign-up). `blocked`: the API
  * refuses this account (blocked or deactivated) — the caller signs out and shows why.

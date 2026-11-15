@@ -135,3 +135,7 @@ Owner-only routes for the busy toggle and the team check the caller's own `selle
 ## Catalogue tier 2 (2026-11-15)
 
 No new permission (no `db:seed`). Recommendation rules: `categories:write`; PIN waitlist demand: `cities:manage` with city scope; Privacy and notify-me: `account:read` / `account:write` plus the session user id (a foreign export id is 404). Rate limits: `reco_ip` 240/min per IP (public read), `privacy_write` 30/h/person, `data_export_request` 5/h/person, `waitlist_write` 20/h/person. The data download is a private authenticated route, never a public URL, and never cached.
+
+## Uploads: product photos (2026-11-15)
+
+Same image gate as job photos (spec 06). Differences: staff (`products:write`) and shops (`inventory:write`, own products, setting on) upload; 40 uploads per 10 minutes per user; the result is public once approved, through a cacheable API route by id (never a Storage URL or key); a pending, refused or removed photo is 404 unless the URL has a valid 10-minute HMAC from a rights-checked listing. Approval and refusal need `products:publish`. The approval queue, descriptions and shop names are staff-only data. Role-leak tests: `apps/api/test/product-photos.test.ts`.

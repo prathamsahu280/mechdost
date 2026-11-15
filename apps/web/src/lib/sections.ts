@@ -14,6 +14,8 @@ const ALL_ACCOUNT_SECTIONS = [
   'coins',
   'vehicles',
   'addresses',
+  // Saved products (design 2026-11-15 item 5): real sign-in only, the list lives on the server.
+  'wishlist',
   // The bell's choices and this device's push (spec 10, 2026-11-15): real sign-in only, it reads the API.
   'notifications',
   // Consents per purpose, data download, account deletion request (DPDP, design 2026-11-15): real sign-in only.
@@ -80,6 +82,7 @@ const REAL_SIGN_IN_ONLY: readonly string[] = [
   'audit',
   'coupons',
   'exports',
+  'wishlist',
 ];
 const shown = <T extends string>(all: readonly T[]): readonly T[] =>
   all.filter(

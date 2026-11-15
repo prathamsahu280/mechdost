@@ -4,6 +4,7 @@ import { auditLog, orderGroups, orders, payments, reservations, webhookEvents } 
 import { CHECKOUT_SETTINGS, settingOr } from './checkout';
 import { cancelInTx } from './customer-orders';
 import { ConflictError, NotFoundError } from './errors';
+import { removeOrderedCartLines } from './cart';
 import { queueOrderPlacedEmail, queuePaymentReceivedEmail } from './email-events';
 import { recordServerEvent } from './events';
 import { rowsOf } from './sql-rows';
@@ -280,6 +281,8 @@ export async function applyRazorpayPayment(
         providerPaymentId: fact.providerPaymentId,
       });
       await queueOrderPlacedEmail(tx, p.groupId);
+      // An online order counts as placed once paid: its packs leave the saved cart on every device.
+      await removeOrderedCartLines(tx, p.userId, { groupId: p.groupId });
     }
     return { outcome: to };
   });

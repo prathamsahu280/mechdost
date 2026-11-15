@@ -6,8 +6,10 @@ import { LocalLink } from '../ui/local-link';
 import { AddToCartButton } from './add-to-cart-button';
 import { CompareToggle } from './compare-toggle';
 import { ProductInfoButton } from './product-info-button';
+import { ProductPhoto } from './product-photo';
 import { ProductVisual } from './product-visual';
 import { UnitPrice } from './unit-price';
+import { WishlistHeartLazy } from './wishlist-lazy';
 
 /**
  * Product card: blueprint artwork with an ⓘ quick-details popover, brand and category, name, rating, price with
@@ -30,6 +32,7 @@ export function ProductCard({
   const cmp = useTranslations('compare');
   const c = useTranslations('categories');
   const r = useTranslations('reviews');
+  const w = useTranslations('storefront');
   const price = product.price;
   const off = price ? discountPercent(price.pricePaise, price.mrpPaise ?? undefined) : 0;
   const rating = product.rating && product.rating.count > 0 ? product.rating : null;
@@ -39,9 +42,28 @@ export function ProductCard({
     <article className="group flex h-full flex-col rounded-card border border-line-card bg-surface p-3 shadow-card transition-shadow duration-[var(--duration-base)] hover:shadow-card-hover">
       <div className="relative">
         <LocalLink href={`/shop/${product.slug}`} className="block" tabIndex={-1} aria-hidden="true">
-          <ProductVisual category={product.category.key} brand={product.brand} sku={product.sku} />
+          {product.photo ? (
+            <ProductPhoto photo={product.photo} sizes="(min-width: 1024px) 280px, 50vw" />
+          ) : (
+            <ProductVisual category={product.category.key} brand={product.brand} sku={product.sku} />
+          )}
         </LocalLink>
         <ProductInfoButton product={product} scope={scope} />
+        <WishlistHeartLazy
+          slug={product.slug}
+          source="card"
+          labels={{
+            add: w('wishlistAdd', { name: `${product.brand} ${product.name}` }),
+            remove: w('wishlistRemove', { name: `${product.brand} ${product.name}` }),
+            saved: w('wishlistSaved'),
+            removed: w('wishlistRemoved'),
+            full: w('wishlistFull', { max: 100 }),
+            failed: w('wishlistFailed'),
+            signIn: w('wishlistSignIn'),
+            pageSave: w('pageSave'),
+            pageSaved: w('pageSaved'),
+          }}
+        />
         <div className="pointer-events-none absolute bottom-3 left-3 flex gap-1.5">
           {product.popular ? (
             <span className="rounded-md bg-accent-button px-2 py-0.5 text-[11px] font-bold text-white">

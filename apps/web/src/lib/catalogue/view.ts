@@ -31,6 +31,8 @@ export interface CardView {
 }
 
 export interface ProductView extends CardView {
+  /** All approved photos in order (the first is `photo`); absent in demo data. */
+  photos?: readonly CataloguePhoto[];
   description: string | null;
   /** The shop that sells at the shown price (E-Commerce Rules); `null` in demo data. */
   seller: string | null;

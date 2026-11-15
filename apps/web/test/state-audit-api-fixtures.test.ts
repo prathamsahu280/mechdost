@@ -36,6 +36,8 @@ describe('API-mode audit fixtures (Q106)', () => {
       'API-ACC-SUPPORT',
       'API-ADM-SUPPORT',
       'API-ADM-EXPORTS',
+      'API-WISHLIST',
+      'API-ADM-PHOTOS',
     ])
       expect(codes.has(code), code).toBe(true);
   });

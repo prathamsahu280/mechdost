@@ -347,3 +347,10 @@ See PENDING DECISIONS in `docs/decisions.md` (payment methods; post-purchase P1 
 - Security review fix: pin change PIN code must be in the workshop's city (filing and decision).
 - Needs at merge: renumber the migration; no `db:seed` (no new permission). Questions Q116, Q117 (renumbered at merge).
 - Not built: items 5 to 7 of the design (online bill payment, staff cancel, ranking); staff screen for change requests; admin analytics column; customer email for the timeout.
+
+## 2026-11-15 — Product photos, server cart, wishlist (branch worktree-agent-a0ef483c4f56d1190, not merged)
+
+- Built (specs 02, 03, 01, 12, 13, 14, 16; decisions "Product photos, server cart and wishlist built"): product photos (max 8, ordered, alt en + hi, 320/640/1600 WebP + placeholder, admin editor + shop uploads behind `catalogue.shop_photo_uploads` + approval queue, public cached API route, `getImageProps` rendering with no client JS), server cart (`carts`/`cart_items`, idempotent merge at sign-in, browser sync in real mode), wishlist (100 max under a row lock, heart on card and page, Account → Wishlist).
+- Migration `0067_photos_cart_wishlist` generated, **not applied** (coordinator renumbers at merge). No new permissions.
+- Tests run: db `product-photos` 12, `cart-wishlist` 14 (+ schema-invariants, catalogue, service-photos, catalogue-admin: 42 total green); api `product-photos` 11, `storefront` 10 (+ catalogue, service-photos, admin-catalogue, middleware-bypass green); shared 370 + 5 new; web 508 (68 files). tsc clean for db, shared, api, web. State audit: rows `API-WISHLIST`, `API-ADM-PHOTOS`, section `wishlist` in `API-NAV-ACCOUNT`; checklist regenerated (3,713 items); not run in a browser.
+- User actions: Q130, Q131. Not built: see the "Not built" lines in specs 02 and 03. Not measured: JS budgets (no build allowed here) — measure `/shop` and `/cart` with `measure-js.mjs` at merge; if over, move the cart-pill effect into the existing lazy compare loader.

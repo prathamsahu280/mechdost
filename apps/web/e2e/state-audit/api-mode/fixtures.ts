@@ -50,6 +50,7 @@ import { accountDeletionMocks, accountSupportMocks, adminSupportMocks } from './
 import { myWorkshopMocks, profileMocks } from './tier1-fixtures.ts';
 import { slipMocks, tier2PortalMocks } from './tier2-fixtures.ts';
 import { adminRecoMocks, demandMocks, notifyMeMocks, privacyMocks } from './catalogue-tier2-fixtures.ts';
+import { photoQueueMocks, wishlistMocks } from './storefront-fixtures.ts';
 import type { Mock, MockCtx, Reply } from './mock-api.ts';
 
 const NOW = Date.parse('2026-11-15T10:00:00.000Z');
@@ -1539,6 +1540,10 @@ export function mocksFor(c: AuditCase): Mock[] {
       return workshopPerformanceMocks(c);
     case 'API-ADM-COINS':
       return coinsMocks();
+    case 'API-WISHLIST':
+      return [meMock(), ...wishlistMocks(c)];
+    case 'API-ADM-PHOTOS':
+      return [meMock(), ...photoQueueMocks(c)];
     case 'API-ADM-COUPONS':
       return couponsMocks(c);
     case 'API-ADM-REVIEWS':

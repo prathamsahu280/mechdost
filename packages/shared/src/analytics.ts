@@ -324,6 +324,26 @@ export interface ServerEventProps {
   vehicle_saved: { vehicleId: string; type: string; fuel: string; action: 'created' | 'updated' };
   vehicle_deleted: { vehicleId: string };
   profile_updated: { fields: string[] };
+  /** Product photos (spec 02): ids, codes and counts only. */
+  product_photo_added: {
+    productId: string;
+    photoId: string;
+    by: 'staff' | 'shop';
+    status: 'pending' | 'approved';
+  };
+  product_photo_removed: { productId: string; photoId: string };
+  product_photo_reviewed: {
+    productId: string;
+    photoId: string;
+    decision: 'approved' | 'rejected';
+    reasonCode: string | null;
+  };
+  product_photos_reordered: { productId: string; count: number };
+  /** Server cart (spec 03): merge at sign-in and replace; counts only, never prices. */
+  cart_merged: { kept: number; added: number; dropped: number };
+  cart_replaced: { lines: number; dropped: number };
+  /** Wishlist (spec 02): the product id and the new list size. */
+  wishlist_changed: { productId: string; on: boolean; count: number };
 }
 export type ServerEvent = keyof ServerEventProps;
 
@@ -380,6 +400,12 @@ export const CLIENT_EVENT_SCHEMAS = {
   // The tray told the shopper the list is full or the browser refused to save it.
   compare_limit_shown: z.object({ reason: z.enum(['full', 'save_failed']) }).strict(),
   remove_from_cart: z.object({ slug: id }).strict(),
+  // Wishlist (design 2026-11-15): the heart on a card, the product page or the account list; slug and direction only.
+  wishlist_toggled: z
+    .object({ slug: id, on: z.boolean(), source: z.enum(['card', 'page', 'account']) })
+    .strict(),
+  // The wishlist heart was pressed while signed out and sent the shopper to sign in.
+  wishlist_sign_in_prompted: z.object({ slug: id }).strict(),
   // Checkout coupon (spec 03, 2026-11-15): the check result and, when refused, the reason code; never the typed code.
   apply_coupon: z
     .object({

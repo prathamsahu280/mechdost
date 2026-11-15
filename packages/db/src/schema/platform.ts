@@ -871,7 +871,7 @@ export const liveOutbox = pgTable(
     ),
     check(
       'live_outbox_kind_valid',
-      sql`${t.kind} in ('order','assignment','shop','workshop','request','quote','coins')`,
+      sql`${t.kind} in ('order','assignment','shop','workshop','request','quote','coins','cart','wishlist')`,
     ),
     check('live_outbox_event_format', sql`${t.event} ~ '^[a-z_]+[.][a-z_]+$'`),
     check('live_outbox_version_positive', sql`${t.entityVersion} >= 1`),

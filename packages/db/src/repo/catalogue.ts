@@ -75,7 +75,7 @@ export interface CataloguePhoto {
   alt: string;
   width: number;
   height: number;
-  blurhash: string | null;
+  lqip: string | null;
 }
 
 export interface CataloguePage {
@@ -202,7 +202,7 @@ interface CardRow {
   photo_alt_hi: string | null;
   photo_width: unknown;
   photo_height: unknown;
-  photo_blurhash: string | null;
+  photo_lqip: string | null;
   rating_avg: unknown;
   rating_count: unknown;
 }
@@ -238,7 +238,7 @@ function toCard(r: CardRow, locale: CatalogueLocale): CatalogueCard {
             alt: localized(r.photo_alt ?? '', r.photo_alt_hi, locale),
             width: num(r.photo_width),
             height: num(r.photo_height),
-            blurhash: r.photo_blurhash,
+            lqip: r.photo_lqip,
           },
   };
 }
@@ -268,9 +268,10 @@ function vehicleTypesOf(raw: string[] | null): VehicleType[] {
 /** First photo and approved-review rating for the rows of `page` (joined after the page is cut). */
 const cardExtras = sql`
   left join lateral (
-    select ph.storage_path as photo_path, ph.alt as photo_alt, ph.alt_hi as photo_alt_hi, ph.width as photo_width,
-      ph.height as photo_height, ph.blurhash as photo_blurhash
-    from product_photos ph where ph.product_id = pg.id order by ph.sort, ph.id limit 1) ph on true
+    select ph.id::text as photo_path, ph.alt as photo_alt, ph.alt_hi as photo_alt_hi, ph.width as photo_width,
+      ph.height as photo_height, ph.lqip as photo_lqip
+    from product_photos ph where ph.product_id = pg.id and ph.status = 'approved' and ph.deleted_at is null
+    order by ph.sort, ph.id limit 1) ph on true
   left join lateral (
     select avg(rv.rating)::float8 as rating_avg, count(*)::int as rating_count
     from reviews rv where rv.target_type = 'product' and rv.target_id = pg.id and rv.status = 'approved') rv on true`;
@@ -469,16 +470,16 @@ export async function getCatalogueProduct(
       order by pv.sku`),
   );
   const photos = rowsOf<{
-    storage_path: string;
+    id: string;
     alt: string;
     alt_hi: string | null;
     width: unknown;
     height: unknown;
-    blurhash: string | null;
+    lqip: string | null;
   }>(
     await db.execute(sql`
-      select storage_path, alt, alt_hi, width, height, blurhash from product_photos
-      where product_id = ${p.id} order by sort, id limit 12`),
+      select id::text as id, alt, alt_hi, width, height, lqip from product_photos
+      where product_id = ${p.id} and status = 'approved' and deleted_at is null order by sort, id limit 12`),
   );
   const partNumbers = rowsOf<{ kind: string; value: string }>(
     await db.execute(sql`
@@ -501,11 +502,11 @@ export async function getCatalogueProduct(
     gstRateBp: num(p.gst_rate_bp),
     partNumbers,
     photos: photos.map((ph) => ({
-      path: ph.storage_path,
+      path: ph.id,
       alt: localized(ph.alt, ph.alt_hi, opts.locale),
       width: num(ph.width),
       height: num(ph.height),
-      blurhash: ph.blurhash,
+      lqip: ph.lqip,
     })),
     variants: variants.map((v) => {
       const price = numOrNull(v.price);

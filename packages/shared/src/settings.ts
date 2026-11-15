@@ -170,6 +170,11 @@ export const OPERATIONAL_SETTINGS = {
    * against the workshop. Per city.
    */
   'service.acceptance_timeout_min': { kind: 'int', min: 10, max: 1440, default: 60 },
+  /**
+   * Product photos (spec 02, user 2026-11-15): staff always add photos; with this on, shops may also add photos for the
+   * products they sell, shown only after staff approve each one. Off by default. Site-wide.
+   */
+  'catalogue.shop_photo_uploads': { kind: 'boolean', default: false, globalOnly: true },
 } as const satisfies Record<string, SettingSpec>;
 
 /**

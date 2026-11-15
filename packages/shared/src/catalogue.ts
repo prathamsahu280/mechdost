@@ -25,11 +25,13 @@ export const CatalogueOfferSchema = z.object({
 });
 
 export const CataloguePhotoSchema = z.object({
+  /** The photo id: the public image path is built from it (productPhotoPath). */
   path: z.string(),
   alt: z.string(),
   width: z.number().int(),
   height: z.number().int(),
-  blurhash: z.string().nullable(),
+  /** A tiny inline WebP data URL shown while the photo loads (the stored placeholder). */
+  lqip: z.string().nullable(),
 });
 
 export const CataloguePlaceSchema = z.object({
