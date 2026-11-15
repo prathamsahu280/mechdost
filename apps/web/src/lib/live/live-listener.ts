@@ -39,7 +39,9 @@ export function connectLive({ locale, onKinds }: ConnectOptions): () => void {
   const isStopped = () => stopped;
   let unwatch: (() => void) | undefined;
 
-  const onSnapshot = (snap: DataSnapshot) => {
+  /** A callback is honoured only for the account it was attached for, while connected and visible. */
+  const onSnapshotFor = (owner: string) => (snap: DataSnapshot) => {
+    if (stopped || uid !== owner || document.visibilityState !== 'visible') return;
     const ping = parseLivePing(snap.val());
     if (!ping) return;
     const fresh = newPings(seen, [ping]);
@@ -59,6 +61,7 @@ export function connectLive({ locale, onKinds }: ConnectOptions): () => void {
     const fail = () => {
       detach();
     };
+    const onSnapshot = onSnapshotFor(uid);
     onChildAdded(inbox, onSnapshot, fail);
     onChildChanged(inbox, onSnapshot, fail);
     attached = {

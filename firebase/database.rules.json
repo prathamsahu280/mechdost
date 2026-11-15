@@ -5,7 +5,11 @@
     "inbox": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid && auth.token.firebase.sign_in_provider != 'anonymous'",
-        ".write": false
+        ".write": false,
+        "$node": {
+          ".write": false,
+          ".validate": false
+        }
       }
     }
   }

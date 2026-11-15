@@ -130,3 +130,7 @@ await page.addInitScript(
 - After each step assert the other roles' pages, the overview counts, and the event in `mechdost-demo-events`.
 - Permutations: world × theme × language × viewport in full; every other dimension (cart, compare, consent, block,
   site config, ticket, order bucket) pairwise; a bug found in a combination becomes a named world.
+
+## Live-update listener (RTDB mocked)
+
+Mock `@firebase/database`, `@firebase/app` and `@/lib/auth/firebase-client` (`currentUid`, `watchUid`), stub `document` (`visibilityState`, add/removeEventListener) and drive the captured `onChildAdded` callbacks by hand. Assert: paths are only `inbox/<uid>`; duplicates, older versions and malformed pings are dropped; hidden closes and visible catches up; a switch to another uid or to null ignores the old callbacks; failures end quietly. For the hub use fake timers and a mocked listener module: nothing fetched in the first task, only when idle and visible, one connection for many consumers, a close grace for effect re-runs. Rules: no Firebase emulator for the database yet (Q160); `apps/api/test/live.test.ts` evaluates each rule clause and walks the tree.

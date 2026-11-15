@@ -169,6 +169,16 @@ which are automated. Add new classes at the end of the relevant section.
 - **N9 · Navigation never walked** — the current marker stuck on the old item after a click, a new section missing from a bar in one build mode, a bar that overflows with no scroll at 320 px or with long Hindi labels, a tab bar item under 24 px, a link that lands on a "not found" or the wrong page → the audit models every bar as a component (`NAV-*`, check `nav`, `walk=yes` clicks each item); the model lists are unit-tested against `src/lib/sections.ts` for demo, real and both mixed builds.
 - **N10 · Real-sign-in screens have no demo twin** — a screen compiled only with `AUTH_MODE=firebase` / `DATA_MODE=api` is invisible to the demo audit and rots (refund queue, give-up, errors, analytics were all unlisted for days) → every such screen needs an `API-…` row in `model-api.ts` with typed fixtures; fixtures must parse with the same shared Zod schema as the screen (a friendlier fixture than the API hides a contract bug), and an unmocked API call fails the case.
 
+## O. Live updates (RTDB pings)
+
+- **O1 · Stale ping after sign-out or account switch** — a callback of the previous account's subscription fires late and refreshes (or shows) the next person's data. Test: `apps/web/test/live-listener.test.ts` "a late callback of the previous account ... is ignored" (callbacks are bound to the uid they were attached for); hub `resetLive` on sign-out.
+- **O2 · Ping for another uid** — the rules or the path let one user read another's inbox, or a ping carries more than ids. Tests: `apps/api/test/live.test.ts` rules clauses (own uid yes; other uid, anonymous, signed-out no), tree walk (every `.write` false, the only non-false `.read` is `inbox/$uid`), `parseLivePing` exact five keys.
+- **O3 · Connection while hidden** — an open socket in a background tab (battery, cost) or the chunk fetched for a tab nobody sees. Tests: listener closes on hidden and catches up on visible; hub fetches the listener only when idle and visible (`live-hub.test.ts`).
+- **O4 · Duplicate or out-of-order pings** — repeated refreshes or an older version overriding a newer one. Tests: version gate (`newPings`), hub merge and 300 ms debounce.
+- **O5 · Listener in the initial bundle** — the database SDK (~30 KB gz) leaks into a header or layout module and breaks the 180 KB gate. Test: `apps/web/test/live-lazy.test.ts`; the coordinator measures `/shop` and `/cart`.
+- **O6 · Live is the only path** — polling removed or tied to the socket, so a blocked socket or unset URL freezes screens. Test: the hub is a no-op without the URL and the consumers' polling tests are unchanged.
+- **O7 · New origin not in the CSP** — the socket works locally and is blocked in production. Test: `csp.test.ts` database host (https and wss), only a Firebase host, only in real mode.
+
 ## M. Test-suite hygiene
 
 - **M1 · Flaky timing** — real clocks/sleeps → use DB `now()` manipulation or fake timers.

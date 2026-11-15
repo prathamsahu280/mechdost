@@ -125,6 +125,30 @@ describe('live listener', () => {
     expect(offs).toContain('inbox/uid-2');
   });
 
+  it('a late callback of the previous account (after the switch or sign-out) is ignored', async () => {
+    const { onKinds } = await connect();
+    const oldCb = children[0]?.cb;
+    authCb?.('uid-2');
+    oldCb?.(ping('cart', 9));
+    expect(onKinds).not.toHaveBeenCalled();
+    const nextCb = children.at(-1)?.cb;
+    authCb?.(null);
+    nextCb?.(ping('order', 1));
+    expect(onKinds).not.toHaveBeenCalled();
+  });
+
+  it('a callback that fires while the tab is hidden or after stop is ignored', async () => {
+    const { onKinds, stop } = await connect();
+    const cb = children[0]?.cb;
+    visibility = 'hidden';
+    cb?.(ping('cart', 1));
+    expect(onKinds).not.toHaveBeenCalled();
+    visibility = 'visible';
+    stop();
+    cb?.(ping('cart', 2));
+    expect(onKinds).not.toHaveBeenCalled();
+  });
+
   it('a permission or network failure ends the subscription quietly', async () => {
     await connect();
     children[0]?.fail();
