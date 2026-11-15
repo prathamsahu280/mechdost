@@ -14,6 +14,7 @@ import {
   type ServiceRequestStatus,
 } from '@mechdost/shared/state';
 import { istDateString } from '@mechdost/shared/time';
+import { MAX_RESCHEDULES } from '@mechdost/shared/workshop-slots';
 import type { VehicleType } from '@mechdost/shared/vehicles';
 import {
   auditLog,
@@ -44,6 +45,7 @@ import { recordServerEvent } from './events';
 import { localized } from './localized';
 import type { Tx } from './orders';
 import { rowsOf } from './sql-rows';
+import { releaseRequestSlots } from './workshop-slots';
 
 /**
  * Service requests (spec 06), customer side and the shared core. Every status change goes through
@@ -113,8 +115,19 @@ type RequestPatch = Partial<
     | 'visitingMechanic'
     | 'arrivalOverrideReason'
     | 'arrivalOverrideBy'
+    | 'preferredDate'
+    | 'preferredSlot'
+    | 'rescheduleCount'
   >
 >;
+
+/** Moves that end or restart a workshop's hold on an hour: its places go back (once per proposal). */
+const SLOT_RELEASING: readonly ServiceRequestStatus[] = [
+  'awaiting_workshop',
+  'needs_routing',
+  'cancelled',
+  'rejected',
+];
 
 /**
  * The only way to change a request's status. `expectedVersion` is the version the caller saw; chained moves in one
@@ -179,6 +192,8 @@ export async function transitionRequest(
       mode: r.serviceMode,
     },
   });
+  // The hour held by the workshop's proposal goes back when the booking is cancelled, rerouted, declined or moved.
+  if (SLOT_RELEASING.includes(args.to)) await releaseRequestSlots(tx, r.id);
   // A paid workshop booking earns the admin-set coins (spec 20, Q24), pending until the unlock days pass.
   if (args.to === 'paid')
     await createServiceReward(tx, {
@@ -326,8 +341,16 @@ export interface ServiceRequestView {
     lowPaise: number;
     highPaise: number;
     note: string | null;
+    /** The hourly slot (IST start hour) of the proposal; null on older proposals. */
+    hour: number | null;
     status: 'pending' | 'accepted';
   } | null;
+  /** Customer reschedules (spec 06): how many were used, and while the workshop answers one, the time it replaces. */
+  reschedule: {
+    count: number;
+    max: number;
+    from: { date: string; slot: ServiceSlot } | null;
+  };
   estimate: EstimateView | null;
   bill: BillView | null;
   /** Customer contact for the workshop (after the visit is confirmed) and staff; null otherwise. */
@@ -343,6 +366,15 @@ interface SnapshotJson {
   titleHi?: string | null;
   lowPaise: number;
   highPaise: number;
+}
+
+/** The time a pending reschedule replaces: the latest "moved by the customer" event's `from`. */
+function rescheduleFrom(
+  events: { to: string; payload: unknown }[],
+): { date: string; slot: ServiceSlot } | null {
+  const last = events.filter((e) => e.to === 'awaiting_workshop').at(-1);
+  const p = last?.payload as { reschedule?: boolean; fromDate?: string; fromSlot?: ServiceSlot } | undefined;
+  return p?.reschedule && p.fromDate && p.fromSlot ? { date: p.fromDate, slot: p.fromSlot } : null;
 }
 
 /** One request with its proposal, current estimate, bill and timeline, shaped for `audience`. */
@@ -412,6 +444,7 @@ export async function loadRequestView(
       actor: serviceEvents.actorType,
       at: serviceEvents.createdAt,
       visible: serviceEvents.visibleToCustomer,
+      payload: serviceEvents.payload,
     })
     .from(serviceEvents)
     .where(eq(serviceEvents.requestId, req.id))
@@ -498,9 +531,15 @@ export async function loadRequestView(
           lowPaise: proposal.lowPaise,
           highPaise: proposal.highPaise,
           note: proposal.note,
+          hour: proposal.slotHour,
           status: proposal.status as 'pending' | 'accepted',
         }
       : null,
+    reschedule: {
+      count: req.rescheduleCount,
+      max: MAX_RESCHEDULES,
+      from: status === 'awaiting_workshop' ? rescheduleFrom(timeline) : null,
+    },
     estimate: estimate
       ? {
           id: estimate.id,
@@ -940,6 +979,80 @@ export async function cancelMyServiceRequest(
       reasonCode: input.reasonCode,
     });
     await withdrawPendingProposals(tx, r.id);
+    return out;
+  });
+}
+
+/**
+ * Move a booking before the vehicle arrives (spec 06, workshops tier 1): the customer picks a new date and part of the
+ * day, the held hour goes back, and the request returns to the workshop (awaiting_workshop), which answers with a
+ * proposal for the new time. At most `MAX_RESCHEDULES` times. The event keeps the old and the new time, so the
+ * history is never lost; home visits follow the same rules (a new arrival code is issued when the visit is confirmed again).
+ */
+export async function rescheduleMyServiceRequest(
+  db: Tx,
+  input: {
+    userId: string;
+    code: string;
+    date: string;
+    slot: ServiceSlot;
+    expectedVersion: number;
+    now?: Date;
+  },
+) {
+  assertBookableDate(input.date, MAX_DAYS_AHEAD, input.now);
+  return db.transaction(async (tx) => {
+    const r = await lockRequest(tx, own(input.userId, input.code));
+    requireStatus(r, ['proposed', 'confirmed']);
+    const [cur] = await tx
+      .select({
+        count: serviceRequests.rescheduleCount,
+        date: serviceRequests.preferredDate,
+        slot: serviceRequests.preferredSlot,
+      })
+      .from(serviceRequests)
+      .where(eq(serviceRequests.id, r.id));
+    if (!cur) throw new NotFoundError('Service request not found');
+    if (cur.count >= MAX_RESCHEDULES)
+      throw new ConflictError('This booking was already moved the most times allowed', 'RESCHEDULE_LIMIT');
+    const [live] = await tx
+      .update(serviceProposals)
+      .set({ status: 'withdrawn', decidedAt: new Date() })
+      .where(
+        and(eq(serviceProposals.requestId, r.id), inArray(serviceProposals.status, ['pending', 'accepted'])),
+      )
+      .returning({ date: serviceProposals.proposedDate, slot: serviceProposals.slot });
+    const fromDate = live?.date ?? cur.date;
+    const fromSlot = (live?.slot ?? cur.slot) as ServiceSlot;
+    if (fromDate === input.date && fromSlot === input.slot)
+      throw new ValidationError('Pick a different date or time', 'RESCHEDULE_SAME');
+    const out = await transitionRequest(tx, {
+      request: r,
+      to: 'awaiting_workshop',
+      expectedVersion: input.expectedVersion,
+      actor: { type: 'customer', userId: input.userId },
+      patch: { preferredDate: input.date, preferredSlot: input.slot, rescheduleCount: cur.count + 1 },
+      payload: {
+        reschedule: true,
+        fromDate,
+        fromSlot,
+        toDate: input.date,
+        toSlot: input.slot,
+        count: cur.count + 1,
+        from: r.status,
+      },
+    });
+    await recordServerEvent(tx, 'service_rescheduled', {
+      userId: input.userId,
+      cityId: r.cityId,
+      props: {
+        requestCode: r.code,
+        workshopId: r.workshopId ?? '',
+        count: cur.count + 1,
+        fromDate,
+        toDate: input.date,
+      },
+    });
     return out;
   });
 }

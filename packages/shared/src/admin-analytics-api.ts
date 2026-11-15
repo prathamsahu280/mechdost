@@ -119,6 +119,8 @@ export const AnalyticsDashboardDto = z.object({
       confirmed: Count,
       completed: Count,
       cancelled: Count,
+      /** Requests this workshop let time out (acceptance timeout) in the range; counts against its score. */
+      expired: Count,
       medianMinutesToPropose: Count.nullable(),
     }),
   ),

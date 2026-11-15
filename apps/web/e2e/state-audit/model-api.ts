@@ -241,6 +241,42 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
     note: API_NOTE,
     realApi: true,
   },
+  // ─────────────── Workshops tier 1 (2026-11-15, spec 06, 07) ───────────────
+  {
+    code: 'API-WS-MYWORKSHOP',
+    page: 'Workshop portal (/partner/workshop), real sign-in',
+    component:
+      'My workshop card: profile text in English and Hindi, hours, busy mode, capacity per hour, menu ranges, pin and GSTIN requests (plain / busy / a waiting pin request)',
+    path: '/partner/workshop',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['workshop'] },
+      { name: 'myws', values: ['plain', 'busy', 'pending'] },
+      stress,
+    ],
+    sweep: 8,
+    note: API_NOTE,
+    realApi: true,
+  },
+  {
+    code: 'API-SVC-RESCHEDULE',
+    page: 'Service request (/service/{code}), real sign-in',
+    component: 'Change date or time: link only, or the open form (date, part of the day, changes left)',
+    path: '/service/SR-RPR-2026-HND401',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['customer'] },
+      { name: 'form', values: ['closed', 'open'] },
+      stress,
+    ],
+    sweep: 8,
+    note: API_NOTE,
+    realApi: true,
+  },
 
   // ─────────────── Refunds (2026-11-15, spec 05) ───────────────
   {

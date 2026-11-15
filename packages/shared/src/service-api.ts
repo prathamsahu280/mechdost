@@ -191,9 +191,19 @@ export const ServiceRequestDetailDto = z.object({
       lowPaise: z.number().int(),
       highPaise: z.number().int(),
       note: z.string().nullable(),
+      /** The hourly slot (IST start hour); absent or null on older proposals. */
+      hour: z.number().int().nullable().default(null),
       status: z.enum(['pending', 'accepted']),
     })
     .nullable(),
+  /** Customer reschedules used, and the time a waiting reschedule replaces (workshops tier 1). */
+  reschedule: z
+    .object({
+      count: z.number().int(),
+      max: z.number().int(),
+      from: z.object({ date: z.string(), slot: z.enum(SLOTS) }).nullable(),
+    })
+    .default({ count: 0, max: 2, from: null }),
   estimate: z
     .object({
       id: z.string(),
@@ -211,6 +221,65 @@ export const ServiceRequestDetailDto = z.object({
   updatedAt: z.string(),
 });
 export type ServiceRequestDetail = z.infer<typeof ServiceRequestDetailDto>;
+
+/** `GET /v1/workshop/slots`: the open hours of a day (workshops tier 1). */
+export const WorkshopSlotsDto = z.object({
+  slots: z.array(
+    z.object({
+      hour: z.number().int(),
+      part: z.enum(SLOTS),
+      capacity: z.number().int(),
+      booked: z.number().int(),
+      free: z.number().int(),
+    }),
+  ),
+});
+export type WorkshopSlots = z.infer<typeof WorkshopSlotsDto>;
+
+/** `GET /v1/workshop/profile`: "My workshop" (workshops tier 1). */
+export const WorkshopProfilesDto = z.object({
+  workshops: z.array(
+    z.object({
+      workshopId: z.string(),
+      name: z.string(),
+      nameHi: z.string().nullable(),
+      addressLine: z.string(),
+      addressLineHi: z.string().nullable(),
+      area: z.string(),
+      areaHi: z.string().nullable(),
+      phone: z.string().nullable(),
+      lat: z.number(),
+      lng: z.number(),
+      gstin: z.string().nullable(),
+      hours: Hours,
+      busy: z.boolean(),
+      slotCapacity: z.number().int(),
+      version: z.number().int(),
+      menu: z.array(
+        z.object({
+          key: z.string(),
+          title: z.string(),
+          titleHi: z.string().nullable(),
+          included: z.string().nullable(),
+          includedHi: z.string().nullable(),
+          lowPaise: z.number().int(),
+          highPaise: z.number().int(),
+          minMinutes: z.number().int(),
+          maxMinutes: z.number().int(),
+          vehicleType: Vehicle.nullable(),
+          active: z.boolean(),
+          homeAvailable: z.boolean(),
+        }),
+      ),
+      pending: z.array(
+        z.object({ id: z.string(), kind: z.enum(['location', 'gstin']), createdAt: z.string() }),
+      ),
+    }),
+  ),
+});
+export type WorkshopProfiles = z.infer<typeof WorkshopProfilesDto>;
+export const WorkshopProfileSavedDto = z.object({ version: z.number().int() });
+export const WorkshopChangeFiledDto = z.object({ id: z.string() });
 
 /** Every state change answers with the new status and version. */
 export const ServiceChangedDto = z.object({ status: Status, version: z.number().int() });

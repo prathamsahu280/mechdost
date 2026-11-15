@@ -15,6 +15,7 @@ import {
   VISIT_FEE_WAIVE_REASONS,
 } from './state';
 import { VEHICLE_TYPES } from './vehicles';
+import { MAX_SLOT_CAPACITY } from './workshop-slots';
 
 /** Part of the day the customer prefers or the workshop proposes (the demo's three slots). */
 export const SERVICE_SLOTS = ['morning', 'afternoon', 'evening'] as const;
@@ -266,7 +267,10 @@ export type EstimateDecisionInput = z.infer<typeof EstimateDecisionSchema>;
 export const ProposeSchema = z
   .object({
     date: isoDate,
-    slot: z.enum(SERVICE_SLOTS),
+    /** The hourly slot (IST start hour) of a whole open hour: takes one place of its capacity (workshops tier 1). */
+    hour: z.number().int().min(0).max(23).optional(),
+    /** Part of the day; only for the older hourless form (derived from `hour` otherwise). */
+    slot: z.enum(SERVICE_SLOTS).optional(),
     lowPaise: paise,
     highPaise: paise,
     note: text(1, 300).nullable().optional(),
@@ -282,7 +286,67 @@ export const ProposeSchema = z
     version: z.number().int().min(1),
   })
   .strict()
-  .refine((p) => p.highPaise >= p.lowPaise, { message: 'high below low', path: ['highPaise'] });
+  .refine((p) => p.highPaise >= p.lowPaise, { message: 'high below low', path: ['highPaise'] })
+  .refine((p) => p.hour !== undefined || p.slot !== undefined, { message: 'pick an hour', path: ['hour'] });
+
+/** Customer: move a booking before the vehicle arrives (a new date and part of the day). */
+export const RescheduleServiceRequestSchema = z
+  .object({ date: isoDate, slot: z.enum(SERVICE_SLOTS), version: z.number().int().min(1) })
+  .strict();
+
+/** Workshop portal: the owner's own capacity edit for one hour. */
+export const SlotCapacitySchema = z
+  .object({
+    date: isoDate,
+    hour: z.number().int().min(0).max(23),
+    capacity: z.number().int().min(0).max(MAX_SLOT_CAPACITY),
+  })
+  .strict();
+
+/**
+ * Workshop portal "My workshop": what the owner may change at once. The pin, the PIN code and the GSTIN are not here
+ * (strict rejects them): they go through a change request that staff approve (spec 07).
+ */
+export const WorkshopSelfEditSchema = z
+  .object({
+    version: z.number().int().min(1),
+    name: WorkshopFields.name.optional(),
+    nameHi: WorkshopFields.nameHi,
+    addressLine: WorkshopFields.addressLine.optional(),
+    addressLineHi: WorkshopFields.addressLineHi,
+    area: WorkshopFields.area.optional(),
+    areaHi: WorkshopFields.areaHi,
+    phone: WorkshopFields.phone,
+    hours: WorkshopHoursSchema.optional(),
+    busy: z.boolean().optional(),
+    slotCapacity: z.number().int().min(1).max(MAX_SLOT_CAPACITY).optional(),
+    menu: z.array(MenuItemSchema).max(MAX_MENU_ITEMS).optional(),
+  })
+  .strict();
+export type WorkshopSelfEditInput = z.infer<typeof WorkshopSelfEditSchema>;
+
+/** Workshop portal: ask staff to move the pin or change the GSTIN (they re-verify; the live values stay meanwhile). */
+export const WorkshopChangeSchema = z.discriminatedUnion('kind', [
+  z
+    .object({
+      kind: z.literal('location'),
+      lat: z.number().min(-90).max(90),
+      lng: z.number().min(-180).max(180),
+      pincode: z.string().regex(PINCODE_RE).nullable().optional(),
+    })
+    .strict(),
+  z.object({ kind: z.literal('gstin'), gstin: WorkshopFields.gstin.unwrap() }).strict(),
+]);
+export type WorkshopChangeInput = z.infer<typeof WorkshopChangeSchema>;
+
+/** Staff: approve or turn down a workshop's change request (a reason is required to turn it down). */
+export const WorkshopChangeDecisionSchema = z
+  .object({
+    approve: z.boolean(),
+    note: z.string().trim().min(5).max(300).nullable().optional(),
+    version: z.number().int().min(1),
+  })
+  .strict();
 
 export const WorkshopDeclineSchema = z
   .object({ reasonCode: z.enum(SERVICE_DECLINE_REASONS), version: z.number().int().min(1) })

@@ -212,6 +212,12 @@ async function prepareApi(page: Page, c: AuditCase): Promise<string[]> {
       }
     }
   }
+  // Workshops tier 1: open the customer's reschedule form.
+  if (c.code === 'API-SVC-RESCHEDULE' && c.state.form === 'open') {
+    const link = main.getByRole('button', { name: /change date or time|तारीख़ या समय बदलें/i }).first();
+    if ((await link.count()) === 0) notes.push('no reschedule link');
+    else await link.click();
+  }
   if (c.code === 'API-SVC-PHOTOS' && c.state.viewer === 'open') {
     const thumb = main.locator('section[aria-labelledby$="-photos-title"] button').first();
     if ((await thumb.count()) === 0) notes.push('no photo thumbnail');

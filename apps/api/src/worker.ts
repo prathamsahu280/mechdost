@@ -15,6 +15,7 @@ import {
   getCompany,
   getPublishedContent,
   expireDueAssignments,
+  expireDueServiceRequests,
   releaseExpiredReservations,
   expireUnpaidOnlineOrders,
   expireDueCoins,
@@ -151,6 +152,28 @@ const expiryTimer = setInterval(() => {
     });
 }, 30_000);
 expiryTimer.unref();
+
+// Workshop acceptance timer (spec 06, workshops tier 1): requests waiting in `awaiting_workshop` past
+// `service.acceptance_timeout_min` go back to routing and count against the workshop. Every 30 s; each expiry is its
+// own compare-and-set transaction under the request lock, so several workers may run this safely.
+let expiringRequests = false;
+const requestTimer = setInterval(() => {
+  if (expiringRequests) return;
+  expiringRequests = true;
+  void expireDueServiceRequests(db)
+    .then(({ expired, failed }) => {
+      if (expired > 0) log('info', 'service_requests_expired', { count: expired });
+      for (const f of failed)
+        log('error', 'service_request_expiry_failed', { requestId: f.requestId, ...safeError(f.error) });
+    })
+    .catch((err: unknown) => {
+      log('error', 'service_request_expiry_failed', safeError(err));
+    })
+    .finally(() => {
+      expiringRequests = false;
+    });
+}, 30_000);
+requestTimer.unref();
 
 // Pauses with an end date resume by themselves (Q28, user 2026-11-13). Every 60 s; each shop is its own
 // compare-and-set, so several workers may run this safely.
@@ -403,6 +426,7 @@ function shutdown(signal: string) {
   log('info', 'shutdown', { signal });
   if (bridgeTimer) clearInterval(bridgeTimer);
   clearInterval(expiryTimer);
+  clearInterval(requestTimer);
   clearInterval(holdTimer);
   clearInterval(pauseTimer);
   clearInterval(paymentTimer);

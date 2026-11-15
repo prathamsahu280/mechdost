@@ -26,9 +26,10 @@ import { useApiList } from './use-api-list';
 import { JobPhotosPanelLazy } from '../photos/photos-lazy';
 import { EstimateBuilderApi, JobStepsApi, OdometerFormApi } from './workshop-job-api';
 import { WorkshopPerformanceLazy } from './workshop-performance-lazy';
+import { HourPickerApi, MyWorkshopApi } from './workshop-tier1-api';
+import { isTier1Error, Tier1Error } from '../workshops/tier1-error';
 
 const NEW_POLL_MS = 30_000;
-const SLOTS = ['morning', 'afternoon', 'evening'] as const;
 const loc = (locale: string) => (locale === 'hi' ? 'hi' : 'en');
 
 /**
@@ -68,6 +69,8 @@ export function WorkshopRequestsApi() {
           <h2 className="font-heading text-2xl font-extrabold">🔧 {name}</h2>
         </section>
       ) : null}
+
+      <MyWorkshopApi />
 
       <HomeSettingsApi />
       <WorkshopPerformanceLazy />
@@ -216,11 +219,14 @@ function NewRequestApi({
 }) {
   const t = useTranslations('portal');
   const h = useTranslations('homeService');
+  const w1 = useTranslations('workshopTier1');
   const locale = useLocale();
   const [detail, setDetail] = useState<ServiceRequestDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [formError, setFormError] = useState(false);
   const [mechanicError, setMechanicError] = useState(false);
+  const [date, setDate] = useState(r.preferredDate.slice(0, 10));
+  const [hourError, setHourError] = useState(false);
   const [declining, setDeclining] = useState(false);
   const [reason, setReason] = useState<ServiceDeclineReason | ''>('');
   const [missing, setMissing] = useState(false);
@@ -271,14 +277,19 @@ function NewRequestApi({
     };
     const low = rupeesToPaise(text('min'));
     const high = rupeesToPaise(text('max'));
-    const date = text('date');
-    const slot = SLOTS.find((x) => x === text('slot')) ?? r.preferredSlot;
+    const hour = Number(text('hour'));
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || low === null || high === null || low <= 0 || high < low) {
       setFormError(true);
       document.getElementById(id('min'))?.focus();
       return;
     }
     setFormError(false);
+    if (text('hour') === '' || !Number.isInteger(hour)) {
+      setHourError(true);
+      document.getElementById(id('hour'))?.focus();
+      return;
+    }
+    setHourError(false);
     const mechanic = text('mechanic');
     if (r.serviceMode === 'home' && !validMechanicName(mechanic)) {
       setMechanicError(true);
@@ -291,7 +302,7 @@ function NewRequestApi({
       'propose',
       {
         date,
-        slot,
+        hour,
         lowPaise: low,
         highPaise: high,
         ...(note ? { note } : {}),
@@ -313,9 +324,22 @@ function NewRequestApi({
   return (
     <article className={`${portalCard} border-accent-button/50`} aria-busy={busy || undefined}>
       <SummaryHead request={r} detail={detail} />
+      {detail?.reschedule.from ? (
+        <p role="status" className="mt-2 rounded-tile bg-pill p-3 text-sm font-bold text-ink">
+          {w1('customerMoved', {
+            from: `${formatDate(detail.reschedule.from.date, locale)}, ${t(`slot_${detail.reschedule.from.slot}`)}`,
+            to: `${formatDate(detail.preferredDate, locale)}, ${t(`slot_${detail.preferredSlot}`)}`,
+          })}
+        </p>
+      ) : null}
+      {hourError ? (
+        <p id={id('hour-error')} role="alert" className="mt-2 text-sm font-bold text-error">
+          {w1('hourRequired')}
+        </p>
+      ) : null}
       {error ? (
         <div className="mt-3">
-          <ServiceApiError code={error} />
+          {isTier1Error(error) ? <Tier1Error code={error} /> : <ServiceApiError code={error} />}
         </div>
       ) : null}
       {declining ? (
@@ -373,22 +397,20 @@ function NewRequestApi({
                 id={id('date')}
                 name="date"
                 type="date"
-                defaultValue={r.preferredDate.slice(0, 10)}
+                value={date}
+                onChange={(e) => {
+                  setDate(e.target.value);
+                }}
                 className={portalField}
               />
             </div>
-            <div>
-              <label htmlFor={id('slot')} className="text-xs font-bold text-muted">
-                {t('proposeSlot')}
-              </label>
-              <select id={id('slot')} name="slot" defaultValue={r.preferredSlot} className={portalField}>
-                {SLOTS.map((x) => (
-                  <option key={x} value={x}>
-                    {t(`slot_${x}`)}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <HourPickerApi
+              workshopId={detail?.workshop?.id ?? null}
+              date={date}
+              id={id('hour')}
+              invalid={hourError}
+              describedBy={hourError ? id('hour-error') : undefined}
+            />
             <div>
               <label htmlFor={id('min')} className="text-xs font-bold text-muted">
                 {t('minCost')}

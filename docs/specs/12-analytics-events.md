@@ -161,3 +161,7 @@ Server events (same transaction; ids, codes and counts only, never text, a path 
 ## Coupon events (2026-11-15)
 
 Client `apply_coupon { result: applicable|refused|applied|removed, reason: <COUPON_REASONS code>|null, funder: mechdost|shop|null }` (the typed code is never recorded; hard rules 9 and 16). Server events in the same transaction: `coupon_redeemed { couponId, orderCode, discountPaise, funder, kind }`, `coupon_released { couponId, orderCode }`, `admin_coupon_saved { couponId, action, funder }`, `admin_coupon_paused { couponId, paused }`, `shop_coupon_decided { couponId, shopId, decision }`.
+
+## Workshops tier 1 events (2026-11-15)
+
+Server (same transaction; ids, codes, counts only): `workshop_slot_capacity_set {workshopId, hour, capacity}`, `workshop_profile_saved {workshopId, fields[], busy, by}`, `workshop_change_requested {workshopId, kind}`, `workshop_change_decided {workshopId, kind, approved}`, `service_slot_booked {requestCode, workshopId, hour}`, `service_rescheduled {requestCode, workshopId, count, fromDate, toDate}`, `service_acceptance_expired {requestCode, workshopId, waitedMinutes}`. Client: `booking_rescheduled {code, workshop, slot}`, `workshop_profile_viewed {}`.

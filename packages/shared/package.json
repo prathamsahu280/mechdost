@@ -56,6 +56,7 @@
     "./email-phrases": "./src/email-phrases.ts",
     "./service-bill": "./src/service-bill.ts",
     "./service-photos": "./src/service-photos.ts",
+    "./workshop-slots": "./src/workshop-slots.ts",
     "./service-requests": "./src/service-requests.ts",
     "./service-api": "./src/service-api.ts",
     "./free-delivery": "./src/free-delivery.ts",

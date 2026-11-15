@@ -136,6 +136,8 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | API-SVC-PHOTOS     | Service request (/service/{code}), real sign-in                  | Before and after strip: none (hidden) / 1 / 6 photos, the viewer closed or open                                                                                                                                                                                                 | pairwise | 24       | 0       |
 | API-ACC-SUPPORT    | Account → Support from an order link, real sign-in               | Talk to MechDost support: issue chips, message, photo picker, the one conversation with photos, the cash on delivery refund destination (none, saved, masked); none, open with photos, COD without destination, COD saved, resolved; the empty-message error                    | pairwise | 40       | 0       |
 | API-ADM-SUPPORT    | Admin → Support inbox with a thread, real sign-in                | Inbox conversation: issue badge, customer photos, the cash on delivery refund panel (no destination, masked destination); open with photos, COD without destination, COD saved, resolved                                                                                        | pairwise | 32       | 0       |
+| API-WS-MYWORKSHOP  | Workshop portal (/partner/workshop), real sign-in                | My workshop card: profile text in English and Hindi, hours, busy mode, capacity per hour, menu ranges, pin and GSTIN requests (plain / busy / a waiting pin request)                                                                                                            | pairwise | 24       | 0       |
+| API-SVC-RESCHEDULE | Service request (/service/{code}), real sign-in                  | Change date or time: link only, or the open form (date, part of the day, changes left)                                                                                                                                                                                          | pairwise | 16       | 0       |
 | API-ADM-REFUNDQ    | Admin console (/admin/refunds)                                   | Refund queue: view buttons, list rows, detail (approve / decline with reason / pay by hand with UTR), alerts                                                                                                                                                                    | pairwise | 65       | 0       |
 | API-ORD-REFUNDLINE | Order page (/orders/{code})                                      | Refund status line under a part: under review, processing, refunded, declined, failed (+ support link)                                                                                                                                                                          | pairwise | 48       | 0       |
 | API-SHOP-PORTAL    | Shop portal (/partner/shop), real sign-in                        | Orders from the API with the give-up form, the shop's warnings, its hours and standing, its agreement                                                                                                                                                                           | pairwise | 63       | 0       |
@@ -160,7 +162,7 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | API-ADM-AUDIT      | Admin → Audit log, real sign-in                                  | Audit log: filters, entries (closed and open with before/after), more, empty, load error                                                                                                                                                                                        | pairwise | 32       | 0       |
 | API-NAV-ADMIN      | Navigation, real sign-in                                         | Admin section bar with every real-mode section (Analytics, Refunds, Errors included): current item, scroll, walk                                                                                                                                                                | cross    | 168      | 0       |
 | API-NAV-ACCOUNT    | Navigation, real sign-in                                         | Account section bar in a real-sign-in build: current item, scroll, walk                                                                                                                                                                                                         | cross    | 80       | 0       |
-| **Total**          |                                                                  |                                                                                                                                                                                                                                                                                 |          | **3649** | **92**  |
+| **Total**          |                                                                  |                                                                                                                                                                                                                                                                                 |          | **3689** | **92**  |
 
 ## Chrome
 
@@ -3061,6 +3063,60 @@ Pairwise (all pairs of values); 32 states; scope `main`.
 - [ ] API-ADM-SUPPORT-030 · 1440px · dark · hi · admin · world=empty · /admin/support · tickets=resolved · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
 - [ ] API-ADM-SUPPORT-031 · 1920px · light · en · admin · world=empty · /admin/support · tickets=open-photos · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
 - [ ] API-ADM-SUPPORT-032 · 1920px · dark · hi · admin · world=empty · /admin/support · tickets=cod-none · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+
+## Workshop portal (/partner/workshop), real sign-in
+
+### API-WS-MYWORKSHOP — My workshop card: profile text in English and Hindi, hours, busy mode, capacity per hour, menu ranges, pin and GSTIN requests (plain / busy / a waiting pin request)
+
+Pairwise (all pairs of values); 24 states; scope `main`.
+
+- [ ] API-WS-MYWORKSHOP-001 · 320px · light · en · workshop partner · world=empty · /partner/workshop · myws=plain · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-WS-MYWORKSHOP-002 · 320px · dark · hi · workshop partner · world=empty · /partner/workshop · myws=busy · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-MYWORKSHOP-003 · 390px · light · hi · workshop partner · world=empty · /partner/workshop · myws=pending · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-MYWORKSHOP-004 · 390px · dark · en · workshop partner · world=empty · /partner/workshop · myws=plain · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-WS-MYWORKSHOP-005 · 480px · light · en · workshop partner · world=empty · /partner/workshop · myws=busy · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-WS-MYWORKSHOP-006 · 480px · dark · hi · workshop partner · world=empty · /partner/workshop · myws=pending · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-MYWORKSHOP-007 · 768px · light · en · workshop partner · world=empty · /partner/workshop · myws=pending · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-WS-MYWORKSHOP-008 · 768px · dark · hi · workshop partner · world=empty · /partner/workshop · myws=plain · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-MYWORKSHOP-009 · 1024px · light · en · workshop partner · world=empty · /partner/workshop · myws=busy · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-WS-MYWORKSHOP-010 · 1024px · dark · hi · workshop partner · world=empty · /partner/workshop · myws=plain · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-MYWORKSHOP-011 · 1280px · light · en · workshop partner · world=empty · /partner/workshop · myws=busy · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-WS-MYWORKSHOP-012 · 1280px · dark · hi · workshop partner · world=empty · /partner/workshop · myws=pending · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-MYWORKSHOP-013 · 1440px · light · en · workshop partner · world=empty · /partner/workshop · myws=plain · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-WS-MYWORKSHOP-014 · 1440px · dark · hi · workshop partner · world=empty · /partner/workshop · myws=busy · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-MYWORKSHOP-015 · 1920px · light · en · workshop partner · world=empty · /partner/workshop · myws=pending · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-WS-MYWORKSHOP-016 · 1920px · dark · hi · workshop partner · world=empty · /partner/workshop · myws=plain · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-MYWORKSHOP-017 · 320px · light · en · workshop partner · world=empty · /partner/workshop · myws=pending · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-WS-MYWORKSHOP-018 · 390px · dark · hi · workshop partner · world=empty · /partner/workshop · myws=busy · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-MYWORKSHOP-019 · 480px · light · en · workshop partner · world=empty · /partner/workshop · myws=plain · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-WS-MYWORKSHOP-020 · 768px · dark · hi · workshop partner · world=empty · /partner/workshop · myws=busy · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-MYWORKSHOP-021 · 1024px · light · en · workshop partner · world=empty · /partner/workshop · myws=pending · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-WS-MYWORKSHOP-022 · 1280px · dark · hi · workshop partner · world=empty · /partner/workshop · myws=plain · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-MYWORKSHOP-023 · 1440px · light · en · workshop partner · world=empty · /partner/workshop · myws=pending · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-WS-MYWORKSHOP-024 · 1920px · dark · hi · workshop partner · world=empty · /partner/workshop · myws=busy · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+
+## Service request (/service/{code}), real sign-in
+
+### API-SVC-RESCHEDULE — Change date or time: link only, or the open form (date, part of the day, changes left)
+
+Pairwise (all pairs of values); 16 states; scope `main`.
+
+- [ ] API-SVC-RESCHEDULE-001 · 320px · light · en · customer · world=empty · /service/SR-RPR-2026-HND401 · form=closed · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-SVC-RESCHEDULE-002 · 320px · dark · hi · customer · world=empty · /service/SR-RPR-2026-HND401 · form=open · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-SVC-RESCHEDULE-003 · 390px · light · hi · customer · world=empty · /service/SR-RPR-2026-HND401 · form=closed · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-SVC-RESCHEDULE-004 · 390px · dark · en · customer · world=empty · /service/SR-RPR-2026-HND401 · form=open · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-SVC-RESCHEDULE-005 · 480px · light · en · customer · world=empty · /service/SR-RPR-2026-HND401 · form=open · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-SVC-RESCHEDULE-006 · 480px · dark · hi · customer · world=empty · /service/SR-RPR-2026-HND401 · form=closed · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-SVC-RESCHEDULE-007 · 768px · light · en · customer · world=empty · /service/SR-RPR-2026-HND401 · form=closed · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-SVC-RESCHEDULE-008 · 768px · dark · hi · customer · world=empty · /service/SR-RPR-2026-HND401 · form=open · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-SVC-RESCHEDULE-009 · 1024px · light · en · customer · world=empty · /service/SR-RPR-2026-HND401 · form=closed · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-SVC-RESCHEDULE-010 · 1024px · dark · hi · customer · world=empty · /service/SR-RPR-2026-HND401 · form=open · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-SVC-RESCHEDULE-011 · 1280px · light · en · customer · world=empty · /service/SR-RPR-2026-HND401 · form=closed · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-SVC-RESCHEDULE-012 · 1280px · dark · hi · customer · world=empty · /service/SR-RPR-2026-HND401 · form=open · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-SVC-RESCHEDULE-013 · 1440px · light · en · customer · world=empty · /service/SR-RPR-2026-HND401 · form=closed · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-SVC-RESCHEDULE-014 · 1440px · dark · hi · customer · world=empty · /service/SR-RPR-2026-HND401 · form=open · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-SVC-RESCHEDULE-015 · 1920px · light · en · customer · world=empty · /service/SR-RPR-2026-HND401 · form=closed · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-SVC-RESCHEDULE-016 · 1920px · dark · hi · customer · world=empty · /service/SR-RPR-2026-HND401 · form=open · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
 
 ## Admin console (/admin/refunds)
 

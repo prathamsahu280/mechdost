@@ -166,9 +166,15 @@ export const RequestDetail = z
         lowPaise: z.number().int(),
         highPaise: z.number().int(),
         note: z.string().nullable(),
+        hour: z.number().int().nullable(),
         status: z.enum(['pending', 'accepted']),
       })
       .nullable(),
+    reschedule: z.object({
+      count: z.number().int(),
+      max: z.number().int(),
+      from: z.object({ date: z.string(), slot: z.enum(SERVICE_SLOTS) }).nullable(),
+    }),
     estimate: z
       .object({
         id: z.string(),

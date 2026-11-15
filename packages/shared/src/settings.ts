@@ -157,6 +157,11 @@ export const OPERATIONAL_SETTINGS = {
   'service.photos_public': { kind: 'boolean', default: false, globalOnly: true },
   /** Most photos per stage (before, after) for one job. */
   'service.photos_max_per_stage': { kind: 'int', min: 1, max: 12, default: 6, globalOnly: true },
+  /**
+   * Workshops tier 1 (spec 06): minutes a request waits in `awaiting_workshop` before it goes back to routing and counts
+   * against the workshop. Per city.
+   */
+  'service.acceptance_timeout_min': { kind: 'int', min: 10, max: 1440, default: 60 },
 } as const satisfies Record<string, SettingSpec>;
 
 /**

@@ -46,6 +46,7 @@ import { homeFinderMocks, homeJobMocks, homeRequestMocks } from './home-fixtures
 import { adminWorkshopAnalyticsMocks, workshopPerformanceMocks } from './workshop-analytics-fixtures.ts';
 import { customerPhotoMocks, workshopPhotoMocks } from './photo-fixtures.ts';
 import { accountSupportMocks, adminSupportMocks } from './support-fixtures.ts';
+import { myWorkshopMocks, profileMocks } from './tier1-fixtures.ts';
 import type { Mock, MockCtx, Reply } from './mock-api.ts';
 
 const NOW = Date.parse('2026-11-15T10:00:00.000Z');
@@ -995,6 +996,7 @@ function analyticsMocks(): Mock[] {
                     confirmed: 22,
                     completed: 18,
                     cancelled: 3,
+                    expired: 1,
                     medianMinutesToPropose: 25,
                   },
                 ]
@@ -1497,7 +1499,7 @@ export function mocksFor(c: AuditCase): Mock[] {
     case 'API-SVC-HOMEREQ':
       return homeRequestMocks(c);
     case 'API-WS-HOMEJOB':
-      return homeJobMocks(c);
+      return [...homeJobMocks(c), ...profileMocks(c)];
     case 'API-ADM-STAFF':
       return staffMocks();
     case 'API-ADM-CUSTOMERS':
@@ -1505,7 +1507,11 @@ export function mocksFor(c: AuditCase): Mock[] {
     case 'API-ADM-AUDIT':
       return auditMocks();
     case 'API-WS-PHOTOS':
-      return workshopPhotoMocks(c);
+      return [...workshopPhotoMocks(c), ...profileMocks(c)];
+    case 'API-WS-MYWORKSHOP':
+      return myWorkshopMocks(c);
+    case 'API-SVC-RESCHEDULE':
+      return homeRequestMocks(c);
     case 'API-SVC-PHOTOS':
       return customerPhotoMocks(c);
     case 'API-ACC-SUPPORT':

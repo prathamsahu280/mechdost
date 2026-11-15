@@ -84,6 +84,7 @@ const SETTING_LABEL = {
   'service.photos_required': 'api_set_service_photos_required',
   'service.photos_public': 'api_set_service_photos_public',
   'service.photos_max_per_stage': 'api_set_service_photos_max_per_stage',
+  'service.acceptance_timeout_min': 'api_set_service_acceptance_timeout_min',
 } as const satisfies Record<SettingKey, string>;
 
 const UNIT_LABEL = {

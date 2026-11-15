@@ -210,6 +210,8 @@ export const serviceRequestMachine = /* @__PURE__ */ defineMachine(
     { from: 'proposed', to: 'cancelled', by: ['customer', 'admin'] },
     // 'admin' only through the audited arrival-code override (home servicing).
     { from: 'confirmed', to: 'vehicle_received', by: ['workshop', 'admin'] },
+    // Customer reschedule (spec 06): the confirmed slot is released and the workshop answers the new time.
+    { from: 'confirmed', to: 'awaiting_workshop', by: ['customer'] },
     { from: 'confirmed', to: 'cancelled', by: ['customer', 'admin', 'workshop'] },
     { from: 'vehicle_received', to: 'estimate_sent', by: ['workshop'] },
     // Home servicing: the customer declined the offer to move the job to the workshop (spec 06); only that path uses it.

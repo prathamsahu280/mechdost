@@ -80,6 +80,8 @@ export const workshops = pgTable(
     homeService: boolean().notNull().default(false),
     homeRadiusKm: smallint().notNull().default(5),
     homeVisitFeePaise: integer().notNull().default(9900),
+    /** Bookings one hourly slot takes (spec 06, workshops tier 1); the owner edits it, `workshop_slots` copies it per hour. */
+    slotCapacity: smallint().notNull().default(2),
     ratingAvg: numeric({ precision: 3, scale: 2 }),
     ratingCount: integer().notNull().default(0),
     createdBy: uuid().references(() => users.id, { onDelete: 'set null' }),
@@ -111,6 +113,7 @@ export const workshops = pgTable(
     check('workshops_phone_format', sql`${t.phone} is null or ${t.phone} ~ '^\\+[1-9][0-9]{7,14}$'`),
     check('workshops_rating_count_nonneg', sql`${t.ratingCount} >= 0`),
     check('workshops_home_radius_range', sql`${t.homeRadiusKm} between 1 and 25`),
+    check('workshops_slot_capacity_range', sql`${t.slotCapacity} between 1 and 20`),
     check('workshops_home_fee_range', sql`${t.homeVisitFeePaise} between 0 and 50000`),
     index('workshops_location_gist').using('gist', t.location),
     // Home listing (ST_DWithin on the workshop pin, bounded by the 25 km maximum radius): only workshops that opted in.
@@ -215,6 +218,8 @@ export const serviceRequests = pgTable(
     visitingMechanic: text(),
     arrivalOverrideReason: text(),
     arrivalOverrideBy: uuid().references(() => users.id, { onDelete: 'restrict' }),
+    /** Times the customer moved the booking (spec 06 reschedule); at most `MAX_RESCHEDULES`. */
+    rescheduleCount: smallint().notNull().default(0),
     version: version(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
@@ -243,6 +248,7 @@ export const serviceRequests = pgTable(
       'service_requests_arrival_override_pair',
       sql`(${t.arrivalOverrideReason} is null) = (${t.arrivalOverrideBy} is null)`,
     ),
+    check('service_requests_reschedule_range', sql`${t.rescheduleCount} between 0 and 2`),
     index().on(t.addressId),
     index().on(t.arrivalOverrideBy),
     check('service_requests_code_format', sql`${t.code} ~ '^SR-[A-Z]{3}-[0-9]{4}-[0-9A-HJKMNP-TV-Z]{6}$'`),
@@ -308,6 +314,10 @@ export const serviceProposals = pgTable(
     lowPaise: paise().notNull(),
     highPaise: paise().notNull(),
     note: text(),
+    /** The hourly slot (IST start hour) holding one unit of `workshop_slots` capacity; null on older proposals. */
+    slotHour: smallint(),
+    /** When that unit went back; set exactly once (`releaseRequestSlots`), never while the proposal is live. */
+    slotReleasedAt: ts(),
     status: text().notNull().default('pending'),
     createdBy: uuid().references(() => users.id, { onDelete: 'set null' }),
     decidedAt: ts(),
@@ -321,6 +331,11 @@ export const serviceProposals = pgTable(
     check(
       'service_proposals_status_valid',
       sql`${t.status} in ('pending','accepted','declined','withdrawn')`,
+    ),
+    check('service_proposals_slot_hour_range', sql`${t.slotHour} is null or ${t.slotHour} between 0 and 23`),
+    check(
+      'service_proposals_release_needs_hour',
+      sql`${t.slotReleasedAt} is null or ${t.slotHour} is not null`,
     ),
     check('service_proposals_note_len', sql`${t.note} is null or char_length(${t.note}) <= 300`),
     uniqueIndex('service_proposals_one_pending_uq')
@@ -470,6 +485,10 @@ export const serviceEvents = pgTable(
   (t) => [
     check('service_events_actor_valid', sql`${t.actorType} in ('customer','workshop','admin','system')`),
     index().on(t.requestId, t.id),
+    // Workshop analytics: acceptance timeouts per workshop (the request no longer names it once it is rerouted).
+    index('service_events_expired_workshop_idx')
+      .on(sql`(${t.payload} ->> 'expiredWorkshopId')`)
+      .where(sql`${t.toStatus} = 'needs_routing'`),
   ],
 );
 
@@ -526,5 +545,74 @@ export const serviceArrivalCodes = pgTable(
   (t) => [
     check('service_arrival_codes_attempts', sql`${t.attempts} between 0 and 5`),
     check('service_arrival_codes_encrypted', encryptedCheck(t.codeEnc)),
+  ],
+);
+
+/**
+ * One hour of a workshop's day (IST start hour) with its capacity and bookings (spec 06 "capacity race"). Rows are made
+ * on demand from the workshop's hours; a booking is the conditional UPDATE `booked = booked + 1 where booked < capacity`
+ * and the CHECK keeps `0 <= booked <= capacity`, so two proposals can never share the last place.
+ */
+export const workshopSlots = pgTable(
+  'workshop_slots',
+  {
+    id: id(),
+    workshopId: uuid()
+      .notNull()
+      .references(() => workshops.id, { onDelete: 'cascade' }),
+    slotDate: date({ mode: 'string' }).notNull(),
+    hour: smallint().notNull(),
+    capacity: smallint().notNull(),
+    booked: smallint().notNull().default(0),
+    version: version(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    unique('workshop_slots_hour_uq').on(t.workshopId, t.slotDate, t.hour),
+    check('workshop_slots_hour_range', sql`${t.hour} between 0 and 23`),
+    check('workshop_slots_capacity_range', sql`${t.capacity} between 0 and 20`),
+    check('workshop_slots_booked_within_capacity', sql`${t.booked} >= 0 and ${t.booked} <= ${t.capacity}`),
+  ],
+);
+
+/**
+ * A workshop owner's request to change the pin or the GSTIN (spec 07 "verified" rule). The live values stay as they are
+ * until staff approve; one pending request per workshop and kind (partial unique index); the decision is audited.
+ */
+export const workshopChangeRequests = pgTable(
+  'workshop_change_requests',
+  {
+    id: id(),
+    workshopId: uuid()
+      .notNull()
+      .references(() => workshops.id, { onDelete: 'cascade' }),
+    kind: text().notNull(),
+    /** `{ lat, lng, pincode? }` for a pin, `{ gstin }` (null = unregister) for GSTIN. */
+    payload: jsonb().notNull(),
+    status: text().notNull().default('pending'),
+    requestedBy: uuid().references(() => users.id, { onDelete: 'set null' }),
+    decidedBy: uuid().references(() => users.id, { onDelete: 'set null' }),
+    decidedAt: ts(),
+    decisionNote: text(),
+    version: version(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    check('workshop_change_requests_kind_valid', sql`${t.kind} in ('location','gstin')`),
+    check('workshop_change_requests_status_valid', sql`${t.status} in ('pending','approved','rejected')`),
+    check('workshop_change_requests_decided_pair', sql`(${t.status} = 'pending') = (${t.decidedAt} is null)`),
+    check(
+      'workshop_change_requests_note_len',
+      sql`${t.decisionNote} is null or char_length(${t.decisionNote}) <= 300`,
+    ),
+    uniqueIndex('workshop_change_requests_one_pending_uq')
+      .on(t.workshopId, t.kind)
+      .where(sql`${t.status} = 'pending'`),
+    index().on(t.workshopId),
+    index().on(t.requestedBy),
+    index().on(t.decidedBy),
+    index().on(t.status, t.createdAt),
   ],
 );
