@@ -139,7 +139,11 @@ export async function evaluateCoupon(
   );
   if (!r) return { ok: false, reason: 'not_found', view: null };
   const view = viewOf(r, input.locale);
-  const refuse = (reason: CouponReason): CouponEvaluation => ({ ok: false, reason, view });
+  // A code the caller may not know about (paused, not started, waiting for its shop, another city) answers exactly like
+  // an unknown code, on the preview and on placing, so neither path tells which codes exist (security review 2026-11-15).
+  const hidden: readonly CouponReason[] = ['paused', 'not_started', 'shop_terms_pending', 'wrong_city'];
+  const refuse = (reason: CouponReason): CouponEvaluation =>
+    hidden.includes(reason) ? { ok: false, reason: 'not_found', view: null } : { ok: false, reason, view };
   if (!r.active) return refuse('paused');
   if (r.not_started) return refuse('not_started');
   if (r.ended) return refuse('expired');

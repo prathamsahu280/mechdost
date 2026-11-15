@@ -7,6 +7,7 @@ import {
   listMyOrders,
   placeOrder,
   quoteCheckout,
+  ValidationError,
 } from '@mechdost/db/repo';
 import { CustomerRefundDto } from '@mechdost/shared/refunds-api';
 import { PERSON_CANCEL_REASONS } from '@mechdost/shared/state';
@@ -14,7 +15,8 @@ import type { SessionCache } from '../auth/session-cache';
 import { ensureRazorpayOrder } from '../payments/service';
 import { ApiError } from '../errors';
 import { authenticate, requireCustomerVerified, requirePermission } from '../middleware/auth';
-import { rateLimit, RATE_RULES } from '../middleware/rate-limit';
+import { enforceRate, rateLimit, RATE_RULES } from '../middleware/rate-limit';
+import { COUPON_CHECK_IP_RATE, COUPON_CHECK_USER_RATE } from './coupons';
 import type { RateRule } from '../rate-limit/limiter';
 import type { AppDeps, AppEnv } from '../types';
 import { validationHook } from '../validation';
@@ -367,6 +369,14 @@ export function checkoutRoutes(deps: AppDeps, cache: SessionCache) {
         coins: body.coins ?? 0,
         couponCode: body.couponCode ?? null,
         locale: body.locale,
+      }).catch(async (err: unknown) => {
+        // A refused coupon on placing is one more guess at a code: it counts against the same per-user and per-IP
+        // limits as `POST /checkout/coupon` (security review 2026-11-15), so placing cannot be used to enumerate codes.
+        if (err instanceof ValidationError && err.code === 'COUPON_INVALID') {
+          await enforceRate(c, deps.rateLimiter, COUPON_CHECK_USER_RATE, userId);
+          await enforceRate(c, deps.rateLimiter, COUPON_CHECK_IP_RATE, c.get('clientIp'));
+        }
+        throw err;
       });
       // The Razorpay order exists (stored) before the client sees it; a retried place reuses it.
       const handle =

@@ -342,8 +342,8 @@ describe('why a code is refused', () => {
       staffUserId: staff,
       scope: ALL,
     });
-    expect(await reason(paused.code)).toBe('paused');
-    expect(await reason((await make({ startsAtIst: '2099-01-01T00:00' })).code)).toBe('not_started');
+    expect(await reason(paused.code)).toBe('not_found');
+    expect(await reason((await make({ startsAtIst: '2099-01-01T00:00' })).code)).toBe('not_found');
     expect(
       await reason((await make({ startsAtIst: '2020-01-01T00:00', endsAtIst: '2020-02-01T00:00' })).code),
     ).toBe('expired');
@@ -353,7 +353,7 @@ describe('why a code is refused', () => {
       .from(s.cities)
       .where(sql`${s.cities.code} <> 'RPR'`)
       .limit(1);
-    if (other) expect(await reason((await make({ city: other.code })).code)).toBe('wrong_city');
+    if (other) expect(await reason((await make({ city: other.code })).code)).toBe('not_found');
   });
 
   it('per-customer limit, and first order only', async () => {
@@ -487,7 +487,7 @@ describe('who funds it: shop payouts', () => {
       lines,
       locale: 'en',
     });
-    expect(asked).toMatchObject({ ok: false, reason: 'shop_terms_pending' });
+    expect(asked).toMatchObject({ ok: false, reason: 'not_found' });
     const [offer] = (await listShopOffers(t(), { shopId, ownedShopIds: [shopId] })).filter(
       (o) => o.couponId === c.id,
     );
@@ -666,5 +666,93 @@ describe('admin coupons (coupons:write): CRUD, pause, scope, audit', () => {
     expect(first.nextCursor).not.toBeNull();
     const next = await listCoupons(t(), { scope: ALL, limit: 2, cursor: first.nextCursor });
     expect(next.coupons[0]?.id).not.toBe(first.coupons[0]?.id);
+  });
+});
+
+describe('security review: the shop accepts exactly what it was shown', () => {
+  const setup = async () => {
+    const [shop] = await db.select({ id: s.shops.id }).from(s.shops).limit(1);
+    const shopId = shop?.id ?? '';
+    const c = await make({ funder: 'shop', shopId, kind: 'flat', value: 1_000 });
+    const [terms] = await db.select().from(s.couponShopTerms).where(eq(s.couponShopTerms.couponId, c.id));
+    await decideShopOffer(t(), {
+      shopId,
+      ownedShopIds: [shopId],
+      couponId: c.id,
+      decision: 'accept',
+      expectedVersion: terms?.version ?? 0,
+      userId: staff,
+    });
+    return { shopId, c };
+  };
+  const edit = (c: { id: string; code: string }, version: number, over: Partial<CouponInput>) =>
+    updateCoupon(t(), {
+      couponId: c.id,
+      expectedVersion: version,
+      staffUserId: staff,
+      scope: ALL,
+      coupon: couponInput({ code: c.code, ...over }),
+    });
+
+  it('an unchanged edit keeps the acceptance; a money change after it asks again', async () => {
+    const { shopId, c } = await setup();
+    const same = await edit(c, c.version, { funder: 'shop', shopId, kind: 'flat', value: 1_000 });
+    expect(same.shopTerms).toBe('accepted');
+    const more = await edit(c, same.version, { funder: 'shop', shopId, kind: 'flat', value: 9_000 });
+    expect(more.shopTerms).toBe('pending');
+  });
+
+  it('flipping the funder away and back never revives an old acceptance', async () => {
+    const { shopId, c } = await setup();
+    const away = await edit(c, c.version, { funder: 'mechdost', shopId: null, kind: 'flat', value: 1_000 });
+    expect(away.shopTerms).toBeNull();
+    const back = await edit(c, away.version, { funder: 'shop', shopId, kind: 'flat', value: 1_000 });
+    expect(back.shopTerms).toBe('pending');
+    expect(back.live).toBe(false);
+  });
+
+  it('changing the shop asks the new shop, not the old one', async () => {
+    const { shopId, c } = await setup();
+    const [other] = await db
+      .select({ id: s.shops.id })
+      .from(s.shops)
+      .where(sql`${s.shops.id} <> ${shopId}`)
+      .limit(1);
+    const moved = await edit(c, c.version, {
+      funder: 'shop',
+      shopId: other?.id ?? null,
+      kind: 'flat',
+      value: 1_000,
+    });
+    expect(moved.shopTerms).toBe('pending');
+    expect(moved.shop?.id).toBe(other?.id);
+  });
+});
+
+describe('security review: a failed code on place does not reveal what exists', () => {
+  const lines = [{ sku: OIL, qty: 1 }];
+  const refusal = async (codeText: string) => {
+    try {
+      await place(lines, codeText);
+    } catch (e) {
+      return (e as { details?: { reason?: string } }).details?.reason;
+    }
+    return 'placed';
+  };
+  it('unknown, paused and not-started codes answer the same; min order stays specific', async () => {
+    const paused = await make();
+    await setCouponPaused(t(), {
+      couponId: paused.id,
+      paused: true,
+      reason: 'Pause test',
+      expectedVersion: paused.version,
+      staffUserId: staff,
+      scope: ALL,
+    });
+    const future = await make({ startsAtIst: '2099-01-01T00:00' });
+    expect(await refusal('NOSUCHCODE')).toBe('not_found');
+    expect(await refusal(paused.code)).toBe('not_found');
+    expect(await refusal(future.code)).toBe('not_found');
+    expect(await refusal((await make({ minSubtotalPaise: 9_999_900 })).code)).toBe('min_order');
   });
 });

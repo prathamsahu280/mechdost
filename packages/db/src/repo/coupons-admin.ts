@@ -33,9 +33,13 @@ function termsSnapshot(
     | 'usageLimitPerUser'
     | 'firstOrderOnly'
     | 'cityId'
+    | 'funder'
+    | 'shopId'
   >,
 ) {
   return {
+    funder: c.funder,
+    shopId: c.shopId,
     kind: c.kind,
     value: c.value,
     minSubtotalPaise: c.minSubtotalPaise,
@@ -47,6 +51,21 @@ function termsSnapshot(
     firstOrderOnly: c.firstOrderOnly,
     cityId: c.cityId,
   };
+}
+
+/** Deep equality of JSON values regardless of key order (jsonb does not keep it). */
+function sameJson(a: unknown, b: unknown): boolean {
+  const canon = (v: unknown): unknown =>
+    Array.isArray(v)
+      ? v.map(canon)
+      : v !== null && typeof v === 'object'
+        ? Object.fromEntries(
+            Object.entries(v)
+              .sort(([x], [y]) => x.localeCompare(y))
+              .map(([k, val]) => [k, canon(val)]),
+          )
+        : v;
+  return JSON.stringify(canon(a)) === JSON.stringify(canon(b));
 }
 
 const inScope = (scope: CityScope, cityId: string | null): boolean =>
@@ -299,19 +318,27 @@ export async function updateCoupon(
     }
     if (!row) throw new ConflictError('The coupon changed meanwhile; reload it', 'STALE_COUPON');
     // The shop agreed to specific terms: any change to them (or a new shop) asks again.
+    // Compared with the snapshot the shop actually saw (the stored terms row), never with the previous coupon state,
+    // so no sequence of edits (change, flip the funder away and back) can leave an old acceptance standing.
     const terms = termsSnapshot(row);
-    const moneyChanged = JSON.stringify(terms) !== JSON.stringify(termsSnapshot(before));
+    const [existing] = await tx.select().from(couponShopTerms).where(eq(couponShopTerms.couponId, row.id));
+    let moneyChanged = false;
     if (row.funder === 'shop' && row.shopId) {
-      const [existing] = await tx.select().from(couponShopTerms).where(eq(couponShopTerms.couponId, row.id));
-      if (!existing)
+      if (!existing) {
+        moneyChanged = true;
         await tx
           .insert(couponShopTerms)
           .values({ couponId: row.id, shopId: row.shopId, status: 'pending', terms });
-      else if (moneyChanged || existing.shopId !== row.shopId)
+      } else if (existing.shopId !== row.shopId || !sameJson(existing.terms, terms)) {
+        moneyChanged = true;
         await tx
           .update(couponShopTerms)
           .set({ shopId: row.shopId, status: 'pending', terms, decidedBy: null, decidedAt: null })
           .where(eq(couponShopTerms.id, existing.id));
+      }
+    } else if (existing) {
+      // No longer shop-funded: the acceptance goes with it; funding by a shop again asks from scratch.
+      await tx.delete(couponShopTerms).where(eq(couponShopTerms.id, existing.id));
     }
     await tx.insert(auditLog).values({
       actorUserId: input.staffUserId,
