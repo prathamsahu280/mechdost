@@ -192,7 +192,32 @@ describe('RTDB security rules (firebase/database.rules.json)', () => {
     expect(rules.rules['.read']).toBe(false);
     expect(rules.rules['.write']).toBe(false);
     expect(Object.keys(rules.rules).sort()).toEqual(['.read', '.write', 'inbox']);
-    expect(rules.rules.inbox.$uid).toEqual({ '.read': 'auth != null && auth.uid === $uid', '.write': false });
+    expect(rules.rules.inbox.$uid['.write']).toBe(false);
+    expect(Object.keys(rules.rules.inbox.$uid).sort()).toEqual(['.read', '.write']);
+    // The read rule, evaluated clause by clause for the callers that matter; an unknown clause fails the test, so
+    // loosening or rewording the rule forces this test to be revisited.
+    interface Auth {
+      uid: string;
+      token: { firebase: { sign_in_provider: string } };
+    }
+    const clauses: Record<string, (auth: Auth | null, uid: string) => boolean> = {
+      'auth != null': (auth) => auth !== null,
+      'auth.uid === $uid': (auth, uid) => auth?.uid === uid,
+      "auth.token.firebase.sign_in_provider != 'anonymous'": (auth) =>
+        auth?.token.firebase.sign_in_provider !== 'anonymous',
+    };
+    const allowed = (auth: Auth | null, uid: string) =>
+      (rules.rules.inbox.$uid['.read'] as string).split(' && ').every((c) => {
+        const clause = clauses[c];
+        if (!clause) throw new Error(`unreviewed rule clause: ${c}`);
+        return clause(auth, uid);
+      });
+    const token = (provider: string) => ({ firebase: { sign_in_provider: provider } });
+    expect(allowed({ uid: 'u1', token: token('custom') }, 'u1')).toBe(true);
+    expect(allowed({ uid: 'u1', token: token('phone') }, 'u1')).toBe(true);
+    expect(allowed({ uid: 'u1', token: token('custom') }, 'u2')).toBe(false); // someone else's inbox
+    expect(allowed({ uid: 'u1', token: token('anonymous') }, 'u1')).toBe(false); // anonymous gets nothing
+    expect(allowed(null, 'u1')).toBe(false); // signed out
   });
 });
 

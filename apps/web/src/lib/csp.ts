@@ -24,6 +24,8 @@ export interface CspInput {
    * loaded by a script that had it (`'strict-dynamic'`), so injected inline script no longer runs there.
    */
   nonce?: string | undefined;
+  /** `NEXT_PUBLIC_FIREBASE_DATABASE_URL`: the live-updates socket (spec 10), only a Firebase-hosted database host. */
+  databaseUrl?: string | undefined;
   /** `NEXT_PUBLIC_SENTRY_DSN`: error reports go to its ingest host (EU region, decision 2026-11-14). */
   sentryDsn?: string | undefined;
 }
@@ -68,6 +70,22 @@ export function sentryIngestOrigin(dsn: string | undefined): string | null {
   }
 }
 
+/** The Realtime Database host (`https` plus `wss` for the socket), or null when unset or not a Firebase host. */
+export function databaseOrigins(url: string | undefined): string[] {
+  if (!url) return [];
+  try {
+    const u = new URL(url);
+    if (
+      u.protocol !== 'https:' ||
+      !/^[a-z0-9-]+(\.[a-z0-9-]+)*\.(firebasedatabase\.app|firebaseio\.com)$/u.test(u.hostname)
+    )
+      return [];
+    return [u.origin, `wss://${u.host}`];
+  } catch {
+    return [];
+  }
+}
+
 const origin = (url: string | undefined) => {
   if (!url) return null;
   try {
@@ -94,6 +112,7 @@ export function contentSecurityPolicy(input: CspInput): string {
   const connect = ["'self'", ...MAP_ORIGINS];
   if (api) connect.push(api);
   if (real) connect.push(...FIREBASE_AUTH_APIS, ...FIREBASE_PUSH_APIS, TURNSTILE, ...RAZORPAY_CONNECT);
+  if (real) connect.push(...databaseOrigins(input.databaseUrl));
   if (emulator) connect.push(emulator);
   const sentry = sentryIngestOrigin(input.sentryDsn);
   if (sentry) connect.push(sentry);
@@ -131,6 +150,7 @@ export function cspFromEnv(nonce?: string): string {
     apiUrl: process.env.NEXT_PUBLIC_API_URL,
     firebaseAuthDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
     authEmulatorHost: process.env.NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST,
+    databaseUrl: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL,
     sentryDsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
     nonce,
   });

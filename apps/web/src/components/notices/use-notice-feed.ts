@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Notice } from '@mechdost/shared/notice-api';
+import { startLive, subscribeLive } from '@/lib/live/live-hub';
 import { fetchNotices, markNoticesRead } from '@/lib/notices-api';
 import { arrivedSince, NOTICES_EVENT, pollInterval, type NoticesEventDetail } from '@/lib/notices-view';
 
@@ -9,8 +10,8 @@ import { arrivedSince, NOTICES_EVENT, pollInterval, type NoticesEventDetail } fr
  * The notification feed behind the bell and the centre page (spec 10, design 2026-11-15). Fetches the newest page,
  * keeps it fresh while the tab is visible (15 s for partners and staff, 60 s for customers, growing back-off on
  * errors), refreshes at once when the tab becomes visible again or the push worker says a message arrived, and tells
- * the rest of the page about new arrivals (`mechdost:notices`, e.g. the shop's offers list). Live pings over the
- * Realtime Database replace the poll when the browser transport ships (spec 10, "Live updates").
+ * the rest of the page about new arrivals (`mechdost:notices`, e.g. the shop's offers list). A live ping over the
+ * shared Realtime Database connection (`lib/live`) refreshes it at once; the poll stays as the fallback (spec 10).
  */
 export type FeedStatus = 'loading' | 'ready' | 'error';
 
@@ -117,15 +118,26 @@ export function useNoticeFeed(opts: {
     };
     // Older browsers and blocked storage have no service worker container at all.
     const worker = 'serviceWorker' in navigator ? navigator.serviceWorker : null;
+    // A live ping about orders, offers, requests, quotes or coins refreshes the list at once (the poll above stays as the
+    // fallback); the connection is shared with the cart and wishlist.
+    const unsubscribe = subscribeLive(
+      ['order', 'assignment', 'shop', 'workshop', 'request', 'quote', 'coins'],
+      () => {
+        void refresh();
+      },
+    );
+    const release = startLive(locale);
     document.addEventListener('visibilitychange', onVisible);
     worker?.addEventListener('message', onWorker);
     return () => {
       alive.current = false;
       if (timer) clearTimeout(timer);
+      unsubscribe();
+      release();
       document.removeEventListener('visibilitychange', onVisible);
       worker?.removeEventListener('message', onWorker);
     };
-  }, [enabled, refresh, role]);
+  }, [enabled, refresh, role, locale]);
 
   const markRead = useCallback(
     (n: Notice) => {

@@ -51,3 +51,10 @@ The emulator fakes SMS and emails, so real mode is tested with no SMS cost. `fir
 The API writes the test accounts to the database in `.env` (the dev project): they are dev data, one per run.
 
 **Why sign-up and the phone reset sign in again:** once a password is linked or changed, Firebase marks the session as a `password` sign-in, and the API refuses those by design (only `phone` and `custom` tokens, so nobody can skip its limits by signing in to Firebase directly). The browser therefore signs in again through `POST /v1/auth/password` and gets a custom-token session. Right after sign-up the profile row has no email yet; the API then asks Firebase which email the password belongs to.
+
+## Realtime Database live updates (2026-11-15)
+
+1. Firebase console, Build, Realtime Database: create in `asia-southeast1`. Copy its URL.
+2. Set `FIREBASE_DATABASE_URL` and `LIVE_TRANSPORT=rtdb` for the API worker, and `NEXT_PUBLIC_FIREBASE_DATABASE_URL` (same URL) at **web build time** (it is inlined). The web CSP then allows its `https` and `wss` host automatically.
+3. Deploy the rules: `firebase deploy --only database` from the repo root (`firebase.json` points at `firebase/database.rules.json`). Check in the console Rules tab. Rules are not deployed by CI.
+4. Verify: sign in on two browsers; add to the cart on one; the other updates within about a second. With the URL unset or the rules missing, nothing breaks: the pages poll (cart 60 s).

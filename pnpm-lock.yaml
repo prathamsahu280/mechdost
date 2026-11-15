@@ -93,6 +93,9 @@ importers:
       '@firebase/auth':
         specifier: 1.13.9
         version: 1.13.9(@firebase/app@0.16.5)
+      '@firebase/database':
+        specifier: 1.1.5
+        version: 1.1.5
       '@firebase/messaging':
         specifier: 0.13.3
         version: 0.13.3(@firebase/app@0.16.5)
