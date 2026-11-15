@@ -132,3 +132,27 @@ to verify with a real keyboard), and the map tile network errors on this PC.
    `CLAUDE_CODE_DISABLE_BG_SHELL_PRESSURE_REAP=1` so a long audit is not stopped while the session is idle):
    `node apps/web/scripts/state-audit-run.mjs F G --api --date 2026-11-16`.
 4. Answer Q170 (the three decisions above).
+
+## Visual review 2026-11-16 (night, coordinator)
+
+Captured with `e2e/visual-review.spec.ts` on the `merge/fix2` build (demo mode): 424 full-page screenshots — 53
+pages × roles (guest, customer, shop, workshop, admin) × 390/1440 px × light/dark × en/hi — made into one contact sheet
+per page and reviewed by eye (phone-width pairs light-en / dark-hi at full size for the key pages, desktop crops for
+shop, workshop profile, admin partners). The capture workflow `visual-review.yml` runs on GitHub once it is on `main`.
+
+Looked right in all variants: home, shop list (cards aligned, badges under the picture, compare/cart controls),
+product page, cart, checkout, account orders, service request with per-line estimate, admin overview / order routing
+/ partners, workshop portal. Full-page captures draw fixed elements (tab bar, launcher) at the first viewport's
+position; that is the capture, not the page.
+
+Found (fixed in the visual-fix batch unless noted):
+
+- **V1** Offer countdown printed as "1440 min left to accept" (shop portal, admin order routing; Hindi "1440 मिनट") →
+  hours and minutes above 60 min.
+- **V2** Shop order card, Hindi 390 px: the delivery-code "confirm" button wraps to three lines beside the field →
+  stacks on narrow screens.
+- **V3** Shop header stats: "★" and "4.6" split across lines → kept together.
+- **V4** Order/request codes break at a hyphen in headings ("SR-RPR-2026-" / "HND104") → codes never break inside.
+- **V5** (minor, not fixed) Workshop profile at 1440 px, page at the top: the floating "Ask MechDost" launcher sits over
+  one price in the booking form's service list; it clears once the form is sticky. Candidate: hide the launcher while
+  the booking form is in view, or reserve space.
