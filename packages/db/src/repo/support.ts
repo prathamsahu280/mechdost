@@ -3,9 +3,11 @@ import { publicCode } from '@mechdost/shared/ids';
 import { labourPromiseOpen } from '@mechdost/shared/service-bill';
 import { ticketMachine, type TicketStatus } from '@mechdost/shared/state';
 import { OPERATIONAL_SETTINGS } from '@mechdost/shared/settings';
+import { SUPPORT_ATTACH_MAX } from '@mechdost/shared/support-thread';
 import {
   auditLog,
   cities,
+  mediaObjects,
   orderGroups,
   orders,
   serviceBills,
@@ -18,9 +20,11 @@ import {
 import { queueTicketEmail } from './email-events';
 import { queueStaffNotice } from './notices';
 import { ConflictError, NotFoundError, ValidationError } from './errors';
+import { recordServerEvent } from './events';
 import { notificationChannelEnabled } from './notification-admin';
 import { enqueueNotification } from './notify';
 import type { Tx } from './orders';
+import type { StoredImage } from './service-photos';
 
 /**
  * Support tickets (spec 09) — the real counterpart of the demo store. Customers raise and follow their own
@@ -33,12 +37,19 @@ export const TICKET_KINDS = ['order_issue', 'refund', 'fitment', 'account', 'lab
 export type TicketKind = (typeof TICKET_KINDS)[number];
 export const DAILY_TICKET_LIMIT = 5;
 export const TICKET_BODY_MAX = 2000;
-const ACK_MS = 48 * 3_600_000;
-const RESOLVE_MS = 30 * 86_400_000;
+export const ACK_MS = 48 * 3_600_000;
+export const RESOLVE_MS = 30 * 86_400_000;
 const ACTIVE: TicketStatus[] = ['open', 'in_review', 'awaiting_customer'];
 
 /** Staff scope from their grants: every city, or a list of city ids. */
 export type TicketScope = { all: true } | { all: false; cityIds: readonly string[] };
+
+/** A stored photo of one message; the API turns it into short-lived URLs after its own rights check. */
+export interface MessageAttachment {
+  mediaId: string;
+  width: number;
+  height: number;
+}
 
 export interface TicketMessageView {
   id: string;
@@ -47,6 +58,7 @@ export interface TicketMessageView {
   internal: boolean;
   channel: string;
   createdAt: Date;
+  attachments: MessageAttachment[];
 }
 
 export interface TicketView {
@@ -55,6 +67,12 @@ export interface TicketView {
   status: TicketStatus;
   channel: string;
   orderCode: string | null;
+  /** Quick issue code of an order/request thread; null on older, free-form requests. */
+  issueCode: string | null;
+  /** The service job (SR-…) a request thread or labour redo is about. */
+  serviceCode: string | null;
+  /** COD refund: whether the order was cash on delivery, and the masked destination the customer gave (never the full value). */
+  refund: { eligible: boolean; destination: { kind: 'upi' | 'bank'; masked: string } | null };
   slaAckDue: Date;
   slaResolveDue: Date;
   resolvedAt: Date | null;
@@ -63,7 +81,7 @@ export interface TicketView {
   messages: TicketMessageView[];
 }
 
-function cleanBody(body: string): string {
+export function cleanBody(body: string): string {
   const text = body.trim();
   if (text.length === 0) throw new ValidationError('Write a message', 'TICKET_BODY_EMPTY');
   if (text.length > TICKET_BODY_MAX) throw new ValidationError('Message is too long', 'TICKET_BODY_TOO_LONG');
@@ -95,7 +113,35 @@ async function messagesOf(db: Tx, ticketId: string, includeInternal: boolean): P
     )
     .orderBy(desc(ticketMessages.createdAt), desc(ticketMessages.id))
     .limit(THREAD_LIMIT);
-  return rows.reverse();
+  const messages = rows.reverse();
+  const media =
+    messages.length === 0
+      ? []
+      : await db
+          .select({
+            id: mediaObjects.id,
+            ownerId: mediaObjects.ownerId,
+            width: mediaObjects.width,
+            height: mediaObjects.height,
+          })
+          .from(mediaObjects)
+          .where(
+            and(
+              eq(mediaObjects.ownerKind, 'ticket_message'),
+              inArray(
+                mediaObjects.ownerId,
+                messages.map((m) => m.id),
+              ),
+              isNull(mediaObjects.deletedAt),
+            ),
+          )
+          .orderBy(mediaObjects.createdAt, mediaObjects.id);
+  return messages.map((m) => ({
+    ...m,
+    attachments: media
+      .filter((a) => a.ownerId === m.id)
+      .map((a) => ({ mediaId: a.id, width: a.width, height: a.height })),
+  }));
 }
 
 /** A thread shows its newest messages (review B9: no unbounded reads); older ones stay in the database. */
@@ -115,7 +161,7 @@ async function replyCap(tx: Tx): Promise<number> {
     : OPERATIONAL_SETTINGS[REPLY_CAP_KEY].default;
 }
 
-const ticketColumns = {
+const baseColumns = {
   id: supportTickets.id,
   code: supportTickets.code,
   kind: supportTickets.kind,
@@ -129,9 +175,47 @@ const ticketColumns = {
   version: supportTickets.version,
 };
 
-async function view(db: Tx, row: { id: string } & Omit<TicketView, 'messages'>, internal: boolean) {
-  const { id, ...rest } = row;
-  return { ...rest, status: rest.status, messages: await messagesOf(db, id, internal) };
+/** What the thread views add: the issue code, the service job, and what the customer needs for a COD refund. */
+const ticketColumns = {
+  ...baseColumns,
+  issueCode: supportTickets.issueCode,
+  serviceCode: serviceRequests.code,
+  paymentMethod: orderGroups.paymentMethod,
+  destinationMask: supportTickets.refundDestinationMask,
+};
+
+async function view(
+  db: Tx,
+  row: {
+    id: string;
+    code: string;
+    kind: string;
+    status: TicketStatus;
+    channel: string;
+    orderCode: string | null;
+    slaAckDue: Date;
+    slaResolveDue: Date;
+    resolvedAt: Date | null;
+    createdAt: Date;
+    version: number;
+    issueCode: string | null;
+    serviceCode: string | null;
+    paymentMethod: string | null;
+    destinationMask: string | null;
+  },
+  internal: boolean,
+): Promise<TicketView> {
+  const { id, paymentMethod, destinationMask, ...rest } = row;
+  return {
+    ...rest,
+    refund: {
+      eligible: paymentMethod === 'cod',
+      destination: destinationMask
+        ? { kind: destinationMask.includes('@') ? 'upi' : 'bank', masked: destinationMask }
+        : null,
+    },
+    messages: await messagesOf(db, id, internal),
+  };
 }
 
 // ── customer ──────────────────────────────────────────────────────────────────────────────────────────────────
@@ -284,6 +368,7 @@ export async function listMyTickets(
     .from(supportTickets)
     .leftJoin(orders, eq(orders.id, supportTickets.orderId))
     .leftJoin(orderGroups, eq(orderGroups.id, orders.groupId))
+    .leftJoin(serviceRequests, eq(serviceRequests.id, supportTickets.serviceRequestId))
     .where(
       and(
         eq(supportTickets.userId, userId),
@@ -301,21 +386,89 @@ export async function getMyTicket(db: Tx, userId: string, code: string): Promise
     .from(supportTickets)
     .leftJoin(orders, eq(orders.id, supportTickets.orderId))
     .leftJoin(orderGroups, eq(orderGroups.id, orders.groupId))
+    .leftJoin(serviceRequests, eq(serviceRequests.id, supportTickets.serviceRequestId))
     .where(and(eq(supportTickets.code, code), eq(supportTickets.userId, userId)))
     .limit(1);
   if (!row) throw new NotFoundError('Request not found');
   return view(db, { ...row, status: row.status as TicketStatus }, false);
 }
 
+/** Photos of one message: at most `SUPPORT_ATTACH_MAX`, each stored privately by the API before this call. */
+export async function attachMessageImages(
+  tx: Tx,
+  input: {
+    messageId: string;
+    ticketId: string;
+    userId: string;
+    cityId: string | null;
+    images: readonly StoredImage[];
+  },
+): Promise<void> {
+  if (input.images.length === 0) return;
+  if (input.images.length > SUPPORT_ATTACH_MAX)
+    throw new ValidationError(`Up to ${String(SUPPORT_ATTACH_MAX)} photos per message`, 'ATTACHMENT_LIMIT');
+  await tx.insert(mediaObjects).values(
+    input.images.map((img) => ({
+      id: img.mediaId,
+      ownerKind: 'ticket_message',
+      ownerId: input.messageId,
+      bucket: img.bucket,
+      path: img.path,
+      thumbPath: img.thumbPath,
+      width: img.width,
+      height: img.height,
+      bytes: img.bytes,
+      thumbBytes: img.thumbBytes,
+      sha256: img.sha256,
+      uploadedBy: input.userId,
+    })),
+  );
+  await tx.insert(auditLog).values({
+    actorUserId: input.userId,
+    actorRole: 'customer',
+    action: 'ticket.photos_added',
+    entity: 'support_ticket',
+    entityId: input.ticketId,
+    after: { messageId: input.messageId, count: input.images.length },
+  });
+  await recordServerEvent(tx, 'support_attachment_added', {
+    userId: input.userId,
+    cityId: input.cityId,
+    props: {
+      count: input.images.length,
+      bytes: input.images.reduce((sum, img) => sum + img.bytes, 0),
+    },
+  });
+}
+
+/**
+ * Before any image work: the request must be the caller's own (404 otherwise) and still open to messages
+ * (409 `TICKET_CLOSED`). The message limit is checked again under the lock when the message is saved.
+ */
+export async function assertCanAttach(db: Tx, userId: string, code: string): Promise<void> {
+  const [t] = await db
+    .select({ status: supportTickets.status })
+    .from(supportTickets)
+    .where(and(eq(supportTickets.code, code), eq(supportTickets.userId, userId)))
+    .limit(1);
+  if (!t) throw new NotFoundError('Request not found');
+  if (t.status === 'closed') throw new ConflictError('This request is closed', 'TICKET_CLOSED');
+}
+
 /** The customer writes again; a ticket waiting on them or resolved returns to review (state machine). */
 export async function customerReplyTicket(
   db: Tx,
-  input: { userId: string; code: string; body: string },
+  input: { userId: string; code: string; body: string; images?: readonly StoredImage[] },
 ): Promise<{ status: TicketStatus }> {
   const body = cleanBody(input.body);
   return db.transaction(async (tx) => {
     const [t] = await tx
-      .select({ id: supportTickets.id, status: supportTickets.status, version: supportTickets.version })
+      .select({
+        id: supportTickets.id,
+        status: supportTickets.status,
+        version: supportTickets.version,
+        cityId: supportTickets.cityId,
+      })
       .from(supportTickets)
       .where(and(eq(supportTickets.code, input.code), eq(supportTickets.userId, input.userId)))
       .limit(1)
@@ -345,13 +498,24 @@ export async function customerReplyTicket(
         .where(and(eq(supportTickets.id, t.id), eq(supportTickets.version, t.version)));
       status = 'in_review';
     }
-    await tx.insert(ticketMessages).values({
-      ticketId: t.id,
-      authorUserId: input.userId,
-      authorRole: 'customer',
-      body,
-      channel: 'web',
-    });
+    const [message] = await tx
+      .insert(ticketMessages)
+      .values({
+        ticketId: t.id,
+        authorUserId: input.userId,
+        authorRole: 'customer',
+        body,
+        channel: 'web',
+      })
+      .returning({ id: ticketMessages.id });
+    if (message && input.images?.length)
+      await attachMessageImages(tx, {
+        messageId: message.id,
+        ticketId: t.id,
+        userId: input.userId,
+        cityId: t.cityId,
+        images: input.images,
+      });
     return { status };
   });
 }
@@ -368,6 +532,7 @@ export interface InboxRow {
   slaResolveDue: Date;
   createdAt: Date;
   version: number;
+  issueCode: string | null;
   /** True once staff have replied to the customer at least once (acknowledged). */
   acknowledged: boolean;
 }
@@ -384,7 +549,8 @@ export async function listInbox(
       : inArray(supportTickets.status, ['resolved', 'closed']);
   const rows = await db
     .select({
-      ...ticketColumns,
+      ...baseColumns,
+      issueCode: supportTickets.issueCode,
       acknowledged: sql<boolean>`exists (select 1 from ${ticketMessages} m where m.ticket_id = ${supportTickets.id} and m.author_role = 'staff' and m.internal = false)`,
     })
     .from(supportTickets)
@@ -424,6 +590,7 @@ export async function getInboxTicket(db: Tx, scope: TicketScope, code: string): 
     .from(supportTickets)
     .leftJoin(orders, eq(orders.id, supportTickets.orderId))
     .leftJoin(orderGroups, eq(orderGroups.id, orders.groupId))
+    .leftJoin(serviceRequests, eq(serviceRequests.id, supportTickets.serviceRequestId))
     .where(and(eq(supportTickets.code, code), scopeFilter(scope)))
     .limit(1);
   if (!row) throw new NotFoundError('Request not found');

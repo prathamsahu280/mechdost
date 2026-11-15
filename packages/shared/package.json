@@ -46,6 +46,7 @@
     "./admin-config-api": "./src/admin-config-api.ts",
     "./admin-errors-api": "./src/admin-errors-api.ts",
     "./support-api": "./src/support-api.ts",
+    "./support-thread": "./src/support-thread.ts",
     "./partners": "./src/partners.ts",
     "./partner-api": "./src/partner-api.ts",
     "./email-templates": "./src/email-templates.ts",

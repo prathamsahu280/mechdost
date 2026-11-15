@@ -20,6 +20,7 @@ import { GST_STATUSES, LOCATION_SOURCES, PARTNER_STANDING_REASONS } from '@mechd
 import { PARTNER_WARNING_REASONS, WARNING_PARTNER_KINDS } from '@mechdost/shared/partner-warnings';
 import { REVIEW_HIDE_REASONS, REVIEW_STATES } from '@mechdost/shared/reviews';
 import { APPLICATION_STATES, INVITE_STATES } from '@mechdost/shared/state';
+import { SUPPORT_ISSUE_CODES } from '@mechdost/shared/support-thread';
 import { citext, createdAt, encryptedCheck, geographyPoint, id, ts, updatedAt, version } from './_common';
 import { cities } from './geography';
 import { users } from './identity';
@@ -362,6 +363,16 @@ export const supportTickets = pgTable(
     cityId: uuid().references(() => cities.id, { onDelete: 'set null' }),
     /** Where the request started (rule 16: a code). */
     channel: text().notNull().default('web'),
+    /**
+     * Quick issue code of an order/request thread (design 2026-11-15; null for older, free-form tickets). One thread
+     * open per customer and order (or service request): the partial unique indexes below (a closed one frees the slot).
+     */
+    issueCode: text(),
+    /** COD refund destination (Q104): UPI id or bank details as JSON, encrypted (AAD 'support_tickets.refund_destination_enc'). */
+    refundDestinationEnc: text(),
+    /** What staff and the customer see of it ("ra***@okbank", "••••1234 · HDFC0001234"); never the full value. */
+    refundDestinationMask: text(),
+    refundDestinationAt: ts(),
     status: text().notNull().default('open'),
     priority: text().notNull().default('normal'),
     assigneeId: uuid().references(() => users.id, { onDelete: 'set null' }),
@@ -387,6 +398,23 @@ export const supportTickets = pgTable(
       sql`${t.userId} is not null or (${t.guestPhone} is not null and ${t.accessKeyHash} is not null)`,
     ),
     check('support_tickets_channel_valid', sql`${t.channel} in ('web','app','whatsapp','email')`),
+    check(
+      'support_tickets_issue_code_valid',
+      sql`${t.issueCode} is null or ${t.issueCode} in (${sql.raw(SUPPORT_ISSUE_CODES.map((c) => `'${c}'`).join(','))})`,
+    ),
+    check('support_tickets_refund_destination_encrypted', encryptedCheck(t.refundDestinationEnc)),
+    check(
+      'support_tickets_refund_destination_pair',
+      sql`(${t.refundDestinationEnc} is null) = (${t.refundDestinationMask} is null)`,
+    ),
+    uniqueIndex('support_tickets_order_thread_uq')
+      .on(t.userId, t.orderId)
+      .where(sql`${t.issueCode} is not null and ${t.orderId} is not null and ${t.status} <> 'closed'`),
+    uniqueIndex('support_tickets_service_thread_uq')
+      .on(t.userId, t.serviceRequestId)
+      .where(
+        sql`${t.issueCode} is not null and ${t.serviceRequestId} is not null and ${t.status} <> 'closed'`,
+      ),
     index().on(t.status, t.slaAckDue),
     index().on(t.cityId, t.status),
     index().on(t.userId),

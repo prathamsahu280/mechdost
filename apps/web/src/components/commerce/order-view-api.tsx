@@ -26,6 +26,7 @@ type Load = { kind: 'loading' } | { kind: 'error'; code: string } | { kind: 'ok'
  */
 export function OrderViewApi({ code }: { code: string }) {
   const t = useTranslations('order');
+  const ts = useTranslations('supportThread');
   const locale = useLocale();
   const isNew = useSearchParams().get('new') === '1';
   const [load, setLoad] = useState<Load>({ kind: 'loading' });
@@ -123,6 +124,16 @@ export function OrderViewApi({ code }: { code: string }) {
         </Suspense>
       ) : null}
       <p className="text-sm text-muted">{t('help')}</p>
+      <p className="text-sm text-ink">
+        {ts('askHelp')}{' '}
+        <Link
+          href={`${prefix}/account/support?order=${encodeURIComponent(order.code)}`}
+          data-track="order_support_thread"
+          className="inline-flex min-h-11 items-center font-bold text-accent-soft-text underline underline-offset-4"
+        >
+          {ts('askHelpLink')}
+        </Link>
+      </p>
     </div>
   );
 }

@@ -149,3 +149,7 @@ Server events (same transaction; ids, codes and counts only, never a path or fil
 ## Admin next tier part 2 events (2026-11-15)
 
 Server events (same transaction as the change; codes, counts and ids only): `admin_policy_restored { key, locale, fromVersion, version }` (next to `admin_content_published` for every publish), `admin_layout_published { scope: global|city, action: saved|reset, hidden, tiles, mapDefault }`, `admin_setting_city_changed { key, action: overridden|reset }`, `admin_company_saved { filled, grievanceShown }`. Client event `admin_site_change` gained areas `policies` and `company` and actions `publish`, `restore`, `preview` (area `layout` action `publish` for the real-mode layout save); `fields` is a count. Click id `admin_policy_preview_call` (preview call link), `footer_grievance_email` and `footer_grievance_phone` (footer links, only once the admin fills the officer).
+
+## Support threads (2026-11-15)
+
+Server events (same transaction; ids, codes and counts only, never text, a path or a payout value): `support_thread_opened { ticketCode, subject: order|service, issueCode, reopened, photos }`, `support_attachment_added { count, bytes }`, `support_refund_destination_saved { ticketCode, kind: upi|bank, replaced }`, `support_refund_from_ticket { ticketCode, orderCode, amountPaise, reasonCode }`. Client event `support_ticket` gains actions `thread_opened`, `thread_reopened`, `photos_attached`, `destination_saved`, `refund_requested` and the optional `issue` (code). Click ids: `order_support_thread`, `service_support_thread`.

@@ -16,11 +16,13 @@ import {
 import { SERVICE_CODE_RE } from '@mechdost/shared/service-requests';
 import { TICKET_STATES } from '@mechdost/shared/state';
 import type { SessionCache } from '../auth/session-cache';
+import { SupportAttachment, SupportRefundInfo } from '@mechdost/shared/support-thread';
 import { authenticate, requirePermission, requireVerified } from '../middleware/auth';
 import { rateLimit, RATE_RULES } from '../middleware/rate-limit';
 import type { AppDeps, AppEnv } from '../types';
 import { validationHook } from '../validation';
 import { errorResponses, ErrorSchema } from './schemas';
+import { supportThreadRoutes, withAttachmentUrls } from './support-threads';
 
 /**
  * Support API (spec 09). Customers: raise, list, read and answer their own requests (foreign codes 404).
@@ -39,6 +41,8 @@ const Message = z.object({
   internal: z.boolean(),
   channel: z.string(),
   createdAt: z.string(),
+  /** Photos of the message as short-lived signed URLs (design 2026-11-15). */
+  attachments: z.array(SupportAttachment),
 });
 
 const Ticket = z
@@ -48,6 +52,9 @@ const Ticket = z
     status: z.enum(TICKET_STATES),
     channel: z.string(),
     orderCode: z.string().nullable(),
+    issueCode: z.string().nullable(),
+    serviceCode: z.string().nullable(),
+    refund: SupportRefundInfo,
     slaAckDue: z.string(),
     slaResolveDue: z.string(),
     resolvedAt: z.string().nullable(),
@@ -64,6 +71,7 @@ const InboxItem = z
     status: z.enum(TICKET_STATES),
     channel: z.string(),
     orderCode: z.string().nullable(),
+    issueCode: z.string().nullable(),
     slaAckDue: z.string(),
     slaResolveDue: z.string(),
     createdAt: z.string(),
@@ -108,18 +116,6 @@ const conflict = {
   409: json(ErrorSchema, 'Closed or changed meanwhile'),
   404: json(ErrorSchema, 'Not found'),
 };
-
-const iso = (d: Date | null) => (d ? d.toISOString() : null);
-function toJson(t: TicketView) {
-  return {
-    ...t,
-    slaAckDue: t.slaAckDue.toISOString(),
-    slaResolveDue: t.slaResolveDue.toISOString(),
-    resolvedAt: iso(t.resolvedAt),
-    createdAt: t.createdAt.toISOString(),
-    messages: t.messages.map((m) => ({ ...m, createdAt: m.createdAt.toISOString() })),
-  };
-}
 
 const createTicket = createRoute({
   method: 'post',
@@ -244,6 +240,10 @@ export function supportRoutes(deps: AppDeps, cache: SessionCache) {
   app.use('/admin/support/*', requireVerified);
   app.use('/admin/support/*', requirePermission('tickets:read'));
   app.on('POST', '/admin/support/tickets/:code/*', requirePermission('tickets:reply'));
+  // The manual refund from a ticket also needs the right to ask for refunds (finance approves it later).
+  app.on('POST', '/admin/support/tickets/:code/refund', requirePermission('refunds:initiate'));
+  const toJson = (t: TicketView) => withAttachmentUrls(t, deps.keyring);
+  app.route('/', supportThreadRoutes(deps));
 
   return app
     .openapi(createTicket, async (c) => {

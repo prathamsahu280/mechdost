@@ -44,12 +44,20 @@ const ERROR_LABEL = {
  */
 function usePresetOrder(): string | null {
   const code = useSearchParams().get('order');
-  return code && ORDER_CODE.test(code) ? code : null;
+  // A sub-order code (…-1) stands for its checkout: the thread is one per order group.
+  const group = code?.replace(/-\d{1,2}$/, '') ?? null;
+  return group && ORDER_CODE.test(group) ? group : null;
 }
 
 /** `?redo=SR-…` from a bill's "Ask for a free redo" link (labour promise, 2026-11-15). */
 function usePresetRedo(): string | null {
   const code = useSearchParams().get('redo');
+  return code && SERVICE_CODE_RE.test(code) ? code : null;
+}
+
+/** `?service=SR-…` from a service job page's "Talk to MechDost support" link (support threads, 2026-11-15). */
+function usePresetService(): string | null {
+  const code = useSearchParams().get('service');
   return code && SERVICE_CODE_RE.test(code) ? code : null;
 }
 
@@ -63,8 +71,9 @@ const SupportSectionApi = dynamic(() => import('./support-section-api').then((m)
 export function SupportSection({ account }: { account: DemoAccount }) {
   const presetOrder = usePresetOrder();
   const presetRedo = usePresetRedo();
+  const presetService = usePresetService();
   return AUTH_MODE === 'firebase' ? (
-    <SupportSectionApi presetOrder={presetOrder} presetRedo={presetRedo} />
+    <SupportSectionApi presetOrder={presetOrder} presetRedo={presetRedo} presetService={presetService} />
   ) : (
     <DemoSupportSection account={account} presetOrder={presetOrder} presetRedo={presetRedo} />
   );

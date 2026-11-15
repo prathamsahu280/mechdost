@@ -202,6 +202,45 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
     realApi: true,
   },
 
+  // ─────────────── Support threads (design 2026-11-15 "Support next tier", items 1 to 3) ───────────────
+  {
+    code: 'API-ACC-SUPPORT',
+    page: 'Account → Support from an order link, real sign-in',
+    component:
+      'Talk to MechDost support: issue chips, message, photo picker, the one conversation with photos, the cash on delivery refund destination (none, saved, masked); none, open with photos, COD without destination, COD saved, resolved; the empty-message error',
+    path: '/account/support?order=MD-RPR-2026-ABC123',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['customer'] },
+      { name: 'tickets', values: ['none', 'open-photos', 'cod-none', 'cod-saved', 'resolved'] },
+      { name: 'form', values: ['closed', 'error'] },
+      stress,
+    ],
+    sweep: 10,
+    note: API_NOTE,
+    realApi: true,
+  },
+  {
+    code: 'API-ADM-SUPPORT',
+    page: 'Admin → Support inbox with a thread, real sign-in',
+    component:
+      'Inbox conversation: issue badge, customer photos, the cash on delivery refund panel (no destination, masked destination); open with photos, COD without destination, COD saved, resolved',
+    path: '/admin/support',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['admin'] },
+      { name: 'tickets', values: ['open-photos', 'cod-none', 'cod-saved', 'resolved'] },
+      stress,
+    ],
+    sweep: 8,
+    note: API_NOTE,
+    realApi: true,
+  },
+
   // ─────────────── Refunds (2026-11-15, spec 05) ───────────────
   {
     code: 'API-ADM-REFUNDQ',

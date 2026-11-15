@@ -23,6 +23,7 @@ import {
   threadFromApi,
   type SupportErrorKey,
 } from '@/lib/support-view';
+import { StaffRefundApi } from '@/components/support/staff-refund-api';
 import { TicketThread, useTicketLabels } from '@/components/support/ticket-thread';
 import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
 
@@ -141,6 +142,7 @@ function InboxTicket({
   onChanged: () => Promise<void>;
 }) {
   const t = useTranslations('support');
+  const tt = useTranslations('supportThread');
   const p = useTranslations('portal');
   const locale = useLocale();
   const labels = useTicketLabels();
@@ -276,7 +278,15 @@ function InboxTicket({
               {p('api_common_loading')}
             </p>
           ) : (
-            <TicketThread ticket={threadFromApi(ticket)} viewer="staff" />
+            <>
+              {ticket.issueCode ? (
+                <p className="text-xs font-bold text-muted">
+                  {tt('issueBadge', { issue: tt(`issue_${ticket.issueCode}`) })}
+                </p>
+              ) : null}
+              <TicketThread ticket={threadFromApi(ticket)} viewer="staff" />
+              <StaffRefundApi code={ticket.code} refund={ticket.refund} onDone={refresh} />
+            </>
           )}
           {status === 'closed' || ticket === null ? null : (
             <form

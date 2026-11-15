@@ -5,6 +5,7 @@
  */
 import { z } from 'zod';
 import { TICKET_STATES } from './state';
+import { SUPPORT_ISSUE_CODES, SupportAttachment, SupportRefundInfo } from './support-thread';
 
 export const SUPPORT_TICKET_KINDS = [
   'order_issue',
@@ -31,6 +32,8 @@ export const SupportMessage = z.object({
   internal: z.boolean(),
   channel: z.string(),
   createdAt: z.string(),
+  /** Photos sent with the message, as short-lived signed URLs (design 2026-11-15). */
+  attachments: z.array(SupportAttachment).default([]),
 });
 export type SupportMessageDto = z.infer<typeof SupportMessage>;
 
@@ -40,6 +43,11 @@ export const SupportTicket = z.object({
   status: Status,
   channel: Channel,
   orderCode: z.string().nullable(),
+  /** Quick issue of an order/request thread; an unknown code reads as "other", null on older requests. */
+  issueCode: z.enum(SUPPORT_ISSUE_CODES).nullable().catch(null).default(null),
+  serviceCode: z.string().nullable().default(null),
+  /** COD refund: whether the customer must give a payout destination, and the masked one they gave. */
+  refund: SupportRefundInfo.default({ eligible: false, destination: null }),
   slaAckDue: z.string(),
   slaResolveDue: z.string(),
   resolvedAt: z.string().nullable(),
@@ -60,6 +68,7 @@ export const SupportInboxItem = z.object({
   status: Status,
   channel: Channel,
   orderCode: z.string().nullable(),
+  issueCode: z.enum(SUPPORT_ISSUE_CODES).nullable().catch(null).default(null),
   slaAckDue: z.string(),
   slaResolveDue: z.string(),
   createdAt: z.string(),
