@@ -112,3 +112,11 @@ log findings with screenshots in the QA report, and fix the real ones in the nex
 Most failures are harness (server-side 500s from the browser-only mock, side-menu "covered" from Playwright's scroll,
 code allowlist, mock data, unmocked shop endpoints) — batch 2C. Real ones went to 2A (signed-in header and account menu
 overflow, scroll regions, refund list, analytics tiles) and 2B (Hindi wording, compare tray, compare strip).
+
+## Order after batch 2 (user 2026-11-16)
+
+1. Gate, budget, chrome-fit on `merge/fix2`; re-run A–G with the fixed harness; triage what is left.
+2. Batch 3: the real bugs the re-run finds, plus the queued leftovers (`shopTier2.csvFile_HEADER` column names as code
+   in Hindi; customer and staff names marked as user text on admin pages); verify, deploy.
+3. Visual review: full-page screenshots of every page, viewed by the coordinator; fix what it finds (batch 4), deploy.
+4. Real website + real API pass (seeded demo accounts, test keys, WhatsApp/SMS off).
