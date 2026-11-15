@@ -137,3 +137,4 @@ Mark each touched item ✅ / ⚠️ / ❌. Anything ❌ blocks implementation un
 - ❌ An email/SMS to an address or number a guest typed (no verification): spam/phishing relay. Only verified account contacts or admin-entered invites.
 
 - **Invisible/special characters in source** (L211): write them as `String.fromCharCode(0x…)`; never a literal and never through perl/sed/Edit escape sequences (they get mangled or decoded); tests assert code points/bytes, not the same constant on both sides.
+- **JS budget** (L233): diff the route's initial modules (`next experimental-analyze --output`, main vs HEAD) before guessing; build-time switches use `process.env.NEXT_PUBLIC_*` inline (an imported mode constant is not folded across modules); a Server Component that renders one of two cards imports each card from its own module so the lean path never bundles the heavy card.

@@ -94,3 +94,16 @@ Product photos are rendered by a **Server Component** with `getImageProps` (a pl
 ## Budget note: the live listener (2026-11-15)
 
 `@firebase/database` (~30 KB gz) must never enter an initial bundle. `lib/live/live-hub.ts` is light (no Firebase) and is imported only by code that runs for signed-in users (`storefront-sync`, `use-notice-feed`); the heavy `live-listener.ts` is reached only by the hub's dynamic import and only when `AUTH_MODE` is firebase, the database URL is set and a consumer started. No header or layout module imports the hub, and no `next/dynamic` is used (budget incident above). Guard: `apps/web/test/live-lazy.test.ts`. The cart pill is unchanged. **Measure `/shop` and `/cart` with `node apps/web/scripts/measure-js.mjs` before merge** (not run here: no builds on this machine).
+
+## Budget incident 2026-11-15 (afternoon): storefront merges
+
+- After merging support tier 2, catalogue parts A and B, workshops tier 2 and the live listener: `/shop` 180.4 and
+  `/cart` 182.6 KB gz (demo build, `measure-js.mjs`).
+- Found with `next experimental-analyze --output` on `main` and on the merge, diffing the route's initial modules:
+  the cart suggestions imported the full `ProductCard` (now `recommendations-cart.tsx` → `recommendations-core.tsx`,
+  lean card only); the cart pill imported the session store for the sync (now a build-time switch + `import()` of
+  `cart-sync-mount.tsx` after load); and build-time switches compared imported constants, which the minifier does not
+  fold across modules (now `process.env.NEXT_PUBLIC_*` inline in the switch).
+- Result: `/` 164.1, `/shop` 180.0, product 178.1, `/workshops` 179.0, `/cart` 179.9 KB gz. **Headroom on `/shop` is
+  zero**; next: inline env in every remaining `AUTH_MODE`/`DATA_MODE` switch (bell, push, header) to win it back.
+- Guards: `apps/web/test/cart-pill-lazy.test.ts`, `apps/web/test/storefront-next-tier.test.ts`.
