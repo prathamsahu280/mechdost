@@ -120,3 +120,14 @@ overflow, scroll regions, refund list, analytics tiles) and 2B (Hindi wording, c
    in Hindi; customer and staff names marked as user text on admin pages); verify, deploy.
 3. Visual review: full-page screenshots of every page, viewed by the coordinator; fix what it finds (batch 4), deploy.
 4. Real website + real API pass (seeded demo accounts, test keys, WhatsApp/SMS off).
+
+## Batch 3 (building 2026-11-16)
+
+- **3a · Every opened panel can be closed** (user: the review form has no way to close): Cancel + Escape + focus
+  return for both review forms, sweep of every in-place form/panel/sheet/menu, audit rule.
+- **3b · Portal navigation feels like a reload** (user, live site: admin side-bar click "feels like the page got
+  refreshed and takes me to the top"): each admin/account/partner section page renders the whole frame (guard, side
+  bar, intro, message bundle) with no shared `layout.tsx`, so every click remounts it and scrolls to the top. Fix:
+  persistent portal layouts, section pages render only the section, no jump to top, pending state, e2e guard.
+- **3c** (after the A–G re-run): real bugs it finds + queued leftovers (Hindi CSV column names, names marked as user
+  text).
