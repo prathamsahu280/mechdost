@@ -1152,3 +1152,17 @@ Design: `docs/superpowers/specs/2026-11-15-support-next-tier-design.md` items 1 
 - **No analytics event for the connection** (no catalogue place; spec 12 untouched). Rule emulator tests queued (Q160) because the repo's emulator setup has Auth only.
 - Supersedes the "no browser listener yet" note of 2026-11-15 "Polling, not live pings, feeds the bell for now": the bell and shop offers now also refresh on a ping; polling stays as the fallback.
 - **Audit round (same day):** hub fetches the listener only when idle and visible and closes 2 s after the last release (no churn on effect re-runs); listener callbacks are uid-bound; rules gained a `$node` guard (`.write` and `.validate` false). Cost if wrong: a one-second later first connection; nothing stored.
+
+## 2026-11-15 — UI audit decisions (Q170, user)
+
+- **Compare with one product (user: "the compare tray shouldnt show with only one product selected but it also
+  shouldnt give the impression that the button did nothing").** The tray appears from 2 products. Ticking the first
+  product gives immediate, visible feedback next to the control: the box stays ticked and a short line says it was
+  added and to pick one more (en + hi), also announced through the existing live region. The UI state audit rule
+  changes from "list holds 1 → tray shown" to "list holds 1 → no tray, a visible confirmation; 2+ → tray".
+- **Privacy banner on phones (user: "the cookie banner shouldnt cover the checkout button or other buttons on
+  phone").** While the banner is open it must not cover any control: the page reserves bottom space equal to the
+  banner (and the tab bar / compare tray when present) so the last controls scroll clear, and fixed launchers (Ask
+  MechDost) sit above it. The audit keeps "covered by the banner" as a real finding.
+- **Footer "Privacy choices" link covered by the open banner:** still open (Q170 part 3); default: acceptable, since the
+  link reopens the same banner.

@@ -45,8 +45,19 @@ the next section.
 5. **P1 · Demo login account picker at 320 px: names and roles overflow their buttons** (LOGIN-FORM, 578 "inside" +
    208 overlap findings; demo builds only). Screenshot: `screenshots/2026-11-15/07-login-demo-picker-320.png`.
 6. **P1 · Workshop portal (320 px, dark, Hindi, busy): a form field shows no visible focus ring** (PRT-WORKSHOP-002).
+7. **P1 · Compare: ticking the first product shows nothing visible** (the tray waits for 2, as decided). Add a short
+   visible confirmation next to the control ("added, pick one more", en + hi) and change the audit rule to match.
+8. **P0 · Privacy banner covers buttons on phones** (cart "Proceed to checkout", bulk quote, last compare rows, the
+   workshop booking form, the Ask MechDost launcher). Reserve bottom space equal to the open banner (plus tab bar /
+   compare tray) so every control scrolls clear, and lift fixed launchers above it.
 
-## Needs a decision (queued as Q170 in `docs/questions-for-user.md`)
+## Decisions (Q170)
+
+Answered 2026-11-15 (user): the compare tray appears only from 2 products, but the first tick must give visible
+feedback ("added, pick one more"); the privacy banner must not cover the checkout button or any other button on phones.
+Both are now bugs to fix tomorrow (items 7 and 8 below); the footer link (third point) is still open.
+
+### As raised
 
 - **Compare tray with one product.** "Compare list holds 1 but no tray is shown" (P0, about 120 findings in B and C;
   also before today's changes). Either the tray appears from 2 products (then the audit rule changes) or it should
