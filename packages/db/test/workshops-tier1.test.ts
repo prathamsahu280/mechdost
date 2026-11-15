@@ -41,6 +41,19 @@ const t = () => db as unknown as Tx;
 const W: Record<string, { id: string; slug: string }> = {};
 let keyN = 0;
 
+/**
+ * The next Sunday by the IST calendar. Not `getUTCDay()`: from 00:00 to 05:30 IST the UTC date is still the day
+ * before, so a UTC weekday picked a Monday (an open day) and the closed-day tests failed after midnight IST
+ * (2026-11-16, 01:30 IST).
+ */
+function nextIstSunday(): string {
+  for (let i = 1; i <= 7; i += 1) {
+    const d = istDateString(new Date(Date.now() + i * 86_400_000));
+    if (new Date(`${d}T00:00:00Z`).getUTCDay() === 0) return d;
+  }
+  throw new Error('no Sunday within a week');
+}
+
 /** The first date from tomorrow on that is not a Sunday (the fixture workshops are open Monday to Saturday). */
 function openDate(offset = 1): string {
   for (let i = offset; i < offset + 8; i += 1) {
@@ -111,7 +124,7 @@ describe('hourly slots', () => {
     const rows = await listSlots(t(), { workshopIds: [W.main!.id], workshopId: W.main!.id, date: DAY });
     expect(rows.map((r) => r.hour)).toEqual([9, 10, 11, 12, 13, 14, 15, 16, 17, 18]);
     expect(rows.every((r) => r.capacity === 2 && r.booked === 0 && r.free === 2)).toBe(true);
-    const sunday = istDateString(new Date(Date.now() + (7 - new Date().getUTCDay()) * 86_400_000));
+    const sunday = nextIstSunday();
     expect(await listSlots(t(), { workshopIds: [W.main!.id], workshopId: W.main!.id, date: sunday })).toEqual(
       [],
     );
@@ -131,7 +144,7 @@ describe('hourly slots', () => {
   it('refuses a closed hour, a closed day, an hour already over today, and another workshop id', async () => {
     const r = await request();
     await expect(propose(r.code, r.version, 22)).rejects.toMatchObject({ code: 'SLOT_CLOSED' });
-    const sunday = istDateString(new Date(Date.now() + (7 - new Date().getUTCDay() || 7) * 86_400_000));
+    const sunday = nextIstSunday();
     await expect(propose(r.code, r.version, 10, 'main', sunday)).rejects.toMatchObject({
       code: 'SLOT_CLOSED',
     });
