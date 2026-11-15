@@ -227,11 +227,14 @@ function RefundLines({ part }: { part: TrackedOrder }) {
       </h3>
       <ul className="mt-2 space-y-2 text-sm text-ink">
         {part.refunds?.map((r) => (
-          <li key={`${r.requestedAt}-${String(r.amountPaise)}`} role="status">
-            {t(`customer_${r.status}`, {
-              amount: formatPrice(r.amountPaise),
-              date: formatDate(r.processedAt ?? r.requestedAt, locale),
-            })}
+          <li key={`${r.requestedAt}-${String(r.amountPaise)}`}>
+            {/* The live region sits inside the item: `role` on the <li> itself would drop it out of the list. */}
+            <span role="status">
+              {t(`customer_${r.status}`, {
+                amount: formatPrice(r.amountPaise),
+                date: formatDate(r.processedAt ?? r.requestedAt, locale),
+              })}
+            </span>
             {r.status === 'declined' || r.status === 'failed' ? (
               <>
                 {' '}

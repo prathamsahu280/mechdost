@@ -4683,7 +4683,7 @@
     "refundKindUpi": "UPI ID",
     "refundKindBank": "Bank account",
     "upiLabel": "UPI ID",
-    "upiHelp": "For example name@bank",
+    "upiHelp": "For example 9876543210@upi",
     "accountNameLabel": "Name on the account",
     "accountNumberLabel": "Account number",
     "accountNumberHelp": "9 to 18 digits",

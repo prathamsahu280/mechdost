@@ -604,9 +604,11 @@ function Kpis({ items }: { items: readonly { label: string; value: string; sub?:
   return (
     <dl className="grid grid-cols-2 gap-3 tab:grid-cols-4">
       {items.map((item) => (
-        <div key={item.label} className={`${portalCard} p-4`}>
+        <div key={item.label} className={`${portalCard} min-w-0 p-3 min-[400px]:p-4`}>
           <dt className="text-sm text-muted">{item.label}</dt>
-          <dd className="mt-1 font-heading text-2xl font-extrabold text-ink tabular-nums">{item.value}</dd>
+          <dd className="mt-1 font-heading text-xl font-extrabold break-words text-ink tabular-nums min-[400px]:text-2xl">
+            {item.value}
+          </dd>
           {item.sub ? <dd className="mt-1 text-xs text-muted">{item.sub}</dd> : null}
         </div>
       ))}

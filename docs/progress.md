@@ -392,3 +392,5 @@ Audit items 2 (header too wide at 1024 px) and 8 (privacy banner covers controls
 only; item 3 verified as a checker issue (header 85 px max < 96 px scroll padding). Guards: `test/site-chrome-fit.test.ts`
 (4 tests); Playwright specs written, not run: `e2e/chrome-fit.spec.ts`. Coordinator: build, measure at 1024-1100 px
 (en/hi, signed in/out, cart 99), re-run the audit rows. Rulings: decisions 2026-11-16.
+
+- **2026-11-16: audit batch 2a built** (branch worktree-agent-a301c32bdb9137cb2, not merged): `ScrollRegion` for analytics/demand/workshop tables, refund list markup, analytics KPI tiles shrink at 320 px, cart label from 560 px, UPI example in Hindi. Guard: `test/audit-batch-2a.test.ts` (8 tests). Not run: Playwright, next build. Coordinator: re-run rows API-ADM-ANALYTICS/COMPANY/DEMAND, API-ORD-REFUNDLINE, account rows (header hscroll at 390 hi may remain: `components/site/header.tsx` belongs to batch 2B). Rulings: decisions 2026-11-16.

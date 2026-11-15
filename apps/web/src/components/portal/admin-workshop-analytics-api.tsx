@@ -6,6 +6,7 @@ import { workshopRates, type AdminWorkshopAnalytics } from '@mechdost/shared/wor
 import { durationParts, formatCount, localName } from '@/lib/admin-analytics-view';
 import { commonErrorKey, type CommonErrorKey } from '@/lib/api-error-key';
 import { formatPrice } from '@/lib/format';
+import { ScrollRegion } from '../ui/scroll-region';
 import {
   ratingText,
   sortWorkshops,
@@ -120,7 +121,7 @@ function WorkshopTable({ data, locale }: { data: AdminWorkshopAnalytics; locale:
   return (
     <section className={portalCard}>
       <h3 className="font-heading text-base font-extrabold text-ink">{t('table_title')}</h3>
-      <div className="mt-2 overflow-x-auto">
+      <ScrollRegion label={t('table_title')} className="mt-2">
         <table className="w-full min-w-max border-collapse text-sm">
           <caption className="sr-only">{t('table_title')}</caption>
           <thead>
@@ -184,7 +185,7 @@ function WorkshopTable({ data, locale }: { data: AdminWorkshopAnalytics; locale:
             })}
           </tbody>
         </table>
-      </div>
+      </ScrollRegion>
     </section>
   );
 }
