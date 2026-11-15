@@ -8,6 +8,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { eq } from 'drizzle-orm';
 import { istDateString } from '@mechdost/shared/time';
 import { loadKeyring } from '../src/crypto';
+import { uuidv7 } from '../src/schema/_common';
 import {
   createRefundFromTicket,
   createServiceRequest,
@@ -80,7 +81,7 @@ async function order(userId: string, method: 'cod' | 'online', status = 'deliver
 }
 
 const image = () => {
-  const mediaId = randomUUID();
+  const mediaId = uuidv7();
   const folder = randomUUID();
   return {
     mediaId,
@@ -293,6 +294,15 @@ describe('photo attachments', () => {
     await expect(
       customerReplyTicket(t(), { userId: f.other, code, body: 'x', images: [image()] }),
     ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+  });
+
+  it('refuses a photo id that is not time-ordered (uuid v7), so photos list in the order they were attached', async () => {
+    const o = await order(f.customer, 'online');
+    await expect(
+      open({ orderCode: o.group, images: [{ ...image(), mediaId: randomUUID() }] }),
+    ).rejects.toMatchObject({
+      code: 'ATTACHMENT_ID',
+    });
   });
 
   it('a photo of a soft-deleted message object is not served', async () => {

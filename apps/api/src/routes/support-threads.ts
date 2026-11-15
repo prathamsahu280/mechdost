@@ -13,6 +13,7 @@ import {
   ticketScopeFrom,
   type StoredImage,
   type TicketView,
+  uuidv7,
 } from '@mechdost/db/repo';
 import { AdminRefundDto } from '@mechdost/shared/refunds-api';
 import { SERVICE_CODE_RE } from '@mechdost/shared/service-requests';
@@ -166,7 +167,7 @@ export function supportThreadRoutes(deps: AppDeps) {
     try {
       for (const file of files) {
         const processed = await processPhoto(Buffer.from(await file.arrayBuffer()));
-        const mediaId = randomUUID();
+        const mediaId = uuidv7();
         const folder = randomUUID();
         const path = `ticket/${folder}/${mediaId}.webp`;
         const thumbPath = `ticket/${folder}/${mediaId}-thumb.webp`;

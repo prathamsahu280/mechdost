@@ -144,6 +144,7 @@ async function messagesOf(db: Tx, ticketId: string, includeInternal: boolean): P
   }));
 }
 
+const UUID_V7 = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 /** A thread shows its newest messages (review B9: no unbounded reads); older ones stay in the database. */
 const THREAD_LIMIT = 200;
 const REPLY_CAP_KEY = 'support.customer_messages_per_ticket_per_day';
@@ -407,6 +408,10 @@ export async function attachMessageImages(
   if (input.images.length === 0) return;
   if (input.images.length > SUPPORT_ATTACH_MAX)
     throw new ValidationError(`Up to ${String(SUPPORT_ATTACH_MAX)} photos per message`, 'ATTACHMENT_LIMIT');
+  // The thread lists photos by (created_at, id); one insert shares created_at, so only time-ordered (v7) ids keep
+  // the order the customer attached them in.
+  if (input.images.some((img) => !UUID_V7.test(img.mediaId)))
+    throw new ValidationError('Photo ids must be uuid v7', 'ATTACHMENT_ID');
   await tx.insert(mediaObjects).values(
     input.images.map((img) => ({
       id: img.mediaId,
