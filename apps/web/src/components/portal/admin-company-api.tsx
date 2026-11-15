@@ -15,7 +15,7 @@ import { commonErrorKey, type CommonErrorKey } from '@/lib/api-error-key';
 import { track } from '@/lib/analytics';
 import { companyFacts, site } from '@/lib/site';
 import { LoadState } from './admin-site-api';
-import { portalCard, portalField, portalPrimary } from './portal-guard';
+import { portalCard, portalField, portalPrimary } from './portal-styles';
 
 /**
  * Admin -> Settings -> Company details (design 2026-11-15 item 8; Consumer Protection (E-Commerce) Rules 2020). Legal

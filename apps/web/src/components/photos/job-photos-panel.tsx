@@ -11,7 +11,7 @@ import {
   type ServicePhotos,
 } from '@mechdost/shared/service-photos';
 import type { ServiceRequestStatus } from '@mechdost/shared/state';
-import { portalQuiet } from '@/components/portal/portal-guard';
+import { portalQuiet } from '@/components/portal/portal-styles';
 import { PhotoViewer, PhotoThumb } from './photo-viewer';
 
 type Load = { kind: 'loading' } | { kind: 'error'; code: string } | { kind: 'ok'; data: ServicePhotos };

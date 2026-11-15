@@ -30,7 +30,7 @@ import { RefundDestinationApi } from '@/components/support/refund-destination-ap
 import { PhotoPicker, ThreadOpenerApi } from '@/components/support/thread-opener-api';
 import { DeletionRequestApi } from '@/components/support/deletion-request-api';
 import { sendPhotoMessage, threadErrorKey } from '@/lib/support-thread-api';
-import { portalCard, portalField, portalPrimary, portalQuiet } from '@/components/portal/portal-guard';
+import { portalCard, portalField, portalPrimary, portalQuiet } from '@/components/portal/portal-styles';
 
 /** A support-specific message, or a common one from `portal.api_common_err_*`. */
 type Problem =

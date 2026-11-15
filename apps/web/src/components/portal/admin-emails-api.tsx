@@ -21,7 +21,7 @@ import {
 import { adminApi } from '@/lib/admin-api';
 import { commonErrorKey, type CommonErrorKey } from '@/lib/api-error-key';
 import { track } from '@/lib/analytics';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 
 type Lang = 'en' | 'hi';
 const LANGS: readonly Lang[] = ['en', 'hi'];

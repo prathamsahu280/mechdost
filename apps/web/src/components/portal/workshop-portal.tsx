@@ -18,7 +18,8 @@ import { AUTH_MODE } from '@/lib/auth/mode';
 import { formatPrice } from '@/lib/format';
 import { PartnerGate } from './partner-gate';
 import { JobCard, RequestSummary } from './workshop-job';
-import { PortalGuard, portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { PortalGuard } from './portal-guard';
+import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 
 const SLOTS = ['morning', 'afternoon', 'evening'] as const;
 

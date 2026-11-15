@@ -1179,3 +1179,8 @@ Design: `docs/superpowers/specs/2026-11-15-support-next-tier-design.md` items 1 
   audit (chunk G) keeps covering states real data cannot produce; a real-API pass covers the main flows end to end
   (order → shop accept → delivery code; service request → estimate → bill → pay; support ticket → reply; refund →
   finance approval; coupons; wishlist and cart across two sessions).
+
+## 2026-11-16 - Client message bundles must cover every client namespace (builder ruling)
+
+- Real-sign-in screens showed raw keys / `MISSING_MESSAGE` (workshopTier1, supportThread, workshopAnalytics, portal, refunds, plus accountApi, storefront, coupons, shopGiveUp, adminEmails, adminTier2, adminExports, trust, workshop, checkout). Fix: namespaces added to each page/shell `ClientMessages` list (api branch only where the page is conditional); `apps/web/test/client-messages-coverage.test.ts` is a standing guard with no allowlist (hard rule 10, spec 16 unaffected).
+- Style constants moved from `portal-guard.tsx` to `portal-styles.ts` and `useNow` to `use-now.ts` so a page importing only styles no longer drags the guard namespaces. No behaviour or bundle change.

@@ -26,7 +26,7 @@ import { track } from '@/lib/analytics';
 import { CATEGORY_EMOJI } from '@/lib/emoji';
 import { CityPicker } from './admin-city-picker';
 import { LoadState } from './admin-site-api';
-import { portalCard, portalPrimary, portalQuiet } from './portal-guard';
+import { portalCard, portalPrimary, portalQuiet } from './portal-styles';
 
 /**
  * Admin -> Home layout on the API (design 2026-11-15 item 6; spec 08). The same choices as the demo editor: the order

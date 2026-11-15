@@ -8,7 +8,7 @@ import { track } from '@/lib/analytics';
 import { formatPrice } from '@/lib/format';
 import { applyCsv, downloadTemplate, previewCsv } from '@/lib/shop-tools-api';
 import { csvFileKey, csvProblemKey } from '@/lib/shop-tools-view';
-import { portalCard, portalPrimary, portalQuiet } from './portal-guard';
+import { portalCard, portalPrimary, portalQuiet } from './portal-styles';
 import { FlashNote, useFlash } from './shop-flash';
 
 type Step =

@@ -33,7 +33,11 @@ export default async function OrderPage({ params }: Props) {
       </h1>
       <div className="mt-8">
         <ClientMessages
-          namespaces={DATA_MODE === 'api' ? ['order', 'cart', 'demo', 'reviews'] : ['order', 'cart', 'demo']}
+          namespaces={
+            DATA_MODE === 'api'
+              ? ['order', 'cart', 'demo', 'reviews', 'supportThread', 'refunds']
+              : ['order', 'cart', 'demo']
+          }
         >
           <Suspense>
             {DATA_MODE === 'api' ? <OrderViewApi code={safe} /> : <OrderView code={safe} />}

@@ -7,7 +7,7 @@ import { fetchStaff, grantStaff, revokeStaff } from '@/lib/admin-people-api';
 import { formatDateTimeIst, peopleErrorKey } from '@/lib/admin-people-view';
 import { commonErrorKey } from '@/lib/api-error-key';
 import { track } from '@/lib/analytics';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 
 /** The staff roles the catalogue defines; their names are translated here (the API sends the English names). */
 const ROLE_KEYS = [

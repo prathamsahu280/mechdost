@@ -11,7 +11,7 @@ import type { AdminReview } from '@mechdost/shared/reviews-api';
 import { useCallback, useEffect, useState, type SyntheticEvent } from 'react';
 import { commonErrorKey, type CommonErrorKey } from '@/lib/api-error-key';
 import { formatDate } from '@/lib/format';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 
 const TABS: readonly ReviewStatus[] = ['pending', 'approved', 'hidden'];
 

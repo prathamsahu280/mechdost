@@ -22,7 +22,7 @@ import {
   STEP_PATH,
   type WorkshopAction,
 } from '@/lib/service-views';
-import { portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { portalField, portalPrimary, portalQuiet } from './portal-styles';
 
 const PAY_METHODS = ['cash', 'upi', 'card'] as const;
 type PayMethod = (typeof PAY_METHODS)[number];

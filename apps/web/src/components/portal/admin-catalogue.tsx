@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
 import { AUTH_MODE } from '@/lib/auth/mode';
-import { portalCard } from './portal-guard';
+import { portalCard } from './portal-styles';
 
 /** The editor (API calls, schemas, price board) loads only when the real backend is in use. */
 const CatalogueEditor = dynamic(() => import('./admin-catalogue-editor').then((m) => m.CatalogueEditor), {

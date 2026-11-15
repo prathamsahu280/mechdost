@@ -9,7 +9,7 @@ import { adminApi } from '@/lib/admin-api';
 import { track } from '@/lib/analytics';
 import { rupeesTextToPaise } from '@/lib/support-view';
 import { threadErrorKey } from '@/lib/support-thread-api';
-import { portalCard, portalField, portalPrimary } from '@/components/portal/portal-guard';
+import { portalCard, portalField, portalPrimary } from '@/components/portal/portal-styles';
 
 /** Reasons staff may pick for a support refund (the system-set ones are not offered). */
 const REASONS = [

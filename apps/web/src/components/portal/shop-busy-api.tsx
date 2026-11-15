@@ -8,7 +8,7 @@ import { adminApi } from '@/lib/admin-api';
 import { istDayTime } from '@/lib/admin-shop-form';
 import { track } from '@/lib/analytics';
 import { tier1ErrorKey } from '@/lib/shop-tier1';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 import { FlashNote, useFlash } from './shop-flash';
 
 /**

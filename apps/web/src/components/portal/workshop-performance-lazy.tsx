@@ -2,7 +2,7 @@
 
 import { lazy, Suspense, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { portalQuiet } from './portal-guard';
+import { portalQuiet } from './portal-styles';
 
 /**
  * The portal's Performance section behind a button, its code loaded only when it is opened (JS budget, coordinator

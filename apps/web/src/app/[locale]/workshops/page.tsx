@@ -33,7 +33,9 @@ export default async function WorkshopsPage() {
         {/* Real data mode also books from here ("Let MechDost choose") and explains API errors. */}
         <ClientMessages
           namespaces={
-            DATA_MODE === 'api' ? ['finder', 'map', 'workshop', 'request', 'homeService'] : ['finder', 'map']
+            DATA_MODE === 'api'
+              ? ['finder', 'map', 'workshop', 'request', 'homeService', 'accountApi']
+              : ['finder', 'map']
           }
         >
           <WorkshopFinder />

@@ -30,7 +30,7 @@ import { track } from '@/lib/analytics';
 import { formatPrice } from '@/lib/format';
 import { AddProductForm, ImportCsv } from './admin-catalogue-add';
 import { PhotoQueueApi } from './photo-queue-api';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 import { ProductPhotosEditor } from './product-photos-editor';
 
 type Notice = { kind: 'ok' | 'error'; text: string } | null;

@@ -57,7 +57,9 @@ import {
   SettingsEditor,
   type ContentDefaults,
 } from './admin-site';
-import { PortalGuard, portalCard, portalField, portalPrimary, portalQuiet, useNow } from './portal-guard';
+import { PortalGuard } from './portal-guard';
+import { useNow } from './use-now';
+import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 import { Applications } from './admin-applications';
 import { GstInvoiceLine } from '@/components/commerce/gst-invoice-line';
 

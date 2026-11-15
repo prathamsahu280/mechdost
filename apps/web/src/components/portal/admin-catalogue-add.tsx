@@ -26,7 +26,7 @@ import {
 import { adminApi } from '@/lib/admin-api';
 import { errorKey } from '@/lib/admin-prices-view';
 import { track } from '@/lib/analytics';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 
 /**
  * Admin → Catalogue → Add product and Import CSV (plan 2026-11-14 Stream B; spec 08 Catalogue). Real API only

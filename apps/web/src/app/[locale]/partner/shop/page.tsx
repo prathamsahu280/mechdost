@@ -34,6 +34,10 @@ export default async function PartnerPage() {
             'bell',
             'shopTier1',
             'shopTier2',
+            'shopGiveUp',
+            'storefront',
+            'coupons',
+            'trust',
           ]}
         >
           <ShopPortal />

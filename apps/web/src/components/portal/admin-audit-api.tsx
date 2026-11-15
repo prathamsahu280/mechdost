@@ -8,7 +8,7 @@ import { formatDateTimeIst, peopleErrorKey } from '@/lib/admin-people-view';
 import { commonErrorKey } from '@/lib/api-error-key';
 import { track } from '@/lib/analytics';
 import { diffJson } from '@/lib/audit-diff';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 
 const EMPTY: AuditQuery = { entity: '', entityId: '', code: '', actor: '', action: '', from: '', to: '' };
 const text = (v: FormDataEntryValue | null) => (typeof v === 'string' ? v : '');

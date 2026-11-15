@@ -15,7 +15,7 @@ import {
   uploadProductPhoto,
   type PhotoScope,
 } from '@/lib/product-photos-api';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 
 const textOf = (v: FormDataEntryValue | null): string => (typeof v === 'string' ? v : '');
 

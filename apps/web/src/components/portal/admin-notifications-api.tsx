@@ -32,7 +32,7 @@ import { track } from '@/lib/analytics';
 import { formatPrice } from '@/lib/format';
 import type { NotifyDefaults } from './admin-notifications';
 import { EVENT_LABEL, PROBLEM_LABEL, SAMPLES } from './notify-labels';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 
 /** The Emails tab (spec 10, design 2026-11-15) is loaded on demand: its template catalogue and preview code stay out of the WhatsApp tab. */
 const NoticesPanel = dynamic(() => import('./admin-notices-api').then((m) => m.NoticesPanel), { ssr: false });

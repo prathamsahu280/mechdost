@@ -7,7 +7,7 @@ import { adminApi } from '@/lib/admin-api';
 import { track } from '@/lib/analytics';
 import { acceptTime, barWidth, percentOf, ratingText } from '@/lib/shop-tools-view';
 import { ApiError } from './api-list-state';
-import { portalCard, portalQuiet } from './portal-guard';
+import { portalCard, portalQuiet } from './portal-styles';
 
 type Load = { kind: 'loading' } | { kind: 'error'; code: string } | { kind: 'ok'; data: ShopPerformanceDto };
 type Window = ShopPerformanceDto['windows'][number];

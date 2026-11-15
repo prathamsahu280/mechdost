@@ -17,7 +17,7 @@ import { track } from '@/lib/analytics';
 import { AUTH_MODE } from '@/lib/auth/mode';
 import { formatDate, formatPrice } from '@/lib/format';
 import { parseRupees } from '@/lib/money-input';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 
 const ONBOARDED = APPLICATION_STAGES.indexOf('onboarded');
 const VERIFICATION = APPLICATION_STAGES.indexOf('verification');

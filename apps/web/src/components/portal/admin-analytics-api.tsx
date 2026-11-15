@@ -27,7 +27,7 @@ import {
 } from '@/lib/admin-analytics-view';
 import { formatPrice } from '@/lib/format';
 import { DailyBars, DataTable } from './analytics-charts';
-import { portalCard, portalField, portalPrimary } from './portal-guard';
+import { portalCard, portalField, portalPrimary } from './portal-styles';
 
 /** The Workshops tab loads its own chunk when first opened (JS budget; the screen is already behind the admin lazy). */
 const WorkshopsTab = lazy(() =>

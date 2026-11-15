@@ -5,7 +5,7 @@ import { useId, useState } from 'react';
 import { adminApi, type ResponseSchema } from '@/lib/admin-api';
 import { track } from '@/lib/analytics';
 import { commonErrorKey } from '@/lib/api-error-key';
-import { portalCard, portalField, portalPrimary, portalQuiet } from '@/components/portal/portal-guard';
+import { portalCard, portalField, portalPrimary, portalQuiet } from '@/components/portal/portal-styles';
 import { DELETION_SECTION_ID } from '@/lib/privacy-hooks';
 
 const BLOCKERS = ['OPEN_ORDERS', 'OPEN_SERVICE', 'OPEN_REFUND'] as const;

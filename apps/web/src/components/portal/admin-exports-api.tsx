@@ -17,7 +17,7 @@ import {
   localRangeError,
   type ExportErrorKey,
 } from '@/lib/admin-exports-view';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 
 interface Done {
   rows: number;

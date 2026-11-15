@@ -14,7 +14,7 @@ import { track } from '@/lib/analytics';
 import { AUTH_MODE } from '@/lib/auth/mode';
 import { formatDate } from '@/lib/format';
 import { GenuineClauseButton } from './genuine-clause';
-import { portalCard, portalField, portalPrimary } from './portal-guard';
+import { portalCard, portalField, portalPrimary } from './portal-styles';
 
 /** Real sign-in builds: the same cards on the API (`/v1/admin/agreements`, `/v1/shop-onboarding/{shopId}/agreement`). */
 const AgreementApi = dynamic(() => import('./admin-onboarding-api').then((m) => m.AgreementApi), {

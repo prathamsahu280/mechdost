@@ -37,7 +37,7 @@ import { formatDate, formatPrice } from '@/lib/format';
 import { parseRupees } from '@/lib/money-input';
 import { ApiListState, LoadMore } from './api-list-state';
 import { CatalogueSkuPicker, type SkuChoice } from './catalogue-sku-picker';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 import { PausePrompt, useShopWarnings, WarningsPanel } from './admin-shop-warnings';
 import { ShopHoursFields } from './shop-hours-fields';
 import { useApiList } from './use-api-list';

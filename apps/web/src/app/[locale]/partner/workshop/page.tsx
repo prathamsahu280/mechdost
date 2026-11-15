@@ -34,6 +34,10 @@ export default async function PartnerPage() {
             'bell',
             'homeService',
             'photos',
+            'workshopTier1',
+            'workshop',
+            'workshopAnalytics',
+            'trust',
           ]}
         >
           <WorkshopPortal />

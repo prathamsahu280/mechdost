@@ -18,7 +18,7 @@ import {
   quoteStatusKey,
   type QuoteMessageKey,
 } from '@/lib/quote-views';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 
 type List =
   | { kind: 'loading' }

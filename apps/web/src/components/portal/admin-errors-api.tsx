@@ -11,7 +11,7 @@ import {
 import { adminApi } from '@/lib/admin-api';
 import { formatDate } from '@/lib/format';
 import { ApiError } from './api-list-state';
-import { portalCard, portalQuiet } from './portal-guard';
+import { portalCard, portalQuiet } from './portal-styles';
 
 const LEVEL_PILL: Record<AdminErrorIssueDto['level'], string> = {
   fatal: 'bg-pill text-error',

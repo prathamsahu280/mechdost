@@ -204,7 +204,7 @@ export default async function WorkshopPage({ params }: Props) {
           <p className="mt-2 text-sm text-muted">{t('bookIntro')}</p>
           <LabourPromise variant="full" as="p" className="mt-2 text-sm font-bold text-ink" />
           <div className="mt-5">
-            <ClientMessages namespaces={['workshop', 'checkout']}>
+            <ClientMessages namespaces={['workshop', 'checkout', 'accountApi']}>
               <BookingForm workshop={found} />
             </ClientMessages>
           </div>

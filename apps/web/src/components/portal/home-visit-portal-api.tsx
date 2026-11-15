@@ -31,7 +31,7 @@ import {
   visitFeeDue,
 } from '@/lib/home-service-views';
 import { lastKmFrom, parseOdometerKm, serviceErrorKey } from '@/lib/service-views';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 import { ServiceApiError } from './service-api-error';
 
 const stepUrl = (code: string, step: string) => `/workshop/requests/${encodeURIComponent(code)}/${step}`;

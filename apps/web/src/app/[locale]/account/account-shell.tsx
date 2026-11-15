@@ -24,6 +24,12 @@ export async function AccountShell({ section }: { section: AccountSection }) {
             'homeService',
             // Account -> Privacy (consents, data download, deletion request; design 2026-11-15).
             'privacy',
+            // Real-sign-in (API) sections: invites, saved places, wishlist, support threads (audit 2026-11-16).
+            'shopTier1',
+            'accountApi',
+            'storefront',
+            'portal',
+            'supportThread',
           ]}
         >
           <AccountArea section={section} />

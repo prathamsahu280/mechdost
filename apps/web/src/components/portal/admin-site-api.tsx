@@ -35,7 +35,7 @@ import { commonErrorKey, type CommonErrorKey } from '@/lib/api-error-key';
 import { track } from '@/lib/analytics';
 import type { ContentDefaults } from './admin-site';
 import { CityPicker } from './admin-city-picker';
-import { portalCard, portalPrimary, portalQuiet, portalField } from './portal-guard';
+import { portalCard, portalPrimary, portalQuiet, portalField } from './portal-styles';
 
 type SaveStatus = 'idle' | 'busy' | 'saved' | 'invalid' | CommonErrorKey;
 

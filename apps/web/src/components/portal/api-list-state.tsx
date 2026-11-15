@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { apiErrorKey } from '@/lib/order-views';
-import { portalQuiet } from './portal-guard';
+import { portalQuiet } from './portal-styles';
 
 /** An API error in the screen's words (`portal.api_err_*`). */
 export function ApiError({ code, id }: { code: string; id?: string }) {

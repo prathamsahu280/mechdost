@@ -4,7 +4,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { AdminCityList, type AdminCityDto } from '@mechdost/shared/admin-config-api';
 import { adminApi } from '@/lib/admin-api';
-import { portalCard, portalField } from './portal-guard';
+import { portalCard, portalField } from './portal-styles';
 
 /**
  * "All cities" or one city, for the admin screens that can hold a value per city (design 2026-11-15 item 7; spec 15).

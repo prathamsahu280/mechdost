@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { withGenuineClause } from '@mechdost/shared/seller-clause';
 import { track } from '@/lib/analytics';
-import { portalQuiet } from './portal-guard';
+import { portalQuiet } from './portal-styles';
 
 /**
  * Adds the "Genuine parts only" clause (draft, pending legal review; `@mechdost/shared/seller-clause`) to the

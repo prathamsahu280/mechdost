@@ -10,7 +10,7 @@ import { formatPrice } from '@/lib/format';
 import { parseRupees } from '@/lib/money-input';
 import { apiErrorKey, priceRows, shopIdsOf, type PriceRow } from '@/lib/order-views';
 import { ApiListState } from './api-list-state';
-import { portalCard, portalField, portalPrimary } from './portal-guard';
+import { portalCard, portalField, portalPrimary } from './portal-styles';
 
 type Load = { status: 'loading' } | { status: 'error'; code: string } | { status: 'ok'; rows: PriceRow[] };
 

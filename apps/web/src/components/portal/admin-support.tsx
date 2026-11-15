@@ -16,7 +16,7 @@ import { AUTH_MODE } from '@/lib/auth/mode';
 import { track } from '@/lib/analytics';
 import { formatDate } from '@/lib/format';
 import { TicketThread, useTicketLabels } from '@/components/support/ticket-thread';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 
 const ERROR_LABEL = {
   empty: 'err_empty',

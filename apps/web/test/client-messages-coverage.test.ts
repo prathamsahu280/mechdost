@@ -20,6 +20,7 @@ function walk(dir: string): string[] {
   });
 }
 
+const slash = (p: string) => p.split('\\').join('/');
 const cache = new Map<string, string>();
 const read = (file: string) => {
   let s = cache.get(file);
@@ -126,7 +127,8 @@ describe('client message bundles cover every client component', () => {
         }
       if (all) continue;
       for (const [ns, via] of used)
-        if (!have.has(ns)) missing.push(`${page.slice(appDir.length + 1)}: ${ns} (used in ${via})`);
+        if (!have.has(ns))
+          missing.push(`${slash(page.slice(appDir.length + 1))}: ${ns} (used in ${slash(via)})`);
     }
     expect(missing).toEqual([]);
   });

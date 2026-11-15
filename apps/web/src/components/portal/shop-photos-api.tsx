@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { ShopOfferList } from '@mechdost/shared/order-views';
 import { adminApi } from '@/lib/admin-api';
 import { fetchProductPhotos } from '@/lib/product-photos-api';
-import { portalCard } from './portal-guard';
+import { portalCard } from './portal-styles';
 import { ProductPhotosEditor } from './product-photos-editor';
 
 interface Product {

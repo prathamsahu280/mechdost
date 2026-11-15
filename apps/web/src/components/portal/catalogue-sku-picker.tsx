@@ -10,7 +10,7 @@ import {
   type CatalogueVariantPick,
 } from '@/lib/catalogue-public-api';
 import { formatPrice } from '@/lib/format';
-import { portalField, portalQuiet } from './portal-guard';
+import { portalField, portalQuiet } from './portal-styles';
 
 export interface SkuChoice {
   sku: string;

@@ -34,7 +34,7 @@ import {
 import { CannedRepliesEditor } from './admin-canned-replies-api';
 import { StaffRefundApi } from '@/components/support/staff-refund-api';
 import { TicketThread, useTicketLabels } from '@/components/support/ticket-thread';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 
 type Problem = { ns: 'support'; key: SupportErrorKey } | { ns: 'portal'; key: CommonErrorKey };
 

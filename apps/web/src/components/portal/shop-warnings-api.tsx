@@ -6,7 +6,7 @@ import { useCallback } from 'react';
 import { adminApi } from '@/lib/admin-api';
 import { formatDate } from '@/lib/format';
 import { ApiListState } from './api-list-state';
-import { portalCard } from './portal-guard';
+import { portalCard } from './portal-styles';
 import { useApiList } from './use-api-list';
 
 /**

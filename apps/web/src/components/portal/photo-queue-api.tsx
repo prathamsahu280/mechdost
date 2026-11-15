@@ -7,7 +7,7 @@ import { PRODUCT_PHOTO_REJECT_REASONS, type ProductPhotoRejectReason } from '@me
 import { track } from '@/lib/analytics';
 import { photoSrc } from '@/lib/photo-src';
 import { approvePhoto, fetchPhotoQueue, productPhotoErrorKey, rejectPhoto } from '@/lib/product-photos-api';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-guard';
+import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 
 interface Item {
   photoId: string;

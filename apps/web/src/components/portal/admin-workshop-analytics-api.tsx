@@ -13,7 +13,7 @@ import {
   type SortDir,
   type SortKey,
 } from '@/lib/workshop-analytics-view';
-import { portalCard, portalPrimary } from './portal-guard';
+import { portalCard, portalPrimary } from './portal-styles';
 import { WorkshopStatsView } from './workshop-stats-view';
 
 interface Query {

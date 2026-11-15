@@ -7,7 +7,7 @@ import { adminApi } from '@/lib/admin-api';
 import { track } from '@/lib/analytics';
 import { formatDate } from '@/lib/format';
 import { tier1ErrorKey } from '@/lib/shop-tier1';
-import { portalCard, portalPrimary, portalQuiet } from '../portal/portal-guard';
+import { portalCard, portalPrimary, portalQuiet } from '../portal/portal-styles';
 import { FlashNote, useFlash } from '../portal/shop-flash';
 
 type Invite = ReturnType<(typeof MyShopInvites)['parse']>['invites'][number];
