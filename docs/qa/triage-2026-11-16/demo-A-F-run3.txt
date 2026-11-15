@@ -1,0 +1,7 @@
+demo {'expected': 2189, 'fail': 4, 'flaky': 2}
+    3 P1 clipped | a line is cut by N px by a container that hides overflow
+      rows: CHR-ASSIST
+      e.g. CHR-ASSIST-002 · 320px · dark · hi · signed out · world=empty · / · op :: button"बल्क ऑर्डर का दाम" · a line is cut by 55 px by a container that hides overflow
+    1 P1 axe:color-contrast | Elements must meet minimum color contrast ratio thresholds (N nodes)
+      rows: SR-VIEW
+      e.g. SR-VIEW-005 · 480px · light · en · customer · world=busy · /service/SR :: a[data-track="labour_redo_claim_open"] · Elements must meet minimum color contrast ratio thresholds (1 nodes)

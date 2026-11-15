@@ -1,0 +1,7 @@
+api {'expected': 2131, 'fail': 16}
+   15 P1 hindi | English on /hi: Tyres, Batteries
+      rows: API-ADM-COUPONS
+      e.g. API-ADM-COUPONS-002 · 320px · dark · hi · admin · world=empty · /admin :: main · English on /hi: Tyres, Batteries
+    1 OTHER | Test timeout of 90000ms exceeded.
+      rows: API-GUEST-SUPPORT
+      e.g. API-GUEST-SUPPORT-003 · 390px · light · hi · signed out · world=empty  :: Test timeout of 90000ms exceeded.
