@@ -1258,3 +1258,20 @@ Design: `docs/superpowers/specs/2026-11-15-support-next-tier-design.md` items 1 
   check those type of stuff too"): bug class. Every in-page form, panel, sheet or menu opened by a button has a
   visible Cancel/close, closes on Escape, and returns focus to the button that opened it. Guarded by a UI state audit
   rule and unit tests.
+
+## 2026-11-16 — No page may feel like a reload (user rule)
+
+User: "none of the pages should function like that" (admin side-bar click "feels like the page got refreshed and
+takes me to the top"). Rule for every page, now and for new work:
+
+- Moving inside the site never reloads the document (in-app links only; no plain `<a>` to internal pages, no
+  `window.location` for internal moves).
+- A frame shared by several pages (portal side bars, account menu, tabs, filters) lives in a layout and stays mounted;
+  only the changing part swaps. No guard, header or menu flashes or redraws on a section change.
+- No jump to the top when the user switches sections or tabs inside a page they are already reading; a new page
+  starts at its top, a switched section scrolls only as far as needed to show its heading.
+- A click shows feedback at once (pending state on the link or a skeleton in the changing part only); no blank frame,
+  no layout shift (CLS < 0.05).
+- Screen readers hear the change (focus or announcement on the new heading).
+- Guarded by a source test (portals have layouts; no internal plain anchors) and an e2e test (frame node survives,
+  no reload, no scroll jump). Checked in every UI review (`docs/design-system.md` § Calm UI).
