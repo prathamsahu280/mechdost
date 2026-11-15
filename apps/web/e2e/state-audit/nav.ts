@@ -13,6 +13,48 @@ export interface NavItemFacts {
   h: number;
   /** At least half of the item is inside the bar's visible area. */
   visible: boolean;
+  /** The `href` attribute as written (a `tel:` or WhatsApp link has no page to open), `target` and `rel`. */
+  raw?: string;
+  target?: string;
+  rel?: string;
+}
+
+export type ExternalKind = 'tel' | 'whatsapp' | 'mailto';
+
+/** The kind of a link the audit browser cannot open (phone dialler, WhatsApp, mail), or null for a page link. */
+export function externalLinkKind(raw: string): ExternalKind | null {
+  if (/^tel:/i.test(raw)) return 'tel';
+  if (/^mailto:/i.test(raw)) return 'mailto';
+  if (/^https?:\/\/(?:wa\.me|api\.whatsapp\.com|web\.whatsapp\.com)(?:[/?]|$)/i.test(raw)) return 'whatsapp';
+  return null;
+}
+
+/**
+ * Rules for an external link, checked by its `href` instead of opening it (the audit browser blocks them, audit
+ * 2026-11-16): `tel:` carries the support number; a WhatsApp link carries it too and opens a new tab with
+ * `noopener`. `supportPhone` is the 10-digit number as the site writes it.
+ */
+export function externalLinkFindings(
+  item: Pick<NavItemFacts, 'text' | 'raw' | 'target' | 'rel'>,
+  supportPhone: string,
+): Finding[] {
+  const raw = item.raw ?? '';
+  const kind = externalLinkKind(raw);
+  if (kind === null || kind === 'mailto') return [];
+  const out: Finding[] = [];
+  const fail = (detail: string) => out.push({ rule: 'nav-load', severity: 'P0', where: item.text, detail });
+  const digits =
+    kind === 'tel'
+      ? /^tel:\+?(\d{10,13})$/i.exec(raw)?.[1]
+      : /^https?:\/\/(?:wa\.me\/|[^/]+\/send\?(?:[^#]*&)?phone=)(\d{10,13})/i.exec(raw)?.[1];
+  if (digits === undefined) fail(`${raw} is not a valid ${kind} link`);
+  else if (!digits.endsWith(supportPhone))
+    fail(`${raw} dials ${digits}, not the support number ${supportPhone}`);
+  if (kind === 'whatsapp' && (item.target !== '_blank' || !/\bnoopener\b/.test(item.rel ?? '')))
+    fail(
+      `${raw} must open in a new tab with rel="noopener" (has target="${item.target ?? ''}" rel="${item.rel ?? ''}")`,
+    );
+  return out;
 }
 
 export interface NavFacts {
@@ -105,6 +147,9 @@ export function readNav(scope: string): NavFacts {
       const overlapX = Math.min(r.right, bar.right) - Math.max(r.left, bar.left);
       return {
         href: new URL(a.href).pathname,
+        raw: a.getAttribute('href') ?? '',
+        target: a.getAttribute('target') ?? '',
+        rel: a.getAttribute('rel') ?? '',
         text: (a.getAttribute('aria-label') ?? a.textContent).trim().replace(/\s+/g, ' ').slice(0, 40),
         current: a.getAttribute('aria-current') === 'page',
         w: r.width,

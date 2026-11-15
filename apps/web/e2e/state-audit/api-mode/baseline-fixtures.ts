@@ -18,10 +18,11 @@ import {
   ServiceRequestPageDto,
 } from '@mechdost/shared/service-api';
 import { WishlistDto, WishlistUnchangedDto } from '@mechdost/shared/wishlist-api';
-import type { AuditCase } from '../cases.ts';
+import { buildCases, type AuditCase } from '../cases.ts';
 import type { Mock, Reply } from './mock-api.ts';
 import { workshop } from './home-fixtures.ts';
 import { mocksFor } from './fixtures.ts';
+import { navQuietMocks } from './nav-fixtures.ts';
 
 type Dto<S extends { parse(value: unknown): unknown }> = ReturnType<S['parse']>;
 
@@ -155,7 +156,29 @@ export function baselineMocks(c: AuditCase): Mock[] {
   ];
 }
 
+/**
+ * The mocks of the sections a navigation row walks to (batch 3c-3, 2026-11-16): each section row's own set, taken
+ * from the first case of the row (the calm default state), so there is one source per screen. Admin bar rows get
+ * the admin screens first, account bar rows the other signed-in screens first; the rest follow.
+ */
+let sectionCases: AuditCase[] | null = null;
+function navSectionMocks(c: AuditCase): Mock[] {
+  if (!c.code.startsWith('API-NAV-')) return [];
+  sectionCases ??= (() => {
+    const seen = new Set<string>();
+    return buildCases().filter((x) => {
+      if (!x.realApi || x.code.startsWith('API-NAV-') || seen.has(x.code)) return false;
+      seen.add(x.code);
+      return true;
+    });
+  })();
+  const admin = c.code === 'API-NAV-ADMIN';
+  const first = sectionCases.filter((x) => x.code.startsWith('API-ADM-') === admin);
+  const rest = sectionCases.filter((x) => x.code.startsWith('API-ADM-') !== admin);
+  return [...first, ...rest].flatMap((x) => mocksFor(x)).concat(navQuietMocks());
+}
+
 /** Everything the mocked API answers for one case: its row's mocks first, then the baseline (first match wins). */
 export function auditMocksFor(c: AuditCase): Mock[] {
-  return [...mocksFor(c), ...baselineMocks(c)];
+  return [...mocksFor(c), ...navSectionMocks(c), ...baselineMocks(c)];
 }

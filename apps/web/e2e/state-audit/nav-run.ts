@@ -5,7 +5,10 @@
 import type { Page } from '@playwright/test';
 import type { AuditCase } from './cases.ts';
 import type { Finding } from './geometry.ts';
-import { navFindings, readNav } from './nav.ts';
+import { externalLinkFindings, externalLinkKind, navFindings, readNav } from './nav.ts';
+
+/** The number the site shows for support (`src/lib/site.ts`); the audit checks the links against it. */
+const SUPPORT_PHONE = '7978776551';
 
 /** Most items walked per case (the admin bar has 15 to 18). */
 const MAX_WALK = 20;
@@ -26,6 +29,11 @@ export async function navCheck(page: Page, c: AuditCase): Promise<Finding[]> {
   for (let i = 0; i < count; i++) {
     const item = facts.items[i];
     if (!item) continue;
+    // A phone or WhatsApp link has no page the audit browser can open: judge its href, do not click it.
+    if (item.raw !== undefined && externalLinkKind(item.raw) !== null) {
+      findings.push(...externalLinkFindings(item, SUPPORT_PHONE));
+      continue;
+    }
     const link = page.locator(c.scope).locator('a[href]:visible').nth(i);
     try {
       await link.scrollIntoViewIfNeeded({ timeout: 3_000 });

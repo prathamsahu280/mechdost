@@ -66,7 +66,8 @@ export function photoQueueMocks(c: AuditCase): Mock[] {
     version: 1,
     brand: 'Castrol',
     category: 'Lubricants',
-    name: auditProductName(i, 'en'),
+    // The catalogue editor lists `name` on every page: on /hi it must read in Hindi (hard rule 10, audit 2026-11-16).
+    name: auditProductName(i, c.locale),
     nameHi: auditProductName(i, 'hi'),
     specSummary: null,
     specSummaryHi: null,

@@ -13,6 +13,7 @@ import { describeCase, type AuditCase } from './cases.ts';
 import {
   applyStress,
   auditDom,
+  behindOpenLayer,
   centre,
   compareFacts,
   compareProblems,
@@ -424,6 +425,8 @@ export async function runCase(page: Page, c: AuditCase, info: TestInfo, api?: Ap
         (await el.getAttribute('aria-label')) ?? ((await el.textContent()) ?? '').trim().slice(0, 30);
       try {
         await el.evaluate(centre);
+        // Under an open dialog, popover or viewer the control cannot be reached, and nothing is wrong.
+        if (await el.evaluate(behindOpenLayer)) continue;
         await el.hover({ timeout: 2_000 });
       } catch (e) {
         const msg = (e instanceof Error ? e.message : String(e))

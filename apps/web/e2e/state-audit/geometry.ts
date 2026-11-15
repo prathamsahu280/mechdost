@@ -364,6 +364,14 @@ export async function auditDom(opts: DomAuditOptions): Promise<Finding[]> {
           if (!a || !b || a.el === b.el) continue;
           if (a.el.contains(b.el) || b.el.contains(a.el)) continue;
           if (a.fixed !== b.fixed) continue;
+          // By design: a control marked data-inset-control over the field of its own wrapper (rule: insetOverlapAllowed).
+          const insetOf = (it: (typeof items)[number], other: (typeof items)[number]) =>
+            it.el.hasAttribute('data-inset-control') &&
+            !other.el.hasAttribute('data-inset-control') &&
+            other.el.matches('input, select, textarea') &&
+            it.el.parentElement !== null &&
+            it.el.parentElement === other.el.parentElement;
+          if (insetOf(a, b) || insetOf(b, a)) continue;
           if (
             a.fixed &&
             b.fixed &&
@@ -734,26 +742,58 @@ export async function auditDom(opts: DomAuditOptions): Promise<Finding[]> {
   return findings;
 }
 
+/**
+ * In the page, right before a hover (after the control was scrolled to the middle of the screen): is its centre
+ * under an open modal dialog, dialog or popover sheet that does not contain it? Such a control cannot be hovered,
+ * and it is not a bug. Checked at hover time because scrolling moves a control under a fixed sheet that was not
+ * over it when the sweep chose its controls (audit 2026-11-16: SHOP-POPOVER, API-SVC-PHOTOS).
+ */
+export function behindOpenLayer(node: Element): boolean {
+  const layers = [
+    ...document.querySelectorAll('[aria-modal="true"], dialog[open], [popover]:popover-open'),
+  ].filter((m) => m.checkVisibility({ visibilityProperty: true }));
+  const r = node.getBoundingClientRect();
+  const cx = (r.left + r.right) / 2;
+  const cy = (r.top + r.bottom) / 2;
+  return layers.some((m) => {
+    if (m.contains(node)) return false;
+    const b = m.getBoundingClientRect();
+    return cx >= b.left && cx <= b.right && cy >= b.top && cy <= b.bottom;
+  });
+}
+
+/** What the overlap rule knows about one of two overlapping items (see `insetOverlapAllowed`). */
+export interface InsetFacts {
+  /** The element carries `data-inset-control` (a toggle drawn inside its own field by design). */
+  inset?: boolean;
+  /** The element is an input, select or textarea. */
+  isField?: boolean;
+  /** The element's parent: a toggle and its field share one wrapper. */
+  wrapper: object | null;
+}
+
+/**
+ * The one overlap that is by design: a control marked `data-inset-control` (the "Show password" toggle) over the
+ * field in the same wrapper. Anything else (an unmarked control, another wrapper, a non-field, two marked ones)
+ * is still an overlap. `auditDom` applies the same rule inline (it is serialised into the page and cannot import).
+ */
+export function insetOverlapAllowed(a: InsetFacts, b: InsetFacts): boolean {
+  const pair = (x: InsetFacts, y: InsetFacts) =>
+    x.inset === true &&
+    y.isField === true &&
+    y.inset !== true &&
+    x.wrapper !== null &&
+    x.wrapper === y.wrapper;
+  return pair(a, b) || pair(b, a);
+}
+
 /** Marks up to `max` controls in scope with `data-sa-i`, preferring one of each kind first. Returns the count. */
 export function markControls(args: { scope: string; max: number; ignore: string }): number {
   const CONTROL =
     'a[href], button, input:not([type="hidden"]), select, textarea, summary, [role="button"], [role="tab"], [role="checkbox"], [role="switch"]';
   for (const el of document.querySelectorAll('[data-sa-i]')) el.removeAttribute('data-sa-i');
   const roots = [...document.querySelectorAll(args.scope)];
-  // Controls under an open modal (aria-modal, dialog[open], an open popover sheet) cannot be hovered: skipped.
-  const modals = [
-    ...document.querySelectorAll('[aria-modal="true"], dialog[open], [popover]:popover-open'),
-  ].filter((m) => m.checkVisibility({ visibilityProperty: true }));
-  const behindModal = (el: Element): boolean => {
-    const r = el.getBoundingClientRect();
-    const cx = (r.left + r.right) / 2;
-    const cy = (r.top + r.bottom) / 2;
-    return modals.some((m) => {
-      if (m.contains(el)) return false;
-      const b = m.getBoundingClientRect();
-      return cx >= b.left && cx <= b.right && cy >= b.top && cy <= b.bottom;
-    });
-  };
+  // Controls under an open modal cannot be hovered: the harness skips them at hover time (`behindOpenLayer`).
   const all: Element[] = [];
   for (const root of roots)
     for (const el of [...(root.matches(CONTROL) ? [root] : []), ...root.querySelectorAll(CONTROL)]) {
@@ -762,7 +802,6 @@ export function markControls(args: { scope: string; max: number; ignore: string 
       if (!el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) continue;
       const r = el.getBoundingClientRect();
       if (r.width < 4 || r.height < 4) continue;
-      if (behindModal(el)) continue;
       all.push(el);
     }
   const kind = (el: Element) =>
