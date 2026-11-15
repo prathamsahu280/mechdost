@@ -2,7 +2,6 @@
 
 import { useEffect, useState, type ComponentType } from 'react';
 import { useSession } from '@/demo/session-state';
-import { AUTH_MODE } from '@/lib/auth/mode';
 import type { BellCopy } from './bell-copy';
 
 /**
@@ -12,7 +11,7 @@ import type { BellCopy } from './bell-copy';
  *
  * JS budget (spec 16; measured 2026-11-15 by an A/B build: this import cost every page 1.5 KB gz): the chunk is loaded
  * with a plain `import()` in an effect, not `next/dynamic`, whose loader runtime no other always-loaded module uses;
- * and the bell is chosen at build time (`AUTH_MODE` is inlined), so a browser-demo build carries none of it.
+ * and the bell is chosen at build time (the env value is inlined in the switch below), so a browser-demo build carries none of it.
  */
 interface ControllerProps {
   copy: BellCopy;
@@ -50,4 +49,6 @@ function NoBell(_props: { copy: BellCopy; locale: string }) {
   return null;
 }
 
-export const Bell = AUTH_MODE === 'firebase' ? RealBell : NoBell;
+// The env value is inlined here, not the imported AUTH_MODE: the minifier folds a literal only inside one module
+// (budget incident 2026-11-15 afternoon, spec 16).
+export const Bell = process.env.NEXT_PUBLIC_AUTH_MODE === 'firebase' ? RealBell : NoBell;
