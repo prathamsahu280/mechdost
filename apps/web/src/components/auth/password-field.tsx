@@ -59,6 +59,7 @@ export function PasswordField({
           aria-pressed={visible}
           aria-label={t('showPassword')}
           aria-controls={id}
+          data-inset-control=""
           onClick={() => {
             setVisible((v) => !v);
           }}

@@ -1120,7 +1120,7 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
     nav: 'bar',
     sweep: 6,
     core: undefined,
-    note: `${API_NOTE} On a walk, screens other than the one under test may answer "not mocked" (their own rows cover them).`,
+    note: `${API_NOTE} Every screen the bar walks to is answered from its own section row mocks (batch 3c-3).`,
     realApi: true,
   },
   {
