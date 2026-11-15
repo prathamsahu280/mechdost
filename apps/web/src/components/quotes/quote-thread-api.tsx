@@ -447,7 +447,7 @@ function OfferCard({
         {canAccept ? (
           <fieldset className="mt-4">
             <legend className="text-sm font-bold text-ink">{t('api_payMethod')}</legend>
-            <div className="mt-1 space-y-1">
+            <div className="mt-1 flex flex-col gap-1">
               <label className="flex min-h-11 items-start gap-3 py-1.5 text-sm text-ink">
                 <input
                   type="radio"
@@ -499,6 +499,7 @@ function OfferCard({
                 type="button"
                 onClick={() => void accept()}
                 disabled={busy}
+                aria-busy={busy}
                 className="press inline-flex min-h-12 flex-1 items-center justify-center rounded-button bg-accent-button px-6 text-sm font-bold text-white hover:bg-accent-button-hover disabled:opacity-70"
               >
                 {busy

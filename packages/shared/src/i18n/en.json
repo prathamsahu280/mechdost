@@ -1278,6 +1278,7 @@
     "api_attachHint": "JPG, PNG or WebP. Up to 4 photos, 8 MB each.",
     "api_attachRemove": "Remove photo {n}",
     "api_attachAlt": "Photo {n} of {total}",
+    "api_attachOpen": "Photo {n} of {total} (opens in a new tab)",
     "api_attachedLabel": "Photos on this message",
     "api_seen": "Seen",
     "api_err_attachLimit": "You can add up to 4 photos to one message.",

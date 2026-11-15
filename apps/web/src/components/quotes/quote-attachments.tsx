@@ -27,7 +27,7 @@ export function QuoteAttachments({ attachments }: { attachments: readonly QuoteA
           >
             <Image
               src={photoSrc(a.thumbUrl)}
-              alt={t('api_attachAlt', { n: i + 1, total: attachments.length })}
+              alt={t('api_attachOpen', { n: i + 1, total: attachments.length })}
               fill
               sizes="80px"
               unoptimized
@@ -102,18 +102,20 @@ export function PhotoPicker({
         {t('api_attach')}
       </button>
       {files.length > 0 ? (
-        <ul className="mt-2 flex flex-wrap gap-2">
+        <ul className="mt-2 flex flex-wrap gap-3">
           {files.map((f, i) => (
             <li key={`${f.name}-${String(i)}-${String(f.size)}`} className="relative">
               <span className="relative block size-16 overflow-hidden rounded-lg border border-line-card bg-pill">
-                <Image
-                  src={previews[i] ?? ''}
-                  alt={t('api_attachAlt', { n: i + 1, total: files.length })}
-                  fill
-                  sizes="64px"
-                  unoptimized
-                  className="object-cover"
-                />
+                {previews[i] ? (
+                  <Image
+                    src={previews[i]}
+                    alt={t('api_attachAlt', { n: i + 1, total: files.length })}
+                    fill
+                    sizes="64px"
+                    unoptimized
+                    className="object-cover"
+                  />
+                ) : null}
               </span>
               <button
                 type="button"
@@ -121,7 +123,7 @@ export function PhotoPicker({
                 onClick={() => {
                   onChange(files.filter((_, j) => j !== i));
                 }}
-                className="absolute -right-2 -top-2 inline-flex size-6 items-center justify-center rounded-full bg-ink text-white"
+                className="press absolute -right-2 -top-2 inline-flex size-8 touch-manipulation items-center justify-center rounded-full bg-ink text-white focus-visible:outline-2 focus-visible:outline-offset-2"
               >
                 <X aria-hidden="true" className="size-3.5" />
               </button>

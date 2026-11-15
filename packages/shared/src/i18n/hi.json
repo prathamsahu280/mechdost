@@ -1278,6 +1278,7 @@
     "api_attachHint": "JPG, PNG या WebP। अधिकतम 4 फ़ोटो, हर एक 8 MB तक।",
     "api_attachRemove": "फ़ोटो {n} हटाएँ",
     "api_attachAlt": "फ़ोटो {n} / {total}",
+    "api_attachOpen": "फ़ोटो {n} / {total} (नए टैब में खुलती है)",
     "api_attachedLabel": "इस संदेश की फ़ोटो",
     "api_seen": "देखा गया",
     "api_err_attachLimit": "एक संदेश में अधिकतम 4 फ़ोटो जोड़ सकते हैं।",
