@@ -8,6 +8,7 @@ import {
   markRefundPaid,
   rejectRefund,
   revealRefundDestination,
+  settleUnsureRefund,
 } from '@mechdost/db/repo';
 import {
   ADMIN_REFUND_VIEWS,
@@ -18,6 +19,7 @@ import {
   MarkRefundPaidBody,
   RefundDestinationDto,
   RejectRefundBody,
+  SettleRefundBody,
 } from '@mechdost/shared/refunds-api';
 import type { SessionCache } from '../auth/session-cache';
 import { ApiError } from '../errors';
@@ -30,8 +32,8 @@ import { errorResponses, ErrorSchema } from './schemas';
 
 /**
  * Admin refund queue (spec 05; decision 2026-11-15 "All need approval"). Verified staff only: `refunds:read` to see,
- * `refunds:initiate` to ask for a refund, `refunds:approve` (finance, super admin) to approve, decline, pay by hand and
- * see a payout destination. City-scoped by the grant of each permission; foreign-city refunds are 404. The approver
+ * `refunds:initiate` to ask for a refund, `refunds:approve` (finance, super admin) to approve, decline, pay by hand, settle an unsure
+ * refund by hand and see a payout destination. City-scoped by the grant of each permission; foreign-city refunds are 404. The approver
  * cannot be the requester (four-eyes, 403 `FOUR_EYES`). Approving an online refund sends it to Razorpay at once; if that
  * fails for now, the worker retries (the refund stays `approved`).
  */
@@ -123,6 +125,17 @@ const markPaid = createRoute({
   responses: { 200: json(AdminRefundDto, 'Paid'), ...conflict, ...errorResponses },
 });
 
+const settle = createRoute({
+  method: 'post',
+  path: '/admin/refunds/{id}/settle',
+  tags: ['admin'],
+  summary:
+    'Settle a refund that needs checking by hand, after looking at Razorpay (not your own request; reason code and note required)',
+  security: secured,
+  request: { params: z.object({ id: Id }), body: body(SettleRefundBody) },
+  responses: { 200: json(AdminRefundDto, 'Settled'), ...conflict, ...errorResponses },
+});
+
 const destination = createRoute({
   method: 'get',
   path: '/admin/refunds/{id}/destination',
@@ -147,6 +160,7 @@ export function adminRefundRoutes(deps: AppDeps, cache: SessionCache) {
   app.on('POST', '/admin/refunds/:id/approve', requirePermission('refunds:approve'));
   app.on('POST', '/admin/refunds/:id/reject', requirePermission('refunds:approve'));
   app.on('POST', '/admin/refunds/:id/mark-paid', requirePermission('refunds:approve'));
+  app.on('POST', '/admin/refunds/:id/settle', requirePermission('refunds:approve'));
   app.on('GET', '/admin/refunds/:id/destination', requirePermission('refunds:approve'));
 
   const keyring = () => deps.keyring ?? undefined;
@@ -229,6 +243,22 @@ export function adminRefundRoutes(deps: AppDeps, cache: SessionCache) {
         refundId: c.req.valid('param').id,
         expectedVersion: b.version,
         reference: b.reference,
+        ...(keyring() ? { keyring: keyring() } : {}),
+      });
+      return c.json(r, 200);
+    })
+    .openapi(settle, async (c) => {
+      const b = c.req.valid('json');
+      const r = await settleUnsureRefund(deps.db, {
+        scope: cityScopeFrom(c.get('auth').grants, 'refunds:approve'),
+        staffUserId: c.get('auth').user.id,
+        refundId: c.req.valid('param').id,
+        expectedVersion: b.version,
+        outcome: b.outcome,
+        reasonCode: b.reasonCode,
+        note: b.note,
+        providerRefundId: b.providerRefundId,
+        providerAmountPaise: b.providerAmountPaise,
         ...(keyring() ? { keyring: keyring() } : {}),
       });
       return c.json(r, 200);

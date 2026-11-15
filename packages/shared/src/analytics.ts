@@ -338,6 +338,17 @@ export interface ServerEventProps {
   refund_failed: { refundId: string; amountPaise: number; failureCode: string };
   /** We cannot tell whether Razorpay holds this refund: the amount stays reserved until it is settled. */
   refund_needs_reconciliation: { refundId: string; amountPaise: number; code: string };
+  /** Finance settled an unsure refund by hand (outcome and reason are codes, never free text). */
+  refund_reconciled: {
+    refundId: string;
+    amountPaise: number;
+    outcome: 'refunded_full' | 'refunded_other_amount' | 'not_refunded';
+    reasonCode: string;
+  };
+  /** A refund request was raised for money captured after the order's payment window closed. */
+  refund_requested_after_close: { refundId: string; paymentId: string; amountPaise: number };
+  /** A credit note was issued for a processed refund of an invoiced order. */
+  credit_note_issued: { refundId: string; creditNoteNumber: string; totalPaise: number };
   /** Customer account (design 2026-11-15): codes and flags only; no name, phone, address text or registration. */
   address_saved: { addressId: string; label: string; isDefault: boolean; action: 'created' | 'updated' };
   address_deleted: { addressId: string };

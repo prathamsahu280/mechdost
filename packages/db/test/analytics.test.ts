@@ -622,6 +622,7 @@ describe('admin overview queues', () => {
         reviews: null,
         applications: null,
         prices: null,
+        refunds: null,
         analytics: { all: false, cityIds: [f.raipur] },
       },
     });
@@ -635,6 +636,8 @@ describe('admin overview queues', () => {
       reviewsPending: null,
       applicationsPending: null,
       priceRequestsPending: null,
+      refundsWaiting: null,
+      refundsNeedChecking: null,
       ordersToday: 0,
       gmvTodayPaise: 0,
     });

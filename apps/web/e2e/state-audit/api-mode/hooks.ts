@@ -30,6 +30,18 @@ async function prepareApi(page: Page, c: AuditCase): Promise<string[]> {
   if (c.code === 'API-ADM-REFUNDQ' && (c.state.detail === 'open' || c.state.form !== 'clean')) {
     await main.locator('section[aria-labelledby="refund-list"] ul li button').first().click();
     await settleApi(page);
+    // An unsure refund: open the settle form, then submit it empty (errors) or fill it in (filled).
+    if (c.state.refund === 'needs-reconciliation' && c.state.form !== 'clean') {
+      await main.locator('[data-testid="refund-settle-open"]').click();
+      if (c.state.form === 'errors')
+        await main
+          .locator('#refund-settle-title')
+          .locator('xpath=ancestor::form')
+          .locator('button[type="submit"]')
+          .click();
+      else await main.locator('textarea').fill('Checked the Razorpay dashboard: no refund there');
+      await settleApi(page);
+    }
   }
 
   if (c.code === 'API-ADM-SHOPS' && c.state.panel && c.state.panel !== 'closed') {

@@ -33,6 +33,7 @@ No test in this spec may be skipped in CI; schema PRs require the `drizzle-postg
 - State machines: `packages/shared/src/state/index.ts`; CAS transitions: `packages/db/src/repo/orders.ts`, `assignments.ts`.
 - Stock: `packages/db/src/repo/inventory.ts`; invoices: `repo/invoices.ts` + SQL `public.allocate_invoice_seq()`.
 - Acceptance tests: `packages/db/test/integrity.test.ts` (PGlite). Multi-connection concurrency tests run against real Postgres in CI (to add with the CI workflow).
+- Refund follow-ups (2026-11-16, migration 0073): settle-by-hand `repo/refunds.ts#settleUnsureRefund` (conditional UPDATE on status + version under the payment lock, CHECKs `refunds_settle_valid`, `refunds_settle_four_eyes`); late captures `repo/payments.ts#recordLateCapture` (idempotency key `sys_late_<order id>`); credit notes `repo/credit-notes.ts` (series `CN`, unique `invoices.refund_id`, CHECKs `invoices_credit_note_link`, `invoices_refund_only_credit_note`, split `splitCreditNote`). Tests `packages/db/test/refund-followups.test.ts`.
 - Rule for new tables: add `version`/`updated_at` triggers and `ENABLE ROW LEVEL SECURITY` in the same migration (the 0002 DO-loops only covered tables existing at that time).
 
 ## Data model note: admin prices (migration 0043, 2026-11-13)

@@ -80,6 +80,10 @@ export const REFUND_VARIANTS = [
   'processed',
   'failed',
   'needs-reconciliation',
+  'needs-reconciliation-own',
+  'settled-by-hand',
+  'processed-credit-note',
+  'after-close',
 ] as const;
 
 export const API_COMPONENTS: readonly ComponentDef[] = [
@@ -456,7 +460,7 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
     code: 'API-ADM-REFUNDQ',
     page: 'Admin console (/admin/refunds)',
     component:
-      'Refund queue: view buttons, list rows, detail (approve / decline with reason / pay by hand with UTR), alerts',
+      'Refund queue: view buttons, list rows, detail (approve / decline with reason / pay by hand with UTR / settle an unsure refund by hand), credit note line, alerts',
     path: '/admin/refunds',
     scope: 'main',
     strategy: 'pairwise',

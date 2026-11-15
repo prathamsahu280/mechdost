@@ -504,3 +504,118 @@ describe('uncertain outcomes never free the money (security review 2026-11-15)',
     ).toBe(true);
   });
 });
+
+describe('settling an unsure refund by hand (spec 05, decision 2026-11-16)', () => {
+  /** An approved refund whose Razorpay answer is unsure (refused, and the lookup is down). */
+  async function unsureRefund() {
+    const o = await paidOrder();
+    await cancelByStaff(o.sub);
+    const r = (await queue(finance)).items.find((i) => i.orderCode === o.sub)!;
+    razorpay.failWith = 400;
+    razorpay.lookupDown = true;
+    expect((await approve(finance, r)).status).toBe(200);
+    razorpay.failWith = null;
+    razorpay.lookupDown = false;
+    const row = async () => (await ctx.db.select().from(s.refunds).where(eq(s.refunds.id, r.id)))[0]!;
+    expect((await row()).status).toBe('needs_reconciliation');
+    return { o, r, row };
+  }
+  const settle = (headers: Record<string, string>, id: string, version: number, extra: object = {}) =>
+    ctx.app.request(`/v1/admin/refunds/${id}/settle`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        version,
+        outcome: 'not_refunded',
+        reasonCode: 'dashboard_checked',
+        note: 'Checked the Razorpay dashboard: nothing there',
+        ...extra,
+      }),
+    });
+
+  it('finance settles it: not refunded frees the amount; the queue shows canSettle', async () => {
+    const { o, r, row } = await unsureRefund();
+    const shown = (await queue(finance, 'attention')).items.find((i) => i.id === r.id) as
+      (RefundJson & { canSettle: boolean }) | undefined;
+    expect(shown?.canSettle).toBe(true);
+    const res = await settle(finance, r.id, (await row()).version);
+    expect(res.status).toBe(200);
+    expect(await json<RefundJson & { settleReasonCode: string }>(res)).toMatchObject({
+      status: 'failed',
+      settleReasonCode: 'dashboard_checked',
+    });
+    const [p] = await ctx.db.select().from(s.payments).where(eq(s.payments.providerPaymentId, o.paymentId));
+    expect(p!.refundReservedPaise).toBe(0);
+  });
+
+  it('refunded in full needs the Razorpay refund id and settles the refund and the payment', async () => {
+    const { o, r, row } = await unsureRefund();
+    const missing = await settle(finance, r.id, (await row()).version, { outcome: 'refunded_full' });
+    expect(missing.status).toBe(422);
+    const done = await settle(finance, r.id, (await row()).version, {
+      outcome: 'refunded_full',
+      providerRefundId: 'rfnd_ByHandFull001',
+    });
+    expect(done.status).toBe(200);
+    expect(await json<RefundJson>(done)).toMatchObject({
+      status: 'processed',
+      providerRefundId: 'rfnd_ByHandFull001',
+    });
+    const [p] = await ctx.db.select().from(s.payments).where(eq(s.payments.providerPaymentId, o.paymentId));
+    expect(p).toMatchObject({ status: 'refunded', refundedPaise: o.total });
+  });
+
+  it('only refunds:approve may settle (ops: 403), a customer is refused, and a stale version is a 409', async () => {
+    const { r, row } = await unsureRefund();
+    const version = (await row()).version;
+    expect((await settle(ops, r.id, version)).status).toBe(403);
+    expect((await settle(ravi, r.id, version)).status).toBe(403);
+    expect((await settle(finance, r.id, version + 4)).status).toBe(409);
+    // A bad body (short note, unknown outcome, unknown field) is a validation error and changes nothing.
+    expect((await settle(finance, r.id, version, { note: 'short' })).status).toBe(400);
+    expect((await settle(finance, r.id, version, { outcome: 'whatever' })).status).toBe(400);
+    expect((await settle(finance, r.id, version, { extra: 1 })).status).toBe(400);
+    expect((await row()).status).toBe('needs_reconciliation');
+  });
+
+  it('four-eyes over HTTP: the staff member who asked for the refund cannot settle it', async () => {
+    const o = await paidOrder();
+    const asked = await ctx.app.request('/v1/admin/refunds', {
+      method: 'POST',
+      headers: { ...boss, 'idempotency-key': `refunds-api-settle-${String(n)}-abcdef` },
+      body: JSON.stringify({
+        orderCode: o.sub,
+        amountPaise: 1000,
+        source: 'part_refund',
+        reasonCode: 'goodwill',
+      }),
+    });
+    expect(asked.status).toBe(201);
+    const r = await json<RefundJson>(asked);
+    expect((await approve(finance, r)).status).toBe(200);
+    // Force it unsure the way the worker would after eight timeouts.
+    await ctx.db.update(s.refunds).set({ status: 'needs_reconciliation' }).where(eq(s.refunds.id, r.id));
+    const [row] = await ctx.db.select().from(s.refunds).where(eq(s.refunds.id, r.id));
+    const res = await settle(boss, r.id, row!.version);
+    expect(res.status).toBe(403);
+    expect((await json<ErrorJson>(res)).error.code).toBe('FOUR_EYES');
+  });
+
+  it('the Overview counts waiting and needs-checking refunds for finance', async () => {
+    await unsureRefund();
+    const ov = await json<{ refundsWaiting: number | null; refundsNeedChecking: number | null }>(
+      await ctx.app.request('/v1/admin/overview', { headers: finance }),
+    );
+    expect(ov.refundsNeedChecking).toBeGreaterThanOrEqual(1);
+    expect(ov.refundsWaiting).not.toBeNull();
+  });
+
+  it('refund alerts reach finance as a bell notice linking to the refunds screen', async () => {
+    await unsureRefund();
+    const notices = await json<{ notices: { kind: string | null; link: string | null }[] }>(
+      await ctx.app.request('/v1/me/notifications', { headers: finance }),
+    );
+    const alert = notices.notices.find((x) => x.kind === 'staff.refund_alert');
+    expect(alert?.link).toContain('/admin/refunds');
+  });
+});

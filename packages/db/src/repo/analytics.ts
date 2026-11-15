@@ -522,6 +522,8 @@ export interface OverviewScopes {
   /** Partner applications have no city: counted only with an all-cities grant. */
   applications: CityScope | null;
   prices: CityScope | null;
+  /** Refunds waiting for approval and refunds that need checking (`refunds:read`). */
+  refunds: CityScope | null;
   analytics: CityScope | null;
 }
 
@@ -591,6 +593,20 @@ async function overviewIn(db: Tx, input: { now: Date; scopes: OverviewScopes }):
           where pr.status = 'pending' and ${scopeFilter('s.city_id', scopes.prices)}`,
       )
     : null;
+  // Refunds by the city of their checkout or service request; `refunds (status, created_at)` serves the filter.
+  const [refundCounts] = scopes.refunds
+    ? rowsOf<{ waiting: unknown; checking: unknown }>(
+        await db.execute(sql`
+          select count(*) filter (where r.status = 'requested')::int as waiting,
+            count(*) filter (where r.status = 'needs_reconciliation')::int as checking
+          from refunds r
+          left join order_groups g on g.id = r.group_id
+          left join service_bills sb on sb.id = r.bill_id
+          left join service_requests sr on sr.id = sb.request_id
+          where r.status in ('requested', 'needs_reconciliation')
+            and ${scopeFilter('coalesce(g.city_id, sr.city_id)', scopes.refunds)}`),
+      )
+    : [];
   const today = istDateString(input.now);
   const day = analyticsDays({ fromDate: today, toDate: today, days: 1 });
   // A date range on order_groups: an explicit city list so `(city_id, created_at)` is used for every city too.
@@ -614,6 +630,8 @@ async function overviewIn(db: Tx, input: { now: Date; scopes: OverviewScopes }):
     reviewsPending: reviews,
     applicationsPending: applications,
     priceRequestsPending: prices,
+    refundsWaiting: refundCounts ? num(refundCounts.waiting) : null,
+    refundsNeedChecking: refundCounts ? num(refundCounts.checking) : null,
     ordersToday: todayKpis?.orders ?? null,
     gmvTodayPaise: todayKpis?.gmv ?? null,
   };

@@ -1,7 +1,7 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import { useCallback, useEffect, useState, type SyntheticEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type SyntheticEvent } from 'react';
 import {
   ADMIN_REFUND_VIEWS,
   type AdminRefund,
@@ -13,6 +13,7 @@ import { track } from '@/lib/analytics';
 import { formatDate, formatPrice } from '@/lib/format';
 import { isRefundReference, refundErrorKey, refundFailureKey } from '@/lib/refund-views';
 import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { RefundSettleForm } from './refund-settle-form';
 
 type List =
   | { kind: 'loading' }
@@ -191,7 +192,9 @@ function RefundDetail({
   const locale = useLocale();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<'approved' | 'declined' | 'paid' | null>(null);
+  const [message, setMessage] = useState<'approved' | 'declined' | 'paid' | 'settled' | null>(null);
+  const [settling, setSettling] = useState(false);
+  const settleOpener = useRef<HTMLButtonElement>(null);
   const [declining, setDeclining] = useState(false);
   const [reason, setReason] = useState<RefundRejectReason>('not_eligible');
   const [reference, setReference] = useState('');
@@ -244,6 +247,11 @@ function RefundDetail({
   };
 
   const manualApproved = refund.mode === 'bank_upi' && refund.status === 'approved';
+  const closeSettle = () => {
+    setSettling(false);
+    // Focus goes back to the button that opened the form (a form opened by a button can always be closed).
+    window.setTimeout(() => settleOpener.current?.focus(), 0);
+  };
 
   return (
     <section aria-labelledby="refund-detail" className={portalCard}>
@@ -302,6 +310,19 @@ function RefundDetail({
       ) : null}
       {refund.status === 'rejected' && refund.rejectReasonCode ? (
         <p className="mt-3 text-sm text-ink">{t(`rejectReason_${refund.rejectReasonCode}`)}</p>
+      ) : null}
+      {refund.settleReasonCode ? (
+        <p className="mt-3 text-sm text-ink">
+          {t('settledBy', { reason: t(`settleReason_${refund.settleReasonCode}`) })}
+        </p>
+      ) : null}
+      {refund.creditNote ? (
+        <p className="mt-3 text-sm font-bold text-ink">
+          {t('creditNote', {
+            number: refund.creditNote.number,
+            amount: formatPrice(refund.creditNote.totalPaise),
+          })}
+        </p>
       ) : null}
       {refund.manualReference ? (
         <p className="mt-3 text-sm font-bold text-ink">
@@ -398,6 +419,38 @@ function RefundDetail({
             <p className="text-sm font-bold text-ink">{t('fourEyes')}</p>
           )}
         </div>
+      ) : null}
+
+      {refund.status === 'needs_reconciliation' ? (
+        refund.canSettle ? (
+          settling ? (
+            <RefundSettleForm
+              refund={refund}
+              onClose={closeSettle}
+              onStale={onChanged}
+              onSettled={(next) => {
+                setSettling(false);
+                setMessage('settled');
+                onChanged(next);
+              }}
+            />
+          ) : (
+            <button
+              ref={settleOpener}
+              data-testid="refund-settle-open"
+              type="button"
+              onClick={() => {
+                click('admin_refund_settle_open');
+                setSettling(true);
+              }}
+              className={`${portalPrimary} mt-5`}
+            >
+              {t('settleOpen')}
+            </button>
+          )
+        ) : (
+          <p className="mt-5 text-sm font-bold text-ink">{t('settleFourEyes')}</p>
+        )
       ) : null}
 
       {manualApproved ? (

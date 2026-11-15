@@ -234,6 +234,7 @@ const STAFF_PERMISSION = {
   'staff.shop_timed_out': 'orders:route',
   'staff.shop_gave_up': 'orders:route',
   'staff.refund_overdue': 'refunds:approve',
+  'staff.refund_alert': 'refunds:approve',
   'staff.new_application': 'applications:review',
   'staff.new_ticket': 'tickets:reply',
 } as const satisfies Partial<Record<NoticeKind, Permission>>;

@@ -34,6 +34,7 @@ export * from './payments';
 export * from './service-bill-payments';
 export * from './service-ranking';
 export * from './refunds';
+export * from './credit-notes';
 export * from './customer-blocks';
 export * from './routing';
 export * from './shop-orders';

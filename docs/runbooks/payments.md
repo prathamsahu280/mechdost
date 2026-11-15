@@ -50,7 +50,11 @@ If money is captured for an order that already expired, was cancelled, or was al
 - the audit log gets `payment.captured_needs_refund` (with the payment id and amount);
 - the API logs `razorpay_webhook_needs_refund` (webhook) or `razorpay_verify_needs_refund` (checkout callback).
 
-Ask for the refund in Admin → Refunds (API `POST /v1/admin/refunds`) once the payment is `paid`; for money captured on a closed order that never became paid, refund it from the Razorpay Dashboard (that case does not create a request yet, spec 05 "Not built").
+Since 2026-11-16, money captured **after the order closed** (payment window ended, or the customer cancelled while the Razorpay sheet was open) is recorded on its payment row (`payment.paid_after_close`) and raises one refund request per closed sub-order, source `payment_after_close`, in Admin → Refunds. Approve it there like any refund. A **second** capture on a group that is already paid through another Razorpay order is still only flagged (`payment.captured_needs_refund`): refund that one from the Razorpay Dashboard.
+
+### A refund that "needs checking"
+
+Admin → Refunds → "Needs checking" lists refunds whose Razorpay outcome we cannot confirm; finance staff also get a bell notice and an Overview tile. Open the refund in the Razorpay Dashboard (our refund id is in the refund's notes/receipt), then in the website press **Settle by hand** and say what you found: refunded in full (enter the `rfnd_...` id), refunded another amount (id + amount), or nothing was refunded. A reason and a note are required; the person who asked for the refund cannot settle it.
 
 ## Not yet
 

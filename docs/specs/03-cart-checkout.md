@@ -61,7 +61,7 @@ Plan `docs/superpowers/plans/2026-11-12-razorpay-checkout-backend.md`; user chos
   - A webhook event is recorded only together with its payment fact (one transaction), so a failed apply is retried.
   - Locks are taken group first, then payment (the expiry job takes orders, then group, then payments).
   - Cancelling the last live part of an unpaid online order expires the group and its Razorpay orders.
-  - Money captured for an expired or cancelled order never completes it: outcome `needs_refund`, audit `payment.captured_needs_refund` (once per payment), logged as an error for finance until automatic refunds exist (spec 05).
+  - Money captured for an expired or cancelled order never completes it: outcome `needs_refund`, audit `payment.captured_needs_refund` (once per payment); since 2026-11-16 the payment is recorded as captured and a refund request (source `payment_after_close`) waits for finance approval (spec 05), except a second capture on an already paid group, which is only flagged.
   - Razorpay order `expire_by` is not set (not verified for the Orders API); the window is enforced on our side.
 - **Final review fixes (2026-11-12):**
   - A capture extends the order's stock holds to `checkout.cod_reservation_minutes`, so a paid order keeps its stock until staff route it.

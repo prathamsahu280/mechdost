@@ -289,7 +289,7 @@ export type PaymentStatus = (typeof PAYMENT_STATES)[number];
 export const paymentMachine = /* @__PURE__ */ defineMachine(
   'payment',
   PAYMENT_STATES,
-  ['refunded', 'expired'],
+  ['refunded'],
   [
     { from: 'created', to: 'attempted', by: ['system'] },
     { from: 'created', to: 'paid', by: ['system'] },
@@ -301,6 +301,9 @@ export const paymentMachine = /* @__PURE__ */ defineMachine(
     { from: 'failed', to: 'attempted', by: ['system'] },
     { from: 'failed', to: 'paid', by: ['system'] },
     { from: 'failed', to: 'expired', by: ['system'] },
+    // A capture that arrives after the payment window closed (the customer paid in the open Razorpay sheet): the money
+    // is real, so it is recorded to be refunded (spec 05). The order itself is never completed by it.
+    { from: 'expired', to: 'paid', by: ['system'] },
     { from: 'paid', to: 'partially_refunded', by: ['system', 'admin'] },
     { from: 'paid', to: 'refunded', by: ['system', 'admin'] },
     { from: 'partially_refunded', to: 'refunded', by: ['system', 'admin'] },
@@ -525,8 +528,9 @@ export const refundMachine = /* @__PURE__ */ defineMachine(
     { from: 'approved', to: 'needs_reconciliation', by: ['system'] },
     { from: 'initiated', to: 'needs_reconciliation', by: ['system'] },
     { from: 'needs_reconciliation', to: 'initiated', by: ['system'] },
-    { from: 'needs_reconciliation', to: 'processed', by: ['system'] },
-    { from: 'needs_reconciliation', to: 'failed', by: ['system'] },
+    // Finance settles it by hand after checking the Razorpay dashboard (`refunds:approve`, never the requester).
+    { from: 'needs_reconciliation', to: 'processed', by: ['system', 'admin'] },
+    { from: 'needs_reconciliation', to: 'failed', by: ['system', 'admin'] },
     { from: 'failed', to: 'processed', by: ['system'] },
   ],
 );
@@ -546,6 +550,7 @@ export const REFUND_SOURCES = [
   'order_cancelled',
   'service_cancelled',
   'duplicate_payment',
+  'payment_after_close',
   'unfulfilled',
   'support_claim',
   'part_refund',
@@ -559,6 +564,7 @@ export const REFUND_REASONS = [
   'order_cancelled',
   'service_cancelled',
   'duplicate_payment',
+  'payment_after_close',
   'faulty',
   'damaged_in_transit',
   'wrong_item',
@@ -578,3 +584,20 @@ export const REFUND_REJECT_REASONS = [
   'other',
 ] as const;
 export type RefundRejectReason = (typeof REFUND_REJECT_REASONS)[number];
+
+/**
+ * How finance settles a refund stuck in `needs_reconciliation` after looking at the Razorpay dashboard
+ * (spec 05 "Settling by hand"): Razorpay did refund exactly our amount, refunded another amount, or refunded nothing.
+ */
+export const REFUND_SETTLE_OUTCOMES = ['refunded_full', 'refunded_other_amount', 'not_refunded'] as const;
+export type RefundSettleOutcome = (typeof REFUND_SETTLE_OUTCOMES)[number];
+
+/** Why finance settled an unsure refund by hand (a code for ML and audit, hard rule 16), beside a required note. */
+export const REFUND_SETTLE_REASONS = [
+  'dashboard_checked',
+  'provider_support_confirmed',
+  'bank_statement_checked',
+  'duplicate_found',
+  'other',
+] as const;
+export type RefundSettleReason = (typeof REFUND_SETTLE_REASONS)[number];
