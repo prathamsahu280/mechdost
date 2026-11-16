@@ -41,3 +41,22 @@ describe('privacy banner never covers controls', () => {
     expect(css).not.toMatch(/html\[data-consent-open\] \.assistant-launcher,/);
   });
 });
+
+describe('assistant launcher never covers a booking form', () => {
+  it('hides while a page carries a form marked data-launcher-avoid', () => {
+    expect(css).toMatch(
+      /html:has\(\[data-launcher-avoid\]\) \.assistant-launcher\s*\{[^}]*visibility:\s*hidden/,
+    );
+  });
+
+  it('marks both booking forms (demo and API)', () => {
+    for (const f of ['booking-form.tsx', 'booking-form-api.tsx'])
+      expect(src(`components/workshops/${f}`)).toMatch(/<form\s+data-launcher-avoid/);
+  });
+
+  it('adds nothing to the launcher (it is in the first load of every page)', () => {
+    expect(src('components/assistant/assistant-launcher.tsx')).not.toMatch(
+      /data-launcher-avoid|IntersectionObserver/,
+    );
+  });
+});

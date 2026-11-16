@@ -231,6 +231,7 @@ export function BookingFormApi({
 
   return (
     <form
+      data-launcher-avoid
       noValidate
       onSubmit={(e) => void onSubmit(e)}
       className="space-y-5"

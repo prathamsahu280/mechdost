@@ -126,3 +126,7 @@ On/off settings (admin Notifications) use a native checkbox with `role="switch"`
 ### Privacy choice banner (2026-11-03)
 
 Card (`rounded-card`, `border-line`, `bg-surface`, `shadow-dialog`) fixed above the mobile tab bar (full width with a 12 px inset) or bottom-left on desktop (max 28 rem). Heading 15 px Manrope extra-bold, body `text-sm text-muted`, then **two equal buttons** side by side (`border-ink`, `text-ink`, same size; never one filled and one quiet). Not a modal and never auto-dismissed. While it is open the page reserves its height at the bottom (`html[data-consent-open] body`, so every last control scrolls clear) and the floating assistant button rides just above it (decision 2026-11-16). Reopened from "Privacy choices" in the footer's legal area. Copy in `consent.*` (en/hi).
+
+### Floating assistant button and forms (2026-11-16)
+
+The "Ask MechDost" button steps aside (hidden, CSS only) on pages whose form has prices or controls along the right edge: mark the form `data-launcher-avoid`. Same family as the consent banner and compare tray rules: one floating thing at a time, and none over a price or a control.

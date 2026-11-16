@@ -55,6 +55,7 @@ export type Check =
   | 'inside'
   | 'overlap'
   | 'covered'
+  | 'launcher'
   | 'clipped'
   | 'aligned'
   | 'tap'
@@ -73,6 +74,8 @@ export const CHECK_TEXT: Readonly<Record<Check, string>> = {
   inside: 'every control and text line stays inside its card or container',
   overlap: 'no two controls or text lines overlap, also while each control is hovered and focused',
   covered: 'no control or text is painted over by another control (hover backgrounds included)',
+  launcher:
+    'the floating assistant button never sits over a price or a control (it may cover plain text only)',
   clipped: 'no text is clipped; ellipsis only where designed and never on prices or button labels',
   aligned: 'cards in a row are equal height with aligned action rows; table cells line up across columns',
   tap: 'every target is at least 24 px (or spaced); under 44 px is noted',
@@ -954,6 +957,20 @@ export const COMPONENTS: readonly ComponentDef[] = [
     ],
     sweep: 16,
     core: coreAt([390], (r) => r.form === 'errors'),
+  },
+  {
+    code: 'WS-BOOK-FLOAT',
+    page: 'Workshop page (/workshops/[slug])',
+    component:
+      'Booking form with the floating assistant button: scanned top to bottom, the button never covers a price or a control (it steps aside while the form is on the page; QA V5)',
+    path: '/workshops/telibandha-car-clinic',
+    scope: 'main',
+    strategy: 'cross',
+    cross: ['width', 'theme', 'locale'],
+    params: [{ name: 'width', values: [320, 390, 480, 1440] }, theme, locale],
+    checks: ['present', 'covered', 'launcher', 'hscroll', 'console'],
+    sweep: 0,
+    core: coreAt([320, 390, 480, 1440]),
   },
 
   // ───────────────────────────── Partners, support, login, policies ─────────────────────────────

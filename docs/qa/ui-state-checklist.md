@@ -36,6 +36,7 @@ Assertions (every state, plus a hover and keyboard-focus sweep over the componen
 - `inside`: every control and text line stays inside its card or container.
 - `overlap`: no two controls or text lines overlap, also while each control is hovered and focused.
 - `covered`: no control or text is painted over by another control (hover backgrounds included).
+- `launcher`: the floating assistant button never sits over a price or a control (it may cover plain text only).
 - `clipped`: no text is clipped; ellipsis only where designed and never on prices or button labels.
 - `aligned`: cards in a row are equal height with aligned action rows; table cells line up across columns.
 - `tap`: every target is at least 24 px (or spaced); under 44 px is noted.
@@ -103,6 +104,7 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | WS-FINDER             | Workshops (/workshops)                                           | Finder: PIN, vehicle, use my location, list cards, map toggle (map canvas excluded)                                                                                                                                                                                             | pairwise | 16       | 2       |
 | OFFERS-PAGE           | Offers (/offers)                                                 | Public offers list (2026-11-16): offer cards with conditions, IST end time and copy-code button; the demo build has no offers, so it shows the empty state with one next action                                                                                                 | pairwise | 16       | 2       |
 | WS-PROFILE            | Workshop page (/workshops/[slug])                                | Workshop profile: services menu, reviews, booking form                                                                                                                                                                                                                          | pairwise | 32       | 1       |
+| WS-BOOK-FLOAT         | Workshop page (/workshops/[slug])                                | Booking form with the floating assistant button: scanned top to bottom, the button never covers a price or a control (it steps aside while the form is on the page; QA V5)                                                                                                      | cross    | 16       | 16      |
 | PTN-LANDING           | Partners (/partners)                                             | Partner landing (kinds, benefits, apply links)                                                                                                                                                                                                                                  | pairwise | 32       | 0       |
 | PTN-APPLY             | Partners (/partners/apply/[kind])                                | Application form (GSTIN, tick lists, location picker; map canvas excluded)                                                                                                                                                                                                      | pairwise | 24       | 1       |
 | SUP-PAGE              | Support (/support)                                               | Support page and request form                                                                                                                                                                                                                                                   | pairwise | 16       | 0       |
@@ -182,7 +184,7 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | API-ADM-EXPORTS       | Admin → Exports, real sign-in                                    | CSV exports: the form (dataset, city, dates), customers with masked or open contacts, done, empty file, too many rows, expired link, range over 180 days, nothing allowed, load error                                                                                           | pairwise | 80       | 0       |
 | API-NAV-ADMIN         | Navigation, real sign-in                                         | Admin section bar with every real-mode section (Analytics, Refunds, Errors included): current item, scroll, walk                                                                                                                                                                | cross    | 176      | 0       |
 | API-NAV-ACCOUNT       | Navigation, real sign-in                                         | Account section bar in a real-sign-in build: current item, scroll, walk                                                                                                                                                                                                         | cross    | 96       | 0       |
-| **Total**             |                                                                  |                                                                                                                                                                                                                                                                                 |          | **4342** | **98**  |
+| **Total**             |                                                                  |                                                                                                                                                                                                                                                                                 |          | **4358** | **114** |
 
 ## Chrome
 
@@ -1929,6 +1931,27 @@ Pairwise (all pairs of values); 32 states; scope `main`.
 - [!] WS-PROFILE-030 · 1280px · dark · hi · customer · world=empty · /workshops/pachpedi-naka-two-wheeler-care · form=filled · trust=long · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console hindi — 2026-11-15 FAIL: P0 covered ×36; P1 covered ×12; P1 console ×4; P2 tap44 ×1 · [screenshot](../../apps/web/test-results/state-audit-2026-11-15/D/output/state-audit.audit.ts-WS-PR-a7438-d-·-trust-long-·-promise-on-audit/attachments/state-audit-failure-f1689ec5e20fb7d4a9755c2f57d8468bb86e06e9.png)
 - [!] WS-PROFILE-031 · 1440px · light · en · signed out · world=empty · /workshops/telibandha-car-clinic · form=clean · trust=hidden · promise=off · asserts: present inside overlap covered clipped tap hscroll focus console — 2026-11-15 FAIL: P0 covered ×39; P1 covered ×20; P1 console ×4; P2 tap44 ×1 · [screenshot](../../apps/web/test-results/state-audit-2026-11-15/D/output/state-audit.audit.ts-WS-PR-d19ee--trust-hidden-·-promise-off-audit/attachments/state-audit-failure-55114b254d8911ffbdd954781cd86953288ec985.png)
 - [!] WS-PROFILE-032 · 1920px · dark · hi · customer · world=empty · /workshops/mowa-ev-and-bike-point · form=errors · trust=override · promise=on · asserts: present inside overlap covered clipped tap hscroll focus console hindi — 2026-11-15 FAIL: P0 covered ×17; P1 covered ×12; P1 console ×4; P2 tap44 ×1 · [screenshot](../../apps/web/test-results/state-audit-2026-11-15/D/output/state-audit.audit.ts-WS-PR-ce79b-trust-override-·-promise-on-audit/attachments/state-audit-failure-c6abb1afb769b681ec5377c1e53e878472856e6c.png)
+
+### WS-BOOK-FLOAT — Booking form with the floating assistant button: scanned top to bottom, the button never covers a price or a control (it steps aside while the form is on the page; QA V5)
+
+Full cross of the high-risk dimensions, the rest pairwise; 16 states; scope `main`.
+
+- [ ] WS-BOOK-FLOAT-001 · 320px · light · en · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console axe · core
+- [ ] WS-BOOK-FLOAT-002 · 320px · light · hi · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console hindi axe · core
+- [ ] WS-BOOK-FLOAT-003 · 320px · dark · en · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console axe · core
+- [ ] WS-BOOK-FLOAT-004 · 320px · dark · hi · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console hindi axe · core
+- [ ] WS-BOOK-FLOAT-005 · 390px · light · en · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console axe · core
+- [ ] WS-BOOK-FLOAT-006 · 390px · light · hi · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console hindi axe · core
+- [ ] WS-BOOK-FLOAT-007 · 390px · dark · en · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console axe · core
+- [ ] WS-BOOK-FLOAT-008 · 390px · dark · hi · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console hindi axe · core
+- [ ] WS-BOOK-FLOAT-009 · 480px · light · en · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console axe · core
+- [ ] WS-BOOK-FLOAT-010 · 480px · light · hi · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console hindi axe · core
+- [ ] WS-BOOK-FLOAT-011 · 480px · dark · en · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console axe · core
+- [ ] WS-BOOK-FLOAT-012 · 480px · dark · hi · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console hindi axe · core
+- [ ] WS-BOOK-FLOAT-013 · 1440px · light · en · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console axe · core
+- [ ] WS-BOOK-FLOAT-014 · 1440px · light · hi · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console hindi axe · core
+- [ ] WS-BOOK-FLOAT-015 · 1440px · dark · en · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console axe · core
+- [ ] WS-BOOK-FLOAT-016 · 1440px · dark · hi · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console hindi axe · core
 
 ## Partners (/partners)
 

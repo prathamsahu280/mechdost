@@ -153,9 +153,7 @@ Found (fixed in the visual-fix batch unless noted):
   stacks on narrow screens.
 - **V3** Shop header stats: "★" and "4.6" split across lines → kept together.
 - **V4** Order/request codes break at a hyphen in headings ("SR-RPR-2026-" / "HND104") → codes never break inside.
-- **V5** (minor, not fixed) Workshop profile at 1440 px, page at the top: the floating "Ask MechDost" launcher sits over
-  one price in the booking form's service list; it clears once the form is sticky. Candidate: hide the launcher while
-  the booking form is in view, or reserve space.
+- **V5** (fixed 2026-11-16) Workshop profile and finder: the floating "Ask MechDost" launcher (fixed bottom-right, 16 px from the edge on phones, 24 px from 1024 px) sat over the right-aligned price column of the booking form's service list, at every scroll position; the state audit allowed fixed elements to cover content, so it never failed. Fix: the booking forms carry `data-launcher-avoid` and `html:has([data-launcher-avoid]) .assistant-launcher { visibility: hidden }` (CSS only, nothing added to the layout graph, same pattern as `data-compare-prompt`); new audit check `launcher` (the launcher may cover plain text, never a control or a price) and row `WS-BOOK-FLOAT` (320/390/480/1440 px x light/dark x en/hi, scanned top to bottom).
 
 ### Visual review fixes (builder, V1–V4 and V7–V9)
 
