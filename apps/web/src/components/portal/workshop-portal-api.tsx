@@ -8,12 +8,12 @@ import {
   type ServiceRequestDetail,
   type ServiceRequestSummary,
 } from '@mechdost/shared/service-api';
-import { computeServiceBill } from '@mechdost/shared/service-bill';
 import { SERVICE_DECLINE_REASONS, type ServiceDeclineReason } from '@mechdost/shared/state';
 import { VEHICLE_ICON } from '@mechdost/shared/vehicles';
 import { useCallback, useEffect, useState, type SyntheticEvent } from 'react';
 import { adminApi } from '@/lib/admin-api';
 import { track } from '@/lib/analytics';
+import { estimateSummary } from '@/lib/estimate-summary';
 import { formatDate, formatPrice } from '@/lib/format';
 import { homeJobNextAction, validMechanicName } from '@/lib/home-service-views';
 import { rangeOf, requestStatusKey, rupeesToPaise, workshopMayRevise } from '@/lib/service-views';
@@ -493,6 +493,12 @@ function NewRequestApi({
   );
 }
 
+const LINE_MARK = {
+  approved: 'lineApproved',
+  declined: 'lineDeclined',
+  pending: 'linePending',
+} as const;
+
 /** One job: loads its detail (estimate, bill, customer) and shows the one next step for its status. */
 function JobCardApi({
   summary,
@@ -550,13 +556,8 @@ function JobCardApi({
 
   const action = homeJobNextAction(detail);
   const est = detail.estimate;
-  // The estimate's full value as sent, whatever the customer decided (the bill counts approved lines only).
-  const estTotal = est
-    ? computeServiceBill(
-        est.items.map((l) => ({ ...l, decision: 'approved' as const })),
-        { gstRegistered: true },
-      ).totalPaise
-    : 0;
+  // Approved lines only once decided, the stored bill total when billed: the same truth as the customer's bill.
+  const estView = est ? estimateSummary(est, detail.bill) : null;
 
   return (
     <article className={portalCard}>
@@ -580,15 +581,21 @@ function JobCardApi({
           setPhotosTick((n) => n + 1);
         }}
       />
-      {est && !revising && action !== 'estimate' ? (
+      {est && estView && !revising && action !== 'estimate' ? (
         <div className="mt-3 rounded-lg bg-surface-alt p-3 text-sm">
           <p className="font-bold text-ink">
-            {t('estimateSummary', { version: est.revision, total: formatPrice(estTotal) })}
+            {t(estView.withGst ? 'estimateSummary' : 'estimateSummaryNoGst', {
+              version: est.revision,
+              total: formatPrice(estView.totalPaise),
+            })}
           </p>
           <ul className="mt-1 space-y-0.5 text-muted">
             {est.items.map((l) => (
-              <li key={l.id} className={l.decision === 'declined' ? 'line-through' : undefined}>
-                <span data-user-content>{l.description}</span> · {l.qty} × {formatPrice(l.unitPaise)}
+              <li key={l.id}>
+                <span className={l.decision === 'declined' ? 'line-through' : undefined}>
+                  <span data-user-content>{l.description}</span> · {l.qty} × {formatPrice(l.unitPaise)}
+                </span>{' '}
+                <span className="font-bold text-ink">· {t(LINE_MARK[l.decision])}</span>
               </li>
             ))}
           </ul>
@@ -617,7 +624,7 @@ function JobCardApi({
         detail.serviceMode === 'home' ? (
           <ArrivalFormApi detail={detail} onDone={changed} />
         ) : (
-          <OdometerFormApi detail={detail} onDone={changed} />
+          <OdometerFormApi detail={detail} onDone={changed} photosTick={photosTick} />
         )
       ) : action === 'estimate' ? (
         <EstimateBuilderApi
