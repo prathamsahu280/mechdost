@@ -4,6 +4,19 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Current status
 
+- **NOW (2026-11-16 evening, coordinator ledger):** everything below up to 693dba3 is **merged to main and pushed**
+  (branch notes saying "not merged" are historical). Pushed 693dba3: record links (`-1` codes open, signed-out
+  `next=`), sign-in messages + `auth_code_failed` event + fresh reCAPTCHA host per attempt, per-account API limits
+  (Q195, admin-configurable, no migration), QA pass 3 fixes (bugs 4–10, 12–15), worker bundle fix (8109348), deploy
+  "stack stays up" check (event names only in public logs). Full gate 12/12, JS budget `/shop` 179.9 / `/cart` 179.8.
+  CI for 693dba3 was running when the session paused; **check `gh run list` → CI then Deploy, then on the server
+  `docker compose ps` (worker Up) before anything else.** QA: `docs/qa/real-api-pass-3-2026-11-16.md` (all flows
+  passed; 15 bugs, all fixed). UI audit A–G clean (1 flaky, 1 checker timeout); visual review 424 shots clean.
+  **Open:** Q196 (cart free-delivery text), Q197 (COD self-cancel default), Q75 (Razorpay webhook → refunds stay
+  `initiated` until set), Q97 (who issues GST invoices), V5 launcher over booking price, WhatsApp templates in Meta
+  review (4 edited ones too), launch switch (real mode, Razorpay live, DB reset, separate prod Supabase). QA data in
+  the live DB is wiped at the launch reset. Test-account password is in private memory only.
+
 - **2026-11-16 (API limits per account, Q195; branch worktree-agent-a590b0a6f306092d9, not merged; no migration):** global `/v1` limit is now `api_user:<uid>` (300/min, verified token only), else `api_guest:<ip>` (600/min), plus `api_ip_flood:<ip>` (3000/min); admin settings `api.signed_in_per_minute`, `api.guest_per_ip_per_minute`, `api.ip_flood_per_minute` (Admin → Settings, bounded, flood >= guest, audited, 45 s cache). Token verified once and shared with `authenticate`. Per-route rule renamed `api_route_user`. Spec 13 and 08, monitoring runbook, decisions updated.
 
 - **2026-11-16 (card Add to cart fix, branch worktree-agent-a02cec4863652d6f5, not merged):** the catalogue card offer now carries the offered variant's `sku` (`CatalogueOfferSchema.sku`); `apiCard` uses it, so card Add to cart works in real mode. Tests: db catalogue, web catalogue-api-source (red then green); tsc clean shared/db/api, web only the two hero image errors.
