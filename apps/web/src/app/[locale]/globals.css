@@ -497,6 +497,13 @@ html[data-compare-prompt] .assistant-launcher {
   visibility: hidden;
 }
 
+/* A form that carries data-launcher-avoid (the workshop booking form, with prices in its right column) keeps the
+   button off the page: a fixed button over the form's right edge covers a price or a control at every scroll
+   position, and pages cannot reserve space for something that follows the viewport (QA 2026-11-15, V5). */
+html:has([data-launcher-avoid]) .assistant-launcher {
+  visibility: hidden;
+}
+
 /* While the privacy choice is open the page ends with room for it (the banner is fixed, so without this its last
    controls could never scroll clear: cart "Proceed to checkout", bulk quote, booking form; audit 2026-11-15 item 8),
    and the assistant button rides just above the banner, never under it. --consent-h is the banner's measured height

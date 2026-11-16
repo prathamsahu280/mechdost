@@ -473,7 +473,12 @@ export async function auditDom(opts: DomAuditOptions): Promise<Finding[]> {
       if (cx < 0 || cy < 0 || cx > vw - 1 || cy > vh - 1) return null;
       const hit = document.elementFromPoint(cx, cy);
       if (!hit || hit === it.el || it.el.contains(hit) || hit.contains(it.el)) return null;
-      if (inFixed(hit) && !it.fixed) return null;
+      // The assistant button may cover plain text, never a control or a price (check `launcher`, QA V5).
+      const launcherHit =
+        has('launcher') &&
+        hit.closest('.assistant-launcher') !== null &&
+        (it.kind === 'control' || it.el.textContent.includes('₹'));
+      if (inFixed(hit) && !it.fixed && !launcherHit) return null;
       if (behindModal(it.el, hit)) return null;
       const coverControl = hit.closest(CONTROL);
       if (it.kind === 'text' && (!coverControl || coverControl.contains(it.el))) return null;

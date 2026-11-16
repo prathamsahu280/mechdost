@@ -385,9 +385,17 @@ export async function runCase(page: Page, c: AuditCase, info: TestInfo, api?: Ap
       width: c.width,
       compare: COMPARES[c.state.compare ?? 'none']?.slugs.length ?? 0,
     });
-  const domRules = ['present', 'inside', 'overlap', 'covered', 'clipped', 'aligned', 'tap', 'hscroll'].filter(
-    (k) => has(k) && !(trayWaits && k === 'present'),
-  );
+  const domRules = [
+    'present',
+    'inside',
+    'overlap',
+    'covered',
+    'launcher',
+    'clipped',
+    'aligned',
+    'tap',
+    'hscroll',
+  ].filter((k) => has(k) && !(trayWaits && k === 'present'));
   const localRules = ['inside', 'overlap', 'covered'].filter(has);
   const local = async (label: string) => {
     if (localRules.length === 0) return;

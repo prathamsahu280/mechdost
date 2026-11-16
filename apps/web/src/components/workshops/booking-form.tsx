@@ -131,6 +131,7 @@ export function BookingForm({ workshop }: { workshop: DemoWorkshop }) {
 
   return (
     <form
+      data-launcher-avoid
       noValidate
       onSubmit={onSubmit}
       className="space-y-5"
