@@ -49,6 +49,7 @@ import { signOutEverywhere } from '@/lib/auth/sign-out';
 import { useEmailStatus } from '@/lib/auth/use-email-status';
 import { EmailPill, VerifyEmailCard } from './verify-email';
 import { formatDate, formatPrice } from '@/lib/format';
+import { loginHref } from '@/lib/record-links';
 import { ACCOUNT_SECTIONS, type AccountSection } from '@/lib/sections';
 
 // Real data mode: coins from the API (spec 20), loaded only when the section opens (L103: React.lazy on customer pages).
@@ -152,7 +153,11 @@ export function AccountFrame({ children }: { children: ReactNode }) {
             ) : null}
           </div>
           <Link
-            href={`${prefix}/login?next=${encodeURIComponent(`${prefix}/account${section === 'overview' ? '' : `/${section}`}`)}`}
+            href={loginHref(
+              prefix,
+              // The page is hydrated here: keep the query (a ticket link from an email) on the way back.
+              `${prefix}/account${section === 'overview' ? '' : `/${section}`}${window.location.search}`,
+            )}
             className={primary}
           >
             {t('signIn')}

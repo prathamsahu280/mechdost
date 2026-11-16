@@ -2,13 +2,15 @@
 
 import { PartyPopper } from 'lucide-react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { PERSON_CANCEL_REASONS } from '@mechdost/shared/state';
 import type { MyOrder, TrackedOrder } from '@mechdost/shared/checkout-api';
 import { lazy, Suspense, useCallback, useEffect, useState, type SyntheticEvent } from 'react';
 import { track } from '@/lib/analytics';
 import { formatDate, formatPrice } from '@/lib/format';
+import { loginHref, orderGroupCode } from '@/lib/record-links';
+import { useSignedOut } from '@/lib/use-signed-out';
 import { ORDER_STEPS, isClosedStatus, orderStepIndex } from '@/lib/order-status';
 import { StatusTimeline } from './status-timeline';
 
@@ -31,10 +33,12 @@ export function OrderViewApi({ code }: { code: string }) {
   const isNew = useSearchParams().get('new') === '1';
   const [load, setLoad] = useState<Load>({ kind: 'loading' });
   const prefix = locale === 'hi' ? '/hi' : '';
+  const here = usePathname();
+  const signedOut = useSignedOut(!code, locale);
 
   const refresh = useCallback(async () => {
     const { fetchMyOrder } = await import('@/lib/orders-api');
-    const res = await fetchMyOrder(locale, code);
+    const res = await fetchMyOrder(locale, orderGroupCode(code));
     setLoad(res.ok ? { kind: 'ok', order: res.data } : { kind: 'error', code: res.code });
   }, [code, locale]);
 
@@ -48,20 +52,20 @@ export function OrderViewApi({ code }: { code: string }) {
   }, [code, refresh]);
 
   const box = 'rounded-card border border-line-card bg-surface p-6 shadow-card';
-  if (!code || (load.kind === 'error' && (load.code === 'NOT_FOUND' || load.code === 'HTTP_404')))
-    return <p className={`${box} text-muted`}>{t('api_notFound')}</p>;
-  if (load.kind === 'error' && load.code === 'AUTH_REQUIRED')
+  if (signedOut || (load.kind === 'error' && load.code === 'AUTH_REQUIRED'))
     return (
       <div className={box}>
         <p className="text-ink">{t('api_signIn')}</p>
         <Link
-          href={`${prefix}/login?next=${encodeURIComponent(`${prefix}/orders/${code}`)}`}
+          href={loginHref(prefix, here)}
           className="press mt-4 inline-flex min-h-11 items-center rounded-button bg-accent-button px-5 text-sm font-bold text-white hover:bg-accent-button-hover"
         >
           {t('api_signInLink')}
         </Link>
       </div>
     );
+  if (!code || (load.kind === 'error' && (load.code === 'NOT_FOUND' || load.code === 'HTTP_404')))
+    return <p className={`${box} text-muted`}>{t('api_notFound')}</p>;
   if (load.kind === 'error')
     return (
       <p role="alert" className={`${box} font-bold text-ink`}>
