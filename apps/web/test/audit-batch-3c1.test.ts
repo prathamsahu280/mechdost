@@ -125,7 +125,7 @@ describe('ORD-VIEW / SR-VIEW: text links use the AA accent text token', () => {
 describe('4-31 px sideways scroll on signed-in pages: the header yields instead of overflowing', () => {
   const header = src('components/site/header.tsx');
   it('the logo link can shrink and the logo is capped to it', () => {
-    expect(header).toContain('inline-flex min-w-0 shrink flex-col items-start');
+    expect(header).toContain('inline-flex min-h-6 min-w-0 shrink flex-col items-start justify-center');
     expect(header).toContain('w-[132px] max-w-full');
   });
 });
