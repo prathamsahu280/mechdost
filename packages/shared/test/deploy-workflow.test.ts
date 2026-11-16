@@ -31,3 +31,16 @@ describe('deploy workflow keeps the server disk clear', () => {
     expect(step).toMatch(/df -h/);
   });
 });
+
+describe('deploy workflow checks the stack stays up (2026-11-16: the worker crash-looped after a green deploy)', () => {
+  const check = workflow.slice(workflow.indexOf('Stack stays up'), workflow.indexOf('Public check'));
+  it('waits, then fails when a service is not running or the worker never started', () => {
+    expect(workflow.indexOf('Stack stays up')).toBeGreaterThan(
+      workflow.indexOf('Update the stack on the server'),
+    );
+    expect(check).toMatch(/sleep \d+/);
+    expect(check).toMatch(/grep -v ' running\$'/);
+    expect(check).toMatch(/grep -q worker_started/);
+    expect(check).not.toMatch(/continue-on-error/);
+  });
+});

@@ -159,6 +159,28 @@ jobs:
             && docker compose up -d --wait --wait-timeout 120 --remove-orphans; rc=\$?; \
             docker logout ghcr.io >/dev/null; docker image prune -af >/dev/null; df -h / | tail -1; \
             docker compose ps; exit \$rc"
+      # `up --wait` counts a container without a healthcheck as up the moment it starts; the worker crash-looped after
+      # a deploy that went green (2026-11-16, duplicate `createRequire` in the bundle). Check again after it has had
+      # time to fail: every service running, and the worker logged `worker_started`.
+      - name: Stack stays up (worker included)
+        env:
+          HOST: ${{ secrets.DEPLOY_HOST }}
+          SSH_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          ssh_() { ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes -o BatchMode=yes "$SSH_USER@$HOST" "$@"; }
+          sleep 45
+          ssh_ 'cd /opt/mechdost && docker compose ps --all --format "{{.Service}} {{.State}} {{.Status}}"'
+          bad=$(ssh_ 'cd /opt/mechdost && docker compose ps --all --format "{{.Service}} {{.State}}"' | grep -v ' running$' || true)
+          if [ -n "$bad" ]; then
+            echo "::error::not running after 45 s: $bad"
+            ssh_ 'cd /opt/mechdost && docker compose logs --tail 40 worker'
+            exit 1
+          fi
+          if ! ssh_ 'cd /opt/mechdost && docker compose logs --since 5m worker' | grep -q worker_started; then
+            echo '::error::the worker never logged worker_started'
+            ssh_ 'cd /opt/mechdost && docker compose logs --tail 40 worker'
+            exit 1
+          fi
       - name: Public check (informational until DNS points at the server)
         continue-on-error: true
         run: |
