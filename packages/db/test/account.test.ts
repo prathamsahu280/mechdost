@@ -230,8 +230,15 @@ describe('vehicles', () => {
       await db.execute(sql`select event, props from events where user_id = ${u}`),
     );
     expect(events.map((e) => e.event)).toEqual(['vehicle_saved', 'vehicle_saved']);
-    expect(JSON.stringify([audit, events])).not.toContain('4321');
-    expect(JSON.stringify([audit, events])).not.toContain('4322');
+    // Only the fields that could carry the registration: random ids and timestamps once contained '4321' by chance
+    // and failed CI (2026-11-16).
+    const carried = JSON.stringify([
+      audit.map((x) => ({ before: x.before, after: x.after, reason: x.reason, ip: x.ipTruncated })),
+      events.map((e) => e.props),
+    ]);
+    expect(carried).not.toContain('4321');
+    expect(carried).not.toContain('4322');
+    expect(JSON.stringify([audit, events])).not.toMatch(/ZZ432[12]/);
   });
 });
 
