@@ -1477,3 +1477,14 @@ same numbers.
 **Not changed:** nothing stored, no migration, no new env variable. Docker: the API image grows by about 20 MB (pdfkit,
 fontkit, three font packages); `pnpm deploy --prod` installs them because they are declared in `apps/api/package.json`
 (`scripts/build.mjs` keeps declared dependencies external; the fonts are read from `node_modules` at run time).
+
+## 2026-11-16 — API rate limits per account for signed-in visitors, per IP for guests (user, Q195)
+
+User: "yeah go with option C and keep it admin configurable too and the guests limit would be per ip". The global API
+limit counted every request per IP (600/min); Indian mobile carriers put many customers behind one shared IP (CGNAT),
+so a busy evening could block real customers (real-API pass 3 hit 429s with five sessions on one PC). Now:
+signed-in requests count per **account** (only after the token is verified), guests per **IP**, and a higher per-IP
+flood guard stays for everyone. Sign-in, OTP, password reset and payment limits keep their own strict rules. All three
+numbers are editable in Admin → Settings (bounded, audited), cached, with code defaults if the setting is missing.
+Rejected: keep as is (blocks shared IPs), only raise the IP limit (still blocks, more room for abuse). Cloudflare
+in front (option D) can be added later on top.
