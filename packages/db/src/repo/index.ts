@@ -19,6 +19,7 @@ export * from './support-bridge';
 export * from './order-notifications';
 export * from './email-notifications';
 export * from './notices';
+export * from './bill-documents';
 export * from './email-events';
 export * from './support';
 export * from './support-threads';

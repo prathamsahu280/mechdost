@@ -27,6 +27,7 @@ import {
   releaseDueCoinRewards,
   expireQuotes,
   globalIntSetting,
+  loadBillSource,
   purgeOldNotices,
   queueOfferExpiryReminders,
   queueRefundOverdueAlerts,
@@ -42,6 +43,7 @@ import { ConfigError, loadConfig } from './config';
 import { pollingPublisher, type LivePublisher } from './live/publisher';
 import { startDispatcher, type ChannelAdapter } from './notify/dispatcher';
 import { createEmailAdapter } from './notify/email';
+import { createBillAttachmentLoader } from './notify/pdf/attachment';
 import { createFirebaseTransport, createPushAdapter } from './notify/push';
 import { createWhatsAppAdapter } from './notify/whatsapp';
 import { startRelay } from './live/relay';
@@ -81,6 +83,11 @@ const adapters: ChannelAdapter[] = [
           loadOverride: (key, locale) => emailOverrideFor(db, key, locale),
           // The grievance officer from Admin -> Company details; EMAIL_GRIEVANCE_CONTACT stays the fallback.
           loadGrievanceContact: async () => grievanceContactLine((await getCompany(db)).details),
+          // The bill / receipt PDF on the bill emails (Q194): built here from the stored bill or order, not queued.
+          loadAttachment: createBillAttachmentLoader({
+            loadSource: (input) => loadBillSource(db, input),
+            loadCompany: async () => (await getCompany(db)).details,
+          }),
           // Order emails' "genuine parts" footer line (Admin -> Content `trust.emailFooter`; design 2026-11-15).
           loadTrustLine: async (locale) =>
             trustLineText(
