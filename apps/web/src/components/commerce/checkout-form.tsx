@@ -19,6 +19,7 @@ import { clearCart, placeDemoOrder, useCart } from '@/demo/store';
 import { priceCart } from '@/demo/cart-pricing';
 import { DATA_MODE } from '@/lib/data-mode';
 import { useCartPricing } from '@/lib/use-cart-pricing';
+import { freeDeliveryHints } from '@/lib/free-delivery-hint';
 import { checkoutTotals } from '@/lib/checkout-totals';
 import { codAllowedAfterCoins, coinRulesFromApi } from '@/lib/coins-view';
 import { CartView } from './cart-view';
@@ -120,6 +121,7 @@ export function CheckoutForm() {
     locale,
   );
   const { priced, subtotalPaise, deliveryPaise, totalPaise } = pricing;
+  const hints = pricing.quote ? freeDeliveryHints(pricing.quote.groups) : [];
   // One coupon (spec 03, real data mode): taken off first; the server re-checks it when the order is placed.
   const [coupon, setCoupon] = useState<AppliedCoupon | null>(null);
   const couponDiscount = coupon?.discountPaise ?? 0;
@@ -793,8 +795,15 @@ export function CheckoutForm() {
             <dd className="font-heading text-xl font-extrabold">{formatPrice(payablePaise)}</dd>
           </div>
         </dl>
-        {/* Same hint as the cart, so the fee never surprises (QA 2026-11-14, finding 13). */}
-        {deliveryPaise > 0 ? (
+        {/* The hint names the threshold the server applied to each shop's group (PIN, shop or city), so it never
+            disagrees with the charge (QA 2026-11-16, bug 7). The demo has no quote and keeps the city setting. */}
+        {pricing.quote ? (
+          hints.map((h) => (
+            <p key={h.seller} className="mt-3 text-xs text-muted">
+              {cartT('freeDeliveryGroupHint', { seller: h.seller, amount: formatPrice(h.minPaise) })}
+            </p>
+          ))
+        ) : deliveryPaise > 0 ? (
           <p className="mt-3 text-xs text-muted">
             {cartT('freeDeliveryHint', { amount: formatPrice(settings.freeDeliveryFromPaise) })}
           </p>

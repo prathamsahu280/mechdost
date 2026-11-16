@@ -165,3 +165,7 @@ The worker (`apps/api/src/worker.ts`, every 10 minutes) calls `autoCloseResolved
 ### Tests
 
 `packages/shared/test/support-sla.test.ts`, `packages/db/test/support-inbox.test.ts`, `support-guest.test.ts`, `support-deletion.test.ts`, `apps/api/test/support-inbox.test.ts`, `support-guest.test.ts`, `support-deletion.test.ts`; state-audit rows `API-ADM-SUPPORT-TOOLS`, `API-GUEST-SUPPORT`, `API-ACC-DELETION`.
+
+## Customer support list stays current (2026-11-16, QA pass 3 bug 10)
+
+Account → Support re-reads the tickets every 20 seconds while the tab is visible and at once when a hidden tab becomes visible, so an admin reply appears without a reload. Test: `apps/web/test/bugfix-qa-pass3b.test.ts`.

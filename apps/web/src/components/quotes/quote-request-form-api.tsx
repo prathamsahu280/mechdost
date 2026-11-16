@@ -12,6 +12,7 @@ import { useCart } from '@/demo/store';
 import { track } from '@/lib/analytics';
 import { formatPrice } from '@/lib/format';
 import { newQuoteKey, quoteErrorKey, type QuoteMessageKey } from '@/lib/quote-views';
+import { QUOTE_SEARCH_DEBOUNCE_MS, shouldSearch } from '@/lib/quote-search';
 
 /**
  * Bulk quote request on the API (real data mode; spec 19): products from the live catalogue (search, or prefilled
@@ -138,23 +139,48 @@ export function QuoteRequestFormApi() {
     })();
   }, [cart, fromCart, product, locale]);
 
-  async function search() {
-    const q = query.trim();
-    if (q.length < 2) return;
-    setSearching('busy');
-    const { call, CataloguePageSchema } = await catalogue();
-    const p = new URLSearchParams({
-      q: q.slice(0, 120),
-      locale: locale === 'hi' ? 'hi' : 'en',
-      city: CITY,
-      limit: '8',
-    });
-    const res = await call(`/catalogue/products?${p.toString()}`, CataloguePageSchema);
-    if (res.ok) {
-      setResults(res.data.items);
+  // The newest search wins: a slow answer to an older query never replaces the current results.
+  const searchSeq = useRef(0);
+  const search = useCallback(
+    async (text: string) => {
+      const q = text.trim();
+      if (!shouldSearch(q)) return;
+      searchSeq.current += 1;
+      const mine = searchSeq.current;
+      setSearching('busy');
+      const { call, CataloguePageSchema } = await catalogue();
+      const p = new URLSearchParams({
+        q: q.slice(0, 120),
+        locale: locale === 'hi' ? 'hi' : 'en',
+        city: CITY,
+        limit: '8',
+      });
+      const res = await call(`/catalogue/products?${p.toString()}`, CataloguePageSchema);
+      if (mine !== searchSeq.current) return;
+      if (res.ok) {
+        setResults(res.data.items);
+        setSearching('idle');
+      } else setSearching('error');
+    },
+    [locale],
+  );
+
+  // Search as you type (QA 2026-11-16, bug 13): once two characters are typed and typing pauses. Enter and the button
+  // still search at once. Clearing the box clears the results.
+  useEffect(() => {
+    if (!shouldSearch(query)) {
+      searchSeq.current += 1;
+      setResults(null);
       setSearching('idle');
-    } else setSearching('error');
-  }
+      return;
+    }
+    const id = window.setTimeout(() => {
+      void search(query);
+    }, QUOTE_SEARCH_DEBOUNCE_MS);
+    return () => {
+      window.clearTimeout(id);
+    };
+  }, [query, search]);
 
   function add(card: CatalogueCard) {
     setLines((ls) =>
@@ -317,15 +343,15 @@ export function QuoteRequestFormApi() {
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
-                  void search();
+                  void search(query);
                 }
               }}
               className={`${input} mt-0`}
             />
             <button
               type="button"
-              onClick={() => void search()}
-              disabled={query.trim().length < 2 || searching === 'busy'}
+              onClick={() => void search(query)}
+              disabled={!shouldSearch(query) || searching === 'busy'}
               aria-label={t('api_search')}
               className="press inline-flex size-11 shrink-0 items-center justify-center rounded-button border border-input-border text-ink hover:bg-pill disabled:opacity-50"
             >

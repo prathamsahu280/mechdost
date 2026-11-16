@@ -11,7 +11,8 @@ import { track } from '@/lib/analytics';
 import { formatDate, formatPrice } from '@/lib/format';
 import { loginHref, orderGroupCode } from '@/lib/record-links';
 import { useSignedOut } from '@/lib/use-signed-out';
-import { ORDER_STEPS, isClosedStatus, orderStepIndex } from '@/lib/order-status';
+import { ORDER_STEPS, cancelHelpShown, isClosedStatus, orderStepIndex } from '@/lib/order-status';
+import { orderTotalLines } from '@/lib/order-totals';
 import { StatusTimeline } from './status-timeline';
 
 /** Reviews of delivered products (spec 02 § Reviews): its own chunk, fetched only when something was delivered. */
@@ -82,6 +83,7 @@ export function OrderViewApi({ code }: { code: string }) {
   const order = load.order;
   const parts = order.orders;
   const anyOpen = parts.some((p) => !isClosedStatus(p.status));
+  const totals = orderTotalLines(order);
   return (
     <div className="space-y-6">
       {isNew && anyOpen ? (
@@ -106,8 +108,15 @@ export function OrderViewApi({ code }: { code: string }) {
           </p>
         ) : null}
         <p className="mt-1 font-heading text-lg font-extrabold text-ink">
-          {t('api_total')}: {formatPrice(order.totalPaise)}
+          {totals.payablePaise === null
+            ? `${t('api_total')}: ${formatPrice(totals.placedPaise)}`
+            : t('api_placedTotal', { amount: formatPrice(totals.placedPaise) })}
         </p>
+        {totals.payablePaise !== null ? (
+          <p className="mt-1 text-ink">
+            {t('api_payableTotal', { amount: formatPrice(totals.payablePaise) })}
+          </p>
+        ) : null}
         {order.business ? (
           <p className="mt-1 text-xs text-muted" data-user-content>
             {t('gstInvoiceFor', { business: order.business.businessName, gstin: order.business.gstin })}
@@ -152,6 +161,8 @@ function OrderPart({
   onChanged: () => Promise<void>;
 }) {
   const t = useTranslations('order');
+  const tr = useTranslations('refunds');
+  const locale = useLocale();
   const steps = ORDER_STEPS.map((s) => ({ key: s, title: t(`stage_${s}`), detail: t(`detail_${s}`) }));
   const closed = isClosedStatus(part.status);
   return (
@@ -211,6 +222,18 @@ function OrderPart({
       </div>
       {part.refunds?.length ? <RefundLines part={part} /> : null}
       {part.canCancel ? <CancelPart part={part} onChanged={onChanged} /> : null}
+      {cancelHelpShown(part) ? (
+        <p className="text-sm text-muted">
+          {t('cancelUnavailable')} {t('cancelUnavailableSupport')}{' '}
+          <Link
+            href={`${locale === 'hi' ? '/hi' : ''}/account/support?order=${encodeURIComponent(part.code)}`}
+            data-track="order_cancel_contact_support"
+            className="font-bold text-ink underline underline-offset-4"
+          >
+            {tr('customerSupport')}
+          </Link>
+        </p>
+      ) : null}
     </section>
   );
 }

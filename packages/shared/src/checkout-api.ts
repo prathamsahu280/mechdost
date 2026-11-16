@@ -28,6 +28,7 @@ export const CheckoutQuoteDto = z.object({
       seller: z.string(),
       subtotalPaise: z.number().int(),
       shippingPaise: z.number().int(),
+      freeDeliveryMinPaise: z.number().int().nullable(),
       taxPaise: z.number().int(),
       totalPaise: z.number().int(),
       leadDays: z.number().int(),

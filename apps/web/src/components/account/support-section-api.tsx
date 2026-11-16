@@ -56,6 +56,8 @@ function useProblemText() {
         : p(problem.key);
 }
 
+const SUPPORT_POLL_MS = 20_000;
+
 /**
  * Account → Support on the API (spec 09; real sign-in builds, loaded by `support-section.tsx`). Same form and
  * conversation as the demo: raise a request (optionally about one of your orders), follow the thread and reply.
@@ -112,6 +114,22 @@ export function SupportSectionApi({
       if (res.ok) setOrders(orderCodes(res.data.orders));
     });
   }, [load, locale]);
+
+  // An admin's reply shows without a reload (QA 2026-11-16, bug 10): the tickets are re-read every 20 seconds while the
+  // tab is visible, and at once when a hidden tab comes back (same pattern as orders, bookings and quotes).
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      if (document.visibilityState === 'visible') void load();
+    }, SUPPORT_POLL_MS);
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void load();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [load]);
 
   const orderChoices = presetOrder && !orders.includes(presetOrder) ? [presetOrder, ...orders] : orders;
 

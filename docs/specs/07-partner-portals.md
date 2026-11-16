@@ -325,3 +325,7 @@ Design `docs/superpowers/specs/2026-11-15-shops-next-tier-design.md` (the "later
 ## Workshop bill payment and cancellation (2026-11-15)
 
 The workshop still marks a bill paid at the workshop (cash, UPI, card); if the customer paid online first, the mark is refused (409, the request moved on); a capture after the mark is refunded by staff approval. A workshop cannot cancel a request after the visit is confirmed except through its existing `confirmed -> cancelled` edge; staff may cancel any live job (spec 06).
+
+## Hindi stock-upload hint (2026-11-16, QA pass 3 bug 15)
+
+Column names in the stock CSV hint stay in Latin as codes (`<code lang="en">`) and each is explained in Hindi (`shopTier2.csvRules`).

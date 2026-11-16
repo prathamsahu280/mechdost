@@ -527,7 +527,8 @@
     "summary": "Order summary",
     "each": "{price} each",
     "emptyBody": "Add oils, batteries, tyres and more. A local Raipur shop confirms your order before it ships.",
-    "emptyCategories": "Or start with a category"
+    "emptyCategories": "Or start with a category",
+    "freeDeliveryGroupHint": "Free delivery on orders from {seller} of {amount} or more."
   },
   "checkout": {
     "title": "Checkout",
@@ -681,7 +682,11 @@
     "api_paidOnline": "Paid online",
     "api_payPending": "Online payment pending",
     "api_total": "Total",
-    "api_part": "Part {n} of {count}"
+    "api_part": "Part {n} of {count}",
+    "cancelUnavailable": "This order cannot be cancelled from this page.",
+    "cancelUnavailableSupport": "If you need to cancel it, contact support and we will help.",
+    "api_placedTotal": "Order total when placed: {amount}",
+    "api_payableTotal": "Still payable after rejected or cancelled parts: {amount}"
   },
   "finder": {
     "title": "Where is your vehicle?",
@@ -2962,7 +2967,10 @@
     "api_set_support_hours_end_minute": "Support closes (minutes after midnight IST, 1260 = 21:00)",
     "api_set_support_first_reply_working_minutes": "First reply target (working minutes inside support hours)",
     "api_set_support_auto_close_days": "Days after resolved before a request closes by itself",
-    "api_set_catalogue_shop_photo_uploads": "Let shops add photos to products they sell (shown after approval)"
+    "api_set_catalogue_shop_photo_uploads": "Let shops add photos to products they sell (shown after approval)",
+    "noShopCover": "No shop that delivers to this PIN code is available right now: they may be paused, suspended, busy or not serving this PIN. Reject it with a message to the customer, or wait.",
+    "noShopStock": "The other shops that deliver here do not stock every item in this order. Reject it with a message to the customer, or wait for stock.",
+    "noShopUntried": "Every shop that delivers here has already declined this order or let it time out. Reject it with a message to the customer."
   },
   "shopGiveUp": {
     "action": "Can't fulfil this order",
@@ -4506,7 +4514,7 @@
     "csvTemplate": "Download template",
     "csvChoose": "Choose a CSV file",
     "csvChosen": "File: {name}",
-    "csvRules": "Up to {rows} lines and 1 MB. Columns: <code>sku</code>, <code>stock</code>, <code>active</code> (<code>yes</code> or <code>no</code>), <code>requested_price</code> (rupees, optional).",
+    "csvRules": "Up to {rows} lines and 1 MB. Columns: <code>sku</code> (the product code), <code>stock</code> (how many you have), <code>active</code> (<code>yes</code> or <code>no</code>: on sale or not), <code>requested_price</code> (rupees, optional).",
     "csvCheck": "Check file",
     "csvChecking": "Checking...",
     "csvApply": "Apply changes",
