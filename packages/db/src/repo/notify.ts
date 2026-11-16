@@ -69,6 +69,19 @@ interface RawOutbox {
 export const OUTBOX_LEASE_SECONDS = 120;
 
 /**
+ * Runs `fn` in a transaction with a LOCAL `statement_timeout` (works through the transaction pooler, where a
+ * session SET would leak to other clients). Without it a statement may hang for the server default (120 s on
+ * Supabase), as the dispatcher's loaders did on 2026-11-16 (SQLSTATE 57014).
+ */
+export async function withStatementTimeout<T>(db: Tx, ms: number, fn: (tx: Tx) => Promise<T>): Promise<T> {
+  const value = `${Math.max(1000, Math.round(ms))}ms`;
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`select set_config('statement_timeout', ${value}, true)`);
+    return fn(tx);
+  });
+}
+
+/**
  * Claims due rows for the given channels only (channels without an adapter are left untouched). Each claimed row
  * gets a fresh `claim_token`; a sender that took longer than the lease loses the row to the next claim and can no
  * longer renew or record it (security review 2026-11-02: no double sends).
@@ -82,7 +95,9 @@ export async function claimOutboxBatch(
   const lease = Math.min(Math.max(opts.leaseSeconds ?? OUTBOX_LEASE_SECONDS, 10), 900);
   const result = await db.execute(sql`
     update notification_outbox
-    set claimed_at = now(), claim_token = gen_random_uuid(), attempts = attempts + 1
+    set claimed_at = now(), claim_token = gen_random_uuid(), attempts = attempts + 1,
+        -- a row taken over after its lease lapsed says so (the previous sender hung or died); a send clears it
+        last_error = case when claimed_at is not null then 'lease_expired' else last_error end
     where id in (
       select id from notification_outbox
       where status = 'pending'

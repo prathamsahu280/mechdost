@@ -130,6 +130,30 @@ describe('notification dispatcher', () => {
     expect(byKey.get(keys[2]!)).toMatchObject({ status: 'failed', lastError: 'meta_131026' });
     expect([1, 2, 3, 10].map(backoffSeconds)).toEqual([30, 60, 120, 3600]);
   });
+
+  it('a send that hangs is cut at its deadline: retry with code send_timeout, the tick is not held (incident 2026-11-16)', async () => {
+    const { db } = await buildApp();
+    const k = `wa-hang-${String(Date.now())}`;
+    await enqueueNotification(db, {
+      dedupeKey: k,
+      channel: 'whatsapp',
+      recipient: '+919876543210',
+      templateKey: 'order.confirmed',
+      payload: { orderCode: k },
+    });
+    const adapter: ChannelAdapter = {
+      channel: 'whatsapp',
+      send: () => new Promise<{ providerId: string | null }>(() => undefined),
+    };
+    const phase = { current: 'idle', since: 0 };
+    const started = Date.now();
+    const result = await dispatchOnce(db, [adapter], { sendDeadlineMs: 200, phase });
+    expect(Date.now() - started).toBeLessThan(5_000);
+    expect(result).toMatchObject({ claimed: 1, sent: 0, retried: 1 });
+    const row = (await db.select().from(s.notificationOutbox)).find((r) => r.dedupeKey === k);
+    expect(row).toMatchObject({ status: 'pending', lastError: 'send_timeout' });
+    expect(phase.current).toBe('idle');
+  });
 });
 
 function signed(body: string, secret = SECRET) {

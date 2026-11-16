@@ -293,3 +293,5 @@ Promoted lessons (rule now in `checklist.md`) are in `learnings-archive.md`; rea
 - L277 · 2026-11-16 · QA triage · "two POSTs on one click" was two different steps of one button, not a double submit → check the request bodies before treating a duplicate as a bug; still guard with a ref.
 
 - L278 · 2026-11-16 · floating UI · the audit exempted fixed elements covering page content, so a launcher over a price (V5) passed every run → fixed UI that can sit over a right-aligned price column needs its own audit check (`launcher`) and, where the page cannot reserve space for something that follows the viewport, a CSS-only hide keyed by a data attribute on the form.
+
+- 2026-11-16 · bug 7 (slow mail): when a lease equals the server statement_timeout, any unbounded query in the lease window turns into a duplicate claim. Check lease vs. every timeout on the path; prefer LOCAL statement_timeout (set_config(...,true)) on the transaction pooler.
