@@ -26,6 +26,14 @@ export function isClosedStatus(status: string): boolean {
   return status === 'cancelled' || status === 'rejected';
 }
 
+/**
+ * An open part the customer cannot cancel here (the admin's self-cancel rule is off, or the part is past packing): the
+ * page says so and points to support instead of showing nothing (QA 2026-11-16, bug 9; spec 05).
+ */
+export function cancelHelpShown(part: { status: string; canCancel: boolean }): boolean {
+  return !part.canCancel && !isClosedStatus(part.status) && part.status !== 'delivered';
+}
+
 /** The `order` locale key that names an API status for the customer. */
 export function orderStatusKey(status: string): `stage_${OrderStep}` | 'cancelledTitle' | 'rejectedTitle' {
   if (status === 'cancelled') return 'cancelledTitle';

@@ -92,6 +92,8 @@ export interface QuoteGroup {
   seller: string;
   subtotalPaise: number;
   shippingPaise: number;
+  /** The free-delivery threshold that applied to this group (PIN ?? shop ?? city); null = delivery is never free. */
+  freeDeliveryMinPaise: number | null;
   taxPaise: number;
   totalPaise: number;
   leadDays: number;
@@ -383,6 +385,7 @@ export async function quoteInternal(
         seller: localized(r.shop_name ?? '', r.shop_name_hi, input.locale),
         subtotalPaise: 0,
         shippingPaise: num(r.shipping),
+        freeDeliveryMinPaise: null,
         taxPaise: 0,
         totalPaise: 0,
         leadDays: 0,
@@ -427,6 +430,7 @@ export async function quoteInternal(
       shop: groupShopFreeMin[i] ?? null,
       city: cityFreeMin,
     });
+    g.freeDeliveryMinPaise = freeMinPaise;
     g.shippingPaise = groupShippingPaise({ ...g, freeMinPaise });
     g.totalPaise = g.subtotalPaise + g.shippingPaise;
   });

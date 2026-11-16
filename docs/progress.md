@@ -497,3 +497,7 @@ merge, new catalogue entries (quote events) need a `META_TEMPLATE_COPY` entry an
 - 5: job card estimate: `estimateSummary` (`lib/estimate-summary.ts`) = approved lines only once decided / stored bill total; per-line mark; `estimateSummaryNoGst` when no GST.
 - 6: `beforePhotoMissing` gates "Vehicle received" (re-check on `photosTick`); `photoStageNeeded` hides the "Needed" badge once a photo exists.
 - Tests: `apps/web/test/bugfix-qa-pass3-b.test.ts`. Docs: spec 06 "Pass 3 UI truth".
+
+## 2026-11-16 — QA pass 3 bugs 7 to 15 (branch worktree-agent-a92c9803191656487, not merged; no migration)
+
+Bug 7 (free-delivery hint = per-group threshold from the quote), 8 (routing empty reasons), 9 (cancel help, no setting flipped, Q197), 10 (support list polling 20 s), 12 (two POSTs were two steps; ref guard added), 13 (debounced quote search), 14 (placed total + still payable), 15 (Hindi CSV column explanations). Tests: `apps/web/test/bugfix-qa-pass3b.test.ts` (red first), `packages/db/test/checkout.test.ts` (new case, red first). Rulings in decisions.md 2026-11-16; questions Q196, Q197. No new imports reachable from layout/home/shop first load (cart-view untouched; `/cart` budget unchanged).

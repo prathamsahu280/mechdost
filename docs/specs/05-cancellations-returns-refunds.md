@@ -153,3 +153,7 @@ The customer gives the UPI id or bank account on their own support thread (spec 
 ## Service bill refunds (2026-11-15)
 
 Refunds of a service bill use the same queue, ledger, four-eyes approval, Razorpay refund with idempotency and webhooks as order refunds; `refunds.bill_id` replaces the group, the finance queue shows the request code (`SR-...`) in the order column's place and the payment method "online", and the city scope comes from the request. Sources `service_cancelled` (staff cancelled a request with a captured payment) and `duplicate_payment` (a capture after the bill was settled another way). The refund request is idempotent per payment and source (`sys_svc_<source>_<payment id>`). The processed email uses the request code and raises no coin or order logic.
+
+## When the customer cannot cancel (2026-11-16, QA pass 3 bug 9)
+
+An open order part without a cancel button (self-cancel settings off, or past the allowed step) shows "This order cannot be cancelled from this page. If you need to cancel it, contact support and we will help." with a link to support for that order (`order.cancelUnavailable*`, en + hi). The rejected or cancelled order page shows "Order total when placed" and, when parts were taken out, "Still payable", beside the refund lines (`order.api_placedTotal`, `api_payableTotal`). Default of the self-cancel settings unchanged (Q197).

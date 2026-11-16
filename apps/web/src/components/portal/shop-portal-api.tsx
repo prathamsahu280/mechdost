@@ -7,7 +7,7 @@ import {
   type AssignmentDeclineReason,
 } from '@mechdost/shared/state';
 import { useLocale, useTranslations } from 'next-intl';
-import { useCallback, useState, type SyntheticEvent } from 'react';
+import { useCallback, useRef, useState, type SyntheticEvent } from 'react';
 import { adminApi } from '@/lib/admin-api';
 import { deadlineView, istDayTime } from '@/lib/admin-shop-form';
 import { track } from '@/lib/analytics';
@@ -442,7 +442,13 @@ function ActiveOrder({
   const [error, setError] = useState<string | null>(null);
   const action = nextShopAction(order.status);
 
+  // A ref, not only state: two presses in the same frame both see `busy === false` (QA 2026-11-16, bug 12). "Out for
+  // delivery" from "packed" is two different steps (shipped, then out_for_delivery), each with its own version.
+  const busyRef = useRef(false);
+
   async function advance(steps: readonly ('packed' | 'shipped' | 'out_for_delivery')[]) {
+    if (busyRef.current) return;
+    busyRef.current = true;
     setBusy(true);
     let version = order.version;
     for (const step of steps) {
@@ -451,6 +457,7 @@ function ActiveOrder({
         body: advanceBody(step, version),
       });
       if (!res.ok) {
+        busyRef.current = false;
         setBusy(false);
         setError(res.code);
         await onChanged();
@@ -458,6 +465,7 @@ function ActiveOrder({
       }
       version = res.data.version;
     }
+    busyRef.current = false;
     setBusy(false);
     setError(null);
     const last = steps.at(-1);

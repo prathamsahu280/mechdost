@@ -107,3 +107,7 @@ Plan `docs/superpowers/plans/2026-11-16-quote-followups.md`; rulings in `docs/de
 ## Coupons on quote orders (2026-11-15)
 
 Not allowed: a quote order's prices were negotiated with staff, so `placeOrder` refuses a coupon with 422 `COUPON_INVALID` (`reason: quote_order`), the same ruling as coins (2026-11-14). Cost if wrong: a customer who wants both asks staff for a lower negotiated price instead.
+
+## Product search while typing (2026-11-16, QA pass 3 bug 13)
+
+The quote form's product search runs 350 ms after typing stops (two characters minimum; Enter or the button still search at once; the newest answer wins). `lib/quote-search.ts`.

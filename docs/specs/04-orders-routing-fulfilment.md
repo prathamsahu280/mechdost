@@ -172,3 +172,7 @@ Design: `docs/superpowers/specs/2026-11-15-shop-give-up-warnings-design.md`.
 ## Built: busy shops and late accepts (2026-11-15)
 
 A shop that is busy or "closed today" (`busy` and `busy_until` in the future, set by its owner, spec 07 "Shop portal tier 1") is never ranked, suggested or offered (`rankShopsForOrder` and `routeOrder` answer `SHOP_NOT_ELIGIBLE`), skipped at checkout and in catalogue prices, and comes back when the time ends (database clock, no job). Tests: `packages/db/test/shop-tier1.test.ts` (closed today, busy for hours and its expiry). An accept after the offer's end time answers `OFFER_EXPIRED` (409) instead of `ASSIGNMENT_UNAVAILABLE`; an offer taken or withdrawn keeps the old code. The active-orders list carries `deliveryLocked`.
+
+## Routing screen reasons and fulfilment double press (2026-11-16, QA pass 3 bugs 8 and 12)
+
+When the ranked list has nobody to offer, the admin screen says why: `noShopCover` (no shop covers the PIN, or they are paused, suspended or busy), `noShopStock` (the covering shops do not stock every item), `noShopUntried` (all already declined or timed out), chosen by `routeEmptyReason`. On the shop portal, "Out for delivery" from "packed" sends two different advance steps (`shipped`, then `out_for_delivery`); a ref guard stops a double press, and the API refuses a repeated step (`WRONG_STEP`, version check).

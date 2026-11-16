@@ -23,6 +23,7 @@ import {
   adminActions,
   closedGroup,
   historyReasonKey,
+  routeEmptyReason,
   routeSuggestions,
   shopStageKey,
   type AdminGroup,
@@ -36,6 +37,12 @@ import { useNoticeRefresh } from '../notices/use-notice-refresh';
 import { useApiList, type ApiList } from './use-api-list';
 
 const POLL_MS = 30_000;
+/** Why nobody can be offered the order (QA 2026-11-16, bug 8): the `portal` key per reason. */
+const NO_SHOP_KEY = {
+  none_cover: 'noShopCover',
+  none_stock: 'noShopStock',
+  all_tried: 'noShopUntried',
+} as const;
 type View = 'needs_routing' | 'awaiting_shop' | 'in_progress' | 'closed';
 
 /**
@@ -276,7 +283,9 @@ function RoutingCard({
         <div className="mt-4">
           <h3 className="text-xs font-extrabold text-muted">{t('suggestions')}</h3>
           {suggestions.length === 0 ? (
-            <p className="mt-2 text-sm font-bold text-warning">{t('noShopCanTake')}</p>
+            <p className="mt-2 text-sm font-bold text-warning">
+              {t(NO_SHOP_KEY[routeEmptyReason(detail.shops)])}
+            </p>
           ) : null}
           <ul className="mt-2 space-y-2">
             {suggestions.map((s, i) => (

@@ -1494,3 +1494,26 @@ Built 2026-11-16: `api_user:<firebase uid>` (300/min), `api_guest:<ip>` (600/min
 only, no migration: the `settings` table already holds them); flood is never below guest (validated on save and
 enforced when read); 45 s cache. The per-route `apiPerUser` rule was renamed `api_route_user` so it no longer shares a
 counter with the global `api_user` rule. Spec 13 "Global API limits".
+
+## 2026-11-16 — Real-API pass 3 fixes: delivery hint, routing reasons, cancel help (bugs 7 to 15)
+
+- **Free delivery (bug 7): the rule is unchanged, the text was wrong.** The charge follows spec 03 "Delivery charges":
+  per shop group, threshold = PIN value, else shop value, else city setting. The checkout summary showed the city
+  setting only, so a PIN or shop override made "Free delivery from ₹999" disagree with a ₹40 charge. The quote now
+  returns `groups[].freeDeliveryMinPaise` (the threshold that applied, null = never free) and the summary says, per
+  charged group, "Free delivery on orders from {shop} of {amount} or more." Money rules not touched. The cart page
+  (no PIN yet) keeps the city text: Q196.
+- **Routing reasons (bug 8):** the empty-suggestions message is chosen from the ranked list: nobody covers the PIN
+  (paused, suspended, busy or not delivering), every covering shop already declined or timed out, or the others do not
+  stock every item. No API change (`routeEmptyReason`).
+- **Cancel help (bug 9):** no setting changed. Spec 05 / Q25 keep customer self-cancel off; an open part with no cancel
+  button now says so and links to support. Whether COD should be self-cancellable by default is Q197.
+- **Order totals (bug 14):** the order page shows "Order total when placed" (`placedTotalPaise`) and, only when parts
+  were rejected or cancelled, "Still payable" (`totalPaise`), next to the refund lines.
+- **Support live (bug 10):** the account support list re-reads every 20 s while visible and on tab return, like orders,
+  bookings and quotes (no live ping kind for tickets exists yet).
+- **Out for delivery (bug 12):** the two POSTs were two different steps (`shipped` then `out_for_delivery`, one button
+  from "packed"), not a double submit; the API already refuses a repeated step (`WRONG_STEP`, version CAS). A ref guard
+  now blocks a real double press.
+- **Bulk-quote search (bug 13):** searches 350 ms after typing stops (two characters minimum), newest answer wins.
+- **Hindi CSV hint (bug 15):** column names stay in `<code lang="en">` (codes); each is now explained in Hindi.

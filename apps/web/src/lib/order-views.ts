@@ -141,6 +141,19 @@ export function routeSuggestions<T extends Ranked>(shops: readonly T[], max = 3)
   return shops.filter((s) => s.eligible && !s.triedBefore).slice(0, max);
 }
 
+/**
+ * Why the routing screen has nobody to offer (QA 2026-11-16, bug 8). `shops` are the approved, not-busy shops covering
+ * the order's PIN: none at all means nobody serves it (paused, suspended, busy or not delivering there); all already
+ * tried means every one declined or timed out; otherwise the rest do not stock every item at the customer's price.
+ */
+export function routeEmptyReason(
+  shops: readonly { triedBefore: boolean }[],
+): 'none_cover' | 'all_tried' | 'none_stock' {
+  if (shops.length === 0) return 'none_cover';
+  if (shops.every((s) => s.triedBefore)) return 'all_tried';
+  return 'none_stock';
+}
+
 /** `reason_*` key in `portal` for a past offer: expired → timeout, a known decline code, else "declined". */
 export function historyReasonKey(h: { status: string; declineReason: string | null }): string {
   if (h.status === 'expired') return 'reason_timeout';

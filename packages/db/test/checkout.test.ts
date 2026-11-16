@@ -159,6 +159,25 @@ describe('quote', () => {
     ).rejects.toThrow();
   });
 
+  it('each group reports the free-delivery threshold that applied to it (the checkout hint reads it)', async () => {
+    const [sharma] = await db.select().from(s.shops).where(eq(s.shops.name, 'Sharma Auto Parts'));
+    const quote = () =>
+      quoteCheckout(t(), { pincode: '492004', lines: [{ sku: OIL, qty: 2 }], locale: 'en' });
+    await db.delete(s.settings).where(eq(s.settings.key, 'checkout.free_delivery_min_paise'));
+    await db.update(s.shops).set({ freeDeliveryMinPaise: null }).where(eq(s.shops.id, sharma!.id));
+    await db.update(s.pincodes).set({ freeDeliveryMinPaise: null }).where(eq(s.pincodes.pincode, '492004'));
+    expect((await quote()).groups[0]?.freeDeliveryMinPaise).toBeNull();
+    await db.insert(s.settings).values({ key: 'checkout.free_delivery_min_paise', value: 99900 });
+    expect((await quote()).groups[0]?.freeDeliveryMinPaise).toBe(99900);
+    await db.update(s.shops).set({ freeDeliveryMinPaise: 150000 }).where(eq(s.shops.id, sharma!.id));
+    expect((await quote()).groups[0]?.freeDeliveryMinPaise).toBe(150000);
+    await db.update(s.pincodes).set({ freeDeliveryMinPaise: 300000 }).where(eq(s.pincodes.pincode, '492004'));
+    expect((await quote()).groups[0]?.freeDeliveryMinPaise).toBe(300000);
+    await db.update(s.pincodes).set({ freeDeliveryMinPaise: null }).where(eq(s.pincodes.pincode, '492004'));
+    await db.update(s.shops).set({ freeDeliveryMinPaise: null }).where(eq(s.shops.id, sharma!.id));
+    await db.delete(s.settings).where(eq(s.settings.key, 'checkout.free_delivery_min_paise'));
+  });
+
   it('uses IGST when the shop is in another state', async () => {
     const [od] = await db
       .insert(s.states)

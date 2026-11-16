@@ -288,3 +288,6 @@ Promoted lessons (rule now in `checklist.md`) are in `learnings-archive.md`; rea
 - L274 · 2026-11-16 · rate-limit · two rules sharing a name (`api_user` global and per-route) would share one counter, because the limiter key is `rule.name:key` → give every new limit rule a unique name and grep `name:` before adding one; verify the token once in the global limiter and pass it to `authenticate` through the context (never parse a JWT unverified)
 
 - L275 · 2026-11-16 · web/service UI · customer and workshop screens each recomputed or hard-coded what the API already stores (paid method, estimate total incl. declined lines, GST wording) → show the stored/decision-aware value through one pure helper with a test, and mirror every gate (after photo) on its sibling (before photo) in the same change.
+
+- L276 · 2026-11-16 · checkout/copy · a banner read one setting (city free-delivery) while the charge used a chain (PIN, shop, city) → any text that states a rule must read the value the server applied (return it in the quote), never re-derive it from a setting.
+- L277 · 2026-11-16 · QA triage · "two POSTs on one click" was two different steps of one button, not a double submit → check the request bodies before treating a duplicate as a bug; still guard with a ref.
