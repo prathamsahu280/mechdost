@@ -86,7 +86,15 @@ export async function sendPhoneCode(
   const a = firebaseAuth(locale);
   try {
     verifier?.clear();
-    verifier = new RecaptchaVerifier(a, containerId, { size: 'invisible', badge: 'inline' });
+    // A fresh host element per attempt: a retry on the same page that rendered into the container a cleared or
+    // abandoned verifier had used failed as "Sign-in isn't working right now" (real-API pass 3, 2026-11-16).
+    const container = document.getElementById(containerId);
+    if (!container)
+      throw Object.assign(new Error('recaptcha container missing'), { code: 'auth/internal-error' });
+    container.replaceChildren();
+    const host = document.createElement('div');
+    container.appendChild(host);
+    verifier = new RecaptchaVerifier(a, host, { size: 'invisible', badge: 'inline' });
     let timer: ReturnType<typeof setTimeout> | undefined;
     const timeout = new Promise<never>((_, reject) => {
       timer = setTimeout(() => {

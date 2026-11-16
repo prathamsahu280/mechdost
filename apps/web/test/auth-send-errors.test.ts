@@ -68,3 +68,14 @@ describe('sign-in copy', () => {
     expect(src).toContain("stage: 'confirm'");
   });
 });
+
+describe('phone code send: a fresh reCAPTCHA host per attempt (2026-11-16)', () => {
+  // A retry on the same page reused the container a cleared or abandoned verifier had rendered into, and the send
+  // failed as "Sign-in isn't working right now" (real-API pass 3, staff second step).
+  it('empties the container and renders each verifier into a new child element', () => {
+    const src = readFileSync(join(__dirname, '..', 'src', 'lib', 'auth', 'firebase-client.ts'), 'utf8');
+    const send = src.slice(src.indexOf('export async function sendPhoneCode'));
+    expect(send).toMatch(/replaceChildren\(\)/);
+    expect(send).toMatch(/new RecaptchaVerifier\(a, host,/);
+  });
+});
