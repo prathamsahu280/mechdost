@@ -36,17 +36,33 @@ export function log(severity: Severity, message: string, fields: Record<string, 
  * stack *frames* only. Never the message: database errors embed the failed query and its parameters (phone
  * numbers, message text), and provider errors can echo request bodies.
  */
-export function safeError(err: unknown): { errorName: string; pgCode?: string; frames?: string } {
+export function safeError(err: unknown): {
+  errorName: string;
+  pgCode?: string;
+  reason?: string;
+  frames?: string;
+} {
   const name = err instanceof Error ? err.name : typeof err;
   let code: string | undefined;
+  let reason: string | undefined;
   let e: unknown = err;
   for (let i = 0; i < 4 && e && typeof e === 'object'; i += 1) {
     const c = (e as { code?: unknown }).code;
-    if (typeof c === 'string' && /^[0-9A-Z]{5}$/.test(c)) {
-      code = c;
-      break;
+    if (typeof c === 'string' && /^[0-9A-Z]{5}$/.test(c)) code = c;
+    const cause = (e as { cause?: unknown }).cause;
+    // The message of the wrapped cause (the database's own text, or the driver's TypeError) is what says what broke.
+    // The wrapper's message ("Failed query: ... params ...") is never logged. Data errors (class 22/23) quote the
+    // offending value, so their quoted parts are hidden.
+    if (cause instanceof Error && !reason) {
+      const raw = cause.message.slice(0, 200);
+      const causeCode = (cause as { code?: unknown }).code;
+      reason =
+        typeof causeCode === 'string' && /^2[23]/.test(causeCode)
+          ? raw.replace(/"[^"]*"|'[^']*'/g, '"?"')
+          : raw;
     }
-    e = (e as { cause?: unknown }).cause;
+    if (code) break;
+    e = cause;
   }
   const frames =
     err instanceof Error && err.stack
@@ -56,5 +72,10 @@ export function safeError(err: unknown): { errorName: string; pgCode?: string; f
           .slice(0, 8)
           .join('\n')
       : undefined;
-  return { errorName: name, ...(code ? { pgCode: code } : {}), ...(frames ? { frames } : {}) };
+  return {
+    errorName: name,
+    ...(code ? { pgCode: code } : {}),
+    ...(reason ? { reason } : {}),
+    ...(frames ? { frames } : {}),
+  };
 }

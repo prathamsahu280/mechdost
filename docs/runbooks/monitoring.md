@@ -66,3 +66,10 @@ Never use the CI token (`SENTRY_AUTH_TOKEN`) here: it can upload releases. To re
 - **PostHog:** empty `POSTHOG_KEY`, `docker compose up -d worker`. Already-sent data is deleted in PostHog (Project settings → Delete data, or by event).
 - **Admin → Errors:** empty `SENTRY_API_TOKEN` → "not connected".
 - A visitor's erasure request: their events are personless with a random id that is not linked to their account; delete by that visitor id in PostHog if they provide it (the browser stores it as `mechdost-visitor`).
+
+## Worker health: what to look for (incident 2026-11-16)
+
+- `notify_tick` (info, every 5 min): `{channels, ticks, claimed, sent, failed, retried, skipped, stuck, errors}` since the previous line. **No `notify_tick` line for 10 minutes = the dispatcher is gone; `stuck > 0` or a `notify_tick_stuck` error = a query hung and was replaced after 120 s.** If the outbox has `pending` rows older than a minute and `claimed` stays 0, check `channels`.
+- `notify_channel_off` (warn, at start): a channel without its key (`RESEND_API_KEY` for email, `WHATSAPP_*`) is off **by design**; rows for it stay `pending` and nothing is logged per row. This was the cause of the 2026-11-16 "outbox not sent" report: the server `.env` got `RESEND_API_KEY` at 06:56 and the worker was restarted by the deploy after that. After changing `.env`, recreate the worker (`docker compose up -d worker`; a plain restart keeps the old environment) and read `worker_started.channels`.
+- The dispatcher uses its own 1-connection pool (the other jobs share 2), so exports/copurchase cannot starve it.
+- Error lines from `safeError` now carry `pgCode` (SQLSTATE) and `reason` (the database's or driver's own message of the wrapped cause, max 200 chars, quoted values hidden for data errors; never the query or parameters). A `data_exports_failed` with no `pgCode` and a `reason` like "argument must be of type string" is a driver-side encoding bug, not a database problem.

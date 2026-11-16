@@ -1,4 +1,4 @@
-import { and, desc, eq, sql, type SQL } from 'drizzle-orm';
+import { and, desc, eq, lte, sql, type SQL } from 'drizzle-orm';
 import { MARKETING_NOTICE_VERSION } from '@mechdost/shared/notice-api';
 import { CONSENT_NOTICE_VERSION } from '@mechdost/shared/privacy';
 import {
@@ -407,7 +407,7 @@ export async function expireDataExports(db: Tx, opts: { now?: Date }): Promise<n
   const rows = await db
     .update(dataExportRequests)
     .set({ status: 'expired', payload: null, payloadBytes: null })
-    .where(and(eq(dataExportRequests.status, 'ready'), sql`${dataExportRequests.expiresAt} <= ${now}`))
+    .where(and(eq(dataExportRequests.status, 'ready'), lte(dataExportRequests.expiresAt, now)))
     .returning({ id: dataExportRequests.id });
   return rows.length;
 }

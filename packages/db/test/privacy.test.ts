@@ -151,6 +151,22 @@ describe('data export', () => {
     });
   });
 
+  it('sends the expiry time to the database as text, never as a raw Date (postgres-js cannot encode one: worker failure 2026-11-16)', async () => {
+    const seen: unknown[] = [];
+    const original = client.query.bind(client);
+    (client as unknown as { query: unknown }).query = (q: string, params?: unknown[], ...rest: unknown[]) => {
+      seen.push(...(params ?? []));
+      return (original as (...a: unknown[]) => unknown)(q, params, ...rest);
+    };
+    try {
+      await expireDataExports(t(), { now: new Date(Date.now() - 10 * 365 * 24 * HOUR) });
+    } finally {
+      (client as unknown as { query: unknown }).query = original;
+    }
+    expect(seen.length).toBeGreaterThan(0);
+    expect(seen.some((p) => p instanceof Date)).toBe(false);
+  });
+
   it('expires after 24 hours: the file is cleared and the download is refused', async () => {
     const later = new Date(Date.now() + (EXPORT_TTL_HOURS + 1) * HOUR);
     await expect(downloadDataExport(t(), { userId: ravi, exportId, now: later })).rejects.toMatchObject({
