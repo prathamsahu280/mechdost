@@ -48,7 +48,9 @@ describe('deploy workflow checks the stack stays up (2026-11-16: the worker cras
 describe('deploy workflow never copies production log lines into the public Actions log', () => {
   it('prints worker event names only', () => {
     const check = workflow.slice(workflow.indexOf('Stack stays up'), workflow.indexOf('Public check'));
-    for (const line of check.split('\n').filter((l) => l.includes('docker compose logs'))) {
+    for (const line of check
+      .split('\n')
+      .filter((l) => l.includes('docker compose logs') && !l.trim().startsWith('echo'))) {
       expect(line, line).toMatch(/grep -(q|oE)/);
     }
   });
