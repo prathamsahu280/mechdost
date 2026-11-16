@@ -11,6 +11,7 @@ const card = {
   vehicleTypes: ['2W'],
   rating: null,
   offer: {
+    sku: 'CAS-ACT4T-0900',
     pricePaise: 44_000,
     mrpPaise: 47_500,
     netQuantity: { qty: 900, unit: 'ml' },
@@ -51,6 +52,7 @@ describe('catalogue DTOs (spec 02, shared by API and web)', () => {
           mrpPaise: 47_500,
           netQuantity: null,
           offer: {
+            sku: 'CAS-ACT4T-0900',
             pricePaise: 44_000,
             mrpPaise: 47_500,
             netQuantity: null,
