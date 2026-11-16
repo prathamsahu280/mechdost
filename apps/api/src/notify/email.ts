@@ -1,3 +1,4 @@
+import { BILL_PDF_MAX_BYTES, isBillAttachmentTemplate } from '@mechdost/shared/bill-document';
 import { defaultEmailTrustLine } from '@mechdost/shared/email-layout';
 import {
   EMAIL_TEMPLATES,
@@ -9,7 +10,9 @@ import {
   type EmailOverride,
 } from '@mechdost/shared/email-templates';
 import type { OutboxRow } from '@mechdost/db/repo';
+import { log, safeError } from '../logger';
 import { ChannelError, type ChannelAdapter } from './dispatcher';
+import type { EmailAttachment } from './pdf/attachment';
 
 /**
  * Email through Resend (plan 2026-11-13 Task 3b), two REST calls' worth of code and no SDK (dependency policy).
@@ -43,9 +46,38 @@ export function createEmailAdapter(
     loadTrustLine?: TrustLineLoader;
     /** The grievance officer line from Admin -> Company details; null/empty or a failure uses `cfg.grievanceContact`. */
     loadGrievanceContact?: () => Promise<string | null>;
+    /**
+     * The bill / receipt PDF for the bill emails (Q194): asked only for the templates in `BILL_ATTACHMENT_TEMPLATES`.
+     * Null, too big or a failure means the mail goes without it.
+     */
+    loadAttachment?: (row: OutboxRow, locale: 'en' | 'hi') => Promise<EmailAttachment | null>;
   } = {},
 ): ChannelAdapter {
   const fetchImpl = opts.fetchImpl ?? fetch;
+  /** The PDF for a bill email, or null: never an error, a missing PDF must not stop the mail (ids and class only in logs). */
+  async function billAttachment(row: OutboxRow, locale: 'en' | 'hi'): Promise<EmailAttachment | null> {
+    if (!opts.loadAttachment || !isBillAttachmentTemplate(row.templateKey)) return null;
+    try {
+      const found = await opts.loadAttachment(row, locale);
+      if (!found) return null;
+      if (found.content.length > BILL_PDF_MAX_BYTES) {
+        log('warn', 'email_attachment_skipped', {
+          outboxId: row.id,
+          reason: 'too_big',
+          bytes: found.content.length,
+        });
+        return null;
+      }
+      return found;
+    } catch (err) {
+      log('warn', 'email_attachment_skipped', {
+        outboxId: row.id,
+        reason: 'build_failed',
+        ...safeError(err),
+      });
+      return null;
+    }
+  }
   return {
     channel: 'email',
     async send(row: OutboxRow) {
@@ -93,6 +125,7 @@ export function createEmailAdapter(
         row.payload.test === 'true'
           ? `${locale === 'hi' ? '[टेस्ट]' : '[Test]'} ${composed.subject}`
           : composed.subject;
+      const attachment = await billAttachment(row, locale);
       let res: Response;
       try {
         res = await fetchImpl('https://api.resend.com/emails', {
@@ -109,6 +142,13 @@ export function createEmailAdapter(
             subject,
             text,
             html,
+            ...(attachment
+              ? {
+                  attachments: [
+                    { filename: attachment.filename, content: attachment.content.toString('base64') },
+                  ],
+                }
+              : {}),
           }),
           signal: AbortSignal.timeout(opts.timeoutMs ?? 10_000),
         });

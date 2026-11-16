@@ -11,6 +11,7 @@ import {
   slotPhrase,
   warningReasonPhrase,
 } from '@mechdost/shared/email-phrases';
+import { BILL_REF_KEY, isBillAttachmentTemplate } from '@mechdost/shared/bill-document';
 import type { OrderStatus, ServiceRequestStatus } from '@mechdost/shared/state';
 import {
   cities,
@@ -87,6 +88,8 @@ export async function queueOrderStatusEmail(
           : cancelReasonPhrase(row.reasonCode, locale),
       message: row.message ?? '',
       refundNote: refundNotePhrase(paidOnline, locale),
+      // The delivered email carries the receipt PDF; the worker builds it from this id (never from PII in the outbox).
+      ...(template === 'order_delivered' ? { [BILL_REF_KEY]: input.orderId } : {}),
     }),
   });
 }
@@ -183,6 +186,7 @@ export async function queuePaymentReceivedEmail(
       amount: rupees(input.amountPaise),
       method: paymentMethodPhrase(input.method, locale),
       paymentId: input.providerPaymentId,
+      [BILL_REF_KEY]: input.paymentId,
     }),
   });
 }
@@ -272,6 +276,8 @@ export async function queueServiceStatusEmail(
       slot: proposal ? `${emailDate(proposal.date, locale)}, ${slotPhrase(proposal.slot, locale)}` : '',
       expectedCost: proposal ? `${rupees(proposal.low)} – ${rupees(proposal.high)}` : '',
       amount: rupees(asNumber(input.payload?.totalPaise) ?? 0),
+      // The bill and completion emails carry the bill PDF; the worker builds it from this request id.
+      ...(isBillAttachmentTemplate(template) ? { [BILL_REF_KEY]: r.id } : {}),
     }),
   });
 }

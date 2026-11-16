@@ -61,6 +61,7 @@
     "./partners": "./src/partners.ts",
     "./partner-api": "./src/partner-api.ts",
     "./email-templates": "./src/email-templates.ts",
+    "./bill-document": "./src/bill-document.ts",
     "./email-layout": "./src/email-layout.ts",
     "./email-phrases": "./src/email-phrases.ts",
     "./service-bill": "./src/service-bill.ts",

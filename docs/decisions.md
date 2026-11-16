@@ -1436,3 +1436,44 @@ URL-encoded `{{1}}` in front of the variable), so the real-API WhatsApp test lin
 templates" — edited through the Graph API (button URL only: `https://mechdost.com/orders/{{1}}`,
 `/service/{{1}}`); all four back in review. The CLI-submitted templates were already correct. Follow-up: the CLI's
 `--status` flags button URLs containing `{{`/`%7B` outside the variable.
+
+## 2026-11-16 - Builder ruling: bill and receipt PDFs on the bill emails (Q194; user: "for the bills emails cant we just attach the bill pdfs right there?")
+
+**What:** the emails `service_bill_ready`, `service_completed`, `order_delivered` and `payment_received` carry a PDF of the
+bill or receipt, in the recipient's language (en or hi). Built at send time in the worker (`apps/api/src/notify/pdf/`) from
+the stored bill or order snapshot (`packages/db/src/repo/bill-documents.ts`), never recomputed
+(`packages/shared/src/bill-document.ts` is a pass-through model with a property test: document totals equal stored totals).
+Titled **Bill** (service) or **Receipt** (orders); never "Tax invoice" (Q97 is open; gapless invoice numbers belong to
+finalised invoices). The company block (name, address, GSTIN, CIN) comes from the admin's Company details, with the built-in
+facts as fallback. The order receipt does not name the shop (like the order emails: area only); the service bill names the
+workshop. Outbox rows hold only an id (`billRef` in the payload: request id, sub-order id or payment id); the worker loads the
+document only when it belongs to the row's recipient (a forged or foreign id finds nothing). Size cap 1.5 MB; a bigger or
+failed PDF is dropped and the mail still goes (the log holds the outbox id and error class only). Resend takes base64
+`attachments: [{ filename, content }]`; file names `MechDost-bill-SR-...pdf` and `MechDost-receipt-MD-...pdf`.
+
+**Library choice (dependency policy checked against `docs/research/security-vulnerabilities.md`):** `pdfkit@0.20.2` (MIT,
+published 2026-08-30, older than `minimumReleaseAge`; dependencies fontkit 2, linebreak, png-js, fflate, @noble/hashes and
+ciphers; no install scripts) plus `@fontsource/{dm-sans,manrope,noto-sans-devanagari}@5.3.0` (OFL fonts as data files, no
+dependencies, no scripts) and `@types/pdfkit@0.17.7` (dev). Exact versions, frozen lockfile, no `allowBuilds` entry needed.
+
+| Option                               | Devanagari shaping                                                                                                             | Cost / fit                                                                                                                                  | Verdict                                   |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| **pdfkit + fontkit 2**               | **Correct**, tested: "सर्विस बिल", "ब्रेक पैड (आगे)", reph, conjuncts क्ष त्र श्री द्वा, matras (`docs/screenshots/bill-pdf/`) | pure JS, ~11 MB unpacked (mostly its own builds), maintained (0.20.2, Aug 2026), runs on Node 24                                            | **chosen**                                |
+| pdf-lib + @pdf-lib/fontkit 1.1.1     | **Crashes** on Devanagari (`regeneratorRuntime is not defined` in the Indic shaper of the 2021 fork), tested                   | pdf-lib's last release is 2022, unmaintained                                                                                                | rejected (tested)                         |
+| @react-pdf/renderer 4.9              | Same engine underneath (depends on pdfkit 0.20.1 and fontkit), so shaping would match                                          | 12 direct dependencies (reconciler, layout, render, font...), a React tree in a worker for no gain                                          | rejected (by inspection, not benchmarked) |
+| headless Chromium rendering the HTML | Correct (browser text engine)                                                                                                  | not in the API image (Playwright is a test tool); +300 MB, a browser process per mail, binary downloads that run scripts against the policy | rejected (policy and size)                |
+
+**Fonts:** DM Sans (body) and Manrope (headings), the site's pairing; Noto Sans Devanagari for Hindi. The Devanagari subset
+file has no ASCII and the Latin files have no Devanagari or rupee sign, so the renderer splits each string into runs by
+character class and draws each run in the right font (this is also how Hindi mixed with codes, numbers and English workshop
+text works). No new colours: navy `#101f34` band and text, accent `#ea5728` total rule, the existing button red `#bf3c12`
+for "payment pending", muted grey for labels.
+
+**Known limit:** the PDF draws correctly, but copying Hindi text out of it (or extracting it with a tool) gives the font's
+glyph order, not logical order (matra before consonant: `िबल` for `बिल`). Display and printing are correct. A tagged PDF with
+logical-order text (ActualText) is a later step if anyone needs to search or screen-read the PDF; the email body carries the
+same numbers.
+
+**Not changed:** nothing stored, no migration, no new env variable. Docker: the API image grows by about 20 MB (pdfkit,
+fontkit, three font packages); `pnpm deploy --prod` installs them because they are declared in `apps/api/package.json`
+(`scripts/build.mjs` keeps declared dependencies external; the fonts are read from `node_modules` at run time).
