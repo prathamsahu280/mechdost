@@ -395,9 +395,14 @@ async function shipmentOf(tx: Tx, orderId: string) {
 export type ShopStep =
   | { to: 'packed' }
   | { to: 'shipped'; mode: 'own' | 'courier'; courier?: string | null; awb?: string | null }
-  | { to: 'out_for_delivery' };
+  /** `handOverOwn`: from `packed`, hand over for own delivery and go out for delivery in this one call. */
+  | { to: 'out_for_delivery'; handOverOwn?: boolean };
 
-/** Pack → hand over → out for delivery (issues the customer's code). Compare-and-set on the order version. */
+/**
+ * Pack → hand over → out for delivery (issues the customer's code). Compare-and-set on the order version.
+ * `out_for_delivery` with `handOverOwn` from `packed` runs both moves in ONE transaction (one request, the version
+ * check on the first move; QA pass 4, bug 3).
+ */
 export async function advanceShopOrder(
   db: Tx,
   input: {
@@ -416,43 +421,54 @@ export async function advanceShopOrder(
     throw new ConflictError('Delivery codes are not configured on this server', 'DELIVERY_CODES_UNAVAILABLE');
   return db.transaction(async (tx) => {
     const o = await ownOrder(tx, input.shopIds, input.code);
+    const compound = step.to === 'out_for_delivery' && step.handOverOwn === true && o.status === 'packed';
+    const moves: ShopStep[] = compound
+      ? [{ to: 'shipped', mode: 'own' }, { to: 'out_for_delivery' }]
+      : [step];
     const from = { packed: 'confirmed', shipped: 'packed', out_for_delivery: 'shipped' } as const;
-    if (o.status !== from[step.to]) throw new ConflictError(`Order is ${o.status}`, 'WRONG_STEP');
+    const first = moves[0];
+    if (!first || o.status !== from[first.to]) throw new ConflictError(`Order is ${o.status}`, 'WRONG_STEP');
     const actor = { type: 'shop' as const, userId: input.staffUserId };
-    // Order row first (lock order, spec 14), then the shipment.
-    const row = await transitionOrder(tx, {
-      orderId: o.id,
-      from: from[step.to],
-      to: step.to,
-      expectedVersion: input.expectedVersion,
-      actor,
-    });
-    if (step.to === 'shipped') {
-      await tx.insert(shipments).values({
+    let version = input.expectedVersion;
+    let status: string = o.status;
+    for (const move of moves) {
+      // Order row first (lock order, spec 14), then the shipment.
+      const row = await transitionOrder(tx, {
         orderId: o.id,
-        mode: step.mode,
-        courier: step.mode === 'courier' ? (step.courier?.trim() ?? null) : null,
-        awb: step.mode === 'courier' ? (step.awb?.trim() ?? null) : null,
-        status: 'in_transit',
+        from: from[move.to],
+        to: move.to,
+        expectedVersion: version,
+        actor,
+      });
+      version = row.version;
+      status = row.status;
+      if (move.to === 'shipped') {
+        await tx.insert(shipments).values({
+          orderId: o.id,
+          mode: move.mode,
+          courier: move.mode === 'courier' ? (move.courier?.trim() ?? null) : null,
+          awb: move.mode === 'courier' ? (move.awb?.trim() ?? null) : null,
+          status: 'in_transit',
+        });
+      }
+      if (move.to === 'out_for_delivery' && input.keyring) {
+        const shipment = await shipmentOf(tx, o.id);
+        await tx.update(shipments).set({ status: 'out_for_delivery' }).where(eq(shipments.id, shipment.id));
+        await issueDeliveryCode(tx, input.keyring, shipment.id);
+      }
+      await auditShop(tx, {
+        staffUserId: input.staffUserId,
+        action: `order.${move.to}`,
+        orderId: o.id,
+        after: { status: move.to },
+      });
+      await recordServerEvent(tx, 'order_fulfilment_step', {
+        userId: input.staffUserId,
+        cityId: o.cityId,
+        props: { orderCode: input.code, shopId: o.shopId, step: move.to },
       });
     }
-    if (step.to === 'out_for_delivery' && input.keyring) {
-      const shipment = await shipmentOf(tx, o.id);
-      await tx.update(shipments).set({ status: 'out_for_delivery' }).where(eq(shipments.id, shipment.id));
-      await issueDeliveryCode(tx, input.keyring, shipment.id);
-    }
-    await auditShop(tx, {
-      staffUserId: input.staffUserId,
-      action: `order.${step.to}`,
-      orderId: o.id,
-      after: { status: step.to },
-    });
-    await recordServerEvent(tx, 'order_fulfilment_step', {
-      userId: input.staffUserId,
-      cityId: o.cityId,
-      props: { orderCode: input.code, shopId: o.shopId, step: step.to },
-    });
-    return { status: row.status, version: row.version };
+    return { status, version };
   });
 }
 

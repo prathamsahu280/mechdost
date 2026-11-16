@@ -141,7 +141,13 @@ const Advance = z
           .optional(),
       })
       .strict(),
-    z.object({ to: z.literal('out_for_delivery'), version: z.number().int().min(1) }).strict(),
+    z
+      .object({
+        to: z.literal('out_for_delivery'),
+        version: z.number().int().min(1),
+        handOverOwn: z.boolean().optional(),
+      })
+      .strict(),
   ])
   .openapi('AdvanceShopOrder');
 
@@ -292,7 +298,9 @@ export function shopOrderRoutes(deps: AppDeps, cache: SessionCache) {
         step:
           b.to === 'shipped'
             ? { to: 'shipped', mode: b.mode, courier: b.courier ?? null, awb: b.awb ?? null }
-            : { to: b.to },
+            : b.to === 'out_for_delivery'
+              ? { to: b.to, handOverOwn: b.handOverOwn === true }
+              : { to: b.to },
         staffUserId: c.get('auth').user.id,
         keyring: deps.keyring ?? null,
       });

@@ -4,7 +4,7 @@ import { Minus, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { CATEGORY_KEYS, CATEGORY_SLUGS } from '@/demo/catalogue';
-import { useCategoryEmoji, useSiteSettings } from '@/demo/site-config';
+import { useCategoryEmoji } from '@/demo/site-config';
 import { removeFromCart, setQuantity, useCart, MAX_QTY } from '@/demo/store';
 import { DATA_MODE, QUOTES_AVAILABLE } from '@/lib/data-mode';
 import { DEFAULT_PIN, useCartPricing } from '@/lib/use-cart-pricing';
@@ -16,14 +16,13 @@ import { productNameFor } from '@/demo/i18n/localize';
 
 const prefix = (locale: string) => (locale === 'hi' ? '/hi' : '');
 
-/** Cart (spec 03) on the demo store: quantities 1–99, remove, live totals, free delivery hint, one primary action. */
+/** Cart (spec 03) on the demo store: quantities 1–99, remove, live totals, a delivery-charges hint, one primary action. */
 export function CartView() {
   const t = useTranslations('cart');
   const c = useTranslations('catalogue');
   const q = useTranslations('quote');
   const cat = useTranslations('categories');
   const emoji = useCategoryEmoji();
-  const settings = useSiteSettings();
   const locale = useLocale();
   const lines = useCart();
   // Real data mode: the API prices the cart at the Raipur-centre PIN; checkout re-prices at the PIN typed there.
@@ -177,11 +176,7 @@ export function CartView() {
             <dd className="font-heading text-xl font-extrabold text-ink">{formatPrice(totalPaise)}</dd>
           </div>
         </dl>
-        {deliveryPaise > 0 ? (
-          <p className="mt-3 text-xs text-muted">
-            {t('freeDeliveryHint', { amount: formatPrice(settings.freeDeliveryFromPaise) })}
-          </p>
-        ) : null}
+        {deliveryPaise > 0 ? <p className="mt-3 text-xs text-muted">{t('freeDeliveryHint')}</p> : null}
         <Link
           href={`${base}/checkout`}
           onClick={() => {

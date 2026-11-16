@@ -11,3 +11,8 @@ export function orderTotalLines(o: { placedTotalPaise: number; totalPaise: numbe
     payablePaise: o.totalPaise === o.placedTotalPaise ? null : o.totalPaise,
   };
 }
+
+/** The total in the account orders list: what was placed, also once parts were rejected (QA pass 4, bug 5). */
+export function orderListTotalPaise(o: { placedTotalPaise: number; totalPaise: number }): number {
+  return o.placedTotalPaise;
+}

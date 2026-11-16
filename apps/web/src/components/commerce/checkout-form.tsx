@@ -804,9 +804,7 @@ export function CheckoutForm() {
             </p>
           ))
         ) : deliveryPaise > 0 ? (
-          <p className="mt-3 text-xs text-muted">
-            {cartT('freeDeliveryHint', { amount: formatPrice(settings.freeDeliveryFromPaise) })}
-          </p>
+          <p className="mt-3 text-xs text-muted">{cartT('freeDeliveryHint')}</p>
         ) : null}
       </aside>
     </div>

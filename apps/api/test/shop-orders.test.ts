@@ -134,8 +134,8 @@ describe('shop orders API', () => {
       version = ((await res.json()) as { version: number }).version;
     };
     await advance({ to: 'packed' });
-    await advance({ to: 'shipped', mode: 'own' });
-    await advance({ to: 'out_for_delivery' });
+    // One request hands over and goes out for delivery (QA pass 4, bug 3); the step-by-step path is the db test's.
+    await advance({ to: 'out_for_delivery', handOverOwn: true });
 
     const shipment = (await ctx.db.select().from(s.shipments)).find((r) => r.orderId === o!.id);
     const deliveryCode = await deliveryCodeFor(ctx.db, keyring, shipment!.id);

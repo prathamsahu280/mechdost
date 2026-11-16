@@ -25,3 +25,8 @@ export function estimateSummary(
     lines: est.items.map((l) => ({ id: l.id, decision: l.decision })),
   };
 }
+
+/** "Approved total (incl. GST)" only when a line carries GST; a workshop without GST gets the plain total (pass 4, bug 6). */
+export function approvedTotalKey(hasGst: boolean): 'approvedTotal' | 'approvedTotalNoGst' {
+  return hasGst ? 'approvedTotal' : 'approvedTotalNoGst';
+}
