@@ -59,3 +59,8 @@ Setup as in pass 2: local API only (real Firebase, live database, no local worke
 ## QA data left in the live database
 
 Orders `MD-RPR-2026-3P5DC9` (part 1 delivered, part 2 rejected), `MD-RPR-2026-5V8Z1A` (paid online ₹1,040, rejected, refund `initiated`), `MD-RPR-2026-KW1J1C` (rejected), `MD-RPR-2026-9AHZTD` (from the quote, COD, still waiting for routing, bulk 12 units ₹5,760), service request `SR-RPR-2026-SD8BQJ` (completed, paid ₹1,250, one pending review), quote `QT-RPR-2026-ZCD5KZ` (accepted), support ticket `REQ-RPR-2026-7AYWRQ` (open), coupon `QAPASS3`, plus the earlier pass data and about 23 sent outbox rows to the test inbox. The customer cart is empty except possibly one oil line left from the coupon test.
+
+## Follow-up (2026-11-16, user)
+
+The user confirmed the "bill ready" email for the pass-3 service request arrived in the test inbox **with the bill PDF
+attached** (sent by the deployed worker). Bill PDFs on emails (Q194) are verified end to end.
