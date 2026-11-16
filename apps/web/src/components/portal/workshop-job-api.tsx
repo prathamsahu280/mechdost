@@ -16,6 +16,7 @@ import { formatPrice } from '@/lib/format';
 import {
   afterPhotoMissing,
   badLineFrom,
+  beforePhotoMissing,
   lastKmFrom,
   parseOdometerKm,
   ratePct,
@@ -34,15 +35,32 @@ const stepUrl = (code: string, step: string) => `/workshop/requests/${encodeURIC
 export function OdometerFormApi({
   detail,
   onDone,
+  photosTick = 0,
 }: {
   detail: ServiceRequestDetail;
   onDone: () => Promise<void>;
+  /** Bumped by the photo panel when a photo is added or removed, so the "received" gate re-checks. */
+  photosTick?: number;
 }) {
   const t = useTranslations('portal');
   const r = useTranslations('request');
+  const pt = useTranslations('photos');
   const locale = useLocale();
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // "Received" needs a before photo when photos are required: say so up front instead of a press the API refuses.
+  const [needsBefore, setNeedsBefore] = useState(false);
+  useEffect(() => {
+    const alive: { current: boolean } = { current: true };
+    void (async () => {
+      const { fetchWorkshopPhotos } = await import('@/lib/photos-api');
+      const res = await fetchWorkshopPhotos(locale, detail.code);
+      if (alive.current && res.ok) setNeedsBefore(beforePhotoMissing(res.data));
+    })();
+    return () => {
+      alive.current = false;
+    };
+  }, [detail.code, locale, photosTick]);
   const id = `${detail.code}-odometer`;
 
   async function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
@@ -102,9 +120,19 @@ export function OdometerFormApi({
           {error}
         </p>
       ) : null}
-      <button type="submit" disabled={busy} className={`${portalPrimary} w-full`}>
+      <button
+        type="submit"
+        disabled={busy || needsBefore}
+        aria-describedby={needsBefore ? `${id}-why` : undefined}
+        className={`${portalPrimary} w-full`}
+      >
         {t('markReceived')}
       </button>
+      {needsBefore ? (
+        <p id={`${id}-why`} className="text-xs font-bold text-warning">
+          {pt('err_PHOTOS_REQUIRED_before')}
+        </p>
+      ) : null}
     </form>
   );
 }

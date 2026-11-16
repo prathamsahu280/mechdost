@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { formatINR } from '@mechdost/shared/money';
+import { billPaidKey } from '@/lib/bill-paid';
 import { computeServiceBill, labourPromiseEndsAt } from '@mechdost/shared/service-bill';
 import { useEffect, useId, useState, type SyntheticEvent } from 'react';
 import { decideEstimate } from '@/demo/service-jobs';
@@ -225,7 +226,8 @@ export function ServiceBillView({
   gstRegistered,
   requestCode,
 }: {
-  bill: DemoServiceBill;
+  /** `method` is the real bill's ('online' = paid through Razorpay); demo bills have none (paid at the workshop). */
+  bill: DemoServiceBill & { method?: string | null };
   workshopName: string;
   gstRegistered: boolean;
   /** The job's code: with a promise on the bill, the "ask for a free redo" link needs it. */
@@ -314,7 +316,7 @@ export function ServiceBillView({
         className={`mt-4 rounded-lg px-3 py-2 text-sm font-bold ${bill.paidAt ? 'bg-success-bg text-success' : 'bg-accent-soft text-accent-soft-text'}`}
       >
         {bill.paidAt
-          ? t('billPaid', { date: formatDate(bill.paidAt, locale) })
+          ? t(billPaidKey(bill.method ?? null), { date: formatDate(bill.paidAt, locale) })
           : t('billPay', { total: formatPrice(bill.totalPaise), workshop: workshopName })}
       </p>
     </section>

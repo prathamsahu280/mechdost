@@ -410,3 +410,14 @@ export function afterPhotoMissing(photos: {
 }): boolean {
   return photos.required && !photos.photos.some((p) => p.stage === 'after');
 }
+
+/** "Vehicle received" needs a before photo when the admin requires photos (QA 2026-11-16, bug 6). */
+export function beforePhotoMissing(photos: {
+  required: boolean;
+  photos: readonly { stage: string }[];
+}): boolean {
+  return photos.required && !photos.photos.some((p) => p.stage === 'before');
+}
+
+/** The "Needed" badge of a photo stage: only while it is required and still empty. */
+export const photoStageNeeded = (required: boolean, count: number): boolean => required && count === 0;

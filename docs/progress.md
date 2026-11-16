@@ -488,3 +488,10 @@ merge, new catalogue entries (quote events) need a `META_TEMPLATE_COPY` entry an
 - Causes: the order page's code check (`^MD-…-XXXXXX$`) refused the per-shop code from order emails (`…-1`), so `code` became `''` and the view said "not found" before it ever asked who was signed in; the same "malformed code means not found" path hid the sign-in prompt on quote and service pages; the API tracks only the order code, so a per-shop code could never load even signed in.
 - Fix: `lib/record-links.ts` (`loginHref`, `orderPageCode`, `orderGroupCode`) is the one place that builds "login that returns here"; every record view (order, quote, service, account frame) uses it with the real URL (`usePathname`, plus `window.location.search` in the account frame so `?ticket=…` survives). `lib/use-signed-out.ts` shows the sign-in prompt for a malformed code when nobody is signed in. A per-shop code now opens its order (fetched by the order code). `next=` is still validated by the login page's `safeNext` (same-origin paths with query only). No new import edges in the layout/home graph: the changes sit in already-lazy page components and a 25-line hook.
 - Tests: `apps/web/test/bugfix-qa-pass3.test.ts`. Docs: spec 04 sign-in line already matches; QA pass 3 bugs 1 and 2 fixed here.
+
+## 2026-11-16 — QA pass 3 bugs 4 to 6 (branch worktree-agent-a740501f7a51d48e4, not merged)
+
+- 4: customer bill "Paid at the workshop" after an online payment: `billPaidKey(method)` (`lib/bill-paid.ts`), new `request.billPaidOnline` en+hi. Email/PDF already say "Online payment" (shared bill-document test).
+- 5: job card estimate: `estimateSummary` (`lib/estimate-summary.ts`) = approved lines only once decided / stored bill total; per-line mark; `estimateSummaryNoGst` when no GST.
+- 6: `beforePhotoMissing` gates "Vehicle received" (re-check on `photosTick`); `photoStageNeeded` hides the "Needed" badge once a photo exists.
+- Tests: `apps/web/test/bugfix-qa-pass3-b.test.ts`. Docs: spec 06 "Pass 3 UI truth".

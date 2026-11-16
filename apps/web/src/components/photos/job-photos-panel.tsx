@@ -12,6 +12,7 @@ import {
 } from '@mechdost/shared/service-photos';
 import type { ServiceRequestStatus } from '@mechdost/shared/state';
 import { portalQuiet } from '@/components/portal/portal-styles';
+import { photoStageNeeded } from '@/lib/service-views';
 import { PhotoViewer, PhotoThumb } from './photo-viewer';
 
 type Load = { kind: 'loading' } | { kind: 'error'; code: string } | { kind: 'ok'; data: ServicePhotos };
@@ -145,7 +146,7 @@ export function JobPhotosPanel({
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-sm font-bold text-ink">
                 {t(stage === 'before' ? 'beforeTitle' : 'afterTitle')}
-                {required ? (
+                {photoStageNeeded(required, mine.length) ? (
                   <span className="ms-2 rounded-full bg-accent-soft px-2 py-0.5 text-xs font-bold text-accent-soft-text">
                     {t('needed')}
                   </span>
