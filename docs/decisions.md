@@ -1420,3 +1420,9 @@ the budget is also a hard gate. Ruling: brand vector assets (logo light/dark) us
 User: "we wont rotate the whatsapp token thats okay just keep the same one in both the .envs". The system-user token
 set on 2026-11-16 stays in the local `.env` and the server `.env` (already set in both); no rotation. Supersedes the
 "rotate later" note in the WhatsApp go-ahead entry.
+
+## 2026-11-16 — Firebase Auth email domain is the user's (user)
+
+User: "in the existing ones i have set the customized domain for review so make sure u dont disrupt that". The Firebase
+Auth email templates and their custom sender domain (and its DNS) are managed by the user in the Firebase console;
+the repo and the session never change them. Launch checklist entry in `docs/runbooks/deploy.md`.
