@@ -190,3 +190,7 @@ Server (same transaction as the change; ids, codes and counts only): `product_ph
 ## Coupon follow-up events (2026-11-16)
 
 Client: `offers_viewed { count }`, `offer_code_copied { kind }` (never the code), `apply_coupon.result` gains `automatic` (an automatic offer was found for the cart). Server: `coupon_redeemed` gains `source: code|automatic`; `coupon_released` gains `reason: order_closed|order_refunded`; new `admin_coupon_usage_viewed { couponId }` (first page only); `admin_export_action.dataset` accepts `coupon_usage`.
+
+## Sign-in failure event (2026-11-16)
+
+Client `auth_code_failed { stage: send|confirm, code, path }`: a phone-code send or check failed. `code` is the Firebase error code only (`auth/network-request-failed`, `auth/invalid-app-credential`, ...; anything else is `unknown`), checked by a strict regex in `CLIENT_EVENT_SCHEMAS`; never the phone number or any free text. Emitted from `components/auth/login-flow.tsx` (sign-up, sign-in staff code, resets). Lets us tell reCAPTCHA/App Check problems from quota and network problems in production.
