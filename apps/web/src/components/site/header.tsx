@@ -34,7 +34,7 @@ export function BrandMark() {
   return (
     <LocalLink
       href="/"
-      className="group inline-flex min-w-0 shrink flex-col items-start"
+      className="group inline-flex min-h-6 min-w-0 shrink flex-col items-start justify-center"
       data-track="brand_home"
     >
       <img
@@ -42,6 +42,7 @@ export function BrandMark() {
         alt={t('brand')}
         {...BRAND_LOGO_SIZE}
         decoding="async"
+        loading="lazy"
         className={`brand-logo-light ${size}`}
       />
       <img
@@ -49,6 +50,7 @@ export function BrandMark() {
         alt={t('brand')}
         {...BRAND_LOGO_SIZE}
         decoding="async"
+        loading="lazy"
         className={`brand-logo-dark ${size}`}
       />
       <span className="eyebrow mt-1.5 hidden text-[7px] whitespace-nowrap text-ink tab:block nav:hidden xl:block tab:text-[8px]">

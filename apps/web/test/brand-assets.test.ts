@@ -98,6 +98,13 @@ describe('header and footer brand', () => {
     expect(header).not.toContain("from 'next/image'");
     expect(header.match(/^\s*<img$/gm)?.length).toBe(2);
     expect(header).toContain('decoding="async"');
+    // React 19 preloads every non-lazy <img> it renders: both logo files were preloaded on every page (CI shell gate
+    // "preloads only the hero", 2026-11-16). Lazy: the visible one still loads at once, the hidden theme never does.
+    expect(header.match(/loading="lazy"/g)?.length).toBe(2);
+    // The logo link is a tap target: at 320 px the 132 px logo is 23.9 px tall, under the 24 px minimum.
+    expect(header).toMatch(
+      /className="group inline-flex min-h-6 min-w-0 shrink flex-col items-start justify-center"/,
+    );
     const css = read('src/app/[locale]/globals.css');
     expect(css).toMatch(/:root\[data-theme='dark'\] \.brand-logo-light\s*\{\s*display: none/);
     expect(css).toMatch(/:root:not\(\[data-theme='light'\]\) \.brand-logo-dark\s*\{\s*display: block/);
