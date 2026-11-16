@@ -386,7 +386,9 @@ function Overview({ account }: { account: DemoAccount }) {
             {account.name.charAt(0).toUpperCase()}
           </span>
           <div className="min-w-0">
-            <h2 className="font-heading text-2xl font-extrabold">{t('hello', { name: account.name })}</h2>
+            <h2 className="font-heading text-2xl font-extrabold">
+              {account.name ? t('hello', { name: account.name }) : t('helloNoName')}
+            </h2>
             <p className="mt-0.5 text-sm text-white/80">
               {t('memberSince', { date: formatDate(account.createdAt, locale) })}
             </p>

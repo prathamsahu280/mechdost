@@ -1481,6 +1481,7 @@
     "partnerBody": "Your tools are in your portal.",
     "openPortal": "Open my portal",
     "hello": "Hello, {name}",
+    "helloNoName": "Hello",
     "memberSince": "Member since {date}",
     "phoneVerified": "Mobile verified",
     "emailVerified": "Email verified",

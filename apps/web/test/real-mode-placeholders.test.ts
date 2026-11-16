@@ -19,3 +19,11 @@ describe('real mode never shows demo placeholders', () => {
     expect(src('components/portal/portal-guard.tsx')).toMatch(/demoNote = SHOW_DEMO_CONTROLS,/);
   });
 });
+
+describe('greeting without a name (real-API pass 2026-11-16: "Hello, " with nothing after it)', () => {
+  it('uses a plain greeting when the account has no name yet', () => {
+    expect(src('components/account/account-area.tsx')).toMatch(
+      /account\.name \? t\('hello', \{ name: account\.name \}\) : t\('helloNoName'\)/,
+    );
+  });
+});

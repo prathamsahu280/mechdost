@@ -1481,6 +1481,7 @@
     "partnerBody": "आपके टूल आपके पोर्टल में हैं।",
     "openPortal": "मेरा पोर्टल खोलें",
     "hello": "नमस्ते, {name}",
+    "helloNoName": "नमस्ते",
     "memberSince": "{date} से सदस्य",
     "phoneVerified": "मोबाइल सत्यापित",
     "emailVerified": "ईमेल सत्यापित",
