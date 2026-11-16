@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { formatINR } from '@mechdost/shared/money';
 import { billPaidKey } from '@/lib/bill-paid';
-import { approvedTotalKey } from '@/lib/estimate-summary';
+import { anyApproved, approvedTotalKey } from '@/lib/estimate-summary';
 import { computeServiceBill, labourPromiseEndsAt } from '@mechdost/shared/service-bill';
 import { useEffect, useId, useState, type SyntheticEvent } from 'react';
 import { decideEstimate } from '@/demo/service-jobs';
@@ -162,7 +162,9 @@ export function EstimateApproval({
           </fieldset>
         ))}
         <p className="font-heading font-extrabold text-ink" aria-live="polite">
-          {t(approvedTotalKey(registered), { total: formatPrice(approvedTotal) })}
+          {anyApproved(choices)
+            ? t(approvedTotalKey(registered), { total: formatPrice(approvedTotal) })
+            : t('approvedTotalHint')}
         </p>
         <label className="flex items-start gap-3 text-sm text-ink">
           <input
@@ -226,7 +228,10 @@ export function ServiceBillView({
   workshopName,
   gstRegistered,
   requestCode,
+  onlinePay = false,
 }: {
+  /** True when "Pay online" sits under the bill: it carries the workshop option as its one secondary line (pass 5, note 2). */
+  onlinePay?: boolean;
   /** `method` is the real bill's ('online' = paid through Razorpay); demo bills have none (paid at the workshop). */
   bill: DemoServiceBill & { method?: string | null };
   workshopName: string;
@@ -313,13 +318,15 @@ export function ServiceBillView({
           ) : null}
         </div>
       ) : null}
-      <p
-        className={`mt-4 rounded-lg px-3 py-2 text-sm font-bold ${bill.paidAt ? 'bg-success-bg text-success' : 'bg-accent-soft text-accent-soft-text'}`}
-      >
-        {bill.paidAt
-          ? t(billPaidKey(bill.method ?? null), { date: formatDate(bill.paidAt, locale) })
-          : t('billPay', { total: formatPrice(bill.totalPaise), workshop: workshopName })}
-      </p>
+      {bill.paidAt || !onlinePay ? (
+        <p
+          className={`mt-4 rounded-lg px-3 py-2 text-sm font-bold ${bill.paidAt ? 'bg-success-bg text-success' : 'bg-accent-soft text-accent-soft-text'}`}
+        >
+          {bill.paidAt
+            ? t(billPaidKey(bill.method ?? null), { date: formatDate(bill.paidAt, locale) })
+            : t('billPay', { total: formatPrice(bill.totalPaise), workshop: workshopName })}
+        </p>
+      ) : null}
     </section>
   );
 }

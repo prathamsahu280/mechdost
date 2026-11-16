@@ -259,6 +259,7 @@ export function RequestViewApi({ code }: { code: string }) {
               workshopName={workshopName ?? ''}
               gstRegistered={req.bill.gstRegistered}
               requestCode={req.code}
+              onlinePay={req.status === 'billed' && !req.bill.paidAt}
             />
           ) : null}
           {req.status === 'billed' && req.bill && !req.bill.paidAt ? (

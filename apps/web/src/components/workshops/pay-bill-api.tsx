@@ -83,6 +83,7 @@ export function PayBillApi({
         <CreditCard aria-hidden="true" className="size-4" />
         {phase === 'opening' ? t('api_payOnlineBusy') : t('api_payOnline')}
       </button>
+      <p className="mt-2 text-sm text-muted">{t('api_payAtWorkshopAlt')}</p>
       {phase === 'confirming' ? (
         <p role="status" className="mt-2 text-sm font-bold text-ink">
           {t('api_payConfirming')}

@@ -26,6 +26,11 @@ export function estimateSummary(
   };
 }
 
+/** True once at least one line is approved; until then the card shows a hint, not "Approved total: ₹0" (pass 5, note 3). */
+export function anyApproved(choices: Readonly<Record<string, 'approved' | 'declined'>>): boolean {
+  return Object.values(choices).includes('approved');
+}
+
 /** "Approved total (incl. GST)" only when a line carries GST; a workshop without GST gets the plain total (pass 4, bug 6). */
 export function approvedTotalKey(hasGst: boolean): 'approvedTotal' | 'approvedTotalNoGst' {
   return hasGst ? 'approvedTotal' : 'approvedTotalNoGst';
