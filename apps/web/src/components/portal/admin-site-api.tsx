@@ -90,6 +90,9 @@ const SETTING_LABEL = {
   'service.photos_max_per_stage': 'api_set_service_photos_max_per_stage',
   'service.acceptance_timeout_min': 'api_set_service_acceptance_timeout_min',
   'catalogue.shop_photo_uploads': 'api_set_catalogue_shop_photo_uploads',
+  'api.signed_in_per_minute': 'api_set_api_signed_in_per_minute',
+  'api.guest_per_ip_per_minute': 'api_set_api_guest_per_ip_per_minute',
+  'api.ip_flood_per_minute': 'api_set_api_ip_flood_per_minute',
 } as const satisfies Record<SettingKey, string>;
 
 const UNIT_LABEL = {
@@ -98,6 +101,7 @@ const UNIT_LABEL = {
   days: 'api_set_unit_days',
   units: 'api_set_unit_units',
   count: 'api_set_unit_count',
+  requests: 'api_set_unit_requests',
   bp: 'coins_api_unit_bp',
   coins: 'coins_api_unit_coins',
 } as const;

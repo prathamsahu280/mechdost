@@ -45,7 +45,13 @@ export function authenticate(
     const token = match?.[1];
     if (!token) throw Unauthorized();
 
-    const identity = await verifyOrThrow(deps.verifier, token, checkRevoked);
+    // The global API limit has already verified this token (no revocation check); a route that wants the revocation
+    // check, or a request without that step, verifies here.
+    const pre = c.get('verifiedToken');
+    const identity =
+      !checkRevoked && pre?.token === token
+        ? pre.identity
+        : await verifyOrThrow(deps.verifier, token, checkRevoked);
 
     // `authTime` is in the key: token refreshes of one sign-in share the entry, while every new sign-in loads the
     // user's roles, status and blocks again on every instance (a role granted moments ago works on next sign-in).

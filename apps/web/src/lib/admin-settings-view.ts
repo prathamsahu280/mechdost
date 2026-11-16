@@ -11,11 +11,13 @@ import {
  * registry (`@mechdost/shared/settings`) holds money in paise and durations in minutes or days; the screen shows
  * money in whole rupees and checks every value with the same rules before sending it.
  */
-export type SettingUnit = 'rupees' | 'minutes' | 'days' | 'units' | 'count' | 'bp' | 'coins' | 'switch';
+export type SettingUnit =
+  'rupees' | 'minutes' | 'days' | 'units' | 'count' | 'bp' | 'coins' | 'requests' | 'switch';
 
 export function settingUnit(key: SettingKey): SettingUnit {
   const spec: SettingSpec = OPERATIONAL_SETTINGS[key];
   if (spec.kind === 'boolean') return 'switch';
+  if (key.startsWith('api.')) return 'requests';
   if (key.endsWith('_paise')) return 'rupees';
   if (key.endsWith('_minutes') || key.endsWith('_min')) return 'minutes';
   if (key.endsWith('_days')) return 'days';

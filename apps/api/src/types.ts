@@ -3,7 +3,7 @@ import type { Tx, UserRecord } from '@mechdost/db/repo';
 import type { Grant } from '@mechdost/shared/rbac';
 import type { AssistantProvider } from './assistant/provider';
 import type { PasswordAuthority } from './auth/password-authority';
-import type { TokenVerifier } from './auth/token-verifier';
+import type { TokenVerifier, VerifiedToken } from './auth/token-verifier';
 import type { TurnstileVerifier } from './auth/turnstile';
 import type { Config } from './config';
 import type { SentryIssuesClient } from './monitoring/sentry-issues';
@@ -50,5 +50,7 @@ export interface AppEnv {
     requestId: string;
     clientIp: string;
     auth: AuthContext;
+    /** The bearer token the global API limit already verified (no revocation check); `authenticate` reuses it. */
+    verifiedToken?: { token: string; identity: VerifiedToken };
   };
 }

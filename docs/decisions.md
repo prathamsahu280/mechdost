@@ -1488,3 +1488,9 @@ flood guard stays for everyone. Sign-in, OTP, password reset and payment limits 
 numbers are editable in Admin → Settings (bounded, audited), cached, with code defaults if the setting is missing.
 Rejected: keep as is (blocks shared IPs), only raise the IP limit (still blocks, more room for abuse). Cloudflare
 in front (option D) can be added later on top.
+
+Built 2026-11-16: `api_user:<firebase uid>` (300/min), `api_guest:<ip>` (600/min), `api_ip_flood:<ip>` (3000/min); keys
+`api.signed_in_per_minute`, `api.guest_per_ip_per_minute`, `api.ip_flood_per_minute` in the settings registry (global
+only, no migration: the `settings` table already holds them); flood is never below guest (validated on save and
+enforced when read); 45 s cache. The per-route `apiPerUser` rule was renamed `api_route_user` so it no longer shares a
+counter with the global `api_user` rule. Spec 13 "Global API limits".

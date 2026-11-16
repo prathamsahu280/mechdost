@@ -15,6 +15,10 @@ Decision 2026-11-14 (`docs/decisions.md` "Monitoring"). Both run in the **EU** a
 
 Nothing personal leaves: Sentry events pass `scrubErrorEvent` (`packages/shared/src/error-scrub.ts`: no user, host, body, headers, cookies, query strings; no emails, phone numbers, tokens or SQL parameters in messages). PostHog gets only events with consent under notice `2026-11-14`+, personless, GeoIP off, props scrubbed again; server events carry no user.
 
+## Reading 429s (API rate limits)
+
+A 429 `RATE_LIMITED` response carries `Retry-After` and `RateLimit-Limit/Remaining/Reset` (the rule that answered). The API log line has the route and status 429, no personal data. The limit that tripped is told by `RateLimit-Limit`: the signed-in number (default 300) means one account was too busy; the guest number (600) means one IP not signed in; the flood number (3000) means one IP overall. Change the numbers in Admin → Settings (API request limits); they apply on every instance within 45 seconds. Spec 13 "Global API limits".
+
 ## Settings
 
 | Variable                                                                      | Where                                     | Value                                                                                 |
