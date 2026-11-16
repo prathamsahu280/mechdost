@@ -1,10 +1,15 @@
 import { and, eq, inArray, isNull, or, sql } from 'drizzle-orm';
 import {
+  API_LIMIT_KEYS,
+  apiLimitRelationProblem,
+  apiLimitsFrom,
   OPERATIONAL_SETTINGS,
   isGlobalOnly,
   needsCoinGuard,
   SETTING_KEYS,
   settingProblem,
+  type ApiLimitKey,
+  type ApiLimits,
   type SettingKey,
 } from '@mechdost/shared/settings';
 import { auditLog, cities, settings } from '../schema';
@@ -61,6 +66,17 @@ export async function globalIntSetting(db: Tx, key: SettingKey): Promise<number>
   return spec.kind === 'int' && typeof spec.default === 'number' ? spec.default : 0;
 }
 
+/** The API request limits in effect: the admin's global values (invalid ones ignored), else the defaults. One query. */
+export async function readApiLimits(db: Tx): Promise<ApiLimits> {
+  const rows = await db
+    .select({ key: settings.key, value: settings.value })
+    .from(settings)
+    .where(and(inArray(settings.key, [...API_LIMIT_KEYS]), isNull(settings.cityId)));
+  const raw: Partial<Record<ApiLimitKey, unknown>> = {};
+  for (const r of rows) for (const k of API_LIMIT_KEYS) if (r.key === k) raw[k] = r.value;
+  return apiLimitsFrom(raw);
+}
+
 /** A whole-site yes/no setting: the admin's global value, else the registry default. */
 export async function globalFlagSetting(db: Tx, key: SettingKey): Promise<boolean> {
   const [row] = await db
@@ -105,6 +121,20 @@ export async function saveOperationalSetting(
   const stored = input.value === null ? sql`'null'::jsonb` : input.value;
   return db.transaction(async (tx) => {
     const [before] = await tx.select().from(settings).where(scopeWhere(input.key, input.cityId));
+    // The flood guard must stay at or above the guest limit (decision 2026-11-16): checked against the stored values.
+    if ((API_LIMIT_KEYS as readonly string[]).includes(input.key)) {
+      const rows = await tx
+        .select({ key: settings.key, value: settings.value })
+        .from(settings)
+        .where(and(inArray(settings.key, [...API_LIMIT_KEYS]), isNull(settings.cityId)));
+      const others: Partial<Record<ApiLimitKey, unknown>> = {};
+      for (const r of rows) for (const k of API_LIMIT_KEYS) if (r.key === k) others[k] = r.value;
+      if (apiLimitRelationProblem(input.key, input.value, others))
+        throw new ValidationError(
+          'The per-IP flood guard cannot be lower than the guest limit',
+          'SETTING_RANGE',
+        );
+    }
     let saved: { version: number } | undefined;
     if (input.expectedVersion === null) {
       [saved] = await tx

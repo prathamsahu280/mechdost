@@ -6,8 +6,10 @@ import type { AppEnv } from '../types';
 
 /** Limits from docs/specs/13 "Abuse protection". Values tuned later via settings/overrides. */
 export const RATE_RULES = {
+  /** Razorpay webhook endpoint per IP (outside /v1, so not part of the global limits below). */
   apiPerIp: { name: 'api_ip', limit: 600, windowSeconds: 60 },
-  apiPerUser: { name: 'api_user', limit: 120, windowSeconds: 60 },
+  /** Per-route cap on one signed-in account. The global /v1 limits are admin settings (`api_user`, `api_guest`, `api_ip_flood`; middleware/api-rate-limit.ts). */
+  apiPerUser: { name: 'api_route_user', limit: 120, windowSeconds: 60 },
   /** CSV catalogue imports (checks and real runs) per staff user: up to 500 rows each (plan 2026-11-14 B). */
   catalogueImport: { name: 'catalogue_import', limit: 30, windowSeconds: 3600 },
   /** Staff test sends of an email template to their own address (spec 10): a typo must not become a mail loop. */

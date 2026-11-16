@@ -5,7 +5,9 @@ import { timeout } from 'hono/timeout';
 import { SessionCache } from './auth/session-cache';
 import { handleError, handleNotFound } from './errors';
 import { log } from './logger';
-import { rateLimit, RATE_RULES } from './middleware/rate-limit';
+import { readApiLimits } from '@mechdost/db/repo';
+import { apiRateLimit } from './middleware/api-rate-limit';
+import { ApiLimitsProvider } from './rate-limit/api-limits';
 import { securityMiddleware } from './middleware/security';
 import { adminAnalyticsRoutes } from './routes/admin-analytics';
 import { adminCatalogueRoutes } from './routes/admin-catalogue';
@@ -96,10 +98,7 @@ export function createApp(deps: AppDeps) {
 
   const v1 = new OpenAPIHono<AppEnv>({ defaultHook: validationHook });
   v1.use('*', timeout(REQUEST_TIMEOUT_MS));
-  v1.use(
-    '*',
-    rateLimit(deps.rateLimiter, RATE_RULES.apiPerIp, (c) => c.get('clientIp')),
-  );
+  v1.use('*', apiRateLimit(deps, new ApiLimitsProvider(() => readApiLimits(deps.db))));
   v1.route('/', authRoutes(deps));
   v1.route('/', meRoutes(deps, sessions));
   v1.route('/', accountRoutes(deps, sessions));

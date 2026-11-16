@@ -175,6 +175,13 @@ export const OPERATIONAL_SETTINGS = {
    * products they sell, shown only after staff approve each one. Off by default. Site-wide.
    */
   'catalogue.shop_photo_uploads': { kind: 'boolean', default: false, globalOnly: true },
+  /*
+   * API request limits (spec 13, decision 2026-11-16, Q195). Requests per minute: per signed-in account, per IP for
+   * guests, and a per-IP flood guard over everything from one address. Site-wide; read through a short cache.
+   */
+  'api.signed_in_per_minute': { kind: 'int', min: 60, max: 5_000, default: 300, globalOnly: true },
+  'api.guest_per_ip_per_minute': { kind: 'int', min: 60, max: 5_000, default: 600, globalOnly: true },
+  'api.ip_flood_per_minute': { kind: 'int', min: 300, max: 20_000, default: 3_000, globalOnly: true },
 } as const satisfies Record<string, SettingSpec>;
 
 /**
@@ -214,4 +221,55 @@ export function settingProblem(key: SettingKey, value: unknown): 'type' | 'range
 export function isGlobalOnly(key: SettingKey): boolean {
   const spec: SettingSpec = OPERATIONAL_SETTINGS[key];
   return spec.globalOnly === true;
+}
+
+/** The three API request limits the admin edits (requests per minute). */
+export interface ApiLimits {
+  signedInPerMinute: number;
+  guestPerIpPerMinute: number;
+  ipFloodPerMinute: number;
+}
+
+export const API_LIMIT_KEYS = [
+  'api.signed_in_per_minute',
+  'api.guest_per_ip_per_minute',
+  'api.ip_flood_per_minute',
+] as const satisfies readonly SettingKey[];
+export type ApiLimitKey = (typeof API_LIMIT_KEYS)[number];
+
+/** Stored values (any shape) to usable limits: a missing or invalid value falls back to its default. */
+export function apiLimitsFrom(raw: Partial<Record<ApiLimitKey, unknown>>): ApiLimits {
+  const pick = (key: ApiLimitKey): number => {
+    const v = raw[key];
+    if (settingProblem(key, v) === null && typeof v === 'number') return v;
+    return OPERATIONAL_SETTINGS[key].default;
+  };
+  const guest = pick('api.guest_per_ip_per_minute');
+  // The flood guard covers every request from an address, so it never sits below the guest limit.
+  return {
+    signedInPerMinute: pick('api.signed_in_per_minute'),
+    guestPerIpPerMinute: guest,
+    ipFloodPerMinute: Math.max(pick('api.ip_flood_per_minute'), guest),
+  };
+}
+
+/**
+ * True when saving `value` for `key` would put the flood guard below the guest limit (given the other one's current
+ * value; an unset other value counts as its default).
+ */
+export function apiLimitRelationProblem(
+  key: SettingKey,
+  value: unknown,
+  others: Partial<Record<ApiLimitKey, unknown>>,
+): boolean {
+  if (typeof value !== 'number') return false;
+  const current = apiLimitsFrom(others);
+  if (key === 'api.guest_per_ip_per_minute') {
+    const flood = others['api.ip_flood_per_minute'];
+    const floodValue =
+      typeof flood === 'number' ? flood : OPERATIONAL_SETTINGS['api.ip_flood_per_minute'].default;
+    return value > floodValue;
+  }
+  if (key === 'api.ip_flood_per_minute') return value < current.guestPerIpPerMinute;
+  return false;
 }

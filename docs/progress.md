@@ -4,6 +4,8 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Current status
 
+- **2026-11-16 (API limits per account, Q195; branch worktree-agent-a590b0a6f306092d9, not merged; no migration):** global `/v1` limit is now `api_user:<uid>` (300/min, verified token only), else `api_guest:<ip>` (600/min), plus `api_ip_flood:<ip>` (3000/min); admin settings `api.signed_in_per_minute`, `api.guest_per_ip_per_minute`, `api.ip_flood_per_minute` (Admin → Settings, bounded, flood >= guest, audited, 45 s cache). Token verified once and shared with `authenticate`. Per-route rule renamed `api_route_user`. Spec 13 and 08, monitoring runbook, decisions updated.
+
 - **2026-11-16 (card Add to cart fix, branch worktree-agent-a02cec4863652d6f5, not merged):** the catalogue card offer now carries the offered variant's `sku` (`CatalogueOfferSchema.sku`); `apiCard` uses it, so card Add to cart works in real mode. Tests: db catalogue, web catalogue-api-source (red then green); tsc clean shared/db/api, web only the two hero image errors.
 
 - **2026-11-16 (QA pass 2 fixes, branch worktree-agent-a916972233b83a55a):** bugs 3-11 of the real-API pass fixed with tests (`apps/web/test/bugfix-qa-pass2.test.ts`): shop prices for multi-shop accounts, Place order pending state, past proposal hours, ready needs after photo (reason shown), service headline follows status, estimate text once, Razorpay prefill (name/email/contact), tab-visible refresh on the service page, avatar icon for nameless accounts. Not merged yet. Bugs 1, 2, 12 (worker) untouched.

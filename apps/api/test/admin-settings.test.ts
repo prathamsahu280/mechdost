@@ -4,6 +4,7 @@
  * against the shared registry; the per-user limit is counted once per request (L54).
  */
 import { beforeAll, describe, expect, it } from 'vitest';
+import { eq } from '@mechdost/db/testing';
 import { ensureUser, grantRole } from '@mechdost/db/repo';
 import * as s from '@mechdost/db/schema';
 import { bearer, buildApp, type ErrorJson } from './helpers';
@@ -128,6 +129,57 @@ describe('admin settings', () => {
     expect((await ctx.app.request('/v1/admin/settings?city=RPR', { headers: manager })).status).toBe(200);
     expect((await ctx.app.request('/v1/admin/settings?city=BLS', { headers: manager })).status).toBe(404);
     expect((await ctx.app.request('/v1/admin/settings', { headers: manager })).status).toBe(404);
+  });
+
+  it('API request limits: bounds, flood >= guest, global only, audited, and ops cannot write', async () => {
+    const admin = await person('05', 'super_admin', null);
+    const put = (key: string, body: object) =>
+      ctx.app.request(`/v1/admin/settings/${key}`, {
+        method: 'PUT',
+        headers: admin,
+        body: JSON.stringify(body),
+      });
+    const code = async (r: Response) => ((await r.json()) as ErrorJson).error.code;
+
+    const low = await put('api.signed_in_per_minute', { city: null, value: 59, version: null });
+    expect(low.status).toBe(422);
+    expect(await code(low)).toBe('SETTING_RANGE');
+    expect((await put('api.signed_in_per_minute', { city: null, value: 250, version: null })).status).toBe(
+      200,
+    );
+    // A city override is refused (the limits are site-wide).
+    expect(
+      (await put('api.guest_per_ip_per_minute', { city: 'RPR', value: 500, version: null })).status,
+    ).toBe(422);
+    // Guest above the (default 3000) flood guard is refused; at it is fine.
+    expect(
+      (await put('api.guest_per_ip_per_minute', { city: null, value: 3001, version: null })).status,
+    ).toBe(422);
+    expect((await put('api.guest_per_ip_per_minute', { city: null, value: 700, version: null })).status).toBe(
+      200,
+    );
+    // Flood below the stored guest value is refused.
+    const flood = await put('api.ip_flood_per_minute', { city: null, value: 600, version: null });
+    expect(flood.status).toBe(422);
+    expect((await put('api.ip_flood_per_minute', { city: null, value: 700, version: null })).status).toBe(
+      200,
+    );
+
+    const audit = await ctx.db
+      .select()
+      .from(s.auditLog)
+      .where(eq(s.auditLog.entityId, 'api.signed_in_per_minute'));
+    expect(audit).toHaveLength(1);
+    expect(audit[0]?.action).toBe('setting.saved');
+    expect(audit[0]?.after).toMatchObject({ value: 250 });
+
+    const ops = await person('06', 'ops_manager', null);
+    const denied = await ctx.app.request('/v1/admin/settings/api.signed_in_per_minute', {
+      method: 'PUT',
+      headers: ops,
+      body: JSON.stringify({ city: null, value: 100, version: 1 }),
+    });
+    expect(denied.status).toBe(403);
   });
 
   it('counts the per-user rate limit once per request', async () => {
