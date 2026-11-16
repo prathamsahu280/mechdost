@@ -1414,3 +1414,9 @@ code into the first load of every page that has no other image: `/shop` 185.7, p
 the budget is also a hard gate. Ruling: brand vector assets (logo light/dark) use a plain `<img>` with `width`/`height`
 (no CLS) and `decoding="async"`; every raster image still uses `next/image`. Guard:
 `apps/web/test/brand-assets.test.ts`. User may revisit (it narrows rule 6 for vector brand files only).
+
+## 2026-11-16 — WhatsApp token kept (user)
+
+User: "we wont rotate the whatsapp token thats okay just keep the same one in both the .envs". The system-user token
+set on 2026-11-16 stays in the local `.env` and the server `.env` (already set in both); no rotation. Supersedes the
+"rotate later" note in the WhatsApp go-ahead entry.
