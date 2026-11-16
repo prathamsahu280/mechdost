@@ -2,13 +2,15 @@
 
 import { BadgeCheck, Send } from 'lucide-react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState, type SyntheticEvent } from 'react';
 import type { QuoteDetail, QuoteOffer, QuotePay } from '@mechdost/shared/quote-api';
 import { QUOTE_DECLINE_REASONS, type QuoteDeclineReason, type QuoteStatus } from '@mechdost/shared/state';
 import { track } from '@/lib/analytics';
 import { formatDate, formatPrice } from '@/lib/format';
+import { loginHref } from '@/lib/record-links';
+import { useSignedOut } from '@/lib/use-signed-out';
 import {
   newQuoteKey,
   quoteErrorKey,
@@ -47,6 +49,8 @@ export function QuoteThreadApi({ code }: { code: string }) {
   const isNew = useSearchParams().get('new') === '1';
   const [load, setLoad] = useState<Load>({ kind: 'loading' });
   const prefix = locale === 'hi' ? '/hi' : '';
+  const here = usePathname();
+  const signedOut = useSignedOut(!code, locale);
 
   const refresh = useCallback(async () => {
     const { fetchMyQuote } = await import('@/lib/quote-api');
@@ -92,7 +96,8 @@ export function QuoteThreadApi({ code }: { code: string }) {
     };
   }, [code, refresh]);
 
-  if (!code || (load.kind === 'error' && quoteErrorKey(load.code) === 'api_err_notFound'))
+  const needsSignIn = signedOut || (load.kind === 'error' && quoteErrorKey(load.code) === 'api_err_auth');
+  if (!needsSignIn && (!code || (load.kind === 'error' && quoteErrorKey(load.code) === 'api_err_notFound')))
     return (
       <div className={card}>
         <p className="text-muted">{t('api_notFound')}</p>
@@ -101,14 +106,11 @@ export function QuoteThreadApi({ code }: { code: string }) {
         </Link>
       </div>
     );
-  if (load.kind === 'error' && quoteErrorKey(load.code) === 'api_err_auth')
+  if (needsSignIn)
     return (
       <div className={card}>
         <p className="text-ink">{t('api_signIn')}</p>
-        <Link
-          href={`${prefix}/login?next=${encodeURIComponent(`${prefix}/quotes/${code}`)}`}
-          className={`${primary} mt-4`}
-        >
+        <Link href={loginHref(prefix, here)} className={`${primary} mt-4`}>
           {t('api_signInLink')}
         </Link>
       </div>

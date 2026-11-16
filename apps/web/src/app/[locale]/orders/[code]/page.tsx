@@ -8,6 +8,7 @@ import { Container } from '@/components/ui/page-intro';
 import { withCode } from '@/components/ui/code-text';
 import type { Locale } from '@/i18n/routing';
 import { DATA_MODE } from '@/lib/data-mode';
+import { orderPageCode } from '@/lib/record-links';
 
 interface Props {
   params: Promise<{ locale: Locale; code: string }>;
@@ -20,12 +21,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 /**
- * Order tracking (spec 04). Codes are MD-{CITY}-{YYYY}-{6 base32}; anything else is not looked up. Real data mode
+ * Order tracking (spec 04). Codes are MD-{CITY}-{YYYY}-{6 base32}, or that plus -N for one shop's part; anything else is not looked up. Real data mode
  * (`NEXT_PUBLIC_DATA_MODE=api`) reads the order from the API for the signed-in customer; demo mode from the browser.
  */
 export default async function OrderPage({ params }: Props) {
   const { code } = await params;
-  const safe = /^MD-[A-Z]{3}-\d{4}-[0-9A-Z]{6}$/.test(code) ? code : '';
+  const safe = orderPageCode(code);
   const t = await getTranslations('order');
   return (
     <Container className="py-10 tab:py-14">

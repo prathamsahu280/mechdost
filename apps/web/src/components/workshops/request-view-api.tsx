@@ -2,13 +2,15 @@
 
 import { PartyPopper } from 'lucide-react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import type { ServiceRequestDetail } from '@mechdost/shared/service-api';
 import { SERVICE_ANY_CANCEL_REASONS, SERVICE_CANCEL_REASONS } from '@mechdost/shared/state';
 import { lazy, Suspense, useCallback, useEffect, useState, type SyntheticEvent } from 'react';
 import { track } from '@/lib/analytics';
 import { formatDate, formatPrice } from '@/lib/format';
+import { loginHref } from '@/lib/record-links';
+import { useSignedOut } from '@/lib/use-signed-out';
 import { useLivePings } from '@/lib/live/use-live-pings';
 import {
   CUSTOMER_STEPS,
@@ -51,6 +53,8 @@ export function RequestViewApi({ code }: { code: string }) {
   const [load, setLoad] = useState<Load>({ kind: 'loading' });
   const [justDecided, setJustDecided] = useState(false);
   const prefix = locale === 'hi' ? '/hi' : '';
+  const here = usePathname();
+  const signedOut = useSignedOut(!code, locale);
 
   const refresh = useCallback(async () => {
     const { fetchMyServiceRequest } = await import('@/lib/service-api');
@@ -84,7 +88,11 @@ export function RequestViewApi({ code }: { code: string }) {
     Boolean(code),
   );
 
-  if (!code || (load.kind === 'error' && (load.code === 'NOT_FOUND' || load.code === 'HTTP_404')))
+  const needsSignIn = signedOut || (load.kind === 'error' && load.code === 'AUTH_REQUIRED');
+  if (
+    !needsSignIn &&
+    (!code || (load.kind === 'error' && (load.code === 'NOT_FOUND' || load.code === 'HTTP_404')))
+  )
     return (
       <div className={box}>
         <p className="text-muted">{t('api_notFound')}</p>
@@ -96,12 +104,12 @@ export function RequestViewApi({ code }: { code: string }) {
         </Link>
       </div>
     );
-  if (load.kind === 'error' && load.code === 'AUTH_REQUIRED')
+  if (needsSignIn)
     return (
       <div className={box}>
         <p className="text-ink">{t('api_signIn')}</p>
         <Link
-          href={`${prefix}/login?next=${encodeURIComponent(`${prefix}/service/${code}`)}`}
+          href={loginHref(prefix, here)}
           className="press mt-4 inline-flex min-h-11 items-center rounded-button bg-accent-button px-5 text-sm font-bold text-white hover:bg-accent-button-hover"
         >
           {t('api_signInLink')}
