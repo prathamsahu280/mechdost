@@ -144,7 +144,7 @@ function trustSeed(c: AuditCase, now: number): Record<string, string> {
   return out;
 }
 
-const localised = (path: string, locale: string) =>
+export const localised = (path: string, locale: string) =>
   locale === 'en' ? path : path === '/' ? '/hi' : `/hi${path}`;
 
 /** What the case stores before the first page load (once per test; later loads keep what the app changed). */
@@ -189,7 +189,7 @@ export function seedFor(c: AuditCase, now: number): Record<string, string> {
  */
 export const SUBMIT_SELECTOR = 'form button[type="submit"]:visible:enabled';
 
-async function settle(page: Page) {
+export async function settle(page: Page) {
   await page.waitForLoadState('networkidle', { timeout: 5_000 }).catch(() => undefined);
   await page.evaluate(async () => {
     await document.fonts.ready;
@@ -198,7 +198,7 @@ async function settle(page: Page) {
 }
 
 /** Opens disclosures, fills or submits forms, presses card actions — whatever the case's state names. */
-async function prepare(page: Page, c: AuditCase): Promise<string[]> {
+export async function prepare(page: Page, c: AuditCase): Promise<string[]> {
   const notes: string[] = [];
   const scope = page.locator(c.scope).first();
   const open = c.state.open;

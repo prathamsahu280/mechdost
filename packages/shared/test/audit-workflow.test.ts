@@ -51,4 +51,15 @@ describe('visual review workflow (2026-11-16)', () => {
     for (const u of [...visual.matchAll(/uses: (\S+)/g)].map((m) => m[1] ?? ''))
       expect(u, u).toMatch(/@[0-9a-f]{40}$/);
   });
+
+  it('has a real-mode capture (mode api): the audit build, the mocked API config, distinct artifacts', () => {
+    expect(visual).toContain('options: [demo, api]');
+    expect(visual).toContain('node apps/web/scripts/state-audit-api-build.mjs');
+    expect(visual).toContain('playwright.visual-review-api.config.ts');
+    expect(visual).toContain('--shard=${{ matrix.shard }}/8');
+    expect(visual).toContain("inputs.mode == 'api' && 'api-' || ''");
+    expect(visual).toContain('visual-review-${{ inputs.mode }}-${{ github.ref }}');
+    // Only public, fake audit values: the workflow reads no secret.
+    expect(visual).not.toContain('secrets.');
+  });
 });

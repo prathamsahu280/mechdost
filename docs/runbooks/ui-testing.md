@@ -94,3 +94,21 @@ The matrix proves pages do not break; it does not judge whether they look right.
 | 2026-11-14 | Full e2e suite (610 tests, 01:42 build)                        | 540 passed / 10 failed (4 infra, 6 caused by tonight's changes or stale tests) — all fixed and re-run green                                                                                                                 |
 | 2026-11-14 | Bisect of a phone-only support e2e failure                     | a badge's `sr-only` text widened the page (needs a `relative` parent) — fixed, overflow check added                                                                                                                         |
 | 2026-11-14 | Final checks (after the Opus code review fixes)                | full suite 558 passed / 7 failed (2 real, fixed; 5 memory crashes — run stopped for low memory); targeted re-runs green; desktop state matrix 59/59                                                                         |
+
+## 6. Visual review capture, demo and real mode (2026-11-16)
+
+Screenshots for a person to look at (no assertions): GitHub → Actions → "Visual review capture (manual)" → Run workflow
+on `main`, input `mode`:
+
+- `demo` (default): demo-data build, `e2e/visual-review.spec.ts`, 5 shards, artifacts `visual-review-N`, files
+  `<role>/<page>__<width>-<theme>-<locale>.png`.
+- `api`: the real-sign-in build of the chunk-G audit (`node apps/web/scripts/state-audit-api-build.mjs`, fake public
+  `NEXT_PUBLIC_*` values, no secrets) with the mocked API and signed-in sessions per role,
+  `e2e/state-audit/visual-review-api.shots.ts` via `playwright.visual-review-api.config.ts`, 8 shards (2584 shots over
+  390/1440 × light/dark × en/hi), artifacts `visual-review-api-N`. Two parts: `pages/<role>/…` (every plain page per
+  role on the quiet baseline mocks, `/login` empty and with errors, the "already signed in" banner for a customer) and
+  `scenes/<API-CODE>/…` (each distinct state of the real-sign-in cases with its own fixtures and set-up: order/service/
+  quote pages, portals, admin queues, cancel help, rejected-order totals, job card per-line status). Components with
+  many states keep an evenly spaced sample (`VISUAL_SCENES_PER_CODE`, default 10); navigation walks are left out.
+- Locally (needs ~3 GB free RAM, low-memory PC: prefer GitHub): build as above, then
+  `VISUAL_SHOTS=test-results/visual-review pnpm exec playwright test -c playwright.visual-review-api.config.ts`.
