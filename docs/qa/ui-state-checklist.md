@@ -104,7 +104,7 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | WS-FINDER             | Workshops (/workshops)                                           | Finder: PIN, vehicle, use my location, list cards, map toggle (map canvas excluded)                                                                                                                                                                                             | pairwise | 16       | 2       |
 | OFFERS-PAGE           | Offers (/offers)                                                 | Public offers list (2026-11-16): offer cards with conditions, IST end time and copy-code button; the demo build has no offers, so it shows the empty state with one next action                                                                                                 | pairwise | 16       | 2       |
 | WS-PROFILE            | Workshop page (/workshops/[slug])                                | Workshop profile: services menu, reviews, booking form                                                                                                                                                                                                                          | pairwise | 32       | 1       |
-| WS-BOOK-FLOAT         | Workshop page (/workshops/[slug])                                | Booking form with the floating assistant button: scanned top to bottom, the button never covers a price or a control (it steps aside while the form is on the page; QA V5)                                                                                                      | cross    | 16       | 16      |
+| WS-BOOK-FLOAT         | Workshop page (/workshops/[slug])                                | Booking form with the floating assistant button: scanned top to bottom, the button never covers a price or a control (it steps aside while the form is on the page; QA V5)                                                                                                      | cross    | 16       | 1       |
 | PTN-LANDING           | Partners (/partners)                                             | Partner landing (kinds, benefits, apply links)                                                                                                                                                                                                                                  | pairwise | 32       | 0       |
 | PTN-APPLY             | Partners (/partners/apply/[kind])                                | Application form (GSTIN, tick lists, location picker; map canvas excluded)                                                                                                                                                                                                      | pairwise | 24       | 1       |
 | SUP-PAGE              | Support (/support)                                               | Support page and request form                                                                                                                                                                                                                                                   | pairwise | 16       | 0       |
@@ -184,7 +184,7 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | API-ADM-EXPORTS       | Admin → Exports, real sign-in                                    | CSV exports: the form (dataset, city, dates), customers with masked or open contacts, done, empty file, too many rows, expired link, range over 180 days, nothing allowed, load error                                                                                           | pairwise | 80       | 0       |
 | API-NAV-ADMIN         | Navigation, real sign-in                                         | Admin section bar with every real-mode section (Analytics, Refunds, Errors included): current item, scroll, walk                                                                                                                                                                | cross    | 176      | 0       |
 | API-NAV-ACCOUNT       | Navigation, real sign-in                                         | Account section bar in a real-sign-in build: current item, scroll, walk                                                                                                                                                                                                         | cross    | 96       | 0       |
-| **Total**             |                                                                  |                                                                                                                                                                                                                                                                                 |          | **4358** | **114** |
+| **Total**             |                                                                  |                                                                                                                                                                                                                                                                                 |          | **4358** | **99**  |
 
 ## Chrome
 
@@ -1936,22 +1936,22 @@ Pairwise (all pairs of values); 32 states; scope `main`.
 
 Full cross of the high-risk dimensions, the rest pairwise; 16 states; scope `main`.
 
-- [ ] WS-BOOK-FLOAT-001 · 320px · light · en · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console axe · core
-- [ ] WS-BOOK-FLOAT-002 · 320px · light · hi · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console hindi axe · core
-- [ ] WS-BOOK-FLOAT-003 · 320px · dark · en · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console axe · core
-- [ ] WS-BOOK-FLOAT-004 · 320px · dark · hi · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console hindi axe · core
-- [ ] WS-BOOK-FLOAT-005 · 390px · light · en · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console axe · core
-- [ ] WS-BOOK-FLOAT-006 · 390px · light · hi · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console hindi axe · core
-- [ ] WS-BOOK-FLOAT-007 · 390px · dark · en · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console axe · core
+- [ ] WS-BOOK-FLOAT-001 · 320px · light · en · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console axe
+- [ ] WS-BOOK-FLOAT-002 · 320px · light · hi · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console hindi
+- [ ] WS-BOOK-FLOAT-003 · 320px · dark · en · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console
+- [ ] WS-BOOK-FLOAT-004 · 320px · dark · hi · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console hindi
+- [ ] WS-BOOK-FLOAT-005 · 390px · light · en · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console axe
+- [ ] WS-BOOK-FLOAT-006 · 390px · light · hi · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console hindi
+- [ ] WS-BOOK-FLOAT-007 · 390px · dark · en · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console
 - [ ] WS-BOOK-FLOAT-008 · 390px · dark · hi · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console hindi axe · core
-- [ ] WS-BOOK-FLOAT-009 · 480px · light · en · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console axe · core
-- [ ] WS-BOOK-FLOAT-010 · 480px · light · hi · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console hindi axe · core
-- [ ] WS-BOOK-FLOAT-011 · 480px · dark · en · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console axe · core
-- [ ] WS-BOOK-FLOAT-012 · 480px · dark · hi · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console hindi axe · core
-- [ ] WS-BOOK-FLOAT-013 · 1440px · light · en · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console axe · core
-- [ ] WS-BOOK-FLOAT-014 · 1440px · light · hi · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console hindi axe · core
-- [ ] WS-BOOK-FLOAT-015 · 1440px · dark · en · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console axe · core
-- [ ] WS-BOOK-FLOAT-016 · 1440px · dark · hi · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console hindi axe · core
+- [ ] WS-BOOK-FLOAT-009 · 480px · light · en · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console axe
+- [ ] WS-BOOK-FLOAT-010 · 480px · light · hi · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console hindi
+- [ ] WS-BOOK-FLOAT-011 · 480px · dark · en · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console
+- [ ] WS-BOOK-FLOAT-012 · 480px · dark · hi · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console hindi
+- [ ] WS-BOOK-FLOAT-013 · 1440px · light · en · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console axe
+- [ ] WS-BOOK-FLOAT-014 · 1440px · light · hi · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console hindi
+- [ ] WS-BOOK-FLOAT-015 · 1440px · dark · en · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console
+- [ ] WS-BOOK-FLOAT-016 · 1440px · dark · hi · signed out · world=empty · /workshops/telibandha-car-clinic · asserts: present covered launcher hscroll console hindi
 
 ## Partners (/partners)
 

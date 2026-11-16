@@ -970,7 +970,8 @@ export const COMPONENTS: readonly ComponentDef[] = [
     params: [{ name: 'width', values: [320, 390, 480, 1440] }, theme, locale],
     checks: ['present', 'covered', 'launcher', 'hscroll', 'console'],
     sweep: 0,
-    core: coreAt([320, 390, 480, 1440]),
+    // One case per push (CI budget, core <= 100); the nightly full audit runs all 16.
+    core: coreAt([390], (r) => r.locale === 'hi' && r.theme === 'dark'),
   },
 
   // ───────────────────────────── Partners, support, login, policies ─────────────────────────────
