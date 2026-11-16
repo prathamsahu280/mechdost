@@ -111,3 +111,5 @@ Not allowed: a quote order's prices were negotiated with staff, so `placeOrder` 
 ## Product search while typing (2026-11-16, QA pass 3 bug 13)
 
 The quote form's product search runs 350 ms after typing stops (two characters minimum; Enter or the button still search at once; the newest answer wins). `lib/quote-search.ts`.
+
+**Pass 5 (2026-11-16): no accept that is known to fail.** When the accept call is refused for stock (CHECKOUT_UNAVAILABLE / OUT_OF_STOCK, shown as quote.api_err_stock), the offer card stops offering Accept: the one primary button becomes "Ask MechDost to source it" (api_askSource, moves focus to the chat box) and points at the warning with aria-describedby=quote-accept-problem. It re-enables when a new offer version arrives. The server check stays the only authority (acceptBlocked in apps/web/src/lib/quote-views.ts); the customer detail carries no stock data, so the warning cannot be known before the first refusal.

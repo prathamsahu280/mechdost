@@ -71,6 +71,8 @@ test('the customer approves line by line; only approved work is billed, with GST
   // Nothing is chosen for the customer, and the form says what is missing.
   await estimate.getByRole('button', { name: 'Confirm my choices' }).click();
   await expect(estimate.getByText('Approve or decline every item.')).toBeVisible();
+  // No "Approved total: ₹0" before any line is approved (pass 5, note 3): a hint instead.
+  await expect(estimate.getByText('Approve the lines you want; the total appears here.')).toBeVisible();
   await estimate
     .getByRole('group', { name: /Brake pads/ })
     .getByLabel('Approve')

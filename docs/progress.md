@@ -533,3 +533,7 @@ Booking forms carry `data-launcher-avoid`; CSS hides `.assistant-launcher` on pa
 ## 2026-11-16 - QA pass 4 bugs (branch worktree-agent-ac038f03f743a9795, not merged)
 
 Bugs 1, 2, 3, 4, 5, 6, 8, 9, 10 of `docs/qa/real-api-pass-4-2026-11-16.md` fixed (7 = email retries, not code; not touched). Tests: `apps/web/test/bugfix-qa-pass4.test.ts`, `packages/db/test/shop-orders.test.ts` ("one-call hand over"), `apps/api/test/shop-orders.test.ts` (compound call), `order-views.test.ts`; e2e text updated (`admin-site`, `qa-regressions`). Rulings in decisions.md 2026-11-16 "QA pass 4"; Q196 answered by default. Budget: `cart-view.tsx` lost code (the `settings` hook and amount), no new import reachable from the layout, `/cart`, `/shop` or home; `checkout-form` text-only. Not measured here. Playwright, next build and `pnpm check` not run.
+
+## 2026-11-16 - QA pass 5 notes 1-3 (branch worktree-agent-a3b091ab2660fae09, not merged; no migration)
+
+Note 1 stock-refused quote offer: primary button becomes "Ask MechDost to source it" with the warning linked (acceptBlocked); note 2 one primary pay choice on the unpaid service bill (onlinePay, api_payAtWorkshopAlt); note 3 estimate hint instead of Approved total 0 (anyApproved, approvedTotalHint). en+hi. Tests apps/web/test/bugfix-qa-pass5.test.ts (red 7/7 first, green after); e2e/service-estimate.spec.ts asserts the hint (not run). Specs 06 and 19 updated.

@@ -6,7 +6,7 @@ import { computeServiceBill } from '@mechdost/shared/service-bill';
 import { useEffect, useId, useState, type SyntheticEvent } from 'react';
 import { track } from '@/lib/analytics';
 import { formatPrice } from '@/lib/format';
-import { approvedTotalKey } from '@/lib/estimate-summary';
+import { anyApproved, approvedTotalKey } from '@/lib/estimate-summary';
 import { estimateDecisions, ratePct, serviceErrorKey } from '@/lib/service-views';
 
 /** A line with its GST as the workshop sent it (the bill applies the workshop's registration). */
@@ -151,7 +151,9 @@ export function EstimateApprovalApi({
           </fieldset>
         ))}
         <p className="font-heading font-extrabold text-ink" aria-live="polite">
-          {t(approvedTotalKey(items.some((l) => l.gstRateBp > 0)), { total: formatPrice(approvedTotal) })}
+          {anyApproved(choices)
+            ? t(approvedTotalKey(items.some((l) => l.gstRateBp > 0)), { total: formatPrice(approvedTotal) })
+            : t('approvedTotalHint')}
         </p>
         <label className="flex items-start gap-3 text-sm text-ink">
           <input

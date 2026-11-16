@@ -13,6 +13,7 @@ import { payNoteShown, type PayNote } from '@/lib/pay-note';
 import { loginHref } from '@/lib/record-links';
 import { useSignedOut } from '@/lib/use-signed-out';
 import {
+  acceptBlocked,
   newQuoteKey,
   quoteErrorKey,
   quotePhotoProblem,
@@ -363,6 +364,7 @@ function OfferCard({
   const locale = useLocale();
   const [problem, setProblem] = useState<QuoteMessageKey | null>(null);
   const [busy, setBusy] = useState(false);
+  const [stockBlockedAt, setStockBlockedAt] = useState<number | null>(null);
   const [closing, setClosing] = useState(false);
   const [method, setMethod] = useState<'cod' | 'online'>('cod');
   const declineButton = useRef<HTMLButtonElement>(null);
@@ -372,6 +374,8 @@ function OfferCard({
   const listTotal = quote.listTotalPaise;
   const saving = listTotal === null ? 0 : listTotal + offer.deliveryPaise - offer.totalPaise;
   const canAccept = quote.status === 'offered' && !offer.expired;
+  // The server refused for stock: no use pressing again for this offer version (a new offer version re-enables it).
+  const blocked = acceptBlocked(problem) && stockBlockedAt === offer.version;
 
   async function accept() {
     const slot = `${String(offer.version)}:${method}`;
@@ -398,6 +402,7 @@ function OfferCard({
     // Too large for cash: the way forward is already on the screen, so select it.
     if (k === 'api_err_codCap') setMethod('online');
     setProblem(k);
+    if (acceptBlocked(k)) setStockBlockedAt(offer.version);
     track('click', { id: `quote_accept_failed_${k}`, path: window.location.pathname });
     // A replaced, expired or closed offer: show the latest state.
     if (k === 'stale' || k === 'expired' || k === 'api_err_closed') await onChanged();
@@ -500,7 +505,11 @@ function OfferCard({
           </fieldset>
         ) : null}
         {problem ? (
-          <p role="alert" className="mt-4 rounded-lg bg-warning-bg p-3 text-sm font-bold text-warning">
+          <p
+            id="quote-accept-problem"
+            role="alert"
+            className="mt-4 rounded-lg bg-warning-bg p-3 text-sm font-bold text-warning"
+          >
             {t(problem)}
           </p>
         ) : null}
@@ -513,18 +522,27 @@ function OfferCard({
             {canAccept ? (
               <button
                 type="button"
-                onClick={() => void accept()}
+                onClick={() => {
+                  if (blocked) {
+                    document.getElementById('quote-message')?.focus();
+                    return;
+                  }
+                  void accept();
+                }}
                 disabled={busy}
                 aria-busy={busy}
+                aria-describedby={blocked ? 'quote-accept-problem' : undefined}
                 className="press inline-flex min-h-12 flex-1 items-center justify-center rounded-button bg-accent-button px-6 text-sm font-bold text-white hover:bg-accent-button-hover disabled:opacity-70"
               >
-                {busy
-                  ? method === 'online'
-                    ? t('api_paying')
-                    : t('api_accepting')
-                  : method === 'online'
-                    ? t('api_acceptPay')
-                    : t('accept')}
+                {blocked
+                  ? t('api_askSource')
+                  : busy
+                    ? method === 'online'
+                      ? t('api_paying')
+                      : t('api_accepting')
+                    : method === 'online'
+                      ? t('api_acceptPay')
+                      : t('accept')}
               </button>
             ) : null}
             <button

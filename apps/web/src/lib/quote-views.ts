@@ -91,6 +91,14 @@ const BY_CODE: Record<string, QuoteMessageKey> = {
   UNAVAILABLE: 'api_err_network',
 };
 
+/**
+ * An offer that cannot be accepted until stock changes (pass 5, note 1): once the server said so, "Accept" stays off for
+ * this offer and the way forward is the chat. Only the stock error blocks; the other errors can be fixed in place.
+ */
+export function acceptBlocked(problem: QuoteMessageKey | null): boolean {
+  return problem === 'api_err_stock';
+}
+
 export function quoteErrorKey(code: string): QuoteMessageKey {
   const known = BY_CODE[code];
   if (known) return known;
