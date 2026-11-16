@@ -4,6 +4,14 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Current status
 
+- **NOW (2026-11-16 night):** pushed after 693dba3: V5 fix (launcher steps aside on booking-form pages; audit check
+  `launcher`, row WS-BOOK-FLOAT), real-mode screenshot capture (`visual-review.yml` mode=api), bill PDF verified in
+  the real inbox, worker heartbeat healthy (one transient statement timeout 13:15, recovered; claim query uses
+  `outbox_pending_idx`). **Next:** final round on this commit — GitHub: UI audit demo (A–F) + api (G), visual review
+  demo + api, then I review the shots; local real-mode re-test of the 15 pass-3 fixes, portal side-bar timing, and
+  decline → reroute to the shop owner's second shop (give it the same product via the UI; its emails go to the test
+  inbox). Customer self-cancel stays off (Q197).
+
 - **2026-11-16 (visual review, real mode):** `visual-review.yml` has `mode: demo|api` (default demo). `api` builds the chunk-G real-sign-in web and captures pages per role plus the API-case scenes (`e2e/state-audit/visual-review-api.shots.ts`, 8 shards, artifacts `visual-review-api-N`). Runbook `docs/runbooks/ui-testing.md` § 6. First GitHub run still to check.
 - **NOW (2026-11-16 evening, coordinator ledger):** everything below up to 693dba3 is **merged to main and pushed**
   (branch notes saying "not merged" are historical). Pushed 693dba3: record links (`-1` codes open, signed-out
