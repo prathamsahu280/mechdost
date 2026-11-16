@@ -296,6 +296,14 @@ Items decided to happen before going public; tick them off here.
 - [x] Hide the demo-only controls: "advance" (orders, service requests, applications), "demo reply" and "demo offer" (Q86, user 2026-11-14). Done 2026-11-14: `SHOW_DEMO_CONTROLS`.
 - [ ] Switch the website from the browser demo to real sign-in and the API (data switch), so seller onboarding links the shop owner on sign-in (Q89).
 - [ ] Demo data off (Q21: "Demo off before public launch, date TBD").
+- [ ] **Firebase Auth email templates** (user 2026-11-16): the sign-up verification and password-reset emails come from
+      Firebase's default template and sender, without the MechDost logo or wording. Firebase console → Authentication →
+      Templates: set the sender name to MechDost, a custom sender domain (mail.mechdost.com or similar, DNS records at the
+      registrar), and the subject/body in English (Firebase has one template language per project; the Hindi wording can
+      sit below the English). Or move these two emails to Resend with our own layout (code change; logo + en/hi like
+      the other emails).
+- [ ] Test API's emails use `WEB_BASE_URL=https://mechdost.com` (a local API defaults to `http://localhost:3000`, so its
+      email logo and links do not load in mail clients; real-API pass 2026-11-16).
 
 ### The real-mode switch, step by step (launch 2026-11-16)
 
