@@ -87,7 +87,7 @@ export async function fetchCatalogueProduct(slug: string, locale: Locale): Promi
 export function apiCard(c: CatalogueCard): CardView {
   return {
     slug: c.slug,
-    sku: null,
+    sku: c.offer?.sku ?? null,
     brand: c.brand.name,
     name: c.name,
     category: {

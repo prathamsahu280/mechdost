@@ -77,7 +77,7 @@ describe('catalogue API', () => {
       slug: 'exide-xltz4a',
       name: 'Exide Xplore XLTZ4A बैटरी',
       category: { slug: 'batteries', name: 'बैटरी' },
-      offer: { pricePaise: 100000, mrpPaise: 150000, shippingPaise: 0 },
+      offer: { sku: 'EXI-XLTZ4A', pricePaise: 100000, mrpPaise: 150000, shippingPaise: 0 },
       vehicleTypes: [], // fitment not listed
     });
     expect(body.items[0]).not.toHaveProperty('id');

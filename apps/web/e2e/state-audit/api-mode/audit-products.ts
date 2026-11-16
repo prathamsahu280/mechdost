@@ -45,6 +45,7 @@ const COPY = {
 } as const;
 
 const offer = (i: number) => ({
+  sku: `AUDIT-${String(i + 1)}`,
   pricePaise: 89_900 + i * 100,
   mrpPaise: 99_900 + i * 100,
   netQuantity: { qty: 900, unit: 'ml' as const },

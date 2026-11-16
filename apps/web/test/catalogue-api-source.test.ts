@@ -16,7 +16,14 @@ const card: CatalogueCard = {
   highlights: ['API SL'],
   vehicleTypes: [],
   rating: null,
-  offer: { pricePaise: 44_000, mrpPaise: 47_500, netQuantity: null, shippingPaise: null, leadDays: null },
+  offer: {
+    sku: 'CAS-0900-B',
+    pricePaise: 44_000,
+    mrpPaise: 47_500,
+    netQuantity: null,
+    shippingPaise: null,
+    leadDays: null,
+  },
   photo: null,
 };
 const product: CatalogueProduct = {
@@ -39,6 +46,7 @@ const product: CatalogueProduct = {
       mrpPaise: 47_500,
       netQuantity: { qty: 900, unit: 'ml' },
       offer: {
+        sku: 'CAS-0900-B',
         pricePaise: 44_000,
         mrpPaise: 47_500,
         netQuantity: { qty: 900, unit: 'ml' },
@@ -152,6 +160,12 @@ describe('catalogue API source (plan 2026-11-10 task 3)', () => {
       fetchCataloguePage({ locale: 'en', cursor: 'stale', restartOnBadCursor: false }),
     ).rejects.toThrow();
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('apiCard: the offered variant sku reaches the card so Add to cart works (real-API bug 2026-11-16)', () => {
+    expect(apiCard(card).sku).toBe('CAS-0900-B');
+    // No offer = on request: no sku, so the card cannot add to the cart.
+    expect(apiCard({ ...card, offer: null }).sku).toBeNull();
   });
 
   it('apiCard: offer null → price null, availability on_request; vehicle types from the API', () => {

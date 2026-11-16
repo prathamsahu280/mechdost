@@ -153,6 +153,7 @@ describe('prices', () => {
     const exide = page.items.find((i) => i.slug === 'exide-xltz4a');
     // Busy Auto is nearer but busy; Paused Auto is cheapest but paused; Far Auto is cheaper but farther.
     expect(exide?.offer).toEqual({
+      sku: 'SKU-EXIDE-XLTZ4A',
       pricePaise: 110000,
       mrpPaise: 150000,
       netQuantity: null,
@@ -166,6 +167,13 @@ describe('prices', () => {
     const page = await listCatalogue(t(), base);
     expect(page.items.find((i) => i.slug === 'exide-xltz4a')?.offer?.pricePaise).toBe(95000);
     expect(page.items.find((i) => i.slug === 'castrol-activ')?.offer).toBeNull(); // no free stock
+  });
+
+  it('every offered card carries the sku of the offered variant (cart needs it)', async () => {
+    const page = await listCatalogue(t(), { ...base, pincode: '492001', q: 'XLTZ4A' });
+    expect(page.items.find((i) => i.slug === 'exide-xltz4a')?.offer?.sku).toBe('SKU-EXIDE-XLTZ4A');
+    const city = await listCatalogue(t(), base);
+    for (const i of city.items) expect(i.offer === null || i.offer.sku.length > 0).toBe(true);
   });
 
   it('an unknown PIN or another city has no offers', async () => {
@@ -268,7 +276,12 @@ describe('product page', () => {
       name: 'Exide Xplore XLTZ4A बैटरी',
       gstRateBp: 1800,
       partNumbers: [{ kind: 'mfr', value: 'XLTZ-4A' }],
-      variants: [{ sku: 'SKU-EXIDE-XLTZ4A', offer: { pricePaise: 110000, seller: 'Near Auto (हिं)' } }],
+      variants: [
+        {
+          sku: 'SKU-EXIDE-XLTZ4A',
+          offer: { sku: 'SKU-EXIDE-XLTZ4A', pricePaise: 110000, seller: 'Near Auto (हिं)' },
+        },
+      ],
     });
     await expect(getCatalogueProduct(t(), 'draft-battery', base)).rejects.toMatchObject({
       code: 'NOT_FOUND',
