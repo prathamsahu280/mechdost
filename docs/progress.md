@@ -4,6 +4,8 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Current status
 
+- **2026-11-16 (morning): DEPLOYED.** `pnpm db:migrate` run (user allowed; 76 migrations, 0073–0077 new; Supabase security advisor: only the expected "RLS on, no policy" notices). main = `5850540`: CI green after two fixes (logo images lazy — React preloaded both and broke the hero-only preload gate; logo link ≥ 24 px at 320), deploy succeeded; mechdost.com, /hi/shop, api.mechdost.com/health and the new logo all 200. Real-API pass on hold (user: "dont start the real api tests yet"). WhatsApp token kept as is (user).
+
 - **2026-11-16 ~04:50 IST: final audit on GitHub — A–F 0/2195, G 1/2147 (a checker timeout).** Everything verified on `merge/fix2`. Deploy waits only on the user running `pnpm db:migrate` (0073–0077).
 
 - **2026-11-16 ~04:35 IST: visual fixes V1–V4, V7–V9 merged and verified** (`pnpm check` 12/12; budget unchanged, /shop 179.9; e2e 84/84). Still READY TO DEPLOY.
