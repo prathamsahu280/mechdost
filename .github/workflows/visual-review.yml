@@ -1,17 +1,26 @@
 # Visual review capture, on demand (user 2026-11-16): full-page screenshots of every page for every role at 390 and
-# 1440 px, light/dark, en/hi, from a demo-mode production build (e2e/visual-review.spec.ts). Uploaded as artifacts
-# for review by eye; never commits. Manual only; minutes are free while the repository is public.
+# 1440 px, light/dark, en/hi. `mode: demo` (default) captures a demo-mode production build (e2e/visual-review.spec.ts,
+# artifacts visual-review-N); `mode: api` captures the real-sign-in build with the chunk-G mocked API and signed-in
+# sessions (e2e/state-audit/visual-review-api.shots.ts, same build as ui-state-audit.yml mode api, artifacts
+# visual-review-api-N). Uploaded as artifacts for review by eye; never commits. Manual only; minutes are free while the repository is public.
 # Supply-chain rules as in ci.yml: actions pinned by full commit SHA, read-only token, frozen lockfile.
 name: Visual review capture (manual)
 
 on:
   workflow_dispatch:
+    inputs:
+      mode:
+        description: 'demo = demo-data build; api = real-sign-in build with the mocked API (real-mode screens and states)'
+        required: false
+        default: demo
+        type: choice
+        options: [demo, api]
 
 permissions:
   contents: read
 
 concurrency:
-  group: visual-review-${{ github.ref }}
+  group: visual-review-${{ inputs.mode }}-${{ github.ref }}
   cancel-in-progress: true
 
 env:
@@ -20,13 +29,13 @@ env:
 
 jobs:
   capture:
-    name: Visual review (shard ${{ matrix.shard }}/5)
+    name: Visual review (${{ inputs.mode }}, shard ${{ matrix.shard }}/${{ inputs.mode == 'api' && 8 || 5 }})
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5]
+        shard: ${{ fromJSON(inputs.mode == 'api' && '[1, 2, 3, 4, 5, 6, 7, 8]' || '[1, 2, 3, 4, 5]') }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -43,23 +52,37 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build the web (demo data)
+        if: inputs.mode != 'api'
         run: pnpm --filter @mechdost/web build
+
+      - name: Build the web (real sign-in + API data, fake public audit values)
+        if: inputs.mode == 'api'
+        run: node apps/web/scripts/state-audit-api-build.mjs
 
       - name: Install Chromium for Playwright
         run: pnpm --filter @mechdost/web exec playwright install --with-deps chromium
 
-      - name: Capture (shard ${{ matrix.shard }} of 5)
+      - name: Capture, demo (shard ${{ matrix.shard }} of 5)
+        if: inputs.mode != 'api'
         working-directory: apps/web
         env:
           VISUAL_SHOTS: test-results/visual-review
         run: pnpm exec playwright test e2e/visual-review.spec.ts --project=desktop --shard=${{ matrix.shard }}/5 --reporter=line
         continue-on-error: true
 
+      - name: Capture, real mode (shard ${{ matrix.shard }} of 8)
+        if: inputs.mode == 'api'
+        working-directory: apps/web
+        env:
+          VISUAL_SHOTS: test-results/visual-review
+        run: pnpm exec playwright test -c playwright.visual-review-api.config.ts --shard=${{ matrix.shard }}/8 --reporter=line
+        continue-on-error: true
+
       - name: Upload screenshots
         if: always()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
-          name: visual-review-${{ matrix.shard }}
+          name: visual-review-${{ inputs.mode == 'api' && 'api-' || '' }}${{ matrix.shard }}
           retention-days: 14
           if-no-files-found: ignore
           path: apps/web/test-results/visual-review/**/*.png

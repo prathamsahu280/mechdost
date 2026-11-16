@@ -4,6 +4,7 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Current status
 
+- **2026-11-16 (visual review, real mode):** `visual-review.yml` has `mode: demo|api` (default demo). `api` builds the chunk-G real-sign-in web and captures pages per role plus the API-case scenes (`e2e/state-audit/visual-review-api.shots.ts`, 8 shards, artifacts `visual-review-api-N`). Runbook `docs/runbooks/ui-testing.md` § 6. First GitHub run still to check.
 - **NOW (2026-11-16 evening, coordinator ledger):** everything below up to 693dba3 is **merged to main and pushed**
   (branch notes saying "not merged" are historical). Pushed 693dba3: record links (`-1` codes open, signed-out
   `next=`), sign-in messages + `auth_code_failed` event + fresh reCAPTCHA host per attempt, per-account API limits
