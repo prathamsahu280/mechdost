@@ -149,39 +149,85 @@ export async function dispatchOnce(
   return result;
 }
 
-export function startDispatcher(opts: {
+export interface DispatcherOptions {
   db: Tx;
   adapters: readonly ChannelAdapter[];
   keyring?: Keyring | null;
   intervalMs?: number;
-}): {
+  /** A run older than this is declared stuck (hung query or connection) and replaced by a new one. */
+  tickTimeoutMs?: number;
+  /** How often the `notify_tick` heartbeat line is logged (what the dispatcher did since the last one). */
+  heartbeatMs?: number;
+  /** Test seam; defaults to `dispatchOnce`. */
+  dispatch?: (
+    db: Tx,
+    adapters: readonly ChannelAdapter[],
+    opts: { keyring: Keyring | null },
+  ) => Promise<DispatchResult>;
+}
+
+/**
+ * A hung query must not stop sending forever (worker incident 2026-11-16): a run older than `tickTimeoutMs` is logged
+ * (`notify_tick_stuck`) and abandoned, and the next tick starts a fresh one. `notify_tick` is a periodic heartbeat with
+ * the counts since the previous line: no heartbeat, or `claimed` at 0 while rows are pending, is the alert
+ * (docs/runbooks/monitoring.md).
+ */
+export function startDispatcher(opts: DispatcherOptions): {
   stop(): Promise<void>;
 } {
-  let running: Promise<void> | null = null;
+  const dispatch = opts.dispatch ?? dispatchOnce;
+  const tickTimeoutMs = opts.tickTimeoutMs ?? 120_000;
+  const totals = { ticks: 0, claimed: 0, sent: 0, failed: 0, retried: 0, skipped: 0, stuck: 0, errors: 0 };
+  let current: { promise: Promise<void>; startedAt: number; id: number } | null = null;
+  let generation = 0;
   const state = { stopped: false };
   const tick = () => {
-    if (running || state.stopped || opts.adapters.length === 0) return;
-    running = (async () => {
+    if (state.stopped || opts.adapters.length === 0) return;
+    if (current) {
+      if (Date.now() - current.startedAt < tickTimeoutMs) return;
+      totals.stuck += 1;
+      log('error', 'notify_tick_stuck', { runningMs: Date.now() - current.startedAt });
+      current = null;
+    }
+    generation += 1;
+    const id = generation;
+    const run = { startedAt: Date.now(), promise: Promise.resolve(), id };
+    totals.ticks += 1;
+    run.promise = (async () => {
       try {
         let r: DispatchResult;
         do {
-          r = await dispatchOnce(opts.db, opts.adapters, { keyring: opts.keyring ?? null });
-        } while (r.claimed > 0 && !state.stopped);
+          r = await dispatch(opts.db, opts.adapters, { keyring: opts.keyring ?? null });
+          totals.claimed += r.claimed;
+          totals.sent += r.sent;
+          totals.failed += r.failed;
+          totals.retried += r.retried;
+          totals.skipped += r.skipped;
+        } while (r.claimed > 0 && !state.stopped && generation === id);
       } catch (err) {
+        totals.errors += 1;
         log('error', 'notify_dispatch_failed', safeError(err));
       }
     })().finally(() => {
-      running = null;
+      if (current?.id === id) current = null;
     });
+    current = run;
   };
   const timer = setInterval(tick, opts.intervalMs ?? 2000);
   timer.unref();
+  const channels = opts.adapters.map((a) => a.channel);
+  const heartbeat = setInterval(() => {
+    log('info', 'notify_tick', { channels, ...totals });
+    for (const k of Object.keys(totals) as (keyof typeof totals)[]) totals[k] = 0;
+  }, opts.heartbeatMs ?? 300_000);
+  heartbeat.unref();
   tick();
   return {
     async stop() {
       state.stopped = true;
       clearInterval(timer);
-      await running;
+      clearInterval(heartbeat);
+      await current?.promise;
     },
   };
 }

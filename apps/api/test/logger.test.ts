@@ -22,6 +22,28 @@ describe('safeError', () => {
     expect(lines.join('\n')).not.toMatch(/919876543210|Where is my order|Failed query/);
   });
 
+  it('adds the database error message of the wrapped cause (not the query or its parameters)', () => {
+    const cause = Object.assign(new Error('column "foo" does not exist'), { code: '42703' });
+    const err = new Error('Failed query: select foo from t params: +919876543210', { cause });
+    const safe = safeError(err);
+    expect(safe).toMatchObject({ pgCode: '42703', reason: 'column "foo" does not exist' });
+    expect(JSON.stringify(safe)).not.toMatch(/919876543210|Failed query/);
+  });
+
+  it('adds the cause message of a non-Postgres failure, and hides values in data errors', () => {
+    const typeError = new Error('Failed query: x', {
+      cause: new TypeError('argument must be of type string'),
+    });
+    expect(safeError(typeError).reason).toBe('argument must be of type string');
+    const bad = new Error('Failed query: x', {
+      cause: Object.assign(new Error('invalid input syntax for type uuid: "+919876543210"'), {
+        code: '22P02',
+      }),
+    });
+    expect(safeError(bad).reason).not.toMatch(/919876543210/);
+    expect(safeError(new Error('top-level message with +91987')).reason).toBeUndefined();
+  });
+
   it('copes with non-Error values', () => {
     expect(safeError('boom')).toEqual({ errorName: 'string' });
     expect(safeError(null)).toEqual({ errorName: 'object' });

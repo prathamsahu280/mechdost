@@ -115,7 +115,12 @@ if (adapters.length > 0) {
     process.exit(1);
   }
 }
-const dispatcher = startDispatcher({ db, adapters, keyring });
+// The dispatcher has its own connection so long background jobs (exports, copurchase) can never starve it.
+// A channel without its key is off by design (rows for it stay pending), so the start line says which are off.
+const notifyConn = createDb(config.databaseUrl, { max: 1, transactionPooler: true });
+if (!config.email) log('warn', 'notify_channel_off', { channel: 'email', missing: 'RESEND_API_KEY' });
+if (!config.whatsapp) log('warn', 'notify_channel_off', { channel: 'whatsapp', missing: 'WHATSAPP_*' });
+const dispatcher = startDispatcher({ db: notifyConn.db, adapters, keyring });
 
 // Inbound WhatsApp → support tickets (spec 09). Only while WhatsApp is on; one event per transaction.
 let bridging = false;
@@ -533,7 +538,14 @@ function shutdown(signal: string) {
   clearInterval(exportTimer);
   clearInterval(waitlistTimer);
   void Promise.all([relay.stop(), dispatcher.stop(), posthog?.stop()])
-    .then(() => Promise.all([sql.end({ timeout: 5 }), listener?.end(), sentry.flush()]))
+    .then(() =>
+      Promise.all([
+        sql.end({ timeout: 5 }),
+        notifyConn.sql.end({ timeout: 5 }),
+        listener?.end(),
+        sentry.flush(),
+      ]),
+    )
     .finally(() => process.exit(0));
   setTimeout(() => process.exit(1), 9000).unref();
 }
