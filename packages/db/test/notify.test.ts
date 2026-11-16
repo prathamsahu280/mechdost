@@ -14,6 +14,7 @@ import {
   markOutboxRetry,
   markOutboxSent,
   renewOutboxClaim,
+  withStatementTimeout,
   recordDeliveryReceipt,
   recordWebhookEvent,
   type Tx,
@@ -95,6 +96,30 @@ describe('notification outbox', () => {
     expect(await claimOutboxBatch(t(), { channels: ['whatsapp'] })).toHaveLength(1);
     await db.execute(sql`update notification_outbox set claimed_at = now() - interval '5 minutes'`);
     expect(await claimOutboxBatch(t(), { channels: ['whatsapp'], leaseSeconds: 60 })).toHaveLength(1);
+  });
+
+  it('a row reclaimed after its lease lapsed records last_error lease_expired (visible, not silent)', async () => {
+    const k = key();
+    await enqueueNotification(t(), wa(k));
+    expect(await claimOutboxBatch(t(), { channels: ['whatsapp'] })).toHaveLength(1);
+    expect((await rowOf(k)).lastError).toBeNull();
+    await db.execute(sql`update notification_outbox set claimed_at = now() - interval '5 minutes'`);
+    const [again] = await claimOutboxBatch(t(), { channels: ['whatsapp'], leaseSeconds: 60 });
+    expect(again?.attempts).toBe(2);
+    expect((await rowOf(k)).lastError).toBe('lease_expired');
+    // A successful send clears it again.
+    await markOutboxSent(t(), again!, 'pid');
+    expect((await rowOf(k)).lastError).toBeNull();
+  });
+
+  it('withStatementTimeout runs the work in a transaction with a local statement_timeout', async () => {
+    const read = async (d: Tx) => {
+      const r: unknown = await d.execute(sql`select current_setting('statement_timeout') as v`);
+      const rows = (r as { rows?: { v: string }[] }).rows ?? (r as { v: string }[]);
+      return rows[0]?.v;
+    };
+    expect(await withStatementTimeout(t(), 4000, read)).toBe('4s');
+    expect(await read(t())).not.toBe('4s');
   });
 
   it('a slow sender whose lease lapsed can neither send nor record (no double send)', async () => {

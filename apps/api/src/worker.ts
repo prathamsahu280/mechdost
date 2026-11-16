@@ -34,6 +34,8 @@ import {
   queueQuoteExpiringEmails,
   readForwardableEvents,
   resumeEndedPauses,
+  withStatementTimeout,
+  type Tx,
 } from '@mechdost/db/repo';
 import { createPosthogSender, startPosthogForwarder } from './analytics/posthog';
 import { FailureBackoff } from './backoff';
@@ -41,6 +43,7 @@ import { dispatchDueRefunds, reconcileDueRefunds } from './payments/refunds';
 import { httpRazorpay } from './payments/razorpay';
 import { ConfigError, loadConfig } from './config';
 import { pollingPublisher, type LivePublisher } from './live/publisher';
+import { withDeadline } from './notify/deadline';
 import { startDispatcher, type ChannelAdapter } from './notify/dispatcher';
 import { createEmailAdapter } from './notify/email';
 import { createBillAttachmentLoader } from './notify/pdf/attachment';
@@ -66,6 +69,13 @@ try {
 const sentry = await startSentry(config.sentry, 'worker');
 
 const { db, sql } = createDb(config.databaseUrl, { max: 2, transactionPooler: true });
+/**
+ * Send-time lookups of the email adapter (template override, company, trust line, bill source): a local
+ * statement_timeout plus an app deadline, so a slow or locked query falls back to the safe default text instead of
+ * holding a mail for the 120 s server timeout (incident 2026-11-16, SQLSTATE 57014).
+ */
+const bounded = <T>(ms: number, name: string, fn: (tx: Tx) => Promise<T>): Promise<T> =>
+  withDeadline(ms + 2_000, name, () => withStatementTimeout(db, ms, fn));
 const publisher: LivePublisher =
   config.live.transport === 'rtdb' && config.live.databaseUrl
     ? createRtdbPublisher({
@@ -80,18 +90,21 @@ const adapters: ChannelAdapter[] = [
   ...(config.email
     ? [
         createEmailAdapter(config.email, {
-          loadOverride: (key, locale) => emailOverrideFor(db, key, locale),
+          loadOverride: (key, locale) => bounded(4_000, 'override', (d) => emailOverrideFor(d, key, locale)),
           // The grievance officer from Admin -> Company details; EMAIL_GRIEVANCE_CONTACT stays the fallback.
-          loadGrievanceContact: async () => grievanceContactLine((await getCompany(db)).details),
+          loadGrievanceContact: async () =>
+            bounded(4_000, 'grievance', async (d) => grievanceContactLine((await getCompany(d)).details)),
           // The bill / receipt PDF on the bill emails (Q194): built here from the stored bill or order, not queued.
           loadAttachment: createBillAttachmentLoader({
-            loadSource: (input) => loadBillSource(db, input),
-            loadCompany: async () => (await getCompany(db)).details,
+            loadSource: (input) => bounded(10_000, 'bill_source', (d) => loadBillSource(d, input)),
+            loadCompany: () => bounded(4_000, 'company', async (d) => (await getCompany(d)).details),
           }),
           // Order emails' "genuine parts" footer line (Admin -> Content `trust.emailFooter`; design 2026-11-15).
           loadTrustLine: async (locale) =>
             trustLineText(
-              (await getPublishedContent(db, { locale, cityId: null }))['trust.emailFooter'],
+              (await bounded(4_000, 'trust_line', (d) => getPublishedContent(d, { locale, cityId: null })))[
+                'trust.emailFooter'
+              ],
               defaultEmailTrustLine(locale),
             ),
         }),

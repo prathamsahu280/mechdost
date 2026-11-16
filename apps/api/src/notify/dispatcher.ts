@@ -8,10 +8,12 @@ import {
   renewOutboxClaim,
   type Channel,
   type OutboxRow,
+  withStatementTimeout,
   type Tx,
 } from '@mechdost/db/repo';
 import type { Keyring } from '@mechdost/db/crypto';
 import { log, safeError } from '../logger';
+import { PhaseTimeoutError, withDeadline } from './deadline';
 
 /**
  * Notification dispatcher (spec 10). Runs in the worker. Claims due outbox rows only for channels that have an
@@ -80,6 +82,18 @@ export function backoffSeconds(attempts: number): number {
   return Math.min(3600, 30 * 2 ** Math.max(0, attempts - 1));
 }
 
+/** Where a run is right now (and since when): the stuck line names it, and stuck is measured from the last progress. */
+export interface DispatchPhase {
+  current: string;
+  since: number;
+}
+
+/** Per-step bounds, far under the 120 s lease: the database side (statement_timeout) and an app-side backstop. */
+export const STEP_STATEMENT_MS = 8_000;
+export const STEP_DEADLINE_MS = 12_000;
+/** The whole provider call incl. its loaders (the Resend fetch itself is cut at 10 s). */
+export const SEND_DEADLINE_MS = 30_000;
+
 export interface DispatchResult {
   claimed: number;
   sent: number;
@@ -97,16 +111,34 @@ export interface DispatchResult {
 export async function dispatchOnce(
   db: Tx,
   adapters: readonly ChannelAdapter[],
-  opts: { limit?: number; keyring?: Keyring | null } = {},
+  opts: { limit?: number; keyring?: Keyring | null; phase?: DispatchPhase; sendDeadlineMs?: number } = {},
 ): Promise<DispatchResult> {
+  const phase = opts.phase ?? { current: 'idle', since: Date.now() };
+  const enter = (name: string) => {
+    phase.current = name;
+    phase.since = Date.now();
+  };
+  /** One bounded database step: local statement_timeout plus an app deadline, so no query can hold the tick. */
+  const step = <T>(name: string, fn: (tx: Tx) => Promise<T>): Promise<T> => {
+    enter(name);
+    return withDeadline(STEP_DEADLINE_MS, name, () => withStatementTimeout(db, STEP_STATEMENT_MS, fn));
+  };
+  /** Analytics event after the outcome is stored: bounded too, and a failure here never changes the outcome. */
+  const outcomeOf = async (row: OutboxRow, outcome: Parameters<typeof recordOutcome>[2]): Promise<void> => {
+    try {
+      await step('event', (tx) => recordOutcome(tx, row, outcome));
+    } catch (err) {
+      log('warn', 'notify_event_failed', safeError(err));
+    }
+  };
   const limit = opts.limit ?? 10;
   const byChannel = new Map(adapters.map((a) => [a.channel, a]));
-  const rows = await claimOutboxBatch(db, { channels: [...byChannel.keys()], limit });
+  const rows = await step('claim', (tx) => claimOutboxBatch(tx, { channels: [...byChannel.keys()], limit }));
   const result: DispatchResult = { claimed: rows.length, sent: 0, failed: 0, retried: 0, skipped: 0 };
   for (const row of rows) {
     const adapter = byChannel.get(row.channel);
     if (!adapter) continue;
-    if (!(await renewOutboxClaim(db, row))) {
+    if (!(await step('renew', (tx) => renewOutboxClaim(tx, row)))) {
       result.skipped += 1;
       continue;
     }
@@ -115,37 +147,54 @@ export async function dispatchOnce(
       // Encrypted payload fields (e.g. the delivery code) are opened only here, just before the provider call.
       open = { ...row, payload: openPayload(row.payload, opts.keyring ?? null) };
     } catch {
-      if (await markOutboxFailed(db, row, 'payload_decrypt')) result.failed += 1;
+      if (await step('record', (tx) => markOutboxFailed(tx, row, 'payload_decrypt'))) result.failed += 1;
       log('error', 'notify_payload_decrypt_failed', { channel: row.channel });
       continue;
     }
     try {
-      const { providerId } = await adapter.send(open);
-      // If this returns false another worker took over after our send: the provider id is still logged as a
-      // code-free warning so the (rare) duplicate is visible in ops.
-      if (await markOutboxSent(db, row, providerId)) {
+      enter('send');
+      const { providerId } = await withDeadline(opts.sendDeadlineMs ?? SEND_DEADLINE_MS, 'send', () =>
+        adapter.send(open),
+      );
+      // The mail is out: a slow database must not turn that into a retry (a second mail). Record it twice at most.
+      let recorded: boolean | null = null;
+      for (let i = 0; i < 2 && recorded === null; i += 1) {
+        try {
+          recorded = await step('record', (tx) => markOutboxSent(tx, row, providerId));
+        } catch (err) {
+          log('warn', 'notify_record_failed_after_send', { channel: row.channel, ...safeError(err) });
+        }
+      }
+      // False = another worker took over after our send: logged code-free so the (rare) duplicate is visible.
+      if (recorded) {
         result.sent += 1;
-        await recordOutcome(db, row, { sent: true });
+        await outcomeOf(row, { sent: true });
       } else log('warn', 'notify_claim_lost_after_send', { channel: row.channel });
     } catch (err) {
-      const e = err instanceof ChannelError ? err : new ChannelError('retry', 'unexpected');
+      const e =
+        err instanceof ChannelError
+          ? err
+          : new ChannelError('retry', err instanceof PhaseTimeoutError ? 'send_timeout' : 'unexpected');
       if (e.failure === 'permanent') {
-        if (await markOutboxFailed(db, row, e.code)) {
+        if (await step('record', (tx) => markOutboxFailed(tx, row, e.code))) {
           result.failed += 1;
-          await recordOutcome(db, row, { sent: false, code: e.code });
+          await outcomeOf(row, { sent: false, code: e.code });
         }
       } else {
         const delay = e.failure === 'later' ? 86_400 : backoffSeconds(row.attempts);
-        const outcome = await markOutboxRetry(db, row, { error: e.code, delaySeconds: delay });
+        const outcome = await step('record', (tx) =>
+          markOutboxRetry(tx, row, { error: e.code, delaySeconds: delay }),
+        );
         if (outcome === 'failed') {
           result.failed += 1;
-          await recordOutcome(db, row, { sent: false, code: e.code });
+          await outcomeOf(row, { sent: false, code: e.code });
         } else if (outcome === 'retry') result.retried += 1;
       }
       // Codes only: never log the recipient or payload (PII, rule 16).
       log('warn', 'notify_send_failed', { channel: row.channel, code: e.code, failure: e.failure });
     }
   }
+  enter('idle');
   return result;
 }
 
@@ -154,7 +203,7 @@ export interface DispatcherOptions {
   adapters: readonly ChannelAdapter[];
   keyring?: Keyring | null;
   intervalMs?: number;
-  /** A run older than this is declared stuck (hung query or connection) and replaced by a new one. */
+  /** A run with no progress (phase change) for this long is declared stuck and replaced by a new one. */
   tickTimeoutMs?: number;
   /** How often the `notify_tick` heartbeat line is logged (what the dispatcher did since the last one). */
   heartbeatMs?: number;
@@ -162,12 +211,12 @@ export interface DispatcherOptions {
   dispatch?: (
     db: Tx,
     adapters: readonly ChannelAdapter[],
-    opts: { keyring: Keyring | null },
+    opts: { keyring: Keyring | null; phase?: DispatchPhase },
   ) => Promise<DispatchResult>;
 }
 
 /**
- * A hung query must not stop sending forever (worker incident 2026-11-16): a run older than `tickTimeoutMs` is logged
+ * A hung query must not stop sending forever (worker incident 2026-11-16): a run with no progress for `tickTimeoutMs` is logged (with the phase it sits in)
  * (`notify_tick_stuck`) and abandoned, and the next tick starts a fresh one. `notify_tick` is a periodic heartbeat with
  * the counts since the previous line: no heartbeat, or `claimed` at 0 while rows are pending, is the alert
  * (docs/runbooks/monitoring.md).
@@ -176,28 +225,34 @@ export function startDispatcher(opts: DispatcherOptions): {
   stop(): Promise<void>;
 } {
   const dispatch = opts.dispatch ?? dispatchOnce;
-  const tickTimeoutMs = opts.tickTimeoutMs ?? 120_000;
+  const tickTimeoutMs = opts.tickTimeoutMs ?? 45_000;
   const totals = { ticks: 0, claimed: 0, sent: 0, failed: 0, retried: 0, skipped: 0, stuck: 0, errors: 0 };
-  let current: { promise: Promise<void>; startedAt: number; id: number } | null = null;
+  let current: { promise: Promise<void>; startedAt: number; id: number; phase: DispatchPhase } | null = null;
   let generation = 0;
   const state = { stopped: false };
   const tick = () => {
     if (state.stopped || opts.adapters.length === 0) return;
     if (current) {
-      if (Date.now() - current.startedAt < tickTimeoutMs) return;
+      const idleMs = Date.now() - Math.max(current.startedAt, current.phase.since);
+      if (idleMs < tickTimeoutMs) return;
       totals.stuck += 1;
-      log('error', 'notify_tick_stuck', { runningMs: Date.now() - current.startedAt });
+      log('error', 'notify_tick_stuck', {
+        phase: current.phase.current,
+        runningMs: Date.now() - current.startedAt,
+        idleMs,
+      });
       current = null;
     }
     generation += 1;
     const id = generation;
-    const run = { startedAt: Date.now(), promise: Promise.resolve(), id };
+    const phase: DispatchPhase = { current: 'idle', since: Date.now() };
+    const run = { startedAt: Date.now(), promise: Promise.resolve(), id, phase };
     totals.ticks += 1;
     run.promise = (async () => {
       try {
         let r: DispatchResult;
         do {
-          r = await dispatch(opts.db, opts.adapters, { keyring: opts.keyring ?? null });
+          r = await dispatch(opts.db, opts.adapters, { keyring: opts.keyring ?? null, phase });
           totals.claimed += r.claimed;
           totals.sent += r.sent;
           totals.failed += r.failed;
@@ -206,7 +261,7 @@ export function startDispatcher(opts: DispatcherOptions): {
         } while (r.claimed > 0 && !state.stopped && generation === id);
       } catch (err) {
         totals.errors += 1;
-        log('error', 'notify_dispatch_failed', safeError(err));
+        log('error', 'notify_dispatch_failed', { phase: phase.current, ...safeError(err) });
       }
     })().finally(() => {
       if (current?.id === id) current = null;
