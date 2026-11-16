@@ -173,12 +173,16 @@ jobs:
           bad=$(ssh_ 'cd /opt/mechdost && docker compose ps --all --format "{{.Service}} {{.State}}"' | grep -v ' running$' || true)
           if [ -n "$bad" ]; then
             echo "::error::not running after 45 s: $bad"
-            ssh_ 'cd /opt/mechdost && docker compose logs --tail 40 worker'
+            # Public repo, public Actions logs: event names only, never log lines (security review 2026-11-16).
+            ssh_ 'cd /opt/mechdost && docker compose logs --tail 200 worker' | grep -oE '"message":"[a-z_]+"' | sort | uniq -c || true
+            echo 'Read the full log on the server: docker compose logs --tail 100 worker'
             exit 1
           fi
           if ! ssh_ 'cd /opt/mechdost && docker compose logs --since 5m worker' | grep -q worker_started; then
             echo '::error::the worker never logged worker_started'
-            ssh_ 'cd /opt/mechdost && docker compose logs --tail 40 worker'
+            # Public repo, public Actions logs: event names only, never log lines (security review 2026-11-16).
+            ssh_ 'cd /opt/mechdost && docker compose logs --tail 200 worker' | grep -oE '"message":"[a-z_]+"' | sort | uniq -c || true
+            echo 'Read the full log on the server: docker compose logs --tail 100 worker'
             exit 1
           fi
       - name: Public check (informational until DNS points at the server)

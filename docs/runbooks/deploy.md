@@ -227,7 +227,7 @@ Until `DEPLOY_ENABLED=true`, the workflow only builds and pushes images (which a
    - API: `GET /health` on :4000.
    - The old container keeps serving until the new one is up.
    - **Stack stays up (2026-11-16):** 45 s later the job checks again: every service `running` and the worker
-     logged `worker_started`, else it fails and prints the worker's last 40 log lines. `up --wait` alone passed while
+     logged `worker_started`, else it fails and prints only the worker's event names (the Actions logs are public; read the log itself on the server). `up --wait` alone passed while
      the worker (no healthcheck) crash-looped on a bundle error.
 5. **Public check:** a last, non-blocking step requests `https://mechdost.com/` from GitHub, to show whether the site is reachable from the internet.
 

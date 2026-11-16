@@ -44,3 +44,12 @@ describe('deploy workflow checks the stack stays up (2026-11-16: the worker cras
     expect(check).not.toMatch(/continue-on-error/);
   });
 });
+
+describe('deploy workflow never copies production log lines into the public Actions log', () => {
+  it('prints worker event names only', () => {
+    const check = workflow.slice(workflow.indexOf('Stack stays up'), workflow.indexOf('Public check'));
+    for (const line of check.split('\n').filter((l) => l.includes('docker compose logs'))) {
+      expect(line, line).toMatch(/grep -(q|oE)/);
+    }
+  });
+});
