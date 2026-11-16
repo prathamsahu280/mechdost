@@ -239,7 +239,10 @@ export async function resetPasswordWithLink(
 export function adoptRealAccount(me: RealMe): DemoAccount {
   const phone = me.phone ? normalisePhone(me.phone) : null;
   if (!phone) throw new Error('a real account always has an Indian mobile number (phone sign-up)');
-  const existing = findAccount(phone);
+  // Only an account from an earlier real sign-in on this device; a seeded demo account with the same phone (the
+  // demo shop owner is 9000000001) must not lend its name or join date (real-API pass 2026-11-16).
+  const found = findAccount(phone);
+  const existing = found?.id.startsWith('real-') ? found : undefined;
   const account: DemoAccount = {
     id: existing?.id ?? `real-${globalThis.crypto.randomUUID()}`,
     phone,

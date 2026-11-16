@@ -1,5 +1,6 @@
 'use client';
 
+import { SHOW_DEMO_CONTROLS } from '@/lib/data-mode';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { createContext, useContext, type ReactNode } from 'react';
@@ -24,7 +25,7 @@ export function usePortalAccount(): DemoAccount | null {
 export function PortalGuard({
   role,
   path,
-  demoNote = true,
+  demoNote = SHOW_DEMO_CONTROLS,
   children,
 }: {
   role: DemoRole;
