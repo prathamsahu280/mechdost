@@ -168,3 +168,13 @@ Coordinator's full-page screenshots (390 px light en, dark hi) and the final aud
 | V7  | Assistant chip cut by 55 px at 320 px hi dark                          | `overflow-x-auto` row inside `overflow-hidden` panel                                                                        | chips `flex-wrap`, text may wrap                                                                                    |
 | V8  | `labour_redo_claim_open` contrast                                      | `text-accent-soft-text` (#bf3c12) on `surface-alt` (#e2e8ef) is 4.4:1; other small `text-accent` links on these pages: none | ink text, accent underline                                                                                          |
 | V9  | /hi coupon form showed "Tyres, Batteries"                              | fixture ignored `?locale=hi` on `/catalogue/categories` (picker reads the localised `name`)                                 | fixture answers Hindi names for `locale=hi`                                                                         |
+
+## Final round, 2026-11-16 (commit 047d1ee, re-run of photos rows on 07bee41)
+
+- UI state audit demo (chunks A–F): 2,209 passed, 2 flaky. API mode (chunk G): 2,142 passed; 5 `API-WS-PHOTOS` timeouts
+  were the audit hook clicking the now-disabled "Vehicle received" (bug 6 fix); hook fixed (07bee41), re-run of
+  `API-WS-PHOTOS-`: all 10 shards green.
+- Visual review demo: 424 shots, clean. **First real-mode capture** (`visual-review.yml` mode=api, 8 shards, 2,936
+  shots: pages per role + chunk-G scenes incl. refund queue, shop portal, service bill, quote thread, admin queues):
+  reviewed, no layout defects in en/hi, light/dark, 390/1440. Expected: pages whose data the baseline mocks don't
+  supply show their error/empty state; sticky header/tab bar repeat in full-page phone shots (capture artifact).
