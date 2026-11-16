@@ -16,6 +16,8 @@ export const CATALOGUE_SLUG_RE = /^[a-z0-9][a-z0-9-]{0,119}$/;
 export const NetQuantitySchema = z.object({ qty: z.number().int().min(1), unit: z.enum(NET_UNITS) });
 
 export const CatalogueOfferSchema = z.object({
+  /** The offered variant's sku: what the cart line needs (a card without an offer has none). */
+  sku: z.string(),
   pricePaise: z.number().int(),
   mrpPaise: z.number().int(),
   /** The pack this offer prices; null when its size is not listed. */

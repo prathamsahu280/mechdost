@@ -46,6 +46,8 @@ export interface CataloguePlace {
 }
 
 export interface CatalogueOffer {
+  /** The offered variant's sku (the cart line key). */
+  sku: string;
   pricePaise: number;
   mrpPaise: number;
   /** Net quantity of the very pack this offer prices (unit price, design 2026-11-13); null when not listed. */
@@ -143,7 +145,7 @@ function offerLateral(place: CataloguePlace, variants: SQL): SQL {
     // Customer price: the admin's PIN override, else city price, else the shop's own (Q26); only shops paid at or
     // below it qualify (design 2026-11-13: never sold below what the shop is paid).
     return sql`left join lateral (
-      select ${CUSTOMER_PRICE} as price, v.mrp_paise as mrp, v.net_qty as net_qty, v.net_unit as net_unit,
+      select ${CUSTOMER_PRICE} as price, v.sku as sku, v.mrp_paise as mrp, v.net_qty as net_qty, v.net_unit as net_unit,
         sp.shipping_paise as shipping,
         coalesce(si.lead_days, sp.lead_days) as lead_days, s.name as shop_name, s.name_hi as shop_name_hi
       from product_variants v
@@ -158,7 +160,7 @@ function offerLateral(place: CataloguePlace, variants: SQL): SQL {
   }
   // City-wide "From ₹": the city price when the admin set one (PIN overrides are shown once a PIN is known).
   return sql`left join lateral (
-    select ${CUSTOMER_PRICE} as price, v.mrp_paise as mrp, v.net_qty as net_qty, v.net_unit as net_unit,
+    select ${CUSTOMER_PRICE} as price, v.sku as sku, v.mrp_paise as mrp, v.net_qty as net_qty, v.net_unit as net_unit,
       null::bigint as shipping, si.lead_days as lead_days,
       s.name as shop_name, s.name_hi as shop_name_hi
     from product_variants v
@@ -191,6 +193,7 @@ interface CardRow {
   highlights_hi: string[] | null;
   vehicle_types: string[] | null;
   price: unknown;
+  sku: string | null;
   mrp: unknown;
   net_qty: unknown;
   net_unit: string | null;
@@ -223,6 +226,7 @@ function toCard(r: CardRow, locale: CatalogueLocale): CatalogueCard {
       price === null
         ? null
         : {
+            sku: r.sku ?? '',
             pricePaise: price,
             mrpPaise: num(r.mrp),
             netQuantity: netQuantityOf(r.net_qty, r.net_unit),
@@ -365,7 +369,7 @@ export async function listCatalogue(db: Tx, query: CatalogueQuery): Promise<Cata
       select p.id, p.slug, p.name, p.name_hi, b.slug as brand_slug, b.name as brand_name,
         c.slug as category_slug, c.name as category_name, c.name_hi as category_name_hi,
         p.spec_summary, p.spec_summary_hi, p.highlights, p.highlights_hi, p.vehicle_types,
-        o.price, o.mrp, o.net_qty, o.net_unit, o.shipping, o.lead_days, ${k.expr} as sort_key
+        o.price, o.sku, o.mrp, o.net_qty, o.net_unit, o.shipping, o.lead_days, ${k.expr} as sort_key
       from products p
       join brands b on b.id = p.brand_id
       join categories c on c.id = p.category_id
@@ -439,7 +443,7 @@ export async function getCatalogueProduct(
           c.slug as category_slug, c.name as category_name, c.name_hi as category_name_hi,
           p.spec_summary, p.spec_summary_hi, p.highlights, p.highlights_hi, p.vehicle_types,
           p.description, p.description_hi, p.compatibility, p.compatibility_hi, p.spec, p.country_of_origin, p.warranty, p.gst_rate_bp,
-          null::bigint as price, null::bigint as mrp, null::int as net_qty, null::text as net_unit,
+          null::bigint as price, null::text as sku, null::bigint as mrp, null::int as net_qty, null::text as net_unit,
           null::bigint as shipping, null::int as lead_days, pc.slug as parent_category_slug,
           '' as sort_key_text
         from products p join brands b on b.id = p.brand_id join categories c on c.id = p.category_id
@@ -520,6 +524,7 @@ export async function getCatalogueProduct(
           price === null
             ? null
             : {
+                sku: v.sku,
                 pricePaise: price,
                 mrpPaise: num(v.mrp),
                 netQuantity: pack,

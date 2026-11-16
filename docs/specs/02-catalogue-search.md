@@ -219,3 +219,5 @@ real stock), never from an admin switch (dark-pattern audit F4, `docs/research/d
 Product card: the badges (Bestseller, vehicle type, fitment not listed) are a wrapping row under the picture (`data-slot="card-badges"`), never over it, so they cannot cover the SKU. Workshop finder (spec 07 listing): the service list under each workshop wraps, no ellipsis.
 
 - **Reviews (2026-11-16):** the write-a-review form (product page, order and service screens) has a visible Cancel next to Submit, closes on Escape and returns focus to "Write a review"; unsent text is discarded by Cancel. Event `review_cancel_<target>`.
+
+- **Card offer carries the sku (2026-11-16, real-API bug):** `CatalogueOfferSchema.sku` is the offered variant's sku (list, search, home ranges, recommendations and wishlist cards all come from `listCatalogue`; the product page's per-variant offer has it too). The web `apiCard` reads `offer.sku`; a card without an offer (on request) has no sku and shows no "Add to cart". Before this, every card "Add to cart" stored a line without a sku and the real cart dropped it. Tests: `packages/db/test/catalogue.test.ts`, `apps/web/test/catalogue-api-source.test.ts`.

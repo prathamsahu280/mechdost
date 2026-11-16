@@ -98,3 +98,7 @@ Which process sent them: the deployed worker did not send anything. The first se
 - Server worker: check why it does not send the outbox (bug 1); this is also why nobody receives order mails on the live site.
 - Look at the order and service mails in the test inbox (logo and link addresses: the first thirteen were sent with localhost addresses, the last five with the real site address).
 - Decide what to do with the QA data in the live database (2 orders, 1 service request, 1 workshop, the test accounts); nothing was removed.
+
+### Fixed 2026-11-16: "Add to cart" from a product card (real mode)
+
+Cause: the catalogue list card offer had no sku, so `apiCard()` set `sku: null`; the cart line had no sku and the real cart and checkout dropped it (header said 1, /cart empty). Fix: `CatalogueOfferSchema.sku` (the offered variant, from the offer lateral in `packages/db/src/repo/catalogue.ts`), `apiCard` uses `offer.sku`. Tests red then green: db catalogue (offer sku), web `catalogue-api-source` (apiCard sku; on request stays null). Not re-run against the live site.
