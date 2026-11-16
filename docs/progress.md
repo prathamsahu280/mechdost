@@ -4,6 +4,8 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Current status
 
+- **2026-11-16 (real-API pass 2):** orders (COD and Razorpay test), routing, shop delivery with code, and a full service request to a paid bill all pass against the live API; emails sent only by a local worker (the deployed worker did not send the outbox). 12 findings in `docs/qa/real-api-pass-2026-11-16.md`.
+
 - **2026-11-16 (real-API pass, partial):** sign-up, staff grant and staff two-step verified against real Firebase and the live API; found and fixed the sign-up retry bug (f08d43a). Order and service steps are blocked: the production database has no products, shops, workshops or notification templates. One WhatsApp test accepted by Meta. Open bugs: demo placeholder name on `/account` and demo footer on `/admin` in real mode. Details: `docs/qa/real-api-pass-2026-11-16.md`.
 
 - **2026-11-16 (morning): DEPLOYED.** `pnpm db:migrate` run (user allowed; 76 migrations, 0073–0077 new; Supabase security advisor: only the expected "RLS on, no policy" notices). main = `5850540`: CI green after two fixes (logo images lazy — React preloaded both and broke the hero-only preload gate; logo link ≥ 24 px at 320), deploy succeeded; mechdost.com, /hi/shop, api.mechdost.com/health and the new logo all 200. Real-API pass on hold (user: "dont start the real api tests yet"). WhatsApp token kept as is (user).

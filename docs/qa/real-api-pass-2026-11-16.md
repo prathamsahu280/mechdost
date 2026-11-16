@@ -38,3 +38,50 @@ Main commit under test: bb88ee3, then f08d43a (sign-up retry fix).
 - Click the verification links for the four test accounts (needed for ordering and for `/admin` data).
 - Check the phone for the WhatsApp test message.
 - Decide how the production catalogue, shop and workshop are created (admin console by hand, or a seed), then rerun steps C to E.
+
+## Pass 2 (same day, after the demo seed: 23 products, 4 shops, 0 workshops; main at 16a693c)
+
+Method: one local API (real Firebase, live database), one local worker, one local web build; one browser with four contexts (customer, shop owner, workshop owner, admin), each signed in once. Cloudflare test keys for Turnstile (local only). Test card for Razorpay test mode: a domestic Mastercard test number (the common Visa test number is refused as "international" in this account).
+
+| Step                                                        | Result             | Notes                                                                                                                                                                                                                                                                                                                                                                            |
+| ----------------------------------------------------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Emails verified                                          | pass               | After the user clicked the links, all four accounts show "Email verified" and the admin console loads its data.                                                                                                                                                                                                                                                                  |
+| 2a. Shop owner to a seeded shop                             | pass               | Admin, Partners, Shops, Manage, Portal access (the direct path; the invite link is for new sellers). The owner also got access to a second shop to receive the routed order (see bug 3).                                                                                                                                                                                         |
+| 2b. Create and publish a workshop                           | pass               | Admin, Partners, Workshops, Add workshop (Hindi texts, service menu, "location verified", "listed" ticked at creation); it shows in the finder at its PIN.                                                                                                                                                                                                                       |
+| 2c. Workshop owner to the workshop                          | pass               | "Give portal access" with the owner role; the workshop portal opens after a fresh sign-in.                                                                                                                                                                                                                                                                                       |
+| C. COD order                                                | pass               | Product page, cart, checkout, COD. See bug 4 (first Place order press ignored).                                                                                                                                                                                                                                                                                                  |
+| C. Online order (Razorpay test)                             | pass               | Checkout opens in test mode; paid; "Payment received. Your order is placed."; payment row `paid`.                                                                                                                                                                                                                                                                                |
+| D. Route, accept, pack, out for delivery, deliver with code | pass (both orders) | Admin routes (one suggested shop), shop accepts, packs, marks out for delivery, the customer page shows the delivery code, the shop enters it, order `delivered`. Customer page followed the status without a reload (accepted, packed, out for delivery, delivered within about 20 s). The shop page needed a reload to show a new offer (not confirmed whether it also polls). |
+| E. Service request to payment                               | pass               | Request, workshop proposal (hour), customer accepts, before photo (upload works), vehicle received with odometer, estimate, customer approves the line (needs the authorisation tick), start work, after photo, ready, bill, customer pays online (Razorpay test): request `completed`.                                                                                          |
+
+### Emails (notification outbox, all addressed to the user's test inbox)
+
+Which process sent them: the deployed worker did not send anything. The first seven rows stayed `pending` for about 8 minutes until a local worker was started; the local worker sent every row afterwards. All rows ended `sent` with a provider id.
+
+- Sent by the local worker with the website address defaulting to localhost (logo and links point at localhost, so the logo does not load in a mail client): `order_placed` (twice), `shop_order_routed` (twice), `order_confirmed` (twice), `order_out_for_delivery` (twice), `order_delivered` (twice), `payment_received`, `service_request_received`, `service_proposed`.
+- Sent after restarting the API and worker with `WEB_BASE_URL=https://mechdost.com`: `service_confirmed`, `service_estimate_ready`, `service_ready`, `service_bill_ready`, `service_completed`.
+- `shop_order_routed` mails go to the shop owner's address, so a seeded shop's address would receive it; here the owner was the test account.
+- Firebase verification mails were sent at sign-up (earlier pass).
+- No WhatsApp and no SMS this pass.
+
+### Bugs and observations (pass 2)
+
+1. **Deployed worker is not sending the outbox.** Rows created at 06:45 to 06:52 stayed `pending` with 0 attempts until a local worker ran. Either the server worker is down or its email channel is off. Check `docker compose logs worker` (expected line `worker_started` with channels `email`). User action or ops fix.
+2. **Worker logs `data_exports_failed` every 30 s** against the live database (table `data_export_requests` exists; the log line carries only stack frames, no message, so the cause is not visible). Needs the error message added to the log and a look at the query.
+3. **A person who owns two shops sees both on the shop portal, but "Your prices" says "This account is not linked to a shop yet. Call MechDost support."** Edge case; steps: give one account the owner role on two shops, open `/partner/shop`.
+4. **Place order does nothing when pressed while "Checking prices and delivery for your PIN..." is showing** (no message; the button looks active). Press again after the check ends and the order is placed. Steps: fill the checkout form, press Place order immediately.
+5. **Workshop "Send proposal" offers hours that have already started** (the list begins at the opening hour); the server refuses with "That hour has already started. Pick a later hour." Better to hide past hours for today.
+6. **"Ready for pickup" is enabled before an after photo exists** on the workshop job; the press does nothing visible until a photo is added (the page says a photo is needed, but there is no message on the press).
+7. **Customer service page keeps the headline "Request sent to QA Raipur Auto Care." after the job is completed and paid** (the step list is right, the headline is stale).
+8. **Estimate review shows the line description twice** ("Engine oil and filter" twice) on the customer's estimate card.
+9. **Razorpay checkout asks for an email** although the account has one (the prefill carries only the phone). Optional: pass the account email as prefill.
+10. **Service request page did not follow the workshop's step within 15 s** once (vehicle received), while the order page did follow within about 20 s. Polling interval differs or the service page polls less often; not measured.
+11. Header avatar circle is empty for an account without a name (fixed greeting, avatar initial still blank).
+12. `service_bill_ready` was claimed at 07:00:34 but only sent at 07:02:35 after the lease ran out (attempts 2): a lost claim, no error. Worth a look at the dispatcher with two workers.
+13. Previously noted and re-checked: sign-up retry fix and the demo placeholder name fix both pass.
+
+### To do by the user
+
+- Server worker: check why it does not send the outbox (bug 1); this is also why nobody receives order mails on the live site.
+- Look at the order and service mails in the test inbox (logo and link addresses: the first thirteen were sent with localhost addresses, the last five with the real site address).
+- Decide what to do with the QA data in the live database (2 orders, 1 service request, 1 workshop, the test accounts); nothing was removed.
