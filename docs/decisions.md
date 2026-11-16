@@ -1426,3 +1426,13 @@ set on 2026-11-16 stays in the local `.env` and the server `.env` (already set i
 User: "in the existing ones i have set the customized domain for review so make sure u dont disrupt that". The Firebase
 Auth email templates and their custom sender domain (and its DNS) are managed by the user in the Firebase console;
 the repo and the session never change them. Launch checklist entry in `docs/runbooks/deploy.md`.
+
+## 2026-11-16 — Hand-made WhatsApp templates had a broken button URL (fixed, user)
+
+The four English templates created by hand in Meta before the CLI (`order_confirmed`, `order_out_for_delivery`,
+`order_rejected_refund`, `service_estimate_ready`) stored their button URL as `…/orders/%7B%7B1%7D%7D{{1}}` (a literal,
+URL-encoded `{{1}}` in front of the variable), so the real-API WhatsApp test linked to
+`/orders/%7B%7B1%7D%7DMD-…`. Our sender was correct (it passes only the code). User: "yeah edit the 4 whatsapp
+templates" — edited through the Graph API (button URL only: `https://mechdost.com/orders/{{1}}`,
+`/service/{{1}}`); all four back in review. The CLI-submitted templates were already correct. Follow-up: the CLI's
+`--status` flags button URLs containing `{{`/`%7B` outside the variable.

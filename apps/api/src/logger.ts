@@ -36,6 +36,14 @@ export function log(severity: Severity, message: string, fields: Record<string, 
  * stack *frames* only. Never the message: database errors embed the failed query and its parameters (phone
  * numbers, message text), and provider errors can echo request bodies.
  */
+/** Hides values a database message can quote: "..." / '...' strings, (...) groups and digit runs of 4 or more. */
+function maskValues(message: string): string {
+  return message
+    .replace(/"[^"]*"|'[^']*'/g, '"?"')
+    .replace(/\([^)]*\)/g, '(?)')
+    .replace(/\d{4,}/g, '#');
+}
+
 export function safeError(err: unknown): {
   errorName: string;
   pgCode?: string;
@@ -50,16 +58,15 @@ export function safeError(err: unknown): {
     const c = (e as { code?: unknown }).code;
     if (typeof c === 'string' && /^[0-9A-Z]{5}$/.test(c)) code = c;
     const cause = (e as { cause?: unknown }).cause;
-    // The message of the wrapped cause (the database's own text, or the driver's TypeError) is what says what broke.
-    // The wrapper's message ("Failed query: ... params ...") is never logged. Data errors (class 22/23) quote the
-    // offending value, so their quoted parts are hidden.
+    // What broke, without any data (security review 2026-11-16): a database cause (5-character SQLSTATE) logs its
+    // message with every quoted value, parenthesised value and long digit run hidden, then capped; any other cause
+    // logs only its name and code, never its message. The wrapper ("Failed query: ... params ...") is never logged.
     if (cause instanceof Error && !reason) {
-      const raw = cause.message.slice(0, 200);
       const causeCode = (cause as { code?: unknown }).code;
       reason =
-        typeof causeCode === 'string' && /^2[23]/.test(causeCode)
-          ? raw.replace(/"[^"]*"|'[^']*'/g, '"?"')
-          : raw;
+        typeof causeCode === 'string' && /^[0-9A-Z]{5}$/.test(causeCode)
+          ? maskValues(cause.message).slice(0, 200)
+          : [cause.name, typeof causeCode === 'string' ? causeCode : ''].filter(Boolean).join(' ');
     }
     if (code) break;
     e = cause;
