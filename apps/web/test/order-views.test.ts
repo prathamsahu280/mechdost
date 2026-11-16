@@ -41,7 +41,8 @@ describe('shop portal on the API', () => {
     expect(nextShopAction('packed')).toEqual({
       kind: 'advance',
       label: 'markShipped',
-      steps: ['shipped', 'out_for_delivery'],
+      steps: ['out_for_delivery'],
+      handOver: true,
     });
     // Handed over but the code was never sent (second call failed): only the missing step.
     expect(nextShopAction('shipped')).toEqual({
@@ -58,6 +59,12 @@ describe('shop portal on the API', () => {
     expect(advanceBody('packed', 3)).toEqual({ to: 'packed', version: 3 });
     expect(advanceBody('shipped', 4)).toEqual({ to: 'shipped', version: 4, mode: 'own' });
     expect(advanceBody('out_for_delivery', 5)).toEqual({ to: 'out_for_delivery', version: 5 });
+    // From "packed" one call hands over and goes out for delivery (QA pass 4, bug 3).
+    expect(advanceBody('out_for_delivery', 5, true)).toEqual({
+      to: 'out_for_delivery',
+      version: 5,
+      handOverOwn: true,
+    });
   });
 
   it('labels statuses with the existing order stage texts', () => {

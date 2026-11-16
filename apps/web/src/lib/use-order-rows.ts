@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { ORDER_STAGES, useOrders } from '@/demo/store';
 import { DATA_MODE } from './data-mode';
 import { isClosedStatus, orderStatusKey } from './order-status';
+import { orderListTotalPaise } from './order-totals';
 
 /** One line of the customer's order list, the same whether it comes from the demo or the API. */
 export interface OrderRow {
@@ -37,7 +38,7 @@ async function loadApiRows(locale: string): Promise<OrderRows> {
       return {
         code: o.code,
         placedAt: o.placedAt,
-        totalPaise: o.totalPaise,
+        totalPaise: orderListTotalPaise(o),
         items: null,
         statusKey: orderStatusKey(part?.status ?? 'placed'),
       };

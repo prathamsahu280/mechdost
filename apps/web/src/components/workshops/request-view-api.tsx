@@ -8,6 +8,7 @@ import type { ServiceRequestDetail } from '@mechdost/shared/service-api';
 import { SERVICE_ANY_CANCEL_REASONS, SERVICE_CANCEL_REASONS } from '@mechdost/shared/state';
 import { lazy, Suspense, useCallback, useEffect, useState, type SyntheticEvent } from 'react';
 import { track } from '@/lib/analytics';
+import { billStepDetailKey } from '@/lib/bill-paid';
 import { formatDate, formatPrice } from '@/lib/format';
 import { loginHref } from '@/lib/record-links';
 import { useSignedOut } from '@/lib/use-signed-out';
@@ -155,7 +156,9 @@ export function RequestViewApi({ code }: { code: string }) {
         ? h('stepArrivedDetail')
         : s === 'requested' && req.status === 'proposed'
           ? t('stepDetail_proposed')
-          : t(`stepDetail_${s}`),
+          : s === 'billed'
+            ? t(billStepDetailKey(req.bill))
+            : t(`stepDetail_${s}`),
   }));
   const noWork = req.status === 'no_work_approved' || (req.status === 'completed' && req.bill === null);
   const estimate = req.estimate;

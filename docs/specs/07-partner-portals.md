@@ -181,6 +181,7 @@ Decision "Shop management and shop hours on the API" (2026-11-14). Migration **0
 - **Working hours** (user 2026-11-14): only the owner sets them, with `PUT /v1/shop/hours/{shopId} {version, hours}`
   (staff of the shop get 403 `OWNER_ONLY`). The value is one window on chosen weekdays in IST; closing "24:00" means
   open until midnight. Default 09:00–21:00, Monday to Saturday. See spec 04 for what the hours do in routing.
+- **Sell another product, several shops (QA pass 4, 2026-11-16):** an owner of more than one shop gets one block per shop (heading "For {shop}" when there are several), each with its own state and requests; it no longer always targets the first shop.
 - **Sell another product:** the shop searches the live catalogue, picks a pack and sends a price + stock request
   (`POST /v1/shop-onboarding/{shopId}/price-requests`). Staff approve it in the price queue, and the approval creates
   the listing. Waiting requests for products not on the board yet are listed.

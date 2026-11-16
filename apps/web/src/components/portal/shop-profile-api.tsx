@@ -285,8 +285,9 @@ function HoursCard({ shop: s, onChanged }: { shop: MyShopDto; onChanged: () => P
  */
 export function ShopNewProductApi() {
   const t = useTranslations('portal');
+  const locale = useLocale();
   const { load } = useMyShops();
-  const shop = load.kind === 'ok' ? load.shops[0] : undefined;
+  const shops = load.kind === 'ok' ? load.shops : [];
   return (
     <section aria-labelledby="new-product-title" className="space-y-3">
       <div>
@@ -295,7 +296,18 @@ export function ShopNewProductApi() {
         </h2>
         <p className="mt-1 text-sm text-muted">{t('shops_api_newLead')}</p>
       </div>
-      {shop ? <NewProduct shopId={shop.id} /> : null}
+      {load.kind === 'ok'
+        ? load.shops.map((s) => (
+            <div key={s.id} className="space-y-2">
+              {shops.length > 1 ? (
+                <h3 className="text-sm font-bold text-ink" data-user-content>
+                  {t('shops_api_newForShop', { shop: locale === 'hi' && s.nameHi ? s.nameHi : s.name })}
+                </h3>
+              ) : null}
+              <NewProduct shopId={s.id} />
+            </div>
+          ))
+        : null}
     </section>
   );
 }

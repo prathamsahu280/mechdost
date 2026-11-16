@@ -1517,3 +1517,20 @@ counter with the global `api_user` rule. Spec 13 "Global API limits".
   now blocks a real double press.
 - **Bulk-quote search (bug 13):** searches 350 ms after typing stops (two characters minimum), newest answer wins.
 - **Hindi CSV hint (bug 15):** column names stay in `<code lang="en">` (codes); each is now explained in Hindi.
+
+## 2026-11-16 - QA pass 4 bugs (builder rulings)
+
+- **Out for delivery is one request (bug 3).** The two POSTs were `shipped` then `out_for_delivery`, by design of the
+  state machine (spec 04). The API now accepts `out_for_delivery` with `handOverOwn: true` from `packed` and runs both
+  moves in one transaction (version checked on the first move, version +2, same events/audit/code). Courier hand-over
+  keeps its own `shipped` step. Cost if wrong: none for data (same rows as before); one extra field on the advance body.
+- **Cart delivery text is neutral (Q196, bug 2).** No city amount on the cart or the checkout fallback; the real
+  per-group threshold is shown at checkout only. User can revise (Q196).
+- **Several shops, "Sell another product" (bug 1):** one block per shop, not a picker, like "Your prices".
+- **Quote page payment (bug 4):** once the order is paid on the server, stale warnings are dropped (one state at a
+  time); while "not confirmed yet" shows, the page re-reads every 4 s.
+- **Orders list total (bug 5):** the list shows the placed total (`placedTotalPaise`), also for rejected orders.
+- **Admin overview counts (bug 8):** refresh while the tab is visible (60 s, `startPolling`) and on tab return.
+- **Split order link (bug 10):** `/orders/<code>-2` shows the whole order, marks (border, `aria-current`) and scrolls to
+  the named part once; order and numbering are unchanged.
+- **Wording (bugs 6, 9):** see spec 06 "Pass 4 wording".

@@ -7,6 +7,7 @@ import type { AdminOverview } from '@mechdost/shared/admin-analytics-api';
 import { commonErrorKey, type CommonErrorKey } from '@/lib/api-error-key';
 import { formatCount } from '@/lib/admin-analytics-view';
 import { formatPrice } from '@/lib/format';
+import { startPolling } from '@/lib/storefront-poll';
 import { ADMIN_SECTIONS, type AdminSection } from '@/lib/sections';
 import { PushPromptSlot } from '../notices/push-prompt-slot';
 import { portalCard, portalPrimary } from './portal-styles';
@@ -31,19 +32,23 @@ export function AdminOverviewApi() {
   const [data, setData] = useState<AdminOverview | null>(null);
   const [error, setError] = useState<CommonErrorKey | null>(null);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (): Promise<boolean> => {
     const { fetchAdminOverview } = await import('@/lib/admin-analytics-api');
     const res = await fetchAdminOverview(locale);
     if (!res.ok) {
       setError(commonErrorKey(res.code));
-      return;
+      return false;
     }
     setError(null);
     setData(res.data);
+    return true;
   }, [locale]);
 
+  // The counts refresh while the tab is visible and when it is shown again (QA pass 4, bug 8: a price request that
+  // arrived after the page opened showed 0 until a reload).
   useEffect(() => {
     void load();
+    return startPolling(load);
   }, [load]);
 
   const all: Tile[] = data

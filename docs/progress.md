@@ -527,3 +527,7 @@ Bug 7 (free-delivery hint = per-group threshold from the quote), 8 (routing empt
 ## 2026-11-16 - V5 launcher over booking form (branch worktree-agent-a40d4e26d4cfc75ca, not merged)
 
 Booking forms carry `data-launcher-avoid`; CSS hides `.assistant-launcher` on pages with one (no JS, layout graph unchanged). State audit: new check `launcher` + row `WS-BOOK-FLOAT`, checklist regenerated (4358 items). Unit test in `apps/web/test/site-chrome-fit.test.ts`. Playwright not run locally (CI).
+
+## 2026-11-16 - QA pass 4 bugs (branch worktree-agent-ac038f03f743a9795, not merged)
+
+Bugs 1, 2, 3, 4, 5, 6, 8, 9, 10 of `docs/qa/real-api-pass-4-2026-11-16.md` fixed (7 = email retries, not code; not touched). Tests: `apps/web/test/bugfix-qa-pass4.test.ts`, `packages/db/test/shop-orders.test.ts` ("one-call hand over"), `apps/api/test/shop-orders.test.ts` (compound call), `order-views.test.ts`; e2e text updated (`admin-site`, `qa-regressions`). Rulings in decisions.md 2026-11-16 "QA pass 4"; Q196 answered by default. Budget: `cart-view.tsx` lost code (the `settings` hook and amount), no new import reachable from the layout, `/cart`, `/shop` or home; `checkout-form` text-only. Not measured here. Playwright, next build and `pnpm check` not run.

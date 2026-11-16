@@ -293,3 +293,6 @@ Promoted lessons (rule now in `checklist.md`) are in `learnings-archive.md`; rea
 - L277 · 2026-11-16 · QA triage · "two POSTs on one click" was two different steps of one button, not a double submit → check the request bodies before treating a duplicate as a bug; still guard with a ref.
 
 - L278 · 2026-11-16 · floating UI · the audit exempted fixed elements covering page content, so a launcher over a price (V5) passed every run → fixed UI that can sit over a right-aligned price column needs its own audit check (`launcher`) and, where the page cannot reserve space for something that follows the viewport, a CSS-only hide keyed by a data attribute on the form.
+
+- L279 · 2026-11-16 · QA triage / API shape · "two POSTs for one click" (L277) was a genuine design smell: a button that needs two server moves leaves a half-done state if the second fails → give a multi-move button ONE server call (compound transition, one transaction, version checked on the first) instead of guarding the client.
+- L280 · 2026-11-16 · copy · a per-city setting printed where only per-PIN/per-shop truth exists (cart, checkout fallback) is wrong twice (pass 3, pass 4) → state a number only where the server priced it; elsewhere use neutral text.

@@ -106,9 +106,9 @@ describe('bug 10: the support list refreshes on its own', () => {
 });
 
 describe('bug 12: one click on a fulfilment button is never two submits of the same step', () => {
-  it('packed to out for delivery is two different steps, each with its own version', () => {
+  it('packed to out for delivery is ONE request (the API does hand-over + out for delivery together; pass 4)', () => {
     const a = nextShopAction('packed');
-    expect(a && 'steps' in a ? new Set(a.steps).size === a.steps.length : false).toBe(true);
+    expect(a && 'steps' in a ? a.steps : null).toEqual(['out_for_delivery']);
   });
   it('the card guards the second press with a ref, not only state', () => {
     expect(read('components/portal/shop-portal-api.tsx')).toContain('busyRef');

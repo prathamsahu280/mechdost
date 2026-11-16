@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { formatINR } from '@mechdost/shared/money';
 import { billPaidKey } from '@/lib/bill-paid';
+import { approvedTotalKey } from '@/lib/estimate-summary';
 import { computeServiceBill, labourPromiseEndsAt } from '@mechdost/shared/service-bill';
 import { useEffect, useId, useState, type SyntheticEvent } from 'react';
 import { decideEstimate } from '@/demo/service-jobs';
@@ -161,7 +162,7 @@ export function EstimateApproval({
           </fieldset>
         ))}
         <p className="font-heading font-extrabold text-ink" aria-live="polite">
-          {t('approvedTotal', { total: formatPrice(approvedTotal) })}
+          {t(approvedTotalKey(registered), { total: formatPrice(approvedTotal) })}
         </p>
         <label className="flex items-start gap-3 text-sm text-ink">
           <input

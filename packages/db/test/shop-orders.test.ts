@@ -335,6 +335,44 @@ describe('advisor review fixes (2026-11-03)', () => {
   });
 });
 
+describe('one-call hand over + out for delivery (QA pass 4, bug 3)', () => {
+  it('from packed, out_for_delivery with handOverOwn moves through shipped in one transaction with one code', async () => {
+    const ids = [shop['Sharma Auto Parts']!];
+    const { code, assignmentId } = await placeAndRoute('Sharma Auto Parts');
+    await acceptShopOffer(t(), { shopIds: ids, assignmentId, staffUserId: shopUser });
+    const adv = async (step: Parameters<typeof advanceShopOrder>[1]['step'], v?: number) =>
+      advanceShopOrder(t(), {
+        shopIds: ids,
+        code,
+        expectedVersion: v ?? (await orderRow(code)).version,
+        step,
+        staffUserId: shopUser,
+        keyring,
+      });
+    // Not packed yet: the compound move is refused.
+    await expect(adv({ to: 'out_for_delivery', handOverOwn: true })).rejects.toMatchObject({
+      code: 'WRONG_STEP',
+    });
+    await adv({ to: 'packed' });
+    const before = await orderRow(code);
+    // A stale version is refused and nothing moves.
+    await expect(adv({ to: 'out_for_delivery', handOverOwn: true }, before.version - 1)).rejects.toThrow();
+    expect((await orderRow(code)).status).toBe('packed');
+    const r = await adv({ to: 'out_for_delivery', handOverOwn: true });
+    expect(r.status).toBe('out_for_delivery');
+    const after = await orderRow(code);
+    expect(after.version).toBe(before.version + 2);
+    const shipments = await db.select().from(s.shipments).where(eq(s.shipments.orderId, after.id));
+    expect(shipments).toHaveLength(1);
+    expect(shipments[0]?.mode).toBe('own');
+    expect(await deliveryCodeFor(t(), keyring, shipments[0]!.id)).toMatch(/^\d{4}$/);
+    const tos = (await db.select().from(s.orderEvents).where(eq(s.orderEvents.orderId, after.id))).map(
+      (e) => e.toStatus,
+    );
+    expect(tos.slice(-3)).toEqual(['packed', 'shipped', 'out_for_delivery']);
+  });
+});
+
 describe('delivery override (review B2, spec 04)', () => {
   it('a locked delivery code no longer strands the order: staff override, audited, once', async () => {
     const ids = [shop['Sharma Auto Parts']!];

@@ -9,6 +9,7 @@ import type { QuoteDetail, QuoteOffer, QuotePay } from '@mechdost/shared/quote-a
 import { QUOTE_DECLINE_REASONS, type QuoteDeclineReason, type QuoteStatus } from '@mechdost/shared/state';
 import { track } from '@/lib/analytics';
 import { formatDate, formatPrice } from '@/lib/format';
+import { payNoteShown, type PayNote } from '@/lib/pay-note';
 import { loginHref } from '@/lib/record-links';
 import { useSignedOut } from '@/lib/use-signed-out';
 import {
@@ -84,6 +85,20 @@ export function QuoteThreadApi({ code }: { code: string }) {
     },
     [locale, refresh],
   );
+
+  const serverPaid = load.kind === 'ok' && load.quote.orderPayment?.status === 'paid';
+  // The payment went through at the bank but our confirmation has not arrived: look again every few seconds until the
+  // order says paid (QA pass 4, bug 4), instead of waiting for the slow poll.
+  const awaitingConfirmation = payNote === 'not_confirmed' && !serverPaid;
+  useEffect(() => {
+    if (!awaitingConfirmation) return;
+    const id = window.setInterval(() => {
+      if (document.visibilityState === 'visible') void refresh();
+    }, 4_000);
+    return () => {
+      window.clearInterval(id);
+    };
+  }, [awaitingConfirmation, refresh]);
 
   useEffect(() => {
     if (!code) return;
@@ -166,7 +181,7 @@ export function QuoteThreadApi({ code }: { code: string }) {
             <AcceptedCard
               quote={quote}
               orderCode={quote.orderCode}
-              note={payNote}
+              note={payNoteShown(payNote, serverPaid)}
               paying={paying}
               onPay={startPayment}
             />
@@ -185,7 +200,6 @@ export function QuoteThreadApi({ code }: { code: string }) {
   );
 }
 
-type PayNote = 'paid' | 'cancelled' | 'failed' | 'unavailable' | 'not_confirmed' | 'expired';
 interface Prefill {
   name: string;
   phone: string;

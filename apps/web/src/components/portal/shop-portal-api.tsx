@@ -442,11 +442,11 @@ function ActiveOrder({
   const [error, setError] = useState<string | null>(null);
   const action = nextShopAction(order.status);
 
-  // A ref, not only state: two presses in the same frame both see `busy === false` (QA 2026-11-16, bug 12). "Out for
-  // delivery" from "packed" is two different steps (shipped, then out_for_delivery), each with its own version.
+  // A ref, not only state: two presses in the same frame both see `busy === false` (QA 2026-11-16, bug 12).
+  // "Out for delivery" from "packed" is one request (`handOver`: the API does hand-over + out for delivery; pass 4).
   const busyRef = useRef(false);
 
-  async function advance(steps: readonly ('packed' | 'shipped' | 'out_for_delivery')[]) {
+  async function advance(steps: readonly ('packed' | 'shipped' | 'out_for_delivery')[], handOver = false) {
     if (busyRef.current) return;
     busyRef.current = true;
     setBusy(true);
@@ -454,7 +454,7 @@ function ActiveOrder({
     for (const step of steps) {
       const res = await adminApi(locale, `/shop/orders/${order.code}/advance`, OrderChanged, {
         method: 'POST',
-        body: advanceBody(step, version),
+        body: advanceBody(step, version, handOver),
       });
       if (!res.ok) {
         busyRef.current = false;
@@ -504,7 +504,7 @@ function ActiveOrder({
           <button
             type="button"
             disabled={busy}
-            onClick={() => void advance(action.steps)}
+            onClick={() => void advance(action.steps, action.handOver === true)}
             className={`${portalPrimary} mt-4 w-full`}
           >
             {t(action.label)}

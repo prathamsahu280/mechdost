@@ -12,6 +12,7 @@ import { formatDate, formatPrice } from '@/lib/format';
 import { loginHref, orderGroupCode } from '@/lib/record-links';
 import { useSignedOut } from '@/lib/use-signed-out';
 import { ORDER_STEPS, cancelHelpShown, isClosedStatus, orderStepIndex } from '@/lib/order-status';
+import { requestedPartCode } from '@/lib/order-parts';
 import { orderTotalLines } from '@/lib/order-totals';
 import { StatusTimeline } from './status-timeline';
 
@@ -19,6 +20,11 @@ import { StatusTimeline } from './status-timeline';
 const WriteReviewApi = lazy(() =>
   import('../reviews/write-review-api').then((m) => ({ default: m.WriteReviewApi })),
 );
+
+/** A stable ref callback: runs on mount only, so the 30 s refresh does not pull the page back to this part. */
+const scrollIntoViewOnce = (el: HTMLElement | null) => {
+  el?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+};
 
 type Load = { kind: 'loading' } | { kind: 'error'; code: string } | { kind: 'ok'; order: MyOrder };
 
@@ -84,6 +90,10 @@ export function OrderViewApi({ code }: { code: string }) {
   const parts = order.orders;
   const anyOpen = parts.some((p) => !isClosedStatus(p.status));
   const totals = orderTotalLines(order);
+  const requested = requestedPartCode(
+    code,
+    parts.map((p) => p.code),
+  );
   return (
     <div className="space-y-6">
       {isNew && anyOpen ? (
@@ -126,6 +136,7 @@ export function OrderViewApi({ code }: { code: string }) {
       {parts.map((part, i) => (
         <OrderPart
           key={part.code}
+          highlight={part.code === requested}
           part={part}
           label={parts.length > 1 ? t('api_part', { n: i + 1, count: parts.length }) : null}
           onChanged={refresh}
@@ -154,10 +165,13 @@ export function OrderViewApi({ code }: { code: string }) {
 function OrderPart({
   part,
   label,
+  highlight,
   onChanged,
 }: {
   part: TrackedOrder;
   label: string | null;
+  /** The part the link named (`/orders/<code>-2`): marked and scrolled into view once (QA pass 4, bug 10). */
+  highlight: boolean;
   onChanged: () => Promise<void>;
 }) {
   const t = useTranslations('order');
@@ -166,7 +180,11 @@ function OrderPart({
   const steps = ORDER_STEPS.map((s) => ({ key: s, title: t(`stage_${s}`), detail: t(`detail_${s}`) }));
   const closed = isClosedStatus(part.status);
   return (
-    <section className="space-y-4 rounded-card border border-line-card bg-surface p-6 shadow-card">
+    <section
+      ref={highlight ? scrollIntoViewOnce : undefined}
+      aria-current={highlight ? 'true' : undefined}
+      className={`space-y-4 rounded-card border bg-surface p-6 shadow-card ${highlight ? 'border-accent-button' : 'border-line-card'}`}
+    >
       {label ? <p className="text-xs font-extrabold text-muted uppercase">{label}</p> : null}
       {part.seller ? (
         <p className="font-heading font-bold text-ink" data-user-content>

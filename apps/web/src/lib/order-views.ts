@@ -45,18 +45,22 @@ export function shopStageKey(
 export type ShopStep = 'packed' | 'shipped' | 'out_for_delivery';
 
 /**
- * The shop's next action: one button per stage, as in the demo. "Mark out for delivery" from `packed` is the
- * API's two moves (hand over for own delivery, then out for delivery — the customer gets the code); from
- * `shipped` (handed over, code not sent yet) only the second. `code` = ask for the customer's delivery code.
+ * The shop's next action: one button per stage, as in the demo. "Mark out for delivery" from `packed` is ONE API
+ * call with `handOver` (the API hands over for own delivery and goes out for delivery together — the customer gets
+ * the code; QA pass 4, bug 3); from `shipped` (handed over, code not sent yet) the plain second step.
+ * `code` = ask for the customer's delivery code.
  */
 export function nextShopAction(
   status: string,
-): { kind: 'advance'; label: 'markPacked' | 'markShipped'; steps: ShopStep[] } | { kind: 'code' } | null {
+):
+  | { kind: 'advance'; label: 'markPacked' | 'markShipped'; steps: ShopStep[]; handOver?: true }
+  | { kind: 'code' }
+  | null {
   switch (status) {
     case 'confirmed':
       return { kind: 'advance', label: 'markPacked', steps: ['packed'] };
     case 'packed':
-      return { kind: 'advance', label: 'markShipped', steps: ['shipped', 'out_for_delivery'] };
+      return { kind: 'advance', label: 'markShipped', steps: ['out_for_delivery'], handOver: true };
     case 'shipped':
       return { kind: 'advance', label: 'markShipped', steps: ['out_for_delivery'] };
     case 'out_for_delivery':
@@ -67,8 +71,11 @@ export function nextShopAction(
 }
 
 /** Request body for one advance step (own delivery; courier hand-over with AWB is not offered on this screen). */
-export function advanceBody(step: ShopStep, version: number) {
-  return step === 'shipped' ? { to: step, version, mode: 'own' as const } : { to: step, version };
+export function advanceBody(step: ShopStep, version: number, handOver = false) {
+  if (step === 'shipped') return { to: step, version, mode: 'own' as const };
+  return step === 'out_for_delivery' && handOver
+    ? { to: step, version, handOverOwn: true as const }
+    : { to: step, version };
 }
 
 export interface AddressLines {
