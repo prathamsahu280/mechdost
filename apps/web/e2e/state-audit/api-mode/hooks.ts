@@ -304,8 +304,17 @@ async function prepareApi(page: Page, c: AuditCase): Promise<string[]> {
       if ((await km.count()) === 0) notes.push('no odometer form');
       else {
         await km.fill('21400');
-        await main.locator('form:has(input[name="odometer"]) button[type="submit"]').first().click();
-        await settleApi(page);
+        const submit = main.locator('form:has(input[name="odometer"]) button[type="submit"]').first();
+        // Since QA pass 3 (bug 6) the button is disabled with its reason while a required before photo is missing, so
+        // the API gate is never reached; clicking a disabled button waited out the test timeout (2026-11-16).
+        if (await submit.isDisabled()) {
+          const reason = await submit.getAttribute('aria-describedby');
+          if (!reason || (await page.locator(`[id="${reason}"]`).count()) === 0)
+            notes.push('vehicle received disabled without a visible reason');
+        } else {
+          await submit.click();
+          await settleApi(page);
+        }
       }
     }
   }
