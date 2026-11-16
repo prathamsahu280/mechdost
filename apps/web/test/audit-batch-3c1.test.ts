@@ -132,7 +132,9 @@ describe('4-31 px sideways scroll on signed-in pages: the header yields instead 
 
 describe('Hindi gate (hard rule 10) for the signed-in name, admin names, shop names, company, CSV help', () => {
   it('the header account link (title = the name) is user content', () => {
-    expect(src('components/auth/account-link.tsx')).toMatch(/title=\{first\}\s+data-user-content/);
+    expect(src('components/auth/account-link.tsx')).toMatch(
+      /title=\{first \|\| account\}\s+data-user-content/,
+    );
   });
   it('person names in admin are marked user content', () => {
     expect(src('components/portal/admin-policies-api.tsx')).toContain(

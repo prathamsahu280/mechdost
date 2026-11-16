@@ -31,7 +31,7 @@ describe('signed-in header fits at every width', () => {
 
   it('the signed-in name shows as text only from xl and keeps a title and an accessible name', () => {
     expect(account).toMatch(/className="sr-only max-w-\[9ch\] truncate xl:not-sr-only"/);
-    expect(account).toMatch(/data-track="header_account"\s+title=\{first\}/);
+    expect(account).toMatch(/data-track="header_account"\s+title=\{first \|\| account\}/);
     expect(account).toContain('<span className="sr-only">, {account}</span>');
   });
 
