@@ -15,7 +15,15 @@ import {
   type Auth,
   type ConfirmationResult,
 } from '@firebase/auth';
-import { codeFailFor, hasPasswordProvider, passwordLinkedFor, type CodeFail } from './auth-errors';
+import {
+  analyticsAuthCode,
+  codeFailFor,
+  hasPasswordProvider,
+  passwordLinkedFor,
+  phoneSendFailFor,
+  type CodeFail,
+  type PhoneFail,
+} from './auth-errors';
 import type { RealMe } from './real-account';
 
 /**
@@ -60,8 +68,7 @@ function firebaseAuth(locale: string): Auth {
 const codeOf = (err: unknown) =>
   typeof err === 'object' && err !== null && 'code' in err && typeof err.code === 'string' ? err.code : '';
 
-export type PhoneFail = 'phone' | 'rate' | 'captcha' | 'unavailable';
-export type { CodeFail };
+export type { CodeFail, PhoneFail };
 
 /** A closed reCAPTCHA challenge never settles the send: give up after this long (a11y review 2026-11-09). */
 const SEND_TIMEOUT_MS = 60_000;
@@ -75,7 +82,7 @@ export async function sendPhoneCode(
   e164: string,
   locale: string,
   containerId: string,
-): Promise<{ ok: true } | { ok: false; reason: PhoneFail }> {
+): Promise<{ ok: true } | { ok: false; reason: PhoneFail; code: string }> {
   const a = firebaseAuth(locale);
   try {
     verifier?.clear();
@@ -96,24 +103,20 @@ export async function sendPhoneCode(
     verifier?.clear();
     verifier = null;
     const code = codeOf(err);
-    if (code === 'auth/invalid-phone-number') return { ok: false, reason: 'phone' };
-    if (code === 'auth/too-many-requests' || code === 'auth/quota-exceeded')
-      return { ok: false, reason: 'rate' };
-    if (code === 'auth/captcha-check-failed') return { ok: false, reason: 'captcha' };
-    return { ok: false, reason: 'unavailable' };
+    return { ok: false, reason: phoneSendFailFor(code), code: analyticsAuthCode(code) };
   }
 }
 
 /** Check the 6-digit code. `hasPassword`: this phone already has an account with a password (sign in instead). */
 export async function confirmPhoneCode(
   code: string,
-): Promise<{ ok: true; hasPassword: boolean } | { ok: false; reason: CodeFail }> {
-  if (!confirmation) return { ok: false, reason: 'otp' };
+): Promise<{ ok: true; hasPassword: boolean } | { ok: false; reason: CodeFail; code: string }> {
+  if (!confirmation) return { ok: false, reason: 'otp', code: 'unknown' };
   try {
     const { user } = await confirmation.confirm(code);
     return { ok: true, hasPassword: user.providerData.some((p) => p.providerId === 'password') };
   } catch (err) {
-    return { ok: false, reason: codeFailFor(codeOf(err)) };
+    return { ok: false, reason: codeFailFor(codeOf(err)), code: analyticsAuthCode(codeOf(err)) };
   }
 }
 

@@ -420,6 +420,14 @@ const path = ANALYTICS_PATH;
 export const CLIENT_EVENT_SCHEMAS = {
   page_view: z.object({ path, locale: z.enum(['en', 'hi']) }).strict(),
   click: z.object({ id, path }).strict(),
+  // A phone-code send or check failed (2026-11-16): the Firebase error code only, never the phone number.
+  auth_code_failed: z
+    .object({
+      stage: z.enum(['send', 'confirm']),
+      code: z.string().regex(/^(auth\/[a-z0-9-]{1,60}|unknown)$/),
+      path,
+    })
+    .strict(),
   // Server-side scrub too: never trust the client to have removed phone numbers or emails.
   search: z
     .object({

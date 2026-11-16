@@ -138,3 +138,9 @@ Built as a support request: `POST /v1/support/deletion-request` (spec 09 "Accoun
 A new account section `wishlist` (real sign-in only; `lib/sections.ts`): saved products newest first with photo, brand, name and a remove button; empty state with "Browse the shop". See spec 02. At sign-in or sign-up the guest cart is merged into the saved cart (spec 03).
 
 **Account frame (2026-11-16):** `app/[locale]/account/layout.tsx` holds the heading, `ClientMessages` and `AccountFrame` (signed-out card, partner pointer, section bar); `/account` and `/account/[section]` render `AccountSectionBody` only, so switching sections never remounts the frame or reloads (decisions 2026-11-16; `e2e/no-reload-navigation.spec.ts`).
+
+## Sign-in error messages (QA pass 4, 2026-11-16)
+
+- Signed in with an account that has no name: the sign-in page says "You're already signed in." (`auth.alreadySignedInNoName`) with the same account link, never "signed in as ." (like `account.helloNoName`).
+- Phone-code send failures are mapped by the pure `phoneSendFailFor(code)` in `lib/auth/auth-errors.ts`: `auth/invalid-phone-number` -> phone field error; `auth/invalid-app-credential`, `auth/missing-app-credential`, `auth/captcha-check-failed` -> security-check message (`errBotCheck`); `auth/too-many-requests`, `auth/quota-exceeded` -> `errTooManyCodes`; `auth/network-request-failed` -> `errNetwork` ("check your connection"); anything else (incl. `auth/operation-not-allowed`) -> generic `errUnavailable`. The partner status check has the matching `statusErr_network`.
+- Every send/confirm failure also records the client event `auth_code_failed` with the Firebase code only (spec 12). Tests: `apps/web/test/auth-send-errors.test.ts`.

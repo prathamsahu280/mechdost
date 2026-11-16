@@ -11,6 +11,32 @@ export function codeFailFor(code: string | undefined): CodeFail {
   return 'unavailable';
 }
 
+export type PhoneFail = 'phone' | 'rate' | 'captcha' | 'network' | 'unavailable';
+
+/** Why a phone-code send failed, from the Firebase error code: each common cause gets its own message. */
+export function phoneSendFailFor(code: string | undefined): PhoneFail {
+  switch (code) {
+    case 'auth/invalid-phone-number':
+      return 'phone';
+    case 'auth/too-many-requests':
+    case 'auth/quota-exceeded':
+      return 'rate';
+    case 'auth/captcha-check-failed':
+    case 'auth/invalid-app-credential':
+    case 'auth/missing-app-credential':
+      return 'captcha';
+    case 'auth/network-request-failed':
+      return 'network';
+    default:
+      return 'unavailable';
+  }
+}
+
+/** The Firebase error code for analytics: only a plain `auth/...` code, never free text (no phone numbers). */
+export function analyticsAuthCode(code: string | undefined): string {
+  return code && /^auth\/[a-z0-9-]{1,60}$/.test(code) ? code : 'unknown';
+}
+
 /** True when this email + password is already linked (a sign-up retry after linking succeeded). */
 export function passwordLinkedFor(
   providerData: readonly { providerId: string; email: string | null }[],

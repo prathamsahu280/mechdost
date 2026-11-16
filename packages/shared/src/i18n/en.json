@@ -1451,6 +1451,7 @@
     "errTooManyCodes": "Too many code requests. Wait a few minutes, then try again.",
     "errUnavailable": "Sign-in isn't working right now. Try again in a few minutes, or call 7978776551.",
     "errBotCheck": "We couldn't finish the security check. Press the button again.",
+    "errNetwork": "We couldn't reach the sign-in service. Check your connection and try again.",
     "errStaffOtherAccount": "This code was for a different account. Use the latest code sent to your phone.",
     "errOtpExpired": "This code has expired. Ask for a new one with “Resend code”.",
     "otpHint": "Enter the 6-digit code from the SMS. You can paste it.",
@@ -1462,6 +1463,7 @@
     "sendingCode": "Sending code…",
     "sendingLink": "Sending…",
     "alreadySignedIn": "You're signed in as {name}. Sign in below only to switch accounts.",
+    "alreadySignedInNoName": "You're already signed in. Sign in below only to switch accounts.",
     "goToAccount": "Go to your account"
   },
   "account": {
@@ -4606,6 +4608,7 @@
     "statusErr_phone": "That phone number was not accepted.",
     "statusErr_rate": "Too many tries. Please wait a while and try again.",
     "statusErr_captcha": "The security check did not finish. Please try again.",
+    "statusErr_network": "We could not connect. Check your connection and try again.",
     "statusErr_otp": "That code is not right. Try again.",
     "statusErr_expired": "That code has expired. Send a new one.",
     "statusErr_unavailable": "This check is not available right now. Please call 7978776551.",

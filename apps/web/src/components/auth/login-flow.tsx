@@ -27,6 +27,7 @@ import {
 } from '@/demo/session';
 import { track } from '@/lib/analytics';
 import type * as RealClientModule from '@/lib/auth/firebase-client';
+import type { CodeFail, PhoneFail } from '@/lib/auth/auth-errors';
 import { AUTH_MODE } from '@/lib/auth/mode';
 import { PasswordField, authInput } from './password-field';
 
@@ -255,16 +256,19 @@ export function LoginFlow() {
     }
   }
 
-  function phoneFail(reason: 'phone' | 'rate' | 'captcha' | 'unavailable') {
+  function phoneFail(reason: PhoneFail, code: string) {
+    track('auth_code_failed', { stage: 'send', code, path: window.location.pathname });
     if (reason === 'phone') fail(t('errPhone'), 'login-phone');
     else if (reason === 'rate') failForm(t('errTooManyCodes'));
+    else if (reason === 'network') failForm(t('errNetwork'));
     else if (reason === 'captcha') {
       track('click', { id: 'login_captcha_failed', path: window.location.pathname });
       failForm(t('errBotCheck'));
     } else failForm(t('errUnavailable'));
   }
 
-  function codeFail(reason: 'otp' | 'expired' | 'rate' | 'unavailable') {
+  function codeFail(reason: CodeFail, code?: string) {
+    if (code) track('auth_code_failed', { stage: 'confirm', code, path: window.location.pathname });
     if (reason === 'otp') fail(t('errOtp'), 'login-otp');
     else if (reason === 'expired') {
       track('click', { id: 'login_code_expired', path: window.location.pathname });
@@ -433,7 +437,7 @@ export function LoginFlow() {
     if (res.status === 'staff_code') {
       const sent = await r.sendPhoneCode(res.phone, locale, RECAPTCHA_ID);
       if (!sent.ok) {
-        phoneFail(sent.reason === 'phone' ? 'unavailable' : sent.reason);
+        phoneFail(sent.reason === 'phone' ? 'unavailable' : sent.reason, sent.code);
         return undefined;
       }
       pendingPassword.current = password;
@@ -465,7 +469,7 @@ export function LoginFlow() {
       const r = await real();
       const confirmed = await r.confirmPhoneCode(otp);
       if (!confirmed.ok) {
-        codeFail(confirmed.reason);
+        codeFail(confirmed.reason, confirmed.code);
         return undefined;
       }
       const token = await botCheck();
@@ -496,7 +500,7 @@ export function LoginFlow() {
     const target = step === 'staff' ? staffPhone : `+91${phone}`;
     const sent = await r.sendPhoneCode(target, locale, RECAPTCHA_ID);
     if (!sent.ok) {
-      phoneFail(sent.reason === 'phone' ? 'unavailable' : sent.reason);
+      phoneFail(sent.reason === 'phone' ? 'unavailable' : sent.reason, sent.code);
       return false;
     }
     setCodeExpired(false);
@@ -521,7 +525,7 @@ export function LoginFlow() {
           const r = await real();
           const sent = await r.sendPhoneCode(`+91${normalised}`, locale, RECAPTCHA_ID);
           if (!sent.ok) {
-            phoneFail(sent.reason);
+            phoneFail(sent.reason, sent.code);
             return undefined;
           }
         }
@@ -561,7 +565,7 @@ export function LoginFlow() {
       const r = await real();
       const confirmed = await r.confirmPhoneCode(otp);
       if (!confirmed.ok) {
-        codeFail(confirmed.reason);
+        codeFail(confirmed.reason, confirmed.code);
         return undefined;
       }
       if (confirmed.hasPassword) {
@@ -670,7 +674,7 @@ export function LoginFlow() {
       const r = await real();
       const confirmed = await r.confirmPhoneCode(otp);
       if (!confirmed.ok) {
-        codeFail(confirmed.reason);
+        codeFail(confirmed.reason, confirmed.code);
         return undefined;
       }
       if (!confirmed.hasPassword) {
@@ -802,7 +806,7 @@ export function LoginFlow() {
         <form noValidate onSubmit={(e) => void onSignIn(e)}>
           {current && !notice ? (
             <p className="mb-4 rounded-lg bg-pill p-3 text-sm text-ink">
-              {t('alreadySignedIn', { name: current.name })}{' '}
+              {current.name ? t('alreadySignedIn', { name: current.name }) : t('alreadySignedInNoName')}{' '}
               <Link
                 href={`${prefix}${homeFor(current.role)}`}
                 data-track="login_go_account"
