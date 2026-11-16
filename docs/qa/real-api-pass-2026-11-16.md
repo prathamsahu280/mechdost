@@ -83,5 +83,5 @@ Which process sent them: the deployed worker did not send anything. The first se
 ### To do by the user
 
 - Server worker: check why it does not send the outbox (bug 1); this is also why nobody receives order mails on the live site.
-- Look at the order and service mails in the test inbox (logo and link addresses: the first twelve were sent with localhost addresses, the last five with the real site address).
+- Look at the order and service mails in the test inbox (logo and link addresses: the first thirteen were sent with localhost addresses, the last five with the real site address).
 - Decide what to do with the QA data in the live database (2 orders, 1 service request, 1 workshop, the test accounts); nothing was removed.
