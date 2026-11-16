@@ -18,7 +18,10 @@ await build({
   format: 'esm',
   sourcemap: true,
   external,
+  // The CommonJS `require` shim uses a private alias: a source file importing `createRequire` itself (the bill PDF
+  // fonts) gave the worker bundle a duplicate declaration and it crashed on start (2026-11-16). Guard: the bundle
+  // syntax check in `test/build-bundle.test.ts`.
   banner: {
-    js: "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);",
+    js: "import { createRequire as __mdCreateRequire } from 'node:module'; const require = __mdCreateRequire(import.meta.url);",
   },
 });
