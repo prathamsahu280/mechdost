@@ -80,6 +80,19 @@ Which process sent them: the deployed worker did not send anything. The first se
 12. `service_bill_ready` was claimed at 07:00:34 but only sent at 07:02:35 after the lease ran out (attempts 2): a lost claim, no error. Worth a look at the dispatcher with two workers.
 13. Previously noted and re-checked: sign-up retry fix and the demo placeholder name fix both pass.
 
+**Fixed 2026-11-16 (branch `worktree-agent-a916972233b83a55a`, tests in `apps/web/test/bugfix-qa-pass2.test.ts`):**
+
+- Bug 3 fixed: "Your prices" reads the shops from `GET /v1/shop/me` (the source of the portal header), one block per shop, shop name shown when there is more than one.
+- Bug 4 fixed: "Place order" is disabled with `aria-busy` and the label "Checking prices…" while the quote loads (never a silent press).
+- Bug 5 fixed: the proposal hour list leaves out hours that already started today (IST), the same rule as the server (`SLOT_PAST`).
+- Bug 6 fixed: "Ready for pickup" is disabled with the reason ("Add at least one after photo first.") while an after photo is required and missing; it re-checks when a photo is added or removed.
+- Bug 7 fixed: the "Request sent to …" headline shows only while the request is requested, in routing or waiting for the workshop.
+- Bug 8 fixed: the line description is in the page once (the visible text names the group; the hidden legend copy is gone).
+- Bug 9 fixed: Razorpay `prefill` carries name, email and contact from the account on checkout, quote and service-bill payments.
+- Bug 10: not a wiring gap. The service page already polls every 30 s and listens to live pings (the order page only polls); its poll skips while the tab is hidden, and the QA browser had four contexts, so the checked tab was in the background. Fixed by refreshing the moment the tab is visible again.
+- Bug 11 fixed: the header avatar shows the neutral person icon when the account has no name (title and accessible label fall back to "Account").
+- Not touched here: bugs 1, 2, 12 (worker and ops).
+
 ### To do by the user
 
 - Server worker: check why it does not send the outbox (bug 1); this is also why nobody receives order mails on the live site.

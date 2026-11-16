@@ -507,6 +507,7 @@ function JobCardApi({
   const [detail, setDetail] = useState<ServiceRequestDetail | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [revising, setRevising] = useState(false);
+  const [photosTick, setPhotosTick] = useState(0);
 
   const load = useCallback(async () => {
     const res = await adminApi(
@@ -572,7 +573,13 @@ function JobCardApi({
         </p>
       ) : null}
       <HomeJobExtrasApi detail={detail} onDone={changed} />
-      <JobPhotosPanelLazy code={detail.code} status={detail.status} />
+      <JobPhotosPanelLazy
+        code={detail.code}
+        status={detail.status}
+        onChanged={() => {
+          setPhotosTick((n) => n + 1);
+        }}
+      />
       {est && !revising && action !== 'estimate' ? (
         <div className="mt-3 rounded-lg bg-surface-alt p-3 text-sm">
           <p className="font-bold text-ink">
@@ -628,7 +635,7 @@ function JobCardApi({
       ) : action === 'wait_approval' ? (
         <p className="mt-3 text-sm font-bold text-warning">{t('waitingApproval')}</p>
       ) : action ? (
-        <JobStepsApi detail={detail} action={action} onDone={changed} />
+        <JobStepsApi detail={detail} action={action} onDone={changed} photosTick={photosTick} />
       ) : null}
       {workshopMayRevise(detail.status) && est && !revising ? (
         <button

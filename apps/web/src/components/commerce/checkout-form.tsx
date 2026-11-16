@@ -158,6 +158,8 @@ export function CheckoutForm() {
     couponDiscountPaise: couponDiscount,
   });
   const prefix = locale === 'hi' ? '/hi' : '';
+  // A press while the quote is still loading would do nothing: the button shows a pending state instead (QA 2026-11-16, bug 4).
+  const checkingPrices = realData && pricing.status === 'loading';
   // Business purchase (buyer GSTIN plan 2026-11-13): optional; checked with the shared, Zod-free GST helpers.
   const [isBusiness, setIsBusiness] = useState(false);
   const [gstinInput, setGstinInput] = useState('');
@@ -728,14 +730,17 @@ export function CheckoutForm() {
         ) : null}
         <button
           type="submit"
-          disabled={submitting || knownBlock !== null}
+          disabled={submitting || checkingPrices || knownBlock !== null}
+          aria-busy={submitting || checkingPrices}
           className="press mt-5 inline-flex min-h-12 w-full items-center justify-center rounded-button bg-accent-button px-5 text-sm font-bold text-white hover:bg-accent-button-hover disabled:opacity-70 min-[600px]:w-auto"
         >
           {submitting
             ? t(method === 'online' ? 'paying' : 'placing')
-            : method === 'online'
-              ? t('payNow')
-              : `${t('place')} · ${formatPrice(payablePaise)}`}
+            : checkingPrices
+              ? t('checking')
+              : method === 'online'
+                ? t('payNow')
+                : `${t('place')} · ${formatPrice(payablePaise)}`}
         </button>
       </form>
 

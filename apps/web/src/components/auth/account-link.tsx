@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { homeFor, useSession } from '@/demo/session-state';
+import { avatarMark } from '@/lib/avatar-mark';
 import { UI_EMOJI } from '@/lib/emoji';
 
 /**
@@ -32,12 +33,12 @@ export function AccountLink({
       </Link>
     );
   }
-  const first = session.name.split(/\s+/)[0] ?? session.name;
+  const { first, initial } = avatarMark(session.name);
   return (
     <Link
       href={`${prefix}${homeFor(session.role)}`}
       data-track="header_account"
-      title={first}
+      title={first || account}
       data-user-content
       className={className}
     >
@@ -45,7 +46,7 @@ export function AccountLink({
         aria-hidden="true"
         className="grid size-7 place-items-center rounded-full bg-accent-soft text-xs font-extrabold text-accent-soft-text"
       >
-        {first.charAt(0).toUpperCase()}
+        {initial ?? UI_EMOJI.account}
       </span>
       {/* Text only from xl: the signed-in row also carries the bell, so it is an avatar (name in the title) until then. */}
       <span data-user-content className="sr-only max-w-[9ch] truncate xl:not-sr-only">

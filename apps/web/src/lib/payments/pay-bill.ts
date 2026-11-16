@@ -1,4 +1,4 @@
-import { loadCheckout, type RazorpaySuccess } from './pay-online';
+import { accountPrefill, loadCheckout, type RazorpaySuccess } from './pay-online';
 
 /**
  * Pay a workshop service bill online with Razorpay Standard Checkout (spec 03 "Service bill payments"). Loaded only
@@ -57,6 +57,7 @@ export async function payBill(input: { code: string; locale: string }): Promise<
     const handle = (await started.json()) as Handle;
     const Razorpay = await loadCheckout();
     if (!Razorpay) return { ok: false, reason: 'unavailable' };
+    const prefill = await accountPrefill();
     const success = await new Promise<RazorpaySuccess | 'cancelled' | 'failed'>((resolve) => {
       let failedOnce = false;
       const rzp = new Razorpay({
@@ -66,6 +67,7 @@ export async function payBill(input: { code: string; locale: string }): Promise<
         currency: handle.currency,
         name: 'MechDost',
         description: input.code,
+        prefill,
         theme: { color: '#ea5728' },
         handler: (res: RazorpaySuccess) => {
           resolve(res);

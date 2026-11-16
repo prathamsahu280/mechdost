@@ -5,7 +5,7 @@
  * Loaded only when the customer pays online (dynamic import), so the thread screen stays inside its JS budget.
  */
 import type { QuotePay } from '@mechdost/shared/quote-api';
-import { loadCheckout, type RazorpaySuccess } from './pay-online';
+import { accountPrefill, loadCheckout, razorpayPrefill, type RazorpaySuccess } from './pay-online';
 
 export type QuoteCheckoutResult =
   { ok: true } | { ok: false; reason: 'cancelled' | 'failed' | 'unavailable' | 'not_confirmed' | 'expired' };
@@ -20,6 +20,11 @@ export interface QuoteCheckoutInput {
 export async function checkoutQuote(input: QuoteCheckoutInput): Promise<QuoteCheckoutResult> {
   const Razorpay = await loadCheckout();
   if (!Razorpay) return { ok: false, reason: 'unavailable' };
+  const prefill = razorpayPrefill({
+    ...(await accountPrefill()),
+    name: input.prefill.name,
+    contact: input.prefill.phone,
+  });
   const outcome = await new Promise<RazorpaySuccess | 'cancelled' | 'failed'>((resolve) => {
     let failedOnce = false;
     const rzp = new Razorpay({
@@ -29,7 +34,7 @@ export async function checkoutQuote(input: QuoteCheckoutInput): Promise<QuoteChe
       currency: input.handle.currency,
       name: 'MechDost',
       description: input.orderCode,
-      prefill: { name: input.prefill.name, contact: input.prefill.phone },
+      prefill,
       theme: { color: '#ea5728' },
       handler: (res: RazorpaySuccess) => {
         resolve(res);

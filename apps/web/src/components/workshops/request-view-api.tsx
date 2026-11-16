@@ -16,6 +16,7 @@ import {
   customerStepIndex,
   rangeOf,
   serviceErrorKey,
+  thanksHeadlineShown,
 } from '@/lib/service-views';
 import { StatusTimeline } from '../commerce/status-timeline';
 import { JobPhotosStripLazy } from '@/components/photos/photos-lazy';
@@ -63,8 +64,14 @@ export function RequestViewApi({ code }: { code: string }) {
     const id = window.setInterval(() => {
       if (document.visibilityState === 'visible') void refresh();
     }, POLL_MS);
+    // A tab that was in the background skipped its polls: catch up the moment it is visible again (QA 2026-11-16, bug 10).
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void refresh();
+    };
+    document.addEventListener('visibilitychange', onVisible);
     return () => {
       window.clearInterval(id);
+      document.removeEventListener('visibilitychange', onVisible);
     };
   }, [code, refresh]);
 
@@ -152,7 +159,7 @@ export function RequestViewApi({ code }: { code: string }) {
   return (
     <div className="grid gap-6 nav:grid-cols-[1fr_380px] nav:items-start">
       <div className="space-y-6">
-        {isNew && req.status !== 'cancelled' ? (
+        {isNew && thanksHeadlineShown(req.status) ? (
           <div
             role="status"
             className="animate-page-in flex items-center gap-3 rounded-card bg-success-bg p-5 text-success"
