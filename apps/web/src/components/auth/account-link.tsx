@@ -1,8 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { homeFor, useSession } from '@/demo/session-state';
-import { avatarMark } from '@/lib/avatar-mark';
+import { avatarMark, homeFor, useSession } from '@/demo/session-state';
 import { UI_EMOJI } from '@/lib/emoji';
 
 /**

@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import en from '../../../packages/shared/src/i18n/en.json';
 import hi from '../../../packages/shared/src/i18n/hi.json';
-import { avatarMark } from '../src/lib/avatar-mark';
+import { avatarMark } from '../src/demo/session-state';
 import { razorpayPrefill } from '../src/lib/payments/pay-online';
 import { afterPhotoMissing, hourHasStarted, thanksHeadlineShown } from '../src/lib/service-views';
 
@@ -115,5 +115,17 @@ describe('bug 11: header avatar without a name', () => {
     expect(avatarMark('rakesh sharma')).toEqual({ first: 'rakesh', initial: 'R' });
     expect(avatarMark('')).toEqual({ first: '', initial: null });
     expect(avatarMark('   ')).toEqual({ first: '', initial: null });
+  });
+});
+
+describe('first-load chunk guards (JS budget, spec 16; 2026-11-16)', () => {
+  // Each of these new import edges split the shared first-load chunks: one extra chunk, +0.5 KB gz on every page.
+  it('service-views (in the home page graph) does not import the shared IST helpers', () => {
+    expect(read('lib/service-views.ts')).not.toMatch(/from '@mechdost\/shared\/time'/);
+  });
+  it('the header account link takes its avatar helper from session-state, not a module of its own', () => {
+    expect(read('components/auth/account-link.tsx')).toMatch(
+      /avatarMark, homeFor, useSession \} from '@\/demo\/session-state'/,
+    );
   });
 });

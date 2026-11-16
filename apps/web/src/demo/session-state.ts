@@ -232,6 +232,17 @@ export function useAccounts(): readonly DemoAccount[] {
   return useSyncExternalStore(demoStorage.subscribe, accountsSnapshot, () => SEEDED_ACCOUNTS);
 }
 
+/**
+ * What the header avatar circle shows (QA 2026-11-16, bug 11): the first letter of the person's first name, or null
+ * for an account without a name (the circle then shows the neutral person icon). Kept in this module (already in the header's bundle): a new module of its own split the shared first-load chunks
+ * (+0.5 KB gz on every page, JS budget 2026-11-16).
+ */
+export function avatarMark(name: string): { first: string; initial: string | null } {
+  const first = name.trim().split(/\s+/)[0] ?? '';
+  const initial = first.charAt(0).toUpperCase();
+  return { first, initial: initial === '' ? null : initial };
+}
+
 export function homeFor(role: DemoRole): string {
   switch (role) {
     case 'shop':

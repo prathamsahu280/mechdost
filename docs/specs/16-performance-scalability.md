@@ -109,6 +109,21 @@ Product photos are rendered by a **Server Component** with `getImageProps` (a pl
   177.9, `/workshops` 178.8, `/cart` 179.8 KB gz. **Headroom on `/shop` is 0.2 KB**; next: inline env in every remaining `AUTH_MODE`/`DATA_MODE` switch (bell, push, header) to win it back.
 - Guards: `apps/web/test/cart-pill-lazy.test.ts`, `apps/web/test/storefront-next-tier.test.ts`.
 
+## Budget incident 2026-11-16: one extra chunk on every page
+
+- After the real-API QA fixes: `/shop` 180.4 and `/cart` 180.3 KB gz, every page one script more than at `16a693c`
+  (179.9 / 179.8). The modules themselves grew by 81 bytes; Turbopack split the lazy-import loader stubs into a
+  chunk of their own (342 B gz).
+- Found by building `16a693c` in a worktree and bisecting the merge file by file. Two new import edges each caused
+  the split on their own: `lib/service-views.ts` importing `@mechdost/shared/time` (the past-hours helper), and a new
+  module `lib/avatar-mark.ts` imported by the header's account link. Neither alone fixed it, which hid the cause.
+- Fix: `hourHasStarted` uses `Intl` beside `istDate` in `service-views.ts`; `avatarMark` lives in
+  `demo/session-state.ts` (already in the header bundle). Result back to `/` 164.1, `/shop` 179.9, `/cart` 179.8 KB gz.
+- Lesson: on this graph a new import edge into the layout or home graph can cost a whole chunk; measure with
+  `measure-js.mjs` before merging any change that adds a module or an import to code reachable from the layout or
+  home, and compare the chunk count, not only the size. Guards: `apps/web/test/bugfix-qa-pass2.test.ts`
+  (first-load chunk guards).
+
 ## Budget incident 2026-11-16 (night): feature merges
 
 After merging the logo, closable panels, refunds, quotes, coupons and shop staff work, `/shop` measured 185.7, product
