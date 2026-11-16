@@ -109,12 +109,14 @@ export function EstimateApprovalApi({
       <p className="mt-2 text-sm text-muted">{t('estimateIntro')}</p>
       <form noValidate onSubmit={(e) => void onSubmit(e)} className="mt-4 space-y-3">
         {items.map((l) => (
-          <fieldset key={l.id} className="rounded-lg border border-line-card p-3">
-            <legend className="sr-only" data-user-content>
-              {l.description}
-            </legend>
+          <fieldset
+            key={l.id}
+            aria-labelledby={`${formId}-${l.id}-desc`}
+            className="rounded-lg border border-line-card p-3"
+          >
+            {/* The visible description names the group: one copy in the page, not a hidden legend as well (QA 2026-11-16, bug 8). */}
             <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-              <p aria-hidden="true" className="font-bold text-ink" data-user-content>
+              <p id={`${formId}-${l.id}-desc`} className="font-bold text-ink" data-user-content>
                 {l.description}
               </p>
               <p className="text-sm font-bold text-ink tabular-nums">{formatPrice(lineGross(l))}</p>

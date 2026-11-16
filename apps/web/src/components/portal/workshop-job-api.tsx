@@ -14,6 +14,7 @@ import { adminApi } from '@/lib/admin-api';
 import { track } from '@/lib/analytics';
 import { formatPrice } from '@/lib/format';
 import {
+  afterPhotoMissing,
   badLineFrom,
   lastKmFrom,
   parseOdometerKm,
@@ -395,15 +396,33 @@ export function JobStepsApi({
   detail,
   action,
   onDone,
+  photosTick = 0,
 }: {
   detail: ServiceRequestDetail;
   action: WorkshopAction;
   onDone: () => Promise<void>;
+  /** Bumped by the photo panel when a photo is added or removed, so the "ready" gate re-checks. */
+  photosTick?: number;
 }) {
   const t = useTranslations('portal');
   const r = useTranslations('request');
+  const pt = useTranslations('photos');
   const locale = useLocale();
   const [busy, setBusy] = useState(false);
+  // "Ready" needs an after photo when photos are required: say so up front instead of a press that does nothing.
+  const [needsAfter, setNeedsAfter] = useState(false);
+  useEffect(() => {
+    if (action !== 'ready') return;
+    const alive: { current: boolean } = { current: true };
+    void (async () => {
+      const { fetchWorkshopPhotos } = await import('@/lib/photos-api');
+      const res = await fetchWorkshopPhotos(locale, detail.code);
+      if (alive.current && res.ok) setNeedsAfter(afterPhotoMissing(res.data));
+    })();
+    return () => {
+      alive.current = false;
+    };
+  }, [action, detail.code, locale, photosTick]);
   const [error, setError] = useState<string | null>(null);
   const [method, setMethod] = useState<PayMethod | ''>('');
   const [missing, setMissing] = useState(false);
@@ -489,12 +508,18 @@ export function JobStepsApi({
       <button
         key={action}
         type="button"
-        disabled={busy}
+        disabled={busy || (action === 'ready' && needsAfter)}
+        aria-describedby={action === 'ready' && needsAfter ? `${detail.code}-ready-why` : undefined}
         onClick={() => void step(STEP_PATH[action], {}, `workshop_job_${action}`)}
         className={`${portalPrimary} w-full`}
       >
         {t(STEP_LABEL[action])}
       </button>
+      {action === 'ready' && needsAfter ? (
+        <p id={`${detail.code}-ready-why`} className="text-xs font-bold text-warning">
+          {pt('err_PHOTOS_REQUIRED_after')}
+        </p>
+      ) : null}
     </div>
   );
 }

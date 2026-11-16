@@ -108,6 +108,38 @@ async function api(path: string, token: string | null, body: unknown, extra: Rec
   });
 }
 
+/**
+ * Razorpay's `prefill` object: only the parts that exist, so checkout does not ask again for what the account already
+ * has (QA 2026-11-16, bug 9). An empty value is left out, never sent blank.
+ */
+export function razorpayPrefill(parts: {
+  name?: string | null;
+  email?: string | null;
+  contact?: string | null;
+}): { name?: string; email?: string; contact?: string } {
+  const out: { name?: string; email?: string; contact?: string } = {};
+  const name = parts.name?.trim();
+  const email = parts.email?.trim();
+  const contact = parts.contact?.trim();
+  if (name) out.name = name;
+  if (email) out.email = email;
+  if (contact) out.contact = contact;
+  return out;
+}
+
+/** The signed-in account's name, email and phone from `GET /v1/me` (nothing when it cannot be read). */
+export async function accountPrefill(): Promise<{ name?: string; email?: string; contact?: string }> {
+  try {
+    const { fetchMe } = await import('@/lib/auth/firebase-client');
+    const me = await fetchMe();
+    return me && me !== 'blocked'
+      ? razorpayPrefill({ name: me.name, email: me.email, contact: me.phone })
+      : {};
+  } catch {
+    return {};
+  }
+}
+
 /** Has the order been paid (by the callback or by Razorpay's webhook)? */
 async function orderPaid(code: string, token: string): Promise<boolean> {
   const res = await fetch(`${API}/v1/orders/${encodeURIComponent(code)}`, {
@@ -193,6 +225,13 @@ export async function payOnline(input: PayOnlineInput): Promise<PayOnlineResult>
     // 3. Razorpay Checkout.
     const Razorpay = await loadCheckout();
     if (!Razorpay) return { ok: false, reason: 'unavailable', orderCode: placed.code };
+    // The form's name and phone win (they are what the order ships to); the account's email fills the rest.
+    const account = await accountPrefill();
+    const prefill = razorpayPrefill({
+      ...account,
+      name: input.address.contactName,
+      contact: input.address.contactPhone,
+    });
     const success = await new Promise<RazorpaySuccess | 'cancelled' | 'failed'>((resolve) => {
       let failedOnce = false;
       const rzp = new Razorpay({
@@ -202,7 +241,7 @@ export async function payOnline(input: PayOnlineInput): Promise<PayOnlineResult>
         currency: handle.currency,
         name: 'MechDost',
         description: placed.code,
-        prefill: { name: input.address.contactName, contact: input.address.contactPhone },
+        prefill,
         theme: { color: '#ea5728' },
         handler: (res: RazorpaySuccess) => {
           resolve(res);

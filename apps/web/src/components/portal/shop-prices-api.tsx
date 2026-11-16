@@ -8,7 +8,8 @@ import { adminApi } from '@/lib/admin-api';
 import { track } from '@/lib/analytics';
 import { formatPrice } from '@/lib/format';
 import { parseRupees } from '@/lib/money-input';
-import { apiErrorKey, priceRows, shopIdsOf, type PriceRow } from '@/lib/order-views';
+import { MyShops, type MyShopDto } from '@mechdost/shared/shop-api';
+import { apiErrorKey, priceRows, type PriceRow } from '@/lib/order-views';
 import { ApiListState } from './api-list-state';
 import { portalCard, portalField, portalPrimary } from './portal-styles';
 
@@ -23,24 +24,49 @@ type Load = { status: 'loading' } | { status: 'error'; code: string } | { status
 export function ShopPricesApi() {
   const t = useTranslations('portal');
   const locale = useLocale();
-  const [shopId, setShopId] = useState<string | null | undefined>(undefined);
+  const [shops, setShops] = useState<MyShopDto[] | null>(null);
+
+  // The same source as the portal header (`GET /v1/shop/me`, ids from the grants): every shop listed there has prices.
+  useEffect(() => {
+    let live = true;
+    void adminApi(locale, '/shop/me', MyShops).then((res) => {
+      if (live) setShops(res.ok ? res.data.shops : []);
+    });
+    return () => {
+      live = false;
+    };
+  }, [locale]);
+
+  return (
+    <section aria-labelledby="prices-title" className="space-y-3">
+      <div>
+        <h2 id="prices-title" className="font-heading text-xl font-extrabold text-ink">
+          {t('pricesTitle')}
+        </h2>
+        <p className="mt-1 text-sm text-muted">{t('pricesLead')}</p>
+        {/* The shop's approved price is what it is paid; customers see the admin's price (Q26, QA 2026-11-14 U1). */}
+        <p className="mt-1 text-sm text-muted">{t('priceCustomerNote')}</p>
+      </div>
+      {shops === null ? <div className="skeleton h-24 rounded-card" aria-hidden="true" /> : null}
+      {shops?.length === 0 ? (
+        <p role="status" className={`${portalCard} text-sm font-bold text-ink`}>
+          {t('api_noShop')}
+        </p>
+      ) : null}
+      {shops?.map((s) => (
+        <ShopPrices key={s.id} shop={s} showName={shops.length > 1} />
+      ))}
+    </section>
+  );
+}
+
+function ShopPrices({ shop, showName }: { shop: MyShopDto; showName: boolean }) {
+  const t = useTranslations('portal');
+  const locale = useLocale();
+  const shopId = shop.id;
   const [load, setLoad] = useState<Load>({ status: 'loading' });
 
-  useEffect(() => {
-    const alive: { current: boolean } = { current: true };
-    void (async () => {
-      const { fetchMe } = await import('@/lib/auth/firebase-client');
-      const me = await fetchMe();
-      if (!alive.current) return;
-      setShopId(me && me !== 'blocked' ? (shopIdsOf(me.roles)[0] ?? null) : null);
-    })();
-    return () => {
-      alive.current = false;
-    };
-  }, []);
-
   const reload = useCallback(async () => {
-    if (!shopId) return;
     const [offers, requests] = await Promise.all([
       adminApi(locale, `/shops/${shopId}/inventory?locale=${locale === 'hi' ? 'hi' : 'en'}`, ShopOfferList),
       adminApi(locale, `/shop-onboarding/${shopId}/price-requests?limit=100`, ShopPriceRequestPage),
@@ -61,38 +87,27 @@ export function ShopPricesApi() {
   }, [reload]);
 
   return (
-    <section aria-labelledby="prices-title" className="space-y-3">
-      <div>
-        <h2 id="prices-title" className="font-heading text-xl font-extrabold text-ink">
-          {t('pricesTitle')}
-        </h2>
-        <p className="mt-1 text-sm text-muted">{t('pricesLead')}</p>
-        {/* The shop's approved price is what it is paid; customers see the admin's price (Q26, QA 2026-11-14 U1). */}
-        <p className="mt-1 text-sm text-muted">{t('priceCustomerNote')}</p>
-      </div>
-      {shopId === null ? (
-        <p role="status" className={`${portalCard} text-sm font-bold text-ink`}>
-          {t('api_noShop')}
-        </p>
-      ) : (
-        <>
-          <ApiListState
-            loading={shopId === undefined || load.status === 'loading'}
-            error={load.status === 'error' ? load.code : null}
-            count={load.status === 'ok' ? load.rows.length : 0}
-            empty={t('api_pricesEmpty')}
-            onRetry={() => void reload()}
-          />
-          {shopId && load.status === 'ok' && load.rows.length > 0 ? (
-            <ul className="grid gap-3 nav:grid-cols-2">
-              {load.rows.map((r) => (
-                <PriceRowCard key={r.sku} shopId={shopId} row={r} onSent={reload} />
-              ))}
-            </ul>
-          ) : null}
-        </>
-      )}
-    </section>
+    <div className="space-y-3">
+      {showName ? (
+        <h3 className="font-heading text-base font-extrabold text-ink">
+          {locale === 'hi' && shop.nameHi ? shop.nameHi : shop.name}
+        </h3>
+      ) : null}
+      <ApiListState
+        loading={load.status === 'loading'}
+        error={load.status === 'error' ? load.code : null}
+        count={load.status === 'ok' ? load.rows.length : 0}
+        empty={t('api_pricesEmpty')}
+        onRetry={() => void reload()}
+      />
+      {load.status === 'ok' && load.rows.length > 0 ? (
+        <ul className="grid gap-3 nav:grid-cols-2">
+          {load.rows.map((r) => (
+            <PriceRowCard key={r.sku} shopId={shopId} row={r} onSent={reload} />
+          ))}
+        </ul>
+      ) : null}
+    </div>
   );
 }
 

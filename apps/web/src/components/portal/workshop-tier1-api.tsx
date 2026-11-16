@@ -12,7 +12,7 @@ import { useCallback, useEffect, useState, type SyntheticEvent } from 'react';
 import { adminApi } from '@/lib/admin-api';
 import { track } from '@/lib/analytics';
 import { formatPrice } from '@/lib/format';
-import { rupeesToPaise } from '@/lib/service-views';
+import { hourHasStarted, rupeesToPaise } from '@/lib/service-views';
 import { Tier1Error } from '../workshops/tier1-error';
 import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 
@@ -62,6 +62,10 @@ export function HourPickerApi({
     };
   }, [locale, workshopId, date]);
 
+  // Hours that already started today (IST) are left out: the server refuses them (SLOT_PAST, QA 2026-11-16 bug 5).
+  const now = new Date();
+  const slots = state.kind === 'ready' ? state.slots.filter((s) => !hourHasStarted(date, s.hour, now)) : [];
+
   return (
     <div>
       <label htmlFor={id} className="text-xs font-bold text-muted">
@@ -76,17 +80,15 @@ export function HourPickerApi({
         className={portalField}
       >
         <option value="">{state.kind === 'loading' ? t('hoursLoading') : t('hourChoose')}</option>
-        {state.kind === 'ready'
-          ? state.slots.map((s) => (
-              <option key={s.hour} value={s.hour} disabled={s.free <= 0}>
-                {s.free <= 0
-                  ? t('hourFull', { time: hhmm(s.hour) })
-                  : t('hourOption', { time: hhmm(s.hour), free: s.free })}
-              </option>
-            ))
-          : null}
+        {slots.map((s) => (
+          <option key={s.hour} value={s.hour} disabled={s.free <= 0}>
+            {s.free <= 0
+              ? t('hourFull', { time: hhmm(s.hour) })
+              : t('hourOption', { time: hhmm(s.hour), free: s.free })}
+          </option>
+        ))}
       </select>
-      {state.kind === 'ready' && state.slots.length === 0 ? (
+      {state.kind === 'ready' && slots.length === 0 ? (
         <p className="mt-1 text-xs font-bold text-error">{t('noHours')}</p>
       ) : null}
       {state.kind === 'error' ? <Tier1Error code={state.code} /> : null}

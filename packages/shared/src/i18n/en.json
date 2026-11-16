@@ -545,6 +545,7 @@
     "consent": "I agree to share my contact and delivery details with MechDost to process this order.",
     "place": "Place order",
     "placing": "Placing your order…",
+    "checking": "Checking prices…",
     "errName": "Enter your name.",
     "errPhone": "Enter a valid 10-digit mobile number.",
     "errAddress": "Enter your full delivery address.",

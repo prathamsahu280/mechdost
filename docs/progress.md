@@ -4,6 +4,7 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Current status
 
+- **2026-11-16 (QA pass 2 fixes, branch worktree-agent-a916972233b83a55a):** bugs 3-11 of the real-API pass fixed with tests (`apps/web/test/bugfix-qa-pass2.test.ts`): shop prices for multi-shop accounts, Place order pending state, past proposal hours, ready needs after photo (reason shown), service headline follows status, estimate text once, Razorpay prefill (name/email/contact), tab-visible refresh on the service page, avatar icon for nameless accounts. Not merged yet. Bugs 1, 2, 12 (worker) untouched.
 - **2026-11-16 (real-API pass 2):** orders (COD and Razorpay test), routing, shop delivery with code, and a full service request to a paid bill all pass against the live API; emails sent only by a local worker (the deployed worker did not send the outbox). 12 findings in `docs/qa/real-api-pass-2026-11-16.md`.
 
 - **2026-11-16 (real-API pass, partial):** sign-up, staff grant and staff two-step verified against real Firebase and the live API; found and fixed the sign-up retry bug (f08d43a). Order and service steps are blocked: the production database has no products, shops, workshops or notification templates. One WhatsApp test accepted by Meta. Open bugs: demo placeholder name on `/account` and demo footer on `/admin` in real mode. Details: `docs/qa/real-api-pass-2026-11-16.md`.

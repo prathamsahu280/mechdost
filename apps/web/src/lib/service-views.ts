@@ -3,6 +3,7 @@ import {
   SERVICE_CUSTOMER_CANCELLABLE,
   type ServiceRequestStatus,
 } from '@mechdost/shared/state';
+import { istDateString, istParts } from '@mechdost/shared/time';
 import type { VehicleType } from '@mechdost/shared/vehicles';
 
 /**
@@ -382,4 +383,22 @@ export function istDate(days = 0, now = new Date()): string {
     month: '2-digit',
     day: '2-digit',
   }).format(new Date(now.getTime() + days * 86_400_000));
+}
+
+/** The server refuses an hour that has already started today (IST); the picker leaves those hours out (QA 2026-11-16, bug 5). */
+export function hourHasStarted(date: string, hour: number, now: Date): boolean {
+  return date === istDateString(now) && hour <= istParts(now).hour;
+}
+
+/** "Request sent to …" is the headline only while the request waits for a proposal (QA 2026-11-16, bug 7). */
+export function thanksHeadlineShown(status: ServiceRequestStatus): boolean {
+  return status === 'requested' || status === 'needs_routing' || status === 'awaiting_workshop';
+}
+
+/** "Ready for pickup" needs an after photo when the admin requires photos (the API answers PHOTOS_REQUIRED otherwise). */
+export function afterPhotoMissing(photos: {
+  required: boolean;
+  photos: readonly { stage: string }[];
+}): boolean {
+  return photos.required && !photos.photos.some((p) => p.stage === 'after');
 }
