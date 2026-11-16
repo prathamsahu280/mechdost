@@ -19,3 +19,11 @@ export function passwordLinkedFor(
   const wanted = email.trim().toLowerCase();
   return providerData.some((p) => p.providerId === 'password' && p.email?.toLowerCase() === wanted);
 }
+
+/**
+ * True when the session already has an email + password linked: a sign-up retry after the link step succeeded. The
+ * API refuses that session (`PROVIDER_NOT_ALLOWED`), so the retry skips the phone-session profile call (2026-11-16).
+ */
+export function hasPasswordProvider(providerData: readonly { providerId: string }[]): boolean {
+  return providerData.some((p) => p.providerId === 'password');
+}

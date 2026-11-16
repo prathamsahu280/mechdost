@@ -35,6 +35,8 @@ const MAP_ORIGINS = ['https://tiles.openfreemap.org', 'https://server.arcgisonli
 const TURNSTILE = 'https://challenges.cloudflare.com';
 const RECAPTCHA_SCRIPTS = ['https://www.google.com/recaptcha/', 'https://www.gstatic.com/recaptcha/'];
 const RECAPTCHA_FRAMES = ['https://www.google.com/recaptcha/', 'https://recaptcha.google.com/recaptcha/'];
+/** The invisible reCAPTCHA of phone sign-in posts to /recaptcha/api2/clr (real-API pass 2026-11-16). */
+const RECAPTCHA_CONNECT = 'https://www.google.com/recaptcha/';
 const FIREBASE_AUTH_APIS = ['https://identitytoolkit.googleapis.com', 'https://securetoken.googleapis.com'];
 /** Web push (spec 10): the browser registers its push token with Firebase Installations and FCM Registrations. */
 const FIREBASE_PUSH_APIS = [
@@ -111,7 +113,14 @@ export function contentSecurityPolicy(input: CspInput): string {
 
   const connect = ["'self'", ...MAP_ORIGINS];
   if (api) connect.push(api);
-  if (real) connect.push(...FIREBASE_AUTH_APIS, ...FIREBASE_PUSH_APIS, TURNSTILE, ...RAZORPAY_CONNECT);
+  if (real)
+    connect.push(
+      ...FIREBASE_AUTH_APIS,
+      ...FIREBASE_PUSH_APIS,
+      TURNSTILE,
+      RECAPTCHA_CONNECT,
+      ...RAZORPAY_CONNECT,
+    );
   if (real) connect.push(...databaseOrigins(input.databaseUrl));
   if (emulator) connect.push(emulator);
   const sentry = sentryIngestOrigin(input.sentryDsn);

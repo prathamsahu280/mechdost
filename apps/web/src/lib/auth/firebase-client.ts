@@ -15,7 +15,7 @@ import {
   type Auth,
   type ConfirmationResult,
 } from '@firebase/auth';
-import { codeFailFor, passwordLinkedFor, type CodeFail } from './auth-errors';
+import { codeFailFor, hasPasswordProvider, passwordLinkedFor, type CodeFail } from './auth-errors';
 import type { RealMe } from './real-account';
 
 /**
@@ -115,6 +115,11 @@ export async function confirmPhoneCode(
   } catch (err) {
     return { ok: false, reason: codeFailFor(codeOf(err)) };
   }
+}
+
+/** True when the signed-in Firebase user already has email + password linked (a sign-up retry). */
+export function sessionHasPassword(): boolean {
+  return hasPasswordProvider(auth?.currentUser?.providerData ?? []);
 }
 
 /** Sign-up step 3: link email + password to the phone account, then send the one-time verification email. */

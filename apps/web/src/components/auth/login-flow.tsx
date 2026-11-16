@@ -601,11 +601,15 @@ export function LoginFlow() {
       }
       const r = await real();
       // Create the profile with the phone session first (the API makes it on the first call; a blocked number
-      // stops here), so the API sign-in below finds the account by its phone.
-      const first = await r.fetchMe();
-      if (!first || first === 'blocked') {
-        failForm(first === 'blocked' ? t('blocked') : t('errUnavailable'));
-        return undefined;
+      // stops here), so the API sign-in below finds the account by its phone. A retry after the email + password was
+      // already linked skips it: the profile exists, and the API refuses the now `password` session
+      // (PROVIDER_NOT_ALLOWED), which used to leave the visitor on "Sign-in isn't working right now" for good.
+      if (!r.sessionHasPassword()) {
+        const first = await r.fetchMe();
+        if (!first || first === 'blocked') {
+          failForm(first === 'blocked' ? t('blocked') : t('errUnavailable'));
+          return undefined;
+        }
       }
       const linked = await r.linkEmailPassword(email, password);
       if (!linked.ok) {

@@ -45,6 +45,8 @@ describe('content security policy (ruling 2026-11-09)', () => {
         // Web push (spec 10): the browser registers its token with these two.
         'https://fcmregistrations.googleapis.com',
         'https://firebaseinstallations.googleapis.com',
+        // Phone sign-in's invisible reCAPTCHA posts to /recaptcha/api2/clr (blocked in the real-API pass, 2026-11-16).
+        'https://www.google.com/recaptcha/',
       ]),
     );
     // Demo builds never talk to Firebase push.
