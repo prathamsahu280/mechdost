@@ -4,6 +4,11 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Current status
 
+- **2026-11-17 overnight check:** main = a8e2fa9 deployed (web, API, worker healthy); all 76 migrations applied
+  (0077 coupons included); logo and coupons branches merged. WhatsApp: 16 approved (all Hindi + quote templates);
+  the 4 edited English ones (button URL fix) still pending in Meta review. `quote_price_ending` approved as MARKETING
+  → Q198 (default: email only for that reminder). Nothing else pending from the overnight plan.
+
 - **2026-11-16 (bug 7 email retries, branch worktree-agent-ab1ca501d6e85ca8b, not merged; no migration):** order-status emails needed 2-3 attempts and 146-247 s (4 rows sent within 1.3 s at 14:09). Cause: send-time loaders (template override, company, trust line, bill source) ran on the worker's shared 2-connection pool with no bound; a slow/locked statement ran to the server statement_timeout (120 s = the lease, SQLSTATE 57014 at 13:15), the row's lease lapsed and it was re-claimed (attempt 2-3). Fix: every dispatcher step has a LOCAL statement_timeout (8 s) plus an app deadline (12 s), loaders 4-10 s then safe default text, send 30 s (retry code send_timeout), a failed record after a send is retried once and never turns into a resend, stuck is measured from the last phase change (45 s) and names the phase, a lease-expired re-claim records last_error lease_expired. Docs: monitoring runbook, spec 10.
 
 - **NOW (2026-11-16 night):** pushed after 693dba3: V5 fix (launcher steps aside on booking-form pages; audit check
