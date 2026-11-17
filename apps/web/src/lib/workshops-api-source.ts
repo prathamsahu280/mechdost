@@ -32,8 +32,8 @@ export async function fetchWorkshopProfile(slug: string, locale: Locale): Promis
   return PublicWorkshopDto.parse(await res.json());
 }
 
-/** Top-rated bookable workshops of the city (rating, then review count), or null when the API cannot answer. */
-export async function fetchTopWorkshops(locale: Locale, max = 3): Promise<PublicWorkshop[] | null> {
+/** The city's bookable workshops (nearest first), or null when the API cannot answer (home strip, sitemap). */
+export async function fetchCityWorkshops(locale: Locale): Promise<PublicWorkshop[] | null> {
   try {
     const url = new URL(`${base()}/v1/workshops`);
     url.searchParams.set('lat', String(CITY_CENTRE.lat));
@@ -46,11 +46,17 @@ export async function fetchTopWorkshops(locale: Locale, max = 3): Promise<Public
     });
     if (!res.ok) return null;
     const parsed = NearbyWorkshopsDto.safeParse(await res.json());
-    if (!parsed.success) return null;
-    return parsed.data.workshops
-      .toSorted((a, b) => (b.ratingAvg ?? 0) - (a.ratingAvg ?? 0) || b.ratingCount - a.ratingCount)
-      .slice(0, max);
+    return parsed.success ? parsed.data.workshops : null;
   } catch {
     return null;
   }
+}
+
+/** Top-rated bookable workshops of the city (rating, then review count), or null when the API cannot answer. */
+export async function fetchTopWorkshops(locale: Locale, max = 3): Promise<PublicWorkshop[] | null> {
+  const workshops = await fetchCityWorkshops(locale);
+  if (!workshops) return null;
+  return workshops
+    .toSorted((a, b) => (b.ratingAvg ?? 0) - (a.ratingAvg ?? 0) || b.ratingCount - a.ratingCount)
+    .slice(0, max);
 }

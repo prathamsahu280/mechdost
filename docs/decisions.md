@@ -1534,3 +1534,26 @@ counter with the global `api_user` rule. Spec 13 "Global API limits".
 - **Split order link (bug 10):** `/orders/<code>-2` shows the whole order, marks (border, `aria-current`) and scrolls to
   the named part once; order and numbering are unchanged.
 - **Wording (bugs 6, 9):** see spec 06 "Pass 4 wording".
+
+## 2026-11-17 — SEO (user: "we need to do the SEO for the mechdost … make sure nothing gets broke")
+
+- **Crawl rules:** `robots.txt` allows everything except the private screens (signed-in areas, portals, admin, cart,
+  checkout, compare, sign-in, notifications, order / service / quote / application records, invite links) in both
+  languages and `/api/`. Those pages stay `noindex` too. AI crawlers are treated like any crawler (Q200).
+- **Sitemap:** one `sitemap.xml` (ISR): public pages, the 9 category pages, every product, every real workshop, each URL
+  in English and Hindi with its `hreflang` set. A sitemap index split by type when the catalogue passes ~2,000 products.
+- **Category pages are landing pages:** `/shop?category=…` is its own canonical with its own title and description;
+  sort, vehicle and page parameters point back to it; any search (`?q=`) is `noindex, follow`.
+- **Structured data only from real facts:** `Organization`, `WebSite`, `BreadcrumbList` and the home `FAQPage` in both
+  modes; `Product` / `Offer` / `AggregateRating` and `AutoRepair` only in API data mode. Demo prices, seed reviews and
+  demo workshops are not real, and fake markup risks a Google manual action. A product without price (on request) and
+  without a rating gets no `Product` item (Google would reject it). Workshop phone numbers are never marked up (masked
+  relay, spec 06).
+- **Demo workshops are `noindex` and not in the sitemap** (fictional businesses with Raipur addresses); real workshops
+  are indexed automatically once the site runs on real data.
+- **Copy:** titles and descriptions say what + where ("… in Raipur"), English and fully Devanagari Hindi, from the
+  locale namespace `seo` (home: `meta`), after a competitor study (GoMechanic, CarDekho/BikeDekho, Boodmo, Koovers,
+  SparesHub, Raipur results; `docs/runbooks/seo.md` § 5). Hard rule 8 note: the copy is in the locale files like all
+  copy; admin-editable meta text comes with the CMS (spec 08).
+- **Search Console:** Domain property verified by a DNS TXT record (no code, no new env variable); steps in
+  `docs/runbooks/seo.md` § 3.

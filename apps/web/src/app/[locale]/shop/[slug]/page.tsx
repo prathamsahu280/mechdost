@@ -26,8 +26,11 @@ import { demoCard, demoProduct } from '@/lib/catalogue/demo-source';
 import type { CardView, ProductView } from '@/lib/catalogue/view';
 import { DATA_MODE, QUOTES_AVAILABLE } from '@/lib/data-mode';
 import { discountPercent, formatPrice } from '@/lib/format';
-import { alternatesFor } from '@/lib/seo';
-import { whatsappLink } from '@/lib/site';
+import { alternatesFor, metaDescription, openGraphFor } from '@/lib/seo';
+import { breadcrumbLd, productLd } from '@/lib/structured-data';
+import { JsonLd } from '@/components/site/json-ld';
+import { localePath } from '@/lib/locale-path';
+import { site, whatsappLink } from '@/lib/site';
 
 interface Props {
   params: Promise<{ locale: Locale; slug: string }>;
@@ -75,10 +78,38 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const data = await load(slug, locale);
   if (!data) return {};
   const { product } = data;
+  const [t, cities] = await Promise.all([
+    getTranslations({ locale, namespace: 'seo' }),
+    getTranslations({ locale, namespace: 'cities' }),
+  ]);
+  const city = cities(site.defaultCity);
+  const title = t('productTitle', { product: `${product.brand} ${product.name}`, city });
+  const details = [product.spec, product.compatibility]
+    .filter(Boolean)
+    .join('. ')
+    .replace(/[.।\s]+$/, '');
+  const description = metaDescription(t('productDescription', { details, city }));
+  const photo = product.photo;
   return {
-    title: `${product.brand} ${product.name}`,
-    description: [product.spec, product.compatibility].filter(Boolean).join('. '),
+    title,
+    description,
     alternates: alternatesFor(`/shop/${slug}`, locale),
+    openGraph: openGraphFor({
+      href: `/shop/${slug}`,
+      locale,
+      title,
+      description,
+      ...(photo
+        ? {
+            image: {
+              url: productPhotoLoader({ src: photo.path, width: 1200 }),
+              width: photo.width,
+              height: photo.height,
+              alt: photo.alt,
+            },
+          }
+        : {}),
+    }),
   };
 }
 
@@ -93,13 +124,14 @@ export default async function ProductPage({ params }: Props) {
   if (!data) notFound();
   const { product, related, reviews } = data;
 
-  const [t, c, r, footer, cmp, w] = await Promise.all([
+  const [t, c, r, footer, cmp, w, nav] = await Promise.all([
     getTranslations('catalogue'),
     getTranslations('categories'),
     getTranslations('reviews'),
     getTranslations('footer'),
     getTranslations('compare'),
     getTranslations('storefront'),
+    getTranslations('nav'),
   ]);
   const categoryName = product.category.name ?? (product.category.key ? c(product.category.key) : null);
   // The star row links to the reviews section, so it shows only when that section does (approved reviews only:
@@ -110,9 +142,21 @@ export default async function ProductPage({ params }: Props) {
   const off = price ? discountPercent(price.pricePaise, price.mrpPaise ?? undefined) : 0;
   const onRequest = product.availability === 'on_request';
   const rows = productRows(t, product);
+  const path = localePath(`/shop/${slug}`, locale);
+  const crumbs = [
+    { name: nav('home'), path: localePath('/', locale) },
+    { name: nav('shop'), path: localePath('/shop', locale) },
+    ...(categoryName
+      ? [{ name: categoryName, path: localePath(`/shop?category=${product.category.slug}`, locale) }]
+      : []),
+    { name: `${product.brand} ${product.name}`, path },
+  ];
+  // Offers and ratings are marked up from real data only (demo prices and seed reviews are not real).
+  const productData = DATA_MODE === 'api' ? productLd(product, path, categoryName) : null;
 
   return (
     <Container className="py-8 tab:py-12">
+      <JsonLd data={productData ? [productData, breadcrumbLd(crumbs)] : breadcrumbLd(crumbs)} />
       <nav aria-label={t('breadcrumb')} className="text-sm text-muted">
         <ol className="flex flex-wrap items-center gap-1.5">
           <li>

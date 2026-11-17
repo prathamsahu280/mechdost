@@ -12,7 +12,8 @@ import { demoCard } from '@/lib/catalogue/demo-source';
 import type { CardView } from '@/lib/catalogue/view';
 import { DATA_MODE } from '@/lib/data-mode';
 import { loadMoreCards, type ListingQuery } from './actions';
-import { alternatesFor } from '@/lib/seo';
+import { alternatesFor, openGraphFor } from '@/lib/seo';
+import { site } from '@/lib/site';
 import { localePath } from '@/lib/locale-path';
 import { VEHICLE_TYPES } from '@mechdost/shared/vehicles';
 
@@ -32,10 +33,33 @@ interface Props {
 const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 const SORTS: SortKey[] = ['popular', 'price_asc', 'price_desc'];
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: 'nav' });
-  return { title: t('shop'), alternates: alternatesFor('/shop', locale) };
+/**
+ * The plain shop and each category are landing pages with their own canonical (`/shop?category=tyres`); sort,
+ * vehicle and page parameters point back to that canonical, and a search result is `noindex, follow` (thin,
+ * endless URL space).
+ */
+export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
+  const [{ locale }, sp] = await Promise.all([params, searchParams]);
+  const [t, c, cities] = await Promise.all([
+    getTranslations({ locale, namespace: 'seo' }),
+    getTranslations({ locale, namespace: 'categories' }),
+    getTranslations({ locale, namespace: 'cities' }),
+  ]);
+  const city = cities(site.defaultCity);
+  const category = categoryFromSlug(first(sp.category));
+  const searched = Boolean(first(sp.q)?.trim());
+  const href = category ? `/shop?category=${CATEGORY_SLUGS[category]}` : '/shop';
+  const title = category ? t('categoryTitle', { category: c(category), city }) : t('shopTitle', { city });
+  const description = category
+    ? t('categoryDescription', { category: c(category), city })
+    : t('shopDescription', { city });
+  return {
+    title,
+    description,
+    alternates: alternatesFor(href, locale),
+    openGraph: openGraphFor({ href, locale, title, description }),
+    ...(searched ? { robots: { index: false, follow: true } } : {}),
+  };
 }
 
 /**

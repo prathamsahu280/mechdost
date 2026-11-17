@@ -4,6 +4,18 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Current status
 
+- **2026-11-17 (SEO, user: "do the SEO … make sure nothing gets broke … no ci/cd should break"; not committed yet):**
+  `robots.txt` + `sitemap.xml` (were 404 on the live site), city-aware titles and descriptions en/hi (namespace `seo`,
+  home `meta`), category landing pages with their own canonical, search results `noindex`, `og:url` and product photo
+  share images, JSON-LD: Organization + WebSite (home), BreadcrumbList (product, workshop), Product/Offer/Rating and
+  AutoRepair in API data mode only; demo workshops `noindex` (not real). Competitor study (GoMechanic, CarDekho,
+  Boodmo …) in `docs/runbooks/seo.md` § 5. Also fixed a CI flake in `packages/db/test/refund-followups.test.ts`
+  (uuid v7 prefix as webhook event id collided within ~16 ms). Verified: `pnpm check` 12/12; demo build + API-mode
+  build (against the live API) both green; Playwright shell + demo-flows + hindi-coverage 96 passed / 1 flaky (map
+  geolocation, unrelated) / 5 skipped; JS budget unchanged vs main (`/shop` 180.0 on both — already at the edge).
+  **Next:** user commits/deploys, then Search Console (Q201, runbook § 3); city landing pages (Q199) after the launch
+  switch; AI crawler policy (Q200).
+
 - **2026-11-17 overnight check:** main = a8e2fa9 deployed (web, API, worker healthy); all 76 migrations applied
   (0077 coupons included); logo and coupons branches merged. WhatsApp: 16 approved (all Hindi + quote templates);
   the 4 edited English ones (button URL fix) still pending in Meta review. `quote_price_ending` approved as MARKETING

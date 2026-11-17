@@ -74,7 +74,16 @@ No offers in pincode → "No eligible delivery offers for this PIN yet. Browse a
 
 ## Acceptance tests
 
-Fitment badge correctness, pincode price resolution picks the **nearest covering** in-stock approved offer (not the cheapest; `packages/db/test/catalogue.test.ts`), unpublished/paused/busy offers never appear, search typo "castrl" finds Castrol (trigram), cursor pagination stable under inserts, SEO JSON-LD present with Offer.
+Fitment badge correctness, pincode price resolution picks the **nearest covering** in-stock approved offer (not the cheapest; `packages/db/test/catalogue.test.ts`), unpublished/paused/busy offers never appear, search typo "castrl" finds Castrol (trigram), cursor pagination stable under inserts, SEO JSON-LD present with Offer (`apps/web/test/seo.test.ts`: INR offer from paise, rating only with reviews, no item for on-request products; verified on the API-mode build 2026-11-17).
+
+## Built: SEO (2026-11-17)
+
+Decisions 2026-11-17 "SEO", runbook `docs/runbooks/seo.md`. Product pages: title "{brand} {name} – Buy Online in
+{city}", description from spec + fitment, canonical + hreflang, product photo as the share image, `BreadcrumbList`
+(Home › Shop › category › product) always, `Product` + `Offer` + `AggregateRating` in API data mode only. The shop with
+one category (`/shop?category=…`) is a landing page with its own canonical, title and description; other parameters
+canonicalise to it; search results are `noindex, follow`. `sitemap.xml` lists every product and category page in both
+languages.
 
 ## Open decisions
 

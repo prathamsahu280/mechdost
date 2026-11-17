@@ -10,7 +10,9 @@ import { ServiceSection } from '@/components/home/service-section';
 import { TopWorkshops } from '@/components/home/top-workshops';
 import { TrustStrip } from '@/components/home/trust-strip';
 import type { Locale } from '@/i18n/routing';
+import { JsonLd } from '@/components/site/json-ld';
 import { alternatesFor } from '@/lib/seo';
+import { organizationLd, websiteLd } from '@/lib/structured-data';
 import { site } from '@/lib/site';
 import { featuredCategories, visibleSections, type HomeSection } from '@mechdost/shared/site-layout';
 import { publishedLayout } from '@/lib/site-config-content';
@@ -30,7 +32,8 @@ export async function generateMetadata({
  * /admin/layout → `data-home-section` order/display set by the pre-paint layout script in the root layout). The
  * page stays a static Server Component.
  */
-export default async function HomePage() {
+export default async function HomePage({ params }: { params: Promise<{ locale: Locale }> }) {
+  const { locale } = await params;
   const city = (await getTranslations('cities'))(site.defaultCity);
   // The admin's saved layout (real mode), applied here on the server: no client code, refreshed by tag on publish.
   // The demo build shows the default order and the browser-stored choices are applied by the pre-paint script.
@@ -47,6 +50,7 @@ export default async function HomePage() {
   };
   return (
     <>
+      <JsonLd data={[organizationLd(), websiteLd(locale)]} />
       <Hero city={city} />
       <div className="flex flex-col">
         {visibleSections(layout).map((key) => (

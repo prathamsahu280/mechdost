@@ -19,7 +19,10 @@ import { routing, type Locale } from '@/i18n/routing';
 import { DATA_MODE } from '@/lib/data-mode';
 import { formatDate, formatPrice } from '@/lib/format';
 import { directionsHref, mapUi } from '@/lib/map-ui';
-import { alternatesFor } from '@/lib/seo';
+import { alternatesFor, metaDescription, openGraphFor } from '@/lib/seo';
+import { localePath } from '@/lib/locale-path';
+import { breadcrumbLd, workshopLd } from '@/lib/structured-data';
+import { JsonLd } from '@/components/site/json-ld';
 import { fetchWorkshopProfile } from '@/lib/workshops-api-source';
 
 interface Props {
@@ -38,23 +41,45 @@ const loadApi = cache((slug: string, locale: Locale) => fetchWorkshopProfile(slu
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, slug } = await params;
+  let w: { name: string; area: string; services: string[] } | null = null;
   if (DATA_MODE === 'api') {
-    const w = await loadApi(slug, locale);
-    if (!w) return {};
-    return {
-      title: w.name,
-      description: `${w.address} · ${w.services.map((s) => s.title).join(', ')}`,
-      alternates: alternatesFor(`/workshops/${slug}`, locale),
-    };
+    const found = await loadApi(slug, locale);
+    if (found) w = { name: found.name, area: found.area, services: found.services.map((s) => s.title) };
+  } else {
+    const found = findWorkshop(slug);
+    if (found) {
+      const local = localizeWorkshop(found, locale);
+      w = { name: local.name, area: local.area, services: local.services.map((s) => s.name) };
+    }
   }
-  const found = findWorkshop(slug);
-  if (!found) return {};
-  const w = localizeWorkshop(found, locale);
+  if (!w) return {};
+  const t = await getTranslations({ locale, namespace: 'seo' });
+  const title = t('workshopTitle', { name: w.name, area: w.area });
+  const description = metaDescription(
+    t('workshopDescription', { name: w.name, area: w.area, services: w.services.slice(0, 3).join(', ') }),
+  );
+  const href = `/workshops/${slug}`;
   return {
-    title: w.name,
-    description: `${w.address} · ${w.services.map((s) => s.name).join(', ')}`,
-    alternates: alternatesFor(`/workshops/${slug}`, locale),
+    title,
+    description,
+    alternates: alternatesFor(href, locale),
+    openGraph: openGraphFor({ href, locale, title, description }),
+    // Demo workshops are not real businesses: never in search results (decisions 2026-11-17 "SEO").
+    ...(DATA_MODE === 'api' ? {} : { robots: { index: false, follow: true } }),
   };
+}
+
+function workshopCrumbs(
+  nav: (key: 'home' | 'workshops') => string,
+  name: string,
+  path: string,
+  locale: string,
+) {
+  return [
+    { name: nav('home'), path: localePath('/', locale) },
+    { name: nav('workshops'), path: localePath('/workshops', locale) },
+    { name, path },
+  ];
 }
 
 /** Workshop profile (spec 06): verification, hours, service menu with price ranges, appointment request. */
@@ -63,7 +88,14 @@ export default async function WorkshopPage({ params }: Props) {
   if (DATA_MODE === 'api') {
     const w = await loadApi(slug, pageLocale);
     if (!w) notFound();
-    return <WorkshopProfileApi workshop={w} />;
+    const nav = await getTranslations('nav');
+    const path = localePath(`/workshops/${slug}`, pageLocale);
+    return (
+      <>
+        <JsonLd data={[workshopLd(w, path), breadcrumbLd(workshopCrumbs(nav, w.name, path, pageLocale))]} />
+        <WorkshopProfileApi workshop={w} />
+      </>
+    );
   }
   const found = findWorkshop(slug);
   if (!found) notFound();
@@ -74,9 +106,13 @@ export default async function WorkshopPage({ params }: Props) {
     getLocale(),
   ]);
   const w = localizeWorkshop(found, locale);
+  const nav = await getTranslations('nav');
+  const crumbPath = localePath(`/workshops/${slug}`, locale);
 
   return (
     <Container className="py-8 tab:py-12">
+      {/* Demo workshops are not real businesses: breadcrumb only, no local-business markup. */}
+      <JsonLd data={breadcrumbLd(workshopCrumbs(nav, w.name, crumbPath, locale))} />
       <LocalLink href="/workshops" className="text-sm font-bold text-ink hover:underline">
         ← {t('back')}
       </LocalLink>

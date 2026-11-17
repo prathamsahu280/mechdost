@@ -5,7 +5,8 @@ import { Container, PageIntro } from '@/components/ui/page-intro';
 import { WorkshopFinder } from '@/components/workshops/workshop-finder';
 import type { Locale } from '@/i18n/routing';
 import { DATA_MODE } from '@/lib/data-mode';
-import { alternatesFor } from '@/lib/seo';
+import { alternatesFor, openGraphFor } from '@/lib/seo';
+import { site } from '@/lib/site';
 
 interface Props {
   params: Promise<{ locale: Locale }>;
@@ -13,8 +14,19 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: 'nav' });
-  return { title: t('workshops'), alternates: alternatesFor('/workshops', locale) };
+  const [t, cities] = await Promise.all([
+    getTranslations({ locale, namespace: 'seo' }),
+    getTranslations({ locale, namespace: 'cities' }),
+  ]);
+  const city = cities(site.defaultCity);
+  const title = t('workshopsTitle', { city });
+  const description = t('workshopsDescription', { city });
+  return {
+    title,
+    description,
+    alternates: alternatesFor('/workshops', locale),
+    openGraph: openGraphFor({ href: '/workshops', locale, title, description }),
+  };
 }
 
 const PROMISES = [

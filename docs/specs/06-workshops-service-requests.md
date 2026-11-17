@@ -247,3 +247,11 @@ Design: `docs/superpowers/specs/2026-11-15-service-photos-design.md`; plan `docs
 - **Before photo gate:** with photos required, "Vehicle received" is disabled with "Add at least one before photo first." until a before photo exists, and re-checks when a photo is added or removed; the "Needed" badge of a stage shows only while that stage is empty.
 
 - **Pass 5 wording (2026-11-16):** the estimate card shows "Approve the lines you want; the total appears here." (approvedTotalHint) until at least one line is approved (anyApproved), never "Approved total: 0". An unpaid bill with "Pay online" under it has one primary choice: the card drops its "Pay {total} at {workshop}" banner (ServiceBillView onlinePay) and the pay block reads "Pay {total} by UPI, card or net banking." with one secondary line "Or pay at the workshop when you collect your vehicle." (api_payAtWorkshopAlt).
+
+## SEO (2026-11-17)
+
+Workshop list and profile pages carry city-aware titles and descriptions (locale namespace `seo`), canonical +
+hreflang and a `BreadcrumbList`. In API data mode the profile adds `AutoRepair` structured data (address, geo,
+opening hours from `hours`, price range and services from the menu, rating only with reviews; never a phone number,
+contact stays masked) and is listed in `sitemap.xml`. Demo workshops are `noindex` and never listed (not real
+businesses). Decisions 2026-11-17 "SEO", runbook `docs/runbooks/seo.md`.

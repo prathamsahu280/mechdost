@@ -534,11 +534,11 @@ describe('credit notes for refunds of invoiced orders', () => {
     });
     await claimRefundDispatch(t(), asked.id);
     const res = await recordAndApplyRazorpayRefundEvent(t(), {
-      eventId: `rzp:evt_fu_cn_${asked.id.slice(0, 12)}`,
+      eventId: `rzp:evt_fu_cn_${asked.id.slice(-12)}`,
       type: 'refund.processed',
       payload: {},
       fact: {
-        providerRefundId: `rfnd_cn${asked.id.slice(0, 12)}`,
+        providerRefundId: `rfnd_cn${asked.id.slice(-12)}`,
         providerPaymentId: o.providerPaymentId,
         refundId: asked.id,
         status: 'processed',
@@ -590,7 +590,7 @@ describe('credit notes for refunds of invoiced orders', () => {
       type: 'refund.processed',
       payload: {},
       fact: {
-        providerRefundId: `rfnd_cn${a.slice(0, 12)}`,
+        providerRefundId: `rfnd_cn${a.slice(-12)}`,
         providerPaymentId: o.providerPaymentId,
         refundId: a,
         status: 'processed',

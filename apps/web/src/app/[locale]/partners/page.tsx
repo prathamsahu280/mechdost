@@ -4,7 +4,7 @@ import { getTranslations } from 'next-intl/server';
 import { ButtonLink } from '@/components/ui/button-link';
 import { Container, PageIntro } from '@/components/ui/page-intro';
 import type { Locale } from '@/i18n/routing';
-import { alternatesFor } from '@/lib/seo';
+import { alternatesFor, openGraphFor } from '@/lib/seo';
 import { site } from '@/lib/site';
 import { SettingValue } from '@/components/site/site-overrides';
 import { TrustLine } from '@/components/site/trust-line';
@@ -15,8 +15,19 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: 'footer' });
-  return { title: t('partners'), alternates: alternatesFor('/partners', locale) };
+  const [t, cities] = await Promise.all([
+    getTranslations({ locale, namespace: 'seo' }),
+    getTranslations({ locale, namespace: 'cities' }),
+  ]);
+  const city = cities(site.defaultCity);
+  const title = t('partnersTitle', { city });
+  const description = t('partnersDescription', { city });
+  return {
+    title,
+    description,
+    alternates: alternatesFor('/partners', locale),
+    openGraph: openGraphFor({ href: '/partners', locale, title, description }),
+  };
 }
 
 const KINDS = [

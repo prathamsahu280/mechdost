@@ -1,7 +1,21 @@
 {
   "meta": {
-    "title": "MechDost — Automotive essentials. Local vehicle care.",
-    "description": "Shop oils, batteries, tyres and more. Find a nearby workshop in {city} and approve the work and cost before repairs."
+    "title": "MechDost — Auto Parts and Car & Bike Service in {city}",
+    "description": "Buy engine oil, batteries, tyres and brake pads for your car or bike, and book a verified workshop near you in {city}. Approve every cost before work begins."
+  },
+  "seo": {
+    "shopTitle": "Car & Bike Parts, Engine Oil & Batteries in {city}",
+    "shopDescription": "Buy engine oil, batteries, tyres, brake pads, filters and accessories for cars, bikes and scooters. Our {city} team confirms stock, price and delivery before your order is accepted.",
+    "categoryTitle": "{category} for Cars & Bikes – Buy Online in {city}",
+    "categoryDescription": "Shop {category} for cars, bikes and scooters on MechDost. Compare brands and prices; our {city} team confirms stock and delivery before your order is accepted.",
+    "productTitle": "{product} – Buy Online in {city}",
+    "productDescription": "{details}. Stock and price confirmed by our {city} team.",
+    "workshopsTitle": "Car & Bike Service Workshops in {city} – Book Online",
+    "workshopsDescription": "Find verified workshops near you in {city}. Compare ratings and expected cost, pick a slot and approve every estimate line before repairs begin.",
+    "workshopTitle": "{name}, {area} – Reviews, Services and Timings",
+    "workshopDescription": "{name}, {area}: {services}. See price ranges and timings, and book a slot on MechDost.",
+    "partnersTitle": "Sell Auto Parts or List Your Workshop in {city}",
+    "partnersDescription": "Parts shops, workshops and mechanics in {city}: get orders and service requests from nearby customers. Apply online; our team verifies you before you go live."
   },
   "common": {
     "skipToContent": "Skip to content",

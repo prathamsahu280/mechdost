@@ -21,6 +21,7 @@ import { SITE_LAYOUT_SCRIPT } from '@/lib/site-layout';
 import { THEME_INIT_SCRIPT } from '@/lib/theme';
 import './globals.css';
 import { localePath } from '@/lib/locale-path';
+import { siteOrigin } from '@/lib/seo';
 
 const manrope = Manrope({ subsets: ['latin'], weight: ['600', '700', '800'], variable: '--font-manrope' });
 const dmSans = DM_Sans({ subsets: ['latin'], weight: ['400', '500', '700'], variable: '--font-dm-sans' });
@@ -54,11 +55,10 @@ export async function generateMetadata({
   if (!hasLocale(routing.locales, locale)) return {};
   const t = await getTranslations({ locale, namespace: 'meta' });
   const city = (await getTranslations({ locale, namespace: 'cities' }))(site.defaultCity);
-  // A Docker build passes an unset build arg as "" (not undefined), so an empty value also falls back.
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+  const title = t('title', { city });
   return {
-    metadataBase: new URL(appUrl !== undefined && appUrl !== '' ? appUrl : 'http://localhost:3000'),
-    title: { default: t('title'), template: `%s · MechDost` },
+    metadataBase: new URL(siteOrigin()),
+    title: { default: title, template: `%s · MechDost` },
     description: t('description', { city }),
     applicationName: 'MechDost',
     icons: {
@@ -71,6 +71,7 @@ export async function generateMetadata({
     openGraph: {
       siteName: 'MechDost',
       locale: locale === 'hi' ? 'hi_IN' : 'en_IN',
+      alternateLocale: locale === 'hi' ? ['en_IN'] : ['hi_IN'],
       type: 'website',
       images: [{ url: '/brand/icons/og-image.png', width: 1200, height: 630, alt: 'MechDost' }],
     },
