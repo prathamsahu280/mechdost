@@ -17,6 +17,7 @@ export const STATIC_PATHS: readonly string[] = [
   '/shop',
   '/workshops',
   '/offers',
+  '/quotes/new',
   '/partners',
   '/partners/apply/seller',
   '/partners/apply/garage',

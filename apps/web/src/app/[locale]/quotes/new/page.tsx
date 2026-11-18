@@ -8,7 +8,8 @@ import { ClientMessages } from '@/components/ui/client-messages';
 import { LocalLink } from '@/components/ui/local-link';
 import { Container, PageIntro } from '@/components/ui/page-intro';
 import type { Locale } from '@/i18n/routing';
-import { alternatesFor } from '@/lib/seo';
+import { alternatesFor, openGraphFor } from '@/lib/seo';
+import { site } from '@/lib/site';
 import { QUOTES_AVAILABLE, QUOTES_ON_API } from '@/lib/data-mode';
 
 interface Props {
@@ -17,8 +18,20 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: 'quote' });
-  return { title: t('title'), alternates: alternatesFor('/quotes/new', locale), robots: { index: false } };
+  const [t, cities] = await Promise.all([
+    getTranslations({ locale, namespace: 'seo' }),
+    getTranslations({ locale, namespace: 'cities' }),
+  ]);
+  const city = cities(site.defaultCity);
+  // The public "Bulk orders" landing (footer link) is indexable; quote records under /quotes/<code> stay private.
+  const title = t('bulkTitle', { city });
+  const description = t('bulkDescription', { city });
+  return {
+    title,
+    description,
+    alternates: alternatesFor('/quotes/new', locale),
+    openGraph: openGraphFor({ href: '/quotes/new', locale, title, description }),
+  };
 }
 
 /**

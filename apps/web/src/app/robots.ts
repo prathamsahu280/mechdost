@@ -7,7 +7,8 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: '*',
-        allow: '/',
+        // The public Bulk orders form sits under /quotes/, whose records stay blocked (longest rule wins).
+        allow: ['/', '/quotes/new', '/hi/quotes/new'],
         disallow: [...PRIVATE_PATHS.flatMap((p) => [p, `/hi${p}`]), '/api/'],
       },
     ],

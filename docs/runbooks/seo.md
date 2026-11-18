@@ -6,15 +6,15 @@ decisions "2026-11-17 — SEO"). Code: `apps/web/src/lib/seo.ts`, `src/lib/struc
 
 ## 1. What is built
 
-| Piece                 | Where / rule                                                                                                                                                                                                                                                                                                  |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `robots.txt`          | `/robots.txt`. Allows everything except the private screens (account, admin, portals, cart, checkout, compare, sign-in, notifications, order / service / quote / application records, partner invite links) in both languages, and `/api/`. Points to the sitemap.                                            |
-| `sitemap.xml`         | `/sitemap.xml`, rebuilt on request at most hourly in demo mode and every 30 s with real data (the catalogue fetch's cache, ISR). Every public page in English and Hindi, each with its `hreflang` pair; the 9 category pages; every product; every real workshop (API mode). Demo workshops are never listed. |
-| Titles + descriptions | From the locale files, namespace `seo` (+ `meta` for the home page), English and Hindi. Pattern: what + where ("… in Raipur"). The layout adds `· MechDost`. Copy based on the competitor study in § 5.                                                                                                       |
-| Canonical + hreflang  | Every public page: its own canonical, `en` / `hi` / `x-default` alternates (`alternatesFor`). The shop with one category is its own canonical (`/shop?category=lubricants`); sort, vehicle and page parameters point back to it; a search result (`?q=`) is `noindex, follow`.                                |
-| Open Graph            | Site-wide default share image; product pages share the product photo; pages with their own title set `og:url`, title and description (`openGraphFor`).                                                                                                                                                        |
-| Structured data       | Home: `Organization` + `WebSite`. Product: `BreadcrumbList` always; `Product` + `Offer` (INR, stock, seller) + `AggregateRating` **in API mode only**. Workshop: `BreadcrumbList`; `AutoRepair` (address, geo, hours, price range, services, rating) **in API mode only**. Home FAQ: `FAQPage`.               |
-| `noindex`             | Private screens (as before), search results, and demo workshop pages (they are not real businesses).                                                                                                                                                                                                          |
+| Piece                 | Where / rule                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `robots.txt`          | `/robots.txt`. Allows everything except the private screens (account, admin, portals, cart, checkout, compare, sign-in, notifications, order / service / quote / application records, partner invite links) in both languages, and `/api/`; allows the Bulk orders form `/quotes/new`. Points to the sitemap.                                                                                                                                                                       |
+| `sitemap.xml`         | `/sitemap.xml`, rebuilt on request at most hourly in demo mode and every 30 s with real data (the catalogue fetch's cache, ISR). **Empty until the site runs on real data** (pre-launch, `searchIndexingOpen()`; every page is also `noindex` then). With real data: every public page in English and Hindi (incl. Bulk orders `/quotes/new`), each with its `hreflang` pair; the 9 category pages; every product; every real workshop (API mode). Demo workshops are never listed. |
+| Titles + descriptions | From the locale files, namespace `seo` (+ `meta` for the home page), English and Hindi. Pattern: what + where ("… in Raipur"). The layout adds `· MechDost`. Copy based on the competitor study in § 5.                                                                                                                                                                                                                                                                             |
+| Canonical + hreflang  | Every public page: its own canonical, `en` / `hi` / `x-default` alternates (`alternatesFor`). The shop with one category is its own canonical (`/shop?category=lubricants`); sort, vehicle and page parameters point back to it; a search result (`?q=`) is `noindex, follow`.                                                                                                                                                                                                      |
+| Open Graph            | Site-wide default share image; product pages share the product photo; pages with their own title set `og:url`, title and description (`openGraphFor`).                                                                                                                                                                                                                                                                                                                              |
+| Structured data       | Home: `Organization` + `WebSite`. Product: `BreadcrumbList` always; `Product` + `Offer` (INR, stock, seller) + `AggregateRating` **in API mode only**. Workshop: `BreadcrumbList`; `AutoRepair` (address, geo, hours, price range, services, rating) **in API mode only**. Home FAQ: `FAQPage`.                                                                                                                                                                                     |
+| `noindex`             | Private screens (as before), search results, and demo workshop pages (they are not real businesses).                                                                                                                                                                                                                                                                                                                                                                                |
 
 Why API mode only for products and workshops: the demo build's prices and seed reviews are not real, and Google treats
 structured data that does not match reality as spam (manual action risk). Breadcrumbs and the organisation are true in
@@ -24,7 +24,7 @@ both modes.
 
 ```bash
 curl -s https://mechdost.com/robots.txt
-curl -s https://mechdost.com/sitemap.xml | grep -c '<url>'          # demo: ~94, real data: grows with the catalogue
+curl -s https://mechdost.com/sitemap.xml | grep -c '<url>'          # demo (pre-launch): 0, real data: grows with the catalogue
 curl -s https://mechdost.com/shop | grep -o '<link rel="canonical"[^>]*>'
 curl -s https://mechdost.com/ | grep -o 'application/ld+json'        # structured data present
 ```
@@ -47,7 +47,7 @@ Do this **after** this change is deployed (so `robots.txt` and `sitemap.xml` are
    and Resend depend on them).
 5. Back in Search Console press **Verify**. If it fails, wait 10-60 minutes and press again (DNS takes time). Check with
    `nslookup -type=TXT mechdost.com`.
-6. **Sitemaps** (left menu) → enter `sitemap.xml` → Submit. Status should become "Success" with ~94 discovered URLs (demo data; more once real data is live).
+6. **Sitemaps** (left menu) → enter `sitemap.xml` → Submit. Do this **after the real-data launch switch**: before it the sitemap is empty and every page is `noindex` (the demo store is never indexed). Status should become "Success" with the discovered URLs.
 7. **URL inspection** (top search bar): inspect `https://mechdost.com/`, then **Request indexing**. Repeat for
    `https://mechdost.com/hi`, `/shop`, `/workshops`, `/partners` (Google allows roughly 10 requests a day).
 8. **Settings → Users and permissions → Add user**: add a second owner as backup (whoever else runs the business).
@@ -70,7 +70,7 @@ method, say so: it needs a new build variable.
 | After real data launch | Enhancements → Breadcrumbs, Merchant listings | Valid items; fix any "missing field" errors that Google lists (warnings are optional).                     |
 | Monthly                | Experience → Core Web Vitals                  | All URLs "Good" (spec 16 budgets).                                                                         |
 
-**At the launch switch to real data (Q89):** re-submit `sitemap.xml`. Demo product URLs that no longer exist return
+**At the launch switch to real data (Q89):** indexing opens by itself (`searchIndexingOpen()`); check a product page no longer has `noindex`, then submit `sitemap.xml`. Demo product URLs that no longer exist return
 404 and Google drops them by itself; nothing to do.
 
 ## 5. Competitor study (2026-11-17) and next steps

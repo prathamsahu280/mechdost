@@ -15,7 +15,9 @@
     "workshopTitle": "{name}, {area} – Reviews, Services and Timings",
     "workshopDescription": "{name}, {area}: {services}. See price ranges and timings, and book a slot on MechDost.",
     "partnersTitle": "Sell Auto Parts or List Your Workshop in {city}",
-    "partnersDescription": "Parts shops, workshops and mechanics in {city}: get orders and service requests from nearby customers. Apply online; our team verifies you before you go live."
+    "partnersDescription": "Parts shops, workshops and mechanics in {city}: get orders and service requests from nearby customers. Apply online; our team verifies you before you go live.",
+    "bulkTitle": "Bulk Auto Parts & Engine Oil Orders in {city} – Get a Price",
+    "bulkDescription": "Buying for a garage, fleet or shop? Ask MechDost for a bulk price on engine oil, batteries, tyres and spare parts. Our {city} team replies with a final price you accept in one tap."
   },
   "common": {
     "skipToContent": "Skip to content",

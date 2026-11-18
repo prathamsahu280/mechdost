@@ -1,10 +1,14 @@
 import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import en from '../../../packages/shared/src/i18n/en.json';
+import hi from '../../../packages/shared/src/i18n/hi.json';
 import robots from '../src/app/robots';
 import { DEMO_PRODUCTS } from '../src/demo/catalogue';
 import { DEMO_WORKSHOPS } from '../src/demo/workshops';
 import type { ProductView } from '../src/lib/catalogue/view';
-import { absoluteUrl, metaDescription, siteOrigin } from '../src/lib/seo';
+import { DATA_MODE } from '../src/lib/data-mode';
+import { absoluteUrl, metaDescription, searchIndexingOpen, siteOrigin } from '../src/lib/seo';
 import { CATEGORY_PATHS, PRIVATE_PATHS, STATIC_PATHS, sitemapEntries } from '../src/lib/sitemap-entries';
 import {
   breadcrumbLd,
@@ -207,7 +211,13 @@ describe('sitemap and robots', () => {
       expect(disallow).toContain(p);
       expect(disallow).toContain(`/hi${p}`);
     }
-    const blocked = (path: string) => disallow.some((d) => path.startsWith(d));
+    const allow = [rule?.allow ?? []].flat();
+    // Google's rule: the longest matching rule wins (an Allow beats a shorter Disallow).
+    const longest = (list: string[], path: string) =>
+      Math.max(-1, ...list.filter((r) => path.startsWith(r)).map((r) => r.length));
+    const blocked = (path: string) => longest(disallow, path) > longest(allow, path);
+    expect(blocked('/quotes/QT-RPR-2026-ABC123'), 'quote records stay blocked').toBe(true);
+    expect(blocked('/hi/quotes/new'), 'Hindi bulk orders page').toBe(false);
     for (const path of [...STATIC_PATHS, ...CATEGORY_PATHS, '/shop/x', '/workshops/x'])
       expect(blocked(path), path).toBe(false);
     expect(robots().sitemap).toBe(absoluteUrl('/sitemap.xml'));
@@ -224,7 +234,6 @@ describe('sitemap and robots', () => {
       '/notifications',
       '/orders/x',
       '/service/x',
-      '/quotes/new',
       '/quotes/x',
       '/partner/shop',
       '/partner/workshop',
@@ -237,5 +246,24 @@ describe('sitemap and robots', () => {
         PRIVATE_PATHS.some((d) => path.startsWith(d)),
         path,
       ).toBe(true);
+  });
+});
+
+describe('pre-launch: no indexing while the site runs on demo data (user 2026-11-18)', () => {
+  it('opens only in real data mode', () => {
+    expect(searchIndexingOpen()).toBe(DATA_MODE === 'api');
+  });
+  it('the layout sets noindex and the sitemap is empty while closed', () => {
+    const layout = readFileSync(join(__dirname, '..', 'src', 'app', '[locale]', 'layout.tsx'), 'utf8');
+    expect(layout).toMatch(
+      /searchIndexingOpen\(\) \? \{\} : \{ robots: \{ index: false, follow: false \} \}/,
+    );
+    const sitemapFile = readFileSync(join(__dirname, '..', 'src', 'app', 'sitemap.ts'), 'utf8');
+    expect(sitemapFile).toMatch(/searchIndexingOpen\(\) \? sitemapEntries\(\) : \[\]/);
+  });
+  it('the Bulk orders page is indexable and listed', () => {
+    expect(STATIC_PATHS).toContain('/quotes/new');
+    expect(en.seo.bulkTitle).toContain('{city}');
+    expect(hi.seo.bulkDescription).toMatch(/[ऀ-ॿ]/);
   });
 });

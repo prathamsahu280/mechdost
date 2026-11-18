@@ -1557,3 +1557,16 @@ counter with the global `api_user` rule. Spec 13 "Global API limits".
   copy; admin-editable meta text comes with the CMS (spec 08).
 - **Search Console:** Domain property verified by a DNS TXT record (no code, no new env variable); steps in
   `docs/runbooks/seo.md` § 3.
+
+## 2026-11-18 — SEO review follow-ups: no indexing before launch; Bulk orders page indexable (user)
+
+Review of 94ba244 ("chore: SEO"); user: "yeah do both fixes".
+
+- **No indexing while the site runs on demo data.** The live site is still the demo store (demo prices and stock
+  text). `searchIndexingOpen()` (`apps/web/src/lib/seo.ts`) is true only in real data mode: until then every page
+  carries `noindex, nofollow` (pages with their own `robots` keep theirs) and `sitemap.xml` is empty. The real-mode
+  launch switch opens both; nothing else to change. `robots.txt` stays as is so crawlers can read the `noindex`.
+- **`/quotes/new` (Bulk orders, footer link) is an indexable landing page** with its own title and description in
+  English and Hindi (`seo.bulkTitle` / `seo.bulkDescription`) and is listed in the sitemap. It had `noindex` since it
+  was built (2026-11-01, no recorded reason) and the SEO commit then blocked all of `/quotes/`. `robots.txt` now
+  allows `/quotes/new` and `/hi/quotes/new`; quote records (`/quotes/<code>`) stay blocked and `noindex`.
