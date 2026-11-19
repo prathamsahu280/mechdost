@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { localePath } from './locale-path';
 import { routing, type Locale } from '@/i18n/routing';
-import { DATA_MODE } from './data-mode';
 
 /**
  * The site's public origin (`https://mechdost.com`), from the build's `NEXT_PUBLIC_APP_URL`. A Docker build passes
@@ -10,15 +9,6 @@ import { DATA_MODE } from './data-mode';
 export function siteOrigin(): string {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL;
   return (appUrl !== undefined && appUrl !== '' ? appUrl : 'http://localhost:3000').replace(/\/$/, '');
-}
-
-/**
- * Search engines may index the site only once it runs on real data (user 2026-11-18: the live site was still the demo
- * store, whose prices and stock text are not real). Until the real-mode switch every page is `noindex` and the sitemap
- * is empty; the switch opens both with no other change.
- */
-export function searchIndexingOpen(): boolean {
-  return DATA_MODE === 'api';
 }
 
 /** An app path as an absolute URL; the home page is the bare origin, as the canonical tag prints it. */

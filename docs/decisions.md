@@ -1570,3 +1570,17 @@ Review of 94ba244 ("chore: SEO"); user: "yeah do both fixes".
   English and Hindi (`seo.bulkTitle` / `seo.bulkDescription`) and is listed in the sitemap. It had `noindex` since it
   was built (2026-11-01, no recorded reason) and the SEO commit then blocked all of `/quotes/`. `robots.txt` now
   allows `/quotes/new` and `/hi/quotes/new`; quote records (`/quotes/<code>`) stay blocked and `noindex`.
+
+## 2026-11-19 — Search indexing open now, on demo data too (user; supersedes the first bullet of 2026-11-18)
+
+User: "yes i want all the pages to be indexed so do the fix". Reason: Google had nothing indexed for "MechDost" and
+answered the brand search with a spelling suggestion ("techdost", an unrelated Meerut software company); the
+site-wide `noindex` would also have dropped the two pages Google already had.
+
+- `searchIndexingOpen()` and the layout's site-wide `noindex, nofollow` are removed; `sitemap.xml` lists every public
+  page, category and product in both languages in every data mode.
+- Unchanged: private screens blocked and `noindex`; search results `noindex, follow`; **demo workshop pages stay
+  `noindex` and out of the sitemap** (fictional businesses with addresses must not show up as real local results);
+  `Product` / `Offer` / `AutoRepair` structured data still only on real data (no markup of demo prices or reviews).
+- Accepted cost: demo product prices and stock text can appear in search snippets until the real-data switch; those
+  URLs refresh or drop (404) after it, and `sitemap.xml` is re-submitted then.

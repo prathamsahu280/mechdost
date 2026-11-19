@@ -7,8 +7,7 @@ import robots from '../src/app/robots';
 import { DEMO_PRODUCTS } from '../src/demo/catalogue';
 import { DEMO_WORKSHOPS } from '../src/demo/workshops';
 import type { ProductView } from '../src/lib/catalogue/view';
-import { DATA_MODE } from '../src/lib/data-mode';
-import { absoluteUrl, metaDescription, searchIndexingOpen, siteOrigin } from '../src/lib/seo';
+import { absoluteUrl, metaDescription, siteOrigin } from '../src/lib/seo';
 import { CATEGORY_PATHS, PRIVATE_PATHS, STATIC_PATHS, sitemapEntries } from '../src/lib/sitemap-entries';
 import {
   breadcrumbLd,
@@ -249,17 +248,16 @@ describe('sitemap and robots', () => {
   });
 });
 
-describe('pre-launch: no indexing while the site runs on demo data (user 2026-11-18)', () => {
-  it('opens only in real data mode', () => {
-    expect(searchIndexingOpen()).toBe(DATA_MODE === 'api');
-  });
-  it('the layout sets noindex and the sitemap is empty while closed', () => {
+describe('indexing is open in every data mode (user 2026-11-19)', () => {
+  it('the layout never sets a site-wide noindex', () => {
     const layout = readFileSync(join(__dirname, '..', 'src', 'app', '[locale]', 'layout.tsx'), 'utf8');
-    expect(layout).toMatch(
-      /searchIndexingOpen\(\) \? \{\} : \{ robots: \{ index: false, follow: false \} \}/,
-    );
-    const sitemapFile = readFileSync(join(__dirname, '..', 'src', 'app', 'sitemap.ts'), 'utf8');
-    expect(sitemapFile).toMatch(/searchIndexingOpen\(\) \? sitemapEntries\(\) : \[\]/);
+    expect(layout).not.toMatch(/robots:/);
+  });
+  it('sitemap.xml lists the public pages', async () => {
+    const { default: sitemap } = await import('../src/app/sitemap');
+    const urls = (await sitemap()).map((e) => e.url);
+    expect(urls).toContain(absoluteUrl('/'));
+    expect(urls).toContain(absoluteUrl('/hi/shop'));
   });
   it('the Bulk orders page is indexable and listed', () => {
     expect(STATIC_PATHS).toContain('/quotes/new');

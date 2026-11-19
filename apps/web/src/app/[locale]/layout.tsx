@@ -21,7 +21,7 @@ import { SITE_LAYOUT_SCRIPT } from '@/lib/site-layout';
 import { THEME_INIT_SCRIPT } from '@/lib/theme';
 import './globals.css';
 import { localePath } from '@/lib/locale-path';
-import { searchIndexingOpen, siteOrigin } from '@/lib/seo';
+import { siteOrigin } from '@/lib/seo';
 
 const manrope = Manrope({ subsets: ['latin'], weight: ['600', '700', '800'], variable: '--font-manrope' });
 const dmSans = DM_Sans({ subsets: ['latin'], weight: ['400', '500', '700'], variable: '--font-dm-sans' });
@@ -61,8 +61,6 @@ export async function generateMetadata({
     title: { default: title, template: `%s · MechDost` },
     description: t('description', { city }),
     applicationName: 'MechDost',
-    // Pre-launch (demo data): no page in search results; pages that set their own `robots` keep theirs.
-    ...(searchIndexingOpen() ? {} : { robots: { index: false, follow: false } }),
     icons: {
       icon: [
         { url: '/brand/favicon.svg', type: 'image/svg+xml' },
