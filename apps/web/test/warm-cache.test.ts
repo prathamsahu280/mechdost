@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-// @ts-expect-error plain .mjs script without types
 import { warmUrls, waitBeforeNext } from '../scripts/warm-cache.mjs';
 
 const xml = `<urlset>
@@ -14,7 +13,7 @@ const xml = `<urlset>
 
 describe('warm-up script', () => {
   it('lists own pages once, home and shop first, product pages last, other hosts never', () => {
-    const urls = warmUrls(xml, 'https://mechdost.com') as string[];
+    const urls = warmUrls(xml, 'https://mechdost.com');
     expect(urls).toEqual([
       'https://mechdost.com/',
       'https://mechdost.com/hi/shop',
