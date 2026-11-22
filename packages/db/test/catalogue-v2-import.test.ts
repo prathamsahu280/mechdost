@@ -274,7 +274,7 @@ describe('catalogue-v2 import', () => {
       );
     expect(rows.length).toBeGreaterThan(5);
     for (const row of rows) {
-      expect(row.nameHi.endsWith('समीक्षित')).toBe(true);
+      expect(row.nameHi?.endsWith('समीक्षित')).toBe(true);
       expect(row.highlightsHi.every((h) => h.endsWith('समीक्षित'))).toBe(true);
     }
   });
