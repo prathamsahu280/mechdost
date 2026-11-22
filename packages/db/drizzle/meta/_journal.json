@@ -533,6 +533,13 @@
       "when": 1794769432124,
       "tag": "0077_coupon_offers_reports",
       "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "7",
+      "when": 1795329572511,
+      "tag": "0078_business_applications",
+      "breakpoints": true
     }
   ]
 }

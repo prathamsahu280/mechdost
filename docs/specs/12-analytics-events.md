@@ -198,3 +198,7 @@ Client `auth_code_failed { stage: send|confirm, code, path }`: a phone-code send
 ## Audience entry events (2026-11-22)
 
 Click ids (`data-track`, delegated `click` event): `home_audience_retail`, `home_audience_garages`, `home_audience_fleets` (the three cards of the home band, one link per card); `nav_business` (header link), `footer_business_garages`, `footer_business_fleets`, `footer_business_bulk` (footer column "For business"); on the landing pages `business_garages_bulk`, `business_garages_reorder`, `business_garages_apply` (the page's primary action) and `business_fleets_apply`. No new event types, no personal data.
+
+## Business applications (design 2026-11-22)
+
+Server: `business_application_submitted { kind, signedIn }`, `business_application_decided { kind, decision: approved|rejected|closed, reasonCode }`, `trade_account_verified { via: application|restored }`, `trade_account_revoked { reasonCode }`. Ids and codes only. Click ids (web): `business_apply_trade`, `business_apply_fleet`, `admin_business_in_review`, `admin_business_approved`, `admin_business_closed`, `admin_trade_revoked`, `admin_trade_restored`.

@@ -571,3 +571,7 @@ Home section `audiences` (first; Admin -> Layout works; en + hi label), server c
 ## 2026-11-22 — Order again built (builder 3, audience entry item 4; branch worktree-agent-ae48f0c43cc984268, not merged; no migration)
 
 `POST /v1/me/cart/reorder` + button on the account orders list and the order page (demo and real mode), en + hi, accessibility contract from the design doc applied. Spec 03/04/12 and decisions updated; state audit row `ORD-AGAIN` and demo fixture order `MD-RPR-2026-HND004` (delivered) added, checklist regenerated (4374 items). Tests: `packages/db/test/cart-reorder.test.ts`, `apps/api/test/storefront.test.ts`, `apps/web/test/order-again.test.ts`. Budget: new web code reachable only from `account-area.tsx`, `order-view.tsx`, `order-view-api.tsx` (account/order routes); runner is `import()`ed on press. Needs `measure-js` after merge. Not run: Playwright, next build.
+
+## 2026-11-22 - Builder 2: business applications (trade + fleet), branch worktree-agent-aafba15786951f205
+
+Migration `0078_business_applications` (not applied; the coordinator applies it and renumbers if another builder also used 0078). Shared DTOs, machines and emails, db repo, API routes, `/business/apply`, admin queue section, account badge, checkout GSTIN prefill. Tests green: shared 508, db targeted 67, api targeted 26, web targeted 126. Specs 07/10/12/13/14 and decisions updated.

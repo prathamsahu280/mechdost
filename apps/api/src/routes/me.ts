@@ -1,6 +1,7 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
-import { updateProfile } from '@mechdost/db/repo';
+import { getTradeProfile, updateProfile } from '@mechdost/db/repo';
 import { ProfilePatchDto } from '@mechdost/shared/account-api';
+import { TRADE_STATUSES, type TradeStatus } from '@mechdost/shared/business-codes';
 import { permissionsOf } from '@mechdost/shared/rbac';
 import type { SessionCache } from '../auth/session-cache';
 import { authenticate } from '../middleware/auth';
@@ -28,6 +29,8 @@ const Me = z
       }),
     ),
     permissions: z.array(z.string()),
+    /** Trade account status (audience entry design 2026-11-22): `verified` shows the badge. */
+    trade: z.object({ status: z.enum(TRADE_STATUSES) }),
   })
   .openapi('Me');
 
@@ -57,7 +60,7 @@ const patchMe = createRoute({
   },
 });
 
-function toMe(auth: AuthContext): z.infer<typeof Me> {
+function toMe(auth: AuthContext, trade: TradeStatus): z.infer<typeof Me> {
   const { user, grants } = auth;
   return {
     id: user.id,
@@ -75,6 +78,7 @@ function toMe(auth: AuthContext): z.infer<typeof Me> {
       workshopId: g.workshopId,
     })),
     permissions: [...permissionsOf(grants)].sort(),
+    trade: { status: trade },
   };
 }
 
@@ -86,12 +90,15 @@ export function meRoutes(deps: AppDeps, cache: SessionCache) {
     rateLimit(deps.rateLimiter, RATE_RULES.apiPerUser, (c) => c.get('auth').user.id),
   );
   return app
-    .openapi(getMe, (c) => c.json(toMe(c.get('auth')), 200))
+    .openapi(getMe, async (c) => {
+      const auth = c.get('auth');
+      return c.json(toMe(auth, (await getTradeProfile(deps.db, auth.user.id)).status), 200);
+    })
     .openapi(patchMe, async (c) => {
       const auth = c.get('auth');
       const { version, ...patch } = c.req.valid('json');
       const user = await updateProfile(deps.db, { userId: auth.user.id, expectedVersion: version, patch });
       cache.invalidateUser(user.id);
-      return c.json(toMe({ ...auth, user }), 200);
+      return c.json(toMe({ ...auth, user }, (await getTradeProfile(deps.db, user.id)).status), 200);
     });
 }

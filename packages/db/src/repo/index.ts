@@ -98,3 +98,4 @@ export * from './support-deletion';
 export * from './product-photos';
 export * from './cart';
 export * from './wishlist';
+export * from './business-applications';

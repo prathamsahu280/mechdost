@@ -45,6 +45,9 @@ describe('catalogue', () => {
       'application_received',
       'application_approved',
       'application_rejected',
+      'trade_application_received',
+      'fleet_application_received',
+      'trade_account_verified',
       'shop_order_routed',
       'partner_warning_issued',
     ])
