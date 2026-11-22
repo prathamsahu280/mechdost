@@ -11,3 +11,4 @@ export * from './media';
 export * from './storefront';
 export * from './storefront-cart';
 export * from './business';
+export * from './search';

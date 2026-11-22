@@ -306,6 +306,14 @@ export const products = pgTable(
     searchVector: tsvector().generatedAlwaysAs(
       sql`setweight(to_tsvector('english'::regconfig, coalesce("name", '')), 'A') || setweight(to_tsvector('simple'::regconfig, coalesce("name_hi", '')), 'A') || setweight(to_tsvector('english'::regconfig, coalesce("spec_summary", '') || ' ' || coalesce("compatibility", '')), 'B') || setweight(to_tsvector('simple'::regconfig, coalesce("spec_summary_hi", '') || ' ' || coalesce("compatibility_hi", '')), 'B') || setweight(to_tsvector('english'::regconfig, coalesce("description", '')), 'C') || setweight(to_tsvector('simple'::regconfig, coalesce("description_hi", '')), 'C')`,
     ),
+    /**
+     * Upper-case letters and digits of the name, spec summary and compatibility with everything else removed
+     * (migration 0080): "Activ 4T 20W-40 900 ml" → "ACTIV4T20W40900ML". The search matches viscosity grades, battery
+     * capacities and tyre sizes against it however the customer spaced them (trigram index, spec 02 "Smart search").
+     */
+    searchCompact: text().generatedAlwaysAs(
+      sql`regexp_replace(upper(coalesce("name", '') || ' ' || coalesce("spec_summary", '') || ' ' || coalesce("compatibility", '')), '[^A-Z0-9]', '', 'g')`,
+    ),
     version: version(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),

@@ -24,6 +24,8 @@ export * from './email-events';
 export * from './support';
 export * from './support-threads';
 export * from './catalogue';
+export * from './search';
+export { invalidateSearchVocab, loadSearchVocab, parseCatalogueQuery } from './search-sql';
 export * from './content';
 export * from './cursor';
 export * from './checkout';

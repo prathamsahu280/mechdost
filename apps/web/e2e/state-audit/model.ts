@@ -655,6 +655,19 @@ export const COMPONENTS: readonly ComponentDef[] = [
     core: coreAt([320]),
   },
   {
+    code: 'SHOP-SEARCH',
+    page: 'Shop (/shop)',
+    component:
+      'Search box with suggestions (combobox): focus loads the list, keyboard and pointer, empty and filled',
+    path: (r) => String(r.route),
+    scope: 'form[role="search"]',
+    strategy: 'pairwise',
+    params: [...env, { name: 'route', values: ['/shop', '/shop?q=castrol%20900ml'] }],
+    checks: ['present', 'inside', 'overlap', 'clipped', 'tap', 'hscroll', 'focus', 'console'],
+    sweep: 6,
+    note: 'Sweep only (the core subset is full). Focus arms the lazy suggestion panel; typing is covered by the unit and e2e tests.',
+  },
+  {
     code: 'SHOP-POPOVER',
     page: 'Shop (/shop)',
     component: 'Quick-details popover (ⓘ) on the first and the last card of a row',

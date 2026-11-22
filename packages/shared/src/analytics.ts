@@ -449,6 +449,24 @@ export const CLIENT_EVENT_SCHEMAS = {
       source: id,
     })
     .strict(),
+  // Smart search (design 2026-11-22): what the suggestion list led to, and searches that found nothing.
+  // Codes and counts only; the query text goes through the same scrub as `search`.
+  search_suggestion_selected: z
+    .object({
+      kind: z.enum(['brand', 'range', 'category', 'product']),
+      position: z.number().int().min(1).max(8),
+    })
+    .strict(),
+  search_zero_results: z
+    .object({
+      query: z
+        .string()
+        .max(80)
+        .transform((q) => scrubFreeText(q)),
+      source: id,
+      had_suggestion: z.boolean(),
+    })
+    .strict(),
   // `source` is optional so events from tabs opened before comparison existed still pass.
   add_to_cart: z
     .object({ slug: id, qty: z.number().int().min(1).max(99), source: z.enum(['compare']).optional() })
@@ -537,7 +555,7 @@ export const CLIENT_EVENT_SCHEMAS = {
   location_detected: z.object({ source: z.enum(['finder', 'map']), pincodeFound: z.boolean() }).strict(),
   admin_site_change: z
     .object({
-      area: z.enum(['content', 'layout', 'categories', 'settings', 'policies', 'company']),
+      area: z.enum(['content', 'layout', 'categories', 'settings', 'policies', 'company', 'search_synonyms']),
       action: z.enum(['save', 'reset', 'publish', 'restore', 'preview']),
       fields: z.number().int().min(0).max(1000),
     })

@@ -77,6 +77,7 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | SHOP-CARD             | Shop (/shop)                                                     | Product card × compare list × cart (full cross)                                                                                                                                                                                                                                 | cross    | 128      | 14      |
 | SHOP-ACTION           | Shop (/shop)                                                     | Card actions clicked, then every card re-checked (cross-entity sync)                                                                                                                                                                                                            | cross    | 40       | 2       |
 | SHOP-FILTERS          | Shop (/shop)                                                     | Search, category chips, vehicle chips, sort, results count, empty result                                                                                                                                                                                                        | pairwise | 48       | 6       |
+| SHOP-SEARCH           | Shop (/shop)                                                     | Search box with suggestions (combobox): focus loads the list, keyboard and pointer, empty and filled                                                                                                                                                                            | pairwise | 16       | 0       |
 | SHOP-POPOVER          | Shop (/shop)                                                     | Quick-details popover (ⓘ) on the first and the last card of a row                                                                                                                                                                                                               | pairwise | 16       | 0       |
 | SHOP-TRAY             | Shop (/shop)                                                     | Compare tray (count, open, clear) over the listing                                                                                                                                                                                                                              | cross    | 32       | 2       |
 | STEP                  | Quantity stepper (card, product page, cart)                      | Stepper − / count / + × quantity × hover/focus/active/disabled (full cross)                                                                                                                                                                                                     | cross    | 180      | 6       |
@@ -188,7 +189,7 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | API-ADM-EXPORTS       | Admin → Exports, real sign-in                                    | CSV exports: the form (dataset, city, dates), customers with masked or open contacts, done, empty file, too many rows, expired link, range over 180 days, nothing allowed, load error                                                                                           | pairwise | 80       | 0       |
 | API-NAV-ADMIN         | Navigation, real sign-in                                         | Admin section bar with every real-mode section (Analytics, Refunds, Errors included): current item, scroll, walk                                                                                                                                                                | cross    | 176      | 0       |
 | API-NAV-ACCOUNT       | Navigation, real sign-in                                         | Account section bar in a real-sign-in build: current item, scroll, walk                                                                                                                                                                                                         | cross    | 96       | 0       |
-| **Total**             |                                                                  |                                                                                                                                                                                                                                                                                 |          | **4431** | **100** |
+| **Total**             |                                                                  |                                                                                                                                                                                                                                                                                 |          | **4447** | **100** |
 
 ## Chrome
 
@@ -901,6 +902,27 @@ Pairwise (all pairs of values); 48 states; scope `main`.
 - [x] SHOP-FILTERS-046 · 1920px · dark · hi · signed out · world=empty · /shop?vehicle=2W&sort=price_asc · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi — 2026-11-16 pass (P2 tap44 ×1; P2 focus-clipped ×9)
 - [x] SHOP-FILTERS-047 · 1920px · light · en · signed out · world=empty · /shop?q=battery&vehicle=4W · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned — 2026-11-16 pass (P2 tap44 ×1; P2 focus-clipped ×9)
 - [x] SHOP-FILTERS-048 · 1920px · dark · hi · signed out · world=empty · /shop?q=zzzz-no-match · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi — 2026-11-16 pass (P2 tap44 ×1; P2 focus-clipped ×9)
+
+### SHOP-SEARCH — Search box with suggestions (combobox): focus loads the list, keyboard and pointer, empty and filled
+
+Pairwise (all pairs of values); 16 states; scope `form[role="search"]`.
+
+- [ ] SHOP-SEARCH-001 · 320px · light · en · signed out · world=empty · /shop · asserts: present inside overlap clipped tap hscroll focus console axe
+- [ ] SHOP-SEARCH-002 · 320px · dark · hi · signed out · world=empty · /shop?q=castrol%20900ml · asserts: present inside overlap clipped tap hscroll focus console hindi
+- [ ] SHOP-SEARCH-003 · 390px · light · hi · signed out · world=empty · /shop · asserts: present inside overlap clipped tap hscroll focus console hindi
+- [ ] SHOP-SEARCH-004 · 390px · dark · en · signed out · world=empty · /shop?q=castrol%20900ml · asserts: present inside overlap clipped tap hscroll focus console
+- [ ] SHOP-SEARCH-005 · 480px · light · en · signed out · world=empty · /shop?q=castrol%20900ml · asserts: present inside overlap clipped tap hscroll focus console axe
+- [ ] SHOP-SEARCH-006 · 480px · dark · hi · signed out · world=empty · /shop · asserts: present inside overlap clipped tap hscroll focus console hindi
+- [ ] SHOP-SEARCH-007 · 768px · light · en · signed out · world=empty · /shop · asserts: present inside overlap clipped tap hscroll focus console
+- [ ] SHOP-SEARCH-008 · 768px · dark · hi · signed out · world=empty · /shop?q=castrol%20900ml · asserts: present inside overlap clipped tap hscroll focus console hindi
+- [ ] SHOP-SEARCH-009 · 1024px · light · en · signed out · world=empty · /shop · asserts: present inside overlap clipped tap hscroll focus console axe
+- [ ] SHOP-SEARCH-010 · 1024px · dark · hi · signed out · world=empty · /shop?q=castrol%20900ml · asserts: present inside overlap clipped tap hscroll focus console hindi
+- [ ] SHOP-SEARCH-011 · 1280px · light · en · signed out · world=empty · /shop · asserts: present inside overlap clipped tap hscroll focus console
+- [ ] SHOP-SEARCH-012 · 1280px · dark · hi · signed out · world=empty · /shop?q=castrol%20900ml · asserts: present inside overlap clipped tap hscroll focus console hindi
+- [ ] SHOP-SEARCH-013 · 1440px · light · en · signed out · world=empty · /shop · asserts: present inside overlap clipped tap hscroll focus console axe
+- [ ] SHOP-SEARCH-014 · 1440px · dark · hi · signed out · world=empty · /shop?q=castrol%20900ml · asserts: present inside overlap clipped tap hscroll focus console hindi
+- [ ] SHOP-SEARCH-015 · 1920px · light · en · signed out · world=empty · /shop · asserts: present inside overlap clipped tap hscroll focus console
+- [ ] SHOP-SEARCH-016 · 1920px · dark · hi · signed out · world=empty · /shop?q=castrol%20900ml · asserts: present inside overlap clipped tap hscroll focus console hindi
 
 ### SHOP-POPOVER — Quick-details popover (ⓘ) on the first and the last card of a row
 

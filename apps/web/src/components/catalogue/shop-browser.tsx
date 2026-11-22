@@ -3,18 +3,25 @@
 import { useCategoryEmoji } from '@/demo/site-config';
 import { CATEGORY_EMOJI, UI_EMOJI } from '@/lib/emoji';
 import { MessageCircle } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
+  useCallback,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
   useTransition,
+  type ComponentType,
   type ReactNode,
+  type Ref,
   type SyntheticEvent,
 } from 'react';
 import type { ListingQuery } from '@/app/[locale]/shop/actions';
+import type { ChosenSuggestion, SuggestHandle, SuggestState } from './search-suggest';
+import type { smartSearchProducts } from '@/demo/smart-search';
+import { DATA_MODE } from '@/lib/data-mode';
 import type { ProductHi } from '@/demo/i18n/hi-products';
 import {
   CATEGORY_KEYS,
@@ -89,10 +96,23 @@ export interface ServerListing {
   pages: number;
   slugs: string[];
   nextCursor: string | null;
+  /** The closest name when the search found nothing (spec 02 "Smart search"); null otherwise. */
+  didYouMean: string | null;
   loadMore: (
     query: ListingQuery,
     cursor: string,
   ) => Promise<{ cards: { slug: string; node: ReactNode }[]; nextCursor: string | null }>;
+}
+
+/** What the lazy suggestion panel takes (its own file exports the full types). */
+interface SuggestProps {
+  listId: string;
+  query: string;
+  locale: string;
+  api: boolean;
+  onState: (s: SuggestState) => void;
+  onChoose: (item: ChosenSuggestion) => void;
+  handle: Ref<SuggestHandle>;
 }
 
 export function ShopBrowser({
@@ -115,6 +135,7 @@ export function ShopBrowser({
   const emoji = useCategoryEmoji();
   const shop = useTranslations('pages.shop');
   const product = useTranslations('product');
+  const locale = useLocale();
   const [state, setState] = useState<State>(initial);
   const [draft, setDraft] = useState(initial.query);
   // A new server render with other filters (header link, Back, a shared URL) resets the controls to match.
@@ -161,11 +182,17 @@ export function ShopBrowser({
   // The Hindi product text for the demo's in-browser search is its own chunk, fetched right after the page loads
   // (not part of the first load, spec 16 incident 2026-11-22); until it arrives only the English text matches.
   const [hiText, setHiText] = useState<Readonly<Record<string, ProductHi>>>();
+  // The smart matcher (query understanding, synonyms, ranking: spec 02 "Smart search") is a lazy chunk too; until it
+  // arrives the plain word match answers.
+  const [smart, setSmart] = useState<typeof smartSearchProducts>();
   useEffect(() => {
     if (server) return;
     let live = true;
     void import('@/demo/i18n/hi-products').then((m) => {
       if (live) setHiText(m.PRODUCT_HI);
+    });
+    void import('@/demo/smart-search').then((m) => {
+      if (live) setSmart(() => m.smartSearchProducts);
     });
     return () => {
       live = false;
@@ -173,7 +200,7 @@ export function ShopBrowser({
   }, [server]);
   const demoResults = useMemo(
     () =>
-      searchProducts({
+      (smart && state.query ? smart : searchProducts)({
         query: state.query,
         category: state.category,
         sort: state.sort,
@@ -181,7 +208,7 @@ export function ShopBrowser({
         categoryLabel: (k) => cat(k),
         hi: hiText,
       }),
-    [state, cat, hiText],
+    [state, cat, hiText, smart],
   );
   const results: { slug: string }[] = server ? server.slugs.map((slug) => ({ slug })) : demoResults;
   const shownCount = results.length + (appended?.cards.length ?? 0);
@@ -203,6 +230,62 @@ export function ShopBrowser({
       window.removeEventListener('popstate', onPop);
     };
   }, []);
+
+  // Suggestions while typing (spec 02 "Smart search"): the panel is a lazy chunk fetched on the first focus.
+  const listId = useId();
+  const [Suggest, setSuggest] = useState<ComponentType<SuggestProps> | null>(null);
+  const [suggestState, setSuggestState] = useState<SuggestState>({ open: false, activeId: undefined });
+  const suggestHandle = useRef<SuggestHandle>(null);
+  const armSuggest = () => {
+    if (Suggest) {
+      suggestHandle.current?.reopen();
+      return;
+    }
+    void import('./search-suggest').then((m) => {
+      setSuggest(() => m.default);
+    });
+  };
+  const onSuggestState = useCallback((s: SuggestState) => {
+    setSuggestState((prev) => (prev.open === s.open && prev.activeId === s.activeId ? prev : s));
+  }, []);
+
+  // Nothing found: "did you mean" (the API sends it; the demo works it out here) and the zero-result event.
+  const zero = shownCount === 0 && state.query !== '';
+  const [demoMean, setDemoMean] = useState<{ query: string; text: string | null } | null>(null);
+  useEffect(() => {
+    if (!zero) return;
+    if (server) {
+      track('search_zero_results', {
+        query: state.query,
+        source: 'shop',
+        had_suggestion: server.didYouMean !== null,
+      });
+      return;
+    }
+    let live = true;
+    void import('@/demo/smart-search').then((m) => {
+      if (!live) return;
+      const text = m.demoDidYouMean(state.query, (k) => cat(k));
+      setDemoMean({ query: state.query, text });
+      track('search_zero_results', { query: state.query, source: 'shop', had_suggestion: text !== null });
+    });
+    return () => {
+      live = false;
+    };
+  }, [zero, state.query, server, cat]);
+  const didYouMean = server ? server.didYouMean : demoMean?.query === state.query ? demoMean.text : null;
+
+  function chooseSuggestion(item: ChosenSuggestion) {
+    track('search_suggestion_selected', { kind: item.kind, position: item.position });
+    if (item.kind === 'product') {
+      router.push(`${basePath}/${item.slug}`);
+      return;
+    }
+    const category = item.kind === 'category' ? categoryFromSlug(item.slug) : undefined;
+    const query = category ? '' : item.label;
+    setDraft(query);
+    apply({ ...state, query, category: category ?? state.category });
+  }
 
   function apply(next: State) {
     setState(next);
@@ -288,18 +371,44 @@ export function ShopBrowser({
           <label htmlFor="shop-q" className="text-xs font-bold text-muted">
             {c('searchLabel')}
           </label>
-          <input
-            id="shop-q"
-            name="q"
-            type="search"
-            value={draft}
-            maxLength={120}
-            placeholder={c('searchPlaceholder')}
-            onChange={(e) => {
-              setDraft(e.target.value);
-            }}
-            className={field}
-          />
+          <div className="relative">
+            <input
+              id="shop-q"
+              name="q"
+              type="search"
+              role="combobox"
+              aria-autocomplete="list"
+              aria-expanded={suggestState.open}
+              aria-controls={suggestState.open ? listId : undefined}
+              aria-activedescendant={suggestState.activeId}
+              autoComplete="off"
+              value={draft}
+              maxLength={120}
+              placeholder={c('searchPlaceholder')}
+              onFocus={armSuggest}
+              onKeyDown={(e) => {
+                suggestHandle.current?.onKeyDown(e);
+              }}
+              onBlur={() => {
+                suggestHandle.current?.close();
+              }}
+              onChange={(e) => {
+                setDraft(e.target.value);
+              }}
+              className={field}
+            />
+            {Suggest ? (
+              <Suggest
+                listId={listId}
+                query={draft}
+                locale={locale}
+                api={DATA_MODE === 'api'}
+                onState={onSuggestState}
+                onChoose={chooseSuggestion}
+                handle={suggestHandle}
+              />
+            ) : null}
+          </div>
         </div>
         <div>
           <label htmlFor="shop-category" className="text-xs font-bold text-muted">
@@ -466,6 +575,21 @@ export function ShopBrowser({
           <p className="max-w-2xl text-[15px] text-muted">
             {state.query ? product('noMatch', { query: state.query }) : shop('empty')}
           </p>
+          {state.query && didYouMean ? (
+            <p className="mt-3 text-[15px] text-ink">
+              <button
+                type="button"
+                data-track="shop_did_you_mean"
+                onClick={() => {
+                  setDraft(didYouMean);
+                  apply({ ...state, query: didYouMean });
+                }}
+                className="min-h-11 font-bold text-accent-soft-text underline underline-offset-4"
+              >
+                {c('didYouMean', { suggestion: didYouMean })}
+              </button>
+            </p>
+          ) : null}
           <a
             href={whatsappLink(state.query ? `${sourcingMessage} ${state.query}` : sourcingMessage)}
             target="_blank"

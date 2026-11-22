@@ -7,6 +7,7 @@ import {
   type CatalogueProduct,
 } from '@mechdost/shared/catalogue';
 import { readAttributes } from '@mechdost/shared/product-attributes';
+import { SuggestResponseSchema } from '@mechdost/shared/search-api';
 import { categoryFromSlug } from '@/demo/catalogue';
 import type { Locale } from '@/i18n/routing';
 import type { CardView, ProductView } from './view';
@@ -70,6 +71,21 @@ export async function fetchCataloguePage(
   if (!res.ok) throw new Error(`catalogue API ${String(res.status)}`);
   const page = CataloguePageSchema.parse(await res.json());
   return { items: page.items.map(apiCard), nextCursor: page.nextCursor };
+}
+
+/** "Did you mean" for a search that found nothing (closest brand, category or product name), or null. */
+export async function fetchDidYouMean(q: string, locale: Locale): Promise<string | null> {
+  const url = new URL(`${base()}/v1/search/suggest`);
+  url.searchParams.set('q', q.trim().slice(0, 80));
+  url.searchParams.set('locale', locale);
+  url.searchParams.set('city', CITY);
+  try {
+    const res = await get(url, { revalidate: 60, tags: ['catalogue'] });
+    if (!res.ok) return null;
+    return SuggestResponseSchema.parse(await res.json()).didYouMean;
+  } catch {
+    return null; // a missing hint never breaks the page
+  }
 }
 
 export async function fetchCatalogueProduct(slug: string, locale: Locale): Promise<ProductView | null> {
