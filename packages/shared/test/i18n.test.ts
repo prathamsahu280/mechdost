@@ -42,6 +42,8 @@ describe('locale messages', () => {
       'announcement.brand',
       'language.other',
       'language.otherName',
+      'chrome.searchEsc', // the Esc key's label, as printed on the keyboard
+      'language.switch', // written in the other language on purpose, marked with lang= (chrome v4 account menu)
       'footer.whatsapp',
       'footer.copyright',
       'assistant.bot',
