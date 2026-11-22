@@ -26,7 +26,7 @@ import {
   users,
 } from '../schema';
 import { queueEmail } from './email-notifications';
-import { ConflictError, NotFoundError, pgCode, ValidationError } from './errors';
+import { ConflictError, ForbiddenError, NotFoundError, pgCode, ValidationError } from './errors';
 import { recordServerEvent } from './events';
 import { queueStaffNotice } from './notices';
 import type { Tx } from './orders';
@@ -398,6 +398,9 @@ export async function decideBusinessApplication(
       );
     if (app.kind === 'trade' && input.decision === 'closed')
       throw new ConflictError('A trade application is approved or rejected', 'TRADE_CANNOT_CLOSE');
+    // Separation of duties (security review 2026-11-22): nobody decides their own application.
+    if (app.user_id !== null && app.user_id === input.staffUserId)
+      throw new ForbiddenError('You cannot decide your own application', 'STAFF_SELF_CHANGE');
     businessApplicationMachine.assert(app.status, input.decision, 'admin');
     if (app.version !== input.expectedVersion)
       throw new ConflictError('Someone else changed this application; reload', 'STALE_APPLICATION');
@@ -595,6 +598,8 @@ export async function setTradeAccountStanding(
   await db.transaction(async (tx) => {
     const app = await lockApplication(tx, input.scope, input.code);
     if (app.kind !== 'trade' || !app.user_id) throw new NotFoundError('Trade account not found');
+    if (app.user_id === input.staffUserId)
+      throw new ForbiddenError('You cannot change your own trade account', 'STAFF_SELF_CHANGE');
     const [acc] = await tx
       .select({
         id: tradeAccounts.id,

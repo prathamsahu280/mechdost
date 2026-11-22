@@ -257,6 +257,41 @@ describe('admin queue and decisions', () => {
     ).rejects.toThrow();
   });
 
+  it('staff can never decide their own application or change their own trade standing (security review 2026-11-22)', async () => {
+    const userId = await newUser();
+    const r = await submitTradeApplication(t(), { userId, application: trade() });
+    const d = await getBusinessApplication(t(), ALL, r.code);
+    for (const decision of ['in_review', 'approved', 'rejected'] as const)
+      await expect(
+        decideBusinessApplication(t(), {
+          scope: ALL,
+          code: r.code,
+          expectedVersion: d.version,
+          staffUserId: userId,
+          decision,
+          ...(decision === 'rejected' ? { reasonCode: 'duplicate' as const } : {}),
+        }),
+      ).rejects.toMatchObject({ status: 403, code: 'STAFF_SELF_CHANGE' });
+    await decideBusinessApplication(t(), {
+      scope: ALL,
+      code: r.code,
+      expectedVersion: d.version,
+      staffUserId: staff,
+      decision: 'approved',
+    });
+    const acc = (await getBusinessApplication(t(), ALL, r.code)).tradeAccount!;
+    await expect(
+      setTradeAccountStanding(t(), {
+        scope: ALL,
+        code: r.code,
+        expectedVersion: acc.version,
+        staffUserId: userId,
+        to: 'revoked',
+        reasonCode: 'misuse',
+      }),
+    ).rejects.toMatchObject({ status: 403, code: 'STAFF_SELF_CHANGE' });
+  });
+
   it('revokes with a reason code and restores, each on the current version', async () => {
     const userId = await newUser();
     const r = await submitTradeApplication(t(), { userId, application: trade() });
