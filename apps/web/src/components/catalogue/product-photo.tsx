@@ -41,13 +41,19 @@ export function ProductPhoto({
         : 'aspect-[4/3] rounded-tile';
   return (
     <div
-      className={`relative flex items-center justify-center overflow-hidden bg-white ${shape} ${className}`}
+      className={`relative flex w-full min-w-0 items-center justify-center overflow-hidden bg-white ${shape} ${className}`}
     >
       {/* Never larger than the stored picture (a small source stays sharp instead of being stretched); the frame's
           aspect ratio is fixed, so nothing shifts while it loads. */}
       <img
         {...props}
-        style={{ ...props.style, maxWidth: photo.width, maxHeight: photo.height }}
+        // `min(100%, …)`: an inline px cap alone overrode `max-w-full`, so a photo wider than its card pushed the grid
+        // cell open (live 2026-11-23: overlapping cards and a sideways scroll on /shop).
+        style={{
+          ...props.style,
+          maxWidth: `min(100%, ${String(photo.width)}px)`,
+          maxHeight: `min(100%, ${String(photo.height)}px)`,
+        }}
         className="h-auto max-h-full w-auto max-w-full object-contain"
       />
     </div>

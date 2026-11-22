@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
@@ -13,8 +15,8 @@ describe('ProductPhoto', () => {
   for (const size of ['card', 'hero', 'thumb'] as const) {
     it(`${size}: caps the picture at its own width and height, centred in a fixed frame`, () => {
       const html = renderToStaticMarkup(createElement(ProductPhoto, { photo, sizes: '300px', size }));
-      expect(html).toContain('max-width:349px');
-      expect(html).toContain('max-height:420px');
+      expect(html).toContain('max-width:min(100%, 349px)');
+      expect(html).toContain('max-height:min(100%, 420px)');
       expect(html).toMatch(/width="349"/);
       expect(html).toMatch(/height="420"/);
       expect(html).toContain('aspect-');
@@ -22,4 +24,20 @@ describe('ProductPhoto', () => {
       expect(html).not.toContain('size-full');
     });
   }
+});
+
+describe('a photo can never be wider than its card (live 2026-11-23: overlapping cards, sideways scroll on /shop)', () => {
+  const src = readFileSync(
+    join(__dirname, '..', 'src', 'components', 'catalogue', 'product-photo.tsx'),
+    'utf8',
+  );
+  it('caps with min(100%, Npx), never a bare px max-width/height that overrides max-w-full', () => {
+    expect(src).toMatch(/maxWidth: `min\(100%, \$\{String\(photo\.width\)\}px\)`/);
+    expect(src).toMatch(/maxHeight: `min\(100%, \$\{String\(photo\.height\)\}px\)`/);
+    expect(src).not.toMatch(/maxWidth: photo\.width\b/);
+    expect(src).not.toMatch(/maxHeight: photo\.height\b/);
+  });
+  it('the frame cannot be pushed open by its image (grid cell min-content)', () => {
+    expect(src).toContain('relative flex w-full min-w-0 items-center justify-center overflow-hidden');
+  });
 });

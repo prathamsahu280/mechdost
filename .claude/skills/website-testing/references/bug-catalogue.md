@@ -114,6 +114,12 @@ which are automated. Add new classes at the end of the relevant section.
   which has no layout bugs (2026-11-14: the busy world's ticket) → every matrix world asserts a marker per page
   (`mustShow`) and seeded count = shown count.
 
+- **H-REAL-LAYOUT · Image or card wider than its grid cell (only with real data).** An inline px cap
+  (`style={{maxWidth: 349}}`) overrides `max-w-full`; the image's intrinsic width becomes the grid item's min-content
+  width, cards overlap and the page scrolls sideways. Demo data without photos hides it. Test: real-mode page in a
+  browser at 390/1280 px, `document.documentElement.scrollWidth <= innerWidth`, screenshot of the grid; unit guard
+  `apps/web/test/product-photo-size.test.ts`. (Live incident 2026-11-23, T190.)
+
 ## I. Performance, caching & scale
 
 - **I1 · Stale cache after admin edit** (price, content, settings) → test tag invalidation/revalidation.
