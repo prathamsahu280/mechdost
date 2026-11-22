@@ -49,6 +49,7 @@ const STEPS = [
  */
 export default async function PartnersPage() {
   const t = await getTranslations('pages.partners');
+  const region = (await getTranslations('regions'))(site.defaultRegion);
 
   return (
     <Container className="py-12 tab:py-16">
