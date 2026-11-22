@@ -4,6 +4,14 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Current status
 
+- **NOW (2026-11-22, user away):** audience entry (retail / mechanics & garages / fleets "MechDost Uptime").
+  Design `docs/superpowers/specs/2026-11-22-audience-entry-design.md` (rulings R1–R5), questions Q202–Q206 queued.
+  Three Sonnet builders in worktrees: (1) home `audiences` section + `/business/garages` + `/business/fleets` + "For
+  business" nav; (2) `trade`/`fleet` applications on the partner pipeline + trade account verify/revoke (migration —
+  apply to the real DB before deploying the code) + badge + GSTIN prefill; (3) "Order again" (`POST
+/v1/me/cart/reorder`). **Next:** merge in order 2 → 1 → 3, full gate, build + measure-js (home 164.1, /shop 179.9,
+  /cart 179.8), migrate, deploy, GitHub audits + visual review, real-mode check, then ask the user Q202–Q206.
+
 - **2026-11-19 (SEO, user: "yes i want all the pages to be indexed so do the fix"):** pre-launch site-wide `noindex` (f17e4b77) removed; every public page, category and product indexable and in `sitemap.xml` on demo data too; demo workshops stay `noindex` (decisions 2026-11-19). Cause: Google showed "techdost" for a "mechdost" search (nothing indexed). **Next:** user commits + pushes; after deploy submits `sitemap.xml` and requests indexing for `/` and `/hi`; Business Profile + social profiles (Q201).
 - **2026-11-17 (SEO, user: "do the SEO … make sure nothing gets broke … no ci/cd should break"; LIVE: 94ba244, CI all green, deployed 16:25 UTC, robots.txt + sitemap.xml (94 URLs) return 200; Search Console Domain property verified by the user):**
   `robots.txt` + `sitemap.xml` (were 404 on the live site), city-aware titles and descriptions en/hi (namespace `seo`,
