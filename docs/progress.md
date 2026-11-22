@@ -4,6 +4,8 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Current status
 
+- **2026-11-22 (QA fixes, branch worktree-agent-ad06fd9fe190c9049, not merged):** audience-entry QA bugs 1, 3, 4, 5, 6, 7. Order again is a constant number of round trips with a bounded lock wait (409 `CART_BUSY`, spec 03); focus after admin revoke/restore/decide goes to a status line; staff deciding their own application see "ask another staff member" (en + hi); the order-again status line no longer doubles the full stop; admin trade "Parts bought" shows category labels; checkout says "GST details on your bill" (Q97 open). Bug 2 (mobile "For business") and info items not in this batch.
+
 - **NOW (2026-11-22, later):** all three audience-entry builders merged into LOCAL main (not pushed): b7548be home
   band + /business pages + For business nav; 279e292 Order again; b49935d trade/fleet applications + migration
   **0078_business_applications** (NOT yet applied to the real DB); 4ed2168 STAFF_SELF_CHANGE guard (security

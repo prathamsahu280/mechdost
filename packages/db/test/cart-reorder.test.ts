@@ -8,6 +8,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { eq, sql } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/pglite';
 import { CART_MAX_LINES } from '@mechdost/shared/cart-api';
 import { seedRaipurDemo, type DemoFixture } from '../src/demo-seed';
 import { getCart, placeCodOrder, quoteCheckout, reorderCart, replaceCart, type Tx } from '../src/repo';
@@ -160,5 +161,63 @@ describe('order again', () => {
     expect(Object.keys(mine[0]!.props as object).sort()).toEqual(['added', 'missing', 'orderId']);
     const audit = await db.select().from(s.auditLog).where(eq(s.auditLog.action, 'cart.reorder'));
     expect(audit.filter((a) => a.actorUserId === u)).toHaveLength(1);
+  });
+
+  it('is a constant number of round trips: ten lines cost the same as one', async () => {
+    const counted: string[] = [];
+    const cdb = drizzle(client, {
+      schema: s,
+      casing: 'snake_case',
+      logger: { logQuery: (q) => void counted.push(q) },
+    }) as unknown as Tx;
+    const a = await user();
+    const one = await placeFor(a, 1);
+    const b = await user();
+    const ten = await placeFor(b, 1);
+    // Clone the order's one line into nine more packs, so the order has ten lines.
+    const extra = skus.filter((k) => k !== OIL).slice(0, 9);
+    await db.execute(sql`
+      insert into order_items (id, order_id, variant_id, title, sku, hsn, gst_rate_bp, unit_paise, qty,
+        taxable_paise, total_paise)
+      select gen_random_uuid(), oi.order_id, v.id, oi.title, v.sku, oi.hsn, 0, 100, 2, 200, 200
+      from order_items oi
+      join orders o on o.id = oi.order_id join order_groups g on g.id = o.group_id,
+        product_variants v
+      where g.code = ${ten} and v.sku in (select jsonb_array_elements_text(${JSON.stringify(extra)}::jsonb))`);
+    counted.length = 0;
+    await reorderCart(cdb, a, one, 'en');
+    const forOne = counted.length;
+    counted.length = 0;
+    const r = await reorderCart(cdb, b, ten, 'en');
+    expect(r.cart.lines).toHaveLength(10);
+    expect(counted.length).toBe(forOne);
+    expect(forOne).toBeLessThanOrEqual(16);
+  });
+
+  it('bounds the wait for a cart another request holds (lock_timeout)', async () => {
+    const seen: string[] = [];
+    const cdb = drizzle(client, {
+      schema: s,
+      casing: 'snake_case',
+      logger: { logQuery: (q) => void seen.push(q) },
+    }) as unknown as Tx;
+    const u = await user();
+    const code = await placeFor(u, 1);
+    seen.length = 0;
+    await reorderCart(cdb, u, code, 'en');
+    expect(seen.some((q) => /lock_timeout/i.test(q))).toBe(true);
+  });
+
+  it('answers 409 CART_BUSY when the lock wait runs out (SQLSTATE 55P03)', async () => {
+    const u = await user();
+    const code = await placeFor(u, 1);
+    const failing = {
+      transaction: () => Promise.reject(Object.assign(new Error('lock timeout'), { code: '55P03' })),
+    } as unknown as Tx;
+    await expect(reorderCart(failing, u, code, 'en')).rejects.toMatchObject({
+      name: 'ConflictError',
+      code: 'CART_BUSY',
+      status: 409,
+    });
   });
 });

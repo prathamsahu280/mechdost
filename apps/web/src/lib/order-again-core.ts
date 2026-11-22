@@ -54,3 +54,17 @@ export function foldDemoCart(
   }
   return { ...out, cart: next };
 }
+
+/**
+ * The sentences of the "order again" status line joined into one, each ending in exactly one full stop (a message may
+ * already end with one, as "Nothing was added to your cart." does: joining blindly gave "cart.. 1 product"). Hindi
+ * ends with the danda.
+ */
+export function joinSentences(parts: readonly string[], locale: string): string {
+  const stop = locale === 'hi' ? '।' : '.';
+  return parts
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .map((p) => (/[.।!?]$/.test(p) ? p : `${p}${stop}`))
+    .join(' ');
+}

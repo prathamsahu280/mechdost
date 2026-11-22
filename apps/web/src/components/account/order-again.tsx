@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
 import { track } from '@/lib/analytics';
-import type { ReorderOutcome } from '@/lib/order-again-core';
+import { joinSentences, type ReorderOutcome } from '@/lib/order-again-core';
 
 /**
  * "Order again" on a past order (audience entry 2026-11-22, item 4; accessibility requirements item 4). One press adds
@@ -49,15 +49,16 @@ export function OrderAgain({ code, source }: { code: string; source: 'list' | 'p
       : t('againNone')
     : t('againError');
   const announce = ok
-    ? [
-        headline,
-        ok.already > 0 ? t('againAlready', { count: ok.already }) : '',
-        ok.missing.length > 0
-          ? `${t('againMissingTitle')}: ${ok.missing.map((m) => `${m.name} (${t(`againReason_${m.reason}`)})`).join(', ')}`
-          : '',
-      ]
-        .filter(Boolean)
-        .join('. ')
+    ? joinSentences(
+        [
+          headline,
+          ok.already > 0 ? t('againAlready', { count: ok.already }) : '',
+          ok.missing.length > 0
+            ? `${t('againMissingTitle')}: ${ok.missing.map((m) => `${m.name} (${t(`againReason_${m.reason}`)})`).join(', ')}`
+            : '',
+        ],
+        locale,
+      )
     : result === 'error'
       ? headline
       : '';

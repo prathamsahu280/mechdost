@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest';
 import { CLIENT_EVENT_SCHEMAS } from '@mechdost/shared/analytics';
 import en from '../../../packages/shared/src/i18n/en.json';
 import hi from '../../../packages/shared/src/i18n/hi.json';
-import { foldDemoCart } from '../src/lib/order-again-core';
+import { foldDemoCart, joinSentences } from '../src/lib/order-again-core';
 
 const root = join(__dirname, '..', 'src');
 const src = (p: string) => readFileSync(join(root, p), 'utf8');
@@ -106,6 +106,21 @@ describe('accessibility contract (design doc, accessibility requirements item 4)
     expect(btn).toMatch(/data-panel-cancel=\{key\}/);
     expect(btn).toMatch(/<ul/);
     expect(btn).toMatch(/t\('againCart'\)/);
+  });
+});
+
+describe('joinSentences (the status line)', () => {
+  it('never doubles a full stop, in English or Hindi', () => {
+    expect(
+      joinSentences(['Nothing was added to your cart.', '1 product was already in your cart'], 'en'),
+    ).toBe('Nothing was added to your cart. 1 product was already in your cart.');
+    expect(joinSentences(['कार्ट में कुछ नहीं जोड़ा गया।', '1 प्रोडक्ट पहले से था', ''], 'hi')).toBe(
+      'कार्ट में कुछ नहीं जोड़ा गया। 1 प्रोडक्ट पहले से था।',
+    );
+    expect(joinSentences(['A', 'B.'], 'en')).not.toMatch(/\.\./);
+  });
+  it('the component composes its status line with it', () => {
+    expect(src('components/account/order-again.tsx')).toMatch(/joinSentences\(/);
   });
 });
 
