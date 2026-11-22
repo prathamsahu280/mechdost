@@ -64,6 +64,7 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | CHR-ASSIST            | Chrome                                                           | Assistant launcher and panel                                                                                                                                                                                                                                                    | pairwise | 16       | 0       |
 | CHR-CONSENT           | Chrome                                                           | Cookie and consent banner                                                                                                                                                                                                                                                       | pairwise | 16       | 0       |
 | HOME-HERO             | Home                                                             | Hero with search                                                                                                                                                                                                                                                                | pairwise | 32       | 0       |
+| HOME-AUDIENCES        | Home                                                             | Audience band (three entry cards)                                                                                                                                                                                                                                               | pairwise | 25       | 1       |
 | HOME-TRUST            | Home                                                             | Trust strip                                                                                                                                                                                                                                                                     | pairwise | 25       | 0       |
 | HOME-CATS             | Home                                                             | Category tiles                                                                                                                                                                                                                                                                  | pairwise | 25       | 0       |
 | HOME-RANGE            | Home                                                             | Product range (cards without compare)                                                                                                                                                                                                                                           | pairwise | 25       | 7       |
@@ -106,6 +107,8 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | WS-PROFILE            | Workshop page (/workshops/[slug])                                | Workshop profile: services menu, reviews, booking form                                                                                                                                                                                                                          | pairwise | 32       | 1       |
 | WS-BOOK-FLOAT         | Workshop page (/workshops/[slug])                                | Booking form with the floating assistant button: scanned top to bottom, the button never covers a price or a control (it steps aside while the form is on the page; QA V5)                                                                                                      | cross    | 16       | 1       |
 | PTN-LANDING           | Partners (/partners)                                             | Partner landing (kinds, benefits, apply links)                                                                                                                                                                                                                                  | pairwise | 32       | 0       |
+| BIZ-GARAGES           | Business (/business/garages)                                     | Garages landing (four benefits with status labels, one primary action)                                                                                                                                                                                                          | pairwise | 16       | 0       |
+| BIZ-FLEETS            | Business (/business/fleets)                                      | Fleets landing, MechDost Uptime (five programme points, one primary action)                                                                                                                                                                                                     | pairwise | 16       | 0       |
 | PTN-APPLY             | Partners (/partners/apply/[kind])                                | Application form (GSTIN, tick lists, location picker; map canvas excluded)                                                                                                                                                                                                      | pairwise | 24       | 1       |
 | SUP-PAGE              | Support (/support)                                               | Support page and request form                                                                                                                                                                                                                                                   | pairwise | 16       | 0       |
 | LOGIN-FORM            | Sign in (/login)                                                 | Sign-in form (password, errors, show password)                                                                                                                                                                                                                                  | pairwise | 16       | 0       |
@@ -184,7 +187,7 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | API-ADM-EXPORTS       | Admin → Exports, real sign-in                                    | CSV exports: the form (dataset, city, dates), customers with masked or open contacts, done, empty file, too many rows, expired link, range over 180 days, nothing allowed, load error                                                                                           | pairwise | 80       | 0       |
 | API-NAV-ADMIN         | Navigation, real sign-in                                         | Admin section bar with every real-mode section (Analytics, Refunds, Errors included): current item, scroll, walk                                                                                                                                                                | cross    | 176      | 0       |
 | API-NAV-ACCOUNT       | Navigation, real sign-in                                         | Account section bar in a real-sign-in build: current item, scroll, walk                                                                                                                                                                                                         | cross    | 96       | 0       |
-| **Total**             |                                                                  |                                                                                                                                                                                                                                                                                 |          | **4358** | **99**  |
+| **Total**             |                                                                  |                                                                                                                                                                                                                                                                                 |          | **4415** | **100** |
 
 ## Chrome
 
@@ -374,6 +377,36 @@ Pairwise (all pairs of values); 32 states; scope `section[aria-labelledby="hero-
 - [x] HOME-HERO-030 · 1280px · dark · hi · customer · world=busy · / · stress=long-price · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console hindi — 2026-11-16 pass
 - [x] HOME-HERO-031 · 1440px · light · en · signed out · world=empty · / · stress=none · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console — 2026-11-16 pass
 - [x] HOME-HERO-032 · 1920px · dark · hi · customer · world=cart · / · stress=long-text · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console hindi — 2026-11-16 pass
+
+### HOME-AUDIENCES — Audience band (three entry cards)
+
+Pairwise (all pairs of values); 25 states; scope `section[aria-labelledby="audiences-title"]`.
+
+- [ ] HOME-AUDIENCES-001 · 320px · light · en · signed out · world=empty · / · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] HOME-AUDIENCES-002 · 320px · dark · hi · customer · world=cart · / · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-AUDIENCES-003 · 390px · light · hi · signed out · world=busy · / · stress=long-price · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-AUDIENCES-004 · 390px · dark · en · customer · world=empty · / · stress=long-price · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] HOME-AUDIENCES-005 · 480px · light · en · customer · world=cart · / · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] HOME-AUDIENCES-006 · 480px · dark · hi · signed out · world=busy · / · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-AUDIENCES-007 · 768px · light · en · signed out · world=cart · / · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] HOME-AUDIENCES-008 · 768px · dark · hi · customer · world=empty · / · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-AUDIENCES-009 · 1024px · light · en · signed out · world=busy · / · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] HOME-AUDIENCES-010 · 1024px · dark · hi · customer · world=empty · / · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-AUDIENCES-011 · 1280px · light · en · signed out · world=cart · / · stress=long-price · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] HOME-AUDIENCES-012 · 1280px · dark · hi · customer · world=busy · / · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-AUDIENCES-013 · 1440px · light · en · signed out · world=empty · / · stress=long-price · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] HOME-AUDIENCES-014 · 1440px · dark · hi · customer · world=cart · / · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-AUDIENCES-015 · 1920px · light · en · signed out · world=busy · / · stress=long-price · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] HOME-AUDIENCES-016 · 1920px · dark · hi · customer · world=empty · / · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-AUDIENCES-017 · 320px · light · en · signed out · world=busy · / · stress=long-price · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] HOME-AUDIENCES-018 · 390px · dark · hi · customer · world=cart · / · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi axe · core
+- [ ] HOME-AUDIENCES-019 · 480px · light · en · signed out · world=empty · / · stress=long-price · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] HOME-AUDIENCES-020 · 768px · dark · hi · customer · world=busy · / · stress=long-price · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-AUDIENCES-021 · 1024px · light · en · signed out · world=cart · / · stress=long-price · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] HOME-AUDIENCES-022 · 1280px · dark · hi · customer · world=empty · / · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-AUDIENCES-023 · 1440px · light · en · signed out · world=busy · / · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] HOME-AUDIENCES-024 · 1920px · dark · hi · customer · world=cart · / · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-AUDIENCES-025 · 390px · light · en · signed out · world=empty · / · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
 
 ### HOME-TRUST — Trust strip
 
@@ -1991,6 +2024,52 @@ Pairwise (all pairs of values); 32 states; scope `main`.
 - [x] PTN-LANDING-030 · 1440px · dark · hi · customer · world=empty · /partners · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console hindi — 2026-11-15 pass
 - [x] PTN-LANDING-031 · 1920px · light · en · signed out · world=empty · /partners · trust=default · asserts: present inside overlap covered clipped tap hscroll focus console — 2026-11-15 pass
 - [x] PTN-LANDING-032 · 1920px · dark · hi · customer · world=empty · /partners · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console hindi — 2026-11-15 pass
+
+## Business (/business/garages)
+
+### BIZ-GARAGES — Garages landing (four benefits with status labels, one primary action)
+
+Pairwise (all pairs of values); 16 states; scope `main`.
+
+- [ ] BIZ-GARAGES-001 · 320px · light · en · signed out · world=empty · /business/garages · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] BIZ-GARAGES-002 · 320px · dark · hi · customer · world=empty · /business/garages · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] BIZ-GARAGES-003 · 390px · light · hi · signed out · world=empty · /business/garages · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] BIZ-GARAGES-004 · 390px · dark · en · customer · world=empty · /business/garages · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] BIZ-GARAGES-005 · 480px · light · en · customer · world=empty · /business/garages · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] BIZ-GARAGES-006 · 480px · dark · hi · signed out · world=empty · /business/garages · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] BIZ-GARAGES-007 · 768px · light · en · signed out · world=empty · /business/garages · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] BIZ-GARAGES-008 · 768px · dark · hi · customer · world=empty · /business/garages · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] BIZ-GARAGES-009 · 1024px · light · en · signed out · world=empty · /business/garages · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] BIZ-GARAGES-010 · 1024px · dark · hi · customer · world=empty · /business/garages · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] BIZ-GARAGES-011 · 1280px · light · en · signed out · world=empty · /business/garages · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] BIZ-GARAGES-012 · 1280px · dark · hi · customer · world=empty · /business/garages · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] BIZ-GARAGES-013 · 1440px · light · en · signed out · world=empty · /business/garages · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] BIZ-GARAGES-014 · 1440px · dark · hi · customer · world=empty · /business/garages · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] BIZ-GARAGES-015 · 1920px · light · en · signed out · world=empty · /business/garages · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] BIZ-GARAGES-016 · 1920px · dark · hi · customer · world=empty · /business/garages · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+
+## Business (/business/fleets)
+
+### BIZ-FLEETS — Fleets landing, MechDost Uptime (five programme points, one primary action)
+
+Pairwise (all pairs of values); 16 states; scope `main`.
+
+- [ ] BIZ-FLEETS-001 · 320px · light · en · signed out · world=empty · /business/fleets · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] BIZ-FLEETS-002 · 320px · dark · hi · customer · world=empty · /business/fleets · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] BIZ-FLEETS-003 · 390px · light · hi · signed out · world=empty · /business/fleets · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] BIZ-FLEETS-004 · 390px · dark · en · customer · world=empty · /business/fleets · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] BIZ-FLEETS-005 · 480px · light · en · customer · world=empty · /business/fleets · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] BIZ-FLEETS-006 · 480px · dark · hi · signed out · world=empty · /business/fleets · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] BIZ-FLEETS-007 · 768px · light · en · signed out · world=empty · /business/fleets · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] BIZ-FLEETS-008 · 768px · dark · hi · customer · world=empty · /business/fleets · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] BIZ-FLEETS-009 · 1024px · light · en · signed out · world=empty · /business/fleets · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] BIZ-FLEETS-010 · 1024px · dark · hi · customer · world=empty · /business/fleets · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] BIZ-FLEETS-011 · 1280px · light · en · signed out · world=empty · /business/fleets · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] BIZ-FLEETS-012 · 1280px · dark · hi · customer · world=empty · /business/fleets · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] BIZ-FLEETS-013 · 1440px · light · en · signed out · world=empty · /business/fleets · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] BIZ-FLEETS-014 · 1440px · dark · hi · customer · world=empty · /business/fleets · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] BIZ-FLEETS-015 · 1920px · light · en · signed out · world=empty · /business/fleets · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] BIZ-FLEETS-016 · 1920px · dark · hi · customer · world=empty · /business/fleets · asserts: present inside overlap covered clipped tap hscroll focus console hindi
 
 ## Partners (/partners/apply/[kind])
 

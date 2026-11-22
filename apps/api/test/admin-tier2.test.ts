@@ -173,7 +173,7 @@ describe('home layout API', () => {
     const reset = (await (await ctx.app.request('/v1/site/home-layout')).json()) as {
       layout: { order: string[]; mapDefault: string };
     };
-    expect(reset.layout.order[0]).toBe('trust');
+    expect(reset.layout.order[0]).toBe('audiences');
     expect(reset.layout.mapDefault).toBe('satellite');
   });
 

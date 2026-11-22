@@ -84,6 +84,18 @@ export function Footer() {
       ],
     },
     {
+      // Design 2026-11-22: the trade and fleet entry points (landing pages) and bulk orders.
+      id: 'business',
+      title: t('colBusiness'),
+      links: [
+        { href: '/business/garages', label: t('businessGarages'), track: 'footer_business_garages' },
+        { href: '/business/fleets', label: t('businessFleets'), track: 'footer_business_fleets' },
+        ...(QUOTES_AVAILABLE
+          ? [{ href: '/quotes/new', label: t('bulkPrice'), track: 'footer_business_bulk' }]
+          : []),
+      ],
+    },
+    {
       id: 'partners',
       title: t('partnersLabel'),
       links: [
@@ -133,7 +145,7 @@ export function Footer() {
           </div>
         </section>
 
-        <div className="grid grid-cols-2 gap-x-6 gap-y-8 tab:grid-cols-4">
+        <div className="grid grid-cols-2 gap-x-6 gap-y-8 tab:grid-cols-3 xl:grid-cols-5">
           {columns.map((col) => (
             <nav key={col.id} aria-labelledby={`footer-col-${col.id}`}>
               <h2 id={`footer-col-${col.id}`} className="text-sm font-extrabold text-ink">

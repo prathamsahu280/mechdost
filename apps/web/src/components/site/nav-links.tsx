@@ -4,13 +4,15 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { canonicalPath } from '@/lib/locale-path';
 import { NAV_EMOJI } from '@/lib/emoji';
-import { isActive, type PrimaryNavKey } from '@/lib/nav';
+import { isActive, type NavKey } from '@/lib/nav';
 
 export interface NavItem {
-  key: PrimaryNavKey;
+  key: NavKey;
   /** Already localised on the server (`/hi/shop`). */
   href: string;
   label: string;
+  /** Mark active on every page under this path (the business pages share one link). */
+  activePrefix?: string;
 }
 
 /**
@@ -23,7 +25,7 @@ export function NavLinks({ label, items }: { label: string; items: readonly NavI
     <nav aria-label={label} className="hidden nav:block">
       <ul className="flex items-center gap-1">
         {items.map((item) => {
-          const active = isActive(pathname, item.href, item.key === 'home');
+          const active = isActive(pathname, item.href, item.key === 'home', item.activePrefix);
           return (
             <li key={item.key}>
               <Link

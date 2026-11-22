@@ -522,6 +522,7 @@ export const COMPONENTS: readonly ComponentDef[] = [
   ...(
     [
       ['HOME-HERO', 'Hero with search', 'section[aria-labelledby="hero-title"]'],
+      ['HOME-AUDIENCES', 'Audience band (three entry cards)', 'section[aria-labelledby="audiences-title"]'],
       ['HOME-TRUST', 'Trust strip', 'main section[aria-label]:not([aria-labelledby])'],
       ['HOME-CATS', 'Category tiles', 'section[aria-labelledby="categories-title"]'],
       ['HOME-RANGE', 'Product range (cards without compare)', 'section[aria-labelledby="range-title"]'],
@@ -546,7 +547,12 @@ export const COMPONENTS: readonly ComponentDef[] = [
     ],
     align: code === 'HOME-RANGE' ? CARD_ALIGN : undefined,
     sweep: 10,
-    core: code === 'HOME-RANGE' ? coreAt([390, 1440]) : undefined,
+    core:
+      code === 'HOME-RANGE'
+        ? coreAt([390, 1440])
+        : code === 'HOME-AUDIENCES'
+          ? coreAt([390], (r) => r.locale === 'hi' && r.theme === 'dark')
+          : undefined,
   })),
   {
     code: 'HOME-FAQ',
@@ -983,6 +989,26 @@ export const COMPONENTS: readonly ComponentDef[] = [
     scope: 'main',
     strategy: 'pairwise',
     params: [...env, authOutIn, { name: 'trust', values: [...TRUST_STATES] }],
+    sweep: 10,
+  },
+  {
+    code: 'BIZ-GARAGES',
+    page: 'Business (/business/garages)',
+    component: 'Garages landing (four benefits with status labels, one primary action)',
+    path: '/business/garages',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [...env, authOutIn],
+    sweep: 10,
+  },
+  {
+    code: 'BIZ-FLEETS',
+    page: 'Business (/business/fleets)',
+    component: 'Fleets landing, MechDost Uptime (five programme points, one primary action)',
+    path: '/business/fleets',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [...env, authOutIn],
     sweep: 10,
   },
   {

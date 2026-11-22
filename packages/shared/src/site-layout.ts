@@ -6,6 +6,7 @@
  * pins the lists to the demo's.
  */
 export const HOME_SECTIONS = [
+  'audiences',
   'trust',
   'categories',
   'products',

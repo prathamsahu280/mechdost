@@ -372,3 +372,9 @@ Admin -> Services: a request needing routing lists the ranked workshops with "Be
 ## Revision 2026-11-16 (coupon follow-ups)
 
 Admin → Coupons: the form has "Show on the public offers page", "Apply automatically (no code)" (disabled for shop-funded) and "Only for one category" (public category list); each coupon card shows the badges and a **Usage** panel (totals, IST days, "Show earlier days", link to the Exports screen where **Coupon use** is a new dataset needing `exports:run` + `coupons:write`). The panel closes with its button or Escape. Audit rows carry `isPublic`, `autoApply`, `categoryId`. Spec 03 § "coupon follow-ups" has the rules.
+
+## Audience band and business pages (2026-11-22)
+
+Design `docs/superpowers/specs/2026-11-22-audience-entry-design.md`. The home page has a new section key `audiences` ("Who are you shopping for?", three cards: car or bike, mechanics and garages, fleets), first in `HOME_SECTIONS` (shared and demo lists agree; a test pins them). **Admin -> Layout** shows, hides and reorders it like every other section (label `portal.section_audiences`, en + hi). A layout stored before the band existed reads fine: the band is appended last until the admin moves it (the order check adds missing sections at the end). The band is a Server Component (no client code).
+
+**Page copy of `/business/garages` and `/business/fleets` is in the locale files (`pages.businessGarages`, `pages.businessFleets`), not yet editable in Admin -> Content.** The content registry (`packages/shared/src/content.ts`) holds fixed short keys and four policy documents; there is no generic page-block type, so editing these pages without a deploy needs a new registry entry (or a "page blocks" type) with API, editor and Hindi parity. Known gap against the design ("sections are content blocks the admin can edit"), reported to the coordinator as an open question; the safe default is the locale files.

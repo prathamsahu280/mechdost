@@ -9,6 +9,7 @@ import { PartnerTeaser } from '@/components/home/partner-teaser';
 import { ServiceSection } from '@/components/home/service-section';
 import { TopWorkshops } from '@/components/home/top-workshops';
 import { TrustStrip } from '@/components/home/trust-strip';
+import { AudienceBand } from '@/components/home/audience-band';
 import type { Locale } from '@/i18n/routing';
 import { JsonLd } from '@/components/site/json-ld';
 import { alternatesFor } from '@/lib/seo';
@@ -39,6 +40,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
   // The demo build shows the default order and the browser-stored choices are applied by the pre-paint script.
   const layout = await publishedLayout();
   const sections: Record<HomeSection, ReactNode> = {
+    audiences: <AudienceBand />,
     trust: <TrustStrip />,
     categories: <CategoryTiles featured={featuredCategories(layout)} emoji={layout.emoji} />,
     products: <ProductRange />,

@@ -15,7 +15,7 @@ export function PageIntro({
   lead,
   as: Heading = 'h1',
 }: {
-  eyebrow: string;
+  eyebrow: ReactNode;
   line1: string;
   line2?: string;
   lead?: string;

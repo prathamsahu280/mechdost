@@ -92,3 +92,8 @@ Next steps, queued in `docs/questions-for-user.md` (Q199-Q200):
 - A sitemap index split by type when the catalogue passes ~2,000 products (`MAX_PRODUCT_PAGES` in
   `sitemap-entries.ts`).
 - AI answer-engine crawlers (GPTBot, ClaudeBot, PerplexityBot): currently allowed like every crawler.
+
+**Business pages (design 2026-11-22):** `/business/garages` and `/business/fleets` are in `STATIC_PATHS` (sitemap, both
+languages, hreflang pair), indexable, with titles and descriptions in `seo.businessGarages*` / `seo.businessFleets*`
+(en + hi). They are not in `PRIVATE_PATHS`. The "For business" header link and footer column link to them, so they are
+crawlable from every page. The application page `/business/apply` is built separately (audience-entry builder 2).
