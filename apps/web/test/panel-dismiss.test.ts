@@ -155,6 +155,8 @@ describe('the review forms', () => {
  */
 const EXEMPT: Record<string, string> = {
   'components/site/consent-banner.tsx': 'banner with own Escape handler and a dismiss button',
+  'components/site/search-trigger.tsx':
+    'header search palette: modal dialog with a close button, Escape, a tap on the dimmed page and focus return (header-search.tsx)',
   'components/notices/bell-controller.tsx': 'menu with own Escape handler, outside-click and focus return',
   'components/assistant/assistant-launcher.tsx': 'chat dialog with its own close button and Escape handler',
   'components/partners/partner-status.tsx':

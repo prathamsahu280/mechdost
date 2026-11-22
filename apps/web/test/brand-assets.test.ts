@@ -101,17 +101,15 @@ describe('header and footer brand', () => {
     // React 19 preloads every non-lazy <img> it renders: both logo files were preloaded on every page (CI shell gate
     // "preloads only the hero", 2026-11-16). Lazy: the visible one still loads at once, the hidden theme never does.
     expect(header.match(/loading="lazy"/g)?.length).toBe(2);
-    // The logo link is a tap target: at 320 px the 132 px logo is 23.9 px tall, under the 24 px minimum.
-    expect(header).toMatch(
-      /className="group inline-flex min-h-6 min-w-0 shrink flex-col items-start justify-center"/,
-    );
+    // The logo link is a 44 px tap target (v4 header: the logo is 26-30 px tall inside it).
+    expect(header).toMatch(/className="group inline-flex min-h-11 min-w-0 shrink items-center"/);
     const css = read('src/app/[locale]/globals.css');
     expect(css).toMatch(/:root\[data-theme='dark'\] \.brand-logo-light\s*\{\s*display: none/);
     expect(css).toMatch(/:root:not\(\[data-theme='light'\]\) \.brand-logo-dark\s*\{\s*display: block/);
   });
 
   it('the footer reuses the same brand lock-up', () => {
-    expect(read('src/components/site/footer.tsx')).toContain('<BrandMark />');
+    expect(read('src/components/site/footer.tsx')).toContain('<BrandMark variant="footer" />');
   });
 
   it('the email header shows the logo image when the site origin is known', () => {

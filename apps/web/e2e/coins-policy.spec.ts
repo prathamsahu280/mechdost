@@ -18,7 +18,8 @@ async function signIn(page: Page, phone: string, next: string) {
 
 async function signOut(page: Page) {
   await page.goto('/account/profile');
-  await page.getByRole('button', { name: 'Sign out' }).first().click();
+  await page.locator('[data-track="header_account"]').click();
+  await page.getByRole('menuitem', { name: 'Sign out' }).click();
 }
 
 test.describe('MechDost Coins (spec 20)', () => {

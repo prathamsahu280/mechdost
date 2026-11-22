@@ -10,22 +10,20 @@ import { describe, expect, it } from 'vitest';
 const src = (p: string) => readFileSync(join(__dirname, '..', 'src', p), 'utf8');
 const css = src('app/[locale]/globals.css');
 
-describe('header at 1024-1279 px', () => {
-  it('shows the cart and account as icons only until xl', () => {
-    expect(src('components/commerce/cart-pill.tsx')).toMatch(/nav:sr-only xl:not-sr-only/);
-    const account = src('components/auth/account-link.tsx');
-    // Two: the account name and the Sign out label (user 2026-11-22).
-    expect(account.match(/nav:sr-only xl:not-sr-only/g)?.length).toBe(2);
-    expect(account).toContain('truncate xl:not-sr-only');
+describe('header at 1024-1279 px (v4, 2026-11-23)', () => {
+  it('shows the nav and the search pill as icons only until xl (labels stay the accessible names)', () => {
+    expect(src('components/site/nav-links.tsx')).toMatch(/sr-only xl:not-sr-only/);
+    expect(src('components/site/search-trigger.tsx')).toMatch(/sr-only xl:not-sr-only/);
   });
 
-  it('gives the icon-only cart and sign-in a hover title (sighted users still get the word)', () => {
+  it('gives the icon-only controls a hover title (sighted users still get the word)', () => {
+    expect(src('components/site/nav-links.tsx')).toMatch(/title=\{item\.label\}/);
     expect(src('components/commerce/cart-pill.tsx')).toMatch(/title=\{label\}/);
-    expect(src('components/auth/account-link.tsx')).toMatch(/title=\{signIn\}/);
+    expect(src('components/auth/account-menu.tsx')).toMatch(/title=\{copy\.signIn\}/);
   });
 
-  it('shows the brand tagline from the tablet width, not at 1024-1279 px', () => {
-    expect(src('components/site/header.tsx')).toMatch(/tab:block nav:hidden min-\[1440px\]:block/);
+  it('has no tagline under the logo any more (the v4 logo stands alone)', () => {
+    expect(src('components/site/header.tsx')).not.toMatch(/tagline/);
   });
 });
 

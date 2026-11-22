@@ -60,7 +60,8 @@ async function codesSoFar(request: APIRequestContext, e164: string) {
 async function signOut(page: Page) {
   // Customers sign out from the Profile section.
   await page.goto('/account/profile');
-  await page.getByRole('button', { name: 'Sign out' }).first().click();
+  await page.locator('[data-track="header_account"]').click();
+  await page.getByRole('menuitem', { name: 'Sign out' }).click();
   await expect(page.getByRole('heading', { name: 'Hello, Real Tester' })).toHaveCount(0, SLOW);
 }
 

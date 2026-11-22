@@ -64,6 +64,14 @@ const TEXT_PAIRS: [fg: string, bg: string][] = [
   ['warning', 'warning-bg'],
   ['private', 'private-bg'],
   ['error', 'surface'],
+  // v4 chrome (decision 2026-11-23): nav chip, cart button and its badge, tinted footer panel
+  ['ink', 'chip'],
+  ['muted', 'chip'],
+  ['muted', 'pill'],
+  ['#ffffff', 'cart'],
+  ['cart-badge-text', 'cart-badge'],
+  ['accent-soft-text', 'pill'],
+  ['muted', 'accent-soft'],
 ];
 
 const NON_TEXT_PAIRS: [fg: string, bg: string][] = [

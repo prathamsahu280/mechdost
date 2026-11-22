@@ -57,8 +57,10 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 
 | Id prefix             | Page                                                             | Component                                                                                                                                                                                                                                                                       | Strategy | States   | In core |
 | --------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | -------- | ------- |
-| CHR-HEADER            | Chrome                                                           | Header (brand, nav, search, language, theme, account, cart pill)                                                                                                                                                                                                                | cross    | 26       | 11      |
-| CHR-TABBAR            | Chrome                                                           | Bottom tab bar (under 1024 px)                                                                                                                                                                                                                                                  | pairwise | 20       | 5       |
+| CHR-HEADER            | Chrome                                                           | Header (v4: logo, segmented nav, search pill, bell, account avatar, cart button; compact bar and search bar on phones)                                                                                                                                                          | cross    | 26       | 11      |
+| CHR-ACCOUNT-MENU      | Chrome                                                           | Account menu behind the header avatar (v4): open, every row, dark-mode switch, language, Sign out in the error colour; portal roles get their portal link                                                                                                                       | pairwise | 16       | 0       |
+| CHR-SEARCH            | Chrome                                                           | Search palette behind the header search pill (v4): popular searches and categories, close button, Escape, focus trap                                                                                                                                                            | pairwise | 16       | 0       |
+| CHR-TABBAR            | Chrome                                                           | Floating dock (v4, under 1024 px)                                                                                                                                                                                                                                               | pairwise | 20       | 5       |
 | CHR-FOOTER            | Chrome                                                           | Footer (help, columns, privacy choices, theme)                                                                                                                                                                                                                                  | pairwise | 16       | 0       |
 | CHR-FLOAT             | Chrome                                                           | Floating stack: assistant launcher, compare tray, consent banner, tab bar together                                                                                                                                                                                              | cross    | 24       | 3       |
 | CHR-ASSIST            | Chrome                                                           | Assistant launcher and panel                                                                                                                                                                                                                                                    | pairwise | 16       | 0       |
@@ -133,7 +135,7 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | ADM-SETTINGS          | Admin console (/admin)                                           | Admin section: settings (section bar, tables, actions)                                                                                                                                                                                                                          | pairwise | 16       | 0       |
 | ADM-NOTIFICATIONS     | Admin console (/admin)                                           | Admin section: notifications (section bar, tables, actions)                                                                                                                                                                                                                     | pairwise | 16       | 0       |
 | NAV-HEADER            | Navigation                                                       | Header nav (1024 px and up): current item, hover, focus, every role and route                                                                                                                                                                                                   | cross    | 31       | 2       |
-| NAV-TABBAR            | Navigation                                                       | Bottom tab bar (under 1024 px): current tab, long Hindi labels, every role, walk                                                                                                                                                                                                | cross    | 26       | 2       |
+| NAV-TABBAR            | Navigation                                                       | Floating dock (under 1024 px): current tab, long Hindi labels, every role, walk                                                                                                                                                                                                 | cross    | 26       | 2       |
 | NAV-ACCOUNT           | Navigation                                                       | Account section bar: current section on each of the nine sections (scrolls on phones)                                                                                                                                                                                           | cross    | 72       | 0       |
 | NAV-ADMIN             | Navigation                                                       | Admin section bar: current section on each demo section (scrolls on phones, column from 1024 px)                                                                                                                                                                                | cross    | 120      | 0       |
 | NAV-CATEGORY          | Navigation                                                       | Shop category chips (scroll row): current chip, every chip applies its filter                                                                                                                                                                                                   | pairwise | 24       | 0       |
@@ -190,11 +192,11 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | API-ADM-EXPORTS       | Admin → Exports, real sign-in                                    | CSV exports: the form (dataset, city, dates), customers with masked or open contacts, done, empty file, too many rows, expired link, range over 180 days, nothing allowed, load error                                                                                           | pairwise | 80       | 0       |
 | API-NAV-ADMIN         | Navigation, real sign-in                                         | Admin section bar with every real-mode section (Analytics, Refunds, Errors included): current item, scroll, walk                                                                                                                                                                | cross    | 176      | 0       |
 | API-NAV-ACCOUNT       | Navigation, real sign-in                                         | Account section bar in a real-sign-in build: current item, scroll, walk                                                                                                                                                                                                         | cross    | 96       | 0       |
-| **Total**             |                                                                  |                                                                                                                                                                                                                                                                                 |          | **4463** | **100** |
+| **Total**             |                                                                  |                                                                                                                                                                                                                                                                                 |          | **4495** | **100** |
 
 ## Chrome
 
-### CHR-HEADER — Header (brand, nav, search, language, theme, account, cart pill)
+### CHR-HEADER — Header (v4: logo, segmented nav, search pill, bell, account avatar, cart button; compact bar and search bar on phones)
 
 Full cross of the high-risk dimensions, the rest pairwise; 26 states; scope `header.sticky`.
 
@@ -225,7 +227,49 @@ Full cross of the high-risk dimensions, the rest pairwise; 26 states; scope `hea
 - [x] CHR-HEADER-025 · 320px · light · en · customer · world=empty · /account · cart=none · asserts: present inside overlap covered clipped tap hscroll focus console axe · core — 2026-11-16 pass (P2 tap44 ×1)
 - [x] CHR-HEADER-026 · 1024px · dark · hi · customer · world=empty · /account · cart=c1 · asserts: present inside overlap covered clipped tap hscroll focus console hindi axe · core — 2026-11-16 pass (P2 tap44 ×1)
 
-### CHR-TABBAR — Bottom tab bar (under 1024 px)
+### CHR-ACCOUNT-MENU — Account menu behind the header avatar (v4): open, every row, dark-mode switch, language, Sign out in the error colour; portal roles get their portal link
+
+Pairwise (all pairs of values); 16 states; scope `header [role="menu"]`.
+
+- [ ] CHR-ACCOUNT-MENU-001 · 320px · light · en · customer · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] CHR-ACCOUNT-MENU-002 · 320px · dark · hi · shop partner · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CHR-ACCOUNT-MENU-003 · 390px · light · hi · customer · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CHR-ACCOUNT-MENU-004 · 390px · dark · en · shop partner · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] CHR-ACCOUNT-MENU-005 · 480px · light · en · shop partner · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] CHR-ACCOUNT-MENU-006 · 480px · dark · hi · customer · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CHR-ACCOUNT-MENU-007 · 768px · light · en · customer · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] CHR-ACCOUNT-MENU-008 · 768px · dark · hi · shop partner · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CHR-ACCOUNT-MENU-009 · 1024px · light · en · customer · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] CHR-ACCOUNT-MENU-010 · 1024px · dark · hi · shop partner · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CHR-ACCOUNT-MENU-011 · 1280px · light · en · customer · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] CHR-ACCOUNT-MENU-012 · 1280px · dark · hi · shop partner · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CHR-ACCOUNT-MENU-013 · 1440px · light · en · customer · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] CHR-ACCOUNT-MENU-014 · 1440px · dark · hi · shop partner · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CHR-ACCOUNT-MENU-015 · 1920px · light · en · customer · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] CHR-ACCOUNT-MENU-016 · 1920px · dark · hi · shop partner · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+
+### CHR-SEARCH — Search palette behind the header search pill (v4): popular searches and categories, close button, Escape, focus trap
+
+Pairwise (all pairs of values); 16 states; scope `[role="dialog"][aria-modal="true"]`.
+
+- [ ] CHR-SEARCH-001 · 320px · light · en · signed out · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] CHR-SEARCH-002 · 320px · dark · hi · customer · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CHR-SEARCH-003 · 390px · light · hi · signed out · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CHR-SEARCH-004 · 390px · dark · en · customer · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] CHR-SEARCH-005 · 480px · light · en · customer · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] CHR-SEARCH-006 · 480px · dark · hi · signed out · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CHR-SEARCH-007 · 768px · light · en · signed out · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] CHR-SEARCH-008 · 768px · dark · hi · customer · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CHR-SEARCH-009 · 1024px · light · en · signed out · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] CHR-SEARCH-010 · 1024px · dark · hi · customer · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CHR-SEARCH-011 · 1280px · light · en · signed out · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] CHR-SEARCH-012 · 1280px · dark · hi · customer · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CHR-SEARCH-013 · 1440px · light · en · signed out · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] CHR-SEARCH-014 · 1440px · dark · hi · customer · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CHR-SEARCH-015 · 1920px · light · en · signed out · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] CHR-SEARCH-016 · 1920px · dark · hi · customer · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+
+### CHR-TABBAR — Floating dock (v4, under 1024 px)
 
 Pairwise (all pairs of values); 20 states; scope `nav.fixed`.
 
@@ -2643,7 +2687,7 @@ Full cross of the high-risk dimensions, the rest pairwise; 31 states; scope `hea
 - [x] NAV-HEADER-030 · 1280px · dark · hi · admin · world=empty · / · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi — 2026-11-15 pass
 - [x] NAV-HEADER-031 · 1440px · light · en · admin · world=empty · /shop · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav — 2026-11-15 pass
 
-### NAV-TABBAR — Bottom tab bar (under 1024 px): current tab, long Hindi labels, every role, walk
+### NAV-TABBAR — Floating dock (under 1024 px): current tab, long Hindi labels, every role, walk
 
 Full cross of the high-risk dimensions, the rest pairwise; 26 states; scope `nav.fixed`.
 

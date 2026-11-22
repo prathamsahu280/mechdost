@@ -1,10 +1,10 @@
 'use client';
 
 import Link from 'next/link';
+import { Bell as BellIcon } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { BELL_PAGE_SIZE, type Notice } from '@mechdost/shared/notice-api';
 import { track } from '@/lib/analytics';
-import { UI_EMOJI } from '@/lib/emoji';
 import { badgeText, emptyActionFor, liveText, withCount } from '@/lib/notices-view';
 import type { BellCopy } from './bell-copy';
 import { NoticeItem } from './notice-item';
@@ -63,7 +63,7 @@ export default function BellController({
   };
 
   return (
-    <div ref={root} className="relative">
+    <div ref={root} className="sm:relative">
       <button
         ref={button}
         type="button"
@@ -75,11 +75,9 @@ export default function BellController({
           if (!open) track('bell_opened', { unread: Math.min(feed.unread, 100) });
           setOpen((o) => !o);
         }}
-        className="press relative inline-flex size-10 min-[440px]:size-11 items-center justify-center rounded-lg text-ink hover:bg-pill"
+        className="press relative inline-flex size-10 items-center justify-center rounded-xl text-ink hover:bg-pill"
       >
-        <span aria-hidden="true" className="text-[18px] leading-none">
-          {UI_EMOJI.bell}
-        </span>
+        <BellIcon aria-hidden="true" className="size-5" />
         {badge ? (
           <span
             aria-hidden="true"
@@ -96,7 +94,7 @@ export default function BellController({
       {open ? (
         <div
           id={panelId}
-          className="absolute top-full right-0 z-40 mt-2 w-[min(92vw,380px)] overflow-hidden rounded-card border border-line-card bg-surface shadow-card"
+          className="absolute z-[45] overflow-hidden rounded-2xl bg-surface shadow-float max-sm:inset-x-0 max-sm:top-full max-sm:mt-2.5 sm:top-full sm:right-0 sm:mt-2.5 sm:w-[360px]"
         >
           <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-2.5">
             <h2 className="font-heading text-[15px] font-extrabold text-ink">{copy.label}</h2>
@@ -140,7 +138,7 @@ export default function BellController({
               </Link>
             </div>
           ) : (
-            <ul className="max-h-[min(60vh,420px)] divide-y divide-line overflow-y-auto">
+            <ul className="max-h-[min(60vh,420px)] overflow-y-auto p-2">
               {feed.notices.map((n) => (
                 <li key={n.id}>
                   <NoticeItem notice={n} locale={locale} newLabel={copy.unread} onOpen={onOpen} />

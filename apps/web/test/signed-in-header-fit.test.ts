@@ -1,8 +1,8 @@
 /**
- * Signed-in header fit (audit 2026-11-16, coordinator ruling): with the bell present the page scrolled sideways by
- * 19 px (390 hi), 15/31 px (480 en/hi) and 23 px (1024 en). The header is built so it fits by construction: the
- * account name and cart label are text only where there is room (icons with names and titles before that), the
- * brand and the tap targets are a little smaller on phones, and the 1024-1279 px row uses the page gutter sparingly.
+ * Signed-in header fit (audit 2026-11-16, coordinator ruling; rebuilt for the v4 header 2026-11-23): with the bell
+ * present the page scrolled sideways by 19 px (390 hi), 15/31 px (480 en/hi) and 23 px (1024 en). The header is built so
+ * it fits by construction: the account entry is an avatar (name in the title), the cart label shows from 640 px, nav
+ * and search labels from xl, the logo shrinks first, and the phone bar is a compact row.
  * Real geometry: `e2e/chrome-fit.spec.ts` (signed-in cases at 320/390/480/768/1024/1280 px).
  */
 import { readFileSync } from 'node:fs';
@@ -13,39 +13,51 @@ const src = (p: string) => readFileSync(join(__dirname, '..', 'src', p), 'utf8')
 
 describe('signed-in header fits at every width', () => {
   const header = src('components/site/header.tsx');
-  const account = src('components/auth/account-link.tsx');
+  const account = src('components/auth/account-menu.tsx');
   const bell = src('components/notices/bell-controller.tsx');
   const bellSlot = src('components/notices/bell.tsx');
   const pill = src('components/commerce/cart-pill.tsx');
-  const lang = src('components/site/language-switcher.tsx');
   const nav = src('components/site/nav-links.tsx');
+  const search = src('components/site/search-trigger.tsx');
 
-  it('the row uses a narrower gutter between 1024 and 1279 px', () => {
-    expect(header).toMatch(/px-\[5%\] py-3 nav:px-6 xl:px-\[5%\]/);
+  it('the bar is a flex row that can shrink: the logo gives way before anything sticks out', () => {
+    expect(header).toContain('inline-flex min-h-11 min-w-0 shrink items-center');
+    expect(header).toContain('w-auto max-w-full');
+    expect(header).toMatch(/header-bar relative mx-auto flex h-14 max-w-\[1320px\] items-center gap-2/);
   });
 
-  it('the logo is narrower until 460 px and the tagline waits for the tablet width', () => {
-    expect(header).toContain('w-[132px] max-w-full min-[460px]:w-[152px] tab:w-[176px]');
-    expect(header).toMatch(/tab:block nav:hidden min-\[1440px\]:block/);
+  it('the logo is 26 px tall on phones and 30 px from 640 px', () => {
+    expect(header).toContain('h-[26px] sm:h-[30px]');
   });
 
-  it('the signed-in name shows as text only from xl and keeps a title and an accessible name', () => {
-    expect(account).toMatch(/className="sr-only max-w-\[9ch\] truncate xl:not-sr-only"/);
-    expect(account).toMatch(/data-track="header_account"\s+title=\{first \|\| account\}/);
-    expect(account).toContain('<span className="sr-only">, {account}</span>');
+  it('the signed-in entry is an avatar button (name in the title and the accessible name), never a wide link', () => {
+    expect(account).toMatch(/data-user-content\s+title=\{first \|\| copy\.account\}/);
+    expect(account).toContain("aria-label={`${copy.account}${first ? `, ${first}` : ''}`}");
+    expect(account).toContain('size-10');
   });
 
-  it('phone tap targets shrink to 40 px below 440 px (still above the 24 px minimum)', () => {
-    expect(account).toContain('min-w-10');
-    expect(account).toContain('min-[440px]:min-w-11');
-    expect(bell).toContain('size-10 min-[440px]:size-11');
-    expect(bellSlot).toContain('size-10 min-[440px]:size-11');
-    expect(pill).toMatch(/px-2\.5 [^"]*min-\[440px\]:px-4/);
-    expect(lang).toMatch(/px-1\.5 [^"]*min-\[440px\]:px-3/);
+  it('phone tap targets are 40 px (above the 24 px minimum); the bell is hidden under 380 px', () => {
+    expect(bell).toContain('size-10');
+    expect(bellSlot).toContain('size-10');
+    expect(bellSlot).toContain('hidden min-[380px]:contents');
+    expect(pill).toContain('size-10');
   });
 
-  it('the primary nav is tighter between 1024 and 1279 px', () => {
-    expect(nav).toMatch(/px-2 text-\[13px\] xl:px-3\.5/);
+  it('the cart is an icon button under 640 px and the navy button from there', () => {
+    expect(pill).toMatch(/sm:size-auto sm:h-10/);
+    expect(pill).toContain('sm:bg-cart');
+  });
+
+  it('the desktop nav and search shrink to icons between 1024 and 1279 px', () => {
+    expect(nav).toContain('sr-only xl:not-sr-only');
+    expect(nav).toContain('xl:px-[13px]');
+    expect(search).toContain('sr-only xl:not-sr-only');
+    expect(search).toContain('xl:min-w-[190px]');
+  });
+
+  it('the phone order is bell, cart, avatar; the desktop order is bell, avatar, cart', () => {
+    expect(header).toMatch(/order-2 empty:hidden nav:order-none[\s\S]*?<AccountMenu/);
+    expect(header).toMatch(/order-1 empty:hidden nav:order-none[\s\S]*?<CartPill/);
   });
 });
 

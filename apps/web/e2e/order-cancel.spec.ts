@@ -21,7 +21,8 @@ async function signIn(page: Page, phone: string, path = '/login') {
 /** Sign out from the user's own area (order pages have no sign-out button). */
 async function signOut(page: Page, from: '/admin' | '/partner/shop' | null = null) {
   if (from) await page.goto(from);
-  await page.getByRole('button', { name: 'Sign out' }).first().click();
+  await page.locator('[data-track="header_account"]').click();
+  await page.getByRole('menuitem', { name: 'Sign out' }).click();
 }
 
 async function placeOrder(page: Page): Promise<string> {

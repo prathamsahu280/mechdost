@@ -14,6 +14,7 @@ import { ConsentBanner } from '@/components/site/consent-banner';
 import { Footer } from '@/components/site/footer';
 import { AnnouncementBar, Header } from '@/components/site/header';
 import { MobileTabBar } from '@/components/site/mobile-tab-bar';
+import { navIcon } from '@/components/site/nav-icons';
 import { routing } from '@/i18n/routing';
 import { BUSINESS_NAV, PRIMARY_NAV } from '@/lib/nav';
 import { site } from '@/lib/site';
@@ -95,19 +96,26 @@ export default async function LocaleLayout({
   // i18n runtime or message catalogue ships to the browser (spec 16 JS budget).
   const localised = (href: string) => localePath(href, locale);
   const navItems = [
-    ...PRIMARY_NAV.map((item) => ({ ...item, href: localised(item.href), label: nav(item.key) })),
+    ...PRIMARY_NAV.map((item) => ({
+      ...item,
+      href: localised(item.href),
+      label: nav(item.key),
+      icon: navIcon(item.key, 17),
+    })),
     // One header-only link (design 2026-11-22); the tab bar below stays at four.
     {
       key: BUSINESS_NAV.key,
       href: localised(BUSINESS_NAV.href),
       activePrefix: localised(BUSINESS_NAV.activePrefix),
       label: nav('business'),
+      icon: navIcon(BUSINESS_NAV.key, 17),
     },
   ];
   const tabItems = PRIMARY_NAV.map((item) => ({
     ...item,
     href: localised(item.href),
     label: tabs(item.key),
+    icon: navIcon(item.key, 20),
   }));
   const region = (await getTranslations('regions'))(site.defaultRegion);
   const consent = await getTranslations('consent');

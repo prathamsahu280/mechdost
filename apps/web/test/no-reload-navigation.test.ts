@@ -71,6 +71,8 @@ const EXTERNAL_HREF =
 
 /** Files whose plain anchor is deliberate, with the reason (anything else must be a next/link `Link`). */
 const PLAIN_ANCHOR_FILES: Record<string, string> = {
+  'components/auth/account-menu-panel.tsx':
+    'the account menu language item: a full load on purpose, like the footer button (bugs 2026-11-13)',
   'components/site/language-switcher.tsx':
     'full load on purpose: the locale proxy sets the language cookie only on a document request (bugs 2026-11-13)',
   'components/catalogue/shop-browser.tsx': 'category chip: onClick prevents default and filters client-side',
@@ -103,11 +105,12 @@ describe('no full document load for internal moves', () => {
     }
   });
 
-  it('assigns window.location only in the language switcher', () => {
+  it('assigns window.location only in the language switches (footer button, account menu item)', () => {
     const offenders: string[] = [];
     for (const file of walk(srcDir).filter((f) => /\.tsx?$/.test(f))) {
       const rel = relative(srcDir, file).split('\\').join('/');
-      if (rel === 'components/site/language-switcher.tsx') continue;
+      if (rel === 'components/site/language-switcher.tsx' || rel === 'components/auth/account-menu-panel.tsx')
+        continue;
       if (/(?:window\.)?location(?:\.href)?\s*=[^=]|location\.(?:assign|replace)\(/.test(read(file)))
         offenders.push(rel);
     }

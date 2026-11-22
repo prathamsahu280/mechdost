@@ -1,8 +1,8 @@
-import { MessageCircle, Phone } from 'lucide-react';
+import { Globe, MessageCircle, Moon, Phone, Store, Sun, UserRound, Wrench } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
+import type { ReactNode } from 'react';
 import { CATEGORY_SLUGS } from '@/demo/catalogue';
 import { site, whatsappLink } from '@/lib/site';
-import { ExternalButtonLink } from '../ui/button-link';
 import { LocalLink } from '../ui/local-link';
 import { CompanyCopyright, CompanyLegal } from './company-legal';
 import { ConsentChoicesButton } from './consent-banner';
@@ -15,8 +15,8 @@ interface FooterLink {
   href: string;
   label: string;
   track: string;
-  /** A call to action shown as a filled button (the "Apply as …" links, user 2026-11-22). */
-  prominent?: boolean;
+  /** A small icon tile before the label (the "For partners" panel). */
+  icon?: ReactNode;
 }
 
 /** Policy pages, in the concept's order (company, privacy, delivery, returns, service terms); Terms of Service added
@@ -30,11 +30,15 @@ const POLICY_LINKS = [
   { href: '/policies/service-terms', label: 'serviceTerms', track: 'footer_service_terms' },
 ] as const;
 
+const linkClass =
+  'inline-flex min-h-10 items-center gap-[9px] rounded-lg text-sm text-muted underline-offset-4 hover:text-ink hover:underline';
+
 /**
- * Site footer: help card (WhatsApp/call) beside four link columns (shop, vehicle care, account, partners), then a
- * legal row with the operator, GSTIN and registered office (confirmed by the user, inbox Q15), theme toggle and
- * credits. Server-only. Policy pages are linked in their own row under the legal block.
- * Link lists become admin-editable navigation in Phase 1 (rule 8, spec 08).
+ * Site footer (v4, user-approved design 2026-11-23): one rounded card. The top holds the help card (WhatsApp/call)
+ * beside five link columns (shop, vehicle care, account, business, and "For partners" in a softly tinted panel with
+ * small icon tiles); then a row with the logo, the operator, GSTIN and registered office (confirmed by the user, inbox
+ * Q15) and the language and dark-mode buttons; then the policy links, privacy choices, credits and copyright.
+ * Server-only apart from the two buttons. Link lists become admin-editable navigation in Phase 1 (rule 8, spec 08).
  */
 export function Footer() {
   const t = useTranslations('footer');
@@ -45,8 +49,17 @@ export function Footer() {
   const cat = useTranslations('categories');
   const account = useTranslations('account');
   const partners = useTranslations('pages.partners');
+  const chrome = useTranslations('chrome');
   const locale = useLocale();
   const language = useTranslations('language');
+  const tile = (icon: ReactNode) => (
+    <span
+      aria-hidden="true"
+      className="grid size-7 shrink-0 place-items-center rounded-[9px] bg-accent-soft text-accent-soft-text transition-transform group-hover/link:scale-110"
+    >
+      {icon}
+    </span>
+  );
 
   const columns: { id: string; title: string; links: FooterLink[] }[] = [
     {
@@ -99,131 +112,163 @@ export function Footer() {
           : []),
       ],
     },
+  ];
+
+  const partnerLinks: FooterLink[] = [
     {
-      id: 'partners',
-      title: t('partnersLabel'),
-      links: [
-        { href: '/partners', label: t('becomePartner'), track: 'footer_partners' },
-        {
-          href: '/partners/apply/seller',
-          label: partners('sellerAction'),
-          track: 'footer_apply_seller',
-          prominent: true,
-        },
-        {
-          href: '/partners/apply/garage',
-          label: partners('garageAction'),
-          track: 'footer_apply_garage',
-          prominent: true,
-        },
-        {
-          href: '/partners/apply/mechanic',
-          label: partners('mechanicAction'),
-          track: 'footer_apply_mechanic',
-          prominent: true,
-        },
-      ],
+      href: '/partners/apply/seller',
+      label: partners('sellerAction'),
+      track: 'footer_apply_seller',
+      icon: tile(<Store size={15} strokeWidth={1.9} />),
+    },
+    {
+      href: '/partners/apply/garage',
+      label: partners('garageAction'),
+      track: 'footer_apply_garage',
+      icon: tile(<Wrench size={15} strokeWidth={1.9} />),
+    },
+    {
+      href: '/partners/apply/mechanic',
+      label: partners('mechanicAction'),
+      track: 'footer_apply_mechanic',
+      icon: tile(<UserRound size={15} strokeWidth={1.9} />),
     },
   ];
 
   return (
-    <footer className="mt-16 border-t border-line bg-surface">
-      <div className="mx-auto grid max-w-[1600px] gap-10 px-[5%] pt-12 pb-8 nav:grid-cols-[minmax(280px,340px)_1fr]">
-        <section
-          aria-labelledby="footer-help"
-          className="rounded-card border border-whatsapp-line bg-whatsapp-bg p-6 nav:self-start"
-        >
-          <h2 id="footer-help" className="font-heading text-[17px] font-extrabold text-ink">
-            {t('helpTitle')}
-          </h2>
-          <p className="mt-2 text-sm leading-relaxed text-muted">{t('helpBody')}</p>
-          <div className="mt-5 flex flex-wrap items-center gap-3">
-            <ExternalButtonLink
-              variant="whatsapp"
-              href={whatsappLink(wa('general'))}
-              target="_blank"
-              rel="noopener noreferrer"
-              note={t('whatsappNote')}
-              data-track="footer_whatsapp"
-            >
-              <MessageCircle aria-hidden="true" className="mr-2 inline size-4 align-[-3px]" />
-              {t('whatsapp', { phone: site.supportPhone })}
-            </ExternalButtonLink>
-            <a
-              href={`tel:${site.supportPhoneE164}`}
-              data-track="footer_call"
-              className="inline-flex min-h-11 items-center gap-2 px-2 text-sm font-bold text-ink underline-offset-4 hover:underline"
-            >
-              <Phone aria-hidden="true" className="size-4" />
-              {t('call')}
-            </a>
-          </div>
-        </section>
+    <footer className="mx-auto mt-16 mb-10 max-w-[1320px] px-2.5 tab:px-5">
+      <div className="overflow-hidden rounded-3xl bg-surface shadow-float">
+        <div className="grid gap-9 p-5 tab:p-8 min-[1100px]:grid-cols-[minmax(260px,320px)_1fr]">
+          <section
+            aria-labelledby="footer-help"
+            className="rounded-[18px] border border-whatsapp-line bg-whatsapp-bg p-[22px] min-[1100px]:self-start"
+          >
+            <h2 id="footer-help" className="font-heading text-lg leading-tight font-extrabold text-ink">
+              {t('helpTitle')}
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-muted">{t('helpBody')}</p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <a
+                href={whatsappLink(wa('general'))}
+                target="_blank"
+                rel="noopener noreferrer"
+                data-track="footer_whatsapp"
+                className="press inline-flex min-h-11 items-center gap-2 rounded-xl bg-whatsapp px-3.5 text-sm font-bold text-white hover:brightness-110"
+              >
+                <MessageCircle aria-hidden="true" size={18} strokeWidth={1.9} />
+                {t('whatsapp', { phone: site.supportPhone })}
+                <span className="sr-only"> ({t('whatsappNote')})</span>
+              </a>
+              <a
+                href={`tel:${site.supportPhoneE164}`}
+                data-track="footer_call"
+                className="press inline-flex min-h-11 items-center gap-2 rounded-xl bg-surface px-3.5 text-sm font-bold text-ink ring-1 ring-line hover:bg-pill"
+              >
+                <Phone aria-hidden="true" size={18} strokeWidth={1.9} />
+                {t('call')}
+              </a>
+            </div>
+          </section>
 
-        <div className="grid grid-cols-2 gap-x-6 gap-y-8 tab:grid-cols-3 xl:grid-cols-5">
-          {columns.map((col) => (
-            <nav key={col.id} aria-labelledby={`footer-col-${col.id}`}>
-              <h2 id={`footer-col-${col.id}`} className="text-sm font-extrabold text-ink">
-                {col.title}
+          <div className="grid grid-cols-2 gap-x-[22px] gap-y-8 tab:grid-cols-3 min-[1100px]:grid-cols-[repeat(4,minmax(0,1fr))_minmax(210px,1.35fr)]">
+            {columns.map((col) => (
+              <nav key={col.id} aria-labelledby={`footer-col-${col.id}`}>
+                <h2
+                  id={`footer-col-${col.id}`}
+                  className="mt-1 mb-3 font-heading text-sm font-extrabold text-ink"
+                >
+                  {col.title}
+                </h2>
+                <ul className="flex flex-col gap-0.5">
+                  {col.links.map((link) => (
+                    <li key={link.href}>
+                      <LocalLink href={link.href} data-track={link.track} className={linkClass}>
+                        {link.label}
+                      </LocalLink>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            ))}
+            <nav
+              aria-labelledby="footer-col-partners"
+              className="col-span-full rounded-2xl bg-bg px-3.5 pt-3.5 pb-3 ring-1 ring-line min-[1100px]:col-span-1 min-[1100px]:-mt-3.5 min-[1100px]:-mr-1.5 min-[1100px]:-ml-1.5"
+            >
+              <h2 id="footer-col-partners" className="mb-3 font-heading text-sm font-extrabold text-ink">
+                {t('partnersLabel')}
               </h2>
-              <ul className="mt-2">
-                {col.links.map((link) => (
+              <ul className="flex flex-col gap-0.5 tab:grid tab:grid-cols-3 min-[1100px]:flex">
+                {partnerLinks.map((link) => (
                   <li key={link.href}>
                     <LocalLink
                       href={link.href}
                       data-track={link.track}
-                      className={
-                        // "Apply as …" are calls to action, not plain links (user 2026-11-22: "needs to be properly
-                        // visible like more eye catchy"): filled accent pill, 44 px target, token colours only.
-                        link.prominent
-                          ? 'mt-1 inline-flex min-h-11 items-center rounded-pill bg-accent-button px-4 text-sm font-bold text-white shadow-card hover:brightness-110'
-                          : 'inline-flex min-h-11 min-w-11 items-center text-sm text-muted underline-offset-4 hover:text-ink hover:underline'
-                      }
+                      className={`${linkClass} group/link font-semibold whitespace-nowrap text-ink`}
                     >
+                      {link.icon}
                       {link.label}
                     </LocalLink>
                   </li>
                 ))}
               </ul>
+              <LocalLink
+                href="/partners"
+                data-track="footer_partners"
+                className="mt-2 inline-flex min-h-10 items-center text-[13px] font-bold whitespace-nowrap text-accent-soft-text underline-offset-4 hover:underline"
+              >
+                {chrome('howPartnering')}
+              </LocalLink>
             </nav>
-          ))}
+          </div>
         </div>
-      </div>
 
-      <div className="mx-auto max-w-[1600px] px-[5%] pb-10">
-        <div className="grid gap-6 border-t border-line pt-8 nav:grid-cols-[1fr_auto] nav:items-start">
-          <div className="space-y-3">
-            <BrandMark />
+        <div className="flex flex-wrap items-center justify-between gap-[18px] border-t border-line p-5 tab:px-8 tab:py-5">
+          <div className="space-y-2">
+            <BrandMark variant="footer" />
             <p className="max-w-xl text-sm text-muted">{t('accountNote')}</p>
             <CompanyLegal locale={locale} />
           </div>
-          {/* Language switch moved here from the header (user 2026-11-22), next to the theme toggle. */}
-          <div className="flex flex-wrap items-center gap-2">
-            <LanguageSwitcher target={locale === 'hi' ? 'en' : 'hi'} text={language('other')} />
-            <ThemeToggle label={theme('toggle')} className="border border-line-card" />
-            <span aria-hidden="true" className="text-sm text-muted">
-              {theme('toggle')}
-            </span>
+          {/* Language switch lives here and in the account menu (user 2026-11-22), next to the dark-mode button. */}
+          <div className="flex flex-wrap gap-2">
+            <LanguageSwitcher
+              target={locale === 'hi' ? 'en' : 'hi'}
+              text={language('other')}
+              icon={<Globe size={17} strokeWidth={1.9} />}
+            />
+            <ThemeToggle
+              label={theme('toggle')}
+              icon={
+                <>
+                  <Moon size={17} strokeWidth={1.9} className="theme-icon-moon" />
+                  <Sun size={17} strokeWidth={1.9} className="theme-icon-sun" />
+                </>
+              }
+            />
           </div>
         </div>
-        <nav aria-label={t('policiesLabel')} className="mt-6">
-          <ul className="flex flex-wrap gap-x-5">
-            {POLICY_LINKS.map((link) => (
-              <li key={link.href}>
-                <LocalLink
-                  href={link.href}
-                  data-track={link.track}
-                  className="inline-flex min-h-11 items-center text-sm text-muted underline-offset-4 hover:text-ink hover:underline"
-                >
-                  {t(link.label)}
-                </LocalLink>
+
+        <div className="border-t border-line px-5 py-3 tab:px-8">
+          <nav aria-label={t('policiesLabel')}>
+            <ul className="flex flex-wrap gap-x-[18px]">
+              {POLICY_LINKS.map((link) => (
+                <li key={link.href}>
+                  <LocalLink
+                    href={link.href}
+                    data-track={link.track}
+                    className="inline-flex min-h-10 items-center text-[13px] text-muted underline-offset-4 hover:text-ink hover:underline"
+                  >
+                    {t(link.label)}
+                  </LocalLink>
+                </li>
+              ))}
+              <li>
+                <ConsentChoicesButton label={consent('choices')} />
               </li>
-            ))}
-          </ul>
-        </nav>
-        <ConsentChoicesButton label={consent('choices')} />
-        <p className="mt-2 text-xs leading-relaxed text-muted">{t('credits')}</p>
-        <CompanyCopyright locale={locale} />
+            </ul>
+          </nav>
+          <p className="mt-1 text-xs leading-relaxed text-muted">{t('credits')}</p>
+          <CompanyCopyright locale={locale} />
+        </div>
       </div>
     </footer>
   );
