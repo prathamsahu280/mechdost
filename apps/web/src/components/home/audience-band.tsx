@@ -40,7 +40,7 @@ export function AudienceBand() {
                   <LocalLink
                     href={href}
                     data-track={track}
-                    className="underline-offset-4 outline-none after:absolute after:inset-0 after:content-[''] hover:underline"
+                    className="underline-offset-4 focus-visible:outline-none after:absolute after:inset-0 after:content-[''] hover:underline"
                   >
                     {t(`${key}Title`)}
                   </LocalLink>
