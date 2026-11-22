@@ -41,19 +41,19 @@ const SORTS: SortKey[] = ['popular', 'price_asc', 'price_desc'];
  */
 export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const [{ locale }, sp] = await Promise.all([params, searchParams]);
-  const [t, c, cities] = await Promise.all([
+  const [t, c, regions] = await Promise.all([
     getTranslations({ locale, namespace: 'seo' }),
     getTranslations({ locale, namespace: 'categories' }),
-    getTranslations({ locale, namespace: 'cities' }),
+    getTranslations({ locale, namespace: 'regions' }),
   ]);
-  const city = cities(site.defaultCity);
+  const region = regions(site.defaultRegion);
   const category = categoryFromSlug(first(sp.category));
   const searched = Boolean(first(sp.q)?.trim());
   const href = category ? `/shop?category=${CATEGORY_SLUGS[category]}` : '/shop';
-  const title = category ? t('categoryTitle', { category: c(category), city }) : t('shopTitle', { city });
+  const title = category ? t('categoryTitle', { category: c(category), region }) : t('shopTitle', { region });
   const description = category
-    ? t('categoryDescription', { category: c(category), city })
-    : t('shopDescription', { city });
+    ? t('categoryDescription', { category: c(category), region })
+    : t('shopDescription', { region });
   return {
     title,
     description,

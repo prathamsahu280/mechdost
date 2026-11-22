@@ -54,12 +54,12 @@ export async function generateMetadata({
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) return {};
   const t = await getTranslations({ locale, namespace: 'meta' });
-  const city = (await getTranslations({ locale, namespace: 'cities' }))(site.defaultCity);
-  const title = t('title', { city });
+  const region = (await getTranslations({ locale, namespace: 'regions' }))(site.defaultRegion);
+  const title = t('title', { region });
   return {
     metadataBase: new URL(siteOrigin()),
     title: { default: title, template: `%s · MechDost` },
-    description: t('description', { city }),
+    description: t('description', { region }),
     applicationName: 'MechDost',
     icons: {
       icon: [
@@ -109,7 +109,7 @@ export default async function LocaleLayout({
     href: localised(item.href),
     label: tabs(item.key),
   }));
-  const city = (await getTranslations('cities'))(site.defaultCity);
+  const region = (await getTranslations('regions'))(site.defaultRegion);
   const consent = await getTranslations('consent');
   const compare = await getTranslations('compare');
   const errorCopy = (await getMessages()).errorPage;
@@ -133,7 +133,7 @@ export default async function LocaleLayout({
         >
           {t('skipToContent')}
         </a>
-        <AnnouncementBar city={city} />
+        <AnnouncementBar region={region} />
         <Header navItems={navItems} />
         {/* The root error page's strings as a data block (not executed): no i18n runtime on every page (JS budget). */}
         <script

@@ -60,9 +60,13 @@ describe('trust lines (design 2026-11-15)', () => {
     expect(trustLineText('Genuine part', 'Default', { brand: 'Bosch' })).toBe('Genuine part');
   });
 
-  it('keeps the order-email default equal to the locale-file default for Raipur', () => {
-    expect(defaultEmailTrustLine('en')).toBe(en.trust.emailFooter.replace('{city}', en.cities.raipur));
-    expect(defaultEmailTrustLine('hi')).toBe(hi.trust.emailFooter.replace('{city}', hi.cities.raipur));
+  it('keeps the order-email default equal to the locale-file default', () => {
+    expect(defaultEmailTrustLine('en')).toBe(
+      en.trust.emailFooter.replace('{region}', en.regions.chhattisgarh),
+    );
+    expect(defaultEmailTrustLine('hi')).toBe(
+      hi.trust.emailFooter.replace('{region}', hi.regions.chhattisgarh),
+    );
   });
 
   it('puts the trust line above the company line, only when given', () => {

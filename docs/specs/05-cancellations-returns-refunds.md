@@ -157,3 +157,7 @@ Refunds of a service bill use the same queue, ledger, four-eyes approval, Razorp
 ## When the customer cannot cancel (2026-11-16, QA pass 3 bug 9)
 
 An open order part without a cancel button (self-cancel settings off, or past the allowed step) shows "This order cannot be cancelled from this page. If you need to cancel it, contact support and we will help." with a link to support for that order (`order.cancelUnavailable*`, en + hi). The rejected or cancelled order page shows "Order total when placed" and, when parts were taken out, "Still payable", beside the refund lines (`order.api_placedTotal`, `api_payableTotal`). Default of the self-cancel settings unchanged (Q197).
+
+## Copy (2026-11-22, user)
+
+Refund and cancel copy says "if we can't fulfil your order you pay nothing / are refunded in full" and "you can cancel until your order is packed"; it does not mention a shop. Decisions 2026-11-22.

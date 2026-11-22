@@ -14,13 +14,13 @@ const FLEET_BENEFITS = [1, 2, 3, 4, 5] as const;
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
-  const [t, cities] = await Promise.all([
+  const [t, regions] = await Promise.all([
     getTranslations({ locale, namespace: 'seo' }),
-    getTranslations({ locale, namespace: 'cities' }),
+    getTranslations({ locale, namespace: 'regions' }),
   ]);
-  const city = cities(site.defaultCity);
-  const title = t('businessFleetsTitle', { city });
-  const description = t('businessFleetsDescription', { city });
+  const region = regions(site.defaultRegion);
+  const title = t('businessFleetsTitle', { region });
+  const description = t('businessFleetsDescription', { region });
   return {
     title,
     description,

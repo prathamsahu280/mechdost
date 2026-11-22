@@ -262,7 +262,7 @@ describe('indexing is open in every data mode (user 2026-11-19)', () => {
   });
   it('the Bulk orders page is indexable and listed', () => {
     expect(STATIC_PATHS).toContain('/quotes/new');
-    expect(en.seo.bulkTitle).toContain('{city}');
+    expect(en.seo.bulkTitle).toContain('{region}');
     expect(hi.seo.bulkDescription).toMatch(/[ऀ-ॿ]/);
   });
 });

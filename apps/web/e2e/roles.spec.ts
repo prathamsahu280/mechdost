@@ -274,7 +274,7 @@ test.describe('order routing across roles (spec 04)', () => {
   }) => {
     test.setTimeout(90_000);
     const code = await placeOrder(page);
-    await expect(page.getByText('Confirming with a nearby shop').first()).toBeVisible();
+    await expect(page.getByText('Confirming availability').first()).toBeVisible();
 
     // Admin: the order waits in "Needs routing" with ranked shop suggestions.
     await signIn(page, '9000000003');
@@ -323,7 +323,7 @@ test.describe('order routing across roles (spec 04)', () => {
 
     // Customer (and admin) see the confirmation.
     await page.goto(`/orders/${code}`);
-    await expect(page.getByText('Fulfilled by Sharma Auto Parts')).toBeVisible();
+    await expect(page.getByText('Fulfilled by')).toHaveCount(0);
     await expect(page.getByText('Packed').first()).toBeVisible();
   });
 

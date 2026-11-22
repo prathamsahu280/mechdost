@@ -12,12 +12,12 @@ import { DATA_MODE } from '@/lib/data-mode';
 import { TopWorkshopsApi } from './top-workshops-api';
 
 /** Top-rated workshops: from the API in real data mode (Stream E), else the demo data. Server-only. */
-export function TopWorkshops({ city }: { city: string }) {
-  return DATA_MODE === 'api' ? <TopWorkshopsApi city={city} /> : <DemoTopWorkshops city={city} />;
+export function TopWorkshops({ region }: { region: string }) {
+  return DATA_MODE === 'api' ? <TopWorkshopsApi region={region} /> : <DemoTopWorkshops region={region} />;
 }
 
-/** Top-rated workshops (demo data; the API ranks by rating × review count per city). Server-only. */
-function DemoTopWorkshops({ city }: { city: string }) {
+/** Top-rated workshops (demo data; the API ranks by rating × review count per region). Server-only. */
+function DemoTopWorkshops({ region }: { region: string }) {
   const t = useTranslations('home.workshops');
   const finder = useTranslations('finder');
   const locale = useLocale();
@@ -29,7 +29,7 @@ function DemoTopWorkshops({ city }: { city: string }) {
       <Container>
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <Eyebrow>{t('eyebrow', { city })}</Eyebrow>
+            <Eyebrow>{t('eyebrow', { region })}</Eyebrow>
             <h2
               id="top-workshops"
               className="mt-4 font-heading text-[clamp(26px,2.8vw,36px)] font-extrabold tracking-[-0.03em] text-ink"

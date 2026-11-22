@@ -7,7 +7,7 @@ import { PERSON_CANCEL_REASONS } from '@mechdost/shared/state';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
 import { restoreCoinsForOrder } from '@/demo/coins';
-import { findShop, rankShops } from '@/demo/shops';
+import { rankShops } from '@/demo/shops';
 import { useSession } from '@/demo/session';
 import {
   advanceOrder,
@@ -25,7 +25,7 @@ import { track } from '@/lib/analytics';
 import { useDisclosureFocus } from '@/lib/use-disclosure-focus';
 import { formatDate, formatPrice } from '@/lib/format';
 import { StatusTimeline } from './status-timeline';
-import { productNameFor, shopNameFor } from '@/demo/i18n/localize';
+import { productNameFor } from '@/demo/i18n/localize';
 import { GstInvoiceLine } from '@/components/commerce/gst-invoice-line';
 import { SHOW_DEMO_CONTROLS } from '@/lib/data-mode';
 
@@ -151,18 +151,6 @@ export function OrderView({ code }: { code: string }) {
             <div className="mt-5">
               <OrderAgain code={order.code} source="page" />
             </div>
-          ) : null}
-          {order.shop?.status === 'accepted' ? (
-            <p className="mt-4 text-sm font-bold text-ink">
-              <span aria-hidden="true">🏪 </span>
-              {t('shopLabel', {
-                shop: shopNameFor(
-                  order.shop.slug,
-                  findShop(order.shop.slug)?.name ?? order.shop.slug,
-                  locale,
-                ),
-              })}
-            </p>
           ) : null}
           {maySeeCode && order.delivery && !order.delivery.confirmedAt && !isClosed(order) ? (
             <section

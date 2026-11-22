@@ -180,3 +180,7 @@ When the ranked list has nobody to offer, the admin screen says why: `noShopCove
 ## Order again (2026-11-22)
 
 A delivered, cancelled or rejected order (all parts closed) offers "Order again" on the order page and in the account orders list. It only fills the cart (spec 03 "Built: Order again"); it never reopens or copies the order, so the order's state machine, snapshots and events are untouched. Not offered while any part is still open (the order is not "past" yet).
+
+## Customer wording (2026-11-22, user)
+
+Routing stays a back-office flow (admin routes, shop accepts or declines). Customer-facing text never mentions it: stage `routing` reads "Confirming availability", `confirmed` reads "Confirmed - will be shipped" with "MechDost confirmed your order", rejections say "We could not fulfil it" / "Not in stock near you", and emails and notifications to the customer say "MechDost confirmed {code}". Portals, admin and partner copy keep the shop wording. Decisions 2026-11-22.

@@ -110,7 +110,8 @@ test.describe('catalogue on the API', () => {
     // The page's own facts table (the related cards' quick-details popovers hold hidden lists too).
     const fact = (term: string) =>
       page.locator('dt', { hasText: term }).locator('xpath=following-sibling::dd');
-    await expect(fact('Sold by')).toHaveText('Sharma Auto Parts');
+    // No seller row for customers (user 2026-11-22).
+    await expect(page.locator('dt', { hasText: 'Sold by' })).toHaveCount(0);
     await expect(fact('Country of origin')).toHaveText('India');
   });
 

@@ -11,6 +11,8 @@ export const site = {
   supportPhoneE164: '+917978776551',
   whatsappNumber: '917978776551',
   defaultCity: 'raipur',
+  /** Coverage name in copy (user 2026-11-22: Chhattisgarh, not Raipur): key into the `regions` locale namespace. */
+  defaultRegion: 'chhattisgarh',
 } as const;
 
 /**

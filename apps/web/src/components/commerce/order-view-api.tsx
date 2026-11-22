@@ -190,11 +190,6 @@ function OrderPart({
       className={`space-y-4 rounded-card border bg-surface p-6 shadow-card ${highlight ? 'border-accent-button' : 'border-line-card'}`}
     >
       {label ? <p className="text-xs font-extrabold text-muted uppercase">{label}</p> : null}
-      {part.seller ? (
-        <p className="font-heading font-bold text-ink" data-user-content>
-          {t('shopLabel', { shop: part.seller })}
-        </p>
-      ) : null}
       {closed ? (
         <div role="status" className="rounded-tile bg-pill p-5 text-ink">
           <p className="font-heading font-bold">

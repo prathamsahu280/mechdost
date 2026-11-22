@@ -13,13 +13,13 @@ const liveUnits = (chunks: ReactNode) => <SettingValue setting="bulkMinUnits" fa
 const STOPS = [
   { n: 1, emoji: '🛒' },
   { n: 2, emoji: '🧭' },
-  { n: 3, emoji: '🏪' },
+  { n: 3, emoji: '✅' },
   { n: 4, emoji: '🚚' },
 ] as const;
 
 /**
  * "How your order reaches you" (decision 2026-11-01, home polish): the routing flow that sets MechDost apart —
- * customer → MechDost picks a verified shop → shop confirms within the timer → delivery — drawn as a dashed road
+ * customer → MechDost checks availability → MechDost confirms within the timer → delivery (no shop shown, user 2026-11-22) — drawn as a dashed road
  * across a blueprint band. Server-only: no client JS.
  */
 export function OrderRoute() {

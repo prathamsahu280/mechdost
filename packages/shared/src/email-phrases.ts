@@ -41,12 +41,12 @@ const CANCEL_REASON = {
 
 const REJECT_REASON = {
   no_stock_nearby: {
-    en: 'We could not find a seller with this item in stock near you.',
-    hi: 'आपके पास किसी विक्रेता के पास यह सामान स्टॉक में नहीं मिला।',
+    en: 'This item is not in stock near you right now.',
+    hi: 'यह सामान अभी आपके पास स्टॉक में नहीं है।',
   },
   all_shops_declined: {
-    en: 'The sellers near you were not able to fulfil this order.',
-    hi: 'आपके पास के विक्रेता यह ऑर्डर पूरा नहीं कर पाए।',
+    en: 'We were not able to fulfil this order.',
+    hi: 'हम यह ऑर्डर पूरा नहीं कर पाए।',
   },
   unserviceable_address: {
     en: 'We cannot deliver to this address yet.',

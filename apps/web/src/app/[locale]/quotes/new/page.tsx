@@ -18,14 +18,14 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
-  const [t, cities] = await Promise.all([
+  const [t, regions] = await Promise.all([
     getTranslations({ locale, namespace: 'seo' }),
-    getTranslations({ locale, namespace: 'cities' }),
+    getTranslations({ locale, namespace: 'regions' }),
   ]);
-  const city = cities(site.defaultCity);
+  const region = regions(site.defaultRegion);
   // The public "Bulk orders" landing (footer link) is indexable; quote records under /quotes/<code> stay private.
-  const title = t('bulkTitle', { city });
-  const description = t('bulkDescription', { city });
+  const title = t('bulkTitle', { region });
+  const description = t('bulkDescription', { region });
   return {
     title,
     description,

@@ -29,14 +29,14 @@ const BUTTON = '#bf3c12';
 
 const FOOTER = {
   en: {
-    genuine: 'Genuine parts from verified Raipur shops.',
+    genuine: 'Genuine parts, delivered across Chhattisgarh.',
     company: 'Shourya Integrated Services Pvt Ltd, Raipur',
     support: 'Need help? Call or WhatsApp MechDost support on',
     why: 'You are getting this email because of activity on your MechDost account.',
     grievance: 'Grievance contact:',
   },
   hi: {
-    genuine: 'रायपुर की सत्यापित दुकानों से असली पार्ट्स।',
+    genuine: 'छत्तीसगढ़ भर में असली पार्ट्स की डिलीवरी।',
     company: 'शौर्य इंटीग्रेटेड सर्विसेज़ प्राइवेट लिमिटेड, रायपुर',
     support: 'मदद चाहिए? MechDost सहायता को कॉल या WhatsApp करें:',
     why: 'आपको यह ईमेल आपके MechDost खाते की गतिविधि के कारण मिल रहा है।',
@@ -46,7 +46,7 @@ const FOOTER = {
 
 /**
  * Default order-email trust line (Admin -> Content `trust.emailFooter` overrides it). Same text as the locale files'
- * `trust.emailFooter` for Raipur; a test keeps the two equal.
+ * `trust.emailFooter` (region Chhattisgarh); a test keeps the two equal.
  */
 export const defaultEmailTrustLine = (locale: 'en' | 'hi'): string => FOOTER[locale].genuine;
 

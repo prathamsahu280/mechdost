@@ -130,3 +130,8 @@ Card (`rounded-card`, `border-line`, `bg-surface`, `shadow-dialog`) fixed above 
 ### Floating assistant button and forms (2026-11-16)
 
 The "Ask MechDost" button steps aside (hidden, CSS only) on pages whose form has prices or controls along the right edge: mark the form `data-launcher-avoid`. Same family as the consent banner and compare tray rules: one floating thing at a time, and none over a price or a control.
+
+## Copy rules added 2026-11-22 (user)
+
+- Customer copy never says an order goes through a shop or seller ("verified shop", "nearby shop", "Sold by", "shop accepted"); MechDost is the only named party. Shop wording stays in portals, admin, partner pages and the named legal exceptions (guard test `packages/shared/test/customer-copy.test.ts`).
+- Coverage copy says Chhattisgarh (छत्तीसगढ़) through `{region}`; "Raipur" stays only as a fact (registered office, PIN checks, order codes, city data). The announcement bar reads "Workshop requests in Chhattisgarh".
