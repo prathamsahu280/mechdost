@@ -32,6 +32,11 @@ const GUEST_PAGES = [
   '/support',
   '/support/guest',
   '/quotes/new',
+  // Audience entry (2026-11-22).
+  '/business/garages',
+  '/business/fleets',
+  '/business/apply?kind=fleet',
+  '/business/apply?kind=trade',
   '/policies/returns',
   '/policies/privacy',
   '/policies/company',
@@ -49,6 +54,7 @@ const CUSTOMER_PAGES = [
   `/service/${CODES.billed}`,
   `/quotes/${CODES.quote}`,
   '/notifications',
+  '/business/apply?kind=trade',
 ];
 
 const ROLES = [
