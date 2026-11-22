@@ -7,6 +7,7 @@ import { LocalLink } from '../ui/local-link';
 import { CompanyCopyright, CompanyLegal } from './company-legal';
 import { ConsentChoicesButton } from './consent-banner';
 import { BrandMark } from './header';
+import { LanguageSwitcher } from './language-switcher';
 import { ThemeToggle } from './theme-toggle';
 import { DATA_MODE, QUOTES_AVAILABLE } from '@/lib/data-mode';
 
@@ -43,6 +44,7 @@ export function Footer() {
   const account = useTranslations('account');
   const partners = useTranslations('pages.partners');
   const locale = useLocale();
+  const language = useTranslations('language');
 
   const columns: { id: string; title: string; links: FooterLink[] }[] = [
     {
@@ -176,7 +178,9 @@ export function Footer() {
             <p className="max-w-xl text-sm text-muted">{t('accountNote')}</p>
             <CompanyLegal locale={locale} />
           </div>
-          <div className="flex items-center gap-2">
+          {/* Language switch moved here from the header (user 2026-11-22), next to the theme toggle. */}
+          <div className="flex flex-wrap items-center gap-2">
+            <LanguageSwitcher target={locale === 'hi' ? 'en' : 'hi'} text={language('other')} />
             <ThemeToggle label={theme('toggle')} className="border border-line-card" />
             <span aria-hidden="true" className="text-sm text-muted">
               {theme('toggle')}

@@ -5,7 +5,6 @@ import { AccountLink } from '../auth/account-link';
 import { Bell } from '../notices/bell';
 import type { BellCopy } from '../notices/bell-copy';
 import { CartPill } from '../commerce/cart-pill';
-import { LanguageSwitcher } from './language-switcher';
 import { ThemeToggle } from './theme-toggle';
 import { NavLinks, type NavItem } from './nav-links';
 import { SiteText } from './site-overrides';
@@ -85,10 +84,9 @@ export function AnnouncementBar({ city }: { city: string }) {
   );
 }
 
-/** Sticky header: brand, primary nav (≥1024px), language, theme, account and the live cart pill. */
+/** Sticky header: brand, primary nav (≥1024px), theme, account and the live cart pill (language switch: footer). */
 export function Header({ navItems }: { navItems: readonly NavItem[] }) {
   const t = useTranslations('nav');
-  const language = useTranslations('language');
   const theme = useTranslations('theme');
   const auth = useTranslations('auth');
   const bell = useTranslations('bell');
@@ -118,7 +116,6 @@ export function Header({ navItems }: { navItems: readonly NavItem[] }) {
         <BrandMark />
         <div className="flex shrink-0 items-center gap-0.5 min-[440px]:gap-1 sm:gap-2">
           <NavLinks label={t('label')} items={navItems} />
-          <LanguageSwitcher target={locale === 'hi' ? 'en' : 'hi'} text={language('other')} />
           {/* Visibility on a wrapper: the toggle's own inline-flex would override a `hidden` class. */}
           <span className="hidden min-[400px]:contents">
             <ThemeToggle label={theme('toggle')} />
