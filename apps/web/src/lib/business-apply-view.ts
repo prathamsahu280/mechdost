@@ -182,4 +182,23 @@ export function businessErrorView(code: string): { form: FormErrorKey | null; pi
   return { form: /^HTTP_5\d\d$/.test(code) ? 'errForm_unavailable' : 'errForm_generic', pincode: false };
 }
 
+/**
+ * How an admin refusal on a business application shows: the two the screen explains in its own words (staff may not
+ * decide their own application or trade account; a fleet enquiry is not approved), or null for the common error text.
+ */
+export function adminBusinessErrorKey(code: string): 'admin_err_notTrade' | 'admin_err_selfDecision' | null {
+  if (code === 'NOT_A_TRADE_APPLICATION') return 'admin_err_notTrade';
+  if (code === 'STAFF_SELF_CHANGE') return 'admin_err_selfDecision';
+  return null;
+}
+
+/** Category slugs as the labels customers see (page language); a slug no longer listed shows as itself. */
+export function categoryLabels(
+  slugs: readonly string[],
+  options: readonly { slug: string; name: string }[],
+): string {
+  const names = new Map(options.map((o) => [o.slug, o.name]));
+  return slugs.map((s) => names.get(s) ?? s).join(', ');
+}
+
 export type { FleetNeed, TradeBusinessType, TradeSpendBand };

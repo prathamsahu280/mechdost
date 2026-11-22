@@ -8,7 +8,7 @@ import {
 } from '@mechdost/shared/cart-api';
 import { auditLog, cartItems, carts, orderGroups, orderItems, orders, users } from '../schema';
 import { uuidv7 } from '../schema/_common';
-import { NotFoundError, ValidationError } from './errors';
+import { ConflictError, NotFoundError, pgCode, ValidationError } from './errors';
 import { recordServerEvent } from './events';
 import { localized } from './localized';
 import type { Tx } from './orders';
@@ -338,6 +338,8 @@ async function foldInto(
   let raised = 0;
   let sellable = 0;
   let total = existing.size;
+  // Decide in memory (the customer's row lock is held, so `existing` cannot change), then write once.
+  const writes: { cartId: string; variantId: string; qty: number }[] = [];
   for (const l of wanted) {
     const r = resolved.get(l.sku);
     if (!r?.variantId || !r.sellable) {
@@ -348,10 +350,7 @@ async function foldInto(
     if (have !== undefined) {
       sellable += 1;
       if (l.qty > have) {
-        await tx
-          .update(cartItems)
-          .set({ qty: l.qty })
-          .where(and(eq(cartItems.cartId, cartId), eq(cartItems.variantId, r.variantId)));
+        writes.push({ cartId, variantId: r.variantId, qty: l.qty });
         raised += 1;
       }
       continue;
@@ -360,11 +359,21 @@ async function foldInto(
       dropped.push({ sku: l.sku, reason: 'too_many_lines' });
       continue;
     }
-    await tx.insert(cartItems).values({ cartId, variantId: r.variantId, qty: l.qty });
+    writes.push({ cartId, variantId: r.variantId, qty: l.qty });
     total += 1;
     added += 1;
     sellable += 1;
   }
+  // One upsert for every new and raised line (a constant number of round trips, whatever the order size).
+  if (writes.length > 0)
+    await tx
+      .insert(cartItems)
+      .values(writes)
+      .onConflictDoUpdate({
+        target: [cartItems.cartId, cartItems.variantId],
+        set: { qty: sql`excluded.qty` },
+        setWhere: sql`${cartItems.qty} < excluded.qty`,
+      });
   const pruned = await pruneUnsellable(tx, cartId);
   if (added + raised + pruned.length > 0) await touch(tx, cartId);
   await tx.insert(auditLog).values({
@@ -429,7 +438,26 @@ export async function reorderCart(
   groupCode: string,
   locale: CartLocale = 'en',
 ): Promise<ReorderResult> {
+  try {
+    return await reorderInTx(db, userId, groupCode, locale);
+  } catch (err) {
+    // Another press for this customer held the cart longer than the wait below: answer "busy", not a 10 s hang.
+    if (pgCode(err) === '55P03')
+      throw new ConflictError('Your cart is being updated, try again', 'CART_BUSY');
+    throw err;
+  }
+}
+
+async function reorderInTx(
+  db: Tx,
+  userId: string,
+  groupCode: string,
+  locale: CartLocale,
+): Promise<ReorderResult> {
   return db.transaction(async (tx) => {
+    // Bound the wait on the customer's row lock (a burst of presses queues here): the hold is a handful of
+    // statements, so two seconds only runs out when something is badly wrong; then the press fails fast (409).
+    await tx.execute(sql`set local lock_timeout = '2s'`);
     const [g] = await tx
       .select({ id: orderGroups.id })
       .from(orderGroups)

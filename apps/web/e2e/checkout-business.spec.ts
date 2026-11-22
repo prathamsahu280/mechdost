@@ -26,7 +26,7 @@ test('without a business purchase, checkout and the order are unchanged', async 
   await expect(page.locator('#checkout-gstin')).toHaveCount(0);
   await page.getByRole('button', { name: /Place order/ }).click();
   await expect(page).toHaveURL(/\/orders\/MD-RPR-/);
-  await expect(page.getByText(/GST invoice for/)).toHaveCount(0);
+  await expect(page.getByText(/GST details on your bill:/)).toHaveCount(0);
 });
 
 test('a business purchase checks the GSTIN, notes another state, and shows on the order and to staff', async ({
@@ -52,7 +52,7 @@ test('a business purchase checks the GSTIN, notes another state, and shows on th
   await expect(page.getByText(/registered in Maharashtra.*delivered in Chhattisgarh/)).toBeVisible();
   await page.getByRole('button', { name: /Place order/ }).click();
   await expect(page).toHaveURL(/\/orders\/MD-RPR-/);
-  await expect(page.getByText('GST invoice for Sahu Motors (27AAPFU0939F1ZV)')).toBeVisible();
+  await expect(page.getByText('GST details on your bill: Sahu Motors (27AAPFU0939F1ZV)')).toBeVisible();
   const code = /\/orders\/(MD-RPR-[^?]+)/.exec(page.url())?.[1] ?? '';
 
   await page.goto(`/login?next=${encodeURIComponent('/admin/orders')}`);
@@ -63,7 +63,7 @@ test('a business purchase checks the GSTIN, notes another state, and shows on th
   await page.getByRole('button', { name: 'Verify and continue' }).click();
   await expect(page).toHaveURL(/\/admin\/orders$/);
   const card = page.locator('article').filter({ hasText: code });
-  await expect(card.getByText('GST invoice for Sahu Motors (27AAPFU0939F1ZV)')).toBeVisible();
+  await expect(card.getByText('GST details on your bill: Sahu Motors (27AAPFU0939F1ZV)')).toBeVisible();
 });
 
 test('on /hi the state note names the states in Hindi', async ({ page }) => {
@@ -90,7 +90,7 @@ test('unticking after typing places the order without a GSTIN; one field alone i
   await page.getByLabel(/This is a business purchase/).uncheck();
   await page.getByRole('button', { name: /Place order/ }).click();
   await expect(page).toHaveURL(/\/orders\/MD-RPR-/);
-  await expect(page.getByText(/GST invoice for/)).toHaveCount(0);
+  await expect(page.getByText(/GST details on your bill:/)).toHaveCount(0);
 });
 
 test('the shop sees the GSTIN only after accepting the order', async ({ page }) => {
@@ -147,8 +147,8 @@ test('the shop sees the GSTIN only after accepting the order', async ({ page }) 
   const offered = page.locator('section[aria-labelledby="offered-title"]');
   const active = page.locator('section[aria-labelledby="active-title"]');
   await expect(offered).toContainText('MD-RPR-2026-BIZ001');
-  await expect(offered).not.toContainText('GST invoice for');
-  await expect(active).toContainText('GST invoice for Sahu Motors (27AAPFU0939F1ZV)');
+  await expect(offered).not.toContainText('GST details on your bill:');
+  await expect(active).toContainText('GST details on your bill: Sahu Motors (27AAPFU0939F1ZV)');
 });
 
 test('a field error goes away as soon as that field is corrected (QA 2026-11-14, U17)', async ({ page }) => {

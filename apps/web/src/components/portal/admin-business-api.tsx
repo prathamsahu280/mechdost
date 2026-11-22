@@ -1,7 +1,7 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import { useState, type SyntheticEvent } from 'react';
+import { useEffect, useRef, useState, type SyntheticEvent } from 'react';
 import {
   BusinessApplicationDetail,
   BusinessApplicationPage,
@@ -17,6 +17,8 @@ import {
 import { APPLICATION_REJECT_REASONS, type ApplicationRejectReason } from '@mechdost/shared/partner-codes';
 import { adminApi } from '@/lib/admin-api';
 import { track } from '@/lib/analytics';
+import { adminBusinessErrorKey, categoryLabels } from '@/lib/business-apply-view';
+import type { CategoryOption } from '@/lib/business-api';
 import { formatDate } from '@/lib/format';
 import { Alert, ListState, MoreButton, useErrorText, usePaged } from './admin-onboarding-api';
 import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
@@ -87,10 +89,33 @@ function BusinessCard({ row: a, onChanged }: { row: BusinessApplicationRowDto; o
   const [error, setError] = useState<string | null>(null);
   const [mode, setMode] = useState<Mode>('idle');
   const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState<{ n: number; text: string }>({ n: 0, text: '' });
+  const [options, setOptions] = useState<CategoryOption[]>([]);
+  const statusRef = useRef<HTMLParagraphElement>(null);
   const field = `biz-${a.code}`;
 
+  // The button that was pressed leaves the page once the application changes, so focus would fall to the body:
+  // it moves to the status line (which also announces the result) after every successful action.
+  useEffect(() => {
+    if (done.n > 0) statusRef.current?.focus();
+  }, [done]);
+
+  useEffect(() => {
+    if (!open || a.kind !== 'trade') return;
+    let live = true;
+    void import('@/lib/business-api')
+      .then((m) => m.fetchCategoryOptions(locale))
+      .then((res) => {
+        if (live && res.ok) setOptions(res.data);
+      });
+    return () => {
+      live = false;
+    };
+  }, [open, a.kind, locale]);
+
   const fail = (code: string) => {
-    setError(code === 'NOT_A_TRADE_APPLICATION' ? t('admin_err_notTrade') : errorText(code));
+    const own = adminBusinessErrorKey(code);
+    setError(own ? t(own) : errorText(code));
   };
 
   async function loadDetail() {
@@ -108,7 +133,12 @@ function BusinessCard({ row: a, onChanged }: { row: BusinessApplicationRowDto; o
     if (!open) void loadDetail();
   }
 
-  async function post(path: string, body: Record<string, unknown>, id: string) {
+  async function post(
+    path: string,
+    body: Record<string, unknown>,
+    id: string,
+    message: 'admin_done_decided' | 'admin_done_revoked' | 'admin_done_restored' = 'admin_done_decided',
+  ) {
     setBusy(true);
     const res = await adminApi(locale, `/admin/business-applications/${a.code}/${path}`, BusinessOk, {
       method: 'POST',
@@ -122,6 +152,7 @@ function BusinessCard({ row: a, onChanged }: { row: BusinessApplicationRowDto; o
     track('click', { id, path: window.location.pathname });
     setMode('idle');
     await loadDetail();
+    setDone((d) => ({ n: d.n + 1, text: t(message) }));
     onChanged();
     return true;
   }
@@ -155,12 +186,20 @@ function BusinessCard({ row: a, onChanged }: { row: BusinessApplicationRowDto; o
       {open ? (
         <div id={`${field}-detail`} data-panel-for={`review-${a.code}`} className="mt-3">
           <Alert text={error} />
+          <p
+            ref={statusRef}
+            role="status"
+            tabIndex={-1}
+            className="text-sm font-bold text-ink focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
+          >
+            {done.text}
+          </p>
           {!detail && !error ? (
             <p role="status" className="text-sm text-muted">
               {t('admin_loading')}
             </p>
           ) : null}
-          {detail ? <Details app={detail} /> : null}
+          {detail ? <Details app={detail} options={options} /> : null}
           {detail && mode === 'reject' ? (
             <ReasonForm
               kind="reject"
@@ -189,6 +228,7 @@ function BusinessCard({ row: a, onChanged }: { row: BusinessApplicationRowDto; o
                   'trade-standing',
                   { version: detail.tradeAccount?.version ?? 0, to: 'revoked', reasonCode },
                   'admin_trade_revoked',
+                  'admin_done_revoked',
                 )
               }
             />
@@ -258,6 +298,7 @@ function BusinessCard({ row: a, onChanged }: { row: BusinessApplicationRowDto; o
                       'trade-standing',
                       { version: detail.tradeAccount?.version ?? 0, to: 'verified' },
                       'admin_trade_restored',
+                      'admin_done_restored',
                     )
                   }
                   className={portalPrimary}
@@ -273,7 +314,13 @@ function BusinessCard({ row: a, onChanged }: { row: BusinessApplicationRowDto; o
   );
 }
 
-function Details({ app }: { app: BusinessApplicationDetailDto }) {
+function Details({
+  app,
+  options,
+}: {
+  app: BusinessApplicationDetailDto;
+  options: readonly CategoryOption[];
+}) {
   const t = useTranslations('business');
   const row = (label: string, value: string) => (
     <div>
@@ -291,7 +338,7 @@ function Details({ app }: { app: BusinessApplicationDetailDto }) {
           {row(t('admin_businessType'), app.businessType ? t(`type_${app.businessType as 'garage'}`) : none)}
           {row(t('admin_gstin'), app.gstin ?? none)}
           {row(t('admin_spend'), app.spendBand ? t(`spend_${app.spendBand as 'over_5l'}`) : none)}
-          {row(t('admin_categories'), app.categories.join(', '))}
+          {row(t('admin_categories'), categoryLabels(app.categories, options))}
         </>
       ) : (
         <>
