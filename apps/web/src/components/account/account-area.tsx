@@ -57,6 +57,9 @@ const CoinsSectionApi = lazy(() =>
   import('./coins-section-api').then((m) => ({ default: m.CoinsSectionApi })),
 );
 
+// Trade account pill (audience entry design 2026-11-22), real sign-in only.
+const TradeBadge = lazy(() => import('./trade-badge').then((m) => ({ default: m.TradeBadge })));
+
 // Real sign-in: addresses, vehicles and profile live on the API (design 2026-11-15); the demo keeps the browser copy.
 const AddressesApi = lazy(() => import('./account-api-sections').then((m) => ({ default: m.AddressesApi })));
 const VehiclesApi = lazy(() => import('./account-api-sections').then((m) => ({ default: m.VehiclesApi })));
@@ -405,7 +408,12 @@ function Overview({ account }: { account: DemoAccount }) {
             {t('phoneVerified')} · +91 {account.phone}
           </li>
           {AUTH_MODE === 'firebase' ? (
-            <EmailPill state={emailState} email={account.email} pillRef={pillRef} />
+            <>
+              <EmailPill state={emailState} email={account.email} pillRef={pillRef} />
+              <Suspense fallback={null}>
+                <TradeBadge />
+              </Suspense>
+            </>
           ) : (
             <li className="inline-flex items-center gap-1.5 rounded-pill bg-white/12 px-3 py-1.5">
               <BadgeCheck aria-hidden="true" className="size-4" />

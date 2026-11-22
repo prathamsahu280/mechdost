@@ -330,3 +330,17 @@ The workshop still marks a bill paid at the workshop (cash, UPI, card); if the c
 ## Hindi stock-upload hint (2026-11-16, QA pass 3 bug 15)
 
 Column names in the stock CSV hint stay in Latin as codes (`<code lang="en">`) and each is explained in Hindi (`shopTier2.csvRules`).
+
+## Business applications: trade accounts and fleet enquiries (design 2026-11-22, item 3)
+
+Separate from seller applications (their table is seller-shaped: GST status, address, map pin, products). Same ideas, own tables (migration `0078_business_applications`): `business_applications` (kind `trade` | `fleet`, code `BA-{CITY}-{YYYY}-{6}`), `business_application_events` (append-only), `trade_accounts` (one per user), `trade_account_events` (append-only).
+
+- **Trade** (`POST /v1/me/trade-application`, signed in, phone verified; per-user 5/h): business name, type (`mechanic|garage|parts_retailer|other`), GSTIN optional (checksum when present), PIN (city derived; unserved PIN refused), spend band, category slugs. Contact is a snapshot of the account. One open application per account (partial unique index), refused when already verified.
+- **Fleet** (`POST /v1/business-applications/fleet` signed out: Turnstile, 5/IP/h, 3/phone/day; or `POST /v1/me/fleet-application` signed in): company, vehicles 2W/3W/4W, needs (codes), optional 500-char note. A lead: review and close only (the DB refuses `approved`).
+- **Status machine** `businessApplicationMachine`: new, in_review, approved, rejected, closed. Trade ends approved/rejected (reject needs an `APPLICATION_REJECT_REASONS` code); fleet ends closed. Conditional UPDATE on `(id, status, version)`.
+- **Approving a trade application** (permission `partners:approve`) creates or restores the applicant's `trade_accounts` row (`verified`, saved business name and GSTIN) in the same transaction, with `trade_account_verified` event, audit and email. Staff can **revoke** with a reason code (`TRADE_REVOKE_REASONS`) and **restore** (`tradeAccountMachine`, version-checked): `POST /v1/admin/business-applications/{code}/trade-standing`.
+- **Customer side**: `GET /v1/me` has `trade: { status: none|pending|verified|revoked }`; `GET /v1/me/trade` returns name and GSTIN only while verified. The account overview shows a "Trade account" pill; checkout pre-fills the optional buyer GSTIN and business name (nothing switched on, nothing required).
+- **Admin**: Admin → Applications lists trade and fleet below the seller applications (kind filter; review, approve, reject, close, revoke, restore). Queue permission `applications:review`, city scope like seller applications.
+- **Page** `/[locale]/business/apply?kind=trade|fleet` (en + hi; accessibility per the design: labelled fields, fieldsets, GSTIN hint, error summary with focus, focus to the success heading with the code). Demo sign-in builds show "applications open soon" (no demo store for accounts).
+- Emails (spec 10): `trade_application_received`, `fleet_application_received` (signed-in applicants only; a typed address of a signed-out lead is never mailed), `trade_account_verified`. Staff get the existing `staff.new_application` bell notice.
+- No rejection or revoke email yet (wording not approved).

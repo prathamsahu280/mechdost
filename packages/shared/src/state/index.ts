@@ -374,6 +374,42 @@ export const applicationMachine = /* @__PURE__ */ defineMachine(
   ],
 );
 
+/**
+ * Business applications (audience entry design 2026-11-22): a trade application ends approved or rejected; a fleet
+ * enquiry is a lead that staff review and close (no account effect).
+ */
+export const BUSINESS_APPLICATION_STATES = ['new', 'in_review', 'approved', 'rejected', 'closed'] as const;
+export type BusinessApplicationStatus = (typeof BUSINESS_APPLICATION_STATES)[number];
+
+export const businessApplicationMachine = /* @__PURE__ */ defineMachine(
+  'business_application',
+  BUSINESS_APPLICATION_STATES,
+  ['approved', 'rejected', 'closed'],
+  [
+    { from: 'new', to: 'in_review', by: ['admin'] },
+    { from: 'new', to: 'approved', by: ['admin'] },
+    { from: 'new', to: 'rejected', by: ['admin'] },
+    { from: 'new', to: 'closed', by: ['admin'] },
+    { from: 'in_review', to: 'approved', by: ['admin'] },
+    { from: 'in_review', to: 'rejected', by: ['admin'] },
+    { from: 'in_review', to: 'closed', by: ['admin'] },
+  ],
+);
+
+/** A customer's trade account: verified by staff, taken back with a reason, restorable (design item 3). */
+export const TRADE_ACCOUNT_STATES = ['verified', 'revoked'] as const;
+export type TradeAccountStatus = (typeof TRADE_ACCOUNT_STATES)[number];
+
+export const tradeAccountMachine = /* @__PURE__ */ defineMachine(
+  'trade_account',
+  TRADE_ACCOUNT_STATES,
+  [],
+  [
+    { from: 'verified', to: 'revoked', by: ['admin'] },
+    { from: 'revoked', to: 'verified', by: ['admin'] },
+  ],
+);
+
 /** Admin invites to sellers: one-time links. */
 export const INVITE_STATES = ['sent', 'used', 'expired', 'revoked'] as const;
 export type InviteStatus = (typeof INVITE_STATES)[number];

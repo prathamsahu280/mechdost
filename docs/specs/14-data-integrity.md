@@ -195,3 +195,10 @@ No table changes and nothing written. One index: `service_requests_workshop_crea
 - `coupon_redemptions`: index `coupon_redemptions_coupon_created_idx (coupon_id, created_at, id)` for usage reports and the `coupon_usage` export. No new table: RLS, revoke and triggers of the existing tables apply (additive columns only).
 - Counters unchanged and still single conditional statements (`redeemCoupon` UPDATE with the window and limit in the WHERE; release by `released_at is null` once). The whole-order refund release locks the group row, then counts sub-orders with processed refunds below their total; two refunds paid together cannot both miss each other.
 - Data for ML (hard rule 16): every new field is typed and an enum or boolean; reports read only; the export carries `customer_ref = left(md5(user_id), 12)`, no PII. Tests: `packages/db/test/coupon-offers.test.ts`, `apps/api/test/coupon-offers.test.ts`.
+
+## Business applications data map (migration 0078, design 2026-11-22)
+
+- `business_applications`: status CHECK from `BUSINESS_APPLICATION_STATES`; shape CHECKs per kind (trade needs user, type, spend band, 1-30 categories, never `closed`; fleet needs phone, email, counts >= 0 with a sum > 0, needs within `FLEET_NEEDS`, only new/in_review/closed); `reason_code` present exactly when rejected; partial unique `(user_id) where kind='trade' and status in ('new','in_review')`; GSTIN (a public identifier) stored plain with a format CHECK; indexes on `(status, kind, created_at, id)`, `(city_id, created_at, id)` and every FK.
+- `business_application_events`, `trade_account_events`: append-only (`forbid_update_delete`).
+- `trade_accounts`: unique `user_id`, status CHECK (`verified|revoked`), `reason_code` present exactly when revoked; version and updated_at triggers. Moves only through `tradeAccountMachine` as conditional UPDATEs on `(status, version)`.
+- ML (rule 16): codes everywhere (type, spend band, needs, reasons); counts as ints; free text only the optional fleet note and review note.

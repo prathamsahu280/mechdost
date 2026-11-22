@@ -29,8 +29,21 @@ const VERIFICATION = APPLICATION_STAGES.indexOf('verification');
  * `/v1/admin/partner-applications` (data switch).
  */
 export function Applications() {
-  return AUTH_MODE === 'firebase' ? <ApplicationsApi /> : <DemoApplications />;
+  return AUTH_MODE === 'firebase' ? (
+    <>
+      <ApplicationsApi />
+      <BusinessApplicationsApi />
+    </>
+  ) : (
+    <DemoApplications />
+  );
 }
+
+/** Trade accounts and fleet enquiries (audience entry design 2026-11-22): API only, below the seller applications. */
+const BusinessApplicationsApi = dynamic(
+  () => import('./admin-business-api').then((m) => m.BusinessApplicationsApi),
+  { ssr: false },
+);
 
 /** Real sign-in builds: the same screen on `/v1/admin/partner-applications`, loaded only then. */
 const ApplicationsApi = dynamic(() => import('./admin-onboarding-api').then((m) => m.ApplicationsApi), {

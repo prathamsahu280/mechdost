@@ -37,6 +37,11 @@ import { accountRoutes } from './routes/account';
 import { storefrontRoutes } from './routes/storefront';
 import { productPhotoRoutes } from './routes/product-photos';
 import { noticeRoutes } from './routes/notices';
+import {
+  businessAccountRoutes,
+  businessAdminRoutes,
+  businessPublicRoutes,
+} from './routes/business-applications';
 import { meRoutes } from './routes/me';
 import { partnerAdminRoutes, partnerPublicRoutes, shopOnboardingRoutes } from './routes/partner-onboarding';
 import { shopInventoryRoutes } from './routes/shop-inventory';
@@ -101,6 +106,9 @@ export function createApp(deps: AppDeps) {
   v1.use('*', apiRateLimit(deps, new ApiLimitsProvider(() => readApiLimits(deps.db))));
   v1.route('/', authRoutes(deps));
   v1.route('/', meRoutes(deps, sessions));
+  v1.route('/', businessAccountRoutes(deps, sessions));
+  v1.route('/', businessPublicRoutes(deps));
+  v1.route('/', businessAdminRoutes(deps, sessions));
   v1.route('/', accountRoutes(deps, sessions));
   v1.route('/', storefrontRoutes(deps, sessions));
   v1.route('/', noticeRoutes(deps, sessions));

@@ -1584,3 +1584,7 @@ site-wide `noindex` would also have dropped the two pages Google already had.
   `Product` / `Offer` / `AutoRepair` structured data still only on real data (no markup of demo prices or reviews).
 - Accepted cost: demo product prices and stock text can appear in search snippets until the real-data switch; those
   URLs refresh or drop (404) after it, and `sitemap.xml` is re-submitted then.
+
+## 2026-11-22 - Business applications built as their own tables (builder 2, audience entry item 3)
+
+Trade and fleet applications get `business_applications` (+ events) and `trade_accounts` (+ events) instead of new kinds in `partner_applications`: that table's CHECKs and repository are seller-shaped (GST status, address, map pin, products, encrypted KYC), so reusing it would have weakened them. Reused: public codes, the status-machine and conditional-UPDATE pattern, reject reason codes, the admin queue screen helpers, the `staff.new_application` notice, the email outbox, Turnstile and rate-limit helpers. Rulings: GSTIN is a public identifier and is stored plain (like the order snapshot); the typed email of a signed-out fleet lead is never mailed (2026-11-15 spam-relay ruling); trade status is `none|pending|verified|revoked` (computed; `pending` = an open application); no rejection or revoke email until wording is approved; demo sign-in builds show "open soon" (no demo store for accounts). Spec 07 section "Business applications".

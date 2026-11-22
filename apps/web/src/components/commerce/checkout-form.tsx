@@ -168,6 +168,24 @@ export function CheckoutForm() {
   const typedGstin = normaliseGstin(gstinInput);
   type StateKey = Parameters<typeof states>[0];
   const isStateKey = (code: string): code is StateKey => GST_STATE_CODES.includes(code);
+  // A verified trade account (audience entry design 2026-11-22): its saved GSTIN and business name are offered here.
+  // Optional like the rest: nothing is switched on or required for the customer. Loaded lazily, real sign-in only.
+  const [trade, setTrade] = useState<{ gstin: string | null; businessName: string } | null>(null);
+  useEffect(() => {
+    if (AUTH_MODE !== 'firebase') return;
+    let live = true;
+    void import('@/lib/business-api')
+      .then(({ fetchTradeProfile }) => fetchTradeProfile(locale))
+      .then((res) => {
+        if (!live || !res.ok || res.data.status !== 'verified') return;
+        setTrade({ gstin: res.data.gstin, businessName: res.data.businessName ?? '' });
+        const saved = res.data.gstin ?? '';
+        setGstinInput((typed) => typed || saved);
+      });
+    return () => {
+      live = false;
+    };
+  }, [locale]);
   const gstinState = isBusiness && isGstin(typedGstin) ? gstinStateCode(typedGstin) : null;
   const otherState =
     gstinState && gstinState !== DEMO_CITY.gstStateCode && isStateKey(gstinState) ? gstinState : null;
@@ -616,6 +634,9 @@ export function CheckoutForm() {
                   className={`${inputClass} uppercase`}
                 />
                 {errorText('gstin')}
+                {trade?.gstin && typedGstin === trade.gstin ? (
+                  <p className="mt-1 text-xs text-muted">{t('tradeGstinNote')}</p>
+                ) : null}
                 {otherState ? (
                   <p role="status" className="mt-1 text-xs text-muted">
                     {t('gstStateNote', {
@@ -631,6 +652,7 @@ export function CheckoutForm() {
                 </label>
                 <input
                   {...field('businessName')}
+                  defaultValue={trade?.businessName ?? ''}
                   autoComplete="organization"
                   maxLength={120}
                   className={inputClass}

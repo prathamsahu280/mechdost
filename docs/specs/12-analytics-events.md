@@ -194,3 +194,7 @@ Client: `offers_viewed { count }`, `offer_code_copied { kind }` (never the code)
 ## Sign-in failure event (2026-11-16)
 
 Client `auth_code_failed { stage: send|confirm, code, path }`: a phone-code send or check failed. `code` is the Firebase error code only (`auth/network-request-failed`, `auth/invalid-app-credential`, ...; anything else is `unknown`), checked by a strict regex in `CLIENT_EVENT_SCHEMAS`; never the phone number or any free text. Emitted from `components/auth/login-flow.tsx` (sign-up, sign-in staff code, resets). Lets us tell reCAPTCHA/App Check problems from quota and network problems in production.
+
+## Business applications (design 2026-11-22)
+
+Server: `business_application_submitted { kind, signedIn }`, `business_application_decided { kind, decision: approved|rejected|closed, reasonCode }`, `trade_account_verified { via: application|restored }`, `trade_account_revoked { reasonCode }`. Ids and codes only. Click ids (web): `business_apply_trade`, `business_apply_fleet`, `admin_business_in_review`, `admin_business_approved`, `admin_business_closed`, `admin_trade_revoked`, `admin_trade_restored`.

@@ -65,7 +65,7 @@ const body = <T extends z.ZodType>(schema: T) => ({
 });
 
 /** Keyset paging for the admin and shop lists (final review 2026-11-13, hard rule 7): opaque `nextCursor`. */
-const PageQuery = {
+export const PageQuery = {
   limit: z.coerce.number().int().min(1).max(100).optional(),
   cursor: z.string().max(200).optional(),
 };
@@ -74,7 +74,7 @@ interface Keyset {
   id: string;
 }
 const encodeCursor = (k: Keyset) => Buffer.from(JSON.stringify(k)).toString('base64url');
-function decodeCursor(raw: string | undefined): Keyset | null {
+export function decodeCursor(raw: string | undefined): Keyset | null {
   if (!raw) return null;
   try {
     const v: unknown = JSON.parse(Buffer.from(raw, 'base64url').toString('utf8'));
@@ -88,11 +88,11 @@ function decodeCursor(raw: string | undefined): Keyset | null {
   }
   throw new ApiError(422, 'INVALID_CURSOR', 'Invalid cursor');
 }
-function nextCursorOf(page: { items: readonly { createdAt: Date; id: string }[]; more: boolean }) {
+export function nextCursorOf(page: { items: readonly { createdAt: Date; id: string }[]; more: boolean }) {
   const last = page.items.at(-1);
   return page.more && last ? encodeCursor({ createdAt: last.createdAt.toISOString(), id: last.id }) : null;
 }
-const Page = (name: string) =>
+export const Page = (name: string) =>
   z.object({ items: z.array(Loose), nextCursor: z.string().nullable() }).openapi(name);
 
 const SubmitBody = z
@@ -120,7 +120,7 @@ function keyringOf(deps: AppDeps) {
   return deps.keyring;
 }
 
-async function human(deps: AppDeps, c: Context<AppEnv>, token: string) {
+export async function human(deps: AppDeps, c: Context<AppEnv>, token: string) {
   if (!deps.turnstile) throw new ApiError(503, 'UNAVAILABLE', 'Applications are not available right now');
   let ok: boolean;
   try {

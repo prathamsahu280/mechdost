@@ -43,7 +43,7 @@ type OwnErrorKey =
   'api_on_errNotSeller' | 'api_on_errInviteOpen' | 'api_on_errInviteCity' | 'api_on_errNotLive';
 
 /** An API error code → a message: the screen's own codes first, then the shared ones. */
-function useErrorText() {
+export function useErrorText() {
   const t = useTranslations('portal');
   return useCallback(
     (code: string, own: Partial<Record<string, OwnErrorKey>> = {}) => t(own[code] ?? commonErrorKey(code)),
@@ -51,7 +51,7 @@ function useErrorText() {
   );
 }
 
-function Alert({ text, id }: { text: string | null; id?: string }) {
+export function Alert({ text, id }: { text: string | null; id?: string }) {
   if (!text) return null;
   return (
     <p id={id} role="alert" className="text-sm font-bold text-error">
@@ -61,7 +61,7 @@ function Alert({ text, id }: { text: string | null; id?: string }) {
 }
 
 /** A keyset-paged list from the API: loading, error with retry, and "Load more" (never a blank list that looks real). */
-function usePaged<T>(path: string, schema: ResponseSchema<{ items: T[]; nextCursor: string | null }>) {
+export function usePaged<T>(path: string, schema: ResponseSchema<{ items: T[]; nextCursor: string | null }>) {
   const locale = useLocale();
   const [items, setItems] = useState<T[]>([]);
   const [next, setNext] = useState<string | null>(null);
@@ -93,7 +93,7 @@ function usePaged<T>(path: string, schema: ResponseSchema<{ items: T[]; nextCurs
   return { items, next, loading, error, reload: () => void load(null), more: () => void load(next) };
 }
 
-function ListState({
+export function ListState({
   loading,
   error,
   empty,
@@ -129,7 +129,7 @@ function ListState({
   return <>{children}</>;
 }
 
-function MoreButton({
+export function MoreButton({
   next,
   loading,
   onMore,

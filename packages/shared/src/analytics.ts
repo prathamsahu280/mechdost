@@ -128,6 +128,15 @@ export interface ServerEventProps {
     locationSource: string;
   };
   partner_application_decided: { decision: 'approved' | 'rejected'; reasonCode: string | null };
+  /** Business applications (audience entry design 2026-11-22): codes only, no names or contacts. */
+  business_application_submitted: { kind: 'trade' | 'fleet'; signedIn: boolean };
+  business_application_decided: {
+    kind: 'trade' | 'fleet';
+    decision: 'approved' | 'rejected' | 'closed';
+    reasonCode: string | null;
+  };
+  trade_account_verified: { via: 'application' | 'restored' };
+  trade_account_revoked: { reasonCode: string };
   partner_invite_sent: Record<string, never>;
   /** The invite link was opened (funnel: sent → opened → submitted). */
   partner_invite_opened: Record<string, never>;

@@ -563,3 +563,7 @@ Bugs 1, 2, 3, 4, 5, 6, 8, 9, 10 of `docs/qa/real-api-pass-4-2026-11-16.md` fixed
 ## 2026-11-16 - QA pass 5 notes 1-3 (branch worktree-agent-a3b091ab2660fae09, not merged; no migration)
 
 Note 1 stock-refused quote offer: primary button becomes "Ask MechDost to source it" with the warning linked (acceptBlocked); note 2 one primary pay choice on the unpaid service bill (onlinePay, api_payAtWorkshopAlt); note 3 estimate hint instead of Approved total 0 (anyApproved, approvedTotalHint). en+hi. Tests apps/web/test/bugfix-qa-pass5.test.ts (red 7/7 first, green after); e2e/service-estimate.spec.ts asserts the hint (not run). Specs 06 and 19 updated.
+
+## 2026-11-22 - Builder 2: business applications (trade + fleet), branch worktree-agent-aafba15786951f205
+
+Migration `0078_business_applications` (not applied; the coordinator applies it and renumbers if another builder also used 0078). Shared DTOs, machines and emails, db repo, API routes, `/business/apply`, admin queue section, account badge, checkout GSTIN prefill. Tests green: shared 508, db targeted 67, api targeted 26, web targeted 126. Specs 07/10/12/13/14 and decisions updated.
