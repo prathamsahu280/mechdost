@@ -75,6 +75,7 @@ export default async function PartnersPage() {
                 <li key={n} className="flex gap-3 text-sm text-ink">
                   <Check aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-success" strokeWidth={3} />
                   {t.rich(`${kind}Point${n}`, {
+                    region,
                     min: (chunks) => <SettingValue setting="acceptMinutes" fallback={chunks} />,
                   })}
                 </li>
@@ -111,7 +112,7 @@ export default async function PartnersPage() {
                 <span className="text-xs font-bold text-accent-soft-text">{t('stepLabel', { n })}</span>
               </div>
               <h3 className="mt-3 font-heading text-lg font-extrabold text-ink">{t(`step${n}Title`)}</h3>
-              <p className="mt-1 text-sm text-muted">{t(`step${n}Body`)}</p>
+              <p className="mt-1 text-sm text-muted">{t(`step${n}Body`, { region })}</p>
             </li>
           ))}
         </ol>

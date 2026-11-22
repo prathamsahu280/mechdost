@@ -78,6 +78,8 @@ const EXEMPT_PREFIXES: Record<string, string> = {
   'trust.lineLabel_': 'admin editor labels',
   'trust.partner': 'partner pages: sell genuine parts',
   'whatsapp.seller': 'partner application message',
+  'cart.sellerCannotOrder':
+    'shown only to signed-in shop accounts (decisions 2026-11-22: sellers cannot order)',
   // Legal pages that must name the seller (Consumer Protection (E-Commerce) Rules, DPDP data recipients).
   'policies.terms.whoBody': 'legal: seller details are on the bill',
   'policies.terms.partnersTitle': 'legal: terms for shops and workshops',

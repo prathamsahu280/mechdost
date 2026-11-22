@@ -15,3 +15,11 @@ describe('language switch lives in the footer (user 2026-11-22: "remove the hind
     );
   });
 });
+
+describe('partner page passes {region} to every message that uses it (CI 2026-11-23: /hi/partners showed "undefined")', () => {
+  it('points and steps get the region value', () => {
+    const page = src('app/[locale]/partners/page.tsx');
+    expect(page).toMatch(/t\.rich\(`\$\{kind\}Point\$\{n\}`, \{\s*region,/);
+    expect(page).toContain('t(`step${n}Body`, { region })');
+  });
+});
