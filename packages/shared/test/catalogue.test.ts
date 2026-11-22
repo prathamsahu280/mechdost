@@ -19,6 +19,9 @@ const card = {
     leadDays: null,
   },
   photo: null,
+  // The lowest MRP among the packs, shown even without a shop offer (2026-11-22).
+  mrpFromPaise: 47_500,
+  mrpVaries: false,
 };
 
 describe('catalogue DTOs (spec 02, shared by API and web)', () => {
