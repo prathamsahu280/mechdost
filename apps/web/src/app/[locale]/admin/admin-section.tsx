@@ -5,6 +5,7 @@ import type { ContentDefaults } from '@/components/portal/admin-site';
 import type { NotifyDefaults } from '@/components/portal/admin-notifications';
 // Not from the 'use client' demo store: in a Server Component its exports are client references, not values.
 import { WHATSAPP_TEMPLATES, type WhatsAppTemplateKey } from '@mechdost/shared/whatsapp';
+import { whatsAppBodyText } from '@mechdost/shared/whatsapp-meta';
 import type { AdminSection } from '@/lib/sections';
 import { site } from '@/lib/site';
 
@@ -41,18 +42,15 @@ async function contentDefaults(): Promise<ContentDefaults> {
 }
 
 /**
- * Default WhatsApp message text per event in both languages. Read raw: the `{{n}}` placeholders are Meta's
- * syntax, not ICU arguments.
+ * Default WhatsApp message text per event in both languages. Read from `notify-templates/*.json`, not the ICU
+ * locale files: the `{{n}}` placeholders are Meta's syntax, and the locale files are precompiled at build time
+ * (spec 16, incident 2026-11-22).
  */
-async function notifyDefaults(): Promise<NotifyDefaults> {
-  const [en, hi] = await Promise.all([
-    getTranslations({ locale: 'en', namespace: 'notifyTemplates' }),
-    getTranslations({ locale: 'hi', namespace: 'notifyTemplates' }),
-  ]);
+function notifyDefaults(): NotifyDefaults {
   return Object.fromEntries(
     (Object.keys(WHATSAPP_TEMPLATES) as WhatsAppTemplateKey[]).map((event) => [
       event,
-      { en: String(en.raw(event)), hi: String(hi.raw(event)) },
+      { en: whatsAppBodyText(event, 'en'), hi: whatsAppBodyText(event, 'hi') },
     ]),
   ) as NotifyDefaults;
 }
@@ -67,7 +65,7 @@ export async function AdminSectionContent({ section }: { section: AdminSection }
     <AdminConsole
       section={section}
       contentDefaults={section === 'content' ? await contentDefaults() : undefined}
-      notifyDefaults={section === 'notifications' ? await notifyDefaults() : undefined}
+      notifyDefaults={section === 'notifications' ? notifyDefaults() : undefined}
     />
   );
 }

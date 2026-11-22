@@ -1,0 +1,20 @@
+{
+  "order": {
+    "confirmed": "Your MechDost order {{1}} is confirmed and will be shipped soon. Track it with the button below.",
+    "out_for_delivery": "Your order {{1}} is out for delivery. When the parcel arrives, tap Track order below and show the delivery person the confirmation shown on the website.",
+    "rejected": "We could not fulfil your order {{1}}. Any payment will go back to your original payment method within 5–7 working days.",
+    "routed": "New order {{1}} for your shop. Accept or decline within {{2}} minutes in the MechDost partner portal."
+  },
+  "service": {
+    "estimate_sent": "The workshop has sent an estimate for your service request {{1}}. Review and approve each item before any work starts."
+  },
+  "quote": {
+    "offer_sent": "The final price for your bulk quote {{1}} is ready. Tap below to review and accept it.",
+    "message": "MechDost replied on your bulk quote {{1}}. Tap below to read the message.",
+    "expiring": "The price on your bulk quote {{1}} ends within a day. Tap below to review it.",
+    "withdrawn": "MechDost closed your bulk quote {{1}}. Tap below to see the reason."
+  },
+  "ticket": {
+    "replied": "MechDost support replied to your request {{1}}. Open it to read the reply."
+  }
+}

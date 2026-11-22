@@ -138,3 +138,27 @@ After merging the logo, closable panels, refunds, quotes, coupons and shop staff
 After: `/` 164.0, `/shop` 179.9, product 178.1, `/workshops` 178.9, `/cart` 179.8, compare 159.2 KB gz. **`/shop` has
 0.1 KB of room**: the next addition to the shop first load needs a matching cut (candidates: lazy compare tray code,
 the filter sheet).
+
+## Budget incident 2026-11-22: audience pages, loader-stub chunk again
+
+- After the `/business/garages` and `/business/fleets` pages, Turbopack again split the lazy-import loader stubs into
+  a chunk of their own on every page (demo build: `/shop` 180.8 KB gz in 15 chunks, `/cart` 180.7 in 13). The new
+  routes themselves are the trigger (reverting the header link alone left `/shop` at 180.4), so the fix is real
+  headroom, not avoiding the trigger.
+- **Win 1, precompiled messages (about 8.7 KB gz on `/shop` and `/cart`).** `createNextIntlPlugin` now sets
+  `experimental.messages.precompile` for `packages/shared/src/i18n`: the locale JSON is compiled to a compact form at
+  build time and `use-intl` uses its format-only runtime, so `@formatjs/icu-messageformat-parser` (5.3 KB), the
+  skeleton parser (2 KB) and most of `intl-messageformat` (1.9 KB) leave every client bundle that formats a message.
+  Consequences to keep in mind: (a) every message must be valid ICU, so the WhatsApp texts (`{{1}}` is Meta syntax)
+  moved to `packages/shared/src/notify-templates/{en,hi}.json` (read by `whatsapp-meta.ts` and the admin card); (b) `t.raw()`
+  and direct imports of the locale JSON return compiled messages, not strings: the demo labour promise passes
+  `{days: '{days}'}` to `t()` instead of `raw`, and the policy editor's "start from the built-in text"
+  (`lib/policy-view.ts`) turns compiled arguments back into `{name}`; the root error copy is plain text only.
+- **Win 2, Hindi product text out of the first load (about 1.9 KB gz on `/shop`).** The demo shop's in-browser search
+  needs `PRODUCT_HI`, but only after the page is up: `searchProducts` takes it as an option and `shop-browser.tsx`
+  fetches `demo/i18n/hi-products` with `import()` on mount (Hindi queries match as soon as the chunk arrives, in
+  practice before the first keystroke).
+- Result (demo build, `measure-js.mjs`): `/` 164.9 (unchanged), `/shop` 180.8 to 170.2 (15 to 14 chunks), product page
+  179.0 to 170.4, `/workshops` to 171.4, `/cart` 180.7 to 172.2 (13), compare 160.1, `/hi` 164.9. Every page that
+  formats messages in the browser has 8 KB or more of room.
+- Guard: `apps/web/test/budget-2026-11-22.test.ts`. Not run here: the Playwright suites (e2e, hindi-coverage).

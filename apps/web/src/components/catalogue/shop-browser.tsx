@@ -15,6 +15,7 @@ import {
   type SyntheticEvent,
 } from 'react';
 import type { ListingQuery } from '@/app/[locale]/shop/actions';
+import type { ProductHi } from '@/demo/i18n/hi-products';
 import {
   CATEGORY_KEYS,
   CATEGORY_SLUGS,
@@ -157,6 +158,19 @@ export function ShopBrowser({
   });
   const nextCursor = appended ? appended.nextCursor : (server?.nextCursor ?? null);
 
+  // The Hindi product text for the demo's in-browser search is its own chunk, fetched right after the page loads
+  // (not part of the first load, spec 16 incident 2026-11-22); until it arrives only the English text matches.
+  const [hiText, setHiText] = useState<Readonly<Record<string, ProductHi>>>();
+  useEffect(() => {
+    if (server) return;
+    let live = true;
+    void import('@/demo/i18n/hi-products').then((m) => {
+      if (live) setHiText(m.PRODUCT_HI);
+    });
+    return () => {
+      live = false;
+    };
+  }, [server]);
   const demoResults = useMemo(
     () =>
       searchProducts({
@@ -165,8 +179,9 @@ export function ShopBrowser({
         sort: state.sort,
         vehicle: state.vehicle,
         categoryLabel: (k) => cat(k),
+        hi: hiText,
       }),
-    [state, cat],
+    [state, cat, hiText],
   );
   const results: { slug: string }[] = server ? server.slugs.map((slug) => ({ slug })) : demoResults;
   const shownCount = results.length + (appended?.cards.length ?? 0);

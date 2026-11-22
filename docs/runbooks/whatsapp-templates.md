@@ -1,7 +1,7 @@
 # WhatsApp templates: submit, check and switch on (`pnpm wa:templates`)
 
 Decision 2026-11-16 (see `docs/decisions.md`), Q173, spec 10. The catalogue is `packages/shared/src/whatsapp.ts`; the
-text of each template (English and Hindi) is `notifyTemplates` in `packages/shared/src/i18n/{en,hi}.json`; button labels
+text of each template (English and Hindi) is the whole file `packages/shared/src/notify-templates/{en,hi}.json` (not in the ICU locale files, which are precompiled at build time: spec 16 incident 2026-11-22); button labels
 and sample values are `packages/shared/src/whatsapp-meta.ts`. The CLI is `apps/api/src/notify/wa-templates-cli.ts`.
 Nothing is submitted to Meta unless you run `--submit --yes`.
 

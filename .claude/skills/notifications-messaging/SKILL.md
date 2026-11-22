@@ -52,4 +52,4 @@ not transactional; template variable validation; webhook signature + dedupe.
 
 ## Template CLI and approval gate (2026-11-16)
 
-Templates are created from the repo with `pnpm wa:templates` (dry run default; `--submit --yes` only on the user's go-ahead, Q173; runbook `docs/runbooks/whatsapp-templates.md`). A new catalogue entry needs its `notifyTemplates` text (en + hi) and a `META_TEMPLATE_COPY` entry. After `--status --save`, a WhatsApp event queues only while Meta approved the language of its enabled template.
+Templates are created from the repo with `pnpm wa:templates` (dry run default; `--submit --yes` only on the user's go-ahead, Q173; runbook `docs/runbooks/whatsapp-templates.md`). A new catalogue entry needs its `notify-templates/{en,hi}.json` text (en + hi) and a `META_TEMPLATE_COPY` entry. After `--status --save`, a WhatsApp event queues only while Meta approved the language of its enabled template.

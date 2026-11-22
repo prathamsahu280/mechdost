@@ -13,6 +13,8 @@ This file is the single source of truth for **where the build is right now**. It
   (hi-products / ICU parser / duplicates). **Then:** merge it, measure, `pnpm db:migrate` (0078), push, CI +
   deploy, audits + visual + real-mode check of the new pages, ask the user Q202–Q207.
 
+- **2026-11-22 perf (branch worktree-agent-affedf7983672947a, not merged):** next-intl precompile + lazy Hindi product search: `/shop` 180.8 to 170.2, `/cart` 180.7 to 172.2 KB gz (spec 16 "Budget incident 2026-11-22"); WhatsApp texts moved to `packages/shared/src/notify-templates/`.
+
 - **NOW (2026-11-22, user away):** audience entry (retail / mechanics & garages / fleets "MechDost Uptime").
   Design `docs/superpowers/specs/2026-11-22-audience-entry-design.md` (rulings R1–R5), questions Q202–Q206 queued.
   Three Sonnet builders in worktrees: (1) home `audiences` section + `/business/garages` + `/business/fleets` + "For

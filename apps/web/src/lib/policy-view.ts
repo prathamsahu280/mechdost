@@ -80,8 +80,24 @@ export const POLICY_PAGES: Record<
 const BUILT_IN_DAYS = '7';
 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
-const textOf = (v: unknown): string =>
-  typeof v === 'string' ? v.replaceAll("''", "'").replaceAll('{days}', BUILT_IN_DAYS) : '';
+/**
+ * Text of one message. The shipped messages are precompiled at build time (spec 16, incident 2026-11-22): a message
+ * with arguments is an array of text and `[name]` nodes, which becomes `{name}` again (`{days}` is filled in). A
+ * raw ICU string (tests) is unescaped the same way.
+ */
+const textOf = (v: unknown): string => {
+  if (typeof v === 'string') return v.replaceAll("''", "'").replaceAll('{days}', BUILT_IN_DAYS);
+  if (!Array.isArray(v)) return '';
+  return v
+    .map((node: unknown) => {
+      if (typeof node === 'string') return node;
+      if (Array.isArray(node) && node.length === 1 && typeof node[0] === 'string') {
+        return node[0] === 'days' ? BUILT_IN_DAYS : `{${node[0]}}`;
+      }
+      return '';
+    })
+    .join('');
+};
 
 /**
  * The built-in text of a policy page as an editable document ("Start from the current text"), read from the locale

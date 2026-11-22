@@ -63,7 +63,7 @@ export const WHATSAPP_TEMPLATES = {
     audience: 'customer',
   },
   // Bulk quotes (spec 19, 2026-11-16). Wired through the outbox; sending stays off until staff switch an event on.
-  // Default bodies: locale files `notifyTemplates.quote.*` (no offer/discount wording; no variable at either end).
+  // Default bodies: locale files `notify-templates/*.json` quote.* (no offer/discount wording; no variable at either end).
   'quote.offer_sent': {
     name: 'quote_price_ready',
     category: 'utility',

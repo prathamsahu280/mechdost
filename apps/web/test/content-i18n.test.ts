@@ -127,7 +127,7 @@ describe('Hindi content overlays', () => {
 });
 
 describe('search works in both languages', () => {
-  const slugs = (query: string) => searchProducts({ query }).map((p) => p.slug);
+  const slugs = (query: string) => searchProducts({ query, hi: PRODUCT_HI }).map((p) => p.slug);
 
   it('matches Hindi names on /hi and English queries everywhere', () => {
     expect(slugs('बैटरी')).toContain('car-starter-battery-45ah');
@@ -140,7 +140,9 @@ describe('search works in both languages', () => {
 
   it('matches the category name as shown', () => {
     const labels = (k: string) => (k === 'lubricants' ? 'लुब्रिकेंट' : k);
-    const found = searchProducts({ query: 'लुब्रिकेंट', categoryLabel: labels }).map((p) => p.category);
+    const found = searchProducts({ query: 'लुब्रिकेंट', categoryLabel: labels, hi: PRODUCT_HI }).map(
+      (p) => p.category,
+    );
     expect(found.length).toBeGreaterThan(0);
     expect(new Set(found)).toEqual(new Set(['lubricants']));
   });

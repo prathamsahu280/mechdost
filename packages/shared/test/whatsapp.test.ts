@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import en from '../src/i18n/en.json';
-import hi from '../src/i18n/hi.json';
+import en from '../src/notify-templates/en.json';
+import hi from '../src/notify-templates/hi.json';
 import {
   WHATSAPP_TEMPLATES,
   classifyWhatsAppError,
@@ -11,7 +11,7 @@ import {
   whatsAppParamProblem,
 } from '../src/whatsapp';
 
-type QuoteEvent = keyof typeof en.notifyTemplates.quote;
+type QuoteEvent = keyof typeof en.quote;
 
 describe('WhatsApp templates (decision 2026-11-02: Meta direct, cheapest)', () => {
   it('every template is utility at launch, with Meta-valid names and listed params', () => {
@@ -32,9 +32,7 @@ describe('WhatsApp templates (decision 2026-11-02: Meta direct, cheapest)', () =
       expect(t.audience).toBe('customer');
       expect(t.params).toEqual(['quoteCode']);
       for (const locale of ['en', 'hi'] as const) {
-        const body = (locale === 'en' ? en : hi).notifyTemplates.quote[
-          key.slice('quote.'.length) as QuoteEvent
-        ];
+        const body = (locale === 'en' ? en : hi).quote[key.slice('quote.'.length) as QuoteEvent];
         expect(utilityTemplateProblem(body), `${key} ${locale}`).toBeNull();
         expect(placeholderProblem(body, t.params.length), `${key} ${locale}`).toBeNull();
         // Meta rejects a body that starts or ends with a variable.

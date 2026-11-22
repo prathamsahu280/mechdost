@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import en from '../../../packages/shared/src/i18n/en.json';
-import hi from '../../../packages/shared/src/i18n/hi.json';
+import en from '../../../packages/shared/src/notify-templates/en.json';
+import hi from '../../../packages/shared/src/notify-templates/hi.json';
 import { WHATSAPP_EVENTS, bodyProblem, preview } from '../src/demo/notification-settings';
 
 /** The default WhatsApp texts we ship must pass the same checks staff face (utility wording, exact placeholders). */
@@ -12,8 +12,8 @@ function lookup(tree: unknown, path: string): unknown {
 
 describe('default WhatsApp message texts', () => {
   for (const [locale, messages] of [
-    ['en', en.notifyTemplates],
-    ['hi', hi.notifyTemplates],
+    ['en', en],
+    ['hi', hi],
   ] as const) {
     it(`are valid utility templates in ${locale}`, () => {
       for (const event of WHATSAPP_EVENTS) {
