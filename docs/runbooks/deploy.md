@@ -230,6 +230,7 @@ Until `DEPLOY_ENABLED=true`, the workflow only builds and pushes images (which a
      logged `worker_started`, else it fails and prints only the worker's event names (the Actions logs are public; read the log itself on the server). `up --wait` alone passed while
      the worker (no healthcheck) crash-looped on a bundle error.
 5. **Public check:** a last, non-blocking step requests `https://mechdost.com/` from GitHub, to show whether the site is reachable from the internet.
+6. **Warm the page cache:** a non-blocking step runs `node apps/web/scripts/warm-cache.mjs` (GET only, one page a second, 8 minutes at most) so the first visit to each shop and product page after the deploy is not a full render (spec 16, incident 2026-11-22). A failure here never fails the deploy.
 
 **Concurrency:** one deploy at a time (`deploy-production` group); a second one waits.
 

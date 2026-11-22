@@ -411,13 +411,39 @@ export interface CatalogueProduct extends Omit<CatalogueCard, 'offer' | 'photo'>
   place: CataloguePlace;
 }
 
+interface VariantRow {
+  sku: string;
+  options: Record<string, unknown>;
+  mrp_paise: unknown;
+  pack_qty: unknown;
+  pack_unit: string | null;
+  price: unknown;
+  mrp: unknown;
+  shipping: unknown;
+  lead_days: unknown;
+  shop_name: string | null;
+  shop_name_hi: string | null;
+}
+
+interface PhotoRow {
+  id: string;
+  alt: string;
+  alt_hi: string | null;
+  width: unknown;
+  height: unknown;
+  lqip: string | null;
+}
+
 /** A live product page with each active variant's best offer for the PIN (or city). Others → 404. */
 export async function getCatalogueProduct(
   db: Tx,
   slug: string,
   opts: { cityCode: string; pincode?: string | null; locale: CatalogueLocale },
 ): Promise<CatalogueProduct> {
-  const place = await resolvePlace(db, opts.cityCode, opts.pincode ?? null);
+  // The place lookup and the product row do not depend on each other: started together, one round trip less
+  // (spec 16, budget incident 2026-11-22).
+  const placeLookup = resolvePlace(db, opts.cityCode, opts.pincode ?? null);
+  placeLookup.catch(() => undefined); // its error is raised by the await below, never as an unhandled rejection
   const [p] = rowsOf<
     CardRow & {
       description: string | null;
@@ -448,44 +474,35 @@ export async function getCatalogueProduct(
       )
       select pg.*, ph.*, rv.* from pg ${cardExtras}`),
   );
+  const place = await placeLookup;
   if (!p) throw new NotFoundError('Product not found');
-  const variants = rowsOf<{
-    sku: string;
-    options: Record<string, unknown>;
-    mrp_paise: unknown;
-    pack_qty: unknown;
-    pack_unit: string | null;
-    price: unknown;
-    mrp: unknown;
-    shipping: unknown;
-    lead_days: unknown;
-    shop_name: string | null;
-    shop_name_hi: string | null;
-  }>(
-    await db.execute(sql`
+  // Variants (with their offers), photos and part numbers are independent reads: one round trip, not three.
+  const [variants, photos, partNumbers] = await Promise.all([
+    db
+      .execute(
+        sql`
       select pv.sku, pv.options, pv.mrp_paise, pv.net_qty as pack_qty, pv.net_unit as pack_unit, o.price, o.mrp, o.shipping, o.lead_days, o.shop_name, o.shop_name_hi
       from product_variants pv
       ${offerLateral(place, sql`v.id = pv.id`)}
       where pv.product_id = ${p.id} and pv.status = 'active'
-      order by pv.sku`),
-  );
-  const photos = rowsOf<{
-    id: string;
-    alt: string;
-    alt_hi: string | null;
-    width: unknown;
-    height: unknown;
-    lqip: string | null;
-  }>(
-    await db.execute(sql`
+      order by pv.sku`,
+      )
+      .then((r) => rowsOf<VariantRow>(r)),
+    db
+      .execute(
+        sql`
       select id::text as id, alt, alt_hi, width, height, lqip from product_photos
-      where product_id = ${p.id} and status = 'approved' and deleted_at is null order by sort, id limit 12`),
-  );
-  const partNumbers = rowsOf<{ kind: string; value: string }>(
-    await db.execute(sql`
+      where product_id = ${p.id} and status = 'approved' and deleted_at is null order by sort, id limit 12`,
+      )
+      .then((r) => rowsOf<PhotoRow>(r)),
+    db
+      .execute(
+        sql`
       select distinct pn.kind, pn.value from part_numbers pn join product_variants v on v.id = pn.variant_id
-      where v.product_id = ${p.id} and pn.kind in ('oe', 'mfr') order by pn.kind, pn.value limit 20`),
-  );
+      where v.product_id = ${p.id} and pn.kind in ('oe', 'mfr') order by pn.kind, pn.value limit 20`,
+      )
+      .then((r) => rowsOf<{ kind: string; value: string }>(r)),
+  ]);
   const card = toCard(p, opts.locale);
   const { offer: _offer, photo: _photo, ...base } = card;
   const attributeSet = attributeSetFor(p.category_slug, p.parent_category_slug);

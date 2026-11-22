@@ -65,3 +65,26 @@ export function createListener(url: string, channel: string, onNotify: () => voi
     end: () => sql.end({ timeout: 5 }),
   };
 }
+
+/**
+ * Keeps `connections` pooled connections open (spec 16, budget incident 2026-11-22). The pool closes a connection
+ * after 20 idle seconds, so a quiet API paid a new TLS + SCRAM handshake to the database (~0.5 s measured) on the
+ * first request after every pause — the "cold" request. A cheap ping slightly more often than that keeps them open
+ * (about four tiny queries a minute per connection). Pings never throw; call the returned function to stop.
+ */
+export function keepPoolWarm(
+  ping: () => Promise<unknown>,
+  opts: { connections?: number; everyMs?: number } = {},
+): () => void {
+  const connections = Math.max(1, opts.connections ?? 2);
+  const everyMs = opts.everyMs ?? 15_000;
+  const round = () => {
+    for (let i = 0; i < connections; i++) void ping().catch(() => undefined);
+  };
+  round();
+  const timer = setInterval(round, everyMs);
+  timer.unref();
+  return () => {
+    clearInterval(timer);
+  };
+}
