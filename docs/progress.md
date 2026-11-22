@@ -4,6 +4,15 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Current status
 
+- **NOW (2026-11-22, evening): real catalogue + smart search.** Source `Desktop/autoparts/catalogue-v2` (user: latest
+  v2); scope (user): price-list brands only (Castrol, Gulf, Exide, Tata Green, KELVINN, CERAFENCE, ELVI), own photo
+  only → **219 products / 740 packs / 695 with MRP**; status of all 3,386 in `docs/catalogue/`. Merged locally:
+  2aef5cd smart search (0080), a5a65f1 catalogue groups + importer (0079, 0080 snapshot rebased), 72c656c RLS fix.
+  Gates green (shared 577, db 1000, api 569, web 1081). **Migrations 0079 + 0080 applied** to the real DB. Running:
+  MRP-without-offer display builder; Hindi translations of 140 descriptions (`--translations`). **Then:** merge, build
+  - measure-js, hindi-coverage admin, push, CI + deploy, ask the user once with the dry-run numbers, real import
+    (`--staff-user` super_admin, `--price-lists`, `--translations`), spot-check en/hi, EXPLAIN search, /shop perf.
+
 - **2026-11-22 (Smart search, builder B, branch worktree-agent-a2da6d50c0ba40914, not merged):** design item 4. Shared query understanding + vocabulary (`packages/shared/src/search`), migration **0080_search_synonyms** (table `search_synonyms` seeded, `products.search_compact` + trigram index, **not applied**, journal idx 80 so it can sit beside builder A's 0079), smart match and ranking in the listing (`repo/search-sql.ts`), `GET /v1/search/suggest` (+ `didYouMean`), admin synonym API + editor, shop combobox (lazy), demo parity, events `search_suggestion_selected` / `search_zero_results`. Spec 02 "Smart search". **Coordinator to wire:** merge migrations (renumber/rebase the 0080 snapshot after A's 0079), pass `product_ranges` into `routes/search.ts` (`rangeSuggester`) and swap `brandVisible` in `repo/search.ts` for the visibility predicate (`TODO(visibility)`), apply the migration, run `pnpm db:seed:demo` no change needed, measure JS budget on `/`, `/shop`, `/cart` after build, e2e on `/shop` typing.
 
 - **2026-11-22 (QA fixes, branch worktree-agent-ad06fd9fe190c9049, not merged):** audience-entry QA bugs 1, 3, 4, 5, 6, 7. Order again is a constant number of round trips with a bounded lock wait (409 `CART_BUSY`, spec 03); focus after admin revoke/restore/decide goes to a status line; staff deciding their own application see "ask another staff member" (en + hi); the order-again status line no longer doubles the full stop; admin trade "Parts bought" shows category labels; checkout says "GST details on your bill" (Q97 open). Bug 2 (mobile "For business") and info items not in this batch.
