@@ -141,8 +141,28 @@ export function layoutMocks(c: AuditCase): Mock[] {
           body: {
             layout: {
               order: custom
-                ? ['faq', 'trust', 'categories', 'products', 'route', 'service', 'workshops', 'partners']
-                : ['trust', 'categories', 'products', 'route', 'service', 'workshops', 'faq', 'partners'],
+                ? [
+                    'faq',
+                    'audiences',
+                    'trust',
+                    'categories',
+                    'products',
+                    'route',
+                    'service',
+                    'workshops',
+                    'partners',
+                  ]
+                : [
+                    'audiences',
+                    'trust',
+                    'categories',
+                    'products',
+                    'route',
+                    'service',
+                    'workshops',
+                    'faq',
+                    'partners',
+                  ],
               hidden: custom ? ['partners'] : [],
               featured: custom ? ['tyres', 'filters', 'batteries', 'evEssentials'] : null,
               emoji: custom ? { tyres: '🛞' } : {},

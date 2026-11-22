@@ -131,7 +131,7 @@ describe('home layout', () => {
   };
 
   it('defaults, saves with compare-and-set, audits, and a city override wins then falls back after reset', async () => {
-    expect((await getHomeLayout(t(), null)).order[0]).toBe('trust');
+    expect((await getHomeLayout(t(), null)).order[0]).toBe('audiences');
     const saved = await saveHomeLayout(t(), {
       cityId: null,
       layout,

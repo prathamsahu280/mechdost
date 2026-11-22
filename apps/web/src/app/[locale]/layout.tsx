@@ -15,7 +15,7 @@ import { Footer } from '@/components/site/footer';
 import { AnnouncementBar, Header } from '@/components/site/header';
 import { MobileTabBar } from '@/components/site/mobile-tab-bar';
 import { routing } from '@/i18n/routing';
-import { PRIMARY_NAV } from '@/lib/nav';
+import { BUSINESS_NAV, PRIMARY_NAV } from '@/lib/nav';
 import { site } from '@/lib/site';
 import { SITE_LAYOUT_SCRIPT } from '@/lib/site-layout';
 import { THEME_INIT_SCRIPT } from '@/lib/theme';
@@ -94,7 +94,16 @@ export default async function LocaleLayout({
   // next-intl stays on the server: client islands get localised hrefs and translated labels as props, so no
   // i18n runtime or message catalogue ships to the browser (spec 16 JS budget).
   const localised = (href: string) => localePath(href, locale);
-  const navItems = PRIMARY_NAV.map((item) => ({ ...item, href: localised(item.href), label: nav(item.key) }));
+  const navItems = [
+    ...PRIMARY_NAV.map((item) => ({ ...item, href: localised(item.href), label: nav(item.key) })),
+    // One header-only link (design 2026-11-22); the tab bar below stays at four.
+    {
+      key: BUSINESS_NAV.key,
+      href: localised(BUSINESS_NAV.href),
+      activePrefix: localised(BUSINESS_NAV.activePrefix),
+      label: nav('business'),
+    },
+  ];
   const tabItems = PRIMARY_NAV.map((item) => ({
     ...item,
     href: localised(item.href),
