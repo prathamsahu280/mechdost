@@ -1,6 +1,7 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import type { Context } from 'hono';
 import {
+  addSearchSynonym,
   createProduct,
   getAdminProduct,
   HIGHLIGHT_LEN,
@@ -8,7 +9,9 @@ import {
   importProducts,
   listAdminProducts,
   type NewProduct,
+  listSearchSynonyms,
   setProductAttributes,
+  setSearchSynonymActive,
   setProductStatus,
   setProductVehicleTypes,
   setVariantNetQuantity,
@@ -21,6 +24,11 @@ import {
   IMPORT_MAX_CSV_CHARS,
   type ImportRowError,
 } from '@mechdost/shared/catalogue-import';
+import {
+  NewSearchSynonymSchema,
+  SearchSynonymSchema,
+  SetSynonymActiveSchema,
+} from '@mechdost/shared/search-api';
 import { NET_QTY_MAX, NET_UNITS } from '@mechdost/shared/product-attributes';
 import { can } from '@mechdost/shared/rbac';
 import { PRODUCT_STATES } from '@mechdost/shared/state';
@@ -366,6 +374,59 @@ function mayPublish(c: Context<AppEnv>, publish: boolean | undefined): boolean {
   throw Forbidden();
 }
 
+const synonymList = createRoute({
+  method: 'get',
+  path: '/admin/catalogue/search-synonyms',
+  tags: ['admin'],
+  summary: 'The search vocabulary: synonyms, category and vehicle words (spec 02 Smart search)',
+  security: [{ bearerAuth: [] }],
+  responses: {
+    200: json(z.object({ items: z.array(SearchSynonymSchema) }), 'All entries'),
+    ...errorResponses,
+  },
+});
+
+const synonymCreate = createRoute({
+  method: 'post',
+  path: '/admin/catalogue/search-synonyms',
+  tags: ['admin'],
+  summary: 'Add a search word (audited; takes effect within 30 seconds on every instance)',
+  security: [{ bearerAuth: [] }],
+  request: {
+    body: {
+      required: true,
+      content: { 'application/json': { schema: NewSearchSynonymSchema } },
+    },
+  },
+  responses: {
+    201: json(SearchSynonymSchema, 'Added'),
+    409: json(ErrorSchema, 'Already in the list'),
+    ...errorResponses,
+  },
+});
+
+const synonymActive = createRoute({
+  method: 'patch',
+  path: '/admin/catalogue/search-synonyms/{id}',
+  tags: ['admin'],
+  summary: 'Switch a search word on or off (history kept; audited)',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: z.object({
+      id: z.uuid().openapi({ param: { name: 'id', in: 'path' } }),
+    }),
+    body: {
+      required: true,
+      content: { 'application/json': { schema: SetSynonymActiveSchema } },
+    },
+  },
+  responses: {
+    200: json(z.object({ version: z.number().int(), active: z.boolean() }), 'Saved'),
+    ...conflict,
+    ...errorResponses,
+  },
+});
+
 export function adminCatalogueRoutes(deps: AppDeps, cache: SessionCache) {
   const app = new OpenAPIHono<AppEnv>({ defaultHook: validationHook });
   const prefix = '/admin/catalogue/*'; // one pattern per prefix (L54)
@@ -382,6 +443,22 @@ export function adminCatalogueRoutes(deps: AppDeps, cache: SessionCache) {
   app.route('/', productPhotoAdminRoutes(deps));
 
   return app
+    .openapi(synonymList, async (c) => c.json({ items: await listSearchSynonyms(deps.db) }, 200))
+    .openapi(synonymCreate, async (c) => {
+      const b = c.req.valid('json');
+      const row = await addSearchSynonym(deps.db, { ...b, staffUserId: c.get('auth').user.id });
+      return c.json(row, 201);
+    })
+    .openapi(synonymActive, async (c) => {
+      const b = c.req.valid('json');
+      const r = await setSearchSynonymActive(deps.db, {
+        id: c.req.valid('param').id,
+        expectedVersion: b.version,
+        active: b.active,
+        staffUserId: c.get('auth').user.id,
+      });
+      return c.json(r, 200);
+    })
     .openapi(create, async (c) => {
       const { publish, ...product } = c.req.valid('json');
       const r = await createProduct(deps.db, {

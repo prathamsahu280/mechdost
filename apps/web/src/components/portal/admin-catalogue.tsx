@@ -10,6 +10,11 @@ const CatalogueEditor = dynamic(() => import('./admin-catalogue-editor').then((m
   ssr: false,
 });
 
+/** The search vocabulary editor (spec 02 "Smart search"): another lazy chunk, real backend only. */
+const SearchSynonyms = dynamic(() => import('./admin-search-synonyms').then((m) => m.AdminSearchSynonyms), {
+  ssr: false,
+});
+
 /**
  * Admin → Catalogue (plan 2026-11-13 admin catalogue + PIN prices, Task 5; spec 08): product texts in English and
  * Hindi, vehicle fit, pack sizes and customer prices per city and PIN. It edits the real catalogue through the API,
@@ -26,7 +31,10 @@ export function AdminCatalogue() {
         <p className="mt-1 text-sm text-muted">{t('cat_intro')}</p>
       </div>
       {AUTH_MODE === 'firebase' ? (
-        <CatalogueEditor />
+        <>
+          <CatalogueEditor />
+          <SearchSynonyms />
+        </>
       ) : (
         <p className={`${portalCard} text-sm font-bold text-ink`}>{t('cat_demoNotice')}</p>
       )}

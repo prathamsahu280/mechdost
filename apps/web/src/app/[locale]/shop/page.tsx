@@ -7,7 +7,7 @@ import { ClientMessages } from '@/components/ui/client-messages';
 import { Container, PageIntro } from '@/components/ui/page-intro';
 import { CATEGORY_SLUGS, categoryFromSlug, DEMO_PRODUCTS, type SortKey } from '@/demo/catalogue';
 import type { Locale } from '@/i18n/routing';
-import { fetchCataloguePage } from '@/lib/catalogue/api-source';
+import { fetchCataloguePage, fetchDidYouMean } from '@/lib/catalogue/api-source';
 import { demoCard } from '@/lib/catalogue/demo-source';
 import type { CardView } from '@/lib/catalogue/view';
 import { DATA_MODE } from '@/lib/data-mode';
@@ -113,7 +113,15 @@ export default async function ShopPage({ searchParams }: Props) {
       if (!cursor) break;
     }
     cards = Object.fromEntries(items.map((p) => [p.slug, <ProductCard key={p.slug} product={p} />]));
-    server = { query, pages, slugs: items.map((p) => p.slug), nextCursor: cursor, loadMore: loadMoreCards };
+    const didYouMean = items.length === 0 && query.q ? await fetchDidYouMean(query.q, locale) : null;
+    server = {
+      query,
+      pages,
+      slugs: items.map((p) => p.slug),
+      nextCursor: cursor,
+      loadMore: loadMoreCards,
+      didYouMean,
+    };
   } else {
     cards = Object.fromEntries(
       DEMO_PRODUCTS.map((p) => [p.slug, <ProductCard key={p.slug} product={demoCard(p, locale)} />]),

@@ -23,6 +23,7 @@ import { adminErrorRoutes } from './routes/admin-errors';
 import { assistantRoutes } from './routes/assistant';
 import { authRoutes } from './routes/auth';
 import { catalogueRoutes } from './routes/catalogue';
+import { searchRoutes } from './routes/search';
 import { adminRefundRoutes } from './routes/admin-refunds';
 import { paymentRoutes, razorpayWebhookRoutes } from './routes/payments';
 import { checkoutRoutes } from './routes/checkout';
@@ -114,6 +115,7 @@ export function createApp(deps: AppDeps) {
   v1.route('/', noticeRoutes(deps, sessions));
   v1.route('/', assistantRoutes(deps));
   v1.route('/', catalogueRoutes(deps));
+  v1.route('/', searchRoutes(deps));
   v1.route('/', contentRoutes(deps));
   v1.route('/', siteConfigPublicRoutes(deps));
   v1.route('/', siteConfigAdminRoutes(deps, sessions));

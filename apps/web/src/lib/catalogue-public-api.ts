@@ -1,3 +1,4 @@
+import { SuggestResponseSchema, type SuggestResponse } from '@mechdost/shared/search-api';
 import {
   CataloguePageSchema,
   CATALOGUE_SLUG_RE,
@@ -99,4 +100,25 @@ export async function productVariants(
       })),
     },
   };
+}
+
+/** Suggestions for the words typed (header and shop search); answers are cached 60 s by the API. */
+export async function suggestSearch(
+  q: string,
+  locale: string,
+  signal?: AbortSignal,
+): Promise<PublicResult<SuggestResponse>> {
+  if (!API) return { ok: false, code: 'UNAVAILABLE' };
+  const url = new URL(`${API}/v1/search/suggest`);
+  url.searchParams.set('q', q.trim().slice(0, 80));
+  url.searchParams.set('locale', locale === 'hi' ? 'hi' : 'en');
+  let res: Response;
+  try {
+    res = await fetch(url.toString(), signal ? { signal } : {});
+  } catch {
+    return { ok: false, code: 'NETWORK' };
+  }
+  if (!res.ok) return { ok: false, code: `HTTP_${String(res.status)}` };
+  const parsed = SuggestResponseSchema.safeParse(await res.json().catch(() => null));
+  return parsed.success ? { ok: true, data: parsed.data } : { ok: false, code: 'BAD_RESPONSE' };
 }

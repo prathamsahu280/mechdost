@@ -41,6 +41,8 @@
     "./catalogue": "./src/catalogue.ts",
     "./catalogue-import": "./src/catalogue-import.ts",
     "./vehicles": "./src/vehicles.ts",
+    "./search": "./src/search/index.ts",
+    "./search-api": "./src/search-api.ts",
     "./business": "./src/business.ts",
     "./business-codes": "./src/business-codes.ts",
     "./business-applications": "./src/business-applications.ts",
