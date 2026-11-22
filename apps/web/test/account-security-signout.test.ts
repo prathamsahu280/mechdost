@@ -68,26 +68,38 @@ describe('Profile → Security', () => {
   });
 });
 
-describe('header Sign out', () => {
-  const link = src('components/auth/account-link.tsx');
+/**
+ * Sign out moved into the account menu (v4 header, user-approved 2026-11-23): the standalone coloured header button is
+ * gone; "Sign out" is the last row of the menu, in the error colour.
+ */
+describe('header Sign out (in the account menu)', () => {
+  const menu = src('components/auth/account-menu.tsx');
+  const panel = src('components/auth/account-menu-panel.tsx');
   it('loads the sign-out code only on the click', () => {
-    expect(link).toMatch(/import\('@\/lib\/auth\/sign-out'\)/);
-    expect(link).not.toMatch(/from '@\/lib\/auth\/sign-out'/);
-    expect(link).not.toMatch(/from '@\/demo\/session'/);
-    expect(link).not.toMatch(/from 'next\/dynamic'/);
+    expect(panel).toMatch(/import\('@\/lib\/auth\/sign-out'\)/);
+    for (const s of [menu, panel]) {
+      expect(s).not.toMatch(/from '@\/lib\/auth\/sign-out'/);
+      expect(s).not.toMatch(/from '@\/demo\/session'/);
+      expect(s).not.toMatch(/from 'next\/dynamic'/);
+    }
   });
-  it('is a coloured 44 px button with text from sm, an accessible name before, and goes home with a status', () => {
-    expect(link).toContain('min-h-11');
-    expect(link).toContain('bg-accent-soft');
-    expect(link).toContain('text-accent-soft-text');
-    expect(link).toContain('sr-only sm:not-sr-only nav:sr-only xl:not-sr-only');
-    expect(link).toContain('title={signOut}');
-    expect(link).toContain('role="status"');
-    expect(link).toMatch(/router\.push\(prefix \|\| '\/'\)/);
+  it('is the last menu row, a menuitem in the error colour with a 44 px target, that goes home and says so', () => {
+    const row = panel.slice(panel.indexOf('data-track="header_sign_out"'));
+    expect(row).toContain('role="menuitem"');
+    expect(row).toContain('text-error');
+    expect(panel).toContain('min-h-11');
+    expect(row).toContain('copy.signOut');
+    expect(row).toMatch(/router\.push\(prefix \|\| '\/'\)/);
+    expect(menu).toContain('role="status"');
+    expect(menu).toContain('setSaid(true)');
   });
   it('the header passes the labels from the server', () => {
     const header = src('components/site/header.tsx');
-    expect(header).toContain("signOut={auth('signOut')}");
-    expect(header).toContain("signedOut={auth('signedOutStatus')}");
+    expect(header).toContain("signOut: auth('signOut')");
+    expect(header).toContain("signedOut: auth('signedOutStatus')");
+  });
+  it('the old standalone header Sign out button is gone', () => {
+    expect(src('components/site/header.tsx')).not.toContain('header_sign_out');
+    expect(menu).not.toContain('header_sign_out');
   });
 });

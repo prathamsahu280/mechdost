@@ -212,6 +212,15 @@ export async function prepare(page: Page, c: AuditCase): Promise<string[]> {
     } else if (c.code === 'SHOP-POPOVER') {
       const infos = page.locator('main article button[data-track^="product_info_"]');
       await (open === 'first' ? infos.first() : infos.nth(Math.max(0, (await infos.count()) - 1))).click();
+    } else if (c.code === 'CHR-ACCOUNT-MENU') {
+      await page.locator('header [data-track="header_account"]').click();
+      // The menu is a lazy chunk: wait for it, so the audit never measures the gap between click and mount.
+      await page.locator('header [role="menu"]').waitFor({ state: 'visible' });
+    } else if (c.code === 'CHR-SEARCH') {
+      // The desktop pill from 1024 px, the full-width bar under it; both open the same palette.
+      const pill = page.locator('[data-track="header_search"]');
+      await ((await pill.isVisible()) ? pill : page.locator('[data-track="header_search_phone"]')).click();
+      await page.locator('[role="dialog"][aria-modal="true"]').waitFor({ state: 'visible' });
     } else if (c.code === 'CHR-ASSIST') {
       await page.locator('.assistant-launcher').click();
       // The panel is a lazy chunk: wait for it, so the audit never measures the gap between click and mount.

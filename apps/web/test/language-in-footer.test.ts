@@ -16,6 +16,14 @@ describe('language switch lives in the footer (user 2026-11-22: "remove the hind
   });
 });
 
+describe('the account menu also switches language (v4 header, 2026-11-23)', () => {
+  it('has a language menu item that loads the other language as a full page', () => {
+    const panel = src('components/auth/account-menu-panel.tsx');
+    expect(panel).toContain('data-track={`language_${target}`}');
+    expect(panel).toContain('window.location.assign(languageHref');
+  });
+});
+
 describe('partner page passes {region} to every message that uses it (CI 2026-11-23: /hi/partners showed "undefined")', () => {
   it('points and steps get the region value', () => {
     const page = src('app/[locale]/partners/page.tsx');

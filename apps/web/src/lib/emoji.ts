@@ -1,19 +1,10 @@
 import type { CategoryKey } from '@/demo/catalogue';
-import type { NavKey } from './nav';
 
 /**
- * Decorative emoji used in navigation and category UI (user request 2026-11-01: "add some emojis to the top
- * bar, the cart button etc."). Always rendered with `aria-hidden` next to a real text label, so screen readers
- * never announce them, and they need no translation. Admin-managed categories carry their own emoji in Phase 1.
+ * Decorative emoji for category tiles and a few in-page marks. The site chrome (header, footer, bottom dock) uses lucide
+ * line icons instead (decision 2026-11-23, guard test/chrome-v4.test.ts). Always rendered with `aria-hidden` next to a
+ * real text label, so screen readers never announce them, and they need no translation.
  */
-export const NAV_EMOJI: Record<NavKey, string> = {
-  home: '🏠',
-  shop: '🛍️',
-  workshops: '🔧',
-  vehicles: '🚗',
-  business: '🤝',
-};
-
 export const CATEGORY_EMOJI: Record<CategoryKey, string> = {
   tyres: '🛞',
   lubricants: '🛢️',
@@ -28,13 +19,5 @@ export const CATEGORY_EMOJI: Record<CategoryKey, string> = {
 
 export const UI_EMOJI = {
   cart: '🛒',
-  account: '👤',
-  signOut: '🚪',
-  bell: '🔔',
-  language: '🌐',
-  dark: '🌙',
-  light: '☀️',
-  orders: '📦',
-  workshops: '🔧',
   all: '🧾',
 } as const;

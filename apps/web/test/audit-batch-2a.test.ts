@@ -66,9 +66,10 @@ describe('copy has no English words on /hi (API-ACC-SUPPORT, API-WS-HOMEJOB)', (
 });
 
 describe('signed-in header at 480-559 px (audit: page scrolled sideways by 15 px en, 31 px hi)', () => {
-  it('the cart label waits for 560 px; the signed-in bell takes the room until then', () => {
+  it('the cart label waits for 640 px (v4: an icon button until then); the signed-in bell takes the room', () => {
     const pill = src('components/commerce/cart-pill.tsx');
-    expect(pill).toContain('min-[560px]:not-sr-only');
+    expect(pill).toContain('sr-only sm:not-sr-only');
     expect(pill).not.toContain('min-[480px]:not-sr-only');
+    expect(pill).not.toContain('min-[560px]:not-sr-only');
   });
 });

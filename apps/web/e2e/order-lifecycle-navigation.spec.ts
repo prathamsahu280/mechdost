@@ -42,8 +42,9 @@ async function signIn(page: Page, phone: string) {
 /** Sign-out lives on the account profile and the portal pages: go there first. */
 async function signOut(page: Page, phone: string) {
   await page.goto(phone === CUSTOMER ? '/account/profile' : phone === ADMIN ? '/admin' : '/partner/shop');
-  await page.getByRole('button', { name: 'Sign out' }).first().click();
-  await expect(page.getByRole('button', { name: 'Sign out' })).toHaveCount(0);
+  await page.locator('[data-track="header_account"]').click();
+  await page.getByRole('menuitem', { name: 'Sign out' }).click();
+  await expect(page.getByRole('menuitem', { name: 'Sign out' })).toHaveCount(0);
 }
 
 /** Opens a page the way a person would land on it and checks it rendered cleanly. */

@@ -20,7 +20,8 @@ async function signIn(page: Page, phone: string, next: string) {
 /** Customers sign out from Account → Profile; staff from the portal header. */
 async function signOut(page: Page, from: 'account' | 'portal') {
   if (from === 'account') await page.goto('/account/profile');
-  await page.getByRole('button', { name: 'Sign out' }).first().click();
+  await page.locator('[data-track="header_account"]').click();
+  await page.getByRole('menuitem', { name: 'Sign out' }).click();
 }
 
 test('a faulty-part request goes from the order page to the inbox and back', async ({ page }) => {

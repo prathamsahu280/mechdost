@@ -57,7 +57,8 @@ test('block → checkout refused → lift → order goes through; full block ref
   await expect(row.getByText(/Can browse and ask support, cannot order/)).toBeVisible();
 
   // Signed out, typing the blocked customer's number still hits the block.
-  await page.getByRole('button', { name: 'Sign out' }).first().click();
+  await page.locator('[data-track="header_account"]').click();
+  await page.getByRole('menuitem', { name: 'Sign out' }).click();
   await tryCheckout(page);
   await expect(
     page.getByRole('alert').filter({ hasText: "This account can't place orders right now." }),
@@ -85,7 +86,8 @@ test('block → checkout refused → lift → order goes through; full block ref
   await ravi.getByLabel('Block', { exact: true }).selectOption('full');
   await ravi.getByRole('button', { name: 'Block Ravi Sahu' }).click();
   await expect(ravi.getByText('No sign-in', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Sign out' }).first().click();
+  await page.locator('[data-track="header_account"]').click();
+  await page.getByRole('menuitem', { name: 'Sign out' }).click();
   await signIn(page, CUSTOMER);
   // Form-level message: on screen above the button and read out by the alert region (hence first()).
   await expect(page.getByText("This account can't sign in right now.").first()).toBeVisible();

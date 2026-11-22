@@ -2,9 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState, type ComponentType } from 'react';
+import { useEffect, useState, type ComponentType, type ReactNode } from 'react';
 import { useCart } from '@/demo/store';
-import { UI_EMOJI } from '@/lib/emoji';
 import { isPortalPath } from '@/lib/portal-path';
 
 /**
@@ -14,10 +13,13 @@ import { isPortalPath } from '@/lib/portal-path';
 export function CartPill({
   href,
   label,
+  icon,
   countText,
 }: {
   href: string;
   label: string;
+  /** The cart icon, rendered by the server (no icon code in the browser bundle). */
+  icon: ReactNode;
   countText: { zero: string; one: string; other: string };
 }) {
   const lines = useCart();
@@ -38,18 +40,19 @@ export function CartPill({
         href={href}
         data-track="header_cart"
         title={label}
-        className="press inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-pill border border-line-card bg-pill px-2.5 font-bold text-[13px] text-ink min-[440px]:px-4"
+        // v4 (decision 2026-11-23): a quiet icon button on phones, the navy cart button (accent in dark mode) from 640 px.
+        className="press relative inline-flex size-10 shrink-0 items-center justify-center rounded-xl text-ink hover:bg-pill sm:size-auto sm:h-10 sm:gap-2.5 sm:bg-cart sm:pr-2 sm:pl-3.5 sm:text-[14px] sm:font-bold sm:text-white sm:shadow-[0_8px_18px_-8px_rgb(16_31_52/0.7)] sm:hover:bg-cart sm:hover:brightness-110"
       >
-        <span aria-hidden="true" className="text-[18px] leading-none">
-          {UI_EMOJI.cart}
+        <span aria-hidden="true" className="flex">
+          {icon}
         </span>
-        <span className="sr-only min-[560px]:not-sr-only nav:sr-only xl:not-sr-only">{label}</span>
+        <span className="sr-only sm:not-sr-only">{label}</span>
         <span
           aria-hidden="true"
-          // Fixed box (user 2026-11-22: "the top bar keeps moving with the cart items"): same width and padding
-          // for 0, 1, 12 or 99+, only the colours change, so the header never reflows when the count changes.
-          className={`inline-block w-[1.75rem] rounded-full px-0.5 text-center font-bold tabular-nums ${
-            count > 0 ? 'bg-accent-button text-white' : 'text-accent-soft-text'
+          // Fixed box (user 2026-11-22: "the top bar keeps moving with the cart items"): the same size for 0, 1, 12 or
+          // 99+, so the header never reflows when the count changes. On phones it is a small badge on the icon.
+          className={`grid size-[18px] place-items-center rounded-full bg-cart-badge text-[9px] font-extrabold text-cart-badge-text tabular-nums max-sm:absolute max-sm:top-0 max-sm:right-0 sm:size-6 sm:rounded-lg sm:text-xs ${
+            count > 0 ? '' : 'max-sm:invisible'
           }`}
         >
           {count > 99 ? '99+' : count}

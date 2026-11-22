@@ -329,7 +329,7 @@ const NAVIGATION: readonly ComponentDef[] = [
   {
     code: 'NAV-TABBAR',
     page: 'Navigation',
-    component: 'Bottom tab bar (under 1024 px): current tab, long Hindi labels, every role, walk',
+    component: 'Floating dock (under 1024 px): current tab, long Hindi labels, every role, walk',
     path: (r) => String(r.route),
     scope: 'nav.fixed',
     strategy: 'cross',
@@ -429,7 +429,8 @@ export const COMPONENTS: readonly ComponentDef[] = [
   {
     code: 'CHR-HEADER',
     page: 'Chrome',
-    component: 'Header (brand, nav, search, language, theme, account, cart pill)',
+    component:
+      'Header (v4: logo, segmented nav, search pill, bell, account avatar, cart button; compact bar and search bar on phones)',
     path: (r) => String(r.route),
     scope: 'header.sticky',
     strategy: 'cross',
@@ -447,9 +448,31 @@ export const COMPONENTS: readonly ComponentDef[] = [
     core: coreAt([320, 390, 1024]),
   },
   {
+    code: 'CHR-ACCOUNT-MENU',
+    page: 'Chrome',
+    component:
+      'Account menu behind the header avatar (v4): open, every row, dark-mode switch, language, Sign out in the error colour; portal roles get their portal link',
+    path: '/',
+    scope: 'header [role="menu"]',
+    strategy: 'pairwise',
+    params: [...env, { name: 'auth', values: ['customer', 'shop'] }, { name: 'open', values: ['first'] }],
+    sweep: 8,
+  },
+  {
+    code: 'CHR-SEARCH',
+    page: 'Chrome',
+    component:
+      'Search palette behind the header search pill (v4): popular searches and categories, close button, Escape, focus trap',
+    path: '/',
+    scope: '[role="dialog"][aria-modal="true"]',
+    strategy: 'pairwise',
+    params: [...env, authOutIn, { name: 'open', values: ['first'] }],
+    sweep: 8,
+  },
+  {
     code: 'CHR-TABBAR',
     page: 'Chrome',
-    component: 'Bottom tab bar (under 1024 px)',
+    component: 'Floating dock (v4, under 1024 px)',
     path: (r) => String(r.route),
     scope: 'nav.fixed',
     strategy: 'pairwise',

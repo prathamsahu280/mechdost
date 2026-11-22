@@ -65,7 +65,8 @@
   "language": {
     "label": "Language",
     "other": "हिंदी",
-    "otherName": "Hindi"
+    "otherName": "Hindi",
+    "switch": "हिंदी में देखें"
   },
   "home": {
     "hero": {
@@ -5801,5 +5802,35 @@
     "admin_done_restored": "Trade account restored.",
     "admin_err_stale": "Someone else changed this. Close it and open it again.",
     "admin_err_generic": "Something went wrong. Try again."
+  },
+  "chrome": {
+    "searchTrigger": "Search parts…",
+    "searchOpenLabel": "Search parts (press /)",
+    "searchPhone": "Search parts, oil, batteries…",
+    "searchTitle": "Search",
+    "searchPlaceholder": "Search parts, brands, tyre size, part number…",
+    "searchClose": "Close search",
+    "searchClear": "Clear",
+    "searchPopular": "Popular searches",
+    "searchCategories": "Categories",
+    "searchSuggestions": "Suggestions",
+    "searchCount": "{count} suggestions",
+    "searchSeeAll": "See all results for “{query}”",
+    "searchEsc": "Esc",
+    "searchHint": "Type at least 2 letters for suggestions, or press Enter to search.",
+    "popular1": "20W-40 bike oil",
+    "popular2": "Exide car battery",
+    "popular3": "90/90-12 tyre",
+    "popular4": "Brake pads",
+    "popular5": "बैटरी",
+    "accountMenu": "Account menu",
+    "menuProfile": "Profile & security",
+    "menuOrders": "My orders",
+    "menuVehicles": "My vehicles",
+    "menuSaved": "Saved items",
+    "menuPortal": "Open your portal",
+    "menuDark": "Dark mode",
+    "notificationsTitle": "Notifications",
+    "howPartnering": "How partnering works"
   }
 }

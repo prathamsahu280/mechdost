@@ -123,9 +123,9 @@ describe('first-load chunk guards (JS budget, spec 16; 2026-11-16)', () => {
   it('service-views (in the home page graph) does not import the shared IST helpers', () => {
     expect(read('lib/service-views.ts')).not.toMatch(/from '@mechdost\/shared\/time'/);
   });
-  it('the header account link takes its avatar helper from session-state, not a module of its own', () => {
-    expect(read('components/auth/account-link.tsx')).toMatch(
-      /avatarMark, homeFor, useSession \} from '@\/demo\/session-state'/,
+  it('the header account menu takes its avatar helper from session-state, not a module of its own', () => {
+    expect(read('components/auth/account-menu.tsx')).toMatch(
+      /avatarMark, useSession, type DemoRole \} from '@\/demo\/session-state'/,
     );
   });
 });

@@ -65,7 +65,8 @@
   "language": {
     "label": "भाषा",
     "other": "English",
-    "otherName": "English"
+    "otherName": "English",
+    "switch": "View in English"
   },
   "home": {
     "hero": {
@@ -5801,5 +5802,35 @@
     "admin_done_restored": "ट्रेड खाता फिर से चालू किया गया।",
     "admin_err_stale": "किसी और ने इसे बदल दिया है। इसे बंद करके फिर खोलें।",
     "admin_err_generic": "कुछ गड़बड़ हुई। फिर कोशिश करें।"
+  },
+  "chrome": {
+    "searchTrigger": "पार्ट्स खोजें…",
+    "searchOpenLabel": "पार्ट्स खोजें (/ दबाएँ)",
+    "searchPhone": "पार्ट्स, ऑयल, बैटरी खोजें…",
+    "searchTitle": "खोजें",
+    "searchPlaceholder": "पार्ट्स, ब्रांड, टायर साइज़, पार्ट नंबर खोजें…",
+    "searchClose": "खोज बंद करें",
+    "searchClear": "मिटाएँ",
+    "searchPopular": "लोकप्रिय खोजें",
+    "searchCategories": "श्रेणियाँ",
+    "searchSuggestions": "सुझाव",
+    "searchCount": "{count} सुझाव",
+    "searchSeeAll": "“{query}” के सभी नतीजे देखें",
+    "searchEsc": "Esc",
+    "searchHint": "सुझावों के लिए कम से कम 2 अक्षर लिखें, या खोजने के लिए Enter दबाएँ।",
+    "popular1": "20W-40 बाइक ऑयल",
+    "popular2": "Exide कार बैटरी",
+    "popular3": "90/90-12 टायर",
+    "popular4": "ब्रेक पैड",
+    "popular5": "बैटरी",
+    "accountMenu": "अकाउंट मेन्यू",
+    "menuProfile": "प्रोफ़ाइल और सुरक्षा",
+    "menuOrders": "मेरे ऑर्डर",
+    "menuVehicles": "मेरे वाहन",
+    "menuSaved": "सहेजे गए आइटम",
+    "menuPortal": "अपना पोर्टल खोलें",
+    "menuDark": "डार्क मोड",
+    "notificationsTitle": "नोटिफ़िकेशन",
+    "howPartnering": "पार्टनरशिप कैसे काम करती है"
   }
 }

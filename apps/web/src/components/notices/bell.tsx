@@ -39,7 +39,7 @@ function RealBell({ copy, locale }: { copy: BellCopy; locale: string }) {
       {Controller ? (
         <Controller copy={copy} prefix={locale === 'hi' ? '/hi' : ''} locale={locale} role={session.role} />
       ) : (
-        <span aria-hidden="true" className="inline-block size-10 min-[440px]:size-11" />
+        <span aria-hidden="true" className="inline-block size-10" />
       )}
     </span>
   );

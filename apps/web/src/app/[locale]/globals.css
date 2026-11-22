@@ -10,8 +10,8 @@
 
   body {
     @apply bg-bg font-sans text-ink antialiased;
-    /* room for the fixed mobile tab bar */
-    padding-bottom: calc(76px + env(safe-area-inset-bottom));
+    /* room for the floating dock (64px tall, 12px above the safe area) */
+    padding-bottom: calc(92px + env(safe-area-inset-bottom));
   }
 
   @media (min-width: 1024px) {
@@ -192,6 +192,46 @@
   :root:not([data-theme='light']) .brand-logo-dark {
     display: block;
   }
+}
+
+/*
+ * v4 header (decision 2026-11-23). The bar shrinks from 64 to 56px (and its corners tighten) over the first 48px of page
+ * scroll, driven by the scroll position itself: no scroll listener, no jank, nothing under reduced motion. Browsers
+ * without scroll-driven animations keep the full-size bar. The outer <header> has a fixed height, so the page never
+ * reflows while the bar shrinks.
+ */
+@keyframes header-shrink {
+  to {
+    height: 56px;
+    border-radius: 16px;
+  }
+}
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .header-bar {
+      animation: header-shrink linear both;
+      animation-timeline: scroll(root block);
+      animation-range: 0 48px;
+    }
+  }
+}
+
+/* The current page in the segmented nav: a white chip with a small orange dashed tread under the label. */
+.nav-chip-active {
+  box-shadow:
+    0 1px 2px #101f341f,
+    0 4px 12px -6px #101f3440;
+}
+.nav-chip-active::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 3px;
+  width: 18px;
+  height: 3px;
+  margin-left: -9px;
+  border-radius: 3px;
+  background: repeating-linear-gradient(90deg, var(--color-accent) 0 4px, transparent 4px 6px);
 }
 
 /* Theme icon swap without JS (the toggle's state is the <html data-theme> / system preference). */
