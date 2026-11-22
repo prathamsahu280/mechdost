@@ -11,6 +11,7 @@ import { fetchCataloguePage, fetchDidYouMean } from '@/lib/catalogue/api-source'
 import { demoCard } from '@/lib/catalogue/demo-source';
 import type { CardView } from '@/lib/catalogue/view';
 import { DATA_MODE } from '@/lib/data-mode';
+import { MAX_LIST_PAGES } from '@/lib/catalogue/load-more';
 import { loadMoreCards, type ListingQuery } from './actions';
 import { alternatesFor, openGraphFor } from '@/lib/seo';
 import { site } from '@/lib/site';
@@ -68,7 +69,6 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
  * API mode: the API filters, searches and pages; `?pages=N` (set by "Load more", at most 10) renders that many
  * pages, so Back from a product returns to the whole list at the same place (final review 2026-11-10).
  */
-const MAX_PAGES = 10;
 export default async function ShopPage({ searchParams }: Props) {
   const [t, footer, wa, locale] = await Promise.all([
     getTranslations('pages.shop'),
@@ -96,7 +96,7 @@ export default async function ShopPage({ searchParams }: Props) {
       sort: sort === 'popular' ? null : sort,
       vehicle: initial.vehicle ?? null,
     };
-    const pages = Math.min(MAX_PAGES, Math.max(1, Math.trunc(Number(first(sp.pages))) || 1));
+    const pages = Math.min(MAX_LIST_PAGES, Math.max(1, Math.trunc(Number(first(sp.pages))) || 1));
     const items: CardView[] = [];
     let cursor: string | null = null;
     for (let n = 0; n < pages; n++) {

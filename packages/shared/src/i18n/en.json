@@ -463,6 +463,7 @@
     "loadMore": "Load more products",
     "loadingMore": "Loading more products…",
     "loadedMore": "{count, plural, one {# more product loaded} other {# more products loaded}}",
+    "endOfList": "You have seen all {count, plural, one {# product} other {# products}}.",
     "loadMoreFailed": "Could not load more products. Try again.",
     "loadFailed": "Unable to load the product catalogue right now. Try again, or contact MechDost on 7978776551.",
     "tryAgain": "Try again",

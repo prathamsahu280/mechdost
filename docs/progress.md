@@ -614,3 +614,7 @@ Built per design `2026-11-22-real-catalogue-and-smart-search-design.md` (everyth
 ## 2026-11-22 - MRP shown without a shop offer (own worktree branch, not merged, no migration)
 
 `mrpFromPaise`/`mrpVaries` on the public card and product DTO (db `listCatalogue`/`getCatalogueProduct`, shared schema); web card, product page and compare show "MRP ₹x" / "MRP from ₹x" (en + hi `catalogue.mrpFrom`) when there is no offer; still no add to cart, no JSON-LD offers. Spec 02 updated. Tests: db catalogue-groups 14, web full 1084, shared, api catalogue. Not run: Playwright, next build.
+
+## 2026-11-22 - Shop Load more fix (own worktree branch, not merged)
+
+Cause: after each page the client called `router.replace('?pages=N')`, so the server re-rendered and re-sent all N pages (RSC 370 KB at 5 pages, ~1 s per click). Fix: `history.replaceState` only; helpers `appendFresh`/`withPages` in `lib/catalogue/load-more.ts`; `aria-busy` on list and button, end-of-list message (`catalogue.endOfList`, en+hi), focus with `preventScroll`. Tests `apps/web/test/load-more.test.ts`. Spec 02 updated.
