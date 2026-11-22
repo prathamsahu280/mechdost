@@ -9,6 +9,7 @@ import { ProductInfoButton } from './product-info-button';
 import { ProductPhoto } from './product-photo';
 import { ProductVisual } from './product-visual';
 import { UnitPrice } from './unit-price';
+import { mrpOnly } from '@/lib/catalogue/mrp-only';
 import { WishlistHeartLazy } from './wishlist-lazy';
 
 /**
@@ -34,6 +35,8 @@ export function ProductCard({
   const r = useTranslations('reviews');
   const w = useTranslations('storefront');
   const price = product.price;
+  const mrp = mrpOnly(product);
+  const mrpLabel = mrp ? t(mrp.key, { price: formatPrice(mrp.paise) }) : null;
   const off = price ? discountPercent(price.pricePaise, price.mrpPaise ?? undefined) : 0;
   const rating = product.rating && product.rating.count > 0 ? product.rating : null;
   const categoryName = product.category.name ?? (product.category.key ? c(product.category.key) : null);
@@ -132,6 +135,8 @@ export function ProductCard({
                 </>
               ) : null}
             </>
+          ) : mrpLabel ? (
+            <span className="text-sm font-semibold text-muted">{mrpLabel}</span>
           ) : null}
         </div>
         <div className="mt-0.5 px-1 text-xs">

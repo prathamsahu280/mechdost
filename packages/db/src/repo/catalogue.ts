@@ -69,6 +69,10 @@ export interface CatalogueCard {
   highlights: string[];
   /** Vehicle types the product is for, in 2W/3W/4W order; empty = fitment not listed (decision 2026-11-12). */
   vehicleTypes: VehicleType[];
+  /** Lowest MRP among active packs, with or without a shop offer (spec 02); null = no MRP. */
+  mrpFromPaise: number | null;
+  /** True when the packs have different MRPs ("MRP from"). */
+  mrpVaries: boolean;
   offer: CatalogueOffer | null;
   rating: { avg: number; count: number } | null;
   photo: CataloguePhoto | null;
@@ -197,6 +201,8 @@ interface CardRow {
   price: unknown;
   sku: string | null;
   mrp: unknown;
+  mrp_from: unknown;
+  mrp_varies: unknown;
   net_qty: unknown;
   net_unit: string | null;
   shipping: unknown;
@@ -224,6 +230,8 @@ function toCard(r: CardRow, locale: CatalogueLocale): CatalogueCard {
     specSummary: r.spec_summary === null ? null : localized(r.spec_summary, r.spec_summary_hi, locale),
     highlights: locale === 'hi' && highlightsHi.length > 0 ? highlightsHi : (r.highlights ?? []),
     vehicleTypes: vehicleTypesOf(r.vehicle_types),
+    mrpFromPaise: numOrNull(r.mrp_from),
+    mrpVaries: r.mrp_varies === true,
     offer:
       price === null
         ? null
@@ -352,6 +360,8 @@ export async function listCatalogue(db: Tx, query: CatalogueQuery): Promise<Cata
       select p.id, p.slug, p.name, p.name_hi, b.slug as brand_slug, b.name as brand_name,
         c.slug as category_slug, c.name as category_name, c.name_hi as category_name_hi,
         p.spec_summary, p.spec_summary_hi, p.highlights, p.highlights_hi, p.vehicle_types,
+        (select min(mv.mrp_paise) from product_variants mv where mv.product_id = p.id and mv.status = 'active') as mrp_from,
+        (select count(distinct mv.mrp_paise) > 1 from product_variants mv where mv.product_id = p.id and mv.status = 'active') as mrp_varies,
         o.price, o.sku, o.mrp, o.net_qty, o.net_unit, o.shipping, o.lead_days, ${k.expr} as sort_key
       from products p
       join brands b on b.id = p.brand_id
@@ -427,6 +437,8 @@ export async function getCatalogueProduct(
           c.slug as category_slug, c.name as category_name, c.name_hi as category_name_hi,
           p.spec_summary, p.spec_summary_hi, p.highlights, p.highlights_hi, p.vehicle_types,
           p.description, p.description_hi, p.compatibility, p.compatibility_hi, p.spec, p.country_of_origin, p.warranty, p.gst_rate_bp,
+          (select min(mv.mrp_paise) from product_variants mv where mv.product_id = p.id and mv.status = 'active') as mrp_from,
+          (select count(distinct mv.mrp_paise) > 1 from product_variants mv where mv.product_id = p.id and mv.status = 'active') as mrp_varies,
           null::bigint as price, null::text as sku, null::bigint as mrp, null::int as net_qty, null::text as net_unit,
           null::bigint as shipping, null::int as lead_days, pc.slug as parent_category_slug,
           '' as sort_key_text

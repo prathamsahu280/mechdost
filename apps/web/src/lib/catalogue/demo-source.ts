@@ -19,6 +19,7 @@ export function demoCard(raw: DemoProduct, locale: string): CardView {
     compatibility: p.compatibility,
     vehicleTypes: VEHICLE_TYPES_OF_FIT[p.fits],
     price: { pricePaise: p.pricePaise, mrpPaise: p.mrpPaise ?? null },
+    mrpFrom: null,
     pack: DEMO_PRODUCT_SPECS[raw.slug]?.netQuantity ?? null,
     availability: p.availability,
     leadDays: p.leadDays,

@@ -117,6 +117,7 @@ export function apiCard(c: CatalogueCard): CardView {
     price: c.offer ? { pricePaise: c.offer.pricePaise, mrpPaise: c.offer.mrpPaise } : null,
     pack: c.offer?.netQuantity ?? null,
     availability: c.offer ? 'in_stock' : 'on_request',
+    mrpFrom: c.mrpFromPaise === null ? null : { paise: c.mrpFromPaise, varies: c.mrpVaries },
     leadDays: c.offer?.leadDays ?? null,
     highlights: c.highlights,
     rating: c.rating,

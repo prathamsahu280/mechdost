@@ -4,6 +4,7 @@ import type { VehicleType } from '@mechdost/shared/vehicles';
 import type { ProductView } from '@/lib/catalogue/view';
 import type { CellValue, CompareGroup } from '@/lib/compare/rows';
 import { discountPercent, formatPrice } from '@/lib/format';
+import { mrpOnly } from '@/lib/catalogue/mrp-only';
 import { StarRating } from '../reviews/star-rating';
 import { LocalLink } from '../ui/local-link';
 import { AddToCartButton } from './add-to-cart-button';
@@ -132,7 +133,14 @@ export function CompareTable({
                       ) : null}
                     </p>
                   ) : (
-                    <p className="text-xs font-bold text-warning">{cat('onRequest')}</p>
+                    <>
+                      {mrpOnly(p) ? (
+                        <p className="text-sm font-semibold text-muted">
+                          {cat(mrpOnly(p)?.key ?? 'mrp', { price: formatPrice(mrpOnly(p)?.paise ?? 0) })}
+                        </p>
+                      ) : null}
+                      <p className="text-xs font-bold text-warning">{cat('onRequest')}</p>
+                    </>
                   )}
                 </div>
               ))}

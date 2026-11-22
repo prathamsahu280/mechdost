@@ -26,6 +26,7 @@ import { demoCard, demoProduct } from '@/lib/catalogue/demo-source';
 import type { CardView, ProductView } from '@/lib/catalogue/view';
 import { DATA_MODE, QUOTES_AVAILABLE } from '@/lib/data-mode';
 import { discountPercent, formatPrice } from '@/lib/format';
+import { mrpOnly } from '@/lib/catalogue/mrp-only';
 import { alternatesFor, metaDescription, openGraphFor } from '@/lib/seo';
 import { breadcrumbLd, productLd } from '@/lib/structured-data';
 import { JsonLd } from '@/components/site/json-ld';
@@ -139,6 +140,7 @@ export default async function ProductPage({ params }: Props) {
   const rating =
     (reviews || DATA_MODE === 'api') && product.rating && product.rating.count > 0 ? product.rating : null;
   const price = product.price;
+  const mrp = mrpOnly(product);
   const off = price ? discountPercent(price.pricePaise, price.mrpPaise ?? undefined) : 0;
   const onRequest = product.availability === 'on_request';
   const rows = productRows(t, product);
@@ -270,6 +272,10 @@ export default async function ProductPage({ params }: Props) {
               <UnitPrice pricePaise={price.pricePaise} pack={product.pack} className="mt-1 text-sm" />
               <p className="mt-1 text-xs text-muted">{t('inclusive')}</p>
             </>
+          ) : mrp ? (
+            <p className="mt-5 font-heading text-2xl font-extrabold text-ink">
+              {t(mrp.key, { price: formatPrice(mrp.paise) })}
+            </p>
           ) : null}
 
           {/* Trust line near the price (design 2026-11-15). "GST bill" is added only for a GST-registered selling shop;

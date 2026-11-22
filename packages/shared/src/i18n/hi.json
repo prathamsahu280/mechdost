@@ -444,6 +444,7 @@
     "inCart": "कार्ट में {count}",
     "viewDetails": "विवरण देखें",
     "mrp": "MRP {price}",
+    "mrpFrom": "MRP {price} से",
     "save": "{percent}% बचत",
     "inclusive": "दाम में GST शामिल है। डिलीवरी चेकआउट पर जुड़ती है।",
     "highlights": "ख़ास बातें",

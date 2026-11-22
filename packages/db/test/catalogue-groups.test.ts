@@ -464,3 +464,45 @@ describe('guard: one visibility rule', () => {
     expect(bad).toEqual([]);
   });
 });
+
+describe('MRP shown without an offer (spec 02, 2026-11-22)', () => {
+  const card = async (slug: string) => {
+    const [row] = await db.select().from(s.products).where(eq(s.products.slug, slug));
+    const page = await listCatalogue(t(), {
+      cityCode: 'RPR',
+      pincode: '492001',
+      locale: 'en',
+      limit: 48,
+      productIds: [row!.id],
+    });
+    return page.items[0];
+  };
+
+  it('with and without a shop offer the card carries the MRP; offer stays null without a shop', async () => {
+    await product('mrp-sold', { brand: F.motul!, mrp: 120_000 });
+    await offer('mrp-sold');
+    await product('mrp-unsold', { brand: F.motul!, mrp: 80_000 });
+    expect(await card('mrp-sold')).toMatchObject({ mrpFromPaise: 120_000, mrpVaries: false });
+    expect(await card('mrp-unsold')).toMatchObject({ mrpFromPaise: 80_000, mrpVaries: false });
+  });
+
+  it('packs with different MRPs give the lowest and flag the difference; null MRPs are ignored', async () => {
+    const p = await product('mrp-packs', { brand: F.motul!, mrp: 90_000 });
+    await db.insert(s.productVariants).values([
+      { productId: p.id, sku: 'MRP-PACKS-2', mrpPaise: 150_000 },
+      { productId: p.id, sku: 'MRP-PACKS-3', mrpPaise: null },
+    ]);
+    expect(await card('mrp-packs')).toMatchObject({ mrpFromPaise: 90_000, mrpVaries: true });
+  });
+
+  it('no MRP at all is null, and the product page carries the same fields', async () => {
+    await product('mrp-none', { brand: F.motul!, mrp: null });
+    expect(await card('mrp-none')).toMatchObject({ mrpFromPaise: null, mrpVaries: false });
+    const page = await getCatalogueProduct(t(), 'mrp-unsold', {
+      cityCode: 'RPR',
+      pincode: '492001',
+      locale: 'en',
+    });
+    expect(page).toMatchObject({ mrpFromPaise: 80_000, mrpVaries: false });
+  });
+});

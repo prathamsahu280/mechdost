@@ -52,6 +52,10 @@ const cardFields = {
   /** Vehicle types the product is for; empty = fitment not listed (decision 2026-11-12). */
   vehicleTypes: z.array(z.enum(VEHICLE_TYPES)),
   rating: z.object({ avg: z.number(), count: z.number().int() }).nullable(),
+  /** Lowest MRP among the product's active packs, with or without a shop offer ("MRP ₹x", spec 02); null = none. */
+  mrpFromPaise: z.number().int().nullable(),
+  /** True when the packs have different MRPs, so the card says "MRP from". */
+  mrpVaries: z.boolean(),
 };
 
 export const CatalogueCardSchema = z.object({

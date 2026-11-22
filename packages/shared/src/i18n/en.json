@@ -444,6 +444,7 @@
     "inCart": "{count} in cart",
     "viewDetails": "View details",
     "mrp": "MRP {price}",
+    "mrpFrom": "MRP from {price}",
     "save": "Save {percent}%",
     "inclusive": "Price includes GST. Delivery is calculated at checkout.",
     "highlights": "Highlights",

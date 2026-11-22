@@ -594,3 +594,7 @@ Migration `0078_business_applications` (not applied; the coordinator applies it 
 ## 2026-11-22 - Builder A: real catalogue import, brand/range switches, optional MRP (branch worktree-agent-adc7512a108af9a2a, not merged, migration 0079 NOT applied)
 
 Built per design `2026-11-22-real-catalogue-and-smart-search-design.md` (everything except smart search): migration 0079, `productVisible` rule everywhere + guard test, nullable MRP handled in every reader/writer, admin API (groups, switches, bulk status, bulk MRP, import status) + UI (lazy chunk), import plan/writer/CLI with price-list fills, status report `docs/catalogue/`. Scope narrowed by the user to the price-list brands (219 products / 740 packs / 695 MRP on the dry run). Photos are NOT uploaded yet (dry run only). Not run: Playwright, next build, Lighthouse, real import. Not done: smart search (builder B), Hindi descriptions (need a translations file), web storefront "price on request" copy (cards/product page show no price when there is no offer, as before).
+
+## 2026-11-22 - MRP shown without a shop offer (own worktree branch, not merged, no migration)
+
+`mrpFromPaise`/`mrpVaries` on the public card and product DTO (db `listCatalogue`/`getCatalogueProduct`, shared schema); web card, product page and compare show "MRP ₹x" / "MRP from ₹x" (en + hi `catalogue.mrpFrom`) when there is no offer; still no add to cart, no JSON-LD offers. Spec 02 updated. Tests: db catalogue-groups 14, web full 1084, shared, api catalogue. Not run: Playwright, next build.
