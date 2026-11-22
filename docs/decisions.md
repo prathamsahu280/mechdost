@@ -1640,3 +1640,12 @@ Brand and range switches never change product status (lossless); one SQL rule `p
 
 - **User:** "a seller login wont have option to order stuff from the website at all".
 - **Decided:** enforced in the API with 403 `SELLER_CANNOT_ORDER` for `seller_owner` / `seller_staff` on cart writes, checkout quote, order placement, coupon check and customer bulk quotes; the web hides the buying actions and shows one note. Workshop accounts keep ordering as customers (not sellers in the code). A staff account that also holds a seller role is blocked by the API; the web maps it to the admin role and does not hide the buttons (the API answer is the guard).
+
+## 2026-11-23 — Seller details never on the bill (Q221 answered)
+
+- **User:** "the seller details will not appear on the bill no". Customers never see the fulfilling shop anywhere,
+  including the bill/invoice PDF, which shows MechDost's operator (Shourya Integrated Services Pvt Ltd, registered
+  address, GSTIN, CIN) only. This is already how `apps/api/src/notify/pdf` renders; the Terms line "the seller's
+  details are on your bill" must not promise otherwise (reworded in the next copy pass).
+- **Note recorded:** under the Consumer Protection (E-Commerce) Rules 2020 a marketplace must make seller details
+  available to buyers; selling as MechDost (seller of record) avoids that. The user to confirm the model with their CA.
