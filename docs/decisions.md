@@ -1620,3 +1620,14 @@ Brand and range switches never change product status (lossless); one SQL rule `p
   **Razorpay TEST keys** (no money taken; COD works) until live keys + webhook secret (Q75) are added; the shared
   dev/prod Supabase stays (separate prod project and the launch data reset are still open).
 - **Undo:** set both variables back to `demo` and dispatch the deploy workflow.
+
+## 2026-11-22 - Change password, Delete my account in Profile, header Sign out (user request, Q213)
+
+- **User:** "add a change password in the profile and make the sign out button more prominent and also move the delete my account button inside the profile section and ... the sign out button on the top bar at the top right and add some colour".
+- **Decided:** Account -> Profile gets a Security card (change password by Firebase re-authentication + `updatePassword`, no new API endpoint: Firebase revokes the other sessions on a password change). "Delete my account" moves from Privacy into that card (same request flow). Sign out is a coloured accent-soft button in the header, loaded lazily on click (JS budget). No new colours, fonts or radii (tokens only).
+- **Not done:** no "sign out everywhere" button; demo mode has no change password (no Firebase account).
+
+## 2026-11-22 - Shop accounts cannot order (user request)
+
+- **User:** "a seller login wont have option to order stuff from the website at all".
+- **Decided:** enforced in the API with 403 `SELLER_CANNOT_ORDER` for `seller_owner` / `seller_staff` on cart writes, checkout quote, order placement, coupon check and customer bulk quotes; the web hides the buying actions and shows one note. Workshop accounts keep ordering as customers (not sellers in the code). A staff account that also holds a seller role is blocked by the API; the web maps it to the admin role and does not hide the buttons (the API answer is the guard).

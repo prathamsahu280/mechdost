@@ -121,7 +121,13 @@ export function Header({ navItems }: { navItems: readonly NavItem[] }) {
             <ThemeToggle label={theme('toggle')} />
           </span>
           <Bell copy={bellCopy} locale={locale} />
-          <AccountLink prefix={locale === 'hi' ? '/hi' : ''} signIn={auth('signIn')} account={t('account')} />
+          <AccountLink
+            prefix={locale === 'hi' ? '/hi' : ''}
+            signIn={auth('signIn')}
+            account={t('account')}
+            signOut={auth('signOut')}
+            signedOut={auth('signedOutStatus')}
+          />
           <CartPill
             href={localePath('/cart', locale)}
             label={t('cart')}

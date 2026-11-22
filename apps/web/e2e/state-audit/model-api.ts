@@ -255,7 +255,7 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
     code: 'API-ACC-PRIVACY',
     page: 'Account → Privacy, real sign-in',
     component:
-      'Consents per purpose with dates and one allow / withdraw button each (never asked, allowed, withdrawn); data download card (none, preparing, ready, expired, failed); the delete-my-account request link; load error',
+      'Consents per purpose with dates and one allow / withdraw button each (never asked, allowed, withdrawn); data download card (none, preparing, ready, expired, failed); load error (the delete-my-account link moved to Profile → Security, 2026-11-22)',
     path: '/account/privacy',
     scope: 'main',
     strategy: 'pairwise',
@@ -267,6 +267,19 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
       stress,
     ],
     sweep: 10,
+    note: API_NOTE,
+    realApi: true,
+  },
+  {
+    code: 'API-ACC-SECURITY',
+    page: 'Account → Profile → Security, real sign-in (user 2026-11-22)',
+    component:
+      'Security card under the profile form: change password (current, new with hint, confirm, show/hide, field errors, general status) and the delete-my-account request link (danger outline); Sign out beside Save',
+    path: '/account/profile',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [...env, { name: 'auth', values: ['customer'] }, stress],
+    sweep: 4,
     note: API_NOTE,
     realApi: true,
   },

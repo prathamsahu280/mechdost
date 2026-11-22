@@ -161,3 +161,7 @@ The RLS identity is pinned to the Firebase issuer and audience: `private.jwt_sub
 ## Business applications (design 2026-11-22)
 
 Trade application and signed-in fleet enquiry: authenticated, phone-verified, 5 per user per hour. Signed-out fleet enquiry: Turnstile, 5 per IP per hour, 3 per phone (hashed) per day. Strict Zod bodies (no user id, status or kind from the client). Admin queue `applications:review`; decide and trade standing `partners:approve`; city-scoped, foreign codes are 404. Tables are RLS deny-all (`rls-inventory`), history append-only. A signed-out lead's typed email is never mailed.
+
+## Shop accounts cannot buy (2026-11-22)
+
+Cart writes, checkout quote (when signed in), order placement, coupon check and customer bulk quotes answer 403 `SELLER_CANNOT_ORDER` for `seller_owner` / `seller_staff` (middleware `forbidSellers`, `forbidSignedInSellers`; shared `isSellerAccount`). Checked in the API, never only in the UI. See spec 01 "Shop accounts cannot buy". Change password: re-authentication is client-side (Firebase), the API only sees the new session; spec 01.

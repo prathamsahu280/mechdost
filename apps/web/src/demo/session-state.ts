@@ -228,6 +228,15 @@ export function useSession(): DemoAccount | null {
   return useSyncExternalStore(demoStorage.subscribe, sessionSnapshot, () => null);
 }
 
+/**
+ * True for a shop account (owner or staff; `demoRoleFor` maps every shop-scoped role to `shop`): shops browse the
+ * catalogue but never buy (user 2026-11-22), so the buying actions hide. The API refuses them too (`SELLER_CANNOT_ORDER`).
+ * Kept in this module (already in the header's bundle) so it adds no chunk.
+ */
+export function useIsSeller(): boolean {
+  return useSession()?.role === 'shop';
+}
+
 export function useAccounts(): readonly DemoAccount[] {
   return useSyncExternalStore(demoStorage.subscribe, accountsSnapshot, () => SEEDED_ACCOUNTS);
 }

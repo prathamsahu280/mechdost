@@ -27,7 +27,7 @@ import {
   WishlistUnchangedDto,
 } from '@mechdost/shared/wishlist-api';
 import type { SessionCache } from '../auth/session-cache';
-import { authenticate } from '../middleware/auth';
+import { authenticate, forbidSellers } from '../middleware/auth';
 import { rateLimit, RATE_RULES } from '../middleware/rate-limit';
 import type { RateRule } from '../rate-limit/limiter';
 import type { AppDeps, AppEnv } from '../types';
@@ -177,6 +177,8 @@ export function storefrontRoutes(deps: AppDeps, cache: SessionCache) {
     );
   }
   const user = (c: Context<AppEnv>) => c.get('auth').user.id;
+  // Shop accounts never buy (user 2026-11-22): adding, changing, merging and re-ordering are refused; reading stays.
+  app.on(['POST', 'PUT'], '/me/cart/*', forbidSellers);
   app.on(
     ['POST', 'PUT', 'DELETE'],
     '/me/cart/lines/:sku',

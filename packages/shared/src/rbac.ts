@@ -343,6 +343,18 @@ function covers(grantValue: string | null, target: string | null | undefined): b
   return grantValue === target;
 }
 
+/**
+ * Shop accounts (owner, staff) never buy on the website (user 2026-11-22): the API refuses their cart, checkout,
+ * coupon and bulk-quote requests with `SELLER_CANNOT_ORDER`, and the web hides the buying actions. Workshop accounts
+ * are not sellers (they may order parts for their own use as customers).
+ */
+export const SELLER_ROLES: readonly string[] = ['seller_owner', 'seller_staff'];
+
+/** True when any grant is a shop role. Pure; used by the API guard and the web's role check. */
+export function isSellerAccount(grants: readonly Pick<Grant, 'role'>[]): boolean {
+  return grants.some((g) => SELLER_ROLES.includes(g.role));
+}
+
 /** Does any grant give `permission` over `target`? Pure; used by API middleware and services. */
 export function can(grants: readonly Grant[], permission: Permission, target: Target = {}): boolean {
   return grants.some(
