@@ -15,6 +15,8 @@ interface FooterLink {
   href: string;
   label: string;
   track: string;
+  /** A call to action shown as a filled button (the "Apply as …" links, user 2026-11-22). */
+  prominent?: boolean;
 }
 
 /** Policy pages, in the concept's order (company, privacy, delivery, returns, service terms); Terms of Service added
@@ -102,12 +104,23 @@ export function Footer() {
       title: t('partnersLabel'),
       links: [
         { href: '/partners', label: t('becomePartner'), track: 'footer_partners' },
-        { href: '/partners/apply/seller', label: partners('sellerAction'), track: 'footer_apply_seller' },
-        { href: '/partners/apply/garage', label: partners('garageAction'), track: 'footer_apply_garage' },
+        {
+          href: '/partners/apply/seller',
+          label: partners('sellerAction'),
+          track: 'footer_apply_seller',
+          prominent: true,
+        },
+        {
+          href: '/partners/apply/garage',
+          label: partners('garageAction'),
+          track: 'footer_apply_garage',
+          prominent: true,
+        },
         {
           href: '/partners/apply/mechanic',
           label: partners('mechanicAction'),
           track: 'footer_apply_mechanic',
+          prominent: true,
         },
       ],
     },
@@ -159,7 +172,13 @@ export function Footer() {
                     <LocalLink
                       href={link.href}
                       data-track={link.track}
-                      className="inline-flex min-h-11 min-w-11 items-center text-sm text-muted underline-offset-4 hover:text-ink hover:underline"
+                      className={
+                        // "Apply as …" are calls to action, not plain links (user 2026-11-22: "needs to be properly
+                        // visible like more eye catchy"): filled accent pill, 44 px target, token colours only.
+                        link.prominent
+                          ? 'mt-1 inline-flex min-h-11 items-center rounded-pill bg-accent-button px-4 text-sm font-bold text-white shadow-card hover:brightness-110'
+                          : 'inline-flex min-h-11 min-w-11 items-center text-sm text-muted underline-offset-4 hover:text-ink hover:underline'
+                      }
                     >
                       {link.label}
                     </LocalLink>

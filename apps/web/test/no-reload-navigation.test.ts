@@ -112,5 +112,6 @@ describe('no full document load for internal moves', () => {
         offenders.push(rel);
     }
     expect(offenders).toEqual([]);
-  });
+    // Walks every source file (several thousand); under a busy machine this took > 5 s (2026-11-22).
+  }, 30_000);
 });
