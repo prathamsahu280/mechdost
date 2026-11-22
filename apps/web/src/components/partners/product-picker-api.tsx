@@ -6,6 +6,7 @@ import { useRef, useState, type KeyboardEvent } from 'react';
 import { searchCatalogue, type CataloguePick } from '@/lib/catalogue-public-api';
 import { track } from '@/lib/analytics';
 import type { ProductPickerProps } from './product-picker';
+import { productFullName } from '@/lib/product-name';
 
 /**
  * "Products you sell" on the live catalogue (real sign-in builds, spec 07 "Real API mode"): the same dialog as the
@@ -133,9 +134,7 @@ export function ProductPickerApi({ value, onChange, invalid, describedBy }: Prod
                             className="size-5 accent-[var(--color-accent-button)]"
                           />
                           <span className="text-sm">
-                            <span className="font-bold">
-                              {p.brand} {p.name}
-                            </span>
+                            <span className="font-bold">{productFullName(p.brand, p.name)}</span>
                             {p.spec ? <span className="block text-xs text-muted">{p.spec}</span> : null}
                           </span>
                         </label>

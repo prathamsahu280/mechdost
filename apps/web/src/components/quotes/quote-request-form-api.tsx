@@ -13,6 +13,7 @@ import { track } from '@/lib/analytics';
 import { formatPrice } from '@/lib/format';
 import { newQuoteKey, quoteErrorKey, type QuoteMessageKey } from '@/lib/quote-views';
 import { QUOTE_SEARCH_DEBOUNCE_MS, shouldSearch } from '@/lib/quote-search';
+import { productFullName } from '@/lib/product-name';
 
 /**
  * Bulk quote request on the API (real data mode; spec 19): products from the live catalogue (search, or prefilled
@@ -47,7 +48,7 @@ function cardLine(card: CatalogueCard, qty: number, sku: string | null = null): 
   return {
     slug: card.slug,
     sku,
-    title: `${card.brand.name} ${card.name}`.trim(),
+    title: productFullName(card.brand.name, card.name).trim(),
     listPaise: card.offer?.pricePaise ?? null,
     qty,
   };
@@ -129,7 +130,7 @@ export function QuoteRequestFormApi() {
           return {
             slug: res.data.slug,
             sku: w.sku ? (variant?.sku ?? null) : null,
-            title: `${res.data.brand.name} ${res.data.name}`.trim(),
+            title: productFullName(res.data.brand.name, res.data.name).trim(),
             listPaise: variant?.offer?.pricePaise ?? null,
             qty: Math.min(99, Math.max(1, w.qty)),
           } satisfies Line;

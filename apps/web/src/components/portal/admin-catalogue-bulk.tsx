@@ -14,6 +14,7 @@ import { track } from '@/lib/analytics';
 import { formatPrice } from '@/lib/format';
 import { parseRupees } from '@/lib/money-input';
 import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { productFullName } from '@/lib/product-name';
 
 /** Most products the MRP panel opens at once (it loads each product's packs). The API accepts up to 500 packs. */
 export const MRP_PANEL_MAX = 25;
@@ -201,7 +202,7 @@ function MrpPanel({
           <li key={p.sku} className="flex flex-wrap items-center justify-between gap-2 py-2">
             <div className="min-w-0">
               <p className="text-sm font-bold text-ink" data-user-content>
-                {p.product.brand} {p.product.name}
+                {productFullName(p.product.brand, p.product.name)}
               </p>
               <p className="text-xs text-muted">
                 {p.sku} · {p.mrpPaise === null ? t('cat_mrpNone') : formatPrice(p.mrpPaise)}

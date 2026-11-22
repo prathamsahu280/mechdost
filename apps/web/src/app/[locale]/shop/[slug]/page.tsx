@@ -32,6 +32,7 @@ import { breadcrumbLd, productLd } from '@/lib/structured-data';
 import { JsonLd } from '@/components/site/json-ld';
 import { localePath } from '@/lib/locale-path';
 import { site, whatsappLink } from '@/lib/site';
+import { productFullName } from '@/lib/product-name';
 
 interface Props {
   params: Promise<{ locale: Locale; slug: string }>;
@@ -84,7 +85,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     getTranslations({ locale, namespace: 'cities' }),
   ]);
   const city = cities(site.defaultCity);
-  const title = t('productTitle', { product: `${product.brand} ${product.name}`, city });
+  const title = t('productTitle', { product: productFullName(product.brand, product.name), city });
   const details = [product.spec, product.compatibility]
     .filter(Boolean)
     .join('. ')
@@ -151,7 +152,7 @@ export default async function ProductPage({ params }: Props) {
     ...(categoryName
       ? [{ name: categoryName, path: localePath(`/shop?category=${product.category.slug}`, locale) }]
       : []),
-    { name: `${product.brand} ${product.name}`, path },
+    { name: productFullName(product.brand, product.name), path },
   ];
   // Offers and ratings are marked up from real data only (demo prices and seed reviews are not real).
   const productData = DATA_MODE === 'api' ? productLd(product, path, categoryName) : null;
@@ -280,11 +281,15 @@ export default async function ProductPage({ params }: Props) {
 
           {/* Trust line near the price (design 2026-11-15). "GST bill" is added only for a GST-registered selling shop;
               the product page does not know the shop yet, so it is left out (never a blanket claim). */}
-          <TrustLine
-            placement="product"
-            brand={product.brand}
-            className="mt-3 text-sm font-bold text-ink before:mr-2 before:text-success before:content-['✓']"
-          />
+          {/* Only when a verified shop actually offers it (live check 2026-11-22: "from a verified shop" showed on
+              imported products no shop stocks yet). */}
+          {onRequest ? null : (
+            <TrustLine
+              placement="product"
+              brand={product.brand}
+              className="mt-3 text-sm font-bold text-ink before:mr-2 before:text-success before:content-['✓']"
+            />
+          )}
 
           <ul className="mt-5 space-y-2 text-sm">
             <li
@@ -318,7 +323,7 @@ export default async function ProductPage({ params }: Props) {
               categoryName={categoryName}
               labels={{
                 toggle: cmp('toggle'),
-                toggleName: cmp('toggleName', { name: `${product.brand} ${product.name}` }),
+                toggleName: cmp('toggleName', { name: productFullName(product.brand, product.name) }),
                 added: cmp('added', { count: '{count}' }),
                 removed: cmp('removed'),
                 hint: cmp('hint'),
@@ -329,8 +334,8 @@ export default async function ProductPage({ params }: Props) {
                 slug={product.slug}
                 source="page"
                 labels={{
-                  add: w('wishlistAdd', { name: `${product.brand} ${product.name}` }),
-                  remove: w('wishlistRemove', { name: `${product.brand} ${product.name}` }),
+                  add: w('wishlistAdd', { name: productFullName(product.brand, product.name) }),
+                  remove: w('wishlistRemove', { name: productFullName(product.brand, product.name) }),
                   saved: w('wishlistSaved'),
                   removed: w('wishlistRemoved'),
                   full: w('wishlistFull', { max: 100 }),
@@ -352,9 +357,9 @@ export default async function ProductPage({ params }: Props) {
                     maxQty: t('maxQty'),
                     maxLines: t('maxLines'),
                     saveFailed: t('saveFailed'),
-                    increase: t('cartIncrease', { name: `${product.brand} ${product.name}` }),
-                    decrease: t('cartDecrease', { name: `${product.brand} ${product.name}` }),
-                    remove: t('cartRemove', { name: `${product.brand} ${product.name}` }),
+                    increase: t('cartIncrease', { name: productFullName(product.brand, product.name) }),
+                    decrease: t('cartDecrease', { name: productFullName(product.brand, product.name) }),
+                    remove: t('cartRemove', { name: productFullName(product.brand, product.name) }),
                     removed: t('cartRemoved'),
                     inCart: t('inCart', { count: '#' }),
                   }}
@@ -362,7 +367,9 @@ export default async function ProductPage({ params }: Props) {
                 />
               ) : (
                 <a
-                  href={whatsappLink(t('askAboutMessage', { product: `${product.brand} ${product.name}` }))}
+                  href={whatsappLink(
+                    t('askAboutMessage', { product: productFullName(product.brand, product.name) }),
+                  )}
                   target="_blank"
                   rel="noopener noreferrer"
                   data-track="product_ask_whatsapp"

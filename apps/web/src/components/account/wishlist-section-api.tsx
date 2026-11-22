@@ -9,6 +9,7 @@ import type { Wishlist } from '@mechdost/shared/wishlist-api';
 import { track } from '@/lib/analytics';
 import { productPhotoLoader } from '@/lib/product-photo-loader';
 import { fetchWishlist, setWishlisted, useWishlistState } from '@/lib/wishlist-store';
+import { productFullName } from '@/lib/product-name';
 
 type Load = { kind: 'loading' } | { kind: 'error' } | { kind: 'ok'; list: Wishlist };
 
@@ -141,7 +142,7 @@ export function WishlistSectionApi() {
                 </div>
                 <button
                   type="button"
-                  aria-label={t('wishlistRemove', { name: `${i.brand} ${i.name}` })}
+                  aria-label={t('wishlistRemove', { name: productFullName(i.brand, i.name) })}
                   onClick={() => void remove(i.slug)}
                   className="press inline-flex size-11 shrink-0 items-center justify-center rounded-full hover:bg-pill"
                 >

@@ -7,6 +7,7 @@ import { CATEGORY_KEYS, DEMO_PRODUCTS } from '@/demo/catalogue';
 import { localizeProduct } from '@/demo/i18n/localize';
 import { track } from '@/lib/analytics';
 import { AUTH_MODE } from '@/lib/auth/mode';
+import { productFullName } from '@/lib/product-name';
 
 export interface ProductPickerProps {
   value: readonly string[];
@@ -48,7 +49,12 @@ function DemoProductPicker({ value, onChange, invalid, describedBy }: ProductPic
     () =>
       DEMO_PRODUCTS.map((p) => {
         const l = localizeProduct(p, locale);
-        return { slug: p.slug, category: p.category, label: `${l.brand} ${l.name}`, spec: l.spec };
+        return {
+          slug: p.slug,
+          category: p.category,
+          label: productFullName(l.brand, l.name),
+          spec: l.spec,
+        };
       }),
     [locale],
   );

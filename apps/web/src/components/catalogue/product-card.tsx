@@ -11,6 +11,7 @@ import { ProductVisual } from './product-visual';
 import { UnitPrice } from './unit-price';
 import { mrpOnly } from '@/lib/catalogue/mrp-only';
 import { WishlistHeartLazy } from './wishlist-lazy';
+import { productFullName } from '@/lib/product-name';
 
 /**
  * Product card: blueprint artwork with an ⓘ quick-details popover, brand and category, name, rating, price with
@@ -56,8 +57,8 @@ export function ProductCard({
           slug={product.slug}
           source="card"
           labels={{
-            add: w('wishlistAdd', { name: `${product.brand} ${product.name}` }),
-            remove: w('wishlistRemove', { name: `${product.brand} ${product.name}` }),
+            add: w('wishlistAdd', { name: productFullName(product.brand, product.name) }),
+            remove: w('wishlistRemove', { name: productFullName(product.brand, product.name) }),
             saved: w('wishlistSaved'),
             removed: w('wishlistRemoved'),
             full: w('wishlistFull', { max: 100 }),
@@ -101,7 +102,7 @@ export function ProductCard({
             className="inline-block py-0.5 hover:underline"
             data-track={`product_${product.slug}`}
           >
-            {product.brand} {product.name}
+            {productFullName(product.brand, product.name)}
           </LocalLink>
         </h3>
         <div data-align="rating" className="mt-1 px-1">
@@ -159,7 +160,7 @@ export function ProductCard({
               categoryName={categoryName}
               labels={{
                 toggle: cmp('toggle'),
-                toggleName: cmp('toggleName', { name: `${product.brand} ${product.name}` }),
+                toggleName: cmp('toggleName', { name: productFullName(product.brand, product.name) }),
                 added: cmp('added', { count: '{count}' }),
                 removed: cmp('removed'),
                 hint: cmp('hint'),
@@ -178,9 +179,9 @@ export function ProductCard({
                   maxQty: t('maxQty'),
                   maxLines: t('maxLines'),
                   saveFailed: t('saveFailed'),
-                  increase: t('cartIncrease', { name: `${product.brand} ${product.name}` }),
-                  decrease: t('cartDecrease', { name: `${product.brand} ${product.name}` }),
-                  remove: t('cartRemove', { name: `${product.brand} ${product.name}` }),
+                  increase: t('cartIncrease', { name: productFullName(product.brand, product.name) }),
+                  decrease: t('cartDecrease', { name: productFullName(product.brand, product.name) }),
+                  remove: t('cartRemove', { name: productFullName(product.brand, product.name) }),
                   removed: t('cartRemoved'),
                   inCart: t('inCart', { count: '#' }),
                 }}

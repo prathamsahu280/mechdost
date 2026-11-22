@@ -9,7 +9,9 @@ import { StarRating } from '../reviews/star-rating';
 import { LocalLink } from '../ui/local-link';
 import { AddToCartButton } from './add-to-cart-button';
 import { CompareRemove } from './compare-islands';
+import { ProductPhoto } from './product-photo';
 import { ProductVisual } from './product-visual';
+import { productFullName } from '@/lib/product-name';
 
 const VEHICLE_LABEL: Record<VehicleType, 'twoWheeler' | 'threeWheeler' | 'fourWheeler'> = {
   '2W': 'twoWheeler',
@@ -114,13 +116,13 @@ export function CompareTable({
                       href={`/shop/${p.slug}`}
                       className="min-w-0 font-heading break-words text-[14px] leading-snug font-bold text-ink hover:underline tab:text-[15px]"
                     >
-                      {p.brand} {p.name}
+                      {productFullName(p.brand, p.name)}
                     </LocalLink>
                     <CompareRemove
                       slug={p.slug}
                       slugs={slugs}
                       prefix={prefix}
-                      label={t('remove', { name: `${p.brand} ${p.name}` })}
+                      label={t('remove', { name: productFullName(p.brand, p.name) })}
                     />
                   </div>
                   {p.price ? (
@@ -174,7 +176,12 @@ export function CompareTable({
                       className="compare-col flex snap-start flex-col py-4 pr-1 tab:px-4"
                     >
                       <div className="mx-auto w-full max-w-[13rem]">
-                        <ProductVisual category={p.category.key} brand={p.brand} />
+                        {/* The real photo when the product has one (live check 2026-11-22: compare showed artwork only). */}
+                        {p.photo ? (
+                          <ProductPhoto photo={p.photo} sizes="208px" />
+                        ) : (
+                          <ProductVisual category={p.category.key} brand={p.brand} />
+                        )}
                       </div>
                       <div className="mt-2 flex min-h-5 items-center gap-1.5 text-xs text-muted">
                         {rating ? (
@@ -203,9 +210,9 @@ export function CompareTable({
                               maxQty: cat('maxQty'),
                               maxLines: cat('maxLines'),
                               saveFailed: cat('saveFailed'),
-                              increase: cat('cartIncrease', { name: `${p.brand} ${p.name}` }),
-                              decrease: cat('cartDecrease', { name: `${p.brand} ${p.name}` }),
-                              remove: cat('cartRemove', { name: `${p.brand} ${p.name}` }),
+                              increase: cat('cartIncrease', { name: productFullName(p.brand, p.name) }),
+                              decrease: cat('cartDecrease', { name: productFullName(p.brand, p.name) }),
+                              remove: cat('cartRemove', { name: productFullName(p.brand, p.name) }),
                               removed: cat('cartRemoved'),
                               inCart: cat('inCart', { count: '#' }),
                             }}

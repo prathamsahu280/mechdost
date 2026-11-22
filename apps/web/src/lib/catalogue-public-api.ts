@@ -5,6 +5,7 @@ import {
   CatalogueProductSchema,
   type CatalogueCard,
 } from '@mechdost/shared/catalogue';
+import { productFullName } from '@/lib/product-name';
 
 /**
  * Live catalogue from the browser (public, no sign-in) for the real-mode pickers: the seller application's product
@@ -88,7 +89,7 @@ export async function productVariants(
   return {
     ok: true,
     data: {
-      name: `${p.data.brand.name} ${p.data.name}`,
+      name: productFullName(p.data.brand.name, p.data.name),
       // Packs without an MRP are not sellable yet (design 2026-11-22): sellers cannot pick them.
       variants: p.data.variants
         .flatMap((v) => (v.mrpPaise === null ? [] : [{ ...v, mrpPaise: v.mrpPaise }]))

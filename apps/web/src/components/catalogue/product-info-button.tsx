@@ -3,6 +3,7 @@ import { useTranslations } from 'next-intl';
 import type { CardView } from '@/lib/catalogue/view';
 import { formatPrice } from '@/lib/format';
 import { LocalLink } from '../ui/local-link';
+import { productFullName } from '@/lib/product-name';
 
 /**
  * The product card's ⓘ button (user, 2026-11-01): quick details without leaving the list. Uses the native Popover
@@ -41,7 +42,7 @@ export function ProductInfoButton({ product, scope }: { product: CardView; scope
           <div className="min-w-0">
             <p className="text-xs font-bold text-muted uppercase">{t('infoTitle')}</p>
             <h3 id={`${id}-title`} className="mt-0.5 font-heading text-lg leading-snug font-extrabold">
-              {product.brand} {product.name}
+              {productFullName(product.brand, product.name)}
             </h3>
           </div>
           <button

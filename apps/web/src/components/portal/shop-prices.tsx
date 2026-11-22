@@ -12,6 +12,7 @@ import { AUTH_MODE } from '@/lib/auth/mode';
 import { formatPrice } from '@/lib/format';
 import { parseRupees } from '@/lib/money-input';
 import { portalCard, portalField, portalPrimary } from './portal-styles';
+import { productFullName } from '@/lib/product-name';
 
 /**
  * "Your prices" (user 2026-11-13, design § Prices): every new price is a request the admin approves; the live
@@ -113,9 +114,7 @@ function PriceRow({ shopSlug, product }: { shopSlug: string; product: DemoProduc
 
   return (
     <li className={portalCard}>
-      <p className="font-bold text-ink">
-        {l.brand} {l.name}
-      </p>
+      <p className="font-bold text-ink">{productFullName(l.brand, l.name)}</p>
       <p className="text-xs text-muted">{t('priceMrp', { mrp: formatPrice(mrpPaise) })}</p>
       <div className="mt-2 space-y-1 text-sm">
         {status.map((s) => (

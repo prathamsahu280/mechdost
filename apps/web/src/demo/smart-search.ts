@@ -18,6 +18,7 @@ import {
 } from './catalogue';
 import type { ProductHi } from './i18n/hi-products';
 import { productSearchText } from './i18n/product-search';
+import { productFullName } from '@/lib/product-name';
 
 /**
  * The demo catalogue's smart search (spec 02 "Smart search", design 2026-11-22): the same query understanding and
@@ -43,7 +44,7 @@ function searchable(
   categoryLabel: ((key: CategoryKey) => string) | undefined,
 ): SearchableProductText {
   return {
-    name: `${p.brand} ${p.name} ${hi?.[p.slug]?.name ?? ''}`,
+    name: `${productFullName(p.brand, p.name)} ${hi?.[p.slug]?.name ?? ''}`,
     brand: p.brand,
     text: `${productSearchText(p, hi)} ${categoryLabel?.(p.category) ?? ''}`,
     categorySlug: CATEGORY_SLUGS[p.category],

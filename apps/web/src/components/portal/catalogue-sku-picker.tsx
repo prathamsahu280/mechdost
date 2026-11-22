@@ -11,6 +11,7 @@ import {
 } from '@/lib/catalogue-public-api';
 import { formatPrice } from '@/lib/format';
 import { portalField, portalQuiet } from './portal-styles';
+import { productFullName } from '@/lib/product-name';
 
 export interface SkuChoice {
   sku: string;
@@ -150,9 +151,7 @@ export function CatalogueSkuPicker({
                 className="flex flex-wrap items-center justify-between gap-2 rounded-tile border border-line-card p-3"
               >
                 <span className="min-w-0 text-sm">
-                  <span className="font-bold text-ink">
-                    {p.brand} {p.name}
-                  </span>
+                  <span className="font-bold text-ink">{productFullName(p.brand, p.name)}</span>
                   <span className="block text-xs text-muted">
                     {p.category.name}
                     {p.spec ? ` · ${p.spec}` : ''}
@@ -161,7 +160,7 @@ export function CatalogueSkuPicker({
                 <button
                   type="button"
                   disabled={busy}
-                  aria-label={t('shops_api_pickChooseAria', { name: `${p.brand} ${p.name}` })}
+                  aria-label={t('shops_api_pickChooseAria', { name: productFullName(p.brand, p.name) })}
                   onClick={() => void choose(p.slug)}
                   className={portalQuiet}
                 >

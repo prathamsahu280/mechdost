@@ -3,6 +3,7 @@ import type { ProductView } from './catalogue/view';
 import { productPhotoLoader } from './product-photo-loader';
 import { absoluteUrl, siteOrigin } from './seo';
 import { site } from './site';
+import { productFullName } from '@/lib/product-name';
 
 /**
  * schema.org JSON-LD for search results (skill nextjs-seo; decisions 2026-11-17 "SEO"). Pure builders, rendered by
@@ -116,7 +117,7 @@ export function productLd(product: ProductView, path: string, categoryName: stri
   return {
     '@context': CONTEXT,
     '@type': 'Product',
-    name: `${product.brand} ${product.name}`,
+    name: productFullName(product.brand, product.name),
     brand: { '@type': 'Brand', name: product.brand },
     ...(product.sku ? { sku: product.sku } : {}),
     ...(gtin ? { gtin } : {}),
