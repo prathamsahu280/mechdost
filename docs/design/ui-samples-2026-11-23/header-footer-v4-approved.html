@@ -1,0 +1,1698 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MechDost header and footer, v4</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --ink: #101f34;
+        --ink-2: #2a3a52;
+        --muted: #5b6b7e;
+        --bg: #eef2f6;
+        --surface: #fff;
+        --surface-2: #f6f8fb;
+        --line: #e1e7ee;
+        --pill: #eef2f6;
+        --accent: #ea5728;
+        --accent-2: #ff8b59;
+        --accent-btn: #d2461a;
+        --soft: #fff1ea;
+        --soft-text: #b93d16;
+        --focus: #e65325;
+        --glass: rgba(255, 255, 255, 0.78);
+        --shadow: 0 10px 30px -12px rgba(16, 31, 52, 0.28), 0 2px 6px rgba(16, 31, 52, 0.06);
+        --ring: 0 0 0 1px rgba(16, 31, 52, 0.07);
+      }
+      html.dark {
+        --ink: #eaf0f7;
+        --ink-2: #c9d4e2;
+        --muted: #9fb0c4;
+        --bg: #081222;
+        --surface: #0f1b2e;
+        --surface-2: #132239;
+        --line: #1f3049;
+        --pill: #16263d;
+        --soft: #351d13;
+        --soft-text: #ffb08a;
+        --glass: rgba(15, 27, 46, 0.72);
+        --shadow: 0 12px 34px -12px rgba(0, 0, 0, 0.6), 0 2px 6px rgba(0, 0, 0, 0.3);
+        --ring: 0 0 0 1px rgba(255, 255, 255, 0.06);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+      }
+      body {
+        font-family: 'DM Sans', system-ui, sans-serif;
+        background: var(--bg);
+        color: var(--ink);
+        transition:
+          background 0.3s,
+          color 0.3s;
+      }
+      svg {
+        width: 20px;
+        height: 20px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 1.9;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        flex: none;
+      }
+      button {
+        font: inherit;
+        color: inherit;
+      }
+      :focus-visible {
+        outline: 3px solid var(--focus);
+        outline-offset: 2px;
+        border-radius: 10px;
+      }
+
+      /* ===== demo chrome ===== */
+      .demo-bar {
+        position: fixed;
+        left: 50%;
+        bottom: 18px;
+        transform: translateX(-50%);
+        z-index: 50;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        background: #101f34;
+        color: #fff;
+        padding: 8px 10px;
+        border-radius: 14px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        font-size: 13px;
+      }
+      .demo-bar button {
+        background: #22324a;
+        border: 0;
+        color: #fff;
+        padding: 8px 12px;
+        border-radius: 9px;
+        cursor: pointer;
+        font-weight: 700;
+      }
+      .demo-bar button.on {
+        background: var(--accent-btn);
+      }
+      .demo-bar span {
+        opacity: 0.7;
+        padding: 0 6px;
+      }
+
+      /* ===== header ===== */
+      .hdr {
+        position: sticky;
+        top: 0;
+        z-index: 40;
+        padding: 14px 20px 0;
+      }
+      .bar {
+        max-width: 1320px;
+        margin: 0 auto;
+        height: 64px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 0 10px 0 16px;
+        background: var(--glass);
+        backdrop-filter: saturate(1.6) blur(14px);
+        -webkit-backdrop-filter: saturate(1.6) blur(14px);
+        border-radius: 20px;
+        box-shadow: var(--shadow), var(--ring);
+        transition:
+          height 0.25s,
+          border-radius 0.25s;
+      }
+      .hdr.scrolled .bar {
+        height: 56px;
+        border-radius: 16px;
+      }
+      .logo {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        text-decoration: none;
+        color: var(--ink);
+        font: 800 20px Manrope;
+        letter-spacing: -0.3px;
+        white-space: nowrap;
+      }
+      .logo .mk {
+        width: 34px;
+        height: 34px;
+        border-radius: 11px;
+        display: grid;
+        place-items: center;
+        color: #fff;
+        background: linear-gradient(135deg, var(--accent-2), var(--accent-btn));
+        box-shadow: 0 6px 14px -6px rgba(210, 70, 26, 0.8);
+      }
+      .logo .mk svg {
+        width: 18px;
+        height: 18px;
+        stroke-width: 2.4;
+      }
+      .logo b {
+        color: var(--accent);
+      }
+      .logo img {
+        display: block;
+        height: 30px;
+        width: auto;
+      }
+      .lg-dark {
+        display: none !important;
+      }
+      html.dark .lg-light {
+        display: none !important;
+      }
+      html.dark .lg-dark {
+        display: block !important;
+      }
+
+      /* segmented nav with sliding indicator */
+      .seg {
+        position: relative;
+        display: flex;
+        gap: 2px;
+        margin: 0 auto;
+        padding: 4px;
+        border-radius: 14px;
+        background: var(--pill);
+      }
+      .seg .ind {
+        position: absolute;
+        top: 4px;
+        bottom: 4px;
+        left: 0;
+        width: 0;
+        border-radius: 10px;
+        background: var(--surface);
+        box-shadow:
+          0 1px 2px rgba(16, 31, 52, 0.12),
+          0 4px 12px -6px rgba(16, 31, 52, 0.25);
+        transition:
+          transform 0.35s cubic-bezier(0.3, 1.2, 0.4, 1),
+          width 0.35s cubic-bezier(0.3, 1.2, 0.4, 1);
+      }
+      html.dark .seg .ind {
+        background: #21344f;
+      }
+      .seg a {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 8px 13px;
+        border-radius: 10px;
+        color: var(--muted);
+        text-decoration: none;
+        font-weight: 700;
+        font-size: 13.5px;
+        white-space: nowrap;
+        transition: color 0.2s;
+      }
+      .seg a svg {
+        width: 17px;
+        height: 17px;
+      }
+      .seg a:hover {
+        color: var(--ink);
+      }
+      .seg a.on {
+        color: var(--ink);
+      }
+      .seg a.on svg {
+        color: var(--accent);
+      }
+      .seg .ind::after {
+        content: '';
+        position: absolute;
+        left: 50%;
+        bottom: 3px;
+        width: 18px;
+        height: 3px;
+        margin-left: -9px;
+        border-radius: 3px;
+        background: repeating-linear-gradient(90deg, var(--accent) 0 4px, transparent 4px 6px);
+      }
+
+      .tools {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        position: relative;
+      }
+      .search {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        height: 40px;
+        padding: 0 10px 0 12px;
+        border-radius: 12px;
+        background: var(--pill);
+        border: 1px solid transparent;
+        color: var(--muted);
+        cursor: pointer;
+        font-size: 13.5px;
+        font-weight: 600;
+        min-width: 190px;
+      }
+      .search:hover {
+        border-color: var(--line);
+        color: var(--ink);
+      }
+      .search kbd {
+        margin-left: auto;
+        font: 700 11px 'DM Sans';
+        color: var(--muted);
+        background: var(--surface);
+        border-radius: 6px;
+        padding: 2px 6px;
+        box-shadow: var(--ring);
+      }
+      .ib {
+        position: relative;
+        width: 40px;
+        height: 40px;
+        display: grid;
+        place-items: center;
+        border-radius: 12px;
+        border: 0;
+        background: transparent;
+        cursor: pointer;
+        color: var(--ink-2);
+        transition:
+          background 0.15s,
+          transform 0.15s;
+      }
+      .ib:hover {
+        background: var(--pill);
+        color: var(--ink);
+      }
+      .ib:active {
+        transform: scale(0.94);
+      }
+      .dot {
+        position: absolute;
+        top: 8px;
+        right: 9px;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 0 0 2.5px var(--glass);
+      }
+      .avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        border: 0;
+        cursor: pointer;
+        display: grid;
+        place-items: center;
+        font: 800 14px Manrope;
+        color: #fff;
+        background: linear-gradient(135deg, #2c4a72, #101f34);
+        box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.12);
+      }
+      html.dark .avatar {
+        background: linear-gradient(135deg, #3b5d8c, #1c2f4b);
+      }
+      .cart {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        height: 40px;
+        padding: 0 8px 0 13px;
+        border-radius: 12px;
+        border: 0;
+        cursor: pointer;
+        font-weight: 700;
+        font-size: 14px;
+        color: #fff;
+        background: linear-gradient(180deg, #1b2d47, #101f34);
+        box-shadow: 0 8px 18px -8px rgba(16, 31, 52, 0.7);
+      }
+      html.dark .cart {
+        background: linear-gradient(180deg, var(--accent), var(--accent-btn));
+        box-shadow: 0 8px 18px -8px rgba(210, 70, 26, 0.8);
+      }
+      .cart .n {
+        min-width: 24px;
+        height: 24px;
+        border-radius: 8px;
+        display: grid;
+        place-items: center;
+        font-size: 12px;
+        background: var(--accent);
+        color: #fff;
+      }
+      html.dark .cart .n {
+        background: #fff;
+        color: var(--accent-btn);
+      }
+      .cart.bump .n {
+        animation: bump 0.35s;
+      }
+      @keyframes bump {
+        40% {
+          transform: scale(1.3);
+        }
+      }
+
+      /* popovers */
+      .pop {
+        position: absolute;
+        top: calc(100% + 10px);
+        right: 0;
+        min-width: 260px;
+        background: var(--surface);
+        border-radius: 16px;
+        box-shadow: var(--shadow), var(--ring);
+        padding: 8px;
+        opacity: 0;
+        transform: translateY(-6px) scale(0.98);
+        transform-origin: top right;
+        pointer-events: none;
+        transition:
+          opacity 0.16s,
+          transform 0.16s;
+        z-index: 45;
+      }
+      .pop.open {
+        opacity: 1;
+        transform: none;
+        pointer-events: auto;
+      }
+      .me {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        padding: 10px 10px 12px;
+        border-bottom: 1px solid var(--line);
+        margin-bottom: 6px;
+      }
+      .me .avatar {
+        cursor: default;
+      }
+      .me b {
+        font: 800 15px Manrope;
+        display: block;
+      }
+      .me small {
+        color: var(--muted);
+      }
+      .mi {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        width: 100%;
+        padding: 9px 10px;
+        border: 0;
+        background: none;
+        border-radius: 10px;
+        text-align: left;
+        cursor: pointer;
+        color: var(--ink);
+        font-size: 14px;
+        font-weight: 500;
+        text-decoration: none;
+      }
+      .mi svg {
+        width: 18px;
+        height: 18px;
+        color: var(--muted);
+      }
+      .mi:hover {
+        background: var(--pill);
+      }
+      .mi .r {
+        margin-left: auto;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .sw {
+        margin-left: auto;
+        width: 36px;
+        height: 20px;
+        border-radius: 10px;
+        background: var(--line);
+        position: relative;
+        transition: 0.2s;
+      }
+      .sw::after {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+        transition: 0.2s;
+      }
+      html.dark .sw {
+        background: var(--accent);
+      }
+      html.dark .sw::after {
+        left: 18px;
+      }
+      .hr {
+        height: 1px;
+        background: var(--line);
+        margin: 6px 4px;
+      }
+      .mi.out {
+        color: #c0331f;
+      }
+      .mi.out svg {
+        color: #c0331f;
+      }
+      html.dark .mi.out,
+      html.dark .mi.out svg {
+        color: #ff8f7d;
+      }
+      .notes h4 {
+        margin: 4px 8px 8px;
+        font: 800 14px Manrope;
+        display: flex;
+        justify-content: space-between;
+      }
+      .notes h4 a {
+        font: 600 12px 'DM Sans';
+        color: var(--accent);
+        text-decoration: none;
+      }
+      .note {
+        display: flex;
+        gap: 10px;
+        padding: 10px;
+        border-radius: 12px;
+      }
+      .note:hover {
+        background: var(--pill);
+      }
+      .note .ic {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+        background: var(--soft);
+        color: var(--soft-text);
+      }
+      .note .ic svg {
+        width: 17px;
+        height: 17px;
+      }
+      .note p {
+        margin: 0;
+        font-size: 13.5px;
+      }
+      .note small {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .mini {
+        width: 320px;
+      }
+      .mini .it {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        padding: 8px;
+      }
+      .mini .th {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        background: var(--surface-2);
+        box-shadow: var(--ring);
+        display: grid;
+        place-items: center;
+        color: var(--muted);
+      }
+      .mini .it p {
+        margin: 0;
+        font-size: 13.5px;
+        font-weight: 600;
+      }
+      .mini .it small {
+        color: var(--muted);
+      }
+      .mini .it .pr {
+        margin-left: auto;
+        font-weight: 800;
+        font-family: Manrope;
+      }
+      .mini .go {
+        display: flex;
+        gap: 8px;
+        padding: 8px;
+      }
+      .btn {
+        flex: 1;
+        height: 42px;
+        border-radius: 12px;
+        border: 0;
+        cursor: pointer;
+        font-weight: 700;
+        font-size: 14px;
+        display: grid;
+        place-items: center;
+        text-decoration: none;
+      }
+      .btn.pri {
+        background: var(--accent-btn);
+        color: #fff;
+      }
+      .btn.sec {
+        background: var(--pill);
+        color: var(--ink);
+      }
+
+      /* command palette */
+      .scrim {
+        position: fixed;
+        inset: 0;
+        background: rgba(8, 18, 34, 0.45);
+        backdrop-filter: blur(3px);
+        display: none;
+        z-index: 60;
+        align-items: flex-start;
+        justify-content: center;
+        padding-top: 12vh;
+      }
+      .scrim.open {
+        display: flex;
+      }
+      .palette {
+        width: min(640px, 92vw);
+        background: var(--surface);
+        border-radius: 18px;
+        box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.5);
+        overflow: hidden;
+      }
+      .palette .in {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 16px 18px;
+        border-bottom: 1px solid var(--line);
+      }
+      .palette input {
+        flex: 1;
+        border: 0;
+        outline: none;
+        background: transparent;
+        font: 600 16px 'DM Sans';
+        color: var(--ink);
+      }
+      .palette .grp {
+        padding: 8px;
+      }
+      .palette .grp small {
+        display: block;
+        padding: 6px 10px;
+        color: var(--muted);
+        font-weight: 700;
+        font-size: 12.5px;
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin: 4px;
+        padding: 7px 12px;
+        border-radius: 999px;
+        background: var(--pill);
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--ink);
+      }
+
+      /* page mock */
+      main {
+        max-width: 1320px;
+        margin: 28px auto 0;
+        padding: 0 20px;
+      }
+      .hero {
+        border-radius: 24px;
+        padding: 42px;
+        background: #101f34;
+        color: #fff;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .hero h1 {
+        font: 800 40px/1.1 Manrope;
+        margin: 0 0 10px;
+        max-width: 620px;
+      }
+      .hero p {
+        margin: 0;
+        color: #c8d4e3;
+        max-width: 560px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 16px;
+        margin: 22px 0;
+      }
+      .card {
+        background: var(--surface);
+        border-radius: 18px;
+        box-shadow: var(--ring);
+        height: 200px;
+      }
+
+      /* footer partners */
+      footer {
+        max-width: 1320px;
+        margin: 40px auto 120px;
+        padding: 0 20px;
+      }
+      .fwrap {
+        background: var(--surface);
+        border-radius: 24px;
+        box-shadow: var(--ring);
+        padding: 28px;
+        display: grid;
+        grid-template-columns: 1.1fr 2fr;
+        gap: 28px;
+      }
+      .fwrap h3 {
+        font: 800 22px/1.2 Manrope;
+        margin: 6px 0 8px;
+      }
+
+      .fwrap p.lead {
+        margin: 0 0 14px;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.55;
+      }
+      .fwrap .more {
+        color: var(--ink);
+        font-weight: 700;
+        font-size: 14px;
+        text-decoration: none;
+        display: inline-flex;
+        gap: 6px;
+        align-items: center;
+      }
+      .fwrap .more:hover {
+        color: var(--accent);
+      }
+      .roles {
+        display: flex;
+        flex-direction: column;
+        border-top: 1px solid var(--line);
+      }
+      .role {
+        display: grid;
+        grid-template-columns: 40px 1fr auto;
+        align-items: center;
+        column-gap: 14px;
+        padding: 14px 6px;
+        border-bottom: 1px solid var(--line);
+        text-decoration: none;
+        color: var(--ink);
+      }
+      .role .ic {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        background: var(--pill);
+        color: var(--ink-2);
+        transition:
+          background 0.18s,
+          color 0.18s;
+      }
+      .role b {
+        font: 700 15px Manrope;
+        display: block;
+      }
+      .role span.d {
+        color: var(--muted);
+        font-size: 13.5px;
+      }
+      .role .cta {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 600;
+        font-size: 13.5px;
+        color: var(--muted);
+        white-space: nowrap;
+      }
+      .role:hover .ic {
+        background: var(--soft);
+        color: var(--soft-text);
+      }
+      .role:hover .cta {
+        color: var(--ink);
+      }
+      .role .cta svg {
+        width: 16px;
+        height: 16px;
+        transition: transform 0.18s;
+      }
+      .role:hover .cta svg {
+        transform: translateX(3px);
+      }
+      @media (max-width: 600px) {
+        .role {
+          grid-template-columns: 40px 1fr;
+        }
+        .role .cta {
+          grid-column: 2;
+          margin-top: 4px;
+        }
+      }
+      .lab {
+        max-width: 1320px;
+        margin: 26px auto 8px;
+        padding: 0 20px;
+        font: 600 13px 'DM Sans';
+        color: var(--muted);
+      }
+
+      /* mobile frame */
+      .phone {
+        width: 390px;
+        height: 760px;
+        margin: 0 auto 40px;
+        border-radius: 36px;
+        overflow: hidden;
+        position: relative;
+        background: var(--bg);
+        box-shadow:
+          0 0 0 10px #0b1626,
+          0 30px 60px -20px rgba(0, 0, 0, 0.4);
+      }
+      .phone .mh {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        height: 56px;
+        border-radius: 18px;
+        background: var(--glass);
+        backdrop-filter: blur(14px);
+        box-shadow: var(--shadow), var(--ring);
+        display: flex;
+        align-items: center;
+        padding: 0 6px 0 12px;
+        gap: 4px;
+      }
+      .phone .mh .logo {
+        font-size: 17px;
+      }
+      .phone .mh .logo .mk {
+        width: 30px;
+        height: 30px;
+      }
+      .phone .mh .sp {
+        margin-left: auto;
+        display: flex;
+        gap: 2px;
+      }
+      .phone .msb {
+        position: absolute;
+        top: 76px;
+        left: 10px;
+        right: 10px;
+        height: 44px;
+        border-radius: 14px;
+        background: var(--surface);
+        box-shadow: var(--ring);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 12px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .phone .body {
+        position: absolute;
+        top: 132px;
+        left: 10px;
+        right: 10px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .phone .body .card {
+        height: 150px;
+      }
+      .dock {
+        position: absolute;
+        left: 14px;
+        right: 14px;
+        bottom: 14px;
+        height: 64px;
+        border-radius: 22px;
+        background: var(--glass);
+        backdrop-filter: blur(16px);
+        box-shadow: var(--shadow), var(--ring);
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        padding: 6px;
+      }
+      .dock a {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        border-radius: 16px;
+        text-decoration: none;
+        color: var(--muted);
+        font: 700 11px 'DM Sans';
+      }
+      .dock a.on {
+        background: var(--soft);
+        color: var(--soft-text);
+      }
+      .dock a svg {
+        width: 20px;
+        height: 20px;
+      }
+      @media (max-width: 1180px) {
+        .search {
+          min-width: 0;
+        }
+        .search span,
+        .search kbd {
+          display: none;
+        }
+        .seg a span {
+          display: none;
+        }
+        .seg a {
+          padding: 9px 11px;
+        }
+      }
+      @media (max-width: 900px) {
+        .fwrap {
+          grid-template-columns: 1fr;
+        }
+        .roles {
+          grid-template-columns: 1fr;
+        }
+      }
+      /* footer: the live structure, refined; partners as one more column */
+      .ft {
+        max-width: 1320px;
+        margin: 40px auto 120px;
+        padding: 0 20px;
+      }
+      .ft-top {
+        display: grid;
+        grid-template-columns: minmax(260px, 320px) 1fr;
+        gap: 36px;
+        padding: 32px;
+        background: var(--surface);
+        border-radius: 24px 24px 0 0;
+        box-shadow: var(--ring);
+      }
+      .help {
+        background: rgba(37, 211, 102, 0.06);
+        border-radius: 18px;
+        padding: 22px;
+        box-shadow: inset 0 0 0 1px rgba(37, 211, 102, 0.24);
+        align-self: start;
+      }
+      .help h3 {
+        font: 800 18px/1.25 Manrope;
+        margin: 0 0 8px;
+      }
+      .help p {
+        margin: 0 0 16px;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.55;
+      }
+      .help-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .wa,
+      .call {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        height: 40px;
+        padding: 0 14px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 14px;
+        text-decoration: none;
+      }
+      .wa {
+        background: #1b8a4b;
+        color: #fff;
+      }
+      .wa svg,
+      .call svg {
+        width: 18px;
+        height: 18px;
+      }
+      .call {
+        background: var(--surface);
+        color: var(--ink);
+        box-shadow: var(--ring);
+      }
+      .cols {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(210px, 1.35fr);
+        gap: 22px;
+      }
+      .cols h4 {
+        font: 800 14px Manrope;
+        margin: 4px 0 12px;
+        color: var(--ink);
+      }
+      .cols ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .cols a {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        min-height: 34px;
+        color: var(--muted);
+        text-decoration: none;
+        font-size: 14px;
+        border-radius: 8px;
+      }
+      .cols a:hover {
+        color: var(--ink);
+      }
+      .partners {
+        background: var(--surface-2);
+        border-radius: 16px;
+        padding: 14px 14px 12px;
+        margin: -14px -6px 0;
+        box-shadow: var(--ring);
+      }
+      .partners .pi {
+        width: 28px;
+        height: 28px;
+        border-radius: 9px;
+        display: grid;
+        place-items: center;
+        background: var(--soft);
+        color: var(--soft-text);
+        transition: transform 0.18s;
+      }
+      .partners .pi svg {
+        width: 15px;
+        height: 15px;
+      }
+      .partners a:hover .pi {
+        transform: scale(1.08);
+      }
+      .partners li a {
+        color: var(--ink-2);
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .partners .how {
+        margin-top: 8px;
+        font-size: 13px;
+        color: var(--soft-text);
+        font-weight: 700;
+        min-height: 28px;
+        white-space: nowrap;
+      }
+      .ft-bot {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 18px;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 32px;
+        background: var(--surface);
+        border-top: 1px solid var(--line);
+        box-shadow: var(--ring);
+      }
+      .who img {
+        height: 26px;
+        width: auto;
+        display: block;
+        margin-bottom: 8px;
+      }
+      .who p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 12.5px;
+        line-height: 1.6;
+      }
+      .prefs {
+        display: flex;
+        gap: 8px;
+      }
+      .pref {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        height: 38px;
+        padding: 0 14px;
+        border-radius: 12px;
+        background: var(--pill);
+        border: 0;
+        color: var(--ink);
+        font-weight: 700;
+        font-size: 13.5px;
+        text-decoration: none;
+        cursor: pointer;
+      }
+      .pref svg {
+        width: 17px;
+        height: 17px;
+      }
+      .legal {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 18px;
+        padding: 16px 32px;
+        background: var(--surface);
+        border-radius: 0 0 24px 24px;
+        box-shadow: var(--ring);
+        font-size: 13px;
+      }
+      .legal a {
+        color: var(--muted);
+        text-decoration: none;
+      }
+      .legal a:hover {
+        color: var(--ink);
+      }
+      .legal span {
+        margin-left: auto;
+        color: var(--muted);
+      }
+      @media (max-width: 1100px) {
+        .ft-top {
+          grid-template-columns: 1fr;
+        }
+        .cols {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+      }
+      @media (max-width: 640px) {
+        .cols {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .partners {
+          grid-column: 1/-1;
+          margin: 0;
+        }
+        .ft-top,
+        .ft-bot,
+        .legal {
+          padding: 20px;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          transition: none !important;
+          animation: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="hdr" id="hdr">
+      <div class="bar">
+        <a class="logo" href="#" aria-label="MechDost home"
+          ><img
+            class="lg-light"
+            src="file:///C:/Users/Admin/Desktop/automart/apps/web/public/brand/mechdost-logo.svg"
+            alt="MechDost"
+            height="30" /><img
+            class="lg-dark"
+            src="file:///C:/Users/Admin/Desktop/automart/apps/web/public/brand/mechdost-logo-dark.svg"
+            alt="MechDost"
+            height="30"
+        /></a>
+
+        <nav class="seg" aria-label="Main" id="seg">
+          <span class="ind" id="ind"></span>
+          <a href="#" data-i="0"
+            ><svg viewBox="0 0 24 24">
+              <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" /></svg
+            ><span>Home</span></a
+          >
+          <a href="#" data-i="1" class="on" aria-current="page"
+            ><svg viewBox="0 0 24 24">
+              <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+              <path d="M3 6h18M16 10a4 4 0 0 1-8 0" /></svg
+            ><span>Shop</span></a
+          >
+          <a href="#" data-i="2"
+            ><svg viewBox="0 0 24 24">
+              <path
+                d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"
+              /></svg
+            ><span>Workshops</span></a
+          >
+          <a href="#" data-i="3"
+            ><svg viewBox="0 0 24 24">
+              <path d="M5 17h14v-4l-2-5H7l-2 5z" />
+              <circle cx="7.5" cy="17" r="2" />
+              <circle cx="16.5" cy="17" r="2" /></svg
+            ><span>My vehicles</span></a
+          >
+          <a href="#" data-i="4"
+            ><svg viewBox="0 0 24 24">
+              <rect x="3" y="7" width="18" height="13" rx="2" />
+              <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18" /></svg
+            ><span>Business</span></a
+          >
+        </nav>
+
+        <div class="tools">
+          <button class="search" id="openSearch" aria-label="Search products (press /)">
+            <svg viewBox="0 0 24 24" style="width: 18px; height: 18px">
+              <circle cx="11" cy="11" r="7" />
+              <path d="m20 20-3.5-3.5" /></svg
+            ><span>Search parts…</span><kbd>/</kbd>
+          </button>
+          <div style="position: relative">
+            <button class="ib" aria-label="Notifications, 3 new" aria-haspopup="dialog" data-pop="pn">
+              <svg viewBox="0 0 24 24">
+                <path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg
+              ><span class="dot"></span>
+            </button>
+            <div class="pop notes" id="pn" role="dialog" aria-label="Notifications" style="width: 330px">
+              <h4>Notifications <a href="#">Mark all read</a></h4>
+              <div class="note">
+                <span class="ic"
+                  ><svg viewBox="0 0 24 24">
+                    <path d="M21 8 12 3 3 8v8l9 5 9-5z" />
+                    <path d="m3 8 9 5 9-5M12 13v8" /></svg
+                ></span>
+                <div>
+                  <p>Order MD-RPR-2026-QA0001 is out for delivery</p>
+                  <small>12 min ago</small>
+                </div>
+              </div>
+              <div class="note">
+                <span class="ic"
+                  ><svg viewBox="0 0 24 24">
+                    <path
+                      d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"
+                    /></svg
+                ></span>
+                <div>
+                  <p>Estimate ready for your Activa service</p>
+                  <small>1 h ago</small>
+                </div>
+              </div>
+              <div class="note">
+                <span class="ic"
+                  ><svg viewBox="0 0 24 24">
+                    <path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z" />
+                    <circle cx="7.5" cy="7.5" r="1.5" /></svg
+                ></span>
+                <div>
+                  <p>Price ready for your bulk quote</p>
+                  <small>Yesterday</small>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style="position: relative">
+            <button class="avatar" aria-label="Account menu" aria-haspopup="menu" data-pop="pa">T</button>
+            <div class="pop" id="pa" role="menu" aria-label="Account">
+              <div class="me">
+                <span class="avatar">T</span>
+                <div><b>Test Customer</b><small>+91 90000 00001</small></div>
+              </div>
+              <a class="mi" href="#" role="menuitem"
+                ><svg viewBox="0 0 24 24">
+                  <circle cx="12" cy="8" r="4" />
+                  <path d="M4 21a8 8 0 0 1 16 0" /></svg
+                >Profile &amp; security</a
+              >
+              <a class="mi" href="#" role="menuitem"
+                ><svg viewBox="0 0 24 24">
+                  <path d="M21 8 12 3 3 8v8l9 5 9-5z" />
+                  <path d="m3 8 9 5 9-5M12 13v8" /></svg
+                >My orders<span class="r">2 active</span></a
+              >
+              <a class="mi" href="#" role="menuitem"
+                ><svg viewBox="0 0 24 24">
+                  <path d="M5 17h14v-4l-2-5H7l-2 5z" />
+                  <circle cx="7.5" cy="17" r="2" />
+                  <circle cx="16.5" cy="17" r="2" /></svg
+                >My vehicles</a
+              >
+              <a class="mi" href="#" role="menuitem"
+                ><svg viewBox="0 0 24 24">
+                  <path
+                    d="M19 14c1.5-1.5 3-3.2 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.8 0-3 .5-4.5 2-1.5-1.5-2.7-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4 3 5.5l7 7z"
+                  /></svg
+                >Saved items</a
+              >
+              <div class="hr"></div>
+              <button class="mi" id="themeItem" role="menuitemcheckbox" aria-checked="false">
+                <svg viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9" /></svg>Dark mode<span
+                  class="sw"
+                ></span>
+              </button>
+              <button class="mi" role="menuitem">
+                <svg viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" /></svg
+                >हिंदी में देखें
+              </button>
+              <div class="hr"></div>
+              <button class="mi out" role="menuitem">
+                <svg viewBox="0 0 24 24">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <path d="m16 17 5-5-5-5M21 12H9" /></svg
+                >Sign out
+              </button>
+            </div>
+          </div>
+          <div style="position: relative">
+            <button class="cart" id="cartBtn" aria-label="Cart, 2 items" aria-haspopup="dialog" data-pop="pc">
+              <svg viewBox="0 0 24 24" style="width: 18px; height: 18px">
+                <circle cx="8" cy="21" r="1" />
+                <circle cx="19" cy="21" r="1" />
+                <path
+                  d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"
+                /></svg
+              >Cart<span class="n" id="cn">2</span>
+            </button>
+            <div class="pop mini" id="pc" role="dialog" aria-label="Cart">
+              <div class="it">
+                <span class="th"
+                  ><svg viewBox="0 0 24 24"><path d="M9 3h6l1 4H8zM7 7h10v14H7z" /></svg
+                ></span>
+                <div>
+                  <p>Castrol Activ 4T 20W-40</p>
+                  <small>900 ml · 1</small>
+                </div>
+                <span class="pr">₹440</span>
+              </div>
+              <div class="it">
+                <span class="th"
+                  ><svg viewBox="0 0 24 24">
+                    <rect x="3" y="8" width="18" height="12" rx="2" />
+                    <path d="M7 8V6h3v2M14 8V6h3v2" /></svg
+                ></span>
+                <div>
+                  <p>Exide Xplore 2W battery</p>
+                  <small>XLTZ4A · 1</small>
+                </div>
+                <span class="pr">₹1,000</span>
+              </div>
+              <div class="go">
+                <a class="btn sec" href="#">View cart</a><a class="btn pri" href="#">Checkout</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <h1>Genuine parts and trusted workshops across Chhattisgarh.</h1>
+        <p>
+          Scroll to see the bar shrink. Try the account menu, bell, cart, search (press /) and the nav — the
+          white chip slides to the page you pick.
+        </p>
+      </section>
+      <div class="grid">
+        <div class="card"></div>
+        <div class="card"></div>
+        <div class="card"></div>
+        <div class="card"></div>
+      </div>
+      <div class="grid">
+        <div class="card"></div>
+        <div class="card"></div>
+        <div class="card"></div>
+        <div class="card"></div>
+      </div>
+    </main>
+
+    <div class="lab">Full footer, with "For partners" as one more column</div>
+    <footer class="ft">
+      <div class="ft-top">
+        <section class="help" aria-labelledby="ft-help">
+          <h3 id="ft-help">Have a question? Talk to MechDost.</h3>
+          <p>
+            Product sourcing, vehicle service and partner enquiries. Our team confirms each request manually.
+          </p>
+          <div class="help-actions">
+            <a class="wa" href="#"
+              ><svg viewBox="0 0 24 24"><path d="M3 21l1.7-5A8.5 8.5 0 1 1 8 19.3z" /></svg>WhatsApp
+              7978776551</a
+            >
+            <a class="call" href="#"
+              ><svg viewBox="0 0 24 24">
+                <path
+                  d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"
+                /></svg
+              >Call us</a
+            >
+          </div>
+        </section>
+        <div class="cols">
+          <nav aria-labelledby="c1">
+            <h4 id="c1">Shop</h4>
+            <ul>
+              <li><a href="#">All products</a></li>
+              <li><a href="#">Tyres</a></li>
+              <li><a href="#">Batteries</a></li>
+              <li><a href="#">Lubricants</a></li>
+              <li><a href="#">Offers</a></li>
+              <li><a href="#">Bulk orders</a></li>
+            </ul>
+          </nav>
+          <nav aria-labelledby="c2">
+            <h4 id="c2">Vehicle care</h4>
+            <ul>
+              <li><a href="#">Find workshops</a></li>
+              <li><a href="#">My vehicles</a></li>
+              <li><a href="#">Service requests</a></li>
+            </ul>
+          </nav>
+          <nav aria-labelledby="c3">
+            <h4 id="c3">Your account</h4>
+            <ul>
+              <li><a href="#">Account</a></li>
+              <li><a href="#">Track an order</a></li>
+              <li><a href="#">Bulk quotes</a></li>
+              <li><a href="#">Cart</a></li>
+            </ul>
+          </nav>
+          <nav aria-labelledby="c4">
+            <h4 id="c4">For business</h4>
+            <ul>
+              <li><a href="#">Mechanics &amp; garages</a></li>
+              <li><a href="#">Fleets</a></li>
+              <li><a href="#">Bulk orders</a></li>
+            </ul>
+          </nav>
+          <nav aria-labelledby="c5" class="partners">
+            <h4 id="c5">For partners</h4>
+            <ul>
+              <li>
+                <a href="#"
+                  ><span class="pi"
+                    ><svg viewBox="0 0 24 24">
+                      <path d="M3 9 5 4h14l2 5" />
+                      <path d="M4 9v11h16V9M9 20v-6h6v6" /></svg></span
+                  >Apply as a seller</a
+                >
+              </li>
+              <li>
+                <a href="#"
+                  ><span class="pi"
+                    ><svg viewBox="0 0 24 24">
+                      <path
+                        d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"
+                      /></svg></span
+                  >Apply as a workshop</a
+                >
+              </li>
+              <li>
+                <a href="#"
+                  ><span class="pi"
+                    ><svg viewBox="0 0 24 24">
+                      <circle cx="12" cy="7" r="4" />
+                      <path d="M5.5 21a6.5 6.5 0 0 1 13 0" /></svg></span
+                  >Apply as a mechanic</a
+                >
+              </li>
+            </ul>
+            <a class="how" href="#">How partnering works</a>
+          </nav>
+        </div>
+      </div>
+      <div class="ft-bot">
+        <div class="who">
+          <img
+            class="lg-light"
+            src="file:///C:/Users/Admin/Desktop/automart/apps/web/public/brand/mechdost-logo.svg"
+            alt="MechDost"
+            height="26"
+          /><img
+            class="lg-dark"
+            src="file:///C:/Users/Admin/Desktop/automart/apps/web/public/brand/mechdost-logo-dark.svg"
+            alt="MechDost"
+            height="26"
+          />
+          <p>
+            Operated by Shourya Integrated Services Pvt Ltd, GSTIN 22ABVCS4888H1ZL<br />C-605 Salasar Greens,
+            Sarona, Tatibandh, Raipur 492099
+          </p>
+        </div>
+        <div class="prefs">
+          <a class="pref" href="#" lang="hi"
+            ><svg viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" /></svg
+            >हिंदी</a
+          >
+          <button class="pref" id="ftTheme" aria-pressed="false">
+            <svg viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9" /></svg>Dark mode
+          </button>
+        </div>
+      </div>
+      <nav class="legal" aria-label="Policies">
+        <a href="#">Company &amp; contact</a><a href="#">Terms of Service</a><a href="#">Privacy policy</a
+        ><a href="#">Delivery &amp; payment</a><a href="#">Returns &amp; refunds</a
+        ><a href="#">Workshop bookings</a><span>© 2026 Shourya Integrated Services Pvt Ltd</span>
+      </nav>
+    </footer>
+
+    <div class="lab" style="text-align: center">Phone, 390 px</div>
+    <div class="phone">
+      <div class="mh">
+        <a class="logo" href="#" aria-label="MechDost home"
+          ><img
+            class="lg-light"
+            src="file:///C:/Users/Admin/Desktop/automart/apps/web/public/brand/mechdost-logo.svg"
+            alt="MechDost"
+            height="26" /><img
+            class="lg-dark"
+            src="file:///C:/Users/Admin/Desktop/automart/apps/web/public/brand/mechdost-logo-dark.svg"
+            alt="MechDost"
+            height="26"
+        /></a>
+        <div class="sp">
+          <button class="ib" aria-label="Notifications, 3 new">
+            <svg viewBox="0 0 24 24">
+              <path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+              <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg
+            ><span class="dot"></span>
+          </button>
+          <button class="ib" aria-label="Cart, 2 items">
+            <svg viewBox="0 0 24 24">
+              <circle cx="8" cy="21" r="1" />
+              <circle cx="19" cy="21" r="1" />
+              <path
+                d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"
+              /></svg
+            ><span class="dot" style="background: var(--accent)"></span>
+          </button>
+          <button
+            class="avatar"
+            style="width: 36px; height: 36px; border-radius: 11px"
+            aria-label="Account menu"
+          >
+            T
+          </button>
+        </div>
+      </div>
+      <div class="msb">
+        <svg viewBox="0 0 24 24" style="width: 18px; height: 18px">
+          <circle cx="11" cy="11" r="7" />
+          <path d="m20 20-3.5-3.5" /></svg
+        >Search parts, oil, batteries…
+      </div>
+      <div class="body">
+        <div class="card"></div>
+        <div class="card"></div>
+        <div class="card"></div>
+        <div class="card"></div>
+      </div>
+      <nav class="dock" aria-label="Tabs">
+        <a href="#"
+          ><svg viewBox="0 0 24 24">
+            <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" /></svg
+          >Home</a
+        >
+        <a href="#" class="on" aria-current="page"
+          ><svg viewBox="0 0 24 24">
+            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+            <path d="M3 6h18M16 10a4 4 0 0 1-8 0" /></svg
+          >Shop</a
+        >
+        <a href="#"
+          ><svg viewBox="0 0 24 24">
+            <path
+              d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"
+            /></svg
+          >Workshops</a
+        >
+        <a href="#"
+          ><svg viewBox="0 0 24 24">
+            <path d="M5 17h14v-4l-2-5H7l-2 5z" />
+            <circle cx="7.5" cy="17" r="2" />
+            <circle cx="16.5" cy="17" r="2" /></svg
+          >Vehicles</a
+        >
+      </nav>
+    </div>
+
+    <div class="scrim" id="scrim" role="dialog" aria-modal="true" aria-label="Search">
+      <div class="palette">
+        <div class="in">
+          <svg viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="7" />
+            <path d="m20 20-3.5-3.5" /></svg
+          ><input id="q" placeholder="Search parts, brands, tyre size, part number…" /><kbd
+            style="font: 700 11px 'DM Sans'; color: var(--muted)"
+            >Esc</kbd
+          >
+        </div>
+        <div class="grp">
+          <small>Popular searches</small><span class="chip">20W-40 bike oil</span
+          ><span class="chip">Exide car battery</span><span class="chip">90/90-12 tyre</span
+          ><span class="chip">Brake pads</span><span class="chip">बैटरी</span>
+        </div>
+        <div class="grp">
+          <small>Categories</small><span class="chip">Lubricants</span><span class="chip">Batteries</span
+          ><span class="chip">Tyres</span><span class="chip">Car care</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="demo-bar">
+      <span>Demo</span><button id="tLight" class="on">Light</button><button id="tDark">Dark</button
+      ><button id="addCart">+ Add to cart</button>
+    </div>
+
+    <script>
+      const root = document.documentElement,
+        hdr = document.getElementById('hdr');
+      const seg = document.getElementById('seg'),
+        ind = document.getElementById('ind');
+      function moveInd(a) {
+        ind.style.width = a.offsetWidth + 'px';
+        ind.style.transform = 'translateX(' + a.offsetLeft + 'px)';
+      }
+      seg.querySelectorAll('a').forEach((a) =>
+        a.addEventListener('click', (e) => {
+          e.preventDefault();
+          seg.querySelectorAll('a').forEach((x) => {
+            x.classList.remove('on');
+            x.removeAttribute('aria-current');
+          });
+          a.classList.add('on');
+          a.setAttribute('aria-current', 'page');
+          moveInd(a);
+        }),
+      );
+      addEventListener('load', () => moveInd(seg.querySelector('a.on')));
+      addEventListener('resize', () => moveInd(seg.querySelector('a.on')));
+      addEventListener('scroll', () => hdr.classList.toggle('scrolled', scrollY > 20), { passive: true });
+      const pops = [...document.querySelectorAll('.pop')];
+      document.querySelectorAll('[data-pop]').forEach((b) =>
+        b.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const p = document.getElementById(b.dataset.pop);
+          const was = p.classList.contains('open');
+          pops.forEach((x) => x.classList.remove('open'));
+          if (!was) p.classList.add('open');
+          b.setAttribute('aria-expanded', String(!was));
+        }),
+      );
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.pop')) pops.forEach((x) => x.classList.remove('open'));
+      });
+      const setTheme = (d) => {
+        document.getElementById('ftTheme').setAttribute('aria-pressed', String(d));
+        root.classList.toggle('dark', d);
+        document.getElementById('tDark').classList.toggle('on', d);
+        document.getElementById('tLight').classList.toggle('on', !d);
+        document.getElementById('themeItem').setAttribute('aria-checked', String(d));
+      };
+      document.getElementById('tLight').onclick = () => setTheme(false);
+      document.getElementById('tDark').onclick = () => setTheme(true);
+      document.getElementById('ftTheme').onclick = () => setTheme(!root.classList.contains('dark'));
+      document.getElementById('themeItem').onclick = (e) => {
+        e.stopPropagation();
+        setTheme(!root.classList.contains('dark'));
+      };
+      const scrim = document.getElementById('scrim');
+      const openS = () => {
+        scrim.classList.add('open');
+        setTimeout(() => document.getElementById('q').focus(), 20);
+      };
+      document.getElementById('openSearch').onclick = openS;
+      document.addEventListener('keydown', (e) => {
+        if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
+          e.preventDefault();
+          openS();
+        }
+        if (e.key === 'Escape') {
+          scrim.classList.remove('open');
+          pops.forEach((x) => x.classList.remove('open'));
+        }
+      });
+      scrim.addEventListener('click', (e) => {
+        if (e.target === scrim) scrim.classList.remove('open');
+      });
+      let n = 2;
+      document.getElementById('addCart').onclick = () => {
+        n++;
+        document.getElementById('cn').textContent = n;
+        const c = document.getElementById('cartBtn');
+        c.setAttribute('aria-label', 'Cart, ' + n + ' items');
+        c.classList.remove('bump');
+        void c.offsetWidth;
+        c.classList.add('bump');
+      };
+    </script>
+  </body>
+</html>

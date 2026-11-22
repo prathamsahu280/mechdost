@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MechDost samples — Order tracking</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=DM+Sans:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="mds.css" />
+    <style>
+      .hero {
+        margin: 12px;
+        border-radius: 20px;
+        padding: 16px;
+        background: var(--ink);
+        color: #fff;
+      }
+      .dark .hero {
+        background: #1a2c47;
+      }
+      .hero small {
+        color: #aebcd0;
+        font-size: 12.5px;
+      }
+      .hero h2 {
+        font-size: 22px;
+        margin: 2px 0 4px;
+        color: #fff;
+      }
+      .hero p {
+        margin: 0;
+        color: #c9d4e2;
+        font-size: 13.5px;
+      }
+      .code {
+        margin-top: 14px;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 14px;
+        padding: 12px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .code b {
+        font: 800 26px Manrope;
+        letter-spacing: 6px;
+        color: #fff;
+      }
+      .code span {
+        font-size: 12.5px;
+        color: #c9d4e2;
+        line-height: 1.4;
+      }
+      .tl {
+        margin: 12px;
+        background: var(--surface);
+        border-radius: 18px;
+        box-shadow: var(--ring);
+        padding: 16px;
+      }
+      .tl h3 {
+        font-size: 15px;
+        margin-bottom: 12px;
+      }
+      .ev {
+        display: grid;
+        grid-template-columns: 26px 1fr;
+        gap: 12px;
+        position: relative;
+        padding-bottom: 16px;
+      }
+      .ev:last-child {
+        padding-bottom: 0;
+      }
+      .ev::before {
+        content: '';
+        position: absolute;
+        left: 12px;
+        top: 26px;
+        bottom: 0;
+        width: 2px;
+        background: var(--line);
+      }
+      .ev:last-child::before {
+        display: none;
+      }
+      .ev.done::before {
+        background: var(--good);
+      }
+      .ev i {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: var(--pill);
+        color: var(--faint);
+        font-style: normal;
+        z-index: 1;
+      }
+      .ev.done i {
+        background: var(--good);
+        color: #fff;
+      }
+      .ev.now i {
+        background: var(--accent-btn);
+        color: #fff;
+        box-shadow: 0 0 0 5px var(--soft);
+      }
+      .ev i svg {
+        width: 14px;
+        height: 14px;
+        stroke-width: 2.6;
+      }
+      .ev b {
+        font-size: 14px;
+        display: block;
+      }
+      .ev small {
+        color: var(--muted);
+        font-size: 12.5px;
+      }
+      .ev.todo b {
+        color: var(--muted);
+      }
+      .it {
+        margin: 12px;
+        background: var(--surface);
+        border-radius: 18px;
+        box-shadow: var(--ring);
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .it .r {
+        display: grid;
+        grid-template-columns: 52px 1fr auto;
+        gap: 10px;
+        align-items: center;
+      }
+      .it .im {
+        width: 52px;
+        height: 52px;
+        border-radius: 12px;
+        background: #fff;
+        box-shadow: var(--ring);
+        display: grid;
+        place-items: center;
+      }
+      .it .im img {
+        max-width: 80%;
+        max-height: 80%;
+      }
+      .it b {
+        font-size: 13.5px;
+        display: block;
+      }
+      .it small {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .acts {
+        margin: 12px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .acts a {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 14px;
+        border-radius: 16px;
+        background: var(--surface);
+        box-shadow: var(--ring);
+        text-decoration: none;
+        color: var(--ink);
+        font: 700 13.5px 'DM Sans';
+      }
+      .acts a svg {
+        color: var(--soft-text);
+      }
+      .acts small {
+        color: var(--muted);
+        font-weight: 500;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="doc">
+      <header>
+        <div>
+          <h1>Order tracking</h1>
+          <p class="sub">
+            The page people open most after buying. Status in plain words at the top, the delivery code big
+            and clear, a simple timeline, and the help actions as tiles.
+          </p>
+        </div>
+        <nav class="pages">
+          <a href="index.html">Overview</a><a href="home.html">Home</a><a href="shop.html">Shop</a
+          ><a href="product.html">Product</a><a href="workshops.html">Workshops</a
+          ><a href="cart.html">Cart &amp; checkout</a><a class="on" href="orders.html">Order tracking</a>
+        </nav>
+      </header>
+      <div class="stage">
+        <div>
+          <p class="cap">Phone · out for delivery</p>
+          <div class="phone" data-themeable>
+            <div class="scroll">
+              <div class="ph-top" style="display: flex; gap: 10px; align-items: center">
+                <button class="ib" style="background: var(--pill)">
+                  <svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" /></svg>
+                </button>
+                <div>
+                  <b style="font: 800 16px Manrope">Order MD-RPR-2026-QA0001</b>
+                  <div style="font-size: 12.5px; color: var(--muted)">
+                    Placed 22 Nov · Cash on delivery · ₹1,588
+                  </div>
+                </div>
+              </div>
+              <div class="hero">
+                <small>Out for delivery</small>
+                <h2>Arriving today by 7 pm</h2>
+                <p>Rakesh is on the way to Shankar Nagar.</p>
+                <div class="code">
+                  <b>4821</b
+                  ><span>Share this code with the delivery person only when you have your parts.</span>
+                </div>
+                <div style="display: flex; gap: 8px; margin-top: 12px">
+                  <a class="btn btn-pri" style="flex: 1; height: 42px; font-size: 14px"
+                    ><svg viewBox="0 0 24 24">
+                      <path
+                        d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"
+                      /></svg
+                    >Call delivery</a
+                  ><a
+                    class="btn"
+                    style="
+                      flex: 1;
+                      height: 42px;
+                      font-size: 14px;
+                      background: rgba(255, 255, 255, 0.1);
+                      color: #fff;
+                    "
+                    >Share location</a
+                  >
+                </div>
+              </div>
+              <div class="tl">
+                <h3>Progress</h3>
+                <div class="ev done">
+                  <i
+                    ><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></svg
+                  ></i>
+                  <div><b>Order placed</b><small>22 Nov, 6:10 pm</small></div>
+                </div>
+                <div class="ev done">
+                  <i
+                    ><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></svg
+                  ></i>
+                  <div><b>Confirmed by MechDost</b><small>22 Nov, 6:22 pm · in 12 minutes</small></div>
+                </div>
+                <div class="ev done">
+                  <i
+                    ><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></svg
+                  ></i>
+                  <div><b>Packed</b><small>23 Nov, 10:40 am</small></div>
+                </div>
+                <div class="ev now">
+                  <i
+                    ><svg viewBox="0 0 24 24">
+                      <rect x="1" y="3" width="15" height="13" />
+                      <path d="M16 8h4l3 3v5h-7z" /></svg
+                  ></i>
+                  <div><b>Out for delivery</b><small>23 Nov, 2:15 pm</small></div>
+                </div>
+                <div class="ev todo">
+                  <i></i>
+                  <div><b>Delivered</b><small>Share the code 4821 to finish</small></div>
+                </div>
+              </div>
+              <div class="it">
+                <div class="r">
+                  <span class="im"><img src="img/oil0.webp" alt="" /></span>
+                  <div><b>Castrol Activ 4T 20W-40</b><small>900 ml × 1</small></div>
+                  <b>₹499</b>
+                </div>
+                <div class="r">
+                  <span class="im"><img src="img/bat0.webp" alt="" /></span>
+                  <div><b>Exide Xplore 12XL2.5L-C</b><small>2.5 Ah × 1</small></div>
+                  <b>₹1,099</b>
+                </div>
+              </div>
+              <div class="acts">
+                <a
+                  ><svg viewBox="0 0 24 24"><path d="M3 21l1.7-5A8.5 8.5 0 1 1 8 19.3z" /></svg>Help on
+                  WhatsApp<small>Hindi or English</small></a
+                >
+                <a
+                  ><svg viewBox="0 0 24 24">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <path d="M14 2v6h6M8 13h8M8 17h8" /></svg
+                  >Download bill<small>PDF with GST details</small></a
+                >
+                <a
+                  ><svg viewBox="0 0 24 24">
+                    <path
+                      d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"
+                    /></svg
+                  >Get it fitted<small>Book a mechanic nearby</small></a
+                >
+                <a
+                  ><svg viewBox="0 0 24 24">
+                    <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+                    <path d="M3 3v5h5" /></svg
+                  >Order again<small>Same items, today's price</small></a
+                >
+              </div>
+            </div>
+            <nav class="dock">
+              <a href="home.html"
+                ><svg viewBox="0 0 24 24">
+                  <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" /></svg
+                >Home</a
+              ><a href="shop.html"
+                ><svg viewBox="0 0 24 24">
+                  <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                  <path d="M3 6h18M16 10a4 4 0 0 1-8 0" /></svg
+                >Shop</a
+              ><a href="workshops.html"
+                ><svg viewBox="0 0 24 24">
+                  <path
+                    d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"
+                  /></svg
+                >Service</a
+              ><a href="cart.html"
+                ><svg viewBox="0 0 24 24">
+                  <circle cx="8" cy="21" r="1" />
+                  <circle cx="19" cy="21" r="1" />
+                  <path
+                    d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"
+                  /></svg
+                >Cart</a
+              ><a class="on"
+                ><svg viewBox="0 0 24 24">
+                  <circle cx="12" cy="8" r="4" />
+                  <path d="M4 21a8 8 0 0 1 16 0" /></svg
+                >Account</a
+              >
+            </nav>
+          </div>
+        </div>
+        <div class="why">
+          <h3>What changed and why</h3>
+          <ul>
+            <li>
+              The top card answers <b>"when will it arrive?"</b> in plain words, then shows the
+              <b>4-digit delivery code</b> big, with when to share it (our delivery is only completed with
+              this code).
+            </li>
+            <li>
+              Call the delivery person and share location — the two things people do on delivery day.
+              <span style="color: #9a5b00"
+                >(Rider details depend on the delivery-agent section planned for tomorrow's discussion.)</span
+              >
+            </li>
+            <li>
+              A <b>simple timeline</b> with times; "Confirmed by MechDost in 12 minutes" builds trust in the
+              confirmation step.
+            </li>
+            <li>
+              Four help tiles: WhatsApp help, bill PDF, <b>"Get it fitted"</b> (workshop cross-sell), and
+              <b>Order again</b> (already built).
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="toggle">
+      <button data-t="light" class="on">Light</button><button data-t="dark">Dark</button>
+    </div>
+    <script src="data.js"></script>
+    <script>
+      logos();
+      themeToggle();
+    </script>
+  </body>
+</html>

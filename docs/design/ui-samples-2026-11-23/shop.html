@@ -1,0 +1,536 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MechDost samples — Shop</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=DM+Sans:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="mds.css" />
+    <style>
+      .stk {
+        position: sticky;
+        top: 0;
+        z-index: 4;
+        background: var(--surface);
+        padding: 12px 14px 10px;
+        box-shadow: 0 1px 0 var(--line);
+      }
+      .stk .row1 {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .back {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        background: var(--pill);
+        border: 0;
+        color: var(--ink);
+      }
+      .stk .search {
+        margin: 0;
+        flex: 1;
+        height: 44px;
+      }
+      .fitbar {
+        margin-top: 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 10px;
+        border-radius: 12px;
+        background: var(--good-bg);
+        color: var(--good);
+        font: 600 13px 'DM Sans';
+      }
+      .fitbar b {
+        font-weight: 800;
+      }
+      .fitbar a {
+        margin-left: auto;
+        font-weight: 800;
+        text-decoration: none;
+        color: inherit;
+      }
+      .stk .chips {
+        margin-top: 10px;
+      }
+      .cnt {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 16px 8px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .cnt b {
+        color: var(--ink);
+      }
+      .list {
+        padding: 0 12px;
+      }
+      .sheet {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: var(--surface);
+        border-radius: 24px 24px 0 0;
+        box-shadow: 0 -20px 50px -10px rgba(0, 0, 0, 0.35);
+        padding: 10px 18px 24px;
+        z-index: 8;
+      }
+      .sheet .grab {
+        width: 44px;
+        height: 5px;
+        border-radius: 3px;
+        background: var(--line);
+        margin: 0 auto 12px;
+      }
+      .sheet h3 {
+        font-size: 17px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .sheet h3 a {
+        font: 700 13px 'DM Sans';
+        color: var(--soft-text);
+        text-decoration: none;
+      }
+      .sheet h4 {
+        font: 700 13.5px 'DM Sans';
+        margin: 16px 0 8px;
+        color: var(--muted);
+      }
+      .sheet .chips {
+        flex-wrap: wrap;
+      }
+      .range {
+        height: 6px;
+        border-radius: 3px;
+        background: var(--pill);
+        position: relative;
+        margin: 14px 4px 6px;
+      }
+      .range i {
+        position: absolute;
+        left: 12%;
+        right: 35%;
+        top: 0;
+        bottom: 0;
+        background: var(--accent-btn);
+        border-radius: 3px;
+      }
+      .range i::before,
+      .range i::after {
+        content: '';
+        position: absolute;
+        top: -6px;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+      }
+      .range i::before {
+        left: -9px;
+      }
+      .range i::after {
+        right: -9px;
+      }
+      .rl {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12.5px;
+        color: var(--muted);
+      }
+      .scrim {
+        position: absolute;
+        inset: 0;
+        background: rgba(8, 18, 34, 0.45);
+        z-index: 7;
+      }
+      /* desktop */
+      .dwrap {
+        display: grid;
+        grid-template-columns: 250px 1fr;
+        gap: 20px;
+        padding: 20px;
+      }
+      .side {
+        background: var(--surface);
+        border-radius: 20px;
+        box-shadow: var(--ring);
+        padding: 18px;
+        align-self: start;
+      }
+      .side h3 {
+        font-size: 15px;
+        margin: 2px 0 10px;
+      }
+      .side .grp {
+        padding: 12px 0;
+        border-top: 1px solid var(--line);
+      }
+      .side .grp:first-of-type {
+        border-top: 0;
+      }
+      .ck {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 6px 0;
+        font-size: 14px;
+        color: var(--ink-2);
+      }
+      .ck span.b {
+        width: 18px;
+        height: 18px;
+        border-radius: 5px;
+        box-shadow: inset 0 0 0 1.5px var(--line);
+      }
+      .ck span.b.on {
+        background: var(--accent-btn);
+        box-shadow: none;
+        position: relative;
+      }
+      .ck span.b.on::after {
+        content: '';
+        position: absolute;
+        left: 6px;
+        top: 2px;
+        width: 4px;
+        height: 9px;
+        border: solid #fff;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+      }
+      .ck small {
+        margin-left: auto;
+        color: var(--faint);
+      }
+      .dtop {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .dtop h1 {
+        font-size: 24px;
+      }
+      .dtop .sort {
+        display: flex;
+        gap: 6px;
+      }
+      .applied {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 14px;
+        flex-wrap: wrap;
+      }
+      .applied .chip {
+        height: 32px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="doc">
+      <header>
+        <div>
+          <h1>Shop</h1>
+          <p class="sub">
+            Products on the first screen. Search, "fits my vehicle", categories and sort stay pinned at the
+            top; everything else lives in one filter sheet. Desktop keeps filters visible on the left.
+          </p>
+        </div>
+        <nav class="pages">
+          <a href="index.html">Overview</a><a href="home.html">Home</a><a class="on" href="shop.html">Shop</a
+          ><a href="product.html">Product</a><a href="workshops.html">Workshops</a
+          ><a href="cart.html">Cart &amp; checkout</a><a href="orders.html">Order tracking</a>
+        </nav>
+      </header>
+      <div class="stage">
+        <div>
+          <p class="cap">Phone · results</p>
+          <div class="phone" data-themeable>
+            <div class="scroll">
+              <div class="stk">
+                <div class="row1">
+                  <button class="back" aria-label="Back">
+                    <svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" /></svg>
+                  </button>
+                  <div class="search">
+                    <svg viewBox="0 0 24 24">
+                      <circle cx="11" cy="11" r="7" />
+                      <path d="m20 20-3.5-3.5" /></svg
+                    ><span style="color: var(--ink); font-weight: 600">engine oil</span
+                    ><span class="mic"
+                      ><svg viewBox="0 0 24 24">
+                        <rect x="9" y="3" width="6" height="11" rx="3" />
+                        <path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></svg
+                    ></span>
+                  </div>
+                </div>
+                <div class="fitbar">
+                  <svg viewBox="0 0 24 24" style="width: 18px; height: 18px"><path d="M20 6 9 17l-5-5" /></svg
+                  ><span>Showing parts that fit <b>Activa 6G</b></span
+                  ><a href="#">Change</a>
+                </div>
+                <div class="chips">
+                  <button class="chip">
+                    <svg viewBox="0 0 24 24"><path d="M3 6h18M6 12h12M10 18h4" /></svg>Filters · 2</button
+                  ><button class="chip">
+                    Sort: Popular <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg></button
+                  ><button class="chip on">2W</button><button class="chip">Castrol</button
+                  ><button class="chip">Gulf</button><button class="chip">1 L &amp; under</button>
+                </div>
+              </div>
+              <div class="cnt">
+                <span><b>48 products</b> · Raipur</span><span>Cash on delivery ✓</span>
+              </div>
+              <div class="list"><div class="grid2" data-grid="0,2,1,3,5,6"></div></div>
+            </div>
+            <nav class="dock">
+              <a href="home.html"
+                ><svg viewBox="0 0 24 24">
+                  <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" /></svg
+                >Home</a
+              ><a class="on"
+                ><svg viewBox="0 0 24 24">
+                  <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                  <path d="M3 6h18M16 10a4 4 0 0 1-8 0" /></svg
+                >Shop</a
+              ><a href="workshops.html"
+                ><svg viewBox="0 0 24 24">
+                  <path
+                    d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"
+                  /></svg
+                >Service</a
+              ><a href="cart.html"
+                ><svg viewBox="0 0 24 24">
+                  <circle cx="8" cy="21" r="1" />
+                  <circle cx="19" cy="21" r="1" />
+                  <path
+                    d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"
+                  /></svg
+                >Cart<span class="n">2</span></a
+              ><a
+                ><svg viewBox="0 0 24 24">
+                  <circle cx="12" cy="8" r="4" />
+                  <path d="M4 21a8 8 0 0 1 16 0" /></svg
+                >Account</a
+              >
+            </nav>
+          </div>
+        </div>
+
+        <div>
+          <p class="cap">Phone · filter sheet open</p>
+          <div class="phone" data-themeable>
+            <div class="scroll" style="overflow: hidden">
+              <div class="stk">
+                <div class="row1">
+                  <button class="back">
+                    <svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" /></svg>
+                  </button>
+                  <div class="search">
+                    <svg viewBox="0 0 24 24">
+                      <circle cx="11" cy="11" r="7" />
+                      <path d="m20 20-3.5-3.5" /></svg
+                    ><span style="color: var(--ink); font-weight: 600">engine oil</span>
+                  </div>
+                </div>
+              </div>
+              <div class="list" style="padding-top: 12px"><div class="grid2" data-grid="0,2"></div></div>
+            </div>
+            <div class="scrim"></div>
+            <div class="sheet" role="dialog" aria-label="Filters">
+              <div class="grab"></div>
+              <h3>Filters <a href="#">Clear all</a></h3>
+              <h4>Vehicle</h4>
+              <div class="chips">
+                <button class="chip on">Two-wheeler</button><button class="chip">Car / SUV</button
+                ><button class="chip">Three-wheeler</button><button class="chip">Truck &amp; tractor</button>
+              </div>
+              <h4>Viscosity</h4>
+              <div class="chips">
+                <button class="chip on">20W-40</button><button class="chip">10W-30</button
+                ><button class="chip">15W-40</button><button class="chip">5W-30</button>
+              </div>
+              <h4>Brand</h4>
+              <div class="chips">
+                <button class="chip on">Castrol</button><button class="chip">Gulf</button
+                ><button class="chip">Motul</button><button class="chip">Servo</button>
+              </div>
+              <h4>Price</h4>
+              <div class="range"><i></i></div>
+              <div class="rl"><span>₹200</span><span>₹1,500</span></div>
+              <h4>Delivery</h4>
+              <div class="chips">
+                <button class="chip">In stock in Raipur</button><button class="chip">Cash on delivery</button>
+              </div>
+              <a class="btn btn-pri" style="width: 100%; margin-top: 18px">Show 12 products</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="why">
+          <h3>What changed and why</h3>
+          <ul>
+            <li>
+              Today the first phone screen is a headline, a paragraph and a 4-field form;
+              <b>products start after 1½ screens</b>. Here they start on screen one.
+            </li>
+            <li><b>"Fits Activa 6G" bar</b> (green) makes the vehicle filter visible and easy to change.</li>
+            <li>
+              One <b>chip row</b>: Filters (with count), Sort, then the most-used quick filters. Everything
+              else goes into a <b>bottom sheet</b> with chip choices (bigger tap targets than dropdowns).
+            </li>
+            <li>Count line shows city and "Cash on delivery ✓": the two questions buyers here ask first.</li>
+            <li>
+              Cards: image first, brand, 2-line name, rating, pack size, price vs MRP with % off, and one
+              clear button (or "Ask on WhatsApp" when there's no price yet).
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <p class="cap" style="margin-top: 30px">Desktop · 1180 px</p>
+      <div class="desk" data-themeable>
+        <div class="dh">
+          <div class="bar">
+            <span class="logo" data-logo></span>
+            <nav class="seg">
+              <a href="home.html"
+                ><svg viewBox="0 0 24 24">
+                  <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" /></svg
+                >Home</a
+              ><a class="on"
+                ><svg viewBox="0 0 24 24">
+                  <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                  <path d="M3 6h18M16 10a4 4 0 0 1-8 0" /></svg
+                >Shop</a
+              ><a href="workshops.html"
+                ><svg viewBox="0 0 24 24">
+                  <path
+                    d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"
+                  /></svg
+                >Workshops</a
+              ><a
+                ><svg viewBox="0 0 24 24">
+                  <path d="M5 17h14v-4l-2-5H7l-2 5z" />
+                  <circle cx="7.5" cy="17" r="2" />
+                  <circle cx="16.5" cy="17" r="2" /></svg
+                >My vehicles</a
+              ><a
+                ><svg viewBox="0 0 24 24">
+                  <rect x="3" y="7" width="18" height="13" rx="2" />
+                  <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg
+                >Business</a
+              >
+            </nav>
+            <div class="tools">
+              <span class="srch"
+                ><svg viewBox="0 0 24 24" style="width: 18px; height: 18px">
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="m20 20-3.5-3.5" /></svg
+                >engine oil<kbd>/</kbd></span
+              ><span class="ib"
+                ><svg viewBox="0 0 24 24">
+                  <path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                  <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg></span
+              ><span class="av">T</span
+              ><span class="cartb"
+                ><svg viewBox="0 0 24 24" style="width: 18px; height: 18px">
+                  <circle cx="8" cy="21" r="1" />
+                  <circle cx="19" cy="21" r="1" />
+                  <path
+                    d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"
+                  /></svg
+                >Cart<span class="n">2</span></span
+              >
+            </div>
+          </div>
+        </div>
+        <div class="dwrap">
+          <aside class="side">
+            <div class="fitbar" style="margin: 0 0 6px">
+              <svg viewBox="0 0 24 24" style="width: 18px; height: 18px"><path d="M20 6 9 17l-5-5" /></svg
+              ><span>Fits <b>Activa 6G</b></span
+              ><a href="#">Change</a>
+            </div>
+            <div class="grp">
+              <h3>Category</h3>
+              <div class="ck"><span class="b on"></span>Engine oil<small>48</small></div>
+              <div class="ck"><span class="b"></span>Gear oil<small>12</small></div>
+              <div class="ck"><span class="b"></span>Chain lube<small>9</small></div>
+            </div>
+            <div class="grp">
+              <h3>Brand</h3>
+              <div class="ck"><span class="b on"></span>Castrol<small>21</small></div>
+              <div class="ck"><span class="b"></span>Gulf<small>14</small></div>
+              <div class="ck"><span class="b"></span>Motul<small>8</small></div>
+              <div class="ck"><span class="b"></span>Servo<small>5</small></div>
+            </div>
+            <div class="grp">
+              <h3>Viscosity</h3>
+              <div class="chips" style="flex-wrap: wrap">
+                <button class="chip on" style="height: 32px">20W-40</button
+                ><button class="chip" style="height: 32px">10W-30</button
+                ><button class="chip" style="height: 32px">15W-40</button>
+              </div>
+            </div>
+            <div class="grp">
+              <h3>Price</h3>
+              <div class="range"><i></i></div>
+              <div class="rl"><span>₹200</span><span>₹1,500</span></div>
+            </div>
+            <div class="grp">
+              <h3>Delivery</h3>
+              <div class="ck"><span class="b on"></span>Cash on delivery</div>
+              <div class="ck"><span class="b"></span>In stock in Raipur</div>
+            </div>
+          </aside>
+          <section>
+            <div class="dtop">
+              <h1>Engine oil for Activa 6G</h1>
+              <div class="sort">
+                <button class="chip on">Popular</button><button class="chip">Price: low to high</button
+                ><button class="chip">Price: high to low</button><button class="chip">Newest</button>
+              </div>
+            </div>
+            <div class="applied">
+              <span class="chip soft">Castrol ✕</span><span class="chip soft">20W-40 ✕</span
+              ><span class="chip soft">Cash on delivery ✕</span>
+            </div>
+            <div class="grid4" data-grid="0,2,1,3,5,6,4,7"></div>
+          </section>
+        </div>
+      </div>
+    </div>
+    <div class="toggle">
+      <button data-t="light" class="on">Light</button><button data-t="dark">Dark</button>
+    </div>
+    <script src="data.js"></script>
+    <script>
+      logos();
+      document.querySelectorAll('[data-grid]').forEach(
+        (el) =>
+          (el.innerHTML = el.dataset.grid
+            .split(',')
+            .map((i) => card(MD.items[+i], false))
+            .join('')),
+      );
+      themeToggle();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,1063 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MechDost samples — Home</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=DM+Sans:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="mds.css" />
+    <style>
+      /* home-specific */
+      .veh {
+        margin: 14px 16px 0;
+        padding: 14px;
+        border-radius: 18px;
+        background: var(--ink);
+        color: #fff;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        position: relative;
+        overflow: hidden;
+      }
+      .dark .veh {
+        background: #1a2c47;
+      }
+      .veh .ic {
+        width: 46px;
+        height: 46px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.1);
+        display: grid;
+        place-items: center;
+      }
+      .veh .ic svg {
+        width: 24px;
+        height: 24px;
+      }
+      .veh small {
+        color: #aebcd0;
+        font-size: 12px;
+      }
+      .veh b {
+        display: block;
+        font: 800 16px Manrope;
+      }
+      .plate {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        margin-top: 4px;
+        background: #fff;
+        color: #101f34;
+        border-radius: 6px;
+        padding: 2px 7px;
+        font: 800 12px 'DM Sans';
+        letter-spacing: 0.6px;
+        box-shadow: inset 0 0 0 1.5px #101f34;
+      }
+      .plate i {
+        font-style: normal;
+        font-size: 9px;
+        color: #1f5fbf;
+        font-weight: 800;
+      }
+      .veh .go {
+        margin-left: auto;
+        height: 36px;
+        padding: 0 12px;
+        border-radius: 10px;
+        background: var(--accent-btn);
+        color: #fff;
+        border: 0;
+        font: 800 13px 'DM Sans';
+        white-space: nowrap;
+      }
+      .cats {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px 6px;
+      }
+      .cat {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        text-decoration: none;
+        color: var(--ink);
+        font: 600 12px/1.25 'DM Sans';
+        text-align: center;
+      }
+      .cat .t {
+        width: 64px;
+        height: 64px;
+        border-radius: 18px;
+        display: grid;
+        place-items: center;
+        background: var(--surface);
+        box-shadow: var(--ring);
+      }
+      .cat .t svg {
+        width: 28px;
+        height: 28px;
+        stroke-width: 1.7;
+      }
+      .c1 .t {
+        color: #c2410c;
+        background: #fff4ec;
+      }
+      .c2 .t {
+        color: #0f766e;
+        background: #ebfaf6;
+      }
+      .c3 .t {
+        color: #334155;
+        background: #eef2f7;
+      }
+      .c4 .t {
+        color: #1d4ed8;
+        background: #eef4ff;
+      }
+      .c5 .t {
+        color: #a16207;
+        background: #fff8e6;
+      }
+      .c6 .t {
+        color: #7c3aed;
+        background: #f4efff;
+      }
+      .c7 .t {
+        color: #be123c;
+        background: #fff0f3;
+      }
+      .c8 .t {
+        color: #166534;
+        background: #edfbf1;
+      }
+      .dark .cat .t {
+        background: var(--surface-2) !important;
+      }
+      .svc {
+        margin: 18px 16px 0;
+        border-radius: 20px;
+        padding: 18px;
+        background: linear-gradient(120deg, #fff1ea, #ffe2d2);
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 10px;
+        align-items: center;
+      }
+      .dark .svc {
+        background: #2a1910;
+      }
+      .svc h3 {
+        font-size: 18px;
+        color: #7a2a0c;
+      }
+      .dark .svc h3 {
+        color: #ffc3a3;
+      }
+      .svc p {
+        margin: 4px 0 12px;
+        color: #7a4a35;
+        font-size: 13.5px;
+        line-height: 1.45;
+      }
+      .dark .svc p {
+        color: #e0b29a;
+      }
+      .svc .big {
+        width: 84px;
+        height: 84px;
+        border-radius: 22px;
+        background: #fff;
+        display: grid;
+        place-items: center;
+        color: var(--accent-btn);
+        box-shadow: 0 10px 22px -12px rgba(210, 70, 26, 0.6);
+      }
+      .svc .big svg {
+        width: 42px;
+        height: 42px;
+        stroke-width: 1.5;
+      }
+      .ws {
+        display: flex;
+        gap: 10px;
+        overflow-x: auto;
+        scrollbar-width: none;
+        padding: 2px 16px 4px;
+        margin: 0 -16px;
+      }
+      .ws::-webkit-scrollbar {
+        display: none;
+      }
+      .wcard {
+        flex: none;
+        width: 250px;
+        background: var(--surface);
+        border-radius: 16px;
+        box-shadow: var(--ring);
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .wcard .top {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+      .wcard .lg {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        background: var(--pill);
+        display: grid;
+        place-items: center;
+        color: var(--ink-2);
+      }
+      .wcard b {
+        font: 800 14.5px Manrope;
+        display: block;
+      }
+      .wcard small {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .wcard .bot {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 13px;
+      }
+      .trust {
+        margin: 18px 16px 0;
+        display: grid;
+        gap: 8px;
+      }
+      .tr {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        padding: 12px 14px;
+        border-radius: 14px;
+        background: var(--surface);
+        box-shadow: var(--ring);
+      }
+      .tr .i {
+        width: 36px;
+        height: 36px;
+        border-radius: 11px;
+        display: grid;
+        place-items: center;
+        background: var(--good-bg);
+        color: var(--good);
+      }
+      .tr b {
+        font: 700 14px 'DM Sans';
+        display: block;
+      }
+      .tr small {
+        color: var(--muted);
+        font-size: 12.5px;
+      }
+      /* desktop */
+      .dhero {
+        margin: 22px 20px 0;
+        display: grid;
+        grid-template-columns: 1.05fr 1fr;
+        gap: 20px;
+      }
+      .find {
+        background: var(--ink);
+        color: #fff;
+        border-radius: 24px;
+        padding: 30px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .dark .find {
+        background: #14243b;
+      }
+      .find h1 {
+        font-size: 36px;
+        line-height: 1.1;
+        max-width: 480px;
+      }
+      .find p {
+        margin: 0;
+        color: #b9c6d8;
+        max-width: 460px;
+        line-height: 1.5;
+      }
+      .tabs {
+        display: inline-flex;
+        background: rgba(255, 255, 255, 0.08);
+        padding: 4px;
+        border-radius: 12px;
+        gap: 2px;
+        align-self: flex-start;
+      }
+      .tabs button {
+        border: 0;
+        background: none;
+        color: #c9d4e2;
+        font: 700 13.5px 'DM Sans';
+        padding: 8px 14px;
+        border-radius: 9px;
+      }
+      .tabs button.on {
+        background: #fff;
+        color: #101f34;
+      }
+      .selrow {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr) auto;
+        gap: 8px;
+      }
+      .sel {
+        height: 48px;
+        border-radius: 12px;
+        background: #fff;
+        color: #101f34;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 12px;
+        font: 600 14px 'DM Sans';
+      }
+      .sel svg {
+        width: 16px;
+        height: 16px;
+        color: #5b6b7e;
+      }
+      .quick {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        font-size: 13px;
+        color: #b9c6d8;
+        align-items: center;
+      }
+      .quick a {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 999px;
+        padding: 6px 11px;
+        text-decoration: none;
+        font-weight: 600;
+      }
+      .dcats {
+        background: var(--surface);
+        border-radius: 24px;
+        padding: 22px;
+        box-shadow: var(--ring);
+      }
+      .dcats h2 {
+        font-size: 18px;
+        margin-bottom: 16px;
+      }
+      .dcats .cats {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 18px 10px;
+      }
+      .dsec {
+        margin: 26px 20px 0;
+      }
+      .dsec h2 {
+        font-size: 22px;
+        margin-bottom: 14px;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+      }
+      .dsec h2 a {
+        font: 700 14px 'DM Sans';
+        color: var(--soft-text);
+        text-decoration: none;
+      }
+      .dtrust {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin: 26px 20px 28px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="doc">
+      <header>
+        <div>
+          <h1>Home</h1>
+          <p class="sub">
+            Location and vehicle first, search on top, categories as big friendly tiles, products on the first
+            screen. Left: phone in English (light). Middle: phone in Hindi (dark). Below: desktop.
+          </p>
+        </div>
+        <nav class="pages">
+          <a href="index.html">Overview</a><a class="on" href="home.html">Home</a><a href="shop.html">Shop</a
+          ><a href="product.html">Product</a><a href="workshops.html">Workshops</a
+          ><a href="cart.html">Cart &amp; checkout</a><a href="orders.html">Order tracking</a>
+        </nav>
+      </header>
+
+      <div class="stage">
+        <!-- ===== PHONE EN ===== -->
+        <div>
+          <p class="cap">Phone · English · light</p>
+          <div class="phone" data-themeable>
+            <div class="scroll">
+              <div class="ph-top">
+                <div class="loc">
+                  <span class="pin"
+                    ><svg viewBox="0 0 24 24">
+                      <path d="M12 21s-7-6.1-7-11.5a7 7 0 0 1 14 0C19 14.9 12 21 12 21z" />
+                      <circle cx="12" cy="9.5" r="2.5" /></svg
+                  ></span>
+                  <div>
+                    <b
+                      >Raipur 492001 <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg></b
+                    ><small>Delivery across Chhattisgarh · Cash on delivery</small>
+                  </div>
+                  <div class="r">
+                    <button class="ib" aria-label="Notifications">
+                      <svg viewBox="0 0 24 24">
+                        <path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                        <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg
+                      ><span class="dot"></span>
+                    </button>
+                  </div>
+                </div>
+                <div class="search">
+                  <svg viewBox="0 0 24 24">
+                    <circle cx="11" cy="11" r="7" />
+                    <path d="m20 20-3.5-3.5" /></svg
+                  >Search oil, battery, tyre size…<span class="mic" aria-label="Voice search"
+                    ><svg viewBox="0 0 24 24">
+                      <rect x="9" y="3" width="6" height="11" rx="3" />
+                      <path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></svg
+                  ></span>
+                </div>
+              </div>
+
+              <div class="veh">
+                <span class="ic"
+                  ><svg viewBox="0 0 24 24">
+                    <circle cx="5.5" cy="17" r="3" />
+                    <circle cx="18.5" cy="17" r="3" />
+                    <path d="M8.5 17h5l3-6h-4l-2-3H8M15 6h2l1.5 5" /></svg
+                ></span>
+                <div>
+                  <small>Shopping for</small><b>Honda Activa 6G</b
+                  ><span class="plate"><i>IND</i>CG 04 AB 1234</span>
+                </div>
+                <button class="go">Parts that fit</button>
+              </div>
+
+              <div class="sec">
+                <h2>What do you need?</h2>
+                <div class="cats">
+                  <a class="cat c1" href="shop.html"
+                    ><span class="t"
+                      ><svg viewBox="0 0 24 24">
+                        <path d="M9 3h6v3l2 2v12a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V8l2-2z" />
+                        <path d="M7 12h10" /></svg></span
+                    >Engine oil</a
+                  >
+                  <a class="cat c2" href="shop.html"
+                    ><span class="t"
+                      ><svg viewBox="0 0 24 24">
+                        <rect x="3" y="7" width="18" height="13" rx="2" />
+                        <path d="M7 7V5h3v2M14 7V5h3v2M8 13h3M14.5 11.5v3M13 13h3" /></svg></span
+                    >Batteries</a
+                  >
+                  <a class="cat c3" href="shop.html"
+                    ><span class="t"
+                      ><svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="9" />
+                        <circle cx="12" cy="12" r="4" />
+                        <path d="M12 3v5M12 16v5M3 12h5M16 12h5" /></svg></span
+                    >Tyres</a
+                  >
+                  <a class="cat c4" href="shop.html"
+                    ><span class="t"
+                      ><svg viewBox="0 0 24 24">
+                        <path d="M12 2.7S6 9 6 13a6 6 0 0 0 12 0c0-4-6-10.3-6-10.3z" /></svg></span
+                    >Car care</a
+                  >
+                  <a class="cat c5" href="shop.html"
+                    ><span class="t"
+                      ><svg viewBox="0 0 24 24"><path d="M4 4h16l-6 8v6l-4 2v-8z" /></svg></span
+                    >Filters</a
+                  >
+                  <a class="cat c6" href="shop.html"
+                    ><span class="t"
+                      ><svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="3" />
+                        <path
+                          d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 9 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 4.6 15a1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"
+                        /></svg></span
+                    >Spare parts</a
+                  >
+                  <a class="cat c7" href="shop.html"
+                    ><span class="t"
+                      ><svg viewBox="0 0 24 24">
+                        <path d="M9 18V5l12-2v13" />
+                        <circle cx="6" cy="18" r="3" />
+                        <circle cx="18" cy="16" r="3" /></svg></span
+                    >Accessories</a
+                  >
+                  <a class="cat c8" href="workshops.html"
+                    ><span class="t"
+                      ><svg viewBox="0 0 24 24">
+                        <path
+                          d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"
+                        /></svg></span
+                    >Book service</a
+                  >
+                </div>
+              </div>
+
+              <div class="sec">
+                <h2>Popular in Raipur <a href="shop.html">See all</a></h2>
+                <div class="grid2" data-grid="0,1,2,3"></div>
+              </div>
+
+              <div class="svc">
+                <div>
+                  <h3>Bike service from ₹499</h3>
+                  <p>Verified workshops near you. See the estimate first; nothing starts without your OK.</p>
+                  <a class="btn btn-pri" href="workshops.html" style="height: 40px; font-size: 14px"
+                    >Book a service</a
+                  >
+                </div>
+                <span class="big"
+                  ><svg viewBox="0 0 24 24">
+                    <path
+                      d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"
+                    /></svg
+                ></span>
+              </div>
+
+              <div class="sec">
+                <h2>Workshops near you <a href="workshops.html">Map</a></h2>
+                <div class="ws">
+                  <div class="wcard">
+                    <div class="top">
+                      <span class="lg"
+                        ><svg viewBox="0 0 24 24">
+                          <path
+                            d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"
+                          /></svg
+                      ></span>
+                      <div><b>Telibandha Car Clinic</b><small>1.2 km · Telibandha</small></div>
+                    </div>
+                    <div class="bot">
+                      <span class="rate"
+                        >4.7<svg viewBox="0 0 24 24">
+                          <path
+                            d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"
+                          /></svg></span
+                      ><span class="badge good">Open now</span><b style="font-size: 13px">from ₹499</b>
+                    </div>
+                  </div>
+                  <div class="wcard">
+                    <div class="top">
+                      <span class="lg"
+                        ><svg viewBox="0 0 24 24">
+                          <circle cx="5.5" cy="17" r="3" />
+                          <circle cx="18.5" cy="17" r="3" />
+                          <path d="M8.5 17h5l3-6h-4l-2-3H8" /></svg
+                      ></span>
+                      <div><b>Shankar Nagar Bike Care</b><small>2.8 km · Shankar Nagar</small></div>
+                    </div>
+                    <div class="bot">
+                      <span class="rate"
+                        >4.5<svg viewBox="0 0 24 24">
+                          <path
+                            d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"
+                          /></svg></span
+                      ><span class="badge good">Pickup</span><b style="font-size: 13px">from ₹349</b>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="trust">
+                <div class="tr">
+                  <span class="i"
+                    ><svg viewBox="0 0 24 24">
+                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                      <path d="m9 12 2 2 4-4" /></svg
+                  ></span>
+                  <div><b>Genuine parts only</b><small>From verified sellers in Chhattisgarh</small></div>
+                </div>
+                <div class="tr">
+                  <span class="i"
+                    ><svg viewBox="0 0 24 24">
+                      <rect x="2" y="6" width="20" height="12" rx="2" />
+                      <circle cx="12" cy="12" r="2.5" />
+                      <path d="M6 12h.01M18 12h.01" /></svg
+                  ></span>
+                  <div><b>Cash on delivery</b><small>Or UPI and cards at checkout</small></div>
+                </div>
+                <div class="tr">
+                  <span class="i" style="background: #e5f7ec; color: #1b8a4b"
+                    ><svg viewBox="0 0 24 24"><path d="M3 21l1.7-5A8.5 8.5 0 1 1 8 19.3z" /></svg
+                  ></span>
+                  <div><b>Help on WhatsApp</b><small>In Hindi or English, 9 am – 8 pm</small></div>
+                </div>
+              </div>
+            </div>
+            <nav class="dock" aria-label="Tabs">
+              <a class="on" href="home.html"
+                ><svg viewBox="0 0 24 24">
+                  <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" /></svg
+                >Home</a
+              >
+              <a href="shop.html"
+                ><svg viewBox="0 0 24 24">
+                  <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                  <path d="M3 6h18M16 10a4 4 0 0 1-8 0" /></svg
+                >Shop</a
+              >
+              <a href="workshops.html"
+                ><svg viewBox="0 0 24 24">
+                  <path
+                    d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"
+                  /></svg
+                >Service</a
+              >
+              <a href="cart.html"
+                ><svg viewBox="0 0 24 24">
+                  <circle cx="8" cy="21" r="1" />
+                  <circle cx="19" cy="21" r="1" />
+                  <path
+                    d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"
+                  /></svg
+                >Cart<span class="n">2</span></a
+              >
+              <a href="#"
+                ><svg viewBox="0 0 24 24">
+                  <circle cx="12" cy="8" r="4" />
+                  <path d="M4 21a8 8 0 0 1 16 0" /></svg
+                >Account</a
+              >
+            </nav>
+          </div>
+        </div>
+
+        <!-- ===== PHONE HI ===== -->
+        <div>
+          <p class="cap">Phone · हिंदी · dark</p>
+          <div class="phone dark" lang="hi" data-themeable>
+            <div class="scroll">
+              <div class="ph-top">
+                <div class="loc">
+                  <span class="pin"
+                    ><svg viewBox="0 0 24 24">
+                      <path d="M12 21s-7-6.1-7-11.5a7 7 0 0 1 14 0C19 14.9 12 21 12 21z" />
+                      <circle cx="12" cy="9.5" r="2.5" /></svg
+                  ></span>
+                  <div>
+                    <b
+                      >रायपुर 492001 <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg></b
+                    ><small>पूरे छत्तीसगढ़ में डिलीवरी · कैश ऑन डिलीवरी</small>
+                  </div>
+                  <div class="r">
+                    <button class="ib" aria-label="सूचनाएँ">
+                      <svg viewBox="0 0 24 24">
+                        <path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                        <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg
+                      ><span class="dot"></span>
+                    </button>
+                  </div>
+                </div>
+                <div class="search">
+                  <svg viewBox="0 0 24 24">
+                    <circle cx="11" cy="11" r="7" />
+                    <path d="m20 20-3.5-3.5" /></svg
+                  >ऑयल, बैटरी, टायर साइज़ खोजें…<span class="mic"
+                    ><svg viewBox="0 0 24 24">
+                      <rect x="9" y="3" width="6" height="11" rx="3" />
+                      <path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></svg
+                  ></span>
+                </div>
+              </div>
+              <div class="veh">
+                <span class="ic"
+                  ><svg viewBox="0 0 24 24">
+                    <circle cx="5.5" cy="17" r="3" />
+                    <circle cx="18.5" cy="17" r="3" />
+                    <path d="M8.5 17h5l3-6h-4l-2-3H8M15 6h2l1.5 5" /></svg
+                ></span>
+                <div>
+                  <small>आपकी गाड़ी</small><b>Honda Activa 6G</b
+                  ><span class="plate"><i>IND</i>CG 04 AB 1234</span>
+                </div>
+                <button class="go">फिट होने वाले पार्ट्स</button>
+              </div>
+              <div class="sec">
+                <h2>आपको क्या चाहिए?</h2>
+                <div class="cats">
+                  <a class="cat c1"
+                    ><span class="t"
+                      ><svg viewBox="0 0 24 24">
+                        <path d="M9 3h6v3l2 2v12a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V8l2-2z" />
+                        <path d="M7 12h10" /></svg></span
+                    >इंजन ऑयल</a
+                  >
+                  <a class="cat c2"
+                    ><span class="t"
+                      ><svg viewBox="0 0 24 24">
+                        <rect x="3" y="7" width="18" height="13" rx="2" />
+                        <path d="M7 7V5h3v2M14 7V5h3v2" /></svg></span
+                    >बैटरी</a
+                  >
+                  <a class="cat c3"
+                    ><span class="t"
+                      ><svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="9" />
+                        <circle cx="12" cy="12" r="4" /></svg></span
+                    >टायर</a
+                  >
+                  <a class="cat c4"
+                    ><span class="t"
+                      ><svg viewBox="0 0 24 24">
+                        <path d="M12 2.7S6 9 6 13a6 6 0 0 0 12 0c0-4-6-10.3-6-10.3z" /></svg></span
+                    >कार केयर</a
+                  >
+                  <a class="cat c5"
+                    ><span class="t"
+                      ><svg viewBox="0 0 24 24"><path d="M4 4h16l-6 8v6l-4 2v-8z" /></svg></span
+                    >फ़िल्टर</a
+                  >
+                  <a class="cat c6"
+                    ><span class="t"
+                      ><svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="3" />
+                        <path d="M12 2v3M12 19v3M2 12h3M19 12h3" /></svg></span
+                    >स्पेयर पार्ट्स</a
+                  >
+                  <a class="cat c7"
+                    ><span class="t"
+                      ><svg viewBox="0 0 24 24">
+                        <path d="M9 18V5l12-2v13" />
+                        <circle cx="6" cy="18" r="3" />
+                        <circle cx="18" cy="16" r="3" /></svg></span
+                    >एक्सेसरीज़</a
+                  >
+                  <a class="cat c8"
+                    ><span class="t"
+                      ><svg viewBox="0 0 24 24">
+                        <path
+                          d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"
+                        /></svg></span
+                    >सर्विस बुक करें</a
+                  >
+                </div>
+              </div>
+              <div class="sec">
+                <h2>रायपुर में लोकप्रिय <a>सभी देखें</a></h2>
+                <div class="grid2" data-grid-hi="0,1,2,3"></div>
+              </div>
+              <div class="svc">
+                <div>
+                  <h3>बाइक सर्विस ₹499 से</h3>
+                  <p>
+                    पास की जाँची-परखी वर्कशॉप। पहले अनुमान देखें, आपकी मंज़ूरी के बिना काम शुरू नहीं होता।
+                  </p>
+                  <a class="btn btn-pri" style="height: 40px; font-size: 14px">सर्विस बुक करें</a>
+                </div>
+                <span class="big"
+                  ><svg viewBox="0 0 24 24">
+                    <path
+                      d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"
+                    /></svg
+                ></span>
+              </div>
+            </div>
+            <nav class="dock">
+              <a class="on"
+                ><svg viewBox="0 0 24 24">
+                  <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" /></svg
+                >होम</a
+              >
+              <a
+                ><svg viewBox="0 0 24 24">
+                  <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                  <path d="M3 6h18M16 10a4 4 0 0 1-8 0" /></svg
+                >शॉप</a
+              >
+              <a
+                ><svg viewBox="0 0 24 24">
+                  <path
+                    d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"
+                  /></svg
+                >सर्विस</a
+              >
+              <a
+                ><svg viewBox="0 0 24 24">
+                  <circle cx="8" cy="21" r="1" />
+                  <circle cx="19" cy="21" r="1" />
+                  <path
+                    d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"
+                  /></svg
+                >कार्ट<span class="n">2</span></a
+              >
+              <a
+                ><svg viewBox="0 0 24 24">
+                  <circle cx="12" cy="8" r="4" />
+                  <path d="M4 21a8 8 0 0 1 16 0" /></svg
+                >खाता</a
+              >
+            </nav>
+          </div>
+        </div>
+
+        <div class="why">
+          <h3>What changed and why</h3>
+          <ul>
+            <li>
+              <b>Location line first</b> (like the service apps people already use): "Raipur 492001 · Delivery
+              across Chhattisgarh · Cash on delivery" answers the three trust questions before anything else.
+            </li>
+            <li>
+              <b>Search with voice</b> at the top; Hindi voice search helps mechanics and older customers who
+              don't like typing.
+            </li>
+            <li>
+              <b>"Shopping for" vehicle card</b> with a number plate (CG 04 …): one tap shows parts that fit.
+              Ties into "My garage".
+            </li>
+            <li>
+              <b>8 big category tiles</b> instead of long text sections; easy to tap, readable in Hindi.
+            </li>
+            <li>
+              <b>Products on the first screen</b>, 2 per row, with real photos, rating, MRP vs price and a
+              clear button.
+            </li>
+            <li>
+              Today's 12-screen home is cut to ~4 screens: the long explainers become one service banner and
+              three trust rows.
+            </li>
+            <li>
+              <b>5-tab dock</b>: Home, Shop, Service, Cart (with count), Account — cart is always one tap away
+              on phones.
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- ===== DESKTOP ===== -->
+      <p class="cap" style="margin-top: 30px">Desktop · 1180 px · light</p>
+      <div class="desk" data-themeable>
+        <div class="dh">
+          <div class="bar">
+            <span class="logo" data-logo></span>
+            <nav class="seg">
+              <a class="on" href="home.html"
+                ><svg viewBox="0 0 24 24">
+                  <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" /></svg
+                >Home</a
+              ><a href="shop.html"
+                ><svg viewBox="0 0 24 24">
+                  <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                  <path d="M3 6h18M16 10a4 4 0 0 1-8 0" /></svg
+                >Shop</a
+              ><a href="workshops.html"
+                ><svg viewBox="0 0 24 24">
+                  <path
+                    d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"
+                  /></svg
+                >Workshops</a
+              ><a
+                ><svg viewBox="0 0 24 24">
+                  <path d="M5 17h14v-4l-2-5H7l-2 5z" />
+                  <circle cx="7.5" cy="17" r="2" />
+                  <circle cx="16.5" cy="17" r="2" /></svg
+                >My vehicles</a
+              ><a
+                ><svg viewBox="0 0 24 24">
+                  <rect x="3" y="7" width="18" height="13" rx="2" />
+                  <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg
+                >Business</a
+              >
+            </nav>
+            <div class="tools">
+              <span class="srch"
+                ><svg viewBox="0 0 24 24" style="width: 18px; height: 18px">
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="m20 20-3.5-3.5" /></svg
+                >Search parts…<kbd>/</kbd></span
+              ><span class="ib"
+                ><svg viewBox="0 0 24 24">
+                  <path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                  <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg
+                ><span class="dot"></span></span
+              ><span class="av">T</span
+              ><span class="cartb"
+                ><svg viewBox="0 0 24 24" style="width: 18px; height: 18px">
+                  <circle cx="8" cy="21" r="1" />
+                  <circle cx="19" cy="21" r="1" />
+                  <path
+                    d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"
+                  /></svg
+                >Cart<span class="n">2</span></span
+              >
+            </div>
+          </div>
+        </div>
+        <div class="dhero">
+          <section class="find">
+            <h1>Parts and service for your vehicle, anywhere in Chhattisgarh</h1>
+            <p>
+              Pick your vehicle once. We show only parts that fit, from verified sellers, with cash on
+              delivery.
+            </p>
+            <div class="tabs" role="tablist">
+              <button class="on">By vehicle</button><button>By number plate</button
+              ><button>By part number</button>
+            </div>
+            <div class="selrow">
+              <span class="sel"
+                >Two-wheeler <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg></span
+              ><span class="sel"
+                >Honda <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg></span
+              ><span class="sel"
+                >Activa 6G <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg></span
+              ><a class="btn btn-pri" href="shop.html">Show parts</a>
+            </div>
+            <div class="quick">
+              Popular: <a>Engine oil 20W-40</a><a>Bike battery</a><a>Brake pads</a><a>90/90-12 tyre</a>
+            </div>
+          </section>
+          <section class="dcats">
+            <h2>Shop by category</h2>
+            <div class="cats">
+              <a class="cat c1"
+                ><span class="t"
+                  ><svg viewBox="0 0 24 24">
+                    <path d="M9 3h6v3l2 2v12a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V8l2-2z" />
+                    <path d="M7 12h10" /></svg></span
+                >Engine oil</a
+              >
+              <a class="cat c2"
+                ><span class="t"
+                  ><svg viewBox="0 0 24 24">
+                    <rect x="3" y="7" width="18" height="13" rx="2" />
+                    <path d="M7 7V5h3v2M14 7V5h3v2" /></svg></span
+                >Batteries</a
+              >
+              <a class="cat c3"
+                ><span class="t"
+                  ><svg viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="9" />
+                    <circle cx="12" cy="12" r="4" /></svg></span
+                >Tyres</a
+              >
+              <a class="cat c4"
+                ><span class="t"
+                  ><svg viewBox="0 0 24 24">
+                    <path d="M12 2.7S6 9 6 13a6 6 0 0 0 12 0c0-4-6-10.3-6-10.3z" /></svg></span
+                >Car care</a
+              >
+              <a class="cat c5"
+                ><span class="t"
+                  ><svg viewBox="0 0 24 24"><path d="M4 4h16l-6 8v6l-4 2v-8z" /></svg></span
+                >Filters</a
+              >
+              <a class="cat c6"
+                ><span class="t"
+                  ><svg viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M12 2v3M12 19v3M2 12h3M19 12h3" /></svg></span
+                >Spare parts</a
+              >
+              <a class="cat c7"
+                ><span class="t"
+                  ><svg viewBox="0 0 24 24">
+                    <path d="M9 18V5l12-2v13" />
+                    <circle cx="6" cy="18" r="3" />
+                    <circle cx="18" cy="16" r="3" /></svg></span
+                >Accessories</a
+              >
+              <a class="cat c8"
+                ><span class="t"
+                  ><svg viewBox="0 0 24 24">
+                    <path
+                      d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"
+                    /></svg></span
+                >Book service</a
+              >
+            </div>
+          </section>
+        </div>
+        <section class="dsec">
+          <h2>Popular in Raipur <a href="shop.html">See all products</a></h2>
+          <div class="grid4" data-grid="0,1,2,4"></div>
+        </section>
+        <div class="dtrust">
+          <div class="tr">
+            <span class="i"
+              ><svg viewBox="0 0 24 24">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                <path d="m9 12 2 2 4-4" /></svg
+            ></span>
+            <div><b>Genuine parts only</b><small>Verified sellers in Chhattisgarh</small></div>
+          </div>
+          <div class="tr">
+            <span class="i"
+              ><svg viewBox="0 0 24 24">
+                <rect x="2" y="6" width="20" height="12" rx="2" />
+                <circle cx="12" cy="12" r="2.5" /></svg
+            ></span>
+            <div><b>Cash on delivery</b><small>Or UPI and cards</small></div>
+          </div>
+          <div class="tr">
+            <span class="i"
+              ><svg viewBox="0 0 24 24">
+                <path
+                  d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"
+                /></svg
+            ></span>
+            <div><b>Estimate before work</b><small>Approve every cost</small></div>
+          </div>
+          <div class="tr">
+            <span class="i" style="background: #e5f7ec; color: #1b8a4b"
+              ><svg viewBox="0 0 24 24"><path d="M3 21l1.7-5A8.5 8.5 0 1 1 8 19.3z" /></svg
+            ></span>
+            <div><b>WhatsApp help</b><small>Hindi or English</small></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="toggle">
+      <button data-t="light" class="on">Light</button><button data-t="dark">Dark</button>
+    </div>
+    <script src="data.js"></script>
+    <script>
+      logos();
+      document.querySelectorAll('[data-grid]').forEach(
+        (el) =>
+          (el.innerHTML = el.dataset.grid
+            .split(',')
+            .map((i) => card(MD.items[+i], false))
+            .join('')),
+      );
+      document.querySelectorAll('[data-grid-hi]').forEach(
+        (el) =>
+          (el.innerHTML = el.dataset.gridHi
+            .split(',')
+            .map((i) => card(MD.items[+i], true))
+            .join('')),
+      );
+      themeToggle();
+    </script>
+  </body>
+</html>

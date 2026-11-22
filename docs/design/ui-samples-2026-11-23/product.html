@@ -1,0 +1,679 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MechDost samples — Product</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=DM+Sans:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="mds.css" />
+    <style>
+      .gal {
+        background: #fff;
+        position: relative;
+        aspect-ratio: 1/1;
+        display: grid;
+        place-items: center;
+      }
+      .gal img {
+        max-width: 78%;
+        max-height: 82%;
+        object-fit: contain;
+      }
+      .gal .tb {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        right: 12px;
+        display: flex;
+        justify-content: space-between;
+      }
+      .gal .tb button {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        border: 0;
+        background: rgba(255, 255, 255, 0.95);
+        box-shadow: var(--ring);
+        display: grid;
+        place-items: center;
+        color: #101f34;
+      }
+      .gal .dots {
+        position: absolute;
+        bottom: 12px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 6px;
+      }
+      .gal .dots i {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #cfd6df;
+      }
+      .gal .dots i.on {
+        width: 20px;
+        border-radius: 4px;
+        background: var(--accent-btn);
+      }
+      .gal .zoom {
+        position: absolute;
+        right: 12px;
+        bottom: 10px;
+        font: 700 11.5px 'DM Sans';
+        color: #5b6b7e;
+        background: #f1f4f8;
+        border-radius: 8px;
+        padding: 4px 8px;
+      }
+      .info {
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        background: var(--surface);
+        border-radius: 0 0 22px 22px;
+      }
+      .info .br {
+        font: 800 12.5px 'DM Sans';
+        color: var(--soft-text);
+      }
+      .info h1 {
+        font-size: 21px;
+        line-height: 1.25;
+      }
+      .info .meta {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .pr {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .pr .price {
+        font-size: 26px;
+      }
+      .pr small {
+        width: 100%;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .packs {
+        display: flex;
+        gap: 8px;
+      }
+      .pk {
+        flex: 1;
+        border-radius: 12px;
+        padding: 10px;
+        box-shadow: inset 0 0 0 1.5px var(--line);
+        background: var(--surface);
+        text-align: left;
+        border: 0;
+        font: 600 13px 'DM Sans';
+        color: var(--ink);
+      }
+      .pk b {
+        display: block;
+        font: 800 15px Manrope;
+      }
+      .pk.on {
+        box-shadow: inset 0 0 0 2px var(--accent-btn);
+        background: var(--soft);
+      }
+      .pk small {
+        color: var(--muted);
+      }
+      .fit {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        padding: 12px;
+        border-radius: 14px;
+        background: var(--good-bg);
+        color: var(--good);
+        font: 600 13.5px 'DM Sans';
+      }
+      .fit .i {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        background: #fff;
+        display: grid;
+        place-items: center;
+      }
+      .dark .fit .i {
+        background: #143523;
+      }
+      .fit b {
+        display: block;
+        font-weight: 800;
+      }
+      .fit a {
+        margin-left: auto;
+        font-weight: 800;
+        color: inherit;
+        text-decoration: none;
+        font-size: 13px;
+      }
+      .del {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+      }
+      .del div {
+        background: var(--surface-2);
+        border-radius: 12px;
+        padding: 10px;
+        font-size: 12px;
+        color: var(--muted);
+        box-shadow: var(--ring);
+      }
+      .del svg {
+        width: 18px;
+        height: 18px;
+        color: var(--ink-2);
+        display: block;
+        margin-bottom: 6px;
+      }
+      .del b {
+        display: block;
+        color: var(--ink);
+        font-size: 13px;
+      }
+      .blk {
+        margin: 12px 12px 0;
+        background: var(--surface);
+        border-radius: 18px;
+        box-shadow: var(--ring);
+        padding: 14px 16px;
+      }
+      .blk h2 {
+        font-size: 16px;
+        margin-bottom: 8px;
+      }
+      .kv {
+        display: grid;
+        grid-template-columns: 120px 1fr;
+        gap: 8px 12px;
+        font-size: 13.5px;
+      }
+      .kv span:nth-child(odd) {
+        color: var(--muted);
+      }
+      .hl {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 13.5px;
+        line-height: 1.6;
+        color: var(--ink-2);
+      }
+      .actbar .qty {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        background: var(--pill);
+        border-radius: 12px;
+        height: 46px;
+      }
+      .actbar .qty button {
+        width: 38px;
+        height: 46px;
+        border: 0;
+        background: none;
+        font: 800 18px 'DM Sans';
+        color: var(--ink);
+      }
+      .actbar .qty b {
+        min-width: 18px;
+        text-align: center;
+      }
+      .actbar .btn {
+        flex: 1;
+      }
+      .waask {
+        width: 46px;
+        height: 46px;
+        border-radius: 13px;
+        background: #e5f7ec;
+        color: #1b8a4b;
+        display: grid;
+        place-items: center;
+      }
+      /* desktop */
+      .dp {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 22px;
+        padding: 20px;
+      }
+      .dgal {
+        background: #fff;
+        border-radius: 22px;
+        box-shadow: var(--ring);
+        display: grid;
+        grid-template-columns: 84px 1fr;
+        gap: 12px;
+        padding: 14px;
+      }
+      .thumbs {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .thumbs span {
+        aspect-ratio: 1;
+        border-radius: 12px;
+        box-shadow: inset 0 0 0 1.5px #e3e8ef;
+        display: grid;
+        place-items: center;
+        background: #fff;
+      }
+      .thumbs span.on {
+        box-shadow: inset 0 0 0 2px var(--accent-btn);
+      }
+      .thumbs img {
+        max-width: 70%;
+        max-height: 70%;
+      }
+      .dmain {
+        display: grid;
+        place-items: center;
+        min-height: 460px;
+      }
+      .dmain img {
+        max-height: 420px;
+        max-width: 80%;
+      }
+      .dinfo {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .dinfo .info {
+        border-radius: 22px;
+        box-shadow: var(--ring);
+        padding: 22px;
+      }
+      .dinfo h1 {
+        font-size: 28px;
+      }
+      .dbtns {
+        display: flex;
+        gap: 10px;
+      }
+      .dbtns .btn {
+        flex: 1;
+        height: 52px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="doc">
+      <header>
+        <div>
+          <h1>Product</h1>
+          <p class="sub">
+            Big photo, the price and the pack choice on the first screen, a clear "fits your vehicle" check,
+            delivery facts as three tiles, and one sticky buy bar at the bottom on phones.
+          </p>
+        </div>
+        <nav class="pages">
+          <a href="index.html">Overview</a><a href="home.html">Home</a><a href="shop.html">Shop</a
+          ><a class="on" href="product.html">Product</a><a href="workshops.html">Workshops</a
+          ><a href="cart.html">Cart &amp; checkout</a><a href="orders.html">Order tracking</a>
+        </nav>
+      </header>
+      <div class="stage">
+        <div>
+          <p class="cap">Phone · in stock with a price</p>
+          <div class="phone" data-themeable>
+            <div class="scroll" style="padding-bottom: 100px">
+              <div class="gal">
+                <div class="tb">
+                  <button aria-label="Back">
+                    <svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" /></svg></button
+                  ><span style="display: flex; gap: 8px"
+                    ><button aria-label="Share">
+                      <svg viewBox="0 0 24 24">
+                        <circle cx="18" cy="5" r="3" />
+                        <circle cx="6" cy="12" r="3" />
+                        <circle cx="18" cy="19" r="3" />
+                        <path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4" />
+                      </svg></button
+                    ><button aria-label="Save">
+                      <svg viewBox="0 0 24 24">
+                        <path
+                          d="M19 14c1.5-1.5 3-3.2 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.8 0-3 .5-4.5 2-1.5-1.5-2.7-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4 3 5.5l7 7z"
+                        />
+                      </svg></button
+                  ></span>
+                </div>
+                <img src="img/oil0.webp" alt="Castrol Activ 4T 20W-40" />
+                <div class="dots"><i class="on"></i><i></i><i></i></div>
+                <span class="zoom">Pinch to zoom</span>
+              </div>
+              <div class="info">
+                <span class="br">Castrol</span>
+                <h1>Activ 4T 20W-40 engine oil</h1>
+                <div class="meta">
+                  <span class="rate"
+                    >4.6<svg viewBox="0 0 24 24">
+                      <path
+                        d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"
+                      /></svg></span
+                  ><span>182 ratings</span><span>· 1.2k bought in Raipur</span>
+                </div>
+                <div class="pr">
+                  <span class="price">₹499</span><span class="mrp">MRP ₹525</span
+                  ><span class="off">5% off</span><small>Inclusive of all taxes · GST bill on request</small>
+                </div>
+                <div class="packs">
+                  <button class="pk on"><b>900 ml</b><small>₹499</small></button
+                  ><button class="pk"><b>1 L</b><small>₹545</small></button>
+                </div>
+                <div class="fit">
+                  <span class="i"
+                    ><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></svg
+                  ></span>
+                  <div><b>Fits your Honda Activa 6G</b>Recommended grade: 20W-40</div>
+                  <a href="#">Change</a>
+                </div>
+                <div class="del">
+                  <div>
+                    <svg viewBox="0 0 24 24">
+                      <rect x="1" y="3" width="15" height="13" />
+                      <path d="M16 8h4l3 3v5h-7z" />
+                      <circle cx="5.5" cy="18.5" r="2.5" />
+                      <circle cx="18.5" cy="18.5" r="2.5" /></svg
+                    ><b>Tomorrow</b>to 492001
+                  </div>
+                  <div>
+                    <svg viewBox="0 0 24 24">
+                      <rect x="2" y="6" width="20" height="12" rx="2" />
+                      <circle cx="12" cy="12" r="2.5" /></svg
+                    ><b>Cash on delivery</b>or UPI
+                  </div>
+                  <div>
+                    <svg viewBox="0 0 24 24">
+                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                      <path d="m9 12 2 2 4-4" /></svg
+                    ><b>Genuine</b>verified seller
+                  </div>
+                </div>
+              </div>
+              <div class="blk">
+                <h2>Why mechanics pick it</h2>
+                <ul class="hl">
+                  <li>API SL, JASO MA2 — safe for wet clutches</li>
+                  <li>Protects in Raipur's summer heat and city traffic</li>
+                  <li>Change every 3,000 km</li>
+                </ul>
+              </div>
+              <div class="blk">
+                <h2>Details</h2>
+                <div class="kv">
+                  <span>Viscosity</span><span>20W-40</span><span>For</span
+                  ><span>4-stroke bikes and scooters</span><span>Pack</span><span>900 ml</span
+                  ><span>Origin</span><span>India</span>
+                </div>
+              </div>
+              <div class="blk">
+                <h2>Need a mechanic to fit it?</h2>
+                <p style="margin: 0 0 10px; font-size: 13.5px; color: var(--muted)">
+                  Add an oil change at a workshop near you from ₹149 labour.
+                </p>
+                <a class="btn btn-ghost" style="height: 40px; font-size: 14px">Add fitting</a>
+              </div>
+            </div>
+            <div class="actbar">
+              <span class="waask" aria-label="Ask on WhatsApp"
+                ><svg viewBox="0 0 24 24"><path d="M3 21l1.7-5A8.5 8.5 0 1 1 8 19.3z" /></svg></span
+              ><span class="qty"
+                ><button aria-label="Less">−</button><b>1</b><button aria-label="More">+</button></span
+              ><a class="btn btn-pri" href="cart.html">Add to cart · ₹499</a>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <p class="cap">Phone · price on request (no shop stock yet)</p>
+          <div class="phone" data-themeable>
+            <div class="scroll" style="padding-bottom: 100px">
+              <div class="gal">
+                <div class="tb">
+                  <button>
+                    <svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" /></svg></button
+                  ><button>
+                    <svg viewBox="0 0 24 24">
+                      <path
+                        d="M19 14c1.5-1.5 3-3.2 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.8 0-3 .5-4.5 2-1.5-1.5-2.7-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4 3 5.5l7 7z"
+                      />
+                    </svg>
+                  </button>
+                </div>
+                <img src="img/car4.webp" alt="KELVINN chain lube" />
+                <div class="dots"><i class="on"></i></div>
+              </div>
+              <div class="info">
+                <span class="br">KELVINN</span>
+                <h1>Chain lube spray (golden)</h1>
+                <div class="meta"><span>150 ml · For bikes</span></div>
+                <div class="pr">
+                  <span class="price" style="font-size: 22px">MRP ₹280</span
+                  ><span class="badge warn">Price on request</span
+                  ><small
+                    >We'll confirm today's price and stock on WhatsApp, usually within 15 minutes.</small
+                  >
+                </div>
+                <div class="del">
+                  <div>
+                    <svg viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="9" />
+                      <path d="M12 7v5l3 2" /></svg
+                    ><b>Reply in 15 min</b>9 am – 8 pm
+                  </div>
+                  <div>
+                    <svg viewBox="0 0 24 24">
+                      <rect x="2" y="6" width="20" height="12" rx="2" />
+                      <circle cx="12" cy="12" r="2.5" /></svg
+                    ><b>Cash on delivery</b>once confirmed
+                  </div>
+                  <div>
+                    <svg viewBox="0 0 24 24">
+                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                      <path d="m9 12 2 2 4-4" /></svg
+                    ><b>Genuine</b>brand-sealed
+                  </div>
+                </div>
+              </div>
+              <div class="blk">
+                <h2>Similar, ready to buy</h2>
+                <div class="grid2" data-grid="0,2"></div>
+              </div>
+            </div>
+            <div class="actbar">
+              <a class="btn btn-wa" style="flex: 1"
+                ><svg viewBox="0 0 24 24"><path d="M3 21l1.7-5A8.5 8.5 0 1 1 8 19.3z" /></svg>Ask price on
+                WhatsApp</a
+              >
+            </div>
+          </div>
+        </div>
+
+        <div class="why">
+          <h3>What changed and why</h3>
+          <ul>
+            <li>
+              Today the photo is small and the price sits under the tab bar. Here the
+              <b>photo fills the width</b> (swipe, pinch to zoom) and price + pack sizes are visible without
+              scrolling.
+            </li>
+            <li><b>Pack sizes as tappable cards</b> with their price, instead of a hidden choice.</li>
+            <li>
+              <b>"Fits your Honda Activa 6G"</b> in green, or a red "doesn't fit" warning — the #1 reason for
+              wrong-part orders.
+            </li>
+            <li>
+              Delivery date to the PIN, cash on delivery and genuine-seller as <b>three short tiles</b>.
+            </li>
+            <li>
+              <b>One sticky buy bar</b>: WhatsApp, quantity, "Add to cart · ₹499". Compare and Save move to
+              the photo toolbar.
+            </li>
+            <li>
+              "Price on request" products get a calm, honest screen with a <b>WhatsApp button</b> and similar
+              products you can buy now.
+            </li>
+            <li>Cross-sell that fits this business: "Need a mechanic to fit it?" adds a workshop job.</li>
+            <li>
+              Names in sentence case ("Activ 4T 20W-40 engine oil"), not ALL CAPS from the supplier list.
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <p class="cap" style="margin-top: 30px">Desktop · 1180 px</p>
+      <div class="desk" data-themeable>
+        <div class="dh">
+          <div class="bar">
+            <span class="logo" data-logo></span>
+            <nav class="seg">
+              <a href="home.html"
+                ><svg viewBox="0 0 24 24">
+                  <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" /></svg
+                >Home</a
+              ><a class="on"
+                ><svg viewBox="0 0 24 24">
+                  <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                  <path d="M3 6h18M16 10a4 4 0 0 1-8 0" /></svg
+                >Shop</a
+              ><a
+                ><svg viewBox="0 0 24 24">
+                  <path
+                    d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"
+                  /></svg
+                >Workshops</a
+              ><a
+                ><svg viewBox="0 0 24 24">
+                  <path d="M5 17h14v-4l-2-5H7l-2 5z" />
+                  <circle cx="7.5" cy="17" r="2" />
+                  <circle cx="16.5" cy="17" r="2" /></svg
+                >My vehicles</a
+              ><a
+                ><svg viewBox="0 0 24 24">
+                  <rect x="3" y="7" width="18" height="13" rx="2" />
+                  <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg
+                >Business</a
+              >
+            </nav>
+            <div class="tools">
+              <span class="srch"
+                ><svg viewBox="0 0 24 24" style="width: 18px; height: 18px">
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="m20 20-3.5-3.5" /></svg
+                >Search parts…<kbd>/</kbd></span
+              ><span class="av">T</span
+              ><span class="cartb"
+                ><svg viewBox="0 0 24 24" style="width: 18px; height: 18px">
+                  <circle cx="8" cy="21" r="1" />
+                  <circle cx="19" cy="21" r="1" />
+                  <path
+                    d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"
+                  /></svg
+                >Cart<span class="n">2</span></span
+              >
+            </div>
+          </div>
+        </div>
+        <div class="dp">
+          <div class="dgal">
+            <div class="thumbs">
+              <span class="on"><img src="img/oil0.webp" alt="" /></span
+              ><span><img src="img/oil4.webp" alt="" /></span><span><img src="img/oil1.webp" alt="" /></span>
+            </div>
+            <div class="dmain"><img src="img/oil0.webp" alt="Castrol Activ 4T 20W-40" /></div>
+          </div>
+          <div class="dinfo">
+            <div class="info">
+              <span class="br">Castrol</span>
+              <h1>Activ 4T 20W-40 engine oil</h1>
+              <div class="meta">
+                <span class="rate"
+                  >4.6<svg viewBox="0 0 24 24">
+                    <path
+                      d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"
+                    /></svg></span
+                ><span>182 ratings · 1.2k bought in Raipur</span>
+              </div>
+              <div class="pr">
+                <span class="price">₹499</span><span class="mrp">MRP ₹525</span><span class="off">5% off</span
+                ><small>Inclusive of all taxes · GST bill on request</small>
+              </div>
+              <div class="packs">
+                <button class="pk on"><b>900 ml</b><small>₹499</small></button
+                ><button class="pk"><b>1 L</b><small>₹545</small></button>
+              </div>
+              <div class="fit">
+                <span class="i"
+                  ><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></svg
+                ></span>
+                <div><b>Fits your Honda Activa 6G</b>Recommended grade: 20W-40</div>
+                <a href="#">Change</a>
+              </div>
+              <div class="dbtns">
+                <a class="btn btn-pri" href="cart.html">Add to cart</a><a class="btn btn-ghost">Buy now</a>
+              </div>
+              <div class="del">
+                <div>
+                  <svg viewBox="0 0 24 24">
+                    <rect x="1" y="3" width="15" height="13" />
+                    <path d="M16 8h4l3 3v5h-7z" />
+                    <circle cx="5.5" cy="18.5" r="2.5" />
+                    <circle cx="18.5" cy="18.5" r="2.5" /></svg
+                  ><b>Tomorrow</b>to 492001
+                </div>
+                <div>
+                  <svg viewBox="0 0 24 24">
+                    <rect x="2" y="6" width="20" height="12" rx="2" />
+                    <circle cx="12" cy="12" r="2.5" /></svg
+                  ><b>Cash on delivery</b>or UPI
+                </div>
+                <div>
+                  <svg viewBox="0 0 24 24">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    <path d="m9 12 2 2 4-4" /></svg
+                  ><b>Genuine</b>verified seller
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="toggle">
+      <button data-t="light" class="on">Light</button><button data-t="dark">Dark</button>
+    </div>
+    <script src="data.js"></script>
+    <script>
+      logos();
+      document.querySelectorAll('[data-grid]').forEach(
+        (el) =>
+          (el.innerHTML = el.dataset.grid
+            .split(',')
+            .map((i) => card(MD.items[+i], false))
+            .join('')),
+      );
+      themeToggle();
+    </script>
+  </body>
+</html>

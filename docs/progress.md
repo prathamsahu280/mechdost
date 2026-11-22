@@ -4,6 +4,12 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Current status
 
+- **2026-11-23 (night, user asleep): UI refresh samples** in `docs/design/ui-samples-2026-11-23/` (open
+  `index.html`): audit of the live site + reference study (Indian shopping, service and auto-parts apps) + redesigned
+  Home, Shop, Product (with price-on-request variant), Workshops + booking, Cart + checkout, Order tracking; phone EN
+  light, phone HI dark, desktop. `header-footer-v4-approved.html` is the approved header/footer (being built on a
+  separate branch). For review when the user wakes; features shown that need decisions are listed on the overview.
+
 - **2026-11-22 (copy rulings A and B, branch worktree-agent-a393c7d2eb58305ca, not merged):** (A) customers never see the shop: stage "Confirming availability", MechDost-first wording on home / cart / checkout / order / policies / emails / notifications / trust lines / assistant, no "Sold by" or "Fulfilled by", JSON-LD seller = MechDost; (B) coverage copy says Chhattisgarh via `{region}` (`site.defaultRegion`, `regions` locale namespace), `{city}` kept for real city data. Guard `packages/shared/test/customer-copy.test.ts`. Decisions 2026-11-22; questions Q221 (seller identity on the bill, E-Commerce Rules) and Q222 (editable region). Owed: the e2e specs that assert old copy were updated but not run (no Playwright on this PC); hindi-coverage e2e to run in CI.
 
 - **2026-11-22 (cold-render incident, perf builder, branch worktree-agent-acd28a4a7aae2158a, not merged):** could not reproduce the 6 to 36 s from outside (idle: cold page 0.25 s, API 0.11 to 0.37 s, DB execution 4 ms); no index needed, no migration 0081. Fixed what the code showed: post-deploy page-cache warm-up step (`apps/web/scripts/warm-cache.mjs`, deploy.yml), API keeps two DB connections warm (`keepPoolWarm`), product query round trips 5 to 3. Open: Q214 (server stats), Q215 (shared rate-limit bucket for server-side renders). Spec 16 has the numbers.

@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MechDost UI samples — overview</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=DM+Sans:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="mds.css" />
+    <style>
+      .wrap {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 32px 24px 90px;
+        color: #101f34;
+      }
+      .wrap h1 {
+        font-size: 34px;
+      }
+      .wrap .lead {
+        font-size: 16px;
+        color: #3c4a5c;
+        max-width: 760px;
+        line-height: 1.6;
+        margin: 8px 0 24px;
+      }
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 14px;
+        margin-bottom: 28px;
+      }
+      .card {
+        background: #fff;
+        border-radius: 18px;
+        box-shadow: var(--ring);
+        padding: 18px;
+        text-decoration: none;
+        color: #101f34;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .card:hover {
+        box-shadow: var(--shadow), var(--ring);
+      }
+      .card b {
+        font: 800 18px Manrope;
+      }
+      .card span {
+        color: #5b6b7e;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+      .panel {
+        background: #fff;
+        border-radius: 18px;
+        box-shadow: var(--ring);
+        padding: 20px 22px;
+        margin-bottom: 16px;
+      }
+      .panel h2 {
+        font-size: 20px;
+        margin-bottom: 10px;
+      }
+      .panel ol,
+      .panel ul {
+        margin: 0;
+        padding-left: 20px;
+        line-height: 1.65;
+        font-size: 14.5px;
+        color: #2a3a52;
+      }
+      .panel li {
+        margin: 4px 0;
+      }
+      .two {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+      @media (max-width: 820px) {
+        .two {
+          grid-template-columns: 1fr;
+        }
+      }
+      .tag {
+        display: inline-block;
+        font: 800 11.5px 'DM Sans';
+        padding: 2px 8px;
+        border-radius: 6px;
+        background: #fff4dc;
+        color: #9a5b00;
+        margin-right: 6px;
+      }
+      .tag.v {
+        background: #e7f6ee;
+        color: #167a43;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>MechDost UI refresh — samples</h1>
+      <p class="lead">
+        I audited the live site (phone and desktop), studied the patterns Indian shoppers already know from
+        big shopping, service and auto-parts apps (vehicle-first search, location line, image-led cards, chip
+        filters, sticky buy bars, cash on delivery up front), and redesigned the five key screens in
+        MechDost's own theme: navy, orange, Manrope + DM Sans, light and dark, English and Hindi. Open each
+        page; every phone frame scrolls, and the Light/Dark switch is bottom-right.
+      </p>
+
+      <div class="cards">
+        <a class="card" href="home.html"
+          ><b>Home</b
+          ><span
+            >Location + vehicle first, voice search, 8 category tiles, products on screen one. English light,
+            Hindi dark, desktop.</span
+          ></a
+        >
+        <a class="card" href="shop.html"
+          ><b>Shop</b
+          ><span
+            >"Fits Activa 6G" bar, chip filters, bottom filter sheet, 2-up image cards; desktop sidebar + 4-up
+            grid.</span
+          ></a
+        >
+        <a class="card" href="product.html"
+          ><b>Product</b
+          ><span
+            >Full-width photo, pack cards, fit check, delivery tiles, sticky buy bar; plus the "price on
+            request" version.</span
+          ></a
+        >
+        <a class="card" href="workshops.html"
+          ><b>Workshops</b
+          ><span
+            >Map first, "what does it need?" tiles with prices, workshop cards, one-screen booking with
+            expected cost.</span
+          ></a
+        >
+        <a class="card" href="orders.html"
+          ><b>Order tracking</b
+          ><span
+            >Arrival in plain words, the delivery code big, a simple timeline, help tiles (WhatsApp, bill, get
+            it fitted, order again).</span
+          ></a
+        >
+        <a class="card" href="cart.html"
+          ><b>Cart &amp; checkout</b
+          ><span
+            >Free-delivery progress, savings line, one-screen checkout with cash on delivery first.</span
+          ></a
+        >
+      </div>
+
+      <div class="two">
+        <div class="panel">
+          <h2>What the audit found (live site, 23 Nov)</h2>
+          <ol>
+            <li>Phone home is <b>~12 screens long</b>; several sections repeat the same promises.</li>
+            <li>
+              Phone shop shows <b>no products on the first screen</b> (headline + paragraph + 4-field form
+              first), and the headline says "Across India".
+            </li>
+            <li>
+              Product page: <b>small photo</b>, price hidden behind the tab bar, related items one per row,
+              five different actions stacked, internal codes shown as "Part reference".
+            </li>
+            <li>
+              <b>Emoji used as icons</b> in the header, tab bar and announcement strip; ALL-CAPS labels on
+              most sections.
+            </li>
+            <li>Supplier ALL-CAPS product names ("KELVINN UPHOLSTERY CLEANER FOAM") shown as is.</li>
+            <li>
+              No visible place for <b>location / PIN</b> or <b>the customer's vehicle</b>, which are the two
+              things that decide what can be bought.
+            </li>
+          </ol>
+        </div>
+        <div class="panel">
+          <h2>Design principles used</h2>
+          <ul>
+            <li><b>Location and vehicle first</b> — every screen knows "Raipur 492001" and "Activa 6G".</li>
+            <li><b>Products and prices on the first screen</b>; words come after.</li>
+            <li>
+              <b>Big targets, chips over dropdowns</b>, one main button per screen, pinned at the bottom on
+              phones.
+            </li>
+            <li>
+              <b>Trust cues where decisions happen</b>: genuine seller, cash on delivery, estimate before
+              work, WhatsApp help in Hindi.
+            </li>
+            <li><b>Hindi as a first-class language</b> (Noto Sans Devanagari, labels that fit).</li>
+            <li>Same brand: navy + orange, real line icons, no emoji, light and dark.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Which ideas are visual only, and which are new features (need your OK)</h2>
+        <ul>
+          <li>
+            <span class="tag v">Visual</span>New home/shop/product/workshop/cart layouts, chips, filter sheet,
+            cards, sticky bars, dock with Cart, sentence-case names, trust tiles.
+          </li>
+          <li>
+            <span class="tag v">Visual + small data</span>"Fits your vehicle" bar and check (we already store
+            vehicle types per product; exact model fitment is the "my garage" topic for tomorrow).
+          </li>
+          <li>
+            <span class="tag">New feature</span>Location line with PIN switcher; voice search (browser speech
+            API, Hindi); search by number plate (needs a VAHAN/RC lookup provider).
+          </li>
+          <li>
+            <span class="tag">New feature</span>Ratings counts and "bought in Raipur" (we have reviews;
+            purchase counts need a decision on showing them).
+          </li>
+          <li>
+            <span class="tag">Needs a decision</span>Express "today within 4 hours" delivery, old-battery
+            exchange discount, workshop 30-day guarantee, coupon FIRST50, pickup &amp; drop price — shown only
+            as examples; none of these are promised today.
+          </li>
+          <li>
+            <span class="tag">New feature</span>"Need a mechanic to fit it?" — add a workshop job to a product
+            order.
+          </li>
+        </ul>
+      </div>
+
+      <div class="panel">
+        <h2>Suggested order if you like it</h2>
+        <ol>
+          <li>Header + footer redesign (approved, being built now on its own branch).</li>
+          <li>Shop page (biggest win: products on screen one) and the product page.</li>
+          <li>Home page (shorter, vehicle-first).</li>
+          <li>Workshops + booking.</li>
+          <li>Cart + checkout.</li>
+        </ol>
+      </div>
+    </div>
+  </body>
+</html>
