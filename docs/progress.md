@@ -590,3 +590,7 @@ Home section `audiences` (first; Admin -> Layout works; en + hi label), server c
 ## 2026-11-22 - Builder 2: business applications (trade + fleet), branch worktree-agent-aafba15786951f205
 
 Migration `0078_business_applications` (not applied; the coordinator applies it and renumbers if another builder also used 0078). Shared DTOs, machines and emails, db repo, API routes, `/business/apply`, admin queue section, account badge, checkout GSTIN prefill. Tests green: shared 508, db targeted 67, api targeted 26, web targeted 126. Specs 07/10/12/13/14 and decisions updated.
+
+## 2026-11-22 - Builder A: real catalogue import, brand/range switches, optional MRP (branch worktree-agent-adc7512a108af9a2a, not merged, migration 0079 NOT applied)
+
+Built per design `2026-11-22-real-catalogue-and-smart-search-design.md` (everything except smart search): migration 0079, `productVisible` rule everywhere + guard test, nullable MRP handled in every reader/writer, admin API (groups, switches, bulk status, bulk MRP, import status) + UI (lazy chunk), import plan/writer/CLI with price-list fills, status report `docs/catalogue/`. Scope narrowed by the user to the price-list brands (219 products / 740 packs / 695 MRP on the dry run). Photos are NOT uploaded yet (dry run only). Not run: Playwright, next build, Lighthouse, real import. Not done: smart search (builder B), Hindi descriptions (need a translations file), web storefront "price on request" copy (cards/product page show no price when there is no offer, as before).

@@ -24,6 +24,7 @@ import {
 } from './coupons';
 import type { CouponGroup } from '@mechdost/shared/coupon';
 import { ConflictError, ForbiddenError, NotFoundError, pgCode, ValidationError } from './errors';
+import { productVisible } from './visibility';
 import { reserveStock } from './inventory';
 import { localized } from './localized';
 import type { Tx } from './orders';
@@ -315,8 +316,8 @@ export async function quoteInternal(
         v.mrp_paise, o.inventory_id, o.shop_id, o.shop_name, o.shop_name_hi, o.shop_state_id, o.price, o.shop_price,
         o.shipping, o.lead_days, best.max_free, o.shop_free_min
       from jsonb_to_recordset(${JSON.stringify(input.lines)}::jsonb) as l(sku text, qty int)
-      left join product_variants v on v.sku = l.sku and v.status = 'active'
-      left join products p on p.id = v.product_id and p.status = 'live'
+      left join product_variants v on v.sku = l.sku and v.status = 'active' and v.mrp_paise is not null
+      left join products p on p.id = v.product_id and ${productVisible('p')}
       left join brands b on b.id = p.brand_id
       left join lateral (
         select si.id as inventory_id, s.id as shop_id, s.name as shop_name, s.name_hi as shop_name_hi,

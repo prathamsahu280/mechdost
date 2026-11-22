@@ -38,7 +38,7 @@ const NetQuantity = z.object({ qty: z.number().int(), unit: z.enum(NET_UNITS) })
 export const AdminProductDetail = ProductBase.extend({
   attributes: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])),
   variants: z.array(
-    z.object({ sku: z.string(), mrpPaise: z.number().int(), netQuantity: NetQuantity.nullable() }),
+    z.object({ sku: z.string(), mrpPaise: z.number().int().nullable(), netQuantity: NetQuantity.nullable() }),
   ),
 });
 export type AdminProductDetailDto = z.infer<typeof AdminProductDetail>;
@@ -57,7 +57,7 @@ export const AdminPriceBoard = z.object({
   variants: z.array(
     z.object({
       sku: z.string(),
-      mrpPaise: z.number().int(),
+      mrpPaise: z.number().int().nullable(),
       city: PriceRef.nullable(),
       pins: z.array(
         z.object({
@@ -159,3 +159,51 @@ export const AdminImportFileProblem = z.object({
 
 /** `GET /v1/catalogue/categories`: the add form's category list (names in the screen's language). */
 export const AdminCategoryList = z.object({ categories: z.array(CatalogueCategorySchema) });
+
+/** `GET /v1/admin/catalogue/groups` and the switch / bulk answers (design 2026-11-22). */
+const GroupBase = z.object({
+  slug: z.string(),
+  name: z.string(),
+  hidden: z.boolean(),
+  hiddenReason: z.string().nullable(),
+  version: z.number().int(),
+  products: z.number().int(),
+  liveProducts: z.number().int(),
+  missingMrpPacks: z.number().int(),
+});
+export const AdminGroups = z.object({
+  brands: z.array(GroupBase.extend({ ranges: z.array(GroupBase.extend({ nameHi: z.string().nullable() })) })),
+});
+export type AdminGroupsDto = z.infer<typeof AdminGroups>;
+export type AdminBrandGroup = AdminGroupsDto['brands'][number];
+export type AdminRangeGroup = AdminBrandGroup['ranges'][number];
+const RunCounts = z.object({
+  imported: z.number().int(),
+  updated: z.number().int(),
+  unchanged: z.number().int(),
+  skipped: z.number().int(),
+});
+export const AdminImportStatus = z.object({
+  run: z
+    .object({
+      at: z.string(),
+      brands: z.record(z.string(), RunCounts),
+      reasons: z.record(z.string(), z.number().int()),
+      totals: RunCounts.extend({ products: z.number().int() }),
+    })
+    .nullable(),
+});
+export const AdminGroupSwitched = z.object({
+  version: z.number().int(),
+  hidden: z.boolean(),
+  hiddenReason: z.string().nullable(),
+  productsAffected: z.number().int(),
+});
+export const AdminBulkStatusResult = z.object({
+  changed: z.array(z.string()),
+  skipped: z.array(z.object({ slug: z.string(), reason: z.string() })),
+});
+export const AdminBulkMrpResult = z.object({
+  updated: z.array(z.string()),
+  skipped: z.array(z.object({ sku: z.string(), reason: z.string() })),
+});

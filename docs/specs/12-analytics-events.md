@@ -203,3 +203,5 @@ Click ids (`data-track`, delegated `click` event): `home_audience_retail`, `home
 ## Business applications (design 2026-11-22)
 
 Server: `business_application_submitted { kind, signedIn }`, `business_application_decided { kind, decision: approved|rejected|closed, reasonCode }`, `trade_account_verified { via: application|restored }`, `trade_account_revoked { reasonCode }`. Ids and codes only. Click ids (web): `business_apply_trade`, `business_apply_fleet`, `admin_business_in_review`, `admin_business_approved`, `admin_business_closed`, `admin_trade_revoked`, `admin_trade_restored`.
+
+- 2026-11-22 (catalogue groups): server events `admin_group_switched` (kind, slug, hidden, reason code, products affected), `admin_products_bulk` (action publish/unpublish/set_mrp, count), `admin_catalogue_v2_imported` (created, updated, packs, MRPs filled); client clicks `admin_group_hide_open`, `admin_group_show_open`, `admin_group_hidden`, `admin_group_shown`, `admin_bulk_publish`, `admin_bulk_unpublish`, `admin_bulk_mrp_saved`, `admin_mrp_saved`.

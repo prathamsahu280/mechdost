@@ -22,7 +22,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check": "pnpm format:check && turbo run typecheck lint test --concurrency=1",
-    "emulators": "pnpm dlx firebase-tools@15.35.0 emulators:start --only auth --project demo-mechdost"
+    "emulators": "pnpm dlx firebase-tools@15.35.0 emulators:start --only auth --project demo-mechdost",
+    "db:import:catalogue": "pnpm --filter @mechdost/api import:catalogue"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

@@ -1,4 +1,5 @@
 import { sql, type SQL } from 'drizzle-orm';
+import { productVisible } from './visibility';
 import {
   SEARCH_VOCAB_KINDS,
   SEARCH_VOCAB_LOCALES,
@@ -54,12 +55,11 @@ export type RangeSuggester = (
 const likeEscape = (q: string) => q.replace(/[\\%_]/g, (m) => `\\${m}`);
 
 /**
- * TODO(visibility): the live filter of brands and categories. Today a brand is offered when it has a live product in
- * a live category; the brand/range visibility predicate (design 2026-11-22 item 1) replaces this one condition.
+ * A brand is suggested only while at least one of its products is visible to customers (the one visibility rule,
+ * `visibility.ts`: live, brand and range not hidden, category and parent neither hidden nor archived).
  */
 const brandVisible = (brand: SQL): SQL =>
-  sql`exists (select 1 from products pb join categories cb on cb.id = pb.category_id
-    where pb.brand_id = ${brand} and pb.status = 'live' and cb.archived_at is null)`;
+  sql`exists (select 1 from products pb where pb.brand_id = ${brand} and ${productVisible('pb')})`;
 
 /**
  * Up to 8 suggestions for what is being typed: brands (≤ 2), ranges (≤ 2, when the seam is wired), categories
@@ -144,7 +144,7 @@ export async function didYouMeanCatalogue(db: Tx, q: string): Promise<string | n
         select c.name, similarity(lower(c.name), ${word}) from categories c where c.archived_at is null and not c.hidden
         union all
         select p.name, word_similarity(${word}, lower(p.name)) * 0.85 from products p
-          join categories pc on pc.id = p.category_id where p.status = 'live' and pc.archived_at is null
+          where ${productVisible('p')}
       ) t where score >= 0.35 and lower(name) <> ${word} order by score desc, length(name) limit 1`),
   );
   return rows[0]?.name ?? null;

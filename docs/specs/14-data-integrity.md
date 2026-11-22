@@ -202,3 +202,7 @@ No table changes and nothing written. One index: `service_requests_workshop_crea
 - `business_application_events`, `trade_account_events`: append-only (`forbid_update_delete`).
 - `trade_accounts`: unique `user_id`, status CHECK (`verified|revoked`), `reason_code` present exactly when revoked; version and updated_at triggers. Moves only through `tradeAccountMachine` as conditional UPDATEs on `(status, version)`.
 - ML (rule 16): codes everywhere (type, spend band, needs, reasons); counts as ints; free text only the optional fleet note and review note.
+
+## Data model note: catalogue groups and optional MRP (migration 0079, 2026-11-22)
+
+`brands` + `hidden/hidden_reason/version` and `product_ranges` (CHECK: hidden iff a reason code, reasons from `HIDE_REASONS`; unique brand+name; RLS on, no grant; bump_version and touch_updated_at triggers), `products.range_id` (indexed FK), `products.hindi_machine`, `product_photos.photo_source`, `product_variants.mrp_paise` nullable (partial index on missing MRP). Switches are conditional UPDATEs on `version` with an audit row; bulk status and bulk MRP are single conditional statements (a product that moved meanwhile is skipped, never forced; an MRP is never set below a stored shop or admin price). The importer finds products by pack SKU, never deletes, never overwrites an MRP, an edited product or a hidden brand; one advisory lock per batch.

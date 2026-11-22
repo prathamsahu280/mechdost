@@ -9,6 +9,7 @@ import {
   type NetQuantity,
 } from '@mechdost/shared/product-attributes';
 import { NotFoundError } from './errors';
+import { productVisible } from './visibility';
 import { decodeCursor, encodeCursor, type CursorKind } from './cursor';
 import { localized } from './localized';
 import { buildSearchSql, parseCatalogueQuery } from './search-sql';
@@ -132,7 +133,7 @@ async function resolvePlace(db: Tx, cityCode: string, pincode: string | null): P
  * shops with only a GST enrolment number are never priced (design 2026-11-13). Shared by the catalogue, checkout
  * and the admin price board, so all three agree on which shops count.
  */
-export const BUYABLE_OFFER = sql`v.status = 'active' and si.active and not si.admin_blocked and si.on_hand - si.reserved > 0
+export const BUYABLE_OFFER = sql`v.status = 'active' and v.mrp_paise is not null and si.active and not si.admin_blocked and si.on_hand - si.reserved > 0
     and s.status = 'approved' and s.gst_status = 'registered'
     and not (s.busy and (s.busy_until is null or s.busy_until > now()))`;
 
@@ -289,7 +290,7 @@ export async function catalogueHasMatch(db: Tx, q: string): Promise<boolean> {
   const rows = rowsOf<{ found: boolean }>(
     await db.execute(sql`select exists (select 1 from products p join brands b on b.id = p.brand_id
       join categories c on c.id = p.category_id
-      where p.status = 'live' and c.archived_at is null and ${match}) as found`),
+      where ${productVisible('p')} and ${match}) as found`),
   );
   return rows[0]?.found === true;
 }
@@ -302,7 +303,7 @@ export async function listCatalogue(db: Tx, query: CatalogueQuery): Promise<Cata
   const place = await resolvePlace(db, query.cityCode, query.pincode ?? null);
 
   const search = q ? buildSearchSql(await parseCatalogueQuery(db, q)) : null;
-  const filters: SQL[] = [sql`p.status = 'live'`, sql`c.archived_at is null`];
+  const filters: SQL[] = [productVisible('p')];
   if (search) filters.push(search.match);
   if (query.category)
     filters.push(
@@ -376,7 +377,8 @@ export async function listCatalogue(db: Tx, query: CatalogueQuery): Promise<Cata
 export interface CatalogueVariant {
   sku: string;
   options: Record<string, unknown>;
-  mrpPaise: number;
+  /** Null = no MRP yet: "price on request", not sellable (design 2026-11-22). */
+  mrpPaise: number | null;
   /** Net quantity of this pack; null when not listed. */
   netQuantity: NetQuantity | null;
   offer: (CatalogueOffer & { seller: string }) | null;
@@ -430,7 +432,7 @@ export async function getCatalogueProduct(
           '' as sort_key_text
         from products p join brands b on b.id = p.brand_id join categories c on c.id = p.category_id
           left join categories pc on pc.id = c.parent_id
-        where p.slug = ${slug} and p.status = 'live' and c.archived_at is null
+        where p.slug = ${slug} and ${productVisible('p')}
       )
       select pg.*, ph.*, rv.* from pg ${cardExtras}`),
   );
@@ -500,7 +502,7 @@ export async function getCatalogueProduct(
       return {
         sku: v.sku,
         options: v.options,
-        mrpPaise: num(v.mrp_paise),
+        mrpPaise: numOrNull(v.mrp_paise),
         netQuantity: pack,
         offer:
           price === null
@@ -543,7 +545,7 @@ export async function listCatalogueCategories(db: Tx, locale: CatalogueLocale): 
   }>(
     await db.execute(sql`
       select c.slug, parent.slug as parent_slug, c.name, c.name_hi, c.description, c.description_hi, c.icon,
-        (select count(*) from products p where p.category_id = c.id and p.status = 'live')::int as live
+        (select count(*) from products p where p.category_id = c.id and ${productVisible('p')})::int as live
       from categories c left join categories parent on parent.id = c.parent_id
       where not c.hidden and c.archived_at is null
       order by c.sort, c.slug`),

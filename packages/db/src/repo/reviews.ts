@@ -13,6 +13,7 @@ import {
 import { auditLog, reviews } from '../schema';
 import { decodeCursor, encodeCursor, pageSize } from './cursor';
 import { ConflictError, NotFoundError, pgCode, ValidationError } from './errors';
+import { productVisible } from './visibility';
 import { recordServerEvent } from './events';
 import { localized } from './localized';
 import type { Tx } from './orders';
@@ -291,7 +292,7 @@ export const PUBLIC_REVIEWS_MAX = 20;
 async function publicTargetId(db: Tx, targetType: ReviewTargetType, slug: string): Promise<string> {
   const q =
     targetType === 'product'
-      ? sql`select id from products where slug = ${slug} and status = 'live' limit 1`
+      ? sql`select p.id from products p where p.slug = ${slug} and ${productVisible('p')} limit 1`
       : sql`select id from workshops where slug = ${slug} and published limit 1`;
   const [row] = rowsOf<{ id: string }>(await db.execute(q));
   if (!row) throw new NotFoundError('Not found');

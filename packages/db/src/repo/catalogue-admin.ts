@@ -135,7 +135,7 @@ function toAdmin(r: Row): AdminProduct {
 
 /** Same rule as `hindiGaps`, in SQL, so the "missing Hindi" filter pages correctly. */
 const blank = (col: AnyPgColumn) => sql`coalesce(${col}, '') = ''`;
-const hasHindiGap = sql`(${blank(products.nameHi)}
+export const hasHindiGap = sql`(${blank(products.nameHi)}
   or (not ${blank(products.specSummary)} and ${blank(products.specSummaryHi)})
   or (not ${blank(products.compatibility)} and ${blank(products.compatibilityHi)})
   or (not ${blank(products.description)} and ${blank(products.descriptionHi)})
@@ -144,7 +144,16 @@ const hasHindiGap = sql`(${blank(products.nameHi)}
 /** Products in slug order (keyset on slug), optionally one status and/or only those with Hindi gaps. */
 export async function listAdminProducts(
   db: Tx,
-  opts: { status?: ProductStatus | null; missingHindiOnly?: boolean; after?: string | null; limit?: number },
+  opts: {
+    status?: ProductStatus | null;
+    missingHindiOnly?: boolean;
+    /** Packs without an MRP ("price on request"), design 2026-11-22. */
+    missingMrpOnly?: boolean;
+    brand?: string | null;
+    range?: string | null;
+    after?: string | null;
+    limit?: number;
+  },
 ): Promise<{ items: AdminProduct[]; next: string | null }> {
   const limit = Math.min(Math.max(opts.limit ?? 50, 1), 100);
   const rows = await loadRows(
@@ -152,6 +161,13 @@ export async function listAdminProducts(
     and(
       opts.status ? eq(products.status, opts.status) : undefined,
       opts.missingHindiOnly ? hasHindiGap : undefined,
+      opts.missingMrpOnly
+        ? sql`exists (select 1 from product_variants v where v.product_id = ${products.id} and v.mrp_paise is null)`
+        : undefined,
+      opts.brand ? eq(brands.slug, opts.brand) : undefined,
+      opts.range
+        ? sql`${products.rangeId} = (select id from product_ranges where slug = ${opts.range})`
+        : undefined,
       opts.after ? gt(products.slug, opts.after) : undefined,
     ),
     limit + 1,
@@ -163,7 +179,8 @@ export async function listAdminProducts(
 /** One pack of a product, as the editor shows it (net quantity for the unit price, MRP for the price rules). */
 export interface AdminVariant {
   sku: string;
-  mrpPaise: number;
+  /** Null = price on request: the admin sets it (design 2026-11-22). */
+  mrpPaise: number | null;
   netQuantity: NetQuantity | null;
 }
 
@@ -257,9 +274,11 @@ export async function updateProductTexts(
     );
     if (Object.keys(changed).length === 0)
       return { version: current.version, missingHindi: current.missingHindi };
+    const touchesHindi = Object.keys(changed).some((k) => k.endsWith('Hi'));
     const [row] = await tx
       .update(products)
-      .set(changed)
+      // A person edited the Hindi: it is no longer machine-made, and a catalogue re-import leaves it alone.
+      .set(touchesHindi ? { ...changed, hindiMachine: false } : changed)
       .where(and(eq(products.id, current.id), eq(products.version, input.expectedVersion)))
       .returning({ version: products.version });
     if (!row) throw new ConflictError('Someone else changed this product; reload', 'STALE_PRODUCT');

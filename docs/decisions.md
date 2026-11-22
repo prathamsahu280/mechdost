@@ -1603,3 +1603,7 @@ Trade and fleet applications get `business_applications` (+ events) and `trade_a
 - A word that is the category's own name matches the whole category; other category words only boost (otherwise "coolant" would return every lubricant).
 - "Did you mean" runs a trigram scan only on the zero-result path (no index needed at a few thousand products; revisit with Meilisearch). Suggestions are cached 60 s per instance (stateless API, rule 7).
 - The suggestion panel is lazy (first focus) because `/shop` sits at the first-load budget edge (spec 16 incident 2026-11-22); there is no header search today, the combobox is on `/shop` only.
+
+### 2026-11-22 - Catalogue groups, optional MRP, import scope (Builder A)
+
+Brand and range switches never change product status (lossless); one SQL rule `productVisible` for every storefront read. MRP may be NULL = not sellable ("price on request"); an MRP is never lowered below a stored price. catalogue-v2 import: price-list brands only, own picture with decodable bytes, idempotent by SKU, admin edits (`hindi_machine` false) and MRPs are never overwritten, Hindi from a glossary plus an optional translations file (no word-by-word description translation). Tyres HSN 4011 at 18 % (GST 2.0), batteries 8507 18 %; fallbacks (coolants 3820, brake fluid 3819, UPS/chargers 8504, auto care by keyword) are listed in the dry-run report for review. CLI lives in apps/api (needs sharp/Storage).

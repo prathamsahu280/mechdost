@@ -10,6 +10,7 @@ import type { Recommendation, RecoRule, RecoRuleInput } from '@mechdost/shared/r
 import { auditLog, categories, recommendationRules } from '../schema';
 import { BUYABLE_OFFER, listCatalogue, type CatalogueLocale } from './catalogue';
 import { ConflictError, NotFoundError, pgCode, ValidationError } from './errors';
+import { productVisible } from './visibility';
 import { recordServerEvent } from './events';
 import type { Tx } from './orders';
 import { num, rowsOf } from './sql-rows';
@@ -302,7 +303,7 @@ export async function recommendFor(
   const sources = rowsOf<{ id: string; category_id: string; parent_id: string | null }>(
     await db.execute(sql`
       select p.id, p.category_id, c.parent_id from products p join categories c on c.id = p.category_id
-      where p.status = 'live' and p.slug in (${sql.join(
+      where ${productVisible('p')} and p.slug in (${sql.join(
         input.slugs.map((s) => sql`${s}`),
         sql`, `,
       )})`),
@@ -319,7 +320,7 @@ export async function recommendFor(
       from recommendation_rules r
       cross join lateral (
         select p.id from products p join categories pc on pc.id = p.category_id
-        where p.status = 'live' and pc.archived_at is null
+        where ${productVisible('p')}
           and (pc.id = r.suggest_category_id or pc.parent_id = r.suggest_category_id)
           and p.id not in (${uuidList(sourceIds)})
           and exists (

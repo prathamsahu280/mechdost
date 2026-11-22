@@ -542,6 +542,13 @@
       "breakpoints": true
     },
     {
+      "idx": 79,
+      "version": "7",
+      "when": 1795353034994,
+      "tag": "0079_catalogue_groups_mrp_optional",
+      "breakpoints": true
+    },
+    {
       "idx": 80,
       "version": "7",
       "when": 1795353242764,

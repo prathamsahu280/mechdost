@@ -225,3 +225,5 @@ T148 · 2026-11-15 · real-sign-in build (launch config) · the API-mode build (
 
 L1 · 2026-11-22 · search tests · property tests of a normaliser must generate only valid inputs (a "25W-16" grade is not a grade) or the property is wrong, not the code; for ranking assert order between two products, never an absolute score.
 L2 · 2026-11-22 · budget · a lazy feature needs a source-level guard: no static value import of the lazy module anywhere except itself (`apps/web/test/search-budget.test.ts`), plus a check that every placeholder of a precompiled message is passed a value at its use.
+
+- 2026-11-22 (catalogue v2): importers need an idempotency test (second run = zero changes), a "never overwrite admin work" test, and a guard test that greps repositories for the visibility rule. A dry run on the real DB before the migration is applied must degrade (report `migrationApplied: false`), not crash.

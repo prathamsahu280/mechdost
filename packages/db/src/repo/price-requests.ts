@@ -38,7 +38,8 @@ async function variantForSku(tx: Tx, sku: string) {
     .where(eq(productVariants.sku, sku))
     .limit(1);
   if (!v) throw new NotFoundError('No such SKU');
-  return v;
+  if (v.mrp === null) throw new ConflictError('This pack has no MRP yet; it cannot be priced', 'MRP_MISSING');
+  return { ...v, mrp: v.mrp };
 }
 
 function checkPrice(pricePaise: number, mrp: number) {
@@ -298,7 +299,11 @@ export async function listPriceRequests(
         : [asc(shopPriceRequests.createdAt), asc(shopPriceRequests.id)]),
     )
     .limit(limit + 1);
-  return { items: rows.slice(0, limit), more: rows.length > limit };
+  // A request needs an MRP to exist, so the filter never drops a row; it only narrows the type.
+  const items = rows
+    .slice(0, limit)
+    .flatMap((r) => (r.mrpPaise === null ? [] : [{ ...r, mrpPaise: r.mrpPaise }]));
+  return { items, more: rows.length > limit };
 }
 
 async function agreementRequired(tx: Tx): Promise<boolean> {

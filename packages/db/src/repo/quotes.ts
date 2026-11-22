@@ -45,6 +45,7 @@ import { placeOrder, quoteCheckout, settingOr } from './checkout';
 import { activeBlockLevels } from './customer-blocks';
 import { decodeCursor, encodeCursor, pageSize } from './cursor';
 import { ConflictError, ForbiddenError, NotFoundError, pgCode, ValidationError } from './errors';
+import { productVisible } from './visibility';
 import { recordServerEvent } from './events';
 import { localized } from './localized';
 import { queueEmail } from './email-notifications';
@@ -654,11 +655,12 @@ export async function createQuote(
         from jsonb_to_recordset(${JSON.stringify(
           input.lines.map((l, i) => ({ ord: i, slug: l.slug, sku: l.sku ?? null })),
         )}::jsonb) as l(ord int, slug text, sku text)
-        left join products p on p.slug = l.slug and p.status = 'live'
+        left join products p on p.slug = l.slug and ${productVisible('p')}
         left join brands b on b.id = p.brand_id
         left join lateral (
           select pv.id, pv.sku, pv.mrp_paise from product_variants pv
-          where pv.product_id = p.id and pv.status = 'active' and (l.sku is null or pv.sku = l.sku)
+          where pv.product_id = p.id and pv.status = 'active' and pv.mrp_paise is not null
+            and (l.sku is null or pv.sku = l.sku)
           order by pv.created_at, pv.sku limit 1) v on true
         order by l.ord`),
     );

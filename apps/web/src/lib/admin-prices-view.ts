@@ -21,7 +21,8 @@ export interface BoardPin {
 
 export interface BoardVariant {
   sku: string;
-  mrpPaise: number;
+  /** Null = no MRP yet: the price form is replaced by a hint (design 2026-11-22). */
+  mrpPaise: number | null;
   city: PriceRef | null;
   pins: BoardPin[];
 }
@@ -101,6 +102,12 @@ export function readPriceInput(
 /** Codes the screen has words for (`portal.cat_err_*`); anything else gets the generic message. */
 const KNOWN = new Set([
   'MRP_EXCEEDED',
+  'MRP_MISSING',
+  'STALE_GROUP',
+  'REASON_CODE',
+  'BULK_SIZE',
+  'MRP_INVALID',
+  'BELOW_PRICE',
   'BELOW_SHOP_PRICE',
   'NO_SHOP',
   'BAD_PRICE',
