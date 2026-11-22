@@ -36,6 +36,7 @@ const product: ProductView = {
   compatibility: null,
   vehicleTypes: ['2W'],
   price: { pricePaise: 44_005, mrpPaise: 47_500 },
+  mrpFrom: null,
   pack: null,
   availability: 'in_stock',
   leadDays: 1,

@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CatalogueCard, CatalogueProduct } from '@mechdost/shared/catalogue';
+import { mrpOnly } from '../src/lib/catalogue/mrp-only';
+import { productLd } from '../src/lib/structured-data';
 import {
   apiCard,
   apiProduct,
@@ -16,6 +18,8 @@ const card: CatalogueCard = {
   highlights: ['API SL'],
   vehicleTypes: [],
   rating: null,
+  mrpFromPaise: 47_500,
+  mrpVaries: false,
   offer: {
     sku: 'CAS-0900-B',
     pricePaise: 44_000,
@@ -199,5 +203,28 @@ describe('catalogue API source (plan 2026-11-10 task 3)', () => {
     expect(p.attributes).toEqual({ saeGrade: '20W40' });
     // The pack of the variant that is sold.
     expect(p.pack).toEqual({ qty: 900, unit: 'ml' });
+  });
+});
+
+describe('MRP without a shop offer (spec 02)', () => {
+  const unsold: CatalogueCard = { ...card, offer: null };
+
+  it('maps to an MRP-only view: no price, still on request, no sku', () => {
+    const v = apiCard(unsold);
+    expect(v).toMatchObject({ price: null, availability: 'on_request', sku: null });
+    expect(v.mrpFrom).toEqual({ paise: 47_500, varies: false });
+    expect(mrpOnly(v)).toEqual({ key: 'mrp', paise: 47_500 });
+  });
+
+  it('says "from" when packs differ, and nothing when there is no MRP or a price', () => {
+    expect(mrpOnly(apiCard({ ...unsold, mrpVaries: true }))).toEqual({ key: 'mrpFrom', paise: 47_500 });
+    expect(mrpOnly(apiCard({ ...unsold, mrpFromPaise: null }))).toBeNull();
+    expect(mrpOnly(apiCard({ ...unsold, mrpFromPaise: 0 }))).toBeNull();
+    expect(mrpOnly(apiCard(card))).toBeNull();
+  });
+
+  it('JSON-LD marks up no offer for an MRP-only product', () => {
+    const view = apiProduct({ ...product, variants: [] }, 'en');
+    expect(productLd(view, '/shop/x', null)).toBeNull();
   });
 });

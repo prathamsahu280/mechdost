@@ -20,6 +20,8 @@ export interface CardView {
   /** Vehicle types the product is for, 2W/3W/4W order; empty = "Fitment not listed" (decision 2026-11-12). */
   vehicleTypes: readonly VehicleType[];
   price: { pricePaise: number; mrpPaise: number | null } | null;
+  /** Lowest pack MRP, shown as "MRP ₹x" when there is no price (no shop offer yet); never a price, never sellable. */
+  mrpFrom: { paise: number; varies: boolean } | null;
   /** Net quantity of the pack the price is for (unit price, design 2026-11-13); null when not listed. */
   pack: NetQuantity | null;
   availability: 'in_stock' | 'low_stock' | 'on_request';
