@@ -48,6 +48,7 @@ const product: ProductView = {
   seller: 'Raipur Lubes',
   countryOfOrigin: null,
   partNumbers: [{ kind: 'mpn', value: 'ACT4T-900' }],
+  partReference: 'CAS-ACT4T-0900',
   shippingPaise: null,
   attributeSet: null,
   attributes: {},
@@ -99,9 +100,20 @@ describe('structured data', () => {
     expect(none).not.toHaveProperty('aggregateRating');
   });
 
-  it('leaves out a product Google would reject (on request, no rating)', () => {
-    expect(productLd({ ...product, availability: 'on_request' }, '/shop/x', null)).toBeNull();
-    expect(productLd({ ...product, price: null }, '/shop/x', null)).toBeNull();
+  it('marks up a product with no price as a Product with no offers (live audit 2026-11-22 item 7)', () => {
+    for (const view of [
+      { ...product, availability: 'on_request' as const },
+      { ...product, price: null },
+    ]) {
+      const ld = productLd(view, '/shop/x', null);
+      expect(ld).toMatchObject({
+        '@type': 'Product',
+        name: 'Castrol Activ 4T 20W40 900 ml',
+        brand: { name: 'Castrol' },
+      });
+      expect(ld).not.toHaveProperty('offers');
+      expect(ld).not.toHaveProperty('aggregateRating');
+    }
   });
 
   it('marks up a workshop as AutoRepair with hours, price range and no phone number', () => {

@@ -81,10 +81,12 @@ export function breadcrumbLd(items: readonly { name: string; path: string }[]): 
 }
 
 /**
- * A product with its offer (real data only). `null` when Google would reject the item: a product needs an offer or a
- * rating, and one sold "on request" has neither a price nor stock to mark up.
+ * A product with its offer when it has a buyable price (real data only). A product with no shop offer (MRP only, or
+ * "on request") is still a Product (name, brand, image, sku, description) with no `offers` and no rating: search
+ * engines read it for the knowledge panel and image results, but never see a price or stock that does not exist
+ * (live audit 2026-11-22 item 7; before that it was left out entirely).
  */
-export function productLd(product: ProductView, path: string, categoryName: string | null): Json | null {
+export function productLd(product: ProductView, path: string, categoryName: string | null): Json {
   const offer =
     product.price && product.availability !== 'on_request'
       ? {
@@ -110,7 +112,6 @@ export function productLd(product: ProductView, path: string, categoryName: stri
           worstRating: 1,
         }
       : null;
-  if (!offer && !rating) return null;
   const photos = product.photos ?? (product.photo ? [product.photo] : []);
   const gtin = product.partNumbers.find((n) => /^gtin|^ean|^upc/i.test(n.kind))?.value;
   const mpn = product.partNumbers.find((n) => /^mpn|^oem|^part/i.test(n.kind))?.value;
@@ -119,7 +120,7 @@ export function productLd(product: ProductView, path: string, categoryName: stri
     '@type': 'Product',
     name: productFullName(product.brand, product.name),
     brand: { '@type': 'Brand', name: product.brand },
-    ...(product.sku ? { sku: product.sku } : {}),
+    ...(product.partReference ? { sku: product.partReference } : {}),
     ...(gtin ? { gtin } : {}),
     ...(mpn ? { mpn } : {}),
     ...(categoryName ? { category: categoryName } : {}),

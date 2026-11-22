@@ -5,10 +5,11 @@ import { ProductCard } from '@/components/catalogue/product-card';
 import { ShopBrowser, type ServerListing } from '@/components/catalogue/shop-browser';
 import { ClientMessages } from '@/components/ui/client-messages';
 import { Container, PageIntro } from '@/components/ui/page-intro';
-import { CATEGORY_SLUGS, categoryFromSlug, DEMO_PRODUCTS, type SortKey } from '@/demo/catalogue';
+import { CATEGORY_SLUGS, DEMO_PRODUCTS, type SortKey } from '@/demo/catalogue';
 import type { Locale } from '@/i18n/routing';
-import { fetchCataloguePage, fetchDidYouMean } from '@/lib/catalogue/api-source';
+import { fetchCataloguePage, fetchCatalogueCategories, fetchDidYouMean } from '@/lib/catalogue/api-source';
 import { demoCard } from '@/lib/catalogue/demo-source';
+import { resolveCategoryParam } from '@/lib/catalogue/shop-state';
 import type { CardView } from '@/lib/catalogue/view';
 import { DATA_MODE } from '@/lib/data-mode';
 import { MAX_LIST_PAGES } from '@/lib/catalogue/load-more';
@@ -47,12 +48,14 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
     getTranslations({ locale, namespace: 'cities' }),
   ]);
   const city = cities(site.defaultCity);
-  const category = categoryFromSlug(first(sp.category));
+  const resolved = await resolveCategory(first(sp.category), locale);
+  const category = resolved.category;
   const searched = Boolean(first(sp.q)?.trim());
-  const href = category ? `/shop?category=${CATEGORY_SLUGS[category]}` : '/shop';
-  const title = category ? t('categoryTitle', { category: c(category), city }) : t('shopTitle', { city });
+  const label = resolved.sub?.name ?? (category ? c(category) : '');
+  const href = category ? `/shop?category=${resolved.sub?.slug ?? CATEGORY_SLUGS[category]}` : '/shop';
+  const title = category ? t('categoryTitle', { category: label, city }) : t('shopTitle', { city });
   const description = category
-    ? t('categoryDescription', { category: c(category), city })
+    ? t('categoryDescription', { category: label, city })
     : t('shopDescription', { city });
   return {
     title,
@@ -61,6 +64,21 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
     openGraph: openGraphFor({ href, locale, title, description }),
     ...(searched ? { robots: { index: false, follow: true } } : {}),
   };
+}
+
+/**
+ * The `category` parameter: a top-level slug or (API mode) a sub-category slug such as the product breadcrumb's
+ * (`car-engine-oil`), which filters to that sub-category and keeps its parent selected. Demo mode knows only the
+ * nine top-level slugs.
+ */
+async function resolveCategory(slug: string | undefined, locale: Locale) {
+  const top = resolveCategoryParam(slug, []);
+  if (top.category || DATA_MODE !== 'api' || !slug) return top;
+  try {
+    return resolveCategoryParam(slug, await fetchCatalogueCategories(locale));
+  } catch {
+    return top; // the filter is dropped, the page still renders
+  }
 }
 
 /**
@@ -79,9 +97,11 @@ export default async function ShopPage({ searchParams }: Props) {
   const sp = await searchParams;
   const sortParam = first(sp.sort);
   const sort: SortKey = SORTS.find((s) => s === sortParam) ?? 'popular';
+  const resolved = await resolveCategory(first(sp.category), locale);
   const initial = {
     query: first(sp.q)?.trim().slice(0, 120) ?? '',
-    category: categoryFromSlug(first(sp.category)),
+    category: resolved.category,
+    sub: resolved.sub,
     sort,
     vehicle: VEHICLE_TYPES.find((v) => v === first(sp.vehicle)),
   };
@@ -92,7 +112,7 @@ export default async function ShopPage({ searchParams }: Props) {
     const query: ListingQuery = {
       locale,
       q: initial.query,
-      category: initial.category ? CATEGORY_SLUGS[initial.category] : null,
+      category: initial.sub?.slug ?? (initial.category ? CATEGORY_SLUGS[initial.category] : null),
       sort: sort === 'popular' ? null : sort,
       vehicle: initial.vehicle ?? null,
     };

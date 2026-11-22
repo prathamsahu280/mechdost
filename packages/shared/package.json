@@ -39,6 +39,7 @@
     "./site-layout": "./src/site-layout.ts",
     "./auth": "./src/auth.ts",
     "./catalogue": "./src/catalogue.ts",
+    "./catalogue-hindi": "./src/catalogue-hindi.ts",
     "./catalogue-groups": "./src/catalogue-groups.ts",
     "./catalogue-import": "./src/catalogue-import.ts",
     "./vehicles": "./src/vehicles.ts",

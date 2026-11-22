@@ -29,52 +29,45 @@ import {
   CATEGORY_SLUGS,
   categoryFromSlug,
   searchProducts,
-  type CategoryKey,
   type SortKey,
 } from '@/demo/catalogue';
 import { track } from '@/lib/analytics';
-import { VEHICLE_LABEL_KEY, VEHICLE_TYPES, type VehicleType } from '@mechdost/shared/vehicles';
+import { shopUrl, type ShopState } from '@/lib/catalogue/shop-state';
+import { VEHICLE_LABEL_KEY, VEHICLE_TYPES } from '@mechdost/shared/vehicles';
 import { whatsappLink } from '@/lib/site';
 
 const SORTS: SortKey[] = ['popular', 'price_asc', 'price_desc'];
 
-interface State {
-  query: string;
-  category: CategoryKey | undefined;
-  sort: SortKey;
-  /** Only products tagged for this vehicle type (decision 2026-11-12). */
-  vehicle: VehicleType | undefined;
-}
+type State = ShopState;
+const urlFor = shopUrl;
 
-function urlFor(base: string, s: State): string {
-  const params = new URLSearchParams();
-  if (s.query) params.set('q', s.query);
-  if (s.category) params.set('category', CATEGORY_SLUGS[s.category]);
-  if (s.sort !== 'popular') params.set('sort', s.sort);
-  if (s.vehicle) params.set('vehicle', s.vehicle);
-  const qs = params.toString();
-  return qs ? `${base}?${qs}` : base;
-}
-
-/** The filters of a server listing, in the shape the URL helpers use. */
-function listingState(q: ListingQuery): State {
+/**
+ * The filters of a server listing, in the shape the URL helpers use. `known` is the state the server rendered: it
+ * names a sub-category slug and its parent (the browser cannot look them up).
+ */
+function listingState(q: ListingQuery, known: State): State {
+  const sub = q.category !== null && q.category === known.sub?.slug ? known.sub : undefined;
   return {
     query: q.q,
-    category: categoryFromSlug(q.category ?? undefined),
+    category: sub ? known.category : categoryFromSlug(q.category ?? undefined),
+    sub,
     sort: q.sort === 'price_asc' || q.sort === 'price_desc' ? q.sort : 'popular',
     vehicle: q.vehicle ?? undefined,
   };
 }
 
-function readUrl(): State {
-  return stateFrom(new URLSearchParams(window.location.search));
+function readUrl(known: State): State {
+  return stateFrom(new URLSearchParams(window.location.search), known);
 }
 
-function stateFrom(p: Pick<URLSearchParams, 'get'>): State {
+function stateFrom(p: Pick<URLSearchParams, 'get'>, known: State): State {
   const sort = p.get('sort');
+  const slug = p.get('category') ?? undefined;
+  const sub = slug !== undefined && slug === known.sub?.slug ? known.sub : undefined;
   return {
     query: (p.get('q') ?? '').trim().slice(0, 120),
-    category: categoryFromSlug(p.get('category') ?? undefined),
+    category: sub ? known.category : categoryFromSlug(slug),
+    sub,
     sort: SORTS.find((s) => s === sort) ?? 'popular',
     vehicle: VEHICLE_TYPES.find((v) => v === p.get('vehicle')),
   };
@@ -140,7 +133,7 @@ export function ShopBrowser({
   const [state, setState] = useState<State>(initial);
   const [draft, setDraft] = useState(initial.query);
   // A new server render with other filters (header link, Back, a shared URL) resets the controls to match.
-  const initialKey = `${initial.query}|${initial.category ?? ''}|${initial.sort}|${initial.vehicle ?? ''}`;
+  const initialKey = `${initial.query}|${initial.category ?? ''}|${initial.sub?.slug ?? ''}|${initial.sort}|${initial.vehicle ?? ''}`;
   const [shownKey, setShownKey] = useState(initialKey);
   if (shownKey !== initialKey) {
     setShownKey(initialKey);
@@ -154,7 +147,7 @@ export function ShopBrowser({
   const [shownUrl, setShownUrl] = useState(urlKey);
   if (!server && shownUrl !== urlKey) {
     setShownUrl(urlKey);
-    const fromUrl = stateFrom(params);
+    const fromUrl = stateFrom(params, initial);
     setState(fromUrl);
     setDraft(fromUrl.query);
   }
@@ -222,7 +215,7 @@ export function ShopBrowser({
   // Back/forward restore the filters without a reload.
   useEffect(() => {
     const onPop = () => {
-      const next = readUrl();
+      const next = readUrl(initial);
       setState(next);
       setDraft(next.query);
     };
@@ -230,7 +223,7 @@ export function ShopBrowser({
     return () => {
       window.removeEventListener('popstate', onPop);
     };
-  }, []);
+  }, [initial]);
 
   // Suggestions while typing (spec 02 "Smart search"): the panel is a lazy chunk fetched on the first focus.
   const listId = useId();
@@ -283,9 +276,17 @@ export function ShopBrowser({
       return;
     }
     const category = item.kind === 'category' ? categoryFromSlug(item.slug) : undefined;
-    const query = category ? '' : item.label;
+    // A sub-category suggestion filters to it (the server then names its parent); other words become the search.
+    const sub =
+      item.kind === 'category' && !category && server ? { slug: item.slug, name: item.label } : undefined;
+    const query = category || sub ? '' : item.label;
     setDraft(query);
-    apply({ ...state, query, category: category ?? state.category });
+    apply({
+      ...state,
+      query,
+      category: sub ? undefined : (category ?? state.category),
+      sub: sub ?? (category ? undefined : state.sub),
+    });
   }
 
   function apply(next: State) {
@@ -325,7 +326,7 @@ export function ShopBrowser({
       window.history.replaceState(
         window.history.state,
         '',
-        withPages(urlFor(basePath, listingState(server.query)), pages),
+        withPages(urlFor(basePath, listingState(server.query, initial)), pages),
       );
       setLoadState('idle');
       setAnnouncement(c('loadedMore', { count: fresh.length }));
@@ -355,6 +356,7 @@ export function ShopBrowser({
   const filtered =
     state.query !== '' ||
     state.category !== undefined ||
+    state.sub !== undefined ||
     state.sort !== 'popular' ||
     state.vehicle !== undefined;
 
@@ -419,7 +421,7 @@ export function ShopBrowser({
             name="category"
             value={state.category ? CATEGORY_SLUGS[state.category] : ''}
             onChange={(e) => {
-              apply({ ...state, category: categoryFromSlug(e.target.value) });
+              apply({ ...state, category: categoryFromSlug(e.target.value), sub: undefined });
             }}
             className={field}
           >
@@ -484,7 +486,7 @@ export function ShopBrowser({
         <ul className="flex gap-2">
           {[undefined, ...CATEGORY_KEYS].map((k) => {
             const active = state.category === k;
-            const next = { ...state, category: k };
+            const next = { ...state, category: k, sub: undefined };
             return (
               <li key={k ?? 'all'}>
                 <a
@@ -514,12 +516,26 @@ export function ShopBrowser({
           {state.query ? `${shop('searchedFor', { query: state.query })} ` : ''}
           {nextCursor ? c('resultsShown', { count: shownCount }) : c('results', { count: shownCount })}
         </p>
+        {state.sub ? (
+          <button
+            type="button"
+            data-track="shop_sub_category_remove"
+            aria-label={c('removeSub', { name: state.sub.name })}
+            onClick={() => {
+              apply({ ...state, sub: undefined });
+            }}
+            className={chip(true)}
+          >
+            {state.sub.name}
+            <span aria-hidden="true">×</span>
+          </button>
+        ) : null}
         {filtered ? (
           <button
             type="button"
             onClick={() => {
               setDraft('');
-              apply({ query: '', category: undefined, sort: 'popular', vehicle: undefined });
+              apply({ query: '', category: undefined, sub: undefined, sort: 'popular', vehicle: undefined });
             }}
             className="min-h-10 text-sm font-bold text-accent-soft-text underline-offset-4 hover:underline"
           >

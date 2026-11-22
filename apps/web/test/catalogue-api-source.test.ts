@@ -5,6 +5,7 @@ import { productLd } from '../src/lib/structured-data';
 import {
   apiCard,
   apiProduct,
+  fetchCatalogueCategories,
   fetchCataloguePage,
   fetchCatalogueProduct,
 } from '../src/lib/catalogue/api-source';
@@ -206,6 +207,62 @@ describe('catalogue API source (plan 2026-11-10 task 3)', () => {
   });
 });
 
+describe('Part reference (live audit 2026-11-22 item 11)', () => {
+  const one = { sku: 'X-1-L', options: {}, mrpPaise: 100, netQuantity: null, offer: null };
+  const two = { ...one, sku: 'X-6-L' };
+
+  it('is the SKU of a single-pack product', () => {
+    expect(apiProduct({ ...product, variants: [one] }, 'en').partReference).toBe('X-1-L');
+  });
+
+  it('never names one pack size of a multi-pack product: a real part number, else nothing', () => {
+    const multi = { ...product, variants: [one, two], partNumbers: [] };
+    expect(apiProduct(multi, 'en').partReference).toBeNull();
+    const numbered = { ...multi, partNumbers: [{ kind: 'mfr', value: '15B2F6' }] };
+    expect(apiProduct(numbered, 'en').partReference).toBe('15B2F6');
+    // The cart still gets the pack that is sold.
+    expect(apiProduct(numbered, 'en').sku).toBe('X-1-L');
+  });
+});
+
+describe('Categories for the shop filter', () => {
+  beforeEach(() => {
+    vi.stubEnv('NEXT_PUBLIC_API_URL', 'http://api.test/');
+    vi.stubGlobal('fetch', fetchMock);
+    fetchMock.mockReset();
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+  });
+
+  it('reads slug, parent and localised name from the categories endpoint', async () => {
+    fetchMock.mockResolvedValue(
+      json({
+        categories: [
+          {
+            slug: 'car-engine-oil',
+            parentSlug: 'lubricants',
+            name: 'कार इंजन ऑयल',
+            description: null,
+            icon: null,
+            liveProducts: 3,
+          },
+        ],
+      }),
+    );
+    const rows = await fetchCatalogueCategories('hi');
+    expect(calledUrl().pathname).toBe('/v1/catalogue/categories');
+    expect(calledUrl().searchParams.get('locale')).toBe('hi');
+    expect(rows[0]).toMatchObject({ slug: 'car-engine-oil', parentSlug: 'lubricants' });
+  });
+
+  it('throws on an API error (the shop then ignores the filter, never shows a wrong list)', async () => {
+    fetchMock.mockResolvedValue(json({ code: 'INTERNAL' }, 500));
+    await expect(fetchCatalogueCategories('en')).rejects.toThrow(/500/);
+  });
+});
+
 describe('MRP without a shop offer (spec 02)', () => {
   const unsold: CatalogueCard = { ...card, offer: null };
 
@@ -223,8 +280,10 @@ describe('MRP without a shop offer (spec 02)', () => {
     expect(mrpOnly(apiCard(card))).toBeNull();
   });
 
-  it('JSON-LD marks up no offer for an MRP-only product', () => {
+  it('JSON-LD marks up the product but no offer for an MRP-only product', () => {
     const view = apiProduct({ ...product, variants: [] }, 'en');
-    expect(productLd(view, '/shop/x', null)).toBeNull();
+    const ld = productLd(view, '/shop/x', null);
+    expect(ld).toMatchObject({ '@type': 'Product', name: 'Castrol Activ 4T 20W40 900 ml' });
+    expect(ld).not.toHaveProperty('offers');
   });
 });

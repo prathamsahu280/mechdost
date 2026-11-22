@@ -118,4 +118,35 @@ describe('compare signals and prompts', () => {
     if (p?.kind !== 'switch') throw new Error('expected a question');
     expect(startNew(p)).toBe('save_failed');
   });
+
+  it('another sub-category of the imported catalogue asks to start a new comparison (live audit 2026-11-22 item 5)', () => {
+    addToCompare('tractor-a', 'tractor-batteries', { name: 'Tractor batteries', lang: 'en' });
+    addToCompare('tractor-b', 'tractor-batteries');
+    expect(addToCompare('inverter-a', 'inverter-batteries')).toBe('other_category');
+    const p = toPrompt(
+      {
+        ask: 'switch',
+        slug: 'inverter-a',
+        category: 'inverter-batteries',
+        name: 'Inverter batteries',
+        lang: 'en',
+      },
+      readCompare(),
+    );
+    expect(p).toMatchObject({
+      kind: 'switch',
+      from: 'tractor-batteries',
+      fromCount: 2,
+      fromName: 'Tractor batteries',
+    });
+  });
+
+  it('a fifth product is refused with a notice, and the list stays at four', () => {
+    for (const slug of ['a', 'b', 'c', 'd']) addToCompare(slug, 'tractor-batteries');
+    expect(addToCompare('e', 'tractor-batteries')).toBe('full');
+    expect(toPrompt({ ask: 'full', slug: 'e', category: 'tractor-batteries' }, readCompare())).toEqual({
+      kind: 'full',
+    });
+    expect(readCompare().slugs).toHaveLength(4);
+  });
 });

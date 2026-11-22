@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { productSlug, slugify } from '@mechdost/shared/catalogue-import';
+import { normaliseViscosity } from '@mechdost/shared/search';
 import { isNetQuantity, type NetQuantity } from '@mechdost/shared/product-attributes';
 import type { VehicleType } from '@mechdost/shared/vehicles';
 import { hindiFromGlossary, SPEC_KEYS_HI, SUB_CATEGORIES } from './glossary';
@@ -60,7 +61,7 @@ export interface PlannedProduct {
   sourceId: number;
   slug: string;
   brand: { slug: string; name: string; company: string };
-  range: { slug: string; name: string; nameHi: string } | null;
+  range: { slug: string; name: string; nameHi: string; nameHiMachine: string } | null;
   category: { slug: string; parent: string; name: string; nameHi: string };
   name: string;
   nameHi: string;
@@ -340,7 +341,17 @@ export function categoryFor(section: Section, k: string) {
   return SUB_CATEGORIES[`${section}|${k}`] ?? null;
 }
 
-function highlightLines(section: Section, specs: [string, string][]): { en: string[]; hi: string[] } {
+/** `5W40` → `5W-40` (the form people type and the title shows); anything else unchanged. */
+export function displayGrade(grade: string): string {
+  const m = /^(\d+)W(\d+)$/.exec(grade);
+  return (m ? normaliseViscosity(m[1] ?? '', m[2] ?? '') : null) ?? grade;
+}
+
+function highlightLines(
+  section: Section,
+  specs: [string, string][],
+  hi: (text: string) => string,
+): { en: string[]; hi: string[] } {
   const wanted =
     section === 'lub'
       ? ['grade', 'API', 'oil type', 'Application', 'Segment']
@@ -352,16 +363,16 @@ function highlightLines(section: Section, specs: [string, string][]): { en: stri
             ? ['Type']
             : ['Application', 'Type'];
   const en: string[] = [];
-  const hi: string[] = [];
+  const hiLines: string[] = [];
   for (const key of wanted) {
     const value = specOf(specs, key);
     if (value === null || value.length > 100) continue;
     const label = key.charAt(0).toUpperCase() + key.slice(1);
     en.push(`${label}: ${value}`.slice(0, 120));
-    hi.push(`${SPEC_KEYS_HI[key.toLowerCase()] ?? label}: ${hindiFromGlossary(value)}`.slice(0, 120));
+    hiLines.push(`${SPEC_KEYS_HI[key.toLowerCase()] ?? hi(label)}: ${hi(value)}`.slice(0, 120));
     if (en.length === 8) break;
   }
-  return { en, hi };
+  return { en, hi: hiLines };
 }
 
 function buildAttributes(
@@ -627,13 +638,15 @@ function planProduct(
   if (tax.fallback)
     rep.fallbacks.hsn[`${src.k} -> ${tax.hsn}`] = (rep.fallbacks.hsn[`${src.k} -> ${tax.hsn}`] ?? 0) + 1;
   const attributes = buildAttributes(section, name, cat.slug, specsPerPack);
-  const range = src.s.trim() === '' ? null : rangeFor(brandSlug, brandName, src.s, rangeSlugs);
-  const highlights = highlightLines(section, specsPerPack[0] ?? []);
+  // Hindi: the translations file first (names, ranges, highlight values, fitment), then the glossary.
+  const hi = (text: string) => input.translations?.get(text) ?? hindiFromGlossary(text);
+  const range = src.s.trim() === '' ? null : rangeFor(brandSlug, brandName, src.s, rangeSlugs, hi);
+  const highlights = highlightLines(section, specsPerPack[0] ?? [], hi);
   const apps = consensus(specsPerPack.map((s) => specOf(s, 'Application')));
   const compat = apps !== null && (section === 'flt' || section === 'bat') ? apps.slice(0, 300) : null;
   const range_ = packRange(packs);
   const attrBits = [
-    attributes.saeGrade,
+    typeof attributes.saeGrade === 'string' ? displayGrade(attributes.saeGrade) : attributes.saeGrade,
     attributes.capacityAh === undefined ? undefined : `${String(attributes.capacityAh)} Ah`,
   ].filter((x): x is string => typeof x === 'string');
   const warranty =
@@ -666,7 +679,7 @@ function planProduct(
     specSummary: [cat.name, ...attrBits, range_.en].join(' · ').slice(0, 200),
     specSummaryHi: [cat.nameHi, ...attrBits, range_.hi].join(' · ').slice(0, 200),
     compatibility: compat,
-    compatibilityHi: compat,
+    compatibilityHi: compat === null ? null : hi(compat),
     highlights: highlights.en,
     highlightsHi: highlights.hi,
     vehicleTypes: vehicleTypesFor(section, src.k, text),
@@ -686,12 +699,15 @@ function rangeFor(
   brandName: string,
   s: string,
   seen: Map<string, string>,
-): { slug: string; name: string; nameHi: string } {
+  hi: (text: string) => string,
+): { slug: string; name: string; nameHi: string; nameHiMachine: string } {
   const name = cleanText(s).slice(0, 120);
   const joined = slugify(`${brandSlug}-${name}`);
   const slug = joined.replace(new RegExp(`^${brandSlug}-${brandSlug}(-|$)`), `${brandSlug}$1`).slice(0, 120);
   seen.set(slug, brandName);
-  return { slug, name, nameHi: hindiFromGlossary(name) };
+  // `nameHiMachine` is what an import without a translations file writes: a stored Hindi name that still equals it
+  // was never edited by the admin, so a later import may replace it with the reviewed translation.
+  return { slug, name, nameHi: hi(name), nameHiMachine: hindiFromGlossary(name) };
 }
 
 /** Totals for the dry-run report. */

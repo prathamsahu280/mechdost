@@ -1,5 +1,6 @@
 import type { VehicleType } from '@mechdost/shared/vehicles';
 import {
+  CatalogueCategoriesSchema,
   CataloguePageSchema,
   CATALOGUE_SLUG_RE,
   CatalogueProductSchema,
@@ -73,6 +74,17 @@ export async function fetchCataloguePage(
   return { items: page.items.map(apiCard), nextCursor: page.nextCursor };
 }
 
+/** Visible categories (top level and sub-categories) in the page language; the shop resolves a sub-category slug. */
+export async function fetchCatalogueCategories(
+  locale: Locale,
+): Promise<{ slug: string; parentSlug: string | null; name: string }[]> {
+  const url = new URL(`${base()}/v1/catalogue/categories`);
+  url.searchParams.set('locale', locale);
+  const res = await get(url, { revalidate: 300, tags: ['catalogue'] });
+  if (!res.ok) throw new Error(`catalogue API ${String(res.status)}`);
+  return CatalogueCategoriesSchema.parse(await res.json()).categories;
+}
+
 /** "Did you mean" for a search that found nothing (closest brand, category or product name), or null. */
 export async function fetchDidYouMean(q: string, locale: Locale): Promise<string | null> {
   const url = new URL(`${base()}/v1/search/suggest`);
@@ -138,6 +150,7 @@ export function apiProduct(p: CatalogueProduct, locale: Locale): ProductView {
     seller: offer?.seller ?? null,
     countryOfOrigin: countryName(p.countryOfOrigin, locale),
     partNumbers: p.partNumbers,
+    partReference: p.variants.length > 1 ? (p.partNumbers[0]?.value ?? null) : (p.variants[0]?.sku ?? null),
     shippingPaise: offer?.shippingPaise ?? null,
     attributeSet: p.attributeSet,
     // Re-read through the shared definitions: a value this build does not know is left out, never shown raw.

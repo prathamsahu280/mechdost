@@ -6,6 +6,8 @@ This file is the single source of truth for **where the build is right now**. It
 
 - **2026-11-22 (cold-render incident, perf builder, branch worktree-agent-acd28a4a7aae2158a, not merged):** could not reproduce the 6 to 36 s from outside (idle: cold page 0.25 s, API 0.11 to 0.37 s, DB execution 4 ms); no index needed, no migration 0081. Fixed what the code showed: post-deploy page-cache warm-up step (`apps/web/scripts/warm-cache.mjs`, deploy.yml), API keeps two DB connections warm (`keepPoolWarm`), product query round trips 5 to 3. Open: Q214 (server stats), Q215 (shared rate-limit bucket for server-side renders). Spec 16 has the numbers.
 
+- **2026-11-22 (live-audit fixes, branch worktree-agent-a3b9d3fc2e8703fcf, not merged):** items 1-8 of the real-mode audit: sub-category URLs in /shop, Hindi of imported names/highlights/ranges/fitment (translations file 140 to 235 keys, importer checks leftovers, re-run refreshes importer-written Hindi), no photo upscaling, Product JSON-LD without offers, home range with real photos, spec grades 5W-40, part reference only for single-pack. Item 4 (compare message) already existed in code, pinned by tests; item 7 (privacy banner) queued as Q220. **Coordinator to run** the re-import command in docs/runbooks/catalogue-import.md ("Re-applying the reviewed Hindi") after merge and deploy.
+
 - **DONE (2026-11-22, night): real catalogue imported** into the real DB after deploy c857c9b (user: "Yes, import
   after deploy"): 219 products, 740 packs, 26 sub-categories, 4 brands, 99 ranges, 219 photos uploaded, 0 failures;
   Raipur admin price skipped for all 695 MRP packs (no shop sells them, Q208). Importer actor = test super_admin.

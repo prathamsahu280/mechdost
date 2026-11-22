@@ -244,6 +244,41 @@ describe('catalogue-v2 import', () => {
     expect([...diff.classes.values()].every((c) => c === 'unchanged' || c === 'updated')).toBe(true);
   });
 
+  it('a re-run with reviewed Hindi replaces what the importer wrote (names, highlights, ranges), never the admin edits', async () => {
+    const ranged = plan.filter((p) => p.range !== null && p.status === 'live');
+    const distinct = [...new Set(ranged.map((p) => p.range?.slug ?? ''))].slice(0, 2);
+    const [kept, changed] = distinct as [string, string];
+    // The admin renamed one range in Hindi after the first import.
+    await db.update(s.productRanges).set({ nameHi: 'एडमिन का नाम' }).where(eq(s.productRanges.slug, kept));
+    const next = plan.map((p) => ({
+      ...p,
+      nameHi: `${p.nameHi} समीक्षित`,
+      highlightsHi: p.highlightsHi.map((h) => `${h} समीक्षित`),
+      range: p.range ? { ...p.range, nameHi: 'नई श्रेणी' } : null,
+    }));
+    await applyCatalogueImport(t(), next, { staffUserId: staff });
+    const ranges = await db.select().from(s.productRanges).where(inArray(s.productRanges.slug, distinct));
+    expect(ranges.find((r) => r.slug === kept)?.nameHi).toBe('एडमिन का नाम');
+    expect(ranges.find((r) => r.slug === changed)?.nameHi).toBe('नई श्रेणी');
+    const rows = await db
+      .select()
+      .from(s.products)
+      .where(
+        and(
+          eq(s.products.hindiMachine, true),
+          inArray(
+            s.products.slug,
+            plan.map((p) => p.slug),
+          ),
+        ),
+      );
+    expect(rows.length).toBeGreaterThan(5);
+    for (const row of rows) {
+      expect(row.nameHi.endsWith('समीक्षित')).toBe(true);
+      expect(row.highlightsHi.every((h) => h.endsWith('समीक्षित'))).toBe(true);
+    }
+  });
+
   it('writes an audit row per created product and lists products without a photo', async () => {
     const created = await db
       .select()

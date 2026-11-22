@@ -12,6 +12,8 @@ import { TrustStrip } from '@/components/home/trust-strip';
 import { AudienceBand } from '@/components/home/audience-band';
 import type { Locale } from '@/i18n/routing';
 import { JsonLd } from '@/components/site/json-ld';
+import { homeRangeCards } from '@/lib/catalogue/home-range';
+import { DATA_MODE } from '@/lib/data-mode';
 import { alternatesFor } from '@/lib/seo';
 import { organizationLd, websiteLd } from '@/lib/structured-data';
 import { site } from '@/lib/site';
@@ -39,11 +41,12 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
   // The admin's saved layout (real mode), applied here on the server: no client code, refreshed by tag on publish.
   // The demo build shows the default order and the browser-stored choices are applied by the pre-paint script.
   const layout = await publishedLayout();
+  const range = DATA_MODE === 'api' ? await homeRangeCards(locale) : undefined;
   const sections: Record<HomeSection, ReactNode> = {
     audiences: <AudienceBand />,
     trust: <TrustStrip />,
     categories: <CategoryTiles featured={featuredCategories(layout)} emoji={layout.emoji} />,
-    products: <ProductRange />,
+    products: <ProductRange cards={range} />,
     route: <OrderRoute />,
     service: <ServiceSection city={city} />,
     workshops: <TopWorkshops city={city} />,
