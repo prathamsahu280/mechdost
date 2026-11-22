@@ -93,3 +93,15 @@ Source: `autoparts/catalogue-v2/site` (`data/{lub,bat,car,tyr,flt}.json`, `data/
 4. Real run: add `--staff-user <uuid>` (or `IMPORT_STAFF_USER_ID`); writes categories (sub-categories with en + hi names), brands, ranges, products (live; `hindi_machine` = true), packs, then photos (sharp variants, LQIP, EXIF stripped, private Storage; `--concurrency` 1-6, default 3; resumable: re-run uploads only products without a photo; `--skip-photos`, `--photos-only`), then Raipur admin price = MRP where the admin-price rule allows (it needs a shop that already sells the pack; none do, so they are counted as skipped; the import never creates shop offers). Records the run for Admin → Catalogue → Import status.
 5. Re-running changes nothing that is unchanged; texts of products staff edited are never overwritten. Hindi: names/sub-categories/highlights come from a glossary (`catalogue-v2/glossary.ts`), descriptions only from `--translations file.json` (`{english: hindi}`; `--export-untranslated out.json` lists what is missing). Keep `catalogue.require_hindi_to_publish` off until the Hindi is reviewed.
 6. The CLI is in `apps/api/src/cli/import-catalogue.ts` (it needs sharp and the Storage client).
+
+### Re-applying the reviewed Hindi (2026-11-22)
+
+`docs/catalogue/catalogue-v2-translations-hi.json` is a flat `{ "English text": "Hindi text" }` map. It now covers the 219 product names, range names, highlight values ("Non Aerosol", "Others", fitment "2-WHEELER") and the descriptions. Only brand, series, standard and unit names stay in Latin script (`packages/shared/src/catalogue-hindi.ts`); a unit test and the importer both check this, and a real run stops while any Hindi text still holds an English word.
+
+To apply it to the products already in the database (texts only, no photos, nothing created or deleted; products staff edited keep their texts; a range keeps an admin's Hindi name):
+
+```
+pnpm --filter @mechdost/api import:catalogue --dir <catalogue-v2/site> --price-lists docs/catalogue/catalogue-v2-price-lists.json --translations docs/catalogue/catalogue-v2-translations-hi.json --skip-photos --staff-user <super_admin uuid>
+```
+
+Run it with `--dry-run` first: it lists the products it would update and prints `hindiLeftovers: 0` when every Hindi text passes. Add a translation by adding a key (the exact English name, value or description) to the JSON; a missing key falls back to the glossary.

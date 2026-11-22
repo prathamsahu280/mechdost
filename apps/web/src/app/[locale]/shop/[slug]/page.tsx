@@ -483,7 +483,7 @@ function productRows(
   return [
     { key: 'spec', term: t('specification'), value: p.spec },
     { key: 'compat', term: t('compatibility'), value: p.compatibility },
-    { key: 'sku', term: t('sku'), value: p.sku },
+    { key: 'sku', term: t('sku'), value: p.partReference },
     { key: 'seller', term: t('soldBy'), value: p.seller },
     { key: 'origin', term: t('origin'), value: p.countryOfOrigin },
   ].filter((row): row is { key: string; term: string; value: string } => Boolean(row.value));

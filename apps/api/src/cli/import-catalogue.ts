@@ -30,6 +30,7 @@ import {
 } from '@mechdost/db/repo';
 import {
   buildPlan,
+  planHindiLeftovers,
   readPhotoBytes,
   statusCsv,
   statusMarkdown,
@@ -50,6 +51,8 @@ interface Args {
   staffUser?: string;
   skipPhotos: boolean;
   photosOnly: boolean;
+  /** Import although Hindi texts still hold English words (the dry run always reports them). */
+  allowEnglishHindi: boolean;
   concurrency: number;
   report?: string;
   city: string;
@@ -67,6 +70,7 @@ function parseArgs(argv: string[]): Args {
     dryRun: false,
     skipPhotos: false,
     photosOnly: false,
+    allowEnglishHindi: false,
     concurrency: 3,
     city: 'RPR',
     brands: PRICE_LIST_BRANDS,
@@ -88,6 +92,7 @@ function parseArgs(argv: string[]): Args {
     else if (flag === '--staff-user') a.staffUser = next();
     else if (flag === '--skip-photos') a.skipPhotos = true;
     else if (flag === '--photos-only') a.photosOnly = true;
+    else if (flag === '--allow-english-hindi') a.allowEnglishHindi = true;
     else if (flag === '--concurrency') a.concurrency = Math.min(Math.max(Number(next()), 1), 6);
     else if (flag === '--report') a.report = next();
     else if (flag === '--city') a.city = next();
@@ -161,12 +166,27 @@ async function main() {
       .join('; ');
   }
 
+  // Hard rule 10: Hindi text may keep brand, series, standard and unit names only. A real run stops on leftovers.
+  const hindiLeftovers = planHindiLeftovers(products);
+  if (hindiLeftovers.length > 0) {
+    log(`${String(hindiLeftovers.length)} Hindi texts still hold English words, for example:`);
+    for (const l of hindiLeftovers.slice(0, 10))
+      log(`  ${l.slug} ${l.field}: ${l.words.join(', ')}  <= ${l.text}`);
+    if (!args.dryRun && !args.allowEnglishHindi)
+      throw new Error('Translate them in --translations (or pass --allow-english-hindi)');
+  }
+
   const url = process.env.DATABASE_URL;
   if (!url || url.includes('<')) throw new Error('DATABASE_URL is missing or still a placeholder');
   const { db, sql } = createDb(url, { max: 4 });
   const tx = db as unknown as Tx;
   const { rows: _rows, ...planSummary } = report;
-  const out: Record<string, unknown> = { dryRun: args.dryRun, plan: planSummary, mrpFills: fills };
+  const out: Record<string, unknown> = {
+    dryRun: args.dryRun,
+    plan: planSummary,
+    mrpFills: fills,
+    hindiLeftovers: hindiLeftovers.length,
+  };
   try {
     if (args.exportUntranslated) {
       const texts = [

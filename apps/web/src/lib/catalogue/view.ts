@@ -40,6 +40,11 @@ export interface ProductView extends CardView {
   seller: string | null;
   countryOfOrigin: string | null;
   partNumbers: { kind: string; value: string }[];
+  /**
+   * The "Part reference" row: the SKU of a single-pack product, else the first real (OE or maker) part number,
+   * else null. A multi-pack product's SKU names one pack size ("…-1-L"), which would read as a part number.
+   */
+  partReference: string | null;
   shippingPaise: number | null;
   /** Category slug whose attribute definitions apply; null = shared compare rows only. */
   attributeSet: string | null;

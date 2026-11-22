@@ -426,6 +426,7 @@
     "apply": "लागू करें",
     "results": "{count, plural, =0 {कोई प्रोडक्ट नहीं} one {# प्रोडक्ट} other {# प्रोडक्ट}}",
     "clear": "फ़िल्टर हटाएँ",
+    "removeSub": "फ़िल्टर हटाएँ: {name}",
     "fits": "{fits} के लिए",
     "inStock": "स्टॉक में",
     "lowStock": "कुछ ही बचे",

@@ -4,6 +4,8 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Current status
 
+- **2026-11-22 (live-audit fixes, branch worktree-agent-a3b9d3fc2e8703fcf, not merged):** items 1-8 of the real-mode audit: sub-category URLs in /shop, Hindi of imported names/highlights/ranges/fitment (translations file 140 to 235 keys, importer checks leftovers, re-run refreshes importer-written Hindi), no photo upscaling, Product JSON-LD without offers, home range with real photos, spec grades 5W-40, part reference only for single-pack. Item 4 (compare message) already existed in code, pinned by tests; item 7 (privacy banner) queued as Q214. **Coordinator to run** the re-import command in docs/runbooks/catalogue-import.md ("Re-applying the reviewed Hindi") after merge and deploy.
+
 - **DONE (2026-11-22, night): real catalogue imported** into the real DB after deploy c857c9b (user: "Yes, import
   after deploy"): 219 products, 740 packs, 26 sub-categories, 4 brands, 99 ranges, 219 photos uploaded, 0 failures;
   Raipur admin price skipped for all 695 MRP packs (no shop sells them, Q208). Importer actor = test super_admin.

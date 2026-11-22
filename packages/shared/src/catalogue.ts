@@ -105,6 +105,8 @@ export const CatalogueCategorySchema = z.object({
   liveProducts: z.number().int(),
 });
 
+export const CatalogueCategoriesSchema = z.object({ categories: z.array(CatalogueCategorySchema) });
+
 export type CatalogueOffer = z.infer<typeof CatalogueOfferSchema>;
 export type CataloguePhoto = z.infer<typeof CataloguePhotoSchema>;
 export type CatalogueCard = z.infer<typeof CatalogueCardSchema>;

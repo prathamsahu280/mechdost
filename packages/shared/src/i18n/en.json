@@ -426,6 +426,7 @@
     "apply": "Apply",
     "results": "{count, plural, =0 {No products} one {# product} other {# products}}",
     "clear": "Clear filters",
+    "removeSub": "Remove filter: {name}",
     "fits": "Fits {fits}",
     "inStock": "In stock",
     "lowStock": "Few left",

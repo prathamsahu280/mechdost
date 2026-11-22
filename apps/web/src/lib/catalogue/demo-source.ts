@@ -39,6 +39,7 @@ export function demoProduct(raw: DemoProduct, locale: string): ProductView {
     seller: null,
     countryOfOrigin: null,
     partNumbers: [],
+    partReference: raw.sku,
     shippingPaise: null,
     attributeSet,
     attributes:

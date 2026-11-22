@@ -40,8 +40,16 @@ export function ProductPhoto({
         ? 'aspect-square rounded-tile'
         : 'aspect-[4/3] rounded-tile';
   return (
-    <div className={`relative overflow-hidden bg-white ${shape} ${className}`}>
-      <img {...props} className="size-full object-contain" />
+    <div
+      className={`relative flex items-center justify-center overflow-hidden bg-white ${shape} ${className}`}
+    >
+      {/* Never larger than the stored picture (a small source stays sharp instead of being stretched); the frame's
+          aspect ratio is fixed, so nothing shifts while it loads. */}
+      <img
+        {...props}
+        style={{ ...props.style, maxWidth: photo.width, maxHeight: photo.height }}
+        className="h-auto max-h-full w-auto max-w-full object-contain"
+      />
     </div>
   );
 }

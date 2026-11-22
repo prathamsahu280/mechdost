@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNull, or, sql } from 'drizzle-orm';
 import type { PlannedProduct } from '../catalogue-v2/plan';
 import {
   auditLog,
@@ -414,6 +414,19 @@ async function ensureGroups(
       .onConflictDoNothing()
       .returning({ id: productRanges.id, slug: productRanges.slug });
     counts.rangesCreated += madeRanges.length;
+    // A range that exists keeps the admin's work, except its Hindi name while that is still what an import without
+    // reviewed translations wrote (or empty): the reviewed Hindi replaces it.
+    for (const { range } of wantedRanges.values())
+      await tx
+        .update(productRanges)
+        .set({ nameHi: range.nameHi, version: sql`${productRanges.version} + 1` })
+        .where(
+          and(
+            eq(productRanges.slug, range.slug),
+            sql`${productRanges.nameHi} is distinct from ${range.nameHi}`,
+            or(isNull(productRanges.nameHi), eq(productRanges.nameHi, range.nameHiMachine)),
+          ),
+        );
     if (madeRanges.length > 0)
       await tx.insert(auditLog).values(
         madeRanges.map((r) => ({
