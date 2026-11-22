@@ -46,11 +46,13 @@ export function CartPill({
         <span className="sr-only min-[560px]:not-sr-only nav:sr-only xl:not-sr-only">{label}</span>
         <span
           aria-hidden="true"
-          className={`min-w-[1.25rem] rounded-full text-center font-bold tabular-nums ${
-            count > 0 ? 'bg-accent-button px-1.5 text-white' : 'text-accent-soft-text'
+          // Fixed box (user 2026-11-22: "the top bar keeps moving with the cart items"): same width and padding
+          // for 0, 1, 12 or 99+, only the colours change, so the header never reflows when the count changes.
+          className={`inline-block w-[1.75rem] rounded-full px-0.5 text-center font-bold tabular-nums ${
+            count > 0 ? 'bg-accent-button text-white' : 'text-accent-soft-text'
           }`}
         >
-          {count}
+          {count > 99 ? '99+' : count}
         </span>
         <span className="sr-only">, {sr}</span>
       </Link>
