@@ -9,18 +9,19 @@ Last real run. Brands imported: castrol, gulf, exide, tata-green, kelvinn, ceraf
 
 | Section | Products | Imported | Updated | Unchanged | Skipped |
 | ------- | -------- | -------- | ------- | --------- | ------- |
-| lub     | 1067     | 154      | 0       | 0         | 913     |
-| bat     | 83       | 32       | 0       | 0         | 51      |
-| car     | 61       | 33       | 0       | 0         | 28      |
+| lub     | 1067     | 0        | 129     | 25        | 913     |
+| bat     | 83       | 0        | 15      | 17        | 51      |
+| car     | 61       | 0        | 33      | 0         | 28      |
 | tyr     | 894      | 0        | 0       | 0         | 894     |
 | flt     | 1281     | 0        | 0       | 0         | 1281    |
 
 ### Status
 
-|          | Products |
-| -------- | -------- |
-| skipped  | 3167     |
-| imported | 219      |
+|           | Products |
+| --------- | -------- |
+| skipped   | 3167     |
+| updated   | 177      |
+| unchanged | 42       |
 
 ### Skip reasons
 

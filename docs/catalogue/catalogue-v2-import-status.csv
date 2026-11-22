@@ -1,13 +1,13 @@
 section,source_id,brand,range,product,packs,packs_with_mrp,mrp_filled_from_price_list,status,reason,detail,slug
-lub,0,Castrol,Castrol Auto Care,1-STEP POLISHING COMPOUND (For 4 WH) - 100 gm,1,1,,imported,,,castrol-1-step-polishing-compound-for-4-wh-100-gm
-lub,1,Castrol,Castrol Auto Care,3-IN-1 SHINER (For 2/4 WH) - 100 ML,1,1,,imported,,,castrol-3-in-1-shiner-for-2-4-wh-100-ml
-lub,2,Castrol,Castrol Auto Care,ANTIRUST LUBRICANT SPRAY (For 2/4 WH) - 325 gm,1,1,,imported,,,castrol-antirust-lubricant-spray-for-2-4-wh-325-gm
-lub,3,Castrol,Castrol Auto Care,ANTIRUST LUBRICANT SPRAY (For 2/4 WH) - 50 gm,1,1,,imported,,,castrol-antirust-lubricant-spray-for-2-4-wh-50-gm
-lub,4,Castrol,Castrol Auto Care,CHAIN CLEANER (For 2 WH) - 110 ML,1,1,,imported,,,castrol-chain-cleaner-for-2-wh-110-ml
-lub,5,Castrol,Castrol Auto Care,CHAIN LUBE (For 2 WH) - 106 ML,1,1,,imported,,,castrol-chain-lube-for-2-wh-106-ml
-lub,6,Castrol,Castrol Auto Care,ENGINE SHAMPOO (FLUSHING OIL) (For 4 WH)-300 ML,1,1,,imported,,,castrol-engine-shampoo-flushing-oil-for-4-wh-300-ml
-lub,7,Gulf,GULF PRO CHAIN,GULF PRO CHAIN CLEAN,1,1,,imported,,,gulf-pro-chain-clean
-lub,8,Gulf,GULF PRO CHAIN,GULF PRO CHAIN LUBE,1,1,,imported,,,gulf-pro-chain-lube
+lub,0,Castrol,Castrol Auto Care,1-STEP POLISHING COMPOUND (For 4 WH) - 100 gm,1,1,,updated,,,castrol-1-step-polishing-compound-for-4-wh-100-gm
+lub,1,Castrol,Castrol Auto Care,3-IN-1 SHINER (For 2/4 WH) - 100 ML,1,1,,updated,,,castrol-3-in-1-shiner-for-2-4-wh-100-ml
+lub,2,Castrol,Castrol Auto Care,ANTIRUST LUBRICANT SPRAY (For 2/4 WH) - 325 gm,1,1,,updated,,,castrol-antirust-lubricant-spray-for-2-4-wh-325-gm
+lub,3,Castrol,Castrol Auto Care,ANTIRUST LUBRICANT SPRAY (For 2/4 WH) - 50 gm,1,1,,updated,,,castrol-antirust-lubricant-spray-for-2-4-wh-50-gm
+lub,4,Castrol,Castrol Auto Care,CHAIN CLEANER (For 2 WH) - 110 ML,1,1,,updated,,,castrol-chain-cleaner-for-2-wh-110-ml
+lub,5,Castrol,Castrol Auto Care,CHAIN LUBE (For 2 WH) - 106 ML,1,1,,updated,,,castrol-chain-lube-for-2-wh-106-ml
+lub,6,Castrol,Castrol Auto Care,ENGINE SHAMPOO (FLUSHING OIL) (For 4 WH)-300 ML,1,1,,updated,,,castrol-engine-shampoo-flushing-oil-for-4-wh-300-ml
+lub,7,Gulf,GULF PRO CHAIN,GULF PRO CHAIN CLEAN,1,1,,updated,,,gulf-pro-chain-clean
+lub,8,Gulf,GULF PRO CHAIN,GULF PRO CHAIN LUBE,1,1,,updated,,,gulf-pro-chain-lube
 lub,9,Motul,,MOTUL HELMET CARE KIT,1,0,,skipped,not_price_list_brand,,
 lub,10,Motul,,MOTUL P2 BRAKE CLEAN,1,0,,skipped,not_price_list_brand,,
 lub,11,Motul,Automobile Products - Additives,MOTUL DIESEL SYSTEM CLEAN PLUS,1,0,,skipped,not_price_list_brand,,
@@ -34,11 +34,11 @@ lub,31,Motul,Powersport Products - Maintenance & Care,MOTUL M2 HELMET INTERIOR C
 lub,32,Motul,Powersport Products - Maintenance & Care,MOTUL MC CARE P3 TYRE REPAIR,1,0,,skipped,not_price_list_brand,,
 lub,33,Motul,Powersport Products - Maintenance & Care,MOTUL MC CARE P4 EZ LUBE,1,0,,skipped,not_price_list_brand,,
 lub,34,Savsol,Automotive Lubricants > Bike,SAVSOL CHAIN LUBE,1,0,,skipped,not_price_list_brand,,
-lub,35,Castrol,Brake Fluid,BRAKE FLUID DOT 3,4,4,,imported,,,castrol-brake-fluid-dot-3
-lub,36,Castrol,Brake Fluid,BRAKE FLUID DOT 4,1,1,,imported,,,castrol-brake-fluid-dot-4
-lub,37,Castrol,Fork Oil,FORK OIL 20W,2,2,,imported,,,castrol-fork-oil-20w
-lub,38,Gulf,GULF BRAKE FLUID,GULF BRAKE FLUID DOT 3,4,4,,imported,,,gulf-brake-fluid-dot-3
-lub,39,Gulf,GULF BRAKE FLUID,GULF SUPER BRAKE FLUID DOT 4,2,2,,imported,,,gulf-super-brake-fluid-dot-4
+lub,35,Castrol,Brake Fluid,BRAKE FLUID DOT 3,4,4,,unchanged,,,castrol-brake-fluid-dot-3
+lub,36,Castrol,Brake Fluid,BRAKE FLUID DOT 4,1,1,,unchanged,,,castrol-brake-fluid-dot-4
+lub,37,Castrol,Fork Oil,FORK OIL 20W,2,2,,unchanged,,,castrol-fork-oil-20w
+lub,38,Gulf,GULF BRAKE FLUID,GULF BRAKE FLUID DOT 3,4,4,,updated,,,gulf-brake-fluid-dot-3
+lub,39,Gulf,GULF BRAKE FLUID,GULF SUPER BRAKE FLUID DOT 4,2,2,,unchanged,,,gulf-super-brake-fluid-dot-4
 lub,40,Gulf,GULF FRONT FORK OIL,GULF FRONT FORK OIL,2,2,,skipped,representative_picture,,
 lub,41,Motul,Automobile Products - Brake Fluids,MOTUL DOT 4 BRAKE FLUID,1,0,,skipped,not_price_list_brand,,
 lub,42,Motul,Powersport Application - Street Bike,MOTUL FORK OIL FL L/M 7.5W,1,0,,skipped,not_price_list_brand,,
@@ -50,15 +50,15 @@ lub,47,SERVO,Genuine Oils For Force Motors,SERVO FORCE BRAKE FLUID DOT 4,1,0,,sk
 lub,48,Savsol,Automotive Lubricants > Bike,SAVSOL FRONT FORK OIL,1,0,,skipped,not_price_list_brand,,
 lub,49,Valvoline,,Valvoline Front Fork Oil,1,0,,skipped,not_price_list_brand,,
 lub,50,Valvoline,Grease,Valvoline Brake Fluid DOT 3,1,0,,skipped,not_price_list_brand,,
-lub,51,Castrol,Radicool,RADICOOL ESSENTIAL 1:3,3,3,,imported,,,castrol-radicool-essential-1-3
-lub,52,Castrol,Radicool,RADICOOL HEAVY DUTY 1:4,3,3,,imported,,,castrol-radicool-heavy-duty-1-4
-lub,53,Castrol,Radicool,RADICOOL SF-O PREMIX (BLUE) 1:3,1,1,,imported,,,castrol-radicool-sf-o-premix-blue-1-3
-lub,54,Castrol,Radicool,RADICOOL SF-O PREMIX (PINK) 1:3,1,1,,imported,,,castrol-radicool-sf-o-premix-pink-1-3
+lub,51,Castrol,Radicool,RADICOOL ESSENTIAL 1:3,3,3,,unchanged,,,castrol-radicool-essential-1-3
+lub,52,Castrol,Radicool,RADICOOL HEAVY DUTY 1:4,3,3,,unchanged,,,castrol-radicool-heavy-duty-1-4
+lub,53,Castrol,Radicool,RADICOOL SF-O PREMIX (BLUE) 1:3,1,1,,updated,,,castrol-radicool-sf-o-premix-blue-1-3
+lub,54,Castrol,Radicool,RADICOOL SF-O PREMIX (PINK) 1:3,1,1,,updated,,,castrol-radicool-sf-o-premix-pink-1-3
 lub,55,Castrol,Radicool,"Radicool Mixed Carton (5 blue,5 pink, 10 green)",1,1,,skipped,representative_picture,,
 lub,56,Gulf,GULF EUROCOOL DURA NXG,EUROCOOL DURA NXG 50,3,3,,skipped,representative_picture,,
-lub,57,Gulf,GULF EUROCOOL DURAMAX,EUROCOOL DURA MAX 40,3,3,,imported,,,gulf-eurocool-dura-max-40
-lub,58,Gulf,GULF KOOL GUARD,GULF KOOL GUARD,3,2,,imported,,,gulf-kool-guard
-lub,59,Gulf,GULF KOOL GUARD G48,GULF KOOL GUARD G48,1,1,,imported,,,gulf-kool-guard-g48
+lub,57,Gulf,GULF EUROCOOL DURAMAX,EUROCOOL DURA MAX 40,3,3,,updated,,,gulf-eurocool-dura-max-40
+lub,58,Gulf,GULF KOOL GUARD,GULF KOOL GUARD,3,2,,unchanged,,,gulf-kool-guard
+lub,59,Gulf,GULF KOOL GUARD G48,GULF KOOL GUARD G48,1,1,,unchanged,,,gulf-kool-guard-g48
 lub,60,Motul,Automobile Products - Coolants & Antifreezes,MOTUL AUTO COOL LONGLIFE PREMIUM,1,0,,skipped,not_price_list_brand,,
 lub,61,Motul,Automobile Products - Coolants & Antifreezes,MOTUL INUGEL EXPERT,1,0,,skipped,not_price_list_brand,,
 lub,62,Motul,Powersport Products - Coolants & Antifreezes,MOTUL MOTOCOOL EXPERT,1,0,,skipped,not_price_list_brand,,
@@ -70,54 +70,54 @@ lub,67,Valvoline,Antifreeze & Coolant,Koolant All Weather HD- RTU,1,0,,skipped,n
 lub,68,Valvoline,Antifreeze & Coolant,Koolant Classic,1,0,,skipped,not_price_list_brand,,
 lub,69,Valvoline,Antifreeze & Coolant,Zerex Heavy Duty ELC,1,0,,skipped,not_price_list_brand,,
 lub,70,Castrol,CRB CNG,CRB CNG 15W-40 LA,6,6,,skipped,representative_picture,,
-lub,71,Castrol,CRB Essential,CRB ESSENTIAL 15W-40 CF-4,7,7,,imported,,,castrol-crb-essential-15w-40-cf-4
+lub,71,Castrol,CRB Essential,CRB ESSENTIAL 15W-40 CF-4,7,7,,updated,,,castrol-crb-essential-15w-40-cf-4
 lub,72,Castrol,CRB Essential,CRB ESSENTIAL 15W-40 CH-4,6,6,,skipped,representative_picture,,
-lub,73,Castrol,CRB Essential,CRB ESSENTIAL 15W-40 CI-4 PLUS,6,6,,imported,,,castrol-crb-essential-15w-40-ci-4-plus
-lub,74,Castrol,CRB Essential,CRB ESSENTIAL 20W-40 CF-4,7,7,,imported,,,castrol-crb-essential-20w-40-cf-4
+lub,73,Castrol,CRB Essential,CRB ESSENTIAL 15W-40 CI-4 PLUS,6,6,,updated,,,castrol-crb-essential-15w-40-ci-4-plus
+lub,74,Castrol,CRB Essential,CRB ESSENTIAL 20W-40 CF-4,7,7,,updated,,,castrol-crb-essential-20w-40-cf-4
 lub,75,Castrol,CRB Essential,CRB ESSENTIAL 20W-40 CH-4,8,8,,skipped,representative_picture,,
-lub,76,Castrol,CRB Mini-Truck,CRB MINI-TRUCK 10W-30 CK-4,2,2,,imported,,,castrol-crb-mini-truck-10w-30-ck-4
-lub,77,Castrol,CRB Mini-Truck,CRB MINI-TRUCK 15W-40 CH-4,2,2,,imported,,,castrol-crb-mini-truck-15w-40-ch-4
-lub,78,Castrol,CRB Multi,CRB MULTI 15W-40 CF-4,6,6,,imported,,,castrol-crb-multi-15w-40-cf-4
+lub,76,Castrol,CRB Mini-Truck,CRB MINI-TRUCK 10W-30 CK-4,2,2,,updated,,,castrol-crb-mini-truck-10w-30-ck-4
+lub,77,Castrol,CRB Mini-Truck,CRB MINI-TRUCK 15W-40 CH-4,2,2,,updated,,,castrol-crb-mini-truck-15w-40-ch-4
+lub,78,Castrol,CRB Multi,CRB MULTI 15W-40 CF-4,6,6,,updated,,,castrol-crb-multi-15w-40-cf-4
 lub,79,Castrol,CRB Plus,CRB PLUS 15W-40 CI-4 PLUS,5,5,,skipped,representative_picture,,
-lub,80,Castrol,CRB Plus,CRB PLUS 20W-40 CH-4,8,8,,imported,,,castrol-crb-plus-20w-40-ch-4
-lub,81,Castrol,CRB Prima,CRB PRIMA 20W-40 CF-4,7,7,,imported,,,castrol-crb-prima-20w-40-cf-4
-lub,82,Castrol,CRB Turbomax,CRB TURBOMAX 15W-40 CH-4,7,7,,imported,,,castrol-crb-turbomax-15w-40-ch-4
-lub,83,Castrol,CRB Turbomax,CRB TURBOMAX 15W-40 CI-4 PLUS,9,9,,imported,,,castrol-crb-turbomax-15w-40-ci-4-plus
-lub,84,Castrol,CRB Turbomax,CRB TURBOMAX+ 15W-40 CK-4,8,8,,imported,,,castrol-crb-turbomax-15w-40-ck-4
-lub,85,Castrol,RX,RX ESSENTIAL 15W-40 CI-4 PLUS,3,3,,imported,,,castrol-rx-essential-15w-40-ci-4-plus
-lub,86,Castrol,RX,RX SUPER 15W-40 CF-4,6,6,,imported,,,castrol-rx-super-15w-40-cf-4
-lub,87,Castrol,RX,RX SUPER MAX 15W-40 CH-4,4,4,,imported,,,castrol-rx-super-max-15w-40-ch-4
-lub,88,Castrol,RX,RX SUPER TURBO 15W-40 CI-4 PLUS,2,2,,imported,,,castrol-rx-super-turbo-15w-40-ci-4-plus
-lub,89,Castrol,Vecton,VECTON LONG DRAIN 15W-40 CK-4,3,3,,imported,,,castrol-vecton-long-drain-15w-40-ck-4
-lub,90,Gulf,CARGO POWER,CARGO POWER 15W-40,4,4,,imported,,,gulf-cargo-power-15w-40
-lub,91,Gulf,GULF CNG SUPREME,CNG SUPREME 20W-50,2,2,,imported,,,gulf-cng-supreme-20w-50
-lub,92,Gulf,GULF DURAMAX,DURAMAX LE,6,4,,imported,,,gulf-duramax-le
-lub,93,Gulf,GULF DURAMAX,DURAMAX LE (CONSUMER PROMO),1,1,,imported,,,gulf-duramax-le-consumer-promo
-lub,94,Gulf,GULF DURAMAX,DURAMAX ULE,5,3,,imported,,,gulf-duramax-ule
-lub,95,Gulf,GULF DURAMAX NXG,GULF DURAMAX NXG,3,2,,imported,,,gulf-duramax-nxg
-lub,96,Gulf,GULF DURAMAX NXG,GULF DURAMAX NXG ULE,3,2,,imported,,,gulf-duramax-nxg-ule
-lub,97,Gulf,GULF LE MAX,LE MAX,6,4,,imported,,,gulf-le-max
-lub,98,Gulf,GULF MULTIPURPOSE,MULTIPURPOSE OIL 20W-40,4,3,,imported,,,gulf-multipurpose-oil-20w-40
+lub,80,Castrol,CRB Plus,CRB PLUS 20W-40 CH-4,8,8,,updated,,,castrol-crb-plus-20w-40-ch-4
+lub,81,Castrol,CRB Prima,CRB PRIMA 20W-40 CF-4,7,7,,updated,,,castrol-crb-prima-20w-40-cf-4
+lub,82,Castrol,CRB Turbomax,CRB TURBOMAX 15W-40 CH-4,7,7,,updated,,,castrol-crb-turbomax-15w-40-ch-4
+lub,83,Castrol,CRB Turbomax,CRB TURBOMAX 15W-40 CI-4 PLUS,9,9,,updated,,,castrol-crb-turbomax-15w-40-ci-4-plus
+lub,84,Castrol,CRB Turbomax,CRB TURBOMAX+ 15W-40 CK-4,8,8,,updated,,,castrol-crb-turbomax-15w-40-ck-4
+lub,85,Castrol,RX,RX ESSENTIAL 15W-40 CI-4 PLUS,3,3,,updated,,,castrol-rx-essential-15w-40-ci-4-plus
+lub,86,Castrol,RX,RX SUPER 15W-40 CF-4,6,6,,updated,,,castrol-rx-super-15w-40-cf-4
+lub,87,Castrol,RX,RX SUPER MAX 15W-40 CH-4,4,4,,updated,,,castrol-rx-super-max-15w-40-ch-4
+lub,88,Castrol,RX,RX SUPER TURBO 15W-40 CI-4 PLUS,2,2,,updated,,,castrol-rx-super-turbo-15w-40-ci-4-plus
+lub,89,Castrol,Vecton,VECTON LONG DRAIN 15W-40 CK-4,3,3,,updated,,,castrol-vecton-long-drain-15w-40-ck-4
+lub,90,Gulf,CARGO POWER,CARGO POWER 15W-40,4,4,,updated,,,gulf-cargo-power-15w-40
+lub,91,Gulf,GULF CNG SUPREME,CNG SUPREME 20W-50,2,2,,updated,,,gulf-cng-supreme-20w-50
+lub,92,Gulf,GULF DURAMAX,DURAMAX LE,6,4,,updated,,,gulf-duramax-le
+lub,93,Gulf,GULF DURAMAX,DURAMAX LE (CONSUMER PROMO),1,1,,updated,,,gulf-duramax-le-consumer-promo
+lub,94,Gulf,GULF DURAMAX,DURAMAX ULE,5,3,,updated,,,gulf-duramax-ule
+lub,95,Gulf,GULF DURAMAX NXG,GULF DURAMAX NXG,3,2,,unchanged,,,gulf-duramax-nxg
+lub,96,Gulf,GULF DURAMAX NXG,GULF DURAMAX NXG ULE,3,2,,unchanged,,,gulf-duramax-nxg-ule
+lub,97,Gulf,GULF LE MAX,LE MAX,6,4,,unchanged,,,gulf-le-max
+lub,98,Gulf,GULF MULTIPURPOSE,MULTIPURPOSE OIL 20W-40,4,3,,updated,,,gulf-multipurpose-oil-20w-40
 lub,99,Gulf,GULF SUPER DUTY,SUPER DUTY CF-4 15W-40,8,6,,skipped,representative_picture,,
 lub,100,Gulf,GULF SUPER DUTY,SUPER DUTY CH-4 15W-40,4,4,,skipped,representative_picture,,
-lub,101,Gulf,GULF SUPER DUTY,SUPER DUTY CI4+ 15W-40,8,6,,imported,,,gulf-super-duty-ci4-15w-40
-lub,102,Gulf,GULF SUPER DUTY,SUPER DUTY XLE 15W-40,8,6,,imported,,,gulf-super-duty-xle-15w-40
-lub,103,Gulf,GULF SUPERFLEET,SUPERFLEET 15W-40,7,5,,imported,,,gulf-superfleet-15w-40
-lub,104,Gulf,GULF SUPERFLEET,SUPERFLEET SUPREME+ 15W-40,6,5,,imported,,,gulf-superfleet-supreme-15w-40
+lub,101,Gulf,GULF SUPER DUTY,SUPER DUTY CI4+ 15W-40,8,6,,updated,,,gulf-super-duty-ci4-15w-40
+lub,102,Gulf,GULF SUPER DUTY,SUPER DUTY XLE 15W-40,8,6,,updated,,,gulf-super-duty-xle-15w-40
+lub,103,Gulf,GULF SUPERFLEET,SUPERFLEET 15W-40,7,5,,updated,,,gulf-superfleet-15w-40
+lub,104,Gulf,GULF SUPERFLEET,SUPERFLEET SUPREME+ 15W-40,6,5,,updated,,,gulf-superfleet-supreme-15w-40
 lub,105,Gulf,GULF SUPERFLEET,SUPERFLEET SUPREME+ CNG 15W-40,5,4,,skipped,representative_picture,,
 lub,106,Gulf,GULF SUPERFLEET,SUPERFLEET SUPREME+ MINI 10W-30,2,2,,skipped,representative_picture,,
-lub,107,Gulf,GULF SUPERFLEET,SUPERFLEET TURBO 15W-40,8,6,,imported,,,gulf-superfleet-turbo-15w-40
-lub,108,Gulf,GULF SUPERFLEET,SUPERFLEET TURBO MINI 15W-40,2,2,,imported,,,gulf-superfleet-turbo-mini-15w-40
-lub,109,Gulf,GULF SUPERFLEET CARGO POWER,GULF SUPERFLEET CARGO POWER CF4 15W-40,4,4,,imported,,,gulf-superfleet-cargo-power-cf4-15w-40
+lub,107,Gulf,GULF SUPERFLEET,SUPERFLEET TURBO 15W-40,8,6,,updated,,,gulf-superfleet-turbo-15w-40
+lub,108,Gulf,GULF SUPERFLEET,SUPERFLEET TURBO MINI 15W-40,2,2,,updated,,,gulf-superfleet-turbo-mini-15w-40
+lub,109,Gulf,GULF SUPERFLEET CARGO POWER,GULF SUPERFLEET CARGO POWER CF4 15W-40,4,4,,updated,,,gulf-superfleet-cargo-power-cf4-15w-40
 lub,110,Gulf,GULF SUPERFLEET CARGO POWER,GULF SUPERFLEET CARGO POWER CH4 15W-40,2,2,,skipped,representative_picture,,
 lub,111,Gulf,GULF SUPERFLEET CARGO POWER,GULF SUPERFLEET CARGO POWER CK4 10W-30,2,2,,skipped,representative_picture,,
 lub,112,Gulf,GULF SUPERFLEET TURBO+,GULF SUPERFLEET TURBO + CF4 15W-40,7,5,,skipped,representative_picture,,
-lub,113,Gulf,GULF SUPERFLEET TURBO+,GULF SUPERFLEET TURBO + CH4 15W-40,8,6,,imported,,,gulf-superfleet-turbo-ch4-15w-40
-lub,114,Gulf,GULF SUPERFLEET TURBO+,GULF SUPERFLEET TURBO + CI4+ 15W-40,8,6,,imported,,,gulf-superfleet-turbo-ci4-15w-40
+lub,113,Gulf,GULF SUPERFLEET TURBO+,GULF SUPERFLEET TURBO + CH4 15W-40,8,6,,updated,,,gulf-superfleet-turbo-ch4-15w-40
+lub,114,Gulf,GULF SUPERFLEET TURBO+,GULF SUPERFLEET TURBO + CI4+ 15W-40,8,6,,updated,,,gulf-superfleet-turbo-ci4-15w-40
 lub,115,Gulf,GULF SUPERFLEET TURBO+,GULF SUPERFLEET TURBO + CK4 15W-40,6,5,,skipped,representative_picture,,
 lub,116,Gulf,GULF SUPERFLEET TURBO+,GULF SUPERFLEET TURBO+ CNG 15W-40,5,4,,skipped,representative_picture,,
-lub,117,Gulf,GULF SUPREME DUTY,SUPREME DUTY LE 15W-40,6,3,,imported,,,gulf-supreme-duty-le-15w-40
-lub,118,Gulf,GULF SUPREME DUTY,SUPREME DUTY ULE 10W-30,6,4,,imported,,,gulf-supreme-duty-ule-10w-30
+lub,117,Gulf,GULF SUPREME DUTY,SUPREME DUTY LE 15W-40,6,3,,updated,,,gulf-supreme-duty-le-15w-40
+lub,118,Gulf,GULF SUPREME DUTY,SUPREME DUTY ULE 10W-30,6,4,,updated,,,gulf-supreme-duty-ule-10w-30
 lub,119,Motul,Heavy Duty Products - Engine Lubricants,MOTUL TEKMA MEGA FLEET LD 15W40,1,0,,skipped,not_price_list_brand,,
 lub,120,Motul,Heavy Duty Products - Engine Lubricants,MOTUL TEKMA MULTI 15W40,2,0,,skipped,not_price_list_brand,,
 lub,121,Motul,Heavy Duty Products - Engine Lubricants,MOTUL TEKMA MULTI 20W40,1,0,,skipped,not_price_list_brand,,
@@ -178,26 +178,26 @@ lub,175,Valvoline,Heavy Duty Engine Oil,Valvoline Premium Plus 15W-40,1,0,,skipp
 lub,176,Valvoline,Power Gen,Valvoline Premium Blue 7600 Diesel Engine Oil,1,0,,skipped,not_price_list_brand,,
 lub,177,Valvoline,Power Gen,Valvoline Premium Blue 7800 Diesel Engine Oil,1,0,,skipped,not_price_list_brand,,
 lub,178,Valvoline,Power Gen,Valvoline Premium Blue 7800 Plus Diesel Engine Oil,1,0,,skipped,not_price_list_brand,,
-lub,179,Castrol,Transmax,TRANSMAX AGRI TRANS M 80W,2,2,,imported,,,castrol-transmax-agri-trans-m-80w
+lub,179,Castrol,Transmax,TRANSMAX AGRI TRANS M 80W,2,2,,unchanged,,,castrol-transmax-agri-trans-m-80w
 lub,180,Castrol,Transmax,TRANSMAX AGRI UTTO,2,2,,skipped,representative_picture,,
-lub,181,Castrol,Transmax,TRANSMAX ATF DEX II,3,3,,imported,,,castrol-transmax-atf-dex-ii
-lub,182,Castrol,Transmax,TRANSMAX ATF DEX/MERC,4,4,,imported,,,castrol-transmax-atf-dex-merc
-lub,183,Castrol,Transmax,TRANSMAX AXLE 140,4,4,,imported,,,castrol-transmax-axle-140
+lub,181,Castrol,Transmax,TRANSMAX ATF DEX II,3,3,,unchanged,,,castrol-transmax-atf-dex-ii
+lub,182,Castrol,Transmax,TRANSMAX ATF DEX/MERC,4,4,,unchanged,,,castrol-transmax-atf-dex-merc
+lub,183,Castrol,Transmax,TRANSMAX AXLE 140,4,4,,updated,,,castrol-transmax-axle-140
 lub,184,Castrol,Transmax,TRANSMAX AXLE 85W-140,5,5,,skipped,representative_picture,,
 lub,185,Castrol,Transmax,TRANSMAX MANUAL 80W-90,5,5,,skipped,representative_picture,,
-lub,186,Castrol,Transmax,TRANSMAX MANUAL 90,4,4,,imported,,,castrol-transmax-manual-90
-lub,187,Castrol,Transmax,TRANSMAX OFF ROAD 30,1,1,,imported,,,castrol-transmax-off-road-30
+lub,186,Castrol,Transmax,TRANSMAX MANUAL 90,4,4,,updated,,,castrol-transmax-manual-90
+lub,187,Castrol,Transmax,TRANSMAX OFF ROAD 30,1,1,,updated,,,castrol-transmax-off-road-30
 lub,188,ENEOS,GEAR OIL,ENEOS GEAR OIL 75W-90,1,0,,skipped,not_price_list_brand,,
 lub,189,ENEOS,GEAR OIL,ENEOS GEAR OIL 80W-90,1,0,,skipped,not_price_list_brand,,
 lub,190,ENEOS,GEAR OIL,ENEOS X PRIME AT FLUID VI,1,0,,skipped,not_price_list_brand,,
-lub,191,Gulf,GULF ATF,GULF GLIDE ATF DX III,4,3,,imported,,,gulf-glide-atf-dx-iii
-lub,192,Gulf,GULF AXLE OIL,GULF GLIDE AXLE OIL 140,4,3,,imported,,,gulf-glide-axle-oil-140
-lub,193,Gulf,GULF AXLE OIL,GULF GLIDE AXLE OIL 85W-140,5,4,,imported,,,gulf-glide-axle-oil-85w-140
-lub,194,Gulf,GULF AXLE OIL,GULF GLIDE AXLE OIL 85W-140 (Promo Pack),1,1,,imported,,,gulf-glide-axle-oil-85w-140-promo-pack
-lub,195,Gulf,GULF GEAR OIL,GULF GLIDE GEAR OIL 80W-90,5,4,,imported,,,gulf-glide-gear-oil-80w-90
-lub,196,Gulf,GULF GEAR OIL,GULF GLIDE GEAR OIL 80W-90 (Promo Pack),2,2,,imported,,,gulf-glide-gear-oil-80w-90-promo-pack
-lub,197,Gulf,GULF GEAR OIL,GULF GLIDE GEAR OIL 90,4,3,,imported,,,gulf-glide-gear-oil-90
-lub,198,Gulf,GULF GEAR OIL,GULF GLIDE SCOOTER GEAR OIL 80W-90,1,1,,imported,,,gulf-glide-scooter-gear-oil-80w-90
+lub,191,Gulf,GULF ATF,GULF GLIDE ATF DX III,4,3,,updated,,,gulf-glide-atf-dx-iii
+lub,192,Gulf,GULF AXLE OIL,GULF GLIDE AXLE OIL 140,4,3,,updated,,,gulf-glide-axle-oil-140
+lub,193,Gulf,GULF AXLE OIL,GULF GLIDE AXLE OIL 85W-140,5,4,,updated,,,gulf-glide-axle-oil-85w-140
+lub,194,Gulf,GULF AXLE OIL,GULF GLIDE AXLE OIL 85W-140 (Promo Pack),1,1,,updated,,,gulf-glide-axle-oil-85w-140-promo-pack
+lub,195,Gulf,GULF GEAR OIL,GULF GLIDE GEAR OIL 80W-90,5,4,,updated,,,gulf-glide-gear-oil-80w-90
+lub,196,Gulf,GULF GEAR OIL,GULF GLIDE GEAR OIL 80W-90 (Promo Pack),2,2,,updated,,,gulf-glide-gear-oil-80w-90-promo-pack
+lub,197,Gulf,GULF GEAR OIL,GULF GLIDE GEAR OIL 90,4,3,,updated,,,gulf-glide-gear-oil-90
+lub,198,Gulf,GULF GEAR OIL,GULF GLIDE SCOOTER GEAR OIL 80W-90,1,1,,unchanged,,,gulf-glide-scooter-gear-oil-80w-90
 lub,199,Gulf,GULF GEAR OIL,GULF GLIDE X 80W-90,1,1,,skipped,representative_picture,,
 lub,200,Motul,Automobile Products - Transmission Fluids,MOTUL MULTI CVTF,1,0,,skipped,not_price_list_brand,,
 lub,201,Motul,Automobile Products - Transmission Fluids,MOTUL MULTI DCTF,1,0,,skipped,not_price_list_brand,,
@@ -250,19 +250,19 @@ lub,247,Valvoline,Grease,Valvoline Gear Gard EP,1,0,,skipped,not_price_list_bran
 lub,248,Valvoline,Grease,Valvoline Gear Gard Super,1,0,,skipped,not_price_list_brand,,
 lub,249,Valvoline,Industrial & Hydraulic Oils,Valvoline AGMA EP Gear Oil 150/220/320/460,1,0,,skipped,not_price_list_brand,,
 lub,250,Valvoline,Industrial & Hydraulic Oils,Valvoline Drive Train Transmission Oil C4 SAE 10W,1,0,,skipped,not_price_list_brand,,
-lub,251,Castrol,Grease,GREASE AP3,1,1,,imported,,,castrol-grease-ap3
-lub,252,Castrol,Premium Longlife,PREMIUM LONGLIFE,8,8,,imported,,,castrol-premium-longlife
-lub,253,Castrol,Spheerol,SPHEEROL CV 30K,7,7,,imported,,,castrol-spheerol-cv-30k
+lub,251,Castrol,Grease,GREASE AP3,1,1,,unchanged,,,castrol-grease-ap3
+lub,252,Castrol,Premium Longlife,PREMIUM LONGLIFE,8,8,,updated,,,castrol-premium-longlife
+lub,253,Castrol,Spheerol,SPHEEROL CV 30K,7,7,,unchanged,,,castrol-spheerol-cv-30k
 lub,254,Castrol,Spheerol,SPHEEROL CV PERFORMANCE 40K,8,8,,skipped,representative_picture,,
-lub,255,Castrol,Spheerol,SPHEEROL CV PERFORMANCE 80K,6,6,,imported,,,castrol-spheerol-cv-performance-80k
+lub,255,Castrol,Spheerol,SPHEEROL CV PERFORMANCE 80K,6,6,,updated,,,castrol-spheerol-cv-performance-80k
 lub,256,Castrol,Spheerol,Spheerol CV 40K,7,7,,skipped,representative_picture,,
 lub,257,Castrol,Spheerol,Spheerol Essential,7,7,,skipped,representative_picture,,
 lub,258,ENEOS,GREASE,ENEOS EPNOC AP (N) 0,1,0,,skipped,not_price_list_brand,,
-lub,259,Gulf,GULF CROWN ENDURA,GULF CROWN ENDURA ES,8,7,,imported,,,gulf-crown-endura-es
-lub,260,Gulf,GULF CROWN MP SPL,GULF CROWN MP SPECIAL ES,8,8,,imported,,,gulf-crown-mp-special-es
-lub,261,Gulf,GULF CROWN MP3,GULF CROWN MP3 ES,4,3,,imported,,,gulf-crown-mp3-es
-lub,262,Gulf,GULF CROWN MULTIPRO,GULF CROWN MULTIPRO ES,8,7,,imported,,,gulf-crown-multipro-es
-lub,263,Gulf,GULF CROWN ULTIMA,GULF CROWN ULTIMA ES,4,4,,imported,,,gulf-crown-ultima-es
+lub,259,Gulf,GULF CROWN ENDURA,GULF CROWN ENDURA ES,8,7,,updated,,,gulf-crown-endura-es
+lub,260,Gulf,GULF CROWN MP SPL,GULF CROWN MP SPECIAL ES,8,8,,unchanged,,,gulf-crown-mp-special-es
+lub,261,Gulf,GULF CROWN MP3,GULF CROWN MP3 ES,4,3,,unchanged,,,gulf-crown-mp3-es
+lub,262,Gulf,GULF CROWN MULTIPRO,GULF CROWN MULTIPRO ES,8,7,,unchanged,,,gulf-crown-multipro-es
+lub,263,Gulf,GULF CROWN ULTIMA,GULF CROWN ULTIMA ES,4,4,,updated,,,gulf-crown-ultima-es
 lub,264,Motul,,MOTUL IRIX LONG LIFE GREASE-RED GEL,1,0,,skipped,not_price_list_brand,,
 lub,265,SERVO,Ashok Leyland Endorsed Grades,SERVO GREASE ALT,1,0,,skipped,not_price_list_brand,,
 lub,266,SERVO,Automotive Greases,SERVO GREASE MIRACLE,1,0,,skipped,not_price_list_brand,,
@@ -330,7 +330,7 @@ lub,327,Valvoline,Grease,Valvoline Crimson Grease,1,0,,skipped,not_price_list_br
 lub,328,Valvoline,Grease,Valvoline Lithium EP2 Grease,1,0,,skipped,not_price_list_brand,,
 lub,329,Valvoline,Grease,Valvoline Multi Purpose Grease,1,0,,skipped,not_price_list_brand,,
 lub,330,Valvoline,Grease,Valvoline Supreme Grease,1,0,,skipped,not_price_list_brand,,
-lub,331,Castrol,Excavator Fluid,EXCAVATOR FLUID TH 46,1,1,,imported,,,castrol-excavator-fluid-th-46
+lub,331,Castrol,Excavator Fluid,EXCAVATOR FLUID TH 46,1,1,,updated,,,castrol-excavator-fluid-th-46
 lub,332,Castrol,Hyspin,HYSPIN HEAVY DUTY 32 / 46 / 68,1,1,,skipped,representative_picture,,
 lub,333,Castrol,RX,RX SAE 10,1,1,,skipped,representative_picture,,
 lub,334,Castrol,RX,RX SAE 30,1,1,,skipped,representative_picture,,
@@ -735,51 +735,51 @@ lub,732,Valvoline,Industrial & Hydraulic Oils,Valvoline Soluble Cutting Oil Supe
 lub,733,Valvoline,Industrial & Hydraulic Oils,Valvoline ThermoSynth,1,0,,skipped,not_price_list_brand,,
 lub,734,Valvoline,Industrial & Hydraulic Oils,Valvoline XLD Plus 10W,1,0,,skipped,not_price_list_brand,,
 lub,735,SERVO,Boat Engine Oil,SERVO BOAT ENGINE OIL 20W-40,1,0,,skipped,not_price_list_brand,,
-lub,736,Castrol,Activ,ACTIV 4T 10W-30,2,2,,imported,,,castrol-activ-4t-10w-30
-lub,737,Castrol,Activ,ACTIV 4T 10W-30 Fully Synthetic,2,2,,imported,,,castrol-activ-4t-10w-30-fully-synthetic
-lub,738,Castrol,Activ,ACTIV 4T 20W-40,2,2,,imported,,,castrol-activ-4t-20w-40
-lub,739,Castrol,Activ,ACTIV 4T 5W-30 Fully Synthetic,2,2,,imported,,,castrol-activ-4t-5w-30-fully-synthetic
-lub,740,Castrol,Activ,ACTIV CRUISE 15W-50,1,1,,imported,,,castrol-activ-cruise-15w-50
-lub,741,Castrol,Activ,ACTIV CRUISE 20W-50,2,2,,imported,,,castrol-activ-cruise-20w-50
+lub,736,Castrol,Activ,ACTIV 4T 10W-30,2,2,,updated,,,castrol-activ-4t-10w-30
+lub,737,Castrol,Activ,ACTIV 4T 10W-30 Fully Synthetic,2,2,,updated,,,castrol-activ-4t-10w-30-fully-synthetic
+lub,738,Castrol,Activ,ACTIV 4T 20W-40,2,2,,updated,,,castrol-activ-4t-20w-40
+lub,739,Castrol,Activ,ACTIV 4T 5W-30 Fully Synthetic,2,2,,updated,,,castrol-activ-4t-5w-30-fully-synthetic
+lub,740,Castrol,Activ,ACTIV CRUISE 15W-50,1,1,,updated,,,castrol-activ-cruise-15w-50
+lub,741,Castrol,Activ,ACTIV CRUISE 20W-50,2,2,,updated,,,castrol-activ-cruise-20w-50
 lub,742,Castrol,Activ,ACTIV HONDA 10W-30,2,2,,skipped,representative_picture,,
-lub,743,Castrol,Activ,ACTIV SCOOTER 10W-30,1,1,,imported,,,castrol-activ-scooter-10w-30
-lub,744,Castrol,Activ,ACTIV SCOOTER 5W30,1,1,,imported,,,castrol-activ-scooter-5w30
+lub,743,Castrol,Activ,ACTIV SCOOTER 10W-30,1,1,,updated,,,castrol-activ-scooter-10w-30
+lub,744,Castrol,Activ,ACTIV SCOOTER 5W30,1,1,,updated,,,castrol-activ-scooter-5w30
 lub,745,Castrol,Activ,ACTIV SCOOTER HONDA 10W-30,1,1,,skipped,representative_picture,,
-lub,746,Castrol,Activ Essential,ACTIV ESSENTIAL 10W-30,2,2,,imported,,,castrol-activ-essential-10w-30
-lub,747,Castrol,Activ Essential,ACTIV ESSENTIAL 20W-40,2,2,,imported,,,castrol-activ-essential-20w-40
+lub,746,Castrol,Activ Essential,ACTIV ESSENTIAL 10W-30,2,2,,updated,,,castrol-activ-essential-10w-30
+lub,747,Castrol,Activ Essential,ACTIV ESSENTIAL 20W-40,2,2,,updated,,,castrol-activ-essential-20w-40
 lub,748,Castrol,Castrol GO!,CASTROL GO ! 2T,3,3,,skipped,representative_picture,,
-lub,749,Castrol,Power1,POWER1 10W-30,2,2,,imported,,,castrol-power1-10w-30
-lub,750,Castrol,Power1,POWER1 10W-40,1,1,,imported,,,castrol-power1-10w-40
-lub,751,Castrol,Power1,POWER1 15W-40,1,1,,imported,,,castrol-power1-15w-40
-lub,752,Castrol,Power1,POWER1 CRUISE 4T 15W-50,1,1,,imported,,,castrol-power1-cruise-4t-15w-50
-lub,753,Castrol,Power1,POWER1 CRUISE 4T 20W-50,2,2,,imported,,,castrol-power1-cruise-4t-20w-50
-lub,754,Castrol,Power1 Ultimate,POWER1 ULT SUPERBIKE 10W-50,1,1,,imported,,,castrol-power1-ult-superbike-10w-50
-lub,755,Castrol,Power1 Ultimate,POWER1 ULTIMATE 10W-40 4T,1,1,,imported,,,castrol-power1-ultimate-10w-40-4t
-lub,756,Castrol,Power1 Ultimate,POWER1 ULTIMATE 10W-50 4T,2,2,,imported,,,castrol-power1-ultimate-10w-50-4t
-lub,757,Castrol,Power1 Ultimate,POWER1 ULTIMATE SB 15W-50,1,1,,imported,,,castrol-power1-ultimate-sb-15w-50
-lub,758,Castrol,Power1 Ultimate,POWER1 ULTIMATE SB 20W-50,1,1,,imported,,,castrol-power1-ultimate-sb-20w-50
-lub,759,Castrol,Power1 Ultimate,POWER1 ULTIMATE SCOOTER 5W-40,1,1,,imported,,,castrol-power1-ultimate-scooter-5w-40
+lub,749,Castrol,Power1,POWER1 10W-30,2,2,,updated,,,castrol-power1-10w-30
+lub,750,Castrol,Power1,POWER1 10W-40,1,1,,updated,,,castrol-power1-10w-40
+lub,751,Castrol,Power1,POWER1 15W-40,1,1,,updated,,,castrol-power1-15w-40
+lub,752,Castrol,Power1,POWER1 CRUISE 4T 15W-50,1,1,,updated,,,castrol-power1-cruise-4t-15w-50
+lub,753,Castrol,Power1,POWER1 CRUISE 4T 20W-50,2,2,,updated,,,castrol-power1-cruise-4t-20w-50
+lub,754,Castrol,Power1 Ultimate,POWER1 ULT SUPERBIKE 10W-50,1,1,,updated,,,castrol-power1-ult-superbike-10w-50
+lub,755,Castrol,Power1 Ultimate,POWER1 ULTIMATE 10W-40 4T,1,1,,updated,,,castrol-power1-ultimate-10w-40-4t
+lub,756,Castrol,Power1 Ultimate,POWER1 ULTIMATE 10W-50 4T,2,2,,unchanged,,,castrol-power1-ultimate-10w-50-4t
+lub,757,Castrol,Power1 Ultimate,POWER1 ULTIMATE SB 15W-50,1,1,,updated,,,castrol-power1-ultimate-sb-15w-50
+lub,758,Castrol,Power1 Ultimate,POWER1 ULTIMATE SB 20W-50,1,1,,updated,,,castrol-power1-ultimate-sb-20w-50
+lub,759,Castrol,Power1 Ultimate,POWER1 ULTIMATE SCOOTER 5W-40,1,1,,updated,,,castrol-power1-ultimate-scooter-5w-40
 lub,760,ENEOS,MOTOR CYCLE OIL,BIKERZ OIL 10W-30,1,0,,skipped,not_price_list_brand,,
 lub,761,ENEOS,MOTOR CYCLE OIL,BIKERZ OIL 15W-50,1,0,,skipped,not_price_list_brand,,
 lub,762,ENEOS,MOTOR CYCLE OIL,BIKERZ OIL 20W-40,1,0,,skipped,not_price_list_brand,,
 lub,763,ENEOS,SCOOTER OIL,SCOOTERZ OIL 10W-30,1,0,,skipped,not_price_list_brand,,
-lub,764,Gulf,GULF PRIDE,GULF PRIDE 10W-30,3,3,,imported,,,gulf-pride-10w-30
-lub,765,Gulf,GULF PRIDE,GULF PRIDE 15W-50,2,2,,imported,,,gulf-pride-15w-50
-lub,766,Gulf,GULF PRIDE,GULF PRIDE 20W-40,2,2,,imported,,,gulf-pride-20w-40
-lub,767,Gulf,GULF PRIDE,GULF PRIDE 20W-50,2,2,,imported,,,gulf-pride-20w-50
+lub,764,Gulf,GULF PRIDE,GULF PRIDE 10W-30,3,3,,updated,,,gulf-pride-10w-30
+lub,765,Gulf,GULF PRIDE,GULF PRIDE 15W-50,2,2,,updated,,,gulf-pride-15w-50
+lub,766,Gulf,GULF PRIDE,GULF PRIDE 20W-40,2,2,,updated,,,gulf-pride-20w-40
+lub,767,Gulf,GULF PRIDE,GULF PRIDE 20W-50,2,2,,updated,,,gulf-pride-20w-50
 lub,768,Gulf,GULF PRIDE 2T,GULF PRIDE 2T,5,4,,skipped,representative_picture,,
 lub,769,Gulf,GULF PRIDE PRO BIKER,GULF PRIDE PRO BIKER 10W-30,2,0,,skipped,representative_picture,,
 lub,770,Gulf,GULF PRIDE PRO BIKER,GULF PRIDE PRO BIKER 15W-50,1,0,,skipped,representative_picture,,
 lub,771,Gulf,GULF PRIDE PRO BIKER,GULF PRIDE PRO BIKER 20W-40,2,0,,skipped,representative_picture,,
-lub,772,Gulf,GULF PRIDE SCOOTER,GULF PRIDE SCOOTER COMBO PACK 10W-30,1,1,,imported,,,gulf-pride-scooter-combo-pack-10w-30
-lub,773,Gulf,GULF PRIDE SCOOTER,GULF PRIDE SCOOTER PLUS 10W-30,1,1,,imported,,,gulf-pride-scooter-plus-10w-30
-lub,774,Gulf,GULF PRIDE SCOOTER,GULF PRIDE SCOOTER PLUS 5W-30,1,1,,imported,,,gulf-pride-scooter-plus-5w-30
-lub,775,Gulf,GULF SYNTRAC,GULF SYNTRAC 10W-30,2,2,,imported,,,gulf-syntrac-10w-30
-lub,776,Gulf,GULF SYNTRAC,GULF SYNTRAC 10W-40,1,1,,imported,,,gulf-syntrac-10w-40
-lub,777,Gulf,GULF SYNTRAC,GULF SYNTRAC 10W-50,2,2,,imported,,,gulf-syntrac-10w-50
-lub,778,Gulf,GULF SYNTRAC,GULF SYNTRAC 15W-50,3,3,,imported,,,gulf-syntrac-15w-50
-lub,779,Gulf,GULF SYNTRAC,GULF SYNTRAC 20W-50,3,3,,imported,,,gulf-syntrac-20w-50
-lub,780,Gulf,GULF ZIPP,GULF ZIPP 4T SMART 20W-40,2,2,,imported,,,gulf-zipp-4t-smart-20w-40
+lub,772,Gulf,GULF PRIDE SCOOTER,GULF PRIDE SCOOTER COMBO PACK 10W-30,1,1,,updated,,,gulf-pride-scooter-combo-pack-10w-30
+lub,773,Gulf,GULF PRIDE SCOOTER,GULF PRIDE SCOOTER PLUS 10W-30,1,1,,updated,,,gulf-pride-scooter-plus-10w-30
+lub,774,Gulf,GULF PRIDE SCOOTER,GULF PRIDE SCOOTER PLUS 5W-30,1,1,,updated,,,gulf-pride-scooter-plus-5w-30
+lub,775,Gulf,GULF SYNTRAC,GULF SYNTRAC 10W-30,2,2,,updated,,,gulf-syntrac-10w-30
+lub,776,Gulf,GULF SYNTRAC,GULF SYNTRAC 10W-40,1,1,,updated,,,gulf-syntrac-10w-40
+lub,777,Gulf,GULF SYNTRAC,GULF SYNTRAC 10W-50,2,2,,unchanged,,,gulf-syntrac-10w-50
+lub,778,Gulf,GULF SYNTRAC,GULF SYNTRAC 15W-50,3,3,,updated,,,gulf-syntrac-15w-50
+lub,779,Gulf,GULF SYNTRAC,GULF SYNTRAC 20W-50,3,3,,updated,,,gulf-syntrac-20w-50
+lub,780,Gulf,GULF ZIPP,GULF ZIPP 4T SMART 20W-40,2,2,,updated,,,gulf-zipp-4t-smart-20w-40
 lub,781,Motul,,GP POWER 4T 10W30,1,0,,skipped,not_price_list_brand,,
 lub,782,Motul,,MOTUL 3100 GOLD 4T 10W30,1,0,,skipped,not_price_list_brand,,
 lub,783,Motul,,MOTUL 3100 GOLD 4T 15W50,1,0,,skipped,not_price_list_brand,,
@@ -839,52 +839,52 @@ lub,836,Valvoline,Motorcycle Oil,Valvoline 4T Premium 20W-40,1,0,,skipped,not_pr
 lub,837,Valvoline,Motorcycle Oil,Valvoline Champ 4T,1,0,,skipped,not_price_list_brand,,
 lub,838,Valvoline,Motorcycle Oil,Valvoline Champ 4T 20W-40,1,0,,skipped,not_price_list_brand,,
 lub,839,Castrol,Edge,EDGE 0W-20 (Jaguar),1,1,,skipped,representative_picture,,
-lub,840,Castrol,Edge,EDGE 0W-40,3,3,,imported,,,castrol-edge-0w-40
-lub,841,Castrol,Edge,EDGE 5W-30,3,3,,imported,,,castrol-edge-5w-30
-lub,842,Castrol,Edge,EDGE 5W-40,3,3,,imported,,,castrol-edge-5w-40
-lub,843,Castrol,Edge,EDGE Euro Car 0W-20,4,4,,imported,,,castrol-edge-euro-car-0w-20
-lub,844,Castrol,Edge,EDGE Hybrid 0W-16,1,1,,imported,,,castrol-edge-hybrid-0w-16
-lub,845,Castrol,Edge,EDGE SUV 0W-30,3,3,,imported,,,castrol-edge-suv-0w-30
-lub,846,Castrol,GTX,GTX 20W-50,6,6,,imported,,,castrol-gtx-20w-50
-lub,847,Castrol,GTX,GTX 5W-30,1,1,,imported,,,castrol-gtx-5w-30
-lub,848,Castrol,GTX,GTX DIESEL 15W-40 CF4,7,7,,imported,,,castrol-gtx-diesel-15w-40-cf4
+lub,840,Castrol,Edge,EDGE 0W-40,3,3,,unchanged,,,castrol-edge-0w-40
+lub,841,Castrol,Edge,EDGE 5W-30,3,3,,updated,,,castrol-edge-5w-30
+lub,842,Castrol,Edge,EDGE 5W-40,3,3,,updated,,,castrol-edge-5w-40
+lub,843,Castrol,Edge,EDGE Euro Car 0W-20,4,4,,updated,,,castrol-edge-euro-car-0w-20
+lub,844,Castrol,Edge,EDGE Hybrid 0W-16,1,1,,updated,,,castrol-edge-hybrid-0w-16
+lub,845,Castrol,Edge,EDGE SUV 0W-30,3,3,,updated,,,castrol-edge-suv-0w-30
+lub,846,Castrol,GTX,GTX 20W-50,6,6,,updated,,,castrol-gtx-20w-50
+lub,847,Castrol,GTX,GTX 5W-30,1,1,,updated,,,castrol-gtx-5w-30
+lub,848,Castrol,GTX,GTX DIESEL 15W-40 CF4,7,7,,updated,,,castrol-gtx-diesel-15w-40-cf4
 lub,849,Castrol,GTX,GTX DIESEL 15W-40 CH4 - TATA,6,6,,skipped,representative_picture,,
 lub,850,Castrol,GTX,GTX DIESEL 15W-40 CI4+,7,7,,skipped,representative_picture,,
-lub,851,Castrol,GTX,GTX ESSENTIAL 20W-50,4,4,,imported,,,castrol-gtx-essential-20w-50
+lub,851,Castrol,GTX,GTX ESSENTIAL 20W-50,4,4,,updated,,,castrol-gtx-essential-20w-50
 lub,852,Castrol,GTX,GTX Full Synthetic 0W-20,3,3,,skipped,representative_picture,,
 lub,853,Castrol,GTX,GTX Full Synthetic 5W-30,4,4,,skipped,representative_picture,,
-lub,854,Castrol,GTX,GTX SUV 5W-30,2,2,,imported,,,castrol-gtx-suv-5w-30
+lub,854,Castrol,GTX,GTX SUV 5W-30,2,2,,updated,,,castrol-gtx-suv-5w-30
 lub,855,Castrol,MGDO,MGDO 15W-40,1,1,,skipped,representative_picture,,
 lub,856,Castrol,MGDO,MGDO 5W-40,1,1,,skipped,representative_picture,,
 lub,857,Castrol,MGO,MGO 20W-40,1,1,,skipped,representative_picture,,
-lub,858,Castrol,MGO,MGO 5W-30,2,2,,imported,,,castrol-mgo-5w-30
-lub,859,Castrol,Magnatec,MAGNATEC 0W-16,1,1,,imported,,,castrol-magnatec-0w-16
-lub,860,Castrol,Magnatec,MAGNATEC 0W-20,2,2,,imported,,,castrol-magnatec-0w-20
-lub,861,Castrol,Magnatec,MAGNATEC 10W-40,4,4,,imported,,,castrol-magnatec-10w-40
-lub,862,Castrol,Magnatec,MAGNATEC 5W-30,4,4,,imported,,,castrol-magnatec-5w-30
-lub,863,Castrol,Magnatec,MAGNATEC 5W-30 T (TATA),1,1,,imported,,,castrol-magnatec-5w-30-t-tata
-lub,864,Castrol,Magnatec,MAGNATEC DIESEL 15W-40,3,3,,imported,,,castrol-magnatec-diesel-15w-40
-lub,865,Castrol,Magnatec,MAGNATEC SUV 5W-30,4,4,,imported,,,castrol-magnatec-suv-5w-30
-lub,866,Castrol,Magnatec,MAGNATEC SUV 5W-40,5,5,,imported,,,castrol-magnatec-suv-5w-40
+lub,858,Castrol,MGO,MGO 5W-30,2,2,,updated,,,castrol-mgo-5w-30
+lub,859,Castrol,Magnatec,MAGNATEC 0W-16,1,1,,unchanged,,,castrol-magnatec-0w-16
+lub,860,Castrol,Magnatec,MAGNATEC 0W-20,2,2,,updated,,,castrol-magnatec-0w-20
+lub,861,Castrol,Magnatec,MAGNATEC 10W-40,4,4,,updated,,,castrol-magnatec-10w-40
+lub,862,Castrol,Magnatec,MAGNATEC 5W-30,4,4,,updated,,,castrol-magnatec-5w-30
+lub,863,Castrol,Magnatec,MAGNATEC 5W-30 T (TATA),1,1,,updated,,,castrol-magnatec-5w-30-t-tata
+lub,864,Castrol,Magnatec,MAGNATEC DIESEL 15W-40,3,3,,updated,,,castrol-magnatec-diesel-15w-40
+lub,865,Castrol,Magnatec,MAGNATEC SUV 5W-30,4,4,,updated,,,castrol-magnatec-suv-5w-30
+lub,866,Castrol,Magnatec,MAGNATEC SUV 5W-40,5,5,,updated,,,castrol-magnatec-suv-5w-40
 lub,867,ENEOS,ENEOS FINE SERIES,ENEOS FINE MOTOR OIL 15W-40,1,0,,skipped,not_price_list_brand,,
 lub,868,ENEOS,ENEOS FINE SERIES,ENEOS FINE MOTOR OIL 5W-30,1,0,,skipped,not_price_list_brand,,
 lub,869,ENEOS,ENEOS FINE SERIES,ENEOS FINE MOTOR OIL 5W-40,1,0,,skipped,not_price_list_brand,,
 lub,870,ENEOS,PASSENGER CAR OIL / ENEOS X SERIES / ENEOS X,ENEOS X 0W-20,1,0,,skipped,not_price_list_brand,,
 lub,871,ENEOS,PASSENGER CAR OIL / ENEOS X SERIES / ENEOS X,ENEOS X 15W-40 SUV,1,0,,skipped,not_price_list_brand,,
 lub,872,ENEOS,PASSENGER CAR OIL / ENEOS X SERIES / ENEOS X PRIME,ENEOS X PRIME 5W-40,1,0,,skipped,not_price_list_brand,,
-lub,873,Gulf,GULF FORMULA,GULF FORMULA ELITE 5W-30,3,3,,imported,,,gulf-formula-elite-5w-30
-lub,874,Gulf,GULF FORMULA,GULF FORMULA SUV 5W-30,6,4,,imported,,,gulf-formula-suv-5w-30
-lub,875,Gulf,GULF FORMULA,GULF FORMULA SUV 5W-40,4,4,,imported,,,gulf-formula-suv-5w-40
-lub,876,Gulf,GULF MAX SUV,GULF MAX SUV 5W-30,3,3,,imported,,,gulf-max-suv-5w-30
-lub,877,Gulf,GULF MAX TD,GULF MAX TD 15W-40,5,5,,imported,,,gulf-max-td-15w-40
-lub,878,Gulf,GULF MULTI FLEET,GULF MULTI FLEET 5W-30,5,3,,imported,,,gulf-multi-fleet-5w-30
-lub,879,Gulf,GULF MULTI G+,GULF MULTI G+ 20W-50,4,4,,imported,,,gulf-multi-g-20w-50
-lub,880,Gulf,GULF SUPER DIESEL X-10,GULF SUPER DIESEL X-10 NM 15W-40,4,4,,imported,,,gulf-super-diesel-x-10-nm-15w-40
-lub,881,Gulf,GULF ULTRASYNTH,GULF ULTRASYNTH GDI 0W-20,3,3,,imported,,,gulf-ultrasynth-gdi-0w-20
-lub,882,Gulf,GULF ULTRASYNTH,GULF ULTRASYNTH GDI 10W-40,3,3,,imported,,,gulf-ultrasynth-gdi-10w-40
-lub,883,Gulf,GULF ULTRASYNTH,GULF ULTRASYNTH GDI 5W-30,5,3,,imported,,,gulf-ultrasynth-gdi-5w-30
-lub,884,Gulf,TMGO,TATA MOTORS GENUINE OIL - SYNTH 5W-30,2,2,,imported,,,gulf-tata-motors-genuine-oil-synth-5w-30
-lub,885,Gulf,TMGO,TATA MOTORS GENUINE OIL 15W-40 CH-4,4,4,,imported,,,gulf-tata-motors-genuine-oil-15w-40-ch-4
+lub,873,Gulf,GULF FORMULA,GULF FORMULA ELITE 5W-30,3,3,,updated,,,gulf-formula-elite-5w-30
+lub,874,Gulf,GULF FORMULA,GULF FORMULA SUV 5W-30,6,4,,updated,,,gulf-formula-suv-5w-30
+lub,875,Gulf,GULF FORMULA,GULF FORMULA SUV 5W-40,4,4,,updated,,,gulf-formula-suv-5w-40
+lub,876,Gulf,GULF MAX SUV,GULF MAX SUV 5W-30,3,3,,updated,,,gulf-max-suv-5w-30
+lub,877,Gulf,GULF MAX TD,GULF MAX TD 15W-40,5,5,,updated,,,gulf-max-td-15w-40
+lub,878,Gulf,GULF MULTI FLEET,GULF MULTI FLEET 5W-30,5,3,,updated,,,gulf-multi-fleet-5w-30
+lub,879,Gulf,GULF MULTI G+,GULF MULTI G+ 20W-50,4,4,,updated,,,gulf-multi-g-20w-50
+lub,880,Gulf,GULF SUPER DIESEL X-10,GULF SUPER DIESEL X-10 NM 15W-40,4,4,,updated,,,gulf-super-diesel-x-10-nm-15w-40
+lub,881,Gulf,GULF ULTRASYNTH,GULF ULTRASYNTH GDI 0W-20,3,3,,updated,,,gulf-ultrasynth-gdi-0w-20
+lub,882,Gulf,GULF ULTRASYNTH,GULF ULTRASYNTH GDI 10W-40,3,3,,updated,,,gulf-ultrasynth-gdi-10w-40
+lub,883,Gulf,GULF ULTRASYNTH,GULF ULTRASYNTH GDI 5W-30,5,3,,updated,,,gulf-ultrasynth-gdi-5w-30
+lub,884,Gulf,TMGO,TATA MOTORS GENUINE OIL - SYNTH 5W-30,2,2,,updated,,,gulf-tata-motors-genuine-oil-synth-5w-30
+lub,885,Gulf,TMGO,TATA MOTORS GENUINE OIL 15W-40 CH-4,4,4,,updated,,,gulf-tata-motors-genuine-oil-15w-40-ch-4
 lub,886,Gulf,TMGO,TATA MOTORS GENUINE OIL 15W-40 CI4 PLUS,3,3,,skipped,representative_picture,,
 lub,887,Motul,,MOTUL 4000 OTEC 10W30,1,0,,skipped,not_price_list_brand,,
 lub,888,Motul,,MOTUL 4000 OTEC 15W40,1,0,,skipped,not_price_list_brand,,
@@ -1041,13 +1041,13 @@ lub,1038,Savita,White Oils & Liquid Paraffin > Technol,Technol 80,1,0,,skipped,n
 lub,1039,Savsol,Automotive Lubricants > Ad,AdBlue,1,0,,skipped,not_price_list_brand,,
 lub,1040,Valvoline,Construction & Mining,Airshield Cummins Genuine DEF,1,0,,skipped,not_price_list_brand,,
 lub,1041,Valvoline,Genset,AirshieldTM DEF (AUS32),1,0,,skipped,not_price_list_brand,,
-lub,1042,Gulf,GULF TRACTOR GUARD ENGINE OIL,GULF TRACTOR GUARD ENGINE OIL 15W-40,3,3,,imported,,,gulf-tractor-guard-engine-oil-15w-40
+lub,1042,Gulf,GULF TRACTOR GUARD ENGINE OIL,GULF TRACTOR GUARD ENGINE OIL 15W-40,3,3,,updated,,,gulf-tractor-guard-engine-oil-15w-40
 lub,1043,Gulf,GULF TRACTOR GUARD ENGINE OIL,GULF TRACTOR GUARD ENGINE OIL 20W-40,4,4,,skipped,representative_picture,,
-lub,1044,Gulf,GULF TRACTOR GUARD UTTO,GULF TRACTOR GUARD UTTO 80W,3,2,,imported,,,gulf-tractor-guard-utto-80w
-lub,1045,Gulf,GULF XHD MAHINDRA,GULF XHD SUPREME 15W-40 - MAHINDRA,2,2,,imported,,,gulf-xhd-supreme-15w-40-mahindra
-lub,1046,Gulf,GULF XHD S,GULF XHD S TRACTOR,3,3,,imported,,,gulf-xhd-s-tractor
-lub,1047,Gulf,GULF XHD SUPREME+,GULF XHD SUPREME+ 15W40,6,6,,imported,,,gulf-xhd-supreme-15w40
-lub,1048,Gulf,GULF XHD SUPREME+,GULF XHD SUPREME+ 20W40,10,8,,imported,,,gulf-xhd-supreme-20w40
+lub,1044,Gulf,GULF TRACTOR GUARD UTTO,GULF TRACTOR GUARD UTTO 80W,3,2,,updated,,,gulf-tractor-guard-utto-80w
+lub,1045,Gulf,GULF XHD MAHINDRA,GULF XHD SUPREME 15W-40 - MAHINDRA,2,2,,updated,,,gulf-xhd-supreme-15w-40-mahindra
+lub,1046,Gulf,GULF XHD S,GULF XHD S TRACTOR,3,3,,unchanged,,,gulf-xhd-s-tractor
+lub,1047,Gulf,GULF XHD SUPREME+,GULF XHD SUPREME+ 15W40,6,6,,updated,,,gulf-xhd-supreme-15w40
+lub,1048,Gulf,GULF XHD SUPREME+,GULF XHD SUPREME+ 20W40,10,8,,updated,,,gulf-xhd-supreme-20w40
 lub,1049,Motul,Heavy Duty Products - Engine Lubricants,MOTUL AGRI PLUS 15W40,1,0,,skipped,not_price_list_brand,,
 lub,1050,Motul,Heavy Duty Products - Engine Lubricants,MOTUL AGRI PLUS 20W40,1,0,,skipped,not_price_list_brand,,
 lub,1051,Motul,Heavy Duty Products - Engine Lubricants,MOTUL AGRI SUPER 15W40,1,0,,skipped,not_price_list_brand,,
@@ -1067,10 +1067,10 @@ lub,1064,Savsol,Automotive Lubricants > Tractor,SAVSOL TRACTOR SPECIAL PLUS 15W-
 lub,1065,Savsol,Automotive Lubricants > Tractor,Tractor Special (Swaraj),1,0,,skipped,not_price_list_brand,,
 lub,1066,Valvoline,Automatic Transmission Fluid,Valvoline Unitrac FR 2 Hydraulic Oil,1,0,,skipped,not_price_list_brand,,
 bat,0,Amaron,Amaron Pro Bike Rider,Amaron Pro Bike Rider,10,0,,skipped,not_price_list_brand,,
-bat,1,Exide,Exide Xplore,Exide Xplore,11,11,,imported,,,exide-xplore
+bat,1,Exide,Exide Xplore,Exide Xplore,11,11,,updated,,,exide-xplore
 bat,2,Amaron,Amaron Heavy Duty (Three Wheeler),Amaron Heavy Duty (Three Wheeler),1,0,,skipped,not_price_list_brand,,
-bat,3,Exide,Exide Eko,Exide Eko,5,5,,imported,,,exide-eko
-bat,4,Exide,Exide Distillo,Exide Distillo,1,1,,imported,,,exide-distillo
+bat,3,Exide,Exide Eko,Exide Eko,5,5,,unchanged,,,exide-eko
+bat,4,Exide,Exide Distillo,Exide Distillo,1,1,,unchanged,,,exide-distillo
 bat,5,Exide,Lithium Ion Battery Charger,Lithium Ion Battery Charger,2,2,,skipped,representative_picture,,
 bat,6,Tata Green,E-Rickshaw Li-Ion,ERK Li-Ion 2200MM wire,1,1,,skipped,representative_picture,,
 bat,7,Tata Green,E-Rickshaw Li-Ion,ERK Li-Ion Battery Charger,1,1,,skipped,representative_picture,,
@@ -1078,10 +1078,10 @@ bat,8,Tata Green,E-Rickshaw Li-Ion,ERK SOC Meter,1,1,,skipped,representative_pic
 bat,9,PowerZone,PowerZone,PowerZone automotive batteries,1,0,,skipped,not_price_list_brand,,
 bat,10,Amaron,Amaron Heavy Duty (Earth Moving Equipment),Amaron Heavy Duty (Earth Moving Equipment),1,0,,skipped,not_price_list_brand,,
 bat,11,Amaron,Amaron Hiway,Amaron Hiway,10,0,,skipped,not_price_list_brand,,
-bat,12,Exide,Exide Xpress,Exide Xpress,10,10,,imported,,,exide-xpress
-bat,13,Tata Green,Roadstar Series,Roadstar Series,6,6,,imported,,,tata-green-roadstar-series
-bat,14,Tata Green,SLV Series,SLV Series,4,4,,imported,,,tata-green-slv-series
-bat,15,Tata Green,TG Series,TG Series,1,1,,imported,,,tata-green-tg-series
+bat,12,Exide,Exide Xpress,Exide Xpress,10,10,,unchanged,,,exide-xpress
+bat,13,Tata Green,Roadstar Series,Roadstar Series,6,6,,unchanged,,,tata-green-roadstar-series
+bat,14,Tata Green,SLV Series,SLV Series,4,4,,unchanged,,,tata-green-slv-series
+bat,15,Tata Green,TG Series,TG Series,1,1,,unchanged,,,tata-green-tg-series
 bat,16,Amaron,Amaron Advanced Stamped Grid (ASG Dura Frame),Amaron Advanced Stamped Grid (ASG Dura Frame),1,0,,skipped,not_price_list_brand,,
 bat,17,Amaron,Amaron Black,Amaron Black,40,0,,skipped,not_price_list_brand,,
 bat,18,Amaron,Amaron Duro,Amaron Duro,6,0,,skipped,not_price_list_brand,,
@@ -1093,34 +1093,34 @@ bat,23,Amaron,Amaron Hi Life GO,Amaron Hi Life GO,1,0,,skipped,not_price_list_br
 bat,24,Amaron,Amaron Hi Life PRO,Amaron Hi Life PRO,1,0,,skipped,not_price_list_brand,,
 bat,25,Amaron,Amaron JADE (Absorbent Glass Mat),Amaron JADE (Absorbent Glass Mat),1,0,,skipped,not_price_list_brand,,
 bat,26,Amaron,Amaron Pro,Amaron Pro,7,0,,skipped,not_price_list_brand,,
-bat,27,Exide,Exide AGMi,Exide AGMi,5,5,,imported,,,exide-agmi
-bat,28,Exide,Exide Dare,Exide Dare,5,5,,imported,,,exide-dare
-bat,29,Exide,Exide Drive,Exide Drive,13,13,,imported,,,exide-drive
-bat,30,Exide,Exide Eezy,Exide Eezy,6,6,,imported,,,exide-eezy
-bat,31,Exide,Exide Eezy ISS,Exide Eezy ISS,3,3,,imported,,,exide-eezy-iss
-bat,32,Exide,Exide Epiq,Exide Epiq,3,3,,imported,,,exide-epiq
-bat,33,Exide,Exide Matrix,Exide Matrix,3,3,,imported,,,exide-matrix
-bat,34,Exide,Exide Mileage,Exide Mileage,13,13,,imported,,,exide-mileage
-bat,35,Exide,Exide Mileage ISS,Exide Mileage ISS,3,3,,imported,,,exide-mileage-iss
-bat,36,Exide,Exide Ride,Exide Ride,4,4,,imported,,,exide-ride
-bat,37,Tata Green,Premio ADV Series,Premio ADV Series,4,4,,imported,,,tata-green-premio-adv-series
-bat,38,Tata Green,Premio ISS Series,Premio ISS Series,2,2,,imported,,,tata-green-premio-iss-series
-bat,39,Tata Green,Premio Series,Premio Series,17,17,,imported,,,tata-green-premio-series
-bat,40,Tata Green,SLV Series,SLV Series,4,4,,imported,,,tata-green-slv-series-slv-series
-bat,41,Tata Green,TG Series,TG Series,4,4,,imported,,,tata-green-tg-series-tg-series
-bat,42,Tata Green,TG-X Series,TG-X Series,1,1,,imported,,,tata-green-tg-x-series
+bat,27,Exide,Exide AGMi,Exide AGMi,5,5,,updated,,,exide-agmi
+bat,28,Exide,Exide Dare,Exide Dare,5,5,,unchanged,,,exide-dare
+bat,29,Exide,Exide Drive,Exide Drive,13,13,,updated,,,exide-drive
+bat,30,Exide,Exide Eezy,Exide Eezy,6,6,,updated,,,exide-eezy
+bat,31,Exide,Exide Eezy ISS,Exide Eezy ISS,3,3,,updated,,,exide-eezy-iss
+bat,32,Exide,Exide Epiq,Exide Epiq,3,3,,updated,,,exide-epiq
+bat,33,Exide,Exide Matrix,Exide Matrix,3,3,,updated,,,exide-matrix
+bat,34,Exide,Exide Mileage,Exide Mileage,13,13,,updated,,,exide-mileage
+bat,35,Exide,Exide Mileage ISS,Exide Mileage ISS,3,3,,updated,,,exide-mileage-iss
+bat,36,Exide,Exide Ride,Exide Ride,4,4,,updated,,,exide-ride
+bat,37,Tata Green,Premio ADV Series,Premio ADV Series,4,4,,unchanged,,,tata-green-premio-adv-series
+bat,38,Tata Green,Premio ISS Series,Premio ISS Series,2,2,,unchanged,,,tata-green-premio-iss-series
+bat,39,Tata Green,Premio Series,Premio Series,17,17,,unchanged,,,tata-green-premio-series
+bat,40,Tata Green,SLV Series,SLV Series,4,4,,unchanged,,,tata-green-slv-series-slv-series
+bat,41,Tata Green,TG Series,TG Series,4,4,,unchanged,,,tata-green-tg-series-tg-series
+bat,42,Tata Green,TG-X Series,TG-X Series,1,1,,unchanged,,,tata-green-tg-x-series
 bat,43,Amaron,Amaron Current EV,Amaron Current EV,1,0,,skipped,not_price_list_brand,,
-bat,44,Exide,Exide Eride Plus,Exide Eride Plus,1,1,,imported,,,exide-eride-plus
-bat,45,Exide,Exide Eride Tubular Plus,Exide Eride Tubular Plus,4,4,,imported,,,exide-eride-tubular-plus
+bat,44,Exide,Exide Eride Plus,Exide Eride Plus,1,1,,updated,,,exide-eride-plus
+bat,45,Exide,Exide Eride Tubular Plus,Exide Eride Tubular Plus,4,4,,updated,,,exide-eride-tubular-plus
 bat,46,Nexcharge,Nexcharge Lithium Ion Battery,Nexcharge Lithium Ion Battery,1,1,,skipped,not_price_list_brand,,
 bat,47,Tata Green,E-Rickshaw - Tubular,E-Rickshaw - Tubular,1,1,,skipped,representative_picture,,
-bat,48,Tata Green,E-Rickshaw Li-Ion,E-Rickshaw Li-Ion,2,2,,imported,,,tata-green-e-rickshaw-li-ion
+bat,48,Tata Green,E-Rickshaw Li-Ion,E-Rickshaw Li-Ion,2,2,,updated,,,tata-green-e-rickshaw-li-ion
 bat,49,Amara Raja,Amara Raja EV Chargers,AC Charger,1,0,,skipped,not_price_list_brand,,
 bat,50,Amara Raja,Amara Raja EV Chargers,DC Fast Charger,1,0,,skipped,not_price_list_brand,,
 bat,51,Amara Raja,Amara Raja EV Chargers,Portable EV Charger,1,0,,skipped,not_price_list_brand,,
 bat,52,Amaron,Amaron Heavy Duty (Genset),Amaron Heavy Duty (Genset),1,0,,skipped,not_price_list_brand,,
 bat,53,Amaron,Genpro,Genpro,1,0,,skipped,not_price_list_brand,,
-bat,54,Tata Green,Genstar,Genstar,1,1,,imported,,,tata-green-genstar
+bat,54,Tata Green,Genstar,Genstar,1,1,,unchanged,,,tata-green-genstar
 bat,55,Amaron,Amaron Brute,Amaron Brute,1,0,,skipped,not_price_list_brand,,
 bat,56,Amaron,Amaron Quanta,Amaron Quanta,1,0,,skipped,not_price_list_brand,,
 bat,57,Amaron,Amaron Quanta - HUPS,Amaron Quanta - HUPS,1,0,,skipped,not_price_list_brand,,
@@ -1132,12 +1132,12 @@ bat,62,Amaron,Powerstack,Powerstack,1,0,,skipped,not_price_list_brand,,
 bat,63,Amaron,Amaron High-Capacity Sine Wave Inverters,Amaron High-Capacity Sine Wave Inverters,3,0,,skipped,not_price_list_brand,,
 bat,64,Amaron,Amaron Sine Wave Home UPS,Amaron Sine Wave Home UPS,8,0,,skipped,not_price_list_brand,,
 bat,65,Amaron,Amaron Square Wave Home UPS,Amaron Square Wave Home UPS,4,0,,skipped,not_price_list_brand,,
-bat,66,Tata Green,SWITCHON HKVA Series,SWITCHON HKVA Series,3,3,,imported,,,tata-green-switchon-hkva-series
-bat,67,Tata Green,SWITCHON HUPS Series,SWITCHON HUPS Series,5,5,,imported,,,tata-green-switchon-hups-series
+bat,66,Tata Green,SWITCHON HKVA Series,SWITCHON HKVA Series,3,3,,unchanged,,,tata-green-switchon-hkva-series
+bat,67,Tata Green,SWITCHON HUPS Series,SWITCHON HUPS Series,5,5,,unchanged,,,tata-green-switchon-hups-series
 bat,68,Amaron,Amaron Current Short Tubular,Amaron Current Short Tubular,3,0,,skipped,not_price_list_brand,,
 bat,69,Amaron,Amaron Current Tall Tubular,Amaron Current Tall Tubular,10,0,,skipped,not_price_list_brand,,
 bat,70,Tata Green,Flate Plate Inverter Battery Series,Flate Plate Inverter Battery Series,2,2,,skipped,representative_picture,,
-bat,71,Tata Green,SWITCHON Tubular Battery Series,SWITCHON Tubular Battery Series,12,12,,imported,,,tata-green-switchon-tubular-battery-series
+bat,71,Tata Green,SWITCHON Tubular Battery Series,SWITCHON Tubular Battery Series,12,12,,updated,,,tata-green-switchon-tubular-battery-series
 bat,72,Amara Raja,Amara Raja Advanced Cell Technologies (ARACT),2 Wheeler Battery Pack,1,0,,skipped,not_price_list_brand,,
 bat,73,Amara Raja,Amara Raja Advanced Cell Technologies (ARACT),3 Wheeler Battery Pack,1,0,,skipped,not_price_list_brand,,
 bat,74,Amaron,Amaron Hi-Life Lubes,Amaron Hi-Life Lubes,1,0,,skipped,not_price_list_brand,,
@@ -1147,47 +1147,47 @@ bat,77,Amaron,Amaron Solar PV Panels,Amaron Mono PERC Solar PV Panels,1,0,,skipp
 bat,78,Amaron,Amaron Solar,Amaron Solar,1,0,,skipped,not_price_list_brand,,
 bat,79,Tata Green,Solar,Solar,1,1,,skipped,representative_picture,,
 bat,80,Amaron,Amaron Harvest,Amaron Harvest,6,0,,skipped,not_price_list_brand,,
-bat,81,Exide,Exide Jai Kisan,Exide Jai Kisan,5,5,,imported,,,exide-jai-kisan
-bat,82,Tata Green,Jeevan Series,Jeevan Series,2,2,,imported,,,tata-green-jeevan-series
-car,0,KELVINN,Aerosol,KELVINN AIRCON KLENE,1,1,,imported,,,kelvinn-aircon-klene
-car,1,KELVINN,Aerosol,KELVINN BATTERY TERMINAL PROTECTANT,1,1,,imported,,,kelvinn-battery-terminal-protectant
-car,2,KELVINN,Aerosol,KELVINN BRAKE KLENE PLUS,2,2,,imported,,,kelvinn-brake-klene-plus
-car,3,KELVINN,Aerosol,KELVINN CHAIN KLENE,2,2,,imported,,,kelvinn-chain-klene
-car,4,KELVINN,Aerosol,KELVINN CHAIN LUBE SPRAY (GOLDEN),2,2,,imported,,,kelvinn-chain-lube-spray-golden
-car,5,KELVINN,Aerosol,KELVINN CHAIN LUBE SPRAY - BLUE,1,1,,imported,,,kelvinn-chain-lube-spray-blue
+bat,81,Exide,Exide Jai Kisan,Exide Jai Kisan,5,5,,updated,,,exide-jai-kisan
+bat,82,Tata Green,Jeevan Series,Jeevan Series,2,2,,unchanged,,,tata-green-jeevan-series
+car,0,KELVINN,Aerosol,KELVINN AIRCON KLENE,1,1,,updated,,,kelvinn-aircon-klene
+car,1,KELVINN,Aerosol,KELVINN BATTERY TERMINAL PROTECTANT,1,1,,updated,,,kelvinn-battery-terminal-protectant
+car,2,KELVINN,Aerosol,KELVINN BRAKE KLENE PLUS,2,2,,updated,,,kelvinn-brake-klene-plus
+car,3,KELVINN,Aerosol,KELVINN CHAIN KLENE,2,2,,updated,,,kelvinn-chain-klene
+car,4,KELVINN,Aerosol,KELVINN CHAIN LUBE SPRAY (GOLDEN),2,2,,updated,,,kelvinn-chain-lube-spray-golden
+car,5,KELVINN,Aerosol,KELVINN CHAIN LUBE SPRAY - BLUE,1,1,,updated,,,kelvinn-chain-lube-spray-blue
 car,6,KELVINN,Aerosol,KELVINN CHAIN LUBRIFY - Blue,1,1,,skipped,representative_picture,,
 car,7,KELVINN,Aerosol,KELVINN CHAINLUBRIFY-GOLD,1,1,,skipped,representative_picture,,
 car,8,KELVINN,Aerosol,KELVINN CHANNEL SPRAY,2,2,,skipped,representative_picture,,
 car,9,KELVINN,Aerosol,KELVINN ELECTRIC CONTACT CLEAN EV,1,1,,skipped,representative_picture,,
-car,10,KELVINN,Aerosol,KELVINN ELECTRIC CONTACT KLENE,1,1,,imported,,,kelvinn-electric-contact-klene
-car,11,KELVINN,Aerosol,KELVINN HELMET HYGIENE FOAM,1,1,,imported,,,kelvinn-helmet-hygiene-foam
-car,12,KELVINN,Aerosol,KELVINN LUBRICATION SPRAY,1,1,,imported,,,kelvinn-lubrication-spray
-car,13,KELVINN,Aerosol,KELVINN RODENT REPELLENT PLUS,1,1,,imported,,,kelvinn-rodent-repellent-plus
-car,14,KELVINN,Aerosol,KELVINN RUST KLENE,2,2,,imported,,,kelvinn-rust-klene
-car,15,KELVINN,Aerosol,KELVINN SILENCER COATING (MATTE BLACK),2,2,,imported,,,kelvinn-silencer-coating-matte-black
-car,16,KELVINN,Aerosol,KELVINN SILENCER COATING (SILVER),2,2,,imported,,,kelvinn-silencer-coating-silver
-car,17,KELVINN,Aerosol,KELVINN THROTTLE BODY & AIR INTAKE KLENER,2,2,,imported,,,kelvinn-throttle-body-air-intake-klener
-car,18,KELVINN,Aerosol,KELVINN UPHOLSTERY CLEANER FOAM,1,1,,imported,,,kelvinn-upholstery-cleaner-foam
-car,19,KELVINN,Aerosol,KELVINN ZX 90 MULTI USE SPRAY,3,3,,imported,,,kelvinn-zx-90-multi-use-spray
-car,20,KELVINN,Non Aerosol,KELVINN ALL WEATHER WINDSHIELD KLENE (FLUID),1,1,,imported,,,kelvinn-all-weather-windshield-klene-fluid
-car,21,KELVINN,Non Aerosol,KELVINN DRY WASH,1,1,,imported,,,kelvinn-dry-wash
-car,22,KELVINN,Non Aerosol,KELVINN GLASS CLEANER,2,2,,imported,,,kelvinn-glass-cleaner
+car,10,KELVINN,Aerosol,KELVINN ELECTRIC CONTACT KLENE,1,1,,updated,,,kelvinn-electric-contact-klene
+car,11,KELVINN,Aerosol,KELVINN HELMET HYGIENE FOAM,1,1,,updated,,,kelvinn-helmet-hygiene-foam
+car,12,KELVINN,Aerosol,KELVINN LUBRICATION SPRAY,1,1,,updated,,,kelvinn-lubrication-spray
+car,13,KELVINN,Aerosol,KELVINN RODENT REPELLENT PLUS,1,1,,updated,,,kelvinn-rodent-repellent-plus
+car,14,KELVINN,Aerosol,KELVINN RUST KLENE,2,2,,updated,,,kelvinn-rust-klene
+car,15,KELVINN,Aerosol,KELVINN SILENCER COATING (MATTE BLACK),2,2,,updated,,,kelvinn-silencer-coating-matte-black
+car,16,KELVINN,Aerosol,KELVINN SILENCER COATING (SILVER),2,2,,updated,,,kelvinn-silencer-coating-silver
+car,17,KELVINN,Aerosol,KELVINN THROTTLE BODY & AIR INTAKE KLENER,2,2,,updated,,,kelvinn-throttle-body-air-intake-klener
+car,18,KELVINN,Aerosol,KELVINN UPHOLSTERY CLEANER FOAM,1,1,,updated,,,kelvinn-upholstery-cleaner-foam
+car,19,KELVINN,Aerosol,KELVINN ZX 90 MULTI USE SPRAY,3,3,,updated,,,kelvinn-zx-90-multi-use-spray
+car,20,KELVINN,Non Aerosol,KELVINN ALL WEATHER WINDSHIELD KLENE (FLUID),1,1,,updated,,,kelvinn-all-weather-windshield-klene-fluid
+car,21,KELVINN,Non Aerosol,KELVINN DRY WASH,1,1,,updated,,,kelvinn-dry-wash
+car,22,KELVINN,Non Aerosol,KELVINN GLASS CLEANER,2,2,,updated,,,kelvinn-glass-cleaner
 car,23,KELVINN,Non Aerosol,KELVINN GLASS KLENE FOAM+,1,1,,skipped,representative_picture,,
-car,24,KELVINN,Non Aerosol,KELVINN POWER DEGREASER,1,1,,imported,,,kelvinn-power-degreaser
-car,25,KELVINN,Non Aerosol,KELVINN POWER DEGREASER-(BOTTLE),1,1,,imported,,,kelvinn-power-degreaser-bottle
-car,26,KELVINN,Non Aerosol,KELVINN SUPER KLENE SHAMPOO,4,4,,imported,,,kelvinn-super-klene-shampoo
+car,24,KELVINN,Non Aerosol,KELVINN POWER DEGREASER,1,1,,updated,,,kelvinn-power-degreaser
+car,25,KELVINN,Non Aerosol,KELVINN POWER DEGREASER-(BOTTLE),1,1,,updated,,,kelvinn-power-degreaser-bottle
+car,26,KELVINN,Non Aerosol,KELVINN SUPER KLENE SHAMPOO,4,4,,updated,,,kelvinn-super-klene-shampoo
 car,27,KELVINN,Non Aerosol,KELVINN UPHOLSTERY CLEANER (CONCENTRATE),2,2,,skipped,representative_picture,,
-car,28,KELVINN,Non Aerosol,KELVINN WINDSHIELD KLENE (FLUID),1,1,,imported,,,kelvinn-windshield-klene-fluid
+car,28,KELVINN,Non Aerosol,KELVINN WINDSHIELD KLENE (FLUID),1,1,,updated,,,kelvinn-windshield-klene-fluid
 car,29,KELVINN,Non Aerosol,KELVINN-HICLEAN ACTIVE AUTO SHAMPOO,2,2,,skipped,representative_picture,,
 car,30,KELVINN,Non Aerosol,KELVINN DETAILING CLOTH PRO YELLOW-GREY 600 GSM,1,1,,skipped,representative_picture,,
 car,31,KELVINN,Non Aerosol,KELVINN MICROFIBRE CLOTH (PACK OF 3),1,1,,skipped,representative_picture,,
-car,32,KELVINN,Non Aerosol,KELVINN WIPEZ BLU MICROFIBER CLOTH,1,1,,imported,,,kelvinn-wipez-blu-microfiber-cloth
-car,33,CERAFENCE,Others,CERAFENCE C9 CERAMIC COATING,1,1,,imported,,,cerafence-c9-ceramic-coating
+car,32,KELVINN,Non Aerosol,KELVINN WIPEZ BLU MICROFIBER CLOTH,1,1,,updated,,,kelvinn-wipez-blu-microfiber-cloth
+car,33,CERAFENCE,Others,CERAFENCE C9 CERAMIC COATING,1,1,,updated,,,cerafence-c9-ceramic-coating
 car,34,ELVI,Others,ELVI 9H CERAMIC COATING,1,1,,skipped,representative_picture,,
 car,35,KELVINN,Non Aerosol,KELVINN ANTIRUST UNDERBODY COATING,1,1,,skipped,representative_picture,,
 car,36,KELVINN,Others,KELVINN GRAPHENE ULTRACOAT G10,1,1,,skipped,representative_picture,,
 car,37,KELVINN,Non Aerosol,KELVINN BATTERY TERMINAL GREASE,1,1,,skipped,representative_picture,,
-car,38,KELVINN,Non Aerosol,KELVINN STOP SQUEAL CALIPER GREASE,1,1,,imported,,,kelvinn-stop-squeal-caliper-grease
+car,38,KELVINN,Non Aerosol,KELVINN STOP SQUEAL CALIPER GREASE,1,1,,updated,,,kelvinn-stop-squeal-caliper-grease
 car,39,KELVINN,Paint It Spray,KELVINN PAINT IT SPRAY - AUTO GREEN (RAL-6024),1,1,,skipped,representative_picture,,
 car,40,KELVINN,Paint It Spray,KELVINN PAINT IT SPRAY - GLOSSY BLACK (RAL-9005),1,1,,skipped,representative_picture,,
 car,41,KELVINN,Paint It Spray,KELVINN PAINT IT SPRAY - GLOSSY SIGNAL WHITE (RAL-9003),1,1,,skipped,representative_picture,,
@@ -1197,14 +1197,14 @@ car,44,KELVINN,Paint It Spray,KELVINN PAINT IT SPRAY - JD YELLOW (RAL-1018),1,1,
 car,45,KELVINN,Paint It Spray,KELVINN PAINT IT SPRAY - MATT BLACK (RAL-9011),1,1,,skipped,representative_picture,,
 car,46,KELVINN,Paint It Spray,KELVINN PAINT IT SPRAY - MMT WHITE (RAL-9012),1,1,,skipped,representative_picture,,
 car,47,KELVINN,Paint It Spray,KELVINN PAINT IT SPRAY - SIGNAL RED (RAL-3001),1,1,,skipped,representative_picture,,
-car,48,KELVINN,Non Aerosol,KELVINN A1 DRESSER (UNIVERSAL POLISH),4,4,,imported,,,kelvinn-a1-dresser-universal-polish
-car,49,KELVINN,Non Aerosol,KELVINN A2 DRESSER (VINYL & LEATHER POLISH),3,3,,imported,,,kelvinn-a2-dresser-vinyl-leather-polish
-car,50,KELVINN,Non Aerosol,KELVINN CARNAUBA WAX,2,2,,imported,,,kelvinn-carnauba-wax
+car,48,KELVINN,Non Aerosol,KELVINN A1 DRESSER (UNIVERSAL POLISH),4,4,,updated,,,kelvinn-a1-dresser-universal-polish
+car,49,KELVINN,Non Aerosol,KELVINN A2 DRESSER (VINYL & LEATHER POLISH),3,3,,updated,,,kelvinn-a2-dresser-vinyl-leather-polish
+car,50,KELVINN,Non Aerosol,KELVINN CARNAUBA WAX,2,2,,updated,,,kelvinn-carnauba-wax
 car,51,KELVINN,Non Aerosol,KELVINN DEEP SHINE,1,1,,skipped,representative_picture,,
-car,52,KELVINN,Non Aerosol,KELVINN HEADLIGHT RESTORER,1,1,,imported,,,kelvinn-headlight-restorer
-car,53,KELVINN,Non Aerosol,KELVINN LIQUID CARNAUBA WAX,1,1,,imported,,,kelvinn-liquid-carnauba-wax
-car,54,KELVINN,Non Aerosol,KELVINN SHINE ALL XTRA - SPONGE POLISH,1,1,,imported,,,kelvinn-shine-all-xtra-sponge-polish
-car,55,KELVINN,Non Aerosol,KELVINN SUPER GLOSS BIKE SHINE,1,1,,imported,,,kelvinn-super-gloss-bike-shine
+car,52,KELVINN,Non Aerosol,KELVINN HEADLIGHT RESTORER,1,1,,updated,,,kelvinn-headlight-restorer
+car,53,KELVINN,Non Aerosol,KELVINN LIQUID CARNAUBA WAX,1,1,,updated,,,kelvinn-liquid-carnauba-wax
+car,54,KELVINN,Non Aerosol,KELVINN SHINE ALL XTRA - SPONGE POLISH,1,1,,updated,,,kelvinn-shine-all-xtra-sponge-polish
+car,55,KELVINN,Non Aerosol,KELVINN SUPER GLOSS BIKE SHINE,1,1,,updated,,,kelvinn-super-gloss-bike-shine
 car,56,KELVINN,Non Aerosol,KELVINN TRIMCOAT XT,1,1,,skipped,representative_picture,,
 car,57,KELVINN,Non Aerosol,KELVINN VINYL & LEATHER DEEP POLISH,1,1,,skipped,representative_picture,,
 car,58,KELVINN,Non Aerosol,KELVINN-ALL IN ONE POLISH,2,2,,skipped,representative_picture,,
