@@ -3,7 +3,7 @@
  * listens on PORT and shuts down gracefully on SIGTERM (Cloud Run gives 10 s).
  */
 import { serve } from '@hono/node-server';
-import { createDb } from '@mechdost/db';
+import { createDb, keepPoolWarm } from '@mechdost/db';
 import { loadKeyring, type Keyring } from '@mechdost/db/crypto';
 import { createApp } from './app';
 import { createAnthropicProvider } from './assistant/provider';
@@ -34,6 +34,8 @@ try {
 const sentry = await startSentry(config.sentry, 'api');
 
 const { db, sql } = createDb(config.databaseUrl, { max: config.databasePoolMax, transactionPooler: true });
+// Open connections at boot and keep two warm: the first request after a pause no longer pays a TLS + SCRAM handshake.
+const stopWarm = keepPoolWarm(() => sql`select 1`, { connections: Math.min(2, config.databasePoolMax) });
 const rateLimiter = config.upstash ? new UpstashRateLimiter(config.upstash) : new MemoryRateLimiter();
 if (!config.upstash) log('warn', 'rate_limit_memory', { note: 'in-memory limiter — development only' });
 
@@ -103,6 +105,7 @@ function shutdown(signal: string) {
   if (stopping) return;
   stopping = true;
   log('info', 'shutdown', { signal });
+  stopWarm();
   server.close(() => {
     void Promise.all([sql.end({ timeout: 5 }), sentry.flush()]).finally(() => process.exit(0));
   });

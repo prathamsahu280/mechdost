@@ -162,3 +162,56 @@ the filter sheet).
   179.0 to 170.4, `/workshops` to 171.4, `/cart` 180.7 to 172.2 (13), compare 160.1, `/hi` 164.9. Every page that
   formats messages in the browser has 8 KB or more of room.
 - Guard: `apps/web/test/budget-2026-11-22.test.ts`. Not run here: the Playwright suites (e2e, hindi-coverage).
+
+## Budget incident 2026-11-22: cold renders (6 to 11.5 s, 36 s under a 6-way crawl)
+
+Reported on the live site (real API mode): warm pages 0.3 to 1.2 s, but the first uncached render of `/hi/shop` took
+10 to 11.5 s, a Castrol product page 10 s, `/hi/business/garages` about 6 s, and single product pages up to 36 s under
+a 6-way parallel crawl.
+
+**Measured (read-only, GET only, at most 2 in parallel, from outside the server; compressed like a browser):**
+
+| Layer                                                 | Result                                                                                                              |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| API list / product / categories / suggest / recommend | 0.11 to 0.24 s warm, first calls 0.24 to 0.37 s (includes TLS); `Cache-Control: public, max-age=30`                 |
+| Database, 242 live products                           | `EXPLAIN (ANALYZE, BUFFERS)` of the list query: execution 4.4 ms, planning 3.3 ms, all buffers hit, no big seq scan |
+| `listCatalogue` / `getCatalogueProduct` wall time     | 114 to 366 ms from a PC (about 28 ms per round trip); the time is round trips, not plans                            |
+| New database connection (TLS + SCRAM)                 | 450 to 510 ms from a PC; the pool drops connections after 20 idle seconds                                           |
+| Web, never-rendered route (`X-Nextjs-Cache: MISS`)    | 0.24 to 0.27 s total; `/hi/shop` with unseen filters 0.25 to 0.55 s; product pages `STALE` served in 0.2 to 0.3 s   |
+| Web, uncompressed download of the 760 KB shop HTML    | 0.9 to 5.6 s on the same page (transfer variance, not the server); compressed it is 87 KB and 0.3 s                 |
+
+So at idle nothing is slow: the 6 to 36 s are not a slow query, a missing index or a slow API. **No migration 0081 was
+needed or written** (nothing to index: 242 products, execution 4 ms). The slow renders happen on a **cold or loaded
+web container** (512 MB, shared host: `docker stats` / instance type are queued as Q214) and have these code-level
+contributors, all of which are cheap to remove:
+
+1. **Every deploy empties the page cache.** ISR output lives in the web container's file system, so after each deploy
+   the first visit to every shop and product page is a full render (API calls plus React render of up to 700 KB of
+   HTML and flight data) and a crawler meets all of them at once. Fix: `apps/web/scripts/warm-cache.mjs` runs as the
+   last deploy step, reads `sitemap.xml` and visits each page once, GET only, one page a second (about 180 API calls a
+   minute, under the 240/min per-address limit), at most 8 minutes, never fails the deploy. Pages are served
+   stale-while-revalidate afterwards, so warmed pages stay fast.
+2. **Cold database connections.** `idle_timeout` is 20 s, so after any quiet period the next request paid a new TLS +
+   SCRAM handshake (about 0.5 s from outside, less in the region). Fix: `keepPoolWarm` (packages/db) opens two
+   connections at boot and pings them every 15 s from the API; four tiny queries a minute.
+3. **Sequential database round trips on the product page.** `getCatalogueProduct` ran place, product, variants,
+   photos and part numbers one after the other (5 round trips). Now the place lookup runs with the product query, and
+   variants, photos and part numbers run together (3 round trips). Same SQL, same results (catalogue tests green).
+4. **One rate-limit bucket for all server-side renders** (a risk, not yet proven in the logs): the website server calls
+   the API by its public address, so every render shares one 240/min bucket; a cold crawl can get 429s that surface
+   as error pages. Queued as Q215; the warm-up is paced to stay inside it.
+
+Known and left alone (no measured cost at idle): the product page fetches the product, then the related list (one
+cached call; a waterfall of one); `ranked` computes each product's offer before the page is cut (4.4 ms at 242 products,
+revisit past about 5,000 products: cut the page first for `newest`); the shop HTML carries each card twice (HTML plus
+flight data, 87 KB compressed); page and fetch revalidate stay at 30 to 60 s because there is no tag refresh on
+price, stock or shop-status changes yet (a longer window needs that wiring and a decision first).
+
+**Diagnostic kept:** `packages/db/scripts/explain-catalogue.ts` (`pnpm --filter @mechdost/db exec tsx
+scripts/explain-catalogue.ts [--plans]`, `ENV_FILE=…` for another `.env`) times the storefront queries and prints
+their plans; SELECT only, never prints the database URL.
+
+Tests: `packages/db/test/keep-pool-warm.test.ts`, `apps/web/test/warm-cache.test.ts`, the existing
+`packages/db/test/catalogue*.test.ts` (78) for the query change, `apps/web/test/catalogue-api-source.test.ts` (cache
+revalidate and tags). Not measured here: a production "after" (nothing was deployed); after the next deploy, repeat
+`curl -w` on `/hi/shop`, a product page and `/hi/business/garages` right after the warm-up step finishes.

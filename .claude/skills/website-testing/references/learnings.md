@@ -229,3 +229,5 @@ L2 · 2026-11-22 · budget · a lazy feature needs a source-level guard: no stat
 - 2026-11-22 (catalogue v2): importers need an idempotency test (second run = zero changes), a "never overwrite admin work" test, and a guard test that greps repositories for the visibility rule. A dry run on the real DB before the migration is applied must degrade (report `migrationApplied: false`), not crash.
 
 - 2026-11-22 (shop Load more): an append-in-place list must not also trigger a router navigation to update the URL (RSC re-render of every page, payload grows linearly); use `history.replaceState`. Guard: no `router.replace` in shop-browser (`apps/web/test/load-more.test.ts`).
+
+- 2026-11-22 (cold renders): a slow-render report needs measurement at four layers before any fix (API `curl -w`, `EXPLAIN (ANALYZE, BUFFERS)`, page `X-Nextjs-Cache` MISS/STALE, compressed vs uncompressed download); an uncompressed 760 KB download looked like a 5 s server stall and was only transfer variance. Guards: `apps/web/test/warm-cache.test.ts`, `packages/db/test/keep-pool-warm.test.ts`.

@@ -189,6 +189,13 @@ jobs:
         continue-on-error: true
         run: |
           curl -fsS -o /dev/null -w 'https://mechdost.com %{http_code}\n' --max-time 20 https://mechdost.com/
+      # A new web container starts with an empty page cache, so the first visit to each shop and product page is a
+      # full render (spec 16, budget incident 2026-11-22). Visit them once, slowly (GET only, one page a second,
+      # inside the API's rate limit, 8 minutes at most) so customers and crawlers meet warm pages.
+      - name: Warm the page cache (never fails the deploy)
+        continue-on-error: true
+        timeout-minutes: 10
+        run: node apps/web/scripts/warm-cache.mjs https://mechdost.com --max-seconds 480
       - name: Remove the key
         if: always()
         run: rm -f ~/.ssh/deploy_key
