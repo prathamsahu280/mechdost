@@ -11,8 +11,9 @@ const CARDS = [
 
 /**
  * "Who are you shopping for?" (design 2026-11-22): three entry paths right after the hero. Server component, no
- * client code (home JS budget). Each card is ONE link, the whole card clickable through a stretched pseudo-element
- * on the title link, so there are no nested interactive elements; the description is plain text inside the card.
+ * client code (home JS budget). Each card IS one link, named by all its visible text (WCAG 2.5.3 label in name), focus
+ * ring on the link itself; a stretched ::after overlay painted over the title and hid the ring from the focused element (state
+ * audit 2026-11-22). No nested interactive elements.
  */
 export function AudienceBand() {
   const t = useTranslations('home.audiences');
@@ -28,25 +29,27 @@ export function AudienceBand() {
         </h2>
         <ul className="mt-5 grid gap-4 tab:grid-cols-3">
           {CARDS.map(({ key, href, track, Icon }) => (
-            <li
-              key={key}
-              className="relative flex gap-4 rounded-card border border-line-card bg-surface p-5 shadow-card transition-colors duration-200 has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus hover:border-accent"
-            >
-              <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-accent-soft text-accent-soft-text">
-                <Icon aria-hidden="true" className="size-6" />
-              </span>
-              <div className="min-w-0">
-                <h3 className="font-heading text-lg font-extrabold text-ink">
-                  <LocalLink
-                    href={href}
-                    data-track={track}
-                    className="underline-offset-4 focus-visible:outline-none after:absolute after:inset-0 after:content-[''] hover:underline"
+            <li key={key}>
+              <LocalLink
+                href={href}
+                data-track={track}
+                className="group flex h-full min-h-11 gap-4 rounded-card border border-line-card bg-surface p-5 shadow-card transition-colors duration-200 hover:border-accent focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
+              >
+                <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-accent-soft text-accent-soft-text">
+                  <Icon aria-hidden="true" className="size-6" />
+                </span>
+                <span className="min-w-0">
+                  <span
+                    id={`audience-${key}-title`}
+                    className="block font-heading text-lg font-extrabold text-ink underline-offset-4 group-hover:underline"
                   >
                     {t(`${key}Title`)}
-                  </LocalLink>
-                </h3>
-                <p className="mt-1 text-sm text-muted">{t(`${key}Body`)}</p>
-              </div>
+                  </span>
+                  <span id={`audience-${key}-body`} className="mt-1 block text-sm text-muted">
+                    {t(`${key}Body`)}
+                  </span>
+                </span>
+              </LocalLink>
             </li>
           ))}
         </ul>

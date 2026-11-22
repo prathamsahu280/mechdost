@@ -26,7 +26,7 @@ describe('signed-in header fits at every width', () => {
 
   it('the logo is narrower until 460 px and the tagline waits for the tablet width', () => {
     expect(header).toContain('w-[132px] max-w-full min-[460px]:w-[152px] tab:w-[176px]');
-    expect(header).toMatch(/tab:block nav:hidden xl:block/);
+    expect(header).toMatch(/tab:block nav:hidden min-\[1440px\]:block/);
   });
 
   it('the signed-in name shows as text only from xl and keeps a title and an accessible name', () => {

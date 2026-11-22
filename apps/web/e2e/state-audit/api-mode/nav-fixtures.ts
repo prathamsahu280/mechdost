@@ -6,6 +6,7 @@
 import { NotificationTemplateList, WhatsAppUsage } from '@mechdost/shared/admin-config-api';
 import { CoinLedgerDto, MyCoinsDto } from '@mechdost/shared/coins-api';
 import { NoticePreferencesViewDto } from '@mechdost/shared/notice-api';
+import { BusinessApplicationPage, TradeProfile } from '@mechdost/shared/business-api';
 import { ApplicationPage } from '@mechdost/shared/partner-api';
 import { MyShopInvites } from '@mechdost/shared/shop-team';
 import type { Mock, Reply } from './mock-api.ts';
@@ -19,6 +20,23 @@ export function navQuietMocks(): Mock[] {
       path: /^\/admin\/partner-applications$/,
       schema: ApplicationPage,
       reply: (): Reply => ({ body: { items: [], nextCursor: null } satisfies Dto<typeof ApplicationPage> }),
+    },
+    // Audience entry (2026-11-22): the admin's trade/fleet queue and the customer's trade status (account overview).
+    {
+      method: 'GET',
+      path: /^\/admin\/business-applications$/,
+      schema: BusinessApplicationPage,
+      reply: (): Reply => ({
+        body: { items: [], nextCursor: null } satisfies Dto<typeof BusinessApplicationPage>,
+      }),
+    },
+    {
+      method: 'GET',
+      path: /^\/me\/trade$/,
+      schema: TradeProfile,
+      reply: (): Reply => ({
+        body: { status: 'none', businessName: null, gstin: null } satisfies Dto<typeof TradeProfile>,
+      }),
     },
     {
       method: 'GET',

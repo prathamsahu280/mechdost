@@ -53,7 +53,7 @@ export function BrandMark() {
         loading="lazy"
         className={`brand-logo-dark ${size}`}
       />
-      <span className="eyebrow mt-1.5 hidden text-[7px] whitespace-nowrap text-ink tab:block nav:hidden xl:block tab:text-[8px]">
+      <span className="eyebrow mt-1.5 hidden text-[7px] whitespace-nowrap text-ink tab:block nav:hidden min-[1440px]:block tab:text-[8px]">
         {t('tagline')}
       </span>
     </LocalLink>

@@ -24,7 +24,7 @@ describe('header at 1024-1279 px', () => {
   });
 
   it('shows the brand tagline from the tablet width, not at 1024-1279 px', () => {
-    expect(src('components/site/header.tsx')).toMatch(/tab:block nav:hidden xl:block/);
+    expect(src('components/site/header.tsx')).toMatch(/tab:block nav:hidden min-\[1440px\]:block/);
   });
 });
 

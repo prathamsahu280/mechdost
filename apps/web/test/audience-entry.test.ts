@@ -23,7 +23,14 @@ describe('home audience band', () => {
     expect(band).toMatch(/<section[^>]*aria-labelledby="audiences-title"/);
     expect(band).toMatch(/<h2[^>]*id="audiences-title"/);
     expect(band).toContain('<ul');
-    expect(band).toContain('after:absolute after:inset-0');
+    // The card IS the link (state audit 2026-11-22: a stretched ::after overlay painted over the title and hid the
+    // focus ring from the focused element): named by its title, described by its text, ring on the link itself.
+    expect(band).not.toContain('after:absolute after:inset-0');
+    // Named by its whole visible text (axe label-content-name-mismatch, WCAG 2.5.3): no aria-label/labelledby override.
+    const card = band.slice(band.indexOf('<LocalLink'), band.indexOf('>', band.indexOf('<LocalLink')));
+    expect(card).not.toMatch(/aria-label(ledby)?=/);
+    expect(band).toMatch(/focus-visible:outline-3/);
+    expect(band).not.toMatch(/(^|\s)outline-none|focus-visible:outline-none/);
     expect(band).toContain('aria-hidden="true"');
   });
   it('carries the analytics ids and links', () => {
