@@ -37,6 +37,7 @@ const OWN = [
 const PARTNER = ['shops', 'shop_users', 'shop_inventory', 'order_assignments', 'workshops'];
 const NONE = [
   'product_ranges',
+  'search_synonyms',
   'admin_prices',
   'agreement_versions',
   'audit_log',

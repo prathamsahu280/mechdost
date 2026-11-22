@@ -23,6 +23,7 @@ CREATE UNIQUE INDEX "search_synonyms_kind_term_idx" ON "search_synonyms" USING b
 -- name spaced them; the trigram index makes the LIKE '%...%' on it an index scan (every query indexed, rule 14).
 CREATE INDEX "products_search_compact_trgm_idx" ON "products" USING gin ("search_compact" gin_trgm_ops);--> statement-breakpoint
 ALTER TABLE public.search_synonyms ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+REVOKE ALL ON public.search_synonyms FROM anon, authenticated;--> statement-breakpoint
 CREATE TRIGGER search_synonyms_bump_version BEFORE UPDATE ON public.search_synonyms
   FOR EACH ROW EXECUTE FUNCTION public.bump_version();--> statement-breakpoint
 CREATE TRIGGER search_synonyms_touch_updated_at BEFORE UPDATE ON public.search_synonyms
