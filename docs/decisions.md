@@ -1607,3 +1607,16 @@ Trade and fleet applications get `business_applications` (+ events) and `trade_a
 ### 2026-11-22 - Catalogue groups, optional MRP, import scope (Builder A)
 
 Brand and range switches never change product status (lossless); one SQL rule `productVisible` for every storefront read. MRP may be NULL = not sellable ("price on request"); an MRP is never lowered below a stored price. catalogue-v2 import: price-list brands only, own picture with decodable bytes, idempotent by SKU, admin edits (`hindi_machine` false) and MRPs are never overwritten, Hindi from a glossary plus an optional translations file (no word-by-word description translation). Tyres HSN 4011 at 18 % (GST 2.0), batteries 8507 18 %; fallbacks (coolants 3820, brake fluid 3819, UPS/chargers 8504, auto care by keyword) are listed in the dry-run report for review. CLI lives in apps/api (needs sharp/Storage).
+
+## 2026-11-22 — Real mode switched on (launch switch, step 1)
+
+- **User:** "turn on real mode now"; asked how, chose **"Flip as is"** (not "hide test data first", not "wait for
+  Razorpay live keys").
+- **Done:** GitHub variables `NEXT_PUBLIC_DATA_MODE=api` and `NEXT_PUBLIC_AUTH_MODE=firebase`, deploy dispatched
+  (run 45039072205 at cd22ed3). mechdost.com now serves the real database: the imported catalogue (219 products, MRP
+  shown, price on request until a shop stocks them, Q208), real sign-in (Firebase phone + password), real orders.
+- **Known and accepted at the switch:** the 23 seed demo products with offers from the 4 seed shops stay orderable;
+  the test workshop stays published; 15 QA orders stay (visible only to the test accounts); online payment uses
+  **Razorpay TEST keys** (no money taken; COD works) until live keys + webhook secret (Q75) are added; the shared
+  dev/prod Supabase stays (separate prod project and the launch data reset are still open).
+- **Undo:** set both variables back to `demo` and dispatch the deploy workflow.
