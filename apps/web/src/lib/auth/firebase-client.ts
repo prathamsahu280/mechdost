@@ -5,6 +5,7 @@ import {
   getAuth,
   linkWithCredential,
   onAuthStateChanged,
+  reauthenticateWithCredential,
   RecaptchaVerifier,
   sendEmailVerification,
   sendPasswordResetEmail,
@@ -24,6 +25,7 @@ import {
   type CodeFail,
   type PhoneFail,
 } from './auth-errors';
+import { changeFailFor, type ChangeFail } from './password-change';
 import type { RealMe } from './real-account';
 
 /**
@@ -324,6 +326,30 @@ export async function setNewPassword(password: string): Promise<boolean> {
     () => true,
     () => false,
   );
+}
+
+/**
+ * Change password (Account → Profile → Security): prove the current one again (the email + password credential the
+ * account was linked with at sign-up), then set the new one. Firebase ends the account's other sessions when the
+ * password changes (their refresh tokens stop working); this browser gets fresh tokens.
+ */
+export async function changePassword(
+  locale: string,
+  current: string,
+  next: string,
+): Promise<{ ok: true } | { ok: false; reason: ChangeFail; code: string }> {
+  const a = firebaseAuth(locale);
+  await a.authStateReady();
+  const user = a.currentUser;
+  if (!user?.email) return { ok: false, reason: 'unavailable', code: 'unknown' };
+  try {
+    await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, current));
+    await updatePassword(user, next);
+    return { ok: true };
+  } catch (err) {
+    const code = codeOf(err);
+    return { ok: false, reason: changeFailFor(code), code: analyticsAuthCode(code) };
+  }
 }
 
 /** Forgot password by email: always looks the same to the person asking (no account enumeration). */

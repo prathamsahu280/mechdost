@@ -4,6 +4,7 @@ import { Minus, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { CATEGORY_KEYS, CATEGORY_SLUGS } from '@/demo/catalogue';
+import { useIsSeller } from '@/demo/session-state';
 import { useCategoryEmoji } from '@/demo/site-config';
 import { removeFromCart, setQuantity, useCart, MAX_QTY } from '@/demo/store';
 import { DATA_MODE, QUOTES_AVAILABLE } from '@/lib/data-mode';
@@ -30,6 +31,7 @@ export function CartView() {
   const pricing = useCartPricing(lines, DEFAULT_PIN, locale);
   const { priced, subtotalPaise, deliveryPaise, totalPaise } = pricing;
   const checkoutT = useTranslations('checkout');
+  const seller = useIsSeller();
   const base = prefix(locale);
 
   if (DATA_MODE === 'api' && priced.length === 0 && lines.length > 0 && pricing.status !== 'ready')
@@ -177,22 +179,32 @@ export function CartView() {
           </div>
         </dl>
         {deliveryPaise > 0 ? <p className="mt-3 text-xs text-muted">{t('freeDeliveryHint')}</p> : null}
-        <Link
-          href={`${base}/checkout`}
-          onClick={() => {
-            track('begin_checkout', { items: priced.length, valuePaise: totalPaise });
-          }}
-          className="press mt-5 inline-flex min-h-12 w-full items-center justify-center rounded-button bg-accent-button px-5 text-sm font-bold text-white hover:bg-accent-button-hover"
-        >
-          {t('checkout')}
-        </Link>
+        {seller ? (
+          // Shop accounts never buy (user 2026-11-22): the note instead of checkout; "Continue shopping" stays below.
+          <p
+            role="note"
+            className="mt-5 rounded-card border border-warning-line bg-warning-bg p-4 text-sm font-bold text-warning"
+          >
+            {t('sellerCannotOrder')}
+          </p>
+        ) : (
+          <Link
+            href={`${base}/checkout`}
+            onClick={() => {
+              track('begin_checkout', { items: priced.length, valuePaise: totalPaise });
+            }}
+            className="press mt-5 inline-flex min-h-12 w-full items-center justify-center rounded-button bg-accent-button px-5 text-sm font-bold text-white hover:bg-accent-button-hover"
+          >
+            {t('checkout')}
+          </Link>
+        )}
         <Link
           href={`${base}/shop`}
           className="mt-3 inline-flex min-h-11 w-full items-center justify-center text-sm font-bold text-ink underline-offset-4 hover:underline"
         >
           {t('continue')}
         </Link>
-        {QUOTES_AVAILABLE ? (
+        {QUOTES_AVAILABLE && !seller ? (
           <Link
             href={`${base}/quotes/new?from=cart`}
             data-track="cart_bulk_quote"

@@ -190,6 +190,21 @@ export function CheckoutForm() {
   const otherState =
     gstinState && gstinState !== DEMO_CITY.gstStateCode && isStateKey(gstinState) ? gstinState : null;
 
+  // Shop accounts never buy (user 2026-11-22): the note and the way back, no form.
+  if (session?.role === 'shop')
+    return (
+      <section className="rounded-card border border-line-card bg-surface p-7 shadow-card">
+        <p role="note" className="text-sm font-bold text-ink">
+          {cartT('sellerCannotOrder')}
+        </p>
+        <Link
+          href={`${locale === 'hi' ? '/hi' : ''}/shop`}
+          className="press mt-4 inline-flex min-h-11 items-center justify-center rounded-button bg-accent-button px-5 text-sm font-bold text-white hover:bg-accent-button-hover"
+        >
+          {cartT('continue')}
+        </Link>
+      </section>
+    );
   if (paid)
     return (
       <section className="rounded-card border border-line-card bg-surface p-7 shadow-card">

@@ -32,6 +32,7 @@ import type { SessionCache } from '../auth/session-cache';
 import { Forbidden } from '../errors';
 import {
   authenticate,
+  forbidSellers,
   requireCustomerVerified,
   requirePermission,
   requireVerified,
@@ -232,6 +233,7 @@ export function couponRoutes(deps: AppDeps, cache: SessionCache) {
     '/checkout/coupon',
     rateLimit(deps.rateLimiter, COUPON_CHECK_USER_RATE, (c) => c.get('auth').user.id),
   );
+  app.use('/checkout/coupon', forbidSellers);
   app.use('/checkout/coupon', requireCustomerVerified(deps));
   app.use('/checkout/coupon', requirePermission('orders:place'));
 

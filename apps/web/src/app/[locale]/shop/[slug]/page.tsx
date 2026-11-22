@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { cache, Suspense } from 'react';
 import { getTranslations } from 'next-intl/server';
 import { AddToCartButton } from '@/components/catalogue/add-to-cart-button';
+import { SellerNote } from '@/components/commerce/seller-note';
 import { CompareToggle } from '@/components/catalogue/compare-toggle';
 import { UnitPrice } from '@/components/catalogue/unit-price';
 import { availabilityLabel, ProductCard } from '@/components/catalogue/product-card';
@@ -126,7 +127,7 @@ export default async function ProductPage({ params }: Props) {
   if (!data) notFound();
   const { product, related, reviews } = data;
 
-  const [t, c, r, footer, cmp, w, nav] = await Promise.all([
+  const [t, c, r, footer, cmp, w, nav, cartNs] = await Promise.all([
     getTranslations('catalogue'),
     getTranslations('categories'),
     getTranslations('reviews'),
@@ -134,6 +135,7 @@ export default async function ProductPage({ params }: Props) {
     getTranslations('compare'),
     getTranslations('storefront'),
     getTranslations('nav'),
+    getTranslations('cart'),
   ]);
   const categoryName = product.category.name ?? (product.category.key ? c(product.category.key) : null);
   // The star row links to the reviews section, so it shows only when that section does (approved reviews only:
@@ -380,6 +382,8 @@ export default async function ProductPage({ params }: Props) {
                   <span className="sr-only"> ({footer('whatsappNote')})</span>
                 </a>
               )}
+              {/* Only a signed-in shop account sees it (they browse, they do not buy; user 2026-11-22). */}
+              {price ? <SellerNote text={cartNs('sellerCannotOrder')} className="mt-3" /> : null}
             </div>
           </div>
           <div className="max-w-md">

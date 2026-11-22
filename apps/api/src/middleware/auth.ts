@@ -10,7 +10,7 @@ import {
 } from '@mechdost/db/repo';
 import { isStaffGrant, STAFF_SESSION_MAX_AGE_SECONDS } from '@mechdost/shared/auth';
 import { blockEffects } from '@mechdost/shared/customers';
-import { can, type Permission, type Target } from '@mechdost/shared/rbac';
+import { can, isSellerAccount, type Permission, type Target } from '@mechdost/shared/rbac';
 import type { SessionCache } from '../auth/session-cache';
 import { TokenError } from '../auth/token-verifier';
 import { ApiError, Forbidden, Unauthorized } from '../errors';
@@ -94,6 +94,45 @@ export function authenticate(
       authTime: identity.authTime,
       staffWithheld,
     });
+    await next();
+  });
+}
+
+/**
+ * Shop accounts cannot buy (user 2026-11-22): runs after `authenticate` on every customer buying route (cart writes,
+ * checkout, coupon check, bulk quotes). Any shop role refuses, even when the person also holds a MechDost staff role.
+ */
+export const forbidSellers = createMiddleware<AppEnv>(async (c, next) => {
+  if (isSellerAccount(c.get('auth').grants))
+    throw Forbidden(
+      'SELLER_CANNOT_ORDER',
+      'Shop accounts cannot place orders. Sign in with a customer account.',
+    );
+  await next();
+});
+
+/**
+ * The same refusal for a route that is public for guests (the checkout quote): when the request carries a sign-in
+ * that is valid, a shop account is refused; a missing or invalid token is a guest, as before.
+ */
+export function forbidSignedInSellers(deps: Pick<AppDeps, 'db' | 'verifier'>, cache: SessionCache) {
+  const auth = authenticate(deps, cache);
+  return createMiddleware<AppEnv>(async (c, next) => {
+    if (!c.req.header('authorization')) return next();
+    const found = { seller: false };
+    try {
+      await auth(c, () => {
+        found.seller = isSellerAccount(c.get('auth').grants);
+        return Promise.resolve();
+      });
+    } catch (err) {
+      if (!(err instanceof ApiError) || err.status !== 401) throw err;
+    }
+    if (found.seller)
+      throw Forbidden(
+        'SELLER_CANNOT_ORDER',
+        'Shop accounts cannot place orders. Sign in with a customer account.',
+      );
     await next();
   });
 }

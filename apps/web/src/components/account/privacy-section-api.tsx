@@ -2,12 +2,9 @@
 
 import type { ConsentView, ExportStatus, PrivacyPurpose, PrivacyView } from '@mechdost/shared/privacy-api';
 import { useLocale, useTranslations } from 'next-intl';
-import Link from 'next/link';
 import { useCallback, useEffect, useId, useState } from 'react';
 import { saveConsent as saveDeviceConsent } from '@/lib/consent';
 import { formatDate } from '@/lib/format';
-import { localePath } from '@/lib/locale-path';
-import { ACCOUNT_DELETION_HOOK } from '@/lib/privacy-hooks';
 import { downloadExport, fetchPrivacy, requestExport, saveConsent } from '@/lib/privacy-api';
 
 const card = 'rounded-card border border-line-card bg-surface p-5 shadow-card tab:p-6';
@@ -23,8 +20,8 @@ type Notice = { tone: 'ok' | 'error'; text: string } | null;
  * Account -> Privacy (DPDP; design 2026-11-15 item 6; real sign-in builds). Three plain cards, one action each:
  * consents per purpose (the date of the last answer, one button to allow or withdraw; a withdrawal is effective at
  * once: promotions stop, and this browser stops sending analytics events), "Download my data" (the worker builds the
- * file, the download works for 24 hours, only here, only signed in) and "Delete my account" (a support request; staff
- * confirm, nothing is deleted from this page).
+ * file, the download works for 24 hours, only here, only signed in). "Delete my account" moved to Profile → Security
+ * (user 2026-11-22; `security-card.tsx`).
  */
 export function PrivacySectionApi() {
   const t = useTranslations('privacy');
@@ -134,20 +131,6 @@ export function PrivacySectionApi() {
         onDownload={(id) => void download(id)}
         onRefresh={() => void reload()}
       />
-
-      <section aria-labelledby="privacy-delete" className={card}>
-        <h2 id="privacy-delete" className="font-heading text-base font-extrabold text-ink">
-          {t('deleteTitle')}
-        </h2>
-        <p className="mt-1 max-w-prose text-sm text-muted">{t('deleteHelp')}</p>
-        <Link
-          href={`${localePath(ACCOUNT_DELETION_HOOK.path, locale)}#${ACCOUNT_DELETION_HOOK.hash}`}
-          data-track="privacy_delete_request"
-          className={`${quiet} mt-4`}
-        >
-          {t('deleteButton')}
-        </Link>
-      </section>
 
       <p
         role="status"

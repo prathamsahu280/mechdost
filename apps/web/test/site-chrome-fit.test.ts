@@ -14,7 +14,8 @@ describe('header at 1024-1279 px', () => {
   it('shows the cart and account as icons only until xl', () => {
     expect(src('components/commerce/cart-pill.tsx')).toMatch(/nav:sr-only xl:not-sr-only/);
     const account = src('components/auth/account-link.tsx');
-    expect(account.match(/nav:sr-only xl:not-sr-only/g)?.length).toBe(1);
+    // Two: the account name and the Sign out label (user 2026-11-22).
+    expect(account.match(/nav:sr-only xl:not-sr-only/g)?.length).toBe(2);
     expect(account).toContain('truncate xl:not-sr-only');
   });
 

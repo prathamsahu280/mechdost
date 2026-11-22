@@ -146,7 +146,8 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | API-SVC-PHOTOS        | Service request (/service/{code}), real sign-in                  | Before and after strip: none (hidden) / 1 / 6 photos, the viewer closed or open                                                                                                                                                                                                 | pairwise | 24       | 0       |
 | API-ACC-SUPPORT       | Account → Support from an order link, real sign-in               | Talk to MechDost support: issue chips, message, photo picker, the one conversation with photos, the cash on delivery refund destination (none, saved, masked); none, open with photos, COD without destination, COD saved, resolved; the empty-message error                    | pairwise | 40       | 0       |
 | API-ADM-SUPPORT       | Admin → Support inbox with a thread, real sign-in                | Inbox conversation: issue badge, customer photos, the cash on delivery refund panel (no destination, masked destination); open with photos, COD without destination, COD saved, resolved                                                                                        | pairwise | 32       | 0       |
-| API-ACC-PRIVACY       | Account → Privacy, real sign-in                                  | Consents per purpose with dates and one allow / withdraw button each (never asked, allowed, withdrawn); data download card (none, preparing, ready, expired, failed); the delete-my-account request link; load error                                                            | pairwise | 43       | 0       |
+| API-ACC-PRIVACY       | Account → Privacy, real sign-in                                  | Consents per purpose with dates and one allow / withdraw button each (never asked, allowed, withdrawn); data download card (none, preparing, ready, expired, failed); load error (the delete-my-account link moved to Profile → Security, 2026-11-22)                           | pairwise | 43       | 0       |
+| API-ACC-SECURITY      | Account → Profile → Security, real sign-in (user 2026-11-22)     | Security card under the profile form: change password (current, new with hint, confirm, show/hide, field errors, general status) and the delete-my-account request link (danger outline); Sign out beside Save                                                                  | pairwise | 16       | 0       |
 | API-ACC-NOTIFYME      | Account → Addresses with an unserved PIN, real sign-in           | "Tell me when MechDost reaches this PIN code" under a saved address that is not served: not waiting, waiting with stop, five-PIN limit message, save error; long names                                                                                                          | pairwise | 32       | 0       |
 | API-ADM-RECO          | Admin → Catalogue, "goes well with" rules, real sign-in          | Rule list under the catalogue editor (none, a few, many, one switched off, load error), English and Hindi reasons, long text, the add-a-rule form                                                                                                                               | pairwise | 40       | 0       |
 | API-ADM-DEMAND        | Admin → Settings, PIN waiting list, real sign-in                 | Customers waiting per PIN (none, a few, many; a PIN with no city; a PIN served now), long area names, load error                                                                                                                                                                | pairwise | 32       | 0       |
@@ -189,7 +190,7 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | API-ADM-EXPORTS       | Admin → Exports, real sign-in                                    | CSV exports: the form (dataset, city, dates), customers with masked or open contacts, done, empty file, too many rows, expired link, range over 180 days, nothing allowed, load error                                                                                           | pairwise | 80       | 0       |
 | API-NAV-ADMIN         | Navigation, real sign-in                                         | Admin section bar with every real-mode section (Analytics, Refunds, Errors included): current item, scroll, walk                                                                                                                                                                | cross    | 176      | 0       |
 | API-NAV-ACCOUNT       | Navigation, real sign-in                                         | Account section bar in a real-sign-in build: current item, scroll, walk                                                                                                                                                                                                         | cross    | 96       | 0       |
-| **Total**             |                                                                  |                                                                                                                                                                                                                                                                                 |          | **4447** | **100** |
+| **Total**             |                                                                  |                                                                                                                                                                                                                                                                                 |          | **4463** | **100** |
 
 ## Chrome
 
@@ -3278,7 +3279,7 @@ Pairwise (all pairs of values); 32 states; scope `main`.
 
 ## Account → Privacy, real sign-in
 
-### API-ACC-PRIVACY — Consents per purpose with dates and one allow / withdraw button each (never asked, allowed, withdrawn); data download card (none, preparing, ready, expired, failed); the delete-my-account request link; load error
+### API-ACC-PRIVACY — Consents per purpose with dates and one allow / withdraw button each (never asked, allowed, withdrawn); data download card (none, preparing, ready, expired, failed); load error (the delete-my-account link moved to Profile → Security, 2026-11-22)
 
 Pairwise (all pairs of values); 43 states; scope `main`.
 
@@ -3325,6 +3326,29 @@ Pairwise (all pairs of values); 43 states; scope `main`.
 - [ ] API-ACC-PRIVACY-041 · 1280px · light · en · customer · world=empty · /account/privacy · consent=never · export=none · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
 - [ ] API-ACC-PRIVACY-042 · 1440px · dark · hi · customer · world=empty · /account/privacy · consent=allowed · export=failed · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
 - [ ] API-ACC-PRIVACY-043 · 1920px · light · en · customer · world=empty · /account/privacy · consent=withdrawn · export=expired · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+
+## Account → Profile → Security, real sign-in (user 2026-11-22)
+
+### API-ACC-SECURITY — Security card under the profile form: change password (current, new with hint, confirm, show/hide, field errors, general status) and the delete-my-account request link (danger outline); Sign out beside Save
+
+Pairwise (all pairs of values); 16 states; scope `main`.
+
+- [ ] API-ACC-SECURITY-001 · 320px · light · en · customer · world=empty · /account/profile · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ACC-SECURITY-002 · 320px · dark · hi · customer · world=empty · /account/profile · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ACC-SECURITY-003 · 390px · light · hi · customer · world=empty · /account/profile · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ACC-SECURITY-004 · 390px · dark · en · customer · world=empty · /account/profile · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ACC-SECURITY-005 · 480px · light · en · customer · world=empty · /account/profile · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ACC-SECURITY-006 · 480px · dark · hi · customer · world=empty · /account/profile · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ACC-SECURITY-007 · 768px · light · en · customer · world=empty · /account/profile · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ACC-SECURITY-008 · 768px · dark · hi · customer · world=empty · /account/profile · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ACC-SECURITY-009 · 1024px · light · en · customer · world=empty · /account/profile · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ACC-SECURITY-010 · 1024px · dark · hi · customer · world=empty · /account/profile · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ACC-SECURITY-011 · 1280px · light · en · customer · world=empty · /account/profile · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ACC-SECURITY-012 · 1280px · dark · hi · customer · world=empty · /account/profile · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ACC-SECURITY-013 · 1440px · light · en · customer · world=empty · /account/profile · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ACC-SECURITY-014 · 1440px · dark · hi · customer · world=empty · /account/profile · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ACC-SECURITY-015 · 1920px · light · en · customer · world=empty · /account/profile · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ACC-SECURITY-016 · 1920px · dark · hi · customer · world=empty · /account/profile · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
 
 ## Account → Addresses with an unserved PIN, real sign-in
 

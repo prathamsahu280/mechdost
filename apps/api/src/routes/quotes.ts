@@ -49,7 +49,7 @@ import {
 import { PHOTO_MAX_BYTES } from '@mechdost/shared/service-photos';
 import type { SessionCache } from '../auth/session-cache';
 import { ApiError, errorBody } from '../errors';
-import { authenticate, requirePermission, requireVerified } from '../middleware/auth';
+import { authenticate, forbidSellers, requirePermission, requireVerified } from '../middleware/auth';
 import { enforceRate, rateLimit, RATE_RULES } from '../middleware/rate-limit';
 import { formFiles, signQuotePhoto, storeImages, uploadKit, type UploadKit } from '../photos/message-upload';
 import { verifyPhotoUrl } from '../photos/url-token';
@@ -260,6 +260,8 @@ export function quoteRoutes(deps: AppDeps, cache: SessionCache) {
     rateLimit(deps.rateLimiter, RATE_RULES.apiPerUser, (c) => c.get('auth').user.id),
   );
   app.use('/quotes/*', requirePermission('quotes:request'));
+  // Shop accounts never buy (user 2026-11-22): asking, messaging, accepting and paying are refused; reading stays.
+  app.on('POST', '/quotes/*', forbidSellers);
   app.on('POST', '/quotes/*', requireVerified);
   app.on(
     'POST',

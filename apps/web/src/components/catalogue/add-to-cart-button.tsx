@@ -2,6 +2,7 @@
 
 import { Minus, Plus, ShoppingCart, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { useIsSeller } from '@/demo/session-state';
 import { track } from '@/lib/analytics';
 import { signal } from '@/lib/compare/signal';
 import { addToCart, MAX_QTY, removeFromCart, setQuantity, useCart, type AddResult } from '@/demo/store';
@@ -79,6 +80,10 @@ export function AddToCartButton({
     focusNext.current = null;
     target.focus();
   }, [inCart]);
+
+  // Shop accounts never buy (user 2026-11-22): no add, stepper or buy action for them (the product page shows a note).
+  const seller = useIsSeller();
+  if (seller) return null;
 
   const problemText = (p: Problem) =>
     p === 'max_qty' ? labels.maxQty : p === 'max_lines' ? labels.maxLines : labels.saveFailed;

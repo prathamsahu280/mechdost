@@ -13,7 +13,13 @@ import { PERSON_CANCEL_REASONS } from '@mechdost/shared/state';
 import type { SessionCache } from '../auth/session-cache';
 import { ensureRazorpayOrder } from '../payments/service';
 import { ApiError } from '../errors';
-import { authenticate, requireCustomerVerified, requirePermission } from '../middleware/auth';
+import {
+  authenticate,
+  forbidSellers,
+  forbidSignedInSellers,
+  requireCustomerVerified,
+  requirePermission,
+} from '../middleware/auth';
 import { enforceRate, rateLimit, RATE_RULES } from '../middleware/rate-limit';
 import { COUPON_CHECK_IP_RATE, COUPON_CHECK_USER_RATE } from './coupons';
 import type { RateRule } from '../rate-limit/limiter';
@@ -324,6 +330,8 @@ export function checkoutRoutes(deps: AppDeps, cache: SessionCache) {
     '/checkout/quote',
     rateLimit(deps.rateLimiter, QUOTE_RATE, (c) => c.get('clientIp')),
   );
+  // Public for guests; a signed-in shop account is refused (user 2026-11-22).
+  app.use('/checkout/quote', forbidSignedInSellers(deps, cache));
   // One pattern: Hono's '/orders/*' also matches '/orders' (L54), so nothing runs twice.
   app.use('/orders/*', authenticate(deps, cache));
   app.use(
@@ -335,6 +343,7 @@ export function checkoutRoutes(deps: AppDeps, cache: SessionCache) {
     '/orders',
     rateLimit(deps.rateLimiter, PLACE_RATE, (c) => c.get('auth').user.id),
   );
+  app.on('POST', '/orders', forbidSellers);
   app.on('POST', '/orders', requireCustomerVerified(deps));
   app.on('POST', '/orders', requirePermission('orders:place'));
 
