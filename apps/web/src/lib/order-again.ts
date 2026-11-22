@@ -30,12 +30,13 @@ async function viaApi(locale: string, code: string): Promise<ReorderOutcome | nu
 }
 
 async function viaDemo(locale: string, code: string): Promise<ReorderOutcome | null> {
-  const [{ cartNow, ordersNow, replaceCart }, { findProduct }, { productNameFor }] = await Promise.all([
+  const [{ cartNow, storeCore, replaceCart }, { findProduct }, { productNameFor }] = await Promise.all([
     import('@/demo/store'),
     import('@/demo/catalogue'),
     import('@/demo/i18n/localize'),
   ]);
-  const order = ordersNow().find((o) => o.code === code);
+  // storeCore, not a new store export: a new export keeps its code in /shop's first load (JS budget 2026-11-22).
+  const order = storeCore.ordersSnapshot().find((o) => o.code === code);
   if (!order) return null;
   const folded = foldDemoCart(
     cartNow(),
