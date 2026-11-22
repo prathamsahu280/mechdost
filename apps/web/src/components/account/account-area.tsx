@@ -40,6 +40,7 @@ import { useTickets } from '@/demo/support';
 import { SupportSection } from './support-section';
 import { useHydrated } from '@/demo/store';
 import { useOrderRows } from '@/lib/use-order-rows';
+import { OrderAgain } from './order-again';
 import { useServiceRows } from '@/lib/use-service-rows';
 import { useQuoteRows } from '@/lib/use-quote-rows';
 import { DATA_MODE, SHOW_DEMO_CONTROLS } from '@/lib/data-mode';
@@ -576,7 +577,7 @@ function OrdersList({ limit }: { limit?: number }) {
       next={{ href: `${prefix}/shop`, label: t('shopNow'), track: 'account_next_orders' }}
     >
       {orders.map((order) => (
-        <li key={order.code}>
+        <li key={order.code} className="space-y-2">
           <Link href={`${prefix}/orders/${order.code}`} className={row}>
             <Package aria-hidden="true" className="size-5 shrink-0 text-accent" />
             <span className="min-w-0 flex-1">
@@ -589,6 +590,7 @@ function OrdersList({ limit }: { limit?: number }) {
             </span>
             <ChevronRight aria-hidden="true" className="size-4 text-muted" />
           </Link>
+          {order.reorderable ? <OrderAgain code={order.code} source="list" /> : null}
         </li>
       ))}
     </ListSection>

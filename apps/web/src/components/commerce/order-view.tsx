@@ -20,6 +20,7 @@ import {
   useOrders,
   type DemoOrder,
 } from '@/demo/store';
+import { OrderAgain } from '@/components/account/order-again';
 import { track } from '@/lib/analytics';
 import { useDisclosureFocus } from '@/lib/use-disclosure-focus';
 import { formatDate, formatPrice } from '@/lib/format';
@@ -145,6 +146,11 @@ export function OrderView({ code }: { code: string }) {
                 ))}
               </ul>
             </section>
+          ) : null}
+          {maySeeCode && (isClosed(order) || order.stage === ORDER_STAGES.length - 1) ? (
+            <div className="mt-5">
+              <OrderAgain code={order.code} source="page" />
+            </div>
           ) : null}
           {order.shop?.status === 'accepted' ? (
             <p className="mt-4 text-sm font-bold text-ink">

@@ -47,3 +47,17 @@ export const CartDto = z.object({
 /** The answer to `GET /me/cart?since=` when nothing changed: no body worth sending. */
 export const CartUnchangedDto = z.object({ unchanged: z.literal(true), version: z.number().int().min(0) });
 export type ServerCart = z.infer<typeof CartDto>;
+
+/** "Order again": the public code of one of the customer's own orders (`MD-{CITY}-{YYYY}-{6 base32}`, no part suffix). */
+export const REORDER_CODE_RE = /^MD-[A-Z]{3}-\d{4}-[0-9A-HJKMNP-TV-Z]{6}$/;
+export const ReorderBody = z.object({ orderCode: z.string().regex(REORDER_CODE_RE) }).strict();
+export const ReorderDto = z.object({
+  cart: CartDto,
+  /** Lines put in the cart or raised to the ordered quantity. */
+  added: z.number().int().min(0),
+  /** Lines the cart already held with at least the ordered quantity. */
+  already: z.number().int().min(0),
+  /** Lines that could not be added, with the name the customer saw on the order and a code for the reason. */
+  missing: z.array(z.object({ sku: z.string(), name: z.string(), reason: z.enum(CART_DROP_REASONS) })),
+});
+export type Reorder = z.infer<typeof ReorderDto>;

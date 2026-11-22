@@ -176,3 +176,7 @@ A shop that is busy or "closed today" (`busy` and `busy_until` in the future, se
 ## Routing screen reasons and fulfilment double press (2026-11-16, QA pass 3 bugs 8 and 12)
 
 When the ranked list has nobody to offer, the admin screen says why: `noShopCover` (no shop covers the PIN, or they are paused, suspended or busy), `noShopStock` (the covering shops do not stock every item), `noShopUntried` (all already declined or timed out), chosen by `routeEmptyReason`. On the shop portal, "Out for delivery" from "packed" is **one** request since QA pass 4 (2026-11-16): `POST /v1/shop/orders/{code}/advance {to:'out_for_delivery', handOverOwn:true, version}` runs `shipped` (own delivery, creates the shipment) and `out_for_delivery` (issues the customer's code) in one transaction, with the version checked on the first move (the order moves version +2; two `order_events` rows, two audit rows, two `order_fulfilment_step` events as before). `handOverOwn` is refused unless the order is `packed` (`WRONG_STEP`); courier hand-over still uses the separate `shipped` step. From a half-done `shipped` order the plain `out_for_delivery` step is used. A ref guard stops a double press.
+
+## Order again (2026-11-22)
+
+A delivered, cancelled or rejected order (all parts closed) offers "Order again" on the order page and in the account orders list. It only fills the cart (spec 03 "Built: Order again"); it never reopens or copies the order, so the order's state machine, snapshots and events are untouched. Not offered while any part is still open (the order is not "past" yet).

@@ -16,6 +16,8 @@ export interface OrderRow {
   items: number | null;
   /** `order` locale key for the status. */
   statusKey: ReturnType<typeof orderStatusKey>;
+  /** Every part is delivered, cancelled or rejected: "Order again" is offered (audience entry 2026-11-22). */
+  reorderable: boolean;
 }
 
 export interface OrderRows {
@@ -41,6 +43,7 @@ async function loadApiRows(locale: string): Promise<OrderRows> {
         totalPaise: orderListTotalPaise(o),
         items: null,
         statusKey: orderStatusKey(part?.status ?? 'placed'),
+        reorderable: o.orders.every((p) => p.status === 'delivered' || isClosedStatus(p.status)),
       };
     }),
   };
@@ -77,6 +80,7 @@ export function useOrderRows(): OrderRows {
       totalPaise: o.totalPaise,
       items: o.lines.length,
       statusKey: `stage_${ORDER_STAGES[o.stage] ?? 'placed'}`,
+      reorderable: o.stage === ORDER_STAGES.length - 1 || Boolean(o.cancellation ?? o.rejection),
     })),
   };
 }

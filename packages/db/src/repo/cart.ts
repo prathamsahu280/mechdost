@@ -6,7 +6,7 @@ import {
   type CartLineInput,
   type ServerCart,
 } from '@mechdost/shared/cart-api';
-import { auditLog, cartItems, carts, users } from '../schema';
+import { auditLog, cartItems, carts, orderGroups, orderItems, orders, users } from '../schema';
 import { uuidv7 } from '../schema/_common';
 import { NotFoundError, ValidationError } from './errors';
 import { recordServerEvent } from './events';
@@ -300,6 +300,91 @@ export async function replaceCart(
   });
 }
 
+interface FoldResult extends MergeResult {
+  raised: number;
+  dropped: ServerCart['dropped'];
+  /** Lines of the request that are on sale (added, raised, or already there with enough). */
+  sellable: number;
+}
+
+/**
+ * Fold lines into the stored cart: the larger quantity wins, never the sum, so doing it twice changes nothing. Lines
+ * beyond the 20-line limit and unsellable SKUs are dropped with a reason. Audited under `auditAction`.
+ */
+async function foldInto(
+  tx: Tx,
+  userId: string,
+  lines: readonly CartLineInput[],
+  locale: CartLocale,
+  auditAction: string,
+): Promise<FoldResult> {
+  const cartId = await lockedCart(tx, userId);
+  const existing = new Map(
+    (
+      await tx
+        .select({ variantId: cartItems.variantId, qty: cartItems.qty })
+        .from(cartItems)
+        .where(eq(cartItems.cartId, cartId))
+    ).map((r) => [r.variantId, r.qty]),
+  );
+  const kept = existing.size;
+  const wanted = distinct(lines);
+  const resolved = await resolve(
+    tx,
+    wanted.map((l) => l.sku),
+  );
+  const dropped: ServerCart['dropped'] = [];
+  let added = 0;
+  let raised = 0;
+  let sellable = 0;
+  let total = existing.size;
+  for (const l of wanted) {
+    const r = resolved.get(l.sku);
+    if (!r?.variantId || !r.sellable) {
+      if (r) dropped.push({ sku: l.sku, reason: reasonOf(r) });
+      continue;
+    }
+    const have = existing.get(r.variantId);
+    if (have !== undefined) {
+      sellable += 1;
+      if (l.qty > have) {
+        await tx
+          .update(cartItems)
+          .set({ qty: l.qty })
+          .where(and(eq(cartItems.cartId, cartId), eq(cartItems.variantId, r.variantId)));
+        raised += 1;
+      }
+      continue;
+    }
+    if (total >= CART_MAX_LINES) {
+      dropped.push({ sku: l.sku, reason: 'too_many_lines' });
+      continue;
+    }
+    await tx.insert(cartItems).values({ cartId, variantId: r.variantId, qty: l.qty });
+    total += 1;
+    added += 1;
+    sellable += 1;
+  }
+  const pruned = await pruneUnsellable(tx, cartId);
+  if (added + raised + pruned.length > 0) await touch(tx, cartId);
+  await tx.insert(auditLog).values({
+    actorUserId: userId,
+    actorRole: 'customer',
+    action: auditAction,
+    entity: 'cart',
+    entityId: cartId,
+    after: { kept, added, dropped: dropped.length },
+  });
+  return {
+    cart: await snapshot(tx, cartId, locale, [...dropped, ...pruned]),
+    kept,
+    added,
+    raised,
+    dropped,
+    sellable,
+  };
+}
+
 /**
  * Fold a guest cart into the stored one at sign-in. The larger quantity wins, never the sum, so sending the same
  * guest cart twice (a retry, a second tab) changes nothing. Lines beyond the 20-line limit and unsellable SKUs are
@@ -312,68 +397,76 @@ export async function mergeCart(
   locale: CartLocale = 'en',
 ): Promise<MergeResult> {
   return db.transaction(async (tx) => {
-    const cartId = await lockedCart(tx, userId);
-    const existing = new Map(
-      (
-        await tx
-          .select({ variantId: cartItems.variantId, qty: cartItems.qty })
-          .from(cartItems)
-          .where(eq(cartItems.cartId, cartId))
-      ).map((r) => [r.variantId, r.qty]),
-    );
-    const kept = existing.size;
-    const guest = distinct(lines);
-    const resolved = await resolve(
-      tx,
-      guest.map((l) => l.sku),
-    );
-    const dropped: ServerCart['dropped'] = [];
-    let added = 0;
-    let raised = 0;
-    let total = existing.size;
-    for (const l of guest) {
-      const r = resolved.get(l.sku);
-      if (!r?.variantId || !r.sellable) {
-        if (r) dropped.push({ sku: l.sku, reason: reasonOf(r) });
-        continue;
-      }
-      const have = existing.get(r.variantId);
-      if (have !== undefined) {
-        if (l.qty > have)
-          await tx
-            .update(cartItems)
-            .set({ qty: l.qty })
-            .where(and(eq(cartItems.cartId, cartId), eq(cartItems.variantId, r.variantId)));
-        if (l.qty > have) raised += 1;
-        continue;
-      }
-      if (total >= CART_MAX_LINES) {
-        dropped.push({ sku: l.sku, reason: 'too_many_lines' });
-        continue;
-      }
-      await tx.insert(cartItems).values({ cartId, variantId: r.variantId, qty: l.qty });
-      total += 1;
-      added += 1;
-    }
-    const pruned = await pruneUnsellable(tx, cartId);
-    if (added + raised + pruned.length > 0) await touch(tx, cartId);
-    await tx.insert(auditLog).values({
-      actorUserId: userId,
-      actorRole: 'customer',
-      action: 'cart.merge',
-      entity: 'cart',
-      entityId: cartId,
-      after: { kept, added, dropped: dropped.length },
-    });
+    const r = await foldInto(tx, userId, lines, locale, 'cart.merge');
     await recordServerEvent(tx, 'cart_merged', {
       userId,
-      props: { kept, added, dropped: dropped.length },
+      props: { kept: r.kept, added: r.added, dropped: r.dropped.length },
     });
-    return {
-      cart: await snapshot(tx, cartId, locale, [...dropped, ...pruned]),
-      kept,
-      added,
-    };
+    return { cart: r.cart, kept: r.kept, added: r.added };
+  });
+}
+
+export interface ReorderResult {
+  cart: ServerCart;
+  /** Lines put in the cart or raised to the ordered quantity. */
+  added: number;
+  /** Lines the cart already held with at least the ordered quantity. */
+  already: number;
+  /** Lines not added, with the name the customer saw on the order. */
+  missing: { sku: string; name: string; reason: CartDropReason }[];
+}
+
+/**
+ * "Order again" (audience entry 2026-11-22, item 4): the SKUs and quantities of one of the customer's own orders go
+ * into the cart. No price of the old order is read: the cart holds SKU and quantity, and every price comes from the
+ * checkout quote, so the order is re-priced live. Same rules as the guest merge (the larger quantity wins, so a second
+ * press changes nothing; the 20-line and 99-quantity limits hold). Packs no longer sold are reported with the name
+ * from the order, never dropped silently. Another customer's order code is a 404 (actor-scoped, hard rule 3).
+ */
+export async function reorderCart(
+  db: Tx,
+  userId: string,
+  groupCode: string,
+  locale: CartLocale = 'en',
+): Promise<ReorderResult> {
+  return db.transaction(async (tx) => {
+    const [g] = await tx
+      .select({ id: orderGroups.id })
+      .from(orderGroups)
+      .where(and(eq(orderGroups.userId, userId), eq(orderGroups.code, groupCode)));
+    if (!g) throw new NotFoundError('Order not found');
+    const items = await tx
+      .select({
+        sku: orderItems.sku,
+        title: orderItems.title,
+        titleHi: orderItems.titleHi,
+        qty: orderItems.qty,
+      })
+      .from(orderItems)
+      .innerJoin(orders, eq(orders.id, orderItems.orderId))
+      .where(eq(orders.groupId, g.id))
+      .orderBy(orders.subNo, orderItems.sku);
+    const names = new Map(items.map((i) => [i.sku, localized(i.title, i.titleHi, locale)]));
+    const qtys = new Map<string, number>();
+    for (const i of items) qtys.set(i.sku, Math.min((qtys.get(i.sku) ?? 0) + i.qty, CART_MAX_QTY));
+    const r = await foldInto(
+      tx,
+      userId,
+      [...qtys].map(([sku, qty]) => ({ sku, qty })),
+      locale,
+      'cart.reorder',
+    );
+    const missing = r.dropped.map((d) => ({
+      sku: d.sku,
+      name: names.get(d.sku) ?? d.sku,
+      reason: d.reason,
+    }));
+    const changed = r.added + r.raised;
+    await recordServerEvent(tx, 'order_again', {
+      userId,
+      props: { orderId: g.id, added: changed, missing: missing.length },
+    });
+    return { cart: r.cart, added: changed, already: r.sellable - changed, missing };
   });
 }
 

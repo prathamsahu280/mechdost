@@ -88,6 +88,7 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | CART-EMPTY            | Cart (/cart)                                                     | Empty cart (one next action, category shortcuts)                                                                                                                                                                                                                                | pairwise | 32       | 0       |
 | CHK-FORM              | Checkout (/checkout)                                             | Checkout form (contact, address, business GSTIN, payment) and summary                                                                                                                                                                                                           | pairwise | 32       | 1       |
 | ORD-VIEW              | Order (/orders/[code])                                           | Order status, timeline, lines, delivery code, cancel/rate/support                                                                                                                                                                                                               | pairwise | 24       | 1       |
+| ORD-AGAIN             | Order (/orders/[code], delivered)                                | Order again button, result panel and Go to cart                                                                                                                                                                                                                                 | pairwise | 16       | 0       |
 | SR-VIEW               | Service request (/service/[code])                                | Request status, proposal, itemised estimate (per-line approval), bill                                                                                                                                                                                                           | pairwise | 40       | 1       |
 | QT-PAGES              | Bulk quotes (/quotes)                                            | Quote request form and quote thread                                                                                                                                                                                                                                             | pairwise | 16       | 0       |
 | ACC-OVERVIEW          | Account (/account)                                               | Account section: overview (section bar + content)                                                                                                                                                                                                                               | pairwise | 16       | 2       |
@@ -184,7 +185,7 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | API-ADM-EXPORTS       | Admin → Exports, real sign-in                                    | CSV exports: the form (dataset, city, dates), customers with masked or open contacts, done, empty file, too many rows, expired link, range over 180 days, nothing allowed, load error                                                                                           | pairwise | 80       | 0       |
 | API-NAV-ADMIN         | Navigation, real sign-in                                         | Admin section bar with every real-mode section (Analytics, Refunds, Errors included): current item, scroll, walk                                                                                                                                                                | cross    | 176      | 0       |
 | API-NAV-ACCOUNT       | Navigation, real sign-in                                         | Account section bar in a real-sign-in build: current item, scroll, walk                                                                                                                                                                                                         | cross    | 96       | 0       |
-| **Total**             |                                                                  |                                                                                                                                                                                                                                                                                 |          | **4358** | **99**  |
+| **Total**             |                                                                  |                                                                                                                                                                                                                                                                                 |          | **4374** | **99**  |
 
 ## Chrome
 
@@ -1511,6 +1512,29 @@ Pairwise (all pairs of values); 24 states; scope `main`.
 - [ ] ORD-VIEW-022 · 1280px · dark · hi · customer · world=busy · /orders/MD-RPR-2026-HND001 · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
 - [ ] ORD-VIEW-023 · 1440px · light · en · customer · world=busy · /orders/MD-RPR-2026-HND003 · asserts: present inside overlap covered clipped tap hscroll focus console dismiss
 - [ ] ORD-VIEW-024 · 1920px · dark · hi · customer · world=busy · /orders/MD-RPR-2026-HND002 · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+
+## Order (/orders/[code], delivered)
+
+### ORD-AGAIN — Order again button, result panel and Go to cart
+
+Pairwise (all pairs of values); 16 states; scope `main`.
+
+- [ ] ORD-AGAIN-001 · 320px · light · en · customer · world=busy · /orders/MD-RPR-2026-HND004 · asserts: present inside overlap covered clipped tap hscroll focus console dismiss axe
+- [ ] ORD-AGAIN-002 · 320px · dark · hi · customer · world=busy · /orders/MD-RPR-2026-HND004 · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+- [ ] ORD-AGAIN-003 · 390px · light · hi · customer · world=busy · /orders/MD-RPR-2026-HND004 · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+- [ ] ORD-AGAIN-004 · 390px · dark · en · customer · world=busy · /orders/MD-RPR-2026-HND004 · asserts: present inside overlap covered clipped tap hscroll focus console dismiss
+- [ ] ORD-AGAIN-005 · 480px · light · en · customer · world=busy · /orders/MD-RPR-2026-HND004 · asserts: present inside overlap covered clipped tap hscroll focus console dismiss axe
+- [ ] ORD-AGAIN-006 · 480px · dark · hi · customer · world=busy · /orders/MD-RPR-2026-HND004 · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+- [ ] ORD-AGAIN-007 · 768px · light · en · customer · world=busy · /orders/MD-RPR-2026-HND004 · asserts: present inside overlap covered clipped tap hscroll focus console dismiss
+- [ ] ORD-AGAIN-008 · 768px · dark · hi · customer · world=busy · /orders/MD-RPR-2026-HND004 · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+- [ ] ORD-AGAIN-009 · 1024px · light · en · customer · world=busy · /orders/MD-RPR-2026-HND004 · asserts: present inside overlap covered clipped tap hscroll focus console dismiss axe
+- [ ] ORD-AGAIN-010 · 1024px · dark · hi · customer · world=busy · /orders/MD-RPR-2026-HND004 · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+- [ ] ORD-AGAIN-011 · 1280px · light · en · customer · world=busy · /orders/MD-RPR-2026-HND004 · asserts: present inside overlap covered clipped tap hscroll focus console dismiss
+- [ ] ORD-AGAIN-012 · 1280px · dark · hi · customer · world=busy · /orders/MD-RPR-2026-HND004 · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+- [ ] ORD-AGAIN-013 · 1440px · light · en · customer · world=busy · /orders/MD-RPR-2026-HND004 · asserts: present inside overlap covered clipped tap hscroll focus console dismiss axe
+- [ ] ORD-AGAIN-014 · 1440px · dark · hi · customer · world=busy · /orders/MD-RPR-2026-HND004 · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+- [ ] ORD-AGAIN-015 · 1920px · light · en · customer · world=busy · /orders/MD-RPR-2026-HND004 · asserts: present inside overlap covered clipped tap hscroll focus console dismiss
+- [ ] ORD-AGAIN-016 · 1920px · dark · hi · customer · world=busy · /orders/MD-RPR-2026-HND004 · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
 
 ## Service request (/service/[code])
 

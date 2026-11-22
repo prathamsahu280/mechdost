@@ -304,3 +304,5 @@ Promoted lessons (rule now in `checklist.md`) are in `learnings-archive.md`; rea
 - L284 · 2026-11-17 · tooling · this checkout's nvm Node was older than `.nvmrc` and `pnpm install` refused (engines) while tsc reported "Cannot find module 'zod'" → `nvm install $(cat .nvmrc)` and `pnpm install --frozen-lockfile` before trusting a typecheck.
 
 L1 · 2026-11-19 · SEO · Google answered a "mechdost" search with a spelling suggestion ("techdost") because a site-wide pre-launch noindex left nothing indexed for the brand → keep the brand pages (home, about/partners, policies) indexable from day one; gate only the pages whose content is not real yet.
+
+L285 · 2026-11-22 · cart/reorder · a "repeat" action on the server is cheapest and safest when it reuses an idempotent fold (larger quantity wins) instead of an idempotency-key table: a second press is a no-op by construction and the same code serves guest merge and reorder → prefer idempotent-by-construction rules over key storage for cart-like folds. Also: a closed-panel opener that is `disabled` while busy drops focus; refocus it after the request (a11y contract).

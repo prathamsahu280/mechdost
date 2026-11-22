@@ -18,6 +18,7 @@ export const CODES = {
   routing: 'MD-RPR-2026-HND001',
   offered: 'MD-RPR-2026-HND002',
   shipped: 'MD-RPR-2026-HND003',
+  delivered: 'MD-RPR-2026-HND004',
   fresh: 'SR-RPR-2026-HND101',
   proposed: 'SR-RPR-2026-HND102',
   declined: 'SR-RPR-2026-HND103',
@@ -73,6 +74,12 @@ export function seedData(now: number) {
       shop: { slug: 'sharma-auto-parts', status: 'accepted', offeredAt: iso(-80), expiresAt: iso(-65) },
       delivery: { code: '4821', attempts: 0, confirmedAt: null, method: null },
       business: { gstin: '22ABVCS4888H1ZL', businessName: 'Sahu Motors' },
+    }),
+    // A delivered order: "Order again" (audience entry 2026-11-22) is offered on closed and delivered orders only.
+    order(CODES.delivered, [line('brake-pad-set-front', 1), line('engine-oil-filter-petrol-car', 2)], {
+      stage: 5,
+      shop: { slug: 'sharma-auto-parts', status: 'accepted', offeredAt: iso(-3000), expiresAt: iso(-2990) },
+      delivery: { code: '7342', attempts: 0, confirmedAt: iso(-60), method: 'code' },
     }),
   ];
   const workshop = DEMO_WORKSHOPS.find((w) => w.slug === 'telibandha-car-clinic');

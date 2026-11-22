@@ -7,6 +7,7 @@ import {
   getWishlistIfChanged,
   mergeCart,
   removeCartLine,
+  reorderCart,
   setCartLine,
   setWishlisted,
 } from '@mechdost/db/repo';
@@ -16,6 +17,8 @@ import {
   CartLineQtyBody,
   CartMergeBody,
   CartUnchangedDto,
+  ReorderBody,
+  ReorderDto,
 } from '@mechdost/shared/cart-api';
 import {
   PRODUCT_SLUG_RE,
@@ -40,6 +43,8 @@ import { errorResponses, ErrorSchema } from './schemas';
  */
 export const CART_WRITE_RATE: RateRule = { name: 'cart_write', limit: 240, windowSeconds: 3600 };
 export const CART_MERGE_RATE: RateRule = { name: 'cart_merge', limit: 20, windowSeconds: 3600 };
+/** "Order again" presses (a press reads one order and folds it into the cart; the cart merge is limited the same way). */
+export const CART_REORDER_RATE: RateRule = { name: 'cart_reorder', limit: 30, windowSeconds: 3600 };
 export const WISHLIST_WRITE_RATE: RateRule = { name: 'wishlist_write', limit: 240, windowSeconds: 3600 };
 
 const json = <T extends z.ZodType>(schema: T, description: string) => ({
@@ -123,6 +128,16 @@ const cartMerge = createRoute({
   request: { query: localeQuery, ...body(CartMergeBody) },
   responses: { 200: json(CartDto, 'Cart'), ...errorResponses },
 });
+const cartReorder = createRoute({
+  method: 'post',
+  path: '/me/cart/reorder',
+  tags,
+  summary:
+    'Order again: add the SKUs and quantities of one of your own orders to the cart (re-priced at checkout; the larger quantity wins, so repeating is safe). Lines no longer sold are listed in `missing`',
+  security,
+  request: { query: localeQuery, ...body(ReorderBody) },
+  responses: { 200: json(ReorderDto, 'Cart and what was added or missing'), ...problems },
+});
 const wishlistGet = createRoute({
   method: 'get',
   path: '/me/wishlist',
@@ -176,6 +191,11 @@ export function storefrontRoutes(deps: AppDeps, cache: SessionCache) {
     'POST',
     '/me/cart/merge',
     rateLimit(deps.rateLimiter, CART_MERGE_RATE, (c) => c.get('auth').user.id),
+  );
+  app.on(
+    'POST',
+    '/me/cart/reorder',
+    rateLimit(deps.rateLimiter, CART_REORDER_RATE, (c) => c.get('auth').user.id),
   );
   app.on(
     ['PUT', 'DELETE'],
@@ -240,6 +260,17 @@ export function storefrontRoutes(deps: AppDeps, cache: SessionCache) {
       );
       return c.json(r.cart, 200);
     })
+    .openapi(cartReorder, async (c) =>
+      c.json(
+        await reorderCart(
+          deps.db,
+          user(c),
+          c.req.valid('json').orderCode,
+          localeOf(c, c.req.valid('query').locale),
+        ),
+        200,
+      ),
+    )
     .openapi(wishlistGet, async (c) => {
       const { locale, since } = c.req.valid('query');
       return c.json(await getWishlistIfChanged(deps.db, user(c), localeOf(c, locale), since ?? -1), 200);
