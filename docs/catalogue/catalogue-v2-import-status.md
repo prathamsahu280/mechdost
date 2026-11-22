@@ -1,6 +1,6 @@
 # catalogue-v2 import status
 
-Last dry run. Brands imported: castrol, gulf, exide, tata-green, kelvinn, cerafence, elvi. One row per product of catalogue-v2 is in
+Last real run. Brands imported: castrol, gulf, exide, tata-green, kelvinn, cerafence, elvi. One row per product of catalogue-v2 is in
 `catalogue-v2-import-status.csv` (3386 rows). A dry run shows what the import WOULD do.
 
 - Products on the list: 3386
@@ -53,11 +53,3 @@ pnpm db:import:catalogue --dir <site> --brands castrol,gulf,motul   # other bran
 ```
 
 See `docs/runbooks/catalogue-import.md`.
-
-## Inputs kept in the repo (2026-11-22)
-
-- `catalogue-v2-translations-hi.json`: Hindi for the 140 product descriptions (`--translations`), machine-made and
-  reviewed for the site Hindi rule (brand, series, standard and grade names stay in Latin script); the products are
-  flagged `hindi_machine` for review in Admin.
-- `catalogue-v2-price-lists.json`: the price rows read from the seven price lists (`--price-lists`, output of
-  `packages/db/scripts/extract-price-lists.py`).

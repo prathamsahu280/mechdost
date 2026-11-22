@@ -4,6 +4,13 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Current status
 
+- **DONE (2026-11-22, night): real catalogue imported** into the real DB after deploy c857c9b (user: "Yes, import
+  after deploy"): 219 products, 740 packs, 26 sub-categories, 4 brands, 99 ranges, 219 photos uploaded, 0 failures;
+  Raipur admin price skipped for all 695 MRP packs (no shop sells them, Q208). Importer actor = test super_admin.
+  **Not visible on mechdost.com yet:** the live site runs `NEXT_PUBLIC_DATA_MODE=demo` (demo catalogue); the real
+  catalogue shows once the launch switch flips to `api` (user decision). Owed: EXPLAIN on smart search and the
+  `/shop` performance pass in real mode (local real-mode build), Playwright on the search combobox.
+
 - **NOW (2026-11-22, evening): real catalogue + smart search.** Source `Desktop/autoparts/catalogue-v2` (user: latest
   v2); scope (user): price-list brands only (Castrol, Gulf, Exide, Tata Green, KELVINN, CERAFENCE, ELVI), own photo
   only → **219 products / 740 packs / 695 with MRP**; status of all 3,386 in `docs/catalogue/`. Merged locally:
