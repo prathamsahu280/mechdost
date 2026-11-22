@@ -461,6 +461,9 @@ export function setQuantity(slug: string, qty: number) {
 /** The saved cart read outside React (the server-cart sync in real sign-in mode, `lib/cart-sync.ts`). */
 export const cartNow = cartSnapshot;
 
+/** The saved demo orders read outside React ("Order again" looks the order up when pressed). */
+export const ordersNow = ordersSnapshot;
+
 /** Replace the whole cart (the server's cart after sign-in or on a new device). */
 export function replaceCart(lines: readonly CartLine[]): boolean {
   return write(KEYS.cart, lines.slice(0, MAX_LINES));

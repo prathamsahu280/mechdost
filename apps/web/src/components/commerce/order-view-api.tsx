@@ -13,6 +13,7 @@ import { loginHref, orderGroupCode } from '@/lib/record-links';
 import { useSignedOut } from '@/lib/use-signed-out';
 import { ORDER_STEPS, cancelHelpShown, isClosedStatus, orderStepIndex } from '@/lib/order-status';
 import { requestedPartCode } from '@/lib/order-parts';
+import { OrderAgain } from '@/components/account/order-again';
 import { orderTotalLines } from '@/lib/order-totals';
 import { StatusTimeline } from './status-timeline';
 
@@ -133,6 +134,9 @@ export function OrderViewApi({ code }: { code: string }) {
           </p>
         ) : null}
       </section>
+      {parts.every((p) => p.status === 'delivered' || isClosedStatus(p.status)) ? (
+        <OrderAgain code={order.code} source="page" />
+      ) : null}
       {parts.map((part, i) => (
         <OrderPart
           key={part.code}

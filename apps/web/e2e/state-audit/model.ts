@@ -842,6 +842,23 @@ export const COMPONENTS: readonly ComponentDef[] = [
     core: coreAt([390], (r) => r.order === 'MD-RPR-2026-HND003'),
   },
   {
+    code: 'ORD-AGAIN',
+    page: 'Order (/orders/[code], delivered)',
+    component: 'Order again button, result panel and Go to cart',
+    path: (r) => `/orders/${String(r.order)}`,
+    scope: 'main',
+    checks: [...BASE_CHECKS, 'dismiss'],
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'order', values: ['MD-RPR-2026-HND004'] },
+      { name: 'auth', values: ['customer'] },
+      { name: 'world', values: ['busy'] },
+    ],
+    mustShow: 'MD-RPR-2026-HND004',
+    sweep: 8,
+  },
+  {
     code: 'SR-VIEW',
     page: 'Service request (/service/[code])',
     component: 'Request status, proposal, itemised estimate (per-line approval), bill',

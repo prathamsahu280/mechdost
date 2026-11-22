@@ -1584,3 +1584,9 @@ site-wide `noindex` would also have dropped the two pages Google already had.
   `Product` / `Offer` / `AutoRepair` structured data still only on real data (no markup of demo prices or reviews).
 - Accepted cost: demo product prices and stock text can appear in search snippets until the real-data switch; those
   URLs refresh or drop (404) after it, and `sitemap.xml` is re-submitted then.
+
+## 2026-11-22 — Order again (audience entry item 4)
+
+- Builds the "reorder" of the 2026-10-31 order-history decision. A server endpoint (`POST /v1/me/cart/reorder`) rather than N client calls: it is actor-scoped (404 for others' orders), reads the order snapshot's SKUs and quantities, folds them into the cart in one transaction with the guest-merge rules (larger quantity wins, so a repeated press is a no-op: idempotent without a key), and reports lines no longer sold by name. Re-pricing is structural: the cart never stores a price.
+- Offered when every part is delivered, cancelled or rejected. Area availability is left to the checkout quote (the cart is area-free by design). Limit 30 presses an hour per customer.
+- Budget: button only on account orders list + order page; logic loaded on press (spec 16 incident rule).

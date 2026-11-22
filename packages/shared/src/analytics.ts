@@ -387,6 +387,8 @@ export interface ServerEventProps {
   /** Server cart (spec 03): merge at sign-in and replace; counts only, never prices. */
   cart_merged: { kept: number; added: number; dropped: number };
   cart_replaced: { lines: number; dropped: number };
+  /** Order again (audience entry 2026-11-22): the order's id and how many lines were added or could not be. */
+  order_again: { orderId: string; added: number; missing: number };
   /** Wishlist (spec 02): the product id and the new list size. */
   wishlist_changed: { productId: string; on: boolean; count: number };
 }
@@ -511,6 +513,9 @@ export const CLIENT_EVENT_SCHEMAS = {
   order_cancel_submitted: z
     .object({ code: id, by: z.enum(['customer', 'staff']), reasonCode: z.enum(ORDER_CANCEL_REASONS) })
     .strict(),
+  // "Order again" pressed on the account orders list or the order page (2026-11-22); the server records the outcome
+  // as `order_again` (ids and counts), so this one is the UI action only.
+  order_again_clicked: z.object({ code: id, source: z.enum(['list', 'page']) }).strict(),
   assistant_opened: z.object({ path }).strict(),
   assistant_message: z.object({ intent: id, length: z.number().int().min(0).max(5000) }).strict(),
   map_action: z

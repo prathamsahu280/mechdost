@@ -7,16 +7,16 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { seedRaipurDemo, type DemoFixture } from '@mechdost/db/demo-seed';
-import { ensureUser } from '@mechdost/db/repo';
+import { ensureUser, placeCodOrder, quoteCheckout } from '@mechdost/db/repo';
 import * as s from '@mechdost/db/schema';
-import { CartDto, CartUnchangedDto, CART_MAX_LINES } from '@mechdost/shared/cart-api';
+import { CartDto, CartUnchangedDto, CART_MAX_LINES, ReorderDto } from '@mechdost/shared/cart-api';
 import {
   WishlistChangeDto,
   WishlistDto,
   WishlistUnchangedDto,
   WISHLIST_MAX,
 } from '@mechdost/shared/wishlist-api';
-import { CART_MERGE_RATE } from '../src/routes/storefront';
+import { CART_MERGE_RATE, CART_REORDER_RATE } from '../src/routes/storefront';
 import { bearer, buildApp, type ErrorJson } from './helpers';
 
 const fixture = JSON.parse(
@@ -190,6 +190,74 @@ describe('server cart', () => {
     let last = 0;
     for (let i = 0; i < CART_MERGE_RATE.limit + 1; i += 1)
       last = (await call(a, 'POST', '/me/cart/merge', { lines: [] })).status;
+    expect(last).toBe(429);
+  });
+});
+
+describe('order again', () => {
+  const OIL = 'CAS-ACT4T-0900';
+  let seq = 0;
+  async function placed(p: Person, qty: number): Promise<string> {
+    const lines = [{ sku: OIL, qty }];
+    const q = await quoteCheckout(ctx.db, { pincode: '492004', lines, locale: 'en' });
+    seq += 1;
+    const r = await placeCodOrder(ctx.db, {
+      userId: p.id,
+      idempotencyKey: `reorder-api-${String(seq).padStart(8, '0')}`,
+      address: {
+        contactName: 'Ravi',
+        contactPhone: '+919876543210',
+        line1: 'House 12, Pandri',
+        line2: null,
+        landmark: null,
+        pincode: '492004',
+      },
+      lines,
+      expectedTotalPaise: q.totalPaise,
+      note: null,
+      locale: 'en',
+    });
+    return r.code;
+  }
+
+  it('needs sign-in and a well-formed order code', async () => {
+    expect((await call(null, 'POST', '/me/cart/reorder', { orderCode: 'MD-RPR-2026-AAAAAA' })).status).toBe(
+      401,
+    );
+    const a = await person('20');
+    expect((await call(a, 'POST', '/me/cart/reorder', { orderCode: 'nope' })).status).toBe(400);
+    expect(
+      (await call(a, 'POST', '/me/cart/reorder', { orderCode: 'MD-RPR-2026-AAAAAA', price: 1 })).status,
+    ).toBe(400);
+  });
+
+  it('adds the lines, answers with the cart and what was missing, and is safe to repeat', async () => {
+    const a = await person('21');
+    const code = await placed(a, 2);
+    const first = ReorderDto.parse(
+      (await call(a, 'POST', '/me/cart/reorder?locale=hi', { orderCode: code })).body,
+    );
+    expect(first.added).toBe(1);
+    expect(first.missing).toEqual([]);
+    expect(first.cart.lines.map((l) => [l.sku, l.qty])).toEqual([[OIL, 2]]);
+    const again = ReorderDto.parse((await call(a, 'POST', '/me/cart/reorder', { orderCode: code })).body);
+    expect(again.added).toBe(0);
+    expect(again.already).toBe(1);
+  });
+
+  it("is a 404 for another customer's order, and adds nothing to anyone's cart", async () => {
+    const owner = await person('22');
+    const stranger = await person('23');
+    const code = await placed(owner, 1);
+    expect((await call(stranger, 'POST', '/me/cart/reorder', { orderCode: code })).status).toBe(404);
+    expect(CartDto.parse((await call(stranger, 'GET', '/me/cart')).body).lines).toEqual([]);
+  });
+
+  it('limits presses per customer', async () => {
+    const a = await person('24');
+    let last = 0;
+    for (let i = 0; i < CART_REORDER_RATE.limit + 1; i += 1)
+      last = (await call(a, 'POST', '/me/cart/reorder', { orderCode: 'MD-RPR-2026-AAAAAA' })).status;
     expect(last).toBe(429);
   });
 });
