@@ -76,7 +76,8 @@ describe('the demo shop search keeps the Hindi text out of the first load', () =
   it('the shop island fetches the overlay with import() and passes it to the search', () => {
     const browser = src('src/components/catalogue/shop-browser.tsx');
     expect(browser).toMatch(/import\('@\/demo\/i18n\/hi-products'\)/);
-    expect(browser).not.toMatch(/^import .*hi-products/m);
+    // Type-only imports are erased; a value import would put the Hindi text back in the first load.
+    expect(browser).not.toMatch(/^import (?!type ).*hi-products/m);
     expect(browser).toMatch(/hi: hiText/);
   });
 });
