@@ -27,6 +27,7 @@ export async function LabourPromise({
     const Tag = as;
     return <Tag className={className}>{t(key, { days })}</Tag>;
   }
-  // `raw` keeps the `{days}` placeholder for the browser to fill from the demo setting.
-  return <DemoLabourPromise template={String(t.raw(key))} as={as} className={className} />;
+  // The value `{days}` keeps the placeholder in the text for the browser to fill from the demo setting (`raw` would
+  // return the precompiled message, spec 16 incident 2026-11-22).
+  return <DemoLabourPromise template={t(key, { days: '{days}' })} as={as} className={className} />;
 }

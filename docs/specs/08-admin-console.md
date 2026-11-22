@@ -92,7 +92,7 @@ User 2026-11-02: "all these options need to be with the admin too".
 
 - **`/admin/notifications`**:
   - Status card (WhatsApp off until the Meta setup, Q50–Q63).
-  - One card per WhatsApp event (`packages/shared/src/whatsapp.ts` catalogue): on/off switch, English and Hindi text side by side with a live preview (sample codes), and the same checks as the API. The checks are `bodyProblem`: no offer/discount/coupon wording in utility templates, exactly the `{{1}}…{{n}}` placeholders, ≤ 1,024 characters. Default texts come from the locale files (`notifyTemplates`, read raw because `{{n}}` is Meta syntax, not ICU).
+  - One card per WhatsApp event (`packages/shared/src/whatsapp.ts` catalogue): on/off switch, English and Hindi text side by side with a live preview (sample codes), and the same checks as the API. The checks are `bodyProblem`: no offer/discount/coupon wording in utility templates, exactly the `{{1}}…{{n}}` placeholders, ≤ 1,024 characters. Default texts come from the locale files (`notify-templates/{en,hi}.json`, read raw because `{{n}}` is Meta syntax, not ICU).
   - Compare-and-set per event, change history.
   - Monthly WhatsApp budget alert (₹, whole rupees) with this month's estimated spend.
   - Demo store: `apps/web/src/demo/notification-settings.ts`. Production: `GET|PUT /v1/admin/notifications/templates`, `GET /v1/admin/notifications/whatsapp`, `PUT /v1/admin/notifications/whatsapp/budget` (verified staff with `notifications:manage`).

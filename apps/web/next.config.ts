@@ -74,6 +74,16 @@ const nextConfig: NextConfig = {
 // Message keys are type-checked via AppConfig (src/global.ts). Literal value typing (createMessagesDeclaration)
 // is not used: it types values as the English text, which the Hindi file can never match. Placeholder parity
 // between languages is enforced by packages/shared/test/i18n.test.ts instead.
-const withNextIntl = createNextIntlPlugin();
+const withNextIntl = createNextIntlPlugin({
+  experimental: {
+    messages: {
+      format: 'json',
+      path: '../../packages/shared/src/i18n',
+      locales: 'infer',
+      sourceLocale: 'en',
+      precompile: true,
+    },
+  },
+});
 
 export default withNextIntl(nextConfig);

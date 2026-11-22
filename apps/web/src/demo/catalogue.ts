@@ -5,6 +5,7 @@
  */
 import type { VehicleType } from '@mechdost/shared/vehicles';
 // Only the product translations, not all of `./i18n/hi.ts` (JS budget: this file ships with the shop page).
+import type { ProductHi } from './i18n/hi-products';
 import { productSearchText } from './i18n/product-search';
 
 // Category constants live in a small module so pages that only need them do not ship the product data.
@@ -396,6 +397,8 @@ export function searchProducts(opts: {
   sort?: SortKey;
   vehicle?: VehicleType;
   categoryLabel?: (key: CategoryKey) => string;
+  /** The Hindi product text (`PRODUCT_HI`), loaded apart from the catalogue; omitted = English text only. */
+  hi?: Readonly<Record<string, ProductHi>>;
 }): DemoProduct[] {
   const q = opts.query?.trim().toLowerCase() ?? '';
   const words = q.split(/\s+/).filter(Boolean);
@@ -403,7 +406,7 @@ export function searchProducts(opts: {
     if (opts.category && p.category !== opts.category) return false;
     if (opts.vehicle && !VEHICLE_TYPES_OF_FIT[p.fits].includes(opts.vehicle)) return false;
     if (words.length === 0) return true;
-    const hay = `${productSearchText(p)} ${opts.categoryLabel?.(p.category) ?? ''}`.toLowerCase();
+    const hay = `${productSearchText(p, opts.hi)} ${opts.categoryLabel?.(p.category) ?? ''}`.toLowerCase();
     return words.every((w) => hay.includes(w) || hay.includes(w.replace(/s$/, '')));
   });
   const sorted = [...list];

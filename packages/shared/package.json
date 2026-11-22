@@ -19,6 +19,7 @@
     "./whatsapp": "./src/whatsapp.ts",
     "./whatsapp-meta": "./src/whatsapp-meta.ts",
     "./i18n/*": "./src/i18n/*",
+    "./notify-templates/*": "./src/notify-templates/*",
     "./customers": "./src/customers.ts",
     "./analytics": "./src/analytics.ts",
     "./analytics-path": "./src/analytics-path.ts",

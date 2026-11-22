@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import en from './i18n/en.json';
-import hi from './i18n/hi.json';
+import en from './notify-templates/en.json';
+import hi from './notify-templates/hi.json';
 import {
   WHATSAPP_TEMPLATES,
   isWhatsAppTemplateKey,
@@ -13,7 +13,7 @@ import {
 /**
  * Meta WhatsApp Business Management API: what the template CLI (`pnpm wa:templates`) submits and reads, and the
  * rules Meta enforces on a template before it will review it (checked here so a dry run catches them first).
- * Template bodies are the locale files' `notifyTemplates` (the same text the admin sees in Notifications); the
+ * Template bodies are the `notify-templates/{en,hi}.json` files (the same text the admin sees in Notifications); the
  * button labels and sample values live here. Catalogue = `whatsapp.ts`; this file never invents a template.
  */
 
@@ -102,8 +102,8 @@ const BODIES: Record<
     quote: Record<string, string>;
   }
 > = {
-  en: en.notifyTemplates,
-  hi: hi.notifyTemplates,
+  en,
+  hi,
 };
 
 /** The locale-file text of a catalogue event, e.g. `order.confirmed` → `notifyTemplates.order.confirmed`. */
