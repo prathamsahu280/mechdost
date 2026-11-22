@@ -556,7 +556,7 @@ function ContentForm({
                 <div key={key} className="rounded-tile border border-line-card p-4">
                   <p className="text-sm font-bold text-ink">
                     {isTrustKey(key)
-                      ? tt(`lineLabel_${trustPlacementOf(key) ?? 'product'}`)
+                      ? tt(`lineLabel_${trustPlacementOf(key) ?? 'product'}`, { brand: '{brand}' })
                       : t(CONTENT_LABEL[key])}
                   </p>
                   <div className="mt-2 grid gap-3 tab:grid-cols-2">

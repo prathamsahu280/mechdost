@@ -81,3 +81,16 @@ describe('the demo shop search keeps the Hindi text out of the first load', () =
     expect(browser).toMatch(/hi: hiText/);
   });
 });
+
+describe('precompiled messages: a literal {token} shown to the admin is passed explicitly (CI 2026-11-22)', () => {
+  // With precompiled messages a missing argument renders "undefined"; /hi/admin/content showed
+  // "ब्रांड के नाम के लिए undefined लिखें" until the token was passed as a value.
+  it('the trust line labels pass {brand}', () => {
+    for (const f of ['components/portal/admin-site.tsx', 'components/portal/admin-site-api.tsx']) {
+      const src = readFileSync(join(__dirname, '..', 'src', f), 'utf8');
+      expect(src, f).toMatch(
+        /tt\(`lineLabel_\$\{trustPlacementOf\(key\) \?\? 'product'\}`, \{ brand: '\{brand\}' \}\)/,
+      );
+    }
+  });
+});
