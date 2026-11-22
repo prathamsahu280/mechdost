@@ -4,6 +4,15 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Current status
 
+- **NOW (2026-11-22, later):** all three audience-entry builders merged into LOCAL main (not pushed): b7548be home
+  band + /business pages + For business nav; 279e292 Order again; b49935d trade/fleet applications + migration
+  **0078_business_applications** (NOT yet applied to the real DB); 4ed2168 STAFF_SELF_CHANGE guard (security
+  review); 8796527 focus outline fix; 1fc0f80 Order again via storeCore. Gates: shared 511, db 927+12, api 556,
+  web 1049 tests, lint/tsc clean. **Blocker: JS budget** /shop 180.8, /cart 180.7 KB gz — the new /business routes
+  re-split the loader-stub chunk (bisected: not the nav link). A perf builder is winning ≥1.5 KB headroom
+  (hi-products / ICU parser / duplicates). **Then:** merge it, measure, `pnpm db:migrate` (0078), push, CI +
+  deploy, audits + visual + real-mode check of the new pages, ask the user Q202–Q207.
+
 - **NOW (2026-11-22, user away):** audience entry (retail / mechanics & garages / fleets "MechDost Uptime").
   Design `docs/superpowers/specs/2026-11-22-audience-entry-design.md` (rulings R1–R5), questions Q202–Q206 queued.
   Three Sonnet builders in worktrees: (1) home `audiences` section + `/business/garages` + `/business/fleets` + "For
