@@ -28,7 +28,7 @@ export interface PriceBoardPin {
 
 export interface PriceBoardVariant {
   sku: string;
-  mrpPaise: number;
+  mrpPaise: number | null;
   city: AdminPriceRef | null;
   pins: PriceBoardPin[];
 }
@@ -124,7 +124,7 @@ export async function getPriceBoard(
   return { productSlug: input.productSlug, cityCode: city.code, variants: out };
 }
 
-async function variantBySku(db: Tx, sku: string): Promise<{ id: string; mrpPaise: number }> {
+async function variantBySku(db: Tx, sku: string): Promise<{ id: string; mrpPaise: number | null }> {
   const [v] = await db
     .select({ id: productVariants.id, mrpPaise: productVariants.mrpPaise })
     .from(productVariants)
@@ -154,6 +154,9 @@ export async function setAdminPrice(
   },
 ): Promise<{ version: number }> {
   const variant = await variantBySku(db, input.sku);
+  if (variant.mrpPaise === null)
+    throw new ValidationError("Set this pack's MRP before its price", 'MRP_MISSING');
+  const mrpPaise = variant.mrpPaise;
   const city = await cityByCode(db, input.cityCode);
   if (input.pincode !== null) {
     const [pin] = await db
@@ -167,7 +170,7 @@ export async function setAdminPrice(
   const lows = [...shops.values()].map((s) => s.lowest);
   const issue = checkAdminPrice({
     pricePaise: input.pricePaise,
-    mrpPaise: variant.mrpPaise,
+    mrpPaise,
     lowestShopPaise: lows.length > 0 ? Math.min(...lows) : null,
   });
   if (issue) throw new ValidationError(PRICE_MESSAGES[issue], issue);

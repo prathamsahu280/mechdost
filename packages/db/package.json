@@ -9,7 +9,8 @@
     "./repo": "./src/repo/index.ts",
     "./crypto": "./src/crypto.ts",
     "./testing": "./src/testing.ts",
-    "./demo-seed": "./src/demo-seed.ts"
+    "./demo-seed": "./src/demo-seed.ts",
+    "./catalogue-v2": "./src/catalogue-v2/index.ts"
   },
   "scripts": {
     "generate": "drizzle-kit generate && node scripts/fix-migrations.mjs",

@@ -1,0 +1,511 @@
+{
+  "lub": [
+    {
+      "co": "Castrol India",
+      "b": "Castrol",
+      "k": "Motorcycle Oil",
+      "s": "Activ",
+      "n": "ACTIV 4T 10W-30",
+      "d": "",
+      "i": 0,
+      "iu": "https://www.castrol.com/content/dam/castrol/country-sites-new/en_in/india/home/images/highlander-packshots/mco/activ-10w-30-900ml-mechanic-promo-2.jpg",
+      "u": "",
+      "src": "MRP_08-10-26.pdf (Castrol Maximum Retail Price List, All India; downloaded 08-10-2026)",
+      "v": [
+        ["1 L", "573", "grade: 10W-30"],
+        ["900 ml", "525", "grade: 10W-30"]
+      ],
+      "id": 736
+    },
+    {
+      "co": "Gulf Oil Lubricants India",
+      "b": "Gulf",
+      "k": "Diesel Engine Oils",
+      "s": "GULF DURAMAX",
+      "n": "DURAMAX LE",
+      "d": "Semi-synthetic diesel engine oil for max durability Gulf Superfleet LE Dura Max 15W-40 is a Semi – Synthetic diesel engine oil for extra long drain interval exclusively developed for maximum durabilit",
+      "i": 2,
+      "iu": "https://assets.gulfoilltd.com/gulfindia/files/2023-05/SF_LE_DURAMAX_1LTR_0.webp",
+      "u": "",
+      "src": "Gulf price circular \"Automotive Range / MRP / SDP / FY 26-27\" (Price_List_Circulation-_05.07.2026_-_revised.pdf), effective 05.07.2026",
+      "v": [
+        ["210 L", "", "Gulf category: CVO; oil type: SYNTHETIC TECHNOLOGY"],
+        ["50 L", "", "Gulf category: CVO; oil type: SYNTHETIC TECHNOLOGY"],
+        ["16 L", "9660", "Gulf category: CVO; oil type: SYNTHETIC TECHNOLOGY"]
+      ],
+      "id": 92
+    },
+    {
+      "co": "Motul India",
+      "b": "Motul",
+      "k": "Auto Care Products",
+      "s": "",
+      "n": "MOTUL HELMET CARE KIT",
+      "d": "MOTUL Helmet Care Kit 200 ml is a complete cleaning and maintenance solution that safely cleans the helmet shell and visor, removes dirt and insects, eliminates odors inside the helmet, and helps main",
+      "i": 7,
+      "iu": "https://azupim01.motul.com/media/motulData/IM/bigweb/HelmetCareKit-Pack-New_png.png",
+      "u": "https://www.motul.com/en-IN/products/35783",
+      "src": "Manufacturer website",
+      "v": [["", "", "Packs: 0.200L; Segment: Moto; SKU: 115498 (0.200L)"]],
+      "id": 9
+    },
+    {
+      "co": "Gulf Oil Lubricants India",
+      "b": "Gulf",
+      "k": "Motorcycle Oil",
+      "s": "GULF PRIDE",
+      "n": "GULF PRIDE 10W-30",
+      "d": "Gulf Pride 4T Ultra Plus 10W-30 engine oil is purposefully engineered to cater to the exacting needs of high-performance 4-stroke motorcycles. Its primary goal is to ensure optimal engine performance,",
+      "i": 1,
+      "iu": "https://assets.gulfoilltd.com/gulfindia/files/2025-05/Gulf%20Oil_Pride%2010W-30_900ML.webp?VersionId=65Ylnta3N5ba__mZBT7O91SwIXGhDMYY",
+      "u": "",
+      "src": "Gulf price circular \"Automotive Range / MRP / SDP / FY 26-27\" (Price_List_Circulation-_05.07.2026_-_revised.pdf), effective 05.07.2026",
+      "v": [
+        ["1 L", "595", "Gulf category: MCO; grade: 10W-30; oil type: SYNTHETIC TECHNOLOGY"],
+        ["900 ml", "550", "Gulf category: MCO; grade: 10W-30; oil type: SYNTHETIC TECHNOLOGY"],
+        ["1.2 L", "725", "Gulf category: MCO; grade: 10W-30; oil type: SYNTHETIC TECHNOLOGY"]
+      ],
+      "id": 764
+    },
+    {
+      "co": "Valvoline Cummins",
+      "b": "Valvoline",
+      "k": "Diesel Engine Oils",
+      "s": "Power Gen",
+      "n": "Valvoline Premium Blue 7800 Plus Diesel Engine Oil",
+      "d": "Formulated to provide advanced lubrication in a wide variety of service conditions, Valvoline Premium Blue will maximize durability of your engine. The product is designed with state-of-the-art additi",
+      "i": 3,
+      "iu": "https://www.valvolineglobal.com/4ac33a/globalassets/sitecore/indiaregion/images/products/valvoline20premium20blue207800.png",
+      "u": "https://www.valvolineglobal.com/en-in/premium-blue-7800-plus-diesel-engine-oil/",
+      "src": "Manufacturer website",
+      "v": [
+        [
+          "",
+          "",
+          "Application: Medium size and heavy-duty diesel engines for Gdrive, off highway mining and construction, marine, loco, city fleet and long haul on highway applications. Ideal"
+        ]
+      ],
+      "id": 178
+    },
+    {
+      "co": "Motul India",
+      "b": "Motul",
+      "k": "Motorcycle Oil",
+      "s": "",
+      "n": "MOTUL 3100 GOLD 4T 10W30",
+      "d": "Motul 3100 4T Gold is a Technosynthese® 4-stroke motorcycle engine oil meeting API SN and JASO MA2 standards. It provides reliable engine and gearbox protection, smooth wet clutch performance, and sta",
+      "i": 4,
+      "iu": "https://azupim01.motul.com/media/motulData/IM/bigweb/3100Gold-10W30-900ml-Pack_png.png",
+      "u": "https://www.motul.com/en-IN/products/13795",
+      "src": "Manufacturer website",
+      "v": [["", "", "Grade: 10W-30; Packs: 0.900L; Segment: Moto; SKU: 115249 (0.900L)"]],
+      "id": 782
+    },
+    {
+      "co": "Motul India",
+      "b": "Motul",
+      "k": "Motorcycle Oil",
+      "s": "Powersport Application - Scooter",
+      "n": "MOTUL 3100 GOLD 4T 10W30",
+      "d": "Motul 3100 4T Gold is a Technosynthese® 4-stroke motorcycle engine oil meeting API SN and JASO MA2 standards. It provides reliable engine and gearbox protection, smooth wet clutch performance, and sta",
+      "i": 5,
+      "iu": "https://azupim01.motul.com/media/motulData/IM/bigweb/3100Gold-10W30-1L-Pack_png.png",
+      "u": "https://www.motul.com/en-IN/products/13796",
+      "src": "Manufacturer website",
+      "v": [["", "", "Grade: 10W-30; Packs: 1L, 0.900L; Segment: Moto; SKU: 115131 (1L), 115132 (0.900L)"]],
+      "id": 793
+    },
+    {
+      "co": "Motul India",
+      "b": "Motul",
+      "k": "Auto Care Products",
+      "s": "Automobile Products - Maintenance & Care",
+      "n": "MOTUL CAR CARE CAR BODY MICROFIBER",
+      "d": "",
+      "i": 6,
+      "iu": "",
+      "u": "https://www.motul.com/en-IN/products/85436",
+      "src": "Manufacturer website",
+      "v": [["", "", "Packs: PCE; Application: Care; Segment: Auto; SKU: 116601 (PCE)"]],
+      "r": 1,
+      "id": 14
+    }
+  ],
+  "bat": [
+    {
+      "co": "Exide Industries",
+      "b": "Exide",
+      "k": "2-Wheeler Battery",
+      "s": "Exide Xplore",
+      "n": "Exide Xplore",
+      "d": "Exide Xplore is designed to deliver dependable, maintenance-free performance for every ride. Its advanced VRLA and AGM technology provide strong starting power, better vibration resistance, and enhanc",
+      "i": 8,
+      "iu": "https://www.exidecare.com/images/exide-xplore-big-new6.jpg",
+      "u": "",
+      "src": "Exide MRCP price list No. EIL/AUTO-VEH/MRCP/26-27/01 (MRCP_Price_List_for_Exide-Vehicular__MC_Application_Batteries_1stOctober26.pdf), effective 1 October 2026",
+      "v": [
+        ["12XL2.5L-C", "1175", "Ah: 2.5; Warranty: 24F+24P; Series warranty: 48M; Application: 2-WHEELER"],
+        ["XLTZ4A", "1376", "Ah: 4; Warranty: 24F+24P; Series warranty: 48M; Application: 2-WHEELER"],
+        ["XLTZ5A", "1624", "Ah: 5; Warranty: 24F+24P; Series warranty: 48M; Application: 2-WHEELER"]
+      ],
+      "id": 1
+    },
+    {
+      "co": "Tata AutoComp GY Batteries",
+      "b": "Tata Green",
+      "k": "Car/SUV Battery",
+      "s": "Premio Series",
+      "n": "Premio Series",
+      "d": "To brave the toughest of weather conditions, we bring you 100% genuine 32ah car battery designed especially for hatchbacks and sedans. This battery boasts of cutting-edge Japanese technology from the ",
+      "i": 10,
+      "iu": "https://www.tatagreenbattery.com/wp-content/uploads/2020/12/34B19L_AM-1.png",
+      "u": "",
+      "src": "Tata Green MRP price list Ref. TGY/AM/Automotive/Inverter/All India/2026-27/MRP-2 (TGY_MRP_4W_PriceList_w.e.f.01.06.2026.pdf), effective 1 June 2026",
+      "v": [
+        ["36B19L-AM PR2436", "4561", "Ah: 32; Warranty: 24+36 months; Total warranty: 60 months"],
+        ["34B19L-M (MSIL Co-Br)", "4732", "Ah: 32; Warranty: 24+36 months; Total warranty: 60 months"],
+        ["34B20L-M (MSIL Co-Br)", "4818", "Ah: 32; Warranty: 24+36 months; Total warranty: 60 months"]
+      ],
+      "id": 39
+    },
+    {
+      "co": "Amara Raja Energy & Mobility",
+      "b": "PowerZone",
+      "k": "Brand range (names only)",
+      "s": "PowerZone",
+      "n": "PowerZone automotive batteries",
+      "d": "",
+      "i": 11,
+      "iu": "https://www.amararajaeandm.com/Business/aftermarket",
+      "u": "https://www.amararajaeandm.com/Business/aftermarket",
+      "src": "Manufacturer website",
+      "v": [["", "", "Note: brand named on corporate site; no product list published"]],
+      "id": 9
+    },
+    {
+      "co": "Exide Industries",
+      "b": "Exide",
+      "k": "Battery Accessories",
+      "s": "Lithium Ion Battery Charger",
+      "n": "Lithium Ion Battery Charger",
+      "d": "",
+      "i": 9,
+      "iu": "",
+      "u": "",
+      "src": "Exide MRCP price list No. EIL/AUTO-VEH/MRCP/26-27/01 (MRCP_Price_List_for_Exide-Vehicular__MC_Application_Batteries_1stOctober26.pdf), effective 1 October 2026",
+      "v": [
+        ["131115102001 (ERLICH48V25A)", "7750", "Rating: 48V,25A; Warranty: 24M FOC; Application: E-RICKSHAW"]
+      ],
+      "r": 1,
+      "id": 5
+    }
+  ],
+  "car": [
+    {
+      "co": "ELVI Comercio India (KELVINN)",
+      "b": "KELVINN",
+      "k": "Aerosol Sprays",
+      "s": "Aerosol",
+      "n": "KELVINN BATTERY TERMINAL PROTECTANT",
+      "d": "Leaves a long lasting and a temperature-resistant film on the surface. It protects the battery terminals and plug-in contacts from corrosion and against the effects of weather and battery acid formati",
+      "i": 21,
+      "iu": "https://lubrycant.in/products/kelvinn-battery-terminal-protectant-150ml",
+      "u": "",
+      "src": "KELVINN_Auto_care_Price_List_wef_13th_June-2026_260613_095446.pdf (KELVINN Products Price List w.e.f. 13th June 2026); picture/description: https://lubrycant.in/products/kelvinn-battery-terminal-protectant-150ml",
+      "v": [["150 ml", "335", "Carton: 2 x 15 x 150 ML; Units per carton: 30; Type: Aerosol"]],
+      "id": 1
+    },
+    {
+      "co": "ELVI Comercio India (KELVINN)",
+      "b": "KELVINN",
+      "k": "Aerosol Sprays",
+      "s": "Aerosol",
+      "n": "KELVINN CHAIN LUBRIFY - Blue",
+      "d": "",
+      "i": 20,
+      "iu": "",
+      "u": "",
+      "src": "KELVINN_Auto_care_Price_List_wef_13th_June-2026_260613_095446.pdf (KELVINN Products Price List w.e.f. 13th June 2026)",
+      "v": [["500 ml", "690", "Carton: 4 x 6 x 500 ML; Units per carton: 24; Type: Aerosol"]],
+      "r": 1,
+      "id": 6
+    }
+  ],
+  "tyr": [
+    {
+      "co": "Apollo Tyres",
+      "b": "Apollo",
+      "k": "Farm/Agricultural",
+      "s": "Agricultural / AGRI",
+      "n": "FX 515",
+      "d": "When your field and your profits need to be lined up perfectly. The Apollo FX 515 rear tractor tyre comes with optimal footprint and low ground pressure for row crop protection.",
+      "i": 12,
+      "iu": "https://www.apollotyres.com/content/dam/orbit/syncforce/products/1304/T0014072.png",
+      "u": "https://www.apollotyres.com/en-in/agricultural-tyres/products/1304-FX-515/",
+      "src": "Manufacturer website",
+      "v": [
+        [
+          "8.3-24",
+          "",
+          "Rim: 24; Ply rating: 6; Tube type: Tube Type; section width: 8.3; overall diameter: 995; usp: Specially Designed Rear Tractor Tyre for Row Crop Cultivation"
+        ],
+        [
+          "8.3-36",
+          "",
+          "Rim: 36; Ply rating: 8; Tube type: Tube Type; section width: 8.3; overall diameter: 1310; usp: Specially Designed Rear Tractor Tyre for Row Crop Cultivation"
+        ],
+        [
+          "12.4-32",
+          "",
+          "Rim: 32; Ply rating: 8; Tube type: Tube Type; section width: 12.4; overall diameter: 1365; usp: Specially Designed Rear Tractor Tyre for Row Crop Cultivation"
+        ]
+      ],
+      "id": 5
+    },
+    {
+      "co": "Apollo Tyres",
+      "b": "Apollo",
+      "k": "Light Commercial",
+      "s": "Truck and Bus / LCV",
+      "n": "ENDURACE LD",
+      "d": "An LCV tyre for those who need better mileage, better traction, and better load carrying capabilities. When nothing else endures, ENDURACE does.",
+      "i": 14,
+      "iu": "https://www.apollotyres.com/content/dam/orbit/syncforce/products/1210/T0017080.png",
+      "u": "https://www.apollotyres.com/en-in/truck-and-bus-tyres/products/1210-ENDURACE-LD/",
+      "src": "Manufacturer website",
+      "v": [
+        [
+          "7.50 R16",
+          "",
+          "Rim: 16; Load index: 122/118; Speed rating: M; Ply rating: 14; Construction: Radial; alternative rim width: 6; diameter(mm) overall: 814; usp: Best in Class Regional Drive Tyre"
+        ],
+        [
+          "7.50 R16",
+          "",
+          "Rim: 16; Load index: 124/120; Speed rating: M; Ply rating: 16; Construction: Radial; alternative rim width: 6; diameter(mm) overall: 814; usp: Best in Class Regional Drive Tyre"
+        ],
+        [
+          "8.25 R16",
+          "",
+          "Rim: 16; Load index: 129/127; Speed rating: M; Ply rating: 16; Construction: Radial; alternative rim width: 6; diameter(mm) overall: 857; usp: Best in Class Regional Drive Tyre"
+        ]
+      ],
+      "id": 249
+    },
+    {
+      "co": "Apollo Tyres",
+      "b": "Apollo",
+      "k": "Truck & Bus",
+      "s": "Truck and Bus / M&H CV",
+      "n": "ENDURACE LD",
+      "d": "An MHCV tyre for those who need better mileage, better traction, and better load carrying capabilities. When nothing else endures, ENDURACE does.",
+      "i": 15,
+      "iu": "https://www.apollotyres.com/content/dam/orbit/syncforce/products/1201/T0017080.png",
+      "u": "https://www.apollotyres.com/en-in/truck-and-bus-tyres/products/1201-ENDURACE-LD/",
+      "src": "Manufacturer website",
+      "v": [
+        [
+          "10.00 R20",
+          "",
+          "Rim: 20; Load index: 146/143; Speed rating: K; Ply rating: 16; Construction: Radial; alternative rim width: 7.5; diameter(mm) overall: 1065; usp: Best in Class Regional Drive Tyre"
+        ],
+        [
+          "8.25 R20",
+          "",
+          "Rim: 20; Load index: 137/135; Speed rating: K; Ply rating: 16; Construction: Radial; alternative rim width: 6.5; diameter(mm) overall: 981; usp: Best in Class Regional Drive Tyre"
+        ],
+        [
+          "295/90 R20",
+          "",
+          "Rim: 20; Load index: 152/148; Speed rating: J; Construction: Radial; alternative rim width: 7.5; diameter(mm) overall: 1065; usp: Best in Class Regional Drive Tyre"
+        ]
+      ],
+      "id": 604
+    },
+    {
+      "co": "Apollo Tyres",
+      "b": "Apollo",
+      "k": "Passenger Car",
+      "s": "Car, SUV & Van / VAN",
+      "n": "Others",
+      "d": "",
+      "i": 13,
+      "iu": "",
+      "u": "https://www.apollotyres.com/en-in/car-suv-tyres/products/2334-Others/",
+      "src": "Manufacturer website",
+      "v": [
+        [
+          "195 R14 C 106/104S",
+          "",
+          "Rim: 14; Load index: 106/104; Speed rating: S; Construction: Radial; part no (EAN): 8904156001466"
+        ]
+      ],
+      "r": 1,
+      "id": 513
+    }
+  ],
+  "flt": [
+    {
+      "co": "Fleetguard Filters Pvt Ltd",
+      "b": "Fleetguard",
+      "k": "Air Filter",
+      "s": "air cleaner asy",
+      "n": "AH19387 air cleaner asy",
+      "d": "With over 1,500 different air filtration products, from clamps to air housings to advanced air filters, Fleetguard® provides peace of mind for your air filtration needs. Our Fleetguard® AH19387 air ho",
+      "i": 17,
+      "iu": "https://catalogue.fleetguard-filtrum.com/uploads/uploadPartImg/ah19387.jpg",
+      "u": "",
+      "src": "catalogue.fleetguard-filtrum.com (Fleetguard Filters Pvt Ltd official India product catalogue, accessed 2026-11-22); description from fleetguard.com/product/AH19387",
+      "v": [
+        [
+          "AH19387",
+          "",
+          "Outer diameter (mm): 158.50; Length (mm): 346.50; Nominal flow: 120.00; Outlet diameter: 76.20; Note: It uses Primary Filter AF25904; Application: cummins 25 kva engine s3.8 g2-g7 cpcb iii; OEM cross "
+        ]
+      ],
+      "id": 9
+    },
+    {
+      "co": "Ashok Leyland",
+      "b": "Leyparts",
+      "k": "Other Filter",
+      "s": "BLOWER - AC PARTS - CONDENSOR - EXP.VALVE - PIPE",
+      "n": "FILTER",
+      "d": "",
+      "i": 18,
+      "iu": "https://mobileapp-images.leykart.com/Product_Detail/2x/F8T02900_1.png",
+      "u": "",
+      "src": "leykart.com (Ashok Leyland official spare-parts e-shop; data from its public catalogue API shop.leykart.com/rest/V1/al/products, accessed 2026-11-22)",
+      "v": [["F8T02900", "", "LENGTH - 206MM WIDTH - 206MM THICKNESS - 25MM; Type: filter Assembly"]],
+      "id": 1188
+    },
+    {
+      "co": "Ashok Leyland",
+      "b": "Leyparts",
+      "k": "Other Filter",
+      "s": "RESERVOIR - PARTS - KITS",
+      "n": "FILTER",
+      "d": "",
+      "i": 19,
+      "iu": "",
+      "u": "",
+      "src": "leykart.com (Ashok Leyland official spare-parts e-shop; data from its public catalogue API shop.leykart.com/rest/V1/al/products, accessed 2026-11-22)",
+      "v": [
+        ["P7A00026", "", ""],
+        ["P7A00057", "", ""]
+      ],
+      "id": 1273
+    },
+    {
+      "co": "Fleetguard Filters Pvt Ltd",
+      "b": "Fleetguard",
+      "k": "Air Filter",
+      "s": "air cleaner asy",
+      "n": "5042815 air cleaner asy",
+      "d": "",
+      "i": 16,
+      "iu": "",
+      "u": "",
+      "src": "catalogue.fleetguard-filtrum.com (Fleetguard Filters Pvt Ltd official India product catalogue, accessed 2026-11-22)",
+      "v": [
+        [
+          "5042815",
+          "",
+          "Outer diameter (mm): 329.00; Length (mm): 583.80; Nominal flow: 530.00; Inlet diameter: 177.80; Outlet diameter: 177.80; Note: It uses Primary Air Filter AF26485 and Safety Air Filter AF26125; Application: tata signa 1923.k engine isbe 5.6l ashwamedh bs vi, tata signa 2823.k engine isbe 5.6l ashwamedh bs vi, tata signa 2825.k engine isbe 6.7l atulya bs vi, tata signa 3523.k engine isbe 5.6l ashwamedh bs vi, tata signa 2523.k engine isbe 5.9l umbrella bs iv; OEM cross reference: tata 573709130109"
+        ]
+      ],
+      "r": 1,
+      "id": 1
+    }
+  ],
+  "img": [
+    [
+      ["t000", 158938, 3678],
+      ["f000", 824906, 19582]
+    ],
+    [
+      ["t000", 333934, 6026],
+      ["f000", 1770420, 12128]
+    ],
+    [
+      ["t000", 481236, 4414],
+      ["f000", 2340092, 9886]
+    ],
+    [
+      ["t000", 904882, 9452],
+      ["f000", 3708964, 16732]
+    ],
+    [
+      ["t000", 1297986, 4962],
+      ["f000", 5319482, 26906]
+    ],
+    [
+      ["t000", 1302948, 4956],
+      ["f000", 5346388, 26830]
+    ],
+    [
+      ["t000", 1537564, 3632],
+      ["f000", 6497846, 18074]
+    ],
+    [
+      ["t000", 1600310, 7340],
+      ["f000", 6801836, 41020]
+    ],
+    [
+      ["t000", 1935900, 7010],
+      ["f000", 8276010, 8612]
+    ],
+    [
+      ["t000", 1976804, 7166],
+      ["f000", 8328810, 9532]
+    ],
+    [
+      ["t000", 2003336, 5494],
+      ["f000", 8433518, 17130]
+    ],
+    [
+      ["t000", 2167052, 4404],
+      ["f001", 23982, 24396]
+    ],
+    [
+      ["t001", 1404038, 3698],
+      ["f002", 1286596, 17352]
+    ],
+    [
+      ["t001", 1548906, 4066],
+      ["f002", 2112652, 25082]
+    ],
+    [
+      ["t001", 1773182, 4606],
+      ["f002", 3304086, 24958]
+    ],
+    [
+      ["t001", 1777788, 4606],
+      ["f002", 3329044, 24958]
+    ],
+    [
+      ["t002", 1241056, 3018],
+      ["f003", 6895686, 15824]
+    ],
+    [
+      ["t002", 1954906, 2126],
+      ["f004", 3414436, 9540]
+    ],
+    [
+      ["t003", 60554, 1662],
+      ["f005", 352564, 6942]
+    ],
+    [
+      ["t003", 544180, 6614],
+      ["f005", 2840244, 25988]
+    ],
+    [
+      ["t003", 770754, 3954],
+      ["f005", 3962534, 18432]
+    ],
+    [
+      ["t003", 801790, 3770],
+      ["f005", 4119114, 19582]
+    ]
+  ]
+}

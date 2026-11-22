@@ -31,6 +31,7 @@ import { enforceRate, rateLimit, RATE_RULES } from '../middleware/rate-limit';
 import type { AppDeps, AppEnv } from '../types';
 import { validationHook } from '../validation';
 import { ApiError, Forbidden } from '../errors';
+import { adminCatalogueGroupRoutes } from './admin-catalogue-groups';
 import { productPhotoAdminRoutes } from './product-photos';
 import { errorResponses, ErrorSchema } from './schemas';
 
@@ -73,7 +74,7 @@ const ProductDetail = Product.extend({
   variants: z.array(
     z.object({
       sku: z.string(),
-      mrpPaise: z.number().int(),
+      mrpPaise: z.number().int().nullable(),
       netQuantity: z.object({ qty: z.number().int(), unit: z.enum(NET_UNITS) }).nullable(),
     }),
   ),
@@ -114,6 +115,16 @@ const list = createRoute({
     query: z.object({
       status: z.enum(PRODUCT_STATES).optional(),
       missingHindi: z.enum(['true', 'false']).optional(),
+      /** Packs without an MRP ("price on request"). */
+      missingMrp: z.enum(['true', 'false']).optional(),
+      brand: z
+        .string()
+        .regex(/^[a-z0-9][a-z0-9-]{0,119}$/)
+        .optional(),
+      range: z
+        .string()
+        .regex(/^[a-z0-9][a-z0-9-]{0,119}$/)
+        .optional(),
       after: z
         .string()
         .regex(/^[a-z0-9-]{1,120}$/)
@@ -378,8 +389,14 @@ export function adminCatalogueRoutes(deps: AppDeps, cache: SessionCache) {
   app.use(prefix, requirePermission('products:write'));
   app.on('POST', '/admin/catalogue/products/:slug/status', requirePermission('products:publish'));
   app.on('POST', '/admin/catalogue/import', requirePermission('products:import'));
+  app.on('POST', '/admin/catalogue/products/bulk-status', requirePermission('products:publish'));
+  // Hiding a brand or range changes the public storefront: publish-level (design 2026-11-22).
+  app.on('POST', '/admin/catalogue/brands/:slug/visibility', requirePermission('products:publish'));
+  app.on('POST', '/admin/catalogue/ranges/:slug/visibility', requirePermission('products:publish'));
   // Product photos share this stack (sign-in, limits, products:write) and add publish rights for the queue (L190).
   app.route('/', productPhotoAdminRoutes(deps));
+  // Brands and ranges, bulk status and MRPs (design 2026-11-22) share the stack too.
+  app.route('/', adminCatalogueGroupRoutes(deps));
 
   return app
     .openapi(create, async (c) => {
@@ -425,6 +442,9 @@ export function adminCatalogueRoutes(deps: AppDeps, cache: SessionCache) {
       const page = await listAdminProducts(deps.db, {
         status: q.status ?? null,
         missingHindiOnly: q.missingHindi === 'true',
+        missingMrpOnly: q.missingMrp === 'true',
+        brand: q.brand ?? null,
+        range: q.range ?? null,
         after: q.after ?? null,
       });
       return c.json(page, 200);

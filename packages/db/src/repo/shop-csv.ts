@@ -57,8 +57,9 @@ async function loadCatalog(tx: Tx, shopId: string, skus: readonly string[]) {
     .where(inArray(productVariants.sku, [...skus]));
   for (const r of rows)
     map.set(r.sku, {
-      mrpPaise: r.mrp,
-      live: r.pStatus === 'live' && r.vStatus === 'active',
+      mrpPaise: r.mrp ?? 0,
+      // No MRP yet = not offerable (design 2026-11-22).
+      live: r.mrp !== null && r.pStatus === 'live' && r.vStatus === 'active',
       offer:
         r.offerId === null
           ? null

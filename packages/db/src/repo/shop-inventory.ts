@@ -54,19 +54,21 @@ export async function listShopInventory(
     .where(eq(shopInventory.shopId, shopId))
     .orderBy(asc(productVariants.sku))
     .limit(1000);
-  return rows.map((r) => ({
-    sku: r.sku,
-    product: localized(r.name, r.nameHi, locale),
-    productSlug: r.slug,
-    mrpPaise: r.mrp,
-    sellingPaise: r.selling,
-    onHand: r.onHand,
-    reserved: r.reserved,
-    free: r.onHand - r.reserved,
-    leadDays: r.leadDays,
-    active: r.active,
-    version: r.version,
-  }));
+  return rows
+    .flatMap((r) => (r.mrp === null ? [] : [{ ...r, mrp: r.mrp }]))
+    .map((r) => ({
+      sku: r.sku,
+      product: localized(r.name, r.nameHi, locale),
+      productSlug: r.slug,
+      mrpPaise: r.mrp,
+      sellingPaise: r.selling,
+      onHand: r.onHand,
+      reserved: r.reserved,
+      free: r.onHand - r.reserved,
+      leadDays: r.leadDays,
+      active: r.active,
+      version: r.version,
+    }));
 }
 
 export interface OfferInput {
@@ -124,6 +126,8 @@ export async function saveShopOffer(
       .where(eq(productVariants.sku, input.sku))
       .limit(1);
     if (!variant) throw new NotFoundError('No such SKU');
+    if (variant.mrp === null)
+      throw new ConflictError('This pack has no MRP yet; it cannot be offered', 'MRP_MISSING');
     check(input.changes, variant.mrp);
     // A shop's own price is always a request for staff approval (user 2026-11-13); stock and on/off stay direct.
     if (input.actorRole === 'shop' && input.changes.sellingPaise !== undefined)

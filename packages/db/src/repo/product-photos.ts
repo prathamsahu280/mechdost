@@ -195,7 +195,15 @@ async function compact(tx: Tx, productId: string): Promise<void> {
 /** Add a photo (the keys of the stored copies). Staff photos are approved at once; a shop's wait for review. */
 export async function saveProductPhoto(
   db: Tx,
-  input: { slug: string; actor: PhotoActor; alt: string; altHi: string; image: StoredProductImage },
+  input: {
+    slug: string;
+    actor: PhotoActor;
+    alt: string;
+    altHi: string;
+    image: StoredProductImage;
+    /** Admin-only: where the picture came from (catalogue import; never shown to customers). */
+    photoSource?: string | null;
+  },
 ): Promise<ProductPhotoRow> {
   const { alt, altHi } = assertAlt(input.alt, input.altHi);
   return db.transaction(async (tx) => {
@@ -228,6 +236,7 @@ export async function saveProductPhoto(
         altHi,
         sort: await liveCount(tx, p.id),
         lqip: img.lqip,
+        photoSource: input.photoSource ?? null,
         width: img.width,
         height: img.height,
         status,

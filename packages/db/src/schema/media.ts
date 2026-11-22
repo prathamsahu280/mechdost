@@ -133,6 +133,8 @@ export const productPhotos = pgTable(
     submittedByShopId: uuid().references(() => shops.id, { onDelete: 'set null' }),
     reviewedBy: uuid().references(() => users.id, { onDelete: 'set null' }),
     reviewedAt: ts(),
+    /** Admin-only: where the picture came from (maker page, marketplace URL); never shown to customers. */
+    photoSource: text(),
     /** Why staff refused it (a code); set together with `deleted_at`. */
     rejectReason: text(),
     createdBy: uuid().references(() => users.id, { onDelete: 'set null' }),

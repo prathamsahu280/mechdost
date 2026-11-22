@@ -88,15 +88,18 @@ export async function productVariants(
     ok: true,
     data: {
       name: `${p.data.brand.name} ${p.data.name}`,
-      variants: p.data.variants.map((v) => ({
-        sku: v.sku,
-        mrpPaise: v.mrpPaise,
-        label: v.netQuantity
-          ? `${String(v.netQuantity.qty)} ${v.netQuantity.unit}`
-          : Object.values(v.options)
-              .filter((x): x is string | number => typeof x === 'string' || typeof x === 'number')
-              .join(' · '),
-      })),
+      // Packs without an MRP are not sellable yet (design 2026-11-22): sellers cannot pick them.
+      variants: p.data.variants
+        .flatMap((v) => (v.mrpPaise === null ? [] : [{ ...v, mrpPaise: v.mrpPaise }]))
+        .map((v) => ({
+          sku: v.sku,
+          mrpPaise: v.mrpPaise,
+          label: v.netQuantity
+            ? `${String(v.netQuantity.qty)} ${v.netQuantity.unit}`
+            : Object.values(v.options)
+                .filter((x): x is string | number => typeof x === 'string' || typeof x === 'number')
+                .join(' · '),
+        })),
     },
   };
 }

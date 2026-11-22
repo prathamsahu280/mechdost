@@ -87,7 +87,7 @@ beforeAll(async () => {
     variants.map((v) => ({
       variantId: v.id,
       cityId: raipur!.id,
-      sellingPaise: v.mrpPaise,
+      sellingPaise: v.mrpPaise ?? 1,
       updatedBy: staffUser.id,
     })),
   );

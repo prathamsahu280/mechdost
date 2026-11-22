@@ -14,7 +14,11 @@ the MRP sources that catalogue-v2 was built from (each product carries `src`).
 `iu` picture source URL, `u` maker page, `src` data source, `r: 1` = **representative** picture (a similar product),
 `v[]` = variants `[pack/model/size, MRP rupees incl. GST or "", specs "k: v; …"]`.
 
-## Selection rule (user 2026-11-22: "only list the products which have pictures already" + "its fine even if the mrps are lacking as long as we have images, the admin can set the mrps also u can check the pdf files for the mrps")
+## Selection rule, updated 2026-11-22 (user scope change; overrides the table below)
+
+Import ONLY products of the price-list brands (Castrol, Gulf, Exide, Tata Green, KELVINN, CERAFENCE, ELVI; CLI `--brands`, default that set) that have their own photo (no `r`) whose full-size picture bytes exist and decode (else skipped as `no_picture_bytes`, never imported without a photo), with all packs (MRP where present, else none). Expected: **219 products / 740 packs / 695 with MRP** (Castrol 82, Gulf 72, KELVINN 32, Exide 17, Tata Green 15, CERAFENCE 1). Every product of catalogue-v2 gets a row in `docs/catalogue/catalogue-v2-import-status.csv` (status imported/updated/unchanged/skipped + reason: `not_price_list_brand`, `representative_picture`, `no_picture_bytes`, `invalid`) and a summary `.md`; Admin → Catalogue shows the last real run. The rest of the catalogue is imported later by changing `--brands`.
+
+## Selection rule (original, user 2026-11-22: "only list the products which have pictures already" + "its fine even if the mrps are lacking as long as we have images, the admin can set the mrps also u can check the pdf files for the mrps")
 
 Import every product that has **its own photo** (`r` absent), with **all** its variants, MRP or not. A pack without an
 MRP is imported with **no MRP** ("price on request", not sellable) and the admin sets it later (Admin → Catalogue,

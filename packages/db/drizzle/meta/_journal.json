@@ -540,6 +540,13 @@
       "when": 1795329572511,
       "tag": "0078_business_applications",
       "breakpoints": true
+    },
+    {
+      "idx": 79,
+      "version": "7",
+      "when": 1795353034994,
+      "tag": "0079_catalogue_groups_mrp_optional",
+      "breakpoints": true
     }
   ]
 }

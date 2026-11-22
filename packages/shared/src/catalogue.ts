@@ -84,7 +84,7 @@ export const CatalogueProductSchema = z.object({
     z.object({
       sku: z.string(),
       options: z.record(z.string(), z.unknown()),
-      mrpPaise: z.number().int(),
+      mrpPaise: z.number().int().nullable(),
       netQuantity: NetQuantitySchema.nullable(),
       offer: CatalogueOfferSchema.extend({ seller: z.string() }).nullable(),
     }),

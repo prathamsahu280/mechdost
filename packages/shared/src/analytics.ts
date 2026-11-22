@@ -91,6 +91,23 @@ export interface ServerEventProps {
   admin_product_created: { productSlug: string; sku: string; status: string; source: 'form' | 'import' };
   /** One committed CSV import (dry runs are not counted): rows in the file, products added, SKUs skipped. */
   admin_catalogue_imported: { rows: number; created: number; skipped: number; status: string };
+  /** The catalogue-v2 import wrote products (CLI `pnpm db:import:catalogue`, design 2026-11-22); dry runs are not counted. */
+  admin_catalogue_v2_imported: {
+    productsCreated: number;
+    productsUpdated: number;
+    packsCreated: number;
+    mrpFilled: number;
+  };
+  /** A brand or product range was switched off/on in Admin → Catalogue → Brands and ranges (hides its products). */
+  admin_group_switched: {
+    kind: 'brand' | 'range';
+    slug: string;
+    hidden: boolean;
+    reasonCode: string | null;
+    productsAffected: number;
+  };
+  /** One bulk action on the product list (publish, unpublish, set MRP): how many products or packs it changed. */
+  admin_products_bulk: { action: 'publish' | 'unpublish' | 'set_mrp'; count: number };
   /** A trust line ("genuine parts") was published or taken down in Admin -> Content (placement = the line's slot). */
   trust_line_edited: { placement: string; locale: 'en' | 'hi'; action: 'published' | 'unpublished' };
   admin_content_published: { key: string; locale: 'en' | 'hi'; action: 'published' | 'unpublished' };

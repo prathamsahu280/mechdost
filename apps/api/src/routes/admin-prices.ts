@@ -32,7 +32,7 @@ const Board = z
     variants: z.array(
       z.object({
         sku: z.string(),
-        mrpPaise: z.number().int(),
+        mrpPaise: z.number().int().nullable(),
         city: Ref.nullable(),
         pins: z.array(
           z.object({

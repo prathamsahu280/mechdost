@@ -9,6 +9,7 @@ import {
 import { auditLog, cartItems, carts, orderGroups, orderItems, orders, users } from '../schema';
 import { uuidv7 } from '../schema/_common';
 import { ConflictError, NotFoundError, pgCode, ValidationError } from './errors';
+import { productVisible } from './visibility';
 import { recordServerEvent } from './events';
 import { localized } from './localized';
 import type { Tx } from './orders';
@@ -63,7 +64,7 @@ async function resolve(tx: Tx, skus: readonly string[]): Promise<Map<string, Res
   if (skus.length === 0) return out;
   const rows = rowsOf<{ sku: string; id: string; sellable: boolean }>(
     await tx.execute(sql`
-      select v.sku, v.id, (v.status = 'active' and p.status = 'live') as sellable
+      select v.sku, v.id, (v.status = 'active' and v.mrp_paise is not null and ${productVisible('p')}) as sellable
       from product_variants v join products p on p.id = v.product_id
       where v.sku in (select jsonb_array_elements_text(${JSON.stringify(skus)}::jsonb))`),
   );
@@ -106,7 +107,7 @@ async function pruneUnsellable(tx: Tx, cartId: string): Promise<ServerCart['drop
     await tx.execute(sql`
       delete from cart_items ci using product_variants v, products p
       where ci.cart_id = ${cartId} and v.id = ci.variant_id and p.id = v.product_id
-        and (v.status <> 'active' or p.status <> 'live')
+        and (v.status <> 'active' or v.mrp_paise is null or not ${productVisible('p')})
       returning v.sku`),
   );
   return gone.map((g) => ({ sku: g.sku, reason: 'not_for_sale' as const }));

@@ -21,6 +21,7 @@ import {
 } from '../schema';
 import { queueApplicationEmail } from './email-events';
 import { ConflictError, NotFoundError, ValidationError } from './errors';
+import { productVisible } from './visibility';
 import { recordServerEvent } from './events';
 import { queueStaffNotice } from './notices';
 import { findOpenInvite } from './partner-invites';
@@ -63,7 +64,7 @@ export async function submitSellerApplication(
     const found = await tx
       .select({ id: products.id, slug: products.slug })
       .from(products)
-      .where(and(inArray(products.slug, app.productSlugs), eq(products.status, 'live')));
+      .where(and(inArray(products.slug, app.productSlugs), productVisible('products')));
     if (found.length !== app.productSlugs.length)
       throw new ValidationError('Some products are not in the catalogue', 'PRODUCTS');
 

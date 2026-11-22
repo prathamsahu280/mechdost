@@ -1,8 +1,10 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import { useCallback, useEffect, useState, type SyntheticEvent } from 'react';
+import dynamic from 'next/dynamic';
+import { useCallback, useEffect, useMemo, useState, type SyntheticEvent } from 'react';
 import {
+  AdminBulkMrpResult,
   AdminNetQuantitySaved,
   AdminPriceBoard,
   AdminPriceSaved,
@@ -29,12 +31,27 @@ import {
 } from '@/lib/admin-prices-view';
 import { track } from '@/lib/analytics';
 import { formatPrice } from '@/lib/format';
+import { parseRupees } from '@/lib/money-input';
 import { AddProductForm, ImportCsv } from './admin-catalogue-add';
+import { BulkBar } from './admin-catalogue-bulk';
 import { PhotoQueueApi } from './photo-queue-api';
 import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 import { ProductPhotosEditor } from './product-photos-editor';
 
 type Notice = { kind: 'ok' | 'error'; text: string } | null;
+
+/** Brands and ranges (design 2026-11-22) load only when that view is opened. */
+const CatalogueGroups = dynamic(() => import('./admin-catalogue-groups').then((m) => m.CatalogueGroups), {
+  ssr: false,
+});
+
+interface ListFilter {
+  missingHindi: boolean;
+  missingMrp: boolean;
+  brand: string | null;
+  range: string | null;
+}
+const NO_FILTER: ListFilter = { missingHindi: false, missingMrp: false, brand: null, range: null };
 
 function NoticeLine({ notice }: { notice: Notice }) {
   if (!notice) return null;
@@ -52,7 +69,10 @@ function NoticeLine({ notice }: { notice: Notice }) {
 export function CatalogueEditor() {
   const t = useTranslations('portal');
   const locale = useLocale();
-  const [missingOnly, setMissingOnly] = useState(false);
+  const [view, setView] = useState<'products' | 'groups'>('products');
+  const [filter, setFilter] = useState<ListFilter>(NO_FILTER);
+  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
+  const [announce, setAnnounce] = useState('');
   const [items, setItems] = useState<AdminProductDto[]>([]);
   const [next, setNext] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -64,7 +84,10 @@ export function CatalogueEditor() {
     async (after: string | null) => {
       setLoading(true);
       const q = new URLSearchParams();
-      if (missingOnly) q.set('missingHindi', 'true');
+      if (filter.missingHindi) q.set('missingHindi', 'true');
+      if (filter.missingMrp) q.set('missingMrp', 'true');
+      if (filter.brand) q.set('brand', filter.brand);
+      if (filter.range) q.set('range', filter.range);
       if (after) q.set('after', after);
       const res = await adminApi(locale, `/admin/catalogue/products?${q.toString()}`, AdminProductList);
       setLoading(false);
@@ -76,12 +99,22 @@ export function CatalogueEditor() {
       setItems((prev) => (after ? [...prev, ...res.data.items] : res.data.items));
       setNext(res.data.next);
     },
-    [locale, missingOnly],
+    [locale, filter],
   );
 
   useEffect(() => {
     void load(null);
   }, [load]);
+
+  const slugs = useMemo(() => [...selected], [selected]);
+  const toggle = (slug: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(slug)) next.delete(slug);
+      else next.add(slug);
+      return next;
+    });
+  };
 
   if (adding && !editing)
     return (
@@ -145,58 +178,146 @@ export function CatalogueEditor() {
           {t('cat_import_open')}
         </button>
       </div>
-      <div className="flex flex-wrap gap-2">
-        {([false, true] as const).map((on) => (
+      <div role="tablist" aria-label={t('cat_title')} className="flex flex-wrap gap-2">
+        {(['products', 'groups'] as const).map((k) => (
           <button
-            key={String(on)}
+            key={k}
             type="button"
-            aria-pressed={missingOnly === on}
+            role="tab"
+            id={`cat-view-${k}`}
+            aria-selected={view === k}
             onClick={() => {
-              setMissingOnly(on);
+              setView(k);
             }}
-            className={`${portalQuiet} aria-pressed:border-accent-button aria-pressed:bg-accent-soft`}
+            className={`${portalQuiet} aria-selected:border-accent-button aria-selected:bg-accent-soft`}
           >
-            {on ? t('cat_filterMissingHindi') : t('cat_filterAll')}
+            {t(k === 'products' ? 'grp_tab_products' : 'grp_tab_groups')}
           </button>
         ))}
       </div>
-      <PhotoQueueApi />
-      {error ? <NoticeLine notice={{ kind: 'error', text: t(error as 'cat_err_generic') }} /> : null}
-      {!loading && items.length === 0 && !error ? (
-        <p className="text-sm text-muted">{t('cat_empty')}</p>
-      ) : null}
-      <ul className={`divide-y divide-line-card ${portalCard}`}>
-        {items.map((p) => (
-          <li key={p.slug} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-3">
-            <div className="min-w-0">
-              <p className="font-heading font-extrabold text-ink" data-user-content>
-                {p.brand} {localName(p, locale)}
-              </p>
-              <p className="text-xs text-muted">
-                {t(`cat_status_${p.status}` as 'cat_status_live')}
-                {p.missingHindi.length > 0
-                  ? ` · ${t('cat_missingHindi', { count: p.missingHindi.length })}`
-                  : ''}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                setEditing(p.slug);
+      <p role="status" aria-live="polite" className="min-h-5 text-sm font-bold text-ink">
+        {announce}
+      </p>
+      {view === 'groups' ? (
+        <CatalogueGroups
+          onOpenProducts={(f) => {
+            setFilter({
+              ...NO_FILTER,
+              brand: f.brand ?? null,
+              range: f.range ?? null,
+              missingMrp: f.missingMrp === true,
+            });
+            setSelected(new Set());
+            setView('products');
+          }}
+        />
+      ) : (
+        <>
+          <div className="flex flex-wrap gap-2">
+            {(
+              [
+                ['all', t('cat_filterAll'), !filter.missingHindi && !filter.missingMrp],
+                ['hindi', t('cat_filterMissingHindi'), filter.missingHindi],
+                ['mrp', t('cat_filterMissingMrp'), filter.missingMrp],
+              ] as const
+            ).map(([k, label, on]) => (
+              <button
+                key={k}
+                type="button"
+                aria-pressed={on}
+                onClick={() => {
+                  setFilter((f) => ({ ...f, missingHindi: k === 'hindi', missingMrp: k === 'mrp' }));
+                  setSelected(new Set());
+                }}
+                className={`${portalQuiet} aria-pressed:border-accent-button aria-pressed:bg-accent-soft`}
+              >
+                {label}
+              </button>
+            ))}
+            {filter.brand || filter.range ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setFilter((f) => ({ ...f, brand: null, range: null }));
+                }}
+                className={portalQuiet}
+              >
+                {t('grp_clearFilter', { name: filter.range ?? filter.brand ?? '' })}
+              </button>
+            ) : null}
+          </div>
+          <PhotoQueueApi />
+          {error ? <NoticeLine notice={{ kind: 'error', text: t(error as 'cat_err_generic') }} /> : null}
+          {!loading && items.length === 0 && !error ? (
+            <p className="text-sm text-muted">{t('cat_empty')}</p>
+          ) : null}
+          {slugs.length > 0 ? (
+            <BulkBar
+              slugs={slugs}
+              announce={setAnnounce}
+              onClear={() => {
+                setSelected(new Set());
               }}
-              className={portalQuiet}
-            >
-              {t('cat_edit', { name: localName(p, locale) })}
+              onChanged={() => {
+                setSelected(new Set());
+                void load(null);
+              }}
+            />
+          ) : null}
+          {items.length > 0 ? (
+            <label className="flex items-center gap-2 text-sm font-bold text-ink">
+              <input
+                type="checkbox"
+                checked={items.length > 0 && items.every((p) => selected.has(p.slug))}
+                onChange={(e) => {
+                  setSelected(e.target.checked ? new Set(items.map((p) => p.slug)) : new Set());
+                }}
+              />
+              {t('cat_select_all')}
+            </label>
+          ) : null}
+          <ul className={`divide-y divide-line-card ${portalCard}`}>
+            {items.map((p) => (
+              <li key={p.slug} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-3">
+                <input
+                  type="checkbox"
+                  aria-label={t('cat_select_row', { name: `${p.brand} ${localName(p, locale)}` })}
+                  checked={selected.has(p.slug)}
+                  onChange={() => {
+                    toggle(p.slug);
+                  }}
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="font-heading font-extrabold text-ink" data-user-content>
+                    {p.brand} {localName(p, locale)}
+                  </p>
+                  <p className="text-xs text-muted">
+                    {t(`cat_status_${p.status}` as 'cat_status_live')}
+                    {p.missingHindi.length > 0
+                      ? ` · ${t('cat_missingHindi', { count: p.missingHindi.length })}`
+                      : ''}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditing(p.slug);
+                  }}
+                  className={portalQuiet}
+                >
+                  {t('cat_edit', { name: localName(p, locale) })}
+                </button>
+              </li>
+            ))}
+          </ul>
+          {loading ? <p className="text-sm text-muted">{t('cat_loading')}</p> : null}
+          {next && !loading ? (
+            <button type="button" onClick={() => void load(next)} className={portalQuiet}>
+              {t('cat_more')}
             </button>
-          </li>
-        ))}
-      </ul>
-      {loading ? <p className="text-sm text-muted">{t('cat_loading')}</p> : null}
-      {next && !loading ? (
-        <button type="button" onClick={() => void load(next)} className={portalQuiet}>
-          {t('cat_more')}
-        </button>
-      ) : null}
+          ) : null}
+        </>
+      )}
     </div>
   );
 }
@@ -266,6 +387,60 @@ function ProductEditor({ slug, onBack }: { slug: string; onBack: () => void }) {
         <p className="text-sm text-muted">{t('cat_loading')}</p>
       )}
     </div>
+  );
+}
+
+/** Set or change the MRP of one pack (design 2026-11-22); never below a price already set, the API says so. */
+function MrpEdit({ sku, mrp, onSaved }: { sku: string; mrp: number | null; onSaved: () => Promise<void> }) {
+  const t = useTranslations('portal');
+  const locale = useLocale();
+  const [notice, setNotice] = useState<Notice>(null);
+
+  async function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const raw = new FormData(e.currentTarget).get('mrp');
+    const parsed = parseRupees(typeof raw === 'string' ? raw : '');
+    if (!parsed.ok) {
+      setNotice({ kind: 'error', text: t(errorKey(parsed.error) as 'cat_err_generic') });
+      return;
+    }
+    const res = await adminApi(locale, '/admin/catalogue/mrps', AdminBulkMrpResult, {
+      method: 'PUT',
+      body: { items: [{ sku, mrpPaise: parsed.paise }] },
+    });
+    if (!res.ok) {
+      setNotice({ kind: 'error', text: t(errorKey(res.code) as 'cat_err_generic') });
+      return;
+    }
+    const skipped = res.data.skipped[0];
+    if (skipped) {
+      setNotice({ kind: 'error', text: t(`cat_err_${skipped.reason}` as 'cat_err_generic') });
+      return;
+    }
+    track('click', { id: 'admin_mrp_saved', path: window.location.pathname });
+    setNotice({ kind: 'ok', text: t('cat_saved') });
+    await onSaved();
+  }
+
+  return (
+    <form onSubmit={(e) => void onSubmit(e)} className="flex flex-wrap items-end gap-3">
+      <div>
+        <label htmlFor={`mrp-${sku}`} className="text-xs font-bold text-muted">
+          {t('cat_mrp_label')}
+        </label>
+        <input
+          id={`mrp-${sku}`}
+          name="mrp"
+          inputMode="decimal"
+          defaultValue={mrp === null ? '' : String(mrp / 100)}
+          className={portalField}
+        />
+      </div>
+      <button type="submit" className={portalQuiet}>
+        {t('cat_mrp_set')}
+      </button>
+      <NoticeLine notice={notice} />
+    </form>
   );
 }
 
@@ -561,9 +736,14 @@ function VariantPrices({
   const locale = useLocale();
   const [notice, setNotice] = useState<Notice>(null);
   const floor = cityFloorPaise(v);
+  const mrp = v.mrpPaise;
 
   async function save(raw: string, pincode: string | null, version: number | null, lowest: number | null) {
-    const read = readPriceInput(raw, { mrpPaise: v.mrpPaise, lowestShopPaise: lowest });
+    if (mrp === null) {
+      setNotice({ kind: 'error', text: t('cat_err_MRP_MISSING') });
+      return;
+    }
+    const read = readPriceInput(raw, { mrpPaise: mrp, lowestShopPaise: lowest });
     if (!read.ok) {
       setNotice({ kind: 'error', text: t(errorKey(read.issue) as 'cat_err_generic') });
       return;
@@ -602,8 +782,10 @@ function VariantPrices({
       className="space-y-3 border-t border-line pt-4 first:border-0 first:pt-0"
     >
       <h4 id={`price-${v.sku}`} className="text-sm font-extrabold text-ink">
-        {v.sku} · MRP {formatPrice(v.mrpPaise)}
+        {v.sku} · MRP {mrp === null ? t('cat_mrpNone') : formatPrice(mrp)}
       </h4>
+      {mrp === null ? <p className="text-xs text-muted">{t('cat_err_MRP_MISSING')}</p> : null}
+      <MrpEdit sku={v.sku} mrp={mrp} onSaved={onSaved} />
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -631,7 +813,10 @@ function VariantPrices({
       <p className="text-xs text-muted">
         {floor === null
           ? t('cat_cityNoShop')
-          : t('cat_cityHint', { floor: formatPrice(floor), mrp: formatPrice(v.mrpPaise) })}
+          : t('cat_cityHint', {
+              floor: formatPrice(floor),
+              mrp: mrp === null ? t('cat_mrpNone') : formatPrice(mrp),
+            })}
       </p>
       <NoticeLine notice={notice} />
       <ul className="space-y-3">

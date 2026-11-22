@@ -15,6 +15,7 @@ import {
   uuid,
   type AnyPgColumn,
 } from 'drizzle-orm/pg-core';
+import { HIDE_REASONS } from '@mechdost/shared/catalogue-groups';
 import { GST_STATUSES } from '@mechdost/shared/partners';
 import { NET_UNITS } from '@mechdost/shared/product-attributes';
 import { INVITE_STATES, PRICE_REQUEST_STATES } from '@mechdost/shared/state';
@@ -66,10 +67,48 @@ export const brands = pgTable(
     origin: text().notNull().default('aftermarket'),
     logoPath: text(),
     featured: boolean().notNull().default(false),
+    /** Admin switch (design 2026-11-22): a hidden brand takes all its products off the storefront; status is untouched. */
+    hidden: boolean().notNull().default(false),
+    hiddenReason: text(),
+    version: version(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
-  (t) => [check('brands_origin_valid', sql`${t.origin} in ('oem','oes','aftermarket')`)],
+  (t) => [
+    check('brands_origin_valid', sql`${t.origin} in ('oem','oes','aftermarket')`),
+    check(
+      'brands_hidden_reason',
+      sql`(${t.hidden} = (${t.hiddenReason} is not null)) and (${t.hiddenReason} is null or ${t.hiddenReason} in (${inList(HIDE_REASONS)}))`,
+    ),
+  ],
+);
+
+/** A product range inside a brand ("Castrol CRB", "Exide Premio"): the admin switches it off like a brand. */
+export const productRanges = pgTable(
+  'product_ranges',
+  {
+    id: id(),
+    brandId: uuid()
+      .notNull()
+      .references(() => brands.id, { onDelete: 'restrict' }),
+    slug: text().notNull().unique(),
+    name: text().notNull(),
+    nameHi: text(),
+    sort: integer().notNull().default(0),
+    hidden: boolean().notNull().default(false),
+    hiddenReason: text(),
+    version: version(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    check(
+      'product_ranges_hidden_reason',
+      sql`(${t.hidden} = (${t.hiddenReason} is not null)) and (${t.hiddenReason} is null or ${t.hiddenReason} in (${inList(HIDE_REASONS)}))`,
+    ),
+    unique('product_ranges_brand_name_uq').on(t.brandId, t.name),
+    index().on(t.brandId),
+  ],
 );
 
 export const shops = pgTable(
@@ -262,8 +301,12 @@ export const products = pgTable(
     categoryId: uuid()
       .notNull()
       .references(() => categories.id, { onDelete: 'restrict' }),
+    /** Optional range inside the brand; hiding the range hides the product (design 2026-11-22). */
+    rangeId: uuid().references(() => productRanges.id, { onDelete: 'restrict' }),
     description: text(),
     descriptionHi: text(),
+    /** True while the Hindi texts are machine-made and not yet reviewed by staff (catalogue-v2 import, R2). */
+    hindiMachine: boolean().notNull().default(false),
     /**
      * Customer-visible summary lines, English + Hindi side by side (decision 2026-11-02 "Localised content
      * columns", spec 02). Brand/model names, units and codes stay in Latin script inside the Hindi text.
@@ -324,6 +367,7 @@ export const products = pgTable(
     ),
     index().on(t.categoryId, t.status),
     index().on(t.brandId),
+    index().on(t.rangeId),
     index().on(t.submittedByShopId),
     index('products_search_vector_idx').using('gin', t.searchVector),
     check('products_vehicle_types_valid', sql`${t.vehicleTypes} <@ array['2W','3W','4W']::text[]`),
@@ -347,7 +391,8 @@ export const productVariants = pgTable(
       .notNull()
       .default(sql`'{}'::jsonb`),
     barcode: text(),
-    mrpPaise: paise().notNull(),
+    /** MRP incl. GST in paise; NULL = "price on request": not sellable until the admin sets it (design 2026-11-22). */
+    mrpPaise: paise(),
     weightG: integer(),
     /**
      * Net quantity of the pack (design 2026-11-13 "Product comparison"): a whole number in a base unit

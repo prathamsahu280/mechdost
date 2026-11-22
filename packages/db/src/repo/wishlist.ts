@@ -2,6 +2,7 @@ import { and, eq, sql } from 'drizzle-orm';
 import { WISHLIST_MAX, type Wishlist } from '@mechdost/shared/wishlist-api';
 import { products, users, wishlistItems } from '../schema';
 import { NotFoundError, ValidationError } from './errors';
+import { productVisible } from './visibility';
 import { recordServerEvent } from './events';
 import { localized } from './localized';
 import type { Tx } from './orders';
@@ -59,7 +60,7 @@ export async function listWishlist(db: Tx, userId: string, locale: WishlistLocal
         ph.id::text as photo_id, ph.alt as photo_alt, ph.alt_hi as photo_alt_hi, ph.width as photo_width,
         ph.height as photo_height
       from wishlist_items w
-      join products p on p.id = w.product_id and p.status = 'live'
+      join products p on p.id = w.product_id and ${productVisible('p')}
       join brands b on b.id = p.brand_id
       left join lateral (
         select id, alt, alt_hi, width, height from product_photos
@@ -102,7 +103,7 @@ export async function setWishlisted(
     const [p] = await tx
       .select({ id: products.id })
       .from(products)
-      .where(and(eq(products.slug, slug), eq(products.status, 'live')));
+      .where(and(eq(products.slug, slug), productVisible('products')));
     if (!p) throw new NotFoundError('Product not found');
     const count = async () => {
       const [row] = await tx
