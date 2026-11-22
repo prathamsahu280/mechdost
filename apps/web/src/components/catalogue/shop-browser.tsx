@@ -1,5 +1,6 @@
 'use client';
 
+import { appendFresh, withPages } from '@/lib/catalogue/load-more';
 import { useCategoryEmoji } from '@/demo/site-config';
 import { CATEGORY_EMOJI, UI_EMOJI } from '@/lib/emoji';
 import { MessageCircle } from 'lucide-react';
@@ -215,7 +216,7 @@ export function ShopBrowser({
 
   // After "Load more", focus the first new card (it is in the DOM once this render commits).
   useEffect(() => {
-    if (focusSlug) firstNew.current?.focus();
+    if (focusSlug) firstNew.current?.focus({ preventScroll: true });
   }, [focusSlug]);
 
   // Back/forward restore the filters without a reload.
@@ -310,23 +311,22 @@ export function ShopBrowser({
         setLoadState('idle');
         return;
       }
-      const shown = new Set([...server.slugs, ...(appended?.cards.map((card) => card.slug) ?? [])]);
-      const fresh = page.cards.filter((card) => !shown.has(card.slug));
+      const fresh = appendFresh(server.slugs, appended?.cards ?? [], page.cards);
+      const pages = (appended?.pages ?? server.pages) + 1;
       setMore({
         key: listingKey,
         cards: [...(appended?.cards ?? []), ...fresh],
         nextCursor: page.nextCursor,
-        pages: (appended?.pages ?? server.pages) + 1,
+        pages,
       });
-      // Put the open pages in the URL and let the server render them, so the Router Cache holds the whole list
-      // and Back from a product returns to it (replaceState alone would restore the cached first page). The
-      // same cards keep their elements (one keyed list), so focus and scroll stay put.
-      // Built from the listing this page belongs to, never from whatever the address bar shows now.
-      const url = new URL(urlFor(basePath, listingState(server.query)), window.location.origin);
-      url.searchParams.set('pages', String((appended?.pages ?? server.pages) + 1));
-      startNavigation(() => {
-        router.replace(`${url.pathname}${url.search}`, { scroll: false });
-      });
+      // Only the address changes (shareable; a fresh load of it renders the N pages once): the cards are already
+      // here, so no server re-render of the whole list (370 KB at 5 pages, measured 2026-11-22). Built from the
+      // listing this page belongs to, never from whatever the address bar shows now.
+      window.history.replaceState(
+        window.history.state,
+        '',
+        withPages(urlFor(basePath, listingState(server.query)), pages),
+      );
       setLoadState('idle');
       setAnnouncement(c('loadedMore', { count: fresh.length }));
       track('click', { id: 'shop_load_more', path: window.location.pathname });
@@ -531,7 +531,7 @@ export function ShopBrowser({
       {shownCount > 0 ? (
         <>
           <ul
-            aria-busy={navigating || undefined}
+            aria-busy={navigating || loadState === 'loading' || undefined}
             className="card-grid mt-5 grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 tab:grid-cols-3 nav:grid-cols-4"
           >
             {[...results.map((p) => ({ slug: p.slug, node: cards[p.slug] })), ...(appended?.cards ?? [])].map(
@@ -555,10 +555,14 @@ export function ShopBrowser({
               {loadState === 'failed' ? (
                 <p className="text-sm font-bold text-error">{c('loadMoreFailed')}</p>
               ) : null}
+              {!nextCursor && appended ? (
+                <p className="text-sm text-muted">{c('endOfList', { count: shownCount })}</p>
+              ) : null}
               {nextCursor ? (
                 <button
                   type="button"
                   aria-disabled={loadState === 'loading' || navigating || undefined}
+                  aria-busy={loadState === 'loading' || undefined}
                   onClick={() => {
                     void loadMore();
                   }}
