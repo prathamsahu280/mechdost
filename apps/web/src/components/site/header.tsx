@@ -59,7 +59,7 @@ export function BrandMark() {
   );
 }
 
-export function AnnouncementBar({ city }: { city: string }) {
+export function AnnouncementBar({ region }: { region: string }) {
   const t = useTranslations('announcement');
   const locale = useLocale();
   return (
@@ -77,7 +77,7 @@ export function AnnouncementBar({ city }: { city: string }) {
           <span aria-hidden="true" className="text-[12px] tracking-normal">
             {UI_EMOJI.workshops}
           </span>
-          <SiteText k="announcement.workshops" locale={locale} fallback={t('workshops', { city })} />
+          <SiteText k="announcement.workshops" locale={locale} fallback={t('workshops', { region })} />
         </span>
       </p>
     </aside>

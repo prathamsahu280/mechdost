@@ -13,7 +13,7 @@ import { localePath } from '@/lib/locale-path';
  * a rotated motorcycle inset on the right. Static imports give width/height + blur placeholders (no CLS, LQIP);
  * only the main photo is preloaded (LCP). The search form is a plain GET to /shop, so it works before JS loads.
  */
-export function Hero({ city }: { city: string }) {
+export function Hero({ region }: { region: string }) {
   const t = useTranslations('home.hero');
   const trust = useTranslations('trust');
   const locale = useLocale();
@@ -38,7 +38,7 @@ export function Hero({ city }: { city: string }) {
             </em>
           </h1>
           <p className="mt-6 max-w-xl text-[15px] leading-relaxed text-hero-copy tab:text-base">
-            <SiteText k="hero.lead" locale={locale} fallback={t('lead', { city })} />
+            <SiteText k="hero.lead" locale={locale} fallback={t('lead', { region })} />
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <ButtonLink href="/shop" data-track="hero_explore_products" className="min-h-12 px-6">

@@ -178,10 +178,10 @@ describe('email adapter (Resend)', () => {
     };
 
     it('shows the default line on order emails, in the recipient language', async () => {
-      expect((await sent('order_placed', 'en')).text).toContain('Genuine parts from verified Raipur shops.');
-      expect((await sent('order_placed', 'hi')).text).toContain(
-        'रायपुर की सत्यापित दुकानों से असली पार्ट्स।',
+      expect((await sent('order_placed', 'en')).text).toContain(
+        'Genuine parts, delivered across Chhattisgarh.',
       );
+      expect((await sent('order_placed', 'hi')).text).toContain('छत्तीसगढ़ भर में असली पार्ट्स की डिलीवरी।');
     });
 
     it('uses the admin wording, and shows nothing when the admin hid it', async () => {
@@ -194,7 +194,7 @@ describe('email adapter (Resend)', () => {
 
     it('falls back to the default when the content lookup fails, and stays off other emails', async () => {
       expect((await sent('order_placed', 'en', () => Promise.reject(new Error('db down')))).text).toContain(
-        'Genuine parts from verified Raipur shops.',
+        'Genuine parts, delivered across Chhattisgarh.',
       );
       expect((await sent('ticket_received', 'en')).text).not.toContain('Genuine parts');
     });

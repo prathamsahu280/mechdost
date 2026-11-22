@@ -38,8 +38,9 @@ describe('bug 7: the checkout hint states the threshold that actually applied to
   });
   it('has cart.freeDeliveryGroupHint in English and Hindi', () => {
     const { e, h } = both('cart', 'freeDeliveryGroupHint');
-    expect(e).toContain('{seller}');
-    expect(h).toContain('{seller}');
+    expect(e).toContain('{amount}');
+    expect(e).not.toContain('{seller}');
+    expect(h).toContain('{amount}');
     expect(h).toMatch(/[ऀ-ॿ]/);
   });
 });

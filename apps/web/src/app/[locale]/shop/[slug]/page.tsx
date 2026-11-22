@@ -80,17 +80,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const data = await load(slug, locale);
   if (!data) return {};
   const { product } = data;
-  const [t, cities] = await Promise.all([
+  const [t, regions] = await Promise.all([
     getTranslations({ locale, namespace: 'seo' }),
-    getTranslations({ locale, namespace: 'cities' }),
+    getTranslations({ locale, namespace: 'regions' }),
   ]);
-  const city = cities(site.defaultCity);
-  const title = t('productTitle', { product: productFullName(product.brand, product.name), city });
+  const region = regions(site.defaultRegion);
+  const title = t('productTitle', { product: productFullName(product.brand, product.name), region });
   const details = [product.spec, product.compatibility]
     .filter(Boolean)
     .join('. ')
     .replace(/[.।\s]+$/, '');
-  const description = metaDescription(t('productDescription', { details, city }));
+  const description = metaDescription(t('productDescription', { details, region }));
   const photo = product.photo;
   return {
     title,
@@ -477,14 +477,13 @@ export default async function ProductPage({ params }: Props) {
 
 /** Specification table rows; empty facts are dropped (no blank definitions). */
 function productRows(
-  t: (key: 'specification' | 'compatibility' | 'sku' | 'soldBy' | 'origin') => string,
+  t: (key: 'specification' | 'compatibility' | 'sku' | 'origin') => string,
   p: ProductView,
 ): { key: string; term: string; value: string }[] {
   return [
     { key: 'spec', term: t('specification'), value: p.spec },
     { key: 'compat', term: t('compatibility'), value: p.compatibility },
     { key: 'sku', term: t('sku'), value: p.partReference },
-    { key: 'seller', term: t('soldBy'), value: p.seller },
     { key: 'origin', term: t('origin'), value: p.countryOfOrigin },
   ].filter((row): row is { key: string; term: string; value: string } => Boolean(row.value));
 }

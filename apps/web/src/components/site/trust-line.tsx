@@ -27,18 +27,18 @@ export async function TrustLine({
   className?: string;
 }) {
   const locale = await getLocale();
-  const [t, cities, published] = await Promise.all([
+  const [t, regions, published] = await Promise.all([
     getTranslations('trust'),
-    getTranslations('cities'),
+    getTranslations('regions'),
     publishedTrust(locale),
   ]);
   const key = trustKey(placement);
-  const city = cities(site.defaultCity);
+  const region = regions(site.defaultRegion);
   const brandName = brand?.trim() ?? '';
   const fallback =
     placement === 'product' && brandName === ''
       ? t('productNoBrand')
-      : t(placement, { city, brand: brandName });
+      : t(placement, { region, brand: brandName });
   const text = trustLineText(published[key], fallback, { brand: brandName });
   if (text === null) return null;
   return (

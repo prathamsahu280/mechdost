@@ -14,17 +14,17 @@ async function contentDefaults(): Promise<ContentDefaults> {
   const pick = async (locale: 'en' | 'hi') => {
     const announcement = await getTranslations({ locale, namespace: 'announcement' });
     const hero = await getTranslations({ locale, namespace: 'home.hero' });
-    const city = (await getTranslations({ locale, namespace: 'cities' }))(site.defaultCity);
+    const region = (await getTranslations({ locale, namespace: 'regions' }))(site.defaultRegion);
     const trust = await getTranslations({ locale, namespace: 'trust' });
     // The product line shows its {brand} token so the admin sees where the brand goes.
-    const line = (p: TrustPlacement) => trust(p, { city, brand: '{brand}' });
+    const line = (p: TrustPlacement) => trust(p, { region, brand: '{brand}' });
     return {
       'announcement.orders': announcement('orders'),
-      'announcement.workshops': announcement('workshops', { city }),
+      'announcement.workshops': announcement('workshops', { region }),
       'hero.eyebrow': hero('eyebrow'),
       'hero.titleLine1': hero('titleLine1'),
       'hero.titleLine2': hero('titleLine2'),
-      'hero.lead': hero('lead', { city }),
+      'hero.lead': hero('lead', { region }),
       'trust.homeGenuine': line('homeGenuine'),
       'trust.homeBill': line('homeBill'),
       'trust.homeEstimates': line('homeEstimates'),

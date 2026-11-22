@@ -62,13 +62,13 @@ export const EMAIL_CATALOGUE = {
     en: {
       subject: 'We got your order {orderCode}',
       heading: 'Your order is placed',
-      body: 'Thank you for ordering on MechDost. Your order {orderCode} has been placed.\n\n{items}\n\nTotal: {total}\nPayment: {paymentMethod}\n\nWe are now confirming it with a seller near you. You will get another email as soon as a seller confirms.',
+      body: 'Thank you for ordering on MechDost. Your order {orderCode} has been placed.\n\n{items}\n\nTotal: {total}\nPayment: {paymentMethod}\n\nWe are now confirming it for you. You will get another email as soon as it is confirmed.',
       button: 'View your order',
     },
     hi: {
       subject: 'आपका ऑर्डर {orderCode} मिल गया',
       heading: 'आपका ऑर्डर दर्ज हो गया है',
-      body: 'MechDost पर ऑर्डर करने के लिए धन्यवाद। आपका ऑर्डर {orderCode} दर्ज हो गया है।\n\n{items}\n\nकुल: {total}\nपेमेंट: {paymentMethod}\n\nहम अभी आपके पास के किसी विक्रेता से इसकी पुष्टि करा रहे हैं। विक्रेता के पुष्टि करते ही आपको दूसरा ईमेल मिलेगा।',
+      body: 'MechDost पर ऑर्डर करने के लिए धन्यवाद। आपका ऑर्डर {orderCode} दर्ज हो गया है।\n\n{items}\n\nकुल: {total}\nपेमेंट: {paymentMethod}\n\nहम अभी आपके लिए इसकी पुष्टि कर रहे हैं। पुष्टि होते ही आपको दूसरा ईमेल मिलेगा।',
       button: 'अपना ऑर्डर देखें',
     },
   }),
@@ -83,13 +83,13 @@ export const EMAIL_CATALOGUE = {
     en: {
       subject: 'Order {orderCode} is confirmed',
       heading: 'Confirmed, and it will be shipped',
-      body: 'Good news: a seller in {shopArea} has confirmed your order {orderCode}.\n\nIt will be shipped soon. We will email you again when it is out for delivery.',
+      body: 'Good news: MechDost has confirmed your order {orderCode}.\n\nIt will be shipped soon. We will email you again when it is out for delivery.',
       button: 'Track your order',
     },
     hi: {
       subject: 'ऑर्डर {orderCode} की पुष्टि हो गई',
       heading: 'पुष्टि हो गई, जल्द भेजा जाएगा',
-      body: 'अच्छी खबर: {shopArea} के एक विक्रेता ने आपके ऑर्डर {orderCode} की पुष्टि कर दी है।\n\nइसे जल्द ही भेजा जाएगा। जब यह डिलीवरी के लिए निकलेगा, हम आपको ईमेल करेंगे।',
+      body: 'अच्छी खबर: MechDost ने आपके ऑर्डर {orderCode} की पुष्टि कर दी है।\n\nइसे जल्द ही भेजा जाएगा। जब यह डिलीवरी के लिए निकलेगा, हम आपको ईमेल करेंगे।',
       button: 'ऑर्डर ट्रैक करें',
     },
   }),
@@ -125,13 +125,13 @@ export const EMAIL_CATALOGUE = {
     en: {
       subject: 'Order {orderCode} was delivered',
       heading: 'Delivered, thank you',
-      body: 'Your order {orderCode} has been delivered. Thank you for choosing MechDost.\n\nA short review helps other drivers choose well, and helps good sellers get noticed.',
+      body: 'Your order {orderCode} has been delivered. Thank you for choosing MechDost.\n\nA short review helps other drivers choose well.',
       button: 'Review your order',
     },
     hi: {
       subject: 'ऑर्डर {orderCode} डिलीवर हो गया',
       heading: 'डिलीवर हो गया, धन्यवाद',
-      body: 'आपका ऑर्डर {orderCode} डिलीवर हो गया है। MechDost चुनने के लिए धन्यवाद।\n\nआपका एक छोटा सा रिव्यू दूसरे ग्राहकों को सही चुनाव करने में मदद करता है और अच्छे विक्रेताओं की पहचान बढ़ाता है।',
+      body: 'आपका ऑर्डर {orderCode} डिलीवर हो गया है। MechDost चुनने के लिए धन्यवाद।\n\nआपका एक छोटा सा रिव्यू दूसरे ग्राहकों को सही चुनाव करने में मदद करता है।',
       button: 'रिव्यू लिखें',
     },
   }),
@@ -170,7 +170,7 @@ export const EMAIL_CATALOGUE = {
     button: order,
     sample: {
       orderCode: 'MD-RPR-2026-4K7Q2M',
-      reason: 'We could not find a seller with this item in stock near you.',
+      reason: 'This item is not in stock near you right now.',
       message: 'Sorry for the trouble. Please try again in a few days or call us.',
       refundNote:
         'You paid online, so we are starting your refund. We will email you again once it is approved.',

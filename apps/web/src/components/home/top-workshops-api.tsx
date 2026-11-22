@@ -9,11 +9,11 @@ import { LocalLink } from '../ui/local-link';
 import { Container, Eyebrow } from '../ui/page-intro';
 
 /**
- * Top-rated workshops of the city from the API (data mode `api`, Stream E): the city's bookable workshops ranked by
+ * Top-rated workshops of the region from the API (data mode `api`, Stream E): the region's bookable workshops ranked by
  * rating and review count. No workshops yet → one next action ("Find a workshop"); API unreachable → the section
  * is left out (the rest of the home page still renders). Server-only, no client JS.
  */
-export async function TopWorkshopsApi({ city }: { city: string }) {
+export async function TopWorkshopsApi({ region }: { region: string }) {
   const locale = await getLocale();
   const [top, t, finder, w] = await Promise.all([
     fetchTopWorkshops(locale),
@@ -27,7 +27,7 @@ export async function TopWorkshopsApi({ city }: { city: string }) {
       <Container>
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <Eyebrow>{t('eyebrow', { city })}</Eyebrow>
+            <Eyebrow>{t('eyebrow', { region })}</Eyebrow>
             <h2
               id="top-workshops"
               className="mt-4 font-heading text-[clamp(26px,2.8vw,36px)] font-extrabold tracking-[-0.03em] text-ink"
@@ -43,7 +43,7 @@ export async function TopWorkshopsApi({ city }: { city: string }) {
         </div>
         {top.length === 0 ? (
           <div className="mt-6 rounded-card border border-line-card bg-surface p-6 shadow-card">
-            <p className="text-ink">{w('api_homeEmpty', { city })}</p>
+            <p className="text-ink">{w('api_homeEmpty', { region })}</p>
             <ButtonLink href="/workshops" data-track="home_workshops_empty" className="mt-4">
               {w('api_homeEmptyCta')}
             </ButtonLink>

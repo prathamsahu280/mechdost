@@ -42,6 +42,8 @@ export function organizationLd(): Json {
       areaServed: 'IN',
       availableLanguage: ['English', 'Hindi'],
     },
+    // Coverage is the state, not the registered-office city (user 2026-11-22).
+    areaServed: { '@type': 'AdministrativeArea', name: 'Chhattisgarh' },
     address: {
       '@type': 'PostalAddress',
       streetAddress: 'C-605 Salasar Greens, Sarona, Tatibandh',
@@ -99,7 +101,8 @@ export function productLd(product: ProductView, path: string, categoryName: stri
               ? 'https://schema.org/LimitedAvailability'
               : 'https://schema.org/InStock',
           itemCondition: 'https://schema.org/NewCondition',
-          ...(product.seller ? { seller: { '@type': 'Organization', name: product.seller } } : {}),
+          // MechDost is the seller of record to the customer (user 2026-11-22: no shop shown to customers).
+          seller: { '@type': 'Organization', name: 'MechDost' },
         }
       : null;
   const rating =

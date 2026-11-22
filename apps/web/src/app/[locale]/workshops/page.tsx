@@ -14,13 +14,13 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
-  const [t, cities] = await Promise.all([
+  const [t, regions] = await Promise.all([
     getTranslations({ locale, namespace: 'seo' }),
-    getTranslations({ locale, namespace: 'cities' }),
+    getTranslations({ locale, namespace: 'regions' }),
   ]);
-  const city = cities(site.defaultCity);
-  const title = t('workshopsTitle', { city });
-  const description = t('workshopsDescription', { city });
+  const region = regions(site.defaultRegion);
+  const title = t('workshopsTitle', { region });
+  const description = t('workshopsDescription', { region });
   return {
     title,
     description,

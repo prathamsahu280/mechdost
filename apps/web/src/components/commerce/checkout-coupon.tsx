@@ -257,11 +257,7 @@ export default function CheckoutCoupon({
                 })}
               </li>
             ))}
-            <li>
-              {found.coupon.funder === 'shop' && found.coupon.shopName
-                ? t('cond_shop', { shop: found.coupon.shopName })
-                : t('cond_mechdost')}
-            </li>
+            <li>{t('cond_mechdost')}</li>
           </ul>
           {found.coupon.terms ? <p className="mt-2 text-sm text-muted">{found.coupon.terms}</p> : null}
           <p className="mt-3 text-sm font-bold text-ink">

@@ -20,7 +20,7 @@ type Stage = 'routing' | 'offered' | 'confirmed' | 'packed' | 'shipped' | 'deliv
 
 /** The customer's timeline step at each stage (order namespace, en). */
 const CUSTOMER_STEP: Record<Exclude<Stage, 'offered' | 'rejected'>, RegExp> = {
-  routing: /Confirming with a nearby shop/,
+  routing: /Confirming availability/,
   confirmed: /Confirmed .* will be shipped/,
   packed: /Packed/,
   shipped: /Out for delivery/,

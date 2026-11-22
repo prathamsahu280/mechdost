@@ -46,7 +46,7 @@ test.describe('shop → cart → checkout → tracking', () => {
     await page.getByRole('button', { name: /Place order/ }).click();
     await expect(page).toHaveURL(/\/orders\/MD-RPR-\d{4}-[0-9A-Z]{6}\?new=1$/);
     await expect(page.getByText('Thank you! Your order is placed.')).toBeVisible();
-    await expect(page.locator('[aria-current="step"]')).toContainText('Confirming with a nearby shop');
+    await expect(page.locator('[aria-current="step"]')).toContainText('Confirming availability');
     await expect(page.getByRole('link', { name: /Cart\s*,\s*no items/ })).toBeVisible();
 
     await page.getByText('Demo controls').click();

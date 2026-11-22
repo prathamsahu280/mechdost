@@ -822,7 +822,7 @@ export function CheckoutForm() {
         {pricing.quote ? (
           hints.map((h) => (
             <p key={h.seller} className="mt-3 text-xs text-muted">
-              {cartT('freeDeliveryGroupHint', { seller: h.seller, amount: formatPrice(h.minPaise) })}
+              {cartT('freeDeliveryGroupHint', { amount: formatPrice(h.minPaise) })}
             </p>
           ))
         ) : deliveryPaise > 0 ? (

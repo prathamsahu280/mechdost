@@ -28,11 +28,7 @@ export function OfferCard({ offer }: { offer: PublicOffer }) {
         </span>
         <div className="min-w-0">
           <h2 className="font-heading text-lg font-extrabold break-words text-ink">{offer.title}</h2>
-          <p className="mt-1 text-sm text-muted">
-            {offer.funder === 'shop' && offer.shopName
-              ? t('shopOffer', { shop: offer.shopName })
-              : t('mechdostOffer')}
-          </p>
+          <p className="mt-1 text-sm text-muted">{t('mechdostOffer')}</p>
         </div>
       </div>
 

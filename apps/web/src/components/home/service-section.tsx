@@ -5,7 +5,7 @@ import { Container, Eyebrow } from '../ui/page-intro';
 const STEPS = [1, 2, 3] as const;
 
 /** "Know the work. Approve the cost." band with the three request steps (concept §3.3). */
-export function ServiceSection({ city }: { city: string }) {
+export function ServiceSection({ region }: { region: string }) {
   const t = useTranslations('home.service');
   return (
     <section aria-labelledby="service-title" className="mt-16 bg-surface-alt py-14 tab:py-16">
@@ -24,7 +24,7 @@ export function ServiceSection({ city }: { city: string }) {
           <ButtonLink href="/workshops" data-track="home_service_find_workshop" className="mt-6">
             {t('cta')}
           </ButtonLink>
-          <p className="mt-5 max-w-xl text-sm leading-relaxed text-muted">{t('note', { city })}</p>
+          <p className="mt-5 max-w-xl text-sm leading-relaxed text-muted">{t('note', { region })}</p>
         </div>
         <ol aria-label={t('stepsLabel')} className="space-y-4">
           {STEPS.map((n) => (
