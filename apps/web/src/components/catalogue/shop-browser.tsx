@@ -14,6 +14,7 @@ import {
   useMemo,
   useRef,
   useState,
+  startTransition,
   useTransition,
   type ComponentType,
   type ReactNode,
@@ -322,11 +323,18 @@ export function ShopBrowser({
       }
       const fresh = appendFresh(server.slugs, appended?.cards ?? [], page.cards);
       const pages = (appended?.pages ?? server.pages) + 1;
-      setMore({
-        key: listingKey,
-        cards: [...(appended?.cards ?? []), ...fresh],
-        nextCursor: page.nextCursor,
-        pages,
+      // A transition: the new cards are server-rendered and can contain a client part whose code is not loaded yet.
+      // Outside a transition React then shows the route's loading screen until it arrives, so the list collapsed to
+      // "Loading…" and the page jumped to the footer (user's screen recording 2026-11-23). In a transition the current
+      // page stays on screen until the new cards are ready.
+      startTransition(() => {
+        setMore({
+          key: listingKey,
+          cards: [...(appended?.cards ?? []), ...fresh],
+          nextCursor: page.nextCursor,
+          pages,
+        });
+        setFocusSlug(fresh[0]?.slug ?? null);
       });
       // Only the address changes (shareable; a fresh load of it renders the N pages once): the cards are already
       // here, so no server re-render of the whole list (370 KB at 5 pages, measured 2026-11-22). Built from the
@@ -339,7 +347,6 @@ export function ShopBrowser({
       setLoadState('idle');
       setAnnouncement(c('loadedMore', { count: fresh.length }));
       track('click', { id: 'shop_load_more', path: window.location.pathname });
-      setFocusSlug(fresh[0]?.slug ?? null);
     } catch {
       setLoadState('failed');
       setAnnouncement(c('loadMoreFailed'));

@@ -69,3 +69,15 @@ describe('after Load more the new products are on screen (user 2026-11-23: "take
     expect(browser).toMatch(/prefers-reduced-motion: reduce/);
   });
 });
+
+describe('Load more never blanks the page (user video 2026-11-23: the list became "Loading…" and the page jumped to the footer)', () => {
+  const browser = src('src/components/catalogue/shop-browser.tsx');
+  it('adds the new cards inside a transition, so a card part that is still loading keeps the old page on screen', () => {
+    const fn = browser.slice(
+      browser.indexOf('async function loadMore()'),
+      browser.indexOf('function onSearch('),
+    );
+    expect(fn).toMatch(/startTransition\(\(\) => \{[\s\S]*setMore\(/);
+    expect(fn).toMatch(/startTransition\(\(\) => \{[\s\S]*setFocusSlug\(/);
+  });
+});
