@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import {
   Briefcase,
   Car,
@@ -71,7 +71,6 @@ export default function AccountMenuPanel({
 }) {
   const root = useRef<HTMLDivElement>(null);
   const menu = useRef<HTMLDivElement>(null);
-  const router = useRouter();
   const pathname = usePathname();
   const theme = useTheme();
   const locale: SiteLocale = pathname === '/hi' || pathname.startsWith('/hi/') ? 'hi' : 'en';
@@ -82,6 +81,10 @@ export default function AccountMenuPanel({
   const items = (): HTMLElement[] =>
     menu.current ? [...menu.current.querySelectorAll<HTMLElement>('[role^="menuitem"]')] : [];
 
+  // Warm the sign-out code while the menu is open, so a tap on Sign out acts at once (bug 2026-11-23).
+  useEffect(() => {
+    void import('@/lib/auth/sign-out');
+  }, []);
   useEffect(() => {
     items()[0]?.focus();
     const onPointer = (e: PointerEvent) => {
@@ -227,11 +230,10 @@ export default function AccountMenuPanel({
           tabIndex={-1}
           data-track="header_sign_out"
           onClick={() => {
-            void import('@/lib/auth/sign-out').then((m) => {
-              m.signOutEverywhere();
-            });
+            // Hide the page at once (bug 2026-11-23); the sign-out then loads the home page fresh.
+            document.documentElement.setAttribute('data-signing-out', '');
             onSignOut();
-            router.push(prefix || '/');
+            void import('@/lib/auth/sign-out').then((m) => m.signOutEverywhere());
           }}
           className={`${ROW} text-error`}
         >

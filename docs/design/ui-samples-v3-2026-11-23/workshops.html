@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MechDost round 3 · Workshops</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="v3.css" />
+    <style>
+      .whead {
+        background: var(--surface);
+        border-bottom: 1px solid var(--rule);
+        padding: 30px 28px;
+        display: grid;
+        grid-template-columns: 1fr 1.1fr;
+        gap: 32px;
+        align-items: start;
+      }
+      .whead h1 {
+        font-size: 44px;
+        line-height: 1.04;
+        letter-spacing: -0.03em;
+        margin-top: 10px;
+      }
+      .whead h1 span {
+        display: block;
+        color: var(--muted);
+      }
+      .whead p {
+        color: var(--ink-2);
+        margin-top: 12px;
+        line-height: 1.55;
+        max-width: 460px;
+      }
+      .where {
+        border: 1px solid var(--rule);
+        border-radius: 14px;
+        padding: 18px;
+        display: grid;
+        gap: 14px;
+        background: var(--paper);
+      }
+      .where h2 {
+        font-size: 18px;
+      }
+      .seg {
+        display: inline-grid;
+        grid-template-columns: 1fr 1fr;
+        border: 1px solid var(--rule-strong);
+        border-radius: 10px;
+        overflow: hidden;
+      }
+      .seg span {
+        padding: 9px 14px;
+        font: 700 13.5px 'DM Sans';
+        text-align: center;
+        background: var(--surface);
+      }
+      .seg span.on {
+        background: var(--ink);
+        color: #fff;
+      }
+      .wrow {
+        display: grid;
+        grid-template-columns: 1fr 1fr auto;
+        gap: 10px;
+        align-items: end;
+      }
+      .ev {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+      }
+      .ev i {
+        width: 18px;
+        height: 18px;
+        border-radius: 4px;
+        border: 1.5px solid var(--rule-strong);
+        background: #fff;
+      }
+      .body {
+        display: grid;
+        grid-template-columns: 1.15fr 1fr;
+        gap: 20px;
+        padding: 22px 28px 30px;
+      }
+      .list {
+        display: grid;
+        gap: 12px;
+        align-content: start;
+      }
+      .count {
+        display: flex;
+        justify-content: space-between;
+        font-size: 14px;
+        color: var(--muted);
+      }
+      .count b {
+        color: var(--ink);
+      }
+      .wk {
+        background: var(--surface);
+        border: 1px solid var(--rule);
+        border-radius: 14px;
+        padding: 16px 18px;
+        display: grid;
+        gap: 10px;
+      }
+      .wk .t {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .wk h3 {
+        font-size: 17px;
+      }
+      .wk .addr {
+        font-size: 13.5px;
+        color: var(--muted);
+        margin-top: 3px;
+      }
+      .wk .svc {
+        font-size: 13.5px;
+        color: var(--ink-2);
+        line-height: 1.5;
+      }
+      .wk .bot {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border-top: 1px dashed var(--rule);
+        padding-top: 12px;
+      }
+      .wk .from {
+        font: 700 14px 'DM Sans';
+        margin-right: auto;
+      }
+      .wk .from b {
+        font: 800 17px Manrope;
+      }
+      .ok {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font: 600 12px 'DM Sans';
+        color: var(--go);
+      }
+      .ok svg {
+        width: 14px;
+        height: 14px;
+        stroke-width: 2.4;
+      }
+      .map {
+        position: sticky;
+        top: 0;
+        height: 520px;
+        border-radius: 14px;
+        border: 1px solid var(--rule);
+        overflow: hidden;
+        background: #e6ebe7;
+        background-image:
+          linear-gradient(rgba(16, 31, 52, 0.06) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(16, 31, 52, 0.06) 1px, transparent 1px);
+        background-size: 40px 40px;
+      }
+      .map .road {
+        position: absolute;
+        background: #fff;
+      }
+      .map .pin {
+        position: absolute;
+        width: 30px;
+        height: 30px;
+        border-radius: 50% 50% 50% 0;
+        transform: rotate(-45deg);
+        background: var(--ink);
+        border: 2px solid #fff;
+      }
+      .map .pin.on {
+        background: var(--accent-btn);
+      }
+      .choose {
+        border: 1px solid var(--rule);
+        border-radius: 14px;
+        background: var(--surface);
+        padding: 18px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+      }
+      .choose h2 {
+        font-size: 18px;
+      }
+      .choose p {
+        color: var(--muted);
+        font-size: 14px;
+        margin-top: 4px;
+        line-height: 1.5;
+        max-width: 480px;
+      }
+      .promise {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        border-top: 1px solid var(--rule);
+        background: var(--surface);
+      }
+      .promise div {
+        padding: 20px 28px;
+        border-right: 1px solid var(--rule);
+        display: flex;
+        gap: 12px;
+      }
+      .promise div:last-child {
+        border-right: 0;
+      }
+      .promise .ic {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: var(--paper);
+        border: 1px solid var(--rule);
+        display: grid;
+        place-items: center;
+      }
+      .promise h3 {
+        font-size: 15.5px;
+      }
+      .promise p {
+        color: var(--muted);
+        font-size: 13.5px;
+        margin-top: 3px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="doc">
+      <header>
+        <div>
+          <h1>Round 3 · Find Workshops</h1>
+          <p>
+            Same page as live: heading and intro, "Where is your vehicle?" (at the workshop / at my home, PIN
+            code, vehicle type, Use my location, EV service only), the workshop list with rating, badges,
+            services, starting price, Show on map and View services &amp; book, the map, "Let MechDost
+            choose", and the three promises. Look only.
+          </p>
+        </div>
+        <nav class="tabs-doc">
+          <a href="home.html">Home</a><a href="shop.html">Shop</a><a href="product.html">Product</a
+          ><a class="on" href="workshops.html">Workshops</a>
+        </nav>
+      </header>
+      <p class="cap">Desktop · 1280 px</p>
+      <div class="desk">
+        <div class="hdr">
+          <img class="logo" src="../../../apps/web/public/brand/mechdost-logo.svg" alt="MechDost" />
+          <nav class="hnav">
+            <a href="home.html">Home</a><a href="shop.html">Shop Products</a
+            ><a class="on" href="#">Find Workshops</a><a href="#">My Vehicles</a><a href="#">For business</a>
+          </nav>
+          <div class="htools">
+            <span class="hsearch">Search parts…<kbd>/</kbd></span
+            ><button class="hbtn">Sign in</button><span class="hcart">Cart<b>0</b></span>
+          </div>
+        </div>
+        <section class="whead">
+          <div>
+            <span class="lbl">MechDost vehicle care</span>
+            <h1>A nearby workshop.<span>A clear estimate.</span></h1>
+            <p>Find the right workshop, understand the service and approve the cost before work begins.</p>
+          </div>
+          <div class="where">
+            <h2>Where is your vehicle?</h2>
+            <div>
+              <div style="font: 700 13px 'DM Sans'; color: var(--ink-2); margin-bottom: 6px">
+                Where should we do the service?
+              </div>
+              <div class="seg"><span class="on">At the workshop</span><span>At my home</span></div>
+            </div>
+            <div class="wrow">
+              <div class="field"><label>PIN code</label><span class="input val">492001</span></div>
+              <div class="field">
+                <label>Vehicle type</label
+                ><span class="input val"
+                  >Any vehicle<svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg
+                ></span>
+              </div>
+              <a class="btn sec" href="#"
+                ><svg viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M12 2v3M12 19v3M2 12h3M19 12h3" /></svg
+                >Use my location</a
+              >
+            </div>
+            <label class="ev"><i></i>EV service only</label>
+          </div>
+        </section>
+        <section class="body">
+          <div class="list">
+            <div class="count">
+              <span><b>8 workshops near you</b> · sorted by distance from PIN 492001</span>
+            </div>
+            <article class="wk">
+              <div class="t">
+                <div>
+                  <h3>Mowa EV &amp; Bike Point</h3>
+                  <p class="addr">Mowa · 492007 · 2.1 km</p>
+                </div>
+                <span class="rating"
+                  ><svg viewBox="0 0 24 24">
+                    <path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z" /></svg
+                  >4.8 <small>(58 reviews)</small></span
+                >
+              </div>
+              <div class="tags">
+                <span class="ok"
+                  ><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></svg>Location checked</span
+                ><span class="tag">Pickup available</span><span class="tag">EV service</span
+                ><span class="tag">2W · 3W</span>
+              </div>
+              <p class="svc">
+                Inspection &amp; diagnosis · General service (2W) · Battery &amp; starting check · EV basic
+                inspection
+              </p>
+              <div class="bot">
+                <span class="from">Services from <b class="num">₹150</b></span
+                ><a class="btn sec" style="height: 40px" href="#">Show on map</a
+                ><a class="btn pri" style="height: 40px" href="#">View services &amp; book</a>
+              </div>
+            </article>
+            <article class="wk">
+              <div class="t">
+                <div>
+                  <h3>Pachpedi Naka Two-Wheeler Care</h3>
+                  <p class="addr">Pachpedi Naka · 492001 · 0.8 km</p>
+                </div>
+                <span class="rating"
+                  ><svg viewBox="0 0 24 24">
+                    <path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z" /></svg
+                  >4.7 <small>(128 reviews)</small></span
+                >
+              </div>
+              <div class="tags">
+                <span class="ok"
+                  ><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></svg>Location checked</span
+                ><span class="tag">2W</span>
+              </div>
+              <p class="svc">
+                Inspection &amp; diagnosis · General service (2W) · Engine oil &amp; filter change · Brake
+                inspection &amp; service
+              </p>
+              <div class="bot">
+                <span class="from">Services from <b class="num">₹200</b></span
+                ><a class="btn sec" style="height: 40px" href="#">Show on map</a
+                ><a class="btn pri" style="height: 40px" href="#">View services &amp; book</a>
+              </div>
+            </article>
+            <div class="choose">
+              <div>
+                <h2>Let MechDost choose</h2>
+                <p>
+                  Not sure which workshop? Tell us the vehicle and the problem. MechDost picks a verified
+                  workshop near you, and it proposes a time and expected cost.
+                </p>
+              </div>
+              <a class="btn sec" href="#">Describe what you need</a>
+            </div>
+          </div>
+          <div>
+            <div class="map">
+              <span
+                class="road"
+                style="left: -20px; right: -20px; top: 190px; height: 14px; transform: rotate(-7deg)"
+              ></span>
+              <span
+                class="road"
+                style="top: -20px; bottom: -20px; left: 230px; width: 12px; transform: rotate(9deg)"
+              ></span>
+              <span class="road" style="top: -20px; bottom: -20px; left: 400px; width: 9px"></span>
+              <span class="pin on" style="left: 160px; top: 130px"></span
+              ><span class="pin" style="left: 300px; top: 250px"></span
+              ><span class="pin" style="left: 420px; top: 120px"></span
+              ><span class="pin" style="left: 110px; top: 330px"></span>
+            </div>
+          </div>
+        </section>
+        <section class="promise">
+          <div>
+            <span class="ic"
+              ><svg viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="7" />
+                <path d="m20 20-3.5-3.5" /></svg></span
+            ><span
+              ><h3>See the scope</h3>
+              <p>Included work and exclusions before booking.</p></span
+            >
+          </div>
+          <div>
+            <span class="ic"
+              ><svg viewBox="0 0 24 24">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <path d="M14 2v6h6M9 15l2 2 4-4" /></svg></span
+            ><span
+              ><h3>Approve the expense</h3>
+              <p>The owner proposes; you approve before repairs.</p></span
+            >
+          </div>
+          <div>
+            <span class="ic"
+              ><svg viewBox="0 0 24 24">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z" /></svg></span
+            ><span
+              ><h3>Keep your history</h3>
+              <p>Vehicle details, estimates and bills together.</p></span
+            >
+          </div>
+        </section>
+      </div>
+    </div>
+  </body>
+</html>

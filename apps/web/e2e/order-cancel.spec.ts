@@ -23,6 +23,9 @@ async function signOut(page: Page, from: '/admin' | '/partner/shop' | null = nul
   if (from) await page.goto(from);
   await page.locator('[data-track="header_account"]').click();
   await page.getByRole('menuitem', { name: 'Sign out' }).click();
+  // Sign-out ends with a fresh load of the home page (bug 2026-11-23): wait for it before the next step.
+  await expect(page.locator('html[data-signing-out]')).toHaveCount(0);
+  await page.waitForLoadState();
 }
 
 async function placeOrder(page: Page): Promise<string> {

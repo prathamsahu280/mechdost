@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MechDost round 3 · Shop</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="v3.css" />
+    <style>
+      .shead {
+        background: var(--surface);
+        border-bottom: 1px solid var(--rule);
+        padding: 30px 28px 24px;
+        display: grid;
+        gap: 18px;
+      }
+      .shead .top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 24px;
+      }
+      .shead h1 {
+        font-size: 40px;
+        line-height: 1.05;
+        letter-spacing: -0.03em;
+      }
+      .shead h1 span {
+        color: var(--muted);
+      }
+      .shead p {
+        color: var(--muted);
+        max-width: 520px;
+        line-height: 1.5;
+        font-size: 14.5px;
+      }
+      .sform {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 1fr auto;
+        gap: 10px;
+        align-items: end;
+      }
+      .results {
+        padding: 22px 28px 36px;
+      }
+      .rbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 14px;
+      }
+      .rbar b {
+        font: 700 15px 'DM Sans';
+      }
+      .rbar span {
+        color: var(--muted);
+        font-size: 13.5px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+      }
+      .more {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        margin-top: 24px;
+        color: var(--muted);
+        font-size: 13.5px;
+      }
+      .more .bar {
+        width: 220px;
+        height: 4px;
+        border-radius: 2px;
+        background: var(--rule);
+        overflow: hidden;
+      }
+      .more .bar i {
+        display: block;
+        width: 35%;
+        height: 100%;
+        background: var(--ink);
+      }
+      /* phone */
+      .m-head {
+        background: var(--surface);
+        border-bottom: 1px solid var(--rule);
+        padding: 18px 16px;
+        display: grid;
+        gap: 12px;
+      }
+      .m-head h1 {
+        font-size: 28px;
+        line-height: 1.08;
+        letter-spacing: -0.03em;
+      }
+      .m-head h1 span {
+        color: var(--muted);
+      }
+      .m-filter {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .m-res {
+        padding: 14px 12px 0;
+      }
+      .m-res .grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .m-res .pbody {
+        padding: 10px;
+      }
+      .m-res .pname {
+        font-size: 13.5px;
+      }
+      .m-res .price {
+        font-size: 18px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="doc">
+      <header>
+        <div>
+          <h1>Round 3 · Shop</h1>
+          <p>
+            Same page as live: heading and note, the search form (product, category, vehicle type, sort), the
+            category chips, the product grid with Compare and Add to cart, and Load more. Look only: a compact
+            header band so products start higher, chips with line icons, and catalogue-style cards. The
+            heading says Chhattisgarh instead of "Across India" (an earlier instruction).
+          </p>
+        </div>
+        <nav class="tabs-doc">
+          <a href="home.html">Home</a><a class="on" href="shop.html">Shop</a><a href="product.html">Product</a
+          ><a href="workshops.html">Workshops</a>
+        </nav>
+      </header>
+
+      <p class="cap">Desktop · 1280 px</p>
+      <div class="desk">
+        <div class="hdr">
+          <img class="logo" src="../../../apps/web/public/brand/mechdost-logo.svg" alt="MechDost" />
+          <nav class="hnav">
+            <a href="home.html"
+              ><svg viewBox="0 0 24 24">
+                <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" /></svg
+              >Home</a
+            >
+            <a class="on" href="#"
+              ><svg viewBox="0 0 24 24">
+                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                <path d="M3 6h18M16 10a4 4 0 0 1-8 0" /></svg
+              >Shop Products</a
+            >
+            <a href="workshops.html"
+              ><svg viewBox="0 0 24 24">
+                <path
+                  d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"
+                /></svg
+              >Find Workshops</a
+            >
+            <a href="#"
+              ><svg viewBox="0 0 24 24">
+                <path d="M5 17h14v-4l-2-5H7l-2 5z" />
+                <circle cx="7.5" cy="17" r="2" />
+                <circle cx="16.5" cy="17" r="2" /></svg
+              >My Vehicles</a
+            >
+            <a href="#"
+              ><svg viewBox="0 0 24 24">
+                <rect x="3" y="7" width="18" height="13" rx="2" />
+                <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg
+              >For business</a
+            >
+          </nav>
+          <div class="htools">
+            <span class="hsearch"
+              ><svg viewBox="0 0 24 24" style="width: 17px; height: 17px">
+                <circle cx="11" cy="11" r="7" />
+                <path d="m20 20-3.5-3.5" /></svg
+              >Search parts…<kbd>/</kbd></span
+            ><button class="hbtn">Sign in</button><span class="hcart">Cart<b>0</b></span>
+          </div>
+        </div>
+        <section class="shead">
+          <div class="top">
+            <div>
+              <span class="lbl">Shop automotive products · Chhattisgarh</span>
+              <h1 style="margin-top: 10px">Explore products. <span>Across Chhattisgarh.</span></h1>
+            </div>
+            <p>
+              Browse freely, no PIN code needed. Delivery address and billing PIN are collected when placing
+              an order. Our team confirms stock, price, shipping and delivery coverage before acceptance.
+            </p>
+          </div>
+          <div class="sform">
+            <div class="field">
+              <label>Search products</label><span class="input">Product, brand or part number</span>
+            </div>
+            <div class="field">
+              <label>Category</label
+              ><span class="input val"
+                >All categories<svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg
+              ></span>
+            </div>
+            <div class="field">
+              <label>Vehicle type</label
+              ><span class="input val"
+                >All vehicles<svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg
+              ></span>
+            </div>
+            <div class="field">
+              <label>Sort by</label
+              ><span class="input val"
+                >Popular first<svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg
+              ></span>
+            </div>
+            <a class="btn pri" href="#">Search</a>
+          </div>
+          <div class="chiprow">
+            <span class="chip on">All categories</span>
+            <span class="chip"
+              ><svg viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="9" />
+                <circle cx="12" cy="12" r="4" /></svg
+              >Tyres</span
+            >
+            <span class="chip"
+              ><svg viewBox="0 0 24 24"><path d="M9 3h6v3l2 2v12a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V8l2-2z" /></svg
+              >Lubricants</span
+            >
+            <span class="chip"
+              ><svg viewBox="0 0 24 24">
+                <rect x="3" y="7" width="18" height="13" rx="2" />
+                <path d="M7 7V5h3v2M14 7V5h3v2" /></svg
+              >Batteries</span
+            >
+            <span class="chip"
+              ><svg viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="9" />
+                <circle cx="12" cy="12" r="3" /></svg
+              >Bearings</span
+            >
+            <span class="chip"
+              ><svg viewBox="0 0 24 24"><path d="M4 4h16l-6 8v6l-4 2v-8z" /></svg>Filters</span
+            >
+            <span class="chip"
+              ><svg viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M12 2v3M12 19v3M2 12h3M19 12h3" /></svg
+              >Spare parts</span
+            >
+            <span class="chip"
+              ><svg viewBox="0 0 24 24">
+                <path d="m12 3 2.4 5 5.6.8-4 3.9.9 5.5L12 15.6 7.1 18.2 8 12.7 4 8.8 9.6 8z" /></svg
+              >Accessories</span
+            >
+            <span class="chip"
+              ><svg viewBox="0 0 24 24">
+                <rect x="2" y="8" width="20" height="12" rx="2" />
+                <path d="M8 8V5a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v3" /></svg
+              >Workshop tools</span
+            >
+            <span class="chip"
+              ><svg viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9z" /></svg>EV essentials</span
+            >
+          </div>
+        </section>
+        <section class="results">
+          <div class="rbar"><b>219 products</b><span>Showing 8 of 219</span></div>
+          <div class="grid" id="g"></div>
+          <div class="more">
+            <span>Showing 8 of 219</span>
+            <div class="bar"><i></i></div>
+            <a class="btn sec" href="#">Load more products</a>
+          </div>
+        </section>
+      </div>
+
+      <div class="stage" style="margin-top: 34px">
+        <div>
+          <p class="cap">Phone · 390 px</p>
+          <div class="phone">
+            <div class="scroll">
+              <div class="phdr">
+                <div class="r1">
+                  <img
+                    class="logo"
+                    src="../../../apps/web/public/brand/mechdost-logo.svg"
+                    alt="MechDost"
+                  /><span class="sp"></span
+                  ><span class="icb"
+                    ><svg viewBox="0 0 24 24">
+                      <circle cx="8" cy="21" r="1" />
+                      <circle cx="19" cy="21" r="1" />
+                      <path
+                        d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"
+                      /></svg></span
+                  ><span class="icb"
+                    ><svg viewBox="0 0 24 24">
+                      <circle cx="12" cy="8" r="4" />
+                      <path d="M4 21a8 8 0 0 1 16 0" /></svg
+                  ></span>
+                </div>
+              </div>
+              <section class="m-head">
+                <h1>Explore products. <span>Across Chhattisgarh.</span></h1>
+                <div class="field"><span class="input">Product, brand or part number</span></div>
+                <div class="m-filter">
+                  <span class="input val"
+                    >All categories<svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg></span
+                  ><span class="input val"
+                    >All vehicles<svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg></span
+                  ><span class="input val"
+                    >Popular first<svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg></span
+                  ><a class="btn pri" href="#">Search</a>
+                </div>
+                <div class="chiprow">
+                  <span class="chip on">All</span><span class="chip">Tyres</span
+                  ><span class="chip">Lubricants</span><span class="chip">Batteries</span
+                  ><span class="chip">Filters</span>
+                </div>
+              </section>
+              <section class="m-res">
+                <div class="rbar" style="display: flex; justify-content: space-between; margin-bottom: 10px">
+                  <b style="font-size: 14px">219 products</b>
+                </div>
+                <div class="grid" id="m"></div>
+              </section>
+            </div>
+            <nav class="dock">
+              <a href="home.html"
+                ><svg viewBox="0 0 24 24">
+                  <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" /></svg
+                >Home</a
+              ><a class="on" href="#"
+                ><svg viewBox="0 0 24 24">
+                  <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                  <path d="M3 6h18M16 10a4 4 0 0 1-8 0" /></svg
+                >Shop</a
+              ><a href="workshops.html"
+                ><svg viewBox="0 0 24 24">
+                  <path
+                    d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"
+                  /></svg
+                >Workshops</a
+              ><a href="#"
+                ><svg viewBox="0 0 24 24">
+                  <path d="M5 17h14v-4l-2-5H7l-2 5z" />
+                  <circle cx="7.5" cy="17" r="2" />
+                  <circle cx="16.5" cy="17" r="2" /></svg
+                >My Vehicles</a
+              >
+            </nav>
+          </div>
+        </div>
+        <div class="notes">
+          <h3>What changed (look only)</h3>
+          <ul>
+            <li>
+              Heading, note, search form and chips now sit in one compact white band, so the first products
+              appear about half a screen higher. Same fields, same order.
+            </li>
+            <li>Category chips use line icons instead of emoji.</li>
+            <li>Cards keep Compare and Add to cart; "Price on request" items keep their own button.</li>
+            <li>Phone: the four form fields become a 2-column block; everything else stays.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <script src="cards.js"></script>
+    <script>
+      fillCards('g', [0, 1, 2, 3, 4, 5, 6, 7], false);
+      fillCards('m', [0, 1, 2, 6], true);
+    </script>
+  </body>
+</html>

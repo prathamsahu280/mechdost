@@ -1222,7 +1222,7 @@ function SignOutButton() {
     <button
       type="button"
       onClick={() => {
-        signOutEverywhere();
+        void signOutEverywhere();
       }}
       data-track="account_sign_out"
       className="press inline-flex min-h-11 items-center justify-center rounded-button border border-accent-button bg-accent-soft px-5 text-sm font-bold text-accent-soft-text hover:bg-accent-button hover:text-white"

@@ -1,0 +1,524 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MechDost round 3 · Product</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="v3.css" />
+    <style>
+      .crumbs {
+        padding: 16px 28px;
+        font-size: 13.5px;
+        color: var(--muted);
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .crumbs a {
+        text-decoration: none;
+        font-weight: 600;
+        color: var(--ink-2);
+      }
+      .pd {
+        display: grid;
+        grid-template-columns: 1.05fr 1fr;
+        gap: 28px;
+        padding: 0 28px 10px;
+      }
+      .gal {
+        border: 1px solid var(--rule);
+        border-radius: 16px;
+        overflow: hidden;
+        background: var(--surface);
+      }
+      .gal .plate {
+        aspect-ratio: 1 / 1;
+        border-bottom: 0;
+      }
+      .gal .plate img {
+        inset: 10% 20%;
+        width: 60%;
+        height: 80%;
+      }
+      .buy {
+        display: grid;
+        gap: 16px;
+        align-content: start;
+      }
+      .buy .meta {
+        font: 600 13.5px 'DM Sans';
+        color: var(--muted);
+      }
+      .buy h1 {
+        font-size: 34px;
+        line-height: 1.12;
+        letter-spacing: -0.025em;
+      }
+      .buy .sum {
+        color: var(--ink-2);
+        font-size: 15.5px;
+      }
+      .pricebox {
+        border: 1px solid var(--rule);
+        border-radius: 14px;
+        background: var(--surface);
+        padding: 18px;
+        display: grid;
+        gap: 12px;
+      }
+      .pricebox .p {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .pricebox .price {
+        font-size: 36px;
+      }
+      .pricebox .note {
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .genuine {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font: 600 13.5px 'DM Sans';
+        color: var(--go);
+      }
+      .genuine svg {
+        width: 16px;
+        height: 16px;
+      }
+      .acts {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 10px;
+      }
+      .acts .cmp {
+        height: 50px;
+        padding: 0 14px;
+      }
+      .acts .btn {
+        height: 50px;
+      }
+      .side {
+        display: grid;
+        gap: 8px;
+        font-size: 14px;
+      }
+      .side a {
+        color: var(--accent-btn);
+        font-weight: 700;
+        text-decoration: none;
+      }
+      .side .row {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        color: var(--ink-2);
+      }
+      .side .row svg {
+        width: 18px;
+        height: 18px;
+        color: var(--muted);
+        margin-top: 1px;
+      }
+      .panel {
+        border: 1px solid var(--rule);
+        border-radius: 14px;
+        background: var(--surface);
+        padding: 20px;
+      }
+      .panel h2 {
+        font-size: 20px;
+        margin-bottom: 14px;
+      }
+      .two {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        padding: 28px 28px 0;
+      }
+      .hl {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 8px;
+      }
+      .hl li {
+        display: flex;
+        gap: 9px;
+        font-size: 14.5px;
+      }
+      .hl li::before {
+        content: '';
+        width: 6px;
+        height: 6px;
+        border-radius: 1px;
+        background: var(--accent);
+        margin-top: 7px;
+        flex: none;
+      }
+      .revs {
+        display: grid;
+        grid-template-columns: 200px 1fr;
+        gap: 22px;
+      }
+      .score b {
+        font: 800 46px Manrope;
+        display: block;
+        line-height: 1;
+      }
+      .score small {
+        color: var(--muted);
+        display: block;
+        margin-top: 6px;
+        font-size: 13.5px;
+        line-height: 1.45;
+      }
+      .rev {
+        border-top: 1px solid var(--rule);
+        padding: 12px 0;
+      }
+      .rev:first-child {
+        border-top: 0;
+        padding-top: 0;
+      }
+      .rev b {
+        font-size: 14.5px;
+      }
+      .rev p {
+        color: var(--ink-2);
+        font-size: 14px;
+        margin: 4px 0;
+      }
+      .rev small {
+        color: var(--muted);
+        font-size: 12.5px;
+      }
+      .rev .v {
+        color: var(--go);
+        font-weight: 600;
+      }
+      /* phone */
+      .m-gal .plate {
+        aspect-ratio: 1 / 0.85;
+      }
+      .m-buy {
+        padding: 16px;
+        display: grid;
+        gap: 12px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--rule);
+      }
+      .m-buy h1 {
+        font-size: 24px;
+        line-height: 1.15;
+      }
+      .m-sec {
+        padding: 16px 12px 0;
+      }
+      .m-sec .panel {
+        padding: 16px;
+      }
+      .stick {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 10px 14px 20px;
+        background: var(--surface);
+        border-top: 1px solid var(--rule);
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 10px;
+        align-items: center;
+        z-index: 6;
+      }
+      .stick .price {
+        font-size: 22px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="doc">
+      <header>
+        <div>
+          <h1>Round 3 · Product page</h1>
+          <p>
+            Every item of the live product page, in the same order: back link and category, brand and name,
+            summary, rating, unit price, the GST note, "Genuine part", Compare, Add to cart, the bulk-price
+            link, the returns note, Highlights, the specification table, Ratings &amp; reviews with "Write a
+            review", and "More in this category". Look only.
+          </p>
+        </div>
+        <nav class="tabs-doc">
+          <a href="home.html">Home</a><a href="shop.html">Shop</a><a class="on" href="product.html">Product</a
+          ><a href="workshops.html">Workshops</a>
+        </nav>
+      </header>
+
+      <p class="cap">Desktop · 1280 px</p>
+      <div class="desk">
+        <div class="hdr">
+          <img class="logo" src="../../../apps/web/public/brand/mechdost-logo.svg" alt="MechDost" />
+          <nav class="hnav">
+            <a href="home.html">Home</a><a class="on" href="shop.html">Shop Products</a
+            ><a href="workshops.html">Find Workshops</a><a href="#">My Vehicles</a
+            ><a href="#">For business</a>
+          </nav>
+          <div class="htools">
+            <span class="hsearch">Search parts…<kbd>/</kbd></span
+            ><button class="hbtn">Sign in</button><span class="hcart">Cart<b>0</b></span>
+          </div>
+        </div>
+        <div class="crumbs">
+          <a href="shop.html">← Back to the shop</a><span>/</span><a href="#">Lubricants</a>
+        </div>
+        <section class="pd">
+          <div class="gal">
+            <div class="plate">
+              <span class="brand">Castrol</span
+              ><img src="../ui-samples-2026-11-23/img/oil0.webp" alt="Castrol Activ 4T 20W40 900 ml" /><span
+                class="ref"
+                >CAS-ACT4T-0900</span
+              >
+            </div>
+          </div>
+          <div class="buy">
+            <span class="meta">Castrol · Lubricants</span>
+            <h1>Activ 4T 20W40 900 ml</h1>
+            <p class="sum">Engine oil for 2W · 20W40 · 900 ml</p>
+            <span class="rating" style="font-size: 14px"
+              ><svg viewBox="0 0 24 24">
+                <path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z" /></svg
+              >4.6 <small>189 reviews</small></span
+            >
+            <div class="pricebox">
+              <div class="p">
+                <span class="price">₹440</span><span class="unit">₹488.89 per litre</span
+                ><span class="genuine"
+                  ><svg viewBox="0 0 24 24">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    <path d="m9 12 2 2 4-4" /></svg
+                  >Genuine Castrol part</span
+                >
+              </div>
+              <p class="note">Price includes GST. Delivery is calculated at checkout.</p>
+              <div class="acts">
+                <span class="cmp"><i></i>Compare</span><a class="btn pri" href="#">Add to cart</a>
+              </div>
+            </div>
+            <div class="side">
+              <div class="row">
+                <svg viewBox="0 0 24 24">
+                  <rect x="2" y="7" width="20" height="14" rx="2" />
+                  <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" /></svg
+                ><span>Need 10 or more? <a href="#">Ask for a bulk price.</a></span>
+              </div>
+              <div class="row">
+                <svg viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="m5.6 5.6 12.8 12.8" /></svg
+                ><span
+                  >No returns or exchanges. Faulty parts are handled by our support team.
+                  <a href="#">Read the policy</a></span
+                >
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="two">
+          <div class="panel">
+            <h2>Highlights</h2>
+            <ul class="hl">
+              <li>Actibond molecules for engine protection</li>
+              <li>JASO MA2 · API SL</li>
+              <li>900 ml pack</li>
+            </ul>
+          </div>
+          <div class="panel">
+            <h2>Specification</h2>
+            <dl class="spec">
+              <div>
+                <dt>Specification</dt>
+                <span class="lead"></span>
+                <dd>Engine oil for 2W · 20W40 · 900 ml</dd>
+              </div>
+              <div>
+                <dt>Compatibility</dt>
+                <span class="lead"></span>
+                <dd>All two-wheelers with 4-stroke engines</dd>
+              </div>
+              <div>
+                <dt>Part reference</dt>
+                <span class="lead"></span>
+                <dd class="num">CAS-ACT4T-0900</dd>
+              </div>
+            </dl>
+          </div>
+        </section>
+        <section class="two" style="grid-template-columns: 1fr">
+          <div class="panel">
+            <h2>Ratings &amp; reviews</h2>
+            <div class="revs">
+              <div class="score">
+                <b>4.6</b
+                ><span class="rating"
+                  ><svg viewBox="0 0 24 24">
+                    <path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z" /></svg
+                  >189 reviews</span
+                ><small>Reviews are checked by MechDost before they are published.</small
+                ><a class="btn sec" style="margin-top: 14px; height: 40px" href="#">Write a review</a>
+              </div>
+              <div>
+                <div class="rev">
+                  <b>Good value</b>
+                  <p>Cheaper than the shop near my house and delivered the same day.</p>
+                  <small>Priya M. · Mowa · <span class="v">Verified purchase</span></small>
+                </div>
+                <div class="rev">
+                  <b>Easy order</b>
+                  <p>Ordered for my Splendor, team confirmed the grade on call. Recommended.</p>
+                  <small>Ravi S. · Shankar Nagar · <span class="v">Verified purchase</span></small>
+                </div>
+                <div class="rev">
+                  <b>Genuine pack</b>
+                  <p>Seal intact, batch number printed. Engine sounds smoother after the change.</p>
+                  <small>Neha G. · Pandri · <span class="v">Verified purchase</span></small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="sect" style="padding-bottom: 32px">
+          <div class="sect-h"><h2>More in Lubricants</h2></div>
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px" id="more"></div>
+        </section>
+      </div>
+
+      <div class="stage" style="margin-top: 34px">
+        <div>
+          <p class="cap">Phone · 390 px</p>
+          <div class="phone">
+            <div class="scroll" style="padding-bottom: 96px">
+              <div class="phdr">
+                <div class="r1">
+                  <img
+                    class="logo"
+                    src="../../../apps/web/public/brand/mechdost-logo.svg"
+                    alt="MechDost"
+                  /><span class="sp"></span
+                  ><span class="icb"
+                    ><svg viewBox="0 0 24 24">
+                      <circle cx="8" cy="21" r="1" />
+                      <circle cx="19" cy="21" r="1" />
+                      <path
+                        d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"
+                      /></svg
+                  ></span>
+                </div>
+              </div>
+              <div class="crumbs" style="padding: 12px 16px"><a href="#">← Back to the shop</a></div>
+              <div class="m-gal" style="background: var(--surface); border-top: 1px solid var(--rule)">
+                <div class="plate">
+                  <span class="brand">Castrol</span
+                  ><img src="../ui-samples-2026-11-23/img/oil0.webp" alt="" /><span class="ref"
+                    >CAS-ACT4T-0900</span
+                  >
+                </div>
+              </div>
+              <div class="m-buy">
+                <span class="meta" style="font: 600 13px 'DM Sans'; color: var(--muted)"
+                  >Castrol · Lubricants</span
+                >
+                <h1>Activ 4T 20W40 900 ml</h1>
+                <p style="color: var(--ink-2); font-size: 14.5px">Engine oil for 2W · 20W40 · 900 ml</p>
+                <span class="rating"
+                  ><svg viewBox="0 0 24 24">
+                    <path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z" /></svg
+                  >4.6 <small>189 reviews</small></span
+                >
+                <span
+                  class="genuine"
+                  style="display: inline-flex; gap: 6px; color: var(--go); font: 600 13.5px 'DM Sans'"
+                  >Genuine Castrol part</span
+                >
+                <p style="font-size: 13px; color: var(--muted)">
+                  Price includes GST. Delivery is calculated at checkout.
+                </p>
+                <p style="font-size: 14px">
+                  Need 10 or more? <a class="link" href="#">Ask for a bulk price.</a>
+                </p>
+                <p style="font-size: 13px; color: var(--muted)">
+                  No returns or exchanges. Faulty parts are handled by our support team.
+                  <a class="link" style="font-size: 13px" href="#">Read the policy</a>
+                </p>
+              </div>
+              <div class="m-sec">
+                <div class="panel">
+                  <h2 style="font-size: 17px">Specification</h2>
+                  <dl class="spec">
+                    <div>
+                      <dt>Grade</dt>
+                      <span class="lead"></span>
+                      <dd>20W40</dd>
+                    </div>
+                    <div>
+                      <dt>Compatibility</dt>
+                      <span class="lead"></span>
+                      <dd>4-stroke 2W</dd>
+                    </div>
+                    <div>
+                      <dt>Part reference</dt>
+                      <span class="lead"></span>
+                      <dd class="num">CAS-ACT4T-0900</dd>
+                    </div>
+                  </dl>
+                </div>
+              </div>
+            </div>
+            <div class="stick">
+              <div><span class="price">₹440</span><br /><span class="unit">₹488.89 per litre</span></div>
+              <a class="btn pri" href="#">Add to cart</a>
+            </div>
+          </div>
+        </div>
+        <div class="notes">
+          <h3>What changed (look only)</h3>
+          <ul>
+            <li>
+              The photo sits large on the engineering-grid plate with its part reference; same single photo as
+              live.
+            </li>
+            <li>
+              Price, unit price, GST note, "Genuine part", Compare and Add to cart are grouped in one price
+              box, so the buying area reads as one unit.
+            </li>
+            <li>
+              Bulk-price and returns notes become two quiet rows with line icons (the live page uses an
+              emoji).
+            </li>
+            <li>
+              The spec table uses dotted leaders like a parts catalogue; reviews get a large score column.
+            </li>
+            <li>
+              Phone: price and Add to cart stay pinned at the bottom so they are never hidden by the tab bar
+              (a bug on the live page).
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <script src="cards.js"></script>
+    <script>
+      fillCards('more', [4, 2, 5, 7], false);
+    </script>
+  </body>
+</html>

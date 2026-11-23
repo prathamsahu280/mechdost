@@ -57,7 +57,7 @@ export function PortalGuard({
             <button
               type="button"
               onClick={() => {
-                signOutEverywhere();
+                void signOutEverywhere();
               }}
               className="press inline-flex min-h-11 items-center rounded-button border border-input-border px-4 text-sm font-bold text-ink hover:bg-pill"
             >
@@ -75,7 +75,7 @@ export function PortalGuard({
         <button
           type="button"
           onClick={() => {
-            signOutEverywhere();
+            void signOutEverywhere();
           }}
           className="press inline-flex min-h-11 items-center rounded-button border border-input-border px-4 font-bold text-ink hover:bg-pill"
         >

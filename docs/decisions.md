@@ -1665,3 +1665,12 @@ User: "make the website open on light mode by default". Without a saved choice t
 device's system theme (replaces "follow the system theme" from 2026-11-01). Dark mode stays one tap away (footer and
 account menu) and a saved dark choice still applies on every visit. Code: `THEME_INIT_SCRIPT` in
 `apps/web/src/lib/theme.ts`, fallbacks in `theme-client.ts` and the three maps; guard `test/theme-light-default.test.ts`.
+
+## 2026-11-23 — Sign-out ends with a fresh load of the home page
+
+User: "suppose im in admin section and i sign out … that page's data still shows for a bit after sign out". Every
+sign-out (account menu, account page, portal guard) now hides the page content at once (`html[data-signing-out]`),
+clears the session synchronously, waits for the Firebase sign-out (at most 4 s), then loads the home page fresh with
+`location.replace` so no data of the signed-out account stays on screen, in memory or behind the Back button. This is
+the one deliberate exception to "no reload feel" (security beats smoothness here). Code `apps/web/src/lib/auth/sign-out.ts`;
+guard `test/sign-out-clean.test.ts`; e2e sign-out steps wait for the fresh load.

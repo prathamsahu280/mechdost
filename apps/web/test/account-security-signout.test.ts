@@ -89,7 +89,8 @@ describe('header Sign out (in the account menu)', () => {
     expect(row).toContain('text-error');
     expect(panel).toContain('min-h-11');
     expect(row).toContain('copy.signOut');
-    expect(row).toMatch(/router\.push\(prefix \|\| '\/'\)/);
+    // Goes home with a fresh load once the session has ended (bug 2026-11-23, test/sign-out-clean.test.ts).
+    expect(row).toMatch(/m\.signOutEverywhere\(\)/);
     expect(menu).toContain('role="status"');
     expect(menu).toContain('setSaid(true)');
   });

@@ -1,0 +1,1009 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MechDost round 3 · Home</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="v3.css" />
+    <style>
+      .hero {
+        display: grid;
+        grid-template-columns: 1.05fr 1fr;
+        gap: 0;
+        background: var(--surface);
+        border-bottom: 1px solid var(--rule);
+      }
+      .hero .copy {
+        padding: 48px 40px 40px 28px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      .hero h1 {
+        font-size: 58px;
+        line-height: 1.02;
+        letter-spacing: -0.035em;
+      }
+      .hero h1 span {
+        display: block;
+        color: var(--muted);
+      }
+      .hero .lead {
+        font-size: 17px;
+        line-height: 1.55;
+        color: var(--ink-2);
+        max-width: 520px;
+      }
+      .hero .ctas {
+        display: flex;
+        gap: 10px;
+      }
+      .hero .find {
+        border-top: 1px solid var(--rule);
+        padding-top: 18px;
+        display: grid;
+        gap: 8px;
+        max-width: 520px;
+      }
+      .hero .find label {
+        font: 700 13px 'DM Sans';
+        color: var(--ink-2);
+      }
+      .hero .find .box {
+        display: flex;
+        height: 52px;
+        border: 1.5px solid var(--ink);
+        border-radius: 11px;
+        overflow: hidden;
+      }
+      .hero .find .box span {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        padding: 0 14px;
+        color: var(--faint);
+        font-size: 15px;
+      }
+      .hero .find .box button {
+        width: 56px;
+        border: 0;
+        background: var(--ink);
+        color: #fff;
+        display: grid;
+        place-items: center;
+      }
+      .hero .pic {
+        position: relative;
+        background: #0f1825 url('../../../apps/web/public/images/automotive-hero.jpg') center / cover;
+        min-height: 560px;
+      }
+      .hero .pic::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(90deg, rgba(16, 31, 52, 0.55), rgba(16, 31, 52, 0) 45%);
+      }
+      .hero .inset {
+        position: absolute;
+        z-index: 1;
+        right: 28px;
+        bottom: 28px;
+        width: 250px;
+        background: #fff;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid var(--rule);
+      }
+      .hero .inset img {
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+      }
+      .hero .inset p {
+        padding: 10px 12px;
+        font: 600 13px 'DM Sans';
+        color: var(--ink-2);
+      }
+      .hero .badge {
+        position: absolute;
+        z-index: 1;
+        left: 28px;
+        top: 28px;
+        background: rgba(16, 31, 52, 0.82);
+        color: #fff;
+        font: 600 13px 'DM Sans';
+        padding: 8px 12px;
+        border-radius: 9px;
+      }
+      .aud {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        border: 1px solid var(--rule);
+        border-radius: 14px;
+        overflow: hidden;
+        background: var(--surface);
+      }
+      .aud a {
+        padding: 22px;
+        text-decoration: none;
+        color: inherit;
+        border-right: 1px solid var(--rule);
+        display: grid;
+        gap: 8px;
+        align-content: start;
+      }
+      .aud a:last-child {
+        border-right: 0;
+      }
+      .aud .ic {
+        width: 46px;
+        height: 46px;
+        border-radius: 11px;
+        background: var(--paper);
+        border: 1px solid var(--rule);
+        display: grid;
+        place-items: center;
+      }
+      .aud h3 {
+        font-size: 19px;
+        margin-top: 6px;
+      }
+      .aud p {
+        color: var(--muted);
+        font-size: 14.5px;
+        line-height: 1.5;
+      }
+      .aud .link {
+        margin-top: 6px;
+      }
+      .trust {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 28px;
+        padding: 22px 0 0;
+      }
+      .trust div {
+        display: flex;
+        gap: 12px;
+      }
+      .trust .ic {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--go-soft);
+        color: var(--go);
+        display: grid;
+        place-items: center;
+      }
+      .trust b {
+        display: block;
+        font: 700 15px 'DM Sans';
+      }
+      .trust small {
+        color: var(--muted);
+        font-size: 13.5px;
+        line-height: 1.45;
+      }
+      .cats.d {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      .cats.d .cat:nth-child(3n) {
+        border-right: 0;
+      }
+      .cats.d .cat:nth-last-child(-n + 3) {
+        border-bottom: 0;
+      }
+      .pgrid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+      }
+      .route {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 28px;
+        align-items: start;
+      }
+      .route .steps {
+        grid-template-columns: repeat(4, 1fr);
+      }
+      .route .step:last-child,
+      .svc .step:last-child {
+        border-right: 0;
+      }
+      .svc .steps {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      .ws {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+      }
+      .wcard {
+        background: var(--surface);
+        border: 1px solid var(--rule);
+        border-radius: 14px;
+        padding: 18px;
+        display: grid;
+        gap: 10px;
+      }
+      .wcard h3 {
+        font-size: 17px;
+      }
+      .wcard .meta {
+        font-size: 13.5px;
+        color: var(--muted);
+      }
+      .wcard .row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-top: 1px dashed var(--rule);
+        padding-top: 10px;
+        font-size: 14px;
+      }
+      .faq {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0 28px;
+      }
+      .faq details {
+        border-bottom: 1px solid var(--rule);
+        padding: 16px 0;
+      }
+      .faq summary {
+        font: 700 15.5px 'DM Sans';
+        list-style: none;
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        cursor: pointer;
+      }
+      .faq summary::after {
+        content: '+';
+        font: 600 20px Manrope;
+        color: var(--accent-btn);
+        line-height: 1;
+      }
+      .faq details[open] summary::after {
+        content: '−';
+      }
+      .faq p {
+        color: var(--muted);
+        font-size: 14.5px;
+        line-height: 1.55;
+        margin-top: 8px;
+      }
+      .grow {
+        margin: 44px 28px 36px;
+        border-radius: 16px;
+        background: var(--graphite);
+        color: #fff;
+        padding: 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 24px;
+        background-image:
+          linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+        background-size: 22px 22px;
+      }
+      .grow h2 {
+        color: #fff;
+        font-size: 28px;
+      }
+      .grow p {
+        color: #b8c3d0;
+        margin-top: 6px;
+        max-width: 620px;
+        line-height: 1.5;
+      }
+      .grow .lbl {
+        color: #ffb08f;
+      }
+      /* phone */
+      .p-hero {
+        background: var(--surface);
+        border-bottom: 1px solid var(--rule);
+      }
+      .p-hero .pic {
+        height: 210px;
+        background: #0f1825 url('../../../apps/web/public/images/automotive-hero.jpg') center / cover;
+      }
+      .p-hero .copy {
+        padding: 20px 16px 22px;
+        display: grid;
+        gap: 14px;
+      }
+      .p-hero h1 {
+        font-size: 34px;
+        line-height: 1.05;
+        letter-spacing: -0.03em;
+      }
+      .p-hero h1 span {
+        display: block;
+        color: var(--muted);
+      }
+      .p-sect {
+        padding: 28px 16px 0;
+      }
+      .p-sect h2 {
+        font-size: 21px;
+        margin-bottom: 12px;
+      }
+      .cats.m {
+        grid-template-columns: 1fr 1fr;
+      }
+      .cats.m .cat {
+        padding: 12px;
+        gap: 10px;
+      }
+      .cats.m .cat:nth-child(2n) {
+        border-right: 0;
+      }
+      .cats.m .cat small {
+        display: none;
+      }
+      .cats.m .cat .ic {
+        width: 38px;
+        height: 38px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="doc">
+      <header>
+        <div>
+          <h1>Round 3 · Home</h1>
+          <p>
+            Same sections, copy and buttons as the live home page, in the same order. What changes: a calmer
+            white canvas, the product photo on an engineering grid, part references in tabular figures, dotted
+            spec leaders, line icons instead of emoji, sentence-case labels, and bordered panels instead of
+            floating shadows.
+          </p>
+        </div>
+        <nav class="tabs-doc">
+          <a class="on" href="home.html">Home</a><a href="shop.html">Shop</a><a href="product.html">Product</a
+          ><a href="workshops.html">Workshops</a>
+        </nav>
+      </header>
+
+      <p class="cap">Desktop · 1280 px</p>
+      <div class="desk">
+        <div class="ann">
+          <span>MechDost</span
+          ><span
+            ><svg viewBox="0 0 24 24">
+              <path d="m7.5 4.27 9 5.15M21 8 12 3 3 8v8l9 5 9-5zM3.3 7 12 12l8.7-5M12 22V12" /></svg
+            >Product orders by confirmation</span
+          ><span
+            ><svg viewBox="0 0 24 24">
+              <path
+                d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"
+              /></svg
+            >Workshop requests in Chhattisgarh</span
+          >
+        </div>
+        <div class="hdr">
+          <img class="logo" src="../../../apps/web/public/brand/mechdost-logo.svg" alt="MechDost" />
+          <nav class="hnav">
+            <a class="on" href="#"
+              ><svg viewBox="0 0 24 24">
+                <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" /></svg
+              >Home</a
+            >
+            <a href="shop.html"
+              ><svg viewBox="0 0 24 24">
+                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                <path d="M3 6h18M16 10a4 4 0 0 1-8 0" /></svg
+              >Shop Products</a
+            >
+            <a href="workshops.html"
+              ><svg viewBox="0 0 24 24">
+                <path
+                  d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"
+                /></svg
+              >Find Workshops</a
+            >
+            <a href="#"
+              ><svg viewBox="0 0 24 24">
+                <path d="M5 17h14v-4l-2-5H7l-2 5z" />
+                <circle cx="7.5" cy="17" r="2" />
+                <circle cx="16.5" cy="17" r="2" /></svg
+              >My Vehicles</a
+            >
+            <a href="#"
+              ><svg viewBox="0 0 24 24">
+                <rect x="3" y="7" width="18" height="13" rx="2" />
+                <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg
+              >For business</a
+            >
+          </nav>
+          <div class="htools">
+            <span class="hsearch"
+              ><svg viewBox="0 0 24 24" style="width: 17px; height: 17px">
+                <circle cx="11" cy="11" r="7" />
+                <path d="m20 20-3.5-3.5" /></svg
+              >Search parts…<kbd>/</kbd></span
+            >
+            <button class="hbtn">
+              <svg viewBox="0 0 24 24" style="width: 17px; height: 17px">
+                <circle cx="12" cy="8" r="4" />
+                <path d="M4 21a8 8 0 0 1 16 0" /></svg
+              >Sign in
+            </button>
+            <span class="hcart"
+              ><svg viewBox="0 0 24 24" style="width: 17px; height: 17px">
+                <circle cx="8" cy="21" r="1" />
+                <circle cx="19" cy="21" r="1" />
+                <path
+                  d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"
+                /></svg
+              >Cart<b>0</b></span
+            >
+          </div>
+        </div>
+
+        <section class="hero">
+          <div class="copy">
+            <span class="lbl">For every drive. Every ride.</span>
+            <h1>Automotive essentials.<span>Local vehicle care.</span></h1>
+            <p class="lead">
+              Shop oils, batteries, tyres and more. Request workshop support in Chhattisgarh and agree on the
+              work and expense before repairs.
+            </p>
+            <div class="ctas">
+              <a class="btn pri" href="shop.html"
+                >Explore Products<svg viewBox="0 0 24 24"><path d="M7 17 17 7M8 7h9v9" /></svg></a
+              ><a class="btn sec" href="workshops.html"
+                >Find a workshop<svg viewBox="0 0 24 24"><path d="M7 17 17 7M8 7h9v9" /></svg
+              ></a>
+            </div>
+            <div class="find">
+              <label>Find your next essential</label>
+              <div class="box">
+                <span>Try tyres, battery or engine oil</span
+                ><button aria-label="Search">
+                  <svg viewBox="0 0 24 24">
+                    <circle cx="11" cy="11" r="7" />
+                    <path d="m20 20-3.5-3.5" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <ul class="checks">
+              <li>
+                <svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></svg>100% genuine parts, delivered
+                across Chhattisgarh
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></svg>Bill with every order
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></svg>Clear estimates, you approve every
+                line
+              </li>
+            </ul>
+          </div>
+          <div class="pic">
+            <span class="badge">Products for your car. Care for your bike.</span>
+            <div class="inset">
+              <img src="../../../apps/web/public/images/motorcycle.jpg" alt="" />
+              <p>And every two-wheel journey.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="sect">
+          <div class="sect-h">
+            <div>
+              <span class="lbl">Start here</span>
+              <h2 style="margin-top: 8px">Who are you shopping for?</h2>
+            </div>
+          </div>
+          <div class="aud">
+            <a href="#"
+              ><span class="ic"
+                ><svg viewBox="0 0 24 24">
+                  <path d="M5 17h14v-4l-2-5H7l-2 5z" />
+                  <circle cx="7.5" cy="17" r="2" />
+                  <circle cx="16.5" cy="17" r="2" /></svg
+              ></span>
+              <h3>For your car or bike</h3>
+              <p>Oils, batteries, tyres and parts, plus verified workshops near you.</p>
+              <span class="link"
+                >Shop products<svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></svg></span
+            ></a>
+            <a href="#"
+              ><span class="ic"
+                ><svg viewBox="0 0 24 24">
+                  <path
+                    d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"
+                  /></svg
+              ></span>
+              <h3>For mechanics &amp; garages</h3>
+              <p>Bulk orders, GST details on your bill and trade prices for verified accounts.</p>
+              <span class="link"
+                >For garages<svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></svg></span
+            ></a>
+            <a href="#"
+              ><span class="ic"
+                ><svg viewBox="0 0 24 24">
+                  <rect x="1" y="3" width="15" height="13" />
+                  <path d="M16 8h4l3 3v5h-7z" />
+                  <circle cx="5.5" cy="18.5" r="2.5" />
+                  <circle cx="18.5" cy="18.5" r="2.5" /></svg
+              ></span>
+              <h3>For fleets</h3>
+              <p>
+                Keep every vehicle on the road: priority workshop slots, reminders and one monthly GST
+                statement.
+              </p>
+              <span class="link"
+                >For fleets<svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></svg></span
+            ></a>
+          </div>
+          <div class="trust">
+            <div>
+              <span class="ic"
+                ><svg viewBox="0 0 24 24">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <path d="M14 2v6h6M9 15l2 2 4-4" /></svg></span
+              ><span
+                ><b>Approve every cost</b
+                ><small>Work starts only after you accept the itemised estimate.</small></span
+              >
+            </div>
+            <div>
+              <span class="ic"
+                ><svg viewBox="0 0 24 24">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                  <path d="m9 12 2 2 4-4" /></svg></span
+              ><span
+                ><b>Checked local partners</b
+                ><small>Every workshop and partner is verified by our team before they go live.</small></span
+              >
+            </div>
+            <div>
+              <span class="ic"
+                ><svg viewBox="0 0 24 24"><path d="M3 21l1.7-5A8.5 8.5 0 1 1 8 19.3z" /></svg></span
+              ><span
+                ><b>Real people on WhatsApp</b
+                ><small>Talk to the MechDost team in English or Hindi.</small></span
+              >
+            </div>
+          </div>
+        </section>
+
+        <section class="sect">
+          <div class="sect-h">
+            <div>
+              <span class="lbl">Shop automotive essentials</span>
+              <h2 style="margin-top: 8px">What does your vehicle need?</h2>
+            </div>
+            <a class="link" href="shop.html"
+              >View all products<svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></svg
+            ></a>
+          </div>
+          <div class="cats d">
+            <a class="cat" href="#"
+              ><span class="ic"
+                ><svg viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="9" />
+                  <circle cx="12" cy="12" r="4" />
+                  <path d="M12 3v5M12 16v5M3 12h5M16 12h5" /></svg></span
+              ><span><b>Tyres</b><small>Sizes and vehicle requirements</small></span></a
+            >
+            <a class="cat" href="#"
+              ><span class="ic"
+                ><svg viewBox="0 0 24 24">
+                  <path d="M9 3h6v3l2 2v12a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V8l2-2z" />
+                  <path d="M7 12h10" /></svg></span
+              ><span><b>Lubricants</b><small>Grade, specification and pack</small></span></a
+            >
+            <a class="cat" href="#"
+              ><span class="ic"
+                ><svg viewBox="0 0 24 24">
+                  <rect x="3" y="7" width="18" height="13" rx="2" />
+                  <path d="M7 7V5h3v2M14 7V5h3v2M8 13h3M14.5 11.5v3M13 13h3" /></svg></span
+              ><span><b>Batteries</b><small>Capacity, size and application</small></span></a
+            >
+            <a class="cat" href="#"
+              ><span class="ic"
+                ><svg viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="9" />
+                  <circle cx="12" cy="12" r="3" />
+                  <circle cx="12" cy="5.5" r="1" />
+                  <circle cx="12" cy="18.5" r="1" />
+                  <circle cx="5.5" cy="12" r="1" />
+                  <circle cx="18.5" cy="12" r="1" /></svg></span
+              ><span><b>Bearings</b><small>References and dimensions</small></span></a
+            >
+            <a class="cat" href="#"
+              ><span class="ic"
+                ><svg viewBox="0 0 24 24"><path d="M4 4h16l-6 8v6l-4 2v-8z" /></svg></span
+              ><span><b>Filters</b><small>Oil, air and fuel filters</small></span></a
+            >
+            <a class="cat" href="#"
+              ><span class="ic"
+                ><svg viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="3" />
+                  <path
+                    d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"
+                  /></svg></span
+              ><span><b>Spare parts</b><small>Brakes and drivetrain</small></span></a
+            >
+            <a class="cat" href="#"
+              ><span class="ic"
+                ><svg viewBox="0 0 24 24">
+                  <path d="m12 3 2.4 5 5.6.8-4 3.9.9 5.5L12 15.6 7.1 18.2 8 12.7 4 8.8 9.6 8z" /></svg></span
+              ><span><b>Accessories</b><small>Everyday vehicle essentials</small></span></a
+            >
+            <a class="cat" href="#"
+              ><span class="ic"
+                ><svg viewBox="0 0 24 24">
+                  <rect x="2" y="8" width="20" height="12" rx="2" />
+                  <path d="M8 8V5a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v3M2 13h20" /></svg></span
+              ><span><b>Workshop tools</b><small>Tools for garages and home use</small></span></a
+            >
+            <a class="cat" href="#"
+              ><span class="ic"
+                ><svg viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9z" /></svg></span
+              ><span><b>EV essentials</b><small>Chargers, cables and batteries</small></span></a
+            >
+          </div>
+        </section>
+
+        <section class="sect">
+          <div class="sect-h">
+            <div>
+              <h2>Browse our product range</h2>
+              <p>No PIN code needed to explore</p>
+            </div>
+            <a class="link" href="shop.html"
+              >View all products<svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></svg
+            ></a>
+          </div>
+          <div class="pgrid" id="dgrid"></div>
+        </section>
+
+        <section class="sect route">
+          <div>
+            <span class="lbl">How your order reaches you</span>
+            <h2 style="font-size: 26px; margin: 8px 0 10px">Ordered online. Confirmed by MechDost.</h2>
+            <p style="color: var(--muted); line-height: 1.55">
+              MechDost checks every order, confirms it is available for your PIN and arranges delivery. You
+              can follow each step.
+            </p>
+            <div style="display: flex; gap: 14px; align-items: center; margin-top: 18px">
+              <a class="btn pri" href="shop.html">Shop products</a
+              ><a class="link" href="#">Buying 10 or more? Ask for a bulk price</a>
+            </div>
+          </div>
+          <div class="steps">
+            <div class="step">
+              <span class="n">01</span>
+              <h3>You order</h3>
+              <p>Browse without a PIN code. Pay cash on delivery.</p>
+            </div>
+            <div class="step">
+              <span class="n">02</span>
+              <h3>MechDost checks availability</h3>
+              <p>We make sure the item is in stock for your PIN.</p>
+            </div>
+            <div class="step">
+              <span class="n">03</span>
+              <h3>Your order is confirmed</h3>
+              <p>We confirm it, usually within 15 minutes, and get it ready to ship.</p>
+            </div>
+            <div class="step">
+              <span class="n">04</span>
+              <h3>Delivered to you</h3>
+              <p>Track every step from your order page.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="sect svc">
+          <div class="sect-h">
+            <div>
+              <h2>Know the work. Approve the cost.</h2>
+              <p>
+                Find participating workshops, tell us what your vehicle needs and agree on the scope and
+                expense before authorising work.
+              </p>
+            </div>
+            <a class="link" href="workshops.html"
+              >Find a workshop<svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></svg
+            ></a>
+          </div>
+          <div class="steps">
+            <div class="step">
+              <span class="n">01</span>
+              <h3>Tell us what you need</h3>
+              <p>Vehicle, location and your concern.</p>
+            </div>
+            <div class="step">
+              <span class="n">02</span>
+              <h3>Review the estimate</h3>
+              <p>Ask for the scope, exclusions and expected expense.</p>
+            </div>
+            <div class="step">
+              <span class="n">03</span>
+              <h3>Confirm the next step</h3>
+              <p>Agree on the workshop, timing and expense.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="sect">
+          <div class="sect-h">
+            <div>
+              <span class="lbl">Top rated in Raipur</span>
+              <h2 style="margin-top: 8px">Workshops our customers trust</h2>
+            </div>
+            <a class="link" href="workshops.html"
+              >See all workshops<svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></svg
+            ></a>
+          </div>
+          <div class="ws">
+            <div class="wcard">
+              <h3>Mowa EV &amp; Bike Point</h3>
+              <span class="meta">Mowa · 492007</span>
+              <div class="tags">
+                <span class="tag">2W · 3W</span><span class="tag">Pickup</span><span class="tag">EV</span>
+              </div>
+              <div class="row">
+                <span class="rating"
+                  ><svg viewBox="0 0 24 24">
+                    <path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z" /></svg
+                  >4.8 <small>58 reviews</small></span
+                ><b class="num">From ₹150</b>
+              </div>
+            </div>
+            <div class="wcard">
+              <h3>Pachpedi Naka Two-Wheeler Care</h3>
+              <span class="meta">Pachpedi Naka · 492001</span>
+              <div class="tags"><span class="tag">2W</span></div>
+              <div class="row">
+                <span class="rating"
+                  ><svg viewBox="0 0 24 24">
+                    <path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z" /></svg
+                  >4.7 <small>128 reviews</small></span
+                ><b class="num">From ₹200</b>
+              </div>
+            </div>
+            <div class="wcard">
+              <h3>Telibandha Car Clinic</h3>
+              <span class="meta">Telibandha · 492006</span>
+              <div class="tags"><span class="tag">4W</span></div>
+              <div class="row">
+                <span class="rating"
+                  ><svg viewBox="0 0 24 24">
+                    <path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z" /></svg
+                  >4.6 <small>94 reviews</small></span
+                ><b class="num">From ₹250</b>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="sect">
+          <div class="sect-h">
+            <div>
+              <span class="lbl">Questions</span>
+              <h2 style="margin-top: 8px">Good to know</h2>
+            </div>
+            <a class="link" href="#">Still have a question? Ask MechDost</a>
+          </div>
+          <div class="faq">
+            <details open>
+              <summary>How long does delivery take in Chhattisgarh?</summary>
+              <p>
+                Most orders arrive in 1–3 days. The product page shows the expected time and your order page
+                shows each step.
+              </p>
+            </details>
+            <details>
+              <summary>How do I pay?</summary>
+              <p>Cash on delivery for now. UPI and card payments are coming soon.</p>
+            </details>
+            <details><summary>What if the part does not fit?</summary></details>
+            <details><summary>How are workshops checked?</summary></details>
+            <details><summary>Will a workshop start work without asking me?</summary></details>
+            <details><summary>Can I order in bulk for my garage or fleet?</summary></details>
+          </div>
+        </section>
+
+        <section class="grow">
+          <div>
+            <span class="lbl">For partners</span>
+            <h2 style="margin-top: 8px">Grow with MechDost.</h2>
+            <p>
+              Sell automotive products, register your garage or join the mechanic network. Our team reviews
+              every application.
+            </p>
+          </div>
+          <a class="btn pri" href="#">Become a partner</a>
+        </section>
+      </div>
+
+      <div class="stage" style="margin-top: 34px">
+        <div>
+          <p class="cap">Phone · 390 px</p>
+          <div class="phone">
+            <div class="scroll">
+              <div class="phdr">
+                <div class="r1">
+                  <img
+                    class="logo"
+                    src="../../../apps/web/public/brand/mechdost-logo.svg"
+                    alt="MechDost"
+                  /><span class="sp"></span
+                  ><span class="icb" aria-label="Cart"
+                    ><svg viewBox="0 0 24 24">
+                      <circle cx="8" cy="21" r="1" />
+                      <circle cx="19" cy="21" r="1" />
+                      <path
+                        d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"
+                      /></svg
+                    ><span class="b">2</span></span
+                  ><span class="icb" aria-label="Account"
+                    ><svg viewBox="0 0 24 24">
+                      <circle cx="12" cy="8" r="4" />
+                      <path d="M4 21a8 8 0 0 1 16 0" /></svg
+                  ></span>
+                </div>
+                <div class="psearch">
+                  <svg viewBox="0 0 24 24">
+                    <circle cx="11" cy="11" r="7" />
+                    <path d="m20 20-3.5-3.5" /></svg
+                  >Search parts, oil, batteries…
+                </div>
+              </div>
+              <section class="p-hero">
+                <div class="pic"></div>
+                <div class="copy">
+                  <span class="lbl">For every drive. Every ride.</span>
+                  <h1>Automotive essentials.<span>Local vehicle care.</span></h1>
+                  <p style="color: var(--ink-2); line-height: 1.5">
+                    Shop oils, batteries, tyres and more. Request workshop support in Chhattisgarh and agree
+                    on the work and expense before repairs.
+                  </p>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px">
+                    <a class="btn pri" href="#">Explore Products</a
+                    ><a class="btn sec" href="#">Find a workshop</a>
+                  </div>
+                  <ul class="checks" style="font-size: 14px">
+                    <li>
+                      <svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></svg>100% genuine parts, delivered
+                      across Chhattisgarh
+                    </li>
+                    <li>
+                      <svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></svg>Bill with every order
+                    </li>
+                    <li>
+                      <svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></svg>Clear estimates, you approve
+                      every line
+                    </li>
+                  </ul>
+                </div>
+              </section>
+              <section class="p-sect">
+                <h2>What does your vehicle need?</h2>
+                <div class="cats m">
+                  <a class="cat"
+                    ><span class="ic"
+                      ><svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="9" />
+                        <circle cx="12" cy="12" r="4" /></svg></span
+                    ><b>Tyres</b></a
+                  >
+                  <a class="cat"
+                    ><span class="ic"
+                      ><svg viewBox="0 0 24 24">
+                        <path d="M9 3h6v3l2 2v12a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V8l2-2z" /></svg></span
+                    ><b>Lubricants</b></a
+                  >
+                  <a class="cat"
+                    ><span class="ic"
+                      ><svg viewBox="0 0 24 24">
+                        <rect x="3" y="7" width="18" height="13" rx="2" />
+                        <path d="M7 7V5h3v2M14 7V5h3v2" /></svg></span
+                    ><b>Batteries</b></a
+                  >
+                  <a class="cat"
+                    ><span class="ic"
+                      ><svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="9" />
+                        <circle cx="12" cy="12" r="3" /></svg></span
+                    ><b>Bearings</b></a
+                  >
+                  <a class="cat"
+                    ><span class="ic"
+                      ><svg viewBox="0 0 24 24"><path d="M4 4h16l-6 8v6l-4 2v-8z" /></svg></span
+                    ><b>Filters</b></a
+                  >
+                  <a class="cat" style="border-bottom: 1px solid var(--rule)"
+                    ><span class="ic"
+                      ><svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="3" />
+                        <path d="M12 2v3M12 19v3M2 12h3M19 12h3" /></svg></span
+                    ><b>Spare parts</b></a
+                  >
+                </div>
+                <a class="link" style="margin-top: 12px" href="#"
+                  >All 9 categories<svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></svg
+                ></a>
+              </section>
+              <section class="p-sect">
+                <h2>Browse our product range</h2>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px" id="mgrid"></div>
+              </section>
+            </div>
+            <nav class="dock">
+              <a class="on" href="#"
+                ><svg viewBox="0 0 24 24">
+                  <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" /></svg
+                >Home</a
+              ><a href="#"
+                ><svg viewBox="0 0 24 24">
+                  <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                  <path d="M3 6h18M16 10a4 4 0 0 1-8 0" /></svg
+                >Shop</a
+              ><a href="#"
+                ><svg viewBox="0 0 24 24">
+                  <path
+                    d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"
+                  /></svg
+                >Workshops</a
+              ><a href="#"
+                ><svg viewBox="0 0 24 24">
+                  <path d="M5 17h14v-4l-2-5H7l-2 5z" />
+                  <circle cx="7.5" cy="17" r="2" />
+                  <circle cx="16.5" cy="17" r="2" /></svg
+                >My Vehicles</a
+              >
+            </nav>
+          </div>
+        </div>
+        <div class="notes">
+          <h3>What changed (look only)</h3>
+          <ul>
+            <li>
+              Hero: white canvas on the left with a single strong headline; the second line is muted instead
+              of orange, so the orange is saved for the one button that matters.
+            </li>
+            <li>Emoji replaced by consistent line icons (categories, trust points, announcement).</li>
+            <li>
+              Product cards: photo on a fine engineering grid with the part reference in the corner (the live
+              cards already carry a part reference); price in large tabular figures over a dashed rule.
+            </li>
+            <li>
+              Sections sit on a hairline rule with a sentence-case label, instead of tracked ALL-CAPS
+              eyebrows.
+            </li>
+            <li>
+              The two step lists ("How your order reaches you", "Know the work") are numbered because they are
+              real sequences.
+            </li>
+            <li>
+              Header and dock: same items as the approved v4; the active tab is marked with an orange
+              underline.
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <script src="cards.js"></script>
+    <script>
+      fillCards('dgrid', [0, 1, 2, 3], false);
+      fillCards('mgrid', [0, 1, 2, 3], true);
+    </script>
+  </body>
+</html>

@@ -816,3 +816,9 @@ body:has([data-compare-tray]) main {
     overscroll-behavior: contain;
   }
 }
+
+/* Sign out (bug 2026-11-23): nothing of the signed-out account stays on screen while the session ends and the home
+   page loads fresh (`signOutEverywhere`). */
+html[data-signing-out] main {
+  visibility: hidden;
+}

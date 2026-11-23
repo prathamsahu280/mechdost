@@ -22,6 +22,9 @@ async function signIn(page: Page, phone: string, path = '/login', password = DEM
 async function signOut(page: Page) {
   await page.locator('[data-track="header_account"]').click();
   await page.getByRole('menuitem', { name: 'Sign out' }).click();
+  // Sign-out ends with a fresh load of the home page (bug 2026-11-23): wait for it before the next step.
+  await expect(page.locator('html[data-signing-out]')).toHaveCount(0);
+  await page.waitForLoadState();
 }
 
 async function placeOrder(page: Page): Promise<string> {
@@ -71,9 +74,8 @@ test.describe('sign-in (spec 01: phone OTP once, then password)', () => {
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
     await expect(page).toHaveURL(/\/account$/);
     await expect(page.getByRole('heading', { name: 'Hello, Ravi Sahu' })).toBeVisible();
-    if ((page.viewportSize()?.width ?? 0) >= 420) {
-      await expect(page.getByRole('link', { name: /Ravi\s*,\s*Account/ })).toBeVisible();
-    }
+    // v4 header (2026-11-23): the account link became the avatar button that opens the account menu.
+    await expect(page.locator('[data-track="header_account"]')).toHaveAccessibleName(/Account menu,\s*Ravi/);
   });
 
   test('locks an account for 15 minutes after 5 wrong passwords', async ({ page }) => {

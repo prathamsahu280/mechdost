@@ -233,6 +233,9 @@ test.describe('shop prices', () => {
 
     await page.locator('[data-track="header_account"]').click();
     await page.getByRole('menuitem', { name: 'Sign out' }).click();
+    // Sign-out ends with a fresh load of the home page (bug 2026-11-23): wait for it before the next step.
+    await expect(page.locator('html[data-signing-out]')).toHaveCount(0);
+    await page.waitForLoadState();
     await signInAdmin(page, '/admin/partners');
     const queue = page.getByRole('region', { name: 'Price requests' });
     await queue
@@ -247,6 +250,9 @@ test.describe('shop prices', () => {
 
     await page.locator('[data-track="header_account"]').click();
     await page.getByRole('menuitem', { name: 'Sign out' }).click();
+    // Sign-out ends with a fresh load of the home page (bug 2026-11-23): wait for it before the next step.
+    await expect(page.locator('html[data-signing-out]')).toHaveCount(0);
+    await page.waitForLoadState();
     await signInShop(page);
     await expect(castrol).toContainText('On sale · you are paid ₹430');
     await expect(shell).toContainText('Taken off sale: Above market price');
@@ -270,6 +276,9 @@ test.describe('seller agreement', () => {
 
     await page.locator('[data-track="header_account"]').click();
     await page.getByRole('menuitem', { name: 'Sign out' }).click();
+    // Sign-out ends with a fresh load of the home page (bug 2026-11-23): wait for it before the next step.
+    await expect(page.locator('html[data-signing-out]')).toHaveCount(0);
+    await page.waitForLoadState();
     await signInShop(page);
     const card = page.getByRole('region', { name: 'Seller agreement' });
     await expect(card).toContainText('genuine parts at prices approved by MechDost');
@@ -400,6 +409,9 @@ test.describe('approved seller reaches their shop', () => {
     await page.goto('/admin');
     await page.locator('[data-track="header_account"]').click();
     await page.getByRole('menuitem', { name: 'Sign out' }).click();
+    // Sign-out ends with a fresh load of the home page (bug 2026-11-23): wait for it before the next step.
+    await expect(page.locator('html[data-signing-out]')).toHaveCount(0);
+    await page.waitForLoadState();
 
     // The applicant creates their login with the application phone (OTP) and lands in their own shop.
     await page.goto('/login');
@@ -421,6 +433,9 @@ test.describe('approved seller reaches their shop', () => {
     // Signing in again later keeps the shop (claimed once, not re-linked or lost).
     await page.locator('[data-track="header_account"]').click();
     await page.getByRole('menuitem', { name: 'Sign out' }).click();
+    // Sign-out ends with a fresh load of the home page (bug 2026-11-23): wait for it before the next step.
+    await expect(page.locator('html[data-signing-out]')).toHaveCount(0);
+    await page.waitForLoadState();
     await page.goto(`/login?next=${encodeURIComponent('/partner/shop')}`);
     await page.getByLabel('Mobile number or email').fill('9123456700');
     await page.getByLabel('Password', { exact: true }).fill('Ghadi#Chowk2026');

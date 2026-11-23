@@ -105,11 +105,15 @@ describe('no full document load for internal moves', () => {
     }
   });
 
-  it('assigns window.location only in the language switches (footer button, account menu item)', () => {
+  it('assigns window.location only in the language switches and sign-out (fresh load drops the signed-out account, bug 2026-11-23)', () => {
     const offenders: string[] = [];
     for (const file of walk(srcDir).filter((f) => /\.tsx?$/.test(f))) {
       const rel = relative(srcDir, file).split('\\').join('/');
-      if (rel === 'components/site/language-switcher.tsx' || rel === 'components/auth/account-menu-panel.tsx')
+      if (
+        rel === 'components/site/language-switcher.tsx' ||
+        rel === 'components/auth/account-menu-panel.tsx' ||
+        rel === 'lib/auth/sign-out.ts'
+      )
         continue;
       if (/(?:window\.)?location(?:\.href)?\s*=[^=]|location\.(?:assign|replace)\(/.test(read(file)))
         offenders.push(rel);
