@@ -85,7 +85,8 @@ export function SearchTrigger(
       <button
         ref={button}
         type="button"
-        aria-label={label}
+        // Phone bar: the visible text is the accessible name (WCAG 2.5.3 label in name, axe label-content-name-mismatch).
+        aria-label={isBar ? label : undefined}
         aria-haspopup="dialog"
         aria-expanded={isBar ? open : undefined}
         data-track={isBar ? 'header_search' : 'header_search_phone'}

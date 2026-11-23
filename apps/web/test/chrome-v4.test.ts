@@ -239,3 +239,13 @@ describe('new strings exist in English and Hindi with the same placeholders', ()
     expect(header).toContain("c('searchSeeAll', { query: '{query}' })");
   });
 });
+
+describe('chrome v4 CI regressions (2026-11-23)', () => {
+  it('phone search bar is named by its visible text, not a different aria-label', () => {
+    const s = src('components/site/search-trigger.tsx');
+    expect(s).toContain('aria-label={isBar ? label : undefined}');
+  });
+  it('footer links are at least 24px wide (short Hindi words like कार्ट)', () => {
+    expect(src('components/site/footer.tsx')).toMatch(/inline-flex min-h-10 min-w-6 /);
+  });
+});

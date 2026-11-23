@@ -31,7 +31,7 @@ const POLICY_LINKS = [
 ] as const;
 
 const linkClass =
-  'inline-flex min-h-10 items-center gap-[9px] rounded-lg text-sm text-muted underline-offset-4 hover:text-ink hover:underline';
+  'inline-flex min-h-10 min-w-6 items-center gap-[9px] rounded-lg text-sm text-muted underline-offset-4 hover:text-ink hover:underline';
 
 /**
  * Site footer (v4, user-approved design 2026-11-23): one rounded card. The top holds the help card (WhatsApp/call)
