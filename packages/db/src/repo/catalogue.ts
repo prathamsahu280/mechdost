@@ -511,7 +511,8 @@ export async function getCatalogueProduct(
     description: p.description === null ? null : localized(p.description, p.description_hi, opts.locale),
     compatibility:
       p.compatibility === null ? null : localized(p.compatibility, p.compatibility_hi, opts.locale),
-    spec: p.spec,
+    // `spec.fitment` (Exide import: hundreds of vehicles) stays out of the page payload; search reads `compatibility`.
+    spec: Object.fromEntries(Object.entries(p.spec).filter(([key]) => key !== 'fitment')),
     attributeSet,
     attributes: attributeSet === null ? {} : readAttributes(attributeSet, p.spec),
     countryOfOrigin: p.country_of_origin,

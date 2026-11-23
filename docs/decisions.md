@@ -1665,3 +1665,14 @@ User: "make the website open on light mode by default". Without a saved choice t
 device's system theme (replaces "follow the system theme" from 2026-11-01). Dark mode stays one tap away (footer and
 account menu) and a saved dark choice still applies on every visit. Code: `THEME_INIT_SCRIPT` in
 `apps/web/src/lib/theme.ts`, fallbacks in `theme-client.ts` and the three maps; guard `test/theme-light-default.test.ts`.
+
+## 2026-11-23 — Exide catalogue replaced by the exidecare data (user request)
+
+User: "Remove existing Exide batteries/products already listed and list the new ones with the proper info and exact model names … include models fitment etc … we need exact part names, not generic names." Then: "list all the products from exide" (all 211 rows, including inverter batteries, home UPS inverters, combos, lithium-ion, genset). Later the same day: "we are adding the model year too".
+
+- **Archive, never delete:** the importer archives every existing product of brand `exide` that is not in the new list (conditional update on `version`, packs archived, audit row each) in one transaction with the new rows; old orders, carts and shop offers point at them. Other brands are never touched. Rows with the same slug or SKU are replaced in place.
+- **Exact names:** "Exide <Range> <MODEL>" with the manufacturer's model code verbatim; the model is also the `mfr` part number and the SKU (`EXIDE-<MODEL>`). Price on request where the source has no MRP (3 combos).
+- **Home power category:** inverter batteries, home UPS inverters, combos and the lithium-ion pack go into a new top-level category `home-power` ("Inverters & home UPS" / "इन्वर्टर और होम UPS"), admin-editable. Vehicle batteries stay under the existing `batteries` sub-categories. HSN 8507 for batteries, 8504 for inverters, UPS and combos, 18 % (assumption, accountant to confirm).
+- **Fitment lives in `spec.fitment`** (full list with fuel, `yearFrom` / `yearTo` and `era` from the source's "Model year / era" column), with a capped searchable text in `compatibility`; the public product API leaves `spec.fitment` out of the page payload. The `fitments` / vehicle tables are NOT written: their constraints do not fit (no years for most rows, kick/electric start, trucks, tractors, gensets). Writing them is the next step of "find the battery for my vehicle".
+- **Range photos:** 49 products only have Exide's generic range picture; they are live with `spec.photoKind = 'range'` and listed in the status report.
+- **Event:** `admin_exide_imported` (spec 12). Runbook: `docs/runbooks/catalogue-import.md` "Exide import".
