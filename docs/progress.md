@@ -5,6 +5,9 @@ This file is the single source of truth for **where the build is right now**. It
 ## Current status
 
 - **2026-11-23: Exide catalogue importer built** (worktree branch worktree-agent-a24d8c801ce4aa120, not pushed, no migration, NOT run against any database): planner `packages/db/src/exide`, repo `repo/exide-import.ts`, CLI `pnpm db:import:exide` (`--plan-only`, `--dry-run`), status report `docs/catalogue/exide-import-status.*`, runbook "Exide import". The real run (archives old Exide products, creates 211 live ones, uploads pictures) waits for the user; run `--dry-run` first.
+
+- **2026-11-23: Email link page `/auth/action` built** (own worktree branch, not pushed/merged; no migration). Handles verifyEmail, verifyAndChangeEmail, resetPassword, recoverEmail in en + hi; unit + e2e + Hindi crawl pass; JS budgets unchanged. **Next (user, after deploy):** Firebase console -> Authentication -> Templates -> each template -> Customize action URL -> `https://mechdost.com/auth/action` (runbook `docs/runbooks/firebase.md` "Email links on mechdost.com"; decisions 2026-11-23). Then check one real verification and one reset email end to end.
+
 - **2026-11-23 (night, user asleep): UI refresh samples** in `docs/design/ui-samples-2026-11-23/` (open
   `index.html`): audit of the live site + reference study (Indian shopping, service and auto-parts apps) + redesigned
   Home, Shop, Product (with price-on-request variant), Workshops + booking, Cart + checkout, Order tracking; phone EN

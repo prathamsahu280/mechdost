@@ -161,3 +161,7 @@ A new account section `wishlist` (real sign-in only; `lib/sections.ts`): saved p
 - **API (spec 13):** `forbidSellers` (and `forbidSignedInSellers` for the guest-public checkout quote) answer **403 `SELLER_CANNOT_ORDER`** on cart writes (`POST/PUT /me/cart/*`: add, merge, re-order), `POST /checkout/quote` (when signed in), `POST /orders`, `POST /checkout/coupon` and customer `POST /quotes/*` (ask, message, accept, pay). Reads stay. A seller who also holds a MechDost staff role is blocked too. Workshop accounts are **not** sellers and are unaffected.
 - **Web:** for a shop account (`useIsSeller`) add to cart / stepper hide, the cart shows the note instead of Checkout and the bulk-quote link, Checkout shows the note and a "Continue shopping" link, the product page shows the note (`cart.sellerCannotOrder`, English and Hindi).
 - **Tests:** `apps/api/test/seller-cannot-order.test.ts` (owner, staff, seller + staff role, customer, support staff, guest), `apps/web/test/seller-no-buy.test.ts`.
+
+## Email links (2026-11-23)
+
+Verification, reset and email-change links open `/auth/action` on our domain (`components/auth/email-action.tsx`, pure helpers `lib/auth/email-action.ts`); the Firebase template action URL is set per `docs/runbooks/firebase.md`. Resetting through Firebase is the right mechanism: Firebase Auth holds the password and the API checks it with `signInWithPassword`. Events in spec 12; tests `apps/web/test/email-action.test.ts`, `apps/web/e2e/email-action.spec.ts`.

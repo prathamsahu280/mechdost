@@ -1697,3 +1697,14 @@ used Turnstile token, a widget error, a network blink on the API call and on the
 API fetch now says "could not reach the sign-in service". The reCAPTCHA Enterprise and Cloudflare widget-mode
 settings are console-only (`docs/runbooks/firebase.md`). Code: `lib/auth/sign-in-retry.ts`, `turnstile.ts`,
 `login-flow.tsx`, `apps/api/src/routes/auth.ts`; test `apps/web/test/sign-in-retry.test.ts`.
+
+## 2026-11-23 — Email links open our own page, `/auth/action` (user request; closes the email-link part of Q30)
+
+User: "edit the firebase email templates and change the links in there to be mechdost.com links". Built the page
+Firebase's custom action URL will point at (`/auth/action`, `/hi/auth/action`): `verifyEmail`,
+`verifyAndChangeEmail`, `resetPassword`, `recoverEmail`, with localised failure states and one next action each. No new
+dependency; the Firebase SDK is loaded on demand on this page only (JS budget unchanged). Passwords are held by
+Firebase Auth and checked by the API through `accounts:signInWithPassword`, so Firebase's reset-by-link sets the real
+password. `continueUrl` is honoured only for same-site URLs. The Firebase console change (template action URL ->
+`https://mechdost.com/auth/action`) is a user action after deploy: `docs/runbooks/firebase.md` "Email links on
+mechdost.com". Events and copy: spec 12, `emailAction` namespace in en.json/hi.json.

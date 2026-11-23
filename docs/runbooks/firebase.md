@@ -32,6 +32,50 @@ Why the key file is passed explicitly (`apps/api/src/auth/firebase-app.ts`): wit
 7. First admin (later staff are given roles in Admin → Staff, `docs/runbooks/staff-roles.md`): the person signs up on the site (phone code, email, password), then from a machine with the production `DATABASE_URL`: `pnpm db:grant-role --phone +91XXXXXXXXXX --role super_admin --reason "first admin"` (staff roles only, `--city RPR` (the city's public code) for city roles; audited). Their next sign-in asks for the phone code and opens the admin console. **Setting customer prices** (Admin → Catalogue → Prices) needs `prices:write`, which comes with the `super_admin`, `ops_manager` and `finance` roles — grant one of those (e.g. `--role finance`) to whoever sets prices; `catalogue_manager` edits texts only.
 8. Manual check on the real project with the production build: phone sign-up shows no CSP errors in the browser console (Google's reCAPTCHA scripts and frames are not exercised by the emulator; allow-list in `apps/web/src/lib/csp.ts`).
 
+## Email links on mechdost.com (2026-11-23)
+
+Firebase sends the verification, password-reset and email-change emails with links to its own page
+(`https://<project>.firebaseapp.com/__/auth/action?mode=…&oobCode=…`). The site has its own page for these links,
+`/auth/action` (and `/hi/auth/action`, `apps/web/src/components/auth/email-action.tsx`), so the links can say
+`mechdost.com`. **Deploy the page first, then change the template** (the other order sends people to a 404).
+
+Modes the page handles (Firebase appends `mode`, `oobCode`, `continueUrl`, `lang`): `verifyEmail` and
+`verifyAndChangeEmail` (apply the code, refresh the signed-in session so the "verify your email" card goes away),
+`resetPassword` (shows the email, asks for a new password with the sign-in rules, then "Sign in"), `recoverEmail`
+(restores the old address, suggests a new password). A missing, wrong, used or expired code shows a localised reason
+and one next step (verify → account page for a new link; reset → sign-in page, "Forgot password?"). `lang=hi` moves
+to the Hindi page. Works signed out; never indexed.
+
+**Why Firebase's reset is the right mechanism for our passwords:** passwords live only in Firebase Auth (scrypt).
+`POST /v1/auth/password` checks them with Identity Toolkit `accounts:signInWithPassword`
+(`apps/api/src/auth/password-authority.ts`) and then mints a custom token; the API stores no password or hash. So
+`confirmPasswordReset` sets the very password the API later checks, and ends the account's older sessions.
+
+**The console change (do after the page is deployed):**
+
+1. Firebase console → `mechdost-prod` → Authentication → Templates.
+2. For each of **Email address verification**, **Password reset**, **Email address change**: pencil icon → "Customize
+   action URL" → `https://mechdost.com/auth/action` → Save. (Optionally set the sender name and reply-to here too.)
+3. `mechdost.com` must be in Authentication → Settings → Authorised domains (step 2 of Production above).
+
+Equivalent Identity Toolkit Admin API call (sets the action URL for all templates at once; field
+`notification.sendEmail.callbackUri` of the project config, v2 `Config` resource; check against the current reference
+before relying on it, it was not run from here):
+
+```
+curl -X PATCH \
+  -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+  -H "x-goog-user-project: <project-id>" -H "Content-Type: application/json" \
+  "https://identitytoolkit.googleapis.com/admin/v2/projects/<project-id>/config?updateMask=notification.sendEmail.callbackUri" \
+  -d '{"notification":{"sendEmail":{"callbackUri":"https://mechdost.com/auth/action"}}}'
+```
+
+Check: sign up with a test email, open the verification email, the link starts with `https://mechdost.com/auth/action`
+and ends on "Email confirmed". Repeat with "Forgot password" by email. Tests: `apps/web/test/email-action.test.ts`
+(unit), `apps/web/e2e/email-action.spec.ts` (states without Firebase, both languages, axe); the Hindi coverage crawl
+includes `/auth/action`. Events (spec 12): `auth_email_action_opened`, `auth_email_verified`,
+`auth_password_reset_done`, `auth_email_action_failed`.
+
 ## Smoke test (no accounts created)
 
 A password check for a made-up email must return "no" (`null`), and a custom token must sign. Both passed on `mechdost-dev` on 2026-11-09.

@@ -136,6 +136,7 @@ const PUBLIC_PAGES = [
   '/cart',
   '/checkout',
   '/login',
+  '/auth/action',
   '/quotes/new',
   '/policies/returns',
   '/policies/privacy',
