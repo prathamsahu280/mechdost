@@ -7,6 +7,7 @@ import {
   badgeText,
   emptyActionFor,
   liveText,
+  noticeTag,
   noticeTime,
   pollInterval,
   POLL_MS,
@@ -54,6 +55,7 @@ describe('new arrivals', () => {
     body: 'b',
     link: null,
     read: false,
+    resolved: false,
     createdAt: '2026-11-15T10:00:00.000Z',
   });
   it('reports only ids not seen before', () => {
@@ -137,5 +139,15 @@ describe('push worker', () => {
     expect(worker).toMatch(/charAt\(1\) !== '\/'/);
     expect(worker).toMatch(/showNotification/);
     expect(worker).toMatch(/notificationclick/);
+  });
+});
+
+describe('notice tag', () => {
+  it('shows New only while unread and Done once the action is taken care of', () => {
+    expect(noticeTag({ read: false, resolved: false })).toBe('new');
+    expect(noticeTag({ read: true, resolved: false })).toBeNull();
+    // A resolved notice is also marked read by the server, but even an unread one never says "New".
+    expect(noticeTag({ read: true, resolved: true })).toBe('done');
+    expect(noticeTag({ read: false, resolved: true })).toBe('done');
   });
 });

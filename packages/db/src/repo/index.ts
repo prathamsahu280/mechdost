@@ -82,6 +82,7 @@ export * from './reviews';
 export * from './analytics';
 export * from './workshop-analytics';
 export * from './account';
+export * from './my-refunds';
 export * from './notice-events';
 export * from './notice-templates-admin';
 export * from './staff-admin';

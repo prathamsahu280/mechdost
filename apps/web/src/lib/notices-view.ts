@@ -49,6 +49,10 @@ export const emptyActionFor = (role: string): { href: string; shop: boolean } =>
         ? { href: '/partner/workshop', shop: false }
         : { href: '/shop', shop: true };
 
+/** The tag a notification carries: "New" while unread; "Done" once its action was taken care of (never "New"). */
+export const noticeTag = (n: Pick<Notice, 'read' | 'resolved'>): 'new' | 'done' | null =>
+  n.resolved ? 'done' : n.read ? null : 'new';
+
 /** "12 Nov, 4:05 pm" in the person's language, India time. */
 export function noticeTime(iso: string, locale: string): string {
   return new Intl.DateTimeFormat(locale === 'hi' ? 'hi-IN' : 'en-IN', {

@@ -141,7 +141,13 @@ export default function BellController({
             <ul className="max-h-[min(60vh,420px)] overflow-y-auto p-2">
               {feed.notices.map((n) => (
                 <li key={n.id}>
-                  <NoticeItem notice={n} locale={locale} newLabel={copy.unread} onOpen={onOpen} />
+                  <NoticeItem
+                    notice={n}
+                    locale={locale}
+                    newLabel={copy.unread}
+                    doneLabel={copy.done}
+                    onOpen={onOpen}
+                  />
                 </li>
               ))}
             </ul>

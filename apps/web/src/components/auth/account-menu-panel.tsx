@@ -11,6 +11,7 @@ import {
   LogOut,
   Moon,
   Package,
+  Undo2,
   UserRound,
   type LucideIcon,
 } from 'lucide-react';
@@ -166,6 +167,9 @@ export default function AccountMenuPanel({
             </MenuLink>
             <MenuLink href={`${prefix}/account/orders`} track="menu_orders" icon={Package} onClose={onClose}>
               {copy.orders}
+            </MenuLink>
+            <MenuLink href={`${prefix}/account/refunds`} track="menu_refunds" icon={Undo2} onClose={onClose}>
+              {copy.refunds}
             </MenuLink>
             <MenuLink href={`${prefix}/account/vehicles`} track="menu_vehicles" icon={Car} onClose={onClose}>
               {copy.vehicles}

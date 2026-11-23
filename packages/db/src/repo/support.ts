@@ -21,7 +21,7 @@ import {
   users,
 } from '../schema';
 import { queueTicketEmail } from './email-events';
-import { queueStaffNotice } from './notices';
+import { queueStaffNotice, resolveNotices } from './notices';
 import { ConflictError, NotFoundError, ValidationError } from './errors';
 import { recordServerEvent } from './events';
 import { firstReplyDueAt } from './support-sla';
@@ -761,12 +761,14 @@ export async function staffReplyTicket(
         channel: 'console',
       })
       .returning({ id: ticketMessages.id });
-    // The first public answer stops the first-reply clock; an internal note never does.
-    if (!input.internal)
+    // The first public answer stops the first-reply clock and clears the "new request" notice; a note never does.
+    if (!input.internal) {
       await tx
         .update(supportTickets)
         .set({ firstRepliedAt: new Date() })
         .where(and(eq(supportTickets.id, t.id), isNull(supportTickets.firstRepliedAt)));
+      await resolveNotices(tx, { kinds: ['staff.new_ticket'], entityIds: [t.id] });
+    }
     if (
       !input.internal &&
       message &&
@@ -833,6 +835,8 @@ export async function setTicketStatus(
       before: { status: from },
       after: { status: input.to },
     });
+    // Any staff status change means someone picked the request up (the "new request" notice is done).
+    await resolveNotices(tx, { kinds: ['staff.new_ticket'], entityIds: [t.id] });
     if (input.to === 'resolved')
       await queueTicketEmail(tx, {
         template: 'ticket_resolved',

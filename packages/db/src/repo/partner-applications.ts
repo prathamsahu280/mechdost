@@ -23,7 +23,7 @@ import { queueApplicationEmail } from './email-events';
 import { ConflictError, NotFoundError, ValidationError } from './errors';
 import { productVisible } from './visibility';
 import { recordServerEvent } from './events';
-import { queueStaffNotice } from './notices';
+import { queueStaffNotice, resolveNotices } from './notices';
 import { findOpenInvite } from './partner-invites';
 import type { Tx } from './orders';
 import { grantRole } from './rbac';
@@ -459,6 +459,8 @@ async function decide(
     .returning({ id: partnerApplications.id });
   if (updated.length === 0)
     throw new ConflictError('Someone else changed this application; reload', 'STALE_APPLICATION');
+  // Decided: the staff "new application" notice is done, for everyone who got it.
+  await resolveNotices(tx, { kinds: ['staff.new_application'], entityIds: [app.id] });
   await tx.insert(auditLog).values({
     actorUserId: staffUserId,
     actorRole: 'staff',

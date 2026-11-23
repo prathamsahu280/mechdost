@@ -98,6 +98,7 @@ export function NoticeCentre() {
                   notice={n}
                   locale={locale}
                   newLabel={t('unread')}
+                  doneLabel={t('done')}
                   onOpen={(x) => {
                     track('notification_opened', { kind: x.kind, channel: 'centre' });
                     feed.markRead(x);

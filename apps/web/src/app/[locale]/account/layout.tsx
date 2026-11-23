@@ -31,6 +31,8 @@ export default async function AccountLayout({ children }: { children: ReactNode 
             // Real-sign-in (API) sections: invites, saved places, wishlist, support threads (audit 2026-11-16).
             'shopTier1',
             'accountApi',
+            // Account → Refunds (spec 05, 2026-11-23).
+            'myRefunds',
             'storefront',
             'portal',
             'supportThread',

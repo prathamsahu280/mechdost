@@ -14,7 +14,7 @@ import {
   shopStaffInviteMachine,
   priceRequestMachine,
 } from '../src/state';
-import { customerRefundStatus } from '../src/refunds-api';
+import { customerRefundStatus, myRefundStage, myRefundSteps, MY_REFUND_STAGES } from '../src/refunds-api';
 
 describe('order state machine', () => {
   it('follows the admin-routing happy path', () => {
@@ -194,6 +194,29 @@ describe('refund state machine (decision 2026-11-15: all refunds need approval)'
   it('never shows "refunded" to the customer before Razorpay confirms', () => {
     const shown = REFUND_STATES.filter((s) => customerRefundStatus(s) === 'refunded');
     expect(shown).toEqual(['processed']);
+  });
+});
+
+describe('the customer refund page stages (2026-11-23)', () => {
+  it('maps every refund status to one plain stage', () => {
+    expect(Object.fromEntries(REFUND_STATES.map((st) => [st, myRefundStage(st)]))).toEqual({
+      requested: 'requested',
+      approved: 'approved',
+      rejected: 'declined',
+      initiated: 'sent',
+      processed: 'completed',
+      failed: 'failed',
+      needs_reconciliation: 'checking',
+    });
+    expect(new Set(REFUND_STATES.map(myRefundStage))).toEqual(new Set(MY_REFUND_STAGES));
+  });
+  it('says "completed" only for a processed refund, like the order page', () => {
+    expect(REFUND_STATES.filter((st) => myRefundStage(st) === 'completed')).toEqual(['processed']);
+    expect(REFUND_STATES.filter((st) => customerRefundStatus(st) === 'refunded')).toEqual(['processed']);
+  });
+  it('draws four steps for a Razorpay refund and three for a payout by hand', () => {
+    expect(myRefundSteps('original')).toEqual(['requested', 'approved', 'sent', 'completed']);
+    expect(myRefundSteps('manual')).toEqual(['requested', 'approved', 'completed']);
   });
 });
 

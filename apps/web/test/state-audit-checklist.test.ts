@@ -61,7 +61,9 @@ describe('UI state model', () => {
   it('keeps a per-push core subset small enough for CI (about 5 minutes)', () => {
     const core = cases.filter((c) => c.tier === 'core');
     expect(core.length).toBeGreaterThan(40);
-    expect(core.length).toBeLessThanOrEqual(100);
+    // 105 (was 100): adding the Refunds account section (2026-11-23) made NAV-ACCOUNT produce its intended single core
+    // case (hi · 390 · coins), which the pairwise draw had missed before; one case is a few seconds per push.
+    expect(core.length).toBeLessThanOrEqual(105);
   });
 
   it('docs/qa/ui-state-checklist.md lists exactly the cases of the model', () => {

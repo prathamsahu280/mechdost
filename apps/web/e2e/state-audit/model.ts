@@ -275,6 +275,7 @@ export const ADMIN_SECTIONS = [
 export const ACCOUNT_SECTIONS = [
   'overview',
   'orders',
+  'refunds',
   'services',
   'quotes',
   'support',

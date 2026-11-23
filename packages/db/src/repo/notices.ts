@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNull, or, sql, type SQL } from 'drizzle-orm';
 import {
   composeNotice,
   noticeLink,
@@ -271,6 +271,30 @@ export async function queueStaffNotice(
   return written;
 }
 
+/**
+ * Marks the still-open notices of one thing as done, for every person who got them: the action they asked for is no
+ * longer needed (an order was routed, rejected or cancelled; a refund decided; a ticket answered…). Sets `read_at`
+ * too, so the unread badge drops, and `resolved_at`, so the bell shows the item as done instead of "New". Called in
+ * the transaction of the change that made the notice moot (a rolled-back change resolves nothing). Idempotent: only
+ * rows with `resolved_at is null` change. `entityIds` match the notice's `entity_id` exactly; `prefixed` ids also
+ * match `id:…` (notices written per person under `assignmentId:userId`). Returns how many rows were resolved.
+ */
+export async function resolveNotices(
+  tx: Tx,
+  input: { kinds: readonly NoticeKind[]; entityIds: readonly string[]; prefixed?: boolean },
+): Promise<number> {
+  if (input.kinds.length === 0 || input.entityIds.length === 0) return 0;
+  const match: SQL[] = [inArray(notifications.entityId, [...input.entityIds])];
+  if (input.prefixed)
+    for (const id of input.entityIds) match.push(sql`${notifications.entityId} like ${`${id}:%`}`);
+  const rows = await tx
+    .update(notifications)
+    .set({ readAt: sql`coalesce(${notifications.readAt}, now())`, resolvedAt: sql`now()` })
+    .where(and(inArray(notifications.kind, [...input.kinds]), isNull(notifications.resolvedAt), or(...match)))
+    .returning({ id: notifications.id });
+  return rows.length;
+}
+
 // ── The bell and the centre page ──────────────────────────────────────────────────────────────────────────────
 
 const viewOf = (r: typeof notifications.$inferSelect): Notice => ({
@@ -281,6 +305,7 @@ const viewOf = (r: typeof notifications.$inferSelect): Notice => ({
   body: r.body,
   link: r.link,
   read: r.readAt !== null,
+  resolved: r.resolvedAt !== null,
   createdAt: r.createdAt.toISOString(),
 });
 

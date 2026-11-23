@@ -8,6 +8,8 @@ import { BROWSER_ONLY_FEATURES, QUOTES_AVAILABLE } from './data-mode';
 const ALL_ACCOUNT_SECTIONS = [
   'overview',
   'orders',
+  // Where each refund stands, in plain words (spec 05, user 2026-11-23): demo data in the demo, the API otherwise.
+  'refunds',
   'services',
   'quotes',
   'support',
@@ -84,19 +86,20 @@ const REAL_SIGN_IN_ONLY: readonly string[] = [
   'exports',
   'wishlist',
 ];
-const shown = <T extends string>(all: readonly T[]): readonly T[] =>
+/** Real-only names that this list also shows in the demo (the account's Refunds has sample data; the admin's does not). */
+const shown = <T extends string>(all: readonly T[], demoToo: readonly string[] = []): readonly T[] =>
   all.filter(
     (s) =>
       (BROWSER_ONLY_FEATURES || !BROWSER_ONLY_SECTIONS.includes(s)) &&
       (s !== 'quotes' || quotesShown) &&
       (s !== 'reviews' || reviewsShown) &&
-      (AUTH_MODE === 'firebase' || !REAL_SIGN_IN_ONLY.includes(s)),
+      (AUTH_MODE === 'firebase' || demoToo.includes(s) || !REAL_SIGN_IN_ONLY.includes(s)),
   );
 
 /** Account sections shown in this build (navigation, routes). */
 // (The bell's choices read the API, so the account section exists with real sign-in only; the admin section of the
 // same name is the WhatsApp screen and stays in the demo.)
-export const ACCOUNT_SECTIONS = shown(ALL_ACCOUNT_SECTIONS).filter(
+export const ACCOUNT_SECTIONS = shown(ALL_ACCOUNT_SECTIONS, ['refunds']).filter(
   (s) => (s !== 'notifications' && s !== 'privacy') || AUTH_MODE === 'firebase',
 );
 /** Admin sections shown in this build (navigation, routes). */

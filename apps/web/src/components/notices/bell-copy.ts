@@ -14,6 +14,7 @@ export interface BellCopy {
   loadError: string;
   retry: string;
   unread: string;
+  done: string;
   emptyTitle: string;
   emptyBody: string;
   emptyActionShop: string;
