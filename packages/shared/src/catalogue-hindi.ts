@@ -111,6 +111,18 @@ const SERIES = [
   'All',
   'Dresser',
   'Smart',
+  // Exide ranges (exidecare import, 2026-11-23)
+  'Genplus',
+  'Gqp',
+  'Imtt',
+  'Inva',
+  'Invamaster',
+  'Invatubular',
+  'Magic',
+  'Nexcharge',
+  'Powerbox',
+  'Star',
+  'Zen',
 ];
 
 /** Vehicle makers and parts brands the product texts name as fitment. */
@@ -157,6 +169,14 @@ const STANDARDS = [
   'GSTIN',
   'MRP',
   'SKU',
+  'ASIC',
+  'DOD',
+  'DSP',
+  'KVA',
+  'LCD',
+  'LED',
+  'MUV',
+  'HCV',
 ];
 
 export const CATALOGUE_PROPER_NAMES: readonly string[] = [...BRANDS, ...SERIES, ...MAKERS, ...STANDARDS];

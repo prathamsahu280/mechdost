@@ -1,0 +1,2011 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MechDost — Service Bay (UI samples v2)</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&family=Noto+Sans+Devanagari:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --ink: #0f1d31;
+        --ink-2: #33445c;
+        --muted: #66768b;
+        --bg: #f2f4f7;
+        --surface: #ffffff;
+        --line: #dde3ea;
+        --night: #0b1626;
+        --night-2: #13233a;
+        --steel: #c9d2dd;
+        --signal: #ea5728;
+        --signal-btn: #d2461a;
+        --go: #1c9a55;
+        --amber: #f2a51a;
+        --plate-blue: #1f4fa8;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: 'DM Sans', system-ui, sans-serif;
+        color: var(--ink);
+        background: #cfd6df;
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: Manrope, 'Noto Sans Devanagari', sans-serif;
+        margin: 0;
+        letter-spacing: -0.4px;
+      }
+      svg {
+        width: 22px;
+        height: 22px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.8;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        flex: none;
+      }
+      button {
+        font: inherit;
+        color: inherit;
+        cursor: pointer;
+      }
+      :focus-visible {
+        outline: 3px solid var(--signal);
+        outline-offset: 2px;
+      }
+      img {
+        display: block;
+      }
+
+      /* ---------- review chrome ---------- */
+      .doc {
+        max-width: 1560px;
+        margin: 0 auto;
+        padding: 32px 24px 80px;
+      }
+      .intro {
+        display: grid;
+        grid-template-columns: 1.1fr 1fr;
+        gap: 28px;
+        align-items: end;
+        margin-bottom: 28px;
+      }
+      .intro h1 {
+        font-size: 34px;
+      }
+      .intro p {
+        margin: 8px 0 0;
+        color: #33445c;
+        line-height: 1.55;
+        max-width: 640px;
+      }
+      .ideas {
+        background: #fff;
+        border-radius: 16px;
+        padding: 16px 18px;
+        font-size: 14px;
+        line-height: 1.55;
+        color: #33445c;
+      }
+      .ideas b {
+        color: var(--ink);
+      }
+      .ideas ul {
+        margin: 6px 0 0;
+        padding-left: 18px;
+      }
+      .row {
+        display: flex;
+        gap: 34px;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        margin-bottom: 40px;
+      }
+      .cap {
+        font: 700 13px 'DM Sans';
+        color: #33445c;
+        margin: 0 0 10px 8px;
+      }
+      .phone {
+        width: 390px;
+        height: 844px;
+        border-radius: 46px;
+        background: var(--bg);
+        overflow: hidden;
+        position: relative;
+        box-shadow:
+          0 0 0 10px #0a1220,
+          0 30px 60px -24px rgba(0, 0, 0, 0.5);
+      }
+      .scroll {
+        position: absolute;
+        inset: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding-bottom: 104px;
+        scrollbar-width: none;
+      }
+      .scroll::-webkit-scrollbar {
+        display: none;
+      }
+
+      /* ---------- shared pieces ---------- */
+      .tread {
+        background-image: repeating-linear-gradient(
+          -55deg,
+          rgba(255, 255, 255, 0.035) 0 10px,
+          transparent 10px 22px
+        );
+      }
+      .topbar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 16px 10px;
+      }
+      .topbar .logo {
+        height: 26px;
+      }
+      .loc {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        height: 36px;
+        padding: 0 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+        font: 700 13px 'DM Sans';
+      }
+      .loc svg {
+        width: 16px;
+        height: 16px;
+      }
+      .iconbtn {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+        border: 0;
+        position: relative;
+      }
+      .iconbtn .dot {
+        position: absolute;
+        top: 9px;
+        right: 10px;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--signal);
+      }
+
+      /* number plate (India HSRP) */
+      .plate {
+        display: flex;
+        align-items: stretch;
+        height: 64px;
+        border-radius: 10px;
+        background: #fff;
+        box-shadow:
+          inset 0 0 0 3px #111,
+          0 10px 24px -12px rgba(0, 0, 0, 0.6);
+        overflow: hidden;
+      }
+      .plate .ind {
+        width: 34px;
+        background: var(--plate-blue);
+        color: #fff;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        font: 700 10px 'DM Sans';
+        margin: 3px 0 3px 3px;
+        border-radius: 7px 0 0 7px;
+      }
+      .plate .ind i {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 1.5px solid #fff;
+      }
+      .plate .num {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        padding: 0 14px;
+        font: 700 34px/1 'Barlow Condensed';
+        letter-spacing: 3px;
+        color: #111;
+        white-space: nowrap;
+      }
+      .plate .num em {
+        font-style: normal;
+        color: #b8c0ca;
+      }
+      .plate .caret {
+        width: 2px;
+        height: 32px;
+        background: var(--signal);
+        margin-left: 3px;
+        animation: blink 1s steps(1) infinite;
+      }
+      @keyframes blink {
+        50% {
+          opacity: 0;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .plate .caret {
+          animation: none;
+        }
+      }
+
+      .doors {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .door {
+        border: 0;
+        text-align: left;
+        border-radius: 18px;
+        padding: 16px 14px 14px;
+        min-height: 132px;
+        gap: 12px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+      .door b {
+        font: 800 19px/1.15 Manrope;
+        display: block;
+      }
+      .door small {
+        display: block;
+        font-size: 12.5px;
+        margin-top: 3px;
+        opacity: 0.8;
+        min-height: 32px;
+      }
+      .door .ic {
+        width: 42px;
+        height: 42px;
+        border-radius: 13px;
+        display: grid;
+        place-items: center;
+      }
+      .door.buy {
+        background: var(--signal-btn);
+        color: #fff;
+        box-shadow: 0 14px 26px -14px rgba(210, 70, 26, 0.9);
+      }
+      .door.buy .ic {
+        background: rgba(255, 255, 255, 0.18);
+      }
+      .door.fix {
+        background: #fff;
+        color: var(--ink);
+      }
+      .door.fix .ic {
+        background: #eef2f6;
+        color: var(--ink);
+      }
+
+      .mode {
+        display: flex;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 4px;
+        gap: 4px;
+      }
+      .mode button {
+        flex: 1;
+        border: 0;
+        background: none;
+        color: #c3cedb;
+        height: 36px;
+        border-radius: 9px;
+        font: 700 13px 'DM Sans';
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+      }
+      .mode button svg {
+        width: 16px;
+        height: 16px;
+      }
+      .mode button.on {
+        background: #fff;
+        color: var(--ink);
+      }
+
+      .sec {
+        padding: 22px 16px 0;
+      }
+      .sec h2 {
+        font-size: 19px;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 12px;
+      }
+      .sec h2 a {
+        font: 700 13px 'DM Sans';
+        color: var(--signal-btn);
+        text-decoration: none;
+      }
+
+      /* pegboard categories */
+      .peg {
+        border-radius: 20px;
+        padding: 14px 10px 12px;
+        background-color: #e7ebf0;
+        background-image: radial-gradient(circle, #c3ccd7 1.6px, transparent 2px);
+        background-size: 18px 18px;
+        background-position: 9px 9px;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px 6px;
+      }
+      .tool {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        text-decoration: none;
+        color: var(--ink);
+        font: 700 12.5px/1.2 'DM Sans';
+        text-align: center;
+        position: relative;
+        padding-top: 8px;
+      }
+      .tool::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 50%;
+        width: 8px;
+        height: 8px;
+        margin-left: -4px;
+        border-radius: 50%;
+        background: #8f9bab;
+        box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.25);
+      }
+      .tool .t {
+        width: 62px;
+        height: 62px;
+        border-radius: 16px;
+        background: #fff;
+        display: grid;
+        place-items: center;
+        box-shadow: 0 6px 12px -8px rgba(15, 29, 49, 0.45);
+      }
+      .tool .t svg {
+        width: 30px;
+        height: 30px;
+        stroke-width: 1.6;
+      }
+
+      /* garage card with service meter */
+      .garage {
+        margin: 0 16px;
+        border-radius: 20px;
+        background: #fff;
+        padding: 16px;
+        display: grid;
+        gap: 12px;
+      }
+      .garage .top {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+      .garage .veh {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        background: var(--ink);
+        color: #fff;
+        display: grid;
+        place-items: center;
+      }
+      .garage b {
+        font: 800 16px Manrope;
+        display: block;
+      }
+      .garage small {
+        color: var(--muted);
+        font-size: 12.5px;
+      }
+      .mini-plate {
+        display: inline-block;
+        border: 1.5px solid #111;
+        border-radius: 4px;
+        padding: 0 5px;
+        font: 700 13px 'Barlow Condensed';
+        letter-spacing: 1px;
+        color: #111;
+        background: #fff;
+        margin-top: 2px;
+      }
+      .meter {
+        display: grid;
+        gap: 6px;
+      }
+      .meter .bar {
+        height: 10px;
+        border-radius: 5px;
+        background: repeating-linear-gradient(90deg, #e3e8ee 0 10%, #fff 10% 10.6%);
+        position: relative;
+        overflow: hidden;
+      }
+      .meter .bar i {
+        position: absolute;
+        inset: 0 22% 0 0;
+        border-radius: 5px;
+        background: linear-gradient(90deg, var(--go), var(--amber));
+      }
+      .meter .lbl {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12.5px;
+        color: var(--muted);
+      }
+      .meter .lbl b {
+        font: 700 13px 'DM Sans';
+        color: #a76400;
+        display: inline;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        height: 48px;
+        padding: 0 18px;
+        border-radius: 14px;
+        border: 0;
+        font: 700 15px 'DM Sans';
+        text-decoration: none;
+        white-space: nowrap;
+      }
+      .btn svg {
+        width: 18px;
+        height: 18px;
+      }
+      .btn.pri {
+        background: var(--signal-btn);
+        color: #fff;
+      }
+      .btn.ink {
+        background: var(--ink);
+        color: #fff;
+      }
+      .btn.ghost {
+        background: #eef2f6;
+        color: var(--ink);
+      }
+      .btn.wide {
+        width: 100%;
+      }
+
+      /* product tile */
+      .rail {
+        display: flex;
+        gap: 10px;
+        overflow-x: auto;
+        padding: 0 16px 4px;
+        scrollbar-width: none;
+      }
+      .rail::-webkit-scrollbar {
+        display: none;
+      }
+      .pt {
+        flex: none;
+        width: 168px;
+        background: #fff;
+        border-radius: 18px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        text-decoration: none;
+        color: inherit;
+      }
+      .pt .ph {
+        height: 150px;
+        padding: 12px;
+        position: relative;
+      }
+      .pt .ph img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+      .fit {
+        position: absolute;
+        left: 8px;
+        top: 8px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        height: 22px;
+        padding: 0 8px;
+        border-radius: 6px;
+        background: #e4f6ec;
+        color: #11683a;
+        font: 700 11px 'DM Sans';
+      }
+      .fit svg {
+        width: 12px;
+        height: 12px;
+        stroke-width: 3;
+      }
+      .pt .bd {
+        padding: 10px 12px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        border-top: 1px solid var(--line);
+      }
+      .pt .br {
+        font: 700 11.5px 'DM Sans';
+        color: var(--muted);
+      }
+      .pt .nm {
+        font: 700 14px/1.25 'DM Sans';
+        min-height: 35px;
+      }
+      .pr {
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+      }
+      .pr b {
+        font: 700 22px/1 'Barlow Condensed';
+        letter-spacing: 0.3px;
+      }
+      .pr s {
+        color: #97a3b2;
+        font-size: 12.5px;
+      }
+      .trade {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font: 700 12px 'DM Sans';
+        color: #11683a;
+      }
+      .trade span {
+        background: #e4f6ec;
+        border-radius: 5px;
+        padding: 1px 6px;
+      }
+
+      /* dashboard lamps */
+      .lamps {
+        margin: 22px 16px 0;
+        border-radius: 20px;
+        background: var(--night);
+        padding: 14px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        color: #dfe6ef;
+      }
+      .lamp {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 7px;
+        font: 600 12px/1.25 'DM Sans';
+      }
+      .lamp i {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        color: #5fe39a;
+        background: radial-gradient(circle, rgba(95, 227, 154, 0.22), transparent 70%);
+      }
+      .lamp i.am {
+        color: var(--amber);
+        background: radial-gradient(circle, rgba(242, 165, 26, 0.22), transparent 70%);
+      }
+
+      /* dock */
+      .dock {
+        position: absolute;
+        left: 12px;
+        right: 12px;
+        bottom: 14px;
+        height: 68px;
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(14px);
+        box-shadow:
+          0 14px 30px -12px rgba(15, 29, 49, 0.45),
+          0 0 0 1px rgba(15, 29, 49, 0.06);
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        padding: 6px;
+        z-index: 5;
+      }
+      .dock a {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        border-radius: 16px;
+        text-decoration: none;
+        color: var(--muted);
+        font: 700 11px 'DM Sans';
+        position: relative;
+      }
+      .dock a.on {
+        background: var(--ink);
+        color: #fff;
+      }
+      .dock .n {
+        position: absolute;
+        top: 5px;
+        right: 20px;
+        min-width: 17px;
+        height: 17px;
+        border-radius: 9px;
+        background: var(--signal-btn);
+        color: #fff;
+        font: 800 10px/17px 'DM Sans';
+        text-align: center;
+        padding: 0 4px;
+      }
+
+      /* ---------- product: spec plate ---------- */
+      .stage {
+        background: #fff;
+        padding: 14px 16px 18px;
+        border-radius: 0 0 26px 26px;
+      }
+      .stage .bar {
+        display: flex;
+        justify-content: space-between;
+      }
+      .stage .bar button {
+        width: 42px;
+        height: 42px;
+        border-radius: 13px;
+        border: 0;
+        background: #eef2f6;
+        display: grid;
+        place-items: center;
+      }
+      .stage .img {
+        height: 290px;
+        display: grid;
+        place-items: center;
+      }
+      .stage .img img {
+        max-height: 270px;
+        max-width: 80%;
+        object-fit: contain;
+      }
+      .ptitle {
+        padding: 16px 16px 0;
+        display: grid;
+        gap: 8px;
+      }
+      .ptitle .br {
+        font: 800 12.5px 'DM Sans';
+        color: var(--signal-btn);
+      }
+      .ptitle h1 {
+        font-size: 23px;
+        line-height: 1.2;
+      }
+      .fitline {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 14px;
+        border-radius: 14px;
+        background: #e4f6ec;
+        color: #11683a;
+        font: 600 13.5px 'DM Sans';
+      }
+      .fitline b {
+        display: block;
+        font-weight: 800;
+      }
+      .fitline .mini-plate {
+        border-color: #11683a;
+        color: #11683a;
+        background: transparent;
+      }
+      .packs {
+        display: flex;
+        gap: 8px;
+      }
+      .pk {
+        flex: 1;
+        border: 0;
+        border-radius: 14px;
+        padding: 10px 12px;
+        text-align: left;
+        background: #fff;
+        box-shadow: inset 0 0 0 1.5px var(--line);
+      }
+      .pk b {
+        display: block;
+        font: 700 22px/1 'Barlow Condensed';
+      }
+      .pk small {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .pk.on {
+        box-shadow: inset 0 0 0 2.5px var(--ink);
+      }
+      .specplate {
+        margin: 18px 16px 0;
+        border-radius: 14px;
+        padding: 16px 18px;
+        position: relative;
+        background: linear-gradient(135deg, #e9edf2, #d4dbe4 60%, #e6eaf0);
+        box-shadow:
+          inset 0 1px 0 #fff,
+          inset 0 -1px 0 rgba(0, 0, 0, 0.08);
+      }
+      .specplate::before,
+      .specplate::after {
+        content: '';
+        position: absolute;
+        top: 10px;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 35% 35%, #fff, #8d99a8);
+      }
+      .specplate::before {
+        left: 10px;
+      }
+      .specplate::after {
+        right: 10px;
+      }
+      .specplate h3 {
+        font: 700 13px 'Barlow Condensed';
+        letter-spacing: 2px;
+        color: #4b5a6e;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+      .specplate dl {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 7px 14px;
+        margin: 0;
+        font-size: 14px;
+      }
+      .specplate dt {
+        color: #4b5a6e;
+      }
+      .specplate dd {
+        margin: 0;
+        font-weight: 700;
+      }
+      .buybar {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 12px 14px 22px;
+        background: rgba(255, 255, 255, 0.94);
+        backdrop-filter: blur(12px);
+        box-shadow: 0 -1px 0 var(--line);
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        z-index: 6;
+      }
+      .buybar .p b {
+        font: 700 28px/1 'Barlow Condensed';
+        display: block;
+      }
+      .buybar .p small {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      /* ---------- job card ---------- */
+      .jobhdr {
+        background: var(--night);
+        color: #fff;
+        padding: 14px 16px 22px;
+      }
+      .jobhdr .row1 {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .jobhdr h1 {
+        font-size: 20px;
+      }
+      .jobhdr small {
+        color: #a9b6c7;
+      }
+      .steps {
+        display: flex;
+        gap: 4px;
+        margin-top: 16px;
+      }
+      .steps span {
+        flex: 1;
+        height: 6px;
+        border-radius: 3px;
+        background: #2a3b55;
+      }
+      .steps span.d {
+        background: var(--go);
+      }
+      .steps span.n {
+        background: var(--signal);
+      }
+      .stepl {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 6px;
+        font: 600 11.5px 'DM Sans';
+        color: #a9b6c7;
+      }
+      .stepl b {
+        color: #fff;
+      }
+      .jobcard {
+        margin: -12px 12px 0;
+        background: #fffdf8;
+        border-radius: 16px;
+        box-shadow: 0 14px 30px -18px rgba(0, 0, 0, 0.5);
+        position: relative;
+        overflow: hidden;
+      }
+      .jobcard .head {
+        padding: 14px 16px 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        border-bottom: 2px dashed #e2d9c6;
+      }
+      .jobcard .head b {
+        font: 700 20px 'Barlow Condensed';
+        letter-spacing: 1px;
+      }
+      .jobcard .head small {
+        display: block;
+        color: var(--muted);
+        font-size: 12.5px;
+      }
+      .line {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 4px 10px;
+        padding: 12px 16px;
+        border-bottom: 1px solid #efe8da;
+        align-items: center;
+      }
+      .line .what b {
+        font-size: 14.5px;
+        display: block;
+      }
+      .line .what small {
+        color: var(--muted);
+        font-size: 12.5px;
+      }
+      .line .amt {
+        font: 700 21px 'Barlow Condensed';
+        text-align: right;
+      }
+      .choice {
+        grid-column: 1 / -1;
+        display: flex;
+        gap: 8px;
+      }
+      .choice button {
+        flex: 1;
+        height: 40px;
+        border-radius: 11px;
+        border: 0;
+        font: 700 13.5px 'DM Sans';
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        background: #f1ede4;
+        color: var(--ink-2);
+      }
+      .choice button svg {
+        width: 16px;
+        height: 16px;
+        stroke-width: 2.6;
+      }
+      .choice button.yes {
+        background: var(--go);
+        color: #fff;
+      }
+      .choice button.no.on {
+        background: #fde8e1;
+        color: #b13a12;
+      }
+      .why {
+        grid-column: 1 / -1;
+        font-size: 12.5px;
+        color: #6d5a2f;
+        background: #fbf3df;
+        border-radius: 9px;
+        padding: 7px 10px;
+      }
+      .total {
+        padding: 14px 16px 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+      }
+      .total b {
+        font: 700 32px/1 'Barlow Condensed';
+      }
+      .stamp {
+        position: absolute;
+        right: 14px;
+        top: 14px;
+        transform: rotate(-12deg);
+        border: 2.5px solid var(--go);
+        color: var(--go);
+        border-radius: 8px;
+        padding: 2px 8px;
+        font: 700 15px 'Barlow Condensed';
+        letter-spacing: 2px;
+        opacity: 0.85;
+      }
+
+      /* ---------- mechanic shop list ---------- */
+      .lhdr {
+        background: #fff;
+        padding: 12px 14px 12px;
+        position: sticky;
+        top: 0;
+        z-index: 3;
+        box-shadow: 0 1px 0 var(--line);
+      }
+      .search {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        height: 48px;
+        border-radius: 14px;
+        background: #eef2f6;
+        padding: 0 14px;
+        color: var(--muted);
+        font-size: 15px;
+      }
+      .search b {
+        color: var(--ink);
+        font-weight: 600;
+      }
+      .chips {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        margin-top: 10px;
+        scrollbar-width: none;
+      }
+      .chips::-webkit-scrollbar {
+        display: none;
+      }
+      .chip {
+        flex: none;
+        height: 36px;
+        padding: 0 13px;
+        border-radius: 999px;
+        border: 0;
+        background: #eef2f6;
+        font: 700 13px 'DM Sans';
+        color: var(--ink-2);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .chip.on {
+        background: var(--ink);
+        color: #fff;
+      }
+      .chip svg {
+        width: 15px;
+        height: 15px;
+      }
+      .tradebanner {
+        margin: 12px 14px 0;
+        border-radius: 14px;
+        padding: 10px 12px;
+        background: var(--ink);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 13px;
+      }
+      .tradebanner b {
+        color: #7fe7ad;
+      }
+      .li {
+        margin: 10px 14px 0;
+        background: #fff;
+        border-radius: 18px;
+        padding: 12px;
+        display: grid;
+        grid-template-columns: 92px 1fr;
+        gap: 12px;
+      }
+      .li .im {
+        height: 92px;
+        border-radius: 12px;
+        background: #f6f8fa;
+        padding: 8px;
+      }
+      .li .im img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+      .li .nm {
+        font: 700 14.5px/1.25 'DM Sans';
+      }
+      .li .meta {
+        font-size: 12.5px;
+        color: var(--muted);
+        margin: 2px 0 6px;
+      }
+      .li .bot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-top: 6px;
+      }
+      .qty {
+        display: flex;
+        align-items: center;
+        height: 38px;
+        border-radius: 11px;
+        background: var(--ink);
+        color: #fff;
+      }
+      .qty button {
+        width: 34px;
+        height: 38px;
+        border: 0;
+        background: none;
+        color: #fff;
+        font: 800 18px 'DM Sans';
+      }
+      .qty b {
+        min-width: 22px;
+        text-align: center;
+        font: 700 17px 'Barlow Condensed';
+      }
+      .add {
+        height: 38px;
+        padding: 0 14px;
+        border-radius: 11px;
+        border: 0;
+        background: var(--signal-btn);
+        color: #fff;
+        font: 700 13.5px 'DM Sans';
+      }
+      .slab {
+        font: 600 11.5px 'DM Sans';
+        color: #11683a;
+      }
+
+      /* ---------- desktop ---------- */
+      .desk {
+        width: 1240px;
+        max-width: 100%;
+        border-radius: 20px;
+        overflow: hidden;
+        background: var(--bg);
+        box-shadow: 0 24px 60px -26px rgba(0, 0, 0, 0.5);
+      }
+      .dhero {
+        background: var(--night);
+        color: #fff;
+        padding: 18px 28px 30px;
+      }
+      .dnav {
+        display: flex;
+        align-items: center;
+        gap: 22px;
+      }
+      .dnav .logo {
+        height: 30px;
+      }
+      .dnav nav {
+        display: flex;
+        gap: 4px;
+        margin-left: 12px;
+      }
+      .dnav nav a {
+        color: #c3cedb;
+        text-decoration: none;
+        font: 700 14px 'DM Sans';
+        padding: 9px 13px;
+        border-radius: 10px;
+      }
+      .dnav nav a.on {
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+      }
+      .dnav .r {
+        margin-left: auto;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .dnav .cart {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        height: 42px;
+        padding: 0 8px 0 14px;
+        border-radius: 12px;
+        background: var(--signal-btn);
+        color: #fff;
+        font: 700 14px 'DM Sans';
+      }
+      .dnav .cart span {
+        background: #fff;
+        color: var(--signal-btn);
+        border-radius: 7px;
+        min-width: 24px;
+        height: 24px;
+        display: grid;
+        place-items: center;
+        font-size: 12px;
+      }
+      .dgrid {
+        display: grid;
+        grid-template-columns: 1.15fr 1fr;
+        gap: 34px;
+        margin-top: 34px;
+        align-items: center;
+      }
+      .dgrid h1 {
+        font-size: 50px;
+        line-height: 1.04;
+        letter-spacing: -1.4px;
+      }
+      .dgrid p {
+        color: #b7c3d3;
+        font-size: 17px;
+        line-height: 1.55;
+        margin: 14px 0 22px;
+        max-width: 520px;
+      }
+      .dfind {
+        background: var(--night-2);
+        border-radius: 22px;
+        padding: 20px;
+        display: grid;
+        gap: 14px;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+      }
+      .dfind label {
+        font: 700 13px 'DM Sans';
+        color: #a9b6c7;
+      }
+      .or {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #7f8ea3;
+        font-size: 12.5px;
+      }
+      .or::before,
+      .or::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: #2a3b55;
+      }
+      .sel {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+      }
+      .sel span {
+        height: 46px;
+        border-radius: 12px;
+        background: #1d2f4a;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 12px;
+        font: 600 14px 'DM Sans';
+        color: #dfe6ef;
+      }
+      .sel svg {
+        width: 16px;
+        height: 16px;
+        color: #7f8ea3;
+      }
+      .dbody {
+        padding: 26px 28px 30px;
+        display: grid;
+        grid-template-columns: 1.3fr 1fr;
+        gap: 22px;
+      }
+      .dbody .peg {
+        grid-template-columns: repeat(8, 1fr);
+      }
+      .card {
+        background: #fff;
+        border-radius: 20px;
+        padding: 18px;
+      }
+      .card h2 {
+        font-size: 19px;
+        margin-bottom: 14px;
+      }
+      .dprods {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+      }
+      .dprods .pt {
+        width: auto;
+        box-shadow: 0 0 0 1px var(--line);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="doc">
+      <div class="intro">
+        <div>
+          <h1>MechDost · "Service Bay" direction</h1>
+          <p>
+            Premium automotive base (deep navy, crisp white, confident type) with workshop objects used as
+            real interface pieces: the Indian number plate, a tool pegboard, a riveted spec plate, a
+            mechanic's job card and dashboard lamps. Built for two customers at once: a bike or car owner and
+            a mechanic buying for the garage. Easy first: every screen has one main action, plain words, and
+            big labeled targets.
+          </p>
+        </div>
+        <div class="ideas">
+          <b>What's new compared with the first round</b>
+          <ul>
+            <li><b>Number plate as the start</b>: type "CG 04 …" once; every screen then shows what fits.</li>
+            <li><b>Two doors</b> on home: "Buy parts" or "Get it repaired". Nothing else competes.</li>
+            <li>
+              <b>Owner / Mechanic switch</b>: mechanics see trade prices, bulk quantities and GST bills.
+            </li>
+            <li>
+              <b>Pegboard</b> categories, <b>spec plate</b> details, <b>job card</b> estimates with an
+              APPROVED stamp.
+            </li>
+            <li>
+              Prices in a condensed gauge-style figure (Barlow Condensed) so ₹ amounts read at a glance.
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="row">
+        <!-- ============ HOME (owner) ============ -->
+        <div>
+          <p class="cap">Home · bike owner</p>
+          <div class="phone">
+            <div class="scroll">
+              <div
+                class="tread"
+                style="
+                  background-color: var(--night);
+                  color: #fff;
+                  padding-bottom: 20px;
+                  border-radius: 0 0 28px 28px;
+                "
+              >
+                <div class="topbar">
+                  <img
+                    class="logo"
+                    src="../../../apps/web/public/brand/mechdost-logo-dark.svg"
+                    alt="MechDost"
+                  />
+                  <span class="loc"
+                    ><svg viewBox="0 0 24 24">
+                      <path d="M12 21s-7-6.1-7-11.5a7 7 0 0 1 14 0C19 14.9 12 21 12 21z" />
+                      <circle cx="12" cy="9.5" r="2.5" /></svg
+                    >Raipur</span
+                  >
+                  <button class="iconbtn" aria-label="Notifications">
+                    <svg viewBox="0 0 24 24">
+                      <path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                      <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg
+                    ><span class="dot"></span>
+                  </button>
+                </div>
+                <div style="padding: 10px 16px 0; display: grid; gap: 14px">
+                  <h1 style="font-size: 27px; line-height: 1.15">What does your vehicle need today?</h1>
+                  <div class="mode" role="tablist" aria-label="Shopping as">
+                    <button class="on" role="tab" aria-selected="true">
+                      <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="8" r="4" />
+                        <path d="M4 21a8 8 0 0 1 16 0" /></svg
+                      >Vehicle owner
+                    </button>
+                    <button role="tab" aria-selected="false">
+                      <svg viewBox="0 0 24 24">
+                        <path
+                          d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"
+                        /></svg
+                      >Mechanic / garage
+                    </button>
+                  </div>
+                  <div class="doors">
+                    <button class="door buy">
+                      <span class="ic"
+                        ><svg viewBox="0 0 24 24">
+                          <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                          <path d="M3 6h18M16 10a4 4 0 0 1-8 0" /></svg></span
+                      ><span><b>Buy parts</b><small>Delivered, cash on delivery</small></span>
+                    </button>
+                    <button class="door fix">
+                      <span class="ic"
+                        ><svg viewBox="0 0 24 24">
+                          <path
+                            d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"
+                          /></svg></span
+                      ><span><b>Get it repaired</b><small>Workshop near you</small></span>
+                    </button>
+                  </div>
+                  <div>
+                    <div style="font: 700 13px 'DM Sans'; color: #a9b6c7; margin-bottom: 8px">
+                      Your vehicle number (we show only parts that fit)
+                    </div>
+                    <div class="plate">
+                      <span class="ind"><i></i>IND</span
+                      ><span class="num">CG 04 <em>&nbsp;AB 1234</em><span class="caret"></span></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="sec">
+                <h2>Shop by category <a href="#">All</a></h2>
+                <div class="peg">
+                  <a class="tool" href="#"
+                    ><span class="t" style="color: #c2410c"
+                      ><svg viewBox="0 0 24 24">
+                        <path d="M9 3h6v3l2 2v12a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V8l2-2z" />
+                        <path d="M7 12h10" /></svg></span
+                    >Engine oil</a
+                  >
+                  <a class="tool" href="#"
+                    ><span class="t" style="color: #0f766e"
+                      ><svg viewBox="0 0 24 24">
+                        <rect x="3" y="7" width="18" height="13" rx="2" />
+                        <path d="M7 7V5h3v2M14 7V5h3v2M8 13h3M14.5 11.5v3M13 13h3" /></svg></span
+                    >Batteries</a
+                  >
+                  <a class="tool" href="#"
+                    ><span class="t" style="color: #334155"
+                      ><svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="9" />
+                        <circle cx="12" cy="12" r="4" />
+                        <path d="M12 3v5M12 16v5M3 12h5M16 12h5" /></svg></span
+                    >Tyres</a
+                  >
+                  <a class="tool" href="#"
+                    ><span class="t" style="color: #a16207"
+                      ><svg viewBox="0 0 24 24"><path d="M4 4h16l-6 8v6l-4 2v-8z" /></svg></span
+                    >Filters</a
+                  >
+                  <a class="tool" href="#"
+                    ><span class="t" style="color: #1d4ed8"
+                      ><svg viewBox="0 0 24 24">
+                        <path d="M12 2.7S6 9 6 13a6 6 0 0 0 12 0c0-4-6-10.3-6-10.3z" /></svg></span
+                    >Car care</a
+                  >
+                  <a class="tool" href="#"
+                    ><span class="t" style="color: #be123c"
+                      ><svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="9" />
+                        <circle cx="12" cy="12" r="3" />
+                        <path d="M12 3v6M12 15v6" /></svg></span
+                    >Brakes</a
+                  >
+                  <a class="tool" href="#"
+                    ><span class="t" style="color: #7c3aed"
+                      ><svg viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9z" /></svg></span
+                    >Electrical</a
+                  >
+                  <a class="tool" href="#"
+                    ><span class="t" style="color: #166534"
+                      ><svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="3" />
+                        <path
+                          d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"
+                        /></svg></span
+                    >Spare parts</a
+                  >
+                </div>
+              </div>
+
+              <div class="sec"><h2>Your garage</h2></div>
+              <div class="garage">
+                <div class="top">
+                  <span class="veh"
+                    ><svg viewBox="0 0 24 24">
+                      <circle cx="5.5" cy="17" r="3" />
+                      <circle cx="18.5" cy="17" r="3" />
+                      <path d="M8.5 17h5l3-6h-4l-2-3H8M15 6h2l1.5 5" /></svg
+                  ></span>
+                  <div><b>Honda Activa 6G</b><span class="mini-plate">CG 04 AB 1234</span></div>
+                </div>
+                <div class="meter">
+                  <div class="bar"><i></i></div>
+                  <div class="lbl"><span>Last service 2,300 km ago</span><b>Service due in 700 km</b></div>
+                </div>
+                <a class="btn ink wide" href="#"
+                  ><svg viewBox="0 0 24 24">
+                    <path
+                      d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"
+                    /></svg
+                  >Book a service</a
+                >
+              </div>
+
+              <div class="sec">
+                <h2>Fits your Activa <a href="#">See all</a></h2>
+              </div>
+              <div class="rail">
+                <a class="pt" href="#"
+                  ><div class="ph">
+                    <img src="../ui-samples-2026-11-23/img/oil0.webp" alt="" /><span class="fit"
+                      ><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></svg>Fits</span
+                    >
+                  </div>
+                  <div class="bd">
+                    <span class="br">Castrol</span><span class="nm">Activ 4T 20W-40 · 900 ml</span
+                    ><span class="pr"><b>₹499</b><s>₹525</s></span>
+                  </div></a
+                >
+                <a class="pt" href="#"
+                  ><div class="ph">
+                    <img src="../ui-samples-2026-11-23/img/bat0.webp" alt="" /><span class="fit"
+                      ><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></svg>Fits</span
+                    >
+                  </div>
+                  <div class="bd">
+                    <span class="br">Exide</span><span class="nm">Xplore 12XL2.5L-C battery</span
+                    ><span class="pr"><b>₹1,099</b><s>₹1,175</s></span>
+                  </div></a
+                >
+                <a class="pt" href="#"
+                  ><div class="ph">
+                    <img src="../ui-samples-2026-11-23/img/car4.webp" alt="" /><span class="fit"
+                      ><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></svg>Fits</span
+                    >
+                  </div>
+                  <div class="bd">
+                    <span class="br">KELVINN</span><span class="nm">Chain lube spray 150 ml</span
+                    ><span class="pr"><b>₹265</b><s>₹280</s></span>
+                  </div></a
+                >
+              </div>
+
+              <div class="lamps" aria-label="Our promises">
+                <div class="lamp">
+                  <i
+                    ><svg viewBox="0 0 24 24">
+                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                      <path d="m9 12 2 2 4-4" /></svg></i
+                  >Genuine parts only
+                </div>
+                <div class="lamp">
+                  <i
+                    ><svg viewBox="0 0 24 24">
+                      <rect x="2" y="6" width="20" height="12" rx="2" />
+                      <circle cx="12" cy="12" r="2.5" /></svg></i
+                  >Cash on delivery
+                </div>
+                <div class="lamp">
+                  <i class="am"
+                    ><svg viewBox="0 0 24 24">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                      <path d="M14 2v6h6M9 15l2 2 4-4" /></svg></i
+                  >You approve every cost
+                </div>
+              </div>
+            </div>
+            <nav class="dock">
+              <a class="on" href="#"
+                ><svg viewBox="0 0 24 24">
+                  <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" /></svg
+                >Home</a
+              >
+              <a href="#"
+                ><svg viewBox="0 0 24 24">
+                  <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                  <path d="M3 6h18M16 10a4 4 0 0 1-8 0" /></svg
+                >Shop</a
+              >
+              <a href="#"
+                ><svg viewBox="0 0 24 24">
+                  <path
+                    d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"
+                  /></svg
+                >Repair</a
+              >
+              <a href="#"
+                ><svg viewBox="0 0 24 24">
+                  <circle cx="8" cy="21" r="1" />
+                  <circle cx="19" cy="21" r="1" />
+                  <path
+                    d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"
+                  /></svg
+                >Cart<span class="n">2</span></a
+              >
+            </nav>
+          </div>
+        </div>
+
+        <!-- ============ MECHANIC SHOP LIST ============ -->
+        <div>
+          <p class="cap">Shop · mechanic mode (trade prices, bulk)</p>
+          <div class="phone">
+            <div class="scroll">
+              <div class="lhdr">
+                <div class="search">
+                  <svg viewBox="0 0 24 24">
+                    <circle cx="11" cy="11" r="7" />
+                    <path d="m20 20-3.5-3.5" /></svg
+                  ><b>engine oil 20w40</b>
+                </div>
+                <div class="chips">
+                  <button class="chip">
+                    <svg viewBox="0 0 24 24"><path d="M3 6h18M6 12h12M10 18h4" /></svg>Filters</button
+                  ><button class="chip on">Bike</button><button class="chip">Castrol</button
+                  ><button class="chip">1 L &amp; under</button><button class="chip">In stock</button>
+                </div>
+              </div>
+              <div class="tradebanner">
+                <svg viewBox="0 0 24 24" style="color: #7fe7ad">
+                  <path
+                    d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"
+                  /></svg
+                ><span>Garage account · <b>trade prices on</b> · GST bill with every order</span>
+              </div>
+              <div class="li">
+                <div class="im"><img src="../ui-samples-2026-11-23/img/oil0.webp" alt="" /></div>
+                <div>
+                  <div class="nm">Castrol Activ 4T 20W-40</div>
+                  <div class="meta">900 ml · bikes &amp; scooters · 48 in stock</div>
+                  <div class="pr"><b>₹462</b><s>₹525 MRP</s></div>
+                  <div class="slab">₹449 each for 12+</div>
+                  <div class="bot">
+                    <span class="trade"><span>Trade</span>save 12%</span
+                    ><span class="qty"
+                      ><button aria-label="Less">−</button><b>12</b><button aria-label="More">+</button></span
+                    >
+                  </div>
+                </div>
+              </div>
+              <div class="li">
+                <div class="im"><img src="../ui-samples-2026-11-23/img/oil4.webp" alt="" /></div>
+                <div>
+                  <div class="nm">Castrol Power1 10W-30</div>
+                  <div class="meta">1 L · bikes · 20 in stock</div>
+                  <div class="pr"><b>₹629</b><s>₹715 MRP</s></div>
+                  <div class="slab">₹612 each for 12+</div>
+                  <div class="bot">
+                    <span class="trade"><span>Trade</span>save 12%</span><button class="add">Add</button>
+                  </div>
+                </div>
+              </div>
+              <div class="li">
+                <div class="im"><img src="../ui-samples-2026-11-23/img/oil3.webp" alt="" /></div>
+                <div>
+                  <div class="nm">Castrol CRB Turbomax 15W-40</div>
+                  <div class="meta">7.5 L · trucks &amp; tractors</div>
+                  <div class="pr"><b>₹3,129</b><s>₹3,480 MRP</s></div>
+                  <div class="slab">₹3,060 each for 4+</div>
+                  <div class="bot">
+                    <span class="trade"><span>Trade</span>save 10%</span><button class="add">Add</button>
+                  </div>
+                </div>
+              </div>
+              <div class="li">
+                <div class="im"><img src="../ui-samples-2026-11-23/img/car2.webp" alt="" /></div>
+                <div>
+                  <div class="nm">KELVINN Brake Klene Plus</div>
+                  <div class="meta">100 ml · workshop use</div>
+                  <div class="pr"><b>₹219</b><s>₹250 MRP</s></div>
+                  <div class="slab">₹205 each for 24+</div>
+                  <div class="bot">
+                    <span class="trade"><span>Trade</span>save 12%</span><button class="add">Add</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="buybar">
+              <div class="p"><small>12 items</small><b>₹5,544</b></div>
+              <a class="btn pri" style="flex: 1" href="#">Review order · GST bill</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============ PRODUCT ============ -->
+        <div>
+          <p class="cap">Product · spec plate + fit check</p>
+          <div class="phone">
+            <div class="scroll" style="padding-bottom: 110px">
+              <div class="stage">
+                <div class="bar">
+                  <button aria-label="Back">
+                    <svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" /></svg></button
+                  ><button aria-label="Save">
+                    <svg viewBox="0 0 24 24">
+                      <path
+                        d="M19 14c1.5-1.5 3-3.2 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.8 0-3 .5-4.5 2-1.5-1.5-2.7-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4 3 5.5l7 7z"
+                      />
+                    </svg>
+                  </button>
+                </div>
+                <div class="img">
+                  <img src="../ui-samples-2026-11-23/img/oil0.webp" alt="Castrol Activ 4T 20W-40" />
+                </div>
+              </div>
+              <div class="ptitle">
+                <span class="br">Castrol</span>
+                <h1>Activ 4T 20W-40 engine oil</h1>
+                <div class="fitline">
+                  <svg viewBox="0 0 24 24" style="stroke-width: 2.6"><path d="M20 6 9 17l-5-5" /></svg>
+                  <div><b>Fits your Honda Activa 6G</b><span class="mini-plate">CG 04 AB 1234</span></div>
+                </div>
+                <div class="packs">
+                  <button class="pk on"><b>₹499</b><small>900 ml</small></button
+                  ><button class="pk"><b>₹545</b><small>1 litre</small></button>
+                </div>
+              </div>
+              <div class="specplate">
+                <h3>SPECIFICATION</h3>
+                <dl>
+                  <dt>Grade</dt>
+                  <dd>20W-40</dd>
+                  <dt>Standard</dt>
+                  <dd>API SL · JASO MA2</dd>
+                  <dt>For</dt>
+                  <dd>4-stroke bikes &amp; scooters</dd>
+                  <dt>Change every</dt>
+                  <dd>3,000 km</dd>
+                </dl>
+              </div>
+              <div class="sec" style="padding-bottom: 4px"><h2>Want a mechanic to fit it?</h2></div>
+              <div class="garage" style="grid-template-columns: 1fr auto; align-items: center">
+                <div>
+                  <b style="font-size: 15px">Oil change at a workshop</b
+                  ><small>Telibandha · 1.2 km · labour ₹149</small>
+                </div>
+                <a class="btn ghost" href="#" style="height: 42px">Add</a>
+              </div>
+            </div>
+            <div class="buybar">
+              <div class="p"><b>₹499</b><small>MRP ₹525 · Cash on delivery</small></div>
+              <a class="btn pri" style="flex: 1" href="#">Add to cart</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============ JOB CARD ============ -->
+        <div>
+          <p class="cap">Repair · approve the estimate (job card)</p>
+          <div class="phone">
+            <div class="scroll" style="padding-bottom: 110px">
+              <div class="jobhdr tread">
+                <div class="row1">
+                  <button class="iconbtn" aria-label="Back">
+                    <svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" /></svg>
+                  </button>
+                  <div>
+                    <h1>Your Activa's estimate</h1>
+                    <small>Telibandha Car &amp; Bike Clinic</small>
+                  </div>
+                </div>
+                <div class="steps">
+                  <span class="d"></span><span class="d"></span><span class="n"></span><span></span
+                  ><span></span>
+                </div>
+                <div class="stepl">
+                  <span>Booked</span><span>Received</span><b>Approve</b><span>Repair</span><span>Ready</span>
+                </div>
+              </div>
+              <div class="jobcard">
+                <div class="head" style="padding-right: 120px">
+                  <div>
+                    <b>JOB CARD SR-RPR-QK41</b><small>Honda Activa 6G · CG 04 AB 1234 · 18,420 km</small>
+                  </div>
+                </div>
+                <span class="stamp">APPROVED</span>
+                <div class="line">
+                  <div class="what"><b>General service</b><small>Labour, check-up and wash</small></div>
+                  <span class="amt">₹499</span>
+                  <div class="choice">
+                    <button class="yes">
+                      <svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></svg>Approved</button
+                    ><button class="no">Skip</button>
+                  </div>
+                </div>
+                <div class="line">
+                  <div class="what"><b>Engine oil change</b><small>Castrol Activ 4T 900 ml</small></div>
+                  <span class="amt">₹499</span>
+                  <div class="choice">
+                    <button class="yes">
+                      <svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></svg>Approved</button
+                    ><button class="no">Skip</button>
+                  </div>
+                </div>
+                <div class="line">
+                  <div class="what"><b>Front brake shoes</b><small>Worn to 1.5 mm</small></div>
+                  <span class="amt">₹380</span>
+                  <div class="why">
+                    Mechanic's note: braking distance is longer than safe. Photo attached.
+                  </div>
+                  <div class="choice">
+                    <button>Approve</button><button class="no on">Skip for now</button>
+                  </div>
+                </div>
+                <div class="total">
+                  <span style="color: var(--muted); font-size: 13.5px"
+                    >Approved total<br />Pay after the work</span
+                  ><b>₹998</b>
+                </div>
+              </div>
+            </div>
+            <div class="buybar"><a class="btn pri wide" href="#">Send my approval</a></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ DESKTOP ============ -->
+      <p class="cap">Desktop · home</p>
+      <div class="desk">
+        <div class="dhero tread">
+          <div class="dnav">
+            <img class="logo" src="../../../apps/web/public/brand/mechdost-logo-dark.svg" alt="MechDost" />
+            <nav>
+              <a class="on" href="#">Home</a><a href="#">Buy parts</a><a href="#">Get it repaired</a
+              ><a href="#">My garage</a><a href="#">For mechanics</a>
+            </nav>
+            <div class="r">
+              <span class="loc"
+                ><svg viewBox="0 0 24 24">
+                  <path d="M12 21s-7-6.1-7-11.5a7 7 0 0 1 14 0C19 14.9 12 21 12 21z" />
+                  <circle cx="12" cy="9.5" r="2.5" /></svg
+                >Raipur 492001</span
+              ><button class="iconbtn" aria-label="Search">
+                <svg viewBox="0 0 24 24">
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="m20 20-3.5-3.5" />
+                </svg></button
+              ><button class="iconbtn" aria-label="Account">
+                <svg viewBox="0 0 24 24">
+                  <circle cx="12" cy="8" r="4" />
+                  <path d="M4 21a8 8 0 0 1 16 0" />
+                </svg></button
+              ><span class="cart">Cart <span>2</span></span>
+            </div>
+          </div>
+          <div class="dgrid">
+            <div>
+              <h1>Parts that fit.<br />Repairs you approve.</h1>
+              <p>
+                For bike and car owners, and for the mechanics who keep Chhattisgarh moving. Genuine parts,
+                cash on delivery, and no work starts without your OK.
+              </p>
+              <div class="doors" style="max-width: 520px">
+                <button class="door buy">
+                  <span class="ic"
+                    ><svg viewBox="0 0 24 24">
+                      <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                      <path d="M3 6h18M16 10a4 4 0 0 1-8 0" /></svg></span
+                  ><span><b>Buy parts</b><small>Delivered across Chhattisgarh</small></span>
+                </button>
+                <button class="door fix">
+                  <span class="ic"
+                    ><svg viewBox="0 0 24 24">
+                      <path
+                        d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"
+                      /></svg></span
+                  ><span><b>Get it repaired</b><small>Verified workshops near you</small></span>
+                </button>
+              </div>
+            </div>
+            <div class="dfind">
+              <div class="mode">
+                <button class="on">Vehicle owner</button><button>Mechanic / garage</button>
+              </div>
+              <label>Your vehicle number</label>
+              <div class="plate">
+                <span class="ind"><i></i>IND</span><span class="num">CG 04 AB 1234</span>
+              </div>
+              <div class="or">or choose your vehicle</div>
+              <div class="sel">
+                <span
+                  >Bike / scooter <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg></span
+                ><span
+                  >Honda <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg></span
+                ><span
+                  >Activa 6G <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg
+                ></span>
+              </div>
+              <a class="btn pri wide" href="#">Show parts that fit</a>
+            </div>
+          </div>
+        </div>
+        <div class="dbody">
+          <div class="card" style="grid-column: 1 / -1">
+            <h2>Shop by category</h2>
+            <div class="peg">
+              <a class="tool" href="#"
+                ><span class="t" style="color: #c2410c"
+                  ><svg viewBox="0 0 24 24">
+                    <path d="M9 3h6v3l2 2v12a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V8l2-2z" />
+                    <path d="M7 12h10" /></svg></span
+                >Engine oil</a
+              >
+              <a class="tool" href="#"
+                ><span class="t" style="color: #0f766e"
+                  ><svg viewBox="0 0 24 24">
+                    <rect x="3" y="7" width="18" height="13" rx="2" />
+                    <path d="M7 7V5h3v2M14 7V5h3v2" /></svg></span
+                >Batteries</a
+              >
+              <a class="tool" href="#"
+                ><span class="t" style="color: #334155"
+                  ><svg viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="9" />
+                    <circle cx="12" cy="12" r="4" /></svg></span
+                >Tyres</a
+              >
+              <a class="tool" href="#"
+                ><span class="t" style="color: #a16207"
+                  ><svg viewBox="0 0 24 24"><path d="M4 4h16l-6 8v6l-4 2v-8z" /></svg></span
+                >Filters</a
+              >
+              <a class="tool" href="#"
+                ><span class="t" style="color: #1d4ed8"
+                  ><svg viewBox="0 0 24 24">
+                    <path d="M12 2.7S6 9 6 13a6 6 0 0 0 12 0c0-4-6-10.3-6-10.3z" /></svg></span
+                >Car care</a
+              >
+              <a class="tool" href="#"
+                ><span class="t" style="color: #be123c"
+                  ><svg viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="9" />
+                    <circle cx="12" cy="12" r="3" /></svg></span
+                >Brakes</a
+              >
+              <a class="tool" href="#"
+                ><span class="t" style="color: #7c3aed"
+                  ><svg viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9z" /></svg></span
+                >Electrical</a
+              >
+              <a class="tool" href="#"
+                ><span class="t" style="color: #166534"
+                  ><svg viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M12 2v3M12 19v3M2 12h3M19 12h3" /></svg></span
+                >Spare parts</a
+              >
+            </div>
+          </div>
+          <div class="card">
+            <h2>Fits your Activa</h2>
+            <div class="dprods">
+              <a class="pt" href="#"
+                ><div class="ph">
+                  <img src="../ui-samples-2026-11-23/img/oil0.webp" alt="" /><span class="fit">Fits</span>
+                </div>
+                <div class="bd">
+                  <span class="br">Castrol</span><span class="nm">Activ 4T 20W-40</span
+                  ><span class="pr"><b>₹499</b><s>₹525</s></span>
+                </div></a
+              >
+              <a class="pt" href="#"
+                ><div class="ph">
+                  <img src="../ui-samples-2026-11-23/img/bat0.webp" alt="" /><span class="fit">Fits</span>
+                </div>
+                <div class="bd">
+                  <span class="br">Exide</span><span class="nm">Xplore battery</span
+                  ><span class="pr"><b>₹1,099</b><s>₹1,175</s></span>
+                </div></a
+              >
+              <a class="pt" href="#"
+                ><div class="ph">
+                  <img src="../ui-samples-2026-11-23/img/oil4.webp" alt="" /><span class="fit">Fits</span>
+                </div>
+                <div class="bd">
+                  <span class="br">Castrol</span><span class="nm">Power1 10W-30</span
+                  ><span class="pr"><b>₹679</b><s>₹715</s></span>
+                </div></a
+              >
+              <a class="pt" href="#"
+                ><div class="ph">
+                  <img src="../ui-samples-2026-11-23/img/car4.webp" alt="" /><span class="fit">Fits</span>
+                </div>
+                <div class="bd">
+                  <span class="br">KELVINN</span><span class="nm">Chain lube spray</span
+                  ><span class="pr"><b>₹265</b><s>₹280</s></span>
+                </div></a
+              >
+            </div>
+          </div>
+          <div style="display: grid; gap: 22px">
+            <div class="garage" style="margin: 0">
+              <div class="top">
+                <span class="veh"
+                  ><svg viewBox="0 0 24 24">
+                    <circle cx="5.5" cy="17" r="3" />
+                    <circle cx="18.5" cy="17" r="3" />
+                    <path d="M8.5 17h5l3-6h-4l-2-3H8" /></svg
+                ></span>
+                <div><b>Honda Activa 6G</b><span class="mini-plate">CG 04 AB 1234</span></div>
+              </div>
+              <div class="meter">
+                <div class="bar"><i></i></div>
+                <div class="lbl"><span>2,300 km since service</span><b>Due in 700 km</b></div>
+              </div>
+              <a class="btn ink wide" href="#">Book a service</a>
+            </div>
+            <div class="lamps" style="margin: 0">
+              <div class="lamp">
+                <i
+                  ><svg viewBox="0 0 24 24">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    <path d="m9 12 2 2 4-4" /></svg></i
+                >Genuine parts
+              </div>
+              <div class="lamp">
+                <i
+                  ><svg viewBox="0 0 24 24">
+                    <rect x="2" y="6" width="20" height="12" rx="2" />
+                    <circle cx="12" cy="12" r="2.5" /></svg></i
+                >Cash on delivery
+              </div>
+              <div class="lamp">
+                <i class="am"
+                  ><svg viewBox="0 0 24 24">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <path d="M14 2v6h6M9 15l2 2 4-4" /></svg></i
+                >You approve every cost
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

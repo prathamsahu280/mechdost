@@ -98,6 +98,13 @@ export interface ServerEventProps {
     packsCreated: number;
     mrpFilled: number;
   };
+  /** The Exide import wrote products (CLI `pnpm db:import:exide`, 2026-11-23); old Exide products are archived, never deleted. */
+  admin_exide_imported: {
+    productsCreated: number;
+    productsUpdated: number;
+    productsArchived: number;
+    packsCreated: number;
+  };
   /** A brand or product range was switched off/on in Admin → Catalogue → Brands and ranges (hides its products). */
   admin_group_switched: {
     kind: 'brand' | 'range';
