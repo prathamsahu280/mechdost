@@ -25,6 +25,7 @@ import {
   type CodeFail,
   type PhoneFail,
 } from './auth-errors';
+import { isTransientAuthCode, retryOnce } from './sign-in-retry';
 import { changeFailFor, type ChangeFail } from './password-change';
 import type { RealMe } from './real-account';
 
@@ -71,6 +72,11 @@ const codeOf = (err: unknown) =>
   typeof err === 'object' && err !== null && 'code' in err && typeof err.code === 'string' ? err.code : '';
 
 export type { CodeFail, PhoneFail };
+
+/** Start Firebase up (app + auth object, and the stored session) while the sign-in form is still being filled in. */
+export function warmFirebase(locale: string): void {
+  void firebaseAuth(locale).authStateReady();
+}
 
 /** A closed reCAPTCHA challenge never settles the send: give up after this long (a11y review 2026-11-09). */
 const SEND_TIMEOUT_MS = 60_000;
@@ -169,7 +175,7 @@ export async function emailStatus(locale: string): Promise<{ email: string; veri
   const user = a.currentUser;
   if (!user?.email) return null;
   await user.reload().catch(() => undefined);
-  if (user.emailVerified) await fetchMe().catch(() => null);
+  if (user.emailVerified) await fetchMe(true).catch(() => null);
   return { email: user.email, verified: user.emailVerified };
 }
 
@@ -197,7 +203,8 @@ export type PasswordResult =
   | { ok: true; status: 'staff_code'; phone: string }
   | {
       ok: false;
-      reason: 'invalid' | 'locked' | 'turnstile' | 'unavailable' | 'staff_mismatch' | 'staff_expired';
+      reason:
+        'invalid' | 'locked' | 'turnstile' | 'network' | 'unavailable' | 'staff_mismatch' | 'staff_expired';
       retryAfterSeconds?: number;
     };
 
@@ -214,20 +221,25 @@ export async function passwordSignIn(input: {
 }): Promise<PasswordResult> {
   const a = firebaseAuth(input.locale);
   const token = input.phoneToken ? await a.currentUser?.getIdToken() : undefined;
-  let res: Response;
-  try {
-    res = await api('/auth/password', {
-      method: 'POST',
-      body: JSON.stringify({
-        identifier: input.identifier,
-        password: input.password,
-        turnstileToken: input.turnstileToken,
-      }),
-      ...(token ? { token } : {}),
-    });
-  } catch {
-    return { ok: false, reason: 'unavailable' };
-  }
+  // A request that never reached the API (a network blink) is safe to send once more.
+  const sent = await retryOnce(
+    () =>
+      api('/auth/password', {
+        method: 'POST',
+        body: JSON.stringify({
+          identifier: input.identifier,
+          password: input.password,
+          turnstileToken: input.turnstileToken,
+        }),
+        ...(token ? { token } : {}),
+      }).then(
+        (response) => ({ response }),
+        () => ({ response: null }),
+      ),
+    (r) => r.response === null,
+  );
+  const res = sent.response;
+  if (!res) return { ok: false, reason: 'network' };
   const body = (await res.json().catch(() => ({}))) as {
     status?: string;
     customToken?: string;
@@ -237,12 +249,17 @@ export async function passwordSignIn(input: {
   if (res.ok && body.status === 'staff_code' && body.phone)
     return { ok: true, status: 'staff_code', phone: body.phone };
   if (res.ok && body.status === 'signed_in' && body.customToken) {
-    try {
-      await signInWithCustomToken(a, body.customToken);
-      return { ok: true, status: 'signed_in' };
-    } catch {
-      return { ok: false, reason: 'unavailable' };
-    }
+    const customToken = body.customToken;
+    // The one-hour custom token is still good after a network blink: try the exchange once more before failing.
+    const exchanged = await retryOnce(
+      () =>
+        signInWithCustomToken(a, customToken).then(
+          () => ({ ok: true as const }),
+          (err: unknown) => ({ ok: false as const, code: codeOf(err) }),
+        ),
+      (r) => !r.ok && isTransientAuthCode(r.code),
+    );
+    return exchanged.ok ? { ok: true, status: 'signed_in' } : { ok: false, reason: 'unavailable' };
   }
   switch (body.error?.code) {
     case 'INVALID_CREDENTIALS':
@@ -290,10 +307,12 @@ export function watchUid(locale: string, cb: (uid: string | null) => void): () =
 
 /**
  * `GET /v1/me` for the signed-in Firebase user (creates the profile row on first sign-up). `blocked`: the API
- * refuses this account (blocked or deactivated) — the caller signs out and shows why.
+ * refuses this account (blocked or deactivated) — the caller signs out and shows why. `forceRefresh` costs a
+ * round trip to Google: only for a caller that needs a claim changed after the last sign-in (email verified);
+ * right after sign-in the token is already fresh (sign-in speed pass 2026-11-23).
  */
-export async function fetchMe(): Promise<ApiMe | 'blocked' | null> {
-  const token = await auth?.currentUser?.getIdToken(true);
+export async function fetchMe(forceRefresh = false): Promise<ApiMe | 'blocked' | null> {
+  const token = await auth?.currentUser?.getIdToken(forceRefresh);
   if (!token) return null;
   const res = await api('/me', { token }).catch(() => null);
   if (!res) return null;

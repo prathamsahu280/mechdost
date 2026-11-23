@@ -177,6 +177,10 @@ This file is the single source of truth for **where the build is right now**. It
   - Verified (targeted, no full gate): db support-threads 14 + support 14 + support-bridge + service-photos + analytics + email-notifications (75 total), api support-threads 13 + support + service-photos + photo-storage + email (42), shared i18n/analytics/api-schemas 13, web full unit suite 478 (65 files); typecheck shared/db/api clean, web only the pre-existing missing hero images; ESLint 0 warnings and Prettier on every touched file.
   - Not done: items 4 to 7 of the design (inbox tools, auto-close, guest tickets, deletion request); staff-uploaded attachments; a purge of stored payout destinations (Q115); a staff bell for customer replies on an existing thread; browser run of the two new audit rows and the Hindi crawl of the new screens (no Playwright by instruction); demo-mode (browser store) has none of this.
 
+## 2026-11-23 — Sign-in speed and captcha pass (worktree branch, not merged)
+
+Pre-warm + prefetched Turnstile token, one-shot silent retries, no forced token refresh, parallel account lookup in the API. Console steps for the user in `docs/runbooks/firebase.md` (reCAPTCHA Enterprise, Turnstile widget mode). Decision 2026-11-23 in `docs/decisions.md`.
+
 ## 2026-11-16 — QA pass 4: sign-in messages (worktree branch agent-a840b32c751fc48f0, not merged; no migration)
 
 Login banner has a no-name variant; phone-code send errors map Firebase codes to specific messages (`phoneSendFailFor`, new `errNetwork`, `statusErr_network`, en+hi); new client event `auth_code_failed {stage, code, path}` (spec 12). Tests `apps/web/test/auth-send-errors.test.ts` (red 9/9 first, then green); web 906 and shared 489 tests pass. No new import edges in the layout/home graph (login page code only).

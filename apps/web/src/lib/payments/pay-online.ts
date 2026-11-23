@@ -131,7 +131,7 @@ export function razorpayPrefill(parts: {
 export async function accountPrefill(): Promise<{ name?: string; email?: string; contact?: string }> {
   try {
     const { fetchMe } = await import('@/lib/auth/firebase-client');
-    const me = await fetchMe();
+    const me = await fetchMe(true);
     return me && me !== 'blocked'
       ? razorpayPrefill({ name: me.name, email: me.email, contact: me.phone })
       : {};

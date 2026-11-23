@@ -101,6 +101,11 @@ export function authRoutes(deps: AppDeps) {
     const ip = c.get('clientIp');
     await closed(() => enforceRate(c, deps.rateLimiter, SIGN_IN_PER_IP, ip));
 
+    const ident = parseSignInIdentifier(body.identifier);
+    // The account lookup does not depend on the Cloudflare answer: both run at once (nothing is revealed or
+    // counted before the check passes), which takes one database round trip off every sign-in.
+    const lookup = ident ? findPasswordAccount(deps.db, ident) : Promise.resolve(null);
+    lookup.catch(() => undefined);
     let human: boolean;
     try {
       human = await turnstile.verify(body.turnstileToken, ip);
@@ -110,7 +115,6 @@ export function authRoutes(deps: AppDeps) {
     }
     if (!human) throw new ApiError(400, 'TURNSTILE_FAILED', 'Complete the check and try again');
 
-    const ident = parseSignInIdentifier(body.identifier);
     const key = keyOf(ident ? `${ident.kind}:${ident.value}` : `raw:${body.identifier.trim().toLowerCase()}`);
     const attempt = await closed(() => deps.rateLimiter.hit(SIGN_IN_FAILURES, key));
     if (!attempt.allowed) {
@@ -118,7 +122,7 @@ export function authRoutes(deps: AppDeps) {
       throw new ApiError(429, 'ACCOUNT_LOCKED', 'Too many attempts — wait 15 minutes or reset your password');
     }
 
-    const account = ident ? await findPasswordAccount(deps.db, ident) : null;
+    const account = await lookup;
     let uid: string | null;
     try {
       // Right after sign-up the profile row has no email yet (it syncs on the next API call), but Firebase knows

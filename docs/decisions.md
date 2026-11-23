@@ -1685,3 +1685,15 @@ User: "Remove existing Exide batteries/products already listed and list the new 
 - **Fitment lives in `spec.fitment`** (full list with fuel, `yearFrom` / `yearTo` and `era` from the source's "Model year / era" column), with a capped searchable text in `compatibility`; the public product API leaves `spec.fitment` out of the page payload. The `fitments` / vehicle tables are NOT written: their constraints do not fit (no years for most rows, kick/electric start, trucks, tractors, gensets). Writing them is the next step of "find the battery for my vehicle".
 - **Range photos:** 49 products only have Exide's generic range picture; they are live with `spec.photoKind = 'range'` and listed in the status report.
 - **Event:** `admin_exide_imported` (spec 12). Runbook: `docs/runbooks/catalogue-import.md` "Exide import".
+
+## 2026-11-23 — Sign-in speed and fewer captchas
+
+User report: sign-in slow, captcha "every time", errors. Decided: (1) Turnstile stays `interaction-only` but starts at
+the first touch of the form and its token is held (max 4 min, single use) until the button is pressed; (2) Firebase,
+the Turnstile script and connections to Cloudflare, Google and the API are warmed when `/login` opens; (3)
+`fetchMe` no longer forces a token refresh after sign-in (only the email-verified and pay-online paths do); (4) the API
+password route looks up the account while Cloudflare verifies the token; (5) one silent retry for an expired or
+used Turnstile token, a widget error, a network blink on the API call and on the custom-token exchange; a failed
+API fetch now says "could not reach the sign-in service". The reCAPTCHA Enterprise and Cloudflare widget-mode
+settings are console-only (`docs/runbooks/firebase.md`). Code: `lib/auth/sign-in-retry.ts`, `turnstile.ts`,
+`login-flow.tsx`, `apps/api/src/routes/auth.ts`; test `apps/web/test/sign-in-retry.test.ts`.
