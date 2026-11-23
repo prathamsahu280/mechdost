@@ -223,9 +223,13 @@ describe('range photos', () => {
 });
 
 const DIR = 'C:/Users/Admin/Desktop/autoparts/exide_batteries';
+// Runs only where the source files exist (the importer's own PC); CI has the fixtures above. The plan is built lazily:
+// a describe body runs while collecting even when skipped, so reading the folder there failed CI (2026-11-23).
 describe.skipIf(!existsSync(`${DIR}/exide_batteries.csv`))('all 211 source rows', () => {
-  const full = planExideDir(DIR);
+  let cached: ReturnType<typeof planExideDir> | undefined;
+  const fullPlan = () => (cached ??= planExideDir(DIR));
   it('plans every row once with unique slugs and SKUs, all live', () => {
+    const full = fullPlan();
     expect(full.products).toHaveLength(211);
     expect(new Set(full.products.map((p) => p.slug)).size).toBe(211);
     expect(new Set(full.products.map((p) => p.variant.sku)).size).toBe(211);
@@ -234,6 +238,7 @@ describe.skipIf(!existsSync(`${DIR}/exide_batteries.csv`))('all 211 source rows'
     expect(full.orphanFitment).toBe(0);
   });
   it('passes the Hindi check everywhere', () => {
+    const full = fullPlan();
     expect(exideHindiLeftovers(full)).toEqual([]);
     expect(full.untranslated).toEqual([]);
   });
