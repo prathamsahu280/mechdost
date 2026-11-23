@@ -49,6 +49,7 @@ export const REAL_ADMIN_SECTIONS = [
 export const REAL_ACCOUNT_SECTIONS = [
   'overview',
   'orders',
+  'refunds',
   'services',
   'quotes',
   'support',

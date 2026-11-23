@@ -88,6 +88,8 @@ const MUST_SHOW: Readonly<Record<string, string>> = {
   '/account/services': CODES.proposed,
   '/account/quotes': CODES.quote,
   '/account/coins': '250',
+  // Account → Refunds (spec 05, 2026-11-23): the demo's sample refunds, with a Razorpay reference.
+  '/account/refunds': 'rfnd_DemoSent0001',
   [`/orders/${CODES.shipped}`]: '4821',
   [`/service/${CODES.proposed}`]: 'तेलीबांधा कार क्लिनिक',
   [`/service/${CODES.estimate}`]: 'मेरी पसंद पक्की करें',

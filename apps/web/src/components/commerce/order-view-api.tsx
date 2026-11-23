@@ -294,6 +294,13 @@ function RefundLines({ part }: { part: TrackedOrder }) {
           </li>
         ))}
       </ul>
+      <Link
+        href={`${prefix}/account/refunds`}
+        data-track="order_refunds_all"
+        className="mt-3 inline-flex min-h-11 items-center text-sm font-bold underline underline-offset-4"
+      >
+        {t('customerSeeAll')}
+      </Link>
     </section>
   );
 }

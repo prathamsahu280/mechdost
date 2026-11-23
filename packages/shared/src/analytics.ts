@@ -639,6 +639,10 @@ export const CLIENT_EVENT_SCHEMAS = {
   notification_opened: z
     .object({ kind: id.nullable(), channel: z.enum(['bell', 'centre', 'push']) })
     .strict(),
+  // The customer's refund page (spec 05, 2026-11-23): how many refunds were shown and how many are still on their way.
+  my_refunds_viewed: z
+    .object({ count: z.number().int().min(0).max(50), inProgress: z.number().int().min(0).max(50) })
+    .strict(),
   push_prompt_shown: z.object({ variant: z.enum(['normal', 'ios', 'denied']) }).strict(),
   push_prompt_answered: z.object({ answer: z.enum(['turn_on', 'not_now', 'ios_done']) }).strict(),
   push_enabled: z.object({ source: z.enum(['card', 'settings']) }).strict(),

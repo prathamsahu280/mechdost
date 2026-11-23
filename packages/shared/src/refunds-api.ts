@@ -54,6 +54,84 @@ export const CustomerRefundDto = z.object({
 });
 export type CustomerRefund = z.infer<typeof CustomerRefundDto>;
 
+/**
+ * The customer's own refund list (`GET /v1/me/refunds`, 2026-11-23). A finer view than `CustomerRefundStatus`: where on
+ * its way the refund is. `completed` exists only after Razorpay (or finance, for a payout by hand) confirms; `checking`
+ * is a refund we cannot yet tell the outcome of (the money is kept aside until we know); `declined` and `failed` point
+ * to support. Nothing here promises an automatic or instant refund.
+ */
+export const MY_REFUND_STAGES = [
+  'requested',
+  'approved',
+  'sent',
+  'completed',
+  'declined',
+  'failed',
+  'checking',
+] as const;
+export type MyRefundStage = (typeof MY_REFUND_STAGES)[number];
+
+/** How the money goes back: `original` = the UPI or card paid with (through Razorpay); `manual` = finance pays by hand. */
+export const MY_REFUND_METHODS = ['original', 'manual'] as const;
+export type MyRefundMethod = (typeof MY_REFUND_METHODS)[number];
+
+export function myRefundStage(status: RefundStatus): MyRefundStage {
+  switch (status) {
+    case 'requested':
+      return 'requested';
+    case 'approved':
+      return 'approved';
+    case 'initiated':
+      return 'sent';
+    case 'processed':
+      return 'completed';
+    case 'rejected':
+      return 'declined';
+    case 'failed':
+      return 'failed';
+    case 'needs_reconciliation':
+      return 'checking';
+  }
+}
+
+/**
+ * The steps of the stepper the page draws, in order. A payout by hand has no "sent to the bank" step: finance pays it
+ * and records it. Declined, failed and checking refunds have no stepper (a plain status line instead).
+ */
+/** The stages that have a step on the stepper. */
+export type MyRefundStep = 'requested' | 'approved' | 'sent' | 'completed';
+
+export function myRefundSteps(method: MyRefundMethod): readonly MyRefundStep[] {
+  return method === 'manual'
+    ? ['requested', 'approved', 'completed']
+    : ['requested', 'approved', 'sent', 'completed'];
+}
+
+/** What the customer may see of a refund: no staff, notes, reject reasons, idempotency keys or payout details. */
+export const MyRefundDto = z
+  .object({
+    id: z.uuid(),
+    /** The checkout (`MD-…`, opens `/orders/{code}`) or the workshop request (`SR-…`, opens `/service/{code}`). */
+    target: z.object({ kind: z.enum(['order', 'service']), code: z.string() }).strict(),
+    amountPaise: z.number().int().min(1),
+    reasonCode: z.enum(REFUND_REASONS),
+    method: z.enum(MY_REFUND_METHODS),
+    stage: z.enum(MY_REFUND_STAGES),
+    requestedAt: z.string(),
+    approvedAt: z.string().nullable(),
+    sentAt: z.string().nullable(),
+    completedAt: z.string().nullable(),
+    /** Razorpay's refund id (`rfnd_…`), once it exists: the reference to quote to the bank. Nothing else of the provider. */
+    providerRefundId: z.string().nullable(),
+  })
+  .strict();
+export type MyRefund = z.infer<typeof MyRefundDto>;
+
+export const MyRefundPageDto = z
+  .object({ refunds: z.array(MyRefundDto), nextCursor: z.string().nullable() })
+  .strict();
+export type MyRefundPage = z.infer<typeof MyRefundPageDto>;
+
 /** Staff cannot invent the two system sources: a rejected or cancelled order creates its own request. */
 export const STAFF_REFUND_SOURCES = ['unfulfilled', 'support_claim', 'part_refund', 'other'] as const;
 

@@ -28,7 +28,7 @@ import {
 import { queueEmail } from './email-notifications';
 import { ConflictError, ForbiddenError, NotFoundError, pgCode, ValidationError } from './errors';
 import { recordServerEvent } from './events';
-import { queueStaffNotice } from './notices';
+import { queueStaffNotice, resolveNotices } from './notices';
 import type { Tx } from './orders';
 import type { CityScope } from './routing';
 import { num, rowsOf } from './sql-rows';
@@ -423,6 +423,8 @@ export async function decideBusinessApplication(
       .returning({ id: businessApplications.id });
     if (updated.length === 0)
       throw new ConflictError('Someone else changed this application; reload', 'STALE_APPLICATION');
+    // Decided: the staff "new application" notice is done, for everyone who got it.
+    await resolveNotices(tx, { kinds: ['staff.new_application'], entityIds: [app.id] });
     await tx.insert(businessApplicationEvents).values({
       applicationId: app.id,
       fromStatus: app.status,

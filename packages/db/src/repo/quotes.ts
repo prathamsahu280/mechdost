@@ -49,6 +49,7 @@ import { productVisible } from './visibility';
 import { recordServerEvent } from './events';
 import { localized } from './localized';
 import { queueEmail } from './email-notifications';
+import { resolveNotices } from './notices';
 import { queueQuoteWhatsApp } from './quote-notifications';
 import type { Tx } from './orders';
 import type { CityScope } from './routing';
@@ -477,6 +478,18 @@ async function transition(
     )
     .returning({ version: quoteRequests.version });
   if (!row) throw new ConflictError('This quote changed; reload and try again', 'STALE_QUOTE');
+  if (q.status === 'offered') {
+    // The price is no longer on offer (accepted, declined, withdrawn, expired or reopened for talks): the customer's
+    // "price is ready" and "offer ends soon" notices are done.
+    const offers = await tx
+      .select({ id: quoteOffers.id })
+      .from(quoteOffers)
+      .where(eq(quoteOffers.quoteId, q.id));
+    await resolveNotices(tx, {
+      kinds: ['quote.offer', 'quote.expiring'],
+      entityIds: [q.id, ...offers.map((o) => o.id)],
+    });
+  }
   await tx.insert(quoteEvents).values({
     quoteId: q.id,
     kind: 'status',

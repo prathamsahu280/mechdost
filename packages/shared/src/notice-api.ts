@@ -46,6 +46,8 @@ export const NoticeDto = z
     body: z.string(),
     link: LocalPath.nullable(),
     read: z.boolean(),
+    /** The action it asked for is no longer needed (order routed, refund decided…): shown as done, never as new. */
+    resolved: z.boolean(),
     createdAt: z.iso.datetime({ offset: true }),
   })
   .strict();

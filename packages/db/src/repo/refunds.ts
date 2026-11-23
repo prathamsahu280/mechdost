@@ -41,7 +41,7 @@ import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '.
 import { recordServerEvent } from './events';
 import { issueCreditNoteForRefund } from './credit-notes';
 import { queueRefundEmail } from './email-notifications';
-import { queueStaffNotice } from './notices';
+import { queueStaffNotice, resolveNotices } from './notices';
 import type { Tx } from './orders';
 import type { CityScope } from './routing';
 import { rowsOf } from './sql-rows';
@@ -102,6 +102,14 @@ async function recordRefundEvent(
     actorId: input.actor.id,
     payload: input.payload ?? {},
   });
+  // Finance notices about this refund are done once it is decided ("waiting for approval") or settled ("needs a
+  // look"): same transaction as the move, so the bell never shows work that is already finished.
+  const settled = input.to === 'processed' || input.to === 'failed' || input.to === 'rejected';
+  if (input.from === 'requested' || settled)
+    await resolveNotices(tx, {
+      kinds: settled ? ['staff.refund_overdue', 'staff.refund_alert'] : ['staff.refund_overdue'],
+      entityIds: [input.refund.id],
+    });
   await tx.insert(auditLog).values({
     actorUserId: input.actor.id,
     actorRole: input.actor.type === 'admin' ? 'staff' : 'system',

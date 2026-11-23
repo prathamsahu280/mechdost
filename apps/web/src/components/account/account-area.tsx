@@ -57,6 +57,13 @@ import { ACCOUNT_SECTIONS, type AccountSection } from '@/lib/sections';
 const CoinsSectionApi = lazy(() =>
   import('./coins-section-api').then((m) => ({ default: m.CoinsSectionApi })),
 );
+// Refunds (spec 05, 2026-11-23): the API list in real data mode, three sample refunds in the demo; both load on open.
+const RefundsSectionApi = lazy(() =>
+  import('./refunds-section-api').then((m) => ({ default: m.RefundsSectionApi })),
+);
+const RefundsSectionDemo = lazy(() =>
+  import('./refunds-section').then((m) => ({ default: m.RefundsSection })),
+);
 
 // Trade account pill (audience entry design 2026-11-22), real sign-in only.
 const TradeBadge = lazy(() => import('./trade-badge').then((m) => ({ default: m.TradeBadge })));
@@ -84,6 +91,7 @@ const sectionFallback = <div className="skeleton h-72 rounded-card" aria-hidden=
 const SECTION_EMOJI: Record<AccountSection, string> = {
   overview: '🏠',
   orders: '📦',
+  refunds: '↩️',
   services: '🔧',
   quotes: '💬',
   coins: '🪙',
@@ -244,6 +252,11 @@ export function AccountSectionBody({ section }: { section: AccountSection }) {
       ) : null}
       {section === 'overview' ? <Overview account={session} /> : null}
       {section === 'orders' ? <OrdersList /> : null}
+      {section === 'refunds' ? (
+        <Suspense fallback={sectionFallback}>
+          {DATA_MODE === 'api' ? <RefundsSectionApi /> : <RefundsSectionDemo />}
+        </Suspense>
+      ) : null}
       {section === 'services' ? <ServicesList /> : null}
       {section === 'quotes' ? <QuotesList /> : null}
       {section === 'coins' ? (

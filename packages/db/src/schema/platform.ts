@@ -185,6 +185,11 @@ export const notifications = pgTable(
     body: text().notNull(),
     link: text(),
     readAt: ts(),
+    /**
+     * Set (with `read_at`) when the thing the notice asked for no longer needs doing: the order was routed, the
+     * refund decided, the ticket answered… The bell shows it as done and it stops counting as unread.
+     */
+    resolvedAt: ts(),
     createdAt: createdAt(),
   },
   (t) => [
@@ -202,6 +207,10 @@ export const notifications = pgTable(
       .on(t.userId, t.dedupeKey)
       .where(sql`${t.dedupeKey} is not null`),
     index('notifications_created_idx').on(t.createdAt),
+    // Finds the still-open notices of one thing when it is resolved (`=` and `LIKE 'id:%'` both use it).
+    index('notifications_open_entity_idx')
+      .on(t.kind, sql`${t.entityId} text_pattern_ops`)
+      .where(sql`${t.resolvedAt} is null`),
   ],
 );
 

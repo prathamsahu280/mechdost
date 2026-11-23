@@ -8,6 +8,7 @@ import { requestRefundForClosedOrder } from './refunds';
 import { createOrderRewards, recordShopCoinDiscount, restoreCoinsForSubOrder } from './coins';
 import { recordShopCouponDiscount, releaseCouponIfOrderDead } from './coupons';
 import { queueOrderStatusEmail } from './email-events';
+import { resolveOrderNotices } from './notice-events';
 import { queueOrderWhatsApp, type OrderWhatsAppEvent } from './order-notifications';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -86,6 +87,8 @@ export async function transitionOrder(
       `Order ${args.orderId} changed before ${args.from} → ${args.to} could apply`,
       'STALE_ORDER',
     );
+  // A notice that asked someone to act on this order (route it, answer the offer) is done now: same transaction.
+  await resolveOrderNotices(tx, { orderId: row.id, groupId: row.groupId, from: args.from });
   const event = WHATSAPP_ON[args.to];
   if (event) await queueOrderWhatsApp(tx, { orderId: row.id, event, orderVersion: row.version });
   // Customer email for the milestone (spec 10, design 2026-11-15), same transaction: a rolled-back change sends nothing.

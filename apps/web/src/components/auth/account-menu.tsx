@@ -11,6 +11,7 @@ export interface AccountMenuCopy {
   account: string;
   profile: string;
   orders: string;
+  refunds: string;
   vehicles: string;
   saved: string;
   portal: string;
