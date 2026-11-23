@@ -1665,3 +1665,15 @@ User: "make the website open on light mode by default". Without a saved choice t
 device's system theme (replaces "follow the system theme" from 2026-11-01). Dark mode stays one tap away (footer and
 account menu) and a saved dark choice still applies on every visit. Code: `THEME_INIT_SCRIPT` in
 `apps/web/src/lib/theme.ts`, fallbacks in `theme-client.ts` and the three maps; guard `test/theme-light-default.test.ts`.
+
+## 2026-11-23 — Sign-in speed and fewer captchas
+
+User report: sign-in slow, captcha "every time", errors. Decided: (1) Turnstile stays `interaction-only` but starts at
+the first touch of the form and its token is held (max 4 min, single use) until the button is pressed; (2) Firebase,
+the Turnstile script and connections to Cloudflare, Google and the API are warmed when `/login` opens; (3)
+`fetchMe` no longer forces a token refresh after sign-in (only the email-verified and pay-online paths do); (4) the API
+password route looks up the account while Cloudflare verifies the token; (5) one silent retry for an expired or
+used Turnstile token, a widget error, a network blink on the API call and on the custom-token exchange; a failed
+API fetch now says "could not reach the sign-in service". The reCAPTCHA Enterprise and Cloudflare widget-mode
+settings are console-only (`docs/runbooks/firebase.md`). Code: `lib/auth/sign-in-retry.ts`, `turnstile.ts`,
+`login-flow.tsx`, `apps/api/src/routes/auth.ts`; test `apps/web/test/sign-in-retry.test.ts`.

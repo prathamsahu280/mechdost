@@ -3,6 +3,8 @@
  * script loads only when a sign-in form needs it. Tokens are single use, so every call runs the check again.
  * Development uses Cloudflare's always-pass test site key (`.env.example`).
  */
+import { retryOnce, tokenUsable } from './sign-in-retry';
+
 interface TurnstileApi {
   render(
     el: HTMLElement,
@@ -37,6 +39,17 @@ let widget: { id: string; el: HTMLElement } | null = null;
 let pending: { resolve: (t: string) => void; reject: (e: Error) => void } | null = null;
 /** The current call's hook: the widget's callbacks are bound once, at render. */
 let shown: (on: boolean) => void = () => undefined;
+/** True while Cloudflare's visible challenge is on screen (a call that joins a running check learns of it). */
+let interactiveNow = false;
+/** Who hears "a visible challenge is up": the call that started the check, or the one that took it over. */
+let listener: (on: boolean) => void = () => undefined;
+/** A check started ahead of the submit (first focus in the form): the token is waiting when the button is pressed. */
+let warm: { promise: Promise<string>; at: number } | null = null;
+
+/** Fetch the Cloudflare script now (sign-in screen opened), so the check at submit time starts at once. */
+export function warmTurnstile(): void {
+  load().catch(() => undefined);
+}
 
 function load(): Promise<TurnstileApi> {
   loading ??= new Promise<TurnstileApi>((resolve, reject) => {
@@ -61,15 +74,61 @@ function load(): Promise<TurnstileApi> {
 }
 
 /**
+ * Start the check before the person presses the button (they are still typing); `turnstileToken` then returns
+ * that token at once while it is fresh. A failure here is silent: the real call just runs its own check.
+ */
+export function prefetchTurnstileToken(
+  containerId: string,
+  locale: string,
+  onInteractive: (shown: boolean) => void = () => undefined,
+): void {
+  if (warm && tokenUsable(warm.at, Date.now())) return;
+  listener = onInteractive;
+  const promise = run(containerId, locale);
+  const mine = { promise, at: Date.now() };
+  warm = mine;
+  promise.catch(() => {
+    if (warm === mine) warm = null;
+  });
+}
+
+/**
  * A fresh token from the widget in `containerId` (rendered on first use; shown only if Cloudflare must ask).
  * `onInteractive(true)` fires when a visible challenge appears (the form labels it and tells the person),
- * `onInteractive(false)` when it is done.
+ * `onInteractive(false)` when it is done. Uses the token prefetched while typing when there is one; a transient
+ * widget error is retried once with a clean widget before it reaches the person.
  */
 export async function turnstileToken(
   containerId: string,
   locale: string,
   onInteractive: (shown: boolean) => void = () => undefined,
 ): Promise<string> {
+  const held = warm;
+  warm = null;
+  if (held && tokenUsable(held.at, Date.now())) {
+    listener = onInteractive;
+    if (interactiveNow) onInteractive(true);
+    try {
+      return await held.promise;
+    } catch {
+      // fall through to a check of our own
+    }
+  }
+  listener = onInteractive;
+  return retryOnce(
+    () =>
+      run(containerId, locale).then(
+        (t) => ({ t }),
+        (e: unknown) => ({ e }),
+      ),
+    (r) => 'e' in r && !(r.e instanceof Error && r.e.message === 'turnstile timed out'),
+  ).then((r) => {
+    if ('t' in r) return r.t;
+    throw r.e;
+  });
+}
+
+async function run(containerId: string, locale: string): Promise<string> {
   let waitingForPerson = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
   const giveUp = new Promise<never>((_, reject) => {
@@ -81,12 +140,14 @@ export async function turnstileToken(
     return await Promise.race([
       issue(containerId, locale, (on) => {
         waitingForPerson = on;
-        onInteractive(on);
+        interactiveNow = on;
+        listener(on);
       }),
       giveUp,
     ]);
   } finally {
     clearTimeout(timer);
+    interactiveNow = false;
   }
 }
 

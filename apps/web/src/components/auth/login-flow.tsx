@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
+import { preconnect } from 'react-dom';
 import { useCallback, useEffect, useRef, useState, type ReactNode, type SyntheticEvent } from 'react';
 import { PASSWORD_MAX, PASSWORD_MIN, passwordProblem } from '@/demo/passwords';
 import {
@@ -27,6 +28,8 @@ import {
 } from '@/demo/session';
 import { track } from '@/lib/analytics';
 import type * as RealClientModule from '@/lib/auth/firebase-client';
+import type { PasswordResult } from '@/lib/auth/firebase-client';
+import { retryOnce } from '@/lib/auth/sign-in-retry';
 import type { CodeFail, PhoneFail } from '@/lib/auth/auth-errors';
 import { AUTH_MODE } from '@/lib/auth/mode';
 import { PasswordField, authInput } from './password-field';
@@ -60,6 +63,20 @@ const ANNOUNCE_BUSY_AFTER_MS = 700;
 const RESET_LINK_MINUTES = REAL ? 60 : 30;
 const ROLE_EMOJI: Record<DemoRole, string> = { customer: '🙋', shop: '🏪', workshop: '🔧', admin: '🛡️' };
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+/** The API's origin for a connection hint; a relative or missing base has none. */
+function apiOrigin(): string | null {
+  try {
+    return process.env.NEXT_PUBLIC_API_URL ? new URL(process.env.NEXT_PUBLIC_API_URL).origin : null;
+  } catch {
+    return null;
+  }
+}
+/** Hosts the real sign-in fetches from (CORS requests): connections opened while the form is being filled in. */
+const WARM_FETCH_ORIGINS = [
+  'https://identitytoolkit.googleapis.com',
+  'https://securetoken.googleapis.com',
+  apiOrigin(),
+].filter((o): o is string => o !== null);
 const RECAPTCHA_ID = 'login-recaptcha';
 const TURNSTILE_ID = 'login-turnstile';
 
@@ -171,6 +188,31 @@ export function LoginFlow() {
     else announce(error.message, 'assertive');
   }, [error, announce]);
 
+  // Real mode: while the person types, fetch what the button needs next — Firebase's code, Cloudflare's script
+  // and connections to the hosts the sign-in talks to — so pressing it does not wait for downloads (2026-11-23).
+  useEffect(() => {
+    if (!REAL) return;
+    preconnect('https://challenges.cloudflare.com');
+    for (const origin of WARM_FETCH_ORIGINS) preconnect(origin, { crossOrigin: 'anonymous' });
+    void real().then((r) => {
+      r.warmFirebase(locale);
+    });
+    void turnstile().then((m) => {
+      m.warmTurnstile();
+    });
+  }, [locale]);
+
+  /** First touch of a form that carries the Cloudflare check: start the check now, while they fill it in. */
+  const prefetchedAt = useRef(0);
+  function onFirstTouch() {
+    if (!REAL || !document.getElementById(TURNSTILE_ID)) return;
+    if (Date.now() - prefetchedAt.current < 60_000) return;
+    prefetchedAt.current = Date.now();
+    void turnstile().then((m) => {
+      m.prefetchTurnstileToken(TURNSTILE_ID, locale, showChallenge);
+    });
+  }
+
   useEffect(
     () => () => {
       window.clearTimeout(busyTimer.current);
@@ -239,21 +281,41 @@ export function LoginFlow() {
     return done(account, event(account.role));
   }
 
+  function showChallenge(shown: boolean) {
+    setChallenge(shown);
+    if (shown) {
+      announce(t('securityCheckLead'));
+      track('click', { id: 'login_bot_check_shown', path: window.location.pathname });
+    }
+  }
+
   /** A fresh Turnstile token for the API; a visible challenge is labelled and announced. */
   async function botCheck(): Promise<string | null> {
     try {
       const { turnstileToken } = await turnstile();
-      return await turnstileToken(TURNSTILE_ID, locale, (shown) => {
-        setChallenge(shown);
-        if (shown) {
-          announce(t('securityCheckLead'));
-          track('click', { id: 'login_bot_check_shown', path: window.location.pathname });
-        }
-      });
+      return await turnstileToken(TURNSTILE_ID, locale, showChallenge);
     } catch {
       failForm(t('errBotCheck'));
       return null;
     }
+  }
+
+  /**
+   * Password sign-in with its Cloudflare check. A token the API calls expired or used is replaced once, silently,
+   * instead of showing an error.
+   * Null: the check itself failed (its message is already shown).
+   */
+  async function signInChecked(
+    r: RealClient,
+    input: { identifier: string; password: string; phoneToken?: boolean },
+  ): Promise<PasswordResult | null> {
+    return retryOnce(
+      async () => {
+        const token = await botCheck();
+        return token ? r.passwordSignIn({ ...input, turnstileToken: token, locale }) : null;
+      },
+      (result) => result !== null && !result.ok && result.reason === 'turnstile',
+    );
   }
 
   function phoneFail(reason: PhoneFail, code: string) {
@@ -421,16 +483,16 @@ export function LoginFlow() {
     who: string = identifier,
     event: (role: DemoRole) => string = (role) => `login_${role}`,
   ): Promise<Outcome> {
-    const token = await botCheck();
-    if (!token) return undefined;
     const r = await real();
-    const res = await r.passwordSignIn({ identifier: who, password, turnstileToken: token, locale });
+    const res = await signInChecked(r, { identifier: who, password });
+    if (!res) return undefined;
     if (!res.ok) {
       track('click', { id: 'login_password_failed', path: window.location.pathname });
       if (res.reason === 'invalid') fail(t('errSignIn'), 'login-password');
       else if (res.reason === 'locked')
         failForm(t('locked', { minutes: Math.max(1, Math.ceil((res.retryAfterSeconds ?? 900) / 60)) }));
       else if (res.reason === 'turnstile') failForm(t('errBotCheck'));
+      else if (res.reason === 'network') failForm(t('errNetwork'));
       else failForm(t('errUnavailable'));
       return undefined;
     }
@@ -472,15 +534,12 @@ export function LoginFlow() {
         codeFail(confirmed.reason, confirmed.code);
         return undefined;
       }
-      const token = await botCheck();
-      if (!token) return undefined;
-      const res = await r.passwordSignIn({
+      const res = await signInChecked(r, {
         identifier,
         password: pendingPassword.current,
-        turnstileToken: token,
-        locale,
         phoneToken: true,
       });
+      if (!res) return undefined;
       if (!res.ok || res.status !== 'signed_in') {
         if (!res.ok && res.reason === 'staff_expired') codeFail('expired');
         else if (!res.ok && res.reason === 'staff_mismatch') failForm(t('errStaffOtherAccount'));
@@ -622,14 +681,8 @@ export function LoginFlow() {
         return undefined;
       }
       // Linking turned the session into a `password` sign-in, which the API refuses: sign in the API's way.
-      const token = await botCheck();
-      if (!token) return undefined;
-      const session = await r.passwordSignIn({
-        identifier: `+91${phone}`,
-        password,
-        turnstileToken: token,
-        locale,
-      });
+      const session = await signInChecked(r, { identifier: `+91${phone}`, password });
+      if (!session) return undefined;
       if (!session.ok || session.status !== 'signed_in') {
         failForm(t('errUnavailable'));
         return undefined;
@@ -1177,7 +1230,7 @@ export function LoginFlow() {
   }
 
   return (
-    <div ref={root}>
+    <div ref={root} onFocusCapture={onFirstTouch}>
       {body}
       {/* Stable across steps, so a step change never unmounts the reCAPTCHA badge (inline, not fixed). */}
       {REAL ? <div id={RECAPTCHA_ID} className="mt-6" /> : null}

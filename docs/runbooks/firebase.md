@@ -58,3 +58,35 @@ The API writes the test accounts to the database in `.env` (the dev project): th
 2. Set `FIREBASE_DATABASE_URL` and `LIVE_TRANSPORT=rtdb` for the API worker, and `NEXT_PUBLIC_FIREBASE_DATABASE_URL` (same URL) at **web build time** (it is inlined). The web CSP then allows its `https` and `wss` host automatically.
 3. Deploy the rules: `firebase deploy --only database` from the repo root (`firebase.json` points at `firebase/database.rules.json`). Check in the console Rules tab. Rules are not deployed by CI.
 4. Verify: sign in on two browsers; add to the cart on one; the other updates within about a second. With the URL unset or the rules missing, nothing breaks: the pages poll (cart 60 s).
+
+## Sign-in speed and captchas (2026-11-23) — what to set in the consoles
+
+Two different checks can appear, and they are not the same thing:
+
+1. **Cloudflare Turnstile** (our own check on password sign-in). The site now asks for it in the quietest mode
+   (`interaction-only`: normally nothing is shown) and starts it while you type, so the button does not wait. It
+   shows a box only when Cloudflare is unsure about the visitor. To make that rarer: Cloudflare dashboard →
+   Turnstile → the MechDost widget → set **Widget mode** to **Managed** (not "Non-interactive" or "Invisible" with
+   strict rules), confirm **Hostnames** list `mechdost.com` and `www.mechdost.com` only, and in Security → Settings
+   turn **Bot Fight Mode** off for the sign-in path only if it is causing challenges for real users (check Security →
+   Events for "challenge" rows on `/v1/auth/password`).
+2. **Google reCAPTCHA** (Firebase phone sign-in, only when an SMS code is sent: sign-up, staff code, forgot
+   password). The console line "Failed to initialize reCAPTCHA Enterprise config. Triggering the reCAPTCHA v2
+   verification" means the project has no reCAPTCHA Enterprise provider, so Firebase falls back to the older v2 check,
+   which is the one that can show picture puzzles. Fix (console only, no code change): Firebase console →
+   Authentication → **Settings** → **SMS defense** (or "reCAPTCHA") → enable **reCAPTCHA Enterprise** for Phone
+   (this creates a reCAPTCHA Enterprise key in the Google Cloud project; the project must have billing and the
+   "reCAPTCHA Enterprise API" enabled in Google Cloud → APIs & Services). Also check Authentication → Settings →
+   **Authorized domains** has `mechdost.com`. Until then v2 keeps working; password sign-in never uses it.
+
+Harmless console lines (they come from third-party iframes, not our page, and block nothing we need): `Framing
+'https://www.google.com/' violates … frame-ancestors 'self'` (report-only policy of Google's own iframe),
+`Connecting to 'data:,' violates … connect-src` and `Fetch API cannot load data:,` (Cloudflare's challenge probes its
+own browser support from inside its iframe; the iframe has its own policy), `OTS parsing error: Size of decompressed
+WOFF 2.0 …` (a font in Cloudflare's challenge iframe, `normal?lang=en`). Nothing to change in `csp.ts`.
+
+What the sign-in does on our side now: the Firebase code, the Cloudflare script and connections to Cloudflare,
+Google and the API start loading when `/login` opens; the Cloudflare check starts at the first touch of the form and
+its token (valid 5 minutes, used once) is ready when the button is pressed; no extra token refresh after sign-in
+(one Google round trip less); the API looks up the account while it asks Cloudflare; an expired or used Cloudflare
+token, a network blink on the API call or on the token exchange is retried once silently before any error shows.
