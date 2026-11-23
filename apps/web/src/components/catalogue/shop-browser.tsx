@@ -10,6 +10,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -207,9 +208,16 @@ export function ShopBrowser({
   const results: { slug: string }[] = server ? server.slugs.map((slug) => ({ slug })) : demoResults;
   const shownCount = results.length + (appended?.cards.length ?? 0);
 
-  // After "Load more", focus the first new card (it is in the DOM once this render commits).
-  useEffect(() => {
-    if (focusSlug) firstNew.current?.focus({ preventScroll: true });
+  // After "Load more", bring the first new card to the top of the screen (below the sticky header, `scroll-padding-top`)
+  // and focus it. Leaving the scroll to the browser let scroll anchoring pin the button and footer in place while the new
+  // cards appeared above, out of sight (user 2026-11-23: "takes me to the footer and leaves me there"). Layout effect:
+  // runs before paint, so there is no jump after the cards show.
+  useLayoutEffect(() => {
+    const card = firstNew.current;
+    if (!focusSlug || !card) return;
+    const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    card.scrollIntoView({ block: 'start', behavior: still ? 'auto' : 'smooth' });
+    card.focus({ preventScroll: true });
   }, [focusSlug]);
 
   // Back/forward restore the filters without a reload.
@@ -556,7 +564,7 @@ export function ShopBrowser({
                   key={card.slug}
                   ref={card.slug === focusSlug ? firstNew : undefined}
                   tabIndex={card.slug === focusSlug ? -1 : undefined}
-                  className="animate-page-in"
+                  className="animate-page-in scroll-mt-[12px]"
                 >
                   {card.node}
                 </li>

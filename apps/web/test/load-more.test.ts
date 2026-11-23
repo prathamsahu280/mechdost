@@ -54,3 +54,18 @@ describe('shop Load more source guards', () => {
     }
   });
 });
+
+describe('after Load more the new products are on screen (user 2026-11-23: "takes me to the footer and leaves me there")', () => {
+  const browser = src('src/components/catalogue/shop-browser.tsx');
+  it('scrolls the first new card to the top below the header, then focuses it without a second jump', () => {
+    const effect = browser.slice(browser.indexOf('After "Load more"'));
+    expect(effect).toMatch(/useLayoutEffect\(/);
+    expect(effect).toMatch(/scrollIntoView\(\{ block: 'start'/);
+    expect(effect).toMatch(/focus\(\{ preventScroll: true \}\)/);
+    expect(effect.indexOf('scrollIntoView')).toBeLessThan(effect.indexOf('focus({ preventScroll: true })'));
+  });
+  it('cards stop below the sticky header and honour reduced motion', () => {
+    expect(browser).toMatch(/className="[^"]*\bscroll-mt-\[/);
+    expect(browser).toMatch(/prefers-reduced-motion: reduce/);
+  });
+});

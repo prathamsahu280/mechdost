@@ -98,18 +98,18 @@ export function SearchTrigger(
         onFocus={warm}
         className={
           isBar
-            ? 'press hidden h-10 min-w-10 shrink items-center justify-center gap-2 rounded-xl border border-transparent bg-pill px-2.5 text-[13.5px] font-semibold text-muted hover:border-line hover:text-ink nav:flex xl:min-w-[190px] xl:justify-start xl:pr-2.5 xl:pl-3'
+            ? 'press hidden h-10 min-w-10 shrink items-center justify-center gap-2 rounded-xl border border-transparent bg-pill px-2.5 text-[13.5px] font-semibold text-muted hover:border-line hover:text-ink nav:flex min-[1440px]:min-w-[190px] min-[1440px]:justify-start min-[1440px]:pr-2.5 min-[1440px]:pl-3'
             : 'press flex h-11 w-full items-center gap-2 rounded-[14px] bg-surface px-3 text-left text-sm text-muted shadow-float'
         }
       >
         <span aria-hidden="true" className="flex">
           {icon}
         </span>
-        <span className={isBar ? 'sr-only xl:not-sr-only' : 'truncate'}>{text}</span>
+        <span className={isBar ? 'sr-only min-[1440px]:not-sr-only' : 'truncate'}>{text}</span>
         {props.variant === 'bar' ? (
           <kbd
             aria-hidden="true"
-            className="ml-auto hidden rounded-md bg-surface px-1.5 py-0.5 font-sans text-[11px] font-bold text-muted ring-1 ring-line xl:inline"
+            className="ml-auto hidden rounded-md bg-surface px-1.5 py-0.5 font-sans text-[11px] font-bold text-muted ring-1 ring-line min-[1440px]:inline"
           >
             {props.hint}
           </kbd>

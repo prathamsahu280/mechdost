@@ -10,10 +10,10 @@ import { describe, expect, it } from 'vitest';
 const src = (p: string) => readFileSync(join(__dirname, '..', 'src', p), 'utf8');
 const css = src('app/[locale]/globals.css');
 
-describe('header at 1024-1279 px (v4, 2026-11-23)', () => {
-  it('shows the nav and the search pill as icons only until xl (labels stay the accessible names)', () => {
-    expect(src('components/site/nav-links.tsx')).toMatch(/sr-only xl:not-sr-only/);
-    expect(src('components/site/search-trigger.tsx')).toMatch(/sr-only xl:not-sr-only/);
+describe('header at 1024-1439 px (v4, 2026-11-23; labels moved to 1440 px: they wrapped at 1280 with a scrollbar)', () => {
+  it('shows the nav and the search pill as icons only until 1440 px (labels stay the accessible names)', () => {
+    expect(src('components/site/nav-links.tsx')).toContain('sr-only min-[1440px]:not-sr-only');
+    expect(src('components/site/search-trigger.tsx')).toContain('sr-only min-[1440px]:not-sr-only');
   });
 
   it('gives the icon-only controls a hover title (sighted users still get the word)', () => {

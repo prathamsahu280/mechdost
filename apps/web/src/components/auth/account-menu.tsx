@@ -101,7 +101,7 @@ export function AccountMenu({
           href={`${prefix}/login`}
           data-track="header_sign_in"
           title={copy.signIn}
-          className="press inline-flex h-10 min-w-10 items-center justify-center gap-2 rounded-xl bg-pill px-2.5 text-[13.5px] font-bold text-ink hover:bg-line min-[400px]:px-3.5"
+          className="press inline-flex h-10 min-w-10 items-center justify-center gap-2 rounded-xl bg-pill px-2.5 text-[13.5px] font-bold whitespace-nowrap text-ink hover:bg-line min-[400px]:px-3.5"
         >
           <span aria-hidden="true" className="flex">
             {signInIcon}

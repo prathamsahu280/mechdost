@@ -49,10 +49,10 @@ describe('signed-in header fits at every width', () => {
   });
 
   it('the desktop nav and search shrink to icons between 1024 and 1279 px', () => {
-    expect(nav).toContain('sr-only xl:not-sr-only');
-    expect(nav).toContain('xl:px-[13px]');
-    expect(search).toContain('sr-only xl:not-sr-only');
-    expect(search).toContain('xl:min-w-[190px]');
+    expect(nav).toContain('sr-only min-[1440px]:not-sr-only');
+    expect(nav).toContain('min-[1440px]:px-[13px]');
+    expect(search).toContain('sr-only min-[1440px]:not-sr-only');
+    expect(search).toContain('min-[1440px]:min-w-[190px]');
   });
 
   it('the phone order is bell, cart, avatar; the desktop order is bell, avatar, cart', () => {
