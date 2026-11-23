@@ -41,3 +41,31 @@ describe('a photo can never be wider than its card (live 2026-11-23: overlapping
     expect(src).toContain('relative flex w-full min-w-0 items-center justify-center overflow-hidden');
   });
 });
+
+describe('photo size never depends on the browser’s srcset density guess (live 2026-11-23: tiny photos on a Mac)', () => {
+  it('fills its capped box with object-contain instead of auto width/height', () => {
+    const html = renderToStaticMarkup(
+      createElement(ProductPhoto, {
+        photo: { ...photo, width: 300, height: 300 },
+        sizes: '25vw',
+        size: 'card',
+      }),
+    );
+    const img = /<img[^>]*>/.exec(html)?.[0] ?? '';
+    expect(img).toMatch(/class="[^"]*\bh-full\b[^"]*\bw-full\b/);
+    expect(img).toContain('object-contain');
+    expect(img).not.toMatch(/\bw-auto\b|\bh-auto\b/);
+    expect(img).toContain('max-width:min(100%, 300px)');
+  });
+  it('the blur placeholder is sized like the photo (contain), never a haze filling the box', () => {
+    const html = renderToStaticMarkup(
+      createElement(ProductPhoto, {
+        photo: { ...photo, lqip: 'data:image/webp;base64,AAAA' },
+        sizes: '25vw',
+        size: 'card',
+      }),
+    );
+    expect(html).toContain('background-size:contain');
+    expect(html).not.toContain('background-size:cover');
+  });
+});

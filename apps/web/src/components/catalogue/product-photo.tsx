@@ -31,6 +31,9 @@ export function ProductPhoto({
     sizes,
     preload: priority,
     loader: productPhotoLoader,
+    // Inline `contain` makes Next size the blur placeholder like the photo (a class would leave it `cover`, so it showed
+    // as a haze around the picture once the image fills its box; 2026-11-23).
+    style: { objectFit: 'contain' },
     ...(photo.lqip ? { placeholder: 'blur' as const, blurDataURL: photo.lqip } : {}),
   });
   const shape =
@@ -54,7 +57,7 @@ export function ProductPhoto({
           maxWidth: `min(100%, ${String(photo.width)}px)`,
           maxHeight: `min(100%, ${String(photo.height)}px)`,
         }}
-        className="h-auto max-h-full w-auto max-w-full object-contain"
+        className="h-full max-h-full w-full max-w-full object-contain"
       />
     </div>
   );
