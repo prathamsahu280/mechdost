@@ -434,6 +434,9 @@ interface PhotoRow {
   lqip: string | null;
 }
 
+/** Keys of `products.spec` the public product page never shows (import data for staff, search and later features). */
+const PRIVATE_SPEC_KEYS: ReadonlySet<string> = new Set(['fitment', 'amaronPrice', 'combos', 'categoryRule']);
+
 /** A live product page with each active variant's best offer for the PIN (or city). Others → 404. */
 export async function getCatalogueProduct(
   db: Tx,
@@ -511,8 +514,9 @@ export async function getCatalogueProduct(
     description: p.description === null ? null : localized(p.description, p.description_hi, opts.locale),
     compatibility:
       p.compatibility === null ? null : localized(p.compatibility, p.compatibility_hi, opts.locale),
-    // `spec.fitment` (Exide import: hundreds of vehicles) stays out of the page payload; search reads `compatibility`.
-    spec: Object.fromEntries(Object.entries(p.spec).filter(([key]) => key !== 'fitment')),
+    // Stays out of the page payload: `fitment` (hundreds of vehicles; search reads `compatibility`) and the importers'
+    // own price terms and combos (`amaronPrice` is a lower selling price: the customer price is MRP until a shop prices it).
+    spec: Object.fromEntries(Object.entries(p.spec).filter(([key]) => !PRIVATE_SPEC_KEYS.has(key))),
     attributeSet,
     attributes: attributeSet === null ? {} : readAttributes(attributeSet, p.spec),
     countryOfOrigin: p.country_of_origin,
