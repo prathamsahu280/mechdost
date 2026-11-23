@@ -24,12 +24,36 @@ vi.mock('../src/demo/store', () => ({
 vi.mock('../src/lib/cart-sync', () => ({ resetCartSync: () => undefined }));
 vi.mock('../src/lib/live/live-hub', () => ({ resetLive: () => undefined }));
 vi.mock('../src/lib/wishlist-store', () => ({ resetWishlist: () => undefined }));
-vi.mock('../src/lib/push/forget-device', () => ({ forgetPushDevice: () => Promise.resolve() }));
+let forgetPush: () => Promise<void> = () => Promise.resolve();
+vi.mock('../src/lib/push/forget-device', () => ({ forgetPushDevice: () => forgetPush() }));
 vi.mock('../src/lib/auth/firebase-client', () => ({ signOutReal: () => firebaseSignOut() }));
 
 const attributes = new Map<string, string>();
 beforeEach(() => {
   events.length = 0;
+  forgetPush = () => Promise.resolve();
+  const store = new Map<string, string>([
+    ['firebase:authUser:key:[DEFAULT]', '{}'],
+    ['mechdost-theme', 'dark'],
+  ]);
+  vi.stubGlobal('localStorage', {
+    get length() {
+      return store.size;
+    },
+    key: (i: number) => [...store.keys()][i] ?? null,
+    removeItem: (k: string) => {
+      store.delete(k);
+      events.push(`ls-removed:${k}`);
+    },
+  });
+  vi.stubGlobal('indexedDB', {
+    deleteDatabase: (name: string) => {
+      events.push(`idb-deleted:${name}`);
+      const req: { onsuccess?: () => void } = {};
+      setTimeout(() => req.onsuccess?.(), 0);
+      return req;
+    },
+  });
   attributes.clear();
   vi.stubGlobal('document', {
     documentElement: {
@@ -73,14 +97,33 @@ describe('sign-out leaves nothing of the account on screen', () => {
     expect(events.slice(-2)).toEqual(['firebase-signed-out', 'replace:/hi']);
   });
 
-  it('a hanging Firebase sign-out does not trap the page: home loads after the cap', async () => {
+  it('a hanging push clean-up never skips the Firebase sign-out (security review 2026-11-23)', async () => {
+    vi.useFakeTimers();
+    forgetPush = () => new Promise<void>(() => undefined);
+    firebaseSignOut = () => {
+      events.push('firebase-signed-out');
+      return Promise.resolve();
+    };
+    const { signOutEverywhere } = await import('../src/lib/auth/sign-out');
+    const done = signOutEverywhere();
+    await vi.advanceTimersByTimeAsync(2500);
+    await done;
+    expect(events.slice(-2)).toEqual(['firebase-signed-out', 'replace:/hi']);
+    expect(events.some((e) => e.startsWith('idb-deleted'))).toBe(false);
+  });
+
+  it('a hanging Firebase sign-out deletes the saved Firebase session before the reload (fail closed)', async () => {
     vi.useFakeTimers();
     firebaseSignOut = () => new Promise<void>(() => undefined);
     const { signOutEverywhere } = await import('../src/lib/auth/sign-out');
     const done = signOutEverywhere();
-    await vi.advanceTimersByTimeAsync(4000);
+    await vi.advanceTimersByTimeAsync(8000);
     await done;
+    expect(events).toContain('ls-removed:firebase:authUser:key:[DEFAULT]');
+    expect(events).not.toContain('ls-removed:mechdost-theme');
+    expect(events).toContain('idb-deleted:firebaseLocalStorageDb');
     expect(events.at(-1)).toBe('replace:/hi');
+    expect(events.indexOf('idb-deleted:firebaseLocalStorageDb')).toBeLessThan(events.indexOf('replace:/hi'));
   });
 
   it('the page content is hidden while signing out, and the menu hides it before loading the sign-out code', () => {
