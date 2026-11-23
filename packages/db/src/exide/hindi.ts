@@ -58,48 +58,6 @@ export const FEATURES_HI: Readonly<Record<string, string>> = {
   '16 Amps Output Socket': '16 एम्पियर आउटपुट सॉकेट',
 };
 
-export const FUEL_EN: Readonly<Record<string, string>> = {
-  diesel: 'Diesel',
-  petrol: 'Petrol',
-  cng: 'CNG',
-  lpg: 'LPG',
-  ev: 'EV',
-  electric_start: 'Electric start',
-  kick_start: 'Kick start',
-};
-
-export const FUEL_HI: Readonly<Record<string, string>> = {
-  diesel: 'डीज़ल',
-  petrol: 'पेट्रोल',
-  cng: 'CNG',
-  lpg: 'LPG',
-  ev: 'EV',
-  electric_start: 'सेल्फ़ स्टार्ट',
-  kick_start: 'किक स्टार्ट',
-};
-
-/** The source's "Fuel / start type" as a code (`null` = blank or not understood). */
-export function fuelCode(raw: string): string | null {
-  switch (raw.trim().toUpperCase()) {
-    case 'DIESEL':
-      return 'diesel';
-    case 'PETROL':
-      return 'petrol';
-    case 'CNG':
-      return 'cng';
-    case 'LPG':
-      return 'lpg';
-    case 'EV':
-      return 'ev';
-    case 'ES':
-      return 'electric_start';
-    case 'KS':
-      return 'kick_start';
-    default:
-      return null;
-  }
-}
-
 /** Generic words of a range name ("Exide Home New Star") that have a Hindi word; the rest are the maker's own names. */
 export const RANGE_WORDS_HI: Readonly<Record<string, string>> = {
   inverter: 'इन्वर्टर',
@@ -139,5 +97,4 @@ export const SPEC_VALUES_HI: Readonly<Record<string, string>> = {
   'flat plate': 'फ़्लैट प्लेट',
 };
 
-export const TERMINAL_HI: Readonly<Record<string, string>> = { left: 'बायाँ', right: 'दायाँ' };
-export const TERMINAL_EN: Readonly<Record<string, string>> = { left: 'Left', right: 'Right' };
+export { FUEL_EN, FUEL_HI, fuelCode, TERMINAL_EN, TERMINAL_HI } from '../battery-import/hindi';

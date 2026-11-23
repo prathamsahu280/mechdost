@@ -105,6 +105,13 @@ export interface ServerEventProps {
     productsArchived: number;
     packsCreated: number;
   };
+  /** The Amaron import wrote products (CLI `pnpm db:import:amaron`, 2026-11-23); old Amaron products are archived, never deleted. */
+  admin_amaron_imported: {
+    productsCreated: number;
+    productsUpdated: number;
+    productsArchived: number;
+    packsCreated: number;
+  };
   /** A brand or product range was switched off/on in Admin → Catalogue → Brands and ranges (hides its products). */
   admin_group_switched: {
     kind: 'brand' | 'range';

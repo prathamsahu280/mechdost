@@ -106,4 +106,6 @@ export * from './visibility';
 export * from './catalogue-groups';
 export * from './catalogue-bulk';
 export * from './catalogue-v2-import';
+export * from './battery-import';
 export * from './exide-import';
+export * from './amaron-import';

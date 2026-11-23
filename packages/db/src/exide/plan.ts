@@ -1,12 +1,30 @@
 import { hindiLeftovers } from '@mechdost/shared/catalogue-hindi';
-import { parseCsv, slugify } from '@mechdost/shared/catalogue-import';
-import type { NetQuantity } from '@mechdost/shared/product-attributes';
+import { slugify } from '@mechdost/shared/catalogue-import';
 import type { VehicleType } from '@mechdost/shared/vehicles';
-import { SUB_CATEGORIES } from '../catalogue-v2/glossary';
+import {
+  addVehicleWords,
+  categoryFor,
+  cleanSpecText,
+  compatibilityTexts,
+  csvRows,
+  highlightsOf,
+  mfrPart,
+  norm,
+  num,
+  parseEra,
+  parseModelYears,
+  planHindiLeftovers,
+  sortFitment,
+  titleWord as titleWordWith,
+  type BatteryFitment,
+  type BatteryPlan,
+  type CsvRow,
+  type Fact,
+  type PlannedProduct,
+  type ReportRow,
+} from '../battery-import';
 import {
   FEATURES_HI,
-  FUEL_EN,
-  FUEL_HI,
   fuelCode,
   RANGE_WORDS_HI,
   SPEC_LABELS_HI,
@@ -19,213 +37,27 @@ import {
  * Exide catalogue plan (user 2026-11-23, runbook `catalogue-import.md` "Exide import"): the pure step that turns the
  * three exidecare CSVs (`exide_batteries.csv`, `exide_vehicle_fitment.csv`) into what the database should hold: one
  * live product per source row, named exactly as Exide names it ("Exide Mileage ML55D23L"), with one pack, its
- * model code as the manufacturer part number, typed specs and the full fitment list. No I/O here.
+ * model code as the manufacturer part number, typed specs and the full fitment list. No I/O here. The parts every
+ * battery brand shares (CSV reading, years and eras, fitment texts, plan shapes) live in `../battery-import`.
  */
-export type CsvRow = Record<string, string>;
-
-/** Header + records of a CSV text (BOM dropped) as one object per row. */
-export function csvRows(text: string): CsvRow[] {
-  const parsed = parseCsv(text);
-  if (!parsed.ok) throw new Error('The CSV is malformed');
-  const [header, ...records] = parsed.records;
-  if (!header) return [];
-  return records.map((rec) => Object.fromEntries(header.map((h, i) => [h.trim(), (rec[i] ?? '').trim()])));
-}
+export { csvRows, type CsvRow };
+export {
+  COMPATIBILITY_CAP,
+  HOME_POWER,
+  cleanSpecText,
+  parseEra,
+  parseModelYears,
+  titleVehicle,
+  yearText,
+  type PlannedCategory,
+} from '../battery-import';
 
 export const BRAND = { slug: 'exide', name: 'Exide' } as const;
-export const HOME_POWER = {
-  slug: 'home-power',
-  name: 'Inverters & home UPS',
-  nameHi: 'इन्वर्टर और होम UPS',
-} as const;
 
-export interface PlannedCategory {
-  slug: string;
-  /** Top-level category it sits under; null = top-level itself (`home-power`). */
-  parent: string | null;
-  name: string;
-  nameHi: string;
-}
-
-export interface ExideFitment {
-  type: string;
-  make: string;
-  model: string;
-  /** `diesel | petrol | cng | lpg | ev | electric_start | kick_start`; null = not stated. */
-  fuel: string | null;
-  /**
-   * Model years the battery fits, when known. Exide's list has no year column: only the few vehicles whose model
-   * text carries one ("CRETA -2023 ONWARDS") have it; the rest are null until another source fills them in.
-   * `yearTo` null with `yearFrom` set = "onwards".
-   */
-  yearFrom: number | null;
-  yearTo: number | null;
-  /** `bs2 | bs3 | bs4 | bs6 | new | old | facelift`; null = nothing known. */
-  era: string | null;
-}
-
-const BS_YEARS: Readonly<Record<string, [number, number | null]>> = {
-  bs2: [2005, 2010],
-  bs3: [2010, 2017],
-  bs4: [2017, 2020],
-  bs6: [2020, null],
-};
-
-/**
- * The fitment list's "Model year / era (from the name)" column (Exide's site gives no year; the column is filled where
- * the model name hints at one) as years and a short era code. An unknown value is null, never an error.
- */
-export function parseEra(raw: string): Pick<ExideFitment, 'yearFrom' | 'yearTo' | 'era'> {
-  const text = raw.trim();
-  const none = { yearFrom: null, yearTo: null, era: null };
-  if (text === '') return none;
-  const bs = /^BS (VI|IV|III|II)\b/i.exec(text);
-  if (bs?.[1]) {
-    const era = { VI: 'bs6', IV: 'bs4', III: 'bs3', II: 'bs2' }[bs[1].toUpperCase()] ?? null;
-    const years = era === null ? undefined : BS_YEARS[era];
-    return years ? { yearFrom: years[0], yearTo: years[1], era } : none;
-  }
-  const onwards = /^((?:19|20)\d\d) onwards$/i.exec(text);
-  if (onwards?.[1]) return { yearFrom: Number(onwards[1]), yearTo: null, era: null };
-  const model = /^((?:19|20)\d\d) model$/i.exec(text);
-  if (model?.[1]) return { yearFrom: Number(model[1]), yearTo: Number(model[1]), era: null };
-  if (/^newer version/i.test(text)) return { ...none, era: 'new' };
-  if (/^older version/i.test(text)) return { ...none, era: 'old' };
-  if (/^facelift/i.test(text)) return { ...none, era: 'facelift' };
-  return none;
-}
-
-const ERA_EN: Readonly<Record<string, string>> = {
-  bs2: 'BS II',
-  bs3: 'BS III',
-  bs4: 'BS IV',
-  bs6: 'BS VI',
-  new: 'new model',
-  old: 'old model',
-  facelift: 'facelift',
-};
-const ERA_HI: Readonly<Record<string, string>> = {
-  bs2: 'BS II',
-  bs3: 'BS III',
-  bs4: 'BS IV',
-  bs6: 'BS VI',
-  new: 'नया मॉडल',
-  old: 'पुराना मॉडल',
-  facelift: 'फ़ेसलिफ़्ट',
-};
-
-const YEAR = '((?:19|20)\\d\\d)';
-const YEAR_RANGE = new RegExp(`[\\s-]*\\b${YEAR}\\s*(?:-|TO)\\s*${YEAR}\\b\\s*$`, 'i');
-const YEAR_ONWARDS = new RegExp(`[\\s-]*\\b${YEAR}\\s*(?:ONW[A-Z]*|\\+)\\s*$`, 'i');
-const YEAR_SINGLE = new RegExp(`[\\s-]*\\b${YEAR}\\s*$`);
-
-/**
- * Model years written inside a vehicle model ("CRETA -2023 ONWARDS", "SCORPIO 2022"; the source cuts the text at 30
- * characters, so "ONW" and "ONWAR" also mean onwards). Returns the model without the year part. A bare year is that
- * model year only; tractor codes such as "2030DI-33HP" are not years.
- */
-export function parseModelYears(raw: string): {
-  model: string;
-  yearFrom: number | null;
-  yearTo: number | null;
-} {
-  const text = raw.trim();
-  const clean = (m: RegExpExecArray) =>
-    text
-      .slice(0, m.index)
-      .replace(/[\s-]+$/, '')
-      .trim();
-  const range = YEAR_RANGE.exec(text);
-  if (range?.[1] && range[2]) {
-    const from = Number(range[1]);
-    const to = Number(range[2]);
-    if (to >= from) return { model: clean(range), yearFrom: from, yearTo: to };
-  }
-  const onwards = YEAR_ONWARDS.exec(text);
-  if (onwards?.[1]) return { model: clean(onwards), yearFrom: Number(onwards[1]), yearTo: null };
-  const single = YEAR_SINGLE.exec(text);
-  if (single?.[1] && clean(single) !== '')
-    return { model: clean(single), yearFrom: Number(single[1]), yearTo: Number(single[1]) };
-  return { model: text, yearFrom: null, yearTo: null };
-}
-
-/** "2023 onwards", "2019-2022", "2022" and the Hindi forms ("2023 से", "2019 से 2022"). */
-export function yearText(e: Pick<ExideFitment, 'yearFrom' | 'yearTo'>, hi: boolean): string | null {
-  if (e.yearFrom === null) return null;
-  const from = String(e.yearFrom);
-  if (e.yearTo === null) return hi ? `${from} से` : `${from} onwards`;
-  if (e.yearTo === e.yearFrom) return from;
-  return hi ? `${from} से ${String(e.yearTo)}` : `${from}-${String(e.yearTo)}`;
-}
-
-export interface ExidePlannedProduct {
-  /** 1-based row of `exide_batteries.csv` (header excluded). */
-  sourceRow: number;
-  productType: string;
-  slug: string;
-  range: { slug: string; name: string; nameHi: string };
-  category: PlannedCategory;
-  name: string;
-  nameHi: string;
-  description: string;
-  descriptionHi: string;
-  specSummary: string;
-  specSummaryHi: string;
-  compatibility: string | null;
-  compatibilityHi: string | null;
-  highlights: string[];
-  highlightsHi: string[];
-  vehicleTypes: VehicleType[];
-  spec: Record<string, unknown>;
-  warranty: string | null;
-  hsn: string;
-  gstRateBp: number;
-  status: 'live' | 'draft';
-  variant: {
-    sku: string;
-    model: string;
-    mrpPaise: number | null;
-    weightG: number | null;
-    netQuantity: NetQuantity;
-    options: Record<string, string>;
-  };
-  /** Manufacturer part number (kind `mfr`) = the model code. */
-  partNumber: { kind: 'mfr'; value: string; normalised: string };
-  photo: { file: string; sourceUrl: string; alt: string; altHi: string } | null;
-  fitmentCount: number;
-}
-
-export interface ExideReportRow {
-  sourceRow: number;
-  productType: string;
-  range: string;
-  model: string;
-  name: string;
-  slug: string;
-  sku: string;
-  category: string;
-  /** Rupees incl. GST, or '' = price on request. */
-  mrpRupees: string;
-  warrantyMonths: string;
-  fitmentCount: number;
-  photoFile: string;
-  /** `model` = this model's own photo; `range` = Exide's one picture for the whole range (generic). */
-  photoKind: 'model' | 'range';
-  status: string;
-}
-
-export interface ExidePlan {
-  products: ExidePlannedProduct[];
-  rows: ExideReportRow[];
-  /** Feature lines with no Hindi entry (left out of the Hindi text); the unit test requires none. */
-  untranslated: string[];
-  /** Lower-case words of vehicle makes and models: Latin by rule 10 ("brand and model names"). */
-  vehicleWords: ReadonlySet<string>;
-  slugCollisions: number;
-  skuCollisions: number;
-  /** Fitment rows whose battery model is not in the battery list. */
-  orphanFitment: number;
-}
+export type ExideFitment = BatteryFitment;
+export type ExidePlannedProduct = PlannedProduct;
+export type ExideReportRow = ReportRow;
+export type ExidePlan = BatteryPlan;
 
 interface TypeInfo {
   code: string;
@@ -329,45 +161,23 @@ const TYPES: Readonly<Record<string, TypeInfo>> = {
   },
 };
 
-const FITMENT_TYPES: Readonly<Record<string, { code: string; order: number }>> = {
-  'Car / SUV / MUV': { code: 'car_suv_muv', order: 0 },
-  'LCV / HCV': { code: 'lcv_hcv', order: 1 },
-  Tractor: { code: 'tractor', order: 2 },
-  'Two-wheeler': { code: 'two_wheeler', order: 3 },
-  'Three-wheeler': { code: 'three_wheeler', order: 4 },
-  Genset: { code: 'genset', order: 5 },
+const FITMENT_TYPES: Readonly<Record<string, string>> = {
+  'Car / SUV / MUV': 'car_suv_muv',
+  'LCV / HCV': 'lcv_hcv',
+  Tractor: 'tractor',
+  'Two-wheeler': 'two_wheeler',
+  'Three-wheeler': 'three_wheeler',
+  Genset: 'genset',
 };
 
-/** Fitment shown in the searchable text: this many vehicles, then "and N more" (the full list is in `spec.fitment`). */
-export const COMPATIBILITY_CAP = 40;
 const GST_BP = 1800;
 
 const ACRONYMS = new Set(['HUPS', 'GQP', 'HB', 'EL', 'UPS', 'LIB']);
 
 /** Title case of the letter runs of one word ("E-RIDE" → "E-Ride", "HUPS" stays); words with digits are codes. */
 function titleWord(word: string): string {
-  if (/\d/.test(word)) return word;
-  if (word.toUpperCase() === 'AGMI') return 'AGMi';
-  return word.replace(/[A-Za-z]+/g, (run) =>
-    ACRONYMS.has(run.toUpperCase()) || run.length <= 1
-      ? run.toUpperCase()
-      : run.charAt(0).toUpperCase() + run.slice(1).toLowerCase(),
-  );
-}
-
-/** "Maruti Suzuki Swift"-style title case for the upper-case vehicle names; short words ("MG", "KIA") stay upper. */
-export function titleVehicle(text: string): string {
-  return text
-    .split(/\s+/)
-    .filter((w) => w !== '')
-    .map((w) =>
-      /\d/.test(w)
-        ? w
-        : w.replace(/[A-Za-z]+/g, (run) =>
-            run.length <= 3 ? run.toUpperCase() : run.charAt(0).toUpperCase() + run.slice(1).toLowerCase(),
-          ),
-    )
-    .join(' ');
+  if (!/\d/.test(word) && word.toUpperCase() === 'AGMI') return 'AGMi';
+  return titleWordWith(word, ACRONYMS);
 }
 
 /** The range as Exide titles it: "EXIDE INVA ZEN" → "Exide Inva Zen"; a range without the brand gets it in front. */
@@ -377,31 +187,6 @@ export function rangeTitle(range: string): { en: string; hi: string; words: stri
   const words = rest.map(titleWord);
   const hi = rest.map((w) => RANGE_WORDS_HI[w.toLowerCase()] ?? titleWord(w));
   return { en: ['Exide', ...words].join(' '), hi: ['Exide', ...hi].join(' '), words };
-}
-
-function num(text: string | undefined): number | null {
-  const t = (text ?? '').trim();
-  if (!/^\d+(\.\d+)?$/.test(t)) return null;
-  const n = Number(t);
-  return n > 0 ? n : null;
-}
-
-const norm = (text: string) =>
-  text
-    .normalize('NFKD')
-    .toUpperCase()
-    .replace(/[^A-Z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-
-/** Source text without the broken `�` bytes of the export (`220V � 7v` was `220V ± 7V`). */
-export function cleanSpecText(text: string): string {
-  return text
-    .replace(/\s*�\s*(?=\d)/g, ' ±')
-    .replace(/(\d)\s*�/g, '$1 ±')
-    .replace(/�/g, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .replace(/^±\s*/, '±');
 }
 
 function otherSpecs(text: string): { key: string; value: string }[] {
@@ -435,14 +220,6 @@ function featureLines(text: string): string[] {
 
 /** English wording of a feature line (the source drops an apostrophe: "Indias" → "India's"). */
 const featureEn = (line: string) => line.replace(/^Indias /, "India's ");
-
-interface Fact {
-  key: string;
-  labelEn: string;
-  labelHi: string;
-  valueEn: string;
-  valueHi: string;
-}
 
 const numText = (n: number) => String(n);
 
@@ -503,7 +280,7 @@ export function planExide(input: PlanInput): ExidePlan {
       orphanFitment += 1;
       continue;
     }
-    const type = FITMENT_TYPES[f['Vehicle type'] ?? '']?.code;
+    const type = FITMENT_TYPES[f['Vehicle type'] ?? ''];
     const make = (f.Make ?? '').trim();
     const years = parseModelYears(f.Model ?? '');
     const vModel = years.model;
@@ -528,19 +305,9 @@ export function planExide(input: PlanInput): ExidePlan {
     seenFit.add(key);
     byModel.set(model, [...(byModel.get(model) ?? []), entry]);
   }
-  const typeOrder = (t: string) => Object.values(FITMENT_TYPES).find((x) => x.code === t)?.order ?? 9;
   for (const list of byModel.values()) {
-    list.sort(
-      (a, b) =>
-        typeOrder(a.type) - typeOrder(b.type) ||
-        cmp(a.make, b.make) ||
-        cmp(a.model, b.model) ||
-        cmp(a.fuel ?? '', b.fuel ?? '') ||
-        (a.yearFrom ?? 0) - (b.yearFrom ?? 0),
-    );
-    for (const e of list)
-      for (const w of `${titleVehicle(e.make)} ${titleVehicle(e.model)}`.match(/[A-Za-z]{3,}/g) ?? [])
-        vehicleWords.add(w.toLowerCase());
+    sortFitment(list);
+    addVehicleWords(list, vehicleWords);
   }
 
   const modelCount = new Map<string, number>();
@@ -749,14 +516,12 @@ export function planExide(input: PlanInput): ExidePlan {
     }
 
     // Highlights (max 8, same count in both languages).
-    const hl: [string, string][] = [];
-    for (const key of ['warranty', 'capacity', 'rating', 'ccaEn', 'size', 'weight', 'terminal']) {
-      const f = factOf(key);
-      if (f) hl.push([`${f.labelEn}: ${f.valueEn}`, `${f.labelHi}: ${f.valueHi}`]);
-    }
-    featsEn.forEach((en, i) => hl.push([en, featsHi[i] ?? en]));
-    const highlights = hl.slice(0, 8).map((h) => h[0]);
-    const highlightsHi = hl.slice(0, 8).map((h) => h[1]);
+    const { highlights, highlightsHi } = highlightsOf(
+      facts,
+      ['warranty', 'capacity', 'rating', 'ccaEn', 'size', 'weight', 'terminal'],
+      featsEn,
+      featsHi,
+    );
 
     // Description.
     const note = warrantyNote(b['Warranty / spec notes from Exide'] ?? '');
@@ -776,38 +541,18 @@ export function planExide(input: PlanInput): ExidePlan {
     }
 
     // Fitment text (searchable) and its Hindi twin.
-    const labels = (fuelWords: Readonly<Record<string, string>>, hi: boolean) => {
-      const seen = new Set<string>();
-      const out: string[] = [];
-      for (const e of fit) {
-        const base = `${titleVehicle(e.make)} ${titleVehicle(e.model)}`;
-        const eraWords = hi ? ERA_HI : ERA_EN;
-        const detail = [
-          e.fuel ? (fuelWords[e.fuel] ?? '') : null,
-          e.era ? eraWords[e.era] : null,
-          yearText(e, hi),
-        ].filter((d): d is string => d !== null && d !== '');
-        const label = detail.length > 0 ? `${base} (${detail.join(', ')})` : base;
-        if (!seen.has(label)) {
-          seen.add(label);
-          out.push(label);
-        }
-      }
-      return out;
-    };
-    const fitText = (list: string[], more: (n: number) => string): string | null =>
-      list.length === 0
-        ? null
-        : [
-            ...list.slice(0, COMPATIBILITY_CAP),
-            ...(list.length > COMPATIBILITY_CAP ? [more(list.length - COMPATIBILITY_CAP)] : []),
-          ]
-            .join(', ')
-            .replace(/, (and \d+ more|और \d+ अन्य)$/, ' $1');
-    const compatibility = fitText(labels(FUEL_EN, false), (n) => `and ${String(n)} more`);
-    const compatibilityHi = fitText(labels(FUEL_HI, true), (n) => `और ${String(n)} अन्य`);
+    const { compatibility, compatibilityHi } = compatibilityTexts(fit);
 
     const draft = pictureFile === '' || !exists(pictureFile);
+    const photo =
+      pictureFile === ''
+        ? null
+        : {
+            file: pictureFile,
+            sourceUrl: ((b['Picture URL'] ?? '').split('|')[0] ?? '').trim().slice(0, 500),
+            alt: name,
+            altHi: nameHi,
+          };
     const product: ExidePlannedProduct = {
       sourceRow,
       productType: info.code,
@@ -817,7 +562,7 @@ export function planExide(input: PlanInput): ExidePlan {
         name: rangeName,
         nameHi: rangeNameHi,
       },
-      category: categoryFor(info),
+      category: categoryFor(info.category),
       name,
       nameHi,
       description: descEn.join('\n\n'),
@@ -842,16 +587,10 @@ export function planExide(input: PlanInput): ExidePlan {
         netQuantity: { qty: 1, unit: 'piece' },
         options: { model },
       },
-      partNumber: { kind: 'mfr', value: model, normalised: model.toUpperCase().replace(/[^A-Z0-9]/g, '') },
-      photo:
-        pictureFile === ''
-          ? null
-          : {
-              file: pictureFile,
-              sourceUrl: ((b['Picture URL'] ?? '').split('|')[0] ?? '').trim().slice(0, 500),
-              alt: name,
-              altHi: nameHi,
-            },
+      partNumbers: [mfrPart(model)],
+      partNumber: mfrPart(model),
+      photos: photo ? [photo] : [],
+      photo,
       fitmentCount: fit.length,
     };
     products.push(product);
@@ -884,37 +623,5 @@ export function planExide(input: PlanInput): ExidePlan {
   };
 }
 
-const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
-
-function categoryFor(info: TypeInfo): PlannedCategory {
-  if (info.category === 'home') return { ...HOME_POWER, parent: null };
-  const sub = SUB_CATEGORIES[info.category];
-  if (!sub) throw new Error(`No sub-category for ${info.category}`);
-  return { slug: sub.slug, parent: sub.parent, name: sub.name, nameHi: sub.nameHi };
-}
-
-/**
- * Hindi texts of the plan that still hold English words (hard rule 10). Vehicle makes and models are brand and model
- * names, so the words of the fitment list may stay in Latin script.
- */
-export function exideHindiLeftovers(plan: ExidePlan): { slug: string; field: string; words: string[] }[] {
-  const out: { slug: string; field: string; words: string[] }[] = [];
-  for (const p of plan.products) {
-    const fields: [string, string | null][] = [
-      ['name_hi', p.nameHi],
-      ['range.name_hi', p.range.nameHi],
-      ['category.name_hi', p.category.nameHi],
-      ['spec_summary_hi', p.specSummaryHi],
-      ['compatibility_hi', p.compatibilityHi],
-      ['description_hi', p.descriptionHi],
-      ['photo.alt_hi', p.photo?.altHi ?? null],
-      ...p.highlightsHi.map((h): [string, string] => ['highlights_hi', h]),
-    ];
-    for (const [field, text] of fields) {
-      if (text === null) continue;
-      const words = hindiLeftovers(text).filter((w) => !plan.vehicleWords.has(w.toLowerCase()));
-      if (words.length > 0) out.push({ slug: p.slug, field, words });
-    }
-  }
-  return out;
-}
+/** Hindi texts of the plan that still hold English words (hard rule 10; see `planHindiLeftovers`). */
+export const exideHindiLeftovers = planHindiLeftovers;

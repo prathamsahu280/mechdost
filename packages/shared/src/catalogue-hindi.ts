@@ -11,6 +11,7 @@ const BRANDS = [
   'Castrol',
   'Gulf',
   'Exide',
+  'Amaron',
   'Tata',
   'Green',
   'Motors',
@@ -123,6 +124,14 @@ const SERIES = [
   'Powerbox',
   'Star',
   'Zen',
+  // Amaron ranges (amaron import, 2026-11-23)
+  'Black',
+  'Current',
+  'Duro',
+  'Flo',
+  'Fresh',
+  'Harvest',
+  'Hiway',
 ];
 
 /** Vehicle makers and parts brands the product texts name as fitment. */
@@ -156,6 +165,7 @@ const STANDARDS = [
   'DEX',
   'MERC',
   'CNG',
+  'LPG',
   'SUV',
   'LCV',
   'GDI',
@@ -176,6 +186,9 @@ const STANDARDS = [
   'LCD',
   'LED',
   'MUV',
+  'CCA',
+  'EFB',
+  'SMF',
   'HCV',
 ];
 
