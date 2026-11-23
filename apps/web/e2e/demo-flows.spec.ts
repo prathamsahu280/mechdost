@@ -488,15 +488,25 @@ test.describe('theme and assistant', () => {
     await expect(page.locator('html')).toHaveAttribute('lang', 'hi');
   });
 
-  test('follows the system dark preference without a saved choice', async ({ browser }) => {
-    const context = await browser.newContext({
-      storageState: CONSENT_DECIDED,
-      colorScheme: 'dark',
-    });
+  test('opens light even on a dark-mode device without a saved choice; a saved dark choice still applies', async ({
+    browser,
+  }) => {
+    // User 2026-11-23: "make the website open on light mode by default" (decisions 2026-11-23).
+    const context = await browser.newContext({ storageState: CONSENT_DECIDED, colorScheme: 'dark' });
     const page = await context.newPage();
     await page.goto('/');
-    const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
-    expect(bg).toBe('rgb(10, 20, 36)');
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+    expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).not.toBe(
+      'rgb(10, 20, 36)',
+    );
+    await page.evaluate(() => {
+      localStorage.setItem('mechdost-theme', 'dark');
+    });
+    await page.reload();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe(
+      'rgb(10, 20, 36)',
+    );
     await context.close();
   });
 

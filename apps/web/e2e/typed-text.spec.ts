@@ -52,6 +52,10 @@ const FIELDS: [string, string][] = [
 for (const scheme of ['light', 'dark'] as const) {
   test(`typed text is readable in ${scheme} mode`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: scheme, reducedMotion: 'reduce' });
+    // The site opens light by default (decisions 2026-11-23): dark is a saved choice, not the system setting.
+    await page.addInitScript((theme) => {
+      localStorage.setItem('mechdost-theme', theme);
+    }, scheme);
     for (const [path, selector] of FIELDS) {
       await page.goto(path);
       expect(await typedContrast(page, selector), `${path} ${selector}`).toBeGreaterThanOrEqual(4.5);
