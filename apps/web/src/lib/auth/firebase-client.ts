@@ -1,5 +1,8 @@
 import { getApps, initializeApp } from '@firebase/app';
 import {
+  applyActionCode,
+  checkActionCode,
+  confirmPasswordReset,
   connectAuthEmulator,
   EmailAuthProvider,
   getAuth,
@@ -13,6 +16,7 @@ import {
   signInWithPhoneNumber,
   signOut,
   updatePassword,
+  verifyPasswordResetCode,
   type Auth,
   type ConfirmationResult,
 } from '@firebase/auth';
@@ -355,6 +359,56 @@ export async function changePassword(
 /** Forgot password by email: always looks the same to the person asking (no account enumeration). */
 export async function sendResetEmail(email: string, locale: string): Promise<void> {
   await sendPasswordResetEmail(firebaseAuth(locale), email).catch(() => undefined);
+}
+
+export type ActionResult<T = object> = ({ ok: true } & T) | { ok: false; code: string };
+
+/** Email link `verifyEmail` / `verifyAndChangeEmail`: apply the code (single use). */
+export async function applyEmailLink(code: string, locale: string): Promise<ActionResult> {
+  try {
+    await applyActionCode(firebaseAuth(locale), code);
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, code: analyticsAuthCode(codeOf(err)) };
+  }
+}
+
+/** Email link `recoverEmail`: read the restored address, then apply the code. */
+export async function recoverEmailLink(
+  code: string,
+  locale: string,
+): Promise<ActionResult<{ email: string }>> {
+  try {
+    const a = firebaseAuth(locale);
+    const info = await checkActionCode(a, code);
+    await applyActionCode(a, code);
+    return { ok: true, email: info.data.email ?? '' };
+  } catch (err) {
+    return { ok: false, code: analyticsAuthCode(codeOf(err)) };
+  }
+}
+
+/** Email link `resetPassword`, step 1: is the code good, and for which email. */
+export async function checkResetLink(code: string, locale: string): Promise<ActionResult<{ email: string }>> {
+  try {
+    return { ok: true, email: await verifyPasswordResetCode(firebaseAuth(locale), code) };
+  } catch (err) {
+    return { ok: false, code: analyticsAuthCode(codeOf(err)) };
+  }
+}
+
+/** Email link `resetPassword`, step 2: set the new password (the code is used up). */
+export async function finishPasswordReset(
+  code: string,
+  password: string,
+  locale: string,
+): Promise<ActionResult> {
+  try {
+    await confirmPasswordReset(firebaseAuth(locale), code, password);
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, code: analyticsAuthCode(codeOf(err)) };
+  }
 }
 
 export async function signOutReal(): Promise<void> {

@@ -445,6 +445,8 @@ const id = z
   .refine((v) => !/\d{7,}/u.test(v), 'looks like a phone number');
 const path = ANALYTICS_PATH;
 
+const EMAIL_ACTION_MODES = ['verifyEmail', 'resetPassword', 'recoverEmail', 'verifyAndChangeEmail'] as const;
+
 export const CLIENT_EVENT_SCHEMAS = {
   page_view: z.object({ path, locale: z.enum(['en', 'hi']) }).strict(),
   click: z.object({ id, path }).strict(),
@@ -454,6 +456,16 @@ export const CLIENT_EVENT_SCHEMAS = {
       stage: z.enum(['send', 'confirm']),
       code: z.string().regex(/^(auth\/[a-z0-9-]{1,60}|unknown)$/),
       path,
+    })
+    .strict(),
+  // The email link page (/auth/action, 2026-11-23): which kind of link, never the code, email or any free text.
+  auth_email_action_opened: z.object({ mode: z.enum(EMAIL_ACTION_MODES) }).strict(),
+  auth_email_verified: z.object({ mode: z.enum(['verifyEmail', 'verifyAndChangeEmail']) }).strict(),
+  auth_password_reset_done: z.object({}).strict(),
+  auth_email_action_failed: z
+    .object({
+      mode: z.enum(EMAIL_ACTION_MODES),
+      code: z.string().regex(/^(auth\/[a-z0-9-]{1,60}|missing|unknown)$/),
     })
     .strict(),
   // Server-side scrub too: never trust the client to have removed phone numbers or emails.
