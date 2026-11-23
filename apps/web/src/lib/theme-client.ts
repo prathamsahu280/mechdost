@@ -3,11 +3,11 @@ import { THEME_STORAGE_KEY } from '@/lib/theme';
 
 export type Theme = 'light' | 'dark';
 
-/** The theme the page shows now: the explicit choice on `<html data-theme>`, else the system preference. */
+/** The theme the page shows now: the explicit choice on `<html data-theme>`, else light (the default). */
 export function currentTheme(): Theme {
   const explicit = document.documentElement.dataset.theme;
   if (explicit === 'dark' || explicit === 'light') return explicit;
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  return 'light'; // light by default (user 2026-11-23)
 }
 
 function subscribe(onChange: () => void) {
@@ -48,11 +48,11 @@ export function toggleTheme(): void {
  * (QA 2026-11-14). Called from an effect of the footer's toggle, which is on every page.
  */
 export function applySavedTheme(): void {
+  let saved: string | null = null;
   try {
-    const saved = localStorage.getItem(THEME_STORAGE_KEY);
-    if ((saved === 'dark' || saved === 'light') && !document.documentElement.dataset.theme)
-      document.documentElement.dataset.theme = saved;
+    saved = localStorage.getItem(THEME_STORAGE_KEY);
   } catch {
-    // Storage blocked: the system theme applies.
+    // Storage blocked: light applies.
   }
+  document.documentElement.dataset.theme ??= saved === 'dark' ? 'dark' : 'light';
 }

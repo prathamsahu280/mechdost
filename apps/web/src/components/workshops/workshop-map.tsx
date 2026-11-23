@@ -43,7 +43,7 @@ const FIT = { padding: 64, maxZoom: 14, duration: 700 };
 function currentTheme(): 'light' | 'dark' {
   const explicit = document.documentElement.dataset.theme;
   if (explicit === 'dark' || explicit === 'light') return explicit;
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  return 'light'; // light by default (user 2026-11-23)
 }
 
 /** Touch screens keep two-finger panning so a one-finger swipe still scrolls the page (except full screen). */

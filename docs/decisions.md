@@ -1658,3 +1658,10 @@ Brand and range switches never change product status (lossless); one SQL rule `p
 - **Differences from the prototype, on purpose:** the sliding indicator is a CSS colour cross-fade between items (no client JS); no mini-cart popover (the cart button opens /cart); no "2 active" hint in the menu (needs data); no brand tagline under the logo; the bar shrinks with a CSS scroll-driven animation (browsers without it keep the full-size bar); the phone search bar is a trigger for the same palette (its data travels once).
 - **JS budget (spec 16):** the account menu and the search palette are lazy chunks (loaded on hover, focus, tap or `/`); first-load islands import no icon library; guards `test/chrome-v4.test.ts` plus the existing budget tests.
 - **Docs and tests:** design-system.md "Site chrome v4"; state-audit rows `CHR-ACCOUNT-MENU` and `CHR-SEARCH` (sweep only), checklist regenerated; e2e Sign-out steps now open the account menu.
+
+## 2026-11-23 — Light mode by default
+
+User: "make the website open on light mode by default". Without a saved choice the site opens light, whatever the
+device's system theme (replaces "follow the system theme" from 2026-11-01). Dark mode stays one tap away (footer and
+account menu) and a saved dark choice still applies on every visit. Code: `THEME_INIT_SCRIPT` in
+`apps/web/src/lib/theme.ts`, fallbacks in `theme-client.ts` and the three maps; guard `test/theme-light-default.test.ts`.

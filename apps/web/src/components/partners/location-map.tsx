@@ -16,7 +16,7 @@ const RAIPUR: PickPoint = { lat: 21.2514, lng: 81.6296 };
 function currentTheme(): 'light' | 'dark' {
   const explicit = document.documentElement.dataset.theme;
   if (explicit === 'dark' || explicit === 'light') return explicit;
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  return 'light'; // light by default (user 2026-11-23)
 }
 
 /**
