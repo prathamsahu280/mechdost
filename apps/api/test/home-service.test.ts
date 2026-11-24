@@ -294,7 +294,12 @@ describe('home booking and the arrival code', () => {
     expect(at(mine.body, 'workshop.ratingCount')).toBe(0);
     const theirs = await call(owner, 'GET', `/workshop/requests/${code}`);
     expect(at(theirs.body, 'home.arrivalCode')).toBeNull();
-    expect(JSON.stringify(theirs.body)).not.toContain(String(at(mine.body, 'home.arrivalCode')));
+    // No field of the workshop's view holds the code. A substring check was flaky: a random 4-digit code can occur
+    // inside an id or a timestamp (CI 2026-11-24, code 3303).
+    const secret = String(at(mine.body, 'home.arrivalCode'));
+    const values = (v: unknown): unknown[] =>
+      v !== null && typeof v === 'object' ? Object.values(v).flatMap(values) : [v];
+    expect(values(theirs.body).map(String)).not.toContain(secret);
     const admin = await call(ops, 'GET', `/admin/service-requests/${code}`);
     expect(at(admin.body, 'home.arrivalCode')).toBeNull();
   });
