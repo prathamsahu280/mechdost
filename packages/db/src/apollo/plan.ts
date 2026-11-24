@@ -276,6 +276,12 @@ export function planApollo(input: ApolloPlanInput): ApolloPlan {
     const descHi = DESCRIPTIONS_HI.get(descEn);
     if (descEn !== '' && descHi === undefined) untranslated.add(descEn);
 
+    if (pattern.toLowerCase() === 'others')
+      checks.push({
+        slug: '',
+        name,
+        note: 'The site lists this size under the pattern "Others" (no tread pattern name). Handled: imported as the product "Apollo Others"; the admin can rename it.',
+      });
     const tl = t['Tubeless / tube type'] ?? '';
     const ply = intOf(t['Ply rating']);
     const patternName = tyrePatternName('Apollo', pattern);

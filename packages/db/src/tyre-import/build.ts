@@ -171,6 +171,18 @@ function uniform<T>(items: readonly T[]): T | undefined {
   return first !== undefined && items.every((x) => x === first) ? first : undefined;
 }
 
+/** The options of a size variant (all strings, empty ones left out): what the size picker and compare read. */
+function sizeOptions(r: TyreRow, label: string): Record<string, string> {
+  const o: Record<string, string> = { size: label };
+  if (r.loadIndex !== null) o.loadIndex = r.loadIndex;
+  if (r.speedRating !== null) o.speedRating = r.speedRating;
+  if (r.construction !== null) o.construction = r.construction;
+  if (r.tubeless !== null) o.tlTt = r.tubeless ? 'TL' : 'TT';
+  if (r.plyRating !== null) o.ply = String(r.plyRating);
+  if (r.position === 'front' || r.position === 'rear' || r.position === 'both') o.frontRear = r.position;
+  return o;
+}
+
 /** The typed data of one size (spec per SKU, under `spec.variantSpecs`). */
 function sizeSpec(r: TyreRow): Record<string, unknown> {
   const spec: Record<string, unknown> = { model: r.sizeText, listedProductType: r.listedType };
@@ -294,7 +306,7 @@ export function planTyreRows(
         mrpPaise: r.mrpPaise,
         weightG: null,
         netQuantity: { qty: 1, unit: 'piece' },
-        options: { size: label },
+        options: sizeOptions(r, label),
         barcode: r.barcode ?? null,
         partNumbers: part.normalised === '' ? [] : [part],
       });

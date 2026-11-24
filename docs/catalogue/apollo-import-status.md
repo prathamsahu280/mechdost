@@ -6,163 +6,163 @@ Source rows: 468. Products planned: 131. Fitment lines in the plan: 1103.
 
 ### By category
 
-|                   | Products |
-| ----------------- | -------- |
-| car-suv-tyres     | 146      |
-| truck-bus-tyres   | 115      |
-| two-wheeler-tyres | 92       |
-| industrial-tyres  | 57       |
-| farm-tyres        | 54       |
-| otr-tyres         | 4        |
+|                   | Source rows |
+| ----------------- | ----------- |
+| car-suv-tyres     | 146         |
+| truck-bus-tyres   | 115         |
+| two-wheeler-tyres | 92          |
+| industrial-tyres  | 57          |
+| farm-tyres        | 54          |
+| otr-tyres         | 4           |
 
 ### By product type
 
-|                      | Products |
-| -------------------- | -------- |
-| Car / SUV / van tyre | 146      |
-| Truck and bus tyre   | 115      |
-| Bike / scooter tyre  | 92       |
-| Industrial tyre      | 57       |
-| Farm tyre            | 54       |
-| Earthmover tyre      | 4        |
+|                      | Source rows |
+| -------------------- | ----------- |
+| Car / SUV / van tyre | 146         |
+| Truck and bus tyre   | 115         |
+| Bike / scooter tyre  | 92          |
+| Industrial tyre      | 57          |
+| Farm tyre            | 54          |
+| Earthmover tyre      | 4           |
 
 ### By range
 
-|                     | Products |
-| ------------------- | -------- |
-| Amazer 4G Life      | 26       |
-| Amazer XP           | 20       |
-| ActiGRIP R1         | 15       |
-| Apterra HT 2        | 15       |
-| Apterra AT2         | 14       |
-| Alnac 4G            | 13       |
-| Endurace RA         | 13       |
-| Aspire 5            | 12       |
-| FX 222              | 12       |
-| Actigrip R4         | 10       |
-| Endumaxx LT         | 10       |
-| Solift R300         | 10       |
-| Altrust             | 9        |
-| Apterra HT          | 9        |
-| Tramplr Xr          | 9        |
-| Amazer XL           | 8        |
-| Virat               | 8        |
-| Bhim                | 7        |
-| Nulift              | 7        |
-| Endurace LD         | 6        |
-| FX 212              | 6        |
-| Tramplr St          | 6        |
-| Vihaan              | 6        |
-| ActiGRIP R2         | 5        |
-| ActiZIP F2          | 5        |
-| Actizip R5          | 5        |
-| Apterra Cross       | 5        |
-| EnduTrax MA         | 5        |
-| FX 333              | 5        |
-| Terra               | 5        |
-| ALT 188-HR          | 4        |
-| Abhimanyu           | 4        |
-| Alnac 4GS           | 4        |
-| Alpha S1            | 4        |
-| Amar Gold           | 4        |
-| Endurace RT         | 4        |
-| FX 515              | 4        |
-| Farmking            | 4        |
-| Krishak Gold        | 4        |
-| Virat 23            | 4        |
-| AMP 918             | 3        |
-| ARG 217             | 3        |
-| ASR 614             | 3        |
-| AWE 713             | 3        |
-| ActiSTEER F1        | 3        |
-| Actigrip S5         | 3        |
-| Agrex AT            | 3        |
-| Alpha H1            | 3        |
-| Apterra HP          | 3        |
-| XT7                 | 3        |
-| XT7 Gold HD         | 3        |
-| AIT 416             | 2        |
-| AMP 928             | 2        |
-| ASR 624             | 2        |
-| AWL 812             | 2        |
-| ActiGRIP S3         | 2        |
-| ActiZIP S2          | 2        |
-| Actigrip F6         | 2        |
-| Actigrip R6         | 2        |
-| Actigrip S8         | 2        |
-| Actisteer F7        | 2        |
-| Actizip R3          | 2        |
-| Actizip S6          | 2        |
-| Altrust GO          | 2        |
-| Amar DeLuxe         | 2        |
-| Axvt                | 2        |
-| EnduRace RAT        | 2        |
-| EnduTuff Mining     | 2        |
-| Endurace RD         | 2        |
-| Krishak Gold (N)    | 2        |
-| Mine Lug            | 2        |
-| Terra BHL           | 2        |
-| Terra BT            | 2        |
-| Terra Crane         | 2        |
-| Terra MT            | 2        |
-| WAV                 | 2        |
-| XT-9 Gold           | 2        |
-| Y LON               | 2        |
-| AIT 406             | 1        |
-| ALT 118             | 1        |
-| ALT108              | 1        |
-| ARC 317             | 1        |
-| ARC307              | 1        |
-| ActiGRIP S4         | 1        |
-| ActiZIP F3          | 1        |
-| ActiZIP S1          | 1        |
-| Actigrip F8         | 1        |
-| Actigrip R8         | 1        |
-| Actizip F5          | 1        |
-| Amar Deluxe X       | 1        |
-| Apterra HL          | 1        |
-| Aspire              | 1        |
-| Aspire 4G+          | 1        |
-| EnduComfort CA2     | 1        |
-| EnduRace ED         | 1        |
-| EnduRace RA(T)      | 1        |
-| EnduRace RA(T) NRG  | 1        |
-| EnduRace RD nRG     | 1        |
-| EnduRace RD2        | 1        |
-| EnduTrax MD         | 1        |
-| EnduTrax MD+        | 1        |
-| EnduTuff SOD        | 1        |
-| Endumaxx LT HD      | 1        |
-| Endumile LHA        | 1        |
-| Endumile LHD        | 1        |
-| Endurace HA 46      | 1        |
-| Endurace LD+        | 1        |
-| Endurace LDR        | 1        |
-| Endurace MA326      | 1        |
-| Endurace MD Plus    | 1        |
-| Endurace RA1        | 1        |
-| Endurace RA18       | 1        |
-| Endurace RD HD      | 1        |
-| Endurace RD23       | 1        |
-| Endutrax MD         | 1        |
-| Gripper             | 1        |
-| Harbor Pro          | 1        |
-| Harbor Pro II       | 1        |
-| Haulug X            | 1        |
-| Kaizen 50L          | 1        |
-| Kaizen XDT          | 1        |
-| Loadstar Super Gold | 1        |
-| Loadstar Super XP   | 1        |
-| Maha Trooper        | 1        |
-| Mine Lug S          | 1        |
-| Others              | 1        |
-| SL HD               | 1        |
-| Terra GT            | 1        |
-| Terra Roller        | 1        |
-| Virat Harvest       | 1        |
-| Virat Harvest Plus  | 1        |
-| XT 100 HD X         | 1        |
-| XT100 HD            | 1        |
+|                     | Source rows |
+| ------------------- | ----------- |
+| Amazer 4G Life      | 26          |
+| Amazer XP           | 20          |
+| ActiGRIP R1         | 15          |
+| Apterra HT 2        | 15          |
+| Apterra AT2         | 14          |
+| Alnac 4G            | 13          |
+| Endurace RA         | 13          |
+| Aspire 5            | 12          |
+| FX 222              | 12          |
+| Actigrip R4         | 10          |
+| Endumaxx LT         | 10          |
+| Solift R300         | 10          |
+| Altrust             | 9           |
+| Apterra HT          | 9           |
+| Tramplr Xr          | 9           |
+| Amazer XL           | 8           |
+| Virat               | 8           |
+| Bhim                | 7           |
+| Nulift              | 7           |
+| Endurace LD         | 6           |
+| FX 212              | 6           |
+| Tramplr St          | 6           |
+| Vihaan              | 6           |
+| ActiGRIP R2         | 5           |
+| ActiZIP F2          | 5           |
+| Actizip R5          | 5           |
+| Apterra Cross       | 5           |
+| EnduTrax MA         | 5           |
+| FX 333              | 5           |
+| Terra               | 5           |
+| ALT 188-HR          | 4           |
+| Abhimanyu           | 4           |
+| Alnac 4GS           | 4           |
+| Alpha S1            | 4           |
+| Amar Gold           | 4           |
+| Endurace RT         | 4           |
+| FX 515              | 4           |
+| Farmking            | 4           |
+| Krishak Gold        | 4           |
+| Virat 23            | 4           |
+| AMP 918             | 3           |
+| ARG 217             | 3           |
+| ASR 614             | 3           |
+| AWE 713             | 3           |
+| ActiSTEER F1        | 3           |
+| Actigrip S5         | 3           |
+| Agrex AT            | 3           |
+| Alpha H1            | 3           |
+| Apterra HP          | 3           |
+| XT7                 | 3           |
+| XT7 Gold HD         | 3           |
+| AIT 416             | 2           |
+| AMP 928             | 2           |
+| ASR 624             | 2           |
+| AWL 812             | 2           |
+| ActiGRIP S3         | 2           |
+| ActiZIP S2          | 2           |
+| Actigrip F6         | 2           |
+| Actigrip R6         | 2           |
+| Actigrip S8         | 2           |
+| Actisteer F7        | 2           |
+| Actizip R3          | 2           |
+| Actizip S6          | 2           |
+| Altrust GO          | 2           |
+| Amar DeLuxe         | 2           |
+| Axvt                | 2           |
+| EnduRace RAT        | 2           |
+| EnduTuff Mining     | 2           |
+| Endurace RD         | 2           |
+| Krishak Gold (N)    | 2           |
+| Mine Lug            | 2           |
+| Terra BHL           | 2           |
+| Terra BT            | 2           |
+| Terra Crane         | 2           |
+| Terra MT            | 2           |
+| WAV                 | 2           |
+| XT-9 Gold           | 2           |
+| Y LON               | 2           |
+| AIT 406             | 1           |
+| ALT 118             | 1           |
+| ALT108              | 1           |
+| ARC 317             | 1           |
+| ARC307              | 1           |
+| ActiGRIP S4         | 1           |
+| ActiZIP F3          | 1           |
+| ActiZIP S1          | 1           |
+| Actigrip F8         | 1           |
+| Actigrip R8         | 1           |
+| Actizip F5          | 1           |
+| Amar Deluxe X       | 1           |
+| Apterra HL          | 1           |
+| Aspire              | 1           |
+| Aspire 4G+          | 1           |
+| EnduComfort CA2     | 1           |
+| EnduRace ED         | 1           |
+| EnduRace RA(T)      | 1           |
+| EnduRace RA(T) NRG  | 1           |
+| EnduRace RD nRG     | 1           |
+| EnduRace RD2        | 1           |
+| EnduTrax MD         | 1           |
+| EnduTrax MD+        | 1           |
+| EnduTuff SOD        | 1           |
+| Endumaxx LT HD      | 1           |
+| Endumile LHA        | 1           |
+| Endumile LHD        | 1           |
+| Endurace HA 46      | 1           |
+| Endurace LD+        | 1           |
+| Endurace LDR        | 1           |
+| Endurace MA326      | 1           |
+| Endurace MD Plus    | 1           |
+| Endurace RA1        | 1           |
+| Endurace RA18       | 1           |
+| Endurace RD HD      | 1           |
+| Endurace RD23       | 1           |
+| Endutrax MD         | 1           |
+| Gripper             | 1           |
+| Harbor Pro          | 1           |
+| Harbor Pro II       | 1           |
+| Haulug X            | 1           |
+| Kaizen 50L          | 1           |
+| Kaizen XDT          | 1           |
+| Loadstar Super Gold | 1           |
+| Loadstar Super XP   | 1           |
+| Maha Trooper        | 1           |
+| Mine Lug S          | 1           |
+| Others              | 1           |
+| SL HD               | 1           |
+| Terra GT            | 1           |
+| Terra Roller        | 1           |
+| Virat Harvest       | 1           |
+| Virat Harvest Plus  | 1           |
+| XT 100 HD X         | 1           |
+| XT100 HD            | 1           |
 
 ### Price on request (no MRP in the source): 288
 
@@ -468,9 +468,10 @@ No price is shown on the maker's page, so the tyre is listed as "price on reques
 - Apollo Others (apollo-others): no_photo_on_site
 - Apollo Endurace RA18 (apollo-endurace-ra18): no_photo_on_site
 
-### Source oddities and how they were handled: 5
+### Source oddities and how they were handled: 6
 
 - Apollo Aspire 4G+ (apollo-aspire-4g-plus): The site shows no size table for this pattern. Handled: the size comes from the row itself.
+- Apollo Others 195 R14 C (apollo-others): The site lists this size under the pattern "Others" (no tread pattern name). Handled: imported as the product "Apollo Others"; the admin can rename it.
 - Apollo Bhim 195 D15 (load index 102/99) (apollo-bhim): Listed on more than one pattern page; merged into one size (also on https://www.apollotyres.com/en-in/truck-and-bus-tyres/products/2101-BHIM/).
 - Apollo Endurace LD+ (apollo-endurace-ld-plus): The site shows no size table for this pattern. Handled: the size comes from the row itself.
 - Apollo EnduTrax MD+ (apollo-endutrax-md-plus): The site shows no size table for this pattern. Handled: the size comes from the row itself.

@@ -12,9 +12,20 @@
 
 ## Status (update after every step; resume from here)
 
-- 2026-11-24 evening: Tasks A1 (writer N variants) and A2 (CEAT and MRF one product per pattern) are committed (a174caa6). Task A3 (Apollo adapter) is in progress in a background agent: WIP files (`packages/db/src/apollo/`, `repo/apollo-import.ts`, `apps/api/src/cli/import-apollo.ts`, `tyre-import/features-hi-apollo.ts`, tests `apollo-plan.test.ts`, `apollo-import.test.ts`, `docs/catalogue/apollo-import-*`) are committed as a WIP snapshot and may not pass gates yet. `apps/api/src/cli/tmp-apollo-images.ts` is a throwaway image-size script: delete it once the numbers are in the status report.
-- NOT started: B1 (size picker and `apiProduct`), B2 (cart by sku, order size label + migration 0084, cards, compare, fitment, admin variant editor), E (screenshots in `scratchpad/size-picker/`, final gates, docs). Run the UI skill chain (accessibility-lead, ui-ux-pro-max, shadcn-component-discovery, frontend-design, web-design-guidelines, shadcn-component-review) before B1 and B2.
-- Full gates (prettier, tsc x4, eslint x3, vitest shared/db/api/web; db and api take about 15 min each) are NOT yet re-run after A1-A3: run them one at a time in the morning.
+- 2026-11-24 night: Tasks A1, A2 and A3 are done and committed on this branch (writer N variants, CEAT and MRF per pattern, Apollo adapter with Hindi dictionaries, `pnpm db:import:apollo`, reports regenerated with `--plan-only`; options keys per the Data contract). Gates: see the commit message and `docs/progress.md`.
+- NOT started (other agent): B1 (size picker and `apiProduct`), B2 (cart by sku, order size label + migration 0084, cards, compare, fitment, admin variant editor), E (screenshots, final gates).
+
+## Data contract (stable; the storefront and admin code against it)
+
+`PlannedProduct.variants[]` (in `packages/db/src/battery-import/types.ts`), written by `repo/battery-import.ts`:
+
+- `sku`: globally unique (`CEAT-<sku>`, `MRF-<normalised name>`, `APOLLO-<shop sku or normalised name>`).
+- `model`: the size label exactly as the maker writes it ("145/70R12 69T TL"); also `options.size`.
+- `mrpPaise`: integer paise or `null` (price on request). `barcode`: EAN or `null` (`product_variants.barcode`). `weightG`: null. `netQuantity`: `{ qty: 1, unit: 'piece' }`. `partNumbers[]`: kind `mfr`.
+- `options` (all strings, empty keys omitted): `{ size, loadIndex, speedRating, construction (radial|bias), tlTt (TL|TT), ply, frontRear (front|rear|both) }`. Stored in `product_variants.options`.
+- Product-level: `name` is the pattern ("CEAT Milaze X3"; "MRF Savari (car and SUV tyre)" when a pattern is sold as two kinds), `spec.pattern`, `spec.sizeCount`, uniform `construction` / `tubeless` / `position`.
+- Per-size private data: `products.spec.variantSpecs[sku]` = `{ size, widthMm | sectionWidthInch, aspectRatioPct, rimInch, construction, loadIndexText, loadIndex, speedSymbol, plyRating, tubeless, tubeIncluded, position, fitment[], ceatPrice?, shopSku?, barcode?, sourceChecks?, productPage }`. `variantSpecs` is in `PRIVATE_SPEC_KEYS` (never in the public payload); expose a public-safe subset only if the storefront needs it.
+- Variants come in listing order (rim, width, aspect, label). A size that leaves the source is archived (its variant `status` = `archived`), never deleted.
 
 ## Global Constraints
 

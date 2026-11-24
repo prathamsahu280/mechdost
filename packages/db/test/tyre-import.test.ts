@@ -194,10 +194,10 @@ describe('CEAT and MRF import', () => {
     for (const key of ['fitment', 'ceatPrice', 'sourceChecks', 'variantSpecs'])
       expect(page.spec).not.toHaveProperty(key);
     expect(page.spec).toMatchObject({ pattern: 'Milaze X3', sizeCount: 2 });
-    expect(page.variants.map((v) => [v.options, v.mrpPaise ?? null])).toEqual(
+    expect(page.variants.map((v) => [v.options.size, v.options.tlTt, v.mrpPaise ?? null])).toEqual(
       expect.arrayContaining([
-        [{ size: '145/70R12 69T TL' }, 290000],
-        [{ size: '155/70R12 73T TL' }, null],
+        ['145/70R12 69T TL', 'TL', 290000],
+        ['155/70R12 73T TL', 'TL', null],
       ]),
     );
   });

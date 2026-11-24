@@ -6,94 +6,94 @@ Source rows: 336. Products planned: 71. Fitment lines in the plan: 4451.
 
 ### By category
 
-|                   | Products |
-| ----------------- | -------- |
-| two-wheeler-tyres | 173      |
-| car-suv-tyres     | 125      |
-| truck-bus-tyres   | 38       |
+|                   | Source rows |
+| ----------------- | ----------- |
+| two-wheeler-tyres | 173         |
+| car-suv-tyres     | 125         |
+| truck-bus-tyres   | 38          |
 
 ### By product type
 
-|                               | Products |
-| ----------------------------- | -------- |
-| Motorcycle tyre               | 142      |
-| Car / SUV tyre                | 125      |
-| Commercial (truck / bus) tyre | 38       |
-| Scooter tyre                  | 31       |
+|                               | Source rows |
+| ----------------------------- | ----------- |
+| Motorcycle tyre               | 142         |
+| Car / SUV tyre                | 125         |
+| Commercial (truck / bus) tyre | 38          |
+| Scooter tyre                  | 31          |
 
 ### By range
 
-|                     | Products |
-| ------------------- | -------- |
-| Milaze X5           | 32       |
-| Milaze X3           | 25       |
-| Sportdrive SUV Calm | 19       |
-| Secura Drive        | 18       |
-| Securalyfe          | 16       |
-| Zoom X3             | 16       |
-| Sportdrive Calm     | 14       |
-| Gripp X5            | 12       |
-| Zoom Plus           | 12       |
-| Securadrive SUV     | 10       |
-| Crossdrive AT       | 9        |
-| Gripp XL            | 7        |
-| Milaze              | 7        |
-| Zoom Plus F         | 7        |
-| Secura F85          | 6        |
-| Secura Zoom F       | 6        |
-| Crossrad            | 5        |
-| Gripp XL F          | 5        |
-| Mile XL X3-D        | 5        |
-| Secura Zoom+        | 5        |
-| Gripp Rad Steel     | 4        |
-| Gripp XC            | 4        |
-| Sportrad            | 4        |
-| Winmile X3-AW       | 4        |
-| Winsuper X3-D       | 4        |
-| Zoom Cruz           | 4        |
-| Zoom XL             | 4        |
-| Energydrive         | 3        |
-| Gripp X3            | 3        |
-| Mile XL X3-R        | 3        |
-| Sportrad ST Rear    | 3        |
-| Winmile X3-R        | 3        |
-| Zoom                | 3        |
-| Zoom Cruz F         | 3        |
-| Zoom D              | 3        |
-| Zoom Rad            | 3        |
-| Zoom X3 F           | 3        |
-| Crossdrive HT       | 2        |
-| FM Super            | 2        |
-| Gripp               | 2        |
-| Gripp RE            | 2        |
-| HCL Super           | 2        |
-| Mile XL Rib         | 2        |
-| Sportdrive          | 2        |
-| Winenergy X3-R      | 2        |
-| Zoom Classic        | 2        |
-| Zoom XL F           | 2        |
-| Gripp Cruz          | 1        |
-| Gripp XL Plus       | 1        |
-| HCL Super HL        | 1        |
-| Lug XL Pro          | 1        |
-| Lyfmax X3-D         | 1        |
-| Lyfmax X3-R         | 1        |
-| Milaze LT           | 1        |
-| Mile XL             | 1        |
-| Mile XL Pro         | 1        |
-| Rockmax X3          | 1        |
-| Rockmax X3 ML       | 1        |
-| Secura F67          | 1        |
-| Secura Neo          | 1        |
-| Secura Sport        | 1        |
-| Sportdrive SUV      | 1        |
-| Sportrad ST Front   | 1        |
-| Winload X3-D        | 1        |
-| Winload X5-D        | 1        |
-| Winmile X3-D        | 1        |
-| Zoom Rad X1         | 1        |
-| Zoom Rad X1 F       | 1        |
-| Zoom Rad X3         | 1        |
+|                     | Source rows |
+| ------------------- | ----------- |
+| Milaze X5           | 32          |
+| Milaze X3           | 25          |
+| Sportdrive SUV Calm | 19          |
+| Secura Drive        | 18          |
+| Securalyfe          | 16          |
+| Zoom X3             | 16          |
+| Sportdrive Calm     | 14          |
+| Gripp X5            | 12          |
+| Zoom Plus           | 12          |
+| Securadrive SUV     | 10          |
+| Crossdrive AT       | 9           |
+| Gripp XL            | 7           |
+| Milaze              | 7           |
+| Zoom Plus F         | 7           |
+| Secura F85          | 6           |
+| Secura Zoom F       | 6           |
+| Crossrad            | 5           |
+| Gripp XL F          | 5           |
+| Mile XL X3-D        | 5           |
+| Secura Zoom+        | 5           |
+| Gripp Rad Steel     | 4           |
+| Gripp XC            | 4           |
+| Sportrad            | 4           |
+| Winmile X3-AW       | 4           |
+| Winsuper X3-D       | 4           |
+| Zoom Cruz           | 4           |
+| Zoom XL             | 4           |
+| Energydrive         | 3           |
+| Gripp X3            | 3           |
+| Mile XL X3-R        | 3           |
+| Sportrad ST Rear    | 3           |
+| Winmile X3-R        | 3           |
+| Zoom                | 3           |
+| Zoom Cruz F         | 3           |
+| Zoom D              | 3           |
+| Zoom Rad            | 3           |
+| Zoom X3 F           | 3           |
+| Crossdrive HT       | 2           |
+| FM Super            | 2           |
+| Gripp               | 2           |
+| Gripp RE            | 2           |
+| HCL Super           | 2           |
+| Mile XL Rib         | 2           |
+| Sportdrive          | 2           |
+| Winenergy X3-R      | 2           |
+| Zoom Classic        | 2           |
+| Zoom XL F           | 2           |
+| Gripp Cruz          | 1           |
+| Gripp XL Plus       | 1           |
+| HCL Super HL        | 1           |
+| Lug XL Pro          | 1           |
+| Lyfmax X3-D         | 1           |
+| Lyfmax X3-R         | 1           |
+| Milaze LT           | 1           |
+| Mile XL             | 1           |
+| Mile XL Pro         | 1           |
+| Rockmax X3          | 1           |
+| Rockmax X3 ML       | 1           |
+| Secura F67          | 1           |
+| Secura Neo          | 1           |
+| Secura Sport        | 1           |
+| Sportdrive SUV      | 1           |
+| Sportrad ST Front   | 1           |
+| Winload X3-D        | 1           |
+| Winload X5-D        | 1           |
+| Winmile X3-D        | 1           |
+| Zoom Rad X1         | 1           |
+| Zoom Rad X1 F       | 1           |
+| Zoom Rad X3         | 1           |
 
 ### Price on request (no MRP in the source): 161
 

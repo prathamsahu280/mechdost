@@ -95,7 +95,7 @@ export function statusMarkdown<P extends BatteryPlan>(
   },
 ): string {
   const table = (title: string, pairs: [string, number][]) =>
-    `### ${title}\n\n| | Products |\n|---|---|\n${pairs.map(([k, n]) => `| ${k} | ${String(n)} |`).join('\n')}\n`;
+    `### ${title}\n\n| | Source rows |\n|---|---|\n${pairs.map(([k, n]) => `| ${k} | ${String(n)} |`).join('\n')}\n`;
   const missing = plan.rows.filter((r) => r.mrpRupees === '');
   const results = meta.results ? tally(plan.rows.map((r) => meta.results?.get(r.slug) ?? 'planned')) : [];
   const archived = meta.archived;

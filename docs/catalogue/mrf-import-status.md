@@ -6,259 +6,259 @@ Source rows: 918. Products planned: 225. Fitment lines in the plan: 3504.
 
 ### By category
 
-|                        | Products |
-| ---------------------- | -------- |
-| tubes-flaps            | 247      |
-| two-wheeler-tyres      | 188      |
-| car-suv-tyres          | 184      |
-| farm-tyres             | 101      |
-| truck-bus-tyres        | 72       |
-| light-commercial-tyres | 69       |
-| otr-tyres              | 37       |
-| three-wheeler-tyres    | 20       |
+|                        | Source rows |
+| ---------------------- | ----------- |
+| tubes-flaps            | 247         |
+| two-wheeler-tyres      | 188         |
+| car-suv-tyres          | 184         |
+| farm-tyres             | 101         |
+| truck-bus-tyres        | 72          |
+| light-commercial-tyres | 69          |
+| otr-tyres              | 37          |
+| three-wheeler-tyres    | 20          |
 
 ### By product type
 
-|                                    | Products |
-| ---------------------------------- | -------- |
-| Tube / flap                        | 247      |
-| Two-wheeler tyre                   | 188      |
-| Passenger car tyre                 | 184      |
-| Farm tyre                          | 101      |
-| Truck and bus tyre                 | 54       |
-| OTR tyre (off the road)            | 37       |
-| Pick-up tyre                       | 34       |
-| LCV tyre (light commercial)        | 23       |
-| Three-wheeler tyre                 | 20       |
-| SCV tyre (small commercial)        | 12       |
-| MCV tyre (medium commercial)       | 10       |
-| ICV tyre (intermediate commercial) | 8        |
+|                                    | Source rows |
+| ---------------------------------- | ----------- |
+| Tube / flap                        | 247         |
+| Two-wheeler tyre                   | 188         |
+| Passenger car tyre                 | 184         |
+| Farm tyre                          | 101         |
+| Truck and bus tyre                 | 54          |
+| OTR tyre (off the road)            | 37          |
+| Pick-up tyre                       | 34          |
+| LCV tyre (light commercial)        | 23          |
+| Three-wheeler tyre                 | 20          |
+| SCV tyre (small commercial)        | 12          |
+| MCV tyre (medium commercial)       | 10          |
+| ICV tyre (intermediate commercial) | 8           |
 
 ### By range
 
-|                                                 | Products |
-| ----------------------------------------------- | -------- |
-| Radial Poly Pouch-Fitted                        | 47       |
-| Radial BU Tube-Loose                            | 28       |
-| ZLX                                             | 28       |
-| Motorcycle Tube                                 | 27       |
-| Shakti Life                                     | 27       |
-| Wanderer Street                                 | 21       |
-| Bias Poly Pouch                                 | 18       |
-| Bias Tube-Fitted                                | 18       |
-| Krishi                                          | 17       |
-| Muscle-Lift                                     | 17       |
-| Nylogrip Plus                                   | 17       |
-| Markus                                          | 15       |
-| Nylon Reinforced Flaps                          | 14       |
-| Shakti Life Plus                                | 14       |
-| Tractor Rear-Fitted Tube                        | 13       |
-| ZTX A1                                          | 13       |
-| Zapper FS                                       | 13       |
-| Tractor Rear-Loose Tube                         | 12       |
-| Mogrip Meteor M                                 | 11       |
-| ZVTS                                            | 11       |
-| Zapper Y                                        | 10       |
-| Moped Tube                                      | 9        |
-| Musclerok-Earthmovers                           | 9        |
-| Nylogrip Ezeeride Rear                          | 9        |
-| Perfinza CLX1                                   | 9        |
-| Wanderer A/T                                    | 9        |
-| Zapper C                                        | 9        |
-| Shakti Super                                    | 8        |
-| Steel Master M154                               | 8        |
-| Mogrip Meteor M+                                | 7        |
-| Perfinza CLY1                                   | 7        |
-| Scooter Tube                                    | 7        |
-| Steel MUSCLE-S3K4                               | 7        |
-| Super Miler 909                                 | 7        |
-| Super Miler 99                                  | 7        |
-| Zapper                                          | 7        |
-| Ecotred                                         | 6        |
-| Mogrip Moto D                                   | 6        |
-| Radial Tube-Loose                               | 6        |
-| Regular Butyl Bias Tubes With Single Bent Valve | 6        |
-| Regular Butyl Bias Tubes With Triple Bent Valve | 6        |
-| Shakti 3                                        | 6        |
-| Steel Master M157                               | 6        |
-| Tractor Front-Fitted Tube                       | 6        |
-| Fitted Tube                                     | 5        |
-| Krishi-HI Lug                                   | 5        |
-| Loose Tube                                      | 5        |
-| M-77                                            | 5        |
-| Mogrip Meteor                                   | 5        |
-| Musclerok-Loaders                               | 5        |
-| Savari Lug N8                                   | 5        |
-| Savari N8                                       | 5        |
-| Shakti Xtra                                     | 5        |
-| Steel MUSCLE-S1M4 Plus                          | 5        |
-| Steel Muscle S3K4                               | 5        |
-| Super Lug Fifty Plus-R                          | 5        |
-| Super Lug-Fifty Plus                            | 5        |
-| Tractor Front-Loose Tube                        | 5        |
-| ZVTV - A1                                       | 5        |
-| Zapper N                                        | 5        |
-| Zapper Q                                        | 5        |
-| Brass Reinforced Flaps                          | 4        |
-| Nylogrip Ezeeride Front                         | 4        |
-| Pahalwan                                        | 4        |
-| Steel MUSCLE-S1R4                               | 4        |
-| Steel Muscle S1F4                               | 4        |
-| Super Lug-Fifty Plus-R                          | 4        |
-| Wanderer A/S                                    | 4        |
-| ZTX                                             | 4        |
-| Automiler 99 N6                                 | 3        |
-| Citibus                                         | 3        |
-| MMT XA1                                         | 3        |
-| Masseter FX                                     | 3        |
-| Radial Tube-Fitted                              | 3        |
-| Rib                                             | 3        |
-| Savari Lug                                      | 3        |
-| Shakti PT                                       | 3        |
-| Shakti TF                                       | 3        |
-| Steel MUSCLE-S3C8 Plus                          | 3        |
-| Steel Muscle S1R4                               | 3        |
-| Super LUG-707                                   | 3        |
-| Wanderer H/T                                    | 3        |
-| ZQT                                             | 3        |
-| ZTX-S                                           | 3        |
-| ZVTV A4                                         | 3        |
-| Zapper FG                                       | 3        |
-| Zapper Kurve                                    | 3        |
-| Zapper Kurve F                                  | 3        |
-| Automiler 84 N6                                 | 2        |
-| BS Flaps                                        | 2        |
-| Citibus S                                       | 2        |
-| E-Savari N4                                     | 2        |
-| Fork Lift-Fitted Tube                           | 2        |
-| Fork Lift-Poly Pouch                            | 2        |
-| Masseter-X                                      | 2        |
-| Masseter-X MCT                                  | 2        |
-| Muscle Bias Tube                                | 2        |
-| Muscle Master                                   | 2        |
-| Musclerok                                       | 2        |
-| Musclerok-Graders                               | 2        |
-| Musclerok-X                                     | 2        |
-| Nylogrip FE Plus                                | 2        |
-| Revz C1                                         | 2        |
-| Revz FC1                                        | 2        |
-| Revz S                                          | 2        |
-| Sand Grip                                       | 2        |
-| Savari                                          | 2        |
-| Shakti                                          | 2        |
-| Shakti HR Lug                                   | 2        |
-| Steel Brace                                     | 2        |
-| Steel MUSCLE-S1F4 Plus                          | 2        |
-| Steel MUSCLE-S1M4                               | 2        |
-| Steel MUSCLE-S1N4                               | 2        |
-| Steel MUSCLE-S1T4                               | 2        |
-| Steel MUSCLE-S3P4                               | 2        |
-| Steel Master M151                               | 2        |
-| Steel Master M159                               | 2        |
-| Steel Master M160                               | 2        |
-| Steel Master M170                               | 2        |
-| Steel Muscle S1M4 Plus                          | 2        |
-| Super LUG-505                                   | 2        |
-| Super Lug 707                                   | 2        |
-| Supermiler 909                                  | 2        |
-| Supermiler 99                                   | 2        |
-| Tractor Trailer - 707                           | 2        |
-| Wanderer O/R                                    | 2        |
-| Wanderer S/L                                    | 2        |
-| Wanderer XT                                     | 2        |
-| ZCC                                             | 2        |
-| ZEC                                             | 2        |
-| ZSport                                          | 2        |
-| ZVTS A1                                         | 2        |
-| ZVTV                                            | 2        |
-| ZWyde                                           | 2        |
-| Zapper FM                                       | 2        |
-| Zapper FQ                                       | 2        |
-| Zapper FY2                                      | 2        |
-| Zapper Hyke                                     | 2        |
-| Zapper S1                                       | 2        |
-| Zapper V                                        | 2        |
-| Zapper Vyde                                     | 2        |
-| Automiler 99 N8                                 | 1        |
-| E-Savari N6                                     | 1        |
-| Implement Muscle-L                              | 1        |
-| Implement Muscle-R                              | 1        |
-| Markus A7 (With Foam)                           | 1        |
-| Markus A7 (Without Foam)                        | 1        |
-| Mogrip Meteor FG                                | 1        |
-| Mogrip Meteor FM                                | 1        |
-| Mogrip Meteor FM1+                              | 1        |
-| Mogrip Meteor FM2                               | 1        |
-| Mogrip Meteor M2                                | 1        |
-| Musclerok-Industrial                            | 1        |
-| Musclerok-Roadtrac                              | 1        |
-| Musclerok-Smooth                                | 1        |
-| Nylogrip                                        | 1        |
-| Nylogrip TT Plus                                | 1        |
-| Nylorib                                         | 1        |
-| Perfinza                                        | 1        |
-| Revz D                                          | 1        |
-| Revz FD                                         | 1        |
-| Revz FH                                         | 1        |
-| Revz H                                          | 1        |
-| Revz K                                          | 1        |
-| Revz M                                          | 1        |
-| Revz MG                                         | 1        |
-| Revz Steel SR01 TL                              | 1        |
-| Revz Y                                          | 1        |
-| Sandgrip                                        | 1        |
-| Savari Extra N8                                 | 1        |
-| Savari Lug Extra N8                             | 1        |
-| Savari N6                                       | 1        |
-| Savari Plus                                     | 1        |
-| Savari Trek N8                                  | 1        |
-| Shakti Tiller                                   | 1        |
-| Steel Brace X                                   | 1        |
-| Steel MUSCLE-S1F4                               | 1        |
-| Steel MUSCLE-S1R4 Plus                          | 1        |
-| Steel MUSCLE-S3H8                               | 1        |
-| Steel Master M147                               | 1        |
-| Steel Master M151 Plus                          | 1        |
-| Steel Muscle S1S4                               | 1        |
-| Steel Muscle S1T4                               | 1        |
-| Steel Muscle S3J4                               | 1        |
-| Steel Muscle SSR1                               | 1        |
-| Super Lug 60                                    | 1        |
-| Super Lug 999                                   | 1        |
-| Super Lug Fifty                                 | 1        |
-| Super Lug-Fifty                                 | 1        |
-| Super Miler                                     | 1        |
-| The Lug-Plus                                    | 1        |
-| Tripleplus N4                                   | 1        |
-| Wanderer A/T A3 ROL                             | 1        |
-| Wanderer A/T A3 Rowl                            | 1        |
-| Wanderer A/T A5 ROL                             | 1        |
-| Wanderer A/T Rowl                               | 1        |
-| Wanderer Sport                                  | 1        |
-| Wanderer Sport-X                                | 1        |
-| ZLO                                             | 1        |
-| ZV2K                                            | 1        |
-| ZVTS-A2                                         | 1        |
-| ZVTV-A2 TL                                      | 1        |
-| Zapper C1                                       | 1        |
-| Zapper C1 (Scooter)                             | 1        |
-| Zapper C1-U                                     | 1        |
-| Zapper ES                                       | 1        |
-| Zapper FH                                       | 1        |
-| Zapper FN                                       | 1        |
-| Zapper FS1                                      | 1        |
-| Zapper FX1                                      | 1        |
-| Zapper FY                                       | 1        |
-| Zapper FY1                                      | 1        |
-| Zapper FYM                                      | 1        |
-| Zapper G                                        | 1        |
-| Zapper H                                        | 1        |
-| Zapper Hyke F                                   | 1        |
-| Zapper K                                        | 1        |
-| Zapper Kurve F1                                 | 1        |
-| Zapper P                                        | 1        |
-| Zapper RF                                       | 1        |
-| Zapper YM                                       | 1        |
+|                                                 | Source rows |
+| ----------------------------------------------- | ----------- |
+| Radial Poly Pouch-Fitted                        | 47          |
+| Radial BU Tube-Loose                            | 28          |
+| ZLX                                             | 28          |
+| Motorcycle Tube                                 | 27          |
+| Shakti Life                                     | 27          |
+| Wanderer Street                                 | 21          |
+| Bias Poly Pouch                                 | 18          |
+| Bias Tube-Fitted                                | 18          |
+| Krishi                                          | 17          |
+| Muscle-Lift                                     | 17          |
+| Nylogrip Plus                                   | 17          |
+| Markus                                          | 15          |
+| Nylon Reinforced Flaps                          | 14          |
+| Shakti Life Plus                                | 14          |
+| Tractor Rear-Fitted Tube                        | 13          |
+| ZTX A1                                          | 13          |
+| Zapper FS                                       | 13          |
+| Tractor Rear-Loose Tube                         | 12          |
+| Mogrip Meteor M                                 | 11          |
+| ZVTS                                            | 11          |
+| Zapper Y                                        | 10          |
+| Moped Tube                                      | 9           |
+| Musclerok-Earthmovers                           | 9           |
+| Nylogrip Ezeeride Rear                          | 9           |
+| Perfinza CLX1                                   | 9           |
+| Wanderer A/T                                    | 9           |
+| Zapper C                                        | 9           |
+| Shakti Super                                    | 8           |
+| Steel Master M154                               | 8           |
+| Mogrip Meteor M+                                | 7           |
+| Perfinza CLY1                                   | 7           |
+| Scooter Tube                                    | 7           |
+| Steel MUSCLE-S3K4                               | 7           |
+| Super Miler 909                                 | 7           |
+| Super Miler 99                                  | 7           |
+| Zapper                                          | 7           |
+| Ecotred                                         | 6           |
+| Mogrip Moto D                                   | 6           |
+| Radial Tube-Loose                               | 6           |
+| Regular Butyl Bias Tubes With Single Bent Valve | 6           |
+| Regular Butyl Bias Tubes With Triple Bent Valve | 6           |
+| Shakti 3                                        | 6           |
+| Steel Master M157                               | 6           |
+| Tractor Front-Fitted Tube                       | 6           |
+| Fitted Tube                                     | 5           |
+| Krishi-HI Lug                                   | 5           |
+| Loose Tube                                      | 5           |
+| M-77                                            | 5           |
+| Mogrip Meteor                                   | 5           |
+| Musclerok-Loaders                               | 5           |
+| Savari Lug N8                                   | 5           |
+| Savari N8                                       | 5           |
+| Shakti Xtra                                     | 5           |
+| Steel MUSCLE-S1M4 Plus                          | 5           |
+| Steel Muscle S3K4                               | 5           |
+| Super Lug Fifty Plus-R                          | 5           |
+| Super Lug-Fifty Plus                            | 5           |
+| Tractor Front-Loose Tube                        | 5           |
+| ZVTV - A1                                       | 5           |
+| Zapper N                                        | 5           |
+| Zapper Q                                        | 5           |
+| Brass Reinforced Flaps                          | 4           |
+| Nylogrip Ezeeride Front                         | 4           |
+| Pahalwan                                        | 4           |
+| Steel MUSCLE-S1R4                               | 4           |
+| Steel Muscle S1F4                               | 4           |
+| Super Lug-Fifty Plus-R                          | 4           |
+| Wanderer A/S                                    | 4           |
+| ZTX                                             | 4           |
+| Automiler 99 N6                                 | 3           |
+| Citibus                                         | 3           |
+| MMT XA1                                         | 3           |
+| Masseter FX                                     | 3           |
+| Radial Tube-Fitted                              | 3           |
+| Rib                                             | 3           |
+| Savari Lug                                      | 3           |
+| Shakti PT                                       | 3           |
+| Shakti TF                                       | 3           |
+| Steel MUSCLE-S3C8 Plus                          | 3           |
+| Steel Muscle S1R4                               | 3           |
+| Super LUG-707                                   | 3           |
+| Wanderer H/T                                    | 3           |
+| ZQT                                             | 3           |
+| ZTX-S                                           | 3           |
+| ZVTV A4                                         | 3           |
+| Zapper FG                                       | 3           |
+| Zapper Kurve                                    | 3           |
+| Zapper Kurve F                                  | 3           |
+| Automiler 84 N6                                 | 2           |
+| BS Flaps                                        | 2           |
+| Citibus S                                       | 2           |
+| E-Savari N4                                     | 2           |
+| Fork Lift-Fitted Tube                           | 2           |
+| Fork Lift-Poly Pouch                            | 2           |
+| Masseter-X                                      | 2           |
+| Masseter-X MCT                                  | 2           |
+| Muscle Bias Tube                                | 2           |
+| Muscle Master                                   | 2           |
+| Musclerok                                       | 2           |
+| Musclerok-Graders                               | 2           |
+| Musclerok-X                                     | 2           |
+| Nylogrip FE Plus                                | 2           |
+| Revz C1                                         | 2           |
+| Revz FC1                                        | 2           |
+| Revz S                                          | 2           |
+| Sand Grip                                       | 2           |
+| Savari                                          | 2           |
+| Shakti                                          | 2           |
+| Shakti HR Lug                                   | 2           |
+| Steel Brace                                     | 2           |
+| Steel MUSCLE-S1F4 Plus                          | 2           |
+| Steel MUSCLE-S1M4                               | 2           |
+| Steel MUSCLE-S1N4                               | 2           |
+| Steel MUSCLE-S1T4                               | 2           |
+| Steel MUSCLE-S3P4                               | 2           |
+| Steel Master M151                               | 2           |
+| Steel Master M159                               | 2           |
+| Steel Master M160                               | 2           |
+| Steel Master M170                               | 2           |
+| Steel Muscle S1M4 Plus                          | 2           |
+| Super LUG-505                                   | 2           |
+| Super Lug 707                                   | 2           |
+| Supermiler 909                                  | 2           |
+| Supermiler 99                                   | 2           |
+| Tractor Trailer - 707                           | 2           |
+| Wanderer O/R                                    | 2           |
+| Wanderer S/L                                    | 2           |
+| Wanderer XT                                     | 2           |
+| ZCC                                             | 2           |
+| ZEC                                             | 2           |
+| ZSport                                          | 2           |
+| ZVTS A1                                         | 2           |
+| ZVTV                                            | 2           |
+| ZWyde                                           | 2           |
+| Zapper FM                                       | 2           |
+| Zapper FQ                                       | 2           |
+| Zapper FY2                                      | 2           |
+| Zapper Hyke                                     | 2           |
+| Zapper S1                                       | 2           |
+| Zapper V                                        | 2           |
+| Zapper Vyde                                     | 2           |
+| Automiler 99 N8                                 | 1           |
+| E-Savari N6                                     | 1           |
+| Implement Muscle-L                              | 1           |
+| Implement Muscle-R                              | 1           |
+| Markus A7 (With Foam)                           | 1           |
+| Markus A7 (Without Foam)                        | 1           |
+| Mogrip Meteor FG                                | 1           |
+| Mogrip Meteor FM                                | 1           |
+| Mogrip Meteor FM1+                              | 1           |
+| Mogrip Meteor FM2                               | 1           |
+| Mogrip Meteor M2                                | 1           |
+| Musclerok-Industrial                            | 1           |
+| Musclerok-Roadtrac                              | 1           |
+| Musclerok-Smooth                                | 1           |
+| Nylogrip                                        | 1           |
+| Nylogrip TT Plus                                | 1           |
+| Nylorib                                         | 1           |
+| Perfinza                                        | 1           |
+| Revz D                                          | 1           |
+| Revz FD                                         | 1           |
+| Revz FH                                         | 1           |
+| Revz H                                          | 1           |
+| Revz K                                          | 1           |
+| Revz M                                          | 1           |
+| Revz MG                                         | 1           |
+| Revz Steel SR01 TL                              | 1           |
+| Revz Y                                          | 1           |
+| Sandgrip                                        | 1           |
+| Savari Extra N8                                 | 1           |
+| Savari Lug Extra N8                             | 1           |
+| Savari N6                                       | 1           |
+| Savari Plus                                     | 1           |
+| Savari Trek N8                                  | 1           |
+| Shakti Tiller                                   | 1           |
+| Steel Brace X                                   | 1           |
+| Steel MUSCLE-S1F4                               | 1           |
+| Steel MUSCLE-S1R4 Plus                          | 1           |
+| Steel MUSCLE-S3H8                               | 1           |
+| Steel Master M147                               | 1           |
+| Steel Master M151 Plus                          | 1           |
+| Steel Muscle S1S4                               | 1           |
+| Steel Muscle S1T4                               | 1           |
+| Steel Muscle S3J4                               | 1           |
+| Steel Muscle SSR1                               | 1           |
+| Super Lug 60                                    | 1           |
+| Super Lug 999                                   | 1           |
+| Super Lug Fifty                                 | 1           |
+| Super Lug-Fifty                                 | 1           |
+| Super Miler                                     | 1           |
+| The Lug-Plus                                    | 1           |
+| Tripleplus N4                                   | 1           |
+| Wanderer A/T A3 ROL                             | 1           |
+| Wanderer A/T A3 Rowl                            | 1           |
+| Wanderer A/T A5 ROL                             | 1           |
+| Wanderer A/T Rowl                               | 1           |
+| Wanderer Sport                                  | 1           |
+| Wanderer Sport-X                                | 1           |
+| ZLO                                             | 1           |
+| ZV2K                                            | 1           |
+| ZVTS-A2                                         | 1           |
+| ZVTV-A2 TL                                      | 1           |
+| Zapper C1                                       | 1           |
+| Zapper C1 (Scooter)                             | 1           |
+| Zapper C1-U                                     | 1           |
+| Zapper ES                                       | 1           |
+| Zapper FH                                       | 1           |
+| Zapper FN                                       | 1           |
+| Zapper FS1                                      | 1           |
+| Zapper FX1                                      | 1           |
+| Zapper FY                                       | 1           |
+| Zapper FY1                                      | 1           |
+| Zapper FYM                                      | 1           |
+| Zapper G                                        | 1           |
+| Zapper H                                        | 1           |
+| Zapper Hyke F                                   | 1           |
+| Zapper K                                        | 1           |
+| Zapper Kurve F1                                 | 1           |
+| Zapper P                                        | 1           |
+| Zapper RF                                       | 1           |
+| Zapper YM                                       | 1           |
 
 ### Price on request (no MRP in the source): 546
 

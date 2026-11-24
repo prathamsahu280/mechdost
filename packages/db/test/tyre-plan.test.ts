@@ -69,10 +69,23 @@ describe('CEAT plan', () => {
     ]);
     expect(milaze()?.nameHi).toBe('CEAT Milaze X3');
     expect(milaze()?.variants.map((v) => [v.sku, v.options, v.model])).toEqual([
-      ['CEAT-105037', { size: '145/70R12 69T TL' }, '145/70R12 69T TL'],
-      ['CEAT-105038', { size: '155/70R12 73T TL' }, '155/70R12 73T TL'],
+      [
+        'CEAT-105037',
+        { size: '145/70R12 69T TL', loadIndex: '69', speedRating: 'T', construction: 'radial', tlTt: 'TL' },
+        '145/70R12 69T TL',
+      ],
+      [
+        'CEAT-105038',
+        { size: '155/70R12 73T TL', loadIndex: '73', speedRating: 'T', construction: 'radial', tlTt: 'TL' },
+        '155/70R12 73T TL',
+      ],
     ]);
-    expect(by('ceat-fm-super')?.variants[0]?.options).toEqual({ size: '10.00-20 (SKU 100014)' });
+    expect(by('ceat-fm-super')?.variants[0]?.options).toEqual({
+      size: '10.00-20 (SKU 100014)',
+      construction: 'bias',
+      ply: '16',
+    });
+    expect(by('ceat-zoom-x3')?.variants[0]?.options.frontRear).toBe('front');
     expect(milaze()?.variant).toBe(milaze()?.variants[0]);
     expect(milaze()?.variants[0]?.partNumbers.map((n) => n.normalised)).toEqual(['105037']);
     expect(milaze()?.variants.every((v) => v.barcode === null)).toBe(true);
