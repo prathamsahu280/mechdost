@@ -57,6 +57,7 @@ import { adminRoutingMocks, billPayMocks } from './tier3-fixtures.ts';
 import { slipMocks, staffPortalMocks, tier2PortalMocks } from './tier2-fixtures.ts';
 import { adminRecoMocks, demandMocks, notifyMeMocks, privacyMocks } from './catalogue-tier2-fixtures.ts';
 import { photoQueueMocks, wishlistMocks } from './storefront-fixtures.ts';
+import { roadsideTrackMocks } from './roadside-fixtures.ts';
 import type { Mock, MockCtx, Reply } from './mock-api.ts';
 
 const NOW = Date.parse('2026-11-15T10:00:00.000Z');
@@ -1832,6 +1833,8 @@ export function mocksFor(c: AuditCase): Mock[] {
       return adminSupportMocks(c);
     case 'API-ACC-DELETION':
       return accountDeletionMocks(c);
+    case 'RSA-TRACK':
+      return [meMock(), ...roadsideTrackMocks()];
     case 'API-GUEST-SUPPORT':
       return [];
     default:

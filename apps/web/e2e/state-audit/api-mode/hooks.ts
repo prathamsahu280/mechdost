@@ -168,7 +168,8 @@ async function prepareApi(page: Page, c: AuditCase): Promise<string[]> {
     if (c.state.edit === 'search') await search.fill('delivery');
     else if (c.state.edit === 'nomatch') await search.fill('zzzz');
     else if (c.state.edit === 'confirm') {
-      await search.fill('cash on delivery');
+      // The search matches the words the page shows: the label of the setting is Hindi on /hi.
+      await search.fill(c.locale === 'hi' ? 'कैश ऑन डिलीवरी' : 'cash on delivery');
       await main.locator('[id="api-setting-checkout.cod_cap_paise"]').fill('0');
       await clickIfPresent(
         main.getByRole('button', { name: /Save changes|बदलाव सेव करें/ }),

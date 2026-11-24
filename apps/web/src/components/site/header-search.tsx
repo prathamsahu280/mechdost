@@ -211,6 +211,7 @@ export default function HeaderSearch({ data, onClose }: SearchPanelProps) {
           />
           <kbd
             aria-hidden="true"
+            lang="en"
             className="hidden rounded-md bg-pill px-1.5 py-0.5 font-sans text-[11px] font-bold text-muted min-[560px]:inline"
           >
             {copy.esc}

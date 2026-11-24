@@ -21,7 +21,7 @@ export function MobileTabBar({ label, items }: { label: string; items: readonly 
     <nav
       aria-label={label}
       data-dock
-      className="fixed inset-x-3.5 bottom-[calc(12px+env(safe-area-inset-bottom))] z-40 mx-auto max-w-xl rounded-[22px] bg-surface/80 p-1.5 shadow-float backdrop-blur-[16px] backdrop-saturate-150 nav:hidden"
+      className="fixed inset-x-3.5 bottom-[calc(12px+env(safe-area-inset-bottom))] z-40 mx-auto max-w-xl rounded-[22px] bg-surface/92 p-1.5 shadow-float backdrop-blur-[16px] backdrop-saturate-150 nav:hidden"
     >
       <ul className="grid grid-cols-4 gap-1">
         {items.map((item) => {

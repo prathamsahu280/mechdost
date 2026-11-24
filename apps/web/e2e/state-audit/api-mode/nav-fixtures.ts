@@ -9,12 +9,20 @@ import { NoticePreferencesViewDto } from '@mechdost/shared/notice-api';
 import { BusinessApplicationPage, TradeProfile } from '@mechdost/shared/business-api';
 import { ApplicationPage } from '@mechdost/shared/partner-api';
 import { MyShopInvites } from '@mechdost/shared/shop-team';
+import { MyRefundPageDto } from '@mechdost/shared/refunds-api';
 import type { Mock, Reply } from './mock-api.ts';
 
 type Dto<S extends { parse(value: unknown): unknown }> = ReturnType<S['parse']>;
 
 export function navQuietMocks(): Mock[] {
   return [
+    // The account's Refunds section (spec 05): no refund yet.
+    {
+      method: 'GET',
+      path: /^\/me\/refunds$/,
+      schema: MyRefundPageDto,
+      reply: (): Reply => ({ body: { refunds: [], nextCursor: null } satisfies Dto<typeof MyRefundPageDto> }),
+    },
     {
       method: 'GET',
       path: /^\/admin\/partner-applications$/,

@@ -5928,7 +5928,7 @@
     "searchCount": "{count} सुझाव",
     "searchSeeAll": "“{query}” के सभी नतीजे देखें",
     "searchEsc": "Esc",
-    "searchHint": "सुझावों के लिए कम से कम 2 अक्षर लिखें, या खोजने के लिए Enter दबाएँ।",
+    "searchHint": "सुझावों के लिए कम से कम 2 अक्षर लिखें, या खोजने के लिए एंटर दबाएँ।",
     "popular1": "20W-40 बाइक ऑयल",
     "popular2": "Exide कार बैटरी",
     "popular3": "90/90-12 टायर",
@@ -5979,7 +5979,7 @@
   "adminSettings": {
     "search_label": "सेटिंग खोजें",
     "search_placeholder": "नाम या विवरण…",
-    "search_none": "“{query}” से कोई सेटिंग नहीं मिली। कोई और शब्द आज़माएँ।",
+    "search_none": "“<q>{query}</q>” से कोई सेटिंग नहीं मिली। कोई और शब्द आज़माएँ।",
     "search_results": "{count, plural, one {# सेटिंग मिली} other {# सेटिंग मिलीं}}",
     "nav_select": "सेटिंग की श्रेणी",
     "nav_label": "सेटिंग की श्रेणियाँ",

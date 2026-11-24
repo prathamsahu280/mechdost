@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Maximize2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useCallback, useRef, useState, type ComponentType, type KeyboardEvent, type ReactNode } from 'react';
 import type { CataloguePhoto } from '@mechdost/shared/catalogue';
@@ -106,14 +106,21 @@ export function ProductGallery({
               inert={i !== active}
               className="w-full min-w-full shrink-0 snap-center"
             >
-              <button
-                type="button"
-                onClick={open}
-                aria-label={p('productEnlarge', { n: i + 1, total })}
-                className="block w-full cursor-zoom-in rounded-card focus-visible:outline-2 focus-visible:outline-offset-2"
-              >
-                {slide}
-              </button>
+              {/* A click on the picture opens the full view; keyboard and screen-reader users have the enlarge button. */}
+              <div className="relative">
+                <div onClick={open} className="cursor-zoom-in rounded-card">
+                  {slide}
+                </div>
+                {/* Inside the scrolling track, so the track has something to focus; the other slides are inert. */}
+                <button
+                  type="button"
+                  onClick={open}
+                  aria-label={p('productEnlarge', { n: i + 1, total })}
+                  className="press absolute top-3 right-3 inline-flex size-11 items-center justify-center rounded-full bg-surface/90 text-ink shadow-md"
+                >
+                  <Maximize2 aria-hidden="true" className="size-5" />
+                </button>
+              </div>
             </div>
           ))}
         </div>
