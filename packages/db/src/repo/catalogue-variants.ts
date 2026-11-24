@@ -51,6 +51,11 @@ function cleanOptions(options: VariantOptions): Record<string, string> {
   return out;
 }
 
+/** The options without the keys that were cleared (an empty text removes a key). */
+function dropEmpty(o: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(o).filter(([, v]) => v !== ''));
+}
+
 function checkMrp(mrp: number | null): void {
   if (mrp !== null && (!Number.isSafeInteger(mrp) || mrp < 1 || mrp > MRP_MAX))
     throw new ValidationError('An MRP is ₹0.01 to ₹10,00,000', 'MRP_INVALID');
@@ -80,8 +85,7 @@ export async function addVariant(
   if (!SKU_RE.test(input.sku))
     throw new ValidationError('A SKU is capital letters, digits and dashes', 'SKU_INVALID');
   checkMrp(input.mrpPaise);
-  const options = cleanOptions(input.options);
-  for (const k of Object.keys(options)) if (options[k] === '') delete options[k];
+  const options = dropEmpty(cleanOptions(input.options));
   if (variantLabel(options) === '') throw new ValidationError('A size needs a label', 'VARIANT_LABEL');
   const barcode = checkBarcode(input.barcode);
   return db.transaction(async (tx) => {
@@ -158,11 +162,10 @@ export async function updateVariant(
     if (cur.version !== input.expectedVersion)
       throw new ConflictError('Someone else changed this size; reload', 'STALE_VARIANT');
 
-    const nextOptions: Record<string, unknown> = {
+    const nextOptions = dropEmpty({
       ...(cur.options as Record<string, unknown>),
       ...(optionChanges ?? {}),
-    };
-    for (const k of Object.keys(nextOptions)) if (nextOptions[k] === '') delete nextOptions[k];
+    });
     if (optionChanges !== undefined && variantLabel(nextOptions) === '')
       throw new ValidationError('A size needs a label', 'VARIANT_LABEL');
     const nextMrp = c.mrpPaise === undefined ? cur.mrpPaise : c.mrpPaise;

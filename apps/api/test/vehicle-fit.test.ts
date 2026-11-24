@@ -24,7 +24,7 @@ async function person(n: string) {
 
 const get = async (h: Record<string, string> | null, path: string) => {
   const res = await ctx.app.request(`/v1${path}`, { method: 'GET', headers: h ?? {} });
-  return { status: res.status, body: (await res.json()) as unknown };
+  return { status: res.status, body: await res.json() };
 };
 
 beforeAll(async () => {

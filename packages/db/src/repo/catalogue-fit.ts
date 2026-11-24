@@ -44,7 +44,7 @@ export async function fitVariantForUser(db: Tx, userId: string, slug: string): P
   const vehicles = await listVehicles(db, userId);
   if (vehicles.length === 0) return NONE;
   for (const sku of row.skus) {
-    const spec: unknown = (specs as Record<string, unknown>)[sku];
+    const spec: unknown = specs[sku];
     const list: unknown =
       typeof spec === 'object' && spec !== null ? (spec as Record<string, unknown>).fitment : null;
     if (!Array.isArray(list)) continue;
