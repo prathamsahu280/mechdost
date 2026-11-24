@@ -26,6 +26,7 @@ import {
   type Fact,
   type PlannedPhoto,
   type PlannedProduct,
+  type PlannedVariant,
   type ReportRow,
 } from '../battery-import';
 import { FEATURES, FORM_FACTOR_HI, NAME_WORDS_HI, TECHNOLOGY_HI, VIEWS } from './hindi';
@@ -658,6 +659,16 @@ export function planAmaron(input: AmaronPlanInput): AmaronPlan {
       modelPart,
       ...(itemPart.normalised !== modelPart.normalised ? [itemPart] : []),
     ].filter((n) => n.normalised !== '');
+    const pack: PlannedVariant = {
+      sku,
+      model,
+      mrpPaise: mrp === null ? null : Math.round(mrp * 100),
+      weightG: null,
+      netQuantity: { qty: 1, unit: 'piece' },
+      options: { model },
+      barcode: null,
+      partNumbers,
+    };
     const product: PlannedProduct = {
       sourceRow,
       productType: info.code,
@@ -680,14 +691,8 @@ export function planAmaron(input: AmaronPlanInput): AmaronPlan {
       hsn: info.hsn,
       gstRateBp,
       status: draft ? 'draft' : 'live',
-      variant: {
-        sku,
-        model,
-        mrpPaise: mrp === null ? null : Math.round(mrp * 100),
-        weightG: null,
-        netQuantity: { qty: 1, unit: 'piece' },
-        options: { model },
-      },
+      variant: pack,
+      variants: [pack],
       partNumbers,
       partNumber: modelPart,
       photos,

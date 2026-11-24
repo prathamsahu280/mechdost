@@ -13,6 +13,9 @@ export interface PlannedCategory {
   parent: string | null;
   name: string;
   nameHi: string;
+  /** Shown on the category page and editable by admin; the tyre importers fill them (2026-11-24). */
+  description?: string;
+  descriptionHi?: string;
 }
 
 export const HOME_POWER = {
@@ -61,6 +64,21 @@ export interface PlannedPhoto {
   altHi: string;
 }
 
+/** One sellable pack of a planned product (a battery model, or one tyre size of a pattern). */
+export interface PlannedVariant {
+  sku: string;
+  model: string;
+  /** Paise incl. GST; null = price on request. */
+  mrpPaise: number | null;
+  weightG: number | null;
+  netQuantity: NetQuantity;
+  options: Record<string, string>;
+  /** EAN / GTIN as the maker prints it; null = none. */
+  barcode: string | null;
+  /** Manufacturer part numbers (kind `mfr`) of this pack. */
+  partNumbers: { kind: 'mfr'; value: string; normalised: string }[];
+}
+
 export interface PlannedProduct {
   /** 1-based row of the batteries CSV (header excluded). */
   sourceRow: number;
@@ -84,15 +102,14 @@ export interface PlannedProduct {
   hsn: string;
   gstRateBp: number;
   status: 'live' | 'draft';
-  variant: {
-    sku: string;
-    model: string;
-    mrpPaise: number | null;
-    weightG: number | null;
-    netQuantity: NetQuantity;
-    options: Record<string, string>;
-  };
-  /** Manufacturer part numbers (kind `mfr`): the model code, and the item code where it differs. */
+  /**
+   * Every sellable pack of the product, in listing order (a battery model has one; a tyre pattern one per size, user
+   * 2026-11-24). The writer reads only `variants`.
+   */
+  variants: PlannedVariant[];
+  /** The first of `variants` (single-pack brands read it directly). */
+  variant: PlannedVariant;
+  /** Manufacturer part numbers (kind `mfr`) of the first pack. */
   partNumbers: { kind: 'mfr'; value: string; normalised: string }[];
   /** The first of `partNumbers` (the model code). */
   partNumber: { kind: 'mfr'; value: string; normalised: string };

@@ -162,7 +162,9 @@ export const productPhotos = pgTable(
       sql`${t.path640} ~ '^[a-z0-9-]+/[0-9a-f-]{36}/[0-9a-f-]{36}-640[.]webp$'`,
     ),
     check('product_photos_rejected_has_reason', sql`${t.rejectReason} is null or ${t.deletedAt} is not null`),
-    uniqueIndex('product_photos_media_uq').on(t.mediaId),
+    // A stored image may serve several products (a tyre pattern's pictures, shared by every size), but only once each.
+    uniqueIndex('product_photos_product_media_uq').on(t.productId, t.mediaId),
+    index('product_photos_media_idx').on(t.mediaId),
     index('product_photos_product_live_idx')
       .on(t.productId, t.sort)
       .where(sql`${t.deletedAt} is null`),

@@ -78,6 +78,8 @@ export interface ReportBrand<P extends BatteryPlan = BatteryPlan> {
   stem: string;
   /** Heading and note of the shared-picture section. */
   sharedPictures: { heading: string; note: string };
+  /** false = only the count of the shared-picture products is printed, not one line each (tyres: whole patterns share). */
+  listShared?: boolean;
   /** Extra sections (already Markdown) the brand wants after the tallies. */
   extraSections?: (plan: P) => string[];
 }
@@ -93,7 +95,7 @@ export function statusMarkdown<P extends BatteryPlan>(
   },
 ): string {
   const table = (title: string, pairs: [string, number][]) =>
-    `### ${title}\n\n| | Products |\n|---|---|\n${pairs.map(([k, n]) => `| ${k} | ${String(n)} |`).join('\n')}\n`;
+    `### ${title}\n\n| | Source rows |\n|---|---|\n${pairs.map(([k, n]) => `| ${k} | ${String(n)} |`).join('\n')}\n`;
   const missing = plan.rows.filter((r) => r.mrpRupees === '');
   const results = meta.results ? tally(plan.rows.map((r) => meta.results?.get(r.slug) ?? 'planned')) : [];
   const archived = meta.archived;
@@ -117,7 +119,7 @@ export function statusMarkdown<P extends BatteryPlan>(
     '',
     brand.sharedPictures.note,
     '',
-    ...shared.map((r) => `- ${r.name} (${r.slug})`),
+    ...(brand.listShared === false ? [] : shared.map((r) => `- ${r.name} (${r.slug})`)),
     '',
     ...(brand.extraSections?.(plan) ?? []),
     archived

@@ -21,6 +21,7 @@ import {
   type CsvRow,
   type Fact,
   type PlannedProduct,
+  type PlannedVariant,
   type ReportRow,
 } from '../battery-import';
 import {
@@ -553,6 +554,16 @@ export function planExide(input: PlanInput): ExidePlan {
             alt: name,
             altHi: nameHi,
           };
+    const pack: PlannedVariant = {
+      sku,
+      model,
+      mrpPaise: mrp === null ? null : Math.round(mrp * 100),
+      weightG: weightKg === null ? null : Math.round(weightKg * 1000),
+      netQuantity: { qty: 1, unit: 'piece' },
+      options: { model },
+      barcode: null,
+      partNumbers: [mfrPart(model)],
+    };
     const product: ExidePlannedProduct = {
       sourceRow,
       productType: info.code,
@@ -579,14 +590,8 @@ export function planExide(input: PlanInput): ExidePlan {
       hsn: info.hsn,
       gstRateBp: GST_BP,
       status: draft ? 'draft' : 'live',
-      variant: {
-        sku,
-        model,
-        mrpPaise: mrp === null ? null : Math.round(mrp * 100),
-        weightG: weightKg === null ? null : Math.round(weightKg * 1000),
-        netQuantity: { qty: 1, unit: 'piece' },
-        options: { model },
-      },
+      variant: pack,
+      variants: [pack],
       partNumbers: [mfrPart(model)],
       partNumber: mfrPart(model),
       photos: photo ? [photo] : [],

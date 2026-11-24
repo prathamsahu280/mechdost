@@ -383,6 +383,106 @@ export async function updateProductPhotoAlt(
   });
 }
 
+/**
+ * Retires the stored image of a removed photo. A pattern picture shared by several products (`attachSharedProductPhoto`,
+ * CEAT and MRF imports 2026-11-24) stays while another live photo still uses it: then nothing is deleted (null).
+ */
+async function releaseMedia(
+  tx: Tx,
+  mediaId: string,
+  now: Date,
+): Promise<{ bucket: string; path: string; thumbPath: string } | null> {
+  const [other] = await tx
+    .select({ id: productPhotos.id })
+    .from(productPhotos)
+    .where(and(eq(productPhotos.mediaId, mediaId), isNull(productPhotos.deletedAt)))
+    .limit(1);
+  if (other) return null;
+  const [media] = await tx
+    .update(mediaObjects)
+    .set({ deletedAt: now })
+    .where(eq(mediaObjects.id, mediaId))
+    .returning({ bucket: mediaObjects.bucket, path: mediaObjects.path, thumbPath: mediaObjects.thumbPath });
+  return media ?? null;
+}
+
+/**
+ * Staff: adds a picture that another product already holds (same stored image, a new photo row) to a product. The
+ * catalogue importers use it for pattern pictures that every size of a pattern shares, so one upload serves all sizes.
+ */
+export async function attachSharedProductPhoto(
+  db: Tx,
+  input: {
+    slug: string;
+    actor: PhotoActor;
+    alt: string;
+    altHi: string;
+    photoSource?: string | null;
+    /** The photo row of the product that holds the image. */
+    fromPhotoId: string;
+  },
+): Promise<ProductPhotoRow> {
+  const { alt, altHi } = assertAlt(input.alt, input.altHi);
+  if (input.actor.kind !== 'staff') throw new NotFoundError('Photo not found');
+  const actor = input.actor;
+  return db.transaction(async (tx) => {
+    const p = await productBySlug(tx, input.slug, true);
+    const { shopId } = await assertCanAdd(tx, p.id, actor);
+    const [src] = await tx
+      .select({
+        mediaId: productPhotos.mediaId,
+        path640: productPhotos.path640,
+        width: productPhotos.width,
+        height: productPhotos.height,
+        lqip: productPhotos.lqip,
+      })
+      .from(productPhotos)
+      .innerJoin(mediaObjects, eq(mediaObjects.id, productPhotos.mediaId))
+      .where(
+        and(
+          eq(productPhotos.id, input.fromPhotoId),
+          isNull(productPhotos.deletedAt),
+          isNull(mediaObjects.deletedAt),
+        ),
+      );
+    if (!src) throw new NotFoundError('Photo not found');
+    const [row] = await tx
+      .insert(productPhotos)
+      .values({
+        productId: p.id,
+        mediaId: src.mediaId,
+        path640: src.path640,
+        alt,
+        altHi,
+        sort: await liveCount(tx, p.id),
+        lqip: src.lqip,
+        photoSource: input.photoSource ?? null,
+        width: src.width,
+        height: src.height,
+        status: 'approved',
+        submittedByShopId: shopId,
+        reviewedBy: actor.userId,
+        reviewedAt: new Date(),
+        createdBy: actor.userId,
+      })
+      .returning(COLUMNS);
+    if (!row) throw new ConflictError('The photo could not be saved', 'PHOTO_NOT_SAVED');
+    await tx.insert(auditLog).values({
+      actorUserId: actor.userId,
+      actorRole: actor.kind,
+      action: 'product_photo.add',
+      entity: 'product',
+      entityId: p.id,
+      after: { photoId: row.id, status: 'approved', sort: row.sort, shopId, sharedFrom: input.fromPhotoId },
+    });
+    await recordServerEvent(tx, 'product_photo_added', {
+      userId: actor.userId,
+      props: { productId: p.id, photoId: row.id, by: actor.kind, status: 'approved' },
+    });
+    return asRow(row);
+  });
+}
+
 /** Object keys of a photo, for the best-effort delete in Storage after the row is gone. */
 export interface RemovedPhotoKeys {
   bucket: string;
@@ -420,11 +520,7 @@ export async function removeProductPhoto(
     }
     const now = new Date();
     await tx.update(productPhotos).set({ deletedAt: now }).where(eq(productPhotos.id, photo.id));
-    const [media] = await tx
-      .update(mediaObjects)
-      .set({ deletedAt: now })
-      .where(eq(mediaObjects.id, photo.mediaId))
-      .returning({ bucket: mediaObjects.bucket, path: mediaObjects.path, thumbPath: mediaObjects.thumbPath });
+    const media = await releaseMedia(tx, photo.mediaId, now);
     await compact(tx, p.id);
     await tx.insert(auditLog).values({
       actorUserId: input.actor.userId,
@@ -499,15 +595,7 @@ export async function reviewProductPhoto(
           rejectReason: input.reasonCode ?? null,
         })
         .where(eq(productPhotos.id, photo.id));
-      const [media] = await tx
-        .update(mediaObjects)
-        .set({ deletedAt: now })
-        .where(eq(mediaObjects.id, photo.mediaId))
-        .returning({
-          bucket: mediaObjects.bucket,
-          path: mediaObjects.path,
-          thumbPath: mediaObjects.thumbPath,
-        });
+      const media = await releaseMedia(tx, photo.mediaId, now);
       await compact(tx, first.productId);
       keys = media ? { bucket: media.bucket, paths: [media.path, media.thumbPath, photo.path640] } : null;
     }
