@@ -101,3 +101,4 @@ Keep it tight: list only what matters for this task. Quote this brief (or its ke
 - `references/research-playbook.md` — how to research, trusted sources, improvement sweep.
 - `references/learnings.md` — accumulated lessons (append-only, newest last).
 - `references/changelog.md` — changes made to this skill.
+- `references/agent-brief.md` — the checklist pasted into every builder-agent brief (user 2026-11-24).
