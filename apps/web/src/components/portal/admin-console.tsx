@@ -92,6 +92,10 @@ const AdminReviewsApi = dynamic(() => import('./admin-reviews-api').then((m) => 
 });
 
 /** Real sign-in: service routing on the API (Stream E, 2026-11-14); demo builds never load it. */
+const AdminRoadside = dynamic(() => import('./admin-roadside').then((m) => m.AdminRoadside), {
+  ssr: false,
+  loading: () => <div className="skeleton h-64 rounded-card" aria-hidden="true" />,
+});
 const ServiceRoutingApi = dynamic(() => import('./admin-services-api').then((m) => m.ServiceRoutingApi), {
   ssr: false,
   loading: () => <div className="skeleton h-96 rounded-card" aria-hidden="true" />,
@@ -173,6 +177,7 @@ const SECTION_EMOJI: Record<AdminSection, string> = {
   orders: '🧭',
   refunds: '💸',
   services: '🔧',
+  roadside: '🆘',
   quotes: '💬',
   applications: '🤝',
   partners: '🏬',
@@ -217,6 +222,7 @@ export function AdminConsole({
       {section === 'refunds' && AUTH_MODE === 'firebase' ? <RefundQueueApi /> : null}
       {section === 'orders' ? AUTH_MODE === 'firebase' ? <OrderRoutingApi /> : <OrderRouting /> : null}
       {section === 'services' ? AUTH_MODE === 'firebase' ? <ServiceRoutingApi /> : <ServiceRouting /> : null}
+      {section === 'roadside' ? <AdminRoadside /> : null}
       {section === 'quotes' ? AUTH_MODE === 'firebase' ? <QuoteDeskApi /> : <QuoteDesk /> : null}
       {section === 'applications' ? <Applications /> : null}
       {section === 'reviews' ? AUTH_MODE === 'firebase' ? <AdminReviewsApi /> : <Reviews /> : null}

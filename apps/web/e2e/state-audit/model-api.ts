@@ -27,6 +27,7 @@ export const REAL_ADMIN_SECTIONS = [
   'orders',
   'refunds',
   'services',
+  'roadside',
   'quotes',
   'applications',
   'partners',

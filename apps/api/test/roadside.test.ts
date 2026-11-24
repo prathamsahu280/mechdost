@@ -324,7 +324,7 @@ describe('paying the advance', () => {
       amountPaise: 50_000,
       currency: 'INR',
       method: 'upi',
-    } as unknown as RazorpayPayment);
+    });
     const sig = createHmac('sha256', KEY_SECRET).update(`${orderId}|pay_rsacb1`).digest('hex');
     const verify = await call(customer, 'POST', '/payments/razorpay/verify', {
       razorpayOrderId: orderId,

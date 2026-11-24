@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { ClientMessages } from '@/components/ui/client-messages';
 import { Container, PageIntro } from '@/components/ui/page-intro';
@@ -36,8 +37,10 @@ const PROMISES = [
 ] as const;
 
 /** Workshop finder (spec 06): location first, then nearby verified workshops. Demo data until the API ships. */
-export default async function WorkshopsPage() {
+export default async function WorkshopsPage({ params }: Props) {
+  const { locale } = await params;
   const t = await getTranslations('pages.workshops');
+  const road = await getTranslations('roadside');
   return (
     <Container className="py-10 tab:py-14">
       <PageIntro eyebrow={t('eyebrow')} line1={t('titleLine1')} line2={t('titleLine2')} lead={t('lead')} />
@@ -53,6 +56,12 @@ export default async function WorkshopsPage() {
           <WorkshopFinder />
         </ClientMessages>
       </div>
+      <p className="mt-8 rounded-card bg-pill p-4 text-sm text-ink">
+        {road('workshopsLink')}{' '}
+        <Link href={`${locale === 'hi' ? '/hi' : ''}/roadside`} className="font-bold underline">
+          {road('workshopsLinkCta')}
+        </Link>
+      </p>
       <ul className="mt-12 grid gap-4 tab:grid-cols-3">
         {PROMISES.map(({ n, emoji }) => (
           <li key={n} className="reveal flex gap-4 rounded-tile border border-line-card bg-surface p-6">

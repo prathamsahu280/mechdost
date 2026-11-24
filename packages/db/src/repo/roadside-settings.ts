@@ -1,4 +1,4 @@
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import { defaultRsaSettings, rsaOpenAt, type RsaProblemType, type RsaSettings } from '@mechdost/shared/rsa';
 import type { RsaSettingsInputT } from '@mechdost/shared/rsa-api';
 import type { VehicleType } from '@mechdost/shared/vehicles';
@@ -158,6 +158,8 @@ export interface RsaAvailability {
   /** The refusal code or null. */
   reason: 'RSA_NOT_AVAILABLE' | 'RSA_OUT_OF_AREA' | 'RSA_CLOSED' | null;
   cityCode: string | null;
+  /** The PIN code's centre, so a customer without GPS still gives a point to drive to. */
+  centroid: { lat: number; lng: number } | null;
   vehicleTypes: VehicleType[];
   advancePaise: Partial<Record<VehicleType, number>>;
   problemTypes: RsaProblemType[];
@@ -176,7 +178,12 @@ export async function getRsaAvailability(
   input: { pincode: string; now?: Date },
 ): Promise<RsaAvailability> {
   const [place] = await db
-    .select({ cityId: pincodes.cityId, cityCode: cities.code })
+    .select({
+      cityId: pincodes.cityId,
+      cityCode: cities.code,
+      lat: sql<number | null>`ST_Y(${pincodes.centroid}::geometry)`,
+      lng: sql<number | null>`ST_X(${pincodes.centroid}::geometry)`,
+    })
     .from(pincodes)
     .innerJoin(cities, eq(cities.id, pincodes.cityId))
     .where(and(eq(pincodes.pincode, input.pincode), eq(pincodes.active, true)))
@@ -186,6 +193,7 @@ export async function getRsaAvailability(
       available: false,
       reason: 'RSA_OUT_OF_AREA',
       cityCode: null,
+      centroid: null,
       vehicleTypes: [],
       advancePaise: {},
       problemTypes: [],
@@ -206,6 +214,8 @@ export async function getRsaAvailability(
     available: reason === null,
     reason,
     cityCode: place.cityCode,
+    centroid:
+      place.lat === null || place.lng === null ? null : { lat: Number(place.lat), lng: Number(place.lng) },
     vehicleTypes: s.vehicleTypes,
     advancePaise: s.advancePaise,
     problemTypes: s.problemTypes,

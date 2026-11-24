@@ -38,6 +38,7 @@ export default async function PartnerPage() {
             'workshop',
             'workshopAnalytics',
             'trust',
+            'roadside',
           ]}
         >
           <WorkshopPortal />

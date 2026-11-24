@@ -53,7 +53,7 @@ export const CHUNKS: Readonly<Record<string, string>> = {
   A: 'CHR-,HOME-',
   B: 'SHOP-,STEP-',
   C: 'PDP-,CMP-,CART-,CHK-',
-  D: 'ORD-,SR-,QT-,ACC-,WS-,OFFERS-,PTN-,BIZ-,SUP-,LOGIN-,POL-',
+  D: 'ORD-,SR-,RSA-,QT-,ACC-,WS-,OFFERS-,PTN-,BIZ-,SUP-,LOGIN-,POL-',
   E: 'PRT-,ADM-',
   F: 'NAV-',
   // Real-sign-in screens: run with playwright.state-audit-api.config.ts (mocked API), not with the demo config.

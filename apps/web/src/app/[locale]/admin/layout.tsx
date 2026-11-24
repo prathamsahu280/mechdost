@@ -19,6 +19,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         <ClientMessages
           namespaces={[
             'portal',
+            'roadside',
             // Admin → Applications → trade accounts and fleet enquiries (audience entry design 2026-11-22).
             'business',
             'account',
