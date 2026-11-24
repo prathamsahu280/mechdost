@@ -344,3 +344,7 @@ Separate from seller applications (their table is seller-shaped: GST status, add
 - **Page** `/[locale]/business/apply?kind=trade|fleet` (en + hi; accessibility per the design: labelled fields, fieldsets, GSTIN hint, error summary with focus, focus to the success heading with the code). Demo sign-in builds show "applications open soon" (no demo store for accounts).
 - Emails (spec 10): `trade_application_received`, `fleet_application_received` (signed-in applicants only; a typed address of a signed-out lead is never mailed), `trade_account_verified`. Staff get the existing `staff.new_application` bell notice.
 - No rejection or revoke email yet (wording not approved).
+
+## Roadside in the workshop portal (2026-11-24, spec 22)
+
+`/partner/workshop` has a Roadside panel (permission `roadside:respond`, scoped to the caller's workshops): opt-in (on/off, radius 1 to 50 km, vehicle types, problem types, towing), offers with a countdown (accept, or decline with a reason code), and the job steps: on my way, the customer's arrival code (5 tries, then support), start, bill lines (kind, description, quantity, price), and "customer paid in cash". The customer's phone is never shown; calls go through MechDost support at launch.

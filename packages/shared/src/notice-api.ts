@@ -12,6 +12,7 @@ export type NoticeCategory = (typeof NOTICE_CATEGORIES)[number];
 export const NOTICE_ENTITY_TYPES = [
   'order',
   'service_request',
+  'rsa_request',
   'quote',
   'ticket',
   'refund',

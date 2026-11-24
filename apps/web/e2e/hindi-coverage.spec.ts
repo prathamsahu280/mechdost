@@ -170,6 +170,7 @@ const CUSTOMER_PAGES = [
   ...ACCOUNT_SECTIONS.map((s) => (s === 'overview' ? '/account' : `/account/${s}`)),
   '/cart',
   '/checkout',
+  '/roadside',
   `/orders/${CODES.shipped}`,
   `/orders/${CODES.routing}`,
   `/service/${CODES.proposed}`,

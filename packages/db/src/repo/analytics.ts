@@ -603,8 +603,9 @@ async function overviewIn(db: Tx, input: { now: Date; scopes: OverviewScopes }):
           left join order_groups g on g.id = r.group_id
           left join service_bills sb on sb.id = r.bill_id
           left join service_requests sr on sr.id = sb.request_id
+          left join rsa_requests rq on rq.id = r.rsa_request_id
           where r.status in ('requested', 'needs_reconciliation')
-            and ${scopeFilter('coalesce(g.city_id, sr.city_id)', scopes.refunds)}`),
+            and ${scopeFilter('coalesce(g.city_id, sr.city_id, rq.city_id)', scopes.refunds)}`),
       )
     : [];
   const today = istDateString(input.now);

@@ -104,3 +104,7 @@ Admin -> Settings gets a city picker (the cities in the staff member's `settings
 - **Telling people:** the worker (every 5 minutes, `notifyServedWaitlist`) finds waiting rows whose PIN is now served and, in one transaction per person, marks the row `notified` and writes the bell notice `account.pin_served` (push per their choices; transactional category because they asked for it; en/hi texts under `notify.account_pin_served`). Told once.
 - **Web:** a "Tell me when MechDost reaches this PIN code" button under a saved address that is not served (Account -> Addresses and the checkout/booking address picker, lazy-loaded), with the waiting state and "Stop waiting". Admin -> Settings shows the demand table under Service area.
 - **Not built:** email or WhatsApp for the "now served" message (needs a template and consent, Q142), a CSV export of the demand, a public "we are coming to your area" page.
+
+## Roadside assistance coverage (2026-11-24, spec 22)
+
+Roadside is covered per city by `rsa_city_settings.pincodes` (each must be an active PIN of that city), not by the reserved `serviceable_*` PIN flags (still unread). A request resolves its city from its PIN code; hours are IST per city; a city with no settings row is off.

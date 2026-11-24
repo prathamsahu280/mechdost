@@ -92,6 +92,44 @@ export const WHATSAPP_TEMPLATES = {
     urlParam: 'quoteCode',
     audience: 'customer',
   },
+  // Roadside assistance (spec 22, 2026-11-24). No arrival code and no amount in any of them (lock-screen rule; Meta
+  // refuses passcode-like codes in utility templates): the button opens the request page, which shows them.
+  'rsa.accepted': {
+    // Renamed from roadside_mechanic_assigned: Meta rejected the English one as INCORRECT_CATEGORY because its text
+    // mentioned the arrival code (code-like content reads as authentication), 2026-11-24.
+    name: 'roadside_mechanic_on_way',
+    category: 'utility',
+    params: ['rsaCode'],
+    urlParam: 'rsaCode',
+    audience: 'customer',
+  },
+  'rsa.arrived': {
+    name: 'roadside_mechanic_arrived',
+    category: 'utility',
+    params: ['rsaCode'],
+    urlParam: 'rsaCode',
+    audience: 'customer',
+  },
+  'rsa.bill_ready': {
+    name: 'roadside_bill_ready',
+    category: 'utility',
+    params: ['rsaCode'],
+    urlParam: 'rsaCode',
+    audience: 'customer',
+  },
+  'rsa.refunded': {
+    name: 'roadside_refund_processed',
+    category: 'utility',
+    params: ['rsaCode'],
+    urlParam: 'rsaCode',
+    audience: 'customer',
+  },
+  'rsa.offer': {
+    name: 'partner_new_roadside_job',
+    category: 'utility',
+    params: ['rsaCode', 'acceptMinutes'],
+    audience: 'partner',
+  },
   'order.routed': {
     name: 'partner_new_order',
     category: 'utility',

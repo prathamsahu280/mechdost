@@ -14,6 +14,7 @@ import {
   orderGroups,
   orders,
   serviceBills,
+  rsaRequests,
   serviceRequests,
   settings,
   supportTickets,
@@ -37,7 +38,15 @@ import type { StoredImage } from './service-photos';
  * compare-and-set; every creation is audited. Customer limit: 5 requests per 24 h (serialised per user).
  */
 /** `labour_redo` = a customer claims the workshop's labour promise on one of their billed jobs (user 2026-11-15, Q105). */
-export const TICKET_KINDS = ['order_issue', 'refund', 'fitment', 'account', 'labour_redo', 'other'] as const;
+export const TICKET_KINDS = [
+  'order_issue',
+  'refund',
+  'fitment',
+  'account',
+  'labour_redo',
+  'rsa_bill_dispute',
+  'other',
+] as const;
 export type TicketKind = (typeof TICKET_KINDS)[number];
 export const DAILY_TICKET_LIMIT = 5;
 export const TICKET_BODY_MAX = 2000;
@@ -237,6 +246,8 @@ export async function createSupportTicket(
     orderCode: string | null;
     /** Required for `labour_redo` (the service job, SR-…); ignored for other kinds. */
     serviceCode?: string | null;
+    /** Required for `rsa_bill_dispute` (the roadside request, RSA-…); ignored for other kinds. */
+    rsaCode?: string | null;
     body: string;
     defaultCityCode: string;
     /** The clock; tests pass a fixed instant (first-reply deadline in support hours). */
@@ -318,6 +329,37 @@ export async function createSupportTicket(
       cityId = job.cityId;
       cityCode = job.cityCode;
     }
+    let rsaRequestId: string | null = null;
+    if (input.kind === 'rsa_bill_dispute') {
+      if (!input.rsaCode) throw new ValidationError('Choose the roadside request', 'RSA_CODE_REQUIRED');
+      // Actor-scoped like orders: someone else's request is "not found". Only a bill that is ready can be questioned.
+      const [q] = await tx
+        .select({
+          id: rsaRequests.id,
+          status: rsaRequests.status,
+          cityId: rsaRequests.cityId,
+          cityCode: cities.code,
+        })
+        .from(rsaRequests)
+        .innerJoin(cities, eq(cities.id, rsaRequests.cityId))
+        .where(and(eq(rsaRequests.code, input.rsaCode), eq(rsaRequests.userId, input.userId)))
+        .limit(1);
+      if (!q) throw new NotFoundError('Roadside request not found');
+      if (q.status !== 'billed' && q.status !== 'completed')
+        throw new ConflictError('There is no bill to question yet', 'RSA_NOT_BILLED');
+      const open = await tx.$count(
+        supportTickets,
+        and(
+          eq(supportTickets.rsaRequestId, q.id),
+          eq(supportTickets.kind, 'rsa_bill_dispute'),
+          inArray(supportTickets.status, ACTIVE),
+        ),
+      );
+      if (open > 0) throw new ConflictError('A question about this bill is already open', 'RSA_DISPUTE_OPEN');
+      rsaRequestId = q.id;
+      cityId = q.cityId;
+      cityCode = q.cityCode;
+    }
     const [ticket] = await tx
       .insert(supportTickets)
       .values({
@@ -326,6 +368,7 @@ export async function createSupportTicket(
         kind: input.kind,
         orderId,
         serviceRequestId,
+        rsaRequestId,
         cityId,
         channel: 'web',
         slaAckDue: await firstReplyDueAt(tx, now),

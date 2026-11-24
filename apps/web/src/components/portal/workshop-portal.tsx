@@ -17,6 +17,7 @@ import { track } from '@/lib/analytics';
 import { AUTH_MODE } from '@/lib/auth/mode';
 import { formatPrice } from '@/lib/format';
 import { PartnerGate } from './partner-gate';
+import { WorkshopRoadside } from './workshop-roadside';
 import { JobCard, RequestSummary } from './workshop-job';
 import { PortalGuard } from './portal-guard';
 import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
@@ -39,10 +40,14 @@ export function WorkshopPortal() {
     <PortalGuard role="workshop" path="/partner/workshop" demoNote={!api}>
       {(account) =>
         api ? (
-          <WorkshopRequestsApi />
+          <>
+            <WorkshopRequestsApi />
+            <WorkshopRoadside />
+          </>
         ) : (
           <PartnerGate kind="workshop" slug={account.partner ?? ''}>
             <WorkshopRequests workshopSlug={account.partner ?? ''} />
+            <WorkshopRoadside />
           </PartnerGate>
         )
       }

@@ -258,6 +258,7 @@ export const ADMIN_SECTIONS = [
   'overview',
   'orders',
   'services',
+  'roadside',
   'quotes',
   'applications',
   'partners',
@@ -1148,6 +1149,32 @@ export const COMPONENTS: readonly ComponentDef[] = [
     strategy: 'pairwise',
     params: [...env, { name: 'auth', values: ['workshop'] }, world2],
     sweep: 16,
+  },
+  // Roadside help (spec 22, 2026-11-24): the customer's request form (location, vehicle, problem, review). The tracking
+  // page needs a request seeded in this browser's demo store, which the harness cannot do yet: its rows are listed and
+  // parked as `test.fixme` (`realApi`), like the other pages that need a seeded world.
+  {
+    code: 'RSA-REQUEST',
+    page: 'Roadside help (/roadside)',
+    component: 'Roadside request: PIN code, vehicle types offered, problem choices, review and advance',
+    path: '/roadside',
+    scope: 'main',
+    checks: [...BASE_CHECKS, 'dismiss'],
+    strategy: 'pairwise',
+    params: [...env, { name: 'auth', values: ['customer'] }],
+    sweep: 16,
+  },
+  {
+    code: 'RSA-TRACK',
+    page: 'Roadside request (/roadside/{code})',
+    component:
+      'Roadside tracking: steps, responder, arrival code, bill with advance and balance, refund note',
+    path: '/roadside/RSA-RPR-2026-DEMO10',
+    scope: 'main',
+    checks: [...BASE_CHECKS],
+    strategy: 'pairwise',
+    params: [...env, { name: 'auth', values: ['customer'] }],
+    realApi: true,
   },
   ...ADMIN_SECTIONS.map((section): ComponentDef => ({
     code: `ADM-${section.toUpperCase()}`,

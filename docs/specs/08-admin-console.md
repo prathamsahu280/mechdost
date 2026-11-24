@@ -399,3 +399,7 @@ Admin → Catalogue has two views. **Products**: filters All / Missing Hindi / *
 - **Demo:** the demo's yes/no order rule ("customers may cancel their own order") is now a switch in Orders and delivery, saved with the other settings; "Reset to defaults" moved to the screen header.
 - **Events:** `admin_settings_nav {category, via}`, `admin_settings_search {results}` (never the words), `admin_settings_discard {fields}`, `admin_settings_confirm {outcome, risky}`; saves keep `admin_site_change`.
 - **Code:** `components/portal/admin-settings-workbench.tsx` (the screen), `admin-settings.tsx` (demo editor and entry), `admin-settings-api.tsx` (API editor, labels, help map), `components/ui/switch.tsx` (shared switch). Tests: `test/admin-settings-registry.test.ts`, `packages/shared/test/analytics.test.ts`, `e2e/admin-site.spec.ts`, state-audit row `API-ADM-SETTINGS`.
+
+## Roadside (2026-11-24, spec 22)
+
+Admin → Roadside: the "Needs dispatch" queue (ranked workshops that opted in, one-click offer, withdraw, cancel with a reason while nobody has accepted; the advance refund request waits in Refunds) and the per-city settings (on/off, vehicle types offered with the advance of each, PIN codes, hours, routing mode, accept timer, problem types, SOS phone). Permissions `roadside:read`, `roadside:dispatch`, `roadside:cancel` (ops roles) and `roadside:settings` (super admin); every save is audited with before and after.

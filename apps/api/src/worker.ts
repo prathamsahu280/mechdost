@@ -3,6 +3,7 @@
  * must not live in request handlers: the live relay (decision 2026-11-01), the outbox dispatcher, the order/stock
  * timers, and PostHog forwarding (decision 2026-11-14).
  */
+import { RSA_PAYMENT_WINDOW_MINUTES } from '@mechdost/shared/rsa';
 import { createDb, createListener } from '@mechdost/db';
 import { loadKeyring, type Keyring } from '@mechdost/db/crypto';
 import { grievanceContactLine } from '@mechdost/shared/company';
@@ -17,6 +18,8 @@ import {
   getPublishedContent,
   expireDueAssignments,
   expireDueServiceRequests,
+  expireDueRsaOffers,
+  expireUnpaidRsa,
   releaseExpiredReservations,
   expireUnpaidOnlineOrders,
   buildDueDataExports,
@@ -204,6 +207,32 @@ const requestTimer = setInterval(() => {
     });
 }, 30_000);
 requestTimer.unref();
+
+// Roadside (spec 22): an offer past the city's accept timer goes back to the dispatch queue, and a request whose advance
+// was not paid within the window is closed (nothing was charged). Every 30 s; each is its own compare-and-set
+// transaction under the request lock, so several workers may run this safely.
+let expiringRsa = false;
+const rsaTimer = setInterval(() => {
+  if (expiringRsa) return;
+  expiringRsa = true;
+  void expireDueRsaOffers(db)
+    .then(async ({ expired, failed }) => {
+      if (expired > 0) log('info', 'rsa_offers_expired', { count: expired });
+      for (const f of failed)
+        log('error', 'rsa_offer_expiry_failed', { offerId: f.offerId, ...safeError(f.error) });
+      const unpaid = await expireUnpaidRsa(db, { olderThanMinutes: RSA_PAYMENT_WINDOW_MINUTES });
+      if (unpaid.closed > 0) log('info', 'rsa_unpaid_closed', { count: unpaid.closed });
+      for (const f of unpaid.failed)
+        log('error', 'rsa_unpaid_close_failed', { requestId: f.requestId, ...safeError(f.error) });
+    })
+    .catch((err: unknown) => {
+      log('error', 'rsa_sweep_failed', safeError(err));
+    })
+    .finally(() => {
+      expiringRsa = false;
+    });
+}, 30_000);
+rsaTimer.unref();
 
 // Pauses with an end date resume by themselves (Q28, user 2026-11-13). Every 60 s; each shop is its own
 // compare-and-set, so several workers may run this safely.

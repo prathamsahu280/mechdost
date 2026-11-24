@@ -14,6 +14,8 @@ Camera (BarcodeDetector) / photo / manual code → match `part_numbers`/barcodes
 
 ## D. Roadside assistance & pickup/return (`03-section-12-assistance`)
 
+> **Roadside assistance is specified in `22-roadside-assistance.md`** (design `docs/superpowers/specs/2026-11-24-roadside-assistance-design.md`, phase 1 built 2026-11-24). Pickup & return below stays future.
+
 Request roadside help (tyre, starting, breakdown, towing) with live location and ETA; pickup & return with handover photos (2 photos, custody terms); provider network (ReadyAssist-style partners or own mechanics); pricing/dispatch; "My assistance enquiries". Phase 4 (pickup/drop basic flag already in workshops).
 
 ## E. Mechanic network (`03-section-15-mechanics`)

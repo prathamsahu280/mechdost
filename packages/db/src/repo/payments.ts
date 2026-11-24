@@ -9,6 +9,7 @@ import { queueOrderPlacedEmail, queuePaymentReceivedEmail } from './email-events
 import { recordServerEvent } from './events';
 import { requestRefundForClosedOrder } from './refunds';
 import { rowsOf } from './sql-rows';
+import { applyRsaPayment } from './roadside-payments';
 import { applyBillPayment } from './service-bill-payments';
 import type { Tx } from './orders';
 
@@ -173,13 +174,15 @@ export async function applyRazorpayPayment(
   return db.transaction(async (tx) => {
     // Lock order: group row, then the payment row (the expiry job takes orders → group → payments; security review).
     const [ref] = await tx
-      .select({ groupId: payments.groupId, billId: payments.billId })
+      .select({ groupId: payments.groupId, billId: payments.billId, rsaRequestId: payments.rsaRequestId })
       .from(payments)
       .where(eq(payments.providerOrderId, fact.providerOrderId))
       .limit(1);
     if (!ref) return { outcome: 'unknown_order' as const };
     // A workshop service bill (purpose `service_bill`): its own lock order and settlement, same table and webhook.
     if (ref.billId) return applyBillPayment(tx, fact, ref.billId);
+    // A roadside advance or balance (purposes `rsa_advance`, `rsa_balance`): its own lock order and settlement.
+    if (ref.rsaRequestId) return applyRsaPayment(tx, fact, ref.rsaRequestId);
     if (!ref.groupId) return { outcome: 'unknown_order' as const };
     const [group] = await tx
       .select({

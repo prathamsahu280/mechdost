@@ -3,6 +3,10 @@ import {
   applyRazorpayPayment,
   onlineGroupOfUser,
   openPaymentForBill,
+  openPaymentForRsa,
+  payableRsaOfUser,
+  paymentOfUserRsa,
+  recordRsaRazorpayOrder,
   openPaymentForGroup,
   payableBillOfUser,
   paymentOfUserBill,
@@ -13,6 +17,7 @@ import {
   type PaymentOutcome,
   type Tx,
 } from '@mechdost/db/repo';
+import type { RsaPaymentPurpose } from '@mechdost/shared/rsa';
 import { ApiError } from '../errors';
 import { checkoutSignatureValid, type RazorpayGateway, type RazorpayPayment } from './razorpay';
 
@@ -115,6 +120,14 @@ export async function verifyCheckout(
     const bill = await paymentOfUserBill(db, {
       userId: input.userId,
       providerOrderId: input.providerOrderId,
+    }).catch(async (e: unknown) => {
+      if (!(e instanceof NotFoundError)) throw e;
+      // A roadside advance or balance (purposes `rsa_advance`, `rsa_balance`).
+      const rsa = await paymentOfUserRsa(db, {
+        userId: input.userId,
+        providerOrderId: input.providerOrderId,
+      });
+      return { ...rsa, billId: rsa.requestId };
     });
     return { ...bill, groupCode: bill.requestCode, paymentStatus: bill.status };
   });
@@ -166,6 +179,46 @@ export async function ensureBillRazorpayOrder(
     billId: bill.billId,
     providerOrderId: created.id,
     amountPaise: bill.totalPaise,
+  });
+  return {
+    keyId: gateway.keyId,
+    orderId: stored.providerOrderId,
+    amountPaise: stored.amountPaise,
+    currency: 'INR',
+  };
+}
+
+/**
+ * The Razorpay order of a roadside request's advance or balance: the amount is the snapshot or the bill read from the
+ * database, never from the client; reused while it can still be paid (one open order per request and purpose); stored
+ * before the client sees it.
+ */
+export async function ensureRsaRazorpayOrder(
+  db: Tx,
+  gateway: RazorpayGateway,
+  input: { userId: string; code: string; purpose: RsaPaymentPurpose },
+): Promise<CheckoutHandle> {
+  const due = await payableRsaOfUser(db, input);
+  const open = await openPaymentForRsa(db, due.requestId, input.purpose);
+  if (open)
+    return {
+      keyId: gateway.keyId,
+      orderId: open.providerOrderId,
+      amountPaise: open.amountPaise,
+      currency: 'INR',
+    };
+  const created = await gateway.createOrder({
+    amountPaise: due.amountPaise,
+    receipt: due.requestCode, // RSA-XXX-YYYY-XXXXXX, within the 40 character limit
+    notes: { requestCode: due.requestCode, purpose: input.purpose },
+  });
+  if (created.amountPaise !== due.amountPaise || created.currency !== 'INR')
+    throw new ApiError(502, 'PAYMENT_PROVIDER_MISMATCH', 'The payment provider returned a different amount');
+  const stored = await recordRsaRazorpayOrder(db, {
+    requestId: due.requestId,
+    purpose: input.purpose,
+    providerOrderId: created.id,
+    amountPaise: due.amountPaise,
   });
   return {
     keyId: gateway.keyId,

@@ -33,6 +33,7 @@ export interface NoticeDef {
 const enc = encodeURIComponent;
 const order = (p: Record<string, string>) => `/orders/${enc(p.orderCode ?? '')}`;
 const service = (p: Record<string, string>) => `/service/${enc(p.requestCode ?? '')}`;
+const roadside = (p: Record<string, string>) => `/roadside/${enc(p.requestCode ?? '')}`;
 const quote = (p: Record<string, string>) => `/quotes/${enc(p.quoteCode ?? '')}`;
 const ticket = (p: Record<string, string>) => `/account/support?ticket=${enc(p.ticketCode ?? '')}`;
 const at = (path: string) => () => path;
@@ -126,6 +127,49 @@ export const NOTICE_CATALOGUE = {
     audience: 'customer',
     text: ['requestCode'],
     link: service,
+  }),
+  // ----- Customer: roadside assistance (spec 22) -------------------------------------------------------------
+  'rsa.accepted': def({
+    category: T,
+    entity: 'rsa_request',
+    audience: 'customer',
+    text: ['requestCode', 'workshopName'],
+    link: roadside,
+  }),
+  'rsa.arrived': def({
+    category: T,
+    entity: 'rsa_request',
+    audience: 'customer',
+    text: ['requestCode', 'workshopName'],
+    link: roadside,
+  }),
+  'rsa.bill_ready': def({
+    category: T,
+    entity: 'rsa_request',
+    audience: 'customer',
+    text: ['requestCode'],
+    link: roadside,
+  }),
+  'rsa.refunded': def({
+    category: T,
+    entity: 'rsa_request',
+    audience: 'customer',
+    text: ['requestCode'],
+    link: roadside,
+  }),
+  'rsa.offer': def({
+    category: T,
+    entity: 'rsa_request',
+    audience: 'partner',
+    text: ['requestCode', 'minutes'],
+    link: at('/partner/workshop'),
+  }),
+  'staff.rsa_cash': def({
+    category: T,
+    entity: 'rsa_request',
+    audience: 'staff',
+    text: ['requestCode'],
+    link: at('/admin/roadside'),
   }),
   'service.proposed': def({
     category: T,

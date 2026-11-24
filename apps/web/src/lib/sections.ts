@@ -34,6 +34,8 @@ const ALL_ADMIN_SECTIONS = [
   // The finance refund queue (spec 05, 2026-11-15): real sign-in only, it reads the API.
   'refunds',
   'services',
+  // Roadside assistance (spec 22, 2026-11-24): dispatch queue, cancel and the per-city settings.
+  'roadside',
   'quotes',
   'applications',
   'partners',
