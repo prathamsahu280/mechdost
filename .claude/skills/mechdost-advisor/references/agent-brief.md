@@ -29,3 +29,11 @@ includes this block, and the lead rejects a branch whose report does not show ea
    `.claude/skills/website-testing/references/learnings.md`.
 7. **Report:** list each item above with file paths; name any skill skipped and why. Commit on the branch; never push,
    never touch the real database or send real messages unless the lead's brief says so.
+
+## Enforcement (user, 2026-11-24: "are the agents following the proper skills and ruleset now")
+
+The lead rejects a branch, without merging, when the report does not show: `mechdost-advisor` run as a skill **before**
+the first code change with its brief quoted; for any UI change the UI chain run **as skills** (accessibility-lead,
+ui-ux-pro-max, frontend-design, web-design-guidelines; shadcn-component-review when components change); and
+`website-testing` + `verification-before-completion` before "done". "Applied as a checklist" does not count. The lead
+still runs an independent security review (payments, auth, money) and a real-browser check before anything goes live.
