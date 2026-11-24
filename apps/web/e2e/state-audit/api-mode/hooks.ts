@@ -162,6 +162,26 @@ async function prepareApi(page: Page, c: AuditCase): Promise<string[]> {
     await settleApi(page);
   }
 
+  // Settings screen (design 2026-11-24): an unsaved edit, an invalid one, a search, or the confirm step.
+  if (c.code === 'API-ADM-SETTINGS' && c.state.edit !== 'clean') {
+    const search = main.getByRole('searchbox');
+    if (c.state.edit === 'search') await search.fill('delivery');
+    else if (c.state.edit === 'nomatch') await search.fill('zzzz');
+    else if (c.state.edit === 'confirm') {
+      await search.fill('cash on delivery');
+      await main.locator('[id="api-setting-checkout.cod_cap_paise"]').fill('0');
+      await clickIfPresent(
+        main.getByRole('button', { name: /Save changes|बदलाव सेव करें/ }),
+        notes,
+        'no save button',
+      );
+    } else {
+      const field = main.locator('input[inputmode="numeric"]').first();
+      await field.fill(c.state.edit === 'invalid' ? '9999999' : '45');
+    }
+    await settleApi(page);
+  }
+
   // Support threads: submit the opener empty (its own error), or open the inbox conversation.
   if (c.code === 'API-ACC-SUPPORT' && c.state.form === 'error') {
     await main.locator('form:has(fieldset) button[type="submit"]').first().click();

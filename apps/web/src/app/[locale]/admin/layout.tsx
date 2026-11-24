@@ -50,6 +50,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             // Real-sign-in (API) admin screens (audit 2026-11-16).
             'adminEmails',
             'adminTier2',
+            // Admin → Settings: categories, search, save bar and one-line help per setting (design 2026-11-24).
+            'adminSettings',
             'coupons',
             'adminExports',
             'refunds',

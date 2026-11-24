@@ -44,3 +44,19 @@ describe('client event registry', () => {
     for (const name of outcomes) expect(Object.keys(CLIENT_EVENT_SCHEMAS)).not.toContain(name);
   });
 });
+
+describe('admin settings events (design 2026-11-24)', () => {
+  it('carry codes and counts only', () => {
+    const nav = CLIENT_EVENT_SCHEMAS.admin_settings_nav;
+    expect(nav.safeParse({ category: 'orders', via: 'search' }).success).toBe(true);
+    expect(nav.safeParse({ category: 'Orders and more', via: 'list' }).success).toBe(false);
+    const search = CLIENT_EVENT_SCHEMAS.admin_settings_search;
+    expect(search.safeParse({ results: 3 }).success).toBe(true);
+    // The words typed are never part of the event.
+    expect(search.safeParse({ results: 3, query: 'cod' }).success).toBe(false);
+    expect(CLIENT_EVENT_SCHEMAS.admin_settings_discard.safeParse({ fields: 2 }).success).toBe(true);
+    const confirm = CLIENT_EVENT_SCHEMAS.admin_settings_confirm;
+    expect(confirm.safeParse({ outcome: 'saved', risky: 1 }).success).toBe(true);
+    expect(confirm.safeParse({ outcome: 'maybe', risky: 1 }).success).toBe(false);
+  });
+});

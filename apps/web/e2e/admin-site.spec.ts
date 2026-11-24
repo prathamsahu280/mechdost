@@ -122,13 +122,56 @@ test.describe('admin site customisation (spec 08)', () => {
     await expect(page.getByLabel('Bulk quote minimum')).toHaveValue('10');
   });
 
+  test('settings are grouped: categories, search, unsaved count and discard (design 2026-11-24)', async ({
+    page,
+  }) => {
+    await signInAsAdmin(page, '/admin/settings');
+    // Orders and delivery is the first category; coin rules live in their own.
+    await expect(page.getByLabel('Delivery fee')).toBeVisible();
+    await expect(page.getByLabel('Most of an order coins can pay')).toHaveCount(0);
+    await page.goto('/admin/settings?cat=coins');
+    await expect(page.getByLabel('Most of an order coins can pay')).toBeVisible();
+    await expect(page.getByLabel('Delivery fee')).toHaveCount(0);
+
+    // Search looks across every category by name and by what the setting does.
+    await page.getByRole('searchbox', { name: 'Search settings' }).fill('free delivery');
+    await expect(page.getByLabel('Free delivery from')).toBeVisible();
+    await expect(page.getByLabel('Most of an order coins can pay')).toHaveCount(0);
+    await page.getByRole('searchbox', { name: 'Search settings' }).fill('zzzz');
+    await expect(page.getByText('No settings match')).toBeVisible();
+    await page.getByRole('searchbox', { name: 'Search settings' }).fill('delivery fee');
+
+    // An edit shows as an unsaved change; Discard puts the saved value back.
+    const fee = page.getByLabel('Delivery fee');
+    const before = await fee.inputValue();
+    await fee.fill('99');
+    await expect(page.getByRole('status').filter({ hasText: '1 unsaved change' })).toBeVisible();
+    await page.getByRole('button', { name: 'Discard changes' }).click();
+    await expect(fee).toHaveValue(before);
+    // Nothing changed any more: the save bar is gone.
+    await expect(page.getByRole('button', { name: 'Save changes' })).toBeHidden();
+  });
+
   test('the customisation screens pass WCAG 2.2 AA and fit small screens', async ({ page }) => {
     // Measure final colours, not a frame of the page fade-in (same as every other axe test).
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await signInAsAdmin(page, '/admin/content');
-    for (const path of ['/admin/content', '/admin/layout', '/admin/settings', '/hi/admin/settings']) {
+    const paths = [
+      '/admin/content',
+      '/admin/layout',
+      '/admin/settings',
+      '/admin/settings?cat=coins',
+      '/hi/admin/settings',
+      '/hi/admin/settings?cat=service',
+    ];
+    for (const path of paths) {
       await page.goto(path);
-      await expect(page.getByRole('button', { name: /Save changes|बदलाव सेव करें/ }).first()).toBeVisible();
+      await expect(
+        page
+          .getByRole('searchbox')
+          .or(page.getByRole('button', { name: /Save changes|बदलाव सेव करें/ }).first())
+          .first(),
+      ).toBeVisible();
       const axe = await new AxeBuilder({ page })
         .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
         .analyze();

@@ -34,7 +34,10 @@ describe('API limit settings screen', () => {
   });
 
   it('the screen maps every key to a label (portal-only component, not in the layout or home graph)', () => {
-    const src = readFileSync(new URL('../src/components/portal/admin-site-api.tsx', import.meta.url), 'utf8');
+    const src = readFileSync(
+      new URL('../src/components/portal/admin-settings-api.tsx', import.meta.url),
+      'utf8',
+    );
     for (const k of KEYS) expect(src).toContain(`'${k}'`);
     expect(src).toContain("requests: 'api_set_unit_requests'");
   });

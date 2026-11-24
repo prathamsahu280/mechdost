@@ -322,10 +322,11 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
   },
   {
     code: 'API-ADM-DEMAND',
-    page: 'Admin → Settings, PIN waiting list, real sign-in',
+    page: 'Admin → Settings → Service area and cities, PIN waiting list, real sign-in',
     component:
       'Customers waiting per PIN (none, a few, many; a PIN with no city; a PIN served now), long area names, load error',
-    path: '/admin/settings',
+    // The panel sits in its own category since the grouped settings screen (design 2026-11-24).
+    path: '/admin/settings?cat=area',
     scope: 'main',
     strategy: 'pairwise',
     params: [
@@ -1003,11 +1004,30 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
     realApi: true,
   },
   {
+    code: 'API-ADM-SETTINGS',
+    page: 'Admin → Settings, categories, search and the save bar, real sign-in',
+    component:
+      'Settings grouped by category (select on phones, tabs, side list), the search box with results or none, an unsaved edit with the sticky save bar, an invalid value, the confirm step for a risky change (cash on delivery off)',
+    path: '/admin/settings?cat=orders',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['admin'] },
+      { name: 'edit', values: ['clean', 'dirty', 'invalid', 'search', 'nomatch', 'confirm'] },
+      stress,
+    ],
+    sweep: 10,
+    note: API_NOTE,
+    realApi: true,
+  },
+  {
     code: 'API-ADM-COMPANY',
     page: 'Admin → Settings → City values and company details, real sign-in',
     component:
       'Settings city picker (all cities, inherited, overridden with reset to inherited) and the company details form (empty, filled, long text, load error)',
-    path: '/admin/settings',
+    // Company details are in the "Store and company" category (design 2026-11-24).
+    path: '/admin/settings?cat=store',
     scope: 'main',
     strategy: 'pairwise',
     params: [

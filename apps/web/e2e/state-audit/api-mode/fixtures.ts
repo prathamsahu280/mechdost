@@ -1784,6 +1784,7 @@ export function mocksFor(c: AuditCase): Mock[] {
       return [meMock(), ...policyMocks(c)];
     case 'API-ADM-LAYOUT':
       return [meMock(), ...layoutMocks(c)];
+    case 'API-ADM-SETTINGS':
     case 'API-ADM-COMPANY':
       // The PIN waiting list sits under Service area on the same screen (design 2026-11-15 item 7).
       return [meMock(), ...settingsMocks(c), ...demandMocks(c)];

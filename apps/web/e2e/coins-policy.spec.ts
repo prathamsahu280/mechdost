@@ -101,6 +101,8 @@ test.describe('MechDost Coins (spec 20)', () => {
 
   test('coin rules are admin settings and the checkout follows them', async ({ page }) => {
     await signIn(page, '9000000003', '/admin/settings');
+    // Coin rules are their own category in Admin → Settings (design 2026-11-24).
+    await page.goto('/admin/settings?cat=coins');
     await page.getByLabel('Most of an order coins can pay').fill('20');
     await page.getByRole('button', { name: 'Save changes' }).click();
     await expect(page.getByRole('status').filter({ hasText: 'Saved.' })).toBeVisible();

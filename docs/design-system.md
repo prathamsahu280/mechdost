@@ -149,3 +149,7 @@ The "Ask MechDost" button steps aside (hidden, CSS only) on pages whose form has
 
 - Customer copy never says an order goes through a shop or seller ("verified shop", "nearby shop", "Sold by", "shop accepted"); MechDost is the only named party. Shop wording stays in portals, admin, partner pages and the named legal exceptions (guard test `packages/shared/test/customer-copy.test.ts`).
 - Coverage copy says Chhattisgarh (छत्तीसगढ़) through `{region}`; "Raipur" stays only as a fact (registered office, PIN checks, order codes, city data). The announcement bar reads "Workshop requests in Chhattisgarh".
+
+### Settings workbench (2026-11-24)
+
+Admin → Settings uses one pattern for any long settings page: a select (phones), pill tabs (tablet) or a side list (>= 1200 px) of categories; a search box; one white card per category holding divided rows (label 15 px bold, one-line help `text-sm text-muted`, range/default 12 px, small `bg-pill` tags, control on the right from 760 px and below the text on phones); a sticky save bar (card with `shadow-float`, above the mobile tab bar) with the unsaved count, Discard and the single primary button. Controls: number input in a bordered group with the unit inside it (min 44 px high), the shared `Switch` (`components/ui/switch.tsx`, the 2026-11-03 switch above), a native `<dialog>` for the one confirm step. No new colours, fonts or radii. New settings categories are registry entries, not new layout.
