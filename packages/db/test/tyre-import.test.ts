@@ -118,7 +118,12 @@ beforeAll(async () => {
 describe('CEAT and MRF import', () => {
   it('a dry run writes nothing and names the one old CEAT product it would archive', async () => {
     const diff = await diffCeatImport(tx, ceat.products);
-    expect(diff.counts).toMatchObject({ productsCreated: 3, productsArchived: 1, categoriesCreated: 2 });
+    expect(diff.counts).toMatchObject({
+      productsCreated: 2,
+      packsCreated: 3,
+      productsArchived: 1,
+      categoriesCreated: 2,
+    });
     expect(diff.archived.map((a) => a.slug)).toEqual(['ceat-old-tyre']);
     expect(await db.select().from(s.categories).where(eq(s.categories.slug, 'car-suv-tyres'))).toHaveLength(
       0,
@@ -127,7 +132,12 @@ describe('CEAT and MRF import', () => {
 
   it('CEAT: archives its old product only, creates the sub-categories under tyres with Hindi names and descriptions', async () => {
     const run = await applyCeatImport(tx, ceat.products, { staffUserId: staff });
-    expect(run.counts).toMatchObject({ productsCreated: 3, productsArchived: 1, categoriesCreated: 2 });
+    expect(run.counts).toMatchObject({
+      productsCreated: 2,
+      packsCreated: 3,
+      productsArchived: 1,
+      categoriesCreated: 2,
+    });
     const status = async (slug: string) =>
       (await db.select().from(s.products).where(eq(s.products.slug, slug)))[0]?.status;
     expect(await status('ceat-old-tyre')).toBe('archived');
@@ -151,11 +161,19 @@ describe('CEAT and MRF import', () => {
           ceat.products.map((p) => p.slug),
         ),
       );
-    expect(rows.map((r) => r.status).sort()).toEqual(['draft', 'live', 'live']);
-    const [hidden] = rows.filter((r) => r.slug === 'ceat-milaze-x3-155-70r12-73t-tl');
-    expect((hidden?.spec as { ceatPrice?: unknown }).ceatPrice).toEqual({
+    expect(rows.map((r) => r.status).sort()).toEqual(['draft', 'live']);
+    const [pattern] = rows.filter((r) => r.slug === 'ceat-milaze-x3');
+    const variantSpecs = (pattern?.spec as { variantSpecs?: Record<string, { ceatPrice?: unknown }> })
+      .variantSpecs;
+    expect(variantSpecs?.['CEAT-105038']?.ceatPrice).toEqual({
       siteData: { paise: 310000, gstIncluded: true },
     });
+    expect(
+      await db
+        .select()
+        .from(s.productVariants)
+        .where(eq(s.productVariants.productId, pattern?.id ?? '')),
+    ).toHaveLength(2);
     const [pack] = await db.select().from(s.productVariants).where(eq(s.productVariants.sku, 'CEAT-105038'));
     expect(pack?.mrpPaise).toBeNull();
   });
@@ -171,37 +189,24 @@ describe('CEAT and MRF import', () => {
     expect(other).toMatchObject({ status: 'live', version: 1 });
   });
 
-  it('the public page hides the private spec keys; the tyre attributes show', async () => {
-    const page = await getCatalogueProduct(tx, 'ceat-milaze-x3-145-70r12-69t-tl', {
-      cityCode: 'RPR',
-      locale: 'en',
-    });
-    for (const key of ['fitment', 'ceatPrice', 'sourceChecks']) expect(page.spec).not.toHaveProperty(key);
-    expect(page.attributes).toMatchObject({
-      size: '145/70R12',
-      loadIndex: 69,
-      speedSymbol: 'T',
-      tubeless: true,
-    });
-    const hidden = await getCatalogueProduct(tx, 'ceat-milaze-x3-155-70r12-73t-tl', {
-      cityCode: 'RPR',
-      locale: 'en',
-    });
-    expect(hidden.spec).not.toHaveProperty('ceatPrice');
-    expect(hidden.variants[0]?.mrpPaise ?? null).toBeNull();
+  it('the public page lists every size as a variant and hides the private spec keys (fitment, hidden price, per-size data)', async () => {
+    const page = await getCatalogueProduct(tx, 'ceat-milaze-x3', { cityCode: 'RPR', locale: 'en' });
+    for (const key of ['fitment', 'ceatPrice', 'sourceChecks', 'variantSpecs'])
+      expect(page.spec).not.toHaveProperty(key);
+    expect(page.spec).toMatchObject({ pattern: 'Milaze X3', sizeCount: 2 });
+    expect(page.variants.map((v) => [v.options, v.mrpPaise ?? null])).toEqual(
+      expect.arrayContaining([
+        [{ size: '145/70R12 69T TL' }, 290000],
+        [{ size: '155/70R12 73T TL' }, null],
+      ]),
+    );
   });
 
   it('category=tyres lists the tyres of every sub-category; a sub-category lists only its own', async () => {
     const all = await listCatalogue(tx, { cityCode: 'RPR', locale: 'en', category: 'tyres', limit: 50 });
     const slugs = all.items.map((i) => i.slug).sort();
     expect(slugs).toEqual(
-      expect.arrayContaining([
-        'ceat-milaze-x3-145-70r12-69t-tl',
-        'ceat-milaze-x3-155-70r12-73t-tl',
-        'mrf-zwyde-175-60r13-77t-tl',
-        'mrf-4-50-12-bias-poly-pouch',
-        'apollo-alnac',
-      ]),
+      expect.arrayContaining(['ceat-milaze-x3', 'mrf-zwyde', 'mrf-bias-poly-pouch', 'apollo-alnac']),
     );
     expect(slugs).not.toContain('ceat-old-tyre');
     expect(slugs).not.toContain('mrf-old-tyre');
@@ -211,11 +216,7 @@ describe('CEAT and MRF import', () => {
       category: 'car-suv-tyres',
       limit: 50,
     });
-    expect(cars.items.map((i) => i.slug).sort()).toEqual([
-      'ceat-milaze-x3-145-70r12-69t-tl',
-      'ceat-milaze-x3-155-70r12-73t-tl',
-      'mrf-zwyde-175-60r13-77t-tl',
-    ]);
+    expect(cars.items.map((i) => i.slug).sort()).toEqual(['ceat-milaze-x3', 'mrf-zwyde']);
   });
 
   it('records one event per run and a second run changes nothing', async () => {
@@ -229,7 +230,7 @@ describe('CEAT and MRF import', () => {
       packsCreated: 0,
       categoriesCreated: 0,
     });
-    expect(run.counts.productsUnchanged).toBe(3);
+    expect(run.counts.productsUnchanged).toBe(2);
     const mrfRun = await applyMrfImport(tx, mrf.products, { staffUserId: staff });
     expect(mrfRun.counts).toMatchObject({ productsCreated: 0, productsUpdated: 0, productsArchived: 0 });
   });
@@ -237,24 +238,18 @@ describe('CEAT and MRF import', () => {
 
 describe('a pattern picture shared by several products', () => {
   it('is stored once; removing one product keeps it for the other and the last removal retires it', async () => {
-    const [a] = await db
-      .select()
-      .from(s.products)
-      .where(eq(s.products.slug, 'ceat-milaze-x3-145-70r12-69t-tl'));
-    const [b] = await db
-      .select()
-      .from(s.products)
-      .where(eq(s.products.slug, 'ceat-milaze-x3-155-70r12-73t-tl'));
+    const [a] = await db.select().from(s.products).where(eq(s.products.slug, 'ceat-milaze-x3'));
+    const [b] = await db.select().from(s.products).where(eq(s.products.slug, 'mrf-zwyde'));
     const actor = { kind: 'staff', userId: staff } as const;
     const first = await saveProductPhoto(tx, {
-      slug: 'ceat-milaze-x3-145-70r12-69t-tl',
+      slug: 'ceat-milaze-x3',
       actor,
       alt: 'front view',
       altHi: 'सामने का दृश्य',
       image: image(a?.id ?? ''),
     });
     const second = await attachSharedProductPhoto(tx, {
-      slug: 'ceat-milaze-x3-155-70r12-73t-tl',
+      slug: 'mrf-zwyde',
       actor,
       alt: 'front view',
       altHi: 'सामने का दृश्य',
@@ -274,7 +269,7 @@ describe('a pattern picture shared by several products', () => {
     ).toHaveLength(1);
 
     const kept = await removeProductPhoto(tx, {
-      slug: 'ceat-milaze-x3-145-70r12-69t-tl',
+      slug: 'ceat-milaze-x3',
       photoId: first.id,
       actor,
     });
@@ -299,7 +294,7 @@ describe('a pattern picture shared by several products', () => {
   it('only staff may attach, and only from a live photo', async () => {
     await expect(
       attachSharedProductPhoto(tx, {
-        slug: 'ceat-milaze-x3-145-70r12-69t-tl',
+        slug: 'ceat-milaze-x3',
         actor: { kind: 'staff', userId: staff },
         alt: 'front view',
         altHi: 'सामने का दृश्य',
@@ -308,7 +303,7 @@ describe('a pattern picture shared by several products', () => {
     ).rejects.toThrow('Photo not found');
     await expect(
       attachSharedProductPhoto(tx, {
-        slug: 'ceat-milaze-x3-145-70r12-69t-tl',
+        slug: 'ceat-milaze-x3',
         actor: { kind: 'shop', userId: staff, shopIds: [] },
         alt: 'front view',
         altHi: 'सामने का दृश्य',

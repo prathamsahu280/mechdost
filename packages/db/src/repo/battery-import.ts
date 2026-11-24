@@ -231,7 +231,7 @@ async function execute(
     .where(
       inArray(
         productVariants.sku,
-        plan.map((p) => p.variant.sku),
+        plan.flatMap((p) => p.variants.map((v) => v.sku)),
       ),
     );
   const bySku = new Map(skuRows.map((v) => [v.sku, v]));
@@ -267,8 +267,12 @@ async function execute(
   };
 
   for (const p of plan) {
-    const owner = bySku.get(p.variant.sku);
-    const row = (owner ? byId.get(owner.productId) : undefined) ?? bySlug.get(p.slug);
+    // The product holding any of the planned SKUs (all of them must sit on the one product), else the one with the slug.
+    const owners = new Set(p.variants.flatMap((v) => bySku.get(v.sku)?.productId ?? []));
+    if (owners.size > 1)
+      throw new ConflictError(`The sizes of ${p.slug} sit on different products`, 'SKU_SPLIT');
+    const [ownerId] = owners;
+    const row = (ownerId === undefined ? undefined : byId.get(ownerId)) ?? bySlug.get(p.slug);
     if (!row) {
       fresh.push(p);
       results.set(p.slug, 'created');
@@ -331,52 +335,58 @@ async function execute(
       touched = true;
     }
 
-    // The pack.
+    // The packs: one per planned variant (a tyre pattern has one per size).
     const vs = variantsOf.get(row.id) ?? [];
-    const mine = vs.find((v) => v.sku === p.variant.sku);
-    const want = {
-      options: p.variant.options,
-      weightG: p.variant.weightG,
-      netQty: p.variant.netQuantity.qty,
-      netUnit: p.variant.netQuantity.unit,
-    };
-    let variantId = mine?.id;
-    if (!mine) {
-      if (write) {
-        const [made] = await db
-          .insert(productVariants)
-          .values({ productId: row.id, sku: p.variant.sku, mrpPaise: p.variant.mrpPaise, ...want })
-          .returning({ id: productVariants.id });
-        variantId = made?.id;
-      }
-      counts.packsCreated += 1;
-      if (p.variant.mrpPaise !== null) counts.mrpSet += 1;
-      touched = true;
-    } else {
-      const patch: Partial<typeof productVariants.$inferInsert> = {};
-      if (!adminEdited) {
-        if (!sameJson(mine.options, want.options)) patch.options = want.options;
-        if (mine.weightG !== want.weightG) patch.weightG = want.weightG;
-        if (mine.netQty !== want.netQty) patch.netQty = want.netQty;
-        if (mine.netUnit !== want.netUnit) patch.netUnit = want.netUnit;
-      }
-      // The old row's MRP is replaced; one this importer wrote (or staff edited) is only filled where empty.
-      if (
-        p.variant.mrpPaise !== null &&
-        mine.mrpPaise !== p.variant.mrpPaise &&
-        (!own || mine.mrpPaise === null)
-      ) {
-        patch.mrpPaise = p.variant.mrpPaise;
-        counts.mrpSet += 1;
-      }
-      if (mine.status === 'archived' && (!own || wasArchived)) patch.status = 'active';
-      if (Object.keys(patch).length > 0) {
-        if (write) await db.update(productVariants).set(patch).where(eq(productVariants.id, mine.id));
+    const planned = new Set(p.variants.map((v) => v.sku));
+    for (const pv of p.variants) {
+      const mine = vs.find((v) => v.sku === pv.sku);
+      const want = {
+        options: pv.options,
+        weightG: pv.weightG,
+        netQty: pv.netQuantity.qty,
+        netUnit: pv.netQuantity.unit,
+      };
+      let variantId = mine?.id;
+      if (!mine) {
+        if (write) {
+          const [made] = await db
+            .insert(productVariants)
+            .values({ productId: row.id, sku: pv.sku, mrpPaise: pv.mrpPaise, barcode: pv.barcode, ...want })
+            .returning({ id: productVariants.id });
+          variantId = made?.id;
+        }
+        counts.packsCreated += 1;
+        if (pv.mrpPaise !== null) counts.mrpSet += 1;
         touched = true;
+      } else {
+        const patch: Partial<typeof productVariants.$inferInsert> = {};
+        if (!adminEdited) {
+          if (!sameJson(mine.options, want.options)) patch.options = want.options;
+          if (mine.weightG !== want.weightG) patch.weightG = want.weightG;
+          if (mine.netQty !== want.netQty) patch.netQty = want.netQty;
+          if (mine.netUnit !== want.netUnit) patch.netUnit = want.netUnit;
+        }
+        // A barcode the source states is written; one staff typed is kept when the source has none.
+        if (pv.barcode !== null && mine.barcode !== pv.barcode && !adminEdited) patch.barcode = pv.barcode;
+        // The old row's MRP is replaced; one this importer wrote (or staff edited) is only filled where empty.
+        if (pv.mrpPaise !== null && mine.mrpPaise !== pv.mrpPaise && (!own || mine.mrpPaise === null)) {
+          patch.mrpPaise = pv.mrpPaise;
+          counts.mrpSet += 1;
+        }
+        if (mine.status === 'archived' && (!own || wasArchived)) patch.status = 'active';
+        if (Object.keys(patch).length > 0) {
+          if (write) await db.update(productVariants).set(patch).where(eq(productVariants.id, mine.id));
+          touched = true;
+        }
       }
+      if (write && variantId && pv.partNumbers.length > 0)
+        await db
+          .insert(partNumbers)
+          .values(pv.partNumbers.map((n) => ({ variantId, ...n })))
+          .onConflictDoNothing();
     }
-    // Other packs of the row are the old import's: archived.
-    const stale = vs.filter((v) => v.sku !== p.variant.sku && v.status !== 'archived');
+    // Other packs of the row are the old import's (or a size the maker dropped): archived, the planned ones untouched.
+    const stale = vs.filter((v) => !planned.has(v.sku) && v.status !== 'archived');
     if (stale.length > 0) {
       if (write)
         await db
@@ -391,11 +401,6 @@ async function execute(
       counts.variantsArchived += stale.length;
       touched = true;
     }
-    if (write && variantId && p.partNumbers.length > 0)
-      await db
-        .insert(partNumbers)
-        .values(p.partNumbers.map((n) => ({ variantId, ...n })))
-        .onConflictDoNothing();
     results.set(p.slug, touched ? 'updated' : 'unchanged');
     if (!touched) counts.productsUnchanged += 1;
   }
@@ -403,8 +408,10 @@ async function execute(
   // New products.
   if (fresh.length > 0) {
     counts.productsCreated = fresh.length;
-    counts.packsCreated += fresh.length;
-    counts.mrpSet += fresh.filter((p) => p.variant.mrpPaise !== null).length;
+    for (const p of fresh) {
+      counts.packsCreated += p.variants.length;
+      counts.mrpSet += p.variants.filter((v) => v.mrpPaise !== null).length;
+    }
     if (write) {
       if (brandId === null)
         throw new ValidationError(`The ${cfg.brand.name} brand is missing`, 'GROUP_MISSING');
@@ -437,28 +444,33 @@ async function execute(
         )
         .returning({ id: products.id, slug: products.slug });
       const idBySlug = new Map(made.map((m) => [m.slug, m.id]));
-      const variants = await db
-        .insert(productVariants)
-        .values(
-          fresh.map((p) => ({
-            productId: idBySlug.get(p.slug) ?? '',
-            sku: p.variant.sku,
-            options: p.variant.options,
-            mrpPaise: p.variant.mrpPaise,
-            weightG: p.variant.weightG,
-            netQty: p.variant.netQuantity.qty,
-            netUnit: p.variant.netQuantity.unit,
-          })),
-        )
-        .returning({ id: productVariants.id, sku: productVariants.sku });
-      const idBySku = new Map(variants.map((v) => [v.sku, v.id]));
-      await db
-        .insert(partNumbers)
-        .values(
-          fresh.flatMap((p) =>
-            p.partNumbers.map((n) => ({ variantId: idBySku.get(p.variant.sku) ?? '', ...n })),
-          ),
-        );
+      const idBySku = new Map<string, string>();
+      const packRows = fresh.flatMap((p) =>
+        p.variants.map((v) => ({
+          productId: idBySlug.get(p.slug) ?? '',
+          sku: v.sku,
+          options: v.options,
+          mrpPaise: v.mrpPaise,
+          barcode: v.barcode,
+          weightG: v.weightG,
+          netQty: v.netQuantity.qty,
+          netUnit: v.netQuantity.unit,
+        })),
+      );
+      for (let k = 0; k < packRows.length; k += 500)
+        for (const v of await db
+          .insert(productVariants)
+          .values(packRows.slice(k, k + 500))
+          .returning({ id: productVariants.id, sku: productVariants.sku }))
+          idBySku.set(v.sku, v.id);
+      const partRows = fresh.flatMap((p) =>
+        p.variants.flatMap((v) => v.partNumbers.map((n) => ({ variantId: idBySku.get(v.sku) ?? '', ...n }))),
+      );
+      for (let k = 0; k < partRows.length; k += 500)
+        await db
+          .insert(partNumbers)
+          .values(partRows.slice(k, k + 500))
+          .onConflictDoNothing();
       for (const p of fresh)
         audit('product.created', idBySlug.get(p.slug) ?? '', null, {
           slug: p.slug,

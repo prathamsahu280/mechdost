@@ -440,6 +440,7 @@ const PRIVATE_SPEC_KEYS: ReadonlySet<string> = new Set([
   'amaronPrice',
   'tataGreenPrice',
   'ceatPrice',
+  'variantSpecs',
   'combos',
   'categoryRule',
   'sourceChecks',

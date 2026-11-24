@@ -14,6 +14,7 @@ export type TyreKind =
   | 'truck_bus'
   | 'farm'
   | 'otr'
+  | 'industrial'
   | 'tube'
   | 'flap';
 
@@ -81,6 +82,13 @@ export const TYRE_CATEGORIES: Readonly<Record<TyreKind, PlannedCategory>> = {
     'ऑफ़-द-रोड (ओटीआर) टायर',
     'Tyres for earth movers, loaders, graders, fork-lifts and industrial vehicles.',
     'अर्थमूवर, लोडर, ग्रेडर, फ़ोर्क-लिफ़्ट और औद्योगिक वाहनों के टायर।',
+  ),
+  industrial: sub(
+    'industrial-tyres',
+    'Industrial tyres',
+    'इंडस्ट्रियल टायर',
+    'Tyres for forklifts, trailers, port and factory vehicles and other industrial equipment.',
+    'फ़ोर्कलिफ़्ट, ट्रेलर, बंदरगाह और फ़ैक्टरी के वाहनों और दूसरे औद्योगिक उपकरणों के टायर।',
   ),
   tube: sub(
     'tubes-flaps',
@@ -155,6 +163,13 @@ export const KINDS: Readonly<Record<TyreKind, KindInfo>> = {
     hsn: '4011',
     en: 'off-the-road (OTR) tyre',
     hi: 'ऑफ़-द-रोड (ओटीआर) टायर',
+  },
+  industrial: {
+    code: 'industrial_tyre',
+    vehicleTypes: [],
+    hsn: '4011',
+    en: 'industrial tyre',
+    hi: 'इंडस्ट्रियल टायर',
   },
   tube: { code: 'tube', vehicleTypes: [], hsn: '4013', en: 'inner tube', hi: 'इनर ट्यूब' },
   flap: { code: 'flap', vehicleTypes: [], hsn: '4012', en: 'tyre flap', hi: 'टायर फ़्लैप' },

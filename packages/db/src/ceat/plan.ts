@@ -11,6 +11,7 @@ import {
   loadIndexText,
   planTyreRows,
   planTyrePhotos,
+  tyrePatternName,
   rupeesToPaise,
   speedSymbol,
   titleTyreName,
@@ -240,8 +241,8 @@ export function planCeat(input: CeatPlanInput): TyrePlan {
     const { photos, missing } = planTyrePhotos({
       files,
       urls,
-      name,
-      nameHi,
+      name: tyrePatternName('CEAT', pattern),
+      nameHi: hindiTyreName(tyrePatternName('CEAT', pattern), kind),
       order: CEAT_VIEW_ORDER,
       exists,
     });
@@ -288,15 +289,11 @@ export function planCeat(input: CeatPlanInput): TyrePlan {
     }
   });
 
-  const plan = planTyreRows(rows, {
+  return planTyreRows(rows, {
     source: 'ceat',
     skuPrefix: 'CEAT',
     checks,
     untranslated: [...untranslated],
     orphanFitment,
   });
-  // The checks were collected by name; give them the slug of their product.
-  const slugOf = new Map(plan.products.map((p) => [p.name, p.slug]));
-  for (const c of plan.checks) c.slug = c.slug === '' ? (slugOf.get(c.name) ?? '') : c.slug;
-  return plan;
 }

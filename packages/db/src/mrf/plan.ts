@@ -11,6 +11,7 @@ import {
   rupeesToPaise,
   speedSymbol,
   titleTyreName,
+  tyrePatternName,
   type TyreCheck,
   type TyreFitment,
   type TyreKind,
@@ -184,8 +185,8 @@ export function planMrf(input: MrfPlanInput): TyrePlan {
     const { photos, missing } = planTyrePhotos({
       files: (t['Picture files'] ?? '').split(' | '),
       urls: (t['Picture URLs'] ?? '').split(' | '),
-      name,
-      nameHi,
+      name: tyrePatternName('MRF', pattern),
+      nameHi: hindiTyreName(tyrePatternName('MRF', pattern), kind),
       order: MRF_VIEW_ORDER,
       exists,
     });
@@ -241,13 +242,10 @@ export function planMrf(input: MrfPlanInput): TyrePlan {
     note: `${String(MRF_DISCONTINUED_TITLES.length)} pages still exist on mrftyres.com but show no product (listed in the sheet "Discontinued pages" of MRF_Tyres.xlsx). None is in mrf_tyres.csv, so none becomes a product.`,
   });
 
-  const plan = planTyreRows(rows, {
+  return planTyreRows(rows, {
     source: 'mrf',
     skuPrefix: 'MRF',
     checks,
     untranslated: [...untranslated],
   });
-  const slugOf = new Map(plan.products.map((p) => [p.name, p.slug]));
-  for (const c of plan.checks) if (c.slug === '') c.slug = slugOf.get(c.name) ?? '';
-  return plan;
 }
