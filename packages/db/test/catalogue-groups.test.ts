@@ -440,6 +440,7 @@ describe('guard: one visibility rule', () => {
       'catalogue-admin.ts',
       'catalogue-create.ts',
       'catalogue-bulk.ts',
+      'catalogue-variants.ts',
       'catalogue-groups.ts',
       'catalogue-v2-import.ts',
       'price-requests.ts',

@@ -195,9 +195,15 @@ describe('detail for the editor (admin catalogue screen, plan 2026-11-13 Task 5)
     ]);
     const p = await getAdminProduct(t(), 'a-complete');
     expect(p.attributes).toEqual({ voltage: 12, capacityAh: 5 });
-    expect(p.variants).toEqual([
-      { sku: 'EXI-A-0003', mrpPaise: 100_000, netQuantity: null },
-      { sku: 'EXI-B-0005', mrpPaise: 150_000, netQuantity: { qty: 1, unit: 'piece' } },
+    expect(p.variants).toMatchObject([
+      { sku: 'EXI-A-0003', mrpPaise: 100_000, netQuantity: null, status: 'active', version: 1 },
+      {
+        sku: 'EXI-B-0005',
+        mrpPaise: 150_000,
+        netQuantity: { qty: 1, unit: 'piece' },
+        status: 'active',
+        version: 1,
+      },
     ]);
   });
 });
