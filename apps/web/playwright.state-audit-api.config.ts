@@ -19,7 +19,7 @@ export default defineConfig({
     ['json', { outputFile: process.env.STATE_AUDIT_REPORT ?? 'test-results/state-audit-api-report.json' }],
   ],
   use: {
-    baseURL: 'http://localhost:3101',
+    baseURL: `http://localhost:${process.env.STATE_AUDIT_PORT ?? '3101'}`,
     trace: 'off',
     screenshot: 'off',
     ...devices['Desktop Chrome'],
@@ -29,9 +29,9 @@ export default defineConfig({
   globalSetup: './e2e/state-audit/api-mode/server-mock-setup.ts',
   projects: [{ name: 'audit-api' }],
   webServer: {
-    command: 'pnpm exec next start --port 3101',
+    command: `pnpm exec next start --port ${process.env.STATE_AUDIT_PORT ?? '3101'}`,
     env: { NEXT_DIST_DIR: '.next-api' },
-    url: 'http://localhost:3101',
+    url: `http://localhost:${process.env.STATE_AUDIT_PORT ?? '3101'}`,
     reuseExistingServer: true,
     timeout: 120_000,
   },

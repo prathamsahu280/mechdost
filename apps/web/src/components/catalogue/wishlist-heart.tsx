@@ -96,7 +96,7 @@ export default function WishlistHeart({
       aria-busy={busy}
       aria-label={label}
       onClick={(e) => void press(e.currentTarget)}
-      className="press absolute top-[3.75rem] right-3 z-10 inline-flex size-10 items-center justify-center rounded-full bg-surface/95 text-ink shadow-card hover:bg-surface"
+      className="press inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-line-card bg-surface text-ink hover:bg-pill"
     >
       <Heart aria-hidden="true" className={`size-5 ${on ? 'fill-accent text-accent' : ''}`} />
     </button>

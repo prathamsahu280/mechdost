@@ -152,6 +152,23 @@ On phones (under 1024 px) the button also hides while a form field in `main` has
 - Customer copy never says an order goes through a shop or seller ("verified shop", "nearby shop", "Sold by", "shop accepted"); MechDost is the only named party. Shop wording stays in portals, admin, partner pages and the named legal exceptions (guard test `packages/shared/test/customer-copy.test.ts`).
 - Coverage copy says Chhattisgarh (छत्तीसगढ़) through `{region}`; "Raipur" stays only as a fact (registered office, PIN checks, order codes, city data). The announcement bar reads "Workshop requests in Chhattisgarh".
 
+### Portal scroll model (2026-11-24, user: "sometimes the sidebar goes down, sometimes the main site content ... in settings there are two of them")
+
+One rule for every portal frame with a side bar (admin console, account area):
+
+- **The page is the only vertical scroller.** Nothing inside a section scrolls in a box: no `max-h` + `overflow-y-auto` panes (lists, quote threads in admin, bulk previews). Tables that need it scroll sideways only. The one exception is a read-before-accept legal text box, marked `data-scroll="box"`.
+- **The side bar** (from 1024 px) is `sticky top-24` under the site header with `max-h-[calc(100dvh-7rem)]` and `overflow-y-auto`: it never moves with the page and scrolls itself only when it is taller than the window (the real-sign-in admin bar has 23 sections). It carries `data-scroll="sidebar"`, which the UI audit's `scroll` check reads. The current item is brought into view inside the bar, never by scrolling the page. Focus rings inside it are inset so the bar's clipping never hides them.
+- **No second sticky column.** The settings category list scrolls with the page (it used to stick as well, so two tall columns were stuck side by side and read as two scroll areas). The only other sticky element is the save bar at the foot.
+- **Side bar content (admin):** sections grouped under headings Operations, Catalogue, People, Content, System (`lib/admin-nav-groups.ts`; the first group, Overview and Analytics, has no heading); one lucide line icon per section (18 px, stroke 1.9), no emoji; on phones the same list is a sideways strip with the headings hidden.
+
+### Product card tools (2026-11-24, user: "the i button and heart button gets over the images")
+
+The round ⓘ (quick details) and ♡ (save) buttons are no longer laid over the picture. They sit at the right end of the card's category line (`data-slot="card-tools"`), 40 px, with a line border instead of a shadow, and the category text takes the rest of the row (it wraps, never truncates). The picture is clean on every card (shop grid, related products, recommendations, home range). The row is 18 px taller than the old text-only category line; it is one of the card's eight shared grid rows, so cards in a row still line up. The UI audit's `offphoto` check fails if a tool button intersects the picture.
+
+### WhatsApp wording (2026-11-24, user: "talk to real people on whatsapp doesnt sound as good")
+
+Every control that opens a WhatsApp chat with MechDost says what it is for: "Contact support on WhatsApp" (Hindi: "WhatsApp पर सहायता से बात करें"). The trust strip reads "Contact support on WhatsApp / Chat with the MechDost team in English or Hindi". The footer button no longer repeats the number (the number is in the assistant note and the Company page); its screen-reader hint "Opens WhatsApp" stays after the visible words, so the accessible name always starts with the visible text (WCAG label-in-name). Admin-side WhatsApp wording (notifications) is unchanged.
+
 ### Settings workbench (2026-11-24)
 
 Admin → Settings uses one pattern for any long settings page: a select (phones), pill tabs (tablet) or a side list (>= 1200 px) of categories; a search box; one white card per category holding divided rows (label 15 px bold, one-line help `text-sm text-muted`, range/default 12 px, small `bg-pill` tags, control on the right from 760 px and below the text on phones); a sticky save bar (card with `shadow-float`, above the mobile tab bar) with the unsaved count, Discard and the single primary button. Controls: number input in a bordered group with the unit inside it (min 44 px high), the shared `Switch` (`components/ui/switch.tsx`, the 2026-11-03 switch above), a native `<dialog>` for the one confirm step. No new colours, fonts or radii. New settings categories are registry entries, not new layout.

@@ -15,7 +15,7 @@ export default defineConfig({
   // Visitors in these suites have already made their privacy choice, so the consent banner (fixed at the bottom)
   // does not cover what they click; e2e/consent.spec.ts starts from a clean browser to test the banner itself.
   use: {
-    baseURL: 'http://localhost:3100',
+    baseURL: `http://localhost:${process.env.E2E_PORT ?? '3100'}`,
     trace: 'retain-on-failure',
     storageState: 'e2e/fixtures/consent-decided.json',
   },
@@ -24,8 +24,8 @@ export default defineConfig({
     { name: 'mobile', use: { ...devices['Pixel 7'], viewport: { width: 390, height: 844 } } },
   ],
   webServer: {
-    command: 'pnpm exec next start --port 3100',
-    url: 'http://localhost:3100',
+    command: `pnpm exec next start --port ${process.env.E2E_PORT ?? '3100'}`,
+    url: `http://localhost:${process.env.E2E_PORT ?? '3100'}`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },

@@ -26,7 +26,7 @@ const ALL_ACCOUNT_SECTIONS = [
 ] as const;
 export type AccountSection = (typeof ALL_ACCOUNT_SECTIONS)[number];
 
-const ALL_ADMIN_SECTIONS = [
+export const ALL_ADMIN_SECTIONS = [
   'overview',
   // Analytics from our own data (spec 08 "Analytics", 2026-11-14): real sign-in only (it reads the API).
   'analytics',

@@ -1153,6 +1153,28 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
     realApi: true,
   },
 
+  // ─────────────── Admin scroll geometry (design 2026-11-24) ───────────────
+  {
+    code: 'API-ADM-SCROLL',
+    page: 'Admin console, real sign-in',
+    component:
+      'Scroll geometry: the page is the only vertical scroller, the side bar stays in view under the header after scrolling, never two tall columns stuck (overview, orders, catalogue, customers, settings, audit log)',
+    path: (r) => adminPath(String(r.section)),
+    scope: 'main',
+    strategy: 'cross',
+    cross: ['width', 'section'],
+    params: [
+      { name: 'width', values: [390, 1024, 1280, 1440, 1920] },
+      { name: 'section', values: ['overview', 'orders', 'catalogue', 'customers', 'settings', 'audit'] },
+      theme,
+      locale,
+      { name: 'auth', values: ['admin'] },
+    ],
+    checks: ['present', 'scroll', 'hscroll', 'console'],
+    note: `${API_NOTE} Every section is answered from its own row's mocks, as in API-NAV-ADMIN.`,
+    realApi: true,
+  },
+
   // ─────────────── Navigation in a real-sign-in build ───────────────
   {
     code: 'API-NAV-ADMIN',

@@ -270,7 +270,7 @@ function Thread({ quote }: { quote: QuoteDetail }) {
     void import('@/lib/quote-api').then(({ markQuoteRead }) => markQuoteRead(locale, code, true));
   }, [newestId, code, locale]);
   return (
-    <ol className="mt-4 max-h-80 space-y-3 overflow-y-auto">
+    <ol className="mt-4 space-y-3">
       {quote.messages.length === 0 ? <li className="text-sm text-muted">{q('noMessages')}</li> : null}
       {quote.messages.map((m) => {
         const ours = m.from !== 'customer';

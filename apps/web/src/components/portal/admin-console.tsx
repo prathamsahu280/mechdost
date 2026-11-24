@@ -10,6 +10,32 @@ import {
   type AssignmentDeclineReason,
 } from '@mechdost/shared/state';
 import { useSelectedLayoutSegment } from 'next/navigation';
+import {
+  Bell,
+  ChartColumn,
+  Coins,
+  FileDown,
+  Handshake,
+  Headset,
+  LayoutDashboard,
+  LayoutGrid,
+  MessagesSquare,
+  Package,
+  PencilLine,
+  RotateCcw,
+  Route,
+  ScrollText,
+  Settings,
+  Siren,
+  Star,
+  Store,
+  Ticket,
+  TriangleAlert,
+  UserCog,
+  Users,
+  Wrench,
+  type LucideIcon,
+} from 'lucide-react';
 import { useState, type ReactNode, type SyntheticEvent } from 'react';
 import { useCenterCurrent } from '@/lib/use-center-current';
 import { useRevealSection } from '@/lib/reveal-section';
@@ -45,6 +71,7 @@ import { track } from '@/lib/analytics';
 import { AUTH_MODE } from '@/lib/auth/mode';
 import { parseRupees } from '@/lib/money-input';
 import { formatDate, formatPrice } from '@/lib/format';
+import { groupAdminSections } from '@/lib/admin-nav-groups';
 import { ADMIN_SECTIONS, type AdminSection } from '@/lib/sections';
 import { AdminCoins } from './admin-coins';
 import { AdminNotifications, type NotifyDefaults } from './admin-notifications';
@@ -152,30 +179,31 @@ const AdminRecoApi = dynamic(() => import('./admin-reco-api').then((m) => m.Admi
   loading: () => <div className="skeleton h-64 rounded-card" aria-hidden="true" />,
 });
 
-const SECTION_EMOJI: Record<AdminSection, string> = {
-  overview: '📊',
-  analytics: '📈',
-  orders: '🧭',
-  refunds: '💸',
-  services: '🔧',
-  roadside: '🆘',
-  quotes: '💬',
-  applications: '🤝',
-  partners: '🏬',
-  catalogue: '📦',
-  customers: '🙋',
-  reviews: '⭐',
-  support: '🛟',
-  coins: '🪙',
-  coupons: '🎟️',
-  content: '✏️',
-  layout: '🧩',
-  settings: '⚙️',
-  notifications: '🔔',
-  staff: '👥',
-  audit: '📜',
-  exports: '📤',
-  errors: '🚨',
+/** One line icon per section (lucide, never emoji; design 2026-11-24). */
+const SECTION_ICON: Record<AdminSection, LucideIcon> = {
+  overview: LayoutDashboard,
+  analytics: ChartColumn,
+  orders: Route,
+  refunds: RotateCcw,
+  services: Wrench,
+  roadside: Siren,
+  quotes: MessagesSquare,
+  applications: Handshake,
+  partners: Store,
+  catalogue: Package,
+  customers: Users,
+  reviews: Star,
+  support: Headset,
+  coins: Coins,
+  coupons: Ticket,
+  content: PencilLine,
+  layout: LayoutGrid,
+  settings: Settings,
+  notifications: Bell,
+  staff: UserCog,
+  audit: ScrollText,
+  exports: FileDown,
+  errors: TriangleAlert,
 };
 
 /**
@@ -285,31 +313,57 @@ function usePrefix() {
   return useLocale() === 'hi' ? '/hi' : '';
 }
 
+/**
+ * The side bar (design 2026-11-24, one scroll model for every admin section): from 1024 px it sticks under the site
+ * header and scrolls itself only when it is taller than the window; the page stays the only other vertical scroller
+ * (nothing inside a section scrolls in a box, and the settings categories do not stick). On phones it is a sideways
+ * strip that scrolls away with the page. `data-scroll="sidebar"` marks the one allowed scroller for the UI audit.
+ */
 function AdminNav({ current }: { current: AdminSection }) {
   const bar = useCenterCurrent<HTMLElement>(current);
   const t = useTranslations('portal');
   const prefix = usePrefix();
+  const groups = groupAdminSections(ADMIN_SECTIONS);
   return (
     <nav
       ref={bar}
       aria-label={t('navLabel')}
-      className="-mx-[5%] overflow-x-auto px-[5%] nav:sticky nav:top-28 nav:mx-0 nav:px-0"
+      data-scroll="sidebar"
+      className="-mx-[5%] overflow-x-auto px-[5%] nav:sticky nav:top-24 nav:mx-0 nav:max-h-[calc(100dvh-7rem)] nav:overflow-x-hidden nav:overflow-y-auto nav:rounded-card nav:border nav:border-line-card nav:bg-surface nav:p-2 nav:shadow-card"
     >
-      <ul className="flex gap-2 nav:flex-col nav:gap-1">
-        {ADMIN_SECTIONS.map((s) => (
-          <li key={s}>
-            <PortalNavLink
-              href={`${prefix}/admin${s === 'overview' ? '' : `/${s}`}`}
-              aria-current={s === current ? 'page' : undefined}
-              className={`press flex min-h-11 items-center gap-2 rounded-pill px-4 text-sm font-bold whitespace-nowrap nav:rounded-button ${
-                s === current ? 'bg-accent-soft text-accent-soft-text' : 'text-ink hover:bg-pill'
-              }`}
+      <ul className="flex gap-2 nav:flex-col nav:gap-3">
+        {groups.map((g) => (
+          <li key={g.id} className="contents nav:block">
+            {g.heading ? (
+              <p
+                id={`admin-nav-${g.heading}`}
+                className="hidden px-3 pt-1 pb-1 text-xs font-bold text-muted nav:block"
+              >
+                {t(`navGroup_${g.heading}`)}
+              </p>
+            ) : null}
+            <ul
+              aria-labelledby={g.heading ? `admin-nav-${g.heading}` : undefined}
+              className="contents nav:flex nav:flex-col nav:gap-0.5"
             >
-              <span aria-hidden="true" className="text-[16px] leading-none">
-                {SECTION_EMOJI[s]}
-              </span>
-              {t(`nav_${s}`)}
-            </PortalNavLink>
+              {g.sections.map((s) => {
+                const Icon = SECTION_ICON[s];
+                return (
+                  <li key={s}>
+                    <PortalNavLink
+                      href={`${prefix}/admin${s === 'overview' ? '' : `/${s}`}`}
+                      aria-current={s === current ? 'page' : undefined}
+                      className={`press flex min-h-11 items-center gap-2.5 rounded-pill px-4 text-sm font-bold whitespace-nowrap focus-visible:outline-3 focus-visible:-outline-offset-3 focus-visible:outline-focus nav:min-h-10 nav:rounded-button nav:px-3 ${
+                        s === current ? 'bg-accent-soft text-accent-soft-text' : 'text-ink hover:bg-pill'
+                      }`}
+                    >
+                      <Icon aria-hidden="true" className="size-[18px] shrink-0" strokeWidth={1.9} />
+                      {t(`nav_${s}`)}
+                    </PortalNavLink>
+                  </li>
+                );
+              })}
+            </ul>
           </li>
         ))}
       </ul>
@@ -1112,7 +1166,7 @@ function QuoteNegotiation({ quote }: { quote: DemoQuote }) {
         <h2 id="quote-chat" className="font-heading text-lg font-extrabold text-ink">
           {quote.code} · <span data-user-content>{quote.customer.name}</span> · {q(`status_${quote.status}`)}
         </h2>
-        <ol className="mt-4 max-h-80 space-y-3 overflow-y-auto">
+        <ol className="mt-4 space-y-3">
           {quote.messages.length === 0 ? <li className="text-sm text-muted">{q('noMessages')}</li> : null}
           {quote.messages.map((m) => {
             const ours = m.from === 'admin';

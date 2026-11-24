@@ -129,8 +129,8 @@
       "approveBody": "Work starts only after you accept the itemised estimate.",
       "checkedTitle": "Checked local partners",
       "checkedBody": "Every workshop and partner is verified by our team before they go live.",
-      "supportTitle": "Real people on WhatsApp",
-      "supportBody": "Talk to the MechDost team in English or Hindi."
+      "supportTitle": "Contact support on WhatsApp",
+      "supportBody": "Chat with the MechDost team in English or Hindi."
     },
     "categoryHints": {
       "tyres": "Sizes and vehicle requirements",
@@ -199,13 +199,13 @@
       "a5": "No. You approve the itemised estimate line by line before any work starts.",
       "q6": "Can I order in bulk for my garage or fleet?",
       "a6": "Yes. Ask for a bulk price from any product page or your cart and agree the final price with our team in a chat.",
-      "more": "Still have a question? Ask MechDost"
+      "more": "Still have a question? Ask MechDost on WhatsApp"
     }
   },
   "footer": {
     "helpTitle": "Have a question? Talk to MechDost.",
     "helpBody": "Product sourcing, vehicle service and partner enquiries. Our team confirms each request manually.",
-    "whatsapp": "WhatsApp {phone}",
+    "whatsapp": "Contact support on WhatsApp",
     "whatsappNote": "Opens WhatsApp",
     "call": "Call us",
     "partnersLabel": "For partners",
@@ -252,7 +252,7 @@
       "titleLine2": "Across India.",
       "lead": "Browse freely—no PIN code needed. Delivery address and billing PIN are collected when placing an order. Our team confirms stock, price, shipping and delivery coverage before acceptance.",
       "empty": "Our catalogue is being prepared. Send a product requirement to our sourcing team.",
-      "emptyAction": "Ask on WhatsApp",
+      "emptyAction": "Ask MechDost on WhatsApp",
       "searchedFor": "You searched for “{query}”."
     },
     "workshops": {
@@ -388,7 +388,7 @@
     "close": "Close assistant",
     "you": "You",
     "bot": "MechDost",
-    "note": "Automated answers. For anything urgent, WhatsApp {phone}.",
+    "note": "Automated answers. For anything urgent, contact support on WhatsApp: {phone}.",
     "suggestionsLabel": "Suggested questions",
     "s_shop": "Find a product",
     "s_workshop": "Get a workshop estimate",
@@ -398,13 +398,13 @@
     "a_shop": "Browse the shop by category or search for a product, brand or part number. Our team confirms price, stock and delivery for your PIN before an order is accepted.",
     "a_workshop": "Tell us your vehicle and what it needs. A nearby workshop proposes a slot and expected cost, and work starts only after you approve the itemised estimate.",
     "a_bulk": "For bulk orders you can negotiate the price directly with the MechDost team. Share the products and quantities and we will reply with a final price for your order.",
-    "a_track": "Once you sign in, your orders and service requests show live status in your account. Until then, message us your order reference on WhatsApp.",
+    "a_track": "Once you sign in, your orders and service requests show live status in your account. Until then, contact support on WhatsApp with your order reference.",
     "a_partner": "Shops, garages and mechanics can apply on the partners page. Our team reviews each application and contacts you.",
-    "a_contact": "You can reach the MechDost team on WhatsApp or by phone at {phone}.",
-    "a_fallback": "I am still learning. Try one of the suggestions, or message our team on WhatsApp for a quick reply.",
+    "a_contact": "You can contact MechDost support on WhatsApp or by phone at {phone}.",
+    "a_fallback": "I am still learning. Try one of the suggestions, or contact support on WhatsApp for a quick reply.",
     "go_shop": "Open the shop",
     "go_workshops": "Find a workshop",
-    "go_whatsapp": "Message on WhatsApp",
+    "go_whatsapp": "Contact support on WhatsApp",
     "go_account": "Open my account",
     "go_partners": "See partner options",
     "go_bulk": "Ask for a bulk price"
@@ -733,7 +733,7 @@
     "detail_delivered": "Delivered and confirmed with your code. Rate the products below.",
     "current": "Current step",
     "done": "Done",
-    "help": "Need help? WhatsApp us with your order number.",
+    "help": "Need help? Contact support on WhatsApp with your order number.",
     "myOrders": "Your recent orders",
     "noOrders": "You have no orders yet.",
     "rejectedTitle": "We could not fulfil this order",
@@ -1945,6 +1945,11 @@
     "nav_applications": "Partner applications",
     "nav_reviews": "Reviews",
     "navLabel": "Console sections",
+    "navGroup_operations": "Operations",
+    "navGroup_catalogue": "Catalogue",
+    "navGroup_people": "People",
+    "navGroup_content": "Content",
+    "navGroup_system": "System",
     "kpi_needsRouting": "Orders to route",
     "kpi_awaitingShop": "Waiting for a shop",
     "kpi_confirmed": "Confirmed, not yet delivered",
@@ -3358,9 +3363,9 @@
       "officeLabel": "Registered office",
       "gstinLabel": "GSTIN",
       "phoneLabel": "Phone and WhatsApp",
-      "whatsapp": "Message us on WhatsApp",
+      "whatsapp": "Contact support on WhatsApp",
       "complaintsTitle": "Complaints",
-      "complaintsBody": "Call or WhatsApp us, or raise a support request from your account. We confirm that we have your complaint within 48 hours and resolve it within one month.",
+      "complaintsBody": "Call us or contact support on WhatsApp, or raise a support request from your account. We confirm that we have your complaint within 48 hours and resolve it within one month.",
       "updated": "Last updated 4 November 2026."
     },
     "terms": {
@@ -3394,7 +3399,7 @@
       "changesTitle": "Changes and law",
       "changesBody": "We may update these terms; the date below shows the latest version, and important changes are announced on the site before they apply. These terms follow Indian law, and the courts at Raipur, Chhattisgarh decide any dispute.",
       "contactTitle": "Questions and complaints",
-      "contactBody": "Raise a support request from your account, or call or WhatsApp us. Our grievance officer acknowledges a complaint within 48 hours and resolves it within one month, as the Consumer Protection (E-Commerce) Rules require.",
+      "contactBody": "Raise a support request from your account, call us or contact support on WhatsApp. Our grievance officer acknowledges a complaint within 48 hours and resolves it within one month, as the Consumer Protection (E-Commerce) Rules require.",
       "help": "Questions about these terms? Call us:",
       "updated": "Last updated: 14 November 2026."
     }
