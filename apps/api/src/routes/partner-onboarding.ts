@@ -51,7 +51,12 @@ import { errorResponses, ErrorSchema } from './schemas';
 const APPLY_PER_IP: RateRule = { name: 'partner_apply_ip', limit: 5, windowSeconds: 3600 };
 const INVITE_PER_IP: RateRule = { name: 'partner_invite_ip', limit: 30, windowSeconds: 3600 };
 /** Spec: per IP and per phone. Keyed by a hash, so no phone number sits in the limiter store. */
-const APPLY_PER_PHONE: RateRule = { name: 'partner_apply_phone', limit: 3, windowSeconds: 86_400 };
+export const APPLY_PER_PHONE: RateRule = {
+  name: 'partner_apply_phone',
+  limit: 3,
+  windowSeconds: 86_400,
+  failClosed: true,
+};
 const phoneKey = (phone: string) => createHash('sha256').update(`partner_apply:${phone}`).digest('hex');
 
 const json = <T extends z.ZodType>(schema: T, description: string) => ({

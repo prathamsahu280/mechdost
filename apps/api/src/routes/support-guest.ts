@@ -39,15 +39,17 @@ const CREATE_PER_PHONE: RateRule = {
   limit: GUEST_TICKETS_PER_PHONE_PER_DAY,
   windowSeconds: 86_400,
 };
-const ACCESS_PER_IP: RateRule = {
+export const ACCESS_PER_IP: RateRule = {
   name: 'support_guest_access_ip',
   limit: GUEST_LOOKUPS_PER_IP,
   windowSeconds: 600,
+  failClosed: true,
 };
-const ACCESS_PER_CODE: RateRule = {
+export const ACCESS_PER_CODE: RateRule = {
   name: 'support_guest_access_code',
   limit: GUEST_LOOKUPS_PER_CODE,
   windowSeconds: 3600,
+  failClosed: true,
 };
 
 const json = <T extends z.ZodType>(schema: T, description: string) => ({

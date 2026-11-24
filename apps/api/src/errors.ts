@@ -1,4 +1,5 @@
 import type { Context } from 'hono';
+import { RateLimitUnavailable } from './rate-limit/limiter';
 import { HTTPException } from 'hono/http-exception';
 import { routePath } from 'hono/route';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
@@ -55,6 +56,9 @@ export function handleError(err: Error, c: Context<AppEnv>): Response {
   // A move the state machine forbids is the caller's mistake, not a server fault (review B5).
   if (err instanceof IllegalTransitionError || err instanceof ActorNotAllowedError)
     return c.json(errorBody(c, err.code, err.message), 409);
+  // A fail-closed rate limit whose store did not answer (sign-in, codes, lookups): try again, not a server fault.
+  if (err instanceof RateLimitUnavailable)
+    return c.json(errorBody(c, 'RATE_LIMIT_UNAVAILABLE', 'Please try again in a minute'), 503);
   if (err instanceof HTTPException) {
     const code = err.status === 413 ? 'PAYLOAD_TOO_LARGE' : err.status === 504 ? 'TIMEOUT' : 'HTTP_ERROR';
     return c.json(errorBody(c, code, err.message || 'Request failed'), err.status);

@@ -112,3 +112,39 @@ describe('rate limits on our own Redis', () => {
     expect((await rl.hit(rule, 'k')).allowed).toBe(true);
   });
 });
+
+describe('probe-sensitive limits refuse while the store is down (security review 2026-11-24)', () => {
+  it('guest support codes, partner status lookups, coupons and phone-keyed forms are fail-closed', async () => {
+    const { STATUS_LOOKUP_IP, STATUS_LOOKUP_PHONE } = await import('../src/routes/shop-tools');
+    const { COUPON_CHECK_IP_RATE, COUPON_CHECK_USER_RATE } = await import('../src/routes/coupons');
+    const guest = await import('../src/routes/support-guest');
+    const business = await import('../src/routes/business-applications');
+    const partner = await import('../src/routes/partner-onboarding');
+    for (const r of [
+      STATUS_LOOKUP_IP,
+      STATUS_LOOKUP_PHONE,
+      COUPON_CHECK_IP_RATE,
+      COUPON_CHECK_USER_RATE,
+      guest.ACCESS_PER_IP,
+      guest.ACCESS_PER_CODE,
+      business.FLEET_PER_PHONE,
+      partner.APPLY_PER_PHONE,
+    ])
+      expect(r.failClosed, r.name).toBe(true);
+  });
+
+  it('a refused fail-closed limit answers 503, not 500', async () => {
+    const { handleError } = await import('../src/errors');
+    const { RateLimitUnavailable: Unavailable } = await import('../src/rate-limit/limiter');
+    let status = 0;
+    const c = {
+      get: () => 'req-1',
+      json: (_body: unknown, s: number) => {
+        status = s;
+        return new Response();
+      },
+    };
+    handleError(new Unavailable(), c as never);
+    expect(status).toBe(503);
+  });
+});

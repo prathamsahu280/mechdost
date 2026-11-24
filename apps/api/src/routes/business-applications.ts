@@ -44,7 +44,12 @@ import { errorResponses, ErrorSchema } from './schemas';
  * - staff: the queue, one application, the decision and the trade account's standing (revoke with a reason).
  */
 const FLEET_PER_IP: RateRule = { name: 'business_fleet_ip', limit: 5, windowSeconds: 3600 };
-const FLEET_PER_PHONE: RateRule = { name: 'business_fleet_phone', limit: 3, windowSeconds: 86_400 };
+export const FLEET_PER_PHONE: RateRule = {
+  name: 'business_fleet_phone',
+  limit: 3,
+  windowSeconds: 86_400,
+  failClosed: true,
+};
 const APPLY_PER_USER: RateRule = { name: 'business_apply_user', limit: 5, windowSeconds: 3600 };
 const phoneKey = (phone: string) => createHash('sha256').update(`business_fleet:${phone}`).digest('hex');
 

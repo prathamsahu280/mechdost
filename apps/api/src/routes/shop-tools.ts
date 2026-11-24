@@ -42,8 +42,18 @@ import { errorResponses, ErrorSchema } from './schemas';
  * file) and a per-user hourly limit; the file is read as text and never executed or echoed.
  */
 export const SHOP_CSV_RATE: RateRule = { name: 'shop_csv_user', limit: 30, windowSeconds: 3600 };
-export const STATUS_LOOKUP_IP: RateRule = { name: 'partner_status_ip', limit: 30, windowSeconds: 3600 };
-export const STATUS_LOOKUP_PHONE: RateRule = { name: 'partner_status_phone', limit: 10, windowSeconds: 3600 };
+export const STATUS_LOOKUP_IP: RateRule = {
+  name: 'partner_status_ip',
+  limit: 30,
+  windowSeconds: 3600,
+  failClosed: true,
+};
+export const STATUS_LOOKUP_PHONE: RateRule = {
+  name: 'partner_status_phone',
+  limit: 10,
+  windowSeconds: 3600,
+  failClosed: true,
+};
 /** A little over the file limit: the multipart envelope. */
 const UPLOAD_BODY_MAX = SHOP_CSV_MAX_BYTES + 64 * 1024;
 /** Changes listed in a check (the counts are complete). */

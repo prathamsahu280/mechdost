@@ -51,8 +51,18 @@ import { errorResponses, ErrorSchema } from './schemas';
  * - the shop owner reads and decides the offers it is asked to fund (`/shop/offers/{shopId}`; another shop's is 404).
  * Bodies are strict; money is integer paise; the admin times are India wall-clock (`YYYY-MM-DDTHH:mm`).
  */
-export const COUPON_CHECK_USER_RATE: RateRule = { name: 'coupon_check_user', limit: 30, windowSeconds: 3600 };
-export const COUPON_CHECK_IP_RATE: RateRule = { name: 'coupon_check_ip', limit: 60, windowSeconds: 3600 };
+export const COUPON_CHECK_USER_RATE: RateRule = {
+  name: 'coupon_check_user',
+  limit: 30,
+  windowSeconds: 3600,
+  failClosed: true,
+};
+export const COUPON_CHECK_IP_RATE: RateRule = {
+  name: 'coupon_check_ip',
+  limit: 60,
+  windowSeconds: 3600,
+  failClosed: true,
+};
 /** The public offers list: generous (the web caches it), but a script cannot hammer the query. */
 export const OFFERS_IP_RATE: RateRule = { name: 'offers_ip', limit: 120, windowSeconds: 60 };
 

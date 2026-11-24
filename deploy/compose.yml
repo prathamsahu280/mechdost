@@ -53,15 +53,15 @@ services:
       - --appendonly
       - 'no'
       - --maxmemory
-      - 48mb
+      - 64mb
       - --maxmemory-policy
-      - volatile-lru
+      - noeviction
       # Defence in depth: only containers on this private network can reach it, and they need the password.
       - --requirepass
       - ${REDIS_PASSWORD:?set REDIS_PASSWORD}
     expose:
       - '6379'
-    mem_limit: 80m
+    mem_limit: 96m
     security_opt:
       - no-new-privileges:true
 
