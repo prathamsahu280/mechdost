@@ -1727,3 +1727,7 @@ User: "this now has amaron batteries too, add them as well on the website and pr
 - **Public page payload:** `spec.amaronPrice`, `spec.combos` and `spec.categoryRule` are kept out of it, like `spec.fitment`.
 - **Event:** `admin_amaron_imported` (spec 12), same props as the Exide event.
 - **Not done yet:** the real run (waits for the user, `--dry-run` first), and no `fitments` / vehicle tables (as for Exide).
+
+## 2026-11-24 - Service-request notices resolve themselves
+
+The customer asks `service.proposed`, `service.estimate_ready` and `service.bill_ready` are marked done (`resolved_at`, read) in the transaction of the move that makes them moot (`transitionRequest` calls `resolveServiceNotices`): leaving `proposed`, `estimate_sent` or `billed`, and every open ask when the request is cancelled, rejected or completed. Same mechanism as the order notices (2026-11-23); no migration. No staff or workshop notices exist for service requests, so none were added. Spec 10.
