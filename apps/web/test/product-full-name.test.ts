@@ -36,5 +36,6 @@ describe('productFullName (live check 2026-11-22: "Gulf GULF PRIDE 20W-40")', ()
     };
     walk(join(__dirname, '..', 'src'));
     expect(offenders).toEqual([]);
-  });
+    // Reads every source file: about 1 s alone, 7 s when the PC runs other suites or builds (2026-11-24).
+  }, 30_000);
 });
