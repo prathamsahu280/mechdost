@@ -36,16 +36,21 @@ Nothing is submitted to Meta unless you run `--submit --yes`.
 
 All are category **UTILITY**, languages `en` and `hi`, no header or footer. `{{1}}` / `{{2}}` are positional.
 
-| Event key                | Meta name                | Purpose                                                  | Placeholders                        | Button (en / hi) → URL                                                               |
-| ------------------------ | ------------------------ | -------------------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------ |
-| `order.confirmed`        | `order_confirmed`        | Shop accepted: order confirmed, will be shipped          | `{{1}}` order code                  | Track order / ऑर्डर ट्रैक करें → `https://mechdost.com/orders/{{1}}`                 |
-| `order.out_for_delivery` | `order_out_for_delivery` | Parcel out for delivery (no code in the text)            | `{{1}}` order code                  | Track order / ऑर्डर ट्रैक करें → `https://mechdost.com/orders/{{1}}`                 |
-| `order.rejected`         | `order_rejected_refund`  | Order could not be fulfilled; refund to original method  | `{{1}}` order code                  | View order / ऑर्डर देखें → `https://mechdost.com/orders/{{1}}`                       |
-| `service.estimate_sent`  | `service_estimate_ready` | Workshop sent an estimate to review per item             | `{{1}}` service request code        | Review estimate / अनुमान देखें → `https://mechdost.com/service/{{1}}`                |
-| `ticket.replied`         | `ticket_reply`           | Support replied to a request                             | `{{1}}` ticket code                 | Open request / रिक्वेस्ट खोलें → `https://mechdost.com/account/support?ticket={{1}}` |
-| `order.routed` (shops)   | `partner_new_order`      | New order for a shop; accept or decline within the timer | `{{1}}` order code, `{{2}}` minutes | none                                                                                 |
+| Event key                | Meta name                    | Purpose                                                      | Placeholders                          | Button (en / hi) → URL                                                               |
+| ------------------------ | ---------------------------- | ------------------------------------------------------------ | ------------------------------------- | ------------------------------------------------------------------------------------ |
+| `order.confirmed`        | `order_confirmed`            | Shop accepted: order confirmed, will be shipped              | `{{1}}` order code                    | Track order / ऑर्डर ट्रैक करें → `https://mechdost.com/orders/{{1}}`                 |
+| `order.out_for_delivery` | `order_out_for_delivery`     | Parcel out for delivery (no code in the text)                | `{{1}}` order code                    | Track order / ऑर्डर ट्रैक करें → `https://mechdost.com/orders/{{1}}`                 |
+| `order.rejected`         | `order_rejected_refund`      | Order could not be fulfilled; refund to original method      | `{{1}}` order code                    | View order / ऑर्डर देखें → `https://mechdost.com/orders/{{1}}`                       |
+| `service.estimate_sent`  | `service_estimate_ready`     | Workshop sent an estimate to review per item                 | `{{1}}` service request code          | Review estimate / अनुमान देखें → `https://mechdost.com/service/{{1}}`                |
+| `ticket.replied`         | `ticket_reply`               | Support replied to a request                                 | `{{1}}` ticket code                   | Open request / रिक्वेस्ट खोलें → `https://mechdost.com/account/support?ticket={{1}}` |
+| `order.routed` (shops)   | `partner_new_order`          | New order for a shop; accept or decline within the timer     | `{{1}}` order code, `{{2}}` minutes   | none                                                                                 |
+| `rsa.accepted`           | `roadside_mechanic_assigned` | Roadside: a mechanic accepted (no arrival code in the text)  | `{{1}}` roadside request code         | Track request / अनुरोध ट्रैक करें → `https://mechdost.com/roadside/{{1}}`            |
+| `rsa.arrived`            | `roadside_mechanic_arrived`  | Roadside: the mechanic reached the customer                  | `{{1}}` roadside request code         | Track request / अनुरोध ट्रैक करें → `https://mechdost.com/roadside/{{1}}`            |
+| `rsa.bill_ready`         | `roadside_bill_ready`        | Roadside: the bill is ready (no amount in the text)          | `{{1}}` roadside request code         | See bill / बिल देखें → `https://mechdost.com/roadside/{{1}}`                         |
+| `rsa.refunded`           | `roadside_refund_processed`  | Roadside: the refund is processed                            | `{{1}}` roadside request code         | View request / अनुरोध देखें → `https://mechdost.com/roadside/{{1}}`                  |
+| `rsa.offer` (workshops)` | `partner_new_roadside_job`   | New roadside request for a workshop; answer within the timer | `{{1}}` request code, `{{2}}` minutes | none                                                                                 |
 
-Sample values sent to Meta: order `MD-RPR-2026-7K3QWX`, request `SR-RPR-2026-4H2MNP`, ticket `REQ-RPR-2026-9D5TXA`, minutes `10`.
+Roadside sample code `RSA-RPR-2026-6M4QZB`. Sample values sent to Meta: order `MD-RPR-2026-7K3QWX`, request `SR-RPR-2026-4H2MNP`, ticket `REQ-RPR-2026-9D5TXA`, minutes `10`.
 The exact English and Hindi body of each is printed by the dry run. `mechdost_otp` (Authentication) is registered by hand
 and is not part of this catalogue (WhatsApp OTP sending is not built, Q56).
 
@@ -60,3 +65,12 @@ automatically; a new key without Meta copy fails typecheck until `META_TEMPLATE_
 - Rate limits (HTTP 429, codes 4, 17, 613, 80008, 130429, 131056) are retried up to 4 times with 1, 2, 4 second waits.
 - Meta may recategorise a template to Marketing (about 7.5 times the price). `--status` shows the category; check it before
   switching the event on.
+
+## Roadside templates (2026-11-24): submit after the merge
+
+Five new names (10 submissions, English and Hindi): `roadside_mechanic_assigned`, `roadside_mechanic_arrived`, `roadside_bill_ready`, `roadside_refund_processed`, `partner_new_roadside_job`. Nothing was submitted by the builder; the dry run is clean (30 templates, 0 problems). To submit, after the merge and once the variables above are set:
+
+1. `pnpm wa:templates` (dry run, no network).
+2. `pnpm wa:templates --status` (the five show as `missing`).
+3. `pnpm wa:templates --submit --yes` (creates only the missing ones).
+4. After Meta approves (minutes to a day): `pnpm wa:templates --status --save`, then switch the roadside events on in Admin → Notifications → WhatsApp.

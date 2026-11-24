@@ -3199,7 +3199,12 @@
     "noShopCover": "No shop that delivers to this PIN code is available right now: they may be paused, suspended, busy or not serving this PIN. Reject it with a message to the customer, or wait.",
     "noShopStock": "The other shops that deliver here do not stock every item in this order. Reject it with a message to the customer, or wait for stock.",
     "noShopUntried": "Every shop that delivers here has already declined this order or let it time out. Reject it with a message to the customer.",
-    "nav_roadside": "Roadside help"
+    "nav_roadside": "Roadside help",
+    "notify_ev_rsa_accepted": "Roadside mechanic accepted",
+    "notify_ev_rsa_arrived": "Roadside mechanic arrived",
+    "notify_ev_rsa_bill_ready": "Roadside bill ready",
+    "notify_ev_rsa_refunded": "Roadside refund processed",
+    "notify_ev_rsa_offer": "New roadside request for a workshop"
   },
   "shopGiveUp": {
     "action": "Can't fulfil this order",
@@ -3851,7 +3856,14 @@
     "tpl_fleet_application_received": "Fleet enquiry received",
     "tpl_trade_account_verified": "Trade account verified",
     "tpl_shop_order_routed": "New order for a shop",
-    "tpl_partner_warning_issued": "Note to a partner"
+    "tpl_partner_warning_issued": "Note to a partner",
+    "tpl_rsa_received": "Roadside request received (advance paid)",
+    "tpl_rsa_accepted": "Roadside mechanic accepted",
+    "tpl_rsa_arrived": "Roadside mechanic arrived",
+    "tpl_rsa_bill_ready": "Roadside bill ready",
+    "tpl_rsa_completed": "Roadside request complete",
+    "tpl_rsa_cancelled": "Roadside request cancelled",
+    "tpl_rsa_refund_processed": "Roadside refund processed"
   },
   "reco": {
     "title": "Goes well with this",
@@ -6148,6 +6160,7 @@
     "kind_towing": "Towing",
     "kind_other": "Other",
     "admin_chooseCity": "Choose a city to see its roadside settings.",
-    "openRequest": "Open your current request"
+    "openRequest": "Open your current request",
+    "admin_queueCount": "{count, plural, one {# request waiting} other {# requests waiting}}"
   }
 }

@@ -10,6 +10,7 @@ import { PINCODE_RE } from '@mechdost/shared/geo';
 import { CreateRsaRequestBody, RsaCodeParam } from '@mechdost/shared/rsa-api';
 import type { SessionCache } from '../auth/session-cache';
 import { ApiError } from '../errors';
+import { createMiddleware } from 'hono/factory';
 import { authenticate, requirePermission } from '../middleware/auth';
 import { rateLimit, RATE_RULES } from '../middleware/rate-limit';
 import { ensureRsaRazorpayOrder } from '../payments/service';
@@ -28,6 +29,14 @@ import { body, conflict, json } from './service-schemas';
 export const RSA_CREATE_RATE: RateRule = { name: 'rsa_create_user', limit: 6, windowSeconds: 600 };
 export const RSA_PAY_RATE: RateRule = { name: 'rsa_pay_user', limit: 20, windowSeconds: 600 };
 export const RSA_AVAILABILITY_RATE: RateRule = { name: 'rsa_availability_ip', limit: 60, windowSeconds: 60 };
+
+const requirePhoneVerified = createMiddleware<AppEnv>(async (c, next) => {
+  if (!c.get('auth').user.phoneVerifiedAt)
+    throw new ApiError(403, 'VERIFICATION_REQUIRED', 'Verify your phone number to continue', {
+      phoneVerified: false,
+    });
+  await next();
+});
 
 const Anything = z.any();
 const Created = z
@@ -121,7 +130,13 @@ export function roadsideRoutes(deps: AppDeps, cache: SessionCache) {
       path,
       rateLimit(deps.rateLimiter, RATE_RULES.apiPerUser, (c) => c.get('auth').user.id),
     );
-  app.on('POST', ['/roadside/requests', '/roadside/requests/*'], requirePermission('roadside:request'));
+  // A verified phone is required to act; a verified email is not (user ruling 2026-11-24), whatever the admin flag says.
+  app.on(
+    'POST',
+    ['/roadside/requests', '/roadside/requests/*'],
+    requirePhoneVerified,
+    requirePermission('roadside:request'),
+  );
   app.on(
     'POST',
     '/roadside/requests',

@@ -7,6 +7,7 @@ import {
   RSA_FUELS,
   RSA_MAX_ADVANCE_PAISE,
   RSA_MAX_BILL_LINES,
+  RSA_MAX_BILL_PAISE,
   RSA_PROBLEM_TYPES,
   RSA_ROUTING_MODES,
   rsaLineTotalPaise,
@@ -133,8 +134,11 @@ export const RsaBillBody = z
     expectedVersion: z.number().int().min(1),
   })
   .strict()
-  .refine((b) => b.lines.reduce((n, l) => n + rsaLineTotalPaise(l.quantity, l.unitPricePaise), 0) > 0, {
-    message: 'bill total must be above zero',
-    path: ['lines'],
-  });
+  .refine(
+    (b) => {
+      const total = b.lines.reduce((n, l) => n + rsaLineTotalPaise(l.quantity, l.unitPricePaise), 0);
+      return total > 0 && total <= RSA_MAX_BILL_PAISE;
+    },
+    { message: 'bill total must be above zero and within the limit', path: ['lines'] },
+  );
 export const RsaVersionBody = z.object({ expectedVersion: z.number().int().min(1) }).strict();

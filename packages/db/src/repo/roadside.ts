@@ -68,6 +68,15 @@ export async function createRsaRequest(
       problemType: b.problemType ?? null,
       now,
     });
+    // The pin must be inside the city (abuse guard: a covered PIN code with a point in another town). Skipped for a city
+    // with no centre set.
+    const [near] = rowsOf<{ ok: boolean | null }>(
+      await tx.execute(sql`select (c.centroid is null or ST_DWithin(c.centroid,
+          ST_SetSRID(ST_MakePoint(${b.lng}, ${b.lat}), 4326)::geography, c.radius_km * 1000)) as ok
+        from cities c where c.id = ${place.cityId}::uuid`),
+    );
+    if (near?.ok === false)
+      throw new ValidationError('The location is outside this city', 'RSA_LOCATION_OUTSIDE', undefined);
     const advancePaise = settings.advancePaise[b.vehicleType];
     if (advancePaise === undefined || advancePaise <= 0)
       throw new ValidationError(

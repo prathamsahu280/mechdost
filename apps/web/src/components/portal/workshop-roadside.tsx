@@ -85,7 +85,7 @@ export function WorkshopRoadside() {
       <div>
         <h3 className="font-bold">{t('ws_offers')}</h3>
         {offers.length === 0 ? <p className="mt-1 text-sm text-muted">{t('ws_noOffers')}</p> : null}
-        <ul className="mt-2 space-y-3">
+        <ul className="mt-2 space-y-3" aria-live="polite">
           {offers.map((o) => (
             <Offer key={o.code} o={o} act={act} />
           ))}

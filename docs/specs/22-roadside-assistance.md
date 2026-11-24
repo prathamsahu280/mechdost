@@ -71,7 +71,7 @@ Labels and messages are in the `roadside` locale namespace (en and hi).
   (`rsa_overpaid`); total = advance or lower completes the request with no Razorpay order (`balance_method = none`).
 - **Refunds stay approval-first** (decisions 2026-11-15): "automatic" means the system raises the request by itself
   (admin cancel, overpaid advance, late capture), idempotent per payment and reason; finance approves it. Copy never
-  promises an instant refund. Open question Q223: may roadside refunds skip approval.
+  promises an instant refund. User ruling 2026-11-24 (Q225): roadside refunds keep the approval step.
 - Late capture (the request was cancelled or expired, or a cash mark won first): the payment is recorded, one refund
   request is raised, the request is not resurrected. The request row lock is the arbiter between cash and online.
 
@@ -99,8 +99,7 @@ by distance, then accept rate over the last 90 days (1 until it has offers), the
 
 Bell + push (`queueNotice`): customer `rsa.accepted`, `rsa.arrived`, `rsa.bill_ready`, `rsa.refunded` (when the refund is
 processed); workshop `rsa.offer`. Texts carry codes and the workshop name only (never the arrival code or an amount).
-Cleared when the ask is moot (offer left `offered`, bill left `billed`). **Not built:** WhatsApp and email templates for
-roadside (Meta templates need approval first; Q to be queued when phase 2 starts).
+Cleared when the ask is moot (offer left `offered`, bill left `billed`). Email (7 templates, en and hi: received, accepted with the arrival code, arrived, bill ready, completed, cancelled with the refund asked for, refund processed) and WhatsApp (UTILITY, request code only: accepted, arrived, bill ready, refunded for the customer; new offer for the workshop) go through the outbox in the same transaction. WhatsApp is queued only while staff switched the event on and Meta approved it; the five templates are in the catalogue but not yet submitted (runbook whatsapp-templates § Roadside templates). The arrival code is in the accepted email only.
 
 ## Analytics (spec 12)
 
@@ -131,5 +130,5 @@ override, bill and balance, cash vs capture, under-advance refund, scope 404s, c
 
 Auto routing (`auto`, `auto_then_manual`), live map and "last updated N min ago", share status, mechanic accounts and
 portal (`responder_type = mechanic`), `towing` status and slabs, customer approval of extra lines, photo upload on the
-request, WhatsApp and email messages, the customer refunds page listing roadside refunds (the tracking page shows them),
+request, the customer refunds page listing roadside refunds (the tracking page shows them),
 GST invoice for the roadside total, customer review after the job, commission and payouts (pending #9), night surcharge.

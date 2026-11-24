@@ -12,7 +12,7 @@
 
 - **Vehicle types: 2W and 4W only at launch** (user, 2026-11-24). `VEHICLE_TYPES` keeps 3W; a per-city setting `vehicleTypes` (default 2W and 4W) decides what is offered. The API refuses a type that is not offered; the UI renders from the settings response. 3W is added later by an admin edit (plus an advance amount for it), no code change.
 - **Pre-payment status.** The design has no state before the advance is paid. Added `awaiting_payment` (hidden from every queue; `system` cancels it after the payment window). `requested` = advance paid.
-- **Refunds stay approval-first** (decisions 2026-11-15, 2026-11-23). The system raises the refund request automatically (cancel, or total below advance), idempotent per payment and reason; finance approves as for every refund. Copy never promises an instant refund. Q223 asks whether roadside refunds may auto-approve.
+- **Refunds stay approval-first** (decisions 2026-11-15, 2026-11-23). The system raises the refund request automatically (cancel, or total below advance), idempotent per payment and reason; finance approves as for every refund. Copy never promises an instant refund. Q225 asks whether roadside refunds may auto-approve.
 - **Two payments per request** (advance, balance), so `service_bills` (one success per bill) is not reused. `payments` gets `rsa_request_id`; purpose/target CHECKs and partial unique indexes are per (request, purpose).
 - **Balance 0 or total below advance:** the request completes without a Razorpay order (`payments_amount_positive`); any difference is a refund request.
 - **Single arbiter:** the request row is locked first by every writer (cash mark, balance capture, cancel); lock order request -> payment -> refund.
@@ -32,7 +32,7 @@
 
 ### Task 1: Docs and plan
 
-- [ ] Plan (this file), design doc header + 2W/4W ruling, spec 22, spec 17 pointer, decisions entry, Q216 closed, Q223 queued.
+- [ ] Plan (this file), design doc header + 2W/4W ruling, spec 22, spec 17 pointer, decisions entry, Q216 closed, Q225 queued.
 
 ### Task 2: Shared contracts (`packages/shared`)
 

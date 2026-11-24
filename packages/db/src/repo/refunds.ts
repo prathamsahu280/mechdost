@@ -42,6 +42,7 @@ import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '.
 import { recordServerEvent } from './events';
 import { issueCreditNoteForRefund } from './credit-notes';
 import { queueRefundEmail } from './email-notifications';
+import { paiseText, queueRsaEmail, queueRsaWhatsApp } from './roadside-messages';
 import { queueRsaRefundedNotice } from './roadside-notices';
 import { queueStaffNotice, resolveNotices } from './notices';
 import type { Tx } from './orders';
@@ -1231,13 +1232,28 @@ async function afterProcessed(
       .innerJoin(rsaRequests, eq(rsaRequests.id, refunds.rsaRequestId))
       .where(eq(refunds.id, r.id))
       .limit(1);
-    if (rq)
+    if (rq) {
       await queueRsaRefundedNotice(tx, {
         requestId: rq.id,
         userId: rq.userId,
         code: rq.code,
         refundId: r.id,
       });
+      await queueRsaEmail(tx, {
+        template: 'rsa_refund_processed',
+        requestId: rq.id,
+        userId: rq.userId,
+        version: `refund-${r.id}`,
+        payload: () => ({ requestCode: rq.code, amount: paiseText(r.amountPaise) }),
+      });
+      await queueRsaWhatsApp(tx, {
+        event: 'rsa.refunded',
+        requestId: rq.id,
+        userId: rq.userId,
+        code: rq.code,
+        version: `refund-${r.id}`,
+      });
+    }
     return;
   }
   if (!order && r.billId) {

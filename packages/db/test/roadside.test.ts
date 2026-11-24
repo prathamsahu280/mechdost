@@ -13,6 +13,9 @@ import type { CreateRsaRequestInput } from '@mechdost/shared/rsa-api';
 import { loadKeyring } from '../src/crypto';
 import {
   acceptRsaOffer,
+  grantRole,
+  saveWhatsAppTemplateStatuses,
+  syncRbacCatalogue,
   applyRazorpayPayment,
   applyRazorpayRefund,
   approveRefund,
@@ -92,6 +95,7 @@ async function newUser(): Promise<string> {
     .values({
       firebaseUid: `rsa-cust-${String(userN)}`,
       phone: `+9198111${String(50000 + userN)}`,
+      email: `rider${String(userN)}@example.com`,
       name: 'Rider',
       language: 'hi',
     })
@@ -957,6 +961,197 @@ describe('the job', () => {
     });
     await expect(billRsa(t(), { ...step(a.code, a.version), lines: [] })).rejects.toMatchObject({
       code: 'BILL_EMPTY',
+    });
+  });
+});
+
+describe('email and WhatsApp (outbox, same transaction)', () => {
+  const outboxOf = (userId: string) =>
+    db.select().from(s.notificationOutbox).where(eq(s.notificationOutbox.recipientUserId, userId));
+  const text = (v: unknown) => JSON.stringify(v);
+
+  it('queues each customer email once, with the arrival code only in the accepted email, and no WhatsApp until switched on', async () => {
+    const j = await inProgress();
+    const userId = owner.get(j.code)!;
+    await billRsa(t(), { ...step(j.code, j.version), lines: LINES });
+    expect(await pay(j.code, 'rsa_balance')).toEqual({ outcome: 'paid' });
+    const rows = await outboxOf(userId);
+    const emails = rows.filter((r) => r.channel === 'email');
+    expect(emails.map((r) => r.templateKey).sort()).toEqual(
+      ['rsa_accepted', 'rsa_arrived', 'rsa_bill_ready', 'rsa_completed', 'rsa_received'].sort(),
+    );
+    const byKey = (k: string) => emails.find((r) => r.templateKey === k)!;
+    expect(byKey('rsa_accepted').payload).toMatchObject({
+      requestCode: j.code,
+      arrivalCode: expect.stringMatching(/^\d{4}$/) as string,
+    });
+    expect(text(byKey('rsa_accepted').payload)).toContain('वर्कशॉप');
+    expect(byKey('rsa_bill_ready').payload).toMatchObject({
+      total: '₹1,800.00',
+      advance: '₹500.00',
+      balance: '₹1,300.00',
+    });
+    expect(byKey('rsa_received').payload).toMatchObject({ amount: '₹500.00' });
+    expect(rows.every((r) => r.channel !== 'whatsapp')).toBe(true);
+    // The arrival code is in no other channel.
+    const code = (byKey('rsa_accepted').payload as { arrivalCode: string }).arrivalCode;
+    for (const r of rows.filter((x) => x.templateKey !== 'rsa_accepted'))
+      expect(text(r.payload)).not.toContain(code);
+  });
+
+  it('emails the cancellation and the processed refund once each, honestly worded', async () => {
+    const { code } = await live();
+    await cancelRsaByStaff(t(), {
+      scope: ALL,
+      code,
+      reasonCode: 'no_responder_accepted',
+      expectedVersion: (await row(code)).version,
+      staffUserId: f.staff,
+    });
+    const [refund] = await refundsOf(code);
+    await approveRefund(t(), {
+      scope: ALL,
+      staffUserId: f.other,
+      refundId: refund!.id,
+      expectedVersion: refund!.version,
+    });
+    const [pay1] = await db.select().from(s.payments).where(eq(s.payments.id, refund!.paymentId!));
+    await claimRefundDispatch(t(), refund!.id);
+    await recordRefundSent(t(), refund!.id, `rfnd_msg${String((payN += 1)).padStart(6, '0')}`);
+    const [sent] = await refundsOf(code);
+    const done = {
+      providerRefundId: sent!.providerRefundId!,
+      providerPaymentId: pay1!.providerPaymentId!,
+      refundId: refund!.id,
+      status: 'processed' as const,
+      amountPaise: 50_000,
+      currency: 'INR',
+    };
+    await applyRazorpayRefund(t(), done);
+    await applyRazorpayRefund(t(), done);
+    const emails = (await outboxOf(owner.get(code)!)).filter((r) => r.channel === 'email');
+    expect(emails.filter((r) => r.templateKey === 'rsa_cancelled')).toHaveLength(1);
+    expect(emails.filter((r) => r.templateKey === 'rsa_refund_processed')).toHaveLength(1);
+    expect(emails.find((r) => r.templateKey === 'rsa_cancelled')!.payload).toMatchObject({
+      amount: '₹500.00',
+    });
+  });
+
+  it('sends WhatsApp only for events switched on, only once Meta approved, and only the request code', async () => {
+    await db.insert(s.notificationTemplates).values(
+      (['rsa.accepted', 'rsa.arrived', 'rsa.offer'] as const).flatMap((key) =>
+        (['en', 'hi'] as const).map((locale) => ({
+          key,
+          channel: 'whatsapp',
+          locale,
+          body: 'x',
+          enabled: true,
+        })),
+      ),
+    );
+    const first = await inProgress();
+    const rows1 = (await outboxOf(owner.get(first.code)!)).filter((r) => r.channel === 'whatsapp');
+    expect(rows1.map((r) => r.templateKey).sort()).toEqual(['rsa.accepted', 'rsa.arrived']);
+    for (const r of rows1) {
+      expect(r.recipient).toMatch(/^\+91/);
+      expect(r.payload).toEqual({ rsaCode: first.code });
+    }
+    // Meta has not approved either language yet: the existing approval gate queues nothing.
+    await saveWhatsAppTemplateStatuses(t(), {
+      'rsa.accepted': { en: 'pending', hi: 'pending' },
+      'rsa.arrived': { en: 'pending', hi: 'pending' },
+    });
+    const second = await inProgress();
+    expect((await outboxOf(owner.get(second.code)!)).filter((r) => r.channel === 'whatsapp')).toHaveLength(0);
+  });
+
+  it('tells a workshop about a new offer on WhatsApp when switched on', async () => {
+    await syncRbacCatalogue(t());
+    const [u] = await db
+      .insert(s.users)
+      .values({ firebaseUid: 'rsa-ws-owner', phone: '+919811177701', name: 'Owner', language: 'en' })
+      .returning();
+    await grantRole(t(), { userId: u!.id, role: 'workshop_owner', workshopId: W.main!.id, grantedBy: null });
+    await saveWhatsAppTemplateStatuses(t(), { 'rsa.offer': { en: 'approved', hi: 'approved' } });
+    const { code } = await live();
+    await sendRsaOffer(t(), {
+      scope: ALL,
+      code,
+      workshopId: W.main!.id,
+      expectedVersion: (await row(code)).version,
+      staffUserId: f.staff,
+    });
+    const rows = (await outboxOf(u!.id)).filter((r) => r.channel === 'whatsapp');
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      templateKey: 'rsa.offer',
+      locale: 'en',
+      payload: { rsaCode: code, acceptMinutes: 3 },
+    });
+  });
+});
+
+describe('security review fixes', () => {
+  it('refuses a pin outside the city (the PIN code is covered, the point is not)', async () => {
+    await db.execute(
+      sql`update cities set centroid = ST_GeogFromText('SRID=4326;POINT(81.63 21.25)') where id = ${f.raipur}::uuid`,
+    );
+    try {
+      await expect(create({ lat: 28.61, lng: 77.2 })).rejects.toMatchObject({ code: 'RSA_LOCATION_OUTSIDE' });
+      const ok = await create({ lat: 21.26, lng: 81.64 });
+      await cancelUnpaidRsa(t(), { userId: owner.get(ok.code)!, code: ok.code });
+    } finally {
+      await db.execute(sql`update cities set centroid = null where id = ${f.raipur}::uuid`);
+    }
+  });
+
+  it('refuses a roadside bill above the limit', async () => {
+    const j = await inProgress();
+    await expect(
+      billRsa(t(), {
+        ...step(j.code, j.version),
+        lines: [{ kind: 'labour', description: 'Typo', quantity: 1, unitPricePaise: 10_000_001 }],
+      }),
+    ).rejects.toMatchObject({ code: 'BILL_TOO_LARGE' });
+    expect((await row(j.code)).status).toBe('in_progress');
+  });
+
+  it('refuses an accept from a workshop paused after the offer went out', async () => {
+    const { code } = await live();
+    await sendRsaOffer(t(), {
+      scope: ALL,
+      code,
+      workshopId: W.near!.id,
+      expectedVersion: (await row(code)).version,
+      staffUserId: f.staff,
+    });
+    const w = await getAdminWorkshop(t(), ALL, W.near!.id);
+    await setWorkshopStanding(t(), {
+      scope: ALL,
+      staffUserId: f.staff,
+      workshopId: W.near!.id,
+      status: 'paused',
+      reason: 'Paused for checks',
+      expectedVersion: w.version,
+    });
+    await expect(
+      acceptRsaOffer(t(), { workshopIds: [W.near!.id], code, staffUserId: f.staff, keyring }),
+    ).rejects.toMatchObject({ code: 'WORKSHOP_NOT_ELIGIBLE' });
+    const back = await getAdminWorkshop(t(), ALL, W.near!.id);
+    await setWorkshopStanding(t(), {
+      scope: ALL,
+      staffUserId: f.staff,
+      workshopId: W.near!.id,
+      status: 'approved',
+      reason: 'Checks done',
+      expectedVersion: back.version,
+    });
+    await cancelRsaByStaff(t(), {
+      scope: ALL,
+      code,
+      reasonCode: 'other',
+      expectedVersion: (await row(code)).version,
+      staffUserId: f.staff,
     });
   });
 });

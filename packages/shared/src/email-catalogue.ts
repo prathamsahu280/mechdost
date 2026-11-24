@@ -35,6 +35,7 @@ const enc = encodeURIComponent;
 const order = (p: Record<string, string>) => `/orders/${enc(p.orderCode ?? '')}`;
 const service = (p: Record<string, string>) => `/service/${enc(p.requestCode ?? '')}`;
 const ticket = (p: Record<string, string>) => `/account/support?ticket=${enc(p.ticketCode ?? '')}`;
+const roadside = (p: Record<string, string>) => `/roadside/${enc(p.requestCode ?? '')}`;
 const partnerHome = () => '/partner/shop';
 
 const T = {
@@ -319,6 +320,162 @@ export const EMAIL_CATALOGUE = {
       subject: 'आपका सर्विस अनुरोध {requestCode} मिल गया',
       heading: 'आपका सर्विस अनुरोध दर्ज हो गया है',
       body: 'हमें आपका सर्विस अनुरोध {requestCode} मिल गया है। यह यहाँ भेजा गया है: {workshop}।\n\nवर्कशॉप आपको समय और अनुमानित खर्च बताएगी। आपको ठीक लगे तभी आप हाँ कहें, उससे पहले कुछ बुक नहीं होता।',
+      button: 'अनुरोध देखें',
+    },
+  }),
+  // ----- Roadside assistance (spec 22, 2026-11-24) ----------------------------------------------------------
+  // Wording rules: nothing is called "refunded" before it is; the arrival code is only for the mechanic who reaches the
+  // customer (it is in the accepted email because the customer asked to have it in writing, never in push or WhatsApp).
+  rsa_received: def({
+    purpose: 'updates',
+    category: 'transactional',
+    audience: T.customer,
+    text: ['requestCode', 'amount'],
+    params: ['requestCode', 'amount'],
+    button: roadside,
+    sample: { requestCode: 'RSA-RPR-2026-6M4QZB', amount: '₹500.00' },
+    en: {
+      subject: 'We got your roadside request {requestCode}',
+      heading: 'Your roadside request is in',
+      body: 'We received your advance of {amount} for roadside request {requestCode}.\n\nMechDost is now finding the nearest verified mechanic. You will get another email as soon as one accepts. After the work you pay only what is left after this advance.',
+      button: 'Track your request',
+    },
+    hi: {
+      subject: 'आपका रोडसाइड अनुरोध {requestCode} मिल गया',
+      heading: 'आपका रोडसाइड अनुरोध दर्ज हो गया',
+      body: 'हमें आपके रोडसाइड अनुरोध {requestCode} का {amount} अग्रिम मिल गया है।\n\nMechDost अब सबसे नज़दीकी जाँचा हुआ मैकेनिक ढूँढ रहा है। कोई मैकेनिक स्वीकार करते ही आपको दूसरा ईमेल मिलेगा। काम के बाद आप इस अग्रिम के बाद जो बचे सिर्फ़ वही देंगे।',
+      button: 'अनुरोध ट्रैक करें',
+    },
+  }),
+  rsa_accepted: def({
+    purpose: 'updates',
+    category: 'transactional',
+    audience: T.customer,
+    text: ['requestCode', 'workshopName', 'arrivalCode'],
+    params: ['requestCode', 'workshopName', 'arrivalCode'],
+    button: roadside,
+    sample: { requestCode: 'RSA-RPR-2026-6M4QZB', workshopName: 'Sharma Auto Works', arrivalCode: '4821' },
+    en: {
+      subject: 'A mechanic is coming for {requestCode}',
+      heading: 'Help is on the way',
+      body: '{workshopName} accepted your roadside request {requestCode} and is coming to you.\n\nYour arrival code: {arrivalCode}\n\nShow this code to the mechanic only when they reach you. MechDost staff will never ask you for it by phone, message or email.',
+      button: 'Track your request',
+    },
+    hi: {
+      subject: '{requestCode} के लिए मैकेनिक आ रहा है',
+      heading: 'मदद आ रही है',
+      body: '{workshopName} ने आपका रोडसाइड अनुरोध {requestCode} स्वीकार कर लिया है और आपके पास आ रहा है।\n\nआपका आगमन कोड: {arrivalCode}\n\nयह कोड मैकेनिक के आपके पास पहुँचने पर ही उसे दिखाएँ। MechDost का कोई कर्मचारी इसे फ़ोन, संदेश या ईमेल पर कभी नहीं माँगेगा।',
+      button: 'अनुरोध ट्रैक करें',
+    },
+  }),
+  rsa_arrived: def({
+    purpose: 'updates',
+    category: 'transactional',
+    audience: T.customer,
+    text: ['requestCode', 'workshopName'],
+    params: ['requestCode', 'workshopName'],
+    button: roadside,
+    sample: { requestCode: 'RSA-RPR-2026-6M4QZB', workshopName: 'Sharma Auto Works' },
+    en: {
+      subject: 'Your mechanic has arrived ({requestCode})',
+      heading: 'Your mechanic has arrived',
+      body: '{workshopName} has reached you for roadside request {requestCode} and is looking at your vehicle.\n\nThe bill comes after the work. You will see every line and what is left to pay after your advance.',
+      button: 'Track your request',
+    },
+    hi: {
+      subject: 'आपका मैकेनिक पहुँच गया ({requestCode})',
+      heading: 'आपका मैकेनिक पहुँच गया',
+      body: '{workshopName} रोडसाइड अनुरोध {requestCode} के लिए आपके पास पहुँच गया है और आपकी गाड़ी देख रहा है।\n\nबिल काम के बाद आएगा। आप हर पंक्ति और अग्रिम के बाद देना बाकी राशि देख पाएँगे।',
+      button: 'अनुरोध ट्रैक करें',
+    },
+  }),
+  rsa_bill_ready: def({
+    purpose: 'billing',
+    category: 'transactional',
+    audience: T.customer,
+    text: ['requestCode', 'workshopName', 'total', 'advance', 'balance'],
+    params: ['requestCode', 'workshopName', 'total', 'advance', 'balance'],
+    button: roadside,
+    sample: {
+      requestCode: 'RSA-RPR-2026-6M4QZB',
+      workshopName: 'Sharma Auto Works',
+      total: '₹1,800.00',
+      advance: '₹500.00',
+      balance: '₹1,300.00',
+    },
+    en: {
+      subject: 'Your roadside bill is ready ({requestCode})',
+      heading: 'Your roadside bill is ready',
+      body: '{workshopName} has prepared the bill for roadside request {requestCode}.\n\nTotal: {total}\nAdvance already paid: {advance}\nLeft to pay: {balance}\n\nYou can pay the balance online on the request page, or pay the mechanic in cash.',
+      button: 'See the bill and pay',
+    },
+    hi: {
+      subject: 'आपका रोडसाइड बिल तैयार है ({requestCode})',
+      heading: 'आपका रोडसाइड बिल तैयार है',
+      body: '{workshopName} ने रोडसाइड अनुरोध {requestCode} का बिल बना दिया है।\n\nकुल: {total}\nपहले दिया अग्रिम: {advance}\nदेना बाकी: {balance}\n\nबाकी राशि आप अनुरोध वाले पेज पर ऑनलाइन दे सकते हैं, या मैकेनिक को नकद दे सकते हैं।',
+      button: 'बिल देखें और भुगतान करें',
+    },
+  }),
+  rsa_completed: def({
+    purpose: 'billing',
+    category: 'transactional',
+    audience: T.customer,
+    text: ['requestCode', 'workshopName', 'total'],
+    params: ['requestCode', 'workshopName', 'total'],
+    button: roadside,
+    sample: { requestCode: 'RSA-RPR-2026-6M4QZB', workshopName: 'Sharma Auto Works', total: '₹1,800.00' },
+    en: {
+      subject: 'Roadside request {requestCode} is complete',
+      heading: 'All done, thank you',
+      body: 'Your roadside request {requestCode} with {workshopName} is complete and paid. The total was {total}.\n\nIf anything about the work is not right, write to us and we will help.',
+      button: 'View the request',
+    },
+    hi: {
+      subject: 'रोडसाइड अनुरोध {requestCode} पूरा हुआ',
+      heading: 'सब पूरा हुआ, धन्यवाद',
+      body: '{workshopName} के साथ आपका रोडसाइड अनुरोध {requestCode} पूरा हो गया और भुगतान हो चुका है। कुल राशि {total} थी।\n\nकाम में कुछ भी ठीक न लगे तो हमें लिखें, हम मदद करेंगे।',
+      button: 'अनुरोध देखें',
+    },
+  }),
+  rsa_cancelled: def({
+    purpose: 'billing',
+    category: 'transactional',
+    audience: T.customer,
+    text: ['requestCode', 'amount'],
+    params: ['requestCode', 'amount'],
+    button: roadside,
+    sample: { requestCode: 'RSA-RPR-2026-6M4QZB', amount: '₹500.00' },
+    en: {
+      subject: 'Roadside request {requestCode} was cancelled',
+      heading: 'We could not find a mechanic',
+      body: 'We are sorry: no mechanic could take your roadside request {requestCode}, so we cancelled it.\n\nWe have asked for a refund of your advance of {amount}. Our team approves it first, and we will email you again once it is processed. It goes back to the payment method you used.',
+      button: 'View the request',
+    },
+    hi: {
+      subject: 'रोडसाइड अनुरोध {requestCode} रद्द हुआ',
+      heading: 'हमें मैकेनिक नहीं मिल सका',
+      body: 'क्षमा करें: कोई मैकेनिक आपका रोडसाइड अनुरोध {requestCode} नहीं ले सका, इसलिए हमने इसे रद्द कर दिया।\n\nहमने आपके {amount} अग्रिम के रिफंड की माँग की है। पहले हमारी टीम इसे मंज़ूर करेगी, और प्रक्रिया पूरी होने पर आपको फिर ईमेल मिलेगा। यह उसी तरीके से वापस जाएगा जिससे आपने भुगतान किया था।',
+      button: 'अनुरोध देखें',
+    },
+  }),
+  rsa_refund_processed: def({
+    purpose: 'billing',
+    category: 'transactional',
+    audience: T.customer,
+    text: ['requestCode', 'amount'],
+    params: ['requestCode', 'amount'],
+    button: roadside,
+    sample: { requestCode: 'RSA-RPR-2026-6M4QZB', amount: '₹500.00' },
+    en: {
+      subject: 'Refund processed for {requestCode}',
+      heading: 'Your refund is on its way to you',
+      body: 'We have processed your refund of {amount} for roadside request {requestCode}. It goes back to the payment method you used.\n\nYour bank or payment app may take 5 to 7 working days to show it. If it has not arrived after that, write to us and we will help.',
+      button: 'View the request',
+    },
+    hi: {
+      subject: '{requestCode} का रिफंड पूरा हुआ',
+      heading: 'आपका रिफंड आपके पास आ रहा है',
+      body: 'हमने रोडसाइड अनुरोध {requestCode} के {amount} का रिफंड भेज दिया है। यह उसी तरीके से वापस जाता है जिससे आपने भुगतान किया था।\n\nआपके बैंक या पेमेंट ऐप में दिखने में 5 से 7 कार्य दिवस लग सकते हैं। उसके बाद भी न आए तो हमें लिखें, हम मदद करेंगे।',
       button: 'अनुरोध देखें',
     },
   }),

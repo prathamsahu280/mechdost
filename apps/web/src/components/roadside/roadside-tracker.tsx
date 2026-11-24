@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { Check } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 import { demoStep, demoView, useDemoRoadside } from '@/demo/roadside';
@@ -131,10 +132,14 @@ function TrackerBody({
         className="rounded-card border border-line-card bg-surface p-5 shadow-card"
         aria-labelledby="rsa-status"
       >
-        <h2 id="rsa-status" className="font-heading text-lg font-extrabold text-ink">
-          {t(`status_${view.status}` as 'status_requested')}
-        </h2>
-        <p className="mt-1 text-sm text-muted">{t(`statusHint_${view.status}` as 'statusHint_requested')}</p>
+        <div role="status" aria-live="polite">
+          <h2 id="rsa-status" className="font-heading text-lg font-extrabold text-ink">
+            {t(`status_${view.status}` as 'status_requested')}
+          </h2>
+          <p className="mt-1 text-sm text-muted">
+            {t(`statusHint_${view.status}` as 'statusHint_requested')}
+          </p>
+        </div>
         {view.status !== 'awaiting_payment' && !cancelled ? (
           <ol className="mt-4 space-y-2">
             {CUSTOMER_STEPS.map((s, i) => (
@@ -147,7 +152,7 @@ function TrackerBody({
                   aria-hidden="true"
                   className={`grid size-6 place-items-center rounded-full text-xs ${i <= idx ? 'bg-success text-white' : 'bg-pill'}`}
                 >
-                  {i < idx ? '✓' : i + 1}
+                  {i < idx ? <Check aria-hidden="true" className="size-4" /> : i + 1}
                 </span>
                 {t(`step_${s}` as 'step_requested')}
               </li>

@@ -7,6 +7,7 @@ import { recordServerEvent } from './events';
 import type { Tx } from './orders';
 import type { PaymentOutcome, RazorpayPaymentFact } from './payments';
 import { requestRefundForRsa } from './refunds';
+import { paiseText, queueRsaEmail } from './roadside-messages';
 import { finishRsa } from './roadside-job';
 import { lockRsa, transitionRsa } from './roadside-core';
 
@@ -229,13 +230,20 @@ export async function applyRsaPayment(
     await move();
     await audit('payment.paid');
     if (advance) {
-      await transitionRsa(tx, {
+      const live = await transitionRsa(tx, {
         request: r,
         to: 'requested',
         expectedVersion: r.version,
         actor: { type: 'system', userId: null },
         patch: { advancePaidAt: new Date() },
         payload: { amountPaise: payment.amountPaise, method: fact.method ?? 'unknown' },
+      });
+      await queueRsaEmail(tx, {
+        template: 'rsa_received',
+        requestId: r.id,
+        userId: r.userId,
+        version: live.version,
+        payload: () => ({ requestCode: r.code, amount: paiseText(payment.amountPaise) }),
       });
       await recordServerEvent(tx, 'rsa_fee_paid', {
         userId: r.userId,

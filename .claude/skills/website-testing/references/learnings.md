@@ -246,8 +246,10 @@ L2 · 2026-11-22 · budget · a lazy feature needs a source-level guard: no stat
 
 - 2026-11-23 (Amaron import): full-source tests stay lazy and skipIf the folder is absent; fixtures are real rows including every odd case (11 unlisted batteries, shared View photo, 0-price rows, combos); the DB test also proves the other brand is untouched in both directions.
 
-T198 · 2026-11-24 · roadside · a feature whose rule is "one live X per customer" makes every test that reuses one customer fail with the conflict, not with the bug under test · give each test request its own customer (a helper that creates the user) and keep one explicit test for the rule.
-T199 · 2026-11-24 · api tests · webhook and checkout ids are validated (`pay_[A-Za-z0-9]+`, event ids without a prefix): an id with underscores turns every webhook into a 400 and the test then fails on an unrelated assertion · check the status of the setup call before the assertion that depends on it.
-T200 · 2026-11-24 · api tests · the error body is `{ error: { code } }`; success bodies carry `code` at the top level: a blanket replace of `.body.code` hides real failures · assert the setup status with the body in the message.
+T200 · 2026-11-24 · roadside · a feature whose rule is "one live X per customer" makes every test that reuses one customer fail with the conflict, not with the bug under test · give each test request its own customer (a helper that creates the user) and keep one explicit test for the rule.
+T201 · 2026-11-24 · api tests · webhook and checkout ids are validated (`pay_[A-Za-z0-9]+`, event ids without a prefix): an id with underscores turns every webhook into a 400 and the test then fails on an unrelated assertion · check the status of the setup call before the assertion that depends on it.
+T202 · 2026-11-24 · api tests · the error body is `{ error: { code } }`; success bodies carry `code` at the top level: a blanket replace of `.body.code` hides real failures · assert the setup status with the body in the message.
 
 - 2026-11-24 (roadside): concurrency suites run on one PGlite connection (serialised): they prove the conditional UPDATE and lock order, not true parallelism; the same suites must run on real Postgres (TEST_DATABASE_URL) in CI.
+
+T203 · 2026-11-24 · notifications · the WhatsApp approval gate is per event (any enabled language approved), not per recipient language: a test that expected "Hindi pending, English approved" to skip a Hindi customer failed · test the gate with both languages pending, and assert the payload carries only the request code (never the arrival code) · packages/db/test/roadside.test.ts.

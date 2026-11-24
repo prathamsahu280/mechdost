@@ -4,12 +4,19 @@ import type { RsaStatus } from '@mechdost/shared/state';
 import { rsaOfferMachine } from '@mechdost/shared/state';
 import type { Keyring } from '../crypto';
 import { auditLog, rsaOffers, rsaRequests, workshops } from '../schema';
-import { issueArrivalCode } from './arrival-code';
+import { issueArrivalCode, readArrivalCode } from './arrival-code';
 import { ConflictError, NotFoundError, ValidationError } from './errors';
 import { recordServerEvent } from './events';
 import type { Tx } from './orders';
 import { requestRefundForRsa } from './refunds';
 import { lockRsa, requireRsaStatus, transitionRsa } from './roadside-core';
+import {
+  paiseText,
+  queueRsaEmail,
+  queueRsaOfferWhatsApp,
+  queueRsaWhatsApp,
+  responderName,
+} from './roadside-messages';
 import { queueRsaCustomerNotice, queueRsaOfferNotice } from './roadside-notices';
 import { getRsaSettings } from './roadside-settings';
 import type { CityScope } from './routing';
@@ -230,6 +237,13 @@ export async function sendRsaOffer(
       code: r.code,
       minutes: Math.max(1, Math.ceil(settings.acceptTimerSeconds / 60)),
     });
+    await queueRsaOfferWhatsApp(tx, {
+      requestId: r.id,
+      offerId: offer.id,
+      workshopId: input.workshopId,
+      code: r.code,
+      minutes: Math.max(1, Math.ceil(settings.acceptTimerSeconds / 60)),
+    });
     await recordServerEvent(tx, 'rsa_offered', {
       userId: input.staffUserId,
       cityId: r.cityId,
@@ -315,6 +329,13 @@ export async function cancelRsaByStaff(
       payload: { reasonCode: input.reasonCode },
     });
     const refundId = await requestRefundForRsa(tx, { requestId: r.id, source: 'rsa_cancelled' });
+    await queueRsaEmail(tx, {
+      template: 'rsa_cancelled',
+      requestId: r.id,
+      userId: r.userId,
+      version: r.version,
+      payload: () => ({ requestCode: r.code, amount: paiseText(r.advancePaise) }),
+    });
     await tx.insert(auditLog).values({
       actorUserId: input.staffUserId,
       actorRole: 'staff',
@@ -378,6 +399,14 @@ export async function acceptRsaOffer(
     const { r, offer } = await lockOwnOffer(tx, input.workshopIds, input.code);
     requireRsaStatus(r, ['offered']);
     if (!offer.live) throw new ConflictError('This offer has run out of time', 'OFFER_EXPIRED');
+    // A workshop paused, suspended, unpublished or marked busy after the offer went out cannot take the job (FOR SHARE: a
+    // concurrent pause waits for this accept and then applies to it).
+    const [standing] = rowsOf<{ ok: boolean }>(
+      await tx.execute(sql`select (w.published and w.status = 'approved' and not w.busy) as ok
+        from workshops w where w.id = ${offer.workshopId}::uuid for share`),
+    );
+    if (!standing?.ok)
+      throw new ValidationError('This workshop cannot take requests now', 'WORKSHOP_NOT_ELIGIBLE');
     const closed = await tx
       .update(rsaOffers)
       .set({ status: 'accepted', respondedAt: new Date() })
@@ -405,6 +434,26 @@ export async function acceptRsaOffer(
       userId: r.userId,
       code: r.code,
       workshopName: w?.name ?? '',
+      version: moved.version,
+    });
+    // The arrival code goes in the email only (the customer asked to have it in writing); push and WhatsApp never carry it.
+    const arrival = await readArrivalCode(tx, input.keyring, r.id, 'rsa');
+    await queueRsaEmail(tx, {
+      template: 'rsa_accepted',
+      requestId: r.id,
+      userId: r.userId,
+      version: moved.version,
+      payload: async (locale) => ({
+        requestCode: r.code,
+        workshopName: await responderName(tx, offer.workshopId, locale),
+        arrivalCode: arrival?.code ?? '',
+      }),
+    });
+    await queueRsaWhatsApp(tx, {
+      event: 'rsa.accepted',
+      requestId: r.id,
+      userId: r.userId,
+      code: r.code,
       version: moved.version,
     });
     await recordServerEvent(tx, 'rsa_accepted', {

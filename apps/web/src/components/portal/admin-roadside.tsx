@@ -45,13 +45,12 @@ export function AdminRoadside() {
   const [city, setCity] = useState('');
   return (
     <div className="space-y-4">
-      <div role="tablist" aria-label={t('adminTitle')} className="flex gap-2">
+      <div role="group" aria-label={t('adminTitle')} className="flex gap-2">
         {(['queue', 'settings'] as const).map((k) => (
           <button
             key={k}
             type="button"
-            role="tab"
-            aria-selected={tab === k}
+            aria-pressed={tab === k}
             className={tab === k ? portalPrimary : portalQuiet}
             onClick={() => {
               setTab(k);
@@ -107,6 +106,9 @@ function Queue() {
         </p>
       ) : null}
       {rows.length === 0 ? <p className="mt-3 text-sm text-muted">{t('admin_queueEmpty')}</p> : null}
+      <p role="status" className="sr-only">
+        {t('admin_queueCount', { count: rows.length })}
+      </p>
       <ul className="mt-3 space-y-3">
         {rows.map((r) => (
           <li key={r.code} className="rounded-card border border-line-card p-4">

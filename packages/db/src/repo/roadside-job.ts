@@ -1,5 +1,6 @@
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import {
+  RSA_MAX_BILL_PAISE,
   rsaBalancePaise,
   rsaLineTotalPaise,
   rsaOverpaidPaise,
@@ -15,6 +16,7 @@ import { recordServerEvent } from './events';
 import type { Tx } from './orders';
 import { requestRefundForRsa } from './refunds';
 import { lockRsa, requireRsaStatus, transitionRsa, type RsaCore } from './roadside-core';
+import { paiseText, queueRsaEmail, queueRsaWhatsApp, responderName } from './roadside-messages';
 import { queueRsaCustomerNotice } from './roadside-notices';
 import type { CityScope } from './routing';
 import { num, rowsOf } from './sql-rows';
@@ -96,6 +98,23 @@ async function arriveInTx(
     userId: r.userId,
     code: r.code,
     workshopName: await workshopName(tx, r.workshopId),
+    version: moved.version,
+  });
+  await queueRsaEmail(tx, {
+    template: 'rsa_arrived',
+    requestId: r.id,
+    userId: r.userId,
+    version: moved.version,
+    payload: async (locale) => ({
+      requestCode: r.code,
+      workshopName: await responderName(tx, r.workshopId, locale),
+    }),
+  });
+  await queueRsaWhatsApp(tx, {
+    event: 'rsa.arrived',
+    requestId: r.id,
+    userId: r.userId,
+    code: r.code,
     version: moved.version,
   });
   await recordServerEvent(tx, 'rsa_arrived', {
@@ -200,6 +219,8 @@ export async function billRsa(db: Tx, input: StepInput & { lines: readonly Line[
   const totalPaise = lines.reduce((n, l) => n + l.totalPaise, 0);
   if (lines.length === 0 || totalPaise <= 0)
     throw new ValidationError('The bill needs a total above zero', 'BILL_EMPTY');
+  if (totalPaise > RSA_MAX_BILL_PAISE)
+    throw new ValidationError('The bill is above the limit', 'BILL_TOO_LARGE');
   return db.transaction(async (tx) => {
     const r = await jobFor(tx, input.workshopIds, input.code);
     requireRsaStatus(r, ['in_progress']);
@@ -255,6 +276,26 @@ export async function billRsa(db: Tx, input: StepInput & { lines: readonly Line[
         refundId,
       };
     }
+    await queueRsaEmail(tx, {
+      template: 'rsa_bill_ready',
+      requestId: r.id,
+      userId: r.userId,
+      version: moved.version,
+      payload: async (locale) => ({
+        requestCode: r.code,
+        workshopName: await responderName(tx, r.workshopId, locale),
+        total: paiseText(totalPaise),
+        advance: paiseText(Math.min(r.advancePaise, totalPaise)),
+        balance: paiseText(balancePaise),
+      }),
+    });
+    await queueRsaWhatsApp(tx, {
+      event: 'rsa.bill_ready',
+      requestId: r.id,
+      userId: r.userId,
+      code: r.code,
+      version: moved.version,
+    });
     await queueRsaCustomerNotice(tx, {
       kind: 'rsa.bill_ready',
       requestId: r.id,
@@ -291,6 +332,17 @@ export async function finishRsa(
       ...(how.method === 'none' ? {} : { balancePaidAt: new Date() }),
     },
     payload: { method: how.method },
+  });
+  await queueRsaEmail(tx, {
+    template: 'rsa_completed',
+    requestId: r.id,
+    userId: r.userId,
+    version: r.version,
+    payload: async (locale) => ({
+      requestCode: r.code,
+      workshopName: await responderName(tx, r.workshopId, locale),
+      total: paiseText(r.totalPaise ?? 0),
+    }),
   });
   await recordServerEvent(tx, 'rsa_completed', {
     userId: how.actor.userId,

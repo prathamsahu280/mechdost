@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { RSA_FUELS, type RsaFuel, type RsaProblemType } from '@mechdost/shared/rsa';
 import { PINCODE_RE } from '@mechdost/shared/geo';
-import { VEHICLE_ICON, VEHICLE_LABEL_KEY, type VehicleType } from '@mechdost/shared/vehicles';
+import { VEHICLE_LABEL_KEY, type VehicleType } from '@mechdost/shared/vehicles';
+import { Bike, Car, Truck, type LucideIcon } from 'lucide-react';
 import { useEffect, useRef, useState, type SyntheticEvent } from 'react';
 import { demoAvailability, demoCreate, demoOpenCode, demoStep } from '@/demo/roadside';
 import { useSession } from '@/demo/session';
@@ -14,6 +15,9 @@ import { DATA_MODE } from '@/lib/data-mode';
 import { formatPrice } from '@/lib/format';
 import { roadsideCall, roadsideErrorKey, type RoadsideAvailability } from '@/lib/roadside';
 import { newIdempotencyKey } from '@/lib/service-views';
+
+/** Line icons (decorative, `aria-hidden`; the label carries the meaning). */
+const VEHICLE_LUCIDE: Record<VehicleType, LucideIcon> = { '2W': Bike, '3W': Truck, '4W': Car };
 
 const PROBLEMS: readonly (RsaProblemType | 'skipped')[] = [
   'dead_battery',
@@ -61,6 +65,7 @@ export function RoadsideRequest() {
   const [openCode, setOpenCode] = useState<string | null>(null);
   const key = useRef(newIdempotencyKey());
   const started = useRef(false);
+  const reviewHeading = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
     if (started.current) return;
@@ -113,6 +118,11 @@ export function RoadsideRequest() {
       { enableHighAccuracy: true, timeout: 10_000 },
     );
   };
+
+  // Moving to the review step puts the screen reader and the keyboard on its heading.
+  useEffect(() => {
+    if (step === 'review') reviewHeading.current?.focus();
+  }, [step]);
 
   const where: Point | null = point ?? avail?.centroid ?? null;
   const advance = vehicleType && avail ? (avail.advancePaise[vehicleType] ?? null) : null;
@@ -214,6 +224,7 @@ export function RoadsideRequest() {
                 className={field}
                 inputMode="numeric"
                 autoComplete="postal-code"
+                aria-invalid={closed ? true : undefined}
                 maxLength={6}
                 value={pincode}
                 onChange={(e) => {
@@ -250,7 +261,7 @@ export function RoadsideRequest() {
                   {avail.vehicleTypes.map((vt) => (
                     <label
                       key={vt}
-                      className="flex min-h-11 cursor-pointer items-center gap-2 rounded-button border border-input-border px-4 text-sm font-bold has-[:checked]:border-accent has-[:checked]:bg-pill"
+                      className="flex min-h-11 cursor-pointer items-center gap-2 rounded-button border border-input-border px-4 text-sm font-bold has-[:checked]:border-accent has-[:checked]:bg-pill has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus"
                     >
                       <input
                         type="radio"
@@ -260,7 +271,10 @@ export function RoadsideRequest() {
                           setVehicleType(vt);
                         }}
                       />
-                      <span aria-hidden="true">{VEHICLE_ICON[vt]}</span>
+                      {(() => {
+                        const Icon = VEHICLE_LUCIDE[vt];
+                        return <Icon aria-hidden="true" className="size-5" />;
+                      })()}
                       {v(VEHICLE_LABEL_KEY[vt])}
                     </label>
                   ))}
@@ -328,7 +342,9 @@ export function RoadsideRequest() {
         </>
       ) : (
         <div className="space-y-4">
-          <h2 className="font-heading text-lg font-extrabold text-ink">{t('reviewTitle')}</h2>
+          <h2 ref={reviewHeading} tabIndex={-1} className="font-heading text-lg font-extrabold text-ink">
+            {t('reviewTitle')}
+          </h2>
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 rounded-card border border-line-card bg-surface p-4 text-sm">
             <dt className="text-muted">{t('pincode')}</dt>
             <dd className="font-bold">{pincode}</dd>

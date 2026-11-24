@@ -60,6 +60,7 @@ const SAMPLE: Record<string, string> = {
   requestCode: 'SR-RPR-2026-4H2MNP',
   ticketCode: 'REQ-RPR-2026-9D5TXA',
   quoteCode: 'QT-RPR-2026-8N3R4T',
+  rsaCode: 'RSA-RPR-2026-6M4QZB',
   acceptMinutes: '10',
 };
 
@@ -90,6 +91,19 @@ export const META_TEMPLATE_COPY: Record<WhatsAppTemplateKey, { button?: ButtonCo
   'quote.message': { button: { label: { en: 'Read message', hi: 'संदेश पढ़ें' }, path: '/quotes/{{1}}' } },
   'quote.expiring': { button: { label: { en: 'Review quote', hi: 'कोटेशन देखें' }, path: '/quotes/{{1}}' } },
   'quote.withdrawn': { button: { label: { en: 'See reason', hi: 'कारण देखें' }, path: '/quotes/{{1}}' } },
+  'rsa.accepted': {
+    button: { label: { en: 'Track request', hi: 'अनुरोध ट्रैक करें' }, path: '/roadside/{{1}}' },
+  },
+  'rsa.arrived': {
+    button: { label: { en: 'Track request', hi: 'अनुरोध ट्रैक करें' }, path: '/roadside/{{1}}' },
+  },
+  'rsa.bill_ready': {
+    button: { label: { en: 'See bill', hi: 'बिल देखें' }, path: '/roadside/{{1}}' },
+  },
+  'rsa.refunded': {
+    button: { label: { en: 'View request', hi: 'अनुरोध देखें' }, path: '/roadside/{{1}}' },
+  },
+  'rsa.offer': {},
   'order.routed': {},
 };
 
@@ -100,6 +114,7 @@ const BODIES: Record<
     service: Record<string, string>;
     ticket: Record<string, string>;
     quote: Record<string, string>;
+    rsa: Record<string, string>;
   }
 > = {
   en,
@@ -108,7 +123,7 @@ const BODIES: Record<
 
 /** The locale-file text of a catalogue event, e.g. `order.confirmed` → `notifyTemplates.order.confirmed`. */
 export function whatsAppBodyText(key: WhatsAppTemplateKey, locale: WhatsAppLocale): string {
-  const [group, event] = key.split('.') as ['order' | 'service' | 'ticket' | 'quote', string];
+  const [group, event] = key.split('.') as ['order' | 'service' | 'ticket' | 'quote' | 'rsa', string];
   return BODIES[locale][group][event] ?? '';
 }
 

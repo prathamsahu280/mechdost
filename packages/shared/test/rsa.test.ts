@@ -10,6 +10,9 @@ import {
 import { CreateRsaRequestBody, RsaBillBody, RsaCodeParam, RsaSettingsInput } from '../src/rsa-api';
 import { REFUND_REASONS, REFUND_SOURCES, RSA_STATES, rsaMachine, rsaOfferMachine } from '../src/state';
 import { publicCode } from '../src/ids';
+import { EMAIL_TEMPLATES, composeEmail, sampleEmailParams } from '../src/email-templates';
+import { WHATSAPP_TEMPLATES, placeholderProblem, utilityTemplateProblem } from '../src/whatsapp';
+import { buildMetaTemplates, whatsAppBodyText } from '../src/whatsapp-meta';
 
 const create = {
   vehicleType: '2W',
@@ -158,6 +161,64 @@ describe('bill', () => {
     expect(
       RsaBillBody.safeParse({ lines: [{ ...line, unitPricePaise: 0 }], expectedVersion: 3 }).success,
     ).toBe(false);
+  });
+});
+
+describe('roadside email and WhatsApp copy (spec 10, spec 22)', () => {
+  const KEYS = [
+    'rsa_received',
+    'rsa_accepted',
+    'rsa_arrived',
+    'rsa_bill_ready',
+    'rsa_completed',
+    'rsa_cancelled',
+    'rsa_refund_processed',
+  ] as const;
+  const ctx = { webBaseUrl: 'https://mechdost.com', grievanceContact: null as string | null };
+
+  it('renders every roadside email in English and Hindi with its sample and a button to the request', () => {
+    for (const key of KEYS)
+      for (const locale of ['en', 'hi'] as const) {
+        const mail = composeEmail(key, locale, sampleEmailParams(key), ctx);
+        expect(mail.subject, `${key} ${locale}`).not.toMatch(/\{\w+\}/);
+        const all = JSON.stringify(mail);
+        expect(all, `${key} ${locale}`).not.toMatch(/\{\w+\}/);
+        expect(all).toContain('/roadside/RSA-RPR-2026-6M4QZB');
+        if (locale === 'hi') expect(mail.subject).toMatch(/[ऀ-ॿ]/);
+      }
+  });
+
+  it('puts the arrival code only in the accepted email and never calls a refund done before it is', () => {
+    for (const key of KEYS.filter((k) => k !== 'rsa_accepted'))
+      expect(EMAIL_TEMPLATES[key].text).not.toContain('arrivalCode');
+    expect(EMAIL_TEMPLATES.rsa_accepted.text).toContain('arrivalCode');
+    for (const locale of ['en', 'hi'] as const)
+      expect(EMAIL_TEMPLATES.rsa_cancelled[locale].body.toLowerCase()).not.toMatch(
+        /has been refunded|refunded to you/,
+      );
+  });
+
+  it('has Meta-compliant utility bodies in both languages, with the request code only', () => {
+    for (const key of [
+      'rsa.accepted',
+      'rsa.arrived',
+      'rsa.bill_ready',
+      'rsa.refunded',
+      'rsa.offer',
+    ] as const) {
+      const t = WHATSAPP_TEMPLATES[key];
+      expect(t.category).toBe('utility');
+      expect(t.params).not.toContain('arrivalCode');
+      for (const locale of ['en', 'hi'] as const) {
+        const body = whatsAppBodyText(key, locale);
+        expect(body, `${key} ${locale}`).not.toBe('');
+        expect(utilityTemplateProblem(body), `${key} ${locale}`).toBeNull();
+        expect(placeholderProblem(body, t.params.length), `${key} ${locale}`).toBeNull();
+        expect(body.trim()).not.toMatch(/^\{\{|\}\}$/);
+      }
+    }
+    expect(WHATSAPP_TEMPLATES['rsa.offer'].audience).toBe('partner');
+    expect(buildMetaTemplates().filter((m) => m.key.startsWith('rsa.'))).toHaveLength(10);
   });
 });
 

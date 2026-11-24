@@ -123,6 +123,8 @@ export function adminRoadsideRoutes(deps: AppDeps, cache: SessionCache) {
       ? requirePermission('roadside:cancel')(c, next)
       : requirePermission('roadside:dispatch')(c, next),
   );
+  // Suggestions are a dispatch tool: roadside:dispatch, not just read.
+  app.on('GET', '/admin/roadside/requests/:code/suggestions', requirePermission('roadside:dispatch'));
   app.on('PUT', '/admin/roadside/settings', requirePermission('roadside:settings'));
   app.on('GET', '/admin/roadside/settings', requirePermission('roadside:settings'));
   const scope = (c: Context<AppEnv>, p: Permission) => cityScopeFrom(c.get('auth').grants, p);

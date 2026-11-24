@@ -63,6 +63,8 @@ export const RSA_MAX_ADVANCE_PAISE = 500_000;
 export const RSA_DEFAULT_VEHICLE_TYPES = ['2W', '4W'] as const satisfies readonly VehicleType[];
 export const RSA_DEFAULT_ACCEPT_TIMER_SECONDS = 150;
 export const RSA_MAX_BILL_LINES = 20;
+/** A roadside bill above this (₹1,00,000) is refused: a typo or abuse, never a roadside job (no customer approval of lines yet). */
+export const RSA_MAX_BILL_PAISE = 10_000_000;
 /** Minutes the customer has to pay the advance before the unpaid request is closed by the worker. */
 export const RSA_PAYMENT_WINDOW_MINUTES = 30;
 export const RSA_PUBLIC_CODE_PREFIX = 'RSA';

@@ -115,3 +115,4 @@ export * from './roadside-dispatch';
 export * from './roadside-job';
 export * from './roadside-payments';
 export * from './roadside-responder';
+export * from './roadside-messages';

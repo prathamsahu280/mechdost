@@ -12,6 +12,11 @@ export const EVENT_LABEL = {
   'quote.message': 'notify_ev_quote_message',
   'quote.expiring': 'notify_ev_quote_expiring',
   'quote.withdrawn': 'notify_ev_quote_withdrawn',
+  'rsa.accepted': 'notify_ev_rsa_accepted',
+  'rsa.arrived': 'notify_ev_rsa_arrived',
+  'rsa.bill_ready': 'notify_ev_rsa_bill_ready',
+  'rsa.refunded': 'notify_ev_rsa_refunded',
+  'rsa.offer': 'notify_ev_rsa_offer',
 } as const satisfies Record<WhatsAppTemplateKey, string>;
 
 export const PROBLEM_LABEL = {
@@ -29,5 +34,6 @@ export const SAMPLES: Record<string, string> = {
   requestCode: 'SR-RPR-2026-4M8T2B',
   ticketCode: 'REQ-RPR-2026-9F2KQA',
   quoteCode: 'QT-RPR-2026-6K2M9P',
+  rsaCode: 'RSA-RPR-2026-6M4QZB',
   acceptMinutes: '15',
 };
