@@ -22,6 +22,7 @@ import { buildCases, type AuditCase } from '../cases.ts';
 import type { Mock, Reply } from './mock-api.ts';
 import { workshop } from './home-fixtures.ts';
 import { mocksFor } from './fixtures.ts';
+import { roadsideQuietMocks } from './roadside-fixtures.ts';
 import { navQuietMocks } from './nav-fixtures.ts';
 
 type Dto<S extends { parse(value: unknown): unknown }> = ReturnType<S['parse']>;
@@ -153,6 +154,8 @@ export function baselineMocks(c: AuditCase): Mock[] {
         body: { photos: [], max: 8, shopUploadsEnabled: true } satisfies Dto<typeof AdminProductPhotosDto>,
       }),
     },
+    // Roadside assistance (spec 22, 2026-11-24): the workshop portal's panel and the admin queue load with their page.
+    ...roadsideQuietMocks(),
   ];
 }
 

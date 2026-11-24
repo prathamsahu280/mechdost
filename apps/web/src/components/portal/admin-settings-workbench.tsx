@@ -231,7 +231,7 @@ export function SettingsWorkbench(props: WorkbenchProps) {
       {props.toolbar}
 
       <div className="grid gap-4 min-[1200px]:grid-cols-[230px_minmax(0,1fr)] min-[1200px]:items-start">
-        <div className="space-y-3 min-[1200px]:sticky min-[1200px]:top-28">
+        <div className="min-w-0 space-y-3 min-[1200px]:sticky min-[1200px]:top-28">
           <div>
             <label htmlFor={`${baseId}-search`} className="sr-only">
               {t('search_label')}
@@ -292,8 +292,10 @@ export function SettingsWorkbench(props: WorkbenchProps) {
                     className={`press flex min-h-11 w-full items-center gap-2 rounded-pill px-4 text-left text-sm font-bold whitespace-nowrap min-[1200px]:whitespace-normal focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus min-[1200px]:rounded-button ${
                       !searching && c.id === active
                         ? 'bg-accent-soft text-accent-soft-text'
-                        : 'text-ink hover:bg-pill'
-                    } ${searching && hits(c.id) === 0 ? 'opacity-50' : ''}`}
+                        : searching && hits(c.id) === 0
+                          ? 'text-muted hover:bg-pill'
+                          : 'text-ink hover:bg-pill'
+                    }`}
                   >
                     <c.icon aria-hidden="true" className="size-5 shrink-0" />
                     <span className="min-w-0 flex-1">{t(`cat_${c.id}`)}</span>
@@ -321,7 +323,10 @@ export function SettingsWorkbench(props: WorkbenchProps) {
           {searching ? (
             <p role="status" className="text-sm font-bold text-ink">
               {resultCount === 0
-                ? t('search_none', { query: query.trim() })
+                ? t.rich('search_none', {
+                    query: query.trim(),
+                    q: (chunks) => <span data-user-content>{chunks}</span>,
+                  })
                 : t('search_results', { count: resultCount })}
             </p>
           ) : (
@@ -346,7 +351,7 @@ export function SettingsWorkbench(props: WorkbenchProps) {
         <div
           role="group"
           aria-label={t('bar_label')}
-          className={`absolute inset-x-0 bottom-0 flex flex-wrap items-center gap-3 rounded-card border border-line-card bg-surface px-4 py-3 shadow-float transition-[opacity,transform,visibility] duration-200 motion-reduce:transition-none ${
+          className={`absolute inset-x-0 bottom-0 flex flex-wrap items-center gap-3 rounded-card border border-line-card bg-surface px-4 py-3 shadow-float min-[1200px]:left-[246px] transition-[opacity,transform,visibility] duration-200 motion-reduce:transition-none ${
             barOpen
               ? 'visible translate-y-0 opacity-100'
               : 'pointer-events-none invisible translate-y-4 opacity-0'

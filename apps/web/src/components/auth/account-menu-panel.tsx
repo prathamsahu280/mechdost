@@ -18,6 +18,7 @@ import {
 import { useEffect, useRef, type KeyboardEvent, type ReactNode } from 'react';
 import { homeFor, type DemoRole } from '@/demo/session-state';
 import { switchLocalePath, type SiteLocale } from '@/lib/locale-path';
+import { ACCOUNT_SECTIONS } from '@/lib/sections';
 import { toggleTheme, useTheme } from '@/lib/theme-client';
 import type { AccountMenuCopy } from './account-menu';
 
@@ -27,6 +28,7 @@ import type { AccountMenuCopy } from './account-menu';
  * the next item starting with it, Escape closes and gives focus back to the avatar, Tab or a tap outside closes. The
  * dark-mode row is a `menuitemcheckbox`; Sign out is the last row, in the error colour.
  */
+const SAVED_AVAILABLE = ACCOUNT_SECTIONS.includes('wishlist');
 const ROW =
   'press group flex min-h-11 w-full items-center gap-[11px] rounded-[10px] px-2.5 text-left text-sm font-medium hover:bg-pill focus-visible:bg-pill';
 
@@ -174,9 +176,12 @@ export default function AccountMenuPanel({
             <MenuLink href={`${prefix}/account/vehicles`} track="menu_vehicles" icon={Car} onClose={onClose}>
               {copy.vehicles}
             </MenuLink>
-            <MenuLink href={`${prefix}/account/wishlist`} track="menu_saved" icon={Heart} onClose={onClose}>
-              {copy.saved}
-            </MenuLink>
+            {/* Saved products exist with real sign-in only; in the demo the page is a 404 and its prefetch loops. */}
+            {SAVED_AVAILABLE ? (
+              <MenuLink href={`${prefix}/account/wishlist`} track="menu_saved" icon={Heart} onClose={onClose}>
+                {copy.saved}
+              </MenuLink>
+            ) : null}
           </>
         ) : (
           <MenuLink

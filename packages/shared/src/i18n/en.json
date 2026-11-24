@@ -5979,7 +5979,7 @@
   "adminSettings": {
     "search_label": "Search settings",
     "search_placeholder": "Name or description…",
-    "search_none": "No settings match “{query}”. Try another word.",
+    "search_none": "No settings match “<q>{query}</q>”. Try another word.",
     "search_results": "{count, plural, one {# setting found} other {# settings found}}",
     "nav_select": "Settings category",
     "nav_label": "Settings categories",

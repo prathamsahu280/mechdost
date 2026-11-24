@@ -205,7 +205,7 @@ function TrackerBody({
             {bill.lines.map((l, i) => (
               <li key={i} className="flex justify-between gap-3 py-2">
                 <span>
-                  {l.description} × {l.quantity}
+                  <span data-user-content>{l.description}</span> × {l.quantity}
                 </span>
                 <span className="font-bold">{formatPrice(l.totalPaise)}</span>
               </li>

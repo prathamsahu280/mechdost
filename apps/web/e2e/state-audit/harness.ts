@@ -360,7 +360,7 @@ export async function runCase(page: Page, c: AuditCase, info: TestInfo, api?: Ap
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
   page.on('console', (m) => {
     if (m.type() === 'error' && !isBlockedOriginNoise(m.text(), m.location().url))
-      errors.push(`console: ${m.text().slice(0, 200)}`);
+      errors.push(`console: ${m.text().slice(0, 200)} @ ${m.location().url}`);
   });
   page.on('response', (r) => {
     if (r.url().startsWith('http://localhost') && r.status() >= 400)

@@ -100,7 +100,7 @@ export function NotificationsApi({ defaults }: { defaults: NotifyDefaults }) {
         </h2>
         <p className="mt-1 max-w-prose text-sm text-muted">{t('notify_intro')}</p>
       </div>
-      <div role="tablist" aria-label={tabs('tabs_label')} className="flex gap-2">
+      <div role="tablist" aria-label={tabs('tabs_label')} className="flex flex-wrap gap-2">
         {(['whatsapp', 'emails', 'notices'] as const).map((id) => (
           <button
             key={id}
