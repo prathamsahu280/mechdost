@@ -403,3 +403,5 @@ Admin → Catalogue has two views. **Products**: filters All / Missing Hindi / *
 ## Roadside (2026-11-24, spec 22)
 
 Admin → Roadside: the "Needs dispatch" queue (ranked workshops that opted in, one-click offer, withdraw, cancel with a reason while nobody has accepted; the advance refund request waits in Refunds) and the per-city settings (on/off, vehicle types offered with the advance of each, PIN codes, hours, routing mode, accept timer, problem types, SOS phone). Permissions `roadside:read`, `roadside:dispatch`, `roadside:cancel` (ops roles) and `roadside:settings` (super admin); every save is audited with before and after.
+
+- **Sizes tab (2026-11-24, spec 02):** Catalogue editor tab "Sizes" (`admin-catalogue-sizes.tsx`, real API only): per size the label, MRP (empty = price on request), barcode, Save, Archive / Restore, and "Add a size" (SKU, size, MRP, barcode). RBAC `products:write` (archive / restore: `products:publish`), versions, audit and rules as in spec 02.
