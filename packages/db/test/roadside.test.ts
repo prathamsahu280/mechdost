@@ -14,6 +14,10 @@ import { loadKeyring } from '../src/crypto';
 import {
   acceptRsaOffer,
   applyRazorpayPayment,
+  applyRazorpayRefund,
+  approveRefund,
+  claimRefundDispatch,
+  recordRefundSent,
   billRsa,
   cancelRsaByStaff,
   cancelUnpaidRsa,
@@ -697,6 +701,52 @@ describe('cancelling', () => {
     const view = await getCustomerRsa(t(), { userId: owner.get(code)!, code, keyring });
     expect(view).toMatchObject({ status: 'cancelled', cancelReason: 'no_responder_accepted' });
     expect(view.refunds).toEqual([{ amountPaise: 50_000, stage: 'under_review' }]);
+  });
+
+  it('send the refund through approval to Razorpay, update the payment ledger and tell the customer once', async () => {
+    const { code } = await live();
+    await cancelRsaByStaff(t(), {
+      scope: ALL,
+      code,
+      reasonCode: 'no_responder_accepted',
+      expectedVersion: (await row(code)).version,
+      staffUserId: f.staff,
+    });
+    const [refund] = await refundsOf(code);
+    // The system asked, so staff other than the requester approve it (four eyes): finance approves, nothing is automatic.
+    expect(refund).toMatchObject({ status: 'requested', requestedBy: null });
+    const approved = await approveRefund(t(), {
+      scope: ALL,
+      staffUserId: f.other,
+      refundId: refund!.id,
+      expectedVersion: refund!.version,
+    });
+    expect(approved.status).toBe('approved');
+    const [pay] = await db.select().from(s.payments).where(eq(s.payments.id, refund!.paymentId!));
+    const job = await claimRefundDispatch(t(), refund!.id);
+    expect(job).toMatchObject({ amountPaise: 50_000, providerPaymentId: pay!.providerPaymentId });
+    await recordRefundSent(t(), refund!.id, `rfnd_rsa${String((payN += 1)).padStart(6, '0')}`);
+    const [sent] = await refundsOf(code);
+    const done = {
+      providerRefundId: sent!.providerRefundId!,
+      providerPaymentId: pay!.providerPaymentId!,
+      refundId: refund!.id,
+      status: 'processed' as const,
+      amountPaise: 50_000,
+      currency: 'INR',
+    };
+    expect(await applyRazorpayRefund(t(), done)).toEqual({ outcome: 'processed' });
+    expect(await applyRazorpayRefund(t(), done)).toEqual({ outcome: 'unchanged' });
+    const [after] = await db.select().from(s.payments).where(eq(s.payments.id, pay!.id));
+    expect(after).toMatchObject({ status: 'refunded', refundedPaise: 50_000, refundReservedPaise: 50_000 });
+    // One bell notice for the customer, and no order email for a request with no order.
+    const notices = await db
+      .select()
+      .from(s.notifications)
+      .where(and(eq(s.notifications.kind, 'rsa.refunded'), eq(s.notifications.userId, owner.get(code)!)));
+    expect(notices).toHaveLength(1);
+    const view = await getCustomerRsa(t(), { userId: owner.get(code)!, code, keyring });
+    expect(view.refunds).toEqual([{ amountPaise: 50_000, stage: 'refunded' }]);
   });
 
   it('let only one of two parallel cancels win', async () => {

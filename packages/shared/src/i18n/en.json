@@ -6134,6 +6134,20 @@
     "ws_radius": "How far you travel (km)",
     "ws_problems": "Problems you handle",
     "ws_towing": "We can tow",
-    "ws_saved": "Saved."
+    "ws_saved": "Saved.",
+    "ws_declineReason": "Why you decline",
+    "ws_lineKind": "Kind of line",
+    "decline_busy": "Busy with another job",
+    "decline_too_far": "Too far",
+    "decline_vehicle_not_served": "We do not serve this vehicle",
+    "decline_problem_not_handled": "We do not handle this problem",
+    "decline_closed": "Closed now",
+    "decline_other": "Other reason",
+    "kind_labour": "Labour",
+    "kind_part": "Part",
+    "kind_towing": "Towing",
+    "kind_other": "Other",
+    "admin_chooseCity": "Choose a city to see its roadside settings.",
+    "openRequest": "Open your current request"
   }
 }

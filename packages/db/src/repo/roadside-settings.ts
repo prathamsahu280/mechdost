@@ -214,8 +214,7 @@ export async function getRsaAvailability(
     available: reason === null,
     reason,
     cityCode: place.cityCode,
-    centroid:
-      place.lat === null || place.lng === null ? null : { lat: Number(place.lat), lng: Number(place.lng) },
+    centroid: place.lat === null || place.lng === null ? null : { lat: place.lat, lng: place.lng },
     vehicleTypes: s.vehicleTypes,
     advancePaise: s.advancePaise,
     problemTypes: s.problemTypes,

@@ -6,12 +6,13 @@ import {
   RSA_DECLINE_REASONS,
   RSA_PROBLEM_TYPES,
   type RsaBillLineKind,
+  type RsaDeclineReason,
   type RsaProblemType,
 } from '@mechdost/shared/rsa';
 import { VEHICLE_TYPES, type VehicleType } from '@mechdost/shared/vehicles';
 import { useCallback, useEffect, useState, type SyntheticEvent } from 'react';
 import { demoJobs, demoOffers, demoStep, useDemoRoadside } from '@/demo/roadside';
-import { DATA_MODE } from '@/lib/data-mode';
+import { AUTH_MODE } from '@/lib/auth/mode';
 import { formatPrice } from '@/lib/format';
 import {
   roadsideCall,
@@ -24,6 +25,8 @@ import {
 import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 
 const POLL_MS = 10_000;
+/** The browser demo (no real sign-in) uses the sample store; real sign-in reads the API (like the portal around it). */
+const DEMO = AUTH_MODE !== 'firebase';
 
 /**
  * Roadside in the workshop portal (spec 22, spec 07): opt in (radius, vehicle types, problem types, towing), answer
@@ -37,7 +40,7 @@ export function WorkshopRoadside() {
   const [data, setData] = useState<RoadsideWorkshopOverview>({ offers: [], jobs: [], optIns: [] });
   const [msg, setMsg] = useState<string | null>(null);
   const load = useCallback(async () => {
-    if (DATA_MODE === 'demo') return;
+    if (DEMO) return;
     const res = await roadsideCall<RoadsideWorkshopOverview>(locale, '/workshop/roadside');
     if (res.ok) setData(res.data);
     else setMsg(roadsideErrorKey(res.code));
@@ -49,8 +52,8 @@ export function WorkshopRoadside() {
       window.clearInterval(id);
     };
   }, [load]);
-  const offers = DATA_MODE === 'demo' ? demoOffers(demo) : data.offers;
-  const jobs = DATA_MODE === 'demo' ? demoJobs(demo) : data.jobs;
+  const offers = DEMO ? demoOffers(demo) : data.offers;
+  const jobs = DEMO ? demoJobs(demo) : data.jobs;
   const act = async (
     code: string,
     path: string,
@@ -58,7 +61,7 @@ export function WorkshopRoadside() {
     demoAction: Parameters<typeof demoStep>[0],
   ) => {
     setMsg(null);
-    if (DATA_MODE === 'demo') {
+    if (DEMO) {
       if (!demoStep(demoAction)) setMsg(path === 'arrive' ? 'err_ARRIVAL_CODE_WRONG' : 'err_WRONG_STEP');
       return;
     }
@@ -97,7 +100,7 @@ export function WorkshopRoadside() {
           ))}
         </ul>
       </div>
-      {DATA_MODE === 'api' ? (
+      {!DEMO ? (
         data.optIns.map((o) => <OptIn key={o.workshopId} o={o} onSaved={() => void load()} />)
       ) : (
         <p className="text-sm text-muted">{t('ws_optInDemo')}</p>
@@ -115,6 +118,7 @@ type Act = (
 
 function Offer({ o, act }: { o: RoadsideOffer; act: Act }) {
   const t = useTranslations('roadside');
+  const [reason, setReason] = useState<RsaDeclineReason>('busy');
   const [left, setLeft] = useState(() =>
     Math.max(0, Math.round((new Date(o.expiresAt).getTime() - Date.now()) / 1000)),
   );
@@ -146,12 +150,24 @@ function Offer({ o, act }: { o: RoadsideOffer; act: Act }) {
         >
           {t('ws_accept')}
         </button>
+        <select
+          aria-label={t('ws_declineReason')}
+          className={`${portalField} !mt-0 !w-auto`}
+          value={reason}
+          onChange={(e) => {
+            setReason(e.target.value as RsaDeclineReason);
+          }}
+        >
+          {RSA_DECLINE_REASONS.map((r) => (
+            <option key={r} value={r}>
+              {t(`decline_${r}` as 'decline_busy')}
+            </option>
+          ))}
+        </select>
         <button
           type="button"
           className={portalQuiet}
-          onClick={() =>
-            void act(o.code, 'decline', { reasonCode: RSA_DECLINE_REASONS[0] }, { kind: 'decline' })
-          }
+          onClick={() => void act(o.code, 'decline', { reasonCode: reason }, { kind: 'decline' })}
         >
           {t('ws_decline')}
         </button>
@@ -260,6 +276,22 @@ function Job({ j, act }: { j: RoadsideJob; act: Act }) {
             <h4 className="text-sm font-bold">{t('ws_billTitle')}</h4>
             {lines.map((l, i) => (
               <div key={i} className="grid grid-cols-[1fr_4rem_6rem] gap-2">
+                <select
+                  aria-label={t('ws_lineKind')}
+                  className={`${portalField} col-span-3`}
+                  value={l.kind}
+                  onChange={(e) => {
+                    setLines(
+                      lines.map((x, k) => (k === i ? { ...x, kind: e.target.value as RsaBillLineKind } : x)),
+                    );
+                  }}
+                >
+                  {RSA_BILL_LINE_KINDS.map((k) => (
+                    <option key={k} value={k}>
+                      {t(`kind_${k}` as 'kind_labour')}
+                    </option>
+                  ))}
+                </select>
                 <input
                   aria-label={t('ws_lineDescription')}
                   className={portalField}

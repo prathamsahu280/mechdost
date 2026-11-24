@@ -7,7 +7,7 @@ import { RSA_FUELS, type RsaFuel, type RsaProblemType } from '@mechdost/shared/r
 import { PINCODE_RE } from '@mechdost/shared/geo';
 import { VEHICLE_ICON, VEHICLE_LABEL_KEY, type VehicleType } from '@mechdost/shared/vehicles';
 import { useEffect, useRef, useState, type SyntheticEvent } from 'react';
-import { demoAvailability, demoCreate, demoStep } from '@/demo/roadside';
+import { demoAvailability, demoCreate, demoOpenCode, demoStep } from '@/demo/roadside';
 import { useSession } from '@/demo/session';
 import { track } from '@/lib/analytics';
 import { DATA_MODE } from '@/lib/data-mode';
@@ -58,6 +58,7 @@ export function RoadsideRequest() {
   const [step, setStep] = useState<'form' | 'review'>('form');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [openCode, setOpenCode] = useState<string | null>(null);
   const key = useRef(newIdempotencyKey());
   const started = useRef(false);
 
@@ -134,6 +135,7 @@ export function RoadsideRequest() {
       const made = demoCreate({ vehicleType, problemType: problemType ?? null, pincode });
       if (!made.ok) {
         setError(roadsideErrorKey(made.code));
+        if (made.code === 'RSA_ALREADY_OPEN') setOpenCode(demoOpenCode());
         setBusy(false);
         return;
       }
@@ -156,6 +158,14 @@ export function RoadsideRequest() {
     });
     if (!made.ok) {
       setError(roadsideErrorKey(made.code));
+      // A request is already open (the tab was closed before paying): link to it so the customer is never stuck.
+      if (made.code === 'RSA_ALREADY_OPEN') {
+        const mine = await roadsideCall<{ code: string; status: string }[]>(locale, '/roadside/requests');
+        if (mine.ok)
+          setOpenCode(
+            mine.data.find((r) => r.status !== 'completed' && r.status !== 'cancelled')?.code ?? null,
+          );
+      }
       setBusy(false);
       return;
     }
@@ -185,6 +195,11 @@ export function RoadsideRequest() {
         <p role="alert" className="rounded-card bg-error-bg p-3 text-sm font-bold text-error">
           {t(error as 'err_generic')}
         </p>
+      ) : null}
+      {openCode ? (
+        <Link href={`${base}/roadside/${openCode}`} className={primary}>
+          {t('openRequest')}
+        </Link>
       ) : null}
       {step === 'form' ? (
         <>

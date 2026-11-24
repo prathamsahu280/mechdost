@@ -333,3 +333,9 @@ export function demoJobs(d: Demo | null): RoadsideJob[] {
     },
   ];
 }
+
+/** The code of the open sample request (so a refused second request can link to it). */
+export function demoOpenCode(): string | null {
+  const d = load();
+  return d && d.status !== 'completed' && d.status !== 'cancelled' ? d.code : null;
+}

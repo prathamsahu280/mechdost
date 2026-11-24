@@ -6134,6 +6134,20 @@
     "ws_radius": "कितनी दूर तक जाते हैं (किमी)",
     "ws_problems": "कौन सी खराबियाँ संभालते हैं",
     "ws_towing": "हम टो कर सकते हैं",
-    "ws_saved": "सहेजा गया।"
+    "ws_saved": "सहेजा गया।",
+    "ws_declineReason": "मना करने का कारण",
+    "ws_lineKind": "पंक्ति का प्रकार",
+    "decline_busy": "दूसरे काम में व्यस्त",
+    "decline_too_far": "बहुत दूर",
+    "decline_vehicle_not_served": "हम यह गाड़ी नहीं संभालते",
+    "decline_problem_not_handled": "हम यह खराबी नहीं संभालते",
+    "decline_closed": "अभी बंद है",
+    "decline_other": "अन्य कारण",
+    "kind_labour": "मज़दूरी",
+    "kind_part": "पुर्ज़ा",
+    "kind_towing": "टोइंग",
+    "kind_other": "अन्य",
+    "admin_chooseCity": "रोडसाइड सेटिंग्स देखने के लिए शहर चुनें।",
+    "openRequest": "अपना मौजूदा अनुरोध खोलें"
   }
 }

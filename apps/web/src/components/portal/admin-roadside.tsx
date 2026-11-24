@@ -13,7 +13,7 @@ import {
 import { VEHICLE_TYPES, type VehicleType } from '@mechdost/shared/vehicles';
 import { useCallback, useEffect, useState, type SyntheticEvent } from 'react';
 import { DEMO_SUGGESTIONS, demoQueue, demoStep, useDemoRoadside } from '@/demo/roadside';
-import { DATA_MODE } from '@/lib/data-mode';
+import { AUTH_MODE } from '@/lib/auth/mode';
 import { formatPrice } from '@/lib/format';
 import {
   roadsideCall,
@@ -21,10 +21,12 @@ import {
   type RoadsideQueueItem,
   type RoadsideSuggestion,
 } from '@/lib/roadside';
+import { CityPicker } from './admin-city-picker';
 import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 
 const POLL_MS = 15_000;
-const CITY = 'RPR';
+/** The browser demo (no real sign-in) uses the sample store; real sign-in reads the API (like the sibling admin sections). */
+const DEMO = AUTH_MODE !== 'firebase';
 const minutesToTime = (m: number) =>
   `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
 const timeToMinutes = (v: string) => {
@@ -40,6 +42,7 @@ const timeToMinutes = (v: string) => {
 export function AdminRoadside() {
   const t = useTranslations('roadside');
   const [tab, setTab] = useState<'queue' | 'settings'>('queue');
+  const [city, setCity] = useState('');
   return (
     <div className="space-y-4">
       <div role="tablist" aria-label={t('adminTitle')} className="flex gap-2">
@@ -58,7 +61,14 @@ export function AdminRoadside() {
           </button>
         ))}
       </div>
-      {tab === 'queue' ? <Queue /> : <Settings />}
+      {tab === 'queue' ? (
+        <Queue />
+      ) : (
+        <>
+          {DEMO ? null : <CityPicker id="rsa-city" value={city} onChange={setCity} />}
+          <Settings city={city} />
+        </>
+      )}
     </div>
   );
 }
@@ -71,7 +81,7 @@ function Queue() {
   const [open, setOpen] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const load = useCallback(async () => {
-    if (DATA_MODE === 'demo') return;
+    if (DEMO) return;
     const res = await roadsideCall<RoadsideQueueItem[]>(locale, '/admin/roadside/queue?view=needs_dispatch');
     if (res.ok) setItems(res.data);
     else setError(res.code);
@@ -83,10 +93,9 @@ function Queue() {
       window.clearInterval(id);
     };
   }, [load]);
-  const rows =
-    DATA_MODE === 'demo'
-      ? demoQueue(demo).filter((r) => r.status === 'requested' || r.status === 'offered')
-      : items;
+  const rows = DEMO
+    ? demoQueue(demo).filter((r) => r.status === 'requested' || r.status === 'offered')
+    : items;
   return (
     <section className={portalCard} aria-labelledby="rsa-queue">
       <h2 id="rsa-queue" className="font-heading text-lg font-extrabold text-ink">
@@ -134,12 +143,12 @@ function Queue() {
 function Dispatch({ item, onDone }: { item: RoadsideQueueItem; onDone: () => void }) {
   const t = useTranslations('roadside');
   const locale = useLocale();
-  const [list, setList] = useState<RoadsideSuggestion[]>(DATA_MODE === 'demo' ? [...DEMO_SUGGESTIONS] : []);
+  const [list, setList] = useState<RoadsideSuggestion[]>(DEMO ? [...DEMO_SUGGESTIONS] : []);
   const [reason, setReason] = useState<RsaCancelReason>('no_responder_accepted');
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   useEffect(() => {
-    if (DATA_MODE === 'demo' || item.status !== 'requested') return;
+    if (DEMO || item.status !== 'requested') return;
     void roadsideCall<RoadsideSuggestion[]>(locale, `/admin/roadside/requests/${item.code}/suggestions`).then(
       (r) => {
         if (r.ok) setList(r.data);
@@ -149,7 +158,7 @@ function Dispatch({ item, onDone }: { item: RoadsideQueueItem; onDone: () => voi
   const run = async (path: string, body: unknown, demoAction: Parameters<typeof demoStep>[0]) => {
     setBusy(true);
     setMsg(null);
-    if (DATA_MODE === 'demo') demoStep(demoAction);
+    if (DEMO) demoStep(demoAction);
     else {
       const res = await roadsideCall(locale, `/admin/roadside/requests/${item.code}/${path}`, {
         method: 'POST',
@@ -243,22 +252,24 @@ function Dispatch({ item, onDone }: { item: RoadsideQueueItem; onDone: () => voi
   );
 }
 
-function Settings() {
+function Settings({ city }: { city: string }) {
   const t = useTranslations('roadside');
   const locale = useLocale();
   const [s, setS] = useState<RsaSettings>(defaultRsaSettings());
   const [pins, setPins] = useState('');
   const [msg, setMsg] = useState<{ ok: boolean; key: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   useEffect(() => {
-    if (DATA_MODE === 'demo') return;
-    void roadsideCall<RsaSettings>(locale, `/admin/roadside/settings?city=${CITY}`).then((r) => {
+    if (DEMO || !city) return;
+    setLoadError(null);
+    void roadsideCall<RsaSettings>(locale, `/admin/roadside/settings?city=${city}`).then((r) => {
       if (r.ok) {
         setS(r.data);
         setPins(r.data.pincodes.join(', '));
-      }
+      } else setLoadError(roadsideErrorKey(r.code));
     });
-  }, [locale]);
+  }, [locale, city]);
   const toggleType = (vt: VehicleType) => {
     setS((cur) => {
       const on = cur.vehicleTypes.includes(vt);
@@ -280,13 +291,13 @@ function Settings() {
   };
   const save = async (e: SyntheticEvent) => {
     e.preventDefault();
-    if (DATA_MODE === 'demo') {
+    if (DEMO) {
       setMsg({ ok: true, key: 'admin_savedDemo' });
       return;
     }
     setBusy(true);
     const body = { ...s, pincodes: pins.split(/[\s,]+/).filter(Boolean) };
-    const res = await roadsideCall<RsaSettings>(locale, `/admin/roadside/settings?city=${CITY}`, {
+    const res = await roadsideCall<RsaSettings>(locale, `/admin/roadside/settings?city=${city}`, {
       method: 'PUT',
       body,
     });
@@ -296,6 +307,13 @@ function Settings() {
     } else setMsg({ ok: false, key: roadsideErrorKey(res.code) });
     setBusy(false);
   };
+  if (!DEMO && !city) return <p className="text-sm text-muted">{t('admin_chooseCity')}</p>;
+  if (loadError)
+    return (
+      <p role="alert" className="text-sm font-bold text-error">
+        {t(loadError as 'err_generic')}
+      </p>
+    );
   return (
     <form onSubmit={(e) => void save(e)} className={`${portalCard} space-y-4`} aria-labelledby="rsa-settings">
       <h2 id="rsa-settings" className="font-heading text-lg font-extrabold text-ink">
