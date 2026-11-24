@@ -11,6 +11,25 @@ export function tokenUsable(issuedAt: number, now: number): boolean {
   return now >= issuedAt && now - issuedAt < TOKEN_MAX_AGE_MS;
 }
 
+/** How long an early check started in one form stays worth keeping before a touch starts another. */
+export const PREFETCH_REUSE_MS = 60_000;
+
+/**
+ * Whether touching a form should start the early Cloudflare check. Keyed by the container element, not by time
+ * alone: a form swapped in ("Forgot password?") has a new container that never had a check, however recently the
+ * previous form started one (user report 2026-11-24: the reset button felt slow because its check only began on
+ * submit). The same, still-mounted container is not started twice inside the reuse window.
+ */
+export function shouldPrefetch(
+  last: { el: unknown; at: number } | null,
+  container: { isConnected: boolean } | null,
+  now: number,
+): boolean {
+  if (!container) return false;
+  if (last?.el !== container) return true;
+  return now - last.at >= PREFETCH_REUSE_MS;
+}
+
 /** Run `attempt`; when `shouldRetry` says its result was a transient failure, run it once more and use that. */
 export async function retryOnce<T>(
   attempt: () => Promise<T>,

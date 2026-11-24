@@ -3861,6 +3861,7 @@
     "tpl_partner_warning_issued": "पार्टनर के लिए नोट",
     "tpl_auth_verify_email": "ईमेल पता कन्फ़र्म करें",
     "tpl_auth_password_reset": "पासवर्ड रीसेट करें",
+    "tpl_auth_password_changed": "पासवर्ड बदला गया",
     "tpl_rsa_received": "रोडसाइड अनुरोध मिला (अग्रिम मिला)",
     "tpl_rsa_accepted": "रोडसाइड मैकेनिक ने स्वीकार किया",
     "tpl_rsa_arrived": "रोडसाइड मैकेनिक पहुँचा",

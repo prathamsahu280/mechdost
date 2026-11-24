@@ -483,6 +483,13 @@ export interface ServerEventProps {
    * out (no such account, address already verified, nothing to send); never the address, the code or the account.
    */
   auth_email_action_requested: { mode: 'resetPassword' | 'verifyEmail'; queued: boolean };
+  /**
+   * The "your password was changed" notice (decision 2026-11-24). `outcome`: `queued` (mail queued), `duplicate` (this
+   * change was already announced), `no_recent_change` (unknown address or no change in the window). Never the address.
+   */
+  auth_password_changed_notified: {
+    outcome: 'queued' | 'duplicate' | 'no_recent_change';
+  };
 }
 export type ServerEvent = keyof ServerEventProps;
 

@@ -349,11 +349,14 @@ export async function saveProfile(
 }
 
 /** Forgot password by phone: after `confirmPhoneCode`, set the new password on the account. */
-export async function setNewPassword(password: string): Promise<boolean> {
+export async function setNewPassword(password: string, locale: string): Promise<boolean> {
   const user = auth?.currentUser;
   if (!user) return false;
   return updatePassword(user, password).then(
-    () => true,
+    () => {
+      void notifyPasswordChanged(user.email ?? '', locale);
+      return true;
+    },
     () => false,
   );
 }
@@ -375,10 +378,30 @@ export async function changePassword(
   try {
     await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, current));
     await updatePassword(user, next);
+    void notifyPasswordChanged(user.email, locale);
     return { ok: true };
   } catch (err) {
     const code = codeOf(err);
     return { ok: false, reason: changeFailFor(code), code: analyticsAuthCode(code) };
+  }
+}
+
+/**
+ * Tell the API a password was just changed so it can email the account holder a security notice (decision
+ * 2026-11-24). Best effort and never throws: the change has already happened. The API does not take our word for it:
+ * it asks Firebase when the password last changed and sends once per change. `keepalive` lets the request finish
+ * if the page is left right away.
+ */
+export async function notifyPasswordChanged(email: string, locale: string): Promise<void> {
+  if (!email) return;
+  try {
+    await api('/auth/password-changed', {
+      method: 'POST',
+      keepalive: true,
+      body: JSON.stringify({ email, locale: locale === 'hi' ? 'hi' : 'en' }),
+    });
+  } catch {
+    // The notice is a courtesy; the password is already changed.
   }
 }
 

@@ -3861,6 +3861,7 @@
     "tpl_partner_warning_issued": "Note to a partner",
     "tpl_auth_verify_email": "Confirm your email address",
     "tpl_auth_password_reset": "Reset your password",
+    "tpl_auth_password_changed": "Your password was changed",
     "tpl_rsa_received": "Roadside request received (advance paid)",
     "tpl_rsa_accepted": "Roadside mechanic accepted",
     "tpl_rsa_arrived": "Roadside mechanic arrived",

@@ -2,6 +2,8 @@ import { createHash } from 'node:crypto';
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { findPasswordAccount, recordSignInAudit, recordStaffSignIn } from '@mechdost/db/repo';
 import { parseSignInIdentifier, STAFF_2FA_CLAIM, STAFF_CODE_MAX_AGE_SECONDS } from '@mechdost/shared/auth';
+import { PASSWORD_CHANGE_WINDOW_MS } from '../auth/email-actions';
+import { announcePasswordChange } from '../auth/password-notice';
 import { TokenError } from '../auth/token-verifier';
 import { ApiError } from '../errors';
 import { log, safeError } from '../logger';
@@ -177,6 +179,25 @@ export function authRoutes(deps: AppDeps) {
     } catch (err) {
       log('error', 'custom_token_failed', safeError(err));
       throw unavailable();
+    }
+    // Catch-up for the "password changed" notice (decision 2026-11-24): the page call can be blocked or never made,
+    // so the first sign-in after a change sends it too (same dedupe key, so still one mail). After the answer is
+    // ready and never in its way: a failure here is only logged.
+    const { emailActions } = deps;
+    if (emailActions) {
+      void emailActions
+        .passwordChangeFor({ uid: account.firebaseUid })
+        .then((change) =>
+          announcePasswordChange(deps.db, change, {
+            locale: account.language === 'hi' ? 'hi' : 'en',
+            now: Date.now(),
+            newAccountMs: PASSWORD_CHANGE_WINDOW_MS,
+            recordSkip: false,
+          }),
+        )
+        .catch((err: unknown) => {
+          log('error', 'password_changed_catchup_failed', safeError(err));
+        });
     }
     return c.json({ status: 'signed_in' as const, customToken }, 200);
   });

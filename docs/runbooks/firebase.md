@@ -82,6 +82,8 @@ build, emulator and API run; it reads the code the emulator recorded) needs the 
 set, as before. Events (spec 12): `auth_email_action_requested` (server), `auth_email_action_opened`,
 `auth_email_verified`, `auth_password_reset_done`, `auth_email_action_failed`.
 
+**Password-changed notice.** `POST /v1/auth/password-changed` needs the same Admin SDK credentials as the reset email (`EmailActionLinks.passwordChangeFor` = `getUserByEmail` or `getUser`, reading `tokensValidAfterTime` and `metadata.creationTime`); without them it answers 503 and the page ignores that. It also runs, in the background, after every successful password sign-in (catch-up, spec 01); a Firebase failure there is only logged (`password_changed_catchup_failed`). Tests: `apps/api/test/auth-password-changed.test.ts`, `apps/api/test/auth-password-catchup.test.ts`, `apps/web/test/auth-password-changed.test.ts`. Event `auth_password_changed_notified` (server). Live check once Resend is set up: change the password on a test account, one mail "Your MechDost password was changed" arrives within a minute, and a second call for the same change sends nothing.
+
 ## Smoke test (no accounts created)
 
 A password check for a made-up email must return "no" (`null`), and a custom token must sign. Both passed on `mechdost-dev` on 2026-11-09.

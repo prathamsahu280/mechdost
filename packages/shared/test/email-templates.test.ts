@@ -52,6 +52,7 @@ describe('catalogue', () => {
       'partner_warning_issued',
       'auth_verify_email',
       'auth_password_reset',
+      'auth_password_changed',
     ])
       expect(keys).toContain(k);
   });
@@ -225,5 +226,27 @@ describe('account emails sent by us (decision 2026-11-24)', () => {
       // An admin override cannot bring the code into the text either.
       expect(emailOverrideProblem(key, { body: 'Your code is {token}' })).toBe('EMAIL_PLACEHOLDER');
     }
+  });
+});
+
+describe('password-changed notice (decision 2026-11-24)', () => {
+  it.each(['en', 'hi'] as const)(
+    'says what happened and how to react, in %s, with no code or secret',
+    (locale) => {
+      const e = composeEmail('auth_password_changed', locale, {}, ctx);
+      expect(e.purpose).toBe('system');
+      expect(e.category).toBe('transactional');
+      expect(EMAIL_TEMPLATES.auth_password_changed.params).toEqual([]);
+      const text = `${e.subject}${e.heading}${e.paragraphs.join(' ')}`;
+      expect(text).toContain('7978776551');
+      expect(text).toContain('support@mechdost.com');
+      expect(e.action?.url).toBe(`https://mechdost.com${locale === 'hi' ? '/hi' : ''}/login`);
+      expect(e.action?.label.length).toBeGreaterThan(0);
+    },
+  );
+
+  it('is written in Devanagari for Hindi and cannot take placeholders from an admin override', () => {
+    expect(DEVANAGARI.test(EMAIL_TEMPLATES.auth_password_changed.hi.body)).toBe(true);
+    expect(emailOverrideProblem('auth_password_changed', { body: 'Code {token}' })).toBe('EMAIL_PLACEHOLDER');
   });
 });

@@ -196,6 +196,7 @@ describe('findPasswordAccount (spec 01 password sign-in)', () => {
       firebaseUid: 'uid-pw',
       phone: '+919822200020',
       email: 'Pw.User@Example.com', // as stored; found below by the lower-case email (citext)
+      language: 'en',
       status: 'active',
       staff: false,
     });

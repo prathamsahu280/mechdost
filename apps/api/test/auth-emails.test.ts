@@ -136,6 +136,11 @@ describe('POST /v1/auth/password-reset-email', () => {
     expect(res.headers.get('retry-after')).toBeTruthy();
   });
 
+  it('limits the address length before trimming the spaces around it', async () => {
+    const ctx = await setup();
+    expect((await reset(ctx, { email: `${' '.repeat(250)}a@example.com` })).status).toBe(400);
+  });
+
   it('refuses a failed bot check before touching Firebase, and a malformed address or extra field', async () => {
     const ctx = await setup();
     const bot = await reset(ctx, { email: 'a@example.com', turnstileToken: 'turnstile-bad-0000000000' });
