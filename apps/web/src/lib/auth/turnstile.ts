@@ -44,7 +44,12 @@ let interactiveNow = false;
 /** Who hears "a visible challenge is up": the call that started the check, or the one that took it over. */
 let listener: (on: boolean) => void = () => undefined;
 /** A check started ahead of the submit (first focus in the form): the token is waiting when the button is pressed. */
-let warm: { promise: Promise<string>; at: number } | null = null;
+let warm: { promise: Promise<string>; at: number; el: HTMLElement | null } | null = null;
+
+/** The early check is only worth waiting for if it runs in the container on screen now (bug 2026-11-24). */
+function sameContainer(held: { el: HTMLElement | null }, containerId: string): boolean {
+  return held.el !== null && held.el.isConnected && held.el === document.getElementById(containerId);
+}
 
 /** Fetch the Cloudflare script now (sign-in screen opened), so the check at submit time starts at once. */
 export function warmTurnstile(): void {
@@ -82,10 +87,10 @@ export function prefetchTurnstileToken(
   locale: string,
   onInteractive: (shown: boolean) => void = () => undefined,
 ): void {
-  if (warm && tokenUsable(warm.at, Date.now())) return;
+  if (warm && tokenUsable(warm.at, Date.now()) && sameContainer(warm, containerId)) return;
   listener = onInteractive;
   const promise = run(containerId, locale);
-  const mine = { promise, at: Date.now() };
+  const mine = { promise, at: Date.now(), el: document.getElementById(containerId) };
   warm = mine;
   promise.catch(() => {
     if (warm === mine) warm = null;
@@ -105,7 +110,8 @@ export async function turnstileToken(
 ): Promise<string> {
   const held = warm;
   warm = null;
-  if (held && tokenUsable(held.at, Date.now())) {
+  // A check started in a form that has been replaced (sign-in → "Forgot password") never answers: run a fresh one.
+  if (held && tokenUsable(held.at, Date.now()) && sameContainer(held, containerId)) {
     listener = onInteractive;
     if (interactiveNow) onInteractive(true);
     try {
@@ -166,7 +172,8 @@ async function issue(
     pending = { resolve, reject };
     shown = onInteractive;
     if (widget?.el !== el) {
-      if (widget) api.remove(widget.id);
+      // A widget whose container already left the page is gone on Cloudflare's side too; removing it only warns.
+      if (widget?.el.isConnected) api.remove(widget.id);
       widget = {
         el,
         id: api.render(el, {
