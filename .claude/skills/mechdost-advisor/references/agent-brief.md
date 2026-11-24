@@ -37,3 +37,9 @@ the first code change with its brief quoted; for any UI change the UI chain run 
 ui-ux-pro-max, frontend-design, web-design-guidelines; shadcn-component-review when components change); and
 `website-testing` + `verification-before-completion` before "done". "Applied as a checklist" does not count. The lead
 still runs an independent security review (payments, auth, money) and a real-browser check before anything goes live.
+
+## Machine safety (2026-11-24)
+
+Never print `.env` values (read `.env.example` for names). Never kill processes by image name (`taskkill /IM node.exe`,
+`pkill node`): other agents, MCP tools and dev servers share the machine. Stop only the servers you started, by port
+or PID. Ask for narrow, worktree-scoped commands so the user is never asked to approve something broad.
