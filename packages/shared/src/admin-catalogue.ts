@@ -38,10 +38,66 @@ const NetQuantity = z.object({ qty: z.number().int(), unit: z.enum(NET_UNITS) })
 export const AdminProductDetail = ProductBase.extend({
   attributes: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])),
   variants: z.array(
-    z.object({ sku: z.string(), mrpPaise: z.number().int().nullable(), netQuantity: NetQuantity.nullable() }),
+    z.object({
+      sku: z.string(),
+      mrpPaise: z.number().int().nullable(),
+      netQuantity: NetQuantity.nullable(),
+      /** The size as one line, built from `options` (user 2026-11-24). */
+      label: z.string(),
+      options: z.record(z.string(), z.unknown()),
+      barcode: z.string().nullable(),
+      status: z.enum(['active', 'archived']),
+      /** Sent back with every change (compare-and-set). */
+      version: z.number().int(),
+    }),
   ),
 });
 export type AdminProductDetailDto = z.infer<typeof AdminProductDetail>;
+
+/**
+ * Sizes (variants) of a product, edited by staff (user 2026-11-24). Strict: only these fields, only the known option
+ * keys; the product, status of the product, prices and stock are never reachable from here.
+ */
+export const VARIANT_OPTION_FIELDS = [
+  'size',
+  'loadIndex',
+  'speedRating',
+  'construction',
+  'tlTt',
+  'ply',
+  'frontRear',
+  'label',
+  'model',
+] as const;
+const OptionText = z.string().trim().max(60);
+export const AdminVariantOptions = z
+  .object(Object.fromEntries(VARIANT_OPTION_FIELDS.map((k) => [k, OptionText.optional()])))
+  .strict();
+const Mrp = z.number().int().min(1).max(100_000_000);
+const Barcode = z
+  .string()
+  .trim()
+  .regex(/^[0-9A-Za-z-]{4,32}$/)
+  .nullable();
+export const AdminVariantAdd = z
+  .object({
+    sku: z.string().regex(/^[A-Z0-9][A-Z0-9-]{0,63}$/),
+    options: AdminVariantOptions,
+    /** Null = price on request. */
+    mrpPaise: Mrp.nullable(),
+    barcode: Barcode.optional(),
+  })
+  .strict();
+export const AdminVariantPatch = z
+  .object({
+    version: z.number().int().min(1),
+    options: AdminVariantOptions.optional(),
+    mrpPaise: Mrp.nullable().optional(),
+    barcode: Barcode.optional(),
+    status: z.enum(['active', 'archived']).optional(),
+  })
+  .strict();
+export const AdminVariantSaved = z.object({ sku: z.string(), version: z.number().int() });
 
 export const AdminTextsSaved = z.object({ version: z.number().int(), missingHindi: z.array(z.string()) });
 export const AdminVehicleTypesSaved = z.object({

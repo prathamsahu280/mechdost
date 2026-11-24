@@ -392,6 +392,8 @@ export async function listCatalogue(db: Tx, query: CatalogueQuery): Promise<Cata
 
 export interface CatalogueVariant {
   sku: string;
+  /** The size as one line ("145/70 R12 69T TL"), built from the options. */
+  label: string;
   options: Record<string, unknown>;
   /** Null = no MRP yet: "price on request", not sellable (design 2026-11-22). */
   mrpPaise: number | null;

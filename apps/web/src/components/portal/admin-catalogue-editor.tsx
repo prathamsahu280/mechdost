@@ -34,6 +34,7 @@ import { formatPrice } from '@/lib/format';
 import { parseRupees } from '@/lib/money-input';
 import { AddProductForm, ImportCsv } from './admin-catalogue-add';
 import { BulkBar } from './admin-catalogue-bulk';
+import { SizesTab } from './admin-catalogue-sizes';
 import { PhotoQueueApi } from './photo-queue-api';
 import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 import { ProductPhotosEditor } from './product-photos-editor';
@@ -322,7 +323,7 @@ export function CatalogueEditor() {
   );
 }
 
-const TABS = ['texts', 'specs', 'photos', 'prices'] as const;
+const TABS = ['texts', 'specs', 'sizes', 'photos', 'prices'] as const;
 type Tab = (typeof TABS)[number];
 
 function ProductEditor({ slug, onBack }: { slug: string; onBack: () => void }) {
@@ -379,6 +380,7 @@ function ProductEditor({ slug, onBack }: { slug: string; onBack: () => void }) {
           >
             {tab === 'texts' ? <TextsTab key={detail.version} detail={detail} onSaved={reload} /> : null}
             {tab === 'specs' ? <SpecsTab detail={detail} onSaved={reload} /> : null}
+            {tab === 'sizes' ? <SizesTab detail={detail} onSaved={reload} /> : null}
             {tab === 'photos' ? <ProductPhotosEditor slug={slug} scope="staff" /> : null}
             {tab === 'prices' ? <PricesTab slug={slug} /> : null}
           </div>

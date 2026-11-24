@@ -158,7 +158,10 @@ export async function updateVariant(
     if (cur.version !== input.expectedVersion)
       throw new ConflictError('Someone else changed this size; reload', 'STALE_VARIANT');
 
-    const nextOptions: Record<string, unknown> = { ...cur.options, ...(optionChanges ?? {}) };
+    const nextOptions: Record<string, unknown> = {
+      ...(cur.options as Record<string, unknown>),
+      ...(optionChanges ?? {}),
+    };
     for (const k of Object.keys(nextOptions)) if (nextOptions[k] === '') delete nextOptions[k];
     if (optionChanges !== undefined && variantLabel(nextOptions) === '')
       throw new ValidationError('A size needs a label', 'VARIANT_LABEL');
