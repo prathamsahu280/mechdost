@@ -18,7 +18,8 @@ import { alternatesFor } from '@/lib/seo';
 import { organizationLd, websiteLd } from '@/lib/structured-data';
 import { site } from '@/lib/site';
 import { featuredCategories, visibleSections, type HomeSection } from '@mechdost/shared/site-layout';
-import { publishedLayout } from '@/lib/site-config-content';
+import { publishedLayout, publishedRoadside } from '@/lib/site-config-content';
+import { RoadsideBand } from '@/components/roadside/roadside-promo';
 import type { ReactNode } from 'react';
 
 export async function generateMetadata({
@@ -42,7 +43,10 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
   // The demo build shows the default order and the browser-stored choices are applied by the pre-paint script.
   const layout = await publishedLayout();
   const range = DATA_MODE === 'api' ? await homeRangeCards(locale) : undefined;
+  const roadside = await publishedRoadside();
   const sections: Record<HomeSection, ReactNode> = {
+    // Roadside help (spec 22): nothing where the city has it off, so the band is never a dead end.
+    roadside: roadside.enabled ? <RoadsideBand alwaysOpen={roadside.alwaysOpen} /> : null,
     audiences: <AudienceBand />,
     trust: <TrustStrip />,
     categories: <CategoryTiles featured={featuredCategories(layout)} emoji={layout.emoji} />,
@@ -58,11 +62,13 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
       <JsonLd data={[organizationLd(), websiteLd(locale)]} />
       <Hero region={region} />
       <div className="flex flex-col">
-        {visibleSections(layout).map((key) => (
-          <div key={key} data-home-section={key}>
-            {sections[key]}
-          </div>
-        ))}
+        {visibleSections(layout)
+          .filter((key) => sections[key] !== null)
+          .map((key) => (
+            <div key={key} data-home-section={key}>
+              {sections[key]}
+            </div>
+          ))}
       </div>
     </>
   );

@@ -10,6 +10,7 @@ export const SITE_CONFIG_KEY = 'mechdost-demo-site';
 
 /** Reorderable home sections, in default order. The hero always comes first and cannot be hidden. */
 export const HOME_SECTIONS = [
+  'roadside',
   'audiences',
   'trust',
   'categories',

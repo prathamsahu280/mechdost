@@ -33,7 +33,8 @@
     "raipur": "रायपुर"
   },
   "regions": {
-    "chhattisgarh": "छत्तीसगढ़"
+    "chhattisgarh": "छत्तीसगढ़",
+    "raipur": "रायपुर"
   },
   "announcement": {
     "brand": "MechDost",
@@ -49,6 +50,7 @@
     "vehicles": "मेरे वाहन",
     "offers": "ऑफ़र",
     "business": "व्यवसाय के लिए",
+    "roadside": "रोडसाइड मदद",
     "account": "अकाउंट",
     "cart": "कार्ट",
     "cartCountZero": "कोई आइटम नहीं",
@@ -60,7 +62,8 @@
     "home": "होम",
     "shop": "ख़रीदें",
     "workshops": "वर्कशॉप",
-    "vehicles": "मेरे वाहन"
+    "vehicles": "वाहन",
+    "roadside": "रोडसाइड"
   },
   "language": {
     "label": "भाषा",
@@ -2125,6 +2128,7 @@
     "section_workshops": "टॉप रेटेड वर्कशॉप",
     "section_faq": "सवाल-जवाब",
     "section_audiences": "आप किसके लिए खरीदारी कर रहे हैं? (तीन कार्ड)",
+    "section_roadside": "रोडसाइड मदद (केवल जहाँ रोडसाइड चालू है)",
     "section_partners": "पार्टनर बनने का न्योता",
     "categories_title": "कैटेगरी शॉर्टकट",
     "categories_lead": "होम पेज के लिए {min} से {max} कैटेगरी चुनें और हर एक के लिए इमोजी चुनें।",
@@ -6106,6 +6110,15 @@
     "trackTitle": "रोडसाइड अनुरोध {code}",
     "workshopsLink": "गाड़ी सड़क पर खराब हो गई?",
     "workshopsLinkCta": "रोडसाइड मदद माँगें",
+    "workshopsCardBody": "सत्यापित मैकेनिक आपके पास आता है। पुष्टि से पहले आप एडवांस देख लेते हैं।",
+    "promoTitle": "सड़क पर फँस गए?",
+    "promoBodyAlways": "मैकेनिक {city} में 24 घंटे आपके पास आता है।",
+    "promoBody": "मैकेनिक {city} में आपके पास आता है।",
+    "promoCta": "रोडसाइड मदद पाएँ",
+    "searchTitle": "रोडसाइड मदद",
+    "searchBody": "सड़क पर फँस गए? मैकेनिक आपके पास आता है।",
+    "searchKind": "सेवा",
+    "shopCardTitle": "सड़क पर मदद चाहिए?",
     "signInFirst": "रोडसाइड मदद माँगने के लिए अपने फ़ोन नंबर से साइन इन करें। सत्यापित ईमेल ज़रूरी नहीं है।",
     "signIn": "साइन इन",
     "whereTitle": "आप कहाँ हैं?",

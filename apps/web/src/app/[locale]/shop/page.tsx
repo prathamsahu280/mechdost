@@ -18,6 +18,9 @@ import { alternatesFor, openGraphFor } from '@/lib/seo';
 import { site } from '@/lib/site';
 import { localePath } from '@/lib/locale-path';
 import { VEHICLE_TYPES } from '@mechdost/shared/vehicles';
+import { matchesRoadsideIntent } from '@mechdost/shared/roadside-intent';
+import { RoadsideCard } from '@/components/roadside/roadside-promo';
+import { publishedRoadside } from '@/lib/site-config-content';
 
 type Search = Promise<{
   q?: string | string[];
@@ -152,6 +155,10 @@ export default async function ShopPage({ searchParams }: Props) {
   return (
     <Container className="py-10 tab:py-14">
       <PageIntro eyebrow={t('eyebrow')} line1={t('titleLine1')} line2={t('titleLine2')} lead={t('lead')} />
+      {/* A search that means "stuck on the road" gets the roadside card on top of the results (spec 22). */}
+      {initial.query && matchesRoadsideIntent(initial.query) && (await publishedRoadside()).enabled ? (
+        <RoadsideCard track="shop_search_roadside" title="shopCardTitle" className="mt-8" />
+      ) : null}
       <ClientMessages namespaces={['catalogue', 'categories', 'product', 'pages']}>
         <ShopBrowser
           basePath={localePath('/shop', locale)}

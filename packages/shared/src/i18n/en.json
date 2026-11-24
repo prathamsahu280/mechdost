@@ -33,7 +33,8 @@
     "raipur": "Raipur"
   },
   "regions": {
-    "chhattisgarh": "Chhattisgarh"
+    "chhattisgarh": "Chhattisgarh",
+    "raipur": "Raipur"
   },
   "announcement": {
     "brand": "MechDost",
@@ -49,6 +50,7 @@
     "vehicles": "My Vehicles",
     "offers": "Offers",
     "business": "For business",
+    "roadside": "Roadside help",
     "account": "Account",
     "cart": "Cart",
     "cartCountZero": "no items",
@@ -59,8 +61,9 @@
     "label": "Quick navigation",
     "home": "Home",
     "shop": "Shop",
-    "workshops": "Find Workshops",
-    "vehicles": "My Vehicles"
+    "workshops": "Workshops",
+    "vehicles": "Vehicles",
+    "roadside": "SOS"
   },
   "language": {
     "label": "Language",
@@ -2125,6 +2128,7 @@
     "section_workshops": "Top-rated workshops",
     "section_faq": "Questions (FAQ)",
     "section_audiences": "Who are you shopping for? (three entry cards)",
+    "section_roadside": "Roadside help (shown only where roadside is on)",
     "section_partners": "Partner invitation",
     "categories_title": "Category shortcuts",
     "categories_lead": "Pick {min} to {max} categories for the home page and choose an emoji for each.",
@@ -6106,6 +6110,15 @@
     "trackTitle": "Roadside request {code}",
     "workshopsLink": "Vehicle broke down on the road?",
     "workshopsLinkCta": "Ask for roadside help",
+    "workshopsCardBody": "A verified mechanic comes to you. You see the advance before you confirm.",
+    "promoTitle": "Stuck on the road?",
+    "promoBodyAlways": "A mechanic comes to you in {city}, 24 hours a day.",
+    "promoBody": "A mechanic comes to you in {city}.",
+    "promoCta": "Get roadside help",
+    "searchTitle": "Roadside help",
+    "searchBody": "Stuck on the road? A mechanic comes to you.",
+    "searchKind": "Service",
+    "shopCardTitle": "Looking for help on the road?",
     "signInFirst": "Sign in with your phone number to ask for roadside help. You do not need a verified email.",
     "signIn": "Sign in",
     "whereTitle": "Where are you?",

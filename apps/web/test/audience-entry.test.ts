@@ -41,7 +41,8 @@ describe('home audience band', () => {
   it('is wired into the home page and the demo layout list agrees with the shared one', () => {
     expect(src('app/[locale]/page.tsx')).toMatch(/audiences: <AudienceBand/);
     expect([...WEB_SECTIONS]).toEqual([...SHARED_SECTIONS]);
-    expect(WEB_SECTIONS[0]).toBe('audiences');
+    expect(WEB_SECTIONS[0]).toBe('roadside'); // spec 22, 2026-11-24: first below the hero
+    expect(WEB_SECTIONS[1]).toBe('audiences');
   });
   it('is documented in the analytics spec', () => {
     const spec = readFileSync(new URL('../../../docs/specs/12-analytics-events.md', import.meta.url), 'utf8');
@@ -110,16 +111,17 @@ describe('For business navigation', () => {
     expect(f).toContain("t('colBusiness')");
     expect(f).toContain('aria-labelledby={`footer-col-${col.id}`}');
   });
-  it('header nav gets one For business item (no new client file); the tab bar stays at four', () => {
+  it('header nav gets one For business item (no new client file); the tab bar has four plus the roadside tab', () => {
     const nav = src('lib/nav.ts');
     expect(nav).toContain("key: 'business'");
-    expect(nav.match(/key: '/g)).toHaveLength(5);
+    expect(nav.match(/key: '/g)).toHaveLength(6);
     expect(src('components/site/nav-links.tsx')).toContain("aria-current={active ? 'page' : undefined}");
     const layout = src('app/[locale]/layout.tsx');
     expect(layout).toContain('BUSINESS_NAV');
-    // The tab bar is built from PRIMARY_NAV only.
-    expect(layout).toMatch(/tabItems = PRIMARY_NAV\.map/);
-    expect(src('components/site/mobile-tab-bar.tsx')).toContain('grid-cols-4');
+    // The tab bar is built from PRIMARY_NAV, plus the roadside tab where the city has it.
+    expect(layout).toMatch(/PRIMARY_NAV\.map/);
+    expect(layout).toContain('ROADSIDE_NAV');
+    expect(src('components/site/mobile-tab-bar.tsx')).toContain('grid-cols-5');
   });
   it('the nav label exists in en and hi', () => {
     expect(at(en, 'nav.business')).toBe('For business');

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import { RoadsideCard } from '@/components/roadside/roadside-promo';
+import { publishedRoadside } from '@/lib/site-config-content';
 import { ClientMessages } from '@/components/ui/client-messages';
 import { Container, PageIntro } from '@/components/ui/page-intro';
 import { WorkshopFinder } from '@/components/workshops/workshop-finder';
@@ -37,13 +38,14 @@ const PROMISES = [
 ] as const;
 
 /** Workshop finder (spec 06): location first, then nearby verified workshops. Demo data until the API ships. */
-export default async function WorkshopsPage({ params }: Props) {
-  const { locale } = await params;
+export default async function WorkshopsPage() {
   const t = await getTranslations('pages.workshops');
-  const road = await getTranslations('roadside');
+  const roadside = await publishedRoadside();
   return (
     <Container className="py-10 tab:py-14">
       <PageIntro eyebrow={t('eyebrow')} line1={t('titleLine1')} line2={t('titleLine2')} lead={t('lead')} />
+      {/* Roadside help at the top (spec 22, user 2026-11-24: "really hard to find"); only where the city has it. */}
+      {roadside.enabled ? <RoadsideCard track="workshops_roadside" className="mt-8" /> : null}
       <div className="mt-8">
         {/* Real data mode also books from here ("Let MechDost choose") and explains API errors. */}
         <ClientMessages
@@ -56,15 +58,6 @@ export default async function WorkshopsPage({ params }: Props) {
           <WorkshopFinder />
         </ClientMessages>
       </div>
-      <p className="mt-8 rounded-card bg-pill p-4 text-sm text-ink">
-        {road('workshopsLink')}{' '}
-        <Link
-          href={`${locale === 'hi' ? '/hi' : ''}/roadside`}
-          className="inline-flex min-h-6 items-center font-bold underline"
-        >
-          {road('workshopsLinkCta')}
-        </Link>
-      </p>
       <ul className="mt-12 grid gap-4 tab:grid-cols-3">
         {PROMISES.map(({ n, emoji }) => (
           <li key={n} className="reveal flex gap-4 rounded-tile border border-line-card bg-surface p-6">

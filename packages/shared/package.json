@@ -48,6 +48,7 @@
     "./rsa-api": "./src/rsa-api.ts",
     "./search": "./src/search/index.ts",
     "./search-api": "./src/search-api.ts",
+    "./roadside-intent": "./src/search/roadside-intent.ts",
     "./business": "./src/business.ts",
     "./business-codes": "./src/business-codes.ts",
     "./business-applications": "./src/business-applications.ts",

@@ -6,6 +6,8 @@
  * pins the lists to the demo's.
  */
 export const HOME_SECTIONS = [
+  // "Stuck on the road?" band (spec 22, 2026-11-24): first below the hero; shown only where roadside is on.
+  'roadside',
   'audiences',
   'trust',
   'categories',

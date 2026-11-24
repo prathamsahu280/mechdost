@@ -39,6 +39,21 @@ export async function publishedLayout(): Promise<HomeLayout> {
   return body === null ? DEFAULT_HOME_LAYOUT : readHomeLayout(field(body, 'layout'));
 }
 
+/**
+ * Is roadside help on in the launch city (spec 22, 2026-11-24)? The header item, the SOS tab, the home band, the
+ * footer link, the /workshops card and the search suggestion all read this one answer, so a city without roadside never
+ * shows a dead end. The browser demo shows it (the demo has roadside); real mode asks the API (cached 60 s) and a failed
+ * or malformed answer hides it. Server Components only.
+ */
+export async function publishedRoadside(): Promise<{ enabled: boolean; alwaysOpen: boolean }> {
+  if (DATA_MODE !== 'api') return { enabled: true, alwaysOpen: true };
+  const body = await readJson('/v1/roadside/city', { city: CITY }, 'roadside-city');
+  return {
+    enabled: field(body, 'enabled') === true,
+    alwaysOpen: field(body, 'alwaysOpen') !== false,
+  };
+}
+
 /** The filled company details ('' = not filled). */
 export async function publishedCompany(): Promise<CompanyDetails> {
   const body = await readJson('/v1/company', {}, 'company');

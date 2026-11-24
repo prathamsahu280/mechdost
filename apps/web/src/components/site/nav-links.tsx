@@ -15,6 +15,8 @@ export interface NavItem {
   activePrefix?: string;
   /** A lucide icon, rendered by the server so no icon code ships in the client bundle (spec 16 JS budget). */
   icon: ReactNode;
+  /** Roadside help (spec 22): drawn in the accent colour so it stands out from the other destinations. */
+  emphasis?: boolean;
 }
 
 /**
@@ -39,13 +41,19 @@ export function NavLinks({ label, items }: { label: string; items: readonly NavI
                 title={item.label}
                 data-track={`nav_${item.key}`}
                 className={`relative flex min-h-10 min-w-10 items-center justify-center gap-[7px] rounded-[10px] px-2.5 text-[13.5px] font-bold whitespace-nowrap transition-[background-color,box-shadow,color] duration-200 min-[1440px]:px-[13px] ${
-                  active ? 'nav-chip-active bg-chip text-ink' : 'text-muted hover:text-ink'
+                  active
+                    ? 'nav-chip-active bg-chip text-ink'
+                    : item.emphasis
+                      ? 'bg-accent-soft text-accent-soft-text hover:bg-accent-soft/70'
+                      : 'text-muted hover:text-ink'
                 }`}
               >
                 <span aria-hidden="true" className={`flex ${active ? 'text-accent' : ''}`}>
                   {item.icon}
                 </span>
-                <span className="sr-only min-[1440px]:not-sr-only">{item.label}</span>
+                <span className="sr-only min-[1440px]:not-sr-only min-[1440px]:whitespace-nowrap">
+                  {item.label}
+                </span>
               </Link>
             </li>
           );

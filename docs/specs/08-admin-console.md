@@ -403,3 +403,5 @@ Admin → Catalogue has two views. **Products**: filters All / Missing Hindi / *
 ## Roadside (2026-11-24, spec 22)
 
 Admin → Roadside: the "Needs dispatch" queue (ranked workshops that opted in, one-click offer, withdraw, cancel with a reason while nobody has accepted; the advance refund request waits in Refunds) and the per-city settings (on/off, vehicle types offered with the advance of each, PIN codes, hours, routing mode, accept timer, problem types, SOS phone). Permissions `roadside:read`, `roadside:dispatch`, `roadside:cancel` (ops roles) and `roadside:settings` (super admin); every save is audited with before and after.
+
+- **Home section "Roadside help" (2026-11-24, spec 22 "Where it shows"):** `roadside` is a ninth, now tenth, home section (first in the default order, label `portal.section_roadside` in Admin → Layout), so the admin can hide or move the "Stuck on the road?" band like any other section. The band renders only while roadside is switched on in the city (Admin → Roadside), so hiding it in the layout and switching the city off are two separate controls. A layout saved before this section existed gets it first (`fullOrder`).
