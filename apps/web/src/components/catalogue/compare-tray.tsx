@@ -10,6 +10,7 @@ import { nameIn, switchText, type SwitchLabels } from '@/lib/compare/prompt-text
 import { signal } from '@/lib/compare/signal';
 import { COMPARE_TRAY_MIN, trayVisible } from '@/lib/compare/tray-visible';
 import { clearCompare, compareHref, readCompare, useCompare } from '@/lib/compare/store';
+import { focusInView } from '@/lib/focus-in-view';
 
 export interface CompareTrayLabels extends SwitchLabels {
   label: string;
@@ -204,9 +205,11 @@ export function CompareTray({
               // The tray disappears: focus must not drop to the page's start (review I8).
               const inside = tray.current?.contains(document.activeElement) ?? false;
               clearCompare();
+              // A toggle already on screen, else the main region; never the first toggle on the page, which
+              // scrolled the shop back to the top (bug 2026-11-24).
               if (inside)
-                focusFirst(
-                  document.querySelector<HTMLElement>('main [data-compare-toggle]'),
+                focusInView(
+                  document.querySelectorAll<HTMLElement>('main [data-compare-toggle]'),
                   document.getElementById('content'),
                 );
             }}
