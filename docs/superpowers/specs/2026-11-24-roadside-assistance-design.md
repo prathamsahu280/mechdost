@@ -15,8 +15,8 @@ agents.
 
 ## Goals / non-goals / anti-goals
 
-- **Goals:** request help in under a minute from a phone; a verified mechanic or workshop on the way fast; booking fee
-  and call-out charge known before confirming; live map of the responder plus WhatsApp updates; arrival code at the
+- **Goals:** request help in under a minute from a phone; a verified mechanic or workshop on the way fast; advance (default ₹500)
+  known before confirming, balance shown after the work; live map of the responder plus WhatsApp updates; arrival code at the
   roadside; extra parts or towing approved line by line; admin can run it fully (hours, area, prices, routing mode).
 - **Non-goals (launch):** membership plans or free-call bundles; insurer or carmaker partner API; highway coverage
   outside the city; commercial vehicles (cranes); a native mechanic app; accident support beyond showing 112 / NHAI 1033.
@@ -25,19 +25,19 @@ agents.
 
 ## User rulings (2026-11-24, in the user's words where quoted)
 
-| #   | Topic                  | Ruling                                                                                                             |
-| --- | ---------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| 1   | Who responds           | "either a mechanic or a workshop"                                                                                  |
-| 2   | Area and hours         | Raipur city, requests 24x7; **admin-configurable** (area by pincode, hours per city)                               |
-| 3   | Choosing the responder | Admin dispatch with ranked suggestions **and** auto routing; "make it admin configurable" (mode per city)          |
-| 4   | Price                  | Admin-configurable, **per vehicle type** (2W, 3W, 4W)                                                              |
-| 5   | Payment                | Admin-configurable; "for now we keep it as the booking fee", charged as an **extra charge** on top of the job bill |
-| 6   | Live tracking          | Live map from the start, plus WhatsApp updates                                                                     |
-| 7   | Memberships            | Not at launch                                                                                                      |
-| 8   | Commission and payouts | Decide later (pending #9)                                                                                          |
-| 9   | Account                | Required; a verified email is **not** required (phone sign-in is enough)                                           |
-| 10  | Cancellation           | Customer cancellation **off** at launch. Admin cancels only when no responder accepts; rules decided later         |
-| 11  | Problem type           | **Optional**: "what if the customer has no clue", so "I don't know what's wrong" is a choice                       |
+| #   | Topic                  | Ruling                                                                                                                                                                                                                                                 |
+| --- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | Who responds           | "either a mechanic or a workshop"                                                                                                                                                                                                                      |
+| 2   | Area and hours         | Raipur city, requests 24x7; **admin-configurable** (area by pincode, hours per city)                                                                                                                                                                   |
+| 3   | Choosing the responder | Admin dispatch with ranked suggestions **and** auto routing; "make it admin configurable" (mode per city)                                                                                                                                              |
+| 4   | Price                  | Admin-configurable, **per vehicle type** (2W, 3W, 4W)                                                                                                                                                                                                  |
+| 5   | Payment                | **Advance** paid online at booking (default ₹500, admin-configurable per vehicle type); after the work the responder enters the total and the customer pays the balance (total − advance). Ruling 2026-11-24, replaces the earlier "extra booking fee" |
+| 6   | Live tracking          | Live map from the start, plus WhatsApp updates                                                                                                                                                                                                         |
+| 7   | Memberships            | Not at launch                                                                                                                                                                                                                                          |
+| 8   | Commission and payouts | Decide later (pending #9)                                                                                                                                                                                                                              |
+| 9   | Account                | Required; a verified email is **not** required (phone sign-in is enough)                                                                                                                                                                               |
+| 10  | Cancellation           | Customer cancellation **off** at launch. Admin cancels only when no responder accepts; rules decided later                                                                                                                                             |
+| 11  | Problem type           | **Optional**: "what if the customer has no clue", so "I don't know what's wrong" is a choice                                                                                                                                                           |
 
 ## Approaches
 
@@ -61,14 +61,15 @@ agents.
 3. **Vehicle:** pick a saved vehicle or the type (2W, 3W, 4W); fuel type (EV changes what can be offered: no jump start).
 4. **What happened? (optional):** dead battery, flat tyre, out of fuel, small fix on the spot, needs towing, **I don't
    know what's wrong**. Optional note and up to 3 photos.
-5. **Review and pay:** shows the booking fee and the call-out charge for that vehicle type, "parts and towing quoted on
-   the spot, you approve each item". Pays the **booking fee online** (Razorpay). Paid → request is live.
+5. **Review and pay:** shows the **advance** for that vehicle type (default ₹500) and "the mechanic adds the total after
+   the work; you pay only what is left after the ₹500". Pays the **advance online** (Razorpay). Paid → request is live.
 6. **Tracking page:** status steps, responder's name, photo if any, workshop name and rating, the **arrival code**, the
    live map with ETA once the responder is on the way, "last updated N min ago" if their location stops, SOS (calls
    MechDost support; shows 112) and "share status" (read-only link for a family member, expires when the job ends).
-7. **On the spot:** responder enters the arrival code. Any extra line (parts, towing by distance slab) is approved per
-   line in the page. Customer pays the job bill (call-out charge + approved lines) online or cash; the booking fee is not
-   part of that bill. Review afterwards.
+7. **On the spot:** responder enters the arrival code. When the work is done the responder enters the bill lines (work,
+   parts, towing); the customer sees the total, the advance already paid, and the **balance = total − advance**, and
+   pays the balance online or cash. If the total is below the advance, the difference is refunded automatically to the
+   original payment method. Review afterwards.
 
 ### Responder (mechanic or workshop)
 
@@ -87,26 +88,27 @@ agents.
 ### Admin
 
 - **Settings per city (all audited):** active pincodes, hours, routing mode (`manual` / `auto` / `auto_then_manual`),
-  accept timer, max auto attempts, booking fee and call-out charge per vehicle type, towing slabs per vehicle type,
+  accept timer, max auto attempts, **advance amount per vehicle type (default ₹500)**, towing slabs per vehicle type,
   problem types offered, SOS phone, message templates.
 - **Queue "Needs dispatch":** ranked responders (on duty, in radius, vehicle and problem type match, distance, accept
   rate, rating); one-click send. In auto mode it fills only when auto routing runs out.
-- **Cancel:** only when no responder accepts. Cancelling refunds the booking fee in full to the original payment method,
+- **Cancel:** only when no responder accepts. Cancelling refunds the advance in full to the original payment method,
   automatically, with a customer message. Other cancellation rules: later (Q pending).
 - **Live board:** open requests on a map, SLA timer per request, responder locations, overrides (arrival code override is
   audited), pause or suspend a responder with a reason.
 
 ### Statuses (draft)
 
-`requested` (booking fee paid) → `offered` → `accepted` → `en_route` → `arrived` (code checked) → `in_progress` →
+`requested` (advance paid) → `offered` → `accepted` → `en_route` → `arrived` (code checked) → `in_progress` →
 `completed` (job bill paid) · side exits: `no_responder` → `cancelled` (admin, refund) · `towing` as a step between
 `in_progress` and `completed` when a tow is approved. Every move is a conditional UPDATE with `version`; one active offer
 per request (partial unique index), same as order assignments.
 
 ## Data, money, rules
 
-- Money in paise; booking fee and call-out charge **snapshotted** on the request; the booking fee is its own payment
-  (not a bill line) so the extra-charge ruling stays clear in invoices.
+- Money in paise; the advance is **snapshotted** on the request and recorded as a payment against the job bill. The
+  bill shows total, "advance paid" and balance due; balance = max(total − advance, 0); a negative difference becomes an
+  automatic refund through the refund ledger. GST invoice for the full total at completion.
 - Location history of the responder kept only while the request is open, then reduced to start/arrival points (DPDP:
   location is personal data; purpose notice at "On my way" and at request time).
 - Phone numbers masked between customer and responder (calls via support at launch).
@@ -133,7 +135,7 @@ way. A native app later removes the limit.
 
 ## Rough phasing inside launch
 
-1. Settings, entity, state machine, customer request + tracking (no map), admin dispatch, booking fee + refund.
+1. Settings, entity, state machine, customer request + tracking (no map), admin dispatch, advance + balance + refund.
 2. Workshop opt-in and offers; minimal mechanic portal and onboarding.
 3. Auto routing; live map; share status; SOS.
 
