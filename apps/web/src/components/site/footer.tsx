@@ -40,7 +40,7 @@ const linkClass =
  * Q15) and the language and dark-mode buttons; then the policy links, privacy choices, credits and copyright.
  * Server-only apart from the two buttons. Link lists become admin-editable navigation in Phase 1 (rule 8, spec 08).
  */
-export function Footer() {
+export function Footer({ roadside = false }: { roadside?: boolean }) {
   const t = useTranslations('footer');
   const consent = useTranslations('consent');
   const wa = useTranslations('whatsapp');
@@ -82,6 +82,8 @@ export function Footer() {
       title: t('colCare'),
       links: [
         { href: '/workshops', label: nav('workshops'), track: 'footer_workshops' },
+        // Only where the city has roadside on (spec 22, 2026-11-24).
+        ...(roadside ? [{ href: '/roadside', label: nav('roadside'), track: 'footer_roadside' }] : []),
         { href: '/account/vehicles', label: nav('vehicles'), track: 'footer_vehicles' },
         { href: '/account/services', label: account('nav_services'), track: 'footer_services' },
       ],

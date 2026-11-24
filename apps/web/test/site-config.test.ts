@@ -62,7 +62,8 @@ describe('site config (admin customisation, spec 08)', () => {
       }),
     );
     const c = siteConfig();
-    expect(c.layout.order[0]).toBe('faq');
+    expect(c.layout.order[0]).toBe('roadside'); // a section the stored list lacks goes to its default place
+    expect(c.layout.order.at(-2)).toBe('faq'); // followed by partners, its default successor
     expect(new Set(c.layout.order)).toEqual(new Set(HOME_SECTIONS)); // every section exactly once
     expect(c.layout.order).toHaveLength(HOME_SECTIONS.length);
     expect(c.layout.hidden).toEqual(['route']);

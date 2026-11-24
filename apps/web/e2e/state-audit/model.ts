@@ -292,7 +292,15 @@ const adminPath = (s: string) => (s === 'overview' ? '/admin' : `/admin/${s}`);
 const walk: Param = { name: 'walk', values: ['no', 'yes'] };
 const NAV_CHECKS: readonly Check[] = [...BASE_CHECKS, 'nav'];
 /** Header and tab bar routes: the four primary destinations, a page that is not a nav target, and each portal. */
-const PRIMARY_ROUTES = ['/', '/shop', '/workshops', '/account/vehicles', '/cart', '/policies/returns'];
+const PRIMARY_ROUTES = [
+  '/',
+  '/shop',
+  '/workshops',
+  '/account/vehicles',
+  '/roadside',
+  '/cart',
+  '/policies/returns',
+];
 const roleRoute = (r: Row) =>
   (r.route !== '/account/vehicles' || r.auth === 'customer') &&
   (r.route !== '/partner/shop' || r.auth === 'shop') &&
@@ -472,6 +480,48 @@ export const COMPONENTS: readonly ComponentDef[] = [
     sweep: 8,
   },
   {
+    code: 'CHR-SEARCH-ROADSIDE',
+    page: 'Chrome',
+    component:
+      'Search palette with "puncture" typed: the "Roadside help" suggestion on top (spec 22, 2026-11-24), then the usual rows',
+    path: '/',
+    scope: '[role="dialog"][aria-modal="true"]',
+    strategy: 'pairwise',
+    params: [...env, { name: 'open', values: ['first'] }],
+    sweep: 8,
+  },
+  {
+    code: 'CHR-HEADER-ROADSIDE',
+    page: 'Chrome',
+    component:
+      'Header "Roadside help" item (spec 22, 2026-11-24): the siren icon in the accent colour next to the other destinations, no wrapping at 1024, 1280 and 1440 px; current on the roadside page',
+    path: (r) => String(r.route),
+    scope: 'header.sticky nav',
+    strategy: 'cross',
+    cross: ['width'],
+    params: [
+      { name: 'width', values: [1024, 1280, 1440, 1920] },
+      theme,
+      locale,
+      { name: 'route', values: ['/', '/roadside'] },
+    ],
+    sweep: 12,
+    core: coreAt([1024], (r) => r.locale === 'hi' && r.theme === 'dark'),
+  },
+  {
+    code: 'CHR-TABBAR-5',
+    page: 'Chrome',
+    component:
+      'Floating dock with five tabs (spec 22, 2026-11-24): the SOS tab last in the accent colour, labels on one line down to 320 px, current on the roadside page',
+    path: (r) => String(r.route),
+    scope: 'nav.fixed',
+    strategy: 'cross',
+    cross: ['width'],
+    params: [phoneWidth, theme, locale, { name: 'route', values: ['/', '/roadside'] }],
+    sweep: 12,
+    core: coreAt([320], (r) => r.locale === 'hi' && r.theme === 'dark'),
+  },
+  {
     code: 'CHR-TABBAR',
     page: 'Chrome',
     component: 'Floating dock (v4, under 1024 px)',
@@ -547,6 +597,11 @@ export const COMPONENTS: readonly ComponentDef[] = [
   ...(
     [
       ['HOME-HERO', 'Hero with search', 'section[aria-labelledby="hero-title"]'],
+      [
+        'HOME-ROADSIDE',
+        'Roadside help band ("Stuck on the road?", one button; spec 22, 2026-11-24)',
+        'section[aria-labelledby="roadside-band-title"]',
+      ],
       ['HOME-AUDIENCES', 'Audience band (three entry cards)', 'section[aria-labelledby="audiences-title"]'],
       ['HOME-TRUST', 'Trust strip', 'main section[aria-label]:not([aria-labelledby])'],
       ['HOME-CATS', 'Category tiles', 'section[aria-labelledby="categories-title"]'],
@@ -984,6 +1039,18 @@ export const COMPONENTS: readonly ComponentDef[] = [
     align: [{ items: 'main ul > li' }],
     sweep: 14,
     core: coreAt([390]),
+  },
+  {
+    code: 'WS-ROADSIDE-CARD',
+    page: 'Workshops (/workshops)',
+    component:
+      'Highlighted roadside card at the top of the page (spec 22, 2026-11-24): accent border, siren, one outlined link to /roadside',
+    path: '/workshops',
+    scope: 'aside[aria-labelledby="workshops_roadside-title"]',
+    strategy: 'pairwise',
+    params: [...env, authOutIn],
+    sweep: 10,
+    core: coreAt([390], (r) => r.locale === 'hi' && r.theme === 'dark'),
   },
   {
     code: 'OFFERS-PAGE',

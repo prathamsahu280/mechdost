@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Search, X } from 'lucide-react';
+import { Search, Siren, X } from 'lucide-react';
+import { matchesRoadsideIntent } from '@mechdost/shared/roadside-intent';
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { SUGGEST_MAX, SUGGEST_QUERY_MIN, type SuggestItemDto } from '@mechdost/shared/search-api';
@@ -26,7 +27,7 @@ interface Row {
   key: string;
   label: string;
   subtitle: string | null;
-  kind: SuggestItemDto['kind'] | 'all';
+  kind: SuggestItemDto['kind'] | 'all' | 'roadside';
   href: string;
 }
 
@@ -95,8 +96,21 @@ export default function HeaderSearch({ data, onClose }: SearchPanelProps) {
 
   // The first row is always "see all results for the words typed", so Enter on an arrow-less list still searches.
   const fresh = long && loadedFor === typed;
+  // A breakdown search ("puncture", "tow", "battery dead") gets "Roadside help" above everything (spec 22).
+  const roadside = data.roadside && long && matchesRoadsideIntent(typed) ? data.roadside : null;
   const rows: Row[] = long
     ? [
+        ...(roadside
+          ? [
+              {
+                key: 'roadside',
+                label: roadside.title,
+                subtitle: roadside.body,
+                kind: 'roadside' as const,
+                href: roadside.href,
+              },
+            ]
+          : []),
         {
           key: 'all',
           label: copy.seeAll.replace('{query}', typed),
@@ -127,6 +141,8 @@ export default function HeaderSearch({ data, onClose }: SearchPanelProps) {
     const row = rows[i];
     if (!row) return;
     if (row.kind === 'all') track('search', { query: typed, source: 'header' });
+    else if (row.kind === 'roadside')
+      track('click', { id: 'header_search_roadside', path: window.location.pathname });
     else track('search_suggestion_selected', { kind: row.kind, position: Math.min(Math.max(i, 1), 8) });
     go(row.href);
   }
@@ -254,6 +270,8 @@ export default function HeaderSearch({ data, onClose }: SearchPanelProps) {
               >
                 {row.kind === 'all' ? (
                   <Search aria-hidden="true" className="size-4 shrink-0 text-muted" />
+                ) : row.kind === 'roadside' ? (
+                  <Siren aria-hidden="true" className="size-4 shrink-0 text-accent-soft-text" />
                 ) : null}
                 <span className="min-w-0 flex-1">
                   <span className={`block truncate ${row.kind === 'all' ? 'font-semibold' : 'font-bold'}`}>
@@ -264,7 +282,9 @@ export default function HeaderSearch({ data, onClose }: SearchPanelProps) {
                   ) : null}
                 </span>
                 {row.kind === 'all' ? null : (
-                  <span className="shrink-0 text-xs font-bold text-muted">{copy.kind[row.kind]}</span>
+                  <span className="shrink-0 text-xs font-bold text-muted">
+                    {row.kind === 'roadside' ? (roadside?.kind ?? '') : copy.kind[row.kind]}
+                  </span>
                 )}
               </li>
             ))}

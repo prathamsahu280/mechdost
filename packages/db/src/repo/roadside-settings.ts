@@ -228,3 +228,21 @@ export async function getRsaAvailability(
     closesAtMinute: s.closesAtMinute,
   };
 }
+
+/**
+ * Whether roadside help is switched on in a city and whether it answers at every hour, for the website chrome (header,
+ * tab bar, home band, footer: spec 22 "Where it shows", 2026-11-24). City level only: no PIN code, no request data.
+ * An unknown city or a city with no settings row is off.
+ */
+export async function getRsaCityStatus(
+  db: Tx,
+  input: { cityCode: string },
+): Promise<{ enabled: boolean; alwaysOpen: boolean }> {
+  const [row] = await db
+    .select({ enabled: rsaCitySettings.enabled, alwaysOpen: rsaCitySettings.alwaysOpen })
+    .from(rsaCitySettings)
+    .innerJoin(cities, eq(cities.id, rsaCitySettings.cityId))
+    .where(eq(cities.code, input.cityCode))
+    .limit(1);
+  return { enabled: row?.enabled ?? false, alwaysOpen: row?.alwaysOpen ?? true };
+}

@@ -60,12 +60,16 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | CHR-HEADER            | Chrome                                                                     | Header (v4: logo, segmented nav, search pill, bell, account avatar, cart button; compact bar and search bar on phones)                                                                                                                                                          | cross    | 26       | 11      |
 | CHR-ACCOUNT-MENU      | Chrome                                                                     | Account menu behind the header avatar (v4): open, every row, dark-mode switch, language, Sign out in the error colour; portal roles get their portal link                                                                                                                       | pairwise | 16       | 0       |
 | CHR-SEARCH            | Chrome                                                                     | Search palette behind the header search pill (v4): popular searches and categories, close button, Escape, focus trap                                                                                                                                                            | pairwise | 16       | 0       |
+| CHR-SEARCH-ROADSIDE   | Chrome                                                                     | Search palette with "puncture" typed: the "Roadside help" suggestion on top (spec 22, 2026-11-24), then the usual rows                                                                                                                                                          | pairwise | 16       | 0       |
+| CHR-HEADER-ROADSIDE   | Chrome                                                                     | Header "Roadside help" item (spec 22, 2026-11-24): the siren icon in the accent colour next to the other destinations, no wrapping at 1024, 1280 and 1440 px; current on the roadside page                                                                                      | cross    | 10       | 1       |
+| CHR-TABBAR-5          | Chrome                                                                     | Floating dock with five tabs (spec 22, 2026-11-24): the SOS tab last in the accent colour, labels on one line down to 320 px, current on the roadside page                                                                                                                      | cross    | 10       | 1       |
 | CHR-TABBAR            | Chrome                                                                     | Floating dock (v4, under 1024 px)                                                                                                                                                                                                                                               | pairwise | 20       | 5       |
 | CHR-FOOTER            | Chrome                                                                     | Footer (help, columns, privacy choices, theme)                                                                                                                                                                                                                                  | pairwise | 16       | 0       |
 | CHR-FLOAT             | Chrome                                                                     | Floating stack: assistant launcher, compare tray, consent banner, tab bar together                                                                                                                                                                                              | cross    | 24       | 3       |
 | CHR-ASSIST            | Chrome                                                                     | Assistant launcher and panel                                                                                                                                                                                                                                                    | pairwise | 16       | 0       |
 | CHR-CONSENT           | Chrome                                                                     | Cookie and consent banner                                                                                                                                                                                                                                                       | pairwise | 16       | 0       |
 | HOME-HERO             | Home                                                                       | Hero with search                                                                                                                                                                                                                                                                | pairwise | 32       | 0       |
+| HOME-ROADSIDE         | Home                                                                       | Roadside help band ("Stuck on the road?", one button; spec 22, 2026-11-24)                                                                                                                                                                                                      | pairwise | 25       | 0       |
 | HOME-AUDIENCES        | Home                                                                       | Audience band (three entry cards)                                                                                                                                                                                                                                               | pairwise | 25       | 1       |
 | HOME-TRUST            | Home                                                                       | Trust strip                                                                                                                                                                                                                                                                     | pairwise | 25       | 0       |
 | HOME-CATS             | Home                                                                       | Category tiles                                                                                                                                                                                                                                                                  | pairwise | 25       | 0       |
@@ -108,6 +112,7 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | ACC-VEHICLES-DATA     | Account (/account)                                                         | Account vehicles: empty, one, at the limit of 10, long Hindi text                                                                                                                                                                                                               | pairwise | 32       | 2       |
 | ACC-ADDRESSES-DATA    | Account (/account)                                                         | Account addresses: empty, one, at the limit of 10, long Hindi text                                                                                                                                                                                                              | pairwise | 32       | 2       |
 | WS-FINDER             | Workshops (/workshops)                                                     | Finder: PIN, vehicle, use my location, list cards, map toggle (map canvas excluded)                                                                                                                                                                                             | pairwise | 16       | 2       |
+| WS-ROADSIDE-CARD      | Workshops (/workshops)                                                     | Highlighted roadside card at the top of the page (spec 22, 2026-11-24): accent border, siren, one outlined link to /roadside                                                                                                                                                    | pairwise | 16       | 0       |
 | OFFERS-PAGE           | Offers (/offers)                                                           | Public offers list (2026-11-16): offer cards with conditions, IST end time and copy-code button; the demo build has no offers, so it shows the empty state with one next action                                                                                                 | pairwise | 16       | 2       |
 | WS-PROFILE            | Workshop page (/workshops/[slug])                                          | Workshop profile: services menu, reviews, booking form                                                                                                                                                                                                                          | pairwise | 32       | 1       |
 | WS-BOOK-FLOAT         | Workshop page (/workshops/[slug])                                          | Booking form with the floating assistant button: scanned top to bottom, the button never covers a price or a control (it steps aside while the form is on the page; QA V5)                                                                                                      | cross    | 16       | 1       |
@@ -139,8 +144,8 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | ADM-LAYOUT            | Admin console (/admin)                                                     | Admin section: layout (section bar, tables, actions)                                                                                                                                                                                                                            | pairwise | 16       | 0       |
 | ADM-SETTINGS          | Admin console (/admin)                                                     | Admin section: settings (section bar, tables, actions)                                                                                                                                                                                                                          | pairwise | 16       | 0       |
 | ADM-NOTIFICATIONS     | Admin console (/admin)                                                     | Admin section: notifications (section bar, tables, actions)                                                                                                                                                                                                                     | pairwise | 16       | 0       |
-| NAV-HEADER            | Navigation                                                                 | Header nav (1024 px and up): current item, hover, focus, every role and route                                                                                                                                                                                                   | cross    | 31       | 2       |
-| NAV-TABBAR            | Navigation                                                                 | Floating dock (under 1024 px): current tab, long Hindi labels, every role, walk                                                                                                                                                                                                 | cross    | 26       | 2       |
+| NAV-HEADER            | Navigation                                                                 | Header nav (1024 px and up): current item, hover, focus, every role and route                                                                                                                                                                                                   | cross    | 38       | 1       |
+| NAV-TABBAR            | Navigation                                                                 | Floating dock (under 1024 px): current tab, long Hindi labels, every role, walk                                                                                                                                                                                                 | cross    | 31       | 2       |
 | NAV-ACCOUNT           | Navigation                                                                 | Account section bar: current section on each of the nine sections (scrolls on phones)                                                                                                                                                                                           | cross    | 80       | 1       |
 | NAV-ADMIN             | Navigation                                                                 | Admin section bar: current section on each demo section (scrolls on phones, column from 1024 px)                                                                                                                                                                                | cross    | 128      | 0       |
 | NAV-CATEGORY          | Navigation                                                                 | Shop category chips (scroll row): current chip, every chip applies its filter                                                                                                                                                                                                   | pairwise | 24       | 0       |
@@ -199,7 +204,7 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | API-ADM-EXPORTS       | Admin → Exports, real sign-in                                              | CSV exports: the form (dataset, city, dates), customers with masked or open contacts, done, empty file, too many rows, expired link, range over 180 days, nothing allowed, load error                                                                                           | pairwise | 80       | 0       |
 | API-NAV-ADMIN         | Navigation, real sign-in                                                   | Admin section bar with every real-mode section (Analytics, Refunds, Errors included): current item, scroll, walk                                                                                                                                                                | cross    | 184      | 0       |
 | API-NAV-ACCOUNT       | Navigation, real sign-in                                                   | Account section bar in a real-sign-in build: current item, scroll, walk                                                                                                                                                                                                         | cross    | 104      | 0       |
-| **Total**             |                                                                            |                                                                                                                                                                                                                                                                                 |          | **4687** | **102** |
+| **Total**             |                                                                            |                                                                                                                                                                                                                                                                                 |          | **4776** | **103** |
 
 ## Chrome
 
@@ -275,6 +280,57 @@ Pairwise (all pairs of values); 16 states; scope `[role="dialog"][aria-modal="tr
 - [ ] CHR-SEARCH-014 · 1440px · dark · hi · customer · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console hindi
 - [ ] CHR-SEARCH-015 · 1920px · light · en · signed out · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console
 - [ ] CHR-SEARCH-016 · 1920px · dark · hi · customer · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+
+### CHR-SEARCH-ROADSIDE — Search palette with "puncture" typed: the "Roadside help" suggestion on top (spec 22, 2026-11-24), then the usual rows
+
+Pairwise (all pairs of values); 16 states; scope `[role="dialog"][aria-modal="true"]`.
+
+- [ ] CHR-SEARCH-ROADSIDE-001 · 320px · light · en · signed out · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] CHR-SEARCH-ROADSIDE-002 · 320px · dark · hi · signed out · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CHR-SEARCH-ROADSIDE-003 · 390px · light · hi · signed out · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CHR-SEARCH-ROADSIDE-004 · 390px · dark · en · signed out · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] CHR-SEARCH-ROADSIDE-005 · 480px · light · en · signed out · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] CHR-SEARCH-ROADSIDE-006 · 480px · dark · hi · signed out · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CHR-SEARCH-ROADSIDE-007 · 768px · light · en · signed out · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] CHR-SEARCH-ROADSIDE-008 · 768px · dark · hi · signed out · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CHR-SEARCH-ROADSIDE-009 · 1024px · light · en · signed out · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] CHR-SEARCH-ROADSIDE-010 · 1024px · dark · hi · signed out · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CHR-SEARCH-ROADSIDE-011 · 1280px · light · en · signed out · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] CHR-SEARCH-ROADSIDE-012 · 1280px · dark · hi · signed out · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CHR-SEARCH-ROADSIDE-013 · 1440px · light · en · signed out · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] CHR-SEARCH-ROADSIDE-014 · 1440px · dark · hi · signed out · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CHR-SEARCH-ROADSIDE-015 · 1920px · light · en · signed out · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] CHR-SEARCH-ROADSIDE-016 · 1920px · dark · hi · signed out · world=empty · / · open=first · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+
+### CHR-HEADER-ROADSIDE — Header "Roadside help" item (spec 22, 2026-11-24): the siren icon in the accent colour next to the other destinations, no wrapping at 1024, 1280 and 1440 px; current on the roadside page
+
+Full cross of the high-risk dimensions, the rest pairwise; 10 states; scope `header.sticky nav`.
+
+- [ ] CHR-HEADER-ROADSIDE-001 · 1024px · light · en · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] CHR-HEADER-ROADSIDE-002 · 1280px · dark · hi · signed out · world=empty · /roadside · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CHR-HEADER-ROADSIDE-003 · 1440px · light · hi · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CHR-HEADER-ROADSIDE-004 · 1920px · dark · en · signed out · world=empty · /roadside · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] CHR-HEADER-ROADSIDE-005 · 1024px · dark · hi · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console hindi axe · core
+- [ ] CHR-HEADER-ROADSIDE-006 · 1280px · light · en · signed out · world=empty · /roadside · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] CHR-HEADER-ROADSIDE-007 · 1440px · dark · en · signed out · world=empty · /roadside · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] CHR-HEADER-ROADSIDE-008 · 1920px · light · hi · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CHR-HEADER-ROADSIDE-009 · 1024px · light · en · signed out · world=empty · /roadside · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] CHR-HEADER-ROADSIDE-010 · 1280px · dark · hi · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+
+### CHR-TABBAR-5 — Floating dock with five tabs (spec 22, 2026-11-24): the SOS tab last in the accent colour, labels on one line down to 320 px, current on the roadside page
+
+Full cross of the high-risk dimensions, the rest pairwise; 10 states; scope `nav.fixed`.
+
+- [ ] CHR-TABBAR-5-001 · 320px · light · en · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] CHR-TABBAR-5-002 · 390px · dark · hi · signed out · world=empty · /roadside · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CHR-TABBAR-5-003 · 480px · light · hi · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CHR-TABBAR-5-004 · 768px · dark · en · signed out · world=empty · /roadside · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] CHR-TABBAR-5-005 · 320px · dark · hi · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console hindi axe · core
+- [ ] CHR-TABBAR-5-006 · 390px · light · en · signed out · world=empty · /roadside · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] CHR-TABBAR-5-007 · 480px · dark · en · signed out · world=empty · /roadside · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] CHR-TABBAR-5-008 · 768px · light · hi · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CHR-TABBAR-5-009 · 320px · light · en · signed out · world=empty · /roadside · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] CHR-TABBAR-5-010 · 390px · dark · hi · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console hindi
 
 ### CHR-TABBAR — Floating dock (v4, under 1024 px)
 
@@ -431,6 +487,36 @@ Pairwise (all pairs of values); 32 states; scope `section[aria-labelledby="hero-
 - [x] HOME-HERO-030 · 1280px · dark · hi · customer · world=busy · / · stress=long-price · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console hindi — 2026-11-16 pass
 - [x] HOME-HERO-031 · 1440px · light · en · signed out · world=empty · / · stress=none · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console — 2026-11-16 pass
 - [x] HOME-HERO-032 · 1920px · dark · hi · customer · world=cart · / · stress=long-text · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console hindi — 2026-11-16 pass
+
+### HOME-ROADSIDE — Roadside help band ("Stuck on the road?", one button; spec 22, 2026-11-24)
+
+Pairwise (all pairs of values); 25 states; scope `section[aria-labelledby="roadside-band-title"]`.
+
+- [ ] HOME-ROADSIDE-001 · 320px · light · en · signed out · world=empty · / · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] HOME-ROADSIDE-002 · 320px · dark · hi · customer · world=cart · / · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-ROADSIDE-003 · 390px · light · hi · signed out · world=busy · / · stress=long-price · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-ROADSIDE-004 · 390px · dark · en · customer · world=empty · / · stress=long-price · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] HOME-ROADSIDE-005 · 480px · light · en · customer · world=cart · / · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] HOME-ROADSIDE-006 · 480px · dark · hi · signed out · world=busy · / · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-ROADSIDE-007 · 768px · light · en · signed out · world=cart · / · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] HOME-ROADSIDE-008 · 768px · dark · hi · customer · world=empty · / · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-ROADSIDE-009 · 1024px · light · en · signed out · world=busy · / · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] HOME-ROADSIDE-010 · 1024px · dark · hi · customer · world=empty · / · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-ROADSIDE-011 · 1280px · light · en · signed out · world=cart · / · stress=long-price · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] HOME-ROADSIDE-012 · 1280px · dark · hi · customer · world=busy · / · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-ROADSIDE-013 · 1440px · light · en · signed out · world=empty · / · stress=long-price · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] HOME-ROADSIDE-014 · 1440px · dark · hi · customer · world=cart · / · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-ROADSIDE-015 · 1920px · light · en · signed out · world=busy · / · stress=long-price · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] HOME-ROADSIDE-016 · 1920px · dark · hi · customer · world=empty · / · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-ROADSIDE-017 · 320px · light · en · signed out · world=busy · / · stress=long-price · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] HOME-ROADSIDE-018 · 390px · dark · hi · customer · world=cart · / · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-ROADSIDE-019 · 480px · light · en · signed out · world=empty · / · stress=long-price · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] HOME-ROADSIDE-020 · 768px · dark · hi · customer · world=busy · / · stress=long-price · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-ROADSIDE-021 · 1024px · light · en · signed out · world=cart · / · stress=long-price · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] HOME-ROADSIDE-022 · 1280px · dark · hi · customer · world=empty · / · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-ROADSIDE-023 · 1440px · light · en · signed out · world=busy · / · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] HOME-ROADSIDE-024 · 1920px · dark · hi · customer · world=cart · / · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-ROADSIDE-025 · 390px · light · en · signed out · world=empty · / · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
 
 ### HOME-AUDIENCES — Audience band (three entry cards)
 
@@ -2022,6 +2108,27 @@ Pairwise (all pairs of values); 16 states; scope `main`.
 - [!] WS-FINDER-015 · 1920px · light · en · signed out · world=empty · /workshops · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console aligned — 2026-11-15 FAIL: P1 console ×4; P2 tap44 ×1 · [screenshot](../../apps/web/test-results/state-audit-2026-11-15/D/output/state-audit.audit.ts-WS-FI-df0db-ty-·-workshops-·-form-clean-audit/attachments/state-audit-failure-00fa87421f500ac320c079edfa69d4f969ae9404.png)
 - [!] WS-FINDER-016 · 1920px · dark · hi · customer · world=empty · /workshops · form=filled · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi — 2026-11-15 FAIL: P1 console ×4; P2 tap44 ×1; P2 focus-clipped ×6 · [screenshot](../../apps/web/test-results/state-audit-2026-11-15/D/output/state-audit.audit.ts-WS-FI-60155-y-·-workshops-·-form-filled-audit/attachments/state-audit-failure-6d80b87949af266ea80531b4f35bb7db3a81cb96.png)
 
+### WS-ROADSIDE-CARD — Highlighted roadside card at the top of the page (spec 22, 2026-11-24): accent border, siren, one outlined link to /roadside
+
+Pairwise (all pairs of values); 16 states; scope `aside[aria-labelledby="workshops_roadside-title"]`.
+
+- [ ] WS-ROADSIDE-CARD-001 · 320px · light · en · signed out · world=empty · /workshops · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] WS-ROADSIDE-CARD-002 · 320px · dark · hi · customer · world=empty · /workshops · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] WS-ROADSIDE-CARD-003 · 390px · light · hi · signed out · world=empty · /workshops · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] WS-ROADSIDE-CARD-004 · 390px · dark · en · customer · world=empty · /workshops · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] WS-ROADSIDE-CARD-005 · 480px · light · en · customer · world=empty · /workshops · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] WS-ROADSIDE-CARD-006 · 480px · dark · hi · signed out · world=empty · /workshops · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] WS-ROADSIDE-CARD-007 · 768px · light · en · signed out · world=empty · /workshops · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] WS-ROADSIDE-CARD-008 · 768px · dark · hi · customer · world=empty · /workshops · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] WS-ROADSIDE-CARD-009 · 1024px · light · en · signed out · world=empty · /workshops · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] WS-ROADSIDE-CARD-010 · 1024px · dark · hi · customer · world=empty · /workshops · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] WS-ROADSIDE-CARD-011 · 1280px · light · en · signed out · world=empty · /workshops · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] WS-ROADSIDE-CARD-012 · 1280px · dark · hi · customer · world=empty · /workshops · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] WS-ROADSIDE-CARD-013 · 1440px · light · en · signed out · world=empty · /workshops · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] WS-ROADSIDE-CARD-014 · 1440px · dark · hi · customer · world=empty · /workshops · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] WS-ROADSIDE-CARD-015 · 1920px · light · en · signed out · world=empty · /workshops · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] WS-ROADSIDE-CARD-016 · 1920px · dark · hi · customer · world=empty · /workshops · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+
 ## Offers (/offers)
 
 ### OFFERS-PAGE — Public offers list (2026-11-16): offer cards with conditions, IST end time and copy-code button; the demo build has no offers, so it shows the empty state with one next action
@@ -2769,70 +2876,82 @@ Pairwise (all pairs of values); 16 states; scope `main`.
 
 ### NAV-HEADER — Header nav (1024 px and up): current item, hover, focus, every role and route
 
-Full cross of the high-risk dimensions, the rest pairwise; 31 states; scope `header.sticky nav`.
+Full cross of the high-risk dimensions, the rest pairwise; 38 states; scope `header.sticky nav`.
 
 - [x] NAV-HEADER-001 · 1024px · light · en · signed out · world=empty · / · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe — 2026-11-15 pass
 - [x] NAV-HEADER-002 · 1024px · dark · hi · customer · world=empty · /shop · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi axe · core — 2026-11-15 pass (P2 tap44 ×1)
 - [!] NAV-HEADER-003 · 1024px · light · hi · shop partner · world=empty · /workshops · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi — 2026-11-15 FAIL: P1 console ×4; P2 tap44 ×1 · [screenshot](../../apps/web/test-results/state-audit-2026-11-15/F/output/state-audit.audit.ts-NAV-H-81f25-empty-·-workshops-·-walk-no-audit/attachments/state-audit-failure-bd89553cc8aacfde66ef864fc120a6fcecd689b2.png)
-- [!] NAV-HEADER-004 · 1024px · dark · en · workshop partner · world=empty · /cart · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav — 2026-11-15 FAIL: P1 hscroll ×1; P1 inside ×8 · [screenshot](../../apps/web/test-results/state-audit-2026-11-15/F/output/state-audit.audit.ts-NAV-H-9bb84-rld-empty-·-cart-·-walk-yes-audit/attachments/state-audit-failure-e60a712d5acbea6e05bc919b9ea685f7d2f953cb.png)
-- [!] NAV-HEADER-005 · 1024px · light · en · admin · world=empty · /policies/returns · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav axe — 2026-11-15 FAIL: P1 hscroll ×1; P1 inside ×8 · [screenshot](../../apps/web/test-results/state-audit-2026-11-15/F/output/state-audit.audit.ts-NAV-H-dc254-policies-returns-·-walk-yes-audit/attachments/state-audit-failure-003550b0607bd00140aa3f100fa75ac7fed34593.png)
+- [ ] NAV-HEADER-004 · 1024px · dark · en · workshop partner · world=empty · /roadside · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-HEADER-005 · 1024px · light · en · admin · world=empty · /cart · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
 - [x] NAV-HEADER-006 · 1280px · dark · hi · signed out · world=empty · /policies/returns · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi — 2026-11-15 pass
 - [x] NAV-HEADER-007 · 1280px · light · en · customer · world=empty · /shop · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav — 2026-11-15 pass
 - [x] NAV-HEADER-008 · 1280px · dark · en · shop partner · world=empty · / · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav — 2026-11-15 pass
-- [x] NAV-HEADER-009 · 1280px · light · hi · workshop partner · world=empty · /cart · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi axe — 2026-11-15 pass
+- [ ] NAV-HEADER-009 · 1280px · light · hi · workshop partner · world=empty · /roadside · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi axe
 - [!] NAV-HEADER-010 · 1280px · dark · hi · admin · world=empty · /workshops · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi — 2026-11-15 FAIL: P1 console ×8 · [screenshot](../../apps/web/test-results/state-audit-2026-11-15/F/output/state-audit.audit.ts-NAV-H-b115c-mpty-·-workshops-·-walk-yes-audit/attachments/state-audit-failure-2fd28effafd7c85dc2de361fabd33e863b0dd5b5.png)
-- [!] NAV-HEADER-011 · 1440px · light · en · signed out · world=empty · /workshops · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav — 2026-11-15 FAIL: P1 console ×8 · [screenshot](../../apps/web/test-results/state-audit-2026-11-15/F/output/state-audit.audit.ts-NAV-H-ece45-mpty-·-workshops-·-walk-yes-audit/attachments/state-audit-failure-6a19f3d4528b199fa9c1ebe7e5dab3566d9f1b4d.png)
-- [x] NAV-HEADER-012 · 1440px · dark · hi · customer · world=empty · / · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi — 2026-11-15 pass
+- [ ] NAV-HEADER-011 · 1440px · light · en · signed out · world=empty · /policies/returns · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-HEADER-012 · 1440px · dark · hi · customer · world=empty · /cart · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
 - [x] NAV-HEADER-013 · 1440px · light · en · shop partner · world=empty · /shop · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe — 2026-11-15 pass
-- [x] NAV-HEADER-014 · 1440px · dark · hi · workshop partner · world=empty · /policies/returns · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi — 2026-11-15 pass
-- [x] NAV-HEADER-015 · 1440px · light · en · admin · world=empty · /cart · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav — 2026-11-15 pass
-- [x] NAV-HEADER-016 · 1920px · dark · hi · signed out · world=empty · /shop · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi — 2026-11-15 pass
-- [!] NAV-HEADER-017 · 1920px · light · en · customer · world=empty · /workshops · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe — 2026-11-15 FAIL: P1 console ×4 · [screenshot](../../apps/web/test-results/state-audit-2026-11-15/F/output/state-audit.audit.ts-NAV-H-ae632-empty-·-workshops-·-walk-no-audit/attachments/state-audit-failure-1e2ce74f821901366fbe39f08cf27193a726883b.png)
+- [ ] NAV-HEADER-014 · 1440px · dark · hi · workshop partner · world=empty · / · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-HEADER-015 · 1440px · light · en · admin · world=empty · /workshops · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-HEADER-016 · 1920px · dark · hi · signed out · world=empty · /roadside · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-HEADER-017 · 1920px · light · en · customer · world=empty · /policies/returns · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
 - [x] NAV-HEADER-018 · 1920px · dark · hi · shop partner · world=empty · /cart · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi — 2026-11-15 pass
-- [x] NAV-HEADER-019 · 1920px · light · en · workshop partner · world=empty · / · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav — 2026-11-15 pass
-- [x] NAV-HEADER-020 · 1920px · dark · hi · admin · world=empty · /admin · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi — 2026-11-15 pass
-- [x] NAV-HEADER-021 · 1920px · light · en · customer · world=empty · /policies/returns · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe — 2026-11-15 pass
-- [x] NAV-HEADER-022 · 1024px · dark · hi · signed out · world=empty · /cart · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi axe · core — 2026-11-15 pass (P2 tap44 ×1)
-- [x] NAV-HEADER-023 · 1280px · light · en · customer · world=empty · /account/vehicles · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav — 2026-11-15 pass
-- [x] NAV-HEADER-024 · 1440px · dark · hi · customer · world=empty · /cart · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi — 2026-11-15 pass
-- [!] NAV-HEADER-025 · 1024px · light · en · shop partner · world=empty · /policies/returns · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe — 2026-11-15 FAIL: P1 hscroll ×1; P1 inside ×8 · [screenshot](../../apps/web/test-results/state-audit-2026-11-15/F/output/state-audit.audit.ts-NAV-H-77c0c--policies-returns-·-walk-no-audit/attachments/state-audit-failure-29af540d24e9ef92d0632e99cc61ee1c5fe15316.png)
-- [x] NAV-HEADER-026 · 1280px · dark · hi · shop partner · world=empty · /partner/shop · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi — 2026-11-15 pass
-- [x] NAV-HEADER-027 · 1440px · light · en · workshop partner · world=empty · /shop · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav — 2026-11-15 pass
-- [!] NAV-HEADER-028 · 1920px · dark · hi · workshop partner · world=empty · /workshops · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi — 2026-11-15 FAIL: P1 console ×8 · [screenshot](../../apps/web/test-results/state-audit-2026-11-15/F/output/state-audit.audit.ts-NAV-H-99f4d-mpty-·-workshops-·-walk-yes-audit/attachments/state-audit-failure-d996aa8badcbd66cea8b5a37665afb8b006654fc.png)
-- [x] NAV-HEADER-029 · 1024px · light · en · workshop partner · world=empty · /partner/workshop · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe — 2026-11-15 pass
-- [x] NAV-HEADER-030 · 1280px · dark · hi · admin · world=empty · / · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi — 2026-11-15 pass
-- [x] NAV-HEADER-031 · 1440px · light · en · admin · world=empty · /shop · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav — 2026-11-15 pass
+- [ ] NAV-HEADER-019 · 1920px · light · en · workshop partner · world=empty · /shop · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-HEADER-020 · 1920px · dark · hi · admin · world=empty · / · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-HEADER-021 · 1024px · light · en · shop partner · world=empty · /policies/returns · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] NAV-HEADER-022 · 1280px · dark · hi · signed out · world=empty · /cart · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-HEADER-023 · 1440px · light · en · customer · world=empty · /roadside · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-HEADER-024 · 1920px · dark · hi · workshop partner · world=empty · /workshops · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-HEADER-025 · 1024px · light · en · signed out · world=empty · /shop · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] NAV-HEADER-026 · 1280px · dark · hi · signed out · world=empty · /workshops · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-HEADER-027 · 1440px · light · en · customer · world=empty · / · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-HEADER-028 · 1920px · dark · hi · customer · world=empty · /workshops · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-HEADER-029 · 1024px · light · en · customer · world=empty · /account/vehicles · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] NAV-HEADER-030 · 1280px · dark · hi · shop partner · world=empty · /roadside · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-HEADER-031 · 1440px · light · en · shop partner · world=empty · /partner/shop · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-HEADER-032 · 1920px · dark · hi · workshop partner · world=empty · /cart · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-HEADER-033 · 1024px · light · en · workshop partner · world=empty · /policies/returns · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] NAV-HEADER-034 · 1280px · dark · hi · workshop partner · world=empty · /partner/workshop · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-HEADER-035 · 1440px · light · en · admin · world=empty · /shop · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-HEADER-036 · 1920px · dark · hi · admin · world=empty · /roadside · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-HEADER-037 · 1024px · light · en · admin · world=empty · /policies/returns · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] NAV-HEADER-038 · 1280px · dark · hi · admin · world=empty · /admin · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
 
 ### NAV-TABBAR — Floating dock (under 1024 px): current tab, long Hindi labels, every role, walk
 
-Full cross of the high-risk dimensions, the rest pairwise; 26 states; scope `nav.fixed`.
+Full cross of the high-risk dimensions, the rest pairwise; 31 states; scope `nav.fixed`.
 
 - [x] NAV-TABBAR-001 · 320px · light · en · signed out · world=empty · / · cart=none · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe — 2026-11-15 pass
 - [x] NAV-TABBAR-002 · 320px · dark · hi · customer · world=empty · /shop · cart=many20 · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi axe · core — 2026-11-15 pass
 - [!] NAV-TABBAR-003 · 390px · dark · en · signed out · world=empty · /workshops · cart=many20 · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav — 2026-11-15 FAIL: P1 console ×4 · [screenshot](../../apps/web/test-results/state-audit-2026-11-15/F/output/state-audit.audit.ts-NAV-T-74b71-ops-·-cart-many20-·-walk-no-audit/attachments/state-audit-failure-e85b2f0584976c5f0b050eb11e06f2032ca68786.png)
-- [x] NAV-TABBAR-004 · 390px · light · hi · customer · world=empty · /cart · cart=none · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi — 2026-11-15 pass
-- [x] NAV-TABBAR-005 · 480px · light · en · customer · world=empty · /policies/returns · cart=many20 · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe — 2026-11-15 pass
-- [x] NAV-TABBAR-006 · 480px · dark · hi · signed out · world=empty · / · cart=none · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi — 2026-11-15 pass
+- [ ] NAV-TABBAR-004 · 390px · light · hi · customer · world=empty · /roadside · cart=none · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-TABBAR-005 · 480px · light · en · customer · world=empty · /cart · cart=many20 · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] NAV-TABBAR-006 · 480px · dark · hi · signed out · world=empty · /policies/returns · cart=none · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
 - [x] NAV-TABBAR-007 · 768px · light · en · signed out · world=empty · /shop · cart=none · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav — 2026-11-15 pass
-- [!] NAV-TABBAR-008 · 768px · dark · hi · customer · world=empty · /workshops · cart=many20 · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi — 2026-11-15 FAIL: P1 console ×8 · [screenshot](../../apps/web/test-results/state-audit-2026-11-15/F/output/state-audit.audit.ts-NAV-T-376c2-ps-·-cart-many20-·-walk-yes-audit/attachments/state-audit-failure-93c1818b83651854d166ff3f5a7b984552260570.png)
-- [x] NAV-TABBAR-009 · 1023px · light · en · signed out · world=empty · /cart · cart=many20 · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe — 2026-11-15 pass
-- [x] NAV-TABBAR-010 · 1023px · dark · hi · customer · world=empty · /policies/returns · cart=none · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi — 2026-11-15 pass
+- [ ] NAV-TABBAR-008 · 768px · dark · hi · customer · world=empty · / · cart=many20 · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-TABBAR-009 · 1023px · light · en · signed out · world=empty · /roadside · cart=many20 · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] NAV-TABBAR-010 · 1023px · dark · hi · customer · world=empty · /workshops · cart=none · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
 - [!] NAV-TABBAR-011 · 320px · light · en · signed out · world=empty · /workshops · cart=none · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav — 2026-11-15 FAIL: P1 console ×8 · [screenshot](../../apps/web/test-results/state-audit-2026-11-15/F/output/state-audit.audit.ts-NAV-T-8b01f-hops-·-cart-none-·-walk-yes-audit/attachments/state-audit-failure-a2f1efb805c7e74d436fd040a05523a5b9be73d9.png)
-- [x] NAV-TABBAR-012 · 320px · dark · hi · customer · world=empty · /cart · cart=many20 · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi — 2026-11-15 pass
-- [x] NAV-TABBAR-013 · 320px · light · en · signed out · world=empty · /policies/returns · cart=none · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe — 2026-11-15 pass
-- [x] NAV-TABBAR-014 · 390px · dark · hi · customer · world=empty · / · cart=many20 · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi — 2026-11-15 pass
-- [x] NAV-TABBAR-015 · 390px · light · en · signed out · world=empty · /shop · cart=none · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav — 2026-11-15 pass
-- [x] NAV-TABBAR-016 · 390px · dark · hi · customer · world=empty · /policies/returns · cart=many20 · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi — 2026-11-15 pass
-- [x] NAV-TABBAR-017 · 480px · light · en · signed out · world=empty · /shop · cart=none · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe — 2026-11-15 pass
-- [!] NAV-TABBAR-018 · 480px · dark · hi · customer · world=empty · /workshops · cart=many20 · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi — 2026-11-15 FAIL: P1 console ×8 · [screenshot](../../apps/web/test-results/state-audit-2026-11-15/F/output/state-audit.audit.ts-NAV-T-844ff-ps-·-cart-many20-·-walk-yes-audit/attachments/state-audit-failure-6f25e64f6777782dc7a44706fbaf0774992020e9.png)
-- [x] NAV-TABBAR-019 · 480px · light · en · signed out · world=empty · /cart · cart=none · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav — 2026-11-15 pass
-- [x] NAV-TABBAR-020 · 768px · dark · hi · customer · world=empty · / · cart=many20 · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi — 2026-11-15 pass
-- [x] NAV-TABBAR-021 · 768px · light · en · signed out · world=empty · /cart · cart=none · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe — 2026-11-15 pass
-- [x] NAV-TABBAR-022 · 768px · dark · hi · customer · world=empty · /policies/returns · cart=many20 · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi — 2026-11-15 pass
-- [x] NAV-TABBAR-023 · 1023px · light · en · signed out · world=empty · / · cart=none · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav — 2026-11-15 pass
-- [x] NAV-TABBAR-024 · 1023px · dark · hi · customer · world=empty · /shop · cart=many20 · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi — 2026-11-15 pass
-- [!] NAV-TABBAR-025 · 1023px · light · en · signed out · world=empty · /workshops · cart=none · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe — 2026-11-15 FAIL: P1 console ×4 · [screenshot](../../apps/web/test-results/state-audit-2026-11-15/F/output/state-audit.audit.ts-NAV-T-95713-shops-·-cart-none-·-walk-no-audit/attachments/state-audit-failure-eb12a52d35aa0f9d4562bfddec24dbb578010696.png)
-- [x] NAV-TABBAR-026 · 320px · dark · hi · customer · world=empty · /account/vehicles · cart=many20 · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi axe · core — 2026-11-15 pass
+- [ ] NAV-TABBAR-012 · 320px · dark · hi · customer · world=empty · /roadside · cart=many20 · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-TABBAR-013 · 320px · dark · hi · signed out · world=empty · /cart · cart=none · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi axe · core
+- [ ] NAV-TABBAR-014 · 320px · light · en · customer · world=empty · /policies/returns · cart=many20 · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-TABBAR-015 · 390px · light · en · signed out · world=empty · / · cart=none · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-TABBAR-016 · 390px · dark · hi · customer · world=empty · /shop · cart=many20 · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-TABBAR-017 · 390px · light · en · signed out · world=empty · /cart · cart=none · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] NAV-TABBAR-018 · 390px · dark · hi · customer · world=empty · /policies/returns · cart=many20 · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-TABBAR-019 · 480px · light · en · signed out · world=empty · / · cart=none · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-TABBAR-020 · 480px · dark · hi · customer · world=empty · /shop · cart=many20 · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-TABBAR-021 · 480px · light · en · signed out · world=empty · /workshops · cart=none · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] NAV-TABBAR-022 · 480px · dark · hi · customer · world=empty · /roadside · cart=many20 · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-TABBAR-023 · 768px · light · en · signed out · world=empty · /workshops · cart=none · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-TABBAR-024 · 768px · dark · hi · customer · world=empty · /roadside · cart=many20 · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-TABBAR-025 · 768px · light · en · signed out · world=empty · /cart · cart=none · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] NAV-TABBAR-026 · 768px · dark · hi · customer · world=empty · /policies/returns · cart=many20 · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-TABBAR-027 · 1023px · light · en · signed out · world=empty · / · cart=none · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-TABBAR-028 · 1023px · dark · hi · customer · world=empty · /shop · cart=many20 · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-TABBAR-029 · 1023px · light · en · signed out · world=empty · /cart · cart=none · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] NAV-TABBAR-030 · 1023px · dark · hi · customer · world=empty · /policies/returns · cart=many20 · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-TABBAR-031 · 320px · light · en · customer · world=empty · /account/vehicles · cart=none · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
 
 ### NAV-ACCOUNT — Account section bar: current section on each of the nine sections (scrolls on phones)
 

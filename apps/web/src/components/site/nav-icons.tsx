@@ -1,4 +1,4 @@
-import { Briefcase, Car, House, ShoppingBag, Wrench, type LucideIcon } from 'lucide-react';
+import { Briefcase, Car, House, ShoppingBag, Siren, Wrench, type LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { NavKey } from '@/lib/nav';
 
@@ -8,6 +8,7 @@ const ICONS: Record<NavKey, LucideIcon> = {
   workshops: Wrench,
   vehicles: Car,
   business: Briefcase,
+  roadside: Siren,
 };
 
 /**

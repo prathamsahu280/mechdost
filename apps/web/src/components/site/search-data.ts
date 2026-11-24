@@ -27,6 +27,11 @@ export interface SearchData {
   popular: readonly string[];
   /** Category chips: each opens `/shop?category=…`. */
   categories: readonly { label: string; href: string }[];
+  /**
+   * "Roadside help" suggestion, shown at the top when the words typed mean a breakdown (spec 22, 2026-11-24). `null`
+   * where the city has no roadside, so the palette never points at a dead end.
+   */
+  roadside: { title: string; body: string; kind: string; href: string } | null;
   /** Every category's name in this language, for the demo suggestions. */
   categoryLabels: Readonly<Record<string, string>>;
 }

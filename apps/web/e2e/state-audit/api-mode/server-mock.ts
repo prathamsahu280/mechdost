@@ -44,6 +44,9 @@ export function serverReply(method: string, pathname: string, query: URLSearchPa
   const path = pathname.replace(/^\/v1/, '');
   const locale = localeOf(query);
 
+  // Roadside is on in the launch city (spec 22 "Where it shows"): the header item, SOS tab, home band and footer link.
+  if (path === '/roadside/city') return { status: 200, body: { enabled: true, alwaysOpen: true } };
+
   if (path === '/catalogue/products') {
     const body = {
       place: { cityCode: 'RPR', pincode: null, pincodeKnown: null },

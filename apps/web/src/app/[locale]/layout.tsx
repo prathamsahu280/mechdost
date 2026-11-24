@@ -15,8 +15,10 @@ import { Footer } from '@/components/site/footer';
 import { AnnouncementBar, Header } from '@/components/site/header';
 import { MobileTabBar } from '@/components/site/mobile-tab-bar';
 import { navIcon } from '@/components/site/nav-icons';
+import type { NavItem } from '@/components/site/nav-links';
 import { routing } from '@/i18n/routing';
-import { BUSINESS_NAV, PRIMARY_NAV } from '@/lib/nav';
+import { BUSINESS_NAV, PRIMARY_NAV, ROADSIDE_NAV } from '@/lib/nav';
+import { publishedRoadside } from '@/lib/site-config-content';
 import { site } from '@/lib/site';
 import { SITE_LAYOUT_SCRIPT } from '@/lib/site-layout';
 import { THEME_INIT_SCRIPT } from '@/lib/theme';
@@ -95,11 +97,13 @@ export default async function LocaleLayout({
   // next-intl stays on the server: client islands get localised hrefs and translated labels as props, so no
   // i18n runtime or message catalogue ships to the browser (spec 16 JS budget).
   const localised = (href: string) => localePath(href, locale);
-  const navItems = [
+  const navItems: NavItem[] = [
     ...PRIMARY_NAV.map((item) => ({
       ...item,
       href: localised(item.href),
-      label: nav(item.key),
+      // The short tab words ("Shop", "Workshops", "Vehicles"): with the roadside item the six labels no longer fit
+      // one line at 1440 px with the long ones (spec 22, 2026-11-24).
+      label: tabs(item.key),
       icon: navIcon(item.key, 17),
     })),
     // One header-only link (design 2026-11-22); the tab bar below stays at four.
@@ -111,12 +115,38 @@ export default async function LocaleLayout({
       icon: navIcon(BUSINESS_NAV.key, 17),
     },
   ];
-  const tabItems = PRIMARY_NAV.map((item) => ({
-    ...item,
-    href: localised(item.href),
-    label: tabs(item.key),
-    icon: navIcon(item.key, 20),
-  }));
+  // Roadside help (spec 22, user 2026-11-24): a header link and the fifth tab, only where the city has it switched on.
+  const roadside = await publishedRoadside();
+  if (roadside.enabled)
+    navItems.splice(PRIMARY_NAV.length, 0, {
+      key: ROADSIDE_NAV.key,
+      href: localised(ROADSIDE_NAV.href),
+      activePrefix: localised(ROADSIDE_NAV.activePrefix),
+      label: nav('roadside'),
+      icon: navIcon(ROADSIDE_NAV.key, 17),
+      emphasis: true,
+    });
+  const tabItems = [
+    ...PRIMARY_NAV.map((item) => ({
+      ...item,
+      href: localised(item.href),
+      label: tabs(item.key),
+      icon: navIcon(item.key, 20),
+      emphasis: false,
+    })),
+    ...(roadside.enabled
+      ? [
+          {
+            key: ROADSIDE_NAV.key,
+            href: localised(ROADSIDE_NAV.href),
+            activePrefix: localised(ROADSIDE_NAV.activePrefix),
+            label: tabs('roadside'),
+            icon: navIcon(ROADSIDE_NAV.key, 20),
+            emphasis: true,
+          },
+        ]
+      : []),
+  ];
   const region = (await getTranslations('regions'))(site.defaultRegion);
   const consent = await getTranslations('consent');
   const compare = await getTranslations('compare');
@@ -142,7 +172,7 @@ export default async function LocaleLayout({
           {t('skipToContent')}
         </a>
         <AnnouncementBar region={region} />
-        <Header navItems={navItems} />
+        <Header navItems={navItems} roadside={roadside.enabled} />
         {/* The root error page's strings as a data block (not executed): no i18n runtime on every page (JS budget). */}
         <script
           id={ERROR_COPY_ID}
@@ -152,7 +182,7 @@ export default async function LocaleLayout({
         <main id="content" tabIndex={-1} className="outline-none">
           {children}
         </main>
-        <Footer />
+        <Footer roadside={roadside.enabled} />
         <MobileTabBar label={tabs('label')} items={tabItems} />
         {/*
           The compare tray floats on every page once something is picked (user 2026-11-13). Mounted here, outside

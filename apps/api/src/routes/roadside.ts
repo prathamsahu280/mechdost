@@ -4,6 +4,7 @@ import {
   createRsaRequest,
   getCustomerRsa,
   getRsaAvailability,
+  getRsaCityStatus,
   listCustomerRsa,
   openRsaBillDispute,
 } from '@mechdost/db/repo';
@@ -61,6 +62,14 @@ const availability = createRoute({
   summary: 'Is roadside help available for this PIN code now, and at what advance (no sign-in)',
   request: { query: z.object({ pincode: z.string().regex(PINCODE_RE) }) },
   responses: { 200: json(Anything, 'Availability'), ...errorResponses },
+});
+const cityStatus = createRoute({
+  method: 'get',
+  path: '/roadside/city',
+  tags: ['roadside'],
+  summary: 'Is roadside help switched on in this city (no sign-in; drives the header, tab bar and home band)',
+  request: { query: z.object({ city: z.string().regex(/^[A-Z]{3}$/) }) },
+  responses: { 200: json(Anything, 'City status'), ...errorResponses },
 });
 const create = createRoute({
   method: 'post',
@@ -134,6 +143,10 @@ export function roadsideRoutes(deps: AppDeps, cache: SessionCache) {
     '/roadside/availability',
     rateLimit(deps.rateLimiter, RSA_AVAILABILITY_RATE, (c) => c.get('clientIp')),
   );
+  app.use(
+    '/roadside/city',
+    rateLimit(deps.rateLimiter, RSA_AVAILABILITY_RATE, (c) => c.get('clientIp')),
+  );
   app.use('/roadside/requests/*', authenticate(deps, cache));
   app.use('/roadside/requests', authenticate(deps, cache));
   for (const path of ['/roadside/requests', '/roadside/requests/*'])
@@ -176,6 +189,11 @@ export function roadsideRoutes(deps: AppDeps, cache: SessionCache) {
     .openapi(availability, async (c) => {
       const out = await getRsaAvailability(deps.db, { pincode: c.req.valid('query').pincode });
       c.header('Cache-Control', 'public, max-age=30');
+      return c.json(out, 200);
+    })
+    .openapi(cityStatus, async (c) => {
+      const out = await getRsaCityStatus(deps.db, { cityCode: c.req.valid('query').city });
+      c.header('Cache-Control', 'public, max-age=60');
       return c.json(out, 200);
     })
     .openapi(create, async (c) => {

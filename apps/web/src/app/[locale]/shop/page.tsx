@@ -18,6 +18,8 @@ import { alternatesFor, openGraphFor } from '@/lib/seo';
 import { site } from '@/lib/site';
 import { localePath } from '@/lib/locale-path';
 import { VEHICLE_TYPES } from '@mechdost/shared/vehicles';
+import { RoadsideCard } from '@/components/roadside/roadside-promo';
+import { publishedRoadside } from '@/lib/site-config-content';
 
 type Search = Promise<{
   q?: string | string[];
@@ -148,6 +150,7 @@ export default async function ShopPage({ searchParams }: Props) {
     );
   }
   const c = await getTranslations('catalogue');
+  const roadside = await publishedRoadside();
 
   return (
     <Container className="py-10 tab:py-14">
@@ -160,6 +163,9 @@ export default async function ShopPage({ searchParams }: Props) {
           sourcingMessage={wa('sourcing')}
           whatsappNote={footer('whatsappNote')}
           server={server}
+          roadside={
+            roadside.enabled ? <RoadsideCard track="shop_search_roadside" title="shopCardTitle" /> : undefined
+          }
         />
       </ClientMessages>
       <p className="mt-6 text-xs text-muted">{c('inclusive')}</p>

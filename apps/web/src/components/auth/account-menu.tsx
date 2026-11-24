@@ -107,7 +107,7 @@ export function AccountMenu({
           <span aria-hidden="true" className="flex">
             {signInIcon}
           </span>
-          <span className="sr-only min-[400px]:not-sr-only">{copy.signIn}</span>
+          <span className="sr-only min-[400px]:not-sr-only min-[400px]:whitespace-nowrap">{copy.signIn}</span>
         </Link>
         {status}
       </>

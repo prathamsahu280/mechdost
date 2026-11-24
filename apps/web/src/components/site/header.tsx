@@ -79,8 +79,9 @@ export function AnnouncementBar({ region }: { region: string }) {
 }
 
 /** Search palette strings and links (the lazy chunk gets them as props: no i18n runtime in the browser). */
-function useSearchData(locale: string): SearchData {
+function useSearchData(locale: string, roadside: boolean): SearchData {
   const c = useTranslations('chrome');
+  const rsa = useTranslations('roadside');
   const cg = useTranslations('catalogue');
   const cat = useTranslations('categories');
   return {
@@ -106,6 +107,14 @@ function useSearchData(locale: string): SearchData {
         product: cg('suggestKind_product'),
       },
     },
+    roadside: roadside
+      ? {
+          title: rsa('searchTitle'),
+          body: rsa('searchBody'),
+          kind: rsa('searchKind'),
+          href: localePath('/roadside', locale),
+        }
+      : null,
     popular: [c('popular1'), c('popular2'), c('popular3'), c('popular4'), c('popular5')],
     categories: (['tyres', 'batteries', 'lubricants', 'filters'] as const).map((key) => ({
       label: cat(key),
@@ -123,7 +132,14 @@ function useSearchData(locale: string): SearchData {
  * scrolls (CSS scroll-driven animation, none under reduced motion). The outer box keeps a fixed height, so the page
  * never reflows when the bar shrinks.
  */
-export function Header({ navItems }: { navItems: readonly NavItem[] }) {
+export function Header({
+  navItems,
+  roadside = false,
+}: {
+  navItems: readonly NavItem[];
+  /** Roadside help is on in this city: the search palette may suggest it (spec 22). */
+  roadside?: boolean;
+}) {
   const t = useTranslations('nav');
   const auth = useTranslations('auth');
   const bell = useTranslations('bell');
@@ -176,7 +192,7 @@ export function Header({ navItems }: { navItems: readonly NavItem[] }) {
           <div className="ml-auto flex items-center gap-1 nav:ml-0">
             <SearchTrigger
               variant="bar"
-              data={useSearchData(locale)}
+              data={useSearchData(locale, roadside)}
               label={c('searchOpenLabel')}
               text={c('searchTrigger')}
               hint="/"

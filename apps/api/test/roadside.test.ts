@@ -259,6 +259,19 @@ describe('availability and creating a request', () => {
     expect((await call(null, 'GET', '/roadside/availability?pincode=abc')).status).toBe(400);
   });
 
+  it('say without sign-in whether a city has roadside on (the site chrome), and no for an unknown or off city', async () => {
+    expect((await call(null, 'GET', '/roadside/city?city=RPR')).body).toEqual({
+      enabled: true,
+      alwaysOpen: true,
+    });
+    expect((await call(null, 'GET', '/roadside/city?city=ZZZ')).body).toEqual({
+      enabled: false,
+      alwaysOpen: true,
+    });
+    expect((await call(null, 'GET', '/roadside/city?city=rpr')).status).toBe(400);
+    expect((await call(null, 'GET', '/roadside/city')).status).toBe(400);
+  });
+
   it('need a signed-in customer, not a verified email, and refuse 3W and unknown fields', async () => {
     expect((await call(null, 'POST', '/roadside/requests', REQUEST, idem())).status).toBe(401);
     expect((await call(customer, 'POST', '/roadside/requests', REQUEST)).status).toBe(400);
