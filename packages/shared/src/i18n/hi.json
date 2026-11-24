@@ -5928,7 +5928,7 @@
   },
   "adminSettings": {
     "search_label": "सेटिंग खोजें",
-    "search_placeholder": "नाम या काम से खोजें…",
+    "search_placeholder": "नाम या विवरण…",
     "search_none": "“{query}” से कोई सेटिंग नहीं मिली। कोई और शब्द आज़माएँ।",
     "search_results": "{count, plural, one {# सेटिंग मिली} other {# सेटिंग मिलीं}}",
     "nav_select": "सेटिंग की श्रेणी",

@@ -328,7 +328,7 @@ export function SettingsWorkbench(props: WorkbenchProps) {
         >
           <p
             role="status"
-            className={`min-w-0 flex-1 text-sm font-bold ${
+            className={`min-w-0 basis-full text-sm font-bold tab:flex-1 tab:basis-0 ${
               dirty.length > 0
                 ? 'text-ink'
                 : status?.tone === 'error'
@@ -351,7 +351,7 @@ export function SettingsWorkbench(props: WorkbenchProps) {
               track('admin_settings_discard', { fields: dirty.length });
               onDiscard();
             }}
-            className={portalQuiet}
+            className={`${portalQuiet} flex-1 tab:flex-none`}
           >
             {t('bar_discard')}
           </button>
@@ -359,7 +359,7 @@ export function SettingsWorkbench(props: WorkbenchProps) {
             type="button"
             disabled={dirty.length === 0 || busy}
             onClick={requestSave}
-            className={portalPrimary}
+            className={`${portalPrimary} flex-1 tab:flex-none`}
           >
             {busy ? p('api_common_saving') : p('site_save')}
           </button>
