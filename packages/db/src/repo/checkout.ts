@@ -122,12 +122,12 @@ export interface CheckoutQuote {
 }
 
 /** The size of a variant of a product sold in several sizes, else null (a single size is never named). */
-function sizeLabelOf(r: { options: Record<string, unknown> | null; sizes: unknown }): string | null {
+export function sizeLabelOf(r: { options: Record<string, unknown> | null; sizes: unknown }): string | null {
   if (Number(r.sizes) <= 1) return null;
   return variantLabel(r.options ?? {}) || null;
 }
 
-const withSize = (title: string, size: string | null): string => (size ? `${title} · ${size}` : title);
+export const withSize = (title: string, size: string | null): string => (size ? `${title} · ${size}` : title);
 
 interface PricedLine {
   sku: string;

@@ -17,6 +17,8 @@ export interface PricedLine {
     category: CategoryKey;
     pricePaise: number;
   };
+  /** The size when the product is sold in several, else null (shown under the name). */
+  sizeLabel: string | null;
   qty: number;
   linePaise: number;
 }
@@ -50,14 +52,15 @@ function useDemoCartPricing(lines: readonly CartLine[]): CartPricing {
   return useMemo(() => {
     const demo = priceCart(lines);
     return {
-      priced: demo.priced.map(({ product, qty, linePaise }) => ({
+      priced: demo.priced.map(({ product, qty, linePaise, unitPaise, sku, sizeLabel }) => ({
+        sizeLabel,
         product: {
           slug: product.slug,
-          sku: product.sku,
+          sku,
           name: product.name,
           brand: product.brand,
           category: product.category,
-          pricePaise: product.pricePaise,
+          pricePaise: unitPaise,
         },
         qty,
         linePaise,
@@ -130,6 +133,8 @@ function useApiCartPricing(lines: readonly CartLine[], pincode: string, locale: 
               category: 'spareParts',
               pricePaise: l.unitPaise,
             },
+            // The server's name already ends with the size (checkout snapshot rule, 2026-11-24).
+            sizeLabel: null,
             qty: l.qty,
             linePaise: l.totalPaise,
           },

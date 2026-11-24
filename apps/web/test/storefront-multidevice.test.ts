@@ -135,7 +135,7 @@ describe('cart on two devices', () => {
   it('the stale laptop edit does not wipe the phone’s battery', async () => {
     const { store, sync } = await signedInDevice({ 'OIL-1': 1 });
     server.otherDevice((m) => m.set('BAT-9', 1)); // 10:00 phone, not yet seen by the laptop
-    store.setQuantity('oil-1', 3); // 11:00 laptop changes a quantity (cart lines carry slug + sku)
+    store.setQuantity('OIL-1', 3); // 11:00 laptop changes a quantity (cart lines carry slug + sku)
     await sync.refreshCart('en');
     expect(Object.fromEntries(server.lines)).toEqual({ 'OIL-1': 3, 'BAT-9': 1 });
     expect(Object.fromEntries(store.cartNow().map((l) => [l.sku, l.qty]))).toEqual({
@@ -159,7 +159,7 @@ describe('cart on two devices', () => {
 
   it('a remove here, and a stale copy there: the removed line stays removed', async () => {
     const { store, sync } = await signedInDevice({ 'OIL-1': 1, 'BELT-2': 1 });
-    store.removeFromCart('oil-1'); // laptop removes
+    store.removeFromCart('OIL-1'); // laptop removes
     server.otherDevice((m) => m.set('BAT-9', 1)); // phone adds something else meanwhile
     await sync.refreshCart('en');
     expect(Object.fromEntries(server.lines)).toEqual({ 'BELT-2': 1, 'BAT-9': 1 });

@@ -500,7 +500,16 @@
     "suggestKind_category": "Category",
     "suggestKind_product": "Product",
     "didYouMean": "Did you mean {suggestion}?",
-    "unitPrice_metre": "{price} per metre"
+    "unitPrice_metre": "{price} per metre",
+    "size": "Size",
+    "sizeHelp": "Choose a size to see its price and stock.",
+    "sizeOutOfStock": "Out of stock",
+    "sizeOnRequest": "Price on request",
+    "sizeFits": "Fits your {vehicle}",
+    "sizeChosen": "{size} selected",
+    "sizeUnavailable": "This size is not available right now. Ask us about it on WhatsApp.",
+    "fromSizes": "from {price} · {count} sizes",
+    "sizesOnly": "{count} sizes"
   },
   "compare": {
     "toggle": "Compare",
@@ -619,7 +628,8 @@
     "each": "{price} each",
     "emptyBody": "Add oils, batteries, tyres and more. MechDost confirms your order before it ships.",
     "emptyCategories": "Or start with a category",
-    "freeDeliveryGroupHint": "Free delivery on this part of your order at {amount} or more."
+    "freeDeliveryGroupHint": "Free delivery on this part of your order at {amount} or more.",
+    "size": "Size"
   },
   "checkout": {
     "title": "Checkout",

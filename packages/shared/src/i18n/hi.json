@@ -500,7 +500,16 @@
     "suggestKind_category": "श्रेणी",
     "suggestKind_product": "उत्पाद",
     "didYouMean": "क्या आपका मतलब {suggestion} था?",
-    "unitPrice_metre": "{price} प्रति मीटर"
+    "unitPrice_metre": "{price} प्रति मीटर",
+    "size": "साइज़",
+    "sizeHelp": "कीमत और स्टॉक देखने के लिए साइज़ चुनें।",
+    "sizeOutOfStock": "स्टॉक में नहीं",
+    "sizeOnRequest": "कीमत पूछने पर",
+    "sizeFits": "आपकी {vehicle} में फ़िट",
+    "sizeChosen": "{size} चुना गया",
+    "sizeUnavailable": "यह साइज़ अभी उपलब्ध नहीं है। इसके बारे में हमसे WhatsApp पर पूछें।",
+    "fromSizes": "{price} से · {count} साइज़",
+    "sizesOnly": "{count} साइज़"
   },
   "compare": {
     "toggle": "तुलना करें",
@@ -619,7 +628,8 @@
     "each": "{price} प्रति यूनिट",
     "emptyBody": "ऑयल, बैटरी, टायर और बहुत कुछ जोड़ें। भेजने से पहले MechDost आपका ऑर्डर कन्फ़र्म करता है।",
     "emptyCategories": "या किसी कैटेगरी से शुरू करें",
-    "freeDeliveryGroupHint": "आपके ऑर्डर के इस हिस्से पर {amount} या उससे ज़्यादा होने पर डिलीवरी मुफ़्त।"
+    "freeDeliveryGroupHint": "आपके ऑर्डर के इस हिस्से पर {amount} या उससे ज़्यादा होने पर डिलीवरी मुफ़्त।",
+    "size": "साइज़"
   },
   "checkout": {
     "title": "चेकआउट",

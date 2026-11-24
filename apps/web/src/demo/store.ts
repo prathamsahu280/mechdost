@@ -42,7 +42,16 @@ export interface DemoOrder {
   /** Copy of the admin rule at placement (Q25): may the customer cancel it themselves? Missing = no. */
   selfCancel?: boolean;
   createdAt: string;
-  lines: { slug: string; name: string; brand: string; qty: number; unitPaise: number }[];
+  lines: {
+    slug: string;
+    name: string;
+    brand: string;
+    qty: number;
+    unitPaise: number;
+    /** The size, when the product is sold in several (user 2026-11-24). */
+    sku?: string;
+    sizeLabel?: string | null;
+  }[];
   subtotalPaise: number;
   deliveryPaise: number;
   totalPaise: number;
@@ -428,18 +437,43 @@ export function useRequests(): readonly DemoServiceRequest[] {
 
 export type AddResult = 'added' | 'max_qty' | 'max_lines' | 'save_failed';
 
-/** Concept limits: at most 20 different products and 99 units of each. */
-export function addToCart(slug: string, qty = 1, sku?: string): AddResult {
-  const lines = [...cartSnapshot()];
-  const existing = lines.find((l) => l.slug === slug);
+/** A cart line's identity: its size (SKU) when it has one, else the product (lines saved before sizes existed). */
+export const lineKey = (l: Pick<CartLine, 'slug' | 'sku'>): string => l.sku ?? l.slug;
+
+/**
+ * Lines saved by slug only (before sizes, user 2026-11-24) become the product's first size: `firstSkuOf` knows the
+ * product's default SKU (the store stays free of the catalogue). Lines it cannot resolve are left as they are.
+ */
+export function upgradeLegacyLines(
+  lines: readonly CartLine[],
+  firstSkuOf: (slug: string) => string | undefined,
+): CartLine[] {
+  return lines.map((l) => {
+    if (l.sku) return l;
+    const sku = firstSkuOf(l.slug);
+    return sku ? { ...l, sku } : l;
+  });
+}
+
+/**
+ * Concept limits: at most 20 different lines and 99 units of each. A line is one size of a product, so two sizes
+ * of one product are two lines. `defaultSku` is the product's first size: an old line saved by slug only becomes that size.
+ */
+export function addToCart(slug: string, qty = 1, sku?: string, defaultSku?: string): AddResult {
+  const lines = defaultSku
+    ? upgradeLegacyLines(cartSnapshot(), (s) => (s === slug ? defaultSku : undefined))
+    : [...cartSnapshot()];
+  const key = sku ?? slug;
+  const existing = lines.find((l) => lineKey(l) === key);
   if (existing) {
     if (existing.qty >= MAX_QTY) return 'max_qty';
-    existing.qty = Math.min(MAX_QTY, existing.qty + qty);
-    const saved = write(
+    const next = { ...existing, qty: Math.min(MAX_QTY, existing.qty + qty) };
+    return write(
       KEYS.cart,
-      lines.map((l) => (l.slug === slug ? { ...existing } : l)),
-    );
-    return saved ? 'added' : 'save_failed';
+      lines.map((l) => (l === existing ? next : l)),
+    )
+      ? 'added'
+      : 'save_failed';
   }
   if (lines.length >= MAX_LINES) return 'max_lines';
   return write(KEYS.cart, [
@@ -450,11 +484,11 @@ export function addToCart(slug: string, qty = 1, sku?: string): AddResult {
     : 'save_failed';
 }
 
-export function setQuantity(slug: string, qty: number) {
+export function setQuantity(key: string, qty: number) {
   const clamped = Math.min(MAX_QTY, Math.max(1, Math.trunc(qty)));
   write(
     KEYS.cart,
-    cartSnapshot().map((l) => (l.slug === slug ? { ...l, qty: clamped } : l)),
+    cartSnapshot().map((l) => (lineKey(l) === key ? { ...l, qty: clamped } : l)),
   );
 }
 
@@ -471,10 +505,10 @@ export function clearCart(): boolean {
   return write(KEYS.cart, []);
 }
 
-export function removeFromCart(slug: string) {
+export function removeFromCart(key: string) {
   write(
     KEYS.cart,
-    cartSnapshot().filter((l) => l.slug !== slug),
+    cartSnapshot().filter((l) => lineKey(l) !== key),
   );
 }
 
@@ -495,12 +529,14 @@ export function placeDemoOrder(
   const order: DemoOrder = {
     code: publicCode('MD', 'RPR'),
     createdAt: new Date().toISOString(),
-    lines: priced.map(({ product, qty }) => ({
+    lines: priced.map(({ product, qty, unitPaise, sku, sizeLabel }) => ({
       slug: product.slug,
-      name: product.name,
+      name: sizeLabel ? `${product.name} · ${sizeLabel}` : product.name,
       brand: product.brand,
       qty,
-      unitPaise: product.pricePaise,
+      unitPaise,
+      sku,
+      sizeLabel,
     })),
     subtotalPaise,
     deliveryPaise,

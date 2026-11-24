@@ -443,6 +443,7 @@ interface PhotoRow {
 /** Keys of `products.spec` the public product page never shows (import data for staff, search and later features). */
 const PRIVATE_SPEC_KEYS: ReadonlySet<string> = new Set([
   'fitment',
+  'variantSpecs',
   'amaronPrice',
   'tataGreenPrice',
   'combos',
