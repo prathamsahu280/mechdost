@@ -52,13 +52,8 @@ import { AdminSupport } from './admin-support';
 import { AdminCatalogue } from './admin-catalogue';
 import { AdminPartners } from './admin-partners';
 import { AdminCustomers } from './admin-customers';
-import {
-  ContentEditor,
-  LayoutEditor,
-  OrderRulesEditor,
-  SettingsEditor,
-  type ContentDefaults,
-} from './admin-site';
+import { ContentEditor, LayoutEditor, type ContentDefaults } from './admin-site';
+import { AdminSettings } from './admin-settings';
 import { PortalGuard, usePortalAccount } from './portal-guard';
 import { PortalNavLink } from './portal-nav-link';
 import { useNow } from './use-now';
@@ -95,12 +90,6 @@ const AdminReviewsApi = dynamic(() => import('./admin-reviews-api').then((m) => 
 const ServiceRoutingApi = dynamic(() => import('./admin-services-api').then((m) => m.ServiceRoutingApi), {
   ssr: false,
   loading: () => <div className="skeleton h-96 rounded-card" aria-hidden="true" />,
-});
-
-/** Real sign-in: service-area PIN codes under Settings (spec 15 "PIN codes", 2026-11-14); demo builds never load it. */
-const ServiceAreaApi = dynamic(() => import('./admin-pincodes-api').then((m) => m.ServiceAreaApi), {
-  ssr: false,
-  loading: () => <div className="skeleton h-64 rounded-card" aria-hidden="true" />,
 });
 
 /** Real sign-in: Analytics and the Overview queue counts on the API (spec 08 "Analytics", 2026-11-14). */
@@ -146,10 +135,6 @@ const LayoutApi = dynamic(() => import('./admin-layout-api').then((m) => m.Layou
   ssr: false,
   loading: () => <div className="skeleton h-96 rounded-card" aria-hidden="true" />,
 });
-const CompanyApi = dynamic(() => import('./admin-company-api').then((m) => m.CompanyApi), {
-  ssr: false,
-  loading: () => <div className="skeleton h-64 rounded-card" aria-hidden="true" />,
-});
 
 /** Real sign-in: coupons, MechDost- and shop-funded (spec 08, 2026-11-15); demo builds never load it. */
 const AdminCouponsApi = dynamic(() => import('./admin-coupons-api').then((m) => m.AdminCouponsApi), {
@@ -157,14 +142,10 @@ const AdminCouponsApi = dynamic(() => import('./admin-coupons-api').then((m) => 
   loading: () => <div className="skeleton h-96 rounded-card" aria-hidden="true" />,
 });
 
-/** Real sign-in: "goes well with" rules (spec 11) and the PIN waiting list (spec 15), design 2026-11-15; demo builds never load them. */
+/** Real sign-in: "goes well with" rules (spec 11), design 2026-11-15; demo builds never load it. (The PIN waiting list, service area and company details live in Admin → Settings, `admin-settings-api.tsx`.) */
 const AdminRecoApi = dynamic(() => import('./admin-reco-api').then((m) => m.AdminRecoApi), {
   ssr: false,
   loading: () => <div className="skeleton h-64 rounded-card" aria-hidden="true" />,
-});
-const AdminDemandApi = dynamic(() => import('./admin-demand-api').then((m) => m.AdminDemandApi), {
-  ssr: false,
-  loading: () => <div className="skeleton h-48 rounded-card" aria-hidden="true" />,
 });
 
 const SECTION_EMOJI: Record<AdminSection, string> = {
@@ -244,15 +225,7 @@ export function AdminConsole({
           <LayoutEditor actor={account.name} />
         )
       ) : null}
-      {section === 'settings' ? (
-        <div className="space-y-6">
-          <SettingsEditor actor={account.name} />
-          <OrderRulesEditor />
-          {AUTH_MODE === 'firebase' ? <ServiceAreaApi /> : null}
-          {AUTH_MODE === 'firebase' ? <AdminDemandApi /> : null}
-          {AUTH_MODE === 'firebase' ? <CompanyApi /> : null}
-        </div>
-      ) : null}
+      {section === 'settings' ? <AdminSettings actor={account.name} /> : null}
       {section === 'notifications' && notifyDefaults ? (
         <AdminNotifications actor={account.name} defaults={notifyDefaults} />
       ) : null}

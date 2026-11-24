@@ -603,6 +603,22 @@ export const CLIENT_EVENT_SCHEMAS = {
       fields: z.number().int().min(0).max(1000),
     })
     .strict(),
+  // Admin → Settings (design 2026-11-24): category chosen, search used, edits discarded, risky save confirmed. Codes
+  // and counts only; the search words are never sent.
+  admin_settings_nav: z
+    .object({
+      category: z.string().regex(/^[a-z_]{2,24}$/),
+      via: z.enum(['list', 'select', 'search']),
+    })
+    .strict(),
+  admin_settings_search: z.object({ results: z.number().int().min(0).max(1000) }).strict(),
+  admin_settings_discard: z.object({ fields: z.number().int().min(0).max(1000) }).strict(),
+  admin_settings_confirm: z
+    .object({
+      outcome: z.enum(['saved', 'cancelled']),
+      risky: z.number().int().min(0).max(1000),
+    })
+    .strict(),
   support_ticket: z
     .object({
       action: z.enum([

@@ -1,6 +1,5 @@
 'use client';
 
-import { saveOrderRules, useOrderRules } from '@/demo/order-rules';
 import { isTrustKey, trustPlacementOf, TRUST_HIDDEN, type TrustKey } from '@mechdost/shared/content';
 import { ArrowDown, ArrowUp } from 'lucide-react';
 import dynamic from 'next/dynamic';
@@ -9,20 +8,16 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useState, type ReactNode, type SyntheticEvent } from 'react';
 import { CATEGORY_KEYS, type CategoryKey } from '@/demo/catalogue';
 import {
-  DEFAULT_SETTINGS,
-  SETTING_LIMITS,
   contentMax,
   isEmoji,
   resetArea,
   saveCategories,
   saveContent,
   saveLayout,
-  saveSettings,
   useSiteConfig,
   type AuditEntry,
   type ContentKey,
   type SiteConfig,
-  type SiteSettings,
   saveMapDefault,
 } from '@/demo/site-config';
 import type { MapMode } from '@/lib/map-styles';
@@ -39,7 +34,6 @@ import {
 import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 
 /** The API editors (real sign-in builds only): loaded on demand so demo bundles stay the same size. */
-const SettingsApi = dynamic(() => import('./admin-site-api').then((m) => m.SettingsApi), { ssr: false });
 const ContentApi = dynamic(() => import('./admin-site-api').then((m) => m.ContentApi), { ssr: false });
 
 /** Default text per content key in both locales, resolved on the server from the locale files. */
@@ -580,148 +574,9 @@ function CategoriesEditor({ actor }: { actor: string }) {
   );
 }
 
-// ── Settings ──────────────────────────────────────────────────────────────────────────────────────────────────
-
-/** `money`: stored in paise, edited in rupees. `percent`: stored in basis points, edited in %. */
-const SETTING_FIELDS: {
-  key: keyof SiteSettings;
-  unit: 'minutes' | 'units' | 'rupees' | 'paise' | 'percent' | 'days';
-  money: boolean;
-  percent?: boolean;
-}[] = [
-  { key: 'acceptMinutes', unit: 'minutes', money: false },
-  { key: 'bulkMinUnits', unit: 'units', money: false },
-  { key: 'deliveryFeePaise', unit: 'rupees', money: true },
-  { key: 'freeDeliveryFromPaise', unit: 'rupees', money: true },
-  { key: 'coinValuePaise', unit: 'paise', money: false },
-  { key: 'coinMaxRedeemBp', unit: 'percent', money: false, percent: true },
-  { key: 'labourPromiseDays', unit: 'days', money: false },
-];
-const scaled = (f: { money: boolean; percent?: boolean }) => f.money || f.percent === true;
-
-export function SettingsEditor({ actor }: { actor: string }) {
-  return AUTH_MODE === 'firebase' ? <SettingsApi /> : <DemoSettingsEditor actor={actor} />;
-}
-
-function DemoSettingsEditor({ actor }: { actor: string }) {
-  const t = useTranslations('portal');
-  const locale = useLocale();
-  const num = (n: number) => new Intl.NumberFormat(locale === 'hi' ? 'hi-IN' : 'en-IN').format(n);
-  const config = useSiteConfig();
-  const [version, setVersion] = useState(config.versions.settings);
-  const toDraft = (s: SiteSettings) =>
-    Object.fromEntries(
-      SETTING_FIELDS.map((f) => [f.key, String(scaled(f) ? s[f.key] / 100 : s[f.key])]),
-    ) as Record<keyof SiteSettings, string>;
-  const [draft, setDraft] = useState(() => toDraft(config.settings));
-  const [errors, setErrors] = useState<Partial<Record<keyof SiteSettings, string>>>({});
-  const [status, setStatus] = useState<Status>('idle');
-
-  function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const next: Partial<Record<keyof SiteSettings, string>> = {};
-    const values = { ...DEFAULT_SETTINGS };
-    for (const f of SETTING_FIELDS) {
-      const { key } = f;
-      const [min, max] = SETTING_LIMITS[key].map((v) => (scaled(f) ? v / 100 : v)) as [number, number];
-      const raw = draft[key].trim();
-      const n = Number(raw);
-      if (!/^\d+$/.test(raw) || n < min || n > max) {
-        next[key] = t('settings_err', { min: num(min), max: num(max) });
-        continue;
-      }
-      values[key] = scaled(f) ? n * 100 : n;
-    }
-    setErrors(next);
-    const first = SETTING_FIELDS.find(({ key }) => next[key]);
-    if (first) {
-      setStatus('invalid');
-      document.getElementById(`setting-${first.key}`)?.focus();
-      return;
-    }
-    if (!saveSettings(version, actor, values)) {
-      setStatus('stale');
-      return;
-    }
-    setVersion(version + 1);
-    setStatus('saved');
-    track('admin_site_change', { area: 'settings', action: 'save', fields: SETTING_FIELDS.length });
-  }
-
-  function onReset() {
-    if (!resetArea(version, actor, 'settings')) {
-      setStatus('stale');
-      return;
-    }
-    setVersion(version + 1);
-    setDraft(toDraft(DEFAULT_SETTINGS));
-    setErrors({});
-    setStatus('reset');
-    track('admin_site_change', { area: 'settings', action: 'reset', fields: 0 });
-  }
-
-  return (
-    <section aria-labelledby="settings-title" className="space-y-4">
-      <div>
-        <h2 id="settings-title" className="font-heading text-xl font-extrabold text-ink">
-          {t('settings_title')}
-        </h2>
-        <p className="mt-1 text-sm text-muted">{t('settings_lead')}</p>
-      </div>
-      <DemoNote />
-      <form onSubmit={onSubmit} className={portalCard} noValidate>
-        <div className="grid gap-5 tab:grid-cols-2">
-          {SETTING_FIELDS.map((f) => {
-            const { key, unit, money } = f;
-            const [min, max] = SETTING_LIMITS[key].map((v) => (scaled(f) ? v / 100 : v)) as [number, number];
-            const id = `setting-${key}`;
-            return (
-              <div key={key}>
-                <label htmlFor={id} className="text-sm font-bold text-ink">
-                  {t(`setting_${key}`)}
-                </label>
-                <div className="mt-1 flex items-center gap-2">
-                  {money ? (
-                    <span aria-hidden="true" className="text-sm font-bold text-muted">
-                      ₹
-                    </span>
-                  ) : null}
-                  <input
-                    id={id}
-                    inputMode="numeric"
-                    value={draft[key]}
-                    aria-invalid={errors[key] ? true : undefined}
-                    aria-describedby={`${id}-hint${errors[key] ? ` ${id}-error` : ''}`}
-                    onChange={(e) => {
-                      setStatus('idle');
-                      setDraft((d) => ({ ...d, [key]: e.target.value.replace(/\D/g, '') }));
-                    }}
-                    className="min-h-11 w-28 rounded-input border border-input-border bg-surface px-3 text-[15px] text-ink"
-                  />
-                  {money ? null : <span className="text-sm text-muted">{t(`unit_${unit}`)}</span>}
-                </div>
-                <p id={`${id}-hint`} className="mt-1 text-xs text-muted">
-                  {t(`setting_${key}_hint`, { min: num(min), max: num(max) })}
-                </p>
-                {errors[key] ? (
-                  <p id={`${id}-error`} className="mt-1 text-xs font-bold text-error">
-                    {errors[key]}
-                  </p>
-                ) : null}
-              </div>
-            );
-          })}
-        </div>
-        <Actions status={status} onReset={onReset} />
-      </form>
-      <RecentChanges />
-    </section>
-  );
-}
-
 // ── Audit trail ───────────────────────────────────────────────────────────────────────────────────────────────
 
-function RecentChanges() {
+export function RecentChanges() {
   const t = useTranslations('portal');
   const locale = useLocale();
   const audit = useSiteConfig().audit.slice(0, 8);
@@ -759,53 +614,6 @@ function RecentChanges() {
           ))}
         </ul>
       )}
-    </section>
-  );
-}
-
-/**
- * Yes/no order rules (hard rule 8): today "customers may cancel their own order" (Q25, off by default: cancel
- * through support). Each new order copies the rule when it is placed; orders already placed keep theirs.
- */
-export function OrderRulesEditor() {
-  // On the API the self-cancel rule is one of the settings above (`orders.customer_self_cancel`).
-  return AUTH_MODE === 'firebase' ? null : <DemoOrderRulesEditor />;
-}
-
-function DemoOrderRulesEditor() {
-  const t = useTranslations('portal');
-  const rules = useOrderRules();
-  const [status, setStatus] = useState<'idle' | 'saved' | 'failed'>('idle');
-  return (
-    <section
-      aria-labelledby="order-rules-title"
-      className="rounded-card border border-line-card bg-surface p-5 shadow-card"
-    >
-      <h2 id="order-rules-title" className="font-heading text-lg font-extrabold text-ink">
-        {t('rules_title')}
-      </h2>
-      <label className="mt-3 flex items-start gap-3 text-sm text-ink">
-        <input
-          type="checkbox"
-          checked={rules.customerSelfCancel}
-          onChange={(e) => {
-            const ok = saveOrderRules({ customerSelfCancel: e.target.checked });
-            setStatus(ok ? 'saved' : 'failed');
-            if (ok) track('admin_site_change', { area: 'settings', action: 'save', fields: 1 });
-          }}
-          className="mt-0.5 size-6 shrink-0 accent-[var(--color-accent-button)]"
-        />
-        <span>
-          <span className="font-bold">{t('rules_selfCancel')}</span>
-          <span className="block text-xs text-muted">{t('rules_selfCancelHint')}</span>
-        </span>
-      </label>
-      <p
-        role="status"
-        className={`mt-2 text-xs font-bold ${status === 'failed' ? 'text-error' : 'text-success'}`}
-      >
-        {status === 'saved' ? t('rules_saved') : status === 'failed' ? t('rules_saveFailed') : ''}
-      </p>
     </section>
   );
 }
