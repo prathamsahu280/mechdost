@@ -1,11 +1,7 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
-import {
-  queueAuthActionEmail,
-  queuePasswordChangedEmail,
-  recordAuthActionSkipped,
-  recordPasswordChangeSkipped,
-} from '@mechdost/db/repo';
-import { isRecentPasswordChange } from '../auth/email-actions';
+import { queueAuthActionEmail, recordAuthActionSkipped } from '@mechdost/db/repo';
+import { isAnnounceable, NEW_ACCOUNT_MS } from '../auth/email-actions';
+import { announcePasswordChange, RecentChangeCache } from '../auth/password-notice';
 import { ApiError } from '../errors';
 import { log, safeError } from '../logger';
 import { authenticate } from '../middleware/auth';
@@ -57,12 +53,6 @@ const CHANGED_PER_IP: RateRule = {
   windowSeconds: 3600,
   failClosed: true,
 };
-const CHANGED_PER_EMAIL: RateRule = {
-  name: 'auth_changed_email',
-  limit: 5,
-  windowSeconds: 3600,
-  failClosed: true,
-};
 /** Every reset answer takes at least this long, so an unknown address does not answer visibly faster. */
 const RESET_MIN_MS = 600;
 
@@ -70,7 +60,7 @@ const Locale = z.enum(['en', 'hi']);
 
 const ResetBody = z
   .object({
-    email: z.string().trim().toLowerCase().pipe(z.email().max(254)),
+    email: z.string().max(254).trim().toLowerCase().pipe(z.email()),
     locale: Locale,
     turnstileToken: z.string().min(1).max(2048),
   })
@@ -78,7 +68,7 @@ const ResetBody = z
   .openapi('PasswordResetEmailRequest');
 
 const ChangedBody = z
-  .object({ email: z.string().trim().toLowerCase().pipe(z.email().max(254)), locale: Locale })
+  .object({ email: z.string().max(254).trim().toLowerCase().pipe(z.email()), locale: Locale })
   .strict()
   .openapi('PasswordChangedRequest');
 
@@ -139,6 +129,7 @@ export function authEmailRoutes(deps: AppDeps, cache: SessionCache) {
   const app = new OpenAPIHono<AppEnv>({ defaultHook: validationHook });
   const minMs = deps.config.env === 'test' ? 0 : RESET_MIN_MS;
   app.use('/auth/verification-email', authenticate(deps, cache));
+  const recentChanges = new RecentChangeCache();
 
   return app
     .openapi(resetRoute, async (c) => {
@@ -186,23 +177,24 @@ export function authEmailRoutes(deps: AppDeps, cache: SessionCache) {
       const body = c.req.valid('json');
       const started = Date.now();
       await closed(() => enforceRate(c, deps.rateLimiter, CHANGED_PER_IP, c.get('clientIp')));
-      // Counted for every address before any lookup, as for the reset email.
-      const turn = await closed(() => deps.rateLimiter.hit(CHANGED_PER_EMAIL, keyOf(body.email)));
-      if (turn.allowed) {
-        try {
-          const change = await emailActions.passwordChangeFor(body.email);
-          if (change && isRecentPasswordChange(change.changedAt, Date.now()))
-            await queuePasswordChangedEmail(deps.db, {
-              uid: change.uid,
-              email: body.email,
-              changedAt: change.changedAt,
-              locale: body.locale,
-            });
-          else await recordPasswordChangeSkipped(deps.db);
-        } catch (err) {
-          // Firebase or the database failing must not look different from "nothing changed".
-          log('error', 'password_changed_notice_failed', safeError(err));
-        }
+      // No per-address budget: someone could use it up just before taking an account over and so hide the change
+      // from its owner (security review 2026-11-24). The per-IP limit bounds the lookups; a found change is
+      // remembered for a short while so repeat calls do not each ask Firebase.
+      try {
+        const now = Date.now();
+        const change =
+          recentChanges.get(body.email, now) ?? (await emailActions.passwordChangeFor({ email: body.email }));
+        // Only a change worth announcing is remembered: "nothing changed" must never hide one that follows.
+        if (change && isAnnounceable(change, now, NEW_ACCOUNT_MS)) recentChanges.set(body.email, change, now);
+        await announcePasswordChange(deps.db, change, {
+          locale: body.locale,
+          now: Date.now(),
+          newAccountMs: NEW_ACCOUNT_MS,
+          recordSkip: true,
+        });
+      } catch (err) {
+        // Firebase or the database failing must not look different from "nothing changed".
+        log('error', 'password_changed_notice_failed', safeError(err));
       }
       const wait = minMs - (Date.now() - started);
       if (wait > 0) await pause(wait);

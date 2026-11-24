@@ -4,7 +4,7 @@
  * record (`tokensValidAfterTime`, moved by every password change). Firebase and Resend are fakes.
  */
 import { randomBytes } from 'node:crypto';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { loadKeyring } from '@mechdost/db/crypto';
 import { events } from '@mechdost/db/repo';
 import * as s from '@mechdost/db/schema';
@@ -66,8 +66,15 @@ describe('POST /v1/auth/password-changed', () => {
     const count = (list: string[], o: string) => list.filter((x) => x === `{"outcome":"${o}"}`).length;
     expect(count(after, 'duplicate') - count(before, 'duplicate')).toBe(3);
     expect(count(after, 'queued') - count(before, 'queued')).toBe(1);
-    changedAgo(ctx, 'once@example.com', 30_000); // changed again, later
-    await notify(ctx, { email: 'once@example.com' });
+    // Changed again, after the half minute the answer is remembered for.
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(Date.now() + 31_000);
+      changedAgo(ctx, 'once@example.com', 5_000);
+      await notify(ctx, { email: 'once@example.com' });
+    } finally {
+      vi.useRealTimers();
+    }
     expect(await outboxFor(ctx, 'once@example.com')).toHaveLength(2);
   });
 
@@ -94,15 +101,65 @@ describe('POST /v1/auth/password-changed', () => {
     expect(await outboxFor(ctx, 'fresh@example.com')).toHaveLength(1);
   });
 
-  it('asks Firebase about one address at most 5 times an hour, and takes 20 requests per network, then 429', async () => {
+  it('has no per-address budget an attacker could burn before a takeover: the victim still gets the notice', async () => {
     const ctx = await setup();
-    for (let i = 0; i < 8; i++) await notify(ctx, { email: 'busy@example.com' });
-    expect(ctx.links.asked.filter((a) => a === 'changed:busy@example.com')).toHaveLength(5);
-    for (let i = 0; i < 12; i++)
+    for (let i = 0; i < 8; i++) await notify(ctx, { email: 'victim@example.com' }); // nothing changed yet
+    changedAgo(ctx, 'victim@example.com', 5_000); // the takeover
+    expect((await notify(ctx, { email: 'victim@example.com' })).status).toBe(200);
+    expect(await outboxFor(ctx, 'victim@example.com')).toHaveLength(1);
+  });
+
+  it('takes 20 requests per network an hour, then 429', async () => {
+    const ctx = await setup();
+    for (let i = 0; i < 20; i++)
       expect((await notify(ctx, { email: `n${String(i)}@example.com` })).status).toBe(200);
     const res = await notify(ctx, { email: 'last@example.com' });
     expect(res.status).toBe(429);
     expect(((await res.json()) as ErrorJson).error.code).toBe('RATE_LIMITED');
+  });
+
+  it('asks Firebase once per half minute about an address with a recent change, and never caches "nothing changed"', async () => {
+    const ctx = await setup();
+    changedAgo(ctx, 'cached@example.com', MIN);
+    for (let i = 0; i < 4; i++) await notify(ctx, { email: 'cached@example.com' });
+    expect(ctx.links.asked.filter((a) => a === 'changed:cached@example.com')).toHaveLength(1);
+    // A "no change" answer is not remembered: the change that follows must be seen at once.
+    await notify(ctx, { email: 'later@example.com' });
+    changedAgo(ctx, 'later@example.com', 1_000);
+    await notify(ctx, { email: 'later@example.com' });
+    expect(ctx.links.asked.filter((a) => a === 'changed:later@example.com')).toHaveLength(2);
+    expect(await outboxFor(ctx, 'later@example.com')).toHaveLength(1);
+  });
+
+  it('sends to the address on the Firebase record, never to the one in the request', async () => {
+    const ctx = await setup();
+    ctx.links.changes.set('typed@example.com', {
+      uid: 'uid-real',
+      changedAt: new Date(Date.now() - MIN),
+      email: 'real@example.com',
+    });
+    await notify(ctx, { email: 'typed@example.com' });
+    expect(await outboxFor(ctx, 'typed@example.com')).toHaveLength(0);
+    expect(await outboxFor(ctx, 'real@example.com')).toHaveLength(1);
+  });
+
+  it('ignores a "change" within 10 seconds of the account being created (a new account is not a change)', async () => {
+    const ctx = await setup();
+    const now = Date.now();
+    ctx.links.changes.set('new@example.com', {
+      uid: 'uid-new',
+      changedAt: new Date(now - 20_000),
+      createdAt: new Date(now - 25_000),
+    });
+    ctx.links.changes.set('old@example.com', {
+      uid: 'uid-old',
+      changedAt: new Date(now - 20_000),
+      createdAt: new Date(now - 60_000),
+    });
+    await notify(ctx, { email: 'new@example.com' });
+    await notify(ctx, { email: 'old@example.com' });
+    expect(await outboxFor(ctx, 'new@example.com')).toHaveLength(0);
+    expect(await outboxFor(ctx, 'old@example.com')).toHaveLength(1);
   });
 
   it('refuses a malformed address or an extra field, and answers 503 when Firebase links are not configured', async () => {
@@ -110,6 +167,8 @@ describe('POST /v1/auth/password-changed', () => {
     expect((await notify(ctx, { email: 'not-an-email' })).status).toBe(400);
     expect((await notify(ctx, { email: 'a@example.com', extra: 1 })).status).toBe(400);
     expect((await notify(ctx, { email: 'a@example.com', locale: 'fr' })).status).toBe(400);
+    // The length is limited before the spaces are trimmed away.
+    expect((await notify(ctx, { email: `${' '.repeat(250)}a@example.com` })).status).toBe(400);
     const off = await setup({ configured: false });
     expect((await notify(off, { email: 'a@example.com' })).status).toBe(503);
   });

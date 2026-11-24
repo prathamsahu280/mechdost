@@ -218,6 +218,8 @@ export interface PasswordAccount {
   firebaseUid: string;
   phone: string | null;
   email: string | null;
+  /** The language the account chose (`en` or `hi`), for mail sent without a request language. */
+  language: string;
   status: string;
   /** Holds a staff grant: signs in with password **and** a phone code (decision 2026-11-01). */
   staff: boolean;
@@ -234,6 +236,7 @@ export async function findPasswordAccount(db: Tx, ident: SignInIdentifier): Prom
       firebaseUid: users.firebaseUid,
       phone: users.phone,
       email: users.email,
+      language: users.language,
       status: users.status,
     })
     .from(users)

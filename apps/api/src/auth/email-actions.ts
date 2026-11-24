@@ -20,13 +20,40 @@ export interface EmailActionLinks {
    * `tokensValidAfterTime` on every password change or reset (it ends the other sessions), and the Admin SDK does not
    * expose `passwordUpdatedAt`, so that is the record we trust. Throws when Firebase cannot answer.
    */
-  passwordChangeFor(email: string): Promise<{ uid: string; changedAt: Date } | null>;
+  passwordChangeFor(by: { email: string } | { uid: string }): Promise<PasswordChange | null>;
+}
+
+/** What Firebase records about the last password change of an account that has an email address. */
+export interface PasswordChange {
+  uid: string;
+  /** The address on the Firebase record: the notice goes here, never to an address a request names. */
+  email: string;
+  /** `tokensValidAfterTime`. */
+  changedAt: Date;
+  /** `metadata.creationTime`. */
+  createdAt: Date;
 }
 
 /** A password change is announced only while it is this recent (the page calls right after the change). */
 export const PASSWORD_CHANGE_WINDOW_MS = 10 * 60_000;
 /** A change dated this far ahead of our clock cannot be real. */
 const CLOCK_SKEW_MS = 60_000;
+
+/** The page call: a change within this long of the account's creation is the account being made, not a change. */
+export const NEW_ACCOUNT_MS = 10_000;
+
+/**
+ * Whether `change` is worth a notice now: recent, and not the account being created. `newAccountMs` is how long after
+ * creation a "change" still counts as part of making the account: `NEW_ACCOUNT_MS` for the page call (the person has
+ * just used a reset code or their password), the whole window for the sign-in catch-up (sign-up sets the password
+ * a little after creating the account, and that first sign-in must not read as a change).
+ */
+export function isAnnounceable(change: PasswordChange, now: number, newAccountMs: number): boolean {
+  return (
+    isRecentPasswordChange(change.changedAt, now) &&
+    change.changedAt.getTime() - change.createdAt.getTime() >= newAccountMs
+  );
+}
 
 /** True when `changedAt` is within the last `PASSWORD_CHANGE_WINDOW_MS` (and not in the future). */
 export function isRecentPasswordChange(changedAt: Date, now: number): boolean {
@@ -71,16 +98,19 @@ export function createFirebaseEmailActionLinks(opts: {
       if (!code) throw new Error('verification link has no usable code');
       return { email: user.email, code };
     },
-    async passwordChangeFor(email) {
+    async passwordChangeFor(by) {
       let user;
       try {
-        user = await auth.getUserByEmail(email);
+        user = 'email' in by ? await auth.getUserByEmail(by.email) : await auth.getUser(by.uid);
       } catch (err) {
         if (NO_ACCOUNT.has(codeOf(err))) return null;
         throw err;
       }
-      const at = user.tokensValidAfterTime ? new Date(user.tokensValidAfterTime) : null;
-      return at && !Number.isNaN(at.getTime()) ? { uid: user.uid, changedAt: at } : null;
+      const changedAt = user.tokensValidAfterTime ? new Date(user.tokensValidAfterTime) : null;
+      const createdAt = user.metadata.creationTime ? new Date(user.metadata.creationTime) : null;
+      if (!user.email || !changedAt || !createdAt) return null;
+      if (Number.isNaN(changedAt.getTime()) || Number.isNaN(createdAt.getTime())) return null;
+      return { uid: user.uid, email: user.email.toLowerCase(), changedAt, createdAt };
     },
   };
 }

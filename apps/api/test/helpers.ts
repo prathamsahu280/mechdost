@@ -91,15 +91,28 @@ export class FakePasswordAuthority implements PasswordAuthority {
 export class FakeEmailActions implements EmailActionLinks {
   readonly resets = new Map<string, string>();
   readonly verifications = new Map<string, { email: string; code: string }>();
-  /** The last password change Firebase knows of, per email. */
-  readonly changes = new Map<string, { uid: string; changedAt: Date }>();
+  /** The last password change Firebase knows of, per email (`email`: the address on the record, when it differs). */
+  readonly changes = new Map<string, { uid: string; changedAt: Date; createdAt?: Date; email?: string }>();
   readonly asked: string[] = [];
   fail = false;
 
-  passwordChangeFor(email: string): Promise<{ uid: string; changedAt: Date } | null> {
-    this.asked.push(`changed:${email}`);
+  passwordChangeFor(
+    by: { email: string } | { uid: string },
+  ): Promise<{ uid: string; email: string; changedAt: Date; createdAt: Date } | null> {
+    this.asked.push('email' in by ? `changed:${by.email}` : `changed-uid:${by.uid}`);
     if (this.fail) return Promise.reject(new Error('firebase down'));
-    return Promise.resolve(this.changes.get(email) ?? null);
+    const hit =
+      'email' in by
+        ? ([by.email, this.changes.get(by.email)] as const)
+        : [...this.changes].find(([, v]) => v.uid === by.uid);
+    const [key, v] = hit ?? [];
+    if (!key || !v) return Promise.resolve(null);
+    return Promise.resolve({
+      uid: v.uid,
+      email: v.email ?? key,
+      changedAt: v.changedAt,
+      createdAt: v.createdAt ?? new Date(Date.now() - 86_400_000),
+    });
   }
 
   passwordResetCode(email: string): Promise<string | null> {
