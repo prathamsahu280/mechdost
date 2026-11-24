@@ -319,7 +319,8 @@ export function planTyreRows(
       }
     }
     const members = sized.map((s) => s.r);
-    const first = variants[0] as PlannedVariant;
+    const first = variants[0];
+    if (!first) continue;
 
     // Pattern-level facts: only what every size shares.
     const n = members.length;

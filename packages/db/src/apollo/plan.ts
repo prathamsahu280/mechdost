@@ -42,7 +42,7 @@ const KIND_OF: Readonly<Record<string, TyreKind>> = {
 
 /** The descriptions by their text with runs of spaces squeezed (the site has stray double spaces). */
 const DESCRIPTIONS_HI = new Map(
-  Object.entries(APOLLO_DESCRIPTIONS_HI).map(([en, hi]) => [en.replace(/[ 	]+/g, ' '), hi]),
+  Object.entries(APOLLO_DESCRIPTIONS_HI).map(([en, hi]) => [en.replace(/ {2,}/g, ' '), hi]),
 );
 
 const INDIA_PAGE = 'https://www.apollotyres.com/en-in/';
@@ -205,7 +205,7 @@ export function planApollo(input: ApolloPlanInput): ApolloPlan {
       if (f === '' || /brochure/i.test(f) || have.includes(f)) continue;
       if (
         viewNumber(f) !== null ||
-        (/ - shop photo\.[^.]+$/.test(f) && !have.some((h) => / - shop photo\./.test(h)))
+        (/ - shop photo\.[^.]+$/.test(f) && !have.some((h) => h.includes(' - shop photo.')))
       )
         have.push(f);
     }

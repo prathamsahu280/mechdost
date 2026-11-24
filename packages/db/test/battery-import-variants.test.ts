@@ -30,7 +30,8 @@ const variant = (sku: string, size: string, mrpPaise: number | null, ean: string
 });
 
 const product = (slug: string, variants: PlannedVariant[]): PlannedProduct => {
-  const first = variants[0] as PlannedVariant;
+  const first = variants[0];
+  if (!first) throw new Error('a product needs a variant');
   return {
     sourceRow: 1,
     productType: 'car_suv_tyre',
