@@ -13,6 +13,7 @@ import {
   PolicyVersionList,
 } from '@mechdost/shared/admin-config-api';
 import { AdminPincodeList } from '@mechdost/shared/geo-api';
+import { OPERATIONAL_SETTINGS, SETTING_KEYS } from '@mechdost/shared/settings';
 import type { AuditCase } from '../cases.ts';
 import type { Mock, Reply } from './mock-api.ts';
 
@@ -199,36 +200,25 @@ export function settingsMocks(c: AuditCase): Mock[] {
         const overridden = forCity && cityMode === 'overridden';
         return {
           body: {
-            settings: [
-              {
-                key: 'orders.acceptance_timeout_min',
-                default: 15,
-                global: { value: 20, version: 2 },
-                city: overridden ? { value: 30, version: 1 } : null,
-                effective: overridden ? 30 : 20,
-              },
-              {
-                key: 'checkout.cod_cap_paise',
-                default: 500_000,
-                global: null,
-                city: null,
-                effective: 500_000,
-              },
-              {
-                key: 'orders.customer_self_cancel_cod',
-                default: false,
-                global: null,
-                city: overridden ? { value: true, version: 1 } : null,
-                effective: overridden,
-              },
-              {
-                key: 'partners.warning_threshold',
-                default: 3,
-                global: null,
-                city: null,
-                effective: 3,
-              },
-            ],
+            // The real API lists every key of the registry with its default; four carry values of their own.
+            settings: SETTING_KEYS.map((key) => {
+              const spec = OPERATIONAL_SETTINGS[key];
+              const base = { key, default: spec.default, global: null, city: null, effective: spec.default };
+              if (key === 'orders.acceptance_timeout_min')
+                return {
+                  ...base,
+                  global: { value: 20, version: 2 },
+                  city: overridden ? { value: 30, version: 1 } : null,
+                  effective: overridden ? 30 : 20,
+                };
+              if (key === 'orders.customer_self_cancel_cod')
+                return {
+                  ...base,
+                  city: overridden ? { value: true, version: 1 } : null,
+                  effective: overridden,
+                };
+              return base;
+            }),
           } satisfies Dto<typeof AdminSettingList>,
         };
       },

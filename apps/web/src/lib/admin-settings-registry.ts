@@ -1,3 +1,20 @@
+import {
+  Building2,
+  Bell,
+  CreditCard,
+  Coins,
+  Handshake,
+  LifeBuoy,
+  MapPin,
+  Package,
+  Settings2,
+  ShieldCheck,
+  ShoppingBag,
+  Siren,
+  Wrench,
+  type LucideIcon,
+} from 'lucide-react';
+
 /**
  * The categories of Admin → Settings (spec 08 "Settings", design 2026-11-24). One registry: adding a category is one
  * entry here (plus its two messages `cat_<id>` and `cat_<id>_help` in the `adminSettings` namespace). A category with
@@ -25,8 +42,8 @@ export type SettingsCategoryId = (typeof SETTINGS_CATEGORY_IDS)[number];
 
 export interface SettingsCategory {
   id: SettingsCategoryId;
-  /** Emoji shown beside the name (decorative; the name carries the meaning). */
-  emoji: string;
+  /** Icon beside the name (decorative, aria-hidden; the name carries the meaning). */
+  icon: LucideIcon;
   /** Key prefixes of the operational settings that belong here (`other` takes whatever no category claims). */
   prefixes: readonly string[];
   /** Admin section that holds this category's own screens (templates, texts), linked from the category. */
@@ -34,30 +51,30 @@ export interface SettingsCategory {
 }
 
 export const SETTINGS_CATEGORIES: readonly SettingsCategory[] = [
-  { id: 'store', emoji: '🏢', prefixes: ['customers.'] },
-  { id: 'orders', emoji: '📦', prefixes: ['orders.', 'checkout.', 'quotes.'] },
-  { id: 'payments', emoji: '💳', prefixes: ['refunds.'] },
-  { id: 'coins', emoji: '🪙', prefixes: ['coins.'], link: { section: 'coins' } },
-  { id: 'partners', emoji: '🤝', prefixes: ['partners.'] },
-  { id: 'service', emoji: '🔧', prefixes: ['service.'] },
-  { id: 'area', emoji: '📍', prefixes: [] },
+  { id: 'store', icon: Building2, prefixes: ['customers.'] },
+  { id: 'orders', icon: Package, prefixes: ['orders.', 'checkout.', 'quotes.'] },
+  { id: 'payments', icon: CreditCard, prefixes: ['refunds.'] },
+  { id: 'coins', icon: Coins, prefixes: ['coins.'], link: { section: 'coins' } },
+  { id: 'partners', icon: Handshake, prefixes: ['partners.'] },
+  { id: 'service', icon: Wrench, prefixes: ['service.'] },
+  { id: 'area', icon: MapPin, prefixes: [] },
   {
     id: 'notifications',
-    emoji: '🔔',
+    icon: Bell,
     prefixes: ['notifications.'],
     link: { section: 'notifications' },
   },
   {
     id: 'catalogue',
-    emoji: '🛒',
+    icon: ShoppingBag,
     prefixes: ['catalogue.'],
     link: { section: 'catalogue' },
   },
-  { id: 'support', emoji: '🛟', prefixes: ['support.'] },
-  { id: 'limits', emoji: '🛡️', prefixes: ['api.', 'assistant.'] },
+  { id: 'support', icon: LifeBuoy, prefixes: ['support.'] },
+  { id: 'limits', icon: ShieldCheck, prefixes: ['api.', 'assistant.'] },
   // Roadside assistance (user 2026-11-23): its settings land here once the keys exist (prefix `roadside.`).
-  { id: 'roadside', emoji: '🚨', prefixes: ['roadside.'] },
-  { id: 'other', emoji: '⚙️', prefixes: [] },
+  { id: 'roadside', icon: Siren, prefixes: ['roadside.'] },
+  { id: 'other', icon: Settings2, prefixes: [] },
 ];
 
 /** Keys whose prefix would put them elsewhere: money going in and out is under Payments. */

@@ -1,5 +1,6 @@
 'use client';
 
+import { Search } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Switch } from '@/components/ui/switch';
@@ -41,6 +42,8 @@ export interface SettingItem {
   /** One line under the help: range, default. */
   hint: string;
   error?: string;
+  /** Shown in an empty number input (a setting that may be left empty). */
+  placeholder?: string;
   /** Small tag beside the hint: "Same in every city", "Custom value". */
   badges?: readonly string[];
   /** Extra row content (the city override line with its reset button). */
@@ -127,6 +130,25 @@ export function SettingsWorkbench(props: WorkbenchProps) {
   const resultCount = shownItems.length + shownPanels.length;
 
   const dirty = items.filter((i) => i.value !== i.saved);
+
+  // The save bar appears with the first change, stays while saving and for a few seconds after a result (an error
+  // stays until the next edit), and is gone otherwise: it never sits over the page with nothing to do.
+  const [flash, setFlash] = useState(false);
+  useEffect(() => {
+    if (!status) {
+      setFlash(false);
+      return;
+    }
+    setFlash(true);
+    if (status.tone === 'error') return;
+    const timer = window.setTimeout(() => {
+      setFlash(false);
+    }, 5000);
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [status]);
+  const barOpen = dirty.length > 0 || busy || flash;
   const risky = dirty.filter((i) => i.risk);
   const dirtyIn = (c: SettingsCategoryId) => dirty.filter((i) => i.category === c).length;
   const hits = (c: SettingsCategoryId) =>
@@ -215,12 +237,10 @@ export function SettingsWorkbench(props: WorkbenchProps) {
               {t('search_label')}
             </label>
             <div className="relative">
-              <span
+              <Search
                 aria-hidden="true"
-                className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-muted"
-              >
-                🔍
-              </span>
+                className="pointer-events-none absolute top-1/2 left-3 size-5 -translate-y-1/2 text-muted"
+              />
               <input
                 id={`${baseId}-search`}
                 type="search"
@@ -252,7 +272,7 @@ export function SettingsWorkbench(props: WorkbenchProps) {
               {searching ? <option value="">{t('search_results', { count: resultCount })}</option> : null}
               {visible.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.emoji} {t(`cat_${c.id}`)}
+                  {t(`cat_${c.id}`)}
                   {dirtyIn(c.id) > 0 ? ` (${String(dirtyIn(c.id))})` : ''}
                 </option>
               ))}
@@ -269,15 +289,13 @@ export function SettingsWorkbench(props: WorkbenchProps) {
                     onClick={() => {
                       pick(c.id, 'list');
                     }}
-                    className={`press flex min-h-11 w-full items-center gap-2 rounded-pill px-4 text-left text-sm font-bold whitespace-nowrap focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus min-[1200px]:rounded-button ${
+                    className={`press flex min-h-11 w-full items-center gap-2 rounded-pill px-4 text-left text-sm font-bold whitespace-nowrap min-[1200px]:whitespace-normal focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus min-[1200px]:rounded-button ${
                       !searching && c.id === active
                         ? 'bg-accent-soft text-accent-soft-text'
                         : 'text-ink hover:bg-pill'
                     } ${searching && hits(c.id) === 0 ? 'opacity-50' : ''}`}
                   >
-                    <span aria-hidden="true" className="text-[16px] leading-none">
-                      {c.emoji}
-                    </span>
+                    <c.icon aria-hidden="true" className="size-5 shrink-0" />
                     <span className="min-w-0 flex-1">{t(`cat_${c.id}`)}</span>
                     {searching && hits(c.id) > 0 ? (
                       <span className="rounded-pill bg-pill px-2 text-xs text-ink">{hits(c.id)}</span>
@@ -320,29 +338,33 @@ export function SettingsWorkbench(props: WorkbenchProps) {
         </div>
       </div>
 
-      <div className="sticky bottom-[calc(84px+env(safe-area-inset-bottom))] z-30 nav:bottom-4">
+      <div
+        aria-hidden="true"
+        className={`transition-[height] duration-200 motion-reduce:transition-none ${barOpen ? 'h-32 tab:h-24' : 'h-0'}`}
+      />
+      <div className="sticky bottom-[calc(84px+env(safe-area-inset-bottom))] z-30 h-0 nav:bottom-4">
         <div
           role="group"
           aria-label={t('bar_label')}
-          className="mx-auto flex flex-wrap items-center gap-3 rounded-card border border-line-card bg-surface px-4 py-3 shadow-float"
+          className={`absolute inset-x-0 bottom-0 flex flex-wrap items-center gap-3 rounded-card border border-line-card bg-surface px-4 py-3 shadow-float transition-[opacity,transform,visibility] duration-200 motion-reduce:transition-none ${
+            barOpen
+              ? 'visible translate-y-0 opacity-100'
+              : 'pointer-events-none invisible translate-y-4 opacity-0'
+          }`}
         >
           <p
             role="status"
             className={`min-w-0 basis-full text-sm font-bold tab:flex-1 tab:basis-0 ${
-              dirty.length > 0
+              dirty.length > 0 && status?.tone !== 'error'
                 ? 'text-ink'
                 : status?.tone === 'error'
                   ? 'text-error'
-                  : status?.tone === 'ok'
-                    ? 'text-success'
-                    : 'text-muted'
+                  : 'text-success'
             }`}
           >
-            {dirty.length > 0
-              ? status?.tone === 'error'
-                ? status.text
-                : t('bar_dirty', { count: dirty.length })
-              : (status?.text ?? t('bar_clean'))}
+            {dirty.length > 0 && status?.tone !== 'error'
+              ? t('bar_dirty', { count: dirty.length })
+              : (status?.text ?? '')}
           </p>
           <button
             type="button"
@@ -390,8 +412,8 @@ function CategoryHeading({ category, prefix }: { category: SettingsCategory | un
   return (
     <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
       <div className="min-w-0">
-        <h3 className="font-heading text-lg font-extrabold text-ink">
-          <span aria-hidden="true">{category.emoji} </span>
+        <h3 className="flex items-center gap-2 font-heading text-lg font-extrabold text-ink">
+          <category.icon aria-hidden="true" className="size-5 shrink-0 text-accent-soft-text" />
           {t(`cat_${category.id}`)}
         </h3>
         <p className="mt-0.5 max-w-prose text-sm text-muted">{t(`cat_${category.id}_help`)}</p>
@@ -402,7 +424,6 @@ function CategoryHeading({ category, prefix }: { category: SettingsCategory | un
           className="inline-flex min-h-11 items-center text-sm font-bold text-accent-soft-text underline-offset-4 hover:underline"
         >
           {t(`link_${link.section}`)}
-          <span aria-hidden="true">&nbsp;→</span>
         </PortalNavLink>
       ) : null}
     </div>
@@ -441,8 +462,8 @@ function Rows({
         return (
           <div key={c.id} className="space-y-4">
             {grouped ? (
-              <h3 className="font-heading text-base font-extrabold text-ink">
-                <span aria-hidden="true">{c.emoji} </span>
+              <h3 className="flex items-center gap-2 font-heading text-base font-extrabold text-ink">
+                <c.icon aria-hidden="true" className="size-5 shrink-0 text-accent-soft-text" />
                 {t(`cat_${c.id}`)}
               </h3>
             ) : null}
@@ -533,6 +554,7 @@ function Row({
               autoComplete="off"
               spellCheck={false}
               value={item.value}
+              placeholder={item.placeholder}
               aria-invalid={item.error ? true : undefined}
               aria-describedby={describedBy}
               onChange={(e) => {

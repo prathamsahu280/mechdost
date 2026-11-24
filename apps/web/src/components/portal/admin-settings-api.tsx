@@ -327,6 +327,7 @@ export function SettingsApi() {
       unit: unit === 'rupees' || unit === 'switch' ? undefined : t(UNIT_LABEL[unit]),
       value,
       saved,
+      placeholder: isNullable(key) ? t('api_set_none') : undefined,
       hint,
       error,
       badges: city
@@ -434,7 +435,6 @@ export function SettingsApi() {
             className="inline-flex min-h-11 items-center text-sm font-bold text-accent-soft-text underline-offset-4 hover:underline"
           >
             {a('link_audit')}
-            <span aria-hidden="true">&nbsp;→</span>
           </PortalNavLink>
         }
       />

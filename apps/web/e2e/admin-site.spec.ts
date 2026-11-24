@@ -148,7 +148,8 @@ test.describe('admin site customisation (spec 08)', () => {
     await expect(page.getByRole('status').filter({ hasText: '1 unsaved change' })).toBeVisible();
     await page.getByRole('button', { name: 'Discard changes' }).click();
     await expect(fee).toHaveValue(before);
-    await expect(page.getByRole('status').filter({ hasText: 'No unsaved changes' })).toBeVisible();
+    // Nothing changed any more: the save bar is gone.
+    await expect(page.getByRole('button', { name: 'Save changes' })).toBeHidden();
   });
 
   test('the customisation screens pass WCAG 2.2 AA and fit small screens', async ({ page }) => {
@@ -165,7 +166,12 @@ test.describe('admin site customisation (spec 08)', () => {
     ];
     for (const path of paths) {
       await page.goto(path);
-      await expect(page.getByRole('button', { name: /Save changes|बदलाव सेव करें/ }).first()).toBeVisible();
+      await expect(
+        page
+          .getByRole('searchbox')
+          .or(page.getByRole('button', { name: /Save changes|बदलाव सेव करें/ }).first())
+          .first(),
+      ).toBeVisible();
       const axe = await new AxeBuilder({ page })
         .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
         .analyze();
