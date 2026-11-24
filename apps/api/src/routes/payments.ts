@@ -21,7 +21,7 @@ import { errorResponses } from './schemas';
  * Razorpay Standard Checkout (plan 2026-11-12; spec 03):
  * - `POST /v1/payments/razorpay/verify` — the checkout callback. Signed-in owner only; HMAC over OUR stored order id;
  *   then the payment is fetched from Razorpay and applied (amount + currency checked, monotonic state).
- * - `POST /v1/webhooks/razorpay` — raw-body HMAC (`X-Razorpay-Signature`, webhook secret) checked before parsing,
+ * - `POST /webhooks/razorpay` (no `/v1`) — raw-body HMAC (`X-Razorpay-Signature`, webhook secret) checked before parsing,
  *   each event recorded once (`x-razorpay-event-id`), payment facts applied. 404 until the webhook secret is set.
  */
 const VerifyBody = z

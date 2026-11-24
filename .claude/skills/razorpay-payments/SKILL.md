@@ -20,7 +20,7 @@ event dedupe, inline apply), unpaid-order expiry. Code: `apps/api/src/payments/*
 3. **Verify (client callback)**: server checks `HMAC_SHA256(order_id + "|" + payment_id, key_secret)` with
    `timingSafeEqual`; marks attempt `attempted`; **do not fulfil on the callback alone** — wait for the webhook or
    fetch the payment from the API.
-4. **Webhook** `POST /v1/webhooks/razorpay`:
+4. **Webhook** `POST /webhooks/razorpay` (no `/v1`):
    - Read the **raw body** (`await c.req.text()`) and verify `X-Razorpay-Signature` = HMAC-SHA256(raw, webhook secret).
      During secret rotation accept old or new secret for 24 h.
    - `INSERT INTO webhook_events(id = x-razorpay-event-id) ON CONFLICT DO NOTHING`; duplicate → 200 and stop.
