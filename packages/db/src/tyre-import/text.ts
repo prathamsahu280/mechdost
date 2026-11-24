@@ -50,7 +50,24 @@ export function decimalOf(text: string | undefined): number | null {
 }
 
 /** The speed rating symbol of the source ("H", "V"; the car page's "S" of "100/S"), or null when blank or not a letter code. */
-export const SPEED_SYMBOLS = ['J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'H', 'V', 'W', 'Y'] as const;
+export const SPEED_SYMBOLS = [
+  'F',
+  'G',
+  'J',
+  'K',
+  'L',
+  'M',
+  'N',
+  'P',
+  'Q',
+  'R',
+  'S',
+  'T',
+  'H',
+  'V',
+  'W',
+  'Y',
+] as const;
 export function speedSymbol(text: string | undefined): string | null {
   const t = (text ?? '').trim().toUpperCase();
   return (SPEED_SYMBOLS as readonly string[]).includes(t) ? t : null;

@@ -55,7 +55,7 @@ export interface BatteryCliBrand<P extends BatteryPlan> {
   readPicture(dir: string, file: string): Buffer | Promise<Buffer>;
   /** A file several products use is stored once and shared (tyre patterns); false = each product stores its own copy. */
   sharePhotos?: boolean;
-  statusCsv(rows: P['rows'], results?: ReadonlyMap<string, RowResult>): string;
+  statusCsv(rows: P['rows'], results?: ReadonlyMap<string, RowResult>, plan?: P): string;
   statusMarkdown(
     plan: P,
     meta: {
@@ -65,6 +65,8 @@ export interface BatteryCliBrand<P extends BatteryPlan> {
     },
   ): string;
   archivedCsv(archived: readonly { slug: string; name: string; status: string }[]): string;
+  /** Extra report files written next to the status report (Apollo: the dropped rows). */
+  extraFiles?(plan: P): { name: string; content: string }[];
   /** Extra numbers for the printed summary. */
   summaryExtras?(plan: P): Record<string, unknown>;
 }
@@ -145,7 +147,11 @@ function writeStatus<P extends BatteryPlan>(
     ? new Map<string, RowResult>([...result.results].map(([slug, r]) => [slug, r]))
     : undefined;
   mkdirSync(args.statusDir, { recursive: true });
-  writeFileSync(`${args.statusDir}/${brand.stem}-import-status.csv`, brand.statusCsv(plan.rows, results));
+  writeFileSync(
+    `${args.statusDir}/${brand.stem}-import-status.csv`,
+    brand.statusCsv(plan.rows, results, plan),
+  );
+  for (const f of brand.extraFiles?.(plan) ?? []) writeFileSync(`${args.statusDir}/${f.name}`, f.content);
   writeFileSync(
     `${args.statusDir}/${brand.stem}-import-status.md`,
     brand.statusMarkdown(plan, { run, archived: result?.archived, results }),

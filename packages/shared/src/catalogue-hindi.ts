@@ -313,12 +313,54 @@ const TYRE_NAMES = [
   'Zwyde',
 ];
 
+/**
+ * Apollo tyre brand, tread pattern names and abbreviations of its texts (tyre import, 2026-11-24): makers' coined names
+ * ("Alnac", "Endurace", "Actigrip") are printed in Latin script on the tyre; JCP, FEA, DPF, TSDP are engineering
+ * abbreviations Apollo prints as capitals.
+ */
+const APOLLO_NAMES = [
+  'Apollo',
+  'Acto',
+  'Actigrip',
+  'Actisteer',
+  'Actizip',
+  'Agrex',
+  'Alnac',
+  'Alpha',
+  'Altrust',
+  'Amar',
+  'Amazer',
+  'Apterra',
+  'Aspire',
+  'Endumaxx',
+  'Endumile',
+  'Endurace',
+  'Endutrax',
+  'Endutuff',
+  'Enudrace',
+  'Farmking',
+  'Haulug',
+  'Harbor',
+  'Krishak',
+  'Loadstar',
+  'Nsd',
+  'Slhd',
+  'Terra',
+  'Tramplr',
+  'Virat',
+  'Dpf',
+  'Fea',
+  'Jcp',
+  'Tsdp',
+];
+
 export const CATALOGUE_PROPER_NAMES: readonly string[] = [
   ...BRANDS,
   ...SERIES,
   ...MAKERS,
   ...STANDARDS,
   ...TYRE_NAMES,
+  ...APOLLO_NAMES,
 ];
 
 const PROPER = new Set(CATALOGUE_PROPER_NAMES.map((w) => w.toLowerCase()));

@@ -277,7 +277,8 @@ export function planTyreRows(
     const variantSpecs: Record<string, Record<string, unknown>> = {};
     const labels = new Set<string>();
     for (const { r, label: rawLabel } of sized) {
-      let sku = `${opts.skuPrefix}-${r.sourceSku ?? norm(r.name.replace(/^MRF\s+/i, ''))}`;
+      const withoutBrand = r.name.replace(new RegExp(`^${escapeRe(r.brand.name)}\\s+`, 'i'), '');
+      let sku = `${opts.skuPrefix}-${r.sourceSku ?? norm(withoutBrand)}`;
       if (skus.has(sku)) {
         skuCollisions += 1;
         sku = `${sku}-${String(r.sourceRow)}`;

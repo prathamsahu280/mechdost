@@ -37,7 +37,10 @@ export interface BatteryImportConfig {
     | 'admin_amaron_imported'
     | 'admin_tatagreen_imported'
     | 'admin_ceat_imported'
-    | 'admin_mrf_imported';
+    | 'admin_mrf_imported'
+    | 'admin_apollo_imported';
+  /** Brands (slugs) whose old products this import archives too (Apollo: Vredestein). Never anything else. */
+  alsoArchiveBrands?: readonly string[];
 }
 
 export interface BatteryImportCounts {
@@ -136,6 +139,15 @@ async function execute(
     }
   }
   const brandId = brand?.id ?? null;
+  const alsoIds =
+    cfg.alsoArchiveBrands && cfg.alsoArchiveBrands.length > 0
+      ? (
+          await db
+            .select({ id: brands.id })
+            .from(brands)
+            .where(inArray(brands.slug, [...cfg.alsoArchiveBrands]))
+        ).map((b) => b.id)
+      : [];
 
   // Categories (sub-categories need their top-level parent; `home-power` is top-level itself).
   const wantedCats = new Map(plan.map((p) => [p.category.slug, p.category]));
@@ -213,7 +225,12 @@ async function execute(
 
   // What exists: every Exide product, the products holding a planned slug, the variants holding a planned SKU.
   const brandRows: ProductRow[] =
-    brandId === null ? [] : await db.select().from(products).where(eq(products.brandId, brandId));
+    brandId === null
+      ? []
+      : await db
+          .select()
+          .from(products)
+          .where(inArray(products.brandId, [brandId, ...alsoIds]));
   const byId = new Map(brandRows.map((r) => [r.id, r]));
   const slugRows = await db
     .select()

@@ -17,7 +17,8 @@
     "./battery-import": "./src/battery-import/index.ts",
     "./tyre-import": "./src/tyre-import/index.ts",
     "./ceat": "./src/ceat/index.ts",
-    "./mrf": "./src/mrf/index.ts"
+    "./mrf": "./src/mrf/index.ts",
+    "./apollo": "./src/apollo/index.ts"
   },
   "scripts": {
     "generate": "drizzle-kit generate && node scripts/fix-migrations.mjs",

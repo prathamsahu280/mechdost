@@ -1,5 +1,6 @@
 export { planHindiLeftovers } from '../battery-import';
 export * from './build';
+export * from './features-hi-apollo';
 export * from './features-hi-ceat';
 export * from './features-hi-mrf';
 export * from './hindi';

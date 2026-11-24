@@ -28,7 +28,8 @@
     "db:import:amaron": "pnpm --filter @mechdost/api import:amaron",
     "db:import:tatagreen": "pnpm --filter @mechdost/api import:tatagreen",
     "db:import:ceat": "pnpm --filter @mechdost/api import:ceat",
-    "db:import:mrf": "pnpm --filter @mechdost/api import:mrf"
+    "db:import:mrf": "pnpm --filter @mechdost/api import:mrf",
+    "db:import:apollo": "pnpm --filter @mechdost/api import:apollo"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
