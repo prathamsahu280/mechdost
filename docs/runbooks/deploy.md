@@ -300,12 +300,13 @@ Items decided to happen before going public; tick them off here.
 - [x] Hide the demo-only controls: "advance" (orders, service requests, applications), "demo reply" and "demo offer" (Q86, user 2026-11-14). Done 2026-11-14: `SHOW_DEMO_CONTROLS`.
 - [ ] Switch the website from the browser demo to real sign-in and the API (data switch), so seller onboarding links the shop owner on sign-in (Q89).
 - [ ] Demo data off (Q21: "Demo off before public launch, date TBD").
-- [ ] **Firebase Auth email templates** (user 2026-11-16): the sign-up verification and password-reset emails use
-      Firebase's own template. **The user has set a custom sender domain there (in review, 2026-11-16) — do not change
-      the Firebase templates, the sender domain or its DNS records from the repo or the session.** Left to finish (user,
-      Firebase console → Authentication → Templates): sender name MechDost and the subject/body wording (one template
-      language per project; Hindi wording can follow the English). A later option is moving these two emails to
-      Resend with our own layout (logo, en/hi) — only with the user's go-ahead, since it would replace this setup.
+- [ ] **Firebase Auth email templates** (user 2026-11-16, changed 2026-11-24): the sign-up verification and
+      password-reset emails are now **sent by our API through Resend** with our own layout (en/hi) and links to
+      `https://mechdost.com/auth/action` (decision 2026-11-24: Firebase refused a custom action URL,
+      `EMAIL_TEMPLATE_UPDATE_NOT_ALLOWED`). Firebase's own templates and sender domain are no longer used for them and
+      are not to be changed from the repo or the session. Before launch (user): Resend set up (`RESEND_API_KEY`,
+      `EMAIL_DOMAIN`, `noreply@` sender, `docs/runbooks/email.md`) and `WEB_BASE_URL=https://mechdost.com` on the API
+      and worker; send one real verification and one reset email end to end.
 - [ ] Test API's emails use `WEB_BASE_URL=https://mechdost.com` (a local API defaults to `http://localhost:3000`, so its
       email logo and links do not load in mail clients; real-API pass 2026-11-16).
 

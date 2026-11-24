@@ -28,18 +28,36 @@ Why the key file is passed explicitly (`apps/api/src/auth/firebase-app.ts`): wit
 3. reCAPTCHA SMS defense (audit mode first, then enforce) and App Check for the web app.
 4. No key files: the API's runtime service account signs custom tokens through IAM — enable the **IAM Service Account Credentials API** and grant the service account `roles/iam.serviceAccountTokenCreator` on itself. The API refuses to start in production with `GOOGLE_APPLICATION_CREDENTIALS` set.
 5. Secrets in Secret Manager: `TURNSTILE_SECRET_KEY`, Upstash keys; `FIREBASE_API_KEY` as plain config (it is the public web key). Production refuses to start without them.
-6. Email action links (verification, password reset) on our domain (Q30).
+6. Email action links (verification, password reset) on our domain: sent by our API through Resend (section "Email links on mechdost.com"); no console setting.
 7. First admin (later staff are given roles in Admin → Staff, `docs/runbooks/staff-roles.md`): the person signs up on the site (phone code, email, password), then from a machine with the production `DATABASE_URL`: `pnpm db:grant-role --phone +91XXXXXXXXXX --role super_admin --reason "first admin"` (staff roles only, `--city RPR` (the city's public code) for city roles; audited). Their next sign-in asks for the phone code and opens the admin console. **Setting customer prices** (Admin → Catalogue → Prices) needs `prices:write`, which comes with the `super_admin`, `ops_manager` and `finance` roles — grant one of those (e.g. `--role finance`) to whoever sets prices; `catalogue_manager` edits texts only.
 8. Manual check on the real project with the production build: phone sign-up shows no CSP errors in the browser console (Google's reCAPTCHA scripts and frames are not exercised by the emulator; allow-list in `apps/web/src/lib/csp.ts`).
 
-## Email links on mechdost.com (2026-11-23)
+## Email links on mechdost.com (2026-11-23, changed 2026-11-24)
 
-Firebase sends the verification, password-reset and email-change emails with links to its own page
-(`https://<project>.firebaseapp.com/__/auth/action?mode=…&oobCode=…`). The site has its own page for these links,
-`/auth/action` (and `/hi/auth/action`, `apps/web/src/components/auth/email-action.tsx`), so the links can say
-`mechdost.com`. **Deploy the page first, then change the template** (the other order sends people to a 404).
+The verification and password-reset emails link to our own page,
+`https://mechdost.com/auth/action?mode=…&oobCode=…&lang=…` (and `/hi/auth/action`,
+`apps/web/src/components/auth/email-action.tsx`). **We send these emails ourselves, not Firebase.** Why: Firebase
+refuses to save a custom action URL for `mechdost-dev`. Both the console and the Identity Toolkit admin API
+(`notification.sendEmail.callbackUri`) answer `EMAIL_TEMPLATE_UPDATE_NOT_ALLOWED`, so the old "Templates → Customize
+action URL" steps cannot work and are gone. **Nothing needs changing in the Firebase console for this.**
 
-Modes the page handles (Firebase appends `mode`, `oobCode`, `continueUrl`, `lang`): `verifyEmail` and
+How it works (decision 2026-11-24, specs 01 and 10):
+
+- The API makes the one-time code with the Admin SDK (`generatePasswordResetLink`, `generateEmailVerificationLink`,
+  `apps/api/src/auth/email-actions.ts`), takes `oobCode` out of the generated link and queues the email in the outbox
+  (templates `auth_password_reset`, `auth_verify_email`; the code is sealed in the payload). The worker sends it through
+  Resend like every other email (`docs/runbooks/email.md`: `RESEND_API_KEY`, `EMAIL_DOMAIN`, the `noreply@` sender).
+- The link base is `WEB_BASE_URL` (API and worker; `http://localhost:3000` by default, https required in production).
+  No other setting. With the Auth Emulator (`FIREBASE_AUTH_EMULATOR_HOST`) the Admin SDK talks to the emulator, which
+  records the code like before; the mail still links to `WEB_BASE_URL`, so in dev it points at localhost.
+- Endpoints: `POST /v1/auth/password-reset-email` (public, Turnstile, 10/hour per IP, 3/hour per address, the same
+  answer for every address) and `POST /v1/auth/verification-email` (signed in, 5/hour per account). The browser no
+  longer calls the Firebase client SDK's `sendPasswordResetEmail` or `sendEmailVerification`. Changing the address
+  (`verifyBeforeUpdateEmail`) is not used by the app.
+- Firebase's own templates stay as they are and are never used for these two emails. While Resend is not set up the
+  outbox row stays pending, so nothing is sent.
+
+Modes the page handles (the link carries `mode`, `oobCode`, `lang`; Firebase's own links also `continueUrl`): `verifyEmail` and
 `verifyAndChangeEmail` (apply the code, refresh the signed-in session so the "verify your email" card goes away),
 `resetPassword` (shows the email, asks for a new password with the sign-in rules, then "Sign in"), `recoverEmail`
 (restores the old address, suggests a new password). A missing, wrong, used or expired code shows a localised reason
@@ -51,30 +69,18 @@ to the Hindi page. Works signed out; never indexed.
 (`apps/api/src/auth/password-authority.ts`) and then mints a custom token; the API stores no password or hash. So
 `confirmPasswordReset` sets the very password the API later checks, and ends the account's older sessions.
 
-**The console change (do after the page is deployed):**
+`mechdost.com` stays in Authentication → Settings → Authorised domains (step 2 of Production above).
 
-1. Firebase console → `mechdost-prod` → Authentication → Templates.
-2. For each of **Email address verification**, **Password reset**, **Email address change**: pencil icon → "Customize
-   action URL" → `https://mechdost.com/auth/action` → Save. (Optionally set the sender name and reply-to here too.)
-3. `mechdost.com` must be in Authentication → Settings → Authorised domains (step 2 of Production above).
-
-Equivalent Identity Toolkit Admin API call (sets the action URL for all templates at once; field
-`notification.sendEmail.callbackUri` of the project config, v2 `Config` resource; check against the current reference
-before relying on it, it was not run from here):
-
-```
-curl -X PATCH \
-  -H "Authorization: Bearer $(gcloud auth print-access-token)" \
-  -H "x-goog-user-project: <project-id>" -H "Content-Type: application/json" \
-  "https://identitytoolkit.googleapis.com/admin/v2/projects/<project-id>/config?updateMask=notification.sendEmail.callbackUri" \
-  -d '{"notification":{"sendEmail":{"callbackUri":"https://mechdost.com/auth/action"}}}'
-```
-
-Check: sign up with a test email, open the verification email, the link starts with `https://mechdost.com/auth/action`
-and ends on "Email confirmed". Repeat with "Forgot password" by email. Tests: `apps/web/test/email-action.test.ts`
-(unit), `apps/web/e2e/email-action.spec.ts` (states without Firebase, both languages, axe); the Hindi coverage crawl
-includes `/auth/action`. Events (spec 12): `auth_email_action_opened`, `auth_email_verified`,
-`auth_password_reset_done`, `auth_email_action_failed`.
+Check: sign up with a test email, or use "Forgot password" by email; the email comes from `noreply@mechdost.com`, its
+button starts with `https://mechdost.com/auth/action` and ends on "Email confirmed" (or the new-password form).
+Tests: `apps/api/test/auth-emails.test.ts` (endpoints, limits, the link in the sent mail),
+`packages/shared/test/email-action-link.test.ts` and `email-templates.test.ts` (templates, both languages),
+`apps/web/test/auth-email-requests.test.ts` (client calls), `apps/web/test/email-action.test.ts` and
+`apps/web/e2e/email-action.spec.ts` (the page: states without Firebase, both languages, axe); the Hindi coverage
+crawl includes `/auth/action`. The emulator e2e `apps/web/e2e/real-auth.spec.ts` (skipped unless the firebase-mode
+build, emulator and API run; it reads the code the emulator recorded) needs the API's `FIREBASE_AUTH_EMULATOR_HOST`
+set, as before. Events (spec 12): `auth_email_action_requested` (server), `auth_email_action_opened`,
+`auth_email_verified`, `auth_password_reset_done`, `auth_email_action_failed`.
 
 ## Smoke test (no accounts created)
 

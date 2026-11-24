@@ -13,9 +13,12 @@ both must be verified before ordering/booking/partner/staff actions (`docs/decis
 > **2026-11-01 decision:** phone OTP **once at sign-up** (then name, email, password, confirm); afterwards phone **or** email + password through `POST /v1/auth/password` (server-side check, limits, lockout, custom token). Forgot password: phone code or email link. Staff: password + phone code. API accepts `phone` + `custom` tokens only; `ensureUser` refuses to create users without a phone. See spec 01 "Password sign-in" and spec 13 "Encryption".
 
 - **Client (apps/web):** Firebase JS SDK v13 modular. `signInWithPhoneNumber(auth, phone, appVerifier)` with an
-  invisible `RecaptchaVerifier`; confirm with the 6-digit code. Email: after phone sign-in, collect email and call
-  `verifyBeforeUpdateEmail(user, email)`; the user clicks the link; `emailVerified` becomes true on the next
-  token refresh. Send `Authorization: Bearer <idToken>` to the API; refresh with `getIdToken()` (auto) and
+  invisible `RecaptchaVerifier`; confirm with the 6-digit code. Email: after phone sign-in, collect email and link
+  email + password (`linkWithCredential`). **The browser never sends Firebase emails** (decision 2026-11-24: Firebase
+  refuses a custom action URL, `EMAIL_TEMPLATE_UPDATE_NOT_ALLOWED`): the API sends the verification and reset emails
+  itself (`POST /v1/auth/verification-email`, `POST /v1/auth/password-reset-email`; Admin SDK `generate*Link`, outbox,
+  Resend), linking to our `/auth/action` page, which applies the code with `applyActionCode` / `confirmPasswordReset`;
+  `emailVerified` becomes true on the next token refresh. Send `Authorization: Bearer <idToken>` to the API; refresh with `getIdToken()` (auto) and
   `getIdToken(true)` after role changes.
 - **API (apps/api):** `firebase-admin` `getAuth().verifyIdToken(token, checkRevoked)` behind a `TokenVerifier`
   interface (fake in tests). `checkRevoked = true` for sensitive routes (money, admin, partner actions) and

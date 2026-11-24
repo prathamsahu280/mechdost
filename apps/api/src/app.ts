@@ -22,6 +22,7 @@ import { adminSettingsRoutes } from './routes/admin-settings';
 import { adminErrorRoutes } from './routes/admin-errors';
 import { assistantRoutes } from './routes/assistant';
 import { authRoutes } from './routes/auth';
+import { authEmailRoutes } from './routes/auth-emails';
 import { catalogueRoutes } from './routes/catalogue';
 import { searchRoutes } from './routes/search';
 import { adminRefundRoutes } from './routes/admin-refunds';
@@ -107,6 +108,7 @@ export function createApp(deps: AppDeps) {
   v1.use('*', timeout(REQUEST_TIMEOUT_MS));
   v1.use('*', apiRateLimit(deps, new ApiLimitsProvider(() => readApiLimits(deps.db))));
   v1.route('/', authRoutes(deps));
+  v1.route('/', authEmailRoutes(deps, sessions));
   v1.route('/', meRoutes(deps, sessions));
   v1.route('/', businessAccountRoutes(deps, sessions));
   v1.route('/', businessPublicRoutes(deps));
