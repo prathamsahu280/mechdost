@@ -1,6 +1,6 @@
 # Tata Green import status
 
-Run: plan only. Source: tatagreen_batteries scrape (`tatagreen_batteries.csv`, `tatagreen_vehicle_fitment.csv`). One line per source row is in `tatagreen-import-status.csv`.
+Run: real run. Source: tatagreen_batteries scrape (`tatagreen_batteries.csv`, `tatagreen_vehicle_fitment.csv`). One line per source row is in `tatagreen-import-status.csv`.
 
 Source rows: 107. Products planned: 107. Fitment lines in the plan: 1349.
 
@@ -59,6 +59,12 @@ Source rows: 107. Products planned: 107. Fitment lines in the plan: 1349.
 | TGX              | 1        |
 | Velocity         | 1        |
 
+### Result of this run
+
+|         | Products |
+| ------- | -------- |
+| created | 107      |
+
 ### Price on request (no MRP in the source): 0
 
 ### Products whose main picture is shared with other products: 12
@@ -104,6 +110,6 @@ Tata Green lists some vehicle batteries on a different page than the product nam
 - Tata Green TGX 400L (tata-green-tgx-400l): car-suv-batteries
 - Tata Green TG800R (tata-green-tg800r): cv-batteries
 
-### Old Tata Green products archived
+### Old Tata Green products archived by this run: 15
 
-Filled in by the real run (`tatagreen-import-archived.csv`).
+Listed in `tatagreen-import-archived.csv`. Archived, never deleted (old orders and carts point at them).
