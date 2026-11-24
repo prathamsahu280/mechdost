@@ -223,7 +223,7 @@ export async function prepare(page: Page, c: AuditCase): Promise<string[]> {
       await page.locator('[role="dialog"][aria-modal="true"]').waitFor({ state: 'visible' });
       if (c.code === 'CHR-SEARCH-ROADSIDE') {
         // A breakdown word puts "Roadside help" on top of the suggestions (spec 22, 2026-11-24).
-        await page.getByRole('combobox').fill('puncture');
+        await page.getByRole('combobox').fill(c.locale === 'hi' ? 'पंक्चर' : 'puncture');
         await page.getByRole('option').first().waitFor({ state: 'visible' });
       }
     } else if (c.code === 'CHR-ASSIST') {

@@ -83,13 +83,11 @@ describe('company details', () => {
 describe('home layout', () => {
   const ok = { ...DEFAULT_HOME_LAYOUT, featured: null };
 
-  it('accepts the default and appends any section the order leaves out', () => {
+  it('accepts the default and puts any section the order leaves out at its default place', () => {
     const r = cleanHomeLayout({ ...ok, order: ['faq', 'trust'] });
-    expect(r.ok && r.layout.order).toEqual([
-      'faq',
-      'trust',
-      ...HOME_SECTIONS.filter((s) => s !== 'faq' && s !== 'trust'),
-    ]);
+    expect(r.ok && new Set(r.layout.order).size).toBe(HOME_SECTIONS.length);
+    expect(r.ok && r.layout.order[0]).toBe('roadside');
+    expect(r.ok && r.layout.order.indexOf('faq')).toBeLessThan(r.ok ? r.layout.order.indexOf('trust') : 0);
   });
 
   it('refuses unknown or repeated sections, bad tile counts and non-emoji text', () => {
@@ -117,7 +115,8 @@ describe('home layout', () => {
 
   it('renders visible sections in order and the default six tiles until chosen', () => {
     const r = cleanHomeLayout({ ...ok, order: ['faq', 'trust'], hidden: ['trust'] });
-    expect(r.ok && visibleSections(r.layout)[0]).toBe('faq');
+    expect(r.ok && visibleSections(r.layout)[0]).toBe('roadside');
+    expect(r.ok && visibleSections(r.layout).indexOf('faq')).toBeLessThan(3);
     expect(r.ok && visibleSections(r.layout)).not.toContain('trust');
     expect(featuredCategories(DEFAULT_HOME_LAYOUT)).toEqual(DEFAULT_FEATURED);
   });

@@ -27,7 +27,7 @@ export function RoadsideBand({ alwaysOpen }: { alwaysOpen: boolean }) {
           <div className="min-w-0 flex-1">
             <h2
               id="roadside-band-title"
-              className="font-heading text-2xl font-extrabold tracking-[-0.02em] text-ink"
+              className="font-heading text-2xl font-extrabold tracking-[-0.02em] text-balance text-ink"
             >
               {t('promoTitle')}
             </h2>
@@ -63,7 +63,7 @@ export function RoadsideCard({
         <Siren aria-hidden="true" className="size-6" strokeWidth={1.9} />
       </span>
       <div className="min-w-0 flex-1">
-        <h2 id={`${track}-title`} className="font-heading text-lg font-extrabold text-ink">
+        <h2 id={`${track}-title`} className="font-heading text-lg font-extrabold text-balance text-ink">
           {t(title)}
         </h2>
         <p className="mt-0.5 text-sm text-ink">{t('workshopsCardBody')}</p>
@@ -71,7 +71,7 @@ export function RoadsideCard({
       <LocalLink
         href="/roadside"
         data-track={track}
-        className="inline-flex min-h-11 items-center justify-center self-start rounded-button border-2 border-accent-button px-5 text-sm font-bold text-accent-soft-text transition-colors duration-200 hover:bg-accent-button hover:text-white tab:self-center"
+        className="inline-flex min-h-11 items-center justify-center self-start rounded-button border-2 border-accent-button px-5 text-sm font-bold text-accent-soft-text transition-colors duration-200 hover:bg-accent-button hover:text-white focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus tab:self-center"
       >
         {t('workshopsLinkCta')}
       </LocalLink>

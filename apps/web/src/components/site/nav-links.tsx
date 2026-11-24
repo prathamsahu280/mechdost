@@ -40,7 +40,7 @@ export function NavLinks({ label, items }: { label: string; items: readonly NavI
                 aria-current={active ? 'page' : undefined}
                 title={item.label}
                 data-track={`nav_${item.key}`}
-                className={`relative flex min-h-10 min-w-10 items-center justify-center gap-[7px] rounded-[10px] px-2.5 text-[13.5px] font-bold whitespace-nowrap transition-[background-color,box-shadow,color] duration-200 min-[1440px]:px-[13px] ${
+                className={`relative flex min-h-10 min-w-10 items-center justify-center gap-[7px] rounded-[10px] px-2.5 text-[13.5px] font-bold whitespace-nowrap transition-[background-color,box-shadow,color] duration-200 ${
                   active
                     ? 'nav-chip-active bg-chip text-ink'
                     : item.emphasis

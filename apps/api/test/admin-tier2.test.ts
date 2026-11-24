@@ -134,7 +134,8 @@ describe('home layout API', () => {
     const pub = await ctx.app.request('/v1/site/home-layout?city=RPR');
     expect(pub.headers.get('cache-control')).toContain('s-maxage=300');
     const body = (await pub.json()) as { layout: { order: string[]; hidden: string[]; mapDefault: string } };
-    expect(body.layout.order.slice(0, 2)).toEqual(['faq', 'trust']);
+    expect(body.layout.order[0]).toBe('roadside'); // a section the saved list lacks goes to its default place
+    expect(body.layout.order.indexOf('faq')).toBeLessThan(body.layout.order.indexOf('trust'));
     expect(body.layout.hidden).toEqual(['partners']);
     expect(body.layout.mapDefault).toBe('map');
 
@@ -173,7 +174,7 @@ describe('home layout API', () => {
     const reset = (await (await ctx.app.request('/v1/site/home-layout')).json()) as {
       layout: { order: string[]; mapDefault: string };
     };
-    expect(reset.layout.order[0]).toBe('audiences');
+    expect(reset.layout.order[0]).toBe('roadside');
     expect(reset.layout.mapDefault).toBe('satellite');
   });
 

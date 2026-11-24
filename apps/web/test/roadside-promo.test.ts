@@ -19,7 +19,9 @@ describe('roadside promotion', () => {
     expect(src('app/[locale]/layout.tsx')).toContain('roadside.enabled');
     expect(src('app/[locale]/page.tsx')).toMatch(/roadside\.enabled \? <RoadsideBand/);
     expect(src('app/[locale]/workshops/page.tsx')).toMatch(/roadside\.enabled \? <RoadsideCard/);
-    expect(src('app/[locale]/shop/page.tsx')).toMatch(/matchesRoadsideIntent\(initial\.query\)/);
+    expect(src('app/[locale]/shop/page.tsx')).toMatch(/roadside\.enabled \? <RoadsideCard/);
+    // The card follows the words on screen (typing without a page load), not only the URL the server rendered.
+    expect(src('components/catalogue/shop-browser.tsx')).toMatch(/matchesRoadsideIntent\(state\.query\)/);
     expect(src('components/site/footer.tsx')).toMatch(/roadside \? \[\{ href: '\/roadside'/);
     expect(src('components/site/header.tsx')).toMatch(/roadside\s*\?\s*\{/);
   });

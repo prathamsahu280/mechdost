@@ -131,7 +131,7 @@ describe('home layout', () => {
   };
 
   it('defaults, saves with compare-and-set, audits, and a city override wins then falls back after reset', async () => {
-    expect((await getHomeLayout(t(), null)).order[0]).toBe('audiences');
+    expect((await getHomeLayout(t(), null)).order[0]).toBe('roadside');
     const saved = await saveHomeLayout(t(), {
       cityId: null,
       layout,
@@ -139,7 +139,8 @@ describe('home layout', () => {
       staffUserId: staff,
     });
     const live = await getHomeLayout(t(), null);
-    expect(live.order.slice(0, 2)).toEqual(['faq', 'trust']);
+    expect(live.order[0]).toBe('roadside');
+    expect(live.order.indexOf('faq')).toBeLessThan(live.order.indexOf('trust'));
     expect(live.hidden).toEqual(['partners']);
     expect(live.mapDefault).toBe('map');
     await expect(

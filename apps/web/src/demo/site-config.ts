@@ -6,6 +6,7 @@
  */
 import { COIN_RULE_LIMITS, DEFAULT_COIN_RULES, type CoinRules } from '@mechdost/shared/coins';
 import { CONTENT_KEYS, cleanContentText, contentMax, type ContentKey } from '@mechdost/shared/content';
+import { completeOrder } from '@mechdost/shared/site-layout';
 import { useSyncExternalStore } from 'react';
 import type { MapMode } from '@/lib/map-styles';
 import { CATEGORY_KEYS, type CategoryKey } from './categories';
@@ -151,8 +152,8 @@ function parse(raw: string | null): SiteConfig {
 
   const layout = isRecord(data.layout) ? data.layout : {};
   const order = Array.isArray(layout.order) ? layout.order.filter(isSection) : [];
-  // Every section exactly once: keep the stored order, append any section the stored list is missing.
-  const fullOrder = [...new Set([...order, ...HOME_SECTIONS])];
+  // Every section exactly once: keep the stored order, put any section the stored list is missing at its default place.
+  const fullOrder = completeOrder(order);
   const hidden = Array.isArray(layout.hidden) ? [...new Set(layout.hidden.filter(isSection))] : [];
   const mapDefault: MapMode = layout.mapDefault === 'map' ? 'map' : 'satellite';
 
@@ -322,7 +323,7 @@ export function saveLayout(
   actor: string,
   layout: Pick<SiteConfig['layout'], 'order' | 'hidden'>,
 ): boolean {
-  const order = [...new Set([...layout.order.filter(isSection), ...HOME_SECTIONS])];
+  const order = completeOrder(layout.order.filter(isSection));
   const hidden = [...new Set(layout.hidden.filter(isSection))];
   return commit(expectedVersion, { actor, area: 'layout', action: 'save', fields: hidden }, (c) => ({
     ...without(c),

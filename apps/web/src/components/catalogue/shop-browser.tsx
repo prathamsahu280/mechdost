@@ -4,6 +4,7 @@ import { appendFresh, withPages } from '@/lib/catalogue/load-more';
 import { useCategoryEmoji } from '@/demo/site-config';
 import { CATEGORY_EMOJI, UI_EMOJI } from '@/lib/emoji';
 import { MessageCircle } from 'lucide-react';
+import { matchesRoadsideIntent } from '@mechdost/shared/roadside-intent';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -118,6 +119,7 @@ export function ShopBrowser({
   sourcingMessage,
   whatsappNote,
   server,
+  roadside,
 }: {
   basePath: string;
   initial: State;
@@ -125,6 +127,8 @@ export function ShopBrowser({
   sourcingMessage: string;
   whatsappNote: string;
   server?: ServerListing;
+  /** The roadside card (server-rendered), only passed where the city has roadside on; shown for breakdown searches. */
+  roadside?: ReactNode;
 }) {
   const c = useTranslations('catalogue');
   const cat = useTranslations('categories');
@@ -525,6 +529,9 @@ export function ShopBrowser({
           })}
         </ul>
       </nav>
+
+      {/* A search that means "stuck on the road" shows the roadside card above the results (spec 22, 2026-11-24). */}
+      {roadside && matchesRoadsideIntent(state.query) ? <div className="mt-6">{roadside}</div> : null}
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
         <p role="status" className="text-sm font-bold text-ink">

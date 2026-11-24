@@ -61,7 +61,7 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | CHR-ACCOUNT-MENU      | Chrome                                                                     | Account menu behind the header avatar (v4): open, every row, dark-mode switch, language, Sign out in the error colour; portal roles get their portal link                                                                                                                       | pairwise | 16       | 0       |
 | CHR-SEARCH            | Chrome                                                                     | Search palette behind the header search pill (v4): popular searches and categories, close button, Escape, focus trap                                                                                                                                                            | pairwise | 16       | 0       |
 | CHR-SEARCH-ROADSIDE   | Chrome                                                                     | Search palette with "puncture" typed: the "Roadside help" suggestion on top (spec 22, 2026-11-24), then the usual rows                                                                                                                                                          | pairwise | 16       | 0       |
-| CHR-HEADER-ROADSIDE   | Chrome                                                                     | Header "Roadside help" item (spec 22, 2026-11-24): the siren icon in the accent colour next to the other destinations, no wrapping at 1024, 1280 and 1440 px; current on the roadside page                                                                                      | cross    | 16       | 1       |
+| CHR-HEADER-ROADSIDE   | Chrome                                                                     | Header "Roadside help" item (spec 22, 2026-11-24): the siren icon in the accent colour next to the other destinations, no wrapping at 1024, 1280 and 1440 px; current on the roadside page                                                                                      | cross    | 10       | 1       |
 | CHR-TABBAR-5          | Chrome                                                                     | Floating dock with five tabs (spec 22, 2026-11-24): the SOS tab last in the accent colour, labels on one line down to 320 px, current on the roadside page                                                                                                                      | cross    | 10       | 1       |
 | CHR-TABBAR            | Chrome                                                                     | Floating dock (v4, under 1024 px)                                                                                                                                                                                                                                               | pairwise | 20       | 5       |
 | CHR-FOOTER            | Chrome                                                                     | Footer (help, columns, privacy choices, theme)                                                                                                                                                                                                                                  | pairwise | 16       | 0       |
@@ -204,7 +204,7 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | API-ADM-EXPORTS       | Admin → Exports, real sign-in                                              | CSV exports: the form (dataset, city, dates), customers with masked or open contacts, done, empty file, too many rows, expired link, range over 180 days, nothing allowed, load error                                                                                           | pairwise | 80       | 0       |
 | API-NAV-ADMIN         | Navigation, real sign-in                                                   | Admin section bar with every real-mode section (Analytics, Refunds, Errors included): current item, scroll, walk                                                                                                                                                                | cross    | 184      | 0       |
 | API-NAV-ACCOUNT       | Navigation, real sign-in                                                   | Account section bar in a real-sign-in build: current item, scroll, walk                                                                                                                                                                                                         | cross    | 104      | 0       |
-| **Total**             |                                                                            |                                                                                                                                                                                                                                                                                 |          | **4782** | **103** |
+| **Total**             |                                                                            |                                                                                                                                                                                                                                                                                 |          | **4776** | **103** |
 
 ## Chrome
 
@@ -304,24 +304,18 @@ Pairwise (all pairs of values); 16 states; scope `[role="dialog"][aria-modal="tr
 
 ### CHR-HEADER-ROADSIDE — Header "Roadside help" item (spec 22, 2026-11-24): the siren icon in the accent colour next to the other destinations, no wrapping at 1024, 1280 and 1440 px; current on the roadside page
 
-Full cross of the high-risk dimensions, the rest pairwise; 16 states; scope `header.sticky nav`.
+Full cross of the high-risk dimensions, the rest pairwise; 10 states; scope `header.sticky nav`.
 
-- [ ] CHR-HEADER-ROADSIDE-001 · 320px · light · en · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console axe
-- [ ] CHR-HEADER-ROADSIDE-002 · 390px · dark · hi · signed out · world=empty · /roadside · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] CHR-HEADER-ROADSIDE-003 · 480px · light · hi · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] CHR-HEADER-ROADSIDE-004 · 768px · dark · en · signed out · world=empty · /roadside · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] CHR-HEADER-ROADSIDE-005 · 1024px · light · en · signed out · world=empty · /roadside · asserts: present inside overlap covered clipped tap hscroll focus console axe
-- [ ] CHR-HEADER-ROADSIDE-006 · 1280px · dark · hi · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] CHR-HEADER-ROADSIDE-007 · 1440px · light · en · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] CHR-HEADER-ROADSIDE-008 · 1920px · dark · hi · signed out · world=empty · /roadside · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] CHR-HEADER-ROADSIDE-009 · 320px · dark · hi · signed out · world=empty · /roadside · asserts: present inside overlap covered clipped tap hscroll focus console hindi axe
-- [ ] CHR-HEADER-ROADSIDE-010 · 390px · light · en · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] CHR-HEADER-ROADSIDE-011 · 480px · dark · en · signed out · world=empty · /roadside · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] CHR-HEADER-ROADSIDE-012 · 768px · light · hi · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] CHR-HEADER-ROADSIDE-013 · 1024px · dark · hi · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console hindi axe · core
-- [ ] CHR-HEADER-ROADSIDE-014 · 1280px · light · en · signed out · world=empty · /roadside · asserts: present inside overlap covered clipped tap hscroll focus console
-- [ ] CHR-HEADER-ROADSIDE-015 · 1440px · dark · hi · signed out · world=empty · /roadside · asserts: present inside overlap covered clipped tap hscroll focus console hindi
-- [ ] CHR-HEADER-ROADSIDE-016 · 1920px · light · en · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] CHR-HEADER-ROADSIDE-001 · 1024px · light · en · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] CHR-HEADER-ROADSIDE-002 · 1280px · dark · hi · signed out · world=empty · /roadside · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CHR-HEADER-ROADSIDE-003 · 1440px · light · hi · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CHR-HEADER-ROADSIDE-004 · 1920px · dark · en · signed out · world=empty · /roadside · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] CHR-HEADER-ROADSIDE-005 · 1024px · dark · hi · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console hindi axe · core
+- [ ] CHR-HEADER-ROADSIDE-006 · 1280px · light · en · signed out · world=empty · /roadside · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] CHR-HEADER-ROADSIDE-007 · 1440px · dark · en · signed out · world=empty · /roadside · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] CHR-HEADER-ROADSIDE-008 · 1920px · light · hi · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] CHR-HEADER-ROADSIDE-009 · 1024px · light · en · signed out · world=empty · /roadside · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] CHR-HEADER-ROADSIDE-010 · 1280px · dark · hi · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console hindi
 
 ### CHR-TABBAR-5 — Floating dock with five tabs (spec 22, 2026-11-24): the SOS tab last in the accent colour, labels on one line down to 320 px, current on the roadside page
 

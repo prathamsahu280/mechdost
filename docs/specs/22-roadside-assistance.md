@@ -145,7 +145,7 @@ The request form carries `data-launcher-avoid-phone`: under 1024 px the floating
 
 ## Where it shows (user, 2026-11-24: "really hard to find ... highlight it way more")
 
-Roadside help was a small text link at the bottom of `/workshops`. It is now promoted in seven places, **all gated by one
+Roadside help was a small text link at the bottom of `/workshops`. It is now promoted in six places, **all gated by one
 answer: roadside is switched on in the visitor's city** (`publishedRoadside()` in `apps/web/src/lib/site-config-content.ts`;
 today the launch city RPR). A city with roadside off shows none of them, so there is never a dead end. Real mode reads the
 new public `GET /v1/roadside/city?city=RPR` (`{ enabled, alwaysOpen }`, IP limited like availability, `Cache-Control: public,

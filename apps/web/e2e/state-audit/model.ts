@@ -499,7 +499,12 @@ export const COMPONENTS: readonly ComponentDef[] = [
     scope: 'header.sticky nav',
     strategy: 'cross',
     cross: ['width'],
-    params: [width, theme, locale, { name: 'route', values: ['/', '/roadside'] }],
+    params: [
+      { name: 'width', values: [1024, 1280, 1440, 1920] },
+      theme,
+      locale,
+      { name: 'route', values: ['/', '/roadside'] },
+    ],
     sweep: 12,
     core: coreAt([1024], (r) => r.locale === 'hi' && r.theme === 'dark'),
   },

@@ -81,8 +81,23 @@ export function isEmoji(value: string): boolean {
   );
 }
 
-/** Every section exactly once: the given order first, then any section it left out. */
-const fullOrder = (order: HomeSection[]): HomeSection[] => [...new Set([...order, ...HOME_SECTIONS])];
+/**
+ * Every section exactly once: the given order, with any section it left out put back at its default place (right after
+ * the section that precedes it in `HOME_SECTIONS`, or first). A layout saved before a section existed (roadside,
+ * 2026-11-24) therefore gets the new section where the default puts it, not at the end of the page.
+ */
+export function completeOrder(order: readonly HomeSection[]): HomeSection[] {
+  const out = [...new Set(order)];
+  HOME_SECTIONS.forEach((section, i) => {
+    if (out.includes(section)) return;
+    const before = HOME_SECTIONS.slice(0, i)
+      .reverse()
+      .find((s) => out.includes(s));
+    out.splice(before === undefined ? 0 : out.indexOf(before) + 1, 0, section);
+  });
+  return out;
+}
+const fullOrder = completeOrder;
 
 /** Check a layout from an editor. Strict: unknown or repeated entries are refused, not dropped. */
 export function cleanHomeLayout(

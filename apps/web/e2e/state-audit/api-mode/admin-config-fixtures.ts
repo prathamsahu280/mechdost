@@ -144,6 +144,7 @@ export function layoutMocks(c: AuditCase): Mock[] {
               order: custom
                 ? [
                     'faq',
+                    'roadside',
                     'audiences',
                     'trust',
                     'categories',
@@ -154,6 +155,7 @@ export function layoutMocks(c: AuditCase): Mock[] {
                     'partners',
                   ]
                 : [
+                    'roadside',
                     'audiences',
                     'trust',
                     'categories',

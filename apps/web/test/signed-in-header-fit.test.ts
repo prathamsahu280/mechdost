@@ -50,7 +50,7 @@ describe('signed-in header fits at every width', () => {
 
   it('the desktop nav and search shrink to icons between 1024 and 1279 px', () => {
     expect(nav).toContain('sr-only min-[1440px]:not-sr-only');
-    expect(nav).toContain('min-[1440px]:px-[13px]');
+    expect(nav).toContain('min-[1440px]:whitespace-nowrap'); // labels never wrap (spec 22, six items)
     expect(search).toContain('sr-only min-[1440px]:not-sr-only');
     expect(search).toContain('min-[1440px]:min-w-[190px]');
   });
