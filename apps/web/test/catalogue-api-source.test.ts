@@ -21,6 +21,7 @@ const card: CatalogueCard = {
   rating: null,
   mrpFromPaise: 47_500,
   mrpVaries: false,
+  sizeCount: 1,
   offer: {
     sku: 'CAS-0900-B',
     pricePaise: 44_000,
@@ -44,9 +45,10 @@ const product: CatalogueProduct = {
   partNumbers: [],
   photos: [],
   variants: [
-    { sku: 'CAS-0900-A', options: {}, mrpPaise: 47_500, netQuantity: null, offer: null },
+    { sku: 'CAS-0900-A', label: '900 ml', options: {}, mrpPaise: 47_500, netQuantity: null, offer: null },
     {
       sku: 'CAS-0900-B',
+      label: '900 ml',
       options: {},
       mrpPaise: 47_500,
       netQuantity: { qty: 900, unit: 'ml' },
@@ -208,7 +210,7 @@ describe('catalogue API source (plan 2026-11-10 task 3)', () => {
 });
 
 describe('Part reference (live audit 2026-11-22 item 11)', () => {
-  const one = { sku: 'X-1-L', options: {}, mrpPaise: 100, netQuantity: null, offer: null };
+  const one = { sku: 'X-1-L', label: '1 L', options: {}, mrpPaise: 100, netQuantity: null, offer: null };
   const two = { ...one, sku: 'X-6-L' };
 
   it('is the SKU of a single-pack product', () => {
@@ -285,5 +287,63 @@ describe('MRP without a shop offer (spec 02)', () => {
     const ld = productLd(view, '/shop/x', null);
     expect(ld).toMatchObject({ '@type': 'Product', name: 'Castrol Activ 4T 20W40 900 ml' });
     expect(ld).not.toHaveProperty('offers');
+  });
+});
+
+describe('Sizes as variants (user 2026-11-24)', () => {
+  const size = (sku: string, label: string, mrpPaise: number | null, price: number | null) => ({
+    sku,
+    label,
+    options: {},
+    mrpPaise,
+    netQuantity: null,
+    offer:
+      price === null
+        ? null
+        : {
+            sku,
+            pricePaise: price,
+            mrpPaise: mrpPaise ?? price,
+            netQuantity: null,
+            shippingPaise: 0,
+            leadDays: 2,
+            seller: 'Sharma Auto Parts',
+          },
+  });
+  const tyre = {
+    ...product,
+    sizeCount: 3,
+    variants: [
+      size('T-A', '145/70 R12 69T TL', 300_000, 280_000),
+      size('T-B', '155/65 R13 73T TL', 350_000, 330_000),
+      size('T-C', '165/80 R14 85T TL', null, null),
+    ],
+  };
+
+  it('carries every size with its own price, stock and price-on-request state', () => {
+    const v = apiProduct(tyre, 'en').variants;
+    expect(v.map((x) => x.sku)).toEqual(['T-A', 'T-B', 'T-C']);
+    expect(v[0]).toMatchObject({ label: '145/70 R12 69T TL', pricePaise: 280_000, inStock: true });
+    expect(v[2]).toMatchObject({ pricePaise: null, mrpPaise: null, priceOnRequest: true, inStock: false });
+  });
+
+  it('opens on the lowest offered price and states it as the product price', () => {
+    const rev = { ...tyre, variants: [tyre.variants[1], tyre.variants[0], tyre.variants[2]] } as typeof tyre;
+    const view = apiProduct(rev, 'en');
+    expect(view.defaultSku).toBe('T-A');
+    expect(view.sku).toBe('T-A');
+    expect(view.price?.pricePaise).toBe(280_000);
+  });
+
+  it('a size without an offer but with an MRP is unavailable, not price on request', () => {
+    const v = apiProduct({ ...tyre, variants: [size('U-1', '1 L', 10_000, null)] }, 'en').variants[0];
+    expect(v).toMatchObject({ inStock: false, priceOnRequest: false, mrpPaise: 10_000 });
+  });
+
+  it('cards say "from" with the size count only when there are several sizes', () => {
+    const c = apiCard({ ...card, sizeCount: 3 });
+    expect(c.sizes).toEqual({ count: 3, fromPaise: 44_000 });
+    expect(apiCard(card).sizes).toBeNull();
+    expect(apiCard({ ...card, sizeCount: 3, offer: null }).sizes).toEqual({ count: 3, fromPaise: null });
   });
 });

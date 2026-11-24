@@ -62,6 +62,7 @@ export function auditCard(i: number, locale: AuditLocale): CatalogueCard {
     category: { slug: 'lubricants', name: t.category },
     mrpFromPaise: null,
     mrpVaries: false,
+    sizeCount: 1,
     specSummary: t.spec,
     highlights: [...t.highlights],
     vehicleTypes: ['2W'],
@@ -98,6 +99,7 @@ export function auditProduct(i: number, locale: AuditLocale): CatalogueProduct {
     category: { slug: 'lubricants', name: t.category },
     mrpFromPaise: null,
     mrpVaries: false,
+    sizeCount: 1,
     specSummary: t.spec,
     highlights: [...t.highlights],
     vehicleTypes: ['2W'],
@@ -115,6 +117,7 @@ export function auditProduct(i: number, locale: AuditLocale): CatalogueProduct {
     variants: [
       {
         sku: `AUDIT-${String(i + 1)}`,
+        label: '1 pack',
         options: {},
         mrpPaise: offer(i).mrpPaise,
         netQuantity: offer(i).netQuantity,

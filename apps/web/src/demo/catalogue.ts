@@ -41,6 +41,19 @@ export interface DemoProduct {
   leadDays: number;
   highlights: string[];
   popular?: boolean;
+  /**
+   * Several sizes of one product (user 2026-11-24, "like 500 ml and 1 L"): the product's own `sku`/price is the
+   * default size and must be one of them. Size labels are sizes, so one text serves both languages.
+   */
+  sizes?: readonly DemoSize[];
+}
+
+export interface DemoSize {
+  sku: string;
+  label: string;
+  pricePaise: number;
+  mrpPaise?: number;
+  availability: Availability;
 }
 
 export const DEMO_PRODUCTS: readonly DemoProduct[] = [
@@ -140,10 +153,33 @@ export const DEMO_PRODUCTS: readonly DemoProduct[] = [
   {
     slug: 'car-tyre-185-65-r15',
     sku: 'TYR-PC-1856515',
-    name: 'Passenger car tyre 185/65 R15',
+    name: 'Milaze X3 passenger car tyre',
     brand: 'CEAT',
     category: 'tyres',
-    spec: '185/65 R15 · 88H · tubeless',
+    spec: 'Tubeless radial · choose your size',
+    sizes: [
+      {
+        sku: 'TYR-PC-1756514',
+        label: '175/65 R14 82T TL',
+        pricePaise: 365_000,
+        mrpPaise: 395_000,
+        availability: 'in_stock',
+      },
+      {
+        sku: 'TYR-PC-1856515',
+        label: '185/65 R15 88H TL',
+        pricePaise: 420_000,
+        mrpPaise: 455_000,
+        availability: 'low_stock',
+      },
+      {
+        sku: 'TYR-PC-1955516',
+        label: '195/55 R16 87V TL',
+        pricePaise: 560_000,
+        mrpPaise: 598_000,
+        availability: 'on_request',
+      },
+    ],
     compatibility: 'Dzire, Amaze, Xcent and similar (check size)',
     fits: '4W',
     pricePaise: 420_000,

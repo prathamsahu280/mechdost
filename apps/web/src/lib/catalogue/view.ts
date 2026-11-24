@@ -26,13 +26,36 @@ export interface CardView {
   pack: NetQuantity | null;
   availability: 'in_stock' | 'low_stock' | 'on_request';
   leadDays: number | null;
+  /** Several sizes: the card says "from ₹X · N sizes" (X = lowest offered price); null for a single size. */
+  sizes: { count: number; fromPaise: number | null } | null;
   highlights: string[];
   rating: { avg: number; count: number } | null;
   popular: boolean;
   photo: CataloguePhoto | null;
 }
 
+/**
+ * One size of a product (user 2026-11-24: sizes are variants, "like 500 ml and 1 L"). `priceOnRequest` = no MRP
+ * (never shown a price, never added to the cart); `inStock` = a verified shop offers it now (else the size is
+ * shown as unavailable but stays selectable, so the customer sees why).
+ */
+export interface VariantView {
+  sku: string;
+  label: string;
+  pricePaise: number | null;
+  mrpPaise: number | null;
+  priceOnRequest: boolean;
+  inStock: boolean;
+  leadDays: number | null;
+  shippingPaise: number | null;
+  pack: NetQuantity | null;
+}
+
 export interface ProductView extends CardView {
+  /** Every active size, in the order shown; one entry = a single-size product (no picker). */
+  variants: readonly VariantView[];
+  /** The size the page opens on (lowest offered price, else the first); `sku`, `price` and `availability` are its. */
+  defaultSku: string | null;
   /** All approved photos in order (the first is `photo`); absent in demo data. */
   photos?: readonly CataloguePhoto[];
   description: string | null;

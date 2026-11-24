@@ -1,5 +1,6 @@
 import { sql, type SQL } from 'drizzle-orm';
 import { adminPriceJoins, CUSTOMER_PRICE } from './admin-price-sql';
+import { variantLabel } from '@mechdost/shared/variants';
 import { VEHICLE_TYPES, isVehicleType, type VehicleType } from '@mechdost/shared/vehicles';
 import {
   attributeDefs,
@@ -73,6 +74,8 @@ export interface CatalogueCard {
   mrpFromPaise: number | null;
   /** True when the packs have different MRPs ("MRP from"). */
   mrpVaries: boolean;
+  /** Active sizes (variants); more than one means the card says "from ₹X · N sizes" (user 2026-11-24). */
+  sizeCount: number;
   offer: CatalogueOffer | null;
   rating: { avg: number; count: number } | null;
   photo: CataloguePhoto | null;
@@ -203,6 +206,7 @@ interface CardRow {
   mrp: unknown;
   mrp_from: unknown;
   mrp_varies: unknown;
+  size_count: unknown;
   net_qty: unknown;
   net_unit: string | null;
   shipping: unknown;
@@ -232,6 +236,7 @@ function toCard(r: CardRow, locale: CatalogueLocale): CatalogueCard {
     vehicleTypes: vehicleTypesOf(r.vehicle_types),
     mrpFromPaise: numOrNull(r.mrp_from),
     mrpVaries: r.mrp_varies === true,
+    sizeCount: Math.max(1, num(r.size_count ?? 1)),
     offer:
       price === null
         ? null
@@ -362,6 +367,7 @@ export async function listCatalogue(db: Tx, query: CatalogueQuery): Promise<Cata
         p.spec_summary, p.spec_summary_hi, p.highlights, p.highlights_hi, p.vehicle_types,
         (select min(mv.mrp_paise) from product_variants mv where mv.product_id = p.id and mv.status = 'active') as mrp_from,
         (select count(distinct mv.mrp_paise) > 1 from product_variants mv where mv.product_id = p.id and mv.status = 'active') as mrp_varies,
+        (select count(*) from product_variants sv where sv.product_id = p.id and sv.status = 'active') as size_count,
         o.price, o.sku, o.mrp, o.net_qty, o.net_unit, o.shipping, o.lead_days, ${k.expr} as sort_key
       from products p
       join brands b on b.id = p.brand_id
@@ -474,6 +480,7 @@ export async function getCatalogueProduct(
           p.description, p.description_hi, p.compatibility, p.compatibility_hi, p.spec, p.country_of_origin, p.warranty, p.gst_rate_bp,
           (select min(mv.mrp_paise) from product_variants mv where mv.product_id = p.id and mv.status = 'active') as mrp_from,
           (select count(distinct mv.mrp_paise) > 1 from product_variants mv where mv.product_id = p.id and mv.status = 'active') as mrp_varies,
+        (select count(*) from product_variants sv where sv.product_id = p.id and sv.status = 'active') as size_count,
           null::bigint as price, null::text as sku, null::bigint as mrp, null::int as net_qty, null::text as net_unit,
           null::bigint as shipping, null::int as lead_days, pc.slug as parent_category_slug,
           '' as sort_key_text
@@ -541,6 +548,7 @@ export async function getCatalogueProduct(
       const pack = netQuantityOf(v.pack_qty, v.pack_unit);
       return {
         sku: v.sku,
+        label: variantLabel(v.options),
         options: v.options,
         mrpPaise: numOrNull(v.mrp_paise),
         netQuantity: pack,
