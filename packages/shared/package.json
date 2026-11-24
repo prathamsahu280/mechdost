@@ -38,6 +38,7 @@
     "./company": "./src/company.ts",
     "./site-layout": "./src/site-layout.ts",
     "./auth": "./src/auth.ts",
+    "./email-action-link": "./src/email-action-link.ts",
     "./catalogue": "./src/catalogue.ts",
     "./catalogue-hindi": "./src/catalogue-hindi.ts",
     "./catalogue-groups": "./src/catalogue-groups.ts",

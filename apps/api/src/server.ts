@@ -7,6 +7,7 @@ import { createDb, keepPoolWarm } from '@mechdost/db';
 import { loadKeyring, type Keyring } from '@mechdost/db/crypto';
 import { createApp } from './app';
 import { createAnthropicProvider } from './assistant/provider';
+import { createFirebaseEmailActionLinks } from './auth/email-actions';
 import { createFirebaseVerifier } from './auth/firebase-verifier';
 import { createFirebasePasswordAuthority } from './auth/password-authority';
 import { createTurnstileVerifier } from './auth/turnstile';
@@ -79,6 +80,10 @@ const app = createApp({
         ...(config.authEmulatorHost ? { emulatorHost: config.authEmulatorHost } : {}),
       })
     : null,
+  emailActions: createFirebaseEmailActionLinks({
+    projectId: config.firebaseProjectId,
+    keyFile: config.firebaseKeyFile,
+  }),
   turnstile: config.turnstileSecret ? createTurnstileVerifier(config.turnstileSecret) : null,
   razorpay: config.razorpay ? httpRazorpay(config.razorpay.keyId, config.razorpay.keySecret) : null,
   sentryIssues: config.sentryIssues ? createSentryIssuesClient(config.sentryIssues) : null,

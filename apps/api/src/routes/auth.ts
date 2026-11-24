@@ -62,7 +62,7 @@ const route = createRoute({
   },
 });
 
-const unavailable = () =>
+export const unavailable = () =>
   new ApiError(503, 'AUTH_UNAVAILABLE', 'Sign-in is unavailable right now — please try again shortly');
 
 /** Rate-limit store errors on sign-in rules mean "refuse", never "allow" (Q18). */
@@ -74,7 +74,7 @@ const STAFF_CODE_ONCE: RateRule = {
   failClosed: true,
 };
 
-async function closed<T>(f: () => Promise<T>): Promise<T> {
+export async function closed<T>(f: () => Promise<T>): Promise<T> {
   try {
     return await f();
   } catch (err) {
@@ -84,7 +84,7 @@ async function closed<T>(f: () => Promise<T>): Promise<T> {
 }
 
 /** Keys and audit rows never hold the typed phone/email: a hash for keys, a truncated IP for the audit. */
-const keyOf = (s: string) => createHash('sha256').update(s).digest('hex');
+export const keyOf = (s: string) => createHash('sha256').update(s).digest('hex');
 function truncateIp(ip: string): string | null {
   if (/^\d{1,3}(\.\d{1,3}){3}$/.test(ip)) return ip.replace(/\.\d{1,3}$/, '.0');
   if (ip.includes(':')) return `${ip.split(':').slice(0, 3).join(':')}::`;

@@ -10,8 +10,6 @@ import {
   onAuthStateChanged,
   reauthenticateWithCredential,
   RecaptchaVerifier,
-  sendEmailVerification,
-  sendPasswordResetEmail,
   signInWithCustomToken,
   signInWithPhoneNumber,
   signOut,
@@ -39,10 +37,13 @@ import type { RealMe } from './real-account';
  * pages load (JS budget, learning L63).
  *
  * - Sign-up: phone code (Firebase SMS, invisible reCAPTCHA) → email + password linked to that phone account →
- *   verification email → name and language saved through the API.
+ *   the API signs them in again (custom token) → verification email → name and language saved through the API.
  * - Sign-in: `POST /v1/auth/password` (the API checks the password, Turnstile and limits) → custom token.
  *   Staff: the API answers `staff_code` → phone code → the same call again with the phone token.
- * - Forgot password: phone code then a new password, or Firebase's reset email.
+ * - Forgot password: phone code then a new password, or an email link.
+ * - Verification and reset emails are sent by the API (`/v1/auth/verification-email`, `/v1/auth/password-reset-email`,
+ *   decision 2026-11-24), never by the Firebase client SDK: Firebase would link to its own page, and the project
+ *   cannot be given a custom action URL. The links open `/auth/action` on our domain.
  */
 
 const API = (process.env.NEXT_PUBLIC_API_URL ?? '').replace(/\/$/, '');
@@ -145,7 +146,11 @@ export function sessionHasPassword(): boolean {
   return hasPasswordProvider(auth?.currentUser?.providerData ?? []);
 }
 
-/** Sign-up step 3: link email + password to the phone account, then send the one-time verification email. */
+/**
+ * Sign-up step 3: link email + password to the phone account. The one-time verification email is sent afterwards
+ * (`resendVerification`), once the API has signed the person in again: linking turns the Firebase session into a
+ * `password` one, which the API refuses.
+ */
 export async function linkEmailPassword(
   email: string,
   password: string,
@@ -162,8 +167,6 @@ export async function linkEmailPassword(
       return { ok: false, reason: 'email_in_use' };
     return { ok: false, reason: 'unavailable' };
   }
-  // A failed send is not fatal: the account area offers "send again".
-  await sendEmailVerification(user).catch(() => undefined);
   return { ok: true };
 }
 
@@ -183,16 +186,20 @@ export async function emailStatus(locale: string): Promise<{ email: string; veri
   return { email: user.email, verified: user.emailVerified };
 }
 
-/** Send the verification email again (account-area banner). False when it could not be sent. */
+/**
+ * Send the verification email (sign-up, and "send again" in the account area): the API mails the account's own
+ * address a link to our `/auth/action` page. False when it could not be sent; an address that is already verified
+ * counts as sent (nothing is wrong).
+ */
 export async function resendVerification(locale: string): Promise<boolean> {
-  const a = firebaseAuth(locale);
-  await a.authStateReady();
-  const user = a.currentUser;
-  if (!user) return false;
-  return sendEmailVerification(user).then(
-    () => true,
-    () => false,
-  );
+  const token = await currentIdToken(locale);
+  if (!token) return false;
+  const res = await api('/auth/verification-email', {
+    method: 'POST',
+    token,
+    body: JSON.stringify({ locale: locale === 'hi' ? 'hi' : 'en' }),
+  }).catch(() => null);
+  return res?.ok ?? false;
 }
 
 async function api(path: string, init: RequestInit & { token?: string } = {}) {
@@ -375,9 +382,27 @@ export async function changePassword(
   }
 }
 
-/** Forgot password by email: always looks the same to the person asking (no account enumeration). */
-export async function sendResetEmail(email: string, locale: string): Promise<void> {
-  await sendPasswordResetEmail(firebaseAuth(locale), email).catch(() => undefined);
+export type ResetEmailResult =
+  { ok: true } | { ok: false; reason: 'turnstile' | 'rate' | 'network' | 'unavailable' };
+
+/**
+ * Forgot password by email (`POST /v1/auth/password-reset-email`, with the Cloudflare check): the API answers the
+ * same for every address, so an accepted request says nothing about whether an account exists.
+ */
+export async function sendResetEmail(
+  email: string,
+  locale: string,
+  turnstileToken: string,
+): Promise<ResetEmailResult> {
+  const res = await api('/auth/password-reset-email', {
+    method: 'POST',
+    body: JSON.stringify({ email, locale: locale === 'hi' ? 'hi' : 'en', turnstileToken }),
+  }).catch(() => null);
+  if (!res) return { ok: false, reason: 'network' };
+  if (res.ok) return { ok: true };
+  const body = (await res.json().catch(() => ({}))) as { error?: { code?: string } };
+  if (body.error?.code === 'TURNSTILE_FAILED') return { ok: false, reason: 'turnstile' };
+  return { ok: false, reason: res.status === 429 ? 'rate' : 'unavailable' };
 }
 
 export type ActionResult<T = object> = ({ ok: true } & T) | { ok: false; code: string };

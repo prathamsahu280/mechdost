@@ -3,6 +3,7 @@ import { createTestDb, type TestDb } from '@mechdost/db/testing';
 import type { Keyring } from '@mechdost/db/crypto';
 import { createApp } from '../src/app';
 import type { AssistantProvider } from '../src/assistant/provider';
+import type { EmailActionLinks } from '../src/auth/email-actions';
 import type { PasswordAuthority } from '../src/auth/password-authority';
 import type { TurnstileVerifier } from '../src/auth/turnstile';
 import { TokenError, type TokenVerifier, type VerifiedToken } from '../src/auth/token-verifier';
@@ -86,6 +87,26 @@ export class FakePasswordAuthority implements PasswordAuthority {
 }
 
 /** Fake Turnstile: only the listed tokens are human. */
+/** Fake Firebase Admin links: reset codes per email, verification per uid; records what was asked. */
+export class FakeEmailActions implements EmailActionLinks {
+  readonly resets = new Map<string, string>();
+  readonly verifications = new Map<string, { email: string; code: string }>();
+  readonly asked: string[] = [];
+  fail = false;
+
+  passwordResetCode(email: string): Promise<string | null> {
+    this.asked.push(`reset:${email}`);
+    if (this.fail) return Promise.reject(new Error('firebase down'));
+    return Promise.resolve(this.resets.get(email) ?? null);
+  }
+
+  verificationFor(uid: string): Promise<{ email: string; code: string } | null> {
+    this.asked.push(`verify:${uid}`);
+    if (this.fail) return Promise.reject(new Error('firebase down'));
+    return Promise.resolve(this.verifications.get(uid) ?? null);
+  }
+}
+
 export class FakeTurnstile implements TurnstileVerifier {
   constructor(private readonly human: readonly string[]) {}
   verify(token: string): Promise<boolean> {
@@ -112,6 +133,7 @@ export async function buildApp(
     keyring?: Keyring | null;
     passwordAuth?: PasswordAuthority | null;
     turnstile?: TurnstileVerifier | null;
+    emailActions?: EmailActionLinks | null;
     razorpay?: RazorpayGateway | null;
     sentryIssues?: SentryIssuesClient | null;
     photoStorage?: PhotoStorage | null;
@@ -136,6 +158,7 @@ export async function buildApp(
     keyring: opts.keyring ?? null,
     passwordAuth: opts.passwordAuth ?? null,
     turnstile: opts.turnstile ?? null,
+    emailActions: opts.emailActions ?? null,
     razorpay: opts.razorpay ?? null,
     sentryIssues: opts.sentryIssues ?? null,
     photoStorage: opts.photoStorage ?? null,

@@ -18,6 +18,7 @@ export * from './localized';
 export * from './support-bridge';
 export * from './order-notifications';
 export * from './email-notifications';
+export * from './auth-emails';
 export * from './notices';
 export * from './bill-documents';
 export * from './email-events';

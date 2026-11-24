@@ -1567,6 +1567,7 @@
     "resetDone": "Password changed. Sign in with your new password.",
     "blocked": "This account can't sign in right now. Call support at 7978776551 if you think this is a mistake.",
     "errTooManyCodes": "Too many code requests. Wait a few minutes, then try again.",
+    "errTooManyResets": "Too many reset link requests. Wait a while, then try again.",
     "errUnavailable": "Sign-in isn't working right now. Try again in a few minutes, or call 7978776551.",
     "errBotCheck": "We couldn't finish the security check. Press the button again.",
     "errNetwork": "We couldn't reach the sign-in service. Check your connection and try again.",
@@ -3844,7 +3845,9 @@
     "tpl_fleet_application_received": "Fleet enquiry received",
     "tpl_trade_account_verified": "Trade account verified",
     "tpl_shop_order_routed": "New order for a shop",
-    "tpl_partner_warning_issued": "Note to a partner"
+    "tpl_partner_warning_issued": "Note to a partner",
+    "tpl_auth_verify_email": "Confirm your email address",
+    "tpl_auth_password_reset": "Reset your password"
   },
   "reco": {
     "title": "Goes well with this",

@@ -162,6 +162,16 @@ A new account section `wishlist` (real sign-in only; `lib/sections.ts`): saved p
 - **Web:** for a shop account (`useIsSeller`) add to cart / stepper hide, the cart shows the note instead of Checkout and the bulk-quote link, Checkout shows the note and a "Continue shopping" link, the product page shows the note (`cart.sellerCannotOrder`, English and Hindi).
 - **Tests:** `apps/api/test/seller-cannot-order.test.ts` (owner, staff, seller + staff role, customer, support staff, guest), `apps/web/test/seller-no-buy.test.ts`.
 
-## Email links (2026-11-23)
+## Email links (2026-11-23, changed 2026-11-24)
 
-Verification, reset and email-change links open `/auth/action` on our domain (`components/auth/email-action.tsx`, pure helpers `lib/auth/email-action.ts`); the Firebase template action URL is set per `docs/runbooks/firebase.md`. Resetting through Firebase is the right mechanism: Firebase Auth holds the password and the API checks it with `signInWithPassword`. Events in spec 12; tests `apps/web/test/email-action.test.ts`, `apps/web/e2e/email-action.spec.ts`.
+Verification and reset links open `/auth/action` on our domain (`components/auth/email-action.tsx`, pure helpers `lib/auth/email-action.ts`; the page also still handles `verifyAndChangeEmail` and `recoverEmail` links). Resetting through a Firebase code is the right mechanism: Firebase Auth holds the password and the API checks it with `signInWithPassword`. Events in spec 12; tests `apps/web/test/email-action.test.ts`, `apps/web/e2e/email-action.spec.ts`.
+
+## Account emails: sent by our API (decision 2026-11-24)
+
+Firebase refuses a custom action URL for the project (`EMAIL_TEMPLATE_UPDATE_NOT_ALLOWED`), so Firebase's own mail is not used. The API makes the one-time code with the Admin SDK and sends the email through the outbox and Resend (spec 10, templates `auth_verify_email` and `auth_password_reset`, English and Hindi); the link is `{WEB_BASE_URL}/auth/action?mode=…&oobCode=…&lang=…` (`/hi/…` for Hindi). Runbook: `docs/runbooks/firebase.md` "Email links on mechdost.com".
+
+- `POST /v1/auth/password-reset-email {email, locale, turnstileToken}` (public): per-IP 10/hour, Turnstile (`TURNSTILE_FAILED` 400), per-address 3/hour (hash of the lower-cased address, counted before any lookup). The answer is always `200 {status:'accepted'}`: unknown address, address over its limit and a Firebase or database failure all look the same (failures only in the log), and every answer takes at least 600 ms. Limit store or Cloudflare down: `AUTH_UNAVAILABLE` 503 (fail closed). Only an existing account gets a mail.
+- `POST /v1/auth/verification-email {locale?}` (signed in): 5/hour per account. The address is read from the caller's Firebase account (never from the request); already verified or no email: `200 {status:'not_needed'}`, else `{status:'sent'}`. Firebase failing: 503.
+- Sign-up: after the API has signed the person in again (linking turns the Firebase session into a `password` one, which the API refuses) the web asks for the verification mail; a failed send is not fatal, the account area offers "send again". The forgot-password email form carries the Cloudflare check.
+- Not built: email change (`verifyBeforeUpdateEmail`), because the app has no such screen; the action page already handles `verifyAndChangeEmail`.
+- Tests: `apps/api/test/auth-emails.test.ts` (link building through the real mail sender, same answer for unknown addresses, limits, sign-in required), `packages/shared/test/email-action-link.test.ts`, `email-templates.test.ts` (en and hi), `apps/web/test/auth-email-requests.test.ts`.

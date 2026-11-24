@@ -692,6 +692,9 @@ export function LoginFlow() {
         failForm(me === 'blocked' ? t('blocked') : t('errUnavailable'));
         return undefined;
       }
+      // The one-time verification email (from the API, linking to /auth/action). A failed send is not fatal: the
+      // account area offers "send again".
+      await r.resendVerification(locale);
       const saved = (await r.saveProfile(me, { name, language })) ?? me;
       void import('@/lib/cart-sync').then((m) => m.mergeAtSignIn(locale === 'hi' ? 'hi' : 'en'));
       setCreated({ account: adoptRealAccount({ ...saved, name }), email });
@@ -754,8 +757,25 @@ export function LoginFlow() {
     }
     await guarded(t('sendingLink'), async () => {
       setResetEmail(email);
-      if (REAL) await (await real()).sendResetEmail(email, locale);
-      else setResetToken(requestEmailReset(email));
+      if (REAL) {
+        const r = await real();
+        // A token the API calls expired or used is replaced once, silently (as in password sign-in).
+        const sent = await retryOnce(
+          async () => {
+            const token = await botCheck();
+            return token ? r.sendResetEmail(email, locale, token) : null;
+          },
+          (result) => result !== null && !result.ok && result.reason === 'turnstile',
+        );
+        if (!sent) return undefined;
+        if (!sent.ok) {
+          if (sent.reason === 'turnstile') failForm(t('errBotCheck'));
+          else if (sent.reason === 'rate') failForm(t('errTooManyResets'));
+          else if (sent.reason === 'network') failForm(t('errNetwork'));
+          else failForm(t('errUnavailable'));
+          return undefined;
+        }
+      } else setResetToken(requestEmailReset(email));
       track('click', { id: 'password_reset_email', path: window.location.pathname });
       goTo('forgot-email-sent');
       return undefined;
@@ -1161,6 +1181,7 @@ export function LoginFlow() {
           />
           {fieldError('login-reset-email')}
           {formError}
+          {securityCheck}
           {submit(t('sendLink'), t('sendingLink'))}
           {back}
         </form>

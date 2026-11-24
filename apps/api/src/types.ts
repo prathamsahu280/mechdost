@@ -2,6 +2,7 @@ import type { Keyring } from '@mechdost/db/crypto';
 import type { Tx, UserRecord } from '@mechdost/db/repo';
 import type { Grant } from '@mechdost/shared/rbac';
 import type { AssistantProvider } from './assistant/provider';
+import type { EmailActionLinks } from './auth/email-actions';
 import type { PasswordAuthority } from './auth/password-authority';
 import type { TokenVerifier, VerifiedToken } from './auth/token-verifier';
 import type { TurnstileVerifier } from './auth/turnstile';
@@ -24,6 +25,8 @@ export interface AppDeps {
   keyring?: Keyring | null;
   /** Password checks + custom tokens (spec 01); null when not configured → sign-in answers 503. */
   passwordAuth?: PasswordAuthority | null;
+  /** One-time codes for the reset and verification emails we send ourselves (decision 2026-11-24); null → those routes answer 503. */
+  emailActions?: EmailActionLinks | null;
   /** Bot check on sign-in; null when not configured → sign-in answers 503 (fails closed). */
   turnstile?: TurnstileVerifier | null;
   /** Razorpay gateway; null when not configured → online payment answers PAYMENT_METHOD_UNAVAILABLE. */

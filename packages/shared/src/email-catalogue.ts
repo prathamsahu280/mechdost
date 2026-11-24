@@ -6,6 +6,7 @@
  * Wording rules: never say "refunded" before it is (only `refund_processed` does); the delivery code is only for
  * the person at the door; sellers never see customer contact details.
  */
+import { emailActionPath } from './email-action-link';
 import type { EmailPurpose } from './email-templates';
 
 export interface EmailCopy {
@@ -765,6 +766,51 @@ export const EMAIL_CATALOGUE = {
       heading: 'आपके लिए एक नया ऑर्डर है',
       body: 'MechDost ने आपको ऑर्डर {orderCode} भेजा है।\n\nकृपया अपने शॉप पोर्टल में {minutes} मिनट के अंदर इसे स्वीकार या अस्वीकार करें। समय पर जवाब न मिला तो ऑर्डर किसी दूसरे विक्रेता को चला जाएगा।',
       button: 'ऑर्डर खोलें',
+    },
+  }),
+  // ----- Account emails (decision 2026-11-24): sent by us, not by Firebase, so the link is on mechdost.com -----
+  /** Verify the address (sign-up, "send again"): the button opens `/auth/action` with the one-time code (`token`). */
+  auth_verify_email: def({
+    purpose: 'system',
+    category: 'transactional',
+    audience: T.customer,
+    text: [],
+    params: ['mode', 'token', 'lang'],
+    button: (p) => emailActionPath({ mode: p.mode, oobCode: p.token, lang: p.lang }),
+    sample: { mode: 'verifyEmail', token: 'preview-only-code', lang: 'en' },
+    en: {
+      subject: 'Confirm your email for MechDost',
+      heading: 'Confirm your email address',
+      body: 'Welcome to MechDost. Tap the button below to confirm this email address. It takes a few seconds.\n\nThe link works once. If you did not create a MechDost account, you can ignore this email.',
+      button: 'Confirm email',
+    },
+    hi: {
+      subject: 'MechDost के लिए अपना ईमेल कन्फ़र्म करें',
+      heading: 'अपना ईमेल पता कन्फ़र्म करें',
+      body: 'MechDost में आपका स्वागत है। इस ईमेल पते को कन्फ़र्म करने के लिए नीचे का बटन दबाएं। इसमें कुछ ही सेकंड लगते हैं।\n\nयह लिंक सिर्फ़ एक बार काम करता है। अगर आपने MechDost पर खाता नहीं बनाया है, तो इस ईमेल को अनदेखा करें।',
+      button: 'ईमेल कन्फ़र्म करें',
+    },
+  }),
+  /** Reset the password: the button opens `/auth/action`, where the person types the new one. */
+  auth_password_reset: def({
+    purpose: 'system',
+    category: 'transactional',
+    audience: T.customer,
+    text: [],
+    params: ['mode', 'token', 'lang'],
+    button: (p) => emailActionPath({ mode: p.mode, oobCode: p.token, lang: p.lang }),
+    sample: { mode: 'resetPassword', token: 'preview-only-code', lang: 'en' },
+    en: {
+      subject: 'Reset your MechDost password',
+      heading: 'Reset your password',
+      body: 'We got a request to reset the password of your MechDost account. Tap the button below to choose a new one.\n\nThe link works once and expires in 1 hour. If you did not ask for this, ignore this email: your password stays as it is.',
+      button: 'Choose a new password',
+    },
+    hi: {
+      subject: 'अपना MechDost पासवर्ड रीसेट करें',
+      heading: 'अपना पासवर्ड रीसेट करें',
+      body: 'आपके MechDost खाते का पासवर्ड रीसेट करने का अनुरोध मिला है। नया पासवर्ड चुनने के लिए नीचे का बटन दबाएं।\n\nयह लिंक सिर्फ़ एक बार काम करता है और 1 घंटे में खत्म हो जाता है। अगर आपने यह अनुरोध नहीं किया, तो इस ईमेल को अनदेखा करें: आपका पासवर्ड वैसा ही रहेगा।',
+      button: 'नया पासवर्ड चुनें',
     },
   }),
   partner_warning_issued: def({

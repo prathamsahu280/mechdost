@@ -50,6 +50,8 @@ describe('catalogue', () => {
       'trade_account_verified',
       'shop_order_routed',
       'partner_warning_issued',
+      'auth_verify_email',
+      'auth_password_reset',
     ])
       expect(keys).toContain(k);
   });
@@ -186,5 +188,42 @@ describe('layout', () => {
 
   it('has no unsubscribe link for transactional mail', () => {
     expect(html.toLowerCase()).not.toContain('unsubscribe');
+  });
+});
+
+describe('account emails sent by us (decision 2026-11-24)', () => {
+  const params = { mode: 'resetPassword', token: 'abc123_XYZ-0987654321', lang: 'en' };
+
+  it.each([
+    ['en', 'https://mechdost.com/auth/action?mode=resetPassword&oobCode=abc123_XYZ-0987654321&lang=en'],
+    ['hi', 'https://mechdost.com/hi/auth/action?mode=resetPassword&oobCode=abc123_XYZ-0987654321&lang=hi'],
+  ] as const)('the reset button opens our action page in %s', (locale, url) => {
+    const e = composeEmail('auth_password_reset', locale, { ...params, lang: locale }, ctx);
+    expect(e.action?.url).toBe(url);
+    expect(e.purpose).toBe('system');
+    expect(e.category).toBe('transactional');
+  });
+
+  it('renders the verification mail in English and Hindi, with the link in both the button and the plain text', () => {
+    for (const locale of ['en', 'hi'] as const) {
+      const p = { mode: 'verifyEmail', token: 'verify-code-0123456789', lang: locale };
+      const e = composeEmail('auth_verify_email', locale, p, ctx);
+      const { text, html } = renderEmailLayout(e, { locale, grievanceContact: null, trustLine: null });
+      const url = e.action?.url ?? '';
+      expect(url).toContain('/auth/action?mode=verifyEmail&oobCode=verify-code-0123456789');
+      expect(text).toContain(url);
+      expect(html).toContain('verify-code-0123456789');
+      expect(DEVANAGARI.test(`${e.subject}${e.heading}${e.paragraphs.join('')}`)).toBe(locale === 'hi');
+    }
+  });
+
+  it('the code never goes into the subject, heading or body text, and there are no placeholders to leak it', () => {
+    for (const key of ['auth_verify_email', 'auth_password_reset'] as const) {
+      expect(EMAIL_TEMPLATES[key].text).toEqual([]);
+      const e = composeEmail(key, 'en', params, ctx);
+      expect(`${e.subject}${e.heading}${e.paragraphs.join('')}`).not.toContain(params.token);
+      // An admin override cannot bring the code into the text either.
+      expect(emailOverrideProblem(key, { body: 'Your code is {token}' })).toBe('EMAIL_PLACEHOLDER');
+    }
   });
 });

@@ -431,6 +431,11 @@ export interface ServerEventProps {
   order_again: { orderId: string; added: number; missing: number };
   /** Wishlist (spec 02): the product id and the new list size. */
   wishlist_changed: { productId: string; on: boolean; count: number };
+  /**
+   * An account email (reset or verification) was asked for (decision 2026-11-24). `queued` is false when no mail went
+   * out (no such account, address already verified, nothing to send); never the address, the code or the account.
+   */
+  auth_email_action_requested: { mode: 'resetPassword' | 'verifyEmail'; queued: boolean };
 }
 export type ServerEvent = keyof ServerEventProps;
 
