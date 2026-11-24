@@ -568,6 +568,13 @@
       "when": 1795515167017,
       "tag": "0082_roadside_assistance",
       "breakpoints": true
+    },
+    {
+      "idx": 84,
+      "version": "7",
+      "when": 1795545104454,
+      "tag": "0084_order_item_variant_label",
+      "breakpoints": true
     }
   ]
 }

@@ -3,6 +3,7 @@ import { adminPriceJoins } from './admin-price-sql';
 import { and, eq, isNull, or, sql } from 'drizzle-orm';
 import type { BusinessPurchase } from '@mechdost/shared/business';
 import { publicCode } from '@mechdost/shared/ids';
+import { variantLabel } from '@mechdost/shared/variants';
 import { OPERATIONAL_SETTINGS, type SettingKey } from '@mechdost/shared/settings';
 import { splitInclusiveGst } from '@mechdost/shared/money';
 import { freeDeliveryMinPaise, groupShippingPaise } from '@mechdost/shared/free-delivery';
@@ -120,6 +121,14 @@ export interface CheckoutQuote {
   cod: { allowed: boolean; reason: 'over_cap' | 'pincode' | null; capPaise: number };
 }
 
+/** The size of a variant of a product sold in several sizes, else null (a single size is never named). */
+function sizeLabelOf(r: { options: Record<string, unknown> | null; sizes: unknown }): string | null {
+  if (Number(r.sizes) <= 1) return null;
+  return variantLabel(r.options ?? {}) || null;
+}
+
+const withSize = (title: string, size: string | null): string => (size ? `${title} · ${size}` : title);
+
 interface PricedLine {
   sku: string;
   qty: number;
@@ -130,6 +139,8 @@ interface PricedLine {
   categoryId: string;
   title: string;
   titleHi: string | null;
+  /** The size, when the product is sold in several (user 2026-11-24); the titles end with it. */
+  variantLabel: string | null;
   hsn: string;
   gstRateBp: number;
   unitPaise: number;
@@ -295,6 +306,8 @@ export async function quoteInternal(
     category_id: string | null;
     name: string | null;
     name_hi: string | null;
+    options: Record<string, unknown> | null;
+    sizes: unknown;
     brand: string | null;
     hsn: string | null;
     gst_rate_bp: unknown;
@@ -312,7 +325,7 @@ export async function quoteInternal(
     shop_free_min: unknown;
   }>(
     await db.execute(sql`
-      select l.sku, l.qty, v.id as variant_id, p.category_id, p.name, p.name_hi, b.name as brand, p.hsn, p.gst_rate_bp,
+      select l.sku, l.qty, v.id as variant_id, p.category_id, p.name, p.name_hi, v.options, (select count(*) from product_variants sz where sz.product_id = v.product_id and sz.status = 'active') as sizes, b.name as brand, p.hsn, p.gst_rate_bp,
         v.mrp_paise, o.inventory_id, o.shop_id, o.shop_name, o.shop_name_hi, o.shop_state_id, o.price, o.shop_price,
         o.shipping, o.lead_days, best.max_free, o.shop_free_min
       from jsonb_to_recordset(${JSON.stringify(input.lines)}::jsonb) as l(sku text, qty int)
@@ -355,7 +368,10 @@ export async function quoteInternal(
   const priced: PricedLine[] = [];
   const lines: QuoteLine[] = input.lines.map((l) => {
     const r = bySku.get(l.sku);
-    const name = r?.name ? `${r.brand ?? ''} ${localized(r.name, r.name_hi, input.locale)}`.trim() : null;
+    const size = r ? sizeLabelOf(r) : null;
+    const name = r?.name
+      ? withSize(`${r.brand ?? ''} ${localized(r.name, r.name_hi, input.locale)}`.trim(), size)
+      : null;
     const base = { sku: l.sku, qty: l.qty, name, mrpPaise: numOrNull(r?.mrp_paise) };
     if (!r?.name || !r.variant_id)
       return {
@@ -409,8 +425,9 @@ export async function quoteInternal(
       shopId: r.shop_id,
       categoryId: r.category_id ?? '',
       // Snapshot both languages, whatever the customer's locale (code review 2026-11-03, hard rule 10).
-      title: `${r.brand ?? ''} ${r.name}`.trim(),
-      titleHi: r.name_hi ? `${r.brand ?? ''} ${r.name_hi}`.trim() : null,
+      title: withSize(`${r.brand ?? ''} ${r.name}`.trim(), size),
+      titleHi: r.name_hi ? withSize(`${r.brand ?? ''} ${r.name_hi}`.trim(), size) : null,
+      variantLabel: size,
       hsn: r.hsn ?? '',
       gstRateBp: num(r.gst_rate_bp),
       unitPaise: unit,
@@ -849,6 +866,7 @@ export async function placeOrder(
           variantId: line.variantId,
           title: line.title,
           titleHi: line.titleHi,
+          variantLabel: line.variantLabel,
           sku: line.sku,
           hsn: line.hsn,
           gstRateBp: line.gstRateBp,
