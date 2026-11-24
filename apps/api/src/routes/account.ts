@@ -4,6 +4,7 @@ import {
   createVehicle,
   deleteAddress,
   deleteVehicle,
+  fitVariantForUser,
   listAddresses,
   listVehicles,
   setDefaultAddress,
@@ -20,9 +21,11 @@ import {
   DeletedDto,
   VehicleCreateDto,
   VehicleDto,
+  VehicleFitDto,
   VehiclePatchDto,
   VehiclesDto,
 } from '@mechdost/shared/account-api';
+import { CATALOGUE_SLUG_RE } from '@mechdost/shared/catalogue';
 import type { SessionCache } from '../auth/session-cache';
 import { authenticate } from '../middleware/auth';
 import { rateLimit, RATE_RULES } from '../middleware/rate-limit';
@@ -113,6 +116,15 @@ const listVehiclesRoute = createRoute({
   summary: 'Your saved vehicles (oldest first)',
   security,
   responses: { 200: json(VehiclesDto, 'Vehicles'), ...errorResponses },
+});
+const vehicleFitRoute = createRoute({
+  method: 'get',
+  path: '/me/vehicles/fit',
+  tags,
+  summary: 'Which size of a product fits your saved vehicles (the size only, never the fitment list)',
+  security,
+  request: { query: z.object({ product: z.string().regex(CATALOGUE_SLUG_RE) }) },
+  responses: { 200: json(VehicleFitDto, 'The fitting size, or none'), ...problems },
 });
 const createVehicleRoute = createRoute({
   method: 'post',
@@ -213,6 +225,9 @@ export function accountRoutes(deps: AppDeps, cache: SessionCache) {
     })
     .openapi(listVehiclesRoute, async (c) =>
       c.json({ vehicles: await listVehicles(deps.db, c.get('auth').user.id) }, 200),
+    )
+    .openapi(vehicleFitRoute, async (c) =>
+      c.json(await fitVariantForUser(deps.db, c.get('auth').user.id, c.req.valid('query').product), 200),
     )
     .openapi(createVehicleRoute, async (c) =>
       c.json(await createVehicle(deps.db, c.get('auth').user.id, c.req.valid('json')), 201),
