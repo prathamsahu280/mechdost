@@ -78,6 +78,8 @@ export interface ReportBrand<P extends BatteryPlan = BatteryPlan> {
   stem: string;
   /** Heading and note of the shared-picture section. */
   sharedPictures: { heading: string; note: string };
+  /** false = only the count of the shared-picture products is printed, not one line each (tyres: whole patterns share). */
+  listShared?: boolean;
   /** Extra sections (already Markdown) the brand wants after the tallies. */
   extraSections?: (plan: P) => string[];
 }
@@ -117,7 +119,7 @@ export function statusMarkdown<P extends BatteryPlan>(
     '',
     brand.sharedPictures.note,
     '',
-    ...shared.map((r) => `- ${r.name} (${r.slug})`),
+    ...(brand.listShared === false ? [] : shared.map((r) => `- ${r.name} (${r.slug})`)),
     '',
     ...(brand.extraSections?.(plan) ?? []),
     archived

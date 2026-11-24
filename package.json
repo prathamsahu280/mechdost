@@ -26,7 +26,9 @@
     "db:import:catalogue": "pnpm --filter @mechdost/api import:catalogue",
     "db:import:exide": "pnpm --filter @mechdost/api import:exide",
     "db:import:amaron": "pnpm --filter @mechdost/api import:amaron",
-    "db:import:tatagreen": "pnpm --filter @mechdost/api import:tatagreen"
+    "db:import:tatagreen": "pnpm --filter @mechdost/api import:tatagreen",
+    "db:import:ceat": "pnpm --filter @mechdost/api import:ceat",
+    "db:import:mrf": "pnpm --filter @mechdost/api import:mrf"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

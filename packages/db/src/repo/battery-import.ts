@@ -32,7 +32,12 @@ export interface BatteryImportConfig {
   specSource: string;
   /** `source` in the audit rows ("exide_import"). */
   auditSource: string;
-  event: 'admin_exide_imported' | 'admin_amaron_imported' | 'admin_tatagreen_imported';
+  event:
+    | 'admin_exide_imported'
+    | 'admin_amaron_imported'
+    | 'admin_tatagreen_imported'
+    | 'admin_ceat_imported'
+    | 'admin_mrf_imported';
 }
 
 export interface BatteryImportCounts {
@@ -164,6 +169,8 @@ async function execute(
         slug: c.slug,
         name: c.name,
         nameHi: c.nameHi,
+        description: c.description ?? null,
+        descriptionHi: c.descriptionHi ?? null,
         parentId: c.parent === null ? null : (categoryId.get(c.parent) ?? null),
         sort: (top?.sort ?? 0) + 1,
       })

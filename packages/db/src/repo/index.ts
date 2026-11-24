@@ -111,6 +111,8 @@ export * from './battery-import';
 export * from './exide-import';
 export * from './amaron-import';
 export * from './tatagreen-import';
+export * from './ceat-import';
+export * from './mrf-import';
 export * from './roadside-settings';
 export * from './roadside';
 export * from './roadside-dispatch';

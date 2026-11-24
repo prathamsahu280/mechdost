@@ -13,6 +13,9 @@ export interface PlannedCategory {
   parent: string | null;
   name: string;
   nameHi: string;
+  /** Shown on the category page and editable by admin; the tyre importers fill them (2026-11-24). */
+  description?: string;
+  descriptionHi?: string;
 }
 
 export const HOME_POWER = {

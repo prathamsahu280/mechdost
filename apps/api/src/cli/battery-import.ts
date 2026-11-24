@@ -20,6 +20,7 @@ import type { BatteryPlan, PlannedPhoto, PlannedProduct, RowResult } from '@mech
 import {
   batteryPhotoStates,
   recordImportRun,
+  attachSharedProductPhoto,
   reorderProductPhotos,
   saveProductPhoto,
   summariseStatus,
@@ -52,6 +53,8 @@ export interface BatteryCliBrand<P extends BatteryPlan> {
   ): Promise<BatteryRunResult>;
   /** The picture bytes the photo pipeline gets (a brand may tidy them first; the source file is never changed). */
   readPicture(dir: string, file: string): Buffer | Promise<Buffer>;
+  /** A file several products use is stored once and shared (tyre patterns); false = each product stores its own copy. */
+  sharePhotos?: boolean;
   statusCsv(rows: P['rows'], results?: ReadonlyMap<string, RowResult>): string;
   statusMarkdown(
     plan: P,
@@ -256,7 +259,7 @@ async function uploadPhotos<P extends BatteryPlan>(
   const storage = supabaseStorage({ url: supabaseUrl, secretKey: secret, bucket: 'service-photos' });
   await storage.ensureBucket();
   const states = await batteryPhotoStates(tx, products);
-  const stats = { uploaded: 0, skipped: 0, failed: 0, products: 0, photos: 0 };
+  const stats = { uploaded: 0, shared: 0, skipped: 0, failed: 0, products: 0, photos: 0 };
   const failures: { slug: string; error: string }[] = [];
 
   // A file several products share (Amaron's one "View" picture, a pair's front photo) is processed once.
@@ -273,6 +276,35 @@ async function uploadPhotos<P extends BatteryPlan>(
     return hit;
   };
 
+  // A picture several products share (a tyre pattern's pictures, shared by every size) is stored once: the first product to
+  // need it uploads it, the others get a photo row on the same stored image (`attachSharedProductPhoto`).
+  const leaders = new Map<string, Promise<{ id: string; existing: boolean }>>();
+  const placeOrShare = async (p: PlannedProduct, state: BatteryPhotoState, photo: PlannedPhoto) => {
+    if ((uses.get(photo.file) ?? 0) < 2 || brand.sharePhotos !== true)
+      return placePhoto(tx, storage, staffUserId, p, state, photo, processFile);
+    const source = photo.sourceUrl === '' ? photo.file : photo.sourceUrl;
+    const known = state.idBySource.get(source);
+    if (known) return { id: known, existing: true };
+    const lead = leaders.get(photo.file);
+    if (!lead) {
+      const first = placePhoto(tx, storage, staffUserId, p, state, photo, processFile);
+      leaders.set(photo.file, first);
+      return first;
+    }
+    const from = await lead;
+    const saved = await attachSharedProductPhoto(tx, {
+      slug: p.slug,
+      actor: { kind: 'staff', userId: staffUserId },
+      alt: photo.alt,
+      altHi: photo.altHi,
+      photoSource: source,
+      fromPhotoId: from.id,
+    });
+    state.idBySource.set(source, saved.id);
+    stats.shared += 1;
+    return { id: saved.id, existing: false };
+  };
+
   await pool(products, args.concurrency, async (p, i) => {
     const state = states.get(p.slug);
     if (!state || p.photos.length === 0) return;
@@ -283,7 +315,7 @@ async function uploadPhotos<P extends BatteryPlan>(
     for (const photo of p.photos) {
       stats.photos += 1;
       try {
-        const id = await placePhoto(tx, storage, staffUserId, p, state, photo, processFile);
+        const id = await placeOrShare(p, state, photo);
         if (id.existing) stats.skipped += 1;
         else {
           stats.uploaded += 1;

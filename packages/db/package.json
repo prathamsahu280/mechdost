@@ -14,7 +14,10 @@
     "./exide": "./src/exide/index.ts",
     "./amaron": "./src/amaron/index.ts",
     "./tatagreen": "./src/tatagreen/index.ts",
-    "./battery-import": "./src/battery-import/index.ts"
+    "./battery-import": "./src/battery-import/index.ts",
+    "./tyre-import": "./src/tyre-import/index.ts",
+    "./ceat": "./src/ceat/index.ts",
+    "./mrf": "./src/mrf/index.ts"
   },
   "scripts": {
     "generate": "drizzle-kit generate && node scripts/fix-migrations.mjs",

@@ -119,6 +119,20 @@ export interface ServerEventProps {
     productsArchived: number;
     packsCreated: number;
   };
+  /** The CEAT tyre import wrote products (CLI `pnpm db:import:ceat`, 2026-11-24); old CEAT products are archived, never deleted. */
+  admin_ceat_imported: {
+    productsCreated: number;
+    productsUpdated: number;
+    productsArchived: number;
+    packsCreated: number;
+  };
+  /** The MRF tyre import wrote products (CLI `pnpm db:import:mrf`, 2026-11-24); old MRF products are archived, never deleted. */
+  admin_mrf_imported: {
+    productsCreated: number;
+    productsUpdated: number;
+    productsArchived: number;
+    packsCreated: number;
+  };
   /** A brand or product range was switched off/on in Admin → Catalogue → Brands and ranges (hides its products). */
   admin_group_switched: {
     kind: 'brand' | 'range';

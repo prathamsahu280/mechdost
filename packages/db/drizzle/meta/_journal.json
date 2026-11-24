@@ -568,6 +568,13 @@
       "when": 1795515167017,
       "tag": "0082_roadside_assistance",
       "breakpoints": true
+    },
+    {
+      "idx": 83,
+      "version": "7",
+      "when": 1795536457417,
+      "tag": "0083_tyre_shared_photos",
+      "breakpoints": true
     }
   ]
 }
