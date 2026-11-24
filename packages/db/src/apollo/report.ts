@@ -1,11 +1,10 @@
-import type { ReportBrand } from '../battery-import';
+import type { ReportBrand, ReportRow } from '../battery-import';
 import {
   tyreArchivedCsv,
   tyreReportBrand,
   tyreStatusCsv,
   tyreStatusMarkdown,
   type ArchivedRow,
-  type ReportRow,
   type RowResult,
 } from '../tyre-import';
 import type { ApolloPlan } from './plan';

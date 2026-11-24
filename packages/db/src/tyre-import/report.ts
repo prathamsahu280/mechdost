@@ -51,9 +51,9 @@ export const tyreStatusCsv = (rows: readonly ReportRow[], results?: ReadonlyMap<
 
 export const tyreArchivedCsv = (archived: readonly ArchivedRow[]) => archivedCsv(archived);
 
-export function tyreStatusMarkdown(
-  brand: ReportBrand<TyrePlan>,
-  plan: TyrePlan,
+export function tyreStatusMarkdown<P extends TyrePlan>(
+  brand: ReportBrand<P>,
+  plan: P,
   meta: {
     run: 'plan only' | 'dry run' | 'real run';
     archived?: readonly ArchivedRow[];
