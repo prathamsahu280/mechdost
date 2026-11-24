@@ -59,9 +59,12 @@ test.describe('shop → cart → checkout → tracking', () => {
 
   test('search and sort the catalogue from the URL', async ({ page }) => {
     await page.goto('/shop?q=tyre&sort=price_desc');
+    // Wait for the cards before reading them (allTextContents does not wait; the retry read an empty list).
+    await expect(page.getByRole('article').first()).toBeVisible();
     const names = await page.getByRole('article').getByRole('heading').allTextContents();
-    // Highest price first; "tyre" also matches the tyre pressure gauge (by design).
-    expect(names[0]).toContain('Passenger car tyre');
+    // Highest price first; "tyre" also matches the tyre pressure gauge (by design). The demo tyre is now
+    // "CEAT Milaze X3 passenger car tyre" with three sizes (2026-11-24).
+    expect(names[0]).toMatch(/passenger car tyre/i);
     expect(names).toHaveLength(3);
   });
 });
