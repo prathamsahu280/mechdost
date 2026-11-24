@@ -1732,6 +1732,10 @@ User: "this now has amaron batteries too, add them as well on the website and pr
 
 The customer asks `service.proposed`, `service.estimate_ready` and `service.bill_ready` are marked done (`resolved_at`, read) in the transaction of the move that makes them moot (`transitionRequest` calls `resolveServiceNotices`): leaving `proposed`, `estimate_sent` or `billed`, and every open ask when the request is cancelled, rejected or completed. Same mechanism as the order notices (2026-11-23); no migration. No staff or workshop notices exist for service requests, so none were added. Spec 10.
 
+## 2026-11-24 — Razorpay live keys are not rotated
+
+User: "we wont generate new razerpay keys no". The live key secret and webhook secret that were pasted in chat on 2026-11-23 stay in use; the recommendation to rotate them is withdrawn at the user's decision. Accepted risk: the secrets exist in the chat transcript. If a leak is ever suspected, rotate in the Razorpay dashboard and update the server `.env` (`docs/runbooks/deploy.md`) and the local `.env`.
+
 ## 2026-11-24 — Turnstile: an early check is reused only in the form that started it
 
 Bug (user, live): the reset-by-email form hung on "Sending…" and then failed the security check. The sign-in form starts the Cloudflare check early (decision 2026-11-23, sign-in speed); "Forgot password?" replaced that form, the early check died with it, and the reset submit waited on it. Rule now (`apps/web/src/lib/auth/turnstile.ts`): a prefetched check is reused only when its container is the one on screen and still connected; otherwise a fresh check runs in the current container, and a widget whose container already left the page is not "removed" again. Test: `apps/web/test/turnstile-stale-widget.test.ts`; learning T199.
