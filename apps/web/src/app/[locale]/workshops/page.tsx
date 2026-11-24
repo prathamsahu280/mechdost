@@ -58,7 +58,10 @@ export default async function WorkshopsPage({ params }: Props) {
       </div>
       <p className="mt-8 rounded-card bg-pill p-4 text-sm text-ink">
         {road('workshopsLink')}{' '}
-        <Link href={`${locale === 'hi' ? '/hi' : ''}/roadside`} className="font-bold underline">
+        <Link
+          href={`${locale === 'hi' ? '/hi' : ''}/roadside`}
+          className="inline-flex min-h-6 items-center font-bold underline"
+        >
           {road('workshopsLinkCta')}
         </Link>
       </p>
