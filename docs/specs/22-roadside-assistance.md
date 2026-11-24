@@ -47,18 +47,20 @@ request and purpose); `refunds` gained `rsa_request_id` (exactly one of group, b
 
 ## Settings (admin, per city, audited; `roadside:settings`)
 
-| Setting                  | Default                                                    |
-| ------------------------ | ---------------------------------------------------------- |
-| enabled                  | off (a city with no row is off)                            |
-| vehicle types offered    | 2W, 4W                                                     |
-| advance per offered type | 50000 paise (₹500) each; exactly the offered types (CHECK) |
-| PIN codes covered        | none (each must be an active PIN of the city)              |
-| hours                    | open all day (or a window in IST, may pass midnight)       |
-| routing mode             | `manual` (`auto`, `auto_then_manual` stored, not built)    |
-| accept timer             | 150 s (60 to 900)                                          |
-| max auto attempts        | 3 (stored for phase 3)                                     |
-| problem types offered    | all six                                                    |
-| SOS phone                | none (shown to customers outside the area or hours)        |
+| Setting                                     | Default                                                                         |
+| ------------------------------------------- | ------------------------------------------------------------------------------- |
+| enabled                                     | off (a city with no row is off)                                                 |
+| vehicle types offered                       | 2W, 4W                                                                          |
+| advance per offered type                    | 50000 paise (₹500) each; exactly the offered types (CHECK)                      |
+| PIN codes covered                           | none (each must be an active PIN of the city)                                   |
+| hours                                       | open all day (or a window in IST, may pass midnight)                            |
+| routing mode                                | `manual` (`auto`, `auto_then_manual` stored, not built)                         |
+| accept timer                                | 150 s (60 to 900)                                                               |
+| bill limit (`maxBillPaise`)                 | 2500000 paise (₹25,000); at most 10000000 (₹1,00,000); a larger bill is refused |
+| "Question this bill" (`billDisputeEnabled`) | off; when on, the customer can open a support request about a ready bill        |
+| max auto attempts                           | 3 (stored for phase 3)                                                          |
+| problem types offered                       | all six                                                                         |
+| SOS phone                                   | none (shown to customers outside the area or hours)                             |
 
 Labels and messages are in the `roadside` locale namespace (en and hi).
 
@@ -132,3 +134,7 @@ Auto routing (`auto`, `auto_then_manual`), live map and "last updated N min ago"
 portal (`responder_type = mechanic`), `towing` status and slabs, customer approval of extra lines, photo upload on the
 request, the customer refunds page listing roadside refunds (the tracking page shows them),
 GST invoice for the roadside total, customer review after the job, commission and payouts (pending #9), night surcharge.
+
+## Bill safeguards (independent review, user rulings 2026-11-24)
+
+No customer approval of the bill (Q227: no). The workshop enters the lines; the total may not exceed the city's `maxBillPaise`. With `billDisputeEnabled` on, a ready (or completed) bill shows "Question this bill": `POST /roadside/requests/{code}/dispute` opens a support request (kind `rsa_bill_dispute`, `support_tickets.rsa_request_id`, one open per request, 5 per 10 minutes per user); the request view carries `disputeAvailable` and `disputeOpen`, the admin queue `disputed`, and the balance stays payable. A cash balance mark raises the staff notice `staff.rsa_cash` and the event `rsa_cash_marked`. The arrival code override (`POST /admin/roadside/requests/{code}/arrival-override`) works only after the 5-try lock, except for a super admin (`roadside:settings`). Before accepting, a workshop sees the pincode, distance, vehicle type, fuel and problem type; the note and address line come with the accepted job. A second captured payment for a request and purpose that is already paid cannot be recorded (unique index): finance gets `staff.refund_alert` once per Razorpay payment. The arrival code is removed from the stored `rsa_accepted` email payload when the mechanic arrives or the email is sent.

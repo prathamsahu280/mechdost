@@ -114,7 +114,10 @@ function Queue() {
           <li key={r.code} className="rounded-card border border-line-card p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="font-bold">{r.code}</p>
-              <p className="text-sm text-muted">{t(`status_${r.status}` as 'status_requested')}</p>
+              <p className="text-sm text-muted">
+                {t(`status_${r.status}` as 'status_requested')}
+                {r.disputed ? ` · ${t('admin_disputed')}` : ''}
+              </p>
             </div>
             <p className="mt-1 text-sm text-muted">
               {r.vehicleType} · {r.pincode} ·{' '}
@@ -436,6 +439,17 @@ function Settings({ city }: { city: string }) {
           </select>
         </label>
         <label className="text-sm font-bold">
+          {t('set_maxBill')}
+          <input
+            className={portalField}
+            inputMode="numeric"
+            value={String(s.maxBillPaise / 100)}
+            onChange={(e) => {
+              setS({ ...s, maxBillPaise: Math.round(Number(e.target.value || 0) * 100) });
+            }}
+          />
+        </label>
+        <label className="text-sm font-bold">
           {t('set_timer')}
           <input
             className={portalField}
@@ -447,6 +461,16 @@ function Settings({ city }: { city: string }) {
           />
         </label>
       </div>
+      <label className="flex min-h-11 items-center gap-3 text-sm font-bold">
+        <input
+          type="checkbox"
+          checked={s.billDisputeEnabled}
+          onChange={(e) => {
+            setS({ ...s, billDisputeEnabled: e.target.checked });
+          }}
+        />
+        {t('set_billDispute')}
+      </label>
       <p className="text-sm text-muted">{t('set_routingNote')}</p>
       <fieldset className="space-y-1">
         <legend className="text-sm font-bold">{t('set_problems')}</legend>

@@ -1,5 +1,5 @@
 {
-  "id": "7303c018-28ff-48ed-8e00-0fbe17404bb9",
+  "id": "3006cd06-baf9-4b3d-a1b9-5c4c463a027a",
   "prevId": "16f4b535-565a-459b-ae26-ac363247e652",
   "version": "7",
   "dialect": "postgresql",
@@ -12965,6 +12965,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "rsa_request_id": {
+          "name": "rsa_request_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
         "city_id": {
           "name": "city_id",
           "type": "uuid",
@@ -13190,6 +13196,37 @@
           "method": "btree",
           "with": {}
         },
+        "support_tickets_rsa_dispute_uq": {
+          "name": "support_tickets_rsa_dispute_uq",
+          "columns": [
+            {
+              "expression": "rsa_request_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"support_tickets\".\"kind\" = 'rsa_bill_dispute' and \"support_tickets\".\"status\" in ('open','in_review','awaiting_customer')",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "support_tickets_rsa_request_id_index": {
+          "name": "support_tickets_rsa_request_id_index",
+          "columns": [
+            {
+              "expression": "rsa_request_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "support_tickets_status_sla_ack_due_index": {
           "name": "support_tickets_status_sla_ack_due_index",
           "columns": [
@@ -13305,6 +13342,19 @@
           "onDelete": "set null",
           "onUpdate": "no action"
         },
+        "support_tickets_rsa_request_id_rsa_requests_id_fk": {
+          "name": "support_tickets_rsa_request_id_rsa_requests_id_fk",
+          "tableFrom": "support_tickets",
+          "tableTo": "rsa_requests",
+          "columnsFrom": [
+            "rsa_request_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
         "support_tickets_city_id_cities_id_fk": {
           "name": "support_tickets_city_id_cities_id_fk",
           "tableFrom": "support_tickets",
@@ -13367,7 +13417,7 @@
         },
         "support_tickets_kind_valid": {
           "name": "support_tickets_kind_valid",
-          "value": "\"support_tickets\".\"kind\" in ('order_issue','service_issue','refund','fitment','product_sourcing','workshop_request','account','deletion_request','labour_redo','other')"
+          "value": "\"support_tickets\".\"kind\" in ('order_issue','service_issue','refund','fitment','product_sourcing','workshop_request','account','deletion_request','labour_redo','rsa_bill_dispute','other')"
         },
         "support_tickets_owner": {
           "name": "support_tickets_owner",
@@ -17571,6 +17621,20 @@
           "notNull": true,
           "default": 3
         },
+        "max_bill_paise": {
+          "name": "max_bill_paise",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 2500000
+        },
+        "bill_dispute_enabled": {
+          "name": "bill_dispute_enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
         "problem_types": {
           "name": "problem_types",
           "type": "text[]",
@@ -17672,6 +17736,10 @@
         "rsa_city_settings_routing_mode": {
           "name": "rsa_city_settings_routing_mode",
           "value": "\"rsa_city_settings\".\"routing_mode\" in ('manual','auto','auto_then_manual')"
+        },
+        "rsa_city_settings_max_bill": {
+          "name": "rsa_city_settings_max_bill",
+          "value": "\"rsa_city_settings\".\"max_bill_paise\" between 100000 and 10000000"
         },
         "rsa_city_settings_hours": {
           "name": "rsa_city_settings_hours",

@@ -169,3 +169,5 @@ Cart writes, checkout quote (when signed in), order placement, coupon check and 
 ## Roadside permissions and limits (2026-11-24, spec 22)
 
 Permissions: `roadside:request` (customers), `roadside:read`, `roadside:dispatch`, `roadside:cancel` (ops roles, city scoped), `roadside:settings` (super admin), `roadside:respond` (workshop owner and staff, scoped to their workshops). Rate limits: public availability 60 per minute per IP; create 6 per 10 minutes per user; pay 20 per 10 minutes per user; arrival code 20 per 10 minutes per user plus the 5-try lock per request. A customer reaches only their own requests (404), a workshop only its own offers and jobs (404), staff only their cities (404). No mass assignment: the create body is strict and never carries the advance, status or workshop.
+
+Roadside override rule (2026-11-24): the arrival-code override needs `roadside:dispatch` and a locked code; only a holder of `roadside:settings` (super admin) may override an unlocked code. The bill question is limited to 5 per 10 minutes per user.

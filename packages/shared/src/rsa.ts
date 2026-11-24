@@ -65,6 +65,8 @@ export const RSA_DEFAULT_ACCEPT_TIMER_SECONDS = 150;
 export const RSA_MAX_BILL_LINES = 20;
 /** A roadside bill above this (₹1,00,000) is refused: a typo or abuse, never a roadside job (no customer approval of lines yet). */
 export const RSA_MAX_BILL_PAISE = 10_000_000;
+/** The per-city ceiling of one roadside bill unless an admin sets another (₹25,000); never above `RSA_MAX_BILL_PAISE`. */
+export const RSA_DEFAULT_MAX_BILL_PAISE = 2_500_000;
 /** Minutes the customer has to pay the advance before the unpaid request is closed by the worker. */
 export const RSA_PAYMENT_WINDOW_MINUTES = 30;
 export const RSA_PUBLIC_CODE_PREFIX = 'RSA';
@@ -117,6 +119,10 @@ export interface RsaSettings {
   routingMode: RsaRoutingMode;
   acceptTimerSeconds: number;
   maxAutoAttempts: number;
+  /** Largest bill a workshop may enter for one request in this city, paise (default ₹25,000, at most ₹1,00,000). */
+  maxBillPaise: number;
+  /** Whether customers see "Question this bill" (opens a support request). Off by default (user ruling 2026-11-24). */
+  billDisputeEnabled: boolean;
   problemTypes: RsaProblemType[];
   sosPhone: string | null;
   version: number;
@@ -135,6 +141,8 @@ export function defaultRsaSettings(): RsaSettings {
     routingMode: 'manual',
     acceptTimerSeconds: RSA_DEFAULT_ACCEPT_TIMER_SECONDS,
     maxAutoAttempts: 3,
+    maxBillPaise: RSA_DEFAULT_MAX_BILL_PAISE,
+    billDisputeEnabled: false,
     problemTypes: [...RSA_PROBLEM_TYPES],
     sosPhone: null,
     version: 0,

@@ -467,6 +467,83 @@ describe('dispatch, the job and the bill', () => {
     ).toBe(404);
   });
 
+  it('limits a bill to the city maximum and lets the customer question it only when the city switched that on', async () => {
+    const who = await person('10');
+    const { code, version } = await live(who);
+    await call(ops, 'POST', `/admin/roadside/requests/${code}/offer`, {
+      workshopId,
+      expectedVersion: version,
+    });
+    expect((await call(owner, 'POST', `/workshop/roadside/requests/${code}/accept`)).status).toBe(200);
+    const accepted = await call(who, 'GET', `/roadside/requests/${code}`);
+    let v = Number(accepted.body.version);
+    // Only a locked code may be overridden by ops; a super admin may always.
+    const override = { reason: 'Customer lost the phone, support is on call', expectedVersion: v };
+    const refused = await call(ops, 'POST', `/admin/roadside/requests/${code}/arrival-override`, override);
+    expect(refused.status).toBe(409);
+    expect(refused.body.error.code).toBe('ARRIVAL_CODE_NOT_LOCKED');
+    const done = await call(
+      superAdmin,
+      'POST',
+      `/admin/roadside/requests/${code}/arrival-override`,
+      override,
+    );
+    expect(done.status, JSON.stringify(done.body)).toBe(200);
+    v = Number(done.body.version);
+    await call(owner, 'POST', `/workshop/roadside/requests/${code}/start`, { expectedVersion: v });
+    v += 1;
+    const tooBig = await call(owner, 'POST', `/workshop/roadside/requests/${code}/bill`, {
+      expectedVersion: v,
+      lines: [{ kind: 'labour', description: 'Big job', quantity: 1, unitPricePaise: 3_000_000 }],
+    });
+    expect(tooBig.status).toBe(422);
+    expect(tooBig.body.error.code).toBe('BILL_TOO_LARGE');
+    await call(owner, 'POST', `/workshop/roadside/requests/${code}/bill`, {
+      expectedVersion: v,
+      lines: [{ kind: 'labour', description: 'Repair', quantity: 1, unitPricePaise: 100_000 }],
+    });
+    // OFF by default: the page is told, and the endpoint refuses.
+    const view = await call(who, 'GET', `/roadside/requests/${code}`);
+    expect(view.body.disputeAvailable).toBe(false);
+    const off = await call(who, 'POST', `/roadside/requests/${code}/dispute`, {});
+    expect(off.status).toBe(409);
+    expect(off.body.error.code).toBe('RSA_DISPUTE_OFF');
+    // An admin switches it on for the city.
+    const cur = await call(superAdmin, 'GET', '/admin/roadside/settings?city=RPR');
+    expect(
+      (
+        await call(superAdmin, 'PUT', '/admin/roadside/settings?city=RPR', {
+          ...cur.body,
+          billDisputeEnabled: true,
+        })
+      ).status,
+    ).toBe(200);
+    expect((await call(who, 'GET', `/roadside/requests/${code}`)).body.disputeAvailable).toBe(true);
+    expect((await call(other, 'POST', `/roadside/requests/${code}/dispute`, {})).status).toBe(404);
+    const on = await call(who, 'POST', `/roadside/requests/${code}/dispute`, {
+      note: 'Please check the labour line',
+    });
+    expect(on.status, JSON.stringify(on.body)).toBe(200);
+    expect(String(on.body.ticketCode)).toMatch(/^REQ-RPR-/);
+    expect((await call(who, 'POST', `/roadside/requests/${code}/dispute`, {})).body.error.code).toBe(
+      'RSA_DISPUTE_OPEN',
+    );
+    expect((await call(who, 'GET', `/roadside/requests/${code}`)).body.disputeOpen).toBe(true);
+    // Admin sees the question on the queue, and the balance is still payable.
+    const queue = await call(ops, 'GET', '/admin/roadside/queue?view=active');
+    expect(
+      (queue.body as unknown as { code: string; disputed: boolean }[]).find((q) => q.code === code)?.disputed,
+    ).toBe(true);
+    expect((await call(who, 'POST', `/roadside/requests/${code}/pay-balance`)).status).toBe(200);
+    // The customer cannot raise a limit above 1,00,000 rupees through the settings either.
+    const bad = await call(superAdmin, 'PUT', '/admin/roadside/settings?city=RPR', {
+      ...cur.body,
+      version: 99,
+      maxBillPaise: 10_000_001,
+    });
+    expect(bad.status).toBe(400);
+  });
+
   it('cancel with a refund request, once, and tell the customer nothing is promised instantly', async () => {
     const who = await person('08');
     const { code, version } = await live(who);

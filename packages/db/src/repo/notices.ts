@@ -237,6 +237,7 @@ const STAFF_PERMISSION = {
   'staff.refund_alert': 'refunds:approve',
   'staff.new_application': 'applications:review',
   'staff.new_ticket': 'tickets:reply',
+  'staff.rsa_cash': 'roadside:read',
 } as const satisfies Partial<Record<NoticeKind, Permission>>;
 
 export type StaffNoticeKind = keyof typeof STAFF_PERMISSION;

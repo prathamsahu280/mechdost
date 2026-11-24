@@ -70,6 +70,8 @@ export interface RsaQueueItem {
   workshopName: string | null;
   offerExpiresAt: string | null;
   attempts: number;
+  /** A question about the bill is open with support. */
+  disputed: boolean;
 }
 
 export async function listRsaQueue(
@@ -92,13 +94,16 @@ export async function listRsaQueue(
     workshop_name: string | null;
     offer_expires_at: string | null;
     attempts: unknown;
+    disputed: boolean;
   }>(
     await db.execute(sql`select r.code, r.status, r.version, r.vehicle_type, r.problem_type, r.pincode, r.address_line,
         r.advance_paise, r.created_at::text as created_at,
         extract(epoch from (now() - r.created_at)) as waiting_s,
         w.name as workshop_name,
         (select o.expires_at::text from rsa_offers o where o.request_id = r.id and o.status = 'offered') as offer_expires_at,
-        (select count(*) from rsa_offers o where o.request_id = r.id) as attempts
+        (select count(*) from rsa_offers o where o.request_id = r.id) as attempts,
+        exists (select 1 from support_tickets t where t.rsa_request_id = r.id and t.kind = 'rsa_bill_dispute'
+          and t.status in ('open', 'in_review', 'awaiting_customer')) as disputed
       from rsa_requests r left join workshops w on w.id = coalesce(r.workshop_id,
         (select o.workshop_id from rsa_offers o where o.request_id = r.id and o.status = 'offered'))
       where ${inScopeRaw(scope)} and ${VIEW[view]}
@@ -119,6 +124,7 @@ export async function listRsaQueue(
     workshopName: r.workshop_name,
     offerExpiresAt: r.offer_expires_at ? new Date(r.offer_expires_at).toISOString() : null,
     attempts: num(r.attempts),
+    disputed: r.disputed,
   }));
 }
 

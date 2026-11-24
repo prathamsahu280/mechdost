@@ -1,6 +1,6 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import type { Context } from 'hono';
-import type { Permission } from '@mechdost/shared/rbac';
+import { can, type Permission } from '@mechdost/shared/rbac';
 import {
   cancelRsaByStaff,
   cityScopeFrom,
@@ -179,6 +179,8 @@ export function adminRoadsideRoutes(deps: AppDeps, cache: SessionCache) {
         reason: b.reason,
         expectedVersion: b.expectedVersion,
         staffUserId: c.get('auth').user.id,
+        // Only a locked code may be overridden, except by someone who may also edit the roadside settings (super admin).
+        bypassLock: can(c.get('auth').grants, 'roadside:settings'),
       });
       return c.json(out, 200);
     })

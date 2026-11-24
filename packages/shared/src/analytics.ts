@@ -312,6 +312,10 @@ export interface ServerEventProps {
     reasonCode: string;
     refundRequested: boolean;
   };
+  /** The customer questioned the bill (a support request was opened). */
+  rsa_bill_disputed: { requestCode: string; totalPaise: number };
+  /** A workshop marked the balance as paid in cash (finance and ops were alerted). */
+  rsa_cash_marked: { requestCode: string; workshopId: string; amountPaise: number };
   rsa_late_capture: { requestCode: string; amountPaise: number; reason: 'cancelled' | 'settled' };
   admin_rsa_settings_saved: { cityId: string; enabled: boolean; vehicleTypes: number; pincodes: number };
   workshop_rsa_opt_in_saved: { workshopId: string; enabled: boolean };

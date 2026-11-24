@@ -1455,7 +1455,7 @@ const scopeSql = (scope: CityScope): SQL =>
     ? sql`true`
     : scope.cityIds.length === 0
       ? sql`false`
-      : sql`coalesce(g.city_id, sr.city_id) in (${sql.join(
+      : sql`coalesce(g.city_id, sr.city_id, rq.city_id) in (${sql.join(
           scope.cityIds.map((id) => sql`${id}::uuid`),
           sql`, `,
         )})`;

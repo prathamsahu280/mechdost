@@ -113,6 +113,28 @@ describe('demo roadside flow', () => {
     expect(d.demoCreate({ vehicleType: '2W', problemType: null, pincode: '492001' }).ok).toBe(true);
   });
 
+  it('lets the customer question a ready bill once, keeping the balance payable', async () => {
+    const d = await demo();
+    d.demoCreate({ vehicleType: '2W', problemType: null, pincode: '492001' });
+    expect(d.demoStep({ kind: 'dispute' })).toBe(false);
+    for (const kind of ['pay_advance', 'offer', 'accept'] as const) d.demoStep({ kind });
+    d.demoStep({ kind: 'arrive', code: d.DEMO_ARRIVAL_CODE });
+    d.demoStep({ kind: 'start' });
+    d.demoStep({
+      kind: 'bill',
+      lines: [{ kind: 'labour', description: 'Repair', quantity: 1, unitPricePaise: 180_000 }],
+    });
+    const read = () =>
+      d.demoView(
+        JSON.parse(store.get('mechdost-demo-roadside-v1') ?? 'null') as Parameters<typeof d.demoView>[0],
+      );
+    expect(read()).toMatchObject({ status: 'billed', disputeOpen: false, disputeAvailable: true });
+    expect(d.demoStep({ kind: 'dispute' })).toBe(true);
+    expect(d.demoStep({ kind: 'dispute' })).toBe(false);
+    expect(read()).toMatchObject({ status: 'billed', disputeOpen: true });
+    expect(d.demoStep({ kind: 'pay_balance' })).toBe(true);
+  });
+
   it('never shows the arrival code after the mechanic arrived', async () => {
     const d = await demo();
     d.demoCreate({ vehicleType: '2W', problemType: null, pincode: '492001' });

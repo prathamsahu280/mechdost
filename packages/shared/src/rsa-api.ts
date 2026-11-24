@@ -36,6 +36,8 @@ export const RsaSettingsInput = z
     routingMode: z.enum(RSA_ROUTING_MODES),
     acceptTimerSeconds: z.number().int().min(60).max(900),
     maxAutoAttempts: z.number().int().min(1).max(10),
+    maxBillPaise: z.number().int().min(100_000).max(RSA_MAX_BILL_PAISE),
+    billDisputeEnabled: z.boolean(),
     problemTypes: z.array(z.enum(RSA_PROBLEM_TYPES)).min(1).max(RSA_PROBLEM_TYPES.length),
     sosPhone: PhoneIn.nullable(),
     version: z.number().int().min(0),
@@ -142,3 +144,6 @@ export const RsaBillBody = z
     { message: 'bill total must be above zero and within the limit', path: ['lines'] },
   );
 export const RsaVersionBody = z.object({ expectedVersion: z.number().int().min(1) }).strict();
+
+/** The customer questions the roadside bill (opens a support request linked to it). */
+export const RsaDisputeBody = z.object({ note: Note.optional() }).strict();

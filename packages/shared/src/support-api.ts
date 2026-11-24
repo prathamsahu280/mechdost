@@ -15,6 +15,7 @@ export const SUPPORT_TICKET_KINDS = [
   'fitment',
   'account',
   'labour_redo',
+  'rsa_bill_dispute',
   'deletion_request',
   'other',
 ] as const;

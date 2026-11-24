@@ -160,6 +160,8 @@ export async function markOutboxSent(
     .update(notificationOutbox)
     .set({
       status: 'sent',
+      // The arrival code is stored only until the email is out (spec 22).
+      payload: sql`case when ${notificationOutbox.templateKey} = 'rsa_accepted' then ${notificationOutbox.payload} - 'arrivalCode' else ${notificationOutbox.payload} end`,
       sentAt: new Date(),
       providerId,
       claimedAt: null,

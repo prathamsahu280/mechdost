@@ -67,6 +67,10 @@ export const rsaCitySettings = pgTable(
     routingMode: text().notNull().default('manual'),
     acceptTimerSeconds: integer().notNull().default(150),
     maxAutoAttempts: smallint().notNull().default(3),
+    /** Largest bill a workshop may enter for one request, paise (default ₹25,000; at most ₹1,00,000). */
+    maxBillPaise: paise().notNull().default(2_500_000),
+    /** Whether customers may question a bill (a support request); off by default. */
+    billDisputeEnabled: boolean().notNull().default(false),
     problemTypes: text()
       .array()
       .notNull()
@@ -87,6 +91,7 @@ export const rsaCitySettings = pgTable(
       sql`jsonb_typeof(${t.advancePaise}) = 'object' and ${t.advancePaise} ?& ${t.vehicleTypes} and (${t.advancePaise} - ${t.vehicleTypes}) = '{}'::jsonb`,
     ),
     check('rsa_city_settings_routing_mode', sql`${t.routingMode} in (${inList(RSA_ROUTING_MODES)})`),
+    check('rsa_city_settings_max_bill', sql`${t.maxBillPaise} between 100000 and 10000000`),
     check(
       'rsa_city_settings_hours',
       sql`${t.opensAtMinute} between 0 and 1439 and ${t.closesAtMinute} between 0 and 1439`,

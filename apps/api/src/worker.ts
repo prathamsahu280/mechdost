@@ -220,8 +220,10 @@ const rsaTimer = setInterval(() => {
       if (expired > 0) log('info', 'rsa_offers_expired', { count: expired });
       for (const f of failed)
         log('error', 'rsa_offer_expiry_failed', { offerId: f.offerId, ...safeError(f.error) });
-      const closed = await expireUnpaidRsa(db, { olderThanMinutes: RSA_PAYMENT_WINDOW_MINUTES });
-      if (closed > 0) log('info', 'rsa_unpaid_closed', { count: closed });
+      const unpaid = await expireUnpaidRsa(db, { olderThanMinutes: RSA_PAYMENT_WINDOW_MINUTES });
+      if (unpaid.closed > 0) log('info', 'rsa_unpaid_closed', { count: unpaid.closed });
+      for (const f of unpaid.failed)
+        log('error', 'rsa_unpaid_close_failed', { requestId: f.requestId, ...safeError(f.error) });
     })
     .catch((err: unknown) => {
       log('error', 'rsa_sweep_failed', safeError(err));

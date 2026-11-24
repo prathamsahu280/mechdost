@@ -164,6 +164,13 @@ export const NOTICE_CATALOGUE = {
     text: ['requestCode', 'minutes'],
     link: at('/partner/workshop'),
   }),
+  'staff.rsa_cash': def({
+    category: T,
+    entity: 'rsa_request',
+    audience: 'staff',
+    text: ['requestCode'],
+    link: at('/admin/roadside'),
+  }),
   'service.proposed': def({
     category: T,
     entity: 'service_request',

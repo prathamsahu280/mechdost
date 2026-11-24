@@ -48,6 +48,10 @@ export interface RoadsideView {
   responder: { workshopName: string; workshopNameHi: string | null } | null;
   arrivalCode: string | null;
   bill: RoadsideBill | null;
+  /** A question about the bill is open with support; the balance stays payable. */
+  disputeOpen: boolean;
+  /** The city switched "Question this bill" on. */
+  disputeAvailable: boolean;
   timeline: { status: RsaStatus; at: string }[];
   refunds: {
     amountPaise: number;
@@ -66,6 +70,7 @@ export interface RoadsideQueueItem {
   workshopName: string | null;
   offerExpiresAt: string | null;
   attempts: number;
+  disputed: boolean;
 }
 
 export interface RoadsideSuggestion {
@@ -81,7 +86,6 @@ export interface RoadsideOffer {
   vehicleType: string;
   problemType: RsaProblemType | null;
   pincode: string;
-  addressLine: string | null;
   distanceM: number | null;
   expiresAt: string;
 }
@@ -155,6 +159,12 @@ const KNOWN_ERRORS = [
   'ARRIVAL_CODE_WRONG',
   'ARRIVAL_CODE_LOCKED',
   'RSA_PINCODE_UNKNOWN',
+  'BILL_TOO_LARGE',
+  'RSA_NOT_BILLED',
+  'RSA_DISPUTE_OPEN',
+  'RSA_DISPUTE_OFF',
+  'ARRIVAL_CODE_NOT_LOCKED',
+  'RSA_LOCATION_OUTSIDE',
   'PAYMENT_METHOD_UNAVAILABLE',
   'NOTHING_TO_PAY',
   'UNAVAILABLE',

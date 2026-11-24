@@ -103,6 +103,20 @@ function TrackerBody({
     }
     setBusy(false);
   };
+  const question = async () => {
+    setBusy(true);
+    setNote(null);
+    if (DATA_MODE === 'demo') demoStep({ kind: 'dispute' });
+    else {
+      const res = await roadsideCall(locale, `/roadside/requests/${encodeURIComponent(code)}/dispute`, {
+        method: 'POST',
+        body: {},
+      });
+      if (!res.ok) setNote(roadsideErrorKey(res.code));
+      reload();
+    }
+    setBusy(false);
+  };
   const dropUnpaid = async () => {
     setBusy(true);
     if (DATA_MODE === 'demo') demoStep({ kind: 'reset' });
@@ -215,6 +229,18 @@ function TrackerBody({
             <p className="mt-3 text-sm text-muted">
               {t('overpaidNote', { amount: formatPrice(bill.overpaidPaise) })}
             </p>
+          ) : null}
+          {view.disputeOpen ? (
+            <p role="status" className="mt-3 rounded-card bg-pill p-3 text-sm text-ink">
+              {t('disputeOpen')}
+            </p>
+          ) : view.disputeAvailable && (view.status === 'billed' || view.status === 'completed') ? (
+            <div className="mt-3">
+              <button type="button" className={quiet} disabled={busy} onClick={() => void question()}>
+                {t('questionBill')}
+              </button>
+              <p className="mt-1 text-sm text-muted">{t('questionBillNote')}</p>
+            </div>
           ) : null}
           {view.status === 'billed' && bill.balancePaise > 0 ? (
             <div className="mt-4 space-y-2">

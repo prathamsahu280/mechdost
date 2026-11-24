@@ -37,6 +37,7 @@ import {
   listWorkshopRsa,
   markRsaBalanceCash,
   markRsaEnRoute,
+  openRsaBillDispute,
   openPaymentForRsa,
   overrideRsaArrival,
   payableRsaOfUser,
@@ -429,7 +430,7 @@ describe('paying the advance', () => {
       .update(s.rsaRequests)
       .set({ createdAt: sql`now() - interval '2 hours'` })
       .where(eq(s.rsaRequests.code, r.code));
-    expect(await expireUnpaidRsa(t(), { olderThanMinutes: 30 })).toBeGreaterThanOrEqual(1);
+    expect((await expireUnpaidRsa(t(), { olderThanMinutes: 30 })).closed).toBeGreaterThanOrEqual(1);
     expect((await row(r.code)).status).toBe('cancelled');
     const cap = fact(o.providerOrderId, o.amountPaise);
     expect(await applyRazorpayPayment(t(), cap)).toEqual({ outcome: 'needs_refund' });
@@ -981,10 +982,9 @@ describe('email and WhatsApp (outbox, same transaction)', () => {
       ['rsa_accepted', 'rsa_arrived', 'rsa_bill_ready', 'rsa_completed', 'rsa_received'].sort(),
     );
     const byKey = (k: string) => emails.find((r) => r.templateKey === k)!;
-    expect(byKey('rsa_accepted').payload).toMatchObject({
-      requestCode: j.code,
-      arrivalCode: expect.stringMatching(/^\d{4}$/) as string,
-    });
+    // The arrival code was in the accepted email and is removed once the mechanic arrived (spec 22).
+    expect(byKey('rsa_accepted').payload).toMatchObject({ requestCode: j.code });
+    expect(byKey('rsa_accepted').payload).not.toHaveProperty('arrivalCode');
     expect(text(byKey('rsa_accepted').payload)).toContain('वर्कशॉप');
     expect(byKey('rsa_bill_ready').payload).toMatchObject({
       total: '₹1,800.00',
@@ -993,10 +993,6 @@ describe('email and WhatsApp (outbox, same transaction)', () => {
     });
     expect(byKey('rsa_received').payload).toMatchObject({ amount: '₹500.00' });
     expect(rows.every((r) => r.channel !== 'whatsapp')).toBe(true);
-    // The arrival code is in no other channel.
-    const code = (byKey('rsa_accepted').payload as { arrivalCode: string }).arrivalCode;
-    for (const r of rows.filter((x) => x.templateKey !== 'rsa_accepted'))
-      expect(text(r.payload)).not.toContain(code);
   });
 
   it('emails the cancellation and the processed refund once each, honestly worded', async () => {
@@ -1153,6 +1149,260 @@ describe('security review fixes', () => {
       expectedVersion: (await row(code)).version,
       staffUserId: f.staff,
     });
+  });
+});
+
+describe('independent security review fixes', () => {
+  const staffWith = async (firebaseUid: string, role: string) => {
+    await syncRbacCatalogue(t());
+    const [u] = await db
+      .insert(s.users)
+      .values({ firebaseUid, phone: `+9198222${String(userN + 60000)}`, name: role, language: 'en' })
+      .returning();
+    userN += 1;
+    await grantRole(t(), { userId: u!.id, role, cityId: null, grantedBy: null });
+    return u!.id;
+  };
+  const noticesOf = (userId: string, kind: string) =>
+    db
+      .select()
+      .from(s.notifications)
+      .where(and(eq(s.notifications.userId, userId), eq(s.notifications.kind, kind)));
+
+  it('keeps a bill under the city limit, which an admin sets (default 25,000 rupees, at most 1,00,000)', async () => {
+    const j = await inProgress();
+    const big = [{ kind: 'labour' as const, description: 'Big job', quantity: 1, unitPricePaise: 3_000_000 }];
+    await expect(billRsa(t(), { ...step(j.code, j.version), lines: big })).rejects.toMatchObject({
+      code: 'BILL_TOO_LARGE',
+      details: { maxPaise: 2_500_000 },
+    });
+    const cur = await getRsaSettings(t(), f.raipur);
+    expect(cur.maxBillPaise).toBe(2_500_000);
+    await saveRsaSettings(t(), {
+      cityId: f.raipur,
+      staffUserId: f.staff,
+      settings: { ...cur, maxBillPaise: 5_000_000 },
+    });
+    expect((await billRsa(t(), { ...step(j.code, j.version), lines: big })).totalPaise).toBe(3_000_000);
+    // The table refuses a limit above 1,00,000 rupees whatever the code does.
+    await expect(
+      db
+        .update(s.rsaCitySettings)
+        .set({ maxBillPaise: 10_000_001 })
+        .where(eq(s.rsaCitySettings.cityId, f.raipur)),
+    ).rejects.toThrow();
+    await saveRsaSettings(t(), {
+      cityId: f.raipur,
+      staffUserId: f.staff,
+      settings: { ...cur, version: cur.version + 1, maxBillPaise: 2_500_000 },
+    });
+  });
+
+  it('lets the customer question a bill: a linked support request, one open at a time, balance still payable, staff see it', async () => {
+    const early = await inProgress();
+    // OFF by default: the button is hidden (view flag) and the repository refuses.
+    const billedFirst = await billRsa(t(), { ...step(early.code, early.version), lines: LINES });
+    expect(billedFirst.completed).toBe(false);
+    expect(
+      (await getCustomerRsa(t(), { userId: owner.get(early.code)!, code: early.code, keyring }))
+        .disputeAvailable,
+    ).toBe(false);
+    await expect(
+      openRsaBillDispute(t(), { userId: owner.get(early.code)!, code: early.code, defaultCityCode: 'XXX' }),
+    ).rejects.toMatchObject({ code: 'RSA_DISPUTE_OFF' });
+    // ON: an admin switches it on for the city.
+    const cur = await getRsaSettings(t(), f.raipur);
+    await saveRsaSettings(t(), {
+      cityId: f.raipur,
+      staffUserId: f.staff,
+      settings: { ...cur, billDisputeEnabled: true },
+    });
+    expect(
+      (await getCustomerRsa(t(), { userId: owner.get(early.code)!, code: early.code, keyring }))
+        .disputeAvailable,
+    ).toBe(true);
+    const unbilled = await inProgress();
+    await expect(
+      openRsaBillDispute(t(), {
+        userId: owner.get(unbilled.code)!,
+        code: unbilled.code,
+        defaultCityCode: 'XXX',
+      }),
+    ).rejects.toMatchObject({ code: 'RSA_NOT_BILLED' });
+    const userId = owner.get(early.code)!;
+    await expect(
+      openRsaBillDispute(t(), { userId: f.other, code: early.code, defaultCityCode: 'XXX' }),
+    ).rejects.toMatchObject({ status: 404 });
+    const opened = await openRsaBillDispute(t(), {
+      userId,
+      code: early.code,
+      note: 'The parts line looks too high',
+      defaultCityCode: 'XXX',
+    });
+    expect(opened.ticketCode).toMatch(/^REQ-RPR-/);
+    await expect(
+      openRsaBillDispute(t(), { userId, code: early.code, defaultCityCode: 'XXX' }),
+    ).rejects.toMatchObject({ code: 'RSA_DISPUTE_OPEN' });
+    const [ticket] = await db
+      .select()
+      .from(s.supportTickets)
+      .where(eq(s.supportTickets.code, opened.ticketCode));
+    expect(ticket).toMatchObject({ kind: 'rsa_bill_dispute', rsaRequestId: await idOf(early.code), userId });
+    expect((await getCustomerRsa(t(), { userId, code: early.code, keyring })).disputeOpen).toBe(true);
+    expect((await listRsaQueue(t(), ALL, 'active')).find((q) => q.code === early.code)?.disputed).toBe(true);
+    // The balance stays payable while the question is open.
+    expect(await pay(early.code, 'rsa_balance')).toEqual({ outcome: 'paid' });
+    expect((await row(early.code)).status).toBe('completed');
+  });
+
+  it('alerts ops whenever a workshop marks the balance as cash', async () => {
+    const ops = await staffWith('rsa-ops-cash', 'ops_manager');
+    const j = await inProgress();
+    await billRsa(t(), { ...step(j.code, j.version), lines: LINES });
+    await markRsaBalanceCash(t(), step(j.code, (await row(j.code)).version));
+    const notices = await noticesOf(ops, 'staff.rsa_cash');
+    expect(notices.length).toBeGreaterThanOrEqual(1);
+    expect(JSON.stringify(notices.at(-1))).toContain(j.code);
+  });
+
+  it('shows a roadside refund to finance staff scoped to its city, and to no other city', async () => {
+    const { code } = await live();
+    await cancelRsaByStaff(t(), {
+      scope: ALL,
+      code,
+      reasonCode: 'other',
+      expectedVersion: (await row(code)).version,
+      staffUserId: f.staff,
+    });
+    const [refund] = await refundsOf(code);
+    const mine = await listAdminRefunds(
+      t(),
+      { all: false, cityIds: [f.raipur] },
+      { view: 'waiting', cursor: null, staffUserId: f.staff },
+    );
+    expect(mine.items.map((i) => i.id)).toContain(refund!.id);
+    const other = await listAdminRefunds(
+      t(),
+      { all: false, cityIds: [f.bhilai] },
+      { view: 'waiting', cursor: null, staffUserId: f.staff },
+    );
+    expect(other.items.map((i) => i.id)).not.toContain(refund!.id);
+  });
+
+  it('raises a finance alert for a second captured payment of a paid request, once per Razorpay payment', async () => {
+    const finance = await staffWith('rsa-finance-extra', 'finance');
+    const r = await create();
+    const o = await order(r.code, 'rsa_advance');
+    expect(await applyRazorpayPayment(t(), fact(o.providerOrderId, o.amountPaise))).toEqual({
+      outcome: 'paid',
+    });
+    const again = fact(o.providerOrderId, o.amountPaise);
+    expect(await applyRazorpayPayment(t(), again)).toEqual({ outcome: 'needs_refund' });
+    expect(await applyRazorpayPayment(t(), again)).toEqual({ outcome: 'needs_refund' });
+    const alerts = (await noticesOf(finance, 'staff.refund_alert')).filter((n) =>
+      JSON.stringify(n).includes(again.providerPaymentId),
+    );
+    expect(alerts).toHaveLength(1);
+  });
+
+  it('completes a bill the advance covers with the right total in the email and the event', async () => {
+    const j = await inProgress();
+    await billRsa(t(), {
+      ...step(j.code, j.version),
+      lines: [{ kind: 'labour', description: 'Jump start', quantity: 1, unitPricePaise: 50_000 }],
+    });
+    const mails = await db
+      .select()
+      .from(s.notificationOutbox)
+      .where(
+        and(
+          eq(s.notificationOutbox.recipientUserId, owner.get(j.code)!),
+          eq(s.notificationOutbox.templateKey, 'rsa_completed'),
+        ),
+      );
+    expect(mails).toHaveLength(1);
+    expect(mails[0]!.payload).toMatchObject({ total: '₹500.00' });
+    const ev = await db.execute(
+      sql`select props from events where event = 'rsa_completed' and props->>'requestCode' = ${j.code}`,
+    );
+    const rows =
+      (ev as unknown as { rows?: { props: { totalPaise: number; via: string } }[] }).rows ??
+      (ev as unknown as { props: { totalPaise: number; via: string } }[]);
+    expect(rows[0]!.props).toMatchObject({ totalPaise: 50_000, via: 'advance_covers' });
+  });
+
+  it('removes the arrival code from the stored email once the mechanic has arrived', async () => {
+    const a = await accepted();
+    const userId = owner.get(a.code)!;
+    const find = async () =>
+      (
+        await db
+          .select()
+          .from(s.notificationOutbox)
+          .where(
+            and(
+              eq(s.notificationOutbox.recipientUserId, userId),
+              eq(s.notificationOutbox.templateKey, 'rsa_accepted'),
+            ),
+          )
+      )[0]!;
+    expect((await find()).payload).toHaveProperty('arrivalCode');
+    const view = await getCustomerRsa(t(), { userId, code: a.code, keyring });
+    await confirmRsaArrival(t(), { ...step(a.code, a.version), arrivalCode: view.arrivalCode!, keyring });
+    const after = await find();
+    expect(after.payload).not.toHaveProperty('arrivalCode');
+    expect(after.payload).toMatchObject({ requestCode: a.code });
+  });
+
+  it('lets staff override the arrival only for a locked code, and a super admin always', async () => {
+    const a = await accepted();
+    const input = {
+      scope: ALL,
+      code: a.code,
+      reason: 'Customer is on the phone with support',
+      expectedVersion: a.version,
+      staffUserId: f.staff,
+    };
+    await expect(overrideRsaArrival(t(), input)).rejects.toMatchObject({ code: 'ARRIVAL_CODE_NOT_LOCKED' });
+    await overrideRsaArrival(t(), { ...input, bypassLock: true });
+    expect((await row(a.code)).status).toBe('arrived');
+  });
+
+  it('shows a workshop only the pincode, distance, vehicle and problem before it accepts, the note and address after', async () => {
+    const r = await create({
+      note: 'Black car near the temple',
+      addressLine: 'Gate 3, Sector 5',
+      problemType: 'flat_tyre',
+    });
+    await order(r.code, 'rsa_advance');
+    await pay(r.code);
+    await sendRsaOffer(t(), {
+      scope: ALL,
+      code: r.code,
+      workshopId: W.main!.id,
+      expectedVersion: (await row(r.code)).version,
+      staffUserId: f.staff,
+    });
+    const offer = (await listWorkshopRsa(t(), [W.main!.id])).offers.find((o) => o.code === r.code)!;
+    expect(Object.keys(offer).sort()).toEqual([
+      'code',
+      'distanceM',
+      'expiresAt',
+      'fuel',
+      'pincode',
+      'problemType',
+      'vehicleType',
+      'workshopId',
+    ]);
+    expect(JSON.stringify(offer)).not.toContain('temple');
+    await acceptRsaOffer(t(), { workshopIds: [W.main!.id], code: r.code, staffUserId: f.staff, keyring });
+    const job = (await listWorkshopRsa(t(), [W.main!.id])).jobs.find((j) => j.code === r.code)!;
+    expect(job).toMatchObject({ note: 'Black car near the temple', addressLine: 'Gate 3, Sector 5' });
+  });
+
+  it('reports the unpaid requests it closed and the ones it could not', async () => {
+    const out = await expireUnpaidRsa(t(), { olderThanMinutes: 30 });
+    expect(out).toEqual({ closed: expect.any(Number) as number, failed: [] });
   });
 });
 

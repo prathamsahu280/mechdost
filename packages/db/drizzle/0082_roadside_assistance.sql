@@ -38,6 +38,8 @@ CREATE TABLE "rsa_city_settings" (
 	"routing_mode" text DEFAULT 'manual' NOT NULL,
 	"accept_timer_seconds" integer DEFAULT 150 NOT NULL,
 	"max_auto_attempts" smallint DEFAULT 3 NOT NULL,
+	"max_bill_paise" bigint DEFAULT 2500000 NOT NULL,
+	"bill_dispute_enabled" boolean DEFAULT false NOT NULL,
 	"problem_types" text[] DEFAULT '{dead_battery,flat_tyre,out_of_fuel,minor_fix,needs_towing,unknown}'::text[] NOT NULL,
 	"sos_phone" text,
 	"updated_by" uuid,
@@ -47,6 +49,7 @@ CREATE TABLE "rsa_city_settings" (
 	CONSTRAINT "rsa_city_settings_vehicle_types" CHECK ("rsa_city_settings"."vehicle_types" <@ array['2W','3W','4W']::text[] and cardinality("rsa_city_settings"."vehicle_types") between 1 and 3),
 	CONSTRAINT "rsa_city_settings_advance_matches" CHECK (jsonb_typeof("rsa_city_settings"."advance_paise") = 'object' and "rsa_city_settings"."advance_paise" ?& "rsa_city_settings"."vehicle_types" and ("rsa_city_settings"."advance_paise" - "rsa_city_settings"."vehicle_types") = '{}'::jsonb),
 	CONSTRAINT "rsa_city_settings_routing_mode" CHECK ("rsa_city_settings"."routing_mode" in ('manual','auto','auto_then_manual')),
+	CONSTRAINT "rsa_city_settings_max_bill" CHECK ("rsa_city_settings"."max_bill_paise" between 100000 and 10000000),
 	CONSTRAINT "rsa_city_settings_hours" CHECK ("rsa_city_settings"."opens_at_minute" between 0 and 1439 and "rsa_city_settings"."closes_at_minute" between 0 and 1439),
 	CONSTRAINT "rsa_city_settings_timer" CHECK ("rsa_city_settings"."accept_timer_seconds" between 60 and 900 and "rsa_city_settings"."max_auto_attempts" between 1 and 10),
 	CONSTRAINT "rsa_city_settings_problem_types" CHECK ("rsa_city_settings"."problem_types" <@ array['dead_battery','flat_tyre','out_of_fuel','minor_fix','needs_towing','unknown']::text[] and cardinality("rsa_city_settings"."problem_types") >= 1),
@@ -161,8 +164,10 @@ ALTER TABLE "refunds" DROP CONSTRAINT "refunds_group_or_bill";--> statement-brea
 ALTER TABLE "refunds" DROP CONSTRAINT "refunds_source_valid";--> statement-breakpoint
 ALTER TABLE "refunds" DROP CONSTRAINT "refunds_reason_valid";--> statement-breakpoint
 ALTER TABLE "notifications" DROP CONSTRAINT "notifications_entity_type_valid";--> statement-breakpoint
+ALTER TABLE "support_tickets" DROP CONSTRAINT "support_tickets_kind_valid";--> statement-breakpoint
 ALTER TABLE "payments" ADD COLUMN "rsa_request_id" uuid;--> statement-breakpoint
 ALTER TABLE "refunds" ADD COLUMN "rsa_request_id" uuid;--> statement-breakpoint
+ALTER TABLE "support_tickets" ADD COLUMN "rsa_request_id" uuid;--> statement-breakpoint
 ALTER TABLE "rsa_arrival_codes" ADD CONSTRAINT "rsa_arrival_codes_request_id_rsa_requests_id_fk" FOREIGN KEY ("request_id") REFERENCES "public"."rsa_requests"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "rsa_bill_lines" ADD CONSTRAINT "rsa_bill_lines_request_id_rsa_requests_id_fk" FOREIGN KEY ("request_id") REFERENCES "public"."rsa_requests"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "rsa_bill_lines" ADD CONSTRAINT "rsa_bill_lines_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
@@ -197,16 +202,20 @@ CREATE INDEX "rsa_requests_unpaid_idx" ON "rsa_requests" USING btree ("created_a
 CREATE INDEX "rsa_responders_enabled_index" ON "rsa_responders" USING btree ("enabled");--> statement-breakpoint
 ALTER TABLE "payments" ADD CONSTRAINT "payments_rsa_request_id_rsa_requests_id_fk" FOREIGN KEY ("rsa_request_id") REFERENCES "public"."rsa_requests"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "refunds" ADD CONSTRAINT "refunds_rsa_request_id_rsa_requests_id_fk" FOREIGN KEY ("rsa_request_id") REFERENCES "public"."rsa_requests"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "support_tickets" ADD CONSTRAINT "support_tickets_rsa_request_id_rsa_requests_id_fk" FOREIGN KEY ("rsa_request_id") REFERENCES "public"."rsa_requests"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 CREATE UNIQUE INDEX "payments_one_success_per_rsa_uq" ON "payments" USING btree ("rsa_request_id","purpose") WHERE "payments"."status" in ('paid','partially_refunded','refunded') and "payments"."rsa_request_id" is not null;--> statement-breakpoint
 CREATE UNIQUE INDEX "payments_one_open_per_rsa_uq" ON "payments" USING btree ("rsa_request_id","purpose") WHERE "payments"."status" in ('created','attempted','failed') and "payments"."rsa_request_id" is not null;--> statement-breakpoint
 CREATE INDEX "payments_rsa_request_id_index" ON "payments" USING btree ("rsa_request_id");--> statement-breakpoint
 CREATE INDEX "refunds_rsa_request_id_index" ON "refunds" USING btree ("rsa_request_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "support_tickets_rsa_dispute_uq" ON "support_tickets" USING btree ("rsa_request_id") WHERE "support_tickets"."kind" = 'rsa_bill_dispute' and "support_tickets"."status" in ('open','in_review','awaiting_customer');--> statement-breakpoint
+CREATE INDEX "support_tickets_rsa_request_id_index" ON "support_tickets" USING btree ("rsa_request_id");--> statement-breakpoint
 ALTER TABLE "payments" ADD CONSTRAINT "payments_purpose_valid" CHECK ("payments"."purpose" in ('order','service_bill','rsa_advance','rsa_balance'));--> statement-breakpoint
 ALTER TABLE "payments" ADD CONSTRAINT "payments_purpose_target" CHECK (("payments"."purpose" = 'order' and "payments"."group_id" is not null and "payments"."bill_id" is null and "payments"."rsa_request_id" is null) or ("payments"."purpose" = 'service_bill' and "payments"."bill_id" is not null and "payments"."group_id" is null and "payments"."rsa_request_id" is null) or ("payments"."purpose" in ('rsa_advance','rsa_balance') and "payments"."rsa_request_id" is not null and "payments"."group_id" is null and "payments"."bill_id" is null));--> statement-breakpoint
 ALTER TABLE "refunds" ADD CONSTRAINT "refunds_one_target" CHECK (num_nonnulls("refunds"."group_id", "refunds"."bill_id", "refunds"."rsa_request_id") = 1);--> statement-breakpoint
 ALTER TABLE "refunds" ADD CONSTRAINT "refunds_source_valid" CHECK ("refunds"."source" in ('order_rejected','order_cancelled','service_cancelled','rsa_cancelled','rsa_overpaid','duplicate_payment','payment_after_close','unfulfilled','support_claim','part_refund','other'));--> statement-breakpoint
 ALTER TABLE "refunds" ADD CONSTRAINT "refunds_reason_valid" CHECK ("refunds"."reason_code" in ('order_rejected','order_cancelled','service_cancelled','rsa_cancelled','rsa_overpaid','duplicate_payment','payment_after_close','faulty','damaged_in_transit','wrong_item','missing_item','not_fulfilled','goodwill','other'));--> statement-breakpoint
 ALTER TABLE "notifications" ADD CONSTRAINT "notifications_entity_type_valid" CHECK ("notifications"."entity_type" is null or "notifications"."entity_type" in ('order','service_request','rsa_request','quote','ticket','refund','shop','application','account'));--> statement-breakpoint
+ALTER TABLE "support_tickets" ADD CONSTRAINT "support_tickets_kind_valid" CHECK ("support_tickets"."kind" in ('order_issue','service_issue','refund','fitment','product_sourcing','workshop_request','account','deletion_request','labour_redo','rsa_bill_dispute','other'));--> statement-breakpoint
 -- Roadside assistance (design 2026-11-24, spec 22). Deny-all for the Data API (anon/authenticated); only the API role
 -- reads and writes these (spec 13). History and bill lines are append-only; mutable rows get version + updated_at.
 ALTER TABLE public.rsa_city_settings ENABLE ROW LEVEL SECURITY;--> statement-breakpoint

@@ -5,9 +5,10 @@ import {
   getCustomerRsa,
   getRsaAvailability,
   listCustomerRsa,
+  openRsaBillDispute,
 } from '@mechdost/db/repo';
 import { PINCODE_RE } from '@mechdost/shared/geo';
-import { CreateRsaRequestBody, RsaCodeParam } from '@mechdost/shared/rsa-api';
+import { CreateRsaRequestBody, RsaCodeParam, RsaDisputeBody } from '@mechdost/shared/rsa-api';
 import type { SessionCache } from '../auth/session-cache';
 import { ApiError } from '../errors';
 import { createMiddleware } from 'hono/factory';
@@ -28,6 +29,7 @@ import { body, conflict, json } from './service-schemas';
  */
 export const RSA_CREATE_RATE: RateRule = { name: 'rsa_create_user', limit: 6, windowSeconds: 600 };
 export const RSA_PAY_RATE: RateRule = { name: 'rsa_pay_user', limit: 20, windowSeconds: 600 };
+export const RSA_DISPUTE_RATE: RateRule = { name: 'rsa_dispute_user', limit: 5, windowSeconds: 600 };
 export const RSA_AVAILABILITY_RATE: RateRule = { name: 'rsa_availability_ip', limit: 60, windowSeconds: 60 };
 
 const requirePhoneVerified = createMiddleware<AppEnv>(async (c, next) => {
@@ -107,6 +109,15 @@ const payBalance = createRoute({
   request: { params: code },
   responses: { 200: json(Checkout, 'Razorpay order'), ...conflict, ...errorResponses },
 });
+const dispute = createRoute({
+  method: 'post',
+  path: '/roadside/requests/{code}/dispute',
+  tags: ['roadside'],
+  summary: 'Question the bill: opens a support request linked to it (the balance stays payable)',
+  security: [{ bearerAuth: [] }],
+  request: { params: code, body: body(RsaDisputeBody.openapi('RsaDispute')) },
+  responses: { 200: json(z.object({ ticketCode: z.string() }), 'Opened'), ...conflict, ...errorResponses },
+});
 const cancelUnpaid = createRoute({
   method: 'post',
   path: '/roadside/requests/{code}/cancel',
@@ -141,6 +152,11 @@ export function roadsideRoutes(deps: AppDeps, cache: SessionCache) {
     'POST',
     '/roadside/requests',
     rateLimit(deps.rateLimiter, RSA_CREATE_RATE, (c) => c.get('auth').user.id),
+  );
+  app.on(
+    'POST',
+    '/roadside/requests/:code/dispute',
+    rateLimit(deps.rateLimiter, RSA_DISPUTE_RATE, (c) => c.get('auth').user.id),
   );
   for (const p of ['pay-advance', 'pay-balance'])
     app.on(
@@ -188,6 +204,15 @@ export function roadsideRoutes(deps: AppDeps, cache: SessionCache) {
     .openapi(payBalance, async (c) =>
       c.json(await payment(c.get('auth').user.id, c.req.valid('param').code, 'rsa_balance'), 200),
     )
+    .openapi(dispute, async (c) => {
+      const out = await openRsaBillDispute(deps.db, {
+        userId: c.get('auth').user.id,
+        code: c.req.valid('param').code,
+        ...(c.req.valid('json').note ? { note: c.req.valid('json').note } : {}),
+        defaultCityCode: 'XXX',
+      });
+      return c.json(out, 200);
+    })
     .openapi(cancelUnpaid, async (c) => {
       await cancelUnpaidRsa(deps.db, { userId: c.get('auth').user.id, code: c.req.valid('param').code });
       return c.json({ ok: true as const }, 200);

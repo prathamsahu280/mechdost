@@ -6,6 +6,7 @@ import { ConflictError, NotFoundError } from './errors';
 import { recordServerEvent } from './events';
 import type { Tx } from './orders';
 import type { PaymentOutcome, RazorpayPaymentFact } from './payments';
+import { queueStaffNotice } from './notices';
 import { requestRefundForRsa } from './refunds';
 import { paiseText, queueRsaEmail } from './roadside-messages';
 import { finishRsa } from './roadside-job';
@@ -193,6 +194,7 @@ export async function applyRsaPayment(
     if (to !== 'paid' || payment.providerPaymentId === fact.providerPaymentId)
       return { outcome: 'unchanged' };
     await flagForRefund(tx, fact, r.code);
+    await alertFinanceOfExtraPayment(tx, r, payment.id, fact);
     return { outcome: 'needs_refund' };
   }
   if (from === to || !paymentMachine.canActor(from, to, 'system')) return { outcome: 'unchanged' };
@@ -272,6 +274,7 @@ export async function applyRsaPayment(
     .limit(1);
   if (other) {
     await flagForRefund(tx, fact, r.code);
+    await alertFinanceOfExtraPayment(tx, r, payment.id, fact);
     return { outcome: 'needs_refund' };
   }
   await move();
@@ -315,5 +318,24 @@ async function flagForRefund(tx: Tx, fact: RazorpayPaymentFact, requestCode: str
     entity: 'payment',
     entityId: fact.providerOrderId,
     after: { providerPaymentId: fact.providerPaymentId, amountPaise: fact.amountPaise, requestCode },
+  });
+}
+
+/**
+ * A second captured payment for a request and purpose that is already paid. The payments table allows one captured
+ * payment per request and purpose (a unique index), so the extra one cannot be recorded and cannot be refunded through
+ * the ledger: finance gets a bell notice (once per Razorpay payment) to refund it in the Razorpay dashboard.
+ */
+async function alertFinanceOfExtraPayment(
+  tx: Tx,
+  r: { cityId: string },
+  paymentId: string,
+  fact: RazorpayPaymentFact,
+): Promise<void> {
+  await queueStaffNotice(tx, {
+    kind: 'staff.refund_alert',
+    cityId: r.cityId,
+    entityId: paymentId,
+    version: fact.providerPaymentId,
   });
 }

@@ -3501,7 +3501,8 @@
     "deletionConfirmedAt": "Deletion confirmed on {date}",
     "err_DELETION_BLOCKED": "The customer still has an open order, service job or refund.",
     "err_DELETION_ALREADY_CONFIRMED": "This deletion request is already confirmed.",
-    "err_FORBIDDEN_DELETION": "Only an account administrator can confirm deletions."
+    "err_FORBIDDEN_DELETION": "Only an account administrator can confirm deletions.",
+    "kind_rsa_bill_dispute": "Question about a roadside bill"
   },
   "consent": {
     "label": "Privacy choice",
@@ -4117,6 +4118,10 @@
     "rsa_offer": {
       "title": "New roadside job",
       "body": "Roadside request {requestCode} is waiting for you. Answer within {minutes} minutes."
+    },
+    "staff_rsa_cash": {
+      "title": "Roadside balance marked as cash",
+      "body": "A workshop marked the balance of roadside request {requestCode} as paid in cash. Check it if the amount looks wrong."
     }
   },
   "adminNotices": {
@@ -6161,6 +6166,18 @@
     "kind_other": "Other",
     "admin_chooseCity": "Choose a city to see its roadside settings.",
     "openRequest": "Open your current request",
-    "admin_queueCount": "{count, plural, one {# request waiting} other {# requests waiting}}"
+    "admin_queueCount": "{count, plural, one {# request waiting} other {# requests waiting}}",
+    "questionBill": "Question this bill",
+    "questionBillNote": "Ask MechDost to check the bill. You can still pay the balance meanwhile, and we will help sort it out.",
+    "questionBillSent": "Thank you. MechDost support will look at this bill and contact you.",
+    "disputeOpen": "A question about this bill is open with MechDost support.",
+    "set_maxBill": "Largest bill a workshop may enter (rupees, at most 1,00,000)",
+    "err_BILL_TOO_LARGE": "This bill is above the limit for this city. Ask MechDost support.",
+    "err_RSA_NOT_BILLED": "There is no bill to question yet.",
+    "err_RSA_DISPUTE_OPEN": "A question about this bill is already open.",
+    "err_ARRIVAL_CODE_NOT_LOCKED": "The override is only for a locked code. Ask the customer for the code again.",
+    "admin_disputed": "Bill questioned",
+    "set_billDispute": "Customers can question a bill (\"Question this bill\" opens a support request)",
+    "err_RSA_DISPUTE_OFF": "Questioning a bill is not available here. Contact MechDost support."
   }
 }

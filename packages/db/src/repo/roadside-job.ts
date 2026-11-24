@@ -9,12 +9,14 @@ import {
 } from '@mechdost/shared/rsa';
 import type { RsaStatus } from '@mechdost/shared/state';
 import type { Keyring } from '../crypto';
-import { auditLog, rsaBillLines, rsaRequests, workshops } from '../schema';
-import { verifyArrivalCode, type ArrivalCheck } from './arrival-code';
+import { auditLog, rsaArrivalCodes, rsaBillLines, rsaRequests, workshops } from '../schema';
+import { ARRIVAL_CODE_MAX_ATTEMPTS, verifyArrivalCode, type ArrivalCheck } from './arrival-code';
 import { ConflictError, NotFoundError, ValidationError } from './errors';
 import { recordServerEvent } from './events';
 import type { Tx } from './orders';
+import { queueStaffNotice } from './notices';
 import { requestRefundForRsa } from './refunds';
+import { getRsaSettings } from './roadside-settings';
 import { lockRsa, requireRsaStatus, transitionRsa, type RsaCore } from './roadside-core';
 import { paiseText, queueRsaEmail, queueRsaWhatsApp, responderName } from './roadside-messages';
 import { queueRsaCustomerNotice } from './roadside-notices';
@@ -148,7 +150,15 @@ export async function confirmRsaArrival(
 /** Staff let a job continue without the code (a locked code, a customer who lost their phone): audited with a reason. */
 export async function overrideRsaArrival(
   db: Tx,
-  input: { scope: CityScope; code: string; reason: string; expectedVersion: number; staffUserId: string },
+  input: {
+    scope: CityScope;
+    code: string;
+    reason: string;
+    expectedVersion: number;
+    staffUserId: string;
+    /** Super admin only: continue even when the code is not locked. Everyone else needs the 5-try lock first. */
+    bypassLock?: boolean;
+  },
 ): Promise<{ version: number }> {
   if (input.reason.trim().length < 5)
     throw new ValidationError('Give a reason of at least 5 characters', 'REASON_REQUIRED');
@@ -165,6 +175,13 @@ export async function overrideRsaArrival(
       ),
     );
     requireRsaStatus(r, ['accepted', 'en_route']);
+    const [code] = await tx
+      .select({ attempts: rsaArrivalCodes.attempts })
+      .from(rsaArrivalCodes)
+      .where(eq(rsaArrivalCodes.requestId, r.id))
+      .limit(1);
+    if (!input.bypassLock && (code?.attempts ?? 0) < ARRIVAL_CODE_MAX_ATTEMPTS)
+      throw new ConflictError('The arrival code is not locked yet', 'ARRIVAL_CODE_NOT_LOCKED');
     const out = await arriveInTx(tx, r, {
       expectedVersion: input.expectedVersion,
       actorUserId: input.staffUserId,
@@ -218,12 +235,17 @@ export async function billRsa(db: Tx, input: StepInput & { lines: readonly Line[
   }));
   const totalPaise = lines.reduce((n, l) => n + l.totalPaise, 0);
   if (lines.length === 0 || totalPaise <= 0)
-    throw new ValidationError('The bill needs a total above zero', 'BILL_EMPTY');
+    throw new ValidationError('The bill needs a total above zero', 'BILL_EMPTY'); // Absolute ceiling; the city's own (admin) ceiling is checked under the lock below.
   if (totalPaise > RSA_MAX_BILL_PAISE)
     throw new ValidationError('The bill is above the limit', 'BILL_TOO_LARGE');
   return db.transaction(async (tx) => {
     const r = await jobFor(tx, input.workshopIds, input.code);
     requireRsaStatus(r, ['in_progress']);
+    const { maxBillPaise } = await getRsaSettings(tx, r.cityId);
+    if (totalPaise > maxBillPaise)
+      throw new ValidationError('The bill is above the limit for this city', 'BILL_TOO_LARGE', {
+        maxPaise: maxBillPaise,
+      });
     const balancePaise = rsaBalancePaise(totalPaise, r.advancePaise);
     const overpaidPaise = rsaOverpaidPaise(totalPaise, r.advancePaise);
     const rows = lines.map((l, i) => ({
@@ -364,7 +386,21 @@ export async function markRsaBalanceCash(db: Tx, input: StepInput): Promise<void
     if (r.version !== input.expectedVersion)
       throw new ConflictError('This request changed meanwhile; reload it and try again', 'STALE_REQUEST');
     if ((r.balancePaise ?? 0) <= 0) throw new ConflictError('Nothing is left to pay', 'NOTHING_TO_PAY');
+    const amountPaise = r.balancePaise ?? 0;
     await finishRsa(tx, r, { method: 'cash', actor: workshopActor(input.staffUserId) });
+    // A cash balance is the one payment nobody but the workshop saw: ops are told, whatever the amount (spec 22).
+    await queueStaffNotice(tx, {
+      kind: 'staff.rsa_cash',
+      cityId: r.cityId,
+      entityId: r.id,
+      version: r.version,
+      params: { requestCode: r.code },
+    });
+    await recordServerEvent(tx, 'rsa_cash_marked', {
+      userId: input.staffUserId,
+      cityId: r.cityId,
+      props: { requestCode: r.code, workshopId: r.workshopId ?? '', amountPaise },
+    });
   });
 }
 
@@ -375,9 +411,7 @@ export interface RsaWorkshopOffer {
   vehicleType: string;
   fuel: string;
   problemType: RsaProblemType | null;
-  note: string | null;
   pincode: string;
-  addressLine: string | null;
   distanceM: number | null;
   expiresAt: string;
   workshopId: string;
@@ -418,14 +452,12 @@ export async function listWorkshopRsa(
     vehicle_type: string;
     fuel: string;
     problem_type: string | null;
-    note: string | null;
     pincode: string;
-    address_line: string | null;
     distance_m: unknown;
     expires_at: string;
     workshop_id: string;
   }>(
-    await db.execute(sql`select r.code, r.vehicle_type, r.fuel, r.problem_type, r.note, r.pincode, r.address_line,
+    await db.execute(sql`select r.code, r.vehicle_type, r.fuel, r.problem_type, r.pincode,
         o.distance_m, o.expires_at::text as expires_at, o.workshop_id
       from rsa_offers o join rsa_requests r on r.id = o.request_id
       where o.workshop_id in (${ids}) and o.status = 'offered' and o.expires_at > now()
@@ -464,9 +496,7 @@ export async function listWorkshopRsa(
       vehicleType: o.vehicle_type,
       fuel: o.fuel,
       problemType: o.problem_type as RsaProblemType | null,
-      note: o.note,
       pincode: o.pincode,
-      addressLine: o.address_line,
       distanceM: o.distance_m === null ? null : num(o.distance_m),
       expiresAt: new Date(o.expires_at).toISOString(),
       workshopId: o.workshop_id,

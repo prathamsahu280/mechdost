@@ -1,16 +1,26 @@
-import { and, asc, desc, eq, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
 import { publicCode } from '@mechdost/shared/ids';
 import type { RsaProblemType } from '@mechdost/shared/rsa';
 import type { CreateRsaRequestInput } from '@mechdost/shared/rsa-api';
 import type { RsaStatus } from '@mechdost/shared/state';
 import type { Keyring } from '../crypto';
-import { cities, pincodes, refunds, rsaBillLines, rsaEvents, rsaRequests, workshops } from '../schema';
+import {
+  cities,
+  pincodes,
+  refunds,
+  rsaBillLines,
+  rsaEvents,
+  rsaRequests,
+  supportTickets,
+  workshops,
+} from '../schema';
 import { readArrivalCode } from './arrival-code';
 import { ConflictError, NotFoundError, ValidationError, pgCode } from './errors';
 import { recordServerEvent } from './events';
 import type { Tx } from './orders';
 import { lockRsa, requireRsaStatus, transitionRsa } from './roadside-core';
 import { assertRsaServiceable, getRsaSettings } from './roadside-settings';
+import { createSupportTicket } from './support';
 import { rowsOf } from './sql-rows';
 
 /**
@@ -197,6 +207,10 @@ export interface RsaCustomerView {
   arrivalCode: string | null;
   arrivalLocked: boolean;
   bill: RsaBillView | null;
+  /** A question about the bill is open with support; the balance stays payable meanwhile. */
+  disputeOpen: boolean;
+  /** Whether the city lets customers question a bill (setting, off by default). */
+  disputeAvailable: boolean;
   timeline: { status: RsaStatus; at: string }[];
   refunds: {
     amountPaise: number;
@@ -288,6 +302,8 @@ export async function getCustomerRsa(
             balanceMethod: q.balanceMethod,
             balancePaidAt: q.balancePaidAt ? q.balancePaidAt.toISOString() : null,
           },
+    disputeOpen: await hasOpenDispute(db, q.id),
+    disputeAvailable: (await getRsaSettings(db, q.cityId)).billDisputeEnabled,
     timeline: events.map((e) => ({ status: e.toStatus as RsaStatus, at: e.createdAt.toISOString() })),
     refunds: refundRows.map((x) => ({ amountPaise: x.amountPaise, stage: stage(x.status) })),
   };
@@ -354,13 +370,14 @@ export async function cancelUnpaidRsa(db: Tx, input: { userId: string; code: str
 export async function expireUnpaidRsa(
   db: Tx,
   input: { olderThanMinutes: number; limit?: number },
-): Promise<number> {
+): Promise<{ closed: number; failed: { requestId: string; error: unknown }[] }> {
   const due = rowsOf<{ id: string }>(
     await db.execute(sql`select id from rsa_requests
       where status = 'awaiting_payment' and created_at < now() - make_interval(mins => ${input.olderThanMinutes})
       order by created_at limit ${input.limit ?? 50}`),
   );
   let closed = 0;
+  const failed: { requestId: string; error: unknown }[] = [];
   for (const d of due) {
     try {
       await db.transaction(async (tx) => {
@@ -385,9 +402,66 @@ export async function expireUnpaidRsa(
         });
         closed += 1;
       });
-    } catch {
-      // One bad row never blocks the rest; the next sweep tries it again.
+    } catch (error) {
+      // One bad row never blocks the rest; the caller logs it and the next sweep tries it again.
+      failed.push({ requestId: d.id, error });
     }
   }
-  return closed;
+  return { closed, failed };
+}
+
+const OPEN_TICKET = ['open', 'in_review', 'awaiting_customer'];
+
+/** Is a question about this request's bill open with support? */
+export async function hasOpenDispute(db: Tx, requestId: string): Promise<boolean> {
+  const n = await db.$count(
+    supportTickets,
+    and(
+      eq(supportTickets.rsaRequestId, requestId),
+      eq(supportTickets.kind, 'rsa_bill_dispute'),
+      inArray(supportTickets.status, OPEN_TICKET),
+    ),
+  );
+  return n > 0;
+}
+
+/**
+ * The customer questions a bill that is ready (spec 22): a support request linked to the roadside request (kind
+ * `rsa_bill_dispute`, one open per bill). Nothing else changes: the balance stays payable while it is open, staff see it
+ * in the support inbox, and a refund still goes through the refund queue.
+ */
+export async function openRsaBillDispute(
+  db: Tx,
+  input: { userId: string; code: string; note?: string; defaultCityCode: string },
+): Promise<{ ticketCode: string }> {
+  const [own] = await db
+    .select({ cityId: rsaRequests.cityId })
+    .from(rsaRequests)
+    .where(and(eq(rsaRequests.code, input.code), eq(rsaRequests.userId, input.userId)))
+    .limit(1);
+  if (!own) throw new NotFoundError('Roadside request not found');
+  if (!(await getRsaSettings(db, own.cityId)).billDisputeEnabled)
+    throw new ConflictError('Questioning a bill is not switched on here', 'RSA_DISPUTE_OFF');
+  const out = await createSupportTicket(db, {
+    userId: input.userId,
+    kind: 'rsa_bill_dispute',
+    orderCode: null,
+    rsaCode: input.code,
+    body: input.note ?? 'The customer questions this roadside bill.',
+    defaultCityCode: input.defaultCityCode,
+  });
+  await db.transaction(async (tx) => {
+    const [q] = await tx
+      .select({ cityId: rsaRequests.cityId, totalPaise: rsaRequests.totalPaise })
+      .from(rsaRequests)
+      .where(and(eq(rsaRequests.code, input.code), eq(rsaRequests.userId, input.userId)))
+      .limit(1);
+    if (q)
+      await recordServerEvent(tx, 'rsa_bill_disputed', {
+        userId: input.userId,
+        cityId: q.cityId,
+        props: { requestCode: input.code, totalPaise: q.totalPaise ?? 0 },
+      });
+  });
+  return { ticketCode: out.code };
 }

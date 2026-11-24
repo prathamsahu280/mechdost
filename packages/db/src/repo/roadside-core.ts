@@ -1,4 +1,4 @@
-import { and, eq, type SQL } from 'drizzle-orm';
+import { and, eq, sql, type SQL } from 'drizzle-orm';
 import { rsaMachine, type RsaStatus } from '@mechdost/shared/state';
 import type { VehicleType } from '@mechdost/shared/vehicles';
 import { auditLog, rsaEvents, rsaRequests } from '../schema';
@@ -131,6 +131,15 @@ export async function transitionRsa(
   r.status = row.status as RsaStatus;
   r.version = row.version;
   if (args.patch?.workshopId !== undefined) r.workshopId = args.patch.workshopId;
+  // Later steps in the same transaction read the amounts this move set (the completed email, the event).
+  if (typeof args.patch?.totalPaise === 'number') r.totalPaise = args.patch.totalPaise;
+  if (typeof args.patch?.balancePaise === 'number') r.balancePaise = args.patch.balancePaise;
+  // Once the mechanic has reached the customer the arrival code has done its job: it no longer sits in the stored email.
+  if ((from === 'accepted' || from === 'en_route') && args.to !== 'accepted' && args.to !== 'en_route')
+    await tx.execute(
+      sql`update notification_outbox set payload = payload - 'arrivalCode'
+        where template_key = 'rsa_accepted' and dedupe_key like ${`rsa_accepted:${r.id}:%`}`,
+    );
   const ask = ASKS[from];
   if (ask) await resolveNotices(tx, { kinds: [ask], entityIds: [r.id] });
   return { status: r.status, version: r.version };

@@ -46,6 +46,8 @@ export interface Demo {
   refunds: RoadsideView['refunds'];
   timeline: { status: RsaStatus; at: string }[];
   offerExpiresAt: string | null;
+  /** The customer questioned the bill (support request open). */
+  disputeOpen?: boolean;
 }
 
 let cache: Demo | null | undefined;
@@ -156,6 +158,7 @@ export function demoStep(
     | { kind: 'pay_balance' }
     | { kind: 'cash' }
     | { kind: 'cancel'; reason: string }
+    | { kind: 'dispute' }
     | { kind: 'reset' },
 ): boolean {
   const d = load();
@@ -217,6 +220,10 @@ export function demoStep(
       if (!is('billed')) return false;
       save(move(d, 'completed', { method: action.kind === 'cash' ? 'cash' : 'online' }));
       return true;
+    case 'dispute':
+      if (!is('billed', 'completed') || d.disputeOpen === true) return false;
+      save({ ...d, disputeOpen: true });
+      return true;
     case 'cancel':
       if (!is('requested', 'offered')) return false;
       save(
@@ -260,6 +267,9 @@ export function demoView(d: Demo): RoadsideView {
     responder: attached ? DEMO_RESPONDER : null,
     arrivalCode: d.status === 'accepted' || d.status === 'en_route' ? DEMO_ARRIVAL_CODE : null,
     bill,
+    disputeOpen: d.disputeOpen === true,
+    // The demo shows the feature (a real city has it off until an admin switches it on).
+    disputeAvailable: true,
     timeline: d.timeline,
     refunds: d.refunds,
   };
@@ -284,6 +294,7 @@ export function demoQueue(d: Demo | null): RoadsideQueueItem[] {
         : null,
       offerExpiresAt: d.offerExpiresAt,
       attempts: d.status === 'requested' ? 0 : 1,
+      disputed: d.disputeOpen === true,
     },
   ];
 }
@@ -307,7 +318,6 @@ export function demoOffers(d: Demo | null): RoadsideOffer[] {
       vehicleType: d.vehicleType,
       problemType: d.problemType,
       pincode: d.pincode,
-      addressLine: null,
       distanceM: 1200,
       expiresAt: d.offerExpiresAt,
     },

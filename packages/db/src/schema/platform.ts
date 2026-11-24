@@ -26,6 +26,7 @@ import { cities } from './geography';
 import { users } from './identity';
 import { orders } from './orders';
 import { products, shops } from './catalogue';
+import { rsaRequests } from './roadside';
 import { serviceRequests, workshops } from './services';
 
 /** Brandur-style idempotency keys for money-moving endpoints (docs/research/data-integrity.md §4). */
@@ -368,6 +369,8 @@ export const supportTickets = pgTable(
     kind: text().notNull(),
     orderId: uuid().references(() => orders.id, { onDelete: 'set null' }),
     serviceRequestId: uuid(),
+    /** The roadside request a bill question (`rsa_bill_dispute`) is about (spec 22). */
+    rsaRequestId: uuid().references(() => rsaRequests.id, { onDelete: 'restrict' }),
     /** City of the linked order (staff scope, rule 7); null = city unknown, visible to all-city staff only. */
     cityId: uuid().references(() => cities.id, { onDelete: 'set null' }),
     /** Where the request started (rule 16: a code). */
@@ -411,7 +414,7 @@ export const supportTickets = pgTable(
     check('support_tickets_priority_valid', sql`${t.priority} in ('low','normal','high','urgent')`),
     check(
       'support_tickets_kind_valid',
-      sql`${t.kind} in ('order_issue','service_issue','refund','fitment','product_sourcing','workshop_request','account','deletion_request','labour_redo','other')`,
+      sql`${t.kind} in ('order_issue','service_issue','refund','fitment','product_sourcing','workshop_request','account','deletion_request','labour_redo','rsa_bill_dispute','other')`,
     ),
     check(
       'support_tickets_owner',
@@ -450,6 +453,11 @@ export const supportTickets = pgTable(
       .where(
         sql`${t.issueCode} is not null and ${t.serviceRequestId} is not null and ${t.status} <> 'closed'`,
       ),
+    // One open question per roadside bill.
+    uniqueIndex('support_tickets_rsa_dispute_uq')
+      .on(t.rsaRequestId)
+      .where(sql`${t.kind} = 'rsa_bill_dispute' and ${t.status} in ('open','in_review','awaiting_customer')`),
+    index().on(t.rsaRequestId),
     index().on(t.status, t.slaAckDue),
     index().on(t.cityId, t.status),
     index().on(t.userId),

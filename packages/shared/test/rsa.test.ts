@@ -105,6 +105,18 @@ describe('settings', () => {
     expect(d.advancePaise['3W']).toBeUndefined();
     expect(d.routingMode).toBe('manual');
   });
+  it('defaults the bill limit to 25,000 rupees (at most 1,00,000) and the bill question to off', () => {
+    const d = defaultRsaSettings();
+    expect(d.maxBillPaise).toBe(2_500_000);
+    expect(d.billDisputeEnabled).toBe(false);
+    const ok = { ...d, enabled: true, pincodes: ['492001'] };
+    expect(
+      RsaSettingsInput.safeParse({ ...ok, maxBillPaise: 10_000_000, billDisputeEnabled: true }).success,
+    ).toBe(true);
+    expect(RsaSettingsInput.safeParse({ ...ok, maxBillPaise: 10_000_001 }).success).toBe(false);
+    expect(RsaSettingsInput.safeParse({ ...ok, maxBillPaise: 50_000 }).success).toBe(false);
+    expect(RsaSettingsInput.safeParse({ ...ok, billDisputeEnabled: 'yes' }).success).toBe(false);
+  });
   it('accepts the defaults and a later 3W', () => {
     expect(RsaSettingsInput.safeParse(ok).success).toBe(true);
     const withThree = {
