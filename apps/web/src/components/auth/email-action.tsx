@@ -135,6 +135,7 @@ export function EmailAction() {
     const res = await client.finishPasswordReset(code.current, password, locale);
     setBusy(false);
     if (res.ok) {
+      void client.notifyPasswordChanged(view.email, locale);
       track('auth_password_reset_done', {});
       setView({ kind: 'done', mode: 'resetPassword' });
       return;

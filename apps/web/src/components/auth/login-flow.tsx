@@ -30,7 +30,7 @@ import { track } from '@/lib/analytics';
 import type * as RealClientModule from '@/lib/auth/firebase-client';
 import type { PasswordResult } from '@/lib/auth/firebase-client';
 import { createAnnouncer } from '@/lib/auth/announcer';
-import { retryOnce } from '@/lib/auth/sign-in-retry';
+import { retryOnce, shouldPrefetch } from '@/lib/auth/sign-in-retry';
 import type { CodeFail, PhoneFail } from '@/lib/auth/auth-errors';
 import { AUTH_MODE } from '@/lib/auth/mode';
 import { PasswordField, authInput } from './password-field';
@@ -202,11 +202,13 @@ export function LoginFlow() {
   }, [locale]);
 
   /** First touch of a form that carries the Cloudflare check: start the check now, while they fill it in. */
-  const prefetchedAt = useRef(0);
+  const prefetched = useRef<{ el: HTMLElement; at: number } | null>(null);
   function onFirstTouch() {
-    if (!REAL || !document.getElementById(TURNSTILE_ID)) return;
-    if (Date.now() - prefetchedAt.current < 60_000) return;
-    prefetchedAt.current = Date.now();
+    if (!REAL) return;
+    const container = document.getElementById(TURNSTILE_ID);
+    // Keyed by the container: a form swapped in (Forgot password) has a new one and starts its own early check.
+    if (!container || !shouldPrefetch(prefetched.current, container, Date.now())) return;
+    prefetched.current = { el: container, at: Date.now() };
     void turnstile().then((m) => {
       m.prefetchTurnstileToken(TURNSTILE_ID, locale, showChallenge);
     });
@@ -738,7 +740,7 @@ export function LoginFlow() {
         failForm(t('noAccount'));
         return undefined;
       }
-      if (!(await r.setNewPassword(password))) {
+      if (!(await r.setNewPassword(password, locale))) {
         failForm(t('errUnavailable'));
         return undefined;
       }

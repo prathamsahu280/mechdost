@@ -91,8 +91,16 @@ export class FakePasswordAuthority implements PasswordAuthority {
 export class FakeEmailActions implements EmailActionLinks {
   readonly resets = new Map<string, string>();
   readonly verifications = new Map<string, { email: string; code: string }>();
+  /** The last password change Firebase knows of, per email. */
+  readonly changes = new Map<string, { uid: string; changedAt: Date }>();
   readonly asked: string[] = [];
   fail = false;
+
+  passwordChangeFor(email: string): Promise<{ uid: string; changedAt: Date } | null> {
+    this.asked.push(`changed:${email}`);
+    if (this.fail) return Promise.reject(new Error('firebase down'));
+    return Promise.resolve(this.changes.get(email) ?? null);
+  }
 
   passwordResetCode(email: string): Promise<string | null> {
     this.asked.push(`reset:${email}`);

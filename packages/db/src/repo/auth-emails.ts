@@ -68,3 +68,35 @@ export async function recordAuthActionSkipped(
     props: { mode: input.mode, queued: false },
   });
 }
+
+/**
+ * Queue the "your password was changed" notice (decision 2026-11-24). One mail per change: the dedupe key is the
+ * Firebase uid plus the moment Firebase recorded the change, so a repeat call (a double click, a retry, an attacker
+ * replaying the request) finds the row and sends nothing. No code, no secret: the payload is empty and the text is
+ * fixed. Like the other `auth_` templates it ignores the Admin → Emails switch (a security notice).
+ * Returns whether a new mail was queued; the outcome is counted as an analytics event in the same transaction.
+ */
+export async function queuePasswordChangedEmail(
+  db: Tx,
+  input: { uid: string; email: string; changedAt: Date; locale: Locale },
+): Promise<boolean> {
+  return db.transaction(async (tx) => {
+    const queued = await enqueueNotification(tx, {
+      dedupeKey: `auth_password_changed:${input.uid}:${String(input.changedAt.getTime())}:email`,
+      channel: 'email',
+      recipient: input.email,
+      templateKey: 'auth_password_changed',
+      locale: input.locale,
+      payload: {},
+    });
+    await recordServerEvent(tx, 'auth_password_changed_notified', {
+      props: { outcome: queued ? 'queued' : 'duplicate' },
+    });
+    return queued;
+  });
+}
+
+/** A change was announced by the page but Firebase shows none in the window (or no such account): counted only. */
+export async function recordPasswordChangeSkipped(db: Tx): Promise<void> {
+  await recordServerEvent(db, 'auth_password_changed_notified', { props: { outcome: 'no_recent_change' } });
+}

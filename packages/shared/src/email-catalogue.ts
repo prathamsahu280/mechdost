@@ -970,6 +970,31 @@ export const EMAIL_CATALOGUE = {
       button: 'नया पासवर्ड चुनें',
     },
   }),
+  /**
+   * Security notice after a password change or reset (decision 2026-11-24): carries no code and no secret. The button
+   * opens the sign-in page (where "Forgot password?" starts a reset); support is named in the text.
+   */
+  auth_password_changed: def({
+    purpose: 'system',
+    category: 'transactional',
+    audience: T.customer,
+    text: [],
+    params: [],
+    button: () => '/login',
+    sample: {},
+    en: {
+      subject: 'Your MechDost password was changed',
+      heading: 'Your password was changed',
+      body: 'The password of your MechDost account was just changed. If it was you, there is nothing more to do.\n\nIf it was not you, reset your password now with the button below, then contact support on 7978776551 or at support@mechdost.com so we can secure your account.',
+      button: 'Reset my password',
+    },
+    hi: {
+      subject: 'आपका MechDost पासवर्ड बदल दिया गया है',
+      heading: 'आपका पासवर्ड बदल दिया गया है',
+      body: 'आपके MechDost खाते का पासवर्ड अभी बदला गया है। अगर यह आपने किया है, तो कुछ और करने की ज़रूरत नहीं है।\n\nअगर यह आपने नहीं किया, तो नीचे के बटन से अभी अपना पासवर्ड रीसेट करें, और फिर 7978776551 पर या support@mechdost.com पर सहायता से संपर्क करें ताकि हम आपका खाता सुरक्षित कर सकें।',
+      button: 'मेरा पासवर्ड रीसेट करें',
+    },
+  }),
   partner_warning_issued: def({
     purpose: 'system',
     category: 'transactional',

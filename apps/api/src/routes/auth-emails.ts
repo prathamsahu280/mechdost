@@ -1,5 +1,11 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
-import { queueAuthActionEmail, recordAuthActionSkipped } from '@mechdost/db/repo';
+import {
+  queueAuthActionEmail,
+  queuePasswordChangedEmail,
+  recordAuthActionSkipped,
+  recordPasswordChangeSkipped,
+} from '@mechdost/db/repo';
+import { isRecentPasswordChange } from '../auth/email-actions';
 import { ApiError } from '../errors';
 import { log, safeError } from '../logger';
 import { authenticate } from '../middleware/auth';
@@ -22,6 +28,13 @@ import { errorResponses } from './schemas';
  *   the difference in work. Limits and Turnstile fail closed.
  * - `POST /v1/auth/verification-email` (signed in): the address comes from the Firebase account of the caller, never
  *   from the request; already verified → `not_needed`.
+ * - `POST /v1/auth/password-changed` (public): the "your password was changed" notice. The browser changes the
+ *   password with Firebase, so the page tells us afterwards; we never trust that and ask Firebase when the account's
+ *   password last changed (`passwordChangeFor`), sending only for a change in the last 10 minutes, once per change
+ *   (outbox dedupe key). No Turnstile on purpose: the caller has just proved control of the address (a reset code or
+ *   the current password), the answer is always the same, and a request cannot make a mail that Firebase's own
+ *   record does not justify, so abuse is capped at one mail per real change; per-IP and per-address limits (fail
+ *   closed) bound the Firebase lookups.
  * Changing the address (`verifyBeforeUpdateEmail`, mode `verifyAndChangeEmail`) is not used by the app, so it has no
  * route; the action page still handles such links.
  */
@@ -34,6 +47,18 @@ const RESET_PER_EMAIL: RateRule = {
 };
 const VERIFY_PER_USER: RateRule = {
   name: 'auth_verify_user',
+  limit: 5,
+  windowSeconds: 3600,
+  failClosed: true,
+};
+const CHANGED_PER_IP: RateRule = {
+  name: 'auth_changed_ip',
+  limit: 20,
+  windowSeconds: 3600,
+  failClosed: true,
+};
+const CHANGED_PER_EMAIL: RateRule = {
+  name: 'auth_changed_email',
   limit: 5,
   windowSeconds: 3600,
   failClosed: true,
@@ -52,6 +77,11 @@ const ResetBody = z
   .strict()
   .openapi('PasswordResetEmailRequest');
 
+const ChangedBody = z
+  .object({ email: z.string().trim().toLowerCase().pipe(z.email().max(254)), locale: Locale })
+  .strict()
+  .openapi('PasswordChangedRequest');
+
 const VerifyBody = z.object({ locale: Locale.optional() }).strict().openapi('VerificationEmailRequest');
 
 const resetRoute = createRoute({
@@ -63,6 +93,21 @@ const resetRoute = createRoute({
   responses: {
     200: {
       description: 'Accepted (says nothing about whether the address has an account)',
+      content: { 'application/json': { schema: z.object({ status: z.literal('accepted') }) } },
+    },
+    ...errorResponses,
+  },
+});
+
+const changedRoute = createRoute({
+  method: 'post',
+  path: '/auth/password-changed',
+  tags: ['auth'],
+  summary: 'Tell the account holder their password was changed (the same answer for every address)',
+  request: { body: { required: true, content: { 'application/json': { schema: ChangedBody } } } },
+  responses: {
+    200: {
+      description: 'Accepted (says nothing about whether a notice was sent)',
       content: { 'application/json': { schema: z.object({ status: z.literal('accepted') }) } },
     },
     ...errorResponses,
@@ -129,6 +174,34 @@ export function authEmailRoutes(deps: AppDeps, cache: SessionCache) {
         } catch (err) {
           // Firebase or the database failing must not look different from "no such account".
           log('error', 'password_reset_email_failed', safeError(err));
+        }
+      }
+      const wait = minMs - (Date.now() - started);
+      if (wait > 0) await pause(wait);
+      return c.json({ status: 'accepted' as const }, 200);
+    })
+    .openapi(changedRoute, async (c) => {
+      const { emailActions } = deps;
+      if (!emailActions) throw unavailable();
+      const body = c.req.valid('json');
+      const started = Date.now();
+      await closed(() => enforceRate(c, deps.rateLimiter, CHANGED_PER_IP, c.get('clientIp')));
+      // Counted for every address before any lookup, as for the reset email.
+      const turn = await closed(() => deps.rateLimiter.hit(CHANGED_PER_EMAIL, keyOf(body.email)));
+      if (turn.allowed) {
+        try {
+          const change = await emailActions.passwordChangeFor(body.email);
+          if (change && isRecentPasswordChange(change.changedAt, Date.now()))
+            await queuePasswordChangedEmail(deps.db, {
+              uid: change.uid,
+              email: body.email,
+              changedAt: change.changedAt,
+              locale: body.locale,
+            });
+          else await recordPasswordChangeSkipped(deps.db);
+        } catch (err) {
+          // Firebase or the database failing must not look different from "nothing changed".
+          log('error', 'password_changed_notice_failed', safeError(err));
         }
       }
       const wait = minMs - (Date.now() - started);

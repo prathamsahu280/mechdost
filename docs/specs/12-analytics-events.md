@@ -198,6 +198,8 @@ Client email-link page `/auth/action` (2026-11-23): `auth_email_action_opened { 
 
 Server event (2026-11-24): `auth_email_action_requested { mode: resetPassword|verifyEmail, queued }` — a reset or verification email was asked for; `queued` false when nothing was sent (no account for the address, already verified). `userId` is set only for a verification request (signed in); never the address or the code. Written with the outbox row in one transaction (`queueAuthActionEmail`).
 
+Server event (2026-11-24): `auth_password_changed_notified { outcome: queued|duplicate|no_recent_change }` - the page announced a password change; `queued` a notice went to the outbox, `duplicate` that change was already announced, `no_recent_change` Firebase shows no change in the last 10 minutes (or no such account). No user id, never the address. Written with the outbox row in one transaction (`queuePasswordChangedEmail`, `recordPasswordChangeSkipped`).
+
 Client `auth_code_failed { stage: send|confirm, code, path }`: a phone-code send or check failed. `code` is the Firebase error code only (`auth/network-request-failed`, `auth/invalid-app-credential`, ...; anything else is `unknown`), checked by a strict regex in `CLIENT_EVENT_SCHEMAS`; never the phone number or any free text. Emitted from `components/auth/login-flow.tsx` (sign-up, sign-in staff code, resets). Lets us tell reCAPTCHA/App Check problems from quota and network problems in production.
 
 ## Audience entry events (2026-11-22)
