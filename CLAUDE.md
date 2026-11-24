@@ -85,6 +85,6 @@ The protocol table above says when each skill runs. The full list of installed s
 ## Commands (update as the repo grows)
 
 ```
-pnpm install · pnpm dev (web :3000, api :4000) · pnpm db:migrate · pnpm db:seed · pnpm db:seed:demo [--remove] · pnpm db:import:exide --dir <exide_batteries> [--plan-only|--dry-run] · pnpm db:import:amaron --dir <amaron_batteries> [--plan-only|--dry-run] [--skip-photos] · pnpm db:grant-role --phone +91… --role <staff role> --reason "…"
+pnpm install · pnpm dev (web :3000, api :4000) · pnpm db:migrate · pnpm db:seed · pnpm db:seed:demo [--remove] · pnpm db:import:exide --dir <exide_batteries> [--plan-only|--dry-run] · pnpm db:import:amaron --dir <amaron_batteries> [--plan-only|--dry-run] [--skip-photos] · pnpm db:import:tatagreen --dir <tatagreen_batteries> [--plan-only|--dry-run] [--skip-photos] [--skip-photos-for <names|@list.txt>] · pnpm db:grant-role --phone +91… --role <staff role> --reason "…"
 pnpm test · pnpm e2e · pnpm lint · pnpm typecheck · pnpm check (all gates) · pnpm format · (planned: pnpm lhci)
 ```

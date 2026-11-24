@@ -132,6 +132,15 @@ const SERIES = [
   'Fresh',
   'Harvest',
   'Hiway',
+  // Tata Green ranges (tatagreen import, 2026-11-24)
+  'Premio',
+  'Velocity',
+  'Roadstar',
+  'Sawaar',
+  'Switchon',
+  'Tgi',
+  'Tgx',
+  'Slv',
 ];
 
 /** Vehicle makers and parts brands the product texts name as fitment. */
@@ -190,6 +199,8 @@ const STANDARDS = [
   'EFB',
   'SMF',
   'HCV',
+  'MSIL',
+  'IoT',
 ];
 
 export const CATALOGUE_PROPER_NAMES: readonly string[] = [...BRANDS, ...SERIES, ...MAKERS, ...STANDARDS];

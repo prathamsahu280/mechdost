@@ -30,6 +30,7 @@ import {
 } from '@mechdost/db/repo';
 import { processProductPhoto, type ProcessedProductImage } from '../photos/image';
 import { supabaseStorage } from '../photos/storage';
+import { addSkipFiles, withoutSkippedPhotos } from './skip-photos';
 
 /** What differs between the brands. */
 export interface BatteryCliBrand<P extends BatteryPlan> {
@@ -49,7 +50,8 @@ export interface BatteryCliBrand<P extends BatteryPlan> {
     products: readonly PlannedProduct[],
     opts: { staffUserId: string },
   ): Promise<BatteryRunResult>;
-  readPicture(dir: string, file: string): Buffer;
+  /** The picture bytes the photo pipeline gets (a brand may tidy them first; the source file is never changed). */
+  readPicture(dir: string, file: string): Buffer | Promise<Buffer>;
   statusCsv(rows: P['rows'], results?: ReadonlyMap<string, RowResult>): string;
   statusMarkdown(
     plan: P,
@@ -69,6 +71,8 @@ interface Args {
   dryRun: boolean;
   planOnly: boolean;
   skipPhotos: boolean;
+  /** Pictures (path relative to the folder, or just the file name) left out of the import: the product imports without them. */
+  skipPhotoFiles: Set<string>;
   staffUser?: string;
   concurrency: number;
   statusDir: string;
@@ -80,6 +84,7 @@ function parseArgs(argv: string[], brand: { folder: string }): Args {
     dryRun: false,
     planOnly: false,
     skipPhotos: false,
+    skipPhotoFiles: new Set(),
     concurrency: 3,
     statusDir: fileURLToPath(new URL('../../../../docs/catalogue', import.meta.url)),
   };
@@ -94,6 +99,7 @@ function parseArgs(argv: string[], brand: { folder: string }): Args {
     else if (flag === '--dry-run') a.dryRun = true;
     else if (flag === '--plan-only') a.planOnly = true;
     else if (flag === '--skip-photos') a.skipPhotos = true;
+    else if (flag === '--skip-photos-for') addSkipFiles(a.skipPhotoFiles, next());
     else if (flag === '--staff-user') a.staffUser = next();
     else if (flag === '--concurrency') a.concurrency = Math.min(Math.max(Number(next()), 1), 6);
     else if (flag === '--status-dir') a.statusDir = next();
@@ -155,7 +161,13 @@ export async function runBatteryImport<P extends BatteryPlan>(brand: BatteryCliB
     process.env.ALLOW_PROD_IMPORT !== 'yes'
   )
     throw new Error('Refusing a real import with NODE_ENV=production unless ALLOW_PROD_IMPORT=yes');
-  const plan = brand.planDir(args.dir);
+  const plan = withoutSkippedPhotos(brand.planDir(args.dir), args.skipPhotoFiles);
+  if (args.skipPhotoFiles.size > 0) {
+    const left = plan.products.reduce((n, p) => n + p.photos.length, 0);
+    log(
+      `--skip-photos-for: ${String(args.skipPhotoFiles.size)} names; ${String(left)} pictures remain in the plan`,
+    );
+  }
   // Hard rule 10: Hindi text keeps brand, model and vehicle names only. A real run stops on leftovers.
   const leftovers = brand.hindiLeftovers(plan);
   if (leftovers.length > 0 || plan.untranslated.length > 0) {
@@ -251,11 +263,11 @@ async function uploadPhotos<P extends BatteryPlan>(
   const uses = new Map<string, number>();
   for (const p of products) for (const ph of p.photos) uses.set(ph.file, (uses.get(ph.file) ?? 0) + 1);
   const shared = new Map<string, Promise<ProcessedProductImage>>();
-  const processFile = (file: string): Promise<ProcessedProductImage> => {
-    if ((uses.get(file) ?? 0) < 2) return processProductPhoto(brand.readPicture(args.dir, file));
+  const processFile = async (file: string): Promise<ProcessedProductImage> => {
+    if ((uses.get(file) ?? 0) < 2) return processProductPhoto(await brand.readPicture(args.dir, file));
     let hit = shared.get(file);
     if (!hit) {
-      hit = processProductPhoto(brand.readPicture(args.dir, file));
+      hit = Promise.resolve(brand.readPicture(args.dir, file)).then(processProductPhoto);
       shared.set(file, hit);
     }
     return hit;

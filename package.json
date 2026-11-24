@@ -25,7 +25,8 @@
     "emulators": "pnpm dlx firebase-tools@15.35.0 emulators:start --only auth --project demo-mechdost",
     "db:import:catalogue": "pnpm --filter @mechdost/api import:catalogue",
     "db:import:exide": "pnpm --filter @mechdost/api import:exide",
-    "db:import:amaron": "pnpm --filter @mechdost/api import:amaron"
+    "db:import:amaron": "pnpm --filter @mechdost/api import:amaron",
+    "db:import:tatagreen": "pnpm --filter @mechdost/api import:tatagreen"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
