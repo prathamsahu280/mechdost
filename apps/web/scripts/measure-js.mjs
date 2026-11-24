@@ -14,6 +14,7 @@ const PAGES = [
   '/',
   '/shop',
   '/shop/castrol-activ-4t-20w40-900ml',
+  '/shop/car-tyre-185-65-r15',
   '/compare?p=castrol-activ-4t-20w40-900ml,motul-3100-4t-10w30-1l,hp-racer4-20w40-900ml',
   '/workshops',
   '/cart',
