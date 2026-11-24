@@ -338,6 +338,15 @@ async function prepareApi(page: Page, c: AuditCase): Promise<string[]> {
     if ((await open.count()) === 0) notes.push('no staff cancel button');
     else await open.click();
   }
+  if (c.code === 'API-PDP-GALLERY' && c.state.viewer === 'open') {
+    const big = page
+      .locator(
+        '[data-product-media] button[aria-label*="larger" i], [data-product-media] button[aria-label*="बड़ी" i]',
+      )
+      .first();
+    if ((await big.count()) === 0) notes.push('no photo to enlarge (none has no viewer)');
+    else await big.click();
+  }
   if (c.code === 'API-SVC-PHOTOS' && c.state.viewer === 'open') {
     const thumb = main.locator('section[aria-labelledby$="-photos-title"] button').first();
     if ((await thumb.count()) === 0) notes.push('no photo thumbnail');

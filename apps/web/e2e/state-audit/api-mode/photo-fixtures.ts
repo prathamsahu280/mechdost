@@ -24,6 +24,17 @@ const imageMock: Mock = {
   reply: (): Reply => ({ raw: { contentType: 'image/png', base64: PIXEL } }),
 };
 
+/** The product page's pictures (`/product-photos/{id}/{width}`): one tiny PNG for every request. */
+export function productPhotoMocks(): Mock[] {
+  return [
+    {
+      method: 'GET',
+      path: /^\/product-photos\//,
+      reply: (): Reply => ({ raw: { contentType: 'image/png', base64: PIXEL } }),
+    },
+  ];
+}
+
 function photos(count: number, stage: PhotoStage, required: boolean): Dto<typeof ServicePhotosDto> {
   return {
     photos: Array.from({ length: count }, (_, i) => ({

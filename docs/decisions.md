@@ -1,4 +1,4 @@
-# Decisions log
+﻿# Decisions log
 
 Append-only. Newest at the bottom. Each entry: date, decision, reason, alternatives considered.
 
@@ -1742,3 +1742,15 @@ Firebase refuses to save a custom action URL for project `mechdost-dev`: both th
 - **Web:** the Firebase client SDK no longer sends any email (`sendPasswordResetEmail`, `sendEmailVerification` removed). Sign-up sends the verification mail after the API has signed the person in again (linking turns the Firebase session into a `password` one, which the API refuses). The forgot-password email form now carries the Cloudflare check.
 - **Event:** server event `auth_email_action_requested { mode, queued }` (spec 12). The page events of 2026-11-23 are unchanged.
 - **Runbook:** the "customize action URL" console step is removed from `docs/runbooks/firebase.md`; nothing to change in the Firebase console, but `mechdost.com` stays in Authorised domains for the page itself (the page applies the codes with the client SDK).
+
+## 2026-11-24 — Product photo gallery: switch the big photo in place, no raw image links (user report)
+
+User: product photos opened the raw API image in a new tab, there was no slider, and a click should show that image in place. Decision:
+
+- **One client island, server-rendered pictures.** `ProductGallery` (`components/catalogue/product-gallery.tsx`) receives the pictures as server-rendered nodes (the first big one `priority`, the rest lazy) and only switches between them, so no image code enters the client bundle and LCP is unchanged. The big photo is a fixed square frame (CLS) and a CSS scroll-snap track (swipe is the browser's own scrolling, no pointer-event code).
+- **Thumbnails are buttons for all photos, the first too**, with a ring and `aria-current` on the active one, 64 px (80 px from 768). Prev/next arrows are always visible on touch and appear on hover or focus where hover exists; keys Left/Right work inside the gallery; the counter "2 / 5" is hidden from screen readers and a polite `role="status"` says "Photo 2 of 5".
+- **Ends do not wrap** (arrows disable at the ends), like the job-photo viewer, so a keyboard user is never thrown from one end to the other.
+- **Full view on click** of the big photo: `ProductPhotoViewer` (native `<dialog>`: trap, Escape, focus back to the opener; arrows, keys, swipe), a lazy chunk loaded on first open (`import()`, no `next/dynamic`, decision 2026-11-14), images through `next/image` with the shop loader (the 1600 px copy). `PhotoViewer` of the job photos was not reused: it is typed for before/after job photos (stage, API-signed URLs, `unoptimized`).
+- **No new tab and no link to the API anywhere.** Locale key `storefront.photoOpens` removed; `photos.productLabel/productShow/productEnlarge/productViewer` added in en and hi (the `photos` namespace is handed to the gallery by `ClientMessages`; the counter is digits only).
+- **Events (spec 12):** `product_photo_selected {index, method: thumb|arrow|swipe|key}` and `product_photo_viewer_opened {index, count}`.
+- One photo: no strip, arrows or counter, the photo still opens the full view. No photo: `ProductVisual` as before.

@@ -565,6 +565,16 @@ export const CLIENT_EVENT_SCHEMAS = {
   service_photos_viewed: z
     .object({ surface: z.enum(['request', 'workshop']), count: z.number().int().min(0).max(24) })
     .strict(),
+  // Product gallery (spec 03): a photo was picked by thumbnail, arrow, swipe or key; the full-screen viewer opened.
+  product_photo_selected: z
+    .object({
+      index: z.number().int().min(0).max(23),
+      method: z.enum(['thumb', 'arrow', 'swipe', 'key']),
+    })
+    .strict(),
+  product_photo_viewer_opened: z
+    .object({ index: z.number().int().min(0).max(23), count: z.number().int().min(1).max(24) })
+    .strict(),
   service_mode_selected: z.object({ mode: z.enum(['workshop', 'home']) }).strict(),
   booking_confirmed: z.object({ code: id, workshop: id, demo: z.boolean() }).strict(),
   booking_cancelled: z.object({ code: id, workshop: id, reasonCode: id }).strict(),

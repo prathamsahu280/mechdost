@@ -71,6 +71,24 @@ export function auditCard(i: number, locale: AuditLocale): CatalogueCard {
   };
 }
 
+/** How many pictures audit product `i` has: none, one, two, then many (the product-page gallery rows pick by index). */
+export const AUDIT_PHOTO_COUNTS = [0, 1, 2, 6] as const;
+
+function auditPhotos(i: number, locale: AuditLocale): CatalogueProduct['photos'] {
+  const count = AUDIT_PHOTO_COUNTS[i % AUDIT_PHOTO_COUNTS.length] ?? 0;
+  const alt =
+    locale === 'hi'
+      ? 'ऑडिट उत्पाद की बहुत लंबे नाम वाली फ़ोटो जो कई पंक्तियों में लिपटती है'
+      : 'Audit product photograph with a very long description that wraps over several lines';
+  return Array.from({ length: count }, (_, n) => ({
+    path: `audit-photo-${String(i)}-${String(n)}`,
+    alt: `${alt} ${String(n + 1)}`,
+    width: n % 2 === 0 ? 1200 : 900,
+    height: 1200,
+    lqip: null,
+  }));
+}
+
 export function auditProduct(i: number, locale: AuditLocale): CatalogueProduct {
   const t = COPY[locale];
   return {
@@ -93,7 +111,7 @@ export function auditProduct(i: number, locale: AuditLocale): CatalogueProduct {
     warranty: null,
     gstRateBp: 1800,
     partNumbers: [],
-    photos: [],
+    photos: auditPhotos(i, locale),
     variants: [
       {
         sku: `AUDIT-${String(i + 1)}`,

@@ -858,6 +858,26 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
     realApi: true,
   },
   {
+    code: 'API-PDP-GALLERY',
+    page: 'Product page (/shop/[slug]), real catalogue',
+    component:
+      'Photo gallery: none (the drawn visual) / 1 / 2 / 6 photos with very long descriptions, thumbnails, arrows and counter, the full view closed or open',
+    path: (r) => `/shop/audit-product-${String(['none', 'one', 'two', 'many'].indexOf(String(r.photos)))}`,
+    scope: '[data-product-media]',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'photos', values: ['none', 'one', 'two', 'many'] },
+      { name: 'viewer', values: ['closed', 'open'] },
+      stress,
+    ],
+    checks: [...BASE_CHECKS, 'dismiss'],
+    sweep: 10,
+    note: API_NOTE,
+    realApi: true,
+  },
+
+  {
     code: 'API-WISHLIST',
     page: 'Account → Wishlist, real sign-in',
     component:
