@@ -1,6 +1,7 @@
 import { defineMachine } from './machine';
 
 export * from './machine';
+export * from './rsa';
 
 /** Sub-order status (docs/specs/04-orders-routing-fulfilment.md). Parent order status is derived. */
 export const ORDER_STATES = [
@@ -585,6 +586,8 @@ export const REFUND_SOURCES = [
   'order_rejected',
   'order_cancelled',
   'service_cancelled',
+  'rsa_cancelled',
+  'rsa_overpaid',
   'duplicate_payment',
   'payment_after_close',
   'unfulfilled',
@@ -599,6 +602,8 @@ export const REFUND_REASONS = [
   'order_rejected',
   'order_cancelled',
   'service_cancelled',
+  'rsa_cancelled',
+  'rsa_overpaid',
   'duplicate_payment',
   'payment_after_close',
   'faulty',

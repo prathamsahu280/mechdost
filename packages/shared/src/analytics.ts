@@ -279,6 +279,42 @@ export interface ServerEventProps {
     reasonCode: string;
     refundRequested: boolean;
   };
+  /** Roadside assistance (spec 22, 2026-11-24): ids, codes, enums and integer paise only; never the location. */
+  rsa_created: {
+    requestCode: string;
+    vehicleType: string;
+    problemType: string;
+    advancePaise: number;
+  };
+  rsa_fee_paid: { requestCode: string; amountPaise: number; method: string };
+  rsa_offered: { requestCode: string; workshopId: string; attempt: number; distanceM: number | null };
+  rsa_accepted: { requestCode: string; workshopId: string; secondsToAccept: number };
+  rsa_declined: { requestCode: string; workshopId: string; reasonCode: string };
+  rsa_timeout: { requestCode: string; workshopId: string };
+  rsa_en_route: { requestCode: string; workshopId: string };
+  rsa_arrived: { requestCode: string; workshopId: string; via: 'code' | 'override' };
+  rsa_billed: {
+    requestCode: string;
+    workshopId: string;
+    totalPaise: number;
+    lines: number;
+    balancePaise: number;
+  };
+  rsa_completed: {
+    requestCode: string;
+    workshopId: string | null;
+    totalPaise: number;
+    via: 'online' | 'cash' | 'advance_covers';
+  };
+  rsa_cancelled: {
+    requestCode: string;
+    by: 'staff' | 'system' | 'customer';
+    reasonCode: string;
+    refundRequested: boolean;
+  };
+  rsa_late_capture: { requestCode: string; amountPaise: number; reason: 'cancelled' | 'settled' };
+  admin_rsa_settings_saved: { cityId: string; enabled: boolean; vehicleTypes: number; pincodes: number };
+  workshop_rsa_opt_in_saved: { workshopId: string; enabled: boolean };
   admin_workshop_saved: { workshopId: string; action: 'created' | 'updated'; published: boolean };
   /** Shop management (decision 2026-11-14 "Shop management"; specs 07/08). */
   admin_partner_standing_changed: {
@@ -672,6 +708,23 @@ export const CLIENT_EVENT_SCHEMAS = {
   workshop_analytics_viewed: z.object({ rangeDays: z.number().int().min(1).max(180) }).strict(),
   admin_analytics_tab: z.object({ tab: z.enum(['overview', 'workshops']) }).strict(),
   // CSV exports (design 2026-11-15): which dataset and what happened; never the range text or any row content.
+  // Roadside assistance (spec 22): the customer's steps in the browser. Codes only; never the pin or the note.
+  rsa_started: z.object({ path }).strict(),
+  rsa_location_set: z.object({ via: z.enum(['gps', 'pincode']), inArea: z.boolean() }).strict(),
+  rsa_problem_selected: z
+    .object({
+      code: z.enum([
+        'dead_battery',
+        'flat_tyre',
+        'out_of_fuel',
+        'minor_fix',
+        'needs_towing',
+        'unknown',
+        'skipped',
+      ]),
+    })
+    .strict(),
+  rsa_sos: z.object({ channel: z.enum(['call_support', 'call_112']) }).strict(),
   admin_export_action: z
     .object({
       dataset: z.enum([
