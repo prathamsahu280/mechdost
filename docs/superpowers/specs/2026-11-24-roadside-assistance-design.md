@@ -1,6 +1,6 @@
 # Roadside assistance (design)
 
-Date: 2026-11-24 · Status: **draft, awaiting the user's approval** · Specs: 06 (workshops & service requests), 07 (partner
+Date: 2026-11-24 · Status: **approved by the user 2026-11-24; phase 1 built (spec 22)** · Specs: 06 (workshops & service requests), 07 (partner
 portals), 10 (notifications), 15 (multi-city, `serviceable_for.rsa`), 17 § D (future modules: roadside) · Related
 designs: `2026-11-15-home-service-design.md` (arrival code, visiting mechanic) · Questions: Q216 (answered below) ·
 Research: agent report 2026-11-24 (ReadyAssist, GoMechanic Top Assist, CarDekho, ICICI Lombard, CEAT, Tata EV; sources
@@ -37,6 +37,7 @@ agents.
 | 8   | Commission and payouts | Decide later (pending #9)                                                                                                                                                                                                                              |
 | 9   | Account                | Required; a verified email is **not** required (phone sign-in is enough)                                                                                                                                                                               |
 | 10  | Cancellation           | Customer cancellation **off** at launch. Admin cancels only when no responder accepts; rules decided later                                                                                                                                             |
+| 12  | Vehicle types          | **2W and 4W only at launch** (user, 2026-11-24). 3W is not offered; the vehicle-type code stays extensible: the per-city setting "vehicle types offered" (default 2W, 4W) plus an advance amount for the type is all it takes to add 3W later          |
 | 11  | Problem type           | **Optional**: "what if the customer has no clue", so "I don't know what's wrong" is a choice                                                                                                                                                           |
 
 ## Approaches
@@ -58,7 +59,7 @@ agents.
    email not needed).
 2. **Where are you?** One tap GPS pin (map, draggable) with address/pincode fallback; outside the active area or hours →
    a clear message plus the call / WhatsApp buttons.
-3. **Vehicle:** pick a saved vehicle or the type (2W, 3W, 4W); fuel type (EV changes what can be offered: no jump start).
+3. **Vehicle:** pick a saved vehicle or the type (2W or 4W at launch); fuel type (EV changes what can be offered: no jump start).
 4. **What happened? (optional):** dead battery, flat tyre, out of fuel, small fix on the spot, needs towing, **I don't
    know what's wrong**. Optional note and up to 3 photos.
 5. **Review and pay:** shows the **advance** for that vehicle type (default ₹500) and "the mechanic adds the total after
