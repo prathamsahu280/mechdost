@@ -27,6 +27,9 @@ const page = (path: string) => {
 };
 
 const product: ProductView = {
+  variants: [],
+  defaultSku: null,
+  sizes: null,
   slug: 'castrol-activ-4t-20w40-900ml',
   sku: 'CAS-ACT4T-0900',
   brand: 'Castrol',
@@ -91,6 +94,40 @@ describe('structured data', () => {
       offers: { price: '440.05', priceCurrency: 'INR', availability: 'https://schema.org/InStock' },
     });
     expect(ld).not.toHaveProperty('aggregateRating');
+  });
+
+  it('several sizes become an aggregate offer: lowest and highest price, count of sold sizes', () => {
+    const size = (sku: string, price: number | null) => ({
+      sku,
+      label: sku,
+      pricePaise: price,
+      mrpPaise: price === null ? null : price + 10_000,
+      priceOnRequest: price === null,
+      inStock: price !== null,
+      leadDays: 2,
+      shippingPaise: null,
+      pack: null,
+    });
+    const ld = productLd(
+      { ...product, variants: [size('A', 330_000), size('B', 280_000), size('C', null)] },
+      '/shop/ceat-milaze-x3',
+      null,
+    );
+    expect(ld).toMatchObject({
+      offers: {
+        '@type': 'AggregateOffer',
+        lowPrice: '2800.00',
+        highPrice: '3300.00',
+        priceCurrency: 'INR',
+        offerCount: 2,
+      },
+    });
+  });
+
+  it('a single size keeps the plain offer', () => {
+    expect(productLd({ ...product, variants: [] }, '/shop/x', null)).toMatchObject({
+      offers: { '@type': 'Offer' },
+    });
   });
 
   it('adds the rating only when there are reviews', () => {

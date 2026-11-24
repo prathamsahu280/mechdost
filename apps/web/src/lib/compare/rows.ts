@@ -172,13 +172,32 @@ export function buildCompareRows(items: readonly ProductView[]): CompareGroup[] 
     .filter((g) => g.rows.length > 0);
 }
 
-/** `?p=a,b,c` → valid, distinct slugs, at most 4 (a repeated `p` uses the first). */
+const SIZE_SKU_RE = /^[A-Z0-9][A-Z0-9-]{0,63}$/;
+
+/** One entry of the link: a slug, optionally followed by ":SKU" for one size of a product sold in several sizes. */
+const splitEntry = (entry: string): { slug: string; sku: string | null } => {
+  const [slug = '', sku = ''] = entry.trim().split(':');
+  return { slug, sku: SIZE_SKU_RE.test(sku) ? sku : null };
+};
+
+/** "?p=a,b:SKU,c" gives valid, distinct slugs, at most 4 (a repeated p uses the first). A ":SKU" part is not a slug. */
 export function parseCompareParam(p: string | string[] | undefined): string[] {
   const raw = Array.isArray(p) ? p[0] : p;
   if (!raw) return [];
   const slugs = raw
     .split(',')
-    .map((s) => s.trim())
+    .map((e) => splitEntry(e).slug)
     .filter((s) => CATALOGUE_SLUG_RE.test(s));
   return [...new Set(slugs)].slice(0, COMPARE_MAX);
+}
+
+/** The sizes the link names (user 2026-11-24): { slug: SKU } for entries written "slug:SKU"; others show their default size. */
+export function parseCompareSizes(p: string | string[] | undefined): Record<string, string> {
+  const raw = Array.isArray(p) ? p[0] : p;
+  const out: Record<string, string> = {};
+  for (const e of (raw ?? '').split(',')) {
+    const { slug, sku } = splitEntry(e);
+    if (sku && CATALOGUE_SLUG_RE.test(slug) && !(slug in out)) out[slug] = sku;
+  }
+  return out;
 }

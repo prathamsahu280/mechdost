@@ -509,7 +509,8 @@
     "sizeChosen": "{size} selected",
     "sizeUnavailable": "This size is not available right now. Ask us about it on WhatsApp.",
     "fromSizes": "from {price} · {count} sizes",
-    "sizesOnly": "{count} sizes"
+    "sizesOnly": "{count} sizes",
+    "chooseSize": "Choose size"
   },
   "compare": {
     "toggle": "Compare",

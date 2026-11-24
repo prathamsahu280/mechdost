@@ -129,6 +129,12 @@ export interface ServerEventProps {
   };
   /** One bulk action on the product list (publish, unpublish, set MRP): how many products or packs it changed. */
   admin_products_bulk: { action: 'publish' | 'unpublish' | 'set_mrp'; count: number };
+  /** A size (variant) of a product was added, edited or archived in the catalogue editor (user 2026-11-24). */
+  admin_variant_changed: {
+    productSlug: string;
+    sku: string;
+    action: 'added' | 'edited' | 'archived' | 'restored';
+  };
   /** A trust line ("genuine parts") was published or taken down in Admin -> Content (placement = the line's slot). */
   trust_line_edited: { placement: string; locale: 'en' | 'hi'; action: 'published' | 'unpublished' };
   admin_content_published: { key: string; locale: 'en' | 'hi'; action: 'published' | 'unpublished' };
@@ -574,6 +580,11 @@ export const CLIENT_EVENT_SCHEMAS = {
     .object({ slug: id, qty: z.number().int().min(1).max(99), source: z.enum(['compare']).optional() })
     .strict(),
   // Product comparison (design 2026-11-13): slugs, category and counts only.
+  // A size picked on a product sold in several sizes (user 2026-11-24): slug and SKU only; `source` = tapped, from a
+  // ?size= link, or preselected because it fits the saved vehicle.
+  product_size_selected: z
+    .object({ slug: id, sku: z.string().min(1).max(64), source: z.enum(['tap', 'link', 'fit']) })
+    .strict(),
   compare_added: z.object({ slug: id, category: id, count: z.number().int().min(1).max(4) }).strict(),
   compare_removed: z.object({ slug: id, count: z.number().int().min(0).max(4) }).strict(),
   compare_opened: z.object({ count: z.number().int().min(0).max(4), category: id.nullable() }).strict(),

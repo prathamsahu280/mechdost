@@ -89,22 +89,39 @@ export function breadcrumbLd(items: readonly { name: string; path: string }[]): 
  * (live audit 2026-11-22 item 7; before that it was left out entirely).
  */
 export function productLd(product: ProductView, path: string, categoryName: string | null): Json {
-  const offer =
-    product.price && product.availability !== 'on_request'
+  // Several sizes (user 2026-11-24): one aggregate offer over the sizes a shop can sell now (lowest and highest price).
+  const sold = product.variants.flatMap((v) => (v.inStock && v.pricePaise !== null ? [v.pricePaise] : []));
+  const aggregate =
+    product.variants.length > 1 && sold.length > 0
       ? {
-          '@type': 'Offer',
+          '@type': 'AggregateOffer',
           url: absoluteUrl(path),
-          price: rupeesText(product.price.pricePaise),
+          lowPrice: rupeesText(Math.min(...sold)),
+          highPrice: rupeesText(Math.max(...sold)),
           priceCurrency: 'INR',
-          availability:
-            product.availability === 'low_stock'
-              ? 'https://schema.org/LimitedAvailability'
-              : 'https://schema.org/InStock',
+          offerCount: sold.length,
           itemCondition: 'https://schema.org/NewCondition',
-          // MechDost is the seller of record to the customer (user 2026-11-22: no shop shown to customers).
           seller: { '@type': 'Organization', name: 'MechDost' },
         }
       : null;
+  const offer =
+    product.variants.length > 1
+      ? aggregate
+      : product.price && product.availability !== 'on_request'
+        ? {
+            '@type': 'Offer',
+            url: absoluteUrl(path),
+            price: rupeesText(product.price.pricePaise),
+            priceCurrency: 'INR',
+            availability:
+              product.availability === 'low_stock'
+                ? 'https://schema.org/LimitedAvailability'
+                : 'https://schema.org/InStock',
+            itemCondition: 'https://schema.org/NewCondition',
+            // MechDost is the seller of record to the customer (user 2026-11-22: no shop shown to customers).
+            seller: { '@type': 'Organization', name: 'MechDost' },
+          }
+        : null;
   const rating =
     product.rating && product.rating.count > 0
       ? {

@@ -3,7 +3,9 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { cache, Suspense } from 'react';
 import { getTranslations } from 'next-intl/server';
-import { AddToCartButton } from '@/components/catalogue/add-to-cart-button';
+import { AddToCartButton, type AddToCartLabels } from '@/components/catalogue/add-to-cart-button';
+import { SizeBuyBox, type SizeBuyBoxLabels } from '@/components/catalogue/size-buy-box';
+import { sizeOptions } from '@/lib/catalogue/size-options';
 import { SellerNote } from '@/components/commerce/seller-note';
 import { CompareToggle } from '@/components/catalogue/compare-toggle';
 import { UnitPrice } from '@/components/catalogue/unit-price';
@@ -36,6 +38,9 @@ import { JsonLd } from '@/components/site/json-ld';
 import { localePath } from '@/lib/locale-path';
 import { site, whatsappLink } from '@/lib/site';
 import { productFullName } from '@/lib/product-name';
+
+/** Real sign-in and real data: the saved vehicle can preselect the size that fits it. */
+const SIZE_FIT = DATA_MODE === 'api' && process.env.NEXT_PUBLIC_AUTH_MODE === 'firebase';
 
 interface Props {
   params: Promise<{ locale: Locale; slug: string }>;
@@ -150,6 +155,48 @@ export default async function ProductPage({ params }: Props) {
   const off = price ? discountPercent(price.pricePaise, price.mrpPaise ?? undefined) : 0;
   const onRequest = product.availability === 'on_request';
   const rows = productRows(t, product);
+  // Several sizes (user 2026-11-24): the buying area is the size picker island; one size keeps the plain markup.
+  const multi = product.variants.length > 1;
+  const fullName = productFullName(product.brand, product.name);
+  const cartLabels: AddToCartLabels = {
+    add: t('addToCart'),
+    added: t('added'),
+    maxQty: t('maxQty'),
+    maxLines: t('maxLines'),
+    saveFailed: t('saveFailed'),
+    increase: t('cartIncrease', { name: fullName }),
+    decrease: t('cartDecrease', { name: fullName }),
+    remove: t('cartRemove', { name: fullName }),
+    removed: t('cartRemoved'),
+    inCart: t('inCart', { count: '#' }),
+  };
+  const sizeList = multi
+    ? sizeOptions(product.variants, {
+        price: formatPrice,
+        mrp: (paise) => t('mrp', { price: formatPrice(paise) }),
+        mrpOnly: (paise) => t('mrp', { price: formatPrice(paise) }),
+        save: (percent) => t('save', { percent }),
+        unit: (per, paise) => t(`unitPrice_${per}`, { price: formatPrice(paise) }),
+        inStock: t('inStock'),
+        onRequest: t('sizeOnRequest'),
+        outOfStock: t('sizeOutOfStock'),
+        delivery: (days) => t('delivery', { days }),
+        askHref: (label) => whatsappLink(t('askAboutMessage', { product: `${fullName} (${label})` })),
+      })
+    : [];
+  const sizeLabels: SizeBuyBoxLabels = {
+    size: t('size'),
+    help: t('sizeHelp'),
+    outOfStock: t('sizeOutOfStock'),
+    onRequest: t('sizeOnRequest'),
+    unavailable: t('sizeUnavailable'),
+    fits: t('sizeFits', { vehicle: '{vehicle}' }),
+    chosen: t('sizeChosen', { size: '{size}' }),
+    inclusive: t('inclusive'),
+    askAbout: t('askAboutProduct'),
+    whatsappNote: footer('whatsappNote'),
+    sellerCannotOrder: cartNs('sellerCannotOrder'),
+  };
   const path = localePath(`/shop/${slug}`, locale);
   const crumbs = [
     { name: nav('home'), path: localePath('/', locale) },
@@ -161,6 +208,40 @@ export default async function ProductPage({ params }: Props) {
   ];
   // Offers and ratings are marked up from real data only (demo prices and seed reviews are not real).
   const productData = DATA_MODE === 'api' ? productLd(product, path, categoryName) : null;
+
+  const extras = (
+    <>
+      <CompareToggle
+        slug={product.slug}
+        category={product.category.slug}
+        categoryName={categoryName}
+        labels={{
+          toggle: cmp('toggle'),
+          toggleName: cmp('toggleName', { name: productFullName(product.brand, product.name) }),
+          added: cmp('added', { count: '{count}' }),
+          removed: cmp('removed'),
+          hint: cmp('hint'),
+        }}
+      />
+      <div className="mt-3">
+        <WishlistHeartLazy
+          slug={product.slug}
+          source="page"
+          labels={{
+            add: w('wishlistAdd', { name: productFullName(product.brand, product.name) }),
+            remove: w('wishlistRemove', { name: productFullName(product.brand, product.name) }),
+            saved: w('wishlistSaved'),
+            removed: w('wishlistRemoved'),
+            full: w('wishlistFull', { max: 100 }),
+            failed: w('wishlistFailed'),
+            signIn: w('wishlistSignIn'),
+            pageSave: w('pageSave'),
+            pageSaved: w('pageSaved'),
+          }}
+        />
+      </div>
+    </>
+  );
 
   return (
     <Container className="py-8 tab:py-12">
@@ -253,137 +334,133 @@ export default async function ProductPage({ params }: Props) {
             </a>
           ) : null}
 
-          {price ? (
-            <>
-              <div className="mt-5 flex flex-wrap items-baseline gap-3">
-                <span className="font-heading text-[34px] font-extrabold text-ink">
-                  {formatPrice(price.pricePaise)}
-                </span>
-                {price.mrpPaise && off ? (
-                  <>
-                    <span className="text-sm text-muted line-through">
-                      {t('mrp', { price: formatPrice(price.mrpPaise) })}
-                    </span>
-                    <span className="rounded-md bg-success-bg px-2 py-0.5 text-xs font-bold text-success">
-                      {t('save', { percent: off })}
-                    </span>
-                  </>
-                ) : null}
-              </div>
-              <UnitPrice pricePaise={price.pricePaise} pack={product.pack} className="mt-1 text-sm" />
-              <p className="mt-1 text-xs text-muted">{t('inclusive')}</p>
-            </>
-          ) : mrp ? (
-            <p className="mt-5 font-heading text-2xl font-extrabold text-ink">
-              {t(mrp.key, { price: formatPrice(mrp.paise) })}
-            </p>
-          ) : null}
-
-          {/* Trust line near the price (design 2026-11-15). "GST bill" is added only for a GST-registered selling shop;
-              the product page does not know the shop yet, so it is left out (never a blanket claim). */}
-          {/* Only when a verified shop actually offers it (live check 2026-11-22: "from a verified shop" showed on
-              imported products no shop stocks yet). */}
-          {onRequest ? null : (
-            <TrustLine
-              placement="product"
-              brand={product.brand}
-              className="mt-3 text-sm font-bold text-ink before:mr-2 before:text-success before:content-['✓']"
-            />
-          )}
-
-          <ul className="mt-5 space-y-2 text-sm">
-            <li
-              className={`flex items-center gap-2 font-bold ${onRequest ? 'text-warning' : 'text-success'}`}
-            >
-              {onRequest ? (
-                <Clock aria-hidden="true" className="size-4" />
-              ) : (
-                <CheckCircle2 aria-hidden="true" className="size-4" />
-              )}
-              {availabilityLabel(t, product.availability)}
-            </li>
-            {product.leadDays !== null ? (
-              <li className="flex items-center gap-2 text-ink">
-                <Truck aria-hidden="true" className="size-4 text-muted" />
-                {t('delivery', { days: product.leadDays })}
-              </li>
-            ) : null}
-            <li className="flex items-center gap-2 text-ink">
-              <ShieldCheck aria-hidden="true" className="size-4 text-muted" />
-              {t('fitNote')}
-            </li>
-          </ul>
-
-          {/* "☐ Compare" right above the main action, the same control as on the cards (user ruling 2026-11-15,
-              "Checkbox style"; UI review 2026-11-14: it must not sit below the fold on phones). */}
-          <div className="mt-5 max-w-md">
-            <CompareToggle
+          {multi ? (
+            <SizeBuyBox
               slug={product.slug}
-              category={product.category.slug}
-              categoryName={categoryName}
-              labels={{
-                toggle: cmp('toggle'),
-                toggleName: cmp('toggleName', { name: productFullName(product.brand, product.name) }),
-                added: cmp('added', { count: '{count}' }),
-                removed: cmp('removed'),
-                hint: cmp('hint'),
-              }}
-            />
-            <div className="mt-3">
-              <WishlistHeartLazy
-                slug={product.slug}
-                source="page"
-                labels={{
-                  add: w('wishlistAdd', { name: productFullName(product.brand, product.name) }),
-                  remove: w('wishlistRemove', { name: productFullName(product.brand, product.name) }),
-                  saved: w('wishlistSaved'),
-                  removed: w('wishlistRemoved'),
-                  full: w('wishlistFull', { max: 100 }),
-                  failed: w('wishlistFailed'),
-                  signIn: w('wishlistSignIn'),
-                  pageSave: w('pageSave'),
-                  pageSaved: w('pageSaved'),
-                }}
-              />
-            </div>
-            <div className="mt-1">
-              {price ? (
-                <AddToCartButton
-                  sku={product.sku}
-                  slug={product.slug}
-                  labels={{
-                    add: t('addToCart'),
-                    added: t('added'),
-                    maxQty: t('maxQty'),
-                    maxLines: t('maxLines'),
-                    saveFailed: t('saveFailed'),
-                    increase: t('cartIncrease', { name: productFullName(product.brand, product.name) }),
-                    decrease: t('cartDecrease', { name: productFullName(product.brand, product.name) }),
-                    remove: t('cartRemove', { name: productFullName(product.brand, product.name) }),
-                    removed: t('cartRemoved'),
-                    inCart: t('inCart', { count: '#' }),
-                  }}
-                  className="min-h-12"
+              sizes={sizeList}
+              defaultSku={product.defaultSku ?? product.variants[0]?.sku ?? ''}
+              labels={sizeLabels}
+              cartLabels={cartLabels}
+              canFit={SIZE_FIT}
+              locale={locale}
+              showSellerNote
+              trust={
+                <TrustLine
+                  placement="product"
+                  brand={product.brand}
+                  className="mt-3 text-sm font-bold text-ink before:mr-2 before:text-success before:content-['✓']"
                 />
-              ) : (
-                <a
-                  href={whatsappLink(
-                    t('askAboutMessage', { product: productFullName(product.brand, product.name) }),
-                  )}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  data-track="product_ask_whatsapp"
-                  className="press inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-button bg-whatsapp px-5 text-sm font-bold text-white"
-                >
-                  <MessageCircle aria-hidden="true" className="size-4" />
-                  {t('askAboutProduct')}
-                  <span className="sr-only"> ({footer('whatsappNote')})</span>
-                </a>
+              }
+              extras={extras}
+            />
+          ) : (
+            <>
+              {price ? (
+                <>
+                  <div className="mt-5 flex flex-wrap items-baseline gap-3">
+                    <span className="font-heading text-[34px] font-extrabold text-ink">
+                      {formatPrice(price.pricePaise)}
+                    </span>
+                    {price.mrpPaise && off ? (
+                      <>
+                        <span className="text-sm text-muted line-through">
+                          {t('mrp', { price: formatPrice(price.mrpPaise) })}
+                        </span>
+                        <span className="rounded-md bg-success-bg px-2 py-0.5 text-xs font-bold text-success">
+                          {t('save', { percent: off })}
+                        </span>
+                      </>
+                    ) : null}
+                  </div>
+                  <UnitPrice pricePaise={price.pricePaise} pack={product.pack} className="mt-1 text-sm" />
+                  <p className="mt-1 text-xs text-muted">{t('inclusive')}</p>
+                </>
+              ) : mrp ? (
+                <p className="mt-5 font-heading text-2xl font-extrabold text-ink">
+                  {t(mrp.key, { price: formatPrice(mrp.paise) })}
+                </p>
+              ) : null}
+
+              {/* Trust line near the price (design 2026-11-15). "GST bill" is added only for a GST-registered selling shop;
+              the product page does not know the shop yet, so it is left out (never a blanket claim). */}
+              {/* Only when a verified shop actually offers it (live check 2026-11-22: "from a verified shop" showed on
+              imported products no shop stocks yet). */}
+              {onRequest ? null : (
+                <TrustLine
+                  placement="product"
+                  brand={product.brand}
+                  className="mt-3 text-sm font-bold text-ink before:mr-2 before:text-success before:content-['✓']"
+                />
               )}
-              {/* Only a signed-in shop account sees it (they browse, they do not buy; user 2026-11-22). */}
-              {price ? <SellerNote text={cartNs('sellerCannotOrder')} className="mt-3" /> : null}
-            </div>
-          </div>
+
+              <ul className="mt-5 space-y-2 text-sm">
+                <li
+                  className={`flex items-center gap-2 font-bold ${onRequest ? 'text-warning' : 'text-success'}`}
+                >
+                  {onRequest ? (
+                    <Clock aria-hidden="true" className="size-4" />
+                  ) : (
+                    <CheckCircle2 aria-hidden="true" className="size-4" />
+                  )}
+                  {availabilityLabel(t, product.availability)}
+                </li>
+                {product.leadDays !== null ? (
+                  <li className="flex items-center gap-2 text-ink">
+                    <Truck aria-hidden="true" className="size-4 text-muted" />
+                    {t('delivery', { days: product.leadDays })}
+                  </li>
+                ) : null}
+                <li className="flex items-center gap-2 text-ink">
+                  <ShieldCheck aria-hidden="true" className="size-4 text-muted" />
+                  {t('fitNote')}
+                </li>
+              </ul>
+
+              {/* "☐ Compare" right above the main action, the same control as on the cards (user ruling 2026-11-15,
+              "Checkbox style"; UI review 2026-11-14: it must not sit below the fold on phones). */}
+              <div className="mt-5 max-w-md">
+                {extras}
+                <div className="mt-1">
+                  {price ? (
+                    <AddToCartButton
+                      sku={product.sku}
+                      defaultSku={product.sku}
+                      slug={product.slug}
+                      labels={{
+                        add: t('addToCart'),
+                        added: t('added'),
+                        maxQty: t('maxQty'),
+                        maxLines: t('maxLines'),
+                        saveFailed: t('saveFailed'),
+                        increase: t('cartIncrease', { name: productFullName(product.brand, product.name) }),
+                        decrease: t('cartDecrease', { name: productFullName(product.brand, product.name) }),
+                        remove: t('cartRemove', { name: productFullName(product.brand, product.name) }),
+                        removed: t('cartRemoved'),
+                        inCart: t('inCart', { count: '#' }),
+                      }}
+                      className="min-h-12"
+                    />
+                  ) : (
+                    <a
+                      href={whatsappLink(
+                        t('askAboutMessage', { product: productFullName(product.brand, product.name) }),
+                      )}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      data-track="product_ask_whatsapp"
+                      className="press inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-button bg-whatsapp px-5 text-sm font-bold text-white"
+                    >
+                      <MessageCircle aria-hidden="true" className="size-4" />
+                      {t('askAboutProduct')}
+                      <span className="sr-only"> ({footer('whatsappNote')})</span>
+                    </a>
+                  )}
+                  {/* Only a signed-in shop account sees it (they browse, they do not buy; user 2026-11-22). */}
+                  {price ? <SellerNote text={cartNs('sellerCannotOrder')} className="mt-3" /> : null}
+                </div>
+              </div>
+            </>
+          )}
           <div className="max-w-md">
             {QUOTES_AVAILABLE ? (
               <p className="mt-3 text-sm text-muted">

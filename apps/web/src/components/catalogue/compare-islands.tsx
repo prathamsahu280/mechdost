@@ -118,7 +118,7 @@ export function CompareRemove({
       aria-label={label}
       onClick={() => {
         if (readCompare().slugs.includes(slug)) removeFromCompare(slug);
-        const rest = slugs.filter((s) => s !== slug);
+        const rest = slugs.filter((s) => s.split(':')[0] !== slug);
         track('compare_removed', { slug, count: rest.length });
         // `cleared`: the empty page must not jump to another saved comparison (review 2026-11-14).
         router.replace(prefix + (rest.length > 0 ? compareHref(rest) : '/compare?cleared=1'), {

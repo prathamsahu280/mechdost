@@ -39,6 +39,9 @@ export function ProductCard({
   const mrp = mrpOnly(product);
   const mrpLabel = mrp ? t(mrp.key, { price: formatPrice(mrp.paise) }) : null;
   const off = price ? discountPercent(price.pricePaise, price.mrpPaise ?? undefined) : 0;
+  // Several sizes (user 2026-11-24): "from ₹X · N sizes" with the lowest price among them, and "Choose size" in place of
+  // "Add to cart" (a card cannot know which size is wanted). One size looks exactly as before.
+  const sizes = product.sizes;
   const rating = product.rating && product.rating.count > 0 ? product.rating : null;
   const categoryName = product.category.name ?? (product.category.key ? c(product.category.key) : null);
 
@@ -120,7 +123,18 @@ export function ProductCard({
           ) : null}
         </div>
         <div data-align="price" className="mt-3 flex flex-wrap items-baseline gap-x-2 gap-y-1 px-1">
-          {price ? (
+          {sizes ? (
+            sizes.fromPaise !== null ? (
+              <span className="font-heading text-[17px] leading-snug font-extrabold text-ink">
+                {t('fromSizes', { price: formatPrice(sizes.fromPaise), count: sizes.count })}
+              </span>
+            ) : (
+              <span className="text-sm font-semibold text-muted">
+                {mrpLabel ? `${mrpLabel} · ` : ''}
+                {t('sizesOnly', { count: sizes.count })}
+              </span>
+            )
+          ) : price ? (
             <>
               <span className="font-heading text-[22px] font-extrabold text-ink">
                 {formatPrice(price.pricePaise)}
@@ -141,7 +155,7 @@ export function ProductCard({
           ) : null}
         </div>
         <div className="mt-0.5 px-1 text-xs">
-          {price ? <UnitPrice pricePaise={price.pricePaise} pack={product.pack} /> : null}
+          {price && !sizes ? <UnitPrice pricePaise={price.pricePaise} pack={product.pack} /> : null}
         </div>
         <p
           data-align="stock"
@@ -167,7 +181,18 @@ export function ProductCard({
               }}
             />
           ) : null}
-          {price ? (
+          {sizes ? (
+            <div data-slot="card-actions" className={compare ? 'mt-1' : 'mt-2'}>
+              <LocalLink
+                href={`/shop/${product.slug}`}
+                data-track="card_choose_size"
+                className="press cart-add"
+              >
+                {t('chooseSize')}
+                <span className="sr-only"> {productFullName(product.brand, product.name)}</span>
+              </LocalLink>
+            </div>
+          ) : price ? (
             <div data-slot="card-actions" className={compare ? 'mt-1' : 'mt-2'}>
               <AddToCartButton
                 sku={product.sku}
