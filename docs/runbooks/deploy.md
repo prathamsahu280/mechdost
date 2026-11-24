@@ -163,7 +163,11 @@ The API starts only when every production check in `apps/api/src/config.ts` pass
 
 You add the rest:
 
-1. **Upstash Redis** (rate limits): go to https://console.upstash.com, then Create database, Redis, region **ap-south-1 (Mumbai)**. Copy the **REST URL** and **REST token** into your local `.env` as `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`.
+1. **Rate-limit Redis (since 2026-11-24 on this server, not Upstash):** `redis` + `srh` run from `compose.yml`. On the server set, once: `T=$(openssl rand -hex 32); P=$(openssl rand -hex 32); printf "SRH_TOKEN=%s
+UPSTASH_REDIS_REST_URL=http://srh:80
+UPSTASH_REDIS_REST_TOKEN=%s
+REDIS_PASSWORD=%s
+" "$T" "$T" "$P" | bash /opt/mechdost/set-env.sh`. Local development keeps the in-memory limiter (or any Upstash-compatible URL). The free Upstash plan (500,000 requests a month) ran out on 2026-11-24 and took the API down; do not go back to it without a paid plan.
 2. **Cloudflare Turnstile** (bot check on public forms): go to https://dash.cloudflare.com, then Turnstile, then Add widget. Use the hostnames `mechdost.com` and `localhost`, mode Managed. Copy:
    - the **secret key** into the local `.env` as `TURNSTILE_SECRET_KEY`;
    - the **site key** as `NEXT_PUBLIC_TURNSTILE_SITE_KEY`. That one is also a GitHub variable (§ 3.4), needed when real sign-in is switched on.

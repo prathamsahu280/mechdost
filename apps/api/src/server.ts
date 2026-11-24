@@ -18,7 +18,8 @@ import { startSentry } from './monitoring/sentry';
 import { createSentryIssuesClient } from './monitoring/sentry-issues';
 import { supabaseStorage } from './photos/storage';
 import { MemoryRateLimiter } from './rate-limit/limiter';
-import { UpstashRateLimiter } from './rate-limit/upstash';
+import { Redis } from '@upstash/redis';
+import { RedisRestRateLimiter } from './rate-limit/redis-rest';
 
 let config;
 try {
@@ -37,7 +38,10 @@ const sentry = await startSentry(config.sentry, 'api');
 const { db, sql } = createDb(config.databaseUrl, { max: config.databasePoolMax, transactionPooler: true });
 // Open connections at boot and keep two warm: the first request after a pause no longer pays a TLS + SCRAM handshake.
 const stopWarm = keepPoolWarm(() => sql`select 1`, { connections: Math.min(2, config.databasePoolMax) });
-const rateLimiter = config.upstash ? new UpstashRateLimiter(config.upstash) : new MemoryRateLimiter();
+// The server's own Redis behind SRH (or Upstash), spoken to with the Upstash REST client (decision 2026-11-24).
+const rateLimiter = config.upstash
+  ? new RedisRestRateLimiter(new Redis({ url: config.upstash.url, token: config.upstash.token }))
+  : new MemoryRateLimiter();
 if (!config.upstash) log('warn', 'rate_limit_memory', { note: 'in-memory limiter — development only' });
 
 // Data keyring (spec 13): delivery codes are encrypted. Required in production; without it in development the

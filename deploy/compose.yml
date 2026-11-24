@@ -40,6 +40,49 @@ services:
     security_opt:
       - no-new-privileges:true
 
+  # Rate-limit counters and short caches (decision 2026-11-24): Redis on this server instead of Upstash (the free
+  # Upstash plan's 500,000 requests a month ran out and every API call failed). Nothing here is customer data: on a
+  # restart the counters start again. Private network only; no port on the host.
+  redis:
+    image: redis:7.4.7-alpine@sha256:02f2cc4882f8bf87c79a220ac958f58c700bdec0dfb9b9ea61b62fb0e8f1bfcf
+    restart: unless-stopped
+    command:
+      - redis-server
+      - --save
+      - ''
+      - --appendonly
+      - 'no'
+      - --maxmemory
+      - 48mb
+      - --maxmemory-policy
+      - volatile-lru
+      # Defence in depth: only containers on this private network can reach it, and they need the password.
+      - --requirepass
+      - ${REDIS_PASSWORD:?set REDIS_PASSWORD}
+    expose:
+      - '6379'
+    mem_limit: 80m
+    security_opt:
+      - no-new-privileges:true
+
+  # Serverless Redis HTTP: speaks the Upstash REST protocol in front of the local Redis, so the API's Upstash client
+  # works unchanged (UPSTASH_REDIS_REST_URL=http://srh:80, UPSTASH_REDIS_REST_TOKEN=SRH_TOKEN in .env).
+  srh:
+    image: hiett/serverless-redis-http:0.0.10@sha256:65128347949bca511e448fd7238780d624573d74c22b79155a7563db19e9b678
+    profiles: [api]
+    restart: unless-stopped
+    environment:
+      SRH_MODE: env
+      SRH_TOKEN: ${SRH_TOKEN:?set SRH_TOKEN}
+      SRH_CONNECTION_STRING: redis://:${REDIS_PASSWORD:?set REDIS_PASSWORD}@redis:6379
+    depends_on:
+      - redis
+    expose:
+      - '80'
+    mem_limit: 160m
+    security_opt:
+      - no-new-privileges:true
+
   api:
     image: ghcr.io/prathamsahu280/mechdost-api:${IMAGE_TAG:?set IMAGE_TAG}
     profiles: [api]
@@ -61,6 +104,8 @@ services:
     volumes:
       - ./supabase-ca-2021.crt:/run/secrets/supabase-ca.crt:ro
       - ./firebase-admin.json:/run/secrets/firebase-admin.json:ro
+    depends_on:
+      - srh
     expose:
       - '4000'
     mem_limit: 384m

@@ -1732,6 +1732,15 @@ User: "this now has amaron batteries too, add them as well on the website and pr
 
 The customer asks `service.proposed`, `service.estimate_ready` and `service.bill_ready` are marked done (`resolved_at`, read) in the transaction of the move that makes them moot (`transitionRequest` calls `resolveServiceNotices`): leaving `proposed`, `estimate_sent` or `billed`, and every open ask when the request is cancelled, rejected or completed. Same mechanism as the order notices (2026-11-23); no migration. No staff or workshop notices exist for service requests, so none were added. Spec 10.
 
+## 2026-11-24 — Rate limits on our own Redis (Upstash free plan exhausted; live outage)
+
+At 11:29 UTC every API route started answering 500: the free Upstash plan's 500,000 requests a month were used up ("ERR max requests limit exceeded") and the rate limiter threw on every request. User asked for a free alternative and chose the server's own Redis (option 1 of 4: own Redis on the AWS server; Redis Cloud free; Postgres counters; in-memory).
+
+- **Store:** `redis` (7.4.7-alpine, pinned by digest, no persistence, 48 MB, `volatile-lru`, password `REDIS_PASSWORD`) and `srh` (Serverless Redis HTTP 0.0.10, pinned by digest, token `SRH_TOKEN`) in `deploy/compose.yml`; private Docker network only, no host ports. The API keeps speaking the Upstash REST protocol: `UPSTASH_REDIS_REST_URL=http://srh:80`, `UPSTASH_REDIS_REST_TOKEN=$SRH_TOKEN`. Counters reset on a restart (they are abuse counters, not data); several API servers later share it the same way.
+- **Limiter:** `@upstash/ratelimit` removed — its Lua scripts carry the Upstash-only flag `allow-key-locking`, which Redis 7/8 and Valkey refuse. `apps/api/src/rate-limit/redis-rest.ts` implements the sliding window with INCRBY + PEXPIRE + GET in one MULTI/EXEC (works on Upstash too).
+- **Failure rule (changed):** a store failure used to throw → 500 on every route. Now ordinary rules allow and log `rate_limit_store_failed`; `failClosed` rules (password sign-in per IP and per account, staff code, reset email per IP and per address, verification email, assistant daily cap) still refuse (503). Codes that can be guessed (arrival, delivery, roadside) are locked after 5 tries in the database, independent of Redis.
+- Tests: `apps/api/test/redis-rate-limiter.test.ts`. Why the plan ran out so fast: see progress (investigated separately).
+
 ## 2026-11-24 — Razorpay live keys are not rotated
 
 User: "we wont generate new razerpay keys no". The live key secret and webhook secret that were pasted in chat on 2026-11-23 stay in use; the recommendation to rotate them is withdrawn at the user's decision. Accepted risk: the secrets exist in the chat transcript. If a leak is ever suspected, rotate in the Razorpay dashboard and update the server `.env` (`docs/runbooks/deploy.md`) and the local `.env`.
