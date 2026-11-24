@@ -1,5 +1,6 @@
 import { and, eq, inArray } from 'drizzle-orm';
-import type { OrderStatus } from '@mechdost/shared/state';
+import type { NoticeKind } from '@mechdost/shared/notice-catalogue';
+import type { OrderStatus, ServiceRequestStatus } from '@mechdost/shared/state';
 import { orderAssignments, orderGroups, orders } from '../schema';
 import { queueStaffNotice, resolveNotices, type StaffNoticeKind } from './notices';
 import type { Tx } from './orders';
@@ -96,4 +97,31 @@ export async function resolveOrderNotices(
       prefixed: true,
     });
   }
+}
+
+/** The customer notice that asks for an action while a request sits in each status, and the action it asks for. */
+const SERVICE_ASKS: Partial<Record<ServiceRequestStatus, NoticeKind>> = {
+  proposed: 'service.proposed',
+  estimate_sent: 'service.estimate_ready',
+  billed: 'service.bill_ready',
+};
+const SERVICE_ASK_KINDS = Object.values(SERVICE_ASKS);
+const SERVICE_ENDED: readonly ServiceRequestStatus[] = ['cancelled', 'rejected', 'completed'];
+
+/**
+ * Clears the customer notices that asked for an action on a service request once that action is moot. Called by
+ * `transitionRequest` in the same transaction, before the new milestone's own notice is queued:
+ * - left `proposed` (accepted, declined, rerouted, cancelled, expired): "the workshop proposed a slot" is done;
+ * - left `estimate_sent` (lines decided, no work approved, cancelled): "your estimate is ready" is done;
+ * - left `billed` (paid, cancelled): "your bill is ready" is done;
+ * - the request ended (cancelled, rejected, completed): every open ask for it is done.
+ * Services raise no staff or workshop notices today; if one is added it belongs here.
+ */
+export async function resolveServiceNotices(
+  tx: Tx,
+  input: { requestId: string; from: ServiceRequestStatus; to: ServiceRequestStatus },
+): Promise<void> {
+  const left = SERVICE_ASKS[input.from];
+  const kinds = SERVICE_ENDED.includes(input.to) ? SERVICE_ASK_KINDS : left ? [left] : [];
+  await resolveNotices(tx, { kinds, entityIds: [input.requestId] });
 }

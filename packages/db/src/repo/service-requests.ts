@@ -41,6 +41,7 @@ import { cancelPendingServiceRewards, createServiceReward } from './coins';
 import { issueArrivalCode } from './arrival-code';
 import { ConflictError, NotFoundError, pgCode, ValidationError } from './errors';
 import { queueServiceReceivedEmail, queueServiceStatusEmail } from './email-events';
+import { resolveServiceNotices } from './notice-events';
 import { recordServerEvent } from './events';
 import { localized } from './localized';
 import type { Tx } from './orders';
@@ -147,6 +148,7 @@ export async function transitionRequest(
   },
 ): Promise<{ status: ServiceRequestStatus; version: number }> {
   const { request: r } = args;
+  const fromStatus = r.status;
   serviceRequestMachine.assert(r.status, args.to, args.actor.type);
   const [row] = await tx
     .update(serviceRequests)
@@ -209,6 +211,8 @@ export async function transitionRequest(
   r.status = row.status as ServiceRequestStatus;
   r.version = row.version;
   if (args.patch?.workshopId !== undefined) r.workshopId = args.patch.workshopId;
+  // Asks that are moot now are cleared first, so the new milestone's own notice is never touched.
+  await resolveServiceNotices(tx, { requestId: r.id, from: fromStatus, to: args.to });
   // Customer email for the milestone (spec 10, design 2026-11-15), same transaction: a rolled-back move sends nothing.
   await queueServiceStatusEmail(tx, { request: r, to: args.to, version: row.version, payload: args.payload });
   return { status: r.status, version: row.version };
