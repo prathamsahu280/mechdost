@@ -13,6 +13,7 @@
     "./catalogue-v2": "./src/catalogue-v2/index.ts",
     "./exide": "./src/exide/index.ts",
     "./amaron": "./src/amaron/index.ts",
+    "./tatagreen": "./src/tatagreen/index.ts",
     "./battery-import": "./src/battery-import/index.ts"
   },
   "scripts": {

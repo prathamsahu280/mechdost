@@ -15,7 +15,8 @@
     "lint": "eslint . --max-warnings=0",
     "import:catalogue": "tsx --env-file-if-exists=../../.env src/cli/import-catalogue.ts",
     "import:exide": "tsx --env-file-if-exists=../../.env src/cli/import-exide.ts",
-    "import:amaron": "tsx --env-file-if-exists=../../.env src/cli/import-amaron.ts"
+    "import:amaron": "tsx --env-file-if-exists=../../.env src/cli/import-amaron.ts",
+    "import:tatagreen": "tsx --env-file-if-exists=../../.env src/cli/import-tatagreen.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "1.3.0",

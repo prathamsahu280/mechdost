@@ -32,7 +32,7 @@ export interface BatteryImportConfig {
   specSource: string;
   /** `source` in the audit rows ("exide_import"). */
   auditSource: string;
-  event: 'admin_exide_imported' | 'admin_amaron_imported';
+  event: 'admin_exide_imported' | 'admin_amaron_imported' | 'admin_tatagreen_imported';
 }
 
 export interface BatteryImportCounts {

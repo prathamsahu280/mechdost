@@ -110,3 +110,4 @@ export * from './catalogue-v2-import';
 export * from './battery-import';
 export * from './exide-import';
 export * from './amaron-import';
+export * from './tatagreen-import';

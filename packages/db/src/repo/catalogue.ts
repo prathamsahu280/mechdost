@@ -435,7 +435,13 @@ interface PhotoRow {
 }
 
 /** Keys of `products.spec` the public product page never shows (import data for staff, search and later features). */
-const PRIVATE_SPEC_KEYS: ReadonlySet<string> = new Set(['fitment', 'amaronPrice', 'combos', 'categoryRule']);
+const PRIVATE_SPEC_KEYS: ReadonlySet<string> = new Set([
+  'fitment',
+  'amaronPrice',
+  'tataGreenPrice',
+  'combos',
+  'categoryRule',
+]);
 
 /** A live product page with each active variant's best offer for the PIN (or city). Others → 404. */
 export async function getCatalogueProduct(
@@ -515,7 +521,7 @@ export async function getCatalogueProduct(
     compatibility:
       p.compatibility === null ? null : localized(p.compatibility, p.compatibility_hi, opts.locale),
     // Stays out of the page payload: `fitment` (hundreds of vehicles; search reads `compatibility`) and the importers'
-    // own price terms and combos (`amaronPrice` is a lower selling price: the customer price is MRP until a shop prices it).
+    // own price terms and combos (`amaronPrice` and `tataGreenPrice` are lower selling price: the customer price is MRP until a shop prices it).
     spec: Object.fromEntries(Object.entries(p.spec).filter(([key]) => !PRIVATE_SPEC_KEYS.has(key))),
     attributeSet,
     attributes: attributeSet === null ? {} : readAttributes(attributeSet, p.spec),

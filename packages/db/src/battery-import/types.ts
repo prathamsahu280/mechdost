@@ -29,6 +29,14 @@ export const EARTH_MOVING_CATEGORY: PlannedCategory = {
   nameHi: 'अर्थ-मूविंग और कंस्ट्रक्शन मशीन बैटरी',
 };
 
+/** Tata Green's sealed 12 V industrial batteries (TGI) fit none of the existing sub-categories: the import creates this one (2026-11-24). */
+export const INDUSTRIAL_CATEGORY: PlannedCategory = {
+  slug: 'industrial-batteries',
+  parent: 'batteries',
+  name: 'Industrial batteries',
+  nameHi: 'औद्योगिक बैटरी',
+};
+
 /** `bat|…` key of a catalogue-v2 sub-category, 'home' for the home-power category, or a category of its own. */
 export type CategoryRef = string | PlannedCategory;
 
