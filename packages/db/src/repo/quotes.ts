@@ -41,7 +41,7 @@ import {
   quoteRequests,
 } from '../schema';
 import type { StoredImage } from './service-photos';
-import { placeOrder, quoteCheckout, settingOr } from './checkout';
+import { placeOrder, quoteCheckout, settingOr, sizeLabelOf, withSize } from './checkout';
 import { activeBlockLevels } from './customer-blocks';
 import { decodeCursor, encodeCursor, pageSize } from './cursor';
 import { ConflictError, ForbiddenError, NotFoundError, pgCode, ValidationError } from './errors';
@@ -660,10 +660,12 @@ export async function createQuote(
       mrp_paise: number | string | null;
       name: string | null;
       name_hi: string | null;
+      options: Record<string, unknown> | null;
+      sizes: unknown;
       brand: string | null;
     }>(
       await tx.execute(sql`
-        select l.ord, l.slug, p.id as product_id, v.id as variant_id, v.sku, v.mrp_paise, p.name, p.name_hi,
+        select l.ord, l.slug, p.id as product_id, v.id as variant_id, v.sku, v.mrp_paise, p.name, p.name_hi, v.options, v.sizes,
           b.name as brand
         from jsonb_to_recordset(${JSON.stringify(
           input.lines.map((l, i) => ({ ord: i, slug: l.slug, sku: l.sku ?? null })),
@@ -671,7 +673,9 @@ export async function createQuote(
         left join products p on p.slug = l.slug and ${productVisible('p')}
         left join brands b on b.id = p.brand_id
         left join lateral (
-          select pv.id, pv.sku, pv.mrp_paise from product_variants pv
+          select pv.id, pv.sku, pv.mrp_paise, pv.options,
+            (select count(*) from product_variants sz where sz.product_id = pv.product_id and sz.status = 'active') as sizes
+          from product_variants pv
           where pv.product_id = p.id and pv.status = 'active' and pv.mrp_paise is not null
             and (l.sku is null or pv.sku = l.sku)
           order by pv.created_at, pv.sku limit 1) v on true
@@ -712,8 +716,8 @@ export async function createQuote(
         variantId: r.variant_id ?? '',
         sku: r.sku ?? '',
         slug: r.slug,
-        title: `${r.brand ?? ''} ${r.name ?? ''}`.trim(),
-        titleHi: r.name_hi ? `${r.brand ?? ''} ${r.name_hi}`.trim() : null,
+        title: withSize(`${r.brand ?? ''} ${r.name ?? ''}`.trim(), sizeLabelOf(r)),
+        titleHi: r.name_hi ? withSize(`${r.brand ?? ''} ${r.name_hi}`.trim(), sizeLabelOf(r)) : null,
         qty,
         listUnitPaise: priceBySku.get(r.sku ?? '') ?? null,
         mrpPaise: Number(r.mrp_paise ?? 0),

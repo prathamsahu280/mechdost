@@ -36,7 +36,8 @@ export function CompareTable({
   caption,
   prefix,
 }: {
-  items: readonly ProductView[];
+  /** `sizeLabel`: the size shown for a product sold in several sizes (user 2026-11-24). */
+  items: readonly (ProductView & { sizeLabel?: string | null })[];
   groups: readonly CompareGroup[];
   caption: string;
   prefix: string;
@@ -44,7 +45,8 @@ export function CompareTable({
   const t = useTranslations('compare');
   const cat = useTranslations('catalogue');
   const r = useTranslations('reviews');
-  const slugs = items.map((p) => p.slug);
+  // A product shown for one size keeps that size in the link ("slug:SKU"), so removing another column keeps it.
+  const slugs = items.map((p) => (p.sizeLabel && p.sku ? `${p.slug}:${p.sku}` : p.slug));
   const prices = items.map((p) => p.price?.pricePaise ?? null);
   const priced = prices.filter((p): p is number => p !== null);
   const lowestPrice = priced.length >= 2 ? Math.min(...priced) : null;
@@ -125,6 +127,12 @@ export function CompareTable({
                       label={t('remove', { name: productFullName(p.brand, p.name) })}
                     />
                   </div>
+                  {p.sizeLabel ? (
+                    <p className="text-xs font-bold text-muted" data-slot="compare-size">
+                      <span className="sr-only">{cat('size')}: </span>
+                      {p.sizeLabel}
+                    </p>
+                  ) : null}
                   {p.price ? (
                     <p className="flex flex-wrap items-baseline gap-x-2 font-heading text-lg font-extrabold text-ink">
                       {formatPrice(p.price.pricePaise)}

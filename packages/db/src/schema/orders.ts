@@ -244,6 +244,11 @@ export const orderItems = pgTable(
     title: text().notNull(),
     titleHi: text(),
     sku: text().notNull(),
+    /**
+     * The size ("145/70 R12 69T TL") when the product is sold in several sizes (user 2026-11-24), else null. The
+     * titles above already end with it; this column keeps it apart for reports and training data (rule 16).
+     */
+    variantLabel: text(),
     hsn: text().notNull(),
     gstRateBp: integer().notNull(),
     unitPaise: paise().notNull(),

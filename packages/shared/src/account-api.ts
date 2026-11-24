@@ -196,6 +196,16 @@ export const VehicleDto = z.object({
 });
 export type SavedVehicle = z.infer<typeof VehicleDto>;
 
+/**
+ * `GET /v1/me/vehicles/fit?product=<slug>` (user 2026-11-24): the size of a product whose private fitment lists one of
+ * the caller's saved vehicles. Only the SKU and the vehicle's make and model leave the server, never the fitment.
+ */
+export const VehicleFitDto = z.object({
+  fitsVariantSku: z.string().nullable(),
+  vehicle: z.object({ make: z.string(), model: z.string() }).nullable(),
+});
+export type VehicleFit = z.infer<typeof VehicleFitDto>;
+
 export const VehiclesDto = z.object({ vehicles: z.array(VehicleDto) });
 export type SavedVehicles = z.infer<typeof VehiclesDto>;
 

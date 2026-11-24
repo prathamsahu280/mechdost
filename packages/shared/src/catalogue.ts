@@ -56,6 +56,8 @@ const cardFields = {
   mrpFromPaise: z.number().int().nullable(),
   /** True when the packs have different MRPs, so the card says "MRP from". */
   mrpVaries: z.boolean(),
+  /** Active sizes (variants); more than one = "from ₹X · N sizes" on the card (user 2026-11-24). */
+  sizeCount: z.number().int().min(1).default(1),
 };
 
 export const CatalogueCardSchema = z.object({
@@ -87,6 +89,8 @@ export const CatalogueProductSchema = z.object({
   variants: z.array(
     z.object({
       sku: z.string(),
+      /** The size as one line ("145/70 R12 69T TL"), built from the options (`variantLabel`). */
+      label: z.string(),
       options: z.record(z.string(), z.unknown()),
       mrpPaise: z.number().int().nullable(),
       netQuantity: NetQuantitySchema.nullable(),

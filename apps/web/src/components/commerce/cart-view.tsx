@@ -2,11 +2,20 @@
 
 import { Minus, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
+import { useEffect } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import { CATEGORY_KEYS, CATEGORY_SLUGS } from '@/demo/catalogue';
+import { CATEGORY_KEYS, CATEGORY_SLUGS, findProduct } from '@/demo/catalogue';
 import { useIsSeller } from '@/demo/session-state';
 import { useCategoryEmoji } from '@/demo/site-config';
-import { removeFromCart, setQuantity, useCart, MAX_QTY } from '@/demo/store';
+import {
+  cartNow,
+  removeFromCart,
+  replaceCart,
+  setQuantity,
+  upgradeLegacyLines,
+  useCart,
+  MAX_QTY,
+} from '@/demo/store';
 import { DATA_MODE, QUOTES_AVAILABLE } from '@/lib/data-mode';
 import { DEFAULT_PIN, useCartPricing } from '@/lib/use-cart-pricing';
 import { CATEGORY_EMOJI, UI_EMOJI } from '@/lib/emoji';
@@ -33,6 +42,14 @@ export function CartView() {
   const checkoutT = useTranslations('checkout');
   const seller = useIsSeller();
   const base = prefix(locale);
+
+  // Demo data: a line saved by slug only (before sizes, user 2026-11-24) becomes the product's first size.
+  useEffect(() => {
+    if (DATA_MODE === 'api') return;
+    const now = cartNow();
+    const next = upgradeLegacyLines(now, (slug) => findProduct(slug)?.sku);
+    if (next.some((l, i) => l.sku !== now[i]?.sku)) replaceCart(next);
+  }, [lines]);
 
   if (DATA_MODE === 'api' && priced.length === 0 && lines.length > 0 && pricing.status !== 'ready')
     return (
@@ -84,9 +101,9 @@ export function CartView() {
   return (
     <div className="grid gap-6 nav:grid-cols-[1fr_360px] nav:items-start">
       <ul className="space-y-3">
-        {priced.map(({ product, qty, linePaise }) => (
+        {priced.map(({ product, qty, linePaise, sizeLabel }) => (
           <li
-            key={product.slug}
+            key={product.sku}
             className="grid grid-cols-[72px_1fr] gap-4 rounded-card border border-line-card bg-surface p-4 shadow-card min-[480px]:grid-cols-[96px_1fr]"
           >
             <ProductVisualClient category={product.category} />
@@ -100,6 +117,12 @@ export function CartView() {
               >
                 {productNameFor(product.slug, product.name, locale)}
               </Link>
+              {sizeLabel ? (
+                <p className="text-sm font-bold text-ink" data-slot="cart-size">
+                  <span className="sr-only">{t('size')}: </span>
+                  {sizeLabel}
+                </p>
+              ) : null}
               <p className="text-xs text-muted">{t('each', { price: formatPrice(product.pricePaise) })}</p>
               <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
                 <div
@@ -112,7 +135,7 @@ export function CartView() {
                     aria-label={c('decrease')}
                     disabled={qty <= 1}
                     onClick={() => {
-                      setQuantity(product.slug, qty - 1);
+                      setQuantity(product.sku, qty - 1);
                     }}
                     className="press inline-flex size-10 items-center justify-center text-ink disabled:opacity-40"
                   >
@@ -126,7 +149,7 @@ export function CartView() {
                     aria-label={c('increase')}
                     disabled={qty >= MAX_QTY}
                     onClick={() => {
-                      setQuantity(product.slug, qty + 1);
+                      setQuantity(product.sku, qty + 1);
                     }}
                     className="press inline-flex size-10 items-center justify-center text-ink disabled:opacity-40"
                   >
@@ -140,7 +163,7 @@ export function CartView() {
                   <button
                     type="button"
                     onClick={() => {
-                      removeFromCart(product.slug);
+                      removeFromCart(product.sku);
                       track('remove_from_cart', { slug: product.slug });
                     }}
                     className="press inline-flex min-h-10 items-center gap-1 rounded-lg px-2 text-xs font-bold text-muted hover:text-error"

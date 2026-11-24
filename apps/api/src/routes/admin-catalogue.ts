@@ -2,6 +2,7 @@ import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import type { Context } from 'hono';
 import {
   addSearchSynonym,
+  addVariant,
   createProduct,
   getAdminProduct,
   HIGHLIGHT_LEN,
@@ -16,8 +17,16 @@ import {
   setProductVehicleTypes,
   setVariantNetQuantity,
   updateProductTexts,
+  updateVariant,
 } from '@mechdost/db/repo';
-import { AdminImportReport, AdminProductCreated, NewProductFields } from '@mechdost/shared/admin-catalogue';
+import {
+  AdminImportReport,
+  AdminProductCreated,
+  AdminVariantAdd,
+  AdminVariantPatch,
+  AdminVariantSaved,
+  NewProductFields,
+} from '@mechdost/shared/admin-catalogue';
 import {
   csvImportRows,
   FIELD_COLUMN,
@@ -84,6 +93,11 @@ const ProductDetail = Product.extend({
       sku: z.string(),
       mrpPaise: z.number().int().nullable(),
       netQuantity: z.object({ qty: z.number().int(), unit: z.enum(NET_UNITS) }).nullable(),
+      label: z.string(),
+      options: z.record(z.string(), z.unknown()),
+      barcode: z.string().nullable(),
+      status: z.enum(['active', 'archived']),
+      version: z.number().int(),
     }),
   ),
 }).openapi('AdminProductDetail');
@@ -112,6 +126,36 @@ const json = <T extends z.ZodType>(schema: T, description: string) => ({
   content: { 'application/json': { schema } },
 });
 const conflict = { 404: json(ErrorSchema, 'Not found'), 409: json(ErrorSchema, 'Changed meanwhile') };
+
+const VariantAdd = AdminVariantAdd.openapi('AdminVariantAdd');
+const VariantPatch = AdminVariantPatch.openapi('AdminVariantPatch');
+const VariantSaved = AdminVariantSaved.openapi('AdminVariantSaved');
+
+const variantAdd = createRoute({
+  method: 'post',
+  path: '/admin/catalogue/products/{slug}/variants',
+  tags: ['admin'],
+  summary: 'Add a size (variant) to a product: label, MRP (empty = price on request), barcode',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: z.object({ slug: Slug }),
+    body: { required: true, content: { 'application/json': { schema: VariantAdd } } },
+  },
+  responses: { 201: json(VariantSaved, 'Added'), ...conflict, ...errorResponses },
+});
+
+const variantPatch = createRoute({
+  method: 'patch',
+  path: '/admin/catalogue/variants/{sku}',
+  tags: ['admin'],
+  summary: 'Edit, archive or restore a size (compare-and-set on its version)',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: z.object({ sku: z.string().regex(/^[A-Z0-9][A-Z0-9-]{0,63}$/) }),
+    body: { required: true, content: { 'application/json': { schema: VariantPatch } } },
+  },
+  responses: { 200: json(VariantSaved, 'Saved'), ...conflict, ...errorResponses },
+});
 
 const list = createRoute({
   method: 'get',
@@ -556,6 +600,30 @@ export function adminCatalogueRoutes(deps: AppDeps, cache: SessionCache) {
         slug: c.req.valid('param').slug,
         expectedVersion: b.version,
         attributes: b.attributes,
+        staffUserId: c.get('auth').user.id,
+      });
+      return c.json(r, 200);
+    })
+    .openapi(variantAdd, async (c) => {
+      const b = c.req.valid('json');
+      const r = await addVariant(deps.db, {
+        slug: c.req.valid('param').slug,
+        sku: b.sku,
+        options: b.options,
+        mrpPaise: b.mrpPaise,
+        barcode: b.barcode ?? null,
+        staffUserId: c.get('auth').user.id,
+      });
+      return c.json(r, 201);
+    })
+    .openapi(variantPatch, async (c) => {
+      const { version, ...changes } = c.req.valid('json');
+      // Archiving or restoring changes what customers see: publish-level, like the product status.
+      if (changes.status !== undefined) mayPublish(c, true);
+      const r = await updateVariant(deps.db, {
+        sku: c.req.valid('param').sku,
+        expectedVersion: version,
+        changes,
         staffUserId: c.get('auth').user.id,
       });
       return c.json(r, 200);

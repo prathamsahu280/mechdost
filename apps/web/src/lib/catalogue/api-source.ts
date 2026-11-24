@@ -11,7 +11,7 @@ import { readAttributes } from '@mechdost/shared/product-attributes';
 import { SuggestResponseSchema } from '@mechdost/shared/search-api';
 import { categoryFromSlug } from '@/demo/catalogue';
 import type { Locale } from '@/i18n/routing';
-import type { CardView, ProductView } from './view';
+import type { CardView, ProductView, VariantView } from './view';
 
 /**
  * Catalogue from the MechDost API (data mode `api`, spec 02). Server-side only: imported from Server Components
@@ -129,6 +129,7 @@ export function apiCard(c: CatalogueCard): CardView {
     price: c.offer ? { pricePaise: c.offer.pricePaise, mrpPaise: c.offer.mrpPaise } : null,
     pack: c.offer?.netQuantity ?? null,
     availability: c.offer ? 'in_stock' : 'on_request',
+    sizes: c.sizeCount > 1 ? { count: c.sizeCount, fromPaise: c.offer?.pricePaise ?? null } : null,
     mrpFrom: c.mrpFromPaise === null ? null : { paise: c.mrpFromPaise, varies: c.mrpVaries },
     leadDays: c.offer?.leadDays ?? null,
     highlights: c.highlights,
@@ -138,13 +139,39 @@ export function apiCard(c: CatalogueCard): CardView {
   };
 }
 
+type ApiVariant = CatalogueProduct['variants'][number];
+
+function apiVariant(v: ApiVariant): VariantView {
+  return {
+    sku: v.sku,
+    label: v.label,
+    pricePaise: v.offer?.pricePaise ?? null,
+    mrpPaise: v.mrpPaise,
+    priceOnRequest: v.mrpPaise === null,
+    inStock: v.offer !== null,
+    leadDays: v.offer?.leadDays ?? null,
+    shippingPaise: v.offer?.shippingPaise ?? null,
+    pack: v.offer?.netQuantity ?? v.netQuantity,
+  };
+}
+
+/** The size a page opens on: the lowest offered price (what the card says "from"), else the first. */
+function defaultVariant(variants: readonly ApiVariant[]): ApiVariant | undefined {
+  let best: ApiVariant | undefined;
+  for (const v of variants)
+    if (v.offer && (!best?.offer || v.offer.pricePaise < best.offer.pricePaise)) best = v;
+  return best ?? variants[0];
+}
+
 export function apiProduct(p: CatalogueProduct, locale: Locale): ProductView {
-  const sold = p.variants.find((v) => v.offer !== null);
+  const sold = defaultVariant(p.variants);
   const offer = sold?.offer ?? null;
   return {
     ...apiCard({ ...p, offer, photo: p.photos[0] ?? null }),
     photos: p.photos,
-    sku: sold?.sku ?? p.variants[0]?.sku ?? null,
+    sku: sold?.sku ?? null,
+    variants: p.variants.map(apiVariant),
+    defaultSku: sold?.sku ?? null,
     compatibility: p.compatibility,
     description: p.description,
     seller: offer?.seller ?? null,

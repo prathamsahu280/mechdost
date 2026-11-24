@@ -12,6 +12,7 @@ const card = {
   rating: null,
   offer: {
     sku: 'CAS-ACT4T-0900',
+    label: '900 ml',
     pricePaise: 44_000,
     mrpPaise: 47_500,
     netQuantity: { qty: 900, unit: 'ml' },
@@ -51,11 +52,13 @@ describe('catalogue DTOs (spec 02, shared by API and web)', () => {
       variants: [
         {
           sku: 'CAS-ACT4T-0900',
+          label: '900 ml',
           options: {},
           mrpPaise: 47_500,
           netQuantity: null,
           offer: {
             sku: 'CAS-ACT4T-0900',
+            label: '900 ml',
             pricePaise: 44_000,
             mrpPaise: 47_500,
             netQuantity: null,

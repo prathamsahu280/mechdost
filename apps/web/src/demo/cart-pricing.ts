@@ -8,7 +8,20 @@ export type PricedCart = ReturnType<typeof priceCart>;
 export function priceCart(lines: readonly CartLine[]) {
   const priced = lines.flatMap((l) => {
     const p = findProduct(l.slug);
-    return p ? [{ product: p, qty: l.qty, linePaise: p.pricePaise * l.qty }] : [];
+    if (!p) return [];
+    // A line is one size of the product (user 2026-11-24); a line saved by slug only is the product's own size.
+    const size = l.sku ? p.sizes?.find((x) => x.sku === l.sku) : undefined;
+    const unitPaise = size?.pricePaise ?? p.pricePaise;
+    return [
+      {
+        product: p,
+        qty: l.qty,
+        unitPaise,
+        sku: size?.sku ?? p.sku,
+        sizeLabel: size?.label ?? null,
+        linePaise: unitPaise * l.qty,
+      },
+    ];
   });
   const subtotalPaise = priced.reduce((s, l) => s + l.linePaise, 0);
   // Admin-set fee and threshold; placed orders keep the values snapshotted at placement.

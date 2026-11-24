@@ -11,7 +11,8 @@ import type { Locale } from '@/i18n/routing';
 import { fetchCatalogueProduct } from '@/lib/catalogue/api-source';
 import { demoProduct } from '@/lib/catalogue/demo-source';
 import type { ProductView } from '@/lib/catalogue/view';
-import { buildCompareRows, parseCompareParam } from '@/lib/compare/rows';
+import { viewForSize } from '@/lib/catalogue/size-view';
+import { buildCompareRows, parseCompareParam, parseCompareSizes } from '@/lib/compare/rows';
 import { DATA_MODE } from '@/lib/data-mode';
 
 interface Props {
@@ -48,14 +49,16 @@ export default async function ComparePage({ params, searchParams }: Props) {
   const [t, c] = await Promise.all([getTranslations('compare'), getTranslations('categories')]);
   const prefix = locale === 'hi' ? '/hi' : '';
   const requested = parseCompareParam(p);
-  const loaded = await load(requested, locale);
+  const sizes = parseCompareSizes(p);
+  // A product sold in several sizes is compared at the size the link names, else its default size (user 2026-11-24).
+  const loaded = (await load(requested, locale)).map((x) => viewForSize(x, sizes[x.slug]));
   const category = loaded[0]?.category ?? null;
   const items = loaded.filter((x) => x.category.slug === category?.slug);
   // Every distinct product the link asked for that is not in the table (unknown, another category, over 4).
   const asked = new Set(
     (Array.isArray(p) ? (p[0] ?? '') : (p ?? ''))
       .split(',')
-      .map((s) => s.trim())
+      .map((s) => s.split(':')[0]?.trim() ?? '')
       .filter((s) => s !== ''),
   );
   const leftOut = asked.size > items.length;

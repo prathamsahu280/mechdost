@@ -126,12 +126,20 @@ const KNOWN = new Set([
   'AUTH_REQUIRED',
   'RATE_LIMITED',
   'NOT_FOUND',
+  'SKU_TAKEN',
+  'SKU_INVALID',
+  'MRP_BELOW_PRICE',
+  'LAST_VARIANT',
+  'VARIANT_LABEL',
+  'VARIANT_OPTION',
+  'BARCODE',
   'empty',
   'format',
   'zero',
 ]);
 
 export function errorKey(code: string): string {
-  if (code === 'STALE_PRODUCT' || code === 'STALE_PRICE' || code === 'CONFLICT') return 'cat_err_STALE';
+  if (code === 'STALE_PRODUCT' || code === 'STALE_PRICE' || code === 'STALE_VARIANT' || code === 'CONFLICT')
+    return 'cat_err_STALE';
   return KNOWN.has(code) ? `cat_err_${code}` : 'cat_err_generic';
 }

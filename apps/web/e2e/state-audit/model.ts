@@ -153,7 +153,14 @@ export const ALL_PRODUCTS = [
 ] as const;
 
 /** Cart contents by state value (`mechdost-cart` lines). */
-export const CARTS: Readonly<Record<string, readonly { slug: string; qty: number }[]>> = {
+/** Sizes of the demo tyre (user 2026-11-24): the first is in stock, the third has no stock (selectable, marked). */
+export const TYRE_SIZES = {
+  first: 'TYR-PC-1756514',
+  second: 'TYR-PC-1856515',
+  out: 'TYR-PC-1955516',
+} as const;
+
+export const CARTS: Readonly<Record<string, readonly { slug: string; qty: number; sku?: string }[]>> = {
   none: [],
   c1: [{ slug: PRODUCTS.castrol, qty: 1 }],
   c2: [{ slug: PRODUCTS.castrol, qty: 2 }],
@@ -163,6 +170,11 @@ export const CARTS: Readonly<Record<string, readonly { slug: string; qty: number
     { slug: PRODUCTS.castrol, qty: 1 },
     { slug: PRODUCTS.motul, qty: 99 },
     { slug: PRODUCTS.exide, qty: 2 },
+  ],
+  // Two sizes of one product are two lines (user 2026-11-24).
+  sizes2: [
+    { slug: PRODUCTS.carTyre, qty: 1, sku: TYRE_SIZES.first },
+    { slug: PRODUCTS.carTyre, qty: 2, sku: TYRE_SIZES.second },
   ],
   many20: ALL_PRODUCTS.slice(0, 20).map((slug, i) => ({ slug, qty: (i % 3) + 1 })),
   // Below the free-delivery threshold (₹999): delivery fee line shows.
@@ -789,7 +801,8 @@ export const COMPONENTS: readonly ComponentDef[] = [
     code: 'PDP-BUYBOX',
     page: 'Product page (/shop/[slug])',
     component: 'Buy box: price, MRP and saving, stock, add to cart / stepper, compare',
-    path: (r) => `/shop/${String(r.product)}`,
+    path: (r) =>
+      `/shop/${String(r.product)}${r.size === 'default' ? '' : `?size=${TYRE_SIZES[r.size as keyof typeof TYRE_SIZES]}`}`,
     scope: 'main',
     strategy: 'pairwise',
     params: [
@@ -798,6 +811,8 @@ export const COMPONENTS: readonly ComponentDef[] = [
         name: 'product',
         values: [PRODUCTS.castrol, PRODUCTS.hd90, PRODUCTS.carTyre, PRODUCTS.evCharger, PRODUCTS.bearing6301],
       },
+      // The demo tyre has three sizes: the picker opens on the default, a linked size, or the one with no stock.
+      { name: 'size', values: ['default', 'first', 'out'] },
       { name: 'cart', values: ['none', 'c1', 'c99'] },
       { name: 'compare', values: ['none', 'lub-2', 'bat-3'] },
       { name: 'stress', values: ['none', 'long-text', 'long-price'] },
@@ -806,7 +821,7 @@ export const COMPONENTS: readonly ComponentDef[] = [
     checks: [...BASE_CHECKS, 'sync'],
     sweep: 12,
     core: coreAt([390, 1440], (r) => r.product === PRODUCTS.castrol),
-    note: 'Products: in stock + MRP, confirmed on request without MRP, low stock, highest price (₹12,500), lowest (₹180).',
+    note: 'Products: in stock + MRP, confirmed on request without MRP, low stock, highest price (₹12,500), lowest (₹180). The tyre has three sizes (size picker; ?size= opens a size; the third has no stock).',
   },
   {
     code: 'PDP-REVIEWS',
@@ -880,7 +895,7 @@ export const COMPONENTS: readonly ComponentDef[] = [
     params: [
       ...env,
       authOutIn,
-      { name: 'cart', values: ['c1', 'mixed', 'many20', 'below', 'max'] },
+      { name: 'cart', values: ['c1', 'mixed', 'many20', 'below', 'max', 'sizes2'] },
       { name: 'stress', values: ['none', 'long-text', 'long-price'] },
     ],
     checks: [...BASE_CHECKS, 'sync'],

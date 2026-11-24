@@ -5,7 +5,15 @@ import { useEffect, useRef, useState } from 'react';
 import { useIsSeller } from '@/demo/session-state';
 import { track } from '@/lib/analytics';
 import { signal } from '@/lib/compare/signal';
-import { addToCart, MAX_QTY, removeFromCart, setQuantity, useCart, type AddResult } from '@/demo/store';
+import {
+  addToCart,
+  lineKey,
+  MAX_QTY,
+  removeFromCart,
+  setQuantity,
+  useCart,
+  type AddResult,
+} from '@/demo/store';
 
 export interface AddToCartLabels {
   add: string;
@@ -46,6 +54,7 @@ type Problem = Exclude<AddResult, 'added'>;
 export function AddToCartButton({
   slug,
   sku,
+  defaultSku,
   labels,
   qty = 1,
   className = '',
@@ -55,6 +64,8 @@ export function AddToCartButton({
   slug: string;
   /** The pack's SKU (products from the API): stored on the cart line for the checkout quote. */
   sku?: string | null;
+  /** The product's first size: an old cart line saved by slug only counts as that size (user 2026-11-24). */
+  defaultSku?: string | null;
   labels: AddToCartLabels;
   qty?: number;
   className?: string;
@@ -63,7 +74,13 @@ export function AddToCartButton({
   notify?: 'inline' | 'tray';
 }) {
   const [problem, setProblem] = useState<Problem | null>(null);
-  const inCart = useCart().find((l) => l.slug === slug)?.qty ?? 0;
+  // A line is one size of the product: two sizes are two lines (user 2026-11-24).
+  const first = defaultSku ?? sku ?? null;
+  const line = useCart().find((l) =>
+    sku ? l.sku === sku || (!l.sku && l.slug === slug && sku === first) : l.slug === slug,
+  );
+  const inCart = line?.qty ?? 0;
+  const key = line ? lineKey(line) : (sku ?? slug);
   const addButton = useRef<HTMLButtonElement>(null);
   const plusButton = useRef<HTMLButtonElement>(null);
   const focusNext = useRef<'add' | 'plus' | null>(null);
@@ -97,7 +114,7 @@ export function AddToCartButton({
   }
 
   function add(n: number, origin: HTMLElement) {
-    const r = addToCart(slug, n, sku ?? undefined);
+    const r = addToCart(slug, n, sku ?? undefined, first ?? undefined);
     if (r === 'added') {
       setProblem(null);
       if (inCart === 0) focusNext.current = 'plus';
@@ -125,11 +142,11 @@ export function AddToCartButton({
               setProblem(null);
               if (inCart === 1) {
                 focusNext.current = 'add';
-                removeFromCart(slug);
+                removeFromCart(key);
                 track('remove_from_cart', { slug });
                 signal({ say: labels.removed });
               } else {
-                setQuantity(slug, inCart - 1);
+                setQuantity(key, inCart - 1);
                 track('click', { id: 'cart_qty_decrease', path: window.location.pathname });
                 signal({ say: labels.inCart.replace('#', String(inCart - 1)) });
               }

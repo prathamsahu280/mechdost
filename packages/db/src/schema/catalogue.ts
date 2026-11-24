@@ -409,6 +409,8 @@ export const productVariants = pgTable(
     netQty: integer(),
     netUnit: text(),
     status: text().notNull().default('active'),
+    /** Staff edits (size label, MRP, barcode, archive) are conditional updates on this (user 2026-11-24). */
+    version: version(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
