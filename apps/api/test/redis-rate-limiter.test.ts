@@ -13,33 +13,14 @@ function fakeRedis(opts: { fail?: boolean } = {}) {
   const data = new Map<string, number>();
   const calls: string[][] = [];
   const store: RedisLike = {
-    multi: () => {
-      const ops: (() => unknown)[] = [];
-      const tx = {
-        incrby: (k: string, n: number) => {
-          calls.push(['incrby', k, String(n)]);
-          ops.push(() => {
-            const v = (data.get(k) ?? 0) + n;
-            data.set(k, v);
-            return v;
-          });
-          return tx;
-        },
-        pexpire: (k: string, ms: number) => {
-          calls.push(['pexpire', k, String(ms)]);
-          ops.push(() => 1);
-          return tx;
-        },
-        get: (k: string) => {
-          ops.push(() => data.get(k) ?? null);
-          return tx;
-        },
-        exec: () =>
-          opts.fail
-            ? Promise.reject(new Error('ERR max requests limit exceeded'))
-            : Promise.resolve(ops.map((o) => o())),
-      };
-      return tx;
+    // Runs HIT_SCRIPT's steps: INCRBY KEYS[1] ARGV[1]; PEXPIRE KEYS[1] ARGV[2]; GET KEYS[2].
+    eval: (_script: string, keys: string[], args: (string | number)[]) => {
+      if (opts.fail) return Promise.reject(new Error('ERR max requests limit exceeded'));
+      const [cur, prev] = keys;
+      calls.push(['incrby', cur ?? '', String(args[0])], ['pexpire', cur ?? '', String(args[1])]);
+      const v = (data.get(cur ?? '') ?? 0) + Number(args[0]);
+      data.set(cur ?? '', v);
+      return Promise.resolve([v, data.get(prev ?? '') ?? 0]);
     },
     del: (...keys: string[]) => {
       if (opts.fail) return Promise.reject(new Error('down'));
@@ -146,5 +127,26 @@ describe('probe-sensitive limits refuse while the store is down (security review
     };
     handleError(new Unavailable(), c as never);
     expect(status).toBe(503);
+  });
+});
+
+describe('the hit is one atomic script (bug 2026-11-24: MULTI through SRH collided under concurrency)', () => {
+  it('uses EVAL with a plain script (no Upstash-only shebang flags) and never MULTI', async () => {
+    const { HIT_SCRIPT } = await import('../src/rate-limit/redis-rest');
+    expect(HIT_SCRIPT).not.toMatch(/^#!/);
+    expect(HIT_SCRIPT).toContain("redis.call('INCRBY',KEYS[1],ARGV[1])");
+    const src = (await import('node:fs')).readFileSync(
+      (await import('node:path')).join(__dirname, '..', 'src', 'rate-limit', 'redis-rest.ts'),
+      'utf8',
+    );
+    expect(src).not.toMatch(/\.multi\(/);
+  });
+
+  it('many concurrent hits are all counted', async () => {
+    const { store } = fakeRedis();
+    const rl = new RedisRestRateLimiter(store);
+    const big = { name: 'api_ip', limit: 1000, windowSeconds: 60 };
+    await Promise.all(Array.from({ length: 50 }, () => rl.hit(big, 'k')));
+    expect((await rl.hit(big, 'k')).remaining).toBe(1000 - 51);
   });
 });
