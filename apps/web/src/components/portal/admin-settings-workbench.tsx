@@ -231,7 +231,7 @@ export function SettingsWorkbench(props: WorkbenchProps) {
       {props.toolbar}
 
       <div className="grid gap-4 min-[1200px]:grid-cols-[230px_minmax(0,1fr)] min-[1200px]:items-start">
-        <div className="min-w-0 space-y-3 min-[1200px]:sticky min-[1200px]:top-28">
+        <div className="min-w-0 space-y-3">
           <div>
             <label htmlFor={`${baseId}-search`} className="sr-only">
               {t('search_label')}

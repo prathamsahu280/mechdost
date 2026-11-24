@@ -328,6 +328,26 @@ async function interact(page: Page, c: AuditCase, run: (label: string) => Promis
   return notes;
 }
 
+/**
+ * Review screenshots (`STATE_AUDIT_SHOTS=<folder>`): a viewport picture of the case as the audit saw it, scrolled the
+ * way a visitor would be (scroll rows 250 px down, card rows to the first card, footer rows to the foot). Off unless
+ * the variable is set; used to show the user a change before it ships.
+ */
+async function takeReviewShot(page: Page, c: AuditCase): Promise<void> {
+  const dir = process.env.STATE_AUDIT_SHOTS;
+  if (!dir) return;
+  const scrollTo = (y: number | 'end') =>
+    page.evaluate((to) => {
+      window.scrollTo(0, to === 'end' ? document.body.scrollHeight : to);
+    }, y);
+  if (c.code.endsWith('SCROLL')) await scrollTo(250);
+  else if (c.code === 'CHR-FOOTER') await scrollTo('end');
+  else if ((await page.locator('main article').count()) > 0)
+    await page.locator('main article').first().scrollIntoViewIfNeeded();
+  await page.waitForTimeout(200);
+  await page.screenshot({ path: `${dir}/${c.id}.png` });
+}
+
 const summarise = (fs: readonly Finding[]) => {
   const counts = new Map<string, number>();
   for (const f of [...fs].sort((a, b) => a.severity.localeCompare(b.severity))) {
@@ -404,6 +424,8 @@ export async function runCase(page: Page, c: AuditCase, info: TestInfo, api?: Ap
     'aligned',
     'tap',
     'hscroll',
+    'offphoto',
+    'scroll',
   ].filter((k) => has(k) && !(trayWaits && k === 'present'));
   const localRules = ['inside', 'overlap', 'covered'].filter(has);
   const local = async (label: string) => {
@@ -580,6 +602,7 @@ export async function runCase(page: Page, c: AuditCase, info: TestInfo, api?: Ap
     else failing.push(f);
   }
   const summary = summarise([...failing, ...notesOnly]);
+  await takeReviewShot(page, c);
   await info.attach('state-audit-summary', { body: summary, contentType: 'text/plain' });
   await info.attach('state-audit-findings', {
     body: JSON.stringify({ id: c.id, state: describeCase(c), url, notes, findings }, null, 2),

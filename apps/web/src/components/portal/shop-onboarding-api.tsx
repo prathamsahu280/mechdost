@@ -364,6 +364,7 @@ function AgreementCard({ shopId }: { shopId: string }) {
       </h2>
       <div
         lang={locale === 'hi' ? 'hi' : 'en'}
+        data-scroll="box"
         className="mt-3 max-h-64 overflow-y-auto rounded-lg bg-surface-alt p-3 text-sm whitespace-pre-line text-ink"
       >
         {locale === 'hi' ? current.textHi : current.textEn}

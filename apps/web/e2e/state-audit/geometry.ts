@@ -21,6 +21,9 @@
  *   tap      a target under 24 × 24 px without 24 px spacing (inline links in sentences are exempt);
  *            under 44 px is reported as P2 (one aggregated finding)
  *   hscroll  the page is wider than the viewport (with the widest offenders)
+ *   offphoto a card's round buttons (ⓘ, ♡) sit on the product picture (design 2026-11-24)
+ *   scroll   a second vertical scroller (only the marked side bar and text boxes may scroll), the side bar out of view
+ *            after the page scrolled, or two tall columns stuck at once (admin, design 2026-11-24)
  *   sync     a compare toggle, stepper or the tray disagrees with the stored lists
  */
 
@@ -302,6 +305,90 @@ export async function auditDom(opts: DomAuditOptions): Promise<Finding[]> {
         detail: `page scrolls sideways by ${String(over)} px; widest: ${wide.map(describe).join(', ') || 'unknown'}`,
         box: wide[0] ? toBox(wide[0].getBoundingClientRect()) : undefined,
       });
+    }
+  }
+
+  // ── offphoto ──
+  if (has('offphoto') && !opts.local) {
+    for (const card of document.querySelectorAll('article')) {
+      if (!inScope(card) || !card.checkVisibility()) continue;
+      const photo = card.querySelector('a[aria-hidden="true"][href*="/shop/"]');
+      const tools = [...card.querySelectorAll('[data-slot="card-tools"] button')].filter((b) =>
+        b.checkVisibility(),
+      );
+      if (!photo) continue;
+      if (tools.length === 0)
+        add({ rule: 'offphoto', severity: 'P1', where: describe(card), detail: 'card has no ⓘ button' });
+      const p = photo.getBoundingClientRect();
+      for (const b of tools) {
+        const x = inter(p, b.getBoundingClientRect());
+        if (x.right - x.left > 2 && x.bottom - x.top > 2)
+          add({
+            rule: 'offphoto',
+            severity: 'P0',
+            where: describe(b),
+            detail: `button sits on the product picture (${String(Math.round(x.right - x.left))}×${String(Math.round(x.bottom - x.top))} px overlap)`,
+            box: toBox(b.getBoundingClientRect()),
+          });
+      }
+    }
+  }
+
+  // ── scroll ──
+  if (has('scroll') && !opts.local) {
+    const startY = window.scrollY;
+    const nested = [...document.body.querySelectorAll('*')].filter((el) => {
+      const cs = getComputedStyle(el);
+      if (cs.overflowY !== 'auto' && cs.overflowY !== 'scroll') return false;
+      if (el.scrollHeight <= el.clientHeight + 2 || el.clientHeight === 0) return false;
+      if (el.matches('[data-scroll="sidebar"], [data-scroll="box"], textarea, select, input')) return false;
+      if (el.closest('dialog[open], [popover]:popover-open, [role="dialog"]') || inFixed(el)) return false;
+      return !ignored(el) && el.checkVisibility();
+    });
+    for (const el of nested.slice(0, 5))
+      add({
+        rule: 'scroll',
+        severity: 'P1',
+        where: describe(el),
+        detail: `a second vertical scroller (${String(el.clientHeight)} px box with ${String(el.scrollHeight)} px of content); the page must be the only one`,
+        box: toBox(el.getBoundingClientRect()),
+      });
+
+    const side = document.querySelector('[data-scroll="sidebar"]');
+    const travel = document.documentElement.scrollHeight - vh;
+    // A sticky bar can only travel inside its own grid: scroll part of that distance (80 %, at most 600 px).
+    const room = side?.parentElement
+      ? side.parentElement.offsetHeight - side.getBoundingClientRect().height
+      : 0;
+    if (side && vw >= 1024 && side.checkVisibility() && travel > 200 && room > 80) {
+      const stuckAt =
+        side.getBoundingClientRect().top + window.scrollY - Number.parseFloat(getComputedStyle(side).top);
+      window.scrollTo(0, Math.min(stuckAt + Math.min(room * 0.8, 600), travel));
+      await frame();
+      const r = side.getBoundingClientRect();
+      if (r.top < 0 || r.top > vh * 0.4 || r.bottom > vh + 1)
+        add({
+          rule: 'scroll',
+          severity: 'P0',
+          where: describe(side),
+          detail: `after scrolling the page the side bar is at ${String(Math.round(r.top))}…${String(Math.round(r.bottom))} px of a ${String(vh)} px window (it must stay in view, under the header)`,
+          box: toBox(r),
+        });
+      const stuck = [...document.body.querySelectorAll('*')].filter((el) => {
+        const cs = getComputedStyle(el);
+        if (cs.position !== 'sticky' || cs.top === 'auto' || !el.checkVisibility()) return false;
+        const b = el.getBoundingClientRect();
+        return b.height > 200 && Math.abs(b.top - Number.parseFloat(cs.top)) <= 2;
+      });
+      if (stuck.length > 1)
+        add({
+          rule: 'scroll',
+          severity: 'P1',
+          where: stuck.map(describe).join(' + '),
+          detail: `${String(stuck.length)} tall columns are stuck at once: it reads as two scroll areas`,
+        });
+      window.scrollTo(0, startY);
+      await frame();
     }
   }
 

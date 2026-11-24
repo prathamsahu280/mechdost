@@ -166,16 +166,18 @@ export function baselineMocks(c: AuditCase): Mock[] {
  */
 let sectionCases: AuditCase[] | null = null;
 function navSectionMocks(c: AuditCase): Mock[] {
-  if (!c.code.startsWith('API-NAV-')) return [];
+  const scroll = c.code === 'API-ADM-SCROLL';
+  if (!c.code.startsWith('API-NAV-') && !scroll) return [];
   sectionCases ??= (() => {
     const seen = new Set<string>();
     return buildCases().filter((x) => {
-      if (!x.realApi || x.code.startsWith('API-NAV-') || seen.has(x.code)) return false;
+      if (!x.realApi || x.code.startsWith('API-NAV-') || x.code === 'API-ADM-SCROLL' || seen.has(x.code))
+        return false;
       seen.add(x.code);
       return true;
     });
   })();
-  const admin = c.code === 'API-NAV-ADMIN';
+  const admin = c.code === 'API-NAV-ADMIN' || scroll;
   const first = sectionCases.filter((x) => x.code.startsWith('API-ADM-') === admin);
   const rest = sectionCases.filter((x) => x.code.startsWith('API-ADM-') !== admin);
   return [...first, ...rest].flatMap((x) => mocksFor(x)).concat(navQuietMocks());

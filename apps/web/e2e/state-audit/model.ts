@@ -60,6 +60,8 @@ export type Check =
   | 'aligned'
   | 'tap'
   | 'hscroll'
+  | 'offphoto'
+  | 'scroll'
   | 'focus'
   | 'console'
   | 'sync'
@@ -80,6 +82,9 @@ export const CHECK_TEXT: Readonly<Record<Check, string>> = {
   aligned: 'cards in a row are equal height with aligned action rows; table cells line up across columns',
   tap: 'every target is at least 24 px (or spaced); under 44 px is noted',
   hscroll: 'the page does not scroll sideways',
+  offphoto: 'the round buttons (info, save) of a card never sit on the product picture',
+  scroll:
+    'the page is the only vertical scroller (side bar and text boxes marked data-scroll excepted); the side bar stays in view under the header after scrolling; never two tall columns stuck at once',
   focus: 'a visible, unclipped focus ring on every control reached by Tab',
   console: 'no console error, page error or failed request to our server',
   sync: 'controls agree with the stored state (compare pressed = in list, stepper = in cart, tray count)',
@@ -600,7 +605,7 @@ export const COMPONENTS: readonly ComponentDef[] = [
     scope: 'section[aria-labelledby="range-title"]',
     strategy: 'pairwise',
     params: [...env],
-    checks: [...BASE_CHECKS, 'aligned'],
+    checks: [...BASE_CHECKS, 'aligned', 'offphoto'],
     align: CARD_ALIGN,
     sweep: 8,
     core: coreAt([390, 1440]),
@@ -624,7 +629,7 @@ export const COMPONENTS: readonly ComponentDef[] = [
       authOutIn,
       { name: 'stress', values: ['none', 'long-text', 'long-price', 'mixed-shape'] },
     ],
-    checks: [...BASE_CHECKS, 'aligned', 'sync'],
+    checks: [...BASE_CHECKS, 'aligned', 'sync', 'offphoto'],
     align: CARD_ALIGN,
     sweep: 12,
     core: coreAt([390, 1440], (r) => r.compare === 'bat-2' || r.cart === 'mixed'),
@@ -646,7 +651,7 @@ export const COMPONENTS: readonly ComponentDef[] = [
       theme,
       locale,
     ],
-    checks: [...BASE_CHECKS, 'aligned', 'sync'],
+    checks: [...BASE_CHECKS, 'aligned', 'sync', 'offphoto'],
     align: CARD_ALIGN,
     sweep: 6,
     core: coreAt([390], (r) => r.action === 'start-new' || r.action === 'compare-other'),
@@ -674,7 +679,7 @@ export const COMPONENTS: readonly ComponentDef[] = [
       },
       { name: 'compare', values: ['none', 'lub-2'] },
     ],
-    checks: [...BASE_CHECKS, 'aligned'],
+    checks: [...BASE_CHECKS, 'aligned', 'offphoto'],
     align: CARD_ALIGN,
     sweep: 14,
     core: coreAt([320]),
@@ -771,7 +776,7 @@ export const COMPONENTS: readonly ComponentDef[] = [
       { name: 'cart', values: ['none', 'mixed'] },
       { name: 'compare', values: ['none', 'bat-2'] },
     ],
-    checks: [...BASE_CHECKS, 'aligned', 'sync'],
+    checks: [...BASE_CHECKS, 'aligned', 'sync', 'offphoto'],
     align: CARD_ALIGN,
     sweep: 8,
   },
@@ -1208,6 +1213,34 @@ export const COMPONENTS: readonly ComponentDef[] = [
     sweep: 16,
     core: section === 'orders' ? coreAt([1440], (r) => r.world === 'busy') : undefined,
   })),
+
+  // Scroll geometry of the admin frame (design 2026-11-24, user: "sometimes the sidebar goes down, sometimes the main
+  // content ... in settings there are two of them"): the page is the only vertical scroller, the side bar stays in
+  // view under the header after scrolling, and never two tall columns are stuck at once.
+  {
+    code: 'ADM-SCROLL',
+    page: 'Admin console (/admin)',
+    component:
+      'Scroll geometry: one page scroller, side bar in view after scrolling, no second scroller (overview, orders, catalogue, content, settings, notifications)',
+    path: (r) => adminPath(String(r.section)),
+    scope: 'main',
+    strategy: 'cross',
+    cross: ['width', 'section'],
+    params: [
+      { name: 'width', values: [390, 1024, 1280, 1440, 1920] },
+      {
+        name: 'section',
+        values: ['overview', 'orders', 'catalogue', 'content', 'settings', 'notifications'].filter((s) =>
+          (ADMIN_SECTIONS as readonly string[]).includes(s),
+        ),
+      },
+      theme,
+      locale,
+      { name: 'auth', values: ['admin'] },
+      { name: 'world', values: ['busy'] },
+    ],
+    checks: ['present', 'scroll', 'hscroll', 'console'],
+  },
 
   ...NAVIGATION,
 

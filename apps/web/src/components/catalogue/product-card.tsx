@@ -52,22 +52,6 @@ export function ProductCard({
             <ProductVisual category={product.category.key} brand={product.brand} sku={product.sku} />
           )}
         </LocalLink>
-        <ProductInfoButton product={product} scope={scope} />
-        <WishlistHeartLazy
-          slug={product.slug}
-          source="card"
-          labels={{
-            add: w('wishlistAdd', { name: productFullName(product.brand, product.name) }),
-            remove: w('wishlistRemove', { name: productFullName(product.brand, product.name) }),
-            saved: w('wishlistSaved'),
-            removed: w('wishlistRemoved'),
-            full: w('wishlistFull', { max: 100 }),
-            failed: w('wishlistFailed'),
-            signIn: w('wishlistSignIn'),
-            pageSave: w('pageSave'),
-            pageSaved: w('pageSaved'),
-          }}
-        />
         {/* Badges under the picture, in normal flow (audit 2026-11-15, item 1: over the picture they covered the SKU
             printed at its foot on narrow cards). They wrap, so no width or language can make them overlap anything. */}
         <div data-slot="card-badges" className="mt-2 flex flex-wrap gap-1.5 px-1">
@@ -95,7 +79,30 @@ export function ProductCard({
           length. Always eight children, empty when there is nothing to show. `data-align` marks rows for the UI
           state audit's aligned check. */}
       <div className="contents">
-        <p className="mt-3 px-1 text-xs text-muted">{categoryName ?? ''}</p>
+        {/* The category line carries the two round buttons (ⓘ details, ♡ save) at its right end, so they never sit on the
+            picture (user 2026-11-24: "the i button and heart button gets over the images"). The row is the same
+            height on every card, so the eight shared rows still line up. */}
+        <div data-slot="card-tools" className="mt-1.5 flex items-center justify-between gap-2 px-1">
+          <p className="min-w-0 flex-1 text-xs text-muted">{categoryName ?? ''}</p>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <ProductInfoButton product={product} scope={scope} />
+            <WishlistHeartLazy
+              slug={product.slug}
+              source="card"
+              labels={{
+                add: w('wishlistAdd', { name: productFullName(product.brand, product.name) }),
+                remove: w('wishlistRemove', { name: productFullName(product.brand, product.name) }),
+                saved: w('wishlistSaved'),
+                removed: w('wishlistRemoved'),
+                full: w('wishlistFull', { max: 100 }),
+                failed: w('wishlistFailed'),
+                signIn: w('wishlistSignIn'),
+                pageSave: w('pageSave'),
+                pageSaved: w('pageSaved'),
+              }}
+            />
+          </div>
+        </div>
         <h3 className="mt-0.5 px-1 font-heading text-[16px] leading-snug font-bold text-ink">
           <LocalLink
             href={`/shop/${product.slug}`}

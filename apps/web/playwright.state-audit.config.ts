@@ -20,15 +20,15 @@ export default defineConfig({
     ['json', { outputFile: process.env.STATE_AUDIT_REPORT ?? 'test-results/state-audit-report.json' }],
   ],
   use: {
-    baseURL: 'http://localhost:3100',
+    baseURL: `http://localhost:${process.env.STATE_AUDIT_PORT ?? '3100'}`,
     trace: 'off',
     screenshot: 'off',
     ...devices['Desktop Chrome'],
   },
   projects: [{ name: 'audit' }],
   webServer: {
-    command: 'pnpm exec next start --port 3100',
-    url: 'http://localhost:3100',
+    command: `pnpm exec next start --port ${process.env.STATE_AUDIT_PORT ?? '3100'}`,
+    url: `http://localhost:${process.env.STATE_AUDIT_PORT ?? '3100'}`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },

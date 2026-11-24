@@ -24,6 +24,29 @@ export function centerCurrentIn(bar: CenterBar): void {
   bar.scrollLeft += offset;
 }
 
+/** The part of a tall side bar the vertical reveal reads and moves. */
+export interface VerticalBar {
+  scrollHeight: number;
+  clientHeight: number;
+  scrollTop: number;
+  getBoundingClientRect(): { top: number; bottom: number };
+  querySelector(selector: string): { getBoundingClientRect(): { top: number; bottom: number } } | null;
+}
+
+/**
+ * Side bar that is taller than the window and scrolls itself (admin, design 2026-11-24): moves only the bar so its
+ * current item is inside it, with a little room. Never the page. Does nothing when the whole bar fits.
+ */
+export function revealCurrentIn(bar: VerticalBar): void {
+  const current = bar.querySelector('[aria-current="page"]');
+  if (!current || bar.scrollHeight <= bar.clientHeight) return;
+  const bounds = bar.getBoundingClientRect();
+  const item = current.getBoundingClientRect();
+  const room = 8;
+  if (item.top < bounds.top + room) bar.scrollTop += item.top - bounds.top - room;
+  else if (item.bottom > bounds.bottom - room) bar.scrollTop += item.bottom - bounds.bottom + room;
+}
+
 /**
  * Section bars that scroll sideways on phones (account, admin): bring the current item into the middle of the bar
  * (UI review 2026-11-14: "Serv…" was cut off, later sections were off screen). Runs on load, when the section
@@ -38,7 +61,9 @@ export function useCenterCurrent<T extends HTMLElement>(key: string) {
     if (!bar) return;
     let live = true;
     const center = () => {
-      if (live) centerCurrentIn(bar);
+      if (!live) return;
+      centerCurrentIn(bar);
+      revealCurrentIn(bar);
     };
     const onFocusOut = (e: FocusEvent) => {
       if (!(e.relatedTarget instanceof Node) || !bar.contains(e.relatedTarget)) center();

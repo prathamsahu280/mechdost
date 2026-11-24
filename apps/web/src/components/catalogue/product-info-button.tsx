@@ -27,7 +27,7 @@ export function ProductInfoButton({ product, scope }: { product: CardView; scope
         popoverTarget={id}
         aria-label={t('info', { name: product.name })}
         data-track={`product_info_${product.slug}`}
-        className="press absolute top-3 right-3 z-10 inline-flex size-10 items-center justify-center rounded-full bg-surface/95 text-ink shadow-card hover:bg-surface"
+        className="press inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-line-card bg-surface text-ink hover:bg-pill"
       >
         <Info aria-hidden="true" className="size-5" />
       </button>

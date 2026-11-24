@@ -197,7 +197,7 @@ function MrpPanel({
         {t('cat_mrp_onlyMissing')}
       </label>
       {packs.length === 0 ? <p className="text-sm text-muted">{t('cat_mrp_none')}</p> : null}
-      <ul className="max-h-96 divide-y divide-line-card overflow-y-auto">
+      <ul className="divide-y divide-line-card">
         {packs.map((p) => (
           <li key={p.sku} className="flex flex-wrap items-center justify-between gap-2 py-2">
             <div className="min-w-0">

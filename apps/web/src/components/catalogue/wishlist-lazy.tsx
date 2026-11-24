@@ -24,7 +24,9 @@ function RealHeart(props: HeartProps) {
       fallback={
         props.source === 'page' ? (
           <span aria-hidden="true" className="inline-block min-h-11 min-w-28" />
-        ) : null
+        ) : (
+          <span aria-hidden="true" className="inline-block size-10 shrink-0" />
+        )
       }
     >
       <Heart {...props} />

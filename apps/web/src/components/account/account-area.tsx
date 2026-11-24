@@ -330,7 +330,8 @@ function SectionNav({ current }: { current: AccountSection }) {
     <nav
       ref={bar}
       aria-label={t('navLabel')}
-      className="-mx-[5%] min-w-0 overflow-x-auto px-[5%] nav:sticky nav:top-28 nav:mx-0 nav:px-0"
+      data-scroll="sidebar"
+      className="-mx-[5%] min-w-0 overflow-x-auto px-[5%] nav:sticky nav:top-24 nav:mx-0 nav:max-h-[calc(100dvh-7rem)] nav:overflow-x-hidden nav:overflow-y-auto nav:p-1"
     >
       <ul className="flex gap-2 nav:flex-col nav:gap-1">
         {ACCOUNT_SECTIONS.map((s) => {
