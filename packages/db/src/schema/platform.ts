@@ -196,7 +196,7 @@ export const notifications = pgTable(
     check('notifications_category_valid', sql`${t.category} in ('transactional','promotional','reminders')`),
     check(
       'notifications_entity_type_valid',
-      sql`${t.entityType} is null or ${t.entityType} in ('order','service_request','quote','ticket','refund','shop','application','account')`,
+      sql`${t.entityType} is null or ${t.entityType} in ('order','service_request','rsa_request','quote','ticket','refund','shop','application','account')`,
     ),
     check('notifications_link_local', sql`${t.link} is null or ${t.link} ~ '^/[^/\\\\]'`),
     index().on(t.userId, t.createdAt),

@@ -6,6 +6,7 @@ export * from './platform';
 export * from './loyalty';
 export * from './payouts';
 export * from './services';
+export * from './roadside';
 export * from './quotes';
 export * from './media';
 export * from './storefront';

@@ -4078,6 +4078,26 @@
     "service_cancelled": {
       "title": "सर्विस रद्द हुई",
       "body": "{requestCode} रद्द कर दिया गया।"
+    },
+    "rsa_accepted": {
+      "title": "मदद आ रही है",
+      "body": "{workshopName} ने {requestCode} स्वीकार किया। पहुँचने पर उन्हें अपना आगमन कोड दिखाएँ।"
+    },
+    "rsa_arrived": {
+      "title": "आपका मैकेनिक पहुँच गया",
+      "body": "{workshopName} {requestCode} के लिए आपके पास पहुँच गया।"
+    },
+    "rsa_bill_ready": {
+      "title": "आपका रोडसाइड बिल तैयार है",
+      "body": "{requestCode} का कुल और बाकी भुगतान देखें।"
+    },
+    "rsa_refunded": {
+      "title": "आपका रिफंड पूरा हुआ",
+      "body": "{requestCode} का रिफंड पूरा हुआ। आपके बैंक में दिखने में कुछ दिन लग सकते हैं।"
+    },
+    "rsa_offer": {
+      "title": "नया रोडसाइड काम",
+      "body": "रोडसाइड अनुरोध {requestCode} आपका इंतज़ार कर रहा है। {minutes} मिनट में जवाब दें।"
     }
   },
   "adminNotices": {

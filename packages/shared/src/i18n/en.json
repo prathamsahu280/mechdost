@@ -4078,6 +4078,26 @@
     "service_cancelled": {
       "title": "Service cancelled",
       "body": "{requestCode} was cancelled."
+    },
+    "rsa_accepted": {
+      "title": "Help is on the way",
+      "body": "{workshopName} accepted {requestCode}. Show your arrival code when they reach you."
+    },
+    "rsa_arrived": {
+      "title": "Your mechanic has arrived",
+      "body": "{workshopName} reached you for {requestCode}."
+    },
+    "rsa_bill_ready": {
+      "title": "Your roadside bill is ready",
+      "body": "See the total and what is left to pay for {requestCode}."
+    },
+    "rsa_refunded": {
+      "title": "Your refund is processed",
+      "body": "The refund for {requestCode} is processed. Your bank may take a few days to show it."
+    },
+    "rsa_offer": {
+      "title": "New roadside job",
+      "body": "Roadside request {requestCode} is waiting for you. Answer within {minutes} minutes."
     }
   },
   "adminNotices": {

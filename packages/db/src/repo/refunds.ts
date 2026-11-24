@@ -30,6 +30,7 @@ import {
   payments,
   refundEvents,
   refunds,
+  rsaRequests,
   serviceBills,
   serviceRequests,
   webhookEvents,
@@ -41,6 +42,7 @@ import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '.
 import { recordServerEvent } from './events';
 import { issueCreditNoteForRefund } from './credit-notes';
 import { queueRefundEmail } from './email-notifications';
+import { queueRsaRefundedNotice } from './roadside-notices';
 import { queueStaffNotice, resolveNotices } from './notices';
 import type { Tx } from './orders';
 import type { CityScope } from './routing';
@@ -123,11 +125,18 @@ async function recordRefundEvent(
 /** Group row, then payment row (lock order). Returns the payment as it is under the lock. */
 async function lockLedger(tx: Tx, paymentId: string) {
   const [ref] = await tx
-    .select({ groupId: payments.groupId, billId: payments.billId })
+    .select({ groupId: payments.groupId, billId: payments.billId, rsaRequestId: payments.rsaRequestId })
     .from(payments)
     .where(eq(payments.id, paymentId))
     .limit(1);
   if (!ref) throw new NotFoundError('Payment not found');
+  // A roadside request: its row first (spec 14 lock order request -> payment), then the payment below.
+  if (ref.rsaRequestId)
+    await tx
+      .select({ id: rsaRequests.id })
+      .from(rsaRequests)
+      .where(eq(rsaRequests.id, ref.rsaRequestId))
+      .for('update');
   if (ref.groupId)
     await tx
       .select({ id: orderGroups.id })
@@ -193,6 +202,8 @@ interface NewRefund {
   /** The checkout (order refunds), or null with `billId` set (service bill refunds): exactly one (CHECK). */
   groupId: string | null;
   billId?: string | null;
+  /** The roadside request (refunds of a cancelled request, an under-advance bill or a late capture); exactly one target. */
+  rsaRequestId?: string | null;
   destinationEnc?: string | null;
   /** `id` is null for a service bill refund; `code` is then the request code. */
   order: { id: string | null; code: string; cityId: string; userId: string };
@@ -212,6 +223,7 @@ async function insertRequest(tx: Tx, input: NewRefund): Promise<{ id: string; fr
       paymentId: input.payment?.id ?? null,
       groupId: input.groupId,
       billId: input.billId ?? null,
+      rsaRequestId: input.rsaRequestId ?? null,
       mode: input.payment ? 'source' : 'bank_upi',
       destinationEnc: input.destinationEnc ?? null,
       orderId: input.order.id,
@@ -294,6 +306,8 @@ async function notifyCustomer(
 ): Promise<void> {
   // The shared email system (merge 2026-11-15): catalogue template, verified-email rule, language, dedupe. Each step
   // happens once per refund, so the step itself is the version. The customer sees the order (group) code.
+  // A roadside refund has no order: its customer message is the `rsa.*` notice (queued by the roadside code).
+  if (input.orderCode.startsWith('RSA-')) return;
   const orderCode = input.orderCode.replace(/-\d{1,2}$/, '');
   await queueRefundEmail(tx, {
     template: `refund_${input.event}`,
@@ -486,13 +500,15 @@ async function loadInScope(tx: Tx, scope: CityScope, refundId: string) {
       requestedBy: refunds.requestedBy,
       createdAt: refunds.createdAt,
       billId: refunds.billId,
-      cityId: sql<string>`coalesce(${orderGroups.cityId}, ${serviceRequests.cityId})`,
-      userId: sql<string>`coalesce(${orderGroups.userId}, ${serviceRequests.userId})`,
+      rsaRequestId: refunds.rsaRequestId,
+      cityId: sql<string>`coalesce(${orderGroups.cityId}, ${serviceRequests.cityId}, ${rsaRequests.cityId})`,
+      userId: sql<string>`coalesce(${orderGroups.userId}, ${serviceRequests.userId}, ${rsaRequests.userId})`,
     })
     .from(refunds)
     .leftJoin(orderGroups, eq(orderGroups.id, refunds.groupId))
     .leftJoin(serviceBills, eq(serviceBills.id, refunds.billId))
     .leftJoin(serviceRequests, eq(serviceRequests.id, serviceBills.requestId))
+    .leftJoin(rsaRequests, eq(rsaRequests.id, refunds.rsaRequestId))
     .where(eq(refunds.id, refundId))
     .limit(1);
   if (!r || (!scope.all && !scope.cityIds.includes(r.cityId))) throw new NotFoundError('Refund not found');
@@ -500,7 +516,20 @@ async function loadInScope(tx: Tx, scope: CityScope, refundId: string) {
 }
 
 /** The code the customer sees: the order's, or the request's for a service bill refund. */
-async function orderCodeOf(tx: Tx, orderId: string | null, billId: string | null = null): Promise<string> {
+async function orderCodeOf(
+  tx: Tx,
+  orderId: string | null,
+  billId: string | null = null,
+  rsaRequestId: string | null = null,
+): Promise<string> {
+  if (rsaRequestId) {
+    const [q] = await tx
+      .select({ code: rsaRequests.code })
+      .from(rsaRequests)
+      .where(eq(rsaRequests.id, rsaRequestId))
+      .limit(1);
+    return q?.code ?? '';
+  }
   if (billId) {
     const [b] = await tx
       .select({ code: serviceRequests.code })
@@ -627,7 +656,7 @@ export async function rejectRefund(
       refundId: r.id,
       userId: r.userId,
       event: 'declined',
-      orderCode: await orderCodeOf(tx, r.orderId, r.billId),
+      orderCode: await orderCodeOf(tx, r.orderId, r.billId, r.rsaRequestId),
       amountPaise: r.amountPaise,
     });
     return viewOf(tx, r.id, input.staffUserId);
@@ -989,11 +1018,12 @@ async function auditMismatch(tx: Tx, refundId: string, action: string, after: Re
  */
 async function alertFinance(tx: Tx, refundId: string, action: string): Promise<void> {
   const [row] = rowsOf<{ city_id: string | null; code: string | null }>(
-    await tx.execute(sql`select coalesce(g.city_id, sr.city_id) as city_id, coalesce(g.code, sr.code) as code
+    await tx.execute(sql`select coalesce(g.city_id, sr.city_id, rq.city_id) as city_id, coalesce(g.code, sr.code, rq.code) as code
       from refunds r
       left join order_groups g on g.id = r.group_id
       left join service_bills sb on sb.id = r.bill_id
       left join service_requests sr on sr.id = sb.request_id
+      left join rsa_requests rq on rq.id = r.rsa_request_id
       where r.id = ${refundId}`),
   );
   if (!row) return;
@@ -1193,6 +1223,23 @@ async function afterProcessed(
     cityId: order?.cityId ?? null,
     props: { refundId: r.id, amountPaise: r.amountPaise, daysFromRequest: days },
   });
+  if (!order && !r.billId) {
+    // A roadside refund: the customer is told once it is processed (bell and push; no order, no coins).
+    const [rq] = await tx
+      .select({ id: rsaRequests.id, code: rsaRequests.code, userId: rsaRequests.userId })
+      .from(refunds)
+      .innerJoin(rsaRequests, eq(rsaRequests.id, refunds.rsaRequestId))
+      .where(eq(refunds.id, r.id))
+      .limit(1);
+    if (rq)
+      await queueRsaRefundedNotice(tx, {
+        requestId: rq.id,
+        userId: rq.userId,
+        code: rq.code,
+        refundId: r.id,
+      });
+    return;
+  }
   if (!order && r.billId) {
     // A service bill refund: the customer is told once it is processed, with the request code (no order, no coins).
     const [bill] = await tx
@@ -1305,13 +1352,14 @@ const FROM = sql`from refunds r
   left join order_groups g on g.id = r.group_id
   left join service_bills sb on sb.id = r.bill_id
   left join service_requests sr on sr.id = sb.request_id
+  left join rsa_requests rq on rq.id = r.rsa_request_id
   left join orders o on o.id = r.order_id
   left join invoices cn on cn.refund_id = r.id and cn.kind = 'credit_note'
-  left join settings cs on cs.key = 'refunds.approval_sla_hours' and cs.city_id = coalesce(g.city_id, sr.city_id)
+  left join settings cs on cs.key = 'refunds.approval_sla_hours' and cs.city_id = coalesce(g.city_id, sr.city_id, rq.city_id)
   left join settings gs on gs.key = 'refunds.approval_sla_hours' and gs.city_id is null`;
 
 const SELECT = sql`select r.id, r.status, r.version, r.source, r.reason_code, r.reason as note, r.amount_paise,
-  o.code as order_code, coalesce(g.code, sr.code) as group_code, coalesce(g.payment_method, 'online') as payment_method, r.requested_by, r.approved_by, r.created_at,
+  o.code as order_code, coalesce(g.code, sr.code, rq.code) as group_code, coalesce(g.payment_method, 'online') as payment_method, r.requested_by, r.approved_by, r.created_at,
   r.decided_at, r.settled_at, r.reject_reason_code, r.failure_code, r.provider_refund_id,
   r.mode, r.destination_enc, r.manual_reference, r.provider_reported_paise, r.settle_reason_code,
   cn.number as cn_number, cn.total_paise as cn_total_paise, cn.issued_at as cn_issued_at,
@@ -1813,6 +1861,66 @@ export async function requestRefundForServiceBill(
     requestedBy: null,
     // One per payment and reason: a repeated cancel, retry or late webhook finds this one instead of making another.
     idemKey: `sys_svc_${input.source}_${paymentId}`,
+  });
+  return made.fresh ? made.id : null;
+}
+
+const RSA_REFUNDABLE = ['paid', 'partially_refunded'];
+
+/**
+ * Roadside money must go back: an admin cancelled the request (the advance), the total came in under the advance (the
+ * difference), or a payment was captured after the request closed (that payment). One approval-first refund request per
+ * payment and reason (idempotent, so a retry, a second cancel or a late webhook never makes a second); locks the
+ * payment ledger after the caller's request lock. Returns the refund id, or null when nothing is held to refund.
+ */
+export async function requestRefundForRsa(
+  tx: Tx,
+  input: {
+    requestId: string;
+    source: 'rsa_cancelled' | 'rsa_overpaid' | 'duplicate_payment' | 'payment_after_close';
+    /** The captured payment to refund from; the request's advance payment when omitted. */
+    paymentId?: string;
+    /** Part of the payment; the whole of what it still holds when omitted. */
+    amountPaise?: number;
+  },
+): Promise<string | null> {
+  const [q] = await tx
+    .select({ code: rsaRequests.code, cityId: rsaRequests.cityId, userId: rsaRequests.userId })
+    .from(rsaRequests)
+    .where(eq(rsaRequests.id, input.requestId))
+    .limit(1);
+  if (!q) return null;
+  let paymentId = input.paymentId ?? null;
+  if (!paymentId) {
+    const [paid] = await tx
+      .select({ id: payments.id })
+      .from(payments)
+      .where(
+        and(
+          eq(payments.rsaRequestId, input.requestId),
+          eq(payments.purpose, 'rsa_advance'),
+          inArray(payments.status, RSA_REFUNDABLE),
+        ),
+      )
+      .limit(1);
+    paymentId = paid?.id ?? null;
+  }
+  if (!paymentId) return null;
+  const payment = await lockLedger(tx, paymentId);
+  const open = payment.amountPaise - payment.reserved;
+  const amount = Math.min(input.amountPaise ?? open, open);
+  if (amount <= 0) return null;
+  const made = await insertRequest(tx, {
+    payment,
+    groupId: null,
+    rsaRequestId: input.requestId,
+    order: { id: null, code: q.code, cityId: q.cityId, userId: q.userId },
+    amountPaise: amount,
+    source: input.source,
+    reasonCode: input.source,
+    note: null,
+    requestedBy: null,
+    idemKey: `sys_rsa_${input.source}_${paymentId}`,
   });
   return made.fresh ? made.id : null;
 }
