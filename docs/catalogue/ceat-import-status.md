@@ -1,6 +1,6 @@
 # CEAT import status
 
-Run: plan only. Source: ceat.com scrape (`ceat_tyres.csv`, `ceat_vehicle_fitment.csv`). One line per source row is in `ceat-import-status.csv`.
+Run: real run. Source: ceat.com scrape (`ceat_tyres.csv`, `ceat_vehicle_fitment.csv`). One line per source row is in `ceat-import-status.csv`.
 
 Source rows: 336. Products planned: 71. Fitment lines in the plan: 4451.
 
@@ -94,6 +94,12 @@ Source rows: 336. Products planned: 71. Fitment lines in the plan: 4451.
 | Zoom Rad X1         | 1           |
 | Zoom Rad X1 F       | 1           |
 | Zoom Rad X3         | 1           |
+
+### Result of this run
+
+|         | Source rows |
+| ------- | ----------- |
+| created | 336         |
 
 ### Price on request (no MRP in the source): 161
 
@@ -305,6 +311,6 @@ No price is shown on the maker's page, so the tyre is listed as "price on reques
 - CEAT Winmile X3-R 290/80R22.5 (ceat-winmile-x3-r): Rim shown as "9.0X222.5" on the site (looks like a typo). Handled: the rim comes from the size (22.5 inch), not from the page's rim text.
 - CEAT Winsuper X3-D 290/80R22.5 (ceat-winsuper-x3-d): Rim shown as "9.0X222.5" on the site (looks like a typo). Handled: the rim comes from the size (22.5 inch), not from the page's rim text.
 
-### Old CEAT products archived
+### Old CEAT products archived by this run: 1
 
-Filled in by the real run (`ceat-import-archived.csv`).
+Listed in `ceat-import-archived.csv`. Archived, never deleted (old orders and carts point at them).

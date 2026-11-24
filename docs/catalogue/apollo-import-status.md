@@ -1,6 +1,6 @@
 # Apollo import status
 
-Run: plan only. Source: apollotyres.com and shop.apollotyres.com scrape (`apollo_tyres.csv`, `apollo_brochure_products.csv`, `apollo_vehicle_fitment.csv`). One line per source row is in `apollo-import-status.csv`.
+Run: real run. Source: apollotyres.com and shop.apollotyres.com scrape (`apollo_tyres.csv`, `apollo_brochure_products.csv`, `apollo_vehicle_fitment.csv`). One line per source row is in `apollo-import-status.csv`.
 
 Source rows: 468. Products planned: 131. Fitment lines in the plan: 1103.
 
@@ -163,6 +163,12 @@ Source rows: 468. Products planned: 131. Fitment lines in the plan: 1103.
 | Virat Harvest Plus  | 1           |
 | XT 100 HD X         | 1           |
 | XT100 HD            | 1           |
+
+### Result of this run
+
+|         | Source rows |
+| ------- | ----------- |
+| created | 468         |
 
 ### Price on request (no MRP in the source): 288
 
@@ -700,6 +706,6 @@ India only. Shop only (sold on shop.apollotyres.com, not on the India site, incl
 - Apollo APTERRA HP 235/70 R16 TL
 - Apollo APTERRA HT 235/70 R16 TL
 
-### Old Apollo products archived
+### Old Apollo products archived by this run: 0
 
-Filled in by the real run (`apollo-import-archived.csv`).
+Listed in `apollo-import-archived.csv`. Archived, never deleted (old orders and carts point at them).

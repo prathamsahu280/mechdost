@@ -1,6 +1,6 @@
 # MRF import status
 
-Run: plan only. Source: mrftyres.com scrape (`mrf_tyres.csv`, `mrf_vehicle_fitment.csv`). One line per source row is in `mrf-import-status.csv`.
+Run: real run. Source: mrftyres.com scrape (`mrf_tyres.csv`, `mrf_vehicle_fitment.csv`). One line per source row is in `mrf-import-status.csv`.
 
 Source rows: 918. Products planned: 225. Fitment lines in the plan: 3504.
 
@@ -259,6 +259,12 @@ Source rows: 918. Products planned: 225. Fitment lines in the plan: 3504.
 | Zapper P                                        | 1           |
 | Zapper RF                                       | 1           |
 | Zapper YM                                       | 1           |
+
+### Result of this run
+
+|         | Source rows |
+| ------- | ----------- |
+| created | 918         |
 
 ### Price on request (no MRP in the source): 546
 
@@ -835,6 +841,6 @@ No price is shown on the maker's page, so the tyre is listed as "price on reques
 - MRF 9.5-24 Krishi (mrf-krishi): The ply rating reads 45634 in the source (a date turned into a number); the ply rating is left blank.
 - Discontinued pages: 22 pages still exist on mrftyres.com but show no product (listed in the sheet "Discontinued pages" of MRF_Tyres.xlsx). None is in mrf_tyres.csv, so none becomes a product.
 
-### Old MRF products archived
+### Old MRF products archived by this run: 1
 
-Filled in by the real run (`mrf-import-archived.csv`).
+Listed in `mrf-import-archived.csv`. Archived, never deleted (old orders and carts point at them).
