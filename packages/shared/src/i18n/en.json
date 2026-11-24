@@ -4779,6 +4779,10 @@
     "prev": "Previous photo",
     "next": "Next photo",
     "position": "Photo {n} of {total}",
+    "productLabel": "Product photos",
+    "productShow": "Show photo {n} of {total}",
+    "productEnlarge": "View photo {n} of {total} larger",
+    "productViewer": "Product photos, full view",
     "galleryTitle": "Recent work",
     "galleryLead": "Photos from jobs this workshop finished through MechDost."
   },
@@ -5659,7 +5663,6 @@
     "wishlistLoadFailed": "Could not load your wishlist.",
     "wishlistRetry": "Try again",
     "wishlistCount": "{count, plural, one {# product saved} other {# products saved}}",
-    "photoOpens": "Open photo {n} in a new tab",
     "photosLead": "Up to {max} photos. The first is the cover shown in the shop. Describe each photo in English and Hindi.",
     "photosShopsOn": "Shops that sell this product may add photos; each waits for your approval.",
     "photosShopsOff": "Only staff add photos right now (a setting turns on shop uploads).",

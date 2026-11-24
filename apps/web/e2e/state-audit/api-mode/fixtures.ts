@@ -50,7 +50,7 @@ import type { AuditCase } from '../cases.ts';
 import { layoutMocks, policyMocks, settingsMocks } from './admin-config-fixtures.ts';
 import { homeFinderMocks, homeJobMocks, homeRequestMocks } from './home-fixtures.ts';
 import { adminWorkshopAnalyticsMocks, workshopPerformanceMocks } from './workshop-analytics-fixtures.ts';
-import { customerPhotoMocks, workshopPhotoMocks } from './photo-fixtures.ts';
+import { customerPhotoMocks, productPhotoMocks, workshopPhotoMocks } from './photo-fixtures.ts';
 import { accountDeletionMocks, accountSupportMocks, adminSupportMocks } from './support-fixtures.ts';
 import { myWorkshopMocks, profileMocks } from './tier1-fixtures.ts';
 import { adminRoutingMocks, billPayMocks } from './tier3-fixtures.ts';
@@ -1823,6 +1823,8 @@ export function mocksFor(c: AuditCase): Mock[] {
       return adminRoutingMocks(c);
     case 'API-SVC-PHOTOS':
       return customerPhotoMocks(c);
+    case 'API-PDP-GALLERY':
+      return [meMock(), ...productPhotoMocks()];
     case 'API-ACC-SUPPORT':
       return accountSupportMocks(c);
     case 'API-ADM-SUPPORT':
