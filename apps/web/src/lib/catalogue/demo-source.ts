@@ -1,9 +1,17 @@
 import { attributeDefs, readAttributes } from '@mechdost/shared/product-attributes';
-import { CATEGORY_SLUGS, VEHICLE_TYPES_OF_FIT, type DemoProduct } from '@/demo/catalogue';
+import { CATEGORY_SLUGS, VEHICLE_TYPES_OF_FIT, type DemoProduct, type DemoSize } from '@/demo/catalogue';
 import { localizeProduct } from '@/demo/i18n/localize';
 import { DEMO_PRODUCT_SPECS } from '@/demo/product-specs';
 import { productRating } from '@/demo/reviews';
 import type { CardView, ProductView } from './view';
+
+const inStock = (s: DemoSize) => s.availability !== 'on_request';
+
+/** The lowest price among the sizes that can be bought; null when none can. */
+function lowestPrice(sizes: readonly DemoSize[]): number | null {
+  const prices = sizes.filter(inStock).map((s) => s.pricePaise);
+  return prices.length > 0 ? Math.min(...prices) : null;
+}
 
 /** A demo product as a card (data mode `demo`), localised like the rest of the demo screens. */
 export function demoCard(raw: DemoProduct, locale: string): CardView {
@@ -22,6 +30,7 @@ export function demoCard(raw: DemoProduct, locale: string): CardView {
     mrpFrom: null,
     pack: DEMO_PRODUCT_SPECS[raw.slug]?.netQuantity ?? null,
     availability: p.availability,
+    sizes: p.sizes ? { count: p.sizes.length, fromPaise: lowestPrice(p.sizes) } : null,
     leadDays: p.leadDays,
     highlights: p.highlights,
     rating: { avg: rating.rating, count: rating.count },
@@ -35,6 +44,18 @@ export function demoProduct(raw: DemoProduct, locale: string): ProductView {
   const attributeSet = attributeDefs(slug).length > 0 ? slug : null;
   return {
     ...demoCard(raw, locale),
+    variants: (raw.sizes ?? [{ ...raw, label: '' }]).map((s) => ({
+      sku: s.sku,
+      label: s.label,
+      pricePaise: s.pricePaise,
+      mrpPaise: s.mrpPaise ?? null,
+      priceOnRequest: false,
+      inStock: s.availability !== 'on_request',
+      leadDays: raw.leadDays,
+      shippingPaise: null,
+      pack: DEMO_PRODUCT_SPECS[raw.slug]?.netQuantity ?? null,
+    })),
+    defaultSku: raw.sku,
     description: null,
     seller: null,
     countryOfOrigin: null,
