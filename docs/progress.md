@@ -671,3 +671,7 @@ User-approved prototype `topbar-c-v4.html` built in the real app: floating glass
 2. **Customer Refunds.** `GET /v1/me/refunds`, `/account/refunds` (+ `/hi`), account bar, account menu "My refunds", order page link, demo sample data, `my_refunds_viewed` event. Tests: API `my-refunds.test.ts` (7), shared stage mapping, e2e `refunds-page.spec.ts`, Hindi coverage entry. Spec 05, spec 12, decisions updated.
 
 - **Next:** apply migration 0081 at merge (renumber if another builder used 0081); service-request notices (`service.proposed`, `estimate_ready`, `bill_ready`) are not auto-resolved yet (spec 10 note).
+
+## 2026-11-24 - Two browser bugs: assistant button over forms on phones, stale sign-in alert (branch worktree-agent-a9f1de147555562d1, not merged; no migration)
+
+Done: launcher hides on phones while a field is focused and on `data-launcher-avoid-phone` forms (roadside); state-audit row `RSA-FLOAT`, checklist regenerated (4687 items); `announcer.ts` + `login-announcer.test.ts`; login-flow clears the alert region on error clear and on a new submit. Docs: design-system, decisions, specs 01 and 22 notes, learnings T204/T205. Playwright audit not run locally (CI).

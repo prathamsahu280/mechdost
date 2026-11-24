@@ -121,6 +121,7 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | PRT-SHOP              | Shop portal (/partner/shop)                                                | Shop portal: offers with timer, accept/decline, orders, prices                                                                                                                                                                                                                  | pairwise | 16       | 1       |
 | PRT-WORKSHOP          | Workshop portal (/partner/workshop)                                        | Workshop portal: requests, proposal, estimate lines, bill                                                                                                                                                                                                                       | pairwise | 16       | 0       |
 | RSA-REQUEST           | Roadside help (/roadside)                                                  | Roadside request: PIN code, vehicle types offered, problem choices, review and advance                                                                                                                                                                                          | pairwise | 16       | 0       |
+| RSA-FLOAT             | Roadside help (/roadside)                                                  | Roadside request with the floating assistant button at 390 px: the button never overlaps a focusable element in main (it steps aside on this form; QA 2026-11-24, "Car / SUV" card)                                                                                             | cross    | 16       | 1       |
 | RSA-TRACK             | Roadside request (/roadside/{code})                                        | Roadside tracking: steps, responder, arrival code, bill with advance and balance, refund note                                                                                                                                                                                   | pairwise | 16       | 0       |
 | ADM-OVERVIEW          | Admin console (/admin)                                                     | Admin section: overview (section bar, tables, actions)                                                                                                                                                                                                                          | pairwise | 16       | 0       |
 | ADM-ORDERS            | Admin console (/admin)                                                     | Admin section: orders (section bar, tables, actions)                                                                                                                                                                                                                            | pairwise | 16       | 1       |
@@ -198,7 +199,7 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | API-ADM-EXPORTS       | Admin → Exports, real sign-in                                              | CSV exports: the form (dataset, city, dates), customers with masked or open contacts, done, empty file, too many rows, expired link, range over 180 days, nothing allowed, load error                                                                                           | pairwise | 80       | 0       |
 | API-NAV-ADMIN         | Navigation, real sign-in                                                   | Admin section bar with every real-mode section (Analytics, Refunds, Errors included): current item, scroll, walk                                                                                                                                                                | cross    | 184      | 0       |
 | API-NAV-ACCOUNT       | Navigation, real sign-in                                                   | Account section bar in a real-sign-in build: current item, scroll, walk                                                                                                                                                                                                         | cross    | 104      | 0       |
-| **Total**             |                                                                            |                                                                                                                                                                                                                                                                                 |          | **4671** | **101** |
+| **Total**             |                                                                            |                                                                                                                                                                                                                                                                                 |          | **4687** | **102** |
 
 ## Chrome
 
@@ -2381,6 +2382,27 @@ Pairwise (all pairs of values); 16 states; scope `main`.
 - [ ] RSA-REQUEST-014 · 1440px · dark · hi · customer · world=empty · /roadside · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
 - [ ] RSA-REQUEST-015 · 1920px · light · en · customer · world=empty · /roadside · asserts: present inside overlap covered clipped tap hscroll focus console dismiss
 - [ ] RSA-REQUEST-016 · 1920px · dark · hi · customer · world=empty · /roadside · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+
+### RSA-FLOAT — Roadside request with the floating assistant button at 390 px: the button never overlaps a focusable element in main (it steps aside on this form; QA 2026-11-24, "Car / SUV" card)
+
+Full cross of the high-risk dimensions, the rest pairwise; 16 states; scope `main`.
+
+- [ ] RSA-FLOAT-001 · 320px · light · en · customer · world=empty · /roadside · asserts: present covered launcher hscroll console axe
+- [ ] RSA-FLOAT-002 · 320px · light · hi · customer · world=empty · /roadside · asserts: present covered launcher hscroll console hindi
+- [ ] RSA-FLOAT-003 · 320px · dark · en · customer · world=empty · /roadside · asserts: present covered launcher hscroll console
+- [ ] RSA-FLOAT-004 · 320px · dark · hi · customer · world=empty · /roadside · asserts: present covered launcher hscroll console hindi
+- [ ] RSA-FLOAT-005 · 390px · light · en · customer · world=empty · /roadside · asserts: present covered launcher hscroll console axe
+- [ ] RSA-FLOAT-006 · 390px · light · hi · customer · world=empty · /roadside · asserts: present covered launcher hscroll console hindi
+- [ ] RSA-FLOAT-007 · 390px · dark · en · customer · world=empty · /roadside · asserts: present covered launcher hscroll console
+- [ ] RSA-FLOAT-008 · 390px · dark · hi · customer · world=empty · /roadside · asserts: present covered launcher hscroll console hindi axe · core
+- [ ] RSA-FLOAT-009 · 480px · light · en · customer · world=empty · /roadside · asserts: present covered launcher hscroll console axe
+- [ ] RSA-FLOAT-010 · 480px · light · hi · customer · world=empty · /roadside · asserts: present covered launcher hscroll console hindi
+- [ ] RSA-FLOAT-011 · 480px · dark · en · customer · world=empty · /roadside · asserts: present covered launcher hscroll console
+- [ ] RSA-FLOAT-012 · 480px · dark · hi · customer · world=empty · /roadside · asserts: present covered launcher hscroll console hindi
+- [ ] RSA-FLOAT-013 · 1440px · light · en · customer · world=empty · /roadside · asserts: present covered launcher hscroll console axe
+- [ ] RSA-FLOAT-014 · 1440px · light · hi · customer · world=empty · /roadside · asserts: present covered launcher hscroll console hindi
+- [ ] RSA-FLOAT-015 · 1440px · dark · en · customer · world=empty · /roadside · asserts: present covered launcher hscroll console
+- [ ] RSA-FLOAT-016 · 1440px · dark · hi · customer · world=empty · /roadside · asserts: present covered launcher hscroll console hindi
 
 ## Roadside request (/roadside/{code})
 

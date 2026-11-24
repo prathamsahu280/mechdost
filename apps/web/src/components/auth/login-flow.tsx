@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { preconnect } from 'react-dom';
-import { useCallback, useEffect, useRef, useState, type ReactNode, type SyntheticEvent } from 'react';
+import { useEffect, useRef, useState, type ReactNode, type SyntheticEvent } from 'react';
 import { PASSWORD_MAX, PASSWORD_MIN, passwordProblem } from '@/demo/passwords';
 import {
   DEMO_OTP,
@@ -29,6 +29,7 @@ import {
 import { track } from '@/lib/analytics';
 import type * as RealClientModule from '@/lib/auth/firebase-client';
 import type { PasswordResult } from '@/lib/auth/firebase-client';
+import { createAnnouncer } from '@/lib/auth/announcer';
 import { retryOnce } from '@/lib/auth/sign-in-retry';
 import type { CodeFail, PhoneFail } from '@/lib/auth/auth-errors';
 import { AUTH_MODE } from '@/lib/auth/mode';
@@ -108,15 +109,9 @@ type Outcome = 'leaving' | undefined;
 function useAnnouncer() {
   const [polite, setPolite] = useState('');
   const [assertive, setAssertive] = useState('');
-  const timers = useRef<{ polite?: number; assertive?: number }>({});
-  const announce = useCallback((message: string, kind: 'polite' | 'assertive' = 'polite') => {
-    const set = kind === 'polite' ? setPolite : setAssertive;
-    window.clearTimeout(timers.current[kind]);
-    set('');
-    timers.current[kind] = window.setTimeout(() => {
-      set(message);
-    }, 100);
-  }, []);
+  const [{ announce, clear }] = useState(() =>
+    createAnnouncer({ polite: setPolite, assertive: setAssertive }),
+  );
   const regions = (
     <>
       <div role="status" aria-atomic="true" className="sr-only">
@@ -127,7 +122,7 @@ function useAnnouncer() {
       </div>
     </>
   );
-  return { announce, regions };
+  return { announce, clear, regions };
 }
 
 /**
@@ -147,7 +142,7 @@ export function LoginFlow() {
   // Already signed in: say so, with the way back; the form stays for switching accounts (QA 2026-11-14, F4).
   const current = useSession();
   const prefix = locale === 'hi' ? '/hi' : '';
-  const { announce, regions } = useAnnouncer();
+  const { announce, clear, regions } = useAnnouncer();
   const [view, setView] = useState<{ step: Step; n: number }>({ step: 'signin', n: 0 });
   const step = view.step;
   const [identifier, setIdentifier] = useState('');
@@ -182,11 +177,15 @@ export function LoginFlow() {
   // Errors: focus the field after its aria-invalid/description are rendered; if it already has focus (Enter in
   // the field) or the error is about the whole form, say it through the alert region instead.
   useEffect(() => {
-    if (!error) return;
+    // No error (step changed, a new submit started, the code was resent): the alert region must not keep the old one.
+    if (!error) {
+      clear('assertive');
+      return;
+    }
     const el = error.field ? document.getElementById(error.field) : null;
     if (el && el !== document.activeElement) el.focus();
     else announce(error.message, 'assertive');
-  }, [error, announce]);
+  }, [error, announce, clear]);
 
   // Real mode: while the person types, fetch what the button needs next — Firebase's code, Cloudflare's script
   // and connections to the hosts the sign-in talks to — so pressing it does not wait for downloads (2026-11-23).
@@ -239,6 +238,7 @@ export function LoginFlow() {
   async function guarded(busyLabel: string, task: () => Promise<Outcome>) {
     if (busyRef.current) return;
     busyRef.current = true;
+    setError(null);
     setBusy(true);
     busyTimer.current = window.setTimeout(() => {
       announce(busyLabel);

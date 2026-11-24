@@ -1165,6 +1165,25 @@ export const COMPONENTS: readonly ComponentDef[] = [
     sweep: 16,
   },
   {
+    code: 'RSA-FLOAT',
+    page: 'Roadside help (/roadside)',
+    component:
+      'Roadside request with the floating assistant button at 390 px: the button never overlaps a focusable element in main (it steps aside on this form; QA 2026-11-24, "Car / SUV" card)',
+    path: '/roadside',
+    scope: 'main',
+    strategy: 'cross',
+    cross: ['width', 'theme', 'locale'],
+    params: [
+      { name: 'width', values: [320, 390, 480, 1440] },
+      theme,
+      locale,
+      { name: 'auth', values: ['customer'] },
+    ],
+    checks: ['present', 'covered', 'launcher', 'hscroll', 'console'],
+    sweep: 0,
+    core: coreAt([390], (r) => r.locale === 'hi' && r.theme === 'dark'),
+  },
+  {
     code: 'RSA-TRACK',
     page: 'Roadside request (/roadside/{code})',
     component:

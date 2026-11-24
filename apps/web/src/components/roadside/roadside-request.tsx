@@ -200,7 +200,7 @@ export function RoadsideRequest() {
     );
 
   return (
-    <form onSubmit={toReview} className="mx-auto max-w-xl space-y-6" noValidate>
+    <form data-launcher-avoid-phone onSubmit={toReview} className="mx-auto max-w-xl space-y-6" noValidate>
       {error ? (
         <p role="alert" className="rounded-card bg-error-bg p-3 text-sm font-bold text-error">
           {t(error as 'err_generic')}
