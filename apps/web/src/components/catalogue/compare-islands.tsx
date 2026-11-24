@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
 import { track } from '@/lib/analytics';
 import { compareHref, readCompare, removeFromCompare } from '@/lib/compare/store';
+import { createScrollSync } from '@/lib/compare-scroll-sync';
 
 /**
  * "Only differences" (design 2026-11-13): a pressed button that hides the rows marked `data-same` (CSS in
@@ -64,7 +65,7 @@ export function DifferencesToggle({
 
 /**
  * Keeps the sticky product strip and the swipeable body side by side (redesign 2026-11-13): whichever one the
- * shopper swipes, the other follows. Passive listeners; a frame guard stops the two from echoing each other.
+ * shopper swipes, the other follows (`lib/compare-scroll-sync.ts`: the touched strip leads until the gesture settles).
  */
 function useScrollSync() {
   // The sticky product strip grows when names wrap: its measured height goes to the page's top scroll padding
@@ -90,24 +91,9 @@ function useScrollSync() {
   useEffect(() => {
     const head = document.querySelector<HTMLElement>('[data-compare-scroll="head"]');
     const body = document.querySelector<HTMLElement>('[data-compare-scroll="body"]');
-    if (!head || !body) return;
-    let lock: HTMLElement | null = null;
-    const follow = (from: HTMLElement, to: HTMLElement) => () => {
-      if (lock && lock !== from) return;
-      lock = from;
-      to.scrollLeft = from.scrollLeft;
-      requestAnimationFrame(() => {
-        lock = null;
-      });
-    };
-    const onHead = follow(head, body);
-    const onBody = follow(body, head);
-    head.addEventListener('scroll', onHead, { passive: true });
-    body.addEventListener('scroll', onBody, { passive: true });
-    return () => {
-      head.removeEventListener('scroll', onHead);
-      body.removeEventListener('scroll', onBody);
-    };
+    if (!head || !body) return undefined;
+    // The strip under the finger leads; the body's snap pauses while the name strip leads (bug 2026-11-24).
+    return createScrollSync(head, body);
   }, []);
 }
 
