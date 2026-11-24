@@ -3221,7 +3221,7 @@
     "cat_sizes_title": "इस उत्पाद के साइज़",
     "cat_sizes_intro": "ग्राहक उत्पाद पेज पर एक साइज़ चुनते हैं। हर साइज़ का अपना SKU, MRP, बारकोड, कीमत और स्टॉक होता है।",
     "cat_size_label": "साइज़",
-    "cat_size_sku": "SKU",
+    "cat_size_sku": "SKU कोड",
     "cat_size_mrp": "MRP ₹ में (खाली = कीमत पूछने पर)",
     "cat_size_barcode": "बारकोड (वैकल्पिक)",
     "cat_size_save": "साइज़ सहेजें",
