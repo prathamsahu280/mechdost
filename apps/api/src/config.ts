@@ -160,6 +160,8 @@ const schema = z
       .transform((v) => (v && v.trim().length >= 20 && !v.includes('<') ? v.trim() : undefined)),
     /** PostHog ingestion host; EU cloud by default (decision 2026-11-14). */
     POSTHOG_HOST: z.url().default('https://eu.i.posthog.com'),
+    /** Megabytes of public product-photo bytes kept in memory (0 = off; capped so it fits the container, decision 2026-11-24). */ PHOTO_CACHE_MB:
+      z.coerce.number().int().min(0).max(128).default(64),
   })
   .superRefine((env, ctx) => {
     if (env.DATABASE_POOL_URL.includes('<')) {
@@ -329,6 +331,7 @@ function toConfig(env: z.infer<typeof schema>) {
         : null,
     defaultCityCode: env.DEFAULT_CITY_CODE,
     /** Private Storage bucket for job photos; null = photos unavailable (503), everything else works. */
+    photoCacheBytes: env.PHOTO_CACHE_MB * 1024 * 1024,
     photoStorage:
       env.SUPABASE_URL && env.SUPABASE_SECRET_KEY
         ? { url: env.SUPABASE_URL, secretKey: env.SUPABASE_SECRET_KEY, bucket: 'service-photos' }

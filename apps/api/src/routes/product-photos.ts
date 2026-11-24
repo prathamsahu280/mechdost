@@ -349,6 +349,7 @@ export function productPhotoAdminRoutes(deps: AppDeps) {
         photoId: p.photoId,
         actor: { kind: 'staff', userId: user(c) },
       });
+      deps.photoCache?.evict(p.photoId);
       if (deps.photoStorage) await deleteObjects(deps.photoStorage, keys);
       return c.json({ ok: true as const }, 200);
     })
@@ -381,6 +382,7 @@ export function productPhotoAdminRoutes(deps: AppDeps) {
         reasonCode: c.req.valid('json').reasonCode,
         userId: user(c),
       });
+      deps.photoCache?.evict(c.req.valid('param').photoId);
       if (deps.photoStorage) await deleteObjects(deps.photoStorage, keys);
       return c.json({ ok: true as const }, 200);
     });
@@ -431,8 +433,15 @@ export function productPhotoRoutes(deps: AppDeps, cache: SessionCache) {
     const sig = c.req.query('s');
     const signed = sig !== undefined && verifyPhotoUrl(kc.keyring, id.data, Number(c.req.query('e')), sig);
     if (!served.approved && !signed) throw new ApiError(404, 'NOT_FOUND', 'Not found');
-    const bytes = await kc.storage.get(served.paths[Number(width.data) as ProductPhotoWidth]);
-    if (!bytes) throw new ApiError(404, 'NOT_FOUND', 'Not found');
+    // Only approved (public, immutable) photos use the cache; previews and errors always go to Storage.
+    const cache = served.approved ? (deps.photoCache ?? null) : null;
+    const w = Number(width.data);
+    let bytes = cache?.get(id.data, w) ?? null;
+    if (!bytes) {
+      bytes = await kc.storage.get(served.paths[w as ProductPhotoWidth]);
+      if (!bytes) throw new ApiError(404, 'NOT_FOUND', 'Not found');
+      cache?.set(id.data, w, bytes);
+    }
     return c.body(new Uint8Array(bytes), 200, {
       'Content-Type': 'image/webp',
       'Content-Disposition': 'inline; filename="product.webp"',
@@ -462,6 +471,7 @@ export function productPhotoRoutes(deps: AppDeps, cache: SessionCache) {
         photoId: p.photoId,
         actor: actorOf(c),
       });
+      deps.photoCache?.evict(p.photoId);
       if (deps.photoStorage) await deleteObjects(deps.photoStorage, keys);
       return c.json({ ok: true as const }, 200);
     });

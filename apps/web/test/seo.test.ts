@@ -235,6 +235,58 @@ describe('sitemap and robots', () => {
     expect(robots().sitemap).toBe(absoluteUrl('/sitemap.xml'));
   });
 
+  it('asks AI-training and SEO-tool crawlers to stay out, and no search engine or link-preview fetcher', () => {
+    const rules = [robots().rules].flat();
+    const star = rules.find((r) => r.userAgent === '*');
+    expect(star, 'the * group stays first').toBe(rules[0]);
+    const named = rules.filter((r) => r.userAgent !== '*');
+    const agents = named.flatMap((r) => [r.userAgent ?? []].flat());
+    for (const bot of [
+      'GPTBot',
+      'ChatGPT-User',
+      'CCBot',
+      'ClaudeBot',
+      'anthropic-ai',
+      'Google-Extended',
+      'Bytespider',
+      'PerplexityBot',
+      'Amazonbot',
+      'meta-externalagent',
+      'cohere-ai',
+      'Diffbot',
+      'AhrefsBot',
+      'SemrushBot',
+      'MJ12bot',
+      'DotBot',
+      'BLEXBot',
+      'PetalBot',
+      'DataForSeoBot',
+    ])
+      expect(agents, bot).toContain(bot);
+    for (const r of named) expect(r.disallow).toBe('/');
+    // Real search engines and share-card fetchers must keep following the `*` group.
+    for (const ok of [
+      'Googlebot',
+      'Bingbot',
+      'DuckDuckBot',
+      'Applebot',
+      'YandexBot',
+      'Baiduspider',
+      'facebookexternalhit',
+      'WhatsApp',
+      'Twitterbot',
+      'TelegramBot',
+      'LinkedInBot',
+      'Slackbot',
+    ])
+      expect(
+        agents.map((a) => a.toLowerCase()),
+        ok,
+      ).not.toContain(ok.toLowerCase());
+    expect(star?.disallow).not.toContain('/');
+    expect(robots().sitemap).toBe(absoluteUrl('/sitemap.xml'));
+  });
+
   it('every noindex page sits under a blocked path', () => {
     const noindex = [
       '/account',

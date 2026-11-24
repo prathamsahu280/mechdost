@@ -17,6 +17,7 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
+      - caddy_logs:/var/log/caddy
     # The API is optional (profile `api`); a missing or failing API never takes the website down.
     depends_on:
       - web
@@ -108,7 +109,7 @@ services:
       - srh
     expose:
       - '4000'
-    mem_limit: 384m
+    mem_limit: 448m
     read_only: true
     tmpfs:
       - /tmp
@@ -149,3 +150,4 @@ services:
 volumes:
   caddy_data:
   caddy_config:
+  caddy_logs:

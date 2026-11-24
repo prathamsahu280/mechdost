@@ -14,6 +14,7 @@ import { loadKeyring } from '@mechdost/db/crypto';
 import { seedRaipurDemo, type DemoFixture } from '@mechdost/db/demo-seed';
 import { ensureUser, grantRole } from '@mechdost/db/repo';
 import * as s from '@mechdost/db/schema';
+import { createPhotoByteCache } from '../src/photos/byte-cache';
 import type { PhotoStorage } from '../src/photos/storage';
 import { bearer, buildApp, type ErrorJson } from './helpers';
 
@@ -36,7 +37,9 @@ class FakeStorage implements PhotoStorage {
     this.objects.set(path, bytes);
     return Promise.resolve();
   }
+  gets = 0;
   get(path: string) {
+    this.gets += 1;
     return Promise.resolve(this.objects.get(path) ?? null);
   }
   remove(path: string) {
@@ -51,6 +54,7 @@ class FakeStorage implements PhotoStorage {
 let ctx: Awaited<ReturnType<typeof buildApp>>;
 let noStorage: Awaited<ReturnType<typeof buildApp>>;
 const storage = new FakeStorage();
+const photoCache = createPhotoByteCache(8 * 1024 * 1024);
 const OIL = 'CAS-ACT4T-0900';
 let slug = '';
 let productId = '';
@@ -141,7 +145,7 @@ let owner: Person;
 let rival: Person;
 
 beforeAll(async () => {
-  ctx = await buildApp({ keyring, photoStorage: storage });
+  ctx = await buildApp({ keyring, photoStorage: storage, photoCache });
   noStorage = await buildApp({ keyring: null, photoStorage: null });
   await seedRaipurDemo(ctx.db, fixture);
   for (const row of await ctx.db.select().from(s.shops)) shop[row.name] = row.id;
@@ -244,6 +248,20 @@ describe('staff upload and list', () => {
     expect((await image('/product-photos/not-a-uuid/640')).status).toBe(404);
   });
 
+  it('a cache hit returns the same bytes and headers as a miss and skips Storage', async () => {
+    const id = photosOf(await call(admin, 'GET', base()))[0]!.id;
+    photoCache.evict(id); // earlier tests may have warmed it
+    const before = storage.gets;
+    const miss = await image(`/product-photos/${id}/320`);
+    const hit = await image(`/product-photos/${id}/320`);
+    expect(storage.gets - before).toBe(1); // the second answer came from memory
+    expect(hit.status).toBe(200);
+    expect(Buffer.from(await hit.arrayBuffer()).equals(Buffer.from(await miss.arrayBuffer()))).toBe(true);
+    const headers = (r: Response) =>
+      [...r.headers.entries()].filter(([n]) => n !== 'x-request-id' && !n.startsWith('ratelimit')).sort();
+    expect(headers(hit)).toEqual(headers(miss));
+  });
+
   it('adds up to eight, refuses a ninth, reorders, edits the description and removes', async () => {
     for (let i = 0; i < 7; i += 1) expect((await upload(admin, base(), await jpeg())).status).toBe(201);
     const ninth = await upload(admin, base(), await jpeg());
@@ -277,7 +295,10 @@ describe('staff upload and list', () => {
     ).toBe(409);
 
     const objects = storage.objects.size;
+    expect((await image(`/product-photos/${first.id}/640`)).status).toBe(200);
+    expect(photoCache.get(first.id, 640)).not.toBeNull(); // warm
     expect((await call(admin, 'DELETE', `${base()}/${first.id}`)).status).toBe(200);
+    expect(photoCache.get(first.id, 640)).toBeNull(); // evicted with the photo
     expect(storage.objects.size).toBe(objects - 3);
     expect((await image(`/product-photos/${first.id}/640`)).status).toBe(404);
     expect(photosOf(await call(admin, 'GET', base()))).toHaveLength(7);
@@ -320,7 +341,11 @@ describe('shop photos', () => {
     expect((await image(`/product-photos/${photo.id}/640`)).status).toBe(404);
     const tampered = photo.previewUrl.replace(/s=[^&]+/, 's=AAAA');
     expect((await image(tampered)).status).toBe(404);
+    const gets = storage.gets;
     expect((await image(photo.previewUrl)).status).toBe(200);
+    expect((await image(photo.previewUrl)).status).toBe(200);
+    expect(storage.gets - gets).toBe(2); // unapproved previews are never cached
+    expect(photoCache.get(photo.id, 640)).toBeNull();
     const pub = (await (await ctx.app.request(`/v1/catalogue/products/${slug}?city=RPR`)).json()) as {
       photos: { path: string }[];
     };
