@@ -53,6 +53,16 @@ describe('assistant launcher never covers a booking form', () => {
       expect(src(`components/workshops/${f}`)).toMatch(/<form\s+data-launcher-avoid/);
   });
 
+  it('on phones also hides while a field in main is focused, and on the roadside request form', () => {
+    const phone = /@media \(max-width: 1023\.98px\)\s*\{([^@]*?)\n\}/.exec(css)?.[1] ?? '';
+    expect(phone).toMatch(
+      /html:has\(main :is\(input, select, textarea\):focus-visible\) \.assistant-launcher/,
+    );
+    expect(phone).toMatch(/html:has\(\[data-launcher-avoid-phone\]\) \.assistant-launcher/);
+    expect(phone).toMatch(/visibility:\s*hidden/);
+    expect(src('components/roadside/roadside-request.tsx')).toMatch(/<form\s+data-launcher-avoid-phone/);
+  });
+
   it('adds nothing to the launcher (it is in the first load of every page)', () => {
     expect(src('components/assistant/assistant-launcher.tsx')).not.toMatch(
       /data-launcher-avoid|IntersectionObserver/,

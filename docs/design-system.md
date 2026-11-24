@@ -145,6 +145,8 @@ Card (`rounded-card`, `border-line`, `bg-surface`, `shadow-dialog`) fixed above 
 
 The "Ask MechDost" button steps aside (hidden, CSS only) on pages whose form has prices or controls along the right edge: mark the form `data-launcher-avoid`. Same family as the consent banner and compare tray rules: one floating thing at a time, and none over a price or a control.
 
+On phones (under 1024 px) the button also hides while a form field in `main` has keyboard focus (CSS `:has(...:focus-visible)`), and for the whole page on a form marked `data-launcher-avoid-phone` (the roadside request form, whose cards run to the right edge; QA 2026-11-24). Not a JS observer (the button is in every first load) and not a right gutter (68 px of a 390 px screen). Audit row `RSA-FLOAT` checks it at 390 px.
+
 ## Copy rules added 2026-11-22 (user)
 
 - Customer copy never says an order goes through a shop or seller ("verified shop", "nearby shop", "Sold by", "shop accepted"); MechDost is the only named party. Shop wording stays in portals, admin, partner pages and the named legal exceptions (guard test `packages/shared/test/customer-copy.test.ts`).

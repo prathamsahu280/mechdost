@@ -176,3 +176,7 @@ Firebase refuses a custom action URL for the project (`EMAIL_TEMPLATE_UPDATE_NOT
 - Sign-up: after the API has signed the person in again (linking turns the Firebase session into a `password` one, which the API refuses) the web asks for the verification mail; a failed send is not fatal, the account area offers "send again". The forgot-password email form carries the Cloudflare check.
 - Not built: email change (`verifyBeforeUpdateEmail`), because the app has no such screen; the action page already handles `verifyAndChangeEmail`.
 - Tests: `apps/api/test/auth-emails.test.ts` (link building through the real mail sender, same answer for unknown addresses, limits, sign-in required), `packages/shared/test/email-action-link.test.ts`, `email-templates.test.ts` (en and hi), `apps/web/test/auth-email-requests.test.ts`.
+
+## Note 2026-11-24: sign-in screen-reader regions
+
+The assertive alert region is cleared whenever the form-level error clears (step change, new submit, code resent), so an old error is never re-read on the next step. Test: `apps/web/test/login-announcer.test.ts`.

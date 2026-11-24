@@ -544,6 +544,17 @@ html:has([data-launcher-avoid]) .assistant-launcher {
   visibility: hidden;
 }
 
+/* Phones (under the 1024 px tab-bar layout), 2026-11-24: the button sat over the right edge of form controls
+   (/roadside, "Car / SUV" card). It steps aside while a field in the page is being used, and for the whole page on a
+   form marked data-launcher-avoid-phone (its cards run to the right edge). A fixed button cannot be given room by
+   the page, and a right gutter on every page would cost 68 px of a 390 px screen. */
+@media (max-width: 1023.98px) {
+  html:has(main :is(input, select, textarea):focus-visible) .assistant-launcher,
+  html:has([data-launcher-avoid-phone]) .assistant-launcher {
+    visibility: hidden;
+  }
+}
+
 /* While the privacy choice is open the page ends with room for it (the banner is fixed, so without this its last
    controls could never scroll clear: cart "Proceed to checkout", bulk quote, booking form; audit 2026-11-15 item 8),
    and the assistant button rides just above the banner, never under it. --consent-h is the banner's measured height

@@ -342,3 +342,5 @@ L295 · 2026-11-22 · tooling · a worktree-isolated agent's shell refuses compo
 L304 · 2026-11-24 · security · a customer route set without the phone-verified gate, a suggestions list under the read permission, a pin never checked against its city, a bill with no ceiling and an offer that a paused workshop could still accept all passed the first tests · for every new money or dispatch feature walk the razorpay and firebase-phone-auth-rbac checklists route by route and add one test per finding.
 
 - 2026-11-24 · WhatsApp templates · Meta rejected a UTILITY template as INCORRECT_CATEGORY because the text mentioned "your arrival code" → never mention a code/OTP/PIN in a utility template body; link to the page instead. Check `rejected_reason` via Graph `GET /{template-id}?fields=rejected_reason` (token only from env).
+
+- 2026-11-24 · fixed overlays: prefer CSS `:has()` rules keyed to a page marker over JS observers in always-loaded components; and when a component has no DOM test env, extract its timer/state logic into a pure module so it can be tested first (login announcer).
