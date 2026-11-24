@@ -8,6 +8,7 @@ import type { PasswordAuthority } from '../src/auth/password-authority';
 import type { TurnstileVerifier } from '../src/auth/turnstile';
 import { TokenError, type TokenVerifier, type VerifiedToken } from '../src/auth/token-verifier';
 import { loadConfig } from '../src/config';
+import type { PhotoByteCache } from '../src/photos/byte-cache';
 import type { PhotoStorage } from '../src/photos/storage';
 import type { RazorpayGateway } from '../src/payments/razorpay';
 import type { SentryIssuesClient } from '../src/monitoring/sentry-issues';
@@ -158,6 +159,7 @@ export async function buildApp(
     razorpay?: RazorpayGateway | null;
     sentryIssues?: SentryIssuesClient | null;
     photoStorage?: PhotoStorage | null;
+    photoCache?: PhotoByteCache | null;
     revalidate?: Revalidator;
   } = {},
 ) {
@@ -183,6 +185,7 @@ export async function buildApp(
     razorpay: opts.razorpay ?? null,
     sentryIssues: opts.sentryIssues ?? null,
     photoStorage: opts.photoStorage ?? null,
+    photoCache: opts.photoCache ?? null,
     ...(opts.revalidate ? { revalidate: opts.revalidate } : {}),
   });
   return { app, db, verifier };

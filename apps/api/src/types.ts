@@ -9,6 +9,7 @@ import type { TurnstileVerifier } from './auth/turnstile';
 import type { Config } from './config';
 import type { SentryIssuesClient } from './monitoring/sentry-issues';
 import type { PhotoStorage } from './photos/storage';
+import type { PhotoByteCache } from './photos/byte-cache';
 import type { RazorpayGateway } from './payments/razorpay';
 import type { RateLimiter } from './rate-limit/limiter';
 import type { Revalidator } from './revalidate';
@@ -33,6 +34,8 @@ export interface AppDeps {
   razorpay?: RazorpayGateway | null;
   /** Private Storage for job photos; null when not configured → photo routes answer 503 PHOTOS_UNAVAILABLE. */
   photoStorage?: PhotoStorage | null;
+  /** In-process cache of public product-photo bytes (saves Storage egress); absent = no caching. */
+  photoCache?: PhotoByteCache | null;
   /** Read-only Sentry issues for Admin → Errors; null when no read token is configured → "not connected". */
   sentryIssues?: SentryIssuesClient | null;
   /** Refreshes the website's cache by tag after a publish; absent = the configured one (tests inject a spy). */

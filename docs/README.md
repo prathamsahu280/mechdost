@@ -56,3 +56,4 @@ Read `../CLAUDE.md` first (hard rules). Then:
 - `runbooks/roadside.md` — turning roadside help on for a city: migration 0082 first, settings, PIN codes, workshop opt-in, refund approvers, WhatsApp templates, a test run (2026-11-24, spec 22).
 - `specs/22-roadside-assistance.md` — roadside assistance: statuses, data, settings, money rules, API, notifications, what is not built (phase 1 built 2026-11-24).
 - `runbooks/seo.md` — SEO: robots.txt, sitemap, titles, canonical/hreflang, structured data (real data only), checks after a deploy, Google Search Console setup steps, competitor study and next steps (2026-11-17).
+- `runbooks/traffic.md` — visitor log (Caddy), crawler rules, top agents/paths/IPs one-liners, blocking an abusive bot, photo cache metric (2026-11-24).

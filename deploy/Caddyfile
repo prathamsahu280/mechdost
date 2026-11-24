@@ -4,7 +4,33 @@
 	email {$ACME_EMAIL:admin@mechdost.com}
 }
 
+# Visitor log (decision 2026-11-24, docs/runbooks/traffic.md): one JSON line per request in a size-capped, rotated
+# file. LOGGING ONLY: it never blocks, slows or changes a response. What it keeps out:
+#   - the query string (reset links carry ?oobCode=..., share links carry tokens): everything after "?" becomes
+#     "?REDACTED", in the request URI and in the Referer header;
+#   - Authorization, Cookie, Set-Cookie and Proxy-Authorization headers: Caddy logs these as REDACTED by default
+#     (https://caddyserver.com/docs/caddyfile/directives/log; only the global option log_credentials turns that off,
+#     and it is not set here);
+#   - TLS details and response headers (noise, and Set-Cookie).
+# Disk: at most 6 files of 16 MiB (the current one plus 5 rolled) = 96 MiB, rolled files older than 30 days go.
+(access_log) {
+	log {
+		output file /var/log/caddy/access.log {
+			roll_size 16MiB
+			roll_keep 5
+			roll_keep_for 720h
+		}
+		format filter {
+			request>uri regexp \?.* ?REDACTED
+			request>headers>Referer regexp \?.* ?REDACTED
+			request>tls delete
+			resp_headers delete
+		}
+	}
+}
+
 mechdost.com {
+	import access_log
 	encode zstd gzip
 	reverse_proxy web:3000
 }
@@ -14,6 +40,7 @@ www.mechdost.com {
 }
 
 api.mechdost.com {
+	import access_log
 	encode zstd gzip
 	reverse_proxy api:4000
 }

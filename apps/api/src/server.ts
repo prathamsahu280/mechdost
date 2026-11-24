@@ -17,6 +17,7 @@ import { log, safeError } from './logger';
 import { startSentry } from './monitoring/sentry';
 import { createSentryIssuesClient } from './monitoring/sentry-issues';
 import { supabaseStorage } from './photos/storage';
+import { createPhotoByteCache } from './photos/byte-cache';
 import { MemoryRateLimiter } from './rate-limit/limiter';
 import { Redis } from '@upstash/redis';
 import { RedisRestRateLimiter } from './rate-limit/redis-rest';
@@ -92,6 +93,7 @@ const app = createApp({
   razorpay: config.razorpay ? httpRazorpay(config.razorpay.keyId, config.razorpay.keySecret) : null,
   sentryIssues: config.sentryIssues ? createSentryIssuesClient(config.sentryIssues) : null,
   photoStorage,
+  photoCache: config.photoCacheBytes > 0 ? createPhotoByteCache(config.photoCacheBytes) : null,
 });
 if (!config.firebaseApiKey || !config.turnstileSecret)
   log('warn', 'password_sign_in_disabled', {
