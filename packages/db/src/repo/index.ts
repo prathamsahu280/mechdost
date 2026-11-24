@@ -54,6 +54,7 @@ export * from './shop-staff-performance';
 export * from './partner-status';
 export * from './customer-orders';
 export * from './catalogue-admin';
+export * from './catalogue-variants';
 export * from './catalogue-create';
 export * from './shop-inventory';
 export * from './events';

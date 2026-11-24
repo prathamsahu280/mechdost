@@ -10,6 +10,7 @@ import {
 import { productMachine, type ProductStatus } from '@mechdost/shared/state';
 import { VEHICLE_TYPES, isVehicleType, type VehicleType } from '@mechdost/shared/vehicles';
 import { auditLog, brands, categories, productVariants, products, settings } from '../schema';
+import { variantLabel } from '@mechdost/shared/variants';
 import { attributeSetFor } from './catalogue';
 import { ConflictError, NotFoundError, ValidationError } from './errors';
 import { recordServerEvent } from './events';
@@ -182,6 +183,13 @@ export interface AdminVariant {
   /** Null = price on request: the admin sets it (design 2026-11-22). */
   mrpPaise: number | null;
   netQuantity: NetQuantity | null;
+  /** The size as one line ("145/70 R12 69T TL"), built from `options`. */
+  label: string;
+  options: Record<string, unknown>;
+  barcode: string | null;
+  status: 'active' | 'archived';
+  /** The token the editor sends back with a change (conditional update, hard rule 3). */
+  version: number;
 }
 
 /**
@@ -201,13 +209,26 @@ export async function getAdminProduct(
       mrpPaise: productVariants.mrpPaise,
       netQty: productVariants.netQty,
       netUnit: productVariants.netUnit,
+      options: productVariants.options,
+      barcode: productVariants.barcode,
+      status: productVariants.status,
+      version: productVariants.version,
     })
     .from(productVariants)
     .where(eq(productVariants.productId, r.id))
     .orderBy(asc(productVariants.sku));
   const variants = packs.map((v) => {
     const q = { qty: v.netQty, unit: v.netUnit };
-    return { sku: v.sku, mrpPaise: v.mrpPaise, netQuantity: isNetQuantity(q) ? q : null };
+    return {
+      sku: v.sku,
+      mrpPaise: v.mrpPaise,
+      netQuantity: isNetQuantity(q) ? q : null,
+      label: variantLabel(v.options),
+      options: v.options,
+      barcode: v.barcode,
+      status: v.status === 'archived' ? ('archived' as const) : ('active' as const),
+      version: v.version,
+    };
   });
   return { ...toAdmin(r), id: r.id, attributes: readAttributes(r.category, extra?.spec), variants };
 }

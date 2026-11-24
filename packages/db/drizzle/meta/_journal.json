@@ -572,8 +572,8 @@
     {
       "idx": 84,
       "version": "7",
-      "when": 1795545104454,
-      "tag": "0084_order_item_variant_label",
+      "when": 1795546609175,
+      "tag": "0084_sizes_order_label_variant_version",
       "breakpoints": true
     }
   ]
