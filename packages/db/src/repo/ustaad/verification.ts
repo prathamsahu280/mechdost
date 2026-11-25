@@ -567,10 +567,13 @@ export async function listUstaadAttestationsForWorkshops(
     .select({ a: ustaadAttestations, name: ustaadMembers.displayName, handle: ustaadMembers.handle })
     .from(ustaadAttestations)
     .innerJoin(ustaadMembers, eq(ustaadMembers.id, ustaadAttestations.memberId))
+    .innerJoin(workshops, eq(workshops.id, ustaadAttestations.workshopId))
     .where(
       and(
         inArray(ustaadAttestations.workshopId, [...workshopIds]),
         eq(ustaadAttestations.status, 'requested'),
+        // Only an approved workshop (not paused or suspended) confirms (security review 2026-11-26).
+        eq(workshops.status, 'approved'),
       ),
     )
     .orderBy(desc(ustaadAttestations.createdAt))
@@ -590,16 +593,20 @@ export async function confirmUstaadAttestation(
 ): Promise<AttestationView> {
   return db.transaction(async (tx) => {
     if (actor.workshopIds.length === 0) throw new NotFoundError('Not found');
-    const [a] = await tx
-      .select()
+    const [found] = await tx
+      .select({ a: ustaadAttestations })
       .from(ustaadAttestations)
+      .innerJoin(workshops, eq(workshops.id, ustaadAttestations.workshopId))
       .where(
         and(
           eq(ustaadAttestations.id, input.id),
           inArray(ustaadAttestations.workshopId, [...actor.workshopIds]),
+          // A paused, suspended or pending workshop cannot confirm (security review 2026-11-26).
+          eq(workshops.status, 'approved'),
         ),
       )
       .limit(1);
+    const a = found?.a;
     if (!a?.workshopId) throw new NotFoundError('Not found');
     const [self] = await tx
       .select({ userId: ustaadMembers.userId })
@@ -1048,4 +1055,14 @@ export async function countOpenUstaadVerifications(tx: Tx): Promise<number> {
     .from(ustaadVerifications)
     .where(or(eq(ustaadVerifications.status, 'requested'), eq(ustaadVerifications.status, 'in_review')));
   return r?.n ?? 0;
+}
+
+/** The approved (not paused, suspended or pending) workshops among `ids`: the only ones that may attest (SR-6). */
+export async function approvedUstaadWorkshopIds(tx: Tx, ids: readonly string[]): Promise<string[]> {
+  if (ids.length === 0) return [];
+  const rows = await tx
+    .select({ id: workshops.id })
+    .from(workshops)
+    .where(and(inArray(workshops.id, [...ids]), eq(workshops.status, 'approved')));
+  return rows.map((r) => r.id);
 }

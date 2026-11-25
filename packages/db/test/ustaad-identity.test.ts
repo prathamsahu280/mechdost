@@ -643,6 +643,37 @@ describe('attestations from a MechDost workshop (SR-6)', () => {
     expect((await memberRow(m.memberId)).workshopId).toBe(workshopA);
   });
 
+  // Security review 2026-11-26 (MEDIUM): only an approved workshop (not paused or suspended) confirms or is asked.
+  it('a suspended workshop cannot see or confirm attestations, nor be asked (404)', async () => {
+    const wS = await mkWorkshop('ustb-suspended');
+    const m = await mkMember({ level: 'ustaad_pending', verified: false });
+    await requestUstaadVerification(t(), { userId: m.userId }, { proofs: ['owner'], requestedLevel: 'naya' });
+    const a = await requestUstaadAttestation(t(), { userId: m.userId }, { workshopId: wS, sinceYear: null });
+    await db
+      .update(s.workshops)
+      .set({ status: 'suspended', statusReason: 'test suspension', statusChangedBy: f.staff })
+      .where(eq(s.workshops.id, wS));
+    expect(await listUstaadAttestationsForWorkshops(t(), [wS])).toHaveLength(0);
+    await expectCode(
+      confirmUstaadAttestation(
+        t(),
+        { userId: f.other, workshopIds: [wS] },
+        { id: a.id, expectedVersion: a.version, decision: 'confirmed' },
+      ),
+      'NOT_FOUND',
+    );
+    const m2 = await mkMember({ level: 'ustaad_pending', verified: false });
+    await requestUstaadVerification(
+      t(),
+      { userId: m2.userId },
+      { proofs: ['owner'], requestedLevel: 'naya' },
+    );
+    await expectCode(
+      requestUstaadAttestation(t(), { userId: m2.userId }, { workshopId: wS, sinceYear: null }),
+      'NOT_FOUND',
+    );
+  });
+
   // Security review 2026-11-26 (MEDIUM): nobody attests for themselves (SR-6).
   it('an owner or staff member of the workshop cannot ask it to confirm them, nor confirm themselves', async () => {
     const owner = await mkMember({ level: 'ustaad_pending', verified: false });

@@ -6,6 +6,7 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import type { Context } from 'hono';
 import {
+  approvedUstaadWorkshopIds,
   confirmUstaadAttestation,
   listUstaadAttestationsForWorkshops,
   workshopIdsFrom,
@@ -52,20 +53,21 @@ export function workshopUstaadRoutes(deps: AppDeps, sessions: SessionCache) {
     );
     app.use(p, requireVerified);
   }
-  const ids = (c: Context<AppEnv>) => {
+  // Only approved workshops (not paused, suspended or pending) take part (security review 2026-11-26).
+  const ids = async (c: Context<AppEnv>) => {
     const w = workshopIdsFrom(c.get('auth').grants, 'service_menu:write');
     if (w.length === 0) throw Forbidden();
-    return w;
+    return approvedUstaadWorkshopIds(deps.db, w);
   };
   return app
     .openapi(list, async (c) =>
-      c.json({ items: await listUstaadAttestationsForWorkshops(deps.db, ids(c)) }, 200),
+      c.json({ items: await listUstaadAttestationsForWorkshops(deps.db, await ids(c)) }, 200),
     )
     .openapi(decide, async (c) =>
       c.json(
         await confirmUstaadAttestation(
           deps.db,
-          { userId: c.get('auth').user.id, workshopIds: ids(c) },
+          { userId: c.get('auth').user.id, workshopIds: await ids(c) },
           { id: c.req.valid('param').id, ...c.req.valid('json') },
         ),
         200,
