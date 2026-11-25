@@ -513,7 +513,9 @@
     "sizeUnavailable": "This size is not available right now. Ask us about it on WhatsApp.",
     "fromSizes": "from {price} · {count} sizes",
     "sizesOnly": "{count} sizes",
-    "chooseSize": "Choose size"
+    "chooseSize": "Choose size",
+    "adminEdit": "Edit {name}",
+    "adminEditTip": "Edit in the catalogue admin"
   },
   "compare": {
     "toggle": "Compare",

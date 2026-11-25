@@ -513,7 +513,9 @@
     "sizeUnavailable": "यह साइज़ अभी उपलब्ध नहीं है। इसके बारे में हमसे WhatsApp पर पूछें।",
     "fromSizes": "{price} से · {count} साइज़",
     "sizesOnly": "{count} साइज़",
-    "chooseSize": "साइज़ चुनें"
+    "chooseSize": "साइज़ चुनें",
+    "adminEdit": "{name} बदलें",
+    "adminEditTip": "कैटलॉग एडमिन में बदलें"
   },
   "compare": {
     "toggle": "तुलना करें",

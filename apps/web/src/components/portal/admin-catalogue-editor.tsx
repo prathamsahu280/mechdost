@@ -39,6 +39,7 @@ import { PhotoQueueApi } from './photo-queue-api';
 import { portalField, portalPrimary, portalQuiet } from './portal-styles';
 import { adminCard } from './admin-ui';
 import { ProductPhotosEditor } from './product-photos-editor';
+import { editableSlugFromSearch } from '@/lib/catalogue/admin-edit';
 
 type Notice = { kind: 'ok' | 'error'; text: string } | null;
 
@@ -79,7 +80,10 @@ export function CatalogueEditor() {
   const [next, setNext] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [editing, setEditing] = useState<string | null>(null);
+  // Arrived from the storefront "Edit" shortcut (`?product=<slug>`, spec 08): open that product's editor straight away.
+  // This chunk never renders on the server, so reading the address here is safe. An unknown slug shows the editor's
+  // normal not-found message with the way back.
+  const [editing, setEditing] = useState<string | null>(() => editableSlugFromSearch(window.location.search));
   const [adding, setAdding] = useState<'product' | 'import' | null>(null);
 
   const load = useCallback(
@@ -150,6 +154,11 @@ export function CatalogueEditor() {
       <ProductEditor
         slug={editing}
         onBack={() => {
+          if (editableSlugFromSearch(window.location.search) !== null) {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('product');
+            window.history.replaceState(window.history.state, '', url);
+          }
           setEditing(null);
           void load(null);
         }}
