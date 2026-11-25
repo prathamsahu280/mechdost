@@ -21,22 +21,15 @@ import {
 } from '../codes';
 import { InternalPathDto } from '../paths';
 import { USTAAD_VIDEO_RAISE_REASONS } from '../settings';
+import { normaliseUstaadPhrase } from '../admin-rules';
 
-// ── Locked items ─────────────────────────────────────────────────────────────────────────────────────────────
-
-export const USTAAD_LOCKED_ITEMS = [
-  /** SR-8 founder ruling: verification and every Bada/Master promotion need a staff approval row. */
-  { item: 'ustaad.verify.staff_final_approval', value: true },
-  /** SR-41, ASCI: the label on every promotion, in its first line. */
-  { item: 'ustaad.promo.label', value: { en: 'Sponsored', hi: 'प्रायोजित' } },
-  /** SR-29: changing the edges would let differencing reveal positions. Kilometres. */
-  { item: 'ustaad.loc.distance_bands', value: [2, 5, 10] },
-] as const;
-export type UstaadLockedItem = (typeof USTAAD_LOCKED_ITEMS)[number]['item'];
-
-export function isUstaadLockedItem(key: string): key is UstaadLockedItem {
-  return USTAAD_LOCKED_ITEMS.some((l) => l.item === key);
-}
+export {
+  USTAAD_LOCKED_ITEMS,
+  isUstaadLockedItem,
+  normaliseUstaadPhrase,
+  promotionMoveAllowed,
+  type UstaadLockedItem,
+} from '../admin-rules';
 
 // ── Settings ─────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -84,11 +77,6 @@ export const UstaadSettingsSavedDto = z.object({
 
 // ── Shared pieces ────────────────────────────────────────────────────────────────────────────────────────────
 
-/** NFC, lower case, trimmed, inner spaces collapsed: the `phrase_norm` / alias form the filters match on. */
-export function normaliseUstaadPhrase(text: string): string {
-  return text.normalize('NFC').trim().toLowerCase().replace(/\s+/g, ' ');
-}
-
 const textEn = (max: number) => z.string().trim().min(1).max(max);
 const textHi = (max: number) => z.string().trim().min(1).max(max);
 const optionalText = (max: number) => z.string().trim().max(max);
@@ -120,7 +108,11 @@ export const LevelRuleWriteDto = z
   })
   .strict();
 export const LevelRuleUpdateDto = LevelRuleWriteDto.extend({ version: Version }).strict();
-export const LevelRuleRowDto = LevelRuleWriteDto.extend({ id: z.string(), version: z.number().int() });
+export const LevelRuleRowDto = z.object({
+  ...LevelRuleWriteDto.shape,
+  id: z.string(),
+  version: z.number().int(),
+});
 
 // ── Badges ───────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -150,7 +142,7 @@ export const BadgeWriteDto = z
   })
   .strict();
 export const BadgeUpdateDto = BadgeWriteDto.extend({ version: Version }).strict();
-export const BadgeRowDto = BadgeWriteDto.extend({ id: z.string(), version: z.number().int() });
+export const BadgeRowDto = z.object({ ...BadgeWriteDto.shape, id: z.string(), version: z.number().int() });
 
 // ── Tags ─────────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -219,7 +211,7 @@ export const ReasonWriteDto = z
   })
   .strict();
 export const ReasonUpdateDto = ReasonWriteDto.omit({ code: true }).extend({ version: Version }).strict();
-export const ReasonRowDto = ReasonWriteDto.extend({ version: z.number().int() });
+export const ReasonRowDto = z.object({ ...ReasonWriteDto.shape, version: z.number().int() });
 
 // ── Reach cities ─────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -234,23 +226,6 @@ export const ReachCityRowDto = z.object({
 });
 
 // ── Promotions ───────────────────────────────────────────────────────────────────────────────────────────────
-
-/** Moves an admin may make; `live` is reached by the schedule (worker), never by hand. */
-const PROMOTION_MOVES: Record<
-  (typeof PROMOTION_STATES)[number],
-  readonly (typeof PROMOTION_STATES)[number][]
-> = {
-  draft: ['scheduled', 'ended'],
-  scheduled: ['draft', 'ended'],
-  live: ['ended'],
-  ended: [],
-};
-export function promotionMoveAllowed(
-  from: (typeof PROMOTION_STATES)[number],
-  to: (typeof PROMOTION_STATES)[number],
-): boolean {
-  return PROMOTION_MOVES[from].includes(to);
-}
 
 const promotionFields = {
   slot: z.enum(PROMOTION_SLOTS),
@@ -317,7 +292,11 @@ export const TutorialCardWriteDto = z
   })
   .strict();
 export const TutorialCardUpdateDto = TutorialCardWriteDto.extend({ version: Version }).strict();
-export const TutorialCardRowDto = TutorialCardWriteDto.extend({ id: z.string(), version: z.number().int() });
+export const TutorialCardRowDto = z.object({
+  ...TutorialCardWriteDto.shape,
+  id: z.string(),
+  version: z.number().int(),
+});
 
 export const CoachmarkWriteDto = z
   .object({
@@ -329,7 +308,11 @@ export const CoachmarkWriteDto = z
   })
   .strict();
 export const CoachmarkUpdateDto = CoachmarkWriteDto.extend({ version: Version }).strict();
-export const CoachmarkRowDto = CoachmarkWriteDto.extend({ id: z.string(), version: z.number().int() });
+export const CoachmarkRowDto = z.object({
+  ...CoachmarkWriteDto.shape,
+  id: z.string(),
+  version: z.number().int(),
+});
 
 // ── Inferred types (the db package has no zod of its own) ───────────────────────────────────────────────────
 export type LevelRuleWrite = z.infer<typeof LevelRuleWriteDto>;
@@ -345,3 +328,23 @@ export type PromotionWrite = Omit<z.infer<typeof PromotionWriteDto>, 'label'>;
 export type PromotionMove = z.infer<typeof PromotionMoveDto>;
 export type TutorialCardWrite = z.infer<typeof TutorialCardWriteDto>;
 export type CoachmarkWrite = z.infer<typeof CoachmarkWriteDto>;
+
+// ── List responses (the web parses these; it has no zod of its own) ────────────────────────────────────────
+export const LevelRuleListDto = z.object({ levels: z.array(LevelRuleRowDto) });
+export const BadgeListDto = z.object({ badges: z.array(BadgeRowDto) });
+export const TagListDto = z.object({ tags: z.array(TagRowDto) });
+export const WordListDto = z.object({ words: z.array(WordRowDto) });
+export const ReasonListDto = z.object({ reasons: z.array(ReasonRowDto) });
+export const ReachCityListDto = z.object({ cities: z.array(ReachCityRowDto) });
+export const PromotionListDto = z.object({ promotions: z.array(PromotionRowDto) });
+export const TutorialCardListDto = z.object({ cards: z.array(TutorialCardRowDto) });
+export const CoachmarkListDto = z.object({ coachmarks: z.array(CoachmarkRowDto) });
+export type LevelRuleRow = z.infer<typeof LevelRuleRowDto>;
+export type BadgeRow = z.infer<typeof BadgeRowDto>;
+export type TagRow = z.infer<typeof TagRowDto>;
+export type WordRow = z.infer<typeof WordRowDto>;
+export type ReasonRow = z.infer<typeof ReasonRowDto>;
+export type ReachCityRow = z.infer<typeof ReachCityRowDto>;
+export type PromotionRow = z.infer<typeof PromotionRowDto>;
+export type TutorialCardRow = z.infer<typeof TutorialCardRowDto>;
+export type CoachmarkRow = z.infer<typeof CoachmarkRowDto>;

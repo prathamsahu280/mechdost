@@ -19,6 +19,7 @@ import { adminExportRoutes } from './routes/admin-exports';
 import { adminNotificationRoutes } from './routes/admin-notifications';
 import { adminOrderRoutes } from './routes/admin-orders';
 import { adminSettingsRoutes } from './routes/admin-settings';
+import { adminUstaadSettingsRoutes } from './routes/admin-ustaad-settings';
 import { adminErrorRoutes } from './routes/admin-errors';
 import { assistantRoutes } from './routes/assistant';
 import { authRoutes } from './routes/auth';
@@ -144,6 +145,8 @@ export function createApp(deps: AppDeps) {
   v1.route('/', adminPriceRoutes(deps, sessions));
   v1.route('/', adminOrderRoutes(deps, sessions));
   v1.route('/', adminSettingsRoutes(deps, sessions));
+  // Admin → Ustaad Network settings and tables (spec 23, task G1); never behind the `ustaad.access` switch.
+  v1.route('/', adminUstaadSettingsRoutes(deps, sessions));
   v1.route('/', adminAnalyticsRoutes(deps, sessions));
   v1.route('/', adminErrorRoutes(deps, sessions));
   v1.route('/', adminContentRoutes(deps, sessions));

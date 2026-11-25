@@ -14,23 +14,26 @@
  */
 import { and, asc, eq, inArray, isNull, like, ne, sql } from 'drizzle-orm';
 import type { UstaadAccessMode } from '@mechdost/shared/ustaad/codes';
+// Runtime helpers from the Zod-free module (L101); the DTO module is imported for types only.
 import {
   isUstaadLockedItem,
   normaliseUstaadPhrase,
   promotionMoveAllowed,
-  type BadgeWrite,
-  type CoachmarkWrite,
-  type LevelRuleWrite,
-  type PromotionMove,
-  type PromotionWrite,
-  type ReachCityWrite,
-  type ReasonUpdate,
-  type ReasonWrite,
-  type TagMerge,
-  type TagWrite,
-  type TutorialCardWrite,
-  type WordUpdate,
-  type WordWrite,
+} from '@mechdost/shared/ustaad/admin-rules';
+import type {
+  BadgeWrite,
+  CoachmarkWrite,
+  LevelRuleWrite,
+  PromotionMove,
+  PromotionWrite,
+  ReachCityWrite,
+  ReasonUpdate,
+  ReasonWrite,
+  TagMerge,
+  TagWrite,
+  TutorialCardWrite,
+  WordUpdate,
+  WordWrite,
 } from '@mechdost/shared/ustaad/dto/admin';
 import {
   USTAAD_SETTINGS,
