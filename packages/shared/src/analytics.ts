@@ -3,6 +3,7 @@ import { redactPath } from './analytics-path';
 import { scrubFreeText } from './privacy';
 import { COUPON_FUNDERS, COUPON_REASONS } from './coupon';
 import { ORDER_CANCEL_REASONS } from './state';
+import { VEHICLE_SEGMENTS } from './vehicle-segments';
 
 /**
  * Server-side analytics events (spec 12; hard rules 9 and 16). Emitted by the API inside the same transaction
@@ -652,6 +653,15 @@ export const CLIENT_EVENT_SCHEMAS = {
       had_suggestion: z.boolean(),
     })
     .strict(),
+  // Vehicle segments (design 2026-11-25): the shop's segment chips changed (codes and a count; no text) and a home
+  // "Shop by vehicle" tile was opened.
+  shop_segment_filtered: z
+    .object({
+      segments: z.array(z.enum(VEHICLE_SEGMENTS)).max(VEHICLE_SEGMENTS.length),
+      count: z.number().int().min(0).max(VEHICLE_SEGMENTS.length),
+    })
+    .strict(),
+  home_segment_tile_clicked: z.object({ segment: z.enum(VEHICLE_SEGMENTS) }).strict(),
   // `source` is optional so events from tabs opened before comparison existed still pass.
   add_to_cart: z
     .object({ slug: id, qty: z.number().int().min(1).max(99), source: z.enum(['compare']).optional() })
@@ -757,7 +767,16 @@ export const CLIENT_EVENT_SCHEMAS = {
   location_detected: z.object({ source: z.enum(['finder', 'map']), pincodeFound: z.boolean() }).strict(),
   admin_site_change: z
     .object({
-      area: z.enum(['content', 'layout', 'categories', 'settings', 'policies', 'company', 'search_synonyms']),
+      area: z.enum([
+        'content',
+        'layout',
+        'categories',
+        'settings',
+        'policies',
+        'company',
+        'search_synonyms',
+        'segments',
+      ]),
       action: z.enum(['save', 'reset', 'publish', 'restore', 'preview']),
       fields: z.number().int().min(0).max(1000),
     })

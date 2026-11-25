@@ -200,6 +200,12 @@
       "q6": "Can I order in bulk for my garage or fleet?",
       "a6": "Yes. Ask for a bulk price from any product page or your cart and agree the final price with our team in a chat.",
       "more": "Still have a question? Ask MechDost on WhatsApp"
+    },
+    "vehicles": {
+      "eyebrow": "Shop by vehicle",
+      "title": "Parts for trucks, tractors and machines",
+      "lead": "Tyres, batteries and oils for the vehicles that earn a living.",
+      "viewAll": "All vehicle types"
     }
   },
   "footer": {
@@ -2175,6 +2181,7 @@
     "layout_down": "Move {name} down",
     "section_trust": "Trust strip",
     "section_categories": "Category shortcuts",
+    "section_vehicles": "Shop by vehicle (trucks, tractors, machines)",
     "section_products": "Popular products",
     "section_route": "How your order reaches you",
     "section_service": "Know the work. Approve the cost.",
@@ -3285,7 +3292,29 @@
     "cat_err_LAST_VARIANT": "A live product needs one active size. Archive the product instead.",
     "cat_err_VARIANT_LABEL": "Enter the size.",
     "cat_err_VARIANT_OPTION": "That size text is not valid.",
-    "cat_err_BARCODE": "A barcode is 4 to 32 letters or digits."
+    "cat_err_BARCODE": "A barcode is 4 to 32 letters or digits.",
+    "seg_title": "Vehicle segments",
+    "seg_intro": "The vehicle types shoppers filter by. Rename them, change the order or switch one off. Switching off hides the filter and the tag; the products stay.",
+    "seg_open": "Edit vehicle segments",
+    "seg_close": "Close",
+    "seg_nameEn": "Name (English)",
+    "seg_nameHi": "Name (Hindi)",
+    "seg_descEn": "Description (English)",
+    "seg_descHi": "Description (Hindi)",
+    "seg_sort": "Order",
+    "seg_active": "Shown to shoppers",
+    "seg_products": "{count, plural, one {# live product} other {# live products}}",
+    "seg_save": "Save",
+    "seg_saved": "Saved.",
+    "seg_empty": "No segments found.",
+    "seg_demoNote": "Demo: your changes are kept in this browser and change the shop filter chips here only. In the live site they are saved for everyone.",
+    "seg_err_stale": "Someone else changed this segment. Reload and try again.",
+    "seg_err_generic": "Could not save. Try again.",
+    "cat_segments": "Vehicle segments",
+    "cat_segmentsHint": "Which vehicles this product is for. Shown as a filter and a tag in the shop.",
+    "cat_saveSegments": "Save vehicle segments",
+    "cat_err_PRODUCT_SEGMENTS": "Unknown vehicle segment.",
+    "syn_kind_segment": "Vehicle segment"
   },
   "shopGiveUp": {
     "action": "Can't fulfil this order",
@@ -6416,5 +6445,34 @@
     "admin_disputed": "Bill questioned",
     "set_billDispute": "Customers can question a bill (\"Question this bill\" opens a support request)",
     "err_RSA_DISPUTE_OFF": "Questioning a bill is not available here. Contact MechDost support."
+  },
+  "segments": {
+    "two_wheeler": "Two-wheeler",
+    "three_wheeler": "Three-wheeler",
+    "car_suv": "Car & SUV",
+    "light_commercial": "Light commercial",
+    "truck_bus": "Truck & bus",
+    "tractor_farm": "Tractor & farm",
+    "construction_otr": "Construction & OTR",
+    "not_vehicle": "Not a vehicle",
+    "desc_two_wheeler": "Bikes and scooters",
+    "desc_three_wheeler": "Autos, e-rickshaws and loaders",
+    "desc_car_suv": "Hatchbacks, sedans and SUVs",
+    "desc_light_commercial": "Pickups, tempos and mini trucks",
+    "desc_truck_bus": "Heavy trucks, tippers and buses",
+    "desc_tractor_farm": "Tractors and farm machines",
+    "desc_construction_otr": "Earth movers, loaders and off-the-road machines",
+    "desc_not_vehicle": "Inverters, home power, gensets and tools",
+    "groupLabel": "Kind of vehicle",
+    "groupHint": "Choose one or more. Nothing chosen shows every vehicle.",
+    "all": "All vehicles",
+    "chip": "{name} ({count})",
+    "chipAria": "{name}, {count, plural, =0 {no products} one {# product} other {# products}}",
+    "selected": "{count, plural, one {# vehicle type selected} other {# vehicle types selected}}",
+    "cleared": "Vehicle types cleared",
+    "suitableFor": "Suitable for",
+    "tagFor": "For {name}",
+    "tileCount": "{count, plural, =0 {Coming soon} one {# product} other {# products}}",
+    "tileOpen": "Shop {name}"
   }
 }

@@ -6,6 +6,7 @@ import { routing, type Locale } from '@/i18n/routing';
 import { fetchCataloguePage, type ApiSort } from '@/lib/catalogue/api-source';
 import { DATA_MODE } from '@/lib/data-mode';
 import { isVehicleType, type VehicleType } from '@mechdost/shared/vehicles';
+import { isVehicleSegment, VEHICLE_SEGMENTS, type VehicleSegment } from '@mechdost/shared/vehicle-segments';
 
 /** What the shop listing asks the API for; the same values the page reads from its URL. */
 export interface ListingQuery {
@@ -15,6 +16,8 @@ export interface ListingQuery {
   sort: ApiSort | null;
   /** Only products tagged for this vehicle type (decision 2026-11-12). */
   vehicle: VehicleType | null;
+  /** Only products in any of these vehicle segments (design 2026-11-25). */
+  segments: VehicleSegment[];
 }
 
 const SORTS: readonly ApiSort[] = ['relevance', 'newest', 'price_asc', 'price_desc'];
@@ -28,8 +31,21 @@ function parse(input: ListingQuery, cursor: string): ListingQuery {
     throw new Error('bad category');
   if (input.sort !== null && !SORTS.includes(input.sort)) throw new Error('bad sort');
   if (input.vehicle !== null && !isVehicleType(input.vehicle)) throw new Error('bad vehicle');
+  if (
+    !Array.isArray(input.segments) ||
+    input.segments.length > VEHICLE_SEGMENTS.length ||
+    !input.segments.every(isVehicleSegment)
+  )
+    throw new Error('bad segments');
   if (typeof cursor !== 'string' || cursor.length === 0 || cursor.length > 512) throw new Error('bad cursor');
-  return { locale, q: input.q, category: input.category, sort: input.sort, vehicle: input.vehicle };
+  return {
+    locale,
+    q: input.q,
+    category: input.category,
+    sort: input.sort,
+    vehicle: input.vehicle,
+    segments: input.segments,
+  };
 }
 
 /**
@@ -49,11 +65,15 @@ export async function loadMoreCards(
     category: query.category ?? undefined,
     sort: query.sort ?? undefined,
     vehicle: query.vehicle ?? undefined,
+    segments: query.segments,
     cursor,
     restartOnBadCursor: false,
   });
   return {
-    cards: page.items.map((p) => ({ slug: p.slug, node: <ProductCard key={p.slug} product={p} /> })),
+    cards: page.items.map((p) => ({
+      slug: p.slug,
+      node: <ProductCard key={p.slug} product={p} segmentFilter={query.segments} />,
+    })),
     nextCursor: page.nextCursor,
   };
 }

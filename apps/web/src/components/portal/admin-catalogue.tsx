@@ -15,6 +15,9 @@ const SearchSynonyms = dynamic(() => import('./admin-search-synonyms').then((m) 
   ssr: false,
 });
 
+/** The vehicle segment editor (design 2026-11-25): live through the API, in the demo against the browser store. */
+const Segments = dynamic(() => import('./admin-segments').then((m) => m.AdminSegments), { ssr: false });
+
 /**
  * Admin → Catalogue (plan 2026-11-13 admin catalogue + PIN prices, Task 5; spec 08): product texts in English and
  * Hindi, vehicle fit, pack sizes and customer prices per city and PIN. It edits the real catalogue through the API,
@@ -27,10 +30,14 @@ export function AdminCatalogue() {
       {AUTH_MODE === 'firebase' ? (
         <>
           <CatalogueEditor />
+          <Segments />
           <SearchSynonyms />
         </>
       ) : (
-        <p className={`${adminCard} text-sm font-bold text-ink`}>{t('cat_demoNotice')}</p>
+        <>
+          <p className={`${adminCard} text-sm font-bold text-ink`}>{t('cat_demoNotice')}</p>
+          <Segments />
+        </>
       )}
     </section>
   );

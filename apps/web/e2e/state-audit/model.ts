@@ -153,6 +153,13 @@ export const ALL_PRODUCTS = [
   'digital-tyre-pressure-gauge',
   'ev-12v-auxiliary-battery',
   'ev-portable-charger-15a',
+  'mrf-steel-muscle-1000r20-truck-tyre',
+  'apollo-endurace-lt-700r16-tyre',
+  'ceat-earthmax-175-25-otr-tyre',
+  'exide-xpress-hd-180ah-truck-battery',
+  'amaron-pro-tractor-88ah-battery',
+  'servo-agri-super-15w40-7l',
+  'exide-inva-master-150ah-inverter-battery',
 ] as const;
 
 /** Cart contents by state value (`mechdost-cart` lines). */
@@ -740,6 +747,53 @@ export const COMPONENTS: readonly ComponentDef[] = [
     sweep: 6,
   },
   {
+    // Design 2026-11-25: the vehicle-type chips above the results (multi-select, counts, 44 px, scroll inside their box).
+    code: 'SHOP-SEGMENT-CHIPS',
+    page: 'Shop (/shop)',
+    component:
+      'Vehicle-type chips with counts (several on at once): at least 44 px, inside the page, no overlap, the row scrolls inside its own box (never the page), focus ring visible',
+    path: (r) => String(r.route),
+    scope: 'main [data-slot="segment-chips"]',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      {
+        name: 'route',
+        values: ['/shop', '/shop?segment=truck_bus', '/shop?segment=truck_bus,tractor_farm,construction_otr'],
+      },
+    ],
+    checks: ['present', 'inside', 'overlap', 'covered', 'tap', 'hscroll', 'focus', 'console'],
+    sweep: 8,
+    core: coreAt(
+      [390],
+      (r) => r.theme === 'light' && r.locale === 'en' && String(r.route).includes('construction'),
+    ),
+  },
+  {
+    code: 'SHOP-SEGMENT-TAG',
+    page: 'Shop (/shop)',
+    component:
+      'Vehicle-type tag on a product card (one, the first segment): at least 24 px, inside its card, never overlapping the info, save or edit buttons or the other badges',
+    path: '/shop?segment=truck_bus',
+    scope: 'main article',
+    strategy: 'pairwise',
+    params: [...env, { name: 'stress', values: ['none', 'long-text', 'mixed-shape'] }],
+    checks: [...BASE_CHECKS, 'aligned', 'offphoto'],
+    align: CARD_ALIGN,
+    sweep: 6,
+  },
+  {
+    code: 'HOME-VEHICLE-TILES',
+    page: 'Home',
+    component: 'Shop by vehicle: Truck & bus, Tractor & farm and Construction & OTR tiles',
+    path: '/',
+    scope: 'section[aria-labelledby="vehicles-title"]',
+    strategy: 'pairwise',
+    params: [...env],
+    checks: ['present', 'inside', 'overlap', 'covered', 'clipped', 'tap', 'hscroll', 'focus', 'console'],
+    sweep: 4,
+  },
+  {
     code: 'SHOP-ACTION',
     page: 'Shop (/shop)',
     component: 'Card actions clicked, then every card re-checked (cross-entity sync)',
@@ -778,6 +832,8 @@ export const COMPONENTS: readonly ComponentDef[] = [
           '/shop?category=ev-essentials&sort=price_desc',
           '/shop?vehicle=2W&sort=price_asc',
           '/shop?q=battery&vehicle=4W',
+          '/shop?segment=truck_bus',
+          '/shop?segment=truck_bus,tractor_farm&category=tyres',
           '/shop?q=zzzz-no-match',
         ],
       },

@@ -1,4 +1,6 @@
 import type { VehicleType } from '@mechdost/shared/vehicles';
+import { formatSegmentParam, type VehicleSegment } from '@mechdost/shared/vehicle-segments';
+import type { SegmentFacet } from '@mechdost/shared/vehicle-segments-api';
 import {
   CatalogueCategoriesSchema,
   CataloguePageSchema,
@@ -8,6 +10,7 @@ import {
   type CatalogueProduct,
 } from '@mechdost/shared/catalogue';
 import { readAttributes } from '@mechdost/shared/product-attributes';
+import { CatalogueSegmentsSchema } from '@mechdost/shared/vehicle-segments-api';
 import { SuggestResponseSchema } from '@mechdost/shared/search-api';
 import { categoryFromSlug } from '@/demo/catalogue';
 import type { Locale } from '@/i18n/routing';
@@ -33,6 +36,8 @@ export interface CatalogueQuery {
   category?: string;
   sort?: ApiSort;
   vehicle?: VehicleType;
+  /** Only products in any of these vehicle segments (design 2026-11-25). */
+  segments?: readonly VehicleSegment[];
   cursor?: string;
   limit?: number;
   /** A shared link starts again at page 1 on a bad cursor; "Load more" must fail instead (review B6). */
@@ -51,7 +56,7 @@ async function get(url: URL, next: { revalidate: number; tags: string[] }): Prom
 
 export async function fetchCataloguePage(
   query: CatalogueQuery,
-): Promise<{ items: CardView[]; nextCursor: string | null }> {
+): Promise<{ items: CardView[]; nextCursor: string | null; segmentFacets: SegmentFacet[] }> {
   const url = new URL(`${base()}/v1/catalogue/products`);
   url.searchParams.set('locale', query.locale);
   url.searchParams.set('city', CITY);
@@ -61,6 +66,8 @@ export async function fetchCataloguePage(
   if (query.category) url.searchParams.set('category', query.category);
   if (query.sort) url.searchParams.set('sort', query.sort);
   if (query.vehicle) url.searchParams.set('vehicle', query.vehicle);
+  const segment = formatSegmentParam(query.segments ?? []);
+  if (segment) url.searchParams.set('segment', segment);
   if (query.cursor) url.searchParams.set('cursor', query.cursor);
 
   let res = await get(url, { revalidate: 30, tags: ['catalogue'] });
@@ -71,7 +78,7 @@ export async function fetchCataloguePage(
   }
   if (!res.ok) throw new Error(`catalogue API ${String(res.status)}`);
   const page = CataloguePageSchema.parse(await res.json());
-  return { items: page.items.map(apiCard), nextCursor: page.nextCursor };
+  return { items: page.items.map(apiCard), nextCursor: page.nextCursor, segmentFacets: page.facets.segments };
 }
 
 /** Visible categories (top level and sub-categories) in the page language; the shop resolves a sub-category slug. */
@@ -83,6 +90,15 @@ export async function fetchCatalogueCategories(
   const res = await get(url, { revalidate: 300, tags: ['catalogue'] });
   if (!res.ok) throw new Error(`catalogue API ${String(res.status)}`);
   return CatalogueCategoriesSchema.parse(await res.json()).categories;
+}
+
+/** Active vehicle segments with live counts in the page language (the home "Shop by vehicle" tiles). */
+export async function fetchCatalogueSegments(locale: Locale) {
+  const url = new URL(`${base()}/v1/catalogue/segments`);
+  url.searchParams.set('locale', locale);
+  const res = await get(url, { revalidate: 300, tags: ['catalogue'] });
+  if (!res.ok) throw new Error(`catalogue API ${String(res.status)}`);
+  return CatalogueSegmentsSchema.parse(await res.json()).segments;
 }
 
 /** "Did you mean" for a search that found nothing (closest brand, category or product name), or null. */
@@ -129,6 +145,7 @@ export function apiCard(c: ApiCard): CardView {
     spec: c.specSummary,
     compatibility: null,
     vehicleTypes: c.vehicleTypes,
+    segments: c.segments,
     price: c.offer ? { pricePaise: c.offer.pricePaise, mrpPaise: c.offer.mrpPaise } : null,
     pack: c.offer?.netQuantity ?? null,
     availability: c.offer ? 'in_stock' : 'on_request',

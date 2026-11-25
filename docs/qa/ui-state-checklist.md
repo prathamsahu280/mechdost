@@ -86,8 +86,11 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | SHOP-CARD             | Shop (/shop)                                                               | Product card × compare list × cart (full cross)                                                                                                                                                                                                                                 | cross    | 128      | 14      |
 | SHOP-CARD-ADMIN       | Shop (/shop)                                                               | Product card as catalogue staff (storefront Edit shortcut on the picture): nothing overlaps or covers the ⓘ and ♡ buttons, everything stays inside the card                                                                                                                     | pairwise | 24       | 0       |
 | SHOP-ADMIN-EDIT       | Shop (/shop)                                                               | Storefront Edit shortcut (pencil link) on a card: shows for catalogue staff, at least 24 px, inside its card, no overlap                                                                                                                                                        | cross    | 16       | 0       |
+| SHOP-SEGMENT-CHIPS    | Shop (/shop)                                                               | Vehicle-type chips with counts (several on at once): at least 44 px, inside the page, no overlap, the row scrolls inside its own box (never the page), focus ring visible                                                                                                       | pairwise | 24       | 0       |
+| SHOP-SEGMENT-TAG      | Shop (/shop)                                                               | Vehicle-type tag on a product card (one, the first segment): at least 24 px, inside its card, never overlapping the info, save or edit buttons or the other badges                                                                                                              | pairwise | 24       | 0       |
+| HOME-VEHICLE-TILES    | Home                                                                       | Shop by vehicle: Truck & bus, Tractor & farm and Construction & OTR tiles                                                                                                                                                                                                       | pairwise | 16       | 0       |
 | SHOP-ACTION           | Shop (/shop)                                                               | Card actions clicked, then every card re-checked (cross-entity sync)                                                                                                                                                                                                            | cross    | 40       | 2       |
-| SHOP-FILTERS          | Shop (/shop)                                                               | Search, category chips, vehicle chips, sort, results count, empty result                                                                                                                                                                                                        | pairwise | 48       | 6       |
+| SHOP-FILTERS          | Shop (/shop)                                                               | Search, category chips, vehicle chips, sort, results count, empty result                                                                                                                                                                                                        | pairwise | 64       | 8       |
 | SHOP-SEARCH           | Shop (/shop)                                                               | Search box with suggestions (combobox): focus loads the list, keyboard and pointer, empty and filled                                                                                                                                                                            | pairwise | 16       | 0       |
 | SHOP-POPOVER          | Shop (/shop)                                                               | Quick-details popover (ⓘ) on the first and the last card of a row                                                                                                                                                                                                               | pairwise | 16       | 0       |
 | SHOP-TRAY             | Shop (/shop)                                                               | Compare tray (count, open, clear) over the listing                                                                                                                                                                                                                              | cross    | 32       | 2       |
@@ -214,7 +217,7 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | API-ADM-HEADER        | Admin console, real sign-in                                                | Page pattern: one header per section (title = side bar item, one-line description, primary action on the right), status badges, empty states, table boxes; 320 to 1920 px, both themes, English and Hindi                                                                       | pairwise | 138      | 0       |
 | API-NAV-ADMIN         | Navigation, real sign-in                                                   | Admin section bar with every real-mode section (Analytics, Refunds, Errors included): current item, scroll, walk                                                                                                                                                                | cross    | 184      | 0       |
 | API-NAV-ACCOUNT       | Navigation, real sign-in                                                   | Account section bar in a real-sign-in build: current item, scroll, walk                                                                                                                                                                                                         | cross    | 104      | 0       |
-| **Total**             |                                                                            |                                                                                                                                                                                                                                                                                 |          | **5135** | **105** |
+| **Total**             |                                                                            |                                                                                                                                                                                                                                                                                 |          | **5215** | **107** |
 
 ## Chrome
 
@@ -1003,6 +1006,89 @@ Full cross of the high-risk dimensions, the rest pairwise; 16 states; scope `mai
 - [ ] SHOP-ADMIN-EDIT-015 · 1920px · light · en · admin · world=empty · /shop · asserts: present inside overlap covered tap hscroll focus console
 - [ ] SHOP-ADMIN-EDIT-016 · 1920px · dark · hi · admin · world=empty · /shop · asserts: present inside overlap covered tap hscroll focus console hindi
 
+### SHOP-SEGMENT-CHIPS — Vehicle-type chips with counts (several on at once): at least 44 px, inside the page, no overlap, the row scrolls inside its own box (never the page), focus ring visible
+
+Pairwise (all pairs of values); 24 states; scope `main [data-slot="segment-chips"]`.
+
+- [ ] SHOP-SEGMENT-CHIPS-001 · 320px · light · en · signed out · world=empty · /shop · asserts: present inside overlap covered tap hscroll focus console axe
+- [ ] SHOP-SEGMENT-CHIPS-002 · 320px · dark · hi · signed out · world=empty · /shop?segment=truck_bus · asserts: present inside overlap covered tap hscroll focus console hindi
+- [ ] SHOP-SEGMENT-CHIPS-003 · 390px · light · hi · signed out · world=empty · /shop?segment=truck_bus,tractor_farm,construction_otr · asserts: present inside overlap covered tap hscroll focus console hindi
+- [ ] SHOP-SEGMENT-CHIPS-004 · 390px · dark · en · signed out · world=empty · /shop · asserts: present inside overlap covered tap hscroll focus console
+- [ ] SHOP-SEGMENT-CHIPS-005 · 480px · light · en · signed out · world=empty · /shop?segment=truck_bus · asserts: present inside overlap covered tap hscroll focus console axe
+- [ ] SHOP-SEGMENT-CHIPS-006 · 480px · dark · hi · signed out · world=empty · /shop?segment=truck_bus,tractor_farm,construction_otr · asserts: present inside overlap covered tap hscroll focus console hindi
+- [ ] SHOP-SEGMENT-CHIPS-007 · 768px · light · en · signed out · world=empty · /shop?segment=truck_bus,tractor_farm,construction_otr · asserts: present inside overlap covered tap hscroll focus console
+- [ ] SHOP-SEGMENT-CHIPS-008 · 768px · dark · hi · signed out · world=empty · /shop · asserts: present inside overlap covered tap hscroll focus console hindi
+- [ ] SHOP-SEGMENT-CHIPS-009 · 1024px · light · en · signed out · world=empty · /shop?segment=truck_bus · asserts: present inside overlap covered tap hscroll focus console axe
+- [ ] SHOP-SEGMENT-CHIPS-010 · 1024px · dark · hi · signed out · world=empty · /shop · asserts: present inside overlap covered tap hscroll focus console hindi
+- [ ] SHOP-SEGMENT-CHIPS-011 · 1280px · light · en · signed out · world=empty · /shop?segment=truck_bus · asserts: present inside overlap covered tap hscroll focus console
+- [ ] SHOP-SEGMENT-CHIPS-012 · 1280px · dark · hi · signed out · world=empty · /shop?segment=truck_bus,tractor_farm,construction_otr · asserts: present inside overlap covered tap hscroll focus console hindi
+- [ ] SHOP-SEGMENT-CHIPS-013 · 1440px · light · en · signed out · world=empty · /shop · asserts: present inside overlap covered tap hscroll focus console axe
+- [ ] SHOP-SEGMENT-CHIPS-014 · 1440px · dark · hi · signed out · world=empty · /shop?segment=truck_bus · asserts: present inside overlap covered tap hscroll focus console hindi
+- [ ] SHOP-SEGMENT-CHIPS-015 · 1920px · light · en · signed out · world=empty · /shop?segment=truck_bus,tractor_farm,construction_otr · asserts: present inside overlap covered tap hscroll focus console
+- [ ] SHOP-SEGMENT-CHIPS-016 · 1920px · dark · hi · signed out · world=empty · /shop · asserts: present inside overlap covered tap hscroll focus console hindi
+- [ ] SHOP-SEGMENT-CHIPS-017 · 320px · light · en · signed out · world=empty · /shop?segment=truck_bus,tractor_farm,construction_otr · asserts: present inside overlap covered tap hscroll focus console axe
+- [ ] SHOP-SEGMENT-CHIPS-018 · 390px · dark · hi · signed out · world=empty · /shop?segment=truck_bus · asserts: present inside overlap covered tap hscroll focus console hindi
+- [ ] SHOP-SEGMENT-CHIPS-019 · 480px · light · en · signed out · world=empty · /shop · asserts: present inside overlap covered tap hscroll focus console
+- [ ] SHOP-SEGMENT-CHIPS-020 · 768px · dark · hi · signed out · world=empty · /shop?segment=truck_bus · asserts: present inside overlap covered tap hscroll focus console hindi
+- [ ] SHOP-SEGMENT-CHIPS-021 · 1024px · light · en · signed out · world=empty · /shop?segment=truck_bus,tractor_farm,construction_otr · asserts: present inside overlap covered tap hscroll focus console axe
+- [ ] SHOP-SEGMENT-CHIPS-022 · 1280px · dark · hi · signed out · world=empty · /shop · asserts: present inside overlap covered tap hscroll focus console hindi
+- [ ] SHOP-SEGMENT-CHIPS-023 · 1440px · light · en · signed out · world=empty · /shop?segment=truck_bus,tractor_farm,construction_otr · asserts: present inside overlap covered tap hscroll focus console
+- [ ] SHOP-SEGMENT-CHIPS-024 · 1920px · dark · hi · signed out · world=empty · /shop?segment=truck_bus · asserts: present inside overlap covered tap hscroll focus console hindi
+
+### SHOP-SEGMENT-TAG — Vehicle-type tag on a product card (one, the first segment): at least 24 px, inside its card, never overlapping the info, save or edit buttons or the other badges
+
+Pairwise (all pairs of values); 24 states; scope `main article`.
+
+- [ ] SHOP-SEGMENT-TAG-001 · 320px · light · en · signed out · world=empty · /shop?segment=truck_bus · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto axe
+- [ ] SHOP-SEGMENT-TAG-002 · 320px · dark · hi · signed out · world=empty · /shop?segment=truck_bus · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-SEGMENT-TAG-003 · 390px · light · hi · signed out · world=empty · /shop?segment=truck_bus · stress=mixed-shape · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-SEGMENT-TAG-004 · 390px · dark · en · signed out · world=empty · /shop?segment=truck_bus · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto
+- [ ] SHOP-SEGMENT-TAG-005 · 480px · light · en · signed out · world=empty · /shop?segment=truck_bus · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto axe
+- [ ] SHOP-SEGMENT-TAG-006 · 480px · dark · hi · signed out · world=empty · /shop?segment=truck_bus · stress=mixed-shape · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-SEGMENT-TAG-007 · 768px · light · en · signed out · world=empty · /shop?segment=truck_bus · stress=mixed-shape · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto
+- [ ] SHOP-SEGMENT-TAG-008 · 768px · dark · hi · signed out · world=empty · /shop?segment=truck_bus · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-SEGMENT-TAG-009 · 1024px · light · en · signed out · world=empty · /shop?segment=truck_bus · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto axe
+- [ ] SHOP-SEGMENT-TAG-010 · 1024px · dark · hi · signed out · world=empty · /shop?segment=truck_bus · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-SEGMENT-TAG-011 · 1280px · light · en · signed out · world=empty · /shop?segment=truck_bus · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto
+- [ ] SHOP-SEGMENT-TAG-012 · 1280px · dark · hi · signed out · world=empty · /shop?segment=truck_bus · stress=mixed-shape · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-SEGMENT-TAG-013 · 1440px · light · en · signed out · world=empty · /shop?segment=truck_bus · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto axe
+- [ ] SHOP-SEGMENT-TAG-014 · 1440px · dark · hi · signed out · world=empty · /shop?segment=truck_bus · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-SEGMENT-TAG-015 · 1920px · light · en · signed out · world=empty · /shop?segment=truck_bus · stress=mixed-shape · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto
+- [ ] SHOP-SEGMENT-TAG-016 · 1920px · dark · hi · signed out · world=empty · /shop?segment=truck_bus · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-SEGMENT-TAG-017 · 320px · light · en · signed out · world=empty · /shop?segment=truck_bus · stress=mixed-shape · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto axe
+- [ ] SHOP-SEGMENT-TAG-018 · 390px · dark · hi · signed out · world=empty · /shop?segment=truck_bus · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-SEGMENT-TAG-019 · 480px · light · en · signed out · world=empty · /shop?segment=truck_bus · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto
+- [ ] SHOP-SEGMENT-TAG-020 · 768px · dark · hi · signed out · world=empty · /shop?segment=truck_bus · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-SEGMENT-TAG-021 · 1024px · light · en · signed out · world=empty · /shop?segment=truck_bus · stress=mixed-shape · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto axe
+- [ ] SHOP-SEGMENT-TAG-022 · 1280px · dark · hi · signed out · world=empty · /shop?segment=truck_bus · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-SEGMENT-TAG-023 · 1440px · light · en · signed out · world=empty · /shop?segment=truck_bus · stress=mixed-shape · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto
+- [ ] SHOP-SEGMENT-TAG-024 · 1920px · dark · hi · signed out · world=empty · /shop?segment=truck_bus · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+
+## Home
+
+### HOME-VEHICLE-TILES — Shop by vehicle: Truck & bus, Tractor & farm and Construction & OTR tiles
+
+Pairwise (all pairs of values); 16 states; scope `section[aria-labelledby="vehicles-title"]`.
+
+- [ ] HOME-VEHICLE-TILES-001 · 320px · light · en · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] HOME-VEHICLE-TILES-002 · 320px · dark · hi · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-VEHICLE-TILES-003 · 390px · light · hi · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-VEHICLE-TILES-004 · 390px · dark · en · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] HOME-VEHICLE-TILES-005 · 480px · light · en · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] HOME-VEHICLE-TILES-006 · 480px · dark · hi · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-VEHICLE-TILES-007 · 768px · light · en · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] HOME-VEHICLE-TILES-008 · 768px · dark · hi · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-VEHICLE-TILES-009 · 1024px · light · en · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] HOME-VEHICLE-TILES-010 · 1024px · dark · hi · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-VEHICLE-TILES-011 · 1280px · light · en · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] HOME-VEHICLE-TILES-012 · 1280px · dark · hi · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-VEHICLE-TILES-013 · 1440px · light · en · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] HOME-VEHICLE-TILES-014 · 1440px · dark · hi · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] HOME-VEHICLE-TILES-015 · 1920px · light · en · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] HOME-VEHICLE-TILES-016 · 1920px · dark · hi · signed out · world=empty · / · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+
+## Shop (/shop)
+
 ### SHOP-ACTION — Card actions clicked, then every card re-checked (cross-entity sync)
 
 Full cross of the high-risk dimensions, the rest pairwise; 40 states; scope `main article`.
@@ -1050,56 +1136,72 @@ Full cross of the high-risk dimensions, the rest pairwise; 40 states; scope `mai
 
 ### SHOP-FILTERS — Search, category chips, vehicle chips, sort, results count, empty result
 
-Pairwise (all pairs of values); 48 states; scope `main`.
+Pairwise (all pairs of values); 64 states; scope `main`.
 
 - [ ] SHOP-FILTERS-001 · 320px · light · en · signed out · world=empty · /shop · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto axe · core
 - [ ] SHOP-FILTERS-002 · 320px · dark · hi · signed out · world=empty · /shop?category=lubricants · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi axe · core
 - [ ] SHOP-FILTERS-003 · 390px · light · hi · signed out · world=empty · /shop?category=ev-essentials&sort=price_desc · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
 - [ ] SHOP-FILTERS-004 · 390px · dark · en · signed out · world=empty · /shop?vehicle=2W&sort=price_asc · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto
 - [ ] SHOP-FILTERS-005 · 480px · light · en · signed out · world=empty · /shop?q=battery&vehicle=4W · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto axe
-- [ ] SHOP-FILTERS-006 · 480px · dark · hi · signed out · world=empty · /shop?q=zzzz-no-match · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
-- [ ] SHOP-FILTERS-007 · 768px · light · en · signed out · world=empty · /shop?category=lubricants · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto
-- [ ] SHOP-FILTERS-008 · 768px · dark · hi · signed out · world=empty · /shop · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
-- [ ] SHOP-FILTERS-009 · 1024px · light · en · signed out · world=empty · /shop?q=zzzz-no-match · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto axe
-- [ ] SHOP-FILTERS-010 · 1024px · dark · hi · signed out · world=empty · /shop?q=battery&vehicle=4W · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
-- [ ] SHOP-FILTERS-011 · 1280px · light · en · signed out · world=empty · /shop?category=ev-essentials&sort=price_desc · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto
-- [ ] SHOP-FILTERS-012 · 1280px · dark · hi · signed out · world=empty · /shop?vehicle=2W&sort=price_asc · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
-- [ ] SHOP-FILTERS-013 · 1440px · light · en · signed out · world=empty · /shop?vehicle=2W&sort=price_asc · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto axe
-- [ ] SHOP-FILTERS-014 · 1440px · dark · hi · signed out · world=empty · /shop?category=ev-essentials&sort=price_desc · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
-- [ ] SHOP-FILTERS-015 · 1920px · light · en · signed out · world=empty · /shop · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto
-- [ ] SHOP-FILTERS-016 · 1920px · dark · hi · signed out · world=empty · /shop?category=lubricants · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
-- [ ] SHOP-FILTERS-017 · 320px · light · en · signed out · world=empty · /shop?category=ev-essentials&sort=price_desc · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto axe · core
-- [ ] SHOP-FILTERS-018 · 320px · dark · hi · signed out · world=empty · /shop?vehicle=2W&sort=price_asc · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi axe · core
+- [ ] SHOP-FILTERS-006 · 480px · dark · hi · signed out · world=empty · /shop?segment=truck_bus · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-FILTERS-007 · 768px · light · en · signed out · world=empty · /shop?segment=truck_bus,tractor_farm&category=tyres · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto
+- [ ] SHOP-FILTERS-008 · 768px · dark · hi · signed out · world=empty · /shop?q=zzzz-no-match · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-FILTERS-009 · 1024px · light · en · signed out · world=empty · /shop?category=lubricants · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto axe
+- [ ] SHOP-FILTERS-010 · 1024px · dark · hi · signed out · world=empty · /shop · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-FILTERS-011 · 1280px · light · en · signed out · world=empty · /shop?segment=truck_bus · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto
+- [ ] SHOP-FILTERS-012 · 1280px · dark · hi · signed out · world=empty · /shop?q=battery&vehicle=4W · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-FILTERS-013 · 1440px · light · en · signed out · world=empty · /shop?q=zzzz-no-match · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto axe
+- [ ] SHOP-FILTERS-014 · 1440px · dark · hi · signed out · world=empty · /shop?segment=truck_bus,tractor_farm&category=tyres · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-FILTERS-015 · 1920px · light · en · signed out · world=empty · /shop?category=ev-essentials&sort=price_desc · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto
+- [ ] SHOP-FILTERS-016 · 1920px · dark · hi · signed out · world=empty · /shop?vehicle=2W&sort=price_asc · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-FILTERS-017 · 320px · dark · en · signed out · world=empty · /shop?category=ev-essentials&sort=price_desc · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto axe · core
+- [ ] SHOP-FILTERS-018 · 320px · light · hi · signed out · world=empty · /shop?vehicle=2W&sort=price_asc · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi axe · core
 - [ ] SHOP-FILTERS-019 · 320px · light · en · signed out · world=empty · /shop?q=battery&vehicle=4W · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto axe · core
-- [ ] SHOP-FILTERS-020 · 320px · dark · hi · signed out · world=empty · /shop?q=zzzz-no-match · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi axe · core
-- [ ] SHOP-FILTERS-021 · 390px · light · en · signed out · world=empty · /shop · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto axe
-- [ ] SHOP-FILTERS-022 · 390px · dark · hi · signed out · world=empty · /shop?category=lubricants · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
-- [ ] SHOP-FILTERS-023 · 390px · light · en · signed out · world=empty · /shop?q=battery&vehicle=4W · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto
-- [ ] SHOP-FILTERS-024 · 390px · dark · hi · signed out · world=empty · /shop?q=zzzz-no-match · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
-- [ ] SHOP-FILTERS-025 · 480px · light · en · signed out · world=empty · /shop · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto axe
-- [ ] SHOP-FILTERS-026 · 480px · dark · hi · signed out · world=empty · /shop?category=lubricants · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
-- [ ] SHOP-FILTERS-027 · 480px · light · en · signed out · world=empty · /shop?category=ev-essentials&sort=price_desc · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto
-- [ ] SHOP-FILTERS-028 · 480px · dark · hi · signed out · world=empty · /shop?vehicle=2W&sort=price_asc · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
-- [ ] SHOP-FILTERS-029 · 768px · light · en · signed out · world=empty · /shop?category=ev-essentials&sort=price_desc · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto axe
-- [ ] SHOP-FILTERS-030 · 768px · dark · hi · signed out · world=empty · /shop?vehicle=2W&sort=price_asc · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
-- [ ] SHOP-FILTERS-031 · 768px · light · en · signed out · world=empty · /shop?q=battery&vehicle=4W · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto
-- [ ] SHOP-FILTERS-032 · 768px · dark · hi · signed out · world=empty · /shop?q=zzzz-no-match · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
-- [ ] SHOP-FILTERS-033 · 1024px · light · en · signed out · world=empty · /shop · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto axe
-- [ ] SHOP-FILTERS-034 · 1024px · dark · hi · signed out · world=empty · /shop?category=lubricants · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
-- [ ] SHOP-FILTERS-035 · 1024px · light · en · signed out · world=empty · /shop?category=ev-essentials&sort=price_desc · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto
-- [ ] SHOP-FILTERS-036 · 1024px · dark · hi · signed out · world=empty · /shop?vehicle=2W&sort=price_asc · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
-- [ ] SHOP-FILTERS-037 · 1280px · light · en · signed out · world=empty · /shop · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto axe
-- [ ] SHOP-FILTERS-038 · 1280px · dark · hi · signed out · world=empty · /shop?category=lubricants · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
-- [ ] SHOP-FILTERS-039 · 1280px · light · en · signed out · world=empty · /shop?q=battery&vehicle=4W · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto
-- [ ] SHOP-FILTERS-040 · 1280px · dark · hi · signed out · world=empty · /shop?q=zzzz-no-match · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
-- [ ] SHOP-FILTERS-041 · 1440px · light · en · signed out · world=empty · /shop · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto axe
-- [ ] SHOP-FILTERS-042 · 1440px · dark · hi · signed out · world=empty · /shop?category=lubricants · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
-- [ ] SHOP-FILTERS-043 · 1440px · light · en · signed out · world=empty · /shop?q=battery&vehicle=4W · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto
-- [ ] SHOP-FILTERS-044 · 1440px · dark · hi · signed out · world=empty · /shop?q=zzzz-no-match · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
-- [ ] SHOP-FILTERS-045 · 1920px · light · en · signed out · world=empty · /shop?category=ev-essentials&sort=price_desc · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto axe
-- [ ] SHOP-FILTERS-046 · 1920px · dark · hi · signed out · world=empty · /shop?vehicle=2W&sort=price_asc · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
-- [ ] SHOP-FILTERS-047 · 1920px · light · en · signed out · world=empty · /shop?q=battery&vehicle=4W · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto
-- [ ] SHOP-FILTERS-048 · 1920px · dark · hi · signed out · world=empty · /shop?q=zzzz-no-match · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-FILTERS-020 · 320px · dark · hi · signed out · world=empty · /shop?segment=truck_bus · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi axe · core
+- [ ] SHOP-FILTERS-021 · 320px · light · en · signed out · world=empty · /shop?segment=truck_bus,tractor_farm&category=tyres · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto axe · core
+- [ ] SHOP-FILTERS-022 · 320px · dark · hi · signed out · world=empty · /shop?q=zzzz-no-match · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi axe · core
+- [ ] SHOP-FILTERS-023 · 390px · light · en · signed out · world=empty · /shop · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto
+- [ ] SHOP-FILTERS-024 · 390px · dark · hi · signed out · world=empty · /shop?category=lubricants · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-FILTERS-025 · 390px · light · en · signed out · world=empty · /shop?q=battery&vehicle=4W · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto axe
+- [ ] SHOP-FILTERS-026 · 390px · dark · hi · signed out · world=empty · /shop?segment=truck_bus · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-FILTERS-027 · 390px · light · en · signed out · world=empty · /shop?segment=truck_bus,tractor_farm&category=tyres · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto
+- [ ] SHOP-FILTERS-028 · 390px · dark · hi · signed out · world=empty · /shop?q=zzzz-no-match · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-FILTERS-029 · 480px · light · en · signed out · world=empty · /shop · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto axe
+- [ ] SHOP-FILTERS-030 · 480px · dark · hi · signed out · world=empty · /shop?category=lubricants · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-FILTERS-031 · 480px · light · en · signed out · world=empty · /shop?category=ev-essentials&sort=price_desc · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto
+- [ ] SHOP-FILTERS-032 · 480px · dark · hi · signed out · world=empty · /shop?vehicle=2W&sort=price_asc · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-FILTERS-033 · 480px · light · en · signed out · world=empty · /shop?segment=truck_bus,tractor_farm&category=tyres · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto axe
+- [ ] SHOP-FILTERS-034 · 480px · dark · hi · signed out · world=empty · /shop?q=zzzz-no-match · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-FILTERS-035 · 768px · light · en · signed out · world=empty · /shop · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto
+- [ ] SHOP-FILTERS-036 · 768px · dark · hi · signed out · world=empty · /shop?category=lubricants · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-FILTERS-037 · 768px · light · en · signed out · world=empty · /shop?category=ev-essentials&sort=price_desc · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto axe
+- [ ] SHOP-FILTERS-038 · 768px · dark · hi · signed out · world=empty · /shop?vehicle=2W&sort=price_asc · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-FILTERS-039 · 768px · light · en · signed out · world=empty · /shop?q=battery&vehicle=4W · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto
+- [ ] SHOP-FILTERS-040 · 768px · dark · hi · signed out · world=empty · /shop?segment=truck_bus · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-FILTERS-041 · 1024px · light · en · signed out · world=empty · /shop?category=ev-essentials&sort=price_desc · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto axe
+- [ ] SHOP-FILTERS-042 · 1024px · dark · hi · signed out · world=empty · /shop?vehicle=2W&sort=price_asc · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-FILTERS-043 · 1024px · light · en · signed out · world=empty · /shop?q=battery&vehicle=4W · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto
+- [ ] SHOP-FILTERS-044 · 1024px · dark · hi · signed out · world=empty · /shop?segment=truck_bus · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-FILTERS-045 · 1024px · light · en · signed out · world=empty · /shop?segment=truck_bus,tractor_farm&category=tyres · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto axe
+- [ ] SHOP-FILTERS-046 · 1024px · dark · hi · signed out · world=empty · /shop?q=zzzz-no-match · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-FILTERS-047 · 1280px · light · en · signed out · world=empty · /shop · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto
+- [ ] SHOP-FILTERS-048 · 1280px · dark · hi · signed out · world=empty · /shop?category=lubricants · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-FILTERS-049 · 1280px · light · en · signed out · world=empty · /shop?category=ev-essentials&sort=price_desc · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto axe
+- [ ] SHOP-FILTERS-050 · 1280px · dark · hi · signed out · world=empty · /shop?vehicle=2W&sort=price_asc · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-FILTERS-051 · 1280px · light · en · signed out · world=empty · /shop?segment=truck_bus,tractor_farm&category=tyres · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto
+- [ ] SHOP-FILTERS-052 · 1280px · dark · hi · signed out · world=empty · /shop?q=zzzz-no-match · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-FILTERS-053 · 1440px · light · en · signed out · world=empty · /shop · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto axe
+- [ ] SHOP-FILTERS-054 · 1440px · dark · hi · signed out · world=empty · /shop?category=lubricants · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-FILTERS-055 · 1440px · light · en · signed out · world=empty · /shop?category=ev-essentials&sort=price_desc · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto
+- [ ] SHOP-FILTERS-056 · 1440px · dark · hi · signed out · world=empty · /shop?vehicle=2W&sort=price_asc · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-FILTERS-057 · 1440px · light · en · signed out · world=empty · /shop?q=battery&vehicle=4W · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto axe
+- [ ] SHOP-FILTERS-058 · 1440px · dark · hi · signed out · world=empty · /shop?segment=truck_bus · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-FILTERS-059 · 1920px · light · en · signed out · world=empty · /shop · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto
+- [ ] SHOP-FILTERS-060 · 1920px · dark · hi · signed out · world=empty · /shop?category=lubricants · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-FILTERS-061 · 1920px · light · en · signed out · world=empty · /shop?q=battery&vehicle=4W · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto axe
+- [ ] SHOP-FILTERS-062 · 1920px · dark · hi · signed out · world=empty · /shop?segment=truck_bus · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-FILTERS-063 · 1920px · light · en · signed out · world=empty · /shop?segment=truck_bus,tractor_farm&category=tyres · compare=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto
+- [ ] SHOP-FILTERS-064 · 1920px · dark · hi · signed out · world=empty · /shop?q=zzzz-no-match · compare=lub-2 · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
 
 ### SHOP-SEARCH — Search box with suggestions (combobox): focus loads the list, keyboard and pointer, empty and filled
 

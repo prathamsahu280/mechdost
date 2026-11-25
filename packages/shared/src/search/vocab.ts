@@ -8,10 +8,12 @@
  *   the text search and the original word stays.
  * - `category`: a word or phrase that points at a category slug (`expandsTo[0]`); a boost, or the filter when the query
  *   has no other words. Matched on the words and their synonym expansions, longest phrase first.
- * - `vehicle`: a word or phrase for a vehicle; `expandsTo[0]` is `2W`/`3W`/`4W`, or a plain word ("truck") when the
- *   catalogue has no such type (the word is then only a text hint).
+ * - `vehicle`: a word or phrase for a vehicle; `expandsTo[0]` is `2W`/`3W`/`4W`, or a plain word when the catalogue has
+ *   no such type (the word is then only a text hint).
+ * - `segment`: a word or phrase for a vehicle segment (design 2026-11-25: "truck", "tractor", "JCB", "inverter");
+ *   `expandsTo[0]` is a segment code. The word leaves the text and steers the ranking, like a 2W/3W/4W word.
  */
-export const SEARCH_VOCAB_KINDS = ['synonym', 'category', 'vehicle'] as const;
+export const SEARCH_VOCAB_KINDS = ['synonym', 'category', 'vehicle', 'segment'] as const;
 export type SearchVocabKind = (typeof SEARCH_VOCAB_KINDS)[number];
 export const SEARCH_VOCAB_LOCALES = ['en', 'hi', 'hinglish'] as const;
 export type SearchVocabLocale = (typeof SEARCH_VOCAB_LOCALES)[number];
@@ -77,12 +79,42 @@ export const DEFAULT_SEARCH_VOCAB: readonly SearchVocabEntry[] = [
     'tuk tuk',
   ),
   ...e('vehicle', 'hi', ['3W'], 'ई-रिक्शा', 'रिक्शा', 'ऑटो'),
-  ...e('vehicle', 'en', ['truck'], 'truck', 'lorry'),
-  ...e('vehicle', 'hi', ['truck'], 'ट्रक'),
-  ...e('vehicle', 'en', ['bus'], 'bus'),
-  ...e('vehicle', 'hi', ['bus'], 'बस'),
-  ...e('vehicle', 'en', ['tractor'], 'tractor'),
-  ...e('vehicle', 'hi', ['tractor'], 'ट्रैक्टर'),
+
+  // Segment intent (design 2026-11-25, migration 0087 seeds the same words): trucks, buses, tractors and machines.
+  ...e(
+    'segment',
+    'en',
+    ['truck_bus'],
+    'truck',
+    'trucks',
+    'lorry',
+    'lorries',
+    'bus',
+    'buses',
+    'tipper',
+    'trailer',
+  ),
+  ...e('segment', 'hi', ['truck_bus'], 'ट्रक', 'लॉरी', 'बस', 'टिपर'),
+  ...e('segment', 'hinglish', ['truck_bus'], 'trak'),
+  ...e('segment', 'en', ['tractor_farm'], 'tractor', 'tractors', 'kisan', 'farm', 'agri', 'harvester'),
+  ...e('segment', 'hi', ['tractor_farm'], 'ट्रैक्टर', 'किसान', 'खेती'),
+  ...e('segment', 'hinglish', ['tractor_farm'], 'trektar', 'tractar'),
+  ...e('segment', 'en', ['light_commercial'], 'tempo', 'pickup', 'pick up', 'mini truck', 'lcv', 'dost'),
+  ...e('segment', 'hi', ['light_commercial'], 'टेम्पो', 'पिकअप'),
+  ...e(
+    'segment',
+    'en',
+    ['construction_otr'],
+    'jcb',
+    'earthmover',
+    'earth mover',
+    'excavator',
+    'loader',
+    'otr',
+  ),
+  ...e('segment', 'hi', ['construction_otr'], 'जेसीबी', 'अर्थमूवर'),
+  ...e('segment', 'en', ['not_vehicle'], 'inverter', 'invertor', 'genset', 'ups'),
+  ...e('segment', 'hi', ['not_vehicle'], 'इन्वर्टर', 'जेनसेट'),
 
   // Category intent (slugs of the top-level categories; a child category is included by the listing).
   ...e(
@@ -175,6 +207,8 @@ export const SEARCH_WEIGHTS = {
   tyreSize: 3,
   partNumber: 1,
   vehicleIntent: 1.5,
+  /** A segment word ("truck", "tractor"): above a tyre-size hit's noise, below an exact size. */
+  segmentIntent: 1.5,
   categoryIntent: 0.4,
   inStock: 0.2,
 } as const;

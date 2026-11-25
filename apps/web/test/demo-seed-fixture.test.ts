@@ -79,6 +79,8 @@ function buildFixture() {
       gstRateBp: 1800,
       // Type-level fitment from the demo `fits` value only (decision 2026-11-12; EV is a fuel, no type).
       vehicleTypes: VEHICLE_TYPES_OF_FIT[p.fits],
+      // Vehicle segments only where the demo states them (design 2026-11-25); the rest take the trigger's defaults.
+      ...(p.segments ? { segments: [...p.segments] } : {}),
       // Comparison data (decision 2026-11-13): typed attributes and the pack size, when the demo states them.
       ...(specs?.attributes ? { attributes: { ...specs.attributes } } : {}),
       ...(specs?.netQuantity ? { netQuantity: specs.netQuantity } : {}),

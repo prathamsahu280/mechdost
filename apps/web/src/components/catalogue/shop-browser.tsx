@@ -31,6 +31,7 @@ import {
   CATEGORY_KEYS,
   CATEGORY_SLUGS,
   categoryFromSlug,
+  demoSegmentsOf,
   searchProducts,
   type SortKey,
 } from '@/demo/catalogue';
@@ -38,6 +39,9 @@ import { track } from '@/lib/analytics';
 import { shopUrl, type ShopState } from '@/lib/catalogue/shop-state';
 import { VEHICLE_LABEL_KEY, VEHICLE_TYPES } from '@mechdost/shared/vehicles';
 import { whatsappLink } from '@/lib/site';
+import { parseSegmentParam, type VehicleSegment } from '@mechdost/shared/vehicle-segments';
+import { activeDemoSegments, useDemoSegments } from '@/demo/segments';
+import { SegmentChips, type SegmentChip } from './segment-chips';
 
 const SORTS: SortKey[] = ['popular', 'price_asc', 'price_desc'];
 
@@ -56,6 +60,7 @@ function listingState(q: ListingQuery, known: State): State {
     sub,
     sort: q.sort === 'price_asc' || q.sort === 'price_desc' ? q.sort : 'popular',
     vehicle: q.vehicle ?? undefined,
+    segments: q.segments,
   };
 }
 
@@ -73,6 +78,7 @@ function stateFrom(p: Pick<URLSearchParams, 'get'>, known: State): State {
     sub,
     sort: SORTS.find((s) => s === sort) ?? 'popular',
     vehicle: VEHICLE_TYPES.find((v) => v === p.get('vehicle')),
+    segments: parseSegmentParam(p.get('segment')),
   };
 }
 
@@ -95,6 +101,8 @@ export interface ServerListing {
   nextCursor: string | null;
   /** The closest name when the search found nothing (spec 02 "Smart search"); null otherwise. */
   didYouMean: string | null;
+  /** The segment chips with counts for this search and category (design 2026-11-25), in the admin's order. */
+  segmentFacets: SegmentChip[];
   loadMore: (
     query: ListingQuery,
     cursor: string,
@@ -139,7 +147,7 @@ export function ShopBrowser({
   const [state, setState] = useState<State>(initial);
   const [draft, setDraft] = useState(initial.query);
   // A new server render with other filters (header link, Back, a shared URL) resets the controls to match.
-  const initialKey = `${initial.query}|${initial.category ?? ''}|${initial.sub?.slug ?? ''}|${initial.sort}|${initial.vehicle ?? ''}`;
+  const initialKey = `${initial.query}|${initial.category ?? ''}|${initial.sub?.slug ?? ''}|${initial.sort}|${initial.vehicle ?? ''}|${initial.segments.join(',')}`;
   const [shownKey, setShownKey] = useState(initialKey);
   if (shownKey !== initialKey) {
     setShownKey(initialKey);
@@ -198,7 +206,8 @@ export function ShopBrowser({
       live = false;
     };
   }, [server]);
-  const demoResults = useMemo(
+  // The demo's matches without the segment filter (what the chip counts are made of), then with it.
+  const demoPool = useMemo(
     () =>
       (smart && state.query ? smart : searchProducts)({
         query: state.query,
@@ -208,8 +217,23 @@ export function ShopBrowser({
         categoryLabel: (k) => cat(k),
         hi: hiText,
       }),
-    [state, cat, hiText, smart],
+    [state.query, state.category, state.sort, state.vehicle, cat, hiText, smart],
   );
+  const demoResults = useMemo(
+    () =>
+      state.segments.length === 0
+        ? demoPool
+        : demoPool.filter((p) => demoSegmentsOf(p).some((x) => state.segments.includes(x))),
+    [demoPool, state.segments],
+  );
+  const demoSegmentRows = useDemoSegments();
+  const segmentChips: readonly SegmentChip[] = server
+    ? server.segmentFacets
+    : activeDemoSegments(demoSegmentRows).map((row) => ({
+        code: row.code,
+        name: locale === 'hi' ? row.nameHi : row.nameEn,
+        count: demoPool.filter((p) => demoSegmentsOf(p).includes(row.code)).length,
+      }));
   const results: { slug: string }[] = server ? server.slugs.map((slug) => ({ slug })) : demoResults;
   const shownCount = results.length + (appended?.cards.length ?? 0);
 
@@ -361,6 +385,11 @@ export function ShopBrowser({
     }
   }
 
+  function setSegments(next: readonly VehicleSegment[]) {
+    track('shop_segment_filtered', { segments: [...next], count: next.length });
+    apply({ ...state, segments: next });
+  }
+
   function onSearch(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     suggestHandle.current?.close();
@@ -382,7 +411,8 @@ export function ShopBrowser({
     state.category !== undefined ||
     state.sub !== undefined ||
     state.sort !== 'popular' ||
-    state.vehicle !== undefined;
+    state.vehicle !== undefined ||
+    state.segments.length > 0;
 
   return (
     <div>
@@ -535,6 +565,21 @@ export function ShopBrowser({
         </ul>
       </nav>
 
+      <SegmentChips
+        chips={segmentChips}
+        selected={state.segments}
+        onToggle={(code) => {
+          setSegments(
+            state.segments.includes(code)
+              ? state.segments.filter((x) => x !== code)
+              : [...state.segments, code],
+          );
+        }}
+        onClear={() => {
+          setSegments([]);
+        }}
+      />
+
       {/* A search that means "stuck on the road" shows the roadside card above the results (spec 22, 2026-11-24). */}
       {roadside && matchesRoadsideIntent(state.query) ? <div className="mt-6">{roadside}</div> : null}
 
@@ -562,7 +607,14 @@ export function ShopBrowser({
             type="button"
             onClick={() => {
               setDraft('');
-              apply({ query: '', category: undefined, sub: undefined, sort: 'popular', vehicle: undefined });
+              apply({
+                query: '',
+                category: undefined,
+                sub: undefined,
+                sort: 'popular',
+                vehicle: undefined,
+                segments: [],
+              });
             }}
             className="min-h-10 text-sm font-bold text-accent-soft-text underline-offset-4 hover:underline"
           >

@@ -13,6 +13,7 @@ import {
   SUGGEST_QUERY_MAX,
   SUGGEST_QUERY_MIN,
 } from '@mechdost/shared/search-api';
+import { VEHICLE_SEGMENTS } from '@mechdost/shared/vehicle-segments';
 import { VEHICLE_TYPES } from '@mechdost/shared/vehicles';
 import { auditLog } from '../schema';
 import { listCatalogue, type CatalogueLocale } from './catalogue';
@@ -208,6 +209,12 @@ async function checkExpansion(
     );
     if (found[0]?.n !== 1) throw new ValidationError('Unknown category slug', 'SYNONYM_CATEGORY');
     return [list[0] ?? ''];
+  }
+  if (kind === 'segment') {
+    const first = expandsTo[0]?.trim() ?? '';
+    if (!(VEHICLE_SEGMENTS as readonly string[]).includes(first))
+      throw new ValidationError('Unknown vehicle segment', 'SYNONYM_SEGMENT');
+    return [first];
   }
   if (kind === 'vehicle') {
     const first = expandsTo[0]?.trim() ?? '';

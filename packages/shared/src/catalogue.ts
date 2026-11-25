@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { NET_UNITS } from './product-attributes';
 import { VEHICLE_TYPES } from './vehicles';
+import { SegmentFacetSchema, SegmentRefSchema } from './vehicle-segments-api';
 
 /**
  * Catalogue response DTOs (spec 02): the single definition used by the API (OpenAPI names are added there) and
@@ -51,6 +52,8 @@ const cardFields = {
   highlights: z.array(z.string()),
   /** Vehicle types the product is for; empty = fitment not listed (decision 2026-11-12). */
   vehicleTypes: z.array(z.enum(VEHICLE_TYPES)),
+  /** Vehicle segments (design 2026-11-25), in the staff's order, named in the page language; empty = none set. */
+  segments: z.array(SegmentRefSchema).default([]),
   rating: z.object({ avg: z.number(), count: z.number().int() }).nullable(),
   /** Lowest MRP among the product's active packs, with or without a shop offer ("MRP ₹x", spec 02); null = none. */
   mrpFromPaise: z.number().int().nullable(),
@@ -75,6 +78,8 @@ export const CataloguePageSchema = z.object({
   place: CataloguePlaceSchema,
   items: z.array(CatalogueCardSchema),
   nextCursor: z.string().nullable(),
+  /** Per-segment counts for the current search and category (first page only; empty on later pages). */
+  facets: z.object({ segments: z.array(SegmentFacetSchema) }).default({ segments: [] }),
 });
 
 export const CatalogueProductSchema = z.object({

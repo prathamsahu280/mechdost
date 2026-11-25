@@ -3,6 +3,7 @@
  * items so the storefront can be presented before the catalogue API exists (spec 02, Phase 1). Indicative prices,
  * integer paise, GST-inclusive. Replaced by `GET /v1/catalogue` — never extend this file with real business data.
  */
+import { defaultSegmentsFor, type VehicleSegment } from '@mechdost/shared/vehicle-segments';
 import type { VehicleType } from '@mechdost/shared/vehicles';
 // Only the product translations, not all of `./i18n/hi.ts` (JS budget: this file ships with the shop page).
 import type { ProductHi } from './i18n/hi-products';
@@ -10,9 +11,9 @@ import { productSearchText } from './i18n/product-search';
 
 // Category constants live in a small module so pages that only need them do not ship the product data.
 export { CATEGORY_KEYS, CATEGORY_SLUGS, categoryFromSlug, type CategoryKey } from './categories';
-import type { CategoryKey } from './categories';
+import { CATEGORY_SLUGS, type CategoryKey } from './categories';
 
-export type VehicleFit = '2W' | '4W' | '2W/4W' | 'EV';
+export type VehicleFit = '2W' | '4W' | '2W/4W' | 'EV' | 'CV';
 
 /**
  * Vehicle types of a demo `fits` value (decision 2026-11-12). EV is a fuel, not a type: those products list no
@@ -23,6 +24,8 @@ export const VEHICLE_TYPES_OF_FIT: Record<VehicleFit, readonly VehicleType[]> = 
   '4W': ['4W'],
   '2W/4W': ['2W', '4W'],
   EV: [],
+  // Commercial vehicles, tractors and machines have no 2W/3W/4W type: they are told by `segments` (design 2026-11-25).
+  CV: [],
 };
 export type Availability = 'in_stock' | 'low_stock' | 'on_request';
 
@@ -35,6 +38,8 @@ export interface DemoProduct {
   spec: string;
   compatibility: string;
   fits: VehicleFit;
+  /** Vehicle segments (design 2026-11-25); omitted = derived from the category and `fits` like the database does. */
+  segments?: readonly VehicleSegment[];
   pricePaise: number;
   mrpPaise?: number;
   availability: Availability;
@@ -415,7 +420,134 @@ export const DEMO_PRODUCTS: readonly DemoProduct[] = [
     leadDays: 5,
     highlights: ['Earth-leakage protection', 'Check wall socket rating'],
   },
+  // Heavy vehicles, tractors and machines (design 2026-11-25): segments tell them apart. Indicative data.
+  {
+    slug: 'mrf-steel-muscle-1000r20-truck-tyre',
+    sku: 'MRF-S3L3-1000R20',
+    name: 'Steel Muscle S3L3 10.00 R20',
+    brand: 'MRF',
+    category: 'tyres',
+    spec: '10.00 R20 · 16 PR · tube type · truck and bus',
+    compatibility: 'Trucks and buses with 20-inch rims',
+    fits: 'CV',
+    segments: ['truck_bus'],
+    pricePaise: 2_150_000,
+    mrpPaise: 2_295_000,
+    availability: 'in_stock',
+    leadDays: 3,
+    highlights: ['Lug pattern for mixed roads', '16 ply rating', 'Retreadable casing'],
+  },
+  {
+    slug: 'apollo-endurace-lt-700r16-tyre',
+    sku: 'APL-END-700R16',
+    name: 'Endurace LT 7.00 R16',
+    brand: 'Apollo',
+    category: 'tyres',
+    spec: '7.00 R16 · 14 PR · tube type · light truck',
+    compatibility: 'Pickups, tempos and mini trucks with 16-inch rims',
+    fits: 'CV',
+    segments: ['light_commercial'],
+    pricePaise: 890_000,
+    mrpPaise: 945_000,
+    availability: 'in_stock',
+    leadDays: 2,
+    highlights: ['Strong sidewall for loaded runs', '14 ply rating'],
+  },
+  {
+    slug: 'ceat-earthmax-175-25-otr-tyre',
+    sku: 'CEAT-EMX-175-25',
+    name: 'Earthmax 17.5-25 OTR',
+    brand: 'CEAT',
+    category: 'tyres',
+    spec: '17.5-25 · 12 PR · loader and dozer',
+    compatibility: 'Wheel loaders and graders with 25-inch rims',
+    fits: 'CV',
+    segments: ['construction_otr'],
+    pricePaise: 6_850_000,
+    mrpPaise: 7_240_000,
+    availability: 'on_request',
+    leadDays: 7,
+    highlights: ['Deep tread for loose ground', 'Cut-resistant compound'],
+  },
+  {
+    slug: 'exide-xpress-hd-180ah-truck-battery',
+    sku: 'EXI-XPHD-180',
+    name: 'Xpress HD 12 V 180 Ah',
+    brand: 'Exide',
+    category: 'batteries',
+    spec: '12 V · 180 Ah · flooded · heavy duty',
+    compatibility: 'Trucks, buses and pickups (check terminal side before ordering)',
+    fits: 'CV',
+    segments: ['truck_bus', 'light_commercial'],
+    pricePaise: 1_240_000,
+    mrpPaise: 1_340_000,
+    availability: 'in_stock',
+    leadDays: 2,
+    highlights: ['Built for diesel cranking', 'Vibration resistant', 'Old battery exchange offers'],
+  },
+  {
+    slug: 'amaron-pro-tractor-88ah-battery',
+    sku: 'AMR-PRT-88',
+    name: 'Pro Tractor 12 V 88 Ah',
+    brand: 'Amaron',
+    category: 'batteries',
+    spec: '12 V · 88 Ah · flooded · tractor',
+    compatibility: 'Most 35 to 55 hp tractors',
+    fits: 'CV',
+    segments: ['tractor_farm'],
+    pricePaise: 890_000,
+    mrpPaise: 960_000,
+    availability: 'low_stock',
+    leadDays: 2,
+    highlights: ['Strong cold start', 'Works in dust and heat'],
+  },
+  {
+    slug: 'servo-agri-super-15w40-7l',
+    sku: 'SRV-AGRI-15W40-7L',
+    name: 'Agri Super 15W40 7.5 L',
+    brand: 'Servo',
+    category: 'lubricants',
+    spec: 'Tractor engine oil · 15W40 · 7.5 L',
+    compatibility: 'Diesel tractors and farm engines',
+    fits: 'CV',
+    segments: ['tractor_farm'],
+    pricePaise: 295_000,
+    mrpPaise: 318_000,
+    availability: 'in_stock',
+    leadDays: 2,
+    highlights: ['API CH-4 grade', 'Protects in heavy field work', '7.5 L pack'],
+  },
+  {
+    slug: 'exide-inva-master-150ah-inverter-battery',
+    sku: 'EXI-IM-150',
+    name: 'Inva Master 12 V 150 Ah',
+    brand: 'Exide',
+    category: 'batteries',
+    spec: '12 V · 150 Ah · tall tubular · home inverter',
+    compatibility: 'Home and shop inverters (not for vehicles)',
+    fits: 'CV',
+    segments: ['not_vehicle'],
+    pricePaise: 1_450_000,
+    mrpPaise: 1_560_000,
+    availability: 'in_stock',
+    leadDays: 2,
+    highlights: ['Long backup hours', 'Low water top-up'],
+  },
 ];
+
+/**
+ * The vehicle segments of a demo product: its own list, else what the database trigger would give it (the category's
+ * default, else the segments of its vehicle types; workshop tools are "not a vehicle"). Same rules as production.
+ */
+export function demoSegmentsOf(p: DemoProduct): readonly VehicleSegment[] {
+  return (
+    p.segments ??
+    defaultSegmentsFor({
+      categorySlug: CATEGORY_SLUGS[p.category],
+      vehicleTypes: VEHICLE_TYPES_OF_FIT[p.fits],
+    })
+  );
+}
 
 export function findProduct(slug: string): DemoProduct | undefined {
   return DEMO_PRODUCTS.find((p) => p.slug === slug);
@@ -432,6 +564,8 @@ export function searchProducts(opts: {
   category?: CategoryKey;
   sort?: SortKey;
   vehicle?: VehicleType;
+  /** Only products in any of these segments (design 2026-11-25). */
+  segments?: readonly VehicleSegment[];
   categoryLabel?: (key: CategoryKey) => string;
   /** The Hindi product text (`PRODUCT_HI`), loaded apart from the catalogue; omitted = English text only. */
   hi?: Readonly<Record<string, ProductHi>>;
@@ -441,6 +575,12 @@ export function searchProducts(opts: {
   const list = DEMO_PRODUCTS.filter((p) => {
     if (opts.category && p.category !== opts.category) return false;
     if (opts.vehicle && !VEHICLE_TYPES_OF_FIT[p.fits].includes(opts.vehicle)) return false;
+    if (
+      opts.segments &&
+      opts.segments.length > 0 &&
+      !demoSegmentsOf(p).some((x) => opts.segments?.includes(x))
+    )
+      return false;
     if (words.length === 0) return true;
     const hay = `${productSearchText(p, opts.hi)} ${opts.categoryLabel?.(p.category) ?? ''}`.toLowerCase();
     return words.every((w) => hay.includes(w) || hay.includes(w.replace(/s$/, '')));

@@ -1,3 +1,4 @@
+import type { VehicleSegment } from '../vehicle-segments';
 import type { VehicleType } from '../vehicles';
 import { compactAlnum, isTypoOf, type PackSize } from './normalise';
 import { matchWords, tokenise, type ParsedQuery } from './parse';
@@ -11,6 +12,8 @@ export interface SearchableProductText {
   text: string;
   categorySlug: string;
   vehicleTypes: readonly VehicleType[];
+  /** The product's vehicle segments (design 2026-11-25). */
+  segments?: readonly VehicleSegment[];
   packs: readonly PackSize[];
   inStock: boolean;
 }
@@ -33,6 +36,8 @@ export function scoreProductText(q: ParsedQuery, p: SearchableProductText): numb
     const group = [w, ...(q.expansions[w] ?? [])];
     let best = 0;
     if (q.categoryWords.includes(w) && p.categorySlug === q.categorySlug) best = W.wordInText;
+    if (q.segmentWords.includes(w) && q.segment !== null && (p.segments ?? []).includes(q.segment))
+      best = Math.max(best, W.wordInText);
     for (const g of group) {
       if (nameHay.includes(g)) best = Math.max(best, W.wordInName);
       else if (textHay.includes(g)) best = Math.max(best, W.wordInText);
@@ -55,6 +60,7 @@ export function scoreProductText(q: ParsedQuery, p: SearchableProductText): numb
   ).length;
   const category = q.categorySlug !== null && p.categorySlug === q.categorySlug;
   const vehicle = q.vehicleType !== null && p.vehicleTypes.includes(q.vehicleType);
+  const segment = q.segment !== null && (p.segments ?? []).includes(q.segment);
 
   if (words.length === 0) {
     const anything =
@@ -62,6 +68,7 @@ export function scoreProductText(q: ParsedQuery, p: SearchableProductText): numb
       q.categorySlug !== null ||
       q.vehicleType !== null ||
       q.vehicleWord !== null ||
+      q.segment !== null ||
       q.partNumbers.length > 0;
     if (anything) {
       const matched =
@@ -72,7 +79,8 @@ export function scoreProductText(q: ParsedQuery, p: SearchableProductText): numb
         attr.tyre ||
         attr.part ||
         category ||
-        vehicle;
+        vehicle ||
+        segment;
       if (!matched) return 0;
     } else if (q.raw.trim() !== '' && tokenise(q.raw).length > 0) {
       return 0;
@@ -88,6 +96,7 @@ export function scoreProductText(q: ParsedQuery, p: SearchableProductText): numb
   if (attr.tyre) score += W.tyreSize;
   if (attr.part) score += W.partNumber;
   if (vehicle) score += W.vehicleIntent;
+  if (segment) score += W.segmentIntent;
   if (category) score += W.categoryIntent;
   if (p.inStock) score += W.inStock;
   return Math.max(score, 0.01);

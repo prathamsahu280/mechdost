@@ -26,6 +26,8 @@ const ProductBase = z.object({
   highlights: z.array(z.string()),
   highlightsHi: z.array(z.string()),
   vehicleTypes: z.array(z.string()),
+  /** Vehicle segment codes (design 2026-11-25). */
+  segments: z.array(z.string()),
   rejectionReason: z.string().nullable(),
   missingHindi: z.array(z.string()),
 });

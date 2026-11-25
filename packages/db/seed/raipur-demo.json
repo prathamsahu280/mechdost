@@ -120,6 +120,10 @@
       "name": "Amaron"
     },
     {
+      "slug": "apollo",
+      "name": "Apollo"
+    },
+    {
       "slug": "autoright",
       "name": "AutoRight"
     },
@@ -182,6 +186,10 @@
     {
       "slug": "skf",
       "name": "SKF"
+    },
+    {
+      "slug": "servo",
+      "name": "Servo"
     },
     {
       "slug": "shell",
@@ -693,6 +701,143 @@
       "hsn": "8504",
       "gstRateBp": 1800,
       "vehicleTypes": []
+    },
+    {
+      "slug": "mrf-steel-muscle-1000r20-truck-tyre",
+      "sku": "MRF-S3L3-1000R20",
+      "name": "Steel Muscle S3L3 10.00 R20",
+      "nameHi": "स्टील मसल S3L3 10.00 R20",
+      "brand": "mrf",
+      "category": "tyres",
+      "specSummary": "10.00 R20 · 16 PR · tube type · truck and bus",
+      "specSummaryHi": "10.00 R20 · 16 PR · ट्यूब टाइप · ट्रक और बस",
+      "compatibility": "Trucks and buses with 20-inch rims",
+      "compatibilityHi": "20 इंच रिम वाले ट्रक और बसें",
+      "highlights": ["Lug pattern for mixed roads", "16 ply rating", "Retreadable casing"],
+      "highlightsHi": [
+        "मिली-जुली सड़कों के लिए लग पैटर्न",
+        "16 प्लाई रेटिंग",
+        "दोबारा चढ़ने (रिट्रेड) लायक ढाँचा"
+      ],
+      "mrpPaise": 2295000,
+      "hsn": "4011",
+      "gstRateBp": 1800,
+      "vehicleTypes": [],
+      "segments": ["truck_bus"]
+    },
+    {
+      "slug": "apollo-endurace-lt-700r16-tyre",
+      "sku": "APL-END-700R16",
+      "name": "Endurace LT 7.00 R16",
+      "nameHi": "Endurace LT 7.00 R16",
+      "brand": "apollo",
+      "category": "tyres",
+      "specSummary": "7.00 R16 · 14 PR · tube type · light truck",
+      "specSummaryHi": "7.00 R16 · 14 PR · ट्यूब टाइप · हल्का ट्रक",
+      "compatibility": "Pickups, tempos and mini trucks with 16-inch rims",
+      "compatibilityHi": "16 इंच रिम वाले पिकअप, टेम्पो और मिनी ट्रक",
+      "highlights": ["Strong sidewall for loaded runs", "14 ply rating"],
+      "highlightsHi": ["लदे वाहन के लिए मज़बूत साइडवॉल", "14 प्लाई रेटिंग"],
+      "mrpPaise": 945000,
+      "hsn": "4011",
+      "gstRateBp": 1800,
+      "vehicleTypes": [],
+      "segments": ["light_commercial"]
+    },
+    {
+      "slug": "ceat-earthmax-175-25-otr-tyre",
+      "sku": "CEAT-EMX-175-25",
+      "name": "Earthmax 17.5-25 OTR",
+      "nameHi": "अर्थमैक्स 17.5-25 ओटीआर",
+      "brand": "ceat",
+      "category": "tyres",
+      "specSummary": "17.5-25 · 12 PR · loader and dozer",
+      "specSummaryHi": "17.5-25 · 12 PR · लोडर और डोज़र",
+      "compatibility": "Wheel loaders and graders with 25-inch rims",
+      "compatibilityHi": "25 इंच रिम वाले व्हील लोडर और ग्रेडर",
+      "highlights": ["Deep tread for loose ground", "Cut-resistant compound"],
+      "highlightsHi": ["ढीली ज़मीन के लिए गहरी ट्रेड", "कट-रोधी कंपाउंड"],
+      "mrpPaise": 7240000,
+      "hsn": "4011",
+      "gstRateBp": 1800,
+      "vehicleTypes": [],
+      "segments": ["construction_otr"]
+    },
+    {
+      "slug": "exide-xpress-hd-180ah-truck-battery",
+      "sku": "EXI-XPHD-180",
+      "name": "Xpress HD 12 V 180 Ah",
+      "nameHi": "Xpress HD 12 V 180 Ah",
+      "brand": "exide",
+      "category": "batteries",
+      "specSummary": "12 V · 180 Ah · flooded · heavy duty",
+      "specSummaryHi": "12 V · 180 Ah · फ़्लडेड · हेवी ड्यूटी",
+      "compatibility": "Trucks, buses and pickups (check terminal side before ordering)",
+      "compatibilityHi": "ट्रक, बसें और पिकअप (ऑर्डर से पहले टर्मिनल की तरफ़ जाँच लें)",
+      "highlights": ["Built for diesel cranking", "Vibration resistant", "Old battery exchange offers"],
+      "highlightsHi": ["डीज़ल क्रैंकिंग के लिए बनी", "कंपन सहने वाली", "पुरानी बैटरी एक्सचेंज ऑफ़र"],
+      "mrpPaise": 1340000,
+      "hsn": "8507",
+      "gstRateBp": 1800,
+      "vehicleTypes": [],
+      "segments": ["truck_bus", "light_commercial"]
+    },
+    {
+      "slug": "amaron-pro-tractor-88ah-battery",
+      "sku": "AMR-PRT-88",
+      "name": "Pro Tractor 12 V 88 Ah",
+      "nameHi": "प्रो ट्रैक्टर 12 V 88 Ah",
+      "brand": "amaron",
+      "category": "batteries",
+      "specSummary": "12 V · 88 Ah · flooded · tractor",
+      "specSummaryHi": "12 V · 88 Ah · फ़्लडेड · ट्रैक्टर",
+      "compatibility": "Most 35 to 55 hp tractors",
+      "compatibilityHi": "ज़्यादातर 35 से 55 hp ट्रैक्टर",
+      "highlights": ["Strong cold start", "Works in dust and heat"],
+      "highlightsHi": ["ठंड में भी दमदार स्टार्ट", "धूल और गर्मी में भरोसेमंद"],
+      "mrpPaise": 960000,
+      "hsn": "8507",
+      "gstRateBp": 1800,
+      "vehicleTypes": [],
+      "segments": ["tractor_farm"]
+    },
+    {
+      "slug": "servo-agri-super-15w40-7l",
+      "sku": "SRV-AGRI-15W40-7L",
+      "name": "Agri Super 15W40 7.5 L",
+      "nameHi": "एग्री सुपर 15W40 7.5 L",
+      "brand": "servo",
+      "category": "lubricants",
+      "specSummary": "Tractor engine oil · 15W40 · 7.5 L",
+      "specSummaryHi": "ट्रैक्टर इंजन ऑयल · 15W40 · 7.5 L",
+      "compatibility": "Diesel tractors and farm engines",
+      "compatibilityHi": "डीज़ल ट्रैक्टर और खेती के इंजन",
+      "highlights": ["API CH-4 grade", "Protects in heavy field work", "7.5 L pack"],
+      "highlightsHi": ["API CH-4 ग्रेड", "खेत के भारी काम में सुरक्षा", "7.5 L पैक"],
+      "mrpPaise": 318000,
+      "hsn": "2710",
+      "gstRateBp": 1800,
+      "vehicleTypes": [],
+      "segments": ["tractor_farm"]
+    },
+    {
+      "slug": "exide-inva-master-150ah-inverter-battery",
+      "sku": "EXI-IM-150",
+      "name": "Inva Master 12 V 150 Ah",
+      "nameHi": "इन्वा मास्टर 12 V 150 Ah",
+      "brand": "exide",
+      "category": "batteries",
+      "specSummary": "12 V · 150 Ah · tall tubular · home inverter",
+      "specSummaryHi": "12 V · 150 Ah · टॉल ट्यूबुलर · घरेलू इन्वर्टर",
+      "compatibility": "Home and shop inverters (not for vehicles)",
+      "compatibilityHi": "घर और दुकान के इन्वर्टर (वाहनों के लिए नहीं)",
+      "highlights": ["Long backup hours", "Low water top-up"],
+      "highlightsHi": ["लंबा बैकअप", "कम पानी भरना पड़ता है"],
+      "mrpPaise": 1560000,
+      "hsn": "8507",
+      "gstRateBp": 1800,
+      "vehicleTypes": [],
+      "segments": ["not_vehicle"]
     }
   ],
   "shops": [
@@ -1024,6 +1169,83 @@
       "sellingPaise": 1250000,
       "onHand": 0,
       "leadDays": 5
+    },
+    {
+      "shop": "chhattisgarh-tyre-house",
+      "sku": "MRF-S3L3-1000R20",
+      "sellingPaise": 2150000,
+      "onHand": 12,
+      "leadDays": 3
+    },
+    {
+      "shop": "chhattisgarh-tyre-house",
+      "sku": "APL-END-700R16",
+      "sellingPaise": 890000,
+      "onHand": 12,
+      "leadDays": 2
+    },
+    {
+      "shop": "chhattisgarh-tyre-house",
+      "sku": "CEAT-EMX-175-25",
+      "sellingPaise": 6850000,
+      "onHand": 0,
+      "leadDays": 7
+    },
+    {
+      "shop": "raipur-battery-point",
+      "sku": "EXI-XPHD-180",
+      "sellingPaise": 1240000,
+      "onHand": 12,
+      "leadDays": 2
+    },
+    {
+      "shop": "gupta-lubes-spares",
+      "sku": "EXI-XPHD-180",
+      "sellingPaise": 1277200,
+      "onHand": 12,
+      "leadDays": 2
+    },
+    {
+      "shop": "raipur-battery-point",
+      "sku": "AMR-PRT-88",
+      "sellingPaise": 890000,
+      "onHand": 2,
+      "leadDays": 2
+    },
+    {
+      "shop": "gupta-lubes-spares",
+      "sku": "AMR-PRT-88",
+      "sellingPaise": 916700,
+      "onHand": 2,
+      "leadDays": 2
+    },
+    {
+      "shop": "sharma-auto-parts",
+      "sku": "SRV-AGRI-15W40-7L",
+      "sellingPaise": 295000,
+      "onHand": 12,
+      "leadDays": 2
+    },
+    {
+      "shop": "gupta-lubes-spares",
+      "sku": "SRV-AGRI-15W40-7L",
+      "sellingPaise": 303900,
+      "onHand": 12,
+      "leadDays": 2
+    },
+    {
+      "shop": "raipur-battery-point",
+      "sku": "EXI-IM-150",
+      "sellingPaise": 1450000,
+      "onHand": 12,
+      "leadDays": 2
+    },
+    {
+      "shop": "gupta-lubes-spares",
+      "sku": "EXI-IM-150",
+      "sellingPaise": 1493500,
+      "onHand": 12,
+      "leadDays": 2
     }
   ]
 }

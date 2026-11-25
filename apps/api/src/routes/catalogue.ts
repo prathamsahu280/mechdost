@@ -1,5 +1,6 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { VEHICLE_TYPES } from '@mechdost/shared/vehicles';
+import { CatalogueSegmentsSchema, SegmentListParam } from '@mechdost/shared/vehicle-segments-api';
 import {
   CATALOGUE_PAGE_MAX,
   CATALOGUE_QUERY_MAX,
@@ -7,6 +8,7 @@ import {
   getCatalogueProduct,
   listCatalogue,
   listCatalogueCategories,
+  listPublicSegments,
 } from '@mechdost/db/repo';
 import {
   CatalogueCategorySchema,
@@ -62,6 +64,18 @@ const categories = createRoute({
   responses: { 200: json(z.object({ categories: z.array(Category) }), 'Categories'), ...errorResponses },
 });
 
+const segments = createRoute({
+  method: 'get',
+  path: '/catalogue/segments',
+  tags: ['catalogue'],
+  summary: 'Active vehicle segments in admin order, with live product counts (design 2026-11-25)',
+  request: { query: z.object({ locale: Locale }) },
+  responses: {
+    200: json(CatalogueSegmentsSchema.openapi('CatalogueSegments'), 'Segments'),
+    ...errorResponses,
+  },
+});
+
 const products = createRoute({
   method: 'get',
   path: '/catalogue/products',
@@ -75,6 +89,8 @@ const products = createRoute({
       brand: Slug.optional(),
       /** Only products tagged for this vehicle type (decision 2026-11-12). */
       vehicle: z.enum(VEHICLE_TYPES).optional(),
+      /** Comma-separated vehicle segments (any of; design 2026-11-25), e.g. `truck_bus,tractor_farm`. */
+      segment: SegmentListParam.optional().openapi({ example: 'truck_bus' }),
       q: z.string().trim().max(CATALOGUE_QUERY_MAX).optional(),
       sort: z.enum(CATALOGUE_SORTS).optional(),
       available: z.enum(['true', 'false']).optional(),
@@ -132,6 +148,11 @@ export function catalogueRoutes(deps: AppDeps) {
       c.header('Cache-Control', CATEGORY_CACHE);
       return c.json({ categories: rows }, 200);
     })
+    .openapi(segments, async (c) => {
+      const rows = await listPublicSegments(deps.db, c.req.valid('query').locale);
+      c.header('Cache-Control', CATEGORY_CACHE);
+      return c.json({ segments: rows }, 200);
+    })
     .openapi(products, async (c) => {
       const query = c.req.valid('query');
       const page = await listCatalogue(deps.db, {
@@ -140,6 +161,7 @@ export function catalogueRoutes(deps: AppDeps) {
         category: query.category ?? null,
         brand: query.brand ?? null,
         vehicleType: query.vehicle ?? null,
+        segments: query.segment ?? null,
         q: query.q ?? null,
         sort: query.sort ?? null,
         availableOnly: query.available === 'true',
@@ -153,6 +175,7 @@ export function catalogueRoutes(deps: AppDeps) {
           place: place(page.place),
           items: page.items.map(({ id: _id, ...card }) => card),
           nextCursor: page.nextCursor,
+          facets: page.facets,
         },
         200,
       );

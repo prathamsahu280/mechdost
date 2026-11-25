@@ -7,10 +7,12 @@ import {
   type SearchableProductText,
 } from '@mechdost/shared/search';
 import type { VehicleType } from '@mechdost/shared/vehicles';
+import type { VehicleSegment } from '@mechdost/shared/vehicle-segments';
 import {
   CATEGORY_KEYS,
   CATEGORY_SLUGS,
   DEMO_PRODUCTS,
+  demoSegmentsOf,
   VEHICLE_TYPES_OF_FIT,
   type CategoryKey,
   type DemoProduct,
@@ -49,6 +51,7 @@ function searchable(
     text: `${productSearchText(p, hi)} ${categoryLabel?.(p.category) ?? ''}`,
     categorySlug: CATEGORY_SLUGS[p.category],
     vehicleTypes: VEHICLE_TYPES_OF_FIT[p.fits],
+    segments: demoSegmentsOf(p),
     packs: packsOf(p),
     inStock: p.availability !== 'on_request',
   };
@@ -59,6 +62,8 @@ export interface SmartSearchOptions {
   category?: CategoryKey;
   sort?: SortKey;
   vehicle?: VehicleType;
+  /** Only products in any of these segments (design 2026-11-25). */
+  segments?: readonly VehicleSegment[];
   categoryLabel?: (key: CategoryKey) => string;
   hi?: Readonly<Record<string, ProductHi>>;
 }
@@ -70,6 +75,12 @@ export function smartSearchProducts(opts: SmartSearchOptions): DemoProduct[] {
   for (const p of DEMO_PRODUCTS) {
     if (opts.category && p.category !== opts.category) continue;
     if (opts.vehicle && !VEHICLE_TYPES_OF_FIT[p.fits].includes(opts.vehicle)) continue;
+    if (
+      opts.segments &&
+      opts.segments.length > 0 &&
+      !demoSegmentsOf(p).some((x) => opts.segments?.includes(x))
+    )
+      continue;
     const score = scoreProductText(parsed, searchable(p, opts.hi, opts.categoryLabel));
     if (score > 0) scored.push({ p, score });
   }

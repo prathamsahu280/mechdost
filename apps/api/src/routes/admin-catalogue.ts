@@ -10,7 +10,10 @@ import {
   importProducts,
   listAdminProducts,
   type NewProduct,
+  listAdminSegments,
   listSearchSynonyms,
+  setProductSegments,
+  updateVehicleSegment,
   setProductAttributes,
   setSearchSynonymActive,
   setProductStatus,
@@ -42,6 +45,12 @@ import { NET_QTY_MAX, NET_UNITS } from '@mechdost/shared/product-attributes';
 import { can } from '@mechdost/shared/rbac';
 import { PRODUCT_STATES } from '@mechdost/shared/state';
 import { VEHICLE_TYPES } from '@mechdost/shared/vehicles';
+import { VEHICLE_SEGMENTS } from '@mechdost/shared/vehicle-segments';
+import {
+  AdminSegmentPatchSchema,
+  AdminSegmentSchema,
+  AdminSegmentsSchema,
+} from '@mechdost/shared/vehicle-segments-api';
 import type { SessionCache } from '../auth/session-cache';
 import { authenticate, requirePermission, requireVerified } from '../middleware/auth';
 import { enforceRate, rateLimit, RATE_RULES } from '../middleware/rate-limit';
@@ -80,6 +89,7 @@ const Product = z
     highlights: z.array(z.string()),
     highlightsHi: z.array(z.string()),
     vehicleTypes: z.array(z.string()),
+    segments: z.array(z.string()),
     rejectionReason: z.string().nullable(),
     missingHindi: z.array(z.string()),
   })
@@ -272,6 +282,65 @@ const vehicleTypes = createRoute({
   },
   responses: {
     200: json(z.object({ version: z.number().int(), vehicleTypes: z.array(z.enum(VEHICLE_TYPES)) }), 'Saved'),
+    ...conflict,
+    ...errorResponses,
+  },
+});
+
+const productSegments = createRoute({
+  method: 'put',
+  path: '/admin/catalogue/products/{slug}/segments',
+  tags: ['admin'],
+  summary: "Set a product's vehicle segments (design 2026-11-25; empty = none set)",
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: z.object({ slug: Slug }),
+    body: {
+      required: true,
+      content: {
+        'application/json': {
+          schema: z
+            .object({
+              version: z.number().int().min(1),
+              segments: z.array(z.enum(VEHICLE_SEGMENTS)).max(VEHICLE_SEGMENTS.length * 2),
+            })
+            .strict()
+            .openapi('AdminProductSegments'),
+        },
+      },
+    },
+  },
+  responses: {
+    200: json(z.object({ version: z.number().int(), segments: z.array(z.enum(VEHICLE_SEGMENTS)) }), 'Saved'),
+    ...conflict,
+    ...errorResponses,
+  },
+});
+
+const segmentsList = createRoute({
+  method: 'get',
+  path: '/admin/catalogue/segments',
+  tags: ['admin'],
+  summary: 'Vehicle segments with both languages, order, switch and live product counts',
+  security: [{ bearerAuth: [] }],
+  responses: { 200: json(AdminSegmentsSchema.openapi('AdminSegments'), 'Segments'), ...errorResponses },
+});
+
+const segmentPatch = createRoute({
+  method: 'patch',
+  path: '/admin/catalogue/segments/{code}',
+  tags: ['admin'],
+  summary: 'Rename, reorder or switch a vehicle segment (compare-and-set on version)',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: z.object({ code: z.enum(VEHICLE_SEGMENTS) }),
+    body: {
+      required: true,
+      content: { 'application/json': { schema: AdminSegmentPatchSchema.openapi('AdminSegmentPatch') } },
+    },
+  },
+  responses: {
+    200: json(AdminSegmentSchema.openapi('AdminSegment'), 'Saved'),
     ...conflict,
     ...errorResponses,
   },
@@ -590,6 +659,27 @@ export function adminCatalogueRoutes(deps: AppDeps, cache: SessionCache) {
         slug: c.req.valid('param').slug,
         expectedVersion: b.version,
         vehicleTypes: b.vehicleTypes,
+        staffUserId: c.get('auth').user.id,
+      });
+      return c.json(r, 200);
+    })
+    .openapi(productSegments, async (c) => {
+      const b = c.req.valid('json');
+      const r = await setProductSegments(deps.db, {
+        slug: c.req.valid('param').slug,
+        expectedVersion: b.version,
+        segments: b.segments,
+        staffUserId: c.get('auth').user.id,
+      });
+      return c.json(r, 200);
+    })
+    .openapi(segmentsList, async (c) => c.json({ segments: await listAdminSegments(deps.db) }, 200))
+    .openapi(segmentPatch, async (c) => {
+      const { version, ...patch } = c.req.valid('json');
+      const r = await updateVehicleSegment(deps.db, {
+        code: c.req.valid('param').code,
+        expectedVersion: version,
+        patch,
         staffUserId: c.get('auth').user.id,
       });
       return c.json(r, 200);

@@ -78,6 +78,7 @@ export function photoQueueMocks(c: AuditCase): Mock[] {
     highlights: [],
     highlightsHi: [],
     vehicleTypes: [],
+    segments: [],
     rejectionReason: null,
     missingHindi: [],
   });

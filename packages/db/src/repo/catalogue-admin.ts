@@ -68,6 +68,8 @@ export interface AdminProduct {
   highlightsHi: string[];
   /** Vehicle types the product is for (decision 2026-11-12); empty = fitment not listed. */
   vehicleTypes: string[];
+  /** Vehicle segment codes (design 2026-11-25), in the shared order; empty = none set. */
+  segments: string[];
   rejectionReason: string | null;
   /** English fields with no Hindi version (shown in English on /hi). */
   missingHindi: HindiGap[];
@@ -114,6 +116,8 @@ const select = {
   highlights: products.highlights,
   highlightsHi: products.highlightsHi,
   vehicleTypes: products.vehicleTypes,
+  segments: sql<string[]>`coalesce((select array_agg(ps.segment_code order by ps.segment_code)
+    from product_vehicle_segments ps where ps.product_id = ${products.id}), '{}'::text[])`,
   rejectionReason: products.rejectionReason,
 };
 type Row = Awaited<ReturnType<typeof loadRows>>[number];

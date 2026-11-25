@@ -113,6 +113,9 @@ export function buildSearchSql(parsed: ParsedQuery): SearchSql {
   }
 
   const vehicle = parsed.vehicleType ? sql`p.vehicle_types @> array[${parsed.vehicleType}]::text[]` : null;
+  const segment = parsed.segment
+    ? sql`exists (select 1 from product_vehicle_segments sg where sg.product_id = p.id and sg.segment_code = ${parsed.segment})`
+    : null;
   const category = parsed.categorySlug
     ? sql`(c.slug = ${parsed.categorySlug} or c.parent_id = (select id from categories where slug = ${parsed.categorySlug}))`
     : null;
@@ -127,13 +130,18 @@ export function buildSearchSql(parsed: ParsedQuery): SearchSql {
       const wq = sql`(to_tsquery('english', ${lex}) || to_tsquery('simple', ${lex}))`;
       const typo = Array.from(w).length >= 4 ? sql` or ${w} <% p.name or ${w} <% b.name` : sql``;
       const byCategory = category && parsed.categoryWords.includes(w) ? sql` or ${category}` : sql``;
-      return sql`(p.search_vector @@ ${wq}${typo}${byCategory})`;
+      const bySegment = segment && parsed.segmentWords.includes(w) ? sql` or ${segment}` : sql``;
+      return sql`(p.search_vector @@ ${wq}${typo}${byCategory}${bySegment})`;
     });
     match = sql`((${sql.join(perWord, sql` and `)}) or ${anyPart})`;
     textRank = sql`(coalesce(ts_rank(p.search_vector, ${tsq}), 0)
       + greatest(word_similarity(${text}, p.name), word_similarity(${text}, b.name)))`;
   } else {
-    const filters = [...attrs.map((a) => a.cond), ...(vehicle ? [vehicle] : [])];
+    const filters = [
+      ...attrs.map((a) => a.cond),
+      ...(vehicle ? [vehicle] : []),
+      ...(segment ? [segment] : []),
+    ];
     match =
       filters.length > 0
         ? sql`(${sql.join(filters, sql` and `)}${parts.length > 0 ? sql` or ${anyPart}` : sql``})`
@@ -146,13 +154,14 @@ export function buildSearchSql(parsed: ParsedQuery): SearchSql {
     ...attrs.map((a) => sql`(case when ${a.cond} then ${a.weight}::float8 else 0 end)`),
     ...(parts.length > 0 ? [sql`(case when ${anyPart} then ${W.partNumber}::float8 else 0 end)`] : []),
     ...(vehicle ? [sql`(case when ${vehicle} then ${W.vehicleIntent}::float8 else 0 end)`] : []),
+    ...(segment ? [sql`(case when ${segment} then ${W.segmentIntent}::float8 else 0 end)`] : []),
     ...(category ? [sql`(case when ${category} then ${W.categoryIntent}::float8 else 0 end)`] : []),
     sql`(case when ${hasOffer} then ${W.inStock}::float8 else 0 end)`,
   ];
   return {
     match,
     rank: (hasOffer) => sql`(${textRank} + ${sql.join(boosts(hasOffer), sql` + `)})::float8`,
-    empty: words.length === 0 && attrs.length === 0 && parts.length === 0 && !vehicle,
+    empty: words.length === 0 && attrs.length === 0 && parts.length === 0 && !vehicle && !segment,
     parsed,
   };
 }

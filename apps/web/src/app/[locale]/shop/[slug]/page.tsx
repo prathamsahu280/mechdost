@@ -156,7 +156,7 @@ export default async function ProductPage({ params }: Props) {
   const mrp = mrpOnly(product);
   const off = price ? discountPercent(price.pricePaise, price.mrpPaise ?? undefined) : 0;
   const onRequest = product.availability === 'on_request';
-  const rows = productRows(t, product);
+  const rows = productRows(t, product, (await getTranslations('segments'))('suitableFor'));
   // Several sizes (user 2026-11-24): the buying area is the size picker island; one size keeps the plain markup.
   const multi = product.variants.length > 1;
   const fullName = productFullName(product.brand, product.name);
@@ -575,10 +575,12 @@ export default async function ProductPage({ params }: Props) {
 function productRows(
   t: (key: 'specification' | 'compatibility' | 'sku' | 'origin') => string,
   p: ProductView,
+  suitableFor: string,
 ): { key: string; term: string; value: string }[] {
   return [
     { key: 'spec', term: t('specification'), value: p.spec },
     { key: 'compat', term: t('compatibility'), value: p.compatibility },
+    { key: 'segments', term: suitableFor, value: p.segments.map((x) => x.name).join(' · ') },
     { key: 'sku', term: t('sku'), value: p.partReference },
     { key: 'origin', term: t('origin'), value: p.countryOfOrigin },
   ].filter((row): row is { key: string; term: string; value: string } => Boolean(row.value));

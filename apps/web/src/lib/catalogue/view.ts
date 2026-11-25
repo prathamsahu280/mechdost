@@ -1,4 +1,5 @@
 import type { VehicleType } from '@mechdost/shared/vehicles';
+import type { VehicleSegment } from '@mechdost/shared/vehicle-segments';
 import type { CataloguePhoto } from '@mechdost/shared/catalogue';
 import type { AttrValue, NetQuantity } from '@mechdost/shared/product-attributes';
 import type { CategoryKey } from '@/demo/catalogue';
@@ -19,6 +20,8 @@ export interface CardView {
   compatibility: string | null;
   /** Vehicle types the product is for, 2W/3W/4W order; empty = "Fitment not listed" (decision 2026-11-12). */
   vehicleTypes: readonly VehicleType[];
+  /** Vehicle segments in the shown order, named in the page language (design 2026-11-25); empty = none set. */
+  segments: readonly { code: VehicleSegment; name: string }[];
   price: { pricePaise: number; mrpPaise: number | null } | null;
   /** Lowest pack MRP, shown as "MRP ₹x" when there is no price (no shop offer yet); never a price, never sellable. */
   mrpFrom: { paise: number; varies: boolean } | null;

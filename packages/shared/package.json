@@ -45,6 +45,8 @@
     "./catalogue-groups": "./src/catalogue-groups.ts",
     "./catalogue-import": "./src/catalogue-import.ts",
     "./vehicles": "./src/vehicles.ts",
+    "./vehicle-segments": "./src/vehicle-segments.ts",
+    "./vehicle-segments-api": "./src/vehicle-segments-api.ts",
     "./rsa": "./src/rsa.ts",
     "./rsa-api": "./src/rsa-api.ts",
     "./search": "./src/search/index.ts",

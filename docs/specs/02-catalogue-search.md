@@ -292,3 +292,63 @@ One product per tread pattern (or oil grade, battery model), each size a **varia
 ## Staff edit shortcut on cards and the product page (2026-11-25)
 
 The product card and the product page carry a staff-only "Edit" link after hydration (never in the cached server HTML); see spec 08 "Storefront edit shortcut". It sits at the picture's top right on cards (the ⓘ and ♡ buttons stay on the category line) and beside the title on the page.
+
+## Vehicle segments (2026-11-25, design `docs/superpowers/specs/2026-11-25-shopping-personalisation-design.md` phase 1; migration `0087_vehicle_segments`, not applied)
+
+User: "we have products for trucks and tractors etc as well right? if yes then add filters and tags for those too"; segments approved ("yeah the segments are fine go ahead").
+
+- **Segments** (closed codes in `packages/shared/src/vehicle-segments.ts`; names, Hindi names, descriptions, order and on/off in table `vehicle_segments`, staff-edited): `two_wheeler` Two-wheeler / दोपहिया, `three_wheeler` तिपहिया, `car_suv` Car & SUV / कार और एसयूवी, `light_commercial` हल्के व्यावसायिक वाहन, `truck_bus` ट्रक और बस, `tractor_farm` ट्रैक्टर और खेती, `construction_otr` निर्माण और ओटीआर, `not_vehicle` Not a vehicle / वाहन के लिए नहीं (inverters, home power, gensets, tools). `VEHICLE_TYPES` (2W/3W/4W) is unchanged and still serves My vehicles, roadside and service requests.
+- **Data:** `vehicle_segments` (code PK, name_en, name_hi, description_en/hi, sort, active, version), many-to-many `product_vehicle_segments (product_id, segment_code)` with index `(segment_code, product_id)`, and the reviewed mapping table `category_default_segments (category_slug, segment_code)`. RLS on, anon/authenticated revoked, version and updated_at triggers. A product has zero or more segments; none = not tagged (shown in no chip, no tag).
+- **Defaults (SQL `product_default_segments`, same logic as `defaultSegmentsFor`):** the category's mapping; a diesel or heavy-duty oil whose name/spec/compatibility says tractor also gets `tractor_farm`; a category with no mapping takes the segments of the product's vehicle types (2W to two_wheeler, 3W to three_wheeler, 4W to car_suv), else none. An AFTER INSERT trigger on `products` applies it to every new product (admin create, CSV, all importers), so imports need no change; `backfill_product_segments()` applied it to the existing products once (idempotent, skips products that already have a row, so staff choices are never overwritten).
+- **Segment backfill mapping (reviewed 2026-11-25):**
+
+| Category slug                                                                                                                                                                              | Segments                                                                             |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| two-wheeler-tyres, two-wheeler-batteries, motorcycle-oil                                                                                                                                   | two_wheeler                                                                          |
+| three-wheeler-tyres, three-wheeler-batteries, e-rickshaw-batteries                                                                                                                         | three_wheeler                                                                        |
+| car-suv-tyres, car-suv-batteries, car-engine-oil, car-care-products                                                                                                                        | car_suv                                                                              |
+| light-commercial-tyres                                                                                                                                                                     | light_commercial                                                                     |
+| truck-bus-tyres                                                                                                                                                                            | truck_bus                                                                            |
+| cv-batteries, diesel-engine-oil, heavy-duty-oils                                                                                                                                           | truck_bus + light_commercial (+ tractor_farm for an oil that says tractor)           |
+| farm-tyres, tractor-batteries, tractor-agri-oils                                                                                                                                           | tractor_farm                                                                         |
+| otr-tyres, industrial-tyres, earth-moving-batteries                                                                                                                                        | construction_otr                                                                     |
+| home-power, genset-batteries, industrial-batteries, workshop-tools                                                                                                                         | not_vehicle                                                                          |
+| greases, gear-oils, speciality-oils, coolants, brake-fluid-fork-oil, aerosol-sprays, polishes-waxes, cleaners-shampoos, tubes-flaps, spare-parts, filters, accessories, bearings, coatings | none: from the product's vehicle types if it has any, else untagged (staff set them) |
+
+- **Preview on the real database (read only, run in the SQL editor before applying):**
+
+```sql
+-- counts per segment the backfill would give (live products); the "(no segment)" row lists the categories left untagged
+with m as (select * from (values
+ ('two-wheeler-tyres','two_wheeler'),('two-wheeler-batteries','two_wheeler'),('motorcycle-oil','two_wheeler'),
+ ('three-wheeler-tyres','three_wheeler'),('three-wheeler-batteries','three_wheeler'),('e-rickshaw-batteries','three_wheeler'),
+ ('car-suv-tyres','car_suv'),('car-suv-batteries','car_suv'),('car-engine-oil','car_suv'),('car-care-products','car_suv'),
+ ('light-commercial-tyres','light_commercial'),('truck-bus-tyres','truck_bus'),
+ ('cv-batteries','truck_bus'),('cv-batteries','light_commercial'),('diesel-engine-oil','truck_bus'),('diesel-engine-oil','light_commercial'),
+ ('heavy-duty-oils','truck_bus'),('heavy-duty-oils','light_commercial'),
+ ('farm-tyres','tractor_farm'),('tractor-batteries','tractor_farm'),('tractor-agri-oils','tractor_farm'),
+ ('otr-tyres','construction_otr'),('industrial-tyres','construction_otr'),('earth-moving-batteries','construction_otr'),
+ ('home-power','not_vehicle'),('genset-batteries','not_vehicle'),('industrial-batteries','not_vehicle'),('workshop-tools','not_vehicle')
+) t(slug, seg)),
+d as (
+  select p.id, c.slug, coalesce(m.seg, case v when '2W' then 'two_wheeler' when '3W' then 'three_wheeler' when '4W' then 'car_suv' end) as seg
+  from products p join categories c on c.id = p.category_id
+  left join m on m.slug = c.slug
+  left join lateral unnest(p.vehicle_types) v on m.seg is null
+  where p.status = 'live'
+  union
+  select p.id, c.slug, 'tractor_farm' from products p join categories c on c.id = p.category_id
+  where p.status = 'live' and c.slug in ('diesel-engine-oil','heavy-duty-oils')
+    and (p.name || ' ' || coalesce(p.spec_summary,'') || ' ' || coalesce(p.compatibility,'')) ~* '(tractor|ट्रैक्टर)')
+select coalesce(seg, '(no segment)') as segment, count(distinct id) as products,
+  string_agg(distinct slug, ', ') filter (where seg is null) as untagged_categories
+from d group by seg order by 2 desc;
+```
+
+The PGlite fixture test proves the same mapping (`packages/db/test/vehicle-segments.test.ts`).
+
+- **API:** `GET /v1/catalogue/products?segment=truck_bus,tractor_farm` (any of; unknown code = 400). Every card has `segments: [{code, name}]` (active only, staff order, page language); the first page has `facets.segments: [{code, name, count}]`, counts for the current search, category, brand, vehicle and availability, ignoring the segment filter itself (so a chip shows what choosing it adds); later pages have none. `GET /v1/catalogue/segments?locale=` lists the active segments with live counts (home tiles; counts use `productVisible`, so hidden brands and categories are never counted). Admin: `GET /v1/admin/catalogue/segments`, `PATCH /v1/admin/catalogue/segments/{code}` (version compare-and-set, strict body), `PUT /v1/admin/catalogue/products/{slug}/segments` (product version compare-and-set, audited `product.segments_updated`); permission `products:write`.
+- **Search words:** a new vocabulary kind `segment` (admin-editable like the others, table `search_synonyms`, migration 0087 adds the check value and the words and turns the old plain-word truck / bus / tractor vehicle entries into segment entries). English, Hindi and Hinglish: truck, lorry, bus, tipper, trailer, ट्रक, बस; tractor, kisan, farm, agri, ट्रैक्टर, किसान; tempo, pickup, mini truck, lcv, टेम्पो; jcb, earthmover, excavator, loader, otr, जेसीबी; inverter, genset, ups, इन्वर्टर. The word leaves the text match and boosts products in that segment (`segmentIntent` 1.5, same as vehicle intent); with no other word left it is the filter ("tractor" lists tractor products). Demo ranker and SQL agree.
+- **Web:** `/shop` shows the vehicle chips (`data-slot="segment-chips"`) under the category chips: toggle buttons with `aria-pressed`, several at once (any of), the count of each for the current search and category, "All vehicles" clears; zero-count chips are hidden unless chosen; 44 px high; the row scrolls sideways inside its own box. URL `?segment=truck_bus,tractor_farm` (valid codes, shared order). Cards carry one tag (`data-slot="card-segment"`) in the badge row under the picture: the product's first segment in staff order; the "Fitment not listed" badge is dropped when a segment tag is shown. The product page lists "Suitable for ..." in its specification table. Home has a section "Shop by vehicle" (layout key `vehicles`, after the categories; the admin orders or hides it like the others) with tiles Truck & bus, Tractor & farm, Construction & OTR linking to `/shop?segment=...`; names, descriptions and counts come from the segment table (API) or the built-in texts (demo); no tiles, no section. Demo mode: the demo catalogue has heavy-vehicle, tractor, OTR and inverter products; the demo admin keeps renames and order in this browser and applies them to the chips only.
+- **Analytics (spec 12):** `shop_segment_filtered { segments, count }`, `home_segment_tile_clicked { segment }`, `admin_site_change` area `segments`.
+- **Tests:** `packages/db/test/vehicle-segments.test.ts`, `packages/shared/test/vehicle-segments.test.ts` and `search.test.ts`, `apps/api/test/catalogue-segments.test.ts` (+ role-leak rows in `admin-catalogue-role-leak.test.ts`), `apps/web/test/segments.test.ts`, `apps/web/e2e/segments.spec.ts`, state-audit rows `SHOP-SEGMENT-CHIPS`, `SHOP-SEGMENT-TAG`, `HOME-VEHICLE-TILES` and two routes of `SHOP-FILTERS`.

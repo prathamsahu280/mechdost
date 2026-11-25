@@ -16,6 +16,7 @@ import { WishlistHeartLazy } from './wishlist-lazy';
 import { AdminEditLazy } from './admin-edit-lazy';
 import { adminEditPath } from '@/lib/catalogue/admin-edit';
 import { productFullName } from '@/lib/product-name';
+import { cardSegment } from '@mechdost/shared/vehicle-segments';
 
 /**
  * Product card: blueprint artwork with an ⓘ quick-details popover, brand and category, name, rating, price with
@@ -27,14 +28,18 @@ export function ProductCard({
   product,
   scope = 'list',
   compare = true,
+  segmentFilter = [],
 }: {
   product: CardView;
   /** Distinguishes lists on one page (ids of the quick-details popover). */
   scope?: string;
   /** Shows the "Compare" toggle (shop pages, where the compare tray lives; not the home page). */
   compare?: boolean;
+  /** The vehicle segments the list is filtered to: the tag shows the first of the product's segments among them. */
+  segmentFilter?: readonly string[];
 }) {
   const t = useTranslations('catalogue');
+  const seg = useTranslations('segments');
   const locale = useLocale();
   const matched = product.matchedSizes ?? [];
   const first = matched[0];
@@ -52,6 +57,8 @@ export function ProductCard({
   const sizes = product.sizes;
   const rating = product.rating && product.rating.count > 0 ? product.rating : null;
   const categoryName = product.category.name ?? (product.category.key ? c(product.category.key) : null);
+  // One vehicle-segment tag (design 2026-11-25): the filtered segment when there is one, else the first, in the admin's order.
+  const segment = cardSegment(product.segments, segmentFilter);
 
   return (
     <article className="group grid rounded-card border border-line-card bg-surface p-3 shadow-card transition-shadow duration-[var(--duration-base)] hover:shadow-card-hover">
@@ -88,16 +95,27 @@ export function ProductCard({
               {t('bestseller')}
             </span>
           ) : null}
-          <span className="rounded-md bg-surface/95 px-2 py-0.5 text-[11px] font-bold text-ink">
-            {product.vehicleTypes.length > 0 ? (
-              <>
-                <span className="sr-only">{t('fitsLabel')} </span>
-                {product.vehicleTypes.join(' · ')}
-              </>
-            ) : (
-              t('fitUnknown')
-            )}
-          </span>
+          {segment ? (
+            <span
+              data-slot="card-segment"
+              className="rounded-md bg-accent-soft px-2 py-0.5 text-[11px] font-bold text-accent-soft-text"
+            >
+              <span className="sr-only">{seg('suitableFor')} </span>
+              {segment.name}
+            </span>
+          ) : null}
+          {product.vehicleTypes.length > 0 || !segment ? (
+            <span className="rounded-md bg-surface/95 px-2 py-0.5 text-[11px] font-bold text-ink">
+              {product.vehicleTypes.length > 0 ? (
+                <>
+                  <span className="sr-only">{t('fitsLabel')} </span>
+                  {product.vehicleTypes.join(' · ')}
+                </>
+              ) : (
+                t('fitUnknown')
+              )}
+            </span>
+          ) : null}
         </div>
       </div>
       {/* Rows line up across a row of cards (user report 2026-11-15: prices and "In stock" at different heights).

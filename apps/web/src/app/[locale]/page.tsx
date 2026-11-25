@@ -8,11 +8,13 @@ import { ProductRange } from '@/components/home/product-range';
 import { PartnerTeaser } from '@/components/home/partner-teaser';
 import { ServiceSection } from '@/components/home/service-section';
 import { TopWorkshops } from '@/components/home/top-workshops';
+import { VehicleTiles } from '@/components/home/vehicle-tiles';
 import { TrustStrip } from '@/components/home/trust-strip';
 import { AudienceBand } from '@/components/home/audience-band';
 import type { Locale } from '@/i18n/routing';
 import { JsonLd } from '@/components/site/json-ld';
 import { homeRangeCards } from '@/lib/catalogue/home-range';
+import { homeSegmentTiles } from '@/lib/catalogue/home-segments';
 import { DATA_MODE } from '@/lib/data-mode';
 import { alternatesFor } from '@/lib/seo';
 import { organizationLd, websiteLd } from '@/lib/structured-data';
@@ -44,12 +46,15 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
   const layout = await publishedLayout();
   const range = DATA_MODE === 'api' ? await homeRangeCards(locale) : undefined;
   const roadside = await publishedRoadside();
+  const vehicleTiles = await homeSegmentTiles(locale);
   const sections: Record<HomeSection, ReactNode> = {
     // Roadside help (spec 22): nothing where the city has it off, so the band is never a dead end.
     roadside: roadside.enabled ? <RoadsideBand alwaysOpen={roadside.alwaysOpen} /> : null,
     audiences: <AudienceBand />,
     trust: <TrustStrip />,
     categories: <CategoryTiles featured={featuredCategories(layout)} emoji={layout.emoji} />,
+    // "Shop by vehicle" (design 2026-11-25): nothing when no segment can be shown, so there is no empty heading.
+    vehicles: vehicleTiles.length > 0 ? <VehicleTiles tiles={vehicleTiles} /> : null,
     products: <ProductRange cards={range} />,
     route: <OrderRoute />,
     service: <ServiceSection region={region} />,

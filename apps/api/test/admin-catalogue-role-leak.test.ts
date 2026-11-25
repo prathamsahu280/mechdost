@@ -102,6 +102,13 @@ const EDITOR_CALLS: { method: string; path: string; body?: unknown }[] = [
     path: `/admin/catalogue/products/${SLUG}/vehicle-types`,
     body: { version: 1, vehicleTypes: ['2W'] },
   },
+  {
+    method: 'PUT',
+    path: `/admin/catalogue/products/${SLUG}/segments`,
+    body: { version: 1, segments: ['two_wheeler'] },
+  },
+  { method: 'GET', path: '/admin/catalogue/segments' },
+  { method: 'PATCH', path: '/admin/catalogue/segments/truck_bus', body: { version: 1, nameEn: 'Heavy' } },
   { method: 'POST', path: `/admin/catalogue/products/${SLUG}/status`, body: { version: 1, status: 'draft' } },
   { method: 'POST', path: `/admin/catalogue/products/${SLUG}/variants`, body: { sku: 'leak-1' } },
 ];

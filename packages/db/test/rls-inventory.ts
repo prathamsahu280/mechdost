@@ -38,6 +38,9 @@ const PARTNER = ['shops', 'shop_users', 'shop_inventory', 'order_assignments', '
 const NONE = [
   'product_ranges',
   'search_synonyms',
+  'vehicle_segments',
+  'product_vehicle_segments',
+  'category_default_segments',
   'admin_prices',
   'agreement_versions',
   'audit_log',

@@ -120,6 +120,7 @@ const KNOWN = new Set([
   'EMPTY_PATCH',
   'NET_QUANTITY',
   'VEHICLE_TYPES',
+  'PRODUCT_SEGMENTS',
   'FORBIDDEN',
   'STAFF_2FA_REQUIRED',
   'VERIFICATION_REQUIRED',
@@ -139,7 +140,13 @@ const KNOWN = new Set([
 ]);
 
 export function errorKey(code: string): string {
-  if (code === 'STALE_PRODUCT' || code === 'STALE_PRICE' || code === 'STALE_VARIANT' || code === 'CONFLICT')
+  if (
+    code === 'STALE_PRODUCT' ||
+    code === 'STALE_SEGMENT' ||
+    code === 'STALE_PRICE' ||
+    code === 'STALE_VARIANT' ||
+    code === 'CONFLICT'
+  )
     return 'cat_err_STALE';
   return KNOWN.has(code) ? `cat_err_${code}` : 'cat_err_generic';
 }

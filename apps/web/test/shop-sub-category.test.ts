@@ -31,7 +31,14 @@ describe('shopUrl', () => {
   it('writes the sub-category slug as the category parameter', () => {
     const sub = { slug: 'car-engine-oil', name: 'Car engine oil' };
     expect(
-      shopUrl('/shop', { query: '', category: 'lubricants', sub, sort: 'popular', vehicle: undefined }),
+      shopUrl('/shop', {
+        query: '',
+        category: 'lubricants',
+        sub,
+        sort: 'popular',
+        vehicle: undefined,
+        segments: [],
+      }),
     ).toBe('/shop?category=car-engine-oil');
     expect(
       shopUrl('/shop', {
@@ -40,6 +47,7 @@ describe('shopUrl', () => {
         sub: undefined,
         sort: 'popular',
         vehicle: undefined,
+        segments: [],
       }),
     ).toBe('/shop?category=lubricants');
   });
