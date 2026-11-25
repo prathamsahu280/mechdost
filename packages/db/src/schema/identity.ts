@@ -1,4 +1,5 @@
 import { sql } from 'drizzle-orm';
+import { USTAAD_CONSENT_PURPOSES } from '@mechdost/shared/ustaad/codes';
 import {
   boolean,
   check,
@@ -171,7 +172,8 @@ export const consents = pgTable(
   (t) => [
     check(
       'consents_purpose_valid',
-      sql`${t.purpose} in ('account','marketing','analytics','location','share_with_partner','whatsapp')`,
+      // Ustaad Network purposes (spec 23 § 13) added by migration ustaad_foundations; the list is the shared one.
+      sql`${t.purpose} in ('account','marketing','analytics','location','share_with_partner','whatsapp',${sql.raw(USTAAD_CONSENT_PURPOSES.map((p) => `'${p}'`).join(','))})`,
     ),
     index().on(t.userId, t.purpose, t.createdAt),
   ],

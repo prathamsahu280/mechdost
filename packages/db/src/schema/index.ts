@@ -13,3 +13,14 @@ export * from './storefront';
 export * from './storefront-cart';
 export * from './business';
 export * from './search';
+// Ustaad Network (spec 23 § 6): one file per area, every migration written by workstream A.
+export * from './ustaad-members';
+export * from './ustaad-media';
+export * from './ustaad-trust';
+export * from './ustaad-onboarding';
+export * from './ustaad-qa';
+export * from './ustaad-content';
+export * from './ustaad-graph';
+export * from './ustaad-local';
+export * from './ustaad-jobs';
+export * from './ustaad-moderation';

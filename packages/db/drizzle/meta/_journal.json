@@ -603,6 +603,48 @@
       "when": 1795622275505,
       "tag": "0087_vehicle_segments",
       "breakpoints": true
+    },
+    {
+      "idx": 88,
+      "version": "7",
+      "when": 1795637354347,
+      "tag": "0088_ustaad_foundations",
+      "breakpoints": true
+    },
+    {
+      "idx": 89,
+      "version": "7",
+      "when": 1795637480218,
+      "tag": "0089_ustaad_identity",
+      "breakpoints": true
+    },
+    {
+      "idx": 90,
+      "version": "7",
+      "when": 1795637541185,
+      "tag": "0090_ustaad_qa",
+      "breakpoints": true
+    },
+    {
+      "idx": 91,
+      "version": "7",
+      "when": 1795637637641,
+      "tag": "0091_ustaad_feed",
+      "breakpoints": true
+    },
+    {
+      "idx": 92,
+      "version": "7",
+      "when": 1795637694516,
+      "tag": "0092_ustaad_local",
+      "breakpoints": true
+    },
+    {
+      "idx": 93,
+      "version": "7",
+      "when": 1795637751595,
+      "tag": "0093_ustaad_moderation",
+      "breakpoints": true
     }
   ]
 }
