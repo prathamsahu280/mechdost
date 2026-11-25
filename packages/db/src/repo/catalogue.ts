@@ -473,7 +473,7 @@ async function segmentFacets(
           join categories c on c.id = p.category_id
           ${needsOffer ? offerLateral(place, sql`v.product_id = p.id`) : sql``}
           join product_vehicle_segments ps on ps.product_id = p.id
-          where ${sql.join(filters, sql` and `)}
+          where ${sql.join([...filters], sql` and `)}
           group by ps.segment_code`,
       )
       .then((r) => rowsOf<{ code: string; n: unknown }>(r)),

@@ -183,3 +183,18 @@ export function cardSegment<T extends { code: string }>(
 ): T | null {
   return own.find((s) => filtered.includes(s.code)) ?? own[0] ?? null;
 }
+
+/**
+ * The `segment` URL parameter ("truck_bus,tractor_farm"): valid codes only, each once, in the shared order. Anything
+ * else is dropped, so a hand-edited link filters nothing it should not.
+ */
+export function parseSegmentParam(value: string | readonly string[] | undefined | null): VehicleSegment[] {
+  const raw = (Array.isArray(value) ? value.join(',') : (value ?? '')) as string;
+  const wanted = new Set(raw.split(',').map((x) => x.trim()));
+  return VEHICLE_SEGMENTS.filter((code) => wanted.has(code));
+}
+
+/** The URL form of a selection (empty string = no filter), in the shared order so one selection has one URL. */
+export function formatSegmentParam(segments: readonly string[]): string {
+  return VEHICLE_SEGMENTS.filter((code) => segments.includes(code)).join(',');
+}

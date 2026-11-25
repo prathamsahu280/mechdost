@@ -50,6 +50,13 @@ export const AdminSegmentPatchSchema = z
   })
   .strict();
 
+/** The public segment list (home "Shop by vehicle" tiles): names in the page language and live product counts. */
+export const CatalogueSegmentSchema = SegmentRefSchema.extend({
+  description: z.string().nullable(),
+  count: z.number().int().min(0),
+});
+export const CatalogueSegmentsSchema = z.object({ segments: z.array(CatalogueSegmentSchema) });
+
 export type SegmentRef = z.infer<typeof SegmentRefSchema>;
 export type SegmentFacet = z.infer<typeof SegmentFacetSchema>;
 export type AdminSegment = z.infer<typeof AdminSegmentSchema>;

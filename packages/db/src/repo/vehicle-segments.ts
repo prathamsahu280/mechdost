@@ -157,3 +157,28 @@ export async function setProductSegments(
     return { version: row.version, segments: next };
   });
 }
+
+export interface PublicSegment {
+  code: VehicleSegment;
+  name: string;
+  description: string | null;
+  /** Live products tagged with it. */
+  count: number;
+}
+
+/** The active segments in staff order, named in the page language, with live product counts (home tiles). */
+export async function listPublicSegments(db: Tx, locale: 'en' | 'hi'): Promise<PublicSegment[]> {
+  const rows = rowsOf<{ code: string; name: string; description: string | null; n: unknown }>(
+    await db.execute(sql`
+      select vs.code, ${locale === 'hi' ? sql`vs.name_hi` : sql`vs.name_en`} as name,
+        ${locale === 'hi' ? sql`coalesce(vs.description_hi, vs.description_en)` : sql`vs.description_en`} as description,
+        (select count(*) from product_vehicle_segments ps join products p on p.id = ps.product_id
+          where ps.segment_code = vs.code and p.status = 'live') as n
+      from vehicle_segments vs where vs.active order by vs.sort, vs.code`),
+  );
+  return rows.flatMap((r) =>
+    isVehicleSegment(r.code)
+      ? [{ code: r.code, name: r.name, description: r.description, count: num(r.n) }]
+      : [],
+  );
+}
