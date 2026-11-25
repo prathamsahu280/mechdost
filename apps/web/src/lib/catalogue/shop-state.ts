@@ -1,4 +1,5 @@
 import type { VehicleType } from '@mechdost/shared/vehicles';
+import { formatSegmentParam, type VehicleSegment } from '@mechdost/shared/vehicle-segments';
 import { CATEGORY_SLUGS, categoryFromSlug, type CategoryKey } from '@/demo/categories';
 import type { SortKey } from '@/demo/catalogue';
 
@@ -18,6 +19,8 @@ export interface ShopState {
   sort: SortKey;
   /** Only products tagged for this vehicle type (decision 2026-11-12). */
   vehicle: VehicleType | undefined;
+  /** Vehicle segments chosen with the chips (any of; design 2026-11-25); empty = all vehicles. */
+  segments: readonly VehicleSegment[];
 }
 
 export function shopUrl(base: string, s: ShopState): string {
@@ -27,6 +30,8 @@ export function shopUrl(base: string, s: ShopState): string {
   else if (s.category) params.set('category', CATEGORY_SLUGS[s.category]);
   if (s.sort !== 'popular') params.set('sort', s.sort);
   if (s.vehicle) params.set('vehicle', s.vehicle);
+  const segment = formatSegmentParam(s.segments);
+  if (segment) params.set('segment', segment);
   const qs = params.toString();
   return qs ? `${base}?${qs}` : base;
 }

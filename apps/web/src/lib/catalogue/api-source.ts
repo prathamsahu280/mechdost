@@ -1,4 +1,6 @@
 import type { VehicleType } from '@mechdost/shared/vehicles';
+import { formatSegmentParam, type VehicleSegment } from '@mechdost/shared/vehicle-segments';
+import type { SegmentFacet } from '@mechdost/shared/vehicle-segments-api';
 import {
   CatalogueCategoriesSchema,
   CataloguePageSchema,
@@ -33,6 +35,8 @@ export interface CatalogueQuery {
   category?: string;
   sort?: ApiSort;
   vehicle?: VehicleType;
+  /** Only products in any of these vehicle segments (design 2026-11-25). */
+  segments?: readonly VehicleSegment[];
   cursor?: string;
   limit?: number;
   /** A shared link starts again at page 1 on a bad cursor; "Load more" must fail instead (review B6). */
@@ -51,7 +55,7 @@ async function get(url: URL, next: { revalidate: number; tags: string[] }): Prom
 
 export async function fetchCataloguePage(
   query: CatalogueQuery,
-): Promise<{ items: CardView[]; nextCursor: string | null }> {
+): Promise<{ items: CardView[]; nextCursor: string | null; segmentFacets: SegmentFacet[] }> {
   const url = new URL(`${base()}/v1/catalogue/products`);
   url.searchParams.set('locale', query.locale);
   url.searchParams.set('city', CITY);
@@ -61,6 +65,8 @@ export async function fetchCataloguePage(
   if (query.category) url.searchParams.set('category', query.category);
   if (query.sort) url.searchParams.set('sort', query.sort);
   if (query.vehicle) url.searchParams.set('vehicle', query.vehicle);
+  const segment = formatSegmentParam(query.segments ?? []);
+  if (segment) url.searchParams.set('segment', segment);
   if (query.cursor) url.searchParams.set('cursor', query.cursor);
 
   let res = await get(url, { revalidate: 30, tags: ['catalogue'] });
@@ -71,7 +77,7 @@ export async function fetchCataloguePage(
   }
   if (!res.ok) throw new Error(`catalogue API ${String(res.status)}`);
   const page = CataloguePageSchema.parse(await res.json());
-  return { items: page.items.map(apiCard), nextCursor: page.nextCursor };
+  return { items: page.items.map(apiCard), nextCursor: page.nextCursor, segmentFacets: page.facets.segments };
 }
 
 /** Visible categories (top level and sub-categories) in the page language; the shop resolves a sub-category slug. */
@@ -129,6 +135,7 @@ export function apiCard(c: ApiCard): CardView {
     spec: c.specSummary,
     compatibility: null,
     vehicleTypes: c.vehicleTypes,
+    segments: c.segments,
     price: c.offer ? { pricePaise: c.offer.pricePaise, mrpPaise: c.offer.mrpPaise } : null,
     pack: c.offer?.netQuantity ?? null,
     availability: c.offer ? 'in_stock' : 'on_request',

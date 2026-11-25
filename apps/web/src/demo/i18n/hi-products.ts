@@ -145,4 +145,40 @@ export const PRODUCT_HI: Readonly<Record<string, ProductHi>> = {
     compatibility: 'टाइप 2 इनलेट वाली EV कारें',
     highlights: ['अर्थ-लीकेज से सुरक्षा', 'दीवार के सॉकेट की रेटिंग जाँच लें'],
   },
+  // Heavy vehicles, tractors and machines (design 2026-11-25).
+  'mrf-steel-muscle-1000r20-truck-tyre': {
+    spec: '10.00 R20 · 16 PR · ट्यूब टाइप · ट्रक और बस',
+    compatibility: '20 इंच रिम वाले ट्रक और बसें',
+    highlights: ['मिली-जुली सड़कों के लिए लग पैटर्न', '16 प्लाई रेटिंग', 'दोबारा चढ़ने (रिट्रेड) लायक ढाँचा'],
+  },
+  'apollo-endurace-lt-700r16-tyre': {
+    spec: '7.00 R16 · 14 PR · ट्यूब टाइप · हल्का ट्रक',
+    compatibility: '16 इंच रिम वाले पिकअप, टेम्पो और मिनी ट्रक',
+    highlights: ['लदे वाहन के लिए मज़बूत साइडवॉल', '14 प्लाई रेटिंग'],
+  },
+  'ceat-earthmax-175-25-otr-tyre': {
+    spec: '17.5-25 · 12 PR · लोडर और डोज़र',
+    compatibility: '25 इंच रिम वाले व्हील लोडर और ग्रेडर',
+    highlights: ['ढीली ज़मीन के लिए गहरी ट्रेड', 'कट-रोधी कंपाउंड'],
+  },
+  'exide-xpress-hd-180ah-truck-battery': {
+    spec: '12 V · 180 Ah · फ़्लडेड · हेवी ड्यूटी',
+    compatibility: 'ट्रक, बसें और पिकअप (ऑर्डर से पहले टर्मिनल की तरफ़ जाँच लें)',
+    highlights: ['डीज़ल क्रैंकिंग के लिए बनी', 'कंपन सहने वाली', 'पुरानी बैटरी एक्सचेंज ऑफ़र'],
+  },
+  'amaron-pro-tractor-88ah-battery': {
+    spec: '12 V · 88 Ah · फ़्लडेड · ट्रैक्टर',
+    compatibility: 'ज़्यादातर 35 से 55 hp ट्रैक्टर',
+    highlights: ['ठंड में भी दमदार स्टार्ट', 'धूल और गर्मी में भरोसेमंद'],
+  },
+  'servo-agri-super-15w40-7l': {
+    spec: 'ट्रैक्टर इंजन ऑयल · 15W40 · 7.5 L',
+    compatibility: 'डीज़ल ट्रैक्टर और खेती के इंजन',
+    highlights: ['API CH-4 ग्रेड', 'खेत के भारी काम में सुरक्षा', '7.5 L पैक'],
+  },
+  'exide-inva-master-150ah-inverter-battery': {
+    spec: '12 V · 150 Ah · टॉल ट्यूबुलर · घरेलू इन्वर्टर',
+    compatibility: 'घर और दुकान के इन्वर्टर (वाहनों के लिए नहीं)',
+    highlights: ['लंबा बैकअप', 'कम पानी भरना पड़ता है'],
+  },
 };

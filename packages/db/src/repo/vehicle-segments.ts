@@ -1,6 +1,7 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { isVehicleSegment, VEHICLE_SEGMENTS, type VehicleSegment } from '@mechdost/shared/vehicle-segments';
 import { auditLog, productVehicleSegments, products, vehicleSegments } from '../schema';
+import { productVisible } from './visibility';
 import { ConflictError, NotFoundError, ValidationError } from './errors';
 import type { Tx } from './orders';
 import { num, rowsOf } from './sql-rows';
@@ -173,7 +174,7 @@ export async function listPublicSegments(db: Tx, locale: 'en' | 'hi'): Promise<P
       select vs.code, ${locale === 'hi' ? sql`vs.name_hi` : sql`vs.name_en`} as name,
         ${locale === 'hi' ? sql`coalesce(vs.description_hi, vs.description_en)` : sql`vs.description_en`} as description,
         (select count(*) from product_vehicle_segments ps join products p on p.id = ps.product_id
-          where ps.segment_code = vs.code and p.status = 'live') as n
+          where ps.segment_code = vs.code and ${productVisible('p')}) as n
       from vehicle_segments vs where vs.active order by vs.sort, vs.code`),
   );
   return rows.flatMap((r) =>

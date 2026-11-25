@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { ProductCard } from '@/components/catalogue/product-card';
 import { ShopBrowser, type ServerListing } from '@/components/catalogue/shop-browser';
+import type { SegmentChip } from '@/components/catalogue/segment-chips';
 import { ClientMessages } from '@/components/ui/client-messages';
 import { Container, PageIntro } from '@/components/ui/page-intro';
 import { CATEGORY_SLUGS, DEMO_PRODUCTS, type SortKey } from '@/demo/catalogue';
@@ -18,6 +19,7 @@ import { alternatesFor, openGraphFor } from '@/lib/seo';
 import { site } from '@/lib/site';
 import { localePath } from '@/lib/locale-path';
 import { VEHICLE_TYPES } from '@mechdost/shared/vehicles';
+import { parseSegmentParam } from '@mechdost/shared/vehicle-segments';
 import { RoadsideCard } from '@/components/roadside/roadside-promo';
 import { publishedRoadside } from '@/lib/site-config-content';
 
@@ -26,6 +28,7 @@ type Search = Promise<{
   category?: string | string[];
   sort?: string | string[];
   vehicle?: string | string[];
+  segment?: string | string[];
   pages?: string | string[];
 }>;
 
@@ -106,6 +109,7 @@ export default async function ShopPage({ searchParams }: Props) {
     sub: resolved.sub,
     sort,
     vehicle: VEHICLE_TYPES.find((v) => v === first(sp.vehicle)),
+    segments: parseSegmentParam(sp.segment),
   };
   let cards: Record<string, ReactNode>;
   let server: ServerListing | undefined;
@@ -117,10 +121,12 @@ export default async function ShopPage({ searchParams }: Props) {
       category: initial.sub?.slug ?? (initial.category ? CATEGORY_SLUGS[initial.category] : null),
       sort: sort === 'popular' ? null : sort,
       vehicle: initial.vehicle ?? null,
+      segments: [...initial.segments],
     };
     const pages = Math.min(MAX_LIST_PAGES, Math.max(1, Math.trunc(Number(first(sp.pages))) || 1));
     const items: CardView[] = [];
     let cursor: string | null = null;
+    let segmentFacets: SegmentChip[] = [];
     for (let n = 0; n < pages; n++) {
       const page = await fetchCataloguePage({
         locale,
@@ -128,8 +134,10 @@ export default async function ShopPage({ searchParams }: Props) {
         category: query.category ?? undefined,
         sort: query.sort ?? undefined,
         vehicle: query.vehicle ?? undefined,
+        segments: query.segments,
         cursor: cursor ?? undefined,
       });
+      if (n === 0) segmentFacets = page.segmentFacets;
       for (const item of page.items) if (!items.some((i) => i.slug === item.slug)) items.push(item);
       cursor = page.nextCursor;
       if (!cursor) break;
@@ -143,6 +151,7 @@ export default async function ShopPage({ searchParams }: Props) {
       nextCursor: cursor,
       loadMore: loadMoreCards,
       didYouMean,
+      segmentFacets,
     };
   } else {
     cards = Object.fromEntries(
@@ -155,7 +164,7 @@ export default async function ShopPage({ searchParams }: Props) {
   return (
     <Container className="py-10 tab:py-14">
       <PageIntro eyebrow={t('eyebrow')} line1={t('titleLine1')} line2={t('titleLine2')} lead={t('lead')} />
-      <ClientMessages namespaces={['catalogue', 'categories', 'product', 'pages']}>
+      <ClientMessages namespaces={['catalogue', 'categories', 'product', 'pages', 'segments']}>
         <ShopBrowser
           basePath={localePath('/shop', locale)}
           initial={initial}

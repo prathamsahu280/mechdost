@@ -11,6 +11,7 @@ import * as s from '../src/schema';
 import {
   invalidateSearchVocab,
   listAdminSegments,
+  listPublicSegments,
   listCatalogue,
   productSegmentCodes,
   setProductSegments,
@@ -285,6 +286,28 @@ describe('the listing: filter, facets, card tags', () => {
       patch: { active: true },
       staffUserId: F.staff!,
     });
+  });
+});
+
+describe('public counts follow the shop visibility rule', () => {
+  it('does not count a live product whose brand or category is hidden', async () => {
+    const countOf = async () =>
+      (await listPublicSegments(t(), 'en')).find((x) => x.code === 'construction_otr')!.count;
+    const before = await countOf();
+    const [hiddenBrand] = await db
+      .insert(s.brands)
+      .values({ slug: 'hidden-brand', name: 'Hidden', hidden: true, hiddenReason: 'discontinued' })
+      .returning();
+    await product('hidden-otr', 'otr-tyres', { brandId: hiddenBrand!.id });
+    expect(await countOf()).toBe(before); // live, but its brand is switched off
+    await db
+      .update(s.brands)
+      .set({ hidden: false, hiddenReason: null })
+      .where(eq(s.brands.id, hiddenBrand!.id));
+    expect(await countOf()).toBe(before + 1);
+    await db.update(s.categories).set({ hidden: true }).where(eq(s.categories.id, CAT['otr-tyres']!));
+    expect(await countOf()).toBe(0);
+    await db.update(s.categories).set({ hidden: false }).where(eq(s.categories.id, CAT['otr-tyres']!));
   });
 });
 

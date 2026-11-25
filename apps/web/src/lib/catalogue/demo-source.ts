@@ -1,5 +1,12 @@
 import { attributeDefs, readAttributes } from '@mechdost/shared/product-attributes';
-import { CATEGORY_SLUGS, VEHICLE_TYPES_OF_FIT, type DemoProduct, type DemoSize } from '@/demo/catalogue';
+import { DEFAULT_SEGMENT_TEXT } from '@mechdost/shared/vehicle-segments';
+import {
+  CATEGORY_SLUGS,
+  demoSegmentsOf,
+  VEHICLE_TYPES_OF_FIT,
+  type DemoProduct,
+  type DemoSize,
+} from '@/demo/catalogue';
 import { localizeProduct } from '@/demo/i18n/localize';
 import { DEMO_PRODUCT_SPECS } from '@/demo/product-specs';
 import { productRating } from '@/demo/reviews';
@@ -26,6 +33,10 @@ export function demoCard(raw: DemoProduct, locale: string): CardView {
     spec: p.spec,
     compatibility: p.compatibility,
     vehicleTypes: VEHICLE_TYPES_OF_FIT[p.fits],
+    segments: demoSegmentsOf(raw).map((code) => ({
+      code,
+      name: locale === 'hi' ? DEFAULT_SEGMENT_TEXT[code].nameHi : DEFAULT_SEGMENT_TEXT[code].nameEn,
+    })),
     price: { pricePaise: p.pricePaise, mrpPaise: p.mrpPaise ?? null },
     mrpFrom: null,
     pack: DEMO_PRODUCT_SPECS[raw.slug]?.netQuantity ?? null,
