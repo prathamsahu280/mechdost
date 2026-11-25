@@ -130,60 +130,138 @@ describe('sniff (AT-UP-2, SR-17)', () => {
   });
 });
 
-describe('container facts (AT-UP-4, AT-UP-5)', () => {
+describe('container facts (AT-UP-4, AT-UP-5; review 2026-11-26: walk the box tree, fail closed)', () => {
+  const full = (type: string, version: number, payload: number[]) =>
+    box(type, [version, 0, 0, 0, ...payload]);
   const mvhd = (timescale: number, duration: number) =>
-    box('mvhd', [
-      0,
-      0,
-      0,
-      0,
+    full('mvhd', 0, [
       ...be32(0),
       ...be32(0),
       ...be32(timescale),
       ...be32(duration),
       ...new Array<number>(80).fill(0),
     ]);
+  const tkhd = (duration: number) =>
+    full('tkhd', 0, [
+      ...be32(0),
+      ...be32(0),
+      ...be32(1),
+      ...be32(0),
+      ...be32(duration),
+      ...new Array<number>(60).fill(0),
+    ]);
+  const mdhd = (timescale: number, duration: number) =>
+    full('mdhd', 0, [...be32(0), ...be32(0), ...be32(timescale), ...be32(duration), 0, 0, 0, 0]);
+  const trak = (movieDuration: number, mediaScale: number, mediaDuration: number) =>
+    box('trak', [...tkhd(movieDuration), ...box('mdia', mdhd(mediaScale, mediaDuration))]);
+  const moov = (...children: number[][]) => new Uint8Array(box('moov', children.flat()));
+  const good = () => [mvhd(1000, 180_000), trak(180_000, 48_000, 180 * 48_000)];
 
-  it('reads the MP4 duration from mvhd, finds moov by walking top boxes', async () => {
+  it('reads the duration from mvhd as a direct child of moov, cross-checked with tkhd and mdhd', async () => {
     const file = new Uint8Array([
       ...box('ftyp', ascii('isom')),
       ...box('mdat', new Array<number>(100).fill(1)),
-      ...box('moov', mvhd(1000, 180_000)),
+      ...box('moov', good().flat()),
     ]);
     const read = (a: number, b: number) => Promise.resolve(file.subarray(a, b + 1));
     const boxes = await mp4TopBoxes(read, file.length);
     expect(boxes.map((b) => b.type)).toEqual(['ftyp', 'mdat', 'moov']);
-    const moov = boxes[2];
-    if (!moov) throw new Error('moov');
-    expect(mp4Facts(file.subarray(moov.offset, moov.offset + moov.size))).toEqual({
+    const m = boxes[2];
+    if (!m) throw new Error('moov');
+    expect(mp4Facts(file.subarray(m.offset, m.offset + m.size))).toEqual({
       durationMs: 180_000,
       problem: null,
     });
-    expect(mp4Facts(new Uint8Array(box('moov', mvhd(600, 108_600)))).durationMs).toBe(181_000);
+    expect(mp4Facts(moov(mvhd(600, 108_600), trak(108_600, 600, 108_600))).durationMs).toBe(181_000);
   });
 
-  it('refuses a location atom and an external data reference without any read or fetch', () => {
-    const withGps = new Uint8Array(
-      box('moov', [...mvhd(1000, 1000), ...box('udta', box('©xyz', ascii('+21.25+081.63/')))]),
+  it('refuses an mvhd that is not a direct child of moov (parser differential)', () => {
+    expect(mp4Facts(moov(box('udta', mvhd(1000, 1000)), trak(1000, 1000, 1000))).problem).toBe('unreadable');
+  });
+
+  it('refuses a track or media duration that disagrees with mvhd', () => {
+    expect(mp4Facts(moov(mvhd(1000, 10_000), trak(180_000, 1000, 10_000))).problem).toBe('unreadable');
+    expect(mp4Facts(moov(mvhd(1000, 10_000), trak(10_000, 1000, 180_000))).problem).toBe('unreadable');
+    expect(mp4Facts(moov(mvhd(1000, 10_000))).problem).toBe('unreadable');
+    expect(mp4Facts(new Uint8Array([...box('moov', good().flat()).slice(0, -5)])).problem).toBe('unreadable');
+  });
+
+  it('fails closed on location metadata: ©xyz, loci and the Apple ISO6709 key (v1 cannot strip it)', () => {
+    expect(mp4Facts(moov(...good(), box('udta', box('©xyz', ascii('+21.25+081.63/'))))).problem).toBe(
+      'location_atom',
     );
-    expect(mp4Facts(withGps).problem).toBe('location_atom');
+    expect(mp4Facts(moov(...good(), box('udta', box('loci', [0, 0, 0, 0])))).problem).toBe('location_atom');
+    const keys = box('keys', [
+      0,
+      0,
+      0,
+      0,
+      ...be32(1),
+      ...box('mdta', ascii('com.apple.quicktime.location.ISO6709')),
+    ]);
+    expect(mp4Facts(moov(...good(), box('meta', [0, 0, 0, 0, ...keys]))).problem).toBe('location_atom');
+  });
+
+  it('refuses an external data reference without any read or fetch; a self-contained one is fine', () => {
     const urlEntry = box('url ', [0, 0, 0, 0, ...ascii('http://evil.example/media')]);
     const dref = box('dref', [0, 0, 0, 0, ...be32(1), ...urlEntry]);
-    expect(mp4Facts(new Uint8Array(box('moov', [...mvhd(1000, 1000), ...dref]))).problem).toBe(
-      'external_reference',
-    );
+    expect(mp4Facts(moov(...good(), box('dinf', dref))).problem).toBe('external_reference');
     const selfContained = box('dref', [0, 0, 0, 0, ...be32(1), ...box('url ', [0, 0, 0, 1])]);
-    expect(mp4Facts(new Uint8Array(box('moov', [...mvhd(1000, 1000), ...selfContained]))).problem).toBeNull();
+    expect(mp4Facts(moov(...good(), box('dinf', selfContained))).problem).toBeNull();
   });
 
-  it('reads the WebM Duration (default 1 ms timecode scale)', () => {
-    const dur = new Uint8Array(8);
-    new DataView(dur.buffer).setFloat64(0, 125_500);
-    const info = [0x15, 0x49, 0xa9, 0x66, 0x80 | 11, 0x44, 0x89, 0x88, ...dur];
-    expect(webmFacts(new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 0x80, ...info]))).toEqual({
+  const ebml = (id: number[], payload: number[]) => [...id, 0x80 | payload.length, ...payload];
+  const durationEl = (ms: number) => {
+    const d = new Uint8Array(8);
+    new DataView(d.buffer).setFloat64(0, ms);
+    return [0x44, 0x89, 0x88, ...d];
+  };
+  const header = ebml([0x1a, 0x45, 0xdf, 0xa3], [0x42, 0x86, 0x81, 0x01]);
+  const segment = (children: number[]) => [
+    0x18,
+    0x53,
+    0x80,
+    0x67,
+    0x01,
+    0xff,
+    0xff,
+    0xff,
+    0xff,
+    0xff,
+    0xff,
+    0xff,
+    ...children,
+  ];
+  const info = (children: number[]) => ebml([0x15, 0x49, 0xa9, 0x66], children);
+
+  it('reads the WebM Duration from Segment → Info (default 1 ms timecode scale)', () => {
+    expect(
+      webmFacts(new Uint8Array([...header, ...segment(info(durationEl(125_500)))]), new Uint8Array()),
+    ).toEqual({
       durationMs: 125_500,
       problem: null,
     });
+  });
+
+  it('refuses a WebM without Duration, an Info outside the Segment, and any Tags element (fail closed)', () => {
+    expect(webmFacts(new Uint8Array([...header, ...segment(info([]))]), new Uint8Array()).problem).toBe(
+      'unreadable',
+    );
+    expect(
+      webmFacts(new Uint8Array([...header, ...info(durationEl(1000)), ...segment([])]), new Uint8Array())
+        .problem,
+    ).toBe('unreadable');
+    const tags = ebml([0x12, 0x54, 0xc3, 0x67], ascii('LOCATION'));
+    expect(
+      webmFacts(
+        new Uint8Array([...header, ...segment([...info(durationEl(1000)), ...tags])]),
+        new Uint8Array(),
+      ).problem,
+    ).toBe('location_atom');
+    expect(
+      webmFacts(new Uint8Array([...header, ...segment(info(durationEl(1000)))]), new Uint8Array(tags))
+        .problem,
+    ).toBe('location_atom');
   });
 
   it('reads the Ogg Opus duration from the last granule minus pre-skip', () => {

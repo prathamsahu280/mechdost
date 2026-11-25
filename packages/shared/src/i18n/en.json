@@ -6700,6 +6700,15 @@
     "moderation": {},
     "admin": {},
     "tutorial": {},
-    "media": {}
+    "media": {
+      "err_MEDIA_LOCATION": "This video has location data in it. Record it in the app, or remove the location and try again.",
+      "err_MEDIA_TOO_LARGE": "This file is too big. Compress it and try again.",
+      "err_MEDIA_TOO_LONG": "This recording is too long. Trim it and try again.",
+      "err_MEDIA_TYPE": "This kind of file cannot be posted.",
+      "err_MEDIA_MISMATCH": "This file could not be used. Try again or pick another one.",
+      "err_MEDIA_QUOTA": "You have reached your upload limit for now.",
+      "err_MEDIA_BUDGET_FULL": "Videos are paused for a short while. Photos and voice still work.",
+      "err_MEDIA_UNAVAILABLE": "Uploads are not available right now. Try again later."
+    }
   }
 }

@@ -158,7 +158,7 @@ CREATE TABLE "ustaad_media" (
 	CONSTRAINT "ustaad_media_bytes_cap" CHECK ("ustaad_media"."declared_bytes" > 0 and ((kind = 'image' and declared_bytes <= 3145728) or (kind = 'video' and declared_bytes <= 157286400) or (kind = 'audio' and declared_bytes <= 10485760) or (kind = 'document' and declared_bytes <= 5242880))),
 	CONSTRAINT "ustaad_media_sha256" CHECK ("ustaad_media"."sha256" ~ '^[0-9a-f]{64}$'),
 	CONSTRAINT "ustaad_media_object_key_format" CHECK ("ustaad_media"."object_key" ~ '^[qmde]/[0-9a-f-]{36}/[0-9a-f-]{36}[.](webp|jpg|mp4|webm|ogg|m4a|pdf)$'),
-	CONSTRAINT "ustaad_media_reject_reason_valid" CHECK ("ustaad_media"."reject_reason_code" is null or "ustaad_media"."reject_reason_code" in ('size_mismatch','type_mismatch','magic_mismatch','too_long','too_large','location_atom','external_reference','decompression_bomb','expired_upload','unreadable')),
+	CONSTRAINT "ustaad_media_reject_reason_valid" CHECK ("ustaad_media"."reject_reason_code" is null or "ustaad_media"."reject_reason_code" in ('size_mismatch','type_mismatch','magic_mismatch','too_long','too_large','location_atom','external_reference','decompression_bomb','expired_upload','unreadable','hash_mismatch')),
 	CONSTRAINT "ustaad_media_rejected_reason" CHECK (("ustaad_media"."status" = 'rejected') = ("ustaad_media"."reject_reason_code" is not null)),
 	CONSTRAINT "ustaad_media_duration" CHECK ("ustaad_media"."duration_ms" is null or "ustaad_media"."duration_ms" between 1 and 600000),
 	CONSTRAINT "ustaad_media_lqip_size" CHECK ("ustaad_media"."lqip" is null or octet_length("ustaad_media"."lqip") <= 400)
