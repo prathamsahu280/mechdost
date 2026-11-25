@@ -31,7 +31,8 @@ import {
   HOME_SECTIONS,
   type HomeSection,
 } from '@/lib/site-layout';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { adminCard } from './admin-ui';
 
 /** The API editors (real sign-in builds only): loaded on demand so demo bundles stay the same size. */
 const ContentApi = dynamic(() => import('./admin-site-api').then((m) => m.ContentApi), { ssr: false });
@@ -171,15 +172,9 @@ function DemoContentEditor({ actor, defaults }: { actor: string; defaults: Conte
   }
 
   return (
-    <section aria-labelledby="content-title" className="space-y-4">
-      <div>
-        <h2 id="content-title" className="font-heading text-xl font-extrabold text-ink">
-          {t('content_title')}
-        </h2>
-        <p className="mt-1 text-sm text-muted">{t('content_lead')}</p>
-      </div>
+    <section aria-labelledby="admin-page-title" className="space-y-4">
       <DemoNote />
-      <form onSubmit={onSubmit} className={portalCard} noValidate>
+      <form onSubmit={onSubmit} className={adminCard} noValidate>
         {CONTENT_GROUPS.map((group) => (
           <fieldset key={group.id} className="mt-2 first:mt-0">
             <legend className="font-heading text-lg font-extrabold text-ink">
@@ -289,7 +284,7 @@ function MapDefaultEditor({ actor }: { actor: string }) {
   }
 
   return (
-    <form onSubmit={onSubmit} className={portalCard}>
+    <form onSubmit={onSubmit} className={adminCard}>
       <fieldset>
         <legend className="font-heading text-base font-extrabold text-ink">{t('mapDefault_title')}</legend>
         <p className="mt-1 text-sm text-muted">{t('mapDefault_help')}</p>
@@ -373,15 +368,9 @@ function SectionsEditor({ actor }: { actor: string }) {
   }
 
   return (
-    <section aria-labelledby="layout-title" className="space-y-4">
-      <div>
-        <h2 id="layout-title" className="font-heading text-xl font-extrabold text-ink">
-          {t('layout_title')}
-        </h2>
-        <p className="mt-1 text-sm text-muted">{t('layout_lead')}</p>
-      </div>
+    <section aria-labelledby="admin-page-title" className="space-y-4">
       <DemoNote />
-      <form onSubmit={onSubmit} className={portalCard}>
+      <form onSubmit={onSubmit} className={adminCard}>
         <p className="rounded-tile bg-pill px-4 py-3 text-sm font-bold text-ink">
           <span aria-hidden="true">📌 </span>
           {t('layout_heroFirst')}
@@ -517,7 +506,7 @@ function CategoriesEditor({ actor }: { actor: string }) {
           {t('categories_lead', { min: FEATURED_MIN, max: FEATURED_MAX })}
         </p>
       </div>
-      <form onSubmit={onSubmit} className={portalCard} noValidate>
+      <form onSubmit={onSubmit} className={adminCard} noValidate>
         <p className="text-sm font-bold text-ink" aria-live="polite">
           {t('categories_count', { count: featured.length, max: FEATURED_MAX })}
         </p>
@@ -590,7 +579,7 @@ export function RecentChanges() {
     }).format(new Date(iso));
   const area = (a: AuditEntry['area']) => t(`area_${a}`);
   return (
-    <section aria-labelledby="audit-title" className={portalCard}>
+    <section aria-labelledby="audit-title" className={adminCard}>
       <h2 id="audit-title" className="font-heading text-lg font-extrabold text-ink">
         {t('audit_title')}
       </h2>

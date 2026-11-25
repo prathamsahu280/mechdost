@@ -334,6 +334,93 @@ export async function auditDom(opts: DomAuditOptions): Promise<Finding[]> {
     }
   }
 
+  // ── adminhead (admin round 2, 2026-11-25) ──
+  if (has('adminhead') && !opts.local) {
+    const heads = [...document.querySelectorAll('[data-admin-header]')].filter((el) => el.checkVisibility());
+    if (heads.length !== 1)
+      add({
+        rule: 'adminhead',
+        severity: 'P0',
+        where: 'page',
+        detail: `${String(heads.length)} admin page headers (exactly one expected)`,
+      });
+    const head = heads[0];
+    if (head) {
+      const title = head.querySelector('h2')?.textContent.trim() ?? '';
+      const lead = head.querySelector('p')?.textContent.trim() ?? '';
+      const current = document
+        .querySelector('[data-scroll="sidebar"] [aria-current="page"]')
+        ?.textContent.trim();
+      if (!title || !lead)
+        add({
+          rule: 'adminhead',
+          severity: 'P1',
+          where: describe(head),
+          detail: 'header lacks a title or a one-line description',
+        });
+      if (current && title && current !== title)
+        add({
+          rule: 'adminhead',
+          severity: 'P1',
+          where: describe(head),
+          detail: `header title "${title}" differs from the side bar's current item "${current}"`,
+        });
+      const hr = head.getBoundingClientRect();
+      if (hr.right > vw + 1 || hr.left < -1)
+        add({
+          rule: 'adminhead',
+          severity: 'P1',
+          where: describe(head),
+          detail: 'header is wider than the window',
+          box: toBox(hr),
+        });
+    }
+    for (const b of document.querySelectorAll('[data-status-badge]')) {
+      if (!(b as HTMLElement).checkVisibility()) continue;
+      const cs = getComputedStyle(b);
+      if (Number.parseFloat(cs.fontSize) < 12)
+        add({
+          rule: 'adminhead',
+          severity: 'P1',
+          where: describe(b),
+          detail: `status badge text is ${cs.fontSize} (12 px minimum)`,
+          box: toBox(b.getBoundingClientRect()),
+        });
+      if (b.scrollWidth > b.clientWidth + 1)
+        add({
+          rule: 'adminhead',
+          severity: 'P1',
+          where: describe(b),
+          detail: 'status badge text is clipped',
+          box: toBox(b.getBoundingClientRect()),
+        });
+    }
+    for (const e of document.querySelectorAll('[data-admin-empty]')) {
+      if (!(e as HTMLElement).checkVisibility()) continue;
+      const actions = e.querySelectorAll('a[href], button, input, select, textarea').length;
+      if (actions > 1)
+        add({
+          rule: 'adminhead',
+          severity: 'P1',
+          where: describe(e),
+          detail: `empty state offers ${String(actions)} actions (one next action)`,
+        });
+    }
+    for (const t of document.querySelectorAll('[data-admin-table]')) {
+      if (!(t as HTMLElement).checkVisibility()) continue;
+      if (
+        t.getAttribute('role') !== 'region' ||
+        !(t.getAttribute('aria-label') ?? t.getAttribute('aria-labelledby'))
+      )
+        add({
+          rule: 'adminhead',
+          severity: 'P1',
+          where: describe(t),
+          detail: 'table box is not a named region',
+        });
+    }
+  }
+
   // ── scroll ──
   if (has('scroll') && !opts.local) {
     const startY = window.scrollY;

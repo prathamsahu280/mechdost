@@ -9,7 +9,8 @@ import { commonErrorKey } from '@/lib/api-error-key';
 import { track } from '@/lib/analytics';
 import { diffJson } from '@/lib/audit-diff';
 import { ACTION_CODES, ENTITY_CODES, auditLabel, type AuditDict } from '@/lib/audit-label';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { adminCard } from './admin-ui';
 
 const EMPTY: AuditQuery = { entity: '', entityId: '', code: '', actor: '', action: '', from: '', to: '' };
 const text = (v: FormDataEntryValue | null) => (typeof v === 'string' ? v : '');
@@ -141,20 +142,13 @@ export function AdminAuditApi() {
   };
 
   return (
-    <section aria-labelledby="audit-title" className="space-y-4">
-      <div>
-        <h2 id="audit-title" className="font-heading text-xl font-extrabold text-ink">
-          {t('audit_title')}
-        </h2>
-        <p className="mt-1 max-w-2xl text-sm text-muted">{t('audit_lead')}</p>
-      </div>
-
+    <section aria-labelledby="admin-page-title" className="space-y-4">
       <form
         ref={formRef}
         onSubmit={onSearch}
         noValidate
         role="search"
-        className={`${portalCard} grid gap-3 min-[600px]:grid-cols-2 min-[1000px]:grid-cols-3`}
+        className={`${adminCard} grid gap-3 min-[600px]:grid-cols-2 min-[1000px]:grid-cols-3`}
       >
         {choice('entity', t('audit_entity'), ENTITY_CODES)}
         {field('entityId', t('audit_entityId'))}
@@ -185,7 +179,7 @@ export function AdminAuditApi() {
       <p className="text-xs text-muted">{t('audit_maskedNote')}</p>
 
       {error ? (
-        <div role="alert" className={`${portalCard} flex flex-wrap items-center gap-3`}>
+        <div role="alert" className={`${adminCard} flex flex-wrap items-center gap-3`}>
           <p className="text-sm font-bold text-error">{own ? t(own) : tc(commonErrorKey(error))}</p>
           <button
             type="button"
@@ -205,7 +199,7 @@ export function AdminAuditApi() {
         </p>
       ) : null}
       {!loading && !error && rows.length === 0 ? (
-        <div className={portalCard}>
+        <div className={adminCard}>
           <p className="text-sm text-muted">{t('audit_none')}</p>
         </div>
       ) : null}
@@ -246,7 +240,7 @@ function AuditRow({
   const locale = useLocale();
   const lines = diffJson(r.before, r.after);
   return (
-    <li className={`${portalCard} !p-0`}>
+    <li className={`${adminCard} !p-0`}>
       <details className="group">
         <summary className="flex min-h-11 cursor-pointer flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-3">
           <span className="min-w-0 text-sm font-bold break-words text-ink">

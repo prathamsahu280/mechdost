@@ -36,7 +36,8 @@ import { AddProductForm, ImportCsv } from './admin-catalogue-add';
 import { BulkBar } from './admin-catalogue-bulk';
 import { SizesTab } from './admin-catalogue-sizes';
 import { PhotoQueueApi } from './photo-queue-api';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { adminCard } from './admin-ui';
 import { ProductPhotosEditor } from './product-photos-editor';
 
 type Notice = { kind: 'ok' | 'error'; text: string } | null;
@@ -277,7 +278,7 @@ export function CatalogueEditor() {
               {t('cat_select_all')}
             </label>
           ) : null}
-          <ul className={`divide-y divide-line-card ${portalCard}`}>
+          <ul className={`divide-y divide-line-card ${adminCard}`}>
             {items.map((p) => (
               <li key={p.slug} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-3">
                 <input
@@ -376,7 +377,7 @@ function ProductEditor({ slug, onBack }: { slug: string; onBack: () => void }) {
             role="tabpanel"
             id={`cat-panel-${tab}`}
             aria-labelledby={`cat-tab-${tab}`}
-            className={portalCard}
+            className={adminCard}
           >
             {tab === 'texts' ? <TextsTab key={detail.version} detail={detail} onSaved={reload} /> : null}
             {tab === 'specs' ? <SpecsTab detail={detail} onSaved={reload} /> : null}

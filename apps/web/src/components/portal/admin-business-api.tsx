@@ -21,7 +21,9 @@ import { adminBusinessErrorKey, categoryLabels } from '@/lib/business-apply-view
 import type { CategoryOption } from '@/lib/business-api';
 import { formatDate } from '@/lib/format';
 import { Alert, ListState, MoreButton, useErrorText, usePaged } from './admin-onboarding-api';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { adminCard } from './admin-ui';
+import { AdminToolbar } from './admin-page-header';
 
 /**
  * Trade account applications and fleet enquiries in the admin console (audience entry design 2026-11-22, item 3),
@@ -45,7 +47,7 @@ export function BusinessApplicationsApi() {
       <h2 id="business-applications-title" className="font-heading text-xl font-extrabold text-ink">
         {t('admin_title')}
       </h2>
-      <div role="group" aria-label={t('admin_filterKind')} className="mt-3 flex flex-wrap gap-2">
+      <AdminToolbar label={t('admin_filterKind')}>
         {KINDS.map((k) => (
           <button
             key={k || 'all'}
@@ -59,7 +61,7 @@ export function BusinessApplicationsApi() {
             {t(kindLabel(k))}
           </button>
         ))}
-      </div>
+      </AdminToolbar>
       <ListState
         loading={list.loading}
         error={list.error}
@@ -161,7 +163,7 @@ function BusinessCard({ row: a, onChanged }: { row: BusinessApplicationRowDto; o
     detail ? post('decide', { version: detail.version, decision }, `admin_business_${decision}`) : undefined;
 
   return (
-    <li className={portalCard}>
+    <li className={adminCard}>
       <p className="mb-2 inline-flex rounded-pill bg-pill px-3 py-1 text-xs font-extrabold text-ink">
         {t(`admin_label_${a.kind}`)} · {t(`admin_status_${a.status}`)}
       </p>

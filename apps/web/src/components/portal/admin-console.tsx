@@ -84,7 +84,10 @@ import { AdminSettings } from './admin-settings';
 import { PortalGuard, usePortalAccount } from './portal-guard';
 import { PortalNavLink } from './portal-nav-link';
 import { useNow } from './use-now';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { StatusBadge, adminCard } from './admin-ui';
+import { OverviewTile } from './admin-overview-tile';
+import { AdminPageHeader } from './admin-page-header';
+import { portalField, portalPrimary, portalQuiet } from './portal-styles';
 import { offerLeftParams } from '@/lib/offer-time';
 import { Applications } from './admin-applications';
 import { GstInvoiceLine } from '@/components/commerce/gst-invoice-line';
@@ -225,7 +228,8 @@ export function AdminConsole({
   const account = usePortalAccount();
   if (!account) return null;
   return (
-    <div data-portal-section className="min-w-0 scroll-mt-28 space-y-6">
+    <div data-portal-section className="min-w-0 scroll-mt-28 space-y-5">
+      <AdminPageHeader section={section} />
       {section === 'overview' ? AUTH_MODE === 'firebase' ? <AdminOverviewApi /> : <Overview /> : null}
       {section === 'analytics' && AUTH_MODE === 'firebase' ? <AdminAnalyticsApi /> : null}
       {section === 'refunds' && AUTH_MODE === 'firebase' ? <RefundQueueApi /> : null}
@@ -418,24 +422,16 @@ function Overview() {
   const tiles = allTiles.filter((k) => ADMIN_SECTIONS.includes(k.href));
 
   return (
-    <section aria-labelledby="kpis">
-      <h2 id="kpis" className="font-heading text-xl font-extrabold text-ink">
-        {t('nav_overview')}
-      </h2>
-      <ul className="mt-3 grid grid-cols-2 gap-3 tab:grid-cols-4">
+    <section aria-labelledby="admin-page-title">
+      <ul className="grid grid-cols-2 gap-3 tab:grid-cols-3 xl:grid-cols-4">
         {tiles.map((tile) => (
           <li key={tile.label}>
-            <Link
+            <OverviewTile
               href={`${prefix}/admin/${tile.href}`}
-              className={`${portalCard} press block p-4 hover:shadow-card-hover ${
-                tile.tone === 'alert' && tile.value !== '0' ? 'border-accent-button' : ''
-              }`}
-            >
-              <span className="block font-heading text-3xl font-extrabold text-ink tabular-nums">
-                {tile.value}
-              </span>
-              <span className="mt-1 block text-sm text-muted">{tile.label}</span>
-            </Link>
+              label={tile.label}
+              value={tile.value}
+              alert={tile.tone === 'alert' && tile.value !== '0'}
+            />
           </li>
         ))}
       </ul>
@@ -466,9 +462,9 @@ function OrderRouting() {
     <div className="space-y-8">
       {groups.map(([title, list], i) => (
         <section key={title} aria-labelledby={`queue-${String(i)}`}>
-          <h2 id={`queue-${String(i)}`} className="font-heading text-xl font-extrabold text-ink">
+          <h3 id={`queue-${String(i)}`} className="font-heading text-xl font-extrabold text-ink">
             {title} <span className="text-muted tabular-nums">({list.length})</span>
-          </h2>
+          </h3>
           {list.length === 0 ? (
             <p className="mt-3 text-sm text-muted">{t('emptyQueue')}</p>
           ) : (
@@ -635,7 +631,7 @@ function RoutingCard({ order, now }: { order: DemoOrder; now: number }) {
   }
 
   return (
-    <article className={`${portalCard} ${canRoute ? 'border-accent-button/60' : ''}`}>
+    <article className={`${adminCard} ${canRoute ? 'border-accent-button/60' : ''}`}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <p className="font-heading text-lg font-extrabold text-ink">{order.code}</p>
@@ -737,9 +733,9 @@ function RoutingCard({ order, now }: { order: DemoOrder; now: number }) {
                 <span className="min-w-0 text-sm">
                   <span className="font-bold text-ink">🏪 {s.name}</span>
                   {i === 0 ? (
-                    <span className="ml-2 rounded-pill bg-success-bg px-2 py-0.5 text-[11px] font-extrabold text-success">
+                    <StatusBadge tone="success" className="ml-2">
                       {t('recommended')}
-                    </span>
+                    </StatusBadge>
                   ) : null}
                   <span className="block text-xs text-muted">
                     {s.area} ·{' '}
@@ -922,9 +918,9 @@ function ServiceRouting() {
   return (
     <div className="space-y-8">
       <section aria-labelledby="declined-requests">
-        <h2 id="declined-requests" className="font-heading text-xl font-extrabold text-ink">
+        <h3 id="declined-requests" className="font-heading text-xl font-extrabold text-ink">
           {t('declinedRequests')} <span className="text-muted tabular-nums">({declined.length})</span>
-        </h2>
+        </h3>
         {declined.length === 0 ? (
           <p className="mt-3 text-sm text-muted">{t('emptyQueue')}</p>
         ) : (
@@ -938,7 +934,7 @@ function ServiceRouting() {
                   takesNewWork('workshop', w.slug),
               ).slice(0, 3);
               return (
-                <li key={req.code} className={`${portalCard} border-accent-button/60`}>
+                <li key={req.code} className={`${adminCard} border-accent-button/60`}>
                   <p className="font-heading text-lg font-extrabold text-ink">{req.code}</p>
                   <p className="text-sm text-muted">
                     <span data-user-content>
@@ -978,13 +974,13 @@ function ServiceRouting() {
       </section>
       {/* Every request, so the section matches the Overview count (UI review 2026-11-14). */}
       <section aria-labelledby="all-requests">
-        <h2 id="all-requests" className="font-heading text-xl font-extrabold text-ink">
+        <h3 id="all-requests" className="font-heading text-xl font-extrabold text-ink">
           {t('allRequests')} <span className="text-muted tabular-nums">({all.length})</span>
-        </h2>
+        </h3>
         {all.length === 0 ? (
           <p className="mt-3 text-sm text-muted">{t('emptyQueue')}</p>
         ) : (
-          <ul className={`mt-3 divide-y divide-line-card ${portalCard}`}>
+          <ul className={`mt-3 divide-y divide-line-card ${adminCard}`}>
             {all.map((req) => (
               <li key={req.code} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-3">
                 <div className="min-w-0">
@@ -1024,10 +1020,7 @@ function QuoteDesk() {
 
   return (
     <div className="grid gap-6 xl:grid-cols-[300px_minmax(0,1fr)] xl:items-start">
-      <section aria-labelledby="quote-list">
-        <h2 id="quote-list" className="font-heading text-xl font-extrabold text-ink">
-          {t('nav_quotes')}
-        </h2>
+      <section aria-labelledby="admin-page-title">
         {quotes.length === 0 ? (
           <p className="mt-3 text-sm text-muted">{t('emptyQueue')}</p>
         ) : (
@@ -1162,10 +1155,10 @@ function QuoteNegotiation({ quote }: { quote: DemoQuote }) {
 
   return (
     <div className="space-y-6">
-      <section aria-labelledby="quote-chat" className={portalCard}>
-        <h2 id="quote-chat" className="font-heading text-lg font-extrabold text-ink">
+      <section aria-labelledby="quote-chat" className={adminCard}>
+        <h3 id="quote-chat" className="font-heading text-lg font-extrabold text-ink">
           {quote.code} · <span data-user-content>{quote.customer.name}</span> · {q(`status_${quote.status}`)}
-        </h2>
+        </h3>
         <ol className="mt-4 space-y-3">
           {quote.messages.length === 0 ? <li className="text-sm text-muted">{q('noMessages')}</li> : null}
           {quote.messages.map((m) => {
@@ -1220,15 +1213,10 @@ function QuoteNegotiation({ quote }: { quote: DemoQuote }) {
       </section>
 
       {!closed ? (
-        <form
-          onSubmit={send}
-          noValidate
-          aria-labelledby="offer-builder"
-          className={`${portalCard} space-y-4`}
-        >
-          <h2 id="offer-builder" className="font-heading text-lg font-extrabold text-ink">
+        <form onSubmit={send} noValidate aria-labelledby="offer-builder" className={`${adminCard} space-y-4`}>
+          <h3 id="offer-builder" className="font-heading text-lg font-extrabold text-ink">
             {t('offerBuilder')}
-          </h2>
+          </h3>
           {quote.lines.map((l) => (
             <div key={l.slug}>
               <label htmlFor={`price-${l.slug}`} className="text-sm font-bold text-ink">
@@ -1352,15 +1340,15 @@ function Reviews() {
       : workshopNameFor(slug, DEMO_WORKSHOPS.find((w) => w.slug === slug)?.name ?? slug, locale);
   return (
     <section aria-labelledby="reviews-title">
-      <h2 id="reviews-title" className="font-heading text-xl font-extrabold text-ink">
+      <h3 id="reviews-title" className="font-heading text-xl font-extrabold text-ink">
         {t('pendingReviews')} <span className="text-muted tabular-nums">({pending.length})</span>
-      </h2>
+      </h3>
       {pending.length === 0 ? (
         <p className="mt-3 text-sm text-muted">{t('noReviews')}</p>
       ) : (
         <ul className="mt-3 grid gap-3 xl:grid-cols-2">
           {pending.map((r) => (
-            <li key={r.id} className={portalCard}>
+            <li key={r.id} className={adminCard}>
               <p className="text-sm font-bold text-star" aria-hidden="true">
                 {'★'.repeat(r.rating)}
                 {'☆'.repeat(5 - r.rating)}

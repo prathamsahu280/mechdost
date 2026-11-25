@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { adminApi } from '@/lib/admin-api';
 import { formatDate, formatPrice } from '@/lib/format';
 import { LocalLink } from '../ui/local-link';
-import { ScrollRegion } from '../ui/scroll-region';
+import { AdminTable, adminTableClass, adminTd, adminTh } from './admin-ui';
 import { portalQuiet } from './portal-styles';
 
 type Load = { kind: 'loading' } | { kind: 'error' } | { kind: 'ok'; report: CouponUsageReport };
@@ -96,23 +96,23 @@ export function AdminCouponUsage({ couponId, onClose }: { couponId: string; onCl
           {load.report.days.length === 0 ? (
             <p className="text-sm text-muted">{t('u_empty')}</p>
           ) : (
-            <ScrollRegion label={t('u_title', { code: load.report.code })}>
-              <table className="w-full min-w-[420px] text-left text-sm">
+            <AdminTable label={t('u_title', { code: load.report.code })}>
+              <table className={adminTableClass}>
                 <thead>
-                  <tr className="text-xs text-muted">
-                    <th scope="col" className="py-1 pr-3 font-bold">
+                  <tr>
+                    <th scope="col" className={adminTh}>
                       {t('u_day')}
                     </th>
-                    <th scope="col" className="py-1 pr-3 font-bold">
+                    <th scope="col" className={adminTh}>
                       {t('u_orders')}
                     </th>
-                    <th scope="col" className="py-1 pr-3 font-bold">
+                    <th scope="col" className={adminTh}>
                       {t('u_released')}
                     </th>
-                    <th scope="col" className="py-1 pr-3 font-bold">
+                    <th scope="col" className={adminTh}>
                       {t('u_discount')}
                     </th>
-                    <th scope="col" className="py-1 font-bold">
+                    <th scope="col" className={adminTh}>
                       {t('u_customers')}
                     </th>
                   </tr>
@@ -120,18 +120,18 @@ export function AdminCouponUsage({ couponId, onClose }: { couponId: string; onCl
                 <tbody>
                   {load.report.days.map((d) => (
                     <tr key={d.day} className="border-t border-line-card text-ink">
-                      <th scope="row" className="py-1 pr-3 font-normal">
+                      <th scope="row" className={adminTh}>
                         {formatDate(`${d.day}T06:00:00+05:30`, locale)}
                       </th>
-                      <td className="py-1 pr-3">{d.orders}</td>
-                      <td className="py-1 pr-3">{d.released}</td>
-                      <td className="py-1 pr-3">{formatPrice(d.discountPaise)}</td>
-                      <td className="py-1">{d.uniqueCustomers}</td>
+                      <td className={adminTd}>{d.orders}</td>
+                      <td className={adminTd}>{d.released}</td>
+                      <td className={adminTd}>{formatPrice(d.discountPaise)}</td>
+                      <td className={adminTd}>{d.uniqueCustomers}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            </ScrollRegion>
+            </AdminTable>
           )}
           <p className="text-xs text-muted">{t('u_note')}</p>
           <div className="flex flex-wrap gap-2">

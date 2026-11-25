@@ -23,7 +23,8 @@ import { contentField, contentStep } from '@/lib/admin-content-view';
 import { commonErrorKey, type CommonErrorKey } from '@/lib/api-error-key';
 import { track } from '@/lib/analytics';
 import type { ContentDefaults } from './admin-site';
-import { portalCard, portalPrimary, portalQuiet, portalField } from './portal-styles';
+import { portalPrimary, portalQuiet, portalField } from './portal-styles';
+import { adminCard } from './admin-ui';
 
 type SaveStatus = 'idle' | 'busy' | 'saved' | 'invalid' | CommonErrorKey;
 
@@ -76,14 +77,14 @@ function StatusLine({ status }: { status: SaveStatus }) {
 export function LoadState({ error, onRetry }: { error: CommonErrorKey | null; onRetry: () => void }) {
   const t = useTranslations('portal');
   return error ? (
-    <div role="alert" className={`${portalCard} space-y-3`}>
+    <div role="alert" className={`${adminCard} space-y-3`}>
       <p className="text-sm font-bold text-error">{t(error)}</p>
       <button type="button" className={portalQuiet} onClick={onRetry}>
         {t('api_common_retry')}
       </button>
     </div>
   ) : (
-    <p role="status" className={`${portalCard} text-sm text-muted`}>
+    <p role="status" className={`${adminCard} text-sm text-muted`}>
       {t('api_common_loading')}
     </p>
   );
@@ -96,7 +97,6 @@ export function LoadState({ error, onRetry }: { error: CommonErrorKey | null; on
  * changed field writes its draft and publishes it; emptying a field takes the live text down (the default shows).
  */
 export function ContentApi({ defaults }: { defaults: ContentDefaults }) {
-  const t = useTranslations('portal');
   const locale = useLocale();
   const [entries, setEntries] = useState<AdminContentEntryDto[] | null>(null);
   const [error, setError] = useState<CommonErrorKey | null>(null);
@@ -116,13 +116,7 @@ export function ContentApi({ defaults }: { defaults: ContentDefaults }) {
   }, [load]);
 
   return (
-    <section aria-labelledby="content-title" className="space-y-4">
-      <div>
-        <h2 id="content-title" className="font-heading text-xl font-extrabold text-ink">
-          {t('content_title')}
-        </h2>
-        <p className="mt-1 text-sm text-muted">{t('content_lead')}</p>
-      </div>
+    <section aria-labelledby="admin-page-title" className="space-y-4">
       {entries ? (
         <ContentForm entries={entries} defaults={defaults} onSaved={load} />
       ) : (
@@ -205,7 +199,7 @@ function ContentForm({
       onSubmit={(e) => {
         void onSubmit(e);
       }}
-      className={portalCard}
+      className={adminCard}
       noValidate
     >
       {CONTENT_GROUPS.map((group) => (

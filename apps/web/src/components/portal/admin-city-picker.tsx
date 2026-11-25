@@ -4,7 +4,8 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { AdminCityList, type AdminCityDto } from '@mechdost/shared/admin-config-api';
 import { adminApi } from '@/lib/admin-api';
-import { portalCard, portalField } from './portal-styles';
+import { portalField } from './portal-styles';
+import { adminCard } from './admin-ui';
 
 /**
  * "All cities" or one city, for the admin screens that can hold a value per city (design 2026-11-15 item 7; spec 15).
@@ -34,7 +35,7 @@ export function CityPicker({
   }, [locale]);
   if (cities.length === 0) return null;
   return (
-    <div className={portalCard}>
+    <div className={adminCard}>
       <label htmlFor={id} className="text-sm font-bold text-ink">
         {t('city_label')}
       </label>

@@ -8,7 +8,8 @@ import { findAccount, normalisePhone, useAccounts } from '@/demo/session';
 import { AUTH_MODE } from '@/lib/auth/mode';
 import { track } from '@/lib/analytics';
 import { formatDate } from '@/lib/format';
-import { portalCard, portalField, portalPrimary } from './portal-styles';
+import { portalField, portalPrimary } from './portal-styles';
+import { adminCard } from './admin-ui';
 
 // Real sign-in builds: the API desk (accounts, activity, adjustments), loaded only there.
 const AdminCoinsApi = dynamic(() => import('./admin-coins-api').then((m) => m.AdminCoinsApi), {
@@ -73,16 +74,10 @@ function DemoCoins({ actor }: { actor: string }) {
   const invalid = (f: string) => (error?.field === f ? true : undefined);
 
   return (
-    <section aria-labelledby="coins-admin-title" className="space-y-4">
-      <div>
-        <h2 id="coins-admin-title" className="font-heading text-xl font-extrabold text-ink">
-          {t('nav_coins')}
-        </h2>
-        <p className="mt-1 text-sm text-muted">{t('coinsAdminLead')}</p>
-      </div>
+    <section aria-labelledby="admin-page-title" className="space-y-4">
       <p className="rounded-lg bg-private-bg p-3 text-sm text-private">{t('coinsRulesPending')}</p>
 
-      <form noValidate onSubmit={onSubmit} className={portalCard}>
+      <form noValidate onSubmit={onSubmit} className={adminCard}>
         <h3 className="font-heading text-lg font-extrabold text-ink">{t('coinsAdjustTitle')}</h3>
         <div className="mt-3 grid gap-4 tab:grid-cols-2">
           <div>
@@ -159,7 +154,7 @@ function DemoCoins({ actor }: { actor: string }) {
         </div>
       </form>
 
-      <section aria-labelledby="coins-activity" className={portalCard}>
+      <section aria-labelledby="coins-activity" className={adminCard}>
         <h3 id="coins-activity" className="font-heading text-lg font-extrabold text-ink">
           {t('coinsActivity')}
         </h3>

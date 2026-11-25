@@ -27,7 +27,9 @@ import {
 } from '@/lib/coupon-view';
 import { formatDate, formatPrice } from '@/lib/format';
 import { AdminCouponUsage } from './admin-coupon-usage';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { AdminHeaderActions, ADMIN_PAGE_TITLE_ID } from './admin-page-header';
+import { portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { adminCard } from './admin-ui';
 
 type Load =
   | { kind: 'loading' }
@@ -171,15 +173,9 @@ export function AdminCouponsApi() {
   const now = new Date();
 
   return (
-    <section aria-labelledby="coupons-admin-title" className="space-y-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 id="coupons-admin-title" className="font-heading text-xl font-extrabold text-ink">
-            {t('a_title')}
-          </h2>
-          <p className="mt-1 max-w-prose text-sm text-muted">{t('a_lead')}</p>
-        </div>
-        {!editing ? (
+    <section aria-labelledby={ADMIN_PAGE_TITLE_ID} className="space-y-4">
+      {!editing ? (
+        <AdminHeaderActions>
           <button
             data-disclosure-trigger="coupon-new"
             type="button"
@@ -192,8 +188,8 @@ export function AdminCouponsApi() {
           >
             {t('a_new')}
           </button>
-        ) : null}
-      </div>
+        </AdminHeaderActions>
+      ) : null}
 
       {saved ? (
         <p role="status" className="rounded-card bg-success-bg px-3 py-2 text-sm font-bold text-success">
@@ -210,7 +206,7 @@ export function AdminCouponsApi() {
         <form
           onSubmit={(e) => void onSave(e)}
           noValidate
-          className={`${portalCard} space-y-4`}
+          className={`${adminCard} space-y-4`}
           aria-label={t('a_form')}
         >
           <h3 className="font-heading text-lg font-extrabold text-ink">
@@ -570,7 +566,7 @@ export function AdminCouponsApi() {
         </p>
       ) : null}
       {load.kind === 'ok' && load.coupons.length === 0 && !editing ? (
-        <div className={`${portalCard} text-center`}>
+        <div className={`${adminCard} text-center`}>
           <p className="font-heading text-lg font-extrabold text-ink">{t('a_empty_title')}</p>
           <p className="mx-auto mt-1 max-w-prose text-sm text-muted">{t('a_empty')}</p>
         </div>
@@ -580,7 +576,7 @@ export function AdminCouponsApi() {
           {load.coupons.map((c) => {
             const status = couponStatus(c, now);
             return (
-              <li key={c.id} className={portalCard}>
+              <li key={c.id} className={adminCard}>
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="font-heading text-lg font-extrabold text-ink">

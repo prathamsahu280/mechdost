@@ -2,24 +2,13 @@
 
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
-import {
-  AdminErrors,
-  type AdminErrorIssueDto,
-  type AdminErrorsDto,
-  type ErrorProject,
-} from '@mechdost/shared/admin-errors-api';
+import { AdminErrors, type AdminErrorsDto, type ErrorProject } from '@mechdost/shared/admin-errors-api';
 import { adminApi } from '@/lib/admin-api';
 import { formatDate } from '@/lib/format';
 import { ApiError } from './api-list-state';
-import { portalCard, portalQuiet } from './portal-styles';
-
-const LEVEL_PILL: Record<AdminErrorIssueDto['level'], string> = {
-  fatal: 'bg-pill text-error',
-  error: 'bg-pill text-error',
-  warning: 'bg-warning-bg text-warning',
-  info: 'bg-pill text-muted',
-  debug: 'bg-pill text-muted',
-};
+import { AdminHeaderActions } from './admin-page-header';
+import { portalQuiet } from './portal-styles';
+import { StatusBadge, adminCard } from './admin-ui';
 
 const PROJECT_LABEL: Record<ErrorProject, 'errors_api_projectWeb' | 'errors_api_projectApi'> = {
   web: 'errors_api_projectWeb',
@@ -55,15 +44,9 @@ export function AdminErrorsApi() {
     });
 
   return (
-    <section aria-labelledby="errors-title" className="space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h2 id="errors-title" className="font-heading text-xl font-extrabold text-ink">
-            {t('nav_errors')}
-          </h2>
-          <p className="mt-1 max-w-2xl text-sm text-muted">{t('errors_api_lead')}</p>
-        </div>
-        {state.kind === 'ready' && state.data.connected ? (
+    <section aria-labelledby="admin-page-title" className="space-y-4">
+      {state.kind === 'ready' && state.data.connected ? (
+        <AdminHeaderActions>
           <button
             type="button"
             data-track="admin_errors_refresh"
@@ -74,8 +57,8 @@ export function AdminErrorsApi() {
           >
             {t('errors_api_refresh')}
           </button>
-        ) : null}
-      </div>
+        </AdminHeaderActions>
+      ) : null}
 
       {state.kind === 'loading' ? (
         <p role="status" className="text-sm text-muted">
@@ -84,7 +67,7 @@ export function AdminErrorsApi() {
       ) : null}
 
       {state.kind === 'failed' ? (
-        <div className={`${portalCard} flex flex-wrap items-center gap-3`}>
+        <div className={`${adminCard} flex flex-wrap items-center gap-3`}>
           <ApiError code={state.code} />
           <button
             type="button"
@@ -100,7 +83,7 @@ export function AdminErrorsApi() {
       ) : null}
 
       {state.kind === 'ready' && !state.data.connected ? (
-        <div className={portalCard}>
+        <div className={adminCard}>
           <h3 className="font-heading text-base font-extrabold text-ink">
             {t('errors_api_notConnectedTitle')}
           </h3>
@@ -124,7 +107,7 @@ export function AdminErrorsApi() {
               : null}
           </p>
           {state.data.projects.map((p) => (
-            <div key={p.project} className={portalCard}>
+            <div key={p.project} className={adminCard}>
               <h3 className="font-heading text-base font-extrabold text-ink">
                 {t(PROJECT_LABEL[p.project])}
               </h3>
@@ -142,11 +125,7 @@ export function AdminErrorsApi() {
                         <p className="min-w-0 flex-1 text-sm font-bold break-words text-ink" lang="en">
                           {i.title}
                         </p>
-                        <span
-                          className={`rounded-pill px-2.5 py-0.5 text-xs font-bold ${LEVEL_PILL[i.level]}`}
-                        >
-                          {t(`errors_api_level_${i.level}`)}
-                        </span>
+                        <StatusBadge code={i.level}>{t(`errors_api_level_${i.level}`)}</StatusBadge>
                       </div>
                       <p className="mt-1 text-xs text-muted">
                         {t('errors_api_count24h', { count: i.count24h })} ·{' '}

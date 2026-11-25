@@ -17,7 +17,8 @@ import {
 import { commonErrorKey } from '@/lib/api-error-key';
 import { track } from '@/lib/analytics';
 import { formatPrice } from '@/lib/format';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { StatusBadge, adminCard } from './admin-ui';
 
 /**
  * Admin → Settings → Service area on the API (spec 15 "PIN codes", spec 08; real sign-in builds only, loaded with
@@ -123,7 +124,7 @@ export function ServiceAreaApi() {
         </h2>
         <p className="mt-1 text-sm text-muted">{t('geo_api_lead')}</p>
       </div>
-      <div className={`${portalCard} space-y-4`}>
+      <div className={`${adminCard} space-y-4`}>
         <form
           className="flex flex-wrap items-end gap-3"
           onSubmit={(e) => {
@@ -196,7 +197,7 @@ export function ServiceAreaApi() {
       </div>
       {data === null ? (
         loadError ? (
-          <div role="alert" className={`${portalCard} space-y-3`}>
+          <div role="alert" className={`${adminCard} space-y-3`}>
             <p className="text-sm font-bold text-error">{loadError}</p>
             <button
               type="button"
@@ -210,18 +211,18 @@ export function ServiceAreaApi() {
             </button>
           </div>
         ) : (
-          <p role="status" className={`${portalCard} text-sm text-muted`}>
+          <p role="status" className={`${adminCard} text-sm text-muted`}>
             {t('api_common_loading')}
           </p>
         )
       ) : data.rows.length === 0 ? (
-        <p className={`${portalCard} text-sm text-muted`}>{t('geo_api_empty')}</p>
+        <p className={`${adminCard} text-sm text-muted`}>{t('geo_api_empty')}</p>
       ) : rows.length === 0 ? (
-        <p className={`${portalCard} text-sm text-muted`}>{t('geo_api_noMatch')}</p>
+        <p className={`${adminCard} text-sm text-muted`}>{t('geo_api_noMatch')}</p>
       ) : (
         <ul className="space-y-3">
           {rows.map((row) => (
-            <li key={row.pincode} className={portalCard}>
+            <li key={row.pincode} className={adminCard}>
               <PincodeSummary row={row} />
               {open !== null && open !== 'add' && open.pincode === row.pincode ? (
                 open.mode === 'edit' ? (
@@ -297,13 +298,11 @@ function PincodeSummary({ row }: { row: AdminPincodeDto }) {
         ) : null}
       </div>
       {row.active ? (
-        <span className="inline-flex rounded-pill bg-success-bg px-3 py-1 text-xs font-extrabold text-success">
-          {t('geo_api_active')}
-        </span>
+        <StatusBadge tone="success">{t('geo_api_active')}</StatusBadge>
       ) : (
-        <span className="inline-flex rounded-pill bg-pill px-3 py-1 text-xs font-extrabold text-error">
+        <StatusBadge tone="danger">
           {t('geo_api_off', { reason: t(REASON_LABEL[row.inactiveReason ?? 'other']) })}
-        </span>
+        </StatusBadge>
       )}
     </div>
   );

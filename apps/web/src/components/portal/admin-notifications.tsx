@@ -19,7 +19,8 @@ import { AUTH_MODE } from '@/lib/auth/mode';
 import { track } from '@/lib/analytics';
 import { formatPrice } from '@/lib/format';
 import { EVENT_LABEL, PROBLEM_LABEL, SAMPLES } from './notify-labels';
-import { portalCard, portalField, portalPrimary } from './portal-styles';
+import { portalField, portalPrimary } from './portal-styles';
+import { adminCard } from './admin-ui';
 
 /** The API editor (real sign-in builds only): loaded on demand so demo bundles stay the same size. */
 const NotificationsApi = dynamic(() => import('./admin-notifications-api').then((m) => m.NotificationsApi), {
@@ -55,13 +56,7 @@ function DemoNotifications({ actor, defaults }: { actor: string; defaults: Notif
   const t = useTranslations('portal');
   const config = useNotifyConfig();
   return (
-    <section aria-labelledby="notify-title" className="space-y-5">
-      <div>
-        <h2 id="notify-title" className="font-heading text-xl font-extrabold text-ink">
-          {t('notify_title')}
-        </h2>
-        <p className="mt-1 max-w-prose text-sm text-muted">{t('notify_intro')}</p>
-      </div>
+    <section aria-labelledby="admin-page-title" className="space-y-5">
       <div
         role="status"
         className="rounded-card border border-line-card bg-private-bg p-4 text-sm text-private"
@@ -87,7 +82,7 @@ function DemoNotifications({ actor, defaults }: { actor: string; defaults: Notif
         ))}
       </ul>
       <BudgetCard actor={actor} budgetPaise={config.budgetPaise} version={config.budgetVersion} />
-      <div className={portalCard}>
+      <div className={adminCard}>
         <h3 className="font-heading text-base font-extrabold text-ink">{t('notify_history')}</h3>
         {config.history.length === 0 ? (
           <p className="mt-2 text-sm text-muted">{t('notify_history_empty')}</p>
@@ -159,7 +154,7 @@ function EventCard({
   }
 
   return (
-    <form onSubmit={onSubmit} className={portalCard} noValidate>
+    <form onSubmit={onSubmit} className={adminCard} noValidate>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="font-heading text-base font-extrabold text-ink">{t(EVENT_LABEL[event])}</h3>
@@ -284,7 +279,7 @@ function BudgetCard({
   }
 
   return (
-    <form onSubmit={onSubmit} className={portalCard} noValidate>
+    <form onSubmit={onSubmit} className={adminCard} noValidate>
       <h3 className="font-heading text-base font-extrabold text-ink">{t('notify_budget_title')}</h3>
       <p className="mt-1 text-sm text-muted">{t('notify_budget_help')}</p>
       <p className="mt-2 text-sm font-bold text-ink">

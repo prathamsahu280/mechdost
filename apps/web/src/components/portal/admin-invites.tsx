@@ -10,7 +10,8 @@ import { createInvite, revokeInvite, useInvites } from '@/demo/partner-store';
 import { track } from '@/lib/analytics';
 import { AUTH_MODE } from '@/lib/auth/mode';
 import { formatDate } from '@/lib/format';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { adminCard } from './admin-ui';
 
 type Field = 'name' | 'email' | 'phone';
 const FIELDS: Field[] = ['name', 'email', 'phone'];
@@ -86,7 +87,7 @@ function DemoAdminInvites() {
   };
 
   return (
-    <section aria-labelledby="invites-title" className={portalCard}>
+    <section aria-labelledby="invites-title" className={adminCard}>
       <h3 id="invites-title" className="font-heading text-lg font-extrabold text-ink">
         {t('invitesTitle')}
       </h3>

@@ -1175,6 +1175,27 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
     realApi: true,
   },
 
+  // ─────────────── Admin page pattern (design 2026-11-25, admin round 2) ───────────────
+  {
+    code: 'API-ADM-HEADER',
+    page: 'Admin console, real sign-in',
+    component:
+      'Page pattern: one header per section (title = side bar item, one-line description, primary action on the right), status badges, empty states, table boxes; 320 to 1920 px, both themes, English and Hindi',
+    path: (r) => adminPath(String(r.section)),
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      { name: 'width', values: [320, 390, 768, 1024, 1440, 1920] },
+      { name: 'section', values: [...REAL_ADMIN_SECTIONS] },
+      theme,
+      locale,
+      { name: 'auth', values: ['admin'] },
+    ],
+    checks: ['present', 'adminhead', 'hscroll', 'console'],
+    note: `${API_NOTE} Every section is answered from its own row's mocks, as in API-NAV-ADMIN.`,
+    realApi: true,
+  },
+
   // ─────────────── Navigation in a real-sign-in build ───────────────
   {
     code: 'API-NAV-ADMIN',

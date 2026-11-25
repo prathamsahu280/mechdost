@@ -12,8 +12,9 @@ import { REFUND_REJECT_REASONS, type RefundRejectReason } from '@mechdost/shared
 import { track } from '@/lib/analytics';
 import { formatDate, formatPrice } from '@/lib/format';
 import { isRefundReference, refundErrorKey, refundFailureKey } from '@/lib/refund-views';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { portalField, portalPrimary, portalQuiet } from './portal-styles';
 import { RefundSettleForm } from './refund-settle-form';
+import { StatusBadge, adminCard } from './admin-ui';
 
 type List =
   | { kind: 'loading' }
@@ -79,9 +80,9 @@ export function RefundQueueApi() {
   return (
     <div className="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)] xl:items-start">
       <section aria-labelledby="refund-list">
-        <h2 id="refund-list" className="font-heading text-xl font-extrabold text-ink">
+        <h3 id="refund-list" className="font-heading text-xl font-extrabold text-ink">
           {t('title')}
-        </h2>
+        </h3>
         <p className="mt-1 text-sm text-muted">{t('intro')}</p>
         {counts ? (
           <p className="mt-2 text-sm font-bold text-ink" role="status">
@@ -155,11 +156,7 @@ export function RefundQueueApi() {
                   </span>
                   <span className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted">
                     {t('asked', { date: formatDate(x.requestedAt, locale) })}
-                    {x.overdue ? (
-                      <span className="rounded-pill bg-pill px-2 py-0.5 font-bold text-ink">
-                        {t('overdueBadge')}
-                      </span>
-                    ) : null}
+                    {x.overdue ? <StatusBadge tone="neutral">{t('overdueBadge')}</StatusBadge> : null}
                   </span>
                 </button>
               </li>
@@ -254,7 +251,7 @@ function RefundDetail({
   };
 
   return (
-    <section aria-labelledby="refund-detail" className={portalCard}>
+    <section aria-labelledby="refund-detail" className={adminCard}>
       <h3 id="refund-detail" className="font-heading text-xl font-extrabold text-ink">
         {formatPrice(refund.amountPaise)} · {t(`status_${refund.status}`)}
       </h3>

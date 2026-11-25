@@ -13,7 +13,8 @@ import {
   type SettingsCategoryId,
 } from '@/lib/admin-settings-registry';
 import { PortalNavLink } from './portal-nav-link';
-import { portalCard, portalPrimary, portalQuiet } from './portal-styles';
+import { portalPrimary, portalQuiet } from './portal-styles';
+import { StatusBadge, adminCard } from './admin-ui';
 
 /**
  * Admin → Settings, the screen around the settings (design 2026-11-24, spec 08). Groups every setting into the
@@ -300,7 +301,7 @@ export function SettingsWorkbench(props: WorkbenchProps) {
                     <c.icon aria-hidden="true" className="size-5 shrink-0" />
                     <span className="min-w-0 flex-1">{t(`cat_${c.id}`)}</span>
                     {searching && hits(c.id) > 0 ? (
-                      <span className="rounded-pill bg-pill px-2 text-xs text-ink">{hits(c.id)}</span>
+                      <StatusBadge tone="neutral">{hits(c.id)}</StatusBadge>
                     ) : null}
                     {dirtyIn(c.id) > 0 ? (
                       <span
@@ -455,7 +456,7 @@ function Rows({
   );
   if (order.length === 0) {
     return (
-      <div className={`${portalCard} text-center`}>
+      <div className={`${adminCard} text-center`}>
         <p className="text-sm text-muted">{t('empty')}</p>
       </div>
     );
@@ -473,7 +474,7 @@ function Rows({
               </h3>
             ) : null}
             {own.length > 0 ? (
-              <ul className={`${portalCard} divide-y divide-line !py-1`}>
+              <ul className={`${adminCard} divide-y divide-line !py-1`}>
                 {own.map((item) => (
                   <Row key={item.id} item={item} onChange={onChange} baseId={baseId} />
                 ))}
@@ -521,11 +522,7 @@ function Row({
               {b}
             </span>
           ))}
-          {changed ? (
-            <span className="rounded-pill bg-warning-bg px-2 py-0.5 font-bold text-warning">
-              {t('changed')}
-            </span>
-          ) : null}
+          {changed ? <StatusBadge tone="warning">{t('changed')}</StatusBadge> : null}
         </p>
         {item.extra}
         {item.error ? (

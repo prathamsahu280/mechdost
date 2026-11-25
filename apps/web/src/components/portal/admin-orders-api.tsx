@@ -31,7 +31,8 @@ import {
 import { deadlineView, istDayTime } from '@/lib/admin-shop-form';
 import { ApiError, ApiListState, LoadMore } from './api-list-state';
 import { useNow } from './use-now';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { StatusBadge, adminCard } from './admin-ui';
+import { portalField, portalPrimary, portalQuiet } from './portal-styles';
 import { offerLeftParams } from '@/lib/offer-time';
 import { useNoticeRefresh } from '../notices/use-notice-refresh';
 import { useApiList, type ApiList } from './use-api-list';
@@ -97,10 +98,10 @@ export function OrderRoutingApi() {
     <div className="space-y-8">
       {groups.map(({ key, list, items }) => (
         <section key={key} aria-labelledby={`queue-${key}`}>
-          <h2 id={`queue-${key}`} className="font-heading text-xl font-extrabold text-ink">
+          <h3 id={`queue-${key}`} className="font-heading text-xl font-extrabold text-ink">
             {t(`queue_${key}`)}{' '}
             {list.loading ? null : <span className="text-muted tabular-nums">({items.length})</span>}
-          </h2>
+          </h3>
           <ApiListState
             loading={list.loading}
             error={list.error}
@@ -198,7 +199,7 @@ function RoutingCard({
 
   return (
     <article
-      className={`${portalCard} ${can.route ? 'border-accent-button/60' : ''}`}
+      className={`${adminCard} ${can.route ? 'border-accent-button/60' : ''}`}
       aria-busy={busy || undefined}
     >
       <p className="font-heading text-lg font-extrabold text-ink">{item.code}</p>
@@ -296,20 +297,16 @@ function RoutingCard({
                 <span className="min-w-0 text-sm">
                   <span className="font-bold text-ink">🏪 {s.name}</span>
                   {i === 0 ? (
-                    <span className="ml-2 rounded-pill bg-success-bg px-2 py-0.5 text-[11px] font-extrabold text-success">
+                    <StatusBadge tone="success" className="ml-2">
                       {t('recommended')}
-                    </span>
+                    </StatusBadge>
                   ) : null}
                   {/* Working hours (user 2026-11-14): open shops are ranked first; a closed one can still take it. */}
-                  <span
-                    className={`ml-2 rounded-pill px-2 py-0.5 text-[11px] font-extrabold ${
-                      s.openNow ? 'bg-success-bg text-success' : 'bg-pill text-muted'
-                    }`}
-                  >
+                  <StatusBadge tone={s.openNow ? 'success' : 'muted'} className="ml-2">
                     {s.openNow || !s.opensAt
                       ? t('shops_api_openNow')
                       : t('shops_api_closedOpens', { time: istDayTime(s.opensAt, locale) })}
-                  </span>
+                  </StatusBadge>
                   <ShopFacts shop={s} />
                 </span>
                 <button

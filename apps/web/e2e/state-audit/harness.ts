@@ -431,6 +431,7 @@ export async function runCase(page: Page, c: AuditCase, info: TestInfo, api?: Ap
     'hscroll',
     'offphoto',
     'scroll',
+    'adminhead',
   ].filter((k) => has(k) && !(trayWaits && k === 'present'));
   const localRules = ['inside', 'overlap', 'covered'].filter(has);
   const local = async (label: string) => {

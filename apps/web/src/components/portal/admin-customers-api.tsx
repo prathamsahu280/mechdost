@@ -19,13 +19,8 @@ import { commonErrorKey, type CommonErrorKey } from '@/lib/api-error-key';
 import { track } from '@/lib/analytics';
 import { blockErrorKey, endsAtFrom, type BlockErrorKey } from '@/lib/customer-blocks-view';
 import { formatDate } from '@/lib/format';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
-
-const PILL: Record<CustomerBlockLevel, string> = {
-  cod_only: 'bg-warning-bg text-warning',
-  orders: 'bg-warning-bg text-warning',
-  full: 'bg-pill text-error',
-};
+import { portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { StatusBadge, adminCard } from './admin-ui';
 
 const isLevel = (v: string): v is CustomerBlockLevel =>
   (CUSTOMER_BLOCK_LEVELS as readonly string[]).includes(v);
@@ -122,7 +117,7 @@ export function CustomerBlocks({ userId }: { userId: string }) {
 
   if (!blocks)
     return loadError ? (
-      <div role="alert" className={`${portalCard} space-y-3`}>
+      <div role="alert" className={`${adminCard} space-y-3`}>
         <p className="text-sm font-bold text-error">{t(loadError)}</p>
         <button
           type="button"
@@ -136,7 +131,7 @@ export function CustomerBlocks({ userId }: { userId: string }) {
         </button>
       </div>
     ) : (
-      <p role="status" className={`${portalCard} text-sm text-muted`}>
+      <p role="status" className={`${adminCard} text-sm text-muted`}>
         {t('api_common_loading')}
       </p>
     );
@@ -152,7 +147,7 @@ export function CustomerBlocks({ userId }: { userId: string }) {
   ) : null;
 
   return (
-    <article className={portalCard} aria-labelledby={`${idBase}-title`}>
+    <article className={adminCard} aria-labelledby={`${idBase}-title`}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <p
           id={`${idBase}-title`}
@@ -163,17 +158,12 @@ export function CustomerBlocks({ userId }: { userId: string }) {
         </p>
         <div className="flex flex-wrap gap-1.5">
           {active.length === 0 ? (
-            <span className="inline-flex rounded-pill bg-success-bg px-3 py-1 text-xs font-extrabold text-success">
-              {t('customersClear')}
-            </span>
+            <StatusBadge tone="success">{t('customersClear')}</StatusBadge>
           ) : (
             active.map((b) => (
-              <span
-                key={b.id}
-                className={`inline-flex rounded-pill px-3 py-1 text-xs font-extrabold ${PILL[b.level]}`}
-              >
+              <StatusBadge key={b.id} code={b.level}>
                 {levelLabel(b.level)}
-              </span>
+              </StatusBadge>
             ))
           )}
         </div>

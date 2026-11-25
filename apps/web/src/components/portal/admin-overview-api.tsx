@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 import type { AdminOverview } from '@mechdost/shared/admin-analytics-api';
@@ -10,7 +9,9 @@ import { formatPrice } from '@/lib/format';
 import { startPolling } from '@/lib/storefront-poll';
 import { ADMIN_SECTIONS, type AdminSection } from '@/lib/sections';
 import { PushPromptSlot } from '../notices/push-prompt-slot';
-import { portalCard, portalPrimary } from './portal-styles';
+import { OVERVIEW_TILE_HEIGHT, OverviewTile } from './admin-overview-tile';
+import { portalPrimary } from './portal-styles';
+import { adminCard } from './admin-ui';
 
 interface Tile {
   label: string;
@@ -77,12 +78,9 @@ export function AdminOverviewApi() {
   return (
     <>
       <PushPromptSlot />
-      <section aria-labelledby="kpis" className="space-y-3">
-        <h2 id="kpis" className="font-heading text-xl font-extrabold text-ink">
-          {t('nav_overview')}
-        </h2>
+      <section aria-labelledby="admin-page-title" className="space-y-3">
         {error ? (
-          <div role="alert" className={`${portalCard} space-y-3`}>
+          <div role="alert" className={`${adminCard} space-y-3`}>
             <p className="text-sm font-bold text-error">{t(error)}</p>
             <button
               type="button"
@@ -95,27 +93,22 @@ export function AdminOverviewApi() {
             </button>
           </div>
         ) : data === null ? (
-          <div role="status" className="grid grid-cols-2 gap-3 tab:grid-cols-4">
+          <div role="status" className="grid grid-cols-2 gap-3 tab:grid-cols-3 xl:grid-cols-4">
             <span className="sr-only">{t('api_common_loading')}</span>
-            {[0, 1, 2, 3].map((i) => (
-              <div key={i} className="skeleton h-24 rounded-card" aria-hidden="true" />
+            {Array.from({ length: 8 }, (_, i) => (
+              <div key={i} className={`skeleton rounded-card ${OVERVIEW_TILE_HEIGHT}`} aria-hidden="true" />
             ))}
           </div>
         ) : (
-          <ul className="grid grid-cols-2 gap-3 tab:grid-cols-4">
+          <ul className="grid grid-cols-2 gap-3 tab:grid-cols-3 xl:grid-cols-4">
             {tiles.map((tile) => (
               <li key={tile.label}>
-                <Link
+                <OverviewTile
                   href={`${prefix}/admin/${tile.href}`}
-                  className={`${portalCard} press block p-4 hover:shadow-card-hover ${
-                    tile.alert && tile.value ? 'border-accent-button' : ''
-                  }`}
-                >
-                  <span className="block font-heading text-3xl font-extrabold text-ink tabular-nums">
-                    {tile.money ? formatPrice(tile.value ?? 0) : formatCount(tile.value ?? 0, locale)}
-                  </span>
-                  <span className="mt-1 block text-sm text-muted">{tile.label}</span>
-                </Link>
+                  label={tile.label}
+                  value={tile.money ? formatPrice(tile.value ?? 0) : formatCount(tile.value ?? 0, locale)}
+                  alert={Boolean(tile.alert && tile.value)}
+                />
               </li>
             ))}
           </ul>

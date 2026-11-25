@@ -37,17 +37,12 @@ import { formatDate, formatPrice } from '@/lib/format';
 import { parseRupees } from '@/lib/money-input';
 import { ApiListState, LoadMore } from './api-list-state';
 import { CatalogueSkuPicker, type SkuChoice } from './catalogue-sku-picker';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { portalField, portalPrimary, portalQuiet } from './portal-styles';
 import { PausePrompt, useShopWarnings, WarningsPanel } from './admin-shop-warnings';
 import { ShopHoursFields } from './shop-hours-fields';
 import { useApiList } from './use-api-list';
+import { StatusBadge, adminCard } from './admin-ui';
 
-const PILL: Record<ShopStatus, string> = {
-  pending: 'bg-pill text-ink',
-  approved: 'bg-success-bg text-success',
-  paused: 'bg-warning-bg text-warning',
-  suspended: 'bg-pill text-error',
-};
 type Panel = 'profile' | 'coverage' | 'products' | 'standing' | 'warnings' | 'members';
 const PANELS: readonly Panel[] = ['profile', 'coverage', 'products', 'standing', 'warnings', 'members'];
 
@@ -157,7 +152,7 @@ function ShopRow({
   const t = useTranslations('portal');
   const locale = useLocale();
   return (
-    <article className={portalCard}>
+    <article className={adminCard}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="font-heading text-lg font-extrabold text-ink">
@@ -167,36 +162,34 @@ function ShopRow({
             {locale === 'hi' && s.addressLineHi ? s.addressLineHi : s.addressLine} · {s.pincode}
           </p>
           <ul className="mt-2 flex flex-wrap gap-2 text-xs font-bold">
-            <li className={`rounded-pill px-3 py-1 ${PILL[s.status]}`}>
+            <StatusBadge as="li" code={s.status}>
               {t(`shops_api_status_${s.status}`)}
-            </li>
-            <li
-              className={`rounded-pill px-3 py-1 ${s.openNow ? 'bg-success-bg text-success' : 'bg-pill text-muted'}`}
-            >
+            </StatusBadge>
+            <StatusBadge as="li" tone={s.openNow ? 'success' : 'muted'}>
               {s.openNow ? t('shops_api_openNow') : t('shops_api_closedNow')}
-            </li>
+            </StatusBadge>
             {s.busy ? (
-              <li className="rounded-pill bg-warning-bg px-3 py-1 text-warning">
+              <StatusBadge as="li" tone="warning">
                 {s.busyUntil
                   ? `${t('shops_api_busy')} · ${istDayTime(s.busyUntil, locale)}`
                   : t('shops_api_busy')}
-              </li>
+              </StatusBadge>
             ) : null}
             {s.gstStatus !== 'registered' ? (
-              <li className="rounded-pill bg-warning-bg px-3 py-1 text-warning">
+              <StatusBadge as="li" tone="warning">
                 {t('shops_api_gstEnrolled')}
-              </li>
+              </StatusBadge>
             ) : null}
-            <li className="rounded-pill bg-pill px-3 py-1 text-ink">
+            <StatusBadge as="li" tone="neutral">
               {t('shops_api_pinCount', { count: s.coveragePincodes })}
-            </li>
-            <li className="rounded-pill bg-pill px-3 py-1 text-ink">
+            </StatusBadge>
+            <StatusBadge as="li" tone="neutral">
               {t('shops_api_onSale', { count: s.offersOnSale })}
-            </li>
+            </StatusBadge>
             {s.missingHindi.length > 0 ? (
-              <li className="rounded-pill bg-warning-bg px-3 py-1 text-warning">
+              <StatusBadge as="li" tone="warning">
                 {t('shops_api_missingHindi', { count: s.missingHindi.length })}
-              </li>
+              </StatusBadge>
             ) : null}
           </ul>
           {s.status === 'pending' ? (
