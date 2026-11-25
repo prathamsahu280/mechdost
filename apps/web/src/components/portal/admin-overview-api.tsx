@@ -1,5 +1,20 @@
 'use client';
 
+import {
+  Handshake,
+  Headset,
+  Hourglass,
+  IndianRupee,
+  RotateCcw,
+  Route,
+  ShieldAlert,
+  ShoppingBag,
+  Star,
+  Tag,
+  Truck,
+  Wrench,
+  type LucideIcon,
+} from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 import type { AdminOverview } from '@mechdost/shared/admin-analytics-api';
@@ -9,7 +24,7 @@ import { formatPrice } from '@/lib/format';
 import { startPolling } from '@/lib/storefront-poll';
 import { ADMIN_SECTIONS, type AdminSection } from '@/lib/sections';
 import { PushPromptSlot } from '../notices/push-prompt-slot';
-import { OVERVIEW_TILE_HEIGHT, OverviewTile } from './admin-overview-tile';
+import { OVERVIEW_TILE_HEIGHT, OverviewTile, type TileTone } from './admin-overview-tile';
 import { portalPrimary } from './portal-styles';
 import { adminCard } from './admin-ui';
 
@@ -18,7 +33,9 @@ interface Tile {
   value: number | null;
   money?: boolean;
   href: AdminSection;
-  alert?: boolean;
+  /** What the number means when it is above zero (a queue with nothing in it is neutral). */
+  tone: TileTone;
+  icon: LucideIcon;
 }
 
 /**
@@ -54,23 +71,79 @@ export function AdminOverviewApi() {
 
   const all: Tile[] = data
     ? [
-        { label: t('kpi_needsRouting'), value: data.ordersNeedRouting, href: 'orders', alert: true },
-        { label: t('kpi_awaitingShop'), value: data.ordersAwaitingShop, href: 'orders' },
-        { label: t('analytics_api_inProgress'), value: data.ordersInProgress, href: 'orders' },
+        {
+          label: t('kpi_needsRouting'),
+          value: data.ordersNeedRouting,
+          href: 'orders',
+          tone: 'warning',
+          icon: Route,
+        },
+        {
+          label: t('kpi_awaitingShop'),
+          value: data.ordersAwaitingShop,
+          href: 'orders',
+          tone: 'warning',
+          icon: Hourglass,
+        },
+        {
+          label: t('analytics_api_inProgress'),
+          value: data.ordersInProgress,
+          href: 'orders',
+          tone: 'info',
+          icon: Truck,
+        },
         {
           label: t('analytics_api_servicesToRoute'),
           value: data.servicesNeedRouting,
           href: 'services',
-          alert: true,
+          tone: 'warning',
+          icon: Wrench,
         },
-        { label: t('kpi_support'), value: data.ticketsOpen, href: 'support', alert: true },
-        { label: t('kpi_reviews'), value: data.reviewsPending, href: 'reviews' },
-        { label: t('kpi_applications'), value: data.applicationsPending, href: 'applications' },
-        { label: t('kpi_priceRequests'), value: data.priceRequestsPending, href: 'partners', alert: true },
-        { label: t('kpi_refundsWaiting'), value: data.refundsWaiting, href: 'refunds' },
-        { label: t('kpi_refundsChecking'), value: data.refundsNeedChecking, href: 'refunds', alert: true },
-        { label: t('analytics_api_today_orders'), value: data.ordersToday, href: 'analytics' },
-        { label: t('analytics_api_today_value'), value: data.gmvTodayPaise, money: true, href: 'analytics' },
+        { label: t('kpi_support'), value: data.ticketsOpen, href: 'support', tone: 'warning', icon: Headset },
+        { label: t('kpi_reviews'), value: data.reviewsPending, href: 'reviews', tone: 'info', icon: Star },
+        {
+          label: t('kpi_applications'),
+          value: data.applicationsPending,
+          href: 'applications',
+          tone: 'info',
+          icon: Handshake,
+        },
+        {
+          label: t('kpi_priceRequests'),
+          value: data.priceRequestsPending,
+          href: 'partners',
+          tone: 'warning',
+          icon: Tag,
+        },
+        {
+          label: t('kpi_refundsWaiting'),
+          value: data.refundsWaiting,
+          href: 'refunds',
+          tone: 'danger',
+          icon: RotateCcw,
+        },
+        {
+          label: t('kpi_refundsChecking'),
+          value: data.refundsNeedChecking,
+          href: 'refunds',
+          tone: 'danger',
+          icon: ShieldAlert,
+        },
+        {
+          label: t('analytics_api_today_orders'),
+          value: data.ordersToday,
+          href: 'analytics',
+          tone: 'info',
+          icon: ShoppingBag,
+        },
+        {
+          label: t('analytics_api_today_value'),
+          value: data.gmvTodayPaise,
+          money: true,
+          href: 'analytics',
+          tone: 'success',
+          icon: IndianRupee,
+        },
       ]
     : [];
   const tiles = all.filter((tile) => tile.value !== null && ADMIN_SECTIONS.includes(tile.href));
@@ -107,7 +180,8 @@ export function AdminOverviewApi() {
                   href={`${prefix}/admin/${tile.href}`}
                   label={tile.label}
                   value={tile.money ? formatPrice(tile.value ?? 0) : formatCount(tile.value ?? 0, locale)}
-                  alert={Boolean(tile.alert && tile.value)}
+                  tone={tile.value ? tile.tone : 'neutral'}
+                  icon={tile.icon}
                 />
               </li>
             ))}

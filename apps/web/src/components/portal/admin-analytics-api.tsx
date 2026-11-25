@@ -339,6 +339,7 @@ function Dashboard({
             days={series((d) => d.gmvPaise)}
             format={money}
             locale={locale}
+            tone="success"
           />
         </div>
         <div className="grid gap-4 tab:grid-cols-2">
@@ -377,10 +378,7 @@ function Dashboard({
                   </span>
                 </div>
                 <div aria-hidden="true" className="mt-1 h-2 rounded-pill bg-pill">
-                  <div
-                    className="h-2 rounded-pill bg-accent-button"
-                    style={{ width: `${String(row.width)}%` }}
-                  />
+                  <div className="h-2 rounded-pill bg-info" style={{ width: `${String(row.width)}%` }} />
                 </div>
               </li>
             ))}
@@ -448,6 +446,7 @@ function Dashboard({
               days={series((d) => d.visitors)}
               format={n}
               locale={locale}
+              tone="accent"
             />
             {data.topSearches ? (
               <TableCard title={t('analytics_api_searches')} note={t('analytics_api_searches_note')}>

@@ -1892,3 +1892,16 @@ User, 2026-11-24: tyres are listed as one product per tread pattern with the siz
 - **Migration number 0084** (0083 belongs to the tyre data branch): its journal entry is `idx 84`; the snapshot `0084_snapshot.json` was generated without the data branch's changes, so after merging both branches regenerate the snapshot (`pnpm --filter @mechdost/db generate` on the merged tree produces an empty diff when they agree).
 - **User ruling the same night: "u can ship the size picker stuff ill review it myself in the morning."** The screenshots are taken for that morning review; shipping does not wait for approval of them.
 - Not done tonight (follow-ups in spec 02): compare size chosen from the product page, photos per size, separate editing of load / speed / TL fields in the admin editor.
+
+## 2026-11-25 - Admin round 2: one page pattern for every admin section
+
+User, 2026-11-25: "maybe admin ui can do a bit of improving", then "yes start the admin ui round 2". Rulings in the order they were taken:
+
+- **Restyle the real pages only, invent nothing.** Two earlier redesign samples were rejected for copying another site and inventing toggles (memory ui-redesign-feedback); round 2 changes headers, cards, badges, tables and states of the existing screens and keeps every route, control and behaviour.
+- **One header, rendered once by `AdminConsole`**, not copied into 23 screens: title from the side bar key, purpose from new `portal.adminHeader_<section>` keys (en + hi), the single primary action through a portal slot (`AdminHeaderActions`) so the button keeps its state and focus handling. Local title blocks were removed; their `aria-labelledby` now points at `admin-page-title`.
+- **Heading levels:** the header is the section's only `h2`; queue and panel headings became `h3` (accessibility review, 2026-11-25).
+- **One status mapping** (`lib/admin-status-tone.ts`) over existing token pairs; badges are words, 12 px minimum, and wrap. No new colour, font or radius. The admin card is the portal card at 16 px padding (20 px from tablet), used in admin files only; the storefront and account keep 20 px.
+- **No sticky table header.** A box that scrolls sideways owns the sticky position and `overflow-x: clip` would hide columns (the keyboard review flagged the clip as a lost-content risk); today's admin tables are short. Revisit with a viewport-level sticky header if a long table appears.
+- **No shared form-field component yet:** the review wants a render-prop that wires `aria-describedby` and `aria-invalid`; the existing forms already set them by hand, so the pattern is documented only. Follow-up in spec 08.
+- **Accessibility review (2026-11-25, specialists aria, keyboard, headings and tables, contrast and forms):** applied the heading levels, the tile reading order (label first in the DOM), removal of the clipping sticky mode and of the unused field component. All badge tones pass AA in both themes (tightest: accent badge 4.88:1 light). Open, pre-existing and not changed here: focus is not moved into the Coupons form or back to the trigger after save (the trigger already unmounted before this change), the Errors retry drops focus, `AdminTable` is always a tab stop.
+- **Audit:** new check `adminhead`, rows `ADM-HEADER` and `API-ADM-HEADER`.

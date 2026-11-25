@@ -40,6 +40,10 @@
   --color-private-bg: #fff5e9;
   --color-private: #785128;
   --color-error: #b42318;
+  /* Admin data colour (user 2026-11-25, decisions.md): soft red and blue pairs; success and warning pairs already existed */
+  --color-error-bg: #fdeceb;
+  --color-info-bg: #e7f0fb;
+  --color-info: #1b4f8f;
   --color-whatsapp: #167b42;
   --color-whatsapp-bg: #eff8f2;
   --color-whatsapp-line: #cfe6d7;
@@ -115,6 +119,9 @@
   --color-private-bg: #2c2113;
   --color-private: #f0c690;
   --color-error: #ff9282;
+  --color-error-bg: #3a1a17;
+  --color-info-bg: #12263d;
+  --color-info: #a6c9f5;
   --color-whatsapp-bg: #0e2419;
   --color-whatsapp-line: #1f4a33;
   --color-focus: #ff8b59;
@@ -153,6 +160,9 @@
     --color-private-bg: #2c2113;
     --color-private: #f0c690;
     --color-error: #ff9282;
+    --color-error-bg: #3a1a17;
+    --color-info-bg: #12263d;
+    --color-info: #a6c9f5;
     --color-whatsapp-bg: #0e2419;
     --color-whatsapp-line: #1f4a33;
     --color-focus: #ff8b59;

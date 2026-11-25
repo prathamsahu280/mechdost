@@ -142,21 +142,25 @@ export function RefundQueueApi() {
                   className={`press w-full rounded-tile border p-3 text-left ${
                     selected === x.id
                       ? 'border-accent-button bg-accent-soft'
-                      : 'border-line-card bg-surface hover:bg-pill'
+                      : x.overdue
+                        ? 'border-line-card bg-error-bg hover:bg-pill'
+                        : 'border-line-card bg-surface hover:bg-pill'
                   }`}
                 >
                   <span className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="font-heading text-base font-extrabold text-ink">
+                    <span className="font-heading text-base font-extrabold text-error tabular-nums">
                       {formatPrice(x.amountPaise)}
                     </span>
-                    <span className="text-xs font-bold text-muted">{t(`status_${x.status}`)}</span>
+                    <StatusBadge code={x.status === 'approved' ? 'in_progress' : x.status}>
+                      {t(`status_${x.status}`)}
+                    </StatusBadge>
                   </span>
                   <span className="mt-1 block text-sm text-ink">
                     {x.orderCode ?? x.groupCode} · {t(`source_${x.source}`)}
                   </span>
                   <span className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted">
                     {t('asked', { date: formatDate(x.requestedAt, locale) })}
-                    {x.overdue ? <StatusBadge tone="neutral">{t('overdueBadge')}</StatusBadge> : null}
+                    {x.overdue ? <StatusBadge tone="danger">{t('overdueBadge')}</StatusBadge> : null}
                   </span>
                 </button>
               </li>

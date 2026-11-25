@@ -17,6 +17,8 @@ import {
   FileDown,
   Handshake,
   Headset,
+  Hourglass,
+  IndianRupee,
   LayoutDashboard,
   LayoutGrid,
   MessagesSquare,
@@ -29,8 +31,10 @@ import {
   Siren,
   Star,
   Store,
+  Tag,
   Ticket,
   TriangleAlert,
+  Truck,
   UserCog,
   Users,
   Wrench,
@@ -68,6 +72,7 @@ import { postQuoteMessage, sendOffer, useQuotes } from '@/demo/quote-store';
 import { takesNewWork } from '@/demo/partner-status';
 import { DEMO_WORKSHOPS } from '@/demo/workshops';
 import { track } from '@/lib/analytics';
+import type { BadgeTone } from '@/lib/admin-status-tone';
 import { AUTH_MODE } from '@/lib/auth/mode';
 import { parseRupees } from '@/lib/money-input';
 import { formatDate, formatPrice } from '@/lib/format';
@@ -85,7 +90,7 @@ import { PortalGuard, usePortalAccount } from './portal-guard';
 import { PortalNavLink } from './portal-nav-link';
 import { useNow } from './use-now';
 import { StatusBadge, adminCard } from './admin-ui';
-import { OverviewTile } from './admin-overview-tile';
+import { OverviewTile, type TileTone } from './admin-overview-tile';
 import { AdminPageHeader } from './admin-page-header';
 import { portalField, portalPrimary, portalQuiet } from './portal-styles';
 import { offerLeftParams } from '@/lib/offer-time';
@@ -394,14 +399,28 @@ function Overview() {
   const support = useTickets().filter((x) => x.status === 'open' || x.status === 'in_review').length;
   const priceRequests = usePendingPriceRequests().length;
 
-  const allTiles: { label: string; value: string; href: AdminSection; tone?: 'alert' }[] = [
+  const allTiles: {
+    label: string;
+    value: string;
+    href: AdminSection;
+    /** What the number means when work is waiting; a queue with nothing in it is neutral. */
+    tone: TileTone;
+    icon: LucideIcon;
+  }[] = [
     {
       label: t('kpi_needsRouting'),
       value: String(count(['needs_routing', 'expired'])),
       href: 'orders',
-      tone: 'alert',
+      tone: 'warning',
+      icon: Route,
     },
-    { label: t('kpi_awaitingShop'), value: String(count('awaiting_shop')), href: 'orders' },
+    {
+      label: t('kpi_awaitingShop'),
+      value: String(count('awaiting_shop')),
+      href: 'orders',
+      tone: 'warning',
+      icon: Hourglass,
+    },
     {
       // Delivered orders are done, not "confirmed" work (QA 2026-11-14, U5).
       label: t('kpi_confirmed'),
@@ -410,14 +429,28 @@ function Overview() {
           .length,
       ),
       href: 'orders',
+      tone: 'info',
+      icon: Truck,
     },
-    { label: t('kpi_value'), value: formatPrice(value), href: 'orders' },
-    { label: t('kpi_quotes'), value: String(quotes), href: 'quotes' },
-    { label: t('kpi_services'), value: String(services), href: 'services' },
-    { label: t('kpi_applications'), value: String(applications), href: 'applications' },
-    { label: t('kpi_reviews'), value: String(reviews), href: 'reviews' },
-    { label: t('kpi_support'), value: String(support), href: 'support', tone: 'alert' },
-    { label: t('kpi_priceRequests'), value: String(priceRequests), href: 'partners', tone: 'alert' },
+    { label: t('kpi_value'), value: formatPrice(value), href: 'orders', tone: 'success', icon: IndianRupee },
+    { label: t('kpi_quotes'), value: String(quotes), href: 'quotes', tone: 'info', icon: MessagesSquare },
+    { label: t('kpi_services'), value: String(services), href: 'services', tone: 'warning', icon: Wrench },
+    {
+      label: t('kpi_applications'),
+      value: String(applications),
+      href: 'applications',
+      tone: 'info',
+      icon: Handshake,
+    },
+    { label: t('kpi_reviews'), value: String(reviews), href: 'reviews', tone: 'info', icon: Star },
+    { label: t('kpi_support'), value: String(support), href: 'support', tone: 'warning', icon: Headset },
+    {
+      label: t('kpi_priceRequests'),
+      value: String(priceRequests),
+      href: 'partners',
+      tone: 'warning',
+      icon: Tag,
+    },
   ];
   const tiles = allTiles.filter((k) => ADMIN_SECTIONS.includes(k.href));
 
@@ -430,7 +463,8 @@ function Overview() {
               href={`${prefix}/admin/${tile.href}`}
               label={tile.label}
               value={tile.value}
-              alert={tile.tone === 'alert' && tile.value !== '0'}
+              tone={tile.value !== '0' && !tile.value.startsWith('₹0') ? tile.tone : 'neutral'}
+              icon={tile.icon}
             />
           </li>
         ))}
@@ -438,6 +472,9 @@ function Overview() {
     </section>
   );
 }
+
+/** Tone per queue, in the order of the groups below (user ruling 2026-11-25). */
+const QUEUE_TONES: readonly BadgeTone[] = ['warning', 'warning', 'info', 'success', 'danger', 'muted'];
 
 function OrderRouting() {
   const t = useTranslations('portal');
@@ -463,7 +500,10 @@ function OrderRouting() {
       {groups.map(([title, list], i) => (
         <section key={title} aria-labelledby={`queue-${String(i)}`}>
           <h3 id={`queue-${String(i)}`} className="font-heading text-xl font-extrabold text-ink">
-            {title} <span className="text-muted tabular-nums">({list.length})</span>
+            {title}{' '}
+            <StatusBadge tone={QUEUE_TONES[i] ?? 'neutral'} className="align-middle tabular-nums">
+              {list.length}
+            </StatusBadge>
           </h3>
           {list.length === 0 ? (
             <p className="mt-3 text-sm text-muted">{t('emptyQueue')}</p>

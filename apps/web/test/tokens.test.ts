@@ -64,6 +64,20 @@ const TEXT_PAIRS: [fg: string, bg: string][] = [
   ['warning', 'warning-bg'],
   ['private', 'private-bg'],
   ['error', 'surface'],
+  // Admin data colour (decision 2026-11-25): tinted tiles, badges and tables
+  ['error', 'error-bg'],
+  ['info', 'info-bg'],
+  ['info', 'surface'],
+  ['ink', 'error-bg'],
+  ['ink', 'info-bg'],
+  ['ink', 'success-bg'],
+  ['ink', 'warning-bg'],
+  ['success', 'surface'],
+  ['warning', 'surface'],
+  ['muted', 'error-bg'],
+  ['muted', 'info-bg'],
+  ['muted', 'success-bg'],
+  ['muted', 'warning-bg'],
   // v4 chrome (decision 2026-11-23): nav chip, cart button and its badge, tinted footer panel
   ['ink', 'chip'],
   ['muted', 'chip'],
@@ -83,6 +97,14 @@ const NON_TEXT_PAIRS: [fg: string, bg: string][] = [
   ['input-border', 'bg'],
   ['star', 'surface'],
   ['star', 'bg'],
+  // Chart marks and icon chips of the admin data colours (decision 2026-11-25)
+  ['info', 'surface'],
+  ['success', 'surface'],
+  ['error', 'surface'],
+  ['info', 'info-bg'],
+  ['success', 'success-bg'],
+  ['error', 'error-bg'],
+  ['warning', 'warning-bg'],
 ];
 
 describe.each([

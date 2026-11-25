@@ -18,6 +18,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState, type SyntheticEvent } from 'react';
 import { adminApi, type ResponseSchema } from '@/lib/admin-api';
 import { track } from '@/lib/analytics';
+import type { BadgeTone } from '@/lib/admin-status-tone';
 import { formatDate, formatPrice } from '@/lib/format';
 import {
   adminActions,
@@ -54,6 +55,16 @@ type View = 'needs_routing' | 'awaiting_shop' | 'in_progress' | 'closed';
  * delivery without the customer's code (audited). Every change sends the order `version`; lists reload after each
  * action and the open queues poll every 30 s.
  */
+/** The queue's tone (user ruling 2026-11-25): waiting amber, in progress blue, delivered green, rejected red, cancelled grey. */
+const QUEUE_TONE: Record<AdminGroup, BadgeTone> = {
+  needs: 'warning',
+  awaiting: 'warning',
+  done: 'info',
+  delivered: 'success',
+  rejected: 'danger',
+  cancelled: 'muted',
+};
+
 export function OrderRoutingApi() {
   const t = useTranslations('portal');
   const locale = useLocale();
@@ -100,7 +111,11 @@ export function OrderRoutingApi() {
         <section key={key} aria-labelledby={`queue-${key}`}>
           <h3 id={`queue-${key}`} className="font-heading text-xl font-extrabold text-ink">
             {t(`queue_${key}`)}{' '}
-            {list.loading ? null : <span className="text-muted tabular-nums">({items.length})</span>}
+            {list.loading ? null : (
+              <StatusBadge tone={QUEUE_TONE[key]} className="align-middle tabular-nums">
+                {items.length}
+              </StatusBadge>
+            )}
           </h3>
           <ApiListState
             loading={list.loading}

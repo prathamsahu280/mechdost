@@ -5,6 +5,9 @@ import { useId, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { chartTicks, shortDay } from '@/lib/admin-analytics-view';
 import { ScrollRegion } from '../ui/scroll-region';
 
+/** Bar colours per measure (decision 2026-11-25 "Admin data colour"); each is at least 3:1 on the card in both themes (tokens test). */
+const BAR_FILL = { info: 'fill-info', success: 'fill-success', accent: 'fill-accent-button' } as const;
+
 /**
  * Small dependency-free charts for Admin → Analytics (decision 2026-11-14 "Analytics charts in SVG"): one series per
  * chart in the accent colour (the title names it, so no legend), round ticks from 0, recessive gridlines, the hovered
@@ -19,7 +22,10 @@ export function DailyBars({
   days,
   format,
   locale,
+  tone = 'info',
 }: {
+  /** The measure's colour, the same on every admin chart: counts blue, money green, visitors the brand orange. */
+  tone?: 'info' | 'success' | 'accent';
   title: string;
   days: readonly { date: string; value: number }[];
   format: (n: number) => string;
@@ -130,7 +136,7 @@ export function DailyBars({
                       width={Math.max(slot - gap, 1)}
                       height={h}
                       rx={Math.min(3, (slot - gap) / 2)}
-                      className={active === i ? 'fill-ink' : 'fill-accent-button'}
+                      className={active === i ? 'fill-ink' : BAR_FILL[tone]}
                     />
                   ) : null}
                   <rect
