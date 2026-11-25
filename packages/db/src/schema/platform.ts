@@ -16,6 +16,7 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 import { CUSTOMER_BLOCK_LEVELS, CUSTOMER_BLOCK_REASONS } from '@mechdost/shared/customers';
+import { NOTICE_PRIORITIES } from '@mechdost/shared/notice-api';
 import { GST_STATUSES, LOCATION_SOURCES, PARTNER_STANDING_REASONS } from '@mechdost/shared/partner-codes';
 import { PARTNER_WARNING_REASONS, WARNING_PARTNER_KINDS } from '@mechdost/shared/partner-warnings';
 import { REVIEW_HIDE_REASONS, REVIEW_STATES } from '@mechdost/shared/reviews';
@@ -164,6 +165,14 @@ export const notificationOutbox = pgTable(
 );
 
 /**
+ * The inbox order group of a notification (spec 10, decision 2026-11-25): 0 unread and urgent, 1 unread, 2 read. One
+ * expression for the index and every query, so the ORDER BY is served by `notifications_inbox_idx`.
+ */
+export const noticeBucketSql = sql.raw(
+  `(case when read_at is null then (case when priority = 'urgent' then 0 else 1 end) else 2 end)`,
+);
+
+/**
  * In-app notification centre (spec 10, design 2026-11-15). Rows are written in the business transaction by
  * `queueNotice`, already rendered in the recipient's language (plain text; no personal data beyond what the person
  * sees on the page the link opens). `dedupe_key` makes a retried transaction write once.
@@ -191,9 +200,20 @@ export const notifications = pgTable(
      * refund decided, the ticket answered… The bell shows it as done and it stops counting as unread.
      */
     resolvedAt: ts(),
+    /** urgent / action / info / success, from the kind when written (shared `NOTICE_PRIORITY_OF_KIND`). */
+    priority: text().notNull().default('info'),
+    /**
+     * Soft delete: the person removed it (or cleared all read). Hidden from the inbox; "Undo" clears it; the daily
+     * job deletes the row later. The `notification_*` analytics events are separate and stay.
+     */
+    dismissedAt: ts(),
     createdAt: createdAt(),
   },
   (t) => [
+    check(
+      'notifications_priority_valid',
+      sql`${t.priority} in (${sql.raw(NOTICE_PRIORITIES.map((p) => `'${p}'`).join(','))})`,
+    ),
     check('notifications_category_valid', sql`${t.category} in ('transactional','promotional','reminders')`),
     check(
       'notifications_entity_type_valid',
@@ -208,6 +228,20 @@ export const notifications = pgTable(
       .on(t.userId, t.dedupeKey)
       .where(sql`${t.dedupeKey} is not null`),
     index('notifications_created_idx').on(t.createdAt),
+    // The inbox: unread urgent, unread, read; newest first inside each. Hidden rows are left out of the index.
+    index('notifications_inbox_idx')
+      .on(t.userId, noticeBucketSql, t.createdAt.desc(), t.id.desc())
+      .where(sql`${t.dismissedAt} is null and ${t.resolvedAt} is null`),
+    // The daily clean-up finds its rows by these (dismissed, resolved, read information).
+    index('notifications_dismissed_idx')
+      .on(t.dismissedAt)
+      .where(sql`${t.dismissedAt} is not null`),
+    index('notifications_resolved_idx')
+      .on(t.resolvedAt)
+      .where(sql`${t.resolvedAt} is not null`),
+    index('notifications_read_info_idx')
+      .on(t.createdAt)
+      .where(sql`${t.readAt} is not null and ${t.priority} in ('info','success')`),
     // Finds the still-open notices of one thing when it is resolved (`=` and `LIKE 'id:%'` both use it).
     index('notifications_open_entity_idx')
       .on(t.kind, sql`${t.entityId} text_pattern_ops`)
@@ -888,7 +922,7 @@ export const liveOutbox = pgTable(
     ),
     check(
       'live_outbox_kind_valid',
-      sql`${t.kind} in ('order','assignment','shop','workshop','request','quote','coins','cart','wishlist')`,
+      sql`${t.kind} in ('order','assignment','shop','workshop','request','quote','coins','cart','wishlist','notice')`,
     ),
     check('live_outbox_event_format', sql`${t.event} ~ '^[a-z_]+[.][a-z_]+$'`),
     check('live_outbox_version_positive', sql`${t.entityVersion} >= 1`),

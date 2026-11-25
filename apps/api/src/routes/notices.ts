@@ -1,10 +1,13 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import {
+  clearReadNotices,
+  dismissNotice,
   getNoticePreferences,
   globalIntSetting,
   listNotices,
   markNoticesRead,
   registerPushDevice,
+  restoreNotices,
   revokePushDevice,
   setNoticePreferences,
   unreadNoticeCount,
@@ -12,12 +15,16 @@ import {
 import {
   MARKETING_NOTICE_VERSION,
   NOTICE_PAGE_MAX,
+  NoticeClearResultDto,
   NoticeCountDto,
+  NoticeDismissResultDto,
   NoticePageDto,
   NoticePreferencesPatchDto,
   NoticePreferencesViewDto,
   NoticeReadDto,
   NoticeReadResultDto,
+  NoticeRestoreDto,
+  NoticeRestoreResultDto,
   PUSH_DEVICES_MAX,
   PushDeviceCreateDto,
   PushDeviceDto,
@@ -85,6 +92,36 @@ const readRoute = createRoute({
   request: body(NoticeReadDto),
   responses: { 200: json(NoticeReadResultDto, 'Marked'), ...errorResponses },
 });
+const dismissRoute = createRoute({
+  method: 'delete',
+  path: '/me/notifications/{id}',
+  tags,
+  summary: 'Remove one of your notifications from the inbox (Undo brings it back)',
+  security,
+  request: { params: z.object({ id: z.uuid().openapi({ param: { name: 'id', in: 'path' } }) }) },
+  responses: {
+    200: json(NoticeDismissResultDto, 'Removed'),
+    404: json(ErrorSchema, 'Not found (or not yours)'),
+    ...errorResponses,
+  },
+});
+const clearReadRoute = createRoute({
+  method: 'post',
+  path: '/me/notifications/clear-read',
+  tags,
+  summary: 'Remove all your read notifications from the inbox (Undo brings them back)',
+  security,
+  responses: { 200: json(NoticeClearResultDto, 'Cleared'), ...errorResponses },
+});
+const restoreRoute = createRoute({
+  method: 'post',
+  path: '/me/notifications/restore',
+  tags,
+  summary: 'Undo a removal: brings back your notifications removed in the batch the token names',
+  security,
+  request: body(NoticeRestoreDto),
+  responses: { 200: json(NoticeRestoreResultDto, 'Restored'), ...errorResponses },
+});
 const registerRoute = createRoute({
   method: 'post',
   path: '/me/push-devices',
@@ -151,9 +188,15 @@ export function noticeRoutes(deps: AppDeps, cache: SessionCache) {
       rateLimit(deps.rateLimiter, RATE_RULES.apiPerUser, (c) => c.get('auth').user.id),
     );
   }
+  for (const path of ['/me/notifications/read', '/me/notifications/clear-read', '/me/notifications/restore'])
+    app.on(
+      ['POST'],
+      path,
+      rateLimit(deps.rateLimiter, NOTICE_READ_RATE, (c) => c.get('auth').user.id),
+    );
   app.on(
-    ['POST'],
-    '/me/notifications/read',
+    ['DELETE'],
+    '/me/notifications/*',
     rateLimit(deps.rateLimiter, NOTICE_READ_RATE, (c) => c.get('auth').user.id),
   );
   for (const path of ['/me/push-devices', '/me/push-devices/*', '/me/notification-preferences'])
@@ -176,6 +219,14 @@ export function noticeRoutes(deps: AppDeps, cache: SessionCache) {
     .openapi(countRoute, async (c) => c.json({ unread: await unreadNoticeCount(deps.db, user(c)) }, 200))
     .openapi(readRoute, async (c) =>
       c.json(await markNoticesRead(deps.db, user(c), c.req.valid('json')), 200),
+    )
+    .openapi(dismissRoute, async (c) => {
+      const res = await dismissNotice(deps.db, user(c), c.req.valid('param').id);
+      return c.json({ dismissed: true as const, ...res }, 200);
+    })
+    .openapi(clearReadRoute, async (c) => c.json(await clearReadNotices(deps.db, user(c)), 200))
+    .openapi(restoreRoute, async (c) =>
+      c.json(await restoreNotices(deps.db, user(c), c.req.valid('json').undoToken), 200),
     )
     .openapi(registerRoute, async (c) => {
       const input = c.req.valid('json');

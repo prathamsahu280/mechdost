@@ -1,8 +1,11 @@
 import {
+  NoticeClearResultDto,
   NoticeCountDto,
+  NoticeDismissResultDto,
   NoticePageDto,
   NoticePreferencesViewDto,
   NoticeReadResultDto,
+  NoticeRestoreResultDto,
   PushDeviceDto,
   PushDeviceRemovedDto,
   type NoticePage,
@@ -32,6 +35,21 @@ export const fetchUnreadCount = (locale: string) =>
 
 export const markNoticesRead = (locale: string, which: { ids: string[] } | { all: true }) =>
   authed(locale, '/me/notifications/read', NoticeReadResultDto, { method: 'POST', body: which });
+
+/** Removes one notification from the inbox; the result carries the token that brings it back. */
+export const dismissNotice = (locale: string, id: string) =>
+  authed(locale, `/me/notifications/${encodeURIComponent(id)}`, NoticeDismissResultDto, { method: 'DELETE' });
+
+/** "Clear all read": one call, one token for the whole batch. */
+export const clearReadNotices = (locale: string) =>
+  authed(locale, '/me/notifications/clear-read', NoticeClearResultDto, { method: 'POST', body: {} });
+
+/** Undo a removal (single or batch) with its token. */
+export const restoreNotices = (locale: string, undoToken: string) =>
+  authed(locale, '/me/notifications/restore', NoticeRestoreResultDto, {
+    method: 'POST',
+    body: { undoToken },
+  });
 
 export const registerPushDevice = (locale: string, token: string) =>
   authed(locale, '/me/push-devices', PushDeviceDto, {

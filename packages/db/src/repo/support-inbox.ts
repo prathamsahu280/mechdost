@@ -5,6 +5,7 @@ import { auditLog, cannedReplies, roles, supportTickets, userRoles, users } from
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from './errors';
 import { recordServerEvent } from './events';
 import type { Tx } from './orders';
+import { resolveTicketReplyNotices } from './notice-events';
 import { loadGrants } from './rbac';
 import { supportSla } from './support-sla';
 import { ticketScopeFrom, type TicketScope } from './support';
@@ -318,6 +319,7 @@ export async function autoCloseResolvedTickets(
         )
         .returning({ id: supportTickets.id });
       if (!row) return false;
+      await resolveTicketReplyNotices(tx, t.id);
       await tx.insert(auditLog).values({
         actorUserId: null,
         actorRole: 'system',

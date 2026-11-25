@@ -12,6 +12,7 @@ import { auditLog, partnerWarnings, settings, shops, workshops } from '../schema
 import { queueShopWarningEmail } from './email-events';
 import { ConflictError, mapPgError, NotFoundError, ValidationError } from './errors';
 import { recordServerEvent } from './events';
+import { resolveNotices } from './notices';
 import type { Tx } from './orders';
 import type { CityScope } from './routing';
 import { rowsOf } from './sql-rows';
@@ -254,6 +255,8 @@ export async function withdrawPartnerWarning(
     } catch (err) {
       mapPgError(err);
     }
+    // The shop's "a warning was added" notices are written per person (`warningId:userId`): all of them are done.
+    await resolveNotices(tx, { kinds: ['partner.warning'], entityIds: [w.id], prefixed: true });
     await tx.insert(auditLog).values({
       actorUserId: input.staffUserId,
       actorRole: 'staff',

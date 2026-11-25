@@ -8,13 +8,16 @@ import {
 } from '@mechdost/shared/notice-catalogue';
 import {
   BELL_BADGE_MAX,
+  noticePriorityOf,
   type Notice,
   type NoticePage,
+  type NoticePriority,
   type NoticePreferences,
 } from '@mechdost/shared/notice-api';
 import type { Permission } from '@mechdost/shared/rbac';
 import {
   consents,
+  noticeBucketSql,
   notificationPreferences,
   notificationTemplates,
   notifications,
@@ -22,7 +25,7 @@ import {
   users,
 } from '../schema';
 import { decodeCursor, encodeCursor, pageSize } from './cursor';
-import { NotFoundError } from './errors';
+import { NotFoundError, ValidationError } from './errors';
 import { recordServerEvent } from './events';
 import { STAFF_WITH } from './live';
 import { enqueueNotification, type Locale } from './notify';
@@ -189,6 +192,7 @@ export async function queueNotice(tx: Tx, input: QueueNoticeInput): Promise<bool
       userId: input.userId,
       category: def.category,
       kind: input.kind,
+      priority: noticePriorityOf(input.kind),
       entityType: def.entity,
       entityId: input.entityId,
       dedupeKey: dedupe,
@@ -302,6 +306,7 @@ const viewOf = (r: typeof notifications.$inferSelect): Notice => ({
   id: r.id,
   kind: r.kind,
   category: r.category as Notice['category'],
+  priority: r.priority as NoticePriority,
   title: r.title,
   body: r.body,
   link: r.link,
@@ -310,43 +315,71 @@ const viewOf = (r: typeof notifications.$inferSelect): Notice => ({
   createdAt: r.createdAt.toISOString(),
 });
 
+/** Rows the person can see: not removed by them, and not already taken care of (a done notice disappears). */
+const VISIBLE = sql`${notifications.dismissedAt} is null and ${notifications.resolvedAt} is null`;
+
 /** Unread count, stopped at one past the badge maximum so a person with thousands costs one short index scan. */
 export async function unreadNoticeCount(tx: Tx, userId: string): Promise<number> {
   const [row] = rowsOf<{ n: number }>(
     await tx.execute(sql`
       select count(*)::int as n from (
-        select 1 from notifications where user_id = ${userId} and read_at is null limit ${BELL_BADGE_MAX + 1}
+        select 1 from notifications
+        where user_id = ${userId} and read_at is null and dismissed_at is null and resolved_at is null
+        limit ${BELL_BADGE_MAX + 1}
       ) unread`),
   );
   return row?.n ?? 0;
 }
 
-/** The person's notifications, newest first, by keyset cursor (hard rule 7). Only their own rows exist for them. */
+/** `group|timestamp`: the inbox cursor's sort key (the id travels beside it). */
+const INBOX_KEY = /^([012])\|(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(?:\.\d{1,6})?[+-]\d{2}(?::\d{2})?)$/;
+
+function decodeInboxCursor(raw: string): { bucket: number; ts: string; id: string } {
+  const { k, id } = decodeCursor(raw, 'text');
+  const m = INBOX_KEY.exec(k);
+  if (!m?.[1] || !m[2]) throw new ValidationError('Invalid cursor', 'INVALID_CURSOR');
+  return { bucket: Number(m[1]), ts: m[2], id };
+}
+
+/**
+ * The person's inbox (spec 10, decision 2026-11-25): unread and urgent first, then unread, then read, newest first
+ * inside each group, by keyset cursor over (group, created_at, id) so a page never repeats or skips a row (hard rule
+ * 7). Served by `notifications_inbox_idx`. Removed and done notices are not listed. Only their own rows exist for them.
+ */
 export async function listNotices(
   tx: Tx,
   userId: string,
   opts: { cursor?: string | undefined; limit?: number | undefined },
 ): Promise<NoticePage> {
   const size = pageSize(opts.limit, 10, 50);
-  const after = opts.cursor ? decodeCursor(opts.cursor, 'timestamp') : null;
+  const after = opts.cursor ? decodeInboxCursor(opts.cursor) : null;
   const rows = await tx
-    .select({ row: notifications, k: sql<string>`${notifications.createdAt}::text` })
+    .select({
+      row: notifications,
+      bucket: sql<number>`${noticeBucketSql}`,
+      k: sql<string>`${notifications.createdAt}::text`,
+    })
     .from(notifications)
     .where(
       and(
         eq(notifications.userId, userId),
+        VISIBLE,
         after
-          ? sql`(${notifications.createdAt}, ${notifications.id}) < (${after.k}::timestamptz, ${after.id}::uuid)`
+          ? sql`(${noticeBucketSql} > ${after.bucket} or (${noticeBucketSql} = ${after.bucket}
+              and (${notifications.createdAt}, ${notifications.id}) < (${after.ts}::timestamptz, ${after.id}::uuid)))`
           : undefined,
       ),
     )
-    .orderBy(desc(notifications.createdAt), desc(notifications.id))
+    .orderBy(sql`${noticeBucketSql}`, desc(notifications.createdAt), desc(notifications.id))
     .limit(size + 1);
   const page = rows.slice(0, size);
   const last = page[page.length - 1];
   return {
     notices: page.map((r) => viewOf(r.row)),
-    nextCursor: rows.length > size && last ? encodeCursor({ k: last.k, id: last.row.id }) : null,
+    nextCursor:
+      rows.length > size && last
+        ? encodeCursor({ k: `${String(last.bucket)}|${last.k}`, id: last.row.id })
+        : null,
     unread: await unreadNoticeCount(tx, userId),
   };
 }
@@ -371,14 +404,130 @@ export async function markNoticesRead(
   return { updated: rows.length, unread: await unreadNoticeCount(tx, userId) };
 }
 
+/** Tells the person's other tabs and devices that their inbox changed (a thin live ping; the poll is the fallback). */
+async function pingInboxChanged(tx: Tx, userId: string): Promise<void> {
+  // The version is the time in seconds since 2025-01-01: it only has to grow, so the clients' version gate keeps up.
+  await tx.execute(sql`
+    select public.live_enqueue(
+      ${`user:${userId}`}, 'notice', ${userId}::uuid,
+      greatest(1, (extract(epoch from now())::bigint - 1735689600)::int), 'notice.changed')`);
+}
+
+/**
+ * Removes one of the person's notices from their inbox (soft delete; counts as read). Returns the token that brings
+ * it back ("Undo"). Another person's id is 404, never a hint that it exists. Removing twice gives the same token.
+ */
+export async function dismissNotice(
+  tx: Tx,
+  userId: string,
+  noticeId: string,
+): Promise<{ undoToken: string; unread: number }> {
+  const done = rowsOf<{ t: string }>(
+    await tx.execute(sql`
+      update notifications
+      set dismissed_at = now(), read_at = coalesce(read_at, now())
+      where id = ${noticeId}::uuid and user_id = ${userId} and dismissed_at is null
+      returning dismissed_at::text as t`),
+  );
+  let token = done[0]?.t;
+  if (token === undefined) {
+    const [again] = rowsOf<{ t: string | null }>(
+      await tx.execute(
+        sql`select dismissed_at::text as t from notifications where id = ${noticeId}::uuid and user_id = ${userId}`,
+      ),
+    );
+    if (!again?.t) throw new NotFoundError('Notification not found');
+    token = again.t;
+  } else {
+    await pingInboxChanged(tx, userId);
+  }
+  return { undoToken: token, unread: await unreadNoticeCount(tx, userId) };
+}
+
+/** "Clear all read": removes every read notice of the person in one statement; one token undoes the whole batch. */
+export async function clearReadNotices(
+  tx: Tx,
+  userId: string,
+): Promise<{ cleared: number; undoToken: string | null; unread: number }> {
+  const [row] = rowsOf<{ n: number; t: string | null }>(
+    await tx.execute(sql`
+      with c as (
+        update notifications set dismissed_at = now()
+        where user_id = ${userId} and read_at is not null and dismissed_at is null
+        returning dismissed_at
+      )
+      select count(*)::int as n, max(dismissed_at)::text as t from c`),
+  );
+  const cleared = row?.n ?? 0;
+  if (cleared > 0) await pingInboxChanged(tx, userId);
+  return {
+    cleared,
+    undoToken: cleared > 0 ? (row?.t ?? null) : null,
+    unread: await unreadNoticeCount(tx, userId),
+  };
+}
+
+/** Undo: brings back the person's own notices removed in the batch the token names (nothing else changes). */
+export async function restoreNotices(
+  tx: Tx,
+  userId: string,
+  undoToken: string,
+): Promise<{ restored: number; unread: number }> {
+  const rows = rowsOf<{ id: string }>(
+    await tx.execute(sql`
+      update notifications set dismissed_at = null
+      where user_id = ${userId} and dismissed_at = ${undoToken}::timestamptz
+      returning id`),
+  );
+  if (rows.length > 0) await pingInboxChanged(tx, userId);
+  return { restored: rows.length, unread: await unreadNoticeCount(tx, userId) };
+}
+
 /** Daily retention: deletes the bell rows older than `days`, in batches so one run never holds a long lock. */
 export async function purgeOldNotices(tx: Tx, days: number, batch = 5000): Promise<number> {
+  return deleteInBatches(tx, sql`created_at < now() - make_interval(days => ${days})`, batch);
+}
+
+/** Days a removed notice stays recoverable, and how long a done one is kept before the row goes (it is hidden at once). */
+export const DISMISSED_KEEP_DAYS = 7;
+export const RESOLVED_KEEP_DAYS = 1;
+
+/**
+ * The clean-up job (spec 10): deletes, in batches, notices the person removed more than a week ago, notices whose
+ * action was done more than a day ago, and read notices that only inform (priority info or success) older than
+ * `infoDays` (setting `notifications.info_clear_days`, default 30). Analytics events are separate and stay.
+ */
+export async function purgeFinishedNotices(
+  tx: Tx,
+  opts: { infoDays: number; batch?: number },
+): Promise<{ dismissed: number; resolved: number; info: number }> {
+  const batch = opts.batch ?? 5000;
+  return {
+    dismissed: await deleteInBatches(
+      tx,
+      sql`dismissed_at is not null and dismissed_at < now() - make_interval(days => ${DISMISSED_KEEP_DAYS})`,
+      batch,
+    ),
+    resolved: await deleteInBatches(
+      tx,
+      sql`resolved_at is not null and resolved_at < now() - make_interval(days => ${RESOLVED_KEEP_DAYS})`,
+      batch,
+    ),
+    info: await deleteInBatches(
+      tx,
+      sql`read_at is not null and priority in ('info','success') and created_at < now() - make_interval(days => ${opts.infoDays})`,
+      batch,
+    ),
+  };
+}
+
+async function deleteInBatches(tx: Tx, where: SQL, batch: number): Promise<number> {
   let total = 0;
   for (;;) {
     const rows = rowsOf<{ id: string }>(
       await tx.execute(sql`
         delete from notifications where id in (
-          select id from notifications where created_at < now() - make_interval(days => ${days}) limit ${batch}
+          select id from notifications where ${where} limit ${batch}
         ) returning id`),
     );
     total += rows.length;

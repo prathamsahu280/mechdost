@@ -1,19 +1,38 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { Notice } from '@mechdost/shared/notice-api';
+import { NOTICE_PAGE_MAX, type Notice } from '@mechdost/shared/notice-api';
 import { startLive, subscribeLive } from '@/lib/live/live-hub';
-import { fetchNotices, markNoticesRead } from '@/lib/notices-api';
+import {
+  clearReadNotices,
+  dismissNotice,
+  fetchNotices,
+  markNoticesRead,
+  restoreNotices,
+} from '@/lib/notices-api';
 import { arrivedSince, NOTICES_EVENT, pollInterval, type NoticesEventDetail } from '@/lib/notices-view';
 
 /**
- * The notification feed behind the bell and the centre page (spec 10, design 2026-11-15). Fetches the newest page,
+ * The notification feed behind the bell and the centre page (spec 10, design 2026-11-15; inbox order and clean-up
+ * 2026-11-25). Fetches the first page in the server's order (unread urgent, unread, read; newest first inside each),
  * keeps it fresh while the tab is visible (15 s for partners and staff, 60 s for customers, growing back-off on
  * errors), refreshes at once when the tab becomes visible again or the push worker says a message arrived, and tells
  * the rest of the page about new arrivals (`mechdost:notices`, e.g. the shop's offers list). A live ping over the
- * shared Realtime Database connection (`lib/live`) refreshes it at once; the poll stays as the fallback (spec 10).
+ * shared Realtime Database connection (`lib/live`) refreshes it at once, also when the person removed notices on
+ * another device (`notice` ping); the poll stays as the fallback (spec 10).
+ *
+ * Removing is optimistic and undoable: the row leaves the list at once, the call goes out, and `undo` holds the token
+ * that brings the batch back (the surface shows it as a toast). A refresh replaces the list with the server's copy, so
+ * done and removed notices vanish on every device.
  */
 export type FeedStatus = 'loading' | 'ready' | 'error';
+
+/** What "Undo" will bring back, shown in the toast. */
+export interface UndoState {
+  kind: 'one' | 'many';
+  count: number;
+  token: string;
+}
 
 export interface Feed {
   status: FeedStatus;
@@ -21,10 +40,17 @@ export interface Feed {
   unread: number;
   hasMore: boolean;
   loadingMore: boolean;
+  /** Something went wrong removing or restoring: the surface shows one calm message. */
+  actionError: 'remove' | 'undo' | null;
+  undo: UndoState | null;
   refresh: () => Promise<void>;
   loadMore: () => Promise<void>;
   markRead: (n: Notice) => void;
   markAllRead: () => void;
+  remove: (n: Notice) => void;
+  clearRead: () => void;
+  undoLast: () => void;
+  closeUndo: () => void;
 }
 
 export function useNoticeFeed(opts: {
@@ -40,13 +66,19 @@ export function useNoticeFeed(opts: {
   const [unread, setUnread] = useState(0);
   const [next, setNext] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [undo, setUndo] = useState<UndoState | null>(null);
+  const [actionError, setActionError] = useState<'remove' | 'undo' | null>(null);
   const known = useRef<Set<string> | null>(null);
   const failures = useRef(0);
   const cursor = useRef<string | null>(null);
+  const loaded = useRef(0);
   const alive = useRef(true);
 
   const refresh = useCallback(async () => {
-    const res = await fetchNotices(locale, { limit });
+    // Pages the person already opened are fetched again in one go (the server order moves rows between groups, so
+    // stitching old pages onto a fresh first page could repeat or skip a row).
+    const take = Math.min(NOTICE_PAGE_MAX, Math.max(limit, loaded.current));
+    const res = await fetchNotices(locale, { limit: take });
     if (!alive.current) return;
     if (!res.ok) {
       failures.current += 1;
@@ -54,21 +86,15 @@ export function useNoticeFeed(opts: {
       return;
     }
     failures.current = 0;
-    const first = res.data.notices;
+    const fresh = res.data.notices;
     // The first load only learns what exists; later loads announce what is new.
-    const arrived = known.current ? arrivedSince(known.current, first) : [];
-    known.current = new Set([...(known.current ?? []), ...first.map((n) => n.id)]);
-    setNotices((prev) => {
-      const ids = new Set(first.map((n) => n.id));
-      const oldest = first[first.length - 1]?.createdAt ?? '';
-      // Pages the person already scrolled to stay; the newest page is replaced by the fresh copy.
-      return [...first, ...prev.filter((n) => !ids.has(n.id) && n.createdAt < oldest)];
-    });
+    const arrived = known.current ? arrivedSince(known.current, fresh) : [];
+    known.current = new Set([...(known.current ?? []), ...fresh.map((n) => n.id)]);
+    loaded.current = fresh.length;
+    cursor.current = res.data.nextCursor;
+    setNotices(fresh);
+    setNext(res.data.nextCursor);
     setUnread(res.data.unread);
-    if (cursor.current === null) {
-      cursor.current = res.data.nextCursor;
-      setNext(res.data.nextCursor);
-    }
     setStatus('ready');
     if (arrived.length > 0)
       window.dispatchEvent(
@@ -90,7 +116,9 @@ export function useNoticeFeed(opts: {
     for (const n of res.data.notices) known.current?.add(n.id);
     setNotices((prev) => {
       const ids = new Set(prev.map((n) => n.id));
-      return [...prev, ...res.data.notices.filter((n) => !ids.has(n.id))];
+      const merged = [...prev, ...res.data.notices.filter((n) => !ids.has(n.id))];
+      loaded.current = merged.length;
+      return merged;
     });
   }, [locale, limit, loadingMore]);
 
@@ -119,9 +147,10 @@ export function useNoticeFeed(opts: {
     // Older browsers and blocked storage have no service worker container at all.
     const worker = 'serviceWorker' in navigator ? navigator.serviceWorker : null;
     // A live ping about orders, offers, requests, quotes or coins refreshes the list at once (the poll above stays as the
-    // fallback); the connection is shared with the cart and wishlist.
+    // fallback); a `notice` ping says the person removed or restored notices on another device. The connection is
+    // shared with the cart and wishlist.
     const unsubscribe = subscribeLive(
-      ['order', 'assignment', 'shop', 'workshop', 'request', 'quote', 'coins'],
+      ['order', 'assignment', 'shop', 'workshop', 'request', 'quote', 'coins', 'notice'],
       () => {
         void refresh();
       },
@@ -154,8 +183,61 @@ export function useNoticeFeed(opts: {
   const markAllRead = useCallback(() => {
     setNotices((prev) => prev.map((x) => ({ ...x, read: true })));
     setUnread(0);
-    void markNoticesRead(locale, { all: true });
-  }, [locale]);
+    void markNoticesRead(locale, { all: true }).then(() => refresh());
+  }, [locale, refresh]);
+
+  const remove = useCallback(
+    (n: Notice) => {
+      setActionError(null);
+      setNotices((prev) => prev.filter((x) => x.id !== n.id));
+      loaded.current = Math.max(0, loaded.current - 1);
+      if (!n.read) setUnread((u) => Math.max(0, u - 1));
+      void dismissNotice(locale, n.id).then((r) => {
+        if (!alive.current) return;
+        if (!r.ok) {
+          setActionError('remove');
+          void refresh();
+          return;
+        }
+        setUnread(r.data.unread);
+        setUndo({ kind: 'one', count: 1, token: r.data.undoToken });
+      });
+    },
+    [locale, refresh],
+  );
+
+  const clearRead = useCallback(() => {
+    setActionError(null);
+    setNotices((prev) => prev.filter((x) => !x.read));
+    void clearReadNotices(locale).then((r) => {
+      if (!alive.current) return;
+      if (!r.ok) {
+        setActionError('remove');
+        void refresh();
+        return;
+      }
+      setUnread(r.data.unread);
+      if (r.data.undoToken && r.data.cleared > 0)
+        setUndo({ kind: 'many', count: r.data.cleared, token: r.data.undoToken });
+      void refresh();
+    });
+  }, [locale, refresh]);
+
+  const undoLast = useCallback(() => {
+    if (!undo) return;
+    const token = undo.token;
+    setUndo(null);
+    void restoreNotices(locale, token).then((r) => {
+      if (!alive.current) return;
+      if (!r.ok) setActionError('undo');
+      void refresh();
+    });
+  }, [locale, undo, refresh]);
+
+  const closeUndo = useCallback(() => {
+    setUndo(null);
+    setActionError(null);
+  }, []);
 
   return {
     status,
@@ -163,9 +245,15 @@ export function useNoticeFeed(opts: {
     unread,
     hasMore: next !== null,
     loadingMore,
+    actionError,
+    undo,
     refresh,
     loadMore,
     markRead,
     markAllRead,
+    remove,
+    clearRead,
+    undoLast,
+    closeUndo,
   };
 }

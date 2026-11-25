@@ -7,7 +7,8 @@ import { BELL_PAGE_SIZE, type Notice } from '@mechdost/shared/notice-api';
 import { track } from '@/lib/analytics';
 import { badgeText, emptyActionFor, liveText, withCount } from '@/lib/notices-view';
 import type { BellCopy } from './bell-copy';
-import { NoticeItem } from './notice-item';
+import { FeedToast } from './feed-toast';
+import { NoticeItem, type NoticeItemCopy } from './notice-item';
 import { useNoticeFeed } from './use-notice-feed';
 
 /**
@@ -29,6 +30,13 @@ export default function BellController({
 }) {
   const feed = useNoticeFeed({ locale, role, limit: BELL_PAGE_SIZE });
   const [open, setOpen] = useState(false);
+  // Only an increase is announced ("3 new notifications"): reading or removing must not talk over the toast.
+  const [announce, setAnnounce] = useState(0);
+  const seenUnread = useRef(0);
+  useEffect(() => {
+    setAnnounce(feed.unread > seenUnread.current ? feed.unread : 0);
+    seenUnread.current = feed.unread;
+  }, [feed.unread]);
   const panelId = useId();
   const root = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
@@ -56,6 +64,37 @@ export default function BellController({
   const label = feed.unread > 0 ? withCount(copy.labelUnread, badge) : copy.label;
   const action = emptyActionFor(role);
 
+  const itemCopy: NoticeItemCopy = {
+    unread: copy.unread,
+    priority: {
+      urgent: copy.priorityUrgent,
+      action: copy.priorityAction,
+      info: copy.priorityInfo,
+      success: copy.prioritySuccess,
+    },
+    removeNamed: copy.removeNamed,
+  };
+  const hasRead = feed.notices.some((n) => n.read);
+
+  /** The button that was pressed leaves the page: keep focus in the panel. */
+  const focusHeading = () => {
+    root.current?.querySelector<HTMLElement>('[data-notice-heading]')?.focus();
+  };
+
+  const onRemove = (n: Notice) => {
+    track('notification_dismissed', { kind: n.kind, priority: n.priority, channel: 'bell' });
+    feed.remove(n);
+  };
+  const onClearRead = () => {
+    track('notifications_cleared', { count: feed.notices.filter((n) => n.read).length, channel: 'bell' });
+    feed.clearRead();
+    focusHeading();
+  };
+  const onUndo = () => {
+    track('notifications_restored', { count: feed.undo?.count ?? 0 });
+    feed.undoLast();
+  };
+
   const onOpen = (n: Notice) => {
     track('notification_opened', { kind: n.kind, channel: 'bell' });
     feed.markRead(n);
@@ -69,7 +108,7 @@ export default function BellController({
         type="button"
         aria-label={label}
         aria-expanded={open}
-        aria-controls={panelId}
+        aria-controls={open ? panelId : undefined}
         data-track="bell"
         onClick={() => {
           if (!open) track('bell_opened', { unread: Math.min(feed.unread, 100) });
@@ -89,24 +128,45 @@ export default function BellController({
       </button>
       {/* Always in the page, so a screen reader announces the change when its text appears. */}
       <span role="status" aria-live="polite" className="sr-only">
-        {liveText(feed.unread, copy)}
+        {liveText(announce, copy)}
       </span>
       {open ? (
         <div
           id={panelId}
+          data-notice-root
           className="absolute z-[45] overflow-hidden rounded-2xl bg-surface shadow-float max-sm:inset-x-0 max-sm:top-full max-sm:mt-2.5 sm:top-full sm:right-0 sm:mt-2.5 sm:w-[360px]"
         >
-          <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-2.5">
-            <h2 className="font-heading text-[15px] font-extrabold text-ink">{copy.label}</h2>
-            {feed.unread > 0 ? (
-              <button
-                type="button"
-                onClick={feed.markAllRead}
-                className="press min-h-11 rounded-lg px-2 text-[13px] font-bold text-accent-soft-text hover:bg-pill"
-              >
-                {copy.markAllRead}
-              </button>
-            ) : null}
+          <div className="flex flex-wrap items-center justify-between gap-x-3 border-b border-line px-4 py-1.5">
+            <h2
+              tabIndex={-1}
+              data-notice-heading
+              className="font-heading text-[15px] font-extrabold text-ink"
+            >
+              {copy.label}
+            </h2>
+            <div className="flex flex-wrap items-center justify-end">
+              {hasRead ? (
+                <button
+                  type="button"
+                  onClick={onClearRead}
+                  className="press min-h-11 rounded-lg px-2 text-[13px] font-bold text-muted hover:bg-pill hover:text-ink"
+                >
+                  {copy.clearRead}
+                </button>
+              ) : null}
+              {feed.unread > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    feed.markAllRead();
+                    focusHeading();
+                  }}
+                  className="press min-h-11 rounded-lg px-2 text-[13px] font-bold text-accent-soft-text hover:bg-pill"
+                >
+                  {copy.markAllRead}
+                </button>
+              ) : null}
+            </div>
           </div>
           {feed.status === 'loading' ? (
             <p role="status" className="px-4 py-6 text-sm text-muted">
@@ -138,15 +198,15 @@ export default function BellController({
               </Link>
             </div>
           ) : (
-            <ul className="max-h-[min(60vh,420px)] overflow-y-auto p-2">
+            <ul aria-label={copy.label} className="max-h-[min(60vh,420px)] overflow-y-auto p-2">
               {feed.notices.map((n) => (
                 <li key={n.id}>
                   <NoticeItem
                     notice={n}
                     locale={locale}
-                    newLabel={copy.unread}
-                    doneLabel={copy.done}
+                    copy={itemCopy}
                     onOpen={onOpen}
+                    onRemove={onRemove}
                   />
                 </li>
               ))}
@@ -164,6 +224,17 @@ export default function BellController({
           </Link>
         </div>
       ) : null}
+      <FeedToast
+        feed={{ ...feed, undoLast: onUndo }}
+        copy={{
+          removedToast: copy.removedToast,
+          clearedToast: copy.clearedToast,
+          undo: copy.undo,
+          undoFailed: copy.undoFailed,
+          removeFailed: copy.removeFailed,
+          dismissToast: copy.dismissToast,
+        }}
+      />
     </div>
   );
 }

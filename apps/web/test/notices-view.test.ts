@@ -8,6 +8,9 @@ import {
   emptyActionFor,
   liveText,
   noticeTag,
+  PRIORITY_VIEW,
+  priorityOrder,
+  undoCountText,
   noticeTime,
   pollInterval,
   POLL_MS,
@@ -51,6 +54,7 @@ describe('new arrivals', () => {
     id,
     kind: 'order.placed',
     category: 'transactional',
+    priority: 'info',
     title: 't',
     body: 'b',
     link: null,
@@ -70,6 +74,54 @@ describe('empty state action per role', () => {
     expect(emptyActionFor('shop').href).toBe('/partner/shop');
     expect(emptyActionFor('workshop').href).toBe('/partner/workshop');
     expect(emptyActionFor('admin').href).toBe('/admin');
+  });
+});
+
+describe('priority look (spec 10, design-system: notice priority)', () => {
+  const all = ['urgent', 'action', 'info', 'success'] as const;
+  const label = (key: string) => (en.bell as Record<string, string>)[key];
+
+  it('every priority has an icon, a bar, a tile, a label colour and a locale key for its text label', () => {
+    for (const p of all) {
+      const v = PRIORITY_VIEW[p];
+      expect(v.icon, p).toMatch(/^[A-Za-z]+$/);
+      expect(v.bar, p).toMatch(/^bg-/);
+      expect(v.tile, p).toMatch(/bg-/);
+      expect(v.label, p).toMatch(/^text-/);
+      expect(label(v.key), p).toBeTruthy();
+    }
+  });
+
+  it('each priority is told apart by more than colour: four icons and four text labels', () => {
+    expect(new Set(all.map((p) => PRIORITY_VIEW[p].icon)).size).toBe(4);
+    expect(new Set(all.map((p) => label(PRIORITY_VIEW[p].key))).size).toBe(4);
+  });
+
+  it('uses only the existing colour tokens (error red, accent orange, muted navy, success green)', () => {
+    expect(PRIORITY_VIEW.urgent.bar).toBe('bg-error');
+    expect(PRIORITY_VIEW.action.bar).toBe('bg-accent-button');
+    expect(PRIORITY_VIEW.info.bar).toBe('bg-muted');
+    expect(PRIORITY_VIEW.success.bar).toBe('bg-success');
+  });
+
+  it('mirrors the server order: unread urgent, unread, read; newest first inside each', () => {
+    const base = { read: false, priority: 'info' as const };
+    const rows = [
+      { id: 'read-new', ...base, read: true, createdAt: '2026-11-25T10:00:00Z' },
+      { id: 'unread-old', ...base, createdAt: '2026-11-25T08:00:00Z' },
+      { id: 'urgent-old', ...base, priority: 'urgent' as const, createdAt: '2026-11-25T07:00:00Z' },
+      { id: 'unread-new', ...base, priority: 'action' as const, createdAt: '2026-11-25T09:00:00Z' },
+    ];
+    expect(rows.sort(priorityOrder).map((r) => r.id)).toEqual([
+      'urgent-old',
+      'unread-new',
+      'unread-old',
+      'read-new',
+    ]);
+  });
+
+  it('the cleared toast fills the count', () => {
+    expect(undoCountText('Cleared {count} read notifications', 3)).toBe('Cleared 3 read notifications');
   });
 });
 

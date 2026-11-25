@@ -113,6 +113,9 @@ async function recordRefundEvent(
       kinds: settled ? ['staff.refund_overdue', 'staff.refund_alert'] : ['staff.refund_overdue'],
       entityIds: [input.refund.id],
     });
+  // The customer's "your refund needs attention" is done once the refund is paid out or declined (not by the failure).
+  if (input.to === 'processed' || input.to === 'rejected')
+    await resolveNotices(tx, { kinds: ['refund.failed'], entityIds: [input.refund.id] });
   await tx.insert(auditLog).values({
     actorUserId: input.actor.id,
     actorRole: input.actor.type === 'admin' ? 'staff' : 'system',

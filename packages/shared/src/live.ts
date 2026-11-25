@@ -20,6 +20,8 @@ export const LIVE_KINDS = [
   // Saved cart and wishlist (design 2026-11-15): a hint to re-read it on the customer's other devices.
   'cart',
   'wishlist',
+  // The bell (2026-11-25): someone removed or restored notifications on another device.
+  'notice',
 ] as const;
 export type LiveKind = (typeof LIVE_KINDS)[number];
 
@@ -33,6 +35,7 @@ export const LIVE_EVENTS = [
   'coins.changed',
   'cart.changed',
   'wishlist.changed',
+  'notice.changed',
 ] as const;
 export type LiveEvent = (typeof LIVE_EVENTS)[number];
 

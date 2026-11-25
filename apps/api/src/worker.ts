@@ -31,6 +31,7 @@ import {
   expireQuotes,
   globalIntSetting,
   loadBillSource,
+  purgeFinishedNotices,
   purgeOldNotices,
   queueOfferExpiryReminders,
   queueRefundOverdueAlerts,
@@ -439,12 +440,20 @@ const noticeHourlyTimer = setInterval(() => {
     });
 }, 3_600_000);
 noticeHourlyTimer.unref();
-// 3) Retention: bell rows older than `notifications.retention_days` are deleted (every 24 h, and once at start).
+// 3) Retention: bell rows older than `notifications.retention_days` are deleted, and so are the ones the person removed
+//    (after 7 days), whose action is done (after 1 day) and read information older than `notifications.info_clear_days`
+//    (every 24 h, and once at start; batched deletes, spec 10).
 const purgeNotices = () => {
   void globalIntSetting(db, 'notifications.retention_days')
     .then((days) => purgeOldNotices(db, days))
     .then((n) => {
       if (n > 0) log('info', 'notifications_purged', { count: n });
+      return globalIntSetting(db, 'notifications.info_clear_days');
+    })
+    .then((infoDays) => purgeFinishedNotices(db, { infoDays }))
+    .then((done) => {
+      const n = done.dismissed + done.resolved + done.info;
+      if (n > 0) log('info', 'notifications_cleared', done);
     })
     .catch((err: unknown) => {
       log('error', 'notifications_purge_failed', safeError(err));

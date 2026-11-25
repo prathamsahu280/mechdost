@@ -22,6 +22,7 @@ import {
   users,
 } from '../schema';
 import { queueTicketEmail } from './email-events';
+import { resolveTicketReplyNotices } from './notice-events';
 import { queueStaffNotice, resolveNotices } from './notices';
 import { ConflictError, NotFoundError, ValidationError } from './errors';
 import { recordServerEvent } from './events';
@@ -580,6 +581,8 @@ export async function customerReplyTicket(
         channel: 'web',
       })
       .returning({ id: ticketMessages.id });
+    // The customer answered: the support reply that waited for them is done.
+    await resolveTicketReplyNotices(tx, t.id);
     if (message && input.images?.length)
       await attachMessageImages(tx, {
         messageId: message.id,
@@ -880,6 +883,7 @@ export async function setTicketStatus(
     });
     // Any staff status change means someone picked the request up (the "new request" notice is done).
     await resolveNotices(tx, { kinds: ['staff.new_ticket'], entityIds: [t.id] });
+    if (input.to === 'resolved' || input.to === 'closed') await resolveTicketReplyNotices(tx, t.id);
     if (input.to === 'resolved')
       await queueTicketEmail(tx, {
         template: 'ticket_resolved',

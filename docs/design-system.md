@@ -180,3 +180,21 @@ Colours are existing tokens only. **Header item and tab:** siren icon (lucide `S
 ### Size picker and "from" price (2026-11-24, user: sizes as variants)
 
 A product sold in several sizes shows a **size picker** above the price: a "Size" legend, one line of help, then chips (`rounded-button`, 1 px `input-border`, 44 px high, 16 px side padding; the chosen chip `border-accent-button bg-accent-soft text-accent-soft-text`; focus uses the portal focus outline). They are native radios in one group (arrow keys move the choice). A size nobody can sell now has a **dashed** border, muted text and a second line "Out of stock" (or "Price on request" when it has no MRP); a size that fits the saved vehicle has a second line "Fits your <vehicle>" in success green. No new colour, font or radius. The price block below changes with the chosen size (same markup as a single size). Cards for such products show "from ₹X · N sizes" (17 px heading font) and a "Choose size" button in place of "Add to cart". The admin Sizes tab uses the portal card, field and button styles.
+
+### Notice priority (2026-11-25, user: "give them a proper colour scheme like red for urgent")
+
+Each notification row in the bell and the notification centre carries a priority (`urgent`, `action`, `info`, `success`; spec 10 has the list per kind). Existing tokens only, light and dark from the tokens:
+
+| Priority | Left bar (4 px)    | Icon tile                              | Label text              | Icon (lucide)   | Label en / hi           |
+| -------- | ------------------ | -------------------------------------- | ----------------------- | --------------- | ----------------------- |
+| urgent   | `bg-error`         | `bg-error/10 text-error`               | `text-error`            | `TriangleAlert` | Urgent / ज़रूरी         |
+| action   | `bg-accent-button` | `bg-accent-soft text-accent-soft-text` | `text-accent-soft-text` | `ClipboardList` | Needs you / आपकी ज़रूरत |
+| info     | `bg-muted`         | `bg-pill text-muted`                   | `text-muted`            | `Info`          | Update / अपडेट          |
+| success  | `bg-success`       | `bg-success-bg text-success`           | `text-success`          | `CircleCheck`   | Good news / अच्छी ख़बर  |
+
+- Never colour alone: bar + tile with its own icon + the visible text label in the meta line above the title ("Urgent · 12 Nov, 4:05 pm"); bar, tile and dot are `aria-hidden`.
+- Unread: bolder title (`font-extrabold`), an 8 px accent dot and the "New" tag; read: normal weight title, row at 90% and the bar at 70%.
+- A Remove (X) button, 44 px, sits beside the row link (a sibling, never nested). "Clear all read" and "Mark all as read" are quiet text buttons in the header.
+- Undo toast: `bg-ink text-surface`, `shadow-float`, 44 px buttons (Undo underlined, Close), above the bottom tab bar under 1024 px, 20 s and paused while hovered or focused, Escape closes; announced by two always-present live regions (polite for "removed", assertive for an error; errors stay until closed). No modal.
+- Empty state: "You’re all caught up" (hi "सब कुछ देख लिया गया है") with one next action per role.
+- Measured contrast (WCAG formula): label and tile text 4.2:1 to 8.9:1 in both themes; full-strength bars 3.7:1 to 9.8:1 against the surface.

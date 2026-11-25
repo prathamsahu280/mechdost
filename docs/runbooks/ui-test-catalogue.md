@@ -905,6 +905,12 @@ Closeable panels (2026-11-16): check `dismiss` (`e2e/state-audit/dismiss.ts`) op
 
 Checker rules changed 2026-11-16 (builder 3c-2): `aligned` compares the foot (bottom) of each card's last control; `sync` (compare) does not demand the tray while the privacy banner is open below 1024 px (`bannerHidesTray`), and the `present` rule is skipped for that SHOP-TRAY state; the "errors" form step presses an enabled submit only (3 s timeout). `dismiss`: Escape is pressed with focus wherever the click left it, and must close the panel just opened (lastKey rule in `PanelDismiss`).
 
+### 9.10b Notification inbox screenshots and a second audit build beside another (2026-11-25)
+
+`apps/web/e2e/state-audit/notices.shots.ts` captures the bell and the notification centre (mixed priorities, empty state, Undo toasts) at 390 and 1440 px, light and dark, English and Hindi, against the real-mode build with a stateful mock of `/v1/me/notifications*` (list in the server's order, read, remove, clear, restore). Opt-in: `NOTICE_SHOTS=<dir>`; it needs a small Playwright config that points `testDir` at `e2e/state-audit`, `testMatch` at `notices.shots.ts` and `globalSetup` at `api-mode/server-mock-setup.ts`.
+
+To run beside another audit (another agent's build on port 4100 or in `.next-api`), set `STATE_AUDIT_API_ORIGIN=http://127.0.0.1:<port>` and `STATE_AUDIT_DIST=<dir>` for the build (`state-audit-api-build.mjs`), the server (`NEXT_DIST_DIR`) and the run; the audit API origin and the build directory then no longer collide.
+
 ### 9.11 Checker fixes from the GitHub run (batch 3c-3, 2026-11-16)
 
 The first full run on GitHub (`docs/qa/triage-2026-11-16/`) was read class by class; these were the checker, not the site. Rules were narrowed with evidence, none weakened.

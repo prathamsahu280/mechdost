@@ -206,11 +206,8 @@ describe('"needs routing" (order placed)', () => {
       expect(await unreadNoticeCount(t(), id)).toBe(0);
       const page = await listNotices(t(), id, {});
       expect(page.unread).toBe(0);
-      expect(page.notices[0]).toMatchObject({
-        kind: 'staff.order_needs_routing',
-        read: true,
-        resolved: true,
-      });
+      // A notice whose action is done leaves the bell (spec 10, 2026-11-25); the row stays until the clean-up job.
+      expect(page.notices).toHaveLength(0);
     }
   });
 

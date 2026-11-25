@@ -25,7 +25,7 @@ export const AUDIT_FIREBASE = {
 } as const;
 
 /** Where the mocked API answers (the audit build's `NEXT_PUBLIC_API_URL`). */
-export const AUDIT_API_ORIGIN = 'http://127.0.0.1:4100';
+export const AUDIT_API_ORIGIN = process.env.STATE_AUDIT_API_ORIGIN ?? 'http://127.0.0.1:4100';
 
 const b64 = (o: unknown) => Buffer.from(JSON.stringify(o)).toString('base64url');
 

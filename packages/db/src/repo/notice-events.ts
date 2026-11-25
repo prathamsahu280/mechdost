@@ -1,7 +1,7 @@
 import { and, eq, inArray } from 'drizzle-orm';
 import type { NoticeKind } from '@mechdost/shared/notice-catalogue';
 import type { OrderStatus, ServiceRequestStatus } from '@mechdost/shared/state';
-import { orderAssignments, orderGroups, orders } from '../schema';
+import { orderAssignments, orderGroups, orders, ticketMessages } from '../schema';
 import { queueStaffNotice, resolveNotices, type StaffNoticeKind } from './notices';
 import type { Tx } from './orders';
 
@@ -97,6 +97,25 @@ export async function resolveOrderNotices(
       prefixed: true,
     });
   }
+}
+
+/**
+ * Clears the customer's "new reply from support" notices of one request once the reply is answered or moot: the
+ * customer wrote back, or staff resolved or closed the request. Replies are noticed per message (`entity_id` = the
+ * staff message id), so the request's public staff messages name them. Same transaction as the change.
+ */
+export async function resolveTicketReplyNotices(tx: Tx, ticketId: string): Promise<void> {
+  const replies = await tx
+    .select({ id: ticketMessages.id })
+    .from(ticketMessages)
+    .where(
+      and(
+        eq(ticketMessages.ticketId, ticketId),
+        eq(ticketMessages.authorRole, 'staff'),
+        eq(ticketMessages.internal, false),
+      ),
+    );
+  await resolveNotices(tx, { kinds: ['ticket.reply'], entityIds: replies.map((r) => r.id) });
 }
 
 /** The customer notice that asks for an action while a request sits in each status, and the action it asks for. */

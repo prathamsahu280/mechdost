@@ -7,7 +7,8 @@ import { track } from '@/lib/analytics';
 import { useHydrated } from '@/demo/store';
 import { useSession } from '@/demo/session-state';
 import { emptyActionFor } from '@/lib/notices-view';
-import { NoticeItem } from './notice-item';
+import { FeedToast } from './feed-toast';
+import { NoticeItem, type NoticeItemCopy } from './notice-item';
 import { NoticeSettings } from './notice-prefs';
 import { PushPrompt } from './push-card';
 import { useNoticeFeed } from './use-notice-feed';
@@ -57,19 +58,61 @@ export function NoticeCentre() {
     );
 
   const action = emptyActionFor(role);
+  const itemCopy: NoticeItemCopy = {
+    unread: t('unread'),
+    priority: {
+      urgent: t('priorityUrgent'),
+      action: t('priorityAction'),
+      info: t('priorityInfo'),
+      success: t('prioritySuccess'),
+    },
+    removeNamed: t('removeNamed', { title: '{title}' }),
+  };
+  const hasRead = feed.notices.some((n) => n.read);
+  const focusHeading = () => {
+    document.getElementById('notice-list-title')?.focus();
+  };
+  const onClearRead = () => {
+    track('notifications_cleared', { count: feed.notices.filter((n) => n.read).length, channel: 'centre' });
+    feed.clearRead();
+    focusHeading();
+  };
+  const onUndo = () => {
+    track('notifications_restored', { count: feed.undo?.count ?? 0 });
+    feed.undoLast();
+  };
   return (
     <div className="space-y-8">
       <PushPrompt partner={role !== 'customer'} />
-      <section aria-labelledby="notice-list-title" className={card}>
+      <section aria-labelledby="notice-list-title" data-notice-root className={card}>
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-3">
-          <h2 id="notice-list-title" className="font-heading text-base font-extrabold text-ink">
+          <h2
+            id="notice-list-title"
+            tabIndex={-1}
+            data-notice-heading
+            className="font-heading text-base font-extrabold text-ink"
+          >
             {t('centreTitle')}
           </h2>
-          {feed.unread > 0 ? (
-            <button type="button" className={quiet} onClick={feed.markAllRead}>
-              {t('markAllRead')}
-            </button>
-          ) : null}
+          <div className="flex flex-wrap items-center gap-2">
+            {hasRead ? (
+              <button type="button" className={quiet} onClick={onClearRead}>
+                {t('clearRead')}
+              </button>
+            ) : null}
+            {feed.unread > 0 ? (
+              <button
+                type="button"
+                className={quiet}
+                onClick={() => {
+                  feed.markAllRead();
+                  focusHeading();
+                }}
+              >
+                {t('markAllRead')}
+              </button>
+            ) : null}
+          </div>
         </div>
         {feed.status === 'loading' ? (
           <p role="status" className="px-5 py-6 text-sm text-muted">
@@ -91,17 +134,24 @@ export function NoticeCentre() {
             </Link>
           </div>
         ) : (
-          <ul className="divide-y divide-line">
+          <ul aria-labelledby="notice-list-title" className="divide-y divide-line">
             {feed.notices.map((n) => (
               <li key={n.id}>
                 <NoticeItem
                   notice={n}
                   locale={locale}
-                  newLabel={t('unread')}
-                  doneLabel={t('done')}
+                  copy={itemCopy}
                   onOpen={(x) => {
                     track('notification_opened', { kind: x.kind, channel: 'centre' });
                     feed.markRead(x);
+                  }}
+                  onRemove={(x) => {
+                    track('notification_dismissed', {
+                      kind: x.kind,
+                      priority: x.priority,
+                      channel: 'centre',
+                    });
+                    feed.remove(x);
                   }}
                 />
               </li>
@@ -113,8 +163,10 @@ export function NoticeCentre() {
             <button
               type="button"
               className={quiet}
-              disabled={feed.loadingMore}
-              onClick={() => void feed.loadMore()}
+              aria-disabled={feed.loadingMore}
+              onClick={() => {
+                if (!feed.loadingMore) void feed.loadMore();
+              }}
             >
               {feed.loadingMore ? t('loading') : t('loadMore')}
             </button>
@@ -122,6 +174,17 @@ export function NoticeCentre() {
         ) : null}
       </section>
       <NoticeSettings role={role} />
+      <FeedToast
+        feed={{ ...feed, undoLast: onUndo }}
+        copy={{
+          removedToast: t('removedToast'),
+          clearedToast: t('clearedToast', { count: '{count}' }),
+          undo: t('undo'),
+          undoFailed: t('undoFailed'),
+          removeFailed: t('removeFailed'),
+          dismissToast: t('dismissToast'),
+        }}
+      />
     </div>
   );
 }

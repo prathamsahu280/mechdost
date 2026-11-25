@@ -12,10 +12,10 @@ const webDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 const env = {
   ...process.env,
-  NEXT_DIST_DIR: '.next-api',
+  NEXT_DIST_DIR: process.env.STATE_AUDIT_DIST ?? '.next-api',
   NEXT_PUBLIC_AUTH_MODE: 'firebase',
   NEXT_PUBLIC_DATA_MODE: 'api',
-  NEXT_PUBLIC_API_URL: 'http://127.0.0.1:4100',
+  NEXT_PUBLIC_API_URL: process.env.STATE_AUDIT_API_ORIGIN ?? 'http://127.0.0.1:4100',
   NEXT_PUBLIC_FIREBASE_API_KEY: 'audit-fake-api-key',
   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: 'audit.invalid',
   NEXT_PUBLIC_FIREBASE_PROJECT_ID: 'demo-audit',

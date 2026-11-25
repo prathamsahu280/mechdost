@@ -167,6 +167,18 @@ export function Header({
     emptyActionShop: bell('emptyActionShop'),
     emptyActionPortal: bell('emptyActionPortal'),
     close: bell('close'),
+    priorityUrgent: bell('priorityUrgent'),
+    priorityAction: bell('priorityAction'),
+    priorityInfo: bell('priorityInfo'),
+    prioritySuccess: bell('prioritySuccess'),
+    removeNamed: bell('removeNamed', { title: '{title}' }),
+    clearRead: bell('clearRead'),
+    clearedToast: bell('clearedToast', { count: '{count}' }),
+    removedToast: bell('removedToast'),
+    undo: bell('undo'),
+    undoFailed: bell('undoFailed'),
+    removeFailed: bell('removeFailed'),
+    dismissToast: bell('dismissToast'),
   };
   const accountCopy: AccountMenuCopy = {
     signIn: auth('signIn'),

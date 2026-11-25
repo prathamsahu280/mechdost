@@ -15,8 +15,11 @@ import {
 } from '@mechdost/db/repo';
 import * as s from '@mechdost/db/schema';
 import {
+  NoticeClearResultDto,
   NoticeCountDto,
+  NoticeDismissResultDto,
   NoticePageDto,
+  NoticeRestoreResultDto,
   NoticePreferencesViewDto,
   NoticeReadResultDto,
   NoticeTemplateListDto,
@@ -153,6 +156,79 @@ describe('the bell', () => {
     const a = await person('06');
     expect((await call(a, 'POST', '/me/notifications/read', { all: true, userId: 'x' })).status).toBe(400);
     expect((await call(a, 'POST', '/me/notifications/read', { ids: [] })).status).toBe(400);
+  });
+});
+
+describe('the inbox: order, remove, clear all read, undo (2026-11-25)', () => {
+  const notice = (userId: string, kind: 'order.placed' | 'shop.offer_expiring', n: string) =>
+    queueNotice(tx(), {
+      kind,
+      userId,
+      entityId: `inbox-${n}`,
+      version: 1,
+      params: { orderCode: `MD-${n}`, minutes: 5 },
+    });
+
+  it('lists unread urgent first and carries the priority code', async () => {
+    const a = await person('11');
+    await notice(a.id, 'order.placed', 'a');
+    await notice(a.id, 'shop.offer_expiring', 'b');
+    const page = NoticePageDto.parse((await call(a, 'GET', '/me/notifications')).body);
+    expect(page.notices.map((n) => n.priority)).toEqual(['urgent', 'info']);
+  });
+
+  it('removing needs sign-in, takes only your own id (404 otherwise), and Undo brings it back', async () => {
+    const a = await person('12');
+    const b = await person('13');
+    await notice(a.id, 'order.placed', 'c');
+    await notice(b.id, 'order.placed', 'd');
+    const mine = NoticePageDto.parse((await call(a, 'GET', '/me/notifications')).body).notices[0];
+    const theirs = NoticePageDto.parse((await call(b, 'GET', '/me/notifications')).body).notices[0];
+    expect((await call(null, 'DELETE', `/me/notifications/${mine?.id}`)).status).toBe(401);
+    expect((await call(a, 'DELETE', `/me/notifications/${theirs?.id}`)).status).toBe(404);
+    expect((await call(a, 'DELETE', '/me/notifications/not-a-uuid')).status).toBe(400);
+    const gone = NoticeDismissResultDto.parse(
+      (await call(a, 'DELETE', `/me/notifications/${mine?.id}`)).body,
+    );
+    expect(gone.unread).toBe(0);
+    expect(NoticePageDto.parse((await call(a, 'GET', '/me/notifications')).body).notices).toHaveLength(0);
+    expect(NoticePageDto.parse((await call(b, 'GET', '/me/notifications')).body).notices).toHaveLength(1);
+    const back = NoticeRestoreResultDto.parse(
+      (await call(a, 'POST', '/me/notifications/restore', { undoToken: gone.undoToken })).body,
+    );
+    expect(back.restored).toBe(1);
+    expect(NoticePageDto.parse((await call(a, 'GET', '/me/notifications')).body).notices).toHaveLength(1);
+  });
+
+  it('clear all read removes only your read notices; Undo restores them; bad bodies are 400', async () => {
+    const a = await person('14');
+    await notice(a.id, 'order.placed', 'e');
+    await notice(a.id, 'order.placed', 'f');
+    await call(a, 'POST', '/me/notifications/read', { all: true });
+    await notice(a.id, 'shop.offer_expiring', 'g');
+    expect((await call(null, 'POST', '/me/notifications/clear-read')).status).toBe(401);
+    const cleared = NoticeClearResultDto.parse((await call(a, 'POST', '/me/notifications/clear-read')).body);
+    expect(cleared).toMatchObject({ cleared: 2, unread: 1 });
+    expect(NoticePageDto.parse((await call(a, 'GET', '/me/notifications')).body).notices).toHaveLength(1);
+    expect((await call(a, 'POST', '/me/notifications/restore', { undoToken: 'yesterday' })).status).toBe(400);
+    expect(
+      (await call(a, 'POST', '/me/notifications/restore', { undoToken: cleared.undoToken, userId: 'x' }))
+        .status,
+    ).toBe(400);
+    const back = await call(a, 'POST', '/me/notifications/restore', { undoToken: cleared.undoToken });
+    expect(NoticeRestoreResultDto.parse(back.body).restored).toBe(2);
+    expect(NoticePageDto.parse((await call(a, 'GET', '/me/notifications')).body).notices).toHaveLength(3);
+  });
+
+  it('another person’s undo token restores nothing of yours', async () => {
+    const a = await person('15');
+    const b = await person('16');
+    await notice(a.id, 'order.placed', 'h');
+    await call(a, 'POST', '/me/notifications/read', { all: true });
+    const cleared = NoticeClearResultDto.parse((await call(a, 'POST', '/me/notifications/clear-read')).body);
+    const stolen = await call(b, 'POST', '/me/notifications/restore', { undoToken: cleared.undoToken });
+    expect(NoticeRestoreResultDto.parse(stolen.body).restored).toBe(0);
+    expect(NoticePageDto.parse((await call(a, 'GET', '/me/notifications')).body).notices).toHaveLength(0);
   });
 });
 

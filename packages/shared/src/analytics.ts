@@ -763,6 +763,18 @@ export const CLIENT_EVENT_SCHEMAS = {
   notification_opened: z
     .object({ kind: id.nullable(), channel: z.enum(['bell', 'centre', 'push']) })
     .strict(),
+  // Removing from the inbox (2026-11-25): the kind or a count only; the rows' text is never an event property.
+  notification_dismissed: z
+    .object({
+      kind: id.nullable(),
+      priority: z.enum(['urgent', 'action', 'info', 'success']),
+      channel: z.enum(['bell', 'centre']),
+    })
+    .strict(),
+  notifications_cleared: z
+    .object({ count: z.number().int().min(0).max(100000), channel: z.enum(['bell', 'centre']) })
+    .strict(),
+  notifications_restored: z.object({ count: z.number().int().min(0).max(100000) }).strict(),
   // The customer's refund page (spec 05, 2026-11-23): how many refunds were shown and how many are still on their way.
   my_refunds_viewed: z
     .object({ count: z.number().int().min(0).max(50), inProgress: z.number().int().min(0).max(50) })

@@ -20,4 +20,18 @@ export interface BellCopy {
   emptyActionShop: string;
   emptyActionPortal: string;
   close: string;
+  priorityUrgent: string;
+  priorityAction: string;
+  priorityInfo: string;
+  prioritySuccess: string;
+  /** "Remove notification: {title}". */
+  removeNamed: string;
+  clearRead: string;
+  /** "Cleared {count} read notifications". */
+  clearedToast: string;
+  removedToast: string;
+  undo: string;
+  undoFailed: string;
+  removeFailed: string;
+  dismissToast: string;
 }
