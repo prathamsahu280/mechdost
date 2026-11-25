@@ -178,6 +178,34 @@ describe('smart correction: meaning guard (SR-27)', () => {
 });
 
 describe('smart correction: masking and the request (SR-28)', () => {
+  it.each([
+    ['phone with dots', 'call 98765.43210 kro', '98765.43210'],
+    ['phone in brackets', 'call (98765) 43210 kro', '98765) 43210'],
+    ['phone with slashes', 'no 98765/43210 h', '98765/43210'],
+    ['Aadhaar 4-4-4', 'aadhaar 2345 6789 0123 h', '2345 6789 0123'],
+    ['Aadhaar in Devanagari digits', 'आधार २३४५ ६७८९ ०१२३ है', '२३४५ ६७८९ ०१२३'],
+    ['IFSC', 'ifsc SBIN0001234 h', 'SBIN0001234'],
+    ['bank account (long digit run)', 'khata 123456789012 h', '123456789012'],
+    ['PAN', 'pan ABCDE1234F h', 'ABCDE1234F'],
+    ['GSTIN', 'gst 22ABCDE1234F1Z5 h', '22ABCDE1234F1Z5'],
+    ['card number', 'card 4111 1111 1111 1111 h', '4111 1111 1111 1111'],
+  ])('masks %s and restores it', (_name, text, secret) => {
+    const m = maskPii(text);
+    expect(m.masked).not.toContain(secret);
+    expect(m.count).toBeGreaterThan(0);
+    expect(m.restore(m.masked)).toBe(text);
+  });
+
+  it('fails closed: eight or more digits left in a short span keep the text away from the LLM', async () => {
+    expect(maskPii('1234-5678 h').safeForLlm).toBe(false);
+    expect(maskPii('bearing 6301 aur 175/65 R14').safeForLlm).toBe(true);
+    const double = new FetchDouble((s) => s);
+    const r = await run('code 1234-5678 h', { double });
+    expect(r).toMatchObject({ engine: 'wordlist', llmSkipped: 'unmasked_digits' });
+    expect(double.requests).toHaveLength(0);
+    expect(r.text).toContain('1234-5678');
+  });
+
   it('masks phones (+91, spaced, Devanagari digits), plates, e-mails, UPI ids, handles and PIN codes', () => {
     const text =
       'call +91 98765 43210 ya ९८७६५४३२१० gaadi CG 04 AB 1234 mail a.b@x.in upi raju@okaxis @raju_m pin 492001';

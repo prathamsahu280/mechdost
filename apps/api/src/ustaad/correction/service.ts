@@ -13,6 +13,7 @@ export type LlmSkipReason =
   | 'no_engine'
   | 'no_consent'
   | 'placeholder_chars'
+  | 'unmasked_digits'
   | 'budget'
   | 'guard'
   | 'placeholder'
@@ -79,6 +80,7 @@ export async function runCorrection(input: CorrectionRunInput): Promise<Correcti
   if (!llm) skipped = 'no_engine';
   else if (!input.llmAllowed) skipped = 'no_consent';
   else if (hasPlaceholderChars(text)) skipped = 'placeholder_chars';
+  else if (!mask.safeForLlm) skipped = 'unmasked_digits';
   else {
     const key = correctionCacheKey({
       engine: llm.id,
