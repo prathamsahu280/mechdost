@@ -221,7 +221,7 @@ describe('leave and rejoin never clears a moderation standing (security review 2
 });
 
 describe('join mode invite_only (review 2026-11-26)', () => {
-  it('refuses every join, even with an application code, until workstream B checks the invite', async () => {
+  it('refuses a join without an invite, and an application code that is not the invite of this phone', async () => {
     await saveUstaadSetting(t(), {
       key: 'ustaad.general.join_mode',
       value: 'invite_only',
@@ -233,8 +233,9 @@ describe('join mode invite_only (review 2026-11-26)', () => {
       joinUstaad(t(), { userId: f.staff }, join({ fromApplication: 'APP-RPR-2026-FAKE01' }), {
         via: 'ustaad',
       }),
-      'USTAAD_JOIN_CLOSED',
+      'USTAAD_INVITE_INVALID',
     );
+    await expectCode(joinUstaad(t(), { userId: f.staff }, join(), { via: 'ustaad' }), 'USTAAD_JOIN_CLOSED');
     await saveUstaadSetting(t(), {
       key: 'ustaad.general.join_mode',
       value: 'all',

@@ -11,6 +11,8 @@ import {
   confirmUstaadAttestation,
   decideUstaadVouch,
   getUstaadOnboarding,
+  joinUstaad,
+  mapMechanicApplications,
   giveUstaadVouch,
   listUstaadAttestationsForWorkshops,
   listUstaadVerifications,
@@ -760,5 +762,87 @@ describe('tutorial progress (flow 15)', () => {
     await resetUstaadOnboarding(t(), { userId: m.userId });
     o = await getUstaadOnboarding(t(), { userId: m.userId });
     expect(o).toMatchObject({ lastCard: null, coachmarksSeen: [], completed: false, skipped: false });
+  });
+});
+
+describe('old mechanic applications → invites (§ 4a)', () => {
+  it('dry run counts, the run writes links once, never a member; the matching phone joins with the code', async () => {
+    await db.insert(s.ustaadReachCities).values({ cityId: f.raipur }).onConflictDoNothing();
+    const [u] = await db
+      .insert(s.users)
+      .values({ firebaseUid: 'ustb-applicant', phone: '+919822277777', name: 'Applicant' })
+      .returning({ id: s.users.id });
+    if (!u) throw new Error('user');
+    await db.insert(s.partnerApplications).values([
+      {
+        code: 'PA-RPR-2026-MECHA1',
+        kind: 'mechanic',
+        name: 'Old Applicant',
+        phone: '+919822277777',
+        pincode: '492001',
+        details: 'Bike mechanic 6 years',
+        consentAt: new Date(),
+      },
+      {
+        code: 'PA-RPR-2026-MECHA2',
+        kind: 'mechanic',
+        name: 'Rejected One',
+        phone: '+919822277778',
+        pincode: '492001',
+        details: 'x',
+        consentAt: new Date(),
+        status: 'rejected',
+      },
+    ]);
+    const members = async () => (await db.select().from(s.ustaadMembers)).length;
+    const before = await members();
+    expect(await mapMechanicApplications(t(), { dryRun: true })).toEqual({ candidates: 2, written: 0 });
+    expect(await mapMechanicApplications(t(), { dryRun: false })).toEqual({ candidates: 2, written: 2 });
+    expect(await mapMechanicApplications(t(), { dryRun: false })).toEqual({ candidates: 0, written: 0 });
+    expect(await members()).toBe(before);
+    const links = await db.select().from(s.ustaadApplicationLinks);
+    expect(links.map((l) => l.status).sort()).toEqual(['closed', 'invited']);
+
+    const body = {
+      track: 'ustaad' as const,
+      specialities: ['two_wheeler' as const],
+      displayName: 'Old Applicant',
+      showGarage: false,
+      pincode: '492001',
+      areaLabel: 'Pandri',
+      yearsClaimed: 6,
+      workPlace: 'shop' as const,
+      verifyMethods: [],
+      consents: {
+        ustaad_profile: true as const,
+        ustaad_directory: false,
+        ustaad_training: false,
+        ustaad_offers: false,
+      },
+      turnstileToken: 'human-token-123',
+    };
+    // Another phone cannot use the code.
+    await expectCode(
+      joinUstaad(
+        t(),
+        { userId: f.customer },
+        { ...body, fromApplication: 'PA-RPR-2026-MECHA1' },
+        { via: 'ustaad' },
+      ),
+      'USTAAD_INVITE_INVALID',
+    );
+    const m = await joinUstaad(
+      t(),
+      { userId: u.id },
+      { ...body, fromApplication: 'PA-RPR-2026-MECHA1' },
+      { via: 'ustaad' },
+    );
+    const row = await memberRow(m.id);
+    expect(row.sourceApplicationId).not.toBeNull();
+    const [link] = await db
+      .select()
+      .from(s.ustaadApplicationLinks)
+      .where(eq(s.ustaadApplicationLinks.memberId, m.id));
+    expect(link?.status).toBe('joined');
   });
 });
