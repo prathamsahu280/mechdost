@@ -1,22 +1,22 @@
 source_row,product_type,range,model,name,slug,sku,category,mrp_rupees,warranty_months,fitment_vehicles,picture,photo_kind,status,result
-75,greases,Automotive Greases,20 kg,Servo Grease MP,servo-grease-mp,SERVO-GREASE-MP-20-KG,greases,,,0,pictures/IndiaMART/SERVO Grease MP.jpeg,model,live,planned
-75,greases,Automotive Greases,182 kg,Servo Grease MP,servo-grease-mp,SERVO-GREASE-MP-182-KG,greases,,,0,pictures/IndiaMART/SERVO Grease MP.jpeg,model,live,planned
-80,motorcycle-oil,2 - Stroke Engine Oils,Standard pack,Servo 2T Supreme,servo-2t-supreme,SERVO-2T-SUPREME-STANDARD-PACK,motorcycle-oil,,,0,pictures/IndiaMART/SERVO 2T SUPREME.jpg,model,live,planned
-82,motorcycle-oil,4 - Stroke Engine Oils,Standard pack,Servo 4T Xtra,servo-4t-xtra,SERVO-4T-XTRA-STANDARD-PACK,motorcycle-oil,,,0,pictures/IndiaMART/SERVO 4T Xtra.jpg,model,live,planned
-86,motorcycle-oil,4 - Stroke Engine Oils,1 L,Servo 4T Zoom,servo-4t-zoom,SERVO-4T-ZOOM-1-L,motorcycle-oil,,,0,pictures/IndiaMART/SERVO 4T ZOOM.jpg,model,live,planned
-87,motorcycle-oil,4 - Stroke Engine Oils,Standard pack,Servo 4T,servo-4t,SERVO-4T-STANDARD-PACK,motorcycle-oil,,,0,pictures/IndiaMART/SERVO 4T.jpeg,model,live,planned
-88,heavy-duty-oils,Diesel Engine Oils,15 L,Servo Raftaar,servo-raftaar,SERVO-RAFTAAR-15-L,heavy-duty-oils,,,0,pictures/IndiaMART/SERVO RAFTAAR.jpg,model,live,planned
-90,heavy-duty-oils,Diesel Engine Oils,1 L,Servo Pride TC 15W-40,servo-pride-tc-15w-40,SERVO-PRIDE-TC-15W-40-1-L,heavy-duty-oils,,,0,pictures/IndiaMART/SERVO PRIDE TC 15W-40.jpg,model,live,planned
-91,heavy-duty-oils,Diesel Engine Oils,210 L,Servo Pride XL 15W-40,servo-pride-xl-15w-40,SERVO-PRIDE-XL-15W-40-210-L,heavy-duty-oils,,,0,pictures/IndiaMART/SERVO PRIDE XL 15W-40.jpg,model,live,planned
-100,heavy-duty-oils,Diesel Engine Oils,2.5 L,Servo Premium CF-4 15W-40,servo-premium-cf-4-15w-40,SERVO-PREMIUM-CF-4-15W-40-2-5-L,heavy-duty-oils,,,0,pictures/IndiaMART/SERVO PREMIUM CF-4 15W-40.jpg,model,live,planned
-100,heavy-duty-oils,Diesel Engine Oils,20 L,Servo Premium CF-4 15W-40,servo-premium-cf-4-15w-40,SERVO-PREMIUM-CF-4-15W-40-20-L,heavy-duty-oils,,,0,pictures/IndiaMART/SERVO PREMIUM CF-4 15W-40.jpg,model,live,planned
-100,heavy-duty-oils,Diesel Engine Oils,26 L,Servo Premium CF-4 15W-40,servo-premium-cf-4-15w-40,SERVO-PREMIUM-CF-4-15W-40-26-L,heavy-duty-oils,,,0,pictures/IndiaMART/SERVO PREMIUM CF-4 15W-40.jpg,model,live,planned
-100,heavy-duty-oils,Diesel Engine Oils,210 L,Servo Premium CF-4 15W-40,servo-premium-cf-4-15w-40,SERVO-PREMIUM-CF-4-15W-40-210-L,heavy-duty-oils,,,0,pictures/IndiaMART/SERVO PREMIUM CF-4 15W-40.jpg,model,live,planned
-107,tractor-agri-oils,Tractor Oils,7.5 L,Servo Tractor Oil 20W-40,servo-tractor-oil-20w-40,SERVO-TRACTOR-OIL-20W-40-7-5-L,tractor-agri-oils,,,0,pictures/IndiaMART/SERVO TRACTOR OIL 20W-40.jpg,model,live,planned
-116,car-engine-oil,Passenger Car Motor Oils,20 L,Servo Super MG 20W-40,servo-super-mg-20w-40,SERVO-SUPER-MG-20W-40-20-L,car-engine-oil,,,0,pictures/IndiaMART/SERVO SUPER MG 5W-30-10W-30-10W-40-20W-40-20W-50.jpg,model,live,planned
-116,car-engine-oil,Passenger Car Motor Oils,210 L,Servo Super MG 20W-40,servo-super-mg-20w-40,SERVO-SUPER-MG-20W-40-210-L,car-engine-oil,,,0,pictures/IndiaMART/SERVO SUPER MG 5W-30-10W-30-10W-40-20W-40-20W-50.jpg,model,live,planned
-130,gear-oils,Gear Oils,200 L,Servo Gear Super 85W-140,servo-gear-super-85w-140,SERVO-GEAR-SUPER-85W-140-200-L,gear-oils,,,0,pictures/IndiaMART/SERVO GEAR SUPER 85W-140.jpeg,model,live,planned
-130,gear-oils,Gear Oils,210 L,Servo Gear Super 85W-140,servo-gear-super-85w-140,SERVO-GEAR-SUPER-85W-140-210-L,gear-oils,,,0,pictures/IndiaMART/SERVO GEAR SUPER 85W-140.jpeg,model,live,planned
+75,greases,Automotive Greases,20 kg,Servo Grease MP,servo-grease-mp,SERVO-GREASE-MP-20-KG,greases,,,0,pictures/IndiaMART/SERVO Grease MP.jpeg,model,live,created
+75,greases,Automotive Greases,182 kg,Servo Grease MP,servo-grease-mp,SERVO-GREASE-MP-182-KG,greases,,,0,pictures/IndiaMART/SERVO Grease MP.jpeg,model,live,created
+80,motorcycle-oil,2 - Stroke Engine Oils,Standard pack,Servo 2T Supreme,servo-2t-supreme,SERVO-2T-SUPREME-STANDARD-PACK,motorcycle-oil,,,0,pictures/IndiaMART/SERVO 2T SUPREME.jpg,model,live,created
+82,motorcycle-oil,4 - Stroke Engine Oils,Standard pack,Servo 4T Xtra,servo-4t-xtra,SERVO-4T-XTRA-STANDARD-PACK,motorcycle-oil,,,0,pictures/IndiaMART/SERVO 4T Xtra.jpg,model,live,created
+86,motorcycle-oil,4 - Stroke Engine Oils,1 L,Servo 4T Zoom,servo-4t-zoom,SERVO-4T-ZOOM-1-L,motorcycle-oil,,,0,,model,live,created
+87,motorcycle-oil,4 - Stroke Engine Oils,Standard pack,Servo 4T,servo-4t,SERVO-4T-STANDARD-PACK,motorcycle-oil,,,0,pictures/IndiaMART/SERVO 4T.jpeg,model,live,created
+88,heavy-duty-oils,Diesel Engine Oils,15 L,Servo Raftaar,servo-raftaar,SERVO-RAFTAAR-15-L,heavy-duty-oils,,,0,pictures/IndiaMART/SERVO RAFTAAR.jpg,model,live,created
+90,heavy-duty-oils,Diesel Engine Oils,1 L,Servo Pride TC 15W-40,servo-pride-tc-15w-40,SERVO-PRIDE-TC-15W-40-1-L,heavy-duty-oils,,,0,pictures/IndiaMART/SERVO PRIDE TC 15W-40.jpg,model,live,created
+91,heavy-duty-oils,Diesel Engine Oils,210 L,Servo Pride XL 15W-40,servo-pride-xl-15w-40,SERVO-PRIDE-XL-15W-40-210-L,heavy-duty-oils,,,0,pictures/IndiaMART/SERVO PRIDE XL 15W-40.jpg,model,live,created
+100,heavy-duty-oils,Diesel Engine Oils,2.5 L,Servo Premium CF-4 15W-40,servo-premium-cf-4-15w-40,SERVO-PREMIUM-CF-4-15W-40-2-5-L,heavy-duty-oils,,,0,pictures/IndiaMART/SERVO PREMIUM CF-4 15W-40.jpg,model,live,created
+100,heavy-duty-oils,Diesel Engine Oils,20 L,Servo Premium CF-4 15W-40,servo-premium-cf-4-15w-40,SERVO-PREMIUM-CF-4-15W-40-20-L,heavy-duty-oils,,,0,pictures/IndiaMART/SERVO PREMIUM CF-4 15W-40.jpg,model,live,created
+100,heavy-duty-oils,Diesel Engine Oils,26 L,Servo Premium CF-4 15W-40,servo-premium-cf-4-15w-40,SERVO-PREMIUM-CF-4-15W-40-26-L,heavy-duty-oils,,,0,pictures/IndiaMART/SERVO PREMIUM CF-4 15W-40.jpg,model,live,created
+100,heavy-duty-oils,Diesel Engine Oils,210 L,Servo Premium CF-4 15W-40,servo-premium-cf-4-15w-40,SERVO-PREMIUM-CF-4-15W-40-210-L,heavy-duty-oils,,,0,pictures/IndiaMART/SERVO PREMIUM CF-4 15W-40.jpg,model,live,created
+107,tractor-agri-oils,Tractor Oils,7.5 L,Servo Tractor Oil 20W-40,servo-tractor-oil-20w-40,SERVO-TRACTOR-OIL-20W-40-7-5-L,tractor-agri-oils,,,0,pictures/IndiaMART/SERVO TRACTOR OIL 20W-40.jpg,model,live,created
+116,car-engine-oil,Passenger Car Motor Oils,20 L,Servo Super MG 20W-40,servo-super-mg-20w-40,SERVO-SUPER-MG-20W-40-20-L,car-engine-oil,,,0,pictures/IndiaMART/SERVO SUPER MG 5W-30-10W-30-10W-40-20W-40-20W-50.jpg,model,live,created
+116,car-engine-oil,Passenger Car Motor Oils,210 L,Servo Super MG 20W-40,servo-super-mg-20w-40,SERVO-SUPER-MG-20W-40-210-L,car-engine-oil,,,0,pictures/IndiaMART/SERVO SUPER MG 5W-30-10W-30-10W-40-20W-40-20W-50.jpg,model,live,created
+130,gear-oils,Gear Oils,200 L,Servo Gear Super 85W-140,servo-gear-super-85w-140,SERVO-GEAR-SUPER-85W-140-200-L,gear-oils,,,0,pictures/IndiaMART/SERVO GEAR SUPER 85W-140.jpeg,model,live,created
+130,gear-oils,Gear Oils,210 L,Servo Gear Super 85W-140,servo-gear-super-85w-140,SERVO-GEAR-SUPER-85W-140-210-L,gear-oils,,,0,pictures/IndiaMART/SERVO GEAR SUPER 85W-140.jpeg,model,live,created
 1,General Equipment And Machinery Greases,Industrial greases,,SERVOgem 2/3/Ep Greases,,,,,,0,,,skipped: industrial,skipped
 2,General Equipment And Machinery Greases,Industrial greases,,SERVOgem Ht/Htxx,,,,,,0,,,skipped: industrial,skipped
 3,Complex Greases,Industrial greases,,SERVOrex L0/L1/L2,,,,,,0,,,skipped: industrial,skipped

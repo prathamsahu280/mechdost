@@ -1,6 +1,6 @@
 # HP lubricants import status
 
-Run: plan only. Source: hplubricants.in scrape (`hp_lubricants_products.csv`, `hp_lubricants_grades.csv`). One line per source row is in `hp-import-status.csv`.
+Run: real run. Source: hplubricants.in scrape (`hp_lubricants_products.csv`, `hp_lubricants_grades.csv`). One line per source row is in `hp-import-status.csv`.
 
 Source rows: 191. Products planned: 187. Fitment lines in the plan: 0.
 
@@ -57,6 +57,12 @@ Source rows: 191. Products planned: 187. Fitment lines in the plan: 0.
 | Diesel Exhaust Fluid                    | 1           |
 | Shock Absorber And Front Fork Oils      | 1           |
 | Three Wheeler Engine Oils               | 1           |
+
+### Result of this run
+
+|         | Source rows |
+| ------- | ----------- |
+| created | 191         |
 
 ### Price on request (no MRP in the source): 191
 
@@ -646,6 +652,6 @@ Every skipped row with its reason is in `hp-import-skipped.csv`.
 - HP Ultra Long Life AP3 Grease (hp-ultra-long-life-ap3-grease): The page's picture is shown on 44 products of the maker's site.
 - HP Milcy Fleet 15W-40 (hp-milcy-fleet-15w-40): The maker's page shows no details; the name and description come from the page's hidden data block.
 
-### Old HP lubricants products archived
+### Old HP lubricants products archived by this run: 0
 
-Filled in by the real run (`hp-import-archived.csv`).
+Listed in `hp-import-archived.csv`. Archived, never deleted (old orders and carts point at them).

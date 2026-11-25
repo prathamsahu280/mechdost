@@ -1,6 +1,6 @@
 # BPCL MAK lubricants import status
 
-Run: plan only. Source: bharatpetroleum.in scrape (`bpcl_mak_lubricants_products.csv`, `_packs.csv`, `_grades.csv`). One line per source row is in `bpcl-import-status.csv`.
+Run: real run. Source: bharatpetroleum.in scrape (`bpcl_mak_lubricants_products.csv`, `_packs.csv`, `_grades.csv`). One line per source row is in `bpcl-import-status.csv`.
 
 Source rows: 269. Products planned: 85. Fitment lines in the plan: 0.
 
@@ -47,6 +47,12 @@ Source rows: 269. Products planned: 85. Fitment lines in the plan: 0.
 | Specialties            | 14          |
 | Auto and CNG           | 10          |
 |                        | 7           |
+
+### Result of this run
+
+|         | Source rows |
+| ------- | ----------- |
+| created | 269         |
 
 ### Price on request (no MRP in the source): 55
 
@@ -182,6 +188,6 @@ Every skipped row with its reason is in `bpcl-import-skipped.csv`.
 - BPCL MAK Syncrol 140 (bpcl-mak-syncrol-140): The page's picture is shown on 145 products of the maker's site.
 - BPCL MAK Syncrol 140 (bpcl-mak-syncrol-140): The page lists several grades ("MAK SYNCROL 90 & 140"); each grade is its own product with the page's packs and photo.
 
-### Old BPCL MAK lubricants products archived
+### Old BPCL MAK lubricants products archived by this run: 0
 
-Filled in by the real run (`bpcl-import-archived.csv`).
+Listed in `bpcl-import-archived.csv`. Archived, never deleted (old orders and carts point at them).

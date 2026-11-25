@@ -1,6 +1,6 @@
 # IOCL Servo lubricants import status
 
-Run: plan only. Source: iocl.com data sheets and IndiaMART listings (`servo_lubricants_products.csv`). One line per source row is in `servo-import-status.csv`.
+Run: real run. Source: iocl.com data sheets and IndiaMART listings (`servo_lubricants_products.csv`). One line per source row is in `servo-import-status.csv`.
 
 Source rows: 18. Products planned: 12. Fitment lines in the plan: 0.
 
@@ -37,6 +37,12 @@ Source rows: 18. Products planned: 12. Fitment lines in the plan: 0.
 | Passenger Car Motor Oils | 2           |
 | 2 - Stroke Engine Oils   | 1           |
 | Tractor Oils             | 1           |
+
+### Result of this run
+
+|         | Source rows |
+| ------- | ----------- |
+| created | 18          |
 
 ### Price on request (no MRP in the source): 18
 
@@ -120,6 +126,6 @@ Every skipped row with its reason is in `servo-import-skipped.csv`.
 - Servo Gear Super 85W-140 (servo-gear-super-85w-140): Photo: IndiaMART seller photo (seller Satish Enterprises, Raipur); the label shows Servo Gear Super 85W-140, 5 L can. The photo may carry the seller's or the maker's branding; nothing is painted out.
 - Servo Gear Super 85W-140 (servo-gear-super-85w-140): IndiaMART seller prices exist for this product; they are asking prices, not MRPs, and are not used (price on request).
 
-### Old IOCL Servo lubricants products archived
+### Old IOCL Servo lubricants products archived by this run: 0
 
-Filled in by the real run (`servo-import-archived.csv`).
+Listed in `servo-import-archived.csv`. Archived, never deleted (old orders and carts point at them).
