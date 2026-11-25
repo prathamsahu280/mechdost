@@ -56,6 +56,7 @@ import { myWorkshopMocks, profileMocks } from './tier1-fixtures.ts';
 import { adminRoutingMocks, billPayMocks } from './tier3-fixtures.ts';
 import { slipMocks, staffPortalMocks, tier2PortalMocks } from './tier2-fixtures.ts';
 import { adminRecoMocks, demandMocks, notifyMeMocks, privacyMocks } from './catalogue-tier2-fixtures.ts';
+import { ustaadAdminMocks } from './ustaad-admin-fixtures.ts';
 import { photoQueueMocks, wishlistMocks } from './storefront-fixtures.ts';
 import { roadsideTrackMocks } from './roadside-fixtures.ts';
 import type { Mock, MockCtx, Reply } from './mock-api.ts';
@@ -1797,6 +1798,8 @@ export function mocksFor(c: AuditCase): Mock[] {
       return notifyMeMocks(c);
     case 'API-ADM-RECO':
       return adminRecoMocks(c);
+    case 'API-ADM-USTAAD':
+      return [meMock(), ...ustaadAdminMocks(c)];
     case 'API-SVC-HOMEFIND':
       return homeFinderMocks(c);
     case 'API-SVC-HOMEREQ':

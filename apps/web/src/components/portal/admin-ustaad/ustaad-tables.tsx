@@ -491,6 +491,7 @@ function EditableTable({
           <button
             type="button"
             className={portalQuiet}
+            data-disclosure-trigger={`ustaad-${config.id}-new`}
             onClick={() => {
               open(null);
             }}
@@ -603,6 +604,7 @@ function EditableTable({
                               type="button"
                               disabled={busy}
                               aria-label={t('t_edit_row', { name })}
+                              data-disclosure-trigger={`ustaad-${config.id}-${id}`}
                               className={portalQuiet}
                               onClick={() => {
                                 open(row);
@@ -616,6 +618,7 @@ function EditableTable({
                               type="button"
                               disabled={busy}
                               className={portalQuiet}
+                              data-disclosure-trigger={`ustaad-${config.id}-merge`}
                               onClick={() => {
                                 setEditing(null);
                                 setMerging({ id, into: '' });
@@ -707,7 +710,12 @@ function EditableTable({
             >
               {t('t_merge')}
             </button>
-            <button type="button" className={portalQuiet} onClick={close}>
+            <button
+              type="button"
+              className={portalQuiet}
+              data-panel-cancel={`ustaad-${config.id}-merge`}
+              onClick={close}
+            >
               {t('t_cancel')}
             </button>
           </div>
@@ -813,6 +821,7 @@ function EditableTable({
             <button
               type="button"
               className={portalQuiet}
+              data-panel-cancel={`ustaad-${config.id}-${editing}`}
               onClick={() => {
                 setMessage(null);
                 close();
