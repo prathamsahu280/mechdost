@@ -1,6 +1,6 @@
 /**
  * `pnpm db:import:hp --dir <hp_lubricants folder> [--dry-run | --plan-only] [--skip-photos]
- * [--skip-photos-for <names | @list.txt>] [--concurrency N] [--staff-user <uuid>]` (user 2026-11-25; runbook
+ * [--skip-photos-for <names | @list.txt>] [--concurrency N] [--packs <researched csv>] [--staff-user <uuid>]` (user 2026-11-25; runbook
  * `docs/runbooks/catalogue-import.md` "HP and BPCL MAK lubricant imports"). Automotive only: industrial, marine,
  * railroad and stationary rows are skipped and listed in the report. HP shows no prices and no pack sizes, so every pack is
  * price on request. A picture the maker shows on many products is never used: that product is a draft.
@@ -32,6 +32,7 @@ runBatteryImport<LubePlan>({
   stem: 'hp',
   hindiFile: 'packages/db/src/lube-import/ (hindi.ts, features-hi-hp.ts, hindi-allowed.ts)',
   planDir: planHpDir,
+  acceptsPacks: true,
   hindiLeftovers: planHindiLeftovers,
   diff: diffHpImport,
   apply: applyHpImport,
@@ -52,6 +53,18 @@ runBatteryImport<LubePlan>({
       return acc;
     }, {}),
     checks: plan.checks.length,
+    research: plan.research
+      ? {
+          rows: plan.research.rows,
+          productsWithPacks: plan.research.productsWithPacks,
+          packs: plan.research.packs,
+          withMrp: plan.research.withMrp,
+          lowConfidence: plan.research.lowConfidence.length,
+          conflicts: plan.research.conflicts.length,
+          unmatched: plan.research.unmatched.length,
+          unreadable: plan.research.unreadable.length,
+        }
+      : undefined,
   }),
 })
   .then(() => {

@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import type { VehicleType } from '@mechdost/shared/vehicles';
 import { pictureExistsIn, readCsvFile, type CsvRow } from '../battery-import';
 import { planLubeItems, type LubeBrand } from './build';
@@ -14,6 +15,7 @@ import {
   withHindi,
 } from './adapter';
 import { ALLOWED_LATIN } from './hindi-allowed';
+import { applyResearchedPacks, parseHpPacksCsv } from './packs-research';
 import { pictureOf, pictureShares } from './picture';
 import { cleanLubeName, gradeKey, propertiesOf, splitGrades } from './text';
 import type { LubeCheck, LubeItem, LubePlan, SkipReason, SkippedRow } from './types';
@@ -157,6 +159,8 @@ export interface HpPlanInput {
   pictureExists?: (file: string) => boolean;
   /** Content hash of a picture file (null = unreadable): the same bytes are the same picture. */
   pictureHash?: (file: string) => string | null;
+  /** Rows of the researched pack list (`--packs`); none = every product keeps its Standard pack. */
+  packs?: readonly CsvRow[];
 }
 
 const NAME_DECIDED: ReadonlySet<string> = new Set([
@@ -286,22 +290,33 @@ export function planHp(input: HpPlanInput): LubePlan {
     }
   });
 
-  return planLubeItems(mergeItems(items), {
+  const merged = mergeItems(items);
+
+  const researched = input.packs ? applyResearchedPacks(merged, input.packs) : null;
+  if (researched && researched.research.unmatched.length > 0)
+    checks.push({
+      slug: '',
+      name: 'Researched packs',
+      note: `Rows for no planned product: ${researched.research.unmatched.join(', ')}.`,
+    });
+  return planLubeItems(researched?.items ?? merged, {
     brand: HP_BRAND,
     source: 'hp',
     skipped,
     checks,
     untranslated: [...missing],
     allowedWords: ALLOWED_LATIN,
+    research: researched?.research,
   });
 }
 
 /** The hp_lubricants folder: the products and grades CSVs and `pictures/…`. */
-export function planHpDir(dir: string): LubePlan {
+export function planHpDir(dir: string, opts: { packs?: string } = {}): LubePlan {
   return planHp({
     products: readCsvFile(dir, 'hp_lubricants_products.csv'),
     grades: readCsvFile(dir, 'hp_lubricants_grades.csv'),
     pictureExists: pictureExistsIn(dir),
     pictureHash: pictureHashIn(dir),
+    packs: opts.packs ? parseHpPacksCsv(readFileSync(opts.packs, 'utf8')) : undefined,
   });
 }

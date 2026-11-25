@@ -2,15 +2,15 @@
 
 Run: plan only. Source: hplubricants.in scrape (`hp_lubricants_products.csv`, `hp_lubricants_grades.csv`). One line per source row is in `hp-import-status.csv`.
 
-Source rows: 187. Products planned: 187. Fitment lines in the plan: 0.
+Source rows: 191. Products planned: 187. Fitment lines in the plan: 0.
 
 ### By category
 
 |                      | Source rows |
 | -------------------- | ----------- |
 | heavy-duty-oils      | 49          |
-| gear-oils            | 34          |
-| motorcycle-oil       | 34          |
+| motorcycle-oil       | 37          |
+| gear-oils            | 35          |
 | car-engine-oil       | 24          |
 | greases              | 12          |
 | coolants             | 10          |
@@ -24,8 +24,8 @@ Source rows: 187. Products planned: 187. Fitment lines in the plan: 0.
 |                      | Source rows |
 | -------------------- | ----------- |
 | heavy-duty-oils      | 49          |
-| gear-oils            | 34          |
-| motorcycle-oil       | 34          |
+| motorcycle-oil       | 37          |
+| gear-oils            | 35          |
 | car-engine-oil       | 24          |
 | greases              | 12          |
 | coolants             | 10          |
@@ -39,17 +39,17 @@ Source rows: 187. Products planned: 187. Fitment lines in the plan: 0.
 |                                         | Source rows |
 | --------------------------------------- | ----------- |
 | Heavy Duty Diesel Engine Oils           | 37          |
-| Gear And Transmission Oils              | 32          |
+| Gear And Transmission Oils              | 33          |
+| Two Wheeler Engine Oils                 | 18          |
 | Passenger Car Engine Oils               | 17          |
 | Bs Vi Grades                            | 16          |
-| Two Wheeler Engine Oils                 | 16          |
 | Automotive Greases                      | 10          |
 | Futurx                                  | 10          |
 | Diesel Engine Oils                      | 9           |
 | Radiator Coolants                       | 9           |
 | Agriculture Oils                        | 8           |
+| Bike Two Wheeler Engine Oils            | 6           |
 | Ev And Hybrid Range                     | 6           |
-| Bike Two Wheeler Engine Oils            | 5           |
 | Auto Lpg And Cng Engine Oils            | 3           |
 | Natural Gas And Cng Engine Oils         | 3           |
 | Brake Fluids                            | 2           |
@@ -58,7 +58,7 @@ Source rows: 187. Products planned: 187. Fitment lines in the plan: 0.
 | Shock Absorber And Front Fork Oils      | 1           |
 | Three Wheeler Engine Oils               | 1           |
 
-### Price on request (no MRP in the source): 187
+### Price on request (no MRP in the source): 189
 
 - HP Kisan Shakti (hp-kisan-shakti)
 - HP Kisan Shakti UTTO (hp-kisan-shakti-utto)
@@ -76,6 +76,7 @@ Source rows: 187. Products planned: 187. Fitment lines in the plan: 0.
 - HP Racer 20W-40 (hp-racer-20w-40)
 - HP Racer 20W-50 (hp-racer-20w-50)
 - HP Racer 15W-50 (hp-racer-15w-50)
+- HP Racer Splendid 10W-30 (hp-racer-splendid-10w-30)
 - HP Racer Splendid 10W-30 (hp-racer-splendid-10w-30)
 - HP Racer Supreme 20W-50 (hp-racer-supreme-20w-50)
 - HP Racer Syntec 20W-50 (hp-racer-syntec-20w-50)
@@ -113,6 +114,7 @@ Source rows: 187. Products planned: 187. Fitment lines in the plan: 0.
 - HP ATF Dex II (hp-atf-dex-ii)
 - HP ATF Dex IID (hp-atf-dex-iid)
 - HP Auto Transmission Fluid A (hp-auto-transmission-fluid-a)
+- HP Gear Drive EP 140 (hp-gear-drive-ep-140)
 - HP Gear Drive EP 140 (hp-gear-drive-ep-140)
 - HP Gear Drive EP 90 (hp-gear-drive-ep-90)
 - HP Gear Drive XP 85W-140 (hp-gear-drive-xp-85w-140)
@@ -192,7 +194,6 @@ Source rows: 187. Products planned: 187. Fitment lines in the plan: 0.
 - HP Neosynth 10W-30 (hp-neosynth-10w-30)
 - HP Neosynth 10W-40 (hp-neosynth-10w-40)
 - HP Neosynth 15W-40 (hp-neosynth-15w-40)
-- HP Neosynth 5W-30 (hp-neosynth-5w-30)
 - HP Neosynth 5W-40 (hp-neosynth-5w-40)
 - HP Neosynth Classic 5W-30 (hp-neosynth-classic-5w-30)
 - HP Neosynth CNG 20W-50 (hp-neosynth-cng-20w-50)
@@ -212,13 +213,14 @@ Source rows: 187. Products planned: 187. Fitment lines in the plan: 0.
 - HP Air Filter Oil 20W-40 (hp-air-filter-oil-20w-40)
 - HP Racer Duo 5W-30 (hp-racer-duo-5w-30)
 - HP Racer GEN6 10W-30 (hp-racer-gen6-10w-30)
-- HP Racer GEN6 20W-40 (hp-racer-gen6-20w-40)
 - HP Racer Green 10W-30 (hp-racer-green-10w-30)
 - HP Racer Green 20W-40 (hp-racer-green-20w-40)
 - HP Racer Plus 15W-50 (hp-racer-plus-15w-50)
 - HP Racer Pro 10W-30 (hp-racer-pro-10w-30)
 - HP Racer Pro 20W-40 (hp-racer-pro-20w-40)
+- HP Racer Pro 20W-40 (hp-racer-pro-20w-40)
 - HP Racer Skutex Pro 5W-30 (hp-racer-skutex-pro-5w-30)
+- HP Racer Splendid 20W-40 (hp-racer-splendid-20w-40)
 - HP Racer Splendid 20W-40 (hp-racer-splendid-20w-40)
 - HP Racer Splendid+ 20W-40 (hp-racer-splendid-plus-20w-40)
 - HP Racer Splendid+ 10W-30 (hp-racer-splendid-plus-10w-30)
@@ -259,18 +261,36 @@ Note: the tables above count lines of the status CSV, which has one line per pac
 | Category             | Products | Packs | Packs with MRP |
 | -------------------- | -------- | ----- | -------------- |
 | tractor-agri-oils    | 8        | 8     | 0              |
-| car-engine-oil       | 24       | 24    | 0              |
+| car-engine-oil       | 24       | 24    | 1              |
 | heavy-duty-oils      | 49       | 49    | 0              |
 | diesel-engine-oil    | 10       | 10    | 0              |
-| motorcycle-oil       | 34       | 34    | 0              |
+| motorcycle-oil       | 34       | 37    | 1              |
 | brake-fluid-fork-oil | 4        | 4     | 0              |
 | greases              | 12       | 12    | 0              |
 | coolants             | 10       | 10    | 0              |
-| gear-oils            | 34       | 34    | 0              |
+| gear-oils            | 34       | 35    | 0              |
 | speciality-oils      | 2        | 2     | 0              |
-| **Total**            | 187      | 187   | 0              |
+| **Total**            | 187      | 191   | 2              |
 
-Packs: 187; with an MRP: 0; price on request: 187.
+Packs: 191; with an MRP: 2; price on request: 189.
+
+### Researched packs and prices (--packs): 29 packs on 25 products, 2 with an MRP
+
+CSV rows: 196. MRP only from high or medium confidence rows; the sale price is never the MRP. Products without rows keep the Standard pack (price on request).
+
+Low confidence, left at price on request: 3
+
+- hp-racer-20w-40 1 L: 369
+- hp-racer-splendid-20w-40 1 L: 485
+- hp-racer-splendid-20w-40 900 ml: 423
+
+Sources disagree, left at price on request: 0
+
+CSV rows for no planned product: 0
+
+Rows that found no pack (nothing to import): 162
+
+Rows with an unreadable pack size: 0
 
 ### Products planned as drafts (no usable photo): 124
 
@@ -414,7 +434,7 @@ Packs: 187; with an MRP: 0; price on request: 187.
 
 Every skipped row with its reason is in `hp-import-skipped.csv`.
 
-### Source oddities and how they were handled: 209
+### Source oddities and how they were handled: 212
 
 - HP Kisan Shakti (hp-kisan-shakti): The maker's page shows no details; the name and description come from the page's hidden data block.
 - HP Kisan Tractor Oil 20W-40 (hp-kisan-tractor-oil-20w-40): The page's picture is shown on 223 products of the maker's site.
@@ -435,6 +455,7 @@ Every skipped row with its reason is in `hp-import-skipped.csv`.
 - HP Racer 20W-40 (hp-racer-20w-40): The page's picture is shown on 223 products of the maker's site.
 - HP Racer 20W-40 (hp-racer-20w-40): The page lists several grades ("HP RACER 10W-30, 20W-40, 20W-50"); each grade is its own product with the page's photo.
 - HP Racer 20W-40 (hp-racer-20w-40): Listed 2 times in the source (rows 15, 29); merged into one product.
+- HP Racer 20W-40 (hp-racer-20w-40): Researched MRP of 1 L (369) has low confidence; left at price on request.
 - HP Racer 20W-50 (hp-racer-20w-50): The page lists several grades ("HP RACER 10W-30, 20W-40, 20W-50, 15W-50"); each grade is its own product with the page's photo.
 - HP Racer 20W-50 (hp-racer-20w-50): The page's picture is shown on 223 products of the maker's site.
 - HP Racer 20W-50 (hp-racer-20w-50): The page lists several grades ("HP RACER 10W-30, 20W-40, 20W-50"); each grade is its own product with the page's photo.
@@ -605,6 +626,8 @@ Every skipped row with its reason is in `hp-import-skipped.csv`.
 - HP Racer Plus 15W-50 (hp-racer-plus-15w-50): The page's picture is shown on 223 products of the maker's site.
 - HP Racer Splendid 20W-40 (hp-racer-splendid-20w-40): The page's picture is shown on 223 products of the maker's site.
 - HP Racer Splendid 20W-40 (hp-racer-splendid-20w-40): The page lists several grades ("HP RACER SPLENDID 20W-40, 20W-50"); each grade is its own product with the page's photo.
+- HP Racer Splendid 20W-40 (hp-racer-splendid-20w-40): Researched MRP of 1 L (485) has low confidence; left at price on request.
+- HP Racer Splendid 20W-40 (hp-racer-splendid-20w-40): Researched MRP of 900 ml (423) has low confidence; left at price on request.
 - HP Racer Synth 10W-40 (hp-racer-synth-10w-40): The page's picture is shown on 223 products of the maker's site.
 - HP Racer2 Low Smoke (hp-racer2-low-smoke): The page's picture is shown on 223 products of the maker's site.
 - HP Prolube 20W-50 (hp-prolube-20w-50): The page's picture is shown on 223 products of the maker's site.

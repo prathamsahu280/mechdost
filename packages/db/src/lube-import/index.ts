@@ -6,6 +6,7 @@ export * from './hindi';
 export * from './hindi-allowed';
 export * from './hp';
 export * from './kinds';
+export * from './packs-research';
 export * from './picture';
 export * from './report';
 export * from './text';

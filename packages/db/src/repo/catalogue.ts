@@ -453,6 +453,7 @@ const PRIVATE_SPEC_KEYS: ReadonlySet<string> = new Set([
   'categoryRule',
   'sourceChecks',
   'sourceDocs',
+  'packSources',
 ]);
 
 /** A live product page with each active variant's best offer for the PIN (or city). Others → 404. */

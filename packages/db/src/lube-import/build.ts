@@ -11,7 +11,8 @@ import {
 import { parseApi, parseBaseType, parseJaso, parseSae, skuBase } from '../catalogue-v2/plan';
 import { LUBE_WORDS_HI } from './hindi';
 import { LUBE_CATEGORIES, LUBE_GST_RATE_BP } from './kinds';
-import type { LubeCheck, LubeItem, LubePlan, LubeText, SkippedRow } from './types';
+import { lubeSlug } from './packs-research';
+import type { LubeCheck, LubeItem, LubePlan, LubeText, PackResearch, SkippedRow } from './types';
 
 export interface LubeBrand {
   slug: string;
@@ -24,6 +25,8 @@ export interface LubeBuildOptions {
   /** `spec.source` (the writer finds its own products by it): "hp", "bpcl". */
   source: string;
   skipped: SkippedRow[];
+  /** What the researched pack list gave (HP `--packs`). */
+  research?: PackResearch;
   checks: LubeCheck[];
   untranslated: string[];
   /** Latin words the Hindi text may keep besides the product names (vehicle makers, standards bodies). */
@@ -107,7 +110,7 @@ export function planLubeItems(items: readonly LubeItem[], opts: LubeBuildOptions
   for (const item of items) {
     const info = LUBE_CATEGORIES[item.category];
     const category = info.category;
-    let slug = slugify(item.name.replace(/\+/g, ' plus '));
+    let slug = lubeSlug(item.name);
     if (slugs.has(slug)) {
       slugCollisions += 1;
       let n = 2;
@@ -222,6 +225,14 @@ export function planLubeItems(items: readonly LubeItem[], opts: LubeBuildOptions
     put('photoKind', item.photoFile && item.draftReason === null && item.photoSharedBy > 1 ? 'range' : '');
     put('draftReason', item.draftReason);
     put('sourceDocs', item.sourceDocs);
+    const packSources = item.packSources;
+    if (packSources)
+      spec.packSources = Object.fromEntries(
+        variants.flatMap((v) => {
+          const source = packSources[v.model];
+          return source ? [[v.sku, source]] : [];
+        }),
+      );
     for (const [k, v] of Object.entries(item.extraSpec)) put(k, v);
 
     const photos: PlannedPhoto[] =
@@ -316,6 +327,7 @@ export function planLubeItems(items: readonly LubeItem[], opts: LubeBuildOptions
     skuCollisions,
     orphanFitment: 0,
     skipped: opts.skipped,
+    research: opts.research,
     drafts,
     checks,
     priceOnRequest,

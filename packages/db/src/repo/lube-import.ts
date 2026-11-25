@@ -15,6 +15,8 @@ import type { Tx } from './orders';
 export const HP_IMPORT: BatteryImportConfig = {
   brand: { slug: 'hp', name: 'HP' },
   specSource: 'hp',
+  // User ruling 2026-11-25: the live HP Racer4 (2 orders, shop inventory) is never archived by the import.
+  keepSlugs: ['hp-racer4-20w40-900ml'],
   auditSource: 'hp_import',
   event: 'admin_hp_imported',
 };

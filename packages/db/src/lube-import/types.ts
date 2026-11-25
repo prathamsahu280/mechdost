@@ -51,6 +51,8 @@ export interface LubeItem {
   photoSharedBy: number;
   properties: OilProperties;
   sourceDocs: { productPage: string; dataSheetUrl: string; pictureUrl: string };
+  /** Researched packs only: where each pack's data came from (private; by pack label). */
+  packSources?: Record<string, { sourceUrls: string[]; checkedOn: string; confidence: string }>;
   /** Extra typed spec keys (`evRange`). */
   extraSpec: Record<string, unknown>;
   /** What was odd in the source and how it was handled. */
@@ -81,7 +83,27 @@ export interface LubeCheck {
   note: string;
 }
 
+/** What the researched pack list (`--packs`) gave, for the report. */
+export interface PackResearch {
+  rows: number;
+  productsWithPacks: number;
+  packs: number;
+  withMrp: number;
+  /** A pack whose only MRP has low confidence: left at price on request. */
+  lowConfidence: { slug: string; pack: string; mrpInr: number }[];
+  /** A pack whose accepted rows disagree on the MRP: left at price on request. */
+  conflicts: { slug: string; pack: string; mrpInr: number[] }[];
+  /** Plan slugs of the CSV that match no planned product. */
+  unmatched: string[];
+  /** Rows whose pack size could not be read. */
+  unreadable: { slug: string; pack: string }[];
+  /** Rows that found no pack (blank size): nothing to import. */
+  noData: number;
+}
+
 export interface LubePlan extends BatteryPlan {
+  /** Set when the plan was made with a researched pack list. */
+  research?: PackResearch;
   skipped: SkippedRow[];
   drafts: { slug: string; name: string; reason: DraftReason }[];
   checks: LubeCheck[];

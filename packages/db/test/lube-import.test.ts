@@ -64,6 +64,7 @@ beforeAll(async () => {
     brandIds[slug] = (await db.insert(s.brands).values({ slug, name }).returning())[0]?.id ?? '';
   for (const [brand, slug] of [
     ['hp', 'hp-old-oil'],
+    ['hp', 'hp-racer4-20w40-900ml'],
     ['castrol', 'castrol-keep-oil'],
   ] as const) {
     const [p] = await db
@@ -102,6 +103,7 @@ describe('HP import', () => {
   it('a dry run names the old HP product and writes nothing', async () => {
     const diff = await diffHpImport(tx, hp.products);
     expect(diff.counts).toMatchObject({ productsCreated: 1, productsArchived: 1 });
+    expect(diff.archived.map((a) => a.slug)).toEqual(['hp-old-oil']);
     expect(await statusOf('hp-old-oil')).toBe('live');
   });
 
@@ -109,6 +111,9 @@ describe('HP import', () => {
     const run = await applyHpImport(tx, hp.products, { staffUserId: staff });
     expect(run.counts).toMatchObject({ productsCreated: 1, packsCreated: 1, productsArchived: 1 });
     expect(await statusOf('hp-old-oil')).toBe('archived');
+    // User ruling 2026-11-25: the live HP Racer4 (orders, shop inventory) is never archived by the import.
+    expect(await statusOf('hp-racer4-20w40-900ml')).toBe('live');
+    expect(run.archived.map((a) => a.slug)).toEqual(['hp-old-oil']);
     expect(await statusOf('castrol-keep-oil')).toBe('live');
     const [p] = await db.select().from(s.products).where(eq(s.products.slug, 'hp-racer-splendid-10w-30'));
     expect(p).toMatchObject({ status: 'live', hsn: '2710' });
@@ -157,5 +162,43 @@ describe('BPCL MAK import', () => {
     expect(page.variants.map((v) => v.label).sort()).toEqual(['1 L', '3.5 L']);
     expect(await statusOf('castrol-keep-oil')).toBe('live');
     expect(await db.select().from(events).where(eq(events.event, 'admin_bpcl_imported'))).toHaveLength(1);
+  });
+});
+
+describe('HP import with researched packs', () => {
+  const researched = planHp({
+    products: [
+      row({
+        Product: 'HP RACER PRO 10W 30',
+        Range: 'Automotive Oils',
+        Category: 'Two Wheeler Engine Oils',
+        'Picture file': 'p/c.jpg',
+      }),
+    ],
+    grades: [],
+    packs: [
+      row({
+        plan_slug: 'hp-racer-pro-10w-30',
+        pack_label: '900 ml',
+        net_qty: '900',
+        net_unit: 'ml',
+        mrp_inr: '420',
+        sale_price_inr: '390',
+        source_url: 'https://example.test/p',
+        checked_on: '2026-11-25',
+        confidence: 'high',
+      }),
+    ],
+  });
+
+  it('writes the researched pack with its MRP and hides the private sources from the public page', async () => {
+    const run = await applyHpImport(tx, researched.products, { staffUserId: staff });
+    expect(run.counts).toMatchObject({ productsCreated: 1, packsCreated: 1, mrpSet: 1 });
+    const page = await getCatalogueProduct(tx, 'hp-racer-pro-10w-30', { cityCode: 'RPR', locale: 'en' });
+    expect(page.variants.map((v) => [v.label, v.mrpPaise])).toEqual([['900 ml', 42000]]);
+    expect(page.spec).not.toHaveProperty('packSources');
+    expect(page.spec).not.toHaveProperty('sourceDocs');
+    const [p] = await db.select().from(s.products).where(eq(s.products.slug, 'hp-racer-pro-10w-30'));
+    expect(JSON.stringify(p?.spec)).toContain('https://example.test/p');
   });
 });
