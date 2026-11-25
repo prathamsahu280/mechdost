@@ -9,9 +9,9 @@
  * Aadhaar (12 digits in 4-4-4) and phones before the long-digit rule; PIN codes last (longer numbers contain six-digit
  * runs).
  *
- * Fail closed (security review 2026-11-26): if the masked text still has a run of eight or more digits split only by
- * non-letters,
- * `safeForLlm` is false and the caller keeps the text on our server (word list only).
+ * Fail closed (security review 2026-11-26): `safeForLlm` is false, and the caller keeps the text on our server (word
+ * list only), when masking failed, when the text has digits of any script other than ASCII and Devanagari, or when the
+ * masked text still has eight or more digits between two letters (see `hasDigitCluster`).
  */
 
 const D = '[0-9०-९]'; // ASCII and Devanagari digits
@@ -74,16 +74,31 @@ export function hasPlaceholderChars(text: string): boolean {
 }
 
 /**
- * True when `RISK_DIGITS` or more digits follow one another with at most three non-letter characters between each
- * (any punctuation, spaces or symbols). A letter ends the run, so part numbers and sizes (`6301 aur 175/65 R14`) are not a cluster, while `1234-5678` or `98 76 54 32` is.
+ * The fail-closed projection (security review 2026-11-26, round 2). Format characters (`\p{Cf}`: zero-width joiners,
+ * direction marks) are removed and placeholders become a space; the text is cut at every letter, and each letter-free
+ * segment is unsafe when it holds `RISK_DIGITS` or more digits of any script, **whatever the separators between them**
+ * (`9 8 7 6 5 . . . 4 3 2 1 0`, `98765—————43210`), or digits of more than one script (`9८७६५४३२१०`). Part numbers
+ * and sizes (`6301 aur 175/65 R14`) are split by letters and stay safe. Errs towards the word list.
  */
-const CLUSTER_RE = new RegExp(
-  `${D}(?:[^\\p{L}\\p{M}⟦⟧\\d\\u0966-\\u096F]{0,3}${D}){${String(RISK_DIGITS - 1)},}`,
-  'u',
-);
-
 export function hasDigitCluster(text: string): boolean {
-  return CLUSTER_RE.test(text.replace(PLACEHOLDER_RE, '⟦⟧'));
+  const plain = text.replace(PLACEHOLDER_RE, ' ').replace(/\p{Cf}/gu, '');
+  return plain.split(/[\p{L}\p{M}]+/u).some((segment) => {
+    const digits = segment.match(/\p{Nd}/gu) ?? [];
+    return digits.length >= RISK_DIGITS;
+  });
+}
+
+/** A number written in two digit scripts at once (`9८७६५४३२१०`), checked on the unmasked text: a disguise. */
+export function hasMixedDigitScripts(text: string): boolean {
+  return text
+    .replace(/\p{Cf}/gu, '')
+    .split(/[\p{L}\p{M}]+/u)
+    .some((segment) => /[0-9]/.test(segment) && /[०-९]/.test(segment));
+}
+
+/** Any decimal digit other than ASCII and Devanagari (Bengali, Gujarati, fullwidth …): never sent to an LLM. */
+export function hasForeignDigits(text: string): boolean {
+  return /(?![0-9०-९])\p{Nd}/u.test(text);
 }
 
 export function maskPii(text: string): Masked {
@@ -103,7 +118,7 @@ export function maskPii(text: string): Masked {
   return {
     masked,
     count: values.length,
-    safeForLlm: !failed && !hasDigitCluster(masked),
+    safeForLlm: !failed && !hasForeignDigits(text) && !hasMixedDigitScripts(text) && !hasDigitCluster(masked),
     restore(output: string): string | null {
       const seen = new Map<number, number>();
       for (const m of output.matchAll(PLACEHOLDER_RE)) {

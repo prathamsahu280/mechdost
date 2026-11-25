@@ -196,6 +196,22 @@ describe('smart correction: masking and the request (SR-28)', () => {
     expect(m.restore(m.masked)).toBe(text);
   });
 
+  it.each([
+    ['mixed Latin and Devanagari digits', 'call 9८७६५४३२१० kro'],
+    ['fullwidth digits', 'call ９８７６５４３２１０ kro'],
+    ['Bengali digits', 'call ৯৮৭৬৫৪৩২১০ kro'],
+    ['a single Gujarati digit', 'part ૬ lagao'],
+    ['zero-width joiners between digits', 'call 98765‍43​210 kro'],
+    ['spaced digits with dots', 'call 9 8 7 6 5 . . . 4 3 2 1 0'],
+    ['a long dash run', 'call 98765—————43210'],
+  ])('fails closed on %s: the LLM is skipped', async (_name, text) => {
+    expect(maskPii(text).safeForLlm).toBe(false);
+    const double = new FetchDouble((s) => s);
+    const r = await run(text, { double });
+    expect(r.engine).toBe('wordlist');
+    expect(double.requests).toHaveLength(0);
+  });
+
   it('fails closed: eight or more digits left in a short span keep the text away from the LLM', async () => {
     expect(maskPii('1234-5678 h').safeForLlm).toBe(false);
     expect(maskPii('bearing 6301 aur 175/65 R14').safeForLlm).toBe(true);
