@@ -1,7 +1,13 @@
 'use client';
 
 import { useEffect, useRef, useState, type ClipboardEvent, type RefObject } from 'react';
-import { cleanCodeInput, decideAutoSubmit, pastedCode, type AutoSubmitState } from './auto-submit-code';
+import {
+  cleanCodeInput,
+  decideAutoSubmit,
+  manualSubmitAllowed,
+  pastedCode,
+  type AutoSubmitState,
+} from './auto-submit-code';
 
 interface Options {
   /** Digits in the code (6 for SMS codes, 4 for the delivery code). */
@@ -87,5 +93,22 @@ export function useAutoSubmitCode({
       }
     },
   };
-  return { value, setValue, checking, inputProps };
+  /**
+   * For the form's own Submit: true when the caller should send `value` now. A value just sent by itself (or a check
+   * still running) is not sent again; focus returns to the field with the code selected instead.
+   */
+  function claimManual(): boolean {
+    if (!manualSubmitAllowed(state.current, value, flying.current || busy)) {
+      const el = input.current;
+      if (el?.isConnected) {
+        el.focus();
+        el.select();
+      }
+      return false;
+    }
+    state.current = { tried: value };
+    return true;
+  }
+
+  return { value, setValue, checking, inputProps, claimManual };
 }

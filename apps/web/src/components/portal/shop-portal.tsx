@@ -359,6 +359,7 @@ function DeliveryCodeForm({ order, shopSlug }: { order: DemoOrder; shopSlug: str
     value: code,
     checking,
     inputProps,
+    claimManual,
   } = useAutoSubmitCode({
     length: DELIVERY_CODE_LENGTH,
     autoComplete: 'off',
@@ -370,6 +371,7 @@ function DeliveryCodeForm({ order, shopSlug }: { order: DemoOrder; shopSlug: str
 
   function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!claimManual()) return;
     check(code, false);
   }
 

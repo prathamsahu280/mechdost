@@ -15,8 +15,8 @@ async function signIn(page: Page, phone: string) {
   await page.getByLabel('Password', { exact: true }).fill(PASSWORD);
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   if (phone === '9000000003') {
+    // Checked by itself at 6 digits (2026-11-25).
     await page.getByLabel('One-time code').fill('123456');
-    await page.getByRole('button', { name: 'Verify and continue' }).click();
   }
   await page.waitForURL((u) => !u.pathname.endsWith('/login'));
 }

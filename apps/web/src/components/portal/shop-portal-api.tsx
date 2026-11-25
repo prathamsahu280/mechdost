@@ -545,6 +545,7 @@ function DeliveryCodeForm({
     value: code,
     checking,
     inputProps,
+    claimManual,
   } = useAutoSubmitCode({
     length: DELIVERY_CODE_LENGTH,
     autoComplete: 'off',
@@ -554,6 +555,7 @@ function DeliveryCodeForm({
 
   function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!claimManual()) return;
     void check(code, false);
   }
 

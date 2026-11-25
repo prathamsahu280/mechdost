@@ -85,11 +85,14 @@ test.describe('proof of delivery', () => {
     const code = await deliveryCodeOf(page, order);
     await page.goto('/partner/shop');
     const field = card.getByLabel("Customer's delivery code");
+    // Habit: type the code, then press the button anyway. The code was already checked by itself, so the press must
+    // not send it again and spend a second try (bug found 2026-11-25).
     await field.fill(code === '0000' ? '1111' : '0000');
     await card.getByRole('button', { name: 'Confirm delivery' }).click();
     await expect(card.getByText("That code doesn't match. 4 tries left.")).toBeVisible();
+    // The right code is checked by itself; the order leaves the list.
     await field.fill(code);
-    await card.getByRole('button', { name: 'Confirm delivery' }).click();
+    await expect(card).toHaveCount(0);
 
     await page.goto(`/orders/${order}`);
     await expect(page.getByText(/confirmed with your delivery code/)).toBeVisible();
@@ -101,10 +104,11 @@ test.describe('proof of delivery', () => {
     const code = await deliveryCodeOf(page, order);
     await page.goto('/partner/shop');
     const card = page.locator('article').filter({ hasText: order });
-    const wrong = code === '0000' ? '1111' : '0000';
-    for (let i = 0; i < 5; i++) {
+    // Each code is checked by itself at 4 digits, once per distinct value (2026-11-25): five different wrong codes.
+    const wrongs = ['0000', '1111', '2222', '3333', '4444', '5555'].filter((w) => w !== code).slice(0, 5);
+    for (const [i, wrong] of wrongs.entries()) {
       await card.getByLabel("Customer's delivery code").fill(wrong);
-      await card.getByRole('button', { name: 'Confirm delivery' }).click();
+      if (i < 4) await expect(card.getByText(new RegExp(`${String(4 - i)} (try|tries) left`))).toBeVisible();
     }
     await expect(
       card.getByText('Too many wrong codes. Call MechDost support', { exact: false }),

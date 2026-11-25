@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   cleanCodeInput,
   decideAutoSubmit,
+  manualSubmitAllowed,
   pastedCode,
   type AutoSubmitState,
 } from '@/lib/auth/auto-submit-code';
@@ -77,5 +78,22 @@ describe('decideAutoSubmit', () => {
     expect(run(fresh(), '12345a').fire).toBe(false);
     expect(run(fresh(), '1234567').fire).toBe(false);
     expect(run(fresh(), '1234', { length: 4 }).fire).toBe(true);
+  });
+});
+
+/**
+ * Bug found in the merged e2e run (2026-11-25): a shop typed a wrong delivery code (sent by itself), then pressed
+ * "Confirm delivery" out of habit; the same wrong code went again and cost a second of the 5 tries.
+ */
+describe('manualSubmitAllowed', () => {
+  it('refuses the value that was just sent by itself', () => {
+    expect(manualSubmitAllowed({ tried: '0000' }, '0000', false)).toBe(false);
+  });
+  it('refuses while a check is running', () => {
+    expect(manualSubmitAllowed({ tried: null }, '1234', true)).toBe(false);
+  });
+  it('allows a value that was not tried yet', () => {
+    expect(manualSubmitAllowed({ tried: '0000' }, '1234', false)).toBe(true);
+    expect(manualSubmitAllowed({ tried: null }, '1234', false)).toBe(true);
   });
 });

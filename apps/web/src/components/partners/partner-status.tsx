@@ -86,6 +86,7 @@ function ApiStatus() {
     setValue: setCode,
     checking,
     inputProps,
+    claimManual,
   } = useAutoSubmitCode({
     length: 6,
     busy: working,
@@ -153,6 +154,7 @@ function ApiStatus() {
 
   function onConfirm(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!claimManual()) return;
     void checkCode(code, false);
   }
 

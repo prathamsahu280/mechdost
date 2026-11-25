@@ -46,3 +46,12 @@ export function decideAutoSubmit(
   if (!ready || state.tried === value) return { fire: false, state };
   return { fire: true, state: { tried: value } };
 }
+
+/**
+ * Whether a press of the Submit button should send `value`. Not while a check is running, and not the value that was
+ * just sent by itself: pressing the button right after typing would send a wrong code twice and spend two of the
+ * delivery code's five tries (e2e, 2026-11-25). Retyping the code sends it again, so a network failure can be retried.
+ */
+export function manualSubmitAllowed(state: AutoSubmitState, value: string, running: boolean): boolean {
+  return !running && state.tried !== value;
+}
