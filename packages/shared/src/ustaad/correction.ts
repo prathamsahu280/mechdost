@@ -102,7 +102,7 @@ export function correctionSegments(before: string, after: string): CorrectionSeg
   const segments: CorrectionSegmentView[] = [];
   const push = (kind: 'same' | 'changed', text: string, was?: string) => {
     const last = segments.at(-1);
-    if (last && last.kind === kind) {
+    if (last?.kind === kind) {
       last.text += text;
       if (was) last.was = last.was ? `${last.was} ${was}` : was;
       return;
@@ -140,7 +140,7 @@ export function correctionSegments(before: string, after: string): CorrectionSeg
     const trail = s.kind === 'changed' ? (/\s+$/.exec(s.text)?.[0] ?? '') : '';
     const core = trail ? { ...s, text: s.text.slice(0, -trail.length) } : s;
     const prev = out.at(-1);
-    if (prev && prev.kind === core.kind && core.kind === 'same') prev.text += core.text;
+    if (prev?.kind === 'same' && core.kind === 'same') prev.text += core.text;
     else out.push(core);
     if (trail) out.push({ kind: 'same', text: trail });
   }

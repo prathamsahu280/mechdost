@@ -143,6 +143,23 @@ describe('smart correction: meaning guard (SR-27)', () => {
     expect(meaningGuard(raw, 'बेयरिंग ६३०१ लगाओ।', [], { maxLengthChangePct: 30 }).ok).toBe(true);
   });
 
+  it('spec 23 § 20 examples: Hinglish and Hindi fixes pass, a changed part number does not', () => {
+    const opts = { maxLengthChangePct: 30 };
+    expect(
+      meaningGuard(
+        'bhaiya splendor ka self nhi chl rha',
+        'Bhaiya, Splendor ka self nahi chal raha.',
+        ['Splendor'],
+        opts,
+      ).ok,
+    ).toBe(true);
+    const hiRaw = 'ब्रेक सू घिस गया हे, 6301 बेरिंग भी बदलना है';
+    expect(meaningGuard(hiRaw, 'ब्रेक शू घिस गया है, 6301 बेयरिंग भी बदलना है।', [], opts).ok).toBe(true);
+    expect(
+      meaningGuard(hiRaw, 'ब्रेक शू घिस गया है, 6302 बेयरिंग भी बदलना है।', [], opts).failures,
+    ).toContain('number');
+  });
+
   it('length rule: ±30 % with a 12-character floor for short text', () => {
     const opts = { maxLengthChangePct: 30 };
     expect(meaningGuard('kya h', 'kya hai', [], opts).ok).toBe(true);
@@ -203,7 +220,7 @@ describe('smart correction: masking and the request (SR-28)', () => {
     ['fullwidth digits', 'call ９８７６５４３２１０ kro'],
     ['Bengali digits', 'call ৯৮৭৬৫৪৩২১০ kro'],
     ['a single Gujarati digit', 'part ૬ lagao'],
-    ['zero-width joiners between digits', 'call 98765‍43​210 kro'],
+    ['zero-width joiners between digits', 'call 98765\u200d43\u200b210 kro'],
     ['spaced digits with dots', 'call 9 8 7 6 5 . . . 4 3 2 1 0'],
     ['a long dash run', 'call 98765—————43210'],
     ['keycap digits', 'call 9️⃣8️⃣7️⃣6️⃣5️⃣4️⃣3️⃣2️⃣1️⃣0️⃣'],
