@@ -156,6 +156,21 @@ describe('ranking and the matched size', () => {
   });
 });
 
+describe('the size lookup is indexable (rule 14)', () => {
+  it('can use the trigram index on size_compact (a table this small prefers a scan unless forced)', async () => {
+    const run = async (force: boolean) => {
+      if (force) await client.exec('set enable_seqscan = off');
+      const res = await client.query<{ 'QUERY PLAN': string }>(
+        `explain select v.product_id from product_variants v
+         where v.status = 'active' and (v.size_compact like '%909012%' or v.size_compact like '%9090R12%')`,
+      );
+      if (force) await client.exec('reset enable_seqscan');
+      return res.rows.map((r) => r['QUERY PLAN']).join('\n');
+    };
+    expect(await run(true)).toContain('product_variants_size_compact_trgm_idx');
+  });
+});
+
 describe('the suggestions use the same search', () => {
   it('"90/90-12" suggests the product', async () => {
     const out = await suggestCatalogue(t(), { q: '90/90-12', locale: 'en', cityCode: 'RPR' });

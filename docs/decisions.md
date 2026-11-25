@@ -1958,3 +1958,11 @@ Colour may carry meaning in admin data (rule 2: a new colour needs an entry; thi
 - **Charts** are hand-made SVG (not Recharts) with one series each, so the `dataviz` rule "one hue per measure" applies instead of a categorical palette: counts blue, money green, visitors the brand orange, funnel blue; hover bar ink; every chart keeps its text readout, keyboard keys and table view. Marks are at least 3:1 on the card in both themes (tokens test).
 - **Tables and lists:** coloured status badges, queue counts as badges (amber, amber, blue, green, red, grey), refund amounts in red (money going out) and an overdue refund row on the soft red tint with a red "Overdue" badge. No other money is coloured.
 - Not done: coloured money in order tables (no negative amounts exist there), per-chart categorical palettes (none has two series).
+
+## 2026-11-25 - Search by size: every active size is searchable, the card says so, the picker shows sizes as tiles (user: "the different sizes of the same product does it show even if i search any of the size and it would open that product? and it would also like tell that the product exists so the customer wont be confused and also improve the way in which u show them")
+
+- **Ruling.** A product is found by any of its active sizes, in any spacing; results say which size matched; the link opens the product with that size chosen. Spec 02 "Search by size".
+- **Migration `0086_variant_size_search` (written, NOT applied):** `product_variants.size_compact` kept by a trigger from `options` + pack (function `variant_size_compact`), backfill without bumping `version`, trigram GIN index. Apply with the next release (migrations first).
+- **Ranking change:** `SEARCH_WEIGHTS.tyreSize` 1 -> 3, so a size match outranks a brand-only match. A size-only query now filters on the size (it found nothing before).
+- **API additions (additive):** `matchedSizes` on catalogue cards, `matchedSize` on suggestions. Analytics `search_size_match_clicked`.
+- **Not built:** the card line "N sizes . range" (needs an API size-range field); queued as an improvement, no user decision needed.

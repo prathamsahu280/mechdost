@@ -45,7 +45,15 @@ describe('groupSizesByRim', () => {
     expect(groupSizesByRim(['1 L', '2 L', '3.5 L', '4 L', '5 L', '7.5 L', '10 L'].map(s))).toBeNull();
     expect(
       groupSizesByRim(
-        ['90/90-12 a', '100/90-12 b', '110/90-12 c', '120/80-12 d', '130/70-12 e', '140/70-12 f'].map(s),
+        [
+          '90/90-12 a',
+          '100/90-12 b',
+          '110/90-12 c',
+          '120/80-12 d',
+          '130/70-12 e',
+          '140/70-12 f',
+          '150/70-12 g',
+        ].map(s),
       ),
     ).toBeNull();
   });
