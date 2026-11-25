@@ -65,5 +65,18 @@ export default tseslint.config(
     ],
     rules: { 'no-console': 'off' },
   },
+  {
+    // Ustaad Network (spec 23 SR-26): member-written text is always rendered as escaped text, never as HTML.
+    files: ['apps/web/src/components/ustaad/**/*.tsx', 'apps/web/src/app/\\[locale\\]/ustaad/**/*.tsx'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "JSXAttribute[name.name='dangerouslySetInnerHTML']",
+          message: 'No dangerouslySetInnerHTML in the Ustaad Network (SR-26): render text, never HTML.',
+        },
+      ],
+    },
+  },
   prettier,
 );

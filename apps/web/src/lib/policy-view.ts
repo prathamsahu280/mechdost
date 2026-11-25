@@ -22,6 +22,7 @@ export const POLICY_PATH: Record<PolicyKey, string> = {
   'policy.returns': '/policies/returns',
   'policy.delivery': '/policies/delivery',
   'policy.service': '/policies/service-terms',
+  'policy.terms': '/terms',
 };
 
 /** The built-in section keys of each policy page, in page order (the `policies.<page>.<key>Title/Body` texts). */
@@ -40,6 +41,15 @@ export const POLICY_PAGES: Record<
       { key: 'errors', emoji: '🛠️' },
       { key: 'safe', emoji: '🔒' },
       { key: 'rights', emoji: '✋' },
+      // Ustaad Network (spec 23 § 13, 2026-11-26): mechanics only.
+      { key: 'ustaad', emoji: '🔧' },
+      { key: 'ustaadAudience', emoji: '👥' },
+      { key: 'ustaadLocation', emoji: '📍' },
+      { key: 'ustaadCorrection', emoji: '✍️' },
+      { key: 'ustaadModeration', emoji: '🛡️' },
+      { key: 'ustaadRetention', emoji: '🗓️' },
+      { key: 'ustaadConsents', emoji: '✅' },
+      { key: 'ustaadGrievance', emoji: '📮' },
     ],
   },
   'policy.delivery': {
@@ -61,6 +71,28 @@ export const POLICY_PAGES: Record<
       { key: 'unfulfilled', emoji: '↩️' },
       { key: 'refunds', emoji: '💳' },
       { key: 'coins', emoji: '🪙' },
+    ],
+  },
+  'policy.terms': {
+    namespace: 'policies.terms',
+    sections: [
+      { key: 'who', emoji: '🏢' },
+      { key: 'account', emoji: '👤' },
+      { key: 'orders', emoji: '🛒' },
+      { key: 'payments', emoji: '💳' },
+      { key: 'returns', emoji: '🔁' },
+      { key: 'services', emoji: '🔧' },
+      { key: 'coins', emoji: '🪙' },
+      { key: 'messages', emoji: '💬' },
+      { key: 'use', emoji: '✅' },
+      { key: 'partners', emoji: '🤝' },
+      { key: 'ustaad', emoji: '🧰' },
+      { key: 'ustaadContent', emoji: '📸' },
+      { key: 'ustaadEnforcement', emoji: '🛡️' },
+      { key: 'liability', emoji: '⚖️' },
+      { key: 'privacy', emoji: '🔒' },
+      { key: 'changes', emoji: '📝' },
+      { key: 'contact', emoji: '📞' },
     ],
   },
   'policy.service': {
@@ -118,7 +150,7 @@ export function builtInPolicy(messages: unknown, key: PolicyKey, today: string):
   return title && sections.length > 0 ? { title, lead: textOf(node.lead), updatedOn: today, sections } : null;
 }
 
-/** Keys of the four editable policies, for the editor's list. */
+/** Keys of the editable policies, for the editor's list. */
 export const EDITABLE_POLICIES: readonly PolicyKey[] = POLICY_KEYS;
 
 /** A blank document to start from (when the built-in text cannot be copied). */

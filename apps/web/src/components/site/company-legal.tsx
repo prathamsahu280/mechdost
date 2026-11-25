@@ -1,6 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import type { Locale } from '@/i18n/routing';
 import { companyFactsFor } from '@/lib/company-facts';
+import { site } from '@/lib/site';
 
 /**
  * Server-only pieces of the footer's legal block, filled from the admin's company details (design 2026-11-15 item
@@ -75,14 +76,22 @@ export async function CompanyCopyright({ locale }: { locale: Locale }) {
   );
 }
 
-/** The grievance officer card under a policy page; renders nothing until the admin fills a detail. */
+/**
+ * The grievance officer card under a policy page (IT Rules 2021, spec 23 § 13). Until the admin fills the details
+ * (Admin → Settings → Company details; Q-U4), it says "To be announced" and gives the MechDost support line and email,
+ * so a complaint always has somewhere to go.
+ */
 export async function GrievanceOfficer({ locale }: { locale: Locale }) {
   const [c, facts] = await Promise.all([
     getTranslations({ locale, namespace: 'siteCompany' }),
     companyFactsFor(locale),
   ]);
-  const g = facts.grievance;
-  if (!g) return null;
+  const g = facts.grievance ?? {
+    name: c('grievanceTba'),
+    email: site.supportEmail,
+    phone: site.supportPhoneE164,
+  };
+  const pending = !facts.grievance;
   return (
     <section
       aria-labelledby="grievance-officer"
@@ -92,6 +101,7 @@ export async function GrievanceOfficer({ locale }: { locale: Locale }) {
         {c('grievanceTitle')}
       </h2>
       <p className="mt-1 text-sm leading-relaxed text-muted">{c('grievanceLead')}</p>
+      {pending ? <p className="mt-1 text-sm leading-relaxed text-muted">{c('grievanceTbaNote')}</p> : null}
       <ul className="mt-3 grid gap-1 text-sm text-ink">
         {g.name ? <li className="font-bold">{g.name}</li> : null}
         {g.email ? (
