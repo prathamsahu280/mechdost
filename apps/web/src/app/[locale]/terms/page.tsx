@@ -5,6 +5,9 @@ import { PolicySections } from '@/components/ui/policy-sections';
 import type { Locale } from '@/i18n/routing';
 import { alternatesFor } from '@/lib/seo';
 import { companyFacts } from '@/lib/site';
+import { GrievanceOfficer } from '@/components/site/company-legal';
+import { PublishedPolicy } from '@/components/ui/published-policy';
+import { publishedPolicy } from '@/lib/site-config-content';
 
 interface Props {
   params: Promise<{ locale: Locale }>;
@@ -13,9 +16,10 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'policies.terms' });
+  const published = await publishedPolicy('policy.terms', locale);
   return {
-    title: t('title'),
-    description: t('lead'),
+    title: published?.title ?? t('title'),
+    description: published?.lead ?? t('lead'),
     alternates: alternatesFor('/terms', locale),
   };
 }
@@ -31,6 +35,10 @@ const SECTIONS = [
   { key: 'messages', emoji: '💬' },
   { key: 'use', emoji: '✅' },
   { key: 'partners', emoji: '🤝' },
+  // Ustaad Network rules (spec 23 § 13, 2026-11-26).
+  { key: 'ustaad', emoji: '🧰' },
+  { key: 'ustaadContent', emoji: '📸' },
+  { key: 'ustaadEnforcement', emoji: '🛡️' },
   { key: 'liability', emoji: '⚖️' },
   { key: 'privacy', emoji: '🔒' },
   { key: 'changes', emoji: '📝' },
@@ -47,6 +55,18 @@ const SECTIONS = [
 export default async function TermsPage({ params }: Props) {
   const { locale } = await params;
   const t = await getTranslations('policies.terms');
+  // Admin-editable since 2026-11-26 (policy.terms); the built-in text below until a version is published.
+  const published = await publishedPolicy('policy.terms', locale);
+  if (published)
+    return (
+      <PublishedPolicy
+        doc={published}
+        locale={locale}
+        eyebrow={t('eyebrow')}
+        help={t('help')}
+        track="policy_terms_call"
+      />
+    );
   const { company, registeredAddress } = companyFacts(locale);
   return (
     <Container className="py-12 tab:py-16">
@@ -61,6 +81,7 @@ export default async function TermsPage({ params }: Props) {
         updated={t('updated')}
         track="policy_terms_call"
       />
+      <GrievanceOfficer locale={locale} />
     </Container>
   );
 }

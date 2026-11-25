@@ -44,10 +44,13 @@ class MemoryHost implements MediaHost {
     if (!o) return Promise.reject(new Error('missing'));
     return Promise.resolve(o.bytes.subarray(start, end + 1));
   }
+  /** Test hook: runs after every copy (an attacker re-uploading to the URL they were given). */
+  afterCopy: ((from: string) => void) | null = null;
   copy(from: UstaadMediaBucket, key: string, to: UstaadMediaBucket, toKey: string) {
     const o = this.objects.get(this.k(from, key));
     if (!o) return Promise.reject(new Error('missing'));
     this.objects.set(this.k(to, toKey), o);
+    this.afterCopy?.(this.k(from, key));
     return Promise.resolve();
   }
   presignGet(bucket: UstaadMediaBucket, key: string, ttlSec: number) {
@@ -189,6 +192,54 @@ describe('Ustaad media API', () => {
     expect((r.body.error.details as { reason: string }).reason).toBe('size_mismatch');
     const [row] = await ctx.db.select().from(s.ustaadMedia).where(eq(s.ustaadMedia.id, id));
     expect(row?.status).toBe('rejected');
+  });
+
+  it('bytes other than the declared sha256 are rejected (hash_mismatch)', async () => {
+    const other = new Uint8Array(photo);
+    other[other.length - 3] = (other[other.length - 3] ?? 0) ^ 0xff;
+    const d = await call(owner, 'POST', '/ustaad/media', {
+      kind: 'image',
+      mime: 'image/jpeg',
+      bytes: photo.byteLength,
+      sha256: sha(photo),
+    });
+    host.upload((d.body.put as { url: string }).url, other, 'image/jpeg');
+    const r = await call(owner, 'POST', `/ustaad/media/${String(d.body.mediaId)}/complete`, {});
+    expect(r.status).toBe(422);
+    expect((r.body.error.details as { reason: string }).reason).toBe('hash_mismatch');
+  });
+
+  it('a file swapped at the upload URL during verification never becomes the live file (TOCTOU)', async () => {
+    const d = await call(owner, 'POST', '/ustaad/media', {
+      kind: 'image',
+      mime: 'image/jpeg',
+      bytes: photo.byteLength,
+      sha256: sha(photo),
+    });
+    const put = d.body.put as { url: string };
+    host.upload(put.url, photo, 'image/jpeg');
+    const evil = new TextEncoder().encode('<!DOCTYPE html><html>swapped</html>');
+    // The moment the server has taken its private copy, the attacker overwrites the upload URL again.
+    let swapped = false;
+    host.afterCopy = (from) => {
+      if (from.startsWith('quarantine:') && !swapped) {
+        host.upload(put.url, evil, 'image/jpeg');
+        swapped = true;
+      }
+    };
+    const r = await call(owner, 'POST', `/ustaad/media/${String(d.body.mediaId)}/complete`, {});
+    host.afterCopy = null;
+    expect(swapped).toBe(true);
+    expect(r.status).toBe(200);
+    const live = [...host.objects.entries()].filter(([k]) => k.startsWith('media:'));
+    for (const [, o] of live) expect(new TextDecoder().decode(o.bytes)).not.toContain('swapped');
+    // Nothing the client can still write to is ever promoted: the upload key holds the attacker's bytes, unused.
+    const [row] = await ctx.db
+      .select()
+      .from(s.ustaadMedia)
+      .where(eq(s.ustaadMedia.id, String(d.body.mediaId)));
+    expect(row?.status).toBe('verified');
+    expect(row?.bucket).toBe('media');
   });
 
   it('an HTML file renamed .jpg is rejected by its magic bytes (AT-UP-2)', async () => {

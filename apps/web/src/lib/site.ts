@@ -9,6 +9,8 @@ export const site = {
   registeredAddress: 'C-605 Salasar Greens, Sarona, Tatibandh, Raipur 492099',
   supportPhone: '7978776551',
   supportPhoneE164: '+917978776551',
+  /** Support mailbox (the account emails already name it); the grievance card shows it until Q-U4 is answered. */
+  supportEmail: 'support@mechdost.com',
   whatsappNumber: '917978776551',
   defaultCity: 'raipur',
   /** Coverage name in copy (user 2026-11-22: Chhattisgarh, not Raipur): key into the `regions` locale namespace. */

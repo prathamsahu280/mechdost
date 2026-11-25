@@ -29,8 +29,20 @@ const SettingsApi = dynamic(() => import('./admin-settings-api').then((m) => m.S
  * Admin → Settings (spec 08 "Settings", design 2026-11-24): every operational setting in one categorised screen.
  * Real sign-in builds edit the API's registry (`admin-settings-api.tsx`); the browser demo edits the demo store here.
  */
+/** The Ustaad Network access switch (spec 23, founder 2026-11-26), on the API only; G1 moves it into Admin → Ustaad. */
+const UstaadAccess = dynamic(() => import('./admin-ustaad-access').then((m) => m.AdminUstaadAccess), {
+  ssr: false,
+});
+
 export function AdminSettings({ actor }: { actor: string }) {
-  return AUTH_MODE === 'firebase' ? <SettingsApi /> : <DemoSettings actor={actor} />;
+  return AUTH_MODE === 'firebase' ? (
+    <>
+      <UstaadAccess />
+      <SettingsApi />
+    </>
+  ) : (
+    <DemoSettings actor={actor} />
+  );
 }
 
 /** `money`: stored in paise, edited in rupees. `percent`: stored in basis points, edited in %. */

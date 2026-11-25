@@ -60,7 +60,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             'shopGiveUp',
             'supportThread',
             'storefront',
-            // Admin → Ustaad Network (spec 23, task G1): only the admin parts of the network's namespace.
+            // Admin → Ustaad Network (spec 23, task G1) and the access switch in Admin → Settings (A): only the admin
+            // parts of the network's namespace, not the member screens' texts.
             'ustaad.admin',
             'ustaad.adminAccess',
           ]}

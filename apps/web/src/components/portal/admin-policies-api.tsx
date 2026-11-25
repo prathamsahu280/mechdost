@@ -93,6 +93,7 @@ const POLICY_LABEL = {
   'policy.returns': 'pol_name_returns',
   'policy.delivery': 'pol_name_delivery',
   'policy.service': 'pol_name_service',
+  'policy.terms': 'pol_name_terms',
 } as const satisfies Record<PolicyKey, string>;
 
 export function PoliciesApi() {

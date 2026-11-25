@@ -54,6 +54,18 @@ export async function publishedRoadside(): Promise<{ enabled: boolean; alwaysOpe
   };
 }
 
+/**
+ * Who may open the Ustaad Network (`ustaad.access`, founder 2026-11-26): `off` makes every `/ustaad` page a real 404;
+ * `staff_preview` (the default) and `open` render the shell and let the client gate decide (the API is the boundary).
+ * The browser demo has no API: it is always the staff preview. An unreachable API counts as `off` (fail closed).
+ */
+export async function publishedUstaadAccess(): Promise<'off' | 'staff_preview' | 'open'> {
+  if (DATA_MODE !== 'api') return 'staff_preview';
+  const body = await readJson('/v1/ustaad-access', {}, 'ustaad-access');
+  const v = field(body, 'access');
+  return v === 'staff_preview' || v === 'open' ? v : 'off';
+}
+
 /** The filled company details ('' = not filled). */
 export async function publishedCompany(): Promise<CompanyDetails> {
   const body = await readJson('/v1/company', {}, 'company');

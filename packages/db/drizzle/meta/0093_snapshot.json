@@ -1,6 +1,6 @@
 {
-  "id": "0aaff7ee-d30a-4cd1-8aa9-f4259091fc87",
-  "prevId": "8d47ed38-a058-4dda-8988-2ef5a018a9cd",
+  "id": "e1949307-9737-4072-b188-8c9c4e151ab4",
+  "prevId": "a365561e-282d-490e-aaa2-ba26005a6918",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -24546,7 +24546,7 @@
         },
         "ustaad_media_reject_reason_valid": {
           "name": "ustaad_media_reject_reason_valid",
-          "value": "\"ustaad_media\".\"reject_reason_code\" is null or \"ustaad_media\".\"reject_reason_code\" in ('size_mismatch','type_mismatch','magic_mismatch','too_long','too_large','location_atom','external_reference','decompression_bomb','expired_upload','unreadable')"
+          "value": "\"ustaad_media\".\"reject_reason_code\" is null or \"ustaad_media\".\"reject_reason_code\" in ('size_mismatch','type_mismatch','magic_mismatch','too_long','too_large','location_atom','external_reference','decompression_bomb','expired_upload','unreadable','hash_mismatch')"
         },
         "ustaad_media_rejected_reason": {
           "name": "ustaad_media_rejected_reason",
