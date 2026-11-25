@@ -64,6 +64,11 @@ export const CatalogueCardSchema = z.object({
   ...cardFields,
   offer: CatalogueOfferSchema.nullable(),
   photo: CataloguePhotoSchema.nullable(),
+  /** The sizes the search named (at most 3, localised label + SKU), so the card can say they exist; else empty. */
+  matchedSizes: z
+    .array(z.object({ label: z.string(), sku: z.string() }))
+    .max(3)
+    .default([]),
 });
 
 export const CataloguePageSchema = z.object({

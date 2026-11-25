@@ -98,6 +98,7 @@ function useSearchData(locale: string, roadside: boolean): SearchData {
       suggestions: c('searchSuggestions'),
       count: c('searchCount', { count: '{count}' }),
       seeAll: c('searchSeeAll', { query: '{query}' }),
+      sizeAvailable: c('searchSizeAvailable', { size: '{size}' }),
       esc: c('searchEsc'),
       hint: c('searchHint'),
       kind: {

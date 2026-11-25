@@ -616,6 +616,11 @@ export const CLIENT_EVENT_SCHEMAS = {
       position: z.number().int().min(1).max(8),
     })
     .strict(),
+  // Search by size (2026-11-25): a product found by one of its sizes was opened from the suggestions or the results
+  // with that size preselected. Slug and SKU only (no query text), so it can be joined to `product_size_selected`.
+  search_size_match_clicked: z
+    .object({ slug: id, sku: z.string().min(1).max(64), source: z.enum(['suggest', 'results']) })
+    .strict(),
   search_zero_results: z
     .object({
       query: z

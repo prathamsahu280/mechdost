@@ -33,6 +33,8 @@ export interface ChosenSuggestion {
   slug: string;
   label: string;
   position: number;
+  /** The SKU of the size the words named (a product found by its size), else null. */
+  sizeSku: string | null;
 }
 
 const DEBOUNCE_MS = 150;
@@ -94,6 +96,7 @@ export default function SearchSuggest({
             label: s.label,
             slug: s.slug,
             subtitle: s.subtitle,
+            matchedSize: null,
             photo: null,
           }));
         }
@@ -117,7 +120,13 @@ export default function SearchSuggest({
     const item = items[i];
     if (!item) return;
     setDismissed(true);
-    onChoose({ kind: item.kind, slug: item.slug, label: item.label, position: i + 1 });
+    onChoose({
+      kind: item.kind,
+      slug: item.slug,
+      label: item.label,
+      position: i + 1,
+      sizeSku: item.matchedSize?.sku ?? null,
+    });
   };
   const chooseRef = useRef(choose);
   useEffect(() => {
@@ -212,6 +221,11 @@ export default function SearchSuggest({
                 <span className="block truncate font-bold">{item.label}</span>
                 {item.subtitle ? (
                   <span className="block truncate text-xs text-muted">{item.subtitle}</span>
+                ) : null}
+                {item.matchedSize ? (
+                  <span className="block truncate text-xs font-bold text-success">
+                    {t('sizeAvailable', { size: item.matchedSize.label })}
+                  </span>
                 ) : null}
               </span>
               <span className="shrink-0 text-xs font-bold text-muted">{kindLabel(item.kind)}</span>

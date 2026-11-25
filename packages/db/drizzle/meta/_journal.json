@@ -589,6 +589,13 @@
       "when": 1795592864306,
       "tag": "0085_notice_inbox",
       "breakpoints": true
+    },
+    {
+      "idx": 86,
+      "version": "7",
+      "when": 1795605679210,
+      "tag": "0086_variant_size_search",
+      "breakpoints": true
     }
   ]
 }

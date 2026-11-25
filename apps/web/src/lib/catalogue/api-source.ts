@@ -112,7 +112,10 @@ export async function fetchCatalogueProduct(slug: string, locale: Locale): Promi
   return apiProduct(CatalogueProductSchema.parse(await res.json()), locale);
 }
 
-export function apiCard(c: CatalogueCard): CardView {
+/** A card as the list API sends it; the product page's own payload has no `matchedSizes` (no search behind it). */
+type ApiCard = Omit<CatalogueCard, 'matchedSizes'> & Partial<Pick<CatalogueCard, 'matchedSizes'>>;
+
+export function apiCard(c: ApiCard): CardView {
   return {
     slug: c.slug,
     sku: c.offer?.sku ?? null,
@@ -130,6 +133,7 @@ export function apiCard(c: CatalogueCard): CardView {
     pack: c.offer?.netQuantity ?? null,
     availability: c.offer ? 'in_stock' : 'on_request',
     sizes: c.sizeCount > 1 ? { count: c.sizeCount, fromPaise: c.offer?.pricePaise ?? null } : null,
+    matchedSizes: c.matchedSizes ?? [],
     mrpFrom: c.mrpFromPaise === null ? null : { paise: c.mrpFromPaise, varies: c.mrpVaries },
     leadDays: c.offer?.leadDays ?? null,
     highlights: c.highlights,

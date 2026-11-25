@@ -172,7 +172,7 @@ export const SEARCH_WEIGHTS = {
   packSize: 0.8,
   batteryAh: 1,
   voltage: 0.5,
-  tyreSize: 1,
+  tyreSize: 3,
   partNumber: 1,
   vehicleIntent: 1.5,
   categoryIntent: 0.4,

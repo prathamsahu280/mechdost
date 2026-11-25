@@ -515,7 +515,12 @@
     "sizesOnly": "{count} sizes",
     "chooseSize": "Choose size",
     "adminEdit": "Edit {name}",
-    "adminEditTip": "Edit in the catalogue admin"
+    "adminEditTip": "Edit in the catalogue admin",
+    "sizeAvailable": "Size {size} available",
+    "sizesAvailable": "Sizes available: {sizes}",
+    "sizeOpened": "Showing size {size}, the one you were looking for.",
+    "sizeGroupRim": "{rim} inch",
+    "sizeGroupOther": "Other sizes"
   },
   "compare": {
     "toggle": "Compare",
@@ -6016,6 +6021,7 @@
     "searchSuggestions": "Suggestions",
     "searchCount": "{count} suggestions",
     "searchSeeAll": "See all results for “{query}”",
+    "searchSizeAvailable": "Size {size} available",
     "searchEsc": "Esc",
     "searchHint": "Type at least 2 letters for suggestions, or press Enter to search.",
     "popular1": "20W-40 bike oil",

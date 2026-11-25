@@ -515,7 +515,12 @@
     "sizesOnly": "{count} साइज़",
     "chooseSize": "साइज़ चुनें",
     "adminEdit": "{name} बदलें",
-    "adminEditTip": "कैटलॉग एडमिन में बदलें"
+    "adminEditTip": "कैटलॉग एडमिन में बदलें",
+    "sizeAvailable": "साइज़ {size} उपलब्ध है",
+    "sizesAvailable": "उपलब्ध साइज़: {sizes}",
+    "sizeOpened": "साइज़ {size} दिखाया जा रहा है, जो आप ढूँढ रहे थे।",
+    "sizeGroupRim": "{rim} इंच",
+    "sizeGroupOther": "अन्य साइज़"
   },
   "compare": {
     "toggle": "तुलना करें",
@@ -6016,6 +6021,7 @@
     "searchSuggestions": "सुझाव",
     "searchCount": "{count} सुझाव",
     "searchSeeAll": "“{query}” के सभी नतीजे देखें",
+    "searchSizeAvailable": "साइज़ {size} उपलब्ध है",
     "searchEsc": "Esc",
     "searchHint": "सुझावों के लिए कम से कम 2 अक्षर लिखें, या खोजने के लिए एंटर दबाएँ।",
     "popular1": "20W-40 बाइक ऑयल",

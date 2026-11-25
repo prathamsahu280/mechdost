@@ -13,7 +13,7 @@ import { NotFoundError } from './errors';
 import { productVisible } from './visibility';
 import { decodeCursor, encodeCursor, type CursorKind } from './cursor';
 import { localized } from './localized';
-import { buildSearchSql, parseCatalogueQuery } from './search-sql';
+import { buildSearchSql, parseCatalogueQuery, sizeMatchCondition } from './search-sql';
 import type { Tx } from './orders';
 import { num, numOrNull, rowsOf } from './sql-rows';
 
@@ -76,6 +76,8 @@ export interface CatalogueCard {
   mrpVaries: boolean;
   /** Active sizes (variants); more than one means the card says "from ₹X · N sizes" (user 2026-11-24). */
   sizeCount: number;
+  /** The sizes the search words named (at most 3, spec 02 "Search by size"); empty without a size in the query. */
+  matchedSizes: { label: string; sku: string }[];
   offer: CatalogueOffer | null;
   rating: { avg: number; count: number } | null;
   photo: CataloguePhoto | null;
@@ -207,6 +209,7 @@ interface CardRow {
   mrp_from: unknown;
   mrp_varies: unknown;
   size_count: unknown;
+  matched_sizes: { sku: string; options: Record<string, unknown> }[] | null;
   net_qty: unknown;
   net_unit: string | null;
   shipping: unknown;
@@ -237,6 +240,7 @@ function toCard(r: CardRow, locale: CatalogueLocale): CatalogueCard {
     mrpFromPaise: numOrNull(r.mrp_from),
     mrpVaries: r.mrp_varies === true,
     sizeCount: Math.max(1, num(r.size_count ?? 1)),
+    matchedSizes: (r.matched_sizes ?? []).map((m) => ({ label: variantLabel(m.options), sku: m.sku })),
     offer:
       price === null
         ? null
@@ -335,6 +339,15 @@ export async function listCatalogue(db: Tx, query: CatalogueQuery): Promise<Cata
   if (query.vehicleType) filters.push(sql`p.vehicle_types @> array[${query.vehicleType}]::text[]`);
   if (query.availableOnly) filters.push(sql`o.price is not null`);
 
+  // Which sizes the words named, only for the rows of the page (the subquery runs after the page is cut, and the
+  // trigram index on `size_compact` keeps it cheap); `null` when the query names no size.
+  const sizeCond = search ? sizeMatchCondition(search.parsed, 'ms') : null;
+  const matchedSizes = sizeCond
+    ? sql`(select jsonb_agg(jsonb_build_object('sku', x.sku, 'options', x.options)) from (
+        select ms.sku, ms.options from product_variants ms
+        where ms.product_id = pg.id and ${sizeCond} order by ms.mrp_paise nulls last, ms.sku limit 3) x)`
+    : sql`null::jsonb`;
+
   const key: Record<CatalogueSort, { expr: SQL; type: SQL; kind: CursorKind; dir: 'asc' | 'desc' }> = {
     relevance: {
       expr: search ? search.rank(sql`o.price is not null`) : sql`0::float8`,
@@ -378,7 +391,7 @@ export async function listCatalogue(db: Tx, query: CatalogueQuery): Promise<Cata
     pg as (
       select r.*, r.sort_key::text as sort_key_text from ranked r where ${after} order by ${order} limit ${limit + 1}
     )
-    select pg.*, ph.*, rv.* from pg ${cardExtras}
+    select pg.*, ph.*, rv.*, ${matchedSizes} as matched_sizes from pg ${cardExtras}
     order by ${order}`);
   const rows = rowsOf<CardRow>(result);
   const page = rows.slice(0, limit);
@@ -402,7 +415,7 @@ export interface CatalogueVariant {
   offer: (CatalogueOffer & { seller: string }) | null;
 }
 
-export interface CatalogueProduct extends Omit<CatalogueCard, 'offer' | 'photo'> {
+export interface CatalogueProduct extends Omit<CatalogueCard, 'offer' | 'photo' | 'matchedSizes'> {
   description: string | null;
   compatibility: string | null;
   spec: Record<string, unknown>;
@@ -528,7 +541,7 @@ export async function getCatalogueProduct(
       .then((r) => rowsOf<{ kind: string; value: string }>(r)),
   ]);
   const card = toCard(p, opts.locale);
-  const { offer: _offer, photo: _photo, ...base } = card;
+  const { offer: _offer, photo: _photo, matchedSizes: _matched, ...base } = card;
   const attributeSet = attributeSetFor(p.category_slug, p.parent_category_slug);
   return {
     ...base,

@@ -1969,3 +1969,11 @@ User: "during forgot password or anything that requires a code, if the code ente
 - **Security:** authority is the API (role-leak tests); visibility from the live `/v1/me` permissions (no new API field: `permissions` already exists), one request per account, none for guests; shop pages stay cacheable because nothing staff-only is in the server HTML (client wrapper + lazy chunk).
 - **Performance:** wrapper only in the shop bundles: /shop 174.0 to 174.3 KB gz, product page 175.1 to 175.5 KB gz (limit 180).
 - Placement: on the picture's top right (the ⓘ ♡ buttons stay on the category line, decision 2026-11-24). New event in spec 12. No new colour, font or radius.
+
+## 2026-11-25 - Search by size: every active size is searchable, the card says so, the picker shows sizes as tiles (user: "the different sizes of the same product does it show even if i search any of the size and it would open that product? and it would also like tell that the product exists so the customer wont be confused and also improve the way in which u show them")
+
+- **Ruling.** A product is found by any of its active sizes, in any spacing; results say which size matched; the link opens the product with that size chosen. Spec 02 "Search by size".
+- **Migration `0086_variant_size_search` (written, NOT applied):** `product_variants.size_compact` kept by a trigger from `options` + pack (function `variant_size_compact`), backfill without bumping `version`, trigram GIN index. Apply with the next release (migrations first).
+- **Ranking change:** `SEARCH_WEIGHTS.tyreSize` 1 -> 3, so a size match outranks a brand-only match. A size-only query now filters on the size (it found nothing before).
+- **API additions (additive):** `matchedSizes` on catalogue cards, `matchedSize` on suggestions. Analytics `search_size_match_clicked`.
+- **Not built:** the card line "N sizes . range" (needs an API size-range field); queued as an improvement, no user decision needed.

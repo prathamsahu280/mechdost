@@ -29,6 +29,8 @@ interface Row {
   subtitle: string | null;
   kind: SuggestItemDto['kind'] | 'all' | 'roadside';
   href: string;
+  /** The SKU of the size the words named (a product found by its size); null otherwise. */
+  sizeSku?: string | null;
 }
 
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled])';
@@ -70,9 +72,14 @@ export default function HeaderSearch({ data, onClose }: SearchPanelProps) {
             import('@/demo/i18n/hi-products'),
           ]);
           const label = (k: CategoryKey) => data.categoryLabels[k] ?? k;
-          next = demo
-            .demoSuggestions(typed, label, hi.PRODUCT_HI, locale)
-            .map((s) => ({ kind: s.kind, label: s.label, slug: s.slug, subtitle: s.subtitle, photo: null }));
+          next = demo.demoSuggestions(typed, label, hi.PRODUCT_HI, locale).map((s) => ({
+            kind: s.kind,
+            label: s.label,
+            slug: s.slug,
+            subtitle: s.subtitle,
+            photo: null,
+            matchedSize: null,
+          }));
         }
         if (ctl.signal.aborted) return;
         setItems(next.slice(0, SUGGEST_MAX));
@@ -89,7 +96,7 @@ export default function HeaderSearch({ data, onClose }: SearchPanelProps) {
   const shopHref = (q: string) => `${prefix}/shop?q=${encodeURIComponent(q)}`;
   const hrefFor = (item: SuggestItemDto) =>
     item.kind === 'product'
-      ? `${prefix}/shop/${item.slug}`
+      ? `${prefix}/shop/${item.slug}${item.matchedSize ? `?size=${encodeURIComponent(item.matchedSize.sku)}` : ''}`
       : item.kind === 'category'
         ? `${prefix}/shop?category=${encodeURIComponent(item.slug)}`
         : shopHref(item.label);
@@ -122,9 +129,16 @@ export default function HeaderSearch({ data, onClose }: SearchPanelProps) {
           ? items.map((item) => ({
               key: `${item.kind}:${item.slug}`,
               label: item.label,
-              subtitle: item.subtitle ?? null,
+              subtitle:
+                [
+                  item.subtitle,
+                  item.matchedSize ? copy.sizeAvailable.replace('{size}', item.matchedSize.label) : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · ') || null,
               kind: item.kind,
               href: hrefFor(item),
+              sizeSku: item.matchedSize?.sku ?? null,
             }))
           : []),
       ]
@@ -143,7 +157,15 @@ export default function HeaderSearch({ data, onClose }: SearchPanelProps) {
     if (row.kind === 'all') track('search', { query: typed, source: 'header' });
     else if (row.kind === 'roadside')
       track('click', { id: 'header_search_roadside', path: window.location.pathname });
-    else track('search_suggestion_selected', { kind: row.kind, position: Math.min(Math.max(i, 1), 8) });
+    else {
+      track('search_suggestion_selected', { kind: row.kind, position: Math.min(Math.max(i, 1), 8) });
+      if (row.kind === 'product' && row.sizeSku)
+        track('search_size_match_clicked', {
+          slug: row.key.slice('product:'.length),
+          sku: row.sizeSku,
+          source: 'suggest',
+        });
+    }
     go(row.href);
   }
 

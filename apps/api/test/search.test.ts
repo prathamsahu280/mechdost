@@ -9,6 +9,9 @@ import { seedRaipurDemo, type DemoFixture } from '@mechdost/db/demo-seed';
 import { ensureUser, grantRole, invalidateSearchVocab } from '@mechdost/db/repo';
 import { SuggestResponseSchema } from '@mechdost/shared/search-api';
 import { bearer, buildApp, type ErrorJson } from './helpers';
+import { CataloguePageSchema } from '@mechdost/shared/catalogue';
+import { productVariants } from '@mechdost/db/schema';
+import { eq } from '@mechdost/db/testing';
 
 const fixture = JSON.parse(
   readFileSync(fileURLToPath(new URL('../../../packages/db/seed/raipur-demo.json', import.meta.url)), 'utf8'),
@@ -57,6 +60,26 @@ describe('GET /v1/search/suggest', () => {
       await (await ctx.app.request('/v1/search/suggest?q=20w40%20bike')).json(),
     );
     expect(body.items.some((i) => i.kind === 'product' && /20W/i.test(i.label))).toBe(true);
+  });
+
+  it('a size finds the product and says which size matched (suggestions and listing)', async () => {
+    await ctx.db
+      .update(productVariants)
+      .set({ options: { size: '90/90-12', loadIndex: 54, speedRating: 'J', tlTt: 'TL' } })
+      .where(eq(productVariants.sku, 'TYR-SC-909012'));
+    const body = SuggestResponseSchema.parse(
+      await (await ctx.app.request('/v1/search/suggest?q=90/90-12')).json(),
+    );
+    const hit = body.items.find((i) => i.kind === 'product');
+    expect(hit?.matchedSize?.label).toContain('90/90-12');
+    expect(hit?.matchedSize?.sku).toBeTruthy();
+
+    const res = await ctx.app.request('/v1/catalogue/products?q=90%2090%2012');
+    const page = CataloguePageSchema.parse(await res.json());
+    const card = page.items.find((i) => i.slug === hit?.slug);
+    expect(card?.matchedSizes.length).toBeGreaterThan(0);
+    expect(card?.matchedSizes.length).toBeLessThanOrEqual(3);
+    expect(card?.matchedSizes[0]?.sku).toBe(hit?.matchedSize?.sku);
   });
 
   it('answers a miss with "did you mean"', async () => {

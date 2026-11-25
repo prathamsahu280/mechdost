@@ -5,6 +5,7 @@ import {
   compactAlnum,
   matchWords,
   parseSearchQuery,
+  tyreSizeKeys,
   type ParsedQuery,
   type SearchVocabEntry,
   type SearchVocabKind,
@@ -50,6 +51,27 @@ function partMatch(part: string, raw: string): SQL {
     where v2.product_id = p.id and (pn.normalised = ${part} or v2.sku = ${raw.trim().toUpperCase()}))`;
 }
 
+/**
+ * "This size of the product is what was searched" for the variant alias `v` (spec 02 "Search by size"): a tyre
+ * size against `size_compact` (trigram index, every spelling of the size) or the pack size against `net_qty` /
+ * `net_unit`. Null when the query names no size. Only active variants count.
+ */
+export function sizeMatchCondition(parsed: ParsedQuery, v: string): SQL | null {
+  const col = sql.raw(`${v}.size_compact`);
+  const own = sql.raw(v);
+  const forms: SQL[] = [];
+  if (parsed.tyreSize)
+    forms.push(
+      sql`(${sql.join(
+        tyreSizeKeys(parsed.tyreSize).map((k) => sql`${col} like ${`%${k}%`}`),
+        sql` or `,
+      )})`,
+    );
+  if (parsed.netQty)
+    forms.push(sql`(${own}.net_qty = ${parsed.netQty.qty} and ${own}.net_unit = ${parsed.netQty.unit})`);
+  return forms.length > 0 ? sql`(${own}.status = 'active' and (${sql.join(forms, sql` or `)}))` : null;
+}
+
 export interface SearchSql {
   /** The WHERE condition (a whole expression). */
   match: SQL;
@@ -77,7 +99,18 @@ export function buildSearchSql(parsed: ParsedQuery): SearchSql {
     });
   if (parsed.ah !== null) attrs.push({ cond: likeCompact(`${parsed.ah}AH`), weight: W.batteryAh });
   if (parsed.voltage !== null) attrs.push({ cond: likeCompact(`${parsed.voltage}V`), weight: W.voltage });
-  if (parsed.tyreSize) attrs.push({ cond: likeCompact(parsed.tyreSize), weight: W.tyreSize });
+  if (parsed.tyreSize) {
+    // The name may carry the size, or any active size (variant) of the product may be it.
+    const own = sql.join(
+      tyreSizeKeys(parsed.tyreSize).map((k) => sql`p.search_compact like ${`%${k}%`}`),
+      sql` or `,
+    );
+    const tyre = sizeMatchCondition({ ...parsed, netQty: null }, 'tv');
+    attrs.push({
+      cond: sql`(${own} or exists (select 1 from product_variants tv where tv.product_id = p.id and ${tyre ?? sql`false`}))`,
+      weight: W.tyreSize,
+    });
+  }
 
   const vehicle = parsed.vehicleType ? sql`p.vehicle_types @> array[${parsed.vehicleType}]::text[]` : null;
   const category = parsed.categorySlug
