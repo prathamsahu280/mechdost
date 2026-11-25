@@ -3,7 +3,6 @@
 import { ArrowRight, type LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { adminCard } from './admin-ui';
 
 /** Height shared by a tile and its loading placeholder, so the grid does not shift when the counts arrive. */
 export const OVERVIEW_TILE_HEIGHT = 'min-h-32';
@@ -29,6 +28,7 @@ const TONE: Record<TileTone, { card: string; number: string; chip: string }> = {
 };
 
 /**
+ * (Not `adminCard`: its `bg-surface` would fight the tint, and utility order decides which background wins.)
  * One Overview stat tile (design 2026-11-25): a coloured icon chip, the number (strong, in the tone's colour), its
  * label, and the queue it counts as the link. Amber and red tiles also say "Needs attention" in words (never colour
  * alone, WCAG 1.4.1). The label comes first in the DOM so the link reads "Orders to route, 3, Needs attention, View".
@@ -52,15 +52,17 @@ export function OverviewTile({
   return (
     <Link
       href={href}
-      className={`${adminCard} ${c.card} ${OVERVIEW_TILE_HEIGHT} press group flex h-full flex-col justify-between gap-2 hover:shadow-card-hover focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus`}
+      className={`rounded-card border p-4 shadow-card tab:p-5 ${c.card} ${OVERVIEW_TILE_HEIGHT} press group flex h-full flex-col justify-between gap-2 hover:shadow-card-hover focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus`}
     >
       <span className="order-2 block text-sm leading-snug text-ink [overflow-wrap:anywhere]">{label}</span>
       <span className="order-1 flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
-        <span className="flex items-center gap-2">
+        <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
           <span className={`grid size-9 shrink-0 place-items-center rounded-tile ${c.chip}`}>
             <Icon aria-hidden="true" className="size-[18px]" strokeWidth={2} />
           </span>
-          <span className={`font-heading text-3xl leading-none font-extrabold tabular-nums ${c.number}`}>
+          <span
+            className={`font-heading text-2xl leading-none tab:text-3xl font-extrabold tabular-nums ${c.number}`}
+          >
             {value}
           </span>
         </span>
