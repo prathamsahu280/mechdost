@@ -51,6 +51,8 @@ const API = (process.env.NEXT_PUBLIC_API_URL ?? '').replace(/\/$/, '');
 let auth: Auth | null = null;
 let confirmation: ConfirmationResult | null = null;
 let verifier: RecaptchaVerifier | null = null;
+/** A verifier made and rendered while the person types, not yet used for a send (see `warmRecaptcha`). */
+let warmed: { verifier: RecaptchaVerifier; host: HTMLElement } | null = null;
 
 function firebaseAuth(locale: string): Auth {
   if (!auth) {
@@ -83,6 +85,29 @@ export function warmFirebase(locale: string): void {
   void firebaseAuth(locale).authStateReady();
 }
 
+/**
+ * Make and render the invisible reCAPTCHA verifier for the phone code now, while the form is being filled in, so the
+ * send after the password step does not first load Google's script and render the widget (measured 2026-11-25: the
+ * code step felt slow). Nothing is sent: Firebase asks reCAPTCHA for a token and sends the SMS only inside
+ * `sendPhoneCode`, and the staff screen calls that only after the API verified the password. A no-op while a warm
+ * verifier waits or one is in use for a send. A render failure is dropped silently (the send then makes its own).
+ */
+export function warmRecaptcha(locale: string, containerId: string): void {
+  if (warmed?.host.isConnected || verifier) return;
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const a = firebaseAuth(locale);
+  container.replaceChildren();
+  const host = document.createElement('div');
+  container.appendChild(host);
+  const made = new RecaptchaVerifier(a, host, { size: 'invisible', badge: 'inline' });
+  warmed = { verifier: made, host };
+  made.render().catch(() => {
+    if (warmed?.verifier === made) warmed = null;
+    made.clear();
+  });
+}
+
 /** A closed reCAPTCHA challenge never settles the send: give up after this long (a11y review 2026-11-09). */
 const SEND_TIMEOUT_MS = 60_000;
 
@@ -99,15 +124,22 @@ export async function sendPhoneCode(
   const a = firebaseAuth(locale);
   try {
     verifier?.clear();
-    // A fresh host element per attempt: a retry on the same page that rendered into the container a cleared or
-    // abandoned verifier had used failed as "Sign-in isn't working right now" (real-API pass 3, 2026-11-16).
-    const container = document.getElementById(containerId);
-    if (!container)
-      throw Object.assign(new Error('recaptcha container missing'), { code: 'auth/internal-error' });
-    container.replaceChildren();
-    const host = document.createElement('div');
-    container.appendChild(host);
-    verifier = new RecaptchaVerifier(a, host, { size: 'invisible', badge: 'inline' });
+    const ready = warmed;
+    warmed = null;
+    if (ready?.host.isConnected) {
+      verifier = ready.verifier; // already rendered while the person typed
+    } else {
+      ready?.verifier.clear();
+      // A fresh host element per attempt: a retry on the same page that rendered into the container a cleared or
+      // abandoned verifier had used failed as "Sign-in isn't working right now" (real-API pass 3, 2026-11-16).
+      const container = document.getElementById(containerId);
+      if (!container)
+        throw Object.assign(new Error('recaptcha container missing'), { code: 'auth/internal-error' });
+      container.replaceChildren();
+      const host = document.createElement('div');
+      container.appendChild(host);
+      verifier = new RecaptchaVerifier(a, host, { size: 'invisible', badge: 'inline' });
+    }
     let timer: ReturnType<typeof setTimeout> | undefined;
     const timeout = new Promise<never>((_, reject) => {
       timer = setTimeout(() => {
@@ -211,7 +243,7 @@ async function api(path: string, init: RequestInit & { token?: string } = {}) {
 
 export type PasswordResult =
   | { ok: true; status: 'signed_in' }
-  | { ok: true; status: 'staff_code'; phone: string }
+  | { ok: true; status: 'staff_code'; phone: string; staffChallenge?: string }
   | {
       ok: false;
       reason:
@@ -226,7 +258,10 @@ export type PasswordResult =
 export async function passwordSignIn(input: {
   identifier: string;
   password: string;
-  turnstileToken: string;
+  /** The Cloudflare token; left out on the second staff call, which sends `staffChallenge` instead. */
+  turnstileToken?: string;
+  /** The signed challenge the first staff call returned (spec 01): stands in for a second Cloudflare check. */
+  staffChallenge?: string;
   locale: string;
   phoneToken?: boolean;
 }): Promise<PasswordResult> {
@@ -240,7 +275,8 @@ export async function passwordSignIn(input: {
         body: JSON.stringify({
           identifier: input.identifier,
           password: input.password,
-          turnstileToken: input.turnstileToken,
+          ...(input.turnstileToken ? { turnstileToken: input.turnstileToken } : {}),
+          ...(input.staffChallenge ? { staffChallenge: input.staffChallenge } : {}),
         }),
         ...(token ? { token } : {}),
       }).then(
@@ -255,10 +291,16 @@ export async function passwordSignIn(input: {
     status?: string;
     customToken?: string;
     phone?: string;
+    staffChallenge?: string;
     error?: { code?: string };
   };
   if (res.ok && body.status === 'staff_code' && body.phone)
-    return { ok: true, status: 'staff_code', phone: body.phone };
+    return {
+      ok: true,
+      status: 'staff_code',
+      phone: body.phone,
+      ...(body.staffChallenge ? { staffChallenge: body.staffChallenge } : {}),
+    };
   if (res.ok && body.status === 'signed_in' && body.customToken) {
     const customToken = body.customToken;
     // The one-hour custom token is still good after a network blink: try the exchange once more before failing.

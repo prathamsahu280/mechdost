@@ -15,6 +15,7 @@ interface TurnstileApi {
       language: string;
       callback: (token: string) => void;
       'error-callback': () => void;
+      'expired-callback': () => void;
       'before-interactive-callback': () => void;
       'after-interactive-callback': () => void;
     },
@@ -31,9 +32,12 @@ declare global {
 }
 
 const SCRIPT = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
-/** A check that has not answered by then (blocked or slow network) fails instead of leaving the form busy;
- *  not while a visible challenge waits for the person. */
-const GIVE_UP_MS = 20_000;
+/** A working widget is waited for this long before the form says "still checking" (calm status line). */
+export const SLOW_AFTER_MS = 8_000;
+/** Hard cap: a check that has not answered by then (blocked or very slow network) fails instead of leaving the
+ *  form busy. Not applied while a visible challenge waits for the person. A widget that reports an error or an
+ *  expired token fails at once, long before this (2026-11-25: the old 20 s cut off checks that were merely slow). */
+export const GIVE_UP_MS = 60_000;
 let loading: Promise<TurnstileApi> | null = null;
 let widget: { id: string; el: HTMLElement } | null = null;
 let pending: { resolve: (t: string) => void; reject: (e: Error) => void } | null = null;
@@ -43,6 +47,8 @@ let shown: (on: boolean) => void = () => undefined;
 let interactiveNow = false;
 /** Who hears "a visible challenge is up": the call that started the check, or the one that took it over. */
 let listener: (on: boolean) => void = () => undefined;
+/** Who hears "the check is slow but still working" (and that it is over). */
+let slowListener: (slow: boolean) => void = () => undefined;
 /** A check started ahead of the submit (first focus in the form): the token is waiting when the button is pressed. */
 let warm: { promise: Promise<string>; at: number; el: HTMLElement | null } | null = null;
 
@@ -86,9 +92,11 @@ export function prefetchTurnstileToken(
   containerId: string,
   locale: string,
   onInteractive: (shown: boolean) => void = () => undefined,
+  onSlow: (slow: boolean) => void = () => undefined,
 ): void {
   if (warm && tokenUsable(warm.at, Date.now()) && sameContainer(warm, containerId)) return;
   listener = onInteractive;
+  slowListener = onSlow;
   const promise = run(containerId, locale);
   const mine = { promise, at: Date.now(), el: document.getElementById(containerId) };
   warm = mine;
@@ -107,9 +115,11 @@ export async function turnstileToken(
   containerId: string,
   locale: string,
   onInteractive: (shown: boolean) => void = () => undefined,
+  onSlow: (slow: boolean) => void = () => undefined,
 ): Promise<string> {
   const held = warm;
   warm = null;
+  slowListener = onSlow;
   // A check started in a form that has been replaced (sign-in → "Forgot password") never answers: run a fresh one.
   if (held && tokenUsable(held.at, Date.now()) && sameContainer(held, containerId)) {
     listener = onInteractive;
@@ -137,22 +147,39 @@ export async function turnstileToken(
 async function run(containerId: string, locale: string): Promise<string> {
   let waitingForPerson = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
+  const state = { slowShown: false };
   const giveUp = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => {
-      if (!waitingForPerson) reject(new Error('turnstile timed out'));
-    }, GIVE_UP_MS);
+    const arm = (ms: number) => {
+      timer = setTimeout(() => {
+        // A visible challenge waits for the person: check again later instead of failing under their hands.
+        if (waitingForPerson) arm(5_000);
+        else reject(new Error('turnstile timed out'));
+      }, ms);
+    };
+    arm(GIVE_UP_MS);
   });
+  const slowTimer = setTimeout(() => {
+    if (waitingForPerson) return;
+    state.slowShown = true;
+    slowListener(true);
+  }, SLOW_AFTER_MS);
   try {
     return await Promise.race([
       issue(containerId, locale, (on) => {
         waitingForPerson = on;
         interactiveNow = on;
+        if (on && state.slowShown) {
+          state.slowShown = false;
+          slowListener(false);
+        }
         listener(on);
       }),
       giveUp,
     ]);
   } finally {
     clearTimeout(timer);
+    clearTimeout(slowTimer);
+    if (state.slowShown) slowListener(false);
     interactiveNow = false;
   }
 }
@@ -187,6 +214,10 @@ async function issue(
           },
           'error-callback': () => {
             pending?.reject(new Error('turnstile error'));
+            pending = null;
+          },
+          'expired-callback': () => {
+            pending?.reject(new Error('turnstile expired'));
             pending = null;
           },
           'before-interactive-callback': () => {
