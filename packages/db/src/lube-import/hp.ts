@@ -161,6 +161,8 @@ export interface HpPlanInput {
   pictureHash?: (file: string) => string | null;
   /** Rows of the researched pack list (`--packs`); none = every product keeps its Standard pack. */
   packs?: readonly CsvRow[];
+  /** Use the MRPs of the researched list (default false: no MRP from the research, user ruling 2026-11-25). */
+  packsMrp?: boolean;
 }
 
 const NAME_DECIDED: ReadonlySet<string> = new Set([
@@ -292,7 +294,9 @@ export function planHp(input: HpPlanInput): LubePlan {
 
   const merged = mergeItems(items);
 
-  const researched = input.packs ? applyResearchedPacks(merged, input.packs) : null;
+  const researched = input.packs
+    ? applyResearchedPacks(merged, input.packs, { mrp: input.packsMrp === true })
+    : null;
   if (researched && researched.research.unmatched.length > 0)
     checks.push({
       slug: '',
@@ -311,12 +315,13 @@ export function planHp(input: HpPlanInput): LubePlan {
 }
 
 /** The hp_lubricants folder: the products and grades CSVs and `pictures/…`. */
-export function planHpDir(dir: string, opts: { packs?: string } = {}): LubePlan {
+export function planHpDir(dir: string, opts: { packs?: string; packsMrp?: boolean } = {}): LubePlan {
   return planHp({
     products: readCsvFile(dir, 'hp_lubricants_products.csv'),
     grades: readCsvFile(dir, 'hp_lubricants_grades.csv'),
     pictureExists: pictureExistsIn(dir),
     pictureHash: pictureHashIn(dir),
+    packsMrp: opts.packsMrp,
     packs: opts.packs ? parseHpPacksCsv(readFileSync(opts.packs, 'utf8')) : undefined,
   });
 }

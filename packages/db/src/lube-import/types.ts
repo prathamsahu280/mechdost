@@ -99,6 +99,8 @@ export interface PackResearch {
   unreadable: { slug: string; pack: string }[];
   /** Rows that found no pack (blank size): nothing to import. */
   noData: number;
+  /** Rows not used: status other than pack_only or found, or a note saying the link was inferred. */
+  ignored: number;
 }
 
 export interface LubePlan extends BatteryPlan {

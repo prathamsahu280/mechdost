@@ -77,6 +77,8 @@ export function lubeReportBrand(opts: {
               `CSV rows for no planned product: ${String(plan.research.unmatched.length)}`,
               ...plan.research.unmatched.map((u) => `- ${u}`),
               '',
+              `Rows not used (status other than pack_only or found, or an inferred link): ${String(plan.research.ignored)}`,
+              '',
               `Rows that found no pack (nothing to import): ${String(plan.research.noData)}`,
               '',
               `Rows with an unreadable pack size: ${String(plan.research.unreadable.length)}`,

@@ -43,7 +43,7 @@ export interface BatteryCliBrand<P extends BatteryPlan> {
   stem: string;
   /** Where the Hindi dictionary lives (named in the error of a failed Hindi check). */
   hindiFile: string;
-  planDir(dir: string, opts?: { packs?: string }): P;
+  planDir(dir: string, opts?: { packs?: string; packsMrp?: boolean }): P;
   /** The brand takes a researched pack list (`--packs <csv>`; HP). */
   acceptsPacks?: boolean;
   hindiLeftovers(plan: P): { slug: string; field: string; words: string[] }[];
@@ -83,6 +83,8 @@ interface Args {
   staffUser?: string;
   /** Researched pack list (HP). */
   packs?: string;
+  /** Use the MRPs of the researched pack list (default off). */
+  packsMrp: boolean;
   concurrency: number;
   statusDir: string;
 }
@@ -94,6 +96,7 @@ function parseArgs(argv: string[], brand: { folder: string }): Args {
     planOnly: false,
     skipPhotos: false,
     skipPhotoFiles: new Set(),
+    packsMrp: false,
     concurrency: 3,
     statusDir: fileURLToPath(new URL('../../../../docs/catalogue', import.meta.url)),
   };
@@ -111,7 +114,11 @@ function parseArgs(argv: string[], brand: { folder: string }): Args {
     else if (flag === '--skip-photos-for') addSkipFiles(a.skipPhotoFiles, next());
     else if (flag === '--staff-user') a.staffUser = next();
     else if (flag === '--packs') a.packs = next();
-    else if (flag === '--concurrency') a.concurrency = Math.min(Math.max(Number(next()), 1), 6);
+    else if (flag === '--packs-mrp') {
+      const v = next();
+      if (v !== 'on' && v !== 'off') throw new Error('--packs-mrp takes on or off');
+      a.packsMrp = v === 'on';
+    } else if (flag === '--concurrency') a.concurrency = Math.min(Math.max(Number(next()), 1), 6);
     else if (flag === '--status-dir') a.statusDir = next();
     else if (flag !== undefined) throw new Error(`Unknown option ${flag}`);
   }
@@ -177,7 +184,10 @@ export async function runBatteryImport<P extends BatteryPlan>(brand: BatteryCliB
     throw new Error('Refusing a real import with NODE_ENV=production unless ALLOW_PROD_IMPORT=yes');
   if (args.packs !== undefined && brand.acceptsPacks !== true)
     throw new Error(`--packs is not used by the ${brand.name} import`);
-  const plan = withoutSkippedPhotos(brand.planDir(args.dir, { packs: args.packs }), args.skipPhotoFiles);
+  const plan = withoutSkippedPhotos(
+    brand.planDir(args.dir, { packs: args.packs, packsMrp: args.packsMrp }),
+    args.skipPhotoFiles,
+  );
   if (args.skipPhotoFiles.size > 0) {
     const left = plan.products.reduce((n, p) => n + p.photos.length, 0);
     log(

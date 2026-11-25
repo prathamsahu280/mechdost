@@ -176,6 +176,7 @@ describe('HP import with researched packs', () => {
       }),
     ],
     grades: [],
+    packsMrp: true,
     packs: [
       row({
         plan_slug: 'hp-racer-pro-10w-30',
@@ -187,6 +188,7 @@ describe('HP import with researched packs', () => {
         source_url: 'https://example.test/p',
         checked_on: '2026-11-25',
         confidence: 'high',
+        status: 'found',
       }),
     ],
   });

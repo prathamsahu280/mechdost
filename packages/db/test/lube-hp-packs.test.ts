@@ -34,18 +34,21 @@ const HEADER =
   'plan_slug,product_name,grade,pack_label,net_qty,net_unit,mrp_inr,sale_price_inr,source_url,source_type,checked_on,confidence,status,note';
 const csv = [
   HEADER,
-  'hp-racer-10w-30,HP Racer,10W-30,1 L,1000,ml,480,450,https://a.test/r1,retailer,2026-11-25,high,ok,',
-  'hp-racer-10w-30,HP Racer,10W-30,900 ml,900,ml,400,350,https://a.test/r2,retailer,2026-11-25,medium,ok,',
-  'hp-racer-10w-30,HP Racer,10W-30,3.5 Litre,3.5,L,1500,1400,https://a.test/r3,marketplace,2026-11-25,low,ok,',
-  'hp-racer-20w-40,HP Racer,20W-40,1 L,1000,ml,500,,https://a.test/s1,retailer,2026-11-24,high,ok,',
-  'hp-racer-20w-40,HP Racer,20W-40,1 L,1000,ml,520,,https://b.test/s2,retailer,2026-11-25,high,ok,',
-  'hp-def,HP DEF,,10 L,10,L,,800,https://a.test/d,retailer,2026-11-25,high,ok,',
-  'hp-nothing,HP Nothing,,1 L,1000,ml,100,,https://a.test/n,retailer,2026-11-25,high,ok,',
+  'hp-racer-10w-30,HP Racer,10W-30,1 L,1000,ml,480,450,https://a.test/r1,retailer,2026-11-25,high,found,',
+  'hp-racer-10w-30,HP Racer,10W-30,900 ml,900,ml,400,350,https://a.test/r2,retailer,2026-11-25,medium,found,',
+  'hp-racer-10w-30,HP Racer,10W-30,3.5 Litre,3.5,L,1500,1400,https://a.test/r3,marketplace,2026-11-25,low,found,',
+  'hp-racer-20w-40,HP Racer,20W-40,1 L,1000,ml,500,,https://a.test/s1,retailer,2026-11-24,high,found,',
+  'hp-racer-20w-40,HP Racer,20W-40,1 L,1000,ml,520,,https://b.test/s2,retailer,2026-11-25,high,found,',
+  'hp-def,HP DEF,,10 L,10,L,,800,https://a.test/d,retailer,2026-11-25,high,pack_only,',
+  'hp-nothing,HP Nothing,,1 L,1000,ml,100,,https://a.test/n,retailer,2026-11-25,high,found,',
   'hp-ev-koolgard,HP EV Koolgard,,,,,,,,,2026-11-25,none,not_found,nothing found',
+  'hp-ev-koolgard,HP EV Koolgard,,1 L,1000,ml,,,https://a.test/e,retailer,2026-11-25,medium,found,inferred link from a sibling product',
+  'hp-def,HP DEF,,20 L,20,L,,,https://a.test/d2,retailer,2026-11-25,low,estimated,',
 ].join('\n');
 
 const packs = parseHpPacksCsv(csv);
-const plan = planHp({ products, grades: [], packs });
+const plan = planHp({ products, grades: [], packs, packsMrp: true });
+const noMrp = planHp({ products, grades: [], packs });
 const by = (slug: string) => {
   const p = plan.products.find((x) => x.slug === slug);
   if (!p) throw new Error(`no product ${slug}`);
@@ -105,12 +108,35 @@ describe('HP researched packs', () => {
 
   it('counts what the research gave', () => {
     expect(plan.research).toMatchObject({
-      rows: 8,
+      rows: 10,
       productsWithPacks: 3,
       packs: 5,
       withMrp: 2,
-      noData: 1,
+      noData: 0,
+      ignored: 3,
       unreadable: [],
     });
+  });
+});
+
+describe('HP researched packs with the MRP switched off (the default, user ruling 2026-11-25)', () => {
+  it('uses no MRP from the research at all, even from high and medium rows', () => {
+    for (const p of noMrp.products) for (const v of p.variants) expect(v.mrpPaise).toBeNull();
+    expect(
+      noMrp.products.find((p) => p.slug === 'hp-racer-10w-30')?.variants.map((v) => [v.model, v.mrpPaise]),
+    ).toEqual([
+      ['900 ml', null],
+      ['1 L', null],
+      ['3.5 L', null],
+    ]);
+    expect(noMrp.research).toMatchObject({ packs: 5, withMrp: 0, conflicts: [], lowConfidence: [] });
+  });
+
+  it('uses only the pack sizes of pack_only and found rows whose note does not say "inferred link"', () => {
+    const def = noMrp.products.find((p) => p.slug === 'hp-def');
+    expect(def?.variants.map((v) => v.model)).toEqual(['10 L']);
+    const ev = noMrp.products.find((p) => p.slug === 'hp-ev-koolgard');
+    expect(ev?.variants.map((v) => v.model)).toEqual(['Standard pack']);
+    expect(noMrp.research?.ignored).toBe(3);
   });
 });

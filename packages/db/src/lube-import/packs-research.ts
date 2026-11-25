@@ -30,9 +30,17 @@ const rupees = (text: string | undefined): number | null => {
 export function applyResearchedPacks(
   items: readonly LubeItem[],
   rows: readonly CsvRow[],
+  opts: { mrp: boolean } = { mrp: false },
 ): { items: LubeItem[]; research: PackResearch } {
   const bySlug = new Map<string, CsvRow[]>();
+  let ignored = 0;
   for (const r of rows) {
+    // User ruling 2026-11-25: only pack_only and found rows, and not a link inferred from another product.
+    const status = (r.status ?? '').trim().toLowerCase();
+    if ((status !== 'pack_only' && status !== 'found') || /inferred link/i.test(r.note ?? '')) {
+      ignored += 1;
+      continue;
+    }
     const slug = (r.plan_slug ?? '').trim();
     bySlug.set(slug, [...(bySlug.get(slug) ?? []), r]);
   }
@@ -46,6 +54,7 @@ export function applyResearchedPacks(
     unmatched: [],
     unreadable: [],
     noData: 0,
+    ignored,
   };
   const known = new Set(items.map((i) => lubeSlug(i.name)));
   research.unmatched = [...bySlug.keys()].filter((s) => !known.has(s));
@@ -78,7 +87,7 @@ export function applyResearchedPacks(
       const accepted = new Set<number>();
       let low: number | null = null;
       for (const r of g.rows) {
-        const mrp = rupees(r.mrp_inr);
+        const mrp = opts.mrp ? rupees(r.mrp_inr) : null;
         if (mrp === null) continue;
         const conf = (r.confidence ?? '').trim().toLowerCase();
         if (conf === 'high' || conf === 'medium') accepted.add(mrp);

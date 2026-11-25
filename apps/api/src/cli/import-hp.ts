@@ -1,6 +1,6 @@
 /**
  * `pnpm db:import:hp --dir <hp_lubricants folder> [--dry-run | --plan-only] [--skip-photos]
- * [--skip-photos-for <names | @list.txt>] [--concurrency N] [--packs <researched csv>] [--staff-user <uuid>]` (user 2026-11-25; runbook
+ * [--skip-photos-for <names | @list.txt>] [--concurrency N] [--packs <researched csv> [--packs-mrp on|off]] [--staff-user <uuid>]` (user 2026-11-25; runbook
  * `docs/runbooks/catalogue-import.md` "HP and BPCL MAK lubricant imports"). Automotive only: industrial, marine,
  * railroad and stationary rows are skipped and listed in the report. HP shows no prices and no pack sizes, so every pack is
  * price on request. A picture the maker shows on many products is never used: that product is a draft.
