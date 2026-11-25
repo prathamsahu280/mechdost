@@ -6,6 +6,8 @@ import { serve } from '@hono/node-server';
 import { createDb, keepPoolWarm } from '@mechdost/db';
 import { loadKeyring, type Keyring } from '@mechdost/db/crypto';
 import { createApp } from './app';
+import { r2MediaHost } from './ustaad/media/r2';
+import { supabaseMediaHost } from './ustaad/media/supabase';
 import { createAnthropicProvider } from './assistant/provider';
 import { createFirebaseEmailActionLinks } from './auth/email-actions';
 import { createFirebaseVerifier } from './auth/firebase-verifier';
@@ -70,6 +72,18 @@ else
     note: 'SUPABASE_URL / SUPABASE_SECRET_KEY not set — job photos unavailable',
   });
 
+// Ustaad Network media (spec 23 § 10): R2 when its keys exist and MEDIA_HOST=r2, else Supabase Storage (Q-U1).
+const um = config.ustaadMedia;
+const mediaHost =
+  um.host === 'r2' && um.r2
+    ? r2MediaHost({ ...um.r2, buckets: um.buckets })
+    : um.supabase
+      ? supabaseMediaHost({ ...um.supabase, buckets: um.buckets })
+      : null;
+if (um.host === 'r2' && !um.r2)
+  log('warn', 'ustaad_media_r2_missing', { note: 'R2_* not set — using Supabase Storage' });
+if (!mediaHost) log('warn', 'ustaad_media_disabled', { note: 'no media host — Ustaad uploads answer 503' });
+
 const app = createApp({
   keyring,
   config,
@@ -93,6 +107,7 @@ const app = createApp({
   razorpay: config.razorpay ? httpRazorpay(config.razorpay.keyId, config.razorpay.keySecret) : null,
   sentryIssues: config.sentryIssues ? createSentryIssuesClient(config.sentryIssues) : null,
   photoStorage,
+  mediaHost,
   photoCache: config.photoCacheBytes > 0 ? createPhotoByteCache(config.photoCacheBytes) : null,
 });
 if (!config.firebaseApiKey || !config.turnstileSecret)

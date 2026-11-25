@@ -13,7 +13,13 @@ import {
   type UstaadMediaKind,
 } from '@mechdost/shared/ustaad/codes';
 import { istDateString } from '@mechdost/shared/time';
-import { ustaadBlocks, ustaadMedia, ustaadMediaTotals, ustaadMediaUsage } from '../../schema';
+import {
+  ustaadBlocks,
+  ustaadMedia,
+  ustaadMediaTotals,
+  ustaadMediaUsage,
+  ustaadMediaVariants,
+} from '../../schema';
 import { ConflictError, NotFoundError, ValidationError } from '../errors';
 import type { Tx } from '../orders';
 import { rowsOf } from '../sql-rows';
@@ -64,7 +70,7 @@ export interface DeclareMediaInput {
 }
 
 /** Caps from the settings for one kind (bytes and, for timed media, milliseconds). */
-async function capsFor(tx: Tx, kind: UstaadMediaKind) {
+export async function ustaadMediaCaps(tx: Tx, kind: UstaadMediaKind) {
   const s = await readUstaadSettingValues(tx, [
     'ustaad.media.image_max_mb',
     'ustaad.media.video_max_mb',
@@ -108,7 +114,7 @@ async function capsFor(tx: Tx, kind: UstaadMediaKind) {
  * photos and voice still work). Quota and budget are conditional increments in this transaction.
  */
 export async function declareUstaadMedia(db: Tx, input: DeclareMediaInput): Promise<UstaadMediaRow> {
-  const caps = await capsFor(db, input.kind);
+  const caps = await ustaadMediaCaps(db, input.kind);
   if (input.bytes > Math.min(caps.maxBytes, input.hostMaxBytes))
     throw new ValidationError('This file is too large', 'MEDIA_TOO_LARGE', {
       maxBytes: Math.min(caps.maxBytes, input.hostMaxBytes),
@@ -148,7 +154,7 @@ export async function declareUstaadMedia(db: Tx, input: DeclareMediaInput): Prom
 async function declareInTx(
   db: Tx,
   input: DeclareMediaInput,
-  caps: Awaited<ReturnType<typeof capsFor>>,
+  caps: Awaited<ReturnType<typeof ustaadMediaCaps>>,
   now: Date,
   day: string,
   budgetFull: ValidationError,
@@ -448,4 +454,42 @@ export async function markUstaadMediaPurged(tx: Tx, row: UstaadMediaRow): Promis
     return;
   }
   await move(tx, row, 'purged', 'system', { purgeAfter: null });
+}
+
+/** Server-written image variants of a verified image (re-encoded, metadata stripped). */
+export async function saveUstaadMediaVariants(
+  tx: Tx,
+  mediaId: string,
+  variants: readonly {
+    variant: (typeof ustaadMediaVariants.$inferInsert)['variant'];
+    objectKey: string;
+    bytes: number;
+    width: number;
+    height: number;
+  }[],
+): Promise<void> {
+  if (variants.length === 0) return;
+  await tx
+    .insert(ustaadMediaVariants)
+    .values(variants.map((v) => ({ ...v, mediaId })))
+    .onConflictDoNothing();
+}
+
+/** The stored key of one variant (or null when the image has no such variant). */
+export async function ustaadMediaVariantKey(
+  tx: Tx,
+  mediaId: string,
+  variant: string,
+): Promise<string | null> {
+  const [row] = await tx
+    .select({ key: ustaadMediaVariants.objectKey })
+    .from(ustaadMediaVariants)
+    .where(and(eq(ustaadMediaVariants.mediaId, mediaId), eq(ustaadMediaVariants.variant, variant)))
+    .limit(1);
+  return row?.key ?? null;
+}
+
+export async function ustaadMediaById(tx: Tx, mediaId: string): Promise<UstaadMediaRow | null> {
+  const [row] = await tx.select().from(ustaadMedia).where(eq(ustaadMedia.id, mediaId)).limit(1);
+  return row ?? null;
 }

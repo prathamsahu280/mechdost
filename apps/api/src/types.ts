@@ -1,6 +1,7 @@
 import type { Keyring } from '@mechdost/db/crypto';
 import type { Tx, UserRecord } from '@mechdost/db/repo';
 import type { Grant } from '@mechdost/shared/rbac';
+import type { MemberView } from '@mechdost/shared/ustaad/dto/members';
 import type { AssistantProvider } from './assistant/provider';
 import type { EmailActionLinks } from './auth/email-actions';
 import type { PasswordAuthority } from './auth/password-authority';
@@ -13,6 +14,7 @@ import type { PhotoByteCache } from './photos/byte-cache';
 import type { RazorpayGateway } from './payments/razorpay';
 import type { RateLimiter } from './rate-limit/limiter';
 import type { Revalidator } from './revalidate';
+import type { MediaHost } from './ustaad/media/host';
 
 /** Everything the app needs from the outside world — injected so tests use PGlite and fakes. */
 export interface AppDeps {
@@ -40,6 +42,8 @@ export interface AppDeps {
   sentryIssues?: SentryIssuesClient | null;
   /** Refreshes the website's cache by tag after a publish; absent = the configured one (tests inject a spy). */
   revalidate?: Revalidator;
+  /** Ustaad Network media store (R2 or Supabase, spec 23 § 10); null → media routes answer 503 MEDIA_UNAVAILABLE. */
+  mediaHost?: MediaHost | null;
 }
 
 export interface AuthContext {
@@ -58,5 +62,7 @@ export interface AppEnv {
     auth: AuthContext;
     /** The bearer token the global API limit already verified (no revocation check); `authenticate` reuses it. */
     verifiedToken?: { token: string; identity: VerifiedToken };
+    /** The Ustaad member making the request (set by `requireUstaadMember`, spec 23). */
+    ustaadMember?: MemberView;
   };
 }
