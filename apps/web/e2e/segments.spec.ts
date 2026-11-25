@@ -1,4 +1,11 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
+
+interface Rect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
 
 /**
  * Vehicle segments (design 2026-11-25, spec 02): chips filter the shop and keep their state in the URL, cards carry a
@@ -83,20 +90,21 @@ test.describe('card tag', () => {
     const c = card(page, TRUCK_TYRE);
     const tag = c.locator('[data-slot="card-segment"]');
     await expect(tag).toContainText('Truck & bus');
-    const [t, box] = await Promise.all([tag.boundingBox(), c.boundingBox()]);
-    expect(t!.height).toBeGreaterThanOrEqual(18);
-    expect(t!.x).toBeGreaterThanOrEqual(box!.x);
-    expect(t!.x + t!.width).toBeLessThanOrEqual(box!.x + box!.width);
-    const buttons = await c.locator('[data-slot="card-tools"] button, [data-slot="admin-edit"]').all();
-    for (const b of buttons) {
-      const r = (await b.boundingBox())!;
-      const overlaps = !(
-        t!.x + t!.width <= r.x ||
-        r.x + r.width <= t!.x ||
-        t!.y + t!.height <= r.y ||
-        r.y + r.height <= t!.y
-      );
-      expect(overlaps).toBe(false);
+    const rect = async (l: Locator): Promise<Rect> => {
+      const r = await l.boundingBox();
+      if (!r) throw new Error('element has no box');
+      return r;
+    };
+    const [t, box] = [await rect(tag), await rect(c)];
+    expect(t.height).toBeGreaterThanOrEqual(18);
+    expect(t.x).toBeGreaterThanOrEqual(box.x);
+    expect(t.x + t.width).toBeLessThanOrEqual(box.x + box.width);
+    for (const b of await c.locator('[data-slot="card-tools"] button, [data-slot="admin-edit"]').all()) {
+      const r = await b.boundingBox();
+      if (!r) continue; // not shown (nothing to overlap)
+      const apart =
+        t.x + t.width <= r.x || r.x + r.width <= t.x || t.y + t.height <= r.y || r.y + r.height <= t.y;
+      expect(apart).toBe(true);
     }
   });
 });

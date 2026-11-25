@@ -63,7 +63,9 @@ describe('UI state model', () => {
     expect(core.length).toBeGreaterThan(40);
     // 105 (was 100): adding the Refunds account section (2026-11-23) made NAV-ACCOUNT produce its intended single core
     // case (hi · 390 · coins), which the pairwise draw had missed before; one case is a few seconds per push.
-    expect(core.length).toBeLessThanOrEqual(105);
+    // 107 (was 105): the vehicle-segment rows (2026-11-25) add one chips case; the seven new demo products and the two
+    // new /shop routes re-draw the pairwise cases of the card and filter rows.
+    expect(core.length).toBeLessThanOrEqual(107);
   });
 
   it('docs/qa/ui-state-checklist.md lists exactly the cases of the model', () => {

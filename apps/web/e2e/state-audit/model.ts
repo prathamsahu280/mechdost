@@ -764,7 +764,10 @@ export const COMPONENTS: readonly ComponentDef[] = [
     ],
     checks: ['present', 'inside', 'overlap', 'covered', 'tap', 'hscroll', 'focus', 'console'],
     sweep: 8,
-    core: coreAt([390], (r) => r.theme === 'light'),
+    core: coreAt(
+      [390],
+      (r) => r.theme === 'light' && r.locale === 'en' && String(r.route).includes('construction'),
+    ),
   },
   {
     code: 'SHOP-SEGMENT-TAG',
@@ -778,7 +781,6 @@ export const COMPONENTS: readonly ComponentDef[] = [
     checks: [...BASE_CHECKS, 'aligned', 'offphoto'],
     align: CARD_ALIGN,
     sweep: 6,
-    core: coreAt([390], (r) => r.theme === 'light' && r.locale === 'hi'),
   },
   {
     code: 'HOME-VEHICLE-TILES',
@@ -790,7 +792,6 @@ export const COMPONENTS: readonly ComponentDef[] = [
     params: [...env],
     checks: ['present', 'inside', 'overlap', 'covered', 'clipped', 'tap', 'hscroll', 'focus', 'console'],
     sweep: 4,
-    core: coreAt([390, 1440], (r) => r.theme === 'light'),
   },
   {
     code: 'SHOP-ACTION',

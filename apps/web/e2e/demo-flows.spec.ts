@@ -64,8 +64,11 @@ test.describe('shop → cart → checkout → tracking', () => {
     const names = await page.getByRole('article').getByRole('heading').allTextContents();
     // Highest price first; "tyre" also matches the tyre pressure gauge (by design). The demo tyre is now
     // "CEAT Milaze X3 passenger car tyre" with three sizes (2026-11-24).
-    expect(names[0]).toMatch(/passenger car tyre/i);
-    expect(names).toHaveLength(3);
+    // Since the heavy-vehicle demo products (2026-11-25) the dearest tyre is the OTR one; the passenger tyre and the
+    // pressure gauge are still among the matches, in descending price order.
+    expect(names[0]).toMatch(/Earthmax/);
+    expect(names.some((n) => /passenger car tyre/i.test(n))).toBe(true);
+    expect(names.some((n) => /pressure gauge/i.test(n))).toBe(true);
   });
 });
 
