@@ -503,3 +503,27 @@ describe('CHECKs', () => {
     );
   });
 });
+
+describe('promotion internal targets (security review 2026-11-26: open redirect)', () => {
+  const promo = (targetId: string) => ({
+    slot: 'feed',
+    titleEn: 'Battery week',
+    titleHi: 'बैटरी सप्ताह',
+    target: 'url_internal',
+    targetId,
+    startsAt: new Date(),
+    endsAt: new Date(Date.now() + 86_400_000),
+  });
+  it.each(['//evil.com', '/\\evil.com', '/%2F%2Fevil.com', '/ok\n//evil', '/\tx', 'https://x', '/a b'])(
+    'the CHECK refuses %j',
+    async (target) => {
+      await rejects(db.insert(s.ustaadPromotions).values(promo(target)), '23514');
+    },
+  );
+  it.each(['/shop?x=1', '/ustaad/learn', '/offers?code=DIWALI-25', '/a;b'])(
+    'the CHECK accepts %j',
+    async (target) => {
+      await db.insert(s.ustaadPromotions).values(promo(target));
+    },
+  );
+});

@@ -32,6 +32,7 @@ import {
   USTAAD_SEGMENT_CODES,
 } from '@mechdost/shared/ustaad/codes';
 import { USTAAD_CONTENT_STATUSES } from '@mechdost/shared/state';
+import { INTERNAL_PATH_SQL_FORBIDDEN, INTERNAL_PATH_SQL_RE } from '@mechdost/shared/ustaad/paths';
 import { createdAt, id, ts, updatedAt, version } from './_common';
 import { cities } from './geography';
 import { users, vehicleModels } from './identity';
@@ -381,9 +382,10 @@ export const ustaadPromotions = pgTable(
     check('ustaad_promotions_status_valid', oneOf(t.status, PROMOTION_STATES)),
     check('ustaad_promotions_segments_valid', allOf(t.segmentCodes, USTAAD_SEGMENT_CODES)),
     check('ustaad_promotions_window', sql`${t.endsAt} > ${t.startsAt}`),
+    // Strict internal path (security review 2026-11-26): the same rule as `isSafeInternalPath` in shared.
     check(
       'ustaad_promotions_internal_target',
-      sql`${t.target} <> 'url_internal' or ${t.targetId} ~ '^/[^/\\\\]'`,
+      sql`${t.target} <> 'url_internal' or (${t.targetId} ~ ${sql.raw(`'${INTERNAL_PATH_SQL_RE}'`)} and ${t.targetId} !~ ${sql.raw(`'${INTERNAL_PATH_SQL_FORBIDDEN}'`)} and char_length(${t.targetId}) <= 300)`,
     ),
   ],
 );

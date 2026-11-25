@@ -1,6 +1,6 @@
 {
-  "id": "b4844775-66b1-47a5-abd5-124477216ba0",
-  "prevId": "291d704e-1f89-46b9-a80d-698854882ece",
+  "id": "8d47ed38-a058-4dda-8988-2ef5a018a9cd",
+  "prevId": "db817648-b44c-4707-96d2-8dbada3a6870",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -29846,7 +29846,7 @@
         },
         "ustaad_promotions_internal_target": {
           "name": "ustaad_promotions_internal_target",
-          "value": "\"ustaad_promotions\".\"target\" <> 'url_internal' or \"ustaad_promotions\".\"target_id\" ~ '^/[^/\\\\]'"
+          "value": "\"ustaad_promotions\".\"target\" <> 'url_internal' or (\"ustaad_promotions\".\"target_id\" ~ '^/([A-Za-z0-9._~!$&''()*+,\\x3B=:@-]+(/[A-Za-z0-9._~!$&''()*+,\\x3B=:@-]*)*)?([?#][^[:space:][:cntrl:]\\\\]*)?$' and \"ustaad_promotions\".\"target_id\" !~ '[[:cntrl:]\\\\]' and char_length(\"ustaad_promotions\".\"target_id\") <= 300)"
         }
       },
       "isRLSEnabled": false

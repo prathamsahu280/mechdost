@@ -147,7 +147,7 @@ CREATE TABLE "ustaad_promotions" (
 	CONSTRAINT "ustaad_promotions_status_valid" CHECK ("ustaad_promotions"."status" in ('draft','scheduled','live','ended')),
 	CONSTRAINT "ustaad_promotions_segments_valid" CHECK ("ustaad_promotions"."segment_codes" <@ array['two_wheeler','three_wheeler','car_suv','light_commercial','truck_bus','tractor_farm','ev']::text[]),
 	CONSTRAINT "ustaad_promotions_window" CHECK ("ustaad_promotions"."ends_at" > "ustaad_promotions"."starts_at"),
-	CONSTRAINT "ustaad_promotions_internal_target" CHECK ("ustaad_promotions"."target" <> 'url_internal' or "ustaad_promotions"."target_id" ~ '^/[^/\\]')
+	CONSTRAINT "ustaad_promotions_internal_target" CHECK ("ustaad_promotions"."target" <> 'url_internal' or ("ustaad_promotions"."target_id" ~ '^/([A-Za-z0-9._~!$&''()*+,\x3B=:@-]+(/[A-Za-z0-9._~!$&''()*+,\x3B=:@-]*)*)?([?#][^[:space:][:cntrl:]\\]*)?$' and "ustaad_promotions"."target_id" !~ '[[:cntrl:]\\]' and char_length("ustaad_promotions"."target_id") <= 300))
 );
 --> statement-breakpoint
 CREATE TABLE "ustaad_reactions" (
