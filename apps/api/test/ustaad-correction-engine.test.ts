@@ -204,6 +204,11 @@ describe('smart correction: masking and the request (SR-28)', () => {
     ['zero-width joiners between digits', 'call 98765‍43​210 kro'],
     ['spaced digits with dots', 'call 9 8 7 6 5 . . . 4 3 2 1 0'],
     ['a long dash run', 'call 98765—————43210'],
+    ['keycap digits', 'call 9️⃣8️⃣7️⃣6️⃣5️⃣4️⃣3️⃣2️⃣1️⃣0️⃣'],
+    ['circled digits', 'call ⑨⑧⑦⑥⑤④③②①⓪'],
+    ['superscript digits', 'call ⁹⁸⁷⁶⁵⁴³²¹⁰'],
+    ['combining acute between digits', 'call 9́8́7́65́432́10'],
+    ['variation selectors between digits', 'call 9️8︎7️6543️210'],
   ])('fails closed on %s: the LLM is skipped', async (_name, text) => {
     expect(maskPii(text).safeForLlm).toBe(false);
     const double = new FetchDouble((s) => s);
@@ -215,6 +220,13 @@ describe('smart correction: masking and the request (SR-28)', () => {
   it('fails closed: eight or more digits left in a short span keep the text away from the LLM', async () => {
     expect(maskPii('1234-5678 h').safeForLlm).toBe(false);
     expect(maskPii('bearing 6301 aur 175/65 R14').safeForLlm).toBe(true);
+    for (const ordinary of [
+      'tyre 175/65 R14 82T',
+      'oil 10W-30 dalo',
+      'price ₹1,520 hai',
+      'बेयरिंग ६३०१ लगाओ',
+    ])
+      expect(maskPii(ordinary).safeForLlm, ordinary).toBe(true);
     const double = new FetchDouble((s) => s);
     const r = await run('code 1234-5678 h', { double });
     expect(r).toMatchObject({ engine: 'wordlist', llmSkipped: 'unmasked_digits' });

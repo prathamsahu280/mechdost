@@ -10,8 +10,10 @@
  * runs).
  *
  * Fail closed (security review 2026-11-26): `safeForLlm` is false, and the caller keeps the text on our server (word
- * list only), when masking failed, when the text has digits of any script other than ASCII and Devanagari, or when the
- * masked text still has eight or more digits between two letters (see `hasDigitCluster`).
+ * list only), when masking failed, when the text has any numeral other than ASCII and Devanagari digits, when one
+ * number mixes the two scripts, or when the masked text still has eight or more numerals between two letters (all read
+ * on `numericProjection`). No offset map is needed for restore: the projection is for checks only, and the masked text
+ * an engine receives is the member's own text with placeholders.
  */
 
 const D = '[0-9०-९]'; // ASCII and Devanagari digits
@@ -74,31 +76,46 @@ export function hasPlaceholderChars(text: string): boolean {
 }
 
 /**
- * The fail-closed projection (security review 2026-11-26, round 2). Format characters (`\p{Cf}`: zero-width joiners,
- * direction marks) are removed and placeholders become a space; the text is cut at every letter, and each letter-free
- * segment is unsafe when it holds `RISK_DIGITS` or more digits of any script, **whatever the separators between them**
- * (`9 8 7 6 5 . . . 4 3 2 1 0`, `98765—————43210`), or digits of more than one script (`9८७६५४३२१०`). Part numbers
- * and sizes (`6301 aur 175/65 R14`) are split by letters and stay safe. Errs towards the word list.
+ * The numeric projection every fail-closed check reads (security review 2026-11-26, rounds 2 and 3), computed once:
+ * NFKC (fullwidth, circled and superscript numerals become ASCII digits), then format characters (`\p{Cf}`: zero-width
+ * joiners, direction marks) removed, then every combining mark or variation selector (`\p{M}`, keycap U+20E3) next to
+ * a numeral removed, placeholders turned into a space. In the projection every `\p{N}` counts as a digit and only
+ * letters (`\p{L}`) split a run. It is used for checks only, never sent or shown.
+ */
+export function numericProjection(text: string): string {
+  let t = text.normalize('NFKC').replace(/\p{Cf}/gu, '');
+  // Marks after a numeral, then marks before one (chains of marks included).
+  t = t.replace(/(\p{N})\p{M}+/gu, '$1').replace(/\p{M}+(?=\p{N})/gu, '');
+  return t.replace(PLACEHOLDER_RE, ' ');
+}
+
+const letterFreeSegments = (projection: string) => projection.split(/\p{L}+/u);
+
+/**
+ * True when a letter-free stretch of the projection holds `RISK_DIGITS` or more numerals, whatever separates them
+ * (`9 8 7 6 5 . . . 4 3 2 1 0`, `98765—————43210`, keycaps, `9́8…`). Part numbers, sizes and prices
+ * (`175/65 R14 82T`, `10W-30`, `₹1,520`, `6301 aur 175/65 R14`) are split by letters or stay short, so they pass.
  */
 export function hasDigitCluster(text: string): boolean {
-  const plain = text.replace(PLACEHOLDER_RE, ' ').replace(/\p{Cf}/gu, '');
-  return plain.split(/[\p{L}\p{M}]+/u).some((segment) => {
-    const digits = segment.match(/\p{Nd}/gu) ?? [];
-    return digits.length >= RISK_DIGITS;
-  });
+  return letterFreeSegments(numericProjection(text)).some(
+    (segment) => (segment.match(/\p{N}/gu) ?? []).length >= RISK_DIGITS,
+  );
 }
 
 /** A number written in two digit scripts at once (`9८७६५४३२१०`), checked on the unmasked text: a disguise. */
 export function hasMixedDigitScripts(text: string): boolean {
-  return text
-    .replace(/\p{Cf}/gu, '')
-    .split(/[\p{L}\p{M}]+/u)
-    .some((segment) => /[0-9]/.test(segment) && /[०-९]/.test(segment));
+  return letterFreeSegments(numericProjection(text)).some(
+    (segment) => /[0-9]/.test(segment) && /[०-९]/.test(segment),
+  );
 }
 
-/** Any decimal digit other than ASCII and Devanagari (Bengali, Gujarati, fullwidth …): never sent to an LLM. */
+/**
+ * Any numeral other than plain ASCII and Devanagari digits in the text as typed (Bengali, Gujarati, fullwidth,
+ * circled, superscript, fractions …): the text is kept off the LLM. The masking patterns only need the two common
+ * scripts because everything else never leaves the server.
+ */
 export function hasForeignDigits(text: string): boolean {
-  return /(?![0-9०-९])\p{Nd}/u.test(text);
+  return /(?![0-9०-९])\p{N}/u.test(text);
 }
 
 export function maskPii(text: string): Masked {
