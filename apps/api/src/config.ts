@@ -167,6 +167,27 @@ const schema = z
       .string()
       .optional()
       .transform((v) => (v && v.trim().length >= 20 && !v.includes('<') ? v.trim() : undefined)),
+    /**
+     * Ustaad Network media (spec 23 § 10; Q-U1): `supabase` (default) or `r2`. R2 needs every `R2_*` value; a missing
+     * one falls back to Supabase with a warning. Supabase uses SUPABASE_URL / SUPABASE_SECRET_KEY above.
+     */
+    MEDIA_HOST: z.enum(['supabase', 'r2']).default('supabase'),
+    R2_ACCOUNT_ID: z
+      .string()
+      .regex(/^[a-f0-9]{32}$/)
+      .optional()
+      .catch(undefined),
+    R2_ACCESS_KEY_ID: z.string().min(16).optional().catch(undefined),
+    R2_SECRET_ACCESS_KEY: z.string().min(32).optional().catch(undefined),
+    R2_BUCKET_QUARANTINE: z.string().default('ustaad-quarantine'),
+    R2_BUCKET_MEDIA: z.string().default('ustaad-media'),
+    R2_BUCKET_DOCS: z.string().default('ustaad-docs'),
+    R2_BUCKET_EVIDENCE: z.string().default('ustaad-evidence'),
+    /** Public host of the media bucket (CSP img-src / media-src) and of the docs bucket (downloads only, SR-16). */
+    R2_MEDIA_HOST: z.string().optional(),
+    R2_DOCS_HOST: z.string().optional(),
+    /** The Supabase project's per-file upload limit in MB (free plan 50); caps are clamped to it. */
+    SUPABASE_MAX_UPLOAD_MB: z.coerce.number().int().min(5).max(5000).default(50),
     /** PostHog ingestion host; EU cloud by default (decision 2026-11-14). */
     POSTHOG_HOST: z.url().default('https://eu.i.posthog.com'),
     /** Megabytes of public product-photo bytes kept in memory (0 = off; capped so it fits the container, decision 2026-11-24). */ PHOTO_CACHE_MB:
@@ -352,6 +373,30 @@ function toConfig(env: z.infer<typeof schema>) {
       env.SUPABASE_URL && env.SUPABASE_SECRET_KEY
         ? { url: env.SUPABASE_URL, secretKey: env.SUPABASE_SECRET_KEY, bucket: 'service-photos' }
         : null,
+    ustaadMedia: {
+      host: env.MEDIA_HOST,
+      buckets: {
+        quarantine: env.R2_BUCKET_QUARANTINE,
+        media: env.R2_BUCKET_MEDIA,
+        docs: env.R2_BUCKET_DOCS,
+        evidence: env.R2_BUCKET_EVIDENCE,
+      },
+      r2:
+        env.R2_ACCOUNT_ID && env.R2_ACCESS_KEY_ID && env.R2_SECRET_ACCESS_KEY
+          ? {
+              accountId: env.R2_ACCOUNT_ID,
+              credentials: { accessKeyId: env.R2_ACCESS_KEY_ID, secretAccessKey: env.R2_SECRET_ACCESS_KEY },
+            }
+          : null,
+      supabase:
+        env.SUPABASE_URL && env.SUPABASE_SECRET_KEY
+          ? {
+              url: env.SUPABASE_URL,
+              secretKey: env.SUPABASE_SECRET_KEY,
+              maxFileBytes: env.SUPABASE_MAX_UPLOAD_MB * 1024 * 1024,
+            }
+          : null,
+    },
     live: {
       transport: env.LIVE_TRANSPORT,
       databaseUrl: env.FIREBASE_DATABASE_URL ?? null,

@@ -188,6 +188,7 @@ export const MEDIA_REJECT_REASONS = [
   'decompression_bomb',
   'expired_upload',
   'unreadable',
+  'hash_mismatch',
 ] as const;
 /** Single PUT up to this size; above it resumable 8 MB parts (spec 23 § 10). */
 export const MEDIA_SINGLE_PUT_MAX = 16 * 1024 * 1024;
@@ -304,6 +305,8 @@ export const USTAAD_ERRORS = [
   'MEDIA_TOO_LONG',
   'MEDIA_MISMATCH',
   'MEDIA_BUDGET_FULL',
+  /** A video with location metadata (v1 cannot strip it): record in the app or remove the location. */
+  'MEDIA_LOCATION',
   'MEDIA_QUOTA',
   'FOUR_EYES',
   'SELF_MODERATION',

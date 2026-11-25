@@ -1,30 +1,24 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi';
-import type { Context } from 'hono';
-import { createMiddleware } from 'hono/factory';
 import {
   correctionMember,
   correctionWords,
-  ustaadSettingValues,
+  readUstaadSettingValues,
   type CorrectionMember,
   type CorrectionWords,
 } from '@mechdost/db/repo';
-import { isStaffGrant } from '@mechdost/shared/auth';
 import { can } from '@mechdost/shared/rbac';
-import { ustaadAccessDecision } from '@mechdost/shared/ustaad/access';
-import type { UstaadAccessMode, UstaadCorrectionMode } from '@mechdost/shared/ustaad/codes';
+import { USTAAD_CORRECTION_MODES, type UstaadCorrectionMode } from '@mechdost/shared/ustaad/codes';
 import {
+  CORRECTION_LANGS,
   CorrectRequest,
   CorrectResponse,
   correctionSegments,
   countChanges,
   type CorrectResponseView,
 } from '@mechdost/shared/ustaad/correction';
-import { USTAAD_CORRECTION_MODES } from '@mechdost/shared/ustaad/codes';
-import type { UstaadSettingValues } from '@mechdost/shared/ustaad/settings';
-import type { SessionCache } from '../../auth/session-cache';
 import { ApiError } from '../../errors';
 import { log } from '../../logger';
-import { authenticate } from '../../middleware/auth';
+import { requireUstaadMember } from '../../middleware/ustaad-member';
 import { RateLimitUnavailable } from '../../rate-limit/limiter';
 import { TtlCache } from '../../ttl-cache';
 import { memoryCorrectionCache } from '../../ustaad/correction/cache';
@@ -35,11 +29,9 @@ import { validationHook } from '../../validation';
 import { errorResponses } from '../schemas';
 
 /**
- * `POST /v1/ustaad/correct` (spec 23 § 8 "Correction", § 11). Members only. The network gate runs first: with
- * `ustaad.access` = off, or staff_preview and the caller is not staff in a staff session, the answer is the generic
- * 404 a missing path gets (anonymous callers included, so nobody learns the network exists); non-members get the same
- * 404. Workstream A3 owns the shared gate and member guard; this route uses the same rules through the shared
- * `ustaadAccessDecision` and swaps to A3's middleware at merge.
+ * `POST /v1/ustaad/correct` (spec 23 § 8 "Correction", § 11). Mounted inside `ustaadRoutes`, so A's `ustaadGate`
+ * runs first (access off / staff preview → the generic 404, even for anonymous callers; open + anonymous → 401), then
+ * `requireUstaadMember` (non-members and members who left → 404, banned → 403 `USTAAD_BANNED`), then `ustaad:use`.
  *
  * Modes: `suggest` returns the corrected text with word-level segments for the suggest card; `auto` returns the same
  * shape, the client sends the corrected text and keeps `original` (stored as `body_original`); `off` returns the text
@@ -47,7 +39,20 @@ import { errorResponses } from '../schemas';
  */
 const DAY_SECONDS = 86_400;
 const SETTINGS_TTL_MS = 30_000;
-const NOT_FOUND = () => new ApiError(404, 'NOT_FOUND', 'Not found');
+
+const SETTING_KEYS = [
+  'ustaad.correction.default_mode',
+  'ustaad.correction.member_can_change',
+  'ustaad.correction.langs.hi',
+  'ustaad.correction.langs.en',
+  'ustaad.correction.langs.hinglish',
+  'ustaad.correction.langs.cg',
+  'ustaad.correction.timeout_ms',
+  'ustaad.correction.llm_daily_calls',
+  'ustaad.correction.per_member_per_10min',
+  'ustaad.correction.max_length_change_pct',
+] as const;
+type CorrectionSettings = Awaited<ReturnType<typeof readUstaadSettingValues<(typeof SETTING_KEYS)[number]>>>;
 
 const correct = createRoute({
   method: 'post',
@@ -62,10 +67,10 @@ const correct = createRoute({
 });
 
 function effectiveMode(
-  s: UstaadSettingValues,
+  s: CorrectionSettings,
   member: CorrectionMember,
   asked: 'suggest' | 'auto' | undefined,
-) {
+): UstaadCorrectionMode {
   const def = s['ustaad.correction.default_mode'] as UstaadCorrectionMode;
   if (!s['ustaad.correction.member_can_change']) return def;
   const own = USTAAD_CORRECTION_MODES.find((m) => m === member.correctionMode);
@@ -74,45 +79,24 @@ function effectiveMode(
   return asked ?? own ?? def;
 }
 
-export function ustaadCorrectRoutes(deps: AppDeps, sessions: SessionCache) {
+export function ustaadCorrectRoutes(deps: AppDeps) {
   const app = new OpenAPIHono<AppEnv>({ defaultHook: validationHook });
-  const settingsCache = new TtlCache<UstaadSettingValues>(SETTINGS_TTL_MS, 1);
+  const settingsCache = new TtlCache<CorrectionSettings>(SETTINGS_TTL_MS, 1);
   const wordsCache = new TtlCache<CorrectionWords>(SETTINGS_TTL_MS, 1);
-  const settingsNow = () => settingsCache.getOrLoad('s', () => ustaadSettingValues(deps.db));
+  const settingsNow = () =>
+    settingsCache.getOrLoad('s', () => readUstaadSettingValues(deps.db, SETTING_KEYS));
   const wordsNow = () => wordsCache.getOrLoad('w', () => correctionWords(deps.db));
   const cache = deps.correctionCache ?? memoryCorrectionCache();
 
-  /** Before sign-in: off → 404; staff preview without a bearer → 404 (not 401). */
-  const gateBefore = createMiddleware<AppEnv>(async (c, next) => {
-    const mode = (await settingsNow())['ustaad.access'] as UstaadAccessMode;
-    const hasBearer = /^Bearer\s+\S+/i.test(c.req.header('authorization') ?? '');
-    if (mode === 'off' || (mode === 'staff_preview' && !hasBearer)) throw NOT_FOUND();
-    await next();
-  });
-  /** After sign-in: the access decision (staff preview needs a staff grant in a staff session). */
-  const gateAfter = createMiddleware<AppEnv>(async (c, next) => {
-    const s = await settingsNow();
-    const decision = ustaadAccessDecision(s['ustaad.access'] as UstaadAccessMode, {
-      signedIn: true,
-      staff: c.get('auth').grants.some(isStaffGrant),
-    });
-    if (decision !== 'allow' || !s['ustaad.general.enabled']) throw NOT_FOUND();
-    await next();
-  });
-  /** Members only: non-members, banned and left members, and callers without `ustaad:use` get the same 404. */
-  const memberOf = async (c: Context<AppEnv>): Promise<CorrectionMember> => {
-    const auth = c.get('auth');
-    const member = await correctionMember(deps.db, auth.user.id);
-    if (!member || (member.status !== 'active' && member.status !== 'restricted')) throw NOT_FOUND();
-    if (!can(auth.grants, 'ustaad:use', {})) throw NOT_FOUND();
-    return member;
-  };
-
-  app.use('/ustaad/correct', gateBefore, authenticate(deps, sessions), gateAfter);
+  app.use('/ustaad/correct', requireUstaadMember(deps));
 
   return app.openapi(correct, async (c) => {
     const body = c.req.valid('json');
-    const member = await memberOf(c);
+    const auth = c.get('auth');
+    // The same 404 the gate gives (errorBody NOT_FOUND), never a hint that the path exists.
+    if (!can(auth.grants, 'ustaad:use', {})) throw new ApiError(404, 'NOT_FOUND', 'Not found');
+    const member = await correctionMember(deps.db, auth.user.id);
+    if (!member) throw new ApiError(404, 'NOT_FOUND', 'Not found');
     const s = await settingsNow();
 
     const limit = s['ustaad.correction.per_member_per_10min'] as number;
@@ -128,7 +112,7 @@ export function ustaadCorrectRoutes(deps: AppDeps, sessions: SessionCache) {
     const text = body.text;
     const lang = body.lang ?? null;
     const mode = effectiveMode(s, member, body.mode);
-    const langOn = lang === null || s[`ustaad.correction.langs.${lang}`] === true;
+    const langOn = lang === null || (CORRECTION_LANGS.includes(lang) && s[`ustaad.correction.langs.${lang}`]);
     const unchanged = (m: UstaadCorrectionMode): CorrectResponseView => ({
       mode: m,
       engine: null,

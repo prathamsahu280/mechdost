@@ -747,7 +747,8 @@ interface SmartCorrectionEngine {
   `correction.member_can_change`) the request's mode, else the member's own; a member's own `off` always wins.
 - **Gate.** `ustaad.access` off, or staff preview without a staff session → the generic 404 even for anonymous callers
   (checked before sign-in); open + anonymous → 401; non-members, banned or left members, and callers without
-  `ustaad:use` → 404. A3's shared gate replaces the route-local one at merge.
+  `ustaad:use` → 404 (banned → 403 `USTAAD_BANNED`). The route is mounted in `ustaadRoutes` behind A3's `ustaadGate`
+  and `requireUstaadMember`.
 - **Length rule.** ±`max_length_change_pct` **or 12 characters, whichever is larger** (`kya h` → `kya hai` is +40 %).
 - **Numbers.** Compared exactly as written (`६३०१` turned into `6301` is refused); protected words, units and
   negations are compared normalised (NFC, lower case, Devanagari digits as ASCII). Negations count as one class

@@ -1,21 +1,12 @@
-import { and, desc, eq, inArray, isNull, like, max, sql } from 'drizzle-orm';
-import { ustaadValuesFrom, type UstaadSettingValues } from '@mechdost/shared/ustaad/settings';
-import { consents, settings, ustaadMembers, ustaadWordLists } from '../schema';
+import { and, desc, eq, inArray, max, sql } from 'drizzle-orm';
+import { consents, ustaadMembers, ustaadWordLists } from '../schema';
 import type { Tx } from './orders';
 
 /**
  * Reads for smart correction (spec 23 § 11). Read-only: the route never writes here (the post/answer/comment writes
- * that store `body_original` and `correction` belong to the content workstreams).
+ * that store `body_original` and `correction` belong to the content workstreams). Settings come from A's
+ * `readUstaadSettingValues`.
  */
-
-/** Every `ustaad.*` global setting, stored values over defaults (invalid stored values fall back). */
-export async function ustaadSettingValues(db: Tx): Promise<UstaadSettingValues> {
-  const rows = await db
-    .select({ key: settings.key, value: settings.value })
-    .from(settings)
-    .where(and(isNull(settings.cityId), like(settings.key, 'ustaad.%')));
-  return ustaadValuesFrom(Object.fromEntries(rows.map((r) => [r.key, r.value])));
-}
 
 export interface CorrectionMember {
   memberId: string;

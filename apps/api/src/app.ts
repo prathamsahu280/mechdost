@@ -21,7 +21,6 @@ import { adminOrderRoutes } from './routes/admin-orders';
 import { adminSettingsRoutes } from './routes/admin-settings';
 import { adminErrorRoutes } from './routes/admin-errors';
 import { assistantRoutes } from './routes/assistant';
-import { ustaadCorrectRoutes } from './routes/ustaad/correct';
 import { authRoutes } from './routes/auth';
 import { authEmailRoutes } from './routes/auth-emails';
 import { catalogueRoutes } from './routes/catalogue';
@@ -72,6 +71,9 @@ import { reviewPublicRoutes, reviewRoutes } from './routes/reviews';
 import { recommendationRoutes } from './routes/recommendations';
 import { privacyRoutes } from './routes/privacy';
 import { pincodeWaitlistRoutes } from './routes/pincode-waitlist';
+import { adminUstaadSettingsRoutes } from './routes/admin-ustaad-settings';
+import { ustaadRoutes } from './routes/ustaad/index';
+import { ustaadAccessCache } from './middleware/ustaad-member';
 import type { AppDeps, AppEnv } from './types';
 import { validationHook } from './validation';
 
@@ -179,7 +181,10 @@ export function createApp(deps: AppDeps) {
   v1.route('/', reviewRoutes(deps, sessions));
   v1.route('/', pincodePublicRoutes(deps));
   v1.route('/', pincodeAdminRoutes(deps, sessions));
-  v1.route('/', ustaadCorrectRoutes(deps, sessions));
+  // Ustaad Network (spec 23): the access gate is inside `ustaadRoutes`; the admin save clears the same cache.
+  const ustaadAccess = ustaadAccessCache(deps);
+  v1.route('/', ustaadRoutes(deps, sessions, ustaadAccess));
+  v1.route('/', adminUstaadSettingsRoutes(deps, sessions, ustaadAccess));
   app.route('/v1', v1);
 
   app.openAPIRegistry.registerComponent('securitySchemes', 'bearerAuth', {
